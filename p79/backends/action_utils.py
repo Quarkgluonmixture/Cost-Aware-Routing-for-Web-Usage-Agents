@@ -15,6 +15,19 @@ ALLOWED_ACTION_TYPES = {
     "stop",
     "tab_focus",
     "select_option",
+    # Protocol Reset #5 (action-set restore, 2026-05-20): upstream-compatible
+    # id-based action space restored for paper-grade VWA fidelity. These were
+    # dropped by the P79 custom prompt; cls/reddit empirically use tab_focus
+    # for cross-site (pre-opened |AND| tabs) so demand is ~0, but restoring
+    # closes the "crippled action space" reviewer attack. Execution: hover/
+    # press/new_tab/close_tab route through the wrapper escape-hatch to upstream
+    # `create_id_based_action`; goto has an explicit wrapper branch with a VWA
+    # domain whitelist (off-site goto → no-op). See 实验笔记 §245.
+    "hover",
+    "press",
+    "new_tab",
+    "close_tab",
+    "goto",
 }
 
 
@@ -145,6 +158,14 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
             a.get("option_value", ""),
             a.get("option_index"),
             a.get("page_number"),
+            # P1-3-B* (cross-AI 2026-05-20): restored-action identifying fields.
+            # Pre-fix two DIFFERENT press (key=Enter vs Escape) or two different
+            # goto URLs collapsed to the same signature → repaired_multiple_
+            # identical → silently executed the first instead of flagging
+            # multiple_actions. Include key/url so distinct restored actions are
+            # disambiguated like click/scroll/select_option already are.
+            a.get("key") or a.get("key_comb"),
+            a.get("url"),
         )
         sigs = {_sig(a) for a, _v, _r in fenced_valid_actions}
         if len(sigs) == 1:
@@ -196,6 +217,11 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
                 a.get("option_value", ""),
                 a.get("option_index"),
                 a.get("page_number"),
+                # P1-3-B* (cross-AI 2026-05-20): restored-action identifying
+                # fields — see fenced-path _sig note above. Keep both signature
+                # tuples in lock-step.
+                a.get("key") or a.get("key_comb"),
+                a.get("url"),
             )
             for a, _v, _r in valid_candidates
         }
@@ -616,6 +642,48 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         # int helper rejects bool. Pre-fix `page_number:true` validated to 1.
         if not _is_strict_int(page_no) or page_no < 0:
             return {"action_type": "wait"}, False, "invalid_schema_dict"
+
+    if action_type == "hover":
+        # Protocol Reset #5 (2026-05-20): hover is click-like — needs an
+        # element_id (int > 0) or a valid coordinate. Reuses the click coord
+        # priority so coord-present-but-malformed surfaces as invalid_coord.
+        coord = action.get("coordinate")
+        elem_id = action.get("element_id")
+        has_id = _is_strict_int(elem_id) and elem_id > 0
+        coord_present = coord is not None
+        coord_ctype = action.get("coordinate_type")
+        coord_valid_shape = coord_present and _is_valid_coordinate_pair(
+            coord, coordinate_type=coord_ctype
+        )
+        if coord_present and not coord_valid_shape:
+            return {"action_type": "wait"}, False, "invalid_coord"
+        if not has_id and not coord_valid_shape:
+            return {"action_type": "wait"}, False, "invalid_element_id"
+        if coord_valid_shape and "coordinate_type" not in action:
+            action["coordinate_type"] = _infer_coordinate_type(action["coordinate"])
+
+    if action_type == "press":
+        # Protocol Reset #5 (2026-05-20): press needs a non-empty key string.
+        # Accept `key` (canonical) or `key_comb` (upstream id-based alias).
+        # Canonicalize onto `key` so the wrapper serializer reads one field.
+        key = action.get("key") or action.get("key_comb")
+        if not isinstance(key, str) or not key.strip():
+            return {"action_type": "wait"}, False, "invalid_schema_dict"
+        action["key"] = key.strip()
+
+    if action_type == "goto":
+        # Protocol Reset #5 (2026-05-20): goto needs a non-empty url string.
+        # The VWA-domain whitelist is a RUNTIME policy enforced in the env
+        # wrapper (`vwa_wrapper._goto_allowed_hosts`) because it depends on the
+        # configured site hosts + currently-open tabs — not a pure schema fact.
+        # Here we only assert schema validity (non-empty string url).
+        url = action.get("url")
+        if not isinstance(url, str) or not url.strip():
+            return {"action_type": "wait"}, False, "invalid_schema_dict"
+        action["url"] = url.strip()
+
+    # new_tab / close_tab take no arguments — always schema-valid once the
+    # action_type passed the ALLOWED_ACTION_TYPES gate above.
 
     if action_type in ("finish", "stop"):
         answer = action.get("answer", "")

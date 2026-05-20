@@ -124,6 +124,11 @@ _WEB_ACTION_TOOL = {
                     "enum": [
                         "click", "type", "scroll", "wait", "back",
                         "forward", "finish", "select_option", "tab_focus",
+                        # Protocol Reset #5 (action-set restore, 2026-05-20):
+                        # upstream-compatible id-based action space. hover/press/
+                        # new_tab/close_tab execute via the wrapper escape-hatch;
+                        # goto via an explicit branch with a VWA-domain whitelist.
+                        "hover", "press", "new_tab", "close_tab", "goto",
                     ],
                     "description": "The type of action to perform.",
                 },
@@ -166,6 +171,14 @@ _WEB_ACTION_TOOL = {
                 "page_number": {
                     "type": "integer",
                     "description": "Tab number for tab_focus.",
+                },
+                "key": {
+                    "type": "string",
+                    "description": "Key combination for press action (e.g. 'Ctrl+Enter').",
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Target URL for goto action (must be a URL on the current task's websites).",
                 },
             },
             "required": ["action_type", "thought"],

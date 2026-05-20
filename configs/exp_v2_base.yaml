@@ -173,11 +173,11 @@ backends:
     dom_mode: "llm"
     mock_mode: false
     # B-991 (2026-05-17): native tool_choice enabled. AWS proxy probe v2
-    # (`docs/checkpoints/probes/proxy_capability_v2_223704.json`) confirmed
-    # OpenAI-format tool_calling support + top-level `tool_calls` response
-    # shape + logprobs (top-2). tool_choice="auto" (per Q1=A) preserves
-    # logprob symmetry with B1/B2 free decoding; pilot N=30 expected
-    # emit_rate ≥95%.
+    # confirmed OpenAI-format tool_calling + top-level `tool_calls` + logprobs.
+    # tool_choice="required" (Fire-6 RCA 2026-05-20): "auto" emitted 0% under
+    # the real dom system prompt ("Output ONLY valid JSON" suppresses tool
+    # calling) → 31% parse_error → injected-wait spirals; "required" restores
+    # emit=100%. Full RCA in proxy_api_agent.py tool_choice block.
     use_tool_calling: true
     # GLM fallback fully retired 2026-05-17 (B-991): construction raises
     # RuntimeError when `use_glm_fallback: true`. Keep this key at `false`

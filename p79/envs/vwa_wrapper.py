@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional, Tuple
 logger = logging.getLogger(__name__)
 import os
 import re
+from urllib.parse import urlparse
 try:
     import numpy as np
 except Exception:  # pragma: no cover - optional runtime dependency
@@ -349,6 +350,7 @@ class VWAWrapper:
         from browser_env import (
             create_id_based_action,
             create_mouse_click_action,
+            create_mouse_hover_action,
             create_scroll_action,
             create_stop_action,
             create_go_back_action,
@@ -356,7 +358,8 @@ class VWAWrapper:
             create_page_focus_action,
             create_keyboard_type_action,
             create_none_action,
-            create_playwright_action
+            create_playwright_action,
+            create_goto_url_action,
         )
 
         action_type = (action_json.get("action_type") or "").lower().strip()
@@ -372,6 +375,10 @@ class VWAWrapper:
         # for select_option dispatch — separate dict so info contract stays
         # symmetric with locator_route_meta (action_kind discriminator).
         _select_option_meta: Optional[Dict[str, Any]] = None
+        # Protocol Reset #5 (action-set restore, 2026-05-20): goto dispatch
+        # telemetry. None unless the step is a goto; otherwise
+        # {action_kind, url, host, allowed, error?}.
+        _goto_meta: Optional[Dict[str, Any]] = None
         # B-510 (/stress A1.25 GRL Chunk 3 P1-3-AB, 2026-05-17): per-step
         # runtime settle-tax accumulator. Pre-fix `sleep_after_execution=0.5`
         # entered `latency_ms.total` per action mix (more TYPE/SELECT → more
@@ -1095,6 +1102,90 @@ class VWAWrapper:
             action = create_none_action()
         elif action_type == "wait":
             action = create_none_action()
+        elif action_type == "hover":
+            # Protocol Reset #5 (P1-1-BC cross-AI fix, 2026-05-20): explicit hover
+            # branch. Pre-fix hover fell through to the escape-hatch, which only
+            # serializes "hover [element_id]"; a coordinate hover (vision mode —
+            # advertised in the vision prompt + validator-valid) raised
+            # ValueError there → was caught → silent no-op (parse_valid=True but
+            # no browser hover). Now element_id hovers via the upstream id-based
+            # parser and coordinate hovers via create_mouse_hover_action,
+            # mirroring the coord-click normalization. Both stamp action_executed
+            # for the evidence layer (P2-2).
+            _hover_eid = action_json.get("element_id")
+            _hover_coord = action_json.get("coordinate")
+            if _hover_eid is not None:
+                action = create_id_based_action(f"hover [{int(_hover_eid)}]")
+                _action_executed = {"action_type": "hover", "dispatch_path": "element_id", "fallback": False}
+            elif (
+                isinstance(_hover_coord, (list, tuple))
+                and len(_hover_coord) == 2
+                and _hover_coord[0] is not None
+                and _hover_coord[1] is not None
+            ):
+                left = float(_hover_coord[0])
+                top = float(_hover_coord[1])
+                if left > 1.1:
+                    left = left / float(self.viewport_width)
+                if top > 1.1:
+                    top = top / float(self.viewport_height)
+                eps = 1e-6
+                if left <= 0.0:
+                    left = eps
+                elif left >= 1.0:
+                    left = 1.0 - eps
+                if top <= 0.0:
+                    top = eps
+                elif top >= 1.0:
+                    top = 1.0 - eps
+                action = create_mouse_hover_action(left=left, top=top)
+                _action_executed = {"action_type": "hover", "dispatch_path": "coord_mouse_hover", "fallback": False}
+            else:
+                action = create_none_action()
+                _action_executed = {"action_type": "hover", "dispatch_path": "noop_no_target", "fallback": True}
+        elif action_type == "goto":
+            # Protocol Reset #5 (action-set restore, 2026-05-20; P1-2-B* cross-AI
+            # fix): goto with a VWA-origin whitelist. Allowed origins = open-tab
+            # netlocs ∪ configured VWA site netlocs (env). Off-site goto → no-op
+            # so the agent cannot leave the controlled site set (eval-breaking /
+            # contamination). cls/reddit cross-site uses pre-opened |AND| tabs +
+            # tab_focus so legitimate origins are already open; demand is ~0.
+            #
+            # P1-2-B* (codex OOB, 2026-05-20): match on `netloc` (host:port), NOT
+            # `hostname`. On the A100 self-host every VWA site is localhost:<port>,
+            # so a hostname-only whitelist collapsed to "any localhost port".
+            # netloc keeps the port distinction. Relative URLs (empty netloc +
+            # empty scheme = a path on the current origin) are inherently on-site
+            # and allowed; non-empty schemes with empty netloc (javascript:/data:)
+            # are NOT relative and stay blocked.
+            _goto_url = str(action_json.get("url") or "").strip()
+            _goto_parsed = urlparse(_goto_url)
+            _goto_netloc = (_goto_parsed.netloc or "").lower()
+            _goto_is_relative = _goto_netloc == "" and _goto_parsed.scheme == ""
+            _allowed_netlocs = self._goto_allowed_hosts()
+            _goto_meta = {
+                "action_kind": "goto",
+                "url": _goto_url,
+                "netloc": _goto_netloc,
+                "relative": _goto_is_relative,
+                "allowed": False,
+            }
+            if _goto_url and (_goto_is_relative or _goto_netloc in _allowed_netlocs):
+                action = create_goto_url_action(_goto_url)
+                _goto_meta["allowed"] = True
+                _action_executed = {
+                    "action_type": "goto",
+                    "dispatch_path": "relative" if _goto_is_relative else "whitelisted",
+                    "fallback": False,
+                }
+            else:
+                action = create_none_action()
+                _goto_meta["error"] = "offsite_blocked"
+                _action_executed = {"action_type": "goto", "dispatch_path": "offsite_blocked", "fallback": True}
+                logger.warning(
+                    "goto blocked (off-whitelist): netloc=%r allowed=%s",
+                    _goto_netloc, sorted(_allowed_netlocs)[:8],
+                )
 
         if action is None and action_type == "click" and "element_id" not in action_json:
             action = create_none_action()
@@ -1107,9 +1198,25 @@ class VWAWrapper:
                 try:
                     action_str = self._json_to_id_action_str(action_json)
                     action = create_id_based_action(action_str)
+                    # P2-2 (cross-AI 2026-05-20): stamp escape-hatch dispatch into
+                    # the wrapper-normalized telemetry so restored actions routed
+                    # here (press / new_tab / close_tab) leave uniform evidence-
+                    # layer proof of execution, parallel to the explicit branches.
+                    if _action_executed is None:
+                        _action_executed = {
+                            "action_type": action_type,
+                            "dispatch_path": "id_based_escape_hatch",
+                            "fallback": False,
+                        }
                 except Exception as _e:
                     logger.warning("create_id_based_action failed (%s), falling back to wait: %s", action_json, _e)
                     action = create_none_action()
+                    if _action_executed is None:
+                        _action_executed = {
+                            "action_type": action_type,
+                            "dispatch_path": "noop_serialize_fail",
+                            "fallback": True,
+                        }
 
         try:
             obs, reward, terminated, truncated, info = self._env.step(action)
@@ -1147,6 +1254,9 @@ class VWAWrapper:
         # dispatch telemetry. None when step did not invoke select_option;
         # otherwise {action_kind, dispatch_path, success, error}.
         info["select_option_meta"] = _select_option_meta
+        # Protocol Reset #5 (action-set restore, 2026-05-20): goto dispatch
+        # telemetry (whitelist allow/block). None unless step was a goto.
+        info["goto_meta"] = _goto_meta
         # B-510 (/stress A1.25 GRL Chunk 3 P1-3-AB, 2026-05-17): per-step
         # runtime settle-tax (wrapper-level wait_for_timeout sum, excluding
         # locator-dispatch internal sleeps). Runner stamps into
@@ -1368,6 +1478,43 @@ class VWAWrapper:
             # Never let telemetry recording mask the actual dialog handling.
             pass
 
+    def _goto_allowed_hosts(self) -> set:
+        """Protocol Reset #5 (action-set restore, 2026-05-20): VWA-origin
+        whitelist for the `goto` action.
+
+        Allowed origins = `netloc` (host:port) of all currently-open browser
+        tabs ∪ the configured VWA site origins (read from the same env vars
+        upstream `browser_env/env_config.py` uses). This blocks the agent from
+        issuing `goto` to an arbitrary off-VWA URL (which would break the eval
+        harness / leave the controlled site set) while permitting every
+        legitimate VWA origin — including cross-site tasks whose tabs are
+        pre-opened via the `|AND|` start_url. Fails safe: any origin not
+        provably a VWA origin is rejected (no-op) by the caller.
+
+        P1-2-B* (codex OOB, 2026-05-20): match on `netloc` (host:port), NOT bare
+        `hostname`. On the A100 self-host every VWA site is localhost:<port>, so
+        a hostname-only whitelist collapsed to "any localhost port" — losing the
+        per-site origin distinction the whitelist is supposed to enforce.
+        """
+        netlocs: set = set()
+        try:
+            for _p in self._env.context.pages:
+                nl = (urlparse(_p.url).netloc or "").lower()
+                if nl:
+                    netlocs.add(nl)
+        except Exception:
+            pass
+        for _var in (
+            "REDDIT", "SHOPPING", "SHOPPING_ADMIN", "GITLAB",
+            "WIKIPEDIA", "MAP", "HOMEPAGE", "CLASSIFIEDS",
+        ):
+            _v = os.environ.get(_var, "")
+            if _v:
+                nl = (urlparse(_v).netloc or "").lower()
+                if nl:
+                    netlocs.add(nl)
+        return netlocs
+
     def _json_to_id_action_str(self, a: Dict[str, Any]) -> str:
         t = (a.get("action_type") or "").lower().strip()
 
@@ -1405,6 +1552,31 @@ class VWAWrapper:
         if t == "wait":
             # 有些实现支持 wait；如果不支持就用 noop/stop 替代
             return "wait"
+
+        # Protocol Reset #5 (action-set restore, 2026-05-20): hover / press /
+        # new_tab / close_tab serialize to the upstream id-based action string
+        # so the step() escape-hatch (`create_id_based_action`) executes them
+        # via the upstream parser. goto is NOT here — it has an explicit step()
+        # branch with a VWA-domain whitelist. Restored for upstream action-space
+        # parity; cls/reddit demand ~0 (cross-site uses tab_focus).
+        if t == "hover":
+            eid = a.get("element_id")
+            if eid is None:
+                raise ValueError(f"hover requires element_id, got: {a}")
+            return f"hover [{int(eid)}]"
+
+        if t == "press":
+            key = a.get("key") or a.get("key_comb") or ""
+            key = str(key).strip()
+            if not key:
+                raise ValueError(f"press requires a key, got: {a}")
+            return f"press [{key}]"
+
+        if t == "new_tab":
+            return "new_tab"
+
+        if t == "close_tab":
+            return "close_tab"
 
         # 兜底：如果 agent 直接给了 action_str
         if "action_str" in a:

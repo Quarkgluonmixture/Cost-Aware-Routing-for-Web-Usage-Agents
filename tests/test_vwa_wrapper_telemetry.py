@@ -26,6 +26,7 @@ def _build_fake_browser_env(captured):
     return types.SimpleNamespace(
         create_id_based_action=lambda action_str: {"kind": "id", "action_str": action_str},
         create_mouse_click_action=lambda left, top: {"kind": "mouse", "left": left, "top": top},
+        create_mouse_hover_action=lambda left, top: {"kind": "hover_coord", "left": left, "top": top},
         create_scroll_action=lambda direction: {"kind": "scroll", "direction": direction},
         create_stop_action=lambda answer: {"kind": "stop", "answer": answer},
         create_go_back_action=lambda: {"kind": "back"},
@@ -34,6 +35,9 @@ def _build_fake_browser_env(captured):
         create_keyboard_type_action=lambda text: {"kind": "type", "text": text},
         create_none_action=lambda: {"kind": "none"},
         create_playwright_action=lambda s: {"kind": "playwright", "action_str": s},
+        # Protocol Reset #5 (action-set restore, 2026-05-20): wrapper now imports
+        # create_goto_url_action for the goto whitelist branch — fake must match.
+        create_goto_url_action=lambda url: {"kind": "goto", "url": url},
         ScriptBrowserEnv=None,
     )
 

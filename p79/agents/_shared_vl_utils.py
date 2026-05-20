@@ -95,7 +95,7 @@ Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
   "confidence": 0.0 to 1.0,
-  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus" | "hover" | "press" | "new_tab" | "close_tab" | "goto",
   ... (other action parameters) ...
 }
 "confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
@@ -121,6 +121,11 @@ Action Schema:
 6. Forward: {"action_type": "forward"}
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 8. Tab focus: {"action_type": "tab_focus", "page_number": int}
+9. Other navigation (rarely needed — prefer the actions above):
+   - Hover: {"action_type": "hover", "element_id": N}
+   - Press a key combo: {"action_type": "press", "key": "Ctrl+Enter"}
+   - New tab / Close tab: {"action_type": "new_tab"} / {"action_type": "close_tab"}
+   - Goto URL: {"action_type": "goto", "url": "http://..."} — ONLY URLs on the task's own websites (a relative path like "/page" on the current site also works); off-site URLs are ignored.
 
 Tab Rule:
 - Multi-site tasks may open multiple tabs (different websites).
@@ -166,7 +171,7 @@ Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
   "confidence": 0.0 to 1.0,
-  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus" | "hover" | "press" | "new_tab" | "close_tab" | "goto",
   ... (other action parameters) ...
 }
 "confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
@@ -192,6 +197,11 @@ Action Schema:
 7. Forward: {"action_type": "forward"}
 8. Finish: {"action_type": "finish", "answer": "optional string"}
 9. Tab focus: {"action_type": "tab_focus", "page_number": int}
+10. Other navigation (rarely needed — prefer the actions above):
+   - Hover: {"action_type": "hover", "element_id": N}
+   - Press a key combo: {"action_type": "press", "key": "Ctrl+Enter"}
+   - New tab / Close tab: {"action_type": "new_tab"} / {"action_type": "close_tab"}
+   - Goto URL: {"action_type": "goto", "url": "http://..."} — ONLY URLs on the task's own websites (a relative path like "/page" on the current site also works); off-site URLs are ignored.
 
 Tab Rule:
 - Multi-site tasks may open multiple tabs (different websites).
@@ -281,7 +291,7 @@ Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
   "confidence": 0.0 to 1.0,
-  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus" | "hover" | "press" | "new_tab" | "close_tab" | "goto",
   ... (other action parameters) ...
 }
 "confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
@@ -305,6 +315,11 @@ Action Schema:
 6. Forward: {"action_type": "forward"}
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 8. Tab focus: {"action_type": "tab_focus", "page_number": int}
+9. Other navigation (rarely needed — prefer the actions above):
+   - Hover: {"action_type": "hover", "coordinate": [x, y], "coordinate_type": "normalized"}
+   - Press a key combo: {"action_type": "press", "key": "Ctrl+Enter"}
+   - New tab / Close tab: {"action_type": "new_tab"} / {"action_type": "close_tab"}
+   - Goto URL: {"action_type": "goto", "url": "http://..."} — ONLY URLs on the task's own websites (a relative path like "/page" on the current site also works); off-site URLs are ignored.
 
 Tab Rule:
 - Multi-site tasks may open multiple tabs (different websites).
