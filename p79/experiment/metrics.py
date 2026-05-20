@@ -631,8 +631,38 @@ def aggregate_condition_metrics(
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
     step_latencies = [float(x.get("p95_step_latency_ms", 0.0)) for x in episode_summaries]
 
-    def _avg(key: str) -> float:
-        return float(statistics.mean([float(x.get(key, 0.0)) for x in episode_summaries]))
+    def _avg(key: str, *, require_present: bool = False) -> float:
+        """Aggregate per-episode field by arithmetic mean.
+
+        /stress 2026-05-20 P0-C3-E: pre-fix `x.get(key, 0.0)` silently injected
+        0 for ANY missing field — including paper-grade canonical metrics
+        (e.g., `total_latency_minus_retry_ms` per B-1410 / `busy_wait_total_ms`
+        per B-1669) that should fail-loud on legacy / mixed-vintage input.
+        `require_present=True` raises ValueError when no episode populates the
+        field, forcing vintage isolation at the code layer (not just prose).
+        Mode-conditional fields (retries / page_unchanged_rate / etc.) keep
+        default require_present=False for backward-compat silent-0 behavior.
+        """
+        vals = [
+            float(x[key])
+            for x in episode_summaries
+            if key in x and x[key] is not None
+        ]
+        if not vals:
+            if require_present:
+                raise ValueError(
+                    f"_avg({key!r}): no episode populates field — paper-grade "
+                    f"canonical metric refuses silent-zero fallback per "
+                    f"/stress P0-C3-E. Likely mixed-vintage input "
+                    f"(pre-B-1410/B-1669 episode summaries lack this field). "
+                    f"Filter input to single-vintage cohort or backfill field "
+                    f"before aggregating."
+                )
+            # Backward-compat path for mode-conditional / optional fields.
+            return float(statistics.mean(
+                [float(x.get(key, 0.0)) for x in episode_summaries]
+            ))
+        return float(statistics.mean(vals))
 
     energy_vals = [x.get("total_energy_kwh") for x in episode_summaries if x.get("total_energy_kwh") is not None]
     co2_vals = [x.get("total_co2e_kg") for x in episode_summaries if x.get("total_co2e_kg") is not None]
@@ -769,7 +799,14 @@ def aggregate_condition_metrics(
         # the aggregated value will be 0.0 from the empty-input branch; downstream
         # consumers should check whether per-episode field is populated before
         # trusting the cross-baseline canonical-latency comparison.
-        "avg_total_latency_minus_retry_ms": _avg("total_latency_minus_retry_ms"),
+        # /stress 2026-05-20 P0-C3-E: paper-grade canonical retry-adjusted
+        # latency (B-1410 A2.7) — fail-loud on missing field to prevent
+        # silent-zero cross-baseline contamination. Mixed-vintage aggregation
+        # (legacy archive + post-A2.7 fire) raises ValueError instead of
+        # producing canonical_ms ≈ 0 from silent-fall.
+        "avg_total_latency_minus_retry_ms": _avg(
+            "total_latency_minus_retry_ms", require_present=True
+        ),
         "avg_total_model_cost_usd": _avg("total_model_cost_usd"),
         "avg_total_cost_usd": _avg("total_cost_usd"),
         "avg_router_overhead_cost_usd": _avg("total_router_overhead_cost_usd"),
@@ -934,7 +971,13 @@ def aggregate_condition_metrics(
         # "N/A — no cost data" rather than a fake-zero.
         "cost_efficiency_ratio": _compute_cost_efficiency_ratio(episode_summaries),
         # §97 audit additions:
-        "avg_busy_wait_total_ms": _avg("busy_wait_total_ms"),
+        # /stress 2026-05-20 P0-C3-E: canonical busy-wait subtraction (B-1669
+        # A2.11) — fail-loud per same reasoning as
+        # avg_total_latency_minus_retry_ms above; downstream
+        # avg_total_latency_canonical_ms = minus_retry - busy_wait requires
+        # both populated, otherwise silent-0 produces canonical = minus_retry
+        # which misses busy-wait subtraction.
+        "avg_busy_wait_total_ms": _avg("busy_wait_total_ms", require_present=True),
         "energy_partial_episode_count": energy_partial_count,
         "energy_partial_episode_rate": (
             float(energy_partial_count) / len(episode_summaries) if episode_summaries else 0.0

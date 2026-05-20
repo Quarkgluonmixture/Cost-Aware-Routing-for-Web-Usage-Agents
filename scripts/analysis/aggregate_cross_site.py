@@ -289,10 +289,22 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             # primary; raw + minus_retry retained as sensitivity columns.
             # canonical = raw - retry - busy_wait = minus_retry - busy_wait
             "avg_busy_wait_total_ms": cond.get("avg_busy_wait_total_ms"),
+            # /stress 2026-05-20 P0-C3-E + P1-14-E (Track E F3): explicit
+            # None-check both operands. Pre-fix `(x or 0)` short-circuit
+            # treated None and 0.0 identically → if avg_busy_wait_total_ms
+            # missing (legacy vintage), canonical = minus_retry - 0 = no
+            # busy_wait subtraction; if minus_retry silent-zero-injected
+            # (Fix #5 closes upstream), canonical = 0 - busy_wait = negative.
+            # Both paths produced wrong paper §1 canonical-latency values.
+            # Post-fix: None propagates → downstream consumers must handle
+            # explicit None instead of treating missing as zero.
             "avg_total_latency_canonical_ms": (
-                (cond.get("avg_total_latency_minus_retry_ms") or 0)
-                - (cond.get("avg_busy_wait_total_ms") or 0)
-            ) if cond.get("avg_total_latency_minus_retry_ms") is not None else None,
+                None
+                if cond.get("avg_total_latency_minus_retry_ms") is None
+                or cond.get("avg_busy_wait_total_ms") is None
+                else float(cond["avg_total_latency_minus_retry_ms"])
+                - float(cond["avg_busy_wait_total_ms"])
+            ),
             "episodes": int(cond.get("episodes", 0)),
             "is_stub": is_stub,
         })
