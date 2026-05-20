@@ -435,7 +435,12 @@ except Exception as e:
       log "  OK (no unclassified quarantine events for cls 0-233 or red 0-209)"
     fi
   else
-    log "  WARN: scripts/maintenance/quarantine_registry.py not deployed — Gate 8 SKIPPED"
+    # /stress 2026-05-20 Track A F3 P0-3-A: paper-grade hard rule "always clean"
+    # contradicts "missing script = silent SKIP". Mirror Gate 4 (preflight_v2.sh
+    # missing) fail-closed pattern. Operator workflow: `git pull` or restore
+    # from backup before paper-grade fire.
+    log "  FAIL: scripts/maintenance/quarantine_registry.py REQUIRED for Gate 8 — paper-grade fire must investigate cross-fire quarantine events; run 'git pull' or restore from backup before re-attempting"
+    errors=$((errors+1))
   fi
 
   if [ "$errors" -gt 0 ]; then

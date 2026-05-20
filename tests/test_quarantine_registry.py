@@ -136,15 +136,79 @@ class TestPreflightCheck:
         assert blocking == []
 
     def test_higher_threshold(self, isolated_registry):
-        """At threshold=3, single quarantine event does NOT halt."""
+        """At threshold=3 (Rule 1), 2 unclassified events do NOT halt.
+
+        /stress 2026-05-20 P0-A2-Hub regression: test must explicitly disable
+        Rule 2 (cross-fire recurrence) via min_recurrent_fires=99 to isolate
+        Rule 1 (unclassified threshold) semantics under test.
+        """
         qr.append_quarantine(site="classifieds", task_id=75, run_id="r1")
         qr.append_quarantine(site="classifieds", task_id=75, run_id="r2")
-        # 2 unclassified events, threshold 3 → still ok
-        should_halt, blocking = qr.preflight_check("classifieds", [75], halt_threshold=3)
+        # 2 unclassified events, threshold 3, Rule 2 disabled → still ok
+        should_halt, blocking = qr.preflight_check(
+            "classifieds", [75], halt_threshold=3, min_recurrent_fires=99,
+        )
         assert should_halt is False
-        # 2 unclassified events, threshold 2 → halt
-        should_halt, _ = qr.preflight_check("classifieds", [75], halt_threshold=2)
+        # 2 unclassified events, threshold 2, Rule 2 disabled → halt by Rule 1
+        should_halt, _ = qr.preflight_check(
+            "classifieds", [75], halt_threshold=2, min_recurrent_fires=99,
+        )
         assert should_halt is True
+
+    def test_cross_fire_recurrence_rule(self, isolated_registry):
+        """/stress 2026-05-20 P0-A2-Hub: cross-fire recurrence (Rule 2)
+        halts independent of classification status — different from Rule 1.
+        """
+        # 2 quarantine events across 2 distinct run_ids
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="r1")
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="r2")
+        # Classify BOTH → unclassified_count=0; Rule 1 would pass
+        qr.append_classification(
+            site="classifieds", task_id=75, classification="transient_drift",
+            classified_by="op", rationale="r1 isolated reproduce",
+        )
+        qr.append_classification(
+            site="classifieds", task_id=75, classification="transient_drift",
+            classified_by="op", rationale="r2 isolated reproduce",
+        )
+        # Rule 1 alone (high threshold, Rule 2 disabled) → passes
+        should_halt_r1, _ = qr.preflight_check(
+            "classifieds", [75], halt_threshold=99, min_recurrent_fires=99,
+        )
+        assert should_halt_r1 is False
+        # Rule 2 with default min_recurrent_fires=2 → halts despite classified
+        should_halt_r2, blocking_r2 = qr.preflight_check(
+            "classifieds", [75], halt_threshold=99, min_recurrent_fires=2,
+        )
+        assert should_halt_r2 is True
+        assert len(blocking_r2) == 1
+        assert blocking_r2[0]["task_id"] == 75
+        assert blocking_r2[0]["rule"] == "cross_fire_recurrence"
+        assert blocking_r2[0]["recurrent_fires"] == 2
+
+    def test_detect_recurrent_failures(self, isolated_registry):
+        """/stress 2026-05-20 P0-A2-Hub: detect_recurrent_failures helper
+        returns tasks with quarantine across ≥ min_fires distinct run_ids.
+        """
+        # task 1: only 1 fire → not recurrent
+        qr.append_quarantine(site="classifieds", task_id=1, run_id="r1")
+        # task 5: 2 fires same run_id (deduped) → still 1 distinct fire
+        qr.append_quarantine(site="classifieds", task_id=5, run_id="r2")
+        qr.append_quarantine(site="classifieds", task_id=5, run_id="r2")
+        # task 75: 3 fires across 3 distinct run_ids → recurrent
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="r3")
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="r4")
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="r5")
+
+        recurrent = qr.detect_recurrent_failures("classifieds", min_fires=2)
+        recurrent_tids = {r["task_id"] for r in recurrent}
+        assert 1 not in recurrent_tids
+        assert 5 not in recurrent_tids  # same run_id deduplicated
+        assert 75 in recurrent_tids
+
+        rec_75 = next(r for r in recurrent if r["task_id"] == 75)
+        assert rec_75["fire_count"] == 3
+        assert sorted(rec_75["run_ids"]) == ["r3", "r4", "r5"]
 
 
 class TestLatestClassification:

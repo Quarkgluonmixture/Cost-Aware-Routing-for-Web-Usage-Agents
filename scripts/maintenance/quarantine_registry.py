@@ -62,7 +62,14 @@ VALID_CLASSIFICATIONS = (
     "substrate",       # site/docker/network — legitimate noise (verified_substrate_noise=True)
     "agent_induced",   # agent caused timeout (e.g., DOM deadlock from bad action sequence)
     "evaluator",       # evaluator harness failure (BLIP-2 / GPT judge / playwright eval timeout)
-    "transient_drift", # one-off transient that doesn't reproduce
+    "transient_drift", # one-off transient that doesn't reproduce (use ONLY when temporally-matched reproduce attempted under mid-fire context)
+    # /stress 2026-05-20 P0-A1-Hub: epistemically honest tier when reproduce
+    # attempted but only in isolated context (fresh chromium, post-event hours,
+    # no cumulative GPU+chromium+cron load) — substrate health in mid-fire
+    # context NOT proven. Re-tier from `transient_drift` when reproduction did
+    # not replicate the mid-fire cumulative load condition (e.g., Wave 4 M7
+    # playwright_mcp_reproduce from a different host, 30h+ post-event).
+    "unreproducible_in_isolation",
     "undecided",       # reviewer needs more data
 )
 
@@ -191,24 +198,80 @@ def latest_classification(site: str, task_id: int) -> Optional[Dict[str, Any]]:
     return max(classif, key=lambda e: e.get("ts", ""))
 
 
+def detect_recurrent_failures(
+    site: str,
+    min_fires: int = 2,
+) -> List[Dict[str, Any]]:
+    """Return list of {task_id, fire_count, run_ids, error_classes} for tasks
+    that have quarantined across >= min_fires distinct fires (distinct run_ids).
+
+    /stress 2026-05-20 P0-A2-Hub: cross-fire recurrent same-task detection.
+    Classification status does NOT unilaterally unblock — a task quarantining
+    across multiple fires is a substrate-degradation signal independent of
+    per-fire classification (a `transient_drift` event recurring 3× is no
+    longer transient).
+
+    Empirical anchor: Fire-3 + Fire-4 both quarantined cls task 75 (item
+    id=84148). Even after Wave 4 M7 reproduce classified it (now
+    `unreproducible_in_isolation` per /stress P0-A1-Hub revised tier), the
+    cross-fire pattern itself warrants pre-Fire-6 halt + matched-temporal-
+    context investigation. Default min_fires=2 catches Fire-3+Fire-4 task 75
+    pattern at next pre-fire gate.
+    """
+    events = _read_events()
+    by_task: Dict[int, List[Dict[str, Any]]] = {}
+    for e in events:
+        if e.get("event_type") != "quarantine":
+            continue
+        if e.get("site") != site:
+            continue
+        tid = e.get("task_id")
+        if tid is None:
+            continue
+        by_task.setdefault(int(tid), []).append(e)
+
+    recurrent: List[Dict[str, Any]] = []
+    for tid, quar_events in by_task.items():
+        run_ids = sorted({q.get("run_id") for q in quar_events if q.get("run_id")})
+        if len(run_ids) >= min_fires:
+            recurrent.append({
+                "task_id": tid,
+                "fire_count": len(run_ids),
+                "run_ids": run_ids,
+                "error_classes": sorted({q.get("error_class") for q in quar_events if q.get("error_class")}),
+            })
+    return sorted(recurrent, key=lambda x: -x["fire_count"])
+
+
 def preflight_check(
     site: str,
     task_ids: List[int],
     halt_threshold: int = 1,
+    min_recurrent_fires: int = 2,
 ) -> Tuple[bool, List[Dict[str, Any]]]:
     """Preflight gate G8 — returns (should_halt, blocking_tasks).
 
     blocking_tasks is a list of dicts with details on which tasks have
-    unclassified_count >= halt_threshold so operator can run M7 manual
-    reproduction on those specific tasks.
+    unclassified_count >= halt_threshold (Rule 1: classification gap) OR
+    recurrent_fires >= min_recurrent_fires (Rule 2: cross-fire recurrence
+    pattern, independent of classification) — so operator can run M7 manual
+    reproduction on those specific tasks BEFORE re-launch.
 
     halt_threshold default = 1: any single unclassified quarantine event
     halts the next fire. User decision 2026-05-19: "Fire-5 should not
     blindly rediscover" task 75. Stricter than "≥3 fires" rule because
     paper-grade should investigate at first occurrence; lenient ≥3 rule
     only applies to FE gate exclusion (Appendix E.1 terminal quarantine).
+
+    min_recurrent_fires default = 2: /stress 2026-05-20 P0-A2-Hub —
+    classification does NOT unilaterally unblock; a task quarantining
+    across ≥ 2 fires halts regardless of classification status. Fire-3 +
+    Fire-4 task 75 empirical recurrence trigger at default.
     """
     blocking: List[Dict[str, Any]] = []
+    blocking_task_ids: set = set()
+
+    # Rule 1: unclassified-count threshold (existing pre-/stress-2026-05-20)
     for tid in task_ids:
         count = count_unclassified(site, tid)
         if count >= halt_threshold:
@@ -216,11 +279,44 @@ def preflight_check(
             blocking.append({
                 "site": site,
                 "task_id": tid,
+                "rule": "unclassified",
                 "unclassified_count": count,
                 "fires_quarantined": [q.get("run_id") for q in quar],
                 "last_error_class": quar[-1].get("error_class") if quar else None,
                 "last_callsite": quar[-1].get("callsite") if quar else None,
             })
+            blocking_task_ids.add(tid)
+
+    # Rule 2: cross-fire recurrence (P0-A2-Hub, 2026-05-20)
+    recurrent = detect_recurrent_failures(site, min_fires=min_recurrent_fires)
+    for r in recurrent:
+        if r["task_id"] not in task_ids:
+            continue
+        if r["task_id"] in blocking_task_ids:
+            # already blocked by Rule 1; annotate with recurrence info
+            for b in blocking:
+                if b["task_id"] == r["task_id"]:
+                    b["recurrent_fires"] = r["fire_count"]
+                    b["rule"] = b["rule"] + "+recurrent"
+                    b["error_classes_across_fires"] = r["error_classes"]
+                    break
+            continue
+        # not blocked by Rule 1, but recurrent across ≥ min_recurrent_fires
+        # fires — halt for matched-temporal-context investigation
+        quar, _ = _task_events(site, r["task_id"])
+        blocking.append({
+            "site": site,
+            "task_id": r["task_id"],
+            "rule": "cross_fire_recurrence",
+            "unclassified_count": 0,  # may be classified but still recurrent
+            "recurrent_fires": r["fire_count"],
+            "fires_quarantined": r["run_ids"],
+            "error_classes_across_fires": r["error_classes"],
+            "last_error_class": quar[-1].get("error_class") if quar else None,
+            "last_callsite": quar[-1].get("callsite") if quar else None,
+        })
+        blocking_task_ids.add(r["task_id"])
+
     should_halt = len(blocking) > 0
     return should_halt, blocking
 
@@ -288,25 +384,59 @@ def _parse_task_range(spec: str) -> List[int]:
 def _cmd_preflight(args: argparse.Namespace) -> int:
     task_ids = _parse_task_range(args.tasks)
     threshold = int(os.environ.get("QUARANTINE_HALT_THRESHOLD", args.halt_threshold))
-    should_halt, blocking = preflight_check(args.site, task_ids, halt_threshold=threshold)
+    # /stress 2026-05-20 P0-A2-Hub: cross-fire recurrent same-task detector
+    # default min_fires=2 (Fire-3+Fire-4 task 75 empirical anchor); env override
+    # QUARANTINE_MIN_RECURRENT_FIRES preserves operator control.
+    min_recurrent = int(os.environ.get("QUARANTINE_MIN_RECURRENT_FIRES", 2))
+    should_halt, blocking = preflight_check(
+        args.site,
+        task_ids,
+        halt_threshold=threshold,
+        min_recurrent_fires=min_recurrent,
+    )
     if should_halt:
+        # /stress 2026-05-20 P0-A2-Hub: surface dual-rule blocking. Rule 1
+        # = unclassified count; Rule 2 = cross-fire recurrence (independent
+        # of classification).
+        n_unclass = sum(1 for b in blocking if "unclassified" in b.get("rule", ""))
+        n_recur = sum(1 for b in blocking if "cross_fire_recurrence" in b.get("rule", ""))
         print(
-            f"[preflight G8 HALT] site={args.site}: "
-            f"{len(blocking)} task(s) have >= {threshold} unclassified quarantine event(s).",
+            f"[preflight G8 HALT] site={args.site}: {len(blocking)} task(s) blocked — "
+            f"unclassified-rule: {n_unclass}, cross-fire-recurrence-rule: {n_recur} "
+            f"(threshold={threshold} unclassified, min_recurrent_fires={min_recurrent}).",
             file=sys.stderr,
         )
         for b in blocking:
+            rule = b.get("rule", "unclassified")
+            tid = b["task_id"]
+            fires = b.get("fires_quarantined", [])
+            if "cross_fire_recurrence" in rule:
+                fire_info = (
+                    f"{b.get('recurrent_fires', len(fires))} fires across "
+                    f"{len(b.get('error_classes_across_fires', []))} distinct error class(es)"
+                )
+            else:
+                fire_info = f"{len(fires)} fire(s)"
             print(
-                f"  • task {b['task_id']}: {b['unclassified_count']} unclassified "
-                f"(fires: {b['fires_quarantined']}); "
-                f"last error={b['last_error_class']!r} callsite={b['last_callsite']!r}",
+                f"  • task {tid} [{rule}]: {fire_info}; "
+                f"last error={b.get('last_error_class')!r} "
+                f"callsite={b.get('last_callsite')!r}",
                 file=sys.stderr,
             )
+            if "cross_fire_recurrence" in rule and b.get("error_classes_across_fires"):
+                for ec in b["error_classes_across_fires"]:
+                    print(f"      error_class: {ec}", file=sys.stderr)
+        # Build classification enum hint dynamically from VALID_CLASSIFICATIONS
+        # so future enum expansions don't drift between code + CLI hint.
+        enum_hint = "|".join(VALID_CLASSIFICATIONS)
         print(
             "[preflight G8 HALT] Required action: reproduce + classify via "
             "`python scripts/maintenance/quarantine_registry.py classify "
-            "--site=<site> --task-id=<N> --as=<substrate|agent_induced|evaluator|transient_drift|undecided> "
-            "--classified-by=<name> --rationale=<...>`",
+            f"--site=<site> --task-id=<N> --as=<{enum_hint}> "
+            "--classified-by=<name> --rationale=<...>`. "
+            "For cross-fire-recurrence rule: matched-temporal-context reproduce "
+            "REQUIRED (not isolated playwright_mcp fresh-context reproduce — "
+            "must replicate mid-fire cumulative load condition).",
             file=sys.stderr,
         )
         return 1
