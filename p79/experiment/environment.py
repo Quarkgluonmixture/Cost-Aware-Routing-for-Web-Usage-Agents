@@ -415,12 +415,21 @@ class VwaEvaluator:
             by the goto, so a fresh isolated page is semantically identical
             AND avoids the runner-context cumulative-state hang (3-fire
             Fire-3/4/5 pattern: edit-form → public Page.goto 30s timeout).
-            Inspection 2026-05-20: 232/234 cls + ~136 red program_html tasks
-            qualify (incl task 4 + task 75).
+            EMPIRICALLY VERIFIED 2026-05-20 (P2-1, B-1783, via
+            scripts/maintenance/verify_eval_context_classification.py): cls has
+            only **31** program_html tasks → **29 isolate** (2 have func/last
+            targets → agent_page); red → **71 isolate**. task 4 + task 75 both
+            isolate. (The earlier "Inspection: 232/234 cls + ~136 red qualify"
+            figure was an ~8× / ~2× overcount — there are only 31 cls program_html
+            tasks TOTAL; the bulk of cls tasks are url_match (131, read live
+            page.url) or string_match (78), NOT program_html. Corrected B-1783.)
           * ``agent_page`` — needs the agent's live page: url_match (reads
             `page.url`), OR program_html with `__last_url__` / `"last"` /
             `func`-url target (URL derives from agent's final navigation).
-            Inspection: 2 cls + ~16 red program_html tasks + all url_match.
+            Verified 2026-05-20: cls 133 (131 url_match + 2 func/last program_html);
+            red 62. url_match does NOT page.goto(target) so it is not exposed to
+            the eval-goto cumulative-state timeout (that risk is program_html-goto
+            specific — fully covered by isolation for the 29 cls / 71 red).
           * ``no_browser_required`` — string_match / ua_match (answer-based,
             no browser navigation).
 

@@ -854,8 +854,17 @@ assert_quarantine_gate() {
   local registry_cli="${repo_root}/scripts/maintenance/quarantine_registry.py"
 
   if [[ ! -f "${registry_cli}" ]]; then
-    echo "[gate_G8] WARN quarantine_registry.py not found at ${registry_cli} — skipping G8 (registry not deployed)" >&2
-    return 0
+    # P2-4 (/stress GRL audit 2026-05-20): fail-CLOSED on missing registry. The
+    # canonical orchestrator queue_phase1_paper_grade.sh:437 already wraps this
+    # fail-closed (B-1762), but this SHARED helper was fail-OPEN (return 0) — any
+    # sibling caller using it directly would silently skip Gate 8. Dev opt-out via
+    # PAPER_GRADE_GATE_ALLOW_MISSING_REGISTRY=1 (NEVER set in a paper-grade fire).
+    if [[ "${PAPER_GRADE_GATE_ALLOW_MISSING_REGISTRY:-0}" == "1" ]]; then
+      echo "[gate_G8] WARN quarantine_registry.py not found at ${registry_cli} — SKIPPING G8 (dev opt-out PAPER_GRADE_GATE_ALLOW_MISSING_REGISTRY=1)" >&2
+      return 0
+    fi
+    echo "[gate_G8] FATAL quarantine_registry.py not found at ${registry_cli} — REQUIRED for Gate 8 (fail-closed). Restore the registry script or set PAPER_GRADE_GATE_ALLOW_MISSING_REGISTRY=1 for a dev run." >&2
+    return 1
   fi
 
   # Prefer .venv python3 if available, else system python3.
