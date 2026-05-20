@@ -6,6 +6,8 @@ type: workspace_index
 
 # Mechanism Workspace — paper §5
 
+> ⏸️ **FROZEN 2026-05-14** — mechanism (§5) 整个暂搁 (advisor discussion 2026-05-14)，移至 **paper-2 scope**，不进当前 paper-1。本目录（README / plan / results）为**冻结存档**：下方「Status snapshot (2026-05-11)」「Stage 4 ⏳ 8/48 cells (bg)」「§5 prose pending Codex」等**均不再 active**。当前 forward state 见 [next_steps.md](../next_steps.md) §0a。仅作未来 paper-2 / 解冻参考。
+
 ## Elevator pitch (1-paragraph mechanism story)
 
 P79 phantom routing space modes (DOM / SoM / Vision / P-text / P-prompt / P-SoM) are **linearly readable** from Qwen3-VL-4B residual stream at every layer 4–36 (Method 4.2 PCA cosine gap, AUROC 1.000 × 540 layer-pair tests). The image-axis dominates mechanism magnitude (peak gap 0.06 at L4–L17), text-axis is mid-scale (0.025 at L23), prompt-axis alone is weakest (0.007 at L36) — 10:4:1 hierarchy. P-SoM's closest mode at every layer is **P-text** (14.7× more distant from SoM), refuting "P-SoM = SoM minus image" and validating the format-axis framing. Mid-layer L17 acts as the **causally active planning site** (Stage 2/3 Cell A-H replacement patching disrupts output overlap; HDMI reliability framework gives Method 4.4 v2 mid-layer L17 α=5 = 0.44 reliability vs late-layer L33 α=10 = 0.23, because late-layer over-steers JSON envelope). This positions our work between Wu et al. 2026 (text-only Qwen 3 4B, tool selection 93% switch) and Ma & Rui 2026 (Qwen3 family rhyme newline 1% causal) — 50% mid-layer reliability is the multimodal-multi-step regime's signature.

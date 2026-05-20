@@ -33,14 +33,14 @@ complementarity, category SR, overlap depth, and routing AUROC.
 |---|---:|---|---|---|
 | `scripts/analysis/aggregate_phantom_lift.py` | 0c, 0d | B0 3-mode + phantom episode `*_summary_v2.json` files | `results/phantom_paper/phantom_lift.csv`, `results/phantom_paper/phantom_lift.md` | reddit 3→5 lift +5.24pp, Jaccard 0.571; classifieds +4.70pp, Jaccard 0.447 |
 | `scripts/analysis/aggregate_routing_auroc.py` | 0g | per-run `analysis/signals/combined/tables/cross_mode_auroc.csv` | `results/phantom_paper/auroc_cross_condition.csv`, `.md`, `_summary.md` | reddit P-SoM max AUROC 0.720; classifieds P-SoM 0.728 |
-| `scripts/analysis/figures/fig0e_category_mode_heatmap.py` | 0e | audit JSON + episode `adjusted_success` | `results/phantom_paper/figures/fig0e_category_mode_heatmap.png` | reddit/cls category × mode adjusted SR heatmap |
-| `scripts/analysis/figures/fig0f_overlap_stacked_bar.py` | 0f | B0 adjusted-success task sets | `results/phantom_paper/figures/fig0f_overlap_stacked_bar.png` | reddit P-SoM solve depth distribution; classifieds P-SoM/P-text overlap depth |
+| `scripts/analysis/figures/fig0e_category_mode_heatmap.py` | 0e | audit JSON + episode `success` (canonical) | `results/phantom_paper/figures/fig0e_category_mode_heatmap.png` | reddit/cls category × mode SR heatmap |
+| `scripts/analysis/figures/fig0f_overlap_stacked_bar.py` | 0f | B0 `success` (canonical) task sets | `results/phantom_paper/figures/fig0f_overlap_stacked_bar.png` | reddit P-SoM solve depth distribution; classifieds P-SoM/P-text overlap depth |
 | `scripts/analysis/figures/fig0c_phantom_lift_bars.py` | 0c viz | `results/phantom_paper/phantom_lift.csv` | `results/phantom_paper/figures/fig0c_phantom_lift_bars.png` | visualizes reddit +5.24pp and classifieds +4.70pp 3→5 oracle lift |
 | `scripts/analysis/figures/fig0g_routing_auroc_heatmap.py` | 0g viz | `results/phantom_paper/auroc_cross_condition.csv` | `results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png` | visualizes B0/B1 AUROC by condition, mode, and signal |
-| `scripts/analysis/figures/fig0d_taskpool_jaccard.py` | 0 supporting | live episode adjusted-success sets | `results/phantom_paper/figures/fig0d_taskpool_jaccard.png` | solve-pool overlap sketch for B0/B1 observation arms |
-| `scripts/analysis/figures/fig0c_drop_one_oracle.py` | 0 supporting | live episode adjusted-success sets | `results/phantom_paper/figures/fig0c_drop_one_oracle.png` (figure) + `results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv` (data sidecar) | drop-one oracle loss for B0/B1 mode pools |
+| `scripts/analysis/figures/fig0d_taskpool_jaccard.py` | 0 supporting | live episode `success` (canonical) sets | `results/phantom_paper/figures/fig0d_taskpool_jaccard.png` | solve-pool overlap sketch for B0/B1 observation arms |
+| `scripts/analysis/figures/fig0c_drop_one_oracle.py` | 0 supporting | live episode `success` (canonical) sets | `results/phantom_paper/figures/fig0c_drop_one_oracle.png` (figure) + `results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv` (data sidecar) | drop-one oracle loss for B0/B1 mode pools |
 
-Outcome live sources also include raw/adjusted SR and FP rate from:
+Outcome live sources also include canonical `success` SR and FP rate from:
 
 - `results/visualwebarena/phase1/B0_3mode_reddit_20260422/*/episodes/*_summary_v2.json`
 - `results/visualwebarena/phase1/B0_3mode_classifieds_20260413/*/episodes/*_summary_v2.json`
@@ -55,7 +55,7 @@ Evidence: action-type frequencies and cascade decomposition.
 
 | Artifact | Sub-code | Input source | Output | Current B0 examples |
 |---|---:|---|---|---|
-| `scripts/analysis/axis_effect_size.py` | 1a, 1b | B0 reddit/classifieds 5-mode step JSONL + summary JSON | `docs/analysis/cross_sites/axis_effect_size.json`, `_report.md` | hook: P-SoM distinct from both endpoints on 4 cells total; cascade: 6 antagonistic pairs |
+| `scripts/analysis/axis_effect_size.py` | 1a, 1b | B0 reddit/classifieds 5-mode step JSONL + summary JSON | `docs/analysis/cross_sites/axis_effect_size.json`, `_report.md` | hook: P-SoM distinct from both endpoints on 6 cells total; cascade: 6 antagonistic pairs |
 | `scripts/analysis/figures/fig1c_strategy_gradient.py` | 1c | B0 5-mode step JSONL | `results/phantom_paper/figures/fig1c_strategy_gradient.png` | reddit DOM search-loop 51.9% → P-SoM 35.7% → SoM 31.4%; classifieds shows image-axis recovery |
 | `scripts/analysis/figures/fig1ab_cascade_diamond.py` | macro/micro schematic | no live data; mechanism schematic | `results/phantom_paper/figures/fig1ab_cascade_diamond.png` | explains text/prompt two-knob design |
 
@@ -83,7 +83,7 @@ Evidence: cost, latency, image-token gap, and B0/B1 frontier.
 |---|---:|---|---|---|
 | `scripts/analysis/aggregate_cross_site.py` | 3a-3c | per-condition `condition_summary_v2.json` | `results/phantom_paper/cross_site/cross_site_aggregation.csv`, `_summary.json`, plots | B0/B1 cross-site SR/cost/latency table |
 | `scripts/analysis/collect_analysis_summary.py` | 3 supporting | run-level summaries, condition summaries, per-run analysis outputs | `results/phantom_paper/run_summary_collect.json` | consolidated run metadata for 8 paper-grade VWA runs |
-| `scripts/analysis/figures/fig3d_cost_sr_frontier.py` | 3d | `cost_per_mode.json` paper cost + adjusted success | `results/phantom_paper/figures/fig3d_cost_sr_frontier.png` | B0 API-token vs B1 electricity-equivalent cost/SR Pareto frontier |
+| `scripts/analysis/figures/fig3d_cost_sr_frontier.py` | 3d | `cost_per_mode.json` paper cost + canonical `success` | `results/phantom_paper/figures/fig3d_cost_sr_frontier.png` | B0 API-token vs B1 electricity-equivalent cost/SR Pareto frontier |
 | `scripts/analysis/figures/fig3_regional_carbon.py` | 3 supporting | B1 episode energy + region intensity constants | `results/phantom_paper/figures/fig3_regional_carbon.png` | regional carbon sensitivity for B1 measured energy |
 | `scripts/analysis/layered_status.py` | status | all 4-dimension artifacts listed above | `docs/analysis/layered_evidence_status.md` | live markdown snapshot with timestamps and missing-artifact warnings |
 

@@ -2,7 +2,7 @@
 
 **Purpose**: Single source of truth for **every** suspected scaffold/dispatch/observation/evaluator bug across the 5-tier audit system, the click-dispatch probe (§106), historical 实验笔记 entries, and conversation-level discoveries. Includes **disputed** and **rejected** entries — 有据可查，避免重复争论。
 
-**Last updated**: 2026-04-30
+**Last updated**: 2026-05-20
 **Maintainer**: Claude session (auto-update on new probe / tier verification)
 
 ---
@@ -1439,7 +1439,7 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 
 | B# | Finding | Severity | Task | Note |
 |---|---|---|---|---|
-| B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question asked 2026-05-14 (clean structured API data?) — awaiting reply; + ensure disclosure fields recorded pre-fire. **Parking lot for all parse/GLM-related findings and pending fixes: `docs/checkpoints/parse_advisor_pending.md`** — Option A (retire GLM) vs Option B (keep + filter) branches drafted there with empirical rescue-rate data + per-aggregator fix points; future `/stress` findings touching parse/GLM land in §4 of that doc. |
+| B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | ✅ **FIXED/CLOSED 2026-05-17 via B-991** — GLM rescue fully retired (`proxy_api_agent.py` physical 删 ~155 LOC, `use_glm_fallback` raises RuntimeError unconditionally; native AWS `tool_calling` replaces rescue) + post-hoc `compute_adjusted_success` layer retired 2026-05-14 (canonical `success`). Asymmetry source removed. **Parking lot history: `docs/checkpoints/parse_advisor_pending.md`** — Option A (retire GLM) chosen. |
 
 ### §139 FP-architecture restructure (2026-05-14) — replace post-hoc adjustment with source-level fixes
 

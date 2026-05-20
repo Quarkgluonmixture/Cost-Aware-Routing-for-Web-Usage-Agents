@@ -10,13 +10,13 @@ write-analysis SKILL Step 7 引用的文档模板。按需 Read 对应模板，�
 # B{x} {Site} — {Mode} 模式分析
 
 > 数据来源：`{run_id}` / `{condition_id}`
-> Episodes: {n_episodes} | Adjusted SR: {adj_sr}% | Raw SR: {raw_sr}%
+> Episodes: {n_episodes} | SR: {sr}% (canonical `success` over `scored_task_count`)
 > 文档生成/更新：{date}
 
 ## 1. 总体概况
 
 - Episode 总数、成功/失败分布
-- Adjusted SR（三套 FP 修正：N/A FP ×n, Visual FP ×n, Eval FP ×n）
+- SR = canonical `success` / `scored_task_count`（post-hoc 三套 FP 修正层 N/A FP / Visual FP / Eval FP 已于 2026-05-14 退役 → 上游 fix + task-load 排除 N/A task）
 - Digest 覆盖率（如不足 100% 则标注）
 
 ## 2. 失败类别分布
@@ -62,8 +62,7 @@ write-analysis SKILL Step 7 引用的文档模板。按需 Read 对应模板，�
 
 ## 1. 成功率
 
-- 主表：raw SR / adjusted SR（按 mode 分列）
-- FP breakdown
+- 主表：canonical SR = `success` / `scored_task_count`（按 mode 分列；post-hoc adjusted_success 层 2026-05-14 退役）
 - 显著性检验（McNemar p-values、Bootstrap CI）
 
 ## 2. 效率指标

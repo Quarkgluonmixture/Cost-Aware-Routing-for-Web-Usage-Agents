@@ -50,7 +50,7 @@ to avoid breaking external references; only `glm/` moved into subdir
 
 | File | Purpose |
 |---|---|
-| `reset_vwa_sites.sh` | DGX → quark Powershell + defensive curl |
+| `reset_vwa_sites.sh` | DGX → quark Powershell + defensive curl (paper-grade host 已迁 A100 self-host 2026-05-14；此为 dev-only 残留) |
 | `create_b1_classifieds_stub.py` | B1 classifieds stub creation |
 | `retry_b1_single_task.sh` | Retry single B1 task |
 

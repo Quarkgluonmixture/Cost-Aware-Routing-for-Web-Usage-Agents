@@ -1,7 +1,7 @@
 # Workshop Sub-Paper Planning Notebook
 
 **Status**: planning substrate (NOT paper draft); 2-track post-/stress A1.25 GRL audit closure 2026-05-17
-**Origin**: synthesis §8.2 of `docs/checkpoints/stress_grl_audit_2026-05-17.md` recommended 2 HIGH-viability workshop tracks
+**Origin**: synthesis §8.2 of `stress_grl_audit_2026-05-17.md` (⚠️ 该文件 2026-05-19 已删除，见 git 历史) recommended 2 HIGH-viability workshop tracks
 **Parent paper-1**: VWA classifieds + reddit phantom routing space study (paper-1, EMNLP / ARR 5/25 target per memory `project_paper_hook.md`)
 **Workshop relationship**: complementary, not subset — these tracks isolate GRL-layer findings that would dilute paper-1's phantom routing hero claim if folded in
 **Last update**: 2026-05-17 (this document IS the first draft of the plan)
@@ -143,7 +143,7 @@ Co-submission is feasible (different audiences); recommend NOT bundling — inde
 
 ## 5. Cross-links
 
-- **Audit substrate**: `docs/checkpoints/stress_grl_audit_2026-05-17.md §8` (closure synthesis)
+- **Audit substrate**: `stress_grl_audit_2026-05-17.md §8` (closure synthesis；⚠️ 文件 2026-05-19 已删除，见 git 历史 / [[实验笔记]])
 - **Chronicle**: `docs/checkpoints/实验笔记.md §179` (audit closure entry)
 - **Catalog**: `docs/reference/master_bug_catalog.md` B-439~B-448 (Chunk 1) + B-479~B-484 (Chunk 2) + B-506~B-511 (Chunk 3) + B-535~B-541 (Chunk 4); also B-01/02/33/91/156/157/158/161 walk-up cluster ancestors
 - **SBOM**: `docs/checkpoints/pre_run/osf_lock_manifest.md` + `locked_versions.md` (8-commit table + sha256 lock)

@@ -1,14 +1,16 @@
 ---
 type: issue
 category: blocker
-status: blocked
+status: superseded
 priority: high
-action: 等 advisor email lock K_h1/K_h3/TOST + A100 SSH verify → launch 16-cell on A100 (~3-5d wallclock)
+action: SUPERSEDED — cls+red phantom 12 cells folded into 42-cond Phase 1a fire; shop 4 cells → Phase 1b deferred
 created: 2026-05-03
-updated: 2026-05-06
+updated: 2026-05-20
 ---
 
 # 16-cell phantom rerun (post-Phase-A bug fix)
+
+> **SUPERSEDED 2026-05-20**: 此 16-cell scope (B0+B1 only, pre-B2) 已被 **42-cond Phase 1a fire** 取代 — cls+red × {B0,B1,B2} × 6 modes (含 P-text/P-SoM/P-prompt phantom) 的 12 个 cls+red phantom cells 现进 Phase 1a Pass-1; shop 4 cells 折入 **Phase 1b (post-workshop deferred)**。Blocker 前提亦失效: K_h1/K_h3 reclassified → transparency-only (prereg §2.4) + advisor email witness reclassified → optional post-fire formalism (prereg DOI-1 lock note 2026-05-18)。文件保留 (4+ cross-doc refs)。
 
 > **Filename legacy** `issue_14cell_phantom_rerun.md` — scope updated 5/5 student decision: **16 cells** (was 14 pre-sync default). Filename retained to avoid breaking 4 cross-doc references (cell_b1_cls_pprompt / cell_b1_red_pprompt / issue_paper_grade_rerun_5cells / issue_b1_gpu_contention / PLAYBOOK §1).
 

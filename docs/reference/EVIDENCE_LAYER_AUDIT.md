@@ -2,14 +2,14 @@
 type: reference
 status: rolling
 created: 2026-05-03
-updated: 2026-05-03
-purpose: pre-rerun methodology + visualization gap registry; lock analysis design before 14-cell data lands
+updated: 2026-05-20
+purpose: pre-rerun methodology + visualization gap registry; lock analysis design before 6-cell data lands
 audience: self + advisor
 ---
 
 # Evidence-Layer Audit & Action Queue
 
-> **Why this doc exists**: 14-cell paper-grade rerun lands ~1 week wallclock. 数据进来前必须 lock 死分析方案 (multiple-comparison family / effect-size convention / pre-registered hypothesis / pooled estimate strategy)，否则 reviewer 一句 "post-hoc analysis decisions" 折损 paper rigor。
+> **Why this doc exists**: 6-cell paper-grade rerun lands ~1 week wallclock. 数据进来前必须 lock 死分析方案 (multiple-comparison family / effect-size convention / pre-registered hypothesis / pooled estimate strategy)，否则 reviewer 一句 "post-hoc analysis decisions" 折损 paper rigor。
 >
 > **What this doc is NOT**: 不是 finding registry / 不是 paper hook / 不是 result narrative。**纯方法论 + viz 装备清单**, 跟数据 direction agnostic。
 >
@@ -136,7 +136,7 @@ registered_at: <yyyy-mm-dd HH:MM BST>
 registered_git_sha: <40-char>
 witnessed_by: <advisor name>
 osf_doi: <optional>
-data_lock_until: <14-cell rerun completion timestamp>
+data_lock_until: <6-cell rerun completion timestamp>
 ---
 
 # Phantom-SoM Pre-Registration
@@ -183,7 +183,7 @@ H4 (P-text / P-prompt drop-one magnitude):
   Disclosed as exploratory (paper §4 prose explicit "exploratory analysis").
 
 H5 (别扭 framework predictions, 笔记 §108.16):
-  4 distinguishing predictions tested against 14-cell data. POST-HOC because
+  4 distinguishing predictions tested against 6-cell data. POST-HOC because
   framework was developed after observing N=4 pre-Phase-A cells.
   Reported irrespective of direction. Paper §5 prose explicit "post-hoc
   theoretical framework, validated on same data motivating it; no formal
@@ -283,7 +283,7 @@ R5 IF (H1 fails: pooled meta sig fails Holm OR < K_h1 cells individually sig):
 
 ## §3 Action queue (ordered, T0 → T1 → T2)
 
-### T0 — Pre-rerun launch (blocks 14-cell start)
+### T0 — Pre-rerun launch (blocks 6-cell start)
 
 - [x] **T0a — A1 + A4 stats columns** (2026-05-03): 改 `aggregate_phantom_lift.py` 加 Bonferroni / Holm / BH q / TOST col + comparison family declaration block. Output `phantom_lift.md` 包含 augmented PRIMARY table + new SECONDARY-family adjusted per-arm table.
 - [x] **T0b — A1 paired viz** (2026-05-03): `scripts/analysis/figures/fig_forest_drop_one.py` 3-panel forest (P-text / P-SoM / P-prompt) × per-cell point + raw 95% CI errorbar + Holm-sig marker fill + TOST equivalence band ±0.5pp. Output `fig_forest_drop_one.png`.
@@ -336,7 +336,7 @@ R5 IF (H1 fails: pooled meta sig fails Holm OR < K_h1 cells individually sig):
 - 2026-05-03: T0a done. Added 4 utility functions (`bootstrap_tost_p` / `bonferroni_adjust` / `holm_bonferroni_adjust` / `bh_fdr_adjust`) + per-arm TOST p computation + post-collection family-based correction in `aggregate_phantom_lift.py`. md output gains comparison-family declaration block + Holm/BH/Bonf/TOST cols in PRIMARY table + new SECONDARY-family adjusted per-arm subsection.
 - 2026-05-03: T0b done. New `fig_forest_drop_one.py` reads `phantom_lift.csv` directly (no recomputation) and renders 3-panel forest with TOST equivalence band shaded ±0.5pp. Design move: raw CI as visual primary, Holm-sig as marker fill — separates "estimate uncertainty" from "after-correction sig" so reader doesn't misread CI width.
 - 2026-05-03: T0c done. New `aggregate_phantom_meta.py` implements DerSimonian-Laird random-effect pooling with per-family Holm gating + Cochran's Q heterogeneity test + I²/τ². Decision: SE_i from bootstrap CI as `(CI_hi - CI_lo)/(2×1.96)` (standard normal approximation, valid at N=210-234). RE chosen over FE because paper §7 "site-modulated + capability-modulated" framing already implies between-cell true-effect heterogeneity.
-- 2026-05-03: T0d done. New `fig_meta_forest.py` uses classical forest convention — weight-sized squares per cell + pooled diamond. Design choice: keep 3-panel structure even when k=1 (P-prompt) so the layout auto-upgrades when 14-cell rerun lands without redesign.
+- 2026-05-03: T0d done. New `fig_meta_forest.py` uses classical forest convention — weight-sized squares per cell + pooled diamond. Design choice: keep 3-panel structure even when k=1 (P-prompt) so the layout auto-upgrades when 6-cell rerun lands without redesign.
 - 2026-05-03: T0a-d Makefile integration done. `phantom-meta` target added to `_aggregate`; `fig_forest_drop_one.py` + `fig_meta_forest.py` added to both `_figures` (full analysis pipeline) and `figures:` (quick regen). `make analysis [FAST=1]` and `make figures` end-to-end confirmed working.
 
 ---
@@ -345,8 +345,7 @@ R5 IF (H1 fails: pooled meta sig fails Holm OR < K_h1 cells individually sig):
 
 - `docs/checkpoints/paper_planning.md` §3 Findings + §4 Section status (evidence framework)
 - `docs/checkpoints/实验笔记.md` §108.6 evidence/explanation separation
-- `docs/checkpoints/ADVISOR_SYNC.md` §2 (VWA bug + 14-cell rerun decision context)
-- `docs/reference/PAPER_STRATEGY_OPEN_QUESTIONS.md` (audit 9 issues)
+- `docs/checkpoints/phase1_plan.md` (VWA bug + 6-cell rerun decision context; replaces ADVISOR_SYNC.md retired 2026-05-15)
 - Bonferroni: Bonferroni 1936, conservative FWER control
 - Holm-Bonferroni: Holm 1979, step-down FWER control (less conservative, same α)
 - BH FDR: Benjamini & Hochberg 1995, false discovery rate control

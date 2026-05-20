@@ -1,6 +1,6 @@
-# Launch Protocol Checklist (16-cell paper-grade rerun)
+# Launch Protocol Checklist (42-condition / 6-cell Phase 1a paper-grade)
 
-**Last updated**: 2026-05-09
+**Last updated**: 2026-05-20
 **Audience**: self-only
 **See also**: `docs/reference/automation_overview.md` for the full
 automation architecture; this file is the **human-runnable checklist**
@@ -36,20 +36,22 @@ Run these **before** the first `make launch` of the batch.
       Playwright + Chromium + VWA SHA + HF model SHA. `make
       pre-launch-check` verifies these programmatically; if you
       bumped any, update the lock doc first and re-witness.
-- [ ] **Quark + Tailscale + Cisco**: VWA Docker stack reachable from
-      DGX:
+- [ ] **VWA stack reachable** (since 2026-05-14 host migration, VWA Docker
+      is self-hosted ON the Condenser A100 VM — run these on the A100 itself,
+      cls/red/shop @ A100 localhost; the old DGX→quark Tailscale path is
+      vestigial):
       ```bash
-      curl -sI http://100.95.81.103:9999/  # reddit, expect 200
-      curl -sI http://100.95.81.103:9980/  # cls
-      curl -sI http://100.95.81.103:7770/  # shopping
+      curl -sI http://localhost:9999/  # reddit, expect 200
+      curl -sI http://localhost:9980/  # cls
+      curl -sI http://localhost:7770/  # shopping
       ```
-      If any fail: user opens quark + Cisco AnyConnect + checks Docker.
+      If any fail: bring up the A100-local VWA Docker stack + check containers.
       Cron `myriad_watcher` will ntfy after 3 SSH chain failures (F36).
 - [ ] **GLM API key present**: `cat .auth/glm` has valid key. Cron
       `glm-playbook` will ntfy after 3 consecutive API failures
       (audit D).
 - [ ] **Disk free > 50 GB**: `df -BG .` — cron `error_scan` ntfies
-      below threshold (audit E). 16 cells × ~10 GB each = ~160 GB
+      below threshold (audit E). 42 conditions × ~10 GB each = ample
       headroom needed; if low, prune `logs/` or archive old `results/`.
 
 ---
@@ -81,7 +83,7 @@ cat >> results/phantom_paper/run_manifest.yaml <<EOF
     condition_subdir: phase1_phantom_som_router_0
     expected_n: 210
     grade: paper-grade
-    notes: "16-cell rerun batch 2026-05-09"
+    notes: "42-cond Phase 1a batch 2026-05-20"
 EOF
 ```
 
@@ -203,9 +205,9 @@ For Stage 2 mechanism cells (Myriad-launched):
 
 ---
 
-## 5. Post-batch (after all 16 cells done)
+## 5. Post-batch (after all 42 conditions done)
 
-- [ ] All 16 cell-md `status: done` (none `quarantined`):
+- [ ] All cell-md `status: done` (none `quarantined`):
       ```bash
       grep -l "status: quarantined" docs/checkpoints/_status/cells/cell_*.md
       ```
@@ -216,14 +218,14 @@ For Stage 2 mechanism cells (Myriad-launched):
       (not pre-bug; the F01 + F40 chain enforces this).
 - [ ] **`scripts/analysis/sensitivity_loo_meta.py`**: re-run; verify
       P-text drop-in arm robustness post-rerun (was FRAGILE on 3 cells;
-      may stabilize on 16).
+      may stabilize on 6 cells).
 - [ ] **`scripts/analysis/power_analysis.py`** with observed SR:
       regenerate `docs/analysis/cross_sites/power_analysis.md`.
 - [ ] **Update `section8_limitations.md`** §8.5 + §8.6 with final
       numbers (mechanism cells F/G results + sparse-mechanism caveat
       reaffirmed).
-- [ ] Append `实验笔记.md §X` chronicle: full 16-cell summary.
-- [ ] **Push 16-cell rerun commit batch** + tag `paper-grade-rerun-<date>`.
+- [ ] Append `实验笔记.md §X` chronicle: full 42-condition summary.
+- [ ] **Push 42-condition commit batch** + tag `paper-grade-rerun-<date>`.
 
 ---
 

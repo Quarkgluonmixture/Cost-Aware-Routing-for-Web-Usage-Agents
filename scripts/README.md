@@ -35,20 +35,18 @@
 
 | Script | Description |
 |--------|-------------|
-| `queue_b0_with_reset.sh` | B0 三模式 VWA classifieds→reddit→shopping，每 condition 间 reset |
-| `queue_b0_wa_with_reset.sh` | B0 三模式 WA shopping→shopping_admin→reddit |
-| `queue_b1_with_reset.sh` | B1 三模式 VWA（同 B0_VWA 结构，本地 4B 模型，无 API key） |
-| `queue_b1_wa_with_reset.sh` | B1 三模式 WA |
+| `queue_baseline.sh` | 单 condition baseline 入口 `<baseline> <mode:dom\|som\|vision> <site>`（race-safe reset + watchdog + idempotent skip） |
+| `queue_phantom_som.sh` / `queue_phantom_dom.sh` / `queue_phantom_text.sh` / `queue_phantom_prompt.sh` | 单 phantom mode 入口 `<baseline> <site>` |
+| `queue_phase1_paper_grade.sh` | Phase 1a 全条件编排器（`launch` sequential cls→red） |
+| `queue_chain.sh` | 跨 baseline 同 site sequential 协调（B0 XOR B1 XOR B2 collision 检查） |
 | `run_scroll_comparison.sh` | Scroll error 一次性交叉验证（Claude / DashScope） |
-
-> 4 个 queue 脚本结构相近但有 ~50% 真实差异（API key、config 来源、dataset、auth 逻辑），暂未参数化合并——Phase 1 三模式跑完后再处理。
 
 ## `maintenance/` — 数据维护、守护、调试
 
 ### 数据修复
 | Script | Description |
 |--------|-------------|
-| `rederive_episode_summary.py` | 修补 episode summary（adjusted_success/cost/etc.，§95 canonical） |
+| `rederive_episode_summary.py` | 修补 episode summary（`success` canonical/cost/etc.，post-hoc adjusted_success 已退役 2026-05-14） |
 | `clear_tasks.py` | 清 task summary/steps/artifacts/digest 记录（统一入口，**不要手动 rm**） |
 | `create_b1_classifieds_stub.py` | 一次性恢复 §34 误删的 classifieds B1 stub |
 | `split_wa_tasks.py` | 一次性拆分 WA test_webarena.raw.json → per-site |

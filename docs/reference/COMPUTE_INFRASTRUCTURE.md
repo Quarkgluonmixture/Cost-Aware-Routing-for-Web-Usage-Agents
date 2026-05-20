@@ -18,7 +18,7 @@ audience: self + advisor sync prep
 
 | Tier | Platform | Status | Use case |
 |---|---|---|---|
-| **0** | UCL Condenser **A100 40GB dedicated** | ✅ **operational 2026-05-14** (VM `a100-jiaming-test` @ `10.134.51.2`, PyTorch verified) | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch (small variants only, 40GB constraint) + 16-cell rerun (pending VWA reach path) |
+| **0** | UCL Condenser **A100 40GB dedicated** | ✅ **operational 2026-05-14** (VM `a100-jiaming-test` @ `10.134.51.2`, PyTorch verified; VWA docker self-hosted LIVE since 2026-05-14, fired Fire-3 2026-05-18) | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch (small variants only, 40GB constraint) + 42-cond / 6-cell Phase 1a (VWA self-hosted on VM) |
 | **1** | UCL **Myriad HPC** (V/U-type 4× A100 80GB / L-type 4× A100 40GB / E/F-type 2× V100) | ✅ account activated 5/6 / **passwordless SSH 5/7 evening** / ⚠️ VSCode Remote-SSH NOT viable (RHEL 7 glibc 2.17 < required 2.28) | Terminal-only batch + cross-arch (qsub on V/U-type) + future SAE training (4-GPU data-parallel). Workflow: dev on quark/A100 → git push → ssh myriad git pull → qsub. |
 | **2** | **DGX Spark** (`spark-9ea3`) shared lab | ✅ stable, no admin/sudo, lab Tailscale `981526092.github` | Archived data source / VWA Docker Tailscale bridge / curation done (笔记 §113) |
 | **3** | Advisor 5090 (post AI Center 搬运) | ⏳ pending | Backup if Condense fails, advisor offered 5/5 sync |
@@ -58,7 +58,7 @@ Host condense-a100        # (and alias condense-test)
 ```
 From DGX: `ssh -i ~/.ssh/vwa_windows Quark@100.95.81.103 'ssh condense-a100 "<cmd>"'`.
 
-**TODO**: set up P79 repo + venv on VM; confirm whether VWA site access (Tailscale to quark) works from inside the Condenser VM; decide which workloads to migrate from DGX/Myriad.
+**Status**: P79 repo + venv set up on VM; **VWA docker stack self-hosted ON the VM** (cls/red/shop @ A100 localhost, see §1.1.2) — VWA self-host is LIVE since 2026-05-14 and has fired paper-grade (Fire-3 2026-05-18). Paper-grade Phase 1a/1b/Pass-2 runs are migrated here from DGX/Myriad.
 
 **40GB capacity analysis** (paper-strategic):
 | Model | Params | bf16 size | fp16+activations buffer | Fits 40GB? |
@@ -76,11 +76,11 @@ From DGX: `ssh -i ~/.ssh/vwa_windows Quark@100.95.81.103 'ssh condense-a100 "<cm
 - ❌ **quark VWA Docker (100.95.81.103:9980/9999/7770)** — NOT reachable directly; would need Tailscale install + lab tailnet membership.
 - ❌ DGX (`100.99.92.18`) Tailscale — same as above.
 
-**Note**: For 16-cell rerun, see §1.1.2 "VWA self-host on A100" — preferred path bypasses the reach issue entirely by co-locating VWA stack with agent on the A100 VM itself.
+**Note**: For the 42-cond / 6-cell Phase 1a, see §1.1.2 "VWA self-host on A100" — preferred path bypasses the reach issue entirely by co-locating VWA stack with agent on the A100 VM itself.
 
-#### §1.1.2 VWA self-host on A100 (preferred for 16-cell rerun)
+#### §1.1.2 VWA self-host on A100 (LIVE — Phase 1a paper-grade host)
 
-Instead of reaching out to quark VWA, **deploy VWA Docker stack on A100 VM itself**. Agent + VWA both localhost-only on A100. Decided 2026-05-07.
+Instead of reaching out to quark VWA, **deploy VWA Docker stack on A100 VM itself**. Agent + VWA both localhost-only on A100. Decided 2026-05-07; LIVE since 2026-05-14, fired paper-grade Fire-3 2026-05-18.
 
 **Why preferred over Tailscale-to-quark path**:
 | Dimension | A100 self-host | A100 → Tailscale → quark |
@@ -100,19 +100,19 @@ Instead of reaching out to quark VWA, **deploy VWA Docker stack on A100 VM itsel
 - VWA red (Postmill + DB): ~5-10GB
 - VWA shop (Magento + DB): ~30-40GB
 - VWA homepage (Python): ~1GB
-- VWA wikipedia (skip — paper §5 mechanistic + 16-cell don't use Wikipedia tasks): 0
+- VWA wikipedia (skip — paper §5 mechanistic + Phase 1a don't use Wikipedia tasks): 0
 - Qwen3-VL-4B model cache: ~10GB
 - Llama-3.2-11B-Vision cache (cross-arch): ~22GB
-- Mechanistic + 16-cell results: ~30GB
+- Mechanistic + Phase 1a results: ~30GB
 - pip site-packages: ~10GB
 - **Total**: ~135-160GB ⇒ 500GB - 160GB = ~340GB headroom ⭐ comfortable
 
 **Setup script**: `scripts/setup/a100_self_host_vwa.sh` (added 2026-05-07).
 
 **Paper §3 method disclosure required**:
-> "Phase 1 paper-grade runs were executed against VWA Docker stack hosted on Windows machine via Docker Desktop WSL2 backend, accessed by agent through Tailscale. For post-Phase-A 16-cell rerun, the same Docker stack is deployed on the A100-equipped UCL Condense VM (Ubuntu 22.04 native Docker), with agent and stack co-located on same host. Byte-equivalence of HTML responses verified across deployments via per-site checksums."
+> "Phase 1 paper-grade runs were executed against VWA Docker stack hosted on Windows machine via Docker Desktop WSL2 backend, accessed by agent through Tailscale. For the post-Phase-A 42-cond / 6-cell Phase 1a paper-grade fire, the same Docker stack is deployed on the A100-equipped UCL Condense VM (Ubuntu 22.04 native Docker), with agent and stack co-located on same host. Byte-equivalence of HTML responses verified across deployments via per-site checksums."
 
-**Status (5/7)**: Setup script written (`scripts/setup/a100_self_host_vwa.sh`); execution pending SSH cert setup.
+**Status (2026-05-14)**: ✅ VWA self-host LIVE on the A100 VM (cls/red/shop @ localhost), fired paper-grade Fire-3 2026-05-18.
 
 **Access path** (post-Steve 5/7 clarification):
 - ❌ Direct SSH not allowed
@@ -172,7 +172,7 @@ Host condense-a100
 | E/F | 2× V100 | 32 GB | 19 nodes | older but plentiful |
 
 **Quotas**: 1 TB home (= scratch), `gquota` to check. Backed-up `~/ACFS` 1 TB read-only from compute nodes.
-**Wallclock**: 72h single-core, 48h parallel (chunkable). 16-cell rerun (~24h per cell) fits comfortably.
+**Wallclock**: 72h single-core, 48h parallel (chunkable). Phase 1a (~24h per condition) fits comfortably.
 **Pre-built modules**: PyTorch 1.11 GPU (load module list per `~/.rc.ucl.ac.uk/docs`), CUDA 11.x, Python 3.7-3.11 stack.
 
 **Job submission paradigm**: SGE qsub batch scripts:
@@ -184,9 +184,9 @@ Host condense-a100
 #$ -wd /home/ucab352/scratch/jobs
 ```
 
-**Old "abandoned" status retracted**: Pre-2026-05-06 we deprecated Myriad due to (a) Tailscale CGNAT block (Myriad → home VWA Docker blocked), (b) wallclock fits single-block 16-cell rerun. Updated assessment 2026-05-07:
-- (a) Still applies — Myriad cannot reach quark VWA Docker via Tailscale → **16-cell rerun NOT feasible on Myriad** (needs live VWA env)
-- (b) Wallclock fine for chunked 16-cell — but Tier 0 A100 dedicated has no wallclock so still primary
+**Old "abandoned" status retracted**: Pre-2026-05-06 we deprecated Myriad due to (a) Tailscale CGNAT block (Myriad → home VWA Docker blocked), (b) wallclock fits single-block Phase 1a. Updated assessment 2026-05-07:
+- (a) Still applies — Myriad cannot reach a live VWA env → **Phase 1a paper-grade fire NOT feasible on Myriad** (needs live VWA env)
+- (b) Wallclock fine for chunked Phase 1a — but Tier 0 A100 dedicated has no wallclock so still primary
 - ✅ **Mechanistic / cross-arch / SAE on archived data is fine on Myriad** (no VWA needed, just LLM forward pass)
 
 **Use cases (5/7 update)**:
@@ -194,7 +194,7 @@ Host condense-a100
 2. ⭐ Llama-4 cross-arch (4-GPU data-parallel on V-type)
 3. ⭐ SAE training (paper v2, defer) — V-type 4× A100 80GB perfect for SAE training scale
 4. ⏳ Analysis batch jobs (CPU-only on D-type) without burning A100 quota
-5. ❌ 16-cell rerun (CGNAT VWA block)
+5. ❌ Phase 1a paper-grade fire (CGNAT VWA block)
 6. ❌ Interactive dev (qsub batch only, no real-time iteration)
 
 ### §1.3 DGX Spark (`spark-9ea3`) — Tier 2
@@ -236,7 +236,7 @@ Host condense-a100
 
 **Roles**:
 - **Primary SSH client** for A100 Condense + Myriad
-- **VWA Docker host** for paper-grade 16-cell rerun (DGX or A100 needs to reach via Tailscale)
+- ~~**VWA Docker host** for paper-grade runs~~ (superseded 2026-05-14: VWA now self-hosted on the A100 VM; quark Docker no longer in paper-grade critical path)
 - **Cert generation host** (UCL VPN + browser → SSH Portal)
 - **Data transfer pivot** (rsync DGX → quark via Tailscale, scp quark → A100 via UCL VPN+bastion)
 
@@ -291,8 +291,8 @@ docker start classifieds classifieds-com vwa-reddit vwa-shopping shopping_admin 
 **Implications for compute path**:
 - ✅ **DGX → quark VWA** path used for historic Phase 1 paper-grade runs (B1 dom/som/vision + B0 phantom_*)
 - ✅ Same path will be used for **future fresh paper-grade runs from lab GPU** (e.g. DGX-side B1 work post-Phase-A if A100 Condense busy)
-- ❌ **Myriad → quark VWA** blocked by CGNAT (Myriad outbound firewall denies Tailscale 100.x.x.x range; documented `MYRIAD_SMOKE_REPORT.md`)
-- ⚠️ **A100 Condense → quark VWA** not yet configured — would require Tailscale install on A100 VM + lab admin approval to add to lab tailnet. Only relevant when launching 16-cell rerun on A100 (post advisor email + threshold lock).
+- ❌ **Myriad → quark VWA** blocked by CGNAT (Myriad outbound firewall denies Tailscale 100.x.x.x range)
+- ✅ **A100 Condense paper-grade** does NOT use quark VWA — VWA Docker is self-hosted on the A100 VM itself (cls/red/shop @ A100 localhost, see §1.1.2), so the Tailscale-to-quark reach issue is moot for Phase 1a.
 
 **Quark sleep/Docker Desktop quirk**: when Windows sleeps, Docker Desktop suspends → containers Stopped. Wake from sleep → Docker Desktop auto-restarts but containers may need manual `docker start` (some compose configs auto-restart, depends on `restart: unless-stopped` policy). VWA containers verified to auto-restart 2026-05-07 (50 seconds after Docker Desktop wake — likely from auto-restart policy).
 
@@ -434,7 +434,7 @@ DGX                  Quark                   A100/Myriad
 | Llama-3.2-11B-Vision cross-arch | Tier 0 A100 40GB Condense | Tier 1 Myriad V-type 80GB | ~22GB bf16 fits 40GB tight, fine |
 | Llama-4 Scout (~17B) cross-arch | ⚠️ Tier 0 borderline (use 4-bit quant) | Tier 1 Myriad V-type 80GB | 40GB headroom thin, prefer Myriad if fp16 needed |
 | Llama-4 Maverick (~70B) cross-arch | ❌ NOT viable on Tier 0 | Tier 1 Myriad V-type 80GB (4-bit single-card) or 4× data-parallel | 40GB single-card insufficient |
-| 16-cell paper-grade rerun | ⚠️ Tier 0 **blocked** until A100 → quark VWA Tailscale path configured | Fallback: DGX shared (lab tailnet, GPU contention slow) | Needs VWA Docker reach |
+| 42-cond / 6-cell Phase 1a paper-grade fire | ✅ Tier 0 **primary** (VWA self-hosted on A100 VM, LIVE since 2026-05-14, fired Fire-3 2026-05-18) | Fallback: DGX shared (lab tailnet, GPU contention slow) | VWA co-located on A100 localhost |
 | SAE training (paper v2 deferred) | ❌ Tier 0 single 40GB infeasible | Tier 1 Myriad V-type 4× A100 80GB data-parallel | data-parallel scales SAE training |
 | CPU analysis batch (figures, aggregation) | DGX local | Tier 1 Myriad D-type | no GPU needed |
 | Smoke tests / curation (small) | DGX (if shared GPU available) | Tier 0 A100 | already done 5/6, 笔记 §113 |
@@ -454,13 +454,13 @@ DGX                  Quark                   A100/Myriad
 - ⏳ Llama-4 cross-arch — pending SSH setup
 - ⏳ Position-resolved patching — pending SSH setup
 
-### §7.2 16-cell paper-grade rerun
+### §7.2 42-cond / 6-cell Phase 1a paper-grade fire
 
 - ✅ Pre-registration framework draft (`preregistration.md` status:draft)
 - ⏳ Threshold witness from advisor (K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp)
 - ⏳ Paper split decision (3 vs 4 papers)
-- ⏳ Compute path lock (planned: A100 Condense, ~3-5d)
-- ⏳ Launch on A100 (post-advisor email reply + SSH setup)
+- ✅ Compute path lock: A100 Condense, VWA self-hosted on VM
+- ✅ Fired on A100 (Fire-3 2026-05-18)
 
 ### §7.3 Paper drafts
 
@@ -490,6 +490,4 @@ DGX                  Quark                   A100/Myriad
 - `docs/checkpoints/实验笔记.md §110-§113` — chronicles 5/5+5/6+5/7
 - `docs/checkpoints/advisor_sync_5_5_outcomes.md §A.8` — compute path original 5/5 sync table
 - `docs/checkpoints/pre_run/preregistration.md` — paper-grade gating
-- `docs/reference/MYRIAD_SMOKE_REPORT.md` — historical CGNAT investigation (now partly obsolete per §1.2)
-- `docs/reference/RUNPOD_ONBOARDING.md` — deprecated by Tier 0
 - `docs/reference/DGX_SPARK_MACHINE_QUIRKS.md` — DGX-specific quirks (sm_121 nvrtc fallback, etc.)

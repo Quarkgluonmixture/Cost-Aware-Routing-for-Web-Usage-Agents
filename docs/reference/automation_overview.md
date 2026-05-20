@@ -1,6 +1,6 @@
 # P79 Automation + Notification + Cleanup Architecture
 
-**Last updated**: 2026-05-09 after audit (A)-(G).
+**Last updated**: 2026-05-20.
 **Audience**: self-only (paper-grade rerun protocol).
 
 This is the canonical map of every auto-firing thing in the P79 repo. If
@@ -14,8 +14,8 @@ something happens without you typing it, it lives here.
 │                              │                               │
 │  ┌───────────────────────────┴────────────────────────────┐  │
 │  │ L1 LAUNCH PROTOCOL (one-shot)                           │  │
-│  │   launch.sh → cell-md auto-create → glm pre-launch     │  │
-│  │   check → nohup queue script → 30s post-hook refresh   │  │
+│  │   launch.sh → cell-md auto-create → pre-launch-check   │  │
+│  │   → nohup queue script → 30s post-hook refresh         │  │
 │  └─────────────────────┬───────────────────────────────────┘  │
 │                        │                                       │
 │  ┌─────────────────────┴───────────────────────────────────┐  │
@@ -63,15 +63,14 @@ Driver: `Makefile launch:` → `scripts/maintenance/launch.sh`. Steps:
 |---|---|---|---|
 | 1 | Cell-md auto-create if missing | `launch.sh` inline | — |
 | 2 | `make pre-launch-check` (C10 + F audit) | `Makefile` | git dirty / VWA SHA mismatch / HF model missing / Playwright ver / disk free / seed / **pytest** |
-| 3 | GLM review of queue + active runs | `glm_pre_launch_check.py` (F37 fail-closed) | rc=2 BLOCK abort / rc=1 WARN interactive y/N |
-| 4 | nohup queue script `RESET_BEFORE=1` | `scripts/queues/queue_*.sh` | site reset failure logged but non-fatal |
-| 5 | Post-launch hook (sleep 30 + dual GLM refresh) | inline | (best-effort) |
+| 3 | nohup queue script `RESET_BEFORE=1` | `scripts/queues/queue_*.sh` | site reset failure logged but non-fatal |
+| 4 | Post-launch hook (sleep 30 + dual GLM refresh) | inline | (best-effort) |
 
 **Exit codes**: 0 OK / 64 usage / 65 unknown mode / 2 hard-rule violation.
 
 **Hard rules enforced** (paper-grade hygiene):
 - Same site B0 XOR B1 (no cross-baseline contamination via shared user
-  accounts). Detected by `glm_pre_launch_check` `pgrep -af run_experiment`.
+  accounts). Detected by queue script `pgrep -af run_experiment` collision check.
 - `RESET_BEFORE=1` mandatory per cell. Site reset via SSH chain
   DGX → quark Tailscale → Windows PowerShell `reset_vwa.ps1`.
 - Queue script idempotent (`pgrep -f` skip if same site+mode running).
@@ -146,7 +145,6 @@ auto_pull_myriad_cell.sh 336424 cellg_rev_ stage2c_cellg_rev_reddit_reverse_myri
 | `glm_playbook_refresh.py` | 3 consecutive GLM-API failures (audit D) | high |
 | `error_scan.py` | disk free <50GB (2 consecutive ticks) | high |
 | `error_scan.py` | tailscale BackendState != Running (3 consecutive ticks) | high |
-| `glm_pre_launch_check.py` | (rc=1 WARN / rc=2 BLOCK on launch) | — (synchronous) |
 | `auto_pull_myriad_cell.sh` | per-cell pull complete (success or partial) | default |
 | `auto_pull_myriad_cell.sh` | 0 files pulled / SSH chain dead | high |
 | `notify_on_fail.sh` | any cron job non-zero exit | high |
@@ -175,7 +173,7 @@ docs/
 ├── codex.base                       (Bases: codex task lifecycle)
 ├── issues.base                      (Bases: issue ledger)
 ├── checkpoints/PLAYBOOK.md          (gitignored, GLM-managed §1+§2; manual §3-§10)
-├── checkpoints/{next_steps, paper_planning, ADVISOR_SYNC, 实验笔记}.md
+├── checkpoints/{next_steps, paper_planning, phase1_plan, 实验笔记}.md
 ├── checkpoints/paper_drafts/section{1..8}_*.md + paper.bib
 ├── checkpoints/_status/             (mirror of _status/, kept for backward-compat)
 ├── checkpoints/phantom_space.canvas
@@ -206,7 +204,7 @@ docs/
 - **Live state (Tailscale scp, ~1min latency)**: `PLAYBOOK.md` +
   `_status/cells/*.md` + `results/phantom_paper/{auroc_cross_condition,phantom_lift}.md`.
 - **Source of truth (git, ~10min latency)**: paper drafts / 实验笔记 /
-  paper_planning / next_steps / ADVISOR_SYNC / code / `_status/{issues,codex,section}/*.md`.
+  paper_planning / next_steps / phase1_plan / code / `_status/{issues,codex,section}/*.md`.
 - **Force pull**: Windows `Ctrl+P` → "Obsidian Git: Pull"; PowerShell
   `Start-ScheduledTask -TaskName "Pull PLAYBOOK from DGX"`.
 
@@ -224,7 +222,7 @@ docs/
 | Forward actions / chains / horizon | `next_steps.md` (manual) |
 | Paper strategy / theory / decision log | `paper_planning.md` (manual, weekly) |
 | Append-only chronicle | `实验笔记.md` (manual, append-only) |
-| Pre-meeting decisions | `ADVISOR_SYNC.md` (manual, per-meeting) |
+| Phase 1 execution + advisor decisions | `phase1_plan.md` (manual, per-milestone) |
 
 ---
 
@@ -235,9 +233,9 @@ docs/
 | New issue | 1 | `_status/issues/issue_*.md` frontmatter |
 | New finding | 1 | append `实验笔记.md §X` chronicle (`#finding` tag) |
 | Cross-X pattern | +1 | `paper_planning.md §3` |
-| Framework decision | +1 | `paper_planning.md §19` + `ADVISOR_SYNC.md §2` |
+| Framework decision | +1 | `paper_planning.md §19` + `phase1_plan.md` |
 | Paper prose update | manual | `paper_drafts/` codex round |
-| **manifest grade promotion** | manual | `results/phantom_paper/run_manifest.yaml` mark new cells `paper-grade` (16-cell rerun prerequisite) |
+| **manifest grade promotion** | manual | `results/phantom_paper/run_manifest.yaml` mark new cells `paper-grade` (42-cond Phase 1a prerequisite) |
 
 ---
 
@@ -261,14 +259,14 @@ docs/
 | I | artifacts 不 prune | weekly cron 删 N>30 天的 `artifacts/{step,dom,screenshot}.{html,jpg,png}` |
 | J | ntfy 端到端 heartbeat | weekly cron 推 "🟢 ntfy alive" 一条 |
 
-These are nice-to-have; not blockers for 16-cell rerun.
+These are nice-to-have; not blockers for the 42-cond Phase 1a fire.
 
 ---
 
 ## See also
 
 - **`docs/reference/launch_checklist.md`** — the human-runnable
-  step-by-step protocol for a 16-cell paper-grade rerun, including
+  step-by-step protocol for a 42-cond / 6-cell Phase 1a paper-grade fire, including
   the manifest grade promotion step that this overview only points at.
 - `docs/checkpoints/PLAYBOOK.md` §6 cron sidecar table (live status)
 - `docs/reference/glm_quark_myriad_sync.md` — alt: GLM-driven SCP from quark

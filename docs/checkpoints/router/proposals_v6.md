@@ -13,6 +13,8 @@ metadata:
   supersedes: proposals_v5 (single-axis SR + universal L2 verbose + Phase 1a 36-cond ambiguity + Cost-Aware title mismatch)
 ---
 
+> ⚠️ paper-1 已被 [proposals_v7.md](proposals_v7.md) supersede；本文件保留作 **paper-2 cascade forward stub**（prereg §H10 canonical estimand source），勿当 paper-1 当前设计。
+
 # v6 router design — Pareto-cascade with phantom-only verbose layer
 
 > **LOCKED 2026-05-16** after round-2 pre-fire cross-AI stress (codex + gemini) surfaced 4 P0 issues + user Q&A locked resolution path. v6 is the executable spec for Phase 1a 72-condition launch + paper §6 prose final.

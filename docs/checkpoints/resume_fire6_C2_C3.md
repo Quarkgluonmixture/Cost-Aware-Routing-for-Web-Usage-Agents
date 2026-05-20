@@ -1,5 +1,7 @@
 # Resume prompt: Fire-6 RCA Stage C2 (diagnostic replay) + C3 (full Fire-6)
 
+> ✅ **C1 (3c767a2) + C2 (9d46134) 已 land**（2026-05-20）。本文档仅 C3（full Fire-6 launch）仍 pending = live-run gate，非文档任务；forward action 见 [next_steps.md](next_steps.md)。下方 C1/C2 段落仅留作 RCA 记录。
+
 ## Where we are (2026-05-20, post-compact resume)
 Fire-6 RCA gamma-staged plan (user-approved). **C1 DONE** (commit `3c767a2`
 on origin/master): L2 program_html evaluator isolation + timeout

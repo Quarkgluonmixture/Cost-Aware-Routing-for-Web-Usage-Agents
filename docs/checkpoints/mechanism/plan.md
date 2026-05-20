@@ -8,6 +8,8 @@ v2_retraction: 2026-05-13 — Stage 4 v1→v2 NPZ migration (Bug 1 tier filter +
 
 # Mechanism Plan — paper §5
 
+> ⏸️ **FROZEN 2026-05-14** — mechanism (§5) 整个暂搁 (advisor discussion 2026-05-14)，移至 **paper-2 scope**。本文档为**冻结存档**，下方所有 method / roadmap / open Qs **不再 active**（`last_substantive_update: 2026-05-13` frontmatter 同冻结）。当前 forward state 见 [next_steps.md](../next_steps.md) §0a。
+
 ## 0. v2 retraction summary (2026-05-13)
 
 V1 Stage 4 NPZ regex `^\[\d+\]\s+\w+` extracted only 38 chars / 3 lines per task, dropping 71/72 SOM_MARKS. Affected: Method 4.2 cosine geometry, Exp 1 axis-2 layer profile, Exp 3 logit lens, per-task fragility. V2 NPZ uses production `_extract_text_marks` (full 72-line `[id=N] {label}` payload). Re-extraction Myriad 359736 (cls) + 359737 (reddit) landed 2026-05-12 late, v2 metrics 2026-05-13 02:52.
