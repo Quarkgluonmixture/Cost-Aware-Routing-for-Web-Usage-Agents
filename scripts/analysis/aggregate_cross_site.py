@@ -298,13 +298,24 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             # Both paths produced wrong paper §1 canonical-latency values.
             # Post-fix: None propagates → downstream consumers must handle
             # explicit None instead of treating missing as zero.
+            # B-1780 (/stress GRL audit 2026-05-20, user Q3=A, B-1773 follow-up):
+            # canonical now subtracts a THIRD term — the recovered dom artifact
+            # screenshot-timeout (C1b). canonical = minus_retry − busy_wait −
+            # recovered. The recovered term uses `or 0.0` (NOT None-propagate like
+            # the other two) because a missing/legacy value genuinely means "no
+            # C1b recovery occurred" (0 ms), whereas missing minus_retry/busy_wait
+            # means "wrong vintage, cannot compute" (None). Raw + minus_retry +
+            # recovered_total + recovered_rate carried as sensitivity columns.
             "avg_total_latency_canonical_ms": (
                 None
                 if cond.get("avg_total_latency_minus_retry_ms") is None
                 or cond.get("avg_busy_wait_total_ms") is None
                 else float(cond["avg_total_latency_minus_retry_ms"])
                 - float(cond["avg_busy_wait_total_ms"])
+                - float(cond.get("avg_screenshot_timeout_recovered_total_ms") or 0.0)
             ),
+            "avg_screenshot_timeout_recovered_total_ms": cond.get("avg_screenshot_timeout_recovered_total_ms"),
+            "screenshot_timeout_recovered_episode_rate": cond.get("screenshot_timeout_recovered_episode_rate"),
             "episodes": int(cond.get("episodes", 0)),
             "is_stub": is_stub,
         })

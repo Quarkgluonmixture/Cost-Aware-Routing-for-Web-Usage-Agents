@@ -329,6 +329,11 @@ class StepRecordV2:
     # grade-required key (telemetry, not a hero field). Enables paper §4
     # disclosure of recovered-timeout steps + their +~30s latency exclusion.
     screenshot_timeout_recovered: bool = False
+    # Fire-6 C1b /stress B-1780 (GRL audit Q3=A, B-1773 follow-up): per-step
+    # recovered screenshot-timeout wait (~30s Playwright ceiling, capped at
+    # env_step_ms) so canonical latency can EXCLUDE the dom artifact-only infra
+    # wait. 0.0 when not recovered.
+    screenshot_timeout_recovered_ms: float = 0.0
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -401,6 +406,13 @@ class EpisodeSummaryV2:
     # blank placeholder). Default 0 (always present). Paper §4 disclosure of
     # recovered-timeout frequency + latency-confound flag (each ≈ +30s).
     screenshot_timeout_recovered_count: int = 0
+    # Fire-6 C1b /stress B-1780 (GRL audit Q3=A, B-1773 follow-up): two-layer
+    # latency rollup. recovered_total_ms = Σ per-step recovered screenshot-timeout
+    # wait; canonical_ms = total_latency_minus_retry_ms − recovered_total_ms
+    # (≥0). raw = total_latency_ms. Lets paper §1 report raw operational latency
+    # AND recovered-artifact-timeout-adjusted canonical latency side by side.
+    screenshot_timeout_recovered_total_ms: float = 0.0
+    total_latency_canonical_ms: Optional[float] = None
     state_change_reason_distribution: Dict[str, int] = field(default_factory=dict)
     checklist_completion_rate: Optional[float] = None
     checklist_failed_items: Optional[int] = None
@@ -618,6 +630,11 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "select_option_meta",  # B-420
     "select_option_meta_primary",  # B-450 retry-overwrite split (symmetric w/ B-440)
     "select_option_meta_retry",    # B-450 retry-overwrite split (symmetric w/ B-440)
+    # P2-3 (/stress GRL audit 2026-05-20): screenshot-recovery telemetry KEY-
+    # presence enforced (was schema-only → write-best-effort; compounds B-1780
+    # write-only). Runner stamps both on every step (dom recovery or 0.0).
+    "screenshot_timeout_recovered",
+    "screenshot_timeout_recovered_ms",
     "agent_visible_changed",
     "control_intervention",  # B-497 control-injected action provenance
     "dialog_meta",  # B-488 browser dialog telemetry (misclick blast radius evidence layer)
@@ -763,7 +780,11 @@ _STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "intervention_from_url": (str, type(None)),
     "intervention_recovery_url": (str, type(None)),
     # Fire-6 C1b /stress P1-5 (always-bool telemetry).
-    "screenshot_timeout_recovered": (bool,),
+    # P2-3 (/stress GRL audit 2026-05-20): now PAPER_GRADE_STEP_OPTIONAL_KEYS
+    # members → contract is "key present, value MAY be None" → types accept None
+    # (runner always stamps bool/float, but validator-key-presence allows None).
+    "screenshot_timeout_recovered": (bool, type(None)),
+    "screenshot_timeout_recovered_ms": (int, float, type(None)),
 }
 
 
@@ -785,6 +806,12 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     "wallclock_end",
     # B-485 resume identity gate (paper-grade rerun protocol)
     "resume_fingerprint",
+    # P2-3 + B-1780 (/stress GRL audit 2026-05-20, Q3=A): screenshot-recovery
+    # two-layer latency telemetry KEY-presence enforced. Runner stamps all three
+    # on every episode (count / Σ recovered ms / canonical = minus_retry − recovered).
+    "screenshot_timeout_recovered_count",
+    "screenshot_timeout_recovered_total_ms",
+    "total_latency_canonical_ms",
     # B-486 quarantine flag (crash-before-evaluator distinguishing)
     "needs_reevaluation",
     # B-193 paper §3.5 transparency telemetry
@@ -883,7 +910,11 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "diagnostic_replay": (bool,),
     "sr_excluded": (bool,),
     # Fire-6 C1b /stress P1-5 (always-int telemetry rollup).
-    "screenshot_timeout_recovered_count": (int,),
+    # P2-3 + B-1780 (/stress GRL audit 2026-05-20): PAPER_GRADE_EPISODE_OPTIONAL_KEYS
+    # members → types accept None (present-may-be-None contract).
+    "screenshot_timeout_recovered_count": (int, type(None)),
+    "screenshot_timeout_recovered_total_ms": (int, float, type(None)),
+    "total_latency_canonical_ms": (int, float, type(None)),
     "verified_substrate_noise": (bool, type(None)),
     # P1-17-C* Phase 2 attempt-lineage (Sensitivity-only column; all None
     # until checkpoint-restore infrastructure lands).

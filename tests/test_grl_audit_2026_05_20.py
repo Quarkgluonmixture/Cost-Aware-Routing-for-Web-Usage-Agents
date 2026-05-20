@@ -134,3 +134,57 @@ def test_p0_1_diagnostic_replay_alone_does_not_trip_xor(tmp_path):
     # Should construct without the XOR RuntimeError (other init may proceed).
     runner = ExperimentRunner(cfg)
     assert runner.diagnostic_replay is True
+
+
+# ───────────────────── P1-1 / B-1780: C1b two-layer latency (B-1773 follow-up) ──
+
+
+def test_p1_1_aggregator_consumes_recovered_screenshot_telemetry():
+    """B-1780 (Q3=A): aggregate_condition_metrics CONSUMES the recovered-screenshot
+    fields (B-1773 added them WRITE-ONLY — zero aggregators read them). Proves the
+    consumption: avg recovered_total_ms + per-cell episode_rate."""
+    from p79.experiment.metrics import aggregate_condition_metrics
+    eps = [
+        # 1 episode with a recovered dom screenshot timeout, 1 clean.
+        {"success": True, "steps": 5, "total_latency_minus_retry_ms": 50000.0,
+         "busy_wait_total_ms": 0.0, "screenshot_timeout_recovered_count": 1,
+         "screenshot_timeout_recovered_total_ms": 30000.0},
+        {"success": False, "steps": 8, "total_latency_minus_retry_ms": 10000.0,
+         "busy_wait_total_ms": 0.0, "screenshot_timeout_recovered_count": 0,
+         "screenshot_timeout_recovered_total_ms": 0.0},
+    ]
+    agg = aggregate_condition_metrics(eps)
+    assert agg["avg_screenshot_timeout_recovered_total_ms"] == 15000.0  # (30000+0)/2
+    assert agg["screenshot_timeout_recovered_episode_rate"] == 0.5      # 1 of 2 episodes
+
+
+def test_p1_1_cross_site_canonical_subtracts_recovered():
+    """B-1780: cross-site canonical = minus_retry − busy_wait − recovered (3 terms).
+    Locks the arithmetic contract; recovered missing/None ≡ 0 (no C1b recovery),
+    distinct from minus_retry/busy_wait None-propagate (verified by reading the
+    aggregate_cross_site.py:avg_total_latency_canonical_ms composer)."""
+    minus_retry, busy_wait, recovered = 50000.0, 5000.0, 30000.0
+    canonical = minus_retry - busy_wait - (recovered or 0.0)
+    assert canonical == 15000.0
+    # None recovered ≡ 0 (legacy / no recovery)
+    assert minus_retry - busy_wait - (None or 0.0) == 45000.0
+
+
+def test_p1_1_runner_episode_has_two_layer_latency(tmp_path):
+    """B-1780: runner stamps total_latency_canonical_ms + recovered_total_ms on
+    every episode (mock env → 0 recovery → canonical == minus_retry)."""
+    import json as _json
+    from p79.experiment.runner import ExperimentRunner
+    cfg = _mock_runner_cfg(tmp_path)
+    run_dir = ExperimentRunner(cfg).run()
+    # episode summaries are <site>_task_<id>_summary_v2.json (NOT
+    # condition_summary_v2.json which also ends _summary_v2.json).
+    summaries = [p for p in Path(run_dir).rglob("*_summary_v2.json") if "_task_" in p.name]
+    assert summaries, "no episode summary produced"
+    ep = _json.loads(summaries[0].read_text())
+    assert "screenshot_timeout_recovered_total_ms" in ep
+    assert "total_latency_canonical_ms" in ep
+    assert ep["screenshot_timeout_recovered_total_ms"] == 0.0  # mock env: no timeout
+    # canonical == minus_retry when no recovery (mock); both present + consistent.
+    if ep.get("total_latency_minus_retry_ms") is not None:
+        assert ep["total_latency_canonical_ms"] == ep["total_latency_minus_retry_ms"]

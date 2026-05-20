@@ -76,6 +76,8 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "diagnostic_replay": False,
     "sr_excluded": False,
     "screenshot_timeout_recovered_count": 0,  # Fire-6 C1b /stress P1-5
+    "screenshot_timeout_recovered_total_ms": 0.0,  # Fire-6 C1b /stress B-1780 (Q3=A)
+    "total_latency_canonical_ms": None,  # Fire-6 C1b /stress B-1780 (Q3=A)
     "artifacts_dir": "",
     # --- additions (optional, default-filled) ---
     "state_change_reason_distribution": {},  # original v2
@@ -308,6 +310,7 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "intervention_from_url": None,
     "intervention_recovery_url": None,
     "screenshot_timeout_recovered": False,  # Fire-6 C1b /stress P1-5
+    "screenshot_timeout_recovered_ms": 0.0,  # Fire-6 C1b /stress B-1780 (Q3=A)
 }
 
 

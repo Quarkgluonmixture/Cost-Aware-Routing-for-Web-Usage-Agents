@@ -3331,6 +3331,20 @@ class ExperimentRunner:
             step_record["screenshot_timeout_recovered"] = bool(
                 next_info.get("screenshot_timeout_recovered")
             ) if isinstance(next_info, dict) else False
+            # Fire-6 C1b /stress B-1780 (GRL audit Q3=A, B-1773 follow-up): the
+            # per-step recovered screenshot-timeout wait (~the 30s Playwright
+            # ceiling that fired) so canonical latency can EXCLUDE it. B-1773
+            # added the bool flag + count "so paper §4 can ... exclude their
+            # ~+30s wait" but never wired the subtraction (write-only telemetry).
+            # Capped at env_step_ms so a step can never subtract more wall time
+            # than it actually took; 0.0 when not recovered. The dom artifact
+            # screenshot is NOT a decision input, so this infra wait must not
+            # inflate dom canonical latency vs SoM/Vision (efficiency claim).
+            step_record["screenshot_timeout_recovered_ms"] = (
+                min(30000.0, float(env_step_ms))
+                if (isinstance(next_info, dict) and next_info.get("screenshot_timeout_recovered"))
+                else 0.0
+            )
             # B-552 (/stress A1.5 P1-2-AB* Claude+codex OOB, 2026-05-17):
             # agent's RAW pre-validate action emit. Paper §3 taxonomy 3-layer
             # model (raw_action / control_intervention.original_action /
@@ -3723,6 +3737,21 @@ class ExperimentRunner:
         # timeouts (dom-mode). Paper §4 disclosure + latency-confound count.
         episode_summary["screenshot_timeout_recovered_count"] = sum(
             1 for s in step_records if s.get("screenshot_timeout_recovered")
+        )
+        # Fire-6 C1b /stress B-1780 (GRL audit Q3=A, B-1773 follow-up): two-layer
+        # latency. raw = total_latency_ms (includes the recovered ~30s timeout —
+        # operational truth). canonical = retry-adjusted MINUS the recovered
+        # artifact screenshot-timeout (dom artifact-only is not a decision input,
+        # so its infra wait must not contaminate the dom-vs-SoM/Vision efficiency
+        # claim). recovered_total_ms = the subtracted delta; the aggregator emits
+        # the per-cell rate. Clamp canonical ≥ 0.
+        episode_summary["screenshot_timeout_recovered_total_ms"] = sum(
+            float(s.get("screenshot_timeout_recovered_ms") or 0.0) for s in step_records
+        )
+        _minus_retry = episode_summary.get("total_latency_minus_retry_ms")
+        episode_summary["total_latency_canonical_ms"] = (
+            max(0.0, float(_minus_retry) - episode_summary["screenshot_timeout_recovered_total_ms"])
+            if _minus_retry is not None else None
         )
         # Total wall time spent in busy-wait stalls (RU-4): not counted in
         # total_latency_ms (which sums step_records latencies), exposed

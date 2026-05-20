@@ -4,7 +4,11 @@ from PIL import Image
 from p79.envs.vwa_wrapper import P79Observation
 from p79.experiment.schema_migrations.v2 import EPISODE_SUMMARY_V2_DEFAULTS
 from p79.experiment.som import prepare_observation_for_mode
-from p79.experiment.types import SCHEMA_VERSION_V2, validate_step_record_v2
+from p79.experiment.types import (
+    SCHEMA_VERSION_V2,
+    PAPER_GRADE_STEP_OPTIONAL_KEYS,
+    validate_step_record_v2,
+)
 
 
 def test_prepare_observation_rejects_unknown_mode(tmp_path):
@@ -300,6 +304,12 @@ def test_step_schema_validation_required_fields():
         "intervention_from_url": None,
         "intervention_recovery_url": None,
     }
+    # Future-proof (P2-3 /stress GRL audit 2026-05-20): backfill any paper-grade
+    # optional keys added after this fixture was written (B-1778 action provenance,
+    # B-1780 screenshot two-layer latency, …) so the fixture doesn't drift on every
+    # schema addition. setdefault preserves the explicit keys above.
+    for _k in PAPER_GRADE_STEP_OPTIONAL_KEYS:
+        record.setdefault(_k, None)
 
     validate_step_record_v2(record)
 
@@ -362,6 +372,10 @@ def test_b481_select_option_meta_structured_fields_validator():
             "intervention_from_url": None,
             "intervention_recovery_url": None,
         }
+        # Future-proof (P2-3 /stress GRL audit 2026-05-20): backfill new paper-grade
+        # optional keys (B-1778 / B-1780 …) so this fixture doesn't drift.
+        for _k in PAPER_GRADE_STEP_OPTIONAL_KEYS:
+            rec.setdefault(_k, None)
         rec[key] = sel_meta_payload
         return rec
 

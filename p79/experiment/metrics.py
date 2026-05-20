@@ -807,6 +807,26 @@ def aggregate_condition_metrics(
         "avg_total_latency_minus_retry_ms": _avg(
             "total_latency_minus_retry_ms", require_present=True
         ),
+        # Fire-6 C1b /stress B-1780 (GRL audit Q3=A, B-1773 follow-up): CONSUME
+        # the recovered-screenshot telemetry (B-1773 added the field write-only).
+        # Expose the per-condition recovered delta + episode rate here; the FINAL
+        # canonical latency (= minus_retry − busy_wait − recovered) is composed
+        # downstream in aggregate_cross_site.py:avg_total_latency_canonical_ms so
+        # the three subtraction terms (B-1402 retry / B-1669 busy_wait / B-1780
+        # recovered-screenshot) live in ONE place — do NOT redefine canonical
+        # here (name owned by the cross-site composer). The recovered term is the
+        # dom artifact-only screenshot-timeout infra wait (not a decision input →
+        # must not inflate dom canonical latency vs SoM/Vision). recovered_total
+        # defaults 0.0 (nonzero only when a dom screenshot timed out).
+        # episode_rate = per-cell sensitivity column (mirrors B-486 quarantine_rate)
+        # bounding the dom adjustment magnitude for paper §4 disclosure.
+        "avg_screenshot_timeout_recovered_total_ms": _avg("screenshot_timeout_recovered_total_ms"),
+        "screenshot_timeout_recovered_episode_rate": (
+            sum(1 for x in episode_summaries
+                if (x.get("screenshot_timeout_recovered_count") or 0) > 0)
+            / len(episode_summaries)
+            if episode_summaries else 0.0
+        ),
         "avg_total_model_cost_usd": _avg("total_model_cost_usd"),
         "avg_total_cost_usd": _avg("total_cost_usd"),
         "avg_router_overhead_cost_usd": _avg("total_router_overhead_cost_usd"),
