@@ -379,6 +379,49 @@ _NOISE_ERROR_SUBSTRINGS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
 )
 
 
+def _can_auto_retry(
+    reason: str,
+    *,
+    quarantine_flagged: bool,
+    paper_grade: bool,
+    condition_completed: bool,
+    retries_so_far: int,
+    max_code_bug_retries: int,
+    max_noise_retries: int,
+) -> bool:
+    """P0-2-B (/stress GRL audit 2026-05-20, user Q2=A): pure decision — may the
+    watchdog delete + retry this error episode?
+
+    INVARIANT (paper-killer guard): ``paper_grade=True`` ⇒ ALWAYS False. A
+    canonical run must never have a failed attempt erased + replaced by a later
+    successful one (denominator surgery; mode/site/backend-correlated — B0 proxy
+    transient errors > B1/B2 local → asymmetric SR inflation). Under paper_grade
+    the halt/quarantine authority belongs to the runner M1 PaperGradeAbortError
+    + the Gate 8 quarantine registry, NOT to silent auto-clean. The auto-clean
+    retry path stays available only for dev / non-paper-grade iteration.
+
+    Mirrors the historical inline predicate exactly for non-paper-grade: only
+    ``error(...)`` non-``evaluator`` reasons retry; ``needs_reevaluation``
+    (quarantine_flagged) and post-aggregation (condition_completed) disable it;
+    ``error(code_bug)`` gets ``max_code_bug_retries`` budget, every other noise
+    bucket gets ``max_noise_retries``.
+    """
+    if not reason.startswith("error("):
+        return False
+    if reason == "error(evaluator)":
+        return False
+    if quarantine_flagged:        # P1-10-B: respect needs_reevaluation field
+        return False
+    if paper_grade:               # P0-2-B: no canonical denominator surgery
+        return False
+    if condition_completed:       # post-aggregation delete would desync
+        return False
+    if reason == "error(code_bug)":
+        return retries_so_far < max_code_bug_retries
+    # remaining error(...) non-evaluator, non-code_bug = noise bucket
+    return retries_so_far < max_noise_retries
+
+
 def _classify_error_string(err_str: str) -> Optional[str]:
     """B-763: substring-match raw error string into a noise category, or None
     if no match (caller falls through to `error(code_bug)`).
@@ -1840,6 +1883,19 @@ def main() -> int:
                 # once aggregated, deleting episodes would create inconsistency.
                 MAX_CODE_BUG_RETRIES = 2
                 MAX_NOISE_RETRIES = 3
+                # P0-2-B (/stress GRL audit 2026-05-20, user Q2=A): paper-grade
+                # canonical runs MUST NOT let the watchdog delete+retry an error
+                # episode — that is denominator surgery (a failed attempt erased
+                # + replaced by a later success; mode/site/backend-correlated:
+                # B0 proxy transient errors > B1/B2 local → asymmetric SR
+                # inflation, a paper killer). Under P79_PAPER_GRADE=1 the
+                # watchdog PRESERVES the episode + alerts; halt/quarantine
+                # authority belongs to the runner M1 PaperGradeAbortError + the
+                # Gate 8 quarantine registry, not to silent auto-clean. The
+                # auto-clean retry path stays available for dev / non-paper-grade
+                # iteration. Supersedes the old "auto-clean = paper-grade 100%
+                # pure" framing (memory reference_watchdog_protocol updated).
+                _watchdog_paper_grade = os.environ.get("P79_PAPER_GRADE", "0") == "1"
                 condition_completed = (condition_dir / "condition_summary_v2.json").exists()
                 retry_key = f"{condition_id}/{site}_task_{task_id}"
                 retries_so_far = error_retry_counts.get(retry_key, 0)
@@ -1914,16 +1970,50 @@ def main() -> int:
                             f"raised (continuing): {_reg_exc}"
                         )
                 is_noise = reason.startswith("error(") and reason != "error(evaluator)" and reason != "error(code_bug)"
-                can_retry = (
-                    reason.startswith("error(")
-                    and reason != "error(evaluator)"
-                    and not quarantine_flagged  # P1-10-B: respect needs_reevaluation field
-                    and not condition_completed
-                    and (
-                        (reason == "error(code_bug)" and retries_so_far < MAX_CODE_BUG_RETRIES)
-                        or (is_noise and retries_so_far < MAX_NOISE_RETRIES)
-                    )
+                # P0-2-B (/stress GRL audit 2026-05-20, user Q2=A): decision
+                # extracted to module-level pure `_can_auto_retry` so the
+                # paper-killer invariant (paper_grade ⇒ never delete+retry) is
+                # unit-testable. _watchdog_paper_grade flows in as `paper_grade`.
+                can_retry = _can_auto_retry(
+                    reason,
+                    quarantine_flagged=quarantine_flagged,
+                    paper_grade=_watchdog_paper_grade,
+                    condition_completed=condition_completed,
+                    retries_so_far=retries_so_far,
+                    max_code_bug_retries=MAX_CODE_BUG_RETRIES,
+                    max_noise_retries=MAX_NOISE_RETRIES,
                 )
+                # P0-2-B (/stress GRL audit 2026-05-20, user Q2=A): explicit
+                # paper-grade preserve branch (parallel to quarantine_flagged
+                # above) so the suppression is observable, not a silent
+                # can_retry=False. An error episode under P79_PAPER_GRADE=1 is
+                # kept on disk + alerted; the runner M1 abort + Gate 8 own the
+                # halt decision. retries_so_far is NOT incremented (no lineage
+                # surgery).
+                if (
+                    _watchdog_paper_grade
+                    and reason.startswith("error(")
+                    and reason != "error(evaluator)"
+                    and not quarantine_flagged
+                    and not condition_completed
+                ):
+                    print(
+                        f"[watchdog][PAPER-GRADE-PRESERVED] task {task_id} "
+                        f"({reason}) — auto-retry/delete SUPPRESSED under "
+                        f"P79_PAPER_GRADE=1 (P0-2-B: no denominator surgery). "
+                        f"Episode preserved on disk; runner M1 abort + Gate 8 "
+                        f"hold halt/quarantine authority."
+                    )
+                    if args.ntfy_topic:
+                        _post_ntfy(
+                            args.ntfy_topic,
+                            f"P79 PAPER-GRADE ERROR task {task_id}",
+                            f"run_id={run_id}\n{condition_id} task {task_id}\n"
+                            f"{reason} — preserved (no auto-clean under "
+                            f"paper-grade); investigate + classify via "
+                            f"quarantine_registry, then explicit re-fire.",
+                            priority="high",
+                        )
                 if reason.startswith("error(") and not condition_completed and not can_retry:
                     # Persistent code_bug — exhausted retries, notify and keep
                     print(

@@ -205,6 +205,30 @@ class ExperimentRunner:
 
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
+        # P0-1-AB (/stress GRL audit 2026-05-20, user Q1=A): paper_grade XOR
+        # diagnostic_replay hard block — fires BEFORE any setup so a config
+        # contradiction can never produce a single artifact (placed ahead of the
+        # B-1407 mock-env check + the diagnostic_controls / baseline_retry
+        # hard-fails below; same "paper_grade forbids X" family). diagnostic_replay
+        # routes output to the non-canonical results/diagnostic_replay/ tree,
+        # stamps every episode sr_excluded=True, AND suppresses the M1
+        # PaperGradeAbortError (`and not self.diagnostic_replay`). A leaked
+        # P79_DIAGNOSTIC_REPLAY=1 env would therefore silently turn a paper-grade
+        # fire into zero-canonical-data + no fail-closed abort — operator believes
+        # canonical, produces nothing in SR. Only queue_diagnostic_replay.sh
+        # (no paper_grade) may enable diagnostic replay; the queue layer has a
+        # mirror env reject for defense-in-depth.
+        if bool(cfg.get("paper_grade", False)) and bool(cfg.get("diagnostic_replay", False)):
+            raise RuntimeError(
+                "paper_grade=True forbids diagnostic_replay=True. Diagnostic "
+                "replay output is non-canonical (results/diagnostic_replay/) + "
+                "sr_excluded=True on every episode + suppresses the M1 "
+                "fail-closed quarantine abort — a paper-grade fire under this "
+                "flag silently produces zero canonical SR data and loses the "
+                "fail-closed guard. Unset P79_DIAGNOSTIC_REPLAY / "
+                "diagnostic_replay for a canonical fire, or remove paper_grade "
+                "and use queue_diagnostic_replay.sh for a diagnostic run."
+            )
         self.output_root = resolve_output_root(cfg)
         self.phase = str(cfg["experiment"]["phase"]).lower()
         self.seeds = _parse_seeds(cfg["experiment"]["seed"])

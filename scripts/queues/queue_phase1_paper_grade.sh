@@ -86,6 +86,22 @@ cd "${REPO_DIR}"
 # B-340 hard-block reachable, (c) B-340 RuntimeError fail-fast at init.
 export P79_PAPER_GRADE=1
 
+# P0-1-AB (/stress GRL audit 2026-05-20, user Q1=A): paper_grade XOR
+# diagnostic_replay — queue-layer mirror of the runner hard block. A leaked
+# P79_DIAGNOSTIC_REPLAY / QUARANTINE_DIAGNOSTIC_REPLAY env (e.g. left exported
+# from a queue_diagnostic_replay.sh session) would route this canonical fire to
+# results/diagnostic_replay/ + sr_excluded=True + suppress the M1 abort —
+# silent zero-canonical-data waste. Fail BEFORE launch. Only
+# queue_diagnostic_replay.sh (no P79_PAPER_GRADE) may set these.
+if [ -n "${P79_DIAGNOSTIC_REPLAY:-}" ] || [ -n "${QUARANTINE_DIAGNOSTIC_REPLAY:-}" ]; then
+  echo "[queue_phase1_paper_grade] FATAL: P79_PAPER_GRADE=1 is incompatible with" >&2
+  echo "  P79_DIAGNOSTIC_REPLAY=${P79_DIAGNOSTIC_REPLAY:-<unset>} /" >&2
+  echo "  QUARANTINE_DIAGNOSTIC_REPLAY=${QUARANTINE_DIAGNOSTIC_REPLAY:-<unset>}." >&2
+  echo "  Diagnostic replay is non-canonical (sr_excluded + M1 abort suppressed)." >&2
+  echo "  Unset both for a canonical fire, or use queue_diagnostic_replay.sh." >&2
+  exit 2
+fi
+
 # B-673 (/stress A1.14 Chunk a P0-2, Claude+codex 2-AI OOB AB, 2026-05-17):
 # orchestrator must enforce paper-grade target host (A100 self-hosted) BEFORE
 # running gates. Header line 20-26 advertises "A100 SSH connectivity verified"
