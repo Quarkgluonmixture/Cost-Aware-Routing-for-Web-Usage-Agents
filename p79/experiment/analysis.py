@@ -731,8 +731,15 @@ def _analyze_condition(
     step_rows: List[Dict[str, Any]],
     phase: str,
     run_dir: Optional[Path] = None,
+    partial: bool = False,
 ) -> None:
-    """Generate analysis for a single condition into analysis/<cond_id>/."""
+    """Generate analysis for a single condition into analysis/<cond_id>/.
+
+    `partial=True` marks a synthesized cell (no condition_summary_v2.json;
+    rebuilt from condition_meta + episode summaries). Such a cell gets a
+    lightweight stub session_summary.json instead of full per-condition
+    plots/tables/CIs — those would be misleading on partial data (B-659).
+    """
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import pandas as pd  # type: ignore
@@ -749,6 +756,32 @@ def _analyze_condition(
         _f.unlink(missing_ok=True)
     for _f in tables_dir.glob("*.csv"):
         _f.unlink(missing_ok=True)
+
+    # B-659 (/stress A1.6b): partial/synthesized cell → emit stub + skip full
+    # analysis. Downstream cross-condition plotters already hatch `_synthesized`
+    # rows (B-179); this stamps the per-condition artifact too so a reader never
+    # mistakes partial-cell numbers for a completed run.
+    if partial:
+        with open(out_dir / "session_summary.json", "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "condition_id": cond_id,
+                    "phase": phase,
+                    "partial": True,
+                    "skip_reason": (
+                        "B-659: synthesized partial cell (no "
+                        "condition_summary_v2.json; rebuilt from condition_meta + "
+                        "episode summaries). Per-condition analysis skipped — full "
+                        "plots/tables/CIs on partial data would mislead."
+                    ),
+                    "episode_count": len(ep_rows),
+                    "step_count": len(step_rows),
+                },
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
+        return
 
     ep_df = pd.DataFrame(ep_rows)
     step_df = pd.DataFrame(step_rows)
@@ -1231,6 +1264,13 @@ def _compute_statistical_tests(
                     continue
 
                 pair_key = f"{cid_a}_vs_{cid_b}"
+                # B-651 Holm sub-family identifier for this pair. Bound here so
+                # the three flat_rows.append() sites below (McNemar / paired-
+                # bootstrap-lift / SR-Wilcoxon) can stamp it. (Regression fix:
+                # commit b72a3e7 added _cell_key() + the three `cell_key` usages
+                # but omitted this assignment → NameError crashed analyze_run on
+                # any ≥2-condition run since 2026-05-18.)
+                cell_key = _cell_key(cid_a, cid_b)
 
                 # McNemar
                 if {"success_a", "success_b"}.issubset(merged.columns):
@@ -1455,25 +1495,33 @@ def _compute_statistical_tests(
             out[src_j] = adj[slot]
         return out
 
-    # Group flat_rows by (test, metric) and apply Holm within each family.
+    # B-651: group flat_rows by (test, metric, cell_key) and apply Holm within
+    # each family. Cell-scoping the family (via `_cell_key` sub-family id, e.g.
+    # `intra_<site>_<baseline>` / `crossbaseline_...`) is the paper's stratified
+    # multiple-comparison design: each (site, model) cell's comparisons form an
+    # independent Holm family so family-wise error is controlled per-cell, not
+    # pooled across cells. (b72a3e7 added `_cell_key` + the `cell_key` column but
+    # left this grouping at (test, metric) — completing B-651 here.)
     if flat_rows:
         from collections import defaultdict as _dd
         families: Dict[Any, List[int]] = _dd(list)
         for idx, row in enumerate(flat_rows):
             test = row.get("test")
             metric = row.get("metric")
+            cell_key = row.get("cell_key")
             if test in ("mcnemar_exact", "wilcoxon_signed_rank") and row.get("p_value") is not None:
-                families[(test, metric)].append(idx)
+                families[(test, metric, cell_key)].append(idx)
             # rows with p_value=None (skipped) get holm_p=None automatically
         for family_key, idx_list in families.items():
             family_p = [flat_rows[i]["p_value"] for i in idx_list]
             family_holm = _holm_correct(family_p)
+            family_label = "_".join(str(p) for p in family_key if p is not None)
             for slot, i in enumerate(idx_list):
                 flat_rows[i]["p_value_holm"] = family_holm[slot]
                 flat_rows[i]["significant_05_holm"] = (
                     family_holm[slot] is not None and family_holm[slot] < 0.05
                 )
-                flat_rows[i]["holm_family"] = f"{family_key[0]}_{family_key[1]}"
+                flat_rows[i]["holm_family"] = family_label
                 flat_rows[i]["holm_family_m"] = len(idx_list)
         # rows that didn't enter a family (bootstrap_ci / skipped) get explicit None
         for row in flat_rows:
@@ -1485,7 +1533,7 @@ def _compute_statistical_tests(
         # Also stamp on the JSON side under a separate `holm` key for symmetry.
         results["holm_corrected"] = {
             "families": {
-                f"{k[0]}_{k[1]}": {
+                "_".join(str(p) for p in k if p is not None): {
                     "m": len(v),
                     "method": "holm-bonferroni step-down (within-family)",
                 }
@@ -1739,11 +1787,19 @@ def analyze_run(run_dir: str) -> Path:
 
     # --- Per-condition (per-session) analysis ---
     cond_ids = [row.get("condition_id") for row in condition_rows if row.get("condition_id")]
+    # B-659: conditions synthesized from condition_meta + episodes (no
+    # condition_summary_v2.json) are partial cells → stub instead of full analysis.
+    synth_cids = {
+        row.get("condition_id") for row in condition_rows if row.get("_synthesized")
+    }
     for cid in cond_ids:
         cond_analysis_dir = results_dir / cid
         cond_ep_rows = [r for r in episode_rows if r.get("condition_id") == cid]
         cond_step_rows = [r for r in step_rows if r.get("condition_id") == cid]
-        _analyze_condition(cid, cond_analysis_dir, cond_ep_rows, cond_step_rows, phase, run_dir=root)
+        _analyze_condition(
+            cid, cond_analysis_dir, cond_ep_rows, cond_step_rows, phase,
+            run_dir=root, partial=(cid in synth_cids),
+        )
 
     # --- Cross-condition overview ---
     if len(cond_ids) <= 1 and cond_df.empty:
@@ -1938,9 +1994,16 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
         if len(pivot_sorted) > 80:
             pivot_sorted = pivot_sorted.head(80)
         fig_h, ax_h = plt.subplots(figsize=(max(4, len(pivot.columns) * 2), max(6, len(pivot_sorted) * 0.15)))
-        heatmap_data = pivot_sorted.apply(pd.to_numeric, errors="coerce").fillna(-1).values.astype(float)
+        # B-650: mask N/A cells via np.ma.masked_invalid + cmap.set_bad gray so
+        # they render gray (matching the colorbar caption), NOT the bottom-of-
+        # scale red that fillna(-1) produced — that made N/A visually identical
+        # to 0=fail and contradicted the "gray=N/A" caption.
+        heatmap_raw = pivot_sorted.apply(pd.to_numeric, errors="coerce").values.astype(float)
+        heatmap_data = np.ma.masked_invalid(heatmap_raw)
+        cmap = plt.get_cmap("RdYlGn").copy()
+        cmap.set_bad("#cccccc")  # N/A → gray
         im = ax_h.imshow(heatmap_data, aspect="auto",
-                         cmap="RdYlGn", vmin=0, vmax=1, interpolation="nearest")
+                         cmap=cmap, vmin=0, vmax=1, interpolation="nearest")
         ax_h.set_xticks(range(len(pivot_sorted.columns)))
         ax_h.set_xticklabels(pivot_sorted.columns, rotation=30, ha="right", fontsize=9)
         ax_h.set_ylabel(f"Task ID (top {len(pivot_sorted)})")
@@ -2129,6 +2192,23 @@ def _plot_phase2(cond_df, plots_dir: Path, tables_dir: Path, reports_dir: Path) 
 
     fixed = plot_df[plot_df["condition_id"] == "phase2_fixed_best"]
     routed = plot_df[plot_df["condition_id"] == "phase2_routed"]
+    # B-661 (/stress A1.6b): each sentinel condition must match ≤1 row. >1 means
+    # cross-site / cross-vintage contamination in the pool (e.g. two sites'
+    # phase2_fixed_best pooled together) — the `.iloc[0]` below would silently
+    # pick an arbitrary row and emit a wrong-cell net-saving number. Fail loud so
+    # the caller filters to a single (site, model) cell first.
+    if len(fixed) > 1:
+        raise ValueError(
+            f"B-661 phase2_fixed_best matched {len(fixed)} rows — expected ≤1. "
+            "Cross-site/cross-vintage contamination in the condition pool; "
+            "filter to a single (site, model) cell before _plot_phase2."
+        )
+    if len(routed) > 1:
+        raise ValueError(
+            f"B-661 phase2_routed matched {len(routed)} rows — expected ≤1. "
+            "Cross-site/cross-vintage contamination in the condition pool; "
+            "filter to a single (site, model) cell before _plot_phase2."
+        )
     if not fixed.empty and not routed.empty:
         # B-177 (/stress A1.4b-i codex B1, OOB): runner cost decomposition is
         # `total = model + router_overhead + obs_prepare` (see

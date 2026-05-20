@@ -106,21 +106,26 @@ def test_dialog_handler_attached_at_context_level():
 
 
 # ---------------------------------------------------------------------------
-# B-159 — asyncio loop running → RuntimeError loud
+# B-159 / B-1581 v2 — stale asyncio loop detect-and-recover
 # ---------------------------------------------------------------------------
 
 
-def test_lazy_init_raises_on_running_asyncio_loop():
-    """B-159: silent passthrough (pre-fix) caused cryptic "Sync API inside the
-    asyncio loop" RuntimeError mid-init. Fail loud with actionable message."""
+def test_lazy_init_recovers_from_stale_asyncio_loop():
+    """B-159 originally fail-loud-raised on an active asyncio loop ("Sync API
+    inside the asyncio loop" cryptic mid-init RuntimeError). That strategy was
+    SUPERSEDED by B-1581 v2 (/stress A2.11 P0-2, 2026-05-18 user Q1=A): instead
+    of raising, both _lazy_init() and reset() now DETECT a stale asyncio loop
+    (a VWA browser_env/async_envs asyncio.run leak) via get_running_loop() and
+    RECOVER — close the stale loop/env and install a fresh one. Both code paths
+    must carry the detection (the suspected red 99s busy-wait root cause)."""
     src = (REPO_ROOT / "p79/envs/vwa_wrapper.py").read_text(encoding="utf-8")
-    # Two spots: _lazy_init + reset
-    assert src.count("detected an active asyncio loop") >= 2, (
-        "B-159 fail-loud raise missing in either _lazy_init or reset()"
+    # Two spots: _lazy_init + reset both detect the stale loop.
+    assert src.count("stale asyncio loop bound to thread") >= 2, (
+        "B-1581 v2 stale-loop detection missing in either _lazy_init or reset()"
     )
-    # The raise message guides the caller to subprocess isolation
-    assert "subprocess" in src, (
-        "B-159 raise message should suggest subprocess isolation"
+    # Detection mechanism: probe asyncio.get_running_loop().
+    assert "get_running_loop()" in src, (
+        "B-1581 v2 must probe asyncio.get_running_loop() to detect a stale loop"
     )
 
 

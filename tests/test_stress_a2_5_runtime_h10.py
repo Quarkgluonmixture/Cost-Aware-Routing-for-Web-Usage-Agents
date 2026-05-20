@@ -4,8 +4,10 @@ Invariants tested:
   1. learned_router.extract_raw_features schema (5 numeric + 15 binary, no site/capability)
   2. learned_router.build_runtime_feature_vector applies selected_mask correctly
   3. learned_router.predict_mode_fold_aware caches per-cell artifacts lazily
-  4. learned_router.predict_mode_fold_aware fallback when fold_assignment missing task_id
-  5. learned_router.predict_mode_fold_aware fallback when artifacts missing
+  4. learned_router.predict_mode_fold_aware hard-fails (LearnedRouterArtifactError)
+     when fold_assignment is missing task_id  [B-1640 / A2.10 P0-3-B: no silent
+     phantom_som fallback for infrastructure errors]
+  5. learned_router.predict_mode_fold_aware hard-fails when fold artifacts missing
   6. learned_router.INTENT_REGEX = 14 banks (must match Chunk A)
   7. aggregate_h10_pareto.fe_inverse_variance_pool basic correctness
   8. aggregate_h10_pareto.check_pareto_non_dominance returns valid fraction
@@ -30,6 +32,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from p79.policies.learned_router import (  # noqa: E402
     INTENT_REGEX,
+    LearnedRouterArtifactError,
     N_FOLDS,
     SAFE_FALLBACK_MODE,
     build_runtime_feature_vector,
@@ -144,7 +147,11 @@ def test_build_runtime_feature_vector_dim_mismatch_raises():
 # ── Invariant 3-5: predict_mode_fold_aware caching + fallback ─────────────
 
 
-def test_predict_mode_fold_aware_fallback_when_task_not_in_fold_assignment():
+def test_predict_mode_fold_aware_raises_when_task_not_in_fold_assignment():
+    """B-1640 / A2.10 P0-3-B: a task absent from fold_assignment is an
+    infrastructure error (training pipeline didn't cover it), NOT a signal-
+    strength fallback — predict_mode_fold_aware must hard-fail loud, never
+    silently route to phantom_som."""
     with tempfile.TemporaryDirectory() as td:
         td_path = Path(td)
         # Write empty fold_assignment
@@ -154,19 +161,20 @@ def test_predict_mode_fold_aware_fallback_when_task_not_in_fold_assignment():
         }))
         rf = extract_raw_features("test", False, 0, 0, 0, 0)
         cache: dict = {}
-        mode, diag = predict_mode_fold_aware(
-            cell_id="test_cell",
-            task_id=999,
-            artifacts_dir=td_path,
-            cache=cache,
-            raw_features=rf,
-        )
-        assert mode == SAFE_FALLBACK_MODE
-        assert diag["fallback_fired"] is True
-        assert diag["fallback_reason"] == "task_id_not_in_fold_assignment"
+        with pytest.raises(LearnedRouterArtifactError, match="not in fold_assignment"):
+            predict_mode_fold_aware(
+                cell_id="test_cell",
+                task_id=999,
+                artifacts_dir=td_path,
+                cache=cache,
+                raw_features=rf,
+            )
 
 
-def test_predict_mode_fold_aware_fallback_when_pipeline_missing():
+def test_predict_mode_fold_aware_raises_when_pipeline_missing():
+    """B-1640 / A2.10 P0-3-B: missing fold artifacts (vectorizer / selected_idx /
+    LR pipeline) is infrastructure-level corruption — hard-fail loud, never
+    silent phantom_som fallback."""
     with tempfile.TemporaryDirectory() as td:
         td_path = Path(td)
         # Fold assignment maps task 1 to fold 0
@@ -177,21 +185,22 @@ def test_predict_mode_fold_aware_fallback_when_pipeline_missing():
         # No vectorizer / selected_idx / pipeline files written
         rf = extract_raw_features("test", False, 0, 0, 0, 0)
         cache: dict = {}
-        mode, diag = predict_mode_fold_aware(
-            cell_id="test_cell",
-            task_id=1,
-            artifacts_dir=td_path,
-            cache=cache,
-            raw_features=rf,
-        )
-        assert mode == SAFE_FALLBACK_MODE
-        assert diag["fallback_fired"] is True
-        assert diag["fallback_reason"] == "missing_fold_artifact"
-        assert diag["fold_k_used"] == 0
+        with pytest.raises(LearnedRouterArtifactError, match="missing artifact"):
+            predict_mode_fold_aware(
+                cell_id="test_cell",
+                task_id=1,
+                artifacts_dir=td_path,
+                cache=cache,
+                raw_features=rf,
+            )
 
 
 def test_predict_mode_fold_aware_caches_artifacts():
-    """Second call should reuse cache without re-reading files."""
+    """Per-cell fold_assignment is cached on first touch and reused on the next
+    call without re-reading files. The cache is populated *before* the B-1640
+    missing-artifact hard-fail raises, so the caching invariant holds even when
+    the prediction itself aborts (here both calls raise on missing fold pickles —
+    we assert the same fold_assignment object is reused across them)."""
     with tempfile.TemporaryDirectory() as td:
         td_path = Path(td)
         (td_path / "test_cell_fold_assignment.json").write_text(json.dumps({
@@ -199,13 +208,16 @@ def test_predict_mode_fold_aware_caches_artifacts():
         }))
         rf = extract_raw_features("test", False, 0, 0, 0, 0)
         cache: dict = {}
-        # First call populates cache (will fallback due to missing artifacts)
-        predict_mode_fold_aware("test_cell", 1, td_path, cache, rf)
+        # First call populates cache, then hard-fails on missing fold artifacts.
+        with pytest.raises(LearnedRouterArtifactError, match="missing artifact"):
+            predict_mode_fold_aware("test_cell", 1, td_path, cache, rf)
         assert "test_cell" in cache
         first_fa = cache["test_cell"]["fold_assignment"]
-        # Second call reuses cache
-        predict_mode_fold_aware("test_cell", 2, td_path, cache, rf)
-        # Cache structure unchanged
+        # Second call reuses the cached fold_assignment (no re-read) before it
+        # too hard-fails on the same missing artifacts.
+        with pytest.raises(LearnedRouterArtifactError, match="missing artifact"):
+            predict_mode_fold_aware("test_cell", 2, td_path, cache, rf)
+        # Cache structure unchanged — same object identity proves reuse.
         assert cache["test_cell"]["fold_assignment"] is first_fa
 
 

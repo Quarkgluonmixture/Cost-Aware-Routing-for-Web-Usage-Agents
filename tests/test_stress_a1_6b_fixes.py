@@ -226,6 +226,12 @@ def test_b659_partial_cell_skip_emits_stub(tmp_path):
     pytest.importorskip("pandas")
     from p79.experiment.analysis import analyze_run
 
+    # Derive the episode summary from EPISODE_SUMMARY_V2_DEFAULTS so it carries
+    # every paper-grade key (incl. total_latency_minus_retry_ms, which
+    # aggregate_condition_metrics requires present) and won't drift on future
+    # schema additions.
+    from conftest import complete_episode_summary
+
     cond = tmp_path / "phase1_dom_router_0"
     eps = cond / "episodes"
     eps.mkdir(parents=True)
@@ -236,7 +242,7 @@ def test_b659_partial_cell_skip_emits_stub(tmp_path):
         "som_on": False, "observation_mode": "dom", "router_on": False,
         "modules": {},
     }))
-    (eps / "1_summary_v2.json").write_text(json.dumps({
+    (eps / "1_summary_v2.json").write_text(json.dumps(complete_episode_summary(**{
         "schema_version": "2.0", "run_id": "r1",
         "condition_id": "phase1_dom_router_0",
         "benchmark": "vwa", "benchmark_site": "classifieds",
@@ -249,7 +255,7 @@ def test_b659_partial_cell_skip_emits_stub(tmp_path):
         "escalation_count": 0, "trigger_distribution": {},
         "benchmark_noise": False, "benchmark_noise_category": None,
         "artifacts_dir": "",
-    }))
+    })))
     (eps / "1_steps_v2.jsonl").write_text('{"step_idx": 0, "x": 1}\n')
 
     analyze_run(str(tmp_path))

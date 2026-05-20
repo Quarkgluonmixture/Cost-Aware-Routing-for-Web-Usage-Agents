@@ -166,18 +166,23 @@ def test_b682_runner_main_has_try_except_around_lr_dispatch():
     assert "_lr_fallback_count" in src
     assert "safe_fallback_target" in src
     # Confirm try/except actually wraps the LR dispatch (the catastrophic path).
-    learned_idx = src.index('if condition.observation_mode == "learned":')
-    try_idx = src.index("try:", learned_idx)
-    except_idx = src.index("except Exception as exc:", try_idx)
     # Post-Chunk-C: predict_mode_fold_aware is the dispatch fn; pre-Chunk-C: load_lr_pipeline.
-    # Use trailing "(" to match call site, not comment references.
-    if "predict_mode_fold_aware(" in src:
-        dispatch_fn = "predict_mode_fold_aware("
-    else:
-        dispatch_fn = "load_lr_pipeline("
-    load_idx = src.index(dispatch_fn, learned_idx)
+    # Use trailing "(" to match the call site, not import/comment references.
+    dispatch_fn = (
+        "predict_mode_fold_aware(" if "predict_mode_fold_aware(" in src
+        else "load_lr_pipeline("
+    )
+    # Anchor on the actual dispatch CALL. Post-diagnostic-replay refactor there
+    # are multiple `observation_mode == "learned"` blocks (a downstream
+    # _lr_fallback_count reporting block precedes the dispatch); rfind the
+    # nearest learned-mode guard *before* the call so try/except bracket the
+    # real dispatch, not an unrelated earlier block.
+    load_idx = src.index(dispatch_fn)
+    learned_idx = src.rindex('if condition.observation_mode == "learned":', 0, load_idx)
+    try_idx = src.index("try:", learned_idx)
+    except_idx = src.index("except Exception as exc:", load_idx)
     assert try_idx < load_idx < except_idx, (
-        f"{dispatch_fn} must be inside the try block, not outside"
+        f"{dispatch_fn} must be inside the try/except block, not outside"
     )
 
 

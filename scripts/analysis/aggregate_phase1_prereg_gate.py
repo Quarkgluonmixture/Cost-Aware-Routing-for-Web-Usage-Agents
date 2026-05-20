@@ -308,10 +308,31 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
     out_csv.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _json_default(o):
+    """JSON fallback for numpy scalars/arrays the gate payload carries.
+
+    `compute_cell()` stows the raw bootstrap distribution under `boot_pp`
+    (an `np.float32` ndarray) and several stats arrive as `np.floating` /
+    `np.integer`; the stdlib encoder rejects all of these. Convert to native
+    Python so `write_json` round-trips losslessly.
+    """
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    if isinstance(o, np.integer):
+        return int(o)
+    if isinstance(o, np.floating):
+        return float(o)
+    if isinstance(o, np.bool_):
+        return bool(o)
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+
+
 def write_json(payload: Dict, out_json: Path) -> None:
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
-                        encoding="utf-8")
+    out_json.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, default=_json_default) + "\n",
+        encoding="utf-8",
+    )
 
 
 def write_md(payload: Dict, out_md: Path) -> None:
