@@ -367,6 +367,16 @@ class EpisodeSummaryV2:
     eval_goto_timeout: Optional[bool] = None
     eval_source_agent_url: Optional[str] = None
     eval_target_url: Optional[str] = None
+    # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-replay provenance.
+    # diagnostic_replay=True marks an episode produced by the targeted
+    # `--diagnostic-replay` runner mode (NOT a canonical paper-grade fire).
+    # sr_excluded=True forces canonical SR aggregators to skip the episode —
+    # defense-in-depth BEYOND the non-canonical results/diagnostic_replay/
+    # output path, enforced at the load chokepoint
+    # `load_episode_summary_strict(reject_sr_excluded=True)`. Always-bool
+    # (mirrors needs_reevaluation / trajectory_incomplete): canonical = False.
+    diagnostic_replay: bool = False
+    sr_excluded: bool = False
     state_change_reason_distribution: Dict[str, int] = field(default_factory=dict)
     checklist_completion_rate: Optional[float] = None
     checklist_failed_items: Optional[int] = None
@@ -756,6 +766,10 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     "eval_goto_timeout",
     "eval_source_agent_url",
     "eval_target_url",
+    # Fire-6 RCA Stage C2 diagnostic-replay provenance (always stamped on
+    # every episode; canonical fires = False, --diagnostic-replay = True).
+    "diagnostic_replay",
+    "sr_excluded",
 })
 
 
@@ -823,6 +837,9 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "eval_goto_timeout": (bool, type(None)),
     "eval_source_agent_url": (str, type(None)),
     "eval_target_url": (str, type(None)),
+    # Fire-6 RCA Stage C2 diagnostic-replay provenance (always-bool).
+    "diagnostic_replay": (bool,),
+    "sr_excluded": (bool,),
     "verified_substrate_noise": (bool, type(None)),
     # P1-17-C* Phase 2 attempt-lineage (Sensitivity-only column; all None
     # until checkpoint-restore infrastructure lands).

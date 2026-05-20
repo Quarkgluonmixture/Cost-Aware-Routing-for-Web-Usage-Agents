@@ -72,6 +72,9 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "eval_goto_timeout": None,
     "eval_source_agent_url": None,
     "eval_target_url": None,
+    # Fire-6 RCA Stage C2 diagnostic-replay provenance (canonical = False).
+    "diagnostic_replay": False,
+    "sr_excluded": False,
     "artifacts_dir": "",
     # --- additions (optional, default-filled) ---
     "state_change_reason_distribution": {},  # original v2

@@ -190,6 +190,21 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     else:
         cfg.setdefault("paper_grade", False)
 
+    # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-replay mode flag.
+    # Mirrors the paper_grade env→yaml→default precedence. Source priority:
+    #   1. env P79_DIAGNOSTIC_REPLAY=1 (queue_diagnostic_replay.sh wrapper)
+    #   2. yaml/CLI top-level `diagnostic_replay: true`
+    #   3. default False (canonical fire / dev / mock)
+    # When True: resolve_output_root routes to results/diagnostic_replay/
+    # (non-canonical), the runner stamps every episode sr_excluded=True
+    # (canonical SR firewall) + suppresses the M1 quarantine abort. This is a
+    # task-scoped reproduction harness, NEVER a canonical fire path.
+    _diag_env = os.environ.get("P79_DIAGNOSTIC_REPLAY", "").strip().lower()
+    if _diag_env in ("1", "true", "yes", "on"):
+        cfg["diagnostic_replay"] = True
+    else:
+        cfg.setdefault("diagnostic_replay", False)
+
     experiment = cfg.setdefault("experiment", {})
     experiment.setdefault("name", "p79_experiment")
     experiment.setdefault("benchmark", "visualwebarena")
@@ -290,7 +305,17 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
 
 def resolve_output_root(cfg: Dict[str, Any]) -> Path:
     experiment = cfg["experiment"]
-    root = Path(experiment["output_root"]) / experiment["benchmark"] / experiment["phase"] / experiment["run_id"]
+    # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-replay output is
+    # NON-CANONICAL. It must NOT land under results/{benchmark}/{phase}/ where
+    # canonical aggregators glob (results/visualwebarena/phase1/...) — diagnostic
+    # episodes would otherwise be discoverable by paper §1 SR producers. Isolate
+    # to results/diagnostic_replay/<run_id>/. This is the FIRST line of defense;
+    # sr_excluded=True + load_episode_summary_strict(reject_sr_excluded=True) is
+    # the second (catches accidental dir merge / explicit mis-pointing).
+    if cfg.get("diagnostic_replay"):
+        root = Path(experiment["output_root"]) / "diagnostic_replay" / experiment["run_id"]
+    else:
+        root = Path(experiment["output_root"]) / experiment["benchmark"] / experiment["phase"] / experiment["run_id"]
     root.mkdir(parents=True, exist_ok=True)
     return root
 

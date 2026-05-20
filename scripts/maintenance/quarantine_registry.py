@@ -73,6 +73,15 @@ VALID_CLASSIFICATIONS = (
     "undecided",       # reviewer needs more data
 )
 
+# Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-scoped Gate 8 override
+# task-count cap. A diagnostic replay is targeted (a handful of tasks under
+# matched-temporal-context investigation, e.g. cls task 4 + 75); a canonical
+# fire enumerates a full site (0-233). Capping the override at a small task
+# count is one of FOUR independent guards (env flag + --diagnostic-replay flag
+# + non-canonical --output-path + task-scoped) that ALL must hold — so a leaked
+# QUARANTINE_DIAGNOSTIC_REPLAY env var alone can never bypass canonical Gate 8.
+DIAG_OVERRIDE_MAX_TASKS = 25
+
 
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -381,6 +390,52 @@ def _parse_task_range(spec: str) -> List[int]:
     return sorted(set(out))
 
 
+def _diagnostic_override_active(
+    args: argparse.Namespace, task_ids: List[int],
+) -> Tuple[bool, List[str]]:
+    """Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-scoped Gate 8
+    override decision. Returns (active, reasons_failed).
+
+    FAIL-CLOSED: the override is active ONLY if ALL FOUR independent guards
+    hold; any single failure keeps canonical Gate 8 in force. The guards
+    encode the user's STRICT constraint that this "must only work with
+    --diagnostic-replay, explicit --tasks, non-canonical output path, and
+    sr_excluded=True ... must not become a canonical Gate-8 bypass":
+
+      1. env QUARANTINE_DIAGNOSTIC_REPLAY=1 — operator intent (queue wrapper).
+      2. --diagnostic-replay CLI flag — a canonical queue's preflight call
+         never passes this, so a leaked env var alone is inert.
+      3. --output-path contains 'diagnostic_replay' — proves the run lands in
+         the non-canonical results/diagnostic_replay/ tree (NOT phase1). This
+         is also the runtime guarantee that every episode carries
+         sr_excluded=True (the runner forces it whenever diagnostic_replay is
+         on, which is what routes output here).
+      4. task list is non-empty AND <= DIAG_OVERRIDE_MAX_TASKS — diagnostic
+         replay is targeted; a full-site range (0-233) fails this guard.
+    """
+    reasons: List[str] = []
+    env_on = os.environ.get("QUARANTINE_DIAGNOSTIC_REPLAY", "").strip().lower() in (
+        "1", "true", "yes", "on",
+    )
+    if not env_on:
+        reasons.append("QUARANTINE_DIAGNOSTIC_REPLAY env not set to 1/true")
+    if not getattr(args, "diagnostic_replay", False):
+        reasons.append("--diagnostic-replay flag not passed")
+    out = getattr(args, "output_path", None) or ""
+    if "diagnostic_replay" not in out:
+        reasons.append(
+            f"--output-path not non-canonical (must contain 'diagnostic_replay'): {out!r}"
+        )
+    if not task_ids:
+        reasons.append("empty task list")
+    elif len(task_ids) > DIAG_OVERRIDE_MAX_TASKS:
+        reasons.append(
+            f"task list too large for diagnostic scope "
+            f"({len(task_ids)} > {DIAG_OVERRIDE_MAX_TASKS} cap)"
+        )
+    return (not reasons), reasons
+
+
 def _cmd_preflight(args: argparse.Namespace) -> int:
     task_ids = _parse_task_range(args.tasks)
     threshold = int(os.environ.get("QUARANTINE_HALT_THRESHOLD", args.halt_threshold))
@@ -395,6 +450,41 @@ def _cmd_preflight(args: argparse.Namespace) -> int:
         min_recurrent_fires=min_recurrent,
     )
     if should_halt:
+        # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-scoped override.
+        # Checked BEFORE the halt path. preflight_check() above stays pure (it
+        # returned the REAL blocking state); the override is an explicit,
+        # fail-closed CLI-layer decision so the gate logic remains honest +
+        # testable. When all four guards hold, the diagnostic replay proceeds
+        # on the SAME blocking tasks under matched-temporal-context — which is
+        # exactly how a cross_fire_recurrence (Rule 2) task like cls 75 gets
+        # the reproduce that unblocks it. Output is non-canonical + every
+        # episode sr_excluded=True, so this can NEVER touch paper §1 SR.
+        override_active, override_fail = _diagnostic_override_active(args, task_ids)
+        if override_active:
+            print(
+                f"[preflight G8 DIAGNOSTIC OVERRIDE] site={args.site}: "
+                f"{len(blocking)} blocking task(s) bypassed for diagnostic replay "
+                f"(env QUARANTINE_DIAGNOSTIC_REPLAY=1 + --diagnostic-replay + "
+                f"non-canonical output + {len(task_ids)} task(s) <= "
+                f"{DIAG_OVERRIDE_MAX_TASKS}). NON-CANONICAL, sr_excluded — "
+                f"NOT a paper-grade fire.",
+                file=sys.stderr,
+            )
+            for b in blocking:
+                print(
+                    f"  • OVERRIDDEN task {b['task_id']} [{b.get('rule')}]: "
+                    f"will run under matched-temporal-context diagnostic replay.",
+                    file=sys.stderr,
+                )
+            return 0
+        # --diagnostic-replay passed but override NOT granted → explain which
+        # guard failed (fail-closed), then fall through to the canonical halt.
+        if getattr(args, "diagnostic_replay", False):
+            print(
+                "[preflight G8] --diagnostic-replay passed but override NOT "
+                "granted (fail-closed): " + "; ".join(override_fail),
+                file=sys.stderr,
+            )
         # /stress 2026-05-20 P0-A2-Hub: surface dual-rule blocking. Rule 1
         # = unclassified count; Rule 2 = cross-fire recurrence (independent
         # of classification).
@@ -484,6 +574,17 @@ def main(argv: Optional[List[str]] = None) -> int:
                        help="task range e.g. '0-233' or '1,3,5' or '75'")
     p_pre.add_argument("--halt-threshold", type=int, default=1,
                        help="halt if any task has unclassified_count >= threshold (default 1)")
+    # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-scoped Gate 8 override.
+    # ALL of (env QUARANTINE_DIAGNOSTIC_REPLAY=1, this flag, non-canonical
+    # --output-path, task-scoped --tasks) must hold — fail-closed. NEVER a
+    # canonical bypass; canonical queue preflight calls omit these flags.
+    p_pre.add_argument("--diagnostic-replay", action="store_true",
+                       help="diagnostic-scoped Gate 8 override (requires "
+                            "QUARANTINE_DIAGNOSTIC_REPLAY=1 + non-canonical "
+                            "--output-path + <=25 tasks). NOT a canonical bypass.")
+    p_pre.add_argument("--output-path", default=None,
+                       help="output root path; for diagnostic override must "
+                            "contain 'diagnostic_replay'.")
     p_pre.set_defaults(func=_cmd_preflight)
 
     args = p.parse_args(argv)

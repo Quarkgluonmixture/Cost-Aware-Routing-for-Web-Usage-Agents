@@ -22,6 +22,26 @@ from p79.experiment.runner import ExperimentRunner  # noqa: E402
 from p79.utils.asyncio_workarounds import install_asyncio_target_closed_warning_filter  # noqa: E402
 
 
+def _parse_tasks(spec: str) -> list:
+    """Parse '4,75' or '0-9' or '7' into a sorted unique list of int task ids.
+
+    Fire-6 RCA Stage C2 (/stress 2026-05-20): shared form with
+    `quarantine_registry.py::_parse_task_range` so --diagnostic-replay --tasks
+    and the Gate 8 preflight accept identical range syntax.
+    """
+    out: list = []
+    for chunk in spec.split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        if "-" in chunk:
+            lo, hi = chunk.split("-", 1)
+            out.extend(range(int(lo), int(hi) + 1))
+        else:
+            out.append(int(chunk))
+    return sorted(set(out))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Unified experiment runner for P79")
     parser.add_argument("--config", required=True, help="Path to experiment YAML config")
@@ -29,6 +49,19 @@ def main() -> None:
     parser.add_argument("--phase", default=None, choices=["phase1", "phase2", "phase3"], help="Optional phase override")
     parser.add_argument("--max_steps", type=int, default=None, help="Optional max step override")
     parser.add_argument("--log_path", default=None, help="Path to the log file for this run (stored in run_meta.json)")
+    # Fire-6 RCA Stage C2 (/stress 2026-05-20): targeted diagnostic replay.
+    parser.add_argument(
+        "--diagnostic-replay", action="store_true",
+        help="NON-CANONICAL targeted diagnostic replay (requires --tasks). "
+             "Output → results/diagnostic_replay/; every episode sr_excluded=True; "
+             "M1 quarantine abort suppressed so all named tasks run + capture "
+             "forensics. NEVER a canonical fire.",
+    )
+    parser.add_argument(
+        "--tasks", default=None,
+        help="Comma/range task ids (e.g. '4,75' or '0-9'). REQUIRED with "
+             "--diagnostic-replay; ignored otherwise.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -52,6 +85,42 @@ def main() -> None:
         cfg["experiment"]["phase"] = args.phase
     if args.max_steps is not None:
         cfg.setdefault("runtime", {})["max_steps"] = args.max_steps
+
+    # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-replay wiring. Must
+    # run BEFORE ExperimentRunner(cfg) so resolve_output_root + load_tasks (both
+    # called in __init__) see the non-canonical flag + task whitelist.
+    if args.diagnostic_replay:
+        if not args.tasks:
+            parser.error(
+                "--diagnostic-replay requires --tasks (e.g. --tasks 4,75). "
+                "Diagnostic replay must be task-scoped — it is never a full fire."
+            )
+        task_ids = _parse_tasks(args.tasks)
+        if not task_ids:
+            parser.error(f"--tasks parsed to an empty list from {args.tasks!r}")
+        cfg["diagnostic_replay"] = True
+        task_cfg = cfg.setdefault("task", {})
+        sites = [s.lower() for s in task_cfg.get("include_sites", [])]
+        tid_map = task_cfg.setdefault("task_ids", {})
+        for site in sites:
+            tid_map[site] = task_ids
+        # Whitelist is authoritative for a diagnostic replay: do not silently
+        # drop a named task because it is tagged N/A (the operator asked for
+        # this exact task by id).
+        task_cfg["exclude_na_tasks"] = False
+        # Self-describing run_id (unless explicitly overridden) for the
+        # results/diagnostic_replay/<run_id>/ dir.
+        if not args.run_id:
+            site_tag = sites[0] if len(sites) == 1 else "multi"
+            cfg["experiment"]["run_id"] = (
+                f"diag_{site_tag}_{int(time.time())}_{os.getpid()}"
+            )
+        logging.info(
+            "DIAGNOSTIC REPLAY mode ON: tasks=%s sites=%s — NON-CANONICAL "
+            "output (results/diagnostic_replay/), sr_excluded=True, M1 abort "
+            "suppressed.",
+            task_ids, sites,
+        )
 
     runner = ExperimentRunner(cfg)
 

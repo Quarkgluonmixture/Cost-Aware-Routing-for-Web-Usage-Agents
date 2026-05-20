@@ -25,6 +25,7 @@ def load_episode_summary_strict(
     *,
     mode: StrictMode = "strict",
     reject_needs_reevaluation: bool = False,
+    reject_sr_excluded: bool = True,
 ) -> Optional[Dict[str, Any]]:
     """Load an episode summary JSON with paper-grade type-safety enforcement.
 
@@ -43,6 +44,19 @@ def load_episode_summary_strict(
             as `success=False` failures. Default False preserves legacy
             consumer semantics where quarantined rows are tolerated as
             transparency input.
+        reject_sr_excluded: Fire-6 RCA Stage C2 (/stress 2026-05-20). When True
+            (DEFAULT — note this differs from reject_needs_reevaluation),
+            an episode carrying `sr_excluded=True` (produced by the
+            `--diagnostic-replay` runner mode) is treated as load failure.
+            Unlike quarantine rows, a diagnostic-replay episode has NO
+            legitimate canonical-SR inclusion scenario, so the firewall is
+            fail-safe-by-default: every canonical SR producer routing through
+            this loader excludes diagnostic episodes with zero per-caller
+            changes, and a future aggregator inherits the firewall for free.
+            Pre-C2 archive rows lack the key (→ False → not rejected), so
+            existing canonical data is unaffected. The diagnostic analysis
+            tooling that WANTS to read its own episodes must pass
+            `reject_sr_excluded=False` explicitly.
 
     Returns:
         dict on success, None on lenient-mode soft failure.
@@ -114,6 +128,32 @@ def load_episode_summary_strict(
         if mode == "strict":
             raise ValueError(msg)
         logger.warning("B-542 load_episode_summary_strict[lenient] %s", msg)
+        return None
+    # C2 (Fire-6 RCA Stage C2, /stress 2026-05-20): diagnostic-replay SR
+    # firewall — second line of defense beyond the non-canonical
+    # results/diagnostic_replay/ output path. sr_excluded=True episodes
+    # (produced by `--diagnostic-replay`) can NEVER enter a canonical SR
+    # universe. Type-guarded BEFORE bool coercion (B-734 lineage): a
+    # JSON `"sr_excluded": "false"` string is Python-truthy and would slip
+    # a diagnostic episode INTO paper §1 if naively coerced — fail-loud.
+    sre_raw = payload.get("sr_excluded", False)
+    if not isinstance(sre_raw, bool):
+        sre_msg = (
+            f"C2 sr_excluded type mismatch in {path}: "
+            f"got {type(sre_raw).__name__}={sre_raw!r}, expected bool"
+        )
+        if mode == "strict":
+            raise ValueError(sre_msg)
+        logger.warning("C2 load_episode_summary_strict[lenient] %s", sre_msg)
+        return None
+    if reject_sr_excluded and sre_raw:
+        msg = (
+            f"C2 diagnostic-replay episode (sr_excluded=True) rejected by "
+            f"canonical aggregator at {path}: task_id={payload.get('task_id')!r}"
+        )
+        if mode == "strict":
+            raise ValueError(msg)
+        logger.warning("C2 load_episode_summary_strict[lenient] %s", msg)
         return None
     return payload
 

@@ -232,6 +232,15 @@ class ExperimentRunner:
         self.state_change_cfg = cfg.get("state_change", {})
         self.energy_tracker = LightweightEnergyTracker(cfg.get("metrics", {}).get("energy", {}))
         self.diagnostic_controls = cfg.get("diagnostic_controls", {}) or {}
+        # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-replay mode.
+        # When True (set by --diagnostic-replay CLI flag / queue wrapper +
+        # config.normalize), every episode is stamped sr_excluded=True (the
+        # canonical SR firewall) and the M1 quarantine fail-closed abort
+        # (~line 1821) is SUPPRESSED so a targeted replay runs ALL requested
+        # tasks (e.g. 4 AND 75), capturing per-task forensics instead of
+        # aborting at the first quarantine. NEVER set on a canonical fire —
+        # output also routes to non-canonical results/diagnostic_replay/.
+        self.diagnostic_replay = bool(cfg.get("diagnostic_replay", False))
         # B-486 (/stress A1.25 GRL Chunk 3 P0-2-C* gemini OOB, 2026-05-17):
         # paper_grade hard-block on diagnostic action controls (mirror B-340
         # GLM fallback hard-block pattern). Pre-fix `_anti_repeat_control` +
@@ -1713,6 +1722,9 @@ class ExperimentRunner:
                 unverified_timeout_event=_is_timeout,
                 timeout_callsite=_timeout_callsite,
                 verified_substrate_noise=None,
+                # Fire-6 RCA Stage C2: diagnostic-replay provenance (error path).
+                diagnostic_replay=self.diagnostic_replay,
+                sr_excluded=self.diagnostic_replay,
                 artifacts_dir=str(condition_dir),
                 error=str(exc),
                 # B-487 (/stress A1.5b Phase 1 P0-3-B): Option K anchors —
@@ -1818,7 +1830,20 @@ class ExperimentRunner:
         # AND the existing exception-path `needs_reevaluation=True` set at
         # the EpisodeSummaryV2 constructor (line 1605, B-486).
         paper_grade = bool(self.cfg.get("paper_grade", False))
-        if paper_grade and bool(summary.get("needs_reevaluation", False)):
+        # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-replay suppresses
+        # the M1 fail-closed abort. A targeted `--diagnostic-replay --tasks 4,75`
+        # must run BOTH tasks and capture per-task forensics (C1 isolation
+        # success/failure proof + `_dump_eval_timeout_forensic`); aborting at
+        # task 4's first quarantine would never reach task 75. The error summary
+        # is still written with needs_reevaluation=True (forensic preserved) and
+        # sr_excluded=True (never enters SR). This is NOT a canonical Gate
+        # bypass — it only fires when diagnostic_replay=True, which forces
+        # non-canonical output + sr_excluded on every episode.
+        if (
+            paper_grade
+            and not self.diagnostic_replay
+            and bool(summary.get("needs_reevaluation", False))
+        ):
             from p79.experiment.environment import PaperGradeAbortError
             raise PaperGradeAbortError(
                 f"first quarantine event under paper_grade=True at "
@@ -3618,6 +3643,9 @@ class ExperimentRunner:
             eval_goto_timeout=getattr(eval_result, "eval_goto_timeout", None),
             eval_source_agent_url=getattr(eval_result, "eval_source_agent_url", None),
             eval_target_url=getattr(eval_result, "eval_target_url", None),
+            # Fire-6 RCA Stage C2: diagnostic-replay provenance (main path).
+            diagnostic_replay=self.diagnostic_replay,
+            sr_excluded=self.diagnostic_replay,
         ).as_dict()
 
         # Enrich with wasted cost and component breakdown for cost-aware analysis
