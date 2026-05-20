@@ -6,7 +6,8 @@ analyze_run body half).
 
 12 fixes:
 - B-650: heatmap cmap `set_bad("#cccccc")` so N/A → gray (matches caption)
-- B-651: Holm-Bonferroni family key includes cell_key sub-family
+- B-651: Holm-Bonferroni family key is (test, metric) per locked prereg §3
+  (cell-scoping reverted Q1=A /stress 2026-05-20; cell_key is transparency-only)
 - B-652: episode + step gate symmetric with B-601 condition gate
 - B-653: TOST + SR-Wilcoxon + wilcoxon_skipped.csv emitted
 - B-654: per-site SR double-column (observed + scored_set)
@@ -316,15 +317,25 @@ def test_b653_tost_retired_paired_bootstrap_still_emitted(tmp_path):
 
 
 # ─── B-651 ──────────────────────────────────────────────────────────────────
-def test_b651_holm_family_cell_scoped(tmp_path):
-    """Holm family key must include cell_key sub-family identifier."""
+def test_b651_holm_family_test_metric_not_cell_scoped(tmp_path):
+    """Holm family key is (test, metric) — NOT cell-scoped.
+
+    B-651 cell-scoping was REVERTED (Q1=A /stress 2026-05-20): the DOI-1-locked
+    preregistration §3 family declaration + paper section3_definition.md:132
+    define the Holm family as `(test, metric)` ("avoids over-correcting tests
+    that probe distinct estimands"). A short-lived `(test, metric, cell_key)`
+    grouping (commit ac925a1) contradicted that registered family + paper prose
+    and was walked back. `cell_key` survives as a per-row transparency stratum
+    label but must NOT enter the holm_family key. This test guards against
+    re-introducing cell-scoping. See /stress B-651 walk-back 2026-05-20.
+    """
     pytest.importorskip("numpy")
     pytest.importorskip("pandas")
     pytest.importorskip("scipy")
     import pandas as pd
     from p79.experiment.analysis import _compute_statistical_tests
 
-    # 3 conds same site, same baseline → intra-cell family.
+    # 3 conds same site, same baseline → all pairs share one (site,model) stratum.
     ep_rows = []
     for cid in ("phase1_dom_router_0", "phase1_som_router_0", "phase1_vision_router_0"):
         for task_id in range(8):
@@ -348,14 +359,25 @@ def test_b651_holm_family_cell_scoped(tmp_path):
     _compute_statistical_tests(cond_df, ep_df, reports_dir, tables_dir)
 
     csv_df = pd.read_csv(tables_dir / "statistical_tests.csv")
-    # Every row should have a cell_key populated (intra_classifieds_local_qwen3vl_4b
-    # for same-baseline same-site comparisons).
-    assert "cell_key" in csv_df.columns, "B-651: cell_key column missing"
-    # At least one row should have intra_<site>_<baseline> cell_key.
+    # cell_key survives as a transparency stratum-label column (intra_<site>_<baseline>
+    # for same-site same-baseline comparisons) — but is NOT the Holm family key.
+    assert "cell_key" in csv_df.columns, "B-651: cell_key transparency column missing"
     intra = csv_df[csv_df["cell_key"].astype(str).str.startswith("intra_")]
-    assert len(intra) > 0, "B-651: no intra-cell sub-family entries found"
-    # holm_family stamp must include cell_key
+    assert len(intra) > 0, "B-651: no intra-cell stratum-label entries found"
+    # holm_family must be the bare (test, metric) form per locked prereg §3 —
+    # it must NOT encode cell_key (no intra_/crossbaseline_/crosssite_ tokens).
     holm_families = set(csv_df["holm_family"].dropna().astype(str))
-    assert any("intra_classifieds_local_qwen3vl_4b" in f for f in holm_families), (
-        f"B-651: holm_family should encode cell_key; got families={holm_families}"
+    assert holm_families, "B-651: no holm_family values emitted"
+    expected_forms = {
+        "mcnemar_exact_success",
+        "wilcoxon_signed_rank_total_cost_usd",
+        "wilcoxon_signed_rank_p95_step_latency_ms",
+    }
+    assert holm_families <= expected_forms, (
+        f"B-651: holm_family must be (test, metric) form per prereg §3; "
+        f"got unexpected families={holm_families - expected_forms}"
     )
+    assert not any(
+        tok in f for f in holm_families
+        for tok in ("intra_", "crossbaseline_", "crosssite_", "unknown")
+    ), f"B-651: holm_family must NOT be cell-scoped (reverted Q1=A); got {holm_families}"

@@ -1264,12 +1264,15 @@ def _compute_statistical_tests(
                     continue
 
                 pair_key = f"{cid_a}_vs_{cid_b}"
-                # B-651 Holm sub-family identifier for this pair. Bound here so
-                # the three flat_rows.append() sites below (McNemar / paired-
-                # bootstrap-lift / SR-Wilcoxon) can stamp it. (Regression fix:
-                # commit b72a3e7 added _cell_key() + the three `cell_key` usages
-                # but omitted this assignment → NameError crashed analyze_run on
-                # any ≥2-condition run since 2026-05-18.)
+                # Per-row transparency stratum label for this pair (which
+                # (site,model) stratum a comparison sits in). Bound here so the
+                # three flat_rows.append() sites below (McNemar / paired-
+                # bootstrap-lift / SR-Wilcoxon) can stamp the `cell_key` column.
+                # NOT the Holm family key — Holm groups by (test, metric) per
+                # locked prereg §3 (B-651 cell-scoping reverted /stress 2026-05-20).
+                # (Regression fix: commit b72a3e7 added _cell_key() + the three
+                # `cell_key` usages but omitted this assignment → NameError
+                # crashed analyze_run on any ≥2-condition run since 2026-05-18.)
                 cell_key = _cell_key(cid_a, cid_b)
 
                 # McNemar
@@ -1495,33 +1498,34 @@ def _compute_statistical_tests(
             out[src_j] = adj[slot]
         return out
 
-    # B-651: group flat_rows by (test, metric, cell_key) and apply Holm within
-    # each family. Cell-scoping the family (via `_cell_key` sub-family id, e.g.
-    # `intra_<site>_<baseline>` / `crossbaseline_...`) is the paper's stratified
-    # multiple-comparison design: each (site, model) cell's comparisons form an
-    # independent Holm family so family-wise error is controlled per-cell, not
-    # pooled across cells. (b72a3e7 added `_cell_key` + the `cell_key` column but
-    # left this grouping at (test, metric) — completing B-651 here.)
+    # Group flat_rows by (test, metric) and apply Holm within each family.
+    # B-651 cell-scoping REVERTED (Q1=A /stress 2026-05-20): the family key is
+    # (test, metric), NOT (test, metric, cell_key). This matches the DOI-1-locked
+    # preregistration §3 family declaration + paper section3_definition.md:132
+    # ("per (test, metric) sub-family ... avoids over-correcting tests that probe
+    # distinct estimands"). A short-lived cell-scoped grouping (commit ac925a1)
+    # was a code↔prose contradiction caught by /stress and walked back here.
+    # `cell_key` survives as a per-row transparency stratum label (which
+    # (site,model) stratum a pairwise comparison belongs to) but does NOT scope
+    # the Holm correction. See /stress B-651 walk-back 2026-05-20.
     if flat_rows:
         from collections import defaultdict as _dd
         families: Dict[Any, List[int]] = _dd(list)
         for idx, row in enumerate(flat_rows):
             test = row.get("test")
             metric = row.get("metric")
-            cell_key = row.get("cell_key")
             if test in ("mcnemar_exact", "wilcoxon_signed_rank") and row.get("p_value") is not None:
-                families[(test, metric, cell_key)].append(idx)
+                families[(test, metric)].append(idx)
             # rows with p_value=None (skipped) get holm_p=None automatically
         for family_key, idx_list in families.items():
             family_p = [flat_rows[i]["p_value"] for i in idx_list]
             family_holm = _holm_correct(family_p)
-            family_label = "_".join(str(p) for p in family_key if p is not None)
             for slot, i in enumerate(idx_list):
                 flat_rows[i]["p_value_holm"] = family_holm[slot]
                 flat_rows[i]["significant_05_holm"] = (
                     family_holm[slot] is not None and family_holm[slot] < 0.05
                 )
-                flat_rows[i]["holm_family"] = family_label
+                flat_rows[i]["holm_family"] = f"{family_key[0]}_{family_key[1]}"
                 flat_rows[i]["holm_family_m"] = len(idx_list)
         # rows that didn't enter a family (bootstrap_ci / skipped) get explicit None
         for row in flat_rows:
@@ -1533,7 +1537,7 @@ def _compute_statistical_tests(
         # Also stamp on the JSON side under a separate `holm` key for symmetry.
         results["holm_corrected"] = {
             "families": {
-                "_".join(str(p) for p in k if p is not None): {
+                f"{k[0]}_{k[1]}": {
                     "m": len(v),
                     "method": "holm-bonferroni step-down (within-family)",
                 }
