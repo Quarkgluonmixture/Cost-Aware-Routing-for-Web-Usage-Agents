@@ -277,3 +277,58 @@ archived:
     expected_n: 466
     grade: archived
     notes: "Pre-Magento-bug run"
+  # ─────────────────────────────────────────────────────────────────────
+  # 2026-05-20 PROTOCOL RESET #2 — B-991 → tool_choice-fix B0 NON-CANONICAL window
+  #   RULE: every B0 run whose run_dir timestamp is >= 2026-05-18 (B-991 commit
+  #   e7546f7 retired the GLM rescue -> exposed B0's native ~25-30% tool-call
+  #   parse failure) and < the 2026-05-20 tool_choice "auto"->"required" fix is
+  #   RCA/archive ONLY -- it does NOT enter Phase 1a primary SR / cost / latency.
+  #   Root cause: tool_choice="auto" + the dom system prompt ("Output ONLY valid
+  #   JSON") suppressed B0 tool emission -> ~31% parse_error -> injected-wait
+  #   death spiral -> SR contamination (run-to-run variance ~20%). See Protocol
+  #   Reset 12-point decision #2 (实验笔记 §244/§245) + Fire-6 RCA (master_bug_catalog).
+  #   The 5 known DGX instances are listed below; A100-only fire runs in the same
+  #   window are covered by the RULE even if not enumerated. DO NOT promote any of
+  #   these to grade: paper-grade. Canonical B0 Phase-1a data = the post-fix
+  #   Fire-6 rerun (gated on Protocol Reset completion, decision #12).
+  # ─────────────────────────────────────────────────────────────────────
+  - baseline: B0
+    site: classifieds
+    mode: DOM
+    run_dir: B0_dom_classifieds_20260520_133223_291174117_410560_R2987
+    condition_subdir: phase1_dom_router_0
+    expected_n: 234
+    grade: archived
+    notes: "Protocol Reset #2 non-canonical (R2987, post-tool_calling new-code RCA run); B-991->tool_choice-fix window; RCA/archive only."
+  - baseline: B0
+    site: classifieds
+    mode: DOM
+    run_dir: B0_dom_classifieds_20260520_000018_844563552_322810_R14647
+    condition_subdir: phase1_dom_router_0
+    expected_n: 234
+    grade: archived
+    notes: "Protocol Reset #2 non-canonical (R14647); B-991->tool_choice-fix window; RCA/archive only."
+  - baseline: B0
+    site: classifieds
+    mode: DOM
+    run_dir: B0_dom_classifieds_20260519_174455_061534393_281104_R12090
+    condition_subdir: phase1_dom_router_0
+    expected_n: 234
+    grade: archived
+    notes: "Protocol Reset #2 non-canonical (R12090); B-991->tool_choice-fix window; RCA/archive only."
+  - baseline: B0
+    site: reddit
+    mode: DOM
+    run_dir: B0_dom_reddit_20260519_005439_733960924_218912_R1821
+    condition_subdir: phase1_dom_router_0
+    expected_n: 210
+    grade: archived
+    notes: "Protocol Reset #2 non-canonical (R1821, reddit); B-991->tool_choice-fix window; RCA/archive only."
+  - baseline: B0
+    site: classifieds
+    mode: DOM
+    run_dir: B0_dom_classifieds_20260518_212838_723280241_199081_R19740
+    condition_subdir: phase1_dom_router_0
+    expected_n: 234
+    grade: archived
+    notes: "Protocol Reset #2 non-canonical (R19740); B-991->tool_choice-fix window; RCA/archive only."
