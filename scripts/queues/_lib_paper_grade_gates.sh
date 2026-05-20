@@ -477,6 +477,12 @@ reset_and_auth_gate() {
     classifieds) _reset_timeout=120 ;;
     *) _reset_timeout=120 ;;
   esac
+  # Fire-6 RCA (/stress 2026-05-20): VWA_RESET_TIMEOUT env override for slow
+  # substrate (e.g. cls 84k-item DB restore exceeding the 120s default under
+  # load). Operator knob; per-site defaults above are the fallback.
+  if [[ -n "${VWA_RESET_TIMEOUT:-}" && "${VWA_RESET_TIMEOUT}" =~ ^[0-9]+$ ]]; then
+    _reset_timeout="${VWA_RESET_TIMEOUT}"
+  fi
   local _reset_rc
   # B-864 (/stress A1.23 P1-7 AB, 2026-05-17): process-group kill + SIGTERM trap.
   # Pre-fix `timeout ${N}s bash -c "..."` killed only the sub-bash on timeout;
