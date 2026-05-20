@@ -520,8 +520,23 @@ sys.exit(0)
     log "  failure modes: runner crash mid-write / FORCE_NEW same-second collision /"
     log "                 schema-version mismatch / stale prior-run dir / disk full"
     log "  aborting chain to prevent silent partial-data advancement"
+    # Fire-5 RCA Wave 5 followup (/stress 2026-05-20 post-Fire-5):
+    # kill orphan watchdog. Pre-fix: queue_chain.sh has TWO abort paths —
+    #   (a) wallclock-max in wait_for_runner_done() at L162 already runs
+    #       `pkill -f experiment_watchdog.*${pattern}` ✓
+    #   (b) sentinel-validation abort here at L519+ — runner has exited
+    #       cleanly OR crashed with no condition_summary write, BUT
+    #       watchdog (spawned by queue_baseline.sh as sibling, NOT in
+    #       runner's process group) keeps polling the dead run_dir.
+    #       After ~24min watchdog hits idle/step-stall threshold and
+    #       emits spurious [STEP STALL] ntfy → operator paged for a
+    #       non-event (chain already aborted, just orphan zombie).
+    # Empirical: Fire-5 cls B0 dom 2026-05-20 00:27 abort → watchdog
+    # PID 323559 alive until 00:35 STEP STALL ntfy → manual kill.
+    # Post-fix: mirror wallclock-path watchdog kill here.
+    pkill -f "experiment_watchdog.*${run_id}" 2>/dev/null || true
     if command -v curl > /dev/null; then
-      curl -L -d "queue_chain ABORT: ${run_id}/${cond_id} sentinel validation failed" \
+      curl -L -d "queue_chain ABORT: ${run_id}/${cond_id} sentinel validation failed; orphan watchdog killed" \
         "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
     fi
     exit 1
