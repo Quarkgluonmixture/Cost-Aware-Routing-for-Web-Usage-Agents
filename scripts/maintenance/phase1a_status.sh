@@ -13,7 +13,7 @@
 #
 # Scored task count (post §139.8 N/A exclusion):
 #   classifieds: 224 (234 nominal - 10 N/A)
-#   reddit:      208 (210 nominal - 2 N/A; codex count was 15 total across cls+red)
+#   reddit:      205 (210 nominal - 5 N/A) — canonical: p79/experiment/analysis.py:80
 #
 # USAGE:
 #   bash scripts/maintenance/phase1a_status.sh                       # text table
@@ -49,7 +49,7 @@ SITES=(classifieds reddit)
 
 declare -A SCORED_COUNT
 SCORED_COUNT[classifieds]=224
-SCORED_COUNT[reddit]=208
+SCORED_COUNT[reddit]=205  # B-1823 (Fire-6 /stress P0-2-B*): was 208 ≠ canonical red=205 (p79/experiment/analysis.py:80; 210 nominal − 5 N/A) → a valid 205-ep run was mis-flagged PARTIAL → false rerun
 
 RESULTS_ROOT="results/visualwebarena/phase1"
 

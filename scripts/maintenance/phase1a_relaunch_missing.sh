@@ -26,6 +26,25 @@ case "$MODE" in
   *) echo "Usage: $0 [dry-run|launch]"; exit 2 ;;
 esac
 
+# B-1823 (Fire-6 /stress P0-1-B*, 2026-05-21): DEPRECATED for paper-grade runs.
+# This tool calls queue_chain.sh directly (bypassing the orchestrator lock/gates
+# at queue_phase1_paper_grade.sh:763-780 + Gate 8 quarantine :424-451) and then
+# launches up to FOUR background chains back-to-back (cls_fresh/red_fresh/
+# cls_resume/red_resume) — violating the single-site-chain hard rule (shared
+# docker user account → session race + cross-condition contamination), and it can
+# re-run completed conditions (it also depended on phase1a_status.sh's pre-fix
+# reddit=208 count → a valid 205-ep reddit run was mis-flagged PARTIAL → rerun).
+# Paper-grade resume now lives in the orchestrator (same preflight/Gate8/quarantine,
+# sequential cls→red, manifest-bound done-skip, no parallel chains):
+#     RESUME_MISSING=1 bash scripts/queues/queue_phase1_paper_grade.sh launch
+if [[ "${P79_PAPER_GRADE:-1}" == "1" ]]; then
+  echo "[phase1a_relaunch_missing][FATAL] DEPRECATED for paper-grade (B-1823)." >&2
+  echo "[phase1a_relaunch_missing][FATAL] reason: bypasses orchestrator gates + launches 4 parallel chains (single-site-rule violation) + can rerun completed data." >&2
+  echo "[phase1a_relaunch_missing][FATAL] use instead: RESUME_MISSING=1 bash scripts/queues/queue_phase1_paper_grade.sh launch" >&2
+  echo "[phase1a_relaunch_missing][FATAL] (dev/non-paper-grade override only: P79_PAPER_GRADE=0)" >&2
+  exit 1
+fi
+
 # Mode → queue script
 queue_script_for_mode() {
   local m=$1
