@@ -7190,7 +7190,7 @@ Triggered by A1.24 fire-day catastrophe (B-1581 + §228 chronicle): user request
 
 ## /stress deep repo audit — 6-lineage cross-track Fire-6 blocker subset (2026-05-20 ~01:00-02:30 BST, B-1762~B-1767, Mode A only)
 
-**Trigger**: User invoked `/stress` for deep repo audit, Mode A only (explicit "claude only" — skip codex Mode B + gemini Mode C). Parallelized via split-session: 1 hub session (Fire-4 RCA Wave 1-4 + OSF DOI 1 drift) + 5 split sessions (Track A queue/launch · Track B runner/agent · Track C phantom/VWA · Track D stats/prereg · Track E paper/canonical). Cross-track unified bug list = **50 findings, 25 OOB, 18 P0** (`docs/checkpoints/audit_tracks/UNIFIED_BUG_LIST_2026-05-20.md`). User reframed P0-overload → 3-tier (Fire-6 blocker / paper blocker / Phase 1b blocker) + directive "你就做 fire blocker". This entry = the **Fire-6 blocker subset only** (6 fixes, 3 commits); paper/stats/SBOM/Phase-1b deferred per user split.
+**Trigger**: User invoked `/stress` for deep repo audit, Mode A only (explicit "claude only" — skip codex Mode B + gemini Mode C). Parallelized via split-session: 1 hub session (Fire-4 RCA Wave 1-4 + OSF DOI 1 drift) + 5 split sessions (Track A queue/launch · Track B runner/agent · Track C phantom/VWA · Track D stats/prereg · Track E paper/canonical). Cross-track unified bug list = **50 findings, 25 OOB, 18 P0** (`docs/checkpoints/audit_tracks/UNIFIED_BUG_LIST_2026-05-20.md` — 已删 2026-05-21,deferred subset 抢救至下方「### Deferred subset 抢救」子节). User reframed P0-overload → 3-tier (Fire-6 blocker / paper blocker / Phase 1b blocker) + directive "你就做 fire blocker". This entry = the **Fire-6 blocker subset only** (6 fixes, 3 commits); paper/stats/SBOM/Phase-1b deferred per user split.
 
 **Empirical anchor (registry state at audit time)**: Fire-3 cls task 75 + Fire-4 cls task 75 + Fire-5 cls task 4 — 3 fires, 3 quarantine, same error class `EvaluatorUnavailableError (Page.goto Timeout 30000ms)` / `Page.screenshot Timeout 30000ms` at `agent_navigation`/`agent_observation` callsites, different task IDs (75 vs 4). Cross-fire substrate-degradation pattern (not random task-specific). Fire-5 aborted via Wave 1 M1 PaperGradeAbortError at task 4 ~14 min in.
 
@@ -7238,6 +7238,42 @@ rc=1  → Fire-6 cls launch HALTS until task 4 + task 75 matched-temporal-contex
 - **Phase 1b blocker**: P0-F1 (shop B0 17.16h > 16h budget)
 
 **Chronicle cross-link**: 实验笔记 §239 (deep audit timeline + split-session method + 50-finding cross-track + Fire-6 blocker subset + user P0-overload reframing lesson).
+
+### Deferred subset 抢救 + spot-check 核验 (2026-05-21 — `audit_tracks/` 删除前)
+
+**触发**: User 清理 untracked `docs/checkpoints/audit_tracks/` (8 工作产物: SPLIT_PROMPTS + 5 track 输出 + hub + UNIFIED_BUG_LIST)。删除前抢救上方 deferred 列表 (10 paper/stats + 1 Phase 1b),逐条 `grep` 实际 artifact 核验「仍 live / 被 §243-244 Protocol Reset superseded / 被后续 commit 修复」。核验印证 §239 user 判断「P0 标签膨胀」: 11 条里 **7 真 live + 2 已有 prereg defense 的争议点 + 2 已失效**。Raw track 文件 (中英双语 blast radius + 推荐改法 + effort) 内容已被本 entry 吸收。
+
+**核验结论表** (grep 时点 2026-05-21, repo HEAD `66860e5`):
+
+| 原 P0 | spot-check 结论 (grep 实证) | 处置 |
+|---|---|---|
+| P0-B1 §8.6 自称 §1/§6 已 reframe but prose 未改 | 仍 live — `section6_router.md` 0 match `sequential.protocol\|agent.environment routing`; `section1_intro.md` 1 弱匹配。§243-244 Protocol Reset 新 framing "Upstream-Core VWA semantics + P79-GRL" → §1/§6 本就要整体重写 | **B-1787** (折叠进 Protocol Reset prose) |
+| P0-B2 §1 footnote + §3.5.1 引 `analysis.py:1428-1432` 作 canonical-latency 消费者 | ✅ 真 live + 代码核实真 mis-cite — `analysis.py:1428-1432` 实为 Wilcoxon signed-rank skip-row (`"test":"wilcoxon_signed_rank"`); `grep minus_retry analysis.py`=0 hits (整文件不消费 latency); 真正点 `metrics.py:914-915` `_avg("total_latency_minus_retry_ms",require_present=True)` (track_E 推荐的 `metrics.py:772` 已漂移成 cost-coverage) | **B-1788** (5min prose fix) |
+| P0-B3 §1↔§4 N=234/210 vs 224/205 + pp 算术 mismatch | 仍 live but Protocol Reset #2 (B-991 后 B0 数据全 non-canonical) + #4 (不 claim absolute SR) → §1 hero 数字 Phase 1a fire 后重算 | **B-1789** (重算后复核) |
+| P0-B4 `meta_phantom_lift.csv` path 不存在 | ❌ 已失效 — `find results -name meta_phantom_lift*` = `results/phantom_paper/meta_phantom_lift.csv`+`.md` 现已存在 (audit 时点不存在) | spot-check 推翻,不抢救 |
+| P0-D1 prereg L98 引 Davidson&MacKinnon 2000 / Hall 1992 错版本+错 context | ✅ 真 live (prereg L98 仍引); track_D 推荐改 Wright 1997 §4.2 fixed-precision-weighting | **B-1790** (OSF amend) |
+| P0-D2 H10 5/6 = K-of-N fake-precision 复活 | 仍 live but prereg L232 已嵌整段 defense ("5/6=0.833 engineering deployability margin NOT significance level; K-of-N retired-doctrine targets across-cells binomial α") | 争议点,已有 defense,无新 B |
+| P0-D3 SE floor 1.0pp 三重 anchor inconsistency | 仍 live but prereg L111 已嵌 defense (Agresti-Coull x=0/N=200=0.68pp cushion + archive-median 0.98pp anchor + backstop fires only `(ses<=0).sum()>0`) | 争议点,已有 defense,无新 B |
+| P0-D4 power 97% 用 archive SE=0.916pp but archive 自 disclaim ≠ calibration substrate | ✅ 真 live (`power_analysis.md:42-46` 仍用 archive SE projection); Protocol Reset #2 把 archive 全标 non-canonical → 矛盾加重 | **B-1791** (OSF amend) |
+| P0-D5 prereg E.4 "semantics unchanged" vs E.1 terminal `success=False` mapping = T3 evaluator change | ✅ 真 live (prereg L795 terminal mapping 仍在); Protocol Reset #9 C1/C1b/Gate8 evaluator 层变化 → T3 相关性增强 | **B-1792** (OSF 1.5) |
+| P0-E1 SBOM 3-doc split-brain (`osf_lock_manifest:75` stale `1c3a615`) | ❌ 已闭 — B-1774 (§241) SBOM re-lock → `locked_versions.md` + prereg §7 已同步 current HEAD `2c15d66` (12 commits); `osf_lock_manifest:75` 的 `1c3a615` 是 **OSF DOI 1 immutable mint-time 快照,故意不更新** (非 bug) | B-1774 已闭,不抢救 |
+| P0-F1 shop B0 17.16h > 16h budget | ✅ 真 live (`queue_chain.sh:145` `MAX_CONDITION_HOURS_B0:-16` site-agnostic; shop 435 task × 142s = 17.16h) | **B-1793** (Phase 1b) |
+
+**抢救 7 B-number 的推荐 fix + 路径** (deferred,NOT 立即 fix,待对应里程碑):
+
+- **B-1787** P0-B1-Hub (paper prose) — `section8_limitations.md:23-29` §8.6 自称 §1/§6 framing 已 revise to "agent-environment routing behaviour under fixed sequential web protocol",但 `section1_intro.md`/`section6_router.md` prose 未含该措辞。**核验**: §243-244 Protocol Reset 引入 canonical framing → §1/§6 本就要整体重写,本 blocker 折叠进 Protocol Reset Memo prose 任务 (实验笔记 §244 task #74) 一并解决。**Effort**: 含在 Reset prose。
+- **B-1788** P0-B2-E (paper prose, **可立即修**) — `section1_intro.md:17` footnote `[^canonical-cost-latency-estimand]` + `section3_definition.md:160` 把 canonical-latency 消费者 `p79/experiment/analysis.py:1428-1432` 改为真正消费点 `p79/experiment/metrics.py:914-915` (`aggregate_cross_site.py` + `metrics.py:527,624-625` 保留)。**Effort**: 5min prose 行号替换 (2 处),风险 low (无 code 改),无依赖。
+- **B-1789** P0-B3-E (paper prose, Phase 1a fire 后) — §1 hero N/pp + §4 表数 over `scored_task_count(site)` (cls=224/red=205, `analysis.py:70-100`) 重算 + §1↔§4 single-source 对齐。Protocol Reset #2 数字本就重来。**Effort**: 2-3h (N/A∩unique-pass 交集核 + drop-one 重算),待 fire。
+- **B-1790** P0-D1-D (prereg, OSF amend) — prereg L98 cite swap Davidson&MacKinnon 2000 → Wright 1997 §4.2 (fixed-precision-weighting under design-fixed-cell estimand) + prose qualifier。prereg DOI 1 immutable → 走 OSF 1.5/DOI 2。**Effort**: 1.5h prose。
+- **B-1791** P0-D4-D (prereg+power_analysis, OSF amend) — `power_analysis.md:46` + prereg §2.4 加 sensitivity sweep [0.7×-2.0×] archive SE + caveat "archive ≠ independent calibration substrate (Appendix A 2026-05-16 §C reframe)"。Protocol Reset 加重 (archive 全 non-canonical)。**Effort**: 4-5h sweep + prose。
+- **B-1792** P0-D5-D (prereg, OSF 1.5) — prereg E.4 "semantics unchanged" 与 E.1 terminal `success=False` T3 mapping 内部矛盾,honest T3 acknowledgment (treat as DOI 2 forward-amendment,cite DOI 1 baseline)。user OSF 1.5 plan 吸收。**Effort**: 1.5-2h prose。
+- **B-1793** P0-F1-A (queue, Phase 1b) — `scripts/queues/queue_chain.sh:145` site-aware budget: shop `MAX_CONDITION_HOURS_B0` 需 ≥18-23h (435 task,Magento 较 cls OSClass 1.33× 重),不能复用 cls-calibrated 16h。workshop 后 shop fire 前修。**Effort**: 30min。
+
+**无新 B (核验后排除,记录防未来重新发现)**:
+- **争议点 (仍 live but prereg 已嵌 defense,低优先 reviewer-watch,非 actionable bug)**: P0-D2 (H10 5/6,L232 defense) + P0-D3 (SE floor,L111 defense)。若 top-tier methodologist 仍 attack 再升级。
+- **已失效 (spot-check 推翻)**: P0-B4 (`meta_phantom_lift.csv` 现已存在) + P0-E1 (B-1774 §241 SBOM re-lock 已同步 canonical 3-doc 至 `2c15d66`; `osf_lock_manifest:75` 的 stale `1c3a615` 是 OSF DOI 1 immutable mint-time 快照,正常)。
+
+**Chronicle cross-link**: 实验笔记 §239 (`audit_tracks/` 已删 2026-05-21,raw track 内容抢救至本 entry)。
 
 ---
 
@@ -7325,5 +7361,15 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **P1-7 (differential censoring, gemini Mode C)** + the §244 estimand challenge (P0-1) → NOT code: paper §3.5 disclosure + parse-cap sensitivity sweep (#74 docs); single-budget question → advisor (not blocking Fire-6).
 
 **Chronicle cross-link**: 实验笔记 §249.
+
+---
+
+## B-1794 — B0 forced-tool-call schema ≡ validator (real fix; description-only `8668a84` superseded) (2026-05-21)
+
+| Bug | Root cause | Fix |
+|---|---|---|
+| **B-1794** B0 (proxy 235B, tool-calling) systematically omits `element_id` on `type`/search steps → `invalid_element_id` → search-task SR artificially suppressed = B0 unfair baseline; pre-fix B0 archive (Fire-3/4/5) all carry this artifact (non-canonical, Amendment 01). | Early hypothesis (schema-prompt inconsistency; description-only fix `8668a84`) **FALSIFIED** — re-run 3/3 still invalid. **Real root cause = `tool_choice="required"` forcing**: Bedrock emits a minimal tool call satisfying only the `required` array (action_type+thought), dropping the OPTIONAL `element_id` (235B has a competing search-via-URL prior). Isolated empirically: real-proxy variant probe `tc="auto"` emits element_id / `tc="required"` omits; local Qwen3-VL-4B with the SAME schema emits element_id (rules out schema-optional + capability + grounding); 235B emits element_id on `click` (action-type-specific). | **`681b9cf`**: `_WEB_ACTION_TOOL` per-action conditional `required` (allOf if/then) **mirroring `validate_action_detailed` exactly** — not stricter (`type` does NOT require `text`), not looser; `anyOf(element_id\|coordinate)` keeps VISION valid. Cross-baseline consistency: schema≡validator (8/8 proven + **10 invariant tests** `tests/test_b0_schema_validator_consistency.py`). Evidence: variant probe 6/6 + comprehensive probe 5/5 + **2×30-step dom smoke 0 invalid** + 1207 pytest. Disclosure: §3.5.1 backend-serialization-adapter + §19 decision (`edff6e1`). Provenance: upstream VWA = text-string `click [id]` (not JSON/tool-call); P79 serialization adapters are P79-specific. Investigation: `scripts/spike/{audit_b0_grounding,payload_diff_b0_b1,local_toolcall_eid_experiment,probe_b0_proxy_variants,probe_b0_fix_confirm,probe_b0_comprehensive_schema}.py`. |
+
+**Chronicle cross-link**: 实验笔记 §250 (early hypothesis) → §251 (real root cause + fix, supersedes §250.3/.4).
 
 ---
