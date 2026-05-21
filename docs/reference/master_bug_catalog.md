@@ -7502,3 +7502,21 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave). Deferred true-fixes → next_steps §0b.
 
 ---
+
+## B-1817, B-1819, B-1820 — router pipeline pre-fire /stress standalone (2026-05-21)
+
+> Standalone (non-clustered) findings of the router-pipeline pre-fire /stress (实验笔记 §255). F5 (B-1818) landed with cluster β (same file). F6-followup (3 diagnostic-script MODES copies) + F9 (P2 deprecated 8-dim path) → next_steps §0b.
+
+| Bug | 根因 | Fix |
+|---|---|---|
+| **B-1817** (P1 F4, Claude OOB) — `tokens_input_text` feature train/serve skew. Train read the real step-0 token count (`tokens.input_text`, None→0 for B0); serve estimated `text_length // 4` → B0 train=0 / serve=len//4 = a feature that differs between training and inference. (Spot-check confirmed `dom_complexity`/`text_length` do NOT skew — only tokens.) | `extract_50_features.py:166` (real) vs `runner/main.py:2261` (len//4). | Shared `estimate_input_tokens(text_length)=len//4` in `router_features.py`; train extractor + serve runner both use it (re-exported via learned_router). Consistency > accuracy (real tokenizer unavailable at serve dispatch + None for B0). |
+| **B-1819** (P1 C4, codex) — rare-class fold generation still crashes. After merging rare classes into `__rare__`, if that merged bucket itself has < n_splits members, `StratifiedKFold(5)` still raises; the old fallback only handled the single-strat-label case. | `train_l1_router_with_mi.py:139-149`. | Robust tiered split: try StratifiedKFold → on ValueError fall back to plain KFold(n_splits) → for cells with < n_splits labeled tasks use n_cell-fold KFold → 0/1-task degenerate single fold. Never crashes the Stage 2 run. |
+| **B-1820** (P1 C7, codex) — router can route to phantom_prompt but H10 excludes the matching baseline. `candidate_modes` (yaml) + oracle MODES include phantom_prompt, but `SINGLE_MODE_BASELINES` (5) excludes it (prereg: cls P-prompt archive aborted at 4 ep) → router could be credited for a phantom_prompt arm an always-phantom_prompt baseline might dominate. | `exp_v2_B0_router_learned_*.yaml:35` candidate vs `aggregate_h10_pareto.py:66` baselines. | Implement the prereg "expands to 6 if >=50 ep P-prompt" rule: `analyze_cell` adds phantom_prompt to the baseline arms when it has >= `PHANTOM_PROMPT_BASELINE_MIN_EP` (50) Pass-1 episodes; verdict carries `phantom_prompt_in_baselines` disclosure. |
+
+**Tests**: `tests/test_router_features_shared.py` +3 (F4 train≡serve identity; C4 merged-rare KFold fallback + tiny-cell no-crash). Full router suite **102 passed**, no regression.
+
+**Deferred → next_steps §0b**: F6-followup (3 diagnostic scripts route through router_features), F9 (delete deprecated 8-dim predict_mode path).
+
+**Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave).
+
+---

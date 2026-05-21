@@ -2225,6 +2225,7 @@ class ExperimentRunner:
             try:
                 from p79.policies.learned_router import (
                     difficulty_to_int,
+                    estimate_input_tokens,
                     extract_raw_features,
                     load_task_image_field,
                     predict_mode_fold_aware,
@@ -2257,8 +2258,9 @@ class ExperimentRunner:
                 # Step-0 obs features (mode-agnostic DOM-style at env.reset return)
                 dom_complexity = (obs.text or "").count("\n") + 1 if obs.text else 0
                 text_length = len(obs.text) if obs.text else 0
-                # Token count estimate (no tokenizer access at this dispatch point)
-                tokens_input_text = text_length // 4
+                # F4 (B-1817): char//4 estimate — the SAME estimate_input_tokens the
+                # train extractor uses, so this feature is identical train ≡ serve.
+                tokens_input_text = estimate_input_tokens(text_length)
 
                 raw_features = extract_raw_features(
                     intent=task_intent,

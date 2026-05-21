@@ -46,7 +46,7 @@ from typing import Any
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold, StratifiedKFold
 
 REPO = Path(__file__).resolve().parents[2]
 OUT_DIR = REPO / "results/phantom_paper/l1_router"
@@ -136,17 +136,32 @@ def generate_per_cell_fold_assignments(
         strat_labels = np.array(
             ["__rare__" if lbl in rare_classes else lbl for lbl in cell_labels]
         )
-        if len(set(strat_labels)) < 2:
-            # Single class after merging — fallback to simple K-fold
-            skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-            # Use dummy labels to enable split
-            dummy = np.zeros(len(cell_task_ids), dtype=int)
-            dummy[: n_splits] = np.arange(n_splits)  # ensure each fold has one item
-            np.random.RandomState(seed).shuffle(dummy)
-            splits = list(skf.split(cell_task_ids, dummy))
-        else:
-            skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-            splits = list(skf.split(cell_task_ids, strat_labels))
+        # C4 (B-1819): build splits robustly. StratifiedKFold can raise even after the
+        # rare-merge above if the merged __rare__ bucket (or any class) still has
+        # < n_splits members, or if the cell has < n_splits labeled tasks. Try
+        # stratified → plain KFold → degenerate single fold for tiny cells; never crash
+        # the whole Stage 2 run (the old single-class dummy path + the else path both
+        # raised ValueError in these cases).
+        n_cell = len(cell_task_ids)
+        splits = None
+        if n_cell >= n_splits and len(set(strat_labels)) >= 2:
+            try:
+                skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+                splits = list(skf.split(cell_task_ids, strat_labels))
+            except ValueError:
+                splits = None  # merged bucket still too small → fall through to KFold
+        if splits is None:
+            if n_cell >= n_splits:
+                print(f"[{cell_id}] WARNING: stratified split infeasible; unstratified KFold.")
+                kf = KFold(n_splits=n_splits, shuffle=True, random_state=seed)
+                splits = list(kf.split(cell_task_ids))
+            elif n_cell >= 2:
+                print(f"[{cell_id}] WARNING: only {n_cell} labeled tasks (< {n_splits}); {n_cell}-fold KFold.")
+                kf = KFold(n_splits=n_cell, shuffle=True, random_state=seed)
+                splits = list(kf.split(cell_task_ids))
+            else:
+                print(f"[{cell_id}] WARNING: {n_cell} labeled task(s); degenerate single fold.")
+                splits = [(np.array([], dtype=int), np.arange(n_cell))]
 
         cell_fold_map = {}
         for fold_k, (_train_local_idx, holdout_local_idx) in enumerate(splits):

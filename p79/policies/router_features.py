@@ -56,6 +56,19 @@ def difficulty_to_int(raw: object, default: int = 0) -> int:
     return default
 
 
+# ── F4 (B-1817): input-token estimate — train ≡ serve ─────────────────────────
+def estimate_input_tokens(text_length: int) -> int:
+    """Estimate input token count from char length (chars // 4).
+
+    Used IDENTICALLY by train (extract_50_features step-0) and serve (runner). The real
+    tokenizer count is unavailable at the serve dispatch point and is None for B0 at
+    train time, so using the real count gave train=0 / serve=len//4 = train/serve skew
+    (F4). A shared estimate makes the feature consistent end to end (consistency >
+    accuracy for a routing feature).
+    """
+    return int(text_length) // 4
+
+
 # ── F2 (B-1806): observation modes in ASCENDING prior-cost order ──────────────
 # `derive_oracle_label` tie-breaks by picking the FIRST successful mode, so this
 # list MUST be ordered cheapest-first for the "cheapest successful mode" label

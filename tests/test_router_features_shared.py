@@ -122,3 +122,51 @@ def test_b1808_fold_assignment_labeled_only_fallback():
         cell_ids, task_ids, labels, seed=42, n_splits=5
     )["B0_classifieds"]
     assert set(fa.keys()) == set(range(10))
+
+
+# ── B-1817 F4: input-token estimate is train ≡ serve ───────────────────────────
+def test_b1817_estimate_input_tokens_train_serve_consistent():
+    from p79.policies import learned_router as serve
+
+    assert rf.estimate_input_tokens(400) == 100
+    assert rf.estimate_input_tokens(0) == 0
+    assert rf.estimate_input_tokens(3) == 0
+    # serve re-exports the SAME function → the feature cannot skew train vs serve.
+    assert serve.estimate_input_tokens is rf.estimate_input_tokens
+
+
+# ── B-1819 C4: rare-class fold generation never crashes ────────────────────────
+def test_b1819_merged_rare_bucket_below_n_splits_kfold_fallback():
+    """A merged __rare__ bucket with < n_splits members made StratifiedKFold raise;
+    now it falls back to plain KFold instead of crashing Stage 2."""
+    import importlib
+
+    import numpy as np
+
+    mi = importlib.import_module("train_l1_router_with_mi")
+    # dom×10 + 3 singletons → rare-merge gives {dom, __rare__(=3)}; __rare__ < 5 so a
+    # StratifiedKFold(5) would raise → KFold fallback must kick in.
+    cell_ids = np.array(["B0_classifieds"] * 13)
+    task_ids = np.array(list(range(13)))
+    labels = np.array(["dom"] * 10 + ["som", "vision", "phantom_text"])
+    fa = mi.generate_per_cell_fold_assignments(
+        cell_ids, task_ids, labels, seed=42, n_splits=5
+    )["B0_classifieds"]
+    assert set(fa.keys()) == set(range(13))
+    assert all(0 <= fk < 5 for fk in fa.values())
+
+
+def test_b1819_tiny_cell_below_n_splits_no_crash():
+    """A cell with < n_splits labeled tasks falls back to n_cell-fold KFold."""
+    import importlib
+
+    import numpy as np
+
+    mi = importlib.import_module("train_l1_router_with_mi")
+    cell_ids = np.array(["B0_reddit"] * 3)
+    task_ids = np.array([10, 11, 12])
+    labels = np.array(["dom", "som", "dom"])
+    fa = mi.generate_per_cell_fold_assignments(
+        cell_ids, task_ids, labels, seed=42, n_splits=5
+    )["B0_reddit"]
+    assert set(fa.keys()) == {10, 11, 12}

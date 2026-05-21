@@ -44,6 +44,7 @@ from p79.policies.router_features import (  # noqa: F401  (re-export)
     NAV_RE,
     SEARCH_RE,
     difficulty_to_int,
+    estimate_input_tokens,
 )
 
 logger = logging.getLogger(__name__)

@@ -64,6 +64,12 @@ CELLS = [
 # cls archive aborted at 4 ep; baseline set expands to 6 if Phase 1a B0+B1+B2 cls
 # all produce ≥50 ep P-prompt outcomes).
 SINGLE_MODE_BASELINES = ["dom", "som", "vision", "phantom_text", "phantom_som"]
+# C7 (B-1820): phantom_prompt is in the router candidate_modes (yaml) + oracle label
+# space but excluded from the fixed baseline set (prereg: cls P-prompt archive aborted
+# at 4 ep). If it gathers >= this many Pass-1 episodes it is added as a 6th baseline so
+# the router cannot be credited for a phantom_prompt arm with no always-phantom_prompt
+# comparison. Implements the prereg "baseline set expands to 6 if >=50 ep P-prompt".
+PHANTOM_PROMPT_BASELINE_MIN_EP = 50
 
 # Router condition_id (single per-cell Pass-2 fire)
 ROUTER_CONDITION_PATTERN = "phase1_learned_router_"  # cond_id prefix for Pass-2
@@ -479,7 +485,20 @@ def analyze_cell(
     # Per-arm baseline metrics (Pass-1)
     baseline_metrics: dict[str, dict[str, np.ndarray]] = {}
     baseline_paired_summaries: dict[str, dict[str, Any]] = {}
-    for arm in SINGLE_MODE_BASELINES:
+    # C7 (B-1820): expand the baseline set to include phantom_prompt when it has enough
+    # Pass-1 data (prereg conditional). The router can route to phantom_prompt, so
+    # without this an always-phantom_prompt baseline that might dominate the router would
+    # never be tested → H10 could over-credit the router.
+    arms = list(SINGLE_MODE_BASELINES)
+    pp_s, _, _, _ = aggregate_arm_metrics(pass1_outcomes, "phantom_prompt")
+    phantom_prompt_in_baselines = len(pp_s) >= PHANTOM_PROMPT_BASELINE_MIN_EP
+    if phantom_prompt_in_baselines and "phantom_prompt" not in arms:
+        arms = arms + ["phantom_prompt"]
+        print(
+            f"  C7: phantom_prompt has {len(pp_s)} ep >= {PHANTOM_PROMPT_BASELINE_MIN_EP} "
+            f"→ added as 6th baseline arm"
+        )
+    for arm in arms:
         s, c, l, tids = aggregate_arm_metrics(pass1_outcomes, arm)
         if len(s) == 0:
             print(f"  arm={arm}: NO DATA, skipping")
@@ -607,6 +626,7 @@ def analyze_cell(
         "status": "ok",
         "n_common_tasks": len(common_sorted),
         "coverage": coverage,  # C8 (B-1811): estimand coverage disclosure
+        "phantom_prompt_in_baselines": phantom_prompt_in_baselines,  # C7 (B-1820)
         "router_sr_mean": router_paired["sr_mean"],
         "router_sr_ci_95": router_paired["sr_ci"],
         "router_cost_mean": router_paired["cost_mean"],

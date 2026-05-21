@@ -159,11 +159,14 @@ def read_step0_features(
     except (json.JSONDecodeError, OSError):
         return None
     sd = step0.get("state_digest", {}) or {}
-    tokens = step0.get("tokens", {}) or {}
+    text_length = int(sd.get("text_length", 0) or 0)
     return {
         "dom_complexity": int(sd.get("dom_complexity", 0) or 0),
-        "text_length": int(sd.get("text_length", 0) or 0),
-        "tokens_input_text": int(tokens.get("input_text", 0) or 0),
+        "text_length": text_length,
+        # F4 (B-1817): use the SAME char//4 estimate as serve (runner main.py). The real
+        # step-0 token count (tokens.input_text) is None for B0 → 0 at train but len//4
+        # at serve = train/serve skew. Consistency > accuracy for a routing feature.
+        "tokens_input_text": estimate_input_tokens(text_length),
     }
 
 
