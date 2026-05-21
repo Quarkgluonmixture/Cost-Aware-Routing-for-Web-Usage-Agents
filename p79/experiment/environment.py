@@ -545,8 +545,12 @@ class VwaEvaluator:
         # hangs 30s × 3 → EvaluatorUnavailableError (Fire-3/4/5 task 75/4).
         # Z proved a FRESH page does the same goto in 639ms. So for tasks whose
         # program_html targets are explicit URLs (agent DOM discarded by goto
-        # anyway), run the eval on a fresh page from the SAME context (shared
-        # auth cookies, clean page state). This SUPERSEDES B-329's
+        # anyway), run the eval on an isolated page (shared auth cookies, clean
+        # state). B-1803 (Fire-6 RCA C1b, 2026-05-21) UPGRADES this from a
+        # same-context new_page to a FRESH browser CONTEXT — Fire-6 task 4 proved a
+        # same-context fresh page STILL hangs 30s × 3 (the BrowserContext, not just
+        # the page, degrades by task ~4); see _open_fresh_eval_page(). This
+        # SUPERSEDES B-329's
         # skip-fresh-retry (which mistakenly assumed program_html needs agent
         # DOM — inspection 2026-05-20 confirmed evaluators.py:368 navigates away).
         eval_context_mode, eval_target_url = self._classify_eval_context(config_file)
@@ -561,14 +565,69 @@ class VwaEvaluator:
 
         eval_page = page  # default: agent's page
         fresh_page = None  # track fresh page for cleanup
+        fresh_context = None  # B-1803: track fresh eval CONTEXT for cleanup
+
+        def _open_fresh_eval_page():
+            """Fire-6 RCA C1b (B-1803, 2026-05-21): open the evaluator page in a
+            FRESH browser CONTEXT — NOT page.context.new_page() (same context).
+
+            Fire-6 (cls B0 dom task 4 / id=84144) proved the C1 same-context
+            new_page is INSUFFICIENT: it timed out page.goto 30s × 3 even though
+            the task isolated (eval_isolated_context_used=True) AND the target page
+            was healthy (curl id=84144 = 0.17s; DB confirms item still active, NOT
+            deleted). The agent's BrowserContext accumulates state by task ~4 (open
+            dialogs / pending XHR / beforeunload / renderer pressure) and a
+            same-context new_page inherits it. A fresh context is a clean Chromium
+            profile (own cookie jar / cache / renderer) that loads the target in
+            ~170ms like the curl. Carries the LIVE storage_state (auth cookies, so
+            the eval stays logged-in) + viewport. Closes any prior fresh context
+            first so each isolated attempt / retry gets a maximally-clean context.
+            Returns the new page; sets the enclosing fresh_context for cleanup.
+            """
+            nonlocal fresh_context
+            if fresh_context is not None:
+                try:
+                    fresh_context.close()
+                except Exception:
+                    pass
+                fresh_context = None
+            # Auth source: prefer the task config's storage_state FILE (the same
+            # auth the env used at envs.py:206) over a live page.context.
+            # storage_state() call — the agent context is the very thing that is
+            # degraded/hung here, and storage_state() (CDP cookie read + localStorage
+            # JS eval) could itself hang on a blocking modal. File read is inert.
+            _storage = None
+            try:
+                with open(config_file) as _cf:
+                    _storage = json.load(_cf).get("storage_state") or None
+            except Exception:
+                _storage = None
+            if _storage is None:
+                try:  # best-effort live fallback (may raise on a degraded context)
+                    _storage = page.context.storage_state()
+                except Exception:
+                    _storage = None
+            _kwargs = {}
+            if _storage:
+                _kwargs["storage_state"] = _storage
+            try:
+                _vp = page.viewport_size
+                if _vp:
+                    _kwargs["viewport"] = _vp
+            except Exception:
+                pass
+            fresh_context = page.context.browser.new_context(**_kwargs)
+            return fresh_context.new_page()
+
         if eval_context_mode == "isolated_program_html_context":
             try:
-                fresh_page = page.context.new_page()
+                # B-1803 (Fire-6 RCA C1b): FRESH CONTEXT, not new_page (same context).
+                fresh_page = _open_fresh_eval_page()
                 eval_page = fresh_page
                 eval_isolated_context_used = True
                 logger.info(
-                    "Eval isolation (C1): program_html-safe task → isolated "
-                    "fresh page (agent_url=%s target=%s)",
+                    "Eval isolation (C1b): program_html-safe task → FRESH browser "
+                    "context page (agent_url=%s target=%s)",
                     str(eval_source_agent_url)[:80], str(eval_target_url)[:80],
                 )
             except Exception as _iso_exc:
@@ -647,18 +706,20 @@ class VwaEvaluator:
                             "Evaluator navigation error (attempt %d/%d), retrying with fresh page in 5s: %s",
                             attempt + 1, max_eval_retries, str(exc).split('\n')[0][:120],
                         )
-                        # Agent's page may have dirty state (open dialogs,
-                        # pending XHR, beforeunload handlers) that persistently
-                        # blocks page.goto().  Open a fresh page in the same
-                        # browser context so cookies/auth are shared but state
-                        # is clean.
-                        if fresh_page is None:
-                            try:
-                                fresh_page = page.context.new_page()
-                                eval_page = fresh_page
-                                logger.info("Opened fresh page for evaluator retry")
-                            except Exception as page_exc:
-                                logger.warning("Failed to open fresh page: %s", page_exc)
+                        # B-1803 (Fire-6 RCA C1b): the agent's page AND its
+                        # long-lived BrowserContext may have dirty/degraded state
+                        # (open dialogs, pending XHR, beforeunload, renderer
+                        # pressure) that persistently blocks page.goto() — a fresh
+                        # page in the SAME context (the old C1 behavior) still hung
+                        # 30s × 3 in Fire-6. Open a fresh CONTEXT instead (clean
+                        # Chromium profile + copied auth), and open a NEW one on
+                        # every retry so each attempt gets a maximally-clean context.
+                        try:
+                            fresh_page = _open_fresh_eval_page()
+                            eval_page = fresh_page
+                            logger.info("Opened FRESH CONTEXT page for evaluator retry (C1b)")
+                        except Exception as page_exc:
+                            logger.warning("Failed to open fresh eval context: %s", page_exc)
                         time.sleep(5)
                         continue
                     # B-783 (/stress A1.9 cold-start P0-2-AB* Claude+codex OOB,
@@ -692,6 +753,13 @@ class VwaEvaluator:
             if fresh_page is not None:
                 try:
                     fresh_page.close()
+                except Exception:
+                    pass
+            # B-1803: close the fresh eval CONTEXT (clean Chromium profile) so it
+            # does not leak across the 234-task run (one per isolated program_html eval).
+            if fresh_context is not None:
+                try:
+                    fresh_context.close()
                 except Exception:
                     pass
 
