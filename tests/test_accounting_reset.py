@@ -332,3 +332,55 @@ def test_p2_5_max_model_attempts_clamped_above_budget_floor():
     rt = normalize_config({"runtime": {"max_steps": 30, "max_model_attempts": 5}})["runtime"]
     assert rt["max_model_attempts"] >= rt["max_agent_actions"] + rt["max_total_parse_errors"]
     assert rt["max_model_attempts"] == 35  # 30 + 5 clamp floor
+
+
+def test_p1_6_crash_after_model_call_preserves_billed_attempt(tmp_path, monkeypatch):
+    """P1-6 (B-1800, /stress 2026-05-21 codex Mode B OOB): a crash AFTER the billed
+    model call but BEFORE the step JSONL write must NOT lose the in-flight step's
+    billed model call. The exception path recovers only WRITTEN JSONL; the
+    crash-atomic ledger restores the in-flight call so §1 total_billed /
+    model_call_attempt_count are not under-reported.
+
+    Injection: make validate_step_record_v2 (called right before write_step) raise
+    on the 2nd step (step_idx==1). Step 0 is written; step 1's backend.step ran
+    (ledger=2) but the record never reaches JSONL → _aggregate_partial_steps sees
+    only step 0 (model_call_attempt_count=1). The ledger correction restores 2."""
+    import p79.experiment.runner.main as runner_main
+    from p79.experiment.runner import ExperimentRunner
+
+    cfg = _minimal_cfg(tmp_path)
+    cfg["runtime"]["max_steps"] = 5
+
+    real_validate = runner_main.validate_step_record_v2
+
+    def _flaky_validate(rec):
+        # Raise specifically when persisting the 2nd step (robust to any other
+        # validate callers): simulates a mid-step crash post-model-call/pre-write.
+        if rec.get("step_idx") == 1:
+            raise RuntimeError("injected mid-step crash (P1-6 regression)")
+        return real_validate(rec)
+
+    monkeypatch.setattr(runner_main, "validate_step_record_v2", _flaky_validate)
+
+    # The episode summary is written to disk (with the ledger-corrected accounting)
+    # BEFORE the condition aggregate runs; a single quarantined episode then trips
+    # the B-784 fail-closed quarantine abort at aggregation. Catch that and read
+    # the on-disk summary (the unit under test is the summary, not the abort).
+    try:
+        ExperimentRunner(cfg).run()
+    except Exception:
+        pass
+    summary_path = next((tmp_path / "results").rglob("*_summary_v2.json"))
+    s = json.loads(summary_path.read_text())
+
+    # Without the B-1800 ledger this would be 1 (only step 0 reached JSONL).
+    assert s["model_call_attempt_count"] == 2, (
+        f"in-flight crashed model call lost — got {s['model_call_attempt_count']}, "
+        f"expected 2 (step 0 written + step 1 crashed-but-billed)"
+    )
+    # additive invariant must still hold after the ledger correction.
+    assert s["canonical_action_cost_usd"] + s["protocol_wasted_cost_usd"] == pytest.approx(
+        s["total_billed_cost_usd"]
+    )
+    # the episode crashed → quarantined for re-run (not silently counted complete).
+    assert s.get("needs_reevaluation") is True

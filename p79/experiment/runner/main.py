@@ -657,6 +657,17 @@ class ExperimentRunner:
             if s.get("valid_agent_action") is False and s.get("consumes_agent_action_budget") is False
         )
         partial_3col = compute_three_column_cost(partial_steps)
+        # B-1798 (P1-1, /stress 2026-05-21): roll up cost-basis on the exception
+        # path too so a crash episode carries the same step→episode basis chain as
+        # the happy path (else the condition aggregator sees None on crash cohorts).
+        _partial_bases = [s.get("cost_unit_basis") for s in partial_steps if s.get("cost_unit_basis")]
+        partial_cost_unit_basis = (
+            max(set(_partial_bases), key=_partial_bases.count) if _partial_bases else None
+        )
+        partial_mixed_warn = (
+            any(bool(s.get("cost_total_mixed_unit_warn")) for s in partial_steps)
+            if partial_steps else None
+        )
         return {
             "steps": n,
             "retries": retries,
@@ -669,6 +680,13 @@ class ExperimentRunner:
             "total_model_cost_usd": total_model_cost,
             "total_cost_usd": total_cost,
             "total_router_overhead_cost_usd": total_router_overhead_cost,
+            # B-1799 (P1-5, /stress 2026-05-21 codex Mode B): return obs_prepare so
+            # the exception-path component_breakdown (main.py ~1872 reads
+            # _agg.get("total_obs_prepare_cost_usd")) closes to total_cost. Pre-fix
+            # it was computed (L611-613) + folded into total_cost but NOT returned →
+            # silent .get(...,0.0) → failed/partial episode breakdown under-counted
+            # obs_prepare → total_cost > model+router+obs_prepare (component non-closure).
+            "total_obs_prepare_cost_usd": total_obs_prepare_cost,
             "total_router_overhead_ms": total_router_overhead_ms,
             "escalation_count": escalation_count,
             "agent_action_step_count": partial_agent_action,
@@ -679,6 +697,8 @@ class ExperimentRunner:
             "total_billed_cost_usd": partial_3col["total_billed_cost_usd"],
             "canonical_action_cost_usd": partial_3col["canonical_action_cost_usd"],
             "protocol_wasted_cost_usd": partial_3col["protocol_wasted_cost_usd"],
+            "cost_unit_basis": partial_cost_unit_basis,
+            "cost_total_mixed_unit_warn": partial_mixed_warn,
         }
 
     @staticmethod
@@ -1652,6 +1672,17 @@ class ExperimentRunner:
         # (B-389) uses it to time-order reset_post_interrupt events vs episode
         # lifetime (`is_after_reset` / `prior_event_count` covariates).
         _wallclock_start = datetime.now(timezone.utc).isoformat()
+        # B-1800 (P1-6, /stress 2026-05-21 codex Mode B OOB): crash-atomic billed-
+        # cost ledger. The billed model call (_run_episode: backend.step) happens
+        # ~960 lines before the step JSONL is written; an exception in that window
+        # loses the in-flight step's billed model spend + its model-call attempt
+        # (the except block below recovers ONLY written JSONL via
+        # _aggregate_partial_steps). Reset the instance ledger here (per episode);
+        # _run_episode increments it right after each billed call; the except block
+        # corrects the recovered _agg so §1 total_billed_cost / model_call_attempt
+        # are not under-reported on a mid-step crash.
+        self._episode_inflight_billed_usd = 0.0
+        self._episode_inflight_model_attempts = 0
         # B-485 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute resume
         # fingerprint per episode so summary write carries it for later
         # restart's identity gate. Per-episode compute is OK (microsecond
@@ -1765,6 +1796,24 @@ class ExperimentRunner:
             # observation_mode so escalation_count can be recomputed from
             # partial steps (not hardcoded 0 = silent paper §4 bias).
             _agg = self._aggregate_partial_steps(_partial_steps, condition.observation_mode)
+            # B-1800 (P1-6): correct the JSONL-recovered billed total + model-call
+            # count with the crash-atomic ledger. `_agg` sums only WRITTEN steps; the
+            # ledger also includes the in-flight (unwritten) billed model call lost to
+            # the crash. delta = ledger − recovered; attribute it to billed + wasted
+            # (the unwritten step produced no valid action) so canonical+wasted≡billed
+            # holds and §1 total_billed is not under-reported. getattr-guarded for
+            # any path that bypassed the per-episode reset.
+            _ledger_billed = float(getattr(self, "_episode_inflight_billed_usd", 0.0) or 0.0)
+            _ledger_attempts = int(getattr(self, "_episode_inflight_model_attempts", 0) or 0)
+            _recovered_billed = float(_agg.get("total_billed_cost_usd") or 0.0)
+            _billed_delta = max(0.0, _ledger_billed - _recovered_billed)
+            if _billed_delta > 0.0:
+                _agg["total_billed_cost_usd"] = _recovered_billed + _billed_delta
+                _agg["total_model_cost_usd"] = float(_agg.get("total_model_cost_usd") or 0.0) + _billed_delta
+                _agg["total_cost_usd"] = float(_agg.get("total_cost_usd") or 0.0) + _billed_delta
+                _agg["protocol_wasted_cost_usd"] = float(_agg.get("protocol_wasted_cost_usd") or 0.0) + _billed_delta
+            if _ledger_attempts > int(_agg.get("model_call_attempt_count") or 0):
+                _agg["model_call_attempt_count"] = _ledger_attempts
 
             summary = EpisodeSummaryV2(
                 schema_version=SCHEMA_VERSION_V2,
@@ -1869,9 +1918,16 @@ class ExperimentRunner:
             summary["component_breakdown"] = {
                 "model_cost_usd": _agg["total_model_cost_usd"],
                 "router_overhead_usd": _agg["total_router_overhead_cost_usd"],
+                # B-1799 (P1-5): _aggregate_partial_steps now returns this key, so
+                # the .get() resolves to the real obs_prepare sum (was silent 0.0).
                 "obs_prepare_usd": float(_agg.get("total_obs_prepare_cost_usd", 0.0)),
                 "total_energy_kwh": 0.0,
             }
+            # B-1798 (P1-1): propagate the cost-basis rollup to the crash summary so
+            # the condition aggregator can stratify crash cohorts too (None ≡ no
+            # recoverable step carried a basis).
+            summary["cost_unit_basis"] = _agg.get("cost_unit_basis")
+            summary["cost_total_mixed_unit_warn"] = _agg.get("cost_total_mixed_unit_warn")
             # B-166 propagation: error summaries also flagged incomplete
             summary["trajectory_incomplete"] = True
             summary["unknown_failure_reasons"] = {}
@@ -2425,6 +2481,14 @@ class ExperimentRunner:
         valid_action_count = 0
         consecutive_parse_errors = 0
         total_parse_errors = 0
+        # B-1800 (P1-6): hoist the per-episode token-cost config (constant — depends
+        # only on backend type) so the crash-atomic billed-cost ledger can value the
+        # in-flight model spend immediately after backend.step, before the
+        # crash-prone env.step / obs / energy / evaluator processing downstream.
+        _token_cost_cfg = select_token_cost_cfg(
+            metrics_cfg=self.cfg.get("metrics", {}),
+            backend_type=self.cfg.get("backends", {}).get(condition.backend_id, {}).get("type"),
+        )
         while (
             agent_action_count < self.max_agent_actions
             and step_idx < self.max_model_attempts
@@ -2578,6 +2642,20 @@ class ExperimentRunner:
             context.planner_sub_goal = planner_sub_goal
             action, meta = backend.step(instruction, obs_for_backend, context)
             backend_latency_ms = (time.time() - backend_start) * 1000.0
+            # B-1800 (P1-6, /stress 2026-05-21 codex Mode B OOB): the model call
+            # above is already billed. Stamp its spend into the instance ledger NOW
+            # — the step record is not written until ~960 lines below, and any
+            # exception in between (env.step / screenshot / energy / evaluator) would
+            # otherwise lose this billed cost + model attempt from the crash-recovery
+            # summary (which reads only written JSONL). The ledger is the
+            # authoritative §1 billed total on the except path; on the happy path it
+            # is ignored (the summary uses the written step records).
+            self._episode_inflight_model_attempts += 1
+            self._episode_inflight_billed_usd += compute_token_cost(
+                input_tokens=int(meta.get("input_tokens") or 0),
+                output_tokens=int(meta.get("output_tokens") or 0),
+                cost_cfg=_token_cost_cfg,
+            )["total"]
 
             # B-134 (/stress A1.1 v8 codex F3, 2026-05-15): save runner-side
             # validate_action result instead of discarding the bool. When
@@ -2939,10 +3017,7 @@ class ExperimentRunner:
             token_cost = compute_token_cost(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cost_cfg=select_token_cost_cfg(
-                    metrics_cfg=self.cfg.get("metrics", {}),
-                    backend_type=self.cfg.get("backends", {}).get(condition.backend_id, {}).get("type"),
-                ),
+                cost_cfg=_token_cost_cfg,  # B-1800: hoisted above (was inline select)
             )
             router_cfg = self.cfg.get("router", {})
             router_overhead_ms = (
@@ -3277,6 +3352,12 @@ class ExperimentRunner:
             step_record["tool_call_emitted"] = meta.get("tool_call_emitted")
             step_record["tool_call_parse_path"] = meta.get("tool_call_parse_path")
             step_record["tool_call_fallback_reason"] = meta.get("tool_call_fallback_reason")
+            # B-1797 (P1-7/P1-8, /stress 2026-05-21 codex Mode B): B1/B2 text-JSON
+            # repair-path provenance (analogue of tool_call_parse_path). None for
+            # B0 (tool-call backend) + clean Path-1 JSON; "repaired_fenced" /
+            # "repaired_multiple_identical" on repaired text-JSON steps. Keeps the
+            # provenance OUT of parse_failure_reason (which is now invalid-only).
+            step_record["text_parse_path"] = meta.get("text_parse_path")
             # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI):
             # about:blank recovery intervention attribution. Stamp non-None
             # values only when runner intervention fired this step;
@@ -3864,6 +3945,22 @@ class ExperimentRunner:
         episode_summary["total_billed_cost_usd"] = _3col["total_billed_cost_usd"]
         episode_summary["canonical_action_cost_usd"] = _3col["canonical_action_cost_usd"]
         episode_summary["protocol_wasted_cost_usd"] = _3col["protocol_wasted_cost_usd"]
+        # B-1798 (P1-1, /stress 2026-05-21 Claude A2 + codex B4 2-AI overlap):
+        # roll up cost_unit_basis (modal) + cost_total_mixed_unit_warn (any) from
+        # step records to the EPISODE summary. Pre-fix these were stamped on STEP
+        # records only; the condition aggregator (metrics.py reads
+        # ep.get("cost_unit_basis")) saw all None → cross_site CSV "unknown" for
+        # every paper-grade row → §1 cross-baseline cost stratification
+        # unverifiable from artifact (re-opened B-1559). Episode summary is the
+        # strict accounting boundary for the basis chain.
+        _ep_bases = [s.get("cost_unit_basis") for s in step_records if s.get("cost_unit_basis")]
+        episode_summary["cost_unit_basis"] = (
+            max(set(_ep_bases), key=_ep_bases.count) if _ep_bases else None
+        )
+        episode_summary["cost_total_mixed_unit_warn"] = (
+            any(bool(s.get("cost_total_mixed_unit_warn")) for s in step_records)
+            if step_records else None
+        )
         # Fire-6 C1b /stress P1-5: episode rollup of recovered Page.screenshot
         # timeouts (dom-mode). Paper §4 disclosure + latency-confound count.
         episode_summary["screenshot_timeout_recovered_count"] = sum(
