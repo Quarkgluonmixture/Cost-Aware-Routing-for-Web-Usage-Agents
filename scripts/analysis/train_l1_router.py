@@ -180,9 +180,20 @@ def tune_threshold_inner_cv(
 ) -> dict[str, Any]:
     """Inner-CV τ tuning on train fold ONLY (GPT-relay Point 5 fix).
 
-    For each candidate τ, train inner pipeline on inner-train, evaluate cost-weighted
-    decision on inner-holdout, score = mean accuracy (= SR if labels are oracle-best
-    mode and we route to the predicted mode).
+    For each candidate τ, train inner pipeline on inner-train, evaluate the routing
+    decision on inner-holdout, score = mode-match accuracy (decided mode == oracle label).
+
+    DISCLOSURE (router /stress 2026-05-21; deferred true-fixes → next_steps.md):
+      - F3/G2 (B-1814): the score is mode-match ACCURACY, a proxy for Pareto utility,
+        NOT true SR. A miss that picks a more expensive but successful mode is scored the
+        same as a cheap failing one. A true Expected-Pareto-Lift objective needs the
+        per-task per-mode outcome matrix inside inner-CV (Stage 3 only has oracle labels)
+        → deferred. 2nd-order: affects τ selection only, NOT the outer-holdout H10 eval.
+      - C3 (B-1816): X_train here is already Stage-2 (outer-pool) MI-selected, so the
+        inner-holdout influenced feature selection → τ is mildly optimistic. 2nd-order
+        (outer eval leak-free, §254) + 3rd-order magnitude (~30 inner-holdout vs ~1124
+        pooled-MI samples). Nested per-inner-fold MI conflicts with the user-confirmed
+        E'' pooled-cross-cell selector → deferred.
 
     Returns dict with chosen tau, per-tau scores, n_inner_folds_used.
     """
@@ -264,10 +275,13 @@ def tune_threshold_inner_cv(
         for tau in candidates:
             # Cost-weighted decision rule: route to pred_mode if max_prob > τ else fallback
             decided_modes = np.where(max_probs > tau, pred_modes, SAFE_FALLBACK_MODE)
-            # Score = SR proxy = fraction where decided_mode == oracle-best (label)
-            # This is the "route picks the right mode" rate on inner-holdout.
-            sr = float((decided_modes == inner_y_holdout).mean())
-            per_tau_scores[tau].append(sr)
+            # F3/G2 (B-1814): mode-match ACCURACY (decided mode == oracle label) — a
+            # proxy for Pareto utility, NOT true SR (a miss picking a more expensive but
+            # successful mode scores the same as a cheap failing one). Deferred
+            # Expected-Pareto-Lift objective → next_steps. 2nd-order: τ-selection only,
+            # outer-holdout H10 eval unaffected.
+            accuracy = float((decided_modes == inner_y_holdout).mean())
+            per_tau_scores[tau].append(accuracy)
 
     # Aggregate per-tau scores
     per_tau_mean: dict[float, float] = {}
@@ -474,6 +488,21 @@ def train_one_cell(
         "per_fold_records": {str(fk): rec for fk, rec in per_fold.items()},
         "holdout_sr_per_fold_mean": float(np.mean(holdout_srs)) if holdout_srs else float("nan"),
         "holdout_sr_per_fold_values": holdout_srs,
+        # δ-cluster disclosure (router /stress 2026-05-21; deferred true-fixes → next_steps):
+        "tau_tuning_disclosure": {
+            "objective": "mode_match_accuracy",
+            "f3_g2_b1814": (
+                "τ chosen by mode-match accuracy (proxy for Pareto utility, not true SR). "
+                "Expected-Pareto-Lift objective needs the outcome matrix in inner-CV "
+                "(deferred). 2nd-order: τ-selection only, outer H10 eval clean."
+            ),
+            "c3_b1816": (
+                "inner-CV reuses the Stage-2 outer-pool MI selector → inner-holdout "
+                "influenced selection → τ mildly optimistic. 2nd-order (outer eval "
+                "leak-free §254) + 3rd-order magnitude. Nested MI deferred (conflicts "
+                "with user-confirmed E'' pooled selector)."
+            ),
+        },
         "note_design": (
             "Q1=C + (E''') design — within-cell 5-fold CV deployment with inner-CV τ "
             "tuning (b). Pipeline has internal StandardScaler (GPT-relay Point 4). "

@@ -41,6 +41,27 @@ updated: 2026-05-18
 
 ---
 
+## §0b Router pipeline pre-fire /stress — deferred follow-ups (2026-05-21)
+
+> Router-pipeline pre-fire /stress (3-AI A+B+C, 22 findings; [[实验笔记]] §255). **16 P0/P1 fixed this round** — 簇 α B-1805~1809 (`25d4608`) / 簇 β B-1810/1811/1818 (`d4bc0bd`) / 簇 γ B-1812/1813 (`9a3703a`) / 簇 δ F7 B-1815 + F3/C3 disclosure. Below = deferred items, all gated on **Pass-1 data landing** (router code runs on empty data now, `n_pooled_total:0`, so effects can't be validated yet).
+
+> [!todo] Deferred — do after Pass-1 lands (real data to validate against)
+> 1. **Write the Pass-1 run manifest** (C2/B-1810) — `results/phantom_paper/l1_router/pass1_run_manifest.json` with the exact 36 paper-grade Pass-1 run IDs → upgrades `discover_runs` from "glob + reject smoke" to strict whitelist. Then run `aggregate_h10_pareto.py --require-full-coverage` (C8/B-1811) for the paper-grade H10 verdict (fail-closed on incomplete coverage).
+> 2. **F3/G2 (B-1814) τ objective** — inner-CV currently picks τ by mode-match accuracy (proxy). On real data, decide whether to switch to Expected-Pareto-Lift (θ). Needs the per-task per-mode outcome matrix threaded Stage 1 → Stage 3 inner-CV. 2nd-order (outer H10 eval already clean); only worth it if τ choice materially shifts the frontier.
+> 3. **C3 (B-1816) inner-CV MI leak** — inner-CV reuses the Stage-2 outer-pool MI selector (mild, 2nd-order, 3rd-order magnitude). Nested per-inner-fold MI would conflict with the user-confirmed E'' pooled-cross-cell selector (per-cell ~30 vs pooled ~1124 MI samples). Decide on real data whether the leak materially moves τ; if not, the disclosure (in `tau_tuning_disclosure` + docstring) suffices.
+> 4. **§6 disclosure block** (write into paper §6 / §3.5 once data lands):
+>    - self-oracle noise ceiling (G1/B-1809) — oracle labels are N=1; report the noise floor before claiming the router beats it (needs a 2nd independent Pass-1 set, or report the multi-success-task fraction as the noise-sensitive subset; both already emitted in `oracle_provenance`).
+>    - deployment realism (C1/gemini#3) — no-success tasks are now routed (out-of-sample fold LR); report their cost in the cost-benefit.
+>    - MODES cost order (F2/B-1806) — verify the prior ascending-cost order against measured per-mode mean cost (summary_v2 `total_model_cost_usd`); switch to a measured-cost tie-break if they disagree.
+>    - router_strictly_better (F7/B-1815) — report `k_cells_router_strictly_better` (θ CI lower > 0) alongside non-dominance; do NOT claim a learned-routing benefit if the router collapses toward a single baseline.
+>    - sklearn/numpy version metadata (C6/B-1813) — store at train time + validate at serve time (defence-in-depth beyond the loader hard-fail).
+> 5. **F6-followup** — 3 diagnostic scripts (`p1_archive_simulation` / `l2_partial_trajectory_auroc` / `router_archive_diagnostic`) still hold local `MODES` copies; route them through `p79/policies/router_features.py` (sanity-check scripts, not paper-primary).
+> 6. **F9 (P2)** — delete/guard the deprecated 8-dim `predict_mode` path (`learned_router.py:425-494`) after confirming no caller (runner uses `predict_mode_fold_aware`).
+>
+> 详 [[实验笔记]] §255 (→ §256 fix wave) + [[master_bug_catalog]] B-1805~B-1818.
+
+---
+
 ## §0 Direction
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, phantom routing space 3 arms / 4-fold drop-in)

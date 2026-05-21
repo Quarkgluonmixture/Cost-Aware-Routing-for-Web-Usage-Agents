@@ -332,6 +332,14 @@ def check_pareto_non_dominance_paired_bootstrap(
     ) if delta_max_replicates else (float("nan"), float("nan"))
     theta_se = float(np.std(delta_max_replicates)) if delta_max_replicates else float("nan")
 
+    # F7/G4 (B-1815): non-dominance is a low bar — a router that collapses to a single
+    # baseline mode (e.g. always phantom_som) is non-dominated BY DEFINITION (it IS a
+    # baseline) and would pass the gate while contributing zero learning. Add a
+    # marginal-utility flag: the router is STRICTLY better than the best cost-feasible
+    # baseline iff θ (= SR_router − max feasible baseline SR) has a 95% CI lower bound
+    # > 0. This is the "the routing logic actually helped" signal §6 must report
+    # alongside non-dominance, so a degenerate router cannot masquerade as success.
+    router_strictly_better = bool(delta_max_replicates) and (theta_ci[0] > 0)
     return {
         "n_common_tasks": n,
         "fraction_non_dominated": frac,
@@ -340,6 +348,7 @@ def check_pareto_non_dominance_paired_bootstrap(
         "theta_mean_pp": theta_mean * 100,
         "theta_ci_95_pp": (theta_ci[0] * 100, theta_ci[1] * 100),
         "theta_se_pp": theta_se * 100,
+        "router_strictly_better_than_envelope": router_strictly_better,
         "n_bootstrap": B,
         "reason": "ok",
     }
@@ -607,6 +616,9 @@ def analyze_cell(
         "passes": pareto["passes"],
         "theta_mean_pp": pareto["theta_mean_pp"],
         "theta_se_pp": pareto["theta_se_pp"],
+        # F7/G4 (B-1815): marginal-utility flag — router strictly > best feasible
+        # baseline (θ CI lower bound > 0), NOT merely non-dominated.
+        "router_strictly_better": pareto.get("router_strictly_better_than_envelope", False),
         # B-1601 (/stress 深入审 Mode A P0-2-A*, 2026-05-18): cell-level
         # cost_unit_basis diagnostic for downstream cross-cell pool homogeneity
         # check in run_h10_verdict (paper §6 Appendix-D FE-pool transparency).
@@ -648,6 +660,20 @@ def run_h10_verdict(
         "k_of_n_string": f"{k_pass}/{n_total}",
         "deployment_threshold": ">= 5/6 cells pass cell-level (operational robustness criterion)",
         "operational_gate_passed": (k_pass >= 5 and n_total >= 6),
+        # F7/G4 (B-1815): marginal-utility layer — how many cells show the router
+        # STRICTLY beating the best feasible single-mode baseline (θ CI lower > 0),
+        # not merely non-dominated. High non-dominance count + low strictly-better
+        # count = router collapsing toward a baseline (learning illusion).
+        "k_cells_router_strictly_better": sum(
+            1 for r in ok_cells if r.get("router_strictly_better")
+        ),
+        "marginal_utility_note": (
+            "Non-dominance only proves 'not worse'; router_strictly_better (θ CI lower "
+            "bound > 0) proves the routing logic added value over the best single mode. "
+            "If k_cells_router_strictly_better << k_cells_passing_cell_level, the router "
+            "is largely reproducing a single-mode baseline (e.g. always phantom_som) and "
+            "§6 must not claim a learned-routing benefit."
+        ),
     }
 
     # APPENDIX-D SENSITIVITY: FE inverse-variance pool over θ_i (transparency, NOT gating)

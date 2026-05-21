@@ -7484,3 +7484,21 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave).
 
 ---
+
+## B-1814, B-1815, B-1816 — router pipeline pre-fire /stress 簇 δ: τ objective / gating / inner-CV (2026-05-21)
+
+> Cluster δ of the router-pipeline pre-fire /stress (实验笔记 §255). Theme = the statistical design of τ tuning + the H10 gate. **F7 (B-1815) fully fixed**; **F3/G2 (B-1814) + C3 (B-1816) are 2nd-order** (τ-selection only; outer H10 eval leak-free per §254) and — data not landed (effects unverifiable) + true fixes touch the user-confirmed E'' architecture — are **DISCLOSED in code + cell_meta with the true-fix deferred to next_steps §0b**. User decision 2026-05-21: "Disclosure + follow-up in next_steps".
+
+| Bug | 根因 | Fix |
+|---|---|---|
+| **B-1815** (P1 F7/G4, gemini OOB + Claude) — **FIXED**. H10 Pareto non-dominance is a low bar: a router that collapses to a single baseline mode (e.g. always phantom_som) is non-dominated BY DEFINITION (it IS a baseline) → would pass the gate with zero learning ("learning illusion"). | `aggregate_h10_pareto.py` non-dominance gate only, no marginal-utility check. | `check_pareto_non_dominance` adds `router_strictly_better_than_envelope` (θ = SR_router − max-feasible-baseline-SR; 95% CI lower bound > 0); cell verdict carries `router_strictly_better`; operational_gate reports `k_cells_router_strictly_better` + `marginal_utility_note`. Non-dominance retained; marginal-utility layer added so a degenerate router cannot masquerade as success. |
+| **B-1814** (P1 F3/G2, Claude + gemini overlap) — **DISCLOSED + deferred**. Inner-CV picks τ by mode-match accuracy (`train_l1_router.py:269`), a proxy for Pareto utility: a miss picking a more-expensive-but-successful mode scores the same as a cheap-failing one. | True Expected-Pareto-Lift τ needs the per-task per-mode outcome matrix inside inner-CV; Stage 3 only has oracle labels → cross-Stage change. | Docstring + `:264` comment + cell_meta `tau_tuning_disclosure.f3_g2_b1814`. 2nd-order (τ-selection only; outer eval clean). True fix → next_steps §0b (decide on real data). |
+| **B-1816** (P1 C3, codex OOB) — **DISCLOSED + deferred**. Inner-CV τ tuning reuses the Stage-2 outer-pool MI selector, so inner-holdout features influenced selection → τ mildly optimistic. | Stage-2 MI is pooled-cross-cell (user-confirmed E''); nested per-inner-fold MI would shrink it to per-cell ~30 samples (unstable) + change the architecture. | Docstring + cell_meta `tau_tuning_disclosure.c3_b1816`. 2nd-order (outer eval leak-free §254) + 3rd-order magnitude (~30 vs ~1124 MI samples). Nested MI → next_steps §0b. |
+
+**Credit retained (§254)**: outer-CV fold-local preprocessing leak = ZERO; the C3 leak is strictly inside the τ-tuning inner-CV and never reaches the outer-holdout H10 evaluation.
+
+**Tests**: F7 verified via h10 suite (33 passed, `router_strictly_better` field present); F3/C3 disclosure is comment/metadata only. Full router suite **99 passed**.
+
+**Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave). Deferred true-fixes → next_steps §0b.
+
+---
