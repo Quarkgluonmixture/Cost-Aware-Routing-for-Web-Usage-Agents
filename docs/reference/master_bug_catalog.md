@@ -7528,3 +7528,45 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave; F6-followup B-1821 landed §256.x).
 
 ---
+
+## B-1822 — Fire-6 condition-boundary flock fd-inheritance self-collision (2026-05-21)
+
+> Standalone incident from the Fire-6 Pass-1 live run (实验笔记 §253 lineage), NOT a /stress batch — surfaced when the chain reached its first-ever condition boundary. Follow-up to **B-646** (chain site-lock flock) + sibling to **B-704** (leaf fd 7) / **B-907** (watchdog fd 8).
+
+**B-1822** (P0, Fire-6 incident) 🛠️ FIXED — **symptom**: Fire-6 cls chain (`567094`) ABORTed at `[1/18]→[2/18]` (B0 dom → B0 som) `2026-05-21T21:21:12Z`: `[FATAL] another paper-grade chain holds lock for site=classifieds` + ntfy "queue_chain ABORT … possible double-fire". **No second chain existed** — `find` over 21:18–21:24Z showed only R9755's own files; `ps`/`fuser` clean; crontab has no auto-relaunch (only `fire6_monitor.sh`, pgrep-alert-only, never relaunches). False positive. orchestrator fail-closed (cls rc=1 → red not launched) → Pass-1 stalled at 1/36, **no data contamination** (R9755 = 224 ep complete, `parse_error_rate` 0 / `cost_column_coverage_rate` 1.0 / `benchmark_noise_rate` 0; full-cohort SR 14.7%).
+
+**Root cause**: `flock` advisory locks bind to the **open file description (OFD)**, not the fd number. The chain holds the per-(site,benchmark) site-lock on fd 9 (`queue_chain.sh:248 exec 9>"$LOCK"`). The leaves spawn the runner + watchdog daemons via `setsid nohup … > LOG 2>&1 < /dev/null &`, redirecting only fd 0/1/2 → both daemons **inherit fd 9** (same OFD). The chain's per-iteration release `exec 9>&-` (`queue_chain.sh:549`) closes only the chain's own fd 9; the **watchdog out-lives the runner and keeps its inherited fd 9 → the OFD stays alive → the site-lock is NOT actually released**. The next iteration's `flock -n 9` (new OFD, same file) then conflicts → FATAL. `_lib_paper_grade_gates.sh:105` already foresaw fd-9 inheritance but handled it only at the leaf (fd 7) layer; the chain-fd-9 + setsid-daemon path was the gap.
+
+**Why latent until now**: Fire-2/3/4/5 all died inside condition `[1/N]` on the task-4/75 `EvaluatorUnavailableError` and never reached a condition boundary. B-1803 (fresh-context eval isolation) let Fire-6 complete the first full condition, exposing this for the first time. (Recurring pattern: each layer's fix lets the run reach the next latent layer.)
+
+| Code | Fix |
+|---|---|
+| **4 queue leaves** — `queue_baseline.sh` runner `:214` + watchdog `:263`; `queue_phantom_{som,text,prompt}.sh` runner + watchdog setsid (`… < /dev/null &`, all inheriting fd 9/8/7) | Append `9>&- 8>&- 7>&-` to each daemon's redirection list → drops all inherited paper-grade lock fds (chain site-lock 9 / leaf site-lock 7 / watchdog-spawn 8) before backgrounding. `N>&-` on an unopened fd is a no-op → safe for chain-invoked + direct-leaf. Makes the chain (and leaf) the sole OFD reference → release is real. **Sibling-propagated to all 4 leaves** per the B-907 leaf set (chain visits the baseline leaf for modes [1-3], then the phantom leaves for [4-6] of each baseline). |
+
+**Test**: `tests/test_b1822_flock_fd_inheritance.sh` — S1 reproduces the bug (pre-fix daemon inherits fd 9 → parent re-acquire FAILs after release), S2 verifies the fix (daemon `9>&-` → re-acquire OK). **pass=2 fail=0**. `bash -n` clean on all 4 leaves.
+
+**Process note**: first sibling-propagation attempt used `sed` to batch the 6 phantom-leaf redirections and corrupted them (an unescaped `&` in the replacement = "whole match" → mangled `2>&1`); `git checkout` rollback + Edit-tool redo. Reaffirms CLAUDE.md "no `sed` for nested-quote shell redirections".
+
+**Status**: 🛠️ FIXED (pending user review + commit). No re-fire until reviewed.
+
+**Chronicle cross-link**: 实验笔记 §253 (Fire-6) → §258 (incident + B-1823~B-1825 fix wave).
+
+---
+
+## B-1823, B-1824, B-1825 — Fire-6 relaunch hardening (/stress 3-AI, 2026-05-21)
+
+> Fire-6 /stress 3-AI (A+B+C) follow-up cluster to B-1822 (condition-boundary flock). Mode A (Claude) found A-F1 (orchestrator fd 10 inherited) / A-F2 (resume reruns R9755, no done-skip) / A-F7 (router_learned + pilot_t0 unpatched); Mode B (codex) found the unsafe `phase1a_relaunch_missing.sh` tool (2 P0) + router watchdog-lock gap + ORCH_FD TOCTOU; Mode C (gemini) reframed resume as a data-integrity ghost-run reviewer-defense issue (manifest). 详 实验笔记 §258.
+
+| Bug | 根因 | Fix |
+|---|---|---|
+| **B-1823** (P0-1-B* + P0-2-B*, codex OOB) — `phase1a_relaunch_missing.sh` is an unsafe paper-grade resume path: `:126` calls `queue_chain.sh` directly (bypassing orchestrator lock/gates + Gate 8) and `:159-163` launches 4 parallel chains (cls_fresh/red_fresh/cls_resume/red_resume) violating the single-site rule; it also trusted `phase1a_status.sh:52 SCORED_COUNT[reddit]=208` ≠ canonical `analysis.py:80` red=205 → a valid 205-ep reddit run mis-flagged PARTIAL → false rerun. | Glob-latest + parallel chains + wrong count. | Hard-fail the tool under `P79_PAPER_GRADE=1` (points to RESUME_MISSING mode); fix reddit count 208→205. |
+| **B-1824** (P1-1-AB* + P1-2-AB* / A-F1 / A-F7, 2-AI) — daemon fd-inheritance was only fixed per-leaf (B-1822); the orchestrator lock fd (`{ORCH_FD}`, dynamically ≥10) was ALSO inherited (实测 fd 10) but unclosed, and `queue_router_learned.sh` (Pass-2) lacked both the fd closure AND `acquire_watchdog_lock` parity. | Sibling-propagation drift + orchestrator fd leak + Pass-2 parity gap. | Shared `spawn_paper_grade_daemon` helper in `_lib` (closes chain 9 / leaf 7 / watchdog 8; supersedes per-leaf B-1822 redirects on baseline + 3 phantom + router_learned; pilot_t0 inline since it doesn't source `_lib`); close `{ORCH_FD}` at the orchestrator→chain spawn boundary (baseline + router orchestrators); add `acquire_watchdog_lock` + trap to router_learned. |
+| **B-1825** (P0-3-AC*, Claude+gemini OOB) — relaunch had no done-skip (`FORCE_NEW=1` reruns completed R9755) and aggregation globbed `ls -dt` latest → a re-fire's 2nd copy = silent double-count / cherry-pick ("ghost run"). | No manifest binding; glob-latest ambiguity. | Orchestrator `RESUME_MISSING=1` mode (same preflight/Gate8/quarantine gates, sequential cls→red, manifest-bound done-skip, parallel-incompatible guard); `docs/checkpoints/pre_run/fire_manifest.json` binds R9755 authoritative; `scripts/analysis/validate_fire_manifest.py` ghost-run gate fail-closes on a manifest-listed condition having a complete non-authoritative run. Disclosure: prereg Appendix E.5. |
+
+**Tests**: `bash -n` clean on all 8 touched scripts; `tests/test_b1822_flock_fd_inheritance.sh` pass=2; helper unit test (daemon drops fd 9/8/7) pass; `{var}>&-` close-on-bg-spawn verified; RESUME_MISSING done-detection verified (R9755 SKIP, B0 som FRESH); `validate_fire_manifest.py` exit 0 on current results (R24437 partial correctly NOT a ghost).
+
+**Deferred (next_steps follow-up)**: per-aggregator manifest-binding (14 `aggregate_*.py` still glob; `validate_fire_manifest.py` gate fail-closes ghosts before aggregation as the interim guard) + manifest auto-append on condition completion (currently `validate_fire_manifest.py --populate` suggests entries).
+
+**Chronicle**: 实验笔记 §258.
+
+---
