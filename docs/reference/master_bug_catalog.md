@@ -7393,3 +7393,15 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle cross-link**: 实验笔记 §252.
 
 ---
+
+## B-1803 — Fire-6 RCA C1b: evaluator isolation → FRESH browser context (Fire-6 task-4 abort) (2026-05-21)
+
+> Fire-6 Pass-1 cls B0 dom aborted at **[1/18] task 4 (id=84144)** — the **4th** fire (Fire-3/4/5/6) killed by the same `EvaluatorUnavailableError: Page.goto 30s × 3` on an isolated program_html eval. Prior RCA (next_steps) blamed "agent-modified substrate"; this session's diagnosis **refuted that**. Cross-fire registry: cls task 4 quarantine + classify(`evaluator`, B-1803). Fix commit `4baac19`. Re-fired same day.
+
+| Bug | Root cause | Fix |
+|---|---|---|
+| **B-1803** Fire-6 cls B0 dom task 4 eval `Page.goto(id=84144)` 30s×3 → `EvaluatorUnavailableError` → quarantine → chain fail-closed abort (rc=1, red not launched). 4th occurrence (Fire-3/4/5/6); fail-closed worked but underlying issue unfixed. | **NOT agent-modified substrate** (refutes prior RCA): DB shows item 84144 `b_active=1` (not deleted); `curl id=84144` = **0.17s** healthy; total 84149/maxid 84154 canonical clean. task 4 classifies `isolated_program_html_context` so C1 already ran the eval on `page.context.new_page()` — a fresh PAGE in the **SAME** long-lived runner context — and it STILL hung. **Real cause: the agent's BrowserContext degrades by task ~4** (open dialogs / pending XHR / beforeunload / renderer pressure); a same-context new_page inherits it. A fresh context loads the target like curl (~170ms). | **`4baac19`**: C1b — `environment.py::_open_fresh_eval_page()` opens the eval page in a **FRESH browser CONTEXT** (`page.context.browser.new_context`), clean Chromium profile, auth via the task config's `storage_state` FILE (not a live `storage_state()` call that could itself hang on the degraded context) + viewport. Both C1 isolated-init + nav-error retry paths use it (retry opens a NEW context each attempt); `fresh_context` closed in `finally`. Within Amendment 01 GRL "evaluator isolation (C1/C1b)" witnessed boundary — reliability only, no scoring change. 87 eval tests pass. Real test = re-fire past task 4. |
+
+**Chronicle cross-link**: 实验笔记 §253.
+
+---
