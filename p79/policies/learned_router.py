@@ -29,11 +29,22 @@ from __future__ import annotations
 import json
 import logging
 import pickle
-import re
 from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
+
+# Single source of truth shared with the train-time extractor + archive sim
+# (router /stress B-1807). Re-exported here so external `from learned_router import
+# COLOR_RE / INTENT_REGEX` callers stay working.
+from p79.policies.router_features import (  # noqa: F401  (re-export)
+    COLOR_RE,
+    COMPARE_RE,
+    INTENT_REGEX,
+    NAV_RE,
+    SEARCH_RE,
+    difficulty_to_int,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,50 +52,10 @@ logger = logging.getLogger(__name__)
 N_FOLDS = 5
 SAFE_FALLBACK_MODE = "phantom_som"
 
-# Back-compat module-level regex aliases (pre-Chunk-C single-pickle callers).
-# New code should use INTENT_REGEX dict (matches scripts/analysis/extract_50_features.py).
-COLOR_RE = re.compile(
-    r"\b(color|red|blue|green|yellow|black|white|orange|purple|pink|brown|gray|grey)\b",
-    re.IGNORECASE,
-)
-SEARCH_RE = re.compile(r"\b(find|search|locate|how many|how much)\b", re.IGNORECASE)
-COMPARE_RE = re.compile(
-    r"\b(cheapest|most expensive|highest|lowest|best|worst|biggest|smallest)\b",
-    re.IGNORECASE,
-)
-NAV_RE = re.compile(r"\b(go to|navigate|open|visit)\b", re.IGNORECASE)
-
-# Intent regex banks — must match scripts/analysis/extract_50_features.py:INTENT_REGEX
-INTENT_REGEX = {
-    "intent_color": re.compile(
-        r"\b(color|red|blue|green|yellow|black|white|orange|purple|pink|brown|gray|grey)\b",
-        re.IGNORECASE,
-    ),
-    "intent_search": re.compile(r"\b(find|search|locate|how many|how much)\b", re.IGNORECASE),
-    "intent_compare": re.compile(
-        r"\b(cheapest|most expensive|highest|lowest|best|worst|biggest|smallest)\b",
-        re.IGNORECASE,
-    ),
-    "intent_nav": re.compile(r"\b(go to|navigate|open|visit)\b", re.IGNORECASE),
-    "intent_filter": re.compile(r"\b(filter|narrow|restrict|limit to|only)\b", re.IGNORECASE),
-    "intent_sort": re.compile(r"\b(sort|rank|order by|by date|by price|newest|oldest)\b", re.IGNORECASE),
-    "intent_aggregate": re.compile(r"\b(total|sum|average|count of|number of)\b", re.IGNORECASE),
-    "intent_compose": re.compile(r"\b(compose|write|post|submit|reply|comment)\b", re.IGNORECASE),
-    "intent_form_fill": re.compile(r"\b(fill|enter|type|input)\b", re.IGNORECASE),
-    "intent_account_action": re.compile(
-        r"\b(login|logout|account|profile|sign in|sign out|subscribe|unsubscribe)\b",
-        re.IGNORECASE,
-    ),
-    "intent_visual_attribute": re.compile(
-        r"\b(size|shape|appear|look|tall|wide|small|large|height|width)\b", re.IGNORECASE
-    ),
-    "intent_question": re.compile(r"\b(what|where|when|why|how)\b|\?", re.IGNORECASE),
-    "intent_action_word": re.compile(r"\b(click|select|choose|press|tap)\b", re.IGNORECASE),
-    "intent_temporal": re.compile(
-        r"\b(today|yesterday|recent|latest|first|newest|oldest|2024|2025|2026)\b",
-        re.IGNORECASE,
-    ),
-}
+# Regex banks (COLOR_RE/SEARCH_RE/COMPARE_RE/NAV_RE + the 14-bank INTENT_REGEX) now
+# live in p79.policies.router_features (B-1807) and are imported above — single source
+# of truth shared with the train-time extractor + archive sim. The previous "must
+# match scripts/analysis/extract_50_features.py" comment was the drift hazard itself.
 
 
 # ── Artifact loaders (cached per cell on Runner attribute) ─────────────────────
@@ -322,8 +293,12 @@ def predict_mode_fold_aware(
 
     # Resolve fold for this task
     # B-1640 hard-fail: task_id missing from fold_assignment is an infrastructure
-    # error (training pipeline didn't include this task), not a signal-strength
-    # fallback. Raising kills the cell run so user diagnoses immediately.
+    # error, not a signal-strength fallback. Since C1 (B-1808) the fold generator
+    # covers the FULL routable universe (labeled + no-success tasks), so a missing
+    # task_id now means a genuine pipeline bug (stale/incomplete fold_assignment, a
+    # manifest mismatch, or a task absent from Pass-1) — never the expected
+    # "no-success task" case (those are now mapped to a round-robin fold). Raising
+    # kills the cell run so the user diagnoses immediately.
     fold_k = cell_cache["fold_assignment"].get(int(task_id))
     if fold_k is None:
         msg = (

@@ -77,6 +77,10 @@ def load_raw_features(npz_path: Path) -> dict[str, Any]:
         "task_ids": data["task_ids"],
         "cell_ids": data["cell_ids"],
         "intents": list(data["intents"]),
+        # C1 (B-1808): full routable universe (incl. no-success) for fold coverage;
+        # fall back to labeled-only for back-compat with pre-C1 NPZ files.
+        "all_task_ids": data["all_task_ids"] if "all_task_ids" in data else data["task_ids"],
+        "all_cell_ids": data["all_cell_ids"] if "all_cell_ids" in data else data["cell_ids"],
         "meta": meta,
     }
 
@@ -85,16 +89,31 @@ def generate_per_cell_fold_assignments(
     cell_ids: np.ndarray,
     task_ids: np.ndarray,
     labels: np.ndarray,
+    all_cell_ids: np.ndarray | None = None,
+    all_task_ids: np.ndarray | None = None,
     seed: int = FOLD_SEED,
     n_splits: int = N_SPLITS,
 ) -> dict[str, dict[int, int]]:
-    """Per-cell StratifiedKFold split.
+    """Per-cell StratifiedKFold split over labeled rows + full-universe coverage.
 
-    For each cell, partition tasks into n_splits folds stratified on oracle label.
+    For each cell, partition the *labeled* tasks into n_splits folds stratified on
+    oracle label (the rows Stage 3 trains on). Then — C1 (B-1808) — extend the
+    assignment to the FULL routable universe (`all_cell_ids`/`all_task_ids`, incl.
+    no-success tasks dropped from training by B-995) so every Pass-2 task resolves to
+    a fold (runtime hard-fails on any task missing from fold_assignment, B-1640).
+    No-success tasks are mapped round-robin; they were never in a training split, so
+    the fold only selects which fold's LR scores them (all out-of-sample). Falls back
+    to labeled-only coverage when the full universe is not supplied.
+
     Returns: {cell_id: {task_id: fold_index}}.
     """
     fold_assignments: dict[str, dict[int, int]] = {}
     unique_cells = sorted(set(cell_ids.tolist()))
+    # C1: full routable universe per cell (incl. no-success), for fold coverage.
+    full_by_cell: dict[str, list[int]] = {}
+    if all_cell_ids is not None and all_task_ids is not None:
+        for c, t in zip(all_cell_ids.tolist(), all_task_ids.tolist()):
+            full_by_cell.setdefault(str(c), []).append(int(t))
     for cell_id in unique_cells:
         cell_mask = cell_ids == cell_id
         cell_task_ids = task_ids[cell_mask]
@@ -133,6 +152,17 @@ def generate_per_cell_fold_assignments(
         for fold_k, (_train_local_idx, holdout_local_idx) in enumerate(splits):
             for local_idx in holdout_local_idx:
                 cell_fold_map[int(cell_task_ids[local_idx])] = fold_k
+
+        # C1 (B-1808): extend coverage to the full routable universe — map no-success
+        # (unlabeled) tasks round-robin so fold_assignment covers every Pass-2 task.
+        if full_by_cell:
+            labeled_tasks = set(cell_fold_map.keys())
+            rr = 0
+            for t in sorted(full_by_cell.get(cell_id, [])):
+                if t not in labeled_tasks:
+                    cell_fold_map[t] = rr % n_splits
+                    rr += 1
+
         fold_assignments[cell_id] = cell_fold_map
 
     return fold_assignments
@@ -329,7 +359,10 @@ def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, 
     # Generate per-cell fold assignments
     print(f"\nGenerating per-cell {N_SPLITS}-fold splits (seed={FOLD_SEED})...")
     fold_assignments = generate_per_cell_fold_assignments(
-        cell_ids, task_ids, labels, seed=FOLD_SEED, n_splits=N_SPLITS
+        cell_ids, task_ids, labels,
+        all_cell_ids=raw.get("all_cell_ids"),
+        all_task_ids=raw.get("all_task_ids"),
+        seed=FOLD_SEED, n_splits=N_SPLITS,
     )
     for cell_id, fold_map in fold_assignments.items():
         fold_counts = Counter(fold_map.values())
@@ -420,8 +453,11 @@ def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, 
             )
         )
 
-    # Dump per-cell fold assignments
+    # Dump per-cell fold assignments. fold_assignment now covers the FULL routable
+    # universe (C1 B-1808); labeled-vs-unlabeled split disclosed for paper-grade audit.
+    labeled_by_cell = Counter(str(c) for c in cell_ids.tolist())
     for cell_id, fold_map in fold_assignments.items():
+        n_labeled = labeled_by_cell.get(cell_id, 0)
         (out_dir / f"{cell_id}_fold_assignment.json").write_text(
             json.dumps(
                 {
@@ -430,6 +466,14 @@ def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, 
                     "seed": FOLD_SEED,
                     "fold_assignment": {str(tid): fk for tid, fk in fold_map.items()},
                     "n_tasks": len(fold_map),
+                    "n_labeled_trained": n_labeled,
+                    "n_unlabeled_routed": len(fold_map) - n_labeled,
+                    "coverage_note": (
+                        "fold_assignment covers the FULL routable task universe (C1 "
+                        "B-1808). Only n_labeled_trained rows fit the LR; n_unlabeled_routed "
+                        "(no-success) tasks are routed out-of-sample by their round-robin "
+                        "fold's LR so the runtime never hard-fails on an unseen Pass-2 task."
+                    ),
                     "fold_sizes": dict(Counter(fold_map.values())),
                     "schema_version": SCHEMA_VERSION,
                 },

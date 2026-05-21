@@ -41,11 +41,16 @@ from p1_archive_simulation import load_cell_outcomes, load_task_features, ARCHIV
 
 REPO = Path(__file__).resolve().parents[2]
 
-# Intent regex banks (mechanism-anchored, not archive-calibrated)
-COLOR_RE   = re.compile(r"\b(color|red|blue|green|yellow|black|white|orange|purple|pink|brown|gray|grey)\b", re.I)
-SEARCH_RE  = re.compile(r"\b(find|search|locate|how many|how much)\b", re.I)
-COMPARE_RE = re.compile(r"\b(cheapest|most expensive|highest|lowest|best|worst|biggest|smallest)\b", re.I)
-NAV_RE     = re.compile(r"\b(go to|navigate|open|visit)\b", re.I)
+# Intent regex + oracle derivation come from the shared single source (router /stress
+# B-1806/B-1807) so this sanity-check sim can't drift from the train-time labels it is
+# meant to mirror.
+from p79.policies.router_features import (  # noqa: E402
+    COLOR_RE,
+    COMPARE_RE,
+    NAV_RE,
+    SEARCH_RE,
+    derive_oracle_label,
+)
 
 
 def build_design_matrix(cells_data: dict) -> tuple[np.ndarray, np.ndarray, list[int], list[str], dict]:
@@ -63,13 +68,13 @@ def build_design_matrix(cells_data: dict) -> tuple[np.ndarray, np.ndarray, list[
             if tid not in matrix:
                 continue
             outcomes = matrix[tid]
-            # oracle best mode = first mode with success=True, tie-break by MODES order
-            best = None
-            for m in ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"]:
-                if outcomes.get(m, False):
-                    best = m; break
+            # oracle best mode = cheapest successful mode (shared derive_oracle_label,
+            # ascending prior-cost tie-break F2). B-995: no-success tasks return None and
+            # are skipped here (were mislabeled "dom", collapsing label semantics and
+            # diverging from extract_50_features Stage 1).
+            best = derive_oracle_label(outcomes)
             if best is None:
-                best = "dom"  # if no mode succeeds, default label = dom
+                continue
             intent = feat["intent"] or ""
             row = [
                 1.0 if site == "classifieds" else 0.0,

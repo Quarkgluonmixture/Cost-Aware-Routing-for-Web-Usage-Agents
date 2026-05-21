@@ -2224,6 +2224,7 @@ class ExperimentRunner:
 
             try:
                 from p79.policies.learned_router import (
+                    difficulty_to_int,
                     extract_raw_features,
                     load_task_image_field,
                     predict_mode_fold_aware,
@@ -2235,15 +2236,23 @@ class ExperimentRunner:
                     if hasattr(task, "raw_task") else ""
                 )
                 task_has_image = load_task_image_field(task.config_file)
+                # F1 (B-1805): VWA stores reasoning_difficulty as an ordinal string
+                # ("easy"/"medium"/"hard"). The old `int(...)` raised ValueError and
+                # the bare `except: pass` silently zeroed it → serve saw 0 while train
+                # saw the real value (train/serve skew). difficulty_to_int is the same
+                # mapping the extractor uses; only file/JSON errors fall through now.
                 reasoning_difficulty = 0
                 try:
                     with open(task.config_file) as _cfg_f:
                         _cfg = json.load(_cfg_f)
-                        reasoning_difficulty = int(
-                            _cfg.get("reasoning_difficulty", 0) or 0
-                        )
-                except Exception:
-                    pass
+                    reasoning_difficulty = difficulty_to_int(
+                        _cfg.get("reasoning_difficulty")
+                    )
+                except (OSError, json.JSONDecodeError) as _diff_err:
+                    logger.warning(
+                        "[learned router] could not read reasoning_difficulty "
+                        "from %s: %s; using 0", task.config_file, _diff_err
+                    )
 
                 # Step-0 obs features (mode-agnostic DOM-style at env.reset return)
                 dom_complexity = (obs.text or "").count("\n") + 1 if obs.text else 0

@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -31,14 +30,22 @@ from typing import Any, Optional
 
 import numpy as np
 
+from p79.policies.router_features import (
+    INTENT_REGEX,
+    MODES,
+    compute_intent_binaries,
+    derive_oracle_label,
+    difficulty_to_int,
+)
+
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
 VWA_CONFIG = REPO / "external/visualwebarena/config_files/vwa"
 OUT_DIR = REPO / "results/phantom_paper/l1_router"
 
-# Mode priority for oracle_label derivation. DOM first (cheapest tie-break), then
-# discriminative modes. Mirrors train_l1_router.py:43 / l1_archive_simulation.py:68.
-MODES = ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"]
+# MODES / INTENT_REGEX / compute_intent_binaries / derive_oracle_label now live in
+# p79.policies.router_features (router /stress B-1806/B-1807): single source of truth
+# shared with the serve-time predictor + archive sim — was copy-pasted and drifting.
 
 # All Phase 1a cells (B0/B1/B2 × cls/red). B2 cells may be empty pre-Phase-1a fire.
 CELLS = [
@@ -47,37 +54,8 @@ CELLS = [
     ("B2", "classifieds"), ("B2", "reddit"),
 ]
 
-# ── 14 intent regex banks (mechanism-anchored). has_ref_image is the 15th binary. ──
-INTENT_REGEX = {
-    "intent_color": re.compile(
-        r"\b(color|red|blue|green|yellow|black|white|orange|purple|pink|brown|gray|grey)\b",
-        re.IGNORECASE,
-    ),
-    "intent_search": re.compile(r"\b(find|search|locate|how many|how much)\b", re.IGNORECASE),
-    "intent_compare": re.compile(
-        r"\b(cheapest|most expensive|highest|lowest|best|worst|biggest|smallest)\b",
-        re.IGNORECASE,
-    ),
-    "intent_nav": re.compile(r"\b(go to|navigate|open|visit)\b", re.IGNORECASE),
-    "intent_filter": re.compile(r"\b(filter|narrow|restrict|limit to|only)\b", re.IGNORECASE),
-    "intent_sort": re.compile(r"\b(sort|rank|order by|by date|by price|newest|oldest)\b", re.IGNORECASE),
-    "intent_aggregate": re.compile(r"\b(total|sum|average|count of|number of)\b", re.IGNORECASE),
-    "intent_compose": re.compile(r"\b(compose|write|post|submit|reply|comment)\b", re.IGNORECASE),
-    "intent_form_fill": re.compile(r"\b(fill|enter|type|input)\b", re.IGNORECASE),
-    "intent_account_action": re.compile(
-        r"\b(login|logout|account|profile|sign in|sign out|subscribe|unsubscribe)\b",
-        re.IGNORECASE,
-    ),
-    "intent_visual_attribute": re.compile(
-        r"\b(size|shape|appear|look|tall|wide|small|large|height|width)\b", re.IGNORECASE
-    ),
-    "intent_question": re.compile(r"\b(what|where|when|why|how)\b|\?", re.IGNORECASE),
-    "intent_action_word": re.compile(r"\b(click|select|choose|press|tap)\b", re.IGNORECASE),
-    "intent_temporal": re.compile(
-        r"\b(today|yesterday|recent|latest|first|newest|oldest|2024|2025|2026)\b",
-        re.IGNORECASE,
-    ),
-}
+# INTENT_REGEX moved to p79.policies.router_features (B-1807). has_ref_image is the
+# 15th binary, computed from the task config (not a regex).
 
 # Schema version for downstream consumers
 FEATURE_SCHEMA_VERSION = "2026-05-18-a2.5-chunk-a"
@@ -135,19 +113,6 @@ def collect_per_task_outcomes(run_dirs: list[Path], site: str) -> dict[int, dict
                 success = bool(rec.get("success", False))
                 matrix.setdefault(tid, {})[mode] = success
     return matrix
-
-
-def derive_oracle_label(outcomes: dict[str, bool]) -> Optional[str]:
-    """Pick oracle-best mode per task.
-
-    Tie-break: MODES priority order (cheapest first).
-    Returns None if NO mode succeeded — B-995 fix: filter no-success tasks (don't
-    assign "dom" fallback that collapses label semantics).
-    """
-    for m in MODES:
-        if outcomes.get(m, False):
-            return m
-    return None  # B-995: no fallback to "dom"; caller filters this task out
 
 
 def read_step0_features(
@@ -218,17 +183,12 @@ def read_task_config(site: str, task_id: int) -> Optional[dict[str, Any]]:
     return {
         "intent": cfg.get("intent", "") or "",
         "has_reference_image": bool(has_ref_image),
-        "reasoning_difficulty": int(cfg.get("reasoning_difficulty", 0) or 0),
-        "visual_difficulty": int(cfg.get("visual_difficulty", 0) or 0),
-        "overall_difficulty": int(cfg.get("overall_difficulty", 0) or 0),
-    }
-
-
-def compute_intent_binaries(intent: str) -> dict[str, int]:
-    """Apply 14 intent regex banks → binary features (0/1)."""
-    return {
-        name: int(bool(pattern.search(intent or "")))
-        for name, pattern in INTENT_REGEX.items()
+        # F1 (B-1805): VWA stores these as ordinal strings ("easy"/"medium"/"hard"),
+        # not ints — int("medium") crashed Stage 1 here. difficulty_to_int maps them
+        # (train ≡ serve via shared router_features).
+        "reasoning_difficulty": difficulty_to_int(cfg.get("reasoning_difficulty")),
+        "visual_difficulty": difficulty_to_int(cfg.get("visual_difficulty")),
+        "overall_difficulty": difficulty_to_int(cfg.get("overall_difficulty")),
     }
 
 
@@ -249,6 +209,12 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
             "n_total_tasks": 0,
             "n_filtered_no_success": 0,
             "n_kept": 0,
+            "all_task_ids": [],
+            "no_success_task_ids": [],
+            "oracle_provenance": {
+                "n_single_success": 0, "n_multi_success": 0,
+                "n_no_success": 0, "n_total_universe": 0, "note": "no Pass-1 runs",
+            },
             "task_ids": [],
             "intents": [],
             "X_numeric": np.zeros((0, 5), dtype=float),
@@ -275,13 +241,31 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
     records_binary = []
     records_label = []
 
+    # C1 (B-1808): the FULL routable task universe (incl. no-success tasks). Pass-2
+    # routes every task and the runtime hard-fails on any task missing from
+    # fold_assignment, so the fold generator must cover this set even though only the
+    # labeled rows are trained on (separate "trainable rows" from "routable universe").
+    all_task_ids = list(task_ids_sorted)
+    no_success_task_ids: list[int] = []
+    # G1 (B-1809): oracle-label provenance. Labels are N=1 draws (single Pass-1 run per
+    # condition); multi-success tasks (label = cheapest of >=2 succeeding modes) are the
+    # tie-break / noise-sensitive subset that a self-oracle ceiling must contextualize.
+    n_single_success = 0
+    n_multi_success = 0
+
     pass1_run_for_step0 = runs[0]  # use first run dir for step-0 (per train_l1_router.py:234)
 
     for tid in task_ids_sorted:
-        label = derive_oracle_label(matrix[tid])
+        outcomes = matrix[tid]
+        label = derive_oracle_label(outcomes)
         if label is None:
             filtered_no_success += 1
+            no_success_task_ids.append(tid)
             continue
+        if sum(1 for m in MODES if outcomes.get(m, False)) >= 2:
+            n_multi_success += 1
+        else:
+            n_single_success += 1
 
         step0 = read_step0_features(pass1_run_for_step0, site, tid)
         cfg = read_task_config(site, tid)
@@ -334,6 +318,23 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         "n_total_tasks": n_total,
         "n_filtered_no_success": filtered_no_success,
         "n_kept": n_kept,
+        # C1 (B-1808): full routable universe (incl. no-success) for fold coverage.
+        "all_task_ids": all_task_ids,
+        "no_success_task_ids": no_success_task_ids,
+        # G1 (B-1809): oracle-label provenance (N=1; multi-success = tie-break sensitive).
+        "oracle_provenance": {
+            "n_single_success": n_single_success,
+            "n_multi_success": n_multi_success,
+            "n_no_success": filtered_no_success,
+            "n_total_universe": n_total,
+            "note": (
+                "Oracle labels are N=1 draws (single Pass-1 run per condition). "
+                "Multi-success tasks (label = cheapest of >=2 succeeding modes) are "
+                "tie-break/noise sensitive. Report a self-oracle noise ceiling in paper "
+                "§6 before claiming the router learns signal beyond oracle variance "
+                "(router /stress G1 B-1809)."
+            ),
+        },
         "task_ids": records_task_id,
         "intents": records_intent,
         "X_numeric": X_numeric,
@@ -370,8 +371,15 @@ def extract_all_cells(cells: Optional[list[tuple[str, str]]] = None) -> dict[str
     pooled_labels: list[str] = []
     pooled_task_ids: list[int] = []
     pooled_cell_ids: list[str] = []
+    # C1 (B-1808): full routable universe (labeled + no-success) so the fold generator
+    # covers every Pass-2 task; trained only on the labeled pooled arrays above.
+    pooled_all_task_ids: list[int] = []
+    pooled_all_cell_ids: list[str] = []
 
     for cell_id, rec in per_cell.items():
+        for tid in rec.get("all_task_ids", []):
+            pooled_all_task_ids.append(tid)
+            pooled_all_cell_ids.append(cell_id)
         if rec["n_kept"] == 0:
             continue
         pooled_intents.extend(rec["intents"])
@@ -419,6 +427,10 @@ def extract_all_cells(cells: Optional[list[tuple[str, str]]] = None) -> dict[str
             "task_ids": pooled_task_ids,
             "cell_ids": pooled_cell_ids,
             "n_total": len(pooled_intents),
+            # C1: full routable universe (incl. no-success) for fold coverage.
+            "all_task_ids": pooled_all_task_ids,
+            "all_cell_ids": pooled_all_cell_ids,
+            "n_universe_total": len(pooled_all_task_ids),
         },
     }
 
@@ -436,6 +448,9 @@ def save_npz(extracted: dict[str, Any], out_path: Path) -> None:
         task_ids=np.array(pooled["task_ids"], dtype=int),
         cell_ids=np.array(pooled["cell_ids"]),
         intents=np.array(pooled["intents"], dtype=object),
+        # C1 (B-1808): full routable universe (incl. no-success) for fold coverage.
+        all_task_ids=np.array(pooled.get("all_task_ids", pooled["task_ids"]), dtype=int),
+        all_cell_ids=np.array(pooled.get("all_cell_ids", pooled["cell_ids"])),
     )
 
     # Companion JSON with schema + per-cell summary
@@ -461,7 +476,9 @@ def save_npz(extracted: dict[str, Any], out_path: Path) -> None:
                 "n_total_tasks": rec["n_total_tasks"],
                 "n_filtered_no_success": rec["n_filtered_no_success"],
                 "n_kept": rec["n_kept"],
+                "n_routable_universe": len(rec.get("all_task_ids", [])),
                 "label_distribution": rec["label_distribution"],
+                "oracle_provenance": rec.get("oracle_provenance", {}),
                 "error": rec.get("error"),
             }
             for cid, rec in extracted["per_cell"].items()
