@@ -105,8 +105,15 @@ _WEB_ACTION_TOOL = {
     "function": {
         "name": "web_action",
         "description": (
-            "Execute a web navigation action on the current page. "
-            "Call this tool with your chosen action for every step."
+            "Execute a web navigation action on the current page. Call this tool "
+            "with your chosen action for every step. RULES (match the text protocol "
+            "shared with the other baselines): for click / type / hover / "
+            "select_option you MUST provide `element_id` (the numeric [N] id from "
+            "the Accessibility Tree); ALWAYS prefer `element_id` over `coordinate` "
+            "(coordinate is a last resort only). Use `type` (not `click`) to enter "
+            "text into an input field; `click` is for buttons/links/navigation. "
+            "`url` is ONLY for the goto action. Do NOT mix fields from different "
+            "actions (e.g. never put `url` on a type action)."
         ),
         "parameters": {
             "type": "object",
@@ -134,18 +141,30 @@ _WEB_ACTION_TOOL = {
                 },
                 "element_id": {
                     "type": "integer",
-                    "description": "Element ID from Accessibility Tree or SOM marks.",
+                    "description": (
+                        "Numeric [N] element ID from the Accessibility Tree / SOM "
+                        "marks. REQUIRED for click / type / hover / select_option — "
+                        "ALWAYS specify it to target the correct element; do NOT "
+                        "omit it and do NOT guess coordinates for these actions."
+                    ),
                 },
                 "coordinate": {
                     "type": "array",
                     "items": {"type": "number"},
                     "minItems": 2,
                     "maxItems": 2,
-                    "description": "Normalized [x, y] coordinates (0.0-1.0).",
+                    "description": (
+                        "Normalized [x, y] coordinates (0.0-1.0). LAST RESORT only "
+                        "— use ONLY when the target has no element_id; always prefer "
+                        "element_id."
+                    ),
                 },
                 "text": {
                     "type": "string",
-                    "description": "Text to type (for type action). Append \\n to submit.",
+                    "description": (
+                        "Text to type (for the type action; also requires "
+                        "element_id). Append \\n to submit."
+                    ),
                 },
                 "scroll_direction": {
                     "type": "string",
@@ -154,7 +173,12 @@ _WEB_ACTION_TOOL = {
                 },
                 "option_label": {
                     "type": "string",
-                    "description": "Visible option text for select_option.",
+                    "description": (
+                        "Visible option text for select_option (must match exactly). "
+                        "Use select_option for native <select> comboboxes and "
+                        "[DROPDOWN OPTIONS]-annotated triggers — clicking a combobox "
+                        "does NOT open the menu, so use select_option to set the value."
+                    ),
                 },
                 "option_value": {
                     "type": "string",
@@ -178,7 +202,12 @@ _WEB_ACTION_TOOL = {
                 },
                 "url": {
                     "type": "string",
-                    "description": "Target URL for goto action (must be a URL on the current task's websites).",
+                    "description": (
+                        "Target URL — ONLY for the goto action. Must be a URL on the "
+                        "current task's own websites (a relative path like '/page' "
+                        "also works); off-site URLs are ignored. Do NOT include url "
+                        "on any non-goto action (e.g. type/click)."
+                    ),
                 },
             },
             "required": ["action_type", "thought"],
