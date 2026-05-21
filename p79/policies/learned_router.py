@@ -71,9 +71,13 @@ def load_fold_assignment(artifacts_dir: str | Path, cell_id: str) -> dict[int, i
         data = json.loads(path.read_text())
         fa = data.get("fold_assignment", {})
         return {int(tid): int(fk) for tid, fk in fa.items()}
-    except (OSError, json.JSONDecodeError) as e:
-        logger.error("Failed to load fold_assignment %s: %s", path, e)
-        return {}
+    except Exception as e:  # C6 (B-1813): file present but unreadable = infra hard-fail
+        # LearnedRouterArtifactError is module-level (defined below); resolved at call
+        # time. A corrupt/incompatible artifact must NOT degrade to a silent fallback.
+        raise LearnedRouterArtifactError(
+            f"corrupt fold_assignment {path}: {type(e).__name__}: {e}. "
+            f"Hard-fail per B-1640 (no silent fallback)."
+        ) from e
 
 
 def load_vectorizer_fold(artifacts_dir: str | Path, fold_k: int) -> Optional[Any]:
@@ -85,9 +89,13 @@ def load_vectorizer_fold(artifacts_dir: str | Path, fold_k: int) -> Optional[Any
     try:
         with path.open("rb") as f:
             return pickle.load(f)
-    except (OSError, pickle.UnpicklingError) as e:
-        logger.error("Failed to load vectorizer %s: %s", path, e)
-        return None
+    except Exception as e:  # C6 (B-1813): pickle / sklearn-numpy version drift
+        raise LearnedRouterArtifactError(
+            f"corrupt/incompatible vectorizer {path}: {type(e).__name__}: {e}. "
+            f"Likely sklearn/numpy version drift between train and serve hosts. "
+            f"Hard-fail per B-1640 (the old OSError/UnpicklingError-only catch let "
+            f"AttributeError/ModuleNotFoundError escape into safe_fallback)."
+        ) from e
 
 
 def load_selected_idx_fold(
@@ -103,9 +111,11 @@ def load_selected_idx_fold(
         mask = np.array(data["selected_mask"], dtype=bool)
         feature_names = data.get("feature_names_all", [])
         return mask, feature_names
-    except (OSError, json.JSONDecodeError, KeyError) as e:
-        logger.error("Failed to load selected_idx %s: %s", path, e)
-        return None, None
+    except Exception as e:  # C6 (B-1813): corrupt selected_idx = infra hard-fail
+        raise LearnedRouterArtifactError(
+            f"corrupt selected_idx {path}: {type(e).__name__}: {e}. "
+            f"Hard-fail per B-1640 (no silent fallback)."
+        ) from e
 
 
 def load_lr_pipeline_fold(
@@ -119,9 +129,12 @@ def load_lr_pipeline_fold(
     try:
         with path.open("rb") as f:
             return pickle.load(f)
-    except (OSError, pickle.UnpicklingError) as e:
-        logger.error("Failed to load LR pipeline %s: %s", path, e)
-        return None
+    except Exception as e:  # C6 (B-1813): pickle / sklearn-numpy version drift
+        raise LearnedRouterArtifactError(
+            f"corrupt/incompatible LR pipeline {path}: {type(e).__name__}: {e}. "
+            f"Likely sklearn/numpy version drift between train and serve hosts. "
+            f"Hard-fail per B-1640."
+        ) from e
 
 
 def load_cell_meta(artifacts_dir: str | Path, cell_id: str) -> dict[str, Any]:
@@ -132,9 +145,11 @@ def load_cell_meta(artifacts_dir: str | Path, cell_id: str) -> dict[str, Any]:
         return {}
     try:
         return json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError) as e:
-        logger.error("Failed to load cell meta %s: %s", path, e)
-        return {}
+    except Exception as e:  # C6 (B-1813): corrupt cell_meta = infra hard-fail
+        raise LearnedRouterArtifactError(
+            f"corrupt cell_meta {path}: {type(e).__name__}: {e}. "
+            f"Hard-fail per B-1640 (no silent fallback to default τ)."
+        ) from e
 
 
 # ── Feature extraction (matches Chunk A Stage 1 deterministic raw 20-dim) ──────

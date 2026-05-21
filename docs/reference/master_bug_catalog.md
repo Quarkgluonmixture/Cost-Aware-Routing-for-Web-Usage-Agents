@@ -7465,3 +7465,22 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave).
 
 ---
+
+## B-1812, B-1813 — router pipeline pre-fire /stress 簇 γ: train→serve artifact contract (2026-05-21)
+
+> Cluster γ of the router-pipeline pre-fire /stress (实验笔记 §255). Theme = the train→serve artifact handshake: Stage 3 must not claim a cell "trained" without all fold pickles, and the runtime loader must hard-fail (not silently fall back) on a corrupt / version-incompatible artifact.
+
+| Bug | 根因 | Fix |
+|---|---|---|
+| **B-1812** (P1 C5, codex) — Stage 3 can produce a "trained" cell missing fold pickles. A fold with `status != "ok"` (insufficient_train_data) writes no pickle + is dropped from `thresholds_per_fold`, but `train_one_cell` still returns + `main` counted it as `n_cells_trained`. The runtime then hard-fails at Pass-2 on the missing fold pickle (B-1640) — discovered at fire time, not train time. | `train_l1_router.py:346-355` (no-pickle return), `:441-444` (threshold drop), `:520-524` (counted trained). | `train_one_cell` computes `cell_complete = len(folds_ok)==5` + `incomplete_folds`; `main` counts `n_cells_trained` only if `cell_complete`, else `n_cells_incomplete` + loud warning; non-zero exit if any incomplete (orchestrator must not fire an undeployable cell). |
+| **B-1813** (P1 C6, codex OOB) — sklearn/pickle version drift silently degrades to fallback. The artifact loaders caught only `(OSError, pickle.UnpicklingError)`; real drift raises `AttributeError`/`ModuleNotFoundError`/`ImportError`/`ValueError`/`TypeError` during `pickle.load`/`json.loads`, which escaped → caught by `runner/main.py:2329` generic `except` → silent `safe_fallback`, violating the B-1640 hard-fail policy. | `learned_router.py:88,122` (+ `74,106,135`). | All 5 artifact loaders: file-missing → `None`/`{}` (caller None-check hard-fails, unchanged); file-present-but-unreadable → `except Exception` → raise `LearnedRouterArtifactError` (corrupt/drift = infra hard-fail → caught by main.py:2303 hard-fail handler, never the silent generic). Task-config loader (`load_task_image_field`) left graceful (VWA input, not a train artifact). |
+
+**F9 (P2, deferred)** — the deprecated 8-dim `predict_mode` path (`learned_router.py:425-494`) is still live (footgun). Out of P0/P1 scope this wave; **F9-followup**: delete or `raise NotImplementedError` after confirming no caller (runner uses `predict_mode_fold_aware`).
+
+**Tests**: `tests/test_router_artifact_contract.py` (4: corrupt pickle / vectorizer / JSON artifacts → raise; missing → None/{}). Full router suite **99 passed**, no regression.
+
+**§6 disclosure TODO** (B-1813): store sklearn/numpy/Python versions in cell_meta at train time + validate at serve time before Pass-2 (defence-in-depth beyond the loader catch).
+
+**Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave).
+
+---

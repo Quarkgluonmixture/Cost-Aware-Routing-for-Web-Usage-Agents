@@ -438,6 +438,16 @@ def train_one_cell(
             f"holdout_sr={rec.get('holdout_sr', 'N/A')}"
         )
 
+    # C5 (B-1812): cell completeness — every fold must be "ok" (pickle written +
+    # threshold tuned), else the runtime hard-fails at Pass-2 on the missing fold pickle
+    # (B-1640). Surface incomplete cells loudly at train time instead of discovering
+    # them at fire time.
+    folds_ok = [fk for fk, rec in per_fold.items() if rec["status"] == "ok"]
+    incomplete_folds = {
+        fk: rec["status"] for fk, rec in per_fold.items() if rec["status"] != "ok"
+    }
+    cell_complete = len(folds_ok) == N_FOLDS_OUTER
+
     # Aggregate cell meta
     thresholds_per_fold = {
         fk: rec["chosen_tau"] for fk, rec in per_fold.items() if rec["status"] == "ok"
@@ -450,6 +460,10 @@ def train_one_cell(
         "schema_version": SCHEMA_VERSION,
         "cell_id": cell_id,
         "n_folds": N_FOLDS_OUTER,
+        # C5 (B-1812): completeness contract — runtime needs all 5 fold pickles.
+        "cell_complete": cell_complete,
+        "folds_ok": folds_ok,
+        "incomplete_folds": incomplete_folds,
         "thresholds_per_fold": thresholds_per_fold,
         "min_class_n_train": N_MIN_CLASS_TRAIN,
         "tau_candidates": TAU_CANDIDATES,
@@ -514,6 +528,7 @@ def main() -> int:
     summary = {
         "schema_version": SCHEMA_VERSION,
         "n_cells_trained": 0,
+        "n_cells_incomplete": 0,
         "n_cells_failed": 0,
         "per_cell": {},
     }
@@ -521,7 +536,18 @@ def main() -> int:
         try:
             cell_meta = train_one_cell(cell_id, artifacts, out_dir)
             summary["per_cell"][cell_id] = cell_meta
-            summary["n_cells_trained"] += 1
+            # C5 (B-1812): only count a cell as trained if ALL folds wrote a pickle. An
+            # incomplete cell would hard-fail the runtime at Pass-2 (B-1640) — flag it
+            # loudly here so the orchestrator never fires an undeployable cell.
+            if cell_meta.get("cell_complete"):
+                summary["n_cells_trained"] += 1
+            else:
+                summary["n_cells_incomplete"] += 1
+                print(
+                    f"  ⚠️  {cell_id} INCOMPLETE: folds {cell_meta.get('incomplete_folds')} "
+                    f"have no pickle — runtime would hard-fail at Pass-2 (B-1640). "
+                    f"NOT deployable."
+                )
         except Exception as exc:
             print(f"  ✗ {cell_id} FAILED: {exc}")
             summary["per_cell"][cell_id] = {"error": str(exc)}
@@ -531,9 +557,12 @@ def main() -> int:
     summary_path.write_text(json.dumps(summary, indent=2, default=str))
     print(f"\nWrote: {summary_path}")
     print(
-        f"\n=== Summary: {summary['n_cells_trained']}/{len(targets)} cells trained ==="
+        f"\n=== Summary: {summary['n_cells_trained']}/{len(targets)} cells fully trained "
+        f"({summary['n_cells_incomplete']} incomplete, {summary['n_cells_failed']} failed) ==="
     )
-    if summary["n_cells_failed"] > 0:
+    # C5 (B-1812): incomplete cells are NOT paper-grade deployable (runtime hard-fail),
+    # so a non-zero exit signals the orchestrator not to fire Pass-2 on them.
+    if summary["n_cells_failed"] > 0 or summary["n_cells_incomplete"] > 0:
         return 1
     return 0
 
