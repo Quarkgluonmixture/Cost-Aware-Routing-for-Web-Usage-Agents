@@ -211,6 +211,54 @@ _WEB_ACTION_TOOL = {
                 },
             },
             "required": ["action_type", "thought"],
+            # B-1794 REAL fix (2026-05-21): per-action conditional required fields,
+            # MIRRORING validate_action_detailed (the shared semantic gate that
+            # B1/B2 prose-JSON also pass through). Root cause of B0's search/type
+            # element_id omission is NOT the prose (B-1794 description-only attempt
+            # failed) but `tool_choice="required"` forcing a MINIMAL tool call that
+            # satisfies only the required-array (action_type, thought), dropping
+            # the OPTIONAL element_id (model had a competing url prior). Confirmed
+            # on the real proxy: tc="auto" emits element_id, tc="required" omits
+            # it; conditional required restores it (probe 6/6 valid). Cross-baseline
+            # CONSISTENCY requires this schema == validator exactly: each clause
+            # below matches a validate_action_detailed rule (NOT stricter — e.g.
+            # `type` does NOT require `text`, mirroring `type(eid,no-text)=valid`;
+            # being stricter would force B0 alone beyond what B1/B2 face). Proxy
+            # enforces multi-if/then + anyOf (probe-confirmed). click/type/hover
+            # use anyOf(element_id|coordinate) so VISION mode (no AXTree →
+            # coordinate only) stays valid; AXTree modes pick element_id. 30-step
+            # dom episode: 0 invalid.
+            "allOf": [
+                {
+                    "if": {"properties": {"action_type": {
+                        "enum": ["click", "type", "hover"]}}},
+                    "then": {"anyOf": [{"required": ["element_id"]},
+                                       {"required": ["coordinate"]}]},
+                },
+                {
+                    "if": {"properties": {"action_type": {"const": "select_option"}}},
+                    "then": {"required": ["element_id"],
+                             "anyOf": [{"required": ["option_label"]},
+                                       {"required": ["option_value"]},
+                                       {"required": ["option_index"]}]},
+                },
+                {
+                    "if": {"properties": {"action_type": {"const": "scroll"}}},
+                    "then": {"required": ["scroll_direction"]},
+                },
+                {
+                    "if": {"properties": {"action_type": {"const": "tab_focus"}}},
+                    "then": {"required": ["page_number"]},
+                },
+                {
+                    "if": {"properties": {"action_type": {"const": "press"}}},
+                    "then": {"required": ["key"]},
+                },
+                {
+                    "if": {"properties": {"action_type": {"const": "goto"}}},
+                    "then": {"required": ["url"]},
+                },
+            ],
         },
     },
 }
