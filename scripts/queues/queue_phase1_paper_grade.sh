@@ -509,9 +509,64 @@ config_for_cmd() {
   esac
 }
 
+# B-1825 (Fire-6 /stress P0-3-AC*): RESUME_MISSING done-detection. A condition is
+# "complete" iff it has a MANIFEST-BOUND authoritative run
+# (docs/checkpoints/pre_run/fire_manifest.json) whose condition_summary_v2.json
+# has episodes >= the expected scored count. Manifest-bound (NOT glob-latest) so a
+# re-fire's ghost run can never be mistaken for the authoritative one — this closes
+# the `ls -dt` latest-run ambiguity in phase1a_status.sh:94. Not-in-manifest /
+# summary-missing / under-count → return 1 → run fresh.
+_condition_complete() {
+  local cmd="$1"
+  local -a p; read -r -a p <<< "$cmd"
+  local script="${p[0]}" bl="${p[1]}" mode site
+  case "$script" in
+    queue_baseline.sh)                            mode="${p[2]}";        site="${p[3]}" ;;
+    queue_phantom_som.sh)                         mode="phantom_som";    site="${p[2]}" ;;
+    queue_phantom_text.sh|queue_phantom_dom.sh)   mode="phantom_text";   site="${p[2]}" ;;
+    queue_phantom_prompt.sh)                      mode="phantom_prompt"; site="${p[2]}" ;;
+    *) return 1 ;;
+  esac
+  REPO_DIR="${REPO_DIR}" python3 - "$site" "$bl" "$mode" <<'PY'
+import json, os, sys
+site, bl, mode = sys.argv[1:4]
+repo = os.environ.get("REPO_DIR", ".")
+try:
+    d = json.load(open(os.path.join(repo, "docs/checkpoints/pre_run/fire_manifest.json")))
+except Exception:
+    sys.exit(1)
+cond = d.get("conditions", {}).get(f"{site}|{bl}|{mode}")
+if not cond:
+    sys.exit(1)
+scored = int(d.get("scored_task_count", {}).get(site, 10**9))
+cond_id = cond.get("condition_id", f"phase1_{mode}_router_0")
+summ = os.path.join(repo, "results/visualwebarena/phase1", cond["run_id"], cond_id, "condition_summary_v2.json")
+try:
+    eps = int(json.load(open(summ)).get("episodes", 0))
+except Exception:
+    sys.exit(1)
+sys.exit(0 if eps >= scored else 1)
+PY
+}
+
+# B-1825: filter a build_*_chain heredoc — when RESUME_MISSING=1, drop conditions
+# already complete (manifest-bound); passthrough otherwise. Logs each skip.
+_resume_filter_done() {
+  if [[ "${RESUME_MISSING:-0}" != "1" ]]; then cat; return 0; fi
+  local cmd
+  while IFS= read -r cmd; do
+    [[ -z "${cmd// }" ]] && continue
+    if _condition_complete "${cmd}"; then
+      log "  [resume] SKIP done (manifest-bound): ${cmd}"
+    else
+      echo "${cmd}"
+    fi
+  done
+}
+
 build_cls_chain() {
   # Phase 1a classifieds: 6 modes per model, B0 → B1 → B2 sequential = 18 conditions
-  cat <<EOF
+  _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
 queue_baseline.sh B0 dom classifieds
 queue_baseline.sh B0 som classifieds
 queue_baseline.sh B0 vision classifieds
@@ -535,7 +590,7 @@ EOF
 
 build_red_chain() {
   # Phase 1a reddit: 6 modes per model, B0 → B1 → B2 sequential = 18 conditions
-  cat <<EOF
+  _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
 queue_baseline.sh B0 dom reddit
 queue_baseline.sh B0 som reddit
 queue_baseline.sh B0 vision reddit
@@ -563,7 +618,7 @@ build_shop_chain() {
   # sites; Phase 1b's deferral is about launch TIMING, not model scope.
   # NOT launched as part of default `launch` (which is Phase 1a cls + red).
   # Launch via explicit `launch phase1b` after workshop submission.
-  cat <<EOF
+  _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
 queue_baseline.sh B0 dom shopping
 queue_baseline.sh B0 som shopping
 queue_baseline.sh B0 vision shopping
@@ -654,7 +709,7 @@ launch_chain() {
     _rc=\$?
     printf 'rc=%d ts=%s label=%s pid=%d\n' \"\$_rc\" \"\$(date -u +%FT%TZ)\" '$label' \"\$\$\" > '$donefile'
     exit \$_rc
-  " _ "${args[@]}" > "$logfile" 2>&1 &
+  " _ "${args[@]}" > "$logfile" 2>&1 {ORCH_FD}>&- &  # B-1824 (Fire-6 /stress P1-2): close orchestrator lock fd → chain subtree (chain/leaf/daemons) never inherits it
   local pid=$!
   log "  PID $pid, log $logfile"
   echo "$pid" > "$pidfile"
@@ -788,7 +843,19 @@ case "$MODE" in
         # contention suspected root cause). Sequential ~2× wallclock but cross-cell
         # latency canonical clean. PHASE1A_PARALLEL=1 opt-in dev mode (NOT paper-
         # grade per CLAUDE.md hard rule #3).
+        # B-1825 (Fire-6 /stress P0-3-AC*): resume is sequential-only — parallel
+        # fresh/resume chains violate the single-site hard rule (the very defect
+        # that made phase1a_relaunch_missing.sh unsafe).
+        if [[ "${RESUME_MISSING:-0}" == "1" && "${PHASE1A_PARALLEL:-0}" == "1" ]]; then
+          fail "RESUME_MISSING=1 + PHASE1A_PARALLEL=1 incompatible (B-1825): resume is sequential-only — no parallel chains. Unset PHASE1A_PARALLEL."
+        fi
         if [[ "${PHASE1A_PARALLEL:-0}" != "1" ]]; then
+          if [[ "${RESUME_MISSING:-0}" == "1" ]]; then
+            log "RESUME_MISSING=1 (B-1825): only conditions WITHOUT a valid manifest-bound"
+            log "  run (docs/checkpoints/pre_run/fire_manifest.json) will fire — same preflight/"
+            log "  Gate8/quarantine gates, sequential cls→red. Completed conditions (e.g. R9755"
+            log "  B0 dom cls) are SKIPPED, not re-run."
+          fi
           log "Sequential paper-grade fire (B-1663): cls → red after cls completion."
           launch_chain "cls" build_cls_chain
           _cls_pid_file="logs/queue_phase1_cls.latest.pid"
