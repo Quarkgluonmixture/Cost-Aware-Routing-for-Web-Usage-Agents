@@ -30,6 +30,7 @@ from typing import Any, Optional
 
 import numpy as np
 
+from p79.policies.pass1_manifest import discover_runs
 from p79.policies.router_features import (
     INTENT_REGEX,
     MODES,
@@ -62,20 +63,22 @@ FEATURE_SCHEMA_VERSION = "2026-05-18-a2.5-chunk-a"
 
 
 def find_pass1_runs(baseline: str, site: str) -> list[Path]:
-    """Discover Pass-1 baseline run dirs for a (baseline, site) cell.
+    """Discover canonical Pass-1 baseline run dirs for a (baseline, site) cell.
 
-    Excludes Pass-2 router conditions (`router_learned_` suffix).
+    C2 (B-1810): delegates to the shared manifest-aware discovery — rejects smoke /
+    test / debug runs and uses the manifest whitelist when present, instead of the old
+    bare glob that only excluded router_learned (and silently folded smoke / partial /
+    stale runs into paper-grade labels).
     """
-    candidates = []
-    if not PHASE1_ROOT.is_dir():
-        return candidates
-    for d in PHASE1_ROOT.glob(f"{baseline}_*_{site}_*"):
-        if not d.is_dir():
-            continue
-        if "router_learned" in d.name:
-            continue
-        candidates.append(d)
-    return sorted(candidates)
+    runs, _ = discover_runs(PHASE1_ROOT, baseline, site, router=False)
+    return runs
+
+
+def find_pass1_runs_with_provenance(
+    baseline: str, site: str
+) -> tuple[list[Path], dict[str, Any]]:
+    """find_pass1_runs + the discovery provenance (kept/rejected/warnings) for meta."""
+    return discover_runs(PHASE1_ROOT, baseline, site, router=False)
 
 
 def collect_per_task_outcomes(run_dirs: list[Path], site: str) -> dict[int, dict[str, bool]]:
@@ -198,7 +201,7 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
     Returns dict with arrays (task_ids, numeric matrix, binary matrix, intents, labels)
     plus filter stats. Skips tasks with no-success outcomes (B-995 filter).
     """
-    runs = find_pass1_runs(baseline, site)
+    runs, run_provenance = find_pass1_runs_with_provenance(baseline, site)
     cell_id = f"{baseline}_{site}"
     if not runs:
         return {
@@ -206,6 +209,7 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
             "baseline": baseline,
             "site": site,
             "n_runs": 0,
+            "run_provenance": run_provenance,
             "n_total_tasks": 0,
             "n_filtered_no_success": 0,
             "n_kept": 0,
@@ -314,6 +318,7 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         "baseline": baseline,
         "site": site,
         "n_runs": len(runs),
+        "run_provenance": run_provenance,
         "pass1_run_dirs": [r.name for r in runs],
         "n_total_tasks": n_total,
         "n_filtered_no_success": filtered_no_success,
@@ -479,6 +484,7 @@ def save_npz(extracted: dict[str, Any], out_path: Path) -> None:
                 "n_routable_universe": len(rec.get("all_task_ids", [])),
                 "label_distribution": rec["label_distribution"],
                 "oracle_provenance": rec.get("oracle_provenance", {}),
+                "run_provenance": rec.get("run_provenance", {}),
                 "error": rec.get("error"),
             }
             for cid, rec in extracted["per_cell"].items()

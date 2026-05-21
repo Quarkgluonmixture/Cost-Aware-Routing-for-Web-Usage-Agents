@@ -47,6 +47,8 @@ from typing import Any, Optional
 
 import numpy as np
 
+from p79.policies.pass1_manifest import discover_runs
+
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
 OUT_DIR = REPO / "results/phantom_paper"
@@ -77,27 +79,20 @@ SCHEMA_VERSION = "2026-05-18-a2.5-chunk-c-h10"
 
 
 def find_pass1_run_dirs(baseline: str, site: str) -> list[Path]:
-    """Discover Pass-1 baseline run dirs for (baseline, site) cell."""
-    if not PHASE1_ROOT.is_dir():
-        return []
-    candidates = []
-    for d in PHASE1_ROOT.glob(f"{baseline}_*_{site}_*"):
-        if not d.is_dir() or "router_learned" in d.name:
-            continue
-        candidates.append(d)
-    return sorted(candidates)
+    """Discover canonical Pass-1 baseline run dirs for (baseline, site) cell.
+
+    C2 (B-1810): shared manifest-aware discovery (rejects smoke/test/debug runs; uses
+    the manifest whitelist when present) — was a bare glob excluding only router_learned,
+    which folded smoke / partial / stale runs into the H10 estimand.
+    """
+    runs, _ = discover_runs(PHASE1_ROOT, baseline, site, router=False)
+    return runs
 
 
 def find_pass2_router_dirs(baseline: str, site: str) -> list[Path]:
-    """Discover Pass-2 router run dirs."""
-    if not PHASE1_ROOT.is_dir():
-        return []
-    candidates = []
-    for d in PHASE1_ROOT.glob(f"{baseline}_*_{site}_*"):
-        if not d.is_dir() or "router_learned" not in d.name:
-            continue
-        candidates.append(d)
-    return sorted(candidates)
+    """Discover canonical Pass-2 router run dirs (C2 B-1810: shared discovery)."""
+    runs, _ = discover_runs(PHASE1_ROOT, baseline, site, router=True)
+    return runs
 
 
 def collect_per_task_outcomes_with_metrics(
@@ -395,8 +390,15 @@ def fe_inverse_variance_pool(
     }
 
 
-def analyze_cell(baseline: str, site: str) -> dict[str, Any]:
-    """Per-cell H10 Pareto analysis: load Pass-1 + Pass-2, paired bootstrap, verdict."""
+def analyze_cell(
+    baseline: str, site: str, require_full_coverage: bool = False
+) -> dict[str, Any]:
+    """Per-cell H10 Pareto analysis: load Pass-1 + Pass-2, paired bootstrap, verdict.
+
+    require_full_coverage (C8 B-1811): when True, fail-closed if the router/baseline
+    task intersection is not the full router task set (paper-grade); otherwise warn and
+    proceed on the intersection subset (dev / partial-fire inspection).
+    """
     cell_id = f"{baseline}_{site}"
     print(f"\n=== {cell_id} ===")
 
@@ -516,6 +518,47 @@ def analyze_cell(baseline: str, site: str) -> dict[str, Any]:
             "passes": False,
         }
 
+    # C8 (B-1811): coverage disclosure + paper-grade fail-closed. The H10 estimand is
+    # the router's task set; silently intersecting down to whatever every arm happens to
+    # have completed turns a partial fire into a biased small-subset verdict that still
+    # reports "passes". Record coverage; under require_full_coverage refuse to emit a
+    # verdict on an incomplete intersection.
+    router_set = set(router_task_ids)
+    coverage = {
+        "n_router_tasks": len(router_set),
+        "n_common": len(common_tasks),
+        "common_fraction": (len(common_tasks) / len(router_set)) if router_set else 0.0,
+        "per_arm": {
+            arm: {
+                "n_tasks": len(set(m["task_ids"])),
+                "n_missing_vs_router": len(router_set - set(m["task_ids"])),
+            }
+            for arm, m in baseline_metrics.items()
+        },
+    }
+    coverage_incomplete = coverage["n_common"] < coverage["n_router_tasks"] or any(
+        a["n_missing_vs_router"] > 0 for a in coverage["per_arm"].values()
+    )
+    if coverage_incomplete and require_full_coverage:
+        return {
+            "cell_id": cell_id,
+            "status": "incomplete_coverage_paper_grade",
+            "passes": False,
+            "coverage": coverage,
+            "missing_per_arm": {
+                arm: sorted(router_set - set(m["task_ids"]))[:50]
+                for arm, m in baseline_metrics.items()
+                if router_set - set(m["task_ids"])
+            },
+        }
+    if coverage_incomplete:
+        print(
+            f"  ⚠️  C8 coverage incomplete: common={coverage['n_common']}/"
+            f"{coverage['n_router_tasks']} router tasks "
+            f"(fraction={coverage['common_fraction']:.2f}); verdict is on the "
+            f"intersection subset — pass --require-full-coverage for paper-grade."
+        )
+
     # Re-align all arms to common task set
     router_tid_to_idx = {t: i for i, t in enumerate(router_task_ids)}
     r_idx = [router_tid_to_idx[t] for t in common_sorted]
@@ -554,6 +597,7 @@ def analyze_cell(baseline: str, site: str) -> dict[str, Any]:
         "site": site,
         "status": "ok",
         "n_common_tasks": len(common_sorted),
+        "coverage": coverage,  # C8 (B-1811): estimand coverage disclosure
         "router_sr_mean": router_paired["sr_mean"],
         "router_sr_ci_95": router_paired["sr_ci"],
         "router_cost_mean": router_paired["cost_mean"],
@@ -570,12 +614,15 @@ def analyze_cell(baseline: str, site: str) -> dict[str, Any]:
     }
 
 
-def run_h10_verdict(cells: Optional[list[tuple[str, str]]] = None) -> dict[str, Any]:
+def run_h10_verdict(
+    cells: Optional[list[tuple[str, str]]] = None,
+    require_full_coverage: bool = False,
+) -> dict[str, Any]:
     """Top-level H10 verdict: per-cell analysis + K-of-6 PRIMARY + FE pool APPENDIX."""
     cells = cells or CELLS
     per_cell_results = {}
     for baseline, site in cells:
-        rec = analyze_cell(baseline, site)
+        rec = analyze_cell(baseline, site, require_full_coverage=require_full_coverage)
         per_cell_results[rec["cell_id"]] = rec
 
     # Operational deployment gate (two-layer: cell-level + grid-level)
@@ -756,7 +803,10 @@ def write_outputs(verdict: dict[str, Any], out_dir: Path) -> None:
         )
     md.append("")
     md.append("## Site-asymmetric viability note")
-    md.append(f"{verdict['note_site_asymmetric']}")
+    # F5 (B-1818): verdict key is note_site_asymmetric_pre_hoc_hypothesis (defined
+    # L718); the bare 'note_site_asymmetric' KeyError'd at §6 markdown write once data
+    # landed. Use the correct key + .get() so a future rename degrades gracefully.
+    md.append(f"{verdict.get('note_site_asymmetric_pre_hoc_hypothesis', '')}")
 
     md_path = out_dir / "h10_pareto_verdict.md"
     md_path.write_text("\n".join(md) + "\n")
@@ -769,6 +819,12 @@ def main() -> int:
     ap.add_argument("--baseline", help="B0 | B1 | B2 (subset)")
     ap.add_argument("--site", help="classifieds | reddit (subset)")
     ap.add_argument("--out-dir", default=str(OUT_DIR), help="Output directory")
+    ap.add_argument(
+        "--require-full-coverage",
+        action="store_true",
+        help="C8 (B-1811): fail-closed per cell if the router/baseline task "
+        "intersection is not the full router task set (paper-grade mode).",
+    )
     args = ap.parse_args()
 
     if args.baseline and args.site:
@@ -776,7 +832,7 @@ def main() -> int:
     else:
         cells = CELLS
 
-    verdict = run_h10_verdict(cells)
+    verdict = run_h10_verdict(cells, require_full_coverage=args.require_full_coverage)
     write_outputs(verdict, Path(args.out_dir))
 
     pv = verdict["primary_k_of_n"]

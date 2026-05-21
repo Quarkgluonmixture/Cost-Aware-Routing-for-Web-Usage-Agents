@@ -7445,3 +7445,23 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave).
 
 ---
+
+## B-1810, B-1811, B-1818 — router pipeline pre-fire /stress 簇 β: run provenance + H10 estimand coverage (2026-05-21)
+
+> Cluster β of the router-pipeline pre-fire /stress (实验笔记 §255). Theme = which runs/tasks count toward paper-grade labels + the H10 estimand. F5 (B-1818) folded in opportunistically (same file as C8).
+
+| Bug | 根因 | Fix |
+|---|---|---|
+| **B-1810** (P0 C2, codex OOB) — unmanifested run discovery folds smoke/partial/stale runs into paper-grade labels + H10. Both `extract_50_features.find_pass1_runs` and `aggregate_h10_pareto.find_pass1_run_dirs` globbed `{baseline}_*_{site}_*` excluding only `router_learned` → matched `*_smoke_*` etc; `.update()` overwrote outcomes newest-wins with no provenance; `runs[0]` step-0 could zero-impute from a smoke run. Empirical: real cls glob = 12 dirs (6 canonical + 6 smoke). | `extract_50_features.py:94`, `aggregate_h10_pareto.py:84,96`. | New `p79/policies/pass1_manifest.py` `discover_runs()`: optional manifest whitelist (paper-grade strict, post-Pass-1) → else glob + REJECT non-canonical (smoke/test/debug/dryrun) + warn on >1-run overwrite ambiguity. Both scripts delegate. `run_provenance` (kept/rejected/warnings) persisted into extract meta. Empirical: cls now n_kept=6 (6 smoke rejected). |
+| **B-1811** (P1 C8, codex) — H10 task estimand silently became "intersection of whatever completed". `analyze_cell` intersected router ∩ all baseline task sets and only failed when empty → a partial fire / missing arm produced a bootstrap verdict on a small biased subset that still reported `passes`. | `aggregate_h10_pareto.py:507-517`. | `analyze_cell(..., require_full_coverage=False)`: compute `coverage` (n_router / n_common / per-arm missing) into the verdict (always disclosed); under `--require-full-coverage` fail-closed with `status=incomplete_coverage_paper_grade` + missing-task table; else warn + proceed (dev). `run_h10_verdict` + `--require-full-coverage` CLI flag thread it through. |
+| **B-1818** (P1 F5, Claude; fixed with C8 — same file) — `write_outputs` referenced `verdict['note_site_asymmetric']` but the key is `note_site_asymmetric_pre_hoc_hypothesis` → `KeyError` at §6 markdown write once data lands. | `aggregate_h10_pareto.py:806` vs key defined `:718`. | Use the correct key + `.get(..., '')`. |
+
+**New module**: `p79/policies/pass1_manifest.py` (`is_non_canonical` / `load_manifest` / `discover_runs`; `re`/`json`/`logging`/`pathlib` only). Manifest schema `{"pass1": {cell_id: [run_dir, ...]}, "pass2_router": {...}}` at `results/phantom_paper/l1_router/pass1_run_manifest.json` (write once Pass-1 lands → strict whitelist).
+
+**Tests**: `tests/test_pass1_manifest.py` (5: smoke/test/debug rejection, router-kind selection, manifest whitelist, multi-run overwrite warning). Full router suite **95 passed**, no regression. Empirical: real cls glob rejected 6 smoke runs.
+
+**§6 disclosure TODO**: write the Pass-1 run manifest with the exact paper-grade run IDs once Pass-1 lands → strict whitelist; run `aggregate_h10_pareto --require-full-coverage` for the paper-grade verdict.
+
+**Chronicle cross-link**: 实验笔记 §255 (→ §256 fix wave).
+
+---
