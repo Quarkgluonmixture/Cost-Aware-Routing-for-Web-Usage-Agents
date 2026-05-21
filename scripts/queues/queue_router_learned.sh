@@ -241,12 +241,12 @@ else
 
   RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_runner_${TS_FULL}.log"
   echo "[router] launching runner → ${RUNNER_LOG}"
-  setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
+  # B-1824 (Fire-6 /stress P2-2): shared daemon spawn closes inherited lock fds 9/8/7.
+  spawn_paper_grade_daemon 0 "${RUNNER_LOG}" -- \
+    "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${CONFIG}" \
     --run_id "${RUN_ID}" \
-    --log_path "${RUNNER_LOG}" \
-    > "${RUNNER_LOG}" 2>&1 < /dev/null &
-  disown
+    --log_path "${RUNNER_LOG}"
   sleep 3
   if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
     echo "[router] runner pid=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)"
@@ -263,11 +263,23 @@ WATCHDOG_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 
 RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
 
+# B-1824 (Fire-6 /stress P1-1-AB*): watchdog-spawn flock parity with baseline +
+# phantom leaves. router_learned called acquire_site_lock (L135) but NOT
+# acquire_watchdog_lock → 2 watchdogs on the same RUN_ID could pass the pgrep
+# TOCTOU window + race on the shared WD_STATE (B-907 class). Extends the existing
+# site-lock trap (L138).
+if ! acquire_watchdog_lock "${RUN_ID}" "router_learned"; then
+  exit $?
+fi
+trap "release_watchdog_lock; release_site_lock" EXIT INT TERM
+
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[router] watchdog for ${RUN_ID} already running, skipping spawn"
 else
   echo "[router] launching watchdog → ${WATCHDOG_LOG} (runner pid=${RUNNER_PID:-unknown})"
-  setsid nohup "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
+  # B-1824 (Fire-6 /stress P2-2): shared daemon spawn closes inherited lock fds.
+  spawn_paper_grade_daemon 0 "${WATCHDOG_LOG}" -- \
+    "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
     --poll-secs 30 \
@@ -275,9 +287,7 @@ else
     --ntfy-topic p79-exp-dgx-spark \
     --state-file "${WATCHDOG_STATE}" \
     --aggregate-prefix "${BASELINE}_router_learned" \
-    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
-    > "${WATCHDOG_LOG}" 2>&1 < /dev/null &
-  disown
+    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"}
   sleep 2
   if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
     echo "[router] watchdog pid=$(pgrep -f "experiment_watchdog.*${RUN_ID}" | head -1)"

@@ -133,11 +133,15 @@ echo "  config: $CONFIG"
 echo "  log:    $LOG_PATH"
 echo "  T=0 + top_p=1.0 + seed=42 propagated to RNG (per Cluster 4 patches)"
 
+# B-1824 (Fire-6 /stress A-F7): close inherited paper-grade lock fds 9/8/7 so this
+# setsid daemon doesn't keep a chain/leaf/watchdog lock OFD alive past a condition
+# boundary. pilot_t0 does not source _lib_paper_grade_gates.sh, so the close is
+# inline here rather than via spawn_paper_grade_daemon.
 setsid nohup "${REPO_DIR}/.venv/bin/python3" scripts/run_experiment.py \
     --config "$CONFIG" \
     --run_id "$RUN_ID" \
     --log_path "$LOG_PATH" \
-    > "$LOG_PATH" 2>&1 < /dev/null &
+    > "$LOG_PATH" 2>&1 < /dev/null 9>&- 8>&- 7>&- &
 
 PID=$!
 echo "[$(date +%H:%M:%S)] runner PID=$PID launched"

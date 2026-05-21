@@ -166,12 +166,12 @@ else
   # codex stress v6 C4: redirect runner stdout/stderr to RUNNER_LOG (was /dev/null).
   # Python logging goes to stderr — /dev/null discarded all phantom runner logs,
   # making mid-run crash debug impossible + paper-grade audit trail incomplete.
-  setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
+  # B-1824 (Fire-6 /stress P2-2): shared daemon spawn closes inherited lock fds 9/8/7.
+  spawn_paper_grade_daemon 0 "${RUNNER_LOG}" -- \
+    "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${CONFIG}" \
     --run_id "${RUN_ID}" \
-    --log_path "${RUNNER_LOG}" \
-    > "${RUNNER_LOG}" 2>&1 < /dev/null &
-  disown
+    --log_path "${RUNNER_LOG}"
   sleep 3
   if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
     echo "[phantom_text] runner pid=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)"
@@ -206,16 +206,16 @@ if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[phantom_text] watchdog for ${RUN_ID} already running, skipping spawn"
 else
   echo "[phantom_text] launching watchdog → ${WD_LOG} (runner pid=${RUNNER_PID:-unknown})"
-  setsid nohup "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
+  # B-1824 (see runner above): shared daemon spawn closes inherited lock fds.
+  spawn_paper_grade_daemon 1 "${WD_LOG}" -- \
+    "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
     --poll-secs 30 --idle-alert-mins 30 \
     --ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}" \
     --state-file "${WD_STATE}" \
     --aggregate-prefix "${AGGREGATE_PREFIX}" \
-    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
-    >> "${WD_LOG}" 2>&1 < /dev/null &
-  disown
+    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"}
   sleep 2
   if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
     echo "[phantom_text] watchdog pid=$(pgrep -f "experiment_watchdog.*${RUN_ID}" | head -1)"

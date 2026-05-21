@@ -211,12 +211,18 @@ else
   export GCE_METADATA_IP=127.0.0.1
   export GCE_METADATA_TIMEOUT=1
   export GCE_METADATA_HOST=disabled.invalid  # retain (defense-in-depth, blocks path-based fallback)
-  setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
+  # B-1824 (Fire-6 /stress P2-2): shared daemon spawn closes inherited paper-grade
+  # lock fds 9/8/7 (supersedes B-1822 per-leaf hand-written redirects — single
+  # helper kills the sibling-propagation drift; ORCH_FD/10 closed at the
+  # orchestrator→chain boundary). flock binds the OFD not the fd number → an
+  # inheriting setsid daemon would keep the chain site-lock alive past the
+  # condition boundary (false double-fire ABORT, Fire-6 21:21:12Z). See
+  # spawn_paper_grade_daemon in _lib_paper_grade_gates.sh.
+  spawn_paper_grade_daemon 0 "${RUNNER_LOG}" -- \
+    "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${CONFIG}" \
     --run_id "${RUN_ID}" \
-    --log_path "${RUNNER_LOG}" \
-    > "${RUNNER_LOG}" 2>&1 < /dev/null &
-  disown
+    --log_path "${RUNNER_LOG}"
   sleep 3
   if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
     echo "[baseline] runner pid=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)"
@@ -260,7 +266,11 @@ if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[baseline] watchdog for ${RUN_ID} already running, skipping spawn"
 else
   echo "[baseline] launching watchdog → ${WATCHDOG_LOG} (runner pid=${RUNNER_PID:-unknown})"
-  setsid nohup "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
+  # B-1824 (see runner note above): shared daemon spawn closes inherited lock fds.
+  # The watchdog is the empirical B-1822 culprit — it out-lives the runner, so its
+  # inherited fd 9 is what held the chain site-lock OFD at 21:21:12Z.
+  spawn_paper_grade_daemon 0 "${WATCHDOG_LOG}" -- \
+    "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
     --poll-secs 30 \
@@ -268,9 +278,7 @@ else
     --ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}" \
     --state-file "${WATCHDOG_STATE}" \
     --aggregate-prefix "${BASELINE}_3mode" \
-    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
-    > "${WATCHDOG_LOG}" 2>&1 < /dev/null &
-  disown
+    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"}
   sleep 2
   if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
     echo "[baseline] watchdog pid=$(pgrep -f "experiment_watchdog.*${RUN_ID}" | head -1)"

@@ -484,7 +484,7 @@ launch_chain() {
     _rc=\$?
     printf 'rc=%d ts=%s label=%s pid=%d\n' \"\$_rc\" \"\$(date -u +%FT%TZ)\" '$label' \"\$\$\" > '$donefile'
     exit \$_rc
-  " _ "${args[@]}" > "$logfile" 2>&1 &
+  " _ "${args[@]}" > "$logfile" 2>&1 {ORCH_FD}>&- &  # B-1824 (Fire-6 /stress P1-2): close orchestrator lock fd → chain subtree (chain/leaf/daemons) never inherits it
   local pid=$!
   # Update .latest.log + .latest.done symlinks for live tail + sentinel read.
   rm -f "$latest_log" 2>/dev/null || true

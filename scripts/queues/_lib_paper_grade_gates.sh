@@ -826,6 +826,41 @@ release_watchdog_lock() {
   fi
 }
 
+# ---------- 7b. Paper-grade daemon spawn (B-1824 Fire-6 /stress P1-2/P2-2) ----------
+# spawn_paper_grade_daemon <append:0|1> <log_path> -- <cmd> [args...]
+#
+# B-1824 (Fire-6 /stress P1-2/P2-2/A-F7, 2026-05-21): single DRY chokepoint for
+# backgrounding the runner/watchdog daemons so they NEVER inherit a paper-grade
+# advisory-lock fd. flock binds the open file description (OFD), not the fd number
+# — a setsid child that inherits a lock fd keeps that OFD alive after the holder's
+# own `exec N>&-`, causing false condition-boundary "double-fire" ABORTs (B-1822).
+# Closes 9 (chain site-lock) / 8 (watchdog-spawn) / 7 (leaf site-lock).
+#
+# The orchestrator lock fd ({ORCH_FD}, dynamically allocated ≥10) is NOT closed
+# here — its fd number is not a literal redirection token in leaf scope. It is
+# closed ONCE at the orchestrator→chain spawn boundary
+# (queue_phase1*_paper_grade.sh: `... {ORCH_FD}>&- &`) so the whole chain subtree
+# (incl. these daemons) never inherits it — more robust than per-daemon eval.
+#
+# Replaces the per-leaf hand-written `setsid nohup ... 9>&- 8>&- 7>&- &` (B-1822
+# round) — single helper kills the sibling-propagation drift that was B-1822's
+# root cause (6 leaves had copy-pasted spawn lines, 2 were missed).
+#
+# `append=1` → `>>` (watchdog appends); `append=0` → `>` (runner truncates).
+# `N>&-` on an unopened fd is a harmless no-op → safe for direct-leaf invocation.
+spawn_paper_grade_daemon() {
+  local append="${1:?spawn_paper_grade_daemon: append flag (0|1) required}"
+  local log_path="${2:?spawn_paper_grade_daemon: log_path required}"
+  shift 2
+  [[ "${1:-}" == "--" ]] && shift
+  if [[ "${append}" == "1" ]]; then
+    setsid nohup "$@" >> "${log_path}" 2>&1 < /dev/null 9>&- 8>&- 7>&- &
+  else
+    setsid nohup "$@" > "${log_path}" 2>&1 < /dev/null 9>&- 8>&- 7>&- &
+  fi
+  disown
+}
+
 # ============================== Gate G8 ==============================
 # Fire-4 RCA Wave 2 M6 (/stress 3-AI 2026-05-19): cross-fire quarantine
 # registry investigation gate. Pre-fix Fire-3 task 75 quarantined +
