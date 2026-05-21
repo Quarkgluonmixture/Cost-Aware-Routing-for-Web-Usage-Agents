@@ -69,3 +69,70 @@ def test_schema_covers_all_validator_required_actions():
             covered.add(cond["const"])
     for at, _, _ in _CASES:
         assert at in covered, f"{at} has a validator requirement but no schema clause"
+
+
+# B-1796 (P0-1, /stress 2026-05-21 Claude Mode A OOB): reverse-direction
+# invariant. The forward tests above only prove schema-minimal ⊆ validator-valid.
+# The fix's contract is schema == validator (bidirectional), so we ALSO lock
+# validator-valid ⊆ schema-accepted for the per-action GROUNDING clauses. The
+# canonical witness is select_option-by-coordinate: the validator accepts it
+# (coordinate path, no element_id — action_utils.py:502), and the pre-B-1796
+# schema rejected it (required element_id), a VISION-mode B0-only over-strictness.
+# Top-level `thought` is intentionally NOT checked — it is an always-on reasoning
+# field required of every baseline by prompt convention, not a per-action
+# grounding requirement the validator gates on.
+def _then_satisfied(action, then):
+    if "required" in then and not all(k in action for k in then["required"]):
+        return False
+    if "anyOf" in then and not any(_then_satisfied(action, s) for s in then["anyOf"]):
+        return False
+    if "allOf" in then and not all(_then_satisfied(action, s) for s in then["allOf"]):
+        return False
+    return True
+
+
+def _schema_grounding_accepts(action):
+    """True iff `action` satisfies every applicable per-action allOf clause."""
+    params = _WEB_ACTION_TOOL["function"]["parameters"]
+    at = action.get("action_type")
+    for clause in params.get("allOf", []):
+        cond = clause.get("if", {}).get("properties", {}).get("action_type", {})
+        types = list(cond.get("enum", [])) + ([cond["const"]] if "const" in cond else [])
+        if at in types and not _then_satisfied(action, clause["then"]):
+            return False
+    return True
+
+
+# validator-valid representatives, incl. the coordinate path the validator allows.
+_REVERSE_CASES = [
+    {"action_type": "click", "coordinate": [0.5, 0.5]},
+    {"action_type": "type", "coordinate": [0.5, 0.5], "text": "x"},
+    {"action_type": "hover", "coordinate": [0.5, 0.5]},
+    # P0-1 canonical witness: select_option by coordinate (no element_id).
+    {"action_type": "select_option", "coordinate": [0.5, 0.5], "option_label": "X"},
+    {"action_type": "select_option", "element_id": 1, "option_index": 2},
+    {"action_type": "scroll", "scroll_direction": "up"},
+    {"action_type": "tab_focus", "page_number": 1},
+    {"action_type": "press", "key": "Enter"},
+    {"action_type": "goto", "url": "/x"},
+    {"action_type": "back"},
+    {"action_type": "finish", "answer": "a"},
+    {"action_type": "wait"},
+]
+
+
+@pytest.mark.parametrize(
+    "action", _REVERSE_CASES,
+    ids=[c["action_type"] + ("_coord" if "coordinate" in c else "") for c in _REVERSE_CASES],
+)
+def test_validator_valid_action_satisfies_schema_grounding(action):
+    """Reverse direction: a validator-valid action must satisfy the B0 tool
+    schema's per-action grounding clauses (else schema is stricter than the
+    validator → B0-only over-strictness, the P0-1 select_option-by-coordinate
+    asymmetry)."""
+    _, valid, reason = validate_action_detailed(dict(action))
+    assert valid, f"test fixture bug: {action} should be validator-valid (got {reason})"
+    assert _schema_grounding_accepts(action), (
+        f"{action['action_type']}: validator-valid but B0 schema rejects "
+        f"(schema stricter than validator — cross-baseline asymmetry)"
+    )

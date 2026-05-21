@@ -223,11 +223,18 @@ _WEB_ACTION_TOOL = {
             # CONSISTENCY requires this schema == validator exactly: each clause
             # below matches a validate_action_detailed rule (NOT stricter — e.g.
             # `type` does NOT require `text`, mirroring `type(eid,no-text)=valid`;
-            # being stricter would force B0 alone beyond what B1/B2 face). Proxy
-            # enforces multi-if/then + anyOf (probe-confirmed). click/type/hover
-            # use anyOf(element_id|coordinate) so VISION mode (no AXTree →
-            # coordinate only) stays valid; AXTree modes pick element_id. 30-step
-            # dom episode: 0 invalid.
+            # being stricter would force B0 alone beyond what B1/B2 face).
+            # P1-10 (/stress 2026-05-21 Claude Mode A): the AWS/Bedrock proxy does
+            # NOT hard-enforce this JSON schema on output (see B-1101 note in
+            # action_utils.py — the model self-decides emission format); the schema
+            # acts as a SOFT constraint that conditions the model to include the
+            # grounding field, and `validate_action_detailed` is the HARD runtime
+            # gate (post-hoc → invalid steps surface in the §3.5 taxonomy). The
+            # probe (6/6 valid) + 30-step dom smoke (0 invalid) confirm the model
+            # honors it empirically; they are NOT a proof of proxy-side enforcement,
+            # so the validator gate remains the authority. click/type/hover use
+            # anyOf(element_id|coordinate) so VISION mode (no AXTree → coordinate
+            # only) stays valid; AXTree modes pick element_id.
             "allOf": [
                 {
                     "if": {"properties": {"action_type": {
@@ -237,10 +244,23 @@ _WEB_ACTION_TOOL = {
                 },
                 {
                     "if": {"properties": {"action_type": {"const": "select_option"}}},
-                    "then": {"required": ["element_id"],
-                             "anyOf": [{"required": ["option_label"]},
-                                       {"required": ["option_value"]},
-                                       {"required": ["option_index"]}]},
+                    # B-1796 (P0-1, /stress 2026-05-21 Claude Mode A OOB): mirror
+                    # validate_action_detailed exactly — select_option needs
+                    # (element_id OR coordinate) AND one option specifier. Pre-fix
+                    # `required: ["element_id"]` was STRICTER than the validator
+                    # (action_utils.py:502 accepts a valid coordinate when element_id
+                    # is absent), so under tool_choice="required" a VISION-mode B0
+                    # (no AXTree → coordinate-only) could not emit a select_option
+                    # that B1/B2 free-gen can — a cross-baseline asymmetry the B-1794
+                    # schema≡validator contract is supposed to eliminate. allOf keeps
+                    # the two independent requirements (grounding + option) both live.
+                    "then": {"allOf": [
+                        {"anyOf": [{"required": ["element_id"]},
+                                   {"required": ["coordinate"]}]},
+                        {"anyOf": [{"required": ["option_label"]},
+                                   {"required": ["option_value"]},
+                                   {"required": ["option_index"]}]},
+                    ]},
                 },
                 {
                     "if": {"properties": {"action_type": {"const": "scroll"}}},
