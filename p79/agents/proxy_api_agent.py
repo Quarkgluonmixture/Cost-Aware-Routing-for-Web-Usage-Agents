@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 from PIL import Image
 
-from p79.backends.action_utils import parse_action_text, validate_action
+from p79.backends.action_utils import parse_action_text, validate_action_detailed
 from p79.backends.image_utils import DEFAULT_MAX_IMAGE_PAYLOAD_BYTES, encode_image_data_url
 
 
@@ -805,7 +805,7 @@ class ProxyApiAgent:
                 if isinstance(tool_input, dict):
                     if not tool_input.get("thought") and isinstance(raw_content, str) and raw_content:
                         tool_input["thought"] = raw_content.strip()[:500]
-                    action, valid = validate_action(tool_input)
+                    action, valid, _tool_detail_reason = validate_action_detailed(tool_input)
                     output_text = json.dumps(tool_input, ensure_ascii=False)
                     if valid:
                         _action_pt, _valid_pt, _fail_pt = parse_action_text(output_text)
@@ -814,10 +814,24 @@ class ProxyApiAgent:
                         _tool_call_parse_path = "tool_calls"
                         logger.info("Proxy tool_calls parsed: %s", action.get("action_type"))
                     else:
-                        fail_reason = "invalid_tool_input"
-                        # B-1588: emission attempted but validate_action rejected → fallback.
-                        _tool_call_fallback_reason = "invalid_tool_input"
-                        logger.warning("Proxy tool_calls validate_action invalid, falling back to text parse.")
+                        # Smoke 2026-05-21: capture the SPECIFIC validate reason
+                        # (invalid_element_id / invalid_coord / invalid_action_type /
+                        # invalid_select_option / invalid_schema_dict / ...) via
+                        # validate_action_detailed instead of the generic
+                        # "invalid_tool_input" — so B0 tool-call failures are
+                        # classifiable from disk (Fire-6 §3.5 B0 failure analysis +
+                        # parse_error_rate disclosure; pre-fix all invalids collapsed
+                        # to one label + mapped to error_category=unknown_failure).
+                        # Raw emitted args logged (not persisted as a schema field)
+                        # for forensics.
+                        fail_reason = _tool_detail_reason or "invalid_tool_input"
+                        # B-1588: emission attempted but validator rejected → fallback.
+                        _tool_call_fallback_reason = fail_reason
+                        logger.warning(
+                            "Proxy tool_calls validate_action_detailed invalid "
+                            "(reason=%s); emitted_args=%s",
+                            fail_reason, output_text[:500],
+                        )
                         action = None
 
         # B-1110 (/stress A2.3b P1-5-A, 2026-05-18): legacy Path-1 Anthropic
