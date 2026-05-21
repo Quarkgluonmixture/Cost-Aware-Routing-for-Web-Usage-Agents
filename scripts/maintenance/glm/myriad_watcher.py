@@ -17,6 +17,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -321,23 +322,56 @@ MYRIAD_HOST = "myriad.rc.ucl.ac.uk"
 LOG_DIR_REMOTE = "/home/ucab352/Scratch/p79/logs"
 
 
-def ssh_chain(remote_cmd: str, timeout: int = 25) -> str | None:
+# Retry knobs for the LB-degradation regime (see ssh_chain docstring).
+# Worst-case wall-clock per ssh_chain call ≈ SSH_ATTEMPT_TIMEOUT × SSH_MAX_ATTEMPTS
+# (+ inter-attempt sleeps) — kept well under the 5-min cron interval even when
+# the double-probe path calls ssh_chain twice. Override via env for an active
+# outage where the healthy-node fraction drops further.
+SSH_ATTEMPT_TIMEOUT = int(os.environ.get("MYRIAD_SSH_ATTEMPT_TIMEOUT", "12"))
+SSH_MAX_ATTEMPTS = int(os.environ.get("MYRIAD_SSH_RETRIES", "8"))
+
+
+def ssh_chain(remote_cmd: str, timeout: int = SSH_ATTEMPT_TIMEOUT,
+              retries: int = SSH_MAX_ATTEMPTS) -> str | None:
     """Run command on Myriad via DGX → quark → myriad chain. Returns stdout
-    on success, None on any failure (timeout, ssh error, non-zero exit)."""
+    from the first successful attempt, or None if all `retries` attempts fail.
+
+    Retry rationale (2026-05-21 chain-degradation incident, 实验笔记):
+    `myriad.rc.ucl.ac.uk` is an F5 GTM single VIP (193.60.252.107) that
+    load-balances each *fresh TCP connection* across ~8 backend login nodes.
+    When some login nodes go sick, they still ACCEPT TCP (the LB handshake is
+    fast — TCP probe 0.2s, 5/5) but their sshd hangs at banner/KEX so the SSH
+    session never completes. Crucially `-o ConnectTimeout` does NOT cap this —
+    it only governs the TCP-connect phase, which already succeeded; only the
+    subprocess wall-clock `timeout` cuts a post-connect hang. During the
+    incident only ~1/8 connections landed on a healthy node (login12), so a
+    single-shot ssh_chain hit a dead node ~7/8 of the time → watcher
+    false-alarmed "Myriad SSH chain broken" with no real outage.
+
+    Fix: each attempt opens a NEW connection → new LB routing → eventually
+    lands on a healthy node. `timeout` is the PER-ATTEMPT wall-clock cap
+    (healthy chain RTT ~4s, so the 12s default has comfortable margin); a
+    genuine full-cluster outage still returns None after all attempts → the
+    n>=3 fail-counter ntfy in main() still escalates correctly (real outages
+    are not masked, only single-sick-node routing is tolerated).
+    """
     inner = (
-        "ssh -o IdentitiesOnly=yes -o BatchMode=yes "
+        "ssh -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 "
         "-i $env:USERPROFILE\\.ssh\\id_rsa_myriad "
         f'{MYRIAD_USER}@{MYRIAD_HOST} "{remote_cmd}"'
     )
-    cmd = ["ssh", "-i", DGX_KEY, "-o", "BatchMode=yes",
+    cmd = ["ssh", "-i", DGX_KEY, "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
            f"{QUARK_USER}@{QUARK_HOST}", inner]
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    except subprocess.TimeoutExpired:
-        return None
-    if r.returncode != 0:
-        return None
-    return r.stdout
+    for attempt in range(retries):
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            r = None  # sick-node post-connect hang → retry onto a new LB route
+        if r is not None and r.returncode == 0:
+            return r.stdout
+        if attempt < retries - 1:
+            time.sleep(0.5)  # brief backoff; let the LB rotate the next route
+    return None
 
 
 def parse_qstat(stdout: str) -> dict:
