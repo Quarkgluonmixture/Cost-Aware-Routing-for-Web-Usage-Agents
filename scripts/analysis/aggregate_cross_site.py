@@ -316,6 +316,12 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             ),
             "avg_screenshot_timeout_recovered_total_ms": cond.get("avg_screenshot_timeout_recovered_total_ms"),
             "screenshot_timeout_recovered_episode_rate": cond.get("screenshot_timeout_recovered_episode_rate"),
+            # P1-2 (/stress accounting audit 2026-05-21, codex Mode B OOB): carry
+            # the canonical-latency operand (busy_wait) into the row so the CSV can
+            # publish all three subtraction terms. canonical = minus_retry −
+            # busy_wait − recovered (computed above); without busy_wait in the CSV
+            # the canonical estimand is not reproducible from the artifact.
+            "avg_busy_wait_total_ms": cond.get("avg_busy_wait_total_ms"),
             # Protocol Reset #6/#7/#8 (§244 canonical, 2026-05-20): two-budget
             # accounting + three-column cost per cell. Cost columns are already
             # None-guarded upstream (metrics._avg_or_none → None on legacy vintage
@@ -500,6 +506,15 @@ def main() -> None:
             # latency carried as sensitivity column per §3.5.1 B-1402 estimand.
             "avg_total_latency_ms": r.get("avg_total_latency_ms"),
             "avg_total_latency_minus_retry_ms": r.get("avg_total_latency_minus_retry_ms"),
+            # P1-2 (/stress accounting audit 2026-05-21, codex Mode B OOB): publish
+            # the canonical-latency estimand + its 3 subtraction operands so the
+            # value is reproducible from the CSV. canonical = minus_retry −
+            # busy_wait − screenshot_recovered. Pre-fix only raw + minus_retry were
+            # emitted → the headline canonical latency was computed (aggregate_run_dir
+            # L309) then DROPPED from the published artifact.
+            "avg_total_latency_canonical_ms": r.get("avg_total_latency_canonical_ms"),
+            "avg_busy_wait_total_ms": r.get("avg_busy_wait_total_ms"),
+            "avg_screenshot_timeout_recovered_total_ms": r.get("avg_screenshot_timeout_recovered_total_ms"),
             # P1-2 (/stress accounting audit 2026-05-21, codex Mode B): the Protocol
             # Reset two-budget counters + three-column cost were carried per-cell in
             # `all_rows` but DROPPED here → never reached the published CSV, so the
@@ -520,6 +535,31 @@ def main() -> None:
             "episodes": r["episodes"],
             "is_stub": r["is_stub"],
         })
+    # P1-1 fail-loud (/stress accounting audit 2026-05-21, user Q1=A): a non-stub
+    # row with billed cost but unknown/None cost_unit_basis means the
+    # step→episode→condition basis chain broke (B-1798) — emitting it as "unknown"
+    # silently makes the §1 cross-baseline cost stratification unverifiable. Fail
+    # loud instead. Legacy/archive re-aggregation (pre-B-1798 vintage) can bypass
+    # via CROSS_SITE_ALLOW_UNKNOWN_BASIS=1.
+    import os as _os
+    if not _os.environ.get("CROSS_SITE_ALLOW_UNKNOWN_BASIS"):
+        _bad_basis = [
+            r for r in aggregation_rows
+            if not r.get("is_stub")
+            and r.get("avg_total_billed_cost_usd") is not None
+            and r.get("cost_unit_basis") in (None, "unknown", "")
+        ]
+        if _bad_basis:
+            raise ValueError(
+                f"cross_site aggregation: {len(_bad_basis)} paper-grade row(s) carry "
+                f"billed cost but cost_unit_basis is unknown/None — the "
+                f"step→episode→condition basis chain broke (B-1798); §1 cross-baseline "
+                f"cost stratification would be unverifiable. Offending "
+                f"(baseline,site,mode): "
+                f"{[(r.get('baseline'), r.get('site'), r.get('mode')) for r in _bad_basis][:8]}. "
+                f"Fix the episode-summary rollup, or set "
+                f"CROSS_SITE_ALLOW_UNKNOWN_BASIS=1 for legacy archive re-aggregation."
+            )
     _save_csv(aggregation_rows, out_dir / "cross_site_aggregation.csv")
 
     # --- cross_site_sr_comparison.png ---
@@ -551,14 +591,21 @@ def main() -> None:
     # of the warning text. SUPPRESS the absolute-cost plot when bases mix (emit a
     # message + the per-basis breakdown is recoverable from the CSV which carries
     # cost_unit_basis per row). Single-basis runs plot normally.
-    if _mixed_basis:
+    # P1-4 (/stress accounting audit 2026-05-21, codex Mode B): suppress when the
+    # basis is MIXED *or* entirely UNKNOWN. Pre-fix the all-unknown case
+    # (`_bases == []` after filtering) gave `_mixed_basis = False` → fell to the
+    # ELSE plot branch and wrote an absolute-cost figure labelled "unknown" — the
+    # exact evidence-loss case treated as safe-to-plot. A figure with no known
+    # cost basis is not a scientific cost number.
+    _has_cost = any(r.get("avg_total_billed_cost_usd") is not None for r in aggregation_rows)
+    if _mixed_basis or (not _bases and _has_cost):
         print(
-            "[P1-6 cost-basis stratification] SUPPRESSED cross_site_cost_comparison.png "
-            f"— rows span {len(_bases)} distinct cost_unit_basis values: {_bases}. "
-            "An absolute-cost plot pooling these is a unit-collision artifact (B0 "
-            "api_usd vs B1/B2 electricity_usd_derived). Stratify by basis from "
+            "[P1-4/P1-6 cost-basis stratification] SUPPRESSED cross_site_cost_comparison.png "
+            f"— cost_unit_basis is {'mixed: ' + str(_bases) if _mixed_basis else 'entirely unknown'}. "
+            "An absolute-cost plot here is a unit-collision artifact (B0 api_usd vs "
+            "B1/B2 electricity_usd_derived) or basis-less. Stratify by basis from "
             "cross_site_aggregation.csv (per-row cost_unit_basis) before any cost "
-            "figure. See paper §3.5.1 + B-1409 + /stress audit 2026-05-21 P1-6."
+            "figure. See paper §3.5.1 + B-1409 + /stress audit 2026-05-21 P1-4/P1-6."
         )
     else:
         _plot_grouped_bar(
@@ -613,15 +660,22 @@ def main() -> None:
                 if any(r["mode"] == m for r in baseline_rows)
             }
 
-    # Weighted-average SR across sites (equal weight per site)
-    weighted_sr: Dict[str, List[float]] = {}
+    # Weighted-average SR across sites (equal weight per site).
+    # P1-3 (/stress accounting audit 2026-05-21, codex Mode B unique OOB): key by
+    # (baseline, mode), NOT mode alone. Pre-fix the mode-only key silently pooled
+    # B0+B1+B2 into one per-mode SR (real artifact: global_avg_sr_per_mode=
+    # {"DOM": 0.0} computed from 3 distinct baseline rows) → destroyed the
+    # 3-baseline design on any nonzero run. Now nested baseline→mode.
+    weighted_sr: Dict[str, Dict[str, List[float]]] = {}
     for r in all_rows:
+        b = r.get("baseline", "unknown")
         m = r["mode"]
         sr = r.get("adjusted_sr") if use_adjusted else r.get("raw_sr")
         if sr is not None:
-            weighted_sr.setdefault(m, []).append(float(sr))
-    global_avg_sr = {
-        m: round(sum(vals) / len(vals), 4) for m, vals in weighted_sr.items()
+            weighted_sr.setdefault(b, {}).setdefault(m, []).append(float(sr))
+    global_avg_sr_per_baseline_mode = {
+        b: {m: round(sum(vals) / len(vals), 4) for m, vals in modes.items()}
+        for b, modes in weighted_sr.items()
     }
 
     summary = {
@@ -629,7 +683,10 @@ def main() -> None:
         "sites": sites,
         "use_adjusted_sr": use_adjusted,
         "per_site": per_site,
-        "global_avg_sr_per_mode": global_avg_sr,
+        # P1-3 (/stress 2026-05-21): per-(baseline,mode) SR — the prior pooled
+        # `global_avg_sr_per_mode` field is REMOVED (it averaged across baselines,
+        # destroying the 3-baseline design). Consumers must read per-baseline.
+        "global_avg_sr_per_baseline_mode": global_avg_sr_per_baseline_mode,
         "outputs": [f.name for f in sorted(out_dir.iterdir()) if f.is_file()],
     }
     _write_json(summary, out_dir / "cross_site_summary.json")
