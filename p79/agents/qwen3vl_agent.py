@@ -350,7 +350,16 @@ class Qwen3VLAgent:
         meta = {
             "raw_output": output_text,
             "valid": valid,
-            "failure_reason": fail_reason,
+            # B-1797 (P1-7/P1-8, /stress 2026-05-21 codex Mode B): parse_action_text
+            # overloads its 3rd return — for VALID actions it can be a repair-path
+            # tag ("repaired_fenced" etc.), which is PROVENANCE not a failure. Only
+            # stamp failure_reason on genuinely invalid actions; route the repair
+            # tag to text_parse_path. action_source declares the serialization
+            # channel so the cross-baseline "same validate_action_detailed gate"
+            # claim is provable from the JSONL (B0=tool_call, B1/B2=text_json).
+            "failure_reason": fail_reason if not valid else None,
+            "action_source": "text_json",
+            "text_parse_path": fail_reason if valid else None,
             "input_tokens": inputs.input_ids.shape[1],  # Exact count
             "input_image_tokens": image_token_count,
             "input_text_tokens": inputs.input_ids.shape[1] - image_token_count,

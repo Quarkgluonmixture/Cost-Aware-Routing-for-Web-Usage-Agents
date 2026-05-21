@@ -177,6 +177,11 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "total_billed_cost_usd": None,
     "canonical_action_cost_usd": None,
     "protocol_wasted_cost_usd": None,
+    # B-1798 (P1-1): episode cost-basis rollup. Archive rows lack these → None
+    # ("vintage cannot attribute basis"); fresh paper-grade runs stamp the
+    # step→episode modal rollup.
+    "cost_unit_basis": None,
+    "cost_total_mixed_unit_warn": None,
 }
 
 
@@ -312,6 +317,7 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "tool_call_emitted": None,
     "tool_call_parse_path": None,
     "tool_call_fallback_reason": None,
+    "text_parse_path": None,  # B-1797 (P1-7/P1-8): B1/B2 repair-path provenance
     # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI overlap
     # OOB): about:blank recovery intervention attribution. None on normal
     # agent steps; runner stamps non-None on intervention steps.

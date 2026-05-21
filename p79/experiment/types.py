@@ -305,6 +305,17 @@ class StepRecordV2:
     tool_call_emitted: Optional[bool] = None
     tool_call_parse_path: Optional[str] = None
     tool_call_fallback_reason: Optional[str] = None
+    # B-1797 (P1-7/P1-8, /stress 2026-05-21 codex Mode B): B1/B2 text-JSON
+    # analogue of tool_call_parse_path. parse_action_text overloads its 3rd
+    # return — for VALID actions it can be a repair-path tag ("repaired_fenced" /
+    # "repaired_multiple_identical") which is PROVENANCE, not a failure. Pre-fix
+    # B1/B2 stored it in failure_reason → parse_failure_reason polluted on valid
+    # repaired steps (empirical: B2 Gemma 30/31 valid steps tagged
+    # "repaired_fenced" because it wraps JSON in markdown). text_parse_path keeps
+    # the repair provenance for paper §3.5 parse-health; parse_failure_reason now
+    # only carries genuine invalid reasons. None for B0 (uses tool_call_parse_path)
+    # and for clean B1/B2 Path-1 JSON.
+    text_parse_path: Optional[str] = None
     # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 unified bug list 2026-05-19,
     # 3-AI overlap OOB): about:blank recovery runner-intervention attribution.
     # Decouples runner navigate_to(start_url) from agent action progress
@@ -625,6 +636,17 @@ class EpisodeSummaryV2:
     total_billed_cost_usd: Optional[float] = None
     canonical_action_cost_usd: Optional[float] = None
     protocol_wasted_cost_usd: Optional[float] = None
+    # B-1798 (P1-1, /stress 2026-05-21 Claude A2 + codex B4 2-AI overlap):
+    # episode-level cost-basis rollup. Pre-fix these existed ONLY on step records
+    # (StepRecordV2:256/283); B-1559 added the CONDITION rollup (metrics.py reads
+    # ep.get("cost_unit_basis")) but never added the EPISODE field or the
+    # step→episode rollup → episodes always None → condition None → cross_site CSV
+    # "unknown" for every paper-grade row → §1 cross-baseline cost stratification
+    # unverifiable from artifact. Episode summary is now the strict accounting
+    # boundary: runner rolls up modal cost_unit_basis + any() mixed-unit-warn.
+    # None = legacy vintage / no step had a basis.
+    cost_unit_basis: Optional[str] = None
+    cost_total_mixed_unit_warn: Optional[bool] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -724,6 +746,11 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "tool_call_emitted",
     "tool_call_parse_path",
     "tool_call_fallback_reason",
+    # B-1797 (P1-7/P1-8, /stress 2026-05-21): B1/B2 text-JSON repair-path
+    # provenance — KEY-presence enforced so paper §3.5 parse-health is grep-able
+    # (None ≡ B0 tool-call backend OR clean Path-1 JSON, populated on repaired
+    # text-JSON steps).
+    "text_parse_path",
     # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI overlap OOB):
     # about:blank recovery intervention attribution at step-level. Runner stamps
     # None on normal agent steps, intervention_type="about_blank_recovery" +
@@ -832,6 +859,7 @@ _STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "tool_call_emitted": (bool, type(None)),
     "tool_call_parse_path": (str, type(None)),
     "tool_call_fallback_reason": (str, type(None)),
+    "text_parse_path": (str, type(None)),  # B-1797 B1/B2 repair-path provenance
     # P0-1-ABC* Phase 2 telemetry (about:blank intervention attribution).
     "intervention_type": (str, type(None)),
     "counted_as_agent_action": (bool, type(None)),
@@ -912,6 +940,11 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     "total_billed_cost_usd",
     "canonical_action_cost_usd",
     "protocol_wasted_cost_usd",
+    # B-1798 (P1-1, /stress 2026-05-21): episode cost-basis rollup KEY-presence
+    # enforced so the step→episode→condition→cross_site basis chain is grep-able
+    # (None ≡ legacy vintage / no-basis step; the condition aggregator reads these).
+    "cost_unit_basis",
+    "cost_total_mixed_unit_warn",
 })
 
 
@@ -1020,6 +1053,9 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "total_billed_cost_usd": (int, float, type(None)),
     "canonical_action_cost_usd": (int, float, type(None)),
     "protocol_wasted_cost_usd": (int, float, type(None)),
+    # B-1798 (P1-1): episode cost-basis rollup value-type contract.
+    "cost_unit_basis": (str, type(None)),
+    "cost_total_mixed_unit_warn": (bool, type(None)),
 }
 
 
