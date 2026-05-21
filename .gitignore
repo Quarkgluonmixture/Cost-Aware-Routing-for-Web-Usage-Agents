@@ -124,3 +124,16 @@ docs/checkpoints/probes/q3_h10_delta_semantic_test.py
 
 # OSF deposit cron writes PID sidecar per timestamped deposit dir; ephemeral.
 docs/checkpoints/pre_run/**/.dispatch.meta
+
+# Playwright MCP runtime artifacts (console logs + network dumps; ephemeral per-session,
+# see reference-playwright-mcp memory). Browser diag tool output, not a tracked asset.
+.playwright-mcp/
+
+# Aggregator-derived cross-site outputs (regenerate via aggregate_sr_fp_per_mode.py /
+# `make analysis`; only human-curated docs like power_analysis.md stay tracked).
+docs/analysis/cross_sites/sr_per_mode.json
+docs/analysis/cross_sites/sr_per_mode.md
+
+# spike/ scratch: the .py/.sh probes stay tracked (B0 grounding/parity research);
+# .txt prompt/output dumps are ephemeral replay artifacts.
+scripts/spike/*.txt
