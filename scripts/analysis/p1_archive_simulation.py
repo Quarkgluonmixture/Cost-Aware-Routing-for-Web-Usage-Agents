@@ -42,6 +42,14 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
+# MODES single-source (F6-followup / B-1821) — shared canonical list so this archive
+# sim can't drift from the train≡serve order in router_features. The prior local copy
+# used the buggy pre-F2 order (expensive som/vision ahead of the cheap phantoms);
+# route_oracle()'s tie-break (first success in MODES iteration order) then biased the
+# oracle routed-mode/cost breakdown toward som/vision. SR is unaffected (oracle hits
+# iff any mode succeeds), but the routed-mode distribution is cost-relevant.
+from p79.policies.router_features import MODES
+
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
 VWA_CONFIG = REPO / "external/visualwebarena/config_files/vwa"
@@ -62,7 +70,6 @@ ARCHIVE_RUNS: dict[tuple[str, str, str], str] = {
     ("B0", "reddit", "phantom_som"):        "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
 }
 
-MODES = ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"]
 CELLS = [("B0", "classifieds"), ("B0", "reddit")]
 
 # P1 v3 rule (per proposals_v4)

@@ -27,6 +27,7 @@ from sklearn.metrics import roc_auc_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from p1_archive_simulation import ARCHIVE_RUNS
+from p79.policies.router_features import MODES  # noqa: E402  (F6-followup / B-1821 single-source)
 
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
@@ -125,7 +126,7 @@ def main():
     cells = []
     # B0 archive (where verbalized exists)
     for site in ["classifieds", "reddit"]:
-        for mode in ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"]:
+        for mode in MODES:  # F6-followup (B-1821): single-source; per-cell AUROC is order-independent (affects only output row order)
             if (("B0", site, mode)) in ARCHIVE_RUNS:
                 cells.append(("B0", site, mode))
 

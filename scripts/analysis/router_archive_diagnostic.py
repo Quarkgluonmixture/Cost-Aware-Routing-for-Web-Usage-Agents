@@ -37,6 +37,11 @@ from typing import Optional
 
 import numpy as np
 
+# MODES single-source (F6-followup / B-1821) — see p1_archive_simulation for rationale.
+# Canonical ascending-cost order makes gate_g1_label_entropy's "argmax success,
+# tie-broken by mode index" prefer the cheap HERO phantom_som over som/vision on ties.
+from p79.policies.router_features import MODES
+
 
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
@@ -61,7 +66,6 @@ ARCHIVE_RUNS: dict[tuple[str, str, str], str] = {
     ("B0", "reddit", "phantom_som"):        "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
 }
 
-MODES = ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"]
 CELLS = [("B0", "classifieds"), ("B0", "reddit")]
 
 
