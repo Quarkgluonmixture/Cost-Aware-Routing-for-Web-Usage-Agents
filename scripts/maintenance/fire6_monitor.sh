@@ -24,7 +24,12 @@ cd "$(dirname "$0")/../.." 2>/dev/null || cd /home/ubuntu/workspace/p79
 NTFY="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 URL="https://ntfy.sh/${NTFY}"
 MODE="${1:-healthcheck}"
-FIRELOG="logs/fire6_phase1a.log"
+# Auto-detect the NEWEST fire log — a relaunch writes a fresh log (e.g.
+# fire6_phase1a_v2.log after the B-1803 task-4 re-fire). Hardcoding the first
+# log caused a false-positive "fatal/abort in fire log" every tick because the
+# original (aborted) log permanently contains the task-4 rc=1 FAIL line.
+FIRELOG="$(ls -t logs/fire6_phase1a*.log 2>/dev/null | head -1)"
+[ -z "$FIRELOG" ] && FIRELOG="logs/fire6_phase1a.log"
 RESULTS="results/visualwebarena/phase1"
 
 _orch_up()      { pgrep -f 'queue_phase1_paper_grade.sh launch' >/dev/null 2>&1; }
