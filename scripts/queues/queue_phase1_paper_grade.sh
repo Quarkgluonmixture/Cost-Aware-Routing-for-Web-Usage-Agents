@@ -557,7 +557,10 @@ _resume_filter_done() {
   while IFS= read -r cmd; do
     [[ -z "${cmd// }" ]] && continue
     if _condition_complete "${cmd}"; then
-      log "  [resume] SKIP done (manifest-bound): ${cmd}"
+      # B-1826: skip log MUST go to stderr — build_*_chain stdout is the chain-command
+      # data channel that launch_chain collects; a log line on stdout becomes a bogus
+      # chain command (Gate 7 UNKNOWN_SCRIPT abort, 2026-05-21 first relaunch).
+      log "  [resume] SKIP done (manifest-bound): ${cmd}" >&2
     else
       echo "${cmd}"
     fi
