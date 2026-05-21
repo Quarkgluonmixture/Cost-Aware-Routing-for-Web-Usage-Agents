@@ -2,8 +2,14 @@
 
 **Purpose**: Single source of truth for **every** suspected scaffold/dispatch/observation/evaluator bug across the 5-tier audit system, the click-dispatch probe (§106), historical 实验笔记 entries, and conversation-level discoveries. Includes **disputed** and **rejected** entries — 有据可查，避免重复争论。
 
-**Last updated**: 2026-05-20
+**Last updated**: 2026-05-21
 **Maintainer**: Claude session (auto-update on new probe / tier verification)
+
+> [!tip] 🔢 Index & maintenance convention (enforced for B-1822+)
+> - **Find a number**: `python3 scripts/maintenance/index_bug_catalog.py --find 1810` → line + enclosing section. Full section map: [[master_bug_catalog_index]] (regenerate via `--write`).
+> - **Lint before commit**: `python3 scripts/maintenance/index_bug_catalog.py --lint` — fails (rc=1) on new out-of-order B-numbers; the 142 pre-2026-05-21 inversions (chunk-reverse /stress batches) are grandfathered.
+> - **Add an entry**: append to the **LAST** `## ` section so B-numbers stay monotonic. Canonical definition point = a heading `### B-N.` *or* a table/list row starting `**B-N**` (bare inline `B-N` is a cross-reference, not a definition).
+> - **Follow-up to an old bug**: use a **NEW** number at the end + cross-link the old one in prose (e.g. `B-1807 follow-up`); never back-insert into the old section — that is what created the 142 historical inversions.
 
 ---
 
@@ -7515,7 +7521,7 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 
 **Tests**: `tests/test_router_features_shared.py` +3 (F4 train≡serve identity; C4 merged-rare KFold fallback + tiny-cell no-crash). Full router suite **102 passed**, no regression.
 
-**F6-followup landed → B-1821** (2026-05-21, commit `<pending>`): the 3 archive diagnostic scripts (`p1_archive_simulation.py` / `router_archive_diagnostic.py` / `l2_partial_trajectory_auroc.py`) now `from p79.policies.router_features import MODES` (identity-shared, verified via `is`) instead of holding local copies. The copies were stuck in the **buggy pre-F2 order** `[dom,som,vision,phantom_text,phantom_prompt,phantom_som]` (expensive image modes ahead of the cheap phantoms, HERO `phantom_som` buried last). Both `router_archive_diagnostic.gate_g1_label_entropy` (argmax-success tie-broken by mode index) and `p1_archive_simulation.route_oracle` (first-success in iteration order) tie-break on MODES order → the canonical ascending-cost order now prefers cheap `phantom_som` over som/vision, fixing the oracle routed-mode/**cost** breakdown bias. SR unaffected (oracle hits iff any mode succeeds); `l2` changes only output row order. Archive already purged from disk → no published paper number moves (sanity-check scripts, not paper-primary). py_compile + import smoke (`MODES is router_features.MODES`) PASS.
+**B-1821** (F6-followup, landed 2026-05-21, commit `b0c79f2`): the 3 archive diagnostic scripts (`p1_archive_simulation.py` / `router_archive_diagnostic.py` / `l2_partial_trajectory_auroc.py`) now `from p79.policies.router_features import MODES` (identity-shared, verified via `is`) instead of holding local copies. The copies were stuck in the **buggy pre-F2 order** `[dom,som,vision,phantom_text,phantom_prompt,phantom_som]` (expensive image modes ahead of the cheap phantoms, HERO `phantom_som` buried last). Both `router_archive_diagnostic.gate_g1_label_entropy` (argmax-success tie-broken by mode index) and `p1_archive_simulation.route_oracle` (first-success in iteration order) tie-break on MODES order → the canonical ascending-cost order now prefers cheap `phantom_som` over som/vision, fixing the oracle routed-mode/**cost** breakdown bias. SR unaffected (oracle hits iff any mode succeeds); `l2` changes only output row order. Archive already purged from disk → no published paper number moves (sanity-check scripts, not paper-primary). py_compile + import smoke (`MODES is router_features.MODES`) PASS.
 
 **Still deferred → next_steps §0b**: F9 (P2 — **NOT a pure delete**: `test_stress_a2_5_runtime_h10.py:16` + `test_learned_router_runtime.py` test the deprecated `predict_mode` as a back-compat shim "still importable", so it needs a guard-vs-remove decision + test update, not a blind deletion).
 

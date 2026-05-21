@@ -55,7 +55,7 @@ updated: 2026-05-18
 >    - MODES cost order (F2/B-1806) — verify the prior ascending-cost order against measured per-mode mean cost (summary_v2 `total_model_cost_usd`); switch to a measured-cost tie-break if they disagree.
 >    - router_strictly_better (F7/B-1815) — report `k_cells_router_strictly_better` (θ CI lower > 0) alongside non-dominance; do NOT claim a learned-routing benefit if the router collapses toward a single baseline.
 >    - sklearn/numpy version metadata (C6/B-1813) — store at train time + validate at serve time (defence-in-depth beyond the loader hard-fail).
-> 5. ✅ **F6-followup DONE** (B-1821, 2026-05-21, commit `<pending>`) — 3 diagnostic scripts (`p1_archive_simulation` / `l2_partial_trajectory_auroc` / `router_archive_diagnostic`) now `from p79.policies.router_features import MODES` (identity-shared, verified `is`). Fixed a latent **cost-bias**: the local copies sat in the buggy pre-F2 order, biasing the archive oracle / G-1 tie-break toward expensive som/vision. 详 [[master_bug_catalog]] B-1821.
+> 5. ✅ **F6-followup DONE** (B-1821, 2026-05-21, commit `b0c79f2`) — 3 diagnostic scripts (`p1_archive_simulation` / `l2_partial_trajectory_auroc` / `router_archive_diagnostic`) now `from p79.policies.router_features import MODES` (identity-shared, verified `is`). Fixed a latent **cost-bias**: the local copies sat in the buggy pre-F2 order, biasing the archive oracle / G-1 tie-break toward expensive som/vision. 详 [[master_bug_catalog]] B-1821.
 > 6. **F9 (P2)** — delete/guard the deprecated 8-dim `predict_mode` path (`learned_router.py:425-494`) after confirming no caller (runner uses `predict_mode_fold_aware`).
 >
 > 详 [[实验笔记]] §255 (→ §256 fix wave) + [[master_bug_catalog]] B-1805~B-1818.
