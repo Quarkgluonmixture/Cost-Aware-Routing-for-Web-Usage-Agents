@@ -22,9 +22,30 @@ updated: 2026-05-18
 
 ---
 
+## §0a CURRENT — Fire-6 Pass-1 LIVE (2026-05-21)
+
+> [!success] **Fire-6 Pass-1 firing now** — launched 2026-05-21 ~12:06 (orchestrator pid 560499, sequential cls→red, ~9d wallclock). All 8 gates green; cls B0 dom healthy (first episodes producing 30 steps). Pre-fire /stress (B-1796..B-1802, 8 fixes) + Addendum 01a witness (tag `prereg-amendment-01a-schema-validator-20260521`, OSF-uploaded) + re-Smoke A PASS all landed. **Nothing required while it runs.**
+>
+> **Monitoring** (all zero-touch): A100 cron `scripts/maintenance/fire6_monitor.sh` (anomaly-only ntfy every 30min + daily heartbeat → `p79-exp-dgx-spark`) · daily Claude intelligent review cron (subtle-anomaly digest) · per-runner `experiment_watchdog` (auth refresh / clean re-run) · `make active` / `cells.base` / PLAYBOOK §1+§2.
+
+> [!todo] Forward plan (priority order, 2026-05-21)
+> 1. **[~9d, passive] Pass-1 lands** → `queue_phase1_paper_grade.sh status` shows 36/36 → `make analysis` (cross-condition + figures) → sanity-check §1 hero numbers (phantom-SoM 4-fold drop-in; H1/H2/H3 per cell). Fire-6 = first B0 fair measurement under schema≡validator.
+> 2. **Pass-2 learned router (6 cond)** ⭐⭐ — post-Pass-1: LR training pipeline (Pass-1 outcomes → oracle label matrix → entropy defer gate → per-cell LR heads → artifact smoke) → `queue_phase1_router_paper_grade.sh`. ~3-5d. (B-1671 launch-pass2 raises until LR pipeline lands.) 详 [[phase1_plan]] §B-router + §C.
+> 3. **Analysis + gating** post Pass-1+2 — H1/H2/H3 (FE pooled bootstrap percentile p, R1-R5 framing per §2.5) + H10 (router Pareto non-dominance + 5/6 grid, §6). 详 [[paper_planning]] §16 + [[preregistration]] §2.
+> 4. **DOI 2 reproducibility bundle** ⭐⭐ — trigger = Pass-1+2 done + analysis frozen + paper §1-8 finalized. 42 condition summaries + episodes + steps + CSV + figures + scripts + drafts; README `cited_by DOI 1`. 详 [[osf_lock_manifest]] §3b.
+> 5. **Paper writing (codex prose round)** — §1 hero numbers from Fire-6 clean data; §3.5.1 already carries Protocol Reset + B-1794 + B-1796..B-1802 disclosure. **Fold in deferred P1-11** (gemini: "upstream-aligned/core" labeling → Abstract non-comparability statement; deferred this /stress round per Q4=A no-codex-round).
+> 6. **R-tier decision** (R1/R3/R5) + workshop vs Phase 1b shop expansion timing — post-data. 详 [[paper_planning]] §16.
+> 7. **(deferred) GRL-layer / bug workshop sub-paper** — B-91 LLM-judge polarity + B-1796..B-1802 reproducible-accounting cluster. Track A/B 2026-06, NOT critical-path. 详 [[workshop_subpaper_plan]] §0.1.
+>
+> **2026-05-21 lineage**: pre-Fire-6 /stress 3-AI (18 findings → 8 fix) + Addendum 01a witness + re-Smoke A PASS + **Fire-6 Pass-1 FIRED**. 详 [[实验笔记]] §252 + §252.1 + §252.2.
+
+---
+
 ## §0 Direction
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, phantom routing space 3 arms / 4-fold drop-in)
+
+> [!warning] ⤵️ SUPERSEDED by §0a CURRENT (2026-05-21) — the Fire-5-aborted RCA below is RESOLVED: the 3-fire stateful-modify-task / EvaluatorUnavailableError pattern was addressed by the GRL eval-isolation + screenshot-recovery + Gate-8 quarantine layer (Protocol Reset / Amendment 01), and Fire-6 Pass-1 is now LIVE + healthy. Kept below for historical RCA context only.
 
 > [!todo] Top forward actions (priority order, **2026-05-20 00:35 BST — Fire-5 aborted at cls task 4 / Fire-3 task 75 pattern repeated / 3-fire stateful-modify-task signal**)
 > 1. **🚨 Fire-5 aborted 00:27:46 BST — RCA + Fire-6 prep needed** ⭐⭐⭐ — Fire-5 launched 2026-05-20 00:00:18 BST with all 8 preflight gates PASS (incl new Gate 8). cls B0 dom condition crashed at **task 4 (delete white car listing, eval URL id=84144) ~15 min in** via `EvaluatorUnavailableError: Page.goto Timeout 30000ms × 3 retries`. Master P0-2-B sentinel-wait correctly halted (rc=1 → NOT launching red ✓ first successful production fire-day fail-closed defense). Run dir: `B0_dom_classifieds_20260520_000018_844563552_322810_R14647`. Tasks 0-3 done in ~10min (task 2 only success), task 4 = ~15min then EvaluatorUnavailableError. **M1 PaperGradeAbortError gate did NOT fire** — because EvaluatorUnavailableError raises BEFORE summary write at `runner/main.py:1505` (B-1662 path), so M1's after-summary gate by design doesn't apply. Quarantine event appended to registry (task 4: 1 unclassified). Gate 8 now correctly HALTs Fire-6 until task 4 classified.
