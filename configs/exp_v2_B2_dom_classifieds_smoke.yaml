@@ -1,0 +1,30 @@
+# B2 (Gemma3-VL) dom classifieds — NON-CANONICAL pre-Fire-6 pipeline smoke (2026-05-21).
+# Identical to exp_v2_B2_dom_classifieds.yaml EXCEPT task.max_tasks_per_site: 1.
+# Verifies the Gemma3-VL local text-JSON path + accounting on real A100 BEFORE
+# Fire-6 (B2 = cross-family 4B). NOT canonical data. Run via
+# `SMOKE_CONFIG=... FORCE_NEW=1 queue_baseline.sh B2 dom classifieds`.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B2_dom_classifieds_smoke"
+
+task:
+  include_sites: ["classifieds"]
+  max_tasks_per_site: 1
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["dom"]
+
+backends:
+  default_backend: "local_gemma"
+  local_gemma:
+    max_new_tokens: 4096
+    temperature: 0.0

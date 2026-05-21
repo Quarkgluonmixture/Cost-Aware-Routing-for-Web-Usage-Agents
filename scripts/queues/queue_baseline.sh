@@ -73,6 +73,18 @@ CFG_NAME="${BASELINE}_${MODE}_${SITE}"
 [[ "${BENCHMARK}" == "wa" ]] && CFG_NAME="${BASELINE}_${MODE}_wa_${SITE}"
 CONFIG="${REPO_DIR}/configs/exp_v2_${CFG_NAME}.yaml"
 
+# SMOKE_CONFIG override (pre-Fire-6 pipeline smoke WITHOUT touching production config).
+# Set SMOKE_CONFIG=<repo-relative-or-absolute path> to run a dedicated NON-CANONICAL
+# smoke config. cfg_name (→ the minted run_id) is derived from the smoke config
+# basename so the smoke run dir is isolated from the canonical Fire run dirs. Smoke
+# runs are non-canonical by naming convention — delete / ignore the smoke run dir
+# after verification. Pairs with FORCE_NEW=1 (unique timestamped run_id).
+if [[ -n "${SMOKE_CONFIG:-}" ]]; then
+  [[ "${SMOKE_CONFIG}" = /* ]] && CONFIG="${SMOKE_CONFIG}" || CONFIG="${REPO_DIR}/${SMOKE_CONFIG}"
+  CFG_NAME="$(basename "${CONFIG}" .yaml | sed 's/^exp_v2_//')"
+  echo "[baseline] SMOKE_CONFIG override → config=${CONFIG} cfg_name=${CFG_NAME} (NON-CANONICAL smoke)"
+fi
+
 if [[ ! -f "${CONFIG}" ]]; then
   echo "[baseline][error] Config not found: ${CONFIG}" >&2
   echo "  Single-mode baseline config 必须先创建 (template: exp_v2_B0_dom_shopping.yaml)" >&2
