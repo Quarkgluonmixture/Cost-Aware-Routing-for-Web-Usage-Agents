@@ -24,11 +24,14 @@ cd "$(dirname "$0")/../.." 2>/dev/null || cd /home/ubuntu/workspace/p79
 NTFY="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 URL="https://ntfy.sh/${NTFY}"
 MODE="${1:-healthcheck}"
-# Auto-detect the NEWEST fire log — a relaunch writes a fresh log (e.g.
-# fire6_phase1a_v2.log after the B-1803 task-4 re-fire). Hardcoding the first
-# log caused a false-positive "fatal/abort in fire log" every tick because the
-# original (aborted) log permanently contains the task-4 rc=1 FAIL line.
-FIRELOG="$(ls -t logs/fire6_phase1a*.log 2>/dev/null | head -1)"
+# Auto-detect the NEWEST fire log across BOTH naming families — fire6_phase1a*.log
+# (B-1803 task-4 re-fire era) AND fire6_relaunch_*.log (RESUME_MISSING relaunch,
+# B-1825). B-1827 (Fire-6 relaunch, 2026-05-22): the prior glob only matched
+# fire6_phase1a* → it pinned the OLD aborted log (whose rc=1 FAIL is permanent) and
+# SILENTLY missed the live fire6_relaunch_* log entirely — both a false-positive
+# "fatal/abort in fire log" every tick AND a real monitoring blind spot (the live
+# relaunch was not being watched at all). Glob both; newest by mtime wins.
+FIRELOG="$(ls -t logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
 [ -z "$FIRELOG" ] && FIRELOG="logs/fire6_phase1a.log"
 RESULTS="results/visualwebarena/phase1"
 
