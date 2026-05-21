@@ -17,6 +17,15 @@
 
 Co-submission is feasible (different audiences); recommend NOT bundling — independent narratives + independent reviewer pools.
 
+### 0.1 Candidate additional GRL-layer findings (Protocol Reset era, 2026-05-21)
+
+The Protocol Reset (实验笔记 §242-251, Amendment 01) surfaced two further GRL-layer ("reliability not policy") findings — candidate workshop material, cross-ref main-paper §3.5.1:
+
+- **B-1794 — B0 forced-tool-call schema ≡ validator (serialization-adapter reliability)**: under `tool_choice="required"` the proxy emits a *minimal* tool call dropping optional but semantically-required fields (element_id on type/search; 235B has a competing search-via-URL prior). Fix = per-action conditional `required` mirroring `validate_action_detailed` exactly (commit `681b9cf` + 10 invariant tests). This is a **serialization-adapter reliability fix** — it makes B0's forced tool-calling conform to the same semantic gate B1/B2 prose-JSON already pass — squarely GRL "reliability not policy". **GRL boundary clarified**: schema≡validator alignment is IN-bounds (serialization adapter); obs-enrichment to disambiguate anonymous `textbox ''` inputs would be OUT-of-bounds (changes representation/task-policy + pollutes phantom-mode comparison + re-diverges from upstream).
+- **Protocol Reset accounting (two-budget step counting + three-column cost)**: restores upstream "N agent decisions" budget semantics + cleanly separates canonical vs protocol-wasted spend — a reliability/measurement-layer contribution (main-paper §3.5.1 disclosure).
+
+Whether either becomes a standalone workshop track (vs main-paper §3.5.1 disclosure only) is an advisor-sync decision; the full GRL workshop writeup stays on the Track A/B 2026-06 timeline (NOT Fire-6-blocking). Evidence scripts: `scripts/spike/probe_b0_*.py` + `tests/test_b0_schema_validator_consistency.py`.
+
 ---
 
 ## 1. Track A — Walk-up Click ON_TARGET
