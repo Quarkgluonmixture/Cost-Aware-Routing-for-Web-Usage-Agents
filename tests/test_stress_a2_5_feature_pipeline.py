@@ -37,6 +37,7 @@ from train_l1_router_with_mi import (  # noqa: E402
     N_SELECTED,
     N_SPLITS,
     build_design_matrix,
+    build_discrete_mask,
     build_pool_mask_for_fold,
     fit_fold_local_tfidf,
     fit_pooled_mi_selector,
@@ -264,11 +265,53 @@ def test_stage2_mi_selector_produces_k_features():
         ]
     )
     y = syn["labels"]
-    selector, mask = fit_pooled_mi_selector(X, y, k=N_SELECTED, seed=42)
+    selector, mask = fit_pooled_mi_selector(X, y, k=N_SELECTED, seed=42, n_binary=15)
     assert mask.sum() == N_SELECTED, (
         f"Expected {N_SELECTED} selected, got {mask.sum()}"
     )
     assert mask.shape[0] == 50, f"Mask should have 50 entries (full feature count)"
+
+
+# ── Invariant 6b: B-1804 MI estimator hygiene (discrete_features) ────────────
+
+
+def test_b1804_discrete_mask_marks_trailing_binary():
+    """B-1804: discrete mask flags ONLY the trailing n_binary columns.
+
+    Design matrix order is [TF-IDF | numeric | binary], so the binary block is always
+    the last n_binary columns regardless of TF-IDF vocab size.
+    """
+    mask = build_discrete_mask(50, 15)
+    assert mask.sum() == 15, f"Expected 15 discrete, got {mask.sum()}"
+    assert not mask[:35].any(), "30 TF-IDF + 5 numeric must stay continuous"
+    assert mask[35:].all(), "trailing 15 binary must be discrete"
+    # Robust to smaller TF-IDF vocab (e.g. 22 TF-IDF + 5 numeric + 15 binary = 42)
+    mask42 = build_discrete_mask(42, 15)
+    assert mask42[-15:].all() and not mask42[:-15].any()
+    # n_binary=0 → legacy all-continuous
+    assert build_discrete_mask(50, 0).sum() == 0
+
+
+def test_b1804_selector_score_func_picklable():
+    """B-1804: score_func is functools.partial (not lambda) → selector pickles.
+
+    The pre-fix `lambda X, y: mutual_info_classif(...)` raised PicklingError on
+    pickle.dumps(selector); functools.partial of a module-level func is picklable.
+    """
+    syn = _make_synthetic_cells(n_per_cell=60, cells=4, seed=13)
+    n = len(syn["task_ids"])
+    X = np.hstack(
+        [
+            np.random.RandomState(0).rand(n, 30),
+            syn["X_numeric"],
+            syn["X_binary"],
+        ]
+    )
+    y = syn["labels"]
+    selector, _ = fit_pooled_mi_selector(X, y, k=N_SELECTED, seed=42, n_binary=15)
+    blob = pickle.dumps(selector)  # would raise with a lambda score_func
+    sel2 = pickle.loads(blob)
+    assert sel2.get_support().sum() == N_SELECTED
 
 
 # ── Invariant 7: Deterministic fold assignments ─────────────────────────────
@@ -459,8 +502,8 @@ def test_stage2_mi_ranking_relatively_stable_cross_seed():
     vec = fit_fold_local_tfidf(intents)
     X_full, _ = build_design_matrix(intents, syn["X_numeric"], syn["X_binary"], vec)
     y = syn["labels"]
-    _, mask1 = fit_pooled_mi_selector(X_full, y, k=N_SELECTED, seed=42)
-    _, mask2 = fit_pooled_mi_selector(X_full, y, k=N_SELECTED, seed=7)
+    _, mask1 = fit_pooled_mi_selector(X_full, y, k=N_SELECTED, seed=42, n_binary=15)
+    _, mask2 = fit_pooled_mi_selector(X_full, y, k=N_SELECTED, seed=7, n_binary=15)
     # Overlap between two seed-runs should be > 50% of selected features
     overlap = (mask1 & mask2).sum()
     assert overlap > N_SELECTED * 0.4, (

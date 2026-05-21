@@ -7405,3 +7405,21 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle cross-link**: 实验笔记 §253.
 
 ---
+
+## B-1804 — L1 router MI feature-selection hygiene: discrete_features + K-sensitivity + picklable score_func (2026-05-21)
+
+> User-relayed router-design finding (external review, verified against code this session). `train_l1_router_with_mi.py` Stage 2 fold-local pooled MI selection. **Timing**: `raw_features_phase1a.json` shows `n_pooled_total: 0` (Pass-1 not yet landed) → Stage 2 currently returns `status: no_data_yet`; existing `*_lr.pkl` are 5/16 stale placeholders. Fixing now = zero-cost (re-runs fresh on real Pass-1 data, no rework). **Verified clean (credit, not bugs)**: fold-local leakage = ZERO (`L308-345` selector never sees holdouts); feature availability = all task-intrinsic / step-0 mode-agnostic, site/capability_tier excluded (`extract_50_features.py:12-14`); no label leakage (`reasoning_difficulty` from task config `L221`, not outcome).
+
+| Bug | 根因 | Fix |
+|---|---|---|
+| **B-1804** (P1, user-relayed; OOB) — `mutual_info_classif(X, y, random_state=seed)` on dense hstack `X` → sklearn `discrete_features='auto'` defaults to **all-continuous** for dense input → the 15 binary indicators run through k-NN (Kraskov) continuous entropy. On a {0,1} axis this produces many distance-0 ties broken by seeded noise → biased + downward-skewed binary MI → binary indicators **systematically under-ranked** in top-k. | `train_l1_router_with_mi.py:202` (pre-fix `score_func=lambda X, y: mutual_info_classif(X, y, random_state=seed)`). Design matrix order `[TF-IDF \| numeric \| binary]` (`build_design_matrix:186`) → binary block is always the trailing 15 cols. | New `build_discrete_mask(n_features, n_binary)` → `mask[-n_binary:]=True`; `fit_pooled_mi_selector(..., n_binary)` passes `discrete_features=mask` (TF-IDF + numeric stay continuous). score_func switched lambda → **`functools.partial`** (picklable, P2-1). `n_binary=0` preserves legacy all-continuous. |
+| **B-1804-b** (P1) — `N_SELECTED=18` hardcoded, no K-sensitivity path; reviewer "why 18 not 10/25?". | `train_l1_router_with_mi.py:52`. | `run_stage2(..., k=N_SELECTED)` + `--k` CLI; `mi_estimator` disclosure block in `stage2_summary.json` (n_neighbors=3, discrete_features handling, k, **note**: per-fold `mi_scores` already dumped → feature-selection K-sensitivity reconstructable post-hoc; only router-perf K-sensitivity needs `--k` re-run). |
+| **P2-2 (deferred, no code)** — step-0 numeric (`dom_complexity`/`text_length`/`tokens_input_text`) require fetching the step-0 AXTree before the routing decision = a fixed pre-routing decision cost. | feature itself is mode-agnostic, but obtaining it costs one AXTree fetch. | Logged as **router §6 disclosure TODO** (not a code fix): router decision-cost accounting must include the one mode-agnostic step-0 observation fetch. |
+
+**Tests**: `tests/test_stress_a2_5_feature_pipeline.py` +2 (`test_b1804_discrete_mask_marks_trailing_binary` — mask flags only trailing binary, robust to smaller TF-IDF vocab + n_binary=0 legacy; `test_b1804_selector_score_func_picklable` — `pickle.dumps(selector)` succeeds, would raise with lambda). Existing MI tests updated to pass `n_binary=15`. 30 passed (feature pipeline) + 18 passed (LR trainer, no Stage-3 regression).
+
+**Reporting framing** (per finding §6): treat the selected set as an **operational compact feature subset** (fold-local nested in CV), NOT a causal feature-importance / feature-discovery claim. Main paper does not rely on the identity of the 18 features.
+
+**Chronicle cross-link**: 实验笔记 §254.
+
+---

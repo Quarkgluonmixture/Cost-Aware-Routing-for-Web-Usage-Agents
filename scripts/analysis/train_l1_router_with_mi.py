@@ -8,8 +8,9 @@ for each fold k:
 1. Computes `pool_idx_k = all_indices \\ {union over cells of holdout_C_k}`.
 2. Fits TfidfVectorizer(max_features=30, min_df=3) on pool intent texts → vectorizer_k.
 3. Transforms pool to 50-dim X_pool_k (30 TF-IDF + 5 numeric + 15 binary).
-4. Fits SelectKBest(mutual_info_classif, k=18) on X_pool_k, y_pool_k → selected_idx_k.
-5. Dumps vectorizer_fold{k}.pkl + selected_idx_fold{k}.json.
+4. Fits SelectKBest(mutual_info_classif, k) on X_pool_k, y_pool_k → selected_idx_k.
+   k defaults to N_SELECTED=18, overridable via --k for K-sensitivity (B-1804).
+5. Dumps vectorizer_fold{k}.pkl + selected_idx_fold{k}.json (incl. full mi_scores).
 
 This is "global fold-local pooled MI" per user OOB-catch #4 — 5 unified selectors per
 fold, shared across cells within that fold. Stage 3 (per-cell × per-fold LR training)
@@ -19,6 +20,11 @@ Properties:
 - Leak: ZERO. Selector_k never sees fold_k holdouts of any cell.
 - Stability: N=~1124 per MI fit (vs N=40 in per-fold-within-cell MI).
 - Sklearn pattern: equivalent to Pipeline-in-CV with selector as first step.
+- MI estimator hygiene (B-1804): the 15 binary indicators are passed via
+  `discrete_features` so the k-NN estimator uses discrete entropy for them rather than
+  treating {0,1} as continuous (sklearn's dense-X default), which biases binary MI
+  downward; TF-IDF + numeric stay continuous. score_func is functools.partial (not a
+  lambda) so the selector stays picklable.
 
 Output artifacts (in OUT_DIR):
 - vectorizer_fold{k}.pkl × 5     # fitted TfidfVectorizer per fold
@@ -29,6 +35,7 @@ Output artifacts (in OUT_DIR):
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import pickle
 import sys
@@ -188,18 +195,49 @@ def build_design_matrix(
     return X_full, tfidf_names
 
 
+def build_discrete_mask(n_features: int, n_binary: int) -> np.ndarray:
+    """Boolean mask marking the trailing `n_binary` columns as discrete (B-1804).
+
+    Design-matrix column order is [TF-IDF | numeric | binary] (`build_design_matrix`),
+    so the binary indicator block is ALWAYS the last `n_binary` columns regardless of
+    how many TF-IDF columns the fold's vocab produced. TF-IDF (continuous magnitude)
+    and numeric (counts / lengths / ordinal) stay continuous. `n_binary=0` → all-False
+    (legacy all-continuous behavior).
+    """
+    mask = np.zeros(n_features, dtype=bool)
+    if n_binary > 0:
+        mask[-n_binary:] = True
+    return mask
+
+
 def fit_pooled_mi_selector(
     X_pool: np.ndarray,
     y_pool: np.ndarray,
     k: int = N_SELECTED,
     seed: int = MI_SEED,
+    n_binary: int = 0,
 ) -> tuple[SelectKBest, np.ndarray]:
-    """Fit SelectKBest(mutual_info_classif, k=18) on pool data.
+    """Fit SelectKBest(mutual_info_classif, k) on pool data.
+
+    B-1804: the binary indicators are passed via `discrete_features` so the k-NN MI
+    estimator uses the discrete-entropy path for them instead of treating {0,1} as
+    continuous (sklearn's dense-X default). The continuous treatment adds tie-breaking
+    noise on the degenerate {0,1} axis and biases binary-feature MI downward, which
+    systematically under-ranks binary indicators in the top-k. `n_binary=0` preserves
+    the legacy all-continuous behavior. `functools.partial` (not a lambda) keeps the
+    score_func picklable.
 
     Returns (selector, selected_idx_boolean_mask).
     """
+    discrete_arg: Any
+    if n_binary > 0:
+        discrete_arg = build_discrete_mask(X_pool.shape[1], n_binary)
+    else:
+        discrete_arg = False  # sklearn dense-X default: all continuous
     selector = SelectKBest(
-        score_func=lambda X, y: mutual_info_classif(X, y, random_state=seed),
+        score_func=functools.partial(
+            mutual_info_classif, discrete_features=discrete_arg, random_state=seed
+        ),
         k=k,
     )
     selector.fit(X_pool, y_pool)
@@ -250,8 +288,14 @@ def compute_feature_stability(
     return {"per_feature": stability, "bands": bands}
 
 
-def run_stage2(npz_path: Path, out_dir: Path) -> dict[str, Any]:
-    """Stage 2 main entry: per-fold pooled TF-IDF + MI selection across 5 folds."""
+def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, Any]:
+    """Stage 2 main entry: per-fold pooled TF-IDF + MI selection across 5 folds.
+
+    `k` = number of features SelectKBest retains per fold (default N_SELECTED=18).
+    Override via `--k` for K-sensitivity sweeps (B-1804). Note: per-fold `mi_scores`
+    are always dumped, so feature-selection K-sensitivity is also reconstructable
+    post-hoc from a single run; only router-performance K-sensitivity needs a re-run.
+    """
     print(f"\n=== Stage 2: Fold-local TF-IDF + global pooled MI ===")
     print(f"Reading Stage 1: {npz_path}")
     raw = load_raw_features(npz_path)
@@ -334,16 +378,20 @@ def run_stage2(npz_path: Path, out_dir: Path) -> dict[str, Any]:
         feature_names_per_fold[fold_k] = feat_names_k
         print(f"  Design matrix: {X_pool_full.shape} (= {len(feat_names_k)} features)")
 
-        # Step 3: Fit MI selector on pool
+        # Step 3: Fit MI selector on pool (B-1804: binary block marked discrete)
         selector_k, selected_mask_k = fit_pooled_mi_selector(
-            X_pool_full, pool_labels, k=N_SELECTED, seed=MI_SEED
+            X_pool_full,
+            pool_labels,
+            k=k,
+            seed=MI_SEED,
+            n_binary=len(feature_names_binary),
         )
         mi_scores_per_fold[fold_k] = selector_k.scores_
         selected_masks_per_fold[fold_k] = selected_mask_k
         selected_names_k = [
             feat_names_k[i] for i, s in enumerate(selected_mask_k) if s
         ]
-        print(f"  Top-{N_SELECTED} MI-selected features ({sum(selected_mask_k)} total):")
+        print(f"  Top-{k} MI-selected features ({sum(selected_mask_k)} total):")
         for nm in selected_names_k[:10]:
             idx = feat_names_k.index(nm)
             print(f"    {nm}: MI={selector_k.scores_[idx]:.4f}")
@@ -433,7 +481,23 @@ def run_stage2(npz_path: Path, out_dir: Path) -> dict[str, Any]:
         "n_splits": N_SPLITS,
         "fold_seed": FOLD_SEED,
         "mi_seed": MI_SEED,
-        "n_selected_per_fold": N_SELECTED,
+        "n_selected_per_fold": k,
+        "mi_estimator": {
+            "method": "sklearn.feature_selection.mutual_info_classif (k-NN entropy)",
+            "n_neighbors": 3,
+            "random_state": MI_SEED,
+            "discrete_features": (
+                f"trailing {len(feature_names_binary)} binary indicators marked "
+                "discrete (B-1804); TF-IDF + numeric treated as continuous"
+            ),
+            "k_selected": k,
+            "note_k_sensitivity": (
+                "Per-fold mi_scores are dumped in selected_idx_fold{k}.json — "
+                "feature-selection K-sensitivity is reconstructable post-hoc by "
+                "taking top-K' from those scores without re-running Stage 2. "
+                "Router-performance K-sensitivity requires Stage 3 re-run with --k."
+            ),
+        },
         "tfidf_max_features": TFIDF_MAX_FEATURES,
         "tfidf_min_df": TFIDF_MIN_DF,
         "pool_sizes_per_fold": pool_sizes_per_fold,
@@ -480,9 +544,15 @@ def main() -> int:
         help="Stage 1 raw features NPZ path",
     )
     ap.add_argument("--out-dir", default=str(OUT_DIR), help="Output directory for artifacts")
+    ap.add_argument(
+        "--k",
+        type=int,
+        default=N_SELECTED,
+        help=f"SelectKBest k per fold (default {N_SELECTED}); vary for K-sensitivity (B-1804)",
+    )
     args = ap.parse_args()
 
-    summary = run_stage2(Path(args.raw_features), Path(args.out_dir))
+    summary = run_stage2(Path(args.raw_features), Path(args.out_dir), k=args.k)
     print("\n=== Summary ===")
     if summary.get("status") == "no_data_yet":
         print(f"Status: {summary['status']} (waiting for Phase 1a Pass-1)")
