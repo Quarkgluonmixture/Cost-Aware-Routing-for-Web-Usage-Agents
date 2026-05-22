@@ -15,14 +15,31 @@ substrate degradation — user directive 2026-05-22).
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from p79.experiment.environment import (
+    EpisodeEvalResult,
+    EvaluatorUnavailableError,
+    VwaEvaluator,
     eval_error_is_retryable,
     _EVAL_MAX_RETRIES,
     _EVAL_RETRY_BACKOFF_BASE_S,
     _EVAL_RETRY_BACKOFF_CAP_S,
 )
+
+
+class _MockPage:
+    url = "http://localhost:9980/index.php?page=item&id=1"
+
+
+class _MockInnerEnv:
+    page = _MockPage()
+
+
+class _MockEnv:
+    _env = _MockInnerEnv()
 
 
 class TestEvalErrorIsRetryable:
@@ -95,3 +112,56 @@ class TestEvalRetryBackoff:
         assert total_span_s >= 480.0, (
             f"retry span {total_span_s}s should cover the ~8min window"
         )
+
+
+class TestB1836P01FailClosedRegression:
+    """codex P0-1 (Gate 1.5 /stress): an eval TIMEOUT on agent-page program_html
+    must FAIL-CLOSED (raise), NOT silently return score=0.0 via the B-329 branch.
+    The first B-1836 fix introduced this regression by making timeout
+    is_nav_error=True → it reached B-329's `return score=0.0` bail. Pre-this-test
+    the retry loop was never exercised, so the regression was invisible (codex P2-2)."""
+
+    @staticmethod
+    def _mk_evaluator(paper_grade: bool) -> VwaEvaluator:
+        ev = VwaEvaluator(paper_grade=False)  # avoid init-time dep raise
+        ev._paper_grade = paper_grade
+        ev._available = True                  # bypass B-544 early unavailable gate
+        ev._captioning_fn = None
+        ev._dump_eval_timeout_forensic = lambda **k: None  # no side-effect files
+
+        def _timeout_router(config_file, captioning_fn=None):
+            def _evaluator(trajectory=None, config_file=None, page=None):
+                raise TimeoutError("Page.goto: Timeout 30000ms exceeded.")
+            return _evaluator
+
+        ev._evaluator_router = _timeout_router
+        return ev
+
+    @staticmethod
+    def _agent_page_program_html_cfg(tmp_path) -> str:
+        # url="last" → _classify_eval_context returns agent_page (NOT isolated),
+        # so eval_isolated_context_used=False → hits the B-329 branch on timeout.
+        cfg = tmp_path / "task.json"
+        cfg.write_text(json.dumps({"eval": {
+            "eval_types": ["program_html"],
+            "program_html": [{"url": "last", "locator": "func:x",
+                              "required_contents": {"must_include": ["y"]}}],
+        }}), encoding="utf-8")
+        return str(cfg)
+
+    def test_paper_grade_agent_page_program_html_timeout_fail_closed(self, tmp_path):
+        """P0-1 regression anchor: paper-grade timeout on agent-page program_html
+        must RAISE EvaluatorUnavailableError (fail-closed), not score=0.0."""
+        ev = self._mk_evaluator(paper_grade=True)
+        cfg = self._agent_page_program_html_cfg(tmp_path)
+        with pytest.raises(EvaluatorUnavailableError):
+            ev.evaluate(trajectory=[], config_file=cfg, env=_MockEnv())
+
+    def test_dev_mode_agent_page_program_html_timeout_scores_zero(self, tmp_path):
+        """Dev mode (non-paper-grade): same path bails to score=0.0, no raise —
+        confirms the fail-closed branch is gated on paper_grade only."""
+        ev = self._mk_evaluator(paper_grade=False)
+        cfg = self._agent_page_program_html_cfg(tmp_path)
+        r = ev.evaluate(trajectory=[], config_file=cfg, env=_MockEnv())
+        assert isinstance(r, EpisodeEvalResult)
+        assert r.score == 0.0

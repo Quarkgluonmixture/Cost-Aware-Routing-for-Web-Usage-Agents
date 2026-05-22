@@ -7713,6 +7713,22 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 
 **Fix (实现, Gate 1, commit 见下)**: 抽模块级纯函数 `eval_error_is_retryable()` **复用 single-source `classify_timeout()`**(不制造第三处关键词 drift; forensic 判定同步改用 classify_timeout → retry-gate 与 forensic 永不分叉)+ `_EVAL_MAX_RETRIES 3→5` + 指数 **LOCAL** backoff `30/60/120/180s(cap)`(worst-case ~9min retry 跨度覆盖今天 ≥8min 窗口)+ message 改诚实 `Exhausted N/M (retryable=...)`。**全局 30s `Page.goto` timeout 不动**(user directive 2026-05-22: 放宽全局会掩盖 substrate degradation)。**fail-closed 保持**(retry 耗尽仍 abort,不做 quarantine/auto-skip — 守 GRL denominator 边界)。**Verified**: `eval_error_is_retryable("Page.goto: Timeout 30000ms exceeded.")=True`(pre-fix False)+ `tests/test_b1836_eval_retry.py`(16 用例)+ 全套 **1271 pass / 0 fail**。**retry+backoff 能否真吸收退化窗口 = Gate 2 canary (B0 som cls) 实证,NOT 在此假设**。可选: fire 前 `docker restart classifieds classifieds_db` 降诱因频率。
 
-**Chronicle**: 实验笔记 §269。
+**Gate 1.5 follow-up fix wave (3-AI /stress on the fix delta, 2026-05-22)**: pre-fire 3-AI /stress (re-fire canary 前, user 纠正 "restart 前需 /stress") 抓到 fix **自身**的 regression + edge cases。**codex P0-1 (OOB)**: fix 让 timeout `is_nav_error=True` → agent-page program_html (`__last_url__`/`last`/func-url, `eval_isolated_context_used=False`) timeout 落入 B-329 branch `return score=0.0` (silent agent failure) 而非 pre-fix fail-closed raise → **违反 fix invariant**, 16 tasks (2 cls + 14 reddit) silent deflate SR, B0-biased。**修**: B-329 branch 加 `if _is_timeout_err and self._paper_grade: raise EvaluatorUnavailableError` (timeout=infra → fail-closed; 非 timeout nav error 才 bail score=0.0)。**codex P1-1**: `_open_fresh_eval_page` close 旧 context 后 new_context 失败 → `eval_page` 指向 closed stale page → 后续 attempt 假 `Target closed` burn budget。**修**: catch fresh-context 创建失败 → `break` fail-closed。**codex P1-2**: 同 P0-1 根 (initial isolation 失败 fallback agent_page → 首次 timeout B-329 silent), P0-1 fix 一并解决。**Claude+codex P2-1 (OOB overlap)**: `eval_goto_timeout` 对任何 timeout (含 Page.screenshot/click/LLM-judge) 误标 → 污染 Fire-5/6 goto forensic signal。**修**: 用 `classify_timeout` callsite, 只 `agent_navigation` 才 set。**codex P2-2**: test 只测 pure fn 不测 retry loop → P0-1 测不出。**修**: `TestB1836P01FailClosedRegression` integration test (mock evaluator 抛 timeout → 验 paper-grade raise + dev-mode score=0)。**gemini P0-2 (OOB) → 独立 B-1837**: eval 5-retry vs agent-step 0-retry asymmetry → differential baseline rescue confound (measure-then-decide, 见 B-1837)。**Verified**: 全套 **1273 pass / 0 fail** (+2 integration test)。两个 P0 各由不同 lineage 独占抓到 (codex code-flow / gemini estimand), Claude Mode A 全漏 = cross-AI 价值实证。
+
+**Chronicle**: 实验笔记 §269 + §271。
+
+---
+
+## B-1837 — eval 5-retry vs agent-step 0-retry asymmetry → differential baseline rescue confound (gemini /stress OOB, B-1836 follow-up, measure-then-decide, 2026-05-22)
+
+**B-1837** (P0-OOB estimand confound, measure-pending) 🔬 **CONFIRMED design-level, NOT a code bug — measure-then-decide (user Q1=A 2026-05-22)** — **claim**: B-1836 给 evaluator 5-retry + 9min backoff budget, 但 **agent-side step 是 0-retry** (§15407 documented "agent-nav 无 retry, motivating GRL layer" + code `runner/main.py:2875-2885` agent env.step exception → `raise` 无 retry; 只 `baseline_retry_on_no_progress` 有 retry 且 default False + asymmetric per `:311`)。叠加 baseline speed 差异 → **differential rescue**: B0 (proxy, ~30-40s/step, 长 trajectory) 更可能在 trajectory 末尾的 **eval 阶段** 撞 docker 退化窗口 → 被 9min eval-retry budget rescue; B1/B2 (local, 快) 更可能 mid-trajectory 的 **agent step** 撞窗口 → agent 0-retry → abort。→ B-1836 selectively rescue B0 的 SR → **artificially inflate B0 的 paired superiority** (paper §1/§4 hero estimand)。
+
+**Why not a code bug**: eval retry 本身是正确的 reliability fix (B-1836); confound 来自 eval-vs-agent retry budget 的 **asymmetry** + baseline speed 差异, 是 estimand-level 而非 code-level。修 code (symmetric agent-step retry) 会改 agent 行为 → 风险 within-protocol comparability。
+
+**Disposition (user Q1=A measure-then-decide)**: 不改 code。canary (B0 som cls) + Pass-1 数据落地后 **量化** per-baseline (eval-rescue rate / agent-abort rate) → 数据说话再定: (a) disclose as known asymmetry limitation (paper §3.5/§8) / (b) symmetric agent-step retry (大改 + re-fire risk) / (c) accept if magnitude negligible。canary 本身 = 第一个量化数据点 (不阻塞 fire)。
+
+**Forward**: canary/Pass-1 落地 → 量化 → paper §3.5/§8 disclosure 决策 (advisor sync 可能需要)。
+
+**Chronicle**: 实验笔记 §271。
 
 ---

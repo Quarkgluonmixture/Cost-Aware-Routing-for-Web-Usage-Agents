@@ -706,10 +706,16 @@ class VwaEvaluator:
                     # flag and the retry gate so they can never drift apart. The
                     # pre-fix inline "timed out" (spaced) never matched
                     # Playwright's "Timeout 30000ms exceeded" → ZERO retries.
-                    _is_timeout_err, _ = classify_timeout(str(exc))
+                    _is_timeout_err, _timeout_callsite = classify_timeout(str(exc))
                     is_nav_error = eval_error_is_retryable(str(exc))
                     if _is_timeout_err:
-                        eval_goto_timeout = True
+                        # B-1836 P2-1: keep eval_goto_timeout goto-specific (the
+                        # Fire-5/6 forensic signal is about Page.goto); non-goto
+                        # timeouts (Page.screenshot/click/LLM-judge deadline)
+                        # still dump forensic + stay retryable, but must NOT
+                        # mislabel the goto flag.
+                        if _timeout_callsite == "agent_navigation":
+                            eval_goto_timeout = True
                         self._dump_eval_timeout_forensic(
                             config_file=config_file,
                             eval_context_mode=eval_context_mode,
@@ -728,6 +734,22 @@ class VwaEvaluator:
                             # from the START (eval_isolated_context_used=True), so
                             # this branch only fires for agent-page-dependent
                             # program_html (`__last_url__` / `"last"` / func-url).
+                            # B-1836 P0-1/P1-2: a TIMEOUT here is INFRA failure,
+                            # not agent failure. B-329 forbids fresh-retry (DOM
+                            # loss) AND silently scoring 0 would absorb the infra
+                            # timeout as an agent error (deflate SR, B0-biased —
+                            # proxy long-trajectory hits more eval timeouts).
+                            # → fail-closed. Only non-timeout nav errors
+                            # (net::err / target-closed) bail to score=0.0.
+                            if _is_timeout_err and self._paper_grade:
+                                raise EvaluatorUnavailableError(
+                                    "paper-grade agent-page program_html evaluator "
+                                    "TIMEOUT (B-329 forbids fresh-retry/DOM-loss; "
+                                    "B-1836 forbids silent score=0.0 on infra "
+                                    "timeout). needs_reevaluation=True (B-486 "
+                                    "quarantine). err="
+                                    f"{str(exc).splitlines()[0][:200] if str(exc) else 'unknown'}"
+                                ) from exc
                             logger.warning(
                                 "Evaluator nav error on agent-page program_html task; "
                                 "skipping retry (B-329) to avoid DOM-state "
@@ -763,7 +785,18 @@ class VwaEvaluator:
                             eval_page = fresh_page
                             logger.info("Opened FRESH CONTEXT page for evaluator retry (C1b)")
                         except Exception as page_exc:
-                            logger.warning("Failed to open fresh eval context: %s", page_exc)
+                            # B-1836 P1-1: fresh-context creation failed AFTER
+                            # _open_fresh_eval_page closed the prior context →
+                            # eval_page now points at a closed/stale page.
+                            # Retrying would manufacture self-inflicted
+                            # "Target closed" errors and burn retry budget on a
+                            # known-bad page. Break to fail-closed instead.
+                            logger.warning(
+                                "Failed to open fresh eval context: %s — aborting "
+                                "retry (B-1836 P1-1: avoid stale closed-page retry)",
+                                page_exc,
+                            )
+                            break
                         time.sleep(_backoff_s)
                         continue
                     # B-783 (/stress A1.9 cold-start P0-2-AB* Claude+codex OOB,
