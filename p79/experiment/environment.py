@@ -14,6 +14,42 @@ logger = logging.getLogger(__name__)
 from PIL import Image
 
 from p79.envs.vwa_wrapper import P79Observation, VWAWrapper
+from p79.experiment.metrics import classify_timeout
+
+
+# B-1836 (Fire-5/6 eval-timeout unified root cause, 2026-05-22): evaluator
+# retry tuning. The pre-fix code had max_eval_retries=3 but a keyword bug
+# (is_nav_error used "timed out" spaced, never matching Playwright's
+# "Timeout 30000ms exceeded") meant Playwright Page.goto timeouts got ZERO
+# retries — one transient cls-docker degradation window aborted the whole
+# condition (3-fire pattern). Fix: (1) eval_error_is_retryable() reuses the
+# single-source classify_timeout(); (2) exponential LOCAL backoff so the
+# retry sequence spans the empirically-observed ~8-10min transient window
+# instead of ~100s back-to-back. The GLOBAL Page.goto timeout stays 30s on
+# purpose — a wider single timeout would mask substrate degradation (user
+# directive 2026-05-22). Whether local retry+backoff actually absorbs the
+# window is a viability question for the B0-som-cls canary, NOT assumed here.
+_EVAL_MAX_RETRIES = 5  # was 3; +2 attempts to span the transient window
+_EVAL_RETRY_BACKOFF_BASE_S = 30.0  # exponential: 30, 60, 120, 180(cap)
+_EVAL_RETRY_BACKOFF_CAP_S = 180.0
+
+
+def eval_error_is_retryable(exc_str: Optional[str]) -> bool:
+    """B-1836: whether an evaluator-phase exception warrants a fresh-context
+    retry. Reuses the canonical classify_timeout() (single-source — already
+    covers Playwright "Timeout 30000ms exceeded" / "timed out" / "deadline
+    exceeded") PLUS non-timeout navigation-error keywords. The pre-B-1836
+    inline list used only "timed out" (spaced) → Playwright's "timeout"
+    (unspaced) never matched → eval Page.goto timeout never retried."""
+    if not exc_str:
+        return False
+    is_timeout, _ = classify_timeout(exc_str)
+    if is_timeout:
+        return True
+    low = exc_str.lower()
+    return any(k in low for k in (
+        "net::err_", "navigation failed", "target closed", "page closed",
+    ))
 
 
 @dataclass
@@ -534,7 +570,7 @@ class VwaEvaluator:
                 config_file, _b329_exc,
             )
 
-        max_eval_retries = 3
+        max_eval_retries = _EVAL_MAX_RETRIES  # B-1836: was hardcoded 3
         page = env._env.page  # noqa: SLF001 - VWA evaluator requires underlying page
 
         # Fire-6 RCA Stage C1 (/stress 2026-05-20, user-approved L2 isolation):
@@ -665,13 +701,14 @@ class VwaEvaluator:
                     return EpisodeEvalResult(score=float(score), error=None, **_eval_metadata())
                 except Exception as exc:  # pragma: no cover - depends on external environment
                     last_exc = exc
-                    err_lower = str(exc).lower()
-                    is_nav_error = any(k in err_lower for k in (
-                        "net::err_", "navigation failed", "timed out",
-                        "target closed", "page closed",
-                    ))
-                    # Fire-6 RCA Stage C1: flag timeout for forensic + metadata.
-                    if any(k in err_lower for k in ("timeout", "timed out", "deadline exceeded")):
+                    # B-1836 (Fire-5/6 eval-timeout unified root cause): reuse
+                    # the single-source classify_timeout() for BOTH the forensic
+                    # flag and the retry gate so they can never drift apart. The
+                    # pre-fix inline "timed out" (spaced) never matched
+                    # Playwright's "Timeout 30000ms exceeded" → ZERO retries.
+                    _is_timeout_err, _ = classify_timeout(str(exc))
+                    is_nav_error = eval_error_is_retryable(str(exc))
+                    if _is_timeout_err:
                         eval_goto_timeout = True
                         self._dump_eval_timeout_forensic(
                             config_file=config_file,
@@ -702,9 +739,16 @@ class VwaEvaluator:
                                 error=f"evaluator_nav_error_program_html:{exc}",
                                 **_eval_metadata(),
                             )
+                        _backoff_s = min(
+                            _EVAL_RETRY_BACKOFF_BASE_S * (2 ** attempt),
+                            _EVAL_RETRY_BACKOFF_CAP_S,
+                        )
                         logger.warning(
-                            "Evaluator navigation error (attempt %d/%d), retrying with fresh page in 5s: %s",
-                            attempt + 1, max_eval_retries, str(exc).split('\n')[0][:120],
+                            "Evaluator navigation error (attempt %d/%d), retrying with "
+                            "fresh context in %.0fs (B-1836 local backoff; global 30s "
+                            "goto timeout unchanged): %s",
+                            attempt + 1, max_eval_retries, _backoff_s,
+                            str(exc).split('\n')[0][:120],
                         )
                         # B-1803 (Fire-6 RCA C1b): the agent's page AND its
                         # long-lived BrowserContext may have dirty/degraded state
@@ -720,7 +764,7 @@ class VwaEvaluator:
                             logger.info("Opened FRESH CONTEXT page for evaluator retry (C1b)")
                         except Exception as page_exc:
                             logger.warning("Failed to open fresh eval context: %s", page_exc)
-                        time.sleep(5)
+                        time.sleep(_backoff_s)
                         continue
                     # B-783 (/stress A1.9 cold-start P0-2-AB* Claude+codex OOB,
                     # 2026-05-17): paper-grade mode = fail-loud on
@@ -736,7 +780,8 @@ class VwaEvaluator:
                     if self._paper_grade:
                         raise EvaluatorUnavailableError(
                             f"paper-grade evaluator mid-call EXCEPTION: {exc!r}. "
-                            f"All {max_eval_retries} retries exhausted; falling "
+                            f"Exhausted {attempt + 1}/{max_eval_retries} eval "
+                            f"attempts (retryable={is_nav_error}); falling "
                             "back to score=0.0 would absorb evaluator infra "
                             "failure as agent error. Caller must treat as "
                             "needs_reevaluation=True (B-486 quarantine). "

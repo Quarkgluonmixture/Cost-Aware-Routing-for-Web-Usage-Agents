@@ -7698,3 +7698,21 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §268。
 
 ---
+
+## B-1836 — eval retry `is_nav_error` 关键词缺 `"timeout"`(无空格)→ Playwright timeout 从不 retry → B-1803 per-retry fresh-context 死代码 (Fire-5/6 eval-timeout 统一根因, B-1803 follow-up, 2026-05-22)
+
+**B-1836** (P0, paper-grade fire blocker, B-1803 follow-up) 🛠️ **FIXED (Gate 1, 2026-05-22)** — code landed + 1271 pytest pass; whether retry absorbs the window = Gate 2 canary (B0 som cls) — **claim**: `environment.py:669-672` 的 `is_nav_error` 关键词 `("net::err_", "navigation failed", "timed out", "target closed", "page closed")` 用了 **`"timed out"`(带空格, 旧 Playwright 措辞)**, 但现 Playwright `Page.goto` timeout 错误是 **`"Timeout 30000ms exceeded"`(含 `"timeout"` 无空格)** → `is_nav_error=False` → retry 分支 (`:685` `if is_nav_error and attempt < max_eval_retries-1`) 进不去 → **第一次 30s timeout 就直接 raise `EvaluatorUnavailableError`** → condition abort。误导性 message `"All {max_eval_retries} retries exhausted"` (`:739`) 实际只 attempt 1 次 (`max_eval_retries=3` 但 retry 从不触发)。
+
+**铁证 (3× zero-retry)**: `logs/eval_timeout_forensic/` 整目录 2 文件全 `attempt=0` — Fire-5 (05-20) task4/id84144 + Fire-6-a2 (05-22) task32/id9689; Fire-5 runner log **0** 条 `retrying/FRESH CONTEXT` 行; R10016 (Fire-6-a2) 同 (本地 verify `"page.goto: timeout 30000ms exceeded".lower()` 命中 nav_keys = `[]`)。若 retry 真发生会有 attempt=1/2 dump, 从来没有。
+
+**B-1803 关系 (修正)**: B-1803 (commit `4baac19`) 写了 nav-error retry path 用 fresh context (`:717-723`) + 自述 "Both C1 isolated-init + nav-error retry paths use it" — 但该 retry path 对 timeout 是**死代码** (is_nav_error 进不去)。B-1803 初始 fresh-context (`:622-632`, forensic `eval_isolated_context_used=true`) 生效但**非根因**; per-retry 部分从未执行。next_steps §0a "B-1803 CONFIRMED 14:18" 是**误判** (task4 05-21 re-fire pass = 那次 docker 没卡的运气, 今天 docker 又卡 task32 又死)。
+
+**为何漏**: B-1803 "87 eval tests pass" 但测试未覆盖 Playwright 真实 timeout 措辞 (mock is_nav_error=True 或用旧 "timed out")。教训同 B-1835: retry 分支运行期行为必须用**真实 Playwright timeout 字符串**断言, 否则 mock 掩盖关键词 mismatch。
+
+**诱因 vs 放大器**: cls docker (`Up 6 days`) 偶发 ~8-10min 瞬时退化窗口 (13:55 health probe latency 6077ms → 14:03 Page.goto >30s → 后 curl id=9689 **134ms** 恢复) 是**诱因**; zero-retry 是**放大器** (一次卡顿 = abort 整 condition + 丢 31 ep)。docker 卡顿不可避免 (6天 uptime + MySQL/PHP-FPM 累积), 真 retry+backoff 能吸收。统一解释 Fire-3/5/6 死在不同 task (75/4/32) — 退化窗口随机撞谁的 eval。
+
+**Fix (实现, Gate 1, commit 见下)**: 抽模块级纯函数 `eval_error_is_retryable()` **复用 single-source `classify_timeout()`**(不制造第三处关键词 drift; forensic 判定同步改用 classify_timeout → retry-gate 与 forensic 永不分叉)+ `_EVAL_MAX_RETRIES 3→5` + 指数 **LOCAL** backoff `30/60/120/180s(cap)`(worst-case ~9min retry 跨度覆盖今天 ≥8min 窗口)+ message 改诚实 `Exhausted N/M (retryable=...)`。**全局 30s `Page.goto` timeout 不动**(user directive 2026-05-22: 放宽全局会掩盖 substrate degradation)。**fail-closed 保持**(retry 耗尽仍 abort,不做 quarantine/auto-skip — 守 GRL denominator 边界)。**Verified**: `eval_error_is_retryable("Page.goto: Timeout 30000ms exceeded.")=True`(pre-fix False)+ `tests/test_b1836_eval_retry.py`(16 用例)+ 全套 **1271 pass / 0 fail**。**retry+backoff 能否真吸收退化窗口 = Gate 2 canary (B0 som cls) 实证,NOT 在此假设**。可选: fire 前 `docker restart classifieds classifieds_db` 降诱因频率。
+
+**Chronicle**: 实验笔记 §269。
+
+---
