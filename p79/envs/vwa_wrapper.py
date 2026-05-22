@@ -13,6 +13,7 @@ try:
 except Exception:  # pragma: no cover - optional runtime dependency
     np = None
 from PIL import Image
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 # B-422 (/stress A1.3 v9 Mode A P1-11, 2026-05-17): named injection
 # distance thresholds. Pre-fix `_inject_css_dropdown_options` used 150 px
@@ -265,12 +266,61 @@ class VWAWrapper:
         self._lazy_init()
         assert self._env is not None
 
-        try:
-            obs, info = self._env.reset(options={"config_file": config_file})
-        except Exception:
-            # Keep wrapper recoverable across episodes after init/reset failures.
-            self.close()
-            raise
+        # B-1831 (/stress 2026-05-22, user A): env.reset initial-navigation
+        # Page.goto transient-timeout retry. The eval path has 3 retries
+        # (environment.py evaluate); the reset path had 0 — a real robustness
+        # asymmetry (Fire-6 B0 som cls task 76: env.reset homepage Page.goto 30s
+        # timeout → PaperGradeAbort killed the whole condition for ONE transient
+        # docker hiccup). Reset is PRE-episode: no model call, no env action, no
+        # episode summary counted until reset succeeds → retry does NOT change
+        # model behavior or SR. A recovered reset is infra recovery, NOT
+        # benchmark_noise, NOT in the SR denominator. ONLY PlaywrightTimeoutError
+        # (navigation/goto) is retried; any other exception keeps the original
+        # close+raise. All retries exhausted → close + raise (PaperGradeAbort
+        # upstream, as before). Does NOT change the VWA global goto timeout
+        # (still 30s per attempt).
+        import time as _time
+        _max_reset_attempts = 3  # initial attempt + 2 retries
+        _reset_timeout_count = 0
+        _reset_attempt_latencies_ms: list = []
+        _reset_recovered = False
+        obs = info = None
+        for _attempt in range(_max_reset_attempts):
+            _t0 = _time.monotonic()
+            try:
+                obs, info = self._env.reset(options={"config_file": config_file})
+                _reset_attempt_latencies_ms.append((_time.monotonic() - _t0) * 1000.0)
+                _reset_recovered = _attempt > 0
+                break
+            except PlaywrightTimeoutError as _goto_to:
+                _reset_timeout_count += 1
+                _reset_attempt_latencies_ms.append((_time.monotonic() - _t0) * 1000.0)
+                if _attempt < _max_reset_attempts - 1:
+                    logger.warning(
+                        "B-1831: env.reset Page.goto TimeoutError (attempt %d/%d) "
+                        "— transient pre-episode retry after backoff. %s",
+                        _attempt + 1, _max_reset_attempts, _goto_to,
+                    )
+                    _time.sleep(2.0 + _attempt)  # 2s, then 3s backoff
+                    continue
+                # All retries exhausted → real substrate failure, fail-closed.
+                self.close()
+                raise
+            except Exception:
+                # Non-timeout reset failure: original behavior (close + raise).
+                self.close()
+                raise
+        # Episode-level reset telemetry (read by runner → episode_summary).
+        # Infra recovery only: does NOT set benchmark_noise, does NOT enter the
+        # SR denominator (episode SR is decided by the agent run that follows a
+        # SUCCESSFUL reset).
+        self._reset_goto_telemetry = {
+            "reset_goto_timeout_count": _reset_timeout_count,
+            "reset_goto_retry_count": max(0, len(_reset_attempt_latencies_ms) - 1),
+            "reset_goto_recovered": _reset_recovered,
+            "reset_goto_latency_ms_per_attempt": _reset_attempt_latencies_ms,
+            "reset_retry_reason": "Page.goto TimeoutError" if _reset_timeout_count else None,
+        }
 
         # Auto-accept confirm/alert dialogs (e.g. Classifieds delete operations use
         # onclick="return confirm(...)" which blocks navigation if not dismissed).

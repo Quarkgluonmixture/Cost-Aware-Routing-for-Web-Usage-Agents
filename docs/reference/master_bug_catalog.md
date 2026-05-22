@@ -7628,3 +7628,15 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §260 part F。
 
 ---
+
+## B-1831 — env.reset Page.goto transient-timeout retry (2026-05-22, Fire-6 task76 incident + /stress user A)
+
+**B-1831** (P1, robustness asymmetry) ✅ FIXED — **claim**: eval path 有 3 retries (`environment.py` evaluate Page.goto), 但 `env.reset` 初始导航 Page.goto **0 retry** → Fire-6 B0 som cls task 76 `env.reset` homepage `Page.goto Timeout 30000ms` (transient docker hiccup) 经 `PaperGradeAbort` 杀整 condition。som mode p95 step 34s 逼近 30s timeout, 5 个 som condition 待跑 = 反复 transient abort 风险 (实验笔记 §262)。
+
+**Fix (user A spec)**: `vwa_wrapper.py:reset()` retry loop — initial + 2 retries, **only `PlaywrightTimeoutError`** (navigation/goto), 2-3s backoff, **30s/attempt 不改 VWA global timeout** (否 B 全局放宽)。recovered = pre-episode infra recovery, **NOT benchmark_noise, NOT SR denominator** (telemetry-only; episode SR 由 reset 成功后 agent run 定)。all retries 耗尽 → close+raise (`PaperGradeAbort` as before)。telemetry 5 字段 (`reset_goto_timeout_count`/`retry_count`/`recovered`/`latency_ms_per_attempt`/`reset_retry_reason`) via `self._reset_goto_telemetry` → `main.py:episode_summary`。
+
+**约束**: 不停正在跑的 R12265 (代码改只影响后续新 runner; R12265 若自撞 reset timeout 仍现 fail-closed abort+resume); 不碰 VWA submodule。**Verified**: py_compile (vwa_wrapper + main.py) + `PlaywrightTimeoutError` import + telemetry 计数 trace 4 场景全对 (第1次成功 tc=0/rec=False / 1次timeout后成功 tc=1/retry=1/rec=True / 2次后 tc=2/retry=2 / 全3次 RAISE)。
+
+**Chronicle**: 实验笔记 §263。
+
+---

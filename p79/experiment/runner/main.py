@@ -4010,6 +4010,17 @@ class ExperimentRunner:
             max(0.0, float(_minus_retry) - episode_summary["screenshot_timeout_recovered_total_ms"])
             if _minus_retry is not None else None
         )
+        # B-1831 (/stress 2026-05-22, user A): episode-level reset Page.goto retry
+        # telemetry (pre-episode infra recovery; NOT benchmark_noise, NOT in the
+        # SR denominator — a recovered reset just means a transient browser/docker
+        # hiccup at env.reset was retried before the agent run started). Sourced
+        # from VwaWrapper._reset_goto_telemetry; getattr-guarded for MockEnv.
+        _reset_tele = getattr(self.environment, "_reset_goto_telemetry", None) or {}
+        episode_summary["reset_goto_timeout_count"] = int(_reset_tele.get("reset_goto_timeout_count", 0))
+        episode_summary["reset_goto_retry_count"] = int(_reset_tele.get("reset_goto_retry_count", 0))
+        episode_summary["reset_goto_recovered"] = bool(_reset_tele.get("reset_goto_recovered", False))
+        episode_summary["reset_goto_latency_ms_per_attempt"] = _reset_tele.get("reset_goto_latency_ms_per_attempt", [])
+        episode_summary["reset_retry_reason"] = _reset_tele.get("reset_retry_reason")
         # Total wall time spent in busy-wait stalls (RU-4): not counted in
         # total_latency_ms (which sums step_records latencies), exposed
         # separately so end-to-end episode time = total_latency_ms + busy_wait_total_ms.
