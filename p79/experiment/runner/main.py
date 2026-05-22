@@ -1592,37 +1592,18 @@ class ExperimentRunner:
         # half-written / missing post-crash. Result: paper §3 / §5 / gallery
         # evidence layer has dangling artifact references. B-225/B-331
         # atomicity chain extends here (last missing layer).
+        # B-1830 (2026-05-22, B-1828 P0-1 sibling): only COMPUTE the screenshot
+        # path here; the actual atomic PNG write is DEFERRED by the runner to
+        # AFTER total_latency_ms + energy (vision's raw screenshot is consumed by
+        # the model as the in-memory obs.image, but the disk write is inspection —
+        # writing it inside the timed step window inflated vision latency canonical,
+        # the same defect P0-1 fixed for som's marked-image save). The runner
+        # writes obs.image atomically at this path post-timing (B-495 durability
+        # preserved there). dom-text save below stays in-window UNCHANGED — it is
+        # cheap + symmetric across all modes incl. dom (R9755 latency consistency).
         screenshot_path: Optional[str] = None
         if getattr(obs, "image", None) is not None:
-            _screenshot_target = step_dir / "screenshot.png"
-            _screenshot_tmp = step_dir / "screenshot.png.tmp"
-            try:
-                obs.image.save(str(_screenshot_tmp))
-                # fsync the file via low-level handle, then atomic rename
-                _fd = os.open(str(_screenshot_tmp), os.O_RDONLY)
-                try:
-                    os.fsync(_fd)
-                finally:
-                    os.close(_fd)
-                os.replace(str(_screenshot_tmp), str(_screenshot_target))
-                # fsync parent dir entry per B-198
-                try:
-                    _pfd = os.open(str(step_dir), os.O_RDONLY)
-                    try:
-                        os.fsync(_pfd)
-                    finally:
-                        os.close(_pfd)
-                except OSError:
-                    pass  # dir fsync best-effort on NFS/FAT
-                screenshot_path = str(_screenshot_target)
-            except Exception:
-                # Best-effort cleanup of leftover tmp
-                try:
-                    if _screenshot_tmp.exists():
-                        _screenshot_tmp.unlink()
-                except OSError:
-                    pass
-                screenshot_path = None
+            screenshot_path = str(step_dir / "screenshot.png")
 
         _dom_target = step_dir / "observation_dom.txt"
         _dom_tmp = step_dir / "observation_dom.txt.tmp"
@@ -3116,23 +3097,39 @@ class ExperimentRunner:
                 step_start_monotonic=step_start_monotonic,
             )
 
-            # B-1828 P0-1 (2026-05-22, 3-AI /stress overlap A+B+C): write the SoM
-            # marked image to disk HERE — AFTER total_latency_ms AND energy are
-            # computed — so the inspection PNG write enters NEITHER the latency
-            # canonical (total_minus_retry) NOR the energy/carbon window. som's
-            # bbox DRAW stays in obs_prepare (model-essential: the in-memory
-            # marked_image was already cloned into obs_for_backend); only the
-            # disk SAVE is excluded. phantom has marked_image=None → no save
-            # (symmetric: B-1828 removed phantom's draw entirely). The earlier
-            # in-window save (now removed) biased the phantom/som speedup ratio.
+            # B-1828 P0-1 + B-1830 (2026-05-22, 3-AI /stress): write inspection
+            # images to disk HERE — AFTER total_latency_ms AND energy are computed
+            # — so the PNG writes enter NEITHER the latency canonical
+            # (total_minus_retry) NOR the energy/carbon window. Two images:
+            #  (1) som's marked image (P0-1): bbox DRAW stays in obs_prepare
+            #      (model-essential, already cloned into obs_for_backend); only the
+            #      SAVE is excluded. phantom has marked_image=None → no save
+            #      (symmetric: B-1828 removed phantom's draw entirely).
+            #  (2) vision's raw screenshot (B-1830): _save_artifacts now only
+            #      computes artifacts["screenshot"] path; the write is deferred
+            #      here (the model already consumed the in-memory obs.image).
+            # The earlier in-window saves (now removed) biased the latency
+            # estimand. Atomic (tmp + fsync + replace, B-495 durability preserved).
             # Non-fatal (artifact-only; gallery/spot-check, not model input).
-            if getattr(obs_prep, "marked_image", None) is not None and obs_prep.marked_image_path:
+            for _img, _path in (
+                (getattr(obs_prep, "marked_image", None), obs_prep.marked_image_path),
+                (getattr(obs, "image", None), artifacts.get("screenshot")),
+            ):
+                if _img is None or not _path:
+                    continue
                 try:
-                    _som_p = Path(obs_prep.marked_image_path)
-                    _som_p.parent.mkdir(parents=True, exist_ok=True)
-                    obs_prep.marked_image.save(str(_som_p))
+                    _ip = Path(_path)
+                    _ip.parent.mkdir(parents=True, exist_ok=True)
+                    _itmp = _ip.with_suffix(_ip.suffix + ".tmp")
+                    _img.save(str(_itmp))
+                    _ifd = os.open(str(_itmp), os.O_RDONLY)
+                    try:
+                        os.fsync(_ifd)
+                    finally:
+                        os.close(_ifd)
+                    os.replace(str(_itmp), str(_ip))
                 except Exception:
-                    logger.warning("B-1828 deferred SoM image save failed", exc_info=True)
+                    logger.warning("B-1828/B-1830 deferred image save failed: %s", _path, exc_info=True)
 
             checklist_snapshot = None
             if checklist_manager is not None:

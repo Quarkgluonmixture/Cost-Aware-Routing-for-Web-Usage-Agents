@@ -7597,7 +7597,7 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 
 **Fix (🛠️ FIXED 2026-05-22, 3-AI /stress A+B+C overlap)**: 实际实现 ≠ 原"画框扣时间"方案,而是 **phantom 直接不画框** (`som.py` phantom 分支不调 `_build_som_result` draw,只 `build_som_text_from_obs_text(return_count=True)` 单次 parse 出 `som_text`+`mark_count`; `marked_image_path=None`)。**som draw 保留** (model 收内存 `marked_image`) 但 **save 移出计时窗** (P0-1, 3-AI overlap): `som.py` 只算 path,`runner/main.py` 在 `total_latency_ms`+`energy` 算完**之后**才 `drawn.save` → save 既不进 latency canonical 也不进 carbon 窗。结果 phantom (无 draw 无 save) vs som (draw 计入 / save 不计入) **对称**,消除 phantom/som speedup ratio 的 instrumentation bias (paper §1 hero)。**Part A (on-demand gallery)**: annotate/gallery 读 `som_image` fallback (P2-1 priority annotated>som_image>raw; P2-3 CWD-robust 构造路径); watchdog auto-gallery gated `P79_WATCHDOG_GALLERY=0` default (on-demand,去常驻磁盘); `make gallery-all` aggregate (P1-1); sync_a100 disclose (P1-2); GLM sidecar 移除 phantom_som image-load (P2-2, B-845 retract); double-parse 消除 (P2-4); dry-run safe (P2-6). 验证: mock (phantom 不画框 / som save 移出 / byte-identity) + py_compile 5 files + pytest 172 passed.
 
-**Status**: 🛠️ **FIXED** (pending commit) — pre-data (0 phantom run 时修=零返工). **Refire**: R11558 som (旧代码,save 在计时窗) killed 2026-05-22 + Fire-6 refire som 起 (新代码); dom R9755 不受影响保留 (dom 无 image save). **Sibling B-1830** (vision `_save_artifacts` raw-screenshot save 同在 total 窗,P0-1 同病) IDENTIFIED → defer 到 vision 跑前 (vision 在 som 后,有时间窗).
+**Status**: 🛠️ **FIXED** (pending commit) — pre-data (0 phantom run 时修=零返工). **Refire**: R11558 som (旧代码,save 在计时窗) killed 2026-05-22 + Fire-6 refire som 起 (新代码); dom R9755 不受影响保留 (dom 无 image save). **Sibling B-1830** (vision `_save_artifacts` raw-screenshot save 同在 total 窗,P0-1 同病) 🛠️ **FIXED** (user 选 fire 前一起修最稳: _save_artifacts screenshot 只算 path + runner total-后 atomic save vision obs.image, loop 与 P0-1 som 共用; dom-txt save 不动保 dom R9755 一致).
 
 **Chronicle**: 实验笔记 §260。
 
@@ -7623,7 +7623,7 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 
 **Fix 方向**: `_save_artifacts` screenshot block (`main.py` ~1596-1625) 只算 path 不写盘; runner 在 P0-1 同点 (post-`total_latency_ms`/energy) atomic-save obs.image。dom-txt save 不动 (留窗内,所有 dom run 一致)。
 
-**Status**: ⚠️ IDENTIFIED — defer to pre-vision-fire. B-1828 refire planning 时发现 (实验笔记 §260 part F).
+**Status**: 🛠️ **FIXED** (pending commit, fire 前修 — user 选最稳) — `_save_artifacts` screenshot block 只算 path (删 in-window B-495 atomic save); runner 在 `total_latency_ms`+energy 算完后 atomic save vision `obs.image` (tmp+fsync+replace, loop 与 P0-1 som marked_image 共用一处); dom-text save 留窗内不动 (所有 dom run 含 R9755 latency 一致, 不逼 dom refire). 验证: py_compile + pytest 159 passed. B-1828 refire planning 时发现 (实验笔记 §260 part F).
 
 **Chronicle**: 实验笔记 §260 part F。
 
