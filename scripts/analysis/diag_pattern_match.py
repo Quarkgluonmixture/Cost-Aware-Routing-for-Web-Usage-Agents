@@ -83,6 +83,27 @@ VISUAL_COLOR_KEYWORDS = re.compile(
     re.IGNORECASE,
 )
 
+# P6 extension (self-evolving 2026-05-22, diagnose Tier-2 task 21): color ADJECTIVES.
+# The concrete-color list above misses "dark color" / "light colored" etc.
+VISUAL_COLOR_ADJ = re.compile(
+    r"\b(dark|light|pale|bright|deep)\s+colou?r(ed)?\b",
+    re.IGNORECASE,
+)
+
+# P15: gallery row-position intent. DOM linearizes the visual grid → cannot know
+# which items physically sit in row N (row width depends on viewport, absent from DOM).
+GALLERY_ROW_RE = re.compile(
+    r"\b(second|third|fourth|fifth|sixth|last|first|next|\d+(?:st|nd|rd|th))\s+(?:two\s+|three\s+)?rows?\b",
+    re.IGNORECASE,
+)
+
+# P16: image-content tasks (book cover / item-image content filter). DOM has no pixels.
+VISUAL_IMAGE_CONTENT_RE = re.compile(
+    r"\b(on (?:the|its) cover|on the front|in (?:its|the|their) image|"
+    r"(?:do not |don't )?include[^.]*\bimage\b|without[^.]*\bimage\b)\b",
+    re.IGNORECASE,
+)
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -257,7 +278,7 @@ def check_p6(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Lis
         return []
     intent = config.get("intent", "")
     has_image = bool(config.get("image"))
-    has_color = bool(VISUAL_COLOR_KEYWORDS.search(intent))
+    has_color = bool(VISUAL_COLOR_KEYWORDS.search(intent) or VISUAL_COLOR_ADJ.search(intent))
     if has_image:
         return [PatternHit(
             "P6", "视觉任务 DOM 必然失败", None,
@@ -439,6 +460,85 @@ def check_p14(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
     return hits
 
 
+def check_p15(_steps: List[Dict], _summary: Dict, config: Dict, mode: str) -> List[PatternHit]:
+    """P15: gallery 行位置查询 — DOM 线性化网格无法定位视觉行 (self-evolving 2026-05-22, diagnose Tier-2 task 14/41/42)."""
+    if mode != "dom":
+        return []
+    intent = config.get("intent", "")
+    start_url = config.get("start_url", "")
+    if "sShowAs=gallery" in start_url and GALLERY_ROW_RE.search(intent):
+        return [PatternHit(
+            "P15", "gallery行位置DOM不可定位", None,
+            f"gallery view + row-position intent; DOM linearizes grid: {intent[:80]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p16(_steps: List[Dict], _summary: Dict, config: Dict, mode: str) -> List[PatternHit]:
+    """P16: 视觉图像内容任务 — cover/image 内容过滤, DOM 无像素 (self-evolving 2026-05-22, diagnose Tier-2 task 80/81)."""
+    if mode != "dom":
+        return []
+    intent = config.get("intent", "")
+    if VISUAL_IMAGE_CONTENT_RE.search(intent):
+        return [PatternHit(
+            "P16", "视觉图像内容DOM必败", None,
+            f"image-content task (cover/image filter); DOM has no pixels: {intent[:80]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p17(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P17: click-back 振荡 — 同一 item 反复进入+退出, detail↔list 横跳无进展 (self-evolving 2026-05-22, diagnose Tier-2 task 40/111)."""
+    from collections import Counter
+    item_visits: Counter = Counter()
+    for s in steps:
+        url = s.get("obs_url", "")
+        if "page=item" in url:
+            m = re.search(r"[?&]id=(\d+)", url)
+            if m:
+                item_visits[m.group(1)] += 1
+    n_back = sum(1 for s in steps if s.get("action_type") == "back")
+    repeated = [(iid, c) for iid, c in item_visits.items() if c >= 3]
+    if repeated and n_back >= 2:
+        iid, c = max(repeated, key=lambda x: x[1])
+        return [PatternHit(
+            "P17", "click-back振荡", None,
+            f"item id={iid} revisited {c}x with {n_back} back actions (detail↔list thrash)",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p18(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P18: cheapest 任务漏价格排序 — intent 要 cheapest 但全程从未按 i_price 排序 (self-evolving 2026-05-22, diagnose Tier-2 task 216)."""
+    intent = config.get("intent", "")
+    if not re.search(r"\b(cheapest|lowest[- ]price|least expensive)\b", intent, re.IGNORECASE):
+        return []
+    sorted_by_price = False
+    has_search = False
+    for s in steps:
+        url = s.get("obs_url", "")
+        if "page=search" in url:
+            has_search = True
+        if "i_price" in url:
+            sorted_by_price = True
+            break
+        act = s.get("action", {}) or {}
+        txt = str(act.get("text", "")).lower()
+        if "lower price" in txt or "price first" in txt:
+            sorted_by_price = True
+            break
+    if has_search and not sorted_by_price:
+        return [PatternHit(
+            "P18", "cheapest漏价格排序", None,
+            f"cheapest/lowest intent but never sorted by price: {intent[:60]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Rule registry
 # ---------------------------------------------------------------------------
@@ -457,6 +557,10 @@ ALL_RULES: Dict[str, Any] = {
     "P12": check_p12,
     "P13": check_p13,
     "P14": check_p14,
+    "P15": check_p15,
+    "P16": check_p16,
+    "P17": check_p17,
+    "P18": check_p18,
 }
 
 
