@@ -2301,7 +2301,14 @@ class ExperimentRunner:
                 if not getattr(self, "_lr_fallback_ntfy_fired", False):
                     self._lr_fallback_ntfy_fired = True
                     try:
-                        import os
+                        # B-1835 (2026-05-22): NO local `import os` here — module-level
+                        # `import os` (line 13) already provides it. A local import made
+                        # `os` function-local for ALL of _run_episode → the deferred
+                        # image-save `os.open` (B-1832, line ~3151) hit
+                        # UnboundLocalError whenever this rarely-run LR-fallback block
+                        # did NOT execute (the common case). B-1832's .tmp fix unmasked
+                        # it (PIL save now succeeds → reaches os.open → crash → caught
+                        # as warning → images STILL lost). Only urllib.request stays local.
                         import urllib.request
                         topic = os.environ.get("NTFY_TOPIC", "")
                         if topic:
@@ -2335,7 +2342,14 @@ class ExperimentRunner:
                 if not getattr(self, "_lr_fallback_ntfy_fired", False):
                     self._lr_fallback_ntfy_fired = True
                     try:
-                        import os
+                        # B-1835 (2026-05-22): NO local `import os` here — module-level
+                        # `import os` (line 13) already provides it. A local import made
+                        # `os` function-local for ALL of _run_episode → the deferred
+                        # image-save `os.open` (B-1832, line ~3151) hit
+                        # UnboundLocalError whenever this rarely-run LR-fallback block
+                        # did NOT execute (the common case). B-1832's .tmp fix unmasked
+                        # it (PIL save now succeeds → reaches os.open → crash → caught
+                        # as warning → images STILL lost). Only urllib.request stays local.
                         import urllib.request
                         topic = os.environ.get("NTFY_TOPIC", "")
                         if topic:

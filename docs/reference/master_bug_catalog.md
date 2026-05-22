@@ -7684,3 +7684,17 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §267。
 
 ---
+
+## B-1835 — `_run_episode` 局部 `import os` 遮蔽全局 → deferred-save `os.open` UnboundLocalError (B-1832 解除掩盖, 2026-05-22)
+
+**B-1835** (P0, artifact data-loss, B-1832 unmasked) 🛠️ **FIXED** — **claim**: `_run_episode` 在 LR-fallback ntfy try 块 (`main.py:2304` + `:2338`) 有局部 `import os` → Python 把**整个 `_run_episode` 的 `os` 当 function-local** → deferred image-save 的 `os.open(str(_itmp))` (`~:3151`, B-1832 P0-1 写盘) 在那两个 ntfy 块不执行时 (常态, 只 LR fallback 一次性触发) 撞 `UnboundLocalError: local variable 'os' referenced before assignment` → except 吞成 warning → **som/vision 图仍全丢**。
+
+**为何现在才暴露**: pre-B-1832 `_img.save(".tmp")` 先抛 `KeyError` → 到不了 `os.open` → bug 藏着。B-1832 format fix 让 save 成功 → 首次到达 `os.open` → 暴露。**实证**: re-fire R28204 (7ad18ef) som EP=8 时 PNG=0 + runner log `UnboundLocalError ... os ... line 3151` ×353。
+
+**为何前 3 次验证全漏**: (a) `test_runner_smoke` MockEnv `obs.image=None` → deferred-save 整块跳过, 永不达 `os.open`; (b) B-1832/B-1835 的 loop-replica 是**独立脚本** (os 模块级, 无函数遮蔽) → 测不出 function-scope shadowing; (c) py_compile 不查运行期名字解析。**唯一抓到它的是生产 + P2-1b artifact gate** (EP=8 PNG=0 monitor 暴露)。三次同一教训: inline-in-function 的运行期行为必须在**真函数上下文 + 真 image** 测, isolation 测不出 ([[feedback-spotcheck-length-claims]] 升级)。
+
+**Fix**: 删 `main.py:2304/:2338` 局部 `import os` (模块级 line 13 已有); `os.environ` 用全局; 保留局部 `import urllib.request` (urllib 仅这两块用, 不遮蔽 os)。**Verified**: py_compile + grep (_run_episode 0 残留局部 import os) + scoping 复现 (条件局部 import + run_ntfy=False → UnboundLocalError; 删后 deferred-save os.open 在函数上下文跑通图落盘 True)。**Refire**: R28204 killed (8 ep image-less) → B-1835 commit → 2nd re-fire。**生产终验**: 新 run 第一批 `*_som.png` 落盘 = 终极证明 (P2-1b gate + monitor 几 ep 内捕获, 不再 105 ep silent)。
+
+**Chronicle**: 实验笔记 §268。
+
+---

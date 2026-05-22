@@ -4,7 +4,7 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-05-22  ·  **Catalog**: master_bug_catalog.md (7686 lines, 113 sections)  ·  **B-numbers**: 770 canonical entries, 1204 referenced, range B-1~B-1834
+**Generated**: 2026-05-22  ·  **Catalog**: master_bug_catalog.md (7700 lines, 114 sections)  ·  **B-numbers**: 771 canonical entries, 1205 referenced, range B-1~B-1835
 
 ## Health (lint)
 
@@ -89,3 +89,4 @@
 | L7644 | B-1832 — deferred image save `.tmp` 后缀 → PIL KeyError → som/vision … | B-1832 |
 | L7662 | B-1833 — cls docker transient navigation stall 复发 → B-1831 retry bu… | B-1833 |
 | L7678 | B-1834 — manifest/resume `episodes >= scored` 非 `==` → over-complet… | B-1834 |
+| L7688 | B-1835 — `_run_episode` 局部 `import os` 遮蔽全局 → deferred-save `os.ope… | B-1835 |
