@@ -7732,3 +7732,15 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §271。
 
 ---
+
+## B-1838 — sync_a100 rsync rc=24 (files vanished) treated as fatal → false cron-fail + skipped downstream refresh (2026-05-22)
+
+**B-1838** (P2 infra false-positive, **FIXED**) — **symptom**: `sync-a100` cron 间歇报 `Exit: 1` "cron fail" ntfy (首现 2026-05-22 14:00, 复现 22:30), 但数据照传 (rsync `sent / received 30M / total 1.24GB / speedup 40.49` 正常)。**根因**: `sync_a100_results.sh` 主 rsync 同步 LIVE run dir (canary R11315 正在写) → runner 删 `artifacts/<task>/.in_progress` 临时 marker + 轮换 step 文件 → rsync `rc=24 "some files vanished before they could be transferred"` (benign warning, 已传文件完好)。但 `set -o pipefail` + `if ! rsync|tee` 把**任何非零 rc (含 24) 当致命** → `exit 1` → (a) false cron-fail ntfy + (b) **早于** top-level gallery sync + `make analysis` 退出 → 每个撞活写的 15-min tick 漏下游 refresh → DGX cells.base/gallery 间歇滞后。整个 Fire 期间间歇刷。
+
+**修**: `set +e` 包 main rsync + `rsync_rc=${PIPESTATUS[0]}` + 只 whitelist rc=24 (`rc≠0 && rc≠24 → exit 1`; rc=24 → log `⚠ files vanished (benign)` 继续)。真失败仍 fatal: **23** (partial, 可能权限/磁盘真问题) / **255** (SSH drop) / **30** (timeout) 都保留。只 24 (vanished, live-source 同步必然) whitelist。`bash -n` ✓。
+
+**Why surfaced now**: pre-Fire-3 sync 目标多是 finalized run (静态, 无 vanish); Fire-3+ 起同步 LIVE 活写 run dir → rc=24 race 才暴露。canary R11315 全程活写 = 高频触发。诊断入口 = `make ntfy` (B-1838 自身验证了该工具价值: 读到 22:30 cron-fail → 5min 定位)。
+
+**Chronicle**: 实验笔记 (本 session)。
+
+---

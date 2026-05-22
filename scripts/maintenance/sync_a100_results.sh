@@ -133,12 +133,27 @@ fi
 # prevents true concurrency, but if lock fails-open on platform without
 # flock, per-PID log keeps forensic separate.
 RSYNC_LOG="/tmp/rsync_a100_last.${$}.log"
-if ! rsync "${RSYNC_OPTS[@]}" \
-       -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
-       "${A100_HOST}:${A100_RESULTS}" "${DGX_RESULTS}" 2>&1 | tee "${RSYNC_LOG}"; then
-  log "✗ rsync failed (SSH chain or A100 unreachable). Retry on next cron run."
+# B-1838 (2026-05-22): tolerate rsync rc=24 ("some files vanished before transfer").
+# The main results tree includes the LIVE run dir — the runner deletes transient
+# markers (artifacts/<task>/.in_progress) + rotates step files while rsync walks
+# the tree → rc=24 is BENIGN (transferred files intact; sent/received/speedup prove
+# the bulk landed). Pre-fix: `set -o pipefail` + `if ! rsync|tee` treated ANY
+# non-zero rc (incl 24) as fatal → exit 1 → (a) false "cron fail" ntfy AND
+# (b) skipped the downstream top-level gallery sync + `make analysis` EVERY time a
+# 15-min tick raced an active task completion (intermittent all-Fire spam + stale
+# DGX state layer). Real failures still fail: 255 (SSH drop) / 23 (partial) / 30
+# (timeout) / etc. Only rc=24 is whitelisted.
+set +e
+rsync "${RSYNC_OPTS[@]}" \
+  -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
+  "${A100_HOST}:${A100_RESULTS}" "${DGX_RESULTS}" 2>&1 | tee "${RSYNC_LOG}"
+rsync_rc=${PIPESTATUS[0]}
+set -e
+if [[ "${rsync_rc}" -ne 0 && "${rsync_rc}" -ne 24 ]]; then
+  log "✗ rsync failed (rc=${rsync_rc}, SSH chain or A100 unreachable). Retry on next cron run."
   exit 1
 fi
+[[ "${rsync_rc}" -eq 24 ]] && log "⚠ rsync rc=24 (files vanished mid-sync — live run dir writing, benign; bulk transferred OK)"
 
 # B-1755 (2026-05-19 morning): rsync top-level watchdog-output dirs too.
 # Separate rsync per dir for fault isolation (one dir's failure doesn't
