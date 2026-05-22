@@ -6,7 +6,7 @@ updated: 2026-05-22
 
 # Next Steps — Forward Action Ledger
 
-> **Future-only**. Live state 不在这里:
+> **Future-only**. **Roadmap = §0.5 `tasks.base`** (dynamic — edit `_status/tasks/*.md` frontmatter). Live state 不在这里:
 > - Today / 瓶颈 / cron health → [[PLAYBOOK#§1]] + [[PLAYBOOK#§2]] (🤖 GLM @daily)
 > - Real-time active runs / GPU → `make active` CLI
 > - Cell snapshot (active 跑中 / pending / done) → `cells.base`
@@ -50,7 +50,26 @@ ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/an
 
 ---
 
-## §0a Fire-6 Pass-1 (2026-05-21) [SUPERSEDED → 见 §0; 本节为 B-1803 时代历史]
+## §0.5 ROADMAP — dynamic (edit `_status/tasks/*.md` frontmatter → Bases 自动重算)
+
+> 7 里程碑迁到 `_status/tasks/` (frontmatter: `status`/`priority`/`horizon`/`blocker`/`eta`/`order`) + `tasks.base` 视图。改一个小 frontmatter 文件即更新, 同 cells/issues 模式 (也自动进 `status.base` 统一视图)。**roadmap canonical = 这里, 不是下面 §0a-§0 的 prose forward-plan**。
+
+![[tasks.base#🔴 NOW]]
+![[tasks.base#📋 NEXT]]
+![[tasks.base#🧊 BACKLOG]]
+
+---
+
+## §0.6 EXPERIMENTS — live (cells.base)
+
+![[cells.base#Active 跑中]]
+![[cells.base#Pending / Queued / Blocked]]
+
+---
+
+> [!warning] ⬇️ **§0a–§3 = 历史 / 已完成 reference** (Fire-6/Fire-5 RCA · OSF DOI-1 已 mint · stats 已 resolved · mechanism 暂搁)。保留作 audit 痕迹但**不是 forward source** — roadmap 看 §0.5, live 状态看 §0。完整 prune (collapse 这些 + §4-§11 reference 瘦身) = 待确认的 follow-up。
+
+## §0a Fire-6 Pass-1 (2026-05-21) [SUPERSEDED → 历史见 实验笔记 §252; roadmap 已移 §0.5]
 
 > [!success] **Fire-6 Pass-1 RE-FIRED with B-1803** (2026-05-21). First launch (~12:06) aborted at cls B0 dom **task 4** (id=84144) — the 4th fire (Fire-3/4/5/6) killed by the same `EvaluatorUnavailableError: Page.goto 30s×3` on a program_html eval. **Diagnosis refuted the prior "agent-modified substrate" RCA**: item 84144 is NOT deleted (DB `b_active=1`) and the URL is healthy (curl 0.17s) — the real cause is the **degraded long-lived BrowserContext** by task ~4, which C1's same-context `new_page` did not escape. **Fix B-1803** (commit `4baac19`, Fire-6 RCA C1b): eval isolation → FRESH browser context (clean Chromium profile + auth from config storage_state file). Re-fired ~12:51 (orchestrator 566503, HEAD `4baac19`, all gates green, cls→red sequential). Pre-fire /stress (B-1796..B-1802) + Addendum 01a witness + re-Smoke A PASS all landed earlier. **✅ B-1803 CONFIRMED (14:18)**: re-fire passed task 4 (maxtask=5, evalerr=0) — the 4-fire id=84144 eval blocker is broken; Fire-6 cls now flowing past it. Multi-day run on standing tooling (A100 shell healthcheck cron + daily Claude review + watchdog). **Nothing required while it runs.**
 >

@@ -1,0 +1,71 @@
+filters:
+  and:
+    - 'type == "task"'
+
+formulas:
+  status_icon: 'if(status == "done", "✅", if(status == "active", "🔄", if(status == "queued", "📋", if(status == "blocked", "🚫", if(status == "pending", "⏳", "❓")))))'
+
+properties:
+  status:
+    displayName: Status
+  formula.status_icon:
+    displayName: ""
+  priority:
+    displayName: Prio
+  horizon:
+    displayName: Horizon
+  blocker:
+    displayName: Blocker
+  eta:
+    displayName: ETA
+  order:
+    displayName: "#"
+
+views:
+  - type: table
+    name: "🔴 NOW"
+    filters:
+      and:
+        - 'horizon == "now"'
+    order:
+      - order
+      - formula.status_icon
+      - file.name
+      - blocker
+      - eta
+
+  - type: table
+    name: "📋 NEXT"
+    filters:
+      and:
+        - 'horizon == "next"'
+    order:
+      - order
+      - formula.status_icon
+      - priority
+      - file.name
+      - blocker
+      - eta
+
+  - type: table
+    name: "🧊 BACKLOG"
+    filters:
+      and:
+        - 'horizon == "backlog"'
+    order:
+      - order
+      - formula.status_icon
+      - file.name
+      - eta
+
+  - type: table
+    name: "All (by order)"
+    order:
+      - order
+      - formula.status_icon
+      - status
+      - priority
+      - horizon
+      - file.name
+      - blocker
+      - eta
