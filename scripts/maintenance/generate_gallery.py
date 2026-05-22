@@ -531,7 +531,21 @@ def _collect_episodes(
                     step_dir = task_artifact_dir / f"step_{step_idx:03d}"
                     annotated = step_dir / "screenshot_annotated.png"
                     raw = step_dir / "screenshot.png"
-                    img_path = annotated if annotated.exists() else raw
+                    # B-1828 part A + P2-1 (2026-05-22, codex): priority
+                    # annotated > som_image > raw. For som the model-input image IS
+                    # the SoM-marked image (<task>/som/step_xxx_som.png), NOT a raw
+                    # screenshot — preferring raw (if it ever reappears) would show
+                    # the wrong visual evidence. vision has no som_image → falls to
+                    # raw screenshot. phantom no longer draws (B-1828) → no som_image,
+                    # falls to non-existent raw → img_src None, by design (phantom
+                    # visual spot-check is meaningless: model never sees an image).
+                    _som_img = task_artifact_dir / "som" / f"step_{step_idx:03d}_som.png"
+                    if annotated.exists():
+                        img_path = annotated
+                    elif _som_img.exists():
+                        img_path = _som_img
+                    else:
+                        img_path = raw
 
                     if embed:
                         img_src = _img_to_data_uri(img_path)

@@ -956,13 +956,15 @@ def _glm_episode_diagnosis(
                 _ep_dir = _find_episode_artifact_dir(run_dir, _cond_id, _task_id)
                 if _ep_dir is not None:
                     _som_marks = _load_som_marks_steps(_ep_dir, _key_steps)
-                    # B-845 (Chunk β P1-2): phantom_som shares SoM image
-                    # surface (annotated screenshots when present) — load
-                    # via same path as canonical SoM. Pre-fix `== "som"`
-                    # exact-match excluded phantom_som from SoM image
-                    # loading even when annotated screenshots existed.
+                    # B-845 (Chunk β P1-2): phantom_som once shared the SoM image
+                    # surface. B-1828 P2-2 (2026-05-22, codex OOB): RETRACTED for
+                    # phantom_som — B-1828 stopped drawing/saving the phantom SoM
+                    # image (the model receives no image → it was pure inspection
+                    # instrumentation polluting latency). Only real `som` carries a
+                    # som_image artifact now; loading for phantom_som would always
+                    # miss (file absent BY DESIGN, not a data gap). Restrict to som.
                     _obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
-                    if _obs_mode in ("som", "phantom_som"):
+                    if _obs_mode == "som":
                         for _s in _key_steps:
                             _b64 = _load_som_image_b64(_ep_dir, _s)
                             if _b64:

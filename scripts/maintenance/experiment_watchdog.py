@@ -2401,10 +2401,18 @@ def main() -> int:
             # Watchdog no longer triggers `_run_auto_digest` or
             # `_check_digest_completions` in periodic status cycle.
 
-            # Auto-annotate screenshots then regenerate gallery HTML
-            annotate_status = _annotate_screenshots(run_dir, args.condition)
-            # Keep primary gallery as full run view; avoid overwriting with single-condition subset.
-            gallery_status = _regenerate_gallery(run_dir, None, args.aggregate_prefix)
+            # B-1828 part A (2026-05-22, gallery on-demand redesign): annotate +
+            # gallery are now ON-DEMAND by default (`make gallery RUN=...`). A
+            # paper-grade run must not pay the per-cycle annotate CPU nor the
+            # 常驻 gallery.html/annotated-png disk. Set P79_WATCHDOG_GALLERY=1 to
+            # restore auto-refresh (e.g. live monitoring during an advisor demo).
+            if os.environ.get("P79_WATCHDOG_GALLERY", "0") == "1":
+                annotate_status = _annotate_screenshots(run_dir, args.condition)
+                # Keep primary gallery as full run view; avoid single-condition subset.
+                gallery_status = _regenerate_gallery(run_dir, None, args.aggregate_prefix)
+            else:
+                annotate_status = "skipped (on-demand: P79_WATCHDOG_GALLERY=0)"
+                gallery_status = "skipped (on-demand: make gallery RUN=...)"
 
             # Run analysis scripts (results fed into consolidated notification)
             new_analysis = _check_analysis_outputs(run_dir, seen_analysis)
@@ -2550,9 +2558,14 @@ def main() -> int:
 
             # Auto-run analysis pipeline after condition completion
             analysis_status = _run_post_condition_analysis(run_dir)
-            annotate_status = _annotate_screenshots(run_dir, cid)
-            # Keep primary gallery as full run view; avoid overwriting with single-condition subset.
-            gallery_status = _regenerate_gallery(run_dir, None, args.aggregate_prefix)
+            # B-1828 part A (2026-05-22): on-demand by default (see status-cycle
+            # block rationale). Set P79_WATCHDOG_GALLERY=1 to restore auto-refresh.
+            if os.environ.get("P79_WATCHDOG_GALLERY", "0") == "1":
+                annotate_status = _annotate_screenshots(run_dir, cid)
+                gallery_status = _regenerate_gallery(run_dir, None, args.aggregate_prefix)
+            else:
+                annotate_status = "skipped (on-demand: P79_WATCHDOG_GALLERY=0)"
+                gallery_status = "skipped (on-demand: make gallery RUN=...)"
             # Cross-run analysis: triggers compare_b0_b1 when sibling baseline run
             # exists for same site, and aggregate_cross_site when ≥2 sites under
             # same baseline have data. Returns None if nothing was triggered.

@@ -93,7 +93,7 @@ def _extract_text_marks(obs_text: str, max_marks: Optional[int] = None) -> List[
     return marks
 
 
-def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None) -> str:
+def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None, return_count: bool = False):
     """Canonical [SOM_MARKS] text builder from an AXTree obs_text string.
 
     SINGLE SOURCE OF TRUTH for SoM text construction. `_build_som_result`
@@ -114,7 +114,11 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None)
     """
     text_marks = _extract_text_marks(obs_text, max_marks=max_marks)
     if len(text_marks) == 0:
-        return "[SOM_MARKS]\n[/SOM_MARKS]"
+        # B-1828 P2-4 (2026-05-22, codex): return_count=True yields
+        # (text, mark_count) from this SINGLE _extract_text_marks pass — the
+        # phantom hot path needs both but must not parse twice post-B-1828
+        # (draw removed → the two parses now dominate phantom obs_prepare).
+        return ("[SOM_MARKS]\n[/SOM_MARKS]", 0) if return_count else "[SOM_MARKS]\n[/SOM_MARKS]"
     # /stress A1.4 F3 backlog sweep (2026-05-15): the look-ahead window
     # previously capped at `min(_i + 3, len(_obs_lines))` (= 2 lines), which
     # was design-fragile if vwa_wrapper's injector ever interleaved property
@@ -141,7 +145,8 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None)
         if _mark["id"] in _options_map:
             _entry += f"\n    {_options_map[_mark['id']]}"
         mark_lines.append(_entry)
-    return "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
+    _som = "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
+    return (_som, len(text_marks)) if return_count else _som
 
 
 # /stress A1.4 F4 backlog sweep (2026-05-15): _collect_bbox_map walks raw
@@ -346,12 +351,21 @@ def prepare_observation_for_mode(
         # phantom_som: SoM prompt + [SOM_MARKS] text + no image (image-mismatched)
         # phantom_dom / phantom_text: DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
         # Obs construction identical — only system prompt differs (handled in agent).
-        result = _build_som_result(obs, obs_text, artifact_dir, step_idx)
+        #
+        # B-1828 (2026-05-22, gallery on-demand redesign): phantom model receives
+        # NO image (marked_image=None), so the SoM bbox draw + PNG save inside
+        # _build_som_result is PURE inspection instrumentation. A paper-grade run
+        # must not pay its `obs_prepare` latency (~140ms/step, the B-1828 estimand
+        # leak) NOR its disk cost (~270KB/step). Compute ONLY the model's actual
+        # input (som_text + mark_count); skip the draw+save entirely. Visual
+        # spot-check for phantom is meaningless (the model never sees an image);
+        # the gallery serves the model-input-image modes (som/vision) on demand.
+        _ph_text, _ph_count = build_som_text_from_obs_text(obs_text, return_count=True)
         return SomResult(
-            som_text=result.som_text,
-            marked_image_path=result.marked_image_path,  # keep artifact for inspection
-            marked_image=None,                           # model receives no image
-            mark_count=result.mark_count,
+            som_text=_ph_text,
+            marked_image_path=None,  # B-1828: no inspection artifact (instrumentation)
+            marked_image=None,       # model receives no image
+            mark_count=_ph_count,    # B-1828 P2-4: single-pass count (no double parse)
         )
 
     if mode == "phantom_prompt":
@@ -448,12 +462,19 @@ def _build_som_result(
                 draw.rectangle([x1, y1, x2, y2], outline="#00BCD4", width=2)
                 _draw_label(draw, x1, y1, str(mark["id"]), font)
 
-            marked_image = drawn  # PIL Image passed to the model
+            marked_image = drawn  # PIL Image passed to the model (in-memory)
 
+            # B-1828 P0-1 (2026-05-22, 3-AI /stress overlap A+B+C): the bbox DRAW
+            # above is model-essential (som model consumes the in-memory marked
+            # image), but the PNG SAVE is inspection instrumentation (the model
+            # never reads the file). Saving inside this obs_prepare timing window
+            # inflated som latency canonical asymmetrically vs phantom (which no
+            # longer draws post-B-1828) → biased phantom/som speedup ratio (paper
+            # §1 hero). Only COMPUTE the target path here; the runner writes the
+            # PNG OUTSIDE the timing window (runner/main.py, after obs_prepare_ms).
+            # `marked_image` (in-memory) carries the pixels for that deferred save.
             som_dir = artifact_dir / "som"
-            som_dir.mkdir(parents=True, exist_ok=True)
             marked_image_path = str(som_dir / f"step_{step_idx:03d}_som.png")
-            drawn.save(marked_image_path)
         except Exception:
             logger.warning("SOM image rendering failed; degrading to unmarked screenshot", exc_info=True)
             marked_image_path = None

@@ -245,9 +245,29 @@ pre-release-check:
 	@echo "Next: manually fill release_redaction_checklist.md L91-93 sign-off log"
 	@echo "      with today's date + this run's outcome, then re-commit."
 
+# B-1828 part A (2026-05-22): on-demand gallery — annotate (agent-action overlay;
+# reads som_image for som mode via _resolve_screenshot fallback) THEN generate HTML.
+# Replaces the retired watchdog auto-refresh (now gated behind P79_WATCHDOG_GALLERY=1).
+# Use for paper figure / advisor demo / som·vision visual spot-check; gallery.html
+# is disposable (regenerate any time, no paper-grade pollution, no常驻 disk).
 gallery:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
+	$(PYTHON) scripts/maintenance/annotate_screenshots.py --run-dir $(RUN)
 	$(PYTHON) scripts/maintenance/generate_gallery.py --run-dir $(RUN)
+
+# B-1828 P1-1 (2026-05-22, codex): on-demand AGGREGATE gallery — all cells
+# (B0/B1/B2 × sites × modes) → results/phase1_paper_grade/gallery.html. Mirrors
+# the retired watchdog _regenerate_phase1_paper_grade_gallery fanout that the
+# single-run `gallery` target cannot reproduce. Use for advisor demo / paper
+# figure "all cells" browsing. Reads existing per-run artifacts (som_image for
+# som; run `make gallery RUN=<run>` first if you want agent-action overlays).
+# Disposable — regenerate any time, no paper-grade pollution.
+gallery-all:
+	$(PYTHON) scripts/maintenance/generate_gallery.py \
+	  --phase-dirs results/visualwebarena/phase1 \
+	  --prefix B0_3mode B1_3mode B2_3mode \
+	  --output-dir results/phase1_paper_grade
+	@echo "Aggregate gallery: results/phase1_paper_grade/gallery.html (serve via http.server 8765)"
 
 # ---- Cross-run / paper-grade aggregation (cross-condition) ----
 # Run once after a batch of conditions is paper-grade clean.

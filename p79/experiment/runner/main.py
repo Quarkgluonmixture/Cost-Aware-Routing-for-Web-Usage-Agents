@@ -2610,6 +2610,9 @@ class ExperimentRunner:
             obs_prepare_ms = (time.time() - obs_prepare_start) * 1000.0
             if condition.router_on and decision_mode != condition.observation_mode:
                 overhead["extra_screenshot_ms"] = (time.time() - screenshot_prep_start) * 1000.0
+            # B-1828 P0-1: SoM marked-image disk save is DEFERRED to after
+            # total_latency_ms + energy are computed (see post-energy block below)
+            # so the inspection write never enters the latency/carbon window.
             instruction = task.intent
             if checklist_manager and bool(self.checklist_cfg.get("inject_into_prompt", True)):
                 instruction = f"{task.intent}\n\n{checklist_manager.format_for_prompt()}"
@@ -3112,6 +3115,24 @@ class ExperimentRunner:
                 duration_seconds=total_latency_ms / 1000.0,
                 step_start_monotonic=step_start_monotonic,
             )
+
+            # B-1828 P0-1 (2026-05-22, 3-AI /stress overlap A+B+C): write the SoM
+            # marked image to disk HERE — AFTER total_latency_ms AND energy are
+            # computed — so the inspection PNG write enters NEITHER the latency
+            # canonical (total_minus_retry) NOR the energy/carbon window. som's
+            # bbox DRAW stays in obs_prepare (model-essential: the in-memory
+            # marked_image was already cloned into obs_for_backend); only the
+            # disk SAVE is excluded. phantom has marked_image=None → no save
+            # (symmetric: B-1828 removed phantom's draw entirely). The earlier
+            # in-window save (now removed) biased the phantom/som speedup ratio.
+            # Non-fatal (artifact-only; gallery/spot-check, not model input).
+            if getattr(obs_prep, "marked_image", None) is not None and obs_prep.marked_image_path:
+                try:
+                    _som_p = Path(obs_prep.marked_image_path)
+                    _som_p.parent.mkdir(parents=True, exist_ok=True)
+                    obs_prep.marked_image.save(str(_som_p))
+                except Exception:
+                    logger.warning("B-1828 deferred SoM image save failed", exc_info=True)
 
             checklist_snapshot = None
             if checklist_manager is not None:

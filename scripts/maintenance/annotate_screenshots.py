@@ -467,6 +467,26 @@ def _resolve_screenshot(step_record: Dict, run_dir: Path, step_dir: Path) -> Opt
     conv = step_dir / "screenshot.png"
     if conv.exists():
         return conv
+    # B-1828 part A (2026-05-22, gallery on-demand redesign): som mode stores its
+    # model-input image (raw screenshot + SoM bbox) at
+    # artifacts/<task>/som/step_xxx_som.png, NOT step_dir/screenshot.png. Fall back
+    # to it so on-demand annotate/gallery can serve the visual spot-check for som
+    # (vision carries raw screenshot via artifact_paths.screenshot above).
+    if ap and ap.get("som_image"):
+        p = Path(ap["som_image"])
+        if p.exists():
+            return p
+        p2 = run_dir / ap["som_image"]
+        if p2.exists():
+            return p2
+    # B-1828 P2-3 (2026-05-22, codex OOB): artifact_paths.som_image is
+    # repo-root-relative (results/...), so the two lookups above only resolve
+    # from a repo-root CWD. Construct from step_dir (CWD-independent), mirroring
+    # generate_gallery._collect_episodes — som/<step_NNN>_som.png sits beside
+    # step_dir under the task artifact dir.
+    _som_construct = step_dir.parent / "som" / f"{step_dir.name}_som.png"
+    if _som_construct.exists():
+        return _som_construct
     return None
 
 
@@ -524,9 +544,18 @@ def annotate_episode(
             except Exception:
                 pass
 
-        output = screenshot.parent / "screenshot_annotated.png"
+        # B-1828 part A: always emit annotated into step_dir (the gallery's lookup
+        # path), even when the底图 came from the sibling som/ dir (som_image
+        # fallback) — keeps generate_gallery._collect_episodes able to find it.
+        output = step_dir / "screenshot_annotated.png"
         if dry_run:
-            print(f"  [dry-run] {output.relative_to(run_dir)}")
+            # B-1828 P2-6 (codex): safe relative display — output is normally
+            # under run_dir (step_dir); guard against future fallback paths.
+            try:
+                _disp = output.relative_to(run_dir)
+            except ValueError:
+                _disp = output
+            print(f"  [dry-run] {_disp}")
             count += 1
             continue
 

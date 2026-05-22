@@ -60,6 +60,13 @@ DGX_RESULTS="${REPO_ROOT}/results/visualwebarena/phase1/"
 # Post-fix: same 15-min cron syncs these too (separate rsync per dir, no
 # --delete-after on top-level — defensive, watchdog regen can re-create
 # from A100 anyway).
+# B-1828 P1-2 (2026-05-22): these top-level aggregate galleries are now ON-DEMAND
+# (watchdog auto-refresh gated behind P79_WATCHDOG_GALLERY=1, default OFF). With
+# the default, A100 no longer auto-generates them, so the rsync loop below simply
+# skips missing dirs (non-fatal — see the `ssh test -d` guard). To refresh:
+# `make gallery-all` (aggregate) or `make gallery RUN=<run>` (per-run) on demand,
+# then sync. The live quark:8765 mirror is therefore NOT auto-current — regenerate
+# before an advisor demo / paper-figure pull.
 A100_TOPLEVEL_DIRS=(
   "phase1_paper_grade"  # 5th GALLERY step output (cross-baseline aggregate)
   "B0_3mode"            # 4th GALLERY step output (combined VWA+WA per baseline)

@@ -7595,9 +7595,9 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 
 **关联调查 (gallery 调查 part D, 2026-05-22) — ❌ NOT_A_BUG (实证排除)**: 担心 B0 som 图成本漏算 → 实证**排除**。B0 cost = `input_tokens × price` (`metrics.py:49`; `proxy_cost=None`, proxy 不直接给 usd);`input_tokens` 取自 proxy `usage.inputTokens` (Bedrock 透传, **含图 token** per Anthropic 标准计费)。**实证**: B0 som input 中位 4300 vs dom 3221, **差 1079 ≈ 一张 1280×720 图 token (1228 = Anthropic w×h/750)** → 文本部分 som([SOM_MARKS]) ≈ dom(AXTree), 差额只能是图 → 图 token 确在 proxy `input_tokens` 里 → cost 含图成本, **无漏算**。**遗留限制 (非 bug, 已 disclose)**: B0 不**拆** image/text token (`image_token_count_method` 仅 B1/B2 本地 `exact_id_match`, B0 `input_image=null`), som 图成本不可从 breakdown 单独审计;B-400 已用 `image_payload_bytes_total` 补充表征 B0 图 egress。cross-baseline 可审计性不对称 (B0 黑盒 vs B1/B2 透明), 不影响 cost 数字正确性。**附带观察**: 历史 B0_dom* run (含 router-mode + archive) 有 ~32% step 带图 (router escalation 发图);paper-grade R9755 纯 dom = 0% 有图 (clean)。
 
-**Fix 方向 (未实施)**: 拆分 `_build_som_result` 的本质成本 (`som_text` 构建 = model 收文本,计入) vs instrumentation (bbox 收集 + 画框 + 存盘)。phantom 系列 (`marked_image=None`) 只计入 `som_text`,画框移出计时窗 (离线 annotate 重画) 或单独计时扣除 (复用 `canonical = minus_retry − busy_wait − recovered` 框架,新增 `minus_instrumentation` 项,`metrics.py:920`)。**som baseline 的画框是本质** (model 收带框图) → **保持计入**,不动。
+**Fix (🛠️ FIXED 2026-05-22, 3-AI /stress A+B+C overlap)**: 实际实现 ≠ 原"画框扣时间"方案,而是 **phantom 直接不画框** (`som.py` phantom 分支不调 `_build_som_result` draw,只 `build_som_text_from_obs_text(return_count=True)` 单次 parse 出 `som_text`+`mark_count`; `marked_image_path=None`)。**som draw 保留** (model 收内存 `marked_image`) 但 **save 移出计时窗** (P0-1, 3-AI overlap): `som.py` 只算 path,`runner/main.py` 在 `total_latency_ms`+`energy` 算完**之后**才 `drawn.save` → save 既不进 latency canonical 也不进 carbon 窗。结果 phantom (无 draw 无 save) vs som (draw 计入 / save 不计入) **对称**,消除 phantom/som speedup ratio 的 instrumentation bias (paper §1 hero)。**Part A (on-demand gallery)**: annotate/gallery 读 `som_image` fallback (P2-1 priority annotated>som_image>raw; P2-3 CWD-robust 构造路径); watchdog auto-gallery gated `P79_WATCHDOG_GALLERY=0` default (on-demand,去常驻磁盘); `make gallery-all` aggregate (P1-1); sync_a100 disclose (P1-2); GLM sidecar 移除 phantom_som image-load (P2-2, B-845 retract); double-parse 消除 (P2-4); dry-run safe (P2-6). 验证: mock (phantom 不画框 / som save 移出 / byte-identity) + py_compile 5 files + pytest 172 passed.
 
-**Status**: ⚠️ IDENTIFIED — pre-data,fix 待 user 决策。gallery part A (som_image 显示 gap) 为同一调查的独立 follow-up。
+**Status**: 🛠️ **FIXED** (pending commit) — pre-data (0 phantom run 时修=零返工). **Refire**: R11558 som (旧代码,save 在计时窗) killed 2026-05-22 + Fire-6 refire som 起 (新代码); dom R9755 不受影响保留 (dom 无 image save). **Sibling B-1830** (vision `_save_artifacts` raw-screenshot save 同在 total 窗,P0-1 同病) IDENTIFIED → defer 到 vision 跑前 (vision 在 som 后,有时间窗).
 
 **Chronicle**: 实验笔记 §260。
 
@@ -7612,5 +7612,19 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **发现来源**: diagnose digest /stress 3-AI 审计 (codex Mode B unique catch, Phase 4 confirmed 178≠191)。
 
 **Chronicle**: 实验笔记 §261。
+
+---
+
+## B-1830 — vision raw-screenshot save in latency window (_save_artifacts, B-1828 P0-1 sibling) (2026-05-22)
+
+**B-1830** (P1, estimand, P0-1 sibling) ⚠️ IDENTIFIED (defer to pre-vision-fire) — **claim**: vision mode 的 raw screenshot save (`_save_artifacts` `main.py:2543` 调用, `obs.image.save` ~`:1600`) 在 step latency 窗内 (step_start → total_latency_ms),把 inspection 写盘时间 (~10-30ms/step) 计入 vision latency canonical。与 B-1828 P0-1 (som marked-image save) 同病,但走 `_save_artifacts` (非 `_build_som_result`)。model 收的是内存 `obs.image`,磁盘 PNG 纯 inspection。
+
+**Why deferred (本轮不修)**: (a) vision 不在 paper §1 hero 对比 (phantom_som vs som) → 低 blast; (b) `_save_artifacts` 同时写 `observation_dom.txt` (所有 mode 含 dom) — 整体外移会把 dom-txt save 也移出 dom 窗 → dom R9755 (保留) vs 新 dom latency 不一致 → 逼 dom refire。fix 必须**只**外移 screenshot save (vision),不动 dom-txt; (c) vision 在 Fire-6 sequential 跑在 som 后 → 有时间窗在 vision 开跑前 land。
+
+**Fix 方向**: `_save_artifacts` screenshot block (`main.py` ~1596-1625) 只算 path 不写盘; runner 在 P0-1 同点 (post-`total_latency_ms`/energy) atomic-save obs.image。dom-txt save 不动 (留窗内,所有 dom run 一致)。
+
+**Status**: ⚠️ IDENTIFIED — defer to pre-vision-fire. B-1828 refire planning 时发现 (实验笔记 §260 part F).
+
+**Chronicle**: 实验笔记 §260 part F。
 
 ---
