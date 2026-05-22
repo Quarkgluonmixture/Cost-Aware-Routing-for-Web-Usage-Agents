@@ -42,6 +42,7 @@ ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/an
 
 **④ PENDING — 盯**:
 > - **canary R11315 (Gate 2)** 完成 (224 ep) → **Gate 3** 重算 36-cond wallclock + abort 率 → go/no-go full Fire。**核心观察**: retry 是否触发 (`ssh condense-a100 "grep -c 'B-1836 local backoff' logs/B0_som_classifieds_*_R11315_runner.log"`) + 能否吸收退化窗口 (撞窗口→retry→跑完=强证据 retry work; abort=retry 不够→Plan B scope 决策, 也是有价值否定结果)。
+> - **canary 落地 → 跑 `/diag` 错因分析** (per-condition, B0×som×cls): `/diag` skill 3-tier (Tier-1 0-token) → `docs/analysis/vwa_classifieds/B0_som_classifieds_diag_digest.md`。拆失败结构 (早期 task=0/1 success=False / N/A 循环截断 / eval-timeout 分布) → 喂 Gate 2/3 评估 + paper-grade per-condition 错因表。**标准步**: 每个 condition 落地都跑 (per-condition 命名, 勿用 run_id)。
 > - **monitor `b7z09re1f`** (DGX background, done/abort + retry 触发计数 → ntfy `p79-exp-dgx-spark`)。compact 后查 monitor: `make schedule-list` 或读 `/tmp/.../tasks/b7z09re1f.output`。
 > - **B-1837** (eval 5-retry vs agent-step 0-retry → differential baseline rescue confound) = measure-then-decide: canary+Pass-1 量化 per-baseline eval-rescue rate, 再定 disclose (paper §3.5/§8) vs symmetric retry。NOT code change now (master_bug_catalog B-1837)。
 > - **Gate 框架 (user 2026-05-22)**: Gate1✓(B-1836 fix) Gate1.5✓(/stress) Gate2(canary LIVE) Gate3(pending wallclock go/no-go)。**先修产出机制→canary→才估 scope; 不盲砍 scope 不盲 full Fire** — canary R11315 是分水岭。
