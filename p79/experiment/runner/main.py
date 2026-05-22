@@ -3121,7 +3121,18 @@ class ExperimentRunner:
                     _ip = Path(_path)
                     _ip.parent.mkdir(parents=True, exist_ok=True)
                     _itmp = _ip.with_suffix(_ip.suffix + ".tmp")
-                    _img.save(str(_itmp))
+                    # B-1832 (2026-05-22): PIL infers the encoder from the file
+                    # extension; the ".tmp" atomic-temp suffix is NOT a registered
+                    # extension → `KeyError: '.tmp'` → EVERY som marked-image and
+                    # vision raw-screenshot save silently failed (swallowed by the
+                    # except below as a per-step warning). The B-1828/B-1830 fix
+                    # repaired the latency/energy estimand but lost all visual
+                    # artifacts. Pass the encoder explicitly from the FINAL path's
+                    # real extension so the deferred save actually writes the PNG.
+                    _fmt = _ip.suffix.lstrip(".").upper()
+                    if _fmt == "JPG":
+                        _fmt = "JPEG"
+                    _img.save(str(_itmp), format=_fmt)
                     _ifd = os.open(str(_itmp), os.O_RDONLY)
                     try:
                         os.fsync(_ifd)

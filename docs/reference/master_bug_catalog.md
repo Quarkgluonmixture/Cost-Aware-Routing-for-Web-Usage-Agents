@@ -7640,3 +7640,19 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §263。
 
 ---
+
+## B-1832 — deferred image save `.tmp` 后缀 → PIL KeyError → som/vision artifact 全丢 (2026-05-22, B-1828/B-1830 regression)
+
+**B-1832** (P0, artifact data-loss / **self-introduced regression**) 🛠️ **FIXED** — **claim**: B-1828/B-1830 的 deferred image-save loop (`main.py:3123-3124`) 用 `_itmp = _ip.with_suffix(_ip.suffix + ".tmp")` 生成 `step_XXX_som.png.tmp` / `screenshot.png.tmp`, 然后 `_img.save(str(_itmp))` **不带 format** → PIL 从 `.tmp` 扩展名推断 encoder 失败 `KeyError: '.tmp'` → `ValueError: unknown file extension: .tmp`。外层 try/except 把它降级成 per-step `logger.warning`(non-fatal,run 不挂),但**每一次 som marked-image + vision raw-screenshot save 都失败**。实证: 在跑的 R12265 (som cls) 磁盘 som png=0 / screenshot png=0, runner log 5344 次 `deferred image save failed`。
+
+**Blast radius**: (a) **estimand 不受影响** — save 瞬间抛异常被 catch (微秒级), 且本就在 `total_latency_ms`+energy 窗外, latency/cost/carbon canonical 仍干净 (B-1828/B-1830 修的目标达成); (b) **真正受害 = 视觉 artifact 全丢** → Part A on-demand gallery (paper figure / advisor demo / som·vision spot-check) 的核心诉求落空 — som/vision/(phantom 无图本就不存) 全 fire 零图; (c) R12265 (som cls) **metrics paper-grade valid 但零图** — 不能 post-hoc 重建 (raw screenshot 也没存)。
+
+**Fix**: `main.py:3120-3130` 显式传 encoder — `_fmt = _ip.suffix.lstrip(".").upper(); if _fmt == "JPG": _fmt = "JPEG"; _img.save(str(_itmp), format=_fmt)`。免 `from PIL import Image` (3124 处作用域不一定可见, 用字符串推断)。atomic tmp+fsync+replace 不变。**Verified**: py_compile + 直接复现 (OLD no-format → `ValueError: unknown file extension: .tmp`; NEW `format=PNG` → 存盘 OK + os.replace + 重载 size/format 正确 + tmp 清理)。**Sibling 检查干净**: grep 全仓 `.tmp` save, 唯一 PIL save 是这一处; 其余 (`logger_v2` / `validate_fire_manifest` / `clear_tasks` / watchdog state / glm sidecars) 全是 JSON/text `write_text`, 不经 PIL format 推断, 不受影响。
+
+**Process note**: B-1828/B-1830 经 3-AI (Claude+codex+gemini) /stress 审过 deferred-save **逻辑** (estimand 正确性) 但**没人实跑一次 `_img.save("x.png.tmp")`** — PIL format-inference-from-extension 是运行期行为, 静态审计盲区。印证 [[feedback-spotcheck-length-claims]]: 运行期 artifact 行为必须实测。**try/except 把 P0 数据丢失淹成 5344 行 warning** — fail-soft 在"模型输入"对 (不该 crash run), 但"paper 证据链 artifact"语境应 per-run once ERROR 汇总, 不是 per-step warning (future hardening, 未做)。
+
+**Deployment**: A100 git pull → vision/phantom/reddit 后续 condition 新 runner 加载修复版 → 有图。R12265 (som cls, 在跑) 不 reload → 留零图; metrics valid 保留, 不 kill 不重跑 (避免浪费 valid metrics + B0 API $); 如需 exact-B0 som-cls figure 图, 后续 cheap targeted 几个 task 重跑即可 (不必杀整 run)。
+
+**Chronicle**: 实验笔记 §265。
+
+---
