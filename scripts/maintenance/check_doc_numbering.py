@@ -1,29 +1,42 @@
 #!/usr/bin/env python3
-"""P79 doc-numbering guard.
+"""P79 doc-numbering guard (v2).
 
-Detects cross-session sequence-number collisions in the two monolithic,
-sequentially-numbered chronicle docs BEFORE they reach the shared remote:
+Blocks cross-session sequence-number collisions before they reach the shared
+remote, for two append-only docs edited by multiple Claude Code sessions
+(DGX / A100 / quark / Myriad, one GitHub remote):
 
-  - docs/checkpoints/实验笔记.md          top-level sections  `## N. ...`
-  - docs/reference/master_bug_catalog.md  bug ids `B-NNNN`
+  - docs/checkpoints/实验笔记.md          sections `## N.`   — ENFORCING (clean format)
+  - docs/reference/master_bug_catalog.md  bug ids `B-NNNN`   — ADVISORY  (see #4 note)
 
-Why this is needed: two independent Claude Code sessions (DGX / A100 / quark /
-Myriad) that each compute "max+1" allocate the SAME next number. git then
-merges the two additions in *different file regions* WITHOUT a conflict,
-silently creating a duplicate (§268 twice / two B-1835 entries). git's own
-conflict detection never sees it. This guard catches it by diffing the
-working tree against the merge-base and the remote tip.
-
-Core idea (noise-proof):
-  added_local  = ids(working tree) - ids(merge-base)
+Detection model (noise-proof via merge-base delta):
+  added_local  = ids(pushed commit) - ids(merge-base)
   added_remote = ids(origin/master) - ids(merge-base)
-  collision    = added_local & added_remote     # both sessions created same id
-Pre-existing duplicates (e.g. the historical §132/§133/§173/§175 pairs) and
-the bug catalog's normal "B-1830 followup" multi-mentions live in the base on
-both sides, so they are never flagged.
+  cross        = added_local & added_remote      # both branches created the same id
+  self_dup     = id duplicated WITHIN the push beyond what the base already had
 
-Used by .githooks/pre-push. Also runnable standalone:
-    python3 scripts/maintenance/check_doc_numbering.py --remote-ref origin/master
+v2 changes — codex race/correctness review 2026-05-22 (docs/checkpoints/codex_outputs/
+hook_race_review_2026-05-22.md):
+  #1  Reads the COMMIT being pushed via `git show <local_sha>:path` (was the working
+      tree), fed from pre-push stdin. Closes the "committed dup + clean working tree"
+      and the non-current-ref push holes (codex P0).
+  #2  git helpers report ok/fail; a degraded check (missing merge-base / git object,
+      e.g. a shallow clone) NO LONGER prints a false "✓ clean" — it warns instead
+      (codex P1 fail-open hole).
+  #5  Section self-dup rule fixed to `count > base_count and count > 1`, so a *third*
+      occurrence of an already-historically-duplicated number is still caught (codex P2).
+  #4  The bug catalog is ADVISORY-ONLY. Its format is heterogeneous (`### B-NN.`,
+      `## B-NNNN —`, `**B-NNNN**`) AND uses a followup convention that legitimately
+      repeats a number across allocation lines, so count-based self-dup is impossible
+      by regex (empirically B-1..B-9 each appear 50-128x in heading form). We keep a
+      best-effort CROSS-SESSION warning (robust because the set-diff cancels count
+      noise) but NEVER BLOCK on bugs, to avoid false-positives on every followup.
+      ⚠ Known residual: two sessions on a SHARED local .git (neither pushed yet) and the
+      post-pull/post-rebase case are NOT caught for bugs by this regex approach. Reliable
+      bug dedup needs a reservation counter (.coord/) or a per-entry restructure, or a
+      server-side CI check on the merge result — see hook_race_review.md #3.
+
+Standalone:
+    python3 scripts/maintenance/check_doc_numbering.py --local-sha HEAD --remote-ref origin/master
     python3 scripts/maintenance/check_doc_numbering.py --local-only
 """
 from __future__ import annotations
@@ -34,15 +47,10 @@ import subprocess
 import sys
 from collections import Counter
 
-# Top-level chronicle headers only: exactly `## N.` (## + whitespace + digits + dot).
-# `###`-level sub-headers (e.g. §127.1) do NOT match because the char after `##`
-# is `#`, not whitespace.
-SECTION_RE = re.compile(r"^##[ \t]+(\d+)\.", re.M)
-BUG_RE = re.compile(r"\bB-(\d+)\b")
+SECTION_RE = re.compile(r"^##[ \t]+(\d+)\.", re.M)   # `## N.` top-level only (### excluded)
+BUG_RE = re.compile(r"\bB-(\d+)\b")                   # all mentions; set-diff cancels noise
 
-# (path, kind, check_selfdup)
-# bug catalog: check_selfdup=False — same B-number legitimately appears many
-# times (original entry + followup entries + triage table + cross-refs).
+# (path, kind, enforce) — enforce=True blocks the push; False is advisory (warn only).
 DOCS = [
     ("docs/checkpoints/实验笔记.md", "section", True),
     ("docs/reference/master_bug_catalog.md", "bug", False),
@@ -65,33 +73,34 @@ def analyze(local_text: str, base_text: str, remote_text: str,
     added_remote = set(remote) - set(base)
     cross = sorted(added_local & added_remote)
 
-    selfdup: list[int] = []
-    if check_selfdup:
-        # a number duplicated in YOUR working tree that was not already
-        # duplicated in the base (so the historical dups never trip it).
-        selfdup = sorted(n for n, c in local.items() if c >= 2 and base.get(n, 0) < 2)
+    # #5: count > base_count (not "base < 2") so a 3rd occurrence is still caught.
+    selfdup = (sorted(n for n, c in local.items() if c > base.get(n, 0) and c > 1)
+               if check_selfdup else [])
 
     all_known = set(local) | set(remote)
     next_free = (max(all_known) if all_known else 0) + 1
     return {"cross": cross, "selfdup": selfdup, "next_free": next_free}
 
 
-# ---- git plumbing (thin wrappers; everything fail-open to "") -------------
+# ---- git plumbing — every helper reports (ok, text); callers track `degraded` ----
 
-def _git(*args: str) -> str:
-    try:
-        return subprocess.run(["git", *args], capture_output=True,
-                              text=True, check=True).stdout
-    except subprocess.CalledProcessError:
-        return ""
+def _git(*args: str) -> tuple[bool, str]:
+    r = subprocess.run(["git", *args], capture_output=True, text=True)
+    return r.returncode == 0, r.stdout
 
 
-def git_show(ref: str, path: str) -> str:
+def ref_exists(ref: str) -> bool:
+    ok, _ = _git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
+    return ok
+
+
+def git_show(ref: str, path: str) -> tuple[bool, str]:
     return _git("show", f"{ref}:{path}")
 
 
 def merge_base(a: str, b: str) -> str:
-    return _git("merge-base", a, b).strip()
+    ok, out = _git("merge-base", a, b)
+    return out.strip() if ok else ""
 
 
 def read_local(path: str) -> str:
@@ -107,47 +116,82 @@ def label(kind: str, n: int) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description="P79 doc-numbering guard")
+    ap.add_argument("--local-sha", default=None,
+                    help="commit being pushed (from pre-push stdin); default = working tree")
     ap.add_argument("--remote-ref", default="origin/master",
                     help="remote tip to compare for cross-session collisions")
     ap.add_argument("--local-only", action="store_true",
-                    help="skip remote comparison (only working-tree self-dups vs HEAD)")
+                    help="skip remote comparison (working-tree self-dups only)")
     args = ap.parse_args()
 
+    local_rev = args.local_sha or "HEAD"
+    remote_present = (not args.local_only) and ref_exists(args.remote_ref)
+
     hard = False
-    for path, kind, check_selfdup in DOCS:
-        local_text = read_local(path)
-        if not local_text:
-            continue
+    degraded: list[str] = []
+    advisory: list[str] = []
 
-        if args.local_only:
-            base_text = git_show("HEAD", path)
-            remote_text = ""
+    for path, kind, enforce in DOCS:
+        # --- local doc content (the COMMIT being pushed, or the working tree) ---
+        if args.local_sha:
+            ok, local_text = git_show(args.local_sha, path)
+            if not ok:
+                if enforce:
+                    degraded.append(f"{path}: 无法读取 push commit ({args.local_sha[:8]}) 内容")
+                continue
         else:
-            base = merge_base("HEAD", args.remote_ref)
-            base_text = git_show(base, path) if base else git_show("HEAD", path)
-            remote_text = git_show(args.remote_ref, path)
+            local_text = read_local(path)
+            if not local_text:
+                continue
 
-        res = analyze(local_text, base_text, remote_text, kind, check_selfdup)
+        # --- base + remote content ---
+        base_text = remote_text = ""
+        if remote_present:
+            base_rev = merge_base(local_rev, args.remote_ref)
+            if not base_rev:
+                if enforce:
+                    degraded.append(f"{path}: 无法定位 merge-base (shallow clone?) — 跨-session 校验降级")
+            else:
+                ok_b, base_text = git_show(base_rev, path)
+                ok_r, remote_text = git_show(args.remote_ref, path)
+                if not (ok_b and ok_r) and enforce:
+                    degraded.append(f"{path}: base/remote 对象缺失 — 跨-session 校验降级")
+                base_text = base_text if ok_b else ""
+                remote_text = remote_text if ok_r else ""
 
-        if res["cross"]:
-            hard = True
-            ids = ", ".join(label(kind, n) for n in res["cross"])
-            print(f"❌ [doc-guard] {path}")
-            print(f"   跨 session 撞号: {ids} —— 另一个 session 已在 {args.remote_ref} 用了同样的号。")
-            print(f"   修法: git pull --rebase, 把你的条目改成下一个空号 "
-                  f"(≥ {label(kind, res['next_free'])}), 再 push。")
-        if res["selfdup"]:
-            hard = True
-            ids = ", ".join(label(kind, n) for n in res["selfdup"])
-            print(f"❌ [doc-guard] {path}")
-            print(f"   本地新增重复号: {ids} —— 同一个号在你的改动里出现 ≥2 次, 改掉再 push。")
+        res = analyze(local_text, base_text, remote_text, kind, check_selfdup=enforce)
+        prefix = "❌" if enforce else "⚠ (advisory)"
+        for ftype in ("cross", "selfdup"):
+            if not res[ftype]:
+                continue
+            ids = ", ".join(label(kind, n) for n in res[ftype])
+            if ftype == "cross":
+                line = (f"{prefix} [doc-guard] {path}\n"
+                        f"   跨 session 撞号: {ids} —— 另一 session 已在 {args.remote_ref} 用了同号。"
+                        f" git pull --rebase 后改用 ≥ {label(kind, res['next_free'])} 再 push。")
+            else:
+                line = (f"{prefix} [doc-guard] {path}\n"
+                        f"   本地新增重复号: {ids} —— 改掉再 push。")
+            if enforce:
+                hard = True
+                print(line)
+            else:
+                advisory.append(line)
+
+    for m in advisory:
+        print(m)
+    for m in degraded:
+        print(f"⚠ [doc-guard] {m}")
 
     if hard:
-        print("\n[doc-guard] push BLOCKED. (紧急绕过: git push --no-verify —— 不建议)")
+        print("\n[doc-guard] push BLOCKED (enforcing doc 撞号). 紧急绕过: git push --no-verify —— 不建议")
         return 1
-
-    print("[doc-guard] ✓ 无跨 session 撞号 / 新增重复号。")
+    if degraded:
+        print("[doc-guard] ⚠ 部分校验降级未完成 — 未确认安全 (见上); 放行 push。")
+        return 0
+    tail = " (bug 为 advisory)" if advisory else ""
+    print(f"[doc-guard] ✓ 无 enforcing-doc 撞号 / 新增重复号{tail}。")
     return 0
 
 

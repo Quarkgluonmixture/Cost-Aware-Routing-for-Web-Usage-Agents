@@ -71,3 +71,11 @@ def test_bug_cross_session_collision_flagged():
     res = mod.analyze(local, base, remote, "bug", check_selfdup=False)
     assert res["cross"] == [1835]
     assert res["next_free"] == 1836
+
+
+def test_third_section_dup_flagged_v2_rule():
+    # codex P2 (#5): a 3rd §132 when base already had it twice must still be caught.
+    base = "## 132. a\n## 132. b\n"
+    local = "## 132. a\n## 132. b\n## 132. c-new\n"
+    res = mod.analyze(local, base, "", "section", check_selfdup=True)
+    assert res["selfdup"] == [132]

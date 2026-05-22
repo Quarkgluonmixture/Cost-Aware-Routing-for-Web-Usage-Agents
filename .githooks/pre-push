@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# P79 doc-numbering guard (pre-push) — block cross-session §/B-number collisions
-# in 实验笔记.md / master_bug_catalog.md before they reach the shared remote.
+# P79 doc-numbering guard (pre-push, v2) — block cross-session §-number collisions
+# in 实验笔记.md (enforcing) + warn on master_bug_catalog.md B-numbers (advisory)
+# before they reach the shared remote.
 #
-# Versioned under .githooks/ (so it travels with the repo across DGX/A100/quark/
-# Myriad clones). Activate per clone once via:
-#     bash scripts/maintenance/install_doc_guard_hooks.sh
+# Versioned under .githooks/ (travels across DGX/A100/quark/Myriad clones).
+# Activate per clone once:  bash scripts/maintenance/install_doc_guard_hooks.sh
 #
-# Fail-open: any setup problem (missing script / no python / offline fetch) must
-# NOT block a legitimate push — only a real number collision returns non-zero.
+# v2 (codex race review 2026-05-22): checks the COMMIT being pushed (from pre-push
+# stdin), not the working tree. Fail-open on setup problems (missing script / no
+# python / offline) — only a real section collision returns non-zero.
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 CHECK="$REPO_ROOT/scripts/maintenance/check_doc_numbering.py"
@@ -23,8 +24,19 @@ fi
 [ -n "$PYBIN" ] || exit 0
 
 REMOTE_NAME="${1:-origin}"
-echo "[doc-guard] checking §/B-number collisions vs ${REMOTE_NAME}/master ..."
-git fetch -q "$REMOTE_NAME" master 2>/dev/null \
-  || echo "[doc-guard] ⚠ fetch failed (offline?) — cross-session check degraded to local-only"
 
-"$PYBIN" "$CHECK" --remote-ref "${REMOTE_NAME}/master"
+# pre-push stdin lines: <local_ref> <local_sha> <remote_ref> <remote_sha>
+# Take the first non-delete local_sha (this repo's workflow = single master push).
+local_sha=""
+while read -r _lref lsha _rref _rsha; do
+  [ -z "$lsha" ] && continue
+  printf '%s' "$lsha" | grep -qE '^0+$' && continue   # all-zero sha = branch delete
+  local_sha="$lsha"; break
+done
+[ -z "$local_sha" ] && local_sha="$(git rev-parse HEAD 2>/dev/null)"
+
+echo "[doc-guard] checking §/B collisions for ${local_sha:0:8} vs ${REMOTE_NAME}/master ..."
+git fetch -q "$REMOTE_NAME" master 2>/dev/null \
+  || echo "[doc-guard] ⚠ fetch failed (offline?) — cross-session check degraded"
+
+"$PYBIN" "$CHECK" --local-sha "$local_sha" --remote-ref "${REMOTE_NAME}/master"
