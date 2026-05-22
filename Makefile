@@ -28,7 +28,7 @@ PYTHON ?= .venv/bin/python3
 PYTEST ?= .venv/bin/pytest
 
 .PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep error-scan \
-        confidence compare reason-diag clean-tasks schedule-list \
+        confidence compare reason-diag clean-tasks schedule-list ntfy \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
         analyze-paper-per-run compare-b0-b1-all phantom-lift \
@@ -66,6 +66,12 @@ help:
 # replaces the manually-maintained §1 Active Processes table in next_steps.md.
 active:
 	@$(PYTHON) scripts/maintenance/active_processes.py
+
+# Pull P79 ntfy notifications into the session so they're readable without manual
+# copy-paste (the watchdogs only push; this polls the same topic back out).
+# `make ntfy` = last 12h all · `make ntfy SINCE=1h` · `make ntfy ALERTS=1` (alerts-only).
+ntfy:
+	@bash scripts/maintenance/ntfy_read.sh $(or $(SINCE),12h) $(if $(ALERTS),alerts,all)
 
 # ---- Tests ----
 test:
