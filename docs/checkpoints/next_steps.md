@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-05-18
+updated: 2026-05-22
 ---
 
 # Next Steps — Forward Action Ledger
@@ -11,7 +11,7 @@ updated: 2026-05-18
 > - Real-time active runs / GPU → `make active` CLI
 > - Cell snapshot (active 跑中 / pending / done) → `cells.base`
 > - Paper section progress → `status.base`
-> - 过去 chronicle → [[实验笔记]] (latest §240, 2026-05-20)
+> - 过去 chronicle → [[实验笔记]] (latest §268, 2026-05-22)
 > - Strategy / theory → [[paper_planning]]
 > - **Phase 1 执行计划 + audit checklist** → [[phase1_plan]] ⭐ canonical
 > - Advisor sync prep → [[issue_advisor_sync_2026-05-14]]
@@ -22,7 +22,35 @@ updated: 2026-05-18
 
 ---
 
-## §0a CURRENT — Fire-6 Pass-1 LIVE (2026-05-21)
+## §0 SESSION HANDOFF — 新 session 接手 (2026-05-22) ⭐ 先读这个
+
+> [!important] **掌握现状 = 跑命令拿 LIVE 状态, 别信本文/笔记的硬编码数字 (秒级 stale)。** 笔记 §265-268 = WHY; 本节 = HOW (拿 live + 盯什么)。2026-05-22 搭了 paper-grade 自检, 一条命令出 verdict。
+
+**① paper-grade verdict (一条命令; 每 6h cron 也自动跑 + ntfy)**:
+```
+ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/maintenance/paper_grade_check.py'
+#  → VERDICT: OK completed_ok=N inprog=[Rxxxx mode ep=N img=N errflood=0]   /   ISSUES=...
+tail -40 logs/cron/paper_grade_check.log     # 每 6h 自动检查历史 (00:30/06:30/12:30/18:30)
+```
+
+**② fire 死活 (fire 在 A100; `make active` 只扫 DGX → 空是正常)**:
+```
+ssh condense-a100 'pgrep -af "queue_phase1_paper_grade|run_experiment\.py" | grep -v bash'
+ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/analysis/validate_fire_manifest.py'
+```
+
+**③ 写时状态 (2026-05-22 14:05 — 用①验证, 勿照搬)**: Fire-6 cls chain LIVE on A100, B0 som **R10016** 跑中 (B-1835 修复后首个干净 run, 图在存 img>0 errflood=0)。dom **R9755** bound done (224 ep, **不重跑** — image 修复对无图 dom 是 no-op)。**HEAD = origin = A100 = `7c54ef3`**, work tree 干净。
+
+**④ PENDING — 盯**:
+> - som R10016 完成 (224) → C watchdog auto-bind manifest → vision 起。**B-1833 看点**: cls docker transient stall (task 76/106 撞过) 是否被 5×retry + 每次 fresh-browser 吸收 (B-1831/1833/P1-1 **首次实跑**)。
+> - 三层主动 ntfy: 每 6h paper-grade cron (✅/🔴) · `bnzidbhtz` 后台 monitor (som DONE) · `fire6_monitor` (orchestrator 死)。
+> - **🔴 / abort → 直接看 A100 runner log 新 traceback** (`ssh condense-a100 'tail -40 /home/ubuntu/workspace/p79/logs/B0_*_R*_runner.log'`), **别 isolation 复现** (B-1832→1835 教训: inline-in-function 运行期 bug 只在生产暴露)。
+
+**⑤ WHY (按需读)**: §265 (B-1832 .tmp) / §266 (substrate + 版本误判更正) / §267 (3-AI /stress 6 修) / §268 (B-1835 + 2nd re-fire) + master_bug_catalog B-1832/1833/1834/1835。B-saga 五层洋葱 (画框→vision→.tmp→retry空心→manifest==→os shadow), 每层是前修解除掩盖逼出。
+
+---
+
+## §0a Fire-6 Pass-1 (2026-05-21) [SUPERSEDED → 见 §0; 本节为 B-1803 时代历史]
 
 > [!success] **Fire-6 Pass-1 RE-FIRED with B-1803** (2026-05-21). First launch (~12:06) aborted at cls B0 dom **task 4** (id=84144) — the 4th fire (Fire-3/4/5/6) killed by the same `EvaluatorUnavailableError: Page.goto 30s×3` on a program_html eval. **Diagnosis refuted the prior "agent-modified substrate" RCA**: item 84144 is NOT deleted (DB `b_active=1`) and the URL is healthy (curl 0.17s) — the real cause is the **degraded long-lived BrowserContext** by task ~4, which C1's same-context `new_page` did not escape. **Fix B-1803** (commit `4baac19`, Fire-6 RCA C1b): eval isolation → FRESH browser context (clean Chromium profile + auth from config storage_state file). Re-fired ~12:51 (orchestrator 566503, HEAD `4baac19`, all gates green, cls→red sequential). Pre-fire /stress (B-1796..B-1802) + Addendum 01a witness + re-Smoke A PASS all landed earlier. **✅ B-1803 CONFIRMED (14:18)**: re-fire passed task 4 (maxtask=5, evalerr=0) — the 4-fire id=84144 eval blocker is broken; Fire-6 cls now flowing past it. Multi-day run on standing tooling (A100 shell healthcheck cron + daily Claude review + watchdog). **Nothing required while it runs.**
 >
