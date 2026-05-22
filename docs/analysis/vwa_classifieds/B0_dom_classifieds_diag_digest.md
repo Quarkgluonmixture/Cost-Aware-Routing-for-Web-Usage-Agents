@@ -1,6 +1,6 @@
-# B0 dom classifieds — 失败错因 digest（diagnose skill）
+# B0 dom classifieds — 失败错因 digest（diag skill）
 
-> **生成方式**: `/diagnose` skill 3-tier pipeline (2026-05-22 首次完整运行)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token) → Tier-2 Claude sub-agent 深挖 35 个 no-hit 盲区 → Tier-3 整合 (本文件)。
+> **生成方式**: `/diag` skill 3-tier pipeline (2026-05-22 首次完整运行)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token) → Tier-2 Claude sub-agent 深挖 35 个 no-hit 盲区 → Tier-3 整合 (本文件)。
 > **Run**: `B0_dom_classifieds_20260521_125142_282975264_567142_R9755` (Fire-6 first completed condition, manifest-bound authoritative)
 > **Condition**: `phase1_dom_router_0` | site classifieds | mode **dom** | model **B0 = Qwen3-VL-235B (proxy)**
 
