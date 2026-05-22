@@ -38,11 +38,14 @@ ssh condense-a100 'pgrep -af "queue_phase1_paper_grade|run_experiment\.py" | gre
 ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/analysis/validate_fire_manifest.py'
 ```
 
-**③ 写时状态 (2026-05-22 — 用①验证, 勿照搬)**: 2nd re-fire som **R10016** 在 task ~31 abort 于 **B-1836**(eval zero-retry keyword bug = Fire-5/6 eval-timeout **统一根因**, 笔记 §269)。**另一 session 已修 B-1836 + pre-fire 3-AI /stress (§271, B-1837)**, HEAD `14def66`, **refire 前**。**B-1832/1835 image 修复已生产验证**(abort 前 img>0 errflood=0 → 图丢失 saga 彻底关闭)。dom **R9755** bound done (224 ep, **不重跑** — image 修复对无图 dom 是 no-op)。
+**③ 写时状态 (2026-05-22 17:06 — 用①验证, 勿照搬)**: **Gate 2 canary `B0_som_classifieds_..._R11315` LIVE** on A100 (HEAD `14def66` 全 fix; B0 som cls; runner pid 842212 / watchdog 842243; **不 restart docker** = 故意保持 6天 uptime 退化态测 retry 吸收)。健康启动 (task 0 已 finish, 真实 agent action select_option/scroll/finish, 非 auth-stall)。Gate 1 (B-1836 eval zero-retry keyword fix, §269) + Gate 1.5 (pre-fire 3-AI /stress: codex 抓 fix **自身** P0-1 B-329 silent-score regression + gemini B-1837 differential-rescue, 全修 1273 test, §271) 已 land+push。prev abort R10016 superseded。dom **R9755** bound done (224 ep, 不重跑)。**B-1832/1835 image 修复已生产验证** (saga 关闭)。
 
 **④ PENDING — 盯**:
-> - **refire**(B-1836 修后)→ som 重跑 → 完成 (224) → C watchdog auto-bind → vision。盯 eval-timeout 是否真被 B-1836 解决 (Fire-3/4/5/6 同一类)。
-> - 三层主动 ntfy: 每 6h paper-grade cron (✅/🔴) · `fire6_monitor` (orchestrator 死) · per-condition watchdog。
+> - **canary R11315 (Gate 2)** 完成 (224 ep) → **Gate 3** 重算 36-cond wallclock + abort 率 → go/no-go full Fire。**核心观察**: retry 是否触发 (`ssh condense-a100 "grep -c 'B-1836 local backoff' logs/B0_som_classifieds_*_R11315_runner.log"`) + 能否吸收退化窗口 (撞窗口→retry→跑完=强证据 retry work; abort=retry 不够→Plan B scope 决策, 也是有价值否定结果)。
+> - **monitor `b7z09re1f`** (DGX background, done/abort + retry 触发计数 → ntfy `p79-exp-dgx-spark`)。compact 后查 monitor: `make schedule-list` 或读 `/tmp/.../tasks/b7z09re1f.output`。
+> - **B-1837** (eval 5-retry vs agent-step 0-retry → differential baseline rescue confound) = measure-then-decide: canary+Pass-1 量化 per-baseline eval-rescue rate, 再定 disclose (paper §3.5/§8) vs symmetric retry。NOT code change now (master_bug_catalog B-1837)。
+> - **Gate 框架 (user 2026-05-22)**: Gate1✓(B-1836 fix) Gate1.5✓(/stress) Gate2(canary LIVE) Gate3(pending wallclock go/no-go)。**先修产出机制→canary→才估 scope; 不盲砍 scope 不盲 full Fire** — canary R11315 是分水岭。
+> - **canary 期 ntfy = 2 层**: 每 6h paper-grade cron (✅/🔴 VERDICT+manifest) + monitor `b7z09re1f` (DONE/RUNNER_GONE/retry/evalerr)。⚠️ **A100 `fire6_monitor` healthcheck cron 已静音** (2026-05-22, canary=`queue_baseline` 非 orchestrator → `_orch_up` false + FIRELOG pin 死 fire6_relaunch log → 每 30min 误报 "orchestrator GONE + FATAL"; daily heartbeat 保留; 备份 A100 `/tmp/cron_fire6.bak`)。**Gate 3 转 full Fire 必须 re-arm**: `ssh condense-a100 "crontab -l | sed 's|^# \[Gate2-canary-quiet[^]]*\] ||' | crontab -"`。
 > - **🔴 / abort → 直接看 A100 runner log 新 traceback** (`ssh condense-a100 'tail -40 /home/ubuntu/workspace/p79/logs/B0_*_R*_runner.log'`), **别 isolation 复现** (B-1832→1836 教训: 运行期 bug 只在生产暴露)。
 
 **⑤ WHY (按需读)**: §265 (B-1832 .tmp) / §266 (substrate + 版本误判) / §267 (3-AI /stress 6 修) / §268 (B-1835 os shadow) / **§269 (B-1836 eval-timeout 统一根因 + B-1803 RCA 修正)** / §271 (Gate 1.5 pre-fire /stress, B-1837) + master_bug_catalog B-1832~B-1837。
