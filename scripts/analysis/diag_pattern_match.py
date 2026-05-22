@@ -682,8 +682,13 @@ def scan_episodes(
             if rule_hits:
                 hit_counts[rule_id] += 1
 
-        if diag.hits or not failed_only:
-            all_diagnoses.append(asdict(diag))
+        # B-1829 (diag /stress P1-1): unconditional append. failed_only already
+        # skips success above (line ~648), so appending all here keeps no-hit
+        # FAILED episodes in results (the Tier-2 deep-dive target) AND makes
+        # `total` = true failed count. Was `if diag.hits or not failed_only`,
+        # which dropped no-hit failed from the denominator (--failed-only
+        # reported Episodes:178 vs true failed=191 on R9755 → wrong pct).
+        all_diagnoses.append(asdict(diag))
 
         if verbose and diag.hits:
             print(f"  Task {task_id} ({cond_id}): {len(diag.hits)} hits — "

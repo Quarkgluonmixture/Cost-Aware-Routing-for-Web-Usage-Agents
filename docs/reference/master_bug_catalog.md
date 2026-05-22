@@ -7602,3 +7602,15 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §260。
 
 ---
+
+## B-1829 — diag_pattern_match `--failed-only` denominator bug (2026-05-22, diagnose /stress P1-1)
+
+**B-1829** (P1, tool correctness) ✅ FIXED — **claim**: `diag_pattern_match.py:685` 的 `if diag.hits or not failed_only` 在 `--failed-only` 模式下只 append has-hit episode, 但 `total = len(all_diagnoses)` (`:692`) 拿它当分母 → no-hit failed 从分母消失。**实测** R9755: `--failed-only` 输出 `Episodes: 178` 而真实 failed=191 (13 no-hit failed 丢失) → pct 全错。digest 本身用 full-scan (不加 `--failed-only`) 未中招, 但工具陷阱误导任何加 flag 的用户。SKILL.md 警告了这个 (Tier-1 须全扫), 但工具没修。
+
+**Fix**: line 685 改无条件 `all_diagnoses.append(asdict(diag))` (failed_only 已在 `:648` skip success → 到此都是 failed, 全 append 使 total=真实 failed count + no-hit failed 回到 results = Tier-2 深挖目标)。**Verified**: `--failed-only` 现输出 191; full-scan results 完全一致 (digest 数字不受影响)。
+
+**发现来源**: diagnose digest /stress 3-AI 审计 (codex Mode B unique catch, Phase 4 confirmed 178≠191)。
+
+**Chronicle**: 实验笔记 §261。
+
+---

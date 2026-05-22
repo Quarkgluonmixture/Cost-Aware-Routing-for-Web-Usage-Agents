@@ -4,6 +4,16 @@
 > **Run**: `B0_dom_classifieds_20260521_125142_282975264_567142_R9755` (Fire-6 first completed condition, manifest-bound authoritative)
 > **Condition**: `phase1_dom_router_0` | site classifieds | mode **dom** | model **B0 = Qwen3-VL-235B (proxy)**
 
+> ⚠️ **定位声明（2026-05-22 /stress 3-AI 审计后加）**：本 digest 是 **internal 诊断记录，NOT paper-grade 结论**。3-AI（Claude + codex + gemini）审计共识其结论**不可作 paper failure-analysis 证据**。已知 limitation：
+> - **in-sample**：self-evolving 规则（P15-P18）从 R9755 no-hit 拟合后在同一 R9755 评估，coverage 82→93% 是 post-hoc fit。（held-out R2987/R1821 已验证规则 FP=0%、不 overfit 到误报；但 coverage 数字仍 in-sample，真泛化需 held-out condition。）
+> - **presence ≠ causation**：191 failed 中仅 **35 no-hit** 经 sub-agent 逐个证因；**156 是规则命中**（agent-limit 类规则），未逐个证因。"100% agent-limit" 应读作"35 深挖 100% + 156 规则命中"。
+> - **单 condition + 无对照**：单 model×mode×site（B0 dom cls）。"DOM 表征天花板 / routing 论点 / P17-P18 换表征救不了"需 **held-out condition + som/vision 对照**才成立（当前均无）。
+> - **P16 under-match**：13 "纯视觉真盲区"含 task 84/106/208（"selfie"/"for its image"/"picture"），P16 正则窄漏 → 非真盲区。
+> - **task 210 confounder**：lamb→plant 是常识缺失非视觉，不支持 routing 论点。
+> - **per-rule 非互斥**：分布是 per-episode-per-rule 命中（561 总 hit vs 191 ep，2.29×），P6∩P14=62 → 非死因互斥划分，勿各行相加。
+>
+> **paper failure-analysis 待 Fire-6 多 condition + cross-mode 数据齐后重做，不复用本 digest 数字。**
+
 ---
 
 ## Verdict
@@ -11,11 +21,11 @@
 | 维度 | 结论 |
 |---|---|
 | Episodes | 224 (33 success / **191 failed**) — SR **14.7%** |
-| 三分类 | **agent-limit 100% · scaffold-bug 0 · benchmark-FP 0** |
+| 三分类 | **agent-limit**（35 深挖证因 100% + 156 规则命中）· scaffold/FP 0（仅 35 子集证因，见 ⚠️ 定位声明）|
 | Deterministic coverage | **93%** (178/191 failed 被 P-rule 命中) |
 | 纯视觉真盲区 | 13 (应 route 到 som/vision，非补 DOM 规则) |
 
-**R9755 的失败全部是真实模型能力局限，零框架 bug，零评测误判。** 这独立复现了 `fire_manifest.json` 声明的 `parse_error_rate=0 / benchmark_noise_rate=0`——Tier-2 对最难的 35 个 no-hit 盲区逐 episode 深挖，parse/tool_call 全 valid、finish-vs-reference 全真错，无一例外。
+**R9755 的失败指向真实模型能力局限**（35 no-hit 深挖子集 100% agent-limit + 156 规则命中 agent-limit 类规则）。在 35 深挖子集内零框架 bug、零评测误判——parse/tool_call 全 valid、finish-vs-reference 全真错；summary `benchmark_noise=0` 全 191 提供额外支撑（但 156 hit 子集未逐个 finish-vs-reference 复核，见 ⚠️ 定位声明）。
 
 > ⚠️ **presence ≠ causation**: 178 deterministic-covered = "命中 agent-limit 类 P-rule"（特征存在），不等于逐个证因。**0 scaffold / 0 FP 的强结论来自 35 no-hit 子集的逐 episode 深挖**（+ scaffold 规则 P8 在全 run 零命中）。33 个 success episode 也全部命中 P-rule（P6 27 / P14 15），证明这些规则是风险标记而非死因判定。
 
