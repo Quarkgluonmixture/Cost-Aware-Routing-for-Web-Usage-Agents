@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# P79 doc-numbering guard (pre-push) — block cross-session §/B-number collisions
+# in 实验笔记.md / master_bug_catalog.md before they reach the shared remote.
+#
+# Versioned under .githooks/ (so it travels with the repo across DGX/A100/quark/
+# Myriad clones). Activate per clone once via:
+#     bash scripts/maintenance/install_doc_guard_hooks.sh
+#
+# Fail-open: any setup problem (missing script / no python / offline fetch) must
+# NOT block a legitimate push — only a real number collision returns non-zero.
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+CHECK="$REPO_ROOT/scripts/maintenance/check_doc_numbering.py"
+[ -f "$CHECK" ] || exit 0
+
+if [ -n "${P79_PYTHON:-}" ] && [ -x "${P79_PYTHON}" ]; then
+  PYBIN="$P79_PYTHON"
+elif [ -x "$REPO_ROOT/.venv/bin/python3" ]; then
+  PYBIN="$REPO_ROOT/.venv/bin/python3"
+else
+  PYBIN="$(command -v python3 || true)"
+fi
+[ -n "$PYBIN" ] || exit 0
+
+REMOTE_NAME="${1:-origin}"
+echo "[doc-guard] checking §/B-number collisions vs ${REMOTE_NAME}/master ..."
+git fetch -q "$REMOTE_NAME" master 2>/dev/null \
+  || echo "[doc-guard] ⚠ fetch failed (offline?) — cross-session check degraded to local-only"
+
+"$PYBIN" "$CHECK" --remote-ref "${REMOTE_NAME}/master"
