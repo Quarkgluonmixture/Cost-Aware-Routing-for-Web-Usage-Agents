@@ -68,7 +68,9 @@ active:
 	@$(PYTHON) scripts/maintenance/active_processes.py
 
 # Pull P79 ntfy notifications into the session so they're readable without manual
-# copy-paste (the watchdogs only push; this polls the same topic back out).
+# copy-paste (the watchdogs only push; this polls them back out). Polls BOTH
+# active topics by default — p79-exp-dgx-spark (exp) + p79-claude (cln, delete/
+# cleanup) — merged by time so no channel is missed. (p79-jiaming retired.)
 # `make ntfy` = last 12h all · `make ntfy SINCE=1h` · `make ntfy ALERTS=1` (alerts-only).
 ntfy:
 	@bash scripts/maintenance/ntfy_read.sh $(or $(SINCE),12h) $(if $(ALERTS),alerts,all)
