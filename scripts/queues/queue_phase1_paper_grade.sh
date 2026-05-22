@@ -562,7 +562,7 @@ try:
     eps = int(json.load(open(summ)).get("episodes", 0))
 except Exception:
     sys.exit(1)
-sys.exit(0 if eps >= scored else 1)
+sys.exit(0 if eps == scored else 1)  # B-1834: EXACT (>= would skip an over-complete/contaminated bound run forever)
 PY
 }
 

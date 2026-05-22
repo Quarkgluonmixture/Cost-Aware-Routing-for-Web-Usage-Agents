@@ -7649,10 +7649,38 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 
 **Fix**: `main.py:3120-3130` 显式传 encoder — `_fmt = _ip.suffix.lstrip(".").upper(); if _fmt == "JPG": _fmt = "JPEG"; _img.save(str(_itmp), format=_fmt)`。免 `from PIL import Image` (3124 处作用域不一定可见, 用字符串推断)。atomic tmp+fsync+replace 不变。**Verified**: py_compile + 直接复现 (OLD no-format → `ValueError: unknown file extension: .tmp`; NEW `format=PNG` → 存盘 OK + os.replace + 重载 size/format 正确 + tmp 清理)。**Sibling 检查干净**: grep 全仓 `.tmp` save, 唯一 PIL save 是这一处; 其余 (`logger_v2` / `validate_fire_manifest` / `clear_tasks` / watchdog state / glm sidecars) 全是 JSON/text `write_text`, 不经 PIL format 推断, 不受影响。
 
-**Process note**: B-1828/B-1830 经 3-AI (Claude+codex+gemini) /stress 审过 deferred-save **逻辑** (estimand 正确性) 但**没人实跑一次 `_img.save("x.png.tmp")`** — PIL format-inference-from-extension 是运行期行为, 静态审计盲区。印证 [[feedback-spotcheck-length-claims]]: 运行期 artifact 行为必须实测。**try/except 把 P0 数据丢失淹成 5344 行 warning** — fail-soft 在"模型输入"对 (不该 crash run), 但"paper 证据链 artifact"语境应 per-run once ERROR 汇总, 不是 per-step warning (future hardening, 未做)。
+**Process note**: B-1828/B-1830 经 3-AI (Claude+codex+gemini) /stress 审过 deferred-save **逻辑** (estimand 正确性) 但**没人实跑一次 `_img.save("x.png.tmp")`** — PIL format-inference-from-extension 是运行期行为, 静态审计盲区。印证 [[feedback-spotcheck-length-claims]]: 运行期 artifact 行为必须实测。**try/except 把 P0 数据丢失淹成 5344 行 warning** — fail-soft 在"模型输入"对 (不该 crash run), 但"paper 证据链 artifact"语境应 per-run once ERROR 汇总, 不是 per-step warning ~~(future hardening, 未做)~~ **→ 已做 (P2-1b, §267)**。
 
-**Deployment**: A100 git pull → vision/phantom/reddit 后续 condition 新 runner 加载修复版 → 有图。R12265 (som cls, 在跑) 不 reload → 留零图; metrics valid 保留, 不 kill 不重跑 (避免浪费 valid metrics + B0 API $); 如需 exact-B0 som-cls figure 图, 后续 cheap targeted 几个 task 重跑即可 (不必杀整 run)。
+**/stress followup (3-AI on re-fire delta, §267)**: (P2-1a, codex F4 + gemini G2 2-AI) deferred-save loop fsync .tmp 文件但漏 **parent-dir fsync** (B-495 契约 `_save_artifacts:1615` 有) → os.replace 后补 `os.open(_ip.parent)`+fsync (原"B-495 preserved"注释半假已订正); (P2-1b, codex F4 加码) **artifact-count gate** — episode `_img_save_ok/fail` 计数 → som/vision 全失败 (fail>0,ok==0) `logger.error` once-per-episode (B-1832 总丢图签名, 替代静默 warning flood) + `episode_summary["artifact_image_saves_ok/fail"]` 字段; (P2-2, gemini G4 + Claude) `_fmt or "PNG"` 空后缀兜底。Verified: pytest runner smoke 7 passed。
 
-**Chronicle**: 实验笔记 §265。
+**Deployment**: A100 git pull → vision/phantom/reddit 后续 condition 新 runner 加载修复版 → 有图。R12265 (som cls, 在跑) 不 reload → 留零图; metrics valid 保留, 不 kill 不重跑 (避免浪费 valid metrics + B0 API $); 如需 exact-B0 som-cls figure 图, 后续 cheap targeted 几个 task 重跑即可 (不必杀整 run)。**后续**: R12265 随后 task 106 reset Page.goto timeout abort (B-1833), 留零图 + partial 105 ep; re-fire 时 B-1832 fix 首次实跑。
+
+**Chronicle**: 实验笔记 §265 + §266 + §267。
+
+---
+
+## B-1833 — cls docker transient navigation stall 复发 → B-1831 retry budget 3→5 (2026-05-22)
+
+**B-1833** (P1, substrate robustness, B-1831 budget tuning) 🛠️ **FIXED (pending /stress + commit)** — **claim**: cls VWA docker (`localhost:9980`) `env.reset` 导航偶发 `Page.goto Timeout 30000ms` transient stall 复发 — R21790 task 76 + R12265 task 106 各撞一次 → `PaperGradeAbortError` 杀整 cls som condition → orchestrator clean-abort 链 (≈50% abort 率/全 som run = 烧 B0 API $ on partial re-fire)。**git reflog 实证**: R21790/R12265 均 e00a54c (B-1831 741be6f 10:50 才落 A100, 两 run 07:14 前已起跑), 即两次 abort 都是 **0-retry 裸跑单次 timeout 一撞即死**, B-1831 从没实跑过。
+
+**根因非资源**: curl `localhost:9980` = 0.2s healthy between aborts; A100 idle (52G RAM free, loadavg 0.24)。→ transient docker hiccup, 非持续 outage 非内存压力。0-retry 下 single 30s stall 即 abort。
+
+**Fix (user 选 "加固 retry 再 re-fire")**: `vwa_wrapper.py:294 _max_reset_attempts 3 → 5` (initial + 4 retries; 5×30s=150s 覆盖 + 2/3/4/5s escalating backoff)。代码常量 3→5, 实跑层面 0→5 (前两次 fire pre-B-1831)。**fail-closed 不变** (全 5 次耗尽 → close+raise, persistent substrate failure 仍 fail-closed)。**per-attempt 30s 不动** (user A: 不放宽 VWA global goto timeout, 否则全局放宽掩盖真问题)。**Verified**: py_compile + 4 场景 telemetry trace (S1 first-success tc=0/retry=0/rec=False / S2 1-timeout-recover tc=1/retry=1/rec=True / **S3 前4timeout第5成功 tc=4/retry=4/rec=True = 新预算救回 (旧3会raise)** / S4 全5耗尽 tc=5 raise)。
+
+**/stress enhancement (3-AI on re-fire delta, §267)**: codex F3 + gemini G1 **2-AI 独立撞** — 单纯 bump budget 是**空心的**: retry loop 在同一 `ScriptBrowserEnv` 上重试, goto/observation timeout 常留 hung context (B-1581), same-instance retry 重撞同样 hang。**Fix (P1-1)**: except 块加 `self.close()` (force-close context_manager 即使 reset_finished=False, vwa_wrapper:1385-1392) + `self._lazy_init()` → 每次 retry fresh browser (mirror `environment.py:716` eval 路径)。**Fix (P1-3, codex F2)**: `except PlaywrightTimeoutError` 包整个 reset (含 observation/screenshot capture), 故 `reset_retry_reason` 改记真实异常 repr (非硬编码 "Page.goto")。Verified: retry close+reinit mock (closes=reinits=2 fresh browser + reason 真异常)。
+
+**预期**: re-fire 后 single transient stall 几乎必 recover (5 retry **+ 每次 fresh browser**), abort 率应从 0-retry 的 ~50% 大降。B-1831 + B-1833 retry (含 browser refresh) 首次实跑。
+
+**Chronicle**: 实验笔记 §266 + §267。
+
+---
+
+## B-1834 — manifest/resume `episodes >= scored` 非 `==` → over-complete run 静默 auto-bind/skip (2026-05-22, /stress codex F1)
+
+**B-1834** (P1, paper-grade integrity) 🛠️ **FIXED (pending commit)** — **claim** (codex F1, re-fire delta /stress): `validate_fire_manifest.py:134` bindable filter + `queue_phase1_paper_grade.sh:565` resume-skip 用 `episodes >= scored` 非 `== scored` → 一个 over-complete run (225/224, dedup-failure / double-run 污染) 会被 auto-bind + 永久 skip = paper-grade 分母腐蚀。与 stricter chain sentinel (`queue_chain.sh:490` exact) 不一致。今天 R12265=105 安全只是巧合 (< scored), 非 gate 严。
+
+**Fix**: (a) bindable filter (`validate:134`) + resume-skip (`queue:565`) 改 `== scored` (只精确 scored auto-bind/skip); (b) **ghost 检查 (`validate:123`) 保留 `>= exp`** — over-complete 非权威 run 更该当 ghost 抓, 改 `==` 会漏; (c) 新增 **over-complete LOUD 检测** (`> scored` → `over_complete` list → verdict fail-closed exit 1), 否则 `==` 改完后 over-complete unbound run 会被静默忽略 (既不 bindable 也不 flag); (d) bound 分支查 auth run 自身 over-complete (corrupted binding)。**Verified**: validate dry (== 正确把 som partial 105/75/0 排除为 not-bindable, dom 224 bound-clean) + 合成测试 scored=50 → 正确抓 3 个 over-complete (R12265 105 / R21790 75 / dom 224) exit 1。
+
+**Chronicle**: 实验笔记 §267。
 
 ---

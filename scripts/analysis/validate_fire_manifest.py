@@ -101,6 +101,7 @@ def main() -> int:
     ghosts: list[str] = []
     unbound_singletons: dict[str, str] = {}
     unbound_ambiguous: list[str] = []
+    over_complete: list[str] = []  # B-1834: episodes > scored = contamination
     ok_bound = 0
 
     for site in SITES:
@@ -114,6 +115,14 @@ def main() -> int:
                     auth = conditions[key]["run_id"]
                     cid = condition_id_for_mode(mode)
                     exp = int(scored.get(site, 10**9))
+                    # B-1834 (3-AI /stress 2026-05-22, codex F1): an authoritative
+                    # binding whose run is OVER-complete (episodes > scored) is a
+                    # corrupted binding (dedup failure / double-run) → fail-closed.
+                    _auth_eps = episodes_in(RESULTS_ROOT / auth / cid / "condition_summary_v2.json")
+                    if _auth_eps > exp:
+                        over_complete.append(
+                            f"{key}: authoritative '{auth}' has {_auth_eps} ep > scored {exp} (corrupted binding)"
+                        )
                     # Ghost = a non-authoritative run that is COMPLETE (episodes >=
                     # scored) → real double-count risk. A partial/aborted extra (e.g.
                     # an interrupted re-fire) is NOT a ghost: it's below the scored
@@ -129,10 +138,22 @@ def main() -> int:
                     else:
                         ok_bound += 1
                 else:
-                    # Not yet bound. A single paper-grade run is bindable; >1 = ambiguous ghost.
+                    # Not yet bound. A run is bindable iff EXACTLY scored. B-1834
+                    # (3-AI /stress 2026-05-22, codex F1): the prior `>= scored`
+                    # would auto-bind an over-complete (e.g. 225/224, dedup-failure
+                    # contaminated) run and then skip it forever = paper-grade
+                    # denominator corruption. Require `== scored`; flag `> scored`
+                    # fail-closed (never silently bind OR silently ignore it).
+                    _cid_u = condition_id_for_mode(mode)
+                    _exp_u = int(scored.get(site, 10**9))
                     valid = [r for r in runs
-                             if episodes_in(RESULTS_ROOT / r / condition_id_for_mode(mode) / "condition_summary_v2.json")
-                             >= int(scored.get(site, 10**9))]
+                             if episodes_in(RESULTS_ROOT / r / _cid_u / "condition_summary_v2.json") == _exp_u]
+                    for r in runs:
+                        _e_u = episodes_in(RESULTS_ROOT / r / _cid_u / "condition_summary_v2.json")
+                        if _e_u > _exp_u:
+                            over_complete.append(
+                                f"{key}: unbound '{r}' has {_e_u} ep > scored {_exp_u} (contamination — never auto-bind)"
+                            )
                     if len(valid) == 1:
                         unbound_singletons[key] = valid[0]
                     elif len(valid) > 1:
@@ -205,6 +226,15 @@ def main() -> int:
         print(f"[validate_fire_manifest] ⚠️  unbound AMBIGUOUS (multi-run): {len(unbound_ambiguous)}")
         for a in unbound_ambiguous:
             print(f"  {a}")
+    if over_complete:
+        print(f"[validate_fire_manifest][FAIL] {len(over_complete)} OVER-COMPLETE run(s) "
+              "(episodes > scored) — contamination, must halt (B-1834):", file=sys.stderr)
+        for o in over_complete:
+            print(f"  ✗ {o}", file=sys.stderr)
+        print("  Fix: a run with MORE than scored episodes = dedup failure / double-run. "
+              "Investigate (scripts/maintenance/clear_tasks.py the duplicate task data) "
+              "before binding/aggregating.", file=sys.stderr)
+        return 1
     if ghosts:
         print(f"[validate_fire_manifest][FAIL] {len(ghosts)} GHOST run(s) — aggregation must halt:", file=sys.stderr)
         for g in ghosts:

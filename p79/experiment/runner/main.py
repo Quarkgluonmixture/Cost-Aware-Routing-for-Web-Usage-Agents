@@ -2461,6 +2461,14 @@ class ExperimentRunner:
         step_idx = 0
         consecutive_busy_waits = 0
         total_busy_waits = 0
+        # B-1832 P2-1b artifact gate (3-AI /stress 2026-05-22, codex F4): per-episode
+        # image-save outcome counters. The B-1828/B-1830 deferred save (post-timing)
+        # increments these; a som/vision episode that ATTEMPTED saves but landed 0
+        # (fail>0, ok==0) is the B-1832 total-loss signature → loud once-per-episode
+        # ERROR after the step loop (replaces the silent per-step warning flood that
+        # let B-1832 run 105 ep with zero artifacts undetected).
+        _img_save_ok = 0
+        _img_save_fail = 0
         # Track total wall time spent in free busy-page waits (RU-4): these
         # don't consume a step but still count toward end-to-end episode time.
         busy_wait_total_ms = 0.0
@@ -3132,6 +3140,13 @@ class ExperimentRunner:
                     _fmt = _ip.suffix.lstrip(".").upper()
                     if _fmt == "JPG":
                         _fmt = "JPEG"
+                    if not _fmt:
+                        # B-1832 P2-2 (3-AI /stress, gemini G4 + Claude F2): an
+                        # extensionless path would give _fmt="" → save(format="")
+                        # → ValueError → same silent artifact loss as B-1832, just a
+                        # different trigger. Default to PNG (all VWA artifact paths
+                        # are .png anyway).
+                        _fmt = "PNG"
                     _img.save(str(_itmp), format=_fmt)
                     _ifd = os.open(str(_itmp), os.O_RDONLY)
                     try:
@@ -3139,7 +3154,23 @@ class ExperimentRunner:
                     finally:
                         os.close(_ifd)
                     os.replace(str(_itmp), str(_ip))
+                    # B-1832 P2-1a (3-AI /stress, gemini G2 + codex F4): fsync the
+                    # PARENT DIR after os.replace so the rename (name→inode link)
+                    # is durable — the B-495 contract _save_artifacts honors
+                    # (main.py:1615-1622) but this deferred loop had dropped, so the
+                    # earlier "B-495 durability preserved" comment was only half-true
+                    # (file synced, directory entry not).
+                    try:
+                        _pfd = os.open(str(_ip.parent), os.O_RDONLY)
+                        try:
+                            os.fsync(_pfd)
+                        finally:
+                            os.close(_pfd)
+                    except OSError:
+                        pass  # dir fsync best-effort (matches _save_artifacts)
+                    _img_save_ok += 1  # B-1832 P2-1b artifact gate
                 except Exception:
+                    _img_save_fail += 1  # B-1832 P2-1b artifact gate
                     logger.warning("B-1828/B-1830 deferred image save failed: %s", _path, exc_info=True)
 
             checklist_snapshot = None
@@ -3976,6 +4007,20 @@ class ExperimentRunner:
         episode_summary["agent_action_step_count"] = agent_action_count
         episode_summary["valid_action_step_count"] = valid_action_count
         episode_summary["model_call_attempt_count"] = len(step_records)
+        # B-1832 P2-1b artifact gate: record per-episode image-save outcomes +
+        # loud once-per-episode ERROR on the total-loss signature (attempts>0, all
+        # failed). dom/phantom never attempt image saves (counters stay 0 → no
+        # false alarm); som/vision do. Condition-level paper-grade gate consumes
+        # these fields downstream (queue sentinel artifact check).
+        episode_summary["artifact_image_saves_ok"] = _img_save_ok
+        episode_summary["artifact_image_saves_fail"] = _img_save_fail
+        if _img_save_fail > 0 and _img_save_ok == 0:
+            logger.error(
+                "B-1832 ARTIFACT GATE: episode task=%s mode=%s saved 0/%d images "
+                "(ALL deferred saves failed) — visual artifacts lost this episode; "
+                "investigate PIL/format/path BEFORE trusting this condition's gallery.",
+                getattr(task, "task_id", "?"), condition.observation_mode, _img_save_fail,
+            )
         episode_summary["runner_iteration_count"] = len(step_records) + total_busy_waits
         episode_summary["parse_error_injected_wait_count"] = total_parse_errors
         # Three-column cost (#8, see metrics.compute_three_column_cost). billed =

@@ -4,11 +4,11 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-05-21  ·  **Catalog**: master_bug_catalog.md (7530 lines, 104 sections)  ·  **B-numbers**: 756 canonical entries, 1192 referenced, range B-1~B-1822
+**Generated**: 2026-05-22  ·  **Catalog**: master_bug_catalog.md (7686 lines, 113 sections)  ·  **B-numbers**: 770 canonical entries, 1204 referenced, range B-1~B-1834
 
 ## Health (lint)
 
-- monotonicity inversions (canonical entries): **142** total (142 grandfathered pre-2026-05-21, **0 new**)
+- monotonicity inversions (canonical entries): **143** total (143 grandfathered pre-2026-05-21, **0 new**)
 - duplicate bold defs: **7** (summary-table echo + detail-list; not bugs)
 - number gaps: **630** — B-100–B-101, B-316–B-319, B-667–B-671, B-685–B-689, B-711, B-713–B-715, B-768–B-780, B-912–B-915, B-919, B-922–B-940, B-958–B-989, B-996–B-999, B-1022–B-1050, B-1065–B-1100, B-1102–B-1110, B-1112–B-1200, B-1209, B-1213–B-1218, B-1220–B-1229, B-1238–B-1259, B-1277–B-1279, B-1297–B-1300, B-1313–B-1319, B-1321–B-1379, B-1381–B-1399, B-1416–B-1419, B-1421–B-1423, B-1425–B-1426, B-1429–B-1430, B-1433–B-1499, B-1513–B-1549, B-1562–B-1569, B-1580, B-1606–B-1610, B-1612–B-1619, B-1632–B-1639, B-1647–B-1649, B-1656–B-1668, B-1680–B-1701, B-1703–B-1761, B-1795
 
@@ -80,3 +80,12 @@
 | L7475 | B-1812, B-1813 — router pipeline pre-fire /stress 簇 γ: train→serve … | B-1812–B-1813 |
 | L7494 | B-1814, B-1815, B-1816 — router pipeline pre-fire /stress 簇 δ: τ ob… | B-1814–B-1816 |
 | L7512 | B-1817, B-1819, B-1820 — router pipeline pre-fire /stress standalon… | B-1817, B-1819–B-1821 |
+| L7532 | B-1822 — Fire-6 condition-boundary flock fd-inheritance self-collis… | B-907, B-1822 |
+| L7556 | B-1823, B-1824, B-1825 — Fire-6 relaunch hardening (/stress 3-AI, 2… | B-1823–B-1827 |
+| L7576 | B-1828 — phantom latency estimand: 画框 instrumentation 计入 obs_prepar… | B-1828 |
+| L7606 | B-1829 — diag_pattern_match `--failed-only` denominator bug (2026-0… | B-1829 |
+| L7618 | B-1830 — vision raw-screenshot save in latency window (_save_artifa… | B-1830 |
+| L7632 | B-1831 — env.reset Page.goto transient-timeout retry (2026-05-22, F… | B-1831 |
+| L7644 | B-1832 — deferred image save `.tmp` 后缀 → PIL KeyError → som/vision … | B-1832 |
+| L7662 | B-1833 — cls docker transient navigation stall 复发 → B-1831 retry bu… | B-1833 |
+| L7678 | B-1834 — manifest/resume `episodes >= scored` 非 `==` → over-complet… | B-1834 |

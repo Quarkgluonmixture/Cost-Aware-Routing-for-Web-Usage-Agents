@@ -279,11 +279,23 @@ class VWAWrapper:
         # close+raise. All retries exhausted → close + raise (PaperGradeAbort
         # upstream, as before). Does NOT change the VWA global goto timeout
         # (still 30s per attempt).
+        #
+        # B-1833 (2026-05-22): budget bumped 3 → 5 attempts after the transient
+        # stall RECURRED — R21790 task 76 + R12265 task 106 both exhausted the
+        # 3×30s = 90s window and PaperGradeAborted the whole cls som condition
+        # (≈50% abort rate per full som run = burning B0 API $ on partial re-fires).
+        # The stall is TRANSIENT not persistent: curl localhost:9980 = 0.2s healthy
+        # between aborts, A100 idle with 52G RAM free → not resource pressure. More
+        # attempts (5×30s = 150s + escalating 2/3/4/5s backoff) absorb longer
+        # transient stalls WITHOUT weakening the persistent-failure fail-closed
+        # (all 5 exhausted → close+raise as before). Per-attempt 30s unchanged
+        # (user A: do not widen the VWA global goto timeout).
         import time as _time
-        _max_reset_attempts = 3  # initial attempt + 2 retries
+        _max_reset_attempts = 5  # initial attempt + 4 retries (B-1833 budget bump)
         _reset_timeout_count = 0
         _reset_attempt_latencies_ms: list = []
         _reset_recovered = False
+        _reset_retry_reason = None
         obs = info = None
         for _attempt in range(_max_reset_attempts):
             _t0 = _time.monotonic()
@@ -295,13 +307,37 @@ class VWAWrapper:
             except PlaywrightTimeoutError as _goto_to:
                 _reset_timeout_count += 1
                 _reset_attempt_latencies_ms.append((_time.monotonic() - _t0) * 1000.0)
+                # B-1833 P1-3 (3-AI /stress 2026-05-22, codex F2): record the ACTUAL
+                # timeout site, not a hardcoded "Page.goto". This except wraps the WHOLE
+                # self._env.reset() (setup + page.goto + first observation/screenshot
+                # capture), so a som/vision first-frame screenshot/CDP timeout is also
+                # caught here — labeling every catch "Page.goto" was false telemetry.
+                _reset_retry_reason = (
+                    f"{type(_goto_to).__name__}: "
+                    f"{(str(_goto_to).splitlines() or [''])[0][:140]}"
+                )
                 if _attempt < _max_reset_attempts - 1:
                     logger.warning(
-                        "B-1831: env.reset Page.goto TimeoutError (attempt %d/%d) "
-                        "— transient pre-episode retry after backoff. %s",
+                        "B-1831/B-1833: env.reset PlaywrightTimeoutError (attempt %d/%d) "
+                        "— transient pre-episode retry after fresh-browser rebuild + backoff. %s",
                         _attempt + 1, _max_reset_attempts, _goto_to,
                     )
-                    _time.sleep(2.0 + _attempt)  # 2s, then 3s backoff
+                    _time.sleep(2.0 + _attempt)  # 2s, 3s, 4s, 5s backoff
+                    # B-1833 P1-1 (3-AI /stress, gemini G1 + codex F3): refresh the
+                    # browser between retries. self.close() force-closes context_manager
+                    # even when reset_finished=False (vwa_wrapper.py:1385-1392) — a
+                    # timed-out reset leaves a half-built env whose Playwright context /
+                    # websocket can be hung (B-1581), so a same-instance retry re-hits it
+                    # (hollow) AND leaks the context. Each retry now gets a fresh browser,
+                    # mirroring environment.py eval path's per-retry maximally-clean
+                    # context. Without this the B-1833 budget bump is a hollow number.
+                    try:
+                        self.close()
+                    except Exception:
+                        logger.warning(
+                            "B-1833: env close before retry-rebuild failed", exc_info=True
+                        )
+                    self._lazy_init()  # close() nulled self._env → rebuild fresh
                     continue
                 # All retries exhausted → real substrate failure, fail-closed.
                 self.close()
@@ -319,7 +355,7 @@ class VWAWrapper:
             "reset_goto_retry_count": max(0, len(_reset_attempt_latencies_ms) - 1),
             "reset_goto_recovered": _reset_recovered,
             "reset_goto_latency_ms_per_attempt": _reset_attempt_latencies_ms,
-            "reset_retry_reason": "Page.goto TimeoutError" if _reset_timeout_count else None,
+            "reset_retry_reason": _reset_retry_reason,  # B-1833 P1-3: real exception, not hardcoded
         }
 
         # Auto-accept confirm/alert dialogs (e.g. Classifieds delete operations use
