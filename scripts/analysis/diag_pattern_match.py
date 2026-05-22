@@ -32,6 +32,22 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 # ---------------------------------------------------------------------------
+# Ruleset version — discover-then-freeze protocol (see diag SKILL.md
+# "跨 condition / cross-mode 工作协议")
+# ---------------------------------------------------------------------------
+# Bump on ANY change to ALL_RULES: a new check_pN OR a regex/threshold edit
+# inside an existing rule. `rules_applied` (in the output JSON) only records the
+# rule-NAME set, so a P16 regex fix is invisible there — this version string
+# makes such content changes explicit. After bumping, re-scan ALL existing
+# conditions (diag_autorun.sh) so every per-condition digest carries the SAME
+# ruleset_version BEFORE any cross-mode comparison.
+#
+# Current basis: P1-P18 discovered from B0 dom classifieds (R9755). The mode
+# gates (`if mode != "dom"` in check_p6 / p15 / p16) are themselves provisional
+# discover-products — NOT yet validated against som / vision / phantom modes.
+RULESET_VERSION = "1-dom"
+
+# ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
 
@@ -701,6 +717,7 @@ def scan_episodes(
 
     result = {
         "run_id": run_id,
+        "ruleset_version": RULESET_VERSION,
         "scan_time": datetime.now(timezone.utc).isoformat(),
         "rules_applied": sorted(rules_to_run.keys()),
         "total_episodes": total,
