@@ -119,6 +119,23 @@ init_paper_grade_env "${REPO_DIR}"
 MODE="${1:-dry-run}"
 SITE_FILTER="${2:-all}"
 
+# B-1830 followup (2026-05-22, user directive): manifest auto-bind FAIL-CLOSED halt
+# gate. The watchdog's in-pipeline _auto_bind_manifest drops this marker on
+# ghost / ambiguous / write-error. A corrupt or ambiguous manifest means the
+# aggregator cannot bind authoritative runs (the paper evidence chain) → refuse to
+# relaunch (a fire would pile MORE conditions on top of an unresolvable manifest).
+# dry-run (plan-only) is allowed so the operator can still inspect; launch is blocked.
+_manifest_halt="${REPO_DIR}/.locks/manifest_bind_halt.marker"
+if [ "${MODE}" = "launch" ] && [ -f "${_manifest_halt}" ]; then
+  echo "[queue_phase1_paper_grade] FATAL: manifest auto-bind halt marker present:" >&2
+  echo "  ${_manifest_halt}" >&2
+  echo "  The watchdog's in-pipeline manifest bind hit ghost / ambiguous / write-error." >&2
+  echo "  Resolve: 'python3 scripts/analysis/validate_fire_manifest.py' to inspect," >&2
+  echo "  bind the authoritative run manually (or clear the ghost), then" >&2
+  echo "  'rm ${_manifest_halt}' to re-enable relaunch." >&2
+  exit 1
+fi
+
 log() { echo "[phase1 $(date '+%H:%M:%S')] $*"; }
 fail() { log "FAIL: $*"; exit 1; }
 

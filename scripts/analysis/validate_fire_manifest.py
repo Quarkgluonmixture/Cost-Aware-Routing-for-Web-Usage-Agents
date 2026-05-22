@@ -30,6 +30,7 @@ import json
 import os
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -77,6 +78,13 @@ def main() -> int:
     ap.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     ap.add_argument("--populate", action="store_true",
                     help="print manifest entries for unbound conditions with exactly 1 paper-grade run")
+    ap.add_argument("--apply", action="store_true",
+                    help="with --populate: actually WRITE the unbound unambiguous bindings to the "
+                         "manifest (atomic + flock). NARROW semantics — only adds a condition that "
+                         "is unbound AND has exactly ONE complete valid run. NEVER overwrites an "
+                         "existing binding, never glob-latest, never picks by SR/mtime, never binds "
+                         "partial/ambiguous/wrong-scored. Ambiguous/ghost/write-error → fail-closed "
+                         "(exit 1). For the in-pipeline watchdog auto-bind hook (B-1830 followup).")
     args = ap.parse_args()
 
     man_path = Path(args.manifest)
@@ -145,6 +153,50 @@ def main() -> int:
             print("\n# ⚠️  Ambiguous (multiple complete runs, manual pick required):", file=sys.stderr)
             for a in unbound_ambiguous:
                 print(f"#   {a}", file=sys.stderr)
+
+        # B-1830 followup (2026-05-22, user directive): --apply WRITES the
+        # unbound + unambiguous bindings (narrow semantics). flock + atomic
+        # replace; re-read under lock to avoid lost-update. NEVER overwrites an
+        # existing binding (idempotent skip). Ambiguous (unbound_ambiguous) +
+        # ghosts are NOT touched here — they fall through to the fail-closed
+        # verdict below (exit 1). Write error → fail-closed (exit 1) too.
+        if args.apply:
+            if not unbound_singletons:
+                print("[validate_fire_manifest][APPLY] nothing to bind (0 unbound unambiguous).")
+            else:
+                import fcntl
+                _lockp = man_path.with_suffix(".applylock")
+                try:
+                    with open(_lockp, "w") as _lk:
+                        fcntl.flock(_lk, fcntl.LOCK_EX)
+                        _m = json.loads(man_path.read_text())  # re-read under lock (lost-update guard)
+                        _conds = _m.setdefault("conditions", {})
+                        _added = []
+                        for key, run_id in unbound_singletons.items():
+                            if key in _conds:
+                                continue  # bound since discovery → idempotent, NEVER overwrite
+                            mode = key.split("|")[2]
+                            _conds[key] = {
+                                "run_id": run_id,
+                                "condition_id": condition_id_for_mode(mode),
+                                "episodes": episodes_in(RESULTS_ROOT / run_id / condition_id_for_mode(mode) / "condition_summary_v2.json"),
+                                "bound_date": datetime.now().strftime("%Y-%m-%d"),
+                                "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)",
+                            }
+                            _added.append(f"{key} → {run_id}")
+                        _tmp = man_path.with_suffix(".json.tmp")
+                        _tmp.write_text(json.dumps(_m, ensure_ascii=False, indent=1) + "\n")
+                        os.replace(str(_tmp), str(man_path))
+                    for a in _added:
+                        print(f"[validate_fire_manifest][APPLY] bound {a}")
+                    # Reflect writes into in-memory state so the verdict below is accurate.
+                    for key in list(unbound_singletons):
+                        conditions.setdefault(key, _conds.get(key, {}))
+                    ok_bound += len(unbound_singletons)
+                    unbound_singletons = {}
+                except Exception as e:
+                    print(f"[validate_fire_manifest][FAIL] --apply write error: {e}", file=sys.stderr)
+                    return 1
 
     # Verdict
     print(f"[validate_fire_manifest] bound-clean conditions: {ok_bound}")

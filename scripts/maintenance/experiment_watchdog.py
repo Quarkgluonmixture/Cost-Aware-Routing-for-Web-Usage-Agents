@@ -918,6 +918,71 @@ def _annotate_screenshots(run_dir: Path, condition: Optional[str] = None) -> str
         return f"error: {exc}"
 
 
+def _auto_bind_manifest(ntfy_topic: Optional[str] = None) -> str:
+    """B-1830 followup (2026-05-22, user directive): in-pipeline manifest auto-bind
+    after a condition completes. FAIL-CLOSED, NOT best-effort — the manifest is the
+    paper evidence chain, not a log.
+
+    Runs `validate_fire_manifest.py --populate --apply` which adds ONLY unbound +
+    unambiguous bindings (exactly-one-complete-valid; never overwrites, never
+    glob-latest, never binds partial/ambiguous). On exit 1 (ghost / ambiguous /
+    write-error) we write a halt marker that queue_phase1_paper_grade.sh preflight
+    checks → RESUME_MISSING relaunch refuses to start (no silent continue) + ntfy
+    urgent. Retries once on transient lock/write failure before halting.
+    """
+    from datetime import datetime as _dt
+    scripts_dir = Path(__file__).resolve().parent.parent
+    vfm = scripts_dir / "analysis" / "validate_fire_manifest.py"
+    if not vfm.exists():
+        return "manifest:script-missing"
+    halt_marker = scripts_dir.parent / ".locks" / "manifest_bind_halt.marker"
+    for attempt in (1, 2):  # retry once on transient lock/write failure
+        try:
+            r = subprocess.run(
+                [sys.executable, str(vfm), "--populate", "--apply"],
+                capture_output=True, text=True, timeout=120,
+            )
+            if r.returncode == 0:
+                print(f"[watchdog][MANIFEST-BIND] ok: {(r.stdout or '').strip()[-200:]}")
+                return "manifest:bound"
+            if attempt == 1:
+                print("[watchdog][MANIFEST-BIND] rc=1 → retry once before fail-closed")
+                continue
+            # exit 1 after retry = ghost / ambiguous / write-error → FAIL-CLOSED
+            msg = ((r.stderr or "") + (r.stdout or ""))[-400:]
+            print(f"[watchdog][MANIFEST-BIND][FAIL-CLOSED] {msg}")
+            try:
+                halt_marker.parent.mkdir(parents=True, exist_ok=True)
+                halt_marker.write_text(
+                    f"manifest auto-bind FAIL-CLOSED {_dt.now().isoformat()}\n{msg}\n"
+                )
+            except Exception:
+                pass
+            if ntfy_topic:
+                _post_ntfy(
+                    ntfy_topic, "P79 MANIFEST-BIND FAIL-CLOSED",
+                    "validate_fire_manifest --apply exit 1 (ghost / ambiguous / write-error). "
+                    "RESUME_MISSING relaunch HALTED until resolved (.locks/manifest_bind_halt.marker). "
+                    f"Resolve: bind manually or clear ghost.\n{msg[-200:]}",
+                    priority="urgent",
+                )
+            return "manifest:FAIL-CLOSED-halt"
+        except Exception as exc:
+            if attempt == 1:
+                print(f"[watchdog][MANIFEST-BIND] attempt 1 exc ({exc}) → retry")
+                continue
+            print(f"[watchdog][MANIFEST-BIND][FAIL-CLOSED] exception: {exc}")
+            try:
+                halt_marker.parent.mkdir(parents=True, exist_ok=True)
+                halt_marker.write_text(f"manifest auto-bind exception {_dt.now().isoformat()}: {exc}\n")
+            except Exception:
+                pass
+            if ntfy_topic:
+                _post_ntfy(ntfy_topic, "P79 MANIFEST-BIND error", str(exc), priority="high")
+            return "manifest:error-halt"
+    return "manifest:unknown"
+
+
 def _run_post_condition_analysis(run_dir: Path) -> str:
     """Run analysis pipeline after a condition completes (best-effort). Returns status."""
     # __file__ lives in scripts/maintenance/; analysis scripts moved to
@@ -2558,6 +2623,14 @@ def main() -> int:
 
             # Auto-run analysis pipeline after condition completion
             analysis_status = _run_post_condition_analysis(run_dir)
+            # B-1830 followup (2026-05-22, user directive): in-pipeline manifest
+            # auto-bind (FAIL-CLOSED). validate_fire_manifest --apply adds only
+            # unbound+unambiguous bindings; on ghost/ambiguous/write-error it drops
+            # .locks/manifest_bind_halt.marker (queue_phase1_paper_grade.sh preflight
+            # refuses to relaunch) + ntfy urgent → NO silent continue. Manifest is
+            # the paper evidence chain.
+            manifest_bind_status = _auto_bind_manifest(args.ntfy_topic)
+            print(f"[watchdog][MANIFEST-BIND] status={manifest_bind_status}")
             # B-1828 part A (2026-05-22): on-demand by default (see status-cycle
             # block rationale). Set P79_WATCHDOG_GALLERY=1 to restore auto-refresh.
             if os.environ.get("P79_WATCHDOG_GALLERY", "0") == "1":
