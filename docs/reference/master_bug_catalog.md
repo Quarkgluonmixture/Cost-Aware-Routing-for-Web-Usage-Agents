@@ -7572,3 +7572,33 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §258.
 
 ---
+
+## B-1828 — phantom latency estimand: 画框 instrumentation 计入 obs_prepare (2026-05-22, gallery 调查 part B)
+
+> Gallery 截图显示调查 (实验笔记 §260 part A) 的 part-B follow-up。User estimand 原则 (本次确立, [[project-cost-latency-canonical-estimand]] 延伸): 每个 mode 的 latency/cost 应反映该 mode 的**生产部署本质** — dom 不需图 (0 成本) / vision 必须图 (算) / som 截图+画 SoM box (算) / **phantom 系列 model 不收图 → 无图片成本**。研究者为 inspection 做的额外画框/标注属 instrumentation,**不该计入** latency canonical。
+
+**B-1828** (P1, estimand accuracy) ⚠️ IDENTIFIED (pre-data, fix 待 user 决策) — **claim**: `phantom_som` / `phantom_text` baseline 的 `latency_ms.obs_prepare` 含 SoM bounding-box 绘制 + PNG 存盘 (`som/step_XXX_som.png`) 时间,而这两个 mode 本质 model 不收图 (`marked_image=None`)。画框纯属 artifact-for-inspection,违反 estimand 原则 → phantom latency canonical 被高估。
+
+**Root cause**: `prepare_observation_for_mode` (`som.py:345`) 的 phantom 分支对 `phantom_som`/`phantom_text` 调 `_build_som_result` (`som.py:349`),后者在 `obs.image` 非空时无条件画框 + `drawn.save()` 存盘 (`som.py:437-456`,注释 "keep artifact for inspection")。该调用在 runner `obs_prepare` 计时窗内: `main.py:2547 obs_prepare_start = time.time()` → `:2548 _size_probe = prepare_observation_for_mode(obs, observation_mode, …)` → `:2610 obs_prepare_ms = now − obs_prepare_start`。phantom obs 构造与 som **identical** (`som.py:347` 注释 "Obs construction identical — only system prompt differs (handled in agent)") → `obs.image` 非空 → `som.py:437 if image is not None and bbox_map` 真触发画框 (非跳过)。
+
+**Evidence**:
+- 代码: phantom 分支 → `_build_som_result` 画框,位于 `obs_prepare` 计时窗 (行号链如上)。
+- 实测旁证: som baseline `obs_prepare=143ms` (画框) vs dom baseline `0.077ms` (不画框) — R11558 som / R9755 dom step record `latency_ms.obs_prepare`。phantom obs 构造 == som → phantom obs_prepare 应 ≈ 143ms 量级 (画框为主; `som_text` = `build_som_text_from_obs_text` 构建仅几 ms)。
+- `phantom_prompt` **不受影响** (`som.py:357` 单独分支,不画框,同 dom)。受影响 = `phantom_som` + `phantom_text` (3 phantom arms 中的 2 个)。
+- pre-data: 当前 results **0 个 phantom run** (Phase 1a 在 dom→som 阶段),污染**未进任何已发布数据**。
+
+**量级 + 方向**: ~140ms/step 画框成本被错误计入,占 step total latency (~11000ms, env_step ~7600ms 主导) 约 **1.3%**。绝对影响小,但**方向保守**: 修复后 phantom_som latency 降低 → 与 full SoM 的 gap 拉大 → paper §1 4-fold drop-in property (b) "latency ~50% lower than full SoM (cls 4×)" claim **更强**。
+
+**Cost 维度 (gallery 调查 part C, 2026-05-22)**: 画框污染**不只 latency**——`overhead_cost_per_ms=5.6e-8` (`exp_v2_base.yaml:68`) 让 `obs_prepare_ms` 经 `main.py:3047-3048` 折进 `cost_usd.total` (实测 som `obs_prepare` cost=8.01e-6 USD/step, 占 total ~0.18%)。**但 paper §1 cost canonical 不受影响**: Protocol Reset #8 (`metrics.py:452-474`) 的 billed/canonical/wasted 三列全基于 `cost_usd.model` (token billed), 不含 obs_prepare overhead。故 B-1828 净影响 = **latency canonical (主) + `cost.total` 字段 ~0.18% (次, 不进 paper canonical)**。
+
+**Paper impact**: paper §1 P-SoM HERO (4-fold drop-in (b) latency) + "phantom routing space 3 arms 共享 4-fold property" — 3 arms 里 som/text 的 latency 被高估、prompt 没有 → arm 间不对称。estimand 须修正以保证 latency 数字精确 + 符合 cost/latency canonical ([[project-cost-latency-canonical-estimand]])。
+
+**关联调查 (gallery 调查 part D, 2026-05-22) — ❌ NOT_A_BUG (实证排除)**: 担心 B0 som 图成本漏算 → 实证**排除**。B0 cost = `input_tokens × price` (`metrics.py:49`; `proxy_cost=None`, proxy 不直接给 usd);`input_tokens` 取自 proxy `usage.inputTokens` (Bedrock 透传, **含图 token** per Anthropic 标准计费)。**实证**: B0 som input 中位 4300 vs dom 3221, **差 1079 ≈ 一张 1280×720 图 token (1228 = Anthropic w×h/750)** → 文本部分 som([SOM_MARKS]) ≈ dom(AXTree), 差额只能是图 → 图 token 确在 proxy `input_tokens` 里 → cost 含图成本, **无漏算**。**遗留限制 (非 bug, 已 disclose)**: B0 不**拆** image/text token (`image_token_count_method` 仅 B1/B2 本地 `exact_id_match`, B0 `input_image=null`), som 图成本不可从 breakdown 单独审计;B-400 已用 `image_payload_bytes_total` 补充表征 B0 图 egress。cross-baseline 可审计性不对称 (B0 黑盒 vs B1/B2 透明), 不影响 cost 数字正确性。**附带观察**: 历史 B0_dom* run (含 router-mode + archive) 有 ~32% step 带图 (router escalation 发图);paper-grade R9755 纯 dom = 0% 有图 (clean)。
+
+**Fix 方向 (未实施)**: 拆分 `_build_som_result` 的本质成本 (`som_text` 构建 = model 收文本,计入) vs instrumentation (bbox 收集 + 画框 + 存盘)。phantom 系列 (`marked_image=None`) 只计入 `som_text`,画框移出计时窗 (离线 annotate 重画) 或单独计时扣除 (复用 `canonical = minus_retry − busy_wait − recovered` 框架,新增 `minus_instrumentation` 项,`metrics.py:920`)。**som baseline 的画框是本质** (model 收带框图) → **保持计入**,不动。
+
+**Status**: ⚠️ IDENTIFIED — pre-data,fix 待 user 决策。gallery part A (som_image 显示 gap) 为同一调查的独立 follow-up。
+
+**Chronicle**: 实验笔记 §260。
+
+---
