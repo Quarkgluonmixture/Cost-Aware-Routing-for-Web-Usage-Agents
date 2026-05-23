@@ -55,6 +55,12 @@ ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/an
 
 **⑤ WHY (按需读)**: §265 (B-1832 .tmp) / §266 (substrate + 版本误判) / §267 (3-AI /stress 6 修) / §268 (B-1835 os shadow) / **§269 (B-1836 eval-timeout 统一根因 + B-1803 RCA 修正)** / §271 (Gate 1.5 pre-fire /stress, B-1837) + master_bug_catalog B-1832~B-1837。
 
+**⚙️ reboot A100 后服务恢复 checklist (reusable — Gate 3 fire 2026-05-23 踩坑)**: reboot 修 NVML/退化是一举两得, 但 reboot 后**2 个服务必须手动恢复**, 否则 paper-grade fire preflight **Gate 4 fail-closed 拦** (`homepage endpoint not reachable`):
+> 1. **`vwa-reddit`** (docker restart policy = `no`, 不自动起): `ssh condense-a100 'docker start vwa-reddit'`
+> 2. **homepage :4399** (是 **flask 进程不是 docker 容器**, reboot 杀进程): `ssh condense-a100 'cd /home/ubuntu/workspace/p79/external/visualwebarena/environment_docker/webarena-homepage && setsid nohup /home/ubuntu/workspace/p79/.venv/bin/flask run --host=0.0.0.0 --port=4399 >/tmp/vwa_homepage.log 2>&1 </dev/null &'`
+>
+> **验证**: `docker ps` 见 `vwa-reddit Up` + `curl -sf localhost:4399` HTTP 200。**自动回来无需手动** (restart policy unless-stopped/always): classifieds / classifieds_db / vwa-shopping / vwa-wikipedia。**WHY**: Gate 3 fire 第一次 launch 因 homepage down 被 Gate 4 拦 (B-1839 无关, 纯 reboot 恢复遗漏)；reddit `restart=no` + flask homepage 是 reboot 恢复的 2 个盲区。fail-closed 拦住 = preflight 工作正常。
+
 ---
 
 ## §1 ROADMAP — dynamic (`tasks.base` ← edit `_status/tasks/*.md` frontmatter)
@@ -97,6 +103,7 @@ Routing signal infra ✅: `confidence_summary.json` per-condition。Train/test �
 | 🟡 R1 | Preflight v2 extension (B0 XOR B1 conflict / archive_subset checks) | 45 min | partially done §134 |
 | 🟡 R4 | Stage 2B `--resume` flag for reboot recovery | 10 min | independent |
 | 🟡 R6 | `check_evaluator_consistency.py` (Gate 7 evaluator_code_sha == lock-time SHA) | 30 min | OSF lock prep |
+| 🟡 **B-1839-fu** | **Phase 1b shopping reset 实现必须含 per-condition docker restart** (B-1839 cls 同款)。per-condition restart 覆盖现状: **reddit ✓** (reset=`docker rm+run` 天然 fresh) / **cls ✓** (B-1839 加 `docker restart classifieds_db classifieds`) / **shopping ✗ 最后缺口** (`_reset_vwa_local_shopping` 现 placeholder `return 78`；Phase 1b 实现时 = HTTP/SQL reset + `docker restart vwa-shopping` + db-ready/http-200 warmup, 否则 shopping 同 cls 退化 + cross-condition latency confound)。 | 1h (随 shopping reset impl) | deferred — Phase 1b launch 前 |
 | 🟡 **B-1760** | **DOM mode `screenshot.png` regression — `obs.image=None` for accessibility_tree across 91/91 step records on Fire-3 cls B0 DOM.** Archive 2026-05-15 had it; logic byte-identical archive↔HEAD; runtime instrument needed. Trigger: post cls B0 SoM cell land. Acceptance: re-fire smoke6 / 10-task pilot, verify `screenshot.png` per step + `annotate_screenshots.py` produces `screenshot_annotated.png`. Paper §3 evidence layer NOT blocked (DOM trajectory + schema-v2 fields present); screenshot is audit-layer only. | 2 h | deferred — post cls B0 SoM land |
 | 🟢 **R2-P2-10-C** | **Appendix E.3 temporal language fix** — `preregistration.md` Appendix E.3 "witnessed alongside DOI 1 anchor" but artifacts timestamped 2026-05-19, DOI 1 minted 2026-05-18T23:10:06Z. Fix: rephrase "post-DOI-1 forward disclosures, appending to the DOI 1 anchor without modifying its locked estimands". Gemini Mode C F5. Honesty surface, NOT re-witness. | 5 min | deferred — next /stress or paper finalize |
 | 🟢 **R2-P2-11-B** | **Schema 4-place sync test enumeration** — `test_schema_4place_sync.py:test_phase2_intervention_fields_present` only enumerates 4 step + 2 episode fields; other 18 Phase 2 fields covered indirectly. Add `test_phase2_attempt_lineage_fields_present` + `test_phase2_footprint_fields_present`. codex Mode B F6. | 15 min | deferred — next /stress or schema v3 |
