@@ -31,11 +31,23 @@ MODE="${1:-healthcheck}"
 # SILENTLY missed the live fire6_relaunch_* log entirely — both a false-positive
 # "fatal/abort in fire log" every tick AND a real monitoring blind spot (the live
 # relaunch was not being watched at all). Glob both; newest by mtime wins.
-FIRELOG="$(ls -t logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
+# B-1840 (2026-05-23): glob MUST include the live orchestrator chain log
+# (queue_phase1_{cls,red}_*.log written by queue_chain.sh). Pre-fix glob only matched
+# the launcher-era fire6_phase1a*/fire6_relaunch_* family → ls -t pinned a STALE aborted
+# relaunch log (e.g. fire6_relaunch_20260522_124915.log line 61 'rc=1 cascade halt') and
+# grep rc=[1-9] false-positived "FATAL/abort in fire log" every 30-min tick. Newest-by-mtime
+# wins → during a live fire the today chain log is selected; old globs remain as fallback.
+FIRELOG="$(ls -t logs/queue_phase1_cls_*.log logs/queue_phase1_red_*.log logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
 [ -z "$FIRELOG" ] && FIRELOG="logs/fire6_phase1a.log"
 RESULTS="results/visualwebarena/phase1"
 
-_orch_up()      { pgrep -f 'queue_phase1_paper_grade.sh launch' >/dev/null 2>&1; }
+# B-1840 (2026-05-23): the real long-lived orchestrator is queue_chain.sh —
+# `queue_phase1_paper_grade.sh launch` is a launcher that spawns queue_chain.sh then
+# EXITS, so matching ONLY the launcher false-positived "orchestrator GONE" every 30-min
+# tick mid-fire (§0 line 53 canary-era same naming-drift root cause). Match queue_chain.sh
+# (live fire) OR the launcher (brief launch window). orch DOWN at fire END (chain exits
+# after 18 conditions) is still a real "COMPLETED or DIED" signal — intended.
+_orch_up()      { pgrep -f 'queue_chain.sh' >/dev/null 2>&1 || pgrep -f 'queue_phase1_paper_grade.sh launch' >/dev/null 2>&1; }
 _recent_step()  { find "$RESULTS" -name '*steps*.jsonl' -newermt '-60 min' ! -path '*smoke*' 2>/dev/null | head -1; }
 _local_runner() { pgrep -af 'run_experiment.py' 2>/dev/null | grep -qE '/exp_v2_B[12]_'; }
 _gpu_mib()      { nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ' || echo 0; }
@@ -53,7 +65,7 @@ fi
 # ---- healthcheck (anomaly-only) ----
 ALERT=""
 if ! _orch_up; then
-  ALERT+="orchestrator GONE — Pass-1 COMPLETED or DIED, verify: queue_phase1_paper_grade.sh status; "
+  ALERT+="orchestrator GONE (queue_chain.sh) — Pass-1 COMPLETED or DIED, verify: pgrep -af queue_chain.sh + chain log tail; "
 else
   if [[ -z "$(_recent_step)" ]]; then
     ALERT+="orch up but NO step in 60min (stall?); "

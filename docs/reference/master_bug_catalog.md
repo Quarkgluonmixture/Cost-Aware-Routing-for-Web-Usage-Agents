@@ -7768,3 +7768,19 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §275 (本 session, pending)。
 
 ---
+
+## B-1840 — fire6_monitor false-positive: orchestrator-name + FIRELOG 命名漂移 (2026-05-23)
+
+**B-1840** (fire6 健康监控误报, **FIXED**) — Gate 3 fire (R31194) launch 后首个 30-min healthcheck 即 ntfy `orchestrator GONE — Pass-1 COMPLETED or DIED` + `FATAL/abort in fire log`,但实测 fire 完全健康 (orchestrator `queue_chain.sh` PID 37013 alive / runner R31194 PID 38068 alive / chain log `[1/18] still running` / 无 FATAL/abort)。**双 false-positive,均为命名漂移**:
+- **Bug 1 `_orch_up()` (line 50)**: `pgrep -f 'queue_phase1_paper_grade.sh launch'` 找 launcher,但 launcher spawn `queue_chain.sh` 后即 EXIT → 真 orchestrator 是 `queue_chain.sh` → launcher 进程找不到 → `_orch_up` 永远 false → 每 tick 误报 GONE。修: 认 `queue_chain.sh` (live fire) OR launcher (brief launch window)。
+- **Bug 2 `FIRELOG` (line 40)**: glob 只匹配 launcher-era `fire6_phase1a*.log`/`fire6_relaunch_*.log` → `ls -t` pin 了昨天 14:03 aborted relaunch log (`fire6_relaunch_20260522_124915.log:61` `rc=1 cascade halt`) → `grep rc=[1-9]` 每 tick 命中 → 误报 FATAL/abort。修: glob 加 `queue_phase1_{cls,red}_*.log` (queue_chain.sh 写的 live chain log) → newest-by-mtime 选今天的干净 log;旧 glob 保留作 fallback。
+
+**WHY 漏网**: §0 line 53 已诊断过 canary 期同款误报,但当时归因 "canary=`queue_baseline` 非 orchestrator" (canary-specific) 并 **silence cron** 而非修根因 → Gate 3 re-arm fire6 后,真 fire 的 `queue_chain.sh`/`queue_phase1_cls_*` 命名同样不匹配 → 误报回归。教训: 监控对象的进程名/log glob 必须跟随被监控对象的命名约定迁移 (launcher-era → queue_chain.sh era),**silence ≠ fix**。
+
+**对 fire 影响**: 零 (纯告警层 bug; fire 数据/orchestration 完全正常)。alert fatigue 风险 (每 30min 狼来了 → 真 abort 被忽略) → 必修。orch DOWN at fire END (chain 跑完 18 conditions 后 queue_chain.sh 退出) 仍是设计内 "COMPLETED or DIED" 真信号,保留。
+
+**Verification**: bash -n ✓ + 实测两假设 (今日 chain log tail-300 无误触发 pattern / 旧 relaunch log line 61-62 含 rc=1) + A100 pull 后 dry-run `fire6_monitor.sh healthcheck` silent (pending push)。
+
+**Chronicle**: 实验笔记 §275 (本 session)。
+
+---
