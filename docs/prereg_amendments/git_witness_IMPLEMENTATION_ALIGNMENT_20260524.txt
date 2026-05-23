@@ -1,12 +1,12 @@
 Implementation-Alignment Amendment 03 pre-fire witness
 
-OSF project: (to be filled at OSF upload — external visibility layer)
+OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01/02; OSF file upload of this amendment pending user action)
 Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
 Git tag: prereg-amendment-03-implementation-alignment-20260524
 Amendment commit SHA: 3361ad84cbdad1f2c7b66489f302aa34411b1fc1
 Commit timestamp (UTC): 2026-05-23T23:27:15Z
 Tag created (UTC): 2026-05-23T23:27:34Z
-Pushed to origin (UTC): (pending — push requires user confirmation)
+Pushed to origin/diag-discover-then-freeze with tags (UTC): 2026-05-23T23:37:40Z (tag anchors witness SHA 3361ad8 branch-independently; later merge to master does not affect the witness)
 Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
 
 Witness primitive = the amendment commit SHA above (content-addressed, tamper-evident;
