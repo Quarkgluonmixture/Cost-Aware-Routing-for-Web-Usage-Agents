@@ -1,0 +1,30 @@
+Gate-Ladder Amendment 02 pre-fire witness
+
+OSF project: https://osf.io/kv9sf/
+Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
+Git tag: prereg-amendment-02-gate-ladder-20260523
+Amendment commit SHA: e338cb4fb0f490dcbc65df5bf666b6f82a7026d8
+Commit timestamp (UTC): 2026-05-23T01:46:41Z
+Tag created (UTC): 2026-05-23T01:46:41Z
+Pushed to origin with tags (UTC): <pending — fill immediately after `git push origin diag-discover-then-freeze --tags`; the git tag above already anchors the witness SHA branch-independently>
+Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+
+Witness primitive = the amendment commit SHA above (content-addressed, tamper-evident;
+the commit timestamp is hashed into the SHA). The git tag is an immovable named pointer
+to it. This OSF upload is the external visibility layer on top of the Git witness.
+
+Scope of Amendment 02 (see AMENDMENT_02_GATE_LADDER_20260523.md):
+  (a) power-table estimand-LABEL correction (4-mode +2.336pp was reported for the 6-mode
+      H1 gate; corrected — H1-strict acknowledged as a strict lower-powered test);
+  (b) post-R5 reporting-scope clarification (H1-failure still → R5; reporting route now
+      conditional on the independently pre-registered H3 / H10 gates: Route C'-S if H3 passes,
+      Route C'-R if H3 fails but H10 passes (router/systems claim only, not structure),
+      Route F if both fail).
+  H1 primary gate estimand / threshold / producer UNCHANGED. Anti-rescue principle
+  (no R5→R3 framing rescue) UNCHANGED and still enforced in code + regression test.
+
+Phase 1a paper-grade per-cell drop-one θ_i / pooled θ_FE computation must occur AFTER this
+witness. At witness time no such paper-grade statistic exists (canary R11315 = probe-only;
+Pass-1 incomplete; Pass-2 not fired).
+
+Amendment file: docs/prereg_amendments/AMENDMENT_02_GATE_LADDER_20260523.md
