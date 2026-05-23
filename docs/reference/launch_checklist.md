@@ -1,5 +1,7 @@
 # Launch Protocol Checklist (42-condition / 6-cell Phase 1a paper-grade)
 
+> ⚠️ **PLAYBOOK retired 2026-05-23** (笔记 §279): 下方对 PLAYBOOK §1/§2/§2.5 cron 的引用 superseded — live status → `make active` / `make ntfy` / `logs/cron/*.log`。
+
 **Last updated**: 2026-05-20
 **Audience**: self-only
 **See also**: `docs/reference/automation_overview.md` for the full

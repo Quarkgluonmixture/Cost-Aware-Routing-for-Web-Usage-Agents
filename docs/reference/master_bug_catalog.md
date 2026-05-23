@@ -7804,3 +7804,53 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §276 (本 session)。
 
 ---
+
+## B-1842 — Parse-error sink: cost 进 wasted 桶但 canonical latency 不扣 (§4 decomposition 不对称) (2026-05-23)
+
+**B-1842** (cost/latency accounting 不对称, **DISCLOSED, code fix queued post-fire**) — 3-AI /stress (Claude Mode A + codex Mode B 2-AI overlap) 发现: `compute_three_column_cost` 把 parse-error/injected-wait step 的 spend 归 `protocol_wasted_cost` (canonical 不含), 但 canonical latency (`aggregate_cross_site.py:309` `avg_total_latency_canonical_ms = minus_retry − busy_wait − recovered`) **没有对称的 parse-error-sink 扣除项** → sink step 的 inference latency 留在 canonical latency。同一事件在 cost / latency 两个 estimand 上归类不一致。
+
+**关键 framing — §1 headline 不受影响**: §1 cost = `total_billed_cost` (含 sink) + §1 latency = `total_latency_minus_retry_ms` (含 sink) → **都含 sink, headline 对称**。不对称仅限 §4 within-episode efficiency decomposition (canonical-cost 剔 sink, canonical-latency 留 sink)。
+
+**实测 inert**: sink rate B0≈0/B1 0/B2 0.7% → 量级 negligible。**Forward remediation** (post-fire, fire 跑中不动 p79/ code): canonical-latency composer 加 `− parse_error_injected_wait_ms` 项。**OSF 不动** (§4 decomposition 非 §1 estimand)。**Cross-link**: section4_limitations_disclosure §4.X.19 + 实验笔记 §278。
+
+---
+
+## B-1843 — `parse_error_rate` 实为 injected-wait-sink rate (含模型主动合法 wait) (2026-05-23)
+
+**B-1843** (metric 命名 vs 语义, **DISCLOSED, rename queued post-fire**) — codex Mode B OOB: `wait` 是合法 agent action (`action_utils.py:7 ALLOWED_ACTION_TYPES` + prompt 教 `_shared_vl_utils.py` + B0 tool schema enum `proxy_api_agent.py:129`)。但 `classify_step_accounting` (`metrics.py:440`) 把**任何** `is_wait` step 都当 `is_injected_wait_sink` → `parse_error_rate` 分子 (`metrics.py:969`) 同时计 rescue-from-unparseable wait **和**模型主动决定的 wait ("等页面加载")。名字暗示"格式失败率", 实测是"resolved-to-WAIT 步占比"。
+
+**影响**: 若某 baseline/mode 自然 WAIT 倾向不同 (如 vision 等 render), `parse_error_rate` 虚高而无真格式失败 → 非严格 cross-baseline format-robustness 可比量。**实测 inert**: 总和 B0≈0/B1 0/B2 0.7% (含所有 wait)。**Forward remediation** (post-fire): rename → `injected_wait_rate` + `parse_valid_before_rescue` flag 区分 rescue-wait vs model-authored-wait。**Cross-link**: section4_limitations_disclosure §4.X.19 + 实验笔记 §278。
+
+---
+
+## B-1844 — Canonical-action validity 只看 parse-validity 不看 env outcome (parseable-but-wrong 进 canonical) (2026-05-23)
+
+**B-1844** (validity predicate 反向 confound, **DISCLOSED, covariate report queued**) — codex Mode B OOB: `classify_step_accounting` (`metrics.py:441`) `valid_agent_action = parse_valid AND not wait AND not goto_blocked` — **不查** `action_success`/`page_changed`。本地 4B "总能吐 JSON" 失败模式 (点 stale id / no-op type) 格式正确但语义空 → 算 canonical action, 耗 budget + spend 进 `canonical_action_cost`; 而 B0 structured-emission failure 进 wasted/cap。
+
+**方向**: 与 §3.5 cap-termination interaction **相反** (cap 罚高-parse-error baseline; 此项**奖励** fluent-failure 小模型)。`no_progress` 单独记 (`main.py:3918`) 但不 gate validity。**Forward remediation**: report `no_progress_rate` per cell 作协变量 (disclosure-level; **不**加 env-outcome 进 validity predicate — 会偏离 upstream "N agent decisions" budget 语义)。**Cross-link**: section4_limitations_disclosure §4.X.19 + 实验笔记 §278。
+
+---
+
+## B-1845 — WAIT-rescue soft-retry 非严格 state-neutral (gemini OOB) (2026-05-23)
+
+**B-1845** (soft-retry state assumption, **DISCLOSURE-ONLY**) — gemini Mode C OOB (攻击 Claude+codex 共享盲点): soft-retry re-observe "same page" 隐含 retry observation == failed-step observation。真实站点 time-dependent content (相对时间戳 "posted 3 hours ago" / lazy-load / 轮播 banner) → retry observation 在 t+ε 非 t₀, 弱扰动 trajectory Markov 属性 + 精确 reproducibility。
+
+**量级**: VWA self-hosted Docker snapshot 相对静态 → bounded small。**无 code remediation** (disclosure: WAIT 非 guaranteed no-op observation)。**Cross-link**: section4_limitations_disclosure §4.X.19 + 实验笔记 §278。
+
+---
+
+## B-1846 — 无 `termination_reason` 字段 (cap-induced 终止只能间接推断) (2026-05-23)
+
+**B-1846** (instrumentation gap, **DISCLOSED, field add queued post-fire**) — Claude Mode A: episode summary 无 `termination_reason`/`episode_end_reason` 字段 → 无法从 disk 直接区分"撞 max_agent_actions"vs"撞 parse cap (max_consecutive=3 / max_total=5)"提前终止, 只能从 `parse_error_injected_wait_count == max` 间接推断 (且分不清"撞 total cap"vs"恰好 N 次但正常完成")。
+
+**影响**: cap-induced early-termination rate (B-1843/§3.5 cross-baseline 分析的关键量) 不可直接量化。**Forward remediation** (post-fire infra 窗口): runner episode rollup 加 `termination_reason` ∈ {max_agent_actions / max_consecutive_parse / max_total_parse / finish / env_error}。新字段向前兼容 (旧 run 无, 不破坏)。**Cross-link**: section4_limitations_disclosure §4.X.19 + 实验笔记 §278。
+
+---
+
+## B-1847 — `paper_grade_check.py` 无 B0 `tool_call_emit_rate` condition gate (auditability) (2026-05-23)
+
+**B-1847** (auditability gap, **DISCLOSED, gate add deferred OSF-prep**) — codex Mode B: B0 per-step stamp `tool_call_emitted`/parse path/fallback reason (`proxy_api_agent.py:1153`, runner persist `main.py:3434`), 但下游 condition/cross-site summary 只带 `parse_error_rate`, 无 `tool_call_emit_rate`/`action_source` distribution。`paper_grade_check.py:113` 只 fail on `parse_error_rate > 0`, 不 check B0 tool-call emit rate → 若 B0 silently fall back text_json path, "B0 = structured tool-calling baseline" 前提可 false 而 parse 对称看似 clean。
+
+**实测**: emit=100% on canonical substrate (`exp_v2_base.yaml:180`), 但无自动 gate。**Forward remediation** (OSF lock prep, 同 R6 evaluator_consistency): paper_grade_check 加 condition-level B0 tool_call_emit_rate ≥0.95 gate。**Cross-link**: section4_limitations_disclosure §4.X.19 + 实验笔记 §278 + next_steps §4 R6。
+
+---

@@ -1,5 +1,7 @@
 # P79 Automation + Notification + Cleanup Architecture
 
+> ⚠️ **PLAYBOOK retired 2026-05-23** (笔记 §279): 下方对 `PLAYBOOK.md §1/§2/§6` 的引用均 superseded — PLAYBOOK GLM-briefing live status 退役 (`glm-refresh-playbook` cron 2026-05-13 已 removed)。live status → `make active` / `make ntfy` / `cells.base`; `glm-update-cells` cron 仍 active (cells.base 依赖)。
+
 **Last updated**: 2026-05-20.
 **Audience**: self-only (paper-grade rerun protocol).
 

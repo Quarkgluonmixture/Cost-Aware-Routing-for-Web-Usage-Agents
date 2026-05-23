@@ -82,10 +82,8 @@ Claude_code/
 /classifieds_docker_compose.zip
 
 # Live state — synced via Tailscale rsync, NOT git
-# (PLAYBOOK is regenerated every 30min/2h by GLM cron; pushing through git
-# would spam history with 60+ commits/day; Windows-side Task Scheduler scp
-# pulls fresh content every 1-2min over Tailscale instead)
-docs/checkpoints/PLAYBOOK.md
+# PLAYBOOK retired 2026-05-23 (笔记 §279): was GLM-managed live status, archived to
+# docs/archive/PLAYBOOK_retired_20260523.md. Live status → make active / make ntfy / cells.base.
 
 # Cells frontmatter — cron */10min updates auto fields (status/progress/
 # sr_raw/last_run_id/pid/history). Manual semantic fields (blocker/eta/

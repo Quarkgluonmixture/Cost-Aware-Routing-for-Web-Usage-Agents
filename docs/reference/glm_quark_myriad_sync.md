@@ -1,5 +1,7 @@
 # GLM 5.1 on quark Windows — Myriad SSH chain replacement
 
+> ⚠️ **PLAYBOOK retired 2026-05-23** (笔记 §279): 下方对 PLAYBOOK §1/§6 的引用 superseded — PLAYBOOK GLM-briefing 退役。GLM Myriad-sync 体系本身 (本文主题) 不受影响。
+
 **Created**: 2026-05-09
 **Why**: DGX → quark Tailscale → Myriad SSH chain depends on (a) DGX-side ssh-agent + key (b) quark Tailscale up (c) Cisco AnyConnect on quark up. 经常 (a) DGX context compaction 把 ssh-agent 状态丢; (b) Tailscale 偶尔自动 sleep; (c) Cisco token expire. 单 chain 易碎. **GLM 5.1 cron on quark** 是更稳定的等价物 — quark Windows 端有 Cisco / OpenSSH / Tailscale 全套, GLM API 调用 unlimited (per `feedback_delegate_to_small_llms.md`), cron 不依赖 interactive session.
 
