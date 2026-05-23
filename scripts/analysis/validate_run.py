@@ -39,6 +39,7 @@ if str(_PROJ_ROOT) not in sys.path:
 
 from p79.experiment.io_utils import read_jsonl_dedup
 from p79.experiment.types import REQUIRED_STEP_FIELDS_V2, validate_step_record_v2
+from p79.experiment.analysis import scored_task_count as _scored_task_count
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -335,19 +336,63 @@ def check_benchmark_field(run_dir: Path, sample_size: int) -> CheckResult:
 
 
 def check_task_coverage(run_dir: Path) -> CheckResult:
-    """C07: Episode count vs task_configs count per condition."""
+    """C07: Episode count vs canonical scored_task_count (hard fail) + task_configs 80% (soft warn).
+
+    Two-tier check (C1 fix 2026-05-24):
+    1. Hard fail: per-condition episode count MUST equal scored_task_count(site) for the run
+       to be paper-grade promotable. Single-condition Phase 1a runs (one mode per run_dir)
+       will have exactly one condition_dir; its ep count must match canonical N.
+       NOTE: in-flight partial runs will fail this check — only use in paper-grade promotion
+       contexts (validate_run_manifest.py / make analysis). If the run is clearly still
+       in-flight, the 80% soft-warn path below still fires as an INFO signal.
+    2. Soft warn/fail: task_configs/ glob 80% threshold retained as secondary signal when
+       task_configs is present; degraded to warn (not skip) when task_configs absent.
+    """
+    site = _infer_site(run_dir)
+    benchmark = _infer_benchmark(run_dir)
+
+    # -- Hard fail: canonical scored_task_count gate --
+    hard_errors = []
+    if site != "unknown" and benchmark != "unknown":
+        try:
+            canonical_n = _scored_task_count(site, benchmark, strict=False)
+        except Exception as exc:
+            canonical_n = None
+            hard_errors.append(f"scored_task_count({site!r}) lookup failed: {exc}")
+
+        if canonical_n is not None:
+            for cond_dir in _condition_dirs(run_dir):
+                ep_count = len(_list_summaries(cond_dir))
+                if ep_count != canonical_n:
+                    hard_errors.append(
+                        f"{cond_dir.name}: {ep_count} episodes != canonical {canonical_n} "
+                        f"(scored_task_count({site!r})). "
+                        "Run is incomplete or has extra episodes — not paper-grade promotable."
+                    )
+
+    if hard_errors:
+        return CheckResult(
+            "C07", "Task coverage", "fail",
+            f"Canonical episode count mismatch ({len(hard_errors)} condition(s)): "
+            + "; ".join(hard_errors[:5]),
+            hard_errors,
+        )
+
+    # -- Soft secondary: task_configs/ 80% check --
     task_configs_dir = run_dir / "task_configs"
     if not task_configs_dir.exists():
+        # task_configs absent is acceptable (degrade to warn, not skip — C1 fix)
         return CheckResult(
-            "C07", "Task coverage", "skip",
-            "task_configs/ directory not found",
+            "C07", "Task coverage", "warn",
+            "task_configs/ directory not found (canonical N check passed). "
+            "Cannot verify 80% task_configs coverage.",
         )
 
     total_tasks = len(list(task_configs_dir.glob("*.json")))
     if total_tasks == 0:
         return CheckResult(
-            "C07", "Task coverage", "skip",
-            "No task config files found",
+            "C07", "Task coverage", "warn",
+            "task_configs/ present but empty (canonical N check passed).",
         )
 
     details = []
@@ -557,8 +602,11 @@ def check_jsonl_corrupt_lines(run_dir: Path) -> CheckResult:
                 corrupt_details.append(f"{stf.relative_to(run_dir)}: {n_corrupt} corrupt lines")
 
     if total_corrupt_lines > 0:
+        # C1 fix 2026-05-24: escalate warn → fail (mirrors C16 fallback_finish severity).
+        # Corrupt JSONL lines mean step records are unreadable → paper-grade analysis
+        # silently drops steps → reason-diag / latency / cost tallies are wrong.
         return CheckResult(
-            "C12", "JSONL integrity", "warn",
+            "C12", "JSONL integrity", "fail",
             f"{total_corrupt_lines} corrupt lines in {corrupt_files}/{total_files} files",
             corrupt_details,
         )

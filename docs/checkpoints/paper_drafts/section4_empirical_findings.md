@@ -24,6 +24,8 @@ The original intuition was that Phantom-SoM should be either a broken SoM config
 
 The single-mode success rates show a site-modulated effect. On classifieds, full SoM remains the strongest individual representation. On reddit, Phantom-SoM is at least competitive with the strongest baselines, while using no image input. The table reports **VWA-Success (N/A excluded)**, as in Figures 1, 2, 7, and 8, which use the canonical episode-level `success` field (post-§139.8 `adjusted_success ≡ success`). The latency column is p95 step latency from `condition_summary_v2.json`; cost is average total cost per task.
 
+> ⚠️ **PLACEHOLDER (pre-Phase-1a)**: 本表为 B0-only archive 数字 + N=234/210 (pre-N/A-exclusion)。Phase 1a clean-run 数据 land 后整体重写为 3-model (B0/B1/B2) table + canonical N=224/205 (figure 脚本已用 224/205, 此处 prose 待同步)。
+
 | Site | Arm | VWA-Success (N/A excl) | Avg cost | p95 step latency | Metric |
 |---|---|---:|---:|---:|---|
 | Classifieds | DOM | 14.10 | $0.043 | 37.5s | N=234 |

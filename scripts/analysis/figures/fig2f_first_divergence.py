@@ -45,11 +45,16 @@ PAIR_SPECS = [
     ("P-prompt", "P-SoM", "P-prompt↔P-SoM"),
     ("DOM", "P-SoM", "DOM↔P-SoM"),
 ]
+# 3-model deep-update (2026-05-24 audit): derive panels from BASELINES × SITES so B2
+# (Gemma3-VL, added 2026-05-14) is no longer silently dropped — fig2b-2e migrated to
+# this pattern 2026-05-18; fig2f was the holdout. Cells without paper-grade data yet
+# (Phase 1a in-flight) render "N/A pending" per draw_panel's empty-data guard.
+BASELINES = ["B0", "B1", "B2"]
+SITES = ["classifieds", "reddit"]
 PANELS = [
-    ("B0", "classifieds", "B0 cls"),
-    ("B0", "reddit", "B0 red"),
-    ("B1", "classifieds", "B1 cls"),
-    ("B1", "reddit", "B1 red"),
+    (b, s, f"{b} {'cls' if s == 'classifieds' else 'red'}")
+    for b in BASELINES
+    for s in SITES
 ]
 BIN_LABELS = ["step 0", "1-3", "4-10", "11+", "no divergence"]
 BIN_COLORS = ["#7c2d12", "#f58518", "#f2cf5b", "#8ab17d", "#bdbdbd"]
@@ -197,7 +202,8 @@ def draw_panel(ax: plt.Axes, baseline: str, site: str, title: str) -> None:
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
-    fig, axes = plt.subplots(2, 2, figsize=(13.5, 9.5), sharex=True)
+    fig, axes = plt.subplots(len(BASELINES), len(SITES),
+                             figsize=(13.5, 4.6 * len(BASELINES)), sharex=True)
     for ax, (baseline, site, title) in zip(axes.ravel(), PANELS):
         draw_panel(ax, baseline, site, title)
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in BIN_COLORS]

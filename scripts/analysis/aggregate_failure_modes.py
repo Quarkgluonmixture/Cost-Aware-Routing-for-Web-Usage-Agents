@@ -159,7 +159,50 @@ def main():
         OUT_MD.write_text("# Failure modes per cell\n\nNo phase1 runs found.\n")
         return
 
-    for run_dir in sorted(PHASE1_DIR.glob("B*")):
+    # C4 fix 2026-05-24: replace PHASE1_DIR.glob("B*") with registry lookup.
+    # Pre-fix: glob picked up ALL run dirs including pre-bug/archived/in-flight
+    # runs that should not enter paper §5 failure-mode distribution. Registry
+    # get_all_cells(grade_filter=["paper-grade"]) returns only manifest-promoted
+    # paper-grade cells — the same gate used by all other paper aggregators.
+    # Derive unique run_dirs from the registry; fall back to glob if manifest
+    # missing (dev smoke use-case).
+    try:
+        import sys as _sys
+        sys_path_backup = list(_sys.path)
+        _sys.path.insert(0, str(ROOT))
+        from scripts.analysis.lib.run_registry import get_all_cells as _get_all_cells
+        _registry_cells = _get_all_cells(grade_filter=["paper-grade"])
+        # Collect unique run dirs that have a condition_reason_summary.csv
+        _registry_run_dirs: dict[str, tuple[str, str]] = {}  # run_dir.name → (baseline, site)
+        for _cs in _registry_cells:
+            _run_dirs_key = _cs.run_dir.name
+            if _run_dirs_key not in _registry_run_dirs:
+                _registry_run_dirs[_run_dirs_key] = (_cs.baseline, _cs.site)
+        _candidate_dirs = sorted(
+            [_cs.run_dir for _cs in _registry_cells],
+            key=lambda p: p.name,
+        )
+        # Deduplicate — multiple cells share the same run_dir (one per mode)
+        _seen_paths: set[Path] = set()
+        _unique_run_dirs: list[Path] = []
+        for _p in _candidate_dirs:
+            if _p not in _seen_paths:
+                _seen_paths.add(_p)
+                _unique_run_dirs.append(_p)
+        if not _unique_run_dirs:
+            print("[failure_modes] WARN: registry returned 0 paper-grade run_dirs — "
+                  "falling back to PHASE1_DIR.glob('B*') for dev smoke", file=_sys.stderr)
+            _unique_run_dirs = sorted([d for d in PHASE1_DIR.glob("B*") if d.is_dir()])
+        else:
+            print(f"[failure_modes] registry: {len(_unique_run_dirs)} unique paper-grade run_dirs",
+                  file=_sys.stderr)
+    except Exception as _reg_exc:
+        import sys as _sys
+        print(f"[failure_modes] WARN: registry lookup failed ({_reg_exc}), "
+              "falling back to PHASE1_DIR.glob('B*')", file=_sys.stderr)
+        _unique_run_dirs = sorted([d for d in PHASE1_DIR.glob("B*") if d.is_dir()])
+
+    for run_dir in _unique_run_dirs:
         if not run_dir.is_dir():
             continue
         baseline, site = parse_run(run_dir.name)

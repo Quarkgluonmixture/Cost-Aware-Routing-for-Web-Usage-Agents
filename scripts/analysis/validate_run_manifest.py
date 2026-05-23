@@ -122,10 +122,14 @@ def validate_manifest(
         if grade in ("paper-grade", "paper-grade-pre-bug"):
             paper_grade_by_cell.setdefault((baseline, site), {})[mode] = entry
 
-            # (b) expected_n canonical check
+            # (b) expected_n canonical check — C2 fix 2026-05-24: unconditional.
+            # Pre-fix: only checked when expected_n was present in yaml (opt-in bypass).
+            # Post-fix: ALWAYS compare actual episode count on disk against EXPECTED_N[site].
+            # yaml `expected_n:` field is still cross-checked when present, but the hard
+            # gate uses EXPECTED_N (registry canonical) not the yaml field.
             raw_en = entry.get("expected_n")
+            canonical_en = EXPECTED_N.get(site, 0)
             if raw_en is not None:
-                canonical_en = EXPECTED_N.get(site, 0)
                 if int(raw_en) != canonical_en:
                     errors.append(
                         f"[expected_n] {baseline}/{site}/{mode}: yaml expected_n={raw_en}, "
@@ -134,12 +138,17 @@ def validate_manifest(
                     )
 
             # (c) disk existence + (d) episode count
+            # C2 fix 2026-05-24: (d) threshold changed from >=50 (MIN_EP_FOR_CELL) to
+            # == EXPECTED_N[site] (exact canonical count). MIN_EP_FOR_CELL=50 was a
+            # completeness proxy that accepted partial runs with >50 episodes as
+            # "complete" for sites with canonical N=224/205 — paper-grade promotion gate
+            # must be exact match, not a lower-bound heuristic.
             if check_disk:
-                run_dir = entry.get("run_dir", "")
+                run_dir_str = entry.get("run_dir", "")
                 cond_sub = entry.get("condition_subdir", "")
                 # Resolve via registry logic
                 from scripts.analysis.lib.run_registry import _resolve_run_dir
-                full_dir = _resolve_run_dir(run_dir) / cond_sub
+                full_dir = _resolve_run_dir(run_dir_str) / cond_sub
                 if not full_dir.exists():
                     errors.append(
                         f"[disk] {baseline}/{site}/{mode}: run_dir/condition_subdir does NOT exist: {full_dir}"
@@ -148,7 +157,15 @@ def validate_manifest(
                     ep_dir = full_dir / "episodes"
                     if ep_dir.exists():
                         ep_count = len(list(ep_dir.glob("*_summary_v2.json")))
-                        if ep_count < MIN_EP_FOR_CELL:
+                        expected_ep = EXPECTED_N.get(site, 0)
+                        if expected_ep > 0 and ep_count != expected_ep:
+                            errors.append(
+                                f"[episode-count] {baseline}/{site}/{mode}: {ep_count} episodes "
+                                f"!= EXPECTED_N({site})={expected_ep}. "
+                                "Run incomplete or has extra episodes — not paper-grade promotable."
+                            )
+                        elif expected_ep == 0 and ep_count < MIN_EP_FOR_CELL:
+                            # Fallback for unknown sites: retain the original >=50 heuristic
                             errors.append(
                                 f"[episode-count] {baseline}/{site}/{mode}: {ep_count} episodes "
                                 f"< MIN_EP_FOR_CELL ({MIN_EP_FOR_CELL}). Likely partial run."
@@ -169,10 +186,11 @@ def validate_manifest(
             )
 
     # (g) Phase 1a planned cells all present (paper-grade)
-    paper_grade_planned_present = {
-        (b, s) for (b, s) in PHASE_1A_PLANNED_CELLS
-        if (b, s) in {(bb, ss) for (ss, bb) in PHASE_1A_PLANNED_CELLS}  # iterate planned
-    }
+    # C2 fix 2026-05-24: removed dead-code variable `paper_grade_planned_present` which
+    # built a set via a self-cancelling filter `(b,s) in {(bb,ss) for (ss,bb) in PLANNED}`
+    # — the comprehension swapped (site,baseline) order so the membership test was always
+    # True when PLANNED uses (site,baseline) tuples but the filter compared (baseline,site);
+    # net result: set was always == PHASE_1A_PLANNED_CELLS but variable was never read.
     planned_missing = []
     for site, baseline in PHASE_1A_PLANNED_CELLS:
         if (baseline, site) not in paper_grade_by_cell:

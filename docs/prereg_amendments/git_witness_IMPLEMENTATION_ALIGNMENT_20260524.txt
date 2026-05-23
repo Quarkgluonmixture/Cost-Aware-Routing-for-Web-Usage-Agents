@@ -1,0 +1,31 @@
+Implementation-Alignment Amendment 03 pre-fire witness
+
+OSF project: (to be filled at OSF upload — external visibility layer)
+Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
+Git tag: prereg-amendment-03-implementation-alignment-20260524
+Amendment commit SHA: (to be filled at commit time)
+Commit timestamp (UTC): (to be filled at commit time)
+Tag created (UTC): (to be filled at commit time)
+Pushed to origin (UTC): (pending — push requires user confirmation)
+Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+
+Witness primitive = the amendment commit SHA above (content-addressed, tamper-evident;
+the commit timestamp is hashed into the SHA). The git tag is an immovable named pointer
+to it. The OSF upload is the external visibility layer on top of the Git witness.
+
+Scope of Amendment 03 (see AMENDMENT_03_IMPLEMENTATION_ALIGNMENT_20260524.md):
+  Pure implementation/prose alignment to estimands ALREADY LOCKED by DOI-1 +
+  AMENDMENT_01 + AMENDMENT_02. NO estimand / gate / δ / R-ladder change.
+  (a) SE-floor code `<= 0` -> `< 0.68` (lands prereg L98/L718 B-1003 already-locked 0.68pp
+      Agresti-Coull threshold; REPLACE value 1.0pp + delta unchanged);
+  (b) §1-hero references converged onto canonical bootstrap-percentile producer
+      aggregate_phase1_full_prereg_decision (per AMENDMENT_02 §2 line 99); legacy
+      aggregate_phase1_prereg_gate marked transparency-only;
+  (c) B0 paper cost + H10 Pareto cost-axis -> total_billed (lands AMENDMENT_01 §1 PRIMARY
+      cost lock; fail-closed with P79_ALLOW_LEGACY_COST=1 escape, no silent fallback).
+
+Phase 1a paper-grade per-cell drop-one theta_i / pooled theta_FE / H10 verdict computation
+must occur AFTER this witness. At witness time no such paper-grade statistic exists (Pass-1
+incomplete; Pass-2 not fired; no 6-mode-complete cell).
+
+Amendment file: docs/prereg_amendments/AMENDMENT_03_IMPLEMENTATION_ALIGNMENT_20260524.md

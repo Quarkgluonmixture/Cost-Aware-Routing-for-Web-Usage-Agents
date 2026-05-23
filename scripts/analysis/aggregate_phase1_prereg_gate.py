@@ -1,13 +1,26 @@
 #!/usr/bin/env python3
-"""B-184: canonical Phase 1 paper §1 PRIMARY gate producer.
+"""B-184: H1 drop-one θ_i / SE_i producer — TRANSPARENCY-ONLY legacy (normal-Z).
 
-Implements the prereg H1 spec (preregistration.md:68-86 lock):
+⚠️ NON-CANONICAL for the gate DECISION (AMENDMENT 03, 2026-05-24). The paper §1 H1
+PRIMARY gate is the **bootstrap percentile** test in
+`aggregate_phase1_full_prereg_decision._pool_bootstrap_percentile_p`
+(prereg §2 H1 L98 + AMENDMENT_02 §2 line 99; `h1_pass =
+pooled_h1_bootstrap.gate_passed_bootstrap`). This file's per-cell
+`_cell_drop_one_theta_se` is the SHARED θ_i/SE_i kernel the canonical producer
+imports (UNCHANGED per AMENDMENT_02 §2); its own `_fe_pool` normal-Z `gate_passed`
++ `theta_FE_pp` are retained ONLY as a transparency column (prereg L98: "retained as
+a transparency check column ... does NOT drive the gate decision"). SE-floor here is
+aligned to the canonical 0.68pp threshold (`_fe_pool`) so the transparency θ_FE is
+bit-identical to the canonical point estimate. §1 hero cites the canonical producer,
+NOT this file.
 
-    Primary gate = "FE inverse-variance pooled P-SoM drop-one effect θ_FE
-                   significantly exceeds the +1.0pp substantive-effect threshold
-                   via a one-sided superiority test:
-                   reject H0: θ_FE ≤ +1.0pp at α=0.05
-                   (PRIMARY family m=1, no within-family correction)"
+Implements the prereg H1 per-cell kernel (preregistration.md:68-86 lock):
+
+    Per-cell kernel = "FE inverse-variance pooled P-SoM drop-one effect θ_FE vs the
+                   +1.0pp substantive-effect threshold, one-sided superiority test:
+                   reject H0: θ_FE ≤ +1.0pp at α=0.05 (PRIMARY family m=1) —
+                   gate DECISION uses canonical bootstrap percentile; this normal-Z
+                   is transparency-only"
 
 Per-cell drop-one (preregistration.md:77-82):
 
@@ -22,14 +35,17 @@ FE pool:
     θ_FE = Σ(w_i · θ_i) / Σ(w_i)
     SE_FE = sqrt(1 / Σ(w_i))
 
-One-sided superiority z-statistic:
+One-sided superiority z-statistic (TRANSPARENCY-ONLY — not the gate decision):
     z = (θ_FE - 1.0) / SE_FE
     p_one_sided = 1 - Φ(z)
-    gate_passed = (p_one_sided < 0.05)
+    gate_passed = (p_one_sided < 0.05)   # transparency column; canonical gate =
+                                         # full_prereg_decision bootstrap percentile
 
-This producer is **complementary** to `aggregate_phantom_lift.py`, which still
-runs the legacy 3→5 lift estimand (now demoted to exploratory; the prereg
-PRIMARY gate is THIS file).
+This producer is **complementary** to `aggregate_phantom_lift.py` (legacy 3→5 lift,
+exploratory) and **SUBORDINATE** to `aggregate_phase1_full_prereg_decision.py`
+(canonical H1 PRIMARY). The prereg PRIMARY gate is the canonical full producer, NOT
+this file; this file supplies the shared θ_i/SE_i kernel + a normal-Z transparency
+cross-check.
 
 Pre-data behavior: if <6 cells contain all 6 modes (e.g., Phase 1a still
 mid-rerun), emits `gate_status="INSUFFICIENT_DATA"` + lists available cells +
@@ -69,6 +85,13 @@ PREREG_B = 1000
 PREREG_SEED = 42
 DELTA_PP = 1.0    # prereg superiority threshold (preregistration.md:341 lock)
 ALPHA = 0.05      # prereg α
+# SE-floor (degenerate-cell protocol, prereg §2 H1 L103-111 + L98/L718 B-1003 codify).
+# AMENDMENT 03 (2026-05-24): threshold aligned to the 0.68pp Agresti-Coull anchor — the
+# SINGLE source mirrored by the canonical primary producer
+# `aggregate_phase1_full_prereg_decision` (which uses the same 0.68/1.0 values). Floor
+# REPLACE value 1.0pp + δ unchanged → implementation alignment, NOT an estimand change.
+SE_FLOOR_THRESHOLD_PP = 0.68
+SE_FLOOR_REPLACE_PP = 1.0
 SIX_MODES = ("DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM")
 
 DEFAULT_OUT_CSV = REPO / "results/phantom_paper/phase1_prereg_gate.csv"
@@ -192,9 +215,18 @@ def _fe_pool(per_cell: List[Dict]) -> Optional[Dict]:
     # Implementation invariant: only applies when bootstrap SE_i = 0 exactly (degenerate
     # cell where drop-one diff vector is identically constant under all resamples);
     # `n_zero_se_floored_cells` is emitted in payload for paper §6 disclosure.
-    n_zero_se = int((ses <= 0).sum())
-    if n_zero_se > 0:
-        ses = np.where(ses <= 0, 1.0, ses)  # 1.0 pp floor — see prereg.md §2 H1
+    # Implementation-alignment (AMENDMENT 03, 2026-05-24): SE-floor uses the module-level
+    # SE_FLOOR_THRESHOLD_PP (0.68pp Agresti-Coull anchor), the SINGLE source mirrored by
+    # the canonical primary producer
+    # `aggregate_phase1_full_prereg_decision._pool_bootstrap_percentile_p`. This legacy
+    # producer was previously on a literal `<= 0` floor — the B-1003 "code-bug fix" that
+    # codified 0.68 in prereg prose (L98/L718) but never landed in code. NO estimand
+    # change (REPLACE value 1.0pp + δ unchanged); only makes the transparency θ_FE
+    # bit-identical to the canonical point estimate.
+    n_zero_se = int((ses <= 0).sum())  # legacy exact-zero transparency stat (back-compat)
+    n_below_floor = int((ses < SE_FLOOR_THRESHOLD_PP).sum())
+    if n_below_floor > 0:
+        ses = np.where(ses < SE_FLOOR_THRESHOLD_PP, SE_FLOOR_REPLACE_PP, ses)
     w = 1.0 / (ses ** 2)
     theta_fe = float(np.sum(w * thetas) / np.sum(w))
     se_fe = float(math.sqrt(1.0 / np.sum(w)))
@@ -211,9 +243,15 @@ def _fe_pool(per_cell: List[Dict]) -> Optional[Dict]:
         "p_one_sided": p_one_sided,
         "alpha": ALPHA,
         "gate_passed": bool(p_one_sided < ALPHA),
-        # v6 fix (P0-9): n_zero_se transparency — cells with SE=0 got floored to 1pp to
-        # prevent degenerate-cell hijack of FE pool weight. paper §6 must disclose.
+        # v6 fix (P0-9) + AMENDMENT 03 alignment (2026-05-24): SE-floor transparency.
+        # `n_zero_se_floored_cells` = legacy exact-zero count (back-compat);
+        # `n_below_se_floor_cells` = cells floored under the canonical 0.68pp
+        # Agresti-Coull threshold. paper §6 discloses if > 0. NOTE: this normal-Z
+        # `gate_passed` is TRANSPARENCY-ONLY; the canonical H1 PRIMARY gate is
+        # `aggregate_phase1_full_prereg_decision` bootstrap percentile (prereg L98).
         "n_zero_se_floored_cells": n_zero_se,
+        "n_below_se_floor_cells": n_below_floor,
+        "se_floor_threshold_pp": SE_FLOOR_THRESHOLD_PP,
     }
 
 

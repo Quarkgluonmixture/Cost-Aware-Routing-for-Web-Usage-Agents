@@ -26,12 +26,16 @@ from __future__ import annotations
 from collections import Counter
 import json
 import math
+import os
 import re
+import sys
+import warnings
 from pathlib import Path
 from statistics import mean
 from typing import Any
 from urllib.parse import urlparse
 
+from p79.experiment.io_utils import read_jsonl_dedup
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
@@ -44,46 +48,77 @@ TASK_CONFIGS = {
     "classifieds": ROOT / "external/visualwebarena/config_files/vwa/test_classifieds.json",
 }
 
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
-
-
-STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
-    "B0": {
-        "reddit": {
-            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-            "Phantom-prompt": _phantom_prompt_dir("B0", "reddit"),
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-            "Phantom-prompt": _phantom_prompt_dir("B0", "classifieds"),
-        },
-    },
-    "B1": {
-        "reddit": {
-            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-            "Phantom-prompt": _phantom_prompt_dir("B1", "reddit"),
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-            "Phantom-prompt": _phantom_prompt_dir("B1", "classifieds"),
-        },
-    },
+# ---------------------------------------------------------------------------
+# Registry-driven STEP_DIRS construction (A-fix: replaces hardcoded run_ids)
+# ---------------------------------------------------------------------------
+# Maps registry PAPER_MODES → axis-script mode key names.  This file uses the
+# same key naming as axis_effect_size.py: "Phantom-SoM" for P-SoM and
+# "Phantom-prompt" for P-prompt, to keep AXIS_CONTRASTS lookups unchanged.
+_REGISTRY_MODE_TO_AXIS_KEY: dict[str, str] = {
+    "DOM": "DOM",
+    "SoM": "SoM",
+    "Vision": "Vision",
+    "P-text": "P-text",
+    "P-SoM": "Phantom-SoM",
+    "P-prompt": "Phantom-prompt",
 }
+
+# Grade preference: paper-grade first, fallback archived for pre-fire validation.
+# Override via env AXIS_GRADE=archived.
+_AXIS_GRADE = os.environ.get("AXIS_GRADE", "paper-grade")
+
+
+def _build_step_dirs() -> dict[str, dict[str, dict[str, Path | None]]]:
+    """Build STEP_DIRS from run_registry, replacing hardcoded archive run_ids.
+
+    Returns nested dict: {baseline: {site: {axis_key: episodes_dir | None}}}.
+    episodes_dir is None when a cell is absent from the registry at the
+    requested grade (downstream per_task_mode_metrics() handles None gracefully).
+    B2 cells present in registry but missing on disk emit a stderr warning.
+    """
+    try:
+        from scripts.analysis.lib.run_registry import get_cells
+    except Exception as exc:  # pragma: no cover
+        warnings.warn(f"[axis1_microbehavior] run_registry import failed ({exc}); falling back to empty dirs", RuntimeWarning)
+        return {}
+
+    if _AXIS_GRADE == "paper-grade":
+        grade_pref = ["paper-grade", "archived"]
+    else:
+        grade_pref = [_AXIS_GRADE]
+
+    all_cells: dict[tuple[str, str, str], object] = {}
+    for grade in reversed(grade_pref):  # lower priority first so higher overwrites
+        try:
+            cells = get_cells(grade=grade)
+        except Exception:
+            cells = []
+        for cell in cells:
+            all_cells[(cell.baseline, cell.site, cell.mode)] = cell
+
+    result: dict[str, dict[str, dict[str, Path | None]]] = {}
+    for baseline in ["B0", "B1", "B2"]:
+        result[baseline] = {}
+        for site in ["reddit", "classifieds"]:
+            site_dict: dict[str, Path | None] = {}
+            for reg_mode, axis_key in _REGISTRY_MODE_TO_AXIS_KEY.items():
+                cell = all_cells.get((baseline, site, reg_mode))
+                if cell is None:
+                    site_dict[axis_key] = None
+                    continue
+                ep_dir = cell.episodes_dir
+                if baseline == "B2" and not ep_dir.exists():
+                    print(
+                        f"[axis1_microbehavior] WARN: B2 cell {site}/{reg_mode} found in registry "
+                        f"but episodes_dir missing on disk: {ep_dir}",
+                        file=sys.stderr,
+                    )
+                site_dict[axis_key] = ep_dir
+            result[baseline][site] = site_dict
+    return result
+
+
+STEP_DIRS: dict[str, dict[str, dict[str, Path | None]]] = _build_step_dirs()
 BASELINES = ["B0", "B1", "B2"]
 SITES_LIST = ["reddit", "classifieds"]
 
@@ -125,15 +160,28 @@ def read_json(path: Path) -> Any:
     return json.loads(path.read_text())
 
 
+def _summary_path_for_steps(steps_path: Path) -> Path | None:
+    """Derive sibling *_summary_v2.json path from a *_steps_v2.jsonl path."""
+    name = steps_path.name  # e.g. reddit_task_5_steps_v2.jsonl
+    summary_name = name.replace("_steps_v2.jsonl", "_summary_v2.json")
+    if summary_name == name:
+        return None
+    candidate = steps_path.parent / summary_name
+    return candidate
+
+
 def read_steps(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with path.open() as handle:
-        for line in handle:
-            try:
-                rows.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return rows
+    """Read step records with restart dedup via read_jsonl_dedup.
+
+    Uses sibling *_summary_v2.json for identity validation (strict_identity=True)
+    when available; falls back to dedup-only when summary is absent.
+    This replaces the previous bare line-iteration loop which let watchdog
+    restart tail segments pollute §4 micro-behavior metrics.
+    """
+    summary = _summary_path_for_steps(path)
+    if summary is not None and summary.exists():
+        return read_jsonl_dedup(path, summary_path=summary, strict_identity=True)
+    return read_jsonl_dedup(path)
 
 
 def task_id_from_path(path: Path) -> int:
@@ -597,32 +645,57 @@ def main() -> None:
             ratio_block[f"{prefix}_macro_mean_abs_effect"] = macro_mean
             ratio_block[f"{prefix}_ratio"] = ratio
 
-    # Verdict computed on B0 only (B1 axis-1 contrasts unavailable until P-text data lands).
-    reddit_ok = bool(site_ratios.get("B0/reddit") is not None and site_ratios["B0/reddit"] > 1.0)
-    classifieds_ok = bool(site_ratios.get("B0/classifieds") is not None and site_ratios["B0/classifieds"] > 1.0)
+    # Verdict: use any baseline that has axis-1 data (B0 or B2 preferred; B1 pending P-text).
+    # TODO(C-fix): when B1/B2 P-text data lands, extend anchor_baselines to include them
+    # and reconsider whether majority-vote across baselines is more appropriate.
+    # Do NOT hardcode "B0 only" — B2 axis-1 contrasts are equally valid once data lands.
+    anchor_baselines = [b for b in BASELINES if any(
+        site_ratios.get(f"{b}/{site}") is not None for site in SITES_LIST
+    )]
+    if not anchor_baselines:
+        anchor_baselines = ["B0"]  # last-resort label for narrative only; all ratios will be None
+
+    def _site_ok(site: str) -> bool:
+        """Return True if ANY anchor baseline clears the ratio > 1.0 threshold for this site."""
+        return any(
+            site_ratios.get(f"{b}/{site}") is not None and site_ratios[f"{b}/{site}"] > 1.0  # type: ignore[operator]
+            for b in anchor_baselines
+        )
+
+    reddit_ok = _site_ok("reddit")
+    classifieds_ok = _site_ok("classifieds")
+    anchor_label = "+".join(anchor_baselines)
+    ratio_block["verdict_anchor_baselines"] = anchor_baselines
+
     if reddit_ok and classifieds_ok:
         verdict = "generalizes"
         narrative = (
-            "Both sites show a larger axis-1 shift in mode-invariant decision anchors than in macro action "
-            "frequencies, so the claim generalizes beyond the reddit search-loop failure mode."
+            f"Both sites show a larger axis-1 shift in mode-invariant decision anchors than in macro action "
+            f"frequencies ({anchor_label}), so the claim generalizes beyond the reddit search-loop failure mode."
         )
     elif reddit_ok or classifieds_ok:
         verdict = "site-specific"
         narrative = (
-            "Only one site clears the decision-over-macro ratio threshold, so the claim should be framed as "
-            "site-specific rather than a cross-site mechanism."
+            f"Only one site clears the decision-over-macro ratio threshold ({anchor_label}), so the claim should be framed as "
+            f"site-specific rather than a cross-site mechanism."
         )
     else:
         verdict = "not supported"
         narrative = (
-            "Neither site clears the decision-over-macro ratio threshold, so the paper should not claim that "
-            "axis 1 primarily changes decision quality."
+            f"Neither site clears the decision-over-macro ratio threshold ({anchor_label}), so the paper should not claim that "
+            f"axis 1 primarily changes decision quality."
         )
     ratio_block["verdict"] = verdict
     ratio_block["narrative"] = narrative
 
-    # Case studies use B0 metrics (need P-text intermediate, only B0 has full set).
-    case_studies = build_case_studies(metrics_by_baseline["B0"], task_configs)
+    # Case studies: prefer B0 (has P-text), fall back to first baseline that has DOM+P-text data.
+    case_baseline = "B0"
+    for b in BASELINES:
+        if metrics_by_baseline[b].get("classifieds", {}).get("DOM") and \
+                metrics_by_baseline[b].get("classifieds", {}).get("P-text"):
+            case_baseline = b
+            break
+    case_studies = build_case_studies(metrics_by_baseline[case_baseline], task_configs)
     out = {
         "method": (
             "Mode-invariant micro-behavior analysis over reddit and classifieds. Per-task/per-mode metrics "
@@ -648,11 +721,17 @@ def main() -> None:
     lines: list[str] = []
     lines.append("## Headline finding")
     lines.append("")
+    # Headline: show ratios for all baselines that have axis-1 data; do not hardcode "B0 only".
+    _cv = out["cross_site_validity"]
+    _anchors = _cv.get("verdict_anchor_baselines") or ["B0"]
+    _ratio_parts = [
+        f"{b} reddit={fmt(_cv.get(f'{b}_reddit_ratio'), 2)} cls={fmt(_cv.get(f'{b}_classifieds_ratio'), 2)}"
+        for b in _anchors
+    ]
     lines.append(
-        f"Axis 1 decision-quality vs macro-frequency test (B0 only — B1 P-text pending): reddit ratio "
-        f"{fmt(out['cross_site_validity'].get('B0_reddit_ratio'), 2)}, classifieds ratio "
-        f"{fmt(out['cross_site_validity'].get('B0_classifieds_ratio'), 2)}; verdict: "
-        f"**{out['cross_site_validity']['verdict']}**."
+        f"Axis 1 decision-quality vs macro-frequency test ({'+'.join(_anchors)}): "
+        + "; ".join(_ratio_parts)
+        + f"; verdict: **{_cv['verdict']}**."
     )
     lines.append("")
     lines.append("## Per-(baseline, site) Axis 1 Table")

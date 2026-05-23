@@ -55,12 +55,13 @@ ARMS = [
 # /stress A1.20 P0-4-AC (2026-05-17, A1.19 B-437 figure-layer propagation gap):
 # the 3→5-mode lift estimand (`4psom_vs_3` etc.) was demoted to APPENDIX exploratory
 # per A1.19 B-184/B-437 (aggregate_phantom_lift.md prose rewrite). Figure label here
-# was still "DEPLOYMENT HERO (H1, gating)" — stale. True paper §1 H1 PRIMARY is
-# `aggregate_phase1_prereg_gate.{csv,json,md}` (P-SoM drop-one over 6-mode universe
-# FE inverse-variance pool; per preregistration.md §2 H1 decision "3A" 2026-05-14).
+# was still "DEPLOYMENT HERO (H1, gating)" — stale. True paper §1 H1 PRIMARY is the
+# bootstrap-percentile gate in `aggregate_phase1_full_prereg_decision.{csv,json,md}`
+# (P-SoM drop-one over 6-mode universe FE pool; prereg §2 H1 L98 + AMENDMENT_02 §2
+# line 99; legacy `phase1_prereg_gate.*` is transparency-only per AMENDMENT 03 2026-05-24).
 # All 3 arms in THIS figure are appendix-only.
 ROLE_BADGE = {
-    "APPENDIX_EXPLORATORY": "APPENDIX exploratory (3→5-mode legacy lift; cf. phase1_prereg_gate.{csv,md} for H1 PRIMARY)",
+    "APPENDIX_EXPLORATORY": "APPENDIX exploratory (3→5-mode legacy lift; cf. phase1_full_prereg_decision.{csv,md} for H1 PRIMARY)",
     # Legacy compat keys retained so any code path inadvertently passing old key
     # gets graceful behavior rather than KeyError; both deprecate alongside A1.19.
     "HERO":     "APPENDIX exploratory (legacy HERO label; see A1.19 B-437)",
@@ -273,15 +274,15 @@ def main() -> None:
 
     fig.suptitle(
         "Meta-analytic forest — APPENDIX exploratory (3→5-mode legacy lift; "
-        "see `phase1_prereg_gate.{csv,md}` for paper §1 H1 PRIMARY hero)",
+        "see `phase1_full_prereg_decision.{csv,md}` for paper §1 H1 PRIMARY hero)",
         fontsize=12.5, fontweight="bold",
     )
     fig.text(
         0.5, 0.025,
         "/stress A1.20 P0-4-AC (2026-05-17, A1.19 B-437 figure-layer propagation gap closed): "
         "the 3→5-mode lift estimand was demoted to APPENDIX exploratory per A1.19 B-184/B-437. "
-        "True paper §1 H1 PRIMARY = P-SoM drop-one over 6-mode universe FE inverse-variance pool "
-        "(producer: `aggregate_phase1_prereg_gate.py`, output: `phase1_prereg_gate.{csv,md}`). "
+        "True paper §1 H1 PRIMARY = P-SoM drop-one over 6-mode universe, bootstrap-percentile gate "
+        "(producer: `aggregate_phase1_full_prereg_decision.py`, output: `phase1_full_prereg_decision.{csv,md}`). "
         "Per-cell square sized by random-effect weight; horizontal line = 95% bootstrap CI. "
         "**Gray diamond** = DerSimonian-Laird Wald RE pool (legacy descriptive only). "
         "**White outlined diamond** (when present) = Hartung-Knapp-Sidik-Jonkman adjustment "

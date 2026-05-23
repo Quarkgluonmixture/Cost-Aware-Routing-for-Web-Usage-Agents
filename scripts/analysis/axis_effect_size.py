@@ -35,60 +35,97 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import re
+import sys
+import warnings
 from pathlib import Path
 from typing import Optional
 
 from p79.experiment.analysis import scored_task_count
+from p79.experiment.io_utils import read_jsonl_dedup
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/axis_effect_size.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/axis_effect_size_report.md"
 
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
-
-
-STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
-    "B0": {
-        "reddit": {
-            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-            "Phantom-prompt": _phantom_prompt_dir("B0", "reddit"),
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-            "Phantom-prompt": _phantom_prompt_dir("B0", "classifieds"),
-        },
-    },
-    "B1": {
-        "reddit": {
-            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-            # Phantom-SoM / P-text not yet available for B1 reddit
-            "Phantom-prompt": _phantom_prompt_dir("B1", "reddit"),
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-            # P-text not yet available for B1 classifieds (only 4 ep at present)
-            "Phantom-prompt": _phantom_prompt_dir("B1", "classifieds"),
-        },
-    },
+# ---------------------------------------------------------------------------
+# Registry-driven STEP_DIRS construction (A-fix: replaces hardcoded run_ids)
+# ---------------------------------------------------------------------------
+# Maps registry PAPER_MODES → axis-script mode key names used in downstream
+# contrasts.  Axis-script uses "Phantom-SoM" (legacy key) for P-SoM and
+# "Phantom-prompt" for P-prompt to keep downstream contrast lookups unchanged.
+_REGISTRY_MODE_TO_AXIS_KEY: dict[str, str] = {
+    "DOM": "DOM",
+    "SoM": "SoM",
+    "Vision": "Vision",
+    "P-text": "P-text",
+    "P-SoM": "Phantom-SoM",
+    "P-prompt": "Phantom-prompt",
 }
+
+# Grade preference order: try paper-grade first, fall back to archived so the
+# script can run pre-fire for validation.  Override via env AXIS_GRADE=archived.
+_AXIS_GRADE = os.environ.get("AXIS_GRADE", "paper-grade")
+
+
+def _build_step_dirs() -> dict[str, dict[str, dict[str, Path | None]]]:
+    """Build STEP_DIRS from run_registry, replacing hardcoded archive run_ids.
+
+    Returns nested dict: {baseline: {site: {axis_key: episodes_dir | None}}}.
+    episodes_dir is None when a cell is absent from the registry at the
+    requested grade (downstream per_task_metrics() already handles None/missing
+    gracefully).  B2 cells present in registry but with no episode summaries on
+    disk emit a stderr warning (not silent skip).
+    """
+    try:
+        from scripts.analysis.lib.run_registry import get_cells, BASELINES as REG_BASELINES, SITES as REG_SITES
+    except Exception as exc:  # pragma: no cover
+        warnings.warn(f"[axis_effect_size] run_registry import failed ({exc}); falling back to empty dirs", RuntimeWarning)
+        return {}
+
+    # Collect all grades that should be considered, in preference order.
+    if _AXIS_GRADE == "paper-grade":
+        grade_pref = ["paper-grade", "archived"]
+    else:
+        grade_pref = [_AXIS_GRADE]
+
+    # Load cells across all relevant grades at once, then pick best per (b,s,m).
+    all_cells: dict[tuple[str, str, str], object] = {}
+    for grade in reversed(grade_pref):  # lower priority first so higher overwrites
+        try:
+            cells = get_cells(grade=grade)
+        except Exception:
+            cells = []
+        for cell in cells:
+            all_cells[(cell.baseline, cell.site, cell.mode)] = cell
+
+    result: dict[str, dict[str, dict[str, Path | None]]] = {}
+    for baseline in ["B0", "B1", "B2"]:
+        result[baseline] = {}
+        for site in ["reddit", "classifieds"]:
+            site_dict: dict[str, Path | None] = {}
+            for reg_mode, axis_key in _REGISTRY_MODE_TO_AXIS_KEY.items():
+                cell = all_cells.get((baseline, site, reg_mode))
+                if cell is None:
+                    # Cell not in registry at any requested grade tier — silently absent.
+                    site_dict[axis_key] = None
+                    continue
+                ep_dir = cell.episodes_dir
+                if baseline == "B2" and not ep_dir.exists():
+                    print(
+                        f"[axis_effect_size] WARN: B2 cell {site}/{reg_mode} found in registry "
+                        f"but episodes_dir missing on disk: {ep_dir}",
+                        file=sys.stderr,
+                    )
+                site_dict[axis_key] = ep_dir
+            result[baseline][site] = site_dict
+    return result
+
+
+STEP_DIRS: dict[str, dict[str, dict[str, Path | None]]] = _build_step_dirs()
 BASELINES = ["B0", "B1", "B2"]
 SITES = ["reddit", "classifieds"]
 SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
@@ -102,14 +139,28 @@ def step_task_id(path: Path) -> int:
     return int(m.group(1))
 
 
+def _summary_path_for_steps(steps_path: Path) -> Path | None:
+    """Derive sibling *_summary_v2.json path from a *_steps_v2.jsonl path."""
+    name = steps_path.name  # e.g. classifieds_task_3_steps_v2.jsonl
+    summary_name = name.replace("_steps_v2.jsonl", "_summary_v2.json")
+    if summary_name == name:
+        return None  # name didn't match expected pattern
+    candidate = steps_path.parent / summary_name
+    return candidate
+
+
 def read_steps(path: Path) -> list[dict]:
-    out = []
-    for line in path.read_text().splitlines():
-        try:
-            out.append(json.loads(line))
-        except json.JSONDecodeError:
-            pass
-    return out
+    """Read step records with restart dedup via read_jsonl_dedup.
+
+    Uses sibling *_summary_v2.json for identity validation (strict_identity=True)
+    when available; falls back to dedup-only when summary is absent.
+    This replaces the previous bare read_text loop which let watchdog restart
+    tail segments pollute §4 metrics.
+    """
+    summary = _summary_path_for_steps(path)
+    if summary is not None and summary.exists():
+        return read_jsonl_dedup(path, summary_path=summary, strict_identity=True)
+    return read_jsonl_dedup(path)
 
 
 _ALL_METRIC_KEYS = (

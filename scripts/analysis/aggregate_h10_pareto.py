@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections import Counter
 from pathlib import Path
@@ -52,6 +53,11 @@ from p79.policies.pass1_manifest import discover_runs
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
 OUT_DIR = REPO / "results/phantom_paper"
+
+# AMENDMENT_01 (2026-05-21): H10 Pareto Cost-axis = total_billed_cost (within-cell,
+# consistent with §1/§4). Fail closed if an episode summary lacks total_billed; legacy
+# archive vintages can opt in to the old total_cost_usd via P79_ALLOW_LEGACY_COST=1.
+_LEGACY_COST_OK = os.environ.get("P79_ALLOW_LEGACY_COST", "0") == "1"
 
 # Phase 1a 6 cells
 CELLS = [
@@ -140,10 +146,23 @@ def collect_per_task_outcomes_with_metrics(
                     continue
                 tid = int(rec["task_id"])
                 success = bool(rec.get("success", False))
-                # total_cost_usd may be at top level OR inside cost_usd dict
-                cost = rec.get("total_cost_usd")
+                # AMENDMENT_01 (2026-05-21): H10 Pareto Cost-axis = total_billed_cost
+                # (within-cell, consistent with §1/§4). Fail closed if a paper-grade
+                # episode lacks total_billed; legacy total_cost_usd / cost_usd.total only
+                # in legacy mode (P79_ALLOW_LEGACY_COST=1 for archive vintages).
+                cost = rec.get("total_billed_cost_usd")
                 if cost is None:
-                    cost = (rec.get("cost_usd") or {}).get("total", 0.0)
+                    if _LEGACY_COST_OK:
+                        cost = rec.get("total_cost_usd")
+                        if cost is None:
+                            cost = (rec.get("cost_usd") or {}).get("total", 0.0)
+                    else:
+                        raise RuntimeError(
+                            f"H10 Pareto cost-axis: {summary_f} lacks total_billed_cost_usd "
+                            "(AMENDMENT_01 H10 cost-axis = total_billed). Set "
+                            "P79_ALLOW_LEGACY_COST=1 for archive vintages, or re-run the "
+                            "condition to emit the canonical billed-cost field."
+                        )
                 latency = rec.get("total_latency_ms")
                 if latency is None:
                     latency = (rec.get("latency_ms") or {}).get("total", 0.0)

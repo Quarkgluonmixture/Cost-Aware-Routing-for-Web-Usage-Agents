@@ -149,30 +149,41 @@ def test_bootstrap_se_scales_with_n(tmp_path):
 
 # ─── _fe_pool ────────────────────────────────────────────────────────────────
 def test_fe_pool_arithmetic():
-    """FE pool: equal SEs → simple mean; weighted SE = sqrt(1/Σw)."""
+    """FE pool: equal SEs → simple mean; weighted SE = sqrt(1/Σw).
+
+    SEs chosen ≥ 0.68pp so the AMENDMENT-03 Agresti-Coull floor does NOT fire —
+    this test exercises the inverse-variance arithmetic, not the floor.
+    """
     per_cell = [
-        {"theta_pp": 2.0, "se_pp": 0.5},
-        {"theta_pp": 3.0, "se_pp": 0.5},
-        {"theta_pp": 4.0, "se_pp": 0.5},
+        {"theta_pp": 2.0, "se_pp": 1.0},
+        {"theta_pp": 3.0, "se_pp": 1.0},
+        {"theta_pp": 4.0, "se_pp": 1.0},
     ]
     fe = _fe_pool(per_cell)
     assert fe is not None
     # Equal weights → arithmetic mean
     assert fe["theta_FE_pp"] == pytest.approx(3.0, abs=1e-9)
-    # SE_FE = sqrt(1 / Σw) where w_i = 1/0.25 = 4 each, Σw=12
-    expected_se_fe = math.sqrt(1.0 / 12.0)
+    # SE_FE = sqrt(1 / Σw) where w_i = 1/1.0² = 1 each, Σw=3
+    expected_se_fe = math.sqrt(1.0 / 3.0)
     assert fe["se_FE_pp"] == pytest.approx(expected_se_fe, abs=1e-9)
+    assert fe["n_below_se_floor_cells"] == 0  # no cell below the 0.68pp floor
 
 
 def test_fe_pool_weighted_by_inverse_variance():
-    """Cell with smaller SE should pull θ_FE toward it more."""
+    """Cell with smaller SE should pull θ_FE toward it more.
+
+    SEs 0.7 vs 1.4 (ratio 1:2 → weight ratio 4:1) are both ≥ 0.68pp so the
+    AMENDMENT-03 floor does not collapse the contrast (the pre-amendment test used
+    SE=0.1, which now floors to 1.0pp and would erase the weighting under test).
+    """
     per_cell = [
-        {"theta_pp": 2.0, "se_pp": 0.1},  # weight = 100
-        {"theta_pp": 10.0, "se_pp": 1.0},  # weight = 1
+        {"theta_pp": 2.0, "se_pp": 0.7},   # weight 1/0.49 (4×)
+        {"theta_pp": 10.0, "se_pp": 1.4},  # weight 1/1.96 (1×)
     ]
     fe = _fe_pool(per_cell)
-    # θ_FE = (100*2 + 1*10) / 101 ≈ 2.079
-    assert fe["theta_FE_pp"] == pytest.approx(210.0 / 101.0, abs=1e-9)
+    # weight ratio 4:1 → θ_FE = (4·2 + 1·10) / 5 = 3.6, pulled toward the low-SE cell
+    assert fe["theta_FE_pp"] == pytest.approx(18.0 / 5.0, abs=1e-9)
+    assert fe["n_below_se_floor_cells"] == 0
 
 
 def test_fe_pool_z_and_p_one_sided_at_threshold():
@@ -194,20 +205,24 @@ def test_fe_pool_returns_none_at_k1():
 
 
 def test_fe_pool_handles_zero_se_via_floor():
-    """SE=0 floored to 1.0pp (P0-9 codex/gemini pre-fire #10/#9 fix).
+    """SE-floor (AMENDMENT 03: `< 0.68pp → 1.0pp` Agresti-Coull threshold).
 
-    /stress A1.12 P1-1 (2026-05-16): legacy expectation was `θ_FE ≈ 2.0`
-    (1e-9 floor → zero-SE row dominates). Current implementation floors to
-    1.0pp so degenerate cells cannot hijack the pool: weights = [1/1², 1/0.5²]
-    = [1, 4]; θ_FE = (1·2 + 4·3) / 5 = 14/5 = 2.8.
+    History: pre-P0-9 used a 1e-9 floor (zero-SE row dominates, θ_FE≈2.0); P0-9
+    floored only the literal-zero SE (threshold `<= 0` → θ_FE=2.8, the SE=0.5 cell
+    keeping weight 4); AMENDMENT 03 (2026-05-24) aligns the threshold to the canonical
+    0.68pp anchor (prereg L98 / B-1003), so BOTH the SE=0.0 cell AND the SE=0.5 cell
+    (0.5 < 0.68) floor to 1.0pp → equal weights → θ_FE = (2 + 3)/2 = 2.5.
+    `n_zero_se_floored_cells` counts only exact-zero (1); `n_below_se_floor_cells`
+    counts all cells under the 0.68 threshold (2).
     """
     per_cell = [
         {"theta_pp": 2.0, "se_pp": 0.0},
         {"theta_pp": 3.0, "se_pp": 0.5},
     ]
     fe = _fe_pool(per_cell)
-    assert fe["theta_FE_pp"] == pytest.approx(2.8, abs=1e-6)
+    assert fe["theta_FE_pp"] == pytest.approx(2.5, abs=1e-6)
     assert fe["n_zero_se_floored_cells"] == 1
+    assert fe["n_below_se_floor_cells"] == 2
 
 
 # ─── build_gate end-to-end ──────────────────────────────────────────────────

@@ -34,9 +34,10 @@ tail -40 logs/cron/paper_grade_check.log     # 每 6h 自动检查历史 (00:30/
 
 **② fire 死活 (fire 在 A100; `make active` 只扫 DGX → 空是正常)**:
 ```
-ssh condense-a100 'pgrep -af "queue_phase1_paper_grade|run_experiment\.py" | grep -v bash'
+ssh condense-a100 'pgrep -af "queue_phase1_paper_grade|queue_chain\.sh|run_experiment\.py" | grep -v "bash -c"'
 ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/analysis/validate_fire_manifest.py'
 ```
+> ⚠️ 滤词用 `grep -v "bash -c"` **不是** `grep -v bash`: 链编排器本体 = `bash scripts/queues/queue_chain.sh …` (它本身就是个 bash 进程), `grep -v bash` 会把它一起滤掉 → 误判"编排器死了" → 诱发**有害的手动 re-fire** (同-site 双起 baseline → 违反 hard rule → cross-contam)。读数: `run_experiment.py` 活 = 当前 condition 在跑; `queue_chain.sh` 活 = 下一 condition 会自动续链; **后者空但前者活 = 当前 condition 跑完会静默 stall** (链不会自动续, 需手动 re-arm)。
 
 **③ 当前阶段 (慢变语境 — live 进度跑①拿, 勿读快照数字)**: **Gate 3 = cls 18-cond chain 跑中** (B0/B1/B2 × 6 mode 顺序: dom / som / vision / P-text / P-SoM / P-prompt), orchestrator `queue_chain.sh` 自动续链, 每 cond **B-1839 per-condition docker restart** = fresh substrate。监控全自动: A100 `fire6_monitor` (re-armed) + DGX `paper_grade_check` 6h cron + sync 15min。**cls 18 完 → red 18** (sequential, cross-site contention 规避)。**ETA ~12-21 天** (B0 cls ~8.3h/mode 实测; 编排器原估偏低 2×)。Amendment 02 (`e338cb4` + tag + OSF, H1-strict 6-mode gate **不动**) + B-1839 substrate (git tag `b1839-substrate-prefire`) 均 **pre-fire witnessed, OSF 不动** (衬底/binding 非 estimand)。WHY 全链 chronicle → §274/§275 (launch 前序) · §276 (B-1840/1841 binding bug) · §277 (R31194 /diag) · §278 (parse-error /stress disclosure)。
 
@@ -172,8 +173,9 @@ docs/checkpoints/paper_drafts/
 
 ### Figures
 `results/phantom_paper/figures/` — regenerate via `make analysis` / `make figures`:
-- §1 hook: fig0a_sr_per_mode_heatmap / fig0b_fp_rate_per_mode / fig0c_drop_one_oracle / fig0g_routing_auroc_heatmap / fig3b_image_token_gap
-- §5 mechanism: fig_stage4_method42_v2_{cls,reddit} / fig_axis2_logit_lens_v2 / fig_axis2_layer_profile_v2 / fig_mech_8cell_l17_forest / fig_mech_real_vs_random / fig_layer_axis_emergence_v2_{cls,reddit} / fig_phantom_structure_venn
+- §1 hook (脚本已存在): fig0a_sr_per_mode_heatmap / fig0b_extra_confidence_calibration / fig0c_drop_one_oracle / fig0g_routing_auroc_heatmap / fig3b_image_token_gap / fig_phantom_structure_venn / fig_meta_forest / fig_forest_drop_one
+- §5 mechanism (§5 暂搁 — 脚本未落地/已 frozen): fig_stage4_method42_v2_{cls,reddit} / fig_axis2_logit_lens_v2 / fig_axis2_layer_profile_v2 / fig_mech_8cell_l17_forest / fig_mech_real_vs_random / fig_layer_axis_emergence_v2_{cls,reddit}
+- §5 mechanism (脚本存在但 §5 暂搁): fig_mechanism_pilot
 
 ### Key infra paths
 ```

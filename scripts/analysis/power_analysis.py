@@ -173,9 +173,9 @@ def main():
     z_label = "1.645 one-sided" if one_sided else "1.96 two-sided"
 
     sites = [
-        ("classifieds", 234),
-        ("reddit", 210),
-        ("shopping", 466),
+        ("classifieds", 224),
+        ("reddit", 205),
+        ("shopping", 435),
     ]
 
     lines = [
@@ -195,7 +195,7 @@ def main():
         "",
         "## Per-cell MDE (minimum detectable effect)",
         "",
-        "| Site | N (pre-exclusion) | MDE (proportion) | MDE (pp) | Cohen's h at MDE |",
+        "| Site | N (scored, post-N/A-exclusion) | MDE (proportion) | MDE (pp) | Cohen's h at MDE |",
         "|---|---|---|---|---|",
     ]
 
@@ -209,9 +209,7 @@ def main():
 
     lines += [
         "",
-        "> Post-§139.8 scored N (after N/A task-load exclusion): cls 224 / red 205 / shop 435. "
-        "MDE shift vs pre-exclusion N is ~2.2% (negligible) but operational denominators "
-        "are the scored count.",
+        "> Scored N (after N/A task-load exclusion, canonical): cls 224 / red 205 / shop 435.",
         "",
         "## Per-cell power at assumed effect sizes",
         "",
@@ -308,7 +306,7 @@ def main():
         "## Interpretation for paper §3",
         "",
         f"- At baseline SR={args.baseline_sr:.2f} (conservative πD bound), smallest site (reddit "
-        f"N=210) detects per-cell effects ≥ {per_site_mde['reddit']*100:.1f}pp at 80% power.",
+        f"N=205) detects per-cell effects ≥ {per_site_mde['reddit']*100:.1f}pp at 80% power.",
         f"- **PRIMARY H1 FE-pool gate** (the gate paper-1 actually hinges on): empirical archive "
         f"k=3 → 81% power at observed +2.34pp; projected k=6 Phase 1a → 97% power. **Well-powered**.",
         f"- Empirical paired SE (from aggregator paired-bootstrap) is ~2.2× smaller than the "

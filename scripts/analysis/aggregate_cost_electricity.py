@@ -4,7 +4,7 @@
 v6 update 2026-05-16: B2 (Gemma3-VL local 4B, added 2026-05-14) added to electricity-
 equivalent cost class alongside B1. See cell-level branch + paper §6 disclosure.
 
-B0 cost = API token cost (avg_total_cost_usd from Qwen3-VL-235B-A22B per-token rates)
+B0 cost = API total-billed cost (avg_total_billed_cost_usd; AMENDMENT_01 §1 PRIMARY)
 B1 cost = electricity-equivalent (avg_total_energy_kwh × electricity price)
 
 Rationale: B0 (API call) and B1 (local 4B inference) belong to DIFFERENT cost
@@ -24,6 +24,8 @@ See paper_planning.md §3 Efficiency dimension (sub-code 3d) framework.
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -77,12 +79,14 @@ def safe_load(path: Path) -> Optional[dict]:
         return None
 
 
-def collect_cell(baseline: str, site: str, mode: str, sub: str) -> dict:
+def collect_cell(baseline: str, site: str, mode: str, sub: str,
+                 legacy_cost_ok: bool = False) -> dict:
     p = RESULTS / sub / "condition_summary_v2.json"
     d = safe_load(p)
     if d is None:
         return {"available": False, "reason": "missing condition_summary_v2.json"}
-    avg_token_cost = d.get("avg_total_cost_usd")
+    avg_token_cost = d.get("avg_total_cost_usd")          # legacy token×rate (artifact)
+    avg_billed_cost = d.get("avg_total_billed_cost_usd")  # AMENDMENT_01 §1 PRIMARY estimand
     avg_energy_kwh = d.get("avg_total_energy_kwh")
     avg_co2e_kg = d.get("avg_total_co2e_kg")
     avg_steps = d.get("avg_steps")
@@ -90,7 +94,7 @@ def collect_cell(baseline: str, site: str, mode: str, sub: str) -> dict:
         "available": True,
         "run_subpath": sub,
         "avg_steps": avg_steps,
-        # Efficiency 3a token cost (B0 = real API $; B1 = artifact, see notes)
+        # Efficiency 3a token cost (legacy yaml-rate artifact; NOT the §1 cost estimand)
         "avg_token_cost_usd_yaml_rate": avg_token_cost,
         # Efficiency 3d energy + electricity cost (only B1 has reliable energy data)
         "avg_energy_kwh": avg_energy_kwh,
@@ -102,8 +106,28 @@ def collect_cell(baseline: str, site: str, mode: str, sub: str) -> dict:
         "avg_co2e_kg": avg_co2e_kg,
     }
     if baseline == "B0":
-        cell["paper_cost_usd"] = avg_token_cost  # paid API dollars
-        cell["paper_cost_class"] = "API_token_dollars"
+        # AMENDMENT_01 (2026-05-21): §1 PRIMARY cost = total_billed (canonical/wasted → §4).
+        # cross_site.py already consumes avg_total_billed_cost_usd (Q1=A); this producer was
+        # the stale legacy holdout still reporting avg_total_cost_usd. Fail closed if a
+        # paper-grade summary lacks total_billed — NO silent fallback to legacy total cost
+        # except explicit legacy mode (env P79_ALLOW_LEGACY_COST=1 for archive vintages).
+        if avg_billed_cost is not None:
+            cell["paper_cost_usd"] = avg_billed_cost  # canonical billed dollars
+            cell["paper_cost_class"] = "API_total_billed_dollars"
+            cell["paper_cost_estimand"] = "avg_total_billed_cost_usd (AMENDMENT_01 §1 PRIMARY)"
+        elif legacy_cost_ok:
+            cell["paper_cost_usd"] = avg_token_cost
+            cell["paper_cost_class"] = "API_token_dollars_LEGACY_FALLBACK"
+            cell["paper_cost_estimand"] = "avg_total_cost_usd (LEGACY fallback — P79_ALLOW_LEGACY_COST)"
+        else:
+            cell["paper_cost_usd"] = None
+            cell["paper_cost_class"] = "ERROR_missing_total_billed"
+            cell["paper_cost_estimand"] = None
+            cell["cost_error"] = (
+                "paper-grade summary lacks avg_total_billed_cost_usd (AMENDMENT_01 §1 "
+                "PRIMARY estimand); set P79_ALLOW_LEGACY_COST=1 to fall back to legacy "
+                "avg_total_cost_usd for archive vintages."
+            )
     elif baseline in ("B1", "B2"):
         # v6 fix (P1-13, codex pre-fire #11): B2 (Gemma3-VL local 4B inference, added
         # 2026-05-14) belongs to same "electricity-equivalent" cost class as B1 (Qwen3-VL
@@ -124,6 +148,7 @@ def collect_cell(baseline: str, site: str, mode: str, sub: str) -> dict:
 
 
 def main() -> None:
+    legacy_cost_ok = os.environ.get("P79_ALLOW_LEGACY_COST", "0") == "1"
     cells: dict[str, dict[str, dict[str, dict]]] = {}
     for baseline, sites in RUNS.items():
         cells[baseline] = {}
@@ -133,7 +158,9 @@ def main() -> None:
                 if sub is None:
                     cells[baseline][site][mode] = {"available": False, "reason": "no run dir"}
                     continue
-                cells[baseline][site][mode] = collect_cell(baseline, site, mode, sub)
+                cells[baseline][site][mode] = collect_cell(
+                    baseline, site, mode, sub, legacy_cost_ok=legacy_cost_ok
+                )
 
     # Cross-class summary stats
     summary = {
@@ -204,7 +231,7 @@ def main() -> None:
     lines.append("# Efficiency — Cost Per Mode (deployment-class aware)\n")
     lines.append(summary["method"] + "\n")
     lines.append("## B0 — API token dollars (paid)\n")
-    lines.append("| site | mode | avg_steps | avg_total_cost_usd ($/ep) |")
+    lines.append("| site | mode | avg_steps | avg_total_billed_cost_usd ($/ep) |")
     lines.append("|---|---|---:|---:|")
     for site in ("reddit", "classifieds"):
         for mode, cell in cells["B0"][site].items():
@@ -296,6 +323,25 @@ def main() -> None:
 
     OUT_MD.write_text("\n".join(lines) + "\n")
     print(f"[md]   {OUT_MD}")
+
+    # Fail closed (AMENDMENT_01 §1 PRIMARY = total_billed): any B0 paper-grade cell
+    # missing avg_total_billed_cost_usd is an error unless P79_ALLOW_LEGACY_COST=1.
+    # Surfaced AFTER writing outputs so the partial table stays available for debugging.
+    cost_errors = [
+        f"{b}/{s}/{m}: {c['cost_error']}"
+        for b, sites in cells.items()
+        for s, modes in sites.items()
+        for m, c in modes.items()
+        if isinstance(c, dict) and c.get("cost_error")
+    ]
+    if cost_errors and not legacy_cost_ok:
+        sys.stderr.write(
+            "[aggregate_cost_electricity] FAIL-CLOSED: B0 cell(s) missing total_billed "
+            "(AMENDMENT_01 §1 PRIMARY estimand):\n  " + "\n  ".join(cost_errors)
+            + "\n  → set P79_ALLOW_LEGACY_COST=1 to fall back to legacy avg_total_cost_usd "
+            "for archive vintages.\n"
+        )
+        sys.exit(2)
 
 
 if __name__ == "__main__":

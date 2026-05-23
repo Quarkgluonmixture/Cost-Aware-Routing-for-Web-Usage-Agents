@@ -59,6 +59,7 @@ from scripts.analysis.lib.run_registry import (  # noqa: E402
 )
 from scripts.analysis.lib.canonical_cells import (  # noqa: E402
     SITE_ABBREV,  # A1.21 P0-7 (B-526): canonical shared source
+    assert_cells_match_planned,  # C3 fix 2026-05-24: fail-loud on scope drift
 )
 
 LOGGER = logging.getLogger("generate-per-task-sr")
@@ -168,6 +169,17 @@ def main() -> int:
         "(A1.21 P1-12 B-528: nargs='append', was single string).",
     )
     p.add_argument("-v", "--verbose", action="store_true")
+    # C3 fix 2026-05-24: --strict-complete flag for fail-loud on Phase 1a partial scope.
+    # Default require_complete=False (tolerate pre-fire partial data — Phase 1a not yet
+    # fully landed). Pass --strict-complete for paper-grade promotion gating.
+    p.add_argument(
+        "--strict-complete",
+        action="store_true",
+        default=False,
+        help="Fail with exit 2 if any Phase 1a planned cell is absent from the output CSV. "
+             "Default: warn only (tolerates pre-fire partial state). "
+             "(C3 fix 2026-05-24, B-526 assert_cells_match_planned)",
+    )
     args = p.parse_args()
     if args.grade is None:
         args.grade = ["paper-grade"]
@@ -294,6 +306,28 @@ def main() -> int:
     }
     sidecar_path.write_text(json.dumps(sidecar, indent=2) + "\n")
     LOGGER.info("provenance sidecar → %s", sidecar_path)
+
+    # C3 fix 2026-05-24: assert_cells_match_planned — fail-loud on scope drift.
+    # Compute written cell_ids from the complete (non-skipped) by_cell entries.
+    written_cell_ids = [
+        f"{SITE_ABBREV[s]}_{b}"
+        for (s, b) in by_cell
+        if (s, b) not in [(si, ba) for (si, ba) in incomplete_cells]
+    ]
+    try:
+        assert_cells_match_planned(
+            written_cell_ids,
+            require_complete=args.strict_complete,
+        )
+        LOGGER.info("assert_cells_match_planned: scope check passed (require_complete=%s)",
+                    args.strict_complete)
+    except ValueError as exc:
+        if args.strict_complete:
+            LOGGER.error("Phase 1a scope check FAILED (--strict-complete): %s", exc)
+            return 2
+        else:
+            LOGGER.warning("Phase 1a scope check (non-strict): %s", exc)
+
     return 0 if n_rows > 0 else 2
 
 

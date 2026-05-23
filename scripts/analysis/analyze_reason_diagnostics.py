@@ -1932,7 +1932,14 @@ def main() -> None:
             )
             if summary is None:
                 continue  # corrupt / type-mismatch / B-486 quarantine
-            steps = _sort_steps_by_idx(_read_jsonl(steps_path))
+            # D-other fix 2026-05-24: pass summary_path + strict_identity=True so
+            # read_jsonl_dedup (aliased as _read_jsonl at module-level via
+            # `from p79.experiment.io_utils import read_jsonl_dedup as _read_jsonl`)
+            # can validate segment identity against the episode summary. This catches
+            # restart-crash bleed-through (stale prior-run steps leaking into the current
+            # episode's JSONL) before the steps enter reason-diagnostics categorisation.
+            # summary_path is already resolved above from the glob match on summary_path.
+            steps = _sort_steps_by_idx(_read_jsonl(steps_path, summary_path=summary_path, strict_identity=True))
             if not steps:
                 continue
 

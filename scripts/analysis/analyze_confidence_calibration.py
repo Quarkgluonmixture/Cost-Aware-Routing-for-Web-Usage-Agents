@@ -40,10 +40,15 @@ from scipy import stats as sp_stats
 # ── Data loading ──────────────────────────────────────────────────────────
 
 def _load_step_records(run_dir: Path) -> List[Dict[str, Any]]:
-    """Load all *_steps_v2.jsonl with restart dedup.
+    """Load all *_steps_v2.jsonl with restart dedup + identity check.
 
-    Delegates to analysis._collect_step_records which handles watchdog
-    restart artifacts (stale lines from earlier runs in append-mode JSONL).
+    D-other fix 2026-05-24: pass summary_path (sibling summary JSON) and
+    strict_identity=True to read_jsonl_dedup so restart-crash bleed-through
+    (stale segments from a prior run whose task_id differs from the current
+    segment) is caught at load time rather than silently entering confidence
+    calibration analysis with wrong task context.
+
+    Sibling path rule: replace `_steps_v2.jsonl` → `_summary_v2.json`.
     """
     try:
         from p79.experiment.io_utils import read_jsonl_dedup
@@ -52,7 +57,12 @@ def _load_step_records(run_dir: Path) -> List[Dict[str, Any]]:
         return _collect_step_records(run_dir)
     rows: List[Dict[str, Any]] = []
     for path in run_dir.glob("*/episodes/*_steps_v2.jsonl"):
-        rows.extend(read_jsonl_dedup(path))
+        summary_path = path.with_name(path.name.replace("_steps_v2.jsonl", "_summary_v2.json"))
+        rows.extend(read_jsonl_dedup(
+            path,
+            summary_path=summary_path if summary_path.exists() else None,
+            strict_identity=True,
+        ))
     return rows
 
 

@@ -8,9 +8,9 @@ four orthogonal dimensions). Sub-codes (0a / 1c / 2a / 3d) remain as figure-inte
 CLI alias `make analyze-layered` and filename `layered_evidence_status.md` are retained
 for backward compatibility.
 
-Inventory note: the current repo has 20 top-level analysis scripts plus 11
-figure scripts under `scripts/analysis/figures/` after adding
-`layered_status.py`.
+Inventory note: the current repo has 63 top-level analysis scripts plus 26
+figure scripts under `scripts/analysis/figures/`. This README's dimension
+mapping table covers only the core paper-grade subset.
 
 ## One-command Status
 
@@ -114,7 +114,6 @@ analyze-paper`, or manual debugging.
 | `scripts/analysis/analyze_search_over_browse.py` | fixed B0/B1 reddit runs | printed/diagnostic tables | search-over-browse diagnosis |
 | `scripts/analysis/analyze_noninteractive_click_earlystop.py` | fixed B0/B1 classifieds SoM runs | printed/diagnostic tables | noninteractive click early-stop diagnosis |
 | `scripts/analysis/b0_vision_coordinate_errors.py` | fixed B0 classifieds run | printed/diagnostic tables | B0 vision coordinate error analysis |
-| `scripts/analysis/figures/fig_capability_b0_b1.py` | `docs/analysis/phantom_paper/disagreement_clusters.md` | `results/phantom_paper/figures/fig_capability_b0_b1.png` | B0/B1 capability contrast diagnostic |
 
 ## Make Targets
 
@@ -129,3 +128,29 @@ analyze-layered  # all dimensions + docs/analysis/layered_evidence_status.md
 Target names retained as CLI aliases for backward compatibility; paper-facing
 naming is "Outcome / Macro / Micro / Efficiency" (4 orthogonal dimensions).
 Existing `analyze` and `analyze-paper` targets are unchanged.
+
+## Script inventory note (2026-05-23 audit)
+
+This README's dimension mapping table covers the core paper-grade script subset
+only. The full repo contains 63 top-level analysis scripts and 26 figure scripts
+(`scripts/analysis/figures/`). Un-listed scripts fall into three categories:
+
+- **Mechanism scripts** (`stage2_*`, `stage4_*`, `mechanism_per_task.py`):
+  target paper §5 (activation patching / layer probes / logit lens), which is
+  暂搁 (frozen) since 2026-05-14. The sole exception is the E3 block in
+  `mechanism_per_task.py`, which feeds `fig0b_extra_confidence_calibration.py`
+  and is therefore pulled into the default `make analysis` pipeline.
+
+- **Ad-hoc diagnostic scripts** (`analyze_comment_selflink_loop*.py`,
+  `analyze_reddit_selflink_cycle.py`, `analyze_search_over_browse.py`,
+  `b0_vision_coordinate_errors.py`, `analyze_noninteractive_click_earlystop.py`,
+  etc.): one-time forensic runs for specific bug investigations; not part of any
+  make target.
+
+- **Routing / learned-router scripts** (`analyze_routing_*.py`,
+  `preregistration_decision_test.py`, `power_analysis.py`, etc.): part of the
+  Phase 1a statistical gate and Pass-2 router pipeline, documented separately in
+  `docs/checkpoints/phase1_plan.md §C`.
+
+For the complete script list use `ls scripts/analysis/*.py` and
+`ls scripts/analysis/figures/*.py`.

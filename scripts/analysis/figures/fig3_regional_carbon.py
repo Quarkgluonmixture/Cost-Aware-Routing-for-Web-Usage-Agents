@@ -51,9 +51,17 @@ _SITE_LABELS = {
 }
 
 
-def _resolve_runs(grade: list | None = None) -> dict:
-    """Map (site → {expected, label, DOM, SoM, Vision episodes}) using
-    run_registry. Raises RuntimeError if any required B1 cell missing.
+def _resolve_runs(grade: list | None = None, baseline: str = "B1") -> dict:
+    """Map (site → {expected, label, DOM, SoM, Vision episodes}) using run_registry.
+    Raises RuntimeError if any required cell is missing.
+
+    `baseline` defaults to "B1" (local Qwen3-VL-4B with NVML-measured energy). B2
+    (Gemma3-VL, also local 4B → NVML-measurable, same deployment class) is a SYMMETRIC
+    carbon-extension point: pass baseline="B2" once Phase 1a B2 energy lands. The full
+    B1+B2 side-by-side carbon figure (a second model = extra mode-lines or a panel row,
+    i.e. a figure redesign) is deferred to the §8 Green AI write-up because B2 energy is
+    not yet collected; parameterising here keeps the B2 gap an explicit known-extension
+    rather than a silent drop (2026-05-24 audit, /stress Agent-3 F8).
     """
     out: dict[str, dict] = {}
     missing: list[str] = []
@@ -63,16 +71,16 @@ def _resolve_runs(grade: list | None = None) -> dict:
     for site in ("classifieds", "reddit"):
         site_entry = {"expected": _SITE_N[site], "label": _SITE_LABELS[site]}
         for mode in ("DOM", "SoM", "Vision"):
-            cells = _get_cells(baseline="B1", site=site, mode=mode, grade=grade)
+            cells = _get_cells(baseline=baseline, site=site, mode=mode, grade=grade)
             if not cells:
-                missing.append(f"B1 {site} {mode}")
+                missing.append(f"{baseline} {site} {mode}")
                 continue
             site_entry[mode] = cells[0].episodes_dir
         out[site] = site_entry
     if missing:
         raise RuntimeError(
-            "fig3_regional_carbon: missing paper-grade cells "
-            f"{missing}. Update run_manifest.yaml or set "
+            f"fig3_regional_carbon: missing paper-grade cells {missing} for baseline "
+            f"{baseline!r}. Update run_manifest.yaml or set "
             "P79_AGGREGATOR_GRADE=archived for legacy sensitivity."
         )
     return out

@@ -104,10 +104,13 @@ def test_collect_per_task_outcomes_captures_basis_field(tmp_path):
     ep_dir.mkdir(parents=True)
 
     # Fake episode summary file with cost_unit_basis field
+    # Canonical schema has total_billed_cost_usd (AMENDMENT_01 H10 cost-axis); a distinct
+    # legacy total_cost_usd is included to prove the matrix reads total_billed, not legacy.
     summary = {
         "task_id": 42,
         "success": True,
-        "total_cost_usd": 0.0000003,
+        "total_billed_cost_usd": 0.0000003,
+        "total_cost_usd": 0.0000009,
         "total_latency_ms": 1234.5,
         "cost_unit_basis": "electricity_usd_derived",
     }
@@ -118,7 +121,7 @@ def test_collect_per_task_outcomes_captures_basis_field(tmp_path):
     assert "dom" in matrix[42]
     entry = matrix[42]["dom"]
     assert entry["cost_unit_basis"] == "electricity_usd_derived"
-    assert entry["cost_usd"] == pytest.approx(0.0000003)
+    assert entry["cost_usd"] == pytest.approx(0.0000003)  # total_billed, NOT total_cost
 
 
 def test_collect_per_task_outcomes_missing_basis_defaults_unknown(tmp_path):
@@ -136,9 +139,11 @@ def test_collect_per_task_outcomes_missing_basis_defaults_unknown(tmp_path):
     summary = {
         "task_id": 7,
         "success": False,
+        "total_billed_cost_usd": 0.001,  # canonical (AMENDMENT_01); fail-closed requires it
         "total_cost_usd": 0.001,
         "total_latency_ms": 5000.0,
-        # No cost_unit_basis key — legacy schema
+        # No cost_unit_basis key — legacy schema (this test exercises the
+        # cost_unit_basis default, not the cost-axis field)
     }
     (ep_dir / "classifieds_task_7_summary_v2.json").write_text(json.dumps(summary))
 
