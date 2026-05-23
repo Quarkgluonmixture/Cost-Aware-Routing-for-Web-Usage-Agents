@@ -59,20 +59,26 @@ _reset_vwa_local_classifieds() {
     # so dev runs (flag unset) skip the ~30-60s cost.
     if [[ "${VWA_RESTART_DOCKER:-0}" == "1" ]]; then
         echo "[${label}][reset_vwa][local] Gate3 per-condition docker restart: classifieds_db + classifieds"
-        if ! docker restart classifieds_db classifieds >/dev/null 2>&1; then
-            echo "[${label}][reset_vwa][local] classifieds docker restart FAILED (fail-closed)" >&2
+        local _restart_out _ntfy="${NTFY_TOPIC:-p79-exp-dgx-spark}"
+        # B-1839 P2-4: capture restart output (was >/dev/null) so per-container errors surface.
+        if ! _restart_out=$(docker restart classifieds_db classifieds 2>&1); then
+            echo "[${label}][reset_vwa][local] classifieds docker restart FAILED (fail-closed): ${_restart_out}" >&2
+            curl -sf -d "🔴 B-1839 cls docker restart FAILED: ${_restart_out}" "ntfy.sh/${_ntfy}" >/dev/null 2>&1 || true
             return 1
         fi
-        # wait MySQL ready (db restart cold ~5-15s) — app HTTP 500s until db up
+        # wait MySQL query-ready (db restart cold ~5-15s). B-1839 P2-1: `SELECT 1` on
+        # osclass DB confirms grant-tables + DB queryable — stricter than `mysqladmin
+        # ping` which returns once the server accepts connections (before query-ready).
         local _i _db_ok=0
         for _i in $(seq 1 30); do
-            if docker exec -e MYSQL_PWD=password classifieds_db mysqladmin -uroot ping >/dev/null 2>&1; then
+            if docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e "SELECT 1" >/dev/null 2>&1; then
                 _db_ok=1; break
             fi
             sleep 2
         done
         if [[ "${_db_ok}" != "1" ]]; then
-            echo "[${label}][reset_vwa][local] classifieds_db not ready 60s post-restart (fail-closed)" >&2
+            echo "[${label}][reset_vwa][local] classifieds_db not query-ready 60s post-restart (fail-closed)" >&2
+            curl -sf -d "🔴 B-1839 cls db not query-ready 60s post-restart" "ntfy.sh/${_ntfy}" >/dev/null 2>&1 || true
             return 1
         fi
         # wait HTTP 200 (OSClass cold ~10-15s) — also warms the FPC so the head-of-
@@ -86,9 +92,10 @@ _reset_vwa_local_classifieds() {
         done
         if [[ "${_http_ok}" != "1" ]]; then
             echo "[${label}][reset_vwa][local] classifieds HTTP not ready 60s post-restart (last=${_code}, fail-closed)" >&2
+            curl -sf -d "🔴 B-1839 cls HTTP not 200 60s post-restart (last=${_code})" "ntfy.sh/${_ntfy}" >/dev/null 2>&1 || true
             return 1
         fi
-        echo "[${label}][reset_vwa][local] classifieds containers fresh + warm (db ping OK, http 200)"
+        echo "[${label}][reset_vwa][local] classifieds containers fresh + warm (db query OK, http 200)"
     fi
     # B-757 (/stress A1.17 cold-start P1-14 A, 2026-05-17): token from env or
     # .auth/cls_reset_token (gitignored). Hardcoded literal removed —
@@ -332,8 +339,12 @@ reset_vwa_sites() {
         local rc=0
         case "${site}" in
             all)
-                _reset_vwa_local_classifieds "${label}" || rc=$?
-                _reset_vwa_local_reddit "${label}" || rc=$?
+                # B-1839 P2-3: short-circuit on first failure (was: continued mutating
+                # reddit/shopping after a cls failure + overwrote rc → masked root cause +
+                # mutated unrelated sites post-hard-fail). Pass-1 uses specific sites, not
+                # `all`; this hardens the documented `reset_vwa_sites all` path.
+                _reset_vwa_local_classifieds "${label}" || { rc=$?; echo "[${label}][reset_vwa] all: classifieds failed (rc=$rc), aborting remaining sites" >&2; return $rc; }
+                _reset_vwa_local_reddit "${label}" || { rc=$?; echo "[${label}][reset_vwa] all: reddit failed (rc=$rc), aborting remaining sites" >&2; return $rc; }
                 _reset_vwa_local_shopping "${label}" || rc=$?
                 ;;
             classifieds)         _reset_vwa_local_classifieds "${label}" || rc=$? ;;

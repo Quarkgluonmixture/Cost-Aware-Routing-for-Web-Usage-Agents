@@ -7744,3 +7744,27 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 (本 session)。
 
 ---
+
+## B-1839 — per-condition docker restart for classifieds fresh substrate (Gate 3 prep) + 3-AI /stress hardening (2026-05-23)
+
+**B-1839** (Gate 3 substrate-control feature + pre-fire 3-AI /stress fixes, **FIXED**) — **feature**: Phase 1a fresh fire 前给 classifieds reset 加 per-condition `docker restart classifieds_db classifieds` (under `VWA_RESTART_DOCKER=1`, paper-grade default) → wait db `SELECT 1` query-ready + HTTP 200 (warms FPC) → 再现有 HTTP `page=reset` + SQL sentinel。**WHY**: reddit reset 已是 `docker rm+run` (fresh/condition); cls reset 之前只 HTTP+SQL+cache → app+db 容器跨所有 condition 持续 (canary R11315 跑在 6-7 天老容器 = 退化衬底 + 跨 condition latency confound, Fire-5/6 eval-timeout 窗口根因 §269)。restart 让 cls 进程层 fresh (PHP-FPM 内存 + MySQL buffer/connection 清; DB 数据靠 named volume 持久 + 后续 reset 清, **不 re-seed** — init only-if-empty)。B-1836 retry 安全网保留。feature commit `16ebf67`。
+
+**Pre-fire 3-AI /stress (Mode A Claude + Mode B codex + Mode C gemini)** — codex (reproducibility-auditor) + gemini (design-layer) 各独占抓真 bug:
+- **P1-1-AB\* (FIXED)**: `_lib_paper_grade_gates.sh` reset-timeout SIGTERM trap 原 `docker stop` **所有**容器 → cross-site destructive (cls reset timeout 杀 concurrent reddit runner 衬底)。B-1839 加长 cls reset → 更易触发。修: trap site-aware (`_trap_containers` by `${site}`)。B-864/B-1583 sibling。
+- **P1-2-B\* (FIXED)**: `VWA_RESTART_DOCKER` 只 Pass-1 orchestrator export → router Pass-2 (调 `init_paper_grade_env`) silent 退回 no-restart。修: export 提进 `init_paper_grade_env` (同 B-548 P79_PAPER_GRADE 模式) → Pass-1/2/leaf/watchdog 全继承。relaunch-missing **moot** (paper-grade B-1823 FATAL deprecated)。
+- **P1-3-B\* (FIXED)**: residual `VWA_RESET_TIMEOUT` (e.g. 120 Fire-6 debug) 覆盖新 240s headroom → false `timeout 124` abort。修: cls restart 路径 clamp floor 240s。
+- **P2-1~4 (FIXED)**: ping→`SELECT 1` query-ready (P2-1) / restart-fail + db/http-not-ready ntfy (P2-2) / `site=all` first-failure short-circuit (P2-3) / restart 输出留日志 (P2-4)。
+
+**Disclose-deferred (paper §4 写时, NOT code now)**:
+- **P1-4-ABC**: latency confound 残留 (reddit rm+run cold vs cls restart warm 不对称 + warmup 只 login page → within-condition cold penalty)。**defused by task 顺序固定** (`runner/main.py:1086` 无 shuffle → cross-mode penalty 抵消; 仅绝对 latency 含一致 cold, 相对比较干净)。disclose "each site fresh by its own mechanism"。
+- **P1-5-B\***: `docker restart` 保留 cls app writable layer (uploads/thumbnails/logs 残留 18 conditions) → "symmetric with reddit rm+run" overclaim。**实际 minor** (DB reset 保证 task 看干净数据; orphan 文件不在 DB index)。disclose 措辞修正。
+
+**Defused (攻击驳回)**: env 传播 (codex 静态 trace `:97→nohup bash-c→queue_chain:364→setsid:508→consumer:60` 全链正确, 无 env-i/无 unexported) · re-seed race (Claude verify: classifieds_db named volume 持久 + init only-if-empty 不 re-seed) · `docker restart A B` + `&&echo 240||echo 120` idiom (codex safe)。
+
+**P0-1-C (gemini, OSF 不动)**: prereg witness — B-1839 改 latency/cost **衬底** (非 estimand/measurement, `metrics.py` 零改) → 不需 OSF Amendment (power 只更稳: fresh 方差更小; 对所有 mode 对称无偏; canary archive 无混用)。轻量: git tag `b1839-substrate-prefire` + paper methods disclose。memory `feedback_pre_fire_protocol_witness` 校准: estimand 改才需 amendment, 衬底改披露即可。
+
+**Verification**: bash -n ✓ + 71 pytest (paper_grade_gates_shell / queue_chain_wallclock / accounting_reset)。3-AI outputs: `docs/checkpoints/{codex,gemini}_outputs/b1839_*`。
+
+**Chronicle**: 实验笔记 §275 (本 session, pending)。
+
+---

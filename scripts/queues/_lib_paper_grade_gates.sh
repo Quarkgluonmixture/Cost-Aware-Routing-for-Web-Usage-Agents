@@ -57,6 +57,13 @@ init_paper_grade_env() {
   # Default-on with `${VAR:-1}` allows explicit `P79_PAPER_GRADE=0 bash
   # scripts/queues/queue_baseline.sh ...` dev opt-out for iteration speed.
   export P79_PAPER_GRADE="${P79_PAPER_GRADE:-1}"
+  # B-1839 (Gate 3 /stress P1-2, 2026-05-23): per-condition docker restart default.
+  # Same propagation pattern as P79_PAPER_GRADE above (B-548): router Pass-2
+  # (queue_phase1_router_paper_grade.sh) + leaf queues + watchdog re-spawn all call
+  # this helper → all inherit the restart default. Pre-fix only the Pass-1 master
+  # orchestrator exported it → Pass-2 + relaunch silently reverted cls to no-restart
+  # (stale-substrate split, no log warning). Dev opt-out: VWA_RESTART_DOCKER=0 prefix.
+  export VWA_RESTART_DOCKER="${VWA_RESTART_DOCKER:-1}"
 }
 
 # ---------- 1b. Per-(site, benchmark) flock — leaf script protection (B-704) ----------
@@ -483,6 +490,14 @@ reset_and_auth_gate() {
   if [[ -n "${VWA_RESET_TIMEOUT:-}" && "${VWA_RESET_TIMEOUT}" =~ ^[0-9]+$ ]]; then
     _reset_timeout="${VWA_RESET_TIMEOUT}"
   fi
+  # B-1839 (Gate 3 /stress P1-3, 2026-05-23): clamp cls restart-mode timeout floor.
+  # A residual VWA_RESET_TIMEOUT (e.g. 120 from Fire-6 debug) would erase the 240s
+  # headroom the docker-restart path needs (db wait ≤60 + http wait ≤60 + reset ≤73)
+  # → false `timeout 124` chain abort. Floor to 240 only under the cls restart path.
+  if [[ "${VWA_RESTART_DOCKER:-0}" == "1" && "${site}" == "classifieds" && "${_reset_timeout}" -lt 240 ]]; then
+    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s too low for cls docker-restart path; clamping to 240s (B-1839)" >&2
+    _reset_timeout=240
+  fi
   local _reset_rc
   # B-864 (/stress A1.23 P1-7 AB, 2026-05-17): process-group kill + SIGTERM trap.
   # Pre-fix `timeout ${N}s bash -c "..."` killed only the sub-bash on timeout;
@@ -505,9 +520,22 @@ reset_and_auth_gate() {
   # shopping_box` which were silent no-ops (`2>/dev/null || true` masked
   # the no-match). Pre-fix B-864 SIGTERM defense was cosmetic. 2-AI overlap
   # AC (Claude Mode A F1 + gemini Mode C F1).
+  # B-1839 (Gate 3 /stress P1-1, 2026-05-23): site-aware SIGTERM trap. Pre-fix the
+  # trap stopped ALL containers (vwa-reddit classifieds classifieds_db vwa-shopping
+  # vwa-wikipedia) → a cls reset timeout would kill a concurrent reddit runner's
+  # substrate (and vice versa). B-1839 lengthens cls reset (docker restart) → higher
+  # timeout-hit probability → this overbroad trap more dangerous. Now only the
+  # reset's own site containers are stopped (B-864 / B-1583 sibling).
+  local _trap_containers
+  case "${site}" in
+    classifieds) _trap_containers="classifieds classifieds_db" ;;
+    reddit)      _trap_containers="vwa-reddit" ;;
+    shopping)    _trap_containers="vwa-shopping" ;;
+    *)           _trap_containers="vwa-reddit classifieds classifieds_db vwa-shopping vwa-wikipedia" ;;
+  esac
   timeout --kill-after=10s --signal=TERM "${_reset_timeout}s" setsid bash -c "
-    trap 'echo \"[reset_and_auth_gate] SIGTERM during reset; attempting docker stop fallback\" >&2; \
-          docker stop vwa-reddit classifieds classifieds_db vwa-shopping vwa-wikipedia 2>/dev/null || true; exit 1' SIGTERM
+    trap 'echo \"[reset_and_auth_gate] SIGTERM during reset; docker stop ${_trap_containers} (site-aware, B-1839)\" >&2; \
+          docker stop ${_trap_containers} 2>/dev/null || true; exit 1' SIGTERM
     source '${repo_dir}/scripts/maintenance/reset_vwa_sites.sh'
     reset_vwa_sites '${site}' '${reset_label}'
   "
