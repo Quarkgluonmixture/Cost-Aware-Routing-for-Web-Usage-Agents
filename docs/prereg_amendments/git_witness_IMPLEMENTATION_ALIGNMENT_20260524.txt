@@ -3,9 +3,9 @@ Implementation-Alignment Amendment 03 pre-fire witness
 OSF project: (to be filled at OSF upload — external visibility layer)
 Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
 Git tag: prereg-amendment-03-implementation-alignment-20260524
-Amendment commit SHA: (to be filled at commit time)
-Commit timestamp (UTC): (to be filled at commit time)
-Tag created (UTC): (to be filled at commit time)
+Amendment commit SHA: 3361ad84cbdad1f2c7b66489f302aa34411b1fc1
+Commit timestamp (UTC): 2026-05-23T23:27:15Z
+Tag created (UTC): 2026-05-23T23:27:34Z
 Pushed to origin (UTC): (pending — push requires user confirmation)
 Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
 
