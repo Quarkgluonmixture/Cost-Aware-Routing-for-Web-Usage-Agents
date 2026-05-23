@@ -1,17 +1,18 @@
 {
   "schema_version": 1,
-  "fire": "Fire-6",
-  "created": "2026-05-21",
+  "fire": "Gate3-fresh-20260523",
+  "created": "2026-05-23",
+  "supersedes": "Fire-6 (2026-05-21, R9755 B0-dom-cls): archived to results/visualwebarena/phase1/_archive_pre_gate3_20260523/. Gate 3 re-runs ALL 36 conditions fresh on post-reboot + B-1839 per-condition-docker-restart substrate; Fire-6 R9755 binding retired (stale 6-7d substrate, non-paper-grade for Gate 3). Manifest reset to empty conditions + re-bound from the Gate 3 fire. See B-1841.",
   "purpose": "Authoritative paper-grade run_id per (site|baseline|mode) condition for Phase 1a Pass-1. B-1825 (Fire-6 /stress P0-3-AC*): RESUME_MISSING=1 skips conditions listed here that have a valid condition_summary_v2.json at the expected scored count; the cross-condition aggregator binds to ONLY these run_ids and FAIL-CLOSES on glob-discovered runs not listed (ghost runs from a re-fire / partial / smoke). This closes the 'glob latest run' ambiguity (phase1a_status.sh:94 `ls -dt`) that would silently double-count or cherry-pick when a relaunch produces a 2nd copy of a condition.",
   "scored_task_count": {"classifieds": 224, "reddit": 205, "shopping": 435},
   "condition_key_format": "<site>|<baseline>|<mode>  (mode in: dom som vision phantom_text phantom_som phantom_prompt)",
   "conditions": {
     "classifieds|B0|dom": {
-      "run_id": "B0_dom_classifieds_20260521_125142_282975264_567142_R9755",
+      "run_id": "B0_dom_classifieds_20260523_080127_508387150_37076_R31194",
       "condition_id": "phase1_dom_router_0",
       "episodes": 224,
-      "bound_date": "2026-05-21",
-      "note": "Fire-6 first completed condition. Collected on PRE-B-1822 code, but B-1822 is a daemon/orchestrator condition-BOUNDARY bug (flock fd inheritance) — within-condition data generation is unaffected (parse_error_rate 0, cost_column_coverage_rate 1.0, benchmark_noise_rate 0). See B-1822 disclosure in preregistration §limitations. Authoritative; do NOT re-run unless homogeneity policy changes."
+      "bound_date": "2026-05-23",
+      "bound_by": "Gate3 manifest reset (B-1841): Fire-6 R9755 retired; R31194 = Gate3 B0|dom first completed condition (224 ep, fresh substrate post-reboot + B-1839)"
     }
   }
 }

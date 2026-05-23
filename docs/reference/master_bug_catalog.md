@@ -7784,3 +7784,23 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Chronicle**: 实验笔记 §275 (本 session)。
 
 ---
+
+## B-1841 — Gate 3 fresh fire 启动漏 reset fire_manifest.json (Fire-6 R9755 stale binding → R31194 误判 ghost) (2026-05-23)
+
+**B-1841** (Gate 3 manifest stale, **FIXED**) — Gate 3 全新 36-fresh fire 第一个 condition R31194 (B0 dom cls, 224 ep) 完成后, watchdog auto-bind (`experiment_watchdog.py:926` 调 `validate_fire_manifest --populate --apply`) 报 `MANIFEST-BIND FAIL-CLOSED` + ntfy: `COMPLETE ghost 'R31194' ≠ authoritative 'R9755'` + 写 `.locks/manifest_bind_halt.marker`。**根因**: `docs/checkpoints/pre_run/fire_manifest.json` 是 **Fire-6 (2026-05-21)** 的 manifest, bind `classifieds|B0|dom → R9755`。Gate 3 是全新 fire (reboot + B-1839 docker restart + 全 36 重跑), R9755 已 archive 到 `_archive_pre_gate3_20260523/`, 但**启动时漏 reset manifest** → R31194 (新 authoritative) vs manifest R9755 (stale) → `validate_fire_manifest.py:130` complete-ghost 判定 → exit 1 fail-closed。
+
+**关键诊断方向纠正**: validate 字面建议 "remove the ghost run dir OR re-bind"。但 ghost = R31194 (新 paper-grade 224 ep), authoritative = R9755 (archived stale) — **方向反了**, 绝不能删 R31194。正解 = **re-bind** (R9755 retire → R31194)。
+
+**影响 (非 fire blocker)**: fire 续链正常 (R31194 done → B0 som R2815 自动启动, monitor `bx856r7z0` 确认)。但 (1) aggregation/router 会 halt (manifest 指向 archived R9755); (2) **每 condition 完成重复 fail + ntfy** (alert fatigue, 同 B-1840 性质); (3) RESUME_MISSING HALTED (sequential chain 不依赖)。
+
+**修复**: reset `fire_manifest.json` — 保留 schema/purpose/scored_task_count, `conditions` 清 R9755 + bind R31194 (224 ep), metadata `fire=Gate3-fresh-20260523` + `supersedes`。清 `.locks/manifest_bind_halt.marker`。`validate_fire_manifest.py` exit 0 确认。后续 condition watchdog auto-bind 正常。
+
+**修前安全性验证 (通读 validate_fire_manifest.py)**: discover_runs glob top-level 不递归 → archive R9755 不被发现 (ghost 纯 manifest binding); reset conditions={} → R31194 走 unbound singleton (224==scored) → --apply 安全 bind; B0 som R2815 episodes<224 → `valid==scored` 过滤排除, 不误绑。
+
+**operational 性质**: manifest = binding whitelist (非 estimand/measurement) → OSF 不动, git commit witness 即可。**教训**: Gate N 全新 fire 启动 checklist 必须含 "reset fire_manifest.json" — **archive 旧数据 ≠ reset manifest binding, 两个独立步骤** (本次只做了前者)。next_steps reboot-recovery checklist 同款盲区 (§275 教训 1 reddit/homepage)。
+
+**Verification**: manifest valid json (`python -m json.tool` ✓) + A100 `validate_fire_manifest` exit 0 (pending push) + 续链实证 (R31194→R2815)。
+
+**Chronicle**: 实验笔记 §276 (本 session)。
+
+---
