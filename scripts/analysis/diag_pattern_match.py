@@ -42,10 +42,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # conditions (diag_autorun.sh) so every per-condition digest carries the SAME
 # ruleset_version BEFORE any cross-mode comparison.
 #
-# Current basis: P1-P18 discovered from B0 dom classifieds (R9755). The mode
-# gates (`if mode != "dom"` in check_p6 / p15 / p16) are themselves provisional
-# discover-products — NOT yet validated against som / vision / phantom modes.
-RULESET_VERSION = "1-dom"
+# Current basis: P1-P18 discovered from B0 dom classifieds R9755 (in-sample fit);
+# P19-P23 + P6/P14 narrowing added from R31194 fresh-substrate Tier-2 (2026-05-23,
+# user fast-track ahead of full 6-mode freeze). Still dom-only discover — the mode
+# gates (`if mode != "dom"` in check_p6 / p15 / p16) + ALL rules are provisional
+# discover-products, NOT yet validated against som / vision / phantom modes.
+# Cross-mode quantitative comparison remains FORBIDDEN until 6-mode freeze.
+RULESET_VERSION = "2-dom"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -117,6 +120,58 @@ GALLERY_ROW_RE = re.compile(
 VISUAL_IMAGE_CONTENT_RE = re.compile(
     r"\b(on (?:the|its) cover|on the front|in (?:its|the|their) image|"
     r"(?:do not |don't )?include[^.]*\bimage\b|without[^.]*\bimage\b)\b",
+    re.IGNORECASE,
+)
+
+# --- self-evolving 2026-05-23 (R31194 B0 dom cls Tier-2; ruleset 1-dom → 2-dom) ---
+
+# P21: DOM-mode visual hallucination — finish answer/thought asserts perception of
+# a PAGE/LISTING image that dom mode cannot see. MUST be tied to page content
+# (listing/item context OR a photographic "image ... taken" claim). References to
+# the TASK's OWN reference image (which IS passed to the multimodal model even in
+# dom mode) are excluded — else this repeats P6's 88%-on-success over-fire.
+DOM_PAGE_IMAGE_CLAIM_RE = re.compile(
+    r"\b(?:listing|item|product|car|vehicle|this|its)\b[^.]{0,40}"
+    r"\b(?:image|picture|photo)\b[^.]{0,30}"
+    r"\b(?:taken|shows?|depicts?|appears?|reveals?|indicates?)\b"
+    r"|\b(?:image|picture|photo)\b\s+(?:that\s+|which\s+)?"
+    r"(?:is|was|appears?\s+to\s+be|seems?\s+to\s+be)\s+taken\b",
+    re.IGNORECASE,
+)
+REF_IMAGE_RE = re.compile(
+    r"\b(?:reference|provided|given|attached|task|target|uploaded|sample|example)\s+"
+    r"(?:image|picture|photo)\b",
+    re.IGNORECASE,
+)
+
+# P22: image-only number/quantity — the answer fact (a number printed on the
+# listing image, or a count) exists only in the image, invisible to dom.
+IMG_NUMBER_INTENT_RE = re.compile(
+    r"number\s+(?:shown\s+)?(?:on|in)\s+(?:the\s+)?(?:image|picture|photo)|"
+    r"(?:shown|displayed|visible)\s+(?:on|in)\s+(?:the\s+)?(?:image|picture|photo)",
+    re.IGNORECASE,
+)
+COUNT_INTENT_RE = re.compile(r"\bhow many\b|\bnumber of\b", re.IGNORECASE)
+GAVE_UP_RE = re.compile(
+    r"not\s+specif|cannot\s+(?:determine|tell|find)|"
+    r"does\s+not\s+(?:specify|mention|state|indicate)|"
+    r"unable\s+to|no\s+(?:specific\s+)?(?:number|count|quantity)|isn'?t\s+specified",
+    re.IGNORECASE,
+)
+
+# P23: oldest-listing intent solved with price-sort (no date-sort UI exists) —
+# agent substitutes i_price ordering for chronology.
+OLDEST_INTENT_RE = re.compile(r"\boldest\b|\bearliest\b", re.IGNORECASE)
+
+# P6 narrowing: a task merely HAVING a reference image does NOT make it dom-blind
+# (the multimodal model receives + can OCR the reference image even in dom mode —
+# this drove P6's 88%-on-success over-fire). Only fire the image branch when the
+# intent requires VISUALLY matching that image to page content.
+P6_IMAGE_VISUAL_MATCH_RE = re.compile(
+    r"\b(?:selfie|pictured|depicted|looks?\s+like|similar\s+to|matching|shown\s+in|"
+    r"(?:this\s+)?exact\s+item|"
+    r"in\s+(?:the|its|their|this)\s+(?:image|picture|photo)|taken\s+(?:on|in|from|at|during)|"
+    r"on\s+(?:the|its)\s+(?:cover|front))\b",
     re.IGNORECASE,
 )
 
@@ -295,10 +350,12 @@ def check_p6(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Lis
     intent = config.get("intent", "")
     has_image = bool(config.get("image"))
     has_color = bool(VISUAL_COLOR_KEYWORDS.search(intent) or VISUAL_COLOR_ADJ.search(intent))
-    if has_image:
+    if has_image and P6_IMAGE_VISUAL_MATCH_RE.search(intent):
+        # Narrowed (R31194 FP audit): reference image alone ≠ dom-blind (model OCRs
+        # it). Only fire when intent requires visually matching it to page content.
         return [PatternHit(
             "P6", "视觉任务 DOM 必然失败", None,
-            "DOM mode cannot see image reference (task has image field)",
+            "DOM mode cannot visually match reference image to page content",
             is_scaffold=False,
         )]
     if has_color:
@@ -440,9 +497,14 @@ def check_p13(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
 
 
 def check_p14(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
-    """P14: URL 自环 — 3+ consecutive steps with identical obs_url (excluding start page)."""
+    """P14: URL 自环 — 4+ consecutive steps with identical obs_url (excluding start page).
+
+    Threshold raised 3→4 (R31194 FP audit): a 3-step same-URL run is too short to
+    confidently call "stuck" (navigate-then-work-then-finish looks identical), and
+    it over-fired on successes. Genuine stuck loops run far longer (task 5 = 30).
+    """
     hits = []
-    if len(steps) < 3:
+    if len(steps) < 4:
         return hits
     # Use task config start_url (not steps[0].obs_url which is post-first-action)
     start_url = _config.get("start_url", "") or steps[0].get("state_digest", {}).get("url_before", "")
@@ -454,7 +516,7 @@ def check_p14(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
             pass  # continue run
         else:
             run_len = i - run_start
-            if run_len >= 3:
+            if run_len >= 4:
                 url = steps[run_start].get("obs_url", "")
                 if url != start_url:
                     hits.append(PatternHit(
@@ -465,7 +527,7 @@ def check_p14(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
             run_start = i
     # Check tail
     run_len = len(steps) - run_start
-    if run_len >= 3:
+    if run_len >= 4:
         url = steps[run_start].get("obs_url", "")
         if url != start_url:
             hits.append(PatternHit(
@@ -555,6 +617,147 @@ def check_p18(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Li
     return []
 
 
+def check_p19(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P19: url_match 任务过早在搜索/列表页 finish — agent 没进 item 详情页就 finish,
+    而 url_match 比对的是当前页 URL (self-evolving 2026-05-23, R31194 Tier-2 task 210)."""
+    ev = config.get("eval") or {}
+    if "url_match" not in (ev.get("eval_types") or []):
+        return []
+    ref_url = ev.get("reference_url") or ""
+    if "page=search" in ref_url:  # target itself is a search page → not premature
+        return []
+    finish_url = None
+    for s in steps:
+        if s.get("action_type") == "finish":
+            finish_url = s.get("obs_url", "")
+            break
+    if finish_url is None and steps:
+        finish_url = steps[-1].get("obs_url", "")
+    if finish_url and "page=search" in finish_url:
+        return [PatternHit(
+            "P19", "url_match过早搜索页finish", None,
+            f"url_match finished on search/list page (not item detail): {finish_url[:70]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p20(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P20: program_html 评测目标页从未访问 — agent 在错误 listing 上操作, eval_target_url
+    全程未出现在 obs_url 历史 (self-evolving 2026-05-23, R31194 Tier-2 task 223)."""
+    ev = config.get("eval") or {}
+    if "program_html" not in (ev.get("eval_types") or []):
+        return []
+    targets = []
+    for ph in ev.get("program_html") or []:
+        u = ph.get("url", "")
+        if isinstance(u, str) and u.startswith("http"):
+            m = re.search(r"[?&]id=(\d+)", u)
+            if m:
+                targets.append(m.group(1))
+    if not targets:
+        return []
+    visited: Set[str] = set()
+    for s in steps:
+        m = re.search(r"[?&]id=(\d+)", s.get("obs_url", ""))
+        if m:
+            visited.add(m.group(1))
+    missing = [t for t in dict.fromkeys(targets) if t not in visited]
+    if missing:
+        return [PatternHit(
+            "P20", "评测目标页从未访问", None,
+            f"program_html target item id={missing[0]} never visited (acted on wrong listing)",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p21(steps: List[Dict], _summary: Dict, config: Dict, mode: str) -> List[PatternHit]:
+    """P21: dom 模式视觉幻觉 — finish 声称看到 listing/page 图像内容, 但 dom 看不到页面像素.
+    Gated on has_image==False (R31194 verify): a task WITH a reference image makes
+    "the image" ambiguous (could be the legit ref image the model sees); WITHOUT one,
+    any "image" claim must be about page content dom cannot see = hallucination.
+    This cleanly removes the task-62/63 echo-the-intent FP (R31194 Tier-2 task 91)."""
+    if mode != "dom":
+        return []
+    if config.get("image"):
+        return []
+    for s in steps:
+        if s.get("action_type") != "finish":
+            continue
+        a = s.get("action", {}) or {}
+        text = " ".join(str(a.get(k, "")) for k in ("thought", "answer"))
+        if not text.strip():
+            continue
+        m = DOM_PAGE_IMAGE_CLAIM_RE.search(text)
+        if m and not REF_IMAGE_RE.search(text):
+            return [PatternHit(
+                "P21", "dom模式视觉幻觉", s.get("step_idx"),
+                f"finish claims page-image perception in dom mode: '...{m.group(0)[:60]}...'",
+                is_scaffold=False,
+            )]
+    return []
+
+
+def check_p22(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P22: 图像唯一信息 (图上数字 / 数量) — 答案 fact 仅在 listing 图中, dom 不可得
+    (self-evolving 2026-05-23, R31194 Tier-2 task 100/221)."""
+    ev = config.get("eval") or {}
+    if "string_match" not in (ev.get("eval_types") or []):
+        return []
+    must = (ev.get("reference_answers") or {}).get("must_include") or []
+    ref_nums: List[str] = []
+    for r in must:
+        for tok in str(r).split("|OR|"):
+            tok = tok.strip()
+            if re.fullmatch(r"\$?\d+(?:\.\d+)?", tok):
+                ref_nums.append(re.sub(r"[^\d.]", "", tok))
+    if not ref_nums:
+        return []
+    intent = config.get("intent", "")
+    finish_ans = ""
+    for s in steps:
+        if s.get("action_type") == "finish":
+            a = s.get("action", {}) or {}
+            finish_ans = str(a.get("answer", "") or a.get("text", ""))
+            break
+    ans_nums = set(re.findall(r"\d+(?:\.\d+)?", finish_ans))
+    hit_ref = any(rn in ans_nums for rn in ref_nums)
+    if hit_ref:
+        return []
+    # (a) intent explicitly reads a number off the image; answer lacks ref number
+    if IMG_NUMBER_INTENT_RE.search(intent):
+        return [PatternHit(
+            "P22", "图上数字dom不可读", None,
+            f"intent reads number from image; answer lacks ref {ref_nums}: {finish_ans[:45]}",
+            is_scaffold=False,
+        )]
+    # (b) count question + agent gave up (quantity only in image)
+    if COUNT_INTENT_RE.search(intent) and GAVE_UP_RE.search(finish_ans):
+        return [PatternHit(
+            "P22", "图中数量dom不可数", None,
+            f"count question, agent could not determine (image-only): {finish_ans[:45]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p23(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P23: oldest-listing 用价格排序代替日期排序 — UI 无 date-sort, agent 用 i_price 当
+    chronology (self-evolving 2026-05-23, R31194 Tier-2 task 156)."""
+    intent = config.get("intent", "")
+    if not OLDEST_INTENT_RE.search(intent):
+        return []
+    for s in steps:
+        if "sOrder=i_price" in s.get("obs_url", ""):
+            return [PatternHit(
+                "P23", "oldest误用价格排序", s.get("step_idx"),
+                "oldest-listing intent but sorted by i_price (no date-sort substitute)",
+                is_scaffold=False,
+            )]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Rule registry
 # ---------------------------------------------------------------------------
@@ -577,6 +780,11 @@ ALL_RULES: Dict[str, Any] = {
     "P16": check_p16,
     "P17": check_p17,
     "P18": check_p18,
+    "P19": check_p19,
+    "P20": check_p20,
+    "P21": check_p21,
+    "P22": check_p22,
+    "P23": check_p23,
 }
 
 
