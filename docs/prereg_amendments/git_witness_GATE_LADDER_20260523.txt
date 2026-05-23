@@ -6,7 +6,7 @@ Git tag: prereg-amendment-02-gate-ladder-20260523
 Amendment commit SHA: e338cb4fb0f490dcbc65df5bf666b6f82a7026d8
 Commit timestamp (UTC): 2026-05-23T01:46:41Z
 Tag created (UTC): 2026-05-23T01:46:41Z
-Pushed to origin with tags (UTC): <pending — fill immediately after `git push origin diag-discover-then-freeze --tags`; the git tag above already anchors the witness SHA branch-independently>
+Pushed to origin/diag-discover-then-freeze with tags (UTC): 2026-05-23T01:48:30Z (tag anchors witness SHA branch-independently; later merge to master does not affect the witness)
 Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
 
 Witness primitive = the amendment commit SHA above (content-addressed, tamper-evident;
