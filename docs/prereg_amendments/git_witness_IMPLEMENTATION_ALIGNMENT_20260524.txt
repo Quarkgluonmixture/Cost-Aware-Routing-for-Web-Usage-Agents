@@ -1,6 +1,6 @@
 Implementation-Alignment Amendment 03 pre-fire witness
 
-OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01/02; OSF file upload of this amendment pending user action)
+OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01/02; 2 amendment docs uploaded by user 2026-05-24)
 Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
 Git tag: prereg-amendment-03-implementation-alignment-20260524
 Amendment commit SHA: 3361ad84cbdad1f2c7b66489f302aa34411b1fc1
