@@ -86,6 +86,16 @@ cd "${REPO_DIR}"
 # B-340 hard-block reachable, (c) B-340 RuntimeError fail-fast at init.
 export P79_PAPER_GRADE=1
 
+# B-1839 (Gate 3, 2026-05-23): per-condition docker restart for fresh substrate.
+# canary R11315 ran on a 6-7 day-old classifieds container (substrate decay behind
+# Fire-5/6 eval-timeout windows + cross-condition latency confound). When set,
+# reset_vwa_sites.sh:_reset_vwa_local_classifieds restarts cls app+db per condition
+# + waits db ping/http 200 (reddit already does docker rm+run = fresh). Exported
+# here so it propagates queue_chain → queue_baseline → reset_and_auth_gate's
+# `setsid bash -c` → reset_vwa_sites. Default 1 for paper-grade fire; opt-out with
+# a `VWA_RESTART_DOCKER=0` prefix (e.g. fast dev rerun on an already-fresh stack).
+export VWA_RESTART_DOCKER="${VWA_RESTART_DOCKER:-1}"
+
 # P0-1-AB (/stress GRL audit 2026-05-20, user Q1=A): paper_grade XOR
 # diagnostic_replay — queue-layer mirror of the runner hard block. A leaked
 # P79_DIAGNOSTIC_REPLAY / QUARANTINE_DIAGNOSTIC_REPLAY env (e.g. left exported

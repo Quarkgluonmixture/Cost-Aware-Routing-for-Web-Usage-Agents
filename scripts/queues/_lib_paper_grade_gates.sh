@@ -474,7 +474,7 @@ reset_and_auth_gate() {
   local _reset_timeout
   case "${site}" in
     reddit) _reset_timeout=240 ;;
-    classifieds) _reset_timeout=120 ;;
+    classifieds) _reset_timeout=$([[ "${VWA_RESTART_DOCKER:-0}" == "1" ]] && echo 240 || echo 120) ;;  # Gate3: +docker restart wait (db+http ≤120s) needs headroom over 120s
     *) _reset_timeout=120 ;;
   esac
   # Fire-6 RCA (/stress 2026-05-20): VWA_RESET_TIMEOUT env override for slow

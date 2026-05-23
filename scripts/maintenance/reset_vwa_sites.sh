@@ -45,6 +45,51 @@ VWA_RESET_ENABLE="${VWA_RESET_ENABLE:-1}"
 # 3-5pp drift (gemini estimate) / 0.2-0.8pp bounded (codex on require_reset subset).
 _reset_vwa_local_classifieds() {
     local label="$1"
+    # ── Gate 3 (2026-05-23): per-condition docker restart (VWA_RESTART_DOCKER=1) ──
+    # WHY: reddit reset already does `docker rm+run` (fresh container each
+    # condition); classifieds reset was HTTP `page=reset` + SQL sentinel +
+    # PHP-cache clear ONLY — app + db containers persisted across ALL conditions
+    # (canary R11315 ran on a 6-7 day-old classifieds container). That accretes
+    # PHP-FPM worker memory + MySQL connection-pool/buffer state → (a) substrate
+    # decay (the ~7-10min latency-degradation windows behind Fire-5/6 eval-timeout
+    # aborts), (b) cross-condition latency confound (a condition on a warm 6-day
+    # container is not comparable to one on a fresh container). Restarting both
+    # containers per condition makes cls symmetric with reddit's rm+run. The
+    # B-1836 retry safety-net stays in place but should now rarely fire. Flag-gated
+    # so dev runs (flag unset) skip the ~30-60s cost.
+    if [[ "${VWA_RESTART_DOCKER:-0}" == "1" ]]; then
+        echo "[${label}][reset_vwa][local] Gate3 per-condition docker restart: classifieds_db + classifieds"
+        if ! docker restart classifieds_db classifieds >/dev/null 2>&1; then
+            echo "[${label}][reset_vwa][local] classifieds docker restart FAILED (fail-closed)" >&2
+            return 1
+        fi
+        # wait MySQL ready (db restart cold ~5-15s) — app HTTP 500s until db up
+        local _i _db_ok=0
+        for _i in $(seq 1 30); do
+            if docker exec -e MYSQL_PWD=password classifieds_db mysqladmin -uroot ping >/dev/null 2>&1; then
+                _db_ok=1; break
+            fi
+            sleep 2
+        done
+        if [[ "${_db_ok}" != "1" ]]; then
+            echo "[${label}][reset_vwa][local] classifieds_db not ready 60s post-restart (fail-closed)" >&2
+            return 1
+        fi
+        # wait HTTP 200 (OSClass cold ~10-15s) — also warms the FPC so the head-of-
+        # chain task playwright wait_until=load (30s) won't trip a cold path.
+        local _http_ok=0 _code
+        for _i in $(seq 1 30); do
+            _code=$(curl -sS -o /dev/null --max-time 10 -w "%{http_code}" \
+                    "http://localhost:9980/index.php?page=login" 2>/dev/null || echo "000")
+            if [[ "${_code}" == "200" ]]; then _http_ok=1; break; fi
+            sleep 2
+        done
+        if [[ "${_http_ok}" != "1" ]]; then
+            echo "[${label}][reset_vwa][local] classifieds HTTP not ready 60s post-restart (last=${_code}, fail-closed)" >&2
+            return 1
+        fi
+        echo "[${label}][reset_vwa][local] classifieds containers fresh + warm (db ping OK, http 200)"
+    fi
     # B-757 (/stress A1.17 cold-start P1-14 A, 2026-05-17): token from env or
     # .auth/cls_reset_token (gitignored). Hardcoded literal removed —
     # committed-in-source secrets fail OSF audit. Migration (1-time): operator
