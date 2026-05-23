@@ -4,7 +4,7 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-05-22  ·  **Catalog**: master_bug_catalog.md (7700 lines, 114 sections)  ·  **B-numbers**: 771 canonical entries, 1205 referenced, range B-1~B-1835
+**Generated**: 2026-05-24  ·  **Catalog**: master_bug_catalog.md (7872 lines, 127 sections)  ·  **B-numbers**: 784 canonical entries, 1218 referenced, range B-1~B-1848
 
 ## Health (lint)
 
@@ -90,3 +90,16 @@
 | L7662 | B-1833 — cls docker transient navigation stall 复发 → B-1831 retry bu… | B-1833 |
 | L7678 | B-1834 — manifest/resume `episodes >= scored` 非 `==` → over-complet… | B-1834 |
 | L7688 | B-1835 — `_run_episode` 局部 `import os` 遮蔽全局 → deferred-save `os.ope… | B-1835 |
+| L7702 | B-1836 — eval retry `is_nav_error` 关键词缺 `"timeout"`(无空格)→ Playwrigh… | B-1836 |
+| L7722 | B-1837 — eval 5-retry vs agent-step 0-retry asymmetry → differentia… | B-1837 |
+| L7736 | B-1838 — sync_a100 rsync rc=24 (files vanished) treated as fatal → … | B-1838 |
+| L7748 | B-1839 — per-condition docker restart for classifieds fresh substra… | B-1839 |
+| L7772 | B-1840 — fire6_monitor false-positive: orchestrator-name + FIRELOG … | B-1840 |
+| L7788 | B-1841 — Gate 3 fresh fire 启动漏 reset fire_manifest.json (Fire-6 R97… | B-1841 |
+| L7808 | B-1842 — Parse-error sink: cost 进 wasted 桶但 canonical latency 不扣 (§… | B-1842 |
+| L7818 | B-1843 — `parse_error_rate` 实为 injected-wait-sink rate (含模型主动合法 wai… | B-1843 |
+| L7826 | B-1844 — Canonical-action validity 只看 parse-validity 不看 env outcome… | B-1844 |
+| L7834 | B-1845 — WAIT-rescue soft-retry 非严格 state-neutral (gemini OOB) (202… | B-1845 |
+| L7842 | B-1846 — 无 `termination_reason` 字段 (cap-induced 终止只能间接推断) (2026-05-23) | B-1846 |
+| L7850 | B-1847 — `paper_grade_check.py` 无 B0 `tool_call_emit_rate` conditio… | B-1847 |
+| L7858 | B-1848 — Playwright driver-wedge hang 绕过 operation timeout + runner… | B-1848 |

@@ -7854,3 +7854,19 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **实测**: emit=100% on canonical substrate (`exp_v2_base.yaml:180`), 但无自动 gate。**Forward remediation** (OSF lock prep, 同 R6 evaluator_consistency): paper_grade_check 加 condition-level B0 tool_call_emit_rate ≥0.95 gate。**Cross-link**: section4_limitations_disclosure §4.X.19 + 实验笔记 §278 + next_steps §4 R6。
 
 ---
+
+## B-1848 — Playwright driver-wedge hang 绕过 operation timeout + runner M1 (Gate3 cls B0 som task190 production incident) (2026-05-23)
+
+**B-1848** (production hang / halt-machinery bypass, **OPERATIONAL recovery done, code fix queued post-fire**) — Gate 3 cls fire R2815 (B0 som) 在 task 190 (`url_match`) **post-finish 阶段静默卡死 ~30min+**, 链冻结。py-spy dump (PID 111351, sudo) 定位: MainThread 阻塞在 Playwright 同步 API 事件循环 `select`/epoll (`greenlet_main playwright/sync_api/_context_manager.py:56 → run_until_complete → _run_once → select`), 等自身 Playwright node driver 响应 = **runner 的 Playwright 浏览器/driver wedge** (node IPC 无响应)。
+
+**误导排查记录** (诊断教训): 先疑 Playwright (无据) → `ss` 见 `3.174.141.51:443 (AWS proxy) CLOSE-WAIT, 25B 未读, fd=21` 改疑 proxy 网络 hang (**stale keep-alive 误导** — MainThread 卡在 Playwright 没回去 reap proxy pool 连接 → CLOSE-WAIT 是症状非根因) → py-spy 栈定论 Playwright。cls docker 健康 (curl 0.22s, `Up 7h`) — **非站点、非 proxy**。唯一可信的是执行栈, 不是周边网络症状。
+
+**halt-machinery bypass (核心)**: Playwright operation timeout 是 **driver 侧强制**的, driver wedge 则 timeout 机制同死; python 客户端对 driver IPC **无 wall-clock deadline** → 永久 block。同时**绕过 runner M1 `PaperGradeAbortError`** (M1 需 exception 触发, silent block 不抛异常) + watchdog **alert-only** (`experiment_watchdog.py:2569-2591` STEP STALL 只 ntfy 不自愈, 第7行注释 "may need restart")。= B-486 Playwright-hang 家族的 **driver-wedge 变种** (比 Fire-3 task75 goto-timeout 更阴: goto 有 timeout 会 raise, 此变种把 operation timeout 也绕过)。
+
+**task 190 paper-grade 处置** (per B-1777 + B-486): hang 在写 `episode_summary` **之前** (count=185, **无 scored outcome**) = incomplete episode, **非已记录 failure** → kill+resume 重跑**不是 denominator surgery** (无失败被抹替)。B-486 允许 quarantine-class task 手动 re-fire ≤3 次, 重跑 1 次 sanctioned; **红线: 不可重跑到成功为止** — 若反复 wedge 按 quarantine + terminal-map `success=False` (防 survivorship bias)。task 190 此次 wedge 记 quarantine-class, 计入 3-strike。
+
+**OPERATIONAL recovery** (2026-05-23, paper-grade-safe): SIGTERM 进程组 (runner PGID 111351 含 Playwright child 165104 + watchdog 111462 独立组单杀 + orchestrator PGID 35933) → **不 restart cls docker** (健康, 重启=无意义+mid-condition substrate 偏移) → **不 clear_tasks 190** (无 scored outcome; resume 默认 True + B-169 fingerprint 自动跳 185 valid summary、重跑无 summary 的 190) → 重启链续 vision。
+
+**Forward code remediation** (defer post-fire, fire 跑中 `p79/` immutable): Playwright driver IPC / sync API 操作加**客户端 wall-clock deadline** (单 page-op SIGALRM 或 watchdog-thread → page/context.close 超时) → driver wedge **raise into runner M1** 而非 silent infinite block; 一并 reap B0 proxy CLOSE-WAIT pool 连接 (次要)。**Cross-link**: B-486 (evaluator-hang 同族) + B-1777 (denominator surgery 原则) + next_steps §0 ④ + 实验笔记 (待 chronicle)。
+
+---
