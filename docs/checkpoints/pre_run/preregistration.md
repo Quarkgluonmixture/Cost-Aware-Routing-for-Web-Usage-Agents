@@ -336,6 +336,8 @@ Tier 2 router: features extracted from agent's first-step observation (task inst
 
 ### FRAMING DECISION RULE (pre-registered, data-conditional)
 
+> ⚠️ **Clarified/corrected by Amendment 02** (`docs/prereg_amendments/AMENDMENT_02_GATE_LADDER_20260523.md`, pre-data witness 2026-05-23): (a) the **R5 row consequence** below is unchanged in that R5 still fires on H1-failure, but its *reporting scope* is now conditional on the independently pre-registered H3 / H10 gates — Route C'-S (H3 passes → lower-claim phantom-space-structure paper) / Route C'-R (H3 fails, H10 passes → lower-claim router-only/systems paper) / Route F (both fail → negative/methodology/B-91 note). No R5→R3 framing-tier rescue; H1 primary gate unchanged. (b) the **H1 power row in §2.4 (+2.336pp)** is the 4-mode ADD estimand (H1-deploy / Appendix-D sensitivity), NOT the 6-mode H1-strict gate effect.
+
 The paper §1 hook framing maps to data outcomes as follows:
 
 | Rule | Conditions | Paper hook framing | Hook power |
@@ -358,7 +360,8 @@ Phase 1a has **6 statistical cells** (2 sites × 3 models = (cls/red) × (B0/B1/
 
 | Gating test | Family | Archive k | Archive θ_FE | Archive SE_FE | k=6 SE_FE (projected) | **k=6 Power @ observed** | Archive I² | Archive p_Q |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| **H1 P-SoM drop-one > δ_H1** | PRIMARY (deployment hero) | 3 | +2.336pp | 0.529pp | 0.374pp | **97%** | 0.00% | 0.461 |
+| **H1 P-SoM drop-one > δ_H1** | PRIMARY (deployment hero) | 3 | +2.336pp ⚠️ | 0.529pp | 0.374pp | **97%** | 0.00% | 0.461 |
+<!-- ⚠️ Amendment 02 (2026-05-23): +2.336pp is the 4-mode ADD estimand `4psom_vs_3` (H1-deploy / Appendix-D sensitivity), NOT the 6-mode H1-strict gate effect that `_cell_drop_one_theta_se` computes. 6-mode strict ≤ 4-mode ADD by construction → this row OVERSTATES H1-strict power. True H1-strict effect TBD from Phase 1a paper-grade data. See docs/prereg_amendments/AMENDMENT_02_GATE_LADDER_20260523.md §3. -->
 | **H3 axis-1 P-text \ P-SoM > 0** | STRUCTURAL (phantom axis 1) | 3 | +3.861pp | 0.702pp | 0.496pp | **100%** | 12.14% | 0.320 |
 | **H3 axis-2 P-prompt \ P-SoM > 0** | STRUCTURAL (phantom axis 2) | 2 | +2.312pp | 0.670pp | 0.387pp | **100%** | 0.00% | 0.430 |
 
