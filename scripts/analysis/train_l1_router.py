@@ -309,6 +309,26 @@ def tune_threshold_inner_cv(
     }
 
 
+def label_entropy_bits(labels) -> float:
+    """Shannon entropy (base-2, bits) of a label distribution.
+
+    H = −Σ_m p(m)·log_2 p(m) over the distinct mode labels present. Used by the H10
+    DEFER gate (prereg §H10 L238-240): if a cell's train-fold best-mode label
+    distribution concentrates on ≤ 2 modes (H < 1.0 bit), the learned router has
+    insufficient label diversity to learn a non-trivial routing policy → H10 is
+    downgraded to §5 descriptive. Computed on RAW train-fold labels (before the B-995
+    min-class filter) so the diagnostic reflects true label concentration, not the
+    filter-inflated distribution.
+    """
+    arr = np.asarray(labels)
+    n = len(arr)
+    if n == 0:
+        return float("nan")
+    _, counts = np.unique(arr, return_counts=True)
+    probs = counts / n
+    return float(-np.sum(probs * np.log2(probs)))
+
+
 def train_one_cell_one_fold(
     cell_id: str,
     fold_k: int,
@@ -399,7 +419,10 @@ def train_one_cell_one_fold(
     )
     pipeline.fit(X_train_full, y_train_filtered)
 
-    # In-fold holdout evaluation (for transparency; this is the H10 evaluation point)
+    # In-fold holdout evaluation — P1-6 (codex B-F7, AMENDMENT_04): DIAGNOSTIC ONLY.
+    # This is CV mode-match accuracy (predicted mode == oracle-best label), NOT the H10
+    # realized SR/cost gate. True H10 uses Pass-2 condition_summary realized (Cost, SR)
+    # in aggregate_h10_pareto.analyze_cell — do NOT cite holdout_sr as H10 evidence.
     holdout_probs = pipeline.predict_proba(X_holdout_full)
     holdout_max_probs = holdout_probs.max(axis=1)
     holdout_argmax_modes = pipeline.classes_[holdout_probs.argmax(axis=1)]
@@ -423,6 +446,12 @@ def train_one_cell_one_fold(
         "n_train_kept": int(len(y_train_filtered)),
         "dropped_classes": dropped_classes,
         "train_label_distribution": dict(Counter(y_train_filtered.tolist())),
+        # P0-2 (AMENDMENT_04 H10 entropy DEFER gate, prereg §H10 L238-240): per-fold
+        # train-fold best-mode label entropy in bits, on RAW y_train (pre B-995
+        # min-class filter) so the diagnostic reflects true label concentration, not
+        # the filter-inflated distribution. H < 1.0 bit → ≤ 2 modes → H10 DEFER.
+        "train_label_counts_raw": dict(Counter(y_train.tolist())),
+        "train_label_entropy_bits": label_entropy_bits(y_train),
         "n_holdout": int(len(y_holdout)),
         "holdout_label_distribution": dict(Counter(y_holdout.tolist())),
         "chosen_tau": tau_star,
@@ -430,6 +459,9 @@ def train_one_cell_one_fold(
         "tau_tuning_reason": tau_result["reason"],
         "tau_tuning_n_inner_folds": tau_result["n_inner_folds_used"],
         "holdout_sr": holdout_sr,
+        # P1-6 (codex B-F7, AMENDMENT_04): clearer alias — CV mode-match accuracy
+        # (predicted == oracle-best label), NOT H10 realized SR/cost. Diagnostic only.
+        "cv_mode_match_acc": holdout_sr,
         "holdout_fallback_rate": holdout_fallback_rate,
         "holdout_modes_predicted": dict(Counter(holdout_decided_modes.tolist())),
         "pickle_path": pickle_path.name,
@@ -470,6 +502,17 @@ def train_one_cell(
         rec["holdout_sr"] for rec in per_fold.values()
         if rec["status"] == "ok" and not np.isnan(rec.get("holdout_sr", float("nan")))
     ]
+    # P0-2 (AMENDMENT_04 H10 entropy DEFER gate): per-fold train-label entropy +
+    # per-cell min over folds. aggregate_h10_pareto reads cell_entropy_min_bits and
+    # DEFERs H10 if any required cell's min < 1.0 bit (prereg §H10 L238-240).
+    entropy_per_fold = {
+        str(fk): rec["train_label_entropy_bits"]
+        for fk, rec in per_fold.items()
+        if rec["status"] == "ok" and "train_label_entropy_bits" in rec
+    }
+    cell_entropy_min_bits = (
+        min(entropy_per_fold.values()) if entropy_per_fold else float("nan")
+    )
     cell_meta = {
         "schema_version": SCHEMA_VERSION,
         "cell_id": cell_id,
@@ -488,6 +531,9 @@ def train_one_cell(
         "per_fold_records": {str(fk): rec for fk, rec in per_fold.items()},
         "holdout_sr_per_fold_mean": float(np.mean(holdout_srs)) if holdout_srs else float("nan"),
         "holdout_sr_per_fold_values": holdout_srs,
+        # P0-2 H10 entropy DEFER gate (prereg §H10 L238-240):
+        "train_label_entropy_bits_per_fold": entropy_per_fold,
+        "cell_entropy_min_bits": cell_entropy_min_bits,
         # δ-cluster disclosure (router /stress 2026-05-21; deferred true-fixes → next_steps):
         "tau_tuning_disclosure": {
             "objective": "mode_match_accuracy",
@@ -585,6 +631,50 @@ def main() -> int:
     summary_path = out_dir / "stage3_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, default=str))
     print(f"\nWrote: {summary_path}")
+
+    # P0-2 (AMENDMENT_04 H10 entropy DEFER gate, prereg §H10 L238-240): emit a dedicated
+    # entropy-gate artifact that aggregate_h10_pareto.run_h10_verdict reads to DEFER H10
+    # when any required cell's train-fold label entropy concentrates on ≤ 2 modes
+    # (min-over-folds < 1.0 bit). Full per-cell + per-fold breakdown (NOT a single bool)
+    # so a reviewer can point at exactly which cell/fold is low-entropy.
+    H10_ENTROPY_DEFER_THRESHOLD_BITS = 1.0
+    entropy_by_cell: dict[str, float] = {}
+    entropy_by_fold: dict[str, dict] = {}
+    for cid, cmeta in summary["per_cell"].items():
+        if not isinstance(cmeta, dict) or "cell_entropy_min_bits" not in cmeta:
+            continue
+        entropy_by_cell[cid] = cmeta["cell_entropy_min_bits"]
+        entropy_by_fold[cid] = cmeta.get("train_label_entropy_bits_per_fold", {})
+    finite_mins = [v for v in entropy_by_cell.values()
+                   if isinstance(v, (int, float)) and not np.isnan(v)]
+    global_entropy_min_bits = min(finite_mins) if finite_mins else float("nan")
+    gate_passed = bool(finite_mins) and global_entropy_min_bits >= H10_ENTROPY_DEFER_THRESHOLD_BITS
+    low_entropy_cells = [
+        c for c, v in entropy_by_cell.items()
+        if isinstance(v, (int, float)) and not np.isnan(v)
+        and v < H10_ENTROPY_DEFER_THRESHOLD_BITS
+    ]
+    entropy_gate = {
+        "schema_version": SCHEMA_VERSION,
+        "defer_threshold_bits": H10_ENTROPY_DEFER_THRESHOLD_BITS,
+        "h10_entropy_gate_passed": gate_passed,
+        "h10_status": "ok" if gate_passed else "deferred_entropy",
+        "global_entropy_min_bits": global_entropy_min_bits,
+        "h10_entropy_by_cell": entropy_by_cell,
+        "h10_entropy_by_fold": entropy_by_fold,
+        "low_entropy_cells": low_entropy_cells,
+        "note": (
+            "prereg §H10 L238-240 DEFER condition: per-cell train-fold best-mode label "
+            "entropy H = −Σ p·log_2(p); if any required cell's min-over-folds < 1.0 bit "
+            "(labels concentrate on ≤ 2 modes) H10 is downgraded to §5 descriptive "
+            "(operational deployment gate suppressed). Computed on RAW train labels "
+            "(pre B-995 min-class filter). Consumed by aggregate_h10_pareto.run_h10_verdict."
+        ),
+    }
+    entropy_gate_path = out_dir / "h10_entropy_gate.json"
+    entropy_gate_path.write_text(json.dumps(entropy_gate, indent=2, default=str))
+    print(f"Wrote: {entropy_gate_path} (h10_status={entropy_gate['h10_status']}, "
+          f"global_min_bits={global_entropy_min_bits})")
     print(
         f"\n=== Summary: {summary['n_cells_trained']}/{len(targets)} cells fully trained "
         f"({summary['n_cells_incomplete']} incomplete, {summary['n_cells_failed']} failed) ==="

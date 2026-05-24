@@ -53,6 +53,10 @@ from p79.policies.pass1_manifest import discover_runs
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
 OUT_DIR = REPO / "results/phantom_paper"
+# P0-2 (AMENDMENT_04 H10 entropy DEFER gate): train_l1_router.main() emits the
+# train-fold label-entropy artifact here; run_h10_verdict reads it to DEFER H10
+# (prereg §H10 L238-240) when any required cell concentrates on ≤ 2 modes.
+ROUTER_ARTIFACT_DIR = REPO / "results/phantom_paper/l1_router"
 
 # AMENDMENT_01 (2026-05-21): H10 Pareto Cost-axis = total_billed_cost (within-cell,
 # consistent with §1/§4). Fail closed if an episode summary lacks total_billed; legacy
@@ -665,6 +669,22 @@ def analyze_cell(
     }
 
 
+def _load_h10_entropy_gate() -> Optional[dict]:
+    """Read the H10 train-fold label-entropy DEFER artifact (train_l1_router output).
+
+    Returns the parsed `h10_entropy_gate.json` (emitted by `train_l1_router.main`) or
+    None if absent/unreadable. `run_h10_verdict` fail-closes H10 deployability when this
+    is None OR when `h10_entropy_gate_passed` is False (prereg §H10 L238-240 DEFER).
+    """
+    path = ROUTER_ARTIFACT_DIR / "h10_entropy_gate.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def run_h10_verdict(
     cells: Optional[list[tuple[str, str]]] = None,
     require_full_coverage: bool = False,
@@ -714,6 +734,45 @@ def run_h10_verdict(
             "§6 must not claim a learned-routing benefit."
         ),
     }
+
+    # P0-2 (AMENDMENT_04 H10 entropy DEFER gate, prereg §H10 L238-240): read the
+    # train-fold label-entropy artifact (train_l1_router output). If any required cell's
+    # min-over-folds entropy < 1.0 bit (labels concentrate on ≤ 2 modes), H10 is DEFERRED
+    # to §5 descriptive — operational_gate_passed is suppressed regardless of Pareto
+    # non-dominance, because a router collapsing to a single mode can pass non-dominance
+    # while having no learnable routing policy. Fail-closed: a MISSING entropy artifact
+    # also suppresses deployability (no entropy verdict ⇒ no deployability claim). The
+    # pre-entropy Pareto verdict is retained (operational_gate_passed_pre_entropy).
+    _entropy_gate = _load_h10_entropy_gate()
+    if _entropy_gate is None:
+        operational_gate["operational_gate_passed_pre_entropy"] = (
+            operational_gate["operational_gate_passed"]
+        )
+        operational_gate["operational_gate_passed"] = False
+        operational_gate["h10_status"] = "entropy_unavailable"
+        operational_gate["entropy_defer_reason"] = (
+            "H10 deployability NOT claimable: entropy gate artifact "
+            "results/phantom_paper/l1_router/h10_entropy_gate.json absent (fail-closed "
+            "per prereg §H10 — run train_l1_router.main() to emit it; no entropy verdict "
+            "means no deployability claim)."
+        )
+        operational_gate["h10_entropy_gate"] = {"h10_status": "unavailable"}
+    else:
+        operational_gate["h10_entropy_gate"] = _entropy_gate
+        if not _entropy_gate.get("h10_entropy_gate_passed", False):
+            operational_gate["operational_gate_passed_pre_entropy"] = (
+                operational_gate["operational_gate_passed"]
+            )
+            operational_gate["operational_gate_passed"] = False
+            operational_gate["h10_status"] = "deferred_entropy"
+            operational_gate["entropy_defer_reason"] = (
+                "H10 DEFERRED to §5 descriptive: train-fold label entropy < 1.0 bit on "
+                f"cells {_entropy_gate.get('low_entropy_cells')} (global_min="
+                f"{_entropy_gate.get('global_entropy_min_bits')} bits). Pareto "
+                "non-dominance suppressed per prereg §H10 L238-240 DEFER condition."
+            )
+        else:
+            operational_gate["h10_status"] = "ok"
 
     # APPENDIX-D SENSITIVITY: FE inverse-variance pool over θ_i (transparency, NOT gating)
     thetas = [r["theta_mean_pp"] for r in ok_cells]
@@ -887,8 +946,16 @@ def main() -> int:
     ap.add_argument(
         "--require-full-coverage",
         action="store_true",
-        help="C8 (B-1811): fail-closed per cell if the router/baseline task "
-        "intersection is not the full router task set (paper-grade mode).",
+        help="(retained for back-compat; full coverage is now the DEFAULT per "
+        "P2-3/AMENDMENT_04 unless --allow-partial-dev). No-op when set.",
+    )
+    ap.add_argument(
+        "--allow-partial-dev",
+        action="store_true",
+        help="P2-3 (codex B-F9, AMENDMENT_04): opt into dev-mode partial-intersection "
+        "verdict. Paper-grade DEFAULT is fail-closed full coverage — without this flag a "
+        "cell whose router/baseline task intersection is incomplete reports "
+        "status=incomplete_coverage_paper_grade + passes=False instead of a biased subset.",
     )
     args = ap.parse_args()
 
@@ -897,7 +964,10 @@ def main() -> int:
     else:
         cells = CELLS
 
-    verdict = run_h10_verdict(cells, require_full_coverage=args.require_full_coverage)
+    # P2-3 (codex B-F9, AMENDMENT_04): paper-grade DEFAULT = fail-closed full coverage;
+    # --allow-partial-dev opts into the dev-mode partial-intersection subset verdict.
+    require_full = not args.allow_partial_dev
+    verdict = run_h10_verdict(cells, require_full_coverage=require_full)
     write_outputs(verdict, Path(args.out_dir))
 
     pv = verdict["primary_k_of_n"]

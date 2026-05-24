@@ -8,13 +8,20 @@ Visual companion to Outcome 0c routing oracle lift.
 
 See docs/checkpoints/paper_planning.md §3 Outcome dimension framework.
 
-fig10: Phantom routing lift — Section 1/4 paper hook visualization.
+fig10: Phantom routing ADDITIVE lift — Appendix-D / H1-deploy sensitivity figure.
+
+⚠️ AMENDMENT_02 §3 / AMENDMENT_04 (2026-05-24): this figure visualizes the 4-mode ADD
+estimand (3→{4,5}-mode incremental oracle lift, `4psom_vs_3` etc.) = Appendix-D /
+H1-deploy sensitivity, NOT the 6-mode-strict H1 drop-one PRIMARY gate
+(`_cell_drop_one_theta_se`; 6-mode strict ≤ 4-mode ADD by construction). Do NOT cite this
+as the §1 H1 hero number — the canonical H1 hero = bootstrap-percentile FE pool from
+`phase1_full_prereg_decision`.
 
 Reads results/phantom_paper/phantom_lift.csv (produced by aggregate_phantom_lift.py)
 and visualizes 4 oracle ceilings per (baseline, site) cell:
   3-mode | +P-text (4-mode) | +P-SoM (4-mode) | 5-mode
 
-Each bar = oracle SR%. Error bars from bootstrap 95% CI on the lift vs 3-mode.
+Each bar = oracle SR% (ADD ceiling). Error bars from bootstrap 95% CI on the lift vs 3-mode.
 Text annotations show absolute ceiling % and lift Δ vs 3-mode.
 
 Output: results/phantom_paper/figures/fig0c_phantom_lift_bars.png

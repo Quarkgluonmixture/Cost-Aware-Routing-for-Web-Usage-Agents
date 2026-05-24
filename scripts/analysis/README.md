@@ -40,6 +40,14 @@ complementarity, category SR, overlap depth, and routing AUROC.
 | `scripts/analysis/figures/fig0d_taskpool_jaccard.py` | 0 supporting | live episode `success` (canonical) sets | `results/phantom_paper/figures/fig0d_taskpool_jaccard.png` | solve-pool overlap sketch for B0/B1 observation arms |
 | `scripts/analysis/figures/fig0c_drop_one_oracle.py` | 0 supporting | live episode `success` (canonical) sets | `results/phantom_paper/figures/fig0c_drop_one_oracle.png` (figure) + `results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv` (data sidecar) | drop-one oracle loss for B0/B1 mode pools |
 
+> ⚠️ **Estimand-label (AMENDMENT_02 §3 / AMENDMENT_04, 2026-05-24)**: the `phantom_lift.csv`
+> "+5.24pp / +4.70pp 3→5 lift" numbers in the rows above are the **4-mode ADD** estimand
+> (`4psom_vs_3`, 3→{4,5}-mode incremental oracle lift) = **Appendix-D / H1-deploy exploratory
+> sensitivity**, NOT the 6-mode-strict H1 drop-one PRIMARY gate. The canonical H1 hero =
+> bootstrap-percentile FE pool from `aggregate_phase1_full_prereg_decision` (6-mode strict ≤
+> 4-mode ADD by construction; H1-strict effect TBD post-Phase-1a). Note `fig0c_drop_one_oracle.py`
+> (drop-one) ≠ `fig0c_phantom_lift_bars.py` (4-mode ADD bars).
+
 Outcome live sources also include canonical `success` SR and FP rate from:
 
 - `results/visualwebarena/phase1/B0_3mode_reddit_20260422/*/episodes/*_summary_v2.json`

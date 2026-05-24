@@ -188,9 +188,22 @@ def _load_cell_per_task(cell: Dict) -> Dict[str, Dict[str, Dict]]:
                 continue
             success_raw = data.get("success")  # bool (strict loader guaranteed)
             # P0-1 fix: `is None` check, NOT truthy `or` short-circuit
-            cost_raw = data.get("total_cost_usd")
+            # P1-3 (AMENDMENT_04 cost alignment 2026-05-24): canonical cost =
+            # total_billed_cost_usd per AMENDMENT_01 §1 + AMENDMENT_03 §3. The H2(a)
+            # per-task ratio + framing gate consume this column. AMENDMENT_03 §3 migrated
+            # aggregate_cost_electricity + aggregate_h10_pareto to total_billed but missed
+            # THIS canonical-gate producer (sibling-propagation gap). Legacy total_cost_usd
+            # / total_model_cost_usd retained as fallback ONLY under P79_ALLOW_LEGACY_COST=1
+            # (archive vintage); paper-grade fails closed to None if billed absent so a
+            # missing-billed cell reports H2(a) state=cannot_evaluate, not a wrong-basis ratio.
+            cost_raw = data.get("total_billed_cost_usd")
             if cost_raw is None:
-                cost_raw = data.get("total_model_cost_usd")
+                _allow_legacy_cost = os.environ.get(
+                    "P79_ALLOW_LEGACY_COST", "0").lower() in ("1", "true", "yes")
+                if _allow_legacy_cost:
+                    cost_raw = data.get("total_cost_usd")
+                    if cost_raw is None:
+                        cost_raw = data.get("total_model_cost_usd")
             try:
                 success = float(success_raw) if success_raw is not None else None
             except (TypeError, ValueError):
@@ -232,7 +245,8 @@ def _h2a_per_task_ratio(per_task: Dict[str, Dict[str, Dict]]) -> Optional[Dict]:
             n_psom_missing += 1
             continue
         if cd <= 0:
-            # cost=0 is real (e.g., GLM fallback or proxy edge); skip ratio to avoid
+            # cost=0 is real (e.g., proxy edge / early-exit before any billed call);
+            # (GLM-fallback path retired B-991 2026-05-17); skip ratio to avoid
             # div-by-zero but count for transparency
             n_dom_zero += 1
             continue
@@ -566,27 +580,74 @@ def _holm_per_cell_transparency(per_cell_theta_se: List[Tuple[float, float]],
 # Framing rule R1-R5 (with I² cap-only, NOT rescue)
 # ---------------------------------------------------------------------------
 
+def _load_h10_operational_gate_passed() -> Optional[bool]:
+    """Read H10 `operational_gate_passed` from h10_pareto_verdict.json for post-R5 routing.
+
+    Returns True/False if the H10 verdict artifact exists + has the field, else None
+    (H10 not yet computed, pre-Pass-2). amendment-02 §4 post-R5 route uses this to pick
+    C_prime_router_only (H10 pass) vs F_failure (H10 fail) when H3 also fails.
+    """
+    path = DEFAULT_OUT_JSON.parent / "h10_pareto_verdict.json"
+    if not path.exists():
+        return None
+    try:
+        v = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    gate = v.get("operational_deployment_gate", {})
+    val = gate.get("operational_gate_passed")
+    return bool(val) if isinstance(val, bool) else None
+
+
 def _apply_framing(h1_pass: bool, h2a_falsified: bool,
                     h3_axis1_pass: bool, h3_axis2_pass: bool,
-                    h1_isq_cap_at_r3: bool) -> Dict:
+                    h1_isq_cap_at_r3: bool, h10_pass: Optional[bool] = None) -> Dict:
     """Apply prereg §2 R1-R5 framing rule with I² cap-only override.
 
     A1.21 P0-3 + P0-11 fix: I² > 75% caps R1/R2 → R3, but does NOT rescue
     failed H1 (prereg L323 + L340-342). Per-cell consistency substitution
     (which the retired decision_test had) is RETIRED.
+
+    P1-1 (AMENDMENT_04, amendment-02 §4): on R5 (H1-fail) the framing TIER is unchanged
+    (still R5) but the REPORTING route is mechanically determined by the independently
+    pre-registered H3 / H10 gates → post_r5_pivot ∈ {C_prime_structure, C_prime_router_only,
+    F_failure}. h10_pass=None (H10 not yet computed, pre-Pass-2) → pivot resolves to a
+    pending marker. NO framing-tier rescue (R5 stays R5; amendment-02 anti-rescue guard).
     """
-    # H1 failed → R5 regardless of I² or H2(a) or H3
+    # H1 failed → R5 regardless of I² or H2(a) or H3 (framing tier unchanged)
     # B-1288 /stress A2.6b P1-12-B 2026-05-18: R5 framing precise scope — falsifies
     # P-SoM deployment-arm superiority over the 6-cell design ONLY; does NOT
     # falsify phantom concept space existence or P-text/P-prompt structural
     # ablation evidence. Cross-link: paper_planning.md §5 R5 row + preregistration.md
     # §2.5 step 8 cross-family claim-tier gate (Qwen anchor is load-bearing).
     if not h1_pass:
+        # P1-1 (amendment-02 §4 post-R5 reporting route): H3-pass → structure pivot;
+        # H3-fail + H10-pass → router-only pivot; H3-fail + H10-fail → failure (Track B).
+        h3_any = h3_axis1_pass or h3_axis2_pass
+        if h3_any:
+            pivot, pivot_desc = ("C_prime_structure",
+                "H3 structural axis survives → lower-claim phantom-space-structure paper "
+                "(P-text/P-prompt axis decomposition; NOT P-SoM deployment hero).")
+        elif h10_pass is True:
+            pivot, pivot_desc = ("C_prime_router_only",
+                "H3 fails (neither axis) but H10 router deployable → lower-claim "
+                "router-only / systems paper.")
+        elif h10_pass is False:
+            pivot, pivot_desc = ("F_failure",
+                "H1 + H3 + H10 all fail → negative/methodology result; Track B B-91 "
+                "evaluation-systems workshop note (prereg §2.5 R5 row).")
+        else:
+            pivot, pivot_desc = ("C_prime_router_only_or_F_pending_h10",
+                "H3 fails; H10 verdict not yet computed (Pass-2 pending) → route resolves "
+                "to C'-R (H10 pass) or F (H10 fail) once H10 lands.")
         return {"rule": "R5",
-                "framing": "Qwen anchor fail scenario — H1 FE superiority failed over 6-cell "
-                           "design (falsifies P-SoM deployment-arm superiority claim, NOT phantom "
-                           "concept space existence or P-text/P-prompt structural ablation "
-                           "evidence). Pivot decision deferred to advisor sync at fail time.",
+                "post_r5_pivot": pivot,
+                "post_r5_pivot_desc": pivot_desc,
+                "framing": "H1 FE superiority failed over 6-cell design (falsifies P-SoM "
+                           "deployment-arm superiority claim, NOT phantom concept space "
+                           "existence or P-text/P-prompt structural ablation evidence). "
+                           "R5 tier unchanged; reporting route = " + pivot
+                           + " per amendment-02 §4.",
                 "hook_power": "n/a",
                 "heterogeneity_override": False}
     # H1 passed but H2(a) falsified → R4
@@ -613,6 +674,65 @@ def _apply_framing(h1_pass: bool, h2a_falsified: bool,
                 "original_rule_pre_cap": primary[0]}
     return {"rule": primary[0], "framing": primary[1], "hook_power": primary[2],
             "heterogeneity_override": False}
+
+
+def _apply_b2_cross_family_downgrade(framing: Dict, per_cell_data: List[Dict]) -> Dict:
+    """prereg §2.5 step-8 (B-1284): B2 (Gemma) cross-family claim-tier downgrade.
+
+    Per-cell H1 pass = bootstrap CI excludes 0 (ci95_lo_pp > 0). Rules:
+    - Qwen-lineage {B0,B1}×{cls,red} 4-cell: ANY per-cell fail → R5 (load-bearing
+      within-family anchor; prereg L412), overrides R1/R2/R3.
+    - B2 {cls,red} 2-cell: ANY fail while Qwen 4-cell all pass → R-tier downgrade ONE
+      step (R1→R2, R2→R3; R3 already lowest) — cross-family non-replication (prereg L411).
+    - Incomplete data (None, e.g. pre-Pass-1 or missing cell) → no downgrade
+      (conservative; await full 6-cell data).
+    Only applies to R1/R2/R3 (H1 passed); R4/R5 terminal, returned unchanged.
+    """
+    rule = framing.get("rule")
+    if rule in ("R4", "R5"):
+        return framing
+
+    def _cell_h1_pass(baseline: str, site: str) -> Optional[bool]:
+        for c in per_cell_data:
+            if c.get("baseline") == baseline and c.get("site") == site:
+                h1 = c.get("h1")
+                if not h1:
+                    return None
+                lo = h1.get("ci95_lo_pp")
+                return (lo > 0) if isinstance(lo, (int, float)) else None
+        return None
+
+    qwen_cells = [("B0", "classifieds"), ("B0", "reddit"),
+                  ("B1", "classifieds"), ("B1", "reddit")]
+    b2_cells = [("B2", "classifieds"), ("B2", "reddit")]
+    qwen_results = {f"{b}_{s}": _cell_h1_pass(b, s) for b, s in qwen_cells}
+    b2_results = {f"{b}_{s}": _cell_h1_pass(b, s) for b, s in b2_cells}
+    cross_family = {
+        "qwen_lineage_per_cell_h1_pass": qwen_results,
+        "b2_lineage_per_cell_h1_pass": b2_results,
+        "rule_pre_cross_family": rule,
+    }
+    qwen_any_fail = any(v is False for v in qwen_results.values())
+    qwen_all_pass = all(v is True for v in qwen_results.values())
+    b2_any_fail = any(v is False for v in b2_results.values())
+
+    if qwen_any_fail:
+        return {**framing, "rule": "R5",
+                "cross_family_override": "qwen_anchor_fail_r5",
+                "cross_family_detail": {**cross_family,
+                    "note": "prereg §2.5 L412: Qwen-lineage per-cell H1 fail → R5 "
+                            "(load-bearing within-family replication), overrides FE-pool R-tier."}}
+    if b2_any_fail and qwen_all_pass:
+        downgrade = {"R1": "R2", "R2": "R3", "R3": "R3"}
+        new_rule = downgrade.get(rule, rule)
+        return {**framing, "rule": new_rule,
+                "cross_family_override": "b2_nonreplication_downgrade",
+                "cross_family_detail": {**cross_family,
+                    "downgraded_to": new_rule,
+                    "note": "prereg §2.5 L411: B2 (Gemma) per-cell H1 fail while Qwen 4-cell "
+                            "pass → R-tier downgrade one step; phantom space + Qwen-validated "
+                            "deployment claim survive."}}
+    return {**framing, "cross_family_detail": cross_family}
 
 
 # ---------------------------------------------------------------------------
@@ -834,7 +954,8 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     # B-1018 (/stress A2.4a P1-15-C gemini F2, 2026-05-18): zero-cost task share
     # disclosure. Pre-fix `_h2a_per_task_ratio` skipped n_dom_zero tasks (divide-
     # by-zero) silently — if DOM-failure tasks systematically have cost=0
-    # (e.g., GLM-rescue / proxy edge / DOM early-exit), median ratio computed
+    # (e.g., proxy edge / DOM early-exit before billed call; GLM-rescue retired
+    # B-991), median ratio computed
     # only over DOM-SUCCESS subset → survival bias on H2(a) cost-equivalence
     # claim, paper §1 "cost ≈ DOM" actually proven only for DOM-pass tasks.
     # Emit per-cell + aggregate n_dom_zero_skipped/n_paired_tasks ratio so
@@ -1020,8 +1141,16 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     h3b_pass = bool(payload.get("h3_axis2_pooled_fe", {}).get("passed", False))
     h1_isq_cap = isq_payload.get("heterogeneity_cap_at_r3", False)
 
-    framing = _apply_framing(h1_pass, h2a_falsified, h3a_pass, h3b_pass, h1_isq_cap)
+    # P1-1 (amendment-02 §4): h10_pass flag for post-R5 reporting route (None if H10
+    # verdict not yet computed, pre-Pass-2). P1-2 (prereg §2.5 step-8): B2 cross-family
+    # claim-tier downgrade applied AFTER base framing (may downgrade R-tier one step or
+    # force R5 on Qwen-anchor failure).
+    h10_pass = _load_h10_operational_gate_passed()
+    framing = _apply_framing(h1_pass, h2a_falsified, h3a_pass, h3b_pass, h1_isq_cap,
+                             h10_pass=h10_pass)
+    framing = _apply_b2_cross_family_downgrade(framing, per_cell_data)
     payload["framing_rule"] = framing
+    payload["h10_pass_for_post_r5"] = h10_pass
 
     # Gate status overall
     if len(per_cell_data) < 6:

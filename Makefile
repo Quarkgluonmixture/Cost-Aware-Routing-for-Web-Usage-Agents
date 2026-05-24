@@ -361,7 +361,7 @@ _aggregate:
 h10-pareto-verdict:
 	@if ls results/visualwebarena/phase1/*_router_learned_*/phase1_learned_router_*_*/condition_summary_v2.json &>/dev/null; then \
 		echo "[h10-pareto-verdict] Pass-2 router data found, running aggregator..."; \
-		$(PYTHON) scripts/analysis/aggregate_h10_pareto.py --all || \
+		$(PYTHON) scripts/analysis/aggregate_h10_pareto.py --all --allow-partial-dev || \
 			echo "[h10-pareto-verdict] WARN: aggregator failed (non-fatal in _aggregate)"; \
 	else \
 		echo "[h10-pareto-verdict] INFO: no Pass-2 router data yet (pre-fire); skipping H10 verdict"; \

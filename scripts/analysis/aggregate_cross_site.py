@@ -287,7 +287,13 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             # red 99s busy-wait × 8 stalls inflated cross-cell latency. Paper
             # §1 latency table uses `avg_total_latency_canonical_ms` as
             # primary; raw + minus_retry retained as sensitivity columns.
-            # canonical = raw - retry - busy_wait = minus_retry - busy_wait
+            # AMENDMENT_04 (2026-05-24, P1-4=A′): canonical = "scaffold-adjusted latency"
+            # = minus_retry − busy_wait − screenshot_recovered (3-subtract; B-1780 third
+            # term below). This is the user-witnessed B-1669 (Q6=A 2026-05-18) + B-1780
+            # (Q3=A 2026-05-20, commit 526db4b) decision; the stale prereg §4 /
+            # amendment-01 prose (which described retry-adjusted-only) is aligned to THIS
+            # code, NOT vice versa. raw / retry-adjusted (minus_retry) / scaffold-adjusted
+            # (canonical) all kept as separate columns; §1 hero cites scaffold-adjusted.
             "avg_busy_wait_total_ms": cond.get("avg_busy_wait_total_ms"),
             # /stress 2026-05-20 P0-C3-E + P1-14-E (Track E F3): explicit
             # None-check both operands. Pre-fix `(x or 0)` short-circuit

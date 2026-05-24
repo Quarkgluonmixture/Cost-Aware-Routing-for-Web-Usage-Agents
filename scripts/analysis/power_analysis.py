@@ -18,7 +18,8 @@ For binary success rate comparisons (P-SoM vs best-baseline), computes:
 - MDE in percentage points at observed N per site (post-§139.8 scored counts:
   cls 224 / red 205 / shop 435)
 - Per-cell power for assumed effect sizes (1pp / 2pp / 3pp / 5pp)
-- FE-pool gate power at observed +2.34pp pooled drop-one (PRIMARY H1 gate)
+- FE-pool gate power at +2.336pp 4-mode ADD proxy (`4psom_vs_3`; NOT the 6-mode-strict
+  H1 drop-one gate effect `_cell_drop_one_theta_se` computes — see AMENDMENT_02 §3 / AMENDMENT_04)
 - TOST equivalence power (defensive computation per /stress A2.3a P1-1)
 
 Method: paired McNemar normal approximation with explicit πD (discordant-pair
@@ -230,7 +231,14 @@ def main():
     # ---------------------------------------------------------------
     lines += [
         "",
-        "## PRIMARY H1 gate power — FE-pool one-sided superiority (prereg §2.5)",
+        "## H1 FE-pool gate power (4-mode ADD proxy) — one-sided superiority (prereg §2.5)",
+        "",
+        "> ⚠️ **AMENDMENT_04 estimand-label (2026-05-24)**: the +2.336pp figure below is the",
+        "> archive **4-mode ADD** estimand (`4psom_vs_3`, 3→{4,5}-mode incremental), used here as",
+        "> a power **proxy** only — NOT the 6-mode-strict H1 drop-one gate effect that",
+        "> `_cell_drop_one_theta_se` computes. Since 6-mode strict ≤ 4-mode ADD by construction,",
+        "> these power numbers OVERSTATE 6-mode-strict H1 power; true H1-strict power is TBD from",
+        "> Phase 1a paper-grade data. Reported as H1-deploy / Appendix-D sensitivity (AMENDMENT_02 §3).",
         "",
         "Empirical numbers from archive `meta_phantom_lift.csv` P-SoM row (k=3 cells:",
         "B0 cls / B0 red / B1 cls — pre-2026-05-14 archive; missing B1 red + B2 cells",
@@ -284,9 +292,13 @@ def main():
         "",
         "| Gating test | Family | Archive k | θ_FE | SE_FE | k=6 SE_FE | **k=6 Power @ obs** | I² | p_Q |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|",
-        "| **H1 P-SoM drop-one > 1.0pp** | PRIMARY (deployment hero) | 3 | +2.336pp | 0.529pp | 0.374pp | **97%** | 0.00% | 0.461 |",
+        "| **P-SoM 4-mode ADD (`4psom_vs_3`)** † | H1-deploy / Appendix-D sensitivity — NOT 6-mode-strict gate | 3 | +2.336pp | 0.529pp | 0.374pp | **97%†** | 0.00% | 0.461 |",
         "| **H3 axis-1 P-text \\ P-SoM > 0** | STRUCTURAL (phantom axis 1) | 3 | +3.861pp | 0.702pp | 0.496pp | **100%** | 12.14% | 0.320 |",
         "| **H3 axis-2 P-prompt \\ P-SoM > 0** | STRUCTURAL (phantom axis 2) | 2 | +2.312pp | 0.670pp | 0.387pp | **100%** | 0.00% | 0.430 |",
+        "",
+        "† **H1 row = 4-mode ADD proxy** (`4psom_vs_3`), NOT the 6-mode-strict drop-one gate;",
+        "power OVERSTATED (6-mode strict ≤ 4-mode ADD); true H1-strict power TBD post-Phase-1a",
+        "(AMENDMENT_02 §3 / AMENDMENT_04). H3 rows below use the unique-count STRUCTURAL estimand.",
         "",
         "All 3 gates parity well-powered + heterogeneity-clean. The 71% I² in archive",
         "`4pdom_vs_3` row is a different statistic (drop-in oracle lift, exploratory/",
@@ -307,8 +319,10 @@ def main():
         "",
         f"- At baseline SR={args.baseline_sr:.2f} (conservative πD bound), smallest site (reddit "
         f"N=205) detects per-cell effects ≥ {per_site_mde['reddit']*100:.1f}pp at 80% power.",
-        f"- **PRIMARY H1 FE-pool gate** (the gate paper-1 actually hinges on): empirical archive "
-        f"k=3 → 81% power at observed +2.34pp; projected k=6 Phase 1a → 97% power. **Well-powered**.",
+        f"- **H1 FE-pool gate power (4-mode ADD proxy ⚠️)**: empirical archive "
+        f"k=3 → 81% / projected k=6 Phase 1a → 97% at +2.336pp **4-mode ADD** (`4psom_vs_3`). This "
+        f"is a power proxy; the 6-mode-strict H1 gate power is TBD post-Phase-1a (6-mode strict ≤ "
+        f"4-mode ADD; AMENDMENT_02 §3 / AMENDMENT_04).",
         f"- Empirical paired SE (from aggregator paired-bootstrap) is ~2.2× smaller than the "
         f"theoretical 1-sample bound used above for per-cell MDE — paired test benefits from real "
         f"between-mode correlation. Per-cell MDE numbers in table above are **conservative upper "
@@ -318,9 +332,10 @@ def main():
         "",
         f"\"Per-cell paired McNemar MDE (conservative bound at πD = 2·min(p,1-p)) = "
         f"[{per_site_mde['classifieds']*100:.1f}, {per_site_mde['reddit']*100:.1f}, "
-        f"{per_site_mde['shopping']*100:.1f}]pp for cls/red/shop. **PRIMARY H1 FE-pool gate "
-        f"empirical power = 81% (k=3 archive) / 97% (k=6 Phase 1a projection) at observed +2.34pp "
-        f"pooled drop-one** — strongly powered. The conservative per-cell MDE bound reflects the "
+        f"{per_site_mde['shopping']*100:.1f}]pp for cls/red/shop. **H1 FE-pool gate power (4-mode "
+        f"ADD proxy) = 81% (k=3 archive) / 97% (k=6 projection) at +2.336pp `4psom_vs_3`; the "
+        f"6-mode-strict H1 gate power is TBD post-Phase-1a** (6-mode strict ≤ 4-mode ADD per "
+        f"AMENDMENT_02 §3 / AMENDMENT_04). The conservative per-cell MDE bound reflects the "
         f"paired-test worst case (ρ=0); empirical πD ≈ 0.019 (≈10× smaller than the bound) "
         f"indicates substantial paired-test benefit from real between-mode correlation. K-of-N "
         f"is transparency-only per prereg §4 Decision 3A.\"",
