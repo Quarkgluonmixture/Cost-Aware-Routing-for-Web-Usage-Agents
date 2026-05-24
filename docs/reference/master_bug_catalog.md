@@ -7870,3 +7870,29 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Forward code remediation** (defer post-fire, fire 跑中 `p79/` immutable): Playwright driver IPC / sync API 操作加**客户端 wall-clock deadline** (单 page-op SIGALRM 或 watchdog-thread → page/context.close 超时) → driver wedge **raise into runner M1** 而非 silent infinite block; 一并 reap B0 proxy CLOSE-WAIT pool 连接 (次要)。**Cross-link**: B-486 (evaluator-hang 同族) + B-1777 (denominator surgery 原则) + next_steps §0 ④ + 实验笔记 (待 chronicle)。
 
 ---
+
+## B-1849~B-1857 — Analysis-layer paper-grade alignment batch (3-AI /stress 2026-05-24, AMENDMENT_04) (2026-05-24)
+
+> 3-AI `/stress` audit of analysis + visualization layer (Mode A Claude stats-methodologist / Mode B codex reproducibility / Mode C gemini figures) vs locked prereg + AMENDMENT_01/02/03. Gate arithmetic (`aggregate_phase1_full_prereg_decision` H1 bootstrap-percentile + H2a ratio + H3 axes) found FAITHFUL; drift was in producer/figure/README/prose surfaces. All fixes = implementation-alignment to already-locked estimands, NO new estimand/gate/δ/R-ladder. Witness: AMENDMENT_04 + tag `prereg-amendment-04-analysis-alignment-20260524`. Pre-data (no θ_FE/H10 computed). Tests: `tests/test_amendment04_alignment.py` 20 cases; H10/router/prereg/framing/amendment04 suite = 174 passed.
+
+**B-1849** (P0-1, 3-AI overlap OOB, **FIXED**) — ADD estimand (`4psom_vs_3`, +2.336pp, 3→{4,5}-mode incremental) labeled "PRIMARY H1 gate / deployment hero" in `power_analysis.py` (6 loci) + `fig0c_phantom_lift_bars.py:11` + `README.md`. Violates AMENDMENT_02 §3 (4-mode ADD ≠ 6-mode-strict gate; 6-mode strict ≤ 4-mode ADD by construction → OVERSTATES H1 power). Fix: relabeled all → "H1-deploy / Appendix-D sensitivity (4-mode ADD)", 6-mode-strict TBD post-Phase-1a. Numbers unchanged (label-only). Mirrors prereg §2.4 ⚠️ + `fig_meta_forest:50-56` APPENDIX_EXPLORATORY precedent.
+
+**B-1850** (P0-2, codex OOB + Claude confirm, **FIXED**) — H10 DEFER entropy gate (prereg §H10 L238-240, per-cell train-fold label entropy `H=−Σ p·log_2(p) < 1.0 bit` → §5 descriptive) was prose-only; `aggregate_h10_pareto` had no entropy branch (`grep entropy=0`). Fix: `train_l1_router.label_entropy_bits` per-fold/per-cell entropy (RAW `y_train` pre-B-995 filter) → `h10_entropy_gate.json`; `run_h10_verdict` reads + fail-closed DEFER (any cell min-over-folds < 1.0 bit OR artifact missing → `operational_gate_passed=False`, `h10_status=deferred_entropy/entropy_unavailable`, pre-entropy verdict retained).
+
+**B-1851** (P1-1, Claude, **FIXED**) — `_apply_framing` R5 branch hardcoded "advisor sync"; no `post_r5_pivot` (`grep post_r5_pivot=空`). AMENDMENT_02 §4 L195-210 requires C'-S/C'-R/F route mechanically determined by H3/H10 + regression test. Fix: `_apply_framing(h10_pass=)` emits `post_r5_pivot` ∈ {C_prime_structure (H3 pass) / C_prime_router_only (H3 fail+H10 pass) / F_failure (both fail) / pending_h10 (H10 not yet computed)}; NO framing-tier rescue (R5 stays R5). Test asserts L209-210.
+
+**B-1852** (P1-2, Claude, **FIXED**) — B2 (Gemma) cross-family claim-tier downgrade (prereg §2.5 step-8 L408-413, B-1284) unimplemented; `_apply_framing` did not receive per-cell B2 outcomes. Fix: `_apply_b2_cross_family_downgrade` — Qwen-lineage {B0,B1}×{cls,red} any per-cell H1 fail → R5 (L412 load-bearing anchor); B2 {cls,red} any fail while Qwen all pass → R-tier −1 step R1→R2→R3 (L411); incomplete data → conservative no-change.
+
+**B-1853** (P1-3, Claude+codex 2-AI, **FIXED**) — canonical gate `_load_cell_per_task:191` (H2a cost-ratio source) read `total_cost_usd` not `total_billed_cost_usd`; AMENDMENT_03 §3 migrated `aggregate_cost_electricity`+`aggregate_h10_pareto` but MISSED this 3rd producer (sibling-propagation gap). Fix: read `total_billed_cost_usd` + fail-closed (`P79_ALLOW_LEGACY_COST=1` escape); missing-billed → H2a `cannot_evaluate` not wrong-basis ratio.
+
+**B-1854** (P1-4, codex; **A′ = code kept, prereg prose superseded**) — `aggregate_cross_site.py:309-316` canonical latency = triple-subtract (`minus_retry − busy_wait − screenshot_recovered`); prereg §4 + amendment-01 prose described retry-adjusted-only. **NOT silent drift**: triple-subtract = user-approved B-1669 (Q6=A 2026-05-18, busy_wait 治 red 99s) + B-1780 (Q3=A 2026-05-20, commit 526db4b, screenshot-recovery; 1162 tests). Resolution: code UNCHANGED (witnessed decision); prereg §4/amendment-01 prose superseded → "scaffold-adjusted canonical" (AMENDMENT_04 §3 supersession table). `minus_retry` kept as sensitivity column; §1 hero cites scaffold-adjusted.
+
+**B-1855** (P1-6, codex, **FIXED**) — `train_l1_router:422` called `holdout_sr` "the H10 evaluation point"; it's CV mode-match accuracy (predicted == oracle-best label), not realized SR/cost (true H10 = Pass-2 realized per `aggregate_h10_pareto.analyze_cell`). Fix: comment DIAGNOSTIC ONLY + `cv_mode_match_acc` alias; "do NOT cite as H10 evidence".
+
+**B-1856** (P2-3, codex, **FIXED**) — `aggregate_h10_pareto --require-full-coverage` opt-in; default emitted biased intersection-subset verdict. Fix: default fail-closed full coverage + `--allow-partial-dev` dev opt-out + Makefile dev target passes `--allow-partial-dev`.
+
+**B-1857** (P2-4, Claude, **FIXED**) — stale "GLM fallback" comments in `_h2a_per_task_ratio` (GLM-rescue retired B-991 2026-05-17). Fix: comments → "proxy edge / early-exit; GLM retired B-991".
+
+**Resolved upstream / doc-only**: **P2-2** normal-Z transparency floor already aligned to 0.68/1.0 by AMENDMENT_03 (`aggregate_phase1_prereg_gate:89-94`) — no drift remains. **P1-7** LR `class_weight=None` = canonical per B-995 (supersedes prereg L224 `balanced`, which produced ~15× minority hallucination; tie recorded AMENDMENT_04 §3); code already carries B-995 note. **P1-5** stale on-disk artifacts (`h10_pareto_verdict.json` / `cross_site_*`) = gitignored, regenerate via `make analysis` post-fire (next_steps tracked).
+
+---

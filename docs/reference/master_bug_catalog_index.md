@@ -4,7 +4,7 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-05-24  ·  **Catalog**: master_bug_catalog.md (7872 lines, 127 sections)  ·  **B-numbers**: 784 canonical entries, 1218 referenced, range B-1~B-1848
+**Generated**: 2026-05-24  ·  **Catalog**: master_bug_catalog.md (7898 lines, 128 sections)  ·  **B-numbers**: 793 canonical entries, 1227 referenced, range B-1~B-1857
 
 ## Health (lint)
 
@@ -103,3 +103,4 @@
 | L7842 | B-1846 — 无 `termination_reason` 字段 (cap-induced 终止只能间接推断) (2026-05-23) | B-1846 |
 | L7850 | B-1847 — `paper_grade_check.py` 无 B0 `tool_call_emit_rate` conditio… | B-1847 |
 | L7858 | B-1848 — Playwright driver-wedge hang 绕过 operation timeout + runner… | B-1848 |
+| L7874 | B-1849~B-1857 — Analysis-layer paper-grade alignment batch (3-AI /s… | B-1849–B-1857 |
