@@ -600,20 +600,23 @@ class VWAWrapper:
             if coord is not None:
                 left = float(coord[0])
                 top = float(coord[1])
-                # Accept either normalized [0-1] or pixel coordinates.
-                # Normalize each dimension independently to handle mixed formats
-                # (e.g. [0.26, 330] where x is normalized but y is pixel).
-                # /stress A1.18-re (B-627 P2-9-C* Gemini OOB, 2026-05-17):
-                # threshold bumped from > 1.0 to > 1.1 so that a hallucinated
-                # `1.0001` coord (intended as normalized boundary 1.0) is NOT
-                # mis-classified as pixel and divided by 1280, which would have
-                # snapped the click to ~0px (far-left edge). Tolerance band of
-                # 0.1 absorbs typical float rounding while preserving the
-                # pixel-coord heuristic.
+                # B-1860: Qwen 0-1000 contract. Qwen3-VL natively emits a
+                # 0-1000 coordinate system (probe-confirmed B0 + B1 2026-05-24);
+                # the model also sometimes returns normalized [0,1] (B-1860
+                # mixed-format probe). Auto-judge each dimension independently
+                # by value: `<= 1.1` → already normalized [0,1] (keep as-is);
+                # `> 1.1` → Qwen 0-1000 → divide by 1000.0 (NOT viewport — the
+                # old `/viewport_width,/viewport_height` was the misclick root
+                # cause: a 0-1000 value e.g. 728 got divided by 1280 → 0.57
+                # instead of 0.728, snapping the click to the wrong position).
+                # The 1.1 (not 1.0) threshold preserves the B-627 tolerance band
+                # so a hallucinated normalized boundary `1.0001` stays [0,1].
+                # Format normalization only — NO target snapping / element
+                # nearest-correction (save format layer, not grounding layer).
                 if left > 1.1:
-                    left = left / float(self.viewport_width)
+                    left = left / 1000.0
                 if top > 1.1:
-                    top = top / float(self.viewport_height)
+                    top = top / 1000.0
                 # Avoid 0.0 which triggers VWA create_mouse_click_action validation
                 eps = 1e-6
                 if left <= 0.0:
@@ -684,12 +687,15 @@ class VWAWrapper:
             if coord is not None and isinstance(coord, (list, tuple)) and len(coord) == 2:
                 left = float(coord[0])
                 top = float(coord[1])
-                # /stress A1.18-re (B-627 sibling P2-9-C* Gemini OOB,
-                # 2026-05-17): same threshold bump as click path above.
+                # B-1860: Qwen 0-1000 contract (type/vision focus-click coord).
+                # Same per-dimension auto-judge as the click path above:
+                # `<= 1.1` → normalized [0,1] (keep); `> 1.1` → Qwen 0-1000
+                # (divide by 1000.0, NOT viewport — viewport division was the
+                # misclick root cause). Format normalization only.
                 if left > 1.1:
-                    left = left / float(self.viewport_width)
+                    left = left / 1000.0
                 if top > 1.1:
-                    top = top / float(self.viewport_height)
+                    top = top / 1000.0
                 eps = 1e-6
                 left = max(eps, min(1.0 - eps, left))
                 top = max(eps, min(1.0 - eps, top))
@@ -1070,8 +1076,15 @@ class VWAWrapper:
                 try:
                     coord = action_json["coordinate"]
                     x_norm, y_norm = float(coord[0]), float(coord[1])
-                    x_px = x_norm * self.viewport_width if x_norm <= 1.0 else x_norm
-                    y_px = y_norm * self.viewport_height if y_norm <= 1.0 else y_norm
+                    # B-1860: Qwen 0-1000 contract (select_option coord, vision
+                    # mode). Per-dimension auto-judge: `<= 1.1` → normalized
+                    # [0,1] → multiply by viewport for px; `> 1.1` → Qwen 0-1000
+                    # → divide by 1000.0 then multiply by viewport. Pre-fix this
+                    # site treated `> 1.0` as already-pixel (raw value passthrough)
+                    # which mis-placed a 0-1000 coord (e.g. 728 → 728px instead of
+                    # 0.728*W). Format normalization only.
+                    x_px = (x_norm / 1000.0 * self.viewport_width) if x_norm > 1.1 else (x_norm * self.viewport_width)
+                    y_px = (y_norm / 1000.0 * self.viewport_height) if y_norm > 1.1 else (y_norm * self.viewport_height)
                     # B-481: structured JS return mirrors element_id path above.
                     # B-511 (/stress A1.25 GRL Chunk 3 P1-4-B*, 2026-05-17):
                     # coord path now accepts `idx` arg symmetric with
@@ -1211,10 +1224,14 @@ class VWAWrapper:
             ):
                 left = float(_hover_coord[0])
                 top = float(_hover_coord[1])
+                # B-1860: Qwen 0-1000 contract (hover coord, vision mode).
+                # Per-dimension auto-judge: `<= 1.1` → normalized [0,1] (keep);
+                # `> 1.1` → Qwen 0-1000 (/1000.0, NOT viewport). Mirrors the
+                # coord-click normalization. Format normalization only.
                 if left > 1.1:
-                    left = left / float(self.viewport_width)
+                    left = left / 1000.0
                 if top > 1.1:
-                    top = top / float(self.viewport_height)
+                    top = top / 1000.0
                 eps = 1e-6
                 if left <= 0.0:
                     left = eps

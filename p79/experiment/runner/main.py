@@ -2503,6 +2503,18 @@ class ExperimentRunner:
             metrics_cfg=self.cfg.get("metrics", {}),
             backend_type=self.cfg.get("backends", {}).get(condition.backend_id, {}).get("type"),
         )
+        # B-1860: Qwen 0-1000 contract. The parse-error caps below
+        # (consecutive_parse_errors / total_parse_errors) MUST count only
+        # genuinely-malformed steps, NOT a 0-1000 coordinate format mismatch.
+        # This invariant is enforced upstream, not here: a 0-1000 coord now
+        # passes `validate_action` (action_utils._is_valid_coordinate_pair
+        # by-value check) → runner_valid_post_backend=True → parse_valid=True →
+        # classify_step_accounting returns is_injected_wait_sink=False → the
+        # counters at L3107-3113 do NOT increment. Only a coord that is STILL
+        # malformed after that by-value judgment (NaN / inf / wrong shape /
+        # negative) trips parse_valid=False and feeds these caps. Pre-fix, a
+        # 0-1000 coord declared "normalized" was hard-rejected → 13.6% of
+        # vision steps counted as parse errors → 48% of episodes cap-killed.
         while (
             agent_action_count < self.max_agent_actions
             and step_idx < self.max_model_attempts

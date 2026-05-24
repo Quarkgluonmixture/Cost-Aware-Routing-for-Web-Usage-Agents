@@ -400,3 +400,152 @@ def test_undeclared_coord_infers_pixel_not_blind_normalized():
     assert action["coordinate_type"] == "pixel", (
         "explicit coordinate_type must not be overridden by inference"
     )
+
+
+# ---------------------------------------------------------------------------
+# B-1860: Qwen 0-1000 coordinate contract
+#
+# Qwen3-VL natively emits a 0-1000 coordinate system (probe-confirmed B0 + B1
+# 2026-05-24) but sometimes also returns normalized [0,1] (mixed-format probe).
+# Contract: judge EACH dimension independently BY VALUE — `<= 1.1` is a
+# normalized [0,1] coord, `> 1.1` is a Qwen 0-1000 coord (divide by 1000) —
+# IGNORING the model's `coordinate_type` declaration (empirically unreliable:
+# model stamps "normalized" while emitting 0-1000). Save the format layer
+# only, NOT the grounding layer (no target snapping). True malformed
+# (NaN / inf / non-number / shape != 2 / negative / bool) still rejects.
+# ---------------------------------------------------------------------------
+
+
+def test_b1860_validator_accepts_qwen_0_1000_even_when_declared_normalized():
+    """The pre-B-1860 hard reject (`coordinate_type=="normalized" → [0,1]`)
+    turned 0-1000 coords into parse errors (vision parse_error 13.6%). Now a
+    0-1000 coord is VALID regardless of the (ignored) coordinate_type label.
+    """
+    from p79.backends.action_utils import _is_valid_coordinate_pair
+
+    # 0-1000 coord declared "normalized" (the empirical failure signature) → valid.
+    assert _is_valid_coordinate_pair([598, 125], coordinate_type="normalized") is True
+    assert _is_valid_coordinate_pair([728, 920], coordinate_type="normalized") is True
+    # Mixed (x normalized, y 0-1000) declared "normalized" → valid.
+    assert _is_valid_coordinate_pair([0.842, 117], coordinate_type="normalized") is True
+    # Pure normalized declared "normalized" → still valid.
+    assert _is_valid_coordinate_pair([0.5, 0.5], coordinate_type="normalized") is True
+    # No declaration (None) → by-value, both regimes valid.
+    assert _is_valid_coordinate_pair([598, 125]) is True
+    assert _is_valid_coordinate_pair([0.5, 0.5]) is True
+
+
+def test_b1860_validator_still_rejects_true_malformed():
+    """Format-layer recovery must NOT relax true-malformed rejection."""
+    from p79.backends.action_utils import _is_valid_coordinate_pair
+
+    # NaN / inf component → reject.
+    assert _is_valid_coordinate_pair([float("nan"), 5]) is False
+    assert _is_valid_coordinate_pair([float("inf"), 5]) is False
+    # Wrong shape (1 number) → reject.
+    assert _is_valid_coordinate_pair([500]) is False
+    # Wrong shape (3 numbers) → reject.
+    assert _is_valid_coordinate_pair([500, 600, 700]) is False
+    # Negative component → reject (grounding-nonsense, not a format issue).
+    assert _is_valid_coordinate_pair([-5, 500]) is False
+    assert _is_valid_coordinate_pair([500, -1]) is False
+    # Non-number component → reject.
+    assert _is_valid_coordinate_pair([500, "x"]) is False
+    # Bool component (int subclass) → reject (B-799 preserved).
+    assert _is_valid_coordinate_pair([True, 500]) is False
+    # Unknown coordinate_type enum → reject (B-802 schema guard preserved).
+    assert _is_valid_coordinate_pair([0.5, 0.5], coordinate_type="screen") is False
+
+
+def test_b1860_validate_action_qwen_0_1000_click_is_parse_valid():
+    """End-to-end through validate_action: a 0-1000 click (the kind that was
+    cap-killing vision episodes) is now parse_valid=True (no invalid_coord)."""
+    from p79.backends.action_utils import validate_action_detailed
+
+    _, valid, reason = validate_action_detailed(
+        {"action_type": "click", "coordinate": [598, 125], "coordinate_type": "normalized"}
+    )
+    assert valid is True
+    assert reason is None
+    # Mixed-format click also parse_valid.
+    _, valid2, _ = validate_action_detailed(
+        {"action_type": "click", "coordinate": [0.842, 117]}
+    )
+    assert valid2 is True
+    # NaN coord still surfaces invalid_coord (true malformed → feeds parse caps).
+    _, valid3, reason3 = validate_action_detailed(
+        {"action_type": "click", "coordinate": [float("nan"), 5]}
+    )
+    assert valid3 is False
+    assert reason3 == "invalid_coord"
+
+
+def _b1860_fake_wrapper(monkeypatch, viewport_width, viewport_height):
+    """Build a VWAWrapper backed by a fake browser_env + env that captures the
+    create_mouse_click_action (left, top) the wrapper computes.
+
+    Uses monkeypatch.setitem for sys.modules so the fake `browser_env` is
+    auto-restored at test teardown (a raw `sys.modules[...]=` assignment would
+    leak the SimpleNamespace into later tests and break real `import
+    browser_env.env_config` — observed polluting test_vwa_evaluator_b91_guard).
+    """
+    import sys
+    import types
+
+    from p79.envs.vwa_wrapper import VWAWrapper
+
+    captured = {}
+
+    fake_browser_env = types.SimpleNamespace(
+        create_id_based_action=lambda s: {"kind": "id", "action_str": s},
+        create_mouse_click_action=lambda left, top: captured.__setitem__("mouse_click", (left, top)) or {"kind": "mouse", "left": left, "top": top},
+        create_mouse_hover_action=lambda left, top: {"kind": "hover_coord", "left": left, "top": top},
+        create_scroll_action=lambda direction: {"kind": "scroll", "direction": direction},
+        create_stop_action=lambda answer: {"kind": "stop", "answer": answer},
+        create_go_back_action=lambda: {"kind": "back"},
+        create_go_forward_action=lambda: {"kind": "forward"},
+        create_page_focus_action=lambda page_number: {"kind": "tab", "page_number": page_number},
+        create_keyboard_type_action=lambda text: {"kind": "type", "text": text},
+        create_none_action=lambda: {"kind": "none"},
+        create_playwright_action=lambda s: {"kind": "playwright", "action_str": s},
+        create_goto_url_action=lambda url: {"kind": "goto", "url": url},
+        ScriptBrowserEnv=None,
+    )
+    monkeypatch.setitem(sys.modules, "browser_env", fake_browser_env)
+
+    class _FakeEnv:
+        def step(self, action):
+            return {"text": "[1] link"}, 0.0, False, False, {"url": "http://mock.local"}
+
+    wrapper = VWAWrapper(viewport_width=viewport_width, viewport_height=viewport_height)
+    wrapper._env = _FakeEnv()
+    return wrapper, captured
+
+
+def test_b1860_wrapper_normalizes_qwen_0_1000_per_dimension(monkeypatch):
+    """Wrapper click path maps each dimension by the 0-1000 contract:
+    `> 1.1` → /1000; `<= 1.1` → kept. viewport != 1000 (1280x720, the real
+    default) proves the divisor is 1000, NOT the viewport. The spec's expected
+    normalized outputs are asserted exactly.
+    """
+    # Both 0-1000 → (598/1000, 125/1000) = (0.598, 0.125).
+    w, cap = _b1860_fake_wrapper(monkeypatch, 1280, 720)
+    w.step({"action_type": "click", "coordinate": [598, 125]})
+    assert cap["mouse_click"] == (0.598, 0.125)
+
+    # Both 0-1000, B1-probe values → (728/1000, 920/1000) = (0.728, 0.920).
+    # 920 > 720 viewport_height — under the OLD /viewport bug this would have
+    # been 920/720 = 1.28 (clamped to ~1.0, far off). /1000 gives 0.920.
+    w, cap = _b1860_fake_wrapper(monkeypatch, 1280, 720)
+    w.step({"action_type": "click", "coordinate": [728, 920]})
+    assert cap["mouse_click"] == (0.728, 0.92)
+
+    # Mixed: x normalized (<= 1.1 kept), y 0-1000 (/1000) → (0.842, 0.117).
+    w, cap = _b1860_fake_wrapper(monkeypatch, 1280, 720)
+    w.step({"action_type": "click", "coordinate": [0.842, 117]})
+    assert cap["mouse_click"] == (0.842, 0.117)
+
+    # Pure normalized: both kept as-is → (0.5, 0.5).
+    w, cap = _b1860_fake_wrapper(monkeypatch, 1280, 720)
+    w.step({"action_type": "click", "coordinate": [0.5, 0.5]})
+    assert cap["mouse_click"] == (0.5, 0.5)

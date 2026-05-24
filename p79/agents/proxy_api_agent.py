@@ -154,9 +154,10 @@ _WEB_ACTION_TOOL = {
                     "minItems": 2,
                     "maxItems": 2,
                     "description": (
-                        "Normalized [x, y] coordinates (0.0-1.0). LAST RESORT only "
-                        "— use ONLY when the target has no element_id; always prefer "
-                        "element_id."
+                        # B-1860: Qwen 0-1000 contract (was "Normalized 0.0-1.0").
+                        "[x, y] coordinates in a 0-1000 system ([0,0]=top-left, "
+                        "[1000,1000]=bottom-right). LAST RESORT only — use ONLY "
+                        "when the target has no element_id; always prefer element_id."
                     ),
                 },
                 "text": {

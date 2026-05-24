@@ -307,17 +307,25 @@ def _is_valid_coordinate_pair(
     # `allow_pixel` legacy fallback path → bogus enum survived into step
     # JSONL audit trail → paper §3.5 schema-taxonomy false expansion. Only
     # the canonical 2 enum members + `None` (legacy unset) are accepted.
+    # (B-1860 keeps this schema-level enum reject: a garbage type string is
+    # still true-malformed; the change below only drops the enum's authority
+    # over the per-dimension VALUE-RANGE judgment.)
     if coordinate_type is not None and coordinate_type not in ("normalized", "pixel"):
         return False
-    # B-406: explicit coordinate_type enforcement (new strict path).
-    if coordinate_type == "normalized":
-        return 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0
-    if coordinate_type == "pixel":
-        return x >= 0 and y >= 0
-    # Backward-compat fallback (coordinate_type is None — caller didn't pass).
-    if allow_pixel:
-        return x >= 0 and y >= 0
-    return 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0
+    # B-1860: Qwen 0-1000 contract — judge each dimension BY VALUE, ignoring
+    # the model's `coordinate_type` declaration (probe-confirmed unreliable:
+    # the model stamps "normalized" while emitting 0-1000 coords). A dimension
+    # `> 1.1` is a legal Qwen 0-1000 coordinate (NOT a [0,1] violation to
+    # reject); a dimension `<= 1.1` is a legal normalized [0,1] coordinate.
+    # Both regimes are non-negative finite numbers, so the single non-negative
+    # check accepts both — and the env wrapper auto-judges per dimension again
+    # (`<= 1.1` keep / `> 1.1` divide by 1000) to map to pixels. This replaces
+    # the pre-fix B-406 hard `coordinate_type == "normalized" → [0,1]` reject
+    # that was rejecting 0-1000 coords as parse errors (vision parse_error
+    # 13.6%). True malformed (NaN / inf / non-number / wrong shape / bool /
+    # NEGATIVE) is still rejected above + here. Save format layer, NOT
+    # grounding layer (no target snapping / nearest-element correction).
+    return x >= 0 and y >= 0
 
 
 def _infer_coordinate_type(coord: Any) -> str:
