@@ -1,6 +1,6 @@
 Analysis-layer Implementation-Alignment Amendment 04 pre-fire witness
 
-OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01/02/03)
+OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01/02/03; AMENDMENT 04 doc + this git_witness uploaded by user 2026-05-24)
 Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
 Git tag: prereg-amendment-04-analysis-alignment-20260524
 Amendment commit SHA: ceb1a211c2f3838eb8f87cacb7db76954a2cfb6a

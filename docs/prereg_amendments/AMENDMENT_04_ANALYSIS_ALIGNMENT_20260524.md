@@ -2,7 +2,7 @@
 amendment_id: 04
 title: Implementation-alignment of analysis-layer producers + figures to locked estimands (ADD-label demotion / H10 entropy DEFER / cost total_billed / latency scaffold-adjusted / post-R5 route / B2 cross-family downgrade) — NO new estimand / gate / δ / R-ladder change
 date: 2026-05-24
-status: pre-fire witness (git tag + push DONE 2026-05-24 @ ceb1a21; OSF upload pending); Phase 1a paper-grade outcome statistics NOT yet computed
+status: pre-fire witness COMPLETE (git tag + push @ ceb1a21 + OSF upload to osf.io/kv9sf/ DONE 2026-05-24); Phase 1a paper-grade outcome statistics NOT yet computed
 parent_prereg: docs/checkpoints/pre_run/preregistration.md (status: locked)
 parent_doi: 10.17605/OSF.IO/9QCWU   # DOI 1, pre-canonical-outcome-creation witness, 2026-05-18
 parent_lock_tag: preregistration-locked @ ef609a3
