@@ -1,0 +1,60 @@
+Analysis-layer Implementation-Alignment Amendment 04 pre-fire witness
+
+OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01/02/03)
+Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
+Git tag: prereg-amendment-04-analysis-alignment-20260524
+Amendment commit SHA: ceb1a211c2f3838eb8f87cacb7db76954a2cfb6a
+Commit timestamp (UTC): 2026-05-24T00:50:34Z
+Tag created (UTC): 2026-05-24T00:50:34Z (lightweight tag = immovable named pointer to the commit SHA)
+Pushed to origin/diag-discover-then-freeze with tags (UTC): ~2026-05-24T00:55Z (tag anchors witness SHA ceb1a21 branch-independently; later merge to master does not affect the witness)
+Code-fix parent commit SHA: eedaa62ce6410599ee92c4991634f05abf9132b4 (committed 2026-05-24T00:50:22Z UTC)
+Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+
+Witness primitive = the amendment commit SHA above (content-addressed, tamper-evident;
+the commit timestamp is hashed into the SHA). The git tag is an immovable named pointer
+to it. The OSF upload is the external visibility layer on top of the Git witness.
+
+Provenance: 3-AI hostile /stress audit of the analysis + visualization layer 2026-05-24
+(Mode A Claude stats-methodologist + Mode B codex reproducibility + Mode C gemini figures);
+unified bug list user-confirmed fix scope 1A / 2A / 3A / 4A. The canonical statistical gate
+arithmetic (aggregate_phase1_full_prereg_decision H1 bootstrap-percentile + H2(a) ratio +
+H3 axes) was found FAITHFUL; the drift was in producer / figure / README / prose surfaces.
+
+Scope of Amendment 04 (see AMENDMENT_04_ANALYSIS_ALIGNMENT_20260524.md):
+  Pure implementation-alignment of analysis-layer producers / figures / README / prose to
+  estimands ALREADY LOCKED by DOI-1 + AMENDMENT_01/02/03 + the user-witnessed B-1669/B-1780
+  latency-canonicalization decisions. NO estimand / gate / delta / R-ladder change.
+  (a) B-1849 ADD-label demote: 4psom_vs_3 (+2.336pp, 3->{4,5}-mode incremental) relabeled
+      "PRIMARY H1 gate / deployment hero" -> "H1-deploy / Appendix-D sensitivity" in
+      power_analysis.py (6 loci) + fig0c_phantom_lift_bars.py + README.md; numbers unchanged
+      (6-mode strict <= 4-mode ADD by construction per AMENDMENT_02 SS3);
+  (b) B-1850 H10 entropy DEFER gate landed (prereg SSH10 L238-240): train_l1_router emits
+      per-cell per-fold train-label entropy h10_entropy_gate.json; aggregate_h10_pareto
+      reads it + fail-closed DEFER (<1.0 bit OR artifact absent -> operational_gate_passed
+      suppressed);
+  (c) B-1851 post-R5 reporting route (AMENDMENT_02 SS4): _apply_framing emits post_r5_pivot
+      C_prime_structure / C_prime_router_only / F_failure (no framing-tier rescue);
+  (d) B-1852 B2 cross-family claim-tier downgrade (prereg SS2.5 step-8): Qwen-anchor fail ->
+      R5; B2 non-replication -> R-tier downgrade one step;
+  (e) B-1853 cost canonical: _load_cell_per_task (H2a cost source) -> total_billed_cost_usd
+      (the 3rd producer AMENDMENT_03 SS3 missed; fail-closed, P79_ALLOW_LEGACY_COST escape);
+  (f) B-1854 latency canonical (A' classification): triple-subtract canonical
+      (minus_retry - busy_wait - screenshot_recovered) RETAINED in code -- it is the
+      user-witnessed B-1669 (Q6=A) + B-1780 (Q3=A, commit 526db4b) decision; the stale prose
+      is prereg SS4 / amendment-01, superseded here to "scaffold-adjusted canonical";
+  (g) B-1855/1856/1857: holdout_sr cv_mode_match_acc diagnostic alias / require-full-coverage
+      default fail-closed + --allow-partial-dev / GLM stale comment removed (B-991 retired).
+  Resolved upstream: P2-2 normal-Z floor already aligned 0.68 by AMENDMENT_03; P1-7
+  class_weight=None canonical per B-995 (supersedes prereg L224 "balanced").
+  Tests: tests/test_amendment04_alignment.py (20 cases incl. AMENDMENT_02 L209-210 post-R5
+  assertions); full suite 1298 passed / 10 skipped at witness time.
+
+The analysis layer is NOT in the Gate-3 fire import path (fire-safe edits); the witness is
+nonetheless recorded because several items touch estimand-adjacent surfaces (SS1-hero label,
+H10 DEFER gate, cost/latency canonical column).
+
+Phase 1a paper-grade per-cell drop-one theta_i / pooled theta_FE / H10 verdict computation
+must occur AFTER this witness. At witness time no such paper-grade statistic exists (Pass-1
+incomplete; Pass-2 not fired; no 6-mode-complete cell).
+
+Amendment file: docs/prereg_amendments/AMENDMENT_04_ANALYSIS_ALIGNMENT_20260524.md
