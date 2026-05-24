@@ -49,6 +49,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # in check_p6 / p15 / p16) + ALL rules are provisional discover-products, NOT yet
 # validated against vision / phantom modes.
 # Cross-mode quantitative comparison remains FORBIDDEN until 6-mode freeze.
+#
+# ⚠️ SYNC: `.claude/skills/diag/SKILL.md` is gitignored (no CI guard) — when bumping
+# this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
+# "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
+# month because the skill doc has no git tracking to flag the drift.)
 RULESET_VERSION = "3-domsom"
 
 # ---------------------------------------------------------------------------
