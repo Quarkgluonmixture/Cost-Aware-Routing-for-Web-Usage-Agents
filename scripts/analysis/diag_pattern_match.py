@@ -43,12 +43,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # ruleset_version BEFORE any cross-mode comparison.
 #
 # Current basis: P1-P18 discovered from B0 dom classifieds R9755 (in-sample fit);
-# P19-P23 + P6/P14 narrowing added from R31194 fresh-substrate Tier-2 (2026-05-23,
-# user fast-track ahead of full 6-mode freeze). Still dom-only discover — the mode
-# gates (`if mode != "dom"` in check_p6 / p15 / p16) + ALL rules are provisional
-# discover-products, NOT yet validated against som / vision / phantom modes.
+# P19-P23 + P6/P14 narrowing added from R31194 fresh-substrate Tier-2 (2026-05-23);
+# P24-P30 + P10/P14/P20 FP-narrowing added from R9725 B0 som cls Tier-2 (2026-05-24,
+# 2nd-mode discover). Now spans 2 modes (dom+som) — the mode gates (`if mode != "dom"`
+# in check_p6 / p15 / p16) + ALL rules are provisional discover-products, NOT yet
+# validated against vision / phantom modes.
 # Cross-mode quantitative comparison remains FORBIDDEN until 6-mode freeze.
-RULESET_VERSION = "2-dom"
+RULESET_VERSION = "3-domsom"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -172,6 +173,43 @@ P6_IMAGE_VISUAL_MATCH_RE = re.compile(
     r"(?:this\s+)?exact\s+item|"
     r"in\s+(?:the|its|their|this)\s+(?:image|picture|photo)|taken\s+(?:on|in|from|at|during)|"
     r"on\s+(?:the|its)\s+(?:cover|front))\b",
+    re.IGNORECASE,
+)
+
+# --- self-evolving 2026-05-24 (R9725 B0 som cls Tier-2; ruleset 2-dom → 3-domsom) ---
+
+# P10 FP-narrowing: date numbers (16th November 2023) are NOT cross-step memory facts.
+# R9725 task 25 fired P10 because thought "16th November 2023" → nums [16, 2023] vs
+# answer "1" (a count). Strip date contexts before the number-mismatch check.
+DATE_CONTEXT_RE = re.compile(
+    r"\b\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b"
+    r"|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}\b"
+    r"|\b(?:19|20)\d{2}\b"
+    r"|\b\d{1,2}/\d{1,2}/\d{2,4}\b|\b\d{4}/\d{1,2}/\d{1,2}\b",
+    re.IGNORECASE,
+)
+
+# P24: finish hedged with explicit uncertainty yet submitted anyway (agent knows the
+# item may not match but visual search is exhausted → surrender-finish).
+UNCERTAINTY_FINISH_RE = re.compile(
+    r"not\s+explicitly|though\s+it'?s?\s+actually|while\s+(?:the\s+)?(?:description|listing|item)[^.]{0,25}does\s+not"
+    r"|may\s+(?:match|be\b)|might\s+(?:match|be\b)|despite\s+(?:being|not)|not\s+a\s+perfect\s+match"
+    r"|does\s+not\s+(?:explicitly\s+)?(?:mention|match|show)|although[^.]{0,40}\bnot\b",
+    re.IGNORECASE,
+)
+
+# P27: finish answer abandons the task (gave up at a page instead of returning/retrying).
+ABANDONMENT_RE = re.compile(
+    r"cannot\s+be\s+completed|does\s+not\s+display|(?:is|are)\s+not\s+(?:found|available)"
+    r"|task\s+cannot|unable\s+to\s+(?:find|complete|locate)|could\s+not\s+(?:find|locate|be\s+found)"
+    r"|no\s+(?:such\s+)?(?:item|listing|result|page)\s+(?:found|exists|available)",
+    re.IGNORECASE,
+)
+
+# P29 (benchmark-FP): semantic yes/no equivalents when reference literal is yes/no.
+YESNO_SEMANTIC_RE = re.compile(
+    r"\b(correct|incorrect|is\s+right|is\s+wrong|indeed|affirmative|"
+    r"that'?s\s+true|that'?s\s+false|does\s+match|do\s+not\s+match)\b",
     re.IGNORECASE,
 )
 
@@ -419,7 +457,13 @@ def check_p10(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
         output_text = action.get("text", "") or action.get("answer", "") or ""
         if not thought or not output_text:
             continue
+        # P10 FP-narrowing (R9725 task 25): a number may legitimately echo a DATE in the
+        # thought ("16th November") — match against FULL thought nums (so answer can
+        # reference a date), but only count NON-date nums (thought_nodate) as facts that
+        # should have carried over. Count answer "1" vs date "16th November 2023" then
+        # no longer fires; genuine cross-step numeric-memory failures still fire.
         thought_nums = _extract_numbers(thought)
+        thought_nodate = _extract_numbers(DATE_CONTEXT_RE.sub(" ", thought))
         output_nums = _extract_numbers(output_text)
         if not thought_nums or not output_nums:
             continue
@@ -428,7 +472,7 @@ def check_p10(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
             if y == 0:
                 continue
             matched = any(abs(x - y) <= 10 for x in thought_nums)
-            if not matched and any(x > 10 for x in thought_nums):
+            if not matched and any(x > 10 for x in thought_nodate):
                 hits.append(PatternHit(
                     "P10", "跨步数值记忆失败", s["step_idx"],
                     f"Thought nums {thought_nums[:5]} vs output num {y}",
@@ -499,42 +543,46 @@ def check_p13(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
 def check_p14(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
     """P14: URL 自环 — 4+ consecutive steps with identical obs_url (excluding start page).
 
-    Threshold raised 3→4 (R31194 FP audit): a 3-step same-URL run is too short to
-    confidently call "stuck" (navigate-then-work-then-finish looks identical), and
-    it over-fired on successes. Genuine stuck loops run far longer (task 5 = 30).
+    Threshold raised 3→4 (R31194 FP audit). R9725 som FP audit (P14 fired on 8/8
+    success-hit episodes = ~100% FP on success) further narrowed: a same-URL run is
+    only "stuck" if it shows NO progress. Skip productive runs — any `type` action
+    (form fill / search input / comment) OR a majority of page_changed=True steps
+    (scrolling/browsing a long page). Genuine stuck loops are same-URL + no-type +
+    mostly page-unchanged (e.g. repeated dead clicks).
     """
     hits = []
     if len(steps) < 4:
         return hits
     # Use task config start_url (not steps[0].obs_url which is post-first-action)
     start_url = _config.get("start_url", "") or steps[0].get("state_digest", {}).get("url_before", "")
+
+    def _emit(run_start: int, run_end: int) -> None:  # run_end exclusive
+        run = steps[run_start:run_end]
+        if len(run) < 4:
+            return
+        url = run[0].get("obs_url", "")
+        if not url or url == start_url:
+            return
+        # R9725 FP-narrowing: productive same-URL is not "stuck"
+        if any(s.get("action_type") == "type" for s in run):
+            return
+        changed = sum(1 for s in run if s.get("page_changed"))
+        if changed * 2 >= len(run):  # >=50% steps changed the page → making progress
+            return
+        hits.append(PatternHit(
+            "P14", "URL 自环", run_start,
+            f"Steps {run_start}-{run_end-1}: stuck (no progress) on {url[:80]}",
+            is_scaffold=False,
+        ))
+
     run_start = 0
     for i in range(1, len(steps)):
         url_cur = steps[i].get("obs_url", "")
-        url_prev = steps[i - 1].get("obs_url", "")
-        if url_cur == url_prev and url_cur:
-            pass  # continue run
-        else:
-            run_len = i - run_start
-            if run_len >= 4:
-                url = steps[run_start].get("obs_url", "")
-                if url != start_url:
-                    hits.append(PatternHit(
-                        "P14", "URL 自环", run_start,
-                        f"Steps {run_start}-{i-1}: stuck on {url[:80]}",
-                        is_scaffold=False,
-                    ))
-            run_start = i
-    # Check tail
-    run_len = len(steps) - run_start
-    if run_len >= 4:
-        url = steps[run_start].get("obs_url", "")
-        if url != start_url:
-            hits.append(PatternHit(
-                "P14", "URL 自环", run_start,
-                f"Steps {run_start}-{len(steps)-1}: stuck on {url[:80]}",
-                is_scaffold=False,
-            ))
+        if url_cur == steps[i - 1].get("obs_url", "") and url_cur:
+            continue  # extend run
+        _emit(run_start, i)
+        run_start = i
+    _emit(run_start, len(steps))  # tail
     return hits
 
 
@@ -650,6 +698,12 @@ def check_p20(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Li
         return []
     targets = []
     for ph in ev.get("program_html") or []:
+        # P20 FP-narrowing (R9725 task 5): delete-verification tasks check for "404"
+        # via the evaluator's own goto — agent deletes from the LIST page (AJAX) and
+        # never navigates to the item URL, so "never visited" is expected, not failure.
+        rc = (ph.get("required_contents") or {}).get("must_include") or []
+        if any("404" in str(x) for x in rc):
+            continue
         u = ph.get("url", "")
         if isinstance(u, str) and u.startswith("http"):
             m = re.search(r"[?&]id=(\d+)", u)
@@ -758,6 +812,189 @@ def check_p23(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Li
     return []
 
 
+def check_p24(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P24: 不确定仍 finish — url_match 任务 finish thought/answer 含明确不确定限定语,
+    且 finish 的 item id ≠ reference id (agent 知道不匹配但视觉搜索耗尽 → 投降式 finish)
+    (self-evolving 2026-05-24, R9725 som Tier-2 task 101/176/201). success-safe: 选对
+    (finish_id==ref_id) 不 fire。"""
+    ev = config.get("eval") or {}
+    ref_url = ev.get("reference_url") or ""
+    ref_m = re.search(r"[?&]id=(\d+)", ref_url)
+    if not ref_m or "page=search" in ref_url:
+        return []
+    ref_id = ref_m.group(1)
+    for s in steps:
+        if s.get("action_type") != "finish":
+            continue
+        a = s.get("action", {}) or {}
+        text = " ".join(str(a.get(k, "")) for k in ("thought", "answer"))
+        m = UNCERTAINTY_FINISH_RE.search(text)
+        if not m:
+            return []
+        fin_m = re.search(r"[?&]id=(\d+)", s.get("obs_url", ""))
+        if fin_m and fin_m.group(1) == ref_id:
+            return []  # selected the right item; hedging is harmless
+        return [PatternHit(
+            "P24", "不确定仍finish", s.get("step_idx"),
+            f"url_match finish hedged on wrong/unclear item: '...{m.group(0)[:45]}...'",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p25(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P25: 跨站任务跳过其中一站 — start_url 含 |AND| 多站, 但 obs_url 从未访问其中 ≥1 个
+    host:port (agent 跳过跨站视觉推理) (self-evolving 2026-05-24, R9725 som Tier-2
+    task 227/232). success-safe: 真做完跨站任务会访问所有站。"""
+    start_url = config.get("start_url", "") or ""
+    if "|AND|" not in start_url:
+        return []
+
+    def _hostport(u: str) -> Optional[str]:
+        m = re.search(r"https?://([^/\s]+)", u)
+        return m.group(1) if m else None
+
+    sites: Set[str] = set()
+    for part in start_url.split("|AND|"):
+        hp = _hostport(part.strip())
+        if hp:
+            sites.add(hp)
+    if len(sites) < 2:
+        return []
+    visited: Set[str] = set()
+    for s in steps:
+        hp = _hostport(s.get("obs_url", ""))
+        if hp:
+            visited.add(hp)
+    missing = sites - visited
+    if missing:
+        return [PatternHit(
+            "P25", "跨站任务跳过其中一站", None,
+            f"multi-site task ({len(sites)} sites) never visited {sorted(missing)}",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p27(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P27: 找不到即放弃 — finish.answer 含放弃短语 (agent 到页面找不到目标即 finish,
+    不返回上级重试) (self-evolving 2026-05-24, R9725 som Tier-2 task 118/163).
+    success-safe: 成功 ep 的 finish 不会说放弃 (N/A task 已 task-load 排除)。"""
+    for s in steps:
+        if s.get("action_type") != "finish":
+            continue
+        a = s.get("action", {}) or {}
+        ans = str(a.get("answer", "") or a.get("text", ""))
+        m = ABANDONMENT_RE.search(ans)
+        if m:
+            return [PatternHit(
+                "P27", "找不到即放弃", s.get("step_idx"),
+                f"finish abandons task: '...{m.group(0)[:50]}...'",
+                is_scaffold=False,
+            )]
+    return []
+
+
+def check_p28(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P28 (benchmark-FP): NLTK 货币 tokenize 假阴性 — string_match must_include 全为纯
+    整数, finish.answer 含该数的货币格式 ($N.NN) 但 NLTK word_tokenize('$5.00')=['$','5.00']
+    致整数 token 缺失 → 误判 (self-evolving 2026-05-24, R9725 som Tier-2 task 42).
+    success-safe: 答案含独立整数 token 时不 fire。"""
+    ev = config.get("eval") or {}
+    if "string_match" not in (ev.get("eval_types") or []):
+        return []
+    must = [str(r).strip() for r in ((ev.get("reference_answers") or {}).get("must_include") or [])]
+    ints = [r for r in must if re.fullmatch(r"\d{1,6}", r)]
+    if not must or len(ints) != len(must):
+        return []
+    finish_ans = ""
+    for s in steps:
+        if s.get("action_type") == "finish":
+            a = s.get("action", {}) or {}
+            finish_ans = str(a.get("answer", "") or a.get("text", ""))
+            break
+    if not finish_ans:
+        return []
+    flagged = []
+    for n in ints:
+        currency = re.search(rf"\${n}\.\d{{2}}|\b{n}\.\d{{2}}", finish_ans)
+        token = re.search(rf"(?<![\d.$]){n}(?![\d.])", finish_ans)
+        if currency and not token:
+            flagged.append(n)
+    if flagged:
+        return [PatternHit(
+            "P28", "benchmark-FP货币tokenize", None,
+            f"must_include {flagged} present as $N.NN but NLTK splits → false-neg: {finish_ans[:42]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p29(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P29 (benchmark-FP): yes/no 语义等价不匹配 — must_include 是 yes/no, finish.answer
+    用 correct/incorrect 等语义等价词但不含字面 yes/no (self-evolving 2026-05-24, R9725
+    som Tier-2 task 222). success-safe: 含字面 yes/no 时不 fire。"""
+    ev = config.get("eval") or {}
+    if "string_match" not in (ev.get("eval_types") or []):
+        return []
+    must = [str(r).strip().lower() for r in ((ev.get("reference_answers") or {}).get("must_include") or [])]
+    if not must or not all(m in ("yes", "no") for m in must):
+        return []
+    finish_ans = ""
+    for s in steps:
+        if s.get("action_type") == "finish":
+            a = s.get("action", {}) or {}
+            finish_ans = str(a.get("answer", "") or a.get("text", ""))
+            break
+    if not finish_ans:
+        return []
+    low = finish_ans.lower()
+    if any(re.search(rf"\b{m}\b", low) for m in must):
+        return []  # literal yes/no present → eval should pass
+    if YESNO_SEMANTIC_RE.search(finish_ans):
+        return [PatternHit(
+            "P29", "benchmark-FP语义yes/no", None,
+            f"ref={must} but answer uses semantic equiv: {finish_ans[:45]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
+def check_p30(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P30: 到达正确 item 后离开 — obs_url 序列曾命中 reference item id 后又离开, 最终
+    finish≠reference (som 标注图致 agent 过度自我否定) (self-evolving 2026-05-24, R9725
+    som Tier-2 task 93). success-safe: finish==ref 时不 fire。"""
+    ev = config.get("eval") or {}
+    ref_m = re.search(r"[?&]id=(\d+)", ev.get("reference_url") or "")
+    if not ref_m:
+        return []
+    ref_id = ref_m.group(1)
+    seq = []
+    for s in steps:
+        m = re.search(r"[?&]id=(\d+)", s.get("obs_url", ""))
+        seq.append(m.group(1) if m else None)
+    if ref_id not in seq:
+        return []
+    fin_id = None
+    for s in steps:
+        if s.get("action_type") == "finish":
+            m = re.search(r"[?&]id=(\d+)", s.get("obs_url", ""))
+            fin_id = m.group(1) if m else None
+            break
+    if fin_id is None and seq:
+        fin_id = seq[-1]
+    if fin_id == ref_id:
+        return []  # ended on the right item
+    last_ref_idx = max(i for i, v in enumerate(seq) if v == ref_id)
+    if last_ref_idx < len(seq) - 1:  # left the reference item after reaching it
+        return [PatternHit(
+            "P30", "到达正确item后离开", last_ref_idx,
+            f"reached reference id={ref_id} (step {last_ref_idx}) then left, finished id={fin_id}",
+            is_scaffold=False,
+        )]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Rule registry
 # ---------------------------------------------------------------------------
@@ -785,6 +1022,14 @@ ALL_RULES: Dict[str, Any] = {
     "P21": check_p21,
     "P22": check_p22,
     "P23": check_p23,
+    "P24": check_p24,  # 不确定仍finish (url_match wrong-item hedge)
+    "P25": check_p25,  # 跨站任务跳过其中一站
+    # P26 skipped (finish_at_search_page deferred — hard to separate from legit
+    #   search-page count tasks without over-firing; see B0_som digest)
+    "P27": check_p27,  # 找不到即放弃 (abandonment phrase)
+    "P28": check_p28,  # benchmark-FP 货币 tokenize
+    "P29": check_p29,  # benchmark-FP 语义 yes/no
+    "P30": check_p30,  # 到达正确item后离开 (som self-doubt)
 }
 
 

@@ -3,7 +3,7 @@
 > **生成方式**: `/diag` skill 3-tier pipeline (2026-05-23 run on R31194)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token, ruleset `1-dom`) → Tier-2 Claude sub-agent 深挖 (23 no-hit 全覆盖 + 12 failed-hit causal verify + 7 success-hit FP 审计 = 42 ep / 7 agents) → Tier-3 整合 (本文件)。
 > **Run**: `B0_dom_classifieds_20260523_080127_508387150_37076_R31194` (Gate-3 fresh substrate, per-condition docker restart, manifest-bound authoritative)
 > **Condition**: `phase1_dom_router_0` | site classifieds | mode **dom** | model **B0 = Qwen3-VL-235B (proxy)**
-> **ruleset_version**: `2-dom` (discover 在 `1-dom`；本 session user fast-track 落码 P19-P23 + 收窄 P6/P14 → bump `1-dom`→`2-dom`，见下「Self-evolving changelog」。cross-mode 聚合前须 verify 全 digest 同版本 — 当前仍**禁止 cross-mode 定量比较**)
+> **ruleset_version**: `3-domsom` (`1-dom` → `2-dom` [R31194 fast-track] → **`3-domsom`** [2026-05-24 R9725 som discover：落码 P24-P30 + P14/P10/P20 FP 修正，**本 run 已全量重扫**]；见下「Self-evolving changelog」。cross-mode 聚合前须 verify 全 digest 同版本 — 当前仍**禁止 cross-mode 定量比较**)
 > **Supersedes**: R9755 digest (2026-05-21, pre-Gate3 first-completed try-run)。本 run 是**同一 condition 的 fresh Gate-3 重跑** → 构成 R9755 self-evolve 出的 P15-P18 的一次 **fresh-substrate out-of-sample 检验**（见下「跨 run 一致性」）。
 
 > ⚠️ **定位声明（沿用 R9755 3-AI 审计共识，仍适用）**：本 digest 是 **internal 诊断记录，NOT paper-grade 结论**。
@@ -106,7 +106,7 @@ P13 搜索代浏览 / P12 不翻页 / P4 根节点  少量
 
 ---
 
-## Self-evolving changelog（已实现 `1-dom` → `2-dom`，2026-05-23 user fast-track）
+## Self-evolving changelog（`1-dom` → `2-dom` 2026-05-23 → `3-domsom` 2026-05-24）
 
 > user 批准在 6-mode freeze 前 fast-track 落码（偏离默认 discover-then-freeze 时序）。已 bump `RULESET_VERSION="2-dom"`；R31194 重扫验证全部通过（每条新规则 **0 success-FP**、命中预期 Tier-2 task）。⚠️ 仍 dom-only → **cross-mode 定量比较仍禁止**；6-mode 数据齐时这些规则连同 som/vision/phantom discover 一并进 freeze 全量重扫。
 
@@ -125,6 +125,22 @@ P13 搜索代浏览 / P12 不翻页 / P4 根节点  少量
 **关键洞察 — P21 的 has_image gate**：无 reference image 时 agent 说"listing image shows X"必指它在 dom 看不到的页面内容 = 真幻觉；有 ref image 时"image"有歧义（可能合法指 ref image，= P6 旧错）。gate 同时消 2 FP（task 62/63 echo intent）+ 保 9 TP。**P21 是本轮最强 paper finding**：dom-mode agent 不只是 fail 视觉任务，而是 **confabulate 视觉 grounding**（"image taken inside a garage" 等）。
 
 **P-rule → router feature 连接**：P19/P21/P22 这类 0-token signal 本身就是 **learned router 的候选特征**（"此 task 需视觉 → route 到 som/vision" vs "此 task 行为缺陷 → 留 dom + retry"）。详见下「后续行动」。
+
+### v3 `3-domsom` 增量（2026-05-24，R9725 som discover + 本 dom run 全量重扫）
+
+som Tier-2 发现的 6 新规则 + 3 修正落码，dom (本 run) 同步重扫验证 success-safe：
+
+| v3 变化 | dom (R31194) | success-fire |
+|---|---|---|
+| **新 P24** 不确定仍 finish | failed 6 | 0 |
+| **新 P25** 跨站任务跳过其中一站 | failed 6 | 0 |
+| **新 P27** 找不到即放弃 | failed 2 | 1（task151 边界：url_match 不看 finish，嘴上放弃但 URL 碰巧匹配 = §282 t151）|
+| **新 P28** benchmark-FP 货币 tokenize | failed 1 | 0 |
+| **新 P30** 到达正确 item 后离开 | failed 4 | 0 |
+| **P14 修正**（排除 productive 长停留）| failed 71→降 | **success-fire 9→2** |
+| **P10 修正**（双变量去日期污染）| — | 低 |
+
+dom failed-coverage 87.9% → **85.8%**（P14 修正去除假覆盖，~4 ep 转 no-hit 待深挖）。新规则在 dom 也命中 = **跨 mode 通用规则**（统一 `3-domsom` 下 dom+som 同口径打分 = freeze 后 cross-mode 比较的基础）。som 完整发现见 `B0_som_classifieds_diag_digest.md`。
 
 ---
 

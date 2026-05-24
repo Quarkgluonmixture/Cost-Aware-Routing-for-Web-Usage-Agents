@@ -3,7 +3,7 @@
 > **生成方式**: `/diag` skill 3-tier pipeline (2026-05-24 run on R9725)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token, ruleset `2-dom`) → Tier-2 Claude sub-agent 深挖 (**44 no-hit 全覆盖 + 8 success-hit FP 审计 = 52 ep / 8 agents**, sonnet) → Tier-3 整合 (本文件)。
 > **Run**: `B0_som_classifieds_20260523_234208_078993305_172000_R9725` (Gate-3 **Option-A 全新重跑**，per-condition docker restart fresh substrate, manifest-bound authoritative)
 > **Condition**: `phase1_som_router_0` | site classifieds | mode **som** | model **B0 = Qwen3-VL-235B (proxy)**
-> **ruleset_version**: `2-dom`（dom-discover 产物，**dom-biased**；som-specific 新模式本 digest 提议 P24-P30 草案但**暂未落码**——见「Self-evolving 提议」。cross-mode 聚合前须 verify 全 digest 同版本 → 当前仍**禁止 cross-mode 定量比较**）
+> **ruleset_version**: `3-domsom`（discover 第 2 mode 落码：som Tier-2 发现的 P24-P30 + P14/P10/P20 FP 修正已 land，全量重扫 dom+som 落同版本——见「Self-evolving」。**本 digest 数字为 v3 重扫后**；v2(2-dom)→v3 变化记于 Self-evolving。仍 dom+som 2-mode discover，vision/phantom 未跑 → **禁止 cross-mode 定量比较**直至 6-mode freeze）
 > **Supersedes**: R2815 som 试跑（2026-05-23，**B-1848 Playwright driver-wedge hang run，已 archived**）。R2815 **不是**干净对照（wedge 污染 → +7pp 非对称，见 B-1858/§282），故本 digest **无干净跨 run 一致性章节**（som 缺第二个健康 run = §0④ gate-blocking repro-replicate 的核心缺口）。
 
 > ⚠️ **定位声明（沿用 R9755/R31194 3-AI 审计共识，仍适用）**：本 digest 是 **internal 诊断记录，NOT paper-grade 结论**。
@@ -22,9 +22,9 @@
 |---|---|
 | Episodes | 224 (**68 success / 156 failed**) — SR **30.4%** |
 | 三分类 | **agent-limit**（52 深挖 = 49 agent-limit + 112 failed-hit 命中 agent-limit 类规则）· **scaffold-bug 0**（52 子集主动找零框架 bug + P8 全 run 0 命中）· **benchmark-FP ≥3**（task 42/96/222，均在 no-hit 子集，finish-vs-reference 语义对却判 0）|
-| Deterministic coverage (failed) | **71.8%** (112/156) — 远低于 dom 87.9% = **som-specific 盲区 44 个**（ruleset dom-biased 的实证）|
-| no-hit failed | **44**（全深挖：41 agent-limit + 3 benchmark-FP + 0 scaffold）|
-| success 命中规则 | 21/68（**P14 在 15/68=22.1% success 上 fire** → 最强误报源，已确认 presence-only）|
+| Deterministic coverage (failed) | **74.4%** (116/156, v3 3-domsom) — was 71.8% (v2 dom-biased)；新规则救 ~12 ep，P14 修正诚实打回 ~8 假覆盖 |
+| no-hit failed | v2 **44** → v3 **40**（全深挖基于 v2：41 agent-limit + 3 benchmark-FP + 0 scaffold；v3 新规则覆盖 ~12，P14 FP 去除打回 ~8 待深挖）|
+| success 命中规则 | v2 21/68（**P14 在 15/68=22.1% success fire** = 最强误报源 presence-only）→ **v3 P14 修正后 success-fire 0/68** ✅ |
 
 **B0 som cls 的失败 ~主要指向真实模型能力局限，pipeline 干净**：52 深挖子集零框架 bug（parse/tool_call 全 valid）+ scaffold 规则 P8 全 run 0 命中。但与 dom 不同，som 多出 **≥3 个 benchmark-FP**（string_match 过严 + 1 个 url-exact 双满足却 0 分的可疑评测）→ 真实 SR 是 **30.4% 的下界**（去 3 FP 后 ≥31.7%）。
 
@@ -39,11 +39,13 @@
 | SR | 15.18% | **30.4%** | som 标注图救了"纯视觉 URL 导航 / 图像唯一信息"类任务 → SR 翻倍 |
 | 最强失败规则 | P6 视觉DOM必败 (49.5%) | P14 URL自环 (41.7%) | **换表征救了感知，没救导航/finish 行为缺陷** → 支撑"通用规则需 module 不是 route" |
 | 视觉天花板规则 P6/P15/P16 | 大量 fire | **0 fire**（mode gate 生效） | som 不再受 DOM 视觉盲区 → 表征确实补了像素信息 |
-| failed coverage | 87.9% | 71.8% | som 16pp 缺口 = dom-discover ruleset 没覆盖 som-specific 模式 |
+| failed coverage | 87.9%→85.8% | 71.8%→74.4% | v2→v3 (3-domsom)；P14 FP 去除致 dom 微降，som 升（新规则覆盖）|
 
 ---
 
-## Tier-1 规则分布 (failed-only, episode-level, ruleset 2-dom)
+## Tier-1 规则分布 (failed-only, episode-level — v2 `2-dom` discover 快照, 落码前)
+
+> 下方是**落码前 (v2)** 分布，保留以解释为何修 P14/P10/P20。**v3 `3-domsom` 落码后分布 + 完整变化见下 Self-evolving section**。
 
 ```
 P14 URL自环                65  ████████████████████  41.7%  ★最强误报源(success 22.1%也fire), 已确认presence-only
@@ -120,23 +122,30 @@ P12 不翻页 / P13 搜索代浏览 / P22 图上数字  少量
 
 ---
 
-## 🔁 Self-evolving 提议（P24-P30 草案 + 现有规则修正 — **暂不落码**）
+## 🔁 Self-evolving — P24-P30 已落码 + P14/P10/P20 修正（v2 `2-dom` → v3 `3-domsom`, 2026-05-24）
 
-> **为何暂不落码**：(1) som 是 discover 第 2 mode（6-mode 未齐，vision/P-text/P-SoM/P-prompt 待跑），落码须 bump `2-dom`→`3-…` + 全量重扫 dom+som，按 skill discover-then-freeze 宜等字典更全或专门一轮；(2) 新规则正则须仔细验证不重蹈 P14 presence-only 覆辙（success ep 不误伤）。**本节作为结构化 follow-up，待 user 决策是否现在落码。**
+> 用户决策"规则库应更新" → discover 第 2 mode 落码（skill discover-then-freeze 的 **discover 阶段 = 逐 mode 累积字典**，非等 6-mode freeze）。`diag_pattern_match.py` bump `2-dom`→`3-domsom`，全量重扫 dom (R31194) + som (R9725) 落同版本。**P26 暂缓**（finish_at_search_page 难与合法 search-page 计数任务区分，留 Tier-2）。
 
-**高优先新规则（反复出现 + 0-token + 低 FP 风险）**：
-- **P24 premature_finish_with_uncertainty** — finish thought/answer 含 `(not explicitly|though it'?s actually|while .* does not|may match|might|despite being|not a perfect match)` AND finish_url item-id ≠ reference → agent-limit。覆盖 101/176/182/201/60/67（最高频通用行为缺陷）
-- **P25 cross_site_skip** — start_url 含 `|AND|` 多站，但全 episode obs_url 的 host:port 集合缺 ≥1 个 site → agent-limit。覆盖 227/232
-- **P26 finish_at_search_page** — eval_type=string_match AND eval_source_url 含 `page=search`（无 `page=item`）→ agent 没进 item 页就 finish。覆盖 40
-- **P27 task_abandonment** — finish.answer 含 `(cannot be completed|does not display|not found|not available|cannot be found)` → agent-limit（找不到即放弃）。覆盖 118/163/169
-- **P28 (benchmark-FP) currency_tokenize** — string_match AND must_include 全纯整数 AND answer 含 `\$?\d+\.\d{2}` → FP 候选。覆盖 42
-- **P29 (benchmark-FP) semantic_yes_no** — string_match AND must_include∈{yes,no} AND answer 含 `(correct|incorrect|is right|is wrong)` → FP 候选。覆盖 222
-- **P30 correct_then_abandoned**（som-specific）— obs_url 序列曾 ==reference_url 后又离开，最终 finish≠reference → som 自我否定。覆盖 93
+**新规则 6 条** — failed ep-level / success-fire（success-safe 验证）:
+| 规则 | 含义 | som failed | som succ-fire | dom failed | 覆盖 (som no-hit) |
+|---|---|---|---|---|---|
+| P24 | 不确定仍 finish (url_match wrong-item hedge) | 7 | 0 | 6 | 101/176/201 |
+| P25 | 跨站任务跳过其中一站 | 12 | 1\* | 6 | 227/232 |
+| P27 | 找不到即放弃 (abandonment) | 5 | 0 | 2(1\*dom) | 118/163 |
+| P28 | benchmark-FP 货币 tokenize | 2 | 0 | 1 | 42 |
+| P29 | benchmark-FP 语义 yes/no | 1 | 0 | 0 | 222 |
+| P30 | 到达正确 item 后离开 (som self-doubt) | 1 | 0 | 4 | 93 |
 
-**现有规则修正（self-evolve 时一并）**：
-- **P14**：排除 edit/item-detail 页长停留（表单操作），或降级 risk-marker（当前 presence-only，failed=65 虚高）
-- **P10**：排除 thought 中年份(>1900)/日期 pattern 数字（task25 类日期污染）
-- **P20**：排除 program_html + required_contents 含 "404"（delete 验证型任务，task5 类）
+\* 2 个边界 success-fire（**非逻辑 bug** = url_match 评测机制特性，记录不调优避免 over-fit）: **P25 task233**（跨站 url_match 单站即满足，未访 reddit 仍 success）/ **P27 task151**（url_match 读 live URL 不看 finish，agent 嘴上 "task cannot" 但 URL 碰巧匹配 = §282 t151）。FP rate ≤1/224=0.4% noise 级。
+
+**修正 3 条** — success-fire 验证（核心成果）:
+| 规则 | 修正 | som succ-fire | 效果 |
+|---|---|---|---|
+| **P14** | 排除 type 输入 / 多数 page_changed 的 "productive" 长停留（非卡死）| **15 → 0** ✅ | presence-only 根治；failed 65→19 |
+| P10 | 双变量：matched 用全量 thought 数字（answer 可引用日期），"遗漏大数"只看去日期数字 | 4 → 3 | task25 日期污染修复，**无新增 FP**（先 strip-all 致 +4 FP，验证抓出 → 改双变量）|
+| P20 | 排除 program_html required_contents 含 "404"（delete 验证型，AJAX 删除无需访问 item）| 1 → 1 | task5 场景 |
+
+**coverage**: som failed 71.8% → **74.4%**（新规则救 ~12 ep；P14 修正诚实打回 ~8 假覆盖 ep 回 no-hit）· dom 87.9% → 85.8%（P14 FP 去除）。**新 no-hit 暴露 8 个 P14-假覆盖 ep**（26/35/43/75/112/136/137/142）= 下轮深挖目标。
 
 ---
 
