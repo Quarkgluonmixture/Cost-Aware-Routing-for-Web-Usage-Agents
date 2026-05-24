@@ -7926,3 +7926,23 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Status**: ✅ root-caused = B-21; P28 detector landed; SR 敏感性 deferred to paper write。**Fix** (上游 option, 非现在 — fire 跑中不动 eval): VWA `must_include` 数字 ref 加货币/小数变体匹配 (ref "14" 也匹配 tok 里 "14.00"/"$14")。**Cross-link**: B-21 + `B0_som_classifieds_diag_digest.md` §benchmark-FP + 笔记 §284。
 
 ---
+
+## B-1860 — Qwen 0-1000 坐标范式 vs P79 [0,1]/viewport 栈不匹配 → vision parse_error 13.6% + 48% ep cap-killed (2026-05-24)
+
+**B-1860** (scaffold / coordinate-protocol, **diagnosed via R3671 /diag; fix+rerun deferred — 改坐标 serialization contract = estimand change, needs witness**) — R3671 (B0×vision×cls) /diag 深挖 parse_error_rate **13.6%** (vs dom/som 0.06%, 高 200×) 根因: **Qwen3-VL 原生输出 0-1000 坐标系**, 但 P79 整个坐标栈 (prompt 要 [0,1] normalized + `action_utils.validate_action_detailed` 卡 [0,1] + `vwa_wrapper.py:614/616` 用 viewport `/1280,/720` 归一化) 全假设 [0,1]/viewport-pixel, 不认识 0-1000。
+
+**铁证** (R3671 484 emitted coords, grep runner log "validate_action_detailed invalid"): y_max=972 **> viewport 720** 但从不超 1000; x/y 整齐卡 [0,1000] (x>1000:0, y>1000:0); 算术验证 task3 step6 `[422,476]`(fail) vs step11 `[0.422,0.476]`(success) = 同一目标位置, `422=0.422×1000` — model 自己在 0-1000↔[0,1] 间转换, 证明是栈不认 0-1000 而非 model 不会 ground。VWA 上游无坐标 mode (全 `click [id]`; `create_mouse_click_action` 只 minimal 存 coords 不判格式), 坐标层全 P79 加 → B-406 (851 rows) 早发现 "coord_type=normalized but pixel" 选了 strict-reject = 裂缝起源。
+
+**双重失败 (统一所有现象)**: ① 0-1000 标 `coordinate_type=normalized` → validate 见值>1 reject → 507 step parse_valid=false (= 13.6%; 484/507 合法 JSON 非 malformed + 23 真 malformed); ② 0-1000 标 `coordinate_type=pixel` → wrapper `/1280,/720`(应 `/1000`) → 归一化到错位置 → 104 misclick 藏进 SR (sub-agent task3/12 实证). **量级**: 48% ep (108/224) ≥3 parse error, **99% (107/108) fail**; 39 ep 命中 total-cap=5 强制终止; trajectory_incomplete 137 中 99 是 parse_error≥3. model ~75% 遵守 prompt [0,1] / ~25% 退回 native 0-1000.
+
+**判定**: NOT agent-limit (model grounding 可能对, 0-1000 是其正确范式) — 是 **format-layer scaffold + parse-error cap (`main.py:2509-2510` consecutive≥3 / total≥5) 提前处刑**. vision SR 13.84% 非 paper-grade clean (coordinate-scaffold 主导 outcome), 不可跨 mode 比 SR / 不能只 disclosure.
+
+**Fix (方向定, 待 witness+重跑)** — 原则 **救 format layer 不救 grounding layer** (format normalization allowed; NO target correction / element snapping / nearest-button rescue): (1) canonical contract = Qwen **0-1000**; wrapper `x_px=x/1000×W, y_px=y/1000×H`; (2) validate 接受 [0,1000] + legacy tolerance (值≤1 当 [0,1] normalized, 日志 `coordinate_format_recovered`); 不让 model `coordinate_type` 声明压过数值判断; (3) prompt 改 0-1000 + 删 coordinate_type 字段 + 删 "normalized 否则失败" 威胁; (4) parse-error cap 只在 0-1000 归一化后仍非法才计数 (格式不匹配不进 cap). = **estimand change → pre-fire witness + amendment + mark R3671 vision non-canonical (RCA archive) + 重跑 vision** (+ som coord fallback 统一; dom/P-text/P-prompt 纯 element_id 不碰).
+
+**Per-model (B1 probe DONE 2026-05-24 DGX)**: B0 铁证 0-1000; **B1 (Qwen3-VL-4B) probe 确认 = 混用 normalized [0,1] + 0-1000** (角落 probe: (0.99,0.99)/(1.0,0.5) normalized + 底部项 **(728,920)** — y=920**>720 排除 pixel**, <1000 = 0-1000 同 B0); B2 (Gemma3-VL 跨族) 仍 **必须 probe** (gated+无 HF token+无缓存, 推后 B2 vision 前 A100-side probe). **逐维度 auto-judge contract 兼容 B0+B1 混用**: 每维 ≤1.1→[0,1]; >1.1→Qwen 0-1000 (/1000).
+
+**Fix spec (probe-confirmed, ready-to-apply, 不碰跑中 fire)**: ① `vwa_wrapper.py:614/616` `left/top>1.1 → /1000.0` (was `/viewport_width,/viewport_height` — 这是 misclick 根因); ② `action_utils.py` validate: `coordinate_type=normalized` 不再硬卡 [0,1], 改逐维度 by-value (>1.1 视 0-1000 合法), **忽略 coordinate_type 声明权威**; ③ `_shared_vl_utils.py:275` make_vision_prompt 改 "0-1000 坐标系 [0,0]左上 [1000,1000]右下" + 删 coordinate_type 字段示例 + 删 "normalized 否则失败" 威胁; ④ 各 agent (proxy/qwen3vl/gemma3vl) 删 coordinate_type 输出; ⑤ `main.py:2509-2510` parse-error cap: 归一化后仍非法才计数 (格式不匹配不进 cap); ⑥ som coordinate fallback 同步. **legacy tolerance**: 值≤1.1 当 [0,1] (B1 也给 normalized) + 日志 `coordinate_format_recovered`. **NO target snapping / NO grounding rescue** (救 format 不救 grounding).
+
+**Status**: 🔬 diagnosed + 方向定; probe B1/B2 + code fix + witness + 重跑 deferred (fire 跑中 `p79/` immutable). **Cross-link**: B-406 (coord_type strict normalized 起源) + B-167 (invalid_coord→vision route deferred) + B-44 (vision coord float32 silent fail) + B-1842~1847 (parse-error accounting) + 笔记 §285 + `B0_vision_classifieds_diag_digest.md`.
+
+---
