@@ -1079,7 +1079,7 @@ Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 
 ---
 
-## §6 Critical Risks + Mitigation (4 risks, 决定接收 vs reject)
+## §6 Critical Risks + Mitigation (6 risks, 决定接收 vs reject)
 
 ### Risk 1: Execution quality（顶刊成败 #1 因素 ⚠️⚠️⚠️）
 
@@ -1147,6 +1147,22 @@ Baseline: random / best-single-mode / rule-based ("if has_ref_image → SoM else
 4. Empirical evidence anchored in `docs/analysis/cross_sites/probe_b37_api_determinism.md` (5 raw outputs + Section 4 disclosure paragraph drafted)
 
 **Cost saved by NOT pursuing this further**: replication study at full 16-cell scale would cost ~$60-200; instead cheap 5-call probe ($0.005) gave us decisive characterization. Paper Section 4 disclosure paragraph is the deliverable.
+
+> **⚠️ NUANCED by Risk 6 (2026-05-24)**: Risk 5 的"B0 decision-convergent (5/5 same action) → SR robust"基于 **5 calls / 1 prompt** 的窄 probe。更大证据 (R9725 vs R2815 som 25-flip + codex cross-AI) 显示 **decision-convergence 非普适** — 同 obs 也会 diverge (4/25 flip byte-identical step-0)。run-to-run SR 方差比此 probe 暗示的大。见 Risk 6。
+
+### Risk 6: Run-to-run SR variance 可能 swamp phantom drop-one effect (新增 2026-05-24, B-1858 + 笔记 §282) ⚠️⚠️⚠️
+
+**Risk 5 的升级 + hero claim 的真风险**。B0 reproducibility 深挖 (R9725 vs R2815 som, 25-flip 分析 + codex gpt-5.5 cross-AI re-derive 自读 primary source) 显示 run-to-run SR 方差是**真的**, 三源: **② VWA element-ID churn (主导)** (`[id=N]`=AX `node.nodeId` 跨页面加载非确定 → 同页面 obs byte-diff → 动作变) + **① provider-nondeterminism (真实)** (4/25 flip step-0 obs byte-identical 却 diverge = 同输入不同输出) + **③ site-state lineage (少量)**, 经**多步轨迹**放大成 outcome 翻转。
+
+**威胁**: phantom drop-one 效应 = **1.7-3.3pp**。run-to-run σ **未干净测** (dom fresh-vs-stale ~0.4pp; som pair +7pp 但 confounded by R2815-wedge + n=1 + directional)。**若 σ~2-3pp → 效应 ~1× 噪声 → phantom SR-superiority claim 可能是噪声而非真信号**。不可 dismiss。
+
+**Mitigation (结构性保护 + 解决路径)**:
+1. **Pooling √6**: phantom gate = FE inverse-variance pooled across 6 cells → pooled run-to-run 噪声 ≈ σ_cell/√6 → 最坏 σ~2-3pp 缩到 pooled ~1pp → pooled 效应 ~2pp 仍可能过 +1.0pp (z~2)。**per-cell claim 脆, pooled claim 稳** (FE-pooled 选作 primary gate 顺带抗此噪声 — 结构对齐)。
+2. **多腿 (非 all-or-nothing on SR)**: 4-fold drop-in 里 (a) cost≈DOM (确定性, 不吃噪声) / (b) latency~50% / (c) AUROC≥baseline 都 run-to-run-robust; 只 (d) SR drop-one 吃噪声。即便 (d) 受威胁, 三腿仍立。
+3. **Clean replicate (gate-blocking)**: post-fire 跑 2 个健康同-B-1839-regime B0 som → 测真 σ → fold 进 pooled SE 重测 gate。survives → claim 站; 不过 → 诚实 null 或 replicate-for-power (每 condition k× 取平均, 噪声 ÷√k)。
+4. Cross-link: B-1858 (机制 + codex 收敛) · 笔记 §282 · next_steps §4 Repro-replicate · preregistration §4 (run-to-run 作二级方差 fold)。
+
+**Status**: **OPEN** — clean replicate (post-fire) = 决定 phantom SR claim 真伪的前置。**§14 reviewer 必问 "1.7-3.3pp 会不会是 run-to-run 噪声" → 此条 = 答案骨架** (pooling √6 + 多腿 + replicate-confirmed σ)。
 
 ---
 
@@ -1500,6 +1516,7 @@ ef29add  drop-in deployment punchline
 | **Phantom is just a degraded SoM** | "Why not collapse to DOM if no image?" | Theory C (codex 5821387) verifies prompt knob: cls P-text = Phantom-SoM SR 14.53% but Jaccard 0.447 (task pool 显著 disjoint). Same SR ≠ same routing pool | paper §5; codex `5821387` |
 | **Phantom drop-in is a fidelity-hurts artifact, not representation routing** ⭐ NEW (lit-digest 2026-05-22) | "Going SoM→P-SoM you remove the marked image (a higher-fidelity modality) and SR holds — maybe that's the *fidelity-hurts* effect (Zenkri & Brock 2026, arXiv:2605.20072: on Lockbox, perfect symbolic-state obs is WORST, raw RGB BEST, and randomly flipping 40% of perceived action outcomes → 2.85× SR by breaking repetitive action loops), i.e. removing a distracting modality, not a representation-routing finding" | (i) **Domain mismatch (robust now)**: Lockbox = closed-loop robotic manipulation, tiny discrete action space with hidden mechanical interdependencies where repetitive-action-loops are the dominant failure; P-SoM does NOT lower observation *fidelity* (RGB→symbolic), it *re-formats the same content* (AXTree↔`[SOM_MARKS]` at 1.00× chars, same elements/labels/URLs). Action-outcome flipping has no web-agent analogue. (ii) **Format-axis structure (robust now)**: the 3 image-off phantom arms (P-text/P-prompt/P-SoM) differ ONLY in text-format × prompt yet drop-one oracle shows *differential per-task* benefit among them (§1 1.7-3.8pp per arm, unique tasks) — a monotone "less perception → fewer loops" account cannot produce within-image-off routing structure. (iii) **Site-asymmetry (contingent on Pass-2)**: a global fidelity-hurts story predicts uniform image-off benefit, but §6.4 hypothesizes cls (visual-rich) REQUIRES the image while red thrives image-off; if Phase 1a confirms, site-asymmetry directly refutes the monotone account. Decision: hold for rebuttal; preempt in §3/§8 prose with 1 sentence + cite arXiv:2605.20072 only if reviewer raises. | §6.4 site-asymmetry (pending Pass-2) + §1 drop-one oracle + arXiv:2605.20072 | [Workshop] |
 | **Effect size small (drop-one 1.7-3.3pp)** | "Statistically marginal" | (i) Pre-registered Hero (P-SoM) requires pooled magnitude ≥ 1.0pp + TOST equivalence at δ=1.0pp rejected. (ii) P-text/P-prompt are framed as **structural ablation evidence** (low-threshold non-overlap proves phantom space is multi-region 2D), NOT as deployment routing arms — so deployment magnitude bar doesn't apply to them. (iii) Holm-Bonferroni multi-comparison correction applied per pre-registered family. | §1 paper hook (data-conditional R1-R5) + `preregistration.md` H1+H3 + `phantom_lift.md` Holm/TOST cols |
+| **Effect could be run-to-run noise (single run/condition)** ⭐ NEW 2026-05-24 | "你每 condition 只跑一次; drop-one 1.7-3.3pp 会不会是 run-to-run 方差? B0 proxy 在 T=0 非 bit-确定" | run-to-run SR 方差是**真的** (3源: VWA element-ID churn ② 主导 [`[id=N]`=AX node.nodeId 跨加载非确定] + provider-nondeterminism ① [4/25 flip byte-identical obs 却 diverge] + site-state ③, 多步放大; R9725-vs-R2815 som 25-flip + codex gpt-5.5 cross-AI 实证)。Defense: (i) **pooling √6** — phantom gate = FE pooled across 6 cells, pooled run-to-run 噪声 ≈ σ_cell/√6, 最坏 σ~2-3pp 缩到 ~1pp → pooled 效应 ~2pp 仍过 +1.0pp (z~2); (ii) **多腿** — cost≈DOM (确定性)/latency/AUROC run-to-run-robust, 只 SR drop-one 吃噪声; (iii) **clean replicate** 测真 σ + fold 进 pooled SE 重测 (gate-blocking, 不过则诚实 null / replicate-for-power)。 | §6 Risk 6 + B-1858 + 笔记 §282 | [Both] |
 | **Post-hoc hypothesis cherry-picking** ⭐ NEW pre-rebuttal | "你 H-list 是数据进来后 fit 的" | Pre-registration locked before 16-cell rerun via Git SHA + advisor email witness + OSF DOI (paper-time public). Multi-comparison family declared explicitly. Exploratory analyses (H4/H5/H6) marked "post-hoc" in paper prose with explicit non-gating disclosure. Framing decision rule R1-R5 maps data outcome to hook framing transparently — reviewer can verify framing-to-data mapping is deterministic, not chosen post-hoc. | `docs/checkpoints/pre_run/preregistration.md` + `EVIDENCE_LAYER_AUDIT.md` §2 |
 | **Latency claim cherry-picked** | "Just one P95 measurement" | §100 SoM probe ground truth (5 imgs × 3 mode × 2 model = 30 cells measured). cls SoM 74s vs Phantom 18s p95 = 4× slower. Across all conditions consistent | §11 + 实验笔记 §100 |
 | **Carbon estimation rough** | "B0 carbon NaN, only B1 measured" | Transparent disclose: B1 NVML measured directly, B0 (proxy API) 远端 GPU 不可测 (per Strubell 2019 / Patterson 2021 estimation acknowledged). fig9 regional sensitivity 用 B1 measured + 45 region intensity table | §11 + fig9 footnote |
