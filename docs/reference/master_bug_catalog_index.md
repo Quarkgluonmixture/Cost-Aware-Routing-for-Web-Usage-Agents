@@ -4,7 +4,7 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-05-24  ·  **Catalog**: master_bug_catalog.md (7898 lines, 128 sections)  ·  **B-numbers**: 793 canonical entries, 1227 referenced, range B-1~B-1857
+**Generated**: 2026-05-24  ·  **Catalog**: master_bug_catalog.md (7908 lines, 129 sections)  ·  **B-numbers**: 794 canonical entries, 1228 referenced, range B-1~B-1858
 
 ## Health (lint)
 
@@ -104,3 +104,4 @@
 | L7850 | B-1847 — `paper_grade_check.py` 无 B0 `tool_call_emit_rate` conditio… | B-1847 |
 | L7858 | B-1848 — Playwright driver-wedge hang 绕过 operation timeout + runner… | B-1848 |
 | L7874 | B-1849~B-1857 — Analysis-layer paper-grade alignment batch (3-AI /s… | B-1849–B-1857 |
+| L7900 | B-1858 — VWA element-ID 标号非确定 → obs cross-run byte-diff → run-to-ru… | B-1858 |

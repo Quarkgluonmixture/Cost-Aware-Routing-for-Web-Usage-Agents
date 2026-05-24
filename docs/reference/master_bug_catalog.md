@@ -7896,3 +7896,13 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **Resolved upstream / doc-only**: **P2-2** normal-Z transparency floor already aligned to 0.68/1.0 by AMENDMENT_03 (`aggregate_phase1_prereg_gate:89-94`) — no drift remains. **P1-7** LR `class_weight=None` = canonical per B-995 (supersedes prereg L224 `balanced`, which produced ~15× minority hallucination; tie recorded AMENDMENT_04 §3); code already carries B-995 note. **P1-5** stale on-disk artifacts (`h10_pareto_verdict.json` / `cross_site_*`) = gitignored, regenerate via `make analysis` post-fire (next_steps tracked).
 
 ---
+
+## B-1858 — VWA element-ID 标号非确定 → obs cross-run byte-diff → run-to-run trajectory churn (reproducibility limiter; 截图=视觉锚) (2026-05-24)
+
+**B-1858** (reproducibility limiter / VWA-inherited, **finding DONE, code fix deferred post-fire**) — 深挖 run-to-run SR 方差 (笔记 §282) 定位根因: `[id=N]` element 标号 (`external/visualwebarena/browser_env/processors.py:532` `f"[{obs_node_id}] {role} ..."`; `obs_node_id` 源自 AX 树 node 身份 `:518-524`, CDP AXNodeId / 全树 enumerate idx) **跨页面捕获非确定** — 完整 AX node 集合随动态节点/timing 略变 → 可见节点标号整体小偏移 (+1/+2)。**content diff 实证**: 同 task 两 run 同元素/同顺序/同文本/同 URL, **仅 `[id=N]` 变** (e.g. Classifieds link 88→90, Logout 5→6)。
+
+**impact**: obs 文本 byte-diff cross-run (step-0: DOM 91% / SOM 82% 不同) 即便站点已 re-seed 干净 (实测 searches=0 / comments=1 / items=baseline); temp=0 模型对 ID token 序列敏感 → step-0 action churn → 多步轨迹分叉。**所有 mode 共享** (AXTree/SoM 标号层)。**截图=视觉锚 (实证 N=30)**: SOM step-0 action 90% 稳 > DOM 73% → 图给稳定视觉锚抗 ID churn, DOM 纯文本全依赖 ID 故更敏感。**聚合 SR 仍复现** (dom replicate R31194 vs R9755 = 0.4pp / N=224) — 分叉殊途同归。**撤回** 早前 3 说法 (DOM obs identical / SOM 视觉源主导方差 / phantom 丢图更可复现, 方向可能反) — 详 §282。
+
+**fix (deferred post-fire, gated)**: `[id=N]` 改用 DFS 遍历位置序号 (`:947` `unique_id=index+1` 模式) 替代 CDP nodeId → 确定化 obs (可见结构已稳 → 位置序号即稳)。**CAVEAT**: VWA submodule 改动 + 动 obs 格式 = OSF-locked substrate 一部分 → careful-gated + dual-report, **NOT during fire**。先做 replay 实验 (固定 obs 调 proxy N 次, 切分 ①模型-serving vs ②obs-churn 占比) 确认 ②主导再修。**Cross-link**: 笔记 §282 + next_steps §4 Repro-replicate。
+
+---
