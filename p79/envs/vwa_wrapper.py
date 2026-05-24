@@ -652,6 +652,23 @@ class VWAWrapper:
                     # normal flow; guard anyway so a direct/edge caller can't
                     # crash on (None, None).
                     action = None
+                elif _coord_tags["true_oob"]:
+                    # V-F1 (B-1860 codex verify P1, 2026-05-24): a true_oob
+                    # coord (a dimension > 1000 → after /1000 still > 1.0) is a
+                    # GROUNDING miss, not a recoverable format. Pre-fix the
+                    # eps-clamp in the else-branch mapped it onto the viewport
+                    # edge and STILL ran create_mouse_click_action → a real
+                    # corner-click that mutates page state (cart / nav) and
+                    # contaminates the paper-grade episode. Fail-closed: no-op
+                    # + telemetry so diag counts true_oob separately from parse
+                    # errors and from executed clicks. NOT clamped.
+                    action = create_none_action()
+                    _action_executed = {
+                        "action_type": "click",
+                        "dispatch_path": "coord_true_oob_noop",
+                        "fallback": True,
+                        "coordinate_normalization": _coord_tags,
+                    }
                 else:
                     # Avoid 0.0 which triggers VWA create_mouse_click_action validation
                     eps = 1e-6
@@ -733,7 +750,26 @@ class VWAWrapper:
             # defensive for direct/edge callers.
             _norm_left, _norm_top, _coord_tags = normalize_coordinate_pair(coord)
             _log_coord_normalization(_coord_tags, "type_focus", coord)
-            if not _coord_tags["malformed"]:
+            if _coord_tags["malformed"]:
+                # B-1860: malformed coord (None,None) — validate_action filters
+                # these upstream; defensive fallback to a coord-less keyboard
+                # type into the current focus (preserves the behavior of the
+                # pre-V-F1 `else` branch that this if-branch replaced).
+                action = create_keyboard_type_action(action_json["text"])
+            elif _coord_tags["true_oob"]:
+                # V-F1 (B-1860 codex verify P1, 2026-05-24): true_oob grounding
+                # miss → fail-closed no-op. Pre-fix the else-branch clamped to
+                # the viewport edge and focus-clicked there (a real click that
+                # can blur the page / type into the wrong field). Telemetry for
+                # diag. NOT clamped.
+                action = create_none_action()
+                _action_executed = {
+                    "action_type": "type",
+                    "dispatch_path": "coord_true_oob_noop",
+                    "fallback": True,
+                    "coordinate_normalization": _coord_tags,
+                }
+            else:
                 left, top = _norm_left, _norm_top
                 eps = 1e-6
                 left = max(eps, min(1.0 - eps, left))
@@ -801,8 +837,6 @@ class VWAWrapper:
                         self._env.page.keyboard.press("Control+a")
                         self._env.page.keyboard.press("Backspace")
                     action = create_keyboard_type_action(action_json["text"])
-            else:
-                action = create_keyboard_type_action(action_json["text"])
         elif action_type == "type" and "text" in action_json and "element_id" in action_json:
             # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*, 2026-05-17): defense-
             # in-depth removal of the legacy `<=0` → keyboard fallback path.
@@ -1133,6 +1167,16 @@ class VWAWrapper:
                         # upstream; surface a clear error if a direct caller
                         # reaches here with (None, None).
                         raise ValueError("malformed select_option coordinate")
+                    if _coord_tags["true_oob"]:
+                        # V-F1 (B-1860 codex verify P1, 2026-05-24): true_oob
+                        # grounding miss → fail-closed no-op. Mark dispatch +
+                        # raise to skip the elementFromPoint JS below (at the
+                        # clamped viewport edge it can resolve + mutate a wrong
+                        # SELECT). The except clause stamps the error but does
+                        # NOT touch dispatch_path, so coord_true_oob_noop
+                        # survives. action falls through to create_none_action.
+                        _select_option_meta["dispatch_path"] = "coord_true_oob_noop"
+                        raise ValueError("coord_true_oob")
                     # B-1860 item 6: eps-clamp in normalized space (the click /
                     # type / hover coord paths all clamp to [eps, 1-eps]; this
                     # site previously did NOT, so a [1000,1000] coord → exactly
@@ -1293,6 +1337,18 @@ class VWAWrapper:
                     # upstream; fall back to noop for a direct/edge caller.
                     action = create_none_action()
                     _action_executed = {"action_type": "hover", "dispatch_path": "noop_no_target", "fallback": True}
+                elif _coord_tags["true_oob"]:
+                    # V-F1 (B-1860 codex verify P1, 2026-05-24): true_oob
+                    # grounding miss → fail-closed no-op (hover at the clamped
+                    # viewport edge could trigger an unintended tooltip / menu).
+                    # Telemetry for diag. NOT clamped.
+                    action = create_none_action()
+                    _action_executed = {
+                        "action_type": "hover",
+                        "dispatch_path": "coord_true_oob_noop",
+                        "fallback": True,
+                        "coordinate_normalization": _coord_tags,
+                    }
                 else:
                     eps = 1e-6
                     if left <= 0.0:

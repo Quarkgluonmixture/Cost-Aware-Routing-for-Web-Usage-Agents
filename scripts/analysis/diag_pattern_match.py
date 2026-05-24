@@ -279,10 +279,27 @@ def check_p1(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> Li
                 # 0-1000 vision coord as OOB (the parse_error 13.6% mislabel).
                 x_oob = y_oob = False
                 x_raw, y_raw = coord[0], coord[1]
+                # V-F2 (B-1860 codex verify P1, 2026-05-24): a raw negative
+                # dimension points off the top/left of the page — a genuine
+                # grounding miss (the comment above promised "raw < 0 → OOB").
+                # The normalizer tags negatives `malformed`; pre-fix the
+                # `malformed → continue` below SWALLOWED them, under-counting
+                # coord failures. Flag negative as OOB explicitly, BEFORE the
+                # malformed skip. (bool excluded — bool is an int subclass.)
+                _x_num = isinstance(x_raw, (int, float)) and not isinstance(x_raw, bool)
+                _y_num = isinstance(y_raw, (int, float)) and not isinstance(y_raw, bool)
+                if (_x_num and x_raw < 0) or (_y_num and y_raw < 0):
+                    hits.append(PatternHit(
+                        "P1", "元素中心越界", s["step_idx"],
+                        f"Vision coord raw ({x_raw}, {y_raw}) has a negative "
+                        f"dimension — off-page grounding miss (true OOB)",
+                        is_scaffold=False,
+                    ))
+                    continue
                 if _normalize_coordinate_pair is not None:
                     x_n, y_n, _tags = _normalize_coordinate_pair([x_raw, y_raw])
                     if _tags["malformed"]:
-                        # Malformed coord — leave to other rules; not an OOB.
+                        # Non-negative malformed (NaN/inf/shape) — other rules.
                         continue
                     x_oob = x_n > 1.0 or x_n < 0.0
                     y_oob = y_n > 1.0 or y_n < 0.0

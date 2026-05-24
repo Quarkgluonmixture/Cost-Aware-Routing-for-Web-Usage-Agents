@@ -741,3 +741,112 @@ def test_b1860_select_option_coord_clamps_inside_viewport(monkeypatch):
     assert x_px == pytest.approx(1280, abs=0.01)  # ~1279.99..., NOT 1280 exactly
     assert y_px == pytest.approx(720, abs=0.01)
     assert x_px != 1280.0 and y_px != 720.0
+
+
+# ---------------------------------------------------------------------------
+# B-1860 codex-verify gap tests (2026-05-24): the 4 fix-impl bugs the codex
+# verification round (b1860_fix_verify_FINAL) caught in the *fix itself*.
+# V-F1 true_oob fail-closed no-op / V-F2 downstream negative coord / V-F3
+# dead_zone counter / V-F4 sibling interpreters (annotate + GLM digest).
+# ---------------------------------------------------------------------------
+
+
+def test_b1860_wrapper_true_oob_click_is_noop(monkeypatch):
+    """V-F1 (codex verify P1): a true_oob click coord (a dimension > 1000 →
+    after /1000 still > 1.0) is a GROUNDING miss. The wrapper must NOT eps-clamp
+    it to the viewport edge and execute a real corner-click (page-state
+    pollution). Fail-closed: no-op + dispatch_path=coord_true_oob_noop;
+    create_mouse_click_action is never called."""
+    w, cap = _b1860_fake_wrapper(monkeypatch, 1280, 720)
+    obs, reward, terminated, truncated, info = w.step(
+        {"action_type": "click", "coordinate": [5000, 5]}
+    )
+    # the corner-click is never executed (no page-state pollution)
+    assert "mouse_click" not in cap
+    # explicit no-op telemetry, distinct from a parse error or executed click
+    ae = info["action_executed"]
+    assert ae["dispatch_path"] == "coord_true_oob_noop"
+    assert ae["coordinate_normalization"]["true_oob"] is True
+
+
+def test_b1860_wrapper_true_oob_select_option_skips_js(monkeypatch):
+    """V-F1 (codex verify P1): select_option true_oob raises to skip the
+    elementFromPoint JS (at the clamped viewport edge it can resolve + mutate a
+    wrong SELECT). page.evaluate is never called."""
+    w, cap = _b1860_fake_wrapper_with_page(monkeypatch, 1280, 720)
+    w.step({
+        "action_type": "select_option",
+        "coordinate": [5000, 5],
+        "option_label": "X",
+    })
+    # elementFromPoint JS never ran → no wrong-SELECT mutation
+    assert "evaluate_xy_px" not in cap
+
+
+def test_b1860_diag_check_p1_flags_negative_coord():
+    """V-F2 (codex verify P1): diag check_p1 must flag a raw negative vision
+    coord as OOB. The normalizer tags negatives malformed; pre-fix the
+    `malformed → continue` swallowed them (under-counting coord failures). A
+    canonical 0-1000 coord must still NOT flag (the B-1860 main fix)."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "analysis"))
+    from diag_pattern_match import check_p1
+
+    neg = [{
+        "step_idx": 0, "action_type": "click", "observation_mode": "vision",
+        "action": {"coordinate": [-5, 500]},
+    }]
+    assert any(h.rule_id == "P1" for h in check_p1(neg, {}, {}, "vision")), \
+        "negative vision coord must flag P1"
+
+    ok = [{
+        "step_idx": 0, "action_type": "click", "observation_mode": "vision",
+        "action": {"coordinate": [598, 125]},
+    }]
+    assert not check_p1(ok, {}, {}, "vision"), "0-1000 coord must NOT flag P1"
+
+
+def test_b1860_reason_diag_negative_leak_and_dead_zone_counter():
+    """V-F2 + V-F3 (codex verify): _compute_action_execution_stats flags a raw
+    negative coord as a pixel leak (V-F2) and counts dead_zone coords (V-F3,
+    raw in (1.1,10]); a canonical 0-1000 coord is neither."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "analysis"))
+    from analyze_reason_diagnostics import _compute_action_execution_stats
+
+    # V-F2: negative coord → leak
+    neg = [{"action": {"action_type": "click", "coordinate": [-5, 500]}, "action_success": True}]
+    assert _compute_action_execution_stats(neg)["ax_pixel_coordinate_leak"] is True
+
+    # V-F3: dead_zone coord (1.5 in (1.1,10]) → counter == 1, NOT a leak
+    dz = [{"action": {"action_type": "click", "coordinate": [1.5, 0.5]}, "action_success": True}]
+    s_dz = _compute_action_execution_stats(dz)
+    assert s_dz["ax_coord_dead_zone_count"] == 1
+    assert s_dz["ax_pixel_coordinate_leak"] is False  # 1.5/1000 = 0.0015, in-range
+
+    # canonical 0-1000 → neither leak nor dead_zone
+    ok = [{"action": {"action_type": "click", "coordinate": [598, 125]}, "action_success": True}]
+    s_ok = _compute_action_execution_stats(ok)
+    assert s_ok["ax_pixel_coordinate_leak"] is False
+    assert s_ok["ax_coord_dead_zone_count"] == 0
+
+
+def test_b1860_annotate_uses_normalizer_not_pixel_div():
+    """V-F4 (codex verify P2): the screenshot annotator must import the single
+    -source normalizer (not the stale `>1 → /img_w` pixel rule). A canonical
+    0-1000 coord normalizes to [0,1] so the crosshair lands where the click
+    actually went (NOT at the img_w-divided left edge)."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "maintenance"))
+    import annotate_screenshots
+    assert annotate_screenshots._normalize_coordinate_pair is not None
+    x, y, _ = annotate_screenshots._normalize_coordinate_pair([728, 920])
+    assert (x, y) == (0.728, 0.92)
+    # NOTE: glm_batch_digest.py (codex V-F4b) is intentionally NOT fixed/tested —
+    # it is half-retired (B-743 PRESERVED as standalone operator debug tool, not
+    # in cron, diagnosis superseded by /diag 3-tier). It is off the fire path, so
+    # the B-1860 coordinate contract does not need it. If it is ever revived,
+    # import normalize_coordinate_pair there too (sibling propagation).

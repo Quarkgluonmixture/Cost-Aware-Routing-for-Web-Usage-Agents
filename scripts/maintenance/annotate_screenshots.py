@@ -42,6 +42,17 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# B-1860 V-F4 (codex verify P2, 2026-05-24): single-source coordinate
+# normalizer (Qwen 0-1000 contract). Add repo root to path so p79 is
+# importable when this maintenance script runs standalone.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+try:
+    from p79.backends.action_utils import normalize_coordinate_pair as _normalize_coordinate_pair
+except ImportError:
+    _normalize_coordinate_pair = None
+
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
@@ -376,13 +387,23 @@ def annotate_step(
     coord = action.get("coordinate")
     has_coord = coord and isinstance(coord, (list, tuple)) and len(coord) >= 2
     if action_type in ("click", "type") and has_coord:
-        # Normalize: values >1.0 are pixel coords (model mixed-format output)
-        cx = float(coord[0])
-        cy = float(coord[1])
-        if cx > 1.0:
-            cx = cx / img_w
-        if cy > 1.0:
-            cy = cy / img_h
+        # B-1860 V-F4 (codex verify P2, 2026-05-24): Qwen3-VL emits a 0-1000
+        # coordinate system, NOT viewport pixels. Pre-fix `cx / img_w` divided
+        # a 0-1000 coord by image width (728 → 728/1280 ≈ left edge) so the
+        # crosshair landed nowhere near the real click. Use the single-source
+        # normalizer (>1.1 → /1000) so the annotation matches where the click
+        # actually went. Inline fallback if p79 is not importable.
+        if _normalize_coordinate_pair is not None:
+            _x_n, _y_n, _ctags = _normalize_coordinate_pair([coord[0], coord[1]])
+            if _ctags["malformed"]:
+                cx, cy = float(coord[0]), float(coord[1])
+            else:
+                cx, cy = _x_n, _y_n
+        else:
+            cx = float(coord[0])
+            cy = float(coord[1])
+            cx = cx / 1000.0 if cx > 1.1 else cx
+            cy = cy / 1000.0 if cy > 1.1 else cy
         px = int(cx * img_w)
         py = int(cy * img_h)
         # Handle off-screen clicks: clamp to image edge + draw indicator
