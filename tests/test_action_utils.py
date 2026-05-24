@@ -1,3 +1,5 @@
+import pytest
+
 from p79.backends.action_utils import parse_action_text, validate_action
 
 
@@ -339,28 +341,34 @@ def test_validate_select_option_rejects_non_int_element_id():
     assert valid is False
 
 
-def test_undeclared_coord_infers_pixel_not_blind_normalized():
-    """B-452 (/stress A1.4 P1-1-B codex OOB, 2026-05-17): undeclared
-    coordinate_type (caller did not pass) must be inferred from coord
-    values, not blindly stamped as "normalized".
+def test_undeclared_coord_infers_qwen_0_1000_not_blind_normalized():
+    """B-452 (/stress A1.4 P1-1-B codex OOB, 2026-05-17) + B-1860 relabel:
+    undeclared coordinate_type (caller did not pass) must be inferred from
+    coord values, not blindly stamped as "normalized".
 
     Pre-B-452 the validator's "auto-add coordinate_type when missing"
-    branch (action_utils.py:299/317/344-345) stamped `"normalized"` for
-    every valid (positive finite) coord including obvious pixel pairs
-    like [100, 200]. The env wrapper at vwa_wrapper.py:352-358 then
-    silently divides by viewport, but the step JSONL audit trail
-    claimed normalized — paper §3 error-taxonomy + cross-baseline
-    coord-failure analysis were mislabeled.
+    branch stamped `"normalized"` for every valid (positive finite) coord
+    including obvious out-of-[0,1] pairs like [100, 200]. The env wrapper
+    then silently rescaled, but the step JSONL audit trail claimed
+    normalized — paper §3 error-taxonomy + cross-baseline coord-failure
+    analysis were mislabeled.
 
-    Post-B-452: `max(x, y) > 1.0` → "pixel"; else → "normalized".
+    B-1860 relabel: an out-of-[0,1] coord (> 1.1) is the Qwen 0-1000
+    coordinate system, NOT viewport pixels — so the inferred label is now
+    `"qwen_0_1000"` (was `"pixel"`, the mislabel that pre-fix routed the
+    value through the viewport-division misclick path). The label is derived
+    from the single-source `normalize_coordinate_pair` tags.
+
+    Post-B-1860: any dimension recovered (> 1.1) → "qwen_0_1000"; else
+    → "normalized".
     """
-    # click with pixel coords + no coordinate_type → infer "pixel"
+    # click with 0-1000 coords + no coordinate_type → infer "qwen_0_1000"
     action, valid = validate_action({
         "action_type": "click", "coordinate": [100, 200],
     })
     assert valid is True
-    assert action["coordinate_type"] == "pixel", (
-        f"pixel coord [100, 200] should infer 'pixel', "
+    assert action["coordinate_type"] == "qwen_0_1000", (
+        f"0-1000 coord [100, 200] should infer 'qwen_0_1000', "
         f"got {action.get('coordinate_type')!r}"
     )
 
@@ -374,24 +382,24 @@ def test_undeclared_coord_infers_pixel_not_blind_normalized():
         f"got {action.get('coordinate_type')!r}"
     )
 
-    # type with pixel coord + no coordinate_type → infer "pixel"
+    # type with 0-1000 coord + no coordinate_type → infer "qwen_0_1000"
     action, valid = validate_action({
         "action_type": "type", "text": "x", "coordinate": [50, 80],
     })
     assert valid is True
-    assert action["coordinate_type"] == "pixel"
+    assert action["coordinate_type"] == "qwen_0_1000"
 
-    # select_option with pixel coord + no coordinate_type → infer "pixel"
+    # select_option with 0-1000 coord + no coordinate_type → infer "qwen_0_1000"
     action, valid = validate_action({
         "action_type": "select_option", "coordinate": [30, 40], "option_label": "X",
     })
     assert valid is True
-    assert action["coordinate_type"] == "pixel"
+    assert action["coordinate_type"] == "qwen_0_1000"
 
     # Explicit declaration is preserved (no inference override).
-    # The declared "pixel" passes _is_valid_coordinate_pair's pixel branch
-    # (x >= 0 and y >= 0), so this is structurally valid even though the
-    # values [0.5, 0.5] look normalized — caller intent wins.
+    # The declared "pixel" passes _is_valid_coordinate_pair (non-malformed),
+    # so this is structurally valid even though the values [0.5, 0.5] look
+    # normalized — caller intent wins.
     action, valid = validate_action({
         "action_type": "click", "coordinate": [0.5, 0.5],
         "coordinate_type": "pixel",
@@ -549,3 +557,187 @@ def test_b1860_wrapper_normalizes_qwen_0_1000_per_dimension(monkeypatch):
     w, cap = _b1860_fake_wrapper(monkeypatch, 1280, 720)
     w.step({"action_type": "click", "coordinate": [0.5, 0.5]})
     assert cap["mouse_click"] == (0.5, 0.5)
+
+
+# ---------------------------------------------------------------------------
+# B-1860: single-source normalizer `normalize_coordinate_pair` (the one place
+# the per-dimension 0-1000↔[0,1] heuristic lives — wrapper / validator / diag
+# all call it). Spec-mandated cases below.
+# ---------------------------------------------------------------------------
+
+
+def test_b1860_normalizer_qwen_0_1000_both_dimensions():
+    """Qwen native 0-1000: (728, 920) → (0.728, 0.92), both regimes
+    `qwen_0_1000`, recovered=True (a 0-1000→[0,1] rescale happened)."""
+    from p79.backends.action_utils import normalize_coordinate_pair
+
+    x, y, tags = normalize_coordinate_pair([728, 920])
+    assert (x, y) == (0.728, 0.92)
+    assert tags["x_regime"] == "qwen_0_1000"
+    assert tags["y_regime"] == "qwen_0_1000"
+    assert tags["x_scale"] == 1000.0 and tags["y_scale"] == 1000.0
+    assert tags["recovered"] is True
+    assert tags["true_oob"] is False
+    assert tags["dead_zone"] is False
+    assert tags["malformed"] is False
+
+
+def test_b1860_normalizer_gemma_normalized_passthrough():
+    """Gemma native normalized [0,1]: (0.85, 0.85) → (0.85, 0.85) unchanged,
+    both regimes `normalized`, recovered=False (no rescale). model-agnostic:
+    the same by-value logic handles Qwen and Gemma with NO per-model branch."""
+    from p79.backends.action_utils import normalize_coordinate_pair
+
+    x, y, tags = normalize_coordinate_pair([0.85, 0.85])
+    assert (x, y) == (0.85, 0.85)
+    assert tags["x_regime"] == "normalized"
+    assert tags["y_regime"] == "normalized"
+    assert tags["x_scale"] == 1.0 and tags["y_scale"] == 1.0
+    assert tags["recovered"] is False
+    assert tags["true_oob"] is False
+    assert tags["dead_zone"] is False
+    assert tags["malformed"] is False
+
+
+def test_b1860_normalizer_mixed_format_per_dimension():
+    """Per-dimension judgment: x normalized (<= 1.1 kept), y 0-1000 (/1000)
+    → (0.842, 0.117). The mixed-format case the probe observed."""
+    from p79.backends.action_utils import normalize_coordinate_pair
+
+    x, y, tags = normalize_coordinate_pair([0.842, 117])
+    assert (x, y) == (0.842, 0.117)
+    assert tags["x_regime"] == "normalized"
+    assert tags["y_regime"] == "qwen_0_1000"
+    assert tags["recovered"] is True
+
+
+def test_b1860_normalizer_dead_zone_tagged():
+    """Dead-zone: a raw value in (1.1, 10] is classified qwen_0_1000 (so it is
+    rescaled) but ALSO flagged `dead_zone` for observability — it could be a
+    near-corner 0-1000 coord OR a fat-fingered out-of-[0,1] normalized coord.
+    B0/B1/B2 probes show none; we do NOT do grounding rescue, only tag it."""
+    from p79.backends.action_utils import normalize_coordinate_pair
+
+    x, y, tags = normalize_coordinate_pair([1.5, 0.5])
+    # x=1.5 → qwen_0_1000 → /1000 = 0.0015 (NOT snapped); y=0.5 kept.
+    assert x == 0.0015 and y == 0.5
+    assert tags["dead_zone"] is True
+    assert tags["x_regime"] == "qwen_0_1000"
+    assert tags["y_regime"] == "normalized"
+    assert tags["true_oob"] is False
+    assert tags["malformed"] is False
+
+
+def test_b1860_normalizer_upper_bound_true_oob():
+    """Upper-bound: a dimension > 1000 is `true_oob` — the post-/1000 value
+    stays > 1.0 (5000/1000 = 5.0), NOT silently clamped into range (that would
+    be grounding rescue). The downstream diag flags it from the true_oob tag."""
+    from p79.backends.action_utils import normalize_coordinate_pair
+
+    x, y, tags = normalize_coordinate_pair([5000, 5])
+    assert x == 5.0  # NOT clamped to <= 1.0
+    assert y == 0.005
+    assert tags["x_regime"] == "true_oob"
+    assert tags["true_oob"] is True
+    assert tags["recovered"] is True
+    assert tags["malformed"] is False
+
+
+def test_b1860_normalizer_malformed_rejected():
+    """Malformed coords return (None, None) + malformed=True so the validator
+    rejects them as genuine parse errors (NOT recoverable format mismatches)."""
+    from p79.backends.action_utils import normalize_coordinate_pair
+
+    # NaN component.
+    x, y, tags = normalize_coordinate_pair([float("nan"), 5])
+    assert (x, y) == (None, None) and tags["malformed"] is True
+    # Wrong shape (1 number).
+    x, y, tags = normalize_coordinate_pair([500])
+    assert (x, y) == (None, None) and tags["malformed"] is True
+    # inf component.
+    _, _, tags = normalize_coordinate_pair([float("inf"), 5])
+    assert tags["malformed"] is True
+    # Negative component (grounding-nonsense, not a format issue).
+    _, _, tags = normalize_coordinate_pair([-5, 500])
+    assert tags["malformed"] is True
+    # Bool component (int subclass — B-799 preserved).
+    _, _, tags = normalize_coordinate_pair([True, 500])
+    assert tags["malformed"] is True
+    # Non-number component.
+    _, _, tags = normalize_coordinate_pair([500, "x"])
+    assert tags["malformed"] is True
+    # 3-element shape.
+    _, _, tags = normalize_coordinate_pair([500, 600, 700])
+    assert tags["malformed"] is True
+
+
+def _b1860_fake_wrapper_with_page(monkeypatch, viewport_width, viewport_height):
+    """Like `_b1860_fake_wrapper` but the fake env also exposes a `page` whose
+    `evaluate` captures the (x_px, y_px) coordinate args the select_option /
+    coord paths pass to the in-page JS — so a test can assert the px landed
+    strictly inside the viewport (the eps-clamp contract)."""
+    import sys
+    import types
+
+    from p79.envs.vwa_wrapper import VWAWrapper
+
+    captured = {}
+
+    fake_browser_env = types.SimpleNamespace(
+        create_id_based_action=lambda s: {"kind": "id", "action_str": s},
+        create_mouse_click_action=lambda left, top: {"kind": "mouse", "left": left, "top": top},
+        create_mouse_hover_action=lambda left, top: {"kind": "hover_coord", "left": left, "top": top},
+        create_scroll_action=lambda direction: {"kind": "scroll", "direction": direction},
+        create_stop_action=lambda answer: {"kind": "stop", "answer": answer},
+        create_go_back_action=lambda: {"kind": "back"},
+        create_go_forward_action=lambda: {"kind": "forward"},
+        create_page_focus_action=lambda page_number: {"kind": "tab", "page_number": page_number},
+        create_keyboard_type_action=lambda text: {"kind": "type", "text": text},
+        create_none_action=lambda: {"kind": "none"},
+        create_playwright_action=lambda s: {"kind": "playwright", "action_str": s},
+        create_goto_url_action=lambda url: {"kind": "goto", "url": url},
+        ScriptBrowserEnv=None,
+    )
+    monkeypatch.setitem(sys.modules, "browser_env", fake_browser_env)
+
+    class _FakePage:
+        def evaluate(self, js, arg=None):
+            # select_option coord path passes [x_px, y_px, label, idx].
+            if isinstance(arg, list) and len(arg) >= 2:
+                captured["evaluate_xy_px"] = (arg[0], arg[1])
+            return {"matched": False, "error": "fake_no_match"}
+
+        def wait_for_timeout(self, ms):
+            captured.setdefault("waits", []).append(ms)
+
+    class _FakeEnv:
+        page = _FakePage()
+
+        def step(self, action):
+            return {"text": "[1] link"}, 0.0, False, False, {"url": "http://mock.local"}
+
+    wrapper = VWAWrapper(viewport_width=viewport_width, viewport_height=viewport_height)
+    wrapper._env = _FakeEnv()
+    return wrapper, captured
+
+
+def test_b1860_select_option_coord_clamps_inside_viewport(monkeypatch):
+    """B-1860 item 6: select_option coord path eps-clamps in normalized space
+    so a [1000,1000] coord does NOT land at the exact viewport boundary
+    (W, H) — where elementFromPoint can return null / a wrong element. The
+    click/type/hover paths already clamped; select_option was the gap.
+    viewport 1280x720; expect px strictly < (1280, 720) and > (0, 0)."""
+    w, cap = _b1860_fake_wrapper_with_page(monkeypatch, 1280, 720)
+    w.step({
+        "action_type": "select_option",
+        "coordinate": [1000, 1000],
+        "option_label": "X",
+    })
+    x_px, y_px = cap["evaluate_xy_px"]
+    # [1000,1000] → normalize (1.0, 1.0) → clamp (1-eps, 1-eps) → px just
+    # inside the viewport, NOT exactly (1280, 720).
+    assert 0.0 < x_px < 1280, f"x_px {x_px} must be strictly inside [0,1280]"
+    assert 0.0 < y_px < 720, f"y_px {y_px} must be strictly inside [0,720]"
+    assert x_px == pytest.approx(1280, abs=0.01)  # ~1279.99..., NOT 1280 exactly
+    assert y_px == pytest.approx(720, abs=0.01)
+    assert x_px != 1280.0 and y_px != 720.0

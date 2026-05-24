@@ -194,6 +194,11 @@ def _read_json(path: Path) -> Dict[str, Any]:
 
 
 from p79.experiment.io_utils import read_jsonl_dedup as _read_jsonl
+# B-1860: single-source coordinate normalizer — the pixel_coordinate_leak
+# detector below must judge a coord through the SAME Qwen 0-1000 contract the
+# runner applies (a canonical 0-1000 coord is NOT a "pixel leak"; only a coord
+# still outside [0,1] AFTER normalization is a true grounding leak).
+from p79.backends.action_utils import normalize_coordinate_pair as _normalize_coordinate_pair
 
 
 def _sort_steps_by_idx(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -1427,13 +1432,20 @@ def _compute_action_execution_stats(steps: List[Dict[str, Any]]) -> Dict[str, An
 
         coord = act.get("coordinate")
         if isinstance(coord, (list, tuple)) and len(coord) >= 2:
-            # Normalized coords live in [0, 1]; anything outside that range
-            # (incl. negatives) indicates the model leaked pixel coordinates.
-            if any(
-                isinstance(c, (int, float)) and (c > 1.0 or c < 0.0)
-                for c in coord[:2]
-            ):
-                pixel_coordinate_leak = True
+            # B-1860: normalize through the Qwen 0-1000 contract FIRST. A
+            # canonical 0-1000 coord (e.g. [598, 125]) is the runner's accepted
+            # format — NOT a pixel leak. Only a coord still outside [0,1] AFTER
+            # normalization (raw > 1000 → true_oob, or raw < 0) is a genuine
+            # leak. Pre-B-1860 this hard-checked `c > 1.0` → flagged EVERY
+            # 0-1000 coord as a "pixel leak" (the same mislabel as the parse
+            # -error 13.6% root cause). Malformed coords are not leaks (other
+            # detectors handle them).
+            if isinstance(coord[0], (int, float)) and isinstance(coord[1], (int, float)):
+                _x_n, _y_n, _tags = _normalize_coordinate_pair([coord[0], coord[1]])
+                if not _tags["malformed"] and (
+                    _x_n > 1.0 or _x_n < 0.0 or _y_n > 1.0 or _y_n < 0.0
+                ):
+                    pixel_coordinate_leak = True
 
     total_steps = len(steps)
     return {
