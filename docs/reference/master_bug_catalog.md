@@ -7912,3 +7912,17 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 **fix (deferred post-fire, gated)**: `[id=N]` 改用 DFS 遍历位置序号 (`:947` `unique_id=index+1` 模式) 替代 CDP nodeId → 确定化 obs (可见结构已稳 → 位置序号即稳)。**CAVEAT**: VWA submodule 改动 + 动 obs 格式 = OSF-locked substrate 一部分 → careful-gated + dual-report, **NOT during fire**。先做 replay 实验 (固定 obs 调 proxy N 次, 切分 ①模型-serving vs ②obs-churn 占比) 确认 ②主导再修。**Cross-link**: 笔记 §282 + next_steps §4 Repro-replicate。
 
 ---
+
+## B-1859 — B-21 string_match 货币 tokenize 假阴性首个 runtime 实证 + P28 deterministic detector (2026-05-24)
+
+**B-1859** (benchmark-FP / VWA-inherited, **= B-21 runtime 实例, 非新 bug**) — R9725 B0 som cls /diag Tier-2 (task 42/96) + task96 评测器复查定位: task96 "url-EXACT 双满足却 reward=0" 之谜 = url_match 部分**实际 pass** (eval_source_agent_url id=5939 = reference_url), string_match 那半 fail, `[url_match, string_match]` AND → 0。
+
+**root cause (= B-21 confirm)**: `evaluators.py:168-177` `must_include`: ref 单 token "14" (`len(word_tokenize(clean_ref))==1`) → `word_tokenize(pred)`; answer "$14.00" → `['$','14.00','.']` → "14" 非独立 token → 0。`clean_answer` (:149-154) 只 lower+去引号不碰货币。tokenize 分支注释本意防子串 FP ("0" in "100"), 副作用 = 货币/小数整数假阴性。B-21 (2026-04-30) 已 static read + audit JSON 记录 ("5.99" vs "$5.99" misses, evaluators.py:312-line edge case); **此为首个 paper-grade run 实证**。
+
+**detector**: diag ruleset **P28** `check_p28` (currency_tokenize, ruleset 3-domsom 2026-05-24) deterministic 0-token 捕获 = B-21 实例。实例: task96 ("14" vs "$14.00") + task42 ("5"/"120" vs "$5.00 to $120.00")。
+
+**paper-grade impact**: 语义对却判 0 → SR 低估。R9725 som P28 命中 2 (task42/96) + P29 1 (task222 semantic yes/no) → 真实 SR ≥ 31.7% (30.4% = 下界)。**不改 eval** (fire 跑中保 OSF substrate 一致); paper SR 报告做 raw vs FP-adjusted 敏感性 (P28/P29 标记 FP 加回)。
+
+**Status**: ✅ root-caused = B-21; P28 detector landed; SR 敏感性 deferred to paper write。**Fix** (上游 option, 非现在 — fire 跑中不动 eval): VWA `must_include` 数字 ref 加货币/小数变体匹配 (ref "14" 也匹配 tok 里 "14.00"/"$14")。**Cross-link**: B-21 + `B0_som_classifieds_diag_digest.md` §benchmark-FP + 笔记 §284。
+
+---

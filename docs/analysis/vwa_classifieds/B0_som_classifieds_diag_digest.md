@@ -26,7 +26,7 @@
 | no-hit failed | v2 **44** → v3 **40**（全深挖基于 v2：41 agent-limit + 3 benchmark-FP + 0 scaffold；v3 新规则覆盖 ~12，P14 FP 去除打回 ~8 待深挖）|
 | success 命中规则 | v2 21/68（**P14 在 15/68=22.1% success fire** = 最强误报源 presence-only）→ **v3 P14 修正后 success-fire 0/68** ✅ |
 
-**B0 som cls 的失败 ~主要指向真实模型能力局限，pipeline 干净**：52 深挖子集零框架 bug（parse/tool_call 全 valid）+ scaffold 规则 P8 全 run 0 命中。但与 dom 不同，som 多出 **≥3 个 benchmark-FP**（string_match 过严 + 1 个 url-exact 双满足却 0 分的可疑评测）→ 真实 SR 是 **30.4% 的下界**（去 3 FP 后 ≥31.7%）。
+**B0 som cls 的失败 ~主要指向真实模型能力局限，pipeline 干净**：52 深挖子集零框架 bug（parse/tool_call 全 valid）+ scaffold 规则 P8 全 run 0 命中。但与 dom 不同，som 多出 **≥3 个 benchmark-FP**（均 string_match 过严 = **B-21** 货币 tokenize / semantic yes-no；**task96 复查确认 url_match 实际 pass，是 string_match 那半 fail**，非 scoring bug）→ 真实 SR 是 **30.4% 的下界**（去 3 FP 后 ≥31.7%）。
 
 ---
 
@@ -95,7 +95,7 @@ P12 不翻页 / P13 搜索代浏览 / P22 图上数字  少量
 
 | task | eval_type | 现象 | 性质 |
 |---|---|---|---|
-| **96** | url_match EXACT + string | finish 落在 item/5939 (=reference EXACT) 且 answer 含 "14"(=must_include)，**双条件满足却 reward=0** | 🔴 最可疑，疑评测器 scoring 聚合 bug，**需人工复查 VWA 评测路径** |
+| **96** | url_match EXACT + string | url_match **pass** (item/5939=ref) 但 string_match **fail**：must_include "14" vs answer "$14.00" — NLTK `word_tokenize` 切成 `['$','14.00']`，"14" 非独立 token → AND=0 | ✅ 复查完成 = **B-21** (string_match 货币 tokenize 假阴性, evaluators.py:173-177)，非 scoring bug；**P28 已捕获** |
 | **42** | string_match | answer "$5.00 to $120.00" 语义对，但 NLTK `word_tokenize('$5.00')=['$','5.00']`，must_include "5" 不是独立 token → 0 分 | string 过严（货币格式 tokenize 假阴性） |
 | **222** | string_match | answer "...is correct"，must_include "yes"，语义等价但字面不含 → 0 分 | string 过严（semantic yes/no mismatch） |
 
@@ -117,7 +117,7 @@ P12 不翻页 / P13 搜索代浏览 / P22 图上数字  少量
 - task 199 — som_ui_chrome_content_confusion：答 "OsClass"(站点 logo) 而非图内 "kaiyo.com"
 
 **benchmark-FP**：
-- task 96 — url EXACT + answer 含 must_include 却 0 分（评测器最可疑）
+- task 96 — url_match pass 但 string_match fail（answer "$14.00" vs must_include "14"，NLTK 货币 tokenize = B-21；P28 捕获）
 - task 42 — 货币格式 NLTK tokenize 假阴性
 
 ---
@@ -153,7 +153,7 @@ P12 不翻页 / P13 搜索代浏览 / P22 图上数字  少量
 
 | 项 | 处置 | 优先级 |
 |---|---|---|
-| **task 96** url-exact 双满足却 0 分 | 人工复查 VWA 评测器 scoring 聚合路径（多 eval_type 合分逻辑）→ 若确认 = master_bug_catalog 新 B-number 候选 | 🔴 高（影响 SR 正确性） |
+| **task 96/42** string_match 货币 tokenize FP | ✅ 复查完成 = **B-21 实例**（evaluators.py:173-177 word_tokenize 货币假阴性，2026-04-30 已 CONFIRMED）。P28 deterministic 检测；**不需新 B-number**。SR 影响：paper 报告时做 raw vs FP-adjusted 敏感性（fire 跑中不改 eval 保一致）| 🟡 paper SR 敏感性 |
 | **task 42 / 222** string_match 过严 FP | 确认后 → 可能 task 排除 或 eval 上游修；与 dom/vision 是否同样 FP 待 cross-mode | 🟡 中 |
 | **P14/P10/P20 误报修正** | diag_pattern_match.py self-evolve（bump version + 全量重扫 dom+som）| 🟡 中（待 user 决策落码时机）|
 | **scaffold-bug 0** | som pipeline 干净 = paper-grade 好消息，无 action | ✅ |
