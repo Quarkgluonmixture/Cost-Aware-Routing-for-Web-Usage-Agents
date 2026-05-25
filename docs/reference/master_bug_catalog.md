@@ -7955,3 +7955,15 @@ Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-A
 fix @3ea598e (fix 分支); 文档 (本 entry + 笔记 §287 + next_steps) @diag 分支. **apply 仍 gated** B1 vision 前窗口 + witness (tag+OSF amendment) — fix 没 push 没碰 A100 fire.
 
 ---
+
+## B-1861 — watchdog ntfy read-timeout 未捕获 → watchdog 崩 → chain fail-safe SIGTERM 杀 fire (2026-05-25)
+
+**B-1861** (scaffold / fire-stability, **FIXED 2026-05-25**) — Gate 3 cls B0 phantom_text (R19776) fire 2026-05-25 00:26:15 被 SIGTERM kill (180/224, 丢 44 ep)。根因链: `experiment_watchdog.py:_post_ntfy` (line 182 `urllib.request.urlopen(req, timeout=15)`) 只 catch `HTTPError` + `URLError`, 但 **read timeout 抛 `socket.timeout`/`TimeoutError`, 不是 `urllib.error.URLError` 子类** (urllib 陷阱: connect-timeout 包成 URLError, **read-timeout 在建连后 read 阶段直接抛 socket.timeout**) → 00:25:17 ntfy.sh 网络抖动 read timeout → TimeoutError 逃过两个 except → 冒泡到 watchdog `main()` line 2528 → watchdog 崩溃 → queue_chain liveness check (line 153, 每 60s) 检测到 "watchdog died mid-run, runner still alive 25440s" → A1.13 P0-4 Q2 A decision fail-safe (watchdog 死 = 无 reactive auth refresh/auto-clean = paper-grade 污染风险) → `_kill_runner_pgroup` SIGTERM kill runner → chain abort exit 1。
+
+**判定**: best-effort 通知 (ntfy) 杀死关键基础设施 (watchdog) 的反模式。chain fail-safe (watchdog 死→abort) 设计**正确**, 但放大了 _post_ntfy 1-行漏洞: 一次 ntfy.sh 网络打嗝 → 整条 fire abort + 丢 44 ep。Gate 3 剩 ~50 condition, 不修每次 ntfy.sh 抖动都可能再杀。
+
+**Fix (2026-05-25)**: `_post_ntfy` 加 `except Exception` catch-all (ntfy best-effort, 任何失败 swallow + log `[watchdog][NTFY] <type>: <e>`, 绝不传播)。**无 sibling** — 唯一 urlopen 在 _post_ntfy, 18 处 ntfy 调用全走它, 修一处全覆盖。inline test: mock urlopen 抛 TimeoutError/OSError/Exception → _post_ntfy 全 swallow 不抛 (verified)。
+
+**恢复 (与 B-1860 apply 同期)**: ptext R19776 (180/224, 旧 code) 不续跑 (180 旧 + 44 新 = 非 paper-grade code-homogeneous), **重跑**。从 vision 重启 chain (dom R31194/som R9725 保留 — 完整旧 code condition, coord 不受影响)。**Cross-link**: queue_chain.sh A1.13 P0-4 watchdog liveness (B-1665 wallclock 同段) + B-1860 (同期 apply) + B-859 (SIGTERM graceful finally converting)。
+
+---

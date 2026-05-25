@@ -185,6 +185,16 @@ def _post_ntfy(topic: str, title: str, body: str, priority: str = "default") -> 
         print(f"[watchdog][NTFY] HTTP {e.code} {e.reason} — notification dropped: {title}")
     except urllib.error.URLError as e:
         print(f"[watchdog][NTFY] URLError: {e.reason} — notification dropped: {title}")
+    except Exception as e:
+        # B-1861 (2026-05-25): ntfy is best-effort — ANY failure must be
+        # swallowed, never propagate. A read timeout raises socket.timeout /
+        # TimeoutError, which is NOT a urllib.error.URLError subclass, so it
+        # escaped the two excepts above → crashed the watchdog main loop →
+        # queue_chain liveness check saw "watchdog died, runner alive" →
+        # fail-safe SIGTERM aborted the whole fire (R19776 ptext killed at
+        # 180/224, 2026-05-25 00:26). Catch-all so a transient ntfy.sh hiccup
+        # can never kill the watchdog again.
+        print(f"[watchdog][NTFY] {type(e).__name__}: {e} — notification dropped: {title}")
 
 
 def _normalize_ref_urls(ref_url: Any) -> List[str]:
