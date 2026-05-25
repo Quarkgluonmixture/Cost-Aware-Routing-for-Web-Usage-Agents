@@ -1,5 +1,7 @@
 # Session Checkpoint 2026-05-25 — Run-to-run noise 威胁 H1/H3 + SoM nodeId 发现 + fire 停
 
+> ✅ **EXECUTED + SUPERSEDED 2026-05-25 PM**(本 checkpoint 的"待深挖"已全部执行):SoM 编号决策 = **deterministic sequential**(§4.1 答案 = design-change 非 bug,但 production SoM 是 sequential → 改之);落码 + 4 轮 codex 验证 + **AMENDMENT_07 / B-1862**(witnessed git tag + OSF kv9sf)+ Phase 1a **全 36-cond fire 重新起飞**(B0 cls dom R21557)。当前状态以 **笔记 §295/§296 + next_steps §0 + AMENDMENT_07** 为准;本文档保留作当时(fire 停)的 chronicle。
+
 > **给新 session 的 self-contained handoff**。今天从一个 ptext sanity check 滚雪球到 paper-grade
 > 核心威胁 + 一个 game-changing 的 SoM 实现发现,经 GPT 三轮 audit + 多次自我修正。对话 context 会丢,
 > 这个文档是唯一入口。新 session 任务:**复盘 + 深挖**(尤其 SoM 编号决策)。
