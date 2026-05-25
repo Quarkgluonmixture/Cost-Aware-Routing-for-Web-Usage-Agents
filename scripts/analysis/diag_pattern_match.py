@@ -64,7 +64,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "3-domsom-b1860coord"
+RULESET_VERSION = "4-domsomvis-b1860coord"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -223,10 +223,14 @@ UNCERTAINTY_FINISH_RE = re.compile(
 )
 
 # P27: finish answer abandons the task (gave up at a page instead of returning/retrying).
+# R24792 vision discover: extended to cover "No <noun> ... is visible" (task 174) and
+# "No <noun> ... was found" (task 186) — vision agents that scroll a wrong item page,
+# fail to spot the target, and finish with a generic not-found phrasing.
 ABANDONMENT_RE = re.compile(
-    r"cannot\s+be\s+completed|does\s+not\s+display|(?:is|are)\s+not\s+(?:found|available)"
+    r"cannot\s+be\s+completed|does\s+not\s+display|(?:is|are)\s+not\s+(?:found|available|visible)"
     r"|task\s+cannot|unable\s+to\s+(?:find|complete|locate)|could\s+not\s+(?:find|locate|be\s+found)"
-    r"|no\s+(?:such\s+)?(?:item|listing|result|page)\s+(?:found|exists|available)",
+    r"|no\s+(?:such\s+)?(?:item|listing|result|page)\s+(?:found|exists|available)"
+    r"|no\s+\w+(?:[^.]{0,50}?)\s+(?:was|were|is|are)\s+(?:found|visible|present|available)",
     re.IGNORECASE,
 )
 
@@ -236,6 +240,12 @@ YESNO_SEMANTIC_RE = re.compile(
     r"that'?s\s+true|that'?s\s+false|does\s+match|do\s+not\s+match)\b",
     re.IGNORECASE,
 )
+
+# P32: keyword text typed into the numeric price filter → malformed sPriceMin/Max URL
+# value (agent put a search term into the price box). Self-evolving 2026-05-25 (R24792
+# vision Tier-2 task 34: "painting animals" → sPriceMin=painti). Naturally success-safe:
+# a malformed price-filter URL never appears in a successful trajectory.
+PRICE_FILTER_TEXT_RE = re.compile(r"[?&]sPrice(?:Min|Max)=[^&]*[A-Za-z]")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -941,22 +951,34 @@ def check_p25(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Li
     return []
 
 
-def check_p27(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+def check_p27(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
     """P27: 找不到即放弃 — finish.answer 含放弃短语 (agent 到页面找不到目标即 finish,
-    不返回上级重试) (self-evolving 2026-05-24, R9725 som Tier-2 task 118/163).
-    success-safe: 成功 ep 的 finish 不会说放弃 (N/A task 已 task-load 排除)。"""
+    不返回上级重试) (self-evolving 2026-05-24, R9725 som Tier-2 task 118/163; ABANDONMENT_RE
+    extended R24792 vision task 174/186).
+    success-safe: 成功 ep 的 finish 不会说放弃 (N/A task 已 task-load 排除)。Carve-out
+    (R24792 全量重扫 dom task 151): url_match agent 主观放弃 ("task cannot be completed")
+    但 finish obs_url 实际停在 reference item → eval 凭 live url pass, 放弃措辞 harmless
+    (同 P24/P30 finish==ref 不 fire)。"""
+    ev = config.get("eval") or {}
+    ref_m = re.search(r"[?&]id=(\d+)", ev.get("reference_url") or "")
+    ref_id = ref_m.group(1) if ref_m else None
     for s in steps:
         if s.get("action_type") != "finish":
             continue
         a = s.get("action", {}) or {}
         ans = str(a.get("answer", "") or a.get("text", ""))
         m = ABANDONMENT_RE.search(ans)
-        if m:
-            return [PatternHit(
-                "P27", "找不到即放弃", s.get("step_idx"),
-                f"finish abandons task: '...{m.group(0)[:50]}...'",
-                is_scaffold=False,
-            )]
+        if not m:
+            continue
+        if ref_id:
+            fin_m = re.search(r"[?&]id=(\d+)", s.get("obs_url", ""))
+            if fin_m and fin_m.group(1) == ref_id:
+                return []  # ended on reference item; url_match passes despite give-up phrasing
+        return [PatternHit(
+            "P27", "找不到即放弃", s.get("step_idx"),
+            f"finish abandons task: '...{m.group(0)[:50]}...'",
+            is_scaffold=False,
+        )]
     return []
 
 
@@ -1060,6 +1082,43 @@ def check_p30(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Li
     return []
 
 
+def check_p31(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P31: budget 耗尽未完成 — trajectory_incomplete (agent 用尽 step budget 仍未到达
+    valid finish / eval) (self-evolving 2026-05-25, R24792 vision Tier-2 task 77/136/203).
+    FP-narrowing (R24792 task 5): delete-verification tasks (program_html checks "404"
+    via evaluator goto) succeed on the DB side-effect even when the agent never reaches a
+    valid finish — trajectory_incomplete is expected there, NOT a failure signal (same
+    404 carve-out as P20)."""
+    if not summary.get("trajectory_incomplete"):
+        return []
+    ev = config.get("eval") or {}
+    for ph in ev.get("program_html") or []:
+        rc = (ph.get("required_contents") or {}).get("must_include") or []
+        if any("404" in str(x) for x in rc):
+            return []
+    return [PatternHit(
+        "P31", "budget耗尽未完成", None,
+        f"trajectory_incomplete after {len(steps)} steps "
+        f"(no valid finish; agent_finished={summary.get('agent_finished')})",
+        is_scaffold=False,
+    )]
+
+
+def check_p32(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P32: 文本误入价格 filter — obs_url 出现 sPriceMin/sPriceMax 含字母 (agent 把搜索
+    关键词打进数字价格框) (self-evolving 2026-05-25, R24792 vision Tier-2 task 34).
+    天然 success-safe: malformed price-filter URL 不出现在成功轨迹。"""
+    for s in steps:
+        url = s.get("obs_url", "") or ""
+        if PRICE_FILTER_TEXT_RE.search(url):
+            return [PatternHit(
+                "P32", "文本误入价格filter", s.get("step_idx"),
+                f"non-numeric price filter (keyword typed into price box): {url[:80]}",
+                is_scaffold=False,
+            )]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Rule registry
 # ---------------------------------------------------------------------------
@@ -1095,6 +1154,8 @@ ALL_RULES: Dict[str, Any] = {
     "P28": check_p28,  # benchmark-FP 货币 tokenize
     "P29": check_p29,  # benchmark-FP 语义 yes/no
     "P30": check_p30,  # 到达正确item后离开 (som self-doubt)
+    "P31": check_p31,  # budget 耗尽未完成 (trajectory_incomplete; R24792 vision discover)
+    "P32": check_p32,  # 文本误入价格 filter (sPriceMin/Max 含字母; R24792 vision discover)
 }
 
 

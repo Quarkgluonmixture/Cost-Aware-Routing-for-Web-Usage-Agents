@@ -3,7 +3,7 @@
 > **生成方式**: `/diag` skill 3-tier pipeline (2026-05-23 run on R31194)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token, ruleset `1-dom`) → Tier-2 Claude sub-agent 深挖 (23 no-hit 全覆盖 + 12 failed-hit causal verify + 7 success-hit FP 审计 = 42 ep / 7 agents) → Tier-3 整合 (本文件)。
 > **Run**: `B0_dom_classifieds_20260523_080127_508387150_37076_R31194` (Gate-3 fresh substrate, per-condition docker restart, manifest-bound authoritative)
 > **Condition**: `phase1_dom_router_0` | site classifieds | mode **dom** | model **B0 = Qwen3-VL-235B (proxy)**
-> **ruleset_version**: `3-domsom` (`1-dom` → `2-dom` [R31194 fast-track] → **`3-domsom`** [2026-05-24 R9725 som discover：落码 P24-P30 + P14/P10/P20 FP 修正，**本 run 已全量重扫**]；见下「Self-evolving changelog」。cross-mode 聚合前须 verify 全 digest 同版本 — 当前仍**禁止 cross-mode 定量比较**)
+> **ruleset_version**: `3-domsom` (`1-dom` → `2-dom` [R31194 fast-track] → **`3-domsom`** [2026-05-24 R9725 som discover：落码 P24-P30 + P14/P10/P20 FP 修正，**本 run 已全量重扫**]；见下「Self-evolving changelog」。cross-mode 聚合前须 verify 全 digest 同版本 — 当前仍**禁止 cross-mode 定量比较**) **→ 全量重扫到 `4-domsomvis-b1860coord` (2026-05-25 vision discover: 本 run 已重扫, dom 新增 P31=58 budget-incomplete + P27 ref-carveout, success-fire 0; 下方分布 section 仍 `3-domsom` 落码前快照, 版本号统一不改定性)**
 > **Supersedes**: R9755 digest (2026-05-21, pre-Gate3 first-completed try-run)。本 run 是**同一 condition 的 fresh Gate-3 重跑** → 构成 R9755 self-evolve 出的 P15-P18 的一次 **fresh-substrate out-of-sample 检验**（见下「跨 run 一致性」）。
 
 > ⚠️ **定位声明（沿用 R9755 3-AI 审计共识，仍适用）**：本 digest 是 **internal 诊断记录，NOT paper-grade 结论**。

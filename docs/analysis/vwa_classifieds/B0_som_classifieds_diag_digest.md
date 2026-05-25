@@ -3,7 +3,7 @@
 > **生成方式**: `/diag` skill 3-tier pipeline (2026-05-24 run on R9725)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token, ruleset `2-dom`) → Tier-2 Claude sub-agent 深挖 (**44 no-hit 全覆盖 + 8 success-hit FP 审计 = 52 ep / 8 agents**, sonnet) → Tier-3 整合 (本文件)。
 > **Run**: `B0_som_classifieds_20260523_234208_078993305_172000_R9725` (Gate-3 **Option-A 全新重跑**，per-condition docker restart fresh substrate, manifest-bound authoritative)
 > **Condition**: `phase1_som_router_0` | site classifieds | mode **som** | model **B0 = Qwen3-VL-235B (proxy)**
-> **ruleset_version**: `3-domsom`（discover 第 2 mode 落码：som Tier-2 发现的 P24-P30 + P14/P10/P20 FP 修正已 land，全量重扫 dom+som 落同版本——见「Self-evolving」。**本 digest 数字为 v3 重扫后**；v2(2-dom)→v3 变化记于 Self-evolving。仍 dom+som 2-mode discover，vision/phantom 未跑 → **禁止 cross-mode 定量比较**直至 6-mode freeze）
+> **ruleset_version**: `3-domsom`（discover 第 2 mode 落码：som Tier-2 发现的 P24-P30 + P14/P10/P20 FP 修正已 land，全量重扫 dom+som 落同版本——见「Self-evolving」。**本 digest 数字为 v3 重扫后**；v2(2-dom)→v3 变化记于 Self-evolving。仍 dom+som 2-mode discover，vision/phantom 未跑 → **禁止 cross-mode 定量比较**直至 6-mode freeze）**→ 全量重扫到 `4-domsomvis-b1860coord` (2026-05-25 vision discover: 本 run 已重扫, som 新增 P31=49 budget-incomplete + P27=9, success-fire 0; 下方分布为落码前快照, 版本号统一不改定性)**
 > **Supersedes**: R2815 som 试跑（2026-05-23，**B-1848 Playwright driver-wedge hang run，已 archived**）。R2815 **不是**干净对照（wedge 污染 → +7pp 非对称，见 B-1858/§282），故本 digest **无干净跨 run 一致性章节**（som 缺第二个健康 run = §0④ gate-blocking repro-replicate 的核心缺口）。
 
 > ⚠️ **定位声明（沿用 R9755/R31194 3-AI 审计共识，仍适用）**：本 digest 是 **internal 诊断记录，NOT paper-grade 结论**。
