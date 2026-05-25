@@ -62,24 +62,47 @@ if [[ "$MODE" == "heartbeat" ]]; then
   exit 0
 fi
 
-# ---- healthcheck (anomaly-only) ----
+# ---- healthcheck (anomaly-only, EDGE-TRIGGERED orchestrator transitions) ----
+# B-1863 (2026-05-25): the "orchestrator GONE" alert used to fire EVERY 30-min
+# tick while the orchestrator was down → after any intentional kill the cron
+# spun forever spamming "GONE". Now it is edge-triggered via a tiny state file:
+# it alerts ONCE on an up→down transition (the genuinely useful "fire just went
+# down" signal), then stays silent while it remains down, and re-arms when the
+# orchestrator returns. The in-flight anomaly checks (stall / GPU / FATAL) are
+# gated to the orch-UP branch so a stopped fire's stale log can't 空转 on FATAL
+# either. Orchestrator detection (_orch_up) binds to the actual long-lived
+# orchestrator — queue_chain.sh OR queue_phase1_paper_grade.sh launch (the latter
+# WAITS for its chain under the B-1663 sequential cls→red protocol, so it stays
+# alive across conditions and is a reliable "fire is alive" anchor).
 ALERT=""
-if ! _orch_up; then
-  ALERT+="orchestrator GONE (queue_chain.sh) — Pass-1 COMPLETED or DIED, verify: pgrep -af queue_chain.sh + chain log tail; "
-else
+ORCH_STATE_FILE="logs/.fire6_orch_state"
+_last_orch=$(cat "$ORCH_STATE_FILE" 2>/dev/null || echo unknown)
+if _orch_up; then
+  printf 'up' > "$ORCH_STATE_FILE"
+  # fire is running — check for in-flight anomalies (fine to repeat: ongoing problem)
   if [[ -z "$(_recent_step)" ]]; then
     ALERT+="orch up but NO step in 60min (stall?); "
   fi
   if _local_runner && [[ "$(_gpu_mib)" -lt 500 ]]; then
     ALERT+="B1/B2 runner up but GPU<500MiB (model load stuck?); "
   fi
-fi
-if tail -300 "$FIRELOG" 2>/dev/null | grep -qiE 'FATAL|quota exhaust|PaperGradeAbort|non-zero|rc=[1-9]'; then
-  ALERT+="FATAL/abort in fire log; "
-fi
-RL=$(ls -t logs/*_runner.log 2>/dev/null | head -1)
-if [[ -n "${RL:-}" ]] && tail -150 "$RL" 2>/dev/null | grep -qiE 'PaperGradeAbort|quota exhaust|CUDA out of memory'; then
-  ALERT+="runner-log fatal ($(basename "$RL")); "
+  if tail -300 "$FIRELOG" 2>/dev/null | grep -qiE 'FATAL|quota exhaust|PaperGradeAbort|non-zero|rc=[1-9]'; then
+    ALERT+="FATAL/abort in fire log; "
+  fi
+  RL=$(ls -t logs/*_runner.log 2>/dev/null | head -1)
+  if [[ -n "${RL:-}" ]] && tail -150 "$RL" 2>/dev/null | grep -qiE 'PaperGradeAbort|quota exhaust|CUDA out of memory'; then
+    ALERT+="runner-log fatal ($(basename "$RL")); "
+  fi
+else
+  # orchestrator down — edge-trigger: alert ONLY on the up→down transition.
+  if [[ "$_last_orch" == "up" ]]; then
+    ALERT+="orchestrator DOWN (up→down transition) — Pass-1 COMPLETED or DIED; verify: pgrep -af 'queue_phase1_paper_grade.sh launch|queue_chain.sh' + chain log tail; "
+    if tail -300 "$FIRELOG" 2>/dev/null | grep -qiE 'FATAL|quota exhaust|PaperGradeAbort'; then
+      ALERT+="(fire log shows FATAL/abort — likely DIED, not a clean completion); "
+    fi
+  fi
+  # already-down (or unknown→down, e.g. fresh machine): stay SILENT — no 空转.
+  printf 'gone' > "$ORCH_STATE_FILE"
 fi
 
 if [[ -n "$ALERT" ]]; then

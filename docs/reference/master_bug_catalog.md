@@ -7981,3 +7981,11 @@ fix @3ea598e (fix 分支); 文档 (本 entry + 笔记 §287 + next_steps) @diag 
 **Cross-link**: B-1858 / B-12 (element-ID churn, 旧 "do-not-patch" superseded) · AMENDMENT_07 (estimand witness) · AMENDMENT_06 §4 (reversed) · 笔记 §282/§292/§293/§294/§295 · `session_checkpoint_2026-05-25_runtorun_noise.md`。
 
 ---
+
+## B-1863 — fire6_monitor "orchestrator GONE" 每 tick 空转 (无状态, kill 后永刷); 改边沿触发 (2026-05-25)
+
+**B-1863** (infra / monitoring-sidecar, **FIXED 2026-05-25**, NOT estimand-affecting) — `scripts/maintenance/fire6_monitor.sh healthcheck`(30min cron)的 "orchestrator GONE" 报警**无状态**:`if ! _orch_up; then ALERT+=GONE`(旧 line 67-68)每 tick 都刷 → fire 一旦 intentional kill / 两次 fire 之间,cron **永远刷 GONE 空转**(用户实测:本 session 17:00→19:30 每 30min 一条 stale "GONE")。且 FATAL 检查在 if/else 外 → 停火后旧 fire log 的 FATAL 也每 tick 空转。
+
+**Fix**: 改**边沿触发**(tiny state file `logs/.fire6_orch_state`):仅在 **up→down transition** 报一次(真正有用的"fire 刚down"信号)+ 持续 down 静默 + orch 回来 re-arm。FATAL/stall/GPU in-flight 检查移进 **orch-UP 分支**(停火后不空转)。`_orch_up` 已 bind 真实 long-lived orchestrator(queue_chain.sh OR `queue_phase1_paper_grade.sh launch` —— 后者在 B-1663 sequential cls→red 下 WAIT for chain 不退出,是可靠 "fire alive" 锚)。bash -n PASS。mid-fire safe(cron sidecar,runner 不读),A100 经单文件 `git checkout origin/diag -- fire6_monitor.sh` 部署(不动 fire code)。**Cross-link**: B-1840 (queue_phase1 chain log glob) + B-1663 (sequential cls→red orchestrator wait) + B-1861 (watchdog ntfy fail-safe, 同类 monitoring robustness)。
+
+---
