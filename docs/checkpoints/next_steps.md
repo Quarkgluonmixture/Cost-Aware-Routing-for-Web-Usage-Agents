@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-05-25
+updated: 2026-05-26
 ---
 
 # Next Steps — Forward Action Ledger
@@ -12,7 +12,7 @@ updated: 2026-05-25
 > - Paper-grade fire verdict → `paper_grade_check.py` (一条命令, §0) + 每 6h cron
 > - Cell snapshot (active / pending / done) → `cells.base`
 > - Paper section progress → `status.base`
-> - 过去 chronicle → [[实验笔记]] (latest §296, 2026-05-25 — SoM sequential-id + Phase 1a re-launch)
+> - 过去 chronicle → [[实验笔记]] (latest §297, 2026-05-26 — repro_replicates clean-replicate 提取 + run-to-run floor)
 > - Strategy / theory → [[paper_planning]]
 > - **Phase 1 执行计划 + audit checklist** → [[phase1_plan]] ⭐ canonical
 > - OSF DOI lock workflow → [[osf_lock_manifest]] · Compute infra → [[COMPUTE_INFRASTRUCTURE]]
@@ -50,7 +50,7 @@ ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/an
 **④ PENDING — forward-only (live 进度靠 ①, 不在此冻快照)**:
 > - **每 condition 落地跑 `/diag`** (per-condition 命名, 勿用 run_id): 3-tier (Tier-1 0-token) → `docs/analysis/vwa_<site>/<model>_<mode>_<site>_diag_digest.md`, 拆失败结构喂 paper-grade 错因表。**ruleset 当前 = `4-domsomvis-b1860coord`** (P1-P32, self-evolved §284/§290; dom/som/vision success-fire 全 0)。⚠️ **此前 diag (R31194 dom · R9725 som · R3671/R24792 vision · R2647 ptext) 全在 archived 旧代码 run 上** —— findings 已喂 ruleset + paper (§283/§284/§290/§291; **B-21** 货币 tokenize benchmark-FP; vision 失败全 agent-limit = paper §3-§4 evidence), 但 run-specific 数字 **superseded**。**新 Phase 1a run 落地后逐 condition 重跑 /diag**(per-condition digest 自动覆盖;**dom/vision digest 仍有效**因代码未变,**som-family 待新数据刷新**)。**open**: P14 v3 scroll_changed 豁免 · failed-hit causal verify (P19/P5/P14) · **cross-mode 定量仍禁** (discover-then-freeze, 6-mode 齐前)。
 > - **[历史, R2647 archived] ptext repro (§292)**: archive R19776 ↔ R2647 同 task 群 6 flip 全 model-nondeterm + **B-1860 对 P-text 无副作用**(element-ID 归因后被 §294 纠正)。**durable 产物 = 工具 `scripts/analysis/compare_cross_run_same_condition.py`**(通用 pre/post-fix 跨 run 审计;起始污染判定用 `url_before` 非 `obs_url`)→ 复用于新 run 的 run-to-run sensitivity(§D4 / MoE 残留)。R2647 已 archive(sequential 重跑)→ R2647-specific 复算 **superseded**。
-> - **H1 run-to-run sensitivity — element-ID churn 已消 via sequential (AMENDMENT_07 / B-1862, §295)**: SoM-family 改 deterministic sequential → element-ID churn(§282 dominant 源)**消除**(155-task 实证 sequential 后字节一致;**反转** §293 的 "非 patch element_id")。**残留** = B0 MoE(字节相同输入仍翻 §242)+ fuzzy judge → **AMENDMENT_06 non-gating sensitivity 现覆盖这些残留**(不再覆盖 element-ID)。**still pending**(fire-gated, 独立 namespace `results/repro_replicates/`): replicate-calibrated MC perturbation 量 MoE 残留 floor · self-oracle discordance 脚本 ✅ · **承诺** floor≈effect → hero prose 降级。详 [[phase1_plan]] §D4 + [[paper_planning]] Risk 6 + AMENDMENT_06/07。
+> - **H1 run-to-run sensitivity — element-ID churn 已消 via sequential (AMENDMENT_07 / B-1862, §295)**: SoM-family 改 deterministic sequential → element-ID churn(§282 dominant 源)**消除**(155-task 实证 sequential 后字节一致;**反转** §293 的 "非 patch element_id")。**残留** = B0 MoE(字节相同输入仍翻 §242)+ fuzzy judge → **AMENDMENT_06 non-gating sensitivity 现覆盖这些残留**(不再覆盖 element-ID)。**✅ repro_replicates 落地 (2026-05-26)**: `results/repro_replicates/` 建+填 2 clean replicate (dom `B0_dom_classifieds_R31194_clean_replicate` + vision `..._R24792_...`, DGX+A100, gitignored, README 记 provenance+干净性论证) — **archive dom/vision 本就是干净 replicate**(B-1860 不碰 `make_dom_prompt` + dom 0 坐标动作 · vision archive post-B-1860 · AMENDMENT_07 dom/vision 保 native nodeId · B-1836 eval-fix predates 两 run)→ floor **不用额外起 replicate run**。**dom floor partial @88 task** (fire 推进中): 17.0%→25.0% Δ=+8.0pp McNemar n.s. = {native nodeId churn + MoE} **entangled** (0 reset/start 污染; divergence-step obs modulo-id 字节一致, 工具 `compare_cross_run_same_condition.py`)。**vision floor gated on 当前 fire vision 落地** → 近乎纯 MoE (vision agent=screenshot-only 无 element_id; ≈ SoM-family post-seq floor; cheaper+realer than probe)。self-oracle discordance 脚本 ✅。**仍 pending**: dom 全跑完重跑拿 canonical N · vision floor · replicate-calibrated MC perturbation · **承诺** floor≈effect → hero prose 降级。详 [[phase1_plan]] §D4 + [[paper_planning]] Risk 6 + AMENDMENT_06/07。
 > - ✅ **[DONE 2026-05-25] paper prose sequential reconcile**: section1 hero · section2 axis-1 · section3 §3.5+H3 · paper_planning Risk6 · phase1_plan §D4 全部对齐 AMENDMENT_07(commit `6b3088a`)。
 > - **Pass-2 router (Pass-1 全 36 完后)**: `queue_phase1_router_paper_grade.sh` (H10 learned router, 6 cell × 1 condition, paper §6)。
 > - **cls 18 完 → red 前**: scratch redirect (results→`/mnt/scratch` symlink; 全 36≈25G; 数据落 DGX verify 后做) + prune + launch red 18。详见下 disk 架构 bullet。
