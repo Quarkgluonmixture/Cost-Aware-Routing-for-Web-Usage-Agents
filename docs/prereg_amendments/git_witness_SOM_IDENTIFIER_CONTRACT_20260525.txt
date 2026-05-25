@@ -7,7 +7,11 @@ Code commit SHA (the estimand change): 3a79196 on branch fix-som-sequential-id
 Amendment-doc commit SHA: this file's own commit, the one the git tag points at
   (resolvable post-tag via `git rev-list -1 prereg-amendment-07-som-identifier-contract-20260525`).
 Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
-Pushed to origin with tags: <UTC after push — PENDING user confirmation; push not yet done>
+Pushed to origin/fix-som-sequential-id with tag prereg-amendment-07-som-identifier-contract-20260525:
+  2026-05-25T19:23:58Z (the GitHub push event is the external timestamp anchoring this witness
+  BEFORE any SoM-family re-collection under the sequential-id contract). OSF upload to kv9sf
+  still PENDING user. Tag points at commit fa53018 (the pre-restart witness commit); this
+  timestamp line is recorded in the follow-up commit on the same branch.
 
 Witness primitive = the commit SHAs above (content-addressed, tamper-evident; the commit
 timestamp is hashed into the SHA). The git tag is an immovable named pointer to the witness
