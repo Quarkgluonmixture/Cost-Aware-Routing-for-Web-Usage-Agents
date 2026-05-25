@@ -88,6 +88,8 @@ ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/an
 **路线 (a) rule-based** — 按 task 属性 route。 **路线 (b) learned** — 训练 classifier route (paper-1 §6 = learned-only per v7 amendment)。 **未来扩展** — 按 mode 行为模式 route。
 Routing signal infra ✅: `confidence_summary.json` per-condition。Train/test → 5-fold site-stratified CV。设计 → [[paper_planning#§8]]。
 
+**Cross-mode 失败 taxonomy** (`scripts/analysis/cross_mode_failure_taxonomy.py`, §291) — routing 证据/feature 来源: B0 cls 3-mode 实证 routing 价值 = **列表缩略图识别 (THUMBNAIL) 梯度** dom>som>vision (非纯导航 SEARCH-NAV 小 / 非详情大图 IMG 极小)。**6-mode 数据齐复用** (`--run` 加列, O(mode) 不爆炸) → 定 routable task 类型 → router feature。Open: UNCLEAR-NAV 拆 (需 listing-level obs, ROI 低) + cross-site (red/shop)。⚠️ provisional 3/6 mode, 禁 cross-mode 定量直至 freeze。
+
 > [!todo] Deferred follow-ups — **gated on Pass-1 data landing** (router code 现跑空数据 `n_pooled_total:0`)。详 [[实验笔记]] §255 + [[master_bug_catalog]] B-1805~B-1818。
 > 1. **Pass-1 run manifest** (C2/B-1810) — `results/phantom_paper/l1_router/pass1_run_manifest.json` 36 paper-grade run IDs → `discover_runs` strict whitelist。然后 `aggregate_h10_pareto.py --require-full-coverage` (C8/B-1811) 出 paper-grade H10 verdict (fail-closed on incomplete)。
 > 2. **τ objective sensitivity** (F3/G2 B-1814) — Pass-1 后跑 τ 对比: (a) accuracy-τ vs (b) fixed-τ vs (c) outcome-matrix Pareto-τ; 仅当 (c) 实质移动 frontier 才采用。**不重构 Stage 1-3** (user 2026-05-21)。
