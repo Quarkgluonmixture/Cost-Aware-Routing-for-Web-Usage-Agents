@@ -1156,13 +1156,15 @@ Baseline: random / best-single-mode / rule-based ("if has_ref_image → SoM else
 
 **威胁**: phantom drop-one 效应 = **1.7-3.3pp**。run-to-run σ **未干净测** (dom fresh-vs-stale ~0.4pp; som pair +7pp 但 confounded by R2815-wedge + n=1 + directional)。**若 σ~2-3pp → 效应 ~1× 噪声 → phantom SR-superiority claim 可能是噪声而非真信号**。不可 dismiss。
 
-**Mitigation (结构性保护 + 解决路径)**:
-1. **Pooling √6**: phantom gate = FE inverse-variance pooled across 6 cells → pooled run-to-run 噪声 ≈ σ_cell/√6 → 最坏 σ~2-3pp 缩到 pooled ~1pp → pooled 效应 ~2pp 仍可能过 +1.0pp (z~2)。**per-cell claim 脆, pooled claim 稳** (FE-pooled 选作 primary gate 顺带抗此噪声 — 结构对齐)。
-2. **多腿 (非 all-or-nothing on SR)**: 4-fold drop-in 里 (a) cost≈DOM (确定性, 不吃噪声) / (b) latency~50% / (c) AUROC≥baseline 都 run-to-run-robust; 只 (d) SR drop-one 吃噪声。即便 (d) 受威胁, 三腿仍立。
-3. **Clean replicate (gate-blocking)**: post-fire 跑 2 个健康同-B-1839-regime B0 som → 测真 σ → fold 进 pooled SE 重测 gate。survives → claim 站; 不过 → 诚实 null 或 replicate-for-power (每 condition k× 取平均, 噪声 ÷√k)。
-4. Cross-link: B-1858 (机制 + codex 收敛) · 笔记 §282 · next_steps §4 Repro-replicate · preregistration §4 (run-to-run 作二级方差 fold)。
+**Risk-controlled mitigation (⚠️ incomplete threat assessment until replicate — 措辞修正 per GPT cross-AI 2026-05-25 §293: 主结果出来前这不是"防线 defense"而是**未完成的威胁评估**)**:
+1. **Pooling √6 (approximate dilution, NOT guarantee)**: phantom gate = FE pooled across 6 cells → pooled run-to-run 噪声 ≈ σ_cell/√6 **仅在 cell noise 独立时成立**。**Common-mode 风险 (GPT E.3 §293)**: B0 proxy nondeterminism / VWA element-ID 机制 / runner+parser scaffold / docker substrate **跨站共享** → cell noise 非独立 → √6 是 approximate dilution **非** guarantee。可写 "pooled 比 per-cell 更不脆", 不可写 "pooled is safe"。
+2. **多腿 (非 all-or-nothing on SR)**: = 用户 4-测量-维度 reframe (§293) — Outcome/Macro/Micro/Efficiency 中**只有 Efficiency 结构性 robust**。映射 4-fold: (a) cost≈DOM (确定性, 无图=省 image token, 不吃 success) / (b) latency~50% robust; (c) AUROC 中等 (ranking metric 比 binary 稳); (d) SR drop-one 最脆 (唯一活在 Outcome 层)。**救 phantom 整体故事 (3 稳腿), 救不了 H1 gate (gate=drop-one)**。
+3. **Replicate-calibrated sensitivity (GPT 标准方法, 升级 clean replicate)**: clean replicate 估 per-mode flip rate / discordance matrix → MC perturbation canonical single-run success matrix → 每次重算 H1 strict θ_FE → 报 canonical p / replicate-calibrated θ_FE 分布 / P(θ_FE>1pp) / floor-vs-effect ratio。**witnessed non-gating** (不进 primary, 不替换 canonical label); 不过 → 诚实降级 prose 或 replicate-for-power (÷√k)。
+4. Cross-link: B-1858 · 笔记 §282/§292/**§293** · AMENDMENT_06 (non-gating sensitivity 草稿) · preregistration L96 (task-level bootstrap 漏 run-to-run 确认)。
 
-**Status**: **OPEN** — clean replicate (post-fire) = 决定 phantom SR claim 真伪的前置。**§14 reviewer 必问 "1.7-3.3pp 会不会是 run-to-run 噪声" → 此条 = 答案骨架** (pooling √6 + 多腿 + replicate-confirmed σ)。
+**GPT cross-AI 3 纠正 (§293, 收回我前期 2 处过度乐观 + 1 处概念混淆)**: (i) **H10 非免疫** — 无 H1 的 oracle-max 偏倚, 但 router lucky+baseline unlucky 仍 false Pareto pass; robustness 取决 Pareto margin **cost-driven (稳) vs SR-driven (脆)**; (ii) drop-one 正偏 **非数学必然** — 方向取决 task pool (真-unique 的 noise → drop-one↓; jointly-solvable+all-fail 的 noise → ↑; VWA near-boundary 多 → 担忧 conditional 成立); (iii) self-oracle floor = **instability diagnostic NOT bias estimate** (报 symmetric self_drop 双向+discordance+κ; 两向差大=version/state drift; `compare_cross_run_same_condition.py` 已实现)。**element_id 不 patch** — 破坏 deployment realism (消除的正是真实部署噪声) + 改 substrate=改 estimand (DOI locked) + mode-specific 改变 drop-one; 隔离用 **deterministic local model** 非 patch。
+
+**Status**: **OPEN** — replicate-calibrated sensitivity (post-fire, witnessed non-gating) = 决定 phantom SR claim 真伪的前置。**GPT bottom line**: H1 strict 若只过 1-2pp 且 floor 也 1-2pp+ → 可诚实报 prereg gate pass 但 **hero 措辞必须降级** "P-SoM stable unique task-solving contribution" → "pre-registered single-run oracle evidence, with reproducibility caveat"。**§14 reviewer 必问 "1.7-3.3pp 会不会是噪声" → 此条 = 答案骨架** (pooling √6 [approximate] + Efficiency 3-腿 robust + replicate-calibrated σ + 主动降级承诺)。advisor = post-fire collateral (带实测 floor-vs-effect 对比)。
 
 ---
 

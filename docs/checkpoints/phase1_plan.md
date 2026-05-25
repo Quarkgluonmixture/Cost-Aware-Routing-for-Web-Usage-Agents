@@ -346,6 +346,21 @@ B0 infra prereq ──┘                                                       
 - [ ] decision test verdict JSON
 - [ ] 输出 → paper §1 hero / §4 P-prompt column / §5 Table
 
+### D4. Reproducibility sensitivity layer (§293, GPT cross-AI; witnessed non-gating, DOI-1 锁约束)
+
+> H1 drop-one (hero) 被 run-to-run noise 威胁: prereg bootstrap 是 **task-level** (L96) → 漏 run-to-run 方差 → anti-conservative (偏假阳); H1 strict effect 可能 1-2pp 与 noise floor 同量级。**不加 gate** (DOI 锁); 另设 witnessed non-gating sensitivity 层; 不稳则 prose 主动降级。详 [[paper_planning]] Risk 6 + [[实验笔记]] §293。
+
+- [x] **self-oracle discordance** — `compare_cross_run_same_condition.py` symmetric self_drop 双向 + discordance + κ (diagnostic NOT bias; 两向差大=version/state drift)
+- [ ] **replicate-calibrated sensitivity** (设计待写): per-mode flip rate → MC perturbation canonical success matrix → 重算 θ_FE 分布 + P(θ_FE>1pp) + floor-vs-effect ratio
+- [ ] **replicate runs** (fire-gated, P0=不碰 running fire; 独立 namespace `results/repro_replicates/` 不污染 canonical denominator):
+  - P1 B0 cls/red × P-SoM (hero arm 自身 instability)
+  - P2 + competitors {SoM, P-text, DOM} (false-unique 判定; 含 **H_robust 可证伪: P-SoM discordance ≤ {dom,som,vision}?** → 赢则 phantom robust=正面卖点)
+  - P3 local 4B **deterministic** 隔离 element_id churn vs provider nondeterminism (非 patch upstream — 破坏 realism)
+  - P4 P-SoM-unique challenge set 重跑 (post canonical H1)
+- [ ] **AMENDMENT_06** non-gating sensitivity + H1 prose run-to-run disclosure (框架草稿, 数字 post-replicate)
+- [ ] **prose 降级承诺** (GPT bottom line): H1 strict 若只过 1-2pp 且 floor 1-2pp+ → hero "stable unique contribution" → "single-run oracle evidence with reproducibility caveat"
+- [ ] open: B1/B2 per-baseline floor (4B 对 id token 可能更敏感→cross-family B2) · H10 cost-vs-SR margin check (等 Pass-2) · √6 common-mode (cell noise 非独立 → approximate dilution 非 guarantee)
+
 ---
 
 ## §E 里程碑 (v7 2-pass split 2026-05-16)

@@ -223,6 +223,30 @@ def main() -> None:
     print(f"  unclassified                      : {counts['unclassified']}")
     print(f"  └ (其中 step-0 含 element_id flip 但 decision-harmless: {eid_flip})")
 
+    # self-oracle noise floor — DIAGNOSTIC ONLY, NOT a bias estimate (GPT cross-AI 审稿 2026-05-25, 笔记 §293).
+    # 把两个 run 当"同 mode 两次跑"→ 互为虚假 drop-one (真值应为 0; 任何 >0 = run-to-run 不稳定地板).
+    # GPT 要求报 symmetric: 两向 self_drop 差大 = version/state drift 非纯随机噪声.
+    if n:
+        y1 = {i: bool(a[i].get("success")) for i in common_scored}
+        y2 = {i: bool(c[i].get("success")) for i in common_scored}
+        d12 = sum(1 for i in common_scored if y1[i] and not y2[i])
+        d21 = sum(1 for i in common_scored if y2[i] and not y1[i])
+        disc = d12 + d21
+        agree = n - disc
+        p1, p2 = sum(y1.values()) / n, sum(y2.values()) / n
+        po = agree / n
+        pe = p1 * p2 + (1 - p1) * (1 - p2)
+        kappa = (po - pe) / (1 - pe) if (1 - pe) > 1e-9 else float("nan")
+        print("\n=== self-oracle noise floor (DIAGNOSTIC, NOT bias estimate — GPT 2026-05-25) ===")
+        print("  两 run 当同 mode 两跑 → 互为虚假 drop-one (真值应为 0):")
+        print(f"  self_drop archive->current : {d12}/{n} = {d12 / n * 100:.1f}pp")
+        print(f"  self_drop current->archive : {d21}/{n} = {d21 / n * 100:.1f}pp  (两向差大=version/state drift 非纯随机)")
+        print(f"  discordance P(Y1!=Y2)      : {disc}/{n} = {disc / n * 100:.1f}pp")
+        print(f"  agreement   P(Y1==Y2)      : {agree}/{n} = {agree / n * 100:.1f}pp")
+        print(f"  Cohen kappa                : {kappa:.3f}")
+        print("  ⚠️ instability proxy, NOT H1 drop-one bias correction (same-mode discordance !=")
+        print("     P-SoM-vs-5-competitors false-unique; 小样本/可能混代码版本 = upper-bound risk trigger).")
+
 
 if __name__ == "__main__":
     main()
