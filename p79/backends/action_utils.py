@@ -255,6 +255,145 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     return {"action_type": "wait", "thought": thought}, False, "parse_failed"
 
 
+# ---------------------------------------------------------------------------
+# B-1860: Qwen 0-1000 coordinate contract — single-source normalizer
+# ---------------------------------------------------------------------------
+# Qwen3-VL (B0/B1) natively emits a 0-1000 coordinate system (probe-confirmed
+# 2026-05-24) but sometimes also returns normalized [0,1] (mixed-format probe);
+# Gemma3-VL (B2) probe shows normalized [0,1] (max 1.0). The two model families'
+# numeric ranges do NOT overlap, so a per-dimension BY-VALUE judgment is
+# model-agnostic (no per-model branch needed):
+#   * dimension <= 1.1   → already normalized [0,1]   (scale 1.0, keep as-is)
+#   * 1.1 < dimension <= 1000 → Qwen 0-1000           (scale 1000, divide)
+#   * dimension > 1000   → true out-of-bounds         (scale 1000 applied, but
+#                          NOT clamped — the post-/1000 value stays > 1 so the
+#                          downstream grounding-OOB check / diag can flag it)
+# The 1.1 (not 1.0) threshold is the B-627 tolerance band so a hallucinated
+# normalized boundary `1.0001` stays [0,1] instead of being divided by 1000.
+# Principle: SAVE FORMAT LAYER, NOT GROUNDING LAYER — we recover the numeric
+# encoding (0-1000 → [0,1]) but never snap to a target / nearest element.
+_QWEN_COORD_SCALE = 1000.0
+# Upper edge of the [0,1] normalized regime (B-627 rounding tolerance).
+_NORMALIZED_MAX = 1.1
+# Upper edge of the legal Qwen 0-1000 regime; > this = true OOB (log, no clamp).
+_QWEN_COORD_MAX = 1000.0
+# Dead-zone: a value in (1.1, ~10] is ambiguous — it could be a genuine 0-1000
+# coord near the top-left corner, OR an out-of-[0,1] normalized coord the model
+# fat-fingered (e.g. 1.5 meant as 1.0). B0/B1/B2 probes show NO values in this
+# band, but we tag it for observability so a future model regression surfaces.
+_DEAD_ZONE_HI = 10.0
+
+
+def _coord_dim_regime(value: float) -> Tuple[str, float]:
+    """B-1860: classify a single coordinate dimension by value.
+
+    Returns ``(regime, scale)`` where ``regime`` ∈
+    ``{"normalized", "qwen_0_1000", "true_oob"}`` and ``scale`` is the divisor
+    to apply (1.0 for already-normalized, 1000.0 for 0-1000 / true-OOB). The
+    caller divides ``value / scale`` to obtain the normalized [0,1] coordinate
+    (for true_oob the result stays > 1.0 by construction — no clamp here).
+    """
+    if value <= _NORMALIZED_MAX:
+        return "normalized", 1.0
+    if value <= _QWEN_COORD_MAX:
+        return "qwen_0_1000", _QWEN_COORD_SCALE
+    return "true_oob", _QWEN_COORD_SCALE
+
+
+def normalize_coordinate_pair(
+    coord: Any,
+) -> Tuple[Optional[float], Optional[float], Dict[str, Any]]:
+    """B-1860: single-source coordinate normalizer (model-agnostic, by-value).
+
+    Maps a raw model-emitted ``coord`` pair to normalized [0,1] viewport space,
+    judging EACH dimension independently by value (Qwen 0-1000 vs normalized
+    [0,1]). This is THE one place the per-dimension regime logic lives — the
+    env wrapper (click / type-focus / select_option / hover), the action
+    validator, and the downstream diagnostics all call this so the heuristic
+    cannot drift between layers (pre-B-1860 it was copy-pasted in 6+ spots,
+    each with a slightly different threshold / divisor → the misclick + parse
+    -error 13.6% root cause).
+
+    Returns ``(x_norm, y_norm, tags)``:
+      * ``x_norm, y_norm`` — normalized [0,1] floats, OR ``(None, None)`` when
+        the coord is true-malformed (wrong shape / NaN / inf / non-number /
+        negative / bool component). Malformed is signalled via
+        ``tags["malformed"] is True`` so the validator rejects it as a genuine
+        parse error (NOT a recoverable format mismatch).
+      * ``tags`` — observability dict:
+          ``x_regime`` / ``y_regime`` ∈ {normalized, qwen_0_1000, true_oob}
+          ``x_scale`` / ``y_scale``   — divisor applied (1.0 or 1000.0)
+          ``recovered``  — True iff any dimension needed a 0-1000 → [0,1]
+                           rescale (i.e. format-layer recovery happened)
+          ``true_oob``   — True iff any dimension is > 1000 (grounding-OOB; the
+                           returned norm value stays > 1.0, NOT clamped)
+          ``dead_zone``  — True iff any dimension is in (1.1, 10] (ambiguous;
+                           B0/B1/B2 probes show none — observability only)
+          ``malformed``  — True iff the coord could not be parsed (then the
+                           norm pair is (None, None))
+
+    SAVE FORMAT LAYER, NOT GROUNDING LAYER: this recovers the numeric encoding
+    only; it never snaps to a target / nearest element / clamps a true-OOB
+    value into range.
+    """
+    tags: Dict[str, Any] = {
+        "x_regime": None,
+        "y_regime": None,
+        "x_scale": None,
+        "y_scale": None,
+        "recovered": False,
+        "true_oob": False,
+        "dead_zone": False,
+        "malformed": False,
+    }
+    # --- shape / type guards (true malformed → reject, mirrors validator) ---
+    if not isinstance(coord, (list, tuple)) or len(coord) != 2:
+        tags["malformed"] = True
+        return None, None, tags
+    # B-799: reject bool components BEFORE float coercion (bool is int subclass).
+    if isinstance(coord[0], bool) or isinstance(coord[1], bool):
+        tags["malformed"] = True
+        return None, None, tags
+    try:
+        x = float(coord[0])
+        y = float(coord[1])
+    except (TypeError, ValueError):
+        tags["malformed"] = True
+        return None, None, tags
+    # NaN / inf.
+    if not (x == x) or not (y == y):
+        tags["malformed"] = True
+        return None, None, tags
+    if x in (float("inf"), float("-inf")) or y in (float("inf"), float("-inf")):
+        tags["malformed"] = True
+        return None, None, tags
+    # Negative = grounding-nonsense, not a recoverable format issue → malformed.
+    if x < 0 or y < 0:
+        tags["malformed"] = True
+        return None, None, tags
+
+    # --- per-dimension by-value regime + rescale (format layer only) ---
+    x_regime, x_scale = _coord_dim_regime(x)
+    y_regime, y_scale = _coord_dim_regime(y)
+    x_norm = x / x_scale
+    y_norm = y / y_scale
+    tags["x_regime"] = x_regime
+    tags["y_regime"] = y_regime
+    tags["x_scale"] = x_scale
+    tags["y_scale"] = y_scale
+    tags["recovered"] = x_regime in ("qwen_0_1000", "true_oob") or y_regime in (
+        "qwen_0_1000",
+        "true_oob",
+    )
+    tags["true_oob"] = x_regime == "true_oob" or y_regime == "true_oob"
+    # Dead-zone tag: raw value in (1.1, 10] (always classified qwen_0_1000 above
+    # since <= 1000, but flagged for observability — B0/B1/B2 probes show none).
+    tags["dead_zone"] = (_NORMALIZED_MAX < x <= _DEAD_ZONE_HI) or (
+        _NORMALIZED_MAX < y <= _DEAD_ZONE_HI
+    )
+    return x_norm, y_norm, tags
+
+
 def _is_valid_coordinate_pair(
     coord: Any,
     coordinate_type: Optional[str] = None,
@@ -274,50 +413,52 @@ def _is_valid_coordinate_pair(
     env behavior / no_progress → paper §3.5 error taxonomy contaminated and
     §1 hero number cross-baseline averaging biased.
 
-    Post-fix: when `coordinate_type` is explicitly passed, strictly enforce
-    the declared semantics. `coordinate_type is None` falls back to legacy
-    `allow_pixel` behavior for backward compatibility with callsites that
-    haven't been updated yet (those still get the old permissive check).
+    B-406 post-fix (SUPERSEDED by B-1860): when `coordinate_type` was
+    explicitly passed it strictly enforced the declared semantics (normalized
+    → [0,1]). B-1860 removed that authority — the model's `coordinate_type`
+    declaration is probe-confirmed unreliable (it stamps "normalized" while
+    emitting 0-1000 coords), so the VALUE-RANGE judgment is now delegated to
+    the single-source `normalize_coordinate_pair` (by value, type-label
+    ignored). The `coordinate_type` enum is still SCHEMA-guarded here (a
+    garbage label like "screen" rejects); only the range semantics changed.
+    `allow_pixel` is now vestigial (kept in the signature for call-site
+    backward compat) — the by-value normalizer accepts both regimes
+    regardless of its value.
     """
-    if not isinstance(coord, (list, tuple)):
-        return False
-    if len(coord) != 2:
-        return False
-    # B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17): reject
-    # bool components BEFORE float coercion. Python `bool` is `int` subclass
-    # → `float(True) == 1.0` silently succeeds → coord=[True, False] passed
-    # the legacy shape check, then `x=1.0, y=0.0` slipped through the
-    # normalized [0,1] gate. Cross-baseline action-shape aggregator counted
-    # bool-typed coords as valid clicks at (1,0). Reject early.
-    if isinstance(coord[0], bool) or isinstance(coord[1], bool):
-        return False
-    try:
-        x = float(coord[0])
-        y = float(coord[1])
-    except (TypeError, ValueError):
-        return False
-    # NaN / inf
-    if not (x == x) or not (y == y):
-        return False
-    if x in (float("inf"), float("-inf")) or y in (float("inf"), float("-inf")):
-        return False
     # B-802 (/stress A1.2 cold-start P1-2-B codex non-OOB, 2026-05-17):
     # unknown coordinate_type enum must reject, not silently fall to pixel.
     # Pre-fix `coordinate_type="screen"` / `"css"` / typos passed via the
     # `allow_pixel` legacy fallback path → bogus enum survived into step
     # JSONL audit trail → paper §3.5 schema-taxonomy false expansion. Only
     # the canonical 2 enum members + `None` (legacy unset) are accepted.
-    if coordinate_type is not None and coordinate_type not in ("normalized", "pixel"):
+    # (B-1860 keeps this schema-level enum reject: a garbage type string is
+    # still true-malformed; the normalizer below only governs the per-
+    # dimension VALUE-RANGE judgment, not the type-enum schema.)
+    # B-1860 adds `"qwen_0_1000"` to the accepted enum: `_infer_coordinate_type`
+    # now stamps that label for recovered 0-1000 coords, so a re-validated
+    # action carrying it must not be rejected as a garbage enum.
+    if coordinate_type is not None and coordinate_type not in (
+        "normalized",
+        "pixel",
+        "qwen_0_1000",
+    ):
         return False
-    # B-406: explicit coordinate_type enforcement (new strict path).
-    if coordinate_type == "normalized":
-        return 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0
-    if coordinate_type == "pixel":
-        return x >= 0 and y >= 0
-    # Backward-compat fallback (coordinate_type is None — caller didn't pass).
-    if allow_pixel:
-        return x >= 0 and y >= 0
-    return 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0
+    # B-1860: Qwen 0-1000 contract — delegate shape + value-range judgment to
+    # the single-source `normalize_coordinate_pair` so the validator and the
+    # env wrapper share ONE per-dimension heuristic (no copy-paste drift).
+    # The normalizer judges by value, IGNORING the model's `coordinate_type`
+    # declaration (probe-confirmed unreliable: model stamps "normalized" while
+    # emitting 0-1000 coords). A dimension `> 1.1` is a legal Qwen 0-1000
+    # coordinate (NOT a [0,1] violation); a dimension `<= 1.1` is normalized
+    # [0,1]. Both are valid; only TRUE malformed (NaN / inf / non-number /
+    # wrong shape / bool / NEGATIVE — `tags["malformed"]`) rejects. This
+    # replaces the pre-fix B-406 hard `coordinate_type=="normalized" → [0,1]`
+    # reject that turned 0-1000 coords into parse errors (vision parse_error
+    # 13.6%). A `true_oob` value (> 1000) is NOT rejected here — it is a
+    # grounding miss, not a format error; the downstream diag flags it from
+    # the telemetry tags. Save format layer, NOT grounding layer.
+    _x_norm, _y_norm, _tags = normalize_coordinate_pair(coord)
+    return not _tags["malformed"]
 
 
 def _infer_coordinate_type(coord: Any) -> str:
@@ -332,23 +473,28 @@ def _infer_coordinate_type(coord: Any) -> str:
     audit trail still claimed ``"normalized"`` — paper §3 error-taxonomy
     aggregator and cross-baseline coord-failure analysis were mislabeled.
 
-    Inference rule (cheap, no env access):
-      - any coord component > 1.0  → ``"pixel"`` (large absolute values
-        cannot be inside [0,1] normalized space)
-      - all components ≤ 1.0       → ``"normalized"`` (canonical default)
+    B-1860 relabel: a coord component ``> 1.1`` is now labeled
+    ``"qwen_0_1000"`` (NOT ``"pixel"``) — the diagnosed root cause is that
+    Qwen3-VL emits a 0-1000 coordinate system, NOT viewport pixels. Stamping
+    ``"pixel"`` was the mislabel that (pre-fix) routed the value through the
+    viewport-division path. The label is derived from the single-source
+    ``normalize_coordinate_pair`` tags so the taxonomy can never disagree with
+    the actual normalization the wrapper applies.
+
+    Label rule (from normalize tags):
+      - any dimension regime is ``qwen_0_1000`` / ``true_oob`` → ``"qwen_0_1000"``
+      - both dimensions ``normalized``                          → ``"normalized"``
 
     The caller is responsible for already validating the coord shape via
-    ``_is_valid_coordinate_pair``; this helper assumes positive finite
-    floats and just picks a label. Returns the inferred type string.
+    ``_is_valid_coordinate_pair``; this helper assumes a non-malformed pair
+    and just picks a label. Returns the inferred type string.
     """
-    try:
-        x = float(coord[0])
-        y = float(coord[1])
-    except (TypeError, ValueError, IndexError):
+    _x, _y, tags = normalize_coordinate_pair(coord)
+    if tags["malformed"]:
         # Defensive fallback — should never happen after _is_valid_coordinate_pair.
         return "normalized"
-    if x > 1.0 or y > 1.0:
-        return "pixel"
+    if tags["recovered"]:
+        return "qwen_0_1000"
     return "normalized"
 
 

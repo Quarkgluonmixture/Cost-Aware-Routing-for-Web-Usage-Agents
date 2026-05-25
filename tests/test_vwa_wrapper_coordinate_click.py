@@ -46,6 +46,12 @@ def test_coordinate_click_with_integer_values_stays_mouse_click(monkeypatch):
 
     assert "id_action" not in captured
     assert captured["env_action"]["kind"] == "mouse"
-    assert captured["mouse_click"] == (0.1, 0.4)
+    # B-1860: Qwen 0-1000 contract. Both 100 and 200 are > 1.1 → treated as
+    # Qwen 0-1000 coords → divided by 1000.0 (NOT by viewport). So
+    # 100/1000=0.1, 200/1000=0.2. Pre-B-1860 this divided by viewport
+    # (100/1000=0.1, 200/500=0.4) — the misclick root cause: a 0-1000 value
+    # got mapped to the wrong fractional position. viewport_height=500 here
+    # (deliberately != width) proves the divisor is 1000, not the viewport.
+    assert captured["mouse_click"] == (0.1, 0.2)
     assert info["raw_action"]["kind"] == "mouse"
 

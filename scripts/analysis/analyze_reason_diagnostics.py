@@ -194,6 +194,11 @@ def _read_json(path: Path) -> Dict[str, Any]:
 
 
 from p79.experiment.io_utils import read_jsonl_dedup as _read_jsonl
+# B-1860: single-source coordinate normalizer — the pixel_coordinate_leak
+# detector below must judge a coord through the SAME Qwen 0-1000 contract the
+# runner applies (a canonical 0-1000 coord is NOT a "pixel leak"; only a coord
+# still outside [0,1] AFTER normalization is a true grounding leak).
+from p79.backends.action_utils import normalize_coordinate_pair as _normalize_coordinate_pair
 
 
 def _sort_steps_by_idx(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -1392,6 +1397,11 @@ def _compute_action_execution_stats(steps: List[Dict[str, Any]]) -> Dict[str, An
     parse_error_count = 0
     page_changed_count = 0
     pixel_coordinate_leak = False
+    # V-F3 (B-1860 codex verify P2, 2026-05-24): aggregate counter giving the
+    # dead_zone tag a read path (raw dimension in (1.1, 10] — ambiguous 0-1000
+    # near-corner vs out-of-[0,1] normalized; probes show none → a nonzero
+    # count is a model-regression signal worth surfacing).
+    coord_dead_zone_count = 0
     consecutive_fail = 0
     max_consecutive_fail_streak = 0
 
@@ -1427,13 +1437,29 @@ def _compute_action_execution_stats(steps: List[Dict[str, Any]]) -> Dict[str, An
 
         coord = act.get("coordinate")
         if isinstance(coord, (list, tuple)) and len(coord) >= 2:
-            # Normalized coords live in [0, 1]; anything outside that range
-            # (incl. negatives) indicates the model leaked pixel coordinates.
-            if any(
-                isinstance(c, (int, float)) and (c > 1.0 or c < 0.0)
-                for c in coord[:2]
-            ):
-                pixel_coordinate_leak = True
+            # B-1860: normalize through the Qwen 0-1000 contract FIRST. A
+            # canonical 0-1000 coord (e.g. [598, 125]) is the runner's accepted
+            # format — NOT a pixel leak. Only a coord still outside [0,1] AFTER
+            # normalization (raw > 1000 → true_oob, or raw < 0) is a genuine
+            # leak. Pre-B-1860 this hard-checked `c > 1.0` → flagged EVERY
+            # 0-1000 coord as a "pixel leak" (the same mislabel as the parse
+            # -error 13.6% root cause). Malformed coords are not leaks (other
+            # detectors handle them).
+            if isinstance(coord[0], (int, float)) and isinstance(coord[1], (int, float)):
+                # V-F2 (B-1860 codex verify P1): a raw negative coord is a
+                # genuine off-page leak; the normalizer tags it `malformed` so
+                # the post-normalize OOB test never sees it. Flag it explicitly
+                # (bool excluded — bool is an int subclass).
+                _c0_neg = not isinstance(coord[0], bool) and coord[0] < 0
+                _c1_neg = not isinstance(coord[1], bool) and coord[1] < 0
+                _x_n, _y_n, _tags = _normalize_coordinate_pair([coord[0], coord[1]])
+                if _c0_neg or _c1_neg or (not _tags["malformed"] and (
+                    _x_n > 1.0 or _x_n < 0.0 or _y_n > 1.0 or _y_n < 0.0
+                )):
+                    pixel_coordinate_leak = True
+                # V-F3 (B-1860 codex verify P2): consume the dead_zone tag.
+                if not _tags["malformed"] and _tags.get("dead_zone"):
+                    coord_dead_zone_count += 1
 
     total_steps = len(steps)
     return {
@@ -1449,6 +1475,7 @@ def _compute_action_execution_stats(steps: List[Dict[str, Any]]) -> Dict[str, An
         "ax_page_change_rate": round(page_changed_count / total_steps, 4) if total_steps else 0.0,
         "ax_max_consecutive_fail_streak": max_consecutive_fail_streak,
         "ax_pixel_coordinate_leak": pixel_coordinate_leak,
+        "ax_coord_dead_zone_count": coord_dead_zone_count,
     }
 
 

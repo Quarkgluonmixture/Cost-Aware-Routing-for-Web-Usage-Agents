@@ -105,15 +105,25 @@ _WEB_ACTION_TOOL = {
     "function": {
         "name": "web_action",
         "description": (
+            # B-1860: mode-neutral element_id/coordinate prose. The prior text
+            # said click/type/hover/select_option "MUST provide element_id",
+            # which contradicts vision mode (no Accessibility Tree → the vision
+            # prompt instructs "DO NOT use element_id, use coordinates"). The
+            # schema's if/then anyOf already accepts coordinate-only, but the
+            # prose was mode-blind and could push the model to hallucinate an
+            # element_id in vision mode. Now: prefer element_id WHEN AVAILABLE;
+            # in vision / no-ID modes provide a coordinate instead.
             "Execute a web navigation action on the current page. Call this tool "
             "with your chosen action for every step. RULES (match the text protocol "
             "shared with the other baselines): for click / type / hover / "
-            "select_option you MUST provide `element_id` (the numeric [N] id from "
-            "the Accessibility Tree); ALWAYS prefer `element_id` over `coordinate` "
-            "(coordinate is a last resort only). Use `type` (not `click`) to enter "
-            "text into an input field; `click` is for buttons/links/navigation. "
-            "`url` is ONLY for the goto action. Do NOT mix fields from different "
-            "actions (e.g. never put `url` on a type action)."
+            "select_option, provide `element_id` (the numeric [N] id from the "
+            "Accessibility Tree / SOM marks) WHEN it is available, and always "
+            "prefer `element_id` over `coordinate`; in vision / no-ID modes (no "
+            "element IDs are shown) provide a `coordinate` instead. Use `type` "
+            "(not `click`) to enter text into an input field; `click` is for "
+            "buttons/links/navigation. `url` is ONLY for the goto action. Do NOT "
+            "mix fields from different actions (e.g. never put `url` on a type "
+            "action)."
         ),
         "parameters": {
             "type": "object",
@@ -142,10 +152,15 @@ _WEB_ACTION_TOOL = {
                 "element_id": {
                     "type": "integer",
                     "description": (
+                        # B-1860: mode-neutral (was "REQUIRED ... do NOT guess
+                        # coordinates"). element_id is only available in modes
+                        # that show an Accessibility Tree / SOM marks; vision
+                        # mode has none and must use `coordinate`.
                         "Numeric [N] element ID from the Accessibility Tree / SOM "
-                        "marks. REQUIRED for click / type / hover / select_option — "
-                        "ALWAYS specify it to target the correct element; do NOT "
-                        "omit it and do NOT guess coordinates for these actions."
+                        "marks. PREFERRED for click / type / hover / select_option "
+                        "WHEN element IDs are available — specify it to target the "
+                        "correct element. In vision / no-ID modes (no element IDs "
+                        "shown), omit it and use `coordinate` instead."
                     ),
                 },
                 "coordinate": {
@@ -154,16 +169,20 @@ _WEB_ACTION_TOOL = {
                     "minItems": 2,
                     "maxItems": 2,
                     "description": (
-                        "Normalized [x, y] coordinates (0.0-1.0). LAST RESORT only "
-                        "— use ONLY when the target has no element_id; always prefer "
-                        "element_id."
+                        # B-1860: Qwen 0-1000 contract (was "Normalized 0.0-1.0").
+                        "[x, y] coordinates in a 0-1000 system ([0,0]=top-left, "
+                        "[1000,1000]=bottom-right). LAST RESORT only — use ONLY "
+                        "when the target has no element_id; always prefer element_id."
                     ),
                 },
                 "text": {
                     "type": "string",
                     "description": (
-                        "Text to type (for the type action; also requires "
-                        "element_id). Append \\n to submit."
+                        # B-1860: mode-neutral target (was "also requires
+                        # element_id"). A vision-mode type targets a coordinate.
+                        "Text to type (for the type action; also provide the "
+                        "target — `element_id` when available, else `coordinate` "
+                        "in vision mode). Append \\n to submit."
                     ),
                 },
                 "scroll_direction": {

@@ -142,6 +142,9 @@ CRITICAL:
 
 
 def make_som_prompt() -> str:
+    # B-1860: Qwen 0-1000 contract. The rare coordinate FALLBACK example below
+    # (element_id is preferred in SoM mode) uses the 0-1000 system and drops the
+    # `coordinate_type` field, consistent with the vision prompt + env wrapper.
     return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.
 
@@ -179,8 +182,8 @@ Response Format (JSON):
 Action Schema:
 1. Click by element_id (preferred): {"action_type": "click", "element_id": N}
    - N is from [SOM_MARKS], e.g. [id=175] link 'Comments' -> element_id: 175.
-2. Click by coordinate (fallback): {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
-   - x, y are floats 0.0–1.0. Use only when no element_id is available.
+2. Click by coordinate (fallback): {"action_type": "click", "coordinate": [x, y]}
+   - x, y are integers in the 0-1000 coordinate system ([0,0]=top-left, [1000,1000]=bottom-right). Use only when no element_id is available.
 3. Type: {"action_type": "type", "text": "string", "element_id": N}
    - This action automatically clicks the target to focus it, then types the text.
    - ALWAYS use "type" (not "click") when you want to enter text into an input field.
@@ -268,11 +271,17 @@ def build_mode_prompt_dispatch_table() -> Dict[str, str]:
 
 
 def make_vision_prompt() -> str:
+    # B-1860: Qwen 0-1000 contract. The coordinate instruction + action-schema
+    # examples below use a 0-1000 system (Qwen3-VL native) and DROP the
+    # `coordinate_type` field (probe-confirmed unreliable; the env wrapper now
+    # auto-judges each dimension by value: <=1.1 normalized / >1.1 /1000). The
+    # prior "normalized 0.0-1.0" instruction + "coordinate_type":"normalized"
+    # examples drove the vision parse_error 13.6% / 48%-episode cap-kill.
     return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.
 
 You receive only a raw screenshot of the current page. No element IDs are available.
-Use normalized coordinates (x, y as floats 0.0–1.0, origin top-left) to interact.
+Use a 0-1000 coordinate system: [0,0]=top-left, [1000,1000]=bottom-right.
 
 Core Rules:
 1) Do NOT answer or finish immediately. You MUST navigate to find the item.
@@ -297,9 +306,9 @@ Response Format (JSON):
 "confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
 
 Action Schema:
-1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
-   - x, y are floats 0.0–1.0. Estimate the center of the target element in the screenshot.
-2. Type: {"action_type": "type", "text": "string", "coordinate": [x, y], "coordinate_type": "normalized"}
+1. Click: {"action_type": "click", "coordinate": [x, y]}
+   - x, y are integers in the 0-1000 coordinate system. Estimate the center of the target element in the screenshot.
+2. Type: {"action_type": "type", "text": "string", "coordinate": [x, y]}
    - This action automatically clicks the target coordinate to focus it, then types the text.
    - ALWAYS use "type" (not "click") when you want to enter text into an input field.
    - "click" is for buttons, links, and navigation only — it cannot enter text.
@@ -316,7 +325,7 @@ Action Schema:
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 8. Tab focus: {"action_type": "tab_focus", "page_number": int}
 9. Other navigation (rarely needed — prefer the actions above):
-   - Hover: {"action_type": "hover", "coordinate": [x, y], "coordinate_type": "normalized"}
+   - Hover: {"action_type": "hover", "coordinate": [x, y]}
    - Press a key combo: {"action_type": "press", "key": "Ctrl+Enter"}
    - New tab / Close tab: {"action_type": "new_tab"} / {"action_type": "close_tab"}
    - Goto URL: {"action_type": "goto", "url": "http://..."} — ONLY URLs on the task's own websites (a relative path like "/page" on the current site also works); off-site URLs are ignored.

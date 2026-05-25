@@ -50,11 +50,21 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # validated against vision / phantom modes.
 # Cross-mode quantitative comparison remains FORBIDDEN until 6-mode freeze.
 #
+# B-1860 (2026-05-24): check_p1 vision-coord branch now normalizes through the
+# Qwen 0-1000 contract (`normalize_coordinate_pair`) BEFORE the OOB test, so a
+# canonical 0-1000 coord is no longer false-flagged. This is a CORRECTNESS edit
+# to an existing rule (not a new discover), but per the bump-on-any-ALL_RULES-
+# change contract the version is bumped to make the content change auditable.
+# NOTE: no vision-mode condition has been Tier-2 discovered yet, so this fix is
+# forward-looking — P1 vision had ZERO real inputs in the dom+som corpus, so
+# re-scanning the existing dom/som digests is a no-op for P1 (their bbox branch
+# is unchanged). Re-scan is still advised before any vision diag.
+#
 # ⚠️ SYNC: `.claude/skills/diag/SKILL.md` is gitignored (no CI guard) — when bumping
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "3-domsom"
+RULESET_VERSION = "3-domsom-b1860coord"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -83,6 +93,15 @@ class EpisodeDiagnosis:
 # ---------------------------------------------------------------------------
 
 VIEWPORT_W, VIEWPORT_H = 1280, 720
+
+# B-1860: single-source coordinate normalizer. P1 (coord-OOB) must judge a
+# vision coord through the SAME Qwen-0-1000 contract the runner applies, so a
+# canonical 0-1000 coord (e.g. [598, 125]) is NOT false-flagged as out-of-[0,1]
+# — only a coord that is STILL > 1 / < 0 AFTER normalization is a true OOB.
+try:
+    from p79.backends.action_utils import normalize_coordinate_pair as _normalize_coordinate_pair
+except Exception:  # pragma: no cover - script may run without p79 on PYTHONPATH
+    _normalize_coordinate_pair = None
 
 US_STATES = {
     "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
@@ -251,10 +270,51 @@ def check_p1(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> Li
         if mode == "vision":
             coord = s.get("action", {}).get("coordinate")
             if coord and len(coord) >= 2:
-                if coord[1] > 1.0 or coord[1] < 0.0 or coord[0] > 1.0 or coord[0] < 0.0:
+                # B-1860: normalize through the Qwen-0-1000 contract BEFORE the
+                # OOB check. A canonical 0-1000 coord (e.g. [598, 125]) is the
+                # runner's accepted format, NOT an OOB — only a coord that is
+                # STILL outside [0,1] after normalization (i.e. raw > 1000 →
+                # true_oob, or raw < 0) is a genuine grounding miss. Pre-B-1860
+                # this rule hard-checked `coord > 1.0` → false-flagged every
+                # 0-1000 vision coord as OOB (the parse_error 13.6% mislabel).
+                x_oob = y_oob = False
+                x_raw, y_raw = coord[0], coord[1]
+                # V-F2 (B-1860 codex verify P1, 2026-05-24): a raw negative
+                # dimension points off the top/left of the page — a genuine
+                # grounding miss (the comment above promised "raw < 0 → OOB").
+                # The normalizer tags negatives `malformed`; pre-fix the
+                # `malformed → continue` below SWALLOWED them, under-counting
+                # coord failures. Flag negative as OOB explicitly, BEFORE the
+                # malformed skip. (bool excluded — bool is an int subclass.)
+                _x_num = isinstance(x_raw, (int, float)) and not isinstance(x_raw, bool)
+                _y_num = isinstance(y_raw, (int, float)) and not isinstance(y_raw, bool)
+                if (_x_num and x_raw < 0) or (_y_num and y_raw < 0):
                     hits.append(PatternHit(
                         "P1", "元素中心越界", s["step_idx"],
-                        f"Vision coord ({coord[0]:.3f}, {coord[1]:.3f}) outside [0,1]",
+                        f"Vision coord raw ({x_raw}, {y_raw}) has a negative "
+                        f"dimension — off-page grounding miss (true OOB)",
+                        is_scaffold=False,
+                    ))
+                    continue
+                if _normalize_coordinate_pair is not None:
+                    x_n, y_n, _tags = _normalize_coordinate_pair([x_raw, y_raw])
+                    if _tags["malformed"]:
+                        # Non-negative malformed (NaN/inf/shape) — other rules.
+                        continue
+                    x_oob = x_n > 1.0 or x_n < 0.0
+                    y_oob = y_n > 1.0 or y_n < 0.0
+                else:
+                    # Fallback (p79 not importable): inline the by-value contract
+                    # (`> 1.1` → /1000) so the rule still does the right thing.
+                    x_n = x_raw / 1000.0 if x_raw > 1.1 else x_raw
+                    y_n = y_raw / 1000.0 if y_raw > 1.1 else y_raw
+                    x_oob = x_n > 1.0 or x_n < 0.0
+                    y_oob = y_n > 1.0 or y_n < 0.0
+                if x_oob or y_oob:
+                    hits.append(PatternHit(
+                        "P1", "元素中心越界", s["step_idx"],
+                        f"Vision coord raw ({x_raw}, {y_raw}) → norm "
+                        f"({x_n:.3f}, {y_n:.3f}) outside [0,1] (true OOB)",
                         is_scaffold=False,
                     ))
         else:  # dom / som

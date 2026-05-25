@@ -15,6 +15,13 @@ except Exception:  # pragma: no cover - optional runtime dependency
 from PIL import Image
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+# B-1860: single-source coordinate normalizer (Qwen 0-1000 contract). All
+# coord sites below (click / type-focus / select_option / hover) call this so
+# the per-dimension 0-1000↔[0,1] heuristic lives in ONE place (action_utils),
+# never copy-pasted across the wrapper. action_utils is a stdlib-only leaf
+# module → no circular import.
+from p79.backends.action_utils import normalize_coordinate_pair
+
 # B-422 (/stress A1.3 v9 Mode A P1-11, 2026-05-17): named injection
 # distance thresholds. Pre-fix `_inject_css_dropdown_options` used 150 px
 # inline and `_inject_select_options` used 100 px inline — same primitive
@@ -25,6 +32,34 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 # intent visible; touching one is now a single-line edit.
 _INJECT_DISTANCE_CSS_DROPDOWN_PX = 150
 _INJECT_DISTANCE_NATIVE_SELECT_PX = 100
+
+
+def _log_coord_normalization(tags: Dict[str, Any], context: str, raw_coord: Any) -> None:
+    """B-1860: surface noteworthy coordinate-normalization events to the runner
+    log (the full per-dimension tags also land in the step JSONL telemetry).
+
+    Two events are worth a log line so a model regression is observable WITHOUT
+    re-parsing every step record:
+      * ``true_oob`` — a dimension > 1000 (after /1000 still > 1.0). We do NOT
+        silently clamp the encoding away (the eps-clamp downstream only keeps
+        the click inside the viewport); this is a grounding miss, logged at
+        WARNING so it stands out.
+      * ``dead_zone`` — a raw value in (1.1, 10], ambiguous between a genuine
+        near-corner 0-1000 coord and a fat-fingered out-of-[0,1] normalized
+        coord. B0/B1/B2 probes show NONE; logged at DEBUG for observability.
+    """
+    if tags.get("true_oob"):
+        logger.warning(
+            "B-1860 coord true_oob (%s): raw=%r regimes=(%s,%s) — grounding "
+            "miss, NOT format-clamped",
+            context, raw_coord, tags.get("x_regime"), tags.get("y_regime"),
+        )
+    elif tags.get("dead_zone"):
+        logger.debug(
+            "B-1860 coord dead_zone (%s): raw=%r in (1.1,10] — ambiguous "
+            "0-1000 vs out-of-[0,1] normalized (probes show none)",
+            context, raw_coord,
+        )
 
 
 @dataclass
@@ -598,42 +633,66 @@ class VWAWrapper:
             ):
                 coord = None
             if coord is not None:
-                left = float(coord[0])
-                top = float(coord[1])
-                # Accept either normalized [0-1] or pixel coordinates.
-                # Normalize each dimension independently to handle mixed formats
-                # (e.g. [0.26, 330] where x is normalized but y is pixel).
-                # /stress A1.18-re (B-627 P2-9-C* Gemini OOB, 2026-05-17):
-                # threshold bumped from > 1.0 to > 1.1 so that a hallucinated
-                # `1.0001` coord (intended as normalized boundary 1.0) is NOT
-                # mis-classified as pixel and divided by 1280, which would have
-                # snapped the click to ~0px (far-left edge). Tolerance band of
-                # 0.1 absorbs typical float rounding while preserving the
-                # pixel-coord heuristic.
-                if left > 1.1:
-                    left = left / float(self.viewport_width)
-                if top > 1.1:
-                    top = top / float(self.viewport_height)
-                # Avoid 0.0 which triggers VWA create_mouse_click_action validation
-                eps = 1e-6
-                if left <= 0.0:
-                    left = eps
-                elif left >= 1.0:
-                    left = 1.0 - eps
-                if top <= 0.0:
-                    top = eps
-                elif top >= 1.0:
-                    top = 1.0 - eps
-                action = create_mouse_click_action(left=left, top=top)
-                # B-553 (/stress A1.5 P1-3-AB* Claude+codex OOB, 2026-05-17):
-                # vision-mode coord-click. No locator dispatch — direct
-                # framework pixel-click. Recorded so reviewer can confirm
-                # vision-mode B0/B1/B2 all take same code path.
-                _action_executed = {
-                    "action_type": "click",
-                    "dispatch_path": "coord_mouse_click",
-                    "fallback": False,
-                }
+                # B-1860: Qwen 0-1000 contract via single-source normalizer.
+                # Qwen3-VL natively emits a 0-1000 coordinate system (probe-
+                # confirmed B0 + B1 2026-05-24); it also sometimes returns
+                # normalized [0,1] (mixed-format probe). The normalizer judges
+                # each dimension by value (`<= 1.1` kept / `> 1.1` divided by
+                # 1000.0 — NOT viewport, which was the misclick root cause: a
+                # 0-1000 value e.g. 728 / 1280 → 0.57 instead of 0.728) and
+                # returns telemetry tags (regime / recovered / true_oob) so the
+                # witness can quantify recovery rate. Format normalization only
+                # — NO target snapping / element nearest-correction.
+                left, top, _coord_tags = normalize_coordinate_pair(coord)
+                _log_coord_normalization(_coord_tags, "click", coord)
+                if _coord_tags["malformed"]:
+                    # B-1860: defensive — the runner's validate_action already
+                    # converts a malformed coord to {"action_type":"wait"}
+                    # before env.step, so this branch is unreachable in the
+                    # normal flow; guard anyway so a direct/edge caller can't
+                    # crash on (None, None).
+                    action = None
+                elif _coord_tags["true_oob"]:
+                    # V-F1 (B-1860 codex verify P1, 2026-05-24): a true_oob
+                    # coord (a dimension > 1000 → after /1000 still > 1.0) is a
+                    # GROUNDING miss, not a recoverable format. Pre-fix the
+                    # eps-clamp in the else-branch mapped it onto the viewport
+                    # edge and STILL ran create_mouse_click_action → a real
+                    # corner-click that mutates page state (cart / nav) and
+                    # contaminates the paper-grade episode. Fail-closed: no-op
+                    # + telemetry so diag counts true_oob separately from parse
+                    # errors and from executed clicks. NOT clamped.
+                    action = create_none_action()
+                    _action_executed = {
+                        "action_type": "click",
+                        "dispatch_path": "coord_true_oob_noop",
+                        "fallback": True,
+                        "coordinate_normalization": _coord_tags,
+                    }
+                else:
+                    # Avoid 0.0 which triggers VWA create_mouse_click_action validation
+                    eps = 1e-6
+                    if left <= 0.0:
+                        left = eps
+                    elif left >= 1.0:
+                        left = 1.0 - eps
+                    if top <= 0.0:
+                        top = eps
+                    elif top >= 1.0:
+                        top = 1.0 - eps
+                    action = create_mouse_click_action(left=left, top=top)
+                    # B-553 (/stress A1.5 P1-3-AB* Claude+codex OOB, 2026-05-17):
+                    # vision-mode coord-click. No locator dispatch — direct
+                    # framework pixel-click. Recorded so reviewer can confirm
+                    # vision-mode B0/B1/B2 all take same code path.
+                    _action_executed = {
+                        "action_type": "click",
+                        "dispatch_path": "coord_mouse_click",
+                        "fallback": False,
+                        # B-1860: coord normalization telemetry (per-dimension
+                        # regime + whether a 0-1000→[0,1] rescale was applied).
+                        "coordinate_normalization": _coord_tags,
+                    }
             else:
                 action = None
         elif action_type == "scroll" and ("delta" in action_json or "scroll_direction" in action_json):
@@ -681,15 +740,37 @@ class VWAWrapper:
             # Fallback to original direct-click + keyboard.type path if
             # walk-up fails (preserves backward-compat on edge cases).
             coord = action_json.get("coordinate")
-            if coord is not None and isinstance(coord, (list, tuple)) and len(coord) == 2:
-                left = float(coord[0])
-                top = float(coord[1])
-                # /stress A1.18-re (B-627 sibling P2-9-C* Gemini OOB,
-                # 2026-05-17): same threshold bump as click path above.
-                if left > 1.1:
-                    left = left / float(self.viewport_width)
-                if top > 1.1:
-                    top = top / float(self.viewport_height)
+            # B-1860: Qwen 0-1000 contract via single-source normalizer
+            # (type/vision focus-click coord). Same per-dimension by-value
+            # judge as the click path (`<= 1.1` kept / `> 1.1` /1000.0, NOT
+            # viewport — viewport division was the misclick root cause).
+            # Telemetry tags stamped into both _action_executed branches.
+            # Malformed (None,None) is gated by the `not malformed` guard — the
+            # runner's validate_action already filters those upstream; this is
+            # defensive for direct/edge callers.
+            _norm_left, _norm_top, _coord_tags = normalize_coordinate_pair(coord)
+            _log_coord_normalization(_coord_tags, "type_focus", coord)
+            if _coord_tags["malformed"]:
+                # B-1860: malformed coord (None,None) — validate_action filters
+                # these upstream; defensive fallback to a coord-less keyboard
+                # type into the current focus (preserves the behavior of the
+                # pre-V-F1 `else` branch that this if-branch replaced).
+                action = create_keyboard_type_action(action_json["text"])
+            elif _coord_tags["true_oob"]:
+                # V-F1 (B-1860 codex verify P1, 2026-05-24): true_oob grounding
+                # miss → fail-closed no-op. Pre-fix the else-branch clamped to
+                # the viewport edge and focus-clicked there (a real click that
+                # can blur the page / type into the wrong field). Telemetry for
+                # diag. NOT clamped.
+                action = create_none_action()
+                _action_executed = {
+                    "action_type": "type",
+                    "dispatch_path": "coord_true_oob_noop",
+                    "fallback": True,
+                    "coordinate_normalization": _coord_tags,
+                }
+            else:
+                left, top = _norm_left, _norm_top
                 eps = 1e-6
                 left = max(eps, min(1.0 - eps, left))
                 top = max(eps, min(1.0 - eps, top))
@@ -717,6 +798,8 @@ class VWAWrapper:
                         "action_type": "type",
                         "dispatch_path": "coord_locator_route",
                         "fallback": False,
+                        # B-1860: coord normalization telemetry.
+                        "coordinate_normalization": _coord_tags,
                     }
                 else:
                     # Walk-up failed → fall back to legacy direct-click + keyboard.type
@@ -732,6 +815,8 @@ class VWAWrapper:
                         "action_type": "type",
                         "dispatch_path": "coord_keyboard_fallback",
                         "fallback": True,
+                        # B-1860: coord normalization telemetry.
+                        "coordinate_normalization": _coord_tags,
                     }
                     self._env.page.mouse.click(_cx_px, _cy_px)
                     _wait_ms = int(self.sleep_after_execution * 1000)
@@ -752,8 +837,6 @@ class VWAWrapper:
                         self._env.page.keyboard.press("Control+a")
                         self._env.page.keyboard.press("Backspace")
                     action = create_keyboard_type_action(action_json["text"])
-            else:
-                action = create_keyboard_type_action(action_json["text"])
         elif action_type == "type" and "text" in action_json and "element_id" in action_json:
             # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*, 2026-05-17): defense-
             # in-depth removal of the legacy `<=0` → keyboard fallback path.
@@ -1069,9 +1152,43 @@ class VWAWrapper:
                 # Vision 路径：通过坐标找元素，用 JS 设置选中值
                 try:
                     coord = action_json["coordinate"]
-                    x_norm, y_norm = float(coord[0]), float(coord[1])
-                    x_px = x_norm * self.viewport_width if x_norm <= 1.0 else x_norm
-                    y_px = y_norm * self.viewport_height if y_norm <= 1.0 else y_norm
+                    # B-1860: Qwen 0-1000 contract via single-source normalizer
+                    # (select_option coord, vision mode). The normalizer maps
+                    # each dimension to [0,1] (`<= 1.1` kept / `> 1.1` /1000.0);
+                    # we then multiply by viewport to get px. Pre-fix this site
+                    # treated `> 1.0` as already-pixel (raw passthrough) which
+                    # mis-placed a 0-1000 coord (e.g. 728 → 728px not 0.728*W).
+                    x_norm, y_norm, _coord_tags = normalize_coordinate_pair(coord)
+                    _log_coord_normalization(_coord_tags, "select_option", coord)
+                    # B-1860: coord normalization telemetry (select_option path).
+                    _select_option_meta["coordinate_normalization"] = _coord_tags
+                    if _coord_tags["malformed"]:
+                        # Defensive — validate_action filters malformed coords
+                        # upstream; surface a clear error if a direct caller
+                        # reaches here with (None, None).
+                        raise ValueError("malformed select_option coordinate")
+                    if _coord_tags["true_oob"]:
+                        # V-F1 (B-1860 codex verify P1, 2026-05-24): true_oob
+                        # grounding miss → fail-closed no-op. Mark dispatch +
+                        # raise to skip the elementFromPoint JS below (at the
+                        # clamped viewport edge it can resolve + mutate a wrong
+                        # SELECT). The except clause stamps the error but does
+                        # NOT touch dispatch_path, so coord_true_oob_noop
+                        # survives. action falls through to create_none_action.
+                        _select_option_meta["dispatch_path"] = "coord_true_oob_noop"
+                        raise ValueError("coord_true_oob")
+                    # B-1860 item 6: eps-clamp in normalized space (the click /
+                    # type / hover coord paths all clamp to [eps, 1-eps]; this
+                    # site previously did NOT, so a [1000,1000] coord → exactly
+                    # (W, H) px = the viewport bottom-right corner, where
+                    # elementFromPoint can return null / a wrong element).
+                    # Clamping before the viewport multiply keeps px strictly
+                    # inside the viewport. Format normalization only.
+                    eps = 1e-6
+                    x_norm = max(eps, min(1.0 - eps, x_norm))
+                    y_norm = max(eps, min(1.0 - eps, y_norm))
+                    x_px = x_norm * self.viewport_width
+                    y_px = y_norm * self.viewport_height
                     # B-481: structured JS return mirrors element_id path above.
                     # B-511 (/stress A1.25 GRL Chunk 3 P1-4-B*, 2026-05-17):
                     # coord path now accepts `idx` arg symmetric with
@@ -1209,23 +1326,47 @@ class VWAWrapper:
                 and _hover_coord[0] is not None
                 and _hover_coord[1] is not None
             ):
-                left = float(_hover_coord[0])
-                top = float(_hover_coord[1])
-                if left > 1.1:
-                    left = left / float(self.viewport_width)
-                if top > 1.1:
-                    top = top / float(self.viewport_height)
-                eps = 1e-6
-                if left <= 0.0:
-                    left = eps
-                elif left >= 1.0:
-                    left = 1.0 - eps
-                if top <= 0.0:
-                    top = eps
-                elif top >= 1.0:
-                    top = 1.0 - eps
-                action = create_mouse_hover_action(left=left, top=top)
-                _action_executed = {"action_type": "hover", "dispatch_path": "coord_mouse_hover", "fallback": False}
+                # B-1860: Qwen 0-1000 contract via single-source normalizer
+                # (hover coord, vision mode). Per-dimension by-value judge
+                # (`<= 1.1` kept / `> 1.1` /1000.0, NOT viewport). Mirrors the
+                # coord-click normalization. Format normalization only.
+                left, top, _coord_tags = normalize_coordinate_pair(_hover_coord)
+                _log_coord_normalization(_coord_tags, "hover", _hover_coord)
+                if _coord_tags["malformed"]:
+                    # Defensive — validate_action filters malformed coords
+                    # upstream; fall back to noop for a direct/edge caller.
+                    action = create_none_action()
+                    _action_executed = {"action_type": "hover", "dispatch_path": "noop_no_target", "fallback": True}
+                elif _coord_tags["true_oob"]:
+                    # V-F1 (B-1860 codex verify P1, 2026-05-24): true_oob
+                    # grounding miss → fail-closed no-op (hover at the clamped
+                    # viewport edge could trigger an unintended tooltip / menu).
+                    # Telemetry for diag. NOT clamped.
+                    action = create_none_action()
+                    _action_executed = {
+                        "action_type": "hover",
+                        "dispatch_path": "coord_true_oob_noop",
+                        "fallback": True,
+                        "coordinate_normalization": _coord_tags,
+                    }
+                else:
+                    eps = 1e-6
+                    if left <= 0.0:
+                        left = eps
+                    elif left >= 1.0:
+                        left = 1.0 - eps
+                    if top <= 0.0:
+                        top = eps
+                    elif top >= 1.0:
+                        top = 1.0 - eps
+                    action = create_mouse_hover_action(left=left, top=top)
+                    _action_executed = {
+                        "action_type": "hover",
+                        "dispatch_path": "coord_mouse_hover",
+                        "fallback": False,
+                        # B-1860: coord normalization telemetry.
+                        "coordinate_normalization": _coord_tags,
+                    }
             else:
                 action = create_none_action()
                 _action_executed = {"action_type": "hover", "dispatch_path": "noop_no_target", "fallback": True}
