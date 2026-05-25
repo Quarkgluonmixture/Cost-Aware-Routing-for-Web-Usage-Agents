@@ -54,7 +54,7 @@ ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/an
 > - **gallery on-demand** (B-1828): `make gallery RUN=<run>` (annotate overlay + HTML) / `make gallery-all` → `http.server 8765 --directory results`。不自动刷新 (paper-grade 保干净); 原图随时 DGX 可生成, HTML 手动 `make gallery`; 近实时设 `P79_WATCHDOG_GALLERY=1` (run 期 overhead, 不建议)。
 > - **🔴 / abort → 直接看 A100 runner log 新 traceback** (`ssh condense-a100 'tail -40 /home/ubuntu/workspace/p79/logs/B0_*_R*_runner.log'`), **别 isolation 复现** (B-1832→1836 教训: 运行期 bug 只在生产暴露)。
 
-**⑤ WHY (按需读)**: 全链 chronicle → 笔记 §265-290 + `master_bug_catalog` B-1832~B-1861。关键锚: §269 (B-1836 eval-timeout) · §280 (B-1848 wedge) · §281 (AMENDMENT_04) · §285-288 (B-1860 coord 全链) · §289 (status 动态层) · §290 (vision /diag: B-1860 验证 + forensic + 落码 P31/P32/P27)。
+**⑤ WHY (按需读)**: 全链 chronicle → 笔记 §265-290 + `master_bug_catalog` B-1832~B-1861。关键锚: §269 (B-1836 eval-timeout) · §280 (B-1848 wedge) · §281 (AMENDMENT_04) · §285-288 (B-1860 coord 全链) · §289 (status 动态层) · §290 (vision /diag: B-1860 验证 + forensic + 落码 P31/P32/P27) · §291 (cross-mode 失败 taxonomy 框架 `cross_mode_failure_taxonomy.py` O(mode) + routing=缩略图识别梯度 provisional)。
 
 **⚙️ reboot A100 后服务恢复 checklist (reusable — Gate 3 fire 2026-05-23 踩坑)**: reboot 修 NVML/退化是一举两得, 但 reboot 后**2 个服务必须手动恢复**, 否则 paper-grade fire preflight **Gate 4 fail-closed 拦** (`homepage endpoint not reachable`):
 > 1. **`vwa-reddit`** (docker restart policy = `no`, 不自动起): `ssh condense-a100 'docker start vwa-reddit'`
