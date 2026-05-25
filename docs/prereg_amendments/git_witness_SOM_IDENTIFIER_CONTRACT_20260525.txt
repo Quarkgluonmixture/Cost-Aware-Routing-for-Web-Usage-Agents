@@ -1,0 +1,70 @@
+B-1862 SoM-family identifier contract — Amendment 07 pre-restart witness
+
+OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01-06; AMENDMENT 07 doc + this git_witness upload PENDING user 2026-05-25)
+Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
+Git tag: prereg-amendment-07-som-identifier-contract-20260525  (PENDING — created at the docs commit below)
+Code commit SHA (the estimand change): 3a79196 on branch fix-som-sequential-id
+Amendment-doc commit SHA: this file's own commit, the one the git tag points at
+  (resolvable post-tag via `git rev-list -1 prereg-amendment-07-som-identifier-contract-20260525`).
+Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+Pushed to origin with tags: <UTC after push — PENDING user confirmation; push not yet done>
+
+Witness primitive = the commit SHAs above (content-addressed, tamper-evident; the commit
+timestamp is hashed into the SHA). The git tag is an immovable named pointer to the witness
+commit (the commit carrying the amendment doc + this git_witness). The OSF upload is the
+external visibility layer on top of the Git witness. The witness PRECEDES the re-collection of
+any SoM-family data under the sequential-id contract.
+
+ESTIMAND-AFFECTING (like Amendment 05, the coordinate contract): this amendment changes the
+element ids the model sees in SoM-family observations (som / phantom_som / phantom_text) from
+the raw CDP AXTree nodeId to a deterministic 1..K sequential selection id. Disclosed BEFORE
+re-collection of any SoM-family data under the new contract. HARKing disclosed: the nodeId-churn
+diagnosis and this correction were discovered post-hoc (ptext repro 笔记 §292 -> run-to-run noise
+§293/§294 -> SoM nodeId finding), NOT a pre-registered hypothesis.
+
+Provenance: ptext archive<->current run-to-run repro deep-dive (笔记 §292) -> run-to-run noise
+threat to H1/H3 (§293, AMENDMENT_06) -> SoM-family nodeId discovery (§294 + session checkpoint).
+155-task empirical structure (step-0, 4 runs): raw nodeId 4-run byte-identical only 4/155 (3%);
+id-stripped 155/155; sequential-renumbered 155/155. 4-round codex cross-AI hostile review
+(Mode B, gpt-5.5 xhigh): R1 found the native-id fallback P0; R2 found the fail-closed namespace
+P0 + recommended Option A over B; R3 found a mock-protocol break (P1) + type-fallback telemetry
+mislabel (P2) + dry-run namespace (P2); R4 clean GO. GPT design endorsement (axis-1 reframe,
+H3 caution).
+
+Why a correction, not an optimization: production / standard SoM interfaces use sequential
+selection ids (Yang 2023 SoM; VWA native image_som index+1; WebVoyager; SeeAct-Choice;
+AndroidControl; browser-use), not raw browser nodeIds. P79's SoM-family nodeId is an artifact of
+building SoM from the AXTree path instead of a sequential selection interface; the nodeId is a
+non-semantic Chromium AXObject counter that churns across resets. This SUPERSEDES AMENDMENT_06
+§4 "element-ID churn is NOT patched" (whose premise "the churn is part of real deployment" is
+falsified by the production-convention evidence).
+
+Scope of Amendment 07 (see AMENDMENT_07_SOM_IDENTIFIER_CONTRACT_20260525.md):
+  (1) SoM-family text + image labels -> deterministic 1..K sequential id (AXTree DFS / mark
+      order); DOM / P-prompt keep native nodeId (the AXTree-native representation arm);
+  (2) seq-keyed dispatch map embedding native_element_id (shallow copy, single-parse so the
+      B-1828 phantom latency property holds);
+  (3) explicit dispatch id-namespace + fail-closed _resolve_native_id + native-id translation at
+      every native-id dispatch site (click-fallback / hover / type escape hatch); select_option
+      stays bbox-only; MockEnvironment + dry-run paths covered;
+  (4) runner per-decision_mode seq-map override (is-not-None); telemetry element_bbox via seq map;
+  (5) include_full_axtree fails loud (mixed-namespace legacy path).
+
+Consequences disclosed: axis-1 is reframed from "pure flattening" to "AXTree-native
+representation -> SoM-indexed selection representation" (structural format + identifier contract
+bundled); H3(ii) P-prompt(nodeId) vs P-SoM(seq) is a non-collapse / structural-region test, not
+a clean prompt-axis-only isolation; H1 SoM-family arms are id-churn-stable while DOM/P-prompt
+retain native-nodeId churn (asymmetric noise disclosed; residual stochasticity covered by
+AMENDMENT_06's non-gating sensitivity).
+
+Data handling: old-contract SoM-family runs (B0 x som = R9725, B0 x phantom_text = R2647 partial)
+archived non-canonical (excluded from all primary analyses); SoM-family conditions re-collected
+under the sequential-id contract; the affected cells are re-run in full for code-homogeneity (a
+cell's H1/H3/H10 success matrix must come from one code SHA). At witness time no sequential-id
+SoM-family data exists.
+
+Cross-AI review artifacts (local, gitignored docs/checkpoints/codex_outputs/):
+  som_sequential_review_FINAL_20260525.md (R1) · som_optionA_review_FINAL_20260525.md (R2) ·
+  som_impl_verify_FINAL_20260525.md (R3) · som_round4_FINAL_20260525.md (R4).
+Chronicle: 实验笔记 §295. Bug record: B-1862 (master_bug_catalog).
+Amendment file: docs/prereg_amendments/AMENDMENT_07_SOM_IDENTIFIER_CONTRACT_20260525.md

@@ -122,11 +122,23 @@ This amendment adds **outputs**, not **decisions**. Per DOI-1 lock, NO gating-fa
   **deterministic** isolation (`torch.use_deterministic_algorithms`) to separate element-ID
   churn from provider nondeterminism **without patching upstream**; P4 P-SoM-unique
   challenge-set re-run (post canonical H1).
-- **element-ID churn is NOT patched** (decision, §293): patching the BrowserGym/CDP
-  observation-local enumeration (B-12, an upstream API contract) would (a) destroy
-  deployment realism — the churn IS part of real deployment; (b) change the substrate =
-  change the estimand (DOI-locked) and is mode-specific, so it would alter drop-one itself.
-  We **quantify** the churn (via P3 deterministic isolation), we do not **remove** it.
+- **element-ID churn — SUPERSEDED by AMENDMENT_07 (2026-05-25, same day).** This bullet
+  originally recorded a decision NOT to patch element-ID churn, on the premise that "the churn
+  IS part of real deployment". That premise was **falsified** later the same day: production /
+  standard SoM interfaces (Yang 2023; VWA native `image_som`; WebVoyager; SeeAct-Choice;
+  AndroidControl; browser-use) all use **sequential** selection ids, not raw browser nodeIds, so
+  P79's SoM-family nodeId churn is a **P79-implementation artifact, not deployment-realistic
+  noise** (P79 built SoM from the AXTree path instead of a sequential selection interface). The
+  churn is therefore **corrected**, not merely quantified: AMENDMENT_07 changes the SoM-family
+  identifier contract to deterministic sequential ids (an ESTIMAND-AFFECTING change, witnessed
+  pre-restart, old SoM-family data archived non-canonical, cell re-collected — the AMENDMENT_05
+  pattern, NOT a silent in-place patch). DOM / P-prompt keep native nodeId by design (the
+  AXTree-native representation arm), so their churn remains and is covered by the sensitivity
+  layer below. **After AMENDMENT_07, this §6/§3-item-2 non-gating sensitivity layer covers the
+  RESIDUAL run-to-run stochasticity** (provider/MoE nondeterminism, evaluator-judge) that
+  sequential ids do not remove — the element-ID component (the dominant source per §282) is
+  eliminated upstream. The §4 replicate item P3 (local deterministic isolation) now measures
+  that residual MoE/provider floor. See AMENDMENT_07 §1/§5 + B-1862.
 
 ## §5 — Cross-AI provenance + honest corrections record
 

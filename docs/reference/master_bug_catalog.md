@@ -7967,3 +7967,17 @@ fix @3ea598e (fix 分支); 文档 (本 entry + 笔记 §287 + next_steps) @diag 
 **恢复 (与 B-1860 apply 同期)**: ptext R19776 (180/224, 旧 code) 不续跑 (180 旧 + 44 新 = 非 paper-grade code-homogeneous), **重跑**。从 vision 重启 chain (dom R31194/som R9725 保留 — 完整旧 code condition, coord 不受影响)。**Cross-link**: queue_chain.sh A1.13 P0-4 watchdog liveness (B-1665 wallclock 同段) + B-1860 (同期 apply) + B-859 (SIGTERM graceful finally converting)。
 
 ---
+
+## B-1862 — SoM-family element id = 泄漏的 CDP AXTree nodeId (跨 reset 非确定) → run-to-run 轨迹噪声; 修为确定性 sequential ids (2026-05-25)
+
+**B-1862** (substrate / estimand / reproducibility, **FIXED 2026-05-25**, ESTIMAND-AFFECTING → AMENDMENT_07) — SoM-family 模式 (som / phantom_som / phantom_text) 用原生 Chromium CDP AXTree nodeId 标号每个 `[SOM_MARKS]` 元素 (`processors.py:532` `obs_node_id`, 被 `som.py::_extract_text_marks` 逐字消费)。nodeId 是 AXObject 创建时分配的**非语义计数器**, 跨 reset **非确定** —— 即使页面内容+顺序逐字相同。实证 (155 cls task, step-0, 4 run): raw nodeId 4-run 字节全同仅 **4/155 (3%)**; id-stripped (内容+顺序) 全同 **155/155**; sequential 重编号后 **155/155**。机制 = per-document AXID 计数器按 DOM 子树整体偏移 + 逐元素 jitter (session/auth 节点如 Logout)。temp-0 模型对 id token 敏感 → churn 致轨迹分叉 → run-to-run 噪声喂入 H1/H3 oracle/set-diff estimand (AMENDMENT_06 / 笔记 §293 威胁)。
+
+**为何是 correction 非 optimization**: production/标准 SoM 用 sequential selection id —— Yang 2023 SoM、VWA 原生 `image_som` (`processors.py:947` `index+1`)、WebVoyager、SeeAct-Choice、AndroidControl、browser-use (`docs/literature/5.1/...Flat Indexed Lists.md`)。P79 的 nodeId 是"从 AXTree 路径建 SoM"的 artifact, 既非标准 SoM 也非 deployment-realistic。**Supersedes AMENDMENT_06 §4 "element-ID churn NOT patched"** (前提"churn 是真实部署一部分"被证伪)。
+
+**Fix (codex 4 轮 hostile review, gpt-5.5 xhigh; Option A)**: seq 文本 + 图标号 + seq-keyed dispatch map 内嵌 `native_element_id` (浅拷, single-parse 保 B-1828 phantom latency); 显式 `_dispatch_id_namespace` + fail-closed `_resolve_native_id` + native-id 翻译于 click-fallback/hover/type-escape-hatch (select_option 纯 bbox 免治); runner per-decision_mode override + telemetry 走 seq map; `include_full_axtree` fail-loud; MockEnvironment + dry-run 覆盖。DOM/P-prompt 保 native nodeId (AXTree-native arm)。codex: native-fallback P0 → fail-closed P0 → mock P1 + telemetry P2 → clean GO。3 新 invariant test + 全回归绿 (incl mock integration)。
+
+**Data**: 旧-contract SoM-family run (B0×som R9725, B0×phantom_text R2647) archive non-canonical; cell 重采。Code @3a79196 (branch `fix-som-sequential-id`)。
+
+**Cross-link**: B-1858 / B-12 (element-ID churn, 旧 "do-not-patch" superseded) · AMENDMENT_07 (estimand witness) · AMENDMENT_06 §4 (reversed) · 笔记 §282/§292/§293/§294/§295 · `session_checkpoint_2026-05-25_runtorun_noise.md`。
+
+---

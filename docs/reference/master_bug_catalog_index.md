@@ -4,13 +4,13 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-05-24  ·  **Catalog**: master_bug_catalog.md (7908 lines, 129 sections)  ·  **B-numbers**: 794 canonical entries, 1228 referenced, range B-1~B-1858
+**Generated**: 2026-05-25  ·  **Catalog**: master_bug_catalog.md (7983 lines, 133 sections)  ·  **B-numbers**: 798 canonical entries, 1233 referenced, range B-1~B-1862
 
 ## Health (lint)
 
 - monotonicity inversions (canonical entries): **143** total (143 grandfathered pre-2026-05-21, **0 new**)
 - duplicate bold defs: **7** (summary-table echo + detail-list; not bugs)
-- number gaps: **630** — B-100–B-101, B-316–B-319, B-667–B-671, B-685–B-689, B-711, B-713–B-715, B-768–B-780, B-912–B-915, B-919, B-922–B-940, B-958–B-989, B-996–B-999, B-1022–B-1050, B-1065–B-1100, B-1102–B-1110, B-1112–B-1200, B-1209, B-1213–B-1218, B-1220–B-1229, B-1238–B-1259, B-1277–B-1279, B-1297–B-1300, B-1313–B-1319, B-1321–B-1379, B-1381–B-1399, B-1416–B-1419, B-1421–B-1423, B-1425–B-1426, B-1429–B-1430, B-1433–B-1499, B-1513–B-1549, B-1562–B-1569, B-1580, B-1606–B-1610, B-1612–B-1619, B-1632–B-1639, B-1647–B-1649, B-1656–B-1668, B-1680–B-1701, B-1703–B-1761, B-1795
+- number gaps: **629** — B-100–B-101, B-316–B-319, B-667–B-671, B-685–B-689, B-711, B-713–B-715, B-768–B-780, B-912–B-915, B-919, B-922–B-940, B-958–B-989, B-996–B-999, B-1022–B-1050, B-1065–B-1100, B-1102–B-1110, B-1112–B-1200, B-1209, B-1213–B-1218, B-1220–B-1229, B-1238–B-1259, B-1277–B-1279, B-1297–B-1300, B-1313–B-1319, B-1321–B-1379, B-1381–B-1399, B-1416–B-1419, B-1421–B-1423, B-1425–B-1426, B-1429–B-1430, B-1433–B-1499, B-1513–B-1549, B-1562–B-1569, B-1580, B-1606–B-1610, B-1612–B-1619, B-1632–B-1639, B-1647–B-1649, B-1656–B-1664, B-1666–B-1668, B-1680–B-1701, B-1703–B-1761, B-1795
 
 ## Section map (file order — find a number by its /stress cluster)
 
@@ -105,3 +105,7 @@
 | L7858 | B-1848 — Playwright driver-wedge hang 绕过 operation timeout + runner… | B-1848 |
 | L7874 | B-1849~B-1857 — Analysis-layer paper-grade alignment batch (3-AI /s… | B-1849–B-1857 |
 | L7900 | B-1858 — VWA element-ID 标号非确定 → obs cross-run byte-diff → run-to-ru… | B-1858 |
+| L7916 | B-1859 — B-21 string_match 货币 tokenize 假阴性首个 runtime 实证 + P28 deter… | B-1859 |
+| L7930 | B-1860 — Qwen 0-1000 坐标范式 vs P79 [0,1]/viewport 栈不匹配 → vision parse… | B-1860 |
+| L7959 | B-1861 — watchdog ntfy read-timeout 未捕获 → watchdog 崩 → chain fail-s… | B-1861 |
+| L7971 | B-1862 — SoM-family element id = 泄漏的 CDP AXTree nodeId (跨 reset 非确定… | B-1862 |
