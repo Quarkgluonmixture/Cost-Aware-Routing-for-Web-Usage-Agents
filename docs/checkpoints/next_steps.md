@@ -27,11 +27,11 @@ updated: 2026-05-23
 >
 > **📊 §1/§2/§4-§7 = `![[base#view]]` embed — Obsidian 端渲染成活表; CLI/Claude session `Read` 只见空壳指针**。拿数据: `make status` (列全 base + 视图 + 计数) → `make status V='<base>#<视图名子串, 勿含空格>'` 渲染单视图 (= Obsidian 等价)。改字段: `make status-set N=<note> SET='status=done'`。数据源 = `_status/*.md` frontmatter (cron ~10min sync; 落后实际 fire 时以 ① live 为准)。
 
-**① paper-grade verdict (一条命令; 每 6h cron 也自动跑 + ntfy)**:
+**① paper-grade verdict (一条命令; 每 6h cron 也自动跑 + ntfy; ⚠️ 无 A100 shell 的受限 session → 跳过 ssh, 直接读下方 `tail` 本地 cron log = 等价 verdict)**:
 ```
 ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/maintenance/paper_grade_check.py'
 #  → VERDICT: OK completed_ok=N inprog=[Rxxxx mode ep=N img=N errflood=0]   /   ISSUES=...
-tail -40 logs/cron/paper_grade_check.log     # 每 6h 自动检查历史 (00:30/06:30/12:30/18:30)
+tail -40 logs/cron/paper_grade_check.log     # ⚠️ ssh 拿不到时 (受限 session) 这是等价 live 源, 滞后 ≤6h; cron 落 DGX 本地 00:30/06:30/12:30/18:30
 ```
 
 **② fire 死活 (fire 在 A100; `make active` 只扫 DGX → 空是正常)**:
