@@ -348,6 +348,8 @@ B0 infra prereq ──┘                                                       
 
 ### D4. Reproducibility sensitivity layer (§293, GPT cross-AI; witnessed non-gating, DOI-1 锁约束)
 
+> ✅ **UPDATE 2026-05-25 (AMENDMENT_07 / B-1862, §295)**: element-ID churn —— **dominant** run-to-run 噪声源 —— 已 **消除**(SoM-family → deterministic sequential ids, 155/155 实证)。本 sensitivity 层现针对**残留**(B0 MoE provider-nondeterminism + fuzzy judge),sequential 不治。下方威胁/checklist 保留作 chronicle;dominant 成分现已上游 corrected(非仅 disclose)。
+
 > H1 drop-one (hero) 被 run-to-run noise 威胁: prereg bootstrap 是 **task-level** (L96) → 漏 run-to-run 方差 → anti-conservative (偏假阳); H1 strict effect 可能 1-2pp 与 noise floor 同量级。**不加 gate** (DOI 锁); 另设 witnessed non-gating sensitivity 层; 不稳则 prose 主动降级。详 [[paper_planning]] Risk 6 + [[实验笔记]] §293。
 
 - [x] **self-oracle discordance** — `compare_cross_run_same_condition.py` symmetric self_drop 双向 + discordance + κ (diagnostic NOT bias; 两向差大=version/state drift)
@@ -355,7 +357,7 @@ B0 infra prereq ──┘                                                       
 - [ ] **replicate runs** (fire-gated, P0=不碰 running fire; 独立 namespace `results/repro_replicates/` 不污染 canonical denominator):
   - P1 B0 cls/red × P-SoM (hero arm 自身 instability)
   - P2 + competitors {SoM, P-text, DOM} (false-unique 判定; 含 **H_robust 可证伪: P-SoM discordance ≤ {dom,som,vision}?** → 赢则 phantom robust=正面卖点)
-  - P3 local 4B **deterministic** 隔离 element_id churn vs provider nondeterminism (非 patch upstream — 破坏 realism)
+  - P3 [REFRAMED 2026-05-25] element-ID churn **已 via sequential 消除**(AMENDMENT_07);P3 现量**残留 MoE/provider floor**(local 4B `deterministic` 固定 model → 剩余 flip = provider nondet,非 element_id)
   - P4 P-SoM-unique challenge set 重跑 (post canonical H1)
 - [ ] **AMENDMENT_06** non-gating sensitivity + H1 prose run-to-run disclosure (框架草稿, 数字 post-replicate)
 - [ ] **prose 降级承诺** (GPT bottom line): H1 strict 若只过 1-2pp 且 floor 1-2pp+ → hero "stable unique contribution" → "single-run oracle evidence with reproducibility caveat"
