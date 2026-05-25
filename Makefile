@@ -88,7 +88,7 @@ ntfy:
 #   make status V=cells ARGS=--json  # machine-readable
 #   make status-set N=<note> SET='status=done blocker="GPU contention"'   # edit field(s)
 status:
-	@$(PYTHON) scripts/maintenance/status_query.py $(V) $(ARGS)
+	@$(PYTHON) scripts/maintenance/status_query.py $(if $(V),"$(V)") $(ARGS)
 
 status-set:
 	@$(PYTHON) scripts/maintenance/status_query.py set $(N) $(SET)
