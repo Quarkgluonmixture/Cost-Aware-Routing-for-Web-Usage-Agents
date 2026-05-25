@@ -156,6 +156,17 @@ class VWAWrapper:
         self._env = None  # lazy init
         # 保存上一次 obs 的 obs_nodes_info，供 select_option element_id 路径使用
         self._last_obs_nodes_info: Optional[Dict[str, Any]] = None
+        # Sequential SoM identifier contract (2026-05-25, codex review): which id
+        # namespace the agent's element_id is in for the CURRENT step.
+        #   "native" -> element_id IS the VWA AXTree nodeId (dom / p-prompt /
+        #               default); native-id dispatch passes it through unchanged.
+        #   "seq"    -> element_id is a 1..K sequential SoM id; native-id dispatch
+        #               MUST translate via obs_nodes_info[seq]["native_element_id"]
+        #               and FAIL-CLOSED (no-op) if the seq is absent — never pass a
+        #               seq through as a native nodeId (would silently mis-click).
+        # Set to "native" on every obs production (reset/step/navigate) and to
+        # "seq" by set_dispatch_obs_nodes_info() (runner calls it for SoM-family).
+        self._dispatch_id_namespace: str = "native"
         # B-509 (/stress A1.25 GRL Chunk 3 P1-2-BC*, 2026-05-17): per-step
         # dialog event accumulator. `_on_dialog` appends each accepted/
         # dismissed dialog; step() drains + clears at end + stamps into
@@ -242,6 +253,10 @@ class VWAWrapper:
         if self.dry_run:
             # Return dummy black image for dry run to satisfy agent
             dummy_img = Image.new('RGB', (self.viewport_width, self.viewport_height), color='black')
+            # Sequential SoM contract (2026-05-25, codex round-3 P2): reset the
+            # dispatch id-namespace to native on every obs production, including
+            # the dev-only dry-run path, so it can never be left stale "seq".
+            self._install_native_obs_nodes_info(None)
             return P79Observation(text="[DRY_RUN]", image=dummy_img), {"dry_run": True}
 
         # B-1581 v2 (/stress A2.11 P0-2-A*B 2026-05-18, user Q1=A): MUST run
@@ -415,8 +430,52 @@ class VWAWrapper:
             logger.warning("Failed to register dialog handler at context level: %s", _e)
 
         p79_obs = self._to_p79_obs(obs, info)
-        self._last_obs_nodes_info = p79_obs.obs_nodes_info
+        self._install_native_obs_nodes_info(p79_obs.obs_nodes_info)
         return p79_obs, info
+
+    def _install_native_obs_nodes_info(self, obs_nodes_info: Optional[Dict[str, Any]]) -> None:
+        """Install the env's native (nodeId-keyed) obs_nodes_info for dispatch and
+        reset the id-namespace to "native". Called on every obs production
+        (reset / step / navigate); the runner may subsequently override with
+        set_dispatch_obs_nodes_info() for SoM-family modes (Sequential SoM
+        identifier contract, 2026-05-25)."""
+        self._last_obs_nodes_info = obs_nodes_info
+        self._dispatch_id_namespace = "native"
+
+    def set_dispatch_obs_nodes_info(self, obs_nodes_info: Optional[Dict[str, Any]]) -> None:
+        """Override the dispatch obs_nodes_info to a SEQUENTIAL-keyed map for the
+        current step. The runner calls this for SoM-family modes after building
+        the observation so that `click [seq]` resolves to the right bbox/native
+        id. Marks the dispatch id-namespace "seq"; native-id fallback paths then
+        translate + fail-closed (see _resolve_native_id). AXTree modes never call
+        this, keeping the native nodeId map installed at obs-production time."""
+        self._last_obs_nodes_info = obs_nodes_info
+        self._dispatch_id_namespace = "seq"
+
+    def _resolve_native_id(self, eid: Any) -> Optional[int]:
+        """Translate a dispatch element_id to the native VWA AX nodeId for the
+        native-id dispatch / serializer paths (create_id_based_action).
+
+        - namespace "native": the id IS already the native nodeId -> int(eid).
+        - namespace "seq": return the seq entry's embedded ``native_element_id``
+          if present, else None = FAIL-CLOSED. A None return MUST make the caller
+          no-op — a seq id (or a hallucinated id absent from the seq map) must
+          never be passed through as a native nodeId (codex review 2026-05-25:
+          validators accept any positive element_id, so a hallucinated
+          ``click [1]`` would otherwise silently click real AX node 1)."""
+        try:
+            eid_str = str(int(eid))
+        except (TypeError, ValueError):
+            return None
+        if self._dispatch_id_namespace != "seq":
+            return int(eid)
+        entry = (self._last_obs_nodes_info or {}).get(eid_str)
+        if isinstance(entry, dict) and "native_element_id" in entry:
+            try:
+                return int(entry["native_element_id"])
+            except (TypeError, ValueError):
+                return None
+        return None  # fail-closed: seq absent / no native id mapping
 
     def get_all_tab_titles(self) -> list[tuple[str, str]]:
         """Return (url, title) for every open tab. Used for start-URL health checks."""
@@ -463,6 +522,9 @@ class VWAWrapper:
     def step(self, action_json: Dict[str, Any]) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
         if self.dry_run:
             dummy_img = Image.new('RGB', (self.viewport_width, self.viewport_height), color='black')
+            # Sequential SoM contract (2026-05-25, codex round-3 P2): reset
+            # dispatch id-namespace to native on the dry-run step path too.
+            self._install_native_obs_nodes_info(None)
             return P79Observation(text="[DRY_RUN]", image=dummy_img), 0.0, False, False, {"dry_run": True}
 
         self._lazy_init()
@@ -610,17 +672,30 @@ class VWAWrapper:
                         "locator-route click fallback: eid=%s reason=%s",
                         eid, _lr_result.get("error", "")[:80],
                     )
-                    action = create_id_based_action(f"click [{eid}]")
-                    # B-553: fallback path — element_id click went through VWA
-                    # framework's `create_id_based_action` after locator-route
-                    # walk-up failed. Reviewer can grep
-                    # `action_executed.fallback==True` to count cross-baseline
-                    # fallback rate (B0 235B rarely; B1/B2 4B more often).
-                    _action_executed = {
-                        "action_type": "click",
-                        "dispatch_path": "element_id_framework",
-                        "fallback": True,
-                    }
+                    # Sequential SoM contract (2026-05-25): translate seq->native
+                    # for the VWA framework dispatch; FAIL-CLOSED (no-op) if the
+                    # seq is unresolved (seq mode, missing / hallucinated id) —
+                    # never pass a seq id through as a native nodeId.
+                    _nid = self._resolve_native_id(eid)
+                    if _nid is None:
+                        action = create_none_action()
+                        _action_executed = {
+                            "action_type": "click",
+                            "dispatch_path": "seq_unresolved_noop",
+                            "fallback": True,
+                        }
+                    else:
+                        action = create_id_based_action(f"click [{_nid}]")
+                        # B-553: fallback path — element_id click went through VWA
+                        # framework's `create_id_based_action` after locator-route
+                        # walk-up failed. Reviewer can grep
+                        # `action_executed.fallback==True` to count cross-baseline
+                        # fallback rate (B0 235B rarely; B1/B2 4B more often).
+                        _action_executed = {
+                            "action_type": "click",
+                            "dispatch_path": "element_id_framework",
+                            "fallback": True,
+                        }
             except (TypeError, ValueError):
                 action = None
         elif action_type == "click" and "coordinate" in action_json:
@@ -1318,8 +1393,14 @@ class VWAWrapper:
             _hover_eid = action_json.get("element_id")
             _hover_coord = action_json.get("coordinate")
             if _hover_eid is not None:
-                action = create_id_based_action(f"hover [{int(_hover_eid)}]")
-                _action_executed = {"action_type": "hover", "dispatch_path": "element_id", "fallback": False}
+                # Sequential SoM contract (2026-05-25): seq->native + fail-closed.
+                _nid = self._resolve_native_id(_hover_eid)
+                if _nid is None:
+                    action = create_none_action()
+                    _action_executed = {"action_type": "hover", "dispatch_path": "seq_unresolved_noop", "fallback": True}
+                else:
+                    action = create_id_based_action(f"hover [{_nid}]")
+                    _action_executed = {"action_type": "hover", "dispatch_path": "element_id", "fallback": False}
             elif (
                 isinstance(_hover_coord, (list, tuple))
                 and len(_hover_coord) == 2
@@ -1422,28 +1503,53 @@ class VWAWrapper:
             if "action_str" in action_json:
                 action = create_playwright_action(str(action_json["action_str"]))
             else:
-                try:
-                    action_str = self._json_to_id_action_str(action_json)
-                    action = create_id_based_action(action_str)
-                    # P2-2 (cross-AI 2026-05-20): stamp escape-hatch dispatch into
-                    # the wrapper-normalized telemetry so restored actions routed
-                    # here (press / new_tab / close_tab) leave uniform evidence-
-                    # layer proof of execution, parallel to the explicit branches.
-                    if _action_executed is None:
-                        _action_executed = {
-                            "action_type": action_type,
-                            "dispatch_path": "id_based_escape_hatch",
-                            "fallback": False,
-                        }
-                except Exception as _e:
-                    logger.warning("create_id_based_action failed (%s), falling back to wait: %s", action_json, _e)
+                # Sequential SoM contract (2026-05-25): this id-based escape hatch
+                # serializes element_id actions (the type fallback routes here, plus
+                # press/new_tab/close_tab which carry no element_id). If an
+                # element_id is present, translate seq->native and FAIL-CLOSED
+                # (no-op) when unresolved — before serializing — so a seq id is
+                # never emitted as a native nodeId. element_id-free actions pass
+                # through unchanged.
+                _esc_eid = action_json.get("element_id")
+                _esc_nid = self._resolve_native_id(_esc_eid) if _esc_eid is not None else None
+                if _esc_eid is not None and _esc_nid is None:
                     action = create_none_action()
-                    if _action_executed is None:
-                        _action_executed = {
-                            "action_type": action_type,
-                            "dispatch_path": "noop_serialize_fail",
-                            "fallback": True,
-                        }
+                    # FORCE-overwrite any pre-stamp (codex round-3 P2): the type
+                    # element-id branch pre-stamps `element_id_framework` on its
+                    # locator-route fallback before reaching this escape hatch; if
+                    # the seq is then unresolved we no-op, so telemetry must report
+                    # the no-op (what actually executed), not the superseded
+                    # framework-dispatch intent. Unconditional, not `if None`.
+                    _action_executed = {
+                        "action_type": action_type,
+                        "dispatch_path": "seq_unresolved_noop",
+                        "fallback": True,
+                    }
+                else:
+                    if _esc_eid is not None:
+                        action_json = {**action_json, "element_id": _esc_nid}
+                    try:
+                        action_str = self._json_to_id_action_str(action_json)
+                        action = create_id_based_action(action_str)
+                        # P2-2 (cross-AI 2026-05-20): stamp escape-hatch dispatch into
+                        # the wrapper-normalized telemetry so restored actions routed
+                        # here (press / new_tab / close_tab) leave uniform evidence-
+                        # layer proof of execution, parallel to the explicit branches.
+                        if _action_executed is None:
+                            _action_executed = {
+                                "action_type": action_type,
+                                "dispatch_path": "id_based_escape_hatch",
+                                "fallback": False,
+                            }
+                    except Exception as _e:
+                        logger.warning("create_id_based_action failed (%s), falling back to wait: %s", action_json, _e)
+                        action = create_none_action()
+                        if _action_executed is None:
+                            _action_executed = {
+                                "action_type": action_type,
+                                "dispatch_path": "noop_serialize_fail",
+                                "fallback": True,
+                            }
 
         try:
             obs, reward, terminated, truncated, info = self._env.step(action)
@@ -1508,7 +1614,7 @@ class VWAWrapper:
         # finish/stop (no wrapper-level normalization layer).
         info["action_executed"] = _action_executed
         p79_obs = self._to_p79_obs(obs, info)
-        self._last_obs_nodes_info = p79_obs.obs_nodes_info
+        self._install_native_obs_nodes_info(p79_obs.obs_nodes_info)
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
 
     def navigate_to(self, url: str) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
@@ -1531,7 +1637,7 @@ class VWAWrapper:
         # Fire-6 RCA Stage C1b: mode-gate screenshot-timeout recovery here too.
         self._gate_screenshot_timeout(info)
         p79_obs = self._to_p79_obs(obs, info)
-        self._last_obs_nodes_info = p79_obs.obs_nodes_info
+        self._install_native_obs_nodes_info(p79_obs.obs_nodes_info)
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
 
     def close(self) -> None:

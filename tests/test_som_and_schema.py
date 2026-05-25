@@ -43,9 +43,11 @@ def test_options_map_lookahead_is_unbounded_by_distance():
         f"Look-ahead window should be unbounded except by next mark id.\n"
         f"Got:\n{out}"
     )
-    # Both marks still present
-    assert "[id=42]" in out
-    assert "[id=43]" in out
+    # Both marks still present — emitted as deterministic SEQUENTIAL ids
+    # (Sequential SoM identifier contract 2026-05-25: nodeId 42->seq 1, 43->seq 2
+    # by mark order), not the raw CDP nodeIds.
+    assert "[id=1]" in out
+    assert "[id=2]" in out
 
 
 def test_options_map_boundary_is_next_mark_id():
@@ -59,14 +61,16 @@ def test_options_map_boundary_is_next_mark_id():
         "[OPTIONS] \"X\", \"Y\"\n"
     )
     out = build_som_text_from_obs_text(obs_text)
-    # `[OPTIONS]` should attach to mark 20 (immediately preceding), not 10.
+    # Emitted ids are SEQUENTIAL (Sequential SoM contract 2026-05-25: nodeId
+    # 10->seq 1, 20->seq 2 by order). `[OPTIONS]` should attach to the SECOND
+    # mark (the 'B' combobox immediately preceding it), not the first.
     lines = out.splitlines()
-    mark10_idx = next(i for i, ln in enumerate(lines) if "[id=10]" in ln)
-    mark20_idx = next(i for i, ln in enumerate(lines) if "[id=20]" in ln)
+    mark1_idx = next(i for i, ln in enumerate(lines) if "[id=1]" in ln)
+    mark2_idx = next(i for i, ln in enumerate(lines) if "[id=2]" in ln)
     options_idx = next(i for i, ln in enumerate(lines) if "[OPTIONS]" in ln)
-    # OPTIONS should be after mark 20, not mixed under mark 10
-    assert mark20_idx < options_idx
-    assert options_idx > mark10_idx  # not under mark 10
+    # OPTIONS should be after mark 2 (the 'B' combobox), not mixed under mark 1
+    assert mark2_idx < options_idx
+    assert options_idx > mark1_idx  # not under mark 1
     # The mark 10 entry should NOT have [OPTIONS] as a child line — no
     # immediate-next-line is [OPTIONS] for mark 10.
 
@@ -433,3 +437,91 @@ def test_b481_select_option_meta_structured_fields_validator():
             "success": "false",  # string not bool
             "matched": False, "match_stage": "none",
         }))
+
+
+# ---------------------------------------------------------------------------
+# Sequential SoM identifier contract (2026-05-25) — invariant tests.
+# The decision: SoM-family modes emit deterministic 1..K sequential element ids
+# instead of churning CDP nodeIds. These tests pin the three invariants the
+# 2-round codex review flagged as the open-go gate.
+# ---------------------------------------------------------------------------
+
+
+def test_seq_ids_deterministic_across_nodeid_churn():
+    """Cross-run determinism (the core noise-elimination invariant): two
+    observations with IDENTICAL mark content+order but DIFFERENT CDP nodeIds
+    (the churn this change removes) must yield byte-identical [SOM_MARKS] seq
+    text and identical seq-map keys (1..K). Only native_element_id differs."""
+    from p79.experiment.som import build_som_text_from_obs_text
+
+    obs_a = "[5] link 'Logout'\n[115] link 'Home'\n[118] textbox 'Search'"
+    obs_b = "[8] link 'Logout'\n[116] link 'Home'\n[120] textbox 'Search'"
+    nodes_a = {"5": {"union_bound": [1, 1, 5, 5]},
+               "115": {"union_bound": [2, 2, 5, 5]},
+               "118": {"union_bound": [3, 3, 5, 5]}}
+    nodes_b = {"8": {"union_bound": [1, 1, 5, 5]},
+               "116": {"union_bound": [2, 2, 5, 5]},
+               "120": {"union_bound": [3, 3, 5, 5]}}
+    text_a, map_a = build_som_text_from_obs_text(obs_a, obs_nodes_info=nodes_a, return_seq_map=True)
+    text_b, map_b = build_som_text_from_obs_text(obs_b, obs_nodes_info=nodes_b, return_seq_map=True)
+
+    # Seq text byte-identical despite churned nodeIds.
+    assert text_a == text_b
+    assert "[id=1] link 'Logout'" in text_a
+    # Seq-map keys are 1..K and identical across the two runs.
+    assert sorted(map_a.keys(), key=int) == ["1", "2", "3"]
+    assert map_a.keys() == map_b.keys()
+    # native_element_id tracks each run's own nodeId (the only per-run difference).
+    assert map_a["1"]["native_element_id"] == "5"
+    assert map_b["1"]["native_element_id"] == "8"
+
+
+def test_seq_dispatch_map_identity():
+    """seq-dispatch identity: the seq map entry for seq i carries (a) the
+    union_bound of the i-th mark's original nodeId (so the bbox path clicks the
+    right element) and (b) native_element_id = that nodeId (so the native-id
+    fallback can translate). The ORIGINAL obs_nodes_info must NOT be mutated."""
+    from p79.experiment.som import build_som_text_from_obs_text
+
+    obs_text = "[42] link 'A'\n[7] button 'B'"
+    nodes = {"42": {"union_bound": [10, 10, 20, 20]},
+             "7": {"union_bound": [30, 30, 40, 40]}}
+    _, seq_map = build_som_text_from_obs_text(obs_text, obs_nodes_info=nodes, return_seq_map=True)
+
+    assert seq_map["1"]["union_bound"] == [10, 10, 20, 20]
+    assert seq_map["1"]["native_element_id"] == "42"
+    assert seq_map["2"]["union_bound"] == [30, 30, 40, 40]
+    assert seq_map["2"]["native_element_id"] == "7"
+    # Shallow-copy invariant: native_element_id must NOT leak into the original
+    # nodeId-keyed dict that AXTree modes still dispatch against.
+    assert "native_element_id" not in nodes["42"]
+    assert "native_element_id" not in nodes["7"]
+
+
+def test_resolve_native_id_fail_closed():
+    """_resolve_native_id (codex review P0): in SEQ namespace a seq absent from
+    the dispatch map must return None (FAIL-CLOSED → caller no-ops), never pass
+    a seq id through as a native nodeId — validators accept any positive
+    element_id, so a hallucinated `click [1]` must not hit real AX node 1. In
+    NATIVE namespace the id IS the nodeId and passes through unchanged."""
+    from p79.envs.vwa_wrapper import VWAWrapper
+
+    w = VWAWrapper.__new__(VWAWrapper)  # bypass heavy __init__; test pure logic
+
+    # NATIVE namespace: element_id is already the native nodeId -> passthrough.
+    w._dispatch_id_namespace = "native"
+    w._last_obs_nodes_info = {"99": {"union_bound": [0, 0, 1, 1]}}
+    assert w._resolve_native_id(99) == 99
+    assert w._resolve_native_id("99") == 99
+
+    # SEQ namespace, present seq -> translate to native_element_id.
+    w._dispatch_id_namespace = "seq"
+    w._last_obs_nodes_info = {"1": {"union_bound": [0, 0, 1, 1], "native_element_id": "115"}}
+    assert w._resolve_native_id(1) == 115
+
+    # SEQ namespace, hallucinated / missing seq -> FAIL-CLOSED None.
+    assert w._resolve_native_id(2) is None
+
+    # SEQ namespace, empty map (zero-marks SoM) -> fail-closed.
+    w._last_obs_nodes_info = {}
+    assert w._resolve_native_id(1) is None

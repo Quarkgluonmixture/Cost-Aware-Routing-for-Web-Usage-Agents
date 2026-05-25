@@ -184,6 +184,15 @@ class MockEnvironment:
     def snapshot_form_fields(self) -> Dict[str, Any]:
         return {"fields": [], "scroll_y": 0, "scroll_x": 0, "scroll_height": 0, "client_height": 0}
 
+    def set_dispatch_obs_nodes_info(self, obs_nodes_info):
+        # Sequential SoM identifier contract (2026-05-25, codex round-3 P1):
+        # protocol-compat no-op. The runner calls this for SoM-family modes to
+        # push a seq-keyed dispatch map; the mock env does not dispatch by
+        # element_id (its step() ignores the action target), so there is nothing
+        # to override. Present so the runner can call it uniformly across the
+        # VWAWrapper / MockEnvironment env protocol without an AttributeError.
+        return None
+
     def close(self):
         return None
 

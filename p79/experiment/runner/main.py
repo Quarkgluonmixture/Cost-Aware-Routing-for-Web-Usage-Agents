@@ -2614,6 +2614,16 @@ class ExperimentRunner:
             else:
                 obs_prep = prepare_observation_for_mode(obs, decision_mode, episode_dir, step_idx)
             artifacts["som_image"] = obs_prep.marked_image_path
+            # Sequential SoM identifier contract (2026-05-25): push the seq-keyed
+            # dispatch map to the env for SoM-family modes (som / phantom_som /
+            # phantom_text) so that click/type/hover [seq] resolve to the right
+            # element. Use `is not None` (NOT truthiness): {} means "SoM-family,
+            # zero marks" → override with empty so a stray id-click fails closed.
+            # AXTree modes (dom / p-prompt / vision) leave obs_nodes_info_seq=None
+            # → the env keeps its native nodeId-keyed map. Router-correct: this is
+            # keyed on the per-step decision_mode's obs_prep.
+            if obs_prep.obs_nodes_info_seq is not None:
+                self.environment.set_dispatch_obs_nodes_info(obs_prep.obs_nodes_info_seq)
             if decision_mode == "som" and obs_prep.som_text:
                 _step_dir = episode_dir / f"step_{step_idx:03d}"
                 _step_dir.mkdir(parents=True, exist_ok=True)
@@ -3706,8 +3716,17 @@ class ExperimentRunner:
             # bbox present. Single canonical absence path.
             step_record["element_bbox"] = None
             eid = action.get("element_id")
-            if eid is not None and hasattr(obs, "obs_nodes_info") and obs.obs_nodes_info:
-                node_info = obs.obs_nodes_info.get(str(eid))
+            # Sequential SoM identifier contract (2026-05-25): for SoM-family modes
+            # the agent's element_id is a seq id, so resolve the bbox via the
+            # seq-keyed map (obs_prep.obs_nodes_info_seq carries union_bound under
+            # seq keys), not the native obs.obs_nodes_info (codex review P2).
+            _bbox_src = (
+                obs_prep.obs_nodes_info_seq
+                if getattr(obs_prep, "obs_nodes_info_seq", None) is not None
+                else (getattr(obs, "obs_nodes_info", None) or None)
+            )
+            if eid is not None and _bbox_src:
+                node_info = _bbox_src.get(str(eid))
                 if isinstance(node_info, dict):
                     ub = node_info.get("union_bound")
                     if ub and len(ub) == 4:

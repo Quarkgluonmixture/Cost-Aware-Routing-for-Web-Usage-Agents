@@ -18,6 +18,20 @@ class SomResult:
     marked_image_path: Optional[str]
     marked_image: Optional[Any]  # PIL Image with bounding boxes drawn, None if unavailable
     mark_count: int
+    # Sequential SoM identifier contract (2026-05-25, B-number pending catalog):
+    # seq-keyed dispatch map for SoM-family modes (som / phantom_som /
+    # phantom_text). Maps the deterministic sequential element id the model sees
+    # in `[SOM_MARKS]` (1..K, assigned by AXTree DFS/mark order) -> the original
+    # CDP `union_bound` for that element. None for AXTree modes (dom / p-prompt /
+    # vision), which keep native non-deterministic nodeId. The runner pushes this
+    # to the env's dispatch `_last_obs_nodes_info` so that `click [seq]` resolves
+    # to the correct bbox. Rationale: Chromium AXObject AXIDs are non-semantic
+    # and churn across resets despite identical page content/order (155/155 tasks
+    # step-0 id-stripped-identical empirical); sequential ids are the correct
+    # operationalization of a SoM-style selection interface and eliminate the
+    # element-ID churn run-to-run noise source. See AMENDMENT (identifier-contract
+    # correction) + 实验笔记 §294.
+    obs_nodes_info_seq: Optional[Dict[str, Any]] = None
     # /stress A1.4 P0-2 (2026-05-17): `degraded_som` bool field DELETED.
     # Pre-deletion this single bool overloaded three semantically distinct
     # states: (a) zero-marks vision-fallback; (b) PIL render-fail
@@ -93,8 +107,25 @@ def _extract_text_marks(obs_text: str, max_marks: Optional[int] = None) -> List[
     return marks
 
 
-def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None, return_count: bool = False):
+def build_som_text_from_obs_text(
+    obs_text: str,
+    max_marks: Optional[int] = None,
+    return_count: bool = False,
+    obs_nodes_info: Optional[Dict[str, Any]] = None,
+    return_seq_map: bool = False,
+):
     """Canonical [SOM_MARKS] text builder from an AXTree obs_text string.
+
+    Sequential SoM identifier contract (2026-05-25): emits deterministic 1..K
+    sequential ids. When ``return_seq_map=True`` (requires ``obs_nodes_info``),
+    also returns the seq-keyed dispatch map (seq -> original union_bound) built
+    from the SAME single ``_extract_text_marks`` pass — so the latency-critical
+    phantom hot path (B-1828) stays single-parse. Return shapes:
+      - return_count=F, return_seq_map=F -> ``som_text``
+      - return_count=T, return_seq_map=F -> ``(som_text, count)``
+      - return_count=F, return_seq_map=T -> ``(som_text, seq_map)``
+      - return_count=T, return_seq_map=T -> ``(som_text, count, seq_map)``
+
 
     SINGLE SOURCE OF TRUTH for SoM text construction. `_build_som_result`
     (production agent path) and every mechanistic extractor MUST call this so
@@ -118,7 +149,10 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None,
         # (text, mark_count) from this SINGLE _extract_text_marks pass — the
         # phantom hot path needs both but must not parse twice post-B-1828
         # (draw removed → the two parses now dominate phantom obs_prepare).
-        return ("[SOM_MARKS]\n[/SOM_MARKS]", 0) if return_count else "[SOM_MARKS]\n[/SOM_MARKS]"
+        _empty = "[SOM_MARKS]\n[/SOM_MARKS]"
+        if return_seq_map:
+            return (_empty, 0, {}) if return_count else (_empty, {})
+        return (_empty, 0) if return_count else _empty
     # /stress A1.4 F3 backlog sweep (2026-05-15): the look-ahead window
     # previously capped at `min(_i + 3, len(_obs_lines))` (= 2 lines), which
     # was design-fragile if vwa_wrapper's injector ever interleaved property
@@ -140,13 +174,72 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None,
             if is_mark_line(_obs_lines[_j]):
                 break  # next element reached — sole boundary
     mark_lines = []
-    for _mark in text_marks:
-        _entry = f"[id={_mark['id']}] {_mark['label']}"
+    # Sequential SoM identifier contract (2026-05-25): emit a deterministic
+    # 1..K sequential id (by mark / AXTree-DFS order) instead of the CDP nodeId.
+    # The nodeId churns across resets despite identical page content/order (see
+    # SomResult note); the visible mark order is deterministic, so sequential
+    # ids are reproducible. `_options_map` is still keyed by the original nodeId
+    # (`_mark['id']`) because it was built from the same obs_text marks above —
+    # the lookup stays correct; only the EMITTED token changes nodeId -> seq.
+    # This is the SINGLE SOURCE so mechanistic extractors share the same seq
+    # numbering (mechanism §5 paused, but kept consistent).
+    _seq_map: Optional[Dict[str, Any]] = {} if return_seq_map else None
+    _src = obs_nodes_info or {}
+    for _seq, _mark in enumerate(text_marks, start=1):
+        _entry = f"[id={_seq}] {_mark['label']}"
         if _mark["id"] in _options_map:
             _entry += f"\n    {_options_map[_mark['id']]}"
         mark_lines.append(_entry)
+        if return_seq_map:
+            # Same single parse (B-1828 phantom hot path): re-key the canonical
+            # obs_nodes_info nodeId -> seq so dispatch resolves click [seq].
+            # SHALLOW-COPY the entry + embed the original nodeId as
+            # `native_element_id` so the wrapper's native-id fallback paths
+            # (create_id_based_action) can translate seq -> native (codex review
+            # 2026-05-25). Must COPY (not mutate): the original nodeId-keyed
+            # obs_nodes_info is still used by AXTree modes and must never acquire
+            # the native_element_id key (its absence is how _resolve_native_id
+            # distinguishes namespaces is NOT relied upon — wrapper uses an
+            # explicit namespace flag — but copying keeps the maps disjoint).
+            _ub = _src.get(str(_mark["id"]))
+            if _ub is not None:
+                _seq_map[str(_seq)] = {**_ub, "native_element_id": str(_mark["id"])}
     _som = "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
+    if return_seq_map:
+        return (_som, len(text_marks), _seq_map) if return_count else (_som, _seq_map)
     return (_som, len(text_marks)) if return_count else _som
+
+
+def build_seq_keyed_obs_nodes_info(
+    obs_text: str,
+    obs_nodes_info: Optional[Dict[str, Any]],
+    max_marks: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Re-key obs_nodes_info from CDP nodeId to the deterministic sequential id.
+
+    Sequential SoM identifier contract (2026-05-25). The model sees ``[id=seq]``
+    in ``[SOM_MARKS]`` (see ``build_som_text_from_obs_text``); action dispatch
+    resolves ``click [seq]`` via ``obs_nodes_info[str(seq)]["union_bound"]``.
+    This builds that seq-keyed map by walking the SAME
+    ``_extract_text_marks(obs_text)`` order the text builder uses, so seq *i* in
+    the text and seq *i* here refer to the same element — no shared state, only
+    the deterministic mark order guarantees the correspondence.
+
+    Marks whose nodeId has no ``obs_nodes_info`` entry (e.g. nodes without a
+    ``union_bound``) are skipped, exactly as the nodeId-keyed path missed them;
+    the dispatch locator-route fallback handles the absence identically. The
+    runner pushes the returned dict to the env's dispatch ``_last_obs_nodes_info``
+    for SoM-family modes only (AXTree modes keep native nodeId keys).
+    """
+    # Delegate to the single-source builder so the seq numbering can never drift
+    # between the [SOM_MARKS] text and this dispatch map. Convenience wrapper for
+    # tests / the som-mode path; the latency-critical phantom path calls
+    # build_som_text_from_obs_text(..., return_seq_map=True) directly to fuse the
+    # text + map into one parse.
+    _, seq_map = build_som_text_from_obs_text(
+        obs_text, max_marks=max_marks, obs_nodes_info=obs_nodes_info, return_seq_map=True
+    )
+    return seq_map
 
 
 # /stress A1.4 F4 backlog sweep (2026-05-15): _collect_bbox_map walks raw
@@ -360,12 +453,21 @@ def prepare_observation_for_mode(
         # input (som_text + mark_count); skip the draw+save entirely. Visual
         # spot-check for phantom is meaningless (the model never sees an image);
         # the gallery serves the model-input-image modes (som/vision) on demand.
-        _ph_text, _ph_count = build_som_text_from_obs_text(obs_text, return_count=True)
+        # Sequential SoM contract + B-1828 single-parse: fuse text + count +
+        # seq dispatch map into one _extract_text_marks pass (phantom is the
+        # latency-critical hot path — no second parse for the dispatch map).
+        _ph_text, _ph_count, _ph_seqmap = build_som_text_from_obs_text(
+            obs_text,
+            return_count=True,
+            obs_nodes_info=getattr(obs, "obs_nodes_info", None),
+            return_seq_map=True,
+        )
         return SomResult(
             som_text=_ph_text,
             marked_image_path=None,  # B-1828: no inspection artifact (instrumentation)
             marked_image=None,       # model receives no image
             mark_count=_ph_count,    # B-1828 P2-4: single-pass count (no double parse)
+            obs_nodes_info_seq=_ph_seqmap,  # seq dispatch map from the SAME parse
         )
 
     if mode == "phantom_prompt":
@@ -411,6 +513,11 @@ def _build_som_result(
             marked_image_path=None,
             marked_image=getattr(obs, "image", None),
             mark_count=0,
+            # Sequential SoM contract: empty dict (not None) signals "SoM-family
+            # mode, but no marks" → runner overrides dispatch with {} so a stray
+            # id-click finds no entry and routes to fallback (the model saw an
+            # empty [SOM_MARKS] block + raw screenshot; there are no valid ids).
+            obs_nodes_info_seq={},
         )
 
     # SoM text construction delegated to the canonical single-source builder
@@ -419,8 +526,25 @@ def _build_som_result(
     # mechanistic extractor shares it so NPZ / patching SoM text is byte-
     # identical to this production path. text_marks is still computed above for
     # the empty-marks degradation check + bbox drawing + mark_count below.
-    som_header = build_som_text_from_obs_text(obs_text)
-    som_text = f"{som_header}\n\n{obs_text}" if include_full_axtree else som_header
+    # Single-source build: som_header (seq text) + _som_seq_map (seq dispatch
+    # map) from one call, so the [SOM_MARKS] text seq and the dispatch-map seq
+    # cannot drift apart.
+    som_header, _som_seq_map = build_som_text_from_obs_text(
+        obs_text, obs_nodes_info=getattr(obs, "obs_nodes_info", None), return_seq_map=True
+    )
+    if include_full_axtree:
+        # Sequential SoM identifier contract (2026-05-25, codex review P1-latent):
+        # the legacy "append full AXTree after [SOM_MARKS]" path would put seq
+        # header ids and native nodeId AXTree ids in ONE observation -> dispatch
+        # id-namespace collision (a model-selected native id could alias a seq
+        # key and hit the wrong element). No current caller passes True; fail
+        # loud rather than silently emit mixed-namespace observations.
+        raise NotImplementedError(
+            "include_full_axtree=True is unsupported under the sequential SoM "
+            "identifier contract: it mixes seq header ids with native AXTree "
+            "ids. Renumber the appended AXTree consistently before re-enabling."
+        )
+    som_text = som_header
 
     bbox_map: Dict[int, List[float]] = {}
 
@@ -454,13 +578,18 @@ def _build_som_result(
             draw = ImageDraw.Draw(drawn)
             width, height = drawn.size
             font = _get_font(size=14)
-            for mark in text_marks:
+            # Sequential SoM identifier contract (2026-05-25): label boxes with
+            # the seq (1..K by mark order), matching the [SOM_MARKS] text and the
+            # seq-keyed dispatch map. _seq is enumerated over the FULL text_marks
+            # BEFORE the no-bbox skip, so a mark without a drawable bbox still
+            # consumes its seq slot — keeping image label seq == text seq.
+            for _seq, mark in enumerate(text_marks, start=1):
                 bbox = bbox_map.get(mark["id"])
                 if not bbox:
                     continue
                 x1, y1, x2, y2 = _normalize_bbox(bbox, width, height)
                 draw.rectangle([x1, y1, x2, y2], outline="#00BCD4", width=2)
-                _draw_label(draw, x1, y1, str(mark["id"]), font)
+                _draw_label(draw, x1, y1, str(_seq), font)
 
             marked_image = drawn  # PIL Image passed to the model (in-memory)
 
@@ -491,6 +620,9 @@ def _build_som_result(
         marked_image_path=marked_image_path,
         marked_image=marked_image,
         mark_count=len(text_marks),
+        # Seq-keyed dispatch map (built in the single-source call above),
+        # matching the [SOM_MARKS] text + image seq labels.
+        obs_nodes_info_seq=_som_seq_map,
     )
 
 
