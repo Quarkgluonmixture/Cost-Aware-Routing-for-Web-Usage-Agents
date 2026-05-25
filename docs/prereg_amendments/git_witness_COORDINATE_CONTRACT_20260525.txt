@@ -1,0 +1,54 @@
+B-1860 Coordinate Contract Amendment 05 pre-restart witness
+
+OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01/02/03/04; AMENDMENT 05 doc + this git_witness uploaded by user 2026-05-25)
+Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
+Git tag: prereg-amendment-05-b1860-coord-contract-20260525
+Amendment doc commit SHA: e9948fcd204f0c95818f0b29d7e72c987a4b4038 (committed 2026-05-25T01:53:25+01:00)
+Apply (merge) commit SHA: d9770069be94cf37abd35bf9df0bc517963af8a3 (committed 2026-05-25T01:50:13+01:00; merges fix-coordinate-contract-b1860 @3ea598e into diag-discover-then-freeze)
+Code-fix commits: 3dd343a (main path, 2026-05-24T20:19) + 75b37bb (paper-grade extension, single-source normalizer, 2026-05-24T21:32) + 3ea598e (codex-verify补修 4 fix-impl bugs + 5 test, 2026-05-24T22:12)
+Watchdog co-disclosed fix (B-1861, NOT estimand-affecting): 3c27807 (2026-05-25T01:46)
+Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+Pushed to origin/diag-discover-then-freeze with tags: <UTC after push> (tag anchors witness SHA branch-independently; later merge to master does not affect the witness)
+
+Witness primitive = the commit SHAs above (content-addressed, tamper-evident; the commit
+timestamp is hashed into the SHA). The git tag is an immovable named pointer to the witness
+commit (the commit carrying both the amendment doc and this git_witness). The OSF upload is
+the external visibility layer on top of the Git witness.
+
+ESTIMAND-AFFECTING (UNLIKE Amendment 04, which changed no estimand): this amendment changes
+the coordinate serialization contract (vision/SoM modes) and relaxes the vision-prompt
+instruction strictness. Disclosed BEFORE re-collection of any vision data under the new
+contract (the witness precedes the re-fire). HARKing disclosed: this is a post-hoc
+data-driven remediation discovered via R3671 /diag, NOT a pre-registered hypothesis.
+
+Provenance: R3671 (B0 x vision x classifieds) /diag failure attribution 2026-05-24 -> B-1860
+root cause (Qwen 0-1000 coordinate system vs the locked [0,1]/viewport-pixel stack); /stress
+3-AI audit (Mode A Claude + Mode B codex + Mode C gemini) on the fix; codex verify on the fix
+implementation (V-F1 true_oob fail-closed no-op / V-F2 downstream negative coord / V-F3
+dead_zone counter / V-F4a annotate sibling; V-F4b glm_batch_digest retracted = half-retired).
+B2 probe confirmed Gemma emits normalized [0,1] -> the by-value contract is model-agnostic.
+
+Scope of Amendment 05 (see AMENDMENT_05_COORDINATE_CONTRACT_20260525.md):
+  (1) coordinate contract -> per-dimension by-value (dim<=1.1 -> [0,1] / dim>1.1 -> Qwen
+      0-1000 /1000), model-agnostic (Qwen 0-1000 and Gemma [0,1] ranges do not overlap);
+  (2) single-source normalize_coordinate_pair() shared by validator + env wrapper (4 sites:
+      click/type/select_option/hover) + downstream diag/analyze;
+  (3) validator no longer hard-rejects >1; vision prompt relaxed [0,1]-or-fail -> 0-1000
+      system, coordinate_type field removed;
+  (4) format layer ONLY -- NO target snapping / element nearest-correction / grounding
+      rescue; an out-of-bounds dimension (>1000) is recorded as a grounding-miss no-op
+      (NOT clamped-and-clicked);
+  (5) B-1861 watchdog _post_ntfy catch-all (ntfy best-effort; a network read timeout no
+      longer crashes the watchdog -> no spurious chain fail-safe abort).
+
+Data handling: R3671 archived non-canonical (excluded from all primary analyses); vision
+conditions re-collected under the new contract; phantom_text (R19776, 180/224 old-code) is
+NOT resumed (a condition must be code-homogeneous) -> fully re-run; dom (R31194) / som
+(R9725) coordinate-light old-contract conditions are retained; the restart resumes
+"from vision".
+
+Vision re-collection under the new contract must occur AFTER this witness. At witness time no
+new-contract vision data exists (the Gate-3 chain aborted at phantom_text via B-1861; only
+the buggy-contract R3671 was collected, now archived).
+
+Amendment file: docs/prereg_amendments/AMENDMENT_05_COORDINATE_CONTRACT_20260525.md
