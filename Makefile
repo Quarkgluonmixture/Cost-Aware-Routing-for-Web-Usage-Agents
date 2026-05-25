@@ -28,7 +28,7 @@ PYTHON ?= .venv/bin/python3
 PYTEST ?= .venv/bin/pytest
 
 .PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep error-scan \
-        confidence compare reason-diag clean-tasks schedule-list ntfy \
+        confidence compare reason-diag clean-tasks schedule-list ntfy status status-set \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
         analyze-paper-per-run compare-b0-b1-all phantom-lift \
@@ -46,6 +46,8 @@ help:
 	@echo "  ⭐ make analysis RUN=<dir>    # single-run pipeline + downstream"
 	@echo ""
 	@echo "  make active                  # real-time process scan"
+	@echo "  make status                  # render _status/ Bases views in terminal (CLI = Obsidian)"
+	@echo "  make status V='cells#Active' # render one view (V = <base>[#view substr])"
 	@echo "  make test                    # full pytest suite"
 	@echo ""
 	@echo "  Per-run / per-cell:          make analyze RUN=<dir>"
@@ -74,6 +76,22 @@ active:
 # `make ntfy` = last 12h all · `make ntfy SINCE=1h` · `make ntfy ALERTS=1` (alerts-only).
 ntfy:
 	@bash scripts/maintenance/ntfy_read.sh $(or $(SINCE),12h) $(if $(ALERTS),alerts,all)
+
+# Render docs/*.base views over _status/ frontmatter in the terminal — the SAME
+# views Obsidian shows (single-source data layer), so neither side maintains a
+# parallel hand-written table. CLI/agent gets byte-equivalent read access; `set`
+# edits one frontmatter field without YAML round-trip (preserves complex fields
+# like `history:`). See scripts/maintenance/status_query.py header for the
+# supported Bases expression subset.
+#   make status                      # list all base + views + note counts
+#   make status V='tasks#NOW'        # render one view (V = <base>[#view substr]; quote the '#')
+#   make status V=cells ARGS=--json  # machine-readable
+#   make status-set N=<note> SET='status=done blocker="GPU contention"'   # edit field(s)
+status:
+	@$(PYTHON) scripts/maintenance/status_query.py $(V) $(ARGS)
+
+status-set:
+	@$(PYTHON) scripts/maintenance/status_query.py set $(N) $(SET)
 
 # ---- Tests ----
 test:
