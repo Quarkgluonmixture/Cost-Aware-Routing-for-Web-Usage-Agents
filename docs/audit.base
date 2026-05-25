@@ -1,0 +1,99 @@
+filters:
+  and:
+    - 'type == "audit"'
+
+formulas:
+  status_icon: 'if(status == "done", "✅", if(status == "gate-blocking", "🔴", if(status == "deferred", "⏸️", if(status == "open", "🟡", "❓"))))'
+  pri_icon: 'if(priority == "P0", "🔴", if(priority == "P1", "🟡", "🟢"))'
+
+properties:
+  ref:
+    displayName: Ref
+  title:
+    displayName: Item
+  status:
+    displayName: Status
+  formula.status_icon:
+    displayName: ""
+  priority:
+    displayName: Pri
+  formula.pri_icon:
+    displayName: ""
+  effort:
+    displayName: Effort
+  phase:
+    displayName: When
+  blocker:
+    displayName: Blocker
+
+views:
+  - type: table
+    name: "🔴 Gate-blocking / now"
+    filters:
+      or:
+        - 'status == "gate-blocking"'
+        - 'phase == "now"'
+    order:
+      - ref
+      - title
+      - formula.pri_icon
+      - effort
+      - blocker
+
+  - type: table
+    name: "Deferred (post-fire)"
+    filters:
+      and:
+        - 'phase == "post-fire"'
+    order:
+      - ref
+      - formula.pri_icon
+      - title
+      - effort
+      - blocker
+
+  - type: table
+    name: "Paper-finalize"
+    filters:
+      and:
+        - 'phase == "paper-finalize"'
+    order:
+      - ref
+      - title
+      - effort
+
+  - type: table
+    name: "Done"
+    filters:
+      and:
+        - 'status == "done"'
+    order:
+      - ref
+      - title
+      - effort
+
+  - type: table
+    name: "All (by priority)"
+    order:
+      - ref
+      - formula.status_icon
+      - status
+      - title
+      - phase
+      - effort
+      - blocker
+    groupBy:
+      property: priority
+      direction: ASC
+
+  - type: table
+    name: "Section 8 (sustainability)"
+    filters:
+      and:
+        - 'phase == "section8"'
+    order:
+      - ref
+      - formula.status_icon
+      - status
+      - title
+      - effort
