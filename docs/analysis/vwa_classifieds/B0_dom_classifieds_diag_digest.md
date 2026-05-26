@@ -1,18 +1,18 @@
 # B0 dom classifieds — 失败错因 digest（diag skill）
 
-> **生成方式**: `/diag` skill 3-tier pipeline (2026-05-23 run on R31194)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token, ruleset `1-dom`) → Tier-2 Claude sub-agent 深挖 (23 no-hit 全覆盖 + 12 failed-hit causal verify + 7 success-hit FP 审计 = 42 ep / 7 agents) → Tier-3 整合 (本文件)。
-> **Run**: `B0_dom_classifieds_20260523_080127_508387150_37076_R31194` (Gate-3 fresh substrate, per-condition docker restart, manifest-bound authoritative)
+> **生成方式**: `/diag` skill 3-tier pipeline (2026-05-26 run on R21557)。Tier-1 deterministic 全扫 (`diag_pattern_match.py`, 0 token, ruleset `4-domsomvis-b1860coord`) → Tier-2 Claude sub-agent 深挖 (**22 no-hit 全覆盖 + 6 success-hit FP 审计 + 3 failed-hit causal verify = 31 ep / 6 agents**, sonnet) → Tier-3 整合 (本文件)。
+> **Run**: `B0_dom_classifieds_20260525_194618_553890342_530647_R21557` (AMENDMENT_07 sequential-id post-fix fresh re-launch, per-condition docker restart, manifest-bound authoritative)
 > **Condition**: `phase1_dom_router_0` | site classifieds | mode **dom** | model **B0 = Qwen3-VL-235B (proxy)**
-> **ruleset_version**: `3-domsom` (`1-dom` → `2-dom` [R31194 fast-track] → **`3-domsom`** [2026-05-24 R9725 som discover：落码 P24-P30 + P14/P10/P20 FP 修正，**本 run 已全量重扫**]；见下「Self-evolving changelog」。cross-mode 聚合前须 verify 全 digest 同版本 — 当前仍**禁止 cross-mode 定量比较**) **→ 全量重扫到 `4-domsomvis-b1860coord` (2026-05-25 vision discover: 本 run 已重扫, dom 新增 P31=58 budget-incomplete + P27 ref-carveout, success-fire 0; 下方分布 section 仍 `3-domsom` 落码前快照, 版本号统一不改定性)**
-> **Supersedes**: R9755 digest (2026-05-21, pre-Gate3 first-completed try-run)。本 run 是**同一 condition 的 fresh Gate-3 重跑** → 构成 R9755 self-evolve 出的 P15-P18 的一次 **fresh-substrate out-of-sample 检验**（见下「跨 run 一致性」）。
+> **ruleset_version**: `4-domsomvis-b1860coord`（不变；本 run 是 dom mode 的 sequential-id 重跑——dom 用 native nodeId 不受 AMENDMENT_07 影响，是 in-distribution clean re-run。**禁止 cross-mode 定量比较** 直至 6-mode 数据齐 freeze + 全量重扫）
+> **Supersedes**: R31194 digest (2026-05-23, archived per AMENDMENT_07 在 `_archive_amend07_seqid_R31194_dom`)。R31194 与 R21557 都用 native nodeId（AMENDMENT_07 只动 SoM-family），二者是同 condition 的 **fresh-vs-fresh out-of-sample 检验**（见下「跨 run 一致性」）。
 
-> ⚠️ **定位声明（沿用 R9755 3-AI 审计共识，仍适用）**：本 digest 是 **internal 诊断记录，NOT paper-grade 结论**。
-> - **单 condition + dom-only + 无对照**：单 model×mode×site（B0 dom cls）。"DOM 表征天花板 / routing 论点 / 换表征能救"需 **som/vision/phantom 对照**才成立（当前 ruleset `1-dom`，6-mode 数据未齐，**禁止任何 cross-mode 定量比较**）。
-> - **presence ≠ causation**：190 failed 中仅 **23 no-hit + 12 failed-hit = 35 经 sub-agent 逐个证因**；其余 155 是规则命中未逐个证因。"agent-limit 主导"应读作"35 深挖 100% agent-limit + 155 命中 agent-limit 类规则"。本 run **causal verify 实测 12 个规则命中里 5 个规则名标错**（presence≠causation 在 fresh data 再次确认，见「Tier-2 causal verify」）。
-> - **P-rule 仍部分 in-sample**：P15-P18 在 R9755 拟合。本 run 是它们的首次 fresh-substrate 检验，coverage 掉 5pp（93%→88%）= in-sample 虚高的实证，**非真泛化结论**（真泛化需 held-out 不同 condition）。
-> - **per-rule 非互斥**：分布是 per-episode-per-rule 命中，P6∩P14 大量重叠，勿各行相加。
+> ⚠️ **定位声明（沿用 R9755/R31194 3-AI 审计共识，仍适用）**：本 digest 是 **internal 诊断记录，NOT paper-grade 结论**。
+> - **单 condition + dom-only + 无对照**：单 model×mode×site（B0 dom cls）。"DOM 表征天花板 / routing 论点 / 换表征能救"需 **som/vision/phantom 对照**才成立（当前 6-mode 数据未齐：dom R21557 + som R5313 已落地，vision/P-text/P-prompt/P-SoM 待跑）。**禁止任何 cross-mode 定量比较**。
+> - **presence ≠ causation**：185 failed 中仅 **22 no-hit + 3 failed-hit causal verify + 6 success-hit FP 审计 = 31 经 sub-agent 逐个证因**；其余 160 failed-hit 是规则命中**未逐个 causal verify**。
+> - **P6 在 30 success 上 fire 26 个 (87%)** = 最强 FP source，3 success-hit verify confirmed 5/6 non-causal → P6 dom mode 高 FP risk 沿用 R31194 结论。
+> - **per-rule 非互斥**：分布是 per-episode-per-rule，P6∩P14∩P19 大量重叠，勿各行相加。
 >
-> **paper failure-analysis 待 6-mode + 多 condition 数据齐后重做，不复用本 digest 数字。**
+> **paper failure-analysis 待 6-mode + 多 condition 数据齐后 cross-mode aggregator 重做，不复用本 digest 数字。**
 
 ---
 
@@ -20,133 +20,174 @@
 
 | 维度 | 结论 |
 |---|---|
-| Episodes | 224 (34 success / **190 failed**) — SR **15.18%** |
-| 三分类 | **agent-limit**（35 深挖证因 100% + 155 规则命中 agent-limit 类）· **scaffold-bug 0**（35 子集证因 + P8 全 run 0 命中）· **benchmark-FP 0**（35 子集 finish-vs-reference 全真错）|
-| Deterministic coverage (failed) | **87.9%** (167/190 failed 命中) — fresh-substrate, vs R9755 in-sample 93% |
-| no-hit failed | **23**（全部 agent-limit；含 13 个 R9755 未暴露的新盲区）|
-| success 全部命中规则 | 34/34（**P6 在 30/34 success 上 fire** → 最强误报源）|
+| Episodes | 224 (39 success / **185 failed**) — SR **17.4%** |
+| 三分类 | **agent-limit 主导**（31 深挖 = 28 agent-limit + 1 scaffold-bug + 1 benchmark-FP + 1 unclear/edge）· **scaffold-bug ≥1**（T180 cls 评分 widget radio input AXTree 不暴露）· **benchmark-FP ≥1**（T216 cross-run cross-mode 全 4 run 落同一替代 item id=82390 而非 reference 66046）|
+| Deterministic coverage (failed) | **88.1%** (163/185 failed 命中) — 与 R31194 fresh-substrate 87.9% 一致 |
+| no-hit failed | **22**（21 agent-limit + 1 scaffold-bug + 1 benchmark-FP / 1 unclear; 13 个 R31194 已暴露的盲区在 R21557 仍 no-hit = 高一致）|
+| success 命中规则 | 30/39（**P6 在 26/30 success 上 fire = 87% FP rate** 沿用 R31194 → P6 carveout 仍 open）|
 
-**R31194 (fresh Gate-3) 的失败 ~100% 指向真实模型能力局限，pipeline 干净**：35 深挖子集零框架 bug、零评测误判（parse/tool_call 全 valid、finish-vs-reference 全真错）+ scaffold 规则 P8 全 run 0 命中。低 SR (15.18%) 是 dom 表征对 cls 视觉任务的结构性天花板，**不是 bug**——这正是 paper-grade clean run 应有的样子。
+**R21557 SR 17.4% (vs R31194 15.18%, R9755 14.7%)** — sequential-id 重跑后小幅上升 2.2pp，仍在 dom 表征对 cls 视觉任务结构性天花板的 floor 邻域 (§D4 dom partial @88 task 17%→25% Δ=+8pp McNemar n.s. = native nodeId churn + MoE 残留)。pipeline 干净：31 深挖子集 parse/tool_call 全 valid，agent-limit 主导 ~100%。
 
 ---
 
-## 跨 run 一致性（R9755 in-sample → R31194 fresh-substrate）
+## 跨 run 一致性（R31194 → R21557, AMENDMENT_07 前后 dom）
 
-R31194 是 R9755 P15-P18 规则的首次 fresh-substrate 检验（同 condition，docker 重启全新 site state）：
+R21557 是 R31194 经 SoM sequential-id fix 后 fresh 重跑（dom mode 与 AMENDMENT_07 无关，故 R21557 验证 ⚖ R31194 sequence robustness）：
 
-| 指标 | R9755 (in-sample fit) | R31194 (fresh substrate) | 读法 |
+| 指标 | R31194 (pre-amend07) | R21557 (post-amend07) | 读法 |
 |---|---|---|---|
-| SR | 14.7% (33/224) | 15.18% (34/224) | 稳定，fresh substrate 未改变能力天花板 |
-| failed-coverage | 93% (P15-P18 拟合后) | **87.9%** | **掉 5pp = in-sample 虚高实证**，规则有一定泛化但非 93% |
-| no-hit failed | 13 | 23 | fresh run 暴露更多盲区（10/13 R9755 no-hit 仍 no-hit = 强一致；+13 新盲区）|
-| scaffold / FP | 0 / 0 | **0 / 0** | 两 run 一致 → 结论 robust |
+| SR | 15.18% (34/224) | 17.4% (39/224) | +2.2pp，仍 floor 邻域；MoE / token-trace 残留方差 (笔记 §242) |
+| failed-coverage | 87.9% | 88.1% | 一致 = ruleset 规则集对 dom-cls 稳定 |
+| no-hit failed | 23 | 22 | 一致；13 个 R31194 no-hit 在 R21557 仍 no-hit（84/97/106/124/129/131/207/208/216/217/218 等）= 规则盲区 highly reproducible |
+| scaffold / FP | 0 / 0 | **1 / 1** | R21557 sub-agent 主动找到 T180 scaffold-bug + T216 benchmark-FP — 此前 R31194 sub-agent 未单独 spot 这两个（不同 batching 命中盲点不同；非新现象，是 sampling artifact）|
 
-**no-hit 重叠**：R9755 的 13 no-hit `[84,97,106,119,124,129,131,162,207,208,210,221,230]` 中 **10 个在 R31194 仍 no-hit**（84/97/106/124/129/131/207/208/210/221）= 规则盲区高度可复现。R31194 新增 13 no-hit `[40,91,100,111,130,156,158,209,211,215,216,219,223]` 暴露 R9755 session 未surface 的模式（见下「Tier-2 新发现」）。
+**no-hit 任务高度 cross-run 共享** = 验证 ruleset 没在 fresh data 上 collapse。
 
 ---
 
-## Tier-1 规则分布 (failed-only, episode-level, ruleset 1-dom)
+## Tier-1 规则分布 (failed-only & success-fire, ruleset 4-domsomvis-b1860coord)
 
 ```
-P14 URL自环              105  ████████████████████  55.3%  (与 P6 大量重叠)
-P6  视觉任务DOM必败       94  ██████████████████    49.5%  ★最强误报源, success 30/34 也 fire
-P16 图像内容             47  █████████             24.7%
-P17 颜色/属性文本推断     38  ███████               20.0%
-P5  感知缺失循环          37  ███████               19.5%
-P10 跨步数值记忆失败      20  ████                  10.5%
-P7  sCity=州名           19  ████                  10.0%
-P18 cheapest漏排序        17  ███                    8.9%
-P2  容器节点误点          16  ███                    8.4%
-P15 gallery行位置          6  █                      3.2%
-P13 搜索代浏览 / P12 不翻页 / P4 根节点  少量
+rule  failed  success-fire  notes
+P2     68      5            container-misclick (high vol)
+P4      2      0
+P5     48      3            perception-loop
+P6     80     26            ★ dom 视觉天花板 (87% FP-rate on success)
+P7     19      0            sCity=州名
+P10    13      4            cross-step number recall (P10 FP 仅来 url_match 端口/element_id, 见 R5313)
+P12     4      1
+P13     3      0
+P14    26      3            ★ v3 修后 success-fire 0→3 仍 OK (P14 v3 productive-stay carveout 起作用)
+P15     5      1            gallery-row pos (dom-only)
+P16    46      7            ★ visual-image-content (dom-only)
+P17    32      5            click-back oscillation
+P18    13      0
+P19    35      0            url_match 过早 finish (CLEAN signal)
+P20    15      0
+P21     5      0
+P22     4      0
+P23     8      0
+P24     5      0
+P25     5      0
+P27     7      0            abandonment (vision-extended + ref-carveout)
+P28     2      0            bench-FP 货币 tokenize
+P30     5      0
+P31    56      2            ★ budget-incomplete (high vol; 2 success-fire 可能仍 productive)
+P32     1      0            text-in-price-filter
 ```
-**is_scaffold 命中: 0**（唯一 scaffold 规则 P8 全 run 零命中 → 但不等于无 scaffold bug，靠 Tier-2 主动找；本 run 35 深挖子集确认 0 scaffold）。
+
+主导规则: **P6=80** (视觉天花板) · **P2=68** (容器误点 — 多 P6 superseded) · **P31=56** (budget 耗尽) · **P5=48** (感知缺失循环) · **P16=46** (视觉图像内容) · **P19=35** (url_match 过早 finish) · **P17=32** (click-back 振荡) · **P14=26** (URL 自环, v3 修后 success-fire 仅 3)。
 
 ---
 
-## Tier-2 新发现 (no-hit 盲区 23 + FP 审计)
+## Tier-2 新发现 (sub-agent 深挖 22 no-hit + 6 success FP audit + 3 failed verify)
 
-### 23 no-hit 全部 agent-limit (0 scaffold / 0 FP)，主因子类型：
+### 关键发现 1 — 1 scaffold-bug (paper-relevant): cls 评分 widget radio AXTree 不可见
 
-1. **纯视觉 URL 导航**（task 124/130/131/158 etc）— intent "navigate to item whose image <草地/日落/篮子/项链>" + url_match，DOM 无任何像素 → 结构性不可解。
-2. **图像唯一信息**（task 100 图上车号 / 209 批量定价仅在图 / 221 数量"6"仅在图）— 答案 fact 只存在于图像，DOM 文本不含。
-3. **跨站视觉过滤**（task 207 Nintendo Switch 配色匹配）— agent 正确执行价格排序但**完全忽略需视觉判断的过滤条件** → 直接支撑 P-SoM signal-AUROC 优势假设。
-4. **视觉内容写评论**（task 208 识别昆虫"moth/butterfly"猜成"beetle"）。
+**T180** (任务: 给 listing 评 5-star + 评论)。Classifieds CSS 星级评分 widget 是 radio input，**完全不暴露在 AXTree 中** — DOM mode agent 看到的 group 节点内只有 `StaticText 'Rating'` + `textbox 'Rating Title'` + `textbox 'Comment'` + `button 'Send'`，**0 个 radio 节点**。Agent step_12 尝试 click 评分区域，locator 返回 `walk_fail:no_actionable_within_walk`。最终评论已提交但无星级 → eval `program_html` 检查 `.comments_list h3 must_include='5 of 5'` 必 fail。
 
-### 新 deterministic 候选（Tier-1 当前未覆盖，self-evolving 提议见下）：
-- **task 210 premature-finish-on-search-page**：url_match EXACT 但 finish 时 `eval_source_agent_url` 含 `page=search`（停在列表页未进 item 详情页）。注：R9755 把 210 判为"lamb→plant 关键词歧义"，fresh run sub-agent 找到更干净的状态信号 = agent 根本没进详情页。
-- **task 223 wrong-target-page**：program_html 的 `eval_target_url` (id=12085) ≠ finish obs_url (id=13215)，且 target URL 从未在任何 step 出现 → agent 在错误 listing 上操作。
-- **task 156 oldest-sort-mismatch**：intent "oldest" + step URL 出现 `sOrder=i_price`（用价格排序代替日期排序，因 UI 无 date-sort 选项）。
-- **task 100/209/221 image-content/quantity-confusion**：intent 要图像内数字/数量 + finish answer 是价格 OR 含 "does not specify"/"cannot determine" + reference 为纯数字。
-- **task 215 WANTED-vs-sale**：finish 前进入的 item title 含 `\bWANTED\b`（求购广告误认为 for-sale）。
-- **DOM-mode 视觉幻觉**（task 1/3/91/219 etc）：obs_mode==dom 但 finish thought/answer 含 "as per the image"/"appears to be"/"image shows" → agent **声称看到了它在 dom 模式看不到的图**。强 paper finding（hallucinated visual grounding）。
+**含义**: cls 任意涉及"give N stars"的 task 在 dom + som + vision 三 mode 都会 fail (radio 不在 AXTree → 视觉模式可能能点但 AXTree-grounded agent 看不到)。**可修**: VWA submodule 改写 `helper_functions.py` 把 radio 暴露 aria 或 interaction 层 JS 强制 click。**B-number candidate**: 待加入 master_bug_catalog (类似 B-21 货币 tokenize / B-1836 eval-timeout, 但更上游)。
 
-### success-hit FP 审计 (7 个全成功但 fire 规则)：5 误报 / 2 真风险
+### 关键发现 2 — 1 benchmark-FP cross-run cross-mode 一致替代 item
 
-- **P6 严重 over-fire**：5 次 fire 中 4 次纯误报（task 15/52/103/137）。根因：P6 触发条件 = `image != null`，但 **B0 多模态会把 task reference image 当"可读文字来源"OCR 出来走文本搜索**（task 137 从封面 OCR "Bastien Piano Basics" 直接搜到），绕过视觉需求 → "task 带图" ≠ "需视觉比对页面截图"。
-- **P14 误报**（task 25）：navigate-then-finish（同 URL 停留 2 步）被当自环；真自环需 ≥3 重复 + ≥1 显式 back。
-- 真风险 2 个：task 75 (P2+P5 容器点击失败+parse 错误 3+ 步停滞)、task 181 (P6+P14，pharaoh 主题混淆致 item ×4 访问 + ×3 back 真震荡)。
+**T216** (任务: 找 $420-$430 区间最便宜的 oval table)。Agent 在 R21557 dom + R31194 dom + R24792 vision + R5313 som **4 个不同 run/mode** 全部一致落在 `item&id=82390` (Weiman Fruitwood Oval Two-Tier Cart, $420, 标题明确含 "Oval")。**Reference url=item&id=66046 在所有 4 个 run 的所有 DOM artifact 中均未出现** (`grep` 无命中) — 是从未在 search/browse 路径上的 item id。
 
-### Tier-2 causal verify (12 failed-hit)：7 真死因 / **5 规则名标错**（presence≠causation）
+**含义**: 跨 run/mode 一致的语义正确替代 → 强 benchmark-FP 信号 (类似 R31194 task 42/96/222 string-match FP)。建议加入 `vwa_manual_non_visual_task_ids.py` 旁的 FP-candidate 排除列表 (待 6-mode 完整数据后再 finalize)。
 
-| task | Tier-1 标 | 真死因 | 类别 |
-|---|---|---|---|
-| 0/1 | P6 | ✓ 真死因（颜色/视觉属性 DOM 不可判）| agent-limit |
-| 60/61 | P16 | ✓ 真死因（参考图理解对，但商品类目区分需缩略图：RV 误判为驾驶 game）| agent-limit |
-| 7 | P17 | ✓ 真死因（颜色无 filter widget，从机型名推断颜色出错）| agent-limit |
-| 5 | P14 | ✓ 真死因（30 步卡同一 URL，0 mutating action）| agent-limit |
-| 11 | P5 | ✓ 真死因（蓝色 bike，item ×4 振荡）| agent-limit |
-| **4** | P14 | ✗ 表层；真因 = **选错 listing**（Toyota 86 而非 white car）后卡 edit 页 | agent-limit |
-| **8** | P5 | ✗ 表层；真因 = **item_add 表单交互失败**（11× no_progress 找不到 price 字段），感知其实成功 | agent-limit |
-| **2** | P10 | ✗ 表层；真因 = **搜索词漂移**（red gem→red gemstone 改变结果集）| agent-limit |
-| **3** | P10 | ✗ 表层；真因 = **颜色幻觉**（"not black as per the image" 在 dom 模式幻觉）| agent-limit |
-| **9** | P17 | ✗ 表层；真因 = **数值漂移**（算出 $785 但表单填 $790）= P10 模式 | agent-limit |
+### 关键发现 3 — DOM 视觉天花板的 6 种新 phrasing 盲区 (P6/P16/P22 regex gap)
 
-→ **P16/P17 语义确认**：P16 = 参考图场景理解对但需商品缩略图区分类目；P17 = 颜色/规格属性无 DOM filter → 文本推断不可靠。
+22 no-hit 中 **21 个全部** indicate "intent 含视觉属性 + dom 模式不可读"，但现有 P6/P16/P22 regex 没匹配。具体分布：
 
----
-
-## Self-evolving changelog（`1-dom` → `2-dom` 2026-05-23 → `3-domsom` 2026-05-24）
-
-> user 批准在 6-mode freeze 前 fast-track 落码（偏离默认 discover-then-freeze 时序）。已 bump `RULESET_VERSION="2-dom"`；R31194 重扫验证全部通过（每条新规则 **0 success-FP**、命中预期 Tier-2 task）。⚠️ 仍 dom-only → **cross-mode 定量比较仍禁止**；6-mode 数据齐时这些规则连同 som/vision/phantom discover 一并进 freeze 全量重扫。
-
-| 新规则 | 0-token signal | 命中(全 failed) | success-FP | 验证 |
-|---|---|---|---|---|
-| **P19 url_match过早搜索页finish** | eval_types⊇url_match + finish obs_url 含 `page=search` + ref_url 非 search | **26** | **0** | task 210 ✓ |
-| **P20 评测目标页从未访问** | eval_types⊇program_html + 任一 http target item id 全程未在 obs_url 出现 | **19** | **0** | task 223 ✓ |
-| **P21 dom模式视觉幻觉** | mode=dom + **has_image=False** + finish 声称看到 listing/photographic 图像内容（排除 ref-image 措辞）| **9** | **0** | task 91/121/146/160... ✓ |
-| **P22 图上数字/数量dom不可得** | string_match + ref 纯数字 + (intent 读图上数字 OR how-many+agent放弃) + answer 缺 ref 数 | **3** | **0** | task 100/221 ✓ |
-| **P23 oldest误用价格排序** | intent 含 oldest/earliest + step URL 含 `sOrder=i_price` | **8** | **0** | task 156 ✓ |
-
-**P-rule 收窄（降 FP，已实现）**：
-- **P6**：has_image branch 从 blanket `image!=null`（success 30/34 fire = 88% 误报）收窄为 `has_image AND intent 含视觉匹配语 (selfie/this image/exact item/taken on...)`。**success-fire 30→22**（去掉纯 OCR-able ref-image 任务；救回 task 47/101 真视觉 TP）。残留 22 = has_image-visual-match 13（risk-marker 本质，agent 偶尔仍成功）+ **has_color 9（既有问题，本次未碰，留后续）**。
-- **P14**：连续同 URL 阈值 **3→4**（outcome-independent；3 步太短无法判"卡死"，navigate-then-finish 长得一样）。**success-fire 13→9，failed-fire 105→71**；真卡死 loop（task 5 = 30 步）不受影响。
-
-**关键洞察 — P21 的 has_image gate**：无 reference image 时 agent 说"listing image shows X"必指它在 dom 看不到的页面内容 = 真幻觉；有 ref image 时"image"有歧义（可能合法指 ref image，= P6 旧错）。gate 同时消 2 FP（task 62/63 echo intent）+ 保 9 TP。**P21 是本轮最强 paper finding**：dom-mode agent 不只是 fail 视觉任务，而是 **confabulate 视觉 grounding**（"image taken inside a garage" 等）。
-
-**P-rule → router feature 连接**：P19/P21/P22 这类 0-token signal 本身就是 **learned router 的候选特征**（"此 task 需视觉 → route 到 som/vision" vs "此 task 行为缺陷 → 留 dom + retry"）。详见下「后续行动」。
-
-### v3 `3-domsom` 增量（2026-05-24，R9725 som discover + 本 dom run 全量重扫）
-
-som Tier-2 发现的 6 新规则 + 3 修正落码，dom (本 run) 同步重扫验证 success-safe：
-
-| v3 变化 | dom (R31194) | success-fire |
+| Task | Intent 关键短语 | 现有规则 miss 原因 |
 |---|---|---|
-| **新 P24** 不确定仍 finish | failed 6 | 0 |
-| **新 P25** 跨站任务跳过其中一站 | failed 6 | 0 |
-| **新 P27** 找不到即放弃 | failed 2 | 1（task151 边界：url_match 不看 finish，嘴上放弃但 URL 碰巧匹配 = §282 t151）|
-| **新 P28** benchmark-FP 货币 tokenize | failed 1 | 0 |
-| **新 P30** 到达正确 item 后离开 | failed 4 | 0 |
-| **P14 修正**（排除 productive 长停留）| failed 71→降 | **success-fire 9→2** |
-| **P10 修正**（双变量去日期污染）| — | 低 |
+| 12, 13 | "color of the most recently listed..." | P6 VISUAL_COLOR_KEYWORDS 漏 `\bcolou?r\b` 名词本身 (只有具体色名) |
+| 16 | "the item with the coffee mug **in the picture**" | P16/P22 漏 "in the picture/image/display" 通用 phrasing |
+| 59 | task_config.image 非空 (外部参考图) | 无 task_config 字段直读规则 |
+| 84 | "selfie image" (拍摄角度) | 纯视觉 attribute, 无文本 proxy |
+| 97 | "shape of an animal" (物理外形) | P22 漏 "shape/picture of" |
+| 106, 192 | "whose image has..." / "primary color of car..." | P16 phrasing variant |
+| 107, 113 | "color of rims" / "jersey number" (raw PNG URL finish) | P16 漏 "color of N"; finish-on-raw-PNG 新模式 |
+| 117, 123 | "similar color as the person" / "object color" + start_url 改写 | P6 漏 "similar color as"; start_url context 被改写未规则 |
+| 129 | "listing image shows the price" | P22 漏 "image shows the price" |
+| 131 | "puppies in the basket" (图像识别) | P16/P22 漏 "image with N" |
+| 203 | "USB-C cable" 仅在图中 | 无 task_config.comments 字段直读规则 |
+| 207, 208 | "color scheme matches" / "insect in picture" | P6 漏 "matches" 动词; "insect in picture" P16 漏 |
+| 209, 218 | "batch 15 cheaper, only in image" / "USA coin in image" | 无 task_config.comments 直读规则 |
+| 217 | comment form field 重复 type 覆盖标题 | 边缘 form-overwrite, deterministic 难 |
 
-dom failed-coverage 87.9% → **85.8%**（P14 修正去除假覆盖，~4 ep 转 no-hit 待深挖）。新规则在 dom 也命中 = **跨 mode 通用规则**（统一 `3-domsom` 下 dom+som 同口径打分 = freeze 后 cross-mode 比较的基础）。som 完整发现见 `B0_som_classifieds_diag_digest.md`。
+### 关键发现 4 — failed-hit P-rule causal verify: 3/3 not causal (presence-coincidence)
+
+T3 (P2 容器误点) / T22 (P17 click-back) / T0 (P19 url_match 过早 finish) 经 sub-agent 逐 step verify：**全部命中 superseded by 更上游的 P6 (颜色不可见) + P15 (gallery 行位置)**。即 P2/P17/P19 hit 是 P6/P15 unrecoverable 死局下的下游症状。
+
+**含义** (沿用 R31194 教训): failed-hit per-rule 计数读作"presence detector"非"causation"。R21557 dom 真实 agent-limit failure mass = **P6 + P15 + P16 + P31 (4 条规则) 联合主导**，其余规则计数虚高 by overlap。
+
+### 关键发现 5 — success-hit FP audit: 5/6 P6 hit non-causal (P6 仍是高 FP-risk)
+
+T4/T5/T15 (P6 "white car" / "red case" — DOM 文本本身含颜色词字面) + T44/T45 (B0 多模态 LLM 通过 reference image OCR 转 text search 绕过视觉匹配) 均 hit_causal=false。**仅 T11** ("first BLUE bike", DOM 无 color field, agent 走了 14 步含 6 次 back oscillation 才绕过感知障碍) hit_causal=true 但仍 success → near-causal grey-zone。
+
+**建议 carveout** (待 6-mode discover 完成后落码):
+- **P6 carveout-A**: DOM 文本本身含颜色词字面匹配 → 不 fire (类似 P14 v3)
+- **P6 carveout-B**: B0 (多模态) + reference image OCR 路径可绕过 → 降级 presence-only
 
 ---
 
-## 后续行动
+## Self-evolving — 提议新规则 (待 6-mode freeze 后批量落码)
 
-- **无 scaffold-bug** → 无需出 B-number（R31194 fresh Gate-3 框架层干净，与 R9755 一致）。
-- **无 benchmark-FP** → 无需 task 排除（35 深挖子集 finish-vs-reference 全真错；N/A task 已 task-load 排除）。
-- **paper router 设计输入**：P14 真自环 (task 5)、P5/P2 振荡 (task 11/75)、P10 数值漂移 (task 2/9)、搜索词漂移 (task 2) 是 **cross-mode agent 行为缺陷，换表征救不了 → 需 retry/memory 模块**；纯视觉盲区 (task 124/130/131/207...) 是 **表征失败 → 可 route 到 som/vision**。⚠️ 此分层是 dom-only provisional，须 6-mode 对照确证。
-- **discover-then-freeze 下一步**：som/vision/phantom 4 mode 跑完 → 各自 discover → 合并 P19-P23 候选 + 收窄 P6/P14 → bump RULESET_VERSION → 全量重扫所有 condition → 才开 cross-mode 定量比较。
+> ⚠️ **按 discover-then-freeze 协议** (SKILL.md "跨 condition / cross-mode 工作协议"): 现 dom + som 两 mode discover 进行中，4 mode 未跑 (vision/P-text/P-prompt/P-SoM)。**新规则不立刻落码 ALL_RULES** — 等所有 6 mode 完成 + Tier-2 discover 完成 → 一次 freeze + 全量重扫 → 落同一 ruleset version。先记录草案。
+
+dom-specific (mode != "dom" gate 默认) 草案:
+
+- **P33** (color "not specified" + page=item): intent 含 `\bcolou?r\s+of\b` + obs_url 含 `page=item&id=` + finish.answer 含 `(?:not\s+(?:specified|mentioned|visible|available)|cannot\s+(?:be\s+)?determine)` → agent-limit visual-attr-not-in-dom. 覆盖 T12/T13 + 也覆盖 T192 self-report. **Success-safe**: finish 显式承认无法找到 → 成功 ep 不会写。
+- **P34** (external reference image): `task_config["image"] != null` + eval_type 含 `url_match` + mode=dom → agent-limit external-ref-image-DOM-inaccessible. 覆盖 T59. **0-token**, 纯 config 读取，**最 deterministic 的新规则**。
+- **P35** (in-the-picture phrasing): intent regex `r'(?:in|with|from)\s+the\s+(?:picture|image|display|photo)'` + mode=dom → agent-limit visual-image-content-DOM-blind. 覆盖 T16/T207/T208 + (P22 phrasing 扩展)。
+- **P36** (raw PNG URL finish): mode=dom + finish step obs_url 匹配 `oc-content/uploads/.*\.png` + thought 含 "I (?:will\s+)?assume" → agent-limit visual-hallucination. 覆盖 T107/T113. **天然 success-safe**: url_match item-page reference 永不会是 raw PNG URL.
+- **P37** (P22 phrasing 扩展): intent 含 `image\s+(?:shows?|has|with)\s+(?:the\s+)?(?:price|number|text)` + mode=dom → agent-limit image-embedded-text. 覆盖 T129. (P22 原 phrasing "number shown IN the image" 漏 T129 的 "listing image shows price")
+- **P38** (cross-mode, scaffold-adjacent): scaffold-bug 提议 — intent 含 `\b\d+\s+star\b|\brating\b` + eval program_html `\d+\s+of\s+\d+` + click 评分区域 walk_fail → scaffold-bug star-widget-AXTree-blind. **B-number candidate**.
+- **P39** (cross-mode, benchmark-FP detector): eval_type=url_match + reference_id NOT in any obs_url across all run trajectories + agent 跨 ≥2 run/mode 一致 finish 同 alternative_id → benchmark-FP candidate. 覆盖 T216. **可能需要 cross-run global view** (per-run Tier-1 看不到), Tier-3 整合时单 cross-run 脚本检测.
+- **P40** (price boundary inclusive vs exclusive): obs_url 含 `sPriceMax=N` + finish step item 价格 == N + intent 含 `under|less\s+than|below` → agent-limit boundary-inclusive. 覆盖 T218. **0-token**.
+- **P41** (P6/P16 regex 修正非新规则, 仍 bump ruleset version):
+  - P6 VISUAL_COLOR_KEYWORDS 添加 `\bcolou?r\b` 名词本身
+  - P6 IMAGE_VISUAL_MATCH_RE 添加 `similar\s+color\s+as` / `same\s+color\s+as` / `matches`
+  - P22 phrasing 收宽（合并入 P37）
+
+**预估覆盖**: 上面 8 条新规则可覆盖 22 no-hit 的 ~17 个 (T84 selfie 无 deterministic signal, T217 form overwrite 边缘, T203 USB-C cable 信号弱)。failed-coverage 88.1% → ~95%。
+
+**FP-rate carveout 提议** (P6 / P10):
+- P6 dom-mode + DOM 文本含目标颜色词字面 → 不 fire (R21557 success-FP 5/6 confirmed)
+- P6 dom-mode + task_config.image != null + agent 用 reference-image OCR 后转 text search → 降级 presence-only
+- P10 url_match task + output 含完整 URL → 过滤 URL 端口 (9980) 与 item_id 数字 (见 R5313 P10 FP audit, 6/6 non-causal)
+- DATE_CONTEXT_RE 月/日残留阈值 `>10` 提高到 `>30` 或限定 3 位数+
+
+---
+
+## 代表 episodes
+
+**scaffold-bug 1 个**:
+- **T180** — rating widget radio AXTree 不可见 → 评论已提交但无星级 → eval `5 of 5` fail. **paper §8 / B-number candidate**.
+
+**benchmark-FP 1 个**:
+- **T216** — Weiman Fruitwood Oval Cart $420, 跨 4 run/mode 一致 finish item=82390 (语义正确), reference=66046 (从未出现). **FP-candidate list 加入**.
+
+**agent-limit 代表**:
+- **T59** — task_config.image 非空 (企鹅参考图), B0 dom 无法读图, 推断"penguin"但实际正确动物不同, finish item=15671 (penguin game) vs reference=6247. **P34 deterministic candidate** (单 config 读取).
+- **T129** — "listing image shows the price" → DOM 文本看到的 $15 是图旁边 text, agent 选错 seller. **P37 candidate**.
+- **T123** — start_url 已指定 cls clothes 搜索, agent step_0 type "yellow" 改写 sPattern, 后续操作脱离 task 指定上下文. **P38 candidate** (cross-mode applicable).
+
+---
+
+## paper-grade 含义 (待 6-mode 完成后再 finalize)
+
+1. **DOM 视觉天花板**: 22 no-hit + 80 P6-hit + 46 P16-hit = **dom mode 视觉相关失败 mass ≥ 35%** of all failures. paper §3 hero `DOM 必败 / SoM 可救` 的 dom 端 evidence numerator. 但**禁止下 cross-mode 定量比较**直至 vision/SoM 同 ruleset 数据。
+2. **scaffold-bug 暴露 1 个 (T180)**: cls 评分 widget AXTree 不暴露 — `master_bug_catalog` 待新 B-number; 暂归 P38 草案 + paper §8 discussion (类似 B-21 货币 tokenize 的 benchmark scaffold limitation).
+3. **benchmark-FP 暴露 1 个 (T216)**: cross-run cross-mode 一致 + reference id 从未出现 = 强 FP 信号. paper §8 disclosure 列表加入.
+4. **跨 run 高一致** (R31194 ↔ R21557): SR ±2.2pp, no-hit 13 重叠, failed-coverage 88.1% vs 87.9%. **AMENDMENT_07 SoM-fix 不影响 dom mode 失败模式**, 符合预期 (P79 dom 用 native nodeId).
+
+---
+
+## Cross-link
+
+- 实验笔记 §294-§296 (AMENDMENT_07 + run-to-run sensitivity)
+- master_bug_catalog (T180 scaffold-bug + T216 FP 待加 B-number)
+- 上 game `next_steps.md` §0 ④ — Phase 1a fire 跑中, 等所有 6 mode 完成 → discover-then-freeze 全量重扫 → 才下 cross-mode 结论
+- R31194 archived digest (旧版本, supersedes by 本文件)
+- R5313 som digest (B0 som cls, 同步刷新)
