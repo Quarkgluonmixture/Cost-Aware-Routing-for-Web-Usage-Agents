@@ -97,17 +97,41 @@ def dsig(action, obs):
     return (at,) if at else ("PARSE_FAIL",)
 
 
+def _extract_first_balanced_json(text: str):
+    """Find first balanced {...} block (handles multi-line + nested)."""
+    start = text.find("{")
+    if start < 0:
+        return None
+    depth = 0
+    in_str = False
+    esc = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if esc:
+            esc = False; continue
+        if c == "\\":
+            esc = True; continue
+        if c == '"':
+            in_str = not in_str; continue
+        if in_str:
+            continue
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return None
+
+
 def parse_action(generated_text: str) -> dict:
-    """从 B1 generate 输出抽 JSON action (与 agent.step 内部 parser 等价的极简版).
-    回退: 直接 regex 抽 action_type / element_id / text / scroll_direction / option_label."""
-    # 尝试 JSON 抽取
-    m = re.search(r'\{[^{}]*"action_type"[^{}]*\}', generated_text, re.DOTALL)
-    if m:
+    """抽 B1 greedy 输出里的 action JSON。优先 balanced-brace + json.loads;失败再 regex 兜底。"""
+    js = _extract_first_balanced_json(generated_text)
+    if js:
         try:
-            return json.loads(m.group(0))
+            return json.loads(js)
         except Exception:
             pass
-    # 回退 regex
     out = {}
     for k in ("action_type", "text", "scroll_direction", "option_label"):
         mm = re.search(rf'"{k}"\s*:\s*"([^"]*)"', generated_text)
@@ -120,12 +144,17 @@ def parse_action(generated_text: str) -> dict:
 
 
 def force_gpu_patch():
-    """与 tier_a 同: 强制 device_map={'':0} (DGX GB10 兼容; A100 等价无害)."""
+    """强制 device_map={'':0} + eager attention.
+    - device_map: DGX GB10 'Not Supported' 显存查询 → auto offload CPU 坑 (tier_a 同).
+    - attn_implementation='eager': Myriad V100 + bf16 + SDPA → 'cutlassF: no kernel
+      found to launch' (V100 SM7.0 cutlass kernel 路径缺); eager 跨 GPU-type 通用
+      (慢但稳, A100/GB10 也 OK 仅 ~2x 慢)。"""
     import p79.agents.qwen3vl_agent as qa
     _orig = qa.Qwen3VLForConditionalGeneration.from_pretrained
 
     def _forced(*a, **k):
         k["device_map"] = {"": 0}
+        k.setdefault("attn_implementation", "eager")
         return _orig(*a, **k)
     qa.Qwen3VLForConditionalGeneration.from_pretrained = _forced
 
@@ -159,7 +188,7 @@ def baseline_action(agent, intent, obs_str, imgs):
     return a
 
 
-def patch_sweep(agent, patcher, intent, obs_arch, obs_curr, imgs, max_new_tokens=64):
+def patch_sweep(agent, patcher, intent, obs_arch, obs_curr, imgs, max_new_tokens=256):
     """对每层 L, 用 source=arch 的 hidden 替换 target=curr 的 last-token hidden, 看 patched 输出。"""
     arch_inputs = build_inputs(agent, intent, obs_arch, imgs)
     curr_inputs = build_inputs(agent, intent, obs_curr, imgs)

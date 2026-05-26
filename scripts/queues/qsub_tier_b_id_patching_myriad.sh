@@ -12,7 +12,7 @@
 #
 # Output: results/tier_b_id_patching_<timestamp>/tier_b_task_<tid>.json + tier_b_summary.json
 
-#$ -l h_rt=4:0:0
+#$ -l h_rt=12:0:0   # bumped from 4h: max_new_tokens 64→256 (need to reach action_type past thought field) → ~4-6x slower
 #$ -l mem=48G
 #$ -l gpu=1
 #$ -wd /home/ucab352/Scratch/p79
