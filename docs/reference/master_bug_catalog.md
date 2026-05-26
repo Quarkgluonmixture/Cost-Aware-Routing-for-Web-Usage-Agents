@@ -7980,6 +7980,8 @@ fix @3ea598e (fix 分支); 文档 (本 entry + 笔记 §287 + next_steps) @diag 
 
 **Cross-link**: B-1858 / B-12 (element-ID churn, 旧 "do-not-patch" superseded) · AMENDMENT_07 (estimand witness) · AMENDMENT_06 §4 (reversed) · 笔记 §282/§292/§293/§294/§295 · `session_checkpoint_2026-05-25_runtorun_noise.md`。
 
+**Follow-up 2026-05-26 — fire_manifest rebind** (commit `f2da391`, B-1862 follow-up, NOT new amendment): AMENDMENT_07 archive 旧 SoM-family run (R31194 dom + R9725 som + R2647 ptext + R24792 vision) 时**漏更新 `docs/checkpoints/pre_run/fire_manifest.json`**, 仍 bind archived run 为 authoritative. 2026-05-26 fire mode-transition (dom→som @ 04:16, som→vision @ 12:18) 两次触发 `validate_fire_manifest --apply` fail-closed (`.locks/manifest_bind_halt.marker`) — 新 sequential-id 数据 (R21557 dom, R5313 som, 各 224 ep) 被当 "ghost vs authoritative archived". 修复 = atomic edit manifest: dom R31194→R21557, som R9725→R5313, vision entry **delete** (R21137 partial killed 2026-05-26 12:21 for Phase 2 disk migration, 无 valid run 可 bind, 留 unbound 让下次 fire 完 narrow-semantics auto-bind via `--populate --apply`). A100 sync via scp; validate_fire_manifest PASS bound-clean=2 no ghost; halt marker ack-deleted. **Governance**: AMENDMENT_07 tag + OSF kv9sf 已 cover sequential-id contract (决策层), manifest rebind 是 implementation 层 follow-up — 不需要新 tag / OSF (memory `feedback_pre_fire_protocol_witness`: 新决策才需 witness, 同 amendment 内 follow-up 不需). **Partial-symlink disk lesson** (相关): 同日 Phase 2 disk migration 用 `results/visualwebarena` → `/mnt/scratch` partial symlink (而非整 `results/` symlink), 因 git 不 follow symlink for tree traversal → 整 symlink 让 Gate 3 报 provenance/mechanistic 全 deleted. 详 [[实验笔记]] §301 + [[next_steps]] §0 ③④.
+
 ---
 
 ## B-1863 — fire6_monitor "orchestrator GONE" 每 tick 空转 (无状态, kill 后永刷); 改边沿触发 (2026-05-25)
@@ -7987,5 +7989,69 @@ fix @3ea598e (fix 分支); 文档 (本 entry + 笔记 §287 + next_steps) @diag 
 **B-1863** (infra / monitoring-sidecar, **FIXED 2026-05-25**, NOT estimand-affecting) — `scripts/maintenance/fire6_monitor.sh healthcheck`(30min cron)的 "orchestrator GONE" 报警**无状态**:`if ! _orch_up; then ALERT+=GONE`(旧 line 67-68)每 tick 都刷 → fire 一旦 intentional kill / 两次 fire 之间,cron **永远刷 GONE 空转**(用户实测:本 session 17:00→19:30 每 30min 一条 stale "GONE")。且 FATAL 检查在 if/else 外 → 停火后旧 fire log 的 FATAL 也每 tick 空转。
 
 **Fix**: 改**边沿触发**(tiny state file `logs/.fire6_orch_state`):仅在 **up→down transition** 报一次(真正有用的"fire 刚down"信号)+ 持续 down 静默 + orch 回来 re-arm。FATAL/stall/GPU in-flight 检查移进 **orch-UP 分支**(停火后不空转)。`_orch_up` 已 bind 真实 long-lived orchestrator(queue_chain.sh OR `queue_phase1_paper_grade.sh launch` —— 后者在 B-1663 sequential cls→red 下 WAIT for chain 不退出,是可靠 "fire alive" 锚)。bash -n PASS。mid-fire safe(cron sidecar,runner 不读),A100 经单文件 `git checkout origin/diag -- fire6_monitor.sh` 部署(不动 fire code)。**Cross-link**: B-1840 (queue_phase1 chain log glob) + B-1663 (sequential cls→red orchestrator wait) + B-1861 (watchdog ntfy fail-safe, 同类 monitoring robustness)。
+
+## B-1864 — cls 评分 widget radio input AXTree 不暴露 → 任意 N-star rating task 跨 mode universal-fail (2026-05-26)
+
+**B-1864** (scaffold / wrapper-grounding / **GRL workshop Track A candidate**, **DIAGNOSED 2026-05-26 via /diag R21557 dom task_180**, fix deferred post-Phase-1a — GRL-bounds wrapper enrichment, mid-fire 改属 ESTIMAND-AFFECTING) — /diag R21557 dom Tier-2 (22 nohit deep-dive batch 3, task_180) 发现 Classifieds CSS 星级评分 widget 是 radio input, **完全不暴露在 AXTree 中** — DOM mode agent 看到的 group 节点内只有 `StaticText 'Rating'` + `textbox 'Rating Title'` + `textbox 'Comment'` + `button 'Send'`, **0 个 radio 节点**。Agent step_12 click 评分区域返回 `walk_fail:no_actionable_within_walk`, 评论已提交但无星级, eval `program_html .comments_list h3 must_include='5 of 5'` 必 fail。
+
+**影响面**: cls 234 task 中 **4 task = 1.7%** (task_95/104/133/180) 涉及评分提交。AXTree-invisible 跨 dom/som/vision 三 mode universal — 不偏 cross-mode 比较, 是 universal SR floor (1.7pp)。
+
+**Fix path (deferred post-Phase-1a, GRL-bounds)**: 跟 `_inject_select_options` + `_inject_css_dropdown_options` (paper §3.5.1 wrapper-enrichment, line 214) 同 pattern — 在 `p79/envs/vwa_wrapper.py::_to_p79_obs` 加 `_inject_radio_groups()`: 查 live page `input[type="radio"]` + 匹配 nearest AXTree 节点 (类似 `_INJECT_DISTANCE_CSS_DROPDOWN_PX = 150`) + 注入 `[RADIO OPTIONS: 1-star ... 5-star]` 标注 + (optional) JS aria-checked 暴露。Serialization adapter, 不改 prompt / 不改 action policy / 不改 task → **GRL boundary in-bounds**, 跟 B-1794 + B-1796~B-1802 同 reliability cluster.
+
+**Decision (current)**: mid-fire 不改 (envs/wrapper 在 fire import 路径, 改 = ESTIMAND-AFFECTING, 违反 [[feedback-analysis-layer-fire-immutability-and-witness]])。Phase 1a 全完后两选:
+- (a) AMENDMENT_08 加 task_95/104/133/180 进 exclude list (scored_task_count cls 224→220, 类比 N/A task task-load 排除)
+- (b) Phase 1b 前实施 wrapper injection fix + 全 baseline 重跑 4 task
+
+**Workshop sub-paper Track A**: 加入作为 GRL walk-up wrapper-enrichment 3rd case = B-1794 schema≡validator + dropdown injection + radio injection = **完整 GRL reliability pattern cluster** (cross-ref [[workshop_subpaper_plan]] §0.1 Track A)。
+
+**Cross-link**: B-1794 (B0 forced-tool-call schema≡validator, GRL serialization adapter), paper §3.5.1 `_inject_css_dropdown_options` (line 214 wrapper-enrichment precedent), [[workshop_subpaper_plan]] Track A, [[实验笔记]] §299, R21557 dom digest (`docs/analysis/vwa_classifieds/B0_dom_classifieds_diag_digest.md`) 关键发现 1。
+
+## B-1865 — cross-site cls+shopping task 在 paper-grade single-site fire 下 shopping 不可达 (2026-05-26)
+
+**B-1865** (scaffold / fire-protocol / paper §8 scope, **DIAGNOSED 2026-05-26 via /diag R5313 som task_36**, disclose-only / Phase 1b deferred — protocol-layer scope decision, **NOT GRL**) — /diag R5313 som Tier-2 failed-hit verify (5-task batch, task_36) 发现 cross-site task (sites=['classifieds','shopping']) 在 paper-grade fire 同 host 只跑一条 site chain (CLAUDE.md hard rule #3 / B-1581 cross-site contention) 下, shopping container `localhost:7770` 不可达。Agent step_5 在 cls 成功找到目标 (Luigi's Mansion 3 id=35037, $50), step_6-29 全部 `goto`/`new_tab` `localhost:7770` 失败 (24 步全程 `about_blank`, `page_changed=False`); P19 误命中 url_match-search-finish 实为 budget 耗尽结果。
+
+**影响面**: cls 234 task 中 **2 task = 0.85%** (task_36/37) 是真 cross-site (sites=['classifieds','shopping'])。**注意区分**: 11 task (task_200/207/224/225/226/227/228/230 等) 标 sites=['classifieds'] 但 intent 引用 reference image — 这些是 **agent-limit 非 scaffold-bug** (B0 多模态 LLM 可 OCR/inference, 已在 R21557 digest P34 task_config.image deterministic candidate 标)。仅 2 个真 cross-site task 跨所有 mode universal-fail。
+
+**Fix path (deferred)**: protocol-layer 决策, 不是 grounding/serialization 问题 (**非 GRL**, 不进 workshop Track A):
+- (a) post-Phase-1a AMENDMENT_08 加 task_36/37 进 exclude list (与 B-1864 合并 cls 224→218)
+- (b) paper §8 disclosure: "cross-site classifieds+shopping tasks not benchmarked under single-site fire protocol"
+- (c) Phase 1c (future) 多 host 专门 cross-site fire — 跟 CLAUDE.md "同 host 单 site chain" hard rule 冲突, 需要新 multi-host substrate
+
+**Decision (current)**: mid-fire 不改 (改 = ESTIMAND-AFFECTING), Phase 1a 完后 AMENDMENT_08 一次性处理 + paper §8 disclose。
+
+**Cross-link**: B-1581 (cross-site contention 原 hard rule rationale), CLAUDE.md "paper-grade fire 同一物理 host 同时只能跑一条 site chain" hard rule #3, [[实验笔记]] §299, R5313 som digest 关键发现 6。
+
+## B-1866 — cross-run cross-mode 4-run 一致替代 item = 新 benchmark-FP class (Weiman Oval Cart, task_216) + B-21 sibling cross-mode confirm (2026-05-26)
+
+**B-1866** (benchmark-FP / cross-run consistency / paper §8 + AMENDMENT_08, **DIAGNOSED 2026-05-26 via /diag R21557 dom task_216 + B-21 P28/P29 cross-mode confirm**, AMENDMENT_08 exclude candidate post-Phase-1a — task-level FP, 非 scaffold change) — /diag R21557 dom Tier-2 (22 nohit deep-dive batch 4, task_216) 发现 cls task_216 (find $420-$430 oval table) 新型 FP 模式: agent 在 **R21557 dom (current) + R31194 dom (archived) + R24792 vision (archived) + R5313 som (current) — 4 run/mode** 全部一致 finish `item&id=82390` (Weiman Fruitwood Oval Two-Tier Cart, $420, 标题明确含 "Oval", 语义完全正确), reference `url_match item&id=66046` **在所有 4 run 的所有 DOM artifact 中均未出现** (`grep` 跨 trajectory 无命中) — reference item 从未在 search/browse 路径上出现, eval 接受的特定 item id 实际不可达。
+
+**与 B-21 / P28 / P29 区别**: B-21 = string_match fuzzy=1.0 GPT-judge FP (Tier 5 binary, documented); P28 检测货币 tokenize FP (finish "$5.00" vs ref "$5", VWA word_tokenize 拆 5.00); P29 检测语义 yes/no FP。**B-1866 是新 class** = url_match eval 接受的 specific item id 在所有 trajectory 中不可达, agent 跨多 mode 一致 finish 语义正确替代 → reference id 是 "ground truth-only, not search-reachable" benchmark artifact, 非 string-match 严苛或 N/A judge FP。
+
+**Tier-1 P-rule 草案 P39 (cross-run-FP detector)** (待 6-mode discover 完后落码 + freeze): eval_type=url_match + reference_id NOT in any obs_url across all run trajectories + agent 跨 ≥2 run/mode 一致 finish 同 alternative_id → flag benchmark-FP candidate。需 cross-run global view (per-run Tier-1 看不到, 当前由 sub-agent 整合发现; P39 落码后自动 detect)。
+
+**B-21 sibling: P28/P29 deterministic detector 当前 hit list (跨 R21557 dom + R5313 som confirm)**:
+- **P28 货币 tokenize FP** (finish answer 含 `$N.MM` 形式 vs ref 期望 `$N`, VWA `word_tokenize` 拆 `5.00` → string_match miss):
+  - **task_42**: R21557 dom + R5313 som 两 run 一致 detect (强 FP 信号)
+  - **task_96**: R21557 dom + R5313 som 两 run 一致 detect (强 FP 信号)
+  - **task_43**: R5313 som only detect (mode-specific 待 vision/phantom confirm)
+- **P29 语义 yes/no FP** (ref 含 yes/no/is/are 语义判断, finish 语义对但 verbatim 不匹配):
+  - **task_222**: R5313 som detect (R9725 archived 同标 = cross-run 一致)
+
+**AMENDMENT_08 exclude list 草案 (post-Phase-1a, 6-mode verify 后 finalize)**:
+```python
+PHASE1A_BENCHMARK_FP_EXCLUDE = [
+    42,   # P28 货币, B-21 sibling, cls dom+som 一致
+    43,   # P28 货币, cls som only, mode-specific 待 confirm
+    96,   # P28 货币, B-21 sibling, cls dom+som 一致
+    216,  # B-1866 cross-run cross-mode 4-run 一致替代 (新 FP class, 最强信号)
+    222,  # P29 语义 yes/no, cls som (R9725+R5313 一致)
+]
+# scored_task_count cls: 224 → 219 (B-1866 alone)
+# combined with B-1864 (4 task) + B-1865 (2 task) + B-1866 (5 task): 224 → 213
+```
+
+**estimand witness 要求**: exclude list 改动 = estimand-adjacent → 必 pre-publish witness (类似 AMENDMENT_05/06/07 pattern: tag + OSF deposit + paper prose reconcile)。**不能 mid-fire 改** — Phase 1a 全完 + 6-mode FP cross-confirm 后一次性 AMENDMENT_08。
+
+**Cross-link**: B-21 (string_match fuzzy=1.0 GPT-judge sibling), B-91 (N/A task FP exclusion precedent), AMENDMENT_05/06/07 (estimand witness pattern), P28/P29 P-rule deterministic detector in `scripts/analysis/diag_pattern_match.py`, [[实验笔记]] §299, R21557 dom digest 关键发现 2 + R5313 som digest E 节。
 
 ---

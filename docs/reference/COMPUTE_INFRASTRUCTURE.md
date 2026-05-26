@@ -107,6 +107,34 @@ Instead of reaching out to quark VWA, **deploy VWA Docker stack on A100 VM itsel
 - pip site-packages: ~10GB
 - **Total**: ~135-160GB ⇒ 500GB - 160GB = ~340GB headroom ⭐ comfortable
 
+**Actual disk layout (post-Phase 2 migration 2026-05-26, 笔记 §301)** — original 500GB headroom budget proved optimistic; real usage 2026-05-26 pre-migration was `/dev/vda1` 457G/485G **95%** because:
+- `/var/lib/containerd` = 388G (docker image storage委托给 containerd, 真物理大头, 不是 `/var/lib/docker`)
+- `/var/lib/docker/rootfs` = 182G (overlay layer + ~13.76G container write-layer during fire)
+- `docker system df` 报 416GB "Images" 是 logical size (不去重共享 layer), 真实需看 `du /var/lib/{docker,containerd}` ≈ 570G total docker stack — paper-grade fire 不可压缩 baseline
+- VM 有 2 个独立物理盘 (虚拟): `/dev/vda1` 485G (`/`, docker stack 主占) + `/dev/sda` 503G (`/mnt/scratch`, 含 119G `wikipedia.zim`)
+
+**Partial symlink layout** (Phase 2 disk migration result, fire data → scratch):
+```
+/home/ubuntu/workspace/p79/results/
+├── B0_3mode / B1_3mode / B2_3mode / ...       (small, git-tracked or analysis aggregate)
+├── provenance/        (256K, git-tracked: env_a100_baseline.json + vwa_a100_*.json — Gate 3 fingerprint)
+├── mechanistic/       (52M, git-tracked: §5 mechanism archive, paper §5 暂搁但 data 保留)
+├── repro_replicates/  (1.5G, gitignored: dom R31194 + vision R24792 clean replicates, 笔记 §297)
+├── diagnostic_replay/ (3.4M)
+├── phantom_paper/     (2.7M)
+├── phase1_paper_grade/(12K)
+└── visualwebarena → /mnt/scratch/p79_results_active_visualwebarena   ⭐ symlink (fire data)
+
+/mnt/scratch/
+├── p79_results_active_visualwebarena/    ← active fire run dirs (B0/B1/B2 × 6 mode × cls/red)
+├── wikipedia_en_all_maxi_2025-08.zim     119G (VWA wikipedia data, single static file)
+└── lost+found/
+```
+
+**Why partial symlink (not full `results/` symlink)**: git 不 follow symlink for tree traversal — 整 `results/` symlink 会让 `git status` 把整 subtree 看成 deleted (因为 git 看 `results` 是 lrwxrwxrwx 类型, 当成 single file 不进 scratch tree). Paper-grade preflight Gate 3 fail-closed on `git diff results/provenance/*.json` showing DELETED → fire abort. **教训**: 只 symlink 不进 git tracking 的子树 (i.e., `results/visualwebarena/<run_id>/...` 是 fire 写, gitignored); git-tracked subdir (provenance / mechanistic / repro_replicates) 必须 留 / 上 git-friendly. Phase 2 第一次 launch 踩这个坑, restructure 后第三次 launch 14:18 飞起。详 [[实验笔记]] §301。
+
+**Disk monitoring**: `ntfy` alert at `/` ≥95% (~每 1-2h scan); paper-grade fire 期间 container write-layer 涨 ~2-3G/cond (B-1839 per-cond docker restart 设计应 reset 但 ~13.76G accumulated 实测可能 partial). scratch 24% (365G avail) 跑全 36 cond ~28-30G data 完全够。
+
 **Setup script**: `scripts/setup/a100_self_host_vwa.sh` (added 2026-05-07).
 
 **Paper §3 method disclosure required**:
