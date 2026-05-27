@@ -607,6 +607,20 @@ class EpisodeSummaryV2:
     cycle_mutating_action_count: int = 0
     repeated_same_mutating_action_count: int = 0
     footprint_risk_score: Optional[float] = None
+    # B-1868 (PROTOCOL_NOTE_01, 2026-05-27): canonical-summary infra-covariate
+    # marker for paper-grade session-loss preserved episodes. List enum so
+    # multiple infra contaminations can co-occur on the same episode (e.g.
+    # session_lost_preserved + B-1839 docker-restart-window-overlap). Default
+    # `[]` is the unambiguous "no infra contamination" semantic. Aggregator at
+    # `scripts/analysis/aggregate_trajectory_covariates.py` reads this field
+    # (event-log AND summary-marker dual-path) so paper §4 GLMM gets the
+    # covariate even when trajectory_events.jsonl pipeline has a gap. B-543
+    # `needs_reevaluation` is the precedent for summary-level non-exclusionary
+    # flag pattern. NOT for filtering — these episodes stay in primary
+    # denominator; paper §3.5 reports them under the
+    # `primary_denominator_policy=preserve_as_observed_failure` contract.
+    # Codex Mode B Finding 5 (2026-05-27, P1-3-B*).
+    infra_covariates: List[str] = field(default_factory=list)
     # Protocol Reset #6/#7/#8 (§244 canonical, 2026-05-20): two-budget accounting
     # rollup + three-column cost. Counters always stamped (≥0, archive=0/untracked):
     #   agent_action_step_count: steps that consumed the agent-action budget
@@ -945,6 +959,11 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     # (None ≡ legacy vintage / no-basis step; the condition aggregator reads these).
     "cost_unit_basis",
     "cost_total_mixed_unit_warn",
+    # B-1868 (PROTOCOL_NOTE_01, 2026-05-27): canonical-summary infra-covariate
+    # marker — list enum, [] default. Aggregator reads this AND event-log
+    # `session_lost_paper_grade_preserved` event; dual-path defense so paper
+    # §4 GLMM gets covariate even when trajectory_events.jsonl is incomplete.
+    "infra_covariates",
 })
 
 
@@ -1056,6 +1075,9 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     # B-1798 (P1-1): episode cost-basis rollup value-type contract.
     "cost_unit_basis": (str, type(None)),
     "cost_total_mixed_unit_warn": (bool, type(None)),
+    # B-1868 (PROTOCOL_NOTE_01): infra-covariate list. Default [] = no
+    # contamination. Element values are enum strings (e.g. "session_lost_preserved").
+    "infra_covariates": (list,),
 }
 
 

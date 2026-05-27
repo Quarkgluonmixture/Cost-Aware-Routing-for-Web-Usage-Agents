@@ -13,8 +13,19 @@ Notifications (push to ntfy):
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import os
+
+# B-1868 (PROTOCOL_NOTE_01): fcntl flock for fallback jsonl atomicity.
+# POSIX-only (mirror logger_v2.py:22-32 pattern). Phase 1a targets are Linux
+# (DGX Spark + Condenser A100); fcntl is the right primitive.
+try:
+    import fcntl  # POSIX advisory locks
+    _HAS_FCNTL = True
+except ImportError:  # pragma: no cover — non-POSIX
+    fcntl = None  # type: ignore[assignment]
+    _HAS_FCNTL = False
 import re
 import signal
 import shutil
@@ -430,6 +441,218 @@ def _can_auto_retry(
         return retries_so_far < max_code_bug_retries
     # remaining error(...) non-evaluator, non-code_bug = noise bucket
     return retries_so_far < max_noise_retries
+
+
+def _build_session_lost_event_key(
+    *,
+    run_id: str,
+    condition_id: str,
+    task_id: int,
+    condition_key: str,
+    phase: str,  # "detected" | "preserved"
+) -> str:
+    """B-1868 (2026-05-27) event_key for downstream aggregator dedup.
+
+    Deterministic key so a retried covariate log (e.g. watchdog restart, fallback
+    audit jsonl replay) does NOT double-count the same episode in paper §4 GLMM.
+    Aggregator MUST dedup on this key. Phase ∈ {"detected", "preserved"}: a single
+    contaminated episode emits both (detection-time + restore-time), each with a
+    distinct phase suffix.
+    """
+    return f"B-1868:{run_id}:{condition_id}:{task_id}:{condition_key}:session_lost_{phase}"
+
+
+def _build_session_lost_detected_metadata(
+    *,
+    site: str,
+    condition_id: str,
+    task_id: int,
+    condition_key: str,
+    streak: int,
+    run_id: str,
+) -> Dict[str, Any]:
+    """B-1868 (2026-05-27) detection-time covariate event metadata.
+
+    Emitted at line ~2219 the moment ``_check_session_health`` returns False,
+    BEFORE restore branch decides preserve-vs-clean. Ensures audit trail lands
+    even if watchdog crashes or condition aborts before login restores.
+
+    INVARIANT (user 2026-05-27 §5.4): metadata MUST NOT contain generic
+    ``is_noise`` field — risks downstream strict loader silently excluding the
+    episode and re-creating denominator surgery. Use specific non-exclusionary
+    fields only. ``infra_covariate`` is a structured covariate marker, NOT an
+    exclusion reason.
+    """
+    return {
+        "site": site,
+        "condition_id": condition_id,
+        "task_id": task_id,
+        "condition_key": condition_key,
+        "session_loss": True,
+        "auth_lost": True,
+        "streak": streak,
+        "paper_grade_guard": "B-1868",
+        "infra_covariate": "session_lost_detected",
+        "event_key": _build_session_lost_event_key(
+            run_id=run_id,
+            condition_id=condition_id,
+            task_id=task_id,
+            condition_key=condition_key,
+            phase="detected",
+        ),
+    }
+
+
+def _build_session_lost_preserved_metadata(
+    *,
+    site: str,
+    condition_id: str,
+    task_id: int,
+    condition_key: str,
+    wave_size: int,
+    wave_task_index: int,
+    run_id: str,
+) -> Dict[str, Any]:
+    """B-1868 (2026-05-27) restore-time PRESERVED-episode covariate metadata.
+
+    Emitted at line ~2363 when login restores under ``P79_PAPER_GRADE=1``. The
+    contaminated episode is PRESERVED in canonical denominator (not deleted),
+    and this metadata payload marks it as ``preserve_as_observed_failure`` for
+    paper §3.5 disclosure + §4 GLMM analysis.
+
+    INVARIANT (user 2026-05-27 §5.4): metadata MUST NOT contain generic
+    ``is_noise`` field. Required fields ``primary_denominator_policy`` and
+    ``exclusion_policy`` explicitly bind the semantics: aggregator MUST keep
+    these episodes in the primary denominator.
+
+    Cross-link: B-1777 sibling invariant on error-retry path; AMENDMENT_08
+    witness chain.
+    """
+    return {
+        "site": site,
+        "condition_id": condition_id,
+        "task_id": task_id,
+        "condition_key": condition_key,
+        "session_loss": True,
+        "auth_lost": True,
+        "paper_grade_guard": "B-1868",
+        "primary_denominator_policy": "preserve_as_observed_failure",
+        "exclusion_policy": "do_not_exclude_from_primary",
+        "infra_covariate": "session_lost_preserved",
+        "wave_size": wave_size,
+        "wave_task_index": wave_task_index,
+        "event_key": _build_session_lost_event_key(
+            run_id=run_id,
+            condition_id=condition_id,
+            task_id=task_id,
+            condition_key=condition_key,
+            phase="preserved",
+        ),
+    }
+
+
+def _append_watchdog_audit_fallback(
+    condition_dir: Path,
+    entry: Dict[str, Any],
+) -> bool:
+    """B-1868 (PROTOCOL_NOTE_01, codex Mode B Finding 3 + Claude P0-2-A* §5.1
+    fallback) — shared best-effort fallback for both detection-time AND
+    restore-time covariate logging failures.
+
+    When ``log_trajectory_event_external`` raises, the covariate cannot silently
+    disappear. This helper appends the failed entry to a per-condition jsonl with
+    fcntl flock + fsync (matches `logger_v2.py:251-260` pattern). Multi-process
+    safe across watchdog manual-restart overlap windows.
+
+    Returns True on successful write, False otherwise (caller already printed
+    a warning so logger-level cascade is owned by caller).
+    """
+    try:
+        condition_dir.mkdir(parents=True, exist_ok=True)
+        fb_path = condition_dir / "watchdog_session_preserved_failures.jsonl"
+        _existed_pre = fb_path.exists()
+        with open(fb_path, "a", encoding="utf-8") as fb_f:
+            if _HAS_FCNTL:
+                fcntl.flock(fb_f.fileno(), fcntl.LOCK_EX)
+            try:
+                fb_f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                fb_f.flush()
+                os.fsync(fb_f.fileno())
+            finally:
+                if _HAS_FCNTL:
+                    fcntl.flock(fb_f.fileno(), fcntl.LOCK_UN)
+        if not _existed_pre:
+            # First-create: parent-dir fsync per logger_v2.py:261-262 pattern.
+            try:
+                _dir_fd = os.open(str(fb_path.parent), os.O_RDONLY)
+                try:
+                    os.fsync(_dir_fd)
+                finally:
+                    os.close(_dir_fd)
+            except OSError:
+                pass  # Best-effort dir fsync — main file fsync above is critical.
+        return True
+    except Exception as _fb_exc:
+        return False
+
+
+def _mark_episode_infra_covariate(
+    condition_dir: Path,
+    task_id: int,
+    site: str,
+    covariate: str,
+) -> bool:
+    """B-1868 (PROTOCOL_NOTE_01, codex Mode B Finding 5 / P1-3-B*) — atomic
+    patch a per-episode summary v2 JSON to append ``covariate`` to its
+    ``infra_covariates`` list. Idempotent: skip if already present.
+
+    Pattern mirrors `logger_v2.write_run_summary_atomic` (tmp + fsync + replace +
+    parent-dir fsync). Failure is non-fatal (caller already has event-log path
+    + fallback jsonl as redundancy) — returns False so caller can ntfy.
+
+    NOT a paper-§3.5-disclosure substitute for trajectory_events.jsonl — this
+    is the canonical artifact dual-path so reviewers reading episode summary
+    directly see the preserved-infra marker without needing to join the event
+    log. B-543 ``needs_reevaluation`` is the precedent for summary-level
+    non-exclusionary flag.
+    """
+    summary_path = condition_dir / "episodes" / f"{site}_task_{task_id}_summary_v2.json"
+    if not summary_path.exists():
+        return False
+    try:
+        with open(summary_path, "r", encoding="utf-8") as f:
+            summary = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return False
+    existing = summary.get("infra_covariates") or []
+    if not isinstance(existing, list):
+        existing = []
+    if covariate in existing:
+        return True  # Idempotent; already marked
+    existing.append(covariate)
+    summary["infra_covariates"] = existing
+    tmp_path = summary_path.with_suffix(".json.b1868_tmp")
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, summary_path)
+        try:
+            _dir_fd = os.open(str(summary_path.parent), os.O_RDONLY)
+            try:
+                os.fsync(_dir_fd)
+            finally:
+                os.close(_dir_fd)
+        except OSError:
+            pass
+        return True
+    except OSError:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+        return False
 
 
 def _classify_error_string(err_str: str) -> Optional[str]:
@@ -2215,14 +2438,76 @@ def main() -> int:
                 if session_ok is False:
                     session_loss_streak[site] += 1
                     streak = session_loss_streak[site]
-                    # Track this episode as contaminated (will be cleaned when login restored)
+                    # Track this episode as contaminated (cleanup vs preserve
+                    # decision deferred to restore-time per B-1868 paper_grade
+                    # guard at line ~2363).
                     session_contaminated[site].append(
                         (condition_id, condition_dir, task_id, site, key)
                     )
+                    # B-1868 (codex Mode B Finding 2 / P0-3-B*, 2026-05-27):
+                    # persist immediately after append so a subsequent B-1584
+                    # FATAL `raise` (which propagates out of `_auto_refresh_auth`
+                    # BEFORE the batch-end `_persist_state()` runs) does NOT lose
+                    # this contaminated entry. Pre-fix: append → fatal → raise →
+                    # in-memory state file untouched → restart replays IF disk
+                    # state file had old empty list; codex F2 attack was the
+                    # mid-tick path where state was already empty + FATAL kills
+                    # everything → covariate fully lost. Persist-after-append
+                    # closes the FATAL race window.
+                    _persist_state()
                     print(
                         f"[watchdog][SESSION] {site} task {task_id} "
                         f"NOT LOGGED IN (streak={streak})"
                     )
+                    # B-1868 (P1-6-A): detection-time event GATED on paper_grade
+                    # — dev mode emits `task_auto_cleared` from `clear_task_files`
+                    # later in restore-path which is the existing covariate
+                    # channel. Paper-grade mode does NOT clean (preserve branch)
+                    # so detection event is the only covariate signal between
+                    # detection and restore. Per user 2026-05-27 §5.5 (audit-trail
+                    # lands even if condition aborts before restore).
+                    if _watchdog_paper_grade:
+                        # B-1868 (codex Finding 3 + Claude P1-1-B): detection-time
+                        # event MUST have fallback parity with restore-time event,
+                        # otherwise the persistent-loss / FATAL / abort-before-
+                        # restore case loses the only B-1868 covariate signal.
+                        _det_metadata = _build_session_lost_detected_metadata(
+                            site=site,
+                            condition_id=condition_id,
+                            task_id=task_id,
+                            condition_key=key,
+                            streak=streak,
+                            run_id=run_id,
+                        )
+                        try:
+                            from p79.experiment.logger_v2 import log_trajectory_event_external
+                            log_trajectory_event_external(
+                                condition_dir=condition_dir,
+                                event_type="session_lost_contaminated_detected",
+                                task_index=task_id,
+                                metadata=_det_metadata,
+                            )
+                        except Exception as _det_exc:
+                            print(
+                                f"[watchdog][SESSION][warn] detection event log "
+                                f"failed for task {task_id}: {_det_exc} (fallback)"
+                            )
+                            _fb_entry = {
+                                "wallclock_ts": datetime.datetime.now(
+                                    datetime.timezone.utc
+                                ).isoformat(),
+                                "exception": f"{type(_det_exc).__name__}: {_det_exc}",
+                                "intended_event_type": "session_lost_contaminated_detected",
+                                "metadata": _det_metadata,
+                            }
+                            # B-1868 (P1-2-B*, codex Finding 4): write fallback to
+                            # this episode's own condition_dir, not session-wave's
+                            # first entry — wave may span condition_dirs.
+                            if not _append_watchdog_audit_fallback(condition_dir, _fb_entry):
+                                print(
+                                    f"[watchdog][SESSION][warn] detection fallback "
+                                    f"file write failed for task {task_id}"
+                                )
                     if streak >= _SESSION_ALERT_THRESHOLD and not session_alerted[site]:
                         session_alerted[site] = True
                         body = (
@@ -2310,6 +2595,25 @@ def main() -> int:
                                     )
                                 except Exception as _ntfy_exc:
                                     print(f"[watchdog][SESSION][warn] ntfy alert failed: {_ntfy_exc}")
+                            # B-1868 (codex Mode B Finding 2 / P0-3-B*, 2026-05-27):
+                            # best-effort persist BEFORE raise. The FATAL `raise`
+                            # propagates out of main loop without reaching the
+                            # batch-end `_persist_state()` at L2857. session_
+                            # contaminated additions from this tick (added at
+                            # L2444) would be lost. We already persist immediately
+                            # at L2447 after append, but if multiple sites in
+                            # this tick or sub-state changes since, re-persist
+                            # one more time before dying for paper-grade audit
+                            # durability. Failure swallowed — primary path is
+                            # already in print + ntfy paths above; this is the
+                            # defense-in-depth layer.
+                            try:
+                                _persist_state()
+                            except Exception as _pre_raise_persist_exc:
+                                print(
+                                    f"[watchdog][SESSION][warn] pre-raise persist "
+                                    f"failed (B-1868 P0-3-B*): {_pre_raise_persist_exc}"
+                                )
                             raise
                         if refresh_ok:
                             print(f"[watchdog][SESSION] {site} auth refreshed — next tasks will use new cookies")
@@ -2360,67 +2664,196 @@ def main() -> int:
                             f"[watchdog][SESSION] {site} login restored "
                             f"(was streak={was_streak})"
                         )
-                        # Auto-clean all contaminated episodes from this loss wave
-                        contaminated = session_contaminated.pop(site, [])
+                        # B-1868 (Claude P0-2-A* refined): peek-then-pop. Reading
+                        # via `get` keeps `session_contaminated[site]` populated
+                        # while the preserve/clean loop runs. If watchdog crashes
+                        # mid-loop OR fallback file write also fails, the disk-
+                        # persisted state still carries the original list → restart
+                        # can replay idempotently (event_key dedup). Pop + persist
+                        # only after for-loop completes successfully.
+                        contaminated = list(session_contaminated.get(site, []))
                         if contaminated:
-                            cleaned = 0
                             wave_size = len(contaminated)
-                            # B-743 (digest retire 2026-05-17): per-mode digest purge
-                            # collection removed — session-wave cleanup no longer needs
-                            # to maintain `digest_*.jsonl` consistency (digest pipeline
-                            # retired from watchdog auto-call path).
-                            for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
-                                # B-880 (/stress A1.24 P0-7-C*, 2026-05-17):
-                                # call shared `clear_task_files` API (same
-                                # function clear_tasks.py uses) — single
-                                # source of truth for file deletion + Option K
-                                # event emit. Pre-fix: inline shutil.rmtree
-                                # + unlink + separate event call → code-path
-                                # divergence with clear_tasks (gemini
-                                # "structural lie" framing). Now: both paths
-                                # converge on `p79.experiment.cleanup`.
-                                # `event_type="task_auto_cleared"` preserves
-                                # B-384 / B-314 schema for paper §4 GLMM
-                                # `had_auth_clear` covariate.
-                                from p79.experiment.cleanup import clear_task_files
-                                # B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17):
-                                # deletion_intent=True → rename-then-async-reap
-                                # closes race vs runner mid-write. Markers
-                                # purged by purge_pending_deletes 5 min later.
-                                clear_task_files(
-                                    condition_dir=cond_dir,
-                                    site=csite,
-                                    task_id=ctask_id,
-                                    event_type="task_auto_cleared",
-                                    reason="session_not_logged_in",
-                                    deletion_intent=True,
-                                    extra_metadata={
-                                        "is_auth_loss": True,
-                                        "cleared_in_session_wave": True,
-                                        "wave_size": wave_size,
-                                        "wave_task_index": cleaned + 1,  # 1-based
-                                        "is_noise": True,
-                                    },
+                            # B-1868 (2026-05-27): paper_grade scope-gap fix
+                            # matching B-1777 invariant. Pre-fix: silent
+                            # clear_task_files + RESUME_MISSING re-run under
+                            # different server state = denominator surgery
+                            # for paper-grade canonical estimand (session-loss
+                            # rate plausibly mode/wallclock-correlated; re-run
+                            # sample non-exchangeable per §302 ~14pp discordance
+                            # floor). Post-fix: paper_grade=True PRESERVES the
+                            # episodes as canonical-launched outcomes under
+                            # infrastructure-contaminated precondition; covariate
+                            # event marks them for paper §3.5 disclosure + §4
+                            # GLMM. NOT framed as agent failure (env-precondition
+                            # broken, not behavioral).
+                            if _watchdog_paper_grade:
+                                preserved = 0
+                                summary_mark_failures: List[Dict[str, Any]] = []
+                                for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
+                                    # B-1868 metadata semantics rule (user
+                                    # 2026-05-27 §5.4): NO generic `is_noise=True`
+                                    # (risks downstream strict loader silently
+                                    # excluding → re-creates denominator surgery).
+                                    # Pure builder + invariant tests guard this.
+                                    cov_metadata = _build_session_lost_preserved_metadata(
+                                        site=csite,
+                                        condition_id=cond_id,
+                                        task_id=ctask_id,
+                                        condition_key=ckey,
+                                        wave_size=wave_size,
+                                        wave_task_index=preserved + 1,
+                                        run_id=run_id,
+                                    )
+                                    _event_ok = False
+                                    try:
+                                        from p79.experiment.logger_v2 import log_trajectory_event_external
+                                        log_trajectory_event_external(
+                                            condition_dir=cond_dir,
+                                            event_type="session_lost_paper_grade_preserved",
+                                            task_index=ctask_id,
+                                            metadata=cov_metadata,
+                                        )
+                                        _event_ok = True
+                                    except Exception as _ev_exc:
+                                        # B-1868 (codex Mode B Finding 4 / P1-2-B*):
+                                        # fallback per-condition_dir (NOT
+                                        # contaminated[0][1]) so site-wave spanning
+                                        # multiple cond_dirs preserves correct
+                                        # provenance. Shared `_append_watchdog_audit_
+                                        # fallback` flock+fsync atomic write.
+                                        _fb_entry = {
+                                            "wallclock_ts": datetime.datetime.now(
+                                                datetime.timezone.utc
+                                            ).isoformat(),
+                                            "exception": f"{type(_ev_exc).__name__}: {_ev_exc}",
+                                            "intended_event_type": "session_lost_paper_grade_preserved",
+                                            "metadata": cov_metadata,
+                                        }
+                                        if not _append_watchdog_audit_fallback(cond_dir, _fb_entry):
+                                            print(
+                                                f"[watchdog][SESSION][warn] BOTH logger AND "
+                                                f"fallback file failed for task {ctask_id}; "
+                                                f"covariate may be permanently lost (state "
+                                                f"file retains contamination tuple for restart "
+                                                f"replay via event_key idempotency)"
+                                            )
+                                        else:
+                                            print(
+                                                f"[watchdog][SESSION][warn] covariate log "
+                                                f"failed for task {ctask_id}: {_ev_exc} "
+                                                f"(fallback file written)"
+                                            )
+                                    # B-1868 (codex Mode B Finding 5 / P1-3-B*):
+                                    # canonical summary dual-path marker. Reviewer
+                                    # reading episode summary directly sees infra
+                                    # contamination without needing trajectory_events
+                                    # log join. Best-effort: if summary file not yet
+                                    # written by runner OR atomic patch fails, the
+                                    # event-log + fallback paths above are the
+                                    # other two redundancy channels.
+                                    _mark_ok = _mark_episode_infra_covariate(
+                                        condition_dir=cond_dir,
+                                        task_id=ctask_id,
+                                        site=csite,
+                                        covariate="session_lost_preserved",
+                                    )
+                                    if not _mark_ok:
+                                        summary_mark_failures.append({
+                                            "task_id": ctask_id,
+                                            "site": csite,
+                                            "condition_id": cond_id,
+                                            "event_ok": _event_ok,
+                                        })
+                                    preserved += 1
+                                # B-1868 (peek-then-pop close): only pop + persist
+                                # AFTER all preserve work done. State file now
+                                # consistent — empty in-memory session_contaminated
+                                # matches persisted disk state.
+                                session_contaminated.pop(site, None)
+                                if summary_mark_failures:
+                                    print(
+                                        f"[watchdog][SESSION][warn] {site} "
+                                        f"{len(summary_mark_failures)}/"
+                                        f"{wave_size} summary infra_covariates "
+                                        f"mark failed (event-log + fallback are "
+                                        f"alternate channels): "
+                                        f"{[f['task_id'] for f in summary_mark_failures]}"
+                                    )
+                                print(
+                                    f"[watchdog][SESSION] {site} paper_grade=1: "
+                                    f"PRESERVED {preserved} NOT-LOGGED-IN episodes "
+                                    f"as canonical denominator failures (B-1868; "
+                                    f"was clean+rerun pre-fix; "
+                                    f"infra_covariates marked in {preserved - len(summary_mark_failures)}/"
+                                    f"{preserved} summaries)"
                                 )
-                                # Remove from in-memory tracking
-                                all_records[:] = [
-                                    r for r in all_records
-                                    if not (r.condition_id == cond_id and r.task_id == ctask_id)
-                                ]
-                                seen_keys.discard(ckey)
-                                reported_keys.discard(ckey)
-                                cleaned += 1
-                            # B-743 (digest retire 2026-05-17): batch digest purge removed.
-                            print(f"[watchdog][SESSION] {site} auto-cleaned {cleaned} NOT-LOGGED-IN episodes")
-                            _persist_state()
-                            if args.ntfy_topic:
-                                _post_ntfy(
-                                    args.ntfy_topic,
-                                    f"P79 SESSION RESTORED [{site}]",
-                                    f"run_id={run_id}\n{site}: login restored\n"
-                                    f"auto-cleaned {cleaned} NOT-LOGGED-IN episodes",
-                                    priority="default",
+                                _persist_state()
+                                if args.ntfy_topic:
+                                    _post_ntfy(
+                                        args.ntfy_topic,
+                                        f"P79 SESSION RESTORED [{site}] (paper_grade)",
+                                        f"run_id={run_id}\n{site}: login restored\n"
+                                        f"paper_grade=1: PRESERVED {preserved} ep as "
+                                        f"denominator failures (B-1868; was clean+rerun "
+                                        f"pre-fix)",
+                                        priority="default",
+                                    )
+                            else:
+                                # Dev-mode original cleanup path — unchanged.
+                                cleaned = 0
+                                # B-743 (digest retire 2026-05-17): per-mode digest
+                                # purge collection removed — session-wave cleanup no
+                                # longer needs to maintain `digest_*.jsonl`
+                                # consistency (digest pipeline retired).
+                                for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
+                                    # B-880 (/stress A1.24 P0-7-C*, 2026-05-17):
+                                    # shared `clear_task_files` API (single source
+                                    # of truth with clear_tasks.py).
+                                    from p79.experiment.cleanup import clear_task_files
+                                    # B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17):
+                                    # deletion_intent=True → rename-then-async-reap
+                                    # closes race vs runner mid-write.
+                                    clear_task_files(
+                                        condition_dir=cond_dir,
+                                        site=csite,
+                                        task_id=ctask_id,
+                                        event_type="task_auto_cleared",
+                                        reason="session_not_logged_in",
+                                        deletion_intent=True,
+                                        extra_metadata={
+                                            "is_auth_loss": True,
+                                            "cleared_in_session_wave": True,
+                                            "wave_size": wave_size,
+                                            "wave_task_index": cleaned + 1,
+                                            "is_noise": True,
+                                        },
+                                    )
+                                    all_records[:] = [
+                                        r for r in all_records
+                                        if not (r.condition_id == cond_id and r.task_id == ctask_id)
+                                    ]
+                                    seen_keys.discard(ckey)
+                                    reported_keys.discard(ckey)
+                                    cleaned += 1
+                                # B-1868 (peek-then-pop close): dev-mode also
+                                # needs explicit pop now that the outer read uses
+                                # `.get` not `.pop`. Persist after pop so disk
+                                # state matches in-memory.
+                                session_contaminated.pop(site, None)
+                                print(
+                                    f"[watchdog][SESSION] {site} auto-cleaned "
+                                    f"{cleaned} NOT-LOGGED-IN episodes"
                                 )
+                                _persist_state()
+                                if args.ntfy_topic:
+                                    _post_ntfy(
+                                        args.ntfy_topic,
+                                        f"P79 SESSION RESTORED [{site}]",
+                                        f"run_id={run_id}\n{site}: login restored\n"
+                                        f"auto-cleaned {cleaned} NOT-LOGGED-IN episodes",
+                                        priority="default",
+                                    )
                     session_loss_streak[site] = 0
                     session_alerted[site] = False
                     session_auto_refresh_attempted[site] = False

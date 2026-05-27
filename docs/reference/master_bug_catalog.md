@@ -8117,3 +8117,92 @@ PHASE1A_BENCHMARK_FP_EXCLUDE = [
 - 真 sub-mechanism = **multi-token cumulative drift (L1) + AWS batching/routing (L2 add)**, paper §3.5 prose 应到此 stop, 不再细化 (audit-artifact gap 不允许)
 
 ---
+
+### B-1868. Watchdog session-cleanup paper_grade scope gap — silent denominator surgery under P79_PAPER_GRADE=1 🛠️ FIXED (PROTOCOL_NOTE_01)
+
+**Attack**: `scripts/maintenance/experiment_watchdog.py:2356-2424` session-restored path unconditionally `clear_task_files(deletion_intent=True)` over `session_contaminated[site]` episodes — physically deletes per-episode summary + steps_v2.jsonl + artifacts (via `_deletion_intent_rename` → B-863 reaper 5min later). **No paper_grade flag check** despite B-1777 (2026-05-20, 笔记 §247) earlier establishing the invariant `paper_grade=True ⇒ never delete+retry` for `_can_auto_retry` error-path; B-1777 scope was `error(...)` reasons only, sibling session-cleanup path missed the guard. (Cross-link fix per gemini Mode C Finding 4: prior draft said §253 which is actually B-1803 BrowserContext.)
+
+**Empirical (R14849 pre-fix incident, 2026-05-27 13:47Z)**: B0 P-SoM cls fire under `P79_PAPER_GRADE=1` lost classifieds session between task 142 (logged-in confirmed) and task 143 (`link 'Login'` present, `link 'Logout'` absent in step_000/observation_dom.txt). The pre-fix watchdog code detected streak=3, fired ntfy ALERT, auto-refreshed auth (recovered), then **cleaned 3 NOT-LOGGED-IN episodes** (task 143/144/145). B-863 reaper purged pending_delete markers within 5min → episodes physically gone, **not forensic-recoverable** (`find -name '*task_143*'` returns nothing post-reaper; gemini Mode C Finding 3). The patched watchdog (this PR, PROTOCOL_NOTE_01) implements the preserve path; **live verification of preserve behavior pending fresh re-launch** — the R14849 incident verified the pre-fix bug, not the post-fix correctness (gemini Mode C: original "Verified post-fire" prose was misleading framing).
+
+**Why this is denominator surgery** (B-1777 same-class argument extended):
+- Session-loss rate likely mode/wallclock-correlated: B0 (proxy via AWS Bedrock) per-episode wallclock ~longer than B1 (local Qwen3-VL-4B) / B2 (local Gemma3-VL); longer wallclock → higher session-timeout probability → **silent delete cleans B0 more than B1/B2**.
+- Even if B-1777 RESUME_MISSING re-runs the cleaned task, re-run sample lands at a **different server state** than the original episode — §302 shows per-task SR discordance ~14.3% for same-condition R24792↔R32024 replay (codex cold-start 222/224 step-0 action diverge under byte-identical screenshot input). Re-run sample is NOT exchangeable with original.
+- Silent delete + later silent re-run = exactly the **"replace failed attempt with later success"** pattern B-1777 rejected, just routed through the session-recovery path rather than the error-retry path.
+
+**Not framed as "agent failed on broken env" (user 2026-05-27 correction)**: contaminated episodes are *canonical launched episode outcomes preserved under infrastructure-contaminated precondition*, NOT clean agent behavioral failures. Paper §3.5 / §4 GLMM must disclose session-loss covariate + report non-gating sensitivity (exclude or flag preserved episodes), NOT treat them as ordinary `success=False`.
+
+**Fix** (commit forthcoming, **PROTOCOL_NOTE_01** witness pattern — implementation-alignment, NOT estimand change; downgraded from AMENDMENT_08 per user 2026-05-27 Q3=C decision: B-1868 aligns recovery-semantics with B-1777 invariant, does NOT alter H1/H3/H10 estimands):
+
+1. **Detection-time event, paper_grade-gated** (`experiment_watchdog.py`, P1-6-A): when `session_ok is False` AND `_watchdog_paper_grade=True`, emit `session_lost_contaminated_detected` covariate event immediately so audit trail lands even if watchdog crashes or condition aborts before login restores. Dev-mode skipped — `task_auto_cleared` from `clear_task_files` is dev's existing covariate channel.
+
+2. **Restore-time guard** (`experiment_watchdog.py`): branch on `_watchdog_paper_grade`. If True: **skip `clear_task_files`**, emit `session_lost_paper_grade_preserved` event with deterministic `event_key`, AND atomic-patch episode summary `infra_covariates += ["session_lost_preserved"]` (P1-3-B*, codex Mode B Finding 5 dual-path). Else: dev-mode `clear_task_files` path unchanged.
+
+3. **Persist-state ordering** (P0-3-B*, codex Mode B Finding 2): `_persist_state()` IMMEDIATELY after `session_contaminated[site].append(...)` so subsequent B-1584 FATAL `raise` (propagates BEFORE batch-end persist) does NOT lose contamination tuples. Also best-effort persist in FATAL `except` before `raise`. **Peek-then-pop at restore**: `session_contaminated.get(site, [])` not `.pop`, pop only after preserve loop completes — mid-loop crash → state file still carries list → restart replays idempotently via `event_key`.
+
+4. **Metadata semantics rule** (user 2026-05-27 §5.4): do NOT use generic `is_noise=True` — risks downstream strict loader / noise filter silently excluding the episode and re-creating denominator surgery. Use **specific, non-exclusionary fields only** (per `_build_session_lost_preserved_metadata` at `experiment_watchdog.py:472+`):
+   ```python
+   metadata={
+       "site": csite, "condition_id": cond_id, "task_id": ctask_id,
+       "condition_key": ckey, "session_loss": True, "auth_lost": True,
+       "paper_grade_guard": "B-1868",
+       "primary_denominator_policy": "preserve_as_observed_failure",
+       "exclusion_policy": "do_not_exclude_from_primary",
+       "infra_covariate": "session_lost_preserved",
+       "wave_size": wave_size, "wave_task_index": preserved + 1,
+       "event_key": f"B-1868:{run_id}:{cond_id}:{ctask_id}:{ckey}:session_lost_preserved",
+   }
+   ```
+   Test `test_b1868_preserved_metadata_forbids_is_noise` is the permanent forward-guard.
+
+5. **Fallback audit + shared helper** (`_append_watchdog_audit_fallback`, P1-1-B + P1-2-B*): on `log_trajectory_event_external` raise, write entry to **per-cond_dir** `watchdog_session_preserved_failures.jsonl` (NOT first-entry's dir — cross-cond_dir wave provenance bug caught by codex Mode B Finding 4). Uses `fcntl.flock + fsync + parent-dir fsync` mirroring `logger_v2.py:251-260`. Aggregator (`aggregate_trajectory_covariates.py`) replays fallback file into event stream with same event_key dedup.
+
+6. **Canonical summary dual-path** (`p79/experiment/types.py:610`, P1-3-B*): per-episode summary v2 adds `infra_covariates: List[str] = []` field + entry in `PAPER_GRADE_EPISODE_OPTIONAL_KEYS` + `_EPISODE_OPTIONAL_FIELD_TYPES`. Watchdog preserve branch atomic-patches summary to append `"session_lost_preserved"`. Aggregator reads BOTH event-log AND summary list → paper §4 GLMM covariate survives even if event-log path has a gap. B-543 `needs_reevaluation` is the precedent for summary-level non-exclusionary flag.
+
+7. **Aggregator updates** (`scripts/analysis/aggregate_trajectory_covariates.py`, P0-1-ABC* + P0-2-B*):
+   - **Event_key dedup** BEFORE lookup-table build — watchdog restart replay events collapse to one.
+   - **Fallback file replay**: read `watchdog_session_preserved_failures.jsonl`, synthesize event dict (promote `intended_event_type`), merge into stream with same dedup.
+   - **2 new covariate columns**: `session_lost_preserved` (bool, dual-path OR of event + summary `infra_covariates`) + `session_lost_preserved_wave_size` (Optional[int]).
+   - **Docstring + schema lock** documents non-exclusion semantics.
+
+8. **Tests** (`tests/test_b1868_session_lost_paper_grade_guard.py`, **14 invariant tests, all pass**):
+   - Metadata builder: required non-exclusionary keys / forbids `is_noise` (preserve + detected variants)
+   - event_key: deterministic per phase / distinct per phase / embedded in metadata / wave context round-trip
+   - Source-grep `test_b1868_inline_call_sites_present`: inline call sites present (forward-guard against helper bypass — P1-4-A)
+   - Fallback round-trip: atomic write + append (no overwrite)
+   - `_mark_episode_infra_covariate`: idempotent + atomic + no-summary-file best-effort
+   - Aggregator: summary dual-path / event-log path / event_key dedup
+
+**Behavior preserved unchanged** (intentionally — these are recovery, not surgery):
+- `_check_session_health` detection (`_SITE_AUTH_REGEX` per-site regex pairs)
+- `session_contaminated[site].append` tracking
+- `_auto_refresh_auth` recovery (lets task 146+ resume logged-in)
+- B-1584 FATAL SIGTERM-runner path (only adds best-effort pre-raise persist)
+- B-742 `auth_refresh_no_clear` trajectory event emit
+- B-880 `clear_task_files` single source in dev-mode path
+- ntfy ALERT / AUTH FATAL urgent notifications
+- `session_loss_streak` reset on restore
+
+**Condition-level integrity threshold** (paper-time guidance, NOT enforced in code per gemini Mode C Finding 1; threshold table requires paper prose anchor + aggregator-side tally to become actionable):
+| Preserved session-loss count | Action |
+|---|---|
+| 0 | clean |
+| 1–3 or ≤1–2% tasks | primary includes; §4 disclose count |
+| >2% or >5 tasks | primary still includes if canonical completed; condition flagged `infra_contaminated_high`; sensitivity table mandatory |
+| catastrophic (>10–20%) | archive condition non-canonical; fresh full-condition rerun preferred before declaring canonical |
+
+This is *whole-condition validity judgment*, NOT per-episode deletion. Aggregator reads `session_lost_preserved` column per condition; paper §3.5 prose ties threshold tally to disclosure framework (PROTOCOL_NOTE_01 paper-side commit lands paper §3.5 + §4 sensitivity text).
+
+**Pre-fix archive** (gemini Mode C Finding 3 forensic-gap disclosure): R14849 partial (B0 P-SoM cls, 2026-05-27 08:35-14:32Z, kill @ task 168) tagged `pre_B-1868_session_cleanup_artifact`, included as RCA evidence not analysis input. **Archive contains surviving episodes (task 0-142, 146-168 sans N/A excludes); episodes 143/144/145 are PHYSICALLY GONE — B-863 reaper purged pending_delete markers ~13:52Z, forensic-irrecoverable.** Reviewer expecting "observed failures preserved for RCA" should read the archive as "surviving sample under contaminated condition" not "complete observation of the contamination wave". Fresh `queue_phase1_paper_grade.sh launch` (FORCE_NEW, not RESUME_MISSING) post-patch for canonical Phase 1a P-SoM cls cell.
+
+**Witness chain** (PROTOCOL_NOTE_01 pattern, NOT AMENDMENT_08 — implementation-alignment vs estimand-change distinction per user 2026-05-27 Q3=C; gemini Mode C Finding 2 also caught directory placement: amendments live in `docs/prereg_amendments/` NOT `docs/checkpoints/pre_run/`):
+- code commit (forthcoming) + 14 invariant tests (all pass)
+- `master_bug_catalog.md` entry (this section)
+- `docs/prereg_amendments/PROTOCOL_NOTE_01_SESSION_LOST_PAPER_GRADE_<date>.md` witness doc (NOT estimand witness — recovery-semantics alignment)
+- git tag `protocol-note-01-session-lost-paper-grade-2026-05-27` (NOT `prereg-amendment-*` — recovery alignment vs estimand revision)
+- 笔记 chronicle §303 append `[bug][design][infra]` (after fresh-launch verification per Phase B step ordering)
+- paper prose reconcile: `paper_drafts/section3_definition.md` §3.5 non-gating sensitivity disclosure + `paper_drafts/section4_findings.md` covariate column reference (1 codex round on prose)
+- OSF deposit: **NOT required** for PROTOCOL_NOTE_01 (recovery alignment); only AMENDMENT_##-grade estimand changes deposit (per AMENDMENT_07 precedent kv9sf was for SoM sequential-id contract = real estimand change).
+
+**Cross-link**: B-1777 (sibling invariant on error-retry path, 2026-05-20, 笔记 §247 — gemini Mode C Finding 4 cross-link fix: was §253 which is actually B-1803 BrowserContext); §302 (server-side noise floor — explains why re-run sample ≠ original); AMENDMENT_07 (estimand-change witness pattern reference, 2026-05-25 B-1862 SoM sequential-id contract — B-1868 deliberately downgrades from this level per Q3=C).
+
+---

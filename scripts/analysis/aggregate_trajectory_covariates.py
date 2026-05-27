@@ -17,6 +17,25 @@ Covariates emitted per (condition_id, site, task_id):
     task with metadata.cleared_in_session_wave=True (passed-through from B-384)
   - session_wave_size (Optional[int]): if cleared_in_session_wave, the wave_size
     metadata from the event (helpful for cluster-correlation analysis)
+  - session_lost_preserved (bool): B-1868 (PROTOCOL_NOTE_01, 2026-05-27) —
+    canonical session-loss preserved marker. True iff either:
+      (A) any `session_lost_paper_grade_preserved` event for this task in
+          trajectory_events.jsonl (with event_key dedup), OR
+      (B) episode summary `infra_covariates` list contains
+          "session_lost_preserved" (B-543 needs_reevaluation pattern).
+    Dual-path semantics: dev-mode cleanup channel (had_auth_clear /
+    cleared_in_session_wave) is DISJOINT from paper-grade preserve channel
+    (session_lost_preserved); paper §4 GLMM consumer joins both for total
+    auth-loss contamination signal. Paper §3.5 disclosure uses this column
+    under `primary_denominator_policy=preserve_as_observed_failure` —
+    NOT for exclusion; primary denominator MUST include preserved episodes.
+  - session_lost_preserved_wave_size (Optional[int]): wave_size from first
+    matching preserve event (None if from-summary-only or no event).
+
+Trajectory events deduped by `metadata.event_key` (B-1868) so watchdog
+restart / replay does not double-count covariates. Fallback jsonl
+(`watchdog_session_preserved_failures.jsonl` in condition_dir, written when
+logger fails) is read and merged into the event stream with same dedup.
 
 Output: `<condition_dir>/analysis/trajectory_covariates.jsonl` — one row per
 episode in condition_summary's episode list. CSV format also written for
@@ -196,6 +215,26 @@ def compute_episode_covariates(
                     "summary": ep_summary,
                 })
 
+    # B-1868 (codex Mode B Finding 1 / P0-2-B*, 2026-05-27): event_key dedup
+    # BEFORE building lookup tables. Without dedup, watchdog crash → restart
+    # → re-process same `summary_path` → re-emit detection/preserve event with
+    # SAME event_key → aggregator double-counts. `prior_event_count` / `n_task_
+    # events` / new `session_lost_preserved` would silently inflate. Dedup on
+    # `metadata.event_key`; events lacking event_key (legacy + non-B-1868 paths)
+    # fall through unchanged. Order: keep first-seen by file order (== earliest
+    # write-attempt) — replay events lose to original write.
+    _seen_event_keys: Set[str] = set()
+    _deduped_events: List[Dict[str, Any]] = []
+    for ev in trajectory_events:
+        ek = (ev.get("metadata") or {}).get("event_key")
+        if ek is not None and ek in _seen_event_keys:
+            continue
+        if ek is not None:
+            _seen_event_keys.add(ek)
+        _deduped_events.append(ev)
+    trajectory_events = _deduped_events
+    del _deduped_events  # let GC reclaim original list
+
     # Build event lookup tables keyed by task_index.
     events_by_task: Dict[int, List[Dict[str, Any]]] = {}
     cell_level_events: List[Dict[str, Any]] = []  # task_index is None
@@ -209,6 +248,40 @@ def compute_episode_covariates(
             except (ValueError, TypeError):
                 continue
             events_by_task.setdefault(ti, []).append(ev)
+
+    # B-1868 (codex Mode B Finding 4 / P1-2-B*, 2026-05-27): replay fallback
+    # jsonl entries into the events stream. Watchdog writes failed-logger
+    # covariate entries to `watchdog_session_preserved_failures.jsonl` per
+    # condition_dir; without this replay path the fallback file is a dead-end
+    # artifact (caught by Mode B audit). Read + dedup by event_key.
+    _fallback_path = condition_dir / "watchdog_session_preserved_failures.jsonl"
+    if _fallback_path.exists():
+        for _fb_entry in _read_jsonl(_fallback_path):
+            _fb_md = (_fb_entry.get("metadata") or {})
+            _fb_ek = _fb_md.get("event_key")
+            if _fb_ek is not None and _fb_ek in _seen_event_keys:
+                continue
+            if _fb_ek is not None:
+                _seen_event_keys.add(_fb_ek)
+            # Synthesize an event_type-shaped dict from the fallback entry so
+            # downstream `event_type` filters match. The fallback entry stored
+            # `intended_event_type` (logger failed before emitting) — promote.
+            _synth_ev = {
+                "event_type": _fb_entry.get("intended_event_type"),
+                "task_index": _fb_md.get("task_id"),
+                "wallclock_ts": _fb_entry.get("wallclock_ts"),
+                "metadata": _fb_md,
+                "_b1868_recovered_from_fallback": True,
+            }
+            ti = _synth_ev.get("task_index")
+            if ti is None:
+                cell_level_events.append(_synth_ev)
+            else:
+                try:
+                    ti = int(ti)
+                except (ValueError, TypeError):
+                    continue
+                events_by_task.setdefault(ti, []).append(_synth_ev)
 
     # cell-level reset_post_interrupt events (used for is_after_reset)
     reset_events = [
@@ -301,6 +374,44 @@ def compute_episode_covariates(
         # decide) so transparency-only reads still see all rows.
         needs_reev = bool(ep_summary.get("needs_reevaluation", False))
 
+        # B-1868 (PROTOCOL_NOTE_01, 2026-05-27): paper §4 GLMM session-loss
+        # preserved covariate. Dual-path read so a missing trajectory_events
+        # entry (logger fail + fallback miss) does NOT silently zero the
+        # covariate when canonical summary still carries the marker.
+        #
+        # Channel A — event-log: any `session_lost_paper_grade_preserved` event
+        #   for this task (dedup already applied above by event_key).
+        # Channel B — canonical summary: episode.summary["infra_covariates"]
+        #   contains "session_lost_preserved" (B-543 needs_reevaluation pattern).
+        #
+        # Either channel → session_lost_preserved=True. Aggregator OR semantics
+        # so dual-path coverage is additive not multiplicative. Paper §3.5
+        # disclosure references this column with `primary_denominator_policy=
+        # preserve_as_observed_failure` semantics (preserved ep stay in primary
+        # denominator; do_not_exclude_from_primary).
+        _preserve_events = [
+            ev for ev in task_events
+            if ev.get("event_type") == "session_lost_paper_grade_preserved"
+        ]
+        session_lost_preserved_from_event = len(_preserve_events) > 0
+        _summary_covariates = ep_summary.get("infra_covariates") or []
+        if not isinstance(_summary_covariates, list):
+            _summary_covariates = []
+        session_lost_preserved_from_summary = (
+            "session_lost_preserved" in _summary_covariates
+        )
+        session_lost_preserved = (
+            session_lost_preserved_from_event or session_lost_preserved_from_summary
+        )
+        # wave_size from first matching event (preserved-time event carries it;
+        # detection-time event carries `streak` not `wave_size` so we skip those).
+        session_lost_preserved_wave_size: Optional[int] = None
+        for _ev in _preserve_events:
+            _ws = (_ev.get("metadata") or {}).get("wave_size")
+            if isinstance(_ws, int):
+                session_lost_preserved_wave_size = _ws
+                break
+
         rows.append({
             "condition_id": condition_id,
             "site": site,
@@ -317,6 +428,11 @@ def compute_episode_covariates(
             # annotates. Legacy rows pre-B-486 default False (no quarantine
             # state recorded → assume normal episode).
             "needs_reevaluation": needs_reev,
+            # B-1868 (PROTOCOL_NOTE_01): preserved-infra covariate, paper §3.5
+            # non-gating disclosure. NOT an exclusion field — primary denominator
+            # MUST keep these episodes per primary_denominator_policy contract.
+            "session_lost_preserved": session_lost_preserved,
+            "session_lost_preserved_wave_size": session_lost_preserved_wave_size,
         })
 
     return rows
@@ -346,6 +462,10 @@ def emit_covariates(condition_dir: Path) -> Tuple[int, Path, Path]:
             # B-543 (/stress A1.5b Phase 2 P1-1-AB): quarantine flag column
             # so empty-rows code path still emits the canonical schema.
             "needs_reevaluation",
+            # B-1868 (PROTOCOL_NOTE_01): session-loss preserved covariate
+            # columns so empty-row schema also exposes them.
+            "session_lost_preserved",
+            "session_lost_preserved_wave_size",
         ]
     with open(csv_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
