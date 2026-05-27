@@ -2,7 +2,7 @@
 
 **Run**: `B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183` (manifest-bound authoritative, Pass-1 paper-grade)
 **Condition**: `phase1_phantom_text_router_0`
-**Mode**: `phantom_text` (= P-text; AXTree text + SoM-style prompt; **no image to agent; reference image attached if task has one**)
+**Mode**: `phantom_text` (= P-text; **`[SOM_MARKS]` index text + DOM-prompt**; no image to agent; reference image attached if task has one). Source: `som.py:399-405` + `som.py:443-471` + paper §1 line 5. **text-mismatched arm**: prompt expects AXTree hierarchical references but obs provides `[SOM_MARKS]` interactive-only subset (regex filter over AXTree, flat 1..K list). Symmetric counterpart = P-prompt (`phantom_prompt`) = AXTree text + SoM-prompt.
 **Site / Model**: classifieds / B0 (Qwen3-VL-235B-A22B via AWS Bedrock proxy)
 **N episodes**: 224 / **SR = 35/224 = 15.6%**
 **Ruleset version**: `4-domsomvis-b1860coord` (only dom+som+vision discovered; **ptext = 4th-mode discover product of THIS digest**)
@@ -51,9 +51,11 @@ Mode-gated visual rules (P6/P15/P16/P21 `mode != "dom"`): all **0 fire on ptext*
 
 ## §3. Tier-2 主深挖 — ptext-specific 失败模式 (45 no-hit, 32 ptext-specific)
 
+> ⚠️ **MECHANISM RE-AUDIT PENDING** (2026-05-27 fix): 本 §3 mechanism attribution 写于 line 5 P-text 定义错误前提下 (had: "AXTree + SoM-prompt"; actually `som.py:399-405` canonical = **`[SOM_MARKS]` + DOM-prompt**)。**Failure phenomenon (visual-attribute blind / image-grounded fail / gallery-row / hallucination) 仍 valid 作 episode-level observed events**, 但**机制归因** ("prompt 风格 SoM 暗示 vision" / "prompt 期待 AXTree obs 给 [SOM_MARKS]") 需 follow-up rewrite。Real mechanism direction = obs `[SOM_MARKS]` flat interactive-only subset 失去 AXTree hierarchical text context (headings / labels / descriptions), 加 DOM-prompt 指导 reference AXTree-style elements 但 obs 是 flatten subset → context 损失驱动 hallucination 更频繁 vs dom (dom obs = full AXTree)。Failure task list (§3.A-§3.E) + episode evidence valid; mechanism prose 待重写。
+
 ### A. Visual-attribute blind (color / shape / cover / thumbnail) — 16+ tasks
 
-**Mechanism**: phantom_text 把 prompt 设计成"使用 element_id 引用" (SoM 风格) 但 obs 是纯 AXTree 文本 — agent **明知**该判定颜色 / 形状 / 封面 / 缩略图但 obs 不含视觉字段, 退化为关键词 matching / hallucination.
+**Mechanism (pending rewrite per §3 audit warning above)**: 原写"phantom_text 把 prompt 设计成'使用 element_id 引用' (SoM 风格) 但 obs 是纯 AXTree 文本" — **错**, 反了 (P-text 实际是 `[SOM_MARKS]` obs + DOM-prompt). Failure phenomenon 真实: agent **明知**该判定颜色 / 形状 / 封面 / 缩略图但 obs 不含视觉字段 (P-text 无图 by construction), 退化为关键词 matching / hallucination — 该 phenomenon **不需 mechanism 修正**, 因为 dom 也无图也会 visual blind, P-text 区别在于 `[SOM_MARKS]` subset 失去 AXTree 周边 text context 进一步弱化 keyword recovery。
 
 Sub-categories:
 - **color attributes** (red / blue / green / purple / neon green / dark color):
@@ -83,7 +85,7 @@ Tasks: 14 (gallery row painting), 23 (gallery row Toyota), 41 (gallery price ran
 
 ### D. Visual hallucination ('I am viewing the image' under no-image mode)
 
-**Mechanism**: Agent **thinks** it can see the image (model alignment between SoM-style prompt that implies vision and image absent from obs) → emits `thought = "I can see..."` then makes up brand/content (task 120 'KONA' for canyon-brand bike).
+**Mechanism (pending rewrite per §3 audit warning)**: 原写 "SoM-style prompt that implies vision" — **错**, P-text 用 DOM-prompt 不 imply vision。Real candidate mechanism: agent 在 `[SOM_MARKS]` obs 看到 `[N] image "alt-text"` 节点 (AXTree image elements 含 alt text, regex 提取后仍保留 `image` role 标识) → 误把 alt-text + role hint 当 "I see image" 触发 → emits `thought = "I can see..."` then makes up brand/content (task 120 'KONA' for canyon-brand bike). **Phenomenon (hallucination) valid 作 episode evidence**, mechanism 待 follow-up rewrite + obs trace verify。
 
 Tasks: 120 (KONA hallucination), partial: 47, 96 (thoughts implying viewing)
 
