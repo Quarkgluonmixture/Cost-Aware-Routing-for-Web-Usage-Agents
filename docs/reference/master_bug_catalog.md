@@ -8055,3 +8055,29 @@ PHASE1A_BENCHMARK_FP_EXCLUDE = [
 **Cross-link**: B-21 (string_match fuzzy=1.0 GPT-judge sibling), B-91 (N/A task FP exclusion precedent), AMENDMENT_05/06/07 (estimand witness pattern), P28/P29 P-rule deterministic detector in `scripts/analysis/diag_pattern_match.py`, [[实验笔记]] §299, R21557 dom digest 关键发现 2 + R5313 som digest E 节。
 
 ---
+
+## B-1867 — Provider remote-serving instability ~14pp dominant noise floor for B0 vision via AWS proxy + audit-artifact gap (2026-05-27)
+
+**B-1867** (paper §3.5 Risk 6 estimand-adjacent / observable phenomenon disclose-only / Phase 1b code-patch candidate, **DIAGNOSED 2026-05-27 via vision MoE compare R24792↔R32024 + codex Mode B gpt-5.5 xhigh cold-start audit**) — Vision MoE 双锚 compare (§297.3 反对称设计: id-channel OFF + MoE ON) 实测 discordance **32/224 = 14.3%** with Δ SR +0.9pp net; codex 自挖全 224 step-0 recompute: **224/224 screenshot byte-identical + url 一致 + 222/224 step-0 actions diverge** = server-side nondeterminism 在字节一致 input 下首位 dominant phenomenon, 99% step-0 actions 在 byte-equal input 下 diverge 不是 trajectory dynamics 漂出来的。Codex cold-start 9-candidate ranking: **remote serving #1 > alias drift #2 > tool-call constrained-decoder instability #3 > MoE-specific routing #4** (官方 Qwen3-VL-235B-A22B is MoE 但 repo 无 expert-route log / serving batch ID / instance ID / model SHA → "Do not label residual 'MoE' unless next experiment isolates same-payload nondeterminism").
+
+**Retracts §298.3 推断**: "B0 dom 12.1% ≈ id 10.5% + MoE 1-2pp 残留" 线性叠加 RETRACTED — 跨 model (B1 dense vs B0 MoE) / modality (replay 文本 obs vs vision screenshot) / serving (DGX local vs AWS Bedrock proxy) / perturbation (id 字节修改 vs same-payload replay) 4 维度不可比较, 减法是 category error。Safe claim (codex §6 verbatim) = "for B0 through the AWS proxy/Bedrock path, nominally greedy same-condition replay has a substantial **remote-serving instability floor**, about **14pp per-task SR discordance** on classifieds vision, while net SR can move only about 1pp"。
+
+**Audit-artifact gap (Phase 1b code-fix scope)**:
+- `results/*/env_snapshot.json:83` 明文 `provider_immutable_sha_available: false` (双 run 都缺)
+- `p79/agents/proxy_api_agent.py:811` POST 时未持久化: canonical SHA256 of full JSON payload + normalized tool-call args hash + response headers (AWS request IDs) + response `model`/`metadata`/`usage` + token logprob margins
+- 无 audit artifact → 物理上无法从 14.3% 进一步 isolate MoE vs batch vs alias sub-mechanism → paper §3.5 prose 只能 stop 在 "observable remote-serving floor"
+
+**Next experiment (no GPU-hour)** — codex §5 推荐: `scripts/maintenance/probe_proxy_full_stack.py` adapt `tool_choice="auto"` → production `"required"`; reconstruct 20 step-0 payload (10 flip + 10 stable); N=5 identical requests back-to-back through same proxy with `temperature=0`, `top_p=1`, `seed=42`, `tool_choice="required"`, `logprobs=true`, `top_logprobs=2`; persist payload SHA256 + response hash + tool args + logprobs + headers + latency + usage。3 个 outcome 分支:
+- 5/5 unique within minutes → remote/tool-decoder nondeterminism confirmed (#1 + #3 alive)
+- Within-minute deterministic 但跨 24h 不同 → alias/deployment drift dominant (#2 alive)
+- Both deterministic → payload reconstruction missed 一个 field, 需 patch `ProxyApiAgent.step` 持久化真 production request body
+
+**含义 (paper Risk 6, AMENDMENT_06 reframe)**:
+- Hero "drop-one oracle 1.7-3.3pp" — vision 7pp self-oracle drop-one 已超 → vision 进 hero 必加 "remote-serving floor" disclosure
+- AMENDMENT_06 non-gating replicate-calibrated sensitivity 框架仍 OK (这就是它设计来覆盖此类 instability), 但 estimand 改: 不再 attribute "MoE residual" 而是 "remote-serving floor"
+- paper §3.5 prose 改: "B0 server-side instability is observed and disclosed; sub-mechanism (MoE expert routing vs dynamic batching vs alias drift vs tool-decoder) is not isolable from current audit artifacts and is left for follow-up work" (= codex framing)
+- Workshop 投稿 prose 不动 (audit gap 在 Phase 1b code-fix scope)
+
+**Cross-link**: 笔记 §282 (推断初次) / §293 (run-to-run 脆弱性 GPT cross-AI) / §297-298 (repro_replicates 干净论证 + Tier A B1 10.5%) / **§302 (vision 双锚反转 + codex Mode B)**; paper_planning Risk 6 (🔁 UPDATED 2026-05-27); next_steps §0 ④ (RECASTED bullet); codex output `docs/checkpoints/codex_outputs/vision_moe_anomaly_2026-05-27.md` (1.9MB 14872 行 8min); AMENDMENT_06/07 (estimand witness pattern); B-1858 (clean replicate gate-blocking, 现 reframe target = remote-serving floor)。
+
+---
