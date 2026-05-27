@@ -1,0 +1,83 @@
+{
+  "ts_utc": "2026-05-27T01:00:01Z",
+  "purpose": "B-1867/§302 N=5 same-payload replay — DashScope intl official API (cross-provider control)",
+  "provider": "dashscope-intl",
+  "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+  "model": "qwen3-vl-235b-a22b-instruct",
+  "n_per_task": 2,
+  "task_ids": [
+    2
+  ],
+  "wall_seconds": 10,
+  "results": [
+    {
+      "task_id": 2,
+      "payload_hash": "49d0ebb47eeb9905",
+      "n_requested": 2,
+      "n_ok": 2,
+      "unique_action_sigs": 1,
+      "unique_action_list": [
+        "?/?"
+      ],
+      "unique_resp_hashes": 2,
+      "calls": [
+        {
+          "status": 200,
+          "ok": true,
+          "elapsed_ms": 6096,
+          "resp_headers": {
+            "x-request-id": "225f6316-9275-9959-b198-298fde9b3b52",
+            "date": "Wed, 27 May 2026 00:59:55 GMT",
+            "server": "istio-envoy"
+          },
+          "resp_hash": "c2c5dc55db0fd3a1",
+          "resp_model": "qwen3-vl-235b-a22b-instruct",
+          "resp_id": "chatcmpl-225f6316-9275-9959-b198-298fde9b3b52",
+          "usage": {
+            "prompt_tokens": 2823,
+            "completion_tokens": 110,
+            "total_tokens": 2933,
+            "prompt_tokens_details": {
+              "image_tokens": 578,
+              "text_tokens": 2245
+            },
+            "completion_tokens_details": {
+              "text_tokens": 110
+            }
+          }
+        },
+        {
+          "status": 200,
+          "ok": true,
+          "elapsed_ms": 4694,
+          "resp_headers": {
+            "x-request-id": "655864ae-a8c8-9a93-b3f4-7c8a3ca426c6",
+            "date": "Wed, 27 May 2026 01:00:00 GMT",
+            "server": "istio-envoy"
+          },
+          "resp_hash": "c3a311f63cb3950a",
+          "resp_model": "qwen3-vl-235b-a22b-instruct",
+          "resp_id": "chatcmpl-655864ae-a8c8-9a93-b3f4-7c8a3ca426c6",
+          "usage": {
+            "prompt_tokens": 2823,
+            "completion_tokens": 110,
+            "total_tokens": 2933,
+            "prompt_tokens_details": {
+              "image_tokens": 578,
+              "text_tokens": 2245
+            },
+            "completion_tokens_details": {
+              "text_tokens": 110
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "n_tasks_unique5": 0,
+    "n_tasks_unique1": 1,
+    "n_tasks_mixed": 0,
+    "n_tasks_error": 0
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "ts_utc": "2026-05-27T00:30:06Z",
+  "purpose": "B-1867/§302 N=5 same-payload replay — discriminate remote-serving vs alias-drift",
+  "n_per_task": 2,
+  "task_ids": [
+    2
+  ],
+  "wall_seconds": 4,
+  "results": [
+    {
+      "task_id": 2,
+      "payload_hash": "bce0f903da3a5405",
+      "n_requested": 2,
+      "n_ok": 2,
+      "unique_action_sigs": 2,
+      "unique_action_list": [
+        "select_option/[517, 410]",
+        "select_option/[581, 419]"
+      ],
+      "unique_resp_hashes": 2,
+      "calls": [
+        {
+          "status": 200,
+          "ok": true,
+          "elapsed_ms": 2291,
+          "resp_headers": {
+            "Date": "Wed, 27 May 2026 00:30:04 GMT",
+            "Content-Length": "22143"
+          },
+          "resp_hash": "74c5a77f58ee375a",
+          "resp_model": "qwen.qwen3-vl-235b-a22b",
+          "usage": {
+            "inputTokens": 2839,
+            "outputTokens": 102,
+            "cost": 0.0033490000000000004
+          },
+          "tool_name": "web_action",
+          "args_hash": "e6e44a264b316aa8",
+          "args": {
+            "thought": "I need to start by selecting the 'Jewelry' category from the dropdown menu to narrow my search. The category selector is visible near the search bar.",
+            "confidence": 0.85,
+            "action_type": "select_option",
+            "coordinate": [
+              581,
+              419
+            ],
+            "option_label": "Jewelry"
+          },
+          "action_type": "select_option",
+          "element_id": null,
+          "coord": [
+            581,
+            419
+          ],
+          "thought_snip": "I need to start by selecting the 'Jewelry' category from the dropdown menu to narrow my search. The category selector is visible near the search bar.",
+          "margin_t0": 3.937500115483999,
+          "t0_tok1": "[\n",
+          "t0_tok2": "["
+        },
+        {
+          "status": 200,
+          "ok": true,
+          "elapsed_ms": 2278,
+          "resp_headers": {
+            "Date": "Wed, 27 May 2026 00:30:06 GMT",
+            "Content-Length": "28779"
+          },
+          "resp_hash": "f913acf475d9cd3d",
+          "resp_model": "qwen.qwen3-vl-235b-a22b",
+          "usage": {
+            "inputTokens": 2839,
+            "outputTokens": 132,
+            "cost": 0.003499
+          },
+          "tool_name": "web_action",
+          "args_hash": "c5073c407505ca18",
+          "args": {
+            "thought": "To find the most recently posted item in the 'Jewelry' category with a red gem priced between $300 to $600, I first need to select the 'Jewelry' category from the dropdown menu. This will narrow down the search to the relevant category before applying further filters.",
+            "confidence": 0.9,
+            "action_type": "select_option",
+            "coordinate": [
+              517,
+              410
+            ],
+            "option_label": "Jewelry"
+          },
+          "action_type": "select_option",
+          "element_id": null,
+          "coord": [
+            517,
+            410
+          ],
+          "thought_snip": "To find the most recently posted item in the 'Jewelry' category with a red gem priced between $300 to $600, I first need to select the 'Jewelry' category from the dropdown menu. This will narrow down ",
+          "margin_t0": 5.43749990221113,
+          "t0_tok1": "[\n",
+          "t0_tok2": "["
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "n_tasks_unique5": 1,
+    "n_tasks_unique1": 0,
+    "n_tasks_mixed": 0,
+    "n_tasks_error": 0
+  }
+}

@@ -8078,6 +8078,42 @@ PHASE1A_BENCHMARK_FP_EXCLUDE = [
 - paper §3.5 prose 改: "B0 server-side instability is observed and disclosed; sub-mechanism (MoE expert routing vs dynamic batching vs alias drift vs tool-decoder) is not isolable from current audit artifacts and is left for follow-up work" (= codex framing)
 - Workshop 投稿 prose 不动 (audit gap 在 Phase 1b code-fix scope)
 
-**Cross-link**: 笔记 §282 (推断初次) / §293 (run-to-run 脆弱性 GPT cross-AI) / §297-298 (repro_replicates 干净论证 + Tier A B1 10.5%) / **§302 (vision 双锚反转 + codex Mode B)**; paper_planning Risk 6 (🔁 UPDATED 2026-05-27); next_steps §0 ④ (RECASTED bullet); codex output `docs/checkpoints/codex_outputs/vision_moe_anomaly_2026-05-27.md` (1.9MB 14872 行 8min); AMENDMENT_06/07 (estimand witness pattern); B-1858 (clean replicate gate-blocking, 现 reframe target = remote-serving floor)。
+**Cross-link**: 笔记 §282 (推断初次) / §293 (run-to-run 脆弱性 GPT cross-AI) / §297-298 (repro_replicates 干净论证 + Tier A B1 10.5%) / **§302 (vision 双锚反转 + codex Mode B)** / **§302.8 (N=5 cross-provider 双 batch + layered noise)**; paper_planning Risk 6 (🔁 UPDATED 2026-05-27 × 2); next_steps §0 ④ (RECASTED bullet); codex output `docs/checkpoints/codex_outputs/vision_moe_anomaly_2026-05-27.md` (1.9MB 14872 行 8min); AMENDMENT_06/07 (estimand witness pattern); B-1858 (clean replicate gate-blocking, 现 reframe target = remote-serving floor)。
+
+### B-1867 follow-up — N=5 cross-provider control verdict (2026-05-27 02:09 BST)
+
+跑了 N=5 same-payload replay 双 batch (DGX, 0 GPU-hour, $1 total cost) 验证 §5 codex 推荐 next experiment:
+
+**Data files (paper §3.5 cite-able)**:
+- AWS: `docs/checkpoints/probes/replay_step0_n5_20260527_013506_batch1_within_minute.json` (20 task × N=5, wall 255s)
+- DashScope: `docs/checkpoints/probes/replay_step0_n5_official_20260527_020841_dashscope_batch1.json` (同 20 task × N=5, wall 379s)
+- Script: `scripts/maintenance/probe_replay_step0_n5.py` (AWS Bedrock) + `scripts/maintenance/probe_replay_step0_n5_official.py` (DashScope intl)
+
+**Verdict** (cross-provider 双 batch 100 req each):
+
+| Stat | **AWS Bedrock** | **DashScope intl** | 比 |
+|---|---|---|---|
+| unique 5/5 (full diverge) | 16/20 (80%) | 1/20 (5%) | AWS 16× |
+| unique 1 (full det) | 0/20 | 4/20 (20%) | DashScope 有 |
+| mixed (2-4 unique) | 4/20 | 15/20 (75%) | DashScope dominant |
+| Margin mean (top1-top2) | 4-5 logit | **16.7 logit** | 3-4× |
+| action class jump | 频繁 | 极少 | AWS 显著 worse |
+| `system_fingerprint` populated | 0/100 | 0/100 | universal None ⚠️ |
+
+**Layered noise framing** (替代单层 "remote-serving floor"):
+
+- **Layer 1 — Model-level (Qwen3-VL-235B-A22B remote serving inherent)**: multi-token coord sequence 高 margin 每 token 但累积漂 ±5 pixel; 短 action sequence (无 coord 或 cached) 在 high-margin 下 4/20 真 bit-exact 证 model 不是 fundamentally 随机, 而是 multi-token positional accumulation
+- **Layer 2 — AWS Bedrock-specific (在 L1 之上加)**: dynamic batching + multi-tenant FP reduction + endpoint multi-instance routing → 单 token margin 4-5 (vs DashScope 17) + 80% full diverge + cross-class action jump
+
+**Implications**:
+- ❌ "Switch to DashScope 解决" escape hatch **死**: Layer 1 仍 ~75% partial-nondet, 仍 non-zero floor
+- ❌ "Model-only inherent, any provider 一样" framing 也错: AWS 显著 worse (16× more chaotic) 证 provider 层有实质 contribution
+- ✅ Honest framing: "**provider-dependent layered noise**; B0 via AWS Bedrock paper-grade estimand 测 ~14pp SR floor; cross-provider DashScope intl lower but nonzero baseline"
+- **`system_fingerprint` cross-provider None confirms** audit gap 是行业普遍 (不是 AWS-specific), B-1867 client-side patch (持久化 payload SHA + canonical args hash + response headers + logprob margins) 仍是唯一可行 forward path — 后续 Phase 1b fire 应 land
+
+**Codex #1 (remote serving) 实证 confirmed cross-provider, 但 sub-mechanism 仍不可 isolate**:
+- 不能 attribute 给 "MoE expert routing" (DashScope 高 margin 不支持 single-token routing 随机)
+- 不能 attribute 给 "AWS-specific bug" (DashScope 仍有 partial-nondet)
+- 真 sub-mechanism = **multi-token cumulative drift (L1) + AWS batching/routing (L2 add)**, paper §3.5 prose 应到此 stop, 不再细化 (audit-artifact gap 不允许)
 
 ---

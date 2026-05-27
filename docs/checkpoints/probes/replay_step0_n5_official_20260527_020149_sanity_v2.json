@@ -1,0 +1,132 @@
+{
+  "ts_utc": "2026-05-27T01:01:49Z",
+  "purpose": "B-1867/§302 N=5 same-payload replay — DashScope intl official API (cross-provider control)",
+  "provider": "dashscope-intl",
+  "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+  "model": "qwen3-vl-235b-a22b-instruct",
+  "n_per_task": 2,
+  "task_ids": [
+    2
+  ],
+  "wall_seconds": 7,
+  "results": [
+    {
+      "task_id": 2,
+      "payload_hash": "49d0ebb47eeb9905",
+      "n_requested": 2,
+      "n_ok": 2,
+      "unique_action_sigs": 2,
+      "unique_action_list": [
+        "select_option/[521, 416]",
+        "select_option/[592, 417]"
+      ],
+      "unique_resp_hashes": 2,
+      "calls": [
+        {
+          "status": 200,
+          "ok": true,
+          "elapsed_ms": 3678,
+          "resp_headers": {
+            "x-request-id": "aaa27dd6-5704-9e4c-9da2-19eeff2268e0",
+            "date": "Wed, 27 May 2026 01:01:46 GMT",
+            "server": "istio-envoy"
+          },
+          "resp_hash": "ef36da793b6750c4",
+          "resp_model": "qwen3-vl-235b-a22b-instruct",
+          "resp_id": "chatcmpl-aaa27dd6-5704-9e4c-9da2-19eeff2268e0",
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 2823,
+            "completion_tokens": 111,
+            "total_tokens": 2934,
+            "prompt_tokens_details": {
+              "image_tokens": 578,
+              "text_tokens": 2245
+            },
+            "completion_tokens_details": {
+              "text_tokens": 111
+            }
+          },
+          "args_hash": "e2f8bad5e7cde24e",
+          "parse_path": "content_json_in_text",
+          "content_raw_snip": "{\n  \"thought\": \"To find the most recently posted item in the \\\"Jewelry\\\" category with a red gem and price between $300 to $600, I need to start by selecting the appropriate category. The category dro",
+          "args": {
+            "thought": "To find the most recently posted item in the \"Jewelry\" category with a red gem and price between $300 to $600, I need to start by selecting the appropriate category. The category dropdown is visible and needs to be set to \"Jewelry\".",
+            "confidence": 0.85,
+            "action_type": "select_option",
+            "coordinate": [
+              592,
+              417
+            ],
+            "option_label": "Jewelry"
+          },
+          "action_type": "select_option",
+          "element_id": null,
+          "coord": [
+            592,
+            417
+          ],
+          "thought_snip": "To find the most recently posted item in the \"Jewelry\" category with a red gem and price between $300 to $600, I need to start by selecting the appropriate category. The category dropdown is visible a",
+          "margin_t0": 17.125,
+          "t0_tok1": "{\n",
+          "t0_tok2": "{\r\n"
+        },
+        {
+          "status": 200,
+          "ok": true,
+          "elapsed_ms": 3469,
+          "resp_headers": {
+            "x-request-id": "a63b962f-4049-9302-bd85-19427a45e869",
+            "date": "Wed, 27 May 2026 01:01:49 GMT",
+            "server": "istio-envoy"
+          },
+          "resp_hash": "7e06d5d77a48a2e4",
+          "resp_model": "qwen3-vl-235b-a22b-instruct",
+          "resp_id": "chatcmpl-a63b962f-4049-9302-bd85-19427a45e869",
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 2823,
+            "completion_tokens": 110,
+            "total_tokens": 2933,
+            "prompt_tokens_details": {
+              "image_tokens": 578,
+              "text_tokens": 2245
+            },
+            "completion_tokens_details": {
+              "text_tokens": 110
+            }
+          },
+          "args_hash": "354c23d6ac6baf81",
+          "parse_path": "content_json_in_text",
+          "content_raw_snip": "{\n  \"thought\": \"To find the most recently posted item in the \\\"Jewelry\\\" category with a red gem and a price between $300 to $600, I need to first select the appropriate category. The category dropdow",
+          "args": {
+            "thought": "To find the most recently posted item in the \"Jewelry\" category with a red gem and a price between $300 to $600, I need to first select the appropriate category. The category dropdown is visible and needs to be set to \"Jewelry\".",
+            "confidence": 0.8,
+            "action_type": "select_option",
+            "coordinate": [
+              521,
+              416
+            ],
+            "option_label": "Jewelry"
+          },
+          "action_type": "select_option",
+          "element_id": null,
+          "coord": [
+            521,
+            416
+          ],
+          "thought_snip": "To find the most recently posted item in the \"Jewelry\" category with a red gem and a price between $300 to $600, I need to first select the appropriate category. The category dropdown is visible and n",
+          "margin_t0": 17.0,
+          "t0_tok1": "{\n",
+          "t0_tok2": "{\r\n"
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "n_tasks_unique5": 1,
+    "n_tasks_unique1": 0,
+    "n_tasks_mixed": 0,
+    "n_tasks_error": 0
+  }
+}
