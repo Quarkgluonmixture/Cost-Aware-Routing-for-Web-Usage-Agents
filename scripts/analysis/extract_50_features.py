@@ -37,6 +37,7 @@ from p79.policies.router_features import (
     compute_intent_binaries,
     derive_oracle_label,
     difficulty_to_int,
+    estimate_input_tokens,
 )
 
 REPO = Path(__file__).resolve().parents[2]
