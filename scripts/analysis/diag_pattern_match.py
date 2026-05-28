@@ -45,9 +45,21 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # Current basis: P1-P18 discovered from B0 dom classifieds R9755 (in-sample fit);
 # P19-P23 + P6/P14 narrowing added from R31194 fresh-substrate Tier-2 (2026-05-23);
 # P24-P30 + P10/P14/P20 FP-narrowing added from R9725 B0 som cls Tier-2 (2026-05-24,
-# 2nd-mode discover). Now spans 2 modes (dom+som) — the mode gates (`if mode != "dom"`
-# in check_p6 / p15 / p16) + ALL rules are provisional discover-products, NOT yet
-# validated against vision / phantom modes.
+# 2nd-mode discover); P31/P32 + P27 ext added from R24792 B0 vision cls Tier-2
+# (2026-05-25, 3rd-mode discover); P33/P34 added from R32031 B0 phantom_som cls Tier-2
+# (2026-05-28, 4th-mode discover): P33 phantom-img-nav ([SOM_MARKS] exposes a listing
+# image href as clickable → agent lands on raw /oc-content/uploads/*.png, hallucinates;
+# success-fire 1/17 on R32031 = clean). P34 phantom_som visual-blind (P6 color/ref-image
+# twin) was PROPOSED but NOT landed: re-scan showed 21/106 success-fire (20%) = presence-
+# only — the SAME lesson as P6's historic 88%-on-success dom over-fire. "navigate to my
+# listing of the white car" (color = self-listing identifier, not a visual judgment) +
+# "I recall seeing this exact item" (ref image IS OCR-able by the multimodal model → only
+# needs OCR→search, no page-image match) both fire spuriously. Needs a success-safe narrow
+# before landing (see B0_phantom_som digest § self-evolve). Now spans 4 modes
+# (dom+som+vision+phantom_som) but phantom_som only contributes P33 so far. The dom-gated
+# visual-blind DETAIL rules (P15 gallery-row / P16 image-content / P22 img-number) ALSO
+# manifest on phantom_som but are NOT yet extended (need full phantom-family data to
+# decide som-specific-twin vs no-image-family-wide gate — see B0_phantom_som digest).
 # Cross-mode quantitative comparison remains FORBIDDEN until 6-mode freeze.
 #
 # B-1860 (2026-05-24): check_p1 vision-coord branch now normalizes through the
@@ -64,7 +76,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "4-domsomvis-b1860coord"
+RULESET_VERSION = "5-domsomvispsom-b1860coord"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -197,6 +209,17 @@ P6_IMAGE_VISUAL_MATCH_RE = re.compile(
     r"(?:this\s+)?exact\s+item|"
     r"in\s+(?:the|its|their|this)\s+(?:image|picture|photo)|taken\s+(?:on|in|from|at|during)|"
     r"on\s+(?:the|its)\s+(?:cover|front))\b",
+    re.IGNORECASE,
+)
+
+# P33: agent navigated to a RAW listing-image URL (/oc-content/uploads/<id>/<id>.png).
+# In phantom_som the [SOM_MARKS] list exposes each listing image's href as a clickable
+# element → agent "clicks the image" → lands on a near-empty DOM page showing only the
+# raw image (still unreadable to the model) → hallucinates an answer. Signal is mode-
+# agnostic (any mode landing on a bare image URL is lost) but structurally phantom_som-
+# induced. Naturally success-safe: a raw image URL is never the item page url_match wants.
+RAW_IMAGE_URL_RE = re.compile(
+    r"/oc-content/uploads/.*\.(?:png|jpe?g|gif|webp)(?:$|\?)",
     re.IGNORECASE,
 )
 
@@ -1119,6 +1142,23 @@ def check_p32(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
     return []
 
 
+def check_p33(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P33: 导航至裸图片 URL 幻觉 — obs_url 落到 /oc-content/uploads/*.png 近空 DOM 页.
+    phantom_som 特有诱因: [SOM_MARKS] 把 listing 图片 href 暴露为带 ID 可点击元素, agent
+    "点进图片" → 裸图片页无可读内容却幻觉作答 (self-evolving 2026-05-28, R32031 B0
+    phantom_som cls Tier-2 task 128/187; 两 sub-agent 独立发现). 天然 success-safe:
+    裸图片 URL ≠ item 页, url_match/program_html 不会 pass."""
+    for i, s in enumerate(steps):
+        url = s.get("obs_url", "") or ""
+        if RAW_IMAGE_URL_RE.search(url):
+            return [PatternHit(
+                "P33", "导航至裸图片URL幻觉", i,
+                f"step {i}: obs_url is raw listing image {url[:80]} (clicked img href, lost)",
+                is_scaffold=False,
+            )]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Rule registry
 # ---------------------------------------------------------------------------
@@ -1156,6 +1196,7 @@ ALL_RULES: Dict[str, Any] = {
     "P30": check_p30,  # 到达正确item后离开 (som self-doubt)
     "P31": check_p31,  # budget 耗尽未完成 (trajectory_incomplete; R24792 vision discover)
     "P32": check_p32,  # 文本误入价格 filter (sPriceMin/Max 含字母; R24792 vision discover)
+    "P33": check_p33,  # 导航至裸图片URL幻觉 (phantom_som SOM_MARKS img-href click; R32031)
 }
 
 
