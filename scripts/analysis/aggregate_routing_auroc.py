@@ -180,7 +180,16 @@ def main() -> int:
             prev_adj = adj
         return group.assign(p_holm=p_holm, holm_m=n)
 
+    # pandas 2.2 groupby.apply EXCLUDES grouping columns from the result (deprecated
+    # behavior → FutureWarning "grouping columns will be excluded"). Back up keys +
+    # restore index-aligned (_holm_within keeps row count + index labels, so label-
+    # aligned assignment is safe). Exposed by first paper-grade manifest promote
+    # 2026-05-28; reproduces at full k_cells=6 (pandas-version bug, not partial-specific).
+    _keys_bak = full[["baseline", "site", "mode"]].copy()
     full = full.groupby(["baseline", "site", "mode"], group_keys=False).apply(_holm_within)
+    for _k in ("baseline", "site", "mode"):
+        if _k not in full.columns:
+            full[_k] = _keys_bak[_k]
 
     # BH-FDR across full exploratory family (per prereg §4 line 424)
     # Benjamini-Hochberg 1995: for ranks i=1..N sorted by p ascending,
@@ -200,6 +209,11 @@ def main() -> int:
     full["q_bh"] = q_bh_list
     full["bh_family_N"] = n_bh
 
+    # pandas 2.x groupby(...).apply (line ~183) can push group keys (baseline/site/mode)
+    # to the index; restore as columns before sort references them. (Exposed by first
+    # paper-grade manifest promote 2026-05-28; reproduces at full k_cells=6 too.)
+    if any(k not in full.columns for k in ("baseline", "site", "mode")):
+        full = full.reset_index()
     full = full.sort_values(["baseline", "site", "mode", "AUROC"], ascending=[True, True, True, False])
 
     out = Path(args.output)

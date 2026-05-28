@@ -514,7 +514,11 @@ analyze-layer2:
 	$(MAKE) fig12-micro-heatmap
 
 analyze-mechanism:
-	$(PYTHON) scripts/analysis/mechanism_per_task.py
+	@# §5 mechanism deferred (advisor 2026-05-14). Report assumes reddit paper-grade cells;
+	@# on partial Phase 1a (reddit not promoted) it crashes on missing reddit Exp1 stats.
+	@# NON-FATAL so outcome analysis + figures aren't blocked. NOTE: remove `|| echo`
+	@# (restore fatal) when §5 resumes — else real mechanism bugs get masked.
+	$(PYTHON) scripts/analysis/mechanism_per_task.py || echo "[analyze-mechanism] §5 deferred — non-fatal skip (partial data / needs reddit paper-grade)"
 
 fig12-micro-heatmap:
 	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py

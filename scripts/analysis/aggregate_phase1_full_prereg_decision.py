@@ -1220,7 +1220,8 @@ def write_json(payload: Dict, out_json: Path, *,
         "input_csv_path": str(input_csv_path) if input_csv_path else None,
         "git_commit_sha": _git_commit_sha(),
     }
-    out_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=float) + "\n",
+    out_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False,
+                        default=lambda o: o.tolist() if isinstance(o, np.ndarray) else float(o)) + "\n",
                         encoding="utf-8")
 
 

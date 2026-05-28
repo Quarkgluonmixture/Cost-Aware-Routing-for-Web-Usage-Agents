@@ -45,43 +45,52 @@
 # ─────────────────────────────────────────────────────────────────────
 
 cells:
-  # B0 classifieds
+  # B0 classifieds — Phase 1a A100 fire (paper-grade, promote 2026-05-28; supersedes 2026-04-13 archived 3mode).
+  # /diag confirmed all 6 modes: 0 scaffold-bug / 0 benchmark-FP. ⚠️ PARTIAL 6/36 cond (B0 cls only;
+  # reddit + B1 + B2 pending) → prereg cross-cell gates will report INSUFFICIENT_DATA until full Phase 1a.
+  # expected_n omitted → registry uses dynamic scored_task_count (cls=224, N/A excluded).
   - baseline: B0
     site: classifieds
     mode: DOM
-    run_dir: B0_3mode_classifieds_20260413
+    run_dir: B0_dom_classifieds_20260525_194618_553890342_530647_R21557
     condition_subdir: phase1_dom_router_0
-    expected_n: 234
-    grade: archived
-    notes: "Phase A pre-bug; will be replaced after rerun"
+    grade: paper-grade
+    notes: "A100 fire R21557, SR 17.4% (39/224)"
   - baseline: B0
     site: classifieds
     mode: SoM
-    run_dir: B0_3mode_classifieds_20260413
+    run_dir: B0_som_classifieds_20260526_041601_863239369_602235_R5313
     condition_subdir: phase1_som_router_0
-    expected_n: 234
-    grade: archived
+    grade: paper-grade
+    notes: "A100 fire R5313, SR 27.2% (61/224)"
   - baseline: B0
     site: classifieds
     mode: Vision
-    run_dir: B0_3mode_classifieds_20260413
+    run_dir: B0_vision_classifieds_20260526_141916_610351680_689390_R32024
     condition_subdir: phase1_vision_router_0
-    expected_n: 234
-    grade: archived
+    grade: paper-grade
+    notes: "A100 fire R32024, SR 25.0% (56/224)"
   - baseline: B0
     site: classifieds
     mode: P-text
-    run_dir: B0_phantom_text_classifieds_20260427
-    condition_subdir: phase1_phantom_dom_router_0
-    expected_n: 234
-    grade: archived
+    run_dir: B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183
+    condition_subdir: phase1_phantom_text_router_0
+    grade: paper-grade
+    notes: "A100 fire R31183, SR 15.6%; subdir=phantom_text (NOT legacy phantom_dom alias)"
   - baseline: B0
     site: classifieds
     mode: P-SoM
-    run_dir: B0_phantom_som_classifieds_20260426
+    run_dir: B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031
     condition_subdir: phase1_phantom_som_router_0
-    expected_n: 234
-    grade: archived
+    grade: paper-grade
+    notes: "A100 fire R32031, SR 15.6%; /diag P33 phantom-img-nav landed"
+  - baseline: B0
+    site: classifieds
+    mode: P-prompt
+    run_dir: B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655
+    condition_subdir: phase1_phantom_prompt_router_0
+    grade: paper-grade
+    notes: "A100 fire R14655, SR 19.6%; NEW mode (no archived predecessor)"
 
   # B0 reddit
   - baseline: B0
