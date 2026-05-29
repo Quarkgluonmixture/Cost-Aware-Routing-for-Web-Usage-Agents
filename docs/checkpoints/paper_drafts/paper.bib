@@ -636,3 +636,76 @@
   howpublished = {\url{https://neurips.cc/Conferences/2024/CallForPapers}},
   note = {Official conference reproducibility checklist + author guidelines. Cited in our paper \S 4 disclosure section as the reporting standard for raw vs adjusted SR, FP-gap, same-task subsets, and dataset card. The full disclosure template is in \S 4 \texttt{section4\_limitations\_disclosure.md} (195 lines covering 17 items).},
 }
+
+% --- lit-digest 2026-05-29 verified additions (router positioning + reviewer-defense + cost) ---
+% All 6 verified against arXiv primary sources (4-way parallel literature check). Digest metadata
+% corrections folded into notes: CSCR acronym = Cost-Spectrum (NOT Cost-Aware); "Same Task" proves
+% "visual aligns late" NOT "text aligns early" (no overclaim); PSS is output-token sharpness NOT
+% perception saliency. RegionFocus (not SoM) / Circuit-Tracing-in-VLMs (in-image math, no anchor) /
+% Mind-the-Web (security) excluded as not relevant.
+
+@misc{liu2025seeing,
+  title = {Seeing but Not Believing: Probing the Disconnect Between Visual Attention and Answer Correctness in Vision-Language Models},
+  author = {Liu, Zhining and Chen, Ziyi and Liu, Hui and Luo, Chen and Tang, Xianfeng and Wang, Suhang and Zeng, Joy and Dai, Zhenwei and Shi, Zhan and Wei, Tianxin and Dumoulin, Benoit and Tong, Hanghang},
+  year = {2025},
+  eprint = {2510.17771},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2510.17771},
+  note = {VLM deep layers reliably attend to the correct visual evidence region even when the final answer is wrong --- ``seeing but not believing.'' The bottleneck is NOT perception fidelity but under-utilization/integration of already-perceived evidence at decoding; a training-free attention-masking intervention improves accuracy across LLaVA/Qwen/Gemma/InternVL. Cited in our paper \S 3/\S 8 reviewer-defense as the external anchor (alongside Zenkri \& Brock 2026) that REFUTES the ``phantom is just degraded perception fidelity'' attack: if the bottleneck is integration not perception, removing the annotated image (perception channel) while keeping the text format leaves task-relevant routing signal largely intact --- exactly the phantom drop-in. This is SUPPORT, not threat. Bonus: evaluated on Gemma + Qwen, our B1/B2 families. CAVEAT for prose: the paper studies image-RETAINING VLMs, so it anchors the upstream proposition ``bottleneck $\neq$ perception,'' not a direct test of phantom-SoM; keep the citation logic explicit, do not overclaim.}
+}
+
+@misc{shirkavand2025cscr,
+  title = {Cost-Aware Contrastive Routing for {LLMs}},
+  author = {Shirkavand, Reza and Gao, Shangqian and Yu, Peiran and Huang, Heng},
+  year = {2025},
+  eprint = {2508.12491},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url = {https://arxiv.org/abs/2508.12491},
+  note = {NeurIPS 2025 Spotlight Poster. CSCR = Cost-\emph{Spectrum} Contrastive Routing (the acronym's S is Spectrum; the title reads ``Cost-Aware'' --- do not mis-expand the acronym). Maps prompts + LLMs into a shared embedding space via logit footprints (open-source models) + perplexity fingerprints (black-box APIs); a contrastive encoder is trained to pick the cheapest accurate expert within adaptive cost bands; inference is one FAISS k-NN lookup (no retrain when the expert pool changes). Up to 25\% better accuracy-cost tradeoff, generalizes to unseen LLMs + OOD prompts. Cited in our paper \S 6 as the most recent SOTA learned cost-aware router and the key positioning contrast: prior cost-aware routers (RouteLLM, FrugalGPT, CSCR) route ACROSS MODELS; we route ACROSS INPUT REPRESENTATIONS within a fixed agent, exploiting the phantom routing space. The perplexity-fingerprint idea for black-box APIs is method-relevant to our B0 (proxy) routing-signal constraint.}
+}
+
+@misc{nikankin2025sametask,
+  title = {Same Task, Different Circuits: Disentangling Modality-Specific Mechanisms in {VLMs}},
+  author = {Nikankin, Yaniv and Arad, Dana and Gandelsman, Yossi and Belinkov, Yonatan},
+  year = {2025},
+  eprint = {2506.09047},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2506.09047},
+  note = {NeurIPS 2025 (Technion CS-NLP). Activation patching shows visual vs textual circuits for the same task are mostly structurally disjoint (avg 18\% shared components) yet functionally similar; the visual representation aligns with its higher-performing textual analog only in LATER layers --- too late to influence downstream positions. Training-free back-patching (later-layer visual representation into earlier layers) closes about a third of the modality gap (+4.6pp avg on visual prompts, $\sim$32\%). Cited in our paper \S 3/discussion as a NICE-TO-HAVE external mechanism anchor for phantom drop-in. IMPORTANT framing constraint: the paper proves ``visual aligns late,'' NOT ``text aligns early'' (a digest overclaim), and has no SoM/web-agent/annotated-image setting. Safe citation wording: ``consistent with Nikankin et al., who find visual representations align with text only in later layers (too late to influence computation), phantom drop-in suggests the text path carries the task-relevant signal without requiring this late cross-modal alignment.'' Do NOT write ``directly supports text aligns earlier.''}
+}
+
+@misc{tao2025logitsharpness,
+  title = {Understanding {GUI} Agent Localization Biases through Logit Sharpness},
+  author = {Tao, Xingjian and Wang, Yiwei and Cai, Yujun and Yang, Zhicheng and Tang, Jing},
+  year = {2025},
+  eprint = {2506.15425},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2506.15425},
+  note = {Proposes a 4-class GUI prediction taxonomy + Peak Sharpness Score (PSS), a post-hoc measure of the sharpness of the coordinate digit-token logit vector (NOT a perception-saliency measure --- the digest implied perception; correct it). Correct predictions have higher PSS; biased hallucinations carry correct-like logits. Cited in our paper \S 4 signal discussion as a related logit-sharpness signal we do NOT adopt as a primary signal, for three reasons: (1) post-hoc on the output distribution, so it cannot serve as a pre-execution learned-router task feature; (2) it needs the full digit-token logit vector, broken by B0 proxy's top-2 logprob truncation (usable on B1/B2 only); (3) it is designed for coordinate regression (ordinal digit tokens), not our task-level binary obs-mode-success prediction --- form mismatch. Informationally close to our existing mean/min-logprob + margin signals.}
+}
+
+@misc{schiepanski2025d2snap,
+  title = {Beyond Pixels: Exploring {DOM} Downsampling for {LLM}-Based Web Agents},
+  author = {Schiepanski, Thassilo M. and Pi{\"e}l, Nicholas},
+  year = {2025},
+  eprint = {2508.04412},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2508.04412},
+  note = {First DOM-downsampling algorithm as a DOM-snapshot preprocessing step for token-cost reduction. Downsampled DOM (67\% SR) matches a grounded GUI-screenshot baseline (65\%) at the same token order ($10^3$), and exceeds it by 8\% one order higher ($10^4$); concludes the DOM-inherent hierarchy is a strong UI feature for LLMs. Cited in our paper \S 1/\S 6 cost argument as independent external corroboration that a DOM/text representation matches or beats a pixel-screenshot baseline at equal token budget --- the same cost-vs-representation logic behind our phantom-SoM cost $\approx$ DOM claim. The digest under-rated this (Score 1); it is the closest of the related GUI-grounding papers to our cost positioning.}
+}
+
+@misc{lu2025earlyexit,
+  title = {Runaway is Ashamed, But Helpful: On the Early-Exit Behavior of Large Language Model-based Agents in Embodied Environments},
+  author = {Lu, Qingyu and Ding, Liang and Cao, Siyi and Liu, Xuebo and Zhang, Kanjian and Zhang, Jinxia and Tao, Dacheng},
+  year = {2025},
+  eprint = {2505.17616},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2505.17616},
+  note = {EMNLP 2025 Findings. First systematic study of early-exit for embodied LLM agents: intrinsic (inject exit instructions for self-termination) + extrinsic (external task-completion verification to halt); two metrics (redundant-step reduction vs progress degradation). 4 LLMs $\times$ 5 embodied environments; a strong agent taking over after an early-exit agent yields better performance at the same total step budget (a cascade precedent). Cited in our paper \S 6 related work to delimit the efficiency-axis taxonomy: model routing (RouteLLM/FrugalGPT/CSCR, \emph{which model}) vs early-exit halting (this work, \emph{when to stop} within an episode) vs representation routing (ours, \emph{which input} within a fixed model). Domain is embodied, not web --- not a direct baseline.}
+}
