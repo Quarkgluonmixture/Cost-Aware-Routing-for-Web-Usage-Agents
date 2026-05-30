@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cost-Aware Routing for Web-Usage Agents — Evidence at a glance</title>
+<style>
+  :root{
+    --paper:#f7f7f5; --card:#ffffff; --ink:#17191e; --muted:#5b626d; --line:#e6e7e2; --line2:#eeefe;
+    --hero:#b21e45; --hero-soft:#f6e3e9; --hero-line:#e3b9c6;
+    --good:#1f7a5c; --slate:#3f5168; --neutral:#7a828e; --warn:#9a6b00;
+    --grid:#edeeea;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{-webkit-text-size-adjust:100%; scroll-behavior:smooth}
+  body{
+    background:var(--paper); color:var(--ink);
+    font:15.5px/1.62 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Noto Serif",serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sans{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+  .wrap{max-width:1000px; margin:0 auto; padding:54px 30px 90px}
+
+  /* ---- entrance animation (borrowed "explainer" feel) ---- */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1; transform:none}
+  @media (prefers-reduced-motion:reduce){ .reveal{opacity:1; transform:none; transition:none} .draw{stroke-dashoffset:0 !important; animation:none !important} }
+
+  header.hero{border-bottom:1px solid var(--line); padding-bottom:30px}
+  .kicker{font-family:-apple-system,sans-serif; font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--hero); font-weight:700; margin-bottom:14px}
+  h1{font-size:38px; line-height:1.1; letter-spacing:-.02em; font-weight:600; margin-bottom:12px}
+  .sub{font-size:19px; line-height:1.45; color:#3a3f48; max-width:780px}
+  .sub b{color:var(--ink)}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:22px}
+  .chip{font-family:-apple-system,sans-serif; background:#fff; color:#3a4150; border:1px solid var(--line);
+        border-radius:999px; padding:5px 13px; font-size:12.5px; font-weight:600; white-space:nowrap}
+  .provenance{font-family:-apple-system,sans-serif; background:#fffdf6; border:1px solid #ece3c8; border-left:3px solid var(--warn);
+        border-radius:8px; padding:13px 17px; margin-top:24px; font-size:13.5px; line-height:1.55; color:#5e4e22}
+  .provenance b{color:#473a14}
+
+  section{margin-top:58px}
+  h2{font-family:-apple-system,sans-serif; font-size:12.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--hero); font-weight:700; display:flex; align-items:center; gap:10px}
+  h2 .n{font-variant-numeric:tabular-nums; color:#c4c8c0; font-weight:700}
+  .lead{font-size:23px; line-height:1.34; letter-spacing:-.01em; margin:8px 0 22px; max-width:850px; font-weight:500}
+  .lead em{font-style:italic; color:var(--hero)}
+  p.note{font-family:-apple-system,sans-serif; color:var(--muted); font-size:13px; line-height:1.55; margin-top:12px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px 24px; box-shadow:0 1px 2px rgba(20,20,30,.03)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+
+  table{border-collapse:collapse; width:100%; font-family:-apple-system,sans-serif; font-size:13.5px}
+  th,td{padding:9px 11px; text-align:right; border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:700; border-bottom:1.5px solid #d8d9d2}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{border-top:1.5px solid #d8d9d2; padding-top:11px}
+  .mode{font-weight:700}
+  .mode small{display:block; font-weight:400; color:var(--muted); font-size:11px}
+  .hl{background:var(--hero-soft)}
+  .hl .mode{color:var(--hero)}
+  .num{font-variant-numeric:tabular-nums}
+  .best{color:var(--good); font-weight:800}
+  .low{color:var(--neutral)}
+  .ci{color:var(--muted); font-size:12px}
+
+  figure{margin:0}
+  svg{display:block; width:100%; height:auto; overflow:visible}
+  .legend{font-family:-apple-system,sans-serif; display:flex; flex-wrap:wrap; gap:16px; margin-top:14px; font-size:12.5px; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .dot{width:10px; height:10px; border-radius:50%; display:inline-block}
+
+  .takeaway{font-family:-apple-system,sans-serif; border-left:3px solid var(--hero); background:#fff; border:1px solid var(--line); border-left:3px solid var(--hero);
+            padding:14px 18px; border-radius:0 10px 10px 0; margin-top:18px; font-size:14.5px; line-height:1.5}
+  .takeaway b{color:var(--hero)}
+
+  .bars{font-family:-apple-system,sans-serif; margin-top:8px}
+  .bar-row{display:grid; grid-template-columns:118px 1fr 40px; align-items:center; gap:11px; margin:8px 0; font-size:13px}
+  .bar-track{background:#eeefe9; border-radius:5px; height:16px; overflow:hidden}
+  .bar-fill{height:100%; border-radius:5px; transform-origin:left; transform:scaleX(0); transition:transform 1s cubic-bezier(.2,.7,.2,1)}
+  .in .bar-fill{transform:scaleX(1)}
+
+  /* cube hero */
+  .cube-wrap{background:linear-gradient(180deg,#fff, #fbfbf9); border:1px solid var(--line); border-radius:16px; padding:10px 8px 4px}
+  .draw{stroke-dasharray:var(--len); stroke-dashoffset:var(--len); animation:draw 1.4s .2s ease forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .fade-late{opacity:0; animation:fadein .8s 1.1s ease forwards}
+  @keyframes fadein{to{opacity:1}}
+
+  footer{font-family:-apple-system,sans-serif; margin-top:64px; border-top:1px solid var(--line); padding-top:24px; color:var(--muted); font-size:12.5px; line-height:1.6}
+  footer b{color:#3a4150}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; background:#f0f1ec; padding:1px 5px; border-radius:4px; color:#444}
+  a{color:var(--hero); text-decoration:none} a:hover{text-decoration:underline}
+
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr} h1{font-size:29px} .lead{font-size:20px} }
+  @media print{ body{background:#fff} .reveal{opacity:1; transform:none} .provenance,.cube-wrap{background:#fff} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero reveal in">
+    <div class="kicker">VisualWebArena · Vision-Language Web Agents</div>
+    <h1>Cost-Aware Routing for Web-Usage Agents</h1>
+    <p class="sub">A web agent can read a page as a screenshot, an accessibility tree, or Set-of-Marks.
+      <b>Which representation should it pay for — and can routing between them beat any single one?</b></p>
+    <div class="chips">
+      <span class="chip">Qwen3-VL 235B / 4B · Gemma-3-4B</span>
+      <span class="chip">~117K LOC Python</span>
+      <span class="chip">1,121 test functions</span>
+      <span class="chip">3-tier compute fleet</span>
+      <span class="chip">preregistered + power-analysed</span>
+    </div>
+    <div class="provenance">
+      <b>Read this honestly.</b> Figures are a <b>worked example</b>: baseline <b>B0 (Qwen3-VL-235B)</b> on
+      <b>VisualWebArena classifieds</b>, N=224 tasks, all six modes. Pooled routing statistics come from a
+      <b>k=3 archive</b> (B0 cls · B0 reddit · B1 cls); the clean <b>k=6</b> re-run is in progress. The failure
+      taxonomy is <b>provisional</b> (single model×site, heuristic). Every number is real and scoped to what has landed.
+    </div>
+  </header>
+
+  <!-- ============ 01 — THE CUBE ============ -->
+  <section class="reveal">
+    <h2><span class="n">01</span> The phantom routing space</h2>
+    <p class="lead">The six observation modes are corners of one <em>2×2×2 design cube</em>:
+      text channel × prompt style × whether a screenshot is rendered. The whole <em>no-image face</em> is the
+      phantom space — signal of Set-of-Marks, cost of text.</p>
+
+    <div class="cube-wrap">
+      <figure>
+      <svg viewBox="0 0 780 470" role="img" aria-label="Isometric 2x2x2 design cube. The front face (no rendered image) holds DOM, P-text, P-prompt and the hero P-SoM. A highlighted depth edge connects P-SoM to full SoM on the back face, labelled plus rendered image. Vision sits apart as pure pixels.">
+        <!-- back face (image = ON), mostly undefined -->
+        <polygon points="350,115 580,115 580,275 350,275" fill="none" stroke="var(--neutral)" stroke-width="1.4" stroke-dasharray="4 5" opacity="0.55"/>
+        <!-- connecting edges -->
+        <g stroke="var(--neutral)" stroke-width="1.4" stroke-dasharray="4 5" opacity="0.55">
+          <line x1="200" y1="360" x2="350" y2="275"/>
+          <line x1="430" y1="360" x2="580" y2="275"/>
+          <line x1="200" y1="200" x2="350" y2="115"/>
+        </g>
+        <!-- highlighted depth edge: P-SoM -> SoM (+ image) -->
+        <line class="draw" style="--len:172" x1="430" y1="200" x2="580" y2="115" stroke="var(--hero)" stroke-width="2.6"/>
+        <g class="fade-late" font-family="-apple-system,sans-serif">
+          <text x="512" y="142" font-size="12" fill="var(--hero)" font-weight="700" transform="rotate(-29.5 512 142)">+ rendered image</text>
+        </g>
+
+        <!-- front face (image = OFF) = the phantom routing space -->
+        <polygon points="200,360 430,360 430,200 200,200" fill="var(--hero-soft)" fill-opacity="0.5" stroke="none"/>
+        <polygon class="draw" style="--len:780" points="200,360 430,360 430,200 200,200" fill="none" stroke="var(--ink)" stroke-width="2.2"/>
+
+        <!-- undefined back nodes -->
+        <g fill="#fff" stroke="var(--neutral)" stroke-width="1.3" opacity="0.6">
+          <circle cx="350" cy="275" r="4.5"/><circle cx="580" cy="275" r="4.5"/><circle cx="350" cy="115" r="4.5"/>
+        </g>
+
+        <g class="fade-late" font-family="-apple-system,sans-serif" font-size="13.5">
+          <!-- DOM -->
+          <circle cx="200" cy="360" r="6" fill="var(--ink)"/>
+          <text x="196" y="385" text-anchor="end" fill="var(--ink)" font-weight="700">DOM</text>
+          <text x="196" y="400" text-anchor="end" fill="var(--muted)" font-size="11">AXTree · DOM</text>
+          <!-- P-text -->
+          <circle cx="430" cy="360" r="6" fill="var(--slate)"/>
+          <text x="430" y="385" text-anchor="middle" fill="var(--slate)" font-weight="700">P-text</text>
+          <text x="430" y="400" text-anchor="middle" fill="var(--muted)" font-size="11">marks · DOM</text>
+          <!-- P-prompt -->
+          <circle cx="200" cy="200" r="6" fill="var(--slate)"/>
+          <text x="196" y="190" text-anchor="end" fill="var(--slate)" font-weight="700">P-prompt</text>
+          <text x="196" y="178" text-anchor="end" fill="var(--muted)" font-size="11">AXTree · SoM</text>
+          <!-- P-SoM hero -->
+          <circle cx="430" cy="200" r="11" fill="none" stroke="var(--hero)" stroke-width="2" opacity="0.45"/>
+          <circle cx="430" cy="200" r="7.5" fill="var(--hero)"/>
+          <text x="448" y="197" fill="var(--hero)" font-weight="800" font-size="15">P-SoM</text>
+          <text x="448" y="213" fill="var(--muted)" font-size="11">marks · SoM · no image</text>
+          <!-- SoM -->
+          <circle cx="580" cy="115" r="7" fill="var(--good)"/>
+          <text x="592" y="112" fill="var(--good)" font-weight="700">SoM</text>
+          <text x="592" y="127" fill="var(--muted)" font-size="11">marks · SoM · + image</text>
+          <!-- Vision (apart) -->
+          <circle cx="690" cy="360" r="6.5" fill="var(--good)"/>
+          <text x="690" y="385" text-anchor="middle" fill="var(--good)" font-weight="700">Vision</text>
+          <text x="690" y="400" text-anchor="middle" fill="var(--muted)" font-size="11">pure pixels</text>
+        </g>
+
+        <!-- axis labels -->
+        <g class="fade-late" font-family="-apple-system,sans-serif" font-size="11.5" fill="var(--muted)">
+          <text x="315" y="438" text-anchor="middle" letter-spacing=".02em">text channel&nbsp;&nbsp;AXTree → [SOM_MARKS]</text>
+          <text x="150" y="280" text-anchor="middle" transform="rotate(-90 150 280)" letter-spacing=".02em">prompt style&nbsp;&nbsp;DOM → SoM</text>
+        </g>
+      </svg>
+      </figure>
+    </div>
+    <div class="takeaway">
+      <b>P-SoM = SoM with the screenshot removed.</b> Same marks, same prompt — it just drops the rendered image,
+      so it pays DOM-class input cost (no vision-encoder image tokens) and lower latency. The question this project
+      answers: is a corner of the no-image face worth <em>routing to</em>?
+    </div>
+  </section>
+
+  <!-- ============ 02 — EXPERIMENT TABLE ============ -->
+  <section class="reveal">
+    <h2><span class="n">02</span> Experiment table — six modes, head to head</h2>
+    <p class="lead">No single phantom mode wins on raw success. P-SoM is in fact <em>tied for lowest</em> alone —
+      its value only appears once modes are combined.</p>
+    <div class="card">
+      <table>
+        <thead><tr><th>Mode</th><th>Success</th><th>Cost / ep</th><th>Steps</th><th>Exclusive solves*</th></tr></thead>
+        <tbody>
+          <tr><td class="mode">DOM</td><td class="num">17.4%</td><td class="num">$0.0696</td><td class="num">15.6</td><td class="num">4</td></tr>
+          <tr><td class="mode">SoM</td><td class="num best">27.2%</td><td class="num">$0.0724</td><td class="num">13.7</td><td class="num">6</td></tr>
+          <tr><td class="mode">Vision</td><td class="num">25.0%</td><td class="num">$0.0648</td><td class="num">15.9</td><td class="num"><b>9</b></td></tr>
+          <tr><td class="mode">P-text</td><td class="num low">15.6%</td><td class="num">$0.0692</td><td class="num">15.8</td><td class="num">2</td></tr>
+          <tr class="hl"><td class="mode">P-SoM</td><td class="num low">15.6%</td><td class="num">$0.0721</td><td class="num">16.2</td><td class="num">2</td></tr>
+          <tr><td class="mode">P-prompt</td><td class="num">19.6%</td><td class="num">$0.0685</td><td class="num">15.0</td><td class="num">6</td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td class="mode">6-mode routed oracle</td><td class="num best">43.3%</td>
+              <td colspan="3" class="low" style="text-align:left">&nbsp;= +16.1 pp over the best single mode</td></tr>
+        </tfoot>
+      </table>
+    </div>
+    <p class="note">*Tasks a mode solves that <em>no other mode</em> does. Every mode — even the low-SR phantoms —
+      keeps a non-empty exclusive set, which is the precondition for routing to pay off.</p>
+  </section>
+
+  <!-- ============ 03 — COST CURVE ============ -->
+  <section class="reveal">
+    <h2><span class="n">03</span> Cost is a floor — routing is the lever</h2>
+    <p class="lead">All six modes cluster in a <em>$0.065–$0.072</em> band, yet every single one sits far below the
+      routed ceiling. <em>Cost doesn't separate the modes; complementarity does.</em></p>
+    <div class="card">
+      <figure>
+      <svg viewBox="0 0 720 450" role="img" aria-label="Success rate versus API cost per episode for six modes. All cluster near 15-27 percent within a narrow cost band, while the routed oracle ceiling at 43.3 percent sits far above, leaving a shaded routing-headroom band.">
+        <!-- headroom band: best single (27.2%) -> oracle (43.3%) -->
+        <rect x="70" y="62.8" width="620" height="121.7" fill="var(--hero-soft)" fill-opacity="0.6"/>
+        <text x="80" y="80" font-family="-apple-system,sans-serif" font-size="12" fill="var(--hero)" font-weight="700">routing headroom · +16.1 pp</text>
+        <!-- axes -->
+        <line x1="70" y1="40" x2="70" y2="390" stroke="#cfd0c9" stroke-width="1.2"/>
+        <line x1="70" y1="390" x2="690" y2="390" stroke="#cfd0c9" stroke-width="1.2"/>
+        <g font-family="-apple-system,sans-serif" font-size="11" fill="#9aa0a0" text-anchor="end">
+          <line x1="70" y1="314.4" x2="690" y2="314.4" stroke="var(--grid)"/><text x="62" y="318">10%</text>
+          <line x1="70" y1="238.9" x2="690" y2="238.9" stroke="var(--grid)"/><text x="62" y="242">20%</text>
+          <line x1="70" y1="163.3" x2="690" y2="163.3" stroke="var(--grid)"/><text x="62" y="167">30%</text>
+          <line x1="70" y1="87.8"  x2="690" y2="87.8"  stroke="var(--grid)"/><text x="62" y="91">40%</text>
+          <text x="62" y="394">0%</text>
+        </g>
+        <g font-family="-apple-system,sans-serif" font-size="11" fill="#9aa0a0" text-anchor="middle">
+          <text x="173.3" y="408">$0.064</text><text x="276.7" y="408">$0.066</text><text x="380" y="408">$0.068</text>
+          <text x="483.3" y="408">$0.070</text><text x="586.7" y="408">$0.072</text>
+        </g>
+        <text x="380" y="434" font-family="-apple-system,sans-serif" font-size="12.5" fill="var(--muted)" text-anchor="middle" font-weight="600">API cost per episode (USD)</text>
+        <text x="24" y="215" font-family="-apple-system,sans-serif" font-size="12.5" fill="var(--muted)" text-anchor="middle" font-weight="600" transform="rotate(-90 24 215)">Task success rate</text>
+        <!-- oracle lines -->
+        <line x1="70" y1="62.8" x2="690" y2="62.8" stroke="var(--hero)" stroke-width="1.8" stroke-dasharray="6 4"/>
+        <text x="686" y="58" font-family="-apple-system,sans-serif" font-size="11.5" fill="var(--hero)" text-anchor="end" font-weight="700">6-mode routed oracle · 43.3%</text>
+        <line x1="70" y1="99.9" x2="690" y2="99.9" stroke="var(--hero-line)" stroke-width="1.3" stroke-dasharray="3 4"/>
+        <text x="686" y="113" font-family="-apple-system,sans-serif" font-size="10.5" fill="var(--neutral)" text-anchor="end">3-mode oracle · 38.4%</text>
+        <!-- points (y = 390 - SR/45*340) -->
+        <g font-family="-apple-system,sans-serif">
+          <circle cx="214.7" cy="201.1" r="6.5" fill="var(--good)"/><text x="214.7" y="188" font-size="12" fill="var(--good)" text-anchor="middle" font-weight="600">Vision 25.0%</text>
+          <circle cx="607.3" cy="184.5" r="6.5" fill="var(--good)"/><text x="607.3" y="171" font-size="12" fill="var(--good)" text-anchor="middle" font-weight="600">SoM 27.2%</text>
+          <circle cx="405.8" cy="241.9" r="6" fill="var(--slate)"/><text x="405.8" y="258" font-size="11.5" fill="var(--slate)" text-anchor="middle">P-prompt 19.6%</text>
+          <circle cx="462.7" cy="258.5" r="6" fill="#495057"/><text x="478" y="252" font-size="11.5" fill="#495057" text-anchor="start">DOM 17.4%</text>
+          <circle cx="442" cy="272.1" r="6" fill="var(--neutral)"/><text x="372" y="288" font-size="11.5" fill="var(--neutral)" text-anchor="middle">P-text 15.6%</text>
+          <circle cx="591.8" cy="272.1" r="8.5" fill="var(--hero)" stroke="#fff" stroke-width="1.6"/><text x="591.8" y="292" font-size="12.5" fill="var(--hero)" text-anchor="middle" font-weight="800">P-SoM 15.6%</text>
+        </g>
+      </svg>
+      </figure>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--good)"></i> strongest single modes</span>
+        <span><i class="dot" style="background:var(--hero)"></i> P-SoM (deployment hero)</span>
+        <span><i class="dot" style="background:var(--neutral)"></i> other phantom / DOM arms</span>
+        <span>shaded = success unreachable by any single mode, unlocked only by routing</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 — POOLED META ============ -->
+  <section class="reveal">
+    <h2><span class="n">04</span> Does adding a phantom arm help? — pooled, k=3 archive</h2>
+    <p class="lead">Fixed-effect meta-analysis of the <em>drop-one oracle lift</em>: how much each arm raises the
+      routed ceiling when added to the DOM / SoM / Vision base.</p>
+    <div class="card">
+      <table>
+        <thead><tr><th>Arm added</th><th>Pooled lift θ<sub>FE</sub></th><th>95% CI</th><th>p (θ&gt;0)</th><th>I²</th><th>k</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td class="mode">P-SoM</td><td class="num"><b>+2.34 pp</b></td><td class="ci">[1.30, 3.37]</td><td class="num">5×10⁻⁶</td><td class="num">0%</td><td class="num">3</td></tr>
+          <tr><td class="mode">P-prompt</td><td class="num">+1.80 pp</td><td class="ci">[0.57, 3.02]</td><td class="num">0.007</td><td class="num">28%</td><td class="num">2</td></tr>
+          <tr><td class="mode">P-text</td><td class="num">+1.60 pp</td><td class="ci">[0.69, 2.51]</td><td class="num">0.012</td><td class="num">71%</td><td class="num">3</td></tr>
+          <tr><td class="mode">3→5-mode oracle</td><td class="num"><b>+3.72 pp</b></td><td class="ci">[2.34, 5.10]</td><td class="num">5×10⁻⁶</td><td class="num">—</td><td class="num">3</td></tr>
+        </tbody>
+      </table>
+      <p class="note">p tests the standard null θ&gt;0; the <em>pre-registered superiority gate</em> raises the bar to
+        θ&nbsp;&gt;&nbsp;+1.0&nbsp;pp (hero arm, below).</p>
+    </div>
+    <div class="takeaway">
+      <b>P-SoM is the cleanest arm:</b> +2.34 pp pooled lift, zero heterogeneity (I²=0%). Against the standard null it
+      pools at p=5×10⁻⁶; against the stricter pre-registered floor H₀: θ ≤ +1.0 pp it still clears the gate at
+      <b>p=0.006</b> (z=2.53). Power <b>81%</b> on the k=3 archive → projected <b>97%</b> at the planned k=6.
+      A representation that <em>loses</em> head-to-head is statistically the most valuable thing to route <em>to</em>.
+    </div>
+  </section>
+
+  <!-- ============ 05 — FAILURE ANALYSIS ============ -->
+  <section class="reveal">
+    <h2><span class="n">05</span> Failure analysis — where routing value lives</h2>
+    <p class="lead">Of 224 tasks, only <em>88 are "routable."</em> That partial-overlap set is the whole opportunity —
+      and a deterministic taxonomy shows <em>why</em> modes differ.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="sans" style="font-weight:700; font-size:14px; margin-bottom:8px">Task outcome classes (N=224)</div>
+        <div class="bars">
+          <div class="bar-row"><span>universal-solve</span><span class="bar-track"><span class="bar-fill" style="width:4%; background:var(--good)"></span></span><span class="num" style="text-align:right">9</span></div>
+          <div class="bar-row"><span>universal-fail</span><span class="bar-track"><span class="bar-fill" style="width:56.7%; background:#b9bdb5"></span></span><span class="num" style="text-align:right">127</span></div>
+          <div class="bar-row"><span style="color:var(--hero); font-weight:700">routable</span><span class="bar-track"><span class="bar-fill" style="width:39.3%; background:var(--hero)"></span></span><span class="num" style="text-align:right; font-weight:700">88</span></div>
+        </div>
+        <p class="note">127 "universal-fail" include genuinely hard tasks &amp; benchmark false-positives — a known
+          ceiling, flagged rather than buried in the denominator.</p>
+      </div>
+
+      <div class="card">
+        <div class="sans" style="font-weight:700; font-size:14px; margin-bottom:8px">P-SoM's complementarity, concretely</div>
+        <p class="sans" style="font-size:13.5px; color:#3a3f48">It uniquely solves tasks where the other five fail by:</p>
+        <div class="bars" style="margin-top:10px">
+          <div class="bar-row"><span>IMG (perception)</span><span class="bar-track"><span class="bar-fill" style="width:80%; background:var(--hero)"></span></span><span class="num" style="text-align:right">8</span></div>
+          <div class="bar-row"><span>BUDGET (ran out)</span><span class="bar-track"><span class="bar-fill" style="width:20%; background:var(--hero-line)"></span></span><span class="num" style="text-align:right">2</span></div>
+        </div>
+        <p class="note">It rescues exactly the <em>image-perception</em> failures — consistent with its text-encoded
+          marks standing in for the rendered screenshot.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <div class="sans" style="font-weight:700; font-size:14px; margin-bottom:10px">Failure-type × mode matrix
+        <span style="font-weight:400; color:var(--muted); font-size:12px">— counts; darker = more failures · O(modes), not O(modes²)</span></div>
+      <table>
+        <thead><tr><th>Failure type</th><th>DOM</th><th>SoM</th><th>Vision</th><th>P-text</th><th>P-SoM</th><th>P-prompt</th></tr></thead>
+        <tbody>
+          <tr><td>SEARCH-NAV <small class="sans" style="color:#9aa0a0">had signal, never navigated</small></td>
+            <td class="num" style="background:#f3f2ee">6</td><td class="num" style="background:#dfd2d7">15</td><td class="num" style="background:#ebe3e5">10</td><td class="num" style="background:#ebe3e5">10</td><td class="num" style="background:#efe9eb">8</td><td class="num" style="background:#f7f6f3">3</td></tr>
+          <tr><td>THUMBNAIL <small class="sans" style="color:#9aa0a0">right page, wrong listing</small></td>
+            <td class="num" style="background:#cba9b4">37</td><td class="num" style="background:#dccdd3">24</td><td class="num" style="background:#d9c8cf">26</td><td class="num" style="background:#ceadb8">35</td><td class="num" style="background:#ceadb8">35</td><td class="num" style="background:#d2b4be">32</td></tr>
+          <tr><td>IMG <small class="sans" style="color:#9aa0a0">right listing, wrong answer</small></td>
+            <td class="num" style="background:#dfd2d7">16</td><td class="num" style="background:#efe9eb">8</td><td class="num" style="background:#f3f0ee">6</td><td class="num" style="background:#e6dce0">12</td><td class="num" style="background:#ebe3e5">10</td><td class="num" style="background:#e1d5da">15</td></tr>
+          <tr><td>BUDGET <small class="sans" style="color:#9aa0a0">no valid finish in budget</small></td>
+            <td class="num" style="background:#c39aa6">56</td><td class="num" style="background:#c197a4">58</td><td class="num" style="background:#bb8f9d">64</td><td class="num" style="background:#bb8f9d">64</td><td class="num" style="background:#b68897">69</td><td class="num" style="background:#bf95a2">62</td></tr>
+        </tbody>
+      </table>
+      <p class="note">The DOM&gt;SoM&gt;Vision gradient on THUMBNAIL/IMG is the image-recognition spectrum made visible.
+        ≈65% of classifieds tasks carry no category signal, so "UNCLEAR-NAV" tasks are honestly excluded from the
+        nav-vs-thumbnail split rather than force-classified — a deliberate limit of the heuristic.</p>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="reveal">
+    <p><b>How this was built.</b> Preregistered design (primary gate = one-sided FE inverse-variance pooled
+      superiority test, H₀: θ ≤ +1.0 pp; RE / HKSJ as sensitivity); a selection-bias-controlled 2×2 separating
+      <em>format</em> from <em>prompt style</em>; race-safe distributed experiment orchestration across three compute
+      tiers (aarch64 dev box · dedicated A100 VM self-hosting the benchmark · SGE HPC) with a 6-layer contamination
+      watchdog; schema-versioned JSONL logging; 1,121 test functions guarding the analysis pipeline.</p>
+    <p style="margin-top:10px"><b>Stack:</b> Python · PyTorch · HF transformers / accelerate · bitsandbytes (bf16 local
+      inference) · OpenAI-style tool-calling over an API proxy · NumPy / pandas / SciPy · Playwright browser env · pytest · SGE/qsub.</p>
+    <p style="margin-top:14px">
+      Sources (in-repo): <code>results/phantom_paper/meta_phantom_lift.csv</code> ·
+      <code>docs/analysis/cross_sites/cost_per_mode.json</code> ·
+      <code>docs/analysis/vwa_classifieds/B0_classifieds_6mode_failure_taxonomy.md</code> ·
+      <code>docs/analysis/cross_sites/power_analysis.md</code>
+      &nbsp;|&nbsp; Undergraduate thesis · author: &lt;your name&gt; · &lt;email / LinkedIn&gt;
+      &nbsp;|&nbsp; Built on <a href="https://github.com/web-arena-x/visualwebarena">VisualWebArena</a>.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  // lightweight scroll-reveal — no external deps (borrows the "explainer" entrance feel)
+  (function(){
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function(e){e.classList.add('in')}); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, {threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){ io.observe(e); });
+  })();
+</script>
+</body>
+</html>
