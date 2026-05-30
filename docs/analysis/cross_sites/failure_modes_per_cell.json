@@ -1,0 +1,39 @@
+{
+  "method": "fine-grained reason_bucket \u2192 5-bucket paper taxonomy (taxonomy doc: docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md \u00a74)",
+  "paper_taxonomy": {
+    "early-finish/wrong-commit": [
+      "fail_early_finish",
+      "fail_finish_claim_missing",
+      "fail_finish_empty_answer",
+      "fail_finish_eval_mismatch",
+      "fail_finish_wrong_url_left_target",
+      "fail_finish_wrong_url_not_found",
+      "fail_finish_wrong_url_price_mismatch"
+    ],
+    "search-loop": [
+      "fail_max_steps_search_repeat"
+    ],
+    "visual-hijack/click-loop": [
+      "fail_max_steps_click_back_loop"
+    ],
+    "element-misground": [
+      "fail_max_steps_target_unreachable"
+    ],
+    "missing-context": [
+      "fail_incomplete_or_stuck",
+      "fail_no_progress"
+    ],
+    "max-steps-other": [
+      "fail_max_steps"
+    ],
+    "error/noise": [
+      "fail_benchmark_noise",
+      "fail_env_error",
+      "fail_parse_error",
+      "fail_policy_blocked_offsite",
+      "fail_summary_error"
+    ]
+  },
+  "unmapped_fine_buckets": {},
+  "cells": {}
+}

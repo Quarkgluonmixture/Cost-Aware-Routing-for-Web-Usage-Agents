@@ -1,0 +1,1387 @@
+{
+  "E1_click_target_divergence": {
+    "classifieds": {
+      "axis_1_text": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 81,
+            "1": 71,
+            "2": 31,
+            "3": 26,
+            "4": 4,
+            "5": 6,
+            "6": 1,
+            "7": 3,
+            "8": 1
+          },
+          "left_mean": 1.303571,
+          "right_hist": {
+            "0": 87,
+            "1": 52,
+            "2": 33,
+            "3": 22,
+            "4": 12,
+            "5": 7,
+            "6": 4,
+            "7": 3,
+            "8": 1,
+            "9": 3
+          },
+          "right_mean": 1.549107,
+          "union_mean": 2.616071
+        },
+        "contrast": "DOM vs P-text",
+        "left_mode": "DOM",
+        "mean_decision_divergence": 0.685471,
+        "mean_jaccard": 0.314529,
+        "median_jaccard": 0.0,
+        "n": 224,
+        "right_mode": "P-text",
+        "std_jaccard": 0.435911
+      },
+      "axis_1_text_alt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 95,
+            "1": 50,
+            "10": 1,
+            "2": 40,
+            "3": 12,
+            "4": 10,
+            "5": 6,
+            "6": 5,
+            "7": 3,
+            "8": 1,
+            "9": 1
+          },
+          "left_mean": 1.401786,
+          "right_hist": {
+            "0": 88,
+            "1": 62,
+            "11": 1,
+            "2": 28,
+            "3": 17,
+            "4": 11,
+            "5": 8,
+            "6": 3,
+            "7": 2,
+            "8": 2,
+            "9": 2
+          },
+          "right_mean": 1.473214,
+          "union_mean": 2.647321
+        },
+        "contrast": "P-prompt vs P-SoM",
+        "left_mode": "P-prompt",
+        "mean_decision_divergence": 0.694339,
+        "mean_jaccard": 0.305661,
+        "median_jaccard": 0.0,
+        "n": 224,
+        "right_mode": "P-SoM",
+        "std_jaccard": 0.432658
+      },
+      "axis_2_prompt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 87,
+            "1": 52,
+            "2": 33,
+            "3": 22,
+            "4": 12,
+            "5": 7,
+            "6": 4,
+            "7": 3,
+            "8": 1,
+            "9": 3
+          },
+          "left_mean": 1.549107,
+          "right_hist": {
+            "0": 88,
+            "1": 62,
+            "11": 1,
+            "2": 28,
+            "3": 17,
+            "4": 11,
+            "5": 8,
+            "6": 3,
+            "7": 2,
+            "8": 2,
+            "9": 2
+          },
+          "right_mean": 1.473214,
+          "union_mean": 2.714286
+        },
+        "contrast": "P-text vs P-SoM",
+        "left_mode": "P-text",
+        "mean_decision_divergence": 0.66011,
+        "mean_jaccard": 0.33989,
+        "median_jaccard": 0.0,
+        "n": 224,
+        "right_mode": "P-SoM",
+        "std_jaccard": 0.438995
+      },
+      "axis_2_prompt_alt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 81,
+            "1": 71,
+            "2": 31,
+            "3": 26,
+            "4": 4,
+            "5": 6,
+            "6": 1,
+            "7": 3,
+            "8": 1
+          },
+          "left_mean": 1.303571,
+          "right_hist": {
+            "0": 95,
+            "1": 50,
+            "10": 1,
+            "2": 40,
+            "3": 12,
+            "4": 10,
+            "5": 6,
+            "6": 5,
+            "7": 3,
+            "8": 1,
+            "9": 1
+          },
+          "right_mean": 1.401786,
+          "union_mean": 2.459821
+        },
+        "contrast": "DOM vs P-prompt",
+        "left_mode": "DOM",
+        "mean_decision_divergence": 0.686867,
+        "mean_jaccard": 0.313133,
+        "median_jaccard": 0.0,
+        "n": 224,
+        "right_mode": "P-prompt",
+        "std_jaccard": 0.427954
+      },
+      "axis_3_image": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 88,
+            "1": 62,
+            "11": 1,
+            "2": 28,
+            "3": 17,
+            "4": 11,
+            "5": 8,
+            "6": 3,
+            "7": 2,
+            "8": 2,
+            "9": 2
+          },
+          "left_mean": 1.473214,
+          "right_hist": {
+            "0": 107,
+            "1": 59,
+            "10": 1,
+            "2": 25,
+            "3": 13,
+            "4": 9,
+            "5": 5,
+            "6": 3,
+            "7": 2
+          },
+          "right_mean": 1.120536,
+          "union_mean": 2.40625
+        },
+        "contrast": "P-SoM vs SoM",
+        "left_mode": "P-SoM",
+        "mean_decision_divergence": 0.686912,
+        "mean_jaccard": 0.313088,
+        "median_jaccard": 0.0,
+        "n": 224,
+        "right_mode": "SoM",
+        "std_jaccard": 0.445273
+      },
+      "compound_DOM_to_PSoM": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 81,
+            "1": 71,
+            "2": 31,
+            "3": 26,
+            "4": 4,
+            "5": 6,
+            "6": 1,
+            "7": 3,
+            "8": 1
+          },
+          "left_mean": 1.303571,
+          "right_hist": {
+            "0": 88,
+            "1": 62,
+            "11": 1,
+            "2": 28,
+            "3": 17,
+            "4": 11,
+            "5": 8,
+            "6": 3,
+            "7": 2,
+            "8": 2,
+            "9": 2
+          },
+          "right_mean": 1.473214,
+          "union_mean": 2.46875
+        },
+        "contrast": "DOM vs P-SoM",
+        "left_mode": "DOM",
+        "mean_decision_divergence": 0.667777,
+        "mean_jaccard": 0.332223,
+        "median_jaccard": 0.0,
+        "n": 224,
+        "right_mode": "P-SoM",
+        "std_jaccard": 0.436241
+      }
+    },
+    "reddit": {
+      "axis_1_text": {
+        "contrast": "DOM vs P-text",
+        "left_mode": "DOM",
+        "n": 0,
+        "right_mode": "P-text",
+        "skipped": true
+      },
+      "axis_1_text_alt": {
+        "contrast": "P-prompt vs P-SoM",
+        "left_mode": "P-prompt",
+        "n": 0,
+        "right_mode": "P-SoM",
+        "skipped": true
+      },
+      "axis_2_prompt": {
+        "contrast": "P-text vs P-SoM",
+        "left_mode": "P-text",
+        "n": 0,
+        "right_mode": "P-SoM",
+        "skipped": true
+      },
+      "axis_2_prompt_alt": {
+        "contrast": "DOM vs P-prompt",
+        "left_mode": "DOM",
+        "n": 0,
+        "right_mode": "P-prompt",
+        "skipped": true
+      },
+      "axis_3_image": {
+        "contrast": "P-SoM vs SoM",
+        "left_mode": "P-SoM",
+        "n": 0,
+        "right_mode": "SoM",
+        "skipped": true
+      },
+      "compound_DOM_to_PSoM": {
+        "contrast": "DOM vs P-SoM",
+        "left_mode": "DOM",
+        "n": 0,
+        "right_mode": "P-SoM",
+        "skipped": true
+      }
+    }
+  },
+  "E2_trajectory_boundary": {
+    "classifieds": {
+      "DOM_vs_P-SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 2,
+            "left_success": false,
+            "right_n_steps": 4,
+            "right_success": true,
+            "task_id": 16,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 7,
+            "left_n_steps": 19,
+            "left_success": true,
+            "right_n_steps": 7,
+            "right_success": false,
+            "task_id": 103,
+            "trajectory_jaccard": 0.6
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 20,
+            "left_success": true,
+            "right_n_steps": 7,
+            "right_success": false,
+            "task_id": 105,
+            "trajectory_jaccard": 0.0
+          }
+        ],
+        "case_study_task_ids": [
+          16,
+          103,
+          105
+        ],
+        "early_divergence_rate": 0.954545,
+        "first_divergent_step_histogram": {
+          "0": 6,
+          "1": 8,
+          "2": 6,
+          "3": 1,
+          "7": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "DOM",
+        "median_first_divergent_step": 1.0,
+        "n_symmetric_diff_tasks": 22,
+        "right_mode": "P-SoM"
+      },
+      "DOM_vs_P-prompt": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 10,
+            "left_success": false,
+            "right_n_steps": 10,
+            "right_success": true,
+            "task_id": 1,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 2,
+            "left_success": false,
+            "right_n_steps": 4,
+            "right_success": true,
+            "task_id": 16,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 10,
+            "left_n_steps": 19,
+            "left_success": false,
+            "right_n_steps": 10,
+            "right_success": true,
+            "task_id": 149,
+            "trajectory_jaccard": 1.0
+          }
+        ],
+        "case_study_task_ids": [
+          1,
+          149,
+          16
+        ],
+        "early_divergence_rate": 0.848485,
+        "first_divergent_step_histogram": {
+          "0": 9,
+          "1": 12,
+          "10": 1,
+          "2": 3,
+          "3": 4,
+          "5": 1,
+          "6": 1,
+          "7": 1,
+          "8": 1
+        },
+        "late_divergence_rate": 0.030303,
+        "left_mode": "DOM",
+        "median_first_divergent_step": 1,
+        "n_symmetric_diff_tasks": 33,
+        "right_mode": "P-prompt"
+      },
+      "DOM_vs_P-text": {
+        "case_studies": [
+          {
+            "first_divergent_step": 8,
+            "left_n_steps": 10,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 75,
+            "trajectory_jaccard": 1.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 13,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 132,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 6,
+            "left_success": false,
+            "right_n_steps": 17,
+            "right_success": true,
+            "task_id": 137,
+            "trajectory_jaccard": 0.111111
+          }
+        ],
+        "case_study_task_ids": [
+          132,
+          75,
+          137
+        ],
+        "early_divergence_rate": 0.954545,
+        "first_divergent_step_histogram": {
+          "0": 6,
+          "1": 10,
+          "2": 3,
+          "3": 2,
+          "8": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "DOM",
+        "median_first_divergent_step": 1.0,
+        "n_symmetric_diff_tasks": 22,
+        "right_mode": "P-text"
+      },
+      "P-SoM_vs_SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 8,
+            "left_success": false,
+            "right_n_steps": 7,
+            "right_success": true,
+            "task_id": 17,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 4,
+            "left_success": false,
+            "right_n_steps": 3,
+            "right_success": true,
+            "task_id": 49,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 8,
+            "left_n_steps": 10,
+            "left_success": true,
+            "right_n_steps": 9,
+            "right_success": false,
+            "task_id": 75,
+            "trajectory_jaccard": 1.0
+          }
+        ],
+        "case_study_task_ids": [
+          17,
+          75,
+          49
+        ],
+        "early_divergence_rate": 0.934783,
+        "first_divergent_step_histogram": {
+          "0": 14,
+          "1": 19,
+          "2": 8,
+          "3": 2,
+          "4": 1,
+          "5": 1,
+          "8": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "P-SoM",
+        "median_first_divergent_step": 1.0,
+        "n_symmetric_diff_tasks": 46,
+        "right_mode": "SoM"
+      },
+      "P-prompt_vs_P-SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 10,
+            "left_success": true,
+            "right_n_steps": 9,
+            "right_success": false,
+            "task_id": 1,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 18,
+            "left_success": true,
+            "right_n_steps": 17,
+            "right_success": false,
+            "task_id": 64,
+            "trajectory_jaccard": 0.181818
+          },
+          {
+            "first_divergent_step": 9,
+            "left_n_steps": 28,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 201,
+            "trajectory_jaccard": 0.666667
+          }
+        ],
+        "case_study_task_ids": [
+          1,
+          201,
+          64
+        ],
+        "early_divergence_rate": 0.913043,
+        "first_divergent_step_histogram": {
+          "0": 6,
+          "1": 9,
+          "2": 3,
+          "3": 3,
+          "4": 1,
+          "9": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "P-prompt",
+        "median_first_divergent_step": 1,
+        "n_symmetric_diff_tasks": 23,
+        "right_mode": "P-SoM"
+      },
+      "P-text_vs_P-SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 8,
+            "left_n_steps": 14,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 12,
+            "trajectory_jaccard": 0.75
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 3,
+            "left_success": false,
+            "right_n_steps": 4,
+            "right_success": true,
+            "task_id": 16,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 20,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 60,
+            "trajectory_jaccard": 0.117647
+          }
+        ],
+        "case_study_task_ids": [
+          16,
+          12,
+          60
+        ],
+        "early_divergence_rate": 0.722222,
+        "first_divergent_step_histogram": {
+          "0": 3,
+          "1": 5,
+          "2": 4,
+          "3": 1,
+          "4": 1,
+          "7": 2,
+          "8": 2
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "P-text",
+        "median_first_divergent_step": 2.0,
+        "n_symmetric_diff_tasks": 18,
+        "right_mode": "P-SoM"
+      }
+    },
+    "reddit": {
+      "DOM_vs_P-SoM": {
+        "case_studies": [],
+        "case_study_task_ids": [],
+        "early_divergence_rate": null,
+        "first_divergent_step_histogram": {},
+        "late_divergence_rate": null,
+        "left_mode": "DOM",
+        "median_first_divergent_step": null,
+        "n_symmetric_diff_tasks": 0,
+        "right_mode": "P-SoM",
+        "skipped": true
+      },
+      "DOM_vs_P-prompt": {
+        "case_studies": [],
+        "case_study_task_ids": [],
+        "early_divergence_rate": null,
+        "first_divergent_step_histogram": {},
+        "late_divergence_rate": null,
+        "left_mode": "DOM",
+        "median_first_divergent_step": null,
+        "n_symmetric_diff_tasks": 0,
+        "right_mode": "P-prompt",
+        "skipped": true
+      },
+      "DOM_vs_P-text": {
+        "case_studies": [],
+        "case_study_task_ids": [],
+        "early_divergence_rate": null,
+        "first_divergent_step_histogram": {},
+        "late_divergence_rate": null,
+        "left_mode": "DOM",
+        "median_first_divergent_step": null,
+        "n_symmetric_diff_tasks": 0,
+        "right_mode": "P-text",
+        "skipped": true
+      },
+      "P-SoM_vs_SoM": {
+        "case_studies": [],
+        "case_study_task_ids": [],
+        "early_divergence_rate": null,
+        "first_divergent_step_histogram": {},
+        "late_divergence_rate": null,
+        "left_mode": "P-SoM",
+        "median_first_divergent_step": null,
+        "n_symmetric_diff_tasks": 0,
+        "right_mode": "SoM",
+        "skipped": true
+      },
+      "P-prompt_vs_P-SoM": {
+        "case_studies": [],
+        "case_study_task_ids": [],
+        "early_divergence_rate": null,
+        "first_divergent_step_histogram": {},
+        "late_divergence_rate": null,
+        "left_mode": "P-prompt",
+        "median_first_divergent_step": null,
+        "n_symmetric_diff_tasks": 0,
+        "right_mode": "P-SoM",
+        "skipped": true
+      },
+      "P-text_vs_P-SoM": {
+        "case_studies": [],
+        "case_study_task_ids": [],
+        "early_divergence_rate": null,
+        "first_divergent_step_histogram": {},
+        "late_divergence_rate": null,
+        "left_mode": "P-text",
+        "median_first_divergent_step": null,
+        "n_symmetric_diff_tasks": 0,
+        "right_mode": "P-SoM",
+        "skipped": true
+      }
+    }
+  },
+  "E3_confidence_calibration": {
+    "cells": {
+      "B0/classifieds/DOM": {
+        "AUROC_behavioral_max": 0.67325,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.554955,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.602841,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "DOM",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
+        "source_table": "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/classifieds/P-SoM": {
+        "AUROC_behavioral_max": 0.766062,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.66387,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.723356,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-SoM",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/classifieds/P-prompt": {
+        "AUROC_behavioral_max": 0.683144,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.611869,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.59275,
+        "AUROC_verbal_n": 223,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-prompt",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/classifieds/P-text": {
+        "AUROC_behavioral_max": 0.707559,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.619955,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.601361,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-text",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/classifieds/SoM": {
+        "AUROC_behavioral_max": 0.752791,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.650659,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.656542,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "SoM",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+        "source_table": "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/classifieds/Vision": {
+        "AUROC_behavioral_max": 0.764403,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.619792,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.691617,
+        "AUROC_verbal_n": 222,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "Vision",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
+        "source_table": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      }
+    },
+    "highlights": {
+      "B0/classifieds": {
+        "best_signal_AUROC": 0.766062,
+        "best_signal_AUROC_mode": "B0/classifieds/P-SoM",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": null,
+        "lowest_ECE_verbal": null
+      }
+    }
+  },
+  "E4_action_vocabulary": {
+    "axis_contrasts": {
+      "classifieds": {
+        "axis_1_text": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": 0.013355,
+            "click": -0.000218,
+            "finish": -0.004173,
+            "forward": 0.0,
+            "other": 0.009472,
+            "scroll": 0.012561,
+            "select_option": 0.010845,
+            "tab_focus": -0.010378,
+            "type": -0.030739,
+            "wait": -0.000725
+          },
+          "n": 224,
+          "right_mode": "P-text",
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.030739
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": 0.013355
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.012561
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.010845
+            },
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": -0.010378
+            }
+          ]
+        },
+        "axis_1_text_alt": {
+          "left_mode": "P-prompt",
+          "mean_per_task_fraction_shift": {
+            "back": 0.002941,
+            "click": -0.015693,
+            "finish": -0.009463,
+            "forward": 0.0,
+            "other": 0.005085,
+            "scroll": 0.034471,
+            "select_option": -0.001811,
+            "tab_focus": -0.007517,
+            "type": -0.007627,
+            "wait": -0.000385
+          },
+          "n": 224,
+          "right_mode": "P-SoM",
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.034471
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.015693
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": -0.009463
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.007627
+            },
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": -0.007517
+            }
+          ]
+        },
+        "axis_2_prompt": {
+          "left_mode": "P-text",
+          "mean_per_task_fraction_shift": {
+            "back": -0.011282,
+            "click": -0.009336,
+            "finish": 0.009469,
+            "forward": 0.0,
+            "other": -0.004872,
+            "scroll": 0.012478,
+            "select_option": -0.004556,
+            "tab_focus": 0.00067,
+            "type": 0.006942,
+            "wait": 0.000487
+          },
+          "n": 224,
+          "right_mode": "P-SoM",
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.012478
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.011282
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": 0.009469
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.009336
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": 0.006942
+            }
+          ]
+        },
+        "axis_2_prompt_alt": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": -0.000868,
+            "click": 0.006139,
+            "finish": 0.014759,
+            "forward": 0.0,
+            "other": -0.000486,
+            "scroll": -0.009432,
+            "select_option": 0.008101,
+            "tab_focus": -0.002191,
+            "type": -0.01617,
+            "wait": 0.000148
+          },
+          "n": 224,
+          "right_mode": "P-prompt",
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.01617
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": 0.014759
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.009432
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.008101
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": 0.006139
+            }
+          ]
+        },
+        "axis_3_image": {
+          "left_mode": "P-SoM",
+          "mean_per_task_fraction_shift": {
+            "back": -0.015688,
+            "click": 0.006881,
+            "finish": 0.034106,
+            "forward": 0.0,
+            "other": 0.006901,
+            "scroll": -0.053859,
+            "select_option": 0.017893,
+            "tab_focus": -0.002307,
+            "type": 0.004466,
+            "wait": 0.001608
+          },
+          "n": 224,
+          "right_mode": "SoM",
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.053859
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": 0.034106
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.017893
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.015688
+            },
+            {
+              "action_type": "other",
+              "mean_fraction_shift": 0.006901
+            }
+          ]
+        },
+        "compound_DOM_to_PSoM": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": 0.002073,
+            "click": -0.009555,
+            "finish": 0.005296,
+            "forward": 0.0,
+            "other": 0.0046,
+            "scroll": 0.025039,
+            "select_option": 0.006289,
+            "tab_focus": -0.009708,
+            "type": -0.023797,
+            "wait": -0.000237
+          },
+          "n": 224,
+          "right_mode": "P-SoM",
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.025039
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.023797
+            },
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": -0.009708
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.009555
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.006289
+            }
+          ]
+        }
+      },
+      "reddit": {
+        "axis_1_text": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": null,
+            "click": null,
+            "finish": null,
+            "forward": null,
+            "other": null,
+            "scroll": null,
+            "select_option": null,
+            "tab_focus": null,
+            "type": null,
+            "wait": null
+          },
+          "n": 0,
+          "right_mode": "P-text",
+          "skipped": true,
+          "top_abs_shifts": []
+        },
+        "axis_1_text_alt": {
+          "left_mode": "P-prompt",
+          "mean_per_task_fraction_shift": {
+            "back": null,
+            "click": null,
+            "finish": null,
+            "forward": null,
+            "other": null,
+            "scroll": null,
+            "select_option": null,
+            "tab_focus": null,
+            "type": null,
+            "wait": null
+          },
+          "n": 0,
+          "right_mode": "P-SoM",
+          "skipped": true,
+          "top_abs_shifts": []
+        },
+        "axis_2_prompt": {
+          "left_mode": "P-text",
+          "mean_per_task_fraction_shift": {
+            "back": null,
+            "click": null,
+            "finish": null,
+            "forward": null,
+            "other": null,
+            "scroll": null,
+            "select_option": null,
+            "tab_focus": null,
+            "type": null,
+            "wait": null
+          },
+          "n": 0,
+          "right_mode": "P-SoM",
+          "skipped": true,
+          "top_abs_shifts": []
+        },
+        "axis_2_prompt_alt": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": null,
+            "click": null,
+            "finish": null,
+            "forward": null,
+            "other": null,
+            "scroll": null,
+            "select_option": null,
+            "tab_focus": null,
+            "type": null,
+            "wait": null
+          },
+          "n": 0,
+          "right_mode": "P-prompt",
+          "skipped": true,
+          "top_abs_shifts": []
+        },
+        "axis_3_image": {
+          "left_mode": "P-SoM",
+          "mean_per_task_fraction_shift": {
+            "back": null,
+            "click": null,
+            "finish": null,
+            "forward": null,
+            "other": null,
+            "scroll": null,
+            "select_option": null,
+            "tab_focus": null,
+            "type": null,
+            "wait": null
+          },
+          "n": 0,
+          "right_mode": "SoM",
+          "skipped": true,
+          "top_abs_shifts": []
+        },
+        "compound_DOM_to_PSoM": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": null,
+            "click": null,
+            "finish": null,
+            "forward": null,
+            "other": null,
+            "scroll": null,
+            "select_option": null,
+            "tab_focus": null,
+            "type": null,
+            "wait": null
+          },
+          "n": 0,
+          "right_mode": "P-SoM",
+          "skipped": true,
+          "top_abs_shifts": []
+        }
+      }
+    },
+    "cells": {
+      "B0/classifieds/DOM": {
+        "back": 0.084954,
+        "click": 0.306064,
+        "finish": 0.047197,
+        "forward": 0.0,
+        "other": 0.002002,
+        "scroll": 0.205092,
+        "select_option": 0.064073,
+        "tab_focus": 0.015446,
+        "type": 0.2746,
+        "wait": 0.000572
+      },
+      "B0/classifieds/P-SoM": {
+        "back": 0.090759,
+        "click": 0.313256,
+        "finish": 0.042354,
+        "forward": 0.0,
+        "other": 0.009626,
+        "scroll": 0.258251,
+        "select_option": 0.062156,
+        "tab_focus": 0.0044,
+        "type": 0.218372,
+        "wait": 0.000825
+      },
+      "B0/classifieds/P-prompt": {
+        "back": 0.086567,
+        "click": 0.325373,
+        "finish": 0.04806,
+        "forward": 0.0,
+        "other": 0.003582,
+        "scroll": 0.205672,
+        "select_option": 0.061194,
+        "tab_focus": 0.016418,
+        "type": 0.25194,
+        "wait": 0.001194
+      },
+      "B0/classifieds/P-text": {
+        "back": 0.108291,
+        "click": 0.311337,
+        "finish": 0.044557,
+        "forward": 0.0,
+        "other": 0.016074,
+        "scroll": 0.214044,
+        "select_option": 0.07445,
+        "tab_focus": 0.003666,
+        "type": 0.22758,
+        "wait": 0.0
+      },
+      "B0/classifieds/SoM": {
+        "back": 0.078732,
+        "click": 0.312316,
+        "finish": 0.054231,
+        "forward": 0.0,
+        "other": 0.027115,
+        "scroll": 0.170206,
+        "select_option": 0.100947,
+        "tab_focus": 0.00294,
+        "type": 0.252205,
+        "wait": 0.001307
+      },
+      "B0/classifieds/Vision": {
+        "back": 0.051448,
+        "click": 0.353107,
+        "finish": 0.044419,
+        "forward": 0.0,
+        "other": 0.005342,
+        "scroll": 0.295193,
+        "select_option": 0.079843,
+        "tab_focus": 0.006185,
+        "type": 0.164464,
+        "wait": 0.0
+      }
+    },
+    "uncommon_action_highlights": [
+      {
+        "action_type": "other",
+        "high_fraction": 0.027115,
+        "high_mode": "SoM",
+        "low_fraction": 0.002002,
+        "low_mode": "DOM",
+        "ratio": 13.542166,
+        "site": "classifieds"
+      },
+      {
+        "action_type": "tab_focus",
+        "high_fraction": 0.016418,
+        "high_mode": "P-prompt",
+        "low_fraction": 0.00294,
+        "low_mode": "SoM",
+        "ratio": 5.583914,
+        "site": "classifieds"
+      },
+      {
+        "action_type": "back",
+        "high_fraction": 0.108291,
+        "high_mode": "P-text",
+        "low_fraction": 0.051448,
+        "low_mode": "Vision",
+        "ratio": 2.10487,
+        "site": "classifieds"
+      }
+    ]
+  },
+  "data_status": {
+    "p_prompt": {
+      "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {
+        "episodes": 224,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "complete but excluded by design"
+      }
+    },
+    "step_dirs": {
+      "classifieds": {
+        "DOM": "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557/phase1_dom_router_0/episodes",
+        "P-SoM": "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031/phase1_phantom_som_router_0/episodes",
+        "P-prompt": "results/visualwebarena/phase1/B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655/phase1_phantom_prompt_router_0/episodes",
+        "P-text": "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183/phase1_phantom_text_router_0/episodes",
+        "SoM": "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/phase1_som_router_0/episodes",
+        "Vision": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/phase1_vision_router_0/episodes"
+      },
+      "reddit": {}
+    }
+  },
+  "method": "Per-task mechanism evidence over B0 reddit/classifieds five-mode runs. E1 uses URL-changing click transition sets, E2 uses first divergent URL-signature step on symmetric-difference adjusted-success tasks, E3 aggregates existing confidence analyzer outputs across paper-grade B0/B1 cells without recomputing calibration, and E4 reports full action_type distributions. Element ids are not used because they are not mode-invariant or step-invariant.",
+  "paper_section5_implications": {
+    "status": "skipped \u2014 partial data / \u00a75 frozen (KeyError: 'mean_jaccard')"
+  },
+  "validation": {
+    "E1_mean_jaccard_range_checks": {
+      "classifieds/axis_1_text": true,
+      "classifieds/axis_1_text_alt": true,
+      "classifieds/axis_2_prompt": true,
+      "classifieds/axis_2_prompt_alt": true,
+      "classifieds/axis_3_image": true,
+      "classifieds/compound_DOM_to_PSoM": true
+    },
+    "E2_first_divergent_step_range_checks": {
+      "classifieds/DOM_vs_P-SoM": true,
+      "classifieds/DOM_vs_P-prompt": true,
+      "classifieds/DOM_vs_P-text": true,
+      "classifieds/P-SoM_vs_SoM": true,
+      "classifieds/P-prompt_vs_P-SoM": true,
+      "classifieds/P-text_vs_P-SoM": true,
+      "reddit/DOM_vs_P-SoM": true,
+      "reddit/DOM_vs_P-prompt": true,
+      "reddit/DOM_vs_P-text": true,
+      "reddit/P-SoM_vs_SoM": true,
+      "reddit/P-prompt_vs_P-SoM": true,
+      "reddit/P-text_vs_P-SoM": true
+    },
+    "E3_cell_count": {
+      "expected": 17,
+      "observed": 6,
+      "pass": false
+    },
+    "E4_action_dist_sum_checks": {
+      "B0/classifieds/DOM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/P-SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/P-prompt": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/P-text": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/Vision": {
+        "pass": true,
+        "sum": 1.0
+      }
+    },
+    "axis1_n_checks": {
+      "classifieds": {
+        "expected": 224,
+        "observed": 224,
+        "pass": true
+      },
+      "reddit": {
+        "expected": 205,
+        "observed": 0,
+        "pass": false
+      }
+    },
+    "effect_size_presence_checks": {
+      "E1_any_click_divergence_gt_0.1": true,
+      "E2_any_early_or_late_rate_gt_0.1": true,
+      "E3_any_AUROC_effect_gt_0.1": true,
+      "E4_any_action_shift_gt_0.1": false
+    },
+    "pass": false
+  }
+}

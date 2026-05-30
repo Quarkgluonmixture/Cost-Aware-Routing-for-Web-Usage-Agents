@@ -1,0 +1,358 @@
+{
+  "method": "Mode-invariant micro-behavior analysis over reddit and classifieds. Per-task/per-mode metrics extract URL sets, URL path sets, target-page hits from task-config URLs, typed keywords, first action type, first post-action URL path, step count, and finish status. Cascade contrasts are right-minus-left: P-text minus DOM (axis 1 text), P-SoM minus P-text (axis 2 prompt), and SoM minus P-SoM (axis 3 image). URL path Jaccard is symmetric; lower values indicate stronger decision divergence. The cross-site claim ratio compares bounded decision effects (1 - URL-path Jaccard, absolute target-hit diff, first-action divergence) with the mean absolute axis-1 macro effect from axis_effect_size.json.",
+  "metrics_per_task_per_mode": {
+    "B0": {
+      "reddit": {},
+      "classifieds": {}
+    },
+    "B1": {
+      "reddit": {},
+      "classifieds": {}
+    },
+    "B2": {
+      "reddit": {},
+      "classifieds": {}
+    }
+  },
+  "axis_contrasts": {
+    "B0": {
+      "reddit": {
+        "axis_1_text": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-text minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-text"
+        },
+        "axis_2_prompt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-text",
+          "left_mode": "P-text",
+          "right_mode": "P-SoM"
+        },
+        "axis_3_image": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus P-SoM",
+          "left_mode": "P-SoM",
+          "right_mode": "SoM"
+        },
+        "compound_dom_to_psom": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
+        "endpoint_dom_to_som": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "SoM"
+        }
+      },
+      "classifieds": {
+        "axis_1_text": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-text minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-text"
+        },
+        "axis_2_prompt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-text",
+          "left_mode": "P-text",
+          "right_mode": "P-SoM"
+        },
+        "axis_3_image": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus P-SoM",
+          "left_mode": "P-SoM",
+          "right_mode": "SoM"
+        },
+        "compound_dom_to_psom": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
+        "endpoint_dom_to_som": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "SoM"
+        }
+      }
+    },
+    "B1": {
+      "reddit": {
+        "axis_1_text": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-text minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-text"
+        },
+        "axis_2_prompt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-text",
+          "left_mode": "P-text",
+          "right_mode": "P-SoM"
+        },
+        "axis_3_image": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus P-SoM",
+          "left_mode": "P-SoM",
+          "right_mode": "SoM"
+        },
+        "compound_dom_to_psom": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
+        "endpoint_dom_to_som": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "SoM"
+        }
+      },
+      "classifieds": {
+        "axis_1_text": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-text minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-text"
+        },
+        "axis_2_prompt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-text",
+          "left_mode": "P-text",
+          "right_mode": "P-SoM"
+        },
+        "axis_3_image": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus P-SoM",
+          "left_mode": "P-SoM",
+          "right_mode": "SoM"
+        },
+        "compound_dom_to_psom": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
+        "endpoint_dom_to_som": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "SoM"
+        }
+      }
+    },
+    "B2": {
+      "reddit": {
+        "axis_1_text": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-text minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-text"
+        },
+        "axis_2_prompt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-text",
+          "left_mode": "P-text",
+          "right_mode": "P-SoM"
+        },
+        "axis_3_image": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus P-SoM",
+          "left_mode": "P-SoM",
+          "right_mode": "SoM"
+        },
+        "compound_dom_to_psom": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
+        "endpoint_dom_to_som": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "SoM"
+        }
+      },
+      "classifieds": {
+        "axis_1_text": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-text minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-text"
+        },
+        "axis_2_prompt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-text",
+          "left_mode": "P-text",
+          "right_mode": "P-SoM"
+        },
+        "axis_3_image": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus P-SoM",
+          "left_mode": "P-SoM",
+          "right_mode": "SoM"
+        },
+        "compound_dom_to_psom": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
+        "endpoint_dom_to_som": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "SoM minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "SoM"
+        }
+      }
+    }
+  },
+  "case_studies": [],
+  "cross_site_validity": {
+    "claim": "axis 1 decision-quality effect > axis 1 macro-action-freq effect",
+    "verdict_anchor_baselines": [
+      "B0"
+    ],
+    "verdict": "not supported",
+    "narrative": "Neither site clears the decision-over-macro ratio threshold (B0), so the paper should not claim that axis 1 primarily changes decision quality."
+  },
+  "validation": {
+    "expected_axis1_n": {
+      "reddit": 205,
+      "classifieds": 224
+    },
+    "axis1_n_checks": {},
+    "target_extraction": {
+      "reddit": {
+        "task_config_n": 210,
+        "target_url_extracted_n": 144
+      },
+      "classifieds": {
+        "task_config_n": 234,
+        "target_url_extracted_n": 172
+      }
+    },
+    "url_jaccard_range_checks": {}
+  }
+}

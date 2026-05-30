@@ -1,0 +1,3599 @@
+{
+  "method": "paired contrasts on per-task metrics; Cohen's d_z (continuous) / Cohen's h (binary search-loop); bootstrap 95% CI (n=2000); Wilcoxon signed-rank. Two analytical tiers: (1) HOOK-level \u2014 DOM vs P-SoM vs SoM, validates P-SoM as independent routing arm without needing P-text/P-prompt; (2) MECHANISM-level \u2014 cascade DOM->P-text->P-SoM->SoM decomposes the compound DOM->P-SoM axis into text/prompt sub-axes.",
+  "axes": {
+    "compound": {
+      "contrast": "P-SoM minus DOM",
+      "controls": "image=no (text+prompt swap together)",
+      "tier": 1
+    },
+    "image": {
+      "contrast": "SoM minus P-SoM",
+      "controls": "text=[SOM_MARKS], prompt=SoM",
+      "tier": "1+2"
+    },
+    "text": {
+      "contrast": "P-text minus DOM",
+      "controls": "prompt=DOM, image=no",
+      "tier": 2
+    },
+    "prompt": {
+      "contrast": "P-SoM minus P-text",
+      "controls": "text=[SOM_MARKS], image=no",
+      "tier": 2
+    },
+    "axis_2_prompt_alt": {
+      "contrast": "P-prompt minus DOM",
+      "controls": "text=AXTree, image=no",
+      "tier": 2
+    },
+    "axis_1_text_alt": {
+      "contrast": "P-SoM minus P-prompt",
+      "controls": "prompt=SoM, image=no",
+      "tier": 2
+    }
+  },
+  "results": {
+    "B0": {
+      "reddit": {
+        "search_loop": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "type_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "scroll_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "selfcorr_count": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "click_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "finish_rate": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "n_steps": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "action_repeat_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        }
+      },
+      "classifieds": {
+        "search_loop": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "type_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "scroll_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "selfcorr_count": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "click_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "finish_rate": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "n_steps": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "action_repeat_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        }
+      }
+    },
+    "B1": {
+      "reddit": {
+        "search_loop": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "type_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "scroll_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "selfcorr_count": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "click_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "finish_rate": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "n_steps": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "action_repeat_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        }
+      },
+      "classifieds": {
+        "search_loop": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "type_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "scroll_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "selfcorr_count": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "click_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "finish_rate": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "n_steps": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "action_repeat_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        }
+      }
+    },
+    "B2": {
+      "reddit": {
+        "search_loop": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "type_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "scroll_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "selfcorr_count": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "click_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "finish_rate": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "n_steps": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "action_repeat_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        }
+      },
+      "classifieds": {
+        "search_loop": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "type_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "scroll_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "selfcorr_count": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "click_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "finish_rate": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "n_steps": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        },
+        "action_repeat_frac": {
+          "compound_dom_to_psom": {
+            "n": 0,
+            "meaningful": false
+          },
+          "text": {
+            "n": 0,
+            "meaningful": false
+          },
+          "prompt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "image": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_2_prompt_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "axis_1_text_alt": {
+            "n": 0,
+            "meaningful": false
+          },
+          "endpoint_dom_to_som": {
+            "n": 0,
+            "meaningful": false
+          },
+          "dominant_cascade": "n/a",
+          "dominant_hook": "n/a",
+          "psom_distinct_from_dom": false,
+          "psom_distinct_from_som": false,
+          "consistency_check": {
+            "axis_sum": NaN,
+            "endpoint_diff": NaN,
+            "error": NaN,
+            "tolerance": 0.0,
+            "units": "n/a",
+            "pass": false,
+            "skipped": true
+          },
+          "cancellation_patterns": []
+        }
+      }
+    }
+  },
+  "validation": {
+    "expected_n": {
+      "reddit": 205,
+      "classifieds": 224
+    },
+    "non_negligible_thresholds": {
+      "cohen_d_z_abs_gt": 0.1,
+      "cohen_h_abs_gt": 0.1
+    },
+    "n_checks": {
+      "B0/reddit/search_loop/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/search_loop/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/search_loop/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/search_loop/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/type_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/type_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/type_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/type_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/scroll_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/scroll_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/scroll_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/scroll_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/selfcorr_count/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/selfcorr_count/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/selfcorr_count/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/selfcorr_count/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/click_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/click_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/click_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/click_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/finish_rate/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/finish_rate/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/finish_rate/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/finish_rate/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/n_steps/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/n_steps/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/n_steps/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/n_steps/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/action_repeat_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/action_repeat_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/action_repeat_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/reddit/action_repeat_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B0/classifieds/search_loop/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/search_loop/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/search_loop/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/search_loop/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/type_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/type_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/type_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/type_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/scroll_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/scroll_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/scroll_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/scroll_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/selfcorr_count/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/selfcorr_count/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/selfcorr_count/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/selfcorr_count/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/click_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/click_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/click_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/click_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/finish_rate/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/finish_rate/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/finish_rate/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/finish_rate/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/n_steps/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/n_steps/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/n_steps/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/n_steps/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/action_repeat_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/action_repeat_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/action_repeat_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B0/classifieds/action_repeat_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/reddit/search_loop/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/search_loop/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/search_loop/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/search_loop/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/type_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/type_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/type_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/type_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/scroll_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/scroll_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/scroll_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/scroll_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/selfcorr_count/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/selfcorr_count/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/selfcorr_count/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/selfcorr_count/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/click_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/click_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/click_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/click_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/finish_rate/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/finish_rate/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/finish_rate/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/finish_rate/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/n_steps/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/n_steps/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/n_steps/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/n_steps/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/action_repeat_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/action_repeat_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/action_repeat_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/reddit/action_repeat_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B1/classifieds/search_loop/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/search_loop/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/search_loop/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/search_loop/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/type_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/type_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/type_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/type_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/scroll_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/scroll_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/scroll_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/scroll_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/selfcorr_count/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/selfcorr_count/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/selfcorr_count/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/selfcorr_count/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/click_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/click_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/click_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/click_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/finish_rate/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/finish_rate/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/finish_rate/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/finish_rate/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/n_steps/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/n_steps/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/n_steps/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/n_steps/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/action_repeat_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/action_repeat_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/action_repeat_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B1/classifieds/action_repeat_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/reddit/search_loop/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/search_loop/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/search_loop/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/search_loop/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/type_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/type_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/type_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/type_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/scroll_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/scroll_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/scroll_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/scroll_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/selfcorr_count/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/selfcorr_count/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/selfcorr_count/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/selfcorr_count/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/click_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/click_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/click_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/click_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/finish_rate/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/finish_rate/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/finish_rate/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/finish_rate/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/n_steps/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/n_steps/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/n_steps/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/n_steps/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/action_repeat_frac/text": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/action_repeat_frac/prompt": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/action_repeat_frac/image": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/reddit/action_repeat_frac/compound": {
+        "observed": 0,
+        "expected": 205,
+        "pass": false
+      },
+      "B2/classifieds/search_loop/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/search_loop/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/search_loop/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/search_loop/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/type_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/type_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/type_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/type_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/scroll_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/scroll_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/scroll_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/scroll_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/selfcorr_count/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/selfcorr_count/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/selfcorr_count/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/selfcorr_count/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/click_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/click_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/click_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/click_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/finish_rate/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/finish_rate/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/finish_rate/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/finish_rate/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/n_steps/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/n_steps/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/n_steps/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/n_steps/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/action_repeat_frac/text": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/action_repeat_frac/prompt": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/action_repeat_frac/image": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      },
+      "B2/classifieds/action_repeat_frac/compound": {
+        "observed": 0,
+        "expected": 224,
+        "pass": false
+      }
+    },
+    "consistency_checks": {
+      "B0/reddit/search_loop": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/reddit/type_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/reddit/scroll_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/reddit/selfcorr_count": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/reddit/click_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/reddit/finish_rate": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/reddit/n_steps": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/reddit/action_repeat_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/search_loop": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/type_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/scroll_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/selfcorr_count": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/click_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/finish_rate": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/n_steps": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B0/classifieds/action_repeat_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/search_loop": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/type_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/scroll_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/selfcorr_count": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/click_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/finish_rate": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/n_steps": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/reddit/action_repeat_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/search_loop": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/type_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/scroll_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/selfcorr_count": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/click_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/finish_rate": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/n_steps": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B1/classifieds/action_repeat_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/search_loop": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/type_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/scroll_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/selfcorr_count": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/click_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/finish_rate": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/n_steps": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/reddit/action_repeat_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/search_loop": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/type_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/scroll_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/selfcorr_count": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/click_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/finish_rate": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/n_steps": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      },
+      "B2/classifieds/action_repeat_frac": {
+        "axis_sum": NaN,
+        "endpoint_diff": NaN,
+        "error": NaN,
+        "tolerance": 0.0,
+        "units": "n/a",
+        "pass": false,
+        "skipped": true
+      }
+    },
+    "non_negligible_effects": [],
+    "axis_1_non_negligible": [],
+    "antagonistic_pairs": []
+  },
+  "interpretation": {
+    "tier1_hook": {
+      "claim": "P-SoM is an independent routing arm: its macro behavior is meaningfully distinct from BOTH DOM and SoM (not collapsible to either).",
+      "psom_distinct_from_both_dom_and_som": [],
+      "psom_distinct_from_dom_only": [],
+      "psom_distinct_from_som_only": [],
+      "psom_indistinct_from_either": [],
+      "verdict_note": "A cell qualifies for hook support when |effect| > 0.1 (small Cohen's d/h) on the relevant contrast."
+    },
+    "tier2_mechanism": {
+      "claim": "The compound DOM->P-SoM transition decomposes into text (axis 1) and prompt (axis 2) sub-effects via P-text intermediate.",
+      "dominant_cascade_by_axis": {
+        "text": [],
+        "prompt": [],
+        "image": []
+      },
+      "antagonistic_pairs": []
+    },
+    "site_specific_notes": {
+      "reddit": "Reddit exposes the clearest internal cancellation: text-structure and prompt changes often move strategy metrics in opposite directions.",
+      "classifieds": "Classifieds shows the strongest image-axis effects (finish rate h=+0.57, action repeat d_z=-0.42, step count d_z=-0.33); without image, P-SoM cls is in a degraded state \u2014 image axis fully recovers it."
+    }
+  }
+}
