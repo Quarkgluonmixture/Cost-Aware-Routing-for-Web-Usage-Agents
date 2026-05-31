@@ -709,3 +709,47 @@
   url = {https://arxiv.org/abs/2505.17616},
   note = {EMNLP 2025 Findings. First systematic study of early-exit for embodied LLM agents: intrinsic (inject exit instructions for self-termination) + extrinsic (external task-completion verification to halt); two metrics (redundant-step reduction vs progress degradation). 4 LLMs $\times$ 5 embodied environments; a strong agent taking over after an early-exit agent yields better performance at the same total step budget (a cascade precedent). Cited in our paper \S 6 related work to delimit the efficiency-axis taxonomy: model routing (RouteLLM/FrugalGPT/CSCR, \emph{which model}) vs early-exit halting (this work, \emph{when to stop} within an episode) vs representation routing (ours, \emph{which input} within a fixed model). Domain is embodied, not web --- not a direct baseline.}
 }
+
+@misc{feldhus2026judgecircuits,
+  title = {Judge Circuits},
+  author = {Feldhus, Nils and Baeumel, Tanja and Golimblevskaia, Elena and Wang, Qianli and Nguyen, Van Bach and Eidt, Aaron Louis and Kahvecioglu, Selin and Ebert, Christopher and Samek, Wojciech and Yang, Jing and Schmitt, Vera and M{\"o}ller, Sebastian and Ostermann, Simon},
+  year = {2026},
+  eprint = {2605.16023},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2605.16023},
+  note = {Position-aware Edge Attribution Patching (PEAP) on text LLM-as-judge across Gemma-3, Qwen2.5, Llama-3. A shared, sparse ``Latent Evaluator'' sub-graph (rating circuit $\cap$ classification circuit) in mid-to-late MLPs computes a continuous judgment signal; fragile, format-specific terminal branches map it to a discrete score (e.g.\ 1--5 vs True/False). KEY nuance: modularity (judging separable from world knowledge) is model-family AND scale dependent --- Qwen2.5-7B/14B, Llama-3.1-8B, Gemma-3-27B are modular (zero-ablating the Latent Evaluator leaves MMLU within $\sim$2pp), but Gemma-3-12B is ENTANGLED (zero-ablation halves MMLU clinical 81\% to 19\%, physics 48\% to 23\%). Format-Transfer Injection flips output format on Qwen2.5-7B (100\% CoLA/STS-B) yet only 0.7\% on geometrically-insulated Gemma-3-27B/MNLI. Cited in our paper \S 1/\S 6 as MOTIVATION: format-conditional computation is mechanistically real and model-family-dependent on the same backbones we use (Qwen3-VL = B0/B1, Gemma-3-VL = B2). CAVEAT 1 (domain gap, state explicitly): text-only judges, NO multimodal/agent; ``format'' here is the judge's OUTPUT format, not our INPUT observation format --- the transfer is conceptual, NOT evidential; do NOT cite as web-agent evidence. CAVEAT 2 (B2 risk): our B2 = google/gemma-3-4b-it is smaller than the already-entangled Gemma-3-12B, so the format/content separability our phantom axis assumes may be WEAKER for B2 than for the Qwen models --- a predicted cross-family confound to watch in analysis, not a settled result. Maps to the shelved \S 5 mechanism scope; use as related-work, NOT a mechanism claim of our own.}
+}
+
+@misc{li2026pando,
+  title = {{PANDO}: Efficient Multimodal {AI} Agents via Online Skill Distillation},
+  author = {Li, Yubo and Miao, Yidi and Shen, Yuntian and Liu, Yuxin},
+  year = {2026},
+  eprint = {2605.24785},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2605.24785},
+  note = {Single-rollout online skill distillation on the full 910-task VisualWebArena. Skill Library = rules (pattern-triggered guardrails) + routines (parameterized program-as-action, retrieved by deterministic keyword containment, not embedding search). 58.3\% SR vs SGV 54.0\% (Gemini-Flash two-pass verifier) vs a 45.2\% WALT reproduction, at 58\%/61\% fewer tokens. BASE = frontier closed stack (Claude Opus 4.6 planner + GPT-5.2 grounding) --- its SR is NOT comparable to our 4B open models (B1/B2); cite for method/metrics, never as a leaderboard next to our numbers. Its ``hierarchical routing'' routes MODEL CAPACITY (expensive planner vs cheap actor), NOT observation representation and NOT skill selection --- orthogonal to our representation routing. Ablation: skills/rules/routines lift SR 38.6\% to 57.3\% (+18.7pp, the SR lever); routing+compression+cache add only +1.7pp SR but cut tokens 147K to 117K (a modest cost lever). Cited in our paper \S 6 as the closest VWA-efficiency neighbor --- DIFFERENTIATE explicitly: PANDO routes compute/skills, we route the observation representation. Borrowable instruments: 3 trajectory-level efficiency metrics --- Action Repetition Rate (9.1/14.2/18.3\%, aligns with our runner cycle detection), Step Overhead Ratio (1.8/2.3/2.6$\times$), Prompt Cache Utilization (72.4/45.1/38.6\%). Its critique of WALT for excluding pre-evaluation discovery cost corroborates our total-billed canonical estimand.}
+}
+
+@misc{abaskohi2026revision,
+  title = {{ReVision}: Scaling Computer-Use Agents via Temporal Visual Redundancy Reduction},
+  author = {Abaskohi, Amirhossein and He, Yuhang and West, Peter and Carenini, Giuseppe and Chawla, Pranit and Vineet, Vibhav},
+  year = {2026},
+  eprint = {2605.11212},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2605.11212},
+  note = {Temporal visual-redundancy reduction for computer-use agents. ReVision Token Selection (RTS) = a 3-layer MLP over consecutive-frame patch-pair embeddings emitting a binary keep-mask (labels from OmniParserV2 segmentation + IoU matching); the MLLM is then FINE-TUNED on the filtered trajectories. Per-benchmark on Qwen2.5-VL-7B with 5 history screenshots: OSWorld 54\% token cut / +1.5pp SR (32.3 to 34.0), AgentNetBench 40\% / +1.3pp (72.5 to 73.8), WebTailBench 37\% / +3.4pp (36.0 to 40.2); avg $\sim$46\% / +3pp. History finding: a no-drop baseline saturates near 7 images then declines, ReVision keeps improving to $\sim$11; saturation tracks total context ($\sim$23k tokens) not image count --- ``saturation reflects inefficient token representation, not limited usefulness of history.'' Cited in our paper \S 6 as related-work for the visual-redundancy/efficiency framing. CAVEAT: (a) it REQUIRES fine-tuning the backbone --- not an inference-time drop-in, unlike our training-free phantom modes; (b) it prunes TEMPORAL redundancy at PATCH level within the kept image stream, whereas phantom drops the ENTIRE annotated image (cross-modal redundancy given the flattened [SOM\_MARKS] text). A contrast point, not a method transfer.}
+}
+
+@misc{li2026dmr,
+  title = {Dynamic Mixed-Precision Routing for Efficient Multi-step {LLM} Interaction},
+  author = {Li, Yuanzhe and Deng, Jianing and Hu, Jingtong and Chen, Tianlong and Wang, Song and Yang, Huanrui},
+  year = {2026},
+  eprint = {2602.02711},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2602.02711},
+  note = {Per-step routing between a bf16 (high) and a W4A16/W3A16-quantized (low) variant of the SAME model; base = Qwen3-1.7B / Qwen3-4B (B1's backbone family). Router = lightweight Transformer encoder ($\sim$2--3\% of the routed LLM's params, 8 layers, trajectory-level input, softmax over precision). Two-stage training: (1) KL-ST --- label a step precision-sensitive when the step-wise KL between low/high action distributions $\geq \tau$, class-weighted CE; (2) GRPO --- reward = success $- \lambda \cdot$ cost. Results: ALFWorld Qwen3-4B bf16 94.3\% / quant 85.4\% / DMR@K=0.40 95.1\% (beats bf16 and faster); WebShop Qwen3-1.7B bf16 59.0\% / quant 40.9\% / DMR@K=0.20 53.4\% (1.17$\times$ speedup, recovers 93\% of the quant gap on GPTQ). Cited in our paper \S 6 as a per-step routing precedent AND a method anchor for our learned router: the ``cheap-vs-expensive action-distribution KL'' is a concrete routing-signal idea (vs our current per-task LR classifier), and KL-supervised-then-GRPO-refine is an upgrade recipe for the per-step phantom-routing extension. CAVEAT: routes PRECISION not representation; router overhead 17--29ms/call; WebShop forces high-KL search steps to bf16. Same efficiency-axis family as our \S 6 taxonomy (model/precision routing = which compute; ours = which representation).}
+}
