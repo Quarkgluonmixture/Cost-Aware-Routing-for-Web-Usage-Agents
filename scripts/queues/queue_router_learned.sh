@@ -157,17 +157,30 @@ if [[ "${BASELINE}" == "B0" ]]; then
   fi
 fi
 
-# ---------- Pre-launch: LR model artifact must exist ----------
-LR_MODEL_PATH="${REPO_DIR}/results/phantom_paper/l1_router/${BASELINE}_${SITE}_lr.pkl"
-if [[ ! -f "${LR_MODEL_PATH}" ]]; then
-  echo "[router][warn] LR model artifact not found: ${LR_MODEL_PATH}" >&2
-  echo "  Pass-2 router requires LR trained on Pass-1 baseline per-task oracle labels." >&2
-  echo "  Run: python3 scripts/analysis/train_l1_router.py --baseline ${BASELINE} --site ${SITE} --out ${LR_MODEL_PATH}" >&2
-  echo "  (train_l1_router.py is TODO; pending separate session)" >&2
-  if [[ "${ALLOW_NO_LR_MODEL:-0}" != "1" ]]; then
-    echo "  Set ALLOW_NO_LR_MODEL=1 to bypass (router will fail at runtime)." >&2
+# ---------- Pre-launch: fold-aware LR bundle must validate ----------
+# S3 cross-AI P0-2-B* (2026-06-02): pre-fix gated on the DEPRECATED single-pickle
+# (${BASELINE}_${SITE}_lr.pkl). The fold-aware runtime (predict_mode_fold_aware)
+# needs the full bundle (5 fold vectorizers + selectors + 6 cells × {meta + 5 LR
+# heads + fold_assignment}), NOT the legacy pickle — a stale single-pickle would
+# pass the old check while every fold-aware artifact is missing (codex measured
+# 52 validation failures on the May-16 on-disk state). Delegate to the canonical
+# validator. Under P79_PAPER_GRADE=1 the ALLOW_NO_LR_MODEL bypass is hard-blocked
+# (no stale-artifact paper-grade fire). The old "train_l1_router.py is TODO" note
+# was stale — Stage 1→3 (extract_50_features → train_l1_router_with_mi →
+# train_l1_router) is the canonical bundle producer.
+LR_ARTIFACTS_DIR="${REPO_DIR}/results/phantom_paper/l1_router"
+if ! "${PYTHON_BIN:-${REPO_DIR}/.venv/bin/python3}" "${REPO_DIR}/scripts/queues/_lib_lr_artifact_validate.py" --artifacts-dir "${LR_ARTIFACTS_DIR}"; then
+  echo "[router][warn] fold-aware LR bundle validation FAILED (${LR_ARTIFACTS_DIR})." >&2
+  echo "  Pass-2 router needs the fold-aware bundle; regenerate via Stage 1→3:" >&2
+  echo "    extract_50_features.py → train_l1_router_with_mi.py → train_l1_router.py" >&2
+  if [[ "${P79_PAPER_GRADE:-0}" == "1" ]]; then
+    echo "  [FATAL] P79_PAPER_GRADE=1: ALLOW_NO_LR_MODEL bypass HARD-BLOCKED (no stale-artifact fire)." >&2
+    exit 1
+  elif [[ "${ALLOW_NO_LR_MODEL:-0}" != "1" ]]; then
+    echo "  Set ALLOW_NO_LR_MODEL=1 to bypass (DEV ONLY; router will fail at runtime)." >&2
     exit 1
   fi
+  echo "[router][warn] ALLOW_NO_LR_MODEL=1 (dev) — proceeding despite validation failure." >&2
 fi
 
 # ---------- 决定 run_id + run_dir ----------
@@ -193,7 +206,7 @@ RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[router] config=${CONFIG}"
 echo "[router] run_dir=${RUN_DIR}"
 echo "[router] condition=${COND_ID}"
-echo "[router] lr_model=${LR_MODEL_PATH}"
+echo "[router] lr_artifacts_dir=${LR_ARTIFACTS_DIR}"
 
 # ---------- 检查 runner 是否已在跑 ----------
 if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
