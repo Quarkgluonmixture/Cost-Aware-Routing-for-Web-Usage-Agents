@@ -7,7 +7,7 @@
 >
 > 现状盘点（2026-06-02）：
 > - `index.html` = 手写 portfolio one-pager，已成熟（5 段 + 手绘 SVG + scroll-reveal）。
-> - `Phantom Space.html` = **已经是 Claude Design 导出的 animated explainer**（产物 ③ 已有 v1）。
+> - `phantom-space.html` = **已经是 Claude Design 导出的 animated explainer**（产物 ③ 已有 v1）。
 > - `results/phantom_paper/figures/*.png` = 20+ 张 paper-grade 图，现成可喂。
 > - **缺口 = slides（产物 ②，完全没有）→ 优先级最高。**
 
@@ -133,7 +133,7 @@ SVG 线条 draw-in：stroke-dashoffset 动画
 
 ## Part D — 产物 ③：图解释器（你已有 explainer v1，二选一）
 
-你已经有 `Phantom Space.html`（Claude Design 导出的 animated explainer）。两条路：
+你已经有 `phantom-space.html`（Claude Design 导出的 animated explainer）。两条路：
 
 **(i) 扩充现有 explainer** — 在同一风格里再加几张图的动画讲解（forest plot、failure matrix）。
 **(ii) 新建"图库走查"** — 把 `results/phantom_paper/figures/` 里的关键 PNG 导入，逐张配旁白。
