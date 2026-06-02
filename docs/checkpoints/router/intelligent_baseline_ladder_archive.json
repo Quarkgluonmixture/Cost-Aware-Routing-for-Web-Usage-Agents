@@ -1,0 +1,192 @@
+{
+  "schema_version": "ladder-2026-06-02-v1",
+  "generated_utc": "2026-06-02T04:51:56.415891+00:00",
+  "disclosure_only": true,
+  "not_a_gate": "Paper \u00a76.5 intelligent-baseline ladder (B-1006 R5 reviewer defense). These rows BOUND the learned router from above (per_task_lookup oracle ceiling) and below (always_cheapest cost floor); they are DISCLOSURE and do NOT enter the H10 operational deployment gate. Archive/dev-sanity numbers are directional only \u2014 paper \u00a76 main data is the Phase 1a Pass-2 fire.",
+  "ladder_arms": {
+    "always_cheapest": "cost-axis lower bound (= always-DOM)",
+    "decision_stump": "single-feature heuristic floor (depth-1 tree)",
+    "per_task_lookup": "infinite-capacity SR ceiling (oracle / task_id one-hot reductio)",
+    "lr_dom_features_only": "text-feature ablation (drops TF-IDF on fire / intent-regex on archive)",
+    "learned_router_proxy": "8-dim LR proxy for the router (archive sanity only)"
+  },
+  "cells": {
+    "B0_classifieds": {
+      "cell_id": "B0_classifieds",
+      "baseline": "B0",
+      "site": "classifieds",
+      "n_tasks": 224,
+      "n_no_success": 127,
+      "modes_present": [
+        "dom",
+        "phantom_prompt",
+        "phantom_som",
+        "phantom_text",
+        "som",
+        "vision"
+      ],
+      "empirical_cheapest_single_mode": "vision",
+      "dom_is_empirically_cheapest": false,
+      "cost_spread_pct": 11.65,
+      "mean_cost_per_mode_usd": {
+        "dom": 0.069619,
+        "phantom_prompt": 0.068526,
+        "phantom_som": 0.072057,
+        "phantom_text": 0.069186,
+        "som": 0.072357,
+        "vision": 0.064807
+      },
+      "oracle_label_distribution": {
+        "dom": 39,
+        "som": 24,
+        "phantom_prompt": 13,
+        "phantom_som": 9,
+        "vision": 9,
+        "phantom_text": 3
+      },
+      "arms": {
+        "always_cheapest_dom": {
+          "arm": "always_cheapest_dom",
+          "role": "cost_only_baseline",
+          "sr_mean_pct": 17.411,
+          "sr_ci_95_pct": [
+            12.946,
+            22.321
+          ],
+          "cost_mean_usd": 0.069619,
+          "cost_ci_95_usd": [
+            0.063973,
+            0.076028
+          ],
+          "n": 224,
+          "routed_mode_dist": {
+            "dom": 224
+          },
+          "note": "= always-DOM (\u00a76.5 cost-only baseline). empirical cheapest single mode by total-billed cost = 'vision'; DOM not strictly cheapest (5 single modes near-tied, spread 11.6%)"
+        },
+        "per_task_lookup": {
+          "arm": "per_task_lookup",
+          "role": "sr_upper_bound",
+          "sr_mean_pct": 43.304,
+          "sr_ci_95_pct": [
+            37.054,
+            49.554
+          ],
+          "cost_mean_usd": 0.06411,
+          "cost_ci_95_usd": [
+            0.058428,
+            0.070035
+          ],
+          "n": 224,
+          "routed_mode_dist": {
+            "dom": 166,
+            "som": 24,
+            "phantom_prompt": 13,
+            "phantom_som": 9,
+            "vision": 9,
+            "phantom_text": 3
+          },
+          "note": "oracle / infinite-capacity ceiling; 127 task(s) have no successful mode"
+        },
+        "learned_router_proxy": {
+          "arm": "learned_router_proxy",
+          "role": "bounded_subject",
+          "sr_mean_pct": 25.0,
+          "sr_ci_95_pct": [
+            19.643,
+            30.804
+          ],
+          "cost_mean_usd": 0.068873,
+          "cost_ci_95_usd": [
+            0.061371,
+            0.075383
+          ],
+          "n": 224,
+          "routed_mode_dist": {
+            "phantom_prompt": 82,
+            "som": 43,
+            "vision": 34,
+            "phantom_som": 27,
+            "dom": 23,
+            "phantom_text": 15
+          },
+          "note": "8-dim balanced LR (mirrors l1_archive_simulation Variant B); archive proxy for the Phase 1a fire router"
+        },
+        "decision_stump": {
+          "arm": "decision_stump",
+          "role": "feature_floor",
+          "sr_mean_pct": 19.643,
+          "sr_ci_95_pct": [
+            14.732,
+            24.554
+          ],
+          "cost_mean_usd": 0.071184,
+          "cost_ci_95_usd": [
+            0.064706,
+            0.077696
+          ],
+          "n": 224,
+          "routed_mode_dist": {
+            "phantom_text": 60,
+            "som": 45,
+            "dom": 45,
+            "phantom_prompt": 35,
+            "phantom_som": 24,
+            "vision": 15
+          },
+          "note": "depth-1 tree (single feature, <=2 modes); bounds value of the full feature set"
+        },
+        "lr_dom_features_only": {
+          "arm": "lr_dom_features_only",
+          "role": "text_ablation",
+          "sr_mean_pct": 22.321,
+          "sr_ci_95_pct": [
+            17.411,
+            28.125
+          ],
+          "cost_mean_usd": 0.065948,
+          "cost_ci_95_usd": [
+            0.05905,
+            0.072805
+          ],
+          "n": 224,
+          "routed_mode_dist": {
+            "phantom_prompt": 58,
+            "som": 57,
+            "phantom_text": 45,
+            "vision": 36,
+            "phantom_som": 17,
+            "dom": 11
+          },
+          "note": "LR on browser/structural features only (archive proxy: drops the 4 intent-regex semantic features; canonical Phase 1a arm drops the 30 TF-IDF columns). Bounds text-signal value."
+        }
+      },
+      "bounding_checks": {
+        "sr_ceiling_holds": true,
+        "proxy_beats_stump": true,
+        "proxy_beats_dom_only_or_equal": true,
+        "router_headroom_pp": 18.304,
+        "text_feature_value_pp": 2.679,
+        "feature_set_value_over_stump_pp": 5.357,
+        "router_lift_over_dom_pp": 7.589,
+        "cost_always_dom_usd": 0.069619,
+        "cost_proxy_usd": 0.068873,
+        "cost_oracle_usd": 0.06411,
+        "structural_invariant_holds": true
+      },
+      "status": "ok",
+      "feature_provenance": {
+        "axtree_defaulted": 0,
+        "intent_missing": 0
+      },
+      "pass1_run_dirs": [
+        "B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
+        "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+        "B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031",
+        "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
+        "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+        "B0_vision_classifieds_20260526_141916_610351680_689390_R32024"
+      ]
+    }
+  }
+}

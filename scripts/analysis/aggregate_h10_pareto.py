@@ -685,6 +685,27 @@ def _load_h10_entropy_gate() -> Optional[dict]:
         return None
 
 
+def _load_ladder_disclosure() -> Optional[dict]:
+    """Read the §6.5 intelligent-baseline-ladder DISCLOSURE artifact (B-1006 R5).
+
+    Produced by `scripts/analysis/intelligent_baseline_ladder.py`. This is a paper
+    §6 DISCLOSURE row set (always-cheapest / decision-stump / per-task-lookup /
+    LR-DOM-only), NOT a gate input: it bounds the learned router from above and below
+    so a reviewer can see the router sits in the sensible region of the (Cost, SR)
+    plane. It is read here purely for co-located reporting and NEVER touches the H10
+    operational deployment gate / Pareto verdict / θ pool. Returns None if absent
+    (regenerate post-fire by running intelligent_baseline_ladder before this script
+    for numbers matching the same Pass-1/Pass-2 data). Mirrors `_load_h10_entropy_gate`.
+    """
+    path = ROUTER_ARTIFACT_DIR / "intelligent_baseline_ladder_disclosure.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def run_h10_verdict(
     cells: Optional[list[tuple[str, str]]] = None,
     require_full_coverage: bool = False,
@@ -830,6 +851,21 @@ def run_h10_verdict(
         )
     fe_pool["cell_cost_unit_basis_summary"] = cell_basis_summary
 
+    # DISCLOSURE ONLY (B-1006 §6.5 intelligent-baseline ladder, R5 reviewer defense):
+    # attach the ladder rows (always-cheapest / decision-stump / per-task-lookup /
+    # LR-DOM-only) read from the artifact produced by intelligent_baseline_ladder.py.
+    # This is a side table — it does NOT enter operational_deployment_gate / Pareto /
+    # θ pool / passes. Absent artifact → {status: pending}. Never raises.
+    ladder_disclosure = _load_ladder_disclosure() or {
+        "status": "pending",
+        "note": (
+            "No intelligent_baseline_ladder_disclosure.json found. Run "
+            "`python -m scripts.analysis.intelligent_baseline_ladder` (regenerate "
+            "post-fire before this script for matching numbers). DISCLOSURE ONLY — "
+            "not part of the H10 gate."
+        ),
+    }
+
     return {
         "schema_version": SCHEMA_VERSION,
         # NOTE: legacy key "primary_k_of_n" retained as alias for downstream consumers
@@ -838,6 +874,7 @@ def run_h10_verdict(
         "operational_deployment_gate": operational_gate,
         "primary_k_of_n": operational_gate,  # legacy alias (A2.8 B-1551 transitional)
         "appendix_fe_pool": fe_pool,
+        "intelligent_baseline_ladder_disclosure": ladder_disclosure,  # B-1006 §6.5 (NOT gating)
         "per_cell": per_cell_results,
         "note_site_asymmetric_pre_hoc_hypothesis": (
             "Site-asymmetric viability is a pre-hoc theoretical prediction "
@@ -850,6 +887,62 @@ def run_h10_verdict(
             "falsification test of this hypothesis."
         ),
     }
+
+
+def _render_ladder_disclosure_md(md: list[str], disc: dict[str, Any]) -> None:
+    """Render the §6.5 intelligent-baseline-ladder DISCLOSURE section (B-1006 R5).
+
+    DISCLOSURE ONLY — explicitly labelled NOT part of the H10 gate. Degrades
+    gracefully on a pending / malformed artifact (never raises).
+    """
+    md.append("## Intelligent-baseline ladder (DISCLOSURE ONLY — not part of H10 gate)")
+    md.append("")
+    md.append(
+        "> B-1006 §6.5 R5 reviewer defense. These rows bound the learned router from below "
+        "(always-cheapest cost baseline, single-feature stump, no-text ablation) and above "
+        "(per-task-lookup oracle = infinite-capacity SR ceiling). They are a side table; they "
+        "do NOT enter the operational deployment gate, Pareto verdict, or θ pool. Source: "
+        "`intelligent_baseline_ladder.py` → `intelligent_baseline_ladder_disclosure.json`."
+    )
+    md.append("")
+    if not disc or disc.get("status") == "pending":
+        md.append(f"_{(disc or {}).get('note', 'ladder disclosure artifact absent (pending).')}_")
+        md.append("")
+        return
+    md.append(f"Artifact generated: `{disc.get('generated_utc', 'n/a')}` · schema `{disc.get('schema_version', 'n/a')}`")
+    md.append("")
+    cells = disc.get("cells", {})
+    ok_cells = {cid: c for cid, c in cells.items() if c.get("status") == "ok"}
+    if not ok_cells:
+        md.append("_No cells with sufficient multi-mode data for the ladder yet (pre-fire)._")
+        md.append("")
+        return
+    md.append(
+        "| Cell | always-DOM SR | stump SR | no-text SR | router-proxy SR | oracle-ceiling SR | "
+        "feat-value vs stump | text-value | headroom | SR-ceiling holds |"
+    )
+    md.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|:--:|")
+    for cid, c in ok_cells.items():
+        a = c.get("arms", {})
+        b = c.get("bounding_checks", {})
+
+        def _sr(name: str) -> str:
+            return f"{a.get(name, {}).get('sr_mean_pct', float('nan')):.1f}"
+
+        md.append(
+            f"| {cid} | {_sr('always_cheapest_dom')} | {_sr('decision_stump')} | "
+            f"{_sr('lr_dom_features_only')} | {_sr('learned_router_proxy')} | {_sr('per_task_lookup')} | "
+            f"{b.get('feature_set_value_over_stump_pp', float('nan')):+.2f} | "
+            f"{b.get('text_feature_value_pp', float('nan')):+.2f} | "
+            f"{b.get('router_headroom_pp', float('nan')):+.2f} | "
+            f"{'✓' if b.get('sr_ceiling_holds') else '✗'} |"
+        )
+    md.append("")
+    md.append(
+        "_All SR in %. feat-value/text-value/headroom in pp. On archive/dev-sanity the proxy is "
+        "an 8-dim LR stand-in; paper §6 main number is the Phase 1a Pass-2 fire learned router._"
+    )
+    md.append("")
 
 
 def write_outputs(verdict: dict[str, Any], out_dir: Path) -> None:
@@ -926,6 +1019,7 @@ def write_outputs(verdict: dict[str, Any], out_dir: Path) -> None:
             f"{'✓' if pn['passes'] else '✗'} |"
         )
     md.append("")
+    _render_ladder_disclosure_md(md, verdict.get("intelligent_baseline_ladder_disclosure", {}))
     md.append("## Site-asymmetric viability note")
     # F5 (B-1818): verdict key is note_site_asymmetric_pre_hoc_hypothesis (defined
     # L718); the bare 'note_site_asymmetric' KeyError'd at §6 markdown write once data

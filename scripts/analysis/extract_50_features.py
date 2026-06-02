@@ -216,6 +216,8 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
             "run_provenance": run_provenance,
             "n_total_tasks": 0,
             "n_filtered_no_success": 0,
+            "n_dropped_no_config": 0,
+            "dropped_no_config_task_ids": [],
             "n_kept": 0,
             "all_task_ids": [],
             "no_success_task_ids": [],
@@ -242,6 +244,17 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
     task_ids_sorted = sorted(matrix.keys())
     n_total = len(task_ids_sorted)
     filtered_no_success = 0
+    # G3 (router /stress dry-run 2026-06-02): labeled tasks whose VWA task config is
+    # unreadable were SILENTLY skipped (the `if cfg is None: continue` below incremented
+    # no counter), so n_total != n_filtered_no_success + n_kept and the loss was invisible
+    # in the meta. Empirically this masked the whole B0_classifieds cell (97 labeled rows →
+    # n_kept=0) when the worktree's external/visualwebarena submodule was unchecked: the
+    # pipeline reported a benign-looking empty pool instead of a loud "configs unreadable".
+    # Count + record the dropped task_ids so the accounting identity
+    # n_total == n_filtered_no_success + n_dropped_no_config + n_kept holds and a config
+    # gap is diagnosable (no silent caps).
+    dropped_no_config = 0
+    dropped_no_config_task_ids: list[int] = []
 
     records_task_id = []
     records_intent = []
@@ -278,7 +291,13 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         step0 = read_step0_features(pass1_run_for_step0, site, tid)
         cfg = read_task_config(site, tid)
         if cfg is None:
-            # Task config missing — skip rather than fabricate
+            # Task config missing/unreadable — skip rather than fabricate, but COUNT it
+            # (G3): a labeled task with no config is a real pipeline anomaly (it ran in
+            # Pass-1, so the config existed then), not a benign filter. Surfacing it keeps
+            # the accounting identity intact and turns a silent empty-pool into a loud,
+            # actionable "N labeled tasks dropped: configs unreadable under VWA_CONFIG".
+            dropped_no_config += 1
+            dropped_no_config_task_ids.append(tid)
             continue
 
         intent = cfg["intent"]
@@ -309,6 +328,23 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         records_label.append(label)
 
     n_kept = len(records_task_id)
+    # G3: accounting identity — every universe task is either no-success-filtered,
+    # config-dropped, or kept. Surface a config gap loudly (it otherwise looks like an
+    # empty pool, which masks a real submodule / path problem).
+    assert n_total == filtered_no_success + dropped_no_config + n_kept, (
+        f"[{cell_id}] task accounting broken: n_total={n_total} != "
+        f"filtered_no_success={filtered_no_success} + dropped_no_config={dropped_no_config} "
+        f"+ n_kept={n_kept}"
+    )
+    if dropped_no_config:
+        preview = dropped_no_config_task_ids[:10]
+        print(
+            f"  ⚠️  [{cell_id}] {dropped_no_config}/{n_total} LABELED tasks DROPPED — VWA "
+            f"task config unreadable under {VWA_CONFIG / f'test_{site}'} (e.g. task_ids "
+            f"{preview}). These ran in Pass-1 so their configs existed then; a gap now "
+            f"usually means the external/visualwebarena submodule is unchecked. Fix the "
+            f"configs and re-run; do NOT treat this as a benign empty pool."
+        )
     X_numeric = (
         np.vstack(records_numeric) if records_numeric else np.zeros((0, 5), dtype=float)
     )
@@ -326,6 +362,10 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         "pass1_run_dirs": [r.name for r in runs],
         "n_total_tasks": n_total,
         "n_filtered_no_success": filtered_no_success,
+        # G3: labeled tasks dropped because their VWA config was unreadable (no longer a
+        # silent skip). n_total == n_filtered_no_success + n_dropped_no_config + n_kept.
+        "n_dropped_no_config": dropped_no_config,
+        "dropped_no_config_task_ids": dropped_no_config_task_ids,
         "n_kept": n_kept,
         # C1 (B-1808): full routable universe (incl. no-success) for fold coverage.
         "all_task_ids": all_task_ids,
@@ -484,6 +524,10 @@ def save_npz(extracted: dict[str, Any], out_path: Path) -> None:
                 "pass1_run_dirs": rec.get("pass1_run_dirs", []),
                 "n_total_tasks": rec["n_total_tasks"],
                 "n_filtered_no_success": rec["n_filtered_no_success"],
+                # G3: surface the config-drop in the persisted meta so a silently empty
+                # pool (e.g. submodule unchecked) is diagnosable from the JSON alone.
+                "n_dropped_no_config": rec.get("n_dropped_no_config", 0),
+                "dropped_no_config_task_ids": rec.get("dropped_no_config_task_ids", []),
                 "n_kept": rec["n_kept"],
                 "n_routable_universe": len(rec.get("all_task_ids", [])),
                 "label_distribution": rec["label_distribution"],
