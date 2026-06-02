@@ -269,13 +269,37 @@ def test_section2_no_metadata_rich_compact_framing():
 
 
 def test_section2_preserves_hierarchical_nesting_framing():
-    """B-900 P1-9: §2 new framing uses structural-format language."""
+    """B-900 P1-9: §2 frames axis-1 as a STRUCTURAL-FORMAT difference (hierarchical
+    nesting vs flattening) over the SAME element semantics — not an information /
+    semantic-content difference.
+
+    S6 test-health audit 2026-06-02: assertions 3+4 updated to track current
+    committed prose. fa53018 (Amendment-07, B-1862 SoM sequential-id estimand
+    witness) deliberately reworded "flattened into a *sequential* indexed list" →
+    "flattened into a *flat* indexed list" (moving "sequential" onto the 1..K
+    selection-id / identifier contract) and replaced the bare "element-level
+    semantic content" phrasing with the explicit two-dimension "representation
+    contract" framing. The structural-format invariant is intact; only the exact
+    phrasing drifted. Assertions made robust to the flat/sequential variant so a
+    faithful future rewording does not re-trip this, while still keeping teeth:
+    it fails if §2 reverts to an information-loss / semantic-difference framing.
+    """
     txt = _read(SECTION2)
+    # (1) the two representations carry the SAME element semantics
     assert "same element semantics" in txt
+    # (2) AXTree side preserves hierarchical nesting
     assert "preserves hierarchical nesting" in txt
-    assert "flattened into a sequential indexed list" in txt
-    assert "altering the element-level semantic content" in txt or \
-           "without altering the element-level semantic content" in txt
+    # (3) SoM side is a flattened indexed list (flat|sequential variant tolerated)
+    assert re.search(r"flattened into a (?:flat|sequential) indexed list", txt), (
+        "§2 must frame the [SOM_MARKS] side as a flattened indexed list "
+        "(structural-format axis), not an information-content reduction"
+    )
+    # (4) difference attributed to representation/format, not semantic content
+    assert "representation contract" in txt or \
+           "element-level semantic content" in txt, (
+        "§2 must attribute the axis-1 difference to the representation contract "
+        "(format + identifier), preserving the 'same semantics' framing"
+    )
 
 
 # ─────────────────── Cross-doc consistency ───────────────────────────────
