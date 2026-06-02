@@ -75,7 +75,7 @@
 
   .bars{font-family:-apple-system,sans-serif; margin-top:8px}
   .bar-row{display:grid; grid-template-columns:118px 1fr 40px; align-items:center; gap:11px; margin:8px 0; font-size:13px}
-  .bar-track{background:#eeefe9; border-radius:5px; height:16px; overflow:hidden}
+  .bar-track{background:var(--grid); border-radius:5px; height:16px; overflow:hidden}
   .bar-fill{height:100%; border-radius:5px; transform-origin:left; transform:scaleX(0); transition:transform 1s cubic-bezier(.2,.7,.2,1)}
   .in .bar-fill{transform:scaleX(1)}
 
@@ -93,9 +93,125 @@
 
   @media (max-width:760px){ .grid2{grid-template-columns:1fr} h1{font-size:29px} .lead{font-size:20px} }
   @media print{ body{background:#fff} .reveal{opacity:1; transform:none} .provenance,.cube-wrap{background:#fff} }
+
+  /* ============================================================
+     Part C — interactive enhancements (visual language unchanged)
+     ============================================================ */
+  html{color-scheme:light}
+  html[data-theme="dark"]{color-scheme:dark}
+  body{transition:background .45s ease, color .45s ease}
+
+  /* --- dark mode: same semantic hues, paper/ink inverted --- */
+  html[data-theme="dark"]{
+    --paper:#14161a; --card:#1d2026; --ink:#eceef1; --muted:#99a1ac; --line:#2b2f37; --line2:#23262d;
+    --hero:#ef6188; --hero-soft:#3a1f29; --hero-line:#7c3b52;
+    --good:#46b98d; --slate:#92a6c2; --neutral:#8b939f; --warn:#d6a13c; --grid:#262a31;
+  }
+  html[data-theme="dark"] body{background:var(--paper)}
+  html[data-theme="dark"] .card{box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  html[data-theme="dark"] .chip{background:#23262d; color:#c7ccd4}
+  html[data-theme="dark"] .sub{color:#c4cad2}
+  html[data-theme="dark"] .provenance{background:#241f12; border-color:#5a4a1f; border-left-color:var(--warn); color:#e6d7a9}
+  html[data-theme="dark"] .provenance b{color:#fbe9b6}
+  html[data-theme="dark"] .cube-wrap{background:linear-gradient(180deg,#20242b,#191c21); border-color:var(--line)}
+  html[data-theme="dark"] .takeaway{background:#1d2026}
+  html[data-theme="dark"] code{background:#23262d; color:#c7ccd4}
+  /* the failure-matrix cells carry fixed light tints → pin their text dark in both themes */
+  html[data-theme="dark"] table.heat td.num{color:#15171a}
+  html[data-theme="dark"] thead th{border-bottom-color:#3a3f48}
+  html[data-theme="dark"] tfoot td, html[data-theme="dark"] th{border-color:#3a3f48}
+
+  /* --- theme toggle --- */
+  .theme-btn{position:fixed; top:18px; right:18px; z-index:60; width:42px; height:42px; border-radius:50%;
+    border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 10px rgba(20,20,30,.10);
+    transition:background .3s, border-color .3s, transform .18s}
+  .theme-btn:hover{transform:translateY(-1px)}
+  .theme-btn svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.8}
+  .theme-btn .moon{display:none}
+  html[data-theme="dark"] .theme-btn .sun{display:none}
+  html[data-theme="dark"] .theme-btn .moon{display:block}
+
+  /* --- sticky section rail (01–05) --- */
+  .rail{position:fixed; right:22px; top:50%; transform:translateY(-50%); z-index:50;
+    display:flex; flex-direction:column; gap:3px; font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+  .rail a{display:flex; align-items:center; justify-content:flex-end; gap:11px; padding:7px 2px; text-decoration:none}
+  .rail a:hover{text-decoration:none}
+  .rail .lbl{opacity:0; max-width:0; overflow:hidden; white-space:nowrap; color:var(--muted);
+    font-size:12px; font-weight:600; transition:opacity .25s ease, max-width .25s ease}
+  .rail a:hover .lbl, .rail a.active .lbl{opacity:1; max-width:200px}
+  .rail .num{font-variant-numeric:tabular-nums; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--neutral); transition:color .25s}
+  .rail .tick{width:22px; height:2px; border-radius:2px; background:var(--line); transition:background .25s, width .25s}
+  .rail a:hover .tick, .rail a.active .tick{width:36px; background:var(--hero)}
+  .rail a.active .num{color:var(--hero)}
+  @media (max-width:1180px){ .rail{display:none} }
+
+  /* --- demo video --- */
+  .demo{margin-top:30px}
+  .demo .frame{position:relative; border:1px solid var(--line); border-radius:16px; overflow:hidden;
+    background:#0c0d10; height:0; padding-bottom:56.25%}
+  .demo video{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#0c0d10; display:none}
+  .demo.playing video{display:block}
+  .demo .poster{position:absolute; inset:0; cursor:pointer; border:0; padding:0; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(120% 120% at 78% 18%, #2a1620 0%, #14161a 58%, #0c0d10 100%)}
+  .demo.playing .poster{display:none}
+  .demo .poster .glyph{position:absolute; left:34px; bottom:30px; right:34px; display:flex; align-items:flex-end; justify-content:space-between; pointer-events:none}
+  .demo .poster .ttl{font-family:-apple-system,sans-serif; color:#f3eef0; font-size:clamp(15px,2.4vw,24px); font-weight:600; letter-spacing:-.01em; line-height:1.25; max-width:60%}
+  .demo .poster .ttl small{display:block; color:#c39aaa; font-weight:500; font-size:.62em; letter-spacing:.16em; text-transform:uppercase; margin-bottom:8px}
+  .demo .poster .dur{font-family:-apple-system,sans-serif; color:#d9c2cb; font-size:12.5px; border:1px solid #5a3a45; border-radius:999px; padding:5px 12px; white-space:nowrap}
+  .demo .play{width:76px; height:76px; border-radius:50%; background:rgba(255,255,255,.94);
+    display:flex; align-items:center; justify-content:center; box-shadow:0 8px 30px rgba(0,0,0,.4); transition:transform .2s}
+  .demo .frame:hover .play{transform:scale(1.07)}
+  .demo .play svg{width:26px; height:26px; margin-left:5px; fill:var(--hero)}
+  .demo .cap{font-family:-apple-system,sans-serif; color:var(--muted); font-size:12.5px; margin-top:11px}
+
+  /* --- mobile: tables scroll instead of squish --- */
+  @media (max-width:760px){
+    .card{overflow-x:auto; -webkit-overflow-scrolling:touch}
+    .card table{min-width:520px}
+    .card table.heat{min-width:620px}
+  }
+
+  /* --- cube interactivity --- */
+  #cubeSvg{transition:transform .55s cubic-bezier(.2,.7,.2,1); will-change:transform}
+  .cube-wrap{cursor:grab; touch-action:pan-y}
+  .cube-wrap.dragging{cursor:grabbing}
+  .cube-wrap.dragging #cubeSvg{transition:none}
+  .phantom-face{transition:fill-opacity .3s ease}
+  .cube-wrap:hover .phantom-face{fill-opacity:.85}
+  .cube-hint{font-family:-apple-system,sans-serif; text-align:center; font-size:11px; color:var(--neutral);
+    letter-spacing:.05em; padding:0 0 9px; opacity:.85}
+
+  /* --- cost scatter scroll-in --- */
+  .scatter .pt{opacity:0; transform:translateY(64px); transition:opacity .7s ease, transform .85s cubic-bezier(.2,.7,.2,1); transition-delay:calc(var(--d,0)*85ms)}
+  .reveal.in .scatter .pt{opacity:1; transform:none}
+  .scatter .headroom{opacity:0; transition:opacity .8s ease .5s}
+  .reveal.in .scatter .headroom{opacity:1}
+
+  @media (prefers-reduced-motion:reduce){
+    .scatter .pt{opacity:1; transform:none; transition:none}
+    .scatter .headroom{opacity:1; transition:none}
+    #cubeSvg{transition:none}
+    body{transition:none}
+  }
 </style>
 </head>
 <body>
+
+<button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode" title="Toggle light / dark">
+  <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><g stroke-linecap="round"><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="5.1" y1="5.1" x2="6.9" y2="6.9"/><line x1="17.1" y1="17.1" x2="18.9" y2="18.9"/><line x1="18.9" y1="5.1" x2="17.1" y2="6.9"/><line x1="6.9" y1="17.1" x2="5.1" y2="18.9"/></g></svg>
+  <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13.2A7.5 7.5 0 0 1 10.8 4 6.5 6.5 0 1 0 20 13.2Z"/></svg>
+</button>
+
+<nav class="rail" aria-label="Section navigation">
+  <a href="#s1"><span class="lbl">The phantom routing space</span><span class="num">01</span><span class="tick"></span></a>
+  <a href="#s2"><span class="lbl">Experiment table</span><span class="num">02</span><span class="tick"></span></a>
+  <a href="#s3"><span class="lbl">Cost &amp; routing</span><span class="num">03</span><span class="tick"></span></a>
+  <a href="#s4"><span class="lbl">Pooled meta-analysis</span><span class="num">04</span><span class="tick"></span></a>
+  <a href="#s5"><span class="lbl">Failure analysis</span><span class="num">05</span><span class="tick"></span></a>
+</nav>
+
 <div class="wrap">
 
   <header class="hero reveal in">
@@ -105,8 +221,8 @@
       <b>Which representation should it pay for — and can routing between them beat any single one?</b></p>
     <div class="chips">
       <span class="chip">Qwen3-VL 235B / 4B · Gemma-3-4B</span>
-      <span class="chip">~117K LOC Python</span>
-      <span class="chip">1,121 test functions</span>
+      <span class="chip">~120K LOC Python</span>
+      <span class="chip">1,141 test functions</span>
       <span class="chip">3-tier compute fleet</span>
       <span class="chip">preregistered + power-analysed</span>
     </div>
@@ -118,16 +234,33 @@
     </div>
   </header>
 
+  <!-- ============ DEMO VIDEO (unnumbered) ============ -->
+  <div class="demo reveal" id="demo">
+    <div class="frame">
+      <button class="poster" type="button" aria-label="Play demo video">
+        <span class="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="glyph">
+          <span class="ttl"><small>Live demo</small>Watch the agent route between representations</span>
+          <span class="dur">screen capture</span>
+        </span>
+      </button>
+      <video preload="none" playsinline controls poster="">
+        <source src="demo.mp4" type="video/mp4" />
+      </video>
+    </div>
+  </div>
+  <p class="cap">Demo clip of the agent solving a VisualWebArena task — click to play.</p>
+
   <!-- ============ 01 — THE CUBE ============ -->
-  <section class="reveal">
+  <section class="reveal" id="s1">
     <h2><span class="n">01</span> The phantom routing space</h2>
     <p class="lead">The six observation modes are corners of one <em>2×2×2 design cube</em>:
       text channel × prompt style × whether a screenshot is rendered. The whole <em>no-image face</em> is the
       phantom space — signal of Set-of-Marks, cost of text.</p>
 
-    <div class="cube-wrap">
+    <div class="cube-wrap" id="cubeWrap">
       <figure>
-      <svg viewBox="0 0 780 470" role="img" aria-label="Isometric 2x2x2 design cube. The front face (no rendered image) holds DOM, P-text, P-prompt and the hero P-SoM. A highlighted depth edge connects P-SoM to full SoM on the back face, labelled plus rendered image. Vision sits apart as pure pixels.">
+      <svg id="cubeSvg" viewBox="0 0 780 470" role="img" aria-label="Isometric 2x2x2 design cube. The front face (no rendered image) holds DOM, P-text, P-prompt and the hero P-SoM. A highlighted depth edge connects P-SoM to full SoM on the back face, labelled plus rendered image. Vision sits apart as pure pixels.">
         <!-- back face (image = ON), mostly undefined -->
         <polygon points="350,115 580,115 580,275 350,275" fill="none" stroke="var(--neutral)" stroke-width="1.4" stroke-dasharray="4 5" opacity="0.55"/>
         <!-- connecting edges -->
@@ -143,7 +276,7 @@
         </g>
 
         <!-- front face (image = OFF) = the phantom routing space -->
-        <polygon points="200,360 430,360 430,200 200,200" fill="var(--hero-soft)" fill-opacity="0.5" stroke="none"/>
+        <polygon class="phantom-face" points="200,360 430,360 430,200 200,200" fill="var(--hero-soft)" fill-opacity="0.5" stroke="none"/>
         <polygon class="draw" style="--len:780" points="200,360 430,360 430,200 200,200" fill="none" stroke="var(--ink)" stroke-width="2.2"/>
 
         <!-- undefined back nodes -->
@@ -186,6 +319,7 @@
         </g>
       </svg>
       </figure>
+      <div class="cube-hint">drag to rotate · hover to highlight the no-image face</div>
     </div>
     <div class="takeaway">
       <b>P-SoM = SoM with the screenshot removed.</b> Same marks, same prompt — it just drops the rendered image,
@@ -195,7 +329,7 @@
   </section>
 
   <!-- ============ 02 — EXPERIMENT TABLE ============ -->
-  <section class="reveal">
+  <section class="reveal" id="s2">
     <h2><span class="n">02</span> Experiment table — six modes, head to head</h2>
     <p class="lead">No single phantom mode wins on raw success. P-SoM is in fact <em>tied for lowest</em> alone —
       its value only appears once modes are combined.</p>
@@ -221,16 +355,18 @@
   </section>
 
   <!-- ============ 03 — COST CURVE ============ -->
-  <section class="reveal">
+  <section class="reveal" id="s3">
     <h2><span class="n">03</span> Cost is a floor — routing is the lever</h2>
     <p class="lead">All six modes cluster in a <em>$0.065–$0.072</em> band, yet every single one sits far below the
       routed ceiling. <em>Cost doesn't separate the modes; complementarity does.</em></p>
     <div class="card">
       <figure>
-      <svg viewBox="0 0 720 450" role="img" aria-label="Success rate versus API cost per episode for six modes. All cluster near 15-27 percent within a narrow cost band, while the routed oracle ceiling at 43.3 percent sits far above, leaving a shaded routing-headroom band.">
+      <svg class="scatter" viewBox="0 0 720 450" role="img" aria-label="Success rate versus API cost per episode for six modes. All cluster near 15-27 percent within a narrow cost band, while the routed oracle ceiling at 43.3 percent sits far above, leaving a shaded routing-headroom band.">
         <!-- headroom band: best single (27.2%) -> oracle (43.3%) -->
+        <g class="headroom">
         <rect x="70" y="62.8" width="620" height="121.7" fill="var(--hero-soft)" fill-opacity="0.6"/>
         <text x="80" y="80" font-family="-apple-system,sans-serif" font-size="12" fill="var(--hero)" font-weight="700">routing headroom · +16.1 pp</text>
+        </g>
         <!-- axes -->
         <line x1="70" y1="40" x2="70" y2="390" stroke="#cfd0c9" stroke-width="1.2"/>
         <line x1="70" y1="390" x2="690" y2="390" stroke="#cfd0c9" stroke-width="1.2"/>
@@ -254,12 +390,12 @@
         <text x="686" y="113" font-family="-apple-system,sans-serif" font-size="10.5" fill="var(--neutral)" text-anchor="end">3-mode oracle · 38.4%</text>
         <!-- points (y = 390 - SR/45*340) -->
         <g font-family="-apple-system,sans-serif">
-          <circle cx="214.7" cy="201.1" r="6.5" fill="var(--good)"/><text x="214.7" y="188" font-size="12" fill="var(--good)" text-anchor="middle" font-weight="600">Vision 25.0%</text>
-          <circle cx="607.3" cy="184.5" r="6.5" fill="var(--good)"/><text x="607.3" y="171" font-size="12" fill="var(--good)" text-anchor="middle" font-weight="600">SoM 27.2%</text>
-          <circle cx="405.8" cy="241.9" r="6" fill="var(--slate)"/><text x="405.8" y="258" font-size="11.5" fill="var(--slate)" text-anchor="middle">P-prompt 19.6%</text>
-          <circle cx="462.7" cy="258.5" r="6" fill="#495057"/><text x="478" y="252" font-size="11.5" fill="#495057" text-anchor="start">DOM 17.4%</text>
-          <circle cx="442" cy="272.1" r="6" fill="var(--neutral)"/><text x="372" y="288" font-size="11.5" fill="var(--neutral)" text-anchor="middle">P-text 15.6%</text>
-          <circle cx="591.8" cy="272.1" r="8.5" fill="var(--hero)" stroke="#fff" stroke-width="1.6"/><text x="591.8" y="292" font-size="12.5" fill="var(--hero)" text-anchor="middle" font-weight="800">P-SoM 15.6%</text>
+          <g class="pt" style="--d:0"><circle cx="214.7" cy="201.1" r="6.5" fill="var(--good)"/><text x="214.7" y="188" font-size="12" fill="var(--good)" text-anchor="middle" font-weight="600">Vision 25.0%</text></g>
+          <g class="pt" style="--d:1"><circle cx="607.3" cy="184.5" r="6.5" fill="var(--good)"/><text x="607.3" y="171" font-size="12" fill="var(--good)" text-anchor="middle" font-weight="600">SoM 27.2%</text></g>
+          <g class="pt" style="--d:2"><circle cx="405.8" cy="241.9" r="6" fill="var(--slate)"/><text x="405.8" y="258" font-size="11.5" fill="var(--slate)" text-anchor="middle">P-prompt 19.6%</text></g>
+          <g class="pt" style="--d:3"><circle cx="462.7" cy="258.5" r="6" fill="var(--ink)"/><text x="478" y="252" font-size="11.5" fill="var(--ink)" text-anchor="start">DOM 17.4%</text></g>
+          <g class="pt" style="--d:4"><circle cx="442" cy="272.1" r="6" fill="var(--neutral)"/><text x="372" y="288" font-size="11.5" fill="var(--neutral)" text-anchor="middle">P-text 15.6%</text></g>
+          <g class="pt" style="--d:5"><circle cx="591.8" cy="272.1" r="8.5" fill="var(--hero)" stroke="var(--card)" stroke-width="1.6"/><text x="591.8" y="292" font-size="12.5" fill="var(--hero)" text-anchor="middle" font-weight="800">P-SoM 15.6%</text></g>
         </g>
       </svg>
       </figure>
@@ -273,7 +409,7 @@
   </section>
 
   <!-- ============ 04 — POOLED META ============ -->
-  <section class="reveal">
+  <section class="reveal" id="s4">
     <h2><span class="n">04</span> Does adding a phantom arm help? — pooled, k=3 archive</h2>
     <p class="lead">Fixed-effect meta-analysis of the <em>drop-one oracle lift</em>: how much each arm raises the
       routed ceiling when added to the DOM / SoM / Vision base.</p>
@@ -299,7 +435,7 @@
   </section>
 
   <!-- ============ 05 — FAILURE ANALYSIS ============ -->
-  <section class="reveal">
+  <section class="reveal" id="s5">
     <h2><span class="n">05</span> Failure analysis — where routing value lives</h2>
     <p class="lead">Of 224 tasks, only <em>88 are "routable."</em> That partial-overlap set is the whole opportunity —
       and a deterministic taxonomy shows <em>why</em> modes differ.</p>
@@ -331,7 +467,7 @@
     <div class="card" style="margin-top:18px">
       <div class="sans" style="font-weight:700; font-size:14px; margin-bottom:10px">Failure-type × mode matrix
         <span style="font-weight:400; color:var(--muted); font-size:12px">— counts; darker = more failures · O(modes), not O(modes²)</span></div>
-      <table>
+      <table class="heat">
         <thead><tr><th>Failure type</th><th>DOM</th><th>SoM</th><th>Vision</th><th>P-text</th><th>P-SoM</th><th>P-prompt</th></tr></thead>
         <tbody>
           <tr><td>SEARCH-NAV <small class="sans" style="color:#9aa0a0">had signal, never navigated</small></td>
@@ -356,7 +492,7 @@
       superiority test, H₀: θ ≤ +1.0 pp; RE / HKSJ as sensitivity); a selection-bias-controlled 2×2 separating
       <em>format</em> from <em>prompt style</em>; race-safe distributed experiment orchestration across three compute
       tiers (aarch64 dev box · dedicated A100 VM self-hosting the benchmark · SGE HPC) with a 6-layer contamination
-      watchdog; schema-versioned JSONL logging; 1,121 test functions guarding the analysis pipeline.</p>
+      watchdog; schema-versioned JSONL logging; 1,141 test functions guarding the analysis pipeline.</p>
     <p style="margin-top:10px"><b>Stack:</b> Python · PyTorch · HF transformers / accelerate · bitsandbytes (bf16 local
       inference) · OpenAI-style tool-calling over an API proxy · NumPy / pandas / SciPy · Playwright browser env · pytest · SGE/qsub.</p>
     <p style="margin-top:14px">
@@ -364,7 +500,8 @@
       <code>docs/analysis/cross_sites/cost_per_mode.json</code> ·
       <code>docs/analysis/vwa_classifieds/B0_classifieds_6mode_failure_taxonomy.md</code> ·
       <code>docs/analysis/cross_sites/power_analysis.md</code>
-      &nbsp;|&nbsp; Undergraduate thesis · author: &lt;your name&gt; · &lt;email / LinkedIn&gt;
+      &nbsp;|&nbsp; Undergraduate thesis · <b>Jiaming Wei</b> · <a href="mailto:ucab352@ucl.ac.uk">ucab352@ucl.ac.uk</a> · <a href="https://linkedin.com/in/jiaming-wei-810ab938b">LinkedIn</a>
+      &nbsp;|&nbsp; <a href="https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents">Code on GitHub</a>
       &nbsp;|&nbsp; Built on <a href="https://github.com/web-arena-x/visualwebarena">VisualWebArena</a>.
     </p>
   </footer>
@@ -381,6 +518,82 @@
     }, {threshold:0.12, rootMargin:'0px 0px -8% 0px'});
     els.forEach(function(e){ io.observe(e); });
   })();
+
+  /* ---- theme toggle (persisted; honours OS preference on first visit) ---- */
+  (function(){
+    var root = document.documentElement;
+    var saved = null;
+    try { saved = localStorage.getItem('pf-theme'); } catch(e){}
+    var init = saved || (window.matchMedia && matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+    root.setAttribute('data-theme', init);
+    var btn = document.getElementById('themeBtn');
+    if (btn) btn.addEventListener('click', function(){
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('pf-theme', next); } catch(e){}
+    });
+  })();
+
+  /* ---- sticky rail: highlight the section in view ---- */
+  (function(){
+    var links = [].slice.call(document.querySelectorAll('.rail a'));
+    if (!links.length || !('IntersectionObserver' in window)) return;
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          if (map[en.target.id]) map[en.target.id].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px'});
+    ['s1','s2','s3','s4','s5'].forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+
+  /* ---- cube: drag to rotate + hover parallax (pseudo-3D tilt) ---- */
+  (function(){
+    var wrap = document.getElementById('cubeWrap'), svg = document.getElementById('cubeSvg');
+    if (!wrap || !svg) return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    var rx = 0, ry = 0, down = false, sx = 0, sy = 0, brx = 0, bry = 0;
+    function apply(){ svg.style.transform = 'perspective(1100px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)'; }
+    wrap.addEventListener('pointerdown', function(e){
+      down = true; sx = e.clientX; sy = e.clientY; brx = rx; bry = ry;
+      wrap.classList.add('dragging');
+      try { wrap.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    wrap.addEventListener('pointermove', function(e){
+      if (down){
+        ry = Math.max(-22, Math.min(22, bry + (e.clientX - sx) / 9));
+        rx = Math.max(-16, Math.min(16, brx - (e.clientY - sy) / 11));
+        apply();
+      } else {
+        var r = wrap.getBoundingClientRect();
+        ry = ((e.clientX - r.left) / r.width  - 0.5) * 11;
+        rx = ((e.clientY - r.top)  / r.height - 0.5) * -7;
+        apply();
+      }
+    });
+    function release(){ if (down){ down = false; wrap.classList.remove('dragging'); } }
+    wrap.addEventListener('pointerup', release);
+    wrap.addEventListener('pointercancel', release);
+    wrap.addEventListener('pointerleave', function(){ if (!down){ rx = 0; ry = 0; apply(); } });
+  })();
+
+  /* ---- demo video: click poster to play (no-ops gracefully until mp4 is wired) ---- */
+  (function(){
+    var d = document.getElementById('demo'); if (!d) return;
+    var v = d.querySelector('video'), poster = d.querySelector('.poster');
+    if (!v || !poster) return;
+    v.addEventListener('error', function(){ d.classList.remove('playing'); });
+    poster.addEventListener('click', function(){
+      d.classList.add('playing');
+      var p = v.play();
+      if (p && p.catch) p.catch(function(){ d.classList.remove('playing'); });
+    });
+  })();
+
 </script>
 </body>
 </html>
