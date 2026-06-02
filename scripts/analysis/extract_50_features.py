@@ -89,6 +89,8 @@ def collect_per_task_outcomes(run_dirs: list[Path], site: str) -> dict[int, dict
     Legacy phantom_dom → phantom_text normalization (CLAUDE.md note).
     """
     matrix: dict[int, dict[str, bool]] = {}
+    _n_corrupt = 0
+    _n_missing_success = 0
     for run_dir in run_dirs:
         for cond_dir in run_dir.iterdir():
             if not cond_dir.is_dir():
@@ -112,10 +114,28 @@ def collect_per_task_outcomes(run_dirs: list[Path], site: str) -> dict[int, dict
                 try:
                     rec = json.loads(summary_f.read_text())
                 except (json.JSONDecodeError, OSError):
+                    _n_corrupt += 1
                     continue
                 tid = int(rec["task_id"])
-                success = bool(rec.get("success", False))
+                # P1-9 (S3 cross-AI, 2026-06-02): a MISSING success field must NOT
+                # be coerced to False — that fabricates a failure outcome and
+                # corrupts the oracle label (missing field = no data, not a failed
+                # task). success is EpisodeSummaryV2-required (+ v2.py default), so
+                # its absence signals a pre-migration / corrupt summary; skip +
+                # count loudly rather than silently poison the label.
+                if "success" not in rec:
+                    _n_missing_success += 1
+                    continue
+                success = bool(rec["success"])
                 matrix.setdefault(tid, {})[mode] = success
+    if _n_corrupt or _n_missing_success:
+        print(
+            f"[extract_50_features] collect_per_task_outcomes({site}): skipped "
+            f"{_n_corrupt} corrupt + {_n_missing_success} missing-'success' "
+            f"summary file(s) (NOT coerced to failure — would corrupt oracle "
+            f"label). Investigate if nonzero on paper-grade data.",
+            file=sys.stderr,
+        )
     return matrix
 
 
