@@ -526,9 +526,14 @@ case "$MODE" in
           fi
           _cls_pid=$(cat "$_cls_pid_file")
           # P0-2-B* sentinel-based wait (parity baseline orchestrator).
-          log "Waiting for Pass-2 cls router chain pid=${_cls_pid} (max 8h, smaller than baseline 24h since router cells are 1 condition each)..."
+          # S3 cross-AI P0-4-B* (2026-06-02): pre-fix cap was 8h (28800s) on the
+          # premise "router cells are 1 condition each" — WRONG. The cls router
+          # chain is 3 model conditions (B0+B1+B2), ≈20h per L46 estimate. An 8h
+          # cap would fire `fail` on a normally-running chain → halt red launch.
+          # Aligned to 24h (86400s), matching the baseline orchestrator ceiling.
+          log "Waiting for Pass-2 cls router chain pid=${_cls_pid} (max 24h, aligned with baseline orchestrator: cls router chain = 3 model conditions B0+B1+B2 ≈ 20h per L46, NOT 1 condition)..."
           _wait_elapsed=0
-          while kill -0 "$_cls_pid" 2>/dev/null && (( _wait_elapsed < 28800 )); do
+          while kill -0 "$_cls_pid" 2>/dev/null && (( _wait_elapsed < 86400 )); do
             sleep 60
             _wait_elapsed=$((_wait_elapsed + 60))
             if (( _wait_elapsed % 1800 == 0 )); then
@@ -536,7 +541,7 @@ case "$MODE" in
             fi
           done
           if kill -0 "$_cls_pid" 2>/dev/null; then
-            fail "Pass-2 cls chain pid=${_cls_pid} alive after 8h max-wait — investigate manually"
+            fail "Pass-2 cls chain pid=${_cls_pid} alive after 24h max-wait — investigate manually"
           fi
           sleep 2
           _cls_done_sentinel="logs/queue_phase1_router_cls.latest.done"
