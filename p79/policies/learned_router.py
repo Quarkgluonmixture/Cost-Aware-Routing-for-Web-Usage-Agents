@@ -376,8 +376,24 @@ def predict_mode_fold_aware(
 
     # Resolve τ for this fold
     thresholds_per_fold = cell_cache["cell_meta"].get("thresholds_per_fold", {})
-    tau = thresholds_per_fold.get(str(fold_k), thresholds_per_fold.get(fold_k, 0.5))
-    diag["tau_used"] = float(tau)
+    # B-1640 hard-fail (S3 cross-AI P0-3-B*, 2026-06-02): a MISSING per-fold τ
+    # means Stage 3 LR training did not emit a threshold for this fold = artifact
+    # corruption, NOT a legitimate signal-strength fallback. Pre-fix code silently
+    # defaulted to τ=0.5 here, contradicting load_cell_meta's own B-1640 contract
+    # ("no silent fallback to default τ"). `is None` check (not falsy) so a
+    # legitimately-trained τ=0.0 stays valid.
+    tau_raw = thresholds_per_fold.get(str(fold_k), thresholds_per_fold.get(fold_k))
+    if tau_raw is None:
+        msg = (
+            f"[learned_router] missing τ for fold_k={fold_k} in cell_meta "
+            f"thresholds_per_fold (cell={cell_id}; available keys="
+            f"{sorted(map(str, thresholds_per_fold))}). Hard-fail per B-1640 "
+            f"(no silent fallback to default τ=0.5)."
+        )
+        logger.error(msg)
+        raise LearnedRouterArtifactError(msg)
+    tau = float(tau_raw)
+    diag["tau_used"] = tau
 
     # Predict + cost-weighted decision rule (B-998)
     # B-1640: pipeline.predict_proba exception is infrastructure-level (numpy

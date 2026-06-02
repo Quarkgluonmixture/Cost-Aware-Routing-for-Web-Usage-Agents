@@ -221,6 +221,87 @@ def test_predict_mode_fold_aware_caches_artifacts():
         assert cache["test_cell"]["fold_assignment"] is first_fa
 
 
+def test_predict_mode_fold_aware_raises_when_tau_missing():
+    """S3 cross-AI P0-3-B* (2026-06-02): a per-fold τ absent from cell_meta
+    thresholds_per_fold is artifact corruption (Stage 3 LR training did not emit
+    a threshold for this fold), NOT a legitimate signal-strength fallback.
+    Pre-fix code silently defaulted to τ=0.5 here, contradicting load_cell_meta's
+    own B-1640 'no silent fallback to default τ' contract. Must hard-fail loud.
+
+    Cache is pre-populated with mock-but-valid fold artifacts so the predictor
+    reaches the τ-resolution step (which precedes predict_proba); only the
+    cell_meta thresholds_per_fold is corrupted (missing fold 2)."""
+    class MockVec:
+        def transform(self, texts):
+            class Sparse:
+                def toarray(self):
+                    return np.zeros((1, 30))  # 30 TF-IDF cols
+            return Sparse()
+
+    class MockPipe:
+        classes_ = np.array(["dom", "som"])
+        def predict_proba(self, x):  # not reached — τ raises first
+            return np.array([[0.7, 0.3]])
+
+    mask = np.zeros(50, dtype=bool)  # 30 tfidf + 5 numeric + 15 binary
+    mask[:18] = True
+    cache = {
+        "test_cell": {
+            "fold_assignment": {7: 2},
+            # thresholds_per_fold deliberately MISSING fold 2 (has 0/1/3/4 only)
+            "cell_meta": {"thresholds_per_fold": {"0": 0.4, "1": 0.4, "3": 0.4, "4": 0.4}},
+            "vectorizers": {2: MockVec()},
+            "selected_masks": {2: mask},
+            "pipelines": {2: MockPipe()},
+        }
+    }
+    rf = extract_raw_features("test", False, 0, 0, 0, 0)
+    with pytest.raises(LearnedRouterArtifactError, match="missing τ"):
+        predict_mode_fold_aware(
+            cell_id="test_cell",
+            task_id=7,
+            artifacts_dir="/nonexistent",  # not read — cache pre-populated
+            cache=cache,
+            raw_features=rf,
+        )
+
+
+def test_predict_mode_fold_aware_accepts_tau_zero():
+    """Guard the `is None` (not falsy) check in the P0-3-B fix: a legitimately
+    trained τ=0.0 must be accepted, not mistaken for 'missing'. Routes to argmax
+    since max_prob (0.7) > τ (0.0)."""
+    class MockVec:
+        def transform(self, texts):
+            class Sparse:
+                def toarray(self):
+                    return np.zeros((1, 30))
+            return Sparse()
+
+    class MockPipe:
+        classes_ = np.array(["dom", "som"])
+        def predict_proba(self, x):
+            return np.array([[0.7, 0.3]])
+
+    mask = np.zeros(50, dtype=bool)
+    mask[:18] = True
+    cache = {
+        "test_cell": {
+            "fold_assignment": {7: 2},
+            "cell_meta": {"thresholds_per_fold": {"2": 0.0}},  # τ=0.0 is legit
+            "vectorizers": {2: MockVec()},
+            "selected_masks": {2: mask},
+            "pipelines": {2: MockPipe()},
+        }
+    }
+    rf = extract_raw_features("test", False, 0, 0, 0, 0)
+    mode, diag = predict_mode_fold_aware(
+        cell_id="test_cell", task_id=7, artifacts_dir="/nonexistent",
+        cache=cache, raw_features=rf,
+    )
+    assert diag["tau_used"] == 0.0
+    assert mode == "dom"  # argmax (prob 0.7) since max_prob > τ=0.0
+
+
 # ── Invariant 6: INTENT_REGEX has 14 banks ──────────────────────────────
 
 
