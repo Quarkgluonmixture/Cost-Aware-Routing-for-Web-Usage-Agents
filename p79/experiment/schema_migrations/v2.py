@@ -182,6 +182,16 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # step→episode modal rollup.
     "cost_unit_basis": None,
     "cost_total_mixed_unit_warn": None,
+    # B-1868 (PROTOCOL_NOTE_01, 2026-05-27): infra-covariate marker list. Default
+    # [] = "no infra contamination" (matches dataclass `default_factory=list`).
+    # 4-place-sync completion — a1c5d6c added this field to types.py (dataclass
+    # L623 + PAPER_GRADE_EPISODE_OPTIONAL_KEYS L966 + _EPISODE_FIELD_TYPES L1080)
+    # but missed this defaults dict, so every dict-construction path (legacy-read
+    # fill_defaults, test fixtures) lacked the key and tripped the write-boundary
+    # presence check → test_schema_4place_sync + 3 cold-start fixtures RED on base
+    # since 2026-05-27. Live runs were unaffected (dataclass default supplies it).
+    # Non-exclusionary covariate, NOT estimand-adjacent. S6 test-health audit 2026-06-02.
+    "infra_covariates": [],
 }
 
 
