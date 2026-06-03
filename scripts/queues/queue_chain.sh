@@ -140,11 +140,19 @@ wait_for_runner_done() {
   #     (between safety levels) so condition-level kill prevents runaway
   #     deadlocks, not normal slow B0 runs. Real deadlocks caught by
   #     watchdog idle-alert (30 min), not by tight wallclock cap.
+  # 2026-06-03 (user decision, B1 R11094 empirical): B1/B2 default → 0 = unlimited.
+  # Weak 4B/Gemma models are max_steps-heavy — low SR (B1 dom cls = 8.7%) means
+  # most tasks burn all 30 steps before failing, so per-condition wallclock is
+  # NOT predictable from per-step latency. The old 4h cap mis-killed a perfectly
+  # healthy R11094 (46/224 done at 4h, ~20h projected, 0 parse errors, advancing
+  # every 30 min). Cap is now opt-in for B1/B2 (set MAX_CONDITION_HOURS=N>0);
+  # real deadlocks still caught by watchdog idle-alert (20min ntfy) + the
+  # watchdog-liveness check above. B0 keeps 16h (predictable 142s/task → 9.2h).
   local _baseline_hours
   if [[ "${pattern}" =~ (^|_)B0_ ]]; then
     _baseline_hours="${MAX_CONDITION_HOURS_B0:-16}"
   else
-    _baseline_hours="${MAX_CONDITION_HOURS:-4}"
+    _baseline_hours="${MAX_CONDITION_HOURS:-0}"
   fi
   local max_condition_secs=$(( _baseline_hours * 3600 ))
   while pgrep -f "run_experiment.py.*${pattern}" > /dev/null; do
@@ -163,7 +171,10 @@ wait_for_runner_done() {
       exit 1
     fi
     # B-1665 P1-5: max wallclock guard (baseline-aware per P1-16-AC).
-    if (( elapsed >= max_condition_secs )); then
+    # 2026-06-03: max_condition_secs==0 ⇒ cap disabled (unlimited); short-circuit
+    # skips the kill. B1/B2 default to 0 (see _baseline_hours above). Real
+    # deadlocks still caught by watchdog idle-alert + liveness check above.
+    if (( max_condition_secs > 0 && elapsed >= max_condition_secs )); then
       log "  [FATAL] ${label}: max condition wallclock exceeded (${elapsed}s ≥ ${max_condition_secs}s = ${_baseline_hours}h, baseline-aware per P1-16-AC)"
       log "  paper-grade fail-fast: condition stuck longer than budget — likely busy-wait loop / proxy hang / cold cache"
       log "  killing runner PGID + watchdog; condition will be marked incomplete by sentinel below"
