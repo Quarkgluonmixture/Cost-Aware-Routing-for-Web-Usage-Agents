@@ -947,7 +947,7 @@ assert_quarantine_gate() {
     echo "[gate_G8]   2. Classify via: ${py_bin} ${registry_cli} classify --site=${site} --task-id=<N> --as=<class> --rationale=<...>" >&2
     echo "[gate_G8]   3. Then re-run preflight to confirm gate clears." >&2
     if command -v curl > /dev/null; then
-      curl -L -d "Gate G8 HALT: site=${site} has unclassified quarantine events; Fire-5 BLOCKED until investigation (Wave 4 M7) completes." \
+      curl -L -d "Gate G8 HALT: site=${site} has unclassified quarantine events; fire BLOCKED until investigation (Wave 4 M7) completes." \
         "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
     fi
     return "${_rc}"
