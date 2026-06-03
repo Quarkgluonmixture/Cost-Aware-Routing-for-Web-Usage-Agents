@@ -135,3 +135,9 @@ docs/analysis/cross_sites/sr_per_mode.md
 # spike/ scratch: the .py/.sh probes stay tracked (B0 grounding/parity research);
 # .txt prompt/output dumps are ephemeral replay artifacts.
 scripts/spike/*.txt
+
+# Condenser/Harvester infra spec (VM YAML, namespace ResourceQuota, resources.zip) —
+# private infra metadata (internal IP / SSH pubkey / owner account / bastion topology).
+# Local ops reference only (docs/reference/condenser/README.md); NOT for the public
+# job-seeking repo. Backed up via DGX→quark home rsync, so not lost by being untracked.
+docs/reference/condenser/
