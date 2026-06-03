@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-05-28
+updated: 2026-06-03
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,8 @@ updated: 2026-05-28
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> ⚠️ **2026-06-10 (Wed) ARC Rancher 升级 — Condenser/A100 可能中断, fire 或需 re-launch** (ARC email 2026-06-03)。Condenser = fire 跑的 A100; ARC 原文 "do not anticipate extended downtime, but risk access to Condenser interrupted during upgrade"。**风险分级**: (a) 仅 access 中断 + VM 不 reboot → fire 存活, 无需动作; (b) Rancher 触发 KubeVirt VM reboot → fire **死** (`fire6_monitor` = **alert-only 不自动重启** [L7/L99 仅 ntfy]; `@reboot` cron 只起 homepage 不起 fire; 无 systemd unit) → **completed conditions SAFE** (manifest-bound on /mnt/scratch, fstab LABEL=scratch reboot 自动挂存活) + 损失 ≤1 in-progress mode 的 partial 进度 (~20h; RESUME_MISSING 仅在 **chain 层** skip 已完 mode [EXACT `eps==scored`], 对被中断 mode 整体 **FORCE_NEW=1 fresh 重跑 from ep0**, **绝不 mode 内续跑** — within-mode 续跑会混两套 reset 态 = B-304 trajectory-discontinuity 非 paper-grade; B-756 leaf fatal-guard 兜底) → **手动 re-launch** = `RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0 bash scripts/queues/queue_phase1_paper_grade.sh launch` (同 6/3; 跳所有已完, 可能需先 archive 被中断 condition 的 partial dir 同 R23971)。**信号** = fire6_monitor ntfy "orchestrator DOWN (up→down)" ≤30min。**行动**: 6/10 当天/次晨 `make ntfy` + 跑 ② 验 fire 死活, 死则 re-launch。⚠️ **不要**为此加 fire 自动重启 (monitor 刻意 alert-only: 自动 relaunch transient 误触发 → 同-site double-fire → cross-contam)。⚠️ KubeVirt #17417: ARC upgrade 若 hard-restart VM 可能踩 GPU-passthrough volume 坑 (我方主动 reboot 才需 detach p-79; 此次 ARC 主导)。
 
 > 🔥 **2026-06-03 (later, wallclock saga): condition+chain 两层 wallclock cap → unlimited, fire 重启** ⭐ 最新。上午 fire(R11094 B1 dom cls)跑 4h 撞 **condition 级 4h wallclock**(B-1665 baseline-aware: B1/B2 4h / B0 16h)被 abort → 整 cls chain DOWN [1/12]。根因 = 弱 4B 模型 SR 低(8.7%)→ max_steps-heavy → 单 condition ~20h ≫ 4h(**弱模型反而比 B0 慢**: per-step latency 分档漏了 per-task 步数维度)。**两层 cap 都改 unlimited**: condition `queue_chain.sh` B1/B2 4h→0(commit `71b07ae`) + chain orchestrator cls-wait 24h→0 `MAX_CLS_WAIT_HOURS`(commit `013175a`); B0 保留 16h; 兜底 watchdog idle-alert(20min)+ liveness 不变。清 R11094(46ep)+R13717(0ep)→ `_archive_wallclock_killed_R11094_*`(forensic-safe mv)。重启 `RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0`: Gate G8 clean → log 实证 "Waiting...(max 0h; 0=unlimited)" → B1 dom cls 起步确认(monitor step JSONL)。**代码 A100 scp 同步 + 全 commit 已 push `origin/diag-discover-then-freeze`**(`71b07ae` condition + `013175a` chain-wait + `6cabd19` Fire-5 cosmetic + `430b302` docs)。**fire 死活/进度跑 ①②拿 live**(别信本行, 秒级 stale)。全链 → 笔记 §314。
 > **⏭️ forward**: cls chain 12 cells(B1×6+B2×6, 每 ~10-20h)→ red 18, **无 cap 跑到自然完成**, ETA **~1.5-2 周**(B1/B2 弱模型慢)。完后才轮到 Pass-2 router(见下方 6/2 条目: prose 已定, launch 前需先在 landed Pass-1 数据跑 Stage 1→3 否则 P0-2 gate fail-closed 拦)。**收尾 ✅ (session 2026-06-03)**: wallclock 两层 fix + Fire-5 cosmetic + §314 chronicle 全 push `origin/diag-discover-then-freeze`。剩 `retry_b1_single_task.sh` L69-70 syntax error(可选, 非关键路径——retry 是手动诊断工具非 fire 依赖)。
