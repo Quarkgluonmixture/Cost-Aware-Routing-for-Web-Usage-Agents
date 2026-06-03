@@ -901,18 +901,26 @@ case "$MODE" in
           # was this exact pattern. Post-fix: poll-loop preserved as runaway
           # watchdog (24h max), then read done sentinel for actual rc; non-zero
           # → fail (NOT launch red).
-          log "Waiting for cls chain pid=${_cls_pid} to complete (max 24h)..."
+          # 2026-06-03 (user decision; same rationale as queue_chain.sh B1/B2 wallclock):
+          # B1/B2 cls chain = 12 conditions × ~10-20h each = 120-240h, far beyond the
+          # old 24h runaway-watchdog cap (P0-4 sized it for a single ~20h chain). With
+          # MAX_CLS_WAIT_HOURS=0 (default) the orchestrator waits until the cls chain
+          # exits on its own — real chain hangs are caught by the condition-level
+          # watchdog idle-alert + liveness check inside queue_chain.sh, NOT by this
+          # poll cap. Set MAX_CLS_WAIT_HOURS=N>0 to restore a hard cap.
+          _max_cls_wait_secs=$(( ${MAX_CLS_WAIT_HOURS:-0} * 3600 ))
+          log "Waiting for cls chain pid=${_cls_pid} to complete (max ${MAX_CLS_WAIT_HOURS:-0}h; 0=unlimited)..."
           _wait_elapsed=0
-          while kill -0 "$_cls_pid" 2>/dev/null && (( _wait_elapsed < 86400 )); do
+          while kill -0 "$_cls_pid" 2>/dev/null; do
+            if (( _max_cls_wait_secs > 0 && _wait_elapsed >= _max_cls_wait_secs )); then
+              fail "cls chain pid=${_cls_pid} alive after ${MAX_CLS_WAIT_HOURS}h max-wait — investigate manually"
+            fi
             sleep 60
             _wait_elapsed=$((_wait_elapsed + 60))
             if (( _wait_elapsed % 1800 == 0 )); then
               log "  cls chain pid=${_cls_pid} still running (${_wait_elapsed}s elapsed)"
             fi
           done
-          if kill -0 "$_cls_pid" 2>/dev/null; then
-            fail "cls chain pid=${_cls_pid} alive after 24h max-wait — investigate manually"
-          fi
           # P0-2-B* sentinel read: launch_chain wraps queue_chain.sh in a
           # subshell that writes `rc=N ts=...` to `.latest.done` BEFORE exit.
           # Brief sleep tolerates subshell-exit/sentinel-write race window.
