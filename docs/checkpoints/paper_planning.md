@@ -612,6 +612,12 @@ Site × axis: cls visual-bound → image helping dominate; red text-dom → harm
 - **Early-exit halting** (*when to stop*, within one episode along time): **Runaway/Early-Exit** (Lu et al., EMNLP 2025 Findings, arXiv:2505.17616 — embodied domain; 含 strong-agent-takeover cascade 雏形)
 - **Representation routing** (*which input representation*, within a fixed model): **← P79 占此轴** (phantom routing space; route across DOM/SoM/phantom obs-mode on one fixed agent)
 
+> **2026-06-04 cross-check 收口** (4 deep-research passes + codex gpt-5.5 zero-preset 独立交叉,全 arXiv id 经 WebFetch/codex 双查真实;原始材料 `docs/literature/routing/`,过程纪律 memory [[feedback-zero-preset-cross-ai-verification]])：三轴 taxonomy 细化 ——
+> - **routing 谱系实为 ~8 轴**: model · cascade · early-exit/halting · speculative · token/visual-token pruning · prompt/context compression · **modality (vision↔text)** · representation。**§6 / dashboard 用 4-轴精简**(粒度递降): model → halting → **modality**(WebVoyager/SeeAct/VistaGUI/AMuFC,industry-heavy) → **representation**(P79)。modality(粗:要不要看图)≠ representation(细:同模态内文本怎么排,DOM↔SoM,per-task);P79 phantom cube = image-presence × text-format 联合 per-task router。
+> - **④ representation gap (4 DR + codex 独立收敛)**: **无 peer-reviewed systematic per-task input-representation routing on a fixed web agent**。Closest = **Read-More-Think-More**(Enomoto, arXiv:2604.01535, 2026 — optimal repr 取决 model capability + thinking budget,但只给 offline 静态 guideline,**arXiv-only 不算 peer-reviewed**,= P79 完美 motivation) + **SeeAct**(Zheng, arXiv:2401.01614, ICML 2024 — 同 GPT-4V 异 grounding 受控对照,明说 "set-of-mark prompting not effective for web agents",= 同模型异表示先驱 + 可 refine 靶子)。within-rep pruning: FocusAgent(2510.03204)· **Prune4Web**(2511.21398, AAAI 2026)· A11y-Compressor(2605.00551)。VWA(2401.13649, ACL 2024)= peer-reviewed benchmark static ablation。
+> - **V-GEMS**(arXiv:2603.02626 "See and Remember")= memory + visual-grounding agent,**NOT representation router**(Gemini-compass DR 误标为 "binary DOM↔vision router";WebFetch + codex 双否)→ 非 P79 competitor。教训:DR 有 id-fabrication + characterization-error 两类错,核 id 存在不够、必核方法。
+> - **novelty 支点(防弹)**: 不主张"没人碰 representation"(VWA/SeeAct 碰过 = static ablation,可被驳),只主张"**没人做 per-task runtime representation router**"(五源锁死)。dashboard Part B 已落地 4 轴 + ④ 诚实写法。
+
 CSCR 的 perplexity-fingerprint (black-box API) 思路对 B0 proxy 的 routing-signal 约束有 method 相关性。相邻 §4 signal: **Logit Sharpness / PSS** (Tao et al. 2025 arXiv:2506.15425, `tao2025logitsharpness`) **不纳入主 signal** — post-hoc 不能当 pre-execution router feature + B0 top-2 截断不可用 (B1/B2 only) + 坐标回归≠task-level binary 形态不匹配; §4 discussion 一句带过即可。
 
 ---
@@ -2032,7 +2038,7 @@ Advisor decision context? → `_status/issues/issue_advisor_sync_*.md` + paper_p
 |  | (i) Bug fix | (ii) Affordance synthesis | (iii) Channel addition |
 |---|---|---|---|
 | **L1 Server-side** | docker / config 修 (~6 § done)<br/>**Industry**: Atlas StoragePartition isolation | agent-readable web standards (0 done, paper 2 future)<br/>**Industry**: **NLWeb** (Microsoft, May 2025, R.V. Guha — Schema.org → agent JSON channel) ⭐ | agent-specific server channel (0 done, paper 2 / M5 EIP brainstorm)<br/>**Industry**: NLWeb fits here too; A2A protocol (Google, Apr 2025) for agent-to-agent |
-| **L2 Agent-pipeline** | runner / wrapper 修 (~28 § done) | script-level affordance overlay (~9 § done, **SoM marker 是 paper-canonical instance**)<br/>**Industry**: **OmniParser-v2** (Microsoft, Feb 2025) — pipeline preprocessing canonical, screenshot → tokenized list | agent-side instrumentation (0 done, **≥7 § identified gaps**) |
+| **L2 Agent-pipeline** | **★ GRL layer** — systematic upstream-bug fix + write-up (~28 § done); flagship = walk-up click ON_TARGET 94.4%→>80%; → workshop Track A (cross-benchmark port planned) | script-level affordance overlay (~9 § done, **SoM marker 是 paper-canonical instance**)<br/>**Industry**: **OmniParser-v2** (Microsoft, Feb 2025) — pipeline preprocessing canonical, screenshot → tokenized list | agent-side instrumentation (0 done, **≥7 § identified gaps**) |
 | **L3 Agent-compute** | n/a (compute 不能 fix bug) | **Paper hook 4-tier sub-gradient** (重要 distinction):<br/>• Pretraining-time: **Magma** (MS Feb 2025, SoM+ToM grounding 进 weights)<br/>• Offline exploration + RAG retrieve: **AppAgent-v2** (Tencent, agent self-generates text doc, deploy-time RAG)<br/>• Inference-time substitution: **Phantom routing space** ⭐ paper-1 main hook (P-text/P-prompt/P-SoM, no pretraining, no RAG, no offline phase)<br/>• Pure visual VLM: UI-TARS, CogAgent, Magma — opposite end (skip text substitution) | n/a (compute 不能 add absent signal) |
 
 ### §21.2 Done items (已做 work, mapped to cells)
@@ -2048,7 +2054,9 @@ Advisor decision context? → `_status/issues/issue_advisor_sync_*.md` + paper_p
 | §86 | Osclass DB 宕机绕过 retry 链, fix mid-episode title 检测 + health check | Osclass server outage detection |
 | §82 | 全站 auth refresh enable (跨 L1/L2; queue retry refresh + per-episode 5ep refresh) | Per-site auth lifecycle |
 
-#### (i) × L2 — Agent-pipeline bug fix (~28 entries)
+#### (i) × L2 — Agent-pipeline bug fix (~28 entries) = **★ GRL layer**
+
+> **GRL framing** (dashboard-synced 2026-06-04): this cell = *systematic fix + write-up of the benchmark's upstream bugs* (reliability, not policy). **Flagship** = walk-up click ON_TARGET (94.4% off-target → walk_success >80%, `locator_dispatch.py` + `locator_route_meta_primary` evidence layer). **Workshop Track A** substrate; **cross-benchmark port planned** (Mind2Web / WebArena / AgiSDK — do they share the off-target gap?). Unifies with **Track B** (LLM-judge polarity bug, B-91/B-535) — both are upstream-VWA-bug systematic fixes under one GRL layer.
 
 | § Cluster | Examples (笔记 §) | Theme |
 |---|---|---|

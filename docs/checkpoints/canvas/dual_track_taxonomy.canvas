@@ -110,9 +110,9 @@
       "x": 240,
       "y": 420,
       "width": 520,
-      "height": 300,
+      "height": 340,
       "color": "2",
-      "text": "### ✅ ~28 § done\n\n**Phase A 4-cluster** (`3c15cd7`, 4/30):\n- C1 dispatch / C2 page_changed / C3 fuzzy cycle min_reps 3→5 / C4 RNG seeding+T=0\n- **dispatch bug 让 94.4% 失败 click 落错 DOM target**\n\n**+ runner reliability**: §57/58/76/85/90/97\n**+ action surface**: §28/29/30/63/65/67/70\n**+ cross-mode symmetry**: §44/45/46/42\n**+ WA**: §71/73/74/83\n**+ watchdog**: §84/82/41/14/12/5"
+      "text": "### ★ GRL layer — ~28 § done\n\n**= systematic fix + write-up of upstream benchmark bugs** (Workshop Track A · cross-bench port planned: Mind2Web/WA/AgiSDK · unifies Track B judge-polarity)\n\n**⭐ flagship: walk-up click ON_TARGET** — 94.4% off-target → >80% (`locator_dispatch.py` + evidence layer)\n\nPhase A `3c15cd7` (dispatch/page_changed/cycle/RNG) · +runner §57/58/76/85/90/97 · +action §28/29/30/63/65/67/70 · +cross-mode §44/45/46/42 · +WA §71/73/74/83 · +watchdog §84/82/41/14/12/5"
     },
     {
       "id": "celll2iisynthaaa",
