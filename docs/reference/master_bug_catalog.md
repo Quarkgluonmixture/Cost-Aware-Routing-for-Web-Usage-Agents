@@ -8206,3 +8206,28 @@ This is *whole-condition validity judgment*, NOT per-episode deletion. Aggregato
 **Cross-link**: B-1777 (sibling invariant on error-retry path, 2026-05-20, 笔记 §247 — gemini Mode C Finding 4 cross-link fix: was §253 which is actually B-1803 BrowserContext); §302 (server-side noise floor — explains why re-run sample ≠ original); AMENDMENT_07 (estimand-change witness pattern reference, 2026-05-25 B-1862 SoM sequential-id contract — B-1868 deliberately downgrades from this level per Q3=C).
 
 ---
+
+### B-1869. Locator `walk_fail` fallback reports `action_success=True` despite unresolved element ref — measurement-fidelity gap (axis-2 amplified) 🔶 CANDIDATE / open (post-fire verify)
+
+**Discovery**: `/diag B1 phantom_text classifieds` (R933, 笔记 §321, 2026-06-06). P4 (根节点误操作) fire 41× in ptext vs **0× in vision** for same model B1. `observation_dom.txt` + step-record ground-truth (task 20 step 5).
+
+**Symptom**: visual-blind agent (no screenshot) wants the search box but it is absent from the current search-result page AXTree → 4B model guesses `type element_id=1` (a low-default ref that maps to no real element; real elements use original AXTree node-ids e.g. RootWebArea=`[3377]`). Step record:
+```
+action_type=type  element_id=1  text="white Xbox console"
+locator_route_meta = {success: False, fallback_used: True, target_tag: None, error: 'walk_fail:no_input_within_walk', action_kind: 'type'}
+element_bbox = [0.0, 0.0, 10.0, 10.0]   # degenerate top-left fallback target
+→ action_success = True   page_changed = True
+```
+So `action_success` is **NOT gated** on `locator_route_meta.success` — the dispatch fell back to typing at a degenerate corner bbox and still reported success, even though no real input element received the keystrokes (no search executed). Same `walk_fail:no_input_within_walk` fallback recurs in no-hit task 136 (→ accidental `sCategory=3` category loop).
+
+**Impact (measurement-layer, NOT eval/SR)**: `action_success` over-counts when the model emits an unresolvable element ref. **Asymmetric across the axis-2 contrast**: numbered-element-ref + visual-blindness (P-text) produces MORE unresolvable refs (P4=41) than DOM-element_id-ref (vision P4=0; dom uses AXTree ids the agent reads directly), so P-text's reported `action_success` is inflated more than DOM's. This means the §306 axis-2 number (B0 cls: ptext action_success 77.3% < dom 79.4%, "SoM-`[N]`-ref 略劣 DOM-element_id-ref") is **conservative** — the true P-text disadvantage is *larger* than measured (real P-text action_success is lower once walk_fail-fallback "successes" are excluded). Direction safe for the claim, but the metric is imprecise; any paper action-level number should disclose the walk_fail-fallback caveat or recompute gating on `locator_route_meta.success`.
+
+**Does NOT affect**: primary SR / eval gates (eval is outcome-based via url_match/program_html/string_match, not action_success). No crash, no fire-blocker.
+
+**Open question (verify post-fire)**: is `action_success=True` on `walk_fail` fallback *intended* ("the action physically executed at fallback coords") or a fidelity bug ("should reflect that the intended element was not located")? Decide: (a) gate `action_success` on `locator_route_meta.success`, or (b) keep but emit a `locator_unresolved` flag so aggregators can filter. Counter via `aggregate_locator_route_metrics.py` (B-440-aware, already counts walk_fail per cond) cross-tab with action_success.
+
+**Status**: CANDIDATE, **post-fire only** (analysis/measurement-layer; NO mid-fire code change — fire-immutability per [[feedback-analysis-layer-fire-immutability-and-witness]]). Not gating Phase 1a. Surfaced now so the freeze-step `WALK_FAIL_DEGENERATE` diag P-rule (笔记 §321 §7) and any action-level paper number both reference it.
+
+**Cross-link**: 笔记 §321 (B1 ptext diag, axis-2 P4 headline) + `docs/analysis/vwa_classifieds/B1_phantom_text_classifieds_diag_digest.md` §3/§9; §306 (action_success axis-2 number this would refine); B-440 (`locator_route_meta._primary` field); `aggregate_locator_route_metrics.py` (existing walk_fail counter); B-114 (sibling: parse fallback executed despite valid=False — same "fallback masks failure as success" family).
+
+---
