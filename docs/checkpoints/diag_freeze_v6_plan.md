@@ -1,6 +1,10 @@
 # Diag Freeze Step v6 — B1 cls 6-mode discover → freeze 合并落码方案
 
-> **状态: 成文待 review, 未落码** (2026-06-08)。B1 cls 6-mode /diag discover 全齐 (§317 som / §318 dom / §320 vision / §321 ptext / §322 psom / §323 pprompt) → discover-then-freeze 协议进入 freeze: 合并 6 condition 的规则提议去重 → 落码 → bump version → 全量重扫拉齐 → **解锁 cross-mode 定量 + k_cells=2 drop-one**。
+> **🧊 状态: DEFERRED — 等 B2 cls discover 完一起 freeze** (user 决策 2026-06-08)。不在 B1 cls 单独 freeze, 而是积累 B2 cls 6-mode discover 后做**一次完整 B1+B2 cls freeze** (12 condition / 2 cell), 第一版 freeze 更全 (符合协议"完备渐进")。本方案规则提议**仍有效**, 落码时**叠加 B2 cls discover 的新提议**再去重。版本届时 `6-*` 覆盖 B1+B2 cls。
+>
+> ⚠️ **纠正 conflation (2026-06-08)**: 本 freeze 解锁的是 **§306 cross-mode TAXONOMY routable/oracle (+16pp 型)** —— 跟 freeze 绑, 该等 B2。**§1 hero drop-one gate (P-SoM 1.7-3.3pp) 是 SR-based, 与 diag freeze 无关** —— B1 cls SR 已 landed, 只需 manifest-promote + `make analysis` 即可 k_cells=1→2 出数, **不需 freeze 也不需等 B2** (独立路径)。
+>
+> **原 (B1 cls 6-mode) 背景**: §317 som / §318 dom / §320 vision / §321 ptext / §322 psom / §323 pprompt 全齐 → 规则提议合并去重 (下方 A-C) → 落码 → bump version → 全量重扫拉齐 → 解锁 cross-mode taxonomy 定量。
 >
 > **当前**: `RULESET_VERSION="5-domsomvispsom-b1860coord"`, 已码 P1-P33 (无 P9/P26, 31 条)。
 > **目标**: `6-*`, 加新规则 (P34+) + 3 个确定性 bug-fix + 一批 success-safe 收窄。
