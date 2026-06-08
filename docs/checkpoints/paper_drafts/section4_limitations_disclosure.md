@@ -34,8 +34,10 @@ disclosure only.
 
 **Residual concern**: If a future reviewer re-runs the evaluator with a newer GPT-4o-mini
 snapshot, single-task labels may flip. The aggregate per-cell SR is robust to this within
-±2pp by simulation. We make this explicit in our reproducibility statement (§3.X) rather
-than retract the SR claim.
+±2pp by simulation. We disclose this judge-snapshot sensitivity here as a reproducibility
+limitation (one of three orthogonal reproducibility axes — judge-snapshot drift here, B0
+remote-serving floor §4.X.7, cross-machine numerical drift §4.X.8) rather than retract the
+SR claim.
 
 ---
 
@@ -165,10 +167,19 @@ This work compares B0 (Qwen3-VL-235B-A22B via proxy API) against B1 (Qwen3-VL-4B
 local). Two configuration asymmetries are intentional and documented:
 
 **A1 — Decoding strategy**: B0 uses `temperature=0.0` with `top_p=1.0` (B-37 fix
-post-§107); B1 uses `do_sample=False` (greedy top-1). Both target deterministic outputs,
-but B0 still inherits proxy-side stochasticity for which the API has no `seed` parameter.
-Cross-run trajectory variance for B0 is bounded by single-step branching at ties; aggregate
-SR is stable (laughs at our N=234+210+466 sampling).
+post-§107); B1 uses `do_sample=False` (greedy top-1). Both target deterministic
+decoding, but `temperature=0` removes only *sampling* stochasticity, not the
+batch-shape-dependent floating-point variation in the forward pass that batched
+serving incurs (the "batch invariance" phenomenon documented by \citet{he2025nondeterminism};
+the floating-point non-associativity root cause, and its sensitivity to evaluation
+batch size and GPU configuration, is quantified for greedy decoding by
+\citet{yuan2025numerical}). A remote proxy client cannot pin the concurrent batch
+composition that determines the server-side reduction order, and the API exposes no
+`seed` parameter; B0 therefore carries a run-to-run noise floor on the serving-side
+batch-shape axis that B1 — local single-request inference at a fixed batch size of 1
+on one machine — does not incur (the orthogonal cross-machine numerical axis is
+treated separately in §4.X.8). We disclose this B0 serving-side variance as a
+reproducibility limitation rather than asserting aggregate-SR stability.
 
 **A3 — Token budget (RESOLVED 2026-05-15 per commit `9f70b4e` / B-116 fix)**: Previously B0 used `max_new_tokens=4096` while B1 used `max_new_tokens=384`. The 12× asymmetry was identified by codex /stress F3 as a paper-grade contamination vector — under the agent's thought+JSON envelope (~400-1500 tokens typical), the 384 cap caused silent truncation on B1/B2 and parse failures that B0's GLM rescue scaffold could mask. **B-116 unified B1 and B2 to `max_new_tokens=4096` to match B0** (commit `9f70b4e fix(configs): B-116 unify B1/B2 max_new_tokens 384→4096 — §142 F3 close`), eliminating the asymmetry. The A100 canonical rerun runs all 3 baselines at 4096; no truncation-rate sensitivity check needed. **Note**: a parse-error recovery scaffold asymmetry (B0 GLM rescue, B1/B2 none) remains an open item; see §3.5.1 cross-baseline disclosure + master_bug_catalog B-86.
 
@@ -183,9 +194,14 @@ generations (sm_70 vs sm_80 vs sm_121). We run `numerical_determinism_check.py` 
 maximum absolute hidden-state drift |Δh| across machines on a fixed input.
 
 **Reproducibility statement**: Cross-machine numerical agreement on Qwen3-VL-4B between
-{DGX, A100, Myriad} layers L0-L35: max |Δh| < [TBD post-rerun, target <1e-2] at L11 (the
-mirage causal layer per §5). This bounds inter-machine reproducibility drift to a level that
-does not flip top-1 logit comparisons; aggregate SR claims are unaffected.
+{DGX, A100, Myriad} layers L0-L35: max |Δh| < [TBD post-rerun, target <1e-2] at L11. This
+bounds inter-machine reproducibility drift to a level that does not flip top-1 logit
+comparisons; moreover, because all Phase-1a paper-grade B1/B2 data is collected on a single
+machine (A100 self-hosted, per §4.X.11 archive-vintage disclosure), cross-machine drift does
+not enter the canonical SR comparison. This cross-machine axis is distinct from and
+orthogonal to the B0 remote-serving run-to-run noise floor disclosed in §4.X.7 (same-machine,
+batch-shape-dependent); the two are reported as separate reproducibility axes and are not
+combined into a single number.
 
 ---
 
