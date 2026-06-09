@@ -12,6 +12,8 @@
 
 *MSc dissertation · Artificial Intelligence for Sustainable Development, UCL · solo · ~117K LOC Python · 1,088 commits over 4 months*
 
+**▶ [Live interactive portfolio & demo](https://quarkgluonmixture.github.io/Cost-Aware-Routing-for-Web-Usage-Agents/portfolio/)**
+
 </div>
 
 ---
@@ -146,5 +148,6 @@ Reproducing a full experiment additionally needs GPU(s), a running VisualWebAren
 ## Status, author & license
 
 - **Status:** active MSc dissertation research; paper in preparation. The phantom-routing-space hypothesis is under evaluation across the six `(site × model)` cells.
+- **Portfolio:** [Live interactive walkthrough + demo video](https://quarkgluonmixture.github.io/Cost-Aware-Routing-for-Web-Usage-Agents/portfolio/)
 - **Author:** Jiaming Wei · ucab352@ucl.ac.uk · [linkedin.com/in/jiaming-wei-810ab938b](https://linkedin.com/in/jiaming-wei-810ab938b)
 - **License:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/). Built on [VisualWebArena](https://github.com/web-arena-x/visualwebarena).
