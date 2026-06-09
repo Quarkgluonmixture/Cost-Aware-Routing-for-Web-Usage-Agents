@@ -8247,3 +8247,19 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: 笔记 §326 (chain abort full chain + user-correction lesson) + §313/§314 (prior cls chain abort saga: A100 outage + wallclock); B-1839 (per-condition docker restart — the feature this patches the gap in); B-1836 (eval-timeout retry, sibling resilience net); [[feedback-pre-fire-protocol-witness]] (substrate change = tag not amendment).
 
 ---
+
+### B-1871. Stage 2 跨 cell 孪生任务 fold 不对齐 → 共享 vectorizer/MI selector 对 holdout intent 不盲 — "Leak: ZERO" 声明被否定 ✅ FIXED (2026-06-09)
+
+**Discovery**: /stress Mode A 整体 repo 审计 2026-06-09 (P0-1-A*, routing-ML persona, user 显式 skip Mode B/C)。Scripts-first 读 `train_l1_router_with_mi.py` 时对 "Leak: ZERO. Selector_k never sees fold_k holdouts of any cell" (L20) 做孪生行推演 → 与 `generate_per_cell_fold_assignments` 的 per-cell 独立 StratifiedKFold 矛盾。
+
+**Symptom**: fold 生成 per-cell 独立、stratify 在各 cell 自己的 oracle label 上 — 同 site 三个 model cell (B0/B1/B2 × cls 或 red) 的 label 不同 + labeled task 集不同 → 同 seed 也产生不同 split → **同 task 在同 site 的三个 cell 里 fold 编号不对齐**。`build_pool_mask_for_fold` 只按 (cell, task) 行级排除 fold-k holdout → B1_cls task t 在 fold k held-out 时,B0_cls/B2_cls 的 task t 孪生行 (intent **逐字相同**, 来自同一 `read_task_config(site, task_id)`; label 跨 cell 相关) 以 ~1−(1/5)²≈96% 概率 (推导, 假设孪生 labeled) 留在 pool_k → `vectorizer_fold{k}` 的 vocab/IDF + `selected_idx_fold{k}` 的 MI 排序见过 holdout intent 与相关 label 的配对。LR head 本身干净 (per-cell rows),但表示层对 holdout intent 不盲 → `section6_router.md:99` "no holdout-leak feature selection" + L7 "no in-sample memorization" 两句 paper prose 硬声明在 task 层面不成立。
+
+**Fix** (user-confirmed 2026-06-09: P0-1 必修 + stratification 选 A): `generate_per_cell_fold_assignments` 重写为 **per-site shared pure KFold** — 每 site 在其全 task universe (三 cell labeled∪no-success 并集) 上 `KFold(shuffle, seed=42)` 切一次,三个 model cell 复用同一映射 → 孪生行同 fold by construction,`build_pool_mask_for_fold` 排除 fold-k holdout 时自动清掉该 task 全部行。**Stratification 整体移除** (user option A): 跨 cell 无 canonical 分层 label (B0 视角 dom / B1 视角 phantom_som 同任务异 label),fold balance 是 nicety 非 correctness 需求,B-995 min-class filter + Stage-3 degenerate guards 已兜底极端不均;纯 KFold 消掉一个 reviewer 可攻击的任意设计选择。C1 (B-1808) universe 覆盖契约保持 (no-success task 进 site universe 一起切,旧 per-cell round-robin 废除);函数签名不变 (labels 参数保留兼容,不再影响 split);`{cell_id}_fold_assignment.json` schema 不变 (消费端 `learned_router.py`/`train_l1_router.py` 零改动)。stage2_summary 加 `fold_alignment: per_site_shared_pure_kfold_b1871` marker。同步更新: docstring + "Leak: ZERO at TASK level" 注释 + coverage_note + `section6_router.md` §6.1/L99 prose。
+
+**Verify**: 3 个新不变量测试 (`test_b1871_same_site_cells_share_fold_map` 同 site 异 label 异 task 集 → shared task fold 全等 / `test_b1871_pool_mask_excludes_holdout_task_rows_from_all_cells` 逐 fold 断言 pool∩holdout-task=∅ end-to-end / `test_b1871_different_sites_split_independently` cls↔red task_id 数值重叠不串) + B-1808/B-1819 旧断言全保持;全套 pytest **1393 passed 0 failed**。**修复时机 = 零数据成本窗口**: on-disk `results/phantom_paper/l1_router/` 仅 5/16 deprecated 单 pickle,fold-aware Stage 1→3 尚未在 paper-grade 数据上跑 (Pass-1 fire 进行中) → 纯代码改动,无重训/重打。
+
+**Does NOT affect**: Pass-1 baseline fire (fold 生成不在 fire import 路径, per [[feedback-analysis-layer-fire-immutability-and-witness]]); Stage 3 train/holdout 划分语义 (按 fold_assignment 消费,不关心生成方式); runtime `predict_mode_fold_aware` (读同 schema JSON); prereg §4 L526 锚文本 ("task-held-out 5-fold within fixed cells" — 未写死 per-cell 生成或 StratifiedKFold,修复兼容; L214 "site-stratified" 属 paper-2 H7/H8 stub 语境)。
+
+**Cross-link**: 笔记 §327 (本次 /stress Mode A 审计全链); B-1808 (C1 universe 覆盖 — 本 fix 保持其契约并废除其 round-robin 实现细节); B-1819 (C4 stratification crash-safety — stratification 移除后该攻击面消失,测试改测纯 KFold 覆盖契约); B-995 (min-class filter — 不分层后的 fold-balance 兜底); `section6_router.md` §6.1 + L99 (prose 同步); [[feedback-systematic-audit-before-verdict]] (列全矩阵逐格实证 — 本 catch 来自孪生行矩阵推演)。
+
+---

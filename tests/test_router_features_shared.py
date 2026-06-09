@@ -135,17 +135,20 @@ def test_b1817_estimate_input_tokens_train_serve_consistent():
     assert serve.estimate_input_tokens is rf.estimate_input_tokens
 
 
-# ── B-1819 C4: rare-class fold generation never crashes ────────────────────────
+# ── B-1819 C4: fold generation never crashes on awkward label/size shapes ──────
+# (B-1871 note: the original B-1819 surface was StratifiedKFold rare-class
+# crashes; stratification is gone — folds are per-site pure KFold — but the
+# crash-safety contract these tests pin (full coverage, valid fold range, no
+# raise on tiny/skewed cells) is unchanged and must keep holding.)
 def test_b1819_merged_rare_bucket_below_n_splits_kfold_fallback():
-    """A merged __rare__ bucket with < n_splits members made StratifiedKFold raise;
-    now it falls back to plain KFold instead of crashing Stage 2."""
+    """Heavily skewed labels (dom×10 + 3 singletons) must not crash fold
+    generation and must yield full coverage — labels no longer influence the
+    split at all (B-1871 pure KFold), which subsumes the old rare-merge path."""
     import importlib
 
     import numpy as np
 
     mi = importlib.import_module("train_l1_router_with_mi")
-    # dom×10 + 3 singletons → rare-merge gives {dom, __rare__(=3)}; __rare__ < 5 so a
-    # StratifiedKFold(5) would raise → KFold fallback must kick in.
     cell_ids = np.array(["B0_classifieds"] * 13)
     task_ids = np.array(list(range(13)))
     labels = np.array(["dom"] * 10 + ["som", "vision", "phantom_text"])
@@ -157,7 +160,7 @@ def test_b1819_merged_rare_bucket_below_n_splits_kfold_fallback():
 
 
 def test_b1819_tiny_cell_below_n_splits_no_crash():
-    """A cell with < n_splits labeled tasks falls back to n_cell-fold KFold."""
+    """A site with < n_splits tasks degrades to n_site-fold KFold (no raise)."""
     import importlib
 
     import numpy as np
@@ -170,3 +173,82 @@ def test_b1819_tiny_cell_below_n_splits_no_crash():
         cell_ids, task_ids, labels, seed=42, n_splits=5
     )["B0_reddit"]
     assert set(fa.keys()) == {10, 11, 12}
+
+
+# ── B-1871: per-site shared folds — twin-task leak closed ──────────────────────
+def test_b1871_same_site_cells_share_fold_map():
+    """Same-site cells (different baselines, different labels, overlapping task
+    ids) MUST agree on the fold of every shared task — otherwise a task held out
+    in one cell keeps verbatim-intent twin rows inside that fold's Stage-2
+    vectorizer/MI selection pool (the P0-1 leak)."""
+    import importlib
+
+    import numpy as np
+
+    mi = importlib.import_module("train_l1_router_with_mi")
+    # B0_cls: tasks 0..19 labeled; B1_cls: tasks 5..24 labeled, DIFFERENT labels
+    # (per-cell oracle labels differ in reality — that difference is what broke
+    # the pre-fix per-cell stratified splits apart).
+    cell_ids = np.array(["B0_classifieds"] * 20 + ["B1_classifieds"] * 20)
+    task_ids = np.array(list(range(20)) + list(range(5, 25)))
+    labels = np.array(["dom"] * 20 + ["phantom_som"] * 20)
+    fa = mi.generate_per_cell_fold_assignments(
+        cell_ids, task_ids, labels, seed=42, n_splits=5
+    )
+    b0, b1 = fa["B0_classifieds"], fa["B1_classifieds"]
+    shared = set(b0) & set(b1)
+    assert shared == set(range(5, 20))
+    for t in shared:
+        assert b0[t] == b1[t], (
+            f"task {t} fold mismatch across same-site cells (B0={b0[t]} B1={b1[t]}) "
+            f"— twin-task leak regression (B-1871)"
+        )
+
+
+def test_b1871_pool_mask_excludes_holdout_task_rows_from_all_cells():
+    """End-to-end leak check: for every fold k, the Stage-2 pool must contain NO
+    row whose task is in fold k — across ALL same-site cells, not just the row's
+    own cell. This is the exact invariant `section6_router.md` 'no holdout-leak
+    feature selection' promises."""
+    import importlib
+
+    import numpy as np
+
+    mi = importlib.import_module("train_l1_router_with_mi")
+    cell_ids = np.array(["B0_classifieds"] * 20 + ["B1_classifieds"] * 20)
+    task_ids = np.array(list(range(20)) + list(range(20)))
+    labels = np.array(["dom"] * 20 + ["phantom_som"] * 20)
+    fa = mi.generate_per_cell_fold_assignments(
+        cell_ids, task_ids, labels, seed=42, n_splits=5
+    )
+    for fold_k in range(5):
+        pool_mask = mi.build_pool_mask_for_fold(cell_ids, task_ids, fa, fold_k)
+        holdout_tasks = {
+            t for cell_map in fa.values() for t, fk in cell_map.items() if fk == fold_k
+        }
+        pooled_tasks = {int(t) for t, keep in zip(task_ids, pool_mask) if keep}
+        assert not (pooled_tasks & holdout_tasks), (
+            f"fold {fold_k}: tasks {sorted(pooled_tasks & holdout_tasks)} have rows "
+            f"in the selection pool while held out somewhere — twin leak (B-1871)"
+        )
+
+
+def test_b1871_different_sites_split_independently():
+    """cls and red task_id spaces overlap numerically (both start at 0) but are
+    different tasks — their fold maps must come from separate site KFolds and
+    must each cover their own universe."""
+    import importlib
+
+    import numpy as np
+
+    mi = importlib.import_module("train_l1_router_with_mi")
+    cell_ids = np.array(["B0_classifieds"] * 10 + ["B0_reddit"] * 10)
+    task_ids = np.array(list(range(10)) + list(range(10)))
+    labels = np.array(["dom"] * 10 + ["phantom_som"] * 10)
+    fa = mi.generate_per_cell_fold_assignments(
+        cell_ids, task_ids, labels, seed=42, n_splits=5
+    )
+    assert set(fa["B0_classifieds"].keys()) == set(range(10))
+    assert set(fa["B0_reddit"].keys()) == set(range(10))
+    for cell_map in fa.values():
+        assert all(0 <= fk < 5 for fk in cell_map.values())

@@ -2,8 +2,9 @@
 """Stage 2: Fold-local TF-IDF + global fold-local pooled MI feature selection.
 
 A2.5 Chunk A (B-996 expanded, /stress 2026-05-18). Reads Stage 1 raw features
-(`raw_features_phase1a.npz`), generates per-cell 5-fold StratifiedKFold splits, and
-for each fold k:
+(`raw_features_phase1a.npz`), generates per-SITE shared pure-KFold splits reused by
+every cell of that site (B-1871 twin-task fold alignment, 2026-06-09 — supersedes
+per-cell StratifiedKFold), and for each fold k:
 
 1. Computes `pool_idx_k = all_indices \\ {union over cells of holdout_C_k}`.
 2. Fits TfidfVectorizer(max_features=30, min_df=3) on pool intent texts → vectorizer_k.
@@ -17,7 +18,13 @@ fold, shared across cells within that fold. Stage 3 (per-cell × per-fold LR tra
 is handled by refactored train_l1_router.py in Chunk B.
 
 Properties:
-- Leak: ZERO. Selector_k never sees fold_k holdouts of any cell.
+- Leak: ZERO at TASK level (B-1871). Pre-fix this read "Selector_k never sees fold_k
+  holdouts of any cell" — true at (cell, task) ROW level but false at task level:
+  per-cell independent StratifiedKFold left a held-out task's verbatim-intent twin
+  rows (same site, other baselines, different fold) inside the fold-k pool, so the
+  shared vectorizer/MI selector saw every holdout intent paired with a correlated
+  label. Per-site shared KFold aligns twins into the same fold, so excluding fold-k
+  holdouts now removes the task's rows from ALL cells — leak-zero by construction.
 - Stability: N=~1124 per MI fit (vs N=40 in per-fold-within-cell MI).
 - Sklearn pattern: equivalent to Pipeline-in-CV with selector as first step.
 - MI estimator hygiene (B-1804): the 15 binary indicators are passed via
@@ -46,7 +53,10 @@ from typing import Any
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
-from sklearn.model_selection import KFold, StratifiedKFold
+# B-1871: StratifiedKFold import dropped — fold generation is per-site pure KFold
+# (no canonical cross-cell label exists to stratify on; see
+# generate_per_cell_fold_assignments docstring).
+from sklearn.model_selection import KFold
 
 REPO = Path(__file__).resolve().parents[2]
 OUT_DIR = REPO / "results/phantom_paper/l1_router"
@@ -85,6 +95,13 @@ def load_raw_features(npz_path: Path) -> dict[str, Any]:
     }
 
 
+def _site_of_cell(cell_id: str) -> str:
+    """`B0_classifieds` → `classifieds`. A cell_id without `_` degrades to itself
+    (single-cell site — alignment is then trivially per-cell, the pre-B-1871 shape)."""
+    parts = cell_id.split("_", 1)
+    return parts[1] if len(parts) == 2 else cell_id
+
+
 def generate_per_cell_fold_assignments(
     cell_ids: np.ndarray,
     task_ids: np.ndarray,
@@ -94,92 +111,91 @@ def generate_per_cell_fold_assignments(
     seed: int = FOLD_SEED,
     n_splits: int = N_SPLITS,
 ) -> dict[str, dict[int, int]]:
-    """Per-cell StratifiedKFold split over labeled rows + full-universe coverage.
+    """Per-SITE shared pure-KFold split + full-universe coverage (B-1871).
 
-    For each cell, partition the *labeled* tasks into n_splits folds stratified on
-    oracle label (the rows Stage 3 trains on). Then — C1 (B-1808) — extend the
-    assignment to the FULL routable universe (`all_cell_ids`/`all_task_ids`, incl.
-    no-success tasks dropped from training by B-995) so every Pass-2 task resolves to
-    a fold (runtime hard-fails on any task missing from fold_assignment, B-1640).
-    No-success tasks are mapped round-robin; they were never in a training split, so
-    the fold only selects which fold's LR scores them (all out-of-sample). Falls back
-    to labeled-only coverage when the full universe is not supplied.
+    B-1871 (/stress Mode A P0-1-A* 2026-06-09, user-confirmed option A): the
+    pre-fix version split each cell independently with StratifiedKFold on that
+    cell's own oracle labels. Same-site model cells (B0_cls / B1_cls / B2_cls)
+    share identical task intents but have different labels → different splits →
+    a task held out in cell C's fold k kept its verbatim-intent TWIN rows (other
+    baselines, fold ≠ k) inside `build_pool_mask_for_fold`'s fold-k selection
+    pool, so the shared vectorizer_k vocab/IDF + MI selector saw every holdout
+    task's intent paired with a correlated label (~96% of holdout tasks had ≥1
+    twin in pool). That contradicted the "Leak: ZERO" / §6 "no holdout-leak
+    feature selection" claims.
 
-    Returns: {cell_id: {task_id: fold_index}}.
+    Fix: ONE fold map per SITE — plain `KFold(shuffle=True, random_state=seed)`
+    over the site's full task universe (union of all that site's cells' labeled
+    + no-success tasks), reused verbatim by every cell of that site. Twin rows
+    land in the same fold by construction, so excluding fold-k holdouts removes
+    a task's rows from ALL cells at once. Stratification is dropped deliberately
+    (user decision 2026-06-09): there is no canonical cross-cell label to
+    stratify on, fold-balance is a nicety not a correctness need (B-995
+    min-class filter + Stage-3 degenerate-fold guards already absorb imbalance),
+    and pure KFold removes an arbitrary design choice a reviewer could attack.
+    `labels` is retained in the signature for caller compatibility but no longer
+    influences the split.
+
+    C1 (B-1808) coverage contract preserved: the site universe includes
+    no-success tasks (dropped from training by B-995), so every Pass-2 task
+    resolves to a fold (runtime hard-fails on a missing task_id, B-1640).
+    No-success tasks are now split by the SAME site KFold instead of the old
+    per-cell round-robin — they were never in a training split, so the fold
+    only selects which fold's LR scores them (all out-of-sample).
+
+    Returns: {cell_id: {task_id: fold_index}} — same shape as pre-B-1871; cells
+    of the same site agree on every shared task_id.
     """
-    fold_assignments: dict[str, dict[int, int]] = {}
-    unique_cells = sorted(set(cell_ids.tolist()))
-    # C1: full routable universe per cell (incl. no-success), for fold coverage.
-    full_by_cell: dict[str, list[int]] = {}
+    unique_cells = sorted(set(str(c) for c in cell_ids.tolist()))
+    # Per-cell universes: labeled rows always; full routable universe when supplied.
+    labeled_by_cell: dict[str, set[int]] = {c: set() for c in unique_cells}
+    for c, t in zip(cell_ids.tolist(), task_ids.tolist()):
+        labeled_by_cell.setdefault(str(c), set()).add(int(t))
+    universe_by_cell: dict[str, set[int]] = {
+        c: set(s) for c, s in labeled_by_cell.items()
+    }
     if all_cell_ids is not None and all_task_ids is not None:
         for c, t in zip(all_cell_ids.tolist(), all_task_ids.tolist()):
-            full_by_cell.setdefault(str(c), []).append(int(t))
-    for cell_id in unique_cells:
-        cell_mask = cell_ids == cell_id
-        cell_task_ids = task_ids[cell_mask]
-        cell_labels = labels[cell_mask]
-        if len(cell_task_ids) == 0:
-            fold_assignments[cell_id] = {}
+            universe_by_cell.setdefault(str(c), set()).add(int(t))
+
+    # Site universe = union over that site's cells (twin tasks appear once).
+    site_universe: dict[str, set[int]] = {}
+    for cell_id, tasks in universe_by_cell.items():
+        site_universe.setdefault(_site_of_cell(cell_id), set()).update(tasks)
+
+    # ONE pure-KFold map per site, shared by every cell of that site (B-1871).
+    site_fold_map: dict[str, dict[int, int]] = {}
+    for site, tasks in site_universe.items():
+        tasks_sorted = np.array(sorted(tasks), dtype=int)
+        n_site = len(tasks_sorted)
+        fold_map: dict[int, int] = {}
+        if n_site == 0:
+            site_fold_map[site] = fold_map
             continue
-
-        # StratifiedKFold may fail if some class has < n_splits members.
-        # If so, drop those classes from stratification — assign them to fold 0.
-        label_counter = Counter(cell_labels.tolist())
-        rare_classes = {lbl for lbl, ct in label_counter.items() if ct < n_splits}
-        if rare_classes:
+        if n_site == 1:
+            # Degenerate single-task site → fold 0 (cannot split).
+            fold_map[int(tasks_sorted[0])] = 0
+            site_fold_map[site] = fold_map
+            continue
+        n_splits_eff = min(n_splits, n_site)
+        if n_splits_eff < n_splits:
             print(
-                f"[{cell_id}] WARNING: classes {rare_classes} have <{n_splits} samples;"
-                f" stratification may be approximate"
+                f"[site={site}] WARNING: only {n_site} tasks (< {n_splits}); "
+                f"{n_splits_eff}-fold KFold."
             )
+        kf = KFold(n_splits=n_splits_eff, shuffle=True, random_state=seed)
+        for fold_k, (_train_idx, holdout_idx) in enumerate(kf.split(tasks_sorted)):
+            for local_idx in holdout_idx:
+                fold_map[int(tasks_sorted[local_idx])] = fold_k
+        site_fold_map[site] = fold_map
 
-        # Use rare-aware stratification: merge rare classes for stratification only
-        strat_labels = np.array(
-            ["__rare__" if lbl in rare_classes else lbl for lbl in cell_labels]
-        )
-        # C4 (B-1819): build splits robustly. StratifiedKFold can raise even after the
-        # rare-merge above if the merged __rare__ bucket (or any class) still has
-        # < n_splits members, or if the cell has < n_splits labeled tasks. Try
-        # stratified → plain KFold → degenerate single fold for tiny cells; never crash
-        # the whole Stage 2 run (the old single-class dummy path + the else path both
-        # raised ValueError in these cases).
-        n_cell = len(cell_task_ids)
-        splits = None
-        if n_cell >= n_splits and len(set(strat_labels)) >= 2:
-            try:
-                skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-                splits = list(skf.split(cell_task_ids, strat_labels))
-            except ValueError:
-                splits = None  # merged bucket still too small → fall through to KFold
-        if splits is None:
-            if n_cell >= n_splits:
-                print(f"[{cell_id}] WARNING: stratified split infeasible; unstratified KFold.")
-                kf = KFold(n_splits=n_splits, shuffle=True, random_state=seed)
-                splits = list(kf.split(cell_task_ids))
-            elif n_cell >= 2:
-                print(f"[{cell_id}] WARNING: only {n_cell} labeled tasks (< {n_splits}); {n_cell}-fold KFold.")
-                kf = KFold(n_splits=n_cell, shuffle=True, random_state=seed)
-                splits = list(kf.split(cell_task_ids))
-            else:
-                print(f"[{cell_id}] WARNING: {n_cell} labeled task(s); degenerate single fold.")
-                splits = [(np.array([], dtype=int), np.arange(n_cell))]
-
-        cell_fold_map = {}
-        for fold_k, (_train_local_idx, holdout_local_idx) in enumerate(splits):
-            for local_idx in holdout_local_idx:
-                cell_fold_map[int(cell_task_ids[local_idx])] = fold_k
-
-        # C1 (B-1808): extend coverage to the full routable universe — map no-success
-        # (unlabeled) tasks round-robin so fold_assignment covers every Pass-2 task.
-        if full_by_cell:
-            labeled_tasks = set(cell_fold_map.keys())
-            rr = 0
-            for t in sorted(full_by_cell.get(cell_id, [])):
-                if t not in labeled_tasks:
-                    cell_fold_map[t] = rr % n_splits
-                    rr += 1
-
-        fold_assignments[cell_id] = cell_fold_map
-
+    # Per-cell view: restrict the shared site map to each cell's own universe.
+    fold_assignments: dict[str, dict[int, int]] = {}
+    for cell_id in sorted(universe_by_cell.keys()):
+        shared = site_fold_map[_site_of_cell(cell_id)]
+        fold_assignments[cell_id] = {
+            t: shared[t] for t in sorted(universe_by_cell[cell_id])
+        }
     return fold_assignments
 
 
@@ -485,9 +501,13 @@ def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, 
                     "n_unlabeled_routed": len(fold_map) - n_labeled,
                     "coverage_note": (
                         "fold_assignment covers the FULL routable task universe (C1 "
-                        "B-1808). Only n_labeled_trained rows fit the LR; n_unlabeled_routed "
-                        "(no-success) tasks are routed out-of-sample by their round-robin "
-                        "fold's LR so the runtime never hard-fails on an unseen Pass-2 task."
+                        "B-1808). Only n_labeled_trained rows fit the LR; no-success "
+                        "tasks are routed out-of-sample by the shared site KFold's "
+                        "fold so the runtime never hard-fails on an unseen Pass-2 "
+                        "task. Folds are PER-SITE SHARED pure KFold (B-1871): cells "
+                        "of the same site agree on every shared task_id, so the "
+                        "fold-k feature-selection pool contains no row of any "
+                        "fold-k holdout task in any cell (twin-task leak closed)."
                     ),
                     "fold_sizes": dict(Counter(fold_map.values())),
                     "schema_version": SCHEMA_VERSION,
@@ -539,6 +559,9 @@ def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, 
         "n_total_tasks": n_total,
         "n_splits": N_SPLITS,
         "fold_seed": FOLD_SEED,
+        # B-1871: fold maps are per-site shared pure KFold (twin-task alignment);
+        # downstream consumers can assert this marker instead of re-deriving.
+        "fold_alignment": "per_site_shared_pure_kfold_b1871",
         "mi_seed": MI_SEED,
         "n_selected_per_fold": k,
         "mi_estimator": {
@@ -586,7 +609,10 @@ def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, 
         "note_canonical_pattern": (
             "Global fold-local pooled MI per user OOB-catch #4 (canonical sklearn "
             "Pipeline-in-CV pattern). Selector_k trained on training side of fold k "
-            "across all cells; never sees holdout tasks from any cell."
+            "across all cells; with per-site shared folds (B-1871) it never sees a "
+            "fold-k holdout TASK from any cell — twin rows of the same task across "
+            "same-site cells share the fold, so task-level leak is zero by "
+            "construction (pre-B-1871 this was only row-level)."
         ),
     }
     (out_dir / "stage2_summary.json").write_text(json.dumps(summary, indent=2))
