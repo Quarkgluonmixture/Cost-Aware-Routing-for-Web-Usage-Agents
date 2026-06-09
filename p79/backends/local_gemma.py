@@ -80,6 +80,12 @@ class LocalGemmaBackend:
                     "image_max_size": config.get("image_max_size", 1024),
                     # B-84: max_obs_chars removed — the agent no longer truncates
                     # obs_text (viewport filter is the real input bound).
+                    # Pan-and-scan amendment (2026-06-09, 笔记 §328): forward
+                    # the yaml flag so the agent runs Gemma3's vendor-
+                    # recommended high-res crop path (768 tok/img vs 256
+                    # squash). Default False preserves the archived pas-off
+                    # ablation arm semantics for replays.
+                    "do_pan_and_scan": bool(config.get("do_pan_and_scan", False)),
                 },
                 # B-411 (/stress A1.2 v8 Mode A P1-4, 2026-05-16):
                 # defense-in-depth — forward paper_grade flag so any future

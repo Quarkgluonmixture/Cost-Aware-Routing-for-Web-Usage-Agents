@@ -1,7 +1,8 @@
-# B2 dom classifieds — diag digest
+# B2 dom classifieds (R17895) — diag digest 【ARCHIVED — pas-off config-ablation arm】
 
-> Per-condition failure attribution (site × model × **mode**). run_id 在 header `Run:` 行 authoritative，不进文件名。re-run 覆盖同名 + 更新 run_id。
-> **首次 B2 (Gemma3-VL 跨族) condition 诊断** — 2026-06-09。
+> ⚠️ **SUPERSEDED 2026-06-09 (pan-and-scan amendment, 笔记 §328)**: R17895 跑于 `do_pan_and_scan=False` (Gemma 默认 256-tok squash 视觉配置)。A100 probe 证明该配置触发灾难模式 (复读崩溃/数量爆炸) → B2 全系改用 vendor-recommended `do_pan_and_scan=true` 重跑。**R17895 降级为 config-ablation arm** (pas-off 对照数据, 不进 paper-1 canonical), 本 digest 随之 run-suffix 归档。新 canonical digest 将在 pas-on rerun 完成后以默认名重建。本文 findings 中与配置无关的部分仍有效 (B-260 Magento gap / P33 cross-mode 重分类 / false-success 审计方法)。
+>
+> Per-condition failure attribution (site × model × **mode**)。**首次 B2 (Gemma3-VL 跨族) condition 诊断** — 2026-06-09。
 
 ## Header
 

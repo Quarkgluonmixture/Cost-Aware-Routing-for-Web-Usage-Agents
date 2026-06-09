@@ -154,6 +154,17 @@ backends:
     max_new_tokens: 4096
     temperature: 0.0       # greedy (do_sample=False in the agent); kept for config symmetry
     mock_mode: false
+    # Pan-and-scan amendment (2026-06-09, 笔记 §327/§328): Gemma3 vendor-
+    # recommended high-res preprocessing for non-square / text-dense images.
+    # Default-off ran B2 in a degenerate-vision regime (256 tok/img squash) —
+    # A100 probe showed repetition collapse + object-count explosion on
+    # gallery pages, both eliminated at do_pan_and_scan=true (768 tok/img).
+    # Enabled BEFORE any B2 data enters paper-1; R17895 dom (pas-off) kept as
+    # archived config-ablation arm. 3x image tokens => honest latency/cost
+    # increase of the vendor-recommended config; exact_id_match token
+    # accounting adapts automatically. See
+    # docs/analysis/vwa_classifieds/B2_gemma_visual_probe_2026-06-09.md.
+    do_pan_and_scan: true
     # Cost: Gemma3-VL is a local ~4B model — reuses the `metrics.cost` local
     # GPU-amortization profile (same size class as B1). A per-model cost review
     # (A100 throughput) is a Tier-3 analysis follow-up, not gating runs.

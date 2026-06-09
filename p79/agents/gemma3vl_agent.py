@@ -130,6 +130,17 @@ class Gemma3VLAgent:
         self._system_prompts = _shared_build_mode_prompt_dispatch_table()
         self.system_prompt = self._system_prompts["dom"]
 
+        # Pan-and-scan amendment (2026-06-09, 笔记 §327/§328): Gemma3's vendor-
+        # recommended high-res preprocessing (multi-crop) for non-square /
+        # text-dense inputs. transformers defaults this OFF, which squashes
+        # every screenshot to 896x896 / 256 tokens — A100 probe showed that
+        # regime produces repetition collapse + object-count explosion on
+        # gallery pages (eliminated at 768 tok with pan-and-scan). Read from
+        # config so run_meta proves the deployed value per run.
+        self.do_pan_and_scan = bool(
+            config.get("agent", {}).get("do_pan_and_scan", False)
+        )
+
     def step(
         self,
         instruction: str,
@@ -239,16 +250,36 @@ class Gemma3VLAgent:
 
         messages = [{"role": "user", "content": content}]
 
-        # Gemma's AutoProcessor handles all vision preprocessing in a single
-        # apply_chat_template call — no separate process_vision_info step.
+        # Pan-and-scan amendment (2026-06-09, 笔记 §328): two-step template +
+        # processor call (mirrors the Qwen agent's structure) so the
+        # `do_pan_and_scan` image-processor kwarg can be forwarded — the
+        # single-step tokenizing apply_chat_template has no clean passthrough
+        # for it. Path equivalence at pas=False verified on-device (identical
+        # input_ids / pixel_values vs the old single-step call) before the
+        # B2 pas-on relaunch.
         preprocess_start = time.time()
-        inputs = self.processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
+        prompt_text = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
         )
+        # add_special_tokens=False is REQUIRED here: the rendered template
+        # already contains a literal <bos>, and Gemma's tokenizer prepends
+        # another by default -> double-BOS (caught by the on-device
+        # equivalence check; the old single-step call emitted exactly one).
+        pil_images = [c["image"] for c in content if c.get("type") == "image"]
+        if pil_images:
+            inputs = self.processor(
+                text=[prompt_text],
+                images=pil_images,
+                do_pan_and_scan=self.do_pan_and_scan,
+                add_special_tokens=False,
+                return_tensors="pt",
+            )
+        else:
+            inputs = self.processor(
+                text=[prompt_text],
+                add_special_tokens=False,
+                return_tensors="pt",
+            )
         if self._input_dtype is not None:
             inputs = inputs.to(self.model.device, dtype=self._input_dtype)
         else:
@@ -264,6 +295,12 @@ class Gemma3VLAgent:
         n_images = (1 if image is not None else 0) + (
             len(reference_images) if reference_images else 0
         )
+        # NOTE (pan-and-scan amendment 2026-06-09): this estimate is per-IMAGE,
+        # not per-crop — with do_pan_and_scan=True each image may expand to
+        # multiple 256-token crops, so the estimate UNDERCOUNTS. It is only the
+        # fallback for transformers builds without processor.image_token_id;
+        # the exact_id_match branch below (active on the paper-grade A100 env)
+        # counts real crop-expanded tokens and is unaffected.
         image_token_count = n_images * GEMMA3_IMAGE_TOKENS
         image_token_count_method = "estimate_256_per_image"
         img_tok_id = getattr(self.processor, "image_token_id", None)
@@ -346,6 +383,10 @@ class Gemma3VLAgent:
             # static cost. Reviewer auditing cost ≈ DOM hero claim across
             # transformers versions needs to see the method, not just the count.
             "image_token_count_method": image_token_count_method,
+            # Pan-and-scan amendment (2026-06-09): persist the deployed flag
+            # per step so the pas-on rerun vs archived pas-off ablation arm is
+            # distinguishable from the JSONL alone (not just run_meta yaml).
+            "do_pan_and_scan": self.do_pan_and_scan,
             **confidence_metrics,
         }
 
