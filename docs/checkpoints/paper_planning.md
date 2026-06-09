@@ -1200,6 +1200,8 @@ Baseline: random / best-single-mode / rule-based ("if has_ref_image → SoM else
 
 **对 paper 的硬约束 (这是 noise 结论的重点, 非细节)**: net SR noise std **≈±2.5pp ≈ mode-to-mode effect size** (DOM-vs-P-text 1.8pp) → 任何 <~2.5pp 的 B0 mode 差异单次 run **不能 reliably 区分** → 所有 B0 mode 对比必须 replicate 扣 noise; drop-one gate anti-conservative (§293); oracle +16pp 与 14% floor 同量级必 replicate (§306)。**已死的旧 framing (勿再用)**: ❌ §298.3 线性拆解 `12.1%=10.5%+1-2pp MoE` (§302 retract = category error); ❌ 25.8% floor (§308 修正 13.3%); ❌ "element_id red herring / decision-harmless" (§294/§295/§308 全线反转); ❌ "MoE-specific residual" 作独立可量化项 (§302 codex 排序 #4 under-evidenced)。
 
+**机制锚点 (lit verified 2026-06-08, paper §4.X.7 citation land)**: 源 ① "AWS serving nondeterminism" 的底层机制 = **batch-invariance 缺失** (He et al. 2025, "Defeating Nondeterminism in LLM Inference", Thinking Machines Lab, 2025-09-10, bibkey `he2025nondeterminism`)。batched serving 的 reduction 累加顺序随 batch 形状变 → 同输入不同 logits;§302.8 cross-provider replay (AWS Bedrock 80% diverge vs DashScope 5%) = 该机制在两个 serving stack 上的实测对照;§308 within-B0 paired floor 13.3% = 量级。即 §282→§308 的黑盒证据**独立 reproduce 了这个已知现象** → 引用把 "Layer 2 = AWS dynamic batching + multi-tenant FP reduction" 从经验推断升级为 citable 机制。peer-reviewed arXiv 锚: Yuan et al. 2506.09501 (bibkey `yuan2025numerical`, cs.CL, 2025-06;实测 eval batch size / GPU count+version → greedy decoding 9% accuracy 波动,根因 floating-point non-associativity,abstract verified 2026-06-08;注 Yuan **未用** "batch invariance" 术语,故 attribution 拆开 = batch-invariance→He / non-associativity→Yuan,非 citation-stretch)。已 land paper §4.X.7 A1(去 §4.X.7↔§4.X.8 矛盾 + 悬空 §3.X 指针 + B1 限定 serving-batch 轴,/stress spot-check 2026-06-08)。**§1 hero reproducibility caveat 仍 PARKED**(§309,留 advisor)。
+
 **Forward — 官方 API 减 noise (future mitigation, NOT escape hatch)**: §302.8 双 provider replay 实测 **DashScope intl 官方 API 的 serving floor 远低于 AWS Bedrock proxy** (5/5-diverge **5% vs 80%**, bit-exact **20% vs 0%**, logit margin **16-17 vs 4-5** = 3-4× 更确定) → **换官方 API 可消除 Layer 2** (AWS-specific dynamic batching + multi-tenant FP reduction + multi-instance routing 的 4-16× 放大), 实际大幅降低 ① 的 floor。⚠️ **三条护栏 (诚实, 否则被 reviewer 反咬)**: (a) **只消 Layer 2 不消 Layer 1** — model-intrinsic multi-token accumulation ~75% partial-nondet 仍在, floor 降但非 0 (§302.8 已立 "不能 framing 成纯 provider 选择问题"); (b) **estimand change** — 换 serving 背景 = B0 测量条件变, paper-grade fire **之后**换需 amendment + git witness, fire **之前**换可直接锁新 estimand (推荐路径, 见下); (c) **需 verify 同 checkpoint** — DashScope 的 `qwen3-vl-235b` 与 AWS Bedrock 是否同一 weights 须确认, 否则混入 model 差异污染对比。**实操建议**: 若 B0 paper-grade **尚未 fire** (current 状态), 优先评估直接切 DashScope 官方 — floor 从 ~14% → 可能个位数, 显著提升所有 B0 mode 对比的统计功效 (直接缓解上面"对 paper 的硬约束"那条); 已 fire 则作 Phase 1b robustness re-run。这条把 §302.8 "escape hatch 死" (= 不能用换 provider **dismiss** noise 讨论) 与 "换 provider 真能 **减少** noise" 区分开: 前者是 framing 护栏, 后者是真实 mitigation action, 两者不矛盾。
 
 > ⏸️ **PARKED per advisor 2026-05-29 (笔记 §309)**: **noise 先接收作 disclosed limitation** (初步目标 = workshop, 重心转 router)。本 forward note (官方 API 减 noise) 降级为 **main-paper future option, 非 workshop 前置**; DashScope 同-checkpoint probe 撤回不做。上方 canonical noise taxonomy 表保留作**诚实 disclosure 素材**, 角色从 "blocker" → "disclosed limitation"。workshop scope 下 §293/§306 "effect ≈ noise floor 必须 replicate" 约束放宽; router H10 Pareto gate 从 "replicate 扣 noise" 降级 "单次 run + disclosed caveat"。pending: §19 decision log entry + next_steps §0 router 优先 (compaction 后续落)。
@@ -1581,6 +1583,7 @@ ef29add  drop-in deployment punchline
 | **Watchdog detection unreliable** | "FPC false alarm undermines paper-grade" | Site-specific audit: cls (real auth issue + auto-clean + 重跑 done), red (0 events), shopping (FPC false alarm fixed). Watchdog auto-clean protocol delete contaminated + runner resume → 0% wasted task. paper-grade 100% pure verified | §18 + 实验笔记 §104 |
 | **Mechanism not novel** | "Each axis has prior literature" | Contribution = systematic decomposition + web-agent multi-step setting + drop-in deployment claim. NOT new LLM mechanism. Paper §5 framing 已 acknowledge | §2 paper contribution position |
 | **Overfit to VWA visual specifics** | "Effect won't generalize to WA" | §103 falsifiable prediction: WA Phantom-SoM 5-mode oracle gain. WA pilot ≤50 task verify Jaccard ≤0.5 universal vs >0.7 VWA-specific | §103 generalization prediction; pending data |
+| **Macro-framing 暗设 agent-native web 是终局** ⭐ NEW 2026-06-05 (仅当 §23 macro-framing 进 prose 才 live) | "你 discussion/future-work 暗设 agent-native web 是终局, 但 bitter-lesson / universal-interface 一派主张 human-UI computer-use 才是 durable bet (人类界面唯一普适、无需任何人配合、agent 专用协议碎片化/腐烂); 凭什么 representation routing 不是死路?" | (i) **不主张 agent-native 必胜** — framing 显式 present 为 3-layer 共存谱 + routing = legacy-web present-tense 过渡解, 不赌终局; (ii) **own data 偏 universal-interface 派** — P-SoM (AXTree regex→text, 谱中段) 证明今天人类界面里选对表示即拿大部分收益, 强化 routing 当下价值而非削弱; (iii) counter-camp 写进 future-work 1 句 (acknowledge 不 dismiss) = balanced 不 naive. Decision: hold; 仅当 prose 含 macro-framing 时 preempt | §23.3 pushback #1+#3 + §21 (ii)×L3 industry niche | [Both] |
 
 **Pre-rebuttal strategy**:
 - Section 4-5 prose 写时 inline cite this table (proactive defense)
@@ -1879,6 +1882,7 @@ Post run:
 | 2026-05-14 (收口) | **Venue cascade (final)** — 主 paper: EMNLP (ARR 5/25) → workshop → NeurIPS; 独立 bug 研究 paper (cross-benchmark bug 聚合, e.g. agisdk) 可单独投 workshop | 学长收口; bug 研究是独立一篇, **不替换**主 paper workshop 节点 | ✅ NeurIPS 用户 2026-05-14 确认 |
 | 2026-05-21 | **Backend-specific serialization MAINTAINED (no format unification)** — upstream VWA = text-string `click [id]` (regex), NOT JSON/tool-call; P79 = structured adapter (B0 tool-call `tool_choice="required"` / B1/B2 JSON `parse_action_text`), P79-specific. Keep; do NOT unify to JSON (=B-991 0%-tool-call failure) nor to upstream text (whole-I/O rewrite, risky pre-Fire-6, little benefit). | Fairness via shared semantic schema + same `validate_action_detailed` + same accounting; B0 tool schema MUST ≡ validator (B-1794 commit 681b9cf: `tool_choice="required"` forced a minimal call dropping OPTIONAL element_id on type/search; structural per-action conditional-required fix, 2×30-step smoke 0 invalid, 10 invariant tests, 1207 pytest). Elicitation asymmetry (forced-tool-call vs free-JSON) = backend-capability-driven, DISCLOSED not hidden. No byte-level format-equivalence claim; reframe "upstream-core VWA semantics" → "upstream-aligned task/action/evaluator/termination semantics + P79 structured serialization adapters + P79-GRL reliability layer". | ✅ §3.5.1 disclosure (section3_definition.md) + commit 681b9cf; pre-fix B0 archive non-canonical (Amendment 01); locked-doc (prereg/Amendment-01) "upstream-core" reframing → future amendment, not in-place retro-edit |
 | 2026-05-29 | **Advisor: noise 先接收 (disclosed limitation) + 初步 venue = workshop + 重心转 router** | workshop 对 single-run noise 容忍高 → noise 非 blocker, router 才是核心交付物 (承 §138 / 2026-05-14 phenomenon+router scope); §308 within-B0 paired 已给受控 floor (B0 13.3% / B1 0) 作 disclosure 素材, 不再深挖 / 不切 provider | ✅ 笔记 §309 + Risk 6 ⏸️PARKED status (官方 API forward → main-paper future option, DashScope probe 撤回) + §14 reviewer-defense row; pending: next_steps §0 forward 优先级转 router |
+| 2026-06-05 | **Macro-framing (interface→incentive→agency) = discussion/future-work garnish, NOT contribution** — intro 1-2 句 motivation (transitional-solution one-liner) + future-work 1 段 bounded+cited; 拒绝任何 load-bearing 升格 | user 2026-06-05 思想链 (world model→interface bottleneck→agent-native 3-layer→"agent-native≠user-aligned"→governance) 体量大但: (a) advisor 2026-05-14 收口刚收窄 scope, (b) routing-paper 飘进 web-governance policy = overreach + 稀释 phantom+router 硬通货, (c) governance frame 非原创 (principal-agent / self-preferencing / open-banking 已成熟; grep 实测多数 anchor repo 内 absent). 我方 pushback 4 条 + user-agent 修辞 + 剂量全存 §23 | ✅ paper_planning §23 + §14.1 counter-camp row; ⏸️ prose 落地 (option 1) pending user 确认 |
 
 ---
 
@@ -2667,5 +2671,56 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 - **新 codex prose round** → §22.6 action items 标 done
 - **Advisor sync 5/5 后** → §22.5 priority 重排 (按 advisor 反馈)
 - **16-cell rerun done** → §22.4 §1 prose 6-contribution 落地 codex pass
+
+---
+
+## §23 Interface→Incentive→Agency Macro-Framing — 剂量决策 + Pushback 存档 (2026-06-05) [framing][discussion][future-work] #design
+
+> **来源**: user 2026-06-05 思想链 (world model → web agent 的 interface bottleneck → agent-native web 三层谱 → "agent-native ≠ user-aligned" → governance). 完整链在对话; 本节 = paper-integration **剂量决策** + 我对该链的 **pushback 存档**, 目的: 防下次 session 从零重吵同一张力, 并锁住 "macro-framing 不得升格为承重 contribution" 的边界.
+>
+> **One-line decision**: 此 macro-framing 在 paper-1 = **discussion / future-work 点缀, NOT contribution**. 剂量 = intro 1-2 句 motivation (transitional-solution one-liner, §23.4) + future-work 1 段 (bounded + cited). 见 §19 decision log 2026-06-05 行 + §14.1 counter-camp 行. **prose 落地 (option 1) 尚未做 — pending user 确认**.
+
+### §23.1 The framing (user 链的压缩 + 我的 3-stage 修正)
+
+User 链压缩: web agent 的瓶颈**不只是智能**, 而是 AI 被迫跑在 human-native infra 上. 三层谱 = legacy human web / automation-friendly web / agent-native web. 关键反转: 即使到 agent-native, 平台内置 AI = **卖方 agent 披买方外壳** (AI 推荐比百度竞价**更隐蔽** — 排序坍缩成一句自然语言解释, paid ranking 被"理性建议"外壳包住). 故需 governance (open-banking 式强制 interoperability) 买方 agent 才活得下来.
+
+**我的修正 (写进 prose 必须带)**: user 的终极压缩是 2-stage ("interface inefficiency → incentive misalignment"). 更准的是 **3-stage: interface → incentive → agency**. agency 层 (用户到底要什么 / 歧义消解 / 不可逆动作要不要确认 / 该不该信这个结果) **不会随完美 API 消失**. 自动驾驶类比其实反打 user 自己的结论: 自驾难的核心是 perception+prediction+长尾安全, 不是"马路为人设计"; 给一条 agent-native 的路, 预测别的 agent 照样难. 瓶颈是**转移**不是消失.
+
+### §23.2 为什么是 garnish 不是 contribution (剂量 + 风险)
+
+约束: (a) advisor 2026-05-14 收口刚把 scope **收窄** (mechanism 暂搁, §19 2026-05-14 行); (b) venue = EMNLP/workshop, timeline 紧; (c) governance frame **非原创** (§23.5). → macro-framing 只能当 garnish.
+
+风险 (具体): 一篇 representation-routing 论文若飘进 web-governance policy, reviewer 过敏 = **overreach** + **稀释硬通货** (phantom routing + router 双线). 这是 §14 已有 "scope-honest disclosure" 纪律的延伸.
+
+剂量 (hard):
+- **intro**: 1-2 句 motivation, 用 §23.4 transitional-solution one-liner. 直连数据, 不展开.
+- **future-work (§8)**: 1 段, bounded + cited (§23.5 anchor), 明确 acknowledge counter-camp (§23.3 #3), 不写成政策论文.
+- 最强 paper-usable 萃取其实是 **observation/semantics bottleneck + 过渡解定位** (直接由数据支撑); incentive/governance 是 vision 装饰, 短而有 cite.
+
+### §23.3 Pushback 4 条 (诚实存档, 防 oversell)
+
+1. **二分法太干净, 而且 own data 在拆它**: human-native vs agent-native 是**连续谱**, 我们的 P-SoM (AXTree regex → `[SOM_MARKS]` text, 无图) 正坐谱中段 — AXTree 本就是 accessibility-oriented = 已半 agent-friendly (见 §1 drop-in (a)). 含义**双向**: (a) 支持 "routing = legacy-web 过渡解"; (b) **削弱** "必须重建 infra" 的 urgency — 若在今天人类界面里选对表示就拿大部分收益, agent-native 的紧迫性就弱. → 当**定位资产**用: routing = present-tense, 不是 wait-for-future.
+2. **"interface 是瓶颈" overclaim**: 见 §23.1 — 瓶颈 interface→incentive→agency 转移而非消失. user 终极句只抓了第一个转移.
+3. **未交手的对立阵营 (审稿必问)** → 已落 §14.1 2026-06-05 row: bitter-lesson / universal-interface 一派主张 human-UI computer-use 才是 **durable bet** (人类界面唯一普适、无需任何人配合、agent 专用协议碎片化/腐烂). Anthropic computer use / CUA 线即此赌注 (§21 (ii)×L computer-use stack 已 map). 我们 own data 偏这派 → paper 若断言 "agent-native 是未来" 不接招 = naive.
+4. **Novelty 诚实**: governance frame 走得很熟 — principal-agent / agency cost / confused deputy / platform self-preferencing (现行反垄断活靶: EU DMA / Google Shopping / Amazon) / open banking (PSD2) / dark patterns / choice architecture. 直觉对, 但**必须 cite, 不能 claim 原创**. grep 实测 (2026-06-05): 这些 anchor 多数 **repo 内 absent** (§23.5).
+
+### §23.4 唯一 paper-usable 萃取 (2 件)
+
+1. **"user agent" 修辞武器**: `user agent` 本是 HTTP 术语, browser 在标准里就叫 user agent, 本意"代表用户行动的软件" (repo 内 user-agent 已 7 文件命中, 但多是 HTTP/UA-string 语境, 非此修辞). web agents = 对该原始承诺的**回归**; §23.1 的 incentive 问题一句钉死: **"会不会真的对得起 user agent 这个名字"**. intro 开场 / discussion 收束都好用, 比"百度竞价"更适合英文 venue (后者审稿人 get 不到).
+2. **transitional-solution one-liner (verbatim 留用)**: *"representation routing is a transitional solution: given today's legacy human web, the agent must pick the cheapest representation that still exposes enough task-relevant semantics."*
+
+### §23.5 Citation anchor (TBD — prose 前 verify, per memory feedback_arxiv_api_for_verification + feedback_grep_lit_before_tbd_claim)
+
+grep `docs/` 实测 2026-06-05 命中 (✅=已在 repo / ❌=absent, fresh anchor 需加):
+- ❌ principal-agent / agency cost (Jensen & Meckling 1976) — 0 files
+- ✅ confused deputy (Hardy 1988) — 1 file (verify which; capability-security, agent 被骗反 principal 的技术 analog)
+- ❌ platform self-preferencing — 0 files (反垄断活靶, fresh)
+- ✅ Digital Markets Act / DMA — 2 files (verify 是否同语境)
+- ❌ open banking / PSD2 — 0 files (mandated-interoperability 先例, fresh; user §8 类比正主)
+- ❌ dark patterns (Brignull) / choice architecture (Thaler & Sunstein, Nudge 2008) — 0 files
+- ❌ bitter lesson — 0 files (counter-camp #3 思想源, fresh)
+- ✅ computer use / agent-native — 33 / 3 files (§21 industry stack 已重度覆盖, 复用勿重造)
+
+⚠️ 经典文献 (Jensen-Meckling / Hardy / Thaler-Sunstein / PSD2 / DMA / Google Shopping 案) 真实存在但 **exact cite 仍须 verify** 再进 `docs/checkpoints/paper_drafts/paper.bib` (755 行); arXiv 类走 arXiv API curl 验. **本节列候选 anchor, 不是已锁 cite.**
 
 ---
