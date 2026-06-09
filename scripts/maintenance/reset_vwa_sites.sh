@@ -112,12 +112,30 @@ _reset_vwa_local_classifieds() {
         echo "[${label}][reset_vwa][local] CLASSIFIEDS_RESET_TOKEN missing (env or .auth/cls_reset_token); aborting cls reset" >&2
         return 1
     fi
-    local code
-    code=$(curl -sS -o /dev/null --max-time 60 -w "%{http_code}" \
-           -X POST -d "token=${token}" \
-           "http://localhost:9980/index.php?page=reset" 2>/dev/null || echo "000")
-    if [[ "${code}" != "200" ]]; then
-        echo "[${label}][reset_vwa][local] classifieds HTTP FAIL (http=${code})" >&2
+    # B-1870 (cls reset POST transient resilience, 2026-06-09): the reset POST
+    # (page=reset) is a heavy op (DB DROP/seed + PHP cache/session clear) that can
+    # transiently fail with http=000000 (TCP connect refused) when the container is
+    # still settling right after the L87 login-200 health probe passed. B-1839's
+    # warm-up retry covered the health probe (lightweight page=login) but NOT this
+    # actual reset call — an asymmetric gap. Observed 2026-06-09 R32472 (B2 som cls):
+    # a single 000000 here cascade-halted the whole cls chain (fail-closed working as
+    # designed, but on a recoverable transient). Fix: symmetric retry+backoff. The
+    # reset is idempotent (000=request never reached server → no partial exec; even a
+    # 500 is DROP+seed-idempotent), so re-POST is safe. Fail-closed PRESERVED — return
+    # 1 only after all 4 attempts exhaust. See master_bug_catalog B-1870.
+    local code _ri _reset_ok=0
+    for _ri in 1 2 3 4; do
+        code=$(curl -sS -o /dev/null --max-time 60 -w "%{http_code}" \
+               -X POST -d "token=${token}" \
+               "http://localhost:9980/index.php?page=reset" 2>/dev/null || echo "000")
+        if [[ "${code}" == "200" ]]; then _reset_ok=1; break; fi
+        if [[ "${_ri}" -lt 4 ]]; then
+            echo "[${label}][reset_vwa][local] classifieds reset POST attempt ${_ri}/4 failed (http=${code}); backoff $(( _ri * 5 ))s" >&2
+            sleep $(( _ri * 5 ))
+        fi
+    done
+    if [[ "${_reset_ok}" != "1" ]]; then
+        echo "[${label}][reset_vwa][local] classifieds HTTP FAIL (http=${code}) after 4 attempts" >&2
         return 1
     fi
     # B-746 (/stress A1.17 cold-start P0-3 C* OOB, 2026-05-17, Q2=D'):

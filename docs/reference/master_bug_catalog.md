@@ -8231,3 +8231,19 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: 笔记 §321 (B1 ptext diag, axis-2 P4 headline) + `docs/analysis/vwa_classifieds/B1_phantom_text_classifieds_diag_digest.md` §3/§9; §306 (action_success axis-2 number this would refine); B-440 (`locator_route_meta._primary` field); `aggregate_locator_route_metrics.py` (existing walk_fail counter); B-114 (sibling: parse fallback executed despite valid=False — same "fallback masks failure as success" family).
 
 ---
+
+### B-1870. cls reset POST (`page=reset`) zero-retry → single transient `http=000000` cascade-halts whole chain — asymmetric retry gap vs health-probe ✅ FIXED (2026-06-09)
+
+**Discovery**: chain abort 2026-06-09 13:33 (R32472, B2 som cls). B2 dom cls (R17895) finished clean (completed_ok 12→13, task233 done, data intact) → chain advanced to `[8/12] B2 som` → reset failed → `queue_chain` fail-closed cascade-halt (orchestrator "NOT launching red"; P0-2-B* working as designed, prevents silent partial-data advancement). User flagged "docker 反复出现, 前几次也是 docker". Historical grep confirmed: 17+ `queue_chain ABORT` 5/18→6/9, almost all cls (cls reset/substrate = recurring fragile point, see 笔记 §16014 "8× rc=1 全 cls"); BUT the `http=000000` signature specifically = **first occurrence** (1× across all logs).
+
+**Symptom**: `reset_vwa_sites.sh:_reset_vwa_local_classifieds` — B-1839's per-condition docker restart added retry to the **health probes** (`SELECT 1` ×30 @L73 + `page=login` http-200 ×30 @L87) but the **actual reset POST** (`page=reset`, L116) had **zero retry** — single non-200 → `return 1` → queue_baseline rc=1 → chain fail-closed. Log shows `classifieds containers fresh + warm (db query OK, http 200)` (login probe OK) immediately followed by `classifieds HTTP FAIL (http=000000)` (reset POST). `000000` = TCP connect refused (not slow); the lightweight `page=login` probe passing does NOT guarantee the heavy `page=reset` op (DB DROP/seed + PHP cache/session clear) can connect in the same instant — container hit a sub-second instability window between probe and reset call. B-1839 warm-up covered the probe but NOT the reset call itself = asymmetric gap.
+
+**Fix**: symmetric retry+backoff on the reset POST — initial + 3 retries (4 attempts), backoff 5/10/15s, all-exhaust → `return 1` (**fail-closed PRESERVED**). Reset is idempotent (000 = request never reached server → no partial exec; even a 500 is DROP+seed-idempotent) so re-POST is safe. `classifieds HTTP FAIL (http=…)` string retained for grep/`paper_grade_check` compat. Substrate hygiene (same class as B-1839: touches reset reliability, NOT estimand/`metrics.py`) → git tag `b1870-cls-reset-retry-prefire`, NO OSF amendment needed (per B-1839 P0-1-C witness conclusion: substrate change = tag + methods disclose, not amendment).
+
+**Verify**: re-launch 2026-06-09 15:49 (`RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0`) — all 8 gates passed, SKIP 13 done (B0×6 + B1×6 + B2 dom), B2 som reset passed **first try** (retry not triggered — `000000` is intermittent), runner R23029 launched, chain watching. B-1870 retry is a **standing safety net** (not exercised this run; will absorb a future `000000` instead of cascade-halting). Especially relevant for the 2026-06-10 ARC Rancher upgrade window when containers are more likely to flap.
+
+**Does NOT affect**: SR/eval (substrate-prep layer, pre-runner, outcome-based eval unchanged); reddit reset (`docker rm+run` self-seed, no HTTP-POST gap); cls 5-table sentinel (L214-250 = `docker exec mysql` local socket, won't 000000).
+
+**Cross-link**: 笔记 §326 (chain abort full chain + user-correction lesson) + §313/§314 (prior cls chain abort saga: A100 outage + wallclock); B-1839 (per-condition docker restart — the feature this patches the gap in); B-1836 (eval-timeout retry, sibling resilience net); [[feedback-pre-fire-protocol-witness]] (substrate change = tag not amendment).
+
+---
