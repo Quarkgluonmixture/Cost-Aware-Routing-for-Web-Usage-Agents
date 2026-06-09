@@ -79,6 +79,18 @@ SINGLE_MODE_BASELINES = ["dom", "som", "vision", "phantom_text", "phantom_som"]
 # at 4 ep). If it gathers >= this many Pass-1 episodes it is added as a 6th baseline so
 # the router cannot be credited for a phantom_prompt arm with no always-phantom_prompt
 # comparison. Implements the prereg "baseline set expands to 6 if >=50 ep P-prompt".
+#
+# B-1872 (/stress Mode A P1-1-A* 2026-06-09): eligibility is a JOINT decision across
+# ALL required cells, decided once in run_h10_verdict and passed down — NOT re-decided
+# per cell. The pre-fix per-cell check let cells face different baseline-arm sets
+# (5 vs 6) whenever one cell's P-prompt data fell below the floor: an extra arm makes
+# non-dominance strictly harder, so the K-of-6 grid criterion would have mixed cells
+# answering different questions. Joint rule = expand to 6 ONLY when every required
+# cell has >= MIN_EP P-prompt episodes (a conservative superset of the prereg's
+# literal "B0+B1+B2 cls all >= 50" wording: red cells must qualify too, otherwise
+# their 6th arm would be data-empty and the per-cell asymmetry would reappear via the
+# arm-skip path). When the joint condition fails, ALL cells stay at the prereg
+# default 5-arm set — cross-cell comparability preserved, no locked default violated.
 PHANTOM_PROMPT_BASELINE_MIN_EP = 50
 
 # Router condition_id (single per-cell Pass-2 fire)
@@ -429,13 +441,19 @@ def fe_inverse_variance_pool(
 
 
 def analyze_cell(
-    baseline: str, site: str, require_full_coverage: bool = False
+    baseline: str, site: str, require_full_coverage: bool = False,
+    phantom_prompt_in_baselines: Optional[bool] = None,
 ) -> dict[str, Any]:
     """Per-cell H10 Pareto analysis: load Pass-1 + Pass-2, paired bootstrap, verdict.
 
     require_full_coverage (C8 B-1811): when True, fail-closed if the router/baseline
     task intersection is not the full router task set (paper-grade); otherwise warn and
     proceed on the intersection subset (dev / partial-fire inspection).
+
+    phantom_prompt_in_baselines (B-1872): the P-prompt 6th-arm decision. Paper-grade
+    callers (run_h10_verdict) pass the JOINT cross-cell verdict so every cell faces
+    the same arm set; None (direct dev invocation) falls back to the legacy
+    cell-local check with a warning.
     """
     cell_id = f"{baseline}_{site}"
     print(f"\n=== {cell_id} ===")
@@ -507,19 +525,29 @@ def analyze_cell(
 
     # Per-arm baseline metrics (Pass-1)
     baseline_metrics: dict[str, dict[str, np.ndarray]] = {}
-    baseline_paired_summaries: dict[str, dict[str, Any]] = {}
     # C7 (B-1820): expand the baseline set to include phantom_prompt when it has enough
     # Pass-1 data (prereg conditional). The router can route to phantom_prompt, so
     # without this an always-phantom_prompt baseline that might dominate the router would
     # never be tested → H10 could over-credit the router.
     arms = list(SINGLE_MODE_BASELINES)
     pp_s, _, _, _ = aggregate_arm_metrics(pass1_outcomes, "phantom_prompt")
-    phantom_prompt_in_baselines = len(pp_s) >= PHANTOM_PROMPT_BASELINE_MIN_EP
+    cell_pp_eligible = len(pp_s) >= PHANTOM_PROMPT_BASELINE_MIN_EP
+    if phantom_prompt_in_baselines is None:
+        # B-1872: legacy cell-local fallback for direct/dev single-cell invocation.
+        # Paper-grade verdicts MUST come through run_h10_verdict's joint decision so
+        # every cell faces the same arm set (an extra arm makes non-dominance strictly
+        # harder; mixing 5- and 6-arm cells breaks the K-of-6 grid comparability).
+        phantom_prompt_in_baselines = cell_pp_eligible
+        print(
+            f"  ⚠️  B-1872: cell-local P-prompt eligibility used "
+            f"({len(pp_s)} ep → {cell_pp_eligible}) — dev path only; paper-grade "
+            f"arm set is decided JOINTLY in run_h10_verdict."
+        )
     if phantom_prompt_in_baselines and "phantom_prompt" not in arms:
         arms = arms + ["phantom_prompt"]
         print(
-            f"  C7: phantom_prompt has {len(pp_s)} ep >= {PHANTOM_PROMPT_BASELINE_MIN_EP} "
-            f"→ added as 6th baseline arm"
+            f"  C7/B-1872: phantom_prompt added as 6th baseline arm "
+            f"(this cell has {len(pp_s)} ep >= {PHANTOM_PROMPT_BASELINE_MIN_EP})"
         )
     for arm in arms:
         s, c, l, tids = aggregate_arm_metrics(pass1_outcomes, arm)
@@ -532,7 +560,6 @@ def analyze_cell(
             print(f"  arm={arm}: NO common task overlap with router, skipping")
             continue
         arm_tid_to_idx = {t: i for i, t in enumerate(tids)}
-        router_tid_to_idx = {t: i for i, t in enumerate(router_task_ids)}
         common_sorted = sorted(common)
         arm_idx = [arm_tid_to_idx[t] for t in common_sorted]
         baseline_metrics[arm] = {
@@ -541,14 +568,7 @@ def analyze_cell(
             "latency": l[arm_idx],
             "task_ids": common_sorted,
         }
-        baseline_paired_summaries[arm] = paired_bootstrap_arm_metrics(
-            s[arm_idx], c[arm_idx]
-        )
-        print(
-            f"  arm={arm}: n_common={len(common_sorted)}, "
-            f"SR={baseline_paired_summaries[arm]['sr_mean']:.3f}, "
-            f"Cost={baseline_paired_summaries[arm]['cost_mean']:.4f}"
-        )
+        print(f"  arm={arm}: n_overlap_with_router={len(common_sorted)}")
 
     if not baseline_metrics:
         return {
@@ -624,6 +644,21 @@ def analyze_cell(
             "cost": m["cost"][b_idx],
         }
 
+    # B-1874 (/stress Mode A P2-1-A 2026-06-09): per-arm descriptive summaries are
+    # computed on the SAME global common task set as the Pareto verdict — pre-fix they
+    # were computed per-arm on each arm's own router-intersection, so a §6 table citing
+    # arm SR/Cost next to θ mixed two universes with different N and would not
+    # cross-check. `n` inside each summary now equals n_common_tasks by construction.
+    baseline_paired_summaries: dict[str, dict[str, Any]] = {
+        arm: paired_bootstrap_arm_metrics(m["success"], m["cost"])
+        for arm, m in aligned_baseline.items()
+    }
+    for arm, summ in baseline_paired_summaries.items():
+        print(
+            f"  arm={arm}: n={summ['n']}, SR={summ['sr_mean']:.3f}, "
+            f"Cost={summ['cost_mean']:.4f}"
+        )
+
     # Router paired bootstrap summary (for descriptive)
     router_paired = paired_bootstrap_arm_metrics(router_success_common, router_cost_common)
     print(
@@ -649,7 +684,8 @@ def analyze_cell(
         "status": "ok",
         "n_common_tasks": len(common_sorted),
         "coverage": coverage,  # C8 (B-1811): estimand coverage disclosure
-        "phantom_prompt_in_baselines": phantom_prompt_in_baselines,  # C7 (B-1820)
+        "phantom_prompt_in_baselines": phantom_prompt_in_baselines,  # C7 (B-1820) + joint per B-1872
+        "cell_pp_ep_count": int(len(pp_s)),  # B-1872 provenance: this cell's own P-prompt ep count
         "router_sr_mean": router_paired["sr_mean"],
         "router_sr_ci_95": router_paired["sr_ci"],
         "router_cost_mean": router_paired["cost_mean"],
@@ -712,9 +748,40 @@ def run_h10_verdict(
 ) -> dict[str, Any]:
     """Top-level H10 verdict: per-cell analysis + K-of-6 PRIMARY + FE pool APPENDIX."""
     cells = cells or CELLS
+
+    # B-1872 (/stress Mode A P1-1-A* 2026-06-09): JOINT P-prompt 6th-arm eligibility,
+    # decided ONCE across all required cells and passed into every analyze_cell call.
+    # Expand to 6 arms only if EVERY required cell has >= MIN_EP Pass-1 P-prompt
+    # episodes; otherwise all cells stay at the prereg-default 5-arm set. This keeps
+    # the K-of-6 grid criterion comparable (an extra arm makes non-dominance strictly
+    # harder — mixing 5- and 6-arm cells would let identical routers pass in one cell
+    # and fail in another purely by arm-set asymmetry). The Pass-1 outcome scan below
+    # duplicates I/O analyze_cell will redo (~seconds on a cold analysis run); accepted
+    # for a non-hot-path aggregator to keep the joint decision side-effect-free.
+    pp_ep_per_cell: dict[str, int] = {}
+    for baseline, site in cells:
+        cell_id = f"{baseline}_{site}"
+        p1_runs = find_pass1_run_dirs(baseline, site)
+        if not p1_runs:
+            pp_ep_per_cell[cell_id] = 0
+            continue
+        outcomes = collect_per_task_outcomes_with_metrics(p1_runs, site)
+        pp_s, _, _, _ = aggregate_arm_metrics(outcomes, "phantom_prompt")
+        pp_ep_per_cell[cell_id] = int(len(pp_s))
+    pp_joint_eligible = bool(pp_ep_per_cell) and all(
+        n >= PHANTOM_PROMPT_BASELINE_MIN_EP for n in pp_ep_per_cell.values()
+    )
+    print(
+        f"\nB-1872 joint P-prompt 6th-arm eligibility: {pp_joint_eligible} "
+        f"(per-cell ep: {pp_ep_per_cell}; floor={PHANTOM_PROMPT_BASELINE_MIN_EP})"
+    )
+
     per_cell_results = {}
     for baseline, site in cells:
-        rec = analyze_cell(baseline, site, require_full_coverage=require_full_coverage)
+        rec = analyze_cell(
+            baseline, site, require_full_coverage=require_full_coverage,
+            phantom_prompt_in_baselines=pp_joint_eligible,
+        )
         per_cell_results[rec["cell_id"]] = rec
 
     # Operational deployment gate (two-layer: cell-level + grid-level)
@@ -754,6 +821,19 @@ def run_h10_verdict(
             "is largely reproducing a single-mode baseline (e.g. always phantom_som) and "
             "§6 must not claim a learned-routing benefit."
         ),
+        # B-1872: joint cross-cell P-prompt 6th-arm decision provenance — every cell
+        # faced the SAME baseline arm set (5 or 6), never a per-cell mix.
+        "phantom_prompt_joint_eligibility": {
+            "joint_eligible": pp_joint_eligible,
+            "min_ep_floor": PHANTOM_PROMPT_BASELINE_MIN_EP,
+            "per_cell_pp_ep": pp_ep_per_cell,
+            "note": (
+                "B-1872: 6th arm (always-phantom_prompt) enabled for ALL cells iff "
+                "every required cell has >= floor Pass-1 P-prompt episodes; else ALL "
+                "cells use the prereg-default 5-arm set. Decided once here, passed "
+                "into analyze_cell — never re-decided per cell."
+            ),
+        },
     }
 
     # P0-2 (AMENDMENT_04 H10 entropy DEFER gate, prereg §H10 L238-240): read the

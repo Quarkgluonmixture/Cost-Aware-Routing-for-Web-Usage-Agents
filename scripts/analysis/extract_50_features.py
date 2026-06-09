@@ -139,10 +139,10 @@ def collect_per_task_outcomes(run_dirs: list[Path], site: str) -> dict[int, dict
     return matrix
 
 
-def read_step0_features(
+def _read_step0_from_run(
     pass1_run_dir: Path, site: str, task_id: int
 ) -> Optional[dict[str, Any]]:
-    """Read DOM-mode step-0 record to extract numeric features.
+    """Read DOM-mode step-0 record from ONE run dir to extract numeric features.
 
     Picks first available DOM condition in run_dir (any DOM-like condition works —
     entry-page is mode-agnostic at step-0 per train_l1_router.py:121-128).
@@ -189,6 +189,25 @@ def read_step0_features(
         # at serve = train/serve skew. Consistency > accuracy for a routing feature.
         "tokens_input_text": estimate_input_tokens(text_length),
     }
+
+
+def read_step0_features(
+    pass1_run_dirs: list[Path], site: str, task_id: int
+) -> Optional[dict[str, Any]]:
+    """Read step-0 numeric features, trying EVERY canonical run dir in order.
+
+    B-1873 (/stress Mode A P1-2-A* 2026-06-09): the pre-fix caller probed only
+    `runs[0]` (alphabetically-first manifest entry) — a task whose dom episodes
+    live in a later run dir silently fell through to the 0-fill path. Walking
+    all canonical runs shrinks the miss set to tasks with genuinely no step-0
+    record anywhere; the remaining misses are COUNTED by the caller (no silent
+    0-fill, mirroring the G3 accounting-identity pattern for config drops).
+    """
+    for run_dir in pass1_run_dirs:
+        rec = _read_step0_from_run(run_dir, site, task_id)
+        if rec is not None:
+            return rec
+    return None
 
 
 def read_task_config(site: str, task_id: int) -> Optional[dict[str, Any]]:
@@ -238,6 +257,8 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
             "n_filtered_no_success": 0,
             "n_dropped_no_config": 0,
             "dropped_no_config_task_ids": [],
+            "n_step0_missing": 0,
+            "step0_missing_task_ids": [],
             "n_kept": 0,
             "all_task_ids": [],
             "no_success_task_ids": [],
@@ -294,7 +315,10 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
     n_single_success = 0
     n_multi_success = 0
 
-    pass1_run_for_step0 = runs[0]  # use first run dir for step-0 (per train_l1_router.py:234)
+    # B-1873: step-0 lookup walks ALL canonical runs (was runs[0] only); misses are
+    # counted below instead of silently 0-filling three numeric features.
+    n_step0_missing = 0
+    step0_missing_task_ids: list[int] = []
 
     for tid in task_ids_sorted:
         outcomes = matrix[tid]
@@ -308,7 +332,7 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         else:
             n_single_success += 1
 
-        step0 = read_step0_features(pass1_run_for_step0, site, tid)
+        step0 = read_step0_features(runs, site, tid)
         cfg = read_task_config(site, tid)
         if cfg is None:
             # Task config missing/unreadable — skip rather than fabricate, but COUNT it
@@ -322,6 +346,14 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
 
         intent = cfg["intent"]
         intent_tok_count = len(intent.split())
+        # B-1873: a labeled task with NO step-0 record in ANY canonical run still
+        # 0-fills the three step-0 numerics (dropping it would shrink the trainable
+        # set; the feature degrades, the row survives) — but the miss is now COUNTED
+        # and surfaced, never silent. High counts mean a run-dir / episode-layout
+        # problem upstream, not a benign default.
+        if step0 is None:
+            n_step0_missing += 1
+            step0_missing_task_ids.append(tid)
         # 5 numeric features (mode-agnostic step-0 + task config)
         numeric = np.array(
             [
@@ -365,6 +397,15 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
             f"usually means the external/visualwebarena submodule is unchecked. Fix the "
             f"configs and re-run; do NOT treat this as a benign empty pool."
         )
+    if n_step0_missing:
+        preview = step0_missing_task_ids[:10]
+        print(
+            f"  ⚠️  [{cell_id}] {n_step0_missing}/{n_kept} kept tasks have NO step-0 "
+            f"record in ANY of {len(runs)} canonical run dir(s) (e.g. task_ids "
+            f"{preview}) — their dom_complexity/text_length/tokens_input_text are "
+            f"0-filled (B-1873). A high count means a run-dir/episode layout problem; "
+            f"investigate before trusting the trained router on this cell."
+        )
     X_numeric = (
         np.vstack(records_numeric) if records_numeric else np.zeros((0, 5), dtype=float)
     )
@@ -387,6 +428,9 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         "n_dropped_no_config": dropped_no_config,
         "dropped_no_config_task_ids": dropped_no_config_task_ids,
         "n_kept": n_kept,
+        # B-1873: kept rows whose step-0 numerics were 0-filled (no record anywhere).
+        "n_step0_missing": n_step0_missing,
+        "step0_missing_task_ids": step0_missing_task_ids,
         # C1 (B-1808): full routable universe (incl. no-success) for fold coverage.
         "all_task_ids": all_task_ids,
         "no_success_task_ids": no_success_task_ids,
@@ -548,6 +592,9 @@ def save_npz(extracted: dict[str, Any], out_path: Path) -> None:
                 # pool (e.g. submodule unchecked) is diagnosable from the JSON alone.
                 "n_dropped_no_config": rec.get("n_dropped_no_config", 0),
                 "dropped_no_config_task_ids": rec.get("dropped_no_config_task_ids", []),
+                # B-1873: 0-filled step-0 numerics disclosure (mirrors G3 config-drop).
+                "n_step0_missing": rec.get("n_step0_missing", 0),
+                "step0_missing_task_ids": rec.get("step0_missing_task_ids", []),
                 "n_kept": rec["n_kept"],
                 "n_routable_universe": len(rec.get("all_task_ids", [])),
                 "label_distribution": rec["label_distribution"],
