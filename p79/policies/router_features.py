@@ -76,17 +76,28 @@ def estimate_input_tokens(text_length: int) -> int:
 # text-only modes — dom + the three phantom arms ([SOM_MARKS] is a *flattened*
 # AXTree, ≈1.00× chars, NO annotated image) — cost ≈ DOM; the two image-bearing
 # modes (som = annotated screenshot, vision = raw screenshot) carry image-token
-# cost and are strictly more expensive. The previous order
+# cost per call. The previous order
 # ["dom","som","vision","phantom_text","phantom_prompt","phantom_som"] ranked the
-# two EXPENSIVE image modes ahead of the cheap phantoms and buried the
+# two image modes ahead of the cheap phantoms and buried the
 # deployment-representative HERO (phantom_som) last → labels biased toward
 # expensive modes, undercutting the paper's cost argument (F2).
 #
-# Within the text-only block costs are ~equal; we order canonical `dom` first,
-# then the HERO `phantom_som`, then the other phantoms. PRIOR ordering — once
-# Pass-1 lands, verify against measured per-mode mean cost (summary_v2
-# `total_model_cost_usd`) and switch to a measured-cost tie-break if the prior
-# order disagrees (router /stress F2 TODO, 2026-05-21).
+# F2 TODO RESOLVED (2026-06-09, /stress Mode A Q4 verify on landed B0+B1 cls,
+# 12 conditions × 224 ep): measured episode-realized `total_billed_cost_usd`
+# does NOT reproduce this prior order — success-only per-mode means are
+# step-count-dominated and CELL-INVERTED (B0 cls cheapest→dearest:
+# vision .033 < som .035 < psom .040 < pprompt .045 < ptext .046 < dom .051;
+# B1 cls: dom .018 < vision .019 < ptext .023 < pprompt .032 < psom .047 <
+# som .050; n_succ only 14-61 per mode). A measured-cost tie-break is therefore
+# NOT viable: (a) the measured order is unstable across cells (B0/B1 inverted),
+# (b) episode cost is endogenous to behavior (success path length), inviting a
+# cost←outcome circularity into the label definition, (c) n_succ is too small
+# to pin an order. DECISION: keep this PRIOR order (input-payload/per-call
+# view: text-only modes carry no image tokens — the §3 drop-in (a) layer),
+# unchanged as the locked tie-break; tie-break sensitivity is bounded by the
+# multi-success task count (G1 `oracle_provenance.n_multi_success`) and is
+# §6-disclosable from the same data if a reviewer asks. Do NOT silently switch
+# to a measured tie-break — that is an oracle-label estimand change.
 MODES = ["dom", "phantom_som", "phantom_text", "phantom_prompt", "som", "vision"]
 
 # Coarse cost tiers (text-only vs image), for callers that want the grouping

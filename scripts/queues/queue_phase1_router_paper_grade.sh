@@ -37,15 +37,20 @@
 #     - queue_router_learned.sh B1 reddit
 #     - queue_router_learned.sh B2 reddit
 #
-# Chain dependency: cls and red can run in parallel (different sites). Within each
-# chain B0 → B1 → B2 sequential (same-site one-baseline rule). Pass-2 itself cannot
-# run in parallel with Pass-1 on same site.
+# Chain dependency (B-1875 stale-comment fix 2026-06-09; launch behavior unchanged
+# since P0-3-B 2026-05-19): paper-grade default is SEQUENTIAL cls → red — CLAUDE.md
+# hard rule #3 (one site chain per physical host: cls+red share the A100 docker
+# bridge + Postgres/Redis underlay + B0 proxy quota/connection pool; cross-site
+# contention biases the cross-cell latency canonical). PHASE1A_PARALLEL=1 is an
+# explicit DEV-ONLY opt-in (NOT paper-grade safe). Within each chain B0 → B1 → B2
+# sequential (same-site one-baseline rule). Pass-2 itself cannot run in parallel
+# with Pass-1 on same site.
 #
 # ETA estimates (A100 40GB; Pass-2 = 1 condition/cell vs Pass-1 = 6 conditions/cell,
 # 6x fewer conditions means ~6x shorter than Pass-1 router pass):
 #   cls chain (3 conditions): B0 (~4h) → B1 (~8h) → B2 (~8h) = 20h ≈ 1 day
 #   red chain (3 conditions): B0 (~3.5h) → B1 (~7h) → B2 (~7h) = 17.5h ≈ 0.7 days
-#   Total Pass-2 wallclock with 2 parallel chains = ~1 day
+#   Total Pass-2 wallclock, sequential cls → red (paper-grade default) ≈ 1.6 days
 #
 # Sentinel files (A2.8 P0-5-B* B-1557 cond_id alignment 2026-05-18; pre-fix doc cited
 # legacy static "phase1_learned_router" but runner emits per-cell + per-backend pattern):
@@ -444,7 +449,7 @@ dry_run() {
   log "Pass-2 total: 6 operational conditions across 6 statistical cells."
   log "Phase 1a total = 36 baseline (Pass-1) + 6 router (Pass-2) = 42 conditions."
   log ""
-  log "ETA: ~1 day wallclock if cls + red chains parallel (each chain B0 → B1 → B2 sequential)."
+  log "ETA: ~1.6 days wallclock, sequential cls → red (paper-grade default per CLAUDE.md hard rule #3; each chain B0 → B1 → B2 sequential). PHASE1A_PARALLEL=1 = dev-only opt-in, NOT paper-grade."
   log ""
   log "Pre-launch TODOs (Gates 3+4 likely currently failing):"
   log "  - LR runtime integration in p79/experiment/runner/main.py (observation_mode=\"learned\" dispatch)"

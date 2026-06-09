@@ -215,7 +215,12 @@ def build_runtime_feature_vector(
 ) -> np.ndarray:
     """Apply fold-k vectorizer + concat + selected_idx mask → (18,) feature vector.
 
-    Mirrors `train_l1_router_with_mi.py:build_design_matrix` runtime equivalent.
+    Runtime equivalent of the train-side design-matrix builders — Stage 2
+    `train_l1_router_with_mi.py:build_design_matrix` AND the canonical Stage 3
+    `train_l1_router.py:build_design_matrix_for_indices` (B-1875 comment-target
+    fix: the old comment named only the Stage-2 file, steering maintainers to
+    diff against the wrong sibling). All three concat [tfidf | numeric | binary]
+    in that order; the dim check below fails loud on any drift.
     """
     intent_text = raw_features["intent_text"]
     X_tfidf = vectorizer.transform([intent_text]).toarray().ravel()  # (30,)

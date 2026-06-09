@@ -8263,3 +8263,51 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: 笔记 §327 (本次 /stress Mode A 审计全链); B-1808 (C1 universe 覆盖 — 本 fix 保持其契约并废除其 round-robin 实现细节); B-1819 (C4 stratification crash-safety — stratification 移除后该攻击面消失,测试改测纯 KFold 覆盖契约); B-995 (min-class filter — 不分层后的 fold-balance 兜底); `section6_router.md` §6.1 + L99 (prose 同步); [[feedback-systematic-audit-before-verdict]] (列全矩阵逐格实证 — 本 catch 来自孪生行矩阵推演)。
 
 ---
+
+### B-1872. H10 第 6 baseline (P-prompt) per-cell 判定 → 跨 cell baseline arm set 可不一致 — gate 严格度漂移 ✅ FIXED (2026-06-09)
+
+**Discovery**: /stress Mode A 2026-06-09 P1-1-A* — prereg L215 写联合条件 ("B0+B1+B2 cls **all** ≥50 ep → expands to 6"),`aggregate_h10_pareto.py:516-519` 实现为逐 cell 独立 `len(pp_s) >= 50`。
+
+**Symptom**: 某 cell P-prompt 数据部分缺失 (<50 ep) 而其他 cell ≥50 时,不同 cell 对抗 5 vs 6 个 baseline arms。多一 arm = 非被支配判定严格单调更难 → H10 的 ≥5/6 grid criterion 在 cell 间不是同一道题;即使 cls-only 字面条件满足,red cell pp 缺数据时其第 6 arm 走 arm-skip 路径 → 不一致换个形态重现。
+
+**Fix**: 判定提升到 `run_h10_verdict` 层做**一次性跨全部 required cells 联合** (`pp_ep_per_cell` 扫描 + `pp_joint_eligible = all(n >= 50)`),经新参数 `analyze_cell(phantom_prompt_in_baselines=...)` 传入;联合不满足 → 全 cell 保持 prereg 默认 5-arm (一致性保住,gate 偏宽松方向 = 与 locked 默认一致,无违反)。联合条件取 all-cells 是 prereg cls-only 字面的保守 superset (注释 L77-93 写明 reasoning)。`analyze_cell` 直接调用 (dev) fallback 旧 per-cell 语义 + 显式 warning。verdict 输出加 `phantom_prompt_joint_eligibility` provenance 块 + per-cell `cell_pp_ep_count`。
+
+**Cross-link**: B-1820 (C7 原条目 — 本 fix 修其判定层级); 笔记 §328; prereg L215。
+
+---
+
+### B-1873. extract_50_features step0 缺失静默 0-fill 无计数 + 只查 runs[0] — G3 修复的不对称残留 ✅ FIXED (2026-06-09)
+
+**Discovery**: /stress Mode A 2026-06-09 P1-2-A* (sibling-propagation 类: G3 把 config-drop 修成 loud + accounting identity,隔壁 step0-drop 路径漏网)。
+
+**Symptom**: `read_step0_features` 只探 `runs[0]` (manifest 字母序第一 run) — task 的 dom episodes 在后续 run dir 时静默落入 0-fill;`build_cell_records` 对 step0=None 把 dom_complexity/text_length/tokens_input_text 三个 numeric 填 0,**无 counter 无 meta 记录** → 0-fill 率不可见,某 cell 高 0-fill 时三特征无声退化为常数,MI 选择 + LR 被拉偏且 train(0)≠serve(真值) skew 不可审计。
+
+**Fix**: (a) `read_step0_features` 改签名收 `run_dirs: list[Path]`,按序遍历全部 canonical runs 直到命中 (内部原逻辑抽为 `_read_step0_from_run`); (b) miss 计数 `n_step0_missing` + `step0_missing_task_ids` 进 per-cell record + `save_npz` per_cell_summary (镜像 G3 模式); (c) loud print 当 >0 ("investigate before trusting the trained router on this cell")。0-fill 行为本身保留 (丢行会缩 trainable set;特征降级行可活),只修可见性 + 查找范围。
+
+**Cross-link**: G3 (config-drop accounting — 本 fix 的模板); B-1817 (F4 tokens 对称性 — 本 fix 补其 step0-missing 路径盲区); 笔记 §328。
+
+---
+
+### B-1874. H10 per-arm 描述性 summary 与 Pareto verdict 用两个不同 task universe — §6 表 N 不可交叉复算 ✅ FIXED (2026-06-09)
+
+**Discovery**: /stress Mode A 2026-06-09 P2-1-A — `analyze_cell` 的 `baseline_paired_summaries[arm]` 在 per-arm router-交集上算 (L544),Pareto θ 在全局 common 交集上算 (L628+),两者并排进 verdict 输出。
+
+**Symptom**: §6 表同时引用 arm SR/Cost 与 θ 时混两个 universe (per-arm N 各异 ≠ n_common_tasks),reviewer 复算对不上。
+
+**Fix**: summaries 计算移到全局 re-align 之后,用 `aligned_baseline[arm]` 的数组 → `summ['n'] == n_common_tasks` by construction;arm 循环内只留 `n_overlap_with_router` print。
+
+**Cross-link**: B-1811 (C8 coverage disclosure — 同一 universe 关切的相邻面); 笔记 §328。
+
+---
+
+### B-1875. Stale 注释/prose sweep × 3 — router queue parallel 残句 + phantom_meta Notes↔代码矛盾 + learned_router 注释指向旧 train 脚本 ✅ FIXED (2026-06-09)
+
+**Discovery**: /stress Mode A 2026-06-09 P2-2-A + P2-3-A。三处纯文字与代码现实脱节 (行为零变更):
+
+1. `queue_phase1_router_paper_grade.sh:40-48` header + dry_run L447 仍写 "cls and red can run in parallel / ETA ~1 day if parallel" — 代码 2026-05-19 P0-3-B 已默认 sequential (CLAUDE.md hard rule #3);dry_run 输出直接误导 operator 期待 parallel/诱发 `PHASE1A_PARALLEL=1` 误开。→ 改为 sequential 默认 + dev-only opt-in 说明 + ETA ≈1.6 days。
+2. `aggregate_phantom_meta.py` MD Notes "TERTIARY uncorrected (exploratory)" 与代码 L391-406 对 TERTIARY 同样做 within-family Holm (m=2) 矛盾;L463 "phase1_prereg_gate.csv (currently MISSING — B-185)" stale (canonical producer 已存在)。→ Notes 改为 as-implemented 描述 (PRIMARY m=1 degenerate / SECONDARY m=3 / TERTIARY m=2 transparency-only);stale 行替换为指向 `aggregate_phase1_full_prereg_decision.py`。
+3. `learned_router.py:218` "Mirrors train_l1_router_with_mi.py:build_design_matrix" — canonical Stage 3 实为 `train_l1_router.py:build_design_matrix_for_indices`,旧指向把维护者引去 diff 错 sibling。→ 注释列全三个 builder + 指明 dim check fail-loud 兜底。
+
+**Cross-link**: P0-3-B 2026-05-19 (sequential fix 本体); B-182/B-185 (phantom_meta 原条目); B-1871 (同批 /stress); 笔记 §328。
+
+---
