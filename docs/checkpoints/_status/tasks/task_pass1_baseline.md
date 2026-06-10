@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "~9d passive (cls 2/18 done 2026-05-26: dom R21557 + som R5313 canonical)"
+eta: "2026-06-26 (D4; §330 watcher: B2 cls ~06-15/16 → red auto-chain ~06-22/23 + buffer)"
 detail: phase1_plan
 created: 2026-05-22
-updated: 2026-05-26
+updated: 2026-06-10
 ---
 
 # Pass-1 baseline (36 cond) lands

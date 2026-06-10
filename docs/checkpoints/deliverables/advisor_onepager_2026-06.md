@@ -1,0 +1,50 @@
+---
+type: deliverable
+status: draft
+audience: advisor
+deliverable: 1 of 2
+created: 2026-06-10
+updated: 2026-06-10
+---
+
+# Cost-Aware Routing for Web-Usage Agents
+
+**Project summary, research questions, experiments & timeline** · Jiaming Wei · 10 June 2026 · *advisor written-feedback deliverable 1 of 2*
+
+## 1. Goal
+
+Web agents read pages through different *observation representations* — accessibility-tree text (**DOM**), Set-of-Marks annotated screenshots (**SoM**), or raw screenshots (**Vision**) — whose token cost and latency differ by large factors, while success rates differ *per task* rather than uniformly. This project (a) characterises the success–cost trade-off of **six** representation modes on VisualWebArena, including a newly identified **phantom routing space**: three hybrid modes (**P-text, P-prompt, P-SoM**) that keep SoM-style text or prompt structure while dropping the annotated image; and (b) tests whether **cost-aware, per-task routing** over these modes improves the success–cost Pareto frontier beyond any fixed mode. Per advisor steers (14 & 29 May): scope = phenomenon + router (mechanism analysis parked); initial venue = workshop; the thesis is the full write-up.
+
+## 2. Research questions
+
+1. **RQ1 — Drop-in phenomenon** (H1/H2, primary): Is P-SoM a "drop-in" routing arm — cost ≈ DOM, ~50 % lower latency than SoM, success not significantly below the best baseline — such that *removing* it from the routing menu measurably costs success? Gate: one-sided fixed-effects pooled drop-one test, θ_FE > +1.0 pp, α = 0.05, k = 6 (site × model) cells.
+2. **RQ2 — Structure** (H3): Is the phantom space organised by two independent axes (text format × prompt style), i.e. a structural region rather than one lucky configuration?
+3. **RQ3 — Learned routing** (H10): Can a learned router, using pre-execution task features, choose per-task modes that are **Pareto non-dominated** (success vs cost) against all six fixed-mode baselines?
+4. **RQ4 — Secondary**: Which failure classes are *routing-rescuable* (cross-mode failure taxonomy)? Do findings hold across model scale and family (Qwen3-VL 235B vs 4B; Gemma3 4B)? All claims are reported against a measured run-to-run noise floor (~14 pp per-task discordance for the API-served 235B model — disclosed limitation per 29 May decision).
+
+## 3. Experiments (pre-registered: OSF DOI 10.17605/OSF.IO/9QCWU)
+
+- **Pass-1 — 36 baseline conditions**: {classifieds, reddit} × {Qwen3-VL-235B (API), Qwen3-VL-4B (local), Gemma3-4B (local)} × {DOM, SoM, Vision, P-text, P-prompt, P-SoM}; 224 / 205 scored tasks per site; paper-grade protocol (per-condition site reset, one-baseline-per-site, watchdog + run manifest, witnessed amendments).
+- **Pass-2 — 6 learned-router conditions**: one per site × model cell, trained on Pass-1 outcomes with site-stratified cross-validation.
+- **Analysis**: FE-pooled drop-one gate (RQ1) · axis non-overlap bootstrap (RQ2) · Pareto non-dominance + cost/latency accounting (RQ3) · 3-tier failure attribution feeding the cross-mode taxonomy (RQ4).
+- **Status (10 Jun)**: 12/36 conditions complete (235B + 4B Qwen on classifieds, 6/6 modes each); Gemma3 classifieds running (mode 1/6 at ~58 %); reddit auto-chained to follow.
+
+## 4. Self-imposed deadlines (tracked continuously; live tracker in repo)
+
+| # | Date | Milestone |
+|---|------|-----------|
+| **D1** | **Fri 13 Jun** | **This one-pager → advisor (deliverable 1)** |
+| D2 | Tue 17 Jun | Gemma3 classifieds 6/6 modes complete + failure diagnosis |
+| D3 | Thu 19 Jun | Failure-taxonomy rule freeze (unlocks cross-mode quantification) |
+| D4 | Thu 26 Jun | Pass-1 complete: all 36 conditions landed (incl. reddit) |
+| **D5** | **Fri 27 Jun** | **Literature-review chapter draft → advisor (deliverable 2)** |
+| D6 | Wed 01 Jul | Full statistical analysis: hero numbers + drop-one gate verdict (k = 6) |
+| D7 | Wed 08 Jul | Pass-2 router trained, run, H10 Pareto verdict |
+| D8 | Fri 25 Jul | Results + discussion chapters drafted |
+| D9 | Mon 10 Aug | Full thesis draft v1 → advisor |
+| D10 | Mon 25 Aug | Advisor feedback incorporated; final polish |
+| D11 | early Sep (TBC) | Official submission (exact date to be confirmed) |
+
+D2/D4/D7 are compute-bound (single A100; ~20–26 h per small-model condition, serialized by protocol; ETAs from the live run rate). Writing deadlines (D5, D8, D9) run in parallel with compute and are not blocked by it. About one week of slack before D8 absorbs infrastructure re-launches.
+
+**Risks**: cluster/VM interruptions (mitigation: resume protocol, completed conditions immutable) · small-model runtime dominates the critical path (mitigation: serialized schedule + slack) · API serving nondeterminism (mitigation: disclosed limitation + sensitivity analysis, per 29 May).
