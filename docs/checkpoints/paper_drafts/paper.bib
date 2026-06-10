@@ -268,10 +268,14 @@
 }
 
 @inproceedings{zheng2024uground,
-  title={UGround: A Universal Visual Grounding Model for GUI Agents},
-  author={Boyuan Zheng and others},
+  title={Navigating the Digital World as Humans Do: Universal Visual Grounding for {GUI} Agents},
+  author={Gou, Boyu and Wang, Ruohan and Zheng, Boyuan and others},
   booktitle={International Conference on Learning Representations (ICLR)},
-  year={2025}
+  year={2025},
+  eprint={2410.05243},
+  archivePrefix={arXiv},
+  url={https://arxiv.org/abs/2410.05243},
+  note={UGround universal visual grounding model for GUI agents. FIXED 2026-06-10: title corrected to the actual paper title and first author corrected to Gou (was listed as Zheng); eprint added — codex Mode B audit, arXiv API verified. Bib key kept for citation stability.}
 }
 
 @inproceedings{prabhu2026walt,
@@ -302,11 +306,13 @@
 
 @inproceedings{agentoccam2025,
   title={AgentOccam: A Simple Yet Strong Baseline for LLM-Based Web Agents},
-  author={Anonymous},
+  author={Yang, Ke and Liu, Yao and Chaudhary, Sapana and others},
   booktitle={The Thirteenth International Conference on Learning Representations},
   year={2025},
   url={https://openreview.net/forum?id=oWdzUpOlkX},
-  note={arXiv preprint arXiv:2410.13825}
+  eprint={2410.13825},
+  archivePrefix={arXiv},
+  note={Observation/action-space refinement alone moves WebArena SR substantially (+26.6 points over similar plain agents per abstract) — no new agent roles, examples, feedback, or search. Author field was blind-review "Anonymous" until 2026-06-10; fixed via arXiv API (codex Mode B audit).}
 }
 
 @article{wang2024webquest,
@@ -356,10 +362,14 @@
 }
 
 @article{pan2024webcanvas,
-  title={Webcanvas: A Framework for Evaluating WebAgents in Real-world Environments},
-  author={Pan, et al.},
-  journal={arXiv preprint arXiv:2410.17236},
-  year={2024}
+  title={{WebCanvas}: Benchmarking Web Agents in Online Environments},
+  author={Pan, Yichen and Kong, Dehan and Zhou, Sida and Cui, Cheng and Leng, Yifei and others},
+  journal={arXiv preprint arXiv:2406.12373},
+  year={2024},
+  eprint={2406.12373},
+  archivePrefix={arXiv},
+  url={https://arxiv.org/abs/2406.12373},
+  note={Live-web evaluation with critical intermediate action/state criteria (Mind2Web-Live). FIXED 2026-06-10: entry previously pointed to arXiv:2410.17236 (= cai2024personalwab, a different paper) with a paraphrased title — caught by codex Mode B citation audit; id re-verified via arXiv API.}
 }
 
 % ---- Q3 AXTree vs flat list ----
@@ -386,10 +396,13 @@
 }
 
 @inproceedings{tong2024eyes,
-  title={Eyes wide shut? exploring the visual shortcomings of multimodal llms},
-  author={Tong, Shengbang and others},
+  title={Eyes Wide Shut? Exploring the Visual Shortcomings of Multimodal {LLMs}},
+  author={Tong, Shengbang and Liu, Zhuang and Zhai, Yuexiang and others},
   booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2024}
+  year={2024},
+  eprint={2401.06209},
+  archivePrefix={arXiv},
+  url={https://arxiv.org/abs/2401.06209}
 }
 
 @article{jia2026decoding,
@@ -772,4 +785,114 @@
   primaryClass = {cs.AI},
   url = {https://arxiv.org/abs/2602.02711},
   note = {Per-step routing between a bf16 (high) and a W4A16/W3A16-quantized (low) variant of the SAME model; base = Qwen3-1.7B / Qwen3-4B (B1's backbone family). Router = lightweight Transformer encoder ($\sim$2--3\% of the routed LLM's params, 8 layers, trajectory-level input, softmax over precision). Two-stage training: (1) KL-ST --- label a step precision-sensitive when the step-wise KL between low/high action distributions $\geq \tau$, class-weighted CE; (2) GRPO --- reward = success $- \lambda \cdot$ cost. Results: ALFWorld Qwen3-4B bf16 94.3\% / quant 85.4\% / DMR@K=0.40 95.1\% (beats bf16 and faster); WebShop Qwen3-1.7B bf16 59.0\% / quant 40.9\% / DMR@K=0.20 53.4\% (1.17$\times$ speedup, recovers 93\% of the quant gap on GPTQ). Cited in our paper \S 6 as a per-step routing precedent AND a method anchor for our learned router: the ``cheap-vs-expensive action-distribution KL'' is a concrete routing-signal idea (vs our current per-task LR classifier), and KL-supervised-then-GRPO-refine is an upgrade recipe for the per-step phantom-routing extension. CAVEAT: routes PRECISION not representation; router overhead 17--29ms/call; WebShop forces high-KL search steps to bf16. Same efficiency-axis family as our \S 6 taxonomy (model/precision routing = which compute; ours = which representation).}
+}
+
+@misc{bai2026webgym,
+  title = {{WebGym}: Scaling Training Environments for Visual Web Agents with Realistic Tasks},
+  author = {Bai, Hao and Taymanov, Alexey and Zhang, Tong and Kumar, Aviral and others},
+  year = {2026},
+  eprint = {2601.02439},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2601.02439},
+  note = {127,645 real live sites / 292k tasks for visual web-agent training; GPT-4o rubric judge (non-deterministic). Human validation of the judge only n=80; rubric revision trades precision ($\sim$73$\to$93\%) against recall ($\sim$96$\to$85\%), residual judge error described as ``almost impossible to eliminate''. Cited in thesis lit-review (verifier-bottleneck line) and as a gap anchor: treats the observation representation as a fixed function of model capability, not a routed variable. Preprint; arXiv id verified via API 2026-06-10.}
+}
+
+@misc{zhang2026infiniteweb,
+  title = {{InfiniteWeb}: Scalable Web Environment Synthesis for {GUI} Agent Training},
+  author = {Zhang, Ziyun and Wang, Zezhou and Zhang, Xiaoyi and Guo, Zongyu and others},
+  year = {2026},
+  eprint = {2601.04126},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2601.04126},
+  note = {Synthetic localStorage static sites ($\sim$\$1.93/site) with deterministic JS evaluators plus anti-tamper instrumentation; the purpose-built deterministic evaluator still shows $\sim$5\% error under human audit (95/100 correct, n=100). Cited in thesis lit-review: deterministic evaluators are not automatically correct. Caveat: $\leq$12-page no-auth static sites, far simpler than VWA's Magento/PostMill stacks. Preprint; id verified via API 2026-06-10.}
+}
+
+@misc{wu2026autowebworld,
+  title = {{AutoWebWorld}: Synthesizing Infinite Verifiable Web Environments via Finite State Machines},
+  author = {Wu, Yifan and Peng, Yiran and Chen, Yiyu and Ruan, Jianhao and others},
+  year = {2026},
+  eprint = {2602.14296},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2602.14296},
+  note = {29 FSM-synthesised Vue sites; goal predicates checked deterministically over the FSM (``no LLM judge'' for state transitions); 11,663 verified trajectories deduplicate to 1,215 distinct. Caveats: query$\leftrightarrow$trajectory semantic alignment is not itself verified, and their own WebVoyager comparison still uses an LLM judge. Cited in thesis lit-review (verifiable-environment synthesis line). Preprint; id verified via API 2026-06-10.}
+}
+
+@misc{ullrich2025openapps,
+  title = {{OpenApps}: Simulating Environment Variations to Measure {UI}-Agent Reliability},
+  author = {Ullrich, Karen and Su, Jingtong and Shi, Claudia and Subramonian, Arjun and others},
+  year = {2025},
+  eprint = {2511.20766},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2511.20766},
+  note = {6 toy FastHTML apps with YAML-parameterised environment variations and fully deterministic state indicators. Two findings used in the thesis: (a) GPT-4o vision-only scores 0 vs 82--90 with AXTree access on their 15-task suite --- an extreme observation-mode first-order effect; (b) fixed-app SR variance understates across-variation deployment variance by $>2\times$ (Qwen2.5-VL within 16.8 vs across 32.0) --- motivates our per-(site, model) stratification and ``within this environment instantiation'' claim wording. Quote: agent-failure reporting usually relies on ``anecdotal evidence alone''. Caveat: 15 tasks = small-n extremes; reliability here = SR variance under perturbation, NOT evaluator correctness (different estimand from our FP-audit line). Preprint; id verified via API 2026-06-10.}
+}
+
+@misc{wu2026mobilegym,
+  title = {{MobileGym}: A Verifiable and Highly Parallel Simulation Platform for Mobile {GUI} Agent Research},
+  author = {Wu, Dingbang and Hao, Rui and Wang, Haiyang and Wu, Shuzhe and others},
+  year = {2026},
+  eprint = {2605.26114},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2605.26114},
+  note = {Browser-native React ``Android-like'' simulator (28 apps / 416 task templates / $>$27k instances); judge = per-task Python check over a structured state diff (deterministic, sub-ms); AnswerSheet protocol replaces free-text answer matching with typed form matchers, targeting false-reject (paraphrase) and false-accept (CoT gold-answer leakage substring) failures. VLM-judge error measured at 10.2\% (12/118; two judge models agree on the count, partially different subsets). Qwen3-VL-4B-Instruct (our B1 backbone) scores 9.4$\pm$0.6\% SR --- a cross-domain low-capability anchor. Cited in thesis lit-review (judge-reliability line). Preprint; id verified via API 2026-06-10.}
+}
+
+@misc{xue2025illusion,
+  title = {An Illusion of Progress? {A}ssessing the Current State of Web Agents},
+  author = {Xue, Tianci and Qi, Weijian and Shi, Tianneng and Song, Chan Hee and others},
+  year = {2025},
+  eprint = {2504.01382},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2504.01382},
+  note = {Critical reassessment of web-agent evaluation; common upstream citation of the 2026 verifiable-environment synthesis line (WebGym, InfiniteWeb, AutoWebWorld all cite it). Cited in thesis lit-review as the evaluation-reliability anchor. id verified via API 2026-06-10.}
+}
+
+@inproceedings{guo2017calibration,
+  title = {On Calibration of Modern Neural Networks},
+  author = {Guo, Chuan and Pleiss, Geoff and Sun, Yu and Weinberger, Kilian Q.},
+  booktitle = {Proceedings of the 34th International Conference on Machine Learning (ICML)},
+  year = {2017},
+  eprint = {1706.04599},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/1706.04599},
+  note = {Canonical result that modern neural networks are systematically miscalibrated and that single-parameter temperature scaling is a strong post-hoc fix. Cited in thesis lit-review as the calibration baseline for confidence-based routing signals.}
+}
+
+@inproceedings{kuhn2023semantic,
+  title = {Semantic Uncertainty: Linguistic Invariances for Uncertainty Estimation in Natural Language Generation},
+  author = {Kuhn, Lorenz and Gal, Yarin and Farquhar, Sebastian},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2023},
+  eprint = {2302.09664},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2302.09664},
+  note = {Uncertainty as entropy over meaning-equivalence classes rather than surface token strings. Cited in thesis lit-review as the intrinsic-signal refinement line beyond raw token logprob.}
+}
+
+@misc{kadavath2022know,
+  title = {Language Models (Mostly) Know What They Know},
+  author = {Kadavath, Saurav and Conerly, Tom and Askell, Amanda and Henighan, Tom and others},
+  year = {2022},
+  eprint = {2207.05221},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2207.05221},
+  note = {Self-evaluation: P(True) / P(IK) calibration improves with model scale --- a directly relevant caveat for confidence-based routing with 4B-class models. Cited in thesis lit-review (routing-signals section).}
+}
+
+@misc{he2024webvoyager,
+  title = {{WebVoyager}: Building an End-to-End Web Agent with Large Multimodal Models},
+  author = {He, Hongliang and Yao, Wenlin and Ma, Kaixin and others},
+  year = {2024},
+  eprint = {2401.13919},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2401.13919},
+  note = {End-to-end multimodal web agent on the live open web with an automatic (LLM-judge) evaluation protocol. Cited in thesis lit-review \S 2.1 (generalist live-web agent line; the system AutoWebWorld and others benchmark against). Added 2026-06-10, arXiv id API-verified.}
 }
