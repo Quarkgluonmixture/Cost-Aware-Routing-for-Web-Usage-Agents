@@ -896,3 +896,36 @@
   url = {https://arxiv.org/abs/2401.13919},
   note = {End-to-end multimodal web agent on the live open web with an automatic (LLM-judge) evaluation protocol. Cited in thesis lit-review \S 2.1 (generalist live-web agent line; the system AutoWebWorld and others benchmark against). Added 2026-06-10, arXiv id API-verified.}
 }
+
+@inproceedings{ovadia2019trust,
+  title = {Can You Trust Your Model's Uncertainty? {E}valuating Predictive Uncertainty Under Dataset Shift},
+  author = {Ovadia, Yaniv and Fertig, Emily and Ren, Jie and others},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2019},
+  eprint = {1906.02530},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/1906.02530},
+  note = {Canonical benchmark: predictive uncertainty that is calibrated in-distribution degrades into overconfidence under dataset shift. Cited thesis lit-review \S 2.5 --- a web agent's observation distribution shifts with every site/page. Added 2026-06-10 \S 2.5 citation pass, id API-verified.}
+}
+
+@misc{gupta2024cascades,
+  title = {Language Model Cascades: Token-Level Uncertainty and Beyond},
+  author = {Gupta, Neha and Narasimhan, Harikrishna and Jitkrittum, Wittawat and others},
+  year = {2024},
+  eprint = {2404.10136},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  url = {https://arxiv.org/abs/2404.10136},
+  note = {Cascade deferral: sequence-level confidence aggregated from token probabilities is length-biased; quantile-based / learned deferral rules over richer uncertainty summaries beat fixed thresholds on raw sequence probability. Cited thesis lit-review \S 2.5 (length-bias + threshold-selection anchor). Added 2026-06-10 \S 2.5 citation pass, id API-verified. Venue left as arXiv (conference status not re-verified).}
+}
+
+@misc{ding2024hybridllm,
+  title = {Hybrid {LLM}: Cost-Efficient and Quality-Aware Query Routing},
+  author = {Ding, Dujian and Mallick, Ankur and Wang, Chi and others},
+  year = {2024},
+  eprint = {2404.14618},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url = {https://arxiv.org/abs/2404.14618},
+  note = {Small-vs-large query routing via a learned difficulty / quality-gap predictor with a tunable quality threshold; reported up to $\sim$40\% fewer large-model calls at matched quality (per internal routing-signals survey \S 3.4 entry, same first author --- cross-checked). Cited thesis lit-review \S 2.5 (learned routing beats raw confidence). Added 2026-06-10 \S 2.5 citation pass, id API-verified. Venue left as arXiv (conference status not re-verified).}
+}
