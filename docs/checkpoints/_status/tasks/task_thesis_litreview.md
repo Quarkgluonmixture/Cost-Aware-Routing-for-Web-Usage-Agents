@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 2
 blocker: ""
-eta: "2026-06-27 (D5)"
+eta: "2026-07-13 (D7 self-target; official hard ≤2026-07-20)"
 detail: paper_drafts
 created: 2026-06-10
 updated: 2026-06-10

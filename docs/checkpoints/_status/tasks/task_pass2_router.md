@@ -5,7 +5,7 @@ priority: P0
 horizon: next
 order: 2
 blocker: "Pass-1 complete + LR pipeline land"
-eta: "2026-07-08 (D7 H10 verdict; 含 Stage 1→3 fold-aware bundle + 6 cond fire)"
+eta: "2026-07-08 (D6 H10 verdict; 含 Stage 1→3 fold-aware bundle + 6 cond fire)"
 detail: phase1_plan
 created: 2026-05-22
 updated: 2026-06-10

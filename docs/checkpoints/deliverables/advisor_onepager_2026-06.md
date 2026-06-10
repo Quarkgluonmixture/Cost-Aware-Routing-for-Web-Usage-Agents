@@ -31,20 +31,22 @@ Web agents read pages through different *observation representations* — access
 
 ## 4. Self-imposed deadlines (tracked continuously; live tracker in repo)
 
+Advisor-set hard deadlines: **this one-pager ≤ Mon 22 Jun (as soon as possible)** · **literature-review chapter ≤ Mon 20 Jul**. Self-targets below are deliberately earlier, leaving review slack before each hard deadline.
+
 | # | Date | Milestone |
 |---|------|-----------|
-| **D1** | **Fri 13 Jun** | **This one-pager → advisor (deliverable 1)** |
-| D2 | Tue 17 Jun | Gemma3 classifieds 6/6 modes complete + failure diagnosis |
-| D3 | Thu 19 Jun | Failure-taxonomy rule freeze (unlocks cross-mode quantification) |
-| D4 | Thu 26 Jun | Pass-1 complete: all 36 conditions landed (incl. reddit) |
-| **D5** | **Fri 27 Jun** | **Literature-review chapter draft → advisor (deliverable 2)** |
-| D6 | Wed 01 Jul | Full statistical analysis: hero numbers + drop-one gate verdict (k = 6) |
-| D7 | Wed 08 Jul | Pass-2 router trained, run, H10 Pareto verdict |
-| D8 | Fri 25 Jul | Results + discussion chapters drafted |
+| **D1** | **Fri 12 Jun** *(hard: 22 Jun)* | **This one-pager → advisor (deliverable 1)** |
+| D2 | Wed 17 Jun | Gemma3 classifieds 6/6 modes complete + failure diagnosis |
+| D3 | Fri 19 Jun | Failure-taxonomy rule freeze (unlocks cross-mode quantification) |
+| D4 | Fri 26 Jun | Pass-1 complete: all 36 conditions landed (incl. reddit) |
+| D5 | Wed 01 Jul | Full statistical analysis: hero numbers + drop-one gate verdict (k = 6) |
+| D6 | Wed 08 Jul | Pass-2 router trained, run, H10 Pareto verdict |
+| **D7** | **Mon 13 Jul** *(hard: 20 Jul)* | **Literature-review chapter draft → advisor (deliverable 2)** |
+| D8 | Fri 24 Jul | Results + discussion chapters drafted |
 | D9 | Mon 10 Aug | Full thesis draft v1 → advisor |
-| D10 | Mon 25 Aug | Advisor feedback incorporated; final polish |
+| D10 | Mon 24 Aug | Advisor feedback incorporated; final polish |
 | D11 | early Sep (TBC) | Official submission (exact date to be confirmed) |
 
-D2/D4/D7 are compute-bound (single A100; ~20–26 h per small-model condition, serialized by protocol; ETAs from the live run rate). Writing deadlines (D5, D8, D9) run in parallel with compute and are not blocked by it. About one week of slack before D8 absorbs infrastructure re-launches.
+D2/D4/D6 are compute-bound (single A100; ~20–26 h per small-model condition, serialized by protocol; ETAs from the live run rate). Writing deadlines (D7, D8, D9) run in parallel with compute and are not blocked by it. About one week of slack before D8 absorbs infrastructure re-launches.
 
 **Risks**: cluster/VM interruptions (mitigation: resume protocol, completed conditions immutable) · small-model runtime dominates the critical path (mitigation: serialized schedule + slack) · API serving nondeterminism (mitigation: disclosed limitation + sensitivity analysis, per 29 May).

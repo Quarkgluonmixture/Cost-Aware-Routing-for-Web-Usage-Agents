@@ -21,10 +21,12 @@ advisor 正式书面反馈 checkpoint, 质量直接影响毕设。
 
 ## Deliverables
 
+> **同日 update**: advisor 回复官方硬 deadline — one-pager **ASAP, ≤2026-06-22**; lit review **≤2026-07-20**。自设目标提前留 slack。
+
 | # | 内容 | deadline | 状态 |
 |---|---|---|---|
-| 1 | one-pager → [[advisor_onepager_2026-06]] | **2026-06-13** (D1) | 🟡 drafted, 待 user review 后发 |
-| 2 | literature-review 章初稿 (底: section2_background + paper.bib + docs/literature/) | **2026-06-27** (D5) | ⏳ 未起草 |
+| 1 | one-pager → [[advisor_onepager_2026-06]] | self **2026-06-12** (D1) / official hard **≤06-22** (ASAP) | 🟡 drafted, 待 user review 后发 |
+| 2 | literature-review 章初稿 (底: section2_background + paper.bib + docs/literature/) | self **2026-07-13** (D7) / official hard **≤07-20** | ⏳ 未起草 |
 
 ## Deadline 跟踪 canonical (三层)
 

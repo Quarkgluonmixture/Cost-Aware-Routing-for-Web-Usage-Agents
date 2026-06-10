@@ -13,5 +13,5 @@ updated: 2026-06-10
 
 # Thesis full draft v1 → advisor
 
-链: results + discussion 章 07-25 (D8) → 全稿 v1 **08-10 (D9)** → 修订完 08-25 (D10)
+链: results + discussion 章 07-24 (D8) → 全稿 v1 **08-10 (D9)** → 修订完 08-24 (D10)
 → official submission early-Sep (D11, 精确日期 TBC)。

@@ -5,7 +5,7 @@ priority: P0
 horizon: next
 order: 3
 blocker: "Pass-1+2 data"
-eta: "2026-07-01 (D6 hero numbers + drop-one gate k=6)"
+eta: "2026-07-01 (D5 hero numbers + drop-one gate k=6)"
 detail: preregistration
 created: 2026-05-22
 updated: 2026-06-10
