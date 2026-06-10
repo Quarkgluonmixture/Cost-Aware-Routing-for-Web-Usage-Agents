@@ -141,3 +141,8 @@ scripts/spike/*.txt
 # Local ops reference only (docs/reference/condenser/README.md); NOT for the public
 # job-seeking repo. Backed up via DGX→quark home rsync, so not lost by being untracked.
 docs/reference/condenser/
+
+# Advisor-facing personal deliverables (one-pager / thesis chapter drafts + generated PDFs) —
+# private student-advisor documents, not for the public job-seeking repo. Kept on disk
+# (backed up via DGX→quark home rsync); referenced by next_steps/issue/memory pointers.
+docs/checkpoints/deliverables/
