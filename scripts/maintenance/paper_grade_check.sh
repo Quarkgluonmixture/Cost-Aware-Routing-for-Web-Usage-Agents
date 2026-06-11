@@ -42,7 +42,23 @@ fi
 # issue signals from EITHER validator
 if printf '%s\n' "$OUT" | grep -qiE 'VERDICT: ISSUES|VERDICT: FAIL|\[FAIL\]|GHOST run|OVER-COMPLETE|regression'; then
   DETAIL="$(printf '%s\n' "$OUT" | grep -iE 'ISSUE:|GHOST|OVER-COMPLETE|\[FAIL\]' | head -3 | tr '\n' ' ')"
-  curl -s -H "Priority: high" -d "🔴 PAPER-GRADE [$TS]: ${VERDICT} | ${DETAIL}" "ntfy.sh/${TOPIC}" >/dev/null 2>&1
+  MSG="🔴 PAPER-GRADE [$TS]: ${VERDICT} | ${DETAIL}"
+  PRIO="high"
 else
-  curl -s -d "✅ PAPER-GRADE [$TS]: ${VERDICT:-clean}" "ntfy.sh/${TOPIC}" >/dev/null 2>&1
+  MSG="✅ PAPER-GRADE [$TS]: ${VERDICT:-clean}"
+  PRIO="default"
+fi
+
+# Edge-triggered push (2026-06-11, user request): pre-fix this re-pushed an
+# identical verdict every 6h (stable ISSUES list = spam; fire death/progress
+# are owned by fire6_monitor / watchdog channels). Push ONLY when the verdict
+# signature changes; full output still lands in $LOG every run (next_steps §0
+# restricted-session live source). Signature strips the timestamp and rolling
+# counters (ep=/img=) so episode progress alone doesn't re-trigger, while
+# completed_ok / ISSUE-set / errflood / inprog-run changes do.
+STATE="${REPO_ROOT}/logs/cron/paper_grade_check.last_pushed"
+SIG="$(printf '%s' "$MSG" | sed -E 's/\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:]+\]//; s/ep=[0-9]+//g; s/img=[0-9]+//g')"
+if [ "$SIG" != "$(cat "$STATE" 2>/dev/null)" ]; then
+  curl -s -H "Priority: ${PRIO}" -d "$MSG" "ntfy.sh/${TOPIC}" >/dev/null 2>&1
+  printf '%s' "$SIG" > "$STATE"
 fi
