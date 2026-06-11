@@ -5,7 +5,7 @@ Runs ON the A100 (where the results live). Validates, for every paper-grade
 condition_summary_v2.json on disk + the in-progress run:
 
   1. episodes == scored_task_count  (EXACT — B-1834; over/under = contamination)
-  2. parse_error_rate == 0  AND  benchmark_noise_rate == 0
+  2. parse_error_rate <= 1%  AND  benchmark_noise_rate == 0
   3. som/vision conditions: artifact images present (PNG > 0)
      — the B-1828→B-1832→B-1835 regression class (deferred-save losing all images);
      this is THE check that the silent 4× image-loss would have tripped.
@@ -34,6 +34,10 @@ MANIFEST = REPO / "docs/checkpoints/pre_run/fire_manifest.json"
 LOGS = REPO / "logs"
 DATE_RE = re.compile(r"(\d{8})")
 IMAGE_MODES = ("som", "vision")  # modes that MUST produce per-step artifact images
+# 2026-06-11 (user): sub-1% parse errors are expected LLM output flakiness, not a
+# data-integrity signal — at >0 the ISSUE list was 9/10 entries of 0.05-0.3% noise
+# drowning the one real outlier (B2-dom @2%). 1% keeps that class visible.
+PARSE_ERR_THRESHOLD = 0.01
 
 
 def _site_of(run_name: str) -> str:
@@ -111,8 +115,9 @@ def main() -> int:
                 issues.append(f"{tag}: BOUND run incomplete ({ep} < scored {exp})")
             continue
         # 2. parse-error / benchmark-noise
-        if float(s.get("parse_error_rate", 0) or 0) > 0:
-            issues.append(f"{tag}: parse_error_rate={s.get('parse_error_rate')}")
+        per = float(s.get("parse_error_rate", 0) or 0)
+        if per > PARSE_ERR_THRESHOLD:
+            issues.append(f"{tag}: parse_error_rate={per:.2%} > {PARSE_ERR_THRESHOLD:.0%}")
         if float(s.get("benchmark_noise_rate", 0) or 0) > 0:
             issues.append(f"{tag}: benchmark_noise_rate={s.get('benchmark_noise_rate')}")
         # 3. image presence (B-1828/1832/1835 regression class)
