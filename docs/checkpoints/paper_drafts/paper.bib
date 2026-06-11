@@ -349,9 +349,10 @@
 
 @article{dhondt2024agente,
   title={Agent-E: From Autonomous Web Navigation to Foundational Design Principles in Agentic Systems},
-  author={D'Hondt, et al.},
+  author={Abuelsaad, Tamer and Akkil, Deepak and Dey, Prasenjit and Jagmohan, Ashish and Vempaty, Aditya and Kokku, Ravi},
   journal={arXiv preprint arXiv:2407.13032},
-  year={2024}
+  year={2024},
+  note={Author field corrected 2026-06-11 (was "D'Hondt, et al." --- arXiv API verified; key retained for historical cross-ref stability). Nearest-neighbour differentiation anchor: hand-designed per-task DOM-variant text selection (text\_only / input\_fields / all\_fields), within-modality, not learned --- cited paper \S 2.2/\S 2.5.}
 }
 
 @article{qiao2025visescape,
@@ -928,4 +929,61 @@
   primaryClass = {cs.LG},
   url = {https://arxiv.org/abs/2404.14618},
   note = {Small-vs-large query routing via a learned difficulty / quality-gap predictor with a tunable quality threshold; reported up to $\sim$40\% fewer large-model calls at matched quality (per internal routing-signals survey \S 3.4 entry, same first author --- cross-checked). Cited thesis lit-review \S 2.5 (learned routing beats raw confidence). Added 2026-06-10 \S 2.5 citation pass, id API-verified. Venue left as arXiv (conference status not re-verified).}
+}
+
+@misc{webrouter2025,
+  title = {WebRouter: Query-specific Router via Variational Information Bottleneck for Cost-sensitive Web Agent},
+  author = {Li, Tao and Hu, Jinlong and Wang, Yang and Liu, Junfeng and Liu, Xuejun},
+  year = {2025},
+  eprint = {2510.11221},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2510.11221},
+  note = {Query$\to$model routing for web agents (cost-sensitive); nearest-neighbour differentiation anchor for paper \S 2.2/\S 2.5 (routes across models, not across representations of the same browser state). Added 2026-06-11, id + title + authors arXiv-API-verified.}
+}
+
+@inproceedings{strubell2019energy,
+  title = {Energy and Policy Considerations for Deep Learning in {NLP}},
+  author = {Strubell, Emma and Ganesh, Ananya and McCallum, Andrew},
+  booktitle = {Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year = {2019},
+  eprint = {1906.02243},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/1906.02243},
+  note = {Energy/carbon reporting precedent cited in \S 8 footprint disclosure. Added 2026-06-11 to close a dangling \textbackslash citep key in section8; id + title + authors arXiv-API-verified.}
+}
+
+@article{inthout2014hksj,
+  title = {The Hartung-Knapp-Sidik-Jonkman method for random effects meta-analysis is straightforward and considerably outperforms the standard {DerSimonian-Laird} method},
+  author = {IntHout, Joanna and Ioannidis, John P.A. and Borm, George F.},
+  journal = {BMC Medical Research Methodology},
+  volume = {14},
+  pages = {25},
+  year = {2014},
+  doi = {10.1186/1471-2288-14-25},
+  note = {HKSJ small-k meta-analysis adjustment; cited in \S 8 statistical-limitations (Appendix sensitivity rationale). Added 2026-06-11 to close a dangling key; DOI Crossref-verified.}
+}
+
+@article{veroniki2016tau,
+  title = {Methods to estimate the between-study variance and its uncertainty in meta-analysis},
+  author = {Veroniki, Areti Angeliki and Jackson, Dan and Viechtbauer, Wolfgang and Bender, Ralf and Bowden, Jack and Knapp, Guido and Kuss, Oliver and Higgins, Julian P.T. and Langan, Dean and Salanti, Georgia},
+  journal = {Research Synthesis Methods},
+  volume = {7},
+  number = {1},
+  pages = {55--79},
+  year = {2016},
+  doi = {10.1002/jrsm.1164},
+  note = {$\tau^2$ estimator survey; cited in \S 8 statistical-limitations. Added 2026-06-11 to close a dangling key; DOI Crossref-verified (online-first 2015, print issue 2016).}
+}
+
+@article{roverknappfriede2015modifiedhk,
+  title = {Hartung-Knapp-Sidik-Jonkman approach and its modification for random-effects meta-analysis with few studies},
+  author = {R{\"o}ver, Christian and Knapp, Guido and Friede, Tim},
+  journal = {BMC Medical Research Methodology},
+  volume = {15},
+  pages = {99},
+  year = {2015},
+  doi = {10.1186/s12874-015-0091-1},
+  eprint = {1508.01227},
+  archivePrefix = {arXiv},
+  note = {Modified Knapp-Hartung for few-study meta-analysis; cited in \S 8 statistical-limitations. Added 2026-06-11 to close a dangling key; DOI Crossref-verified + arXiv id title-search-verified.}
 }

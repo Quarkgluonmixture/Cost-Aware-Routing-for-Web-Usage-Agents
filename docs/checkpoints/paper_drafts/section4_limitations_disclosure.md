@@ -33,11 +33,16 @@ metric is raw `success`. Appendix D retains the pre-§139.8 ladder for archive c
 disclosure only.
 
 **Residual concern**: If a future reviewer re-runs the evaluator with a newer GPT-4o-mini
-snapshot, single-task labels may flip. The aggregate per-cell SR is robust to this within
-±2pp by simulation. We disclose this judge-snapshot sensitivity here as a reproducibility
-limitation (one of three orthogonal reproducibility axes — judge-snapshot drift here, B0
-remote-serving floor §4.X.7, cross-machine numerical drift §4.X.8) rather than retract the
-SR claim.
+snapshot, single-task labels may flip. A simulation-style sensitivity pass suggests the
+aggregate per-cell SR shifts within roughly ±2pp under judge-snapshot perturbation — a
+qualitative, order-of-magnitude bound (no locked simulation artifact is registered for this
+number, and it sits at the same magnitude as the B0 serving-side floor — ≈±2.5pp net SR per the lab-notebook same-payload replay measurement). We disclose this
+judge-snapshot sensitivity here as a reproducibility limitation (one of four orthogonal
+reproducibility axes — judge-snapshot drift here, B0 remote-serving floor §4.X.7,
+cross-machine numerical drift §4.X.8, and input-side element-ID churn on B1/B2 local
+repeats — the dominant local-baseline repeat-to-repeat perturbation, dom-mode native
+node-ids being a known residual after the AMENDMENT_07 SoM-family sequential-id fix) rather
+than retract the SR claim.
 
 ---
 
@@ -52,7 +57,7 @@ This is effectively binary GPT-judged matching, not a tunable similarity metric.
 
 **Mitigation**: We use `fuzzy_threshold=1.0` consistently across all conditions (verified
 via condition_meta.json `evaluator_config.fuzzy_threshold`), so the variability source is
-the same as B-20 ua_match drift and is jointly bounded by the same FP filter robustness.
+the same as B-20 ua_match drift and is closed by the same B-91 evaluator-level guard (the historical post-hoc FP-filter layer is retired and is no longer the bounding mechanism).
 The mis-naming does not affect our results, but we flag it for readers attempting to
 interpret raw VWA evaluator parameters.
 
@@ -127,7 +132,9 @@ text-exposure advantage from a no-op viewport filter" pathway is closed by the f
 no longer receives full text for visually-truncated elements whose centre falls outside the
 viewport; SoM and Phantom-SoM read from the same fixed AXTree, so paired comparisons
 (P-SoM ↔ DOM, P-SoM ↔ SoM) remain mutually consistent at the text-payload layer. The §1
-hero claim (P-SoM ≥ best of DOM/SoM/Vision) is supported under the fixed scaffold and does
+hero claim (P-SoM's strictly-positive drop-one contribution alongside DOM/SoM/Vision — a
+complementarity claim, *not* "P-SoM ≥ best of" dominance, which §4 explicitly disclaims;
+archive-provisional pending the Phase 1a FE-pool gate) does
 not rely on the upstream operator-precedence bug as a confound source. The pre-fix archive
 (`docs/archive/analysis_pre_2026-05-15/`) is retained for sensitivity reference only and
 must not be mixed with Phase 1a clean-run numbers.
@@ -181,7 +188,7 @@ on one machine — does not incur (the orthogonal cross-machine numerical axis i
 treated separately in §4.X.8). We disclose this B0 serving-side variance as a
 reproducibility limitation rather than asserting aggregate-SR stability.
 
-**A3 — Token budget (RESOLVED 2026-05-15 per commit `9f70b4e` / B-116 fix)**: Previously B0 used `max_new_tokens=4096` while B1 used `max_new_tokens=384`. The 12× asymmetry was identified by codex /stress F3 as a paper-grade contamination vector — under the agent's thought+JSON envelope (~400-1500 tokens typical), the 384 cap caused silent truncation on B1/B2 and parse failures that B0's GLM rescue scaffold could mask. **B-116 unified B1 and B2 to `max_new_tokens=4096` to match B0** (commit `9f70b4e fix(configs): B-116 unify B1/B2 max_new_tokens 384→4096 — §142 F3 close`), eliminating the asymmetry. The A100 canonical rerun runs all 3 baselines at 4096; no truncation-rate sensitivity check needed. **Note**: a parse-error recovery scaffold asymmetry (B0 GLM rescue, B1/B2 none) remains an open item; see §3.5.1 cross-baseline disclosure + master_bug_catalog B-86.
+**A3 — Token budget (RESOLVED 2026-05-15 per commit `9f70b4e` / B-116 fix)**: Previously B0 used `max_new_tokens=4096` while B1 used `max_new_tokens=384`. The 12× asymmetry was identified by codex /stress F3 as a paper-grade contamination vector — under the agent's thought+JSON envelope (~400-1500 tokens typical), the 384 cap caused silent truncation on B1/B2 and parse failures that B0's GLM rescue scaffold could mask. **B-116 unified B1 and B2 to `max_new_tokens=4096` to match B0** (commit `9f70b4e fix(configs): B-116 unify B1/B2 max_new_tokens 384→4096 — §142 F3 close`), eliminating the asymmetry. The A100 canonical rerun runs all 3 baselines at 4096; no truncation-rate sensitivity check needed. **Note**: the historical parse-error recovery scaffold asymmetry (B0 GLM rescue, B1/B2 none) is RESOLVED — the GLM rescue path was retired entirely 2026-05-17 (B-901; B-86 closed via B-991), leaving all three baselines on the same structured-output parse contract; residual parse-handling symmetry caveats are covered in §4.X.19 and §3.5.1.
 
 ---
 
@@ -194,9 +201,10 @@ generations (sm_70 vs sm_80 vs sm_121). We run `numerical_determinism_check.py` 
 maximum absolute hidden-state drift |Δh| across machines on a fixed input.
 
 **Reproducibility statement**: Cross-machine numerical agreement on Qwen3-VL-4B between
-{DGX, A100, Myriad} layers L0-L35: max |Δh| < [TBD post-rerun, target <1e-2] at L11. This
-bounds inter-machine reproducibility drift to a level that does not flip top-1 logit
-comparisons; moreover, because all Phase-1a paper-grade B1/B2 data is collected on a single
+{DGX, A100, Myriad} layers L0-L35: max |Δh| = [TBD post-rerun] at L11. Cross-GPU agreement
+is NOT guaranteed at the action level — greedy decoding has been observed to flip across
+GPU generations on this codebase (V100 vs A100 baseline flips), so we do not pre-assert
+top-1 logit stability across machines; moreover, because all Phase-1a paper-grade B1/B2 data is collected on a single
 machine (A100 self-hosted, per §4.X.11 archive-vintage disclosure), cross-machine drift does
 not enter the canonical SR comparison. This cross-machine axis is distinct from and
 orthogonal to the B0 remote-serving run-to-run noise floor disclosed in §4.X.7 (same-machine,
@@ -207,7 +215,7 @@ combined into a single number.
 
 ## §4.X.9 Pre-Phase-A vs post-Phase-A asymmetry (B-01 to B-37 family)
 
-The 36-condition / 6-cell Phase 1a rerun (preregistration.md §4 cell inclusion) uses post-Phase-A code only
+The 42-condition (36 Pass-1 baseline + 6 Pass-2 router) / 6-cell Phase 1a rerun (preregistration.md §4 cell inclusion) uses post-Phase-A code only
 (commit ≥ `3c15cd7`, dispatch + page_changed + cycle + RNG fixes deployed). Pre-Phase-A
 data is retained as Appendix D robustness check (preregistration.md `Cell inclusion (Appendix D)`).
 For mechanistic Stage 2B/2C input artifacts, we use pre-Phase-A archived observations
@@ -215,11 +223,13 @@ For mechanistic Stage 2B/2C input artifacts, we use pre-Phase-A archived observa
 trajectory bugs (Phase A scaffold issues) do **not** affect the model's forward-pass
 input→output mapping at any frozen step. Mechanism findings (L11 causal layer, forward-vs-reverse
 asymmetry) are therefore unaffected by Phase A vintage; we make this independence explicit
-in §5.
+here (the mechanism analysis itself is deferred to the follow-up paper).
 
 ---
 
 ## §4.X.10 Stage 2B input vintage independence (笔记 §116 user Q)
+
+> *(Mechanism scope deferred to the follow-up paper per advisor 2026-05-14 — this subsection is retained for archival continuity of the Stage 2B/2C work and does not enter the paper-1 claim set.)*
 
 Mechanistic Stage 2B (forward L11 mirage causal layer) and Stage 2C (reverse direction
 asymmetry) use frozen `observation_dom.txt` + `screenshot_annotated.png` artifacts from
@@ -231,7 +241,8 @@ mirage finding is therefore Phase-A-vintage-independent.
 
 For full robustness, we pre-specify a post-Phase-A spot-check (5-10 tasks from a clean
 post-`3c15cd7` cell) where we re-run Stage 2B and verify L11 causal layer holds. This
-sensitivity check is in §5 Appendix and does not gate the main mechanism claim.
+sensitivity check belongs to the mechanism follow-up paper's appendix and does not gate any
+paper-1 claim (the mechanism claim itself is deferred).
 
 ---
 
@@ -244,7 +255,7 @@ between the upstream base and our pinned HEAD is reproduced below for OSF reprod
 review and cross-paper comparability. Per **B-607 P1-1-AC\*** (2026-05-17 /stress A1.18-re Claude+Gemini OOB), the patch-bundle integrity witness has been migrated from the prior `git diff base..HEAD | sha256sum` recipe (environment-dependent on `diff.algorithm` / `core.autocrlf` / git version) to a **tree-hash chain** of git-canonical commit and tree SHAs (`git rev-list base..HEAD --format=tformat:'%H %T' | sha256sum`), which is byte-deterministic across all git versions and OS environments. The current tree-hash-chain SHA-256 is
 `2696d0a61e2f70536f247ebb225f51c262b657d8b8b7b407f8581b75757a8bae`.
 
-**Archive vintage disclosure (added 2026-05-17 /stress A1.18-re B-617 P1-11-C Gemini)**: The Phase 1a pre-fix archive (B0/B1 only, collected pre-2026-05-13 on DGX→quark Tailscale stack) was produced under a much earlier submodule HEAD (`f0c835b` or earlier — predating the `eb5cbd8` A1.18 sweep + `c1765ee` / `1c3a615` / `2f9b0b4` A1.25-and-onward sweeps). The canonical paper-grade rerun (post-§139.8 FP architecture + B2 = Gemma3-VL included) runs on A100 self-hosted VWA Docker against the current pinned HEAD `2f9b0b4`. **Paper §1 hero numbers cite ONLY the canonical-rerun-at-`2f9b0b4` data** — archive data is retained as Appendix D "pre-§139.8 contamination reference" only, never folded into §1 4-fold-drop-in claim. Within-rerun comparisons (across modes / baselines / sites on the same A100 stack at the same HEAD) are unaffected by this version-rift; cross-vintage comparison (archive ↔ canonical) is explicitly disclaimed as a confound vector — not used for paper-grade claims.
+**Archive vintage disclosure (added 2026-05-17 /stress A1.18-re B-617 P1-11-C Gemini)**: The Phase 1a pre-fix archive (B0/B1 only, collected pre-2026-05-13 on DGX→quark Tailscale stack) was produced under a much earlier submodule HEAD (`f0c835b` or earlier — predating the `eb5cbd8` A1.18 sweep + `c1765ee` / `1c3a615` / `2f9b0b4` A1.25-and-onward sweeps). The canonical paper-grade rerun (post-§139.8 FP architecture + B2 = Gemma3-VL included) runs on A100 self-hosted VWA Docker against the current pinned submodule HEAD (see the verification block below for the live hash; `2f9b0b4` was the pin when this paragraph was first written and the pin has since advanced). **Paper §1 hero numbers cite ONLY the canonical-rerun data at the pinned HEAD recorded in the verification block** — archive data is retained as Appendix D "pre-§139.8 contamination reference" only, never folded into §1 4-fold-drop-in claim. Within-rerun comparisons (across modes / baselines / sites on the same A100 stack at the same HEAD) are unaffected by this version-rift; cross-vintage comparison (archive ↔ canonical) is explicitly disclaimed as a confound vector — not used for paper-grade claims.
 
 | Commit (short) | Subject | Behavioural impact | Affected files | Paper §-disclosure |
 |---|---|---|---|---|
@@ -295,7 +306,7 @@ documented, not concealed (B-619 P2-1-A 2026-05-17 paper §4.X.11 caveat expansi
 
 ## §4.X.12 Hardcoded Tailscale IP in VWA submodule + task configs
 
-For Phase 1a we run the VWA Docker container set on a Windows host inside our private
+For the pre-§139.8 archive collection we ran the VWA Docker container set on a Windows host inside our private
 Tailscale network (IP `100.95.81.103`, hostname `quark`). To make the Chromium browser
 launched by the VWA scaffold resolve the upstream CMU seed URLs to that host, commit
 `3f9ceca` adds `--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103` to
@@ -378,7 +389,8 @@ infrastructure.
 **Bias direction per mode**: P-SoM uses a regex-extracted SOM_MARKS payload that may
 elicit different `error(*)` rates than baseline modes (DOM/SoM/Vision) — if P-SoM noise
 rate is higher → P-SoM SR is retry-inflated relative to baseline. The 1.7-3.3 pp drop-one
-effect may be partly retry artifact rather than phantom-routing signal. Supplementary
+effect (range across the three archive P-SoM cells; the B0-only §4.3 table shows the 2.56 /
+3.33 pp endpoints) may be partly retry artifact rather than phantom-routing signal. Supplementary
 Table S-retry (planned post-data) reports per-mode retry rates `(noise_retries,
 code_bug_retries, clean_first_try)` so reviewers can assess retry-bias direction.
 
@@ -399,7 +411,7 @@ Watchdog auto-clean is implemented as a **6-layer cross-component pipeline** dis
 
 **Layer 5 edge (runner-already-exited)**: if a condition's contamination wave occurs at the very end of the task queue (last-N tasks contaminated; runner finalizes before watchdog 30s poll detects), watchdog deletes the contaminated `<task>_summary_v2.json` files but the runner process has already exited → those tasks are never re-run → SR denominator loses those data points. Bounded post-data by `aggregate_phase1_full_prereg_decision.py` audit comparing the canonical `scored_task_count` for each cell (cls=224, red=205, shop=435) against the actual count of `summary_v2.json` files persisting in `<run_dir>/<cond_id>/episodes/`. Gap = layer-5 edge case trigger count per (site, model, mode). Direction: SR denominator under-count → SR point estimate slightly inflated relative to true denominator (mode-asymmetric only if cleanup-wave timing correlates with mode-specific failure clustering; expected near-symmetric since session-loss is infrastructure-level not mode-level).
 
-**Layer 6 edge (no-next-task-arrives)**: layer 6 (verify) re-runs layer 1 (`_check_session_health`) on the next task's step_000 DOM check. If a refresh action (layer 3) completes at the tail of a condition with no subsequent task, verify never fires for that refresh → refresh false-positive (auth-refresh API returned True but cookies didn't actually save) is undetected within the condition. Bounded post-data by `aggregate_trajectory_covariates.py` covariate audit comparing `auth_refresh_no_clear.outcome=ok` events (Option K Hook E, B-742) against subsequent-task `is_after_reset=True` covariate distribution. Unverified-refresh count = events with no subsequent-task verification within the same condition_dir. Direction: false-positive refreshes carry contamination into post-refresh tasks of subsequent (different) conditions only if running multi-condition with shared `.auth/<site>_state.json` — Phase 1a 36-condition orchestration explicitly resets `.auth/` between conditions (RESET_BEFORE=1), so false-positive refresh is contained within a single condition. Magnitude expected very low (Playwright auth_refresh has internal post-login URL guard).
+**Layer 6 edge (no-next-task-arrives)**: layer 6 (verify) re-runs layer 1 (`_check_session_health`) on the next task's step_000 DOM check. If a refresh action (layer 3) completes at the tail of a condition with no subsequent task, verify never fires for that refresh → refresh false-positive (auth-refresh API returned True but cookies didn't actually save) is undetected within the condition. Bounded post-data by `aggregate_trajectory_covariates.py` covariate audit comparing `auth_refresh_no_clear.outcome=ok` events (Option K Hook E, B-742) against subsequent-task `is_after_reset=True` covariate distribution. Unverified-refresh count = events with no subsequent-task verification within the same condition_dir. Direction: false-positive refreshes carry contamination into post-refresh tasks of subsequent (different) conditions only if running multi-condition with shared `.auth/<site>_state.json` — Phase 1a Pass-1 36-condition orchestration explicitly resets `.auth/` between conditions (RESET_BEFORE=1), so false-positive refresh is contained within a single condition. Magnitude expected very low (Playwright auth_refresh has internal post-login URL guard).
 
 **Why Option E framing (cross-component + edge case disclosure) over A (降级 to "4-layer + 2 implicit") or B (add explicit immediate verify code)**:
 - Option A would lose paper §3 "Defense in Depth" strength signal without resolving the underlying gap (layer 5+6 edges still exist whether claim is 4 or 6).
@@ -472,7 +484,7 @@ Cross-link: 实验笔记 §237 (full RCA chronicle) + §241 (Fire-6 Stage C) + �
 
 ## §4.X.19 Parse-error rescue accounting — cross-baseline symmetry caveats (B-1842 / B-1843 / B-1844 / B-1845, 3-AI /stress 2026-05-23)
 
-A spot-check /stress (3 independent AI lineages: Claude Mode A + codex Mode B + gemini Mode C) of the unparseable-output handling path surfaced four accounting-symmetry caveats on top of the cap-interaction disclosure already in §3.5 (the "parse-error cap can terminate an episode before the 30-action budget" paragraph). All four are **empirically inert on the canonical substrate** — the per-cell injected-wait-sink rate is B0 ≈ 0% / B1 0% / B2 0.7% (post-B-1794) — but are disclosed here for cross-baseline interpretability, with forward code remediations queued (non-blocking, deferred post-fire to preserve in-fire code immutability across the 18-condition sequential chain).
+A spot-check /stress (3 independent AI lineages: Claude Mode A + codex Mode B + gemini Mode C) of the unparseable-output handling path surfaced four accounting-symmetry caveats on top of the cap-interaction disclosure already in §3.5 (the "parse-error cap can terminate an episode before the 30-action budget" paragraph). All four are **empirically inert on the measured substrate** — the per-cell injected-wait-sink rate is B0 ≈ 0% / B1 0% / B2 0.7% (post-B-1794; the B2 rate was measured on the pas-off run archived by the 2026-06-09 pan-and-scan amendment and is to be re-measured on the pas-on rerun) — but are disclosed here for cross-baseline interpretability, with forward code remediations queued (non-blocking, deferred post-fire to preserve in-fire code immutability across the 18-condition sequential chain).
 
 **`parse_error_rate` is an injected-wait-sink rate, not a pure format-failure rate (B-1843, codex Mode B OOB).** `wait` is a first-class agent action (`p79/backends/action_utils.py:7 ALLOWED_ACTION_TYPES`; taught in the shared prompt `p79/agents/_shared_vl_utils.py`; allowed in the B0 tool schema enum `proxy_api_agent.py:129`). `classify_step_accounting` (`p79/experiment/metrics.py:440`) maps *any* `is_wait` step to `is_injected_wait_sink`, so the `parse_error_rate` numerator (`metrics.py:969`) counts both rescue-from-unparseable waits AND model-authored deliberate waits ("page still loading"). The name overstates "format failure"; the measured quantity is "fraction of model calls that resolved to a no-op WAIT". A baseline or mode with a higher *natural* WAIT propensity (e.g. vision mode awaiting render) would show a higher `parse_error_rate` without any genuine format failure, so the rate is not a strictly clean cross-baseline format-robustness comparator. Forward remediation: rename to `injected_wait_rate` + split rescue-wait from model-authored-wait via a `parse_valid_before_rescue` flag (queued post-fire).
 

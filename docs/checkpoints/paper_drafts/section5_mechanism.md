@@ -10,6 +10,8 @@ note: This draft is retained as the paper-2 mechanism working document. Paper-1 
 # 5. Mechanism Interpretability — ⚠️ PAPER-2 WORKING DRAFT (not part of paper-1 main submission)
 
 > **Scope marker (added 2026-05-15)**: Per advisor discussion 2026-05-14, mechanism §5 is **deferred entirely to a follow-up paper-2**. Paper-1 (current workshop submission) covers (1) phenomenon — phantom routing space + 4-fold drop-in property — and (2) cost-aware router. This file is retained as the paper-2 working draft; paper-1 `section1_intro.md` no longer cites Section 5 mechanism claims. Do NOT include this section in paper-1 prose builds / pandoc renders.
+>
+> ⚠️ **Stale-reference warning (added 2026-06-11)**: the body below predates the 2026-05-14 scope flip and retains the *pre-flip* paper-1/paper-2 division of labour in ~5 places (e.g. "routing … deferred to paper 2", "Paper-2 (routing)") — read those inverted: under the current scope, **router = paper-1, mechanism = paper-2**. Sweep these before any copy-paste into the paper-2 manuscript.
 
 ## 5.1 Overview and Theoretical Framing
 
