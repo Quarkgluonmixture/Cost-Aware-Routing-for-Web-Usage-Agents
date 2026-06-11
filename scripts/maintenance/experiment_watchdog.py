@@ -1780,8 +1780,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--condition", default=None, help="Filter to specific condition_id")
     p.add_argument("--poll-secs", type=int, default=30, help="Polling interval (seconds)")
     p.add_argument("--max-steps", type=int, default=30, help="Configured episode max steps")
-    p.add_argument("--report-interval-mins", type=int, default=30,
-                    help="Push status report every N minutes (default: 30)")
+    p.add_argument("--report-interval-mins", type=int, default=180,
+                    help="Push status report every N minutes (default: 180; "
+                         "progress-only — IDLE/DOWN alerts are independent of this)")
     p.add_argument("--idle-alert-mins", type=int, default=20,
                     help="Alert if no new episode for N minutes (default: 20)")
     p.add_argument("--step-stale-mins", type=int, default=10,
