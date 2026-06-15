@@ -8311,3 +8311,24 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: P0-3-B 2026-05-19 (sequential fix 本体); B-182/B-185 (phantom_meta 原条目); B-1871 (同批 /stress); 笔记 §328。
 
 ---
+
+### B-1876. B2 (Gemma3-VL) cls 全 mode SR 地板 (0.4-2.2%, 比 B1 低 3-7×) → "matched-capability cross-family control" 前提失效 + parse_error_rate 跨族语义陷阱 📋 DISCLOSE (非 code bug, 2026-06-15)
+
+**Discovery**: `paper_grade_check.py` verdict 持续报 B2 cls 3 mode `parse_error_rate > 1%` (som 5.04% / phantom_text 4.11% / dom 2.01%)。user 命定向 triage "查清 parse_error" 时拉 B0/B1/B2 cls SR 对照,撞见更大问题 — B2 全 mode SR 在地板。
+
+**Symptom (4 层)**:
+1. **parse_error_rate 跨族语义陷阱**: 该 metric (`metrics.py:969` = Σ injected-wait / Σ model-calls) 把"真 unparseable 语法"与"语义无效引用"合并计数。B2 som 275 条 `parse_valid=False` 拆开: `invalid_select_option` 102 + `invalid_element_id` 95 + `invalid_action_type` 68 = **268 (97.5%) 是语义无效引用** (JSON 正常解析,但引用不存在的 element/option/action-type),真 unparseable (`parse_failed`) 只 7 条 (2.5%)。即 B2 的 "parse_error" 实质是 **grounding 幻觉**,不是格式/基础设施问题。跨 mode 梯度 som 5% > ptext 4% > dom 2% > vision 0.7% 自洽 (`[N]`-引用型观测最诱发 ID 幻觉,vision 用坐标无 ID 可幻觉)。upstream `repaired_fenced` 修复层兜了 86.5% 脏输出 → scaffold 正常工作。⚠️ 该陷阱泛化 (B0 的 parse_error 也部分是语义类),跨 model 比该 metric 时勿读作"格式/infra 健康度"。
+2. **SR 地板**: B2 cls dom 1.3% / som 2.2% / vision 2.2% / ptext 0.4%,比同为 4B 的 B1 (Qwen: 6.2 / 14.3 / 12.5 / 7.6%) 低 **3-7×**。同尺寸跨族 (Qwen→Gemma) 差距 > 同族降尺寸 (B0 235B → B1 4B 仅 ~半) → **family ≫ size**。
+3. **终止失败**: B2 som finish/stop 出现率 15% (34/224) vs B1 51% (114/224),85% episode 游荡至 max_steps;57% episode 单一动作主导 ≥70% + 52.7% 连续复读 (task_55: `select_option [11]` 复读 8 次,`thought` 懂任务但动作崩塌)。
+4. **scaffold family-fit confound**: parsing/repair/finish-format apparatus 在 Qwen 族 (B0/B1) 上演化调出;Gemma 需 86.5% 修复 + 仅 15% 终止 → 拟合更差 → B1-vs-B2 同时混 **family + capability + prompt-fit** 三者。
+
+**Disposition (disclose, 非 fix)**:
+- **不**为 B2 调 Gemma-specific prompt: (a) 救不了地板大头 (真能力地板 — 全局用全谱动作 click/type/scroll/goto/finish 证明非接线 bug,但逐 ep 崩塌 + grounding 差); (b) mid-fire 改 scaffold = 数据污染 + 破坏"同 scaffold"公平性。
+- **B2 角色 reframe**: "matched-capability control" → "cross-family **能力/grounding 地板** + scaffold-fit 证据"。其 parse_error 跨 mode 梯度 + 终止失败 = 干净 cross-family axis-2 证据。
+- **§8 disclose**: 终止率 gap (15% vs 51%) + scaffold family-fit confound。可救切片被 eval 机制夹死 (VWA 多数 task `program_html` 按**末态**判分,不终止 ≠ 丢分 → 可救空间限信息类/string_match 子集,个位数 pp)。
+- **Advisor**: B2 是 advisor 2026-05-14 为 control 角色加,地板结果动其设计意图 → 进 D1 one-pager limitations / 口头同步。
+- **监控**: `parse_error` 阈值可改 baseline-aware (B2 放宽,仿 B-1665 wallclock) 或标 B2-known,避免 verdict 长期挂 ISSUES (待定;现 flag 工作正常,刻意保留以持续可见)。
+
+**Cross-link**: B-1665 (baseline-aware wallclock 同 pattern); 笔记 §317 P31 (B1 finish-less,B2 是极端版); §322 (B1 `element_id=1` 幻觉 low-default,B2 grounding 更差); CLAUDE.md "matched-capability cross-family control" 定义 (B2 纳入依据); 笔记 §335 (全链叙事)。数据源 = `results/visualwebarena/phase1/B2_{dom,som,vision,phantom_text}_classifieds_*/condition_summary_v2.json` + `B1_som_*R31705` 对照。
+
+---
