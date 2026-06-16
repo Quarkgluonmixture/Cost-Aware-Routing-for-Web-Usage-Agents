@@ -8332,3 +8332,17 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: B-1665 (baseline-aware wallclock 同 pattern); 笔记 §317 P31 (B1 finish-less,B2 是极端版); §322 (B1 `element_id=1` 幻觉 low-default,B2 grounding 更差); CLAUDE.md "matched-capability cross-family control" 定义 (B2 纳入依据); 笔记 §335 (全链叙事)。数据源 = `results/visualwebarena/phase1/B2_{dom,som,vision,phantom_text}_classifieds_*/condition_summary_v2.json` + `B1_som_*R31705` 对照。
 
 ---
+
+### B-1877. B2 phantom_prompt cls CUDA OOM (KV-cache 碎片化) → fire R3873 死 task34; expandable_segments 修复 ✅ FIXED (2026-06-16)
+
+**Discovery**: ntfy `Fire-6 ALERT orchestrator DOWN` (2026-06-16 12:30Z)。fire 自走完 B2 cls 5/6 (dom/som/vision/ptext/psom) 后,phantom_prompt R3873 跑到 task34 CUDA OOM → `PaperGradeAbortError` fail-closed abort → chain sentinel 验 33/224≠224 FATAL → orchestrator DOWN。cls 5/6 完成 (17 condition manifest-bound 安全)。
+
+**Root cause (4 向证据收敛 = 碎片化, 非泄漏非容量)**: `torch.OutOfMemoryError` 在 gemma3 attention KV-cache `torch.cat` update。内存账: **live 23.56GiB (60% of 40GB) + 15.39GiB reserved-but-unallocated (碎片) + 7.5MiB free**,只要 16MiB 却失败 → 碎片 15.39GiB ≫ 需求。(1) 整段日志仅末尾 1 次 OOM 无慢爬升; (2) 其他 5 B2 cls mode (含 **224ep phantom_som**) OOM=0 → 非系统泄漏 (否则跑更久的 phantom_som 先死); (3) task34 OOM 在 step19,周围 task 30-33 步正常完成 → 非单 task 爆; (4) live 仅 60% util → 非容量耗尽。**唯 phantom_prompt 受害的因**: 它喂原始 AXTree 文本 (全模式最长 + 长度方差最大) × Gemma3 不终止游荡 (§335: finish 15% vs B1 51%) → 可变尺寸 KV alloc = 碎片化经典诱因 (SoM 系观测尺寸受 mark 约束更均匀 → 不碎)。
+
+**Fix**: `export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` (错误信息自带钦定解) → segments 可增长跨尺寸复用,消可变尺寸碎片。持久化进 `scripts/queues/_lib_paper_grade_gates.sh` canonical CUDA-env 块 (commit `0044069`),所有 launch 继承。**Substrate-only** (改 CUDA 内存布局,非 model compute/data/estimand → paper-grade safe)。
+
+**Re-fire (operator 协议)**: classify task34=substrate 入 `quarantine_registry.jsonl` (G8 preflight 放行) → archive R3873 partial (`_archive_cuda_oom_R3873_20260616`) → `PYTORCH_CUDA_ALLOC_CONF=... RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0 queue_phase1_paper_grade.sh launch` → skip 17 已完,FORCE_NEW phantom_prompt **R10175** (`strings /proc/$PID/environ` 确认 expandable_segments 生效,GPU 9.4GB 健康)。验证 = R10175 越 task34 死点 (done-monitor ep≥38)。
+
+**Cross-link**: 笔记 §335 (B2 终止失败 = 本 OOM 的机制因: finish-less → 长游荡 → KV 膨胀,两 finding 同根); B-1876 (同 B2 phantom 族); B-1665 (baseline-aware 同 substrate-fix 体例); 笔记 §337 (全链叙事)。
+
+---
