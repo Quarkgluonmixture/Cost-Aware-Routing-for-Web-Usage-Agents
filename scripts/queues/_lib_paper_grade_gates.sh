@@ -31,6 +31,13 @@ init_paper_grade_env() {
   export PYTORCH_NVML_BASED_CUDA_CHECK=1
   export CUDA_MPS_PIPE_DIRECTORY=""
   export CUDA_MPS_LOG_DIRECTORY=""
+  # KV-cache fragmentation OOM fix (2026-06-16, B2 phantom_prompt R3873 task34):
+  # longest-context mode (raw AXTree) × non-terminating Gemma3 → variable-size KV
+  # allocs fragment the caching allocator → false OOM at ~33ep (live 23.56GiB/60%
+  # util, but 15.39GiB reserved-but-unallocated). expandable_segments lets segments
+  # grow/reuse across sizes → recovers the fragmented reserve. Substrate-only: changes
+  # CUDA memory layout, NOT model compute / data / any estimand → paper-grade safe.
+  export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
   # VWA endpoint env (file is per-host: A100 self-hosted = localhost vars;
   # DGX dev session = quark Tailscale IPs)
   if [[ -f "${repo_dir}/scripts/vwa_env_remote.sh" ]]; then
