@@ -746,6 +746,36 @@ check_clear_tasks_recovery() {
   pass "B-884 no half-deleted run substrate detected"
 }
 
+# B-1878 (2026-06-18): paper-grade evaluator 本地 reference image 可达性 gate.
+# reddit Phase 1a fire (R15710) task28 撞 VWA PageImageEvaluator
+# `Image.open('coco_images/000000515982.jpg')` → FileNotFoundError → paper-grade
+# EvaluatorUnavailableError (拒绝吸收成 agent score=0) → chain abort + orchestrator DOWN.
+# 根因 = DGX→A100 self-hosted 迁移漏建 coco_images symlink + 漏配 media/ reference;
+# cls 18 condition 全过 = cls 本地 reference 数 0, reddit 唯一有 2 个本地 reference 首撞.
+# Pre-fix preflight 只查 evaluator INIT (B-793 check_vwa_evaluator_paper_grade) + import,
+# 不查 reference image 在盘 → fire 跑到 task-N 才 abort (同 B-1660 NLTK / B-679 OpenAI key
+# 的 "silent preflight pass → first task evaluator crash" 体例). 委托独立脚本
+# scripts/maintenance/check_image_references.py (复用 tasks.py._replace_placeholders 保 gate
+# 与 runner 同源; 对非-http reference os.path.exists 相对 runner CWD).
+check_image_references() {
+  if [[ "${PAPER_GRADE_PREFLIGHT}" != "1" ]]; then
+    return  # only enforce in --paper-grade
+  fi
+  if [[ -z "${PYTHON_BIN:-}" ]]; then
+    fail "B-1878 image-reference gate needs Python (not found)"
+    return
+  fi
+  print_check "B-1878 paper-grade evaluator 本地 reference image 可达性"
+  local py_output
+  # CWD=PROJECT_DIR 模拟 runner 评测进程 CWD — evaluator Image.open 解析相对进程 CWD.
+  if ! py_output="$( cd "${PROJECT_DIR}" && "${PYTHON_BIN}" scripts/maintenance/check_image_references.py 2>&1 )"; then
+    echo "${py_output}" | while IFS= read -r line; do echo "    ${line}"; done
+    fail "B-1878 本地 reference image 缺失 → paper-grade evaluator 跑到对应 task 时 FileNotFoundError → EvaluatorUnavailableError → chain abort (R15710 reddit pattern). 修复见上方提示."
+    return
+  fi
+  pass "B-1878 reference image gate PASSED (所有站点本地 reference CWD 可达 — missing surface at preflight, not fire)"
+}
+
 main() {
   echo "=== P79 Preflight v2 ==="
   echo "project_dir=${PROJECT_DIR}"
@@ -772,6 +802,7 @@ main() {
   check_vwa_evaluator_import
   check_vwa_evaluator_paper_grade  # B-793: skipped unless --paper-grade
   check_clear_tasks_recovery       # B-884: skipped unless --paper-grade
+  check_image_references           # B-1878: skipped unless --paper-grade — reddit reference-image abort guard
 
   if (( EXIT_CODE == 0 )); then
     echo "Preflight completed successfully."

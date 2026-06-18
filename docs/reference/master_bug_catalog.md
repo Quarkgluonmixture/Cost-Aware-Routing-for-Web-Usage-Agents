@@ -8346,3 +8346,19 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: 笔记 §335 (B2 终止失败 = 本 OOM 的机制因: finish-less → 长游荡 → KV 膨胀,两 finding 同根); B-1876 (同 B2 phantom 族); B-1665 (baseline-aware 同 substrate-fix 体例); 笔记 §337 (全链叙事)。
 
 ---
+
+### B-1878. reddit fire R15710 缺 evaluator reference image (CWD-相对路径 coco_images/ + media/) → PageImageEvaluator FileNotFoundError → paper-grade abort ✅ FIXED (2026-06-18)
+
+**Discovery**: ntfy `queue_chain ABORT ... sentinel validation failed` (2026-06-17 22:26Z) + `Fire-6 ALERT orchestrator DOWN` (22:30Z)。cls 18 condition 全 paper-grade 完成后 chain 进 reddit 首 condition B0 dom reddit R15710,跑到 task28 (27/205) abort。⚠️ 交互 `ssh condense-a100 'cmd'` 落 bastion MOTD banner 易误判"受限 session",实际 **rsync / `ssh -o ConnectTimeout` 可穿透** (= sync_a100 cron 同款连接) → 拉 A100 runner log 定位。
+
+**Root cause**: reddit `page_image_query` task 的 `eval_fuzzy_image_match` 用 **CWD-相对路径** reference image (VWA 上游 `evaluation_harness/evaluators.py:589` `Image.open(exact_match_img)` 硬编码相对进程 CWD)。runner CWD=`/home/ubuntu/workspace/p79/` 下无 `coco_images/` (图实在 `external/visualwebarena/coco_images/`,DGX→A100 self-hosted 迁移时漏建根 symlink) → `FileNotFoundError: coco_images/000000515982.jpg` → `environment.py:823` paper-grade 升级为 `EvaluatorUnavailableError` (拒绝 fallback score=0.0,否则 infra 失败被吸收成 agent 失败污染 §1 SR = B-783/B-785/B-486 合订) → runner 退出不写 condition_summary → C3 sentinel (queue_chain.sh L529) 找不到 summary → abort + orphan watchdog kill → orchestrator 级联 DOWN。**为何 cls 18 全过 reddit 首撞**: cls image-eval 走 task-attached reference (B-824 路径),不碰 CWD 顶层 `coco_images/`;reddit 是首个用 VWA 原生 fuzzy_image_match 相对路径的站点 → A100 self-hosted 环境首次暴露此 latent 缺口。
+
+**Fix (纯环境层,零代码 / 零 estimand)**: A100 `cd p79` → (1) `ln -sfn external/visualwebarena/coco_images coco_images` (解 task28); (2) reddit 205 task 扫出**仅 2 个本地 reference** (其余 16 image-task 走 http URL),第 2 个 = task184 `media/catalog/product/cache/829a59e57f886f8cf0598ffca4f8a940/B/0/B009P9HODS.1.jpg`,docker fs 该 cache-hash 不存在 (Magento media cache 按图像参数哈希、按需生成) → 必走 HTTP 取: `curl http://localhost:7770/<path> -o <CWD-path>` (HTTP 200 30524B)。金标准 `PIL.Image.open().load()` 两路径均 RGB OK (640×426 / 700×700)。⚠️ symlink 而非 chdir/patch 上游 = 不动 fire-path 代码 → OSF 可复现性 witness 不变。
+
+**Re-fire**: archive R15710 partial (forensic) → **`RESUME_MISSING=1 MAX_CONDITION_HOURS=0 queue_phase1_paper_grade.sh launch red`** → FORCE_NEW reddit 18-cond from ep0。⚠️ **必须 `launch red` 非裸 `launch`**: cls 18 全完后裸 `launch` 触发首现边界 = RESUME_MISSING 把 cls 全 SKIP → 「空 cls chain (0 cells) 退出 rc=2」→ P0-2-B cascade guard (Fire-3 2026-05-19 cls-abort-静默续red 防线) **误判 cls 失败 → 拒 launch red** (2026-06-18 实证, orchestrator FAIL halt 无数据污染)。`launch red` (脚本 line 31 red-only 入口) 直走 reddit chain + `assert_no_other_site_chain_running`,RESUME_MISSING 仍生效。**实际 re-fire 成功**: 2026-06-18 09:38 `launch red` → red chain `queue_phase1_red_20260618_093824` [1/18] B0 dom reddit 起步。
+
+**Follow-up (建议,未做)**: `preflight_v2.sh` 加「扫全站 task 本地 image reference 可达」gate (B-793 对 evaluator-init 的同类加固) → 下次换站 / 换 host 在 10s preflight 暴露,非 fire 跑到 task-N 才 abort。shopping (Phase 1b) 同有本地 image reference,不加 preflight 迟早撞同类。
+
+**Cross-link**: B-783/B-785 (paper-grade evaluator fail-closed 同设计); B-824 (cls/shop task-attached reference image = 本 bug 对照,解释为何 cls 不撞); B-793 (preflight 加固体例); B-486 (quarantine hook); 笔记 §343 (全链叙事)。
+
+---
