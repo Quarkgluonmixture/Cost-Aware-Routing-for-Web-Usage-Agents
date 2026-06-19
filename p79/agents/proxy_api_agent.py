@@ -783,6 +783,25 @@ class ProxyApiAgent:
         ))
         _max_retries = int(gen_cfg.get("max_retries", 3))
         _backoff = int(gen_cfg.get("retry_backoff_s", 10))  # seconds; doubles each attempt
+        # B-1880 (reddit chain abort #3, 2026-06-19): cap the exponential
+        # backoff so a thick retry budget (max_retries raised to survive
+        # multi-minute AWS-proxy 503 outages) does not balloon a single sleep
+        # to 5min+. R28130 B0 dom reddit died at task 59/205 when a ~3min
+        # sustained 503 window (21:54->21:57Z) exhausted the old 3-retry/70s
+        # budget -> first quarantine event -> PaperGradeAbortError -> whole
+        # 205-task condition lost at 58/205. Capped exponential backoff
+        # (industry-standard) lengthens the total tolerance window while keeping
+        # post-recovery retry latency bounded by the cap (proxy may recover at
+        # t+50s but uncapped doubling would still wait 320s). None = uncapped
+        # (back-compat: pre-B-1880 unbounded doubling). estimand-neutral (a retry
+        # that succeeds returns identical data); yaml-exposed per B-568.
+        _backoff_max_raw = gen_cfg.get("retry_backoff_max_s", None)
+        _backoff_max = int(_backoff_max_raw) if _backoff_max_raw is not None else None
+
+        def _capped_wait(attempt: int) -> int:
+            w = _backoff * (2 ** attempt)
+            return min(w, _backoff_max) if _backoff_max is not None else w
+
         _retry_count = 0
         _retry_wait_ms_total = 0.0
         # B-399 (/stress A1.1 v8 Mode A P1-1, 2026-05-16): accumulate the
@@ -818,7 +837,7 @@ class ProxyApiAgent:
                     _attempt_elapsed_ms = (time.time() - _attempt_start) * 1000.0
                     if _attempt == _max_retries:
                         raise
-                    wait = _backoff * (2 ** _attempt)
+                    wait = _capped_wait(_attempt)
                     logger.warning(
                         "API network error %s (attempt %d/%d, %.0fms), retrying in %ds...",
                         net_exc, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,
@@ -834,7 +853,7 @@ class ProxyApiAgent:
                     # this attempt's elapsed is the LEGITIMATE network cost,
                     # NOT scaffold. Do not accumulate.
                     break
-                wait = _backoff * (2 ** _attempt)
+                wait = _capped_wait(_attempt)
                 logger.warning(
                     "API %s (attempt %d/%d, %.0fms), retrying in %ds...",
                     resp.status_code, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,

@@ -569,3 +569,112 @@ def test_f8_paper_grade_without_tool_calling_raises_at_init(monkeypatch):
     }
     with pytest.raises(RuntimeError, match=r"paper-grade B0 requires use_tool_calling=true|B-1102"):
         ProxyApiAgent(config)
+
+
+# ----- B-1880: capped exponential backoff (reddit chain abort #3, 2026-06-19) -----
+# RCA: R28130 B0 dom reddit died at task 59/205 when a ~3min sustained AWS-proxy
+# 503 window exhausted the 3-retry/70s budget -> first quarantine event ->
+# PaperGradeAbortError -> whole 205-task condition lost at 58/205. Fix: thicken
+# the retry budget (yaml max_retries up) but cap the exponential backoff so a
+# single sleep cannot balloon (uncapped doubling at attempt 7 would sleep 1280s).
+# These freeze the cap contract so a regression fails CI, not mid-fire.
+
+
+def _build_proxy_agent(monkeypatch, model_extra):
+    monkeypatch.setenv("PROXY_API_KEY", "rp_test_dummy")
+    from p79.agents.proxy_api_agent import ProxyApiAgent
+
+    config = {
+        "model": {
+            "api_name": "qwen.qwen3-vl-235b-a22b",
+            "base_url": "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke",
+            "use_tool_calling": True,
+            **model_extra,
+        },
+        "agent": {"image_max_size": 256},
+        "paper_grade": False,
+    }
+    return ProxyApiAgent(config)
+
+
+def _patch_503_capture_sleeps(monkeypatch):
+    """All requests.post return HTTP 503 (raise_for_status raises HTTPError on
+    the last attempt); capture each backoff sleep instead of sleeping. Returns
+    the list that accumulates wait values in order."""
+    import requests as _rq
+
+    resp_mock = MagicMock()
+    resp_mock.status_code = 503
+    resp_mock.json.return_value = {}
+    resp_mock.text = "Service Unavailable"
+
+    def _raise_for_status():
+        raise _rq.exceptions.HTTPError(
+            "503 Server Error: Service Unavailable", response=resp_mock,
+        )
+
+    resp_mock.raise_for_status = _raise_for_status
+
+    def _fake_post(url, json=None, headers=None, timeout=None, **kw):
+        return resp_mock
+
+    monkeypatch.setattr("p79.agents.proxy_api_agent.requests.post", _fake_post)
+
+    sleeps: list = []
+    monkeypatch.setattr(
+        "p79.agents.proxy_api_agent.time.sleep", lambda s: sleeps.append(s),
+    )
+    return sleeps
+
+
+def test_b1880_capped_exponential_backoff(monkeypatch):
+    """B-1880: retry_backoff_max_s caps the doubling. max_retries=4, base=10,
+    cap=60 -> sleeps [10, 20, 40, 60] (the 4th capped from 80)."""
+    import requests as _rq
+
+    agent = _build_proxy_agent(
+        monkeypatch,
+        {"max_retries": 4, "retry_backoff_s": 10, "retry_backoff_max_s": 60},
+    )
+    sleeps = _patch_503_capture_sleeps(monkeypatch)
+    with pytest.raises(_rq.exceptions.HTTPError):
+        agent.step(
+            instruction="Find a kayak",
+            obs=_mock_obs(),
+            history=[],
+            observation_mode="dom",
+        )
+    assert sleeps == [10, 20, 40, 60], f"capped backoff drift: {sleeps}"
+
+
+def test_b1880_uncapped_backoff_back_compat(monkeypatch):
+    """B-1880 back-compat: retry_backoff_max_s unset -> unbounded doubling
+    (pre-B-1880 behavior preserved). max_retries=3, base=10 -> [10, 20, 40]."""
+    import requests as _rq
+
+    agent = _build_proxy_agent(
+        monkeypatch, {"max_retries": 3, "retry_backoff_s": 10},
+    )
+    sleeps = _patch_503_capture_sleeps(monkeypatch)
+    with pytest.raises(_rq.exceptions.HTTPError):
+        agent.step(
+            instruction="Find a kayak",
+            obs=_mock_obs(),
+            history=[],
+            observation_mode="dom",
+        )
+    assert sleeps == [10, 20, 40], f"uncapped backoff drift: {sleeps}"
+
+
+def test_b1880_base_yaml_thickened_budget():
+    """B-1880: exp_v2_base.yaml api_strong carries the thickened budget so all
+    B0 per-site configs inherit it (Hydra defaults + recursive merge)."""
+    import yaml
+
+    base = yaml.safe_load(
+        (REPO_ROOT / "configs" / "exp_v2_base.yaml").read_text()
+    )
+    api_strong = base["backends"]["api_strong"]
+    assert api_strong["max_retries"] == 8, api_strong.get("max_retries")
+    assert api_strong["retry_backoff_s"] == 10, api_strong.get("retry_backoff_s")
+    assert api_strong["retry_backoff_max_s"] == 60, api_strong.get("retry_backoff_max_s")

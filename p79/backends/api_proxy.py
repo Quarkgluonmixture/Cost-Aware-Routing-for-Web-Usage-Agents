@@ -152,6 +152,11 @@ class ApiProxyBackend:
                     # signature).
                     "max_retries": config.get("max_retries", 3),
                     "retry_backoff_s": config.get("retry_backoff_s", 10),
+                    # B-1880 (reddit chain abort #3, 2026-06-19): cap exponential
+                    # backoff (None = uncapped, back-compat). Lets max_retries be
+                    # raised to survive multi-minute proxy 503 outages without a
+                    # single 5min+ sleep. See proxy_api_agent.py retry loop RCA.
+                    "retry_backoff_max_s": config.get("retry_backoff_max_s", None),
                     "retryable_codes": config.get(
                         "retryable_codes", [429, 500, 502, 503, 504],
                     ),

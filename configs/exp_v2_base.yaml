@@ -181,6 +181,21 @@ backends:
     # already override to 4096 explicitly (configs/exp_v2_B0_3mode_*.yaml).
     max_new_tokens: 4096
     max_image_payload_bytes: 5242880
+    # B-1880 (reddit chain abort #3, 2026-06-19): thickened B0 proxy retry
+    # budget + capped backoff. AWS proxy (API Gateway -> Bedrock) emits
+    # transient 503s; pre-fix 3 retries x 10/20/40s (~3min incl. ~30s/attempt
+    # 503 latency) was exhausted by a ~3min sustained outage on R28130 reddit
+    # task 59 -> first quarantine event -> PaperGradeAbortError -> whole
+    # 205-task condition lost at 58/205. New budget: 8 retries, 10s base
+    # doubling capped at 60s -> ~11min total tolerance (sleeps 10+20+40+60x5
+    # =370s + ~9x30s 503 latency) while post-recovery retry latency stays <=60s.
+    # Genuine sustained outages (>~11min = real substrate failure) still
+    # fail-closed for operator intervention. estimand-neutral (retry success
+    # returns identical data); applies to all B0 sites (per-site configs inherit
+    # via Hydra defaults + recursive merge, none override these keys).
+    max_retries: 8
+    retry_backoff_s: 10
+    retry_backoff_max_s: 60
     dom_mode: "llm"
     mock_mode: false
     # B-991 (2026-05-17): native tool_choice enabled. AWS proxy probe v2

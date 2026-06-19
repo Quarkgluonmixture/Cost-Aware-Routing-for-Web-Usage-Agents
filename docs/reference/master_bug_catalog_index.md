@@ -4,13 +4,13 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-06-06  ·  **Catalog**: master_bug_catalog.md (8233 lines, 138 sections)  ·  **B-numbers**: 805 canonical entries, 1241 referenced, range B-1~B-1869
+**Generated**: 2026-06-19  ·  **Catalog**: master_bug_catalog.md (8398 lines, 138 sections)  ·  **B-numbers**: 816 canonical entries, 1254 referenced, range B-1~B-1880
 
 ## Health (lint)
 
 - monotonicity inversions (canonical entries): **143** total (143 grandfathered pre-2026-05-21, **0 new**)
 - duplicate bold defs: **7** (summary-table echo + detail-list; not bugs)
-- number gaps: **628** — B-100–B-101, B-316–B-319, B-667–B-671, B-685–B-689, B-711, B-713–B-715, B-768–B-780, B-912–B-915, B-919, B-922–B-940, B-958–B-989, B-996–B-999, B-1022–B-1050, B-1065–B-1100, B-1102–B-1110, B-1112–B-1200, B-1209, B-1213–B-1218, B-1220–B-1229, B-1238–B-1259, B-1277–B-1279, B-1297–B-1300, B-1313–B-1319, B-1321–B-1379, B-1381–B-1399, B-1416–B-1419, B-1421–B-1423, B-1425–B-1426, B-1429–B-1430, B-1433–B-1499, B-1513–B-1549, B-1562–B-1569, B-1580, B-1606–B-1610, B-1612–B-1619, B-1632–B-1639, B-1647–B-1649, B-1656–B-1662, B-1664, B-1666–B-1668, B-1680–B-1701, B-1703–B-1761, B-1795
+- number gaps: **626** — B-100–B-101, B-316–B-319, B-667–B-671, B-685–B-689, B-711, B-713–B-715, B-768–B-780, B-912–B-915, B-919, B-922–B-940, B-958–B-989, B-996–B-999, B-1022–B-1050, B-1065–B-1100, B-1102–B-1110, B-1112–B-1200, B-1209, B-1213–B-1218, B-1220–B-1229, B-1238–B-1259, B-1277–B-1279, B-1297–B-1300, B-1313–B-1319, B-1321–B-1379, B-1381–B-1399, B-1416–B-1419, B-1421–B-1423, B-1425–B-1426, B-1429–B-1430, B-1433–B-1499, B-1513–B-1549, B-1562–B-1569, B-1580, B-1606–B-1610, B-1612–B-1619, B-1632–B-1639, B-1647–B-1649, B-1656–B-1662, B-1664, B-1666–B-1667, B-1680–B-1699, B-1701, B-1703–B-1761, B-1795
 
 ## Section map (file order — find a number by its /stress cluster)
 
@@ -113,4 +113,4 @@
 | L7993 | B-1864 — cls 评分 widget radio input AXTree 不暴露 → 任意 N-star rating ta… | B-1864 |
 | L8009 | B-1865 — cross-site cls+shopping task 在 paper-grade single-site fir… | B-1865 |
 | L8024 | B-1866 — cross-run cross-mode 4-run 一致替代 item = 新 benchmark-FP clas… | B-1866 |
-| L8059 | B-1867 — Provider remote-serving instability ~14pp dominant noise f… | B-1867–B-1869 |
+| L8059 | B-1867 — Provider remote-serving instability ~14pp dominant noise f… | B-1867–B-1880 |
