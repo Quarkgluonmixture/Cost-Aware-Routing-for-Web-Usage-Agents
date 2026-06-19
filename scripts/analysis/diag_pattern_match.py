@@ -30,6 +30,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
+from urllib.parse import urlparse
 
 # ---------------------------------------------------------------------------
 # Ruleset version — discover-then-freeze protocol (see diag SKILL.md
@@ -76,7 +77,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "5-domsomvispsom-b1860coord"
+RULESET_VERSION = "6-b12clsfull-b1860coord"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -223,6 +224,28 @@ RAW_IMAGE_URL_RE = re.compile(
     re.IGNORECASE,
 )
 
+P34_GIVEUP_RE = re.compile(
+    r"cannot verify|image not visible|not listed|\[\]",
+    re.IGNORECASE,
+)
+
+P38_IMAGE_URL_INTENT_RE = re.compile(
+    r"\bin the image\b|\bwebsite\b[^.]{0,40}\bimage\b|\bimage\b[^.]{0,40}\bwebsite\b",
+    re.IGNORECASE,
+)
+
+MUTATION_INTENT_RE = re.compile(
+    r"\b(delete|remove|edit|update|change|modify|submit|post|create|comment|reply|rate|"
+    r"mark\s+as\s+sold|take\s+down)\b",
+    re.IGNORECASE,
+)
+
+LUCKY_NUMERIC_TOKENS = {
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "zero", "one", "two", "three", "four", "five", "six", "seven",
+    "eight", "nine", "none", "no", "not", "nothing", "false", "n/a",
+}
+
 # --- self-evolving 2026-05-24 (R9725 B0 som cls Tier-2; ruleset 2-dom → 3-domsom) ---
 
 # P10 FP-narrowing: date numbers (16th November 2023) are NOT cross-step memory facts.
@@ -286,6 +309,92 @@ def _extract_numbers(text: str) -> List[float]:
 
 def _obs_mode(step: Dict) -> str:
     return step.get("observation_mode", "dom")
+
+
+def _find_finish_step(steps: List[Dict]) -> Optional[Dict]:
+    for s in steps:
+        if s.get("action_type") == "finish":
+            return s
+    return None
+
+
+def _finish_answer(steps: List[Dict]) -> str:
+    s = _find_finish_step(steps)
+    if not s:
+        return ""
+    a = s.get("action", {}) or {}
+    return str(a.get("answer", "") or a.get("text", "") or "")
+
+
+def _step_has_walk_fail(step: Dict) -> bool:
+    for key in ("locator_route_meta", "locator_route_meta_primary", "locator_route_meta_retry"):
+        meta = step.get(key)
+        if isinstance(meta, dict) and "walk_fail" in str(meta.get("error", "")):
+            return True
+    return False
+
+
+def _walk_fail_errors(step: Dict) -> List[str]:
+    errors = []
+    for key in ("locator_route_meta", "locator_route_meta_primary", "locator_route_meta_retry"):
+        meta = step.get(key)
+        if isinstance(meta, dict):
+            err = str(meta.get("error", "") or "")
+            if "walk_fail" in err:
+                errors.append(err)
+    return errors
+
+
+def _flatten_strings(obj: Any) -> List[str]:
+    if obj is None:
+        return []
+    if isinstance(obj, str):
+        return [obj]
+    if isinstance(obj, (int, float, bool)):
+        return [str(obj)]
+    if isinstance(obj, dict):
+        out: List[str] = []
+        for v in obj.values():
+            out.extend(_flatten_strings(v))
+        return out
+    if isinstance(obj, (list, tuple, set)):
+        out = []
+        for v in obj:
+            out.extend(_flatten_strings(v))
+        return out
+    return [str(obj)]
+
+
+def _eval_reference_strings(config: Dict) -> List[str]:
+    ev = config.get("eval") or {}
+    refs = []
+    refs.extend(_flatten_strings(ev.get("reference_answers")))
+    if ev.get("reference_url"):
+        refs.append(str(ev.get("reference_url")))
+    for ph in ev.get("program_html") or []:
+        refs.extend(_flatten_strings(ph.get("url")))
+        refs.extend(_flatten_strings(ph.get("required_contents")))
+    return refs
+
+
+def _string_match_reference_tokens(config: Dict) -> Set[str]:
+    ev = config.get("eval") or {}
+    refs = []
+    refs.extend(_flatten_strings(ev.get("reference_answers")))
+    for ph in ev.get("program_html") or []:
+        rc = (ph.get("required_contents") or {}).get("must_include") or []
+        refs.extend(_flatten_strings(rc))
+
+    tokens: Set[str] = set()
+    for ref in refs:
+        for tok in re.findall(r"n/a|[A-Za-z]+|\d+", str(ref).lower()):
+            tokens.add(tok)
+    return tokens
+
+
+def _program_html_locators(config: Dict) -> List[str]:
+    ev = config.get("eval") or {}
+    return [str(ph.get("locator", "") or "") for ph in ev.get("program_html") or []]
 
 
 # ---------------------------------------------------------------------------
@@ -406,7 +515,7 @@ def check_p3(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> Li
     return hits
 
 
-def check_p4(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+def check_p4(steps: List[Dict], summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
     """P4: 根节点误操作 — action targets root element (id=0/1 or full-viewport bbox)."""
     hits = []
     for s in steps:
@@ -426,6 +535,8 @@ def check_p4(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> Li
             is_root = True
             reason = f"bbox covers nearly full viewport ({bbox[2]:.0f}x{bbox[3]:.0f})"
         if is_root:
+            if summary.get("success") and _step_has_walk_fail(s):
+                continue
             hits.append(PatternHit(
                 "P4", "根节点误操作", s["step_idx"],
                 f"{at} on root node ({reason})",
@@ -436,6 +547,8 @@ def check_p4(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> Li
 
 def check_p5(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
     """P5: 感知缺失循环 — 3+ consecutive steps same action+target, page unchanged."""
+    if _summary.get("success"):
+        return []
     hits = []
     if len(steps) < 3:
         return hits
@@ -545,6 +658,11 @@ def check_p8(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> Li
 
 def check_p10(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
     """P10: 跨步数值记忆失败 — thought mentions number X, action uses different number Y."""
+    finish_action = _find_finish_step(steps)
+    if finish_action:
+        answer = str((finish_action.get("action") or {}).get("answer", "") or "")
+        if answer.startswith("http"):
+            return []
     hits = []
     for s in steps:
         at = s.get("action_type", "")
@@ -601,6 +719,8 @@ def check_p11(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Li
 
 def check_p12(steps: List[Dict], summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
     """P12: 从不翻页 — no scroll in episode with many steps and high no-change rate."""
+    if summary.get("success"):
+        return []
     if len(steps) < 6:
         return []
     has_scroll = any(s.get("action_type") == "scroll" for s in steps)
@@ -648,6 +768,8 @@ def check_p14(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
     (scrolling/browsing a long page). Genuine stuck loops are same-URL + no-type +
     mostly page-unchanged (e.g. repeated dead clicks).
     """
+    if _summary.get("success"):
+        return []
     hits = []
     if len(steps) < 4:
         return hits
@@ -715,6 +837,8 @@ def check_p16(_steps: List[Dict], _summary: Dict, config: Dict, mode: str) -> Li
 
 def check_p17(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
     """P17: click-back 振荡 — 同一 item 反复进入+退出, detail↔list 横跳无进展 (self-evolving 2026-05-22, diagnose Tier-2 task 40/111)."""
+    if _summary.get("success"):
+        return []
     from collections import Counter
     item_visits: Counter = Counter()
     for s in steps:
@@ -737,6 +861,8 @@ def check_p17(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
 
 def check_p18(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
     """P18: cheapest 任务漏价格排序 — intent 要 cheapest 但全程从未按 i_price 排序 (self-evolving 2026-05-22, diagnose Tier-2 task 216)."""
+    if any("sOrder=i_price" in (s.get("obs_url", "") or "") for s in steps):
+        return []
     intent = config.get("intent", "")
     if not re.search(r"\b(cheapest|lowest[- ]price|least expensive)\b", intent, re.IGNORECASE):
         return []
@@ -777,8 +903,8 @@ def check_p19(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> Li
         if s.get("action_type") == "finish":
             finish_url = s.get("obs_url", "")
             break
-    if finish_url is None and steps:
-        finish_url = steps[-1].get("obs_url", "")
+    if finish_url is None:
+        return []
     if finish_url and "page=search" in finish_url:
         return [PatternHit(
             "P19", "url_match过早搜索页finish", None,
@@ -1112,9 +1238,17 @@ def check_p31(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Lis
     via evaluator goto) succeed on the DB side-effect even when the agent never reaches a
     valid finish — trajectory_incomplete is expected there, NOT a failure signal (same
     404 carve-out as P20)."""
+    if summary.get("success"):
+        return []
     if not summary.get("trajectory_incomplete"):
         return []
     ev = config.get("eval") or {}
+    eval_types = ev.get("eval_types") or []
+    ref_url = ev.get("reference_url") or ""
+    last_obs_url = steps[-1].get("obs_url", "") if steps else ""
+    if ref_url and any(t in eval_types for t in ("url_match", "agent_page")):
+        if urlparse(last_obs_url).path == urlparse(ref_url).path:
+            return []
     for ph in ev.get("program_html") or []:
         rc = (ph.get("required_contents") or {}).get("must_include") or []
         if any("404" in str(x) for x in rc):
@@ -1148,15 +1282,179 @@ def check_p33(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
     "点进图片" → 裸图片页无可读内容却幻觉作答 (self-evolving 2026-05-28, R32031 B0
     phantom_som cls Tier-2 task 128/187; 两 sub-agent 独立发现). 天然 success-safe:
     裸图片 URL ≠ item 页, url_match/program_html 不会 pass."""
+    raw_idxs = [
+        i for i, s in enumerate(steps)
+        if RAW_IMAGE_URL_RE.search(s.get("obs_url", "") or "")
+    ]
+    if not raw_idxs:
+        return []
+    raw_set = set(raw_idxs)
+    severity = "low"
+    for i in raw_idxs:
+        if i + 1 in raw_set and not any(s.get("action_type") == "back" for s in steps[i:i + 2]):
+            severity = "high"
+            break
     for i, s in enumerate(steps):
         url = s.get("obs_url", "") or ""
         if RAW_IMAGE_URL_RE.search(url):
             return [PatternHit(
                 "P33", "导航至裸图片URL幻觉", i,
-                f"step {i}: obs_url is raw listing image {url[:80]} (clicked img href, lost)",
+                f"step {i}: obs_url is raw listing image {url[:80]} "
+                f"(clicked img href, lost; severity={severity})",
                 is_scaffold=False,
             )]
     return []
+
+
+def check_p34(steps: List[Dict], summary: Dict, config: Dict, mode: str) -> List[PatternHit]:
+    """P34: image-task blind give-up — no image input, short run, explicit visual give-up."""
+    if summary.get("success"):
+        return []
+    if mode != "dom" and not mode.startswith("phantom_"):
+        return []
+    if not config.get("image"):
+        return []
+    if len(steps) > 3:
+        return []
+    input_image = sum(int(((s.get("tokens") or {}).get("input_image")) or 0) for s in steps)
+    if input_image != 0:
+        return []
+    answer = _finish_answer(steps)
+    if not answer or not P34_GIVEUP_RE.search(answer):
+        return []
+    return [PatternHit(
+        "P34", "VISUAL_BLIND_IMAGE_TASK", None,
+        f"image task in {mode}, input_image=0, short give-up finish: {answer[:80]}",
+        is_scaffold=False,
+    )]
+
+
+def check_p35(_steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P35: mutation missing — program_html side-effect task finished without mutation."""
+    if summary.get("success"):
+        return []
+    ev = config.get("eval") or {}
+    if "program_html" not in (ev.get("eval_types") or []):
+        return []
+    eval_source = str(summary.get("eval_source_agent_url") or "")
+    locators = _program_html_locators(config)
+    if "item_edit" not in eval_source and not any(".comments_list" in loc for loc in locators):
+        return []
+    if int(summary.get("effective_mutating_action_count") or 0) != 0:
+        return []
+    if summary.get("agent_finished") is not True:
+        return []
+    return [PatternHit(
+        "P35", "MUTATION_MISSING", None,
+        "program_html side-effect task finished with effective_mutating_action_count=0",
+        is_scaffold=False,
+    )]
+
+
+def check_p36(steps: List[Dict], summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P36: mode-robust walk failure — locator walk_fail while trying to act."""
+    if summary.get("success"):
+        return []
+    hits = []
+    seen: Set[Tuple[int, str]] = set()
+    for s in steps:
+        if s.get("action_type") not in ("click", "type"):
+            continue
+        for err in _walk_fail_errors(s):
+            if not ("no_input_within_walk" in err or "no_actionable_within_walk" in err):
+                continue
+            key = (s.get("step_idx"), err)
+            if key in seen:
+                continue
+            seen.add(key)
+            hits.append(PatternHit(
+                "P36", "WALK_FAIL_DEGENERATE", s.get("step_idx"),
+                f"{s.get('action_type')} locator {err}",
+                is_scaffold=False,
+            ))
+    return hits
+
+
+def check_p37(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P37: URL hallucination — example.com answer when task references localhost URL."""
+    if summary.get("success"):
+        return []
+    answer = _finish_answer(steps)
+    if "example.com" not in answer.lower():
+        return []
+    refs = _eval_reference_strings(config)
+    if not any("localhost" in r for r in refs):
+        return []
+    return [PatternHit(
+        "P37", "URL_HALLUCINATION", None,
+        f"finish answer hallucinated example.com while reference contains localhost: {answer[:80]}",
+        is_scaffold=False,
+    )]
+
+
+def check_p38(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P38: DOM URL as image content — returns localhost URL for website-in-image task."""
+    if summary.get("success"):
+        return []
+    intent = config.get("intent", "")
+    if not P38_IMAGE_URL_INTENT_RE.search(intent):
+        return []
+    answer = _finish_answer(steps)
+    if "localhost" not in answer.lower():
+        return []
+    refs = _eval_reference_strings(config)
+    has_external_ref = any(
+        "localhost" not in r.lower() and re.search(r"\b[a-z0-9-]+\.[a-z]{2,}\b", r, re.IGNORECASE)
+        for r in refs
+    )
+    if not has_external_ref:
+        return []
+    return [PatternHit(
+        "P38", "DOM_URL_AS_IMAGE", None,
+        f"image/website intent answered with localhost URL instead of external reference: {answer[:80]}",
+        is_scaffold=False,
+    )]
+
+
+def check_p39(_steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P39: success without mutation — diagnostic benchmark-FP for mutation tasks."""
+    if summary.get("success") is not True:
+        return []
+    ev = config.get("eval") or {}
+    if "program_html" not in (ev.get("eval_types") or []):
+        return []
+    intent = config.get("intent", "")
+    if not MUTATION_INTENT_RE.search(intent):
+        return []
+    if int(summary.get("effective_mutating_action_count") or 0) != 0:
+        return []
+    if summary.get("agent_finished") is not False:
+        return []
+    return [PatternHit(
+        "P39", "SUCCESS_NO_MUTATION", None,
+        "success=True mutation task with effective_mutating_action_count=0 and agent_finished=False",
+        is_scaffold=False,
+    )]
+
+
+def check_p40(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P40: lucky numeric/string FP — trivial answer token succeeded without item-detail navigation."""
+    if summary.get("success") is not True:
+        return []
+    ev = config.get("eval") or {}
+    if ev.get("eval_types") != ["string_match"]:
+        return []
+    ref_tokens = _string_match_reference_tokens(config)
+    if not ref_tokens or not ref_tokens.issubset(LUCKY_NUMERIC_TOKENS):
+        return []
+    detail_markers = ("page=item", "product_id=", "/product/")
+    if any(any(marker in (s.get("obs_url", "") or "") for marker in detail_markers) for s in steps):
+        return []
+    return [PatternHit(
+        "P40", "LUCKY_NUMERIC_FP", None,
+        f"string_match success with trivial reference tokens {sorted(ref_tokens)} and no item-detail visit",
+        is_scaffold=False,
+    )]
 
 
 # ---------------------------------------------------------------------------
@@ -1197,6 +1495,13 @@ ALL_RULES: Dict[str, Any] = {
     "P31": check_p31,  # budget 耗尽未完成 (trajectory_incomplete; R24792 vision discover)
     "P32": check_p32,  # 文本误入价格 filter (sPriceMin/Max 含字母; R24792 vision discover)
     "P33": check_p33,  # 导航至裸图片URL幻觉 (phantom_som SOM_MARKS img-href click; R32031)
+    "P34": check_p34,
+    "P35": check_p35,
+    "P36": check_p36,
+    "P37": check_p37,
+    "P38": check_p38,
+    "P39": check_p39,
+    "P40": check_p40,
 }
 
 
