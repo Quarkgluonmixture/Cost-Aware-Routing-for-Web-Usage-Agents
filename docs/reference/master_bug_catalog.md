@@ -8362,3 +8362,19 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: B-783/B-785 (paper-grade evaluator fail-closed 同设计); B-824 (cls/shop task-attached reference image = 本 bug 对照,解释为何 cls 不撞); B-793 (preflight 加固体例); B-486 (quarantine hook); 笔记 §343 (全链叙事)。
 
 ---
+
+### B-1879. reddit B0 dom 撞 16h condition wallclock cap mis-kill (cls-校准 cap 不外推 reddit) → cap unlimited ✅ FIXED (2026-06-19)
+
+**Discovery**: ntfy `queue_chain ABORT ([1/18] B0 dom reddit): condition exceeded 16h max wallclock` (2026-06-19 01:41Z) + `Fire-6 ALERT orchestrator DOWN` (02:00Z)。B-1878 re-fire 的 reddit chain (R4992 B0 dom reddit, 06-18 09:38 起步) 跑 16h03m 后被 condition-level wallclock guard kill,仅完成 56/205 (~17min/task)。
+
+**Root cause**: `queue_chain.sh wait_for_runner_done()` 的 baseline-aware cap (B-1665/P1-16-AC) 给 B0 default 16h,注释依据 = Fire-4 **cls** 实测 142s/task × 234 = 9.24h, 16h = 1.5-2× 安全余量。**但 142s/task 仅 classifieds 校准**。reddit dom = max_steps-heavy (低 SR → 多数 task 烧满 30 步才失败) + B0 AWS-proxy 高延迟 (latency=10001ms) → 实测 ~1028s/task (~17min), 全 condition 投影 ~58h ≫ 16h → healthy-but-slow run 被 mis-kill (R4992 step JSONL 推进到 kill 瞬间 task74→75→76 = 慢非 stuck)。**= 2026-06-03 B1/B2 cls 4h-cap saga (R11094, §314) 的 B0-reddit 版重演**: 当时已确立 "per-step latency × per-task step-count 跨 site 不可预测, fixed cap 无法区分 slow-but-healthy vs stuck",但只改 B1/B2 → 0,**B0 保 16h (仅 cls 验证过)** → reddit 一上即撞。
+
+**Fix (operational guard, 非 estimand)**: B0 default cap 16h → 0 (unlimited),与 B1/B2 统一; real deadlock 改靠 watchdog idle-alert(30min) + liveness check 兜底 (盯"推进停滞"而非"总时长")。保留 `MAX_CONDITION_HOURS_B0=N>0` env 入口 (将来想加安全网可显式设)。commit `cd5029e` (branch fix/b1878-reddit-reference-image) + scp 同步 A100 (md5 `428921ae` 一致, bash -n OK)。**不动 max_steps/prompt/evaluator/task set/reset boundary → 无 OSF witness** (同 B-1665 6/3 B1/B2 先例)。
+
+**Re-fire**: R4992 partial (72 ep, **无 condition_summary_v2.json** = wallclock-kill 特征) → forensic-safe mv `_archive_wallclock_killed_R4992_dom_partial_20260619` (同 R11094 命名) → `RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0 launch red` (必 `red` 非裸 launch, B-1878 空-cls-chain cascade) → 全 gates 过 (G8 cls+red clean) → orchestrator PID 2112400, [1/18] B0 dom reddit **R28130** runner(2113661)+watchdog(2113692) 活 + task0 step JSONL + proxy tool_calls(click/back) 正常。
+
+**Follow-up**: reddit/shop 其余 B0 condition 现受益 (不再撞 cap); cls 的 B0 16h guard 一并取消 → 若担心 cls B0 真 stuck, watchdog idle-alert 已覆盖 (30min 无新 ep + step JSONL 10min 无更新 = 真 stall 信号, 比 16h 总时长更早更准, 故 cls 去 cap 无监控真空)。**广义教训**: 修一类 bug (B-1665 cap mis-kill) 时把同结构所有 cohort (B0/B1/B2) 一起改, 别只改触发的那个。
+
+**Cross-link**: B-1665/P1-16-AC (baseline-aware cap 起源 + 6/3 B1/B2 unlimited 决策); §314 (R11094 同失败模式); B-1878 (同 chain 前一次 DOWN, 不同根因 = reference image); B-304 (within-mode 不续跑 → archive + FORCE_NEW from ep0); 笔记 §344 (全链叙事)。
+
+---

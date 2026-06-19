@@ -23,7 +23,15 @@ updated: 2026-06-03
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-06-18 UPDATE — cls Pass-1 全完成 (里程碑) + reddit chain abort 根因已修待 re-launch** ⭐ 最新先读, 详 笔记 §343 + B-1878:
+> 🔭 **2026-06-19 UPDATE — reddit chain 第二次 DOWN (16h B0 wallclock cap mis-kill) → cap unlimited + re-launch DONE** ⭐ 最新先读, 详 笔记 §344 + commit cd5029e:
+> - **🔴→✅ reddit chain 第二次 DOWN 已修复 + re-launch 起步**: 06-18 09:38 re-launch (R4992 B0 dom reddit) 跑到 06-19 01:41Z 撞 **16h condition wallclock cap** abort (56/205, ~17min/task, ~58h projected) → orchestrator DOWN 02:00Z。**根因 = B0 16h cap 按 cls 142s/task 校准, 不外推 reddit** (max_steps-heavy + B0 proxy 高延迟) = 2026-06-03 B1/B2 cls 4h-cap saga (§314 R11094) 的 B0-reddit 版重演 (当时只改 B1/B2 unlimited, B0 留 16h, 假设只在 cls 验证过)。
+> - **修复**: `queue_chain.sh` B0 default cap **16h→0 (unlimited)**, 跟 B1/B2 统一, real deadlock 靠 watchdog idle-alert(30min)+liveness 兜底 (commit `cd5029e`, operational guard 非 estimand → 无 OSF witness, 同 6/3 先例; 保留 `MAX_CONDITION_HOURS_B0=N>0` env 入口)。scp 同步 A100 (md5 `428921ae` 一致, bash -n OK)。
+> - **✅ re-launch DONE (2026-06-19 07:50, `launch red` under unlimited cap)**: R4992 partial → `_archive_wallclock_killed_R4992_dom_partial_20260619` (forensic-safe mv, FORCE_NEW from ep0 per B-304)。新链 `queue_phase1_red_20260619_075023` orchestrator PID 2112400, **[1/18] B0 dom reddit R28130** runner(2113661)+watchdog(2113692) 活 + task0 step JSONL + proxy tool_calls(click/back) 正常 = fire 恢复。live 进度跑 ①②。
+> - **未 push**: commit `cd5029e` + 本 session 前置未 push commits。push 需 user 确认。
+> - **⏱️ schedule risk (已 surface user)**: B0 reddit dom ~58h/cond, reddit 18 cond 同-site sequential (hard rule 不能并行) → reddit Pass-1 ETA ~1.5-2 周+, **advisor D4 (Pass-1 全 36 cond 06-26, 剩 7 天) 几乎确定 miss** → 需跟学长 re-plan。
+> - **受限 session 穿透教训重温 (§343)**: `condense-a100` = A100 VM 本体 (非 jump host) → 直接 `ssh condense-a100 'cmd'`, **别用 `-J`** (当跳板会 publickey denied), bastion MOTD banner 仅 stderr 可忽略。
+>
+> 🔭 **2026-06-18 UPDATE — cls Pass-1 全完成 (里程碑) + reddit chain abort 根因已修待 re-launch** 详 笔记 §343 + B-1878:
 > - **cls Pass-1 ✅ 18 condition 全 paper-grade** (B0/B1/B2 × 6 mode × classifieds; ① verdict completed_ok=18 + manifest bound-clean=18)。chain 进 reddit 首 condition 即 abort (下条)。
 > - **🔴 reddit chain DOWN (2026-06-17 22:26Z) → 根因已修, 待 user re-launch**: B0 dom reddit R15710 跑到 task28 (27/205) 撞 `EvaluatorUnavailableError` (缺 CWD-相对 reference image) → paper-grade fail-closed abort → sentinel L529 → orchestrator DOWN。**非 runner crash / 非站点 / 非代码 bug = A100 self-hosted 迁移漏配 reference image** (B-1878)。⚠️ 受限-session 错觉: 交互 `ssh condense-a100 'cmd'` 落 bastion MOTD banner, 实际 rsync / `ssh -o ConnectTimeout` 可穿透拉 runner log。**已修 2 图** (`coco_images` symlink + curl 落 `B009P9HODS.1.jpg`; PIL 金标准 RGB OK; reddit 全站仅此 2 个本地 reference, 余 16 image-task 走 http)。
 > - **✅ re-launch DONE (2026-06-18 09:38, `launch red`)**: R15710 partial 已 archive → reddit red-only chain 起步 **[1/18] B0 dom reddit** (`queue_phase1_red_20260618_093824`, FORCE_NEW from ep0)。⚠️ **必须 `launch red` 非裸 `launch`** — cls 18 全完后裸 launch 撞「空 cls chain (0 cells) rc=2 → P0-2-B cascade halt 拒 launch red」首现边界 (B-1878 Re-fire 注)。live 进度跑 ① + `make ntfy`; A100 fire-6 monitor 接管。
