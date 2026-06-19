@@ -39,11 +39,19 @@
 ## Pilot 计划 (DGX, **不碰 A100 paper-grade**)
 - **Stage 0 smoke ✅ PASS (2026-06-16)**: MiMo-VL 在 DGX 加载干净 (`Qwen2_5_VLForConditionalGeneration` class, meta=0; GB10 sm_121 nvrtc prod bug → `apply_nvrtc_prod_fallback_if_needed` 同 agent 即修) + **3/3 parse-valid + 无 native leak = 无 GLM-lockout** + grounding 连贯 (task_184 找对 element 17 PA speaker)。**集成轻确认** (Qwen2.5-VL 处理栈同构 → 复用 `qwen3vl_agent.py` 路径, vs Gemma 全新 class)。**两新考量**: (a) MiMo-VL-**RL** = thinking 模型, 每步 `<think>` 块 = thinking-vs-not confound (B0/B1/B2 不 think) → paper-design 决策; (b) 缺 JSON `thought`/`confidence` (confidence 可 logprob derive)。脚本 `scripts/maintenance/probe_mimo_b3_conformance.py`。
 - **Stage 1 format-conformance** (= GLM-lockout 直接测): 喂真实 agent prompt + classifieds 观测, 验 parse-valid 率 + **能否发我们的 `finish`** + 不泄漏 native tokens。
-- **Stage 2 floor pilot** (过 1 后): 20-30 classifieds task via **DGX→quark Tailscale VWA** (dev path, 非 A100 localhost) → 真 SR。判: 不地板 (≫1%) → 立 B3 production bring-up (同 §140); 地板 → 战略发现 + 学长 scope 决策。
-- **隔离**: A100 R10175 paper-grade fire 全程不受影响 (不同 GPU + 不同 VWA 实例)。
+- **Stage 2 floor pilot** (过 1 后): ~25 classifieds task → 真 SR。判: 不地板 (≫1%) → 立 B3 production bring-up (同 §140); 地板 → 战略发现 + 学长 scope 决策。⚠️ **2026-06-17 更新: 原 DGX→quark dev 路径放弃** (笔记 §342: task_configs 被 DGX 共享环境外部进程删的幽灵, 全库无 P79 代码删它 = 非 B3 code bug; MiMo 集成 sound, task0 真跑 15 步) → **改 A100 cls fire 完后在 A100 跑** (有完整 setup, 同站冲突现排队)。
+- **隔离**: A100 paper-grade fire 全程不受影响 (DGX pilot 已放弃; A100 floor pilot 排在 cls fire 之后, 非并发)。
 
 ## 部署注意
 MiMo-VL-7B-RL 经 **MORL** → §8 诚实标 "general post-trained checkpoint, no VWA-specific SFT/TTI" (同 Qwen3-VL/Gemma3 类, 非 "no RL")。`Qwen2_5_VLForConditionalGeneration` 是部署接口非 backbone。若严格禁 RL-checkpoint → 退 `MiMo-VL-7B-SFT-2508` (但无可核 WebVoyager 数, 防地板证据弱)。
+
+## official-usage audit (2026-06-17→18, reviewer-defense 第三锁)
+GPT browsing-audit (官方 HF/GitHub/arXiv 2506.03569) + Claude in-repo 代码验证 → **无单一 misconfiguration**。详 `docs/analysis/vwa_classifieds/B3_mimo_official_playbook_audit_2026-06-17.md`（对标 §338 B2 audit）。
+- **官方关键**: 部署推荐 temp=0.3/top_p=0.95 (但 tech report **视觉评测用 greedy** → greedy 有官方先例); **`/no_think` 关思考 99.84%** (放 user msg 末尾、后无内容; RL+SFT 都支持 → on/off ablation 同模型可行, 不需换 SFT); 默认 system prompt **仅身份句** (非 GUI prompt, 模板支持替换); processor 官方从 MiMo checkpoint 加载; **单图 image-before-text**; bf16; **无官方 JSON mode / web-agent runner** (JSON 合规非原生保证)。
+- **纠正本 doc §40 (b)**: MiMo **直吐 confidence** (§341 集成实测, 非"缺 confidence")。
+- **代码验证 3 项** (GPT 标"条件性需改"): processor 从 MiMo 加载 ✓ (`mimo_vl_agent.py:98`) + 单图 image-before-text ✓ (`qwen3vl_agent.py:250`) + max_new_tokens=4096 截断 = **telemetry gap ⚠️**。
+- **A100 run 前 action**: ① **抬 max_new_tokens 4096→8192~16384** + 加截断率 telemetry (thinking 长推理先于 JSON, 官方 vision 用 32768; 4096 可能截 JSON = 人为失败); ② **§8 disclose**: greedy / 替换默认 system prompt / SoM-element-ID JSON action / cap / processor; ③ **温度敏感性補强** (post-pilot, 少 task × {greedy, temp=0.3 ×3 seed})。
+- **前置**: floor pilot (A100) confirm 不地板才 promote + 此 lock 生效。
 
 ## 源 (arXiv API 核 3 ID 全真; SR 数字正文级待复核)
 `2606.03203` MedCUA-Bench (GLM zero-action 源) · `2506.03569` MiMo-VL Tech Report · `2507.01006` GLM-4.5V/4.1V (WebVoyager-SoM 34/69 + format) · GPT/Gemini 全报告存 `docs/literature/{gpt.md, 跨家族...选型报告.md}`。

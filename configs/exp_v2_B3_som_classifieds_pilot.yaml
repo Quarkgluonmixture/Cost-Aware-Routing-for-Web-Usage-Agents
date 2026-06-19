@@ -1,0 +1,56 @@
+# B3 (MiMo-VL-7B-RL-2508) som classifieds — DEV FLOOR PILOT (§340, 2026-06-16).
+# NOT paper-grade. Cross-family 4th model (Xiaomi MiMo-7B backbone, bolt-on =
+# regime-consistent for the MIRAGE mechanism phantom rides on). Purpose: does
+# MiMo floor on OUR fixed-JSON scaffold — the one question the literature can't
+# answer (no candidate has verifiable raw zero-shot VWA SR ≥6%)?
+#
+# Dev path: DGX→quark Tailscale VWA (launch with
+# CLASSIFIEDS=http://100.95.81.103:9980), NOT the A100 paper-grade fire (which
+# self-hosts VWA at localhost). thinking-ON (natural mode — cleanest floor
+# judgment; <think> blocks stripped by action_utils.parse_action_text B-800).
+# som mode = strongest single mode, comparable to B1 som 14.3% / B2 som 2.2%.
+# local_mimo backend defined INLINE (deep-merge adds it alongside base
+# local_4b/local_gemma/api_strong → zero modification to exp_v2_base.yaml).
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B3_som_classifieds_pilot"
+
+task:
+  include_sites: ["classifieds"]
+  # 25→10: fast first-look floor (~3min/step on shared GB10 thinking model; §340).
+  # Full 25-task comparable floor can run later/overnight if the first-look is ambiguous.
+  max_tasks_per_site: 10
+
+runtime:
+  # 30→15: cap per-task time for the fast first-look (loop-y tasks else run 30×~3min).
+  # COARSER than B1/B2 (30 steps) — note in floor analysis; a loop-y model rarely
+  # finishes in steps 16-30 anyway, so this mostly saves time, not floor validity.
+  max_steps: 15
+  resume: false
+
+variables:
+  primary:
+    observation_mode: ["som"]
+
+backends:
+  default_backend: "local_mimo"
+  local_mimo:
+    type: "local_mimo"
+    path: "XiaomiMiMo/MiMo-VL-7B-RL-2508"
+    # Pinned to the cached snapshot SHA (refs/main 2026-06-16) for reproducibility.
+    # Explicit (non-null) so the runner's B-83 logic does NOT forward the
+    # top-level Qwen model.revision into this cross-family backend.
+    revision: "4bfb270765825d2fa059011deb4c96fdd579be6f"
+    quantization: "none"
+    device: "cuda"
+    # DGX shared GB10: Stage-0 probe loaded MiMo (~16GB bf16) fine without the
+    # VRAM gate; the sm_121 VRAM probe is unreliable, so disable the gate here.
+    min_free_vram_gb: 0
+    # Generous headroom: thinking checkpoint emits <think> before the JSON
+    # action (greedy stops at EOS well under this; Stage-0 fit in 512).
+    max_new_tokens: 4096
+    temperature: 0.0   # greedy (do_sample=False in agent); matches B0/B1/B2 + Stage-0
+    mock_mode: false

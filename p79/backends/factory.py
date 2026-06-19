@@ -90,6 +90,13 @@ def create_backend(backend_id: str, cfg: Dict[str, Any]):
     if backend_type == "local_gemma":
         from p79.backends.local_gemma import LocalGemmaBackend
         return LocalGemmaBackend(backend_id, cfg)
+    # B3 dev pilot (§340, 2026-06-16): MiMo-VL-7B-RL ships as the Qwen2.5-VL
+    # deployment class; LocalMiMoBackend drives MiMoVLAgent (subclass of
+    # Qwen3VLAgent, same processing stack). Lazy import keeps the Qwen2.5-VL
+    # load path off the B0/B1/B2 paper-grade fire import path.
+    if backend_type == "local_mimo":
+        from p79.backends.local_mimo import LocalMiMoBackend
+        return LocalMiMoBackend(backend_id, cfg)
     if backend_type == "api_proxy":
         from p79.backends.api_proxy import ApiProxyBackend
         return ApiProxyBackend(backend_id, cfg)
