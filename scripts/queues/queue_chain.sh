@@ -147,10 +147,19 @@ wait_for_runner_done() {
   # healthy R11094 (46/224 done at 4h, ~20h projected, 0 parse errors, advancing
   # every 30 min). Cap is now opt-in for B1/B2 (set MAX_CONDITION_HOURS=N>0);
   # real deadlocks still caught by watchdog idle-alert (20min ntfy) + the
-  # watchdog-liveness check above. B0 keeps 16h (predictable 142s/task → 9.2h).
+  # watchdog-liveness check above.
+  # 2026-06-19 (user decision, B0 R4992 reddit empirical): B0 default → 0 too.
+  # The 16h B0 cap was calibrated on classifieds ONLY (142s/task → 9.2h). reddit
+  # dom is max_steps-heavy + B0 AWS-proxy latency-bound: R4992 measured ~17min/task
+  # (56/205 done at 16h, ~58h projected) and was mis-killed at exactly 16h03m —
+  # the SAME failure mode as R11094 (the cls 142s/task assumption does NOT
+  # extrapolate to reddit/shop). Per-step latency × step-count is unpredictable
+  # across sites, so a fixed wallclock cap cannot distinguish "slow but healthy"
+  # from "stuck". B0 now matches B1/B2: unlimited by default, real deadlocks
+  # caught by watchdog idle-alert + liveness check. Opt back in: MAX_CONDITION_HOURS_B0=N>0.
   local _baseline_hours
   if [[ "${pattern}" =~ (^|_)B0_ ]]; then
-    _baseline_hours="${MAX_CONDITION_HOURS_B0:-16}"
+    _baseline_hours="${MAX_CONDITION_HOURS_B0:-0}"
   else
     _baseline_hours="${MAX_CONDITION_HOURS:-0}"
   fi
@@ -172,8 +181,9 @@ wait_for_runner_done() {
     fi
     # B-1665 P1-5: max wallclock guard (baseline-aware per P1-16-AC).
     # 2026-06-03: max_condition_secs==0 ⇒ cap disabled (unlimited); short-circuit
-    # skips the kill. B1/B2 default to 0 (see _baseline_hours above). Real
-    # deadlocks still caught by watchdog idle-alert + liveness check above.
+    # skips the kill. All baselines default to 0 (B0 since 2026-06-19; see
+    # _baseline_hours above). Real deadlocks still caught by watchdog
+    # idle-alert + liveness check above.
     if (( max_condition_secs > 0 && elapsed >= max_condition_secs )); then
       log "  [FATAL] ${label}: max condition wallclock exceeded (${elapsed}s ≥ ${max_condition_secs}s = ${_baseline_hours}h, baseline-aware per P1-16-AC)"
       log "  paper-grade fail-fast: condition stuck longer than budget — likely busy-wait loop / proxy hang / cold cache"
