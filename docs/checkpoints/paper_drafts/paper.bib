@@ -222,6 +222,15 @@
   primaryClass={cs.AI}
 }
 
+@article{zhou2026visualignorance,
+  title = {Diagnosing Visual Ignorance in Vision-Language Models},
+  author = {Zhou, Runyu and Zhang, Qi and Wang, Qixun and Wang, Yisen},
+  year = {2026},
+  journal = {arXiv preprint arXiv:2606.06890},
+  primaryClass = {cs.CV},
+  note = {Dual-lens study of VLM language-prior reliance. Behavioral: progressive Gaussian blur (8 kernels) over 12 VQA benchmarks $\times$ 3 VLMs (Qwen2.5-VL-3B/7B, LLaVA-1.6-Mistral-7B) tracking consecutive-identical answers; 20--40\% of samples are answered identically under total visual occlusion (RePOPE/MMMU $\sim$40\%) $\to$ ``benchmarks reward visual ignorance''. Mechanistic: counterfactual layer replacement + layer-wise MLP probing localize a two-stage suppression --- middle layers carry the visual signal, late layers ($\sim$final third) re-inject text-space priors (language-prior prob $>$0.6). Directly cites MIRAGE and positions itself as a strict-superset method (multi-step consecutive-consistency lower bound vs MIRAGE's binary image-present/absent comparison). Cited in our paper \S 2.4 as the fresher behavioral anchor for language-prior dominance, alongside MIRAGE \citep{asadi2026mirageillusionvisualunderstanding} + Scaffold \citep{vu2026scaffold}. CAVEAT: single-image VQA domain, not web agents; ``visual ignorance'' = discarding a PRESENT image, whereas Phantom-SoM REMOVES the image while preserving its element index as text --- motivational transfer only. The mechanism half (layer replacement / MLP probe) maps to the deferred paper-2 \S 5 (same toolkit as our shelved patching/probe plan). Added 2026-06-15 from cron\_digest\_2026-06-12 triage, arXiv id API-verified.}
+}
+
 @inproceedings{kaduri2024whatsintheimage,
   title={What's in the Image? A Deep-Dive into the Vision of Vision Language Models},
   author={Omri Kaduri and Shai Bagon and Tali Dekel},
@@ -475,6 +484,16 @@
   author={Liu, Xunzhuo and He, Bowei and Liu, Xue and Luo, Andy and Zhang, Haichen and Chen, Huamin},
   journal={arXiv preprint arXiv:2603.12823},
   year={2026}
+}
+
+@misc{hwang2026webchallenger,
+  title = {{WebChallenger}: A Reliable and Efficient Generalist Web Agent},
+  author = {Hwang, Jayoo and Zhang, Xiaowen and Padwal, Vedant},
+  year = {2026},
+  eprint = {2606.10423},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  note = {PageMem = a deterministic structured-DOM representation (4-level WebsiteMem $\to$ PageMem $\to$ PageSection (DOM subtree + LLM one-sentence summary) $\to$ Element), with offline-exploration persistent memory, a multi-stage select-then-summarize observation pipeline (selective attention), and compound-action workflows; numbered-list-index action, not tool-calling. Backbone GLM-4-32B-0414, no fine-tune; its VisualWebArena vision model is Qwen3-VL-4B-Instruct (= our B1). WebArena 56.3\% (open-agent SOTA, +7.9 over Mobile-Agent-v3.5); VWA 48.7\%; harness-isolation GLM-4-32B 19.4\% (minimal GenericAgent) $\to$ 58.8\% (WebChallenger), a +39.4pt ``architecture not scale'' claim. Cited in our paper \S 6.8 as the fixed-representation contrast pole: WebChallenger commits every page to a SINGLE structured DOM view, whereas we route per task among DOM/SoM/Vision/phantom; its within-page section selection is intra-representation attention, not cross-mode routing. Its harness-isolation design (same model, minimal-vs-rich harness) is a clean template for reporting a representation contribution net of model scale. CAVEAT: NOT a baseline --- different controller (GLM-4-32B vs our Qwen/Gemma), full VWA-910 with an offline exploration phase, and PageMem bundles memory+workflows so its SR is not attributable to representation alone; SR incomparable to ours. Added 2026-06-15 from cron\_digest\_2026-06-12 triage, arXiv id API-verified.}
 }
 
 @article{li2025seetrek,
