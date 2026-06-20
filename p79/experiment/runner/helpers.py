@@ -315,3 +315,38 @@ def _notify_retry_pass(
         logger.info("Retry pass ntfy sent to %s", topic)
     except Exception as exc:
         logger.warning("Retry pass ntfy failed: %s", exc)
+
+
+def _notify_transient_retry(
+    condition_id: str,
+    site: str,
+    task_id: Any,
+    transient_class: str,
+    attempt: int,
+    max_retries: int,
+) -> None:
+    """Push ntfy for a B-1881 transient-substrate episode-level retry.
+
+    Transparency channel so the operator sees that a transient infra blip
+    (auth / proxy_5xx / network) triggered an episode retry on fresh substrate
+    INSTEAD of a condition-level fail-closed abort. Best-effort — never raises."""
+    topic = os.environ.get("NTFY_TOPIC", "").strip()
+    if not topic:
+        return
+    title = f"P79 transient-retry [{condition_id}] task {task_id} ({transient_class})"
+    body = (
+        f"transient substrate ({transient_class}) at site={site} task={task_id} "
+        f"— episode-level retry {attempt}/{max_retries} on fresh substrate "
+        f"(NOT condition abort; B-1881)"
+    )
+    url = f"https://ntfy.sh/{topic}"
+    req = urllib.request.Request(
+        url, data=body.encode("utf-8"), method="POST",
+        headers={"Title": title, "Priority": "default", "Markdown": "yes"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15):
+            pass
+        logger.info("Transient-retry ntfy sent to %s", topic)
+    except Exception as exc:
+        logger.warning("Transient-retry ntfy failed: %s", exc)

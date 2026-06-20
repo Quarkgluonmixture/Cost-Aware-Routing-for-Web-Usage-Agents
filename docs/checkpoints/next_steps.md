@@ -23,7 +23,14 @@ updated: 2026-06-03
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-06-19 (later) UPDATE — reddit chain 第 3 次 abort (B0 proxy 503 sustained outage) → retry budget 加厚 + capped backoff DONE, 待 re-launch** ⭐ 最新先读, 详 笔记 §349 + B-1880:
+> 🔭 **2026-06-20→21 UPDATE — reddit chain 第 4 次 abort (auth blip) → 结构性修复 PRE-FLIGHT transient episode-retry (3-AI /stress + PROTOCOL_NOTE_02) DONE + re-fired** ⭐ 最新先读, 详 笔记 §350 + B-1881:
+> - **🔴 第 4 次 abort (2026-06-20 22:12Z)**: B-1880 re-fire 的 R26851 跑到 task140 (137/205) 撞 reddit auth blip (`LOGIN_FAILED still_on_login`, `steps=0` pre-flight 零污染) → fail-closed abort。**结构性问题坐实**: fail-closed-on-first-quarantine × B0 长 runtime → 连续 2 次 transient (503+auth) 弃 ~192 ep/~40h,都零污染。
+> - **✅ Fix DONE (3-AI /stress contract change, estimand-neutral)**: transient quarantine → **有界 episode-retry**,核心收窄 = **PRE-FLIGHT (`steps==0`) ∧ class∈{auth,network}** (proxy_5xx 排除,B-1880 管)。3-AI 收敛: codex 独家 P0 (mid-episode mutation 污染) + gemini defuse (pre-flight-only) + 我 (组合风险) → steps==0 一刀解 mutation/redraw/masking 且 **estimand 不变 → PROTOCOL_NOTE_02 非 OSF amendment**。结构化 provenance + 透明度 (retry_count 进 summary+trajectory+ntfy+yaml) + watchdog race close。18 tests + 1420 pass 0 新回归。
+> - **Witness**: `PROTOCOL_NOTE_02_TRANSIENT_PREFLIGHT_RETRY_20260621.md` + tag (NO OSF deposit,recovery-alignment tier;gemini OSF dissent 已记录)。**Live-verification pending**: 下次 reddit 撞 transient auth blip 验 PRESERVE。
+> - **✅ committed + pushed + tag · re-fire 同 session 执行**: archive R26851 → `launch red`。live 进度跑 `make ntfy` + ① verdict。
+> - **Follow-up (defer)**: aggregator emit retry_count covariate · §3.5/§8 disclosure prose (per-cell retry count + B0 zero-retry SR sensitivity) · abort summary 漏 aborted-episode (codex P2 pre-existing)。
+>
+> 🔭 **2026-06-19 (later) UPDATE — reddit chain 第 3 次 abort (B0 proxy 503 sustained outage) → retry budget 加厚 + capped backoff DONE** 详 笔记 §349 + B-1880:
 > - **🔴 reddit chain 第 3 次 DOWN (2026-06-19 21:57Z)**: R28130 (B-1879 re-fire, 07:50 起步) 跑到 task59 (58/205) abort。**根因 = B0 AWS proxy 持续 ~3min 503 (21:54→21:57Z, attempt 1/3→2/3→3/3 全 503) 耗尽旧 retry 预算 (~3min 容忍) → needs_reevaluation=True = paper_grade 首个 quarantine event → PaperGradeAbortError fail-closed → runner 退出不写 summary → C3 sentinel abort + orphan watchdog kill**。= 同 chain 连续第 3 次 abort, 第 3 个不同根因 (B-1878 ref image @t28 / B-1879 wallclock @t56 / 本次 503 @t59)。**断链 sentinel = 症状探测器非故障源**。外部 substrate transient, 非代码 bug。
 > - **✅ Fix DONE (capped exponential backoff, user 选 b, estimand-neutral)**: `proxy_api_agent.py` 加 `retry_backoff_max_s` (None=uncapped 向后兼容) + `_capped_wait()` helper · `api_proxy.py` forward · `exp_v2_base.yaml api_strong` max_retries 3→8 / backoff 10 / cap 60 → 容忍窗口 **~3min→~10.7min**, post-recovery retry ≤60s。无 OSF witness (operational guard, 同 B-1665/B-1879 先例); yaml-exposed per B-568; 所有 B0 site 继承。+3 tests 17 pass + 关联 105 pass 零回归; 4 文件 rsync A100 双端 md5 一致 + py_compile OK。B-1880 登 catalog。
 > - **✅ committed + pushed** `origin/fix/b1878-reddit-reference-image` (commit `57ee93c`: 4 fire-path 文件 + catalog + 笔记 §349, user 显式确认)。

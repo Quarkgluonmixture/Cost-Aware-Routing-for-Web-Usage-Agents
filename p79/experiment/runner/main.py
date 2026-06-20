@@ -85,6 +85,7 @@ from p79.experiment.runner.helpers import (
     _anti_repeat_control,
     _no_early_finish_control,
     _notify_retry_pass,
+    _notify_transient_retry,
 )
 
 logger = logging.getLogger(__name__)
@@ -1629,7 +1630,211 @@ class ExperimentRunner:
             "som_image": None,
         }
 
+    @staticmethod
+    def _classify_transient_substrate(msg: str) -> Optional[str]:
+        """Classify a quarantine error string as a transient-substrate class
+        ("auth" / "proxy_5xx" / "network") or None (non-transient). Used for BOTH
+        provenance/logging AND the retry gate, but classification alone does NOT
+        authorize a retry — the wrapper (_run_and_record_episode) additionally
+        requires steps==0 (pre-flight) AND class ∈ {auth, network} (proxy_5xx is
+        owned by B-1880's internal retry, so it aborts here).
+
+        B-1881 (reddit chain abort #3/#4, 2026-06-20). CONSERVATIVE by design —
+        only unambiguous infra signals match. Agent-induced Playwright timeouts
+        (M5 taxonomy:
+        agent_observation / agent_navigation / agent_action), benchmark noise,
+        evaluator-init failures, and proxy 403 (quota) all return None so they
+        still abort — misclassifying a real agent/benchmark failure as transient
+        would mask it by retrying. Matches on the (≤200-char-truncated) error
+        embedded in the PaperGradeAbortError message; the discriminating tokens
+        (auth_required_gate / 503 / execute-api / connection reset) all appear at
+        the head of those error strings."""
+        s = msg or ""
+        low = s.lower()
+        # auth: site session login failure (AuthRefreshFailure from auth gate).
+        if (
+            "authrefreshfailure" in low
+            or "auth_required_gate" in low
+            or "refresh_site_auth returned false" in low
+            or "login_failed" in low
+        ):
+            return "auth"
+        # proxy 5xx: AWS proxy (API Gateway → Bedrock) transient unavailability.
+        # 403 (quota) is raised upstream before reaching the quarantine path, so
+        # only genuine 5xx transients reach here.
+        if ("execute-api" in low or "model-api" in low) and (
+            "503" in s or "502" in s or "504" in s
+            or "service unavailable" in low or "bad gateway" in low
+            or "gateway timeout" in low
+        ):
+            return "proxy_5xx"
+        # network: connection-level transients (proxy or VWA site).
+        if (
+            "connection aborted" in low
+            or "connection reset" in low
+            or "connection refused" in low
+            or "max retries exceeded" in low
+            or "remote end closed connection" in low
+            or "temporary failure in name resolution" in low
+        ):
+            return "network"
+        return None
+
+    def _recover_transient_substrate(self, tclass: str, task: Any, attempt: int) -> None:
+        """Recover from a transient-substrate quarantine before an episode retry
+        (B-1881). Bounded capped backoff lets the transient window pass; the auth
+        class additionally forces the next episode's auth gate to re-authenticate.
+
+        The next `_run_episode` call cleans the prior attempt's partial artifacts
+        on entry (B-488 stale-archive / wipe), so a retry runs on fresh substrate."""
+        backoff = min(30 * (2 ** (attempt - 1)), 120)  # 30, 60, 120 (cap 120)
+        logger.info(
+            "B-1881 transient recovery (class=%s attempt=%d): backoff %ds before "
+            "episode retry on fresh substrate",
+            tclass, attempt, backoff,
+        )
+        time.sleep(backoff)
+        if tclass == "auth":
+            # Force the next _run_episode auth gate to re-authenticate: set the
+            # last-refresh ts to epoch so should_refresh() sees a huge
+            # seconds_since and re-runs auth_required_gate. (The failed gate did
+            # not update the ts, but a recent prior success could otherwise
+            # suppress the re-gate — set explicitly.)
+            self._auth_last_refresh_ts[task.site] = 0.0
+
     def _run_and_record_episode(
+        self,
+        condition: ConditionSpec,
+        task: Any,
+        backend: Any,
+        condition_logger: LoggerV2,
+        condition_dir: Path,
+        effective_cid: str,
+        current_seed: int,
+    ) -> Dict[str, Any]:
+        """B-1881 transient-substrate retry wrapper around _run_and_record_episode_once.
+
+        Fire-4 RCA Wave 1 M1 made the FIRST quarantine event (needs_reevaluation
+        =True) fail-closed abort the whole condition — correct for non-transient
+        substrate compromise, but for TRANSIENT infra blips (AWS-proxy 5xx,
+        reddit/shop session-auth login failure, connection resets) it converts a
+        recoverable hiccup into total-condition loss (reddit chain abort #3
+        R28130 proxy-503 lost 55 ep; #4 R26851 auth lost 137 ep — both failed at
+        episode boundaries with ZERO contamination).
+
+        Now: a PRE-FLIGHT (steps==0) transient quarantine of class auth/network
+        triggers a BOUNDED episode-level retry on fresh substrate (re-auth /
+        capped backoff) instead of a condition abort. The steps==0 gate is the
+        master safety (3-AI /stress consensus 2026-06-20): the agent took no
+        browser action, so there is NO site mutation (codex P0-1), NO stochastic-
+        rollout to redraw (P0-2), and the failure CANNOT be agent-induced (P1-3)
+        — the retry is "the episode finally starting on valid substrate", which
+        leaves the SR estimand UNCHANGED (hence PROTOCOL_NOTE_02, not an OSF
+        amendment). Mid-episode failures (steps>0), proxy_5xx (owned by B-1880's
+        ~11min internal retry), non-transient quarantines (agent / benchmark /
+        evaluator), and retry exhaustion all still re-raise PaperGradeAbortError
+        for operator intervention — the fail-closed safety net is preserved.
+        Retries are logged to trajectory_events.jsonl + stamped on the canonical
+        episode summary (transient_retry_count) + ntfy for transparency. Bound via
+        yaml `transient_episode_max_retries` (default 3); diagnostic_replay + dev
+        mode keep the legacy single-attempt fail-closed.
+        """
+        _paper_grade = bool(self.cfg.get("paper_grade", False))
+        _max = int(self.cfg.get("transient_episode_max_retries", 3))
+        # B-1881 (3-AI /stress consensus 2026-06-20): retry ONLY pre-flight
+        # (steps==0) transient infra failures, where the agent took no browser
+        # action ⇒ no site mutation (codex P0-1), no stochastic-rollout redraw
+        # (3-AI P0-2), no agent-induced masking (P1-3). proxy_5xx is EXCLUDED:
+        # the proxy agent already retries 5xx internally ~11min (B-1880); an
+        # episode-level proxy_5xx reaching here = that budget exhausted =
+        # sustained outage ⇒ legitimate abort (also avoids the B-1880×B-1881
+        # ~4×11min worst-case time-to-abort, P1-5).
+        _RETRYABLE_CLASSES = {"auth", "network"}
+        _attempt = 0
+        _retry_classes: List[str] = []
+        while True:
+            try:
+                summary = self._run_and_record_episode_once(
+                    condition, task, backend, condition_logger,
+                    condition_dir, effective_cid, current_seed,
+                )
+                # B-1881 P1-6 transparency: stamp retry lineage on the (clean)
+                # returned summary so the CANONICAL data layer — not just
+                # trajectory_events.jsonl — records that this outcome was
+                # transient-retry-rescued (reviewer can audit retry frequency
+                # from episode summaries; populates the EpisodeSummaryV2
+                # attempt-lineage reservation in types.py).
+                if _attempt > 0 and isinstance(summary, dict):
+                    summary["transient_retry_count"] = _attempt
+                    summary["transient_retry_classes"] = list(_retry_classes)
+                    summary["is_retry_attempt"] = True
+                    summary["attempt_index"] = _attempt
+                    summary["retry_trigger"] = _retry_classes[-1]
+                    try:
+                        condition_logger.write_episode_summary(
+                            task.site, task.task_id, summary,
+                        )
+                    except Exception:  # canonical write already done in once(); best-effort stamp
+                        pass
+                return summary
+            except PaperGradeAbortError as _abort:
+                _tclass = getattr(_abort, "transient_class", None)
+                _steps = int(getattr(_abort, "steps", 0) or 0)
+                if (
+                    not _paper_grade
+                    or self.diagnostic_replay
+                    or _tclass not in _RETRYABLE_CLASSES
+                    or _steps != 0            # mid-episode (steps>0) ⇒ NOT retryable
+                    or _attempt >= _max
+                ):
+                    # non-transient / mid-episode / exhausted / dev → fail-closed abort
+                    raise
+                _attempt += 1
+                _retry_classes.append(_tclass)
+                logger.warning(
+                    "B-1881 PRE-FLIGHT transient quarantine (class=%s steps=0) at "
+                    "site=%s task=%s — episode-level retry %d/%d on fresh substrate "
+                    "(NOT condition abort): %s",
+                    _tclass, task.site, task.task_id, _attempt, _max,
+                    str(_abort)[:200],
+                )
+                # P1-4: delete the failed canonical summary BEFORE the backoff so
+                # the watchdog (tracks by episode-key, not mtime —
+                # experiment_watchdog.py:2151) cannot ingest the needs_reevaluation
+                # summary during the sleep window, false-alert, and key-lock
+                # against the clean retry overwrite. steps==0 ⇒ no forensic step
+                # data is lost (the episode never ran); the trajectory event below
+                # preserves the retry record.
+                try:
+                    condition_logger.summary_path(
+                        task.site, task.task_id,
+                    ).unlink(missing_ok=True)
+                except Exception:
+                    pass
+                try:
+                    condition_logger.log_trajectory_event(
+                        "transient_substrate_retry",
+                        task_index=(
+                            int(task.task_id) if task.task_id is not None else None
+                        ),
+                        metadata={
+                            "transient_class": _tclass,
+                            "retry_attempt": _attempt,
+                            "max_retries": _max,
+                            "steps_at_failure": _steps,
+                            "site": task.site,
+                            "condition_id": effective_cid,
+                        },
+                    )
+                except Exception:  # transparency best-effort; never block recovery
+                    pass
+                _notify_transient_retry(
+                    effective_cid, task.site, task.task_id, _tclass, _attempt, _max,
+                )
+                self._recover_transient_substrate(_tclass, task, _attempt)
+                continue
+
+    def _run_and_record_episode_once(
         self,
         condition: ConditionSpec,
         task: Any,
@@ -1642,6 +1847,9 @@ class ExperimentRunner:
         """Run one episode with error handling and write summary. Returns summary dict.
 
         Fatal env errors are re-raised; all other errors produce an error summary.
+        A first quarantine event (needs_reevaluation=True) under paper_grade raises
+        PaperGradeAbortError — the transient-retry wrapper (_run_and_record_episode)
+        decides whether to retry (transient) or propagate (abort).
         """
         logger.info(
             "Running condition=%s seed=%d backend=%s site=%s task=%s",
@@ -1974,6 +2182,15 @@ class ExperimentRunner:
             and bool(summary.get("needs_reevaluation", False))
         ):
             from p79.experiment.environment import PaperGradeAbortError
+            # B-1881: attach structured provenance so the transient-retry wrapper
+            # gates on (class, steps) without re-parsing the truncated message.
+            # steps==0 ⇒ pre-flight (agent took no browser action ⇒ no mutation,
+            # no rollout to redraw); >0 ⇒ mid-episode (NOT retryable — possible
+            # site mutation / stochastic-rollout redraw per 3-AI B-1881 audit).
+            _abort_steps = int(summary.get("steps", 0) or 0)
+            _abort_tclass = self._classify_transient_substrate(
+                str(summary.get("error", ""))
+            )
             raise PaperGradeAbortError(
                 f"first quarantine event under paper_grade=True at "
                 f"site={task.site} task={task.task_id} condition={effective_cid}: "
@@ -1983,7 +2200,9 @@ class ExperimentRunner:
                 f"compromised substrate. Operator: investigate task, classify "
                 f"(agent-induced / benchmark / substrate / evaluator / transient), "
                 f"add to quarantine_registry.jsonl (Wave 2 M6 investigation gate, "
-                f"NOT auto skip-list), then manually re-fire after substrate fix."
+                f"NOT auto skip-list), then manually re-fire after substrate fix.",
+                transient_class=_abort_tclass,
+                steps=_abort_steps,
             )
         return summary
 

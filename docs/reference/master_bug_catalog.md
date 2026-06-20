@@ -8396,3 +8396,28 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: B-1878 + B-1879 (同 reddit chain 连续 3 次 abort,3 不同根因); B-568/P1-10-A (retry hyperparam yaml-expose 起源,本 fix 复用其 yaml 契约); B-1668/B-1700 (proxy global lock,同 retry loop 上下文); §302 (B0 remote-serving nondeterminism floor — 503 是其极端表现); B-486 (quarantine hook); B-304 (archive + FORCE_NEW from ep0); 笔记 §349 (全链叙事)。
 
 ---
+
+### B-1881. reddit chain 第 4 次 abort (B0 auth blip @task140) → 结构性修复: PRE-FLIGHT transient-substrate episode-retry (3-AI /stress contract change) ✅ FIXED (2026-06-20→21)
+
+**Discovery**: ntfy `QUARANTINE task 140: error(auth) + needs_reevaluation=True` (2026-06-20 22:12Z) → `queue_chain ABORT sentinel validation failed` (22:13Z) → Fire-6 orchestrator DOWN (22:30Z)。B-1880 re-fire 的 reddit chain (R26851 B0 dom reddit, 06-19 23:14 起步) 跑到 task140 (137/205 done) abort。**= 同 reddit chain 连续第 4 次 abort,第 2 次连续 transient** (B-1878 ref-image / B-1879 wallclock / B-1880 proxy-503 / 本次 auth)。
+
+**Root cause (transient,零污染)**: reddit session auth_refresh 连续几小时 ok (18:58→21:50 每 ~25min),22:12:02 task140 突然 `cred_wrong / LOGIN_FAILED (still_on_login)`,2 次重试挤在 5s 内 (22:12:02→07) 撞同一 reddit underlay (Postgres/Redis) 打嗝窗口 → `AuthRefreshFailure` → fail-closed abort。**关键: task140 `steps=0`** — auth gate 在 episode 跑之前就失败 → 零污染。站点探测确认 transient: reddit HTTP 200 / `vwa-reddit Up 23h` 未重启 / creds env 完好 / login 现正常。**结构性问题坐实**: paper-grade `fail-closed-on-FIRST-quarantine` (Fire-4 RCA Wave 1 M1) 与「B0 flaky-proxy/auth × reddit ~44h 长 runtime」天然冲突 — 长跑撞 ≥1 次瞬时事件几乎必然,每次整 condition 归零 (B-1880 弃 55 ep + B-1881 弃 137 ep = ~192 ep/~40h 浪费,两次都零污染)。
+
+**Fix (3-AI /stress contract change, estimand-neutral)**: transient-class quarantine → **有界 episode-level retry on fresh substrate** 而非 condition-abort。三方 cross-AI (Claude Mode A + codex Mode B + gemini Mode C) 收敛核心 = **PRE-FLIGHT (`steps==0`) only**:
+- **codex P0 (独家 OOB)**: mid-episode retry「fresh substrate」名不副实 — episode 可能已 mutate 站点 (发帖/加购/改 listing),retry 只 `environment.reset` 不做 app-state restore → **真站点污染**。
+- **3-AI P0**: mid-episode 重抽落在 B0 ~14pp 噪声上 → SR selection bias。
+- **gemini defuse + codex 升级**: 收窄到 `steps==0` (agent 未行动) 一刀解 mutation + redraw + agent-induced masking,且 **estimand 不变** (episode 仍只跑一次于有效 substrate)→ **PROTOCOL_NOTE_02 而非 OSF amendment** (gemini 初判 amendment 是基于含 mid-episode 的初版;steps==0 收窄后其论证坍缩为 protocol note)。
+
+实现: `_run_and_record_episode` 改名 `_once` (B-168/486/488/323 不变量 byte-unchanged) + 薄 wrapper 做 retry; gate = `paper_grade ∧ ¬diag ∧ exc.transient_class∈{auth,network} ∧ exc.steps==0 ∧ attempt<max`; **proxy_5xx 排除** (B-1880 内部 ~11min retry 已管,避免 ~4×11min 组合 P1-5); `PaperGradeAbortError` 加结构化 provenance (`transient_class`+`steps`,codex F3 反对 string 解析); 透明度 (`transient_retry_count` 进 canonical summary + trajectory event + ntfy + `transient_episode_max_retries:3` 显式入 base yaml,codex F6); 删 failed summary 防 watchdog stale-ingest race (codex F4 OOB,`experiment_watchdog.py:2151` 按 key 非 mtime,已 spot-verify)。
+
+**Tests**: `tests/test_b1881_transient_episode_retry.py` 18 cases (pre-flight auth/network retry→success · proxy_5xx 不 retry · mid-episode steps>0 任意 class abort · exhaustion/non-transient/diag/dev/max=0 abort · lineage stamp · summary unlink · classifier · legacy back-compat)。全套件 1420 pass 0 新回归 (1 pre-existing section1 prose fail 无关)。A100 6 文件 md5 双端一致 + import + provenance smoke。
+
+**Witness**: `docs/prereg_amendments/PROTOCOL_NOTE_02_TRANSIENT_PREFLIGHT_RETRY_20260621.md` + tag `protocol-note-02-transient-preflight-retry-20260621` (recovery-alignment tier,**NO OSF deposit**,同 PROTOCOL_NOTE_01 先例;gemini OSF-amendment dissent 已记录 §0)。**Live-verification pending**: 下次 reddit 长跑撞 transient auth blip 时验 PRESERVE 路径 (期望 `transient-retry` ntfy + condition 越过 blip 不 abort)。
+
+**Re-fire**: archive R26851 partial (55ep condition_summary, 137 ep done) → `RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0 launch red`。
+
+**Follow-up (P2/defer)**: aggregator emit `transient_retry_count` per-episode covariate (现只进 summary,§4 covariate adjustment 待接); abort condition_summary 漏 aborted episode + `aborted_summary_count` 语义 (codex P2,**pre-existing 非本次引入**); §3.5/§8 disclosure prose (per-cell retry count + B0 zero-retry SR sensitivity)。
+
+**Cross-link**: B-1880 (下层 proxy 503 capped-backoff,本 fix 的互补层); B-1878/B-1879 (同 chain 连续 4 abort); Fire-4 RCA Wave 1 M1 (本 fix refine 的 fail-closed 规则); B-486/B-783 (infra≠agent-score 原则); B-488 (stale-archive,retry 复用); §302 (B0 ~14pp 噪声 = estimand 攻击面); PROTOCOL_NOTE_01 (同 recovery-alignment tier); 笔记 §350 (全链叙事)。
+
+---

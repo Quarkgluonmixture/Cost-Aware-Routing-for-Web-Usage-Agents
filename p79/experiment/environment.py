@@ -146,7 +146,30 @@ class PaperGradeAbortError(RuntimeError):
 
     Per /stress 3-AI Fire-4 RCA Wave 1 fix 2026-05-19. Bug catalog entry
     Fire-4 RCA Wave 1 M1 (depends on R1 B-486 quarantine substrate +
-    R1 P1-10-B watchdog respect)."""
+    R1 P1-10-B watchdog respect).
+
+    **B-1881 (2026-06-20)**: carries structured provenance (`transient_class`,
+    `steps`) so the transient-retry wrapper (`_run_and_record_episode`) can gate
+    on the failure's class + step-count WITHOUT re-parsing the truncated message.
+    The wrapper retries ONLY pre-flight (`steps == 0`) transient failures — where
+    the agent took no action, so there is no site mutation, no stochastic-rollout
+    redraw, and no agent-induced masking (3-AI /stress B-1881 consensus). Both
+    fields default None/0 for legacy raises (back-compat)."""
+
+    def __init__(
+        self,
+        message: str = "",
+        *,
+        transient_class: Optional[str] = None,
+        steps: int = 0,
+    ) -> None:
+        super().__init__(message)
+        # B-1881: structured failure provenance for the transient-retry gate.
+        # transient_class ∈ {"auth","proxy_5xx","network",None}; steps = recovered
+        # partial-step count (0 ⇒ pre-flight: auth gate / reset-goto / first model
+        # call failed before any browser action ⇒ no mutation ⇒ clean to retry).
+        self.transient_class = transient_class
+        self.steps = int(steps or 0)
 
 
 class MockEnvironment:

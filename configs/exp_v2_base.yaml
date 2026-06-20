@@ -113,6 +113,16 @@ state_change:
 model:
   revision: "ebb281ec70b05090aa6165b016eac8ec08e71b17"
 
+# B-1881 (2026-06-20): bounded episode-level retry budget for PRE-FLIGHT
+# (steps==0) transient-substrate quarantines of class auth/network — see runner
+# _run_and_record_episode. Explicit here (not only the config.py default) so a
+# reviewer reproduces retry behavior from yaml + commit SHA (codex F6); set 0 to
+# restore the legacy single-attempt fail-closed. Applies under paper_grade only
+# (never diagnostic_replay). proxy_5xx is NOT episode-retried (owned by B-1880's
+# ~11min internal proxy retry); mid-episode (steps>0) failures are NOT retried
+# (possible site mutation / stochastic-rollout redraw — 3-AI /stress consensus).
+transient_episode_max_retries: 3
+
 backends:
   default_backend: "local_4b"
   local_4b:

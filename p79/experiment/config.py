@@ -205,6 +205,16 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     else:
         cfg.setdefault("diagnostic_replay", False)
 
+    # B-1881 (reddit chain abort #3/#4, 2026-06-20): bounded episode-level retry
+    # budget for TRANSIENT-substrate quarantines (auth / proxy_5xx / network).
+    # The runner's transient-retry wrapper (_run_and_record_episode) retries the
+    # episode on fresh substrate up to this many times instead of fail-closed
+    # aborting the whole condition; non-transient quarantines + exhaustion still
+    # abort. yaml-exposed for reproducibility (reviewer can set 0 to restore the
+    # legacy single-attempt fail-closed). Applies only under paper_grade=True
+    # (and never under diagnostic_replay).
+    cfg.setdefault("transient_episode_max_retries", 3)
+
     experiment = cfg.setdefault("experiment", {})
     experiment.setdefault("name", "p79_experiment")
     experiment.setdefault("benchmark", "visualwebarena")
