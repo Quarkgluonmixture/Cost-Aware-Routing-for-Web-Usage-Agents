@@ -675,6 +675,8 @@ def test_b1880_base_yaml_thickened_budget():
         (REPO_ROOT / "configs" / "exp_v2_base.yaml").read_text()
     )
     api_strong = base["backends"]["api_strong"]
-    assert api_strong["max_retries"] == 8, api_strong.get("max_retries")
+    # WAIT-OUT retune (2026-06-21): 8 -> 24 (~11min -> ~34min) after abort#5
+    # R16380 task104 ~8-10min 503 cluster exhausted the 11min budget by a hair.
+    assert api_strong["max_retries"] == 24, api_strong.get("max_retries")
     assert api_strong["retry_backoff_s"] == 10, api_strong.get("retry_backoff_s")
     assert api_strong["retry_backoff_max_s"] == 60, api_strong.get("retry_backoff_max_s")

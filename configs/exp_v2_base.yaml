@@ -191,19 +191,26 @@ backends:
     # already override to 4096 explicitly (configs/exp_v2_B0_3mode_*.yaml).
     max_new_tokens: 4096
     max_image_payload_bytes: 5242880
-    # B-1880 (reddit chain abort #3, 2026-06-19): thickened B0 proxy retry
-    # budget + capped backoff. AWS proxy (API Gateway -> Bedrock) emits
-    # transient 503s; pre-fix 3 retries x 10/20/40s (~3min incl. ~30s/attempt
-    # 503 latency) was exhausted by a ~3min sustained outage on R28130 reddit
-    # task 59 -> first quarantine event -> PaperGradeAbortError -> whole
-    # 205-task condition lost at 58/205. New budget: 8 retries, 10s base
-    # doubling capped at 60s -> ~11min total tolerance (sleeps 10+20+40+60x5
-    # =370s + ~9x30s 503 latency) while post-recovery retry latency stays <=60s.
-    # Genuine sustained outages (>~11min = real substrate failure) still
-    # fail-closed for operator intervention. estimand-neutral (retry success
-    # returns identical data); applies to all B0 sites (per-site configs inherit
-    # via Hydra defaults + recursive merge, none override these keys).
-    max_retries: 8
+    # B-1880 (reddit chain abort #3 2026-06-19; WAIT-OUT retune #5 2026-06-21):
+    # step-level "wait out the outage" budget for the AWS proxy (API Gateway ->
+    # Bedrock), which emits both isolated 503s AND occasional sustained ~8-10min
+    # 503 clusters. This is the PRIMARY + estimand-SAFE defense: a step-level
+    # retry resumes the SAME in-flight rollout (same context + step_idx) once the
+    # proxy recovers — NOT a re-draw (unlike episode-level retry, which is why
+    # B-1881 excludes proxy_5xx and never re-runs mid-episode). So the only
+    # question is "how long to wait". History: abort#3 R28130 (~3min cluster) ->
+    # bumped 3->8 retries (~11min); abort#5 R16380 task104 (~8-10min cluster at
+    # step 8) exhausted that ~11min by a hair (proxy recovered 18:19, retry died
+    # 18:21). Now WAIT-OUT grade: 24 retries, 10s base doubling capped at 60s ->
+    # ~34min total tolerance (sleeps 10+20+40+60x21=1330s + ~25x30s 503 latency
+    # =750s) with post-recovery latency <=60s (cap = poll proxy every <=60s for
+    # recovery, no separate health probe needed). Absorbs all observed clusters
+    # with ~3.5x margin. estimand-neutral (same rollout continues; no re-draw) ->
+    # no OSF deposit (same tier as B-1880). A >34min outage = genuinely dead proxy
+    # -> step fails -> condition aborts for operator intervention (watchdog
+    # step-stall 10min ntfy is informational during the wait, NOT a kill).
+    # Applies to all B0 sites (per-site configs inherit via Hydra recursive merge).
+    max_retries: 24
     retry_backoff_s: 10
     retry_backoff_max_s: 60
     dom_mode: "llm"
