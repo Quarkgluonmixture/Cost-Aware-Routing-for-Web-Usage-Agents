@@ -121,7 +121,14 @@ model:
 # (never diagnostic_replay). proxy_5xx is NOT episode-retried (owned by B-1880's
 # ~11min internal proxy retry); mid-episode (steps>0) failures are NOT retried
 # (possible site mutation / stochastic-rollout redraw — 3-AI /stress consensus).
-transient_episode_max_retries: 3
+# B-1883 (2026-06-22, abort#8 retune): 3->6. B-1881's 30/60/120s capped backoff
+# at n=3 gives a ~3.5min absorption window; reddit session-auth blips (abort#4/#8,
+# LOGIN_FAILED still_on_login) ran ~4min and overflowed by seconds. n=6 =
+# 30+60+120+120+120+120 ≈ 9.5min window (backoff caps at 120s), mirroring B-1880's
+# proxy wait-out grade. Estimand-safety UNCHANGED (still steps==0 pre-flight only,
+# zero contamination, same-rollout no-redraw — the prior /stress consensus covers
+# the count bump; only the wait window lengthens).
+transient_episode_max_retries: 6
 
 backends:
   default_backend: "local_4b"

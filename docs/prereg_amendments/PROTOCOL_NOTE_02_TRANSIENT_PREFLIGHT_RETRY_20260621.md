@@ -139,3 +139,30 @@ B-486 / B-783 (infra-not-agent-score principle) · B-488 (stale-archive) ·
 Fire-4 RCA Wave 1 M1 (the fail-closed rule this refines) · PROTOCOL_NOTE_01
 (same recovery-alignment tier precedent) · 笔记 §350 · /stress 3-AI outputs
 `docs/checkpoints/{codex,gemini}_outputs/b1881_transient_retry*`.
+
+## 7. Addendum (2026-06-22, B-1883): budget retune 3 → 6 — §5 live-verified
+§5's predicted live event occurred. On the resumed reddit chain (run R819) an
+auth blip hit **task 143** at 2026-06-22T21:00–21:03Z (`auth_refresh
+outcome=cred_wrong LOGIN_FAILED still_on_login`). The B-1881 path **engaged
+exactly as designed** — runner log: `B-1881 PRE-FLIGHT transient quarantine
+(class=auth steps=0) — episode-level retry 3/3 on fresh substrate` — confirming
+the PRESERVE/retry mechanism fires on the right class at the right boundary.
+
+But it **exhausted**: the 30/60/120s capped backoff at n=3 spans only a ~3.5min
+absorption window, and this blip ran ~4min → overflowed by seconds → abort (the
+8th reddit-chain abort; cf. 笔记 §349/§350/§352). Post-hoc the substrate was
+healthy (vwa-reddit Up 26h no restart, HTTP 200, login 302, proxy 401); task 143
+was classified `transient_drift` (registry, commit-synced) and re-ran clean on
+resume.
+
+**Retune**: `transient_episode_max_retries: 3 → 6` (`configs/exp_v2_base.yaml`;
+supersedes the `3` recorded in §1.1 / §1.3 / §1.4). Backoff caps at 120s, so n=6
+= 30+60+120+120+120+120 ≈ **9.5min** window — mirroring B-1880's proxy "wait-out"
+grade for the auth class. **Estimand-safety UNCHANGED**: still `steps==0`
+pre-flight only (zero contamination, agent took no action), still same-rollout
+no-redraw, still proxy_5xx-excluded and mid-episode-excluded. The 3-AI /stress
+consensus that cleared the *mechanism* (§2–§4) covers this *count* bump — only
+the wait window lengthens; no new failure-mode surface. No test asserts the
+literal `3` (the suite passes the budget as a parameter), so §4 stays green.
+Recovery-alignment tier → NO OSF deposit (same as the parent note). Cross-link:
+master_bug_catalog B-1883 · 笔记 §353.

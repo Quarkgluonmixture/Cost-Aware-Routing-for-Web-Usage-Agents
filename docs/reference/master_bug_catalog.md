@@ -8437,3 +8437,17 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: B-304 (within-mode FORCE_NEW 默认, 本 fix 解锁的 resume 是其 independent-task exception); B-1880/B-1881 (同 reddit chain 抗-abort 栈, 本 fix = "abort 变廉价" 层); B-836/B-641 (env_snapshot stale check, mint 的下一道门); B-486 (needs_reevaluation force-rerun, resume 时 re-run task139 靠它); PROTOCOL_NOTE_03 (resume-on-abort policy witness, 待写); 笔记 §351 (全链叙事)。
 
 ---
+
+### B-1883. reddit auth-blip episode-retry budget 3→6 (B-1881 撑爆 ~4min blip by seconds) → auth-class wait-out grade ✅ FIXED (2026-06-22)
+
+**Discovery**: reddit chain 第 8 次 abort (R819 B0 dom resume, task 143 @2026-06-22T21:00-21:03Z, `error(auth)` auth_required_gate FAILED / `auth_refresh outcome=cred_wrong LOGIN_FAILED still_on_login`)。runner log `B-1881 PRE-FLIGHT transient quarantine (class=auth steps=0) — episode-level retry 3/3 on fresh substrate` = **B-1881 机制 engage 正确** (对的 class + 对的 boundary), 但 retry 3/3 全撞同一 blip → exhausted → abort。这正是 PROTOCOL_NOTE_02 §5 "Live-verification pending" 等的 live event。
+
+**Root cause (budget 不是 mechanism)**: B-1881 backoff = `min(30·2^(n-1), 120)` (`main.py:1690`), n=3 → 30+60+120 = **~3.5min** 吸收窗口。abort#8 的 reddit session-auth blip 持续 ~4min, **just 溢出几十秒**。两个 transient failure class 被两套 budget 管, proxy 503 在 abort#5 拿到 wait-out retune (step-level 24 retries ≈35min, B-1880), 但 auth class 还停在 B-1881 最初 episode-level 3 retries → auth blip >3.5min 必漏。
+
+**Fix**: `transient_episode_max_retries: 3 → 6` (`configs/exp_v2_base.yaml`, DGX line131 + A100 line124 anchored-sed, 两边 == 6 核对)。backoff 封顶 120s → n=6 = 30+60+120+120+120+120 ≈ **9.5min** 窗口 = 镜像 B-1880 proxy wait-out grade 到 auth class。**estimand-safety 不变** (steps==0 pre-flight only / 零 contamination / same-rollout no-redraw / proxy_5xx + mid-episode 仍 excluded) → 3-AI /stress 已过的 *mechanism* consensus 覆盖此 *count* bump (只延长等待窗, 无新 failure-mode surface)。**无 test 硬编码 3** (test 把 budget 当参数传 `test_b1881_transient_episode_retry.py:47`) → 套件零改。abort#8 task143 已 classify transient_drift (registry commit-synced) + resume 重跑 clean。
+
+**Witness (recovery-alignment tier, NO OSF)**: PROTOCOL_NOTE_02 §7 addendum (同机制同 doc) + 本 entry + 笔记 §353。/stress 不重跑 (count bump 被 parent B-1881 的 3-AI /stress consensus 覆盖, 见 §7 论证)。
+
+**Cross-link**: B-1881 (parent 机制, 本 = 其 budget retune); B-1880 (proxy 503 wait-out, 本 = auth class 的对位); B-1882 (resume-on-abort, abort#8 靠它救 140 ep); PROTOCOL_NOTE_02 §7 (witness); 笔记 §353 (abort#7+#8 全链)。
+
+---
