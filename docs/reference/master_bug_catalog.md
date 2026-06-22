@@ -8421,3 +8421,19 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: B-1880 (下层 proxy 503 capped-backoff,本 fix 的互补层); B-1878/B-1879 (同 chain 连续 4 abort); Fire-4 RCA Wave 1 M1 (本 fix refine 的 fail-closed 规则); B-486/B-783 (infra≠agent-score 原则); B-488 (stale-archive,retry 复用); §302 (B0 ~14pp 噪声 = estimand 攻击面); PROTOCOL_NOTE_01 (同 recovery-alignment tier); 笔记 §350 (全链叙事)。
 
 ---
+
+### B-1882. mint_run_id resume stale-check 查错文件 (schema_version in condition_meta 而非 v2-filename) → resume 路径 latent dead → resume-on-abort 解锁 ✅ FIXED (2026-06-22)
+
+**Discovery**: reddit chain 第 6 次 abort 后 (R819 B0 dom, ~34min proxy-503 outage 撑爆 wait-out @task139, 见 B-1880 wait-out retune), user 选 resume-on-abort 救 135 ep (reddit task 实证独立 → resume estimand-clean, Explore 查 test_reddit.raw.json 0 跨任务 post-ID 碰撞)。`FORCE_NEW=0 queue_baseline.sh B0 dom reddit` 期望 resume R819, 但 mint 输出 `skipping stale resume candidate R819 (schema_version != v2); minting fresh run_id` → 起了 fresh R22390 (= FORCE_NEW, 要丢 135 ep)。
+
+**Root cause (latent dead code, 从未暴露)**: `_lib_paper_grade_gates.sh mint_run_id` 的 stale-check (L343-352) `grep '"schema_version":"v2'` 在 **`condition_meta.json`**,但该文件**从来没有 schema_version 字段** (keys: condition_id/phase/backend_id/som_on/observation_mode/router_on/modules/label/metadata/seed)。schema v2 标记实际在 **文件名约定** (`condition_summary_v2.json` + `episodes/*_summary_v2.json` 的 `_v2`)。→ grep 永远失败 → **任何** resume candidate 永远判 stale → resume 路径 dead code。**从未暴露因为 canonical chain 永远 export FORCE_NEW=1** (queue_chain.sh:364, 从不 resume) → 唯独 operator 手动 resume-on-abort 才撞上。
+
+**Fix**: stale-check 改查真 v2 marker —— `condition_summary_v2.json` 存在 (优先) OR `episodes/*_summary_v2.json` 存在 (aborted/incomplete run fallback)。legacy v1 run (无 `_v2` 文件) / 空 run 仍正确判 stale → fresh (安全意图保留)。功能测试: v2 run → RESUMED ✓ / legacy → FRESH ✓。**只影响 resume (FORCE_NEW=0) 路径** (FORCE_NEW=1 跳过整块) → 链零回归。env_snapshot git-commit check (下一道, B-836) 不变。lib scp A100 (md5 `54c0ac2` 一致 + bash -n OK)。
+
+**即时止血**: archive fresh R22390 + 手动补 R819 condition_meta `schema_version:"v2"` (truthful — episode summaries 都是 v2, 仅 provenance 补全) → resume R819 from 135 (skip 0-138 + B-486 force-rerun task139 + 续 140-204)。**135 ep (~16h) 救回**。本 fix 让未来 resume **自动化** (不再需手动补 meta)。
+
+**Re-fire**: `FORCE_NEW=0 RESET_BEFORE=0 P79_PAPER_GRADE=1 queue_baseline.sh B0 dom reddit` (standalone resume B0 dom; 完成后 manifest-bind + `RESUME_MISSING=1 launch red` 续剩 17 cond)。⚠️ resume-on-abort POLICY (reddit 用 resume 而非 FORCE_NEW) = B-304 exception, 被「reddit task 独立」背书 → **PROTOCOL_NOTE_03 witness 待写 + /stress 待补** (本 fix 只解锁 mechanism, policy 何时用由 PROTOCOL_NOTE_03 + 学长定; dependent-task 站点仍须 FORCE_NEW)。
+
+**Cross-link**: B-304 (within-mode FORCE_NEW 默认, 本 fix 解锁的 resume 是其 independent-task exception); B-1880/B-1881 (同 reddit chain 抗-abort 栈, 本 fix = "abort 变廉价" 层); B-836/B-641 (env_snapshot stale check, mint 的下一道门); B-486 (needs_reevaluation force-rerun, resume 时 re-run task139 靠它); PROTOCOL_NOTE_03 (resume-on-abort policy witness, 待写); 笔记 §351 (全链叙事)。
+
+---

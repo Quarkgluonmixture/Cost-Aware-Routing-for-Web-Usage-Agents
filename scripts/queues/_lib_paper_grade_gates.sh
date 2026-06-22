@@ -340,16 +340,41 @@ mint_run_id() {
       # branch existed at L335+). Claude Mode A solo OOB catch.
       local stale=0
       local stale_reason=""
-      local meta
-      for meta in "${existing}"/*/condition_meta.json; do
-        if [[ -f "${meta}" ]]; then
-          if ! grep -q '"schema_version"[[:space:]]*:[[:space:]]*"v2' "${meta}" 2>/dev/null; then
-            stale=1
-            stale_reason="schema_version != v2"
-            break
-          fi
-        fi
+      # B-1882 (resume-on-abort enabler, 2026-06-22): the schema-v2 invariant is
+      # encoded in the v2 FILENAME convention (condition_summary_v2.json +
+      # episodes/*_summary_v2.json), NOT in condition_meta.json — which has NEVER
+      # carried a schema_version field (keys: condition_id/phase/backend_id/
+      # som_on/observation_mode/router_on/modules/label/metadata/seed). Pre-fix
+      # the grep for '"schema_version":"v2' in condition_meta.json ALWAYS failed
+      # → EVERY resume candidate was deemed stale → the resume path was dead code,
+      # masked because the canonical chain always exports FORCE_NEW=1 (never
+      # resumes). Surfaced 2026-06-22 attempting resume-on-abort of R819 (reddit
+      # B0 dom, 135 ep) after the 6th proxy-503 abort: mint minted a fresh run_id
+      # (= FORCE_NEW, would lose 135 ep) instead of resuming. Fix: check the real
+      # v2 marker — presence of a v2-named summary (condition_summary first, then
+      # episode summaries for aborted/incomplete runs). A legacy v1 run (no _v2
+      # files) or an empty run still correctly fails → fresh. Estimand-neutral:
+      # only changes WHICH run_id is selected (resume vs fresh); for sites whose
+      # tasks are independent (reddit — verified no cross-task state deps) resume
+      # is paper-grade clean (PROTOCOL_NOTE_03). For dependent-task sites the
+      # operator must still FORCE_NEW; this fix only UNBLOCKS resume, the
+      # B-304/PROTOCOL_NOTE_03 policy decides WHEN to use it.
+      local _has_v2_schema=0
+      local _cs
+      for _cs in "${existing}"/*/condition_summary_v2.json; do
+        [[ -f "${_cs}" ]] && { _has_v2_schema=1; break; }
       done
+      if [[ "${_has_v2_schema}" == "0" ]]; then
+        # No condition_summary yet (aborted/incomplete run) — fall back to the
+        # per-episode v2 summary marker so a mid-run abort is still resumable.
+        if ls "${existing}"/*/episodes/*_summary_v2.json >/dev/null 2>&1; then
+          _has_v2_schema=1
+        fi
+      fi
+      if [[ "${_has_v2_schema}" == "0" ]]; then
+        stale=1
+        stale_reason="no v2-schema summaries (condition_summary_v2.json / episodes/*_summary_v2.json absent — legacy v1 or empty run)"
+      fi
 
       # B-836 P1-10-B*: additional CONTENT checks against env_snapshot.json
       if [[ "${stale}" == "0" ]]; then
