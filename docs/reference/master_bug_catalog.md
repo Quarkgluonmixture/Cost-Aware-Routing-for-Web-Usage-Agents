@@ -8448,6 +8448,24 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 
 **Witness (recovery-alignment tier, NO OSF)**: PROTOCOL_NOTE_02 §7 addendum (同机制同 doc) + 本 entry + 笔记 §353。/stress 不重跑 (count bump 被 parent B-1881 的 3-AI /stress consensus 覆盖, 见 §7 论证)。
 
-**Cross-link**: B-1881 (parent 机制, 本 = 其 budget retune); B-1880 (proxy 503 wait-out, 本 = auth class 的对位); B-1882 (resume-on-abort, abort#8 靠它救 140 ep); PROTOCOL_NOTE_02 §7 (witness); 笔记 §353 (abort#7+#8 全链)。
+**Cross-link**: B-1881 (parent 机制, 本 = 其 budget retune); B-1880 (proxy 503 wait-out, 本 = auth class 的对位); B-1882 (resume-on-abort, abort#8 靠它救 140 ep); PROTOCOL_NOTE_02 §7 (witness); 笔记 §353 (abort#7+#8 全链)。⚠️ **SUPERSEDED-AS-BANDAID by B-1884**: auth-class 的真根因不是 budget 太短, 是 **reddit 账号在 A100 容器里根本不存在** — B-1881/B-1883 整条 retry/budget 线是对「账号缺失」的擦屁股, 见 B-1884。
+
+---
+
+### B-1884. ROOT CAUSE: A100 reddit 容器 postmill DB 缺 VWA 测试账号 MarvelsGrantMan136 → 所有 fresh login "Invalid credentials" → B-1878~B-1883 整条 reddit abort saga 的真因 ⚠️ DIAGNOSED (2026-06-23)
+
+**这是 reddit chain 反复 abort (abort #4/#8/#9/#10, B-1878→B-1883) 的真根因。** 之前全部归因 (ref-image / wallclock / proxy 503 / auth blip / budget) 中, auth-class 那条 (B-1881/B-1883/abort#4/8/9/10) **全是对本 bug 的 band-aid** — 真相是 reddit 登录账号在 A100 容器里不存在。
+
+**Discovery (regression-diff, user 逼问 "早期 reddit 跑过完整没这 bug" 触发)**: abort 看似 intermittent auth blip, budget bump (3→6) 实测仍 abort#10。R819 dead 后安全窗口手动复现登录: `refresh_site_auth("reddit")` **10/10 FAIL** `LOGIN_FAILED (still_on_login)`, 稳定 3.8s (非 timeout = 服务端实拒)。逐层排除: 不是 Symfony throttle (`RateLimitExemptLimiter` 豁免 127/8 + rate-limiter cache 零写) / 不是容器宕/OOM (Up 27h) / 不是网络/DB (302/200 正常) / 不是磁盘 (inode 9% + 46G free, disk 假设证伪) / 不是 Playwright selector (curl 独立复现同样失败) / 不是 CSRF (cookie-check 带 jar 后表单完整 8731 bytes)。curl POST `/login_check` (正确端点 + 正确 CSRF) → 302 回 /login + flash **"Invalid credentials"**。postmill DB 查证: `SELECT ... WHERE username='MarvelsGrantMan136'` → **0 行** (exact / ILIKE / normalized 三查皆 0; 总 users 661,782; psql 正常工作 `Marvel%` 有别的用户)。账号**不存在**。
+
+**Why reddit ALONE (三站对比)**: cls 账号 `blake.sullivan@gmail.com` 存在 (OSClass `oc_t_user` pk=1) · shop `emma.lopez@gmail.com` 存在 (Magento `customer_entity` id=27)。**只有 reddit 缺**, 因为: VWA reddit setup = (a) 装载 66万真实用户的 `postmill-populated-exposed-withimg` image (107GB reddit 抓取快照) + (b) **通过 `/registration` 单独注册测试账号 MarvelsGrantMan136/test1234**。cls(`jykoh/classifieds`)/shop(`shopping_final_0712`) 的测试账号 **baked 进 image** (一步到位); reddit 独需 (b) 这步额外注册。**2026-05-14 A100 自托管迁移时漏了 (b)** → DB 全在、独缺测试账号。reddit 是唯一需要 post-load account-creation 的站, 所以唯独它中招。app `DATABASE_URL` 用 `postmill` DB (66万 users), 缺账号确认在 app 实连库。
+
+**Blast radius (查证, 损失可控)**: **reddit 单站**。cls 已 bound 的 B0 dom/som (224ep×2, paper-grade) **账号在 → auth 一直正常 (当年无 auth abort 吻合) → 数据安全, 无污染**。shop (Phase 1b 缓) 账号在, 无碍。**reddit 至今无任何 bound paper-grade 数据** (B0 dom 从没跑完, R819 是首次尝试 = 一直 abort 的这个) → 无已锁结果丢失。**R819 的 148 ep 多半 contaminated** (账号不存在 → agent 没真正登录, 靠无效 cached session/REMEMBERME, 需登录任务非-merit 失败) → 作废, reddit fire 从干净 substrate 重启。
+
+**Fix (substrate-level, estimand-neutral = 恢复 VWA canonical state)**: 补做漏掉的 (b) — 通过 `/registration` (端点实测 200) 注册 MarvelsGrantMan136/test1234。postmill console 无 create-user (仅 `postmill:change-password` 对已存在用户 + `security:hash-password`), 故走 /registration UI/API。bare 注册账号对 reddit 任务足够 (eval 查 agent 自己发的 comment/post, 不依赖账号预存状态)。注册后 `refresh_site_auth` 用 test1234 即通。⚠️ **/stress 待拷问**: bare 账号是否完全等价 VWA-canonical 测试账号 (订阅/karma 初始态)? 还是该从正确 image 重灌 DB?
+
+**教训**: auth 失败第一步应 `SELECT username FROM users` 查账号 + 直接打一发登录, 而非堆 retry/budget/shadow-mode/容错。绕了 6 个 bug-number (B-1878→1883) 的 band-aid 才查这个最基本的。"early 能跑、对比着查" (regression-diff) 是定位关键 — April B1 reddit (`B1_3mode_reddit_20260413`) 用 **quark 容器** 84/84 登录全 ok = 证明 reddit auth 能 100% 可靠, 是 A100 这个容器缺账号。
+
+**Cross-link**: B-1878/B-1879/B-1880/B-1881/B-1882/B-1883 (全 reddit abort saga, auth-class 那条 = 本 bug 的 band-aid); [[reference-condenser-a100-infra]] (A100 自托管 VWA docker, 迁移 2026-05-14); 笔记 §354 (全链根因叙事 + why-reddit + blast radius)。
 
 ---

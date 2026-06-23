@@ -4,7 +4,7 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-06-22  ·  **Catalog**: master_bug_catalog.md (8453 lines, 138 sections)  ·  **B-numbers**: 819 canonical entries, 1257 referenced, range B-1~B-1883
+**Generated**: 2026-06-23  ·  **Catalog**: master_bug_catalog.md (8471 lines, 138 sections)  ·  **B-numbers**: 820 canonical entries, 1258 referenced, range B-1~B-1884
 
 ## Health (lint)
 
@@ -113,4 +113,4 @@
 | L7993 | B-1864 — cls 评分 widget radio input AXTree 不暴露 → 任意 N-star rating ta… | B-1864 |
 | L8009 | B-1865 — cross-site cls+shopping task 在 paper-grade single-site fir… | B-1865 |
 | L8024 | B-1866 — cross-run cross-mode 4-run 一致替代 item = 新 benchmark-FP clas… | B-1866 |
-| L8059 | B-1867 — Provider remote-serving instability ~14pp dominant noise f… | B-1867–B-1883 |
+| L8059 | B-1867 — Provider remote-serving instability ~14pp dominant noise f… | B-1867–B-1884 |
