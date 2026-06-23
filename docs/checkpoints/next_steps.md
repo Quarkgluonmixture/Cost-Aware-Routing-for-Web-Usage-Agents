@@ -23,7 +23,16 @@ updated: 2026-06-03
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-06-22 UPDATE — reddit abort #5/#6 (proxy 503) → wait-out retune 撞墙 → 转向 resume-on-abort (B-1882) → R819 resume from 135 中** ⭐⭐ 最新先读, 详 笔记 §352 + B-1880/B-1882:
+> 🔭 **2026-06-23 UPDATE — reddit abort saga 真根因揪出 = task 138 改用户名 (B-1884); 整条 proxy/auth band-aid 被 recontextualize; fire 停着等 estimand 决策** ⭐⭐⭐ 最新先读, 详 笔记 §354/§355/§356 + master_bug_catalog B-1884:
+> - **真根因 (100% 实证)**: reddit **task 138 intent="Change my username to..."** → B0(强模型)成功改名 MarvelsGrantMan136→Patrick → 后续 fresh login 全 "Invalid credentials" → P79 auth_refresh (每5ep重登) 失败 → fail-closed abort。**之前所有归因 (ref-image/wallclock/proxy503/auth-blip/budget B-1878→1883) 里 auth-class 那条全是对此的 band-aid**。B1(弱模型)做失败 task138 → 账号没动 → April 跑得好 = **capability-modulated contamination**。
+> - **⚠️ 我中途两个误判 (已纠正, 别重蹈)**: ① B-1884 初版误判「image 缺账号」(错: image 有 id=13915, 是被改名) → §354 标 SUPERSEDED + §355 更正 + 注册 hook 已 revert; ② 误判「P79 不 honor require_reset → cls 已锁数据污染」(错: P79 经 `p79/envs/vwa_wrapper.py` honor, bound cls run 实测 22-23 次 reset fire) → **cls B0 dom/som 数据安全, 虚惊撤回**。两次都是 grep 窄一层就结论「缺失」, 教训: 结论「X 缺失」前 grep 整条 delegation chain (wrapper→upstream)。
+> - **VWA 设计真相 (§356 + memory `reference-vwa-design-quirks`)**: require_reset 只实现 cls (reddit/shop=`TODO(jykoh)` no-op); VWA 并行=4段共享后端 (task138 污染比 P79 单流更脏); **不存在可照搬的「VWA 标准」处理破坏性任务**; P79 串行(非 VWA 并行)因 latency estimand; gc_maxlifetime 24min → P79 周期重登是承重墙不能删。
+> - **fire 现状: R819 DEAD, 未重启** (停 148/205)。**无 bound reddit paper-grade 数据丢失** (reddit 从没跑完)。proxy-503 band-aid (B-1880 wait-out / B-1882 resume) 仍有效存在但**不再是 reddit blocker** (真 blocker = task138)。
+> - **🔲 #1 OPEN — 必须先定再动 reddit fire**: reddit task-138 fix = **estimand 决策**(非工程能拍): **(a) reorder-138-last**(干净 per-task 能力, 去自毁级联, 贴 representation/routing 主张)vs **(b) verify-then-tolerate**(auth 不 abort, 跑完列表含自毁后果, 贴部署真实)+ 披露 + sensitivity。**= advisor 议题**(定义 reddit 测什么)。两个都不动任务列表内容、都是合理 deviation。**别在定这个之前重启 reddit / 别 `launch red`**。
+> - **owed 降级**: PROTOCOL_NOTE_03 (resume-policy witness) + chain 续跑 (`RESUME_MISSING=1 launch red`) 现 **defer** 到 task-138 estimand 定了再说 (reddit 干净跑不了之前续跑无意义)。DashScope (proxy 根治) 仍学长议题但非 reddit blocker。
+> - **commits 全 local 未 push**: `6a18657`(registry transient_drift) `ba1aec1`(B-1883 budget, 现 recontextualized) `c91cec5`(B-1884 v1 误判) `4df2dc4`(B-1884 corrected + hook revert) `1d9f691`(§356 VWA flaws)。push 需用户确认。
+>
+> 🔭 **2026-06-22 UPDATE (root-cause SUPERSEDED by 2026-06-23/B-1884 above; B-1880/B-1882 机制本身仍有效) — reddit abort #5/#6 (proxy 503) → wait-out retune 撞墙 → 转向 resume-on-abort (B-1882) → R819 resume from 135 中** 详 笔记 §352 + B-1880/B-1882:
 > - **abort #5 (R16380 task104 steps=8)**: ~8-10min proxy 503 簇 mid-episode 耗尽 B-1880 11min → abort 丢 55 ep。B-1881 按设计未接 (steps>0 + proxy_5xx 排除)。Fix = B-1880 **wait-out retune** max_retries 8→24 (~11min→**~35min**, commit `50e0c90`)。
 > - **abort #6 (R819 task139 steps=1)**: **~34min 持续 503 outage** 打满 attempt 24/24 → 连 35min wait-out 也耗尽,丢 135 ep。**band-aid 死亡有数据**: proxy outage 指数变长 (3min→8min→34min) → 别再加阈值。
 > - **战略转向 resume-on-abort**: Explore 实证 **reddit task 独立** (0 跨任务 post-ID 碰撞) → reset-mixing 对 reddit 无害 → **从断点 resume (不 FORCE_NEW) 比 chunking 更好** (救进度 + 未来 abort 只丢 ~1 task + 零 infra)。chunking 弃。
