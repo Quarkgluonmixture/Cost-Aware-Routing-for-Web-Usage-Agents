@@ -4,7 +4,7 @@
 > 🔎 Locate a number: `python3 scripts/maintenance/index_bug_catalog.py --find 1810`.
 > 🩺 Health check: `python3 scripts/maintenance/index_bug_catalog.py --lint` (before commit).
 
-**Generated**: 2026-06-23  ·  **Catalog**: master_bug_catalog.md (8471 lines, 138 sections)  ·  **B-numbers**: 820 canonical entries, 1258 referenced, range B-1~B-1884
+**Generated**: 2026-06-23  ·  **Catalog**: master_bug_catalog.md (8479 lines, 138 sections)  ·  **B-numbers**: 820 canonical entries, 1258 referenced, range B-1~B-1884
 
 ## Health (lint)
 

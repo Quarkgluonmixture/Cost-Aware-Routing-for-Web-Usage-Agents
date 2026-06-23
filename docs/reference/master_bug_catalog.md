@@ -8448,24 +8448,32 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 
 **Witness (recovery-alignment tier, NO OSF)**: PROTOCOL_NOTE_02 §7 addendum (同机制同 doc) + 本 entry + 笔记 §353。/stress 不重跑 (count bump 被 parent B-1881 的 3-AI /stress consensus 覆盖, 见 §7 论证)。
 
-**Cross-link**: B-1881 (parent 机制, 本 = 其 budget retune); B-1880 (proxy 503 wait-out, 本 = auth class 的对位); B-1882 (resume-on-abort, abort#8 靠它救 140 ep); PROTOCOL_NOTE_02 §7 (witness); 笔记 §353 (abort#7+#8 全链)。⚠️ **SUPERSEDED-AS-BANDAID by B-1884**: auth-class 的真根因不是 budget 太短, 是 **reddit 账号在 A100 容器里根本不存在** — B-1881/B-1883 整条 retry/budget 线是对「账号缺失」的擦屁股, 见 B-1884。
+**Cross-link**: B-1881 (parent 机制, 本 = 其 budget retune); B-1880 (proxy 503 wait-out, 本 = auth class 的对位); B-1882 (resume-on-abort, abort#8 靠它救 140 ep); PROTOCOL_NOTE_02 §7 (witness); 笔记 §353 (abort#7+#8 全链)。⚠️ **SUPERSEDED-AS-BANDAID by B-1884**: auth-class 的真根因不是 budget 太短 — 是 **reddit task 138「改用户名」破坏性任务把测试账号改名 (B0 成功执行), 之后 fresh login 全失败**。B-1881/B-1883 整条 retry/budget 线是对此的擦屁股, 见 B-1884 (注: B-1884 初版误判为「image 缺账号」, 已更正为 task-138 改名)。
 
 ---
 
-### B-1884. ROOT CAUSE: A100 reddit 容器 postmill DB 缺 VWA 测试账号 MarvelsGrantMan136 → 所有 fresh login "Invalid credentials" → B-1878~B-1883 整条 reddit abort saga 的真因 ⚠️ DIAGNOSED (2026-06-23)
+### B-1884. ROOT CAUSE: reddit task 138「改用户名」破坏性任务把测试账号 MarvelsGrantMan136 改名 → P79 auth_refresh fresh-login 失败 → fail-closed abort (= reddit auth abort saga 真因) ⚠️ DIAGNOSED + CORRECTED (2026-06-23)
 
-**这是 reddit chain 反复 abort (abort #4/#8/#9/#10, B-1878→B-1883) 的真根因。** 之前全部归因 (ref-image / wallclock / proxy 503 / auth blip / budget) 中, auth-class 那条 (B-1881/B-1883/abort#4/8/9/10) **全是对本 bug 的 band-aid** — 真相是 reddit 登录账号在 A100 容器里不存在。
+> **诊断更正史 (本 entry 经两轮)**: 初版 (commit c91cec5) 误判根因 = 「A100 image 缺测试账号 / 迁移漏注册步」, 并加了一个 `/registration` 注册 hook 进 `reset_vwa_sites.sh`。**该判断错了, hook 已 revert** (见下 Correction)。真根因 = task 138 改名。两轮都列在此供后人避坑。
 
-**Discovery (regression-diff, user 逼问 "早期 reddit 跑过完整没这 bug" 触发)**: abort 看似 intermittent auth blip, budget bump (3→6) 实测仍 abort#10。R819 dead 后安全窗口手动复现登录: `refresh_site_auth("reddit")` **10/10 FAIL** `LOGIN_FAILED (still_on_login)`, 稳定 3.8s (非 timeout = 服务端实拒)。逐层排除: 不是 Symfony throttle (`RateLimitExemptLimiter` 豁免 127/8 + rate-limiter cache 零写) / 不是容器宕/OOM (Up 27h) / 不是网络/DB (302/200 正常) / 不是磁盘 (inode 9% + 46G free, disk 假设证伪) / 不是 Playwright selector (curl 独立复现同样失败) / 不是 CSRF (cookie-check 带 jar 后表单完整 8731 bytes)。curl POST `/login_check` (正确端点 + 正确 CSRF) → 302 回 /login + flash **"Invalid credentials"**。postmill DB 查证: `SELECT ... WHERE username='MarvelsGrantMan136'` → **0 行** (exact / ILIKE / normalized 三查皆 0; 总 users 661,782; psql 正常工作 `Marvel%` 有别的用户)。账号**不存在**。
+**初版误判 (WRONG)**: 旧 R819 容器查 `MarvelsGrantMan136` = 0 行 + curl 登录 "Invalid credentials" + 排除 throttle/容器/网络/磁盘/CSRF/Playwright → 误结「image 缺账号」。加了 idempotent `/registration` 注册 hook。
 
-**Why reddit ALONE (三站对比)**: cls 账号 `blake.sullivan@gmail.com` 存在 (OSClass `oc_t_user` pk=1) · shop `emma.lopez@gmail.com` 存在 (Magento `customer_entity` id=27)。**只有 reddit 缺**, 因为: VWA reddit setup = (a) 装载 66万真实用户的 `postmill-populated-exposed-withimg` image (107GB reddit 抓取快照) + (b) **通过 `/registration` 单独注册测试账号 MarvelsGrantMan136/test1234**。cls(`jykoh/classifieds`)/shop(`shopping_final_0712`) 的测试账号 **baked 进 image** (一步到位); reddit 独需 (b) 这步额外注册。**2026-05-14 A100 自托管迁移时漏了 (b)** → DB 全在、独缺测试账号。reddit 是唯一需要 post-load account-creation 的站, 所以唯独它中招。app `DATABASE_URL` 用 `postmill` DB (66万 users), 缺账号确认在 app 实连库。
+**Correction (user 一句「restart≠reset, restart 包括 reset, 我现在都是 restart」触发)**: 跑一次真 reset (`docker rm+run` from `postmill-populated-exposed-withimg`, 需 `VWA_RESET_ENABLE=1` + source 调用) → fresh 容器里 **`MarvelsGrantMan136` 存在, id=13915, created=2020-06-24** (= image seed 原账号, 非缺失)。所以 **image 本来就有账号**; 旧 R819 容器的 0 行是账号被**改名**了, 不是 image 缺。
 
-**Blast radius (查证, 损失可控)**: **reddit 单站**。cls 已 bound 的 B0 dom/som (224ep×2, paper-grade) **账号在 → auth 一直正常 (当年无 auth abort 吻合) → 数据安全, 无污染**。shop (Phase 1b 缓) 账号在, 无碍。**reddit 至今无任何 bound paper-grade 数据** (B0 dom 从没跑完, R819 是首次尝试 = 一直 abort 的这个) → 无已锁结果丢失。**R819 的 148 ep 多半 contaminated** (账号不存在 → agent 没真正登录, 靠无效 cached session/REMEMBERME, 需登录任务非-merit 失败) → 作废, reddit fire 从干净 substrate 重启。
+**真根因 (100% 实证, R819 task 138 step records)**: **reddit task 138 intent = "Change my username to the first name of the recipient in the image."** B0 (235B 强模型) 成功执行 (task138 success=True): step records 明示 agent 把用户名改成 "Patrick" — `url_after: /user/Patrick/account`, `title: Editing user Patrick`。改名后 `MarvelsGrantMan136` 不存在 → 后续 fresh login 全 "Invalid credentials"。**时间线**: 改名@138 → cached session (绑 user id 13915=现 Patrick) 撑几个 task → P79 auth_refresh **每 5ep 一次 fresh login** → 138+5≈143 触发 → 失败 → abort#8 (task 143)。abort#9/#10 同理。
 
-**Fix (substrate-level, estimand-neutral = 恢复 VWA canonical state)**: 补做漏掉的 (b) — 通过 `/registration` (端点实测 200) 注册 MarvelsGrantMan136/test1234。postmill console 无 create-user (仅 `postmill:change-password` 对已存在用户 + `security:hash-password`), 故走 /registration UI/API。bare 注册账号对 reddit 任务足够 (eval 查 agent 自己发的 comment/post, 不依赖账号预存状态)。注册后 `refresh_site_auth` 用 test1234 即通。⚠️ **/stress 待拷问**: bare 账号是否完全等价 VWA-canonical 测试账号 (订阅/karma 初始态)? 还是该从正确 image 重灌 DB?
+**为什么是 P79 而非 VWA 的问题**: VWA 官方 harness **跨 task 复用 saved cookie** (`storage_state=.auth/reddit_state.json`), **从不 per-task fresh login**; 且 `run.py`/`envs.py:172-178` 的 `require_reset` **只实现了 classifieds reset** (`TODO(jykoh): Add reset functionality for Shopping/Reddit` — reddit reset 是 no-op)。所以改名后 VWA 复用的 session 仍有效, 不报 "Invalid credentials", 顶多下游 ~34 个引用 MarvelsGrantMan136 的 task 按 merit 失败 (SR 低)。**P79 自己加的 auth_refresh** (fresh re-login 每 5ep/20min, 为对抗 24min `gc_maxlifetime` session 过期) + **fail-closed abort** = 把 VWA 可容忍的改名污染**升级成 condition 杀手**。
 
-**教训**: auth 失败第一步应 `SELECT username FROM users` 查账号 + 直接打一发登录, 而非堆 retry/budget/shadow-mode/容错。绕了 6 个 bug-number (B-1878→1883) 的 band-aid 才查这个最基本的。"early 能跑、对比着查" (regression-diff) 是定位关键 — April B1 reddit (`B1_3mode_reddit_20260413`) 用 **quark 容器** 84/84 登录全 ok = 证明 reddit auth 能 100% 可靠, 是 A100 这个容器缺账号。
+**为什么 B1 (April) 没事**: B1 (4B 弱模型) 大概率**做失败了 task 138** (没真改成用户名) → 账号没动 → `B1_3mode_reddit_20260413` 84/84 auth ok 跑完。**capability-modulated contamination**: 模型越强越可能成功执行破坏性任务 → 越容易触发污染。这本身是个 paper-grade confound (B0 vs B1/B2 比较受此影响)。
 
-**Cross-link**: B-1878/B-1879/B-1880/B-1881/B-1882/B-1883 (全 reddit abort saga, auth-class 那条 = 本 bug 的 band-aid); [[reference-condenser-a100-infra]] (A100 自托管 VWA docker, 迁移 2026-05-14); 笔记 §354 (全链根因叙事 + why-reddit + blast radius)。
+**per-task reset 不是 VWA 标准 (更正初版「该补 per-task reset」)**: VWA 没实现 reddit reset; per-task DB reset 既非标准也非 P79 之前没做的疏漏。P79 per-condition reset (B-1839) 在 condition 之间从 image 恢复账号 (id=13915), 但 **condition 内**跑到 task 138 又被改名。
+
+**Blast radius (更正)**: **reddit 单站的 auth-abort** 成立; cls 已 bound B0 dom/som (224ep×2) **auth 44/44 OK (R21557 log 实证) → 账号没被改名 → auth 干净**。但**更广的隐患**: 任何站点只要有破坏性任务 (改名/删内容/改设置) 都会 condition 内污染下游 task (VWA 继承属性, per-condition 非 per-task reset)。reddit task 138 是已知的 auth-catastrophic 个例 (改的是登录身份)。⚠️ **待审**: 全 210 reddit (+ cls) 破坏性任务清单 + 下游污染范围。R819 148 ep 含 task138 改名后的污染 → 作废重跑 (一致结论)。
+
+**Fix (未定, hook 已 revert)**: NOT per-task reset (非标准), NOT 注册 hook (会建冒牌 id=661783 掩盖污染, 已 revert)。候选: **(A)** auth_refresh fresh-login 失败时先验现有 session 还活否, 活就续 (= 对齐 VWA cookie-reuse 行为, 改名后 session 确实还有效); **(B)** 接受下游 merit 失败 (= VWA-equivalent, benchmark 属性); **(C)** reset 撤销改名 (比 VWA 干净但偏离标准, 需 disclosure)。待 user/advisor 定。
+
+**教训**: ① auth 失败先 `SELECT username` + 手动登录复现, 别堆 retry/budget (绕 6 个 bug-number 才查)。② **诊断要区分 reset vs restart** — 误以为 image 缺账号, 实则一次真 reset 就证伪 (账号在 image 里); user 的 domain 知识 (restart 含 reset) 是更正关键。③ regression-diff 用对参照系: April B1 用 quark 容器**且弱模型没改成名** → 不是「容器差异」是「模型能力差异 × 破坏性任务」。④ 怀疑某 substrate 状态被改时, 先查「是不是被某个 task 改的」(grep task intents) 再下结论。
+
+**Cross-link**: B-1878/B-1879/B-1880/B-1881/B-1882/B-1883 (reddit abort saga; auth-class 那条 = 本 bug 的 band-aid); reddit task 138 (VWA test_reddit.json, 改名任务); VWA `run.py`/`envs.py:172` (require_reset 只 cls); [[reference-condenser-a100-infra]]; 笔记 §354 (初版叙事, 已标 superseded) + §355 (更正叙事)。
 
 ---
