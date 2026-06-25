@@ -1,18 +1,18 @@
 ---
 type: task
-status: active
+status: done
 priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "2026-06-12 (D1 self-target; official hard ≤2026-06-22, advisor: ASAP)"
+eta: "DONE 2026-06-21 (sent; D1 self-target was 06-12, official hard ≤06-22 met)"
 detail: deliverables/advisor_onepager_2026-06
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-21
 ---
 
 # Deliverable 1 — advisor one-pager (goals/RQs/experiments + deadlines)
 
-已起草 `docs/checkpoints/deliverables/advisor_onepager_2026-06.md` (英文)。user review → **06-12 发 advisor**
-(advisor 2026-06-10: "as soon as possible", 官方硬线 **≤06-22**)。
-deadline 全表 D1-D11 在 one-pager §4 = canonical; 本 task eta 联动。
+✅ **2026-06-21 user 已邮件发送 advisor**（PDF `docs/checkpoints/deliverables/advisor_onepager_2026-06.pdf`）。
+踩在官方硬线 ≤06-22 之内。下一个 advisor deliverable = **D7 lit-review 章 self 07-13 / 硬线 ≤07-20**。
+deadline 全表 D1-D11 在 one-pager §4 = canonical; 本 task 收口。
