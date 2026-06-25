@@ -92,6 +92,32 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "time_interval_seconds": 1200,
         "sites": ["classifieds", "reddit", "shopping", "shopping_admin"],
     },
+    # B-1884 / Fix 4 (2026-06-25): reddit task 138 ("change my username")
+    # renames the shared test account; username IS the login credential, so the
+    # periodic fresh re-login above would fail-closed. Restore it idempotently
+    # at the START of every reddit task (before auth_refresh) — mirrors the
+    # per-task require_reset classifieds gets from upstream VWA (which never
+    # implemented a reddit reset). Verified DB path (笔记 §354): postmill DB
+    # inside the vwa-reddit container, reached as `su - postgres` (peer auth),
+    # table users / id=13915. Defaults overridable here. See
+    # p79/utils/reddit_identity.py + PROTOCOL_NOTE_04.
+    "reddit_identity_reset": {
+        "enabled": True,
+        "container": "vwa-reddit",
+        "db": "postmill",
+        "db_os_user": "postgres",
+        "table": "users",
+        "username_column": "username",
+        # postmill login matches the lowercase canonical column, NOT username —
+        # both must be restored (A100-verified 2026-06-25). "" to skip.
+        "normalized_username_column": "normalized_username",
+        "seed_normalized_username": "",  # "" → auto = seed_username.lower()
+        "user_id": 13915,
+        "seed_username": "MarvelsGrantMan136",
+        "sql_override": "",
+        "timeout_s": 30,
+        "fail_closed": False,
+    },
     "analysis": {
         "outputs": {
             "save_plots": True,

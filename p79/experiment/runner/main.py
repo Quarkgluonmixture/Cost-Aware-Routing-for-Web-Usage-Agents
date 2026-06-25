@@ -2225,6 +2225,19 @@ class ExperimentRunner:
         # threading via `_run_and_record_episode` for multi-seed correctness.
         if effective_cid is None:
             effective_cid = condition.condition_id
+        # ── B-1884 / Fix 4: reddit shared-account identity restore ──
+        # reddit task 138 ("change my username") renames the shared test
+        # account; the username IS the login credential, so the periodic fresh
+        # re-login below would then fail-closed (root cause of the 2026-06
+        # reddit abort saga). Heal it idempotently HERE — BEFORE the auth-refresh
+        # check — so a renamed account is restored before the next re-login.
+        # Setup phase (pre-trajectory) → not measured execution; mirrors the
+        # per-task require_reset classifieds already gets. Estimand = clean
+        # per-task (user decision 2026-06-25). See p79/utils/reddit_identity.py
+        # + PROTOCOL_NOTE_04 + 笔记 §357.
+        if task.site == "reddit":
+            from p79.utils.reddit_identity import restore_reddit_identity
+            restore_reddit_identity(self.cfg, logger=logger)
         # ── Auth refresh check (before browser context creation) ──
         site = task.site
         self._auth_episode_counts.setdefault(site, 0)
