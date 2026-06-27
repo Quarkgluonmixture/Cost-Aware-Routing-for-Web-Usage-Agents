@@ -136,7 +136,7 @@ wallstreetbets/dataisbeautiful 帖金额只在图里，agent 从评论文字/先
 
 ## 7. Actionable
 
-- **[infra ⚠️ 高] A100 diag 版本偏移**: A100 部署 `diag_pattern_match.py` 仍是 **v5 (`5-domsomvispsom-b1860coord`, Jun 9)**，缺 v6 的 P34-P40 + success-safe 收窄。本 digest 用 DGX v6 重扫（rsync run 数据到 DGX 本地）。→ **rsync v6 脚本到 A100** 否则 A100 端 cron/autorun 出 v5 数字。
+- **[infra] A100 diag 版本偏移 — ✅ 已修 (2026-06-27)**: A100 部署 `diag_pattern_match.py` 曾停在 **v5 (`5-domsomvispsom-b1860coord`, Jun 9)**，缺 v6 的 P34-P40 + success-safe 收窄。本 digest 用 DGX v6 重扫（rsync run 数据到 DGX 本地）。**已 rsync v6 脚本到 A100** (md5 `a63f7488` 两端一致 + py_compile OK + A100 重扫 R11344 = 147 with-hits 行为一致) → A100 端 cron/autorun 现出 v6 数字。
 - **[diag self-evolve] 落 R1-R8 + H1/H2 → bump `7-reddit-*` → 全量重扫** cls 18 + reddit 已落 condition（按 discover-then-freeze 协议；reddit 6-mode 齐后再 freeze 比较）。先落 H1 (P6/P16 site-gate) 收益最大 = 修跨站 FP。
 - **[paper finding]** B0 dom reddit = 干净 agent-limit 地板 (0 scaffold/0 FP 双侧)，reddit 引入 cls 无的新失败族（页面图盲 / submission-img 陷阱 / 多目标 DM / 子版块导航）。→ 进 paper 失败分析 + router 证据 (mode-specific vs 通用二分成立)。
 - **[非 bug] P36/P31/P5 主导 = 能力地板签名**，无需修。
