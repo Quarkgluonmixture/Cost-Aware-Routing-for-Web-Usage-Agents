@@ -77,7 +77,7 @@ from urllib.parse import urlparse
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "6-b12clsfull-b1860coord"
+RULESET_VERSION = "7-p6p16clsgate-b1860coord"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -309,6 +309,14 @@ def _extract_numbers(text: str) -> List[float]:
 
 def _obs_mode(step: Dict) -> str:
     return step.get("observation_mode", "dom")
+
+
+def _benchmark_site(summary: Dict, steps: List[Dict]) -> str:
+    """Authoritative episode site (mirrors scan_episodes site resolution)."""
+    s = (summary or {}).get("benchmark_site")
+    if not s and steps:
+        s = steps[0].get("benchmark_site")
+    return s or ""
 
 
 def _find_finish_step(steps: List[Dict]) -> Optional[Dict]:
@@ -589,12 +597,21 @@ def check_p5(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> Li
     return hits
 
 
-def check_p6(steps: List[Dict], _summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
-    """P6: 视觉任务 DOM 必然失败 — DOM mode + visual task."""
+def check_p6(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P6: 视觉任务 DOM 必然失败 — DOM mode + visual task (classifieds-gated)."""
     if not steps:
         return []
     mode = _obs_mode(steps[0])
     if mode != "dom":
+        return []
+    if _benchmark_site(summary, steps) != "classifieds":
+        # H1 (2026-06-27, reddit discover): P6 is a classifieds-calibrated visual
+        # rule. On reddit it produced only presence-only cross-site FPs — the task
+        # reference image is delivered to the model even in dom mode (ref-image
+        # channel), so "dom can't match ref-to-page" doesn't hold; genuine reddit
+        # page-image blindness is owned by the eval_type=page_image_query detector,
+        # not this intent-regex rule. Empirically P6 never fired on the real reddit
+        # page-blind failures (they were no-hit). Gate to classifieds.
         return []
     intent = config.get("intent", "")
     has_image = bool(config.get("image"))
@@ -821,9 +838,14 @@ def check_p15(_steps: List[Dict], _summary: Dict, config: Dict, mode: str) -> Li
     return []
 
 
-def check_p16(_steps: List[Dict], _summary: Dict, config: Dict, mode: str) -> List[PatternHit]:
-    """P16: 视觉图像内容任务 — cover/image 内容过滤, DOM 无像素 (self-evolving 2026-05-22, diagnose Tier-2 task 80/81)."""
+def check_p16(steps: List[Dict], summary: Dict, config: Dict, mode: str) -> List[PatternHit]:
+    """P16: 视觉图像内容任务 — cover/image 内容过滤, DOM 无像素 (self-evolving 2026-05-22, diagnose Tier-2 task 80/81; classifieds-gated H1 2026-06-27)."""
     if mode != "dom":
+        return []
+    if _benchmark_site(summary, steps) != "classifieds":
+        # H1 (2026-06-27, reddit discover): same cross-site FP as P6 — reddit
+        # reference images are model-visible in dom; this intent-regex rule never
+        # caught the real reddit page-image failures (no-hit), only mis-fired.
         return []
     intent = config.get("intent", "")
     if VISUAL_IMAGE_CONTENT_RE.search(intent):

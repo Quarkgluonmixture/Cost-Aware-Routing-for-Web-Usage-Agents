@@ -7,7 +7,7 @@
 | **Site / Model / Mode** | reddit / B0 (Qwen3-VL-235B-A22B) / dom (仅 AXTree 文本) |
 | **Episodes** | 205 |
 | **SR** | **14.6%** (30 success / 175 failed) |
-| **ruleset_version** | `6-b12clsfull-b1860coord` (DGX v6; ⚠️ A100 部署仍 v5，见 §7) |
+| **ruleset_version** | 分析跑于 `6-b12clsfull-b1860coord` (v6); **H1 site-gate 已落 → `7-p6p16clsgate-b1860coord` (2026-06-27)**: reddit P6/P16 命中现归 0 (§4/§5/§7), cls 不变 (105/52/1/1 v6==v7 实测)。本 digest 三子集数字为 v6-scan (= H1 的动机依据); v7 下 reddit success_with_hits 10→1, failed_NO_HIT 38→45 |
 | **Tier-2 深挖** | 38 no-hit failed (全覆盖) + 10 success-with-hits (FP 审计) = 48 ep / 8 sonnet sub-agents |
 | **生成** | /diag 3-tier, 2026-06-27 |
 
@@ -114,7 +114,7 @@ wallstreetbets/dataisbeautiful 帖金额只在图里，agent 从评论文字/先
 | **R8** | `P-RED-SEARCH-EXHAUSTION` | `answer 含 'No post found'/'no results' AND eval=string_match` | agent-limit (cross-site 通用) | 低 | 124 |
 
 **Hygiene fix (落 v7 必做，否则 cross-mode 聚合失真)**:
-- **H1 — P6/P16 加 site-gate / ref-image carve-out**: `image_payload_bytes_ref>0` 时跳过（reddit ref-image 可见），或 `site=='classifieds'` 才 fire。消除 reddit 全部此类跨站 FP，保留 cls 真阳性。
+- **H1 — P6/P16 site-gate → classifieds — ✅ LANDED 2026-06-27 (`7-p6p16clsgate-b1860coord`)**: 选 site-gate 而非 ref-image carve-out — 理由 (a) `image_payload_bytes_ref` 不在 summary (在 steps), 且 `config.image` 既是 P6 触发又无法区分 FP/TP; (b) **实证 P6/P16 在 reddit 根本没抓到真视觉失败** (genuine page-image-blind 全在 no-hit), reddit 真视觉失败由 R1=page_image_query 接管 → site-gate 不丢真信号。实现 = `_benchmark_site(summary,steps)!="classifieds": return []` (benchmark_site 实测 reddit 205/205 / cls 224/224 可靠)。**验证**: reddit P6 17→0 / P16 14→0 (failed) + success-FP {P6:6,P16:8}→0; **cls 字节级不变** (105/52/1/1 v6==v7); DGX+A100 md5 `aea8c026` 一致。
 - **H2 — P25 加 success-gate**: `success is not True` 才计 hit_causal（已是 success-side 收窄惯例）。
 
 > **router 论点连带**: R1/R3 = mode-specific (换 mode 能救 → 可 route)；R7 = cross-mode 通用行为缺陷 (换 mode 救不了 → 需 retry/memory module)。reddit 失败族同样落「通用 vs mode-specific」二分，与 cls 一致 → 支撑 paper router 证据栈。但**单 condition 不下定论**，待 reddit 6-mode 齐验证哪些 mode-specific。
@@ -137,7 +137,7 @@ wallstreetbets/dataisbeautiful 帖金额只在图里，agent 从评论文字/先
 ## 7. Actionable
 
 - **[infra] A100 diag 版本偏移 — ✅ 已修 (2026-06-27)**: A100 部署 `diag_pattern_match.py` 曾停在 **v5 (`5-domsomvispsom-b1860coord`, Jun 9)**，缺 v6 的 P34-P40 + success-safe 收窄。本 digest 用 DGX v6 重扫（rsync run 数据到 DGX 本地）。**已 rsync v6 脚本到 A100** (md5 `a63f7488` 两端一致 + py_compile OK + A100 重扫 R11344 = 147 with-hits 行为一致) → A100 端 cron/autorun 现出 v6 数字。
-- **[diag self-evolve] 落 R1-R8 + H1/H2 → bump `7-reddit-*` → 全量重扫** cls 18 + reddit 已落 condition（按 discover-then-freeze 协议；reddit 6-mode 齐后再 freeze 比较）。先落 H1 (P6/P16 site-gate) 收益最大 = 修跨站 FP。
+- **[diag self-evolve] H1 ✅ 已落 (`7-p6p16clsgate-b1860coord`, 2026-06-27)**; **剩 R1-R8 + H2 (P25 success-gate) 待落 → 后续 bump `8-reddit-*`**（按 discover-then-freeze，reddit 6-mode 齐后一起 freeze 比较）。**cls 全量重扫-relabel 暂缓**: H1 对 cls 是 no-op (105/52/1/1 v6==v7 实测) → 18 cls digest 数字仍有效, 仅 version label 停 v6, 待 freeze 点统一 relabel (behavior-invariant, 非 stale 数据)。
 - **[paper finding]** B0 dom reddit = 干净 agent-limit 地板 (0 scaffold/0 FP 双侧)，reddit 引入 cls 无的新失败族（页面图盲 / submission-img 陷阱 / 多目标 DM / 子版块导航）。→ 进 paper 失败分析 + router 证据 (mode-specific vs 通用二分成立)。
 - **[非 bug] P36/P31/P5 主导 = 能力地板签名**，无需修。
 - **[cross-ref]** B-1884 task-138 真成功改名复核 = 本 digest §4 独立确认（非照搬笔记）。
