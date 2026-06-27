@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-06-03
+updated: 2026-06-27
 ---
 
 # Next Steps — Forward Action Ledger
@@ -12,7 +12,7 @@ updated: 2026-06-03
 > - Paper-grade fire verdict → `paper_grade_check.py` (一条命令, §0) + 每 6h cron
 > - Cell snapshot (active / pending / done) → `cells.base`
 > - Paper section progress → `status.base`
-> - 过去 chronicle → [[实验笔记]] (latest §323, 2026-06-08 — §317-323 B1 cls cross-mode /diag discover **6-mode 齐**: som finish-less/dom 真卡死/vision **router-crux REFINE**/ptext+psom **axis-2 P4 phantom-family-wide RESOLVED**/psom **P33 4B>235B gap**/**pprompt P4=0 但 walk_fail 主导 → text-表征轴精化 + DOM-URL 视觉盲(⚠️撤回"修正B0§319"误判, img-src 全文本模式暴露 B0§319成立) + task5 false-success FP 首例**; §319 lit-digest)
+> - 过去 chronicle → [[实验笔记]] (latest §357, 2026-06-23→25 — reddit abort saga 真根因 = task-138 改用户名 × auth_refresh fresh-login × fail-closed [B-1884] → Fix 4 (per-task identity restore, GRL substrate 复原) 实现+A100 deploy; §354 SUPERSEDED→§355 corrected→§356 VWA 设计缺陷盘点。**生产 live-verify 见上方 §0 06-26 块** [R11344 越过 task-138/151 无 abort])
 > - Strategy / theory → [[paper_planning]]
 > - **Phase 1 执行计划 + audit checklist** → [[phase1_plan]] ⭐ canonical
 > - OSF DOI lock workflow → [[osf_lock_manifest]] · Compute infra → [[COMPUTE_INFRASTRUCTURE]]
@@ -23,11 +23,19 @@ updated: 2026-06-03
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-06-25 UPDATE — estimand 已拍 (user 选 a) + Fix 4 实现+A100 deploy+live-verify ✅ DONE; 唯一剩 operator `launch red` (待 user go)** ⭐⭐⭐ 最新先读, 详 笔记 §357.6 + PROTOCOL_NOTE_04 + B-1884:
+> 🔭 **2026-06-26→27 UPDATE — Fix-4 reddit fire LIVE + 生产 live-verified (无 abort 越过 task-138/151) + reddit 首条 (B0 dom) 已 land bound-clean ✅; D4 (@06-26) 坐实 miss → advisor re-plan** ⭐⭐⭐ 最新先读 (supersedes 06-25 "唯一剩 launch red"):
+> - **✅ Fix-4 reddit fire 已启动 + 首条已 land**: user 06-25 15:48Z 已 `launch red` → reddit 首条 run `R11344` (`B0_dom_reddit_20260625_154833_...`; = 06-25 G8-clear 后的 Fix-4 relaunch, FORCE_NEW from ep0, 接 abort#10@task151 之后)。**该条 06-27 已完成 + manifest bound-clean = reddit 史上首条 paper-grade 干净 condition** (此前 reddit 从没跑完过一条)。chain 已自动续进后续 mode — 实时 current run/condition/进度/死活 → 跑 ① `bash scripts/maintenance/paper_grade_check.sh` + `make ntfy` (别冻数字进本行)。§0 06-25 标的 "唯一剩 operator launch red" 已完成。
+> - **✅✅ Fix 4 生产环境 LIVE-VERIFIED (核心里程碑)**: R11344 已无 abort 跑过 **task 138 (改用户名 = B-1884 自毁级联根因)** 且越过 **task 151 (abort#10 前次失败点)** → `restore_reddit_identity()` 每-task 幂等复原**在真实 fire 里成立**, 自毁级联根除 (= 一次性已成立的事实, 不随 fire 进度变)。§0 06-25 的 verify-script 只证 SQL heal 单点, **整条 fire 撑过 138 = 现 PASSED**。Fix 4 (= estimand a clean-per-task) 实战闭环。⚠️ **这是 finding** — reddit 条件跑完后须 append 笔记 §358 chronicle (本次只更 live state, 未写笔记)。
+> - **bound-clean = cls 18 全 + reddit 首条 (B0 dom)** (manifest 0 ghost / 0 unbound; 实时计数跑 ①); verdict **ISSUES=5 全 = B2(Gemma) cls parse_error >1%** = 已知 floor (§327 / B-1876 / 每次 cron verdict 都在, **非新回归、非 fire-blocker**)。
+> - **🔲 operator 当前无需动作** — fire 自走 (reddit 首条 B0 dom 已 land, chain 自动进下一 mode; current condition 跑 ①), reddit 18 cond sequential ~1.5-2 周。监控 = `make ntfy` + 跑 ① verdict; 撞 abort 才介入 (三层自动兜底已就位: wait-out 35min B-1880 / pre-flight transient-retry B-1881 / resume-on-abort B-1882)。
+> - **🔴 D4 (Pass-1 全 36 cond @06-26) 坐实 miss**: reddit chain 刚起步 (首条 B0 dom 已 land, 余 17+ cond sequential) → reddit Pass-1 ETA early/mid-July → **需跟学长 re-plan reddit 目标** (与已定 estimand(a) 一并同步; one-pager 已 06-21 sent)。
+> - **有未 push commits** (清单跑 `git log @{u}..HEAD`, 含 Fix-4); push 需用户确认。
+>
+> 🔭 **2026-06-25 UPDATE — estimand 已拍 (user 选 a) + Fix 4 实现+A100 deploy+live-verify ✅ DONE; ~~唯一剩 operator `launch red` (待 user go)~~ → ✅ 已 launch 06-25 15:48 = R11344 (见上方 06-26 块)** ⭐⭐ 详 笔记 §357.6 + PROTOCOL_NOTE_04 + B-1884:
 > - **estimand 决策 = (a) clean-per-task** (user 2026-06-25 "不问学长了，直接按推荐做")。Fix 4 是它的实现。
 > - **✅ Fix 4 已实现 + 本地验证 (code 完成, 零回归)**: 新 `p79/utils/reddit_identity.py::restore_reddit_identity()` 在每个 reddit task 的 `_run_episode` 开头 (auth-refresh **之前**, 时序关键) 跑幂等 `UPDATE users SET username='MarvelsGrantMan136' WHERE id=13915 AND username<>...`, 经 **verified** 路径 `docker exec vwa-reddit su - postgres -c "psql -d postmill -c ..."` (§354 实测 peer-auth; 表 users/id=13915)。`runner/main.py` 加调用 + `config.py` 加 `reddit_identity_reset` 块。**12 新测试 + runner smoke = 19 pass 零回归**; shell 三层转义 `shlex.split` 双层模拟验证 psql 收 SQL byte-exact。witness = `PROTOCOL_NOTE_04`; catalog B-1884 标 ✅ FIXED。= 补 VWA 给 cls 有、reddit 漏 (`envs.py:172 TODO`) 的 per-task clean-state, cls 已 bound 数据零影响 (gate on site==reddit)。
 > - **✅ A100 deploy + live-verify DONE (2026-06-25)**: rsync 5 文件→A100 `/home/ubuntu/workspace/p79` + 远端 14 测试过 + `scripts/maintenance/verify_reddit_identity_fix.sh` 实测通过。**验证抓到初版 bug**: postmill `users` 有 `normalized_username` 列、**登录认它不认 `username`** → 修成 Fix 4 复原**两列** (username + normalized_username=lower); 重验 真实两列改名→复原→**fresh login=LOGIN_OK**。(教训: live verify 必须 replicate 真实 mutation 全副作用, 否则弱模拟假阳性。)
-> - **🔲 唯一剩余 = operator `launch red`** (待 user 明确 go — 这是真正启 ~1.5-2 周 reddit fire, 非 code gate): `RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0 launch red` (FORCE_NEW from ep0 per B-304; 启动前 `pgrep -f "run_experiment.*reddit"` 须空 + 同站冲突 check)。launch 时 queue 会 reset reddit 容器 (docker rm+run) → 现 verify 留的 fresh 容器会被替换, 无碍。
+> - **✅ DONE 06-25 15:48Z — operator `launch red` 已执行 → R11344** (FORCE_NEW from ep0; 该 reddit 首条现已完成 bound-clean + Fix-4 生产 verified, 详见上方 06-26→27 块): 启动命令 = `RESUME_MISSING=1 MAX_CONDITION_HOURS=0 MAX_CLS_WAIT_HOURS=0 launch red`。launch 时 queue reset reddit 容器 (docker rm+run) → 替换掉 verify 留的 fresh 容器, 无碍。
 > - **codex 沙盒已修** (config.toml `sandbox_mode=danger-full-access`) — 后续 delegate 不再挂。
 > - **commits 全 local 未 push**: 本 session code = reddit_identity.py + runner/main.py + config.py + test + PROTOCOL_NOTE_04 + catalog B-1884 + 笔记 §357 + 本 handoff (全 tracked); dashboard/memory/`~/.codex/config.toml` 不入版本。叠加前几 session 未 push 的 `6a18657`..`149e1e6`。push/commit 需用户确认。
 > - **D4 (Pass-1 全 36 @06-26) 仍几乎确定 miss** (reddit 0 clean, 即便 Fix 4 deploy 后跑也要 ~1.5-2 周) → 需跟学长 re-plan reddit 目标 (early/mid-July)。
