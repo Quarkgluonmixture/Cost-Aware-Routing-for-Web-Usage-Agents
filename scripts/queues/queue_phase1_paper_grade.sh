@@ -619,12 +619,7 @@ EOF
 }
 
 build_red_chain() {
-  # Phase 1a reddit: 6 modes per model, B0 → B1 sequential = 12 conditions.
-  # B2 (Gemma3-VL) reddit DROPPED 2026-06-28 (user decision; witness PROTOCOL_NOTE_05):
-  # removes the (reddit, B2) cell → reddit Pass-1 = B0+B1 only (both Qwen-family);
-  # reddit cross-family control deferred to MiMo B3 per 2026-06-16 "换槽" plan.
-  # B2 cls (6 cond) unaffected + already bound. Phase 1a matrix 6→5 cells.
-  # Reversible: re-add the 6 `... B2 reddit` lines to restore. cls chain keeps B2.
+  # Phase 1a reddit: 6 modes per model, B0 → B1 → B2 sequential = 18 conditions
   _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
 queue_baseline.sh B0 dom reddit
 queue_baseline.sh B0 som reddit
@@ -638,6 +633,12 @@ queue_baseline.sh B1 vision reddit
 queue_phantom_text.sh B1 reddit
 queue_phantom_som.sh B1 reddit
 queue_phantom_prompt.sh B1 reddit
+queue_baseline.sh B2 dom reddit
+queue_baseline.sh B2 som reddit
+queue_baseline.sh B2 vision reddit
+queue_phantom_text.sh B2 reddit
+queue_phantom_som.sh B2 reddit
+queue_phantom_prompt.sh B2 reddit
 EOF
 }
 
