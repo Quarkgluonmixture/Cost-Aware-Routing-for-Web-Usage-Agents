@@ -13,7 +13,7 @@ prior_amendments:
   - AMENDMENT_07_SOM_IDENTIFIER_CONTRACT_20260525
   - PROTOCOL_NOTE_01_SESSION_LOST_PAPER_GRADE_20260527
   - PROTOCOL_NOTE_02_TRANSIENT_PREFLIGHT_RETRY_20260621
-  # PROTOCOL_NOTE_03 reserved (resume-on-abort policy witness, B-1882, pending)
+  - PROTOCOL_NOTE_03_RESUME_ON_ABORT_20260622
 witness_tag: protocol-note-04-reddit-identity-reset-20260625   # set at finalizing commit
 osf_deposit: RECOMMENDED at next advisor sync — this DEFINES the reddit measurement (Option a); see §0
 decided_by: user 2026-06-25 ("不问学长了，直接按照之前推荐的做吧" — proceed with the recommended option without an advisor gate)
