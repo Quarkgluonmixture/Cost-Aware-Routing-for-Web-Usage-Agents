@@ -33,7 +33,7 @@ updated: 2026-06-27
 >   ④ **verdict-day runbook**: 脚本化「读 gate JSON → 重生成 Table 2/3/4 → 填 slot → regression grep → 词数」(本 session 4 个 P0 全是转录/压缩漂移, 教训现成)
 >   ⑤ **Pass-2 router 管线预演**: 21-cell 数据上跑通 train_l1_router 全链 + emit `h10_entropy_gate.json` (H10 现 fail-closed 就因它缺失; 别 deadline 周 debug)
 >   ⑥ Figures F1 (2×2 diamond 概念图) + F2 (drop-one forest) · ⑦ **连续性包**: aaai27 工作流/sync 配方/战略态势 → memory 固化 · ⑧ registry sync cron 补丁 (fire_manifest 拉取 + 未-promote ntfy) · ⑨ /diag red som/vision (promote 时标了 diag-pending) · ⑩ LaTeX/AAAI 模板骨架 · ⑪ 砍词 -500 · ⑫ Track B (judge polarity, ~1500 词) 草稿
-> - **有未 push commits** (本日 5 个: draft v0.1 / chronicle / stress fixes / registry 打通 / fire 修复收尾, 叠加此前累积) — push 需 user 确认 (已两问未决)。
+> - **✅ 已 push** (user 确认 2026-07-01 深夜; 本日 6 commits + 此前累积全部上 `origin/fix/b1878-reddit-reference-image`)。⚠️ A100 repo 的 git 状态落后于 origin — **fire 进行中不要在 A100 上 git pull** (queue 脚本被后续 chain 条件复用, 中途换码有风险); 需要单文件对齐用 rsync, 整体对齐等 chain 完成。
 >
 > 🔭 **2026-07-01 UPDATE — AAAI-27 定为投稿目标 + 合稿初稿 v0.1 落地** ⭐⭐ (fire 线见上方深夜块):
 > - **⏰ 真实 deadline 在本月**: AAAI-27 abstract **07-21** / full **07-28** / supp 07-31 (UTC-12)，7 页正文+refs+repro checklist，双盲（官网核实，非 user 记的"下月28"）。venue 与 EMNLP/NeurIPS cascade + D11 early-Sep 有张力 → **advisor 确认 owed**（archival main-conf 提交权 + k<6 降级预案三选一，estimand-adjacent 需 witness）。
