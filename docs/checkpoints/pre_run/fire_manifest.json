@@ -1,29 +1,162 @@
 {
-  "schema_version": 1,
-  "fire": "Gate3-fresh-20260523",
-  "created": "2026-05-23",
-  "supersedes": "Fire-6 (2026-05-21, R9755 B0-dom-cls): archived to results/visualwebarena/phase1/_archive_pre_gate3_20260523/. Gate 3 re-runs ALL 36 conditions fresh on post-reboot + B-1839 per-condition-docker-restart substrate; Fire-6 R9755 binding retired (stale 6-7d substrate, non-paper-grade for Gate 3). Manifest reset to empty conditions + re-bound from the Gate 3 fire. See B-1841.",
-  "purpose": "Authoritative paper-grade run_id per (site|baseline|mode) condition for Phase 1a Pass-1. B-1825 (Fire-6 /stress P0-3-AC*): RESUME_MISSING=1 skips conditions listed here that have a valid condition_summary_v2.json at the expected scored count; the cross-condition aggregator binds to ONLY these run_ids and FAIL-CLOSES on glob-discovered runs not listed (ghost runs from a re-fire / partial / smoke). This closes the 'glob latest run' ambiguity (phase1a_status.sh:94 `ls -dt`) that would silently double-count or cherry-pick when a relaunch produces a 2nd copy of a condition.",
-  "scored_task_count": {
-    "classifieds": 224,
-    "reddit": 205,
-    "shopping": 435
+ "schema_version": 1,
+ "fire": "Gate3-fresh-20260523",
+ "created": "2026-05-23",
+ "supersedes": "Fire-6 (2026-05-21, R9755 B0-dom-cls): archived to results/visualwebarena/phase1/_archive_pre_gate3_20260523/. Gate 3 re-runs ALL 36 conditions fresh on post-reboot + B-1839 per-condition-docker-restart substrate; Fire-6 R9755 binding retired (stale 6-7d substrate, non-paper-grade for Gate 3). Manifest reset to empty conditions + re-bound from the Gate 3 fire. See B-1841.",
+ "purpose": "Authoritative paper-grade run_id per (site|baseline|mode) condition for Phase 1a Pass-1. B-1825 (Fire-6 /stress P0-3-AC*): RESUME_MISSING=1 skips conditions listed here that have a valid condition_summary_v2.json at the expected scored count; the cross-condition aggregator binds to ONLY these run_ids and FAIL-CLOSES on glob-discovered runs not listed (ghost runs from a re-fire / partial / smoke). This closes the 'glob latest run' ambiguity (phase1a_status.sh:94 `ls -dt`) that would silently double-count or cherry-pick when a relaunch produces a 2nd copy of a condition.",
+ "scored_task_count": {
+  "classifieds": 224,
+  "reddit": 205,
+  "shopping": 435
+ },
+ "condition_key_format": "<site>|<baseline>|<mode>  (mode in: dom som vision phantom_text phantom_som phantom_prompt)",
+ "conditions": {
+  "classifieds|B0|dom": {
+   "run_id": "B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
+   "condition_id": "phase1_dom_router_0",
+   "episodes": 224,
+   "bound_date": "2026-05-26",
+   "bound_by": "AMENDMENT_07 follow-up (B-1862): rebind from archived R31194 (Gate3 substrate, retired in AMENDMENT_07 sequential-id reset). R21557 = first AMENDMENT_07 sequential-id paper-grade run, 224 ep, clean. Run-time discovered via halt markers 04:16 + 12:18 (mode-transition fail-closed). See _archive_amend07_seqid_R31194_dom_20260525."
   },
-  "condition_key_format": "<site>|<baseline>|<mode>  (mode in: dom som vision phantom_text phantom_som phantom_prompt)",
-  "conditions": {
-    "classifieds|B0|dom": {
-      "run_id": "B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
-      "condition_id": "phase1_dom_router_0",
-      "episodes": 224,
-      "bound_date": "2026-05-26",
-      "bound_by": "AMENDMENT_07 follow-up (B-1862): rebind from archived R31194 (Gate3 substrate, retired in AMENDMENT_07 sequential-id reset). R21557 = first AMENDMENT_07 sequential-id paper-grade run, 224 ep, clean. Run-time discovered via halt markers 04:16 + 12:18 (mode-transition fail-closed). See _archive_amend07_seqid_R31194_dom_20260525."
-    },
-    "classifieds|B0|som": {
-      "run_id": "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
-      "condition_id": "phase1_som_router_0",
-      "episodes": 224,
-      "bound_date": "2026-05-26",
-      "bound_by": "AMENDMENT_07 follow-up (B-1862): rebind from archived R9725 (retired AMENDMENT_07 sequential-id reset). R5313 = first AMENDMENT_07 sequential-id paper-grade run for som, 224 ep, clean. Same root-cause as dom (halt 12:18 som→vision transition). See _archive_amend07_seqid_R9725_som_20260525."
-    }
+  "classifieds|B0|som": {
+   "run_id": "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+   "condition_id": "phase1_som_router_0",
+   "episodes": 224,
+   "bound_date": "2026-05-26",
+   "bound_by": "AMENDMENT_07 follow-up (B-1862): rebind from archived R9725 (retired AMENDMENT_07 sequential-id reset). R5313 = first AMENDMENT_07 sequential-id paper-grade run for som, 224 ep, clean. Same root-cause as dom (halt 12:18 som→vision transition). See _archive_amend07_seqid_R9725_som_20260525."
+  },
+  "classifieds|B0|vision": {
+   "run_id": "B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
+   "condition_id": "phase1_vision_router_0",
+   "episodes": 224,
+   "bound_date": "2026-05-26",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B0|phantom_text": {
+   "run_id": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
+   "condition_id": "phase1_phantom_text_router_0",
+   "episodes": 224,
+   "bound_date": "2026-05-27",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B0|phantom_som": {
+   "run_id": "B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031",
+   "condition_id": "phase1_phantom_som_router_0",
+   "episodes": 224,
+   "bound_date": "2026-05-28",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B0|phantom_prompt": {
+   "run_id": "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+   "condition_id": "phase1_phantom_prompt_router_0",
+   "episodes": 224,
+   "bound_date": "2026-05-28",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B1|dom": {
+   "run_id": "B1_dom_classifieds_20260603_103630_477435114_112846_R17188",
+   "condition_id": "phase1_dom_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-04",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B1|som": {
+   "run_id": "B1_som_classifieds_20260604_072456_562166453_226675_R31705",
+   "condition_id": "phase1_som_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-05",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B1|vision": {
+   "run_id": "B1_vision_classifieds_20260605_012235_349047872_327631_R28622",
+   "condition_id": "phase1_vision_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-05",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B1|phantom_text": {
+   "run_id": "B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933",
+   "condition_id": "phase1_phantom_text_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-06",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B1|phantom_som": {
+   "run_id": "B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199",
+   "condition_id": "phase1_phantom_som_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-07",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B1|phantom_prompt": {
+   "run_id": "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516",
+   "condition_id": "phase1_phantom_prompt_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-08",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B2|dom": {
+   "run_id": "B2_dom_classifieds_20260609_214713_553762009_985526_R21521",
+   "condition_id": "phase1_dom_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-11",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B2|som": {
+   "run_id": "B2_som_classifieds_20260611_210828_923656661_1218867_R3380",
+   "condition_id": "phase1_som_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-12",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B2|vision": {
+   "run_id": "B2_vision_classifieds_20260612_221910_098760264_1351451_R9288",
+   "condition_id": "phase1_vision_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-14",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B2|phantom_text": {
+   "run_id": "B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219",
+   "condition_id": "phase1_phantom_text_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-15",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B2|phantom_som": {
+   "run_id": "B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577",
+   "condition_id": "phase1_phantom_som_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-16",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "classifieds|B2|phantom_prompt": {
+   "run_id": "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175",
+   "condition_id": "phase1_phantom_prompt_router_0",
+   "episodes": 224,
+   "bound_date": "2026-06-17",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B0|dom": {
+   "run_id": "B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
+   "condition_id": "phase1_dom_router_0",
+   "episodes": 205,
+   "bound_date": "2026-06-27",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B0|som": {
+   "run_id": "B0_som_reddit_20260627_035453_162107997_3024022_R20936",
+   "condition_id": "phase1_som_router_0",
+   "episodes": 205,
+   "bound_date": "2026-06-28",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B0|vision": {
+   "run_id": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
+   "condition_id": "phase1_vision_router_0",
+   "episodes": 205,
+   "bound_date": "2026-06-29",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
   }
+ }
 }

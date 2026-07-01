@@ -4,15 +4,23 @@
 > 把 tag 逐步升级到 [A]。**全部 verdict slot 填完之前不得投稿**。
 > Deadline 锚: abstract **2026-07-21** / full paper **2026-07-28** / supp **2026-07-31** (UTC-12)。
 
-## 0. 立即可做（数据已 land，只欠聚合）
+## 0. 聚合链已打通 ✅（2026-07-01）— sync 配方 + 剩余项
 
-| 槽位 | 现状 | 动作 |
+**✅ RESOLVED 2026-07-01**：聚合门控链 = A100 fire 侧 `validate_fire_manifest --apply` auto-bind →
+`docs/checkpoints/pre_run/fire_manifest.json`（21 bound）→ **手动 promote** 进
+`results/phantom_paper/run_manifest.yaml` `cells:`（grade: paper-grade）→ aggregators。
+本轮已做：rsync fire_manifest A100→DGX + promote 15 cells（B1/B2 cls ×12 + B0 red dom/som/vision）
+→ `make analysis FAST=1` 吃进 **21 cells**；H1 interim k=3 / H2(a) 3/3 / H3 interim 已进 draft slots。
+**新 cell land 后的 sync 配方**：`rsync condense-a100:.../fire_manifest.json` → promote 新 bound 条目进
+run_manifest.yaml → `make analysis FAST=1` → 更新 draft tags/slots。
+
+| 剩余槽位 | 现状 | 动作 |
 |---|---|---|
-| Table 2 cls·B1 / cls·B2 行 `[P]→[A]` | 12 条 run done，只有 frontmatter sr_raw | ⚠️ 2026-07-01 实测：DGX 侧 `make analysis FAST=1` 后 sr_per_mode 仍只有 6 个 B0-cls cell —— 收集器被 binding 门控，且 `results/phantom_paper/run_manifest.yaml` 两端都停在旧日期（A100 06-09 / DGX 05-28），live bound 记录在 `paper_grade_check` 侧。**需先梳理聚合链的 binding 输入**（哪个文件、谁更新、A100 还是 DGX 跑聚合），再谈 [P]→[A]。附带发现：figures 阶段在空数据上崩 `max() iterable argument is empty`（`make analysis` Error 2，pre-existing） |
-| Table 2 red·B0 前 4 格 `[P]→[A]` | 已 land (dom/som/vision/ptext) 但未进 sr_per_mode.json | 同上，等 binding 链梳理 |
-| §5.4 H2(a) per-task paired median ratio | producer `_h2a_per_task_ratio` 显示 0/1 cells with paired data | 需 `generate_per_task_sr.py` paired-CSV 先 land（读 run_manifest），再跑 `aggregate_phase1_full_prereg_decision.py`；与上面 binding 链是同一个前置 |
+| red·B0 P-text `[P]→[A]` | run 已完成 (07-01) 但 fire 侧还没 auto-bind | 等 A100 validate_fire_manifest 下一轮 bind → 走 sync 配方 |
 | §5.4 latency canonical (retry-adjusted) | 只有 archive p95 [V] | aggregator emit `total_minus_retry_ms` per-mode 表（cross_sites cost_per_mode 目前无 wall-clock 列，需补列） |
-| §6 AUROC 全 cell | 只有 B0 cls | `make analysis` 后取 `auroc_cross_condition.md` |
+| §6 AUROC 全 cell | auroc_cross_condition 需确认是否已扩到 21 cells | 查 `auroc_cross_condition.md`，扩了就把 §6 那句的 per-cell 范围更新 |
+| ⚠️ figures 阶段 2 个 pre-existing 崩点 | ① `fig0c` 系 `max() empty`（首轮）② `axis1_microbehavior.py` KeyError `'mean_jaccard'`（partial reddit 数据） | 修 figure 脚本对 partial-cell 的容错；不 block 聚合（aggregators 在 figures 之前已完成） |
+| ⚠️ red·B0 drop-one 慎用 | `fig0c` 的 b0_red 行（DOM 4.88 / SoM 3.90 / Vision 3.41）是 **3-mode partial portfolio** 上的 drop-one，与 6-mode 定义不可比 | draft 不引用，等 6 modes 齐 |
 
 ## 1. 等 fire 落地（顺序 = chain 自动推进）
 

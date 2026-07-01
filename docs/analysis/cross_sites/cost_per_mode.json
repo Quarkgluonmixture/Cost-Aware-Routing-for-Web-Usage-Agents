@@ -11,7 +11,44 @@
   },
   "cells": {
     "B0": {
-      "reddit": {},
+      "reddit": {
+        "DOM": {
+          "available": true,
+          "run_subpath": "B0_dom_reddit_20260625_154833_928747130_2827521_R11344/phase1_dom_router_0",
+          "avg_steps": 20.15609756097561,
+          "avg_token_cost_usd_yaml_rate": 0.1012782270646165,
+          "avg_energy_kwh": null,
+          "avg_electricity_usd": null,
+          "avg_co2e_kg": null,
+          "paper_cost_usd": 0.10127808292682927,
+          "paper_cost_class": "API_total_billed_dollars",
+          "paper_cost_estimand": "avg_total_billed_cost_usd (AMENDMENT_01 \u00a71 PRIMARY)"
+        },
+        "SoM": {
+          "available": true,
+          "run_subpath": "B0_som_reddit_20260627_035453_162107997_3024022_R20936/phase1_som_router_0",
+          "avg_steps": 20.014634146341464,
+          "avg_token_cost_usd_yaml_rate": 0.10998538137303794,
+          "avg_energy_kwh": null,
+          "avg_electricity_usd": null,
+          "avg_co2e_kg": null,
+          "paper_cost_usd": 0.10996328780487805,
+          "paper_cost_class": "API_total_billed_dollars",
+          "paper_cost_estimand": "avg_total_billed_cost_usd (AMENDMENT_01 \u00a71 PRIMARY)"
+        },
+        "Vision": {
+          "available": true,
+          "run_subpath": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559/phase1_vision_router_0",
+          "avg_steps": 23.214634146341464,
+          "avg_token_cost_usd_yaml_rate": 0.09747025533515186,
+          "avg_energy_kwh": null,
+          "avg_electricity_usd": null,
+          "avg_co2e_kg": null,
+          "paper_cost_usd": 0.09747008292682927,
+          "paper_cost_class": "API_total_billed_dollars",
+          "paper_cost_estimand": "avg_total_billed_cost_usd (AMENDMENT_01 \u00a71 PRIMARY)"
+        }
+      },
       "classifieds": {
         "DOM": {
           "available": true,
@@ -89,12 +126,153 @@
     },
     "B1": {
       "reddit": {},
-      "classifieds": {}
+      "classifieds": {
+        "DOM": {
+          "available": true,
+          "run_subpath": "B1_dom_classifieds_20260603_103630_477435114_112846_R17188/phase1_dom_router_0",
+          "avg_steps": 21.383928571428573,
+          "avg_token_cost_usd_yaml_rate": 0.05951431748441356,
+          "avg_energy_kwh": 0.005643503227175642,
+          "avg_electricity_usd": 0.000677220387261077,
+          "avg_co2e_kg": 0.0012415707099786412,
+          "paper_cost_usd": 0.000677220387261077,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "SoM": {
+          "available": true,
+          "run_subpath": "B1_som_classifieds_20260604_072456_562166453_226675_R31705/phase1_som_router_0",
+          "avg_steps": 18.008928571428573,
+          "avg_token_cost_usd_yaml_rate": 0.060291877889203004,
+          "avg_energy_kwh": 0.004817530908792886,
+          "avg_electricity_usd": 0.0005781037090551463,
+          "avg_co2e_kg": 0.0010598567999344347,
+          "paper_cost_usd": 0.0005781037090551463,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "Vision": {
+          "available": true,
+          "run_subpath": "B1_vision_classifieds_20260605_012235_349047872_327631_R28622/phase1_vision_router_0",
+          "avg_steps": 20.169642857142858,
+          "avg_token_cost_usd_yaml_rate": 0.043155741064187805,
+          "avg_energy_kwh": 0.004965781647515528,
+          "avg_electricity_usd": 0.0005958937977018633,
+          "avg_co2e_kg": 0.001092471962453416,
+          "paper_cost_usd": 0.0005958937977018633,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-text": {
+          "available": true,
+          "run_subpath": "B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933/phase1_phantom_text_router_0",
+          "avg_steps": 22.455357142857142,
+          "avg_token_cost_usd_yaml_rate": 0.05879197793157476,
+          "avg_energy_kwh": 0.005745065482771394,
+          "avg_electricity_usd": 0.0006894078579325672,
+          "avg_co2e_kg": 0.0012639144062097066,
+          "paper_cost_usd": 0.0006894078579325672,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-prompt": {
+          "available": true,
+          "run_subpath": "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516/phase1_phantom_prompt_router_0",
+          "avg_steps": 21.397321428571427,
+          "avg_token_cost_usd_yaml_rate": 0.06303562682733944,
+          "avg_energy_kwh": 0.005522724601835574,
+          "avg_electricity_usd": 0.0006627269522202689,
+          "avg_co2e_kg": 0.0012149994124038264,
+          "paper_cost_usd": 0.0006627269522202689,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-SoM": {
+          "available": true,
+          "run_subpath": "B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199/phase1_phantom_som_router_0",
+          "avg_steps": 21.258928571428573,
+          "avg_token_cost_usd_yaml_rate": 0.0596974767286052,
+          "avg_energy_kwh": 0.005707206815155593,
+          "avg_electricity_usd": 0.0006848648178186711,
+          "avg_co2e_kg": 0.0012555854993342305,
+          "paper_cost_usd": 0.0006848648178186711,
+          "paper_cost_class": "electricity_equivalent"
+        }
+      }
     },
     "B2": {
       "reddit": {},
-      "classifieds": {}
+      "classifieds": {
+        "DOM": {
+          "available": true,
+          "run_subpath": "B2_dom_classifieds_20260609_214713_553762009_985526_R21521/phase1_dom_router_0",
+          "avg_steps": 27.383928571428573,
+          "avg_token_cost_usd_yaml_rate": 0.07676432597417729,
+          "avg_energy_kwh": 0.007420360722119757,
+          "avg_electricity_usd": 0.0008904432866543708,
+          "avg_co2e_kg": 0.0016324793588663466,
+          "paper_cost_usd": 0.0008904432866543708,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "SoM": {
+          "available": true,
+          "run_subpath": "B2_som_classifieds_20260611_210828_923656661_1218867_R3380/phase1_som_router_0",
+          "avg_steps": 24.366071428571427,
+          "avg_token_cost_usd_yaml_rate": 0.09077299938973665,
+          "avg_energy_kwh": 0.006951908136390238,
+          "avg_electricity_usd": 0.0008342289763668285,
+          "avg_co2e_kg": 0.0015294197900058524,
+          "paper_cost_usd": 0.0008342289763668285,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "Vision": {
+          "available": true,
+          "run_subpath": "B2_vision_classifieds_20260612_221910_098760264_1351451_R9288/phase1_vision_router_0",
+          "avg_steps": 28.25,
+          "avg_token_cost_usd_yaml_rate": 0.0706544694985359,
+          "avg_energy_kwh": 0.007767282393252817,
+          "avg_electricity_usd": 0.000932073887190338,
+          "avg_co2e_kg": 0.0017088021265156197,
+          "paper_cost_usd": 0.000932073887190338,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-text": {
+          "available": true,
+          "run_subpath": "B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219/phase1_phantom_text_router_0",
+          "avg_steps": 26.848214285714285,
+          "avg_token_cost_usd_yaml_rate": 0.0732028291037958,
+          "avg_energy_kwh": 0.007362529157706359,
+          "avg_electricity_usd": 0.000883503498924763,
+          "avg_co2e_kg": 0.0016197564146953989,
+          "paper_cost_usd": 0.000883503498924763,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-prompt": {
+          "available": true,
+          "run_subpath": "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175/phase1_phantom_prompt_router_0",
+          "avg_steps": 27.84375,
+          "avg_token_cost_usd_yaml_rate": 0.08452676533951214,
+          "avg_energy_kwh": 0.007300065796338096,
+          "avg_electricity_usd": 0.0008760078955605715,
+          "avg_co2e_kg": 0.001606014475194381,
+          "paper_cost_usd": 0.0008760078955605715,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-SoM": {
+          "available": true,
+          "run_subpath": "B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577/phase1_phantom_som_router_0",
+          "avg_steps": 28.383928571428573,
+          "avg_token_cost_usd_yaml_rate": 0.08456491908043794,
+          "avg_energy_kwh": 0.007576227460458638,
+          "avg_electricity_usd": 0.0009091472952550365,
+          "avg_co2e_kg": 0.0016667700413009003,
+          "paper_cost_usd": 0.0009091472952550365,
+          "paper_cost_class": "electricity_equivalent"
+        }
+      }
     }
   },
-  "deployment_class_ratios": {}
+  "deployment_class_ratios": {
+    "classifieds": {
+      "avg_B0_API_dollars": 0.069425,
+      "avg_B1_electricity_dollars": 0.00064804,
+      "ratio_B0_over_B1": 107.13,
+      "note": "ratio across deployment classes, not capability tiers"
+    }
+  }
 }

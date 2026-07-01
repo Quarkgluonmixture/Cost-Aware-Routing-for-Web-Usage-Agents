@@ -125,11 +125,14 @@ Two properties follow from the construction, prior to any experiment. **(a) Cost
 
 # 5 Results I: The Phenomenon
 
-<!-- Data status 2026-07-01 (post-stress fix round): [A] = B0-cls aggregate only;
-     [P] = B1/B2-cls + B0-red 4/6 (frontmatter/diag, aggregation pending — DGX-side
-     aggregation is manifest-gated at 6 B0-cls cells, see NUMBERS_TODO §0);
-     <TBD> = B0-red psom/pprompt (in flight), B1/B2-red (queued), all pooled
-     verdicts. Lift tags only after the aggregation chain ingests each cell. -->
+<!-- Data status 2026-07-01 (post registry-promotion): [A] = 21-cell aggregate
+     (B0/B1/B2 cls ×6 + B0-red dom/som/vision) — run_manifest.yaml promoted from
+     A100 fire_manifest.json (21 bound conditions) 2026-07-01, `make analysis`
+     ingested; [P] = B0-red P-text (landed 07-01, fire-side bind pending);
+     <TBD> = B0-red psom/pprompt (in flight), B1/B2-red (queued), all final
+     verdicts. Interim pools (k=3 cls) recorded in the H1/H3 slots — do NOT
+     promote them to verdicts. Sync recipe when new cells land: rsync A100
+     fire_manifest.json → promote into run_manifest.yaml cells: → make analysis. -->
 
 ## 5.1 Single-mode success rates
 
@@ -138,13 +141,13 @@ Two properties follow from the construction, prior to any experiment. **(a) Cost
 | Cell | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
 |---|---|---|---|---|---|---|
 | cls·B0 [A] | 17.4 | **27.2** | 25.0 | 15.6 | 19.6 | 15.6 |
-| cls·B1 [P] | 6.3 | **14.3** | 12.5 | 7.6 | 6.7 | 6.7 |
-| cls·B2 [P] | 1.3 | 2.2 | 2.2 | 0.4 | 1.8 | 0.9 |
-| red·B0 | 14.6 [P] | 14.6 [P] | 7.8 [P] | 13.7 [P] | \<TBD\> | \<TBD\> |
+| cls·B1 [A] | 6.3 | **14.3** | 12.5 | 7.6 | 6.7 | 6.7 |
+| cls·B2 [A] | 1.3 | 2.2 | 2.2 | 0.4 | 1.8 | 0.9 |
+| red·B0 | 14.6 [A] | 14.6 [A] | 7.8 [A] | 13.7 [P] | \<TBD\> | \<TBD\> |
 | red·B1 | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> |
 | red·B2 | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> |
 
-Three patterns are stable across the landed cells. First, on the visually dense marketplace, full SoM is the strongest single arm at every capability tier (B0: 27.2% vs. 17.4% DOM) — the phantom arms do *not* dominate, and single-mode SR is not the claim. Second, on the text-dominated forum the screenshot-free arms are competitive with the bundle: B0 Reddit DOM 14.6%, SoM 14.6%, P-text 13.7%, while Vision drops to 7.8% — differences among the leading arms sit within the B0 serving-noise floor (~±2.5pp net SR, measured on classifieds same-payload replay; §8) and we describe them as *comparable within sampling error*, not as ranking. Third, capability modulates everything: B1 reproduces the cls ordering at roughly half the SR; B2 sits at a ~1–2% floor on cls — a genuine capability floor on this benchmark (six independent diagnostics; §8) — which mutes its within-cell contrasts and is why the cross-family claim runs through the pre-registered claim-tier gate rather than through pooling sleight-of-hand.
+Three patterns are stable across the landed cells. First, on the visually dense marketplace, full SoM is the strongest single arm at every capability tier (B0: 27.2% vs. 17.4% DOM) — the phantom arms do *not* dominate, and single-mode SR is not the claim. Second, on the text-dominated forum the screenshot-free arms are competitive with the bundle: B0 Reddit DOM 14.6%, SoM 14.6%, P-text 13.7%, while Vision drops to 7.8% — differences among the leading arms sit within the B0 serving-noise floor (~±2.5pp net SR, measured on classifieds same-payload replay; §8) and we describe them as *comparable within sampling error*, not as ranking. Third, capability modulates everything: B1 preserves the top of the cls ordering (SoM strongest, Vision second) at roughly half the SR, though the phantom-arm tail reorders; B2 sits at a ~1–2% floor on cls — a genuine capability floor on this benchmark (six independent diagnostics; §8) — which mutes its within-cell contrasts and is why the cross-family claim runs through the pre-registered claim-tier gate rather than through pooling sleight-of-hand.
 
 ## 5.2 Drop-one oracle: each arm's irreplaceable coverage
 
@@ -161,9 +164,9 @@ For each cell, the six-mode oracle ceiling is the SR of the best arm per task; t
 | P-text | 0.89 | [0.00, 2.23] |
 | P-SoM | 0.89 | [0.00, 2.23] |
 
-Two readings matter. (i) The six-mode ceiling (43.3%) is far above the best single arm (27.2%): over a third of the benchmark's oracle-solvable mass (36 of 97 tasks) lies outside the best single arm, which is the existence proof for representation routing on this cell. (ii) Every arm — including all three phantom arms — carries a positive point-estimate of irreplaceable coverage, with P-prompt's CI excluding zero on this cell. The pre-registered hero gate is *not* a per-cell statement: H1 pools the P-SoM drop-one across all six cells by fixed-effects inverse variance and tests it against +1.0pp. <H1-VERDICT: gate currently INSUFFICIENT_DATA — requires ≥2 complete 6-mode cells; populate from `phase1_prereg_gate.md` once Reddit lands.> The archive substrate, for calibration only, showed pooled P-SoM +2.34pp with I²=0% across three cells [V]; the canonical verdict replaces it.
+Two readings matter. (i) The six-mode ceiling (43.3%) is far above the best single arm (27.2%): over a third of the benchmark's oracle-solvable mass (36 of 97 tasks) lies outside the best single arm, which is the existence proof for representation routing on this cell. (ii) Every arm — including all three phantom arms — carries a positive point-estimate of irreplaceable coverage, with P-prompt's CI excluding zero on this cell. On the other two complete cells the pattern repeats at lower amplitude: P-SoM drop-one is +1.34pp [0.00, 3.12] on cls·B1 and +0.45pp [0.00, 1.34] on the cls·B2 floor [A]. The pre-registered hero gate is *not* a per-cell statement: H1 pools the P-SoM drop-one across all six cells by fixed-effects inverse variance and tests it against +1.0pp. <H1-VERDICT: PARTIAL_DATA as of 2026-07-01 — interim pool over the k=3 complete cells (all classifieds) gives θ_FE = +0.98pp, 95% CI [−0.05, 2.00], *below* the +1.0pp bar on classifieds alone; the k=6 verdict hinges on the three pending Reddit cells (archive calibration [V]: pooled +2.34pp, I²=0%, with Reddit the strongest P-SoM site). Populate from `phase1_prereg_gate.md` when Reddit completes; do NOT quote the interim pool as the verdict.>
 
-The structural gates ask whether the space is genuinely two-dimensional: H3(i) tests whether P-text solves tasks P-SoM does not; H3(ii) the same for P-prompt. <H3-VERDICT: pending pooled computation.> On cls·B0 [A], both axis unique-sets are non-empty under the pre-registered estimand: P-text solves 9 tasks P-SoM misses (4.02pp) and P-prompt 16 tasks (7.14pp) — pairwise non-redundancy against the compound arm, a distinct and looser quantity than Table 3's drop-one irreplaceability against the full portfolio.
+The structural gates ask whether the space is genuinely two-dimensional: H3(i) tests whether P-text solves tasks P-SoM does not; H3(ii) the same for P-prompt. <H3-VERDICT: PARTIAL_DATA — interim FE pools over landed complete cells: axis-1 +3.20pp [1.58, 4.82] (k=2; cls·B2 excluded by the ≥2-task per-cell noise floor) and axis-2 +2.26pp [1.14, 3.38] (k=3), both interim CIs excluding 0; final verdict at k=6.> On cls·B0 [A], both axis unique-sets are non-empty under the pre-registered estimand: P-text solves 9 tasks P-SoM misses (4.02pp) and P-prompt 16 tasks (7.14pp) — pairwise non-redundancy against the compound arm, a distinct and looser quantity than Table 3's drop-one irreplaceability against the full portfolio.
 
 ## 5.3 Complementarity, not average superiority
 
@@ -171,7 +174,7 @@ Cross-mode success-pool overlap is far from complete: same-task Jaccard between 
 
 ## 5.4 Cost and latency: the constructed substrate holds
 
-On the canonical B0-cls cell [A], per-episode billed cost is descriptively flat across arms: DOM $0.0696, P-text $0.0692, P-prompt $0.0685, P-SoM $0.0721, SoM $0.0724 (cell-mean P-SoM/DOM ratio 1.04). The pre-registered H2(a) check is stricter than this marginal comparison — it is the per-task median of *paired* cost ratios against a 1.20× falsification bound — and has not yet been evaluated on any cell (0/1 cells with paired cost data; <TBD>). Note the *absolute* flatness of B0 cost across screenshot-on/off arms is an artifact of the API's pricing bundle; the by-construction claim is about the input pipeline (no page-screenshot tokens, same filtered text), which the falsification check operationalizes. On local backbones, where the image channel is directly measurable, removing the marked screenshot saves 733 (Reddit) and 1064 (cls) image tokens per step [V, B1]. Latency: on the archive substrate, cls P95 step latency was 18.2s (P-SoM) vs. 74.0s (SoM) [V]; canonical retry-adjusted recomputation <TBD>. These are architectural consequences being *verified*, not discoveries being made.
+On the canonical B0-cls cell [A], per-episode billed cost is descriptively flat across arms: DOM $0.0696, P-text $0.0692, P-prompt $0.0685, P-SoM $0.0721, SoM $0.0724. The pre-registered H2(a) check is stricter than this marginal comparison — the per-task median of *paired* cost ratios cost(P-SoM)/cost(DOM) against a 1.20× falsification bound — and on the three landed complete cells it stands unfalsified: per-task median ratios 1.01 (cls·B0), 1.04 (cls·B1), 1.08 (cls·B2) [A]; remaining cells <TBD>. Note the *absolute* flatness of B0 cost across screenshot-on/off arms is an artifact of the API's pricing bundle; the by-construction claim is about the input pipeline (no page-screenshot tokens, same filtered text), which the falsification check operationalizes. On local backbones, where the image channel is directly measurable, removing the marked screenshot saves 733 (Reddit) and 1064 (cls) image tokens per step [V, B1]. Latency: on the archive substrate, cls P95 step latency was 18.2s (P-SoM) vs. 74.0s (SoM) [V]; canonical retry-adjusted recomputation <TBD>. These are architectural consequences being *verified*, not discoveries being made.
 
 ## 5.5 A behavioural two-knob observation (hypothesis-generating)
 
@@ -208,7 +211,7 @@ Across the landed cells the *existence* of phantom-arm coverage appears on both 
 
 **Composition with compute-axis routing.** Representation routing is orthogonal to model/capacity/precision routing and to token pruning; a production stack can route representation per task, prune within the chosen representation, and escalate models on stall. We resist the stronger reading that representation routing *replaces* model routing. We also register a boundary condition: the lever's magnitude tracks the per-step cost of image encoding, and cheaper vision encoders will shrink (not erase) it.
 
-**Existence vs. utility across settings.** On the one complete canonical cell, screenshot-free arms carry unique coverage even though full SoM leads on average; whether that existence pattern replicates across the remaining cells — including the B2 capability floor — is precisely what the pooled gates test (<TBD>). The space's *utility*, by contrast, is already visibly site- and capability-modulated (§5.6). Deployments should expect the routing menu to be worth widening precisely where observations are text-dominated or image encoding is expensive, and the router to be worth training only where per-task signal exists.
+**Existence vs. utility across settings.** On all three complete canonical cells, screenshot-free arms carry unique coverage even though full SoM leads on average — P-SoM uniquely solves 2, 3, and 1 tasks on cls·B0/B1/B2 respectively [A], the last at the pre-registered per-cell noise floor; whether this pattern survives pooling across all six cells is precisely what the gates test (<TBD>). The space's *utility*, by contrast, is already visibly site- and capability-modulated (§5.6). Deployments should expect the routing menu to be worth widening precisely where observations are text-dominated or image encoding is expensive, and the router to be worth training only where per-task signal exists.
 
 # 8 Limitations
 

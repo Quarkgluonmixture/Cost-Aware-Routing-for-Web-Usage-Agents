@@ -209,6 +209,116 @@ cells:
     expected_n: 210
     grade: archived
 
+  # B1 + B2 classifieds + B0 reddit (partial 3/6) — Phase 1a A100 fire, promoted 2026-07-01 from
+  # fire_manifest.json auto-bind (validate_fire_manifest --apply). /diag digests: B1 cls 6/6 +
+  # B2 cls 6/6 + B0 red dom (docs/analysis/vwa_*/); B0 red som/vision diag pending (data paper-grade
+  # per bound-clean verdict; diag = attribution only). B2 known floor: parse_error >1% (B-1876).
+  - baseline: B1
+    site: classifieds
+    mode: DOM
+    run_dir: B1_dom_classifieds_20260603_103630_477435114_112846_R17188
+    condition_subdir: phase1_dom_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-04 (224 ep); /diag done"
+  - baseline: B1
+    site: classifieds
+    mode: P-prompt
+    run_dir: B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516
+    condition_subdir: phase1_phantom_prompt_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-08 (224 ep); /diag done"
+  - baseline: B1
+    site: classifieds
+    mode: P-SoM
+    run_dir: B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199
+    condition_subdir: phase1_phantom_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-07 (224 ep); /diag done"
+  - baseline: B1
+    site: classifieds
+    mode: P-text
+    run_dir: B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933
+    condition_subdir: phase1_phantom_text_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-06 (224 ep); /diag done"
+  - baseline: B1
+    site: classifieds
+    mode: SoM
+    run_dir: B1_som_classifieds_20260604_072456_562166453_226675_R31705
+    condition_subdir: phase1_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-05 (224 ep); /diag done"
+  - baseline: B1
+    site: classifieds
+    mode: Vision
+    run_dir: B1_vision_classifieds_20260605_012235_349047872_327631_R28622
+    condition_subdir: phase1_vision_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-05 (224 ep); /diag done"
+  - baseline: B2
+    site: classifieds
+    mode: DOM
+    run_dir: B2_dom_classifieds_20260609_214713_553762009_985526_R21521
+    condition_subdir: phase1_dom_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-11 (224 ep); /diag done"
+  - baseline: B2
+    site: classifieds
+    mode: P-prompt
+    run_dir: B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175
+    condition_subdir: phase1_phantom_prompt_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-17 (224 ep); /diag done"
+  - baseline: B2
+    site: classifieds
+    mode: P-SoM
+    run_dir: B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577
+    condition_subdir: phase1_phantom_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-16 (224 ep); /diag done"
+  - baseline: B2
+    site: classifieds
+    mode: P-text
+    run_dir: B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219
+    condition_subdir: phase1_phantom_text_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-15 (224 ep); /diag done"
+  - baseline: B2
+    site: classifieds
+    mode: SoM
+    run_dir: B2_som_classifieds_20260611_210828_923656661_1218867_R3380
+    condition_subdir: phase1_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-12 (224 ep); /diag done"
+  - baseline: B2
+    site: classifieds
+    mode: Vision
+    run_dir: B2_vision_classifieds_20260612_221910_098760264_1351451_R9288
+    condition_subdir: phase1_vision_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-14 (224 ep); /diag done"
+  - baseline: B0
+    site: reddit
+    mode: DOM
+    run_dir: B0_dom_reddit_20260625_154833_928747130_2827521_R11344
+    condition_subdir: phase1_dom_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-27 (205 ep); /diag done"
+  - baseline: B0
+    site: reddit
+    mode: SoM
+    run_dir: B0_som_reddit_20260627_035453_162107997_3024022_R20936
+    condition_subdir: phase1_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-28 (205 ep); diag pending"
+  - baseline: B0
+    site: reddit
+    mode: Vision
+    run_dir: B0_vision_reddit_20260628_094255_184327569_3222015_R17559
+    condition_subdir: phase1_vision_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-06-29 (205 ep); diag pending"
+
 in_flight:
   - baseline: B1
     site: classifieds
