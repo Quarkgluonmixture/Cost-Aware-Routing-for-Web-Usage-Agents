@@ -23,7 +23,19 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-01 UPDATE — AAAI-27 定为投稿目标 + 合稿初稿 v0.1 落地** ⭐⭐⭐ 最新先读 (fire 线见下方 06-26→27 块，仍自走):
+> 🔭 **2026-07-01 深夜 UPDATE — fire 停摆 15h 已修复重启 (B0 psom R28173 跑着) + AAAI 新 session 工作队列固化** ⭐⭐⭐ 最新先读:
+> - **✅ fire 已恢复**: ptext 完成后 chain 死 (§359 resume 用单跑 queue_phantom_text, 跑完自然退出, 无人续链 → 停摆 ~15h, cron `inprog=none` 不报警)。首次 relaunch 踩坑: **RESUME_MISSING 跳过判据 = manifest-bound ∧ eps==scored**, 而 bind 是 chain 内步骤 → chain 死时 ptext 从未 bind → relaunch 重跑 ptext (R13246, 已 kill+archive `_archive_duplicate_unbound_ptext_R13246_20260701`)。修复 = 手动 `validate_fire_manifest --populate --apply` (bind ptext → 22) → 再 `launch red` → **B0 phantom_som R28173 UP** (22:33Z, runner+watchdog 活, 前 4 条 reddit 全部正确 SKIP)。**教训/SOP: chain 死后续链前先跑 `--populate --apply` 补 bind, 否则重跑已完成条件**。剩余队列 = psom→pprompt→B1 red ×6→B2 red ×6 (14 cond)。live 状态跑 ① + `make ntfy`。
+> - **🔲 每个 cell land 后**: 走 `paper_drafts/aaai27/NUMBERS_TODO.md §0` sync 配方 (rsync fire_manifest → promote run_manifest → make analysis → draft tags/slots)。
+> - **📋 新 session 工作队列 (user 2026-07-01 决定, 按杠杆排序)**:
+>   ① **拟学长四合一消息** (AAAI venue 消耗 main-conf 提交权 / 真 deadline 7-21+7-28 / k<6 降级预案三选一 / prereg §3 FWER amendment) — 最高杠杆, 等不得
+>   ② **D7 lit-review 章起草** (self 07-13 / 硬线 07-20, **与 AAAI 冲刺同周撞车**, advisor 两大书面 deliverable 之一) — 从 docs/literature + aaai27 §2 corpus 起
+>   ③ **§1/abstract 双分支预写** (H1-pass / H1-fail-H3-pass 两版; H1 interim k=3 = +0.98pp 低于门槛, verdict 押 reddit → 两分支都真可能用上)
+>   ④ **verdict-day runbook**: 脚本化「读 gate JSON → 重生成 Table 2/3/4 → 填 slot → regression grep → 词数」(本 session 4 个 P0 全是转录/压缩漂移, 教训现成)
+>   ⑤ **Pass-2 router 管线预演**: 21-cell 数据上跑通 train_l1_router 全链 + emit `h10_entropy_gate.json` (H10 现 fail-closed 就因它缺失; 别 deadline 周 debug)
+>   ⑥ Figures F1 (2×2 diamond 概念图) + F2 (drop-one forest) · ⑦ **连续性包**: aaai27 工作流/sync 配方/战略态势 → memory 固化 · ⑧ registry sync cron 补丁 (fire_manifest 拉取 + 未-promote ntfy) · ⑨ /diag red som/vision (promote 时标了 diag-pending) · ⑩ LaTeX/AAAI 模板骨架 · ⑪ 砍词 -500 · ⑫ Track B (judge polarity, ~1500 词) 草稿
+> - **有未 push commits** (本日 5 个: draft v0.1 / chronicle / stress fixes / registry 打通 / fire 修复收尾, 叠加此前累积) — push 需 user 确认 (已两问未决)。
+>
+> 🔭 **2026-07-01 UPDATE — AAAI-27 定为投稿目标 + 合稿初稿 v0.1 落地** ⭐⭐ (fire 线见上方深夜块):
 > - **⏰ 真实 deadline 在本月**: AAAI-27 abstract **07-21** / full **07-28** / supp 07-31 (UTC-12)，7 页正文+refs+repro checklist，双盲（官网核实，非 user 记的"下月28"）。venue 与 EMNLP/NeurIPS cascade + D11 early-Sep 有张力 → **advisor 确认 owed**（archival main-conf 提交权 + k<6 降级预案三选一，estimand-adjacent 需 witness）。
 > - **✅ AAAI 合稿初稿 v0.1**: `paper_drafts/aaai27/aaai27_main.md`（submission master，4876 词实测）+ `NUMBERS_TODO.md`（⟨TBD⟩ 槽位→producer 映射 + deadline 风险账 ⭐ 数字/ETA 一律看它，别信 chronicle 冻数）。verdict slots（H1/H3/H10）留空 + (R-CONDITIONAL) 句子按 realized R-tier 重写；§6 router 双分支预写。详 笔记 §360。
 > - **✅ 聚合链已打通 (07-01 晚)**: 门控 = fire_manifest.json (A100 auto-bind, 21 条) → promote 进 run_manifest.yaml → aggregators。已 sync + promote 15 cells → 聚合 21 cells；**H1 interim k=3 (cls-only) θ_FE=+0.98pp [−0.05,2.00] 低于 1.0pp 门槛 — verdict 押在 reddit**；H2(a) 3/3 unfalsified (1.01/1.04/1.08)；H3 interim 两轴 CI 排除 0。draft slots 已同步。新 cell land 后 sync 配方 → `paper_drafts/aaai27/NUMBERS_TODO.md §0`。
