@@ -1,0 +1,93 @@
+%% AAAI-27 submission skeleton (队列⑩, 2026-07-02)
+%% ---------------------------------------------------------------
+%% 依赖 AAAI-27 author kit (aaai27.sty + aaai27.bst) — 官网下载后放本目录;
+%% kit 未到手前本文件编译不过, 结构先锁定, verdict day 只做 body 填充。
+%% 转换流程见 README.md (pandoc 生成 body_generated.tex 后手工整入各 section)。
+%% 匿名纪律: \pdfinfo 不带作者; 全文无 host 名/用户名; OSF 用 anonymous view-only。
+\documentclass[letterpaper]{article}
+\usepackage[submission]{aaai27}   % AAAI-27 kit; camera-ready 时去 [submission]
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\usepackage[hyphens]{url}
+\usepackage{graphicx}
+\urlstyle{rm}
+\def\UrlFont{\rm}
+\usepackage{natbib}
+\usepackage{caption}
+\frenchspacing
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\usepackage{booktabs}   % Tables 1-4
+\usepackage{amsmath}
+
+% 图源: results/phantom_paper/figures/ (pdf 版) — 提交前复制进本目录
+\graphicspath{{./figures/}}
+
+\pdfinfo{
+/TemplateVersion (2027.1)
+}
+
+\title{Phantom Routing Space: Screenshot-Free Observation Arms\\
+as Independent Routing Structure for Multimodal Web Agents}
+% ^ working title — 与 aaai27_main.md 对齐后定稿
+\author{Anonymous submission}   % submission mode 下 kit 自动匿名
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+% <- aaai27_main.md # Abstract (~230 词; verdict slots 填完后转入)
+TODO: abstract from aaai27\_main.md after verdict splice.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+% <- aaai27_main.md §1 (含 branch_prewrites 选支后的 ¶3/¶4)
+% Figure F1 落位: 2x2 diamond schematic
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_f1_diamond_schematic.pdf}
+\caption{The 2$\times$2 ablation diamond over (text-payload format $\times$
+prompt family). TODO: sync caption with aaai27\_main.md Table~1 note.}
+\label{fig:diamond}
+\end{figure}
+
+\section{Related Work}\label{sec:related}
+% <- §2 四段: observation modes / routing / prompt-format / efficient-obs
+
+\section{The Phantom Routing Space}\label{sec:space}
+% <- §3: Table 1 (booktabs) + by-construction properties + scope
+\subsection{Six modes, one substrate}
+\subsection{By-construction properties}
+
+\section{Experimental Setup}\label{sec:setup}
+% <- §4: 三 baseline / gates / prereg / scored sets (cls 224 / red 205)
+
+\section{Results I: The Phenomenon}\label{sec:results}
+% <- §5: Table 2 (SR) / Table 3 (drop-one) / H1 verdict / cost / latency
+% Figure F2 落位: H1 forest
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_f2_h1_forest.pdf}
+\caption{Per-cell P-SoM strict six-mode drop-one with FE pooled diamond
+against the pre-registered $+1.0$pp threshold. TODO: verdict-day regen
+(INTERIM watermark must be absent).}
+\label{fig:h1forest}
+\end{figure}
+
+\section{Results II: A Representation Router}\label{sec:router}
+% <- §6: H10 双分支之一 + Table 4 (+ optional F3 Pareto scatter)
+
+\section{Discussion}\label{sec:discussion}
+% <- §7
+
+\section{Limitations}\label{sec:limitations}
+% <- §8 (含 FWER 表述 — Amendment 03 批准与否决定措辞)
+
+% Reproducibility statement: kit 若要求单独 section/checklist, 从
+% aaai27_main.md # Reproducibility statement 转入
+
+\bibliography{paper}
+\bibliographystyle{aaai27}
+
+\end{document}
