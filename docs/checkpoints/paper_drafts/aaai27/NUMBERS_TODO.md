@@ -32,6 +32,15 @@ run_manifest.yaml → `make analysis FAST=1` → 更新 draft tags/slots。
 | `<H1-VERDICT>` `<H3-VERDICT>` | ≥2 个 6-mode 齐 cell (cls·B0 + red·B0 即可先出首个 pooled 读数; 正式 gate 要 6 cell) | red·B0 齐 (~07-05) 出 k=2 预读; k=6 取决于 B1/B2 red |
 | Table 4 + `<H10-VERDICT>` | Pass-2 router fire (`queue_phase1_router_paper_grade.sh`, 6 cond, ~3-5d) | 排在 Pass-1 后 ⚠️ 高风险 |
 
+**⚠️ Pass-2 预演发现 (2026-07-02, rehearsal dir `results/phantom_paper/l1_router_rehearsal_20260702/`)**:
+训练链 3 段全通 (extract_50_features → with_mi → train_l1_router), `h10_entropy_gate.json` 正常 emit
+(h10_status=ok, global_min_bits=2.10 > 1.0 DEFER 门槛) — H10 fail-closed 缺件已在 verdict 周前排除。
+**但 B2_classifieds router 不可训** (best-mode 标签仅 16 task, 5 fold 全 insufficient_train_data,
+B-1640 runtime 会 loud-fail) — 若 B2_reddit 同地板, H10 ≥5/6 判据数学上最多 4/6 → §6 descriptive
+分支概率高 (已进 advisor 四合一消息 3️⃣(b))。**verdict-day/Pass-2 前必做**: 全 Pass-1 land 后在
+**canonical** `results/phantom_paper/l1_router/` 重跑同链 (rehearsal 目录只是预演, 勿混用), 再 rsync
+lr_fold pkls → A100 (Pass-2 queue 的 artifact gate 检查 30 pkl)。
+
 **产出命令**: `python scripts/analysis/aggregate_phase1_full_prereg_decision.py` (H1/H2a/H3/R-rule) ·
 `python scripts/analysis/aggregate_h10_pareto.py` (H10) · `make analysis` (全管线)。
 
