@@ -23,7 +23,13 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-06-26→27 UPDATE — Fix-4 reddit fire LIVE + 生产 live-verified (无 abort 越过 task-138/151) + reddit 首条 (B0 dom) 已 land bound-clean ✅; D4 (@06-26) 坐实 miss → advisor re-plan** ⭐⭐⭐ 最新先读 (supersedes 06-25 "唯一剩 launch red"):
+> 🔭 **2026-07-01 UPDATE — AAAI-27 定为投稿目标 + 合稿初稿 v0.1 落地** ⭐⭐⭐ 最新先读 (fire 线见下方 06-26→27 块，仍自走):
+> - **⏰ 真实 deadline 在本月**: AAAI-27 abstract **07-21** / full **07-28** / supp 07-31 (UTC-12)，7 页正文+refs+repro checklist，双盲（官网核实，非 user 记的"下月28"）。venue 与 EMNLP/NeurIPS cascade + D11 early-Sep 有张力 → **advisor 确认 owed**（archival main-conf 提交权 + k<6 降级预案三选一，estimand-adjacent 需 witness）。
+> - **✅ AAAI 合稿初稿 v0.1**: `paper_drafts/aaai27/aaai27_main.md`（submission master，4876 词实测）+ `NUMBERS_TODO.md`（⟨TBD⟩ 槽位→producer 映射 + deadline 风险账 ⭐ 数字/ETA 一律看它，别信 chronicle 冻数）。verdict slots（H1/H3/H10）留空 + (R-CONDITIONAL) 句子按 realized R-tier 重写；§6 router 双分支预写。详 笔记 §360。
+> - **🔲 立即可做**: A100 跑一轮 `make analysis`（B1/B2 cls 12 条 + fresh reddit 尚未进聚合，H1 gate 因此 `INSUFFICIENT_DATA`）→ 把 draft [P] 升 [A] + 出 k=2 pooled 预读。
+> - **⚠️ commit 本 prose 前必跑 /stress (+B/C chain)** — CLAUDE.md auto-trigger；aaai27/ 两文件当前 untracked 未 commit。
+>
+> 🔭 **2026-06-26→27 UPDATE — Fix-4 reddit fire LIVE + 生产 live-verified (无 abort 越过 task-138/151) + reddit 首条 (B0 dom) 已 land bound-clean ✅; D4 (@06-26) 坐实 miss → advisor re-plan** ⭐⭐⭐ (supersedes 06-25 "唯一剩 launch red"):
 > - **✅ Fix-4 reddit fire 已启动 + 首条已 land**: user 06-25 15:48Z 已 `launch red` → reddit 首条 run `R11344` (`B0_dom_reddit_20260625_154833_...`; = 06-25 G8-clear 后的 Fix-4 relaunch, FORCE_NEW from ep0, 接 abort#10@task151 之后)。**该条 06-27 已完成 + manifest bound-clean = reddit 史上首条 paper-grade 干净 condition** (此前 reddit 从没跑完过一条)。chain 已自动续进后续 mode — 实时 current run/condition/进度/死活 → 跑 ① `bash scripts/maintenance/paper_grade_check.sh` + `make ntfy` (别冻数字进本行)。§0 06-25 标的 "唯一剩 operator launch red" 已完成。
 > - **✅✅ Fix 4 生产环境 LIVE-VERIFIED (核心里程碑)**: R11344 已无 abort 跑过 **task 138 (改用户名 = B-1884 自毁级联根因)** 且越过 **task 151 (abort#10 前次失败点)** → `restore_reddit_identity()` 每-task 幂等复原**在真实 fire 里成立**, 自毁级联根除 (= 一次性已成立的事实, 不随 fire 进度变)。§0 06-25 的 verify-script 只证 SQL heal 单点, **整条 fire 撑过 138 = 现 PASSED**。Fix 4 (= estimand a clean-per-task) 实战闭环。⚠️ **这是 finding** — reddit 条件跑完后须 append 笔记 §358 chronicle (本次只更 live state, 未写笔记)。
 > - **bound-clean = cls 18 全 + reddit 首条 (B0 dom)** (manifest 0 ghost / 0 unbound; 实时计数跑 ①); verdict **ISSUES=5 全 = B2(Gemma) cls parse_error >1%** = 已知 floor (§327 / B-1876 / 每次 cron verdict 都在, **非新回归、非 fire-blocker**)。
