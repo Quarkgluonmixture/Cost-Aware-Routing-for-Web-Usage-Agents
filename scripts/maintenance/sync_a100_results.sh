@@ -195,6 +195,23 @@ for d in "${A100_TOPLEVEL_DIRS[@]}"; do
   fi
 done
 
+# 队列⑧ (2026-07-02, §360.3 根因补丁): fire_manifest binding 状态 watch。
+# episode 数据有 15-min sync, 但 binding 登记 (A100 validate_fire_manifest --apply
+# → fire_manifest.json) 此前无同步路径 → bound cell 不 promote 就静默不进聚合
+# (B1/B2 cls 三周教训)。拉到 STAGING 副本 (不覆盖 git-tracked
+# docs/checkpoints/pre_run/fire_manifest.json — promote 仍是手动 deliberate 步骤,
+# 见 NUMBERS_TODO §0 配方), 再 diff registry, gap 集合变化时 ntfy。非致命。
+FIRE_MANIFEST_STAGE="${REPO_ROOT}/logs/cron/fire_manifest_a100_latest.json"
+mkdir -p "${REPO_ROOT}/logs/cron"
+if rsync -az -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
+     "${A100_HOST}:/home/ubuntu/workspace/p79/docs/checkpoints/pre_run/fire_manifest.json" \
+     "${FIRE_MANIFEST_STAGE}" 2>/dev/null; then
+  .venv/bin/python3 scripts/maintenance/check_manifest_promotion_gap.py \
+    --fire "${FIRE_MANIFEST_STAGE}" 2>&1 | sed 's/^/    /' || true
+else
+  log "  - fire_manifest staging pull failed (non-fatal; next tick retries)"
+fi
+
 # Post-sync: detect new condition_summary_v2.json
 SUMMARY_AFTER=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.json" 2>/dev/null | sort)
 NEW_SUMMARIES=$(comm -13 <(echo "${SUMMARY_BEFORE}") <(echo "${SUMMARY_AFTER}") | grep -v '^$' || true)

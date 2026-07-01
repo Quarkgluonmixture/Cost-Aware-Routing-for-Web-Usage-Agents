@@ -16,7 +16,7 @@ run_manifest.yaml → `make analysis FAST=1` → 更新 draft tags/slots。
 
 | 剩余槽位 | 现状 | 动作 |
 |---|---|---|
-| red·B0 P-text `[P]→[A]` | run 已完成 (07-01) 但 fire 侧还没 auto-bind | 等 A100 validate_fire_manifest 下一轮 bind → 走 sync 配方 |
+| ~~red·B0 P-text `[P]→[A]`~~ | ✅ DONE 2026-07-02: R32139 promoted + 22-cell 聚合 + Table 2 升 [A] | (队列⑧ 补丁顺带完成; promotion-gap watch 已 cron 化) |
 | §5.4 latency canonical (retry-adjusted) | 只有 archive p95 [V] | aggregator emit `total_minus_retry_ms` per-mode 表（cross_sites cost_per_mode 目前无 wall-clock 列，需补列） |
 | §6 AUROC 全 cell | auroc_cross_condition 需确认是否已扩到 21 cells | 查 `auroc_cross_condition.md`，扩了就把 §6 那句的 per-cell 范围更新 |
 | ⚠️ figures 阶段 2 个 pre-existing 崩点 | ① `fig0c` 系 `max() empty`（首轮）② `axis1_microbehavior.py` KeyError `'mean_jaccard'`（partial reddit 数据） | 修 figure 脚本对 partial-cell 的容错；不 block 聚合（aggregators 在 figures 之前已完成） |

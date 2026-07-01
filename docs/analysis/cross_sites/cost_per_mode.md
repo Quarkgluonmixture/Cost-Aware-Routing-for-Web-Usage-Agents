@@ -9,6 +9,7 @@ B0 reports avg_total_cost_usd from per-token API rates (Qwen3-VL-235B-A22B $0.00
 | reddit | DOM | 20.2 | $0.1013 |
 | reddit | SoM | 20.0 | $0.1100 |
 | reddit | Vision | 23.2 | $0.0975 |
+| reddit | P-text | 23.0 | $0.1050 |
 | classifieds | DOM | 15.6 | $0.0696 |
 | classifieds | SoM | 13.7 | $0.0724 |
 | classifieds | Vision | 15.9 | $0.0648 |

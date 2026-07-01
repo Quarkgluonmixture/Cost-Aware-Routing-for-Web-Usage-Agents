@@ -318,6 +318,13 @@ cells:
     condition_subdir: phase1_vision_router_0
     grade: paper-grade
     notes: "A100 fire, bound 2026-06-29 (205 ep); diag pending"
+  - baseline: B0
+    site: reddit
+    mode: P-text
+    run_dir: B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139
+    condition_subdir: phase1_phantom_text_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-01 (205 ep, §359 resume + §360.4 手动 bind); diag pending"
 
 in_flight:
   - baseline: B1

@@ -47,6 +47,18 @@
           "paper_cost_usd": 0.09747008292682927,
           "paper_cost_class": "API_total_billed_dollars",
           "paper_cost_estimand": "avg_total_billed_cost_usd (AMENDMENT_01 \u00a71 PRIMARY)"
+        },
+        "P-text": {
+          "available": true,
+          "run_subpath": "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/phase1_phantom_text_router_0",
+          "avg_steps": 22.990243902439026,
+          "avg_token_cost_usd_yaml_rate": 0.10495548428541043,
+          "avg_energy_kwh": null,
+          "avg_electricity_usd": null,
+          "avg_co2e_kg": null,
+          "paper_cost_usd": 0.10495361951219512,
+          "paper_cost_class": "API_total_billed_dollars",
+          "paper_cost_estimand": "avg_total_billed_cost_usd (AMENDMENT_01 \u00a71 PRIMARY)"
         }
       },
       "classifieds": {

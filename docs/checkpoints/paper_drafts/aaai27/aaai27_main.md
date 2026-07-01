@@ -125,14 +125,15 @@ Two properties follow from the construction, prior to any experiment. **(a) Cost
 
 # 5 Results I: The Phenomenon
 
-<!-- Data status 2026-07-01 (post registry-promotion): [A] = 21-cell aggregate
-     (B0/B1/B2 cls ×6 + B0-red dom/som/vision) — run_manifest.yaml promoted from
-     A100 fire_manifest.json (21 bound conditions) 2026-07-01, `make analysis`
-     ingested; [P] = B0-red P-text (landed 07-01, fire-side bind pending);
+<!-- Data status 2026-07-02 (post registry-promotion): [A] = 22-cell aggregate
+     (B0/B1/B2 cls ×6 + B0-red dom/som/vision/P-text) — run_manifest.yaml promoted
+     from A100 fire_manifest.json (22 bound conditions; P-text R32139 promoted
+     2026-07-02), `make analysis` ingested;
      <TBD> = B0-red psom/pprompt (in flight), B1/B2-red (queued), all final
      verdicts. Interim pools (k=3 cls) recorded in the H1/H3 slots — do NOT
      promote them to verdicts. Sync recipe when new cells land: rsync A100
-     fire_manifest.json → promote into run_manifest.yaml cells: → make analysis. -->
+     fire_manifest.json → promote into run_manifest.yaml cells: → make analysis
+     (promotion-gap watch now cron-automated: check_manifest_promotion_gap.py). -->
 
 ## 5.1 Single-mode success rates
 
@@ -143,7 +144,7 @@ Two properties follow from the construction, prior to any experiment. **(a) Cost
 | cls·B0 [A] | 17.4 | **27.2** | 25.0 | 15.6 | 19.6 | 15.6 |
 | cls·B1 [A] | 6.3 | **14.3** | 12.5 | 7.6 | 6.7 | 6.7 |
 | cls·B2 [A] | 1.3 | 2.2 | 2.2 | 0.4 | 1.8 | 0.9 |
-| red·B0 | 14.6 [A] | 14.6 [A] | 7.8 [A] | 13.7 [P] | \<TBD\> | \<TBD\> |
+| red·B0 | 14.6 [A] | 14.6 [A] | 7.8 [A] | 13.7 [A] | \<TBD\> | \<TBD\> |
 | red·B1 | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> |
 | red·B2 | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> |
 
