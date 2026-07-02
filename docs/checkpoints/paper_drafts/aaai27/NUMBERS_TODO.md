@@ -50,10 +50,11 @@ lr_fold pkls → A100 (Pass-2 queue 的 artifact gate 检查 30 pkl)。
   Pass-1 全齐 ≈ **07-17±3**；Pass-2 router 6 cond ≈ +3-5d → **07-20~07-24**，分析 +1d。
 - ⇒ 全量 6-cell verdict 版本 vs 07-28 full deadline: **可行但零余量**；abstract (07-21) 时
   大概率只有 k=2~4 cell。
-- **降级预案 (跟学长确认)**: (a) 主文以 landed cells + pooled-k<6 透明披露投稿（prereg 有
-  fixed-cells 设计，k 不齐必须明写，不能静默降 k）; (b) H10 若 Pass-2 赶不上 → §6 走
-  descriptive operating-points 分支（draft 已双分支预写）; (c) 弃 AAAI 回 D11 early-Sep 原计划。
-- ⚠️ **决定 (a)/(b)/(c) = estimand-adjacent 决策，需 advisor + witness**，不是工程可拍。
+- **✅ 降级预案已定 (user 拍板 2026-07-02): a+b 组合** — (a) deadline 时以 landed cells + pooled-k<6
+  透明披露投稿 (fixed-cells 设计, k 不齐必须明写); (b) H10 若 Pass-2 赶不上 → §6 走 descriptive
+  operating-points 分支。(c) 弃 AAAI 已排除 — **venue 同日拍板 = 投 AAAI-27**。
+- 附带同日决策: Amendment 03 (FWER) 不走 (论文保持现有 hedge 表述, prereg 不动); B-1885 两死任务
+  **分母 205 不动**, §8 Scope 段披露句已落 (2026-07-02)。
 
 ## 3. 写作侧遗留 (不依赖数据)
 
