@@ -23,7 +23,13 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-01 深夜 UPDATE — fire 停摆 15h 已修复重启 (B0 psom R28173 跑着) + AAAI 新 session 工作队列固化** ⭐⭐⭐ 最新先读:
+> 🔭 **2026-07-02 UPDATE — 12 项队列自走完毕 (①-⑫ 全推进, 详下方深夜块逐项钩) + 下 session 入口** ⭐⭐⭐ 最新先读:
+> - **🔲 下 session 首件事 = /stress + codex + gemini chain**, scope = 3 个 prose 持牌件 (工作树未 commit): `aaai27_main.md` 砍词稿 (-214) / `branch_prewrites_s1_abstract.md` (双分支预写) / `trackB_judge_polarity_note.md` (2055 词 v0) → 修完跑 banned grep (item 9 带 `| grep -v` 免疫) → 分块 commit。
+> - **🔲 user 三个待决**: ① 学长四合一消息 (`deliverables/advisor_msg_4in1_2026-07-01.md`, 含 Amendment 03 拟稿) **审后发送**; ② 本 session 6 commits (`c81e77f`..`92022a5`) **push 待确认**; ③ B-1885 分母豁免 (103/104 config-FP) 并入 advisor estimand 议题包。
+> - **fire**: B0 psom R28173 健康 (07-02 08:17Z 41/205, ~15min/ep, ETA ~07-04) → pprompt → B1×6 → B2×6。每 cell land 走 NUMBERS_TODO §0 配方 (**promotion-gap watch 已 cron 化**, 漏 promote 会 ntfy)。psom/pprompt land 后各自 `/diag` (som/vision digest 已齐)。
+> - **本 session 硬产出速览**: verdict-day 工具链 (slotsheet+runbook+双分支+F1/F2+LaTeX) / Pass-2 预演通 + **B2_cls router 不可训 → H10 ≤4/6 风险** / B-1885 / reddit som+vision 双 diag / 22-cell 聚合 (red P-text [A])。chronicle → 笔记 §361。
+>
+> 🔭 **2026-07-01 深夜 UPDATE — fire 停摆 15h 已修复重启 (B0 psom R28173 跑着) + AAAI 新 session 工作队列固化** ⭐⭐ (队列已全钩, 见上方 07-02 块):
 > - **✅ fire 已恢复**: ptext 完成后 chain 死 (§359 resume 用单跑 queue_phantom_text, 跑完自然退出, 无人续链 → 停摆 ~15h, cron `inprog=none` 不报警)。首次 relaunch 踩坑: **RESUME_MISSING 跳过判据 = manifest-bound ∧ eps==scored**, 而 bind 是 chain 内步骤 → chain 死时 ptext 从未 bind → relaunch 重跑 ptext (R13246, 已 kill+archive `_archive_duplicate_unbound_ptext_R13246_20260701`)。修复 = 手动 `validate_fire_manifest --populate --apply` (bind ptext → 22) → 再 `launch red` → **B0 phantom_som R28173 UP** (22:33Z, runner+watchdog 活, 前 4 条 reddit 全部正确 SKIP)。**教训/SOP: chain 死后续链前先跑 `--populate --apply` 补 bind, 否则重跑已完成条件**。剩余队列 = psom→pprompt→B1 red ×6→B2 red ×6 (14 cond)。live 状态跑 ① + `make ntfy`。
 > - **🔲 每个 cell land 后**: 走 `paper_drafts/aaai27/NUMBERS_TODO.md §0` sync 配方 (rsync fire_manifest → promote run_manifest → make analysis → draft tags/slots)。
 > - **📋 新 session 工作队列 (user 2026-07-01 决定, 按杠杆排序)**:
