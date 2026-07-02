@@ -23,7 +23,12 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-02 UPDATE — 12 项队列自走完毕 (①-⑫ 全推进, 详下方深夜块逐项钩) + 下 session 入口** ⭐⭐⭐ 最新先读:
+> 🔭 **2026-07-02 晚 UPDATE — psom R28173 abort@task87 (proxy 503) → resume 闭环, fire 已恢复推进** ⭐⭐⭐ 最新先读:
+> - **✅ abort + recovery 全闭环** (详 笔记 §362): task 87 撞 proxy 503 (18:08–18:44Z ~36min outage, 打穿 B-1880 wait-out) → fail-closed abort 83/205 → PROTOCOL_NOTE_03 resume 第 4 次实战 (`FORCE_NEW=0 RESET_BEFORE=0` 单跑 queue_phantom_som) → task 87 rerun 干净 (error=None merit-failure) → classify `transient_drift` via resume_rerun_clean → **G8 preflight 绿**。registry 已 sync DGX (37→39 行, 前缀不变式成立)。
+> - **🔴 psom 完成后 operator 动作 (runner 退出时 ntfy p79-claude 会响, ETA ~07-04)**: 单跑 queue 自然退出**不续链且不 bind** (07-01 深夜同坑) → 必须先 A100 `validate_fire_manifest --populate --apply` 补 bind psom → 再 `launch red` (skip 已 bind, 续 pprompt→B1×6→B2×6)。DGX 侧双 done-monitor 已挂。
+> - **⚠️ 48h 内第 2 次同签名 proxy 长 outage** (6-30 task80 / 7-02 task87, 均 >35min) — DashScope 直连议题权重 +1 (学长消息 v2 pending 项)。
+>
+> 🔭 **2026-07-02 UPDATE — 12 项队列自走完毕 (①-⑫ 全推进, 详下方深夜块逐项钩) + 下 session 入口** ⭐⭐⭐:
 > - **✅ /stress chain DONE 2026-07-02** (user "直接做吧" 授权): A5+B5+C4 = 12 findings 全修 (Track B 归因重大更正 89f5af2 两层拆分 / cancellation 谬误→差分压缩 / Branch A 矩阵收紧 / 槽位真实字段名 / aaai27 限定语回填)。prose 三件已 commit (`b684306`) + **全部 push 完** (`823c43c..b684306`)。详 笔记 §361.6。
 > - **✅ user 四项拍板 2026-07-02** (詳 §361.7 + paper_planning §19): **venue=AAAI-27** / 预案 **a+b** / **Amendment 03 撤** (论文保持 hedge 两层表述) / **B-1885 分母 205 不动** (§8 披露句已落)。唯一余项: 学长消息**知会版 v2** (`deliverables/advisor_msg_4in1_2026-07-01.md`) 待 user 审后发送 (决策已定, 消息只知会+留异议窗口)。
 > - **fire**: B0 psom R28173 健康 (07-02 08:17Z 41/205, ~15min/ep, ETA ~07-04) → pprompt → B1×6 → B2×6。每 cell land 走 NUMBERS_TODO §0 配方 (**promotion-gap watch 已 cron 化**, 漏 promote 会 ntfy)。psom/pprompt land 后各自 `/diag` (som/vision digest 已齐)。
