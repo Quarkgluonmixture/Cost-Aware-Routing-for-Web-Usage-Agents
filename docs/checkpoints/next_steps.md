@@ -24,8 +24,8 @@ updated: 2026-06-27
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
 > 🔭 **2026-07-02 UPDATE — 12 项队列自走完毕 (①-⑫ 全推进, 详下方深夜块逐项钩) + 下 session 入口** ⭐⭐⭐ 最新先读:
-> - **🔲 下 session 首件事 = /stress + codex + gemini chain**, scope = 3 个 prose 持牌件 (工作树未 commit): `aaai27_main.md` 砍词稿 (-214) / `branch_prewrites_s1_abstract.md` (双分支预写) / `trackB_judge_polarity_note.md` (2055 词 v0) → 修完跑 banned grep (item 9 带 `| grep -v` 免疫) → 分块 commit。
-> - **🔲 user 三个待决**: ① 学长四合一消息 (`deliverables/advisor_msg_4in1_2026-07-01.md`, 含 Amendment 03 拟稿) **审后发送**; ② 本 session 6 commits (`c81e77f`..`92022a5`) **push 待确认**; ③ B-1885 分母豁免 (103/104 config-FP) 并入 advisor estimand 议题包。
+> - **✅ /stress chain DONE 2026-07-02** (user "直接做吧" 授权): A5+B5+C4 = 12 findings 全修 (Track B 归因重大更正 89f5af2 两层拆分 / cancellation 谬误→差分压缩 / Branch A 矩阵收紧 / 槽位真实字段名 / aaai27 限定语回填)。prose 三件已 commit (`b684306`) + **全部 push 完** (`823c43c..b684306`)。详 笔记 §361.6。
+> - **🔲 user 两个待决**: ① 学长四合一消息 (`deliverables/advisor_msg_4in1_2026-07-01.md`, 含 Amendment 03 拟稿) **审后发送**; ② B-1885 分母豁免 (103/104 config-FP) 并入 advisor estimand 议题包 (可加进四合一作第五点或后续单发)。
 > - **fire**: B0 psom R28173 健康 (07-02 08:17Z 41/205, ~15min/ep, ETA ~07-04) → pprompt → B1×6 → B2×6。每 cell land 走 NUMBERS_TODO §0 配方 (**promotion-gap watch 已 cron 化**, 漏 promote 会 ntfy)。psom/pprompt land 后各自 `/diag` (som/vision digest 已齐)。
 > - **本 session 硬产出速览**: verdict-day 工具链 (slotsheet+runbook+双分支+F1/F2+LaTeX) / Pass-2 预演通 + **B2_cls router 不可训 → H10 ≤4/6 风险** / B-1885 / reddit som+vision 双 diag / 22-cell 聚合 (red P-text [A])。chronicle → 笔记 §361。
 >
