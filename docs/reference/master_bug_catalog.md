@@ -8477,3 +8477,25 @@ So `action_success` is **NOT gated** on `locator_route_meta.success` — the dis
 **Cross-link**: B-1878/B-1879/B-1880/B-1881/B-1882/B-1883 (reddit abort saga; auth-class 那条 = 本 bug 的 band-aid); reddit task 138 (VWA test_reddit.json, 改名任务); VWA `run.py`/`envs.py:172` (require_reset 只 cls); [[reference-condenser-a100-infra]]; 笔记 §354 (初版叙事, 已标 superseded) + §355 (更正叙事)。
 
 ---
+
+### B-1885. VWA reddit task 103+104 config program_html eval URL 错指 task 102 帖子 (copy-paste) → 两 task 全 mode 全 model 系统性不可赢 (benchmark-FP / 上游 task-config bug) 🔎 DIAGNOSED (2026-07-02)
+
+**发现**: /diag B0 som reddit (R20936) Tier-2 深挖 task 103 (sub-agent) + Tier-3 全站扫描证实。**205 个 reddit
+task config 中恰 2 个** (103, 104) 的 `eval.program_html[1].url` 指向 `f/MechanicalKeyboards/56362` (= task 102
+的帖子), 而各自 start_url 分别为 `f/memes/41674` / `f/memes/21059` — 上游 VWA task-config 复制粘贴错误。
+实证: som task 103 agent 在正确帖发了正确评论 (`eval_source_agent_url=f/memes/41674/comment/2`) 仍判 fail;
+vision task 104 独立 sub-agent 复核同结论 (2-AI 收敛)。
+
+**影响面**: 该 2 task 在**所有 mode × 所有 model** 判 fail → (a) 对 mode 间/model 间对比**无偏** (全员同败,
+paired 对比抵消); (b) 压低绝对 SR 天花板 ~2/205≈1.0pp + oracle ceiling 同幅; (c) drop-one/unique-pass 不受影响
+(无 mode 能解)。**非 fire-blocker, 不触发 rerun** — 披露级 (paper §8 evaluator-reliability 段落可引作
+自证数据点, 与 B-91/B-535 同一 taxonomy: 上游 benchmark 质量)。
+
+**处置**: ① 检测已 0-token 化候选 (R-som-9 `P-FP-eval-url-mismatch`: config 加载时比对 start_url ↔
+program_html[*].url 帖子路径; reddit 全站扫描脚本一次性跑过, cls/shop 待扫); ② 上游 VWA issue 候选
+(独立 bug 研究 paper / agisdk 聚合线索材); ③ scored_task_count 是否豁免 2 task = **estimand 决策 defer**
+(prereg 锁 205 分母; 豁免会改分母 → 需 advisor + witness, 现状维持 205 不动, 只在 §8 披露)。
+
+**Cross-link**: /diag digest `docs/analysis/vwa_reddit/B0_som_reddit_diag_digest.md` §8-§9; B-91 (judge
+polarity, 同 taxonomy); Track B note (`paper_drafts/trackB_judge_polarity_note.md`, evaluator-reliability
+证据链); 笔记 §361 (本 session chronicle)。
