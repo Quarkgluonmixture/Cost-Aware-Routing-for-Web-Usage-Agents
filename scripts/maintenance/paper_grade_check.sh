@@ -20,11 +20,23 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LOG="${REPO_ROOT}/logs/cron/paper_grade_check.log"
 mkdir -p "$(dirname "$LOG")"
 
-OUT="$(timeout 180 ssh "$A100" "cd ${REMOTE} && \
-  .venv/bin/python3 scripts/maintenance/paper_grade_check.py 2>&1; \
-  echo '===MANIFEST==='; \
-  .venv/bin/python3 scripts/analysis/validate_fire_manifest.py 2>&1 | tail -3" 2>&1)"
-SSH_RC=$?
+# Host guard (2026-07-03): running this wrapper ON the A100 itself used to
+# `ssh condense-a100` (alias only resolvable from DGX) → rc=255 → pushed a
+# false "could NOT reach A100" alert (2 real incidents 2026-07-03 08:35Z).
+# On the A100, run the validators locally instead of ssh-ing to ourselves.
+if [ "$(hostname)" = "a100-jiaming-test" ]; then
+  OUT="$(cd "${REMOTE}" && \
+    .venv/bin/python3 scripts/maintenance/paper_grade_check.py 2>&1; \
+    echo '===MANIFEST==='; \
+    .venv/bin/python3 scripts/analysis/validate_fire_manifest.py 2>&1 | tail -3)"
+  SSH_RC=$?
+else
+  OUT="$(timeout 180 ssh "$A100" "cd ${REMOTE} && \
+    .venv/bin/python3 scripts/maintenance/paper_grade_check.py 2>&1; \
+    echo '===MANIFEST==='; \
+    .venv/bin/python3 scripts/analysis/validate_fire_manifest.py 2>&1 | tail -3" 2>&1)"
+  SSH_RC=$?
+fi
 
 {
   echo "===================================================================="
