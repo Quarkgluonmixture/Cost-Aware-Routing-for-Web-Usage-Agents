@@ -37,7 +37,13 @@ MODE="${1:-healthcheck}"
 # relaunch log (e.g. fire6_relaunch_20260522_124915.log line 61 'rc=1 cascade halt') and
 # grep rc=[1-9] false-positived "FATAL/abort in fire log" every 30-min tick. Newest-by-mtime
 # wins → during a live fire the today chain log is selected; old globs remain as fallback.
-FIRELOG="$(ls -t logs/queue_phase1_cls_*.log logs/queue_phase1_red_*.log logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
+# 2026-07-03 (4th naming-drift incarnation after B-1825/B-1827/B-1840): ad-hoc
+# detour chains launched directly via queue_chain.sh write logs/queue_chain_*.log
+# (e.g. queue_chain_b1b2_red_proxyout_20260703.log, proxy-outage B1/B2 detour) —
+# absent from this glob, ls -t pinned yesterday's ABORTED queue_phase1_red_* log
+# while _orch_up saw the live detour chain → "FATAL/abort in fire log" spam every
+# 30-min tick (3 false alerts 10:30/11:00/11:30Z). Include queue_chain_* family.
+FIRELOG="$(ls -t logs/queue_phase1_cls_*.log logs/queue_phase1_red_*.log logs/queue_chain_*.log logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
 [ -z "$FIRELOG" ] && FIRELOG="logs/fire6_phase1a.log"
 RESULTS="results/visualwebarena/phase1"
 

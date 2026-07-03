@@ -8499,3 +8499,23 @@ program_html[*].url 帖子路径; reddit 全站扫描脚本一次性跑过, cls/
 **Cross-link**: /diag digest `docs/analysis/vwa_reddit/B0_som_reddit_diag_digest.md` §8-§9; B-91 (judge
 polarity, 同 taxonomy); Track B note (`paper_drafts/trackB_judge_polarity_note.md`, evaluator-reliability
 证据链); 笔记 §361 (本 session chronicle)。
+
+## B-1886 — fire6 FIRELOG 命名漂移第 4 号: 直呼 queue_chain.sh 的 detour log 不在 glob (2026-07-03)
+
+**B-1886** (fire6 假警报, **FIXED**, B-1825/B-1827/B-1840 同家族第 4 次) — proxy-outage B1/B2 detour
+(user 拍板 ③, 2026-07-03) 直接 `queue_chain.sh` 自定义 12-cell 列表启动, log 命名
+`logs/queue_chain_b1b2_red_proxyout_20260703.log` 不在 FIRELOG glob 四家族
+(`queue_phase1_{cls,red}_*` / `fire6_phase1a*` / `fire6_relaunch_*`) 内 → `ls -t` pin 到前日
+ABORTED `queue_phase1_red_20260701_*.log` (含 PaperGradeAbort/rc=1 文本), 而 `_orch_up` 认得
+`queue_chain.sh` 进程 = orch UP → 进入 in-flight 分支后 tail-300 grep 稳定命中 →
+**"FATAL/abort in fire log" 每 30-min 空转报警** (实证 3 条 10:30/11:00/11:30Z, B1 chain 实际健康)。
+
+**修**: glob 加 `logs/queue_chain_*.log` 家族 (`fire6_monitor.sh:40` 附注释), newest-by-mtime 恢复
+"live log 优先"不变式; 双端部署 (DGX + rsync A100), A100 手动 healthcheck 验证静默。
+
+**教训**: `_orch_up` 检测 (进程名) 与 FIRELOG 检测 (log glob) 是**两套命名约定**, 加新启动路径时
+必须同时对齐两者 — B-1840 修了 launcher-era 家族却没预留 ad-hoc queue_chain 直呼场景; 任何
+"绕 launcher 直启 chain" 的恢复操作 (resume-on-abort / detour) 都会再踩, 已在 glob 注释里点名。
+
+**Cross-link**: B-1825/B-1827/B-1840 (前 3 号); 笔记 §363 (proxy outage #3 + detour chronicle, 待写);
+next_steps §0 2026-07-03 块; commit 本节。
