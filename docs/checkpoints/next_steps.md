@@ -27,7 +27,7 @@ updated: 2026-06-27
 > - **🔴 abort#3**: psom R28173 resume 段健康推进 62 ep (84→146) 后, task 149 再撞 proxy 503 (07:32Z abort, registry 已 append 未 classify — 等 rerun 证据, 同 task87 模式)。**本次 outage 异常**: ~06:58Z 起 >2.5h 无自愈 (前两次 ~36min), 503 body + 30s 稳定耗时 = API Gateway 集成超时, 后端挂死疑需人工重启。
 > - **⏳ probe 循环已挂** (DGX bg, 5min/探, 连续 3×200 判恢复, 12h 兜底) → 恢复自动通知 → resume psom + rerun/classify task149 (协议同 §362)。
 > - **📨 管理员证据包已备好**: `deliverables/proxy_admin_outage_evidence_2026-07-03.md` (60h 3 次 outage 时间线 + apigw-requestid + DashScope 议题) — **待 user 审后发学长/proxy 管理员**。
-> - **🎯 待 user 拍板**: proxy 恢复无期时是否乱序先跑 B1×6/B2×6 (local 模型不依赖 proxy, AAAI 07-21 下纯赚 wallclock; 代价 = 每条跑完手动 `--populate --apply` 补 bind + proxy 恢复时 B0 resume 需排队)。未拍板前不动。
+> - **✅ user 拍板 ③ (2026-07-03) + 学长消息已发**: **12-cell B1/B2 reddit chain 已启动** (直接 `queue_chain.sh` 自定义列表, 不过 G8 [G8 只在 launch 层], RESET_BEFORE=1 默认, chain pid=3849518, log=`logs/queue_chain_b1b2_red_proxyout_20260703.log`)。[1/12] B1 dom reddit UP (10:13Z, run_id=B1_dom_reddit_20260703)。顺序 = B1 dom/som/vision/ptext/psom/pprompt → B2 同 6 模式。**B0 插回策略 = chain 完成后**: bind 检查 (`--populate --apply`) → B0 psom resume (146/205+task149 rerun/classify) → B0 pprompt → 最后 `launch red` 兜底校验。proxy 恢复通知到达时 B1/B2 若在跑, B0 排队不并行 (同 site 一 baseline 硬规则)。DGX 双 bg monitor: probe 循环 (proxy) + chain-exit (72h 兜底)。
 > - **✅ 顺带修**: paper_grade_check.sh host guard (`7c4eb13`) — 在 A100 上误跑 wrapper 曾致 2 条假 "could NOT reach A100" 告警 (08:35Z, 已 all-clear 澄清 + 双端部署)。
 >
 > 🔭 **2026-07-02 晚 UPDATE — psom R28173 abort@task87 (proxy 503) → resume 闭环, fire 已恢复推进** ⭐⭐:
