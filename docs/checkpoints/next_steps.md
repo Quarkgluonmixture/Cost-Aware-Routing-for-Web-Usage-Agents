@@ -23,7 +23,14 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-02 晚 UPDATE — psom R28173 abort@task87 (proxy 503) → resume 闭环, fire 已恢复推进** ⭐⭐⭐ 最新先读:
+> 🔭 **2026-07-03 UPDATE — abort#3 task149 (proxy outage >2.5h 未自愈, 史上最长) + 待 user 拍板恢复策略** ⭐⭐⭐ 最新先读:
+> - **🔴 abort#3**: psom R28173 resume 段健康推进 62 ep (84→146) 后, task 149 再撞 proxy 503 (07:32Z abort, registry 已 append 未 classify — 等 rerun 证据, 同 task87 模式)。**本次 outage 异常**: ~06:58Z 起 >2.5h 无自愈 (前两次 ~36min), 503 body + 30s 稳定耗时 = API Gateway 集成超时, 后端挂死疑需人工重启。
+> - **⏳ probe 循环已挂** (DGX bg, 5min/探, 连续 3×200 判恢复, 12h 兜底) → 恢复自动通知 → resume psom + rerun/classify task149 (协议同 §362)。
+> - **📨 管理员证据包已备好**: `deliverables/proxy_admin_outage_evidence_2026-07-03.md` (60h 3 次 outage 时间线 + apigw-requestid + DashScope 议题) — **待 user 审后发学长/proxy 管理员**。
+> - **🎯 待 user 拍板**: proxy 恢复无期时是否乱序先跑 B1×6/B2×6 (local 模型不依赖 proxy, AAAI 07-21 下纯赚 wallclock; 代价 = 每条跑完手动 `--populate --apply` 补 bind + proxy 恢复时 B0 resume 需排队)。未拍板前不动。
+> - **✅ 顺带修**: paper_grade_check.sh host guard (`7c4eb13`) — 在 A100 上误跑 wrapper 曾致 2 条假 "could NOT reach A100" 告警 (08:35Z, 已 all-clear 澄清 + 双端部署)。
+>
+> 🔭 **2026-07-02 晚 UPDATE — psom R28173 abort@task87 (proxy 503) → resume 闭环, fire 已恢复推进** ⭐⭐:
 > - **✅ abort + recovery 全闭环** (详 笔记 §362): task 87 撞 proxy 503 (18:08–18:44Z ~36min outage, 打穿 B-1880 wait-out) → fail-closed abort 83/205 → PROTOCOL_NOTE_03 resume 第 4 次实战 (`FORCE_NEW=0 RESET_BEFORE=0` 单跑 queue_phantom_som) → task 87 rerun 干净 (error=None merit-failure) → classify `transient_drift` via resume_rerun_clean → **G8 preflight 绿**。registry 已 sync DGX (37→39 行, 前缀不变式成立)。
 > - **🔴 psom 完成后 operator 动作 (runner 退出时 ntfy p79-claude 会响, ETA ~07-04)**: 单跑 queue 自然退出**不续链且不 bind** (07-01 深夜同坑) → 必须先 A100 `validate_fire_manifest --populate --apply` 补 bind psom → 再 `launch red` (skip 已 bind, 续 pprompt→B1×6→B2×6)。DGX 侧双 done-monitor 已挂。
 > - **⚠️ 48h 内第 2 次同签名 proxy 长 outage** (6-30 task80 / 7-02 task87, 均 >35min) — DashScope 直连议题权重 +1 (学长消息 v2 pending 项)。
