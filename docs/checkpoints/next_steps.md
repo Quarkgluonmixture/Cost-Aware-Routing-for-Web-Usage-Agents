@@ -23,7 +23,13 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-03 UPDATE — abort#3 task149 (proxy outage >2.5h 未自愈, 史上最长) + 待 user 拍板恢复策略** ⭐⭐⭐ 最新先读:
+> 🔭 **2026-07-04 UPDATE — proxy 恢复 (outage 共 ~20.7h) → 调度改为"最早边界插 B0"** ⭐⭐⭐ 最新先读:
+> - **✅ proxy 恢复 ~03:40Z** (probe #2 200×3; outage 06:58Z 07-03 → ~03:40Z 07-04 史上最长, 疑学长人工重启)。**4 天 3 次 outage → B0 工作优先级最高 (趁 proxy 活着干), B1/B2 outage-免疫可随时跑**。
+> - **✅ 已摘 chain 续链循环** (kill chain-loop pid 3849518, runner/watchdog PPID=1 无恙, 实证零影响): B1 dom 独立跑完当前条 (77/205 @ 04:00Z, ETA ~07-05 10:00Z), 完成后**不再自动续 som** — 改插 B0 slot。
+> - **🔜 B0 slot (B1 dom 完成即触发, DGX monitor 已挂)**: ① 验证 205/205 + bind B1 dom (`--populate --apply`) → ② B0 psom resume (146/205, B-486 force-rerun task149 → rerun 干净后 classify transient_drift) → ③ B0 pprompt 整条 → ④ 重启 B1 som..pprompt chain (B2 去留届时按 ETA 拍板, user 2026-07-03 倾向时间紧则砍)。
+> - **教训沉淀候选**: "chain 完成后插 B0" 原计划在 20h 级 outage 面前不成立 — 依赖外部 substrate 的工作永远抢最早窗口 (机会成本调度)。
+>
+> 🔭 **2026-07-03 UPDATE — abort#3 task149 (proxy outage >2.5h 未自愈, 史上最长) + 待 user 拍板恢复策略** ⭐⭐:
 > - **🔴 abort#3**: psom R28173 resume 段健康推进 62 ep (84→146) 后, task 149 再撞 proxy 503 (07:32Z abort, registry 已 append 未 classify — 等 rerun 证据, 同 task87 模式)。**本次 outage 异常**: ~06:58Z 起 >2.5h 无自愈 (前两次 ~36min), 503 body + 30s 稳定耗时 = API Gateway 集成超时, 后端挂死疑需人工重启。
 > - **⏳ probe 循环已挂** (DGX bg, 5min/探, 连续 3×200 判恢复, 12h 兜底) → 恢复自动通知 → resume psom + rerun/classify task149 (协议同 §362)。
 > - **📨 管理员证据包已备好**: `deliverables/proxy_admin_outage_evidence_2026-07-03.md` (60h 3 次 outage 时间线 + apigw-requestid + DashScope 议题) — **待 user 审后发学长/proxy 管理员**。
