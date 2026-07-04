@@ -26,7 +26,8 @@ updated: 2026-06-27
 > 🔭 **2026-07-04 UPDATE — proxy 恢复 (outage 共 ~20.7h) → 调度改为"最早边界插 B0"** ⭐⭐⭐ 最新先读:
 > - **✅ proxy 恢复 ~03:40Z** (probe #2 200×3; outage 06:58Z 07-03 → ~03:40Z 07-04 史上最长, 疑学长人工重启)。**4 天 3 次 outage → B0 工作优先级最高 (趁 proxy 活着干), B1/B2 outage-免疫可随时跑**。
 > - **✅ 已摘 chain 续链循环** (kill chain-loop pid 3849518, runner/watchdog PPID=1 无恙, 实证零影响): B1 dom 独立跑完当前条 (77/205 @ 04:00Z, ETA ~07-05 10:00Z), 完成后**不再自动续 som** — 改插 B0 slot。
-> - **🔜 B0 slot (B1 dom 完成即触发, DGX monitor 已挂)**: ① 验证 205/205 + bind B1 dom (`--populate --apply`) → ② B0 psom resume (146/205, B-486 force-rerun task149 → rerun 干净后 classify transient_drift) → ③ B0 pprompt 整条 → ④ 重启 B1 som..pprompt chain (B2 去留届时按 ETA 拍板, user 2026-07-03 倾向时间紧则砍)。
+> - **🔜 B0 slot 改条件分支 (2026-07-04 17:08Z proxy 又挂 = outage#4, 恢复后 ~13.5h 内再死)**: B1 dom 完成时 (monitor fire) **现场探 proxy**: ① proxy UP → bind B1 dom → B0 psom resume (146/205, task149 rerun→classify) → B0 pprompt → 续 B1; ② proxy DOWN → **B1 逐条单跑续** (som→vision→ptext→psom→pprompt, 每条一个 boundary, 首个 proxy-up 的 boundary 插 B0)。逐条单跑不走 chain = 每个 boundary 都是 B0 插入机会; 单跑无 sentinel/bind → 每条完成后 `--populate --apply` 补 bind (SOP)。B2 去留按 ETA 届时拍板。
+> - **🔴 proxy 稳定性升级为项目 #1 风险**: 4 天 4 次 outage (06-30 / 07-02 / 07-03×20.7h / 07-04 17:08Z-), 恢复窗口越来越短 — DashScope 直连议题急迫性再升级 (学长线程)。
 > - **教训沉淀候选**: "chain 完成后插 B0" 原计划在 20h 级 outage 面前不成立 — 依赖外部 substrate 的工作永远抢最早窗口 (机会成本调度)。
 >
 > 🔭 **2026-07-03 UPDATE — abort#3 task149 (proxy outage >2.5h 未自愈, 史上最长) + 待 user 拍板恢复策略** ⭐⭐:
