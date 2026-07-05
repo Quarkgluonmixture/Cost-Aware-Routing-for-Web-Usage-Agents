@@ -19,6 +19,7 @@ run_manifest.yaml → `make analysis FAST=1` → 更新 draft tags/slots。
 | ~~red·B0 P-text `[P]→[A]`~~ | ✅ DONE 2026-07-02: R32139 promoted + 22-cell 聚合 + Table 2 升 [A] | (队列⑧ 补丁顺带完成; promotion-gap watch 已 cron 化) |
 | §5.4 latency canonical (retry-adjusted) | 只有 archive p95 [V] | aggregator emit `total_minus_retry_ms` per-mode 表（cross_sites cost_per_mode 目前无 wall-clock 列，需补列） |
 | §6 AUROC 全 cell | auroc_cross_condition 需确认是否已扩到 21 cells | 查 `auroc_cross_condition.md`，扩了就把 §6 那句的 per-cell 范围更新 |
+| §6 covariate 基线 + template-disjoint split `<TBD>` | 新增 2026-07-05 (raw_digest_triage; defuse li2026aucnotenough 型 "learnable vs memorizable" 攻击) | `scripts/analysis/router_covariate_baseline.py` (分析 agent 在建) → 填 §6 Evaluation 段 `<TBD>` + report `docs/analysis/cross_sites/router_covariate_baseline_2026-07-05.md` |
 | ⚠️ figures 阶段 2 个 pre-existing 崩点 | ① `fig0c` 系 `max() empty`（首轮）② `axis1_microbehavior.py` KeyError `'mean_jaccard'`（partial reddit 数据） | 修 figure 脚本对 partial-cell 的容错；不 block 聚合（aggregators 在 figures 之前已完成） |
 | ⚠️ red·B0 drop-one 慎用 | `fig0c` 的 b0_red 行（DOM 4.88 / SoM 3.90 / Vision 3.41）是 **3-mode partial portfolio** 上的 drop-one，与 6-mode 定义不可比 | draft 不引用，等 6 modes 齐 |
 

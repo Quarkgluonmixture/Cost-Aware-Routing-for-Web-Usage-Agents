@@ -98,7 +98,9 @@ mechanism 簇 13 篇 + 3 篇跨簇：
 5. **仍无 bib-dedup**：AVR/MIRAGE/Scaffold/SteerMoE/early-exit/CSCR 等已 bib 论文反复被 surface。
 6. venue 核验结果：ICML 2026 ✓ (2606.20544 journal-ref) / EMNLP 2025 Findings ✓ (2505.17616 comment) / CHI 2026 HCXAI Workshop ✓ (2604.03527 comment) / **CVPR 2026 Findings Track 真实存在**（2602.20330；但 = opt-in 无额外评审 track，引用需注明）/ ICLR 2026 (2602.21704) 作者自报未独立确认 / ICML 2026 (2606.00376) **不可核实**。
 
-## 4. Disposition 行动表（待 user 拍板，未执行）
+## 4. Disposition 行动表
+
+**执行状态 (2026-07-05, user 拍板"全做")**: ✅ 13 条入 `paper.bib` (99→112: 12 LIVE + `li2026aucnotenough`); ✅ 合稿 `aaai27_main.md` §2 两段 + §6 covariate-baseline 句 (`<TBD>` 槽); ✅ 长版 section2 (§2.2 survey/三邻居/PTE + §2.4 enomoto/SDO/sema/wu/chowdhury) + section3 (§3.4 factorial 先例) + section6 (§6.8 survey opener + 表 3 行 + 差异化段 + vardanyan); ✅ paper_planning §14.1 +4 defense 行; ✅ NUMBERS_TODO §0 +1 槽位; ✅ digest skill patch → `raw/_digest_skill_patch_2026-07-05.md` (prompt 本体在 Hermes/quark 侧, 需 user 微信端粘入); ⏳ AUROC 加固数字 = `router_covariate_baseline.py` 分析 agent 在跑。**draft prose (aaai27_main + section2/3/6) 未 commit, 待 /stress** (CLAUDE.md auto-trigger; 06-15 先例同)。
 
 | 动作 | 对象 | 优先级 | 落点 |
 |---|---|:--:|---|

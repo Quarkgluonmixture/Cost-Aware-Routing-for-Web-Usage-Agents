@@ -1006,3 +1006,132 @@
   archivePrefix = {arXiv},
   note = {Modified Knapp-Hartung for few-study meta-analysis; cited in \S 8 statistical-limitations. Added 2026-06-11 to close a dangling key; DOI Crossref-verified + arXiv id title-search-verified.}
 }
+
+@misc{moslem2026routingsurvey,
+  title = {Dynamic Model Routing and Cascading for Efficient {LLM} Inference: A Survey},
+  author = {Moslem, Yasmin and Kelleher, John D.},
+  year = {2026},
+  eprint = {2603.04445},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.NI},
+  note = {Survey of routing/cascading across independently trained LLMs (explicitly excludes MoE-internal routing); six paradigms (difficulty-aware / human-preference / clustering / RL / uncertainty-quantification / cascading) + a multimodal-routing chapter. All six paradigms select WHICH MODEL answers; observation/representation routing is absent from the entire survey (no observation / prompt-format / WebArena coverage) --- cited in \S 1 and \S 6.8 as the authoritative gap witness that efficiency routing has so far acted on the model/compute axis. Do NOT cite as ``the first survey'' (paper makes no such claim). Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{piet2026plan,
+  title = {Web Agents Should Adopt the Plan-Then-Execute Paradigm},
+  author = {Piet, Julien and Chow, Annabella and Hou, Yiwei and Lyu, Muxi and Venuto, Sylvie and Zhu, Jinhao and Popa, Raluca Ada and Wagner, David},
+  year = {2026},
+  eprint = {2605.14290},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CR},
+  note = {Security-motivated position paper (Berkeley Popa/Wagner group; NO empirical agent, no SR/latency experiments): ReAct web agents are ``insecure by design'' because attacker-controlled tokens sit where the model picks its next action; plan-then-execute (PTE) commits to a task-specific program first. Manual classification of all 860 WebArena tasks: 81.28\% purely programmatic, 18.72\% need runtime LLM subroutines (fixed control flow), 0 need reactive replanning; self-reports only 33\% coverage via Postmill's 16 REST APIs. Cited in \S 2 as the architecture-spectrum contrast pole; the representation-choice question SURVIVES inside PTE --- its runtime LLM subroutines still consume page observations. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{enomoto2026observation,
+  title = {Revisiting Observation Reduction for Web Agents: Comprehensive Evaluation with a Lightweight Framework},
+  author = {Enomoto, Masafumi and Obara, Ryoma and Zhang, Haochen and Oyamada, Masafumi},
+  year = {2026},
+  eprint = {2605.29397},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  note = {MFS (Minimal Failure Set) = smallest set of HTML elements whose deletion fails the task; MFS coverage is a zero-inference proxy metric (Spearman $\rho \geq 0.8$ vs end-to-end success, $\sim$290$\times$ faster evaluation). Benchmarks 11 extractive HTML-reduction methods on WorkArena L1 + WebLinx; best config 2.2$\times$ per-step latency reduction at 84\% success retention. WITHIN-representation compression (text-only HTML reduction, fixed per run, no per-task adaptivity, no cross-modal arms) --- cited in \S 2 as the nearest observation-efficiency neighbour, contrasting our cross-representation per-task routing. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{wang2026lazymcot,
+  title = {Focus When Necessary: Adaptive Routing and Collaborative Grounding for Training-Free Visual Grounding},
+  author = {Wang, Yifan and Li, Peiming and Li, Shiyu and Hu, Zhiyuan and Yang, Xiaochen and Yang, Wenming and Tang, Yang and Wei, Zheng},
+  year = {2026},
+  eprint = {2606.16158},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CV},
+  note = {LazyMCoT (TencentBAC; LazyMCoT is the framework name, not the title): training-free difficulty-triggered visual-input escalation for high-resolution NATURAL-IMAGE VQA (V*/HR-Bench/TreeBench; NOT GUI/web --- an earlier digest mislabeled it GUI grounding). Two first-token statistics $\to$ small GBDT router with conformal-calibrated threshold; confident samples answer directly, uncertain ones get a two-stage localized-panel re-ask of the same VLM (Qwen2.5-VL-7B V* 79.10$\to$90.60). Cited in \S 6.8 as the nearest non-model-axis routing neighbour: escalation of visual detail WITHIN a single mode, vs our per-task selection across a six-mode representation menu with complementarity (drop-one) as the object of study; its routing signal is model-internal (first-token stats) whereas our LR reads task text only. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{wang2026boundaryrouter,
+  title = {Learning Agent Routing From Early Experience},
+  author = {Wang, Yimin and Qiu, Jiahao and Qi, Xuan and Juan, Xinzhe and Shi, Jingzhe and Zhao, Zelin and Wang, Hongru and Liu, Shilong and Wang, Mengdi},
+  year = {2026},
+  eprint = {2605.07180},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  note = {BoundaryRouter (framework name; use the real title above): training-free cold-start routing between direct LLM inference and a full agent pipeline via an early-experience memory (no gold labels) + hybrid retrieval + rubric-guided CoT; releases RouteBench (87 base questions + rephrase/OOD). $-$60.6\% inference time vs agent-only (at $-$11.5\% relative accuracy), +28.6\% vs LLM-only; finds routing ``surprisingly still a relatively hard problem''. Execution-strategy/compute axis, not representation; cited in \S 6.8 for cold-start label-free routing design and as independent evidence that per-query routing is non-trivial. CAVEAT: 87-question base benchmark --- do not cite as strong evidence. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{genc2026adaptivereranking,
+  title = {Adaptive Re-Ranking},
+  author = {Genc, Ata Cinar and Korukluoglu, Emir Kaan and Allan, James},
+  year = {2026},
+  eprint = {2606.25249},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.IR},
+  note = {Per-query routing across three retrieval pipelines (BM25 / +MiniLM cross-encoder / +BGE reranker; IR domain, UMass, ICTIR'26 format). The full per-query oracle dominates every fixed pipeline on all 8 BEIR datasets on both nDCG@10 and latency, yet a fine-tuned BERT router reaches only $\sim$0.65 test accuracy (class imbalance; systematic under-selection of the heavy tier): ``per-query routing offers large potential gains but is non-trivial to learn from limited supervision''. Cited in \S 6 as the cleanest cross-domain analogue of the oracle-headroom-vs-learned-router gap. CAVEAT: their oracle is a full per-query argmax oracle, NOT our drop-one construction --- keep the two constructions distinct when citing. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{gaur2026sdo,
+  title = {Signal-Driven Observation for Long-Horizon Web Agents},
+  author = {Gaur, Shubham and Lane, Ian},
+  year = {2026},
+  eprint = {2606.06708},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  note = {Position paper (self-declared; no experiments, no implementation): decouple observation frequency from action frequency --- a lightweight signal detector (URL change / new ARIA elements / action failure / exogenous DOM mutation) triggers DOM re-reads by a sub-RLM. Orthogonal axis to ours (WHEN to observe vs WHICH representation; explicitly modality-agnostic); cited in \S 2 (one line) for field momentum on observation management as a first-class design variable. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{chowdhury2026miragedetect,
+  title = {Detect Before You Leap: Mirage Detection in Vision-Language Models},
+  author = {Chowdhury, Sayeed Shafayet and Miah, Md. Shaown and Haque, S. M. Taiabul and Ahmed, Syed Ishtiaque},
+  year = {2026},
+  eprint = {2606.00435},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CV},
+  note = {Runtime pre-release mirage detection: classify image-question pairs Related / Unrelated-Real / Blank-Noise BEFORE the VLM answers and abstain accordingly; TC-LIA layer-wise CLIP alignment-trajectory features + ensemble across 12 VLM backbones, up to 94.7\% 3-class accuracy (Qwen2.5-VL-32B) at 3.0\% residual mirage rate. Cited in \S 2 next to MIRAGE \citep{asadi2026mirageillusionvisualunderstanding} as the detectability follow-up and positioning contrast: they treat the image-free regime as a risk to detect-and-abstain, we treat it as a routable arm to exploit. NOTE: TC-LIA needs an image + an extra CLIP forward --- inapplicable to our image-free phantom arms. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{meng2026sema,
+  title = {Sema: Semantic Transport for Real-Time Multimodal Agents},
+  author = {Meng, Jiaying and Li, Bojie},
+  year = {2026},
+  eprint = {2604.20940},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.MM},
+  note = {Transport-layer system: replaces screenshot streaming with an a11y-tree structured-text stream + compact visual tokens; 130--210$\times$ bandwidth reduction; OSWorld Vision-Text 93.3\% vs 94.0\% raw (Qwen2.5-VL-7B). Key ablation: visual tokens alone 75.5\%, + structured text 93.3\% --- structured text is the load-bearing component. Cited (low weight) in the constructed-substrate discussion as independent engineering evidence that structured text carries most UI-task signal. WORDING RED LINE: Sema RETAINS compact visual tokens --- do NOT cite as ``dropping the image costs nothing'' (our P-SoM is zero-image, and complementarity, not image-free parity, is our claim). Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{vardanyan2025browser,
+  title = {Building Browser Agents: Architecture, Security, and Practical Solutions},
+  author = {Vardanyan, Aram},
+  year = {2025},
+  eprint = {2511.19477},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.SE},
+  note = {Non-peer-reviewed production report (FillApp, one year of deployment): a11y-tree-first context with SELECTIVE VISION ESCALATION (canvas apps / charts / missing a11y tree delegate to a VLM returning a11y-format references); WebGames $\sim$85\%, \$0.0048/step, 6.8s/step; no WebArena numbers. Cited (low weight) in \S 6 rule-based-router motivation: industry already runs hand-tuned representation-escalation heuristics; we quantify the per-task representation-routing headroom systematically. Mark as technical report; WebGames numbers not comparable to VWA. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{wu2026visionbecomeslanguage,
+  title = {How Vision Becomes Language: A Layer-wise Information-Theoretic Analysis of Multimodal Reasoning},
+  author = {Wu, Hongxuan and Zhang, Yukun and Zhou, Xueqing},
+  year = {2026},
+  eprint = {2602.15580},
+  archivePrefix = {arXiv},
+  note = {Layer-wise partial-information-decomposition (PID) analysis of LLaVA-1.5/1.6-7B on six GQA task types: visual-unique information peaks early then decays monotonically; language-unique surges late to $\sim$82\% of predictive information; cross-modal synergy $<$2\% throughout; attention-knockout causal check; layer trajectories strongly task-dependent (cross-variant correlation $>$0.96). Cited in \S 1/\S 2 as MOTIVATION ONLY (1--2 sentences): late-layer language dominance makes text-side phantom representations plausible, and task-dependent information fingerprints motivate per-task representation routing. NOT evidence for our claims (VQA domain, LLaVA-only, internal-representation not behavioral). Also parked as paper-2 \S 5 must-cite. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{senoglu2026medvqacalib,
+  title = {Just how sure are you? Improving Verbalized Uncertainty Calibration in Medical {VQA}},
+  author = {Senoglu, Eren and Toschi, Federico and Brunello, Nicolo and Sassella, Andrea and Carman, Mark James},
+  year = {2026},
+  eprint = {2606.27023},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  note = {Training-based verbalized-confidence calibration for medical VQA via a composite loss whose alignment signal comes from a 2$\times$2 factorial perturbation: image availability (original vs blacked-out) $\times$ text integrity (original vs shuffled options); MedGemma-4B + Qwen2-VL-7B, ECE $-$60\%+, discrimination +26\%+. Cited (optional, one line) in \S 3 as a factorial modality-perturbation design precedent --- the black-image condition removes visual evidence while preserving input structure, kin to our phantom construction. NOTE: their 2$\times$2 is a TRAINING-SIGNAL construction, not an evaluation design, and their axes (evidence presence $\times$ option integrity) differ from ours (format $\times$ prompt-style). Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
+
+@misc{li2026aucnotenough,
+  title = {When {AUC} 0.998 Is Not Enough: A Candidate Evaluation Protocol for Hidden-State Probes of Indirect Prompt Injection in Multimodal Computer-Use Agents},
+  author = {Li, Yanhang and Fan, Zhichao and Zhuang, Zexin},
+  year = {2026},
+  eprint = {2606.22864},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  note = {Cautionary case study in OUR domain (Qwen2.5-VL-7B + Mind2Web teacher-forced replay): near-perfect clean-vs-attack AUC of hidden-state prompt-injection probes does NOT license ``detects malicious content'' --- a metadata-only scalar logistic saturates text-side AUC (C1), and nuisance-matched visual controls collapse the direct malicious-vs-control AUC (C2); prescribes scalar baselines + matched controls + cluster-bootstrap CIs, single-backbone humility. Cited in \S 6 as motivation for reporting a scalar-covariate baseline and a template-disjoint split next to the router AUROC (their C1 diagnostic transferred: is ``learnable'' partly ``memorizable'' via site/length/template covariates?). Must-cite for any paper-2 hidden-state probe work. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+}
