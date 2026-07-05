@@ -100,7 +100,7 @@ mechanism 簇 13 篇 + 3 篇跨簇：
 
 ## 4. Disposition 行动表
 
-**执行状态 (2026-07-05, user 拍板"全做")**: ✅ 13 条入 `paper.bib` (99→112: 12 LIVE + `li2026aucnotenough`); ✅ 合稿 `aaai27_main.md` §2 两段 + §6 covariate-baseline 句 (`<TBD>` 槽); ✅ 长版 section2 (§2.2 survey/三邻居/PTE + §2.4 enomoto/SDO/sema/wu/chowdhury) + section3 (§3.4 factorial 先例) + section6 (§6.8 survey opener + 表 3 行 + 差异化段 + vardanyan); ✅ paper_planning §14.1 +4 defense 行; ✅ NUMBERS_TODO §0 +1 槽位; ✅ digest skill patch → `raw/_digest_skill_patch_2026-07-05.md` (prompt 本体在 Hermes/quark 侧, 需 user 微信端粘入); ⏳ AUROC 加固数字 = `router_covariate_baseline.py` 分析 agent 在跑。**draft prose (aaai27_main + section2/3/6) 未 commit, 待 /stress** (CLAUDE.md auto-trigger; 06-15 先例同)。
+**执行状态 (2026-07-05, user 拍板"全做")**: ✅ 13 条入 `paper.bib` (99→112: 12 LIVE + `li2026aucnotenough`); ✅ 合稿 `aaai27_main.md` §2 两段 + §6 covariate-baseline 句 (`<TBD>` 槽); ✅ 长版 section2 (§2.2 survey/三邻居/PTE + §2.4 enomoto/SDO/sema/wu/chowdhury) + section3 (§3.4 factorial 先例) + section6 (§6.8 survey opener + 表 3 行 + 差异化段 + vardanyan); ✅ paper_planning §14.1 +4 defense 行; ✅ NUMBERS_TODO §0 +1 槽位; ✅ digest skill patch → `raw/_digest_skill_patch_2026-07-05.md` (prompt 本体在 Hermes/quark 侧, 需 user 微信端粘入); ✅ AUROC 加固首轮数字已出 (rehearsal vintage, B0_cls/B1_cls) — **红旗方向**: 18-feat LR vs scalar 基线 ΔAUROC −0.013/+0.007 (CI 含 0), 当前可测 learnability 全可由 trivial 协变量达成; 前瞻性预警非推翻 (§6 无 landed AUROC claim), canonical 重跑待 Pass-1 全 land, 详见 `docs/analysis/cross_sites/router_covariate_baseline_2026-07-05.md` + NUMBERS_TODO §0。**draft prose (aaai27_main + section2/3/6) 未 commit, 待 /stress** (CLAUDE.md auto-trigger; 06-15 先例同)。
 
 | 动作 | 对象 | 优先级 | 落点 |
 |---|---|:--:|---|
