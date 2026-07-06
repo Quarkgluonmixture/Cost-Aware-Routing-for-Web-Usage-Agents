@@ -23,6 +23,14 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> 🔭 **2026-07-06 UPDATE — 停摆 ~1.5 天后按分支 ② 重启: B1 som reddit UP + probe 重挂** ⭐⭐⭐ 最新先读:
+> - **🔴 停摆发现**: B1 dom reddit 07-04 23:20 完成 205/205 **且已 bind** (bound 23 = cls 18 + red B0×4 + red B1 dom), 但 07-04 的"monitor fire → 探 proxy → 插 B0/续 B1"是 operator 动作, 07-05 无 session → fire 空转 ~35h (与 07-01 15h 停摆同款盲区: cron `inprog=none` 不报"该跑而没跑")。
+> - **🔴 proxy 仍 DOWN (outage#4 已 ~41h+, 刷新纪录)**: 实测 `probe_proxy_alive.py` (新脚本, 单请求轻量探活, 已 rsync A100) → 无 tools 请求 **503**; 带 tools 请求 400 validation_error ("missing field `type`") — 疑 probe_proxy_capability.py 旧 schema 所致, 但 **proxy 恢复后 B0 首 episode 需盯防部署变更**。
+> - **✅ 分支 ② 已执行 (user go 2026-07-06 ~11:00 BST)**: `RESET_BEFORE=1 queue_baseline.sh B1 som reddit` → **run_id=`B1_som_reddit_20260706` UP** (reset OK warm-up 93s, runner pid 26258 + watchdog pid 26289, GPU 9GB)。ETA 参考 B1 dom ~36h → **~07-08 早**。
+> - **🔜 B1 som 完成时 (monitor fire) SOP**: ① `validate_fire_manifest --populate --apply` 补 bind (单跑不自动 bind); ② boundary 探 proxy (`ssh condense-a100 '.venv/bin/python3 scripts/maintenance/probe_proxy_alive.py'`): UP → B0 psom resume (146/205, task149 rerun→classify) → B0 pprompt; DOWN → 续 B1 vision 单跑。
+> - **⏳ DGX 双 bg monitor 已挂**: done-monitor (205/205 或 runner 退出 → ntfy p79-claude, 60h 兜底) + proxy probe 循环 (5min/探, 3×200 判恢复 → ntfy, 48h 兜底)。
+> - **📨 升级信号**: outage#4 时长已超 07-03 的 20.7h 纪录一倍 — 管理员证据包 (`deliverables/proxy_admin_outage_evidence_2026-07-03.md`) 待补 outage#4 时间线后发送 (user 审)。
+>
 > 🔭 **2026-07-04 UPDATE — proxy 恢复 (outage 共 ~20.7h) → 调度改为"最早边界插 B0"** ⭐⭐⭐ 最新先读:
 > - **✅ proxy 恢复 ~03:40Z** (probe #2 200×3; outage 06:58Z 07-03 → ~03:40Z 07-04 史上最长, 疑学长人工重启)。**4 天 3 次 outage → B0 工作优先级最高 (趁 proxy 活着干), B1/B2 outage-免疫可随时跑**。
 > - **✅ 已摘 chain 续链循环** (kill chain-loop pid 3849518, runner/watchdog PPID=1 无恙, 实证零影响): B1 dom 独立跑完当前条 (77/205 @ 04:00Z, ETA ~07-05 10:00Z), 完成后**不再自动续 som** — 改插 B0 slot。
