@@ -44,10 +44,10 @@ NTFY_TOPIC=p79-exp-dgx-spark
 # docs/checkpoints/process/cross_system_docker_audit_3way_diff_2026-05-15.md.
 */15 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "sync-a100" -- bash scripts/maintenance/sync_a100_results.sh >> logs/cron/sync_a100_results.log 2>&1
 
-# every 6h (00:30/06:30/12:30/18:30): paper-grade integrity check of the A100 Phase-1a
+# twice daily (08:30/20:30, was 6h — travel noise-cut 2026-07-07): paper-grade integrity check of the A100 Phase-1a
 # fire — SSH A100, validate completed conditions (episodes==scored [B-1834] / parse_err
 # + benchmark_noise==0 / som·vision IMAGE PRESENCE [B-1828→1832→1835 image-loss
 # regression class] / B0 cost coverage) + in-progress run health (images landing, no
 # UnboundLocalError/deferred-save-failed flood) + manifest ghost/over-complete. ntfy
 # verdict ✅/🔴 each run; full output → logs/cron/paper_grade_check.log. (set 2026-05-22)
-30 */6 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "paper-grade-check" -- bash scripts/maintenance/paper_grade_check.sh >> logs/cron/paper_grade_check.log 2>&1
+30 8,20 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "paper-grade-check" -- bash scripts/maintenance/paper_grade_check.sh >> logs/cron/paper_grade_check.log 2>&1
