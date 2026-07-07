@@ -191,7 +191,7 @@ else
     "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
-    --poll-secs 30 --idle-alert-mins "${EXP_WATCHDOG_IDLE_ALERT_MINS:-60}" \
+    --poll-secs 30 --idle-alert-mins "${EXP_WATCHDOG_IDLE_ALERT_MINS:-180}" \
     --ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}" \
     --state-file "${WD_STATE}" \
     --aggregate-prefix "${AGGREGATE_PREFIX}" \

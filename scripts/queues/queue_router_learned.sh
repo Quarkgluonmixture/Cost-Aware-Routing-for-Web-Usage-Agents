@@ -296,7 +296,7 @@ else
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
     --poll-secs 30 \
-    --idle-alert-mins "${EXP_WATCHDOG_IDLE_ALERT_MINS:-60}" \
+    --idle-alert-mins "${EXP_WATCHDOG_IDLE_ALERT_MINS:-180}" \
     --ntfy-topic p79-exp-dgx-spark \
     --state-file "${WATCHDOG_STATE}" \
     --aggregate-prefix "${BASELINE}_router_learned" \
