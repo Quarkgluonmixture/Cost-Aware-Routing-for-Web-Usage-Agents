@@ -23,7 +23,12 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-06 UPDATE — 停摆 ~1.5 天后按分支 ② 重启: B1 som reddit UP + probe 重挂** ⭐⭐⭐ 最新先读:
+> 🔭 **2026-07-07 UPDATE — proxy 已恢复 (学长 Lambda timeout 120s→10min + 上游修复; gateway + Lambda URL 双入口 200)** ⭐⭐⭐ 最新先读:
+> - **✅ proxy UP** (probe 循环 07-06 18:19 报 3×200 RECOVERED; 07-07 14:2x 复测 gateway+Lambda URL 均 200)。outage#4 总时长 ~49h (07-04 17:08Z → ~07-06 17:1xZ), 根因诊断 = Lambda 上游模型服务无响应 (503@30s gateway / 502@120s Lambda URL 双路径钉死), 学长已修 + Lambda timeout 提至 10min。
+> - **B1 som reddit 健康**: 146/205 @ 07-07 14:16 (~11.5min/ep ≈ dom 节奏; 07-06 的 100s busy-wait 仅 task 0 局部现象)。ETA 完成 ~07-08 凌晨。done-monitor 已重挂 (前一 session 退出时被停)。
+> - **🤖 4 天无人值守 orchestrator 已接管 boundary (07-07 14:32 armed, user 北爱尔兰行 07-08→07-11)**: `orchestrate_reddit_boundaries.sh` @ A100 (pid 143199, log `logs/orchestrate_red_20260707.log`) 自动执行整条队列 = B1 som wait→bind → 探 proxy → UP: B0 psom RESUME (146/205) → B0 pprompt → B1 vision/ptext/psom/pprompt → B2 ×6, per-boundary bind+ntfy (p79-claude)。user 三拍板: 全自动 A / B0 abort→跳过续 B1 / B2 纳入队尾。fail-safe = 异常 ntfy+停在安全状态。**回来后 TODO**: ① task149 registry classify (psom resume rerun 证据); ② 若中途停摆看 ntfy 最后一条 + orch log triage; ③ B0 psom/pprompt 若被跳过 → 手动 resume。详 笔记 §365。
+>
+> 🔭 **2026-07-06 UPDATE — 停摆 ~1.5 天后按分支 ② 重启: B1 som reddit UP + probe 重挂** ⭐⭐⭐:
 > - **🔴 停摆发现**: B1 dom reddit 07-04 23:20 完成 205/205 **且已 bind** (bound 23 = cls 18 + red B0×4 + red B1 dom), 但 07-04 的"monitor fire → 探 proxy → 插 B0/续 B1"是 operator 动作, 07-05 无 session → fire 空转 ~35h (与 07-01 15h 停摆同款盲区: cron `inprog=none` 不报"该跑而没跑")。
 > - **🔴 proxy 仍 DOWN (outage#4 已 ~41h+, 刷新纪录)**: 实测 `probe_proxy_alive.py` (新脚本, 单请求轻量探活, 已 rsync A100) → 无 tools 请求 **503**; 带 tools 请求 400 validation_error ("missing field `type`") — 疑 probe_proxy_capability.py 旧 schema 所致, 但 **proxy 恢复后 B0 首 episode 需盯防部署变更**。
 > - **✅ 分支 ② 已执行 (user go 2026-07-06 ~11:00 BST)**: `RESET_BEFORE=1 queue_baseline.sh B1 som reddit` → **run_id=`B1_som_reddit_20260706` UP** (reset OK warm-up 93s, runner pid 26258 + watchdog pid 26289, GPU 9GB)。ETA 参考 B1 dom ~36h → **~07-08 早**。
