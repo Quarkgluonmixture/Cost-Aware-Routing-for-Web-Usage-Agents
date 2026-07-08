@@ -23,7 +23,12 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-07 UPDATE — proxy 已恢复 (学长 Lambda timeout 120s→10min + 上游修复; gateway + Lambda URL 双入口 200)** ⭐⭐⭐ 最新先读:
+> 🔭 **2026-07-08 UPDATE — B1 som land (205/205, bound 24) + outage#5 (proxy 恢复仅 ~31h 再死) + orchestrator v2 (per-boundary B0 插入)** ⭐⭐⭐ 最新先读:
+> - **✅ 首个 boundary 全自动通过**: B1 som 00:14Z 完成 205/205 → orch 自动 bind (bound 24) → 探 proxy 3×503 → 正确跳过 B0 → B1 vision 已启动 (00:21Z)。
+> - **🔴 outage#5**: proxy 07-06 17:1xZ 恢复 → 07-08 00:19Z 前再死 (~31h)。学长 Lambda timeout 修复未解决根因 — 上游模型服务本身不稳。
+> - **✅ orchestrator v2 部署 (pid 206635, `f901b4a`)**: v1 只在单一 boundary 探 proxy 的缺口修复 → 每个 boundary 都 try_b0 (psom→pprompt, ≤2 attempts each), 全条件 FORCE_NEW=0+RESET auto (abort 数据永不丢), eps>=205 幂等 skip (可任意时点 kill 重启接管)。proxy 恢复窗口不再会被错过。
+>
+> 🔭 **2026-07-07 UPDATE — proxy 已恢复 (学长 Lambda timeout 120s→10min + 上游修复; gateway + Lambda URL 双入口 200)** ⭐⭐⭐:
 > - **✅ proxy UP** (probe 循环 07-06 18:19 报 3×200 RECOVERED; 07-07 14:2x 复测 gateway+Lambda URL 均 200)。outage#4 总时长 ~49h (07-04 17:08Z → ~07-06 17:1xZ), 根因诊断 = Lambda 上游模型服务无响应 (503@30s gateway / 502@120s Lambda URL 双路径钉死), 学长已修 + Lambda timeout 提至 10min。
 > - **B1 som reddit 健康**: 146/205 @ 07-07 14:16 (~11.5min/ep ≈ dom 节奏; 07-06 的 100s busy-wait 仅 task 0 局部现象)。ETA 完成 ~07-08 凌晨。done-monitor 已重挂 (前一 session 退出时被停)。
 > - **🤖 4 天无人值守 orchestrator 已接管 boundary (07-07 14:32 armed, user 北爱尔兰行 07-08→07-11)**: `orchestrate_reddit_boundaries.sh` @ A100 (pid 143199, log `logs/orchestrate_red_20260707.log`) 自动执行整条队列 = B1 som wait→bind → 探 proxy → UP: B0 psom RESUME (146/205) → B0 pprompt → B1 vision/ptext/psom/pprompt → B2 ×6, per-boundary bind+ntfy (p79-claude)。user 三拍板: 全自动 A / B0 abort→跳过续 B1 / B2 纳入队尾。fail-safe = 异常 ntfy+停在安全状态。**回来后 TODO**: ① task149 registry classify (psom resume rerun 证据); ② 若中途停摆看 ntfy 最后一条 + orch log triage; ③ B0 psom/pprompt 若被跳过 → 手动 resume。详 笔记 §365。
