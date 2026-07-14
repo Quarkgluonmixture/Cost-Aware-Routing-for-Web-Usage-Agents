@@ -208,9 +208,19 @@ def test_section1_null_framing_footnote_present():
 
 
 def test_section1_jaccard_null_reference_present():
-    """B-897 P1-6: Jaccard prose includes random-independent baseline + unique-pass count."""
+    """B-897 P1-6: Jaccard prose includes random-independent baseline + unique-pass count.
+
+    Assertion 1 updated 2026-07-14 (toolchain-audit test-health pass): commit 7b0f456
+    (fire 前 staleness pass, cross-AI /stress 闭环) deliberately reworded
+    "3-5× higher than the random-independent baseline" → "at least ~3× the
+    random-independent baseline (… interval-endpoint bound, not a per-pair
+    measurement)" — an honesty downgrade of the multiplier claim. The stale
+    assertion had been failing since that commit. Teeth retained: §1 must still
+    reference the random-independent baseline with the E[J] range and the
+    residual unique-pass framing.
+    """
     txt = _read(SECTION1)
-    assert "3-5× higher than the random-independent baseline" in txt
+    assert "~3× the random-independent baseline" in txt
     assert "E[J] ≈ 0.06-0.10" in txt
     assert "residual unique-pass set" in txt
 
