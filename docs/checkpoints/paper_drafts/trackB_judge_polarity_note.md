@@ -167,21 +167,37 @@ the LLM-judge paths is.
 (tasks where `eval.fuzzy_match` is a human-readable reference answer).  The `llm_ua_match`
 path covers N/A tasks (tasks where `eval.fuzzy_match == "N/A"`).  On the VWA classifieds
 site, 10 of 234 tasks (4.3\%) are N/A tasks; on reddit, 5 of 210 tasks (2.4\%); on shopping,
-31 of 466 tasks (6.6\%).  String-match (`fuzzy_match`) tasks constitute a further fraction of
-each site's task set ⟨TBD: per-site fuzzy_match task counts, countable from task configs⟩.
-(来源: `docs/reference/master_bug_catalog.md` B-91 + `docs/memory/reference_benchmark_task_sizes.md`)
+31 of 466 tasks (6.6\%).  Non-N/A `fuzzy_match` tasks---the branch that calls
+`llm_fuzzy_match` on a human-readable reference answer---constitute **0 of 234** classifieds
+tasks, **0 of 210** reddit tasks, and **0 of 466** shopping tasks in the checked-in VWA
+configs.  All `fuzzy_match` entries in these three release splits are instead exactly `"N/A"`
+(10/5/31 respectively) and therefore enter the sibling `llm_ua_match` path if exact N/A
+matching fails.  Thus B-535's fuzzy-parser branch has zero direct task-config exposure in
+these splits, while its sibling UA-parser polarity bug is exposed through the N/A tasks.
+(来源 [V]: `external/visualwebarena/config_files/vwa/test_{classifieds,reddit,shopping}.raw.json`,
+counted 2026-07-14; command and output archived in
+`docs/checkpoints/codex_outputs/trackb_tbd_2026-07-14.md`)
 
-**Quantitative SR delta (polarity inversion, B-535)**: ⟨TBD: cross-paper re-evaluation
-comparing SR_published (upstream buggy judge) vs SR_post-fix-judge on a shared archive is
-needed to quantify the delta.  No public VWA paper output archive was available for systematic
-re-evaluation at time of writing.⟩
+**Quantitative SR delta (polarity inversion, B-535)**: **Blocked on a paired evaluator-replay
+run; no numerical delta is recoverable from the current repository.**  The bug catalog records
+no pre/post-fix SR, and the local episode archive retains final `score`/`success` but not every
+raw LLM-judge response needed to apply both parsers to identical verdict text.  A valid estimate
+requires a frozen shared trajectory/output archive for an explicitly identified study, one
+instrumented judge pass that persists each raw response (with task, prediction, judge model and
+version), and offline replay of those same responses through the upstream `89f5af2` parser and
+the fixed parser; the result should report site-stratified paired
+$\mathrm{SR}_{\text{upstream}}-\mathrm{SR}_{\text{fixed}}$ with uncertainty.  A genuinely
+cross-paper estimate additionally requires the prior paper's raw outputs, which are not present
+here.
+(来源 [V]: `docs/reference/master_bug_catalog.md` B-91/B-535 + repository archive-schema
+inspection, 2026-07-14; evidence commands in the Track B TBD report)
 
 **Qualitative scope**: Every VWA-derived paper that uses the upstream `helper_functions.py`
 without modification is exposed to both bugs.  This includes the original VWA paper
-\citep{koh2024visualwebarena}, WebArena-Verified ⟨TBD: citation key not yet in paper.bib⟩,
-PAE ⟨TBD: citation key not yet in paper.bib; noted in literature review as reporting
-"around half of the successful trajectories ... are false positives" on WebArena, independent
-of this polarity bug⟩, and other WebArena-family studies.
+\citep{koh2024visualwebarena}, WebArena-Verified (non-arXiv venue; needs manual bib entry),
+PAE \citep{zhou2025pae}---noted in the literature review as reporting that around half of its
+successful WebArena trajectories were evaluator false positives, independently of this
+polarity bug---and other WebArena-family studies.
 
 **Within-paper comparisons are attenuated, not invalidated**: the polarity fallthrough is
 *not* additive noise that cancels in a paired difference.  It fires precisely when the judge
