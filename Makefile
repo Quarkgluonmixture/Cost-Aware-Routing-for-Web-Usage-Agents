@@ -390,7 +390,10 @@ _figures:
 	$(PYTHON) scripts/analysis/figures/fig0a_sr_per_mode_heatmap.py
 	# fig0b_fp_rate_per_mode retired §139.8 + /stress A1.6 (2026-05-16)
 	$(PYTHON) scripts/analysis/figures/fig0b_extra_confidence_calibration.py
-	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
+	# fig0c: routine pipeline = interim monitoring → explicit --allow-partial (script marks
+	# output NON_PAPER_GRADE + watermark). Verdict-day strict path runs WITHOUT the flag
+	# per VERDICT_DAY_RUNBOOK (fail-closed exit 2 on partial data — Chunk 2, PROTOCOL_NOTE_05).
+	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py --allow-partial
 	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
 	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
 	# /stress A1.20 P0-5-B* / Q3=B (2026-05-17): fig0e_category_mode_heatmap deferred —
@@ -493,7 +496,10 @@ analyze-layer0:
 	$(MAKE) phantom-lift
 	$(MAKE) routing-auroc
 	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
-	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
+	# fig0c: routine pipeline = interim monitoring → explicit --allow-partial (script marks
+	# output NON_PAPER_GRADE + watermark). Verdict-day strict path runs WITHOUT the flag
+	# per VERDICT_DAY_RUNBOOK (fail-closed exit 2 on partial data — Chunk 2, PROTOCOL_NOTE_05).
+	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py --allow-partial
 	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
 	$(PYTHON) scripts/analysis/figures/fig0g_routing_auroc_heatmap.py
 	$(PYTHON) scripts/analysis/figures/fig0e_category_mode_heatmap.py
