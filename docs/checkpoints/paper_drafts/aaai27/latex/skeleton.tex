@@ -1,0 +1,83 @@
+% Pandoc/LaTeX driver template for the AAAI-27 dry-run.
+% convert.sh replaces the three @@...@@ tokens and writes build/main.tex.
+\documentclass[@@CLASS_OPTIONS@@]{article}
+@@VENUE_SETUP@@
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\usepackage[hyphens]{url}
+\urlstyle{rm}
+\def\UrlFont{\rmfamily}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{amsmath,amssymb}
+\usepackage{natbib}
+\usepackage{xcolor}
+\usepackage{microtype}
+
+\frenchspacing
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\graphicspath{{figures/}}
+
+% A visible but line-breakable marker. Only the yellow tag is boxed so a
+% long verdict description cannot create an unbreakable overfull hbox.
+\newcommand{\todo}[1]{%
+  \begingroup\color{red!75!black}\bfseries
+  \colorbox{yellow!45}{\strut TODO}\,#1\endgroup}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% pdfLaTeX mappings for the Unicode used by the Markdown master. Keeping
+% these here also makes unsupported source glyphs explicit and auditable.
+\DeclareUnicodeCharacter{00A7}{\S}
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{00B2}{\ensuremath{{}^{2}}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{03B8}{\ensuremath{\theta}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+\DeclareUnicodeCharacter{2013}{--}
+\DeclareUnicodeCharacter{2014}{---}
+\DeclareUnicodeCharacter{2026}{\ldots}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{21D2}{\ensuremath{\Rightarrow}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2216}{\ensuremath{\setminus}}
+\DeclareUnicodeCharacter{221E}{\ensuremath{\infty}}
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2284}{\ensuremath{\not\subset}}
+
+\ifdefined\pdfinfo
+  \pdfinfo{/TemplateVersion (@@TEMPLATE_VERSION@@)}
+\fi
+
+\title{\input{title_generated.tex}}
+\author{Anonymous submission}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{abstract_generated.tex}
+\end{abstract}
+
+\input{body_generated.tex}
+
+% The labels let the dry-run report locate the page on which references
+% begin without forcing a page break (which would distort the page count).
+\label{refs-start}
+\bibliography{paper}
+\bibliographystyle{@@BIB_STYLE@@}
+\label{document-end}
+
+\end{document}

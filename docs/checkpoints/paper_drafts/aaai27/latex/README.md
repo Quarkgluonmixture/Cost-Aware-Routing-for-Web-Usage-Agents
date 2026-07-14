@@ -1,27 +1,23 @@
-# LaTeX 转换工作流 (队列⑩, 2026-07-02)
+# LaTeX 转换工作流（2026-07-14 dry-run）
 
-## 前置（一次性）
-1. AAAI-27 author kit: 官网 authorkit 下载 `aaai27.sty` + `aaai27.bst` 放本目录
-   （⚠️ kit 未入库前 skeleton 编译不过——结构已锁, 不 block 写作）。
-2. `mkdir -p figures && cp ../../../../..//results/phantom_paper/figures/fig_f1_diamond_schematic.pdf figures/`
-   （F2/F3 同理; **verdict-day 重生成后再拷**, INTERIM 水印版禁入）。
-3. bib: `cp ../../paper.bib .`（或 symlink; kit 用 natbib + aaai27.bst）。
+唯一入口：
 
-## md → tex 转换（verdict slots 填完之后才做）
 ```bash
-# 1. 剥 HTML comments (checklist 块等) — 注意别在 md 里内联这个命令 (item-7 教训)
-# 2. pandoc 转 body (natbib citation)
-pandoc ../aaai27_main.md -f markdown -t latex --natbib --wrap=none \
-  -o body_generated.tex
-# 3. 手工整入 skeleton 各 \section (pandoc 输出是平铺的, header 层级会带
-#    \section/\subsection, 但 Table 1-4 的 markdown 管道表转出来是 longtable —
-#    需手工换成 booktabs tabular; citation key [@x] → \citep{x} pandoc 自动)
+./convert.sh
 ```
 
-## 提交前 checklist (与 aaai27_main.md 末尾 checklist 联动)
-- [ ] `[submission]` 模式编译 (匿名) + 页数 ≤7 正文 (refs 不计)
-- [ ] 全部 `TODO:` 清零; INTERIM 水印图 0 张 (grep "INTERIM" 编译日志/图源)
-- [ ] `bibtex` 0 warning (paper.bib key 与 --natbib 输出对齐; nikankin2025sametask 留 rebuttal 不入正文)
-- [ ] `\graphicspath` 下图全为 verdict-day 重生成版
-- [ ] grep 匿名违规: host 名 (spark/condense/quark/myriad) / 用户名 / OSF 非匿名链接
-- [ ] reproducibility checklist 按 kit 要求填 (aaai27_main.md # Reproducibility statement 为源)
+脚本每次重建 `build/`，自动完成 HTML comment 剥离、占位符 `\todo`
+标记、pandoc `--natbib` 转换、四张 Markdown 表的 `booktabs table*`
+转换、F1/F2 复制和 `latexmk` 编译。产物是 `build/main.pdf`；全局
+`.gitignore` 的 `build/` 规则已覆盖该目录。
+
+`paper.bib` 的 `note` 字段含内部文献消化文字，标准 BibTeX style 会将其
+原样打印；脚本仅在生成的 `build/paper.bib` 中剥掉这些单行字段，不改
+canonical Bib 文件。
+
+若本目录同时存在 `aaai27.sty` 与 `aaai27.bst`，脚本使用官方
+`submission` 模式；否则使用标准 `article[twocolumn]` + `plainnat`
+代理。代理 PDF 只证明转换链可编译，页数不等于正式 AAAI 页数。
+
+提交前仍须确认：官方 author kit 已放入本目录、全部 `\todo` 清零、
+F2 不含 `INTERIM/PARTIAL_DATA` 水印、BibTeX 无 warning、匿名信息清零。
