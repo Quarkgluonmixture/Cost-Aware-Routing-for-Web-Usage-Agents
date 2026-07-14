@@ -2309,7 +2309,7 @@
         "status": "complete but excluded by design"
       },
       "B1_phantom_prompt_reddit_20260713": {
-        "episodes": 88,
+        "episodes": 97,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "partial / pending"
       },

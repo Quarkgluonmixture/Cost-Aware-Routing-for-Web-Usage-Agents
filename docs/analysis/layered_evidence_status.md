@@ -1,6 +1,6 @@
 # 4-dimension Evidence Status (live snapshot)
 
-Generated: 2026-07-14 13:10 UTC
+Generated: 2026-07-14 13:55 UTC  
 Source: `make analyze-layered` (CLI alias preserved)
 
 > Four orthogonal dimensions: Outcome / Macro / Micro / Efficiency. Sub-codes (0a / 1c / 2a / 3d) remain as figure-internal anchors.
@@ -21,7 +21,7 @@ Source: `make analyze-layered` (CLI alias preserved)
 - B0 classifieds: best routing AUROC P-SoM **0.766**; ECE n/a in existing outputs
 - B1 reddit: best routing AUROC P-text **0.688**; ECE n/a in existing outputs
 - B1 classifieds: best routing AUROC DOM **0.870**; ECE n/a in existing outputs
-- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:54 UTC
 
 ### 0c Routing oracle (3→5-mode lift)
 
@@ -29,15 +29,15 @@ Source: `make analyze-layered` (CLI alias preserved)
   - single phantom lifts: +P-text +1.34pp; +P-SoM +1.34pp
 - reddit: **+2.44pp** [0.49, 4.88] Wilcoxon p=0.0253, McNemar p=0.0312 ✅
   - single phantom lifts: +P-text +1.46pp; +P-SoM +0.98pp
-- source: `results/phantom_paper/phantom_lift.csv` | last update: 2026-07-14 13:09 UTC
-- figures: `results/phantom_paper/figures/fig0c_drop_one_oracle.png`, `results/phantom_paper/figures/fig0c_phantom_lift_bars.png` | last update: 2026-07-14 13:09 UTC
+- source: `results/phantom_paper/phantom_lift.csv` | last update: 2026-07-14 13:54 UTC
+- figures: `results/phantom_paper/figures/fig0c_drop_one_oracle.png`, `results/phantom_paper/figures/fig0c_phantom_lift_bars.png` | last update: 2026-07-14 13:54 UTC
 
 ### 0d Task-pool Jaccard (Scenario C sentinel)
 
 - classifieds: P-text↔P-SoM Jaccard **0.591** (✅ safe); threshold ≤0.7
 - reddit: P-text↔P-SoM Jaccard **0.417** (✅ safe); threshold ≤0.7
-- source: `results/phantom_paper/phantom_lift.csv` | last update: 2026-07-14 13:09 UTC
-- figure: `results/phantom_paper/figures/fig0d_taskpool_jaccard.png` | last update: 2026-07-14 13:09 UTC
+- source: `results/phantom_paper/phantom_lift.csv` | last update: 2026-07-14 13:54 UTC
+- figure: `results/phantom_paper/figures/fig0d_taskpool_jaccard.png` | last update: 2026-07-14 13:54 UTC
 
 ### 0e Per-category SR
 
@@ -53,14 +53,14 @@ Source: `make analyze-layered` (CLI alias preserved)
 - classifieds P-SoM: d1=0 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
 - classifieds P-text: d1=0 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
 - classifieds P-prompt: d1=44 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
-- figure: `results/phantom_paper/figures/fig0f_overlap_stacked_bar.png` | last update: 2026-07-14 13:09 UTC
+- figure: `results/phantom_paper/figures/fig0f_overlap_stacked_bar.png` | last update: 2026-07-14 13:54 UTC
 
 ### 0g Routing AUROC
 
 - reddit: DOM n/a; P-text n/a; P-prompt n/a; P-SoM n/a; SoM n/a; Vision n/a
 - classifieds: DOM n/a; P-text n/a; P-prompt n/a; P-SoM n/a; SoM n/a; Vision n/a
-- source: `results/phantom_paper/auroc_cross_condition.csv` | last update: 2026-07-14 13:09 UTC
-- figure: `results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png` | last update: 2026-07-14 13:10 UTC
+- source: `results/phantom_paper/auroc_cross_condition.csv` | last update: 2026-07-14 13:54 UTC
+- figure: `results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png` | last update: 2026-07-14 13:54 UTC
 
 ## Macro — agent 平均怎么 act
 
@@ -68,25 +68,25 @@ Source: `make analyze-layered` (CLI alias preserved)
 
 - P-SoM distinct from both endpoints: reddit **0/8**, classifieds **0/8**
 - DOM-only distinct cells: 0; SoM-only distinct cells: 0; indistinct cells: 0
-- source: `docs/analysis/cross_sites/axis_effect_size.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/axis_effect_size.json` | last update: 2026-07-14 13:54 UTC
 
 ### 1b Tier 2a cascade
 
 - Dominant cascade counts: text 0; prompt 0; image 0
 - Antagonistic mechanism pairs: **0** ()
-- source: `docs/analysis/cross_sites/axis_effect_size.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/axis_effect_size.json` | last update: 2026-07-14 13:54 UTC
 
 ### 1c Strategy gradient
 
 - reddit: DOM search-loop n/a → P-SoM search-loop n/a → SoM search-loop n/a
 - classifieds: DOM search-loop n/a → P-SoM search-loop n/a → SoM search-loop n/a
-- figure: `results/phantom_paper/figures/fig1c_strategy_gradient.png` | last update: 2026-07-14 13:10 UTC
+- figure: `results/phantom_paper/figures/fig1c_strategy_gradient.png` | last update: 2026-07-14 13:54 UTC
 
 ### 1d Full action vocabulary (E4)
 
 - reddit: compound DOM→P-SoM top shifts: tab_focus 0.077; scroll -0.043; finish -0.030
 - classifieds: compound DOM→P-SoM top shifts: scroll 0.025; type -0.024; tab_focus -0.010
-- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:54 UTC
 
 ## Micro — per-step 决策
 
@@ -94,43 +94,43 @@ Source: `make analyze-layered` (CLI alias preserved)
 
 - reddit: axis-1 URL-path Jaccard **n/a**; compound DOM↔P-SoM **n/a**
 - classifieds: axis-1 URL-path Jaccard **n/a**; compound DOM↔P-SoM **n/a**
-- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:09 UTC
-- figure: `results/phantom_paper/figures/fig2_micro_divergence_heatmap.png` | last update: 2026-07-14 13:10 UTC
+- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:54 UTC
+- figure: `results/phantom_paper/figures/fig2_micro_divergence_heatmap.png` | last update: 2026-07-14 13:54 UTC
 
 ### 2a-extra Click-target divergence (E1)
 
 - reddit: axis-1 click-transition Jaccard **0.333**; compound DOM↔P-SoM **0.308**
 - classifieds: axis-1 click-transition Jaccard **0.315**; compound DOM↔P-SoM **0.332**
-- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:54 UTC
 
 ### 2b Target-hit
 
 - reddit: axis-1 n/a; compound n/a
 - classifieds: axis-1 n/a; compound n/a
-- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:54 UTC
 
 ### 2c Keyword reuse
 
 - reddit: axis-1 max-keyword-repeat diff **n/a**; compound **n/a**
 - classifieds: axis-1 max-keyword-repeat diff **n/a**; compound **n/a**
-- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:54 UTC
 
 ### 2d First-action
 
 - reddit: axis-1 divergence **n/a**; compound **n/a**
 - classifieds: axis-1 divergence **n/a**; compound **n/a**
-- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:54 UTC
 
 ### 2e Cross-site validity
 
 - verdict: **not supported**; reddit ratio n/a, classifieds ratio n/a
-- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/axis1_microbehavior.json` | last update: 2026-07-14 13:54 UTC
 
 ### 2f Trajectory boundary (E2)
 
 - reddit: DOM↔P-SoM symmetric-diff N **n/a**; median first divergent step n/a; early n/a; late n/a
 - classifieds: DOM↔P-SoM symmetric-diff N **n/a**; median first divergent step n/a; early n/a; late n/a
-- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:09 UTC
+- source: `docs/analysis/cross_sites/mechanism_per_task.json` | last update: 2026-07-14 13:54 UTC
 
 ## Efficiency — cost / latency / carbon
 
@@ -144,7 +144,7 @@ Source: `make analyze-layered` (CLI alias preserved)
 
 - reddit: SoM median tokens/step n/a vs P-SoM n/a; observed gap **n/a tokens/step**
 - classifieds: SoM median tokens/step n/a vs P-SoM n/a; observed gap **n/a tokens/step**
-- source: `results/phantom_paper/run_summary_collect.json` plus episode `total_tokens` fallback | last update: 2026-07-14 13:09 UTC
+- source: `results/phantom_paper/run_summary_collect.json` plus episode `total_tokens` fallback | last update: 2026-07-14 13:54 UTC
 
 ### 3c Latency
 
@@ -158,8 +158,8 @@ Computed via `aggregate_cost_electricity.py`: B0 = API token dollars; B1 = `avg_
 - reddit: B0 API $0.1043/ep vs B1 electricity $0.001254/ep → **83x** deployment-class gap
 - classifieds: B0 API $0.0694/ep vs B1 electricity $0.000648/ep → **107x** deployment-class gap
 - ⚠️ §103 / paper-planning legacy '30×' claim **superseded** by these data — real ratio ~100× (deployment class, not capability ratio)
-- source: `docs/analysis/cross_sites/cost_per_mode.json` | last update: 2026-07-14 13:09 UTC
-- figure: `results/phantom_paper/figures/fig3d_cost_sr_frontier.png` | last update: 2026-07-14 13:10 UTC
+- source: `docs/analysis/cross_sites/cost_per_mode.json` | last update: 2026-07-14 13:54 UTC
+- figure: `results/phantom_paper/figures/fig3d_cost_sr_frontier.png` | last update: 2026-07-14 13:55 UTC
 
 ## Paper Claim → Dimension Support Matrix
 
