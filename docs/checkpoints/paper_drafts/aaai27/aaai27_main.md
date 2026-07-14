@@ -243,6 +243,11 @@ PRE-SUBMISSION CHECKLIST (delete before compile)
     this prose (CLAUDE.md auto-trigger).
  6. Verify all bib keys compile against paper.bib; nikankin2025sametask
     reserved for rebuttal use.
+ 6b. OFFICIAL PDF COMPILE MUST GO THROUGH latex/convert.sh — it strips
+    the 63 internal `note` fields from the build copy of paper.bib
+    (they contain internal triage/reviewer text; any bypass compile
+    LEAKS them into the reference list and inflates ~3 pages —
+    empirically caught in the 2026-07-14 LaTeX dry-run).
  7. Word budget (measure by stripping HTML comments, then wc -w; do
     NOT paste the strip-regex here — a literal close-comment token
     inside this block truncates it, empirically caught 2026-07-01):
