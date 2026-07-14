@@ -240,11 +240,43 @@
     },
     "reddit": {
       "axis_1_text": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 75,
+            "1": 48,
+            "11": 1,
+            "2": 35,
+            "3": 16,
+            "4": 14,
+            "5": 8,
+            "6": 3,
+            "7": 3,
+            "9": 2
+          },
+          "left_mean": 1.609756,
+          "right_hist": {
+            "0": 76,
+            "1": 47,
+            "2": 37,
+            "3": 18,
+            "4": 11,
+            "5": 8,
+            "6": 5,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "right_mean": 1.526829,
+          "union_mean": 2.84878
+        },
         "contrast": "DOM vs P-text",
         "left_mode": "DOM",
-        "n": 0,
+        "mean_decision_divergence": 0.667139,
+        "mean_jaccard": 0.332861,
+        "median_jaccard": 0.0,
+        "n": 205,
         "right_mode": "P-text",
-        "skipped": true
+        "std_jaccard": 0.441438
       },
       "axis_1_text_alt": {
         "contrast": "P-prompt vs P-SoM",
@@ -254,11 +286,43 @@
         "skipped": true
       },
       "axis_2_prompt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 76,
+            "1": 47,
+            "2": 37,
+            "3": 18,
+            "4": 11,
+            "5": 8,
+            "6": 5,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "left_mean": 1.526829,
+          "right_hist": {
+            "0": 74,
+            "1": 45,
+            "2": 41,
+            "3": 14,
+            "4": 11,
+            "5": 11,
+            "6": 3,
+            "7": 2,
+            "8": 3,
+            "9": 1
+          },
+          "right_mean": 1.62439,
+          "union_mean": 2.785366
+        },
         "contrast": "P-text vs P-SoM",
         "left_mode": "P-text",
-        "n": 0,
+        "mean_decision_divergence": 0.590621,
+        "mean_jaccard": 0.409379,
+        "median_jaccard": 0.166667,
+        "n": 205,
         "right_mode": "P-SoM",
-        "skipped": true
+        "std_jaccard": 0.448006
       },
       "axis_2_prompt_alt": {
         "contrast": "DOM vs P-prompt",
@@ -268,18 +332,80 @@
         "skipped": true
       },
       "axis_3_image": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 74,
+            "1": 45,
+            "2": 41,
+            "3": 14,
+            "4": 11,
+            "5": 11,
+            "6": 3,
+            "7": 2,
+            "8": 3,
+            "9": 1
+          },
+          "left_mean": 1.62439,
+          "right_hist": {
+            "0": 80,
+            "1": 58,
+            "2": 32,
+            "3": 16,
+            "4": 12,
+            "5": 4,
+            "6": 2,
+            "7": 1
+          },
+          "right_mean": 1.253659,
+          "union_mean": 2.609756
+        },
         "contrast": "P-SoM vs SoM",
         "left_mode": "P-SoM",
-        "n": 0,
+        "mean_decision_divergence": 0.68697,
+        "mean_jaccard": 0.31303,
+        "median_jaccard": 0.0,
+        "n": 205,
         "right_mode": "SoM",
-        "skipped": true
+        "std_jaccard": 0.428763
       },
       "compound_DOM_to_PSoM": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 75,
+            "1": 48,
+            "11": 1,
+            "2": 35,
+            "3": 16,
+            "4": 14,
+            "5": 8,
+            "6": 3,
+            "7": 3,
+            "9": 2
+          },
+          "left_mean": 1.609756,
+          "right_hist": {
+            "0": 74,
+            "1": 45,
+            "2": 41,
+            "3": 14,
+            "4": 11,
+            "5": 11,
+            "6": 3,
+            "7": 2,
+            "8": 3,
+            "9": 1
+          },
+          "right_mean": 1.62439,
+          "union_mean": 2.936585
+        },
         "contrast": "DOM vs P-SoM",
         "left_mode": "DOM",
-        "n": 0,
+        "mean_decision_divergence": 0.692066,
+        "mean_jaccard": 0.307934,
+        "median_jaccard": 0.0,
+        "n": 205,
         "right_mode": "P-SoM",
-        "skipped": true
+        "std_jaccard": 0.424943
       }
     }
   },
@@ -591,16 +717,51 @@
     },
     "reddit": {
       "DOM_vs_P-SoM": {
-        "case_studies": [],
-        "case_study_task_ids": [],
-        "early_divergence_rate": null,
-        "first_divergent_step_histogram": {},
-        "late_divergence_rate": null,
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 11,
+            "left_success": true,
+            "right_n_steps": 28,
+            "right_success": false,
+            "task_id": 2,
+            "trajectory_jaccard": 0.2
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 11,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 2,
+            "left_n_steps": 30,
+            "left_success": true,
+            "right_n_steps": 32,
+            "right_success": false,
+            "task_id": 58,
+            "trajectory_jaccard": 0.333333
+          }
+        ],
+        "case_study_task_ids": [
+          2,
+          58,
+          11
+        ],
+        "early_divergence_rate": 1.0,
+        "first_divergent_step_histogram": {
+          "0": 14,
+          "1": 6,
+          "2": 1
+        },
+        "late_divergence_rate": 0.0,
         "left_mode": "DOM",
-        "median_first_divergent_step": null,
-        "n_symmetric_diff_tasks": 0,
-        "right_mode": "P-SoM",
-        "skipped": true
+        "median_first_divergent_step": 0,
+        "n_symmetric_diff_tasks": 21,
+        "right_mode": "P-SoM"
       },
       "DOM_vs_P-prompt": {
         "case_studies": [],
@@ -615,28 +776,100 @@
         "skipped": true
       },
       "DOM_vs_P-text": {
-        "case_studies": [],
-        "case_study_task_ids": [],
-        "early_divergence_rate": null,
-        "first_divergent_step_histogram": {},
-        "late_divergence_rate": null,
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 14,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 15,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 8,
+            "left_n_steps": 30,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 100,
+            "trajectory_jaccard": 0.428571
+          }
+        ],
+        "case_study_task_ids": [
+          14,
+          100,
+          15
+        ],
+        "early_divergence_rate": 0.9375,
+        "first_divergent_step_histogram": {
+          "0": 14,
+          "3": 1,
+          "8": 1
+        },
+        "late_divergence_rate": 0.0,
         "left_mode": "DOM",
-        "median_first_divergent_step": null,
-        "n_symmetric_diff_tasks": 0,
-        "right_mode": "P-text",
-        "skipped": true
+        "median_first_divergent_step": 0.0,
+        "n_symmetric_diff_tasks": 16,
+        "right_mode": "P-text"
       },
       "P-SoM_vs_SoM": {
-        "case_studies": [],
-        "case_study_task_ids": [],
-        "early_divergence_rate": null,
-        "first_divergent_step_histogram": {},
-        "late_divergence_rate": null,
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 10,
+            "right_success": true,
+            "task_id": 4,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": true,
+            "right_n_steps": 6,
+            "right_success": false,
+            "task_id": 11,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 6,
+            "left_n_steps": 17,
+            "left_success": false,
+            "right_n_steps": 27,
+            "right_success": true,
+            "task_id": 21,
+            "trajectory_jaccard": 0.333333
+          }
+        ],
+        "case_study_task_ids": [
+          4,
+          21,
+          11
+        ],
+        "early_divergence_rate": 0.95,
+        "first_divergent_step_histogram": {
+          "0": 12,
+          "1": 4,
+          "2": 2,
+          "3": 1,
+          "6": 1
+        },
+        "late_divergence_rate": 0.0,
         "left_mode": "P-SoM",
-        "median_first_divergent_step": null,
-        "n_symmetric_diff_tasks": 0,
-        "right_mode": "SoM",
-        "skipped": true
+        "median_first_divergent_step": 0.0,
+        "n_symmetric_diff_tasks": 21,
+        "right_mode": "SoM"
       },
       "P-prompt_vs_P-SoM": {
         "case_studies": [],
@@ -651,16 +884,51 @@
         "skipped": true
       },
       "P-text_vs_P-SoM": {
-        "case_studies": [],
-        "case_study_task_ids": [],
-        "early_divergence_rate": null,
-        "first_divergent_step_histogram": {},
-        "late_divergence_rate": null,
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 11,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 12,
+            "trajectory_jaccard": 0.25
+          },
+          {
+            "first_divergent_step": 2,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 100,
+            "trajectory_jaccard": 0.8
+          }
+        ],
+        "case_study_task_ids": [
+          11,
+          100,
+          12
+        ],
+        "early_divergence_rate": 1.0,
+        "first_divergent_step_histogram": {
+          "0": 16,
+          "1": 3,
+          "2": 2
+        },
+        "late_divergence_rate": 0.0,
         "left_mode": "P-text",
-        "median_first_divergent_step": null,
-        "n_symmetric_diff_tasks": 0,
-        "right_mode": "P-SoM",
-        "skipped": true
+        "median_first_divergent_step": 0,
+        "n_symmetric_diff_tasks": 21,
+        "right_mode": "P-SoM"
       }
     }
   },
@@ -809,12 +1077,568 @@
         "site": "classifieds",
         "source_run": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
         "source_table": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/DOM": {
+        "AUROC_behavioral_max": 0.685333,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": 0.614286,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.76019,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "DOM",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
+        "source_table": "results/visualwebarena/phase1/B0_dom_reddit_20260625_154833_928747130_2827521_R11344/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/P-SoM": {
+        "AUROC_behavioral_max": 0.673196,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.607023,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.736742,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-SoM",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/P-text": {
+        "AUROC_behavioral_max": 0.654229,
+        "AUROC_behavioral_n": 76,
+        "AUROC_behavioral_signal": "url_revisit_max",
+        "AUROC_token": 0.688226,
+        "AUROC_token_n": 76,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.694859,
+        "AUROC_verbal_n": 76,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-text",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/SoM": {
+        "AUROC_behavioral_max": 0.713524,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.588286,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.575905,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "SoM",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936",
+        "source_table": "results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/Vision": {
+        "AUROC_behavioral_max": 0.876653,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.787698,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.853505,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "Vision",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
+        "source_table": "results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/classifieds/DOM": {
+        "AUROC_behavioral_max": 0.870238,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.753401,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.702211,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "DOM",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_dom_classifieds_20260603_103630_477435114_112846_R17188",
+        "source_table": "results/visualwebarena/phase1/B1_dom_classifieds_20260603_103630_477435114_112846_R17188/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/classifieds/P-SoM": {
+        "AUROC_behavioral_max": 0.63126,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.703668,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.726954,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-SoM",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199",
+        "source_table": "results/visualwebarena/phase1/B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/classifieds/P-prompt": {
+        "AUROC_behavioral_max": 0.726954,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.63126,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.658692,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-prompt",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516",
+        "source_table": "results/visualwebarena/phase1/B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/classifieds/P-text": {
+        "AUROC_behavioral_max": 0.827792,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.742825,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.722648,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-text",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933",
+        "source_table": "results/visualwebarena/phase1/B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/classifieds/SoM": {
+        "AUROC_behavioral_max": 0.527425,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.635417,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_mean_logprob",
+        "AUROC_verbal": 0.737061,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "SoM",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_som_classifieds_20260604_072456_562166453_226675_R31705",
+        "source_table": "results/visualwebarena/phase1/B1_som_classifieds_20260604_072456_562166453_226675_R31705/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/classifieds/Vision": {
+        "AUROC_behavioral_max": 0.706542,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.533163,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_mean_margin",
+        "AUROC_verbal": 0.806214,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "Vision",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_vision_classifieds_20260605_012235_349047872_327631_R28622",
+        "source_table": "results/visualwebarena/phase1/B1_vision_classifieds_20260605_012235_349047872_327631_R28622/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/reddit/DOM": {
+        "AUROC_behavioral_max": 0.634443,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.594989,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.682685,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "DOM",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_dom_reddit_20260703",
+        "source_table": "results/visualwebarena/phase1/B1_dom_reddit_20260703/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/reddit/P-SoM": {
+        "AUROC_behavioral_max": 0.546372,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": 0.503366,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_mean_margin",
+        "AUROC_verbal": 0.644727,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-SoM",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_phantom_som_reddit_20260711",
+        "source_table": "results/visualwebarena/phase1/B1_phantom_som_reddit_20260711/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/reddit/P-text": {
+        "AUROC_behavioral_max": 0.640613,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.688482,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.684929,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-text",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_phantom_text_reddit_20260710",
+        "source_table": "results/visualwebarena/phase1/B1_phantom_text_reddit_20260710/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/reddit/SoM": {
+        "AUROC_behavioral_max": 0.518773,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": 0.506258,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_mean_entropy",
+        "AUROC_verbal": 0.666927,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "SoM",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_som_reddit_20260706",
+        "source_table": "results/visualwebarena/phase1/B1_som_reddit_20260706/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B1/reddit/Vision": {
+        "AUROC_behavioral_max": null,
+        "AUROC_behavioral_n": null,
+        "AUROC_behavioral_signal": null,
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": null,
+        "AUROC_verbal_n": null,
+        "AUROC_verbal_signal": null,
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "Vision",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_vision_reddit_20260708_002122_732634080_205180_R16847",
+        "source_table": "results/visualwebarena/phase1/B1_vision_reddit_20260708_002122_732634080_205180_R16847/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B2/classifieds/DOM": {
+        "AUROC_behavioral_max": 0.914781,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.68175,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_mean_margin",
+        "AUROC_verbal": 0.671192,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "DOM",
+        "model": "B2",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B2_dom_classifieds_20260609_214713_553762009_985526_R21521",
+        "source_table": "results/visualwebarena/phase1/B2_dom_classifieds_20260609_214713_553762009_985526_R21521/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B2/classifieds/P-SoM": {
+        "AUROC_behavioral_max": 0.880631,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": 0.835586,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.367045,
+        "AUROC_verbal_n": 222,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-SoM",
+        "model": "B2",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577",
+        "source_table": "results/visualwebarena/phase1/B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B2/classifieds/P-prompt": {
+        "AUROC_behavioral_max": 0.932955,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": 0.652273,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.496591,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-prompt",
+        "model": "B2",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175",
+        "source_table": "results/visualwebarena/phase1/B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B2/classifieds/P-text": {
+        "AUROC_behavioral_max": 0.659193,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": 0.919283,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.934091,
+        "AUROC_verbal_n": 221,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "P-text",
+        "model": "B2",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219",
+        "source_table": "results/visualwebarena/phase1/B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B2/classifieds/SoM": {
+        "AUROC_behavioral_max": 0.646575,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.63653,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.663014,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "SoM",
+        "model": "B2",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B2_som_classifieds_20260611_210828_923656661_1218867_R3380",
+        "source_table": "results/visualwebarena/phase1/B2_som_classifieds_20260611_210828_923656661_1218867_R3380/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B2/classifieds/Vision": {
+        "AUROC_behavioral_max": 0.619635,
+        "AUROC_behavioral_n": 224,
+        "AUROC_behavioral_signal": "url_revisit_max",
+        "AUROC_token": 0.807306,
+        "AUROC_token_n": 224,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.654795,
+        "AUROC_verbal_n": 224,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": null,
+        "mode": "Vision",
+        "model": "B2",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B2_vision_classifieds_20260612_221910_098760264_1351451_R9288",
+        "source_table": "results/visualwebarena/phase1/B2_vision_classifieds_20260612_221910_098760264_1351451_R9288/analysis/signals/combined/tables/auroc_all_metrics.csv"
       }
     },
     "highlights": {
       "B0/classifieds": {
         "best_signal_AUROC": 0.766062,
         "best_signal_AUROC_mode": "B0/classifieds/P-SoM",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": null,
+        "lowest_ECE_verbal": null
+      },
+      "B0/reddit": {
+        "best_signal_AUROC": 0.876653,
+        "best_signal_AUROC_mode": "B0/reddit/Vision",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": null,
+        "lowest_ECE_verbal": null
+      },
+      "B1/classifieds": {
+        "best_signal_AUROC": 0.870238,
+        "best_signal_AUROC_mode": "B1/classifieds/DOM",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": null,
+        "lowest_ECE_verbal": null
+      },
+      "B1/reddit": {
+        "best_signal_AUROC": 0.688482,
+        "best_signal_AUROC_mode": "B1/reddit/P-text",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": null,
+        "lowest_ECE_verbal": null
+      },
+      "B2/classifieds": {
+        "best_signal_AUROC": 0.934091,
+        "best_signal_AUROC_mode": "B2/classifieds/P-text",
         "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
         "honest_commit_mode_lowest_ECE_verbal": null,
         "lowest_ECE_verbal": null
@@ -1069,21 +1893,42 @@
         "axis_1_text": {
           "left_mode": "DOM",
           "mean_per_task_fraction_shift": {
-            "back": null,
-            "click": null,
-            "finish": null,
-            "forward": null,
-            "other": null,
-            "scroll": null,
-            "select_option": null,
-            "tab_focus": null,
-            "type": null,
-            "wait": null
+            "back": 0.006965,
+            "click": -0.01554,
+            "finish": -0.027969,
+            "forward": 0.000157,
+            "other": 0.002943,
+            "scroll": -0.049364,
+            "select_option": -0.001488,
+            "tab_focus": 0.077362,
+            "type": 0.00663,
+            "wait": 0.000305
           },
-          "n": 0,
+          "n": 205,
           "right_mode": "P-text",
-          "skipped": true,
-          "top_abs_shifts": []
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": 0.077362
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.049364
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": -0.027969
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.01554
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": 0.006965
+            }
+          ]
         },
         "axis_1_text_alt": {
           "left_mode": "P-prompt",
@@ -1107,21 +1952,42 @@
         "axis_2_prompt": {
           "left_mode": "P-text",
           "mean_per_task_fraction_shift": {
-            "back": null,
-            "click": null,
-            "finish": null,
-            "forward": null,
-            "other": null,
-            "scroll": null,
-            "select_option": null,
-            "tab_focus": null,
-            "type": null,
-            "wait": null
+            "back": -0.003749,
+            "click": 0.013918,
+            "finish": -0.002485,
+            "forward": -0.000157,
+            "other": -0.002537,
+            "scroll": 0.006812,
+            "select_option": 0.004085,
+            "tab_focus": -0.000269,
+            "type": -0.018112,
+            "wait": 0.002493
           },
-          "n": 0,
+          "n": 205,
           "right_mode": "P-SoM",
-          "skipped": true,
-          "top_abs_shifts": []
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.018112
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": 0.013918
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.006812
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.004085
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.003749
+            }
+          ]
         },
         "axis_2_prompt_alt": {
           "left_mode": "DOM",
@@ -1145,40 +2011,82 @@
         "axis_3_image": {
           "left_mode": "P-SoM",
           "mean_per_task_fraction_shift": {
-            "back": null,
-            "click": null,
-            "finish": null,
-            "forward": null,
-            "other": null,
-            "scroll": null,
-            "select_option": null,
-            "tab_focus": null,
-            "type": null,
-            "wait": null
+            "back": -0.009256,
+            "click": 0.023428,
+            "finish": 0.034792,
+            "forward": 0.0,
+            "other": -0.003414,
+            "scroll": -0.025516,
+            "select_option": 0.01444,
+            "tab_focus": -0.017292,
+            "type": -0.016745,
+            "wait": -0.000436
           },
-          "n": 0,
+          "n": 205,
           "right_mode": "SoM",
-          "skipped": true,
-          "top_abs_shifts": []
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": 0.034792
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.025516
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": 0.023428
+            },
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": -0.017292
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.016745
+            }
+          ]
         },
         "compound_DOM_to_PSoM": {
           "left_mode": "DOM",
           "mean_per_task_fraction_shift": {
-            "back": null,
-            "click": null,
-            "finish": null,
-            "forward": null,
-            "other": null,
-            "scroll": null,
-            "select_option": null,
-            "tab_focus": null,
-            "type": null,
-            "wait": null
+            "back": 0.003216,
+            "click": -0.001623,
+            "finish": -0.030454,
+            "forward": 0.0,
+            "other": 0.000406,
+            "scroll": -0.042552,
+            "select_option": 0.002597,
+            "tab_focus": 0.077093,
+            "type": -0.011482,
+            "wait": 0.002798
           },
-          "n": 0,
+          "n": 205,
           "right_mode": "P-SoM",
-          "skipped": true,
-          "top_abs_shifts": []
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": 0.077093
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.042552
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": -0.030454
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.011482
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": 0.003216
+            }
+          ]
         }
       }
     },
@@ -1254,6 +2162,66 @@
         "tab_focus": 0.006185,
         "type": 0.164464,
         "wait": 0.0
+      },
+      "B0/reddit/DOM": {
+        "back": 0.079864,
+        "click": 0.46515,
+        "finish": 0.025411,
+        "forward": 0.0,
+        "other": 0.024201,
+        "scroll": 0.190949,
+        "select_option": 0.023233,
+        "tab_focus": 0.04211,
+        "type": 0.148838,
+        "wait": 0.000242
+      },
+      "B0/reddit/P-SoM": {
+        "back": 0.074106,
+        "click": 0.442493,
+        "finish": 0.017777,
+        "forward": 0.0,
+        "other": 0.028914,
+        "scroll": 0.125723,
+        "select_option": 0.023774,
+        "tab_focus": 0.151638,
+        "type": 0.132362,
+        "wait": 0.003213
+      },
+      "B0/reddit/P-text": {
+        "back": 0.080628,
+        "click": 0.431572,
+        "finish": 0.015913,
+        "forward": 0.000212,
+        "other": 0.029281,
+        "scroll": 0.126883,
+        "select_option": 0.015489,
+        "tab_focus": 0.149586,
+        "type": 0.149798,
+        "wait": 0.000637
+      },
+      "B0/reddit/SoM": {
+        "back": 0.062637,
+        "click": 0.483305,
+        "finish": 0.024616,
+        "forward": 0.0,
+        "other": 0.023641,
+        "scroll": 0.097977,
+        "select_option": 0.044114,
+        "tab_focus": 0.146722,
+        "type": 0.11455,
+        "wait": 0.002437
+      },
+      "B0/reddit/Vision": {
+        "back": 0.044547,
+        "click": 0.318975,
+        "finish": 0.014709,
+        "forward": 0.0,
+        "other": 0.03341,
+        "scroll": 0.367934,
+        "select_option": 0.007775,
+        "tab_focus": 0.138054,
+        "type": 0.072284,
+        "wait": 0.002311
       }
     },
     "uncommon_action_highlights": [
@@ -1267,6 +2235,15 @@
         "site": "classifieds"
       },
       {
+        "action_type": "select_option",
+        "high_fraction": 0.044114,
+        "high_mode": "SoM",
+        "low_fraction": 0.007775,
+        "low_mode": "Vision",
+        "ratio": 5.674022,
+        "site": "reddit"
+      },
+      {
         "action_type": "tab_focus",
         "high_fraction": 0.016418,
         "high_mode": "P-prompt",
@@ -1276,6 +2253,24 @@
         "site": "classifieds"
       },
       {
+        "action_type": "scroll",
+        "high_fraction": 0.367934,
+        "high_mode": "Vision",
+        "low_fraction": 0.097977,
+        "low_mode": "SoM",
+        "ratio": 3.755311,
+        "site": "reddit"
+      },
+      {
+        "action_type": "tab_focus",
+        "high_fraction": 0.151638,
+        "high_mode": "P-SoM",
+        "low_fraction": 0.04211,
+        "low_mode": "DOM",
+        "ratio": 3.600978,
+        "site": "reddit"
+      },
+      {
         "action_type": "back",
         "high_fraction": 0.108291,
         "high_mode": "P-text",
@@ -1283,12 +2278,41 @@
         "low_mode": "Vision",
         "ratio": 2.10487,
         "site": "classifieds"
+      },
+      {
+        "action_type": "type",
+        "high_fraction": 0.149798,
+        "high_mode": "P-text",
+        "low_fraction": 0.072284,
+        "low_mode": "Vision",
+        "ratio": 2.072357,
+        "site": "reddit"
       }
     ]
   },
   "data_status": {
     "p_prompt": {
       "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {
+        "episodes": 224,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "complete but excluded by design"
+      },
+      "B0_phantom_prompt_reddit_20260709": {
+        "episodes": 96,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "partial / pending"
+      },
+      "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {
+        "episodes": 224,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "complete but excluded by design"
+      },
+      "B1_phantom_prompt_reddit_20260713": {
+        "episodes": 81,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "partial / pending"
+      },
+      "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {
         "episodes": 224,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "complete but excluded by design"
@@ -1303,12 +2327,21 @@
         "SoM": "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/phase1_som_router_0/episodes",
         "Vision": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/phase1_vision_router_0/episodes"
       },
-      "reddit": {}
+      "reddit": {
+        "DOM": "results/visualwebarena/phase1/B0_dom_reddit_20260625_154833_928747130_2827521_R11344/phase1_dom_router_0/episodes",
+        "P-SoM": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/phase1_phantom_som_router_0/episodes",
+        "P-text": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/phase1_phantom_text_router_0/episodes",
+        "SoM": "results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936/phase1_som_router_0/episodes",
+        "Vision": "results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/phase1_vision_router_0/episodes"
+      }
     }
   },
   "method": "Per-task mechanism evidence over B0 reddit/classifieds five-mode runs. E1 uses URL-changing click transition sets, E2 uses first divergent URL-signature step on symmetric-difference adjusted-success tasks, E3 aggregates existing confidence analyzer outputs across paper-grade B0/B1 cells without recomputing calibration, and E4 reports full action_type distributions. Element ids are not used because they are not mode-invariant or step-invariant.",
   "paper_section5_implications": {
-    "status": "skipped \u2014 partial data / \u00a75 frozen (KeyError: 'mean_jaccard')"
+    "E1_headline": "DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.308 on reddit and 0.332 on classifieds.",
+    "E2_headline": "Boundary divergence is usually visible early among symmetric-difference tasks: DOM vs P-SoM early rates are reddit 100.0% and classifieds 95.5%.",
+    "E3_headline": "The strongest calibration/routing cell is B2/classifieds/P-text with max AUROC 0.934; B0 token ECE is unavailable in existing per-run outputs.",
+    "E4_headline": "The largest action-vocabulary shift is reddit axis_1_text tab_focus (0.077 right-minus-left)."
   },
   "validation": {
     "E1_mean_jaccard_range_checks": {
@@ -1317,7 +2350,11 @@
       "classifieds/axis_2_prompt": true,
       "classifieds/axis_2_prompt_alt": true,
       "classifieds/axis_3_image": true,
-      "classifieds/compound_DOM_to_PSoM": true
+      "classifieds/compound_DOM_to_PSoM": true,
+      "reddit/axis_1_text": true,
+      "reddit/axis_2_prompt": true,
+      "reddit/axis_3_image": true,
+      "reddit/compound_DOM_to_PSoM": true
     },
     "E2_first_divergent_step_range_checks": {
       "classifieds/DOM_vs_P-SoM": true,
@@ -1334,9 +2371,9 @@
       "reddit/P-text_vs_P-SoM": true
     },
     "E3_cell_count": {
-      "expected": 17,
-      "observed": 6,
-      "pass": false
+      "expected": 28,
+      "observed": 28,
+      "pass": true
     },
     "E4_action_dist_sum_checks": {
       "B0/classifieds/DOM": {
@@ -1362,6 +2399,26 @@
       "B0/classifieds/Vision": {
         "pass": true,
         "sum": 1.0
+      },
+      "B0/reddit/DOM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/P-SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/P-text": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/Vision": {
+        "pass": true,
+        "sum": 1.0
       }
     },
     "axis1_n_checks": {
@@ -1372,8 +2429,8 @@
       },
       "reddit": {
         "expected": 205,
-        "observed": 0,
-        "pass": false
+        "observed": 205,
+        "pass": true
       }
     },
     "effect_size_presence_checks": {

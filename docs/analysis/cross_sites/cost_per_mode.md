@@ -10,6 +10,7 @@ B0 reports avg_total_cost_usd from per-token API rates (Qwen3-VL-235B-A22B $0.00
 | reddit | SoM | 20.0 | $0.1100 |
 | reddit | Vision | 23.2 | $0.0975 |
 | reddit | P-text | 23.0 | $0.1050 |
+| reddit | P-SoM | 22.7 | $0.1078 |
 | classifieds | DOM | 15.6 | $0.0696 |
 | classifieds | SoM | 13.7 | $0.0724 |
 | classifieds | Vision | 15.9 | $0.0648 |
@@ -23,6 +24,11 @@ Computed as `avg_total_energy_kwh × $0.12/kWh` (DGX Spark, UK industrial rate p
 
 | site | mode | avg_steps | avg_energy_kwh | avg_co2e_kg | avg_electricity_usd ($/ep) |
 |---|---|---:|---:|---:|---:|
+| reddit | DOM | 23.4 | 0.01098 | 0.00241 | $0.001317 |
+| reddit | SoM | 22.2 | 0.01103 | 0.00243 | $0.001324 |
+| reddit | Vision | 23.1 | 0.00830 | 0.00183 | $0.000996 |
+| reddit | P-text | 25.5 | 0.01078 | 0.00237 | $0.001294 |
+| reddit | P-SoM | 25.2 | 0.01116 | 0.00246 | $0.001340 |
 | classifieds | DOM | 21.4 | 0.00564 | 0.00124 | $0.000677 |
 | classifieds | SoM | 18.0 | 0.00482 | 0.00106 | $0.000578 |
 | classifieds | Vision | 20.2 | 0.00497 | 0.00109 | $0.000596 |
@@ -47,6 +53,7 @@ Computed as `avg_total_energy_kwh × $0.12/kWh` (DGX Spark, UK industrial rate p
 
 | site | avg B0 API ($/ep) | avg B1 electricity ($/ep) | ratio (B0/B1) |
 |---|---:|---:|---:|
+| reddit | $0.1043 | $0.001254 | 83× |
 | classifieds | $0.0694 | $0.000648 | 107× |
 
 The qualitative cost gap between API and local inference is large (2–3 orders of magnitude per these data) but is fundamentally a deployment-mode comparison, not a model-size ratio. Reporting a single multiplier (e.g. '30x') without specifying the cost class is misleading.
