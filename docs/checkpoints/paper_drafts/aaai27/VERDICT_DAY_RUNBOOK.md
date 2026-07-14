@@ -3,7 +3,7 @@
 > **触发时点**: 最后一个 pending cell bind 完成（Pass-1 全 36 → H1/H3 verdict day；Pass-2 router 6
 > cond 完成 → H10 verdict day，可分两次走）。目标 = 从 "数据 land" 到 "draft slot 全填 + 自检过" 一条
 > 命令链走完，**全程零手抄**（本 session 4 个 P0 全是转录/压缩漂移——工具链就是防它）。
-> k<6 提前投稿场景（advisor 预案(a)）同样走本 runbook，只是 gate_status=PARTIAL_DATA 时按 §6 特例处理。
+> k<6 提前投稿场景（advisor 预案(a)）同样走本 runbook，但 `analysis_status=PARTIAL` 时只允许 verdict-中性披露；不得选择或 splice 分支。
 
 ## 0. 前置: 数据 sync（每个 cell land 后即做, 不等 verdict day）
 
@@ -29,7 +29,7 @@ make analysis FAST=1
   --out /tmp/claude-1012/slotsheet_$(date +%Y%m%d).md
 ```
 
-- **Step 3 — 读 sheet §A/§B**: gate_status 必须 = COMPLETE（k<6 提前投稿除外，见 §6）。
+- **Step 3 — 读 sheet §A/§B**: `analysis_status` 必须 = `COMPLETE`，且 `h1_verdict ∈ {PASS,FAIL}`。
   确认 branch 建议后**人工对照** prereg §2.5 + Amendment 02 ladder（sheet 只建议不拍板；
   B2 claim-tier gate / I² cap 两个 modifier 在 sheet §A 里看）。
 
@@ -62,7 +62,7 @@ grep -nE "<(H1|H3|H10)-VERDICT>|R-CONDITIONAL|«|⟨TBD⟩|<TBD" aaai27_main.md
 
 ## 3. Abstract deadline (07-21) 特别通道
 
-07-21 只交 abstract + title：若当日 gate_status 仍 PARTIAL，abstract 用现稿的 verdict-中性版
+07-21 只交 abstract + title：若当日 `analysis_status` 仍为 `PARTIAL`，abstract 用现稿的 verdict-中性版
 （`<H1-VERDICT>` 句改为 "pre-registered gates … determine the final claim tier" 原措辞即可提交，
 CMT abstract 可后改）。**不要**在 abstract 里写 interim 数字。
 
@@ -76,7 +76,7 @@ Pass-2 land 后: `python scripts/analysis/aggregate_h10_pareto.py` → 重跑 sl
 
 | 症状 | 处置 |
 |---|---|
-| sheet §A gate_status=PARTIAL_DATA 但以为全 land | 查 skipped_cells 行 + fire_manifest bind 数; 回 §0 sync |
+| sheet §A analysis_status=PARTIAL 但以为全 land | 查 skipped_cells 行 + fire_manifest bind 数; 回 §0 sync |
 | H3 某轴意外 FAIL | branch_prewrites 两支都不适用 → Amendment 02 ladder (C'-R/F) 现写, 先停 splice |
 | sheet 数字 vs 旧 interim 引用打架 | 以 sheet 为准; interim 引用全文搜出来清掉 (笔记 §360.3 数字禁入 draft) |
 | I² cap_at_R3=True | framing 最高 R3, §1 hook 降级 (prereg I²-cap 条款) |
@@ -84,7 +84,7 @@ Pass-2 land 后: `python scripts/analysis/aggregate_h10_pareto.py` → 重跑 sl
 
 ## 6. k<6 提前投稿特例（advisor 预案(a) 获批时）
 
-- gate_status=PARTIAL_DATA 是预期态; sheet 照生成, «K»<6。
-- draft 必须同时落: §4 k<6 透明披露句 + §8 statistics para 对应修改（fixed-cells 设计, k 不齐明写）。
-- H1/H3 verdict 措辞用 "on the k=«K» landed cells" 限定; **分支句仍按 gate boolean 走**（prereg
-  fixed-cells 设计下 k<6 pooled gate 是有定义的, 只是 scope 收窄——这正是预案(a) 的披露义务）。
+- `analysis_status=PARTIAL` 是预期态；rehearsal sheet 顶部标 `INVALID_FOR_DRAFT`，§B 只输出 `NO_BRANCH`，并抑制可复制槽值/表格。
+- draft 只允许 verdict-中性措辞，并同时落 §4 k<6 透明披露句 + §8 statistics para 对应修改（fixed-cells 设计, k 不齐明写）。
+- pooled k<6 数值仅作 interim 诊断；**不得按 legacy `gate_status` 或 bootstrap boolean 选择分支**。最终分支唯一依据是 `analysis_status=COMPLETE` 后的 `h1_verdict`。
+- 例外出口（不焊死预案(a)）：若 advisor 确认要在 k<6 提前选支投稿，这构成对 prereg "over the 6 planned cells" estimand 的临时偏离 —— 须先落新的 PROTOCOL_NOTE（明确 k<6 pooled gate 的临时定义 + 披露义务）并打 witness tag；在此之前 slotsheet 刻意不提供任何 k<6 选支机制。runbook 层不得自行拍板。

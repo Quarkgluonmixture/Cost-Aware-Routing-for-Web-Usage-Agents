@@ -7,30 +7,39 @@ Outputs:
 
 Supporting visualization for oracle/drop-one solve-pool evidence.
 
-Drop-one oracle loss for B0/B1 VWA observation arms.
-
-All available cells are computed from episode-level ``success`` sets.
-B0 Phantom-SoM/P-text use fresh paper-grade clean re-run; B1 Phantom-SoM is
-drawn as unavailable pending re-run.
+Drop-one oracle loss for the six planned B0/B1/B2 × Classifieds/Reddit cells.
+Paper-grade numeric rows require the exact canonical six-mode/task-set contract;
+``--allow-partial`` is an explicitly NON_PAPER_GRADE exploratory route.
 """
 
 from __future__ import annotations
 
+import argparse
+import csv
 import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 try:
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import PAPER_MODES
     from scripts.analysis.figures.lib.panels import paper_grade_panels
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        task_id_set_sha256,
+    )
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import PAPER_MODES
     from scripts.analysis.figures.lib.panels import paper_grade_panels
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        task_id_set_sha256,
+    )
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "results/phantom_paper/figures/fig0c_drop_one_oracle.png"
@@ -65,15 +74,16 @@ def _spec_to_legacy_panel(spec) -> dict:
     return {
         "key": spec.key,
         "title": spec.title,
+        "baseline": spec.baseline,
+        "site": spec.site,
         "expected": spec.expected_n,
         "modes": dict(spec.modes),
         "is_placeholder": spec.is_placeholder,
     }
 
 
-# Drop-one oracle uses union/intersection over the **common observed** task
-# universe per panel (so a partial in-flight run doesn't artificially shrink
-# other modes' unique-task counts).
+# Panel topology is registry-driven; task-universe validation happens inside
+# ``load_panel_sets`` against the canonical scored IDs.
 PANELS = [_spec_to_legacy_panel(s) for s in paper_grade_panels()]
 
 # /stress A1.20 P1-4-A (2026-05-17): SECTION103_LOSS drift-detection dict deleted.
@@ -124,40 +134,104 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
     return successes, observed
 
 
-def load_panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, set[int]], set[int], set[str]]:
-    """Returns (succ_sets_intersected, observed_sets, common_universe, partial_modes).
+def load_panel_sets(
+    panel: dict,
+    *,
+    allow_partial: bool = False,
+) -> tuple[
+    dict[str, set[int]],
+    dict[str, set[int]],
+    set[int],
+    set[str],
+    dict,
+]:
+    """Load and validate one panel's six-arm task universe.
 
-    Drop-one is computed on the intersection of **complete** modes only.
-    Partial modes (observed < 0.9 × expected) are excluded from the oracle
-    union/intersection so they don't artificially shrink the comparable
-    universe (otherwise modes that diverge on the full pool can become
-    accidentally redundant in the partial intersection — e.g. B0 reddit
-    Vision drop-one collapsed to 0 when P-prompt at n=134 was included).
+    Paper-grade output requires exactly the six canonical modes and requires
+    every mode's observed task IDs to equal the site's canonical scored set.
+    The old 90% near-complete route is intentionally gone.  Exploratory output
+    is available only through ``allow_partial=True`` and is explicitly marked
+    NON_PAPER_GRADE by the caller.
     """
+    expected_override = panel.get("expected_task_ids")
+    if expected_override is None:
+        expected_ids, expected_sha = expected_scored_ids(panel["site"])
+    else:
+        expected_ids = frozenset(int(t) for t in expected_override)
+        expected_sha = task_id_set_sha256(expected_ids)
+
+    registered_modes = set(panel.get("modes", {}))
+    canonical_modes = set(MODES)
     sets: dict[str, set[int]] = {}
     obs: dict[str, set[int]] = {}
-    partial_modes: set[str] = set()
-    for mode, ep_dir in panel["modes"].items():
-        successes, observed = load_success_set(ep_dir)
+    for mode in MODES:
+        ep_dir = panel.get("modes", {}).get(mode)
+        if ep_dir is None:
+            successes, observed = set(), set()
+        else:
+            successes, observed = load_success_set(ep_dir)
         sets[mode] = successes
         obs[mode] = observed
-        if observed and len(observed) < int(panel["expected"] * 0.9):
-            partial_modes.add(mode)
-            print(
-                f"[note] {panel['title']} {mode}: partial n={len(observed)}/"
-                f"{panel['expected']} — excluded from drop-one oracle",
-                file=sys.stderr,
+
+    partial_modes = {m for m in MODES if obs[m] != expected_ids}
+    complete_exact = (
+        registered_modes == canonical_modes
+        and not partial_modes
+        and len(expected_ids) == int(panel["expected"])
+    )
+    errors: list[str] = []
+    if registered_modes != canonical_modes:
+        errors.append(
+            "mode set mismatch: "
+            f"missing={sorted(canonical_modes - registered_modes)} "
+            f"extra={sorted(registered_modes - canonical_modes)}"
+        )
+    for mode in MODES:
+        if obs[mode] != expected_ids:
+            errors.append(
+                f"{mode} task set mismatch: observed={len(obs[mode])}/"
+                f"expected={len(expected_ids)} missing={len(expected_ids - obs[mode])} "
+                f"extra={len(obs[mode] - expected_ids)}"
             )
-        elif observed and len(observed) != panel["expected"]:
-            print(
-                f"[note] {panel['title']} {mode}: near-complete n={len(observed)}/"
-                f"{panel['expected']} — included",
-                file=sys.stderr,
-            )
-    complete_obs = {m: o for m, o in obs.items() if m not in partial_modes and o}
-    common = set.intersection(*complete_obs.values()) if complete_obs else set()
-    sets_r = {m: s & common for m, s in sets.items() if m not in partial_modes}
-    return sets_r, obs, common, partial_modes
+
+    if complete_exact:
+        common = set(expected_ids)
+        participating_modes = list(MODES)
+    elif allow_partial:
+        participating_modes = [m for m in MODES if obs[m]]
+        common = (
+            set.intersection(*(obs[m] for m in participating_modes))
+            if participating_modes
+            else set()
+        )
+        if len(participating_modes) < 2:
+            errors.append("fewer than two observed modes for exploratory drop-one")
+        if not common:
+            errors.append("empty common task universe")
+    else:
+        participating_modes = []
+        common = set()
+
+    sets_r = {m: sets[m] & common for m in participating_modes} if common else {}
+    diagnostic_modes = [m for m in MODES if obs[m]]
+    diagnostic_common = (
+        set.intersection(*(obs[m] for m in diagnostic_modes))
+        if diagnostic_modes else set()
+    )
+    portfolio_modes = participating_modes or diagnostic_modes
+    task_sha = (
+        expected_sha if complete_exact
+        else task_id_set_sha256(common or diagnostic_common)
+    )
+    meta = {
+        "portfolio_modes": portfolio_modes,
+        "n_modes_unique": len(set(portfolio_modes)),
+        "task_set_sha256": task_sha,
+        "expected_task_set_sha256": expected_sha,
+        "complete_exact": complete_exact,
+        "errors": errors,
+    }
+    return sets_r, obs, common, partial_modes, meta
 
 
 def drop_one_losses(sets: dict[str, set[int]], expected: int) -> dict[str, float]:
@@ -172,20 +246,20 @@ def drop_one_losses(sets: dict[str, set[int]], expected: int) -> dict[str, float
 
 def bootstrap_drop_one_ci(
     sets: dict[str, set[int]],
-    expected: int,
+    common_task_ids: set[int] | frozenset[int],
     n_bootstrap: int = 1000,
     seed: int = 42,
     ci: float = 0.95,
 ) -> dict[str, tuple[float, float]]:
     """Bootstrap 95% CI for drop-one oracle loss per mode.
 
-    Resamples N tasks (with replacement) from observed task universe; for each
-    resample, recomputes drop-one loss; returns (low, high) percentiles.
+    Resamples the explicit common task universe, including tasks on which every
+    arm fails.  The universe must never be inferred from a success-set union.
     """
     rng = np.random.default_rng(seed)
     if not sets:
         return {}
-    universe = sorted(set().union(*sets.values()))
+    universe = sorted(int(t) for t in common_task_ids)
     if not universe:
         return {mode: (0.0, 0.0) for mode in sets}
     n = len(universe)
@@ -205,7 +279,7 @@ def bootstrap_drop_one_ci(
                 if m == mode:
                     continue
                 without |= mk[idx]
-            losses_samples[mode][b] = 100.0 * (union_count - int(without.sum())) / expected
+            losses_samples[mode][b] = 100.0 * (union_count - int(without.sum())) / n
     alpha = (1 - ci) / 2
     return {
         mode: (
@@ -216,7 +290,42 @@ def bootstrap_drop_one_ci(
     }
 
 
-def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
+def _panel_error_row(
+    panel: dict, meta: dict, captured_at: str, error: str, *,
+    grade: str = "PAPER_GRADE",
+) -> dict:
+    return {
+        "row_type": "panel_error",
+        "grade": grade,
+        "captured_at": captured_at,
+        "panel": panel["key"],
+        "site_baseline": panel["title"],
+        "baseline": panel.get("baseline", ""),
+        "site": panel.get("site", ""),
+        "mode": "",
+        "drop_one_loss_pp": "",
+        "ci95_low_pp": "",
+        "ci95_high_pp": "",
+        "n_common": 0,
+        "n_expected": panel["expected"],
+        "portfolio_modes": json.dumps(meta.get("portfolio_modes", [])),
+        "n_modes_unique": meta.get("n_modes_unique", 0),
+        "task_set_sha256": meta.get("task_set_sha256", ""),
+        "complete_exact": False,
+        "is_partial": True,
+        "error": error,
+    }
+
+
+def draw_panel(
+    ax: plt.Axes,
+    panel: dict,
+    csv_rows: list[dict],
+    *,
+    allow_partial: bool,
+    captured_at: str,
+) -> bool:
+    """Draw a panel and return whether its paper-grade contract is exact."""
     # /stress A1.20 P0-3 (2026-05-17): placeholder cells (e.g., B2 pre-Phase-1a-fire)
     # render explicit "pending" tile rather than silent skip.
     if panel.get("is_placeholder") or not panel["modes"]:
@@ -230,12 +339,46 @@ def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
         ax.set_title(panel["title"], fontsize=10.5, fontweight="bold")
         ax.set_xticks([])
         ax.set_yticks([])
-        return
-    sets_r, obs, common, partial_modes_set = load_panel_sets(panel)
+        meta = {
+            "portfolio_modes": [], "n_modes_unique": 0,
+            "task_set_sha256": "", "complete_exact": False,
+        }
+        csv_rows.append(_panel_error_row(
+            panel, meta, captured_at, "placeholder or no registered modes",
+            grade="NON_PAPER_GRADE" if allow_partial else "PAPER_GRADE",
+        ))
+        return False
+    sets_r, obs, common, partial_modes_set, meta = load_panel_sets(
+        panel, allow_partial=allow_partial,
+    )
+    if not meta["complete_exact"] and not allow_partial:
+        error = "; ".join(meta["errors"])
+        ax.text(
+            0.5, 0.5, f"{panel['title']}\n\nPANEL ERROR\n{error}",
+            ha="center", va="center", transform=ax.transAxes, fontsize=8,
+            color="#990000", wrap=True,
+        )
+        ax.set_title(panel["title"], fontsize=10.5, fontweight="bold")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        csv_rows.append(_panel_error_row(panel, meta, captured_at, error))
+        return False
+    if not sets_r or not common:
+        error = "; ".join(meta["errors"]) or "no numeric exploratory universe"
+        csv_rows.append(_panel_error_row(
+            panel, meta, captured_at, error,
+            grade="NON_PAPER_GRADE" if allow_partial else "PAPER_GRADE",
+        ))
+        ax.text(0.5, 0.5, f"{panel['title']}\n\nNO NUMERIC OUTPUT\n{error}",
+                ha="center", va="center", transform=ax.transAxes, fontsize=8,
+                color="#990000", wrap=True)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return False
     # Drop-one denominator = N_common across complete (non-partial) modes.
     n_common = len(common) if common else panel["expected"]
     losses = drop_one_losses(sets_r, n_common)
-    cis = bootstrap_drop_one_ci(sets_r, n_common)
+    cis = bootstrap_drop_one_ci(sets_r, common)
     partial_modes = sorted(partial_modes_set)
     # P1-4-A: SECTION103_LOSS now empty (deleted retired drift dict); loop preserved
     # as no-op for future drift-detection re-injection if needed.
@@ -287,15 +430,25 @@ def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
             fontsize=6.5,
         )
         csv_rows.append({
+            "row_type": "numeric",
+            "grade": "NON_PAPER_GRADE" if allow_partial else "PAPER_GRADE",
+            "captured_at": captured_at,
             "panel": panel["key"],
             "site_baseline": panel["title"],
+            "baseline": panel.get("baseline", ""),
+            "site": panel.get("site", ""),
             "mode": mode,
             "drop_one_loss_pp": round(value, 4),
             "ci95_low_pp": round(ci_low, 4),
             "ci95_high_pp": round(ci_high, 4),
             "n_common": n_common,
             "n_expected": panel["expected"],
-            "is_partial": mode in partial_modes,
+            "portfolio_modes": json.dumps(meta["portfolio_modes"]),
+            "n_modes_unique": meta["n_modes_unique"],
+            "task_set_sha256": meta["task_set_sha256"],
+            "complete_exact": meta["complete_exact"],
+            "is_partial": not meta["complete_exact"] or mode in partial_modes,
+            "error": "" if meta["complete_exact"] else "; ".join(meta["errors"]),
         })
     n_label = f"N={n_common}" if n_common == panel["expected"] else f"N={n_common}/{panel['expected']}†"
     ax.set_title(f"{panel['title']} ({n_label})", fontsize=10.5, fontweight="bold")
@@ -303,11 +456,23 @@ def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
     ax.set_ylim(0, 13.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
+    return bool(meta["complete_exact"])
 
 
-def main() -> None:
-    import csv as _csv
-    OUT.parent.mkdir(parents=True, exist_ok=True)
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
+    ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--csv-out", type=Path, default=None)
+    ap.add_argument(
+        "--allow-partial", action="store_true",
+        help="Exploratory only: emit NON_PAPER_GRADE numeric rows on the observed common subset.",
+    )
+    args = ap.parse_args(argv)
+    out_path = args.out
+    csv_path = args.csv_out or out_path.parent.parent / "fig0c_drop_one_bootstrap_ci.csv"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    captured_at = datetime.now(timezone.utc).isoformat()
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
     # /stress A1.20 P0-3: layout grows automatically with N panels (3 baselines
     # × 2 sites = 6 panels for Phase 1a, 2×4 grid). lib/panels.PanelSpec drives.
@@ -318,8 +483,13 @@ def main() -> None:
                              figsize=(13.0, max(4.3, 4.3 * n_rows)), sharey=True)
     axes_flat = axes.flat if hasattr(axes, "flat") else [axes]
     csv_rows: list[dict] = []
+    exact_panels: list[bool] = []
     for ax, panel in zip(axes_flat, PANELS):
-        draw_panel(ax, panel, csv_rows)
+        exact_panels.append(draw_panel(
+            ax, panel, csv_rows,
+            allow_partial=args.allow_partial,
+            captured_at=captured_at,
+        ))
     # Hide unused subplot if odd panel count.
     for extra in list(axes_flat)[n_panels:]:
         extra.set_visible(False)
@@ -328,14 +498,14 @@ def main() -> None:
             row[0].set_ylabel("Oracle loss when arm is removed (pp, 95% bootstrap CI)")
         else:
             row.set_ylabel("Oracle loss when arm is removed (pp, 95% bootstrap CI)")
-    fig.suptitle("Drop-One Oracle: Incremental Routing Value (up to 6-mode, 95% bootstrap CI, n=1000)", fontsize=13.5, fontweight="bold")
+    fig.suptitle("Drop-One Oracle: Incremental Routing Value (strict 6-mode, 95% bootstrap CI, n=1000)", fontsize=13.5, fontweight="bold")
     fig.text(
         0.5,
         0.025,
         "Higher bars = representation solves tasks not recovered by the other plotted arms. "
         "P-SoM = Phantom-SoM, P-text = AXTree+DOM-prompt+no per-step screenshot, P-prompt = AXTree+SoM-prompt+no per-step screenshot. "
-        "† = partial / common-universe subset (B0 reddit P-prompt run live; "
-        "B1 phantom_som chain in flight). **N=common observed across all 6 modes per panel** "
+        "† = explicit --allow-partial exploratory common-universe subset. "
+        "Paper-grade numeric rows require exact six modes and the canonical task-ID set. "
         "(denominator value shown in each panel title; pp lifts are expressed as percentages "
         "of THIS panel's N_common, not against site's expected_n) — /stress A1.20 P1-9-C (2026-05-17). "
         "Canonical N per site from scored_task_count post-§139.8: cls=224 / red=205. "
@@ -344,23 +514,32 @@ def main() -> None:
         fontsize=7.5,
         color="#555555",
     )
+    if args.allow_partial:
+        fig.text(0.5, 0.5, "NON_PAPER_GRADE — PARTIAL EXPLORATION",
+                 fontsize=24, color="#CC0000", alpha=0.18, ha="center",
+                 va="center", rotation=18, zorder=10)
     fig.tight_layout(rect=(0, 0.06, 1, 0.93))
-    fig.savefig(OUT, bbox_inches="tight")
-    print(OUT)
+    fig.savefig(out_path, bbox_inches="tight")
+    print(out_path)
     # Data sidecar lives alongside other cross-condition aggregations
     # (phantom_lift.csv, auroc_cross_condition.csv, run_summary_collect.json),
     # not inside figures/ — figures/ is for PNGs only.
-    csv_path = OUT.parent.parent / "fig0c_drop_one_bootstrap_ci.csv"
     with csv_path.open("w", newline="") as f:
-        writer = _csv.DictWriter(f, fieldnames=[
-            "panel", "site_baseline", "mode",
+        writer = csv.DictWriter(f, fieldnames=[
+            "row_type", "grade", "captured_at", "panel", "site_baseline",
+            "baseline", "site", "mode",
             "drop_one_loss_pp", "ci95_low_pp", "ci95_high_pp",
-            "n_common", "n_expected", "is_partial",
+            "n_common", "n_expected", "portfolio_modes", "n_modes_unique",
+            "task_set_sha256", "complete_exact", "is_partial", "error",
         ])
         writer.writeheader()
         writer.writerows(csv_rows)
     print(csv_path)
+    if not args.allow_partial and not all(exact_panels):
+        print("error: one or more panels failed exact paper-grade validation", file=sys.stderr)
+        return 2
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

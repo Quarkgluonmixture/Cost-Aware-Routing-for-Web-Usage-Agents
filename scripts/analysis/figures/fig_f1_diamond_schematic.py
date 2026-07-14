@@ -41,6 +41,7 @@ VISION_XY = (1.85, -0.05)
 
 
 def main() -> int:
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(7.0, 4.2), dpi=300)
 
     # phantom region: the three screenshot-free non-DOM corners
