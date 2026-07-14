@@ -87,8 +87,8 @@ The deterministic evaluation paths (`exact_match`, `must_include`, `one_of`,
 specific to the two LLM-judge paths.
 
 **Discovery**: Identified by code inspection during an audit of the VWA evaluation harness
-(2026-05-14).  Literature context: WebArena-Verified classifies N/A scoring as an "evaluation
-mechanism issue"; \citet{lu2025agentrewardbench} provide a systematic framework for
+(2026-05-14).  Literature context: WebArena Verified classifies N/A scoring as an "evaluation
+mechanism issue" \citep{elhattami2025webarenaverified}; \citet{lu2025agentrewardbench} provide a systematic framework for
 categorising evaluator failure modes in web-agent benchmarks.
 (来源: `docs/reference/master_bug_catalog.md` B-91)
 
@@ -194,10 +194,14 @@ inspection, 2026-07-14; evidence commands in the Track B TBD report)
 
 **Qualitative scope**: Every VWA-derived paper that uses the upstream `helper_functions.py`
 without modification is exposed to both bugs.  This includes the original VWA paper
-\citep{koh2024visualwebarena}, WebArena-Verified (non-arXiv venue; needs manual bib entry),
-PAE \citep{zhou2025pae}---noted in the literature review as reporting that around half of its
-successful WebArena trajectories were evaluator false positives, independently of this
-polarity bug---and other WebArena-family studies.
+\citep{koh2024visualwebarena}, PAE \citep{zhou2025pae}---noted in the literature review as
+reporting that around half of its successful WebArena trajectories were evaluator false
+positives, independently of this polarity bug---and other WebArena-family studies.
+WebArena Verified sits on the other side of this scope line: it *replaces* the brittle
+checkers (type- and normalization-aware comparators over all 812 audited tasks) and reports
+an $\sim$11\% false-negative reduction on its baseline agent
+\citep{elhattami2025webarenaverified}---independent confirmation that checker fragility
+moves headline numbers, and the repair-side contrast to the exposure list above.
 
 **Within-paper comparisons are attenuated, not invalidated**: the polarity fallthrough is
 *not* additive noise that cancels in a paired difference.  It fires precisely when the judge
