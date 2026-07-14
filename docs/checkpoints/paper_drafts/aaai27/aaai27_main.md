@@ -3,9 +3,27 @@
 AAAI-27 MAIN TRACK CONSOLIDATED DRAFT v0.1 (2026-07-01)
 =====================================================================
 Target: AAAI-27 Main Technical Track
-  - Abstract deadline:      2026-07-21 (UTC-12)
-  - Full paper deadline:    2026-07-28 (UTC-12)
-  - Supplementary deadline: 2026-07-31 (UTC-12)
+  SUBMISSION SYSTEM: OpenReview (NOT CMT — corrected 2026-07-14 from the
+  live submission form; user registered + entered the AAAI-27 form).
+  Live-form deadlines (always quote UTC-0 + AoE together):
+  - Abstract registration:  Jul 22 2026 11:59 AM UTC-0
+                            = Jul 21 23:59 AoE (London: Jul 22 12:59 BST)
+  - Full submission:        Jul 29 2026 11:59 AM UTC-0
+                            = Jul 28 23:59 AoE (London: Jul 29 12:59 BST)
+  - Reciprocal reviewer nomination FREEZES Jul 21 AoE: nominee needs >=2
+    first-author OR >=5 co-authored archival publications; a qualified
+    author left un-nominated risks DESK REJECT (author-list + nomination
+    decision at the 2026-07-16 advisor meeting).
+  - Supplements (technical/media/code+data) are fields on the SAME form;
+    the previously assumed separate 07-31 supplement deadline is
+    UNCONFIRMED on the live form — treat supplements as due with the
+    full submission until the CFP says otherwise.
+  - Form fields: Title / Authors / TL;DR / Abstract / Primary+Secondary
+    Topics / Country of Institutions / PDF / Reproducibility Checklist /
+    Technical+Media+Code supplements / Reciprocal Reviewer Nomination /
+    COI / Policies acknowledgement.
+  - Abstract+TL;DR copy-paste source (verdict-neutral, 248 words):
+    deliverables/openreview_abstract_tldr_2026-07-14.md
   - Format: 7 pages technical content + references + reproducibility
     checklist; AAAI two-column camera-ready style; double-blind.
 

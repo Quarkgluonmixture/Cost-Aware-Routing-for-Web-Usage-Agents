@@ -62,6 +62,12 @@
 
 \title{\input{title_generated.tex}}
 \author{Anonymous submission}
+% AAAI 2027 style requires \affiliations to be set or \maketitle dies on the
+% undefined \aaai@affiliations token; the proxy template has no such macro, so
+% guard the call to stay dual-mode.
+\makeatletter
+\@ifundefined{affiliations}{}{\affiliations{Anonymous submission}}
+\makeatother
 \date{}
 
 \begin{document}
@@ -77,7 +83,12 @@
 % begin without forcing a page break (which would distort the page count).
 \label{refs-start}
 \bibliography{paper}
-\bibliographystyle{@@BIB_STYLE@@}
+% aaai2027.sty issues \bibliographystyle{aaai2027} internally at \bibliography;
+% a second call makes bibtex error "Illegal, another \bibstyle". Only set it
+% ourselves when the style file has not already done so (proxy mode).
+\makeatletter
+\@ifundefined{aaai@affiliations}{\bibliographystyle{@@BIB_STYLE@@}}{}
+\makeatother
 \label{document-end}
 
 \end{document}

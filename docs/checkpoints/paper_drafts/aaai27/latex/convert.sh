@@ -176,13 +176,22 @@ if [[ "$(rg -c '\\begin\{table\*\}' "$BUILD_DIR/body_generated.tex")" -ne 4 ]]; 
   exit 2
 fi
 
-if [[ -f "$LATEX_DIR/aaai27.sty" && -f "$LATEX_DIR/aaai27.bst" ]]; then
+# Official kit detection: accept both the aaai27.* naming this script originally
+# expected and the aaai2027.* naming the actual AAAI-27 author kit ships with
+# (downloaded 2026-07-14). Style name must match the .sty basename for \usepackage.
+STY_BASE=''
+if [[ -f "$LATEX_DIR/aaai2027.sty" && -f "$LATEX_DIR/aaai2027.bst" ]]; then
+  STY_BASE='aaai2027'
+elif [[ -f "$LATEX_DIR/aaai27.sty" && -f "$LATEX_DIR/aaai27.bst" ]]; then
+  STY_BASE='aaai27'
+fi
+if [[ -n "$STY_BASE" ]]; then
   CLASS_OPTIONS='letterpaper'
-  VENUE_SETUP='\usepackage[submission]{aaai27}'
-  BIB_STYLE='aaai27'
-  TEMPLATE_VERSION='AAAI-27 official author kit'
+  VENUE_SETUP="\usepackage[submission]{$STY_BASE}"
+  BIB_STYLE="$STY_BASE"
+  TEMPLATE_VERSION="AAAI-27 official author kit ($STY_BASE)"
   BUILD_MODE='official-aaai27'
-  cp "$LATEX_DIR/aaai27.sty" "$LATEX_DIR/aaai27.bst" "$BUILD_DIR/"
+  cp "$LATEX_DIR/$STY_BASE.sty" "$LATEX_DIR/$STY_BASE.bst" "$BUILD_DIR/"
 else
   CLASS_OPTIONS='10pt,letterpaper,twocolumn'
   VENUE_SETUP='\usepackage[margin=0.75in,columnsep=0.25in]{geometry}'

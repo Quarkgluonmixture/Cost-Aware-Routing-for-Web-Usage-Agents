@@ -23,7 +23,13 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-14 UPDATE — codex 自走循环 day-1: 三审计→全修 (9 commits local 未 push) + 6 reddit conditions promote (22→28) + PROTOCOL_NOTE_05** ⭐⭐⭐ 最新先读 (详 笔记 §366):
+> 🔭 **2026-07-14 深夜 UPDATE — 投稿系统实测 = OpenReview 非 CMT + 官方模板 7 页压线 + 07-16 线下周会** ⭐⭐⭐ 最新先读:
+> - **OpenReview 修正 (user 注册实测)**: AAAI-27 = OpenReview 表单。deadline 双标注: abstract **Jul 22 11:59AM UTC-0 = Jul 21 23:59 AoE** / full **Jul 29 11:59AM UTC-0 = Jul 28 23:59 AoE** / **reviewer-nomination 冻结 Jul 21 AoE** (资格作者未提名=desk-reject 风险)。abstract+TL;DR 复制源已备: `deliverables/openreview_abstract_tldr_2026-07-14.md` (248 词/槽位 0)。
+> - **官方模板页数账 (author kit aaai2027.sty/bst 已入)**: 正文**恰好第 7 页末结束** (refs pp.8-9) — 压线合规零余量, verdict splice 增词用 cut_prewrites 抵消。convert.sh 三个官方模式断点已修 (kit 命名/affiliations/双 bibstyle)。
+> - **📅 07-16 线下学长周会** — 议程: D7 章交付 / PROTOCOL_NOTE_05 披露 (witness 义务) / 4-in-1 消息内容当面过 / **作者名单+reviewer nomination 拍板 (冻结 Jul 21 AoE 前必须落表单)** / B2 timeline→k<6 预案(a) 决策树 / router covariate 红旗。周会 brief 07-15 准备 (dashboard+md, 等 B1 pprompt land 用 k=4 新数)。
+> - 全部 commits 已 push (`5ab5224` 及之前); 今日全景 → 笔记 §366-§366.3。
+>
+> 🔭 **2026-07-14 UPDATE — codex 自走循环 day-1: 三审计→全修 + 6 reddit conditions promote (22→28) + PROTOCOL_NOTE_05** ⭐⭐⭐ (详 笔记 §366):
 > - **✅ 三场 codex (gpt-5.6-sol xhigh) 审计全修**: ① relwork stress (17ce79f "待 stress" 清账, 10 findings → `9acfa24` 修, novelty 重写三级 spine 可守) ② readiness (词数 5450→5248, banned grep 出清, branch 完整 abstract 197/203 词) ③ **工具链 Stop-ship 9 P0** → Chunk 1 `27e04a9` (H3 pool 恢复 "over 6 planned cells" estimand + H1/SR exact 224/205 task-set + analysis_status/h1_verdict schema; **witness = PROTOCOL_NOTE_05 + tag**, outcome-blind @ k=3) + Chunk 2 `e35d0b4` (fig0c universe / F2 单源 / router majority OOF 泄漏 / slotsheet fail-closed + Decimal 舍入锁)。测试 1433p/2f → **1454 passed/0 failed** (+19 regression)。
 > - **⚠️ 修正后 interim 数字 (canonical artifact 已重生)**: H3 axis-1 k=3 = **1.08pp [0.47, 1.98]** (旧 3.20pp 是 outcome-dependent 删 cell 的产物, stale-by-correction — draft/旧引用勿再用); axis-2 = 2.26pp 不变; 全部 NOT_EVALUATED @ k=3 (verdict 只在 k=6)。
 > - **✅ 6 个 bound reddit conditions 已 promote** (staging fire_manifest 07-13 → run_manifest 22→28): B0 psom + **B1 red dom/som/vision/ptext/psom (5/6!)**。B0/B1 reddit 各只差 P-prompt 即成完整 6-mode cell → k 3→5 在望。B1 pprompt 大概率在 A100 orchestrator 队列中/已完成 — **下一动作: 探 A100 最新 fire_manifest + 若 bound 继续 promote** (`logs/cron/fire_manifest_a100_latest.json` 15-min cron staging)。

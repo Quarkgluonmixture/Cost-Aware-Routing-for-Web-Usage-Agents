@@ -101,11 +101,16 @@ grep -nE "<(H1|H3|H10)-VERDICT>|R-CONDITIONAL|«|⟨TBD⟩|<TBD" aaai27_main.md
 - ⑤ **/stress + codex + gemini chain**（CLAUDE.md auto-trigger #2, 不可跳）→ 修完**重跑①②**。
 - ⑥ commit（规范 message）；push 问 user。
 
-## 3. Abstract deadline (07-21) 特别通道
+## 3. Abstract registration 特别通道（OpenReview, 非 CMT — 2026-07-14 实测修正）
 
-07-21 只交 abstract + title：若当日 `analysis_status` 仍为 `PARTIAL`，abstract 用现稿的 verdict-中性版
-（`<H1-VERDICT>` 句改为 "pre-registered gates … determine the final claim tier" 原措辞即可提交，
-CMT abstract 可后改）。**不要**在 abstract 里写 interim 数字。
+**系统 = OpenReview** (AAAI-27 Main Technical Track 表单)。deadline 双标注:
+**Jul 22 2026 11:59 AM UTC-0 = Jul 21 23:59 AoE** (伦敦 Jul 22 12:59 BST)。
+只需 Title + TL;DR + Abstract (+Topics/COI 等表单字段): verdict-中性版 abstract + TL;DR
+已备好 → **`deliverables/openreview_abstract_tldr_2026-07-14.md` 逐字复制**
+(248 词, 槽位 0)。abstract 在 full deadline 前可改。**不要**在 abstract 里写 interim 数字。
+⚠️ **Reciprocal reviewer nomination 同在 Jul 21 AoE 冻结** — 有资格作者
+(≥2 一作 or ≥5 合著 archival) 未提名 = desk-reject 风险; 作者名单 + 提名在
+07-16 学长周会拍板, 冻结前必须落到表单。
 
 ## 4. H10 单独 verdict (若 Pass-2 晚于 Pass-1)
 

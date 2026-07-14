@@ -2,7 +2,11 @@
 
 > 每个 `<TBD>` / `[P]` / `[V]` 槽位 → 数据来源 + producer 命令。落一批数据就跑一轮，
 > 把 tag 逐步升级到 [A]。**全部 verdict slot 填完之前不得投稿**。
-> Deadline 锚: abstract **2026-07-21** / full paper **2026-07-28** / supp **2026-07-31** (UTC-12)。
+> Deadline 锚 (OpenReview 实测 2026-07-14, 双标注 UTC-0 + AoE): abstract registration
+> **Jul 22 11:59 AM UTC-0 = Jul 21 23:59 AoE** / full submission **Jul 29 11:59 AM UTC-0
+> = Jul 28 23:59 AoE** / reviewer-nomination 冻结 **Jul 21 AoE** (资格作者未提名 = desk-reject
+> 风险)。旧 "supp 07-31" 在 live 表单无对应独立 deadline (supplements 是同表单字段) — 按随
+> full submission 交齐处理, 除非 CFP 另有说明。系统 = **OpenReview 非 CMT**。
 
 ## 0. 聚合链已打通 ✅（2026-07-01）— sync 配方 + 剩余项
 
