@@ -44,7 +44,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/mechanism_per_task.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/mechanism_per_task_report.md"
-SR_FP_JSON = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.json"
+SR_JSON = ROOT / "docs/analysis/cross_sites/sr_per_mode.json"
 
 def _step_dirs_from_registry(baseline: str) -> dict[str, dict[str, Path]]:
     out: dict[str, dict[str, Path]] = {"reddit": {}, "classifieds": {}}
@@ -500,13 +500,16 @@ def e3_cells_for_run(model: str, site: str, run_dir: Path) -> dict[str, dict[str
     return cells
 
 
-def load_fp_rates() -> dict[str, float]:
-    if not SR_FP_JSON.exists():
+def load_sr_rates() -> dict[str, float]:
+    """Load canonical Layer-0 SR values keyed as baseline/site/mode."""
+    if not SR_JSON.exists():
         return {}
-    data = read_json(SR_FP_JSON)
+    data = read_json(SR_JSON)
     rates: dict[str, float] = {}
     for key, row in (data.get("cells") or {}).items():
-        rates[key] = row.get("fp_rate_pct")
+        value = row.get("sr_pct")
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            rates[key] = float(value)
     return rates
 
 
@@ -514,9 +517,9 @@ def build_e3() -> dict[str, Any]:
     cells: dict[str, dict[str, Any]] = {}
     for model, site, run_dir in CONF_RUNS:
         cells.update(e3_cells_for_run(model, site, run_dir))
-    fp_rates = load_fp_rates()
+    sr_rates = load_sr_rates()
     for key, row in cells.items():
-        row["layer0b_fp_rate_pct"] = fp_rates.get(key)
+        row["layer0_sr_pct"] = sr_rates.get(key)
 
     highlights: dict[str, Any] = {}
     grouped: dict[tuple[str, str], list[tuple[str, dict[str, Any]]]] = defaultdict(list)
@@ -544,7 +547,7 @@ def build_e3() -> dict[str, Any]:
                 best_signal[1].get("AUROC_verbal") or -1,
                 best_signal[1].get("AUROC_behavioral_max") or -1,
             ) if best_signal else None,
-            "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+            "sr_cross_reference": "Canonical SR attached from sr_per_mode.json when available.",
         }
     return {"cells": cells, "highlights": highlights}
 
@@ -904,7 +907,7 @@ def write_report(out: dict[str, Any]) -> None:
         "",
         "E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/signals/combined/tables`. It does not recompute calibration. B1 runs expose per-mode token and verbalized calibration in `per_mode_summary.csv`; B0 API runs expose verbalized and behavioral AUROC but no token-level calibration in the existing outputs.",
         "",
-        "| model | site | mode | ECE token | ECE verbal | AUROC token | AUROC verbal | AUROC behavioral max | FP rate | best signals |",
+        "| model | site | mode | ECE token | ECE verbal | AUROC token | AUROC verbal | AUROC behavioral max | canonical SR | best signals |",
         "|---|---|---|---:|---:|---:|---:|---:|---:|---|",
     ]
     for key in sorted(e3["cells"]):
@@ -920,7 +923,7 @@ def write_report(out: dict[str, Any]) -> None:
             f"| {row['model']} | {row['site']} | {short_mode(row['mode'])} | "
             f"{fmt(row.get('ECE_token'))} | {fmt(row.get('ECE_verbal'))} | "
             f"{fmt(row.get('AUROC_token'))} | {fmt(row.get('AUROC_verbal'))} | "
-            f"{fmt(row.get('AUROC_behavioral_max'))} | {fmt(row.get('layer0b_fp_rate_pct'))} | "
+            f"{fmt(row.get('AUROC_behavioral_max'))} | {fmt(row.get('layer0_sr_pct'))} | "
             f"{'; '.join(signals)} |"
         )
     lines += ["", "E3 highlights:"]
@@ -932,7 +935,7 @@ def write_report(out: dict[str, Any]) -> None:
         )
     lines += [
         "",
-        "Outcome 0b FP cross-reference: B0 FP rates are attached for cells present in `sr_fp_per_mode.json`. Because B0 ECE is absent from the existing analyzer outputs, low-ECE versus low-FP claims should be made only for B1 calibration cells or deferred until B0 calibration tables are generated.",
+        "Outcome 0a SR cross-reference: canonical per-mode SR values are attached from `sr_per_mode.json`. Because B0 ECE is absent from the existing analyzer outputs, calibration claims remain limited to the fields actually emitted by each baseline.",
         "",
         "## E4 Action vocabulary distribution",
         "",

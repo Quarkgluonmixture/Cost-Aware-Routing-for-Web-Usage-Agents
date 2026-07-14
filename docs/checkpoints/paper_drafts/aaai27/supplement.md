@@ -109,11 +109,11 @@ For H1 and each H3 axis, we report (i) the number of cells whose per-cell paired
 | 2026-06-21 | Protocol Note 02 | Restricted bounded episode retry to pre-flight auth/network failures. | Recovery alignment only. |
 | 2026-06-22 | Protocol Note 03 | Licensed breakpoint resume for the verified independent-task Reddit site. | Recovery alignment only. |
 | 2026-06-25 | Protocol Note 04 | Restored Reddit's seeded identity before each task. | Defines the clean-per-task Reddit measurement before canonical Reddit completion. |
-| 2026-07-14 | Protocol Note 05 | Restored exact task universes, all-cell H3 pooling, orthogonal status fields, and atomic artifact writes. | Locked estimands unchanged; producer conformance restored. |
+| 2026-07-14 | Protocol Note 05 | Restored exact task universes, all-cell H3 pooling, orthogonal status fields, and rollback-protected artifact replacement. | Locked estimands unchanged; producer conformance restored. |
 
 ## S2.5 Analysis-layer conformance
 
-Protocol Note 05 was recorded while only an interim three-cell pool existed and before a final six-cell verdict. It corrected five implementation deviations without changing the registered analysis: all data-bearing planned cells enter H3 regardless of their cell-level noise-floor label; every mode must equal the exact canonical scored task set; single-mode SR uses that fixed denominator; completion status is separated from PASS/FAIL/NOT_EVALUATED; and unavailable values remain null rather than becoming numerical zeros. The JSON, CSV, and Markdown decision artifacts are written as one staged transaction. Final manuscript slots are populated only when the artifact reports complete analysis and an evaluated verdict.
+Protocol Note 05 was recorded while only an interim three-cell pool existed and before a final six-cell verdict. It corrected five implementation deviations without changing the registered analysis: all data-bearing planned cells enter H3 regardless of their cell-level noise-floor label; every mode must equal the exact canonical scored task set; single-mode SR uses that fixed denominator; completion status is separated from PASS/FAIL/NOT_EVALUATED; and unavailable values remain null rather than becoming numerical zeros. The JSON, CSV, and Markdown decision artifacts use render-before-replace with an inter-process lock, rollback backups, and parent-directory fsync. Final manuscript slots are populated only when the artifact reports complete analysis and an evaluated verdict.
 
 <!-- Sources for S2 (internal; strip before submission):
 docs/checkpoints/pre_run/preregistration.md §2 and §4;

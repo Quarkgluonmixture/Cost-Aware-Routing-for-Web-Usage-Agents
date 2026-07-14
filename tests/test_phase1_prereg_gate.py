@@ -268,7 +268,8 @@ def test_build_gate_six_cells_passes(tmp_path):
     payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     assert payload["gate_status"] == "PASS"
     assert payload["analysis_status"] == "COMPLETE"
-    assert payload["h1_verdict"] == "PASS"
+    assert payload["h1_verdict_normal_approx_transparency"] == "PASS"
+    assert "h1_verdict" not in payload
     assert len(payload["per_cell"]) == 6
     fe = payload["pooled_fe"]
     # θ_FE = 10pp (each cell has 10/100=10% of tasks only P-SoM saves), >> δ=1.0pp
@@ -292,7 +293,8 @@ def test_build_gate_six_cells_at_threshold_fails(tmp_path):
     assert fe["gate_passed"] is False
     assert payload["gate_status"] == "FAIL"
     assert payload["analysis_status"] == "COMPLETE"
-    assert payload["h1_verdict"] == "FAIL"
+    assert payload["h1_verdict_normal_approx_transparency"] == "FAIL"
+    assert "h1_verdict" not in payload
 
 
 def test_build_gate_partial_data_three_cells(tmp_path):
@@ -305,7 +307,8 @@ def test_build_gate_partial_data_three_cells(tmp_path):
     payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     assert payload["gate_status"] == "PARTIAL_DATA"
     assert payload["analysis_status"] == "PARTIAL"
-    assert payload["h1_verdict"] == "NOT_EVALUATED"
+    assert payload["h1_verdict_normal_approx_transparency"] == "NOT_EVALUATED"
+    assert "h1_verdict" not in payload
     assert len(payload["per_cell"]) == 3
     assert "pooled_fe" in payload
 
@@ -357,7 +360,8 @@ def test_write_md_renders(tmp_path):
     out_md = tmp_path / "phase1_prereg_gate.md"
     write_md(payload, out_md)
     text = out_md.read_text()
-    assert "# Phase 1 prereg gate" in text
+    assert "# Phase 1 legacy H1 normal-approximation transparency check" in text
+    assert "NOT the canonical H1 verdict" in text
     assert "PASSED" in text
     assert "θ_FE" in text
     assert "B-184" in text

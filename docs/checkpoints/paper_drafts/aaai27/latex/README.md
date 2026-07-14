@@ -4,6 +4,7 @@
 
 ```bash
 ./convert.sh
+./convert.sh --submission  # same full chain, but only succeeds at TODO=0
 ```
 
 脚本每次重建 `build/`，自动完成 HTML comment 剥离、占位符 `\todo`

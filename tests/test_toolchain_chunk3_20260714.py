@@ -146,7 +146,13 @@ def _write_complete_pass1_artifacts(tmp_path: Path) -> tuple[Path, Path, Path]:
                 "baseline": baseline,
                 "site": site,
                 "mode": mode,
+                "n_total": 2,
+                "observed_n": 2,
+                "expected_n": 2,
+                "n_success": 1,
+                "sr_denominator_n": 2,
                 "sr_pct": 50.0,
+                "completeness_ratio": 1.0,
                 "complete_exact": True,
                 "task_set_sha256": task_sha,
             })
@@ -174,7 +180,10 @@ def _write_complete_pass1_artifacts(tmp_path: Path) -> tuple[Path, Path, Path]:
     sr_path = tmp_path / "sr.json"
     fig0c_path = tmp_path / "fig0c.csv"
     decision_path.write_text(json.dumps(decision))
-    sr_path.write_text(json.dumps({"summary_table": sr_rows}))
+    sr_path.write_text(json.dumps({
+        "captured_at": captured_at,
+        "summary_table": sr_rows,
+    }))
     with fig0c_path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(fig_rows[0]))
         writer.writeheader()
@@ -239,6 +248,28 @@ def test_k3_h10_pending_rejects_partial_as_non_bypass(tmp_path, capsys):
     assert "h1_verdict in {PASS, FAIL}" in stderr
 
 
+def test_f05_h10_pending_rejects_null_sr_pct_with_exit_2(tmp_path, capsys):
+    decision, sr, fig0c = _write_complete_pass1_artifacts(tmp_path)
+    payload = json.loads(sr.read_text())
+    payload["summary_table"][0]["sr_pct"] = None
+    sr.write_text(json.dumps(payload))
+    out = tmp_path / "must-not-exist" / "slotsheet.md"
+
+    rc = slots.main([
+        "--h10-pending",
+        "--decision", str(decision),
+        "--sr", str(sr),
+        "--fig0c", str(fig0c),
+        "--out", str(out),
+    ])
+
+    assert rc == 2
+    assert not out.exists()
+    stderr = capsys.readouterr().err
+    assert "SR invalid numeric field" in stderr
+    assert "sr_pct=None" in stderr
+
+
 def test_k3_h10_pending_and_rehearsal_are_argparse_mutually_exclusive(capsys):
     with pytest.raises(SystemExit) as excinfo:
         slots.main(["--h10-pending", "--rehearsal"])
@@ -263,4 +294,3 @@ def test_k2_f1_out_writes_scratch_help_exists_and_default_is_canonical(tmp_path)
     )
     assert help_result.returncode == 0
     assert "--out BASENAME" in help_result.stdout
-

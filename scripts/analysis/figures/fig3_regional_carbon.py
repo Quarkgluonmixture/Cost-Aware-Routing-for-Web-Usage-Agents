@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import statistics
 from pathlib import Path
@@ -51,6 +52,12 @@ from lib.run_registry import get_cells as _get_cells  # noqa: E402
 # §139.8: scored-set sizes (total − N/A excluded at load) from the single
 # source of truth, not pre-exclusion 234/210. Labels derive from the count.
 from p79.experiment.analysis import scored_task_count as _scored_task_count
+from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+from scripts.analysis.lib.episode_rows import load_task_rows
+
+_SITE_IDS = {
+    site: expected_scored_ids(site)[0] for site in ("classifieds", "reddit")
+}
 _SITE_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("classifieds", "reddit")}
 _SITE_LABELS = {
     "classifieds": f"Classifieds (N={_SITE_N['classifieds']})",
@@ -83,7 +90,11 @@ def _resolve_runs(
         env_grade = _os.environ.get("P79_AGGREGATOR_GRADE", "")
         grade = [g.strip() for g in env_grade.split(",") if g.strip()] or None
     for site in ("classifieds", "reddit"):
-        site_entry = {"expected": _SITE_N[site], "label": _SITE_LABELS[site]}
+        site_entry = {
+            "expected": _SITE_N[site],
+            "expected_ids": _SITE_IDS[site],
+            "label": _SITE_LABELS[site],
+        }
         for mode in ("DOM", "SoM", "Vision"):
             cells = _get_cells(baseline=baseline, site=site, mode=mode, grade=grade)
             if not cells:
@@ -114,6 +125,26 @@ DISPLAY_NAME = {
 REPRESENTATIVE_REGIONS = ["norway", "france", "usa", "china", "india", "poland", "south_africa"]
 
 
+def caption_for_baseline(baseline: str) -> str:
+    """Return baseline-specific provenance without cross-model claim leakage."""
+    measurement = (
+        f"Energy from {baseline} local 4B NVML measurement on cls "
+        f"(N={_SITE_N['classifieds']}) / red (N={_SITE_N['reddit']}). "
+        "Per-region intensity from IEA 2023 / ElectricityMaps. "
+    )
+    if baseline == "B1":
+        return measurement + (
+            "B0 (Qwen3-VL-235B via proxy API) energy is not directly observable "
+            "on local hardware; B1 measurement serves as a lower-bound reference "
+            "for representation-driven carbon sensitivity."
+        )
+    return measurement + (
+        "B0 (Qwen3-VL-235B via proxy API) energy is not directly observable on "
+        "local hardware. This B2 sensitivity reports Gemma3-VL-4B measurements "
+        "only and makes no ordering claim against unobserved B0 energy."
+    )
+
+
 def task_id(path: Path) -> int:
     match = re.search(r"task_(\d+)_summary", path.name)
     if not match:
@@ -121,7 +152,42 @@ def task_id(path: Path) -> int:
     return int(match.group(1))
 
 
-def median_energy_kwh(ep_dir: Path, expected: int) -> tuple[float, int]:
+def median_energy_kwh(
+    ep_dir: Path,
+    expected: int,
+    *,
+    strict: bool = False,
+    expected_ids: frozenset[int] | set[int] | None = None,
+) -> tuple[float, int]:
+    if strict:
+        if expected_ids is None:
+            raise ValueError("strict energy loading requires canonical expected_ids")
+        canonical_ids = frozenset(int(task_id) for task_id in expected_ids)
+        rows = load_task_rows(ep_dir, strict_mode="strict")
+        observed_ids = frozenset(rows)
+        if observed_ids != canonical_ids:
+            raise RuntimeError(
+                f"{ep_dir}: strict task-ID set mismatch; "
+                f"observed={len(observed_ids)}/{len(canonical_ids)}, "
+                f"missing={sorted(canonical_ids - observed_ids)}, "
+                f"extra={sorted(observed_ids - canonical_ids)}"
+            )
+        values: list[float] = []
+        for tid in sorted(canonical_ids):
+            value = rows[tid].get("total_energy_kwh")
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or float(value) < 0.0
+            ):
+                raise RuntimeError(
+                    f"{ep_dir}: task_id={tid} has invalid total_energy_kwh={value!r}; "
+                    "strict mode requires one finite non-negative value per canonical task"
+                )
+            values.append(float(value))
+        return statistics.median(values), len(values)
+
     values: list[float] = []
     seen: set[int] = set()
     for path in sorted(ep_dir.glob("*_summary_v2.json")):
@@ -133,7 +199,12 @@ def median_energy_kwh(ep_dir: Path, expected: int) -> tuple[float, int]:
             record = json.load(f)
         value = record.get("total_energy_kwh")
         if value is not None:
-            values.append(float(value))
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                numeric = math.nan
+            if math.isfinite(numeric) and numeric >= 0.0:
+                values.append(numeric)
     if len(seen) != expected:
         print(f"[warn] {ep_dir}: summaries n={len(seen)}/{expected}")
     if len(values) != len(seen):
@@ -292,7 +363,12 @@ def main(argv: list[str] | None = None) -> int:
             if ep_dir is None:
                 continue
             try:
-                median_kwh, n = median_energy_kwh(ep_dir, spec["expected"])
+                median_kwh, n = median_energy_kwh(
+                    ep_dir,
+                    spec["expected"],
+                    strict=args.strict,
+                    expected_ids=spec["expected_ids"],
+                )
             except RuntimeError as exc:
                 if args.strict:
                     raise
@@ -349,9 +425,7 @@ def main(argv: list[str] | None = None) -> int:
     fig.text(
         0.5,
         0.02,
-        f"Energy from {args.baseline} local 4B NVML measurement on cls (N={_SITE_N['classifieds']}) / red (N={_SITE_N['reddit']}). "
-        "Per-region intensity from IEA 2023 / ElectricityMaps. "
-        "B0 (Qwen3-VL-235B via proxy API) energy is not directly observable on local hardware; B1 measurement serves as a lower-bound reference for representation-driven carbon sensitivity.",
+        caption_for_baseline(args.baseline),
         ha="center",
         fontsize=7.8,
         color="#555555",

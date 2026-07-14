@@ -71,17 +71,17 @@ sys.path.insert(0, str(REPO))
 # Reuse the SAME cell enumeration + episode loader the existing phantom-lift
 # producer uses → guarantees the gate operates on the same data slices and
 # refuses the same partial cells (MIN_EP_FOR_CELL filter).
-from scripts.analysis.aggregate_phantom_lift import (  # noqa: E402
-    CELLS,
-    MIN_EP_FOR_CELL,
-    load,
-)
+from scripts.analysis.aggregate_phantom_lift import CELLS, MIN_EP_FOR_CELL  # noqa: E402
 from scripts.analysis.lib.atomic_io import atomic_write_text  # noqa: E402
 from scripts.analysis.lib.canonical_task_universe import (  # noqa: E402
     expected_scored_ids,
     task_id_set_sha256,
 )
 from scripts.analysis.lib.canonical_cells import PHASE_1A_PLANNED_CELLS  # noqa: E402
+from scripts.analysis.lib.episode_rows import (  # noqa: E402
+    load_cell_task_rows,
+    load_task_rows,
+)
 
 # B-176 lock: bootstrap seed=42, B=1000 per prereg "1000-resample".
 # (Note: prereg explicitly says 1000, NOT the 10_000 used in `analyze_run`
@@ -105,6 +105,14 @@ DEFAULT_OUT_JSON = REPO / "results/phantom_paper/phase1_prereg_gate.json"
 DEFAULT_OUT_MD = REPO / "results/phantom_paper/phase1_prereg_gate.md"
 
 
+def load(episodes_dir: Path) -> tuple[set[int], set[int]]:
+    """Legacy H1 set view over the shared identity-checked row loader."""
+    rows = load_task_rows(episodes_dir)
+    observed = set(rows)
+    succeeded = {task_id for task_id, row in rows.items() if row["success"] is True}
+    return succeeded, observed
+
+
 def _norm_cdf(x: float) -> float:
     """Standard-normal CDF via erf; scipy-free."""
     return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
@@ -113,6 +121,7 @@ def _norm_cdf(x: float) -> float:
 def _cell_drop_one_theta_se(
     cell: Dict, *, B: int = PREREG_B, seed: int = PREREG_SEED,
     expected_ids: Optional[frozenset[int] | set[int]] = None,
+    rows_by_mode: Optional[Dict[str, Dict[int, Dict]]] = None,
 ) -> Dict:
     """Compute per-cell drop-one effect + bootstrap SE per prereg spec.
 
@@ -130,17 +139,19 @@ def _cell_drop_one_theta_se(
         expected = frozenset(int(t) for t in expected_ids)
         task_set_sha = task_id_set_sha256(expected)
 
-    # Load per-mode (success, observed) sets via the shared `load` primitive.
+    # Load every mode through one shared, identity-checked task_id -> row map.
+    # The canonical full producer passes the same map onward to H2/H3, so the
+    # three hypotheses cannot silently use different task identities.
+    if rows_by_mode is None:
+        rows_by_mode = load_cell_task_rows(cell, modes=SIX_MODES)
     succ: Dict[str, set] = {}
     obs: Dict[str, set] = {}
     for mode in SIX_MODES:
-        ep_dir = cell.get("modes", {}).get(mode)
-        if ep_dir is None:
-            s, o = set(), set()
-        else:
-            s, o = load(ep_dir)
-        succ[mode] = s
-        obs[mode] = o
+        rows = rows_by_mode.get(mode, {})
+        obs[mode] = set(rows)
+        succ[mode] = {
+            task_id for task_id, row in rows.items() if row["success"] is True
+        }
 
     observed_n = {m: len(obs[m]) for m in SIX_MODES}
     missing_ids = {m: sorted(expected - obs[m]) for m in SIX_MODES}
@@ -310,7 +321,10 @@ def build_gate(
             per_cell.append(result)
 
     payload: Dict = {
-        "prereg_section": "preregistration.md §1 H1 PRIMARY gate (line 68-86 lock)",
+        "prereg_section": (
+            "preregistration.md §1 H1 normal-Z transparency check; "
+            "NOT canonical verdict (canonical bootstrap gate is full decision producer)"
+        ),
         "estimand": "FE inverse-variance pooled P-SoM drop-one over 6 planned cells",
         "delta_pp": DELTA_PP,
         "alpha": ALPHA,
@@ -330,7 +344,7 @@ def build_gate(
     else:
         analysis_status = "PARTIAL"
     payload["analysis_status"] = analysis_status
-    payload["h1_verdict"] = "NOT_EVALUATED"
+    payload["h1_verdict_normal_approx_transparency"] = "NOT_EVALUATED"
     if len(per_cell) == 0:
         payload["gate_status"] = "INSUFFICIENT_DATA"
         payload["gate_status_reason"] = (
@@ -360,7 +374,9 @@ def build_gate(
         )
 
     if analysis_status == "COMPLETE" and fe is not None:
-        payload["h1_verdict"] = "PASS" if fe["gate_passed"] else "FAIL"
+        payload["h1_verdict_normal_approx_transparency"] = (
+            "PASS" if fe["gate_passed"] else "FAIL"
+        )
 
     return payload
 
@@ -371,11 +387,14 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
     lines = [
         "row_type,baseline,site,k_cells,n_tasks,theta_pp,se_pp,ci95_lo_pp,"
         "ci95_hi_pp,oracle_6_pp,oracle_5_no_psom_pp,n_psom_only,"
-        "z_one_sided,p_one_sided,gate_passed,gate_status,analysis_status,h1_verdict",
+        "z_one_sided,p_one_sided,gate_passed,gate_status,analysis_status,"
+        "h1_verdict_normal_approx_transparency",
     ]
     gs = payload.get("gate_status", "UNKNOWN")
     analysis_status = payload.get("analysis_status", "INSUFFICIENT")
-    h1_verdict = payload.get("h1_verdict", "NOT_EVALUATED")
+    h1_verdict = payload.get(
+        "h1_verdict_normal_approx_transparency", "NOT_EVALUATED"
+    )
     for r in payload["per_cell"]:
         lines.append(
             f"cell,{r['baseline']},{r['site']},,{r['n_tasks']},"
@@ -426,7 +445,7 @@ def write_json(payload: Dict, out_json: Path) -> None:
 def write_md(payload: Dict, out_md: Path) -> None:
     out_md.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "# Phase 1 prereg gate — H1 PRIMARY (P-SoM drop-one over 6 cells)",
+        "# Phase 1 legacy H1 normal-approximation transparency check",
         "",
         "**Estimand** (preregistration.md §1, lines 68-86 lock):",
         "",
@@ -440,7 +459,10 @@ def write_md(payload: Dict, out_md: Path) -> None:
         "",
         f"**Gate status**: `{payload.get('gate_status', 'UNKNOWN')}`",
         f"**Analysis status**: `{payload.get('analysis_status', 'INSUFFICIENT')}`",
-        f"**H1 verdict**: `{payload.get('h1_verdict', 'NOT_EVALUATED')}`",
+        "**NOT the canonical H1 verdict.** Canonical = full decision producer's "
+        "bootstrap-percentile gate.",
+        f"**Normal-approximation transparency verdict**: "
+        f"`{payload.get('h1_verdict_normal_approx_transparency', 'NOT_EVALUATED')}`",
         "",
         payload.get("gate_status_reason", ""),
         "",
@@ -468,7 +490,7 @@ def write_md(payload: Dict, out_md: Path) -> None:
         sig = "✅ **PASSED**" if fe["gate_passed"] else "❌ **NOT YET**"
         lines += [
             "",
-            "## Pooled FE (paper §1 hero claim source)",
+            "## Pooled FE normal-Z transparency check (non-canonical)",
             "",
             f"- **k = {fe['k_cells']}** cells",
             f"- **θ_FE = +{fe['theta_FE_pp']:.3f}pp** (SE = {fe['se_FE_pp']:.3f}pp)",

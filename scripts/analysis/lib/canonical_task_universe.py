@@ -67,4 +67,3 @@ def expected_scored_ids(
             f"{len(ids)} IDs but scored_task_count returned {expected_n}"
         )
     return ids, task_id_set_sha256(ids)
-

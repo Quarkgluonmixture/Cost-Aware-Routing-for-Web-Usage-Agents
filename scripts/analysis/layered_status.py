@@ -14,10 +14,17 @@ import csv
 import json
 import math
 import statistics
+import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+try:
+    from scripts.analysis.lib.run_registry import get_cells
+except ModuleNotFoundError:  # pragma: no cover - direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import get_cells
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,33 +33,20 @@ OUT = ROOT / "docs/analysis/layered_evidence_status.md"
 RESULTS = ROOT / "results/visualwebarena/phase1"
 PAPER = ROOT / "results/phantom_paper"
 CROSS = ROOT / "docs/analysis/cross_sites"
-
-def _phantom_prompt_cond(site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"B0_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0"))
-    return candidates[-1] if candidates else None
+SR_JSON = CROSS / "sr_per_mode.json"
+SR_MD = CROSS / "sr_per_mode.md"
 
 
-MODE_SPECS: dict[str, dict[str, Path]] = {
-    "classifieds": {
-        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0",
-        "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0",
-        "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0",
-        "P-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0",
-        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0",
-    },
-    "reddit": {
-        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0",
-        "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0",
-        "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0",
-        "P-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
-        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0",
-    },
-}
-# P-prompt is conditionally added when its run dir exists (Tier 2 cls+red only)
-for _site in ("classifieds", "reddit"):
-    _pp = _phantom_prompt_cond(_site)
-    if _pp is not None:
-        MODE_SPECS[_site]["P-prompt"] = _pp
+def _mode_specs_from_registry(baseline: str = "B0") -> dict[str, dict[str, Path]]:
+    """Resolve live condition directories from the canonical run registry."""
+    out: dict[str, dict[str, Path]] = {"classifieds": {}, "reddit": {}}
+    for site in out:
+        for cell in get_cells(baseline=baseline, site=site):
+            out[site][cell.mode] = cell.run_dir / cell.condition_subdir
+    return out
+
+
+MODE_SPECS = _mode_specs_from_registry("B0")
 
 AUDITS = {
     "classifieds": CROSS / "codex_audit_classifieds.json",
@@ -297,23 +291,58 @@ def best_auroc(rows: list[dict[str, str]]) -> dict[tuple[str, str, str], dict[st
 def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]]) -> None:
     phantom_csv = PAPER / "phantom_lift.csv"
     auroc_csv = PAPER / "auroc_cross_condition.csv"
-    sr_fp_md = CROSS / "sr_fp_per_mode.md"
     lift_rows = read_csv(phantom_csv)
     auroc_rows = best_auroc(read_csv(auroc_csv))
+    if not SR_JSON.is_file() or not SR_MD.is_file():
+        raise RuntimeError(
+            "Layer-0 canonical SR sources must exist before status generation: "
+            f"json={SR_JSON.is_file()} md={SR_MD.is_file()}"
+        )
+    sr_payload = read_json(SR_JSON) or {}
+    sr_rows = sr_payload.get("summary_table", []) if isinstance(sr_payload, dict) else []
+    if not isinstance(sr_rows, list) or not sr_rows:
+        raise RuntimeError(f"Layer-0 canonical SR summary_table is empty: {SR_JSON}")
+    for row in sr_rows:
+        if not isinstance(row, dict) or row.get("complete_exact") is not True:
+            continue
+        value = row.get("sr_pct")
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+        ):
+            raise RuntimeError(
+                "Landed exact canonical SR row has no renderable sr_pct: "
+                f"{row.get('baseline')}/{row.get('site')}/{row.get('mode')}={value!r}"
+            )
+    sr_by_key = {
+        (row.get("baseline"), row.get("site"), row.get("mode")): row
+        for row in sr_rows if isinstance(row, dict)
+    }
 
     lines += ["## Outcome — task 成功 / 路由 arm 证据", ""]
 
-    lines += ["### 0a SR per mode (B0)", ""]
-    for site in ["reddit", "classifieds"]:
-        parts = []
-        for mode in ["DOM", "P-text", "P-prompt", "P-SoM", "SoM", "Vision"]:
-            if mode not in stats[site]:
-                continue
-            s = stats[site][mode]
-            parts.append(f"{mode} **{fmt_pct(s['sr'])}**")
-        lines.append(f"- {site}: " + "; ".join(parts))
-    lines.append(f"- source: `results/visualwebarena/phase1/B0_*/*/episodes/*_summary_v2.json` (live); last update: {max_timestamp([p for modes in MODE_SPECS.values() for d in modes.values() for p in (d / 'episodes').glob('*_summary_v2.json')])}")
-    lines.append(f"- standalone cite source: `{rel(sr_fp_md)}` | last update: {timestamp(sr_fp_md)}")
+    lines += ["### 0a SR per mode (canonical)", ""]
+    if not sr_by_key:
+        lines.append(f"- ⚠️ missing or unreadable | {source_line(SR_JSON)}")
+    for baseline in ("B0", "B1", "B2"):
+        if not any(key[0] == baseline for key in sr_by_key):
+            continue
+        for site in ("reddit", "classifieds"):
+            parts = []
+            for mode in ("DOM", "P-text", "P-prompt", "P-SoM", "SoM", "Vision"):
+                row = sr_by_key.get((baseline, site, mode))
+                value = row.get("sr_pct") if row else None
+                rendered = (
+                    f"{float(value):.2f}%"
+                    if isinstance(value, (int, float)) and not isinstance(value, bool)
+                    and math.isfinite(float(value))
+                    else "n/a"
+                )
+                parts.append(f"{mode} **{rendered}**")
+            lines.append(f"- {baseline} {site}: " + "; ".join(parts))
+    lines.append(f"- canonical source: `{rel(SR_JSON)}` | last update: {timestamp(SR_JSON)}")
+    lines.append(f"- standalone cite source: `{rel(SR_MD)}` | last update: {timestamp(SR_MD)}")
     lines.append("")
 
     # §139.8 + /stress A1.6 (2026-05-16): the "0b FP rate" block is retired —
@@ -698,7 +727,7 @@ def main() -> None:
     lines = [
         "# 4-dimension Evidence Status (live snapshot)",
         "",
-        f"Generated: {generated}  ",
+        f"Generated: {generated}",
         "Source: `make analyze-layered` (CLI alias preserved)",
         "",
         "> Four orthogonal dimensions: Outcome / Macro / Micro / Efficiency. Sub-codes (0a / 1c / 2a / 3d) remain as figure-internal anchors.",

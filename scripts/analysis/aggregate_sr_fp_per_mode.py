@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -310,6 +311,7 @@ def main() -> None:
                 summary_table.append(cell)
 
     out = {
+        "captured_at": datetime.now(timezone.utc).isoformat(),
         "method": "canonical SR (success) aggregation from per-task summary_v2.json; "
                   "exact scored task-ID set from p79.experiment.tasks.load_tasks; "
                   "fixed expected-set denominator; no post-hoc FP adjustment",

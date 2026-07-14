@@ -43,6 +43,7 @@ import hashlib
 import json
 import math
 import os
+import shutil
 import statistics
 import subprocess
 import sys
@@ -74,8 +75,13 @@ from scripts.analysis.aggregate_phase1_prereg_gate import (  # noqa: E402
     PREREG_SEED,
     SIX_MODES,
 )
-from scripts.analysis.lib.atomic_io import atomic_write_text  # noqa: E402
+from scripts.analysis.lib.atomic_io import (  # noqa: E402
+    atomic_write_text,
+    exclusive_file_lock,
+    fsync_directory,
+)
 from scripts.analysis.lib.canonical_cells import PHASE_1A_PLANNED_CELLS  # noqa: E402
+from scripts.analysis.lib.episode_rows import load_cell_task_rows  # noqa: E402
 
 DEFAULT_OUT_CSV = REPO / "results/phantom_paper/phase1_full_prereg_decision.csv"
 DEFAULT_OUT_JSON = REPO / "results/phantom_paper/phase1_full_prereg_decision.json"
@@ -128,6 +134,7 @@ def _self_code_sha() -> str:
         Path(__file__),
         REPO / "scripts/analysis/aggregate_phase1_prereg_gate.py",
         REPO / "scripts/analysis/lib/canonical_task_universe.py",
+        REPO / "scripts/analysis/lib/episode_rows.py",
     ):
         with p.open("rb") as f:
             h.update(f.read())
@@ -138,7 +145,11 @@ def _self_code_sha() -> str:
 # Cell per-task data loader (success + cost, paired across modes)
 # ---------------------------------------------------------------------------
 
-def _load_cell_per_task(cell: Dict) -> Dict[str, Dict[str, Dict]]:
+def _load_cell_per_task(
+    cell: Dict,
+    *,
+    rows_by_mode: Optional[Dict[str, Dict[int, Dict]]] = None,
+) -> Dict[str, Dict[str, Dict]]:
     """Load per-mode per-task {success, cost} dict for one (baseline, site) cell.
 
     A1.21 P0-1 fix: `cost_raw = data.get('total_cost_usd')` 用 `is None` 检查
@@ -155,44 +166,12 @@ def _load_cell_per_task(cell: Dict) -> Dict[str, Dict[str, Dict]]:
 
     Returns: dict[mode] -> dict[task_id_str] -> {"success": float|None, "cost": float|None}
     """
-    from p79.experiment.io_utils import load_episode_summary_strict
-
-    # Same env opt-out as `aggregate_phantom_lift.load()` for symmetry (B-325).
-    _strict_env = os.environ.get("P79_STRICT", "1").lower()
-    _strict_mode = "lenient" if _strict_env in ("0", "false", "no") else "strict"
-
+    if rows_by_mode is None:
+        rows_by_mode = load_cell_task_rows(cell, modes=SIX_MODES)
     by_mode: Dict[str, Dict[str, Dict]] = {}
-    for mode, ep_dir in cell["modes"].items():
+    for mode in SIX_MODES:
         outcomes: Dict[str, Dict] = {}
-        if not ep_dir.exists():
-            by_mode[mode] = outcomes
-            continue
-        for summary_path in sorted(ep_dir.glob("*_summary_v2.json")):
-            try:
-                # B-542: strict loader + reject_needs_reevaluation=True for
-                # canonical paper-grade producer. Type-safe bool/int/str at
-                # the boundary + paper-grade quarantine filter at the
-                # boundary (was post-hoc nowhere → quarantined episodes
-                # silently counted as `success=False` failures).
-                data = load_episode_summary_strict(
-                    summary_path,
-                    mode=_strict_mode,
-                    reject_needs_reevaluation=True,
-                )
-            except ValueError:
-                # Strict-mode rejection (corrupt JSON, type mismatch, or
-                # quarantined episode). Skip rather than crash the entire
-                # cell — `validate_run_manifest.py` (B-525 / B-494) is the
-                # canonical CI gate for archive cleanliness audit.
-                continue
-            except (OSError, FileNotFoundError):
-                continue
-            if data is None:
-                # Lenient-mode soft failure (logger.warning already emitted).
-                continue
-            tid = data.get("task_id")
-            if tid is None:
-                continue
+        for tid, data in rows_by_mode.get(mode, {}).items():
             success_raw = data.get("success")  # bool (strict loader guaranteed)
             # P0-1 fix: `is None` check, NOT truthy `or` short-circuit
             # P1-3 (AMENDMENT_04 cost alignment 2026-05-24): canonical cost =
@@ -873,19 +852,22 @@ def build_full_decision(
     per_cell_data = []
     skipped = []
     for cell in cells:
+        rows_by_mode = load_cell_task_rows(cell, modes=SIX_MODES)
         # H1 per cell (reuses B-184 path → bit-identical to phase1_prereg_gate)
         expected_ids = (
             expected_ids_by_site.get(cell["site"])
             if expected_ids_by_site is not None else None
         )
-        h1_per_cell = _cell_drop_one_theta_se(cell, expected_ids=expected_ids)
+        h1_per_cell = _cell_drop_one_theta_se(
+            cell, expected_ids=expected_ids, rows_by_mode=rows_by_mode
+        )
         if not h1_per_cell["complete_exact"]:
             skipped.append({
                 **h1_per_cell,
                 "reason": h1_per_cell["incomplete_reason"],
             })
             continue
-        per_task = _load_cell_per_task(cell)
+        per_task = _load_cell_per_task(cell, rows_by_mode=rows_by_mode)
         h2a = _h2a_per_task_ratio(per_task)
         # B-948 (/stress A2.3a P0-6-B*, 2026-05-17): compute six-arm complete-
         # case universe ONCE per cell + pass to both axis tests → matches
@@ -1560,15 +1542,27 @@ def write_outputs_atomic(
     manifest_path: Optional[Path] = None,
     input_csv_path: Optional[Path] = None,
 ) -> None:
-    """Render all three artifacts before replacing any destination.
+    """Render before replace, then commit under a lock with rollback backups.
 
-    Individual writers are atomic as well; this staging layer additionally
-    prevents a later schema/render error (notably Markdown) from leaving an
-    updated CSV/JSON paired with a stale or missing sibling artifact.
+    This is deliberately described as render-before-replace with rollback, not
+    as a filesystem transaction.  A same-directory ``flock`` serializes
+    writers; old destinations are copied to sibling backups before the first
+    replace; a commit error triggers best-effort restoration of all three; and
+    the parent directory is fsynced after commit or rollback.
     """
     destinations = [Path(out_csv), Path(out_json), Path(out_md)]
+    parent_dirs = {path.parent.resolve() for path in destinations}
+    if len(parent_dirs) != 1:
+        raise ValueError(
+            "phase1 full-decision outputs must share one parent directory for "
+            "locked render-before-replace with rollback"
+        )
+    parent = destinations[0].parent
+    parent.mkdir(parents=True, exist_ok=True)
     token = f"{os.getpid()}.{uuid.uuid4().hex}"
     staged = [p.with_name(f".{p.name}.{token}.staged") for p in destinations]
+    backups = [p.with_name(f".{p.name}.{token}.backup") for p in destinations]
+    lock_path = parent / ".phase1_full_prereg_decision.outputs.lock"
     try:
         write_csv(payload, staged[0])
         write_json(
@@ -1578,11 +1572,45 @@ def write_outputs_atomic(
             input_csv_path=input_csv_path,
         )
         write_md(payload, staged[2])
-        for src, dst in zip(staged, destinations):
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(src, dst)
+        with exclusive_file_lock(lock_path):
+            had_old: list[bool] = []
+            for dst, backup in zip(destinations, backups):
+                exists = dst.exists()
+                had_old.append(exists)
+                if not exists:
+                    continue
+                with dst.open("rb") as source, backup.open("xb") as target:
+                    shutil.copyfileobj(source, target)
+                    target.flush()
+                    os.fsync(target.fileno())
+            fsync_directory(parent)
+
+            try:
+                for src, dst in zip(staged, destinations):
+                    os.replace(src, dst)
+                fsync_directory(parent)
+            except BaseException as commit_error:
+                rollback_errors: list[str] = []
+                for dst, backup, existed in zip(destinations, backups, had_old):
+                    try:
+                        if existed and backup.exists():
+                            os.replace(backup, dst)
+                        elif not existed:
+                            dst.unlink(missing_ok=True)
+                    except BaseException as rollback_error:
+                        rollback_errors.append(f"{dst}: {rollback_error}")
+                try:
+                    fsync_directory(parent)
+                except BaseException as rollback_fsync_error:
+                    rollback_errors.append(f"directory fsync: {rollback_fsync_error}")
+                if rollback_errors and hasattr(commit_error, "add_note"):
+                    commit_error.add_note(
+                        "Best-effort output rollback encountered: "
+                        + "; ".join(rollback_errors)
+                    )
+                raise
     finally:
-        for path in staged:
+        for path in staged + backups:
             try:
                 path.unlink()
             except FileNotFoundError:

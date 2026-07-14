@@ -57,7 +57,7 @@ def test_f1_status_schema_is_orthogonal_in_both_producers(monkeypatch):
         }
 
     monkeypatch.setattr(full, "_cell_drop_one_theta_se", fake_h1)
-    monkeypatch.setattr(full, "_load_cell_per_task", lambda _cell: {})
+    monkeypatch.setattr(full, "_load_cell_per_task", lambda _cell, **_kwargs: {})
     cells = [
         {"site": site, "baseline": baseline, "modes": {}}
         for site, baseline in PHASE_1A_PLANNED_CELLS
@@ -69,7 +69,8 @@ def test_f1_status_schema_is_orthogonal_in_both_producers(monkeypatch):
 
     partial = build_gate([])
     assert partial["analysis_status"] == "INSUFFICIENT"
-    assert partial["h1_verdict"] == "NOT_EVALUATED"
+    assert partial["h1_verdict_normal_approx_transparency"] == "NOT_EVALUATED"
+    assert "h1_verdict" not in partial
     assert partial["gate_status"] == "INSUFFICIENT_DATA"
 
 
@@ -206,4 +207,3 @@ def test_f5_three_output_transaction_does_not_partially_replace(monkeypatch, tmp
         )
     assert [path.read_text(encoding="utf-8") for path in destinations] == ["OLD\n"] * 3
     assert not list(tmp_path.glob("*.staged"))
-

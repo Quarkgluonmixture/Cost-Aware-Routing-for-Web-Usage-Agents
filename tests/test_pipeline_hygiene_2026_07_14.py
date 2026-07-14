@@ -46,6 +46,39 @@ def test_h2_fig3_strict_preserves_fail_closed_behavior(monkeypatch):
         fig3._resolve_runs(strict=True)
 
 
+def test_f06_fig3_strict_rejects_one_of_expected_task_energy(tmp_path, monkeypatch):
+    from scripts.analysis.figures import fig3_regional_carbon as fig3
+
+    dirs = {}
+    for site in ("classifieds", "reddit"):
+        episodes = tmp_path / site / "episodes"
+        episodes.mkdir(parents=True)
+        (episodes / "task_0_summary_v2.json").write_text(
+            json.dumps({
+                "schema_version": "2.0",
+                "task_id": 0,
+                "success": False,
+                "total_energy_kwh": 0.01,
+            }),
+            encoding="utf-8",
+        )
+        dirs[site] = episodes
+
+    class Cell:
+        def __init__(self, episodes_dir):
+            self.episodes_dir = episodes_dir
+
+    def fake_get_cells(*, baseline, site, mode, grade):
+        return [Cell(dirs[site])]
+
+    monkeypatch.setattr(fig3, "_get_cells", fake_get_cells)
+    monkeypatch.setattr(fig3, "OUT", tmp_path / "strict.png")
+
+    with pytest.raises(RuntimeError, match="strict task-ID set mismatch"):
+        fig3.main(["--strict"])
+    assert not fig3.OUT.exists()
+
+
 def test_h3_partial_mean_jaccard_is_skipped_without_losing_available_cell(capsys):
     from scripts.analysis import mechanism_per_task as mechanism
 

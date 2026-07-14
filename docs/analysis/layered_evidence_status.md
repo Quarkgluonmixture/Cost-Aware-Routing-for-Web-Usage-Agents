@@ -1,6 +1,6 @@
 # 4-dimension Evidence Status (live snapshot)
 
-Generated: 2026-07-14 13:55 UTC  
+Generated: 2026-07-14 17:08 UTC
 Source: `make analyze-layered` (CLI alias preserved)
 
 > Four orthogonal dimensions: Outcome / Macro / Micro / Efficiency. Sub-codes (0a / 1c / 2a / 3d) remain as figure-internal anchors.
@@ -8,12 +8,16 @@ Source: `make analyze-layered` (CLI alias preserved)
 
 ## Outcome — task 成功 / 路由 arm 证据
 
-### 0a SR per mode (B0)
+### 0a SR per mode (canonical)
 
-- reddit: DOM **n/a**; P-text **n/a**; P-prompt **12.50%**; P-SoM **n/a**; SoM **n/a**; Vision **n/a**
-- classifieds: DOM **n/a**; P-text **n/a**; P-prompt **19.64%**; P-SoM **n/a**; SoM **n/a**; Vision **n/a**
-- source: `results/visualwebarena/phase1/B0_*/*/episodes/*_summary_v2.json` (live); last update: 2026-07-13 16:35 UTC
-- standalone cite source: `docs/analysis/cross_sites/sr_fp_per_mode.md` | last update: ⚠️ missing
+- B0 reddit: DOM **14.63%**; P-text **13.66%**; P-prompt **n/a**; P-SoM **11.22%**; SoM **14.63%**; Vision **7.80%**
+- B0 classifieds: DOM **17.41%**; P-text **15.62%**; P-prompt **19.64%**; P-SoM **15.62%**; SoM **27.23%**; Vision **25.00%**
+- B1 reddit: DOM **6.83%**; P-text **6.83%**; P-prompt **n/a**; P-SoM **6.83%**; SoM **8.29%**; Vision **2.93%**
+- B1 classifieds: DOM **6.25%**; P-text **7.59%**; P-prompt **6.70%**; P-SoM **6.70%**; SoM **14.29%**; Vision **12.50%**
+- B2 reddit: DOM **n/a**; P-text **n/a**; P-prompt **n/a**; P-SoM **n/a**; SoM **n/a**; Vision **n/a**
+- B2 classifieds: DOM **1.34%**; P-text **0.45%**; P-prompt **1.79%**; P-SoM **0.89%**; SoM **2.23%**; Vision **2.23%**
+- canonical source: `docs/analysis/cross_sites/sr_per_mode.json` | last update: 2026-07-14 13:54 UTC
+- standalone cite source: `docs/analysis/cross_sites/sr_per_mode.md` | last update: 2026-07-14 13:54 UTC
 
 ### 0b-extra Confidence calibration (E3)
 
@@ -47,12 +51,11 @@ Source: `make analyze-layered` (CLI alias preserved)
 
 ### 0f Overlap depth
 
-- reddit P-SoM: d1=0 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
-- reddit P-text: d1=0 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
-- reddit P-prompt: d1=12 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
-- classifieds P-SoM: d1=0 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
-- classifieds P-text: d1=0 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
-- classifieds P-prompt: d1=44 / d2=0 / d3=0 / d4=0 / d5=0 / d6=0
+- reddit P-SoM: d1=2 / d2=4 / d3=4 / d4=9 / d5=4 / d6=0
+- reddit P-text: d1=3 / d2=7 / d3=5 / d4=9 / d5=4 / d6=0
+- classifieds P-SoM: d1=2 / d2=0 / d3=4 / d4=8 / d5=12 / d6=9
+- classifieds P-text: d1=2 / d2=1 / d3=5 / d4=7 / d5=11 / d6=9
+- classifieds P-prompt: d1=6 / d2=5 / d3=6 / d4=6 / d5=12 / d6=9
 - figure: `results/phantom_paper/figures/fig0f_overlap_stacked_bar.png` | last update: 2026-07-14 13:54 UTC
 
 ### 0g Routing AUROC
@@ -78,8 +81,8 @@ Source: `make analyze-layered` (CLI alias preserved)
 
 ### 1c Strategy gradient
 
-- reddit: DOM search-loop n/a → P-SoM search-loop n/a → SoM search-loop n/a
-- classifieds: DOM search-loop n/a → P-SoM search-loop n/a → SoM search-loop n/a
+- reddit: DOM search-loop 45.37% → P-SoM search-loop 33.66% → SoM search-loop 34.63%
+- classifieds: DOM search-loop 80.80% → P-SoM search-loop 78.12% → SoM search-loop 68.30%
 - figure: `results/phantom_paper/figures/fig1c_strategy_gradient.png` | last update: 2026-07-14 13:54 UTC
 
 ### 1d Full action vocabulary (E4)
@@ -136,20 +139,20 @@ Source: `make analyze-layered` (CLI alias preserved)
 
 ### 3a Token/cost per step
 
-- reddit: DOM n/a; P-SoM n/a; SoM n/a
-- classifieds: DOM n/a; P-SoM n/a; SoM n/a
+- reddit: DOM input-cost/step $0.00452; P-SoM input-cost/step $0.00424; SoM input-cost/step $0.00503
+- classifieds: DOM input-cost/step $0.00393; P-SoM input-cost/step $0.00392; SoM input-cost/step $0.00481
 - source: B0 `condition_summary_v2.json` per condition
 
 ### 3b Image embedding / total-token gap
 
-- reddit: SoM median tokens/step n/a vs P-SoM n/a; observed gap **n/a tokens/step**
-- classifieds: SoM median tokens/step n/a vs P-SoM n/a; observed gap **n/a tokens/step**
+- reddit: SoM median tokens/step 5058 vs P-SoM 4166; observed gap **893 tokens/step**
+- classifieds: SoM median tokens/step 4745 vs P-SoM 3894; observed gap **851 tokens/step**
 - source: `results/phantom_paper/run_summary_collect.json` plus episode `total_tokens` fallback | last update: 2026-07-14 13:54 UTC
 
 ### 3c Latency
 
-- reddit: DOM n/a; P-SoM n/a; SoM n/a; P-SoM/SoM n/ax
-- classifieds: DOM n/a; P-SoM n/a; SoM n/a; P-SoM/SoM n/ax
+- reddit: DOM 572.1s/episode; P-SoM 563.0s/episode; SoM 458.5s/episode; P-SoM/SoM 1.23x
+- classifieds: DOM 115.0s/episode; P-SoM 121.1s/episode; SoM 106.7s/episode; P-SoM/SoM 1.14x
 - source: B0 `condition_summary_v2.json` per condition
 
 ### 3d B0 (API) vs B1 (local) deployment-class cost gap

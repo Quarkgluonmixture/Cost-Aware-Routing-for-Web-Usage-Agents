@@ -100,6 +100,52 @@ def _parse_time(value: Any) -> datetime | None:
         return None
 
 
+def _is_number(
+    value: Any,
+    *,
+    minimum: float | None = None,
+    maximum: float | None = None,
+    integer: bool = False,
+) -> bool:
+    """Type-strict finite numeric validation (``bool`` is never numeric)."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    number = float(value)
+    if not math.isfinite(number):
+        return False
+    if minimum is not None and number < minimum:
+        return False
+    if maximum is not None and number > maximum:
+        return False
+    return not integer or number.is_integer()
+
+
+def _is_csv_number(
+    value: Any,
+    *,
+    minimum: float | None = None,
+    maximum: float | None = None,
+    integer: bool = False,
+) -> bool:
+    if isinstance(value, bool) or value in (None, ""):
+        return False
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return False
+    if not math.isfinite(number):
+        return False
+    if minimum is not None and number < minimum:
+        return False
+    if maximum is not None and number > maximum:
+        return False
+    return not integer or number.is_integer()
+
+
+def _is_required_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
 def _load_json(path: Path, label: str, errors: list[str]) -> dict[str, Any]:
     if not path.is_file() or path.stat().st_size == 0:
         errors.append(f"missing or empty {label}: {path}")
@@ -161,17 +207,30 @@ def validate_artifacts(
         errors.append("final slotsheet requires h1_verdict in {PASS, FAIL}")
     if final:
         required_numeric_paths = (
-            ("pooled_h1_fe", "theta_FE_pp"),
-            ("pooled_h1_bootstrap", "ci95_lo_pp_bootstrap"),
-            ("pooled_h1_bootstrap", "ci95_hi_pp_bootstrap"),
-            ("pooled_h1_bootstrap", "p_one_sided_bootstrap"),
-            ("pooled_h1_bootstrap", "k_cells"),
-            ("h3_axis1_pooled_fe", "theta_FE_pp"),
-            ("h3_axis2_pooled_fe", "theta_FE_pp"),
+            (("pooled_h1_fe", "theta_FE_pp"), -100.0, 100.0, False),
+            (("pooled_h1_bootstrap", "ci95_lo_pp_bootstrap"), -100.0, 100.0, False),
+            (("pooled_h1_bootstrap", "ci95_hi_pp_bootstrap"), -100.0, 100.0, False),
+            (("pooled_h1_bootstrap", "p_one_sided_bootstrap"), 0.0, 1.0, False),
+            (("pooled_h1_bootstrap", "k_cells"), 1.0, 6.0, True),
+            (("h1_heterogeneity", "I_squared_pct"), 0.0, 100.0, False),
+            (("h3_axis1_pooled_fe", "theta_FE_pp"), -100.0, 100.0, False),
+            (("h3_axis1_pooled_fe", "ci95_lo_pp_bootstrap"), -100.0, 100.0, False),
+            (("h3_axis1_pooled_fe", "ci95_hi_pp_bootstrap"), -100.0, 100.0, False),
+            (("h3_axis2_pooled_fe", "theta_FE_pp"), -100.0, 100.0, False),
+            (("h3_axis2_pooled_fe", "ci95_lo_pp_bootstrap"), -100.0, 100.0, False),
+            (("h3_axis2_pooled_fe", "ci95_hi_pp_bootstrap"), -100.0, 100.0, False),
         )
-        for path in required_numeric_paths:
-            if not isinstance(g(dec, *path, default=None), (int, float)):
-                errors.append(f"decision required numeric field missing: {'.'.join(path)}")
+        for path, minimum, maximum, integer in required_numeric_paths:
+            value = g(dec, *path, default=None)
+            if not _is_number(
+                value, minimum=minimum, maximum=maximum, integer=integer
+            ):
+                errors.append(
+                    "decision required numeric field invalid: "
+                    f"{'.'.join(path)}={value!r}"
+                )
+        if _parse_time(dec.get("captured_at")) is None:
+            errors.append("decision required captured_at timestamp missing or invalid")
 
     decision_cells: dict[str, dict[str, Any]] = {}
     per_cell = dec.get("per_cell")
@@ -188,6 +247,8 @@ def validate_artifacts(
                 errors.append(f"decision {cid} h1.complete_exact is not true")
             if not isinstance(h1.get("observed_n"), dict) or set(h1["observed_n"]) != set(MODE_ORDER):
                 errors.append(f"decision {cid} does not carry six unique canonical modes")
+            if final and not _is_required_string(h1.get("task_set_sha256")):
+                errors.append(f"decision {cid} required task_set_sha256 missing")
         if final and set(decision_cells) != PLANNED_CELL_IDS:
             errors.append(
                 "decision cells are not exact planned six: "
@@ -200,6 +261,8 @@ def validate_artifacts(
         errors.append("SR summary_table is missing or empty")
         sr_rows = []
     sr_keys: set[tuple[str, str, str]] = set()
+    if final and _parse_time(sr.get("captured_at")) is None:
+        errors.append("SR required captured_at timestamp missing or invalid")
     for row in sr_rows:
         key = (str(row.get("baseline")), str(row.get("site")), str(row.get("mode")))
         if key in sr_keys:
@@ -211,8 +274,26 @@ def validate_artifacts(
         cid = _cell_id(row.get("baseline"), row.get("site"))
         expected_sha = g(decision_cells.get(cid, {}), "h1", "task_set_sha256", default=None)
         row_sha = row.get("task_set_sha256")
-        if expected_sha is not None and row_sha is not None and row_sha != expected_sha:
+        if final and not _is_required_string(row_sha):
+            errors.append(f"SR required task_set_sha256 missing for {key}")
+        if expected_sha is not None and row_sha != expected_sha:
             errors.append(f"task_set_sha256 mismatch decision↔SR for {key}")
+        if final:
+            sr_numeric_fields = (
+                ("n_total", 0.0, None, True),
+                ("observed_n", 0.0, None, True),
+                ("expected_n", 1.0, None, True),
+                ("n_success", 0.0, None, True),
+                ("sr_denominator_n", 1.0, None, True),
+                ("sr_pct", 0.0, 100.0, False),
+                ("completeness_ratio", 0.0, 1.0, False),
+            )
+            for field, minimum, maximum, integer in sr_numeric_fields:
+                value = row.get(field)
+                if not _is_number(
+                    value, minimum=minimum, maximum=maximum, integer=integer
+                ):
+                    errors.append(f"SR invalid numeric field for {key}: {field}={value!r}")
     expected_sr_keys = {
         (cid.split("_", 1)[0], cid.split("_", 1)[1], mode)
         for cid in PLANNED_CELL_IDS for mode in MODE_ORDER
@@ -241,6 +322,27 @@ def validate_artifacts(
         if any(str(r.get("is_partial")).lower() == "true" for r in rows):
             errors.append(f"fig0c {cid} contains partial numeric rows")
         for row in rows:
+            if final:
+                fig_numeric_fields = (
+                    ("drop_one_loss_pp", -100.0, 100.0, False),
+                    ("ci95_low_pp", -100.0, 100.0, False),
+                    ("ci95_high_pp", -100.0, 100.0, False),
+                    ("n_common", 1.0, None, True),
+                    ("n_expected", 1.0, None, True),
+                    ("n_modes_unique", 6.0, 6.0, True),
+                )
+                for field, minimum, maximum, integer in fig_numeric_fields:
+                    value = row.get(field)
+                    if not _is_csv_number(
+                        value, minimum=minimum, maximum=maximum, integer=integer
+                    ):
+                        errors.append(
+                            f"fig0c {cid} invalid numeric field: {field}={value!r}"
+                        )
+                if not _is_required_string(row.get("task_set_sha256")):
+                    errors.append(f"fig0c {cid} required task_set_sha256 missing")
+                if _parse_time(row.get("captured_at")) is None:
+                    errors.append(f"fig0c {cid} required captured_at missing or invalid")
             try:
                 portfolio = json.loads(row.get("portfolio_modes", "[]"))
                 n_modes_unique = int(row.get("n_modes_unique", "0"))
@@ -303,6 +405,10 @@ def validate_artifacts(
             or not h10.get("operational_deployment_gate")
         ):
             errors.append("H10 operational_deployment_gate is missing")
+        if final and _parse_time(h10.get("captured_at")) is None:
+            errors.append("H10 required captured_at timestamp missing or invalid")
+        if final and not _is_required_string(h10.get("task_set_sha256")):
+            errors.append("H10 required task_set_sha256 missing")
 
         router_cells = set(str(c) for c in router.get("cells", []))
         if not router:
@@ -316,6 +422,8 @@ def validate_artifacts(
                 )
             if final and router_cells != PLANNED_CELL_IDS:
                 errors.append("router cells must contain exact planned six")
+            if final and _parse_time(router.get("captured_at")) is None:
+                errors.append("router required captured_at timestamp missing or invalid")
             contrasts = router.get("paired_contrasts")
             if not isinstance(contrasts, list) or not contrasts:
                 errors.append("router paired_contrasts is missing or empty")
@@ -336,6 +444,24 @@ def validate_artifacts(
                 }
                 if keys != expected_keys or len(contrasts) != len(expected_keys):
                     errors.append("router paired_contrasts must contain exact 18 predefined rows")
+                for record in contrasts:
+                    if not isinstance(record, dict):
+                        errors.append("router paired_contrasts contains a non-object row")
+                        continue
+                    rid = f"{record.get('cell_id')}/{record.get('contrast_id')}"
+                    if not _is_number(
+                        record.get("delta_auroc"), minimum=-1.0, maximum=1.0
+                    ):
+                        errors.append(f"router {rid} invalid delta_auroc")
+                    ci = record.get("ci95")
+                    if (
+                        not isinstance(ci, list)
+                        or len(ci) != 2
+                        or any(not _is_number(v, minimum=-1.0, maximum=1.0) for v in ci)
+                    ):
+                        errors.append(f"router {rid} invalid ci95")
+                    if not _is_number(record.get("n_common"), minimum=1.0, integer=True):
+                        errors.append(f"router {rid} invalid n_common")
             if not isinstance(router.get("results"), list) or not router.get("results"):
                 errors.append("router results table is missing or empty")
             router_validation = g(router, "canonical_input_validation", "cells", default={})
@@ -349,12 +475,12 @@ def validate_artifacts(
                         decision_cells.get(cid, {}), "h1", "task_set_sha256",
                         default=None,
                     )
-                    if (
-                        router_sha is not None
-                        and expected_sha is not None
-                        and router_sha != expected_sha
-                    ):
+                    if final and not _is_required_string(router_sha):
+                        errors.append(f"router {cid} required task_set_sha256 missing")
+                    if expected_sha is not None and router_sha != expected_sha:
                         errors.append(f"task_set_sha256 mismatch decision↔router for {cid}")
+            elif final:
+                errors.append("router canonical_input_validation.cells is missing")
 
     dec_time = _parse_time(dec.get("captured_at"))
     fig_times = {_parse_time(r.get("captured_at")) for r in numeric_fig}
@@ -371,13 +497,14 @@ def validate_artifacts(
         else:
             gaps.append(f"decision↔{label}: captured_at unavailable on one side")
 
-    # These producers currently do not expose joinable capture/provenance fields.
-    if not sr.get("captured_at"):
+    # Final mode treats the required timestamps/SHA joins above as hard schema
+    # errors. Rehearsal retains gap-shaped diagnostics for older artifacts.
+    if not sr.get("captured_at") and not final:
         gaps.append("SR: captured_at absent; time-window join cannot be enforced")
     if not h10_pending:
-        if not h10.get("captured_at"):
+        if not h10.get("captured_at") and not final:
             gaps.append("H10: captured_at absent; time-window join cannot be enforced")
-        if not h10.get("task_set_sha256"):
+        if not h10.get("task_set_sha256") and not final:
             gaps.append("H10: task_set_sha256 absent; task-universe join cannot be enforced")
     return errors, sorted(set(gaps))
 

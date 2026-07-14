@@ -1,6 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SUBMISSION=0
+if [[ $# -gt 1 ]]; then
+  printf 'Usage: %s [--submission]\n' "$0" >&2
+  exit 2
+fi
+case "${1:-}" in
+  "") ;;
+  --submission) SUBMISSION=1 ;;
+  -h|--help)
+    printf 'Usage: %s [--submission]\n' "$0"
+    printf '  --submission  fail unless the generated TeX contains zero visible TODO slots\n'
+    exit 0
+    ;;
+  *)
+    printf 'ERROR: unknown argument: %s\n' "$1" >&2
+    printf 'Usage: %s [--submission]\n' "$0" >&2
+    exit 2
+    ;;
+esac
+
 LATEX_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 REPO_ROOT="$(git -C "$LATEX_DIR" rev-parse --show-toplevel)"
 SOURCE_MD="$LATEX_DIR/../aaai27_main.md"
@@ -133,7 +153,7 @@ $2
 \\begin{figure}[t]
 \\centering
 \\includegraphics[width=\\columnwidth]{fig_f1_diamond_schematic.pdf}
-\\caption{The \$2\\times2\$ ablation diamond over text-payload format and prompt family. \\todo{caption sync}}
+\\caption{The \$2\\times2\$ ablation diamond over text-payload format and prompt family.}
 \\label{fig:diamond}
 \\end{figure}
 }s;
@@ -141,7 +161,7 @@ $2
 \\begin{figure}[t]
 \\centering
 \\includegraphics[width=\\columnwidth]{fig_f2_h1_forest.pdf}
-\\caption{Per-cell P-SoM strict six-mode drop-one results with the fixed-effects pooled estimate against the pre-registered \$+1.0\$pp threshold. \\todo{verdict-day figure}}
+\\caption{Per-cell P-SoM strict six-mode drop-one results with the fixed-effects pooled estimate against the pre-registered \$+1.0\$pp threshold.}
 \\label{fig:h1forest}
 \\end{figure}
 }s;
@@ -186,10 +206,16 @@ printf '%s\n' "$BUILD_MODE" > "$BUILD_DIR/build_mode.txt"
 ) 2>&1 | tee "$BUILD_DIR/latexmk.stdout.log"
 
 PAGES="$(pdfinfo "$BUILD_DIR/main.pdf" | awk '/^Pages:/ { print $2 }')"
-TODO_COUNT="$(rg -o '\\todo\{' "$BUILD_DIR/abstract_generated.tex" "$BUILD_DIR/body_generated.tex" | wc -l)"
+TODO_COUNT="$({ rg -o '\\todo\{' "$BUILD_DIR/abstract_generated.tex" "$BUILD_DIR/body_generated.tex" || true; } | wc -l)"
 REF_PAGE="$(sed -n 's/.*\\newlabel{refs-start}{{[^}]*}{\([^}]*\)}.*/\1/p' "$BUILD_DIR/main.aux" | tail -n 1)"
 
 printf '\nBuild mode: %s\n' "$BUILD_MODE"
 printf 'PDF: %s (%s pages)\n' "$BUILD_DIR/main.pdf" "$PAGES"
 printf 'Reference start page: %s\n' "${REF_PAGE:-unknown}"
 printf 'Visible TODO slots: %s\n' "$TODO_COUNT"
+
+if [[ "$SUBMISSION" -eq 1 && "$TODO_COUNT" -ne 0 ]]; then
+  printf 'ERROR: --submission requires zero visible TODO slots; residuals:\n' >&2
+  rg -n '\\todo\{' "$BUILD_DIR/abstract_generated.tex" "$BUILD_DIR/body_generated.tex" >&2 || true
+  exit 2
+fi
