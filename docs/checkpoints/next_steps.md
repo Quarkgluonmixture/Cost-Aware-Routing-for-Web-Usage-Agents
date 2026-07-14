@@ -27,7 +27,8 @@ updated: 2026-06-27
 > - **OpenReview 修正 (user 注册实测)**: AAAI-27 = OpenReview 表单。deadline 双标注: abstract **Jul 22 11:59AM UTC-0 = Jul 21 23:59 AoE** / full **Jul 29 11:59AM UTC-0 = Jul 28 23:59 AoE** / **reviewer-nomination 冻结 Jul 21 AoE** (资格作者未提名=desk-reject 风险)。abstract+TL;DR 复制源已备: `deliverables/openreview_abstract_tldr_2026-07-14.md` (248 词/槽位 0)。
 > - **官方模板页数账 (author kit aaai2027.sty/bst 已入)**: 正文**恰好第 7 页末结束** (refs pp.8-9) — 压线合规零余量, verdict splice 增词用 cut_prewrites 抵消。convert.sh 三个官方模式断点已修 (kit 命名/affiliations/双 bibstyle)。
 > - **📅 07-16 线下学长周会** — 议程: D7 章交付 / PROTOCOL_NOTE_05 披露 (witness 义务) / 4-in-1 消息内容当面过 / **作者名单+reviewer nomination 拍板 (冻结 Jul 21 AoE 前必须落表单)** / B2 timeline→k<6 预案(a) 决策树 / router covariate 红旗。周会 brief 07-15 准备 (dashboard+md, 等 B1 pprompt land 用 k=4 新数)。
-> - 全部 commits 已 push (`5ab5224` 及之前); 今日全景 → 笔记 §366-§366.3。
+> - 全部 commits 已 push (最新 `62daf0d`); 今日全景 → 笔记 §366-§366.4。
+> - **🔚 codex 自走循环已收官 (user 2026-07-14 深夜指令)**: 监视器已停。**下 session 接手动作**: ① 查 B1 pprompt land (`logs/cron/fire_manifest_a100_latest.json` bound>28 或 ssh A100) → 走 NUMBERS_TODO §0 promote 配方 → k=4 聚合+interim 刷新; ② 周会 brief 已备 `deliverables/weekly_meeting_brief_2026-07-16.md` (07-14 深夜快照, land 后可用 slotsheet --rehearsal 刷 k=4 数字)。
 >
 > 🔭 **2026-07-14 UPDATE — codex 自走循环 day-1: 三审计→全修 + 6 reddit conditions promote (22→28) + PROTOCOL_NOTE_05** ⭐⭐⭐ (详 笔记 §366):
 > - **✅ 三场 codex (gpt-5.6-sol xhigh) 审计全修**: ① relwork stress (17ce79f "待 stress" 清账, 10 findings → `9acfa24` 修, novelty 重写三级 spine 可守) ② readiness (词数 5450→5248, banned grep 出清, branch 完整 abstract 197/203 词) ③ **工具链 Stop-ship 9 P0** → Chunk 1 `27e04a9` (H3 pool 恢复 "over 6 planned cells" estimand + H1/SR exact 224/205 task-set + analysis_status/h1_verdict schema; **witness = PROTOCOL_NOTE_05 + tag**, outcome-blind @ k=3) + Chunk 2 `e35d0b4` (fig0c universe / F2 单源 / router majority OOF 泄漏 / slotsheet fail-closed + Decimal 舍入锁)。测试 1433p/2f → **1454 passed/0 failed** (+19 regression)。
