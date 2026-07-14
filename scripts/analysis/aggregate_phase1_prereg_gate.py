@@ -511,7 +511,7 @@ def write_md(payload: Dict, out_md: Path) -> None:
     atomic_write_text(out_md, "\n".join(lines) + "\n")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     # B-1014 (/stress A2.4a P1-12-B codex F4, 2026-05-18): manifest_path parity
     # with canonical full producer. Pre-fix B-184 legacy main() had no
@@ -527,19 +527,27 @@ def main() -> int:
     ap.add_argument("--output-csv", default=str(DEFAULT_OUT_CSV))
     ap.add_argument("--output-json", default=str(DEFAULT_OUT_JSON))
     ap.add_argument("--output-md", default=str(DEFAULT_OUT_MD))
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     # B-1014: lazy fn re-evaluates env var + manifest at call time (mirror
     # canonical full producer pattern). Falls back to module-level frozen CELLS
-    # if get_aggregator_cells unavailable.
+    # only for the expected legacy-import compatibility failure; registry and
+    # manifest errors must propagate instead of silently selecting other data.
     try:
-        from scripts.analysis.lib.run_registry import get_aggregator_cells as _get
+        from scripts.analysis.aggregate_phantom_lift import (
+            get_aggregator_cells as _get,
+        )
+    except (ImportError, AttributeError) as exc:
+        print(
+            "warning: aggregate_phantom_lift.get_aggregator_cells unavailable; "
+            f"falling back to legacy frozen CELLS ({exc})",
+            file=sys.stderr,
+        )
+        cells_to_use = CELLS
+    else:
         manifest_path = (Path(args.run_manifest) if args.run_manifest
                          else REPO / "results/phantom_paper/run_manifest.yaml")
         cells_to_use = _get(manifest_path=manifest_path)
-    except Exception:
-        # Back-compat: legacy frozen CELLS path
-        cells_to_use = CELLS
 
     payload = build_gate(cells_to_use)
 

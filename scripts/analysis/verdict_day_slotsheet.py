@@ -407,8 +407,17 @@ def validate_artifacts(
             errors.append("H10 operational_deployment_gate is missing")
         if final and _parse_time(h10.get("captured_at")) is None:
             errors.append("H10 required captured_at timestamp missing or invalid")
-        if final and not _is_required_string(h10.get("task_set_sha256")):
-            errors.append("H10 required task_set_sha256 missing")
+        if isinstance(h10_cells, dict):
+            for cid, cell in h10_cells.items():
+                h10_sha = cell.get("task_set_sha256") if isinstance(cell, dict) else None
+                expected_sha = g(
+                    decision_cells.get(cid, {}), "h1", "task_set_sha256",
+                    default=None,
+                )
+                if final and not _is_required_string(h10_sha):
+                    errors.append(f"H10 {cid} required task_set_sha256 missing")
+                if expected_sha is not None and h10_sha != expected_sha:
+                    errors.append(f"task_set_sha256 mismatch decision↔H10 for {cid}")
 
         router_cells = set(str(c) for c in router.get("cells", []))
         if not router:
@@ -504,8 +513,14 @@ def validate_artifacts(
     if not h10_pending:
         if not h10.get("captured_at") and not final:
             gaps.append("H10: captured_at absent; time-window join cannot be enforced")
-        if not h10.get("task_set_sha256") and not final:
-            gaps.append("H10: task_set_sha256 absent; task-universe join cannot be enforced")
+        h10_cells = h10.get("per_cell")
+        if isinstance(h10_cells, dict) and not final:
+            for cid, cell in h10_cells.items():
+                if not isinstance(cell, dict) or not cell.get("task_set_sha256"):
+                    gaps.append(
+                        f"H10 {cid}: task_set_sha256 absent; "
+                        "task-universe join cannot be enforced"
+                    )
     return errors, sorted(set(gaps))
 
 

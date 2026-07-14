@@ -9,8 +9,12 @@ from pathlib import Path
 
 import pytest
 
+from scripts.analysis import aggregate_h10_pareto as h10
+from scripts.analysis import aggregate_phase1_prereg_gate as legacy_gate
+from scripts.analysis import aggregate_phantom_lift as phantom_lift
 from scripts.analysis import verdict_day_slotsheet as slots
 from scripts.analysis.figures import fig_f1_diamond_schematic as f1
+from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -127,7 +131,7 @@ def _write_complete_pass1_artifacts(tmp_path: Path) -> tuple[Path, Path, Path]:
     fig_rows = []
     for cell_id in sorted(slots.PLANNED_CELL_IDS):
         baseline, site = cell_id.split("_", 1)
-        task_sha = f"sha256-{cell_id}"
+        task_sha = expected_scored_ids(site)[1]
         decision["per_cell"].append({
             "baseline": baseline,
             "site": site,
@@ -189,6 +193,153 @@ def _write_complete_pass1_artifacts(tmp_path: Path) -> tuple[Path, Path, Path]:
         writer.writeheader()
         writer.writerows(fig_rows)
     return decision_path, sr_path, fig0c_path
+
+
+def _build_producer_h10(monkeypatch) -> dict:
+    """Exercise the real producer schema without requiring landed Pass-2 data."""
+    monkeypatch.setattr(h10, "find_pass1_run_dirs", lambda *_args: [Path("synthetic")])
+    monkeypatch.setattr(
+        h10, "collect_per_task_outcomes_with_metrics", lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        h10, "aggregate_arm_metrics",
+        lambda *_args, **_kwargs: ([0] * h10.PHANTOM_PROMPT_BASELINE_MIN_EP, [], [], []),
+    )
+
+    def fake_analyze_cell(baseline, site, **_kwargs):
+        return {
+            "cell_id": f"{baseline}_{site}",
+            "baseline": baseline,
+            "site": site,
+            "status": "ok",
+            "passes": True,
+            "theta_mean_pp": 2.0,
+            "theta_se_pp": 1.0,
+            "router_strictly_better": True,
+            "cell_cost_unit_basis": {
+                "homogeneous": True,
+                "modal_basis": "api_usd",
+            },
+        }
+
+    monkeypatch.setattr(h10, "analyze_cell", fake_analyze_cell)
+    monkeypatch.setattr(
+        h10, "_load_h10_entropy_gate",
+        lambda: {"h10_entropy_gate_passed": True},
+    )
+    monkeypatch.setattr(h10, "_load_ladder_disclosure", lambda: None)
+    return h10.build_verdict()
+
+
+def _complete_router_payload(decision: dict) -> dict:
+    captured_at = decision["captured_at"]
+    task_shas = {
+        f"{cell['baseline']}_{cell['site']}": cell["h1"]["task_set_sha256"]
+        for cell in decision["per_cell"]
+    }
+    contrast_ids = (
+        "full-vs-scalar:standard",
+        "full-vs-scalar:template_disjoint",
+        "standard-vs-template-disjoint:full_lr",
+    )
+    return {
+        "grade": "PAPER_GRADE",
+        "analysis_status": "COMPLETE",
+        "captured_at": captured_at,
+        "cells": sorted(slots.PLANNED_CELL_IDS),
+        "paired_contrasts": [
+            {
+                "cell_id": cid,
+                "contrast_id": contrast_id,
+                "delta_auroc": 0.1,
+                "ci95": [0.0, 0.2],
+                "n_common": 100,
+            }
+            for cid in sorted(slots.PLANNED_CELL_IDS)
+            for contrast_id in contrast_ids
+        ],
+        "results": [{"status": "ok"}],
+        "canonical_input_validation": {
+            "cells": {
+                cid: {"task_set_sha256": task_shas[cid]}
+                for cid in sorted(slots.PLANNED_CELL_IDS)
+            },
+        },
+    }
+
+
+def test_n01_full_final_accepts_real_h10_producer_schema_and_rejects_sha_mismatch(
+    tmp_path, monkeypatch, capsys,
+):
+    decision_path, sr_path, fig0c_path = _write_complete_pass1_artifacts(tmp_path)
+    decision = json.loads(decision_path.read_text())
+    h10_payload = _build_producer_h10(monkeypatch)
+    assert "task_set_sha256" not in h10_payload
+    assert set(h10_payload["per_cell"]) == slots.PLANNED_CELL_IDS
+
+    h10_path = tmp_path / "h10.json"
+    router_path = tmp_path / "router.json"
+    h10_path.write_text(json.dumps(h10_payload))
+    router_path.write_text(json.dumps(_complete_router_payload(decision)))
+    valid_out = tmp_path / "valid-slotsheet.md"
+    common_args = [
+        "--decision", str(decision_path),
+        "--h10", str(h10_path),
+        "--sr", str(sr_path),
+        "--fig0c", str(fig0c_path),
+        "--router", str(router_path),
+    ]
+
+    assert slots.main([*common_args, "--out", str(valid_out)]) == 0
+    assert valid_out.read_text().startswith("# Verdict-day slot sheet")
+    assert capsys.readouterr().err == ""
+
+    h10_payload["per_cell"]["B1_reddit"]["task_set_sha256"] = "wrong-site-universe"
+    h10_path.write_text(json.dumps(h10_payload))
+    mismatch_out = tmp_path / "mismatch-must-not-exist.md"
+    assert slots.main([*common_args, "--out", str(mismatch_out)]) == 2
+    assert not mismatch_out.exists()
+    assert (
+        "task_set_sha256 mismatch decision↔H10 for B1_reddit"
+        in capsys.readouterr().err
+    )
+
+    h10_payload["task_set_sha256"] = "arbitrary-nonjoinable-global"
+    for cell in h10_payload["per_cell"].values():
+        cell.pop("task_set_sha256", None)
+    h10_path.write_text(json.dumps(h10_payload))
+    global_only_out = tmp_path / "global-only-must-not-exist.md"
+    assert slots.main([*common_args, "--out", str(global_only_out)]) == 2
+    assert not global_only_out.exists()
+    global_only_errors = capsys.readouterr().err
+    assert "H10 B0_classifieds required task_set_sha256 missing" in global_only_errors
+    assert "H10 B2_reddit required task_set_sha256 missing" in global_only_errors
+
+
+def test_u2_legacy_cli_run_manifest_reaches_live_aggregator(
+    tmp_path, monkeypatch,
+):
+    manifest = tmp_path / "chosen-run-manifest.yaml"
+    manifest.write_text("schema_version: test\n")
+    selected_cells = [{"baseline": "B9", "site": "reddit", "modes": {}}]
+    seen: dict[str, object] = {}
+
+    def fake_get_aggregator_cells(*, manifest_path):
+        seen["manifest_path"] = manifest_path
+        return selected_cells
+
+    def fake_build_gate(cells):
+        seen["cells"] = cells
+        return {"gate_status": "INSUFFICIENT_DATA", "per_cell": [], "skipped_cells": []}
+
+    monkeypatch.setattr(phantom_lift, "get_aggregator_cells", fake_get_aggregator_cells)
+    monkeypatch.setattr(legacy_gate, "build_gate", fake_build_gate)
+    monkeypatch.setattr(legacy_gate, "write_csv", lambda *_args: None)
+    monkeypatch.setattr(legacy_gate, "write_json", lambda *_args: None)
+    monkeypatch.setattr(legacy_gate, "write_md", lambda *_args: None)
+
+    assert legacy_gate.main(["--run-manifest", str(manifest)]) == 0
+    assert seen == {"manifest_path": manifest, "cells": selected_cells}
 
 
 def test_k3_h10_pending_complete_emits_copyable_pass1_and_pending_partitions(tmp_path):

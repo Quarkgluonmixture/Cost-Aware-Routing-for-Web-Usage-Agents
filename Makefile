@@ -447,11 +447,10 @@ summary-collect:
 routing-auroc:
 	$(PYTHON) scripts/analysis/aggregate_routing_auroc.py
 
-# B-184: Phase 1 PRIMARY gate (preregistration.md §1 lock).
-# FE inverse-variance pooled P-SoM drop-one over 6 planned (site, model) cells,
-# one-sided superiority test against δ=1.0pp at α=0.05. This is the
-# CANONICAL paper §1 H1 source-of-truth — every paper §1 hero number should
-# trace back to results/phantom_paper/phase1_prereg_gate.{csv,json,md}.
+# B-184: Phase 1 legacy normal-Z transparency-only H1 artifact.
+# The CANONICAL paper §1 H1 source-of-truth is the full decision producer
+# (`phase1-full-prereg-decision`) and its bootstrap-percentile verdict; this
+# target retains the shared per-cell kernel plus normal-Z transparency columns.
 # `phantom-lift` (below) computes the legacy 3→5 lift estimand and is now
 # appendix-exploratory only (codex B2 catch — different estimand than prereg).
 phase1-prereg-gate:

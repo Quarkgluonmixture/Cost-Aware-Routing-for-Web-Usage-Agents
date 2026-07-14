@@ -43,12 +43,19 @@ import json
 import os
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
 
 from p79.policies.pass1_manifest import discover_runs
+
+try:
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+except ModuleNotFoundError:  # pragma: no cover - direct script execution.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
 
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
@@ -103,7 +110,7 @@ DELTA_PP = 1.0  # H1-mirror δ for Appendix-D FE pool sensitivity row only (NOT 
 # operational deployment gate). The operational gate uses cell-level paired-bootstrap
 # Pareto non-dominance + grid-level >=5/6 robustness criterion, neither of which uses
 # delta_pp as a threshold. See preregistration.md §H10 OPERATIONAL DEPLOYMENT GATE.
-SCHEMA_VERSION = "2026-05-18-a2.5-chunk-c-h10"
+SCHEMA_VERSION = "2026-07-14-h10-cell-provenance-v2"
 
 
 def find_pass1_run_dirs(baseline: str, site: str) -> list[Path]:
@@ -742,12 +749,21 @@ def _load_ladder_disclosure() -> Optional[dict]:
         return None
 
 
-def run_h10_verdict(
+def build_verdict(
     cells: Optional[list[tuple[str, str]]] = None,
     require_full_coverage: bool = False,
 ) -> dict[str, Any]:
-    """Top-level H10 verdict: per-cell analysis + K-of-6 PRIMARY + FE pool APPENDIX."""
+    """Build the canonical H10 verdict and its per-cell task-universe provenance."""
     cells = cells or CELLS
+
+    # N-01 (2026-07-14): H10 shares the same canonical scored task universe as
+    # the full prereg decision producer.  The digest is site-specific, so it is
+    # carried by every cell record rather than collapsed into an undefined
+    # top-level/global hash.
+    task_set_sha256_by_site = {
+        site: expected_scored_ids(site)[1]
+        for site in {site for _, site in cells}
+    }
 
     # B-1872 (/stress Mode A P1-1-A* 2026-06-09): JOINT P-prompt 6th-arm eligibility,
     # decided ONCE across all required cells and passed into every analyze_cell call.
@@ -782,6 +798,7 @@ def run_h10_verdict(
             baseline, site, require_full_coverage=require_full_coverage,
             phantom_prompt_in_baselines=pp_joint_eligible,
         )
+        rec["task_set_sha256"] = task_set_sha256_by_site[site]
         per_cell_results[rec["cell_id"]] = rec
 
     # Operational deployment gate (two-layer: cell-level + grid-level)
@@ -948,6 +965,7 @@ def run_h10_verdict(
 
     return {
         "schema_version": SCHEMA_VERSION,
+        "captured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         # NOTE: legacy key "primary_k_of_n" retained as alias for downstream consumers
         # (paper §6 figure scripts, OSF artifact replay); new canonical key is
         # "operational_deployment_gate". /stress A2.8 B-1551 transitional schema.
@@ -967,6 +985,14 @@ def run_h10_verdict(
             "falsification test of this hypothesis."
         ),
     }
+
+
+def run_h10_verdict(
+    cells: Optional[list[tuple[str, str]]] = None,
+    require_full_coverage: bool = False,
+) -> dict[str, Any]:
+    """Compatibility wrapper for the pre-N-01 public function name."""
+    return build_verdict(cells, require_full_coverage=require_full_coverage)
 
 
 def _render_ladder_disclosure_md(md: list[str], disc: dict[str, Any]) -> None:
@@ -1141,7 +1167,7 @@ def main() -> int:
     # P2-3 (codex B-F9, AMENDMENT_04): paper-grade DEFAULT = fail-closed full coverage;
     # --allow-partial-dev opts into the dev-mode partial-intersection subset verdict.
     require_full = not args.allow_partial_dev
-    verdict = run_h10_verdict(cells, require_full_coverage=require_full)
+    verdict = build_verdict(cells, require_full_coverage=require_full)
     write_outputs(verdict, Path(args.out_dir))
 
     pv = verdict["primary_k_of_n"]
