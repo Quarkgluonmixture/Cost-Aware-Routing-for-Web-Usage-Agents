@@ -2291,6 +2291,7 @@
     ]
   },
   "data_status": {
+    "missing_e1_cell_count": 2,
     "p_prompt": {
       "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {
         "episodes": 224,
@@ -2308,7 +2309,7 @@
         "status": "complete but excluded by design"
       },
       "B1_phantom_prompt_reddit_20260713": {
-        "episodes": 81,
+        "episodes": 88,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "partial / pending"
       },
@@ -2338,7 +2339,7 @@
   },
   "method": "Per-task mechanism evidence over B0 reddit/classifieds five-mode runs. E1 uses URL-changing click transition sets, E2 uses first divergent URL-signature step on symmetric-difference adjusted-success tasks, E3 aggregates existing confidence analyzer outputs across paper-grade B0/B1 cells without recomputing calibration, and E4 reports full action_type distributions. Element ids are not used because they are not mode-invariant or step-invariant.",
   "paper_section5_implications": {
-    "E1_headline": "DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.308 on reddit and 0.332 on classifieds.",
+    "E1_headline": "Available DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.308 on reddit; 0.332 on classifieds.",
     "E2_headline": "Boundary divergence is usually visible early among symmetric-difference tasks: DOM vs P-SoM early rates are reddit 100.0% and classifieds 95.5%.",
     "E3_headline": "The strongest calibration/routing cell is B2/classifieds/P-text with max AUROC 0.934; B0 token ECE is unavailable in existing per-run outputs.",
     "E4_headline": "The largest action-vocabulary shift is reddit axis_1_text tab_focus (0.077 right-minus-left)."

@@ -2,45 +2,722 @@
   "method": "Mode-invariant micro-behavior analysis over reddit and classifieds. Per-task/per-mode metrics extract URL sets, URL path sets, target-page hits from task-config URLs, typed keywords, first action type, first post-action URL path, step count, and finish status. Cascade contrasts are right-minus-left: P-text minus DOM (axis 1 text), P-SoM minus P-text (axis 2 prompt), and SoM minus P-SoM (axis 3 image). URL path Jaccard is symmetric; lower values indicate stronger decision divergence. The cross-site claim ratio compares bounded decision effects (1 - URL-path Jaccard, absolute target-hit diff, first-action divergence) with the mean absolute axis-1 macro effect from axis_effect_size.json.",
   "metrics_per_task_per_mode": {
     "B0": {
-      "reddit": {},
-      "classifieds": {}
+      "reddit": {
+        "DOM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.770732,
+          "mean_url_path_set_size": 3.229268,
+          "mean_n_steps": 20.156098,
+          "finish_rate": 0.512195,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3,
+          "mean_max_keyword_repeat": 2.117073,
+          "mean_distinct_keywords": 1.302439,
+          "first_action_type_counts": {
+            "click": 97,
+            "finish": 3,
+            "goto": 1,
+            "scroll": 14,
+            "select_option": 1,
+            "tab_focus": 26,
+            "type": 63
+          }
+        },
+        "Vision": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.04878,
+          "mean_url_path_set_size": 2.726829,
+          "mean_n_steps": 23.214634,
+          "finish_rate": 0.341463,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 1.678049,
+          "mean_max_keyword_repeat": 1.253659,
+          "mean_distinct_keywords": 0.790244,
+          "first_action_type_counts": {
+            "click": 125,
+            "finish": 1,
+            "goto": 9,
+            "scroll": 33,
+            "tab_focus": 25,
+            "type": 12
+          }
+        },
+        "SoM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.268293,
+          "mean_url_path_set_size": 2.834146,
+          "mean_n_steps": 20.014634,
+          "finish_rate": 0.492683,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.292683,
+          "mean_max_keyword_repeat": 1.692683,
+          "mean_distinct_keywords": 0.97561,
+          "first_action_type_counts": {
+            "click": 109,
+            "finish": 3,
+            "new_tab": 3,
+            "scroll": 16,
+            "select_option": 1,
+            "tab_focus": 22,
+            "type": 51
+          }
+        },
+        "Phantom-SoM": {
+          "n_tasks": 203,
+          "mean_url_set_size": 3.684729,
+          "mean_url_path_set_size": 3.103448,
+          "mean_n_steps": 22.842365,
+          "finish_rate": 0.408867,
+          "target_hit_n": 143,
+          "target_hit_rate": 0.006993,
+          "mean_n_type_actions": 3.044335,
+          "mean_max_keyword_repeat": 2.093596,
+          "mean_distinct_keywords": 1.216749,
+          "first_action_type_counts": {
+            "click": 107,
+            "finish": 1,
+            "goto": 1,
+            "hover": 1,
+            "scroll": 15,
+            "select_option": 1,
+            "tab_focus": 24,
+            "type": 53
+          }
+        },
+        "P-text": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.565854,
+          "mean_url_path_set_size": 2.960976,
+          "mean_n_steps": 22.990244,
+          "finish_rate": 0.365854,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.443902,
+          "mean_max_keyword_repeat": 2.560976,
+          "mean_distinct_keywords": 1.22439,
+          "first_action_type_counts": {
+            "click": 96,
+            "finish": 2,
+            "new_tab": 1,
+            "scroll": 14,
+            "select_option": 1,
+            "tab_focus": 19,
+            "type": 72
+          }
+        }
+      },
+      "classifieds": {
+        "DOM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.660714,
+          "mean_url_path_set_size": 1.589286,
+          "mean_n_steps": 15.607143,
+          "finish_rate": 0.736607,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 4.28125,
+          "mean_max_keyword_repeat": 2.3125,
+          "mean_distinct_keywords": 1.71875,
+          "first_action_type_counts": {
+            "click": 41,
+            "finish": 1,
+            "scroll": 28,
+            "select_option": 75,
+            "tab_focus": 9,
+            "type": 70
+          }
+        },
+        "Vision": {
+          "n_tasks": 224,
+          "mean_url_set_size": 3.986607,
+          "mean_url_path_set_size": 1.517857,
+          "mean_n_steps": 15.879464,
+          "finish_rate": 0.705357,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.602679,
+          "mean_max_keyword_repeat": 1.263393,
+          "mean_distinct_keywords": 1.388393,
+          "first_action_type_counts": {
+            "back": 1,
+            "click": 72,
+            "finish": 4,
+            "goto": 3,
+            "new_tab": 2,
+            "scroll": 29,
+            "select_option": 30,
+            "tab_focus": 1,
+            "type": 82
+          }
+        },
+        "SoM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.223214,
+          "mean_url_path_set_size": 1.598214,
+          "mean_n_steps": 13.665179,
+          "finish_rate": 0.741071,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.441964,
+          "mean_max_keyword_repeat": 1.602679,
+          "mean_distinct_keywords": 1.575893,
+          "first_action_type_counts": {
+            "back": 1,
+            "click": 46,
+            "finish": 4,
+            "goto": 1,
+            "new_tab": 2,
+            "scroll": 20,
+            "select_option": 79,
+            "tab_focus": 1,
+            "type": 69,
+            "wait": 1
+          }
+        },
+        "Phantom-SoM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.611607,
+          "mean_url_path_set_size": 1.642857,
+          "mean_n_steps": 16.232143,
+          "finish_rate": 0.6875,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.544643,
+          "mean_max_keyword_repeat": 1.772321,
+          "mean_distinct_keywords": 1.513393,
+          "first_action_type_counts": {
+            "back": 1,
+            "click": 52,
+            "finish": 2,
+            "goto": 2,
+            "new_tab": 1,
+            "scroll": 25,
+            "select_option": 75,
+            "tab_focus": 1,
+            "type": 65
+          }
+        },
+        "P-text": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.696429,
+          "mean_url_path_set_size": 1.629464,
+          "mean_n_steps": 15.830357,
+          "finish_rate": 0.705357,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.598214,
+          "mean_max_keyword_repeat": 1.915179,
+          "mean_distinct_keywords": 1.544643,
+          "first_action_type_counts": {
+            "back": 2,
+            "click": 50,
+            "goto": 3,
+            "new_tab": 2,
+            "scroll": 24,
+            "select_option": 74,
+            "tab_focus": 2,
+            "type": 67
+          }
+        },
+        "Phantom-prompt": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.441964,
+          "mean_url_path_set_size": 1.571429,
+          "mean_n_steps": 14.955357,
+          "finish_rate": 0.71875,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.767857,
+          "mean_max_keyword_repeat": 1.96875,
+          "mean_distinct_keywords": 1.53125,
+          "first_action_type_counts": {
+            "click": 56,
+            "finish": 3,
+            "goto": 1,
+            "scroll": 31,
+            "select_option": 66,
+            "tab_focus": 8,
+            "type": 59
+          }
+        }
+      }
     },
     "B1": {
-      "reddit": {},
-      "classifieds": {}
+      "reddit": {
+        "DOM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 4.004878,
+          "mean_url_path_set_size": 3.239024,
+          "mean_n_steps": 23.37561,
+          "finish_rate": 0.317073,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 5.77561,
+          "mean_max_keyword_repeat": 4.131707,
+          "mean_distinct_keywords": 1.604878,
+          "first_action_type_counts": {
+            "back": 1,
+            "click": 85,
+            "finish": 6,
+            "goto": 12,
+            "new_tab": 6,
+            "scroll": 3,
+            "select_option": 2,
+            "tab_focus": 5,
+            "type": 84,
+            "wait": 1
+          }
+        },
+        "Vision": {
+          "n_tasks": 205,
+          "mean_url_set_size": 2.229268,
+          "mean_url_path_set_size": 2.165854,
+          "mean_n_steps": 23.087805,
+          "finish_rate": 0.297561,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 0.560976,
+          "mean_max_keyword_repeat": 0.487805,
+          "mean_distinct_keywords": 0.253659,
+          "first_action_type_counts": {
+            "back": 2,
+            "click": 131,
+            "finish": 13,
+            "goto": 4,
+            "new_tab": 4,
+            "scroll": 28,
+            "tab_focus": 12,
+            "type": 8,
+            "wait": 3
+          }
+        },
+        "SoM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.039024,
+          "mean_url_path_set_size": 2.736585,
+          "mean_n_steps": 22.204878,
+          "finish_rate": 0.326829,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.702439,
+          "mean_max_keyword_repeat": 2.326829,
+          "mean_distinct_keywords": 0.912195,
+          "first_action_type_counts": {
+            "click": 142,
+            "finish": 12,
+            "scroll": 6,
+            "tab_focus": 2,
+            "type": 43
+          }
+        },
+        "Phantom-SoM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.921951,
+          "mean_url_path_set_size": 3.317073,
+          "mean_n_steps": 25.156098,
+          "finish_rate": 0.22439,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 4.55122,
+          "mean_max_keyword_repeat": 3.609756,
+          "mean_distinct_keywords": 1.4,
+          "first_action_type_counts": {
+            "click": 131,
+            "finish": 9,
+            "goto": 14,
+            "new_tab": 3,
+            "scroll": 4,
+            "type": 44
+          }
+        },
+        "P-text": {
+          "n_tasks": 205,
+          "mean_url_set_size": 4.063415,
+          "mean_url_path_set_size": 3.170732,
+          "mean_n_steps": 25.492683,
+          "finish_rate": 0.219512,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 6.595122,
+          "mean_max_keyword_repeat": 4.84878,
+          "mean_distinct_keywords": 1.692683,
+          "first_action_type_counts": {
+            "click": 76,
+            "finish": 3,
+            "goto": 14,
+            "new_tab": 6,
+            "scroll": 4,
+            "tab_focus": 1,
+            "type": 101
+          }
+        }
+      },
+      "classifieds": {
+        "DOM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.098214,
+          "mean_url_path_set_size": 1.450893,
+          "mean_n_steps": 21.383929,
+          "finish_rate": 0.410714,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 8.129464,
+          "mean_max_keyword_repeat": 6.116071,
+          "mean_distinct_keywords": 1.732143,
+          "first_action_type_counts": {
+            "back": 1,
+            "click": 37,
+            "finish": 8,
+            "goto": 1,
+            "scroll": 13,
+            "select_option": 61,
+            "tab_focus": 1,
+            "type": 102
+          }
+        },
+        "Vision": {
+          "n_tasks": 224,
+          "mean_url_set_size": 2.013393,
+          "mean_url_path_set_size": 1.366071,
+          "mean_n_steps": 20.169643,
+          "finish_rate": 0.401786,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 1.138393,
+          "mean_max_keyword_repeat": 0.830357,
+          "mean_distinct_keywords": 0.584821,
+          "first_action_type_counts": {
+            "back": 4,
+            "click": 98,
+            "finish": 16,
+            "goto": 1,
+            "new_tab": 1,
+            "scroll": 31,
+            "type": 73
+          }
+        },
+        "SoM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 3.21875,
+          "mean_url_path_set_size": 1.370536,
+          "mean_n_steps": 18.008929,
+          "finish_rate": 0.508929,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 4.049107,
+          "mean_max_keyword_repeat": 3.129464,
+          "mean_distinct_keywords": 1.178571,
+          "first_action_type_counts": {
+            "click": 56,
+            "finish": 17,
+            "goto": 1,
+            "scroll": 4,
+            "select_option": 50,
+            "type": 96
+          }
+        },
+        "Phantom-SoM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 3.861607,
+          "mean_url_path_set_size": 1.424107,
+          "mean_n_steps": 21.258929,
+          "finish_rate": 0.424107,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 4.446429,
+          "mean_max_keyword_repeat": 3.517857,
+          "mean_distinct_keywords": 1.325893,
+          "first_action_type_counts": {
+            "back": 1,
+            "click": 62,
+            "finish": 10,
+            "goto": 2,
+            "scroll": 8,
+            "select_option": 44,
+            "type": 97
+          }
+        },
+        "P-text": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.410714,
+          "mean_url_path_set_size": 1.459821,
+          "mean_n_steps": 22.455357,
+          "finish_rate": 0.383929,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 8.754464,
+          "mean_max_keyword_repeat": 6.46875,
+          "mean_distinct_keywords": 1.825893,
+          "first_action_type_counts": {
+            "back": 2,
+            "click": 34,
+            "finish": 6,
+            "goto": 2,
+            "scroll": 9,
+            "select_option": 70,
+            "type": 101
+          }
+        },
+        "Phantom-prompt": {
+          "n_tasks": 224,
+          "mean_url_set_size": 3.995536,
+          "mean_url_path_set_size": 1.455357,
+          "mean_n_steps": 21.397321,
+          "finish_rate": 0.40625,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 4.316964,
+          "mean_max_keyword_repeat": 3.227679,
+          "mean_distinct_keywords": 1.375,
+          "first_action_type_counts": {
+            "click": 50,
+            "finish": 9,
+            "goto": 2,
+            "scroll": 11,
+            "select_option": 47,
+            "tab_focus": 1,
+            "type": 103,
+            "wait": 1
+          }
+        }
+      }
     },
     "B2": {
       "reddit": {},
-      "classifieds": {}
+      "classifieds": {
+        "DOM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.339286,
+          "mean_url_path_set_size": 1.825893,
+          "mean_n_steps": 27.383929,
+          "finish_rate": 0.125,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.986607,
+          "mean_max_keyword_repeat": 3.571429,
+          "mean_distinct_keywords": 0.825893,
+          "first_action_type_counts": {
+            "click": 88,
+            "goto": 53,
+            "scroll": 7,
+            "select_option": 35,
+            "type": 39,
+            "wait": 2
+          }
+        },
+        "Vision": {
+          "n_tasks": 224,
+          "mean_url_set_size": 2.691964,
+          "mean_url_path_set_size": 1.772321,
+          "mean_n_steps": 28.25,
+          "finish_rate": 0.102679,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.763393,
+          "mean_max_keyword_repeat": 2.78125,
+          "mean_distinct_keywords": 1.21875,
+          "first_action_type_counts": {
+            "click": 87,
+            "goto": 28,
+            "scroll": 43,
+            "select_option": 23,
+            "type": 42,
+            "wait": 1
+          }
+        },
+        "SoM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 3.258929,
+          "mean_url_path_set_size": 1.486607,
+          "mean_n_steps": 24.366071,
+          "finish_rate": 0.151786,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.410714,
+          "mean_max_keyword_repeat": 2.857143,
+          "mean_distinct_keywords": 0.96875,
+          "first_action_type_counts": {
+            "click": 108,
+            "goto": 16,
+            "scroll": 5,
+            "select_option": 40,
+            "type": 46,
+            "wait": 9
+          }
+        },
+        "Phantom-SoM": {
+          "n_tasks": 224,
+          "mean_url_set_size": 3.78125,
+          "mean_url_path_set_size": 1.852679,
+          "mean_n_steps": 28.383929,
+          "finish_rate": 0.053571,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.388393,
+          "mean_max_keyword_repeat": 2.071429,
+          "mean_distinct_keywords": 0.727679,
+          "first_action_type_counts": {
+            "click": 81,
+            "goto": 97,
+            "scroll": 5,
+            "select_option": 25,
+            "type": 5,
+            "wait": 11
+          }
+        },
+        "P-text": {
+          "n_tasks": 224,
+          "mean_url_set_size": 4.013393,
+          "mean_url_path_set_size": 1.870536,
+          "mean_n_steps": 26.848214,
+          "finish_rate": 0.0625,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 4.866071,
+          "mean_max_keyword_repeat": 3.982143,
+          "mean_distinct_keywords": 1.022321,
+          "first_action_type_counts": {
+            "click": 45,
+            "goto": 103,
+            "scroll": 5,
+            "select_option": 39,
+            "type": 18,
+            "wait": 14
+          }
+        },
+        "Phantom-prompt": {
+          "n_tasks": 224,
+          "mean_url_set_size": 3.5625,
+          "mean_url_path_set_size": 1.84375,
+          "mean_n_steps": 27.84375,
+          "finish_rate": 0.071429,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.151786,
+          "mean_max_keyword_repeat": 1.794643,
+          "mean_distinct_keywords": 0.607143,
+          "first_action_type_counts": {
+            "click": 126,
+            "goto": 66,
+            "scroll": 6,
+            "select_option": 9,
+            "type": 11,
+            "wait": 6
+          }
+        }
+      }
     }
   },
   "axis_contrasts": {
     "B0": {
       "reddit": {
         "axis_1_text": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.425219,
+          "url_decision_divergence": 0.574781,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.443902,
+          "distinct_keywords_diff": -0.078049,
+          "n_type_actions_diff": 0.443902,
+          "n_steps_diff": 2.834146,
+          "finish_rate_diff": -0.146341,
+          "first_action_divergence_rate": 0.253659,
+          "first_action_target_url_path_divergence_rate": 0.55122,
           "contrast": "P-text minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-text"
         },
         "axis_2_prompt": {
-          "n": 0,
-          "skipped": true,
+          "n": 203,
+          "url_jaccard_mean": 0.505018,
+          "url_decision_divergence": 0.494982,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 143,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.006993,
+          "target_hit_rate_diff": 0.006993,
+          "target_hit_rate_diff_pct_pts": 0.699301,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 1,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.487685,
+          "distinct_keywords_diff": -0.014778,
+          "n_type_actions_diff": -0.428571,
+          "n_steps_diff": -0.20197,
+          "finish_rate_diff": 0.044335,
+          "first_action_divergence_rate": 0.300493,
+          "first_action_target_url_path_divergence_rate": 0.502463,
           "contrast": "P-SoM minus P-text",
           "left_mode": "P-text",
           "right_mode": "P-SoM"
         },
         "axis_3_image": {
-          "n": 0,
-          "skipped": true,
+          "n": 203,
+          "url_jaccard_mean": 0.389804,
+          "url_decision_divergence": 0.610196,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 143,
+          "target_hit_rate_left": 0.006993,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": -0.006993,
+          "target_hit_rate_diff_pct_pts": -0.699301,
+          "target_hit_mcnemar": {
+            "left_only": 1,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.384236,
+          "distinct_keywords_diff": -0.231527,
+          "n_type_actions_diff": -0.729064,
+          "n_steps_diff": -2.852217,
+          "finish_rate_diff": 0.083744,
+          "first_action_divergence_rate": 0.325123,
+          "first_action_target_url_path_divergence_rate": 0.610837,
           "contrast": "SoM minus P-SoM",
           "left_mode": "P-SoM",
           "right_mode": "SoM"
         },
         "compound_dom_to_psom": {
-          "n": 0,
-          "skipped": true,
+          "n": 203,
+          "url_jaccard_mean": 0.405795,
+          "url_decision_divergence": 0.594205,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 143,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.006993,
+          "target_hit_rate_diff": 0.006993,
+          "target_hit_rate_diff_pct_pts": 0.699301,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 1,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.039409,
+          "distinct_keywords_diff": -0.093596,
+          "n_type_actions_diff": 0.019704,
+          "n_steps_diff": 2.665025,
+          "finish_rate_diff": -0.103448,
+          "first_action_divergence_rate": 0.29064,
+          "first_action_target_url_path_divergence_rate": 0.600985,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-SoM"
@@ -60,8 +737,28 @@
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.357497,
+          "url_decision_divergence": 0.642503,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.42439,
+          "distinct_keywords_diff": -0.326829,
+          "n_type_actions_diff": -0.707317,
+          "n_steps_diff": -0.141463,
+          "finish_rate_diff": -0.019512,
+          "first_action_divergence_rate": 0.302439,
+          "first_action_target_url_path_divergence_rate": 0.580488,
           "contrast": "SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "SoM"
@@ -69,50 +766,190 @@
       },
       "classifieds": {
         "axis_1_text": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.84916,
+          "url_decision_divergence": 0.15084,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.397321,
+          "distinct_keywords_diff": -0.174107,
+          "n_type_actions_diff": -0.683036,
+          "n_steps_diff": 0.223214,
+          "finish_rate_diff": -0.03125,
+          "first_action_divergence_rate": 0.308036,
+          "first_action_target_url_path_divergence_rate": 0.223214,
           "contrast": "P-text minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-text"
         },
         "axis_2_prompt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.874835,
+          "url_decision_divergence": 0.125165,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.142857,
+          "distinct_keywords_diff": -0.03125,
+          "n_type_actions_diff": -0.053571,
+          "n_steps_diff": 0.401786,
+          "finish_rate_diff": -0.017857,
+          "first_action_divergence_rate": 0.294643,
+          "first_action_target_url_path_divergence_rate": 0.223214,
           "contrast": "P-SoM minus P-text",
           "left_mode": "P-text",
           "right_mode": "P-SoM"
         },
         "axis_3_image": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.864477,
+          "url_decision_divergence": 0.135523,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.169643,
+          "distinct_keywords_diff": 0.0625,
+          "n_type_actions_diff": -0.102679,
+          "n_steps_diff": -2.566964,
+          "finish_rate_diff": 0.053571,
+          "first_action_divergence_rate": 0.299107,
+          "first_action_target_url_path_divergence_rate": 0.205357,
           "contrast": "SoM minus P-SoM",
           "left_mode": "P-SoM",
           "right_mode": "SoM"
         },
         "compound_dom_to_psom": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.863281,
+          "url_decision_divergence": 0.136719,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.540179,
+          "distinct_keywords_diff": -0.205357,
+          "n_type_actions_diff": -0.736607,
+          "n_steps_diff": 0.625,
+          "finish_rate_diff": -0.049107,
+          "first_action_divergence_rate": 0.28125,
+          "first_action_target_url_path_divergence_rate": 0.209821,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.880878,
+          "url_decision_divergence": 0.119122,
+          "url_jaccard_min": 0.25,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.34375,
+          "distinct_keywords_diff": -0.1875,
+          "n_type_actions_diff": -0.513393,
+          "n_steps_diff": -0.651786,
+          "finish_rate_diff": -0.017857,
+          "first_action_divergence_rate": 0.308036,
+          "first_action_target_url_path_divergence_rate": 0.209821,
           "contrast": "P-prompt minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-prompt"
         },
         "axis_1_text_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.875415,
+          "url_decision_divergence": 0.124585,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.196429,
+          "distinct_keywords_diff": -0.017857,
+          "n_type_actions_diff": -0.223214,
+          "n_steps_diff": 1.276786,
+          "finish_rate_diff": -0.03125,
+          "first_action_divergence_rate": 0.3125,
+          "first_action_target_url_path_divergence_rate": 0.232143,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.856528,
+          "url_decision_divergence": 0.143472,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.709821,
+          "distinct_keywords_diff": -0.142857,
+          "n_type_actions_diff": -0.839286,
+          "n_steps_diff": -1.941964,
+          "finish_rate_diff": 0.004464,
+          "first_action_divergence_rate": 0.348214,
+          "first_action_target_url_path_divergence_rate": 0.191964,
           "contrast": "SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "SoM"
@@ -122,29 +959,109 @@
     "B1": {
       "reddit": {
         "axis_1_text": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.508831,
+          "url_decision_divergence": 0.491169,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.717073,
+          "distinct_keywords_diff": 0.087805,
+          "n_type_actions_diff": 0.819512,
+          "n_steps_diff": 2.117073,
+          "finish_rate_diff": -0.097561,
+          "first_action_divergence_rate": 0.243902,
+          "first_action_target_url_path_divergence_rate": 0.517073,
           "contrast": "P-text minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-text"
         },
         "axis_2_prompt": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.470353,
+          "url_decision_divergence": 0.529647,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -1.239024,
+          "distinct_keywords_diff": -0.292683,
+          "n_type_actions_diff": -2.043902,
+          "n_steps_diff": -0.336585,
+          "finish_rate_diff": 0.004878,
+          "first_action_divergence_rate": 0.395122,
+          "first_action_target_url_path_divergence_rate": 0.560976,
           "contrast": "P-SoM minus P-text",
           "left_mode": "P-text",
           "right_mode": "P-SoM"
         },
         "axis_3_image": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.412607,
+          "url_decision_divergence": 0.587393,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -1.282927,
+          "distinct_keywords_diff": -0.487805,
+          "n_type_actions_diff": -1.84878,
+          "n_steps_diff": -2.95122,
+          "finish_rate_diff": 0.102439,
+          "first_action_divergence_rate": 0.365854,
+          "first_action_target_url_path_divergence_rate": 0.64878,
           "contrast": "SoM minus P-SoM",
           "left_mode": "P-SoM",
           "right_mode": "SoM"
         },
         "compound_dom_to_psom": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.433874,
+          "url_decision_divergence": 0.566126,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.521951,
+          "distinct_keywords_diff": -0.204878,
+          "n_type_actions_diff": -1.22439,
+          "n_steps_diff": 1.780488,
+          "finish_rate_diff": -0.092683,
+          "first_action_divergence_rate": 0.370732,
+          "first_action_target_url_path_divergence_rate": 0.565854,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-SoM"
@@ -164,8 +1081,28 @@
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.352164,
+          "url_decision_divergence": 0.647836,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -1.804878,
+          "distinct_keywords_diff": -0.692683,
+          "n_type_actions_diff": -3.073171,
+          "n_steps_diff": -1.170732,
+          "finish_rate_diff": 0.009756,
+          "first_action_divergence_rate": 0.517073,
+          "first_action_target_url_path_divergence_rate": 0.707317,
           "contrast": "SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "SoM"
@@ -173,50 +1110,190 @@
       },
       "classifieds": {
         "axis_1_text": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.880211,
+          "url_decision_divergence": 0.119789,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.352679,
+          "distinct_keywords_diff": 0.09375,
+          "n_type_actions_diff": 0.625,
+          "n_steps_diff": 1.071429,
+          "finish_rate_diff": -0.026786,
+          "first_action_divergence_rate": 0.1875,
+          "first_action_target_url_path_divergence_rate": 0.151786,
           "contrast": "P-text minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-text"
         },
         "axis_2_prompt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.849692,
+          "url_decision_divergence": 0.150308,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -2.950893,
+          "distinct_keywords_diff": -0.5,
+          "n_type_actions_diff": -4.308036,
+          "n_steps_diff": -1.196429,
+          "finish_rate_diff": 0.040179,
+          "first_action_divergence_rate": 0.258929,
+          "first_action_target_url_path_divergence_rate": 0.196429,
           "contrast": "P-SoM minus P-text",
           "left_mode": "P-text",
           "right_mode": "P-SoM"
         },
         "axis_3_image": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.847938,
+          "url_decision_divergence": 0.152062,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.388393,
+          "distinct_keywords_diff": -0.147321,
+          "n_type_actions_diff": -0.397321,
+          "n_steps_diff": -3.25,
+          "finish_rate_diff": 0.084821,
+          "first_action_divergence_rate": 0.28125,
+          "first_action_target_url_path_divergence_rate": 0.25,
           "contrast": "SoM minus P-SoM",
           "left_mode": "P-SoM",
           "right_mode": "SoM"
         },
         "compound_dom_to_psom": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.834015,
+          "url_decision_divergence": 0.165985,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -2.598214,
+          "distinct_keywords_diff": -0.40625,
+          "n_type_actions_diff": -3.683036,
+          "n_steps_diff": -0.125,
+          "finish_rate_diff": 0.013393,
+          "first_action_divergence_rate": 0.276786,
+          "first_action_target_url_path_divergence_rate": 0.21875,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.847696,
+          "url_decision_divergence": 0.152304,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -2.888393,
+          "distinct_keywords_diff": -0.357143,
+          "n_type_actions_diff": -3.8125,
+          "n_steps_diff": 0.013393,
+          "finish_rate_diff": -0.004464,
+          "first_action_divergence_rate": 0.223214,
+          "first_action_target_url_path_divergence_rate": 0.183036,
           "contrast": "P-prompt minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-prompt"
         },
         "axis_1_text_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.866071,
+          "url_decision_divergence": 0.133929,
+          "url_jaccard_min": 0.111111,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.290179,
+          "distinct_keywords_diff": -0.049107,
+          "n_type_actions_diff": 0.129464,
+          "n_steps_diff": -0.138393,
+          "finish_rate_diff": 0.017857,
+          "first_action_divergence_rate": 0.214286,
+          "first_action_target_url_path_divergence_rate": 0.178571,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.863272,
+          "url_decision_divergence": 0.136728,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -2.986607,
+          "distinct_keywords_diff": -0.553571,
+          "n_type_actions_diff": -4.080357,
+          "n_steps_diff": -3.375,
+          "finish_rate_diff": 0.098214,
+          "first_action_divergence_rate": 0.272321,
+          "first_action_target_url_path_divergence_rate": 0.209821,
           "contrast": "SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "SoM"
@@ -277,50 +1354,190 @@
       },
       "classifieds": {
         "axis_1_text": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.619287,
+          "url_decision_divergence": 0.380713,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.410714,
+          "distinct_keywords_diff": 0.196429,
+          "n_type_actions_diff": 0.879464,
+          "n_steps_diff": -0.535714,
+          "finish_rate_diff": -0.0625,
+          "first_action_divergence_rate": 0.566964,
+          "first_action_target_url_path_divergence_rate": 0.34375,
           "contrast": "P-text minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-text"
         },
         "axis_2_prompt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.657159,
+          "url_decision_divergence": 0.342841,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -1.910714,
+          "distinct_keywords_diff": -0.294643,
+          "n_type_actions_diff": -2.477679,
+          "n_steps_diff": 1.535714,
+          "finish_rate_diff": -0.008929,
+          "first_action_divergence_rate": 0.459821,
+          "first_action_target_url_path_divergence_rate": 0.28125,
           "contrast": "P-SoM minus P-text",
           "left_mode": "P-text",
           "right_mode": "P-SoM"
         },
         "axis_3_image": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.607557,
+          "url_decision_divergence": 0.392443,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.785714,
+          "distinct_keywords_diff": 0.241071,
+          "n_type_actions_diff": 1.022321,
+          "n_steps_diff": -4.017857,
+          "finish_rate_diff": 0.098214,
+          "first_action_divergence_rate": 0.620536,
+          "first_action_target_url_path_divergence_rate": 0.352679,
           "contrast": "SoM minus P-SoM",
           "left_mode": "P-SoM",
           "right_mode": "SoM"
         },
         "compound_dom_to_psom": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.610813,
+          "url_decision_divergence": 0.389187,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -1.5,
+          "distinct_keywords_diff": -0.098214,
+          "n_type_actions_diff": -1.598214,
+          "n_steps_diff": 1,
+          "finish_rate_diff": -0.071429,
+          "first_action_divergence_rate": 0.620536,
+          "first_action_target_url_path_divergence_rate": 0.34375,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.655485,
+          "url_decision_divergence": 0.344515,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -1.776786,
+          "distinct_keywords_diff": -0.21875,
+          "n_type_actions_diff": -1.834821,
+          "n_steps_diff": 0.459821,
+          "finish_rate_diff": -0.053571,
+          "first_action_divergence_rate": 0.566964,
+          "first_action_target_url_path_divergence_rate": 0.339286,
           "contrast": "P-prompt minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-prompt"
         },
         "axis_1_text_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.684673,
+          "url_decision_divergence": 0.315327,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.276786,
+          "distinct_keywords_diff": 0.120536,
+          "n_type_actions_diff": 0.236607,
+          "n_steps_diff": 0.540179,
+          "finish_rate_diff": -0.017857,
+          "first_action_divergence_rate": 0.504464,
+          "first_action_target_url_path_divergence_rate": 0.316964,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
-          "n": 0,
-          "skipped": true,
+          "n": 224,
+          "url_jaccard_mean": 0.606324,
+          "url_decision_divergence": 0.393676,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.714286,
+          "distinct_keywords_diff": 0.142857,
+          "n_type_actions_diff": -0.575893,
+          "n_steps_diff": -3.017857,
+          "finish_rate_diff": 0.026786,
+          "first_action_divergence_rate": 0.602679,
+          "first_action_target_url_path_divergence_rate": 0.352679,
           "contrast": "SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "SoM"
@@ -328,9 +1545,403 @@
       }
     }
   },
-  "case_studies": [],
+  "case_studies": [
+    {
+      "site": "reddit",
+      "task_id": 23,
+      "intent": "Find this post and tell me what the top comment says.",
+      "target_url": "__REDDIT__/f/photoshopbattles/24816/-/comment/155650",
+      "url_path_jaccard": 0.333333,
+      "DOM": {
+        "n_steps": 30,
+        "n_url_visits": 2,
+        "target_url_visited": false,
+        "reward": 1.0,
+        "first_action_type": "type",
+        "first_action_target_url_path": "/search",
+        "search_keywords": [
+          "pumpkin robot",
+          "pumpkin robot",
+          "pumpkin robot",
+          "pumpkin robot",
+          "pumpkin robot",
+          "pumpkin robot",
+          "pumpkin robot",
+          "pumpkin robot"
+        ],
+        "max_keyword_repeat": 16,
+        "distinct_keywords": 1,
+        "url_path_trajectory": [
+          "/search",
+          "/forums",
+          "/search",
+          "/forums",
+          "/search",
+          "/forums",
+          "/search",
+          "/forums",
+          "/search",
+          "/forums",
+          "/search",
+          "/forums"
+        ],
+        "url_route_trajectory": [
+          "/search?q=pumpkin+robot",
+          "/forums",
+          "/search?q=pumpkin+robot",
+          "/forums",
+          "/search?q=pumpkin+robot",
+          "/forums",
+          "/search?q=pumpkin+robot",
+          "/forums",
+          "/search?q=pumpkin+robot",
+          "/forums",
+          "/search?q=pumpkin+robot",
+          "/forums"
+        ]
+      },
+      "P-text": {
+        "n_steps": 10,
+        "n_url_visits": 3,
+        "target_url_visited": false,
+        "reward": 0.0,
+        "first_action_type": "type",
+        "first_action_target_url_path": "/search",
+        "search_keywords": [
+          "pumpkin robot",
+          "pumpkin"
+        ],
+        "max_keyword_repeat": 1,
+        "distinct_keywords": 2,
+        "url_path_trajectory": [
+          "/search",
+          "/f/Art/10111/a-big-eater-me-pumpkin-carving-2022"
+        ],
+        "url_route_trajectory": [
+          "/search?q=pumpkin+robot",
+          "/search?q=pumpkin",
+          "/f/Art/10111/a-big-eater-me-pumpkin-carving-2022"
+        ]
+      }
+    },
+    {
+      "site": "reddit",
+      "task_id": 30,
+      "intent": "Find the user who posted this and navigate to the comments section of one of their other posts.",
+      "target_url": "__REDDIT__/f/gaming/105429",
+      "url_path_jaccard": 0.071429,
+      "DOM": {
+        "n_steps": 14,
+        "n_url_visits": 7,
+        "target_url_visited": false,
+        "reward": 0.0,
+        "first_action_type": "click",
+        "first_action_target_url_path": "/search",
+        "search_keywords": [
+          "colmscomics",
+          "colmscomics",
+          "colmscomics"
+        ],
+        "max_keyword_repeat": 3,
+        "distinct_keywords": 1,
+        "url_path_trajectory": [
+          "/forums/all",
+          "/search",
+          "/forums/all",
+          "/search",
+          "/forums",
+          "/search",
+          "/user/MarvelsGrantMan136",
+          "/user/MarvelsGrantMan136/submissions",
+          "/user/MarvelsGrantMan136/comments",
+          "/f/television/134942"
+        ],
+        "url_route_trajectory": [
+          "/forums/all",
+          "/search?q=COLMSCOMICS",
+          "/forums/all",
+          "/search?q=COLMSCOMICS",
+          "/forums",
+          "/search?q=COLMSCOMICS",
+          "/user/MarvelsGrantMan136",
+          "/user/MarvelsGrantMan136/submissions",
+          "/user/MarvelsGrantMan136/comments",
+          "/f/television/134942"
+        ]
+      },
+      "P-text": {
+        "n_steps": 30,
+        "n_url_visits": 8,
+        "target_url_visited": false,
+        "reward": 1.0,
+        "first_action_type": "type",
+        "first_action_target_url_path": "/",
+        "search_keywords": [
+          "colmscomics",
+          "colmscomics",
+          "colmscomics",
+          "colmscomics",
+          "colmscomics",
+          "colmscomics"
+        ],
+        "max_keyword_repeat": 6,
+        "distinct_keywords": 1,
+        "url_path_trajectory": [
+          "/search",
+          "/",
+          "/search",
+          "/",
+          "/search",
+          "/",
+          "/search",
+          "/",
+          "/search",
+          "/",
+          "/search",
+          "/user/colmscomics"
+        ],
+        "url_route_trajectory": [
+          "/search?q=COLMSCOMICS",
+          "/",
+          "/search?q=COLMSCOMICS",
+          "/",
+          "/search?q=COLMSCOMICS",
+          "/",
+          "/search?q=COLMSCOMICS",
+          "/",
+          "/search?q=COLMSCOMICS",
+          "/",
+          "/search?q=COLMSCOMICS",
+          "/user/colmscomics"
+        ]
+      }
+    },
+    {
+      "site": "reddit",
+      "task_id": 4,
+      "intent": "I'm trying to do some research about the post with this image. Tell me how many comments mention the word \"wheat\".",
+      "target_url": "__REDDIT__/f/OldSchoolCool/121626/in-1982-agnes-denes-cultivated-grew-and-harvested-a-two-acre",
+      "url_path_jaccard": 0.2,
+      "DOM": {
+        "n_steps": 19,
+        "n_url_visits": 2,
+        "target_url_visited": false,
+        "reward": 0.0,
+        "first_action_type": "type",
+        "first_action_target_url_path": "/search",
+        "search_keywords": [
+          "wheat field in city",
+          "wheat field in city"
+        ],
+        "max_keyword_repeat": 2,
+        "distinct_keywords": 1,
+        "url_path_trajectory": [
+          "/search",
+          "/f/nosleep/44227/i-accidentally-created-artificial-intelligence-in-my",
+          "/search"
+        ],
+        "url_route_trajectory": [
+          "/search?q=wheat+field+in+city",
+          "/f/nosleep/44227/i-accidentally-created-artificial-intelligence-in-my",
+          "/search?q=wheat+field+in+city"
+        ]
+      },
+      "P-text": {
+        "n_steps": 30,
+        "n_url_visits": 5,
+        "target_url_visited": false,
+        "reward": 1.0,
+        "first_action_type": "type",
+        "first_action_target_url_path": "/search",
+        "search_keywords": [
+          "wheat field cityscape",
+          "wheat field cityscape",
+          "wheat field cityscape",
+          "wheat field cityscape",
+          "wheat field cityscape",
+          "wheat field cityscape",
+          "wheat field cityscape",
+          "wheat field cityscape"
+        ],
+        "max_keyword_repeat": 8,
+        "distinct_keywords": 2,
+        "url_path_trajectory": [
+          "/search",
+          "/forums/all",
+          "/search",
+          "/forums",
+          "/search",
+          "/forums",
+          "/search",
+          "/forums",
+          "/search",
+          "/forums",
+          "/search",
+          "/submission_images/0e02bdd220997613d250dca7ceb11ca19c711b2428f0b2d864e2b20fc7b5445b.jpg"
+        ],
+        "url_route_trajectory": [
+          "/search?q=wheat+field+cityscape",
+          "/forums/all",
+          "/search?q=wheat+field+cityscape",
+          "/forums",
+          "/search?q=wheat+field+cityscape",
+          "/forums",
+          "/search?q=wheat+field+cityscape",
+          "/forums",
+          "/search?q=wheat+field+cityscape",
+          "/forums",
+          "/search?q=wheat+field+cityscape",
+          "/search?q=wheat"
+        ]
+      }
+    },
+    {
+      "site": "classifieds",
+      "task_id": 226,
+      "intent": "Show me the cheapest figurine from the classifieds site that is of the third animal from the left shown in the product image on OneStopMarket.",
+      "target_url": "__CLASSIFIEDS__/index.php?page=item&id=8964",
+      "url_path_jaccard": 0.0,
+      "DOM": {
+        "n_steps": 27,
+        "n_url_visits": 4,
+        "target_url_visited": false,
+        "reward": 0.0,
+        "first_action_type": "type",
+        "first_action_target_url_path": "/index.php",
+        "search_keywords": [
+          "figurine"
+        ],
+        "max_keyword_repeat": 1,
+        "distinct_keywords": 1,
+        "url_path_trajectory": [
+          "/index.php",
+          "/5pcs-30ml-cute-mini-portable-gel-silicone-hand-bottle-cartoon-empty-spray-bottle-cosmetic-container-refillable-bottle-hand-soap-bottle.html",
+          "/index.php"
+        ],
+        "url_route_trajectory": [
+          "/index.php?page=search&sPattern=figurine",
+          "/index.php?page=search&sPattern=figurine&sOrder=i_price&iOrderType=asc",
+          "/index.php?page=item&id=83138",
+          "/index.php?page=search&sPattern=figurine&sOrder=i_price&iOrderType=asc",
+          "/5pcs-30ml-cute-mini-portable-gel-silicone-hand-bottle-cartoon-empty-spray-bottle-cosmetic-container-refillable-bottle-hand-soap-bottle.html",
+          "/index.php?page=search&sPattern=figurine&sOrder=i_price&iOrderType=asc",
+          "/index.php?page=item&id=83138",
+          "/index.php?page=search&sPattern=figurine&sOrder=i_price&iOrderType=asc",
+          "/index.php?page=item&id=83138",
+          "/index.php?page=search&sPattern=figurine&sOrder=i_price&iOrderType=asc",
+          "/index.php?page=item&id=83138",
+          "/index.php?page=search&sPattern=figurine&sOrder=i_price&iOrderType=asc"
+        ]
+      },
+      "P-text": {
+        "n_steps": 30,
+        "n_url_visits": 1,
+        "target_url_visited": false,
+        "reward": 1.0,
+        "first_action_type": "new_tab",
+        "first_action_target_url_path": "blank",
+        "search_keywords": [
+          "https://www.onestopmarket.com"
+        ],
+        "max_keyword_repeat": 1,
+        "distinct_keywords": 1,
+        "url_path_trajectory": [
+          "blank"
+        ],
+        "url_route_trajectory": [
+          "blank"
+        ]
+      }
+    },
+    {
+      "site": "classifieds",
+      "task_id": 199,
+      "intent": "Tell me the website mentioned in the image.",
+      "target_url": null,
+      "url_path_jaccard": 0.0,
+      "DOM": {
+        "n_steps": 1,
+        "n_url_visits": 1,
+        "target_url_visited": null,
+        "reward": 0.0,
+        "first_action_type": "finish",
+        "first_action_target_url_path": null,
+        "search_keywords": [],
+        "max_keyword_repeat": 0,
+        "distinct_keywords": 0,
+        "url_path_trajectory": [
+          "/index.php"
+        ],
+        "url_route_trajectory": [
+          "/index.php?page=item&id=43887"
+        ]
+      },
+      "P-text": {
+        "n_steps": 2,
+        "n_url_visits": 1,
+        "target_url_visited": null,
+        "reward": 0.0,
+        "first_action_type": "goto",
+        "first_action_target_url_path": "/",
+        "search_keywords": [],
+        "max_keyword_repeat": 0,
+        "distinct_keywords": 0,
+        "url_path_trajectory": [
+          "/"
+        ],
+        "url_route_trajectory": [
+          "/"
+        ]
+      }
+    }
+  ],
   "cross_site_validity": {
     "claim": "axis 1 decision-quality effect > axis 1 macro-action-freq effect",
+    "B0_reddit_decision_effects": {
+      "url_decision_divergence": 0.574781,
+      "target_hit_abs_diff": 0.0,
+      "first_action_divergence_rate": 0.253659,
+      "mean_abs_decision_effect": 0.276146
+    },
+    "B0_reddit_macro_axis1_effects": {},
+    "B0_reddit_macro_mean_abs_effect": null,
+    "B0_reddit_ratio": null,
+    "B0_classifieds_decision_effects": {
+      "url_decision_divergence": 0.15084,
+      "target_hit_abs_diff": 0.0,
+      "first_action_divergence_rate": 0.308036,
+      "mean_abs_decision_effect": 0.152958
+    },
+    "B0_classifieds_macro_axis1_effects": {},
+    "B0_classifieds_macro_mean_abs_effect": null,
+    "B0_classifieds_ratio": null,
+    "B1_reddit_decision_effects": {
+      "url_decision_divergence": 0.491169,
+      "target_hit_abs_diff": 0.0,
+      "first_action_divergence_rate": 0.243902,
+      "mean_abs_decision_effect": 0.245024
+    },
+    "B1_reddit_macro_axis1_effects": {},
+    "B1_reddit_macro_mean_abs_effect": null,
+    "B1_reddit_ratio": null,
+    "B1_classifieds_decision_effects": {
+      "url_decision_divergence": 0.119789,
+      "target_hit_abs_diff": 0.0,
+      "first_action_divergence_rate": 0.1875,
+      "mean_abs_decision_effect": 0.10243
+    },
+    "B1_classifieds_macro_axis1_effects": {},
+    "B1_classifieds_macro_mean_abs_effect": null,
+    "B1_classifieds_ratio": null,
+    "B2_classifieds_decision_effects": {
+      "url_decision_divergence": 0.380713,
+      "target_hit_abs_diff": 0.0,
+      "first_action_divergence_rate": 0.566964,
+      "mean_abs_decision_effect": 0.315893
+    },
+    "B2_classifieds_macro_axis1_effects": {},
+    "B2_classifieds_macro_mean_abs_effect": null,
+    "B2_classifieds_ratio": null,
     "verdict_anchor_baselines": [
       "B0"
     ],
@@ -342,7 +1953,33 @@
       "reddit": 205,
       "classifieds": 224
     },
-    "axis1_n_checks": {},
+    "axis1_n_checks": {
+      "B0/reddit": {
+        "observed": 205,
+        "expected": 205,
+        "pass": true
+      },
+      "B0/classifieds": {
+        "observed": 224,
+        "expected": 224,
+        "pass": true
+      },
+      "B1/reddit": {
+        "observed": 205,
+        "expected": 205,
+        "pass": true
+      },
+      "B1/classifieds": {
+        "observed": 224,
+        "expected": 224,
+        "pass": true
+      },
+      "B2/classifieds": {
+        "observed": 224,
+        "expected": 224,
+        "pass": true
+      }
+    },
     "target_extraction": {
       "reddit": {
         "task_config_n": 210,
@@ -353,6 +1990,131 @@
         "target_url_extracted_n": 172
       }
     },
-    "url_jaccard_range_checks": {}
+    "url_jaccard_range_checks": {
+      "B0/reddit/axis_1_text": {
+        "value": 0.425219,
+        "pass": true
+      },
+      "B0/reddit/axis_2_prompt": {
+        "value": 0.505018,
+        "pass": true
+      },
+      "B0/reddit/axis_3_image": {
+        "value": 0.389804,
+        "pass": true
+      },
+      "B0/reddit/compound_dom_to_psom": {
+        "value": 0.405795,
+        "pass": true
+      },
+      "B0/reddit/endpoint_dom_to_som": {
+        "value": 0.357497,
+        "pass": true
+      },
+      "B0/classifieds/axis_1_text": {
+        "value": 0.84916,
+        "pass": true
+      },
+      "B0/classifieds/axis_2_prompt": {
+        "value": 0.874835,
+        "pass": true
+      },
+      "B0/classifieds/axis_3_image": {
+        "value": 0.864477,
+        "pass": true
+      },
+      "B0/classifieds/compound_dom_to_psom": {
+        "value": 0.863281,
+        "pass": true
+      },
+      "B0/classifieds/axis_2_prompt_alt": {
+        "value": 0.880878,
+        "pass": true
+      },
+      "B0/classifieds/axis_1_text_alt": {
+        "value": 0.875415,
+        "pass": true
+      },
+      "B0/classifieds/endpoint_dom_to_som": {
+        "value": 0.856528,
+        "pass": true
+      },
+      "B1/reddit/axis_1_text": {
+        "value": 0.508831,
+        "pass": true
+      },
+      "B1/reddit/axis_2_prompt": {
+        "value": 0.470353,
+        "pass": true
+      },
+      "B1/reddit/axis_3_image": {
+        "value": 0.412607,
+        "pass": true
+      },
+      "B1/reddit/compound_dom_to_psom": {
+        "value": 0.433874,
+        "pass": true
+      },
+      "B1/reddit/endpoint_dom_to_som": {
+        "value": 0.352164,
+        "pass": true
+      },
+      "B1/classifieds/axis_1_text": {
+        "value": 0.880211,
+        "pass": true
+      },
+      "B1/classifieds/axis_2_prompt": {
+        "value": 0.849692,
+        "pass": true
+      },
+      "B1/classifieds/axis_3_image": {
+        "value": 0.847938,
+        "pass": true
+      },
+      "B1/classifieds/compound_dom_to_psom": {
+        "value": 0.834015,
+        "pass": true
+      },
+      "B1/classifieds/axis_2_prompt_alt": {
+        "value": 0.847696,
+        "pass": true
+      },
+      "B1/classifieds/axis_1_text_alt": {
+        "value": 0.866071,
+        "pass": true
+      },
+      "B1/classifieds/endpoint_dom_to_som": {
+        "value": 0.863272,
+        "pass": true
+      },
+      "B2/classifieds/axis_1_text": {
+        "value": 0.619287,
+        "pass": true
+      },
+      "B2/classifieds/axis_2_prompt": {
+        "value": 0.657159,
+        "pass": true
+      },
+      "B2/classifieds/axis_3_image": {
+        "value": 0.607557,
+        "pass": true
+      },
+      "B2/classifieds/compound_dom_to_psom": {
+        "value": 0.610813,
+        "pass": true
+      },
+      "B2/classifieds/axis_2_prompt_alt": {
+        "value": 0.655485,
+        "pass": true
+      },
+      "B2/classifieds/axis_1_text_alt": {
+        "value": 0.684673,
+        "pass": true
+      },
+      "B2/classifieds/endpoint_dom_to_som": {
+        "value": 0.606324,
+        "pass": true
+      }
+    }
   }
 }

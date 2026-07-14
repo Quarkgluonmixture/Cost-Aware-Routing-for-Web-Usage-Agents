@@ -172,7 +172,7 @@ Uncommon-action highlights:
 
 ## Mechanism evidence for paper Section 5
 
-DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.308 on reddit and 0.332 on classifieds.
+Available DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.308 on reddit; 0.332 on classifieds.
 
 Boundary divergence is usually visible early among symmetric-difference tasks: DOM vs P-SoM early rates are reddit 100.0% and classifieds 95.5%.
 
@@ -389,4 +389,4 @@ Overall pass: False.
 | E1 N reddit | 205 / 205 |
 | E1 N classifieds | 224 / 224 |
 | E3 cells | 28 / 28 |
-| P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 96, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 81, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |
+| P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 96, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 88, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |
