@@ -113,7 +113,7 @@ Two properties follow from the construction, prior to any experiment. **(a) Cost
 
 **Backbones.** B0 = Qwen3-VL-235B-A22B via a commercial API (high-capability anchor); B1 = Qwen3-VL-4B, local (within-family capability contrast); B2 = Gemma-3-4B-it, local (cross-family direction test at 4B *parameter* parity, not matched capability). With three backbones the deployment-tier axis (API vs local) and the family axis (Qwen vs Gemma) are not separable; we scope B0-vs-B1 as a deployment-tier + capability contrast, B1-vs-B2 as a cross-family direction test, and pre-registered a claim-tier gate over the lineage taxonomy (4 Qwen-lineage cells; 2 Gemma-lineage cells): if either B2 cell fails the per-cell drop-one criterion while all four Qwen cells pass, the cross-family claim tier downgrades one step — "Qwen-lineage verified; Gemma-lineage did not replicate" — without collapsing the construct.
 
-**Conditions and cells.** Pass-1: 2 sites × 3 backbones × 6 modes = 36 conditions. Pass-2: one learned-router condition per (site, backbone) cell = 6 conditions. Statistics are stratified at the 6 (site, backbone) cells.
+**Conditions and cells.** Pass-1: 2 sites × 3 backbones × 6 modes = 36 conditions. Pass-2: one learned-router condition per (site, backbone) cell = 6 conditions. Statistics are stratified at the 6 (site, backbone) cells. Full reset, ordering, recovery, and quarantine protocols are specified in Supplement §§S1 and S3.
 <!-- C9: sequential/reset/order/quarantine details are now instantiated in docs/checkpoints/paper_drafts/aaai27/supplement.md §S1 (with quarantine taxonomy in §S3). -->
 
 **Decoding and action interface.** Greedy decoding throughout (B0: temperature 0; B1/B2: `do_sample=False`); `max_new_tokens=4096` for all three. Actions use one shared semantic schema (8 actions) with backbone-appropriate serialization: native tool-calling for B0 (`tool_choice="required"`, schema programmatically identical to the validator) and structured JSON for B1/B2. This elicitation asymmetry is backbone-capability-driven and disclosed, not hidden (§8).
@@ -126,11 +126,11 @@ Two properties follow from the construction, prior to any experiment. **(a) Cost
 
 # 5 Results I: The Phenomenon
 
-<!-- Data status 2026-07-02 (post registry-promotion): [A] = 22-condition aggregate
-     (B0/B1/B2 cls ×6 + B0-red dom/som/vision/P-text) — run_manifest.yaml promoted
-     from A100 fire_manifest.json (22 bound conditions; P-text R32139 promoted
-     2026-07-02), `make analysis` ingested;
-     <TBD> = B0-red psom/pprompt (in flight), B1/B2-red (queued), all final
+<!-- Data status 2026-07-14 (post registry-promotion): [A] = 28-condition aggregate
+     (B0/B1/B2 cls ×6 + B0-red dom/som/vision/P-text/P-SoM +
+     B1-red dom/som/vision/P-text/P-SoM) — run_manifest.yaml promoted from
+     A100 fire_manifest.json (28 bound conditions), `make analysis` ingested;
+     <TBD> = B0/B1-red P-prompt and B2-red ×6 (in flight/queued), all final
      verdicts. Interim pools (k=3 cls) recorded in the H1/H3 slots — do NOT
      promote them to verdicts. Sync recipe when new conditions land: rsync A100
      fire_manifest.json → promote into run_manifest.yaml cells: → make analysis
@@ -145,8 +145,8 @@ Two properties follow from the construction, prior to any experiment. **(a) Cost
 | cls·B0 [A] | 17.4 | **27.2** | 25.0 | 15.6 | 19.6 | 15.6 |
 | cls·B1 [A] | 6.3 | **14.3** | 12.5 | 7.6 | 6.7 | 6.7 |
 | cls·B2 [A] | 1.3 | 2.2 | 2.2 | 0.4 | 1.8 | 0.9 |
-| red·B0 | 14.6 [A] | 14.6 [A] | 7.8 [A] | 13.7 [A] | \<TBD\> | \<TBD\> |
-| red·B1 | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> |
+| red·B0 | 14.6 [A] | 14.6 [A] | 7.8 [A] | 13.7 [A] | \<TBD\> | 11.2 [A] |
+| red·B1 | 6.8 [A] | 8.3 [A] | 2.9 [A] | 6.8 [A] | \<TBD\> | 6.8 [A] |
 | red·B2 | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> | \<TBD\> |
 
 Three patterns are stable across the landed cells. First, on the visually dense marketplace, full SoM is the strongest single arm at every capability tier (B0: 27.2% vs. 17.4% DOM) — the phantom arms do *not* dominate, and single-mode SR is not the claim. Second, on the text-dominated forum the screenshot-free arms are competitive with the bundle: B0 Reddit DOM 14.6%, SoM 14.6%, P-text 13.7%, Vision 7.8% — differences among the leading arms sit within the B0 serving-noise floor (~±2.5pp net SR, measured on classifieds same-payload replay; §8), *comparable within sampling error*, not a ranking. Third, capability modulates everything: B1 preserves the top of the cls ordering at roughly half the SR, though the phantom-arm tail reorders; B2 sits at a ~1–2% cls floor — a genuine capability floor (six independent diagnostics; §8) — which mutes its within-cell contrasts and is why the cross-family claim runs through the pre-registered claim-tier gate rather than pooling sleight-of-hand.
@@ -192,7 +192,7 @@ Across the landed cells the *existence* of phantom-arm coverage appears on both 
 
 **Evaluation.** H10 is a two-layer *operational deployment gate*, not a significance test: a cell passes if the router's (Cost, SR) point is Pareto non-dominated by all five pre-registered single-mode baselines in ≥95% of task-paired bootstrap replicates; the router is *deployable* if ≥5 of 6 cells pass. An intelligent-baseline ladder bounds the router from both sides: always-cheapest, decision stump, DOM-features-only LR, and a per-task lookup table (an ∞-capacity reductio bounding generalization headroom). On cls·B0 the ladder spans always-DOM 17.4% → stump 19.6% → 8-feature LR proxy 25.0% → oracle ceiling 43.3% (disclosure-only: the proxy is an archive-sanity stand-in entering no gate); it brackets the plausible value of task features (+5.4pp over the stump) and the headroom no 18-feature router can close (+18.3pp to oracle). Following [@li2026aucnotenough], the canonical analysis will conditionally compare the full LR against `scalar_min` (intent character count, word count, and reference-image flag) and a template-disjoint split; site is constant within each per-cell head and is not a scalar feature. A non-canonical rehearsal is already a red flag: full-LR vs scalar macro-AUROC was 0.522 vs 0.535 on B0-cls and 0.567 vs 0.560 on B1-cls, with both paired full-minus-scalar CIs crossing zero [rehearsal only; source: `router_covariate_baseline_2026-07-05.md`]. If canonical full LR does not significantly outperform the scalar baseline, §6 will be downgraded to a shallow-covariate operating point; complementarity remains PRIMARY. If it does, we will report the paired AUROC delta and CI \<TBD: populate from `router_covariate_baseline.py`\>.
 
-*Table 4: H10 verdict per cell — router (Cost, SR) vs. five single-mode baselines. <TBD: populate from `aggregate_h10_pareto.py` after Pass-2 fire. Current artifact state: no Pass-2 runs in any cell; Pass-1 still missing for red·B1/red·B2; entropy-gate artifact absent → `h10_status=entropy_unavailable`, deployability fail-closed per prereg (no entropy verdict ⇒ no deployability claim).>*
+*Table 4: H10 verdict per cell — router (Cost, SR) vs. five single-mode baselines. <TBD: populate from `aggregate_h10_pareto.py` after Pass-2 fire. Current artifact state: no Pass-2 runs in any cell; Pass-1 still missing red·B0/B1 P-prompt and red·B2 ×6; entropy-gate artifact absent → `h10_status=entropy_unavailable`, deployability fail-closed per prereg (no entropy verdict ⇒ no deployability claim).>*
 
 | Cell | n common | Router SR | Router cost | frac non-dominated | Pass |
 |---|---|---|---|---|---|
@@ -230,7 +230,7 @@ Code (agent scaffold, patched-evaluator submodule with pinned tree hash, analysi
 <!--
 =====================================================================
 PRE-SUBMISSION CHECKLIST (delete before compile)
- 1. Rerun `make analysis` after: B0-red psom/pprompt land; B1/B2-red
+ 1. Rerun `make analysis` after: B0/B1-red pprompt and B2-red ×6
     land; Pass-2 router fire. Lift [P] → [A], fill <TBD>.
  2. Resolve <H1-VERDICT>, <H3-VERDICT>, <H10-VERDICT>; rewrite all
     (R-CONDITIONAL) sentences per realized R-tier (prereg §2.5).
@@ -251,9 +251,9 @@ PRE-SUBMISSION CHECKLIST (delete before compile)
  7. Word budget (measure by stripping HTML comments, then wc -w; do
     NOT paste the strip-regex here — a literal close-comment token
     inside this block truncates it, empirically caught 2026-07-01):
-    body = 5297 words incl. 4 tables (2026-07-14 interim-slot annotations
+    body = 5320 words incl. 4 tables (2026-07-14 interim-slot annotations
     added +49 inside <H*-VERDICT:> placeholders, which are wholly REPLACED
-    at verdict splice — effective post-splice budget unchanged from 5248)
+    at verdict splice — effective post-splice budget is 5271)
     ≈ 6.7-7.0 pages two-column;
     figures F1-F3 add ~1.0-1.2 pages → currently ~1 page OVER.
     Plan to cut ~800-1000 words at verdict-landing time (candidates:

@@ -129,12 +129,8 @@ Pass-2 land 后: `python scripts/analysis/aggregate_h10_pareto.py` → 重跑 sl
   --out /tmp/p79_rehearsal_20260714/fig0c_drop_one_oracle.png \
   --csv-out /tmp/p79_rehearsal_20260714/fig0c_drop_one_bootstrap_ci.csv \
   --allow-partial
-# F1 暂无 --out CLI；复制脚本并保持 scripts/analysis/figures 目录深度，使固定 ROOT 落在 scratch。
-mkdir -p /tmp/p79_rehearsal_20260714/scripts/analysis/figures
-cp scripts/analysis/figures/fig_f1_diamond_schematic.py \
-  /tmp/p79_rehearsal_20260714/scripts/analysis/figures/fig_f1_diamond_schematic.py
-.venv/bin/python3 \
-  /tmp/p79_rehearsal_20260714/scripts/analysis/figures/fig_f1_diamond_schematic.py
+.venv/bin/python3 scripts/analysis/figures/fig_f1_diamond_schematic.py \
+  --out /tmp/p79_rehearsal_20260714/fig_f1_diamond_schematic
 ```
 
 | 症状 | 处置 |
@@ -143,7 +139,7 @@ cp scripts/analysis/figures/fig_f1_diamond_schematic.py \
 | H3 某轴意外 FAIL | branch_prewrites 两支都不适用 → Amendment 02 ladder (C'-R/F) 现写, 先停 splice |
 | sheet 数字 vs 旧 interim 引用打架 | 以 sheet 为准; interim 引用全文搜出来清掉 (笔记 §360.3 数字禁入 draft) |
 | I² cap_at_R3=True | framing 最高 R3, §1 hook 降级 (prereg I²-cap 条款) |
-| figures 崩 (fig0c max-empty / axis1 KeyError) | pre-existing partial-data 崩点 (NUMBERS_TODO §0), 不 block tables; 全 cell 齐后应自愈 |
+| figures 崩 (fig0c max-empty / axis1 KeyError) | 已于 2026-07-14 修复 (e35d0b4/559cb47)；若再现 = regression，停止并审查 |
 
 ## 6. k<6 提前投稿特例（advisor 预案(a) 获批时）
 
