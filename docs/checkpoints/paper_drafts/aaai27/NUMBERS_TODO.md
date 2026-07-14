@@ -7,18 +7,18 @@
 ## 0. 聚合链已打通 ✅（2026-07-01）— sync 配方 + 剩余项
 
 **✅ RESOLVED 2026-07-01**：聚合门控链 = A100 fire 侧 `validate_fire_manifest --apply` auto-bind →
-`docs/checkpoints/pre_run/fire_manifest.json`（21 bound）→ **手动 promote** 进
+`docs/checkpoints/pre_run/fire_manifest.json`（21 bound conditions）→ **手动 promote** 进
 `results/phantom_paper/run_manifest.yaml` `cells:`（grade: paper-grade）→ aggregators。
-本轮已做：rsync fire_manifest A100→DGX + promote 15 cells（B1/B2 cls ×12 + B0 red dom/som/vision）
-→ `make analysis FAST=1` 吃进 **21 cells**；H1 interim k=3 / H2(a) 3/3 / H3 interim 已进 draft slots。
-**新 cell land 后的 sync 配方**：`rsync condense-a100:.../fire_manifest.json` → promote 新 bound 条目进
+本轮已做：rsync fire_manifest A100→DGX + promote 15 conditions（B1/B2 cls ×12 + B0 red dom/som/vision）
+→ `make analysis FAST=1` 吃进 **21 conditions**；H1 interim k=3 / H2(a) 3/3 / H3 interim 已进 draft slots。
+**新 condition land 后的 sync 配方**：`rsync condense-a100:.../fire_manifest.json` → promote 新 bound 条目进
 run_manifest.yaml → `make analysis FAST=1` → 更新 draft tags/slots。
 
 | 剩余槽位 | 现状 | 动作 |
 |---|---|---|
-| ~~red·B0 P-text `[P]→[A]`~~ | ✅ DONE 2026-07-02: R32139 promoted + 22-cell 聚合 + Table 2 升 [A] | (队列⑧ 补丁顺带完成; promotion-gap watch 已 cron 化) |
+| ~~red·B0 P-text `[P]→[A]`~~ | ✅ DONE 2026-07-02: R32139 promoted + 22-condition 聚合 + Table 2 升 [A] | (队列⑧ 补丁顺带完成; promotion-gap watch 已 cron 化) |
 | §5.4 latency canonical (retry-adjusted) | 只有 archive p95 [V] | aggregator emit `total_minus_retry_ms` per-mode 表（cross_sites cost_per_mode 目前无 wall-clock 列，需补列） |
-| §6 AUROC 全 cell | auroc_cross_condition 需确认是否已扩到 21 cells | 查 `auroc_cross_condition.md`，扩了就把 §6 那句的 per-cell 范围更新 |
+| §6 AUROC 全 statistical cells | auroc_cross_condition 需确认是否已纳入 21 conditions | 查 `auroc_cross_condition.md`，扩了就把 §6 那句的 per-cell 范围更新 |
 | §6 covariate 基线 + template-disjoint split `<TBD>` | ⚠️ **rehearsal vintage 首轮已出且是红旗** (2026-07-05): B0_cls/B1_cls 上 18-feat LR vs 3-协变量 scalar 基线 ΔAUROC −0.013/+0.007 (CI 全含 0) — 当前可测 learnability 全部可由 trivial 协变量达成; disjoint 掉幅 0~−0.05。**不推翻 landed claim (§6 无 landed AUROC), 但若 canonical 全量后格局不变 → §6.6 披露扩全 cell + scalar 基线进 §6.5 梯队**。⚠️ 勿混淆 estimand: 攻击面 = LR mode-prediction AUROC, ≠ §1 per-mode confidence-signal AUROC (0.766 P-SoM, 不含 task 文本特征) | Pass-1 全 land 后 `python scripts/analysis/router_covariate_baseline.py` 在 canonical NPZ 重跑 → 填 §6 `<TBD>`; report `docs/analysis/cross_sites/router_covariate_baseline_2026-07-05.md` |
 | ⚠️ figures 阶段 2 个 pre-existing 崩点 | ① `fig0c` 系 `max() empty`（首轮）② `axis1_microbehavior.py` KeyError `'mean_jaccard'`（partial reddit 数据） | 修 figure 脚本对 partial-cell 的容错；不 block 聚合（aggregators 在 figures 之前已完成） |
 | ⚠️ red·B0 drop-one 慎用 | `fig0c` 的 b0_red 行（DOM 4.88 / SoM 3.90 / Vision 3.41）是 **3-mode partial portfolio** 上的 drop-one，与 6-mode 定义不可比 | draft 不引用，等 6 modes 齐 |
@@ -44,6 +44,34 @@ lr_fold pkls → A100 (Pass-2 queue 的 artifact gate 检查 30 pkl)。
 
 **产出命令**: `python scripts/analysis/aggregate_phase1_full_prereg_decision.py` (H1/H2a/H3/R-rule) ·
 `python scripts/analysis/aggregate_h10_pareto.py` (H10) · `make analysis` (全管线)。
+
+### 1.1 Verdict/branch 命名槽总账（唯一映射）
+
+每个 slot 一行；branch 文件只消费这里登记的 ID。`partial-data` 只允许预览，不能 splice 为终局；`needs-producer-field` 表示 estimand 已锁但 producer 尚未发出该稳定字段。
+
+| slot_id | target anchor | estimand | producer command | artifact field | status |
+|---|---|---|---|---|---|
+| THETA | `branch_prewrites_s1_abstract.md` / all `«THETA»` | H1 six-mode P-SoM drop-one FE point estimate (pp) over complete planned cells | `python scripts/analysis/aggregate_phase1_full_prereg_decision.py` | `results/phantom_paper/phase1_full_prereg_decision.json::pooled_h1_fe.theta_FE_pp` | partial-data (k=3/6) |
+| CI_LO | branch / all `«CI_LO»` | H1 primary pooled task-paired bootstrap 95% CI lower bound (pp) | same H1 producer | `...json::pooled_h1_bootstrap.ci95_lo_pp_bootstrap` | partial-data (k=3/6) |
+| CI_HI | branch / all `«CI_HI»` | H1 primary pooled task-paired bootstrap 95% CI upper bound (pp) | same H1 producer | `...json::pooled_h1_bootstrap.ci95_hi_pp_bootstrap` | partial-data (k=3/6) |
+| P_BOOT | branch / all `«P_BOOT»` | H1 one-sided paired-bootstrap p-value for H0: θ_FE ≤ +1.0pp | same H1 producer | `...json::pooled_h1_bootstrap.p_one_sided_bootstrap` | partial-data (k=3/6) |
+| K | branch / all `«K»` | number of complete six-mode (site, backbone) statistical cells in the reported FE pool | same H1 producer | `...json::k_actual` | partial-data (3; final design 6) |
+| AX1 | branch / all `«AX1»` | H3 axis-1 FE point estimate: per-cell P-text \ P-SoM unique contribution (pp) | same H1 producer | `...json::h3_axis1_pooled_fe.theta_FE_pp` | partial-data |
+| AX2 | branch / all `«AX2»` | H3 axis-2 FE point estimate: per-cell P-prompt \ P-SoM unique contribution (pp) | same H1 producer | `...json::h3_axis2_pooled_fe.theta_FE_pp` | partial-data |
+| AX1_CI_LO | branch complete abstracts / `«AX1_CI_LO»` | H3 axis-1 primary bootstrap 95% CI lower bound (pp) | same H1 producer | `...json::h3_axis1_pooled_fe.ci95_lo_pp_bootstrap` | partial-data |
+| AX1_CI_HI | branch complete abstracts / `«AX1_CI_HI»` | H3 axis-1 primary bootstrap 95% CI upper bound (pp) | same H1 producer | `...json::h3_axis1_pooled_fe.ci95_hi_pp_bootstrap` | partial-data |
+| AX2_CI_LO | branch complete abstracts / `«AX2_CI_LO»` | H3 axis-2 primary bootstrap 95% CI lower bound (pp) | same H1 producer | `...json::h3_axis2_pooled_fe.ci95_lo_pp_bootstrap` | partial-data |
+| AX2_CI_HI | branch complete abstracts / `«AX2_CI_HI»` | H3 axis-2 primary bootstrap 95% CI upper bound (pp) | same H1 producer | `...json::h3_axis2_pooled_fe.ci95_hi_pp_bootstrap` | partial-data |
+| UNIQ_CLS | branch / all `«UNIQ_CLS»` | **distinct Classifieds task IDs** in the union across the three canonical backbones of `{t: P-SoM succeeds and every other menu arm fails within that cell}`; deduplicate task IDs across backbones | `python scripts/analysis/aggregate_phase1_full_prereg_decision.py` | required stable field `...json::site_unique_psom_union.classifieds.n_unique_task_ids` | needs-producer-field; do not splice |
+| UNIQ_RED | branch / all `«UNIQ_RED»` | **distinct Reddit task IDs** under the same across-backbone union and within-cell P-SoM-only rule | same H1 producer | required stable field `...json::site_unique_psom_union.reddit.n_unique_task_ids` | needs-producer-field; do not splice |
+
+**UNIQ 选择理由。** Main §7 currently exposes per-backbone counts (cls·B0/B1/B2 = 2/3/1). A single site slot cannot select one backbone, and summing would double-count the same benchmark task when it is unique in multiple backbone cells. The deduplicated union is therefore the only site-level scalar that still means “number of tasks”; until the producer emits the two registered fields, these slots are intentionally blocked.
+
+### 1.2 §8 strict-gate power producer
+
+| slot_id | target anchor | estimand | producer command | artifact field | status |
+|---|---|---|---|---|---|
+| STRICT_GATE_POWER | `aaai27_main.md` §8 Statistics / `strict-gate power is reported as <TBD>` | achieved/prospective power for the **strict six-mode H1 drop-one gate** using the realized canonical effect and paired-bootstrap SE, not the archive four-mode additive proxy | recompute by the method in `docs/analysis/cross_sites/power_analysis.md` after the six-mode verdict artifact lands | verdict-day power ledger field `strict_6mode_h1.power_at_realized_effect` | needs-verdict-data |
 
 ## 2. Deadline 风险账 (2026-07-01 起算)
 

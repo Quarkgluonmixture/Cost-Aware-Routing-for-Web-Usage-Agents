@@ -1,5 +1,7 @@
 # §1 / Abstract 双分支预写 (队列③, 2026-07-01)
 
+> ⚠️ **字数警告（2026-07-14 实测）**：下列旧“内联句”原样 splice 会把 250 词 abstract 推到 Branch A 278 词、Branch B 291 词；不得用于 CMT。请改用 §6 的完整替换 abstract。
+>
 > **用途**: verdict day 按 realized gate JSON 选一支 splice 进 `aaai27_main.md`，删另一支。
 > 两分支 = 当前真实可能的两个世界: **Branch A** = **H1-PASS ∧ H3 两轴 PASS** (R-tier 由 B2 claim-tier
 > gate 定 R1/R2；⚠️ 触发条件含 H3 — A 支 abstract 句断言了双轴 structural gate 通过, H1-pass 但任一
@@ -26,7 +28,8 @@
 | «CI_HI» | `pooled_h1_bootstrap.ci95_hi_pp_bootstrap` |
 | «P_BOOT» | `pooled_h1_bootstrap.p_one_sided_bootstrap` (primary gate 统计量; normal-Z 只进 appendix) |
 | «K» | 实际入池完整 cell 数 (=6 或 k<6 透明披露 per advisor 预案(a)) |
-| «AX1» «AX2» ± CI | H3 axis-1 / axis-2 FE pooled unique-contribution |
+| «AX1» / «AX1_CI_LO» / «AX1_CI_HI» | H3 axis-1 FE pooled unique-contribution及其 primary bootstrap CI |
+| «AX2» / «AX2_CI_LO» / «AX2_CI_HI» | H3 axis-2 FE pooled unique-contribution及其 primary bootstrap CI |
 | «UNIQ_CLS» «UNIQ_RED» | P-SoM per-site unique-pass counts (canonical [A], 非 archive 7+6) |
 
 ---
@@ -60,11 +63,11 @@
 
 ---
 
-## 3. §1 ¶4 (hero-gate 段, 现稿 L57 "Because ... §6 reports how much of it a learned router recovers." 末两句替换)
+## 3. §1 ¶4 (hero-gate 段, 现稿 L57 "Because ... motivates the preregistered oracle-vs-realized comparison in §6." 末两句替换)
 
 ### Branch A
 
-> The pooled P-SoM contribution is the pre-registered hero gate of the paper (H1: one-sided superiority over a +1.0pp substantive threshold), and it **passes**: «THETA»pp (95% CI [«CI_LO», «CI_HI»], p = «P_BOOT»). The drop-one number is an *oracle ceiling*, not a realized router gain; §6 reports how much of it a learned router recovers.
+> The pooled P-SoM contribution is the pre-registered hero gate of the paper (H1: one-sided superiority over a +1.0pp substantive threshold), and it **passes**: «THETA»pp (95% CI [«CI_LO», «CI_HI»], p = «P_BOOT»). The drop-one number is an *oracle ceiling*, not a realized router gain; it motivates the preregistered oracle-vs-realized comparison in §6.
 
 ### Branch B
 
@@ -83,10 +86,30 @@
 
 ## 5. 词数账
 
-- Branch A: abstract +14 词 / §1 净 +9 词 (对 5275 基线可忽略, 砍词计划照旧 item 7)。
-- Branch B: abstract +43 词 / §1 净 +71 词 — B 支落地时砍词目标改 ~-900 (item 7 候选顺序不变)。
+- Branch A 旧 splice 实测：abstract **+28** 词；§1 **+21** 词。
+- Branch B 旧 splice 实测：abstract **+41** 词；§1 三处基础替换 **+85** 词，另加规定的 extra sentence **+23** 词。
 
-## 6. 与 runbook (队列④) 的接口
+## 6. ≤250 词完整替换 Abstract（verdict day 直接整段替换）
+
+以下计数仅计 abstract 正文，不含 `# Abstract` 标题；计数时把每个命名槽替换为最长合理的单-token 数字（如 `−100.00`、`+100.00`、`<0.0001`、`224`），因此不会低估数字落地后的 `wc -w`。
+
+### Branch A 完整 abstract（H1-PASS ∧ H3 双轴 PASS）
+
+<!-- ABSTRACT_A_BEGIN -->
+Multimodal web agents built on Set-of-Marks (SoM) receive a bundled observation: a marked screenshot, its textual legend, and an image-grounding prompt. We study the boundary that omits the annotated screenshot while holding the model, action space, evaluator, and task-supplied reference images fixed. Crossing hierarchical accessibility-tree versus flattened `[SOM_MARKS]` text with DOM-style versus SoM-style prompts yields three screenshot-free arms—P-text, P-prompt, and P-SoM—which we call the **phantom routing space**. Across VisualWebArena Classifieds and Reddit and three backbones, we compare this menu with DOM, full SoM, and Vision. The pre-registered fixed-effects pooled drop-one gate passes over «K» complete (site, model) cells: removing P-SoM costs «THETA»pp of oracle coverage (95% CI [«CI_LO», «CI_HI»], one-sided p=«P_BOOT» against +1.0pp). Both structural axes also pass: «AX1»pp (95% CI [«AX1_CI_LO», «AX1_CI_HI»]) and «AX2»pp (95% CI [«AX2_CI_LO», «AX2_CI_HI»]); P-SoM uniquely solves «UNIQ_CLS» Classifieds and «UNIQ_RED» Reddit task IDs under the registered site-level union estimand. By construction, the arms retain DOM's text pipeline while skipping screenshot encoding; a pre-registered cost-ratio check tests that property. A per-cell learned router selects among the six representations and is evaluated under a Pareto deployment gate (<H10-VERDICT>). We do not claim P-SoM replaces full SoM: its value is complementary, irreplaceable routing coverage.
+<!-- ABSTRACT_A_END -->
+
+实测正文词数（最长合理数字替换）：**197**。
+
+### Branch B 完整 abstract（H1-FAIL ∧ H3 双轴 PASS）
+
+<!-- ABSTRACT_B_BEGIN -->
+Multimodal web agents built on Set-of-Marks (SoM) receive a bundled observation: a marked screenshot, its textual legend, and an image-grounding prompt. We study the boundary that omits the annotated screenshot while holding the model, action space, evaluator, and task-supplied reference images fixed. Crossing hierarchical accessibility-tree versus flattened `[SOM_MARKS]` text with DOM-style versus SoM-style prompts yields three screenshot-free arms—P-text, P-prompt, and P-SoM—which we call the **phantom routing space**. Across VisualWebArena Classifieds and Reddit and three backbones, we compare this menu with DOM, full SoM, and Vision. P-SoM's pooled drop-one contribution does not clear the pre-registered +1.0pp substantive threshold over «K» complete cells («THETA»pp, 95% CI [«CI_LO», «CI_HI»], one-sided p=«P_BOOT»). Both structural axes pass: «AX1»pp (95% CI [«AX1_CI_LO», «AX1_CI_HI»]) and «AX2»pp (95% CI [«AX2_CI_LO», «AX2_CI_HI»]); P-SoM uniquely solves «UNIQ_CLS» Classifieds and «UNIQ_RED» Reddit task IDs under the registered site-level union estimand. Following the pre-registered framing ladder, we therefore claim a non-redundant representation region with small per-arm irreplaceable coverage, not flagship-arm superiority. By construction, the arms retain DOM's text pipeline while skipping screenshot encoding; a pre-registered cost-ratio check tests that property. A per-cell learned router is evaluated under a Pareto deployment gate (<H10-VERDICT>). We do not claim P-SoM replaces full SoM: complementarity remains the primary finding.
+<!-- ABSTRACT_B_END -->
+
+实测正文词数（最长合理数字替换）：**203**。
+
+## 7. 与 runbook (队列④) 的接口
 
 verdict day 流程: 读 gate JSON → 本文件选支 → splice → 填 «槽» → 删 (R-CONDITIONAL) 标记与另一支
 → banned grep → 词数 → /stress。本文件是 runbook 第 2-4 步的输入。

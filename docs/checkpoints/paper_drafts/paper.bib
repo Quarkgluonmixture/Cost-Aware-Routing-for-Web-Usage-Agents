@@ -1014,7 +1014,17 @@
   eprint = {2603.04445},
   archivePrefix = {arXiv},
   primaryClass = {cs.NI},
-  note = {Survey of routing/cascading across independently trained LLMs (explicitly excludes MoE-internal routing); six paradigms (difficulty-aware / human-preference / clustering / RL / uncertainty-quantification / cascading) + a multimodal-routing chapter. All six paradigms select WHICH MODEL answers; observation/representation routing is absent from the entire survey (no observation / prompt-format / WebArena coverage) --- cited in \S 1 and \S 6.8 as the authoritative gap witness that efficiency routing has so far acted on the model/compute axis. Do NOT cite as ``the first survey'' (paper makes no such claim). Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+  note = {Survey of routing/cascading across independently trained LLMs (explicitly excludes MoE-internal routing); six paradigms (difficulty-aware / human-preference / clustering / RL / uncertainty-quantification / cascading) + a multimodal-routing chapter. Within this explicitly cross-model scope, all six paradigms select WHICH MODEL answers. Cited only for that taxonomy; its scope cannot establish a field-scale absence of observation routing. Do NOT cite as ``the first survey'' (paper makes no such claim). Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified; scope guard corrected 2026-07-14.}
+}
+
+@misc{enomoto2026readmore,
+  title = {Read More, Think More: Revisiting Observation Reduction for Web Agents},
+  author = {Enomoto, Masafumi and Obara, Ryoma and Zhang, Haochen and Oyamada, Masafumi},
+  year = {2026},
+  eprint = {2604.01535},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  note = {Controlled comparison of HTML and accessibility-tree observations for web agents. The preferred representation depends on model capability and thinking-token budget; observation history and diff-based history are also evaluated. It provides representation-aware design guidance, not a learned online per-task router or drop-one complementarity characterization. Cited in \S 2 and \S 6 as the nearest controlled representation-choice study. Title, authors, year, identifier, and primary class verified against the arXiv API on 2026-07-14; scope cross-checked against `docs/literature/routing/deep-research-report.md`.}
 }
 
 @misc{piet2026plan,
@@ -1024,7 +1034,7 @@
   eprint = {2605.14290},
   archivePrefix = {arXiv},
   primaryClass = {cs.CR},
-  note = {Security-motivated position paper (Berkeley Popa/Wagner group; NO empirical agent, no SR/latency experiments): ReAct web agents are ``insecure by design'' because attacker-controlled tokens sit where the model picks its next action; plan-then-execute (PTE) commits to a task-specific program first. Manual classification of all 860 WebArena tasks: 81.28\% purely programmatic, 18.72\% need runtime LLM subroutines (fixed control flow), 0 need reactive replanning; self-reports only 33\% coverage via Postmill's 16 REST APIs. Cited in \S 2 as the architecture-spectrum contrast pole; the representation-choice question SURVIVES inside PTE --- its runtime LLM subroutines still consume page observations. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+  note = {Security-motivated position paper (Berkeley Popa/Wagner group; NO empirical agent, no SR/latency experiments): ReAct web agents are ``insecure by design'' because attacker-controlled tokens sit where the model picks its next action; plan-then-execute (PTE) commits to a task-specific program first. Manual classification of all 860 WebArena tasks: 81.28\% purely programmatic, 18.72\% need runtime LLM subroutines (fixed control flow), 0 need reactive replanning; self-reports only 33\% coverage via Postmill's 16 REST APIs. Cited in \S 2 as an architecture-spectrum boundary: representation choice remains at plan construction and in runtime subroutines, but broad typed-API adoption would shrink the scope of per-step routing. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified; boundary wording corrected 2026-07-14.}
 }
 
 @misc{enomoto2026observation,
@@ -1084,7 +1094,7 @@
   eprint = {2606.00435},
   archivePrefix = {arXiv},
   primaryClass = {cs.CV},
-  note = {Runtime pre-release mirage detection: classify image-question pairs Related / Unrelated-Real / Blank-Noise BEFORE the VLM answers and abstain accordingly; TC-LIA layer-wise CLIP alignment-trajectory features + ensemble across 12 VLM backbones, up to 94.7\% 3-class accuracy (Qwen2.5-VL-32B) at 3.0\% residual mirage rate. Cited in \S 2 next to MIRAGE \citep{asadi2026mirageillusionvisualunderstanding} as the detectability follow-up and positioning contrast: they treat the image-free regime as a risk to detect-and-abstain, we treat it as a routable arm to exploit. NOTE: TC-LIA needs an image + an extra CLIP forward --- inapplicable to our image-free phantom arms. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+  note = {Runtime pre-release mirage detection: classify image-question pairs Related / Unrelated-Real / Blank-Noise BEFORE the VLM answers and abstain accordingly; TC-LIA layer-wise CLIP alignment-trajectory features + ensemble across 12 VLM backbones, up to 94.7\% 3-class accuracy (Qwen2.5-VL-32B) at 3.0\% residual mirage rate. Cited in \S 2 as a risk boundary: MirageDetect targets ungrounded responses when image and alternate evidence are absent or irrelevant, whereas phantom success is grounded in structured page text. Its detector motivates escalation when an omitted screenshot contains non-redundant evidence; do not call the two settings one regime. TC-LIA itself requires an image + an extra CLIP forward. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified; scope guard corrected 2026-07-14.}
 }
 
 @misc{meng2026sema,
@@ -1094,7 +1104,7 @@
   eprint = {2604.20940},
   archivePrefix = {arXiv},
   primaryClass = {cs.MM},
-  note = {Transport-layer system: replaces screenshot streaming with an a11y-tree structured-text stream + compact visual tokens; 130--210$\times$ bandwidth reduction; OSWorld Vision-Text 93.3\% vs 94.0\% raw (Qwen2.5-VL-7B). Key ablation: visual tokens alone 75.5\%, + structured text 93.3\% --- structured text is the load-bearing component. Cited (low weight) in the constructed-substrate discussion as independent engineering evidence that structured text carries most UI-task signal. WORDING RED LINE: Sema RETAINS compact visual tokens --- do NOT cite as ``dropping the image costs nothing'' (our P-SoM is zero-image, and complementarity, not image-free parity, is our claim). Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+  note = {Transport-layer system: replaces screenshot streaming with an a11y-tree structured-text stream + compact visual tokens; 130--210$\times$ bandwidth reduction; OSWorld Vision-Text 93.3\% vs 94.0\% raw (Qwen2.5-VL-7B). Key ablation: visual tokens alone 75.5\%, + structured text 93.3\% --- structured text is necessary to close the gap to raw-screen performance. Sema RETAINS compact visual tokens and has no text-only/no-screenshot arm, so it does not establish screenshot-omission parity or apportion most task signal to text. Cited only for the bounded hybrid result. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified; wording guard corrected 2026-07-14.}
 }
 
 @misc{vardanyan2025browser,
