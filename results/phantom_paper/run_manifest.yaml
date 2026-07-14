@@ -326,6 +326,49 @@ cells:
     grade: paper-grade
     notes: "A100 fire, bound 2026-07-01 (205 ep, §359 resume + §360.4 手动 bind); diag pending"
 
+  - baseline: B0
+    site: reddit
+    mode: P-SoM
+    run_dir: B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173
+    condition_subdir: phase1_phantom_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-09 (205 ep, promote 2026-07-14 via staging fire_manifest sync 配方); diag pending"
+  - baseline: B1
+    site: reddit
+    mode: DOM
+    run_dir: B1_dom_reddit_20260703
+    condition_subdir: phase1_dom_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-04 (205 ep, promote 2026-07-14 via staging fire_manifest sync 配方); diag pending"
+  - baseline: B1
+    site: reddit
+    mode: SoM
+    run_dir: B1_som_reddit_20260706
+    condition_subdir: phase1_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-08 (205 ep, promote 2026-07-14 via staging fire_manifest sync 配方); diag pending"
+  - baseline: B1
+    site: reddit
+    mode: Vision
+    run_dir: B1_vision_reddit_20260708_002122_732634080_205180_R16847
+    condition_subdir: phase1_vision_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-09 (205 ep, promote 2026-07-14 via staging fire_manifest sync 配方); diag pending"
+  - baseline: B1
+    site: reddit
+    mode: P-text
+    run_dir: B1_phantom_text_reddit_20260710
+    condition_subdir: phase1_phantom_text_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-11 (205 ep, promote 2026-07-14 via staging fire_manifest sync 配方); diag pending"
+  - baseline: B1
+    site: reddit
+    mode: P-SoM
+    run_dir: B1_phantom_som_reddit_20260711
+    condition_subdir: phase1_phantom_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-13 (205 ep, promote 2026-07-14 via staging fire_manifest sync 配方); diag pending"
+
 in_flight:
   - baseline: B1
     site: classifieds

@@ -23,7 +23,14 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-08 UPDATE — B1 som land (205/205, bound 24) + outage#5 (proxy 恢复仅 ~31h 再死) + orchestrator v2 (per-boundary B0 插入)** ⭐⭐⭐ 最新先读:
+> 🔭 **2026-07-14 UPDATE — codex 自走循环 day-1: 三审计→全修 (9 commits local 未 push) + 6 reddit conditions promote (22→28) + PROTOCOL_NOTE_05** ⭐⭐⭐ 最新先读 (详 笔记 §366):
+> - **✅ 三场 codex (gpt-5.6-sol xhigh) 审计全修**: ① relwork stress (17ce79f "待 stress" 清账, 10 findings → `9acfa24` 修, novelty 重写三级 spine 可守) ② readiness (词数 5450→5248, banned grep 出清, branch 完整 abstract 197/203 词) ③ **工具链 Stop-ship 9 P0** → Chunk 1 `27e04a9` (H3 pool 恢复 "over 6 planned cells" estimand + H1/SR exact 224/205 task-set + analysis_status/h1_verdict schema; **witness = PROTOCOL_NOTE_05 + tag**, outcome-blind @ k=3) + Chunk 2 `e35d0b4` (fig0c universe / F2 单源 / router majority OOF 泄漏 / slotsheet fail-closed + Decimal 舍入锁)。测试 1433p/2f → **1454 passed/0 failed** (+19 regression)。
+> - **⚠️ 修正后 interim 数字 (canonical artifact 已重生)**: H3 axis-1 k=3 = **1.08pp [0.47, 1.98]** (旧 3.20pp 是 outcome-dependent 删 cell 的产物, stale-by-correction — draft/旧引用勿再用); axis-2 = 2.26pp 不变; 全部 NOT_EVALUATED @ k=3 (verdict 只在 k=6)。
+> - **✅ 6 个 bound reddit conditions 已 promote** (staging fire_manifest 07-13 → run_manifest 22→28): B0 psom + **B1 red dom/som/vision/ptext/psom (5/6!)**。B0/B1 reddit 各只差 P-prompt 即成完整 6-mode cell → k 3→5 在望。B1 pprompt 大概率在 A100 orchestrator 队列中/已完成 — **下一动作: 探 A100 最新 fire_manifest + 若 bound 继续 promote** (`logs/cron/fire_manifest_a100_latest.json` 15-min cron staging)。
+> - **🔲 未 push 9 commits** (`9acfa24`..今日尾) — push 需 user 确认。B0 psom task149 registry classify 仍 pending (§0 07-07 TODO ①)。/diag 欠账: 新 promote 的 6 条全部 diag pending。
+> - **⚙️ 工具链新语义**: verdict-day 走 runbook 严格路径 (fail-closed); 日常 `make analysis` fig0c 已显式 --allow-partial (`cc3334e`); slotsheet final 模式缺 artifact 即 exit 2; k<6 选支被禁 (预案(a) 出口 = 新 PROTOCOL_NOTE + advisor sign-off)。
+>
+> 🔭 **2026-07-08 UPDATE — B1 som land (205/205, bound 24) + outage#5 (proxy 恢复仅 ~31h 再死) + orchestrator v2 (per-boundary B0 插入)** ⭐⭐⭐:
 > - **✅ 首个 boundary 全自动通过**: B1 som 00:14Z 完成 205/205 → orch 自动 bind (bound 24) → 探 proxy 3×503 → 正确跳过 B0 → B1 vision 已启动 (00:21Z)。
 > - **🔴 outage#5**: proxy 07-06 17:1xZ 恢复 → 07-08 00:19Z 前再死 (~31h)。学长 Lambda timeout 修复未解决根因 — 上游模型服务本身不稳。
 > - **✅ orchestrator v2 部署 (pid 206635, `f901b4a`)**: v1 只在单一 boundary 探 proxy 的缺口修复 → 每个 boundary 都 try_b0 (psom→pprompt, ≤2 attempts each), 全条件 FORCE_NEW=0+RESET auto (abort 数据永不丢), eps>=205 幂等 skip (可任意时点 kill 重启接管)。proxy 恢复窗口不再会被错过。

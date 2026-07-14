@@ -164,6 +164,48 @@
    "episodes": 205,
    "bound_date": "2026-07-01",
    "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B1|dom": {
+   "run_id": "B1_dom_reddit_20260703",
+   "condition_id": "phase1_dom_router_0",
+   "episodes": 205,
+   "bound_date": "2026-07-04",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B1|som": {
+   "run_id": "B1_som_reddit_20260706",
+   "condition_id": "phase1_som_router_0",
+   "episodes": 205,
+   "bound_date": "2026-07-08",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B1|vision": {
+   "run_id": "B1_vision_reddit_20260708_002122_732634080_205180_R16847",
+   "condition_id": "phase1_vision_router_0",
+   "episodes": 205,
+   "bound_date": "2026-07-09",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B0|phantom_som": {
+   "run_id": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
+   "condition_id": "phase1_phantom_som_router_0",
+   "episodes": 205,
+   "bound_date": "2026-07-09",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B1|phantom_text": {
+   "run_id": "B1_phantom_text_reddit_20260710",
+   "condition_id": "phase1_phantom_text_router_0",
+   "episodes": 205,
+   "bound_date": "2026-07-11",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B1|phantom_som": {
+   "run_id": "B1_phantom_som_reddit_20260711",
+   "condition_id": "phase1_phantom_som_router_0",
+   "episodes": 205,
+   "bound_date": "2026-07-13",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
   }
  }
 }
