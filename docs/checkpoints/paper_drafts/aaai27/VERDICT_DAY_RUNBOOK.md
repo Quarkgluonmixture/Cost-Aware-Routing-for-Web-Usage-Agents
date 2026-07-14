@@ -39,6 +39,20 @@ make analysis FAST=1
   --out /tmp/claude-1012/slotsheet_$(date +%Y%m%d).md
 ```
 
+若 **Pass-1 已全 land**（decision 为 `analysis_status=COMPLETE` 且 `h1_verdict` 已是
+`PASS`/`FAIL`），但 Pass-2/H10 尚未 land，Step 2 跳过并把 Step 2b 改用
+`--h10-pending`：
+```bash
+.venv/bin/python3 scripts/analysis/verdict_day_slotsheet.py \
+  --h10-pending \
+  --decision results/phantom_paper/phase1_full_prereg_decision.json \
+  --sr docs/analysis/cross_sites/sr_per_mode.json \
+  --fig0c results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv \
+  --out /tmp/claude-1012/slotsheet_h1_h3_$(date +%Y%m%d).md
+```
+该形态只开放 H1/H3 槽与 Tables 2/3；H10/router、Table 4 和 abstract H10 槽均显式
+fail-closed。它不能用于 `PARTIAL`，也不能与 `--rehearsal` 同用。
+
 当前 `analysis_status=PARTIAL` 时只用下列 **rehearsal 安全形态**；全部输出进 scratch，禁止拿来
 splice：
 ```bash
@@ -94,6 +108,10 @@ grep -nE "<(H1|H3|H10)-VERDICT>|R-CONDITIONAL|«|⟨TBD⟩|<TBD" aaai27_main.md
 CMT abstract 可后改）。**不要**在 abstract 里写 interim 数字。
 
 ## 4. H10 单独 verdict (若 Pass-2 晚于 Pass-1)
+
+Pass-1 全 land、Pass-2 未 land 的第一次 verdict 先用 §1 的 `--h10-pending`，只 splice
+H1/H3 与 Tables 2/3，并采用 sheet 给出的固定 abstract H10 pending 短语；§6 与 Table 4 保持
+pending，禁止填任何 router 数值。
 
 Pass-2 land 后: `python scripts/analysis/aggregate_h10_pareto.py` → 重跑 slotsheet → 只动 §6 + Table 4
 + abstract 的 `<H10-VERDICT>` 短语。前置: `h10_entropy_gate.json` 必须存在（队列⑤预演产物;

@@ -9,6 +9,8 @@ Output: results/phantom_paper/figures/fig_f1_diamond_schematic.{png,pdf}
 """
 from __future__ import annotations
 
+import argparse
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -40,8 +42,20 @@ SOM_XY = (1.85, 1.0)
 VISION_XY = (1.85, -0.05)
 
 
-def main() -> int:
-    OUT.parent.mkdir(parents=True, exist_ok=True)
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
+    parser.add_argument(
+        "--out", type=Path, default=OUT, metavar="BASENAME",
+        help=f"output basename without extension (default: {OUT})",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    # Keep the pre-argparse callable contract: main() means canonical defaults.
+    args = build_parser().parse_args([] if argv is None else argv)
+    out = args.out
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(7.0, 4.2), dpi=300)
 
     # phantom region: the three screenshot-free non-DOM corners
@@ -106,10 +120,12 @@ def main() -> int:
     ax.axis("off")
     fig.tight_layout()
     for ext in ("png", "pdf"):
-        fig.savefig(f"{OUT}.{ext}", bbox_inches="tight")
-        print(f"Wrote: {OUT}.{ext}")
+        path = out.parent / f"{out.name}.{ext}"
+        fig.savefig(path, bbox_inches="tight")
+        print(f"Wrote: {path}")
+    plt.close(fig)
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

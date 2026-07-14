@@ -4,8 +4,11 @@
 Final mode emits copyable slots/tables only when every required artifact is
 present, non-empty, exact, and mutually consistent.  ``--rehearsal`` emits a
 diagnostic sheet headed ``INVALID_FOR_DRAFT``; it never emits copyable slot or
-table blocks.  Verdict logic reads ``analysis_status`` and ``h1_verdict``;
-legacy ``gate_status`` is display-only fallback metadata.
+table blocks.  ``--h10-pending`` is a COMPLETE-only final mode for the interval
+between Pass-1 and Pass-2: H1/H3 slots and Tables 2/3 remain copyable, while all
+H10/router values fail closed behind explicit pending markers.  Verdict logic
+reads ``analysis_status`` and ``h1_verdict``; legacy ``gate_status`` is
+display-only fallback metadata.
 """
 from __future__ import annotations
 
@@ -34,6 +37,13 @@ PLANNED_CELL_IDS = {
     for site in ("classifieds", "reddit")
 }
 CAPTURE_WINDOW_SECONDS = 24 * 60 * 60
+H10_PENDING_NOTICE = (
+    "H10 PENDING (Pass-2 not landed; deployability fail-closed per prereg)"
+)
+H10_PENDING_ABSTRACT = (
+    "Learned-router deployability remains pending until the preregistered "
+    "Pass-2 evaluation is complete."
+)
 
 
 def g(d: Any, *keys: str, default: Any = "MISSING") -> Any:
@@ -127,6 +137,7 @@ def validate_artifacts(
     router: dict[str, Any],
     *,
     final: bool,
+    h10_pending: bool = False,
 ) -> tuple[list[str], list[str]]:
     """Return hard validation errors and explicitly disclosed provenance gaps."""
     errors: list[str] = []
@@ -134,9 +145,19 @@ def validate_artifacts(
     status = dec.get("analysis_status")
     if status not in {"COMPLETE", "PARTIAL", "INSUFFICIENT"}:
         errors.append(f"decision analysis_status invalid or missing: {status!r}")
-    if final and status != "COMPLETE":
+    if h10_pending:
+        if status != "COMPLETE":
+            errors.append(
+                "--h10-pending requires decision artifact "
+                f"analysis_status=COMPLETE, got {status!r}; it cannot bypass completeness"
+            )
+        if dec.get("h1_verdict") not in {"PASS", "FAIL"}:
+            errors.append(
+                "--h10-pending requires decision artifact h1_verdict in {PASS, FAIL}"
+            )
+    elif final and status != "COMPLETE":
         errors.append(f"final slotsheet requires analysis_status=COMPLETE, got {status!r}")
-    if final and dec.get("h1_verdict") not in {"PASS", "FAIL"}:
+    if final and not h10_pending and dec.get("h1_verdict") not in {"PASS", "FAIL"}:
         errors.append("final slotsheet requires h1_verdict in {PASS, FAIL}")
     if final:
         required_numeric_paths = (
@@ -267,66 +288,82 @@ def validate_artifacts(
             f"fig0c numeric panels must equal planned six; got {sorted(fig_by_cell)}"
         )
 
-    h10_cells = h10.get("per_cell")
-    if not isinstance(h10_cells, dict) or not h10_cells:
-        errors.append("H10 per_cell is missing or empty")
-    elif final and set(h10_cells) != PLANNED_CELL_IDS:
-        errors.append("H10 per_cell must contain exact planned six")
-    elif final and any(not isinstance(value, dict) or not value for value in h10_cells.values()):
-        errors.append("H10 per_cell contains an empty/non-object table row")
-    if final and (
-        not isinstance(h10.get("operational_deployment_gate"), dict)
-        or not h10.get("operational_deployment_gate")
-    ):
-        errors.append("H10 operational_deployment_gate is missing")
+    if not h10_pending:
+        h10_cells = h10.get("per_cell")
+        if not isinstance(h10_cells, dict) or not h10_cells:
+            errors.append("H10 per_cell is missing or empty")
+        elif final and set(h10_cells) != PLANNED_CELL_IDS:
+            errors.append("H10 per_cell must contain exact planned six")
+        elif final and any(
+            not isinstance(value, dict) or not value for value in h10_cells.values()
+        ):
+            errors.append("H10 per_cell contains an empty/non-object table row")
+        if final and (
+            not isinstance(h10.get("operational_deployment_gate"), dict)
+            or not h10.get("operational_deployment_gate")
+        ):
+            errors.append("H10 operational_deployment_gate is missing")
 
-    router_cells = set(str(c) for c in router.get("cells", []))
-    if not router:
-        errors.append("router artifact is missing or empty")
-    else:
-        if final and router.get("grade") != "PAPER_GRADE":
-            errors.append(f"router grade is not PAPER_GRADE: {router.get('grade')!r}")
-        if final and router.get("analysis_status") != "COMPLETE":
-            errors.append(
-                f"router analysis_status is not COMPLETE: {router.get('analysis_status')!r}"
-            )
-        if final and router_cells != PLANNED_CELL_IDS:
-            errors.append("router cells must contain exact planned six")
-        contrasts = router.get("paired_contrasts")
-        if not isinstance(contrasts, list) or not contrasts:
-            errors.append("router paired_contrasts is missing or empty")
-        elif final:
-            expected_contrast_ids = {
-                "full-vs-scalar:standard",
-                "full-vs-scalar:template_disjoint",
-                "standard-vs-template-disjoint:full_lr",
-            }
-            keys = {
-                (str(record.get("cell_id")), str(record.get("contrast_id")))
-                for record in contrasts if isinstance(record, dict)
-            }
-            expected_keys = {
-                (cell_id, contrast_id)
-                for cell_id in PLANNED_CELL_IDS
-                for contrast_id in expected_contrast_ids
-            }
-            if keys != expected_keys or len(contrasts) != len(expected_keys):
-                errors.append("router paired_contrasts must contain exact 18 predefined rows")
-        if not isinstance(router.get("results"), list) or not router.get("results"):
-            errors.append("router results table is missing or empty")
-        router_validation = g(router, "canonical_input_validation", "cells", default={})
-        if isinstance(router_validation, dict):
-            for cid, validation in router_validation.items():
-                router_sha = validation.get("task_set_sha256") if isinstance(validation, dict) else None
-                expected_sha = g(decision_cells.get(cid, {}), "h1", "task_set_sha256", default=None)
-                if router_sha is not None and expected_sha is not None and router_sha != expected_sha:
-                    errors.append(f"task_set_sha256 mismatch decision↔router for {cid}")
+        router_cells = set(str(c) for c in router.get("cells", []))
+        if not router:
+            errors.append("router artifact is missing or empty")
+        else:
+            if final and router.get("grade") != "PAPER_GRADE":
+                errors.append(f"router grade is not PAPER_GRADE: {router.get('grade')!r}")
+            if final and router.get("analysis_status") != "COMPLETE":
+                errors.append(
+                    f"router analysis_status is not COMPLETE: {router.get('analysis_status')!r}"
+                )
+            if final and router_cells != PLANNED_CELL_IDS:
+                errors.append("router cells must contain exact planned six")
+            contrasts = router.get("paired_contrasts")
+            if not isinstance(contrasts, list) or not contrasts:
+                errors.append("router paired_contrasts is missing or empty")
+            elif final:
+                expected_contrast_ids = {
+                    "full-vs-scalar:standard",
+                    "full-vs-scalar:template_disjoint",
+                    "standard-vs-template-disjoint:full_lr",
+                }
+                keys = {
+                    (str(record.get("cell_id")), str(record.get("contrast_id")))
+                    for record in contrasts if isinstance(record, dict)
+                }
+                expected_keys = {
+                    (cell_id, contrast_id)
+                    for cell_id in PLANNED_CELL_IDS
+                    for contrast_id in expected_contrast_ids
+                }
+                if keys != expected_keys or len(contrasts) != len(expected_keys):
+                    errors.append("router paired_contrasts must contain exact 18 predefined rows")
+            if not isinstance(router.get("results"), list) or not router.get("results"):
+                errors.append("router results table is missing or empty")
+            router_validation = g(router, "canonical_input_validation", "cells", default={})
+            if isinstance(router_validation, dict):
+                for cid, validation in router_validation.items():
+                    router_sha = (
+                        validation.get("task_set_sha256")
+                        if isinstance(validation, dict) else None
+                    )
+                    expected_sha = g(
+                        decision_cells.get(cid, {}), "h1", "task_set_sha256",
+                        default=None,
+                    )
+                    if (
+                        router_sha is not None
+                        and expected_sha is not None
+                        and router_sha != expected_sha
+                    ):
+                        errors.append(f"task_set_sha256 mismatch decision↔router for {cid}")
 
     dec_time = _parse_time(dec.get("captured_at"))
     fig_times = {_parse_time(r.get("captured_at")) for r in numeric_fig}
     fig_times.discard(None)
-    router_time = _parse_time(router.get("captured_at"))
-    for label, times in (("fig0c", fig_times), ("router", {router_time} if router_time else set())):
+    provenance_times = [("fig0c", fig_times)]
+    if not h10_pending:
+        router_time = _parse_time(router.get("captured_at"))
+        provenance_times.append(("router", {router_time} if router_time else set()))
+    for label, times in provenance_times:
         if dec_time is not None and times:
             for other in times:
                 if abs((other - dec_time).total_seconds()) > CAPTURE_WINDOW_SECONDS:
@@ -337,10 +374,11 @@ def validate_artifacts(
     # These producers currently do not expose joinable capture/provenance fields.
     if not sr.get("captured_at"):
         gaps.append("SR: captured_at absent; time-window join cannot be enforced")
-    if not h10.get("captured_at"):
-        gaps.append("H10: captured_at absent; time-window join cannot be enforced")
-    if not h10.get("task_set_sha256"):
-        gaps.append("H10: task_set_sha256 absent; task-universe join cannot be enforced")
+    if not h10_pending:
+        if not h10.get("captured_at"):
+            gaps.append("H10: captured_at absent; time-window join cannot be enforced")
+        if not h10.get("task_set_sha256"):
+            gaps.append("H10: task_set_sha256 absent; task-universe join cannot be enforced")
     return errors, sorted(set(gaps))
 
 
@@ -357,6 +395,7 @@ def build_sheet(
     router: dict[str, Any],
     *,
     rehearsal: bool,
+    h10_pending: bool = False,
     errors: list[str],
     gaps: list[str],
 ) -> str:
@@ -368,6 +407,9 @@ def build_sheet(
         add(f"# Verdict-day slot sheet (captured_at={g(dec, 'captured_at')})")
     add("")
     add("> Rounding lock: decimal.Decimal + ROUND_HALF_UP. Final mode is the only copyable source.")
+    if h10_pending:
+        add(f"> **{H10_PENDING_NOTICE}**")
+        add("> Copyable scope in this sheet: H1/H3 slots and Tables 2/3 only.")
     add("")
 
     analysis_status = dec.get("analysis_status")
@@ -406,13 +448,17 @@ def build_sheet(
             f"  - {cell.get('baseline')}·{cell.get('site')}: "
             + " | ".join(f"{key}={scalar_display(value)}" for key, value in scalars(h2).items())
         )
-    operational = g(h10, "operational_deployment_gate", default={})
-    add(
-        "- H10 operational gate: "
-        + " | ".join(
-            f"{key}={scalar_display(value)}" for key, value in scalars(operational).items()
+    if h10_pending:
+        add(f"- H10 operational gate: **{H10_PENDING_NOTICE}**")
+    else:
+        operational = g(h10, "operational_deployment_gate", default={})
+        add(
+            "- H10 operational gate: "
+            + " | ".join(
+                f"{key}={scalar_display(value)}"
+                for key, value in scalars(operational).items()
+            )
         )
-    )
     if errors:
         add("- validation diagnostics:")
         for error in errors:
@@ -442,6 +488,38 @@ def build_sheet(
         add("- All currently comparable provenance fields joined successfully.")
     add("")
 
+    if rehearsal:
+        add("## C'. Router covariate diagnostics (REHEARSAL — NON-COPYABLE, 禁止进 draft)")
+        add(
+            "> ⚠ Diagnostic visibility only. This warning-shaped table is not a "
+            "canonical slot source and must not be copied into the draft."
+        )
+        add(
+            "- input artifact markers: "
+            f"grade=`{router.get('grade', 'MISSING')}`; "
+            f"analysis_status=`{router.get('analysis_status', 'MISSING')}`; "
+            f"captured_at=`{router.get('captured_at', 'MISSING')}`"
+        )
+        add("| ⚠ diagnostic only | cell | contrast | delta_AUROC | CI95 | n_common |")
+        add("|---|---|---|---:|---:|---:|")
+        contrasts = router.get("paired_contrasts", [])
+        if isinstance(contrasts, list):
+            for contrast in contrasts:
+                if not isinstance(contrast, dict):
+                    continue
+                ci = contrast.get("ci95")
+                ci_text = (
+                    f"[{decimal_format(ci[0], 3)}, {decimal_format(ci[1], 3)}]"
+                    if isinstance(ci, list) and len(ci) == 2 else "undefined"
+                )
+                add(
+                    f"| ⚠ NON-COPYABLE | {contrast.get('cell_id')} | "
+                    f"{contrast.get('contrast_id')} | "
+                    f"{decimal_format(contrast.get('delta_auroc'), 3)} | "
+                    f"{ci_text} | {contrast.get('n_common')} |"
+                )
+        add("")
+
     if rehearsal or analysis_status != "COMPLETE":
         add("Copyable §C–§F slots/tables intentionally suppressed.")
         return "\n".join(lines) + "\n"
@@ -463,18 +541,23 @@ def build_sheet(
             f"[{decimal_format(g(axis, 'ci95_lo_pp_bootstrap'))}, "
             f"{decimal_format(g(axis, 'ci95_hi_pp_bootstrap'))}] | {axis_key} |"
         )
-    for contrast in router.get("paired_contrasts", []):
-        slot = _router_slot_id(contrast)
-        ci = contrast.get("ci95")
-        ci_text = (
-            f"[{decimal_format(ci[0], 3)}, {decimal_format(ci[1], 3)}]"
-            if isinstance(ci, list) and len(ci) == 2 else "undefined"
-        )
-        add(
-            f"| {slot} | ΔAUROC={decimal_format(contrast.get('delta_auroc'), 3)}; "
-            f"CI95={ci_text}; n={contrast.get('n_common')} | "
-            f"paired_contrasts[{contrast.get('contrast_id')}] |"
-        )
+    if h10_pending:
+        add("")
+        add("### H10/router slots")
+        add(f"- **{H10_PENDING_NOTICE}**")
+    else:
+        for contrast in router.get("paired_contrasts", []):
+            slot = _router_slot_id(contrast)
+            ci = contrast.get("ci95")
+            ci_text = (
+                f"[{decimal_format(ci[0], 3)}, {decimal_format(ci[1], 3)}]"
+                if isinstance(ci, list) and len(ci) == 2 else "undefined"
+            )
+            add(
+                f"| {slot} | ΔAUROC={decimal_format(contrast.get('delta_auroc'), 3)}; "
+                f"CI95={ci_text}; n={contrast.get('n_common')} | "
+                f"paired_contrasts[{contrast.get('contrast_id')}] |"
+            )
     add("")
 
     add("## D. Table 2 regen (SR)")
@@ -503,18 +586,27 @@ def build_sheet(
     add("")
 
     add("## F. Table 4 regen (H10)")
-    for cid, cell in h10["per_cell"].items():
-        add(
-            f"- {cid}: "
-            + " | ".join(
-                f"{key}={scalar_display(value)}" for key, value in scalars(cell).items()
+    if h10_pending:
+        add(f"- **{H10_PENDING_NOTICE}**")
+        add("- Table 4 numeric rows are intentionally withheld until Pass-2 lands.")
+        add(f"- Suggested abstract `<H10-VERDICT>` phrase: “{H10_PENDING_ABSTRACT}”")
+    else:
+        for cid, cell in h10["per_cell"].items():
+            add(
+                f"- {cid}: "
+                + " | ".join(
+                    f"{key}={scalar_display(value)}"
+                    for key, value in scalars(cell).items()
+                )
             )
-        )
     add("")
 
     add("## G. Post-splice checklist")
     add("1. Run banned-phrase and residual-slot greps from VERDICT_DAY_RUNBOOK.md.")
-    add("2. Verify [P]→[A] provenance lifts and the router contrast cohort counts.")
+    if h10_pending:
+        add("2. Leave §6/Table 4 pending; rerun full final mode after Pass-2 lands.")
+    else:
+        add("2. Verify [P]→[A] provenance lifts and the router contrast cohort counts.")
     add("3. Run the required stress chain before paper-prose commit.")
     return "\n".join(lines) + "\n"
 
@@ -527,17 +619,34 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--fig0c", type=Path, default=FIG0C)
     ap.add_argument("--router", type=Path, default=ROUTER)
     ap.add_argument("--out", type=Path, default=None)
-    ap.add_argument("--rehearsal", action="store_true")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--rehearsal", action="store_true",
+        help="emit INVALID_FOR_DRAFT diagnostics without copyable slots/tables",
+    )
+    mode.add_argument(
+        "--h10-pending", action="store_true",
+        help=(
+            "COMPLETE-only Pass-1 final sheet: emit copyable H1/H3 and Tables 2/3 "
+            "while withholding H10/router values until Pass-2"
+        ),
+    )
     args = ap.parse_args(argv)
 
     load_errors: list[str] = []
     dec = _load_json(args.decision, "decision artifact", load_errors)
-    h10 = _load_json(args.h10, "H10 artifact", load_errors)
     sr = _load_json(args.sr, "SR artifact", load_errors)
     fig0c = _load_csv(args.fig0c, "fig0c artifact", load_errors)
-    router = _load_json(args.router, "router artifact", load_errors)
+    if args.h10_pending:
+        h10: dict[str, Any] = {}
+        router: dict[str, Any] = {}
+    else:
+        h10 = _load_json(args.h10, "H10 artifact", load_errors)
+        router = _load_json(args.router, "router artifact", load_errors)
     validation_errors, gaps = validate_artifacts(
-        dec, h10, sr, fig0c, router, final=not args.rehearsal,
+        dec, h10, sr, fig0c, router,
+        final=not args.rehearsal,
+        h10_pending=args.h10_pending,
     )
     errors = load_errors + validation_errors
     if errors and not args.rehearsal:
@@ -547,7 +656,8 @@ def main(argv: list[str] | None = None) -> int:
 
     output = build_sheet(
         dec, h10, sr, fig0c, router,
-        rehearsal=args.rehearsal, errors=errors, gaps=gaps,
+        rehearsal=args.rehearsal, h10_pending=args.h10_pending,
+        errors=errors, gaps=gaps,
     )
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
