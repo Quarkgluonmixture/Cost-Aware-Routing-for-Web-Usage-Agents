@@ -758,6 +758,22 @@ def fmt_pct(value: Any, digits: int = 1) -> str:
     return f"{100.0 * float(value):.{digits}f}%"
 
 
+def log_missing_e1_cells(e1: dict[str, Any]) -> int:
+    """Inventory partial E1 cells before prose/report consumers read fields."""
+    missing = 0
+    for site, site_block in e1.items():
+        for axis, block in site_block.items():
+            if block.get("mean_jaccard") is not None:
+                continue
+            missing += 1
+            print(
+                f"[mechanism_per_task] SKIP E1 {site}/{axis}: missing mean_jaccard "
+                f"({block.get('left_mode', '?')} vs {block.get('right_mode', '?')})"
+            )
+    print(f"[mechanism_per_task] SKIP summary: {missing} E1 cell(s) missing mean_jaccard")
+    return missing
+
+
 def headline_implications(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, Any], e4: dict[str, Any]) -> dict[str, str]:
     red_e1 = e1["reddit"]["compound_DOM_to_PSoM"]
     cls_e1 = e1["classifieds"]["compound_DOM_to_PSoM"]
@@ -776,12 +792,22 @@ def headline_implications(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, 
         for item in block.get("top_abs_shifts", [])
     ]
     top_e4 = max(top_e4_iter, key=lambda row: abs(row[2]["mean_fraction_shift"])) if top_e4_iter else None
+    available_e1 = [
+        ("reddit", red_e1),
+        ("classifieds", cls_e1),
+    ]
+    available_e1 = [(site, block) for site, block in available_e1 if block.get("mean_jaccard") is not None]
+    if available_e1:
+        e1_headline = (
+            "Available DOM and P-SoM click transitions diverge at event granularity: compound "
+            "click-target Jaccard is "
+            + "; ".join(f"{fmt(block.get('mean_jaccard'))} on {site}" for site, block in available_e1)
+            + "."
+        )
+    else:
+        e1_headline = "E1 click-target divergence unavailable: all compound DOM vs P-SoM cells are partial."
     return {
-        "E1_headline": (
-            "DOM and P-SoM click transitions diverge at event granularity: "
-            f"compound click-target Jaccard is {fmt(red_e1['mean_jaccard'])} on reddit and "
-            f"{fmt(cls_e1['mean_jaccard'])} on classifieds."
-        ),
+        "E1_headline": e1_headline,
         "E2_headline": (
             "Boundary divergence is usually visible early among symmetric-difference tasks: "
             f"DOM vs P-SoM early rates are reddit {fmt_pct(e2_dom_psom['reddit']['early_divergence_rate'])} "
@@ -820,7 +846,7 @@ def write_report(out: dict[str, Any]) -> None:
     ]
     for site in ("reddit", "classifieds"):
         for axis, block in e1[site].items():
-            if block.get("skipped") or block.get("n", 0) == 0:
+            if block.get("skipped") or block.get("n", 0) == 0 or block.get("mean_jaccard") is None:
                 lines.append(
                     f"| {site} | {axis} ({short_mode(block.get('left_mode', '?'))} vs "
                     f"{short_mode(block.get('right_mode', '?'))}) | 0 (pending) | n/a | n/a | n/a | n/a | n/a | n/a | n/a |"
@@ -1080,6 +1106,7 @@ def main() -> None:
     e2 = build_e2(all_tasks)
     e3 = build_e3()
     e4 = build_e4(all_tasks)
+    missing_e1_cell_count = log_missing_e1_cells(e1)
     implications = headline_implications(e1, e2, e3, e4)
     out = {
         "method": (
@@ -1095,6 +1122,7 @@ def main() -> None:
                 for site, modes in STEP_DIRS.items()
             },
             "p_prompt": detect_partial_prompt_runs(),
+            "missing_e1_cell_count": missing_e1_cell_count,
         },
         "E1_click_target_divergence": e1,
         "E2_trajectory_boundary": e2,

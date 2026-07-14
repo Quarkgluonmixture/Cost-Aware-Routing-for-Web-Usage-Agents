@@ -335,7 +335,7 @@ endif
 	@# keep cells.base sync (lightweight, no GLM call) but drop PLAYBOOK refresh
 	@# (GLM call). PLAYBOOK §1+§2 retire planned; this is the align step.
 	@nohup bash -c "sleep 5 && $(MAKE) glm-update-cells APPLY=1" \
-	  >> logs/cron/glm_update_cells.log 2>&1 < /dev/null & disown ; true
+	  >> logs/cron/glm_update_cells.log 2>&1 < /dev/null & true
 
 # Per-run pipeline for all paper-grade VWA runs (loop over registry)
 _per_run_all:
@@ -558,19 +558,38 @@ analyze-paper-per-run:
 # run set on cls + red. Outputs to results/visualwebarena/phase1/b0_vs_b1[_vs_b2]_<site>/.
 # 3-model deep-update 2026-05-18: B2_RUN_CLS/RED resolved from registry; returns
 # empty string when cell missing → compare auto-falls through to legacy 2-way mode.
-B0_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B0','classifieds','DOM'); print(c.run_dir if c else '')")
-B0_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B0','reddit','DOM'); print(c.run_dir if c else '')")
-B1_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B1','classifieds','DOM'); print(c.run_dir if c else '')")
-B1_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B1','reddit','DOM'); print(c.run_dir if c else '')")
-B2_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B2','classifieds','DOM'); print(c.run_dir if c else '')")
-B2_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B2','reddit','DOM'); print(c.run_dir if c else '')")
+# Resolve the current paper-grade DOM entry explicitly.  get_cell() intentionally
+# searches every grade for backwards compatibility and sorts by run path, which
+# made this target select stale archived vintages after paper-grade promotion.
+B0_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cells; c=get_cells(baseline='B0',site='classifieds',mode='DOM',grade='paper-grade'); print(c[0].run_dir if c else '')")
+B0_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cells; c=get_cells(baseline='B0',site='reddit',mode='DOM',grade='paper-grade'); print(c[0].run_dir if c else '')")
+B1_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cells; c=get_cells(baseline='B1',site='classifieds',mode='DOM',grade='paper-grade'); print(c[0].run_dir if c else '')")
+B1_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cells; c=get_cells(baseline='B1',site='reddit',mode='DOM',grade='paper-grade'); print(c[0].run_dir if c else '')")
+B2_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cells; c=get_cells(baseline='B2',site='classifieds',mode='DOM',grade='paper-grade'); print(c[0].run_dir if c else '')")
+B2_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cells; c=get_cells(baseline='B2',site='reddit',mode='DOM',grade='paper-grade'); print(c[0].run_dir if c else '')")
 
 # Legacy target retained for back-compat; alias to compare-baselines-all.
 compare-b0-b1-all: compare-baselines-all
 
 compare-baselines-all:
-	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_CLS) B1=$(B1_RUN_CLS) B2=$(B2_RUN_CLS) SITE=classifieds || true
-	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_RED) B1=$(B1_RUN_RED) B2=$(B2_RUN_RED) SITE=reddit || true
+	@if [ -z "$(B0_RUN_CLS)" ] || [ ! -d "$(B0_RUN_CLS)" ]; then \
+		echo "[compare-baselines-all] SKIP classifieds: paper-grade B0 DOM run is absent or not a directory: $(B0_RUN_CLS)"; \
+	elif [ -z "$(B1_RUN_CLS)" ] || [ ! -d "$(B1_RUN_CLS)" ]; then \
+		echo "[compare-baselines-all] SKIP classifieds: paper-grade B1 DOM run is absent or not a directory: $(B1_RUN_CLS)"; \
+	elif [ -n "$(B2_RUN_CLS)" ] && [ ! -d "$(B2_RUN_CLS)" ]; then \
+		echo "[compare-baselines-all] SKIP classifieds: paper-grade B2 DOM run is not a directory: $(B2_RUN_CLS)"; \
+	else \
+		$(MAKE) --no-print-directory compare B0="$(B0_RUN_CLS)" B1="$(B1_RUN_CLS)" B2="$(B2_RUN_CLS)" SITE=classifieds; \
+	fi
+	@if [ -z "$(B0_RUN_RED)" ] || [ ! -d "$(B0_RUN_RED)" ]; then \
+		echo "[compare-baselines-all] SKIP reddit: paper-grade B0 DOM run is absent or not a directory: $(B0_RUN_RED)"; \
+	elif [ -z "$(B1_RUN_RED)" ] || [ ! -d "$(B1_RUN_RED)" ]; then \
+		echo "[compare-baselines-all] SKIP reddit: paper-grade B1 DOM run is absent or not a directory: $(B1_RUN_RED)"; \
+	elif [ -n "$(B2_RUN_RED)" ] && [ ! -d "$(B2_RUN_RED)" ]; then \
+		echo "[compare-baselines-all] SKIP reddit: paper-grade B2 DOM run is not a directory: $(B2_RUN_RED)"; \
+	else \
+		$(MAKE) --no-print-directory compare B0="$(B0_RUN_RED)" B1="$(B1_RUN_RED)" B2="$(B2_RUN_RED)" SITE=reddit; \
+	fi
 
 # Paper-grade snapshot — one-shot "everything after new data":
 #   1. per-run pipeline (rederive + reason-diag + cross-rep + confidence) on

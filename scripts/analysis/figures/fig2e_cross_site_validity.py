@@ -114,6 +114,15 @@ def interpretation(value: float) -> str:
     return "symmetric"
 
 
+def fmt_ratio(value: Any) -> str:
+    """Format an optional stored ratio without crashing on partial cells."""
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    return f"{numeric:.2f}" if math.isfinite(numeric) else "n/a"
+
+
 def main() -> None:
     data = load_json()
     # 3-model deep-update 2026-05-18: iterate BASELINES registry (was hardcoded
@@ -150,8 +159,8 @@ def main() -> None:
     note = (
         "Aggregates Micro 2a URL divergence, 2b target-hit abs diff, 2c normalized keyword-repeat diff, "
         "and 2d first-action divergence. "
-        f"Existing axis-1 decision/macro ratios: red={cv.get('B0_reddit_ratio', float('nan')):.2f}, "
-        f"cls={cv.get('B0_classifieds_ratio', float('nan')):.2f}."
+        f"Existing axis-1 decision/macro ratios: red={fmt_ratio(cv.get('B0_reddit_ratio'))}, "
+        f"cls={fmt_ratio(cv.get('B0_classifieds_ratio'))}."
     )
     ax.set_title("Micro 2e — reddit/classifieds effect ratio", fontsize=13, fontweight="bold")
     ax.set_xticks(x, [label for _contrast, label in AXES])

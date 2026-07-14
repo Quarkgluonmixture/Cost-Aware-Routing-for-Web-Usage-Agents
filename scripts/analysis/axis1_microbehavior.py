@@ -78,9 +78,16 @@ def _build_step_dirs() -> dict[str, dict[str, dict[str, Path | None]]]:
     """
     try:
         from scripts.analysis.lib.run_registry import get_cells
-    except Exception as exc:  # pragma: no cover
-        warnings.warn(f"[axis1_microbehavior] run_registry import failed ({exc}); falling back to empty dirs", RuntimeWarning)
-        return {}
+    except ModuleNotFoundError:  # pragma: no cover - direct script execution.
+        sys.path.append(str(ROOT))
+        try:
+            from scripts.analysis.lib.run_registry import get_cells
+        except Exception as exc:
+            warnings.warn(
+                f"[axis1_microbehavior] run_registry import failed ({exc}); falling back to empty dirs",
+                RuntimeWarning,
+            )
+            return {}
 
     if _AXIS_GRADE == "paper-grade":
         grade_pref = ["paper-grade", "archived"]
@@ -121,6 +128,7 @@ def _build_step_dirs() -> dict[str, dict[str, dict[str, Path | None]]]:
 STEP_DIRS: dict[str, dict[str, dict[str, Path | None]]] = _build_step_dirs()
 BASELINES = ["B0", "B1", "B2"]
 SITES_LIST = ["reddit", "classifieds"]
+SKIPPED_TASK_INPUTS: list[str] = []
 
 MODE_LABELS = {
     "DOM": "DOM",
@@ -298,7 +306,13 @@ def per_task_mode_metrics(baseline: str, site: str, mode: str, task_configs: dic
         return out
     for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
         task_id = task_id_from_path(path)
-        steps = read_steps(path)
+        try:
+            steps = read_steps(path)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            label = f"{baseline}/{site}/{MODE_LABELS[mode]}/task_{task_id}"
+            SKIPPED_TASK_INPUTS.append(label)
+            print(f"[axis1_microbehavior] SKIP {label}: {exc}")
+            continue
         urls = {str(step.get("obs_url") or "") for step in steps if step.get("obs_url")}
         paths = {url_path(url) for url in urls if url}
         keywords = [text for step in steps if action_type(step) == "type" for text in [action_text(step)] if text]
@@ -555,6 +569,7 @@ def format_paths(paths: list[str]) -> str:
 
 
 def main() -> None:
+    SKIPPED_TASK_INPUTS.clear()
     task_configs = {site: load_task_configs(site) for site in SITES_LIST}
     # metrics_by_baseline[baseline][site][mode] -> dict task_id -> per-task metric
     metrics_by_baseline: dict[str, dict[str, dict[str, dict[int, dict[str, Any]]]]] = {}
@@ -582,6 +597,7 @@ def main() -> None:
         "target_extraction": {},
         "url_jaccard_range_checks": {},
     }
+    skipped_cells: list[str] = []
     for baseline in BASELINES:
         axis_contrasts[baseline] = {}
         for site in SITES_LIST:
@@ -597,7 +613,14 @@ def main() -> None:
                 left = site_metrics.get(left_mode, {})
                 right = site_metrics.get(right_mode, {})
                 if not left or not right:
-                    # Skip contrasts that need missing modes (B1 cls P-text / B1 red phantom)
+                    missing_modes = [
+                        MODE_LABELS[mode]
+                        for mode, data in ((left_mode, left), (right_mode, right))
+                        if not data
+                    ]
+                    label = f"{baseline}/{site}/{axis_name}: missing {', '.join(missing_modes)}"
+                    skipped_cells.append(label)
+                    print(f"[axis1_microbehavior] SKIP {label}")
                     axis_contrasts[baseline][site][axis_name] = {
                         "n": 0,
                         "skipped": True,
@@ -622,6 +645,11 @@ def main() -> None:
                     "value": value,
                     "pass": value is not None and 0.0 <= value <= 1.0,
                 }
+
+    print(
+        f"[axis1_microbehavior] SKIP summary: {len(skipped_cells)} partial cell contrast(s), "
+        f"{len(SKIPPED_TASK_INPUTS)} invalid task input(s)"
+    )
 
     ratio_block: dict[str, Any] = {
         "claim": "axis 1 decision-quality effect > axis 1 macro-action-freq effect",

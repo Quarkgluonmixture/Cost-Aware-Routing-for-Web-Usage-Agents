@@ -5,10 +5,17 @@ Output:
 - results/phantom_paper/figures/fig3_regional_carbon.png
 
 Regional carbon sensitivity from B1 measured episode energy.
+
+This sensitivity figure is deliberately permissive in the routine analysis
+pipeline: missing cells render as PARTIAL/NON_PAPER_GRADE with a watermark and
+an explicit stdout inventory.  ``--strict`` restores fail-closed behavior for
+verdict day.  This is intentionally the opposite default from the gate figure
+fig0c, whose numeric output is strict unless ``--allow-partial`` is requested.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import statistics
@@ -51,9 +58,16 @@ _SITE_LABELS = {
 }
 
 
-def _resolve_runs(grade: list | None = None, baseline: str = "B1") -> dict:
+def _resolve_runs(
+    grade: list | None = None,
+    baseline: str = "B1",
+    *,
+    strict: bool = False,
+) -> tuple[dict, list[str]]:
     """Map (site → {expected, label, DOM, SoM, Vision episodes}) using run_registry.
-    Raises RuntimeError if any required cell is missing.
+
+    Routine calls return available cells plus a missing-cell inventory.  With
+    ``strict=True``, any missing required cell raises RuntimeError.
 
     `baseline` defaults to "B1" (local Qwen3-VL-4B with NVML-measured energy). B2
     (Gemma3-VL, also local 4B → NVML-measurable, same deployment class) is a SYMMETRIC
@@ -77,13 +91,13 @@ def _resolve_runs(grade: list | None = None, baseline: str = "B1") -> dict:
                 continue
             site_entry[mode] = cells[0].episodes_dir
         out[site] = site_entry
-    if missing:
+    if missing and strict:
         raise RuntimeError(
             f"fig3_regional_carbon: missing paper-grade cells {missing} for baseline "
             f"{baseline!r}. Update run_manifest.yaml or set "
             "P79_AGGREGATOR_GRADE=archived for legacy sensitivity."
         )
-    return out
+    return out, missing
 
 
 # Lazy module-level placeholder; populated by main() at runtime.
@@ -155,8 +169,15 @@ def draw_world_reference(ax: plt.Axes, items: list[tuple[str, float]], energies:
     else:
         xpos = len(intensities) - 1
     ax.axvline(xpos, color="#555555", linestyle="--", linewidth=1.0, alpha=0.65)
-    som_world_y = energies["SoM"][0] * world
-    ax.axhline(som_world_y, color=COLORS["SoM"], linestyle="--", linewidth=1.0, alpha=0.38)
+    reference_mode = "SoM" if "SoM" in energies else next(iter(energies))
+    reference_world_y = energies[reference_mode][0] * world
+    ax.axhline(
+        reference_world_y,
+        color=COLORS[reference_mode],
+        linestyle="--",
+        linewidth=1.0,
+        alpha=0.38,
+    )
     ax.text(
         xpos + 0.25,
         0.96,
@@ -169,12 +190,12 @@ def draw_world_reference(ax: plt.Axes, items: list[tuple[str, float]], energies:
     )
     ax.text(
         len(items) - 1.0,
-        som_world_y,
-        "SoM @ world avg",
+        reference_world_y,
+        f"{reference_mode} @ world avg",
         ha="right",
         va="bottom",
         fontsize=7.5,
-        color="#9a4f08",
+        color=COLORS[reference_mode],
     )
 
 
@@ -182,9 +203,27 @@ def draw_site(ax: plt.Axes, site: str, items: list[tuple[str, float]], energies:
     x = list(range(len(items)))
     intensities = [intensity for _, intensity in items]
     for mode in MODES:
+        if mode not in energies:
+            continue
         median_kwh, _ = energies[mode]
         y = [median_kwh * intensity for intensity in intensities]
         ax.plot(x, y, color=COLORS[mode], linewidth=2.0, marker="o", markersize=2.6, label=mode)
+
+    if not energies:
+        ax.text(
+            0.5,
+            0.5,
+            "NO AVAILABLE ENERGY CELLS",
+            transform=ax.transAxes,
+            ha="center",
+            va="center",
+            fontsize=11,
+            color="#990000",
+        )
+        ax.set_title(RUNS[site]["label"], fontsize=12, fontweight="bold")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return
 
     draw_world_reference(ax, items, energies)
     pos = region_positions(items)
@@ -209,10 +248,11 @@ def draw_site(ax: plt.Axes, site: str, items: list[tuple[str, float]], energies:
             continue
         xpos = pos[region]
         ax.axvline(xpos, color="#999999", linestyle=":", linewidth=0.7, alpha=0.45)
-        som_y = energies["SoM"][0] * REGION_INTENSITY_G_PER_KWH[region]
+        reference_mode = "SoM" if "SoM" in energies else next(iter(energies))
+        reference_y = energies[reference_mode][0] * REGION_INTENSITY_G_PER_KWH[region]
         ax.annotate(
             DISPLAY_NAME[region],
-            xy=(xpos, som_y),
+            xy=(xpos, reference_y),
             xytext=(0, 12),
             textcoords="offset points",
             ha="center",
@@ -223,10 +263,19 @@ def draw_site(ax: plt.Axes, site: str, items: list[tuple[str, float]], energies:
         )
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Fail if any required cell or usable energy payload is missing.",
+    )
+    parser.add_argument("--baseline", default="B1", choices=("B1", "B2"))
+    args = parser.parse_args(argv)
+
     # F40 audit 2026-05-09: resolve RUNS at runtime via run_registry.
     global RUNS
-    RUNS = _resolve_runs()
+    RUNS, missing = _resolve_runs(baseline=args.baseline, strict=args.strict)
 
     items = region_items()
     print(
@@ -239,15 +288,35 @@ def main() -> None:
     for site, spec in RUNS.items():
         all_energies[site] = {}
         for mode in MODES:
-            median_kwh, n = median_energy_kwh(spec[mode], spec["expected"])
+            ep_dir = spec.get(mode)
+            if ep_dir is None:
+                continue
+            try:
+                median_kwh, n = median_energy_kwh(ep_dir, spec["expected"])
+            except RuntimeError as exc:
+                if args.strict:
+                    raise
+                label = f"{args.baseline} {site} {mode} (no usable energy)"
+                missing.append(label)
+                print(f"[fig3_regional_carbon] SKIP {label}: {exc}")
+                continue
             all_energies[site][mode] = (median_kwh, n)
             print(f"{site} {mode}: median_energy={median_kwh:.8f} kWh n={n}")
         for region in ["norway", "france", "usa", "china", "india", "poland", "south_africa"]:
+            if not all_energies[site]:
+                continue
             vals = ", ".join(
                 f"{mode}={all_energies[site][mode][0] * REGION_INTENSITY_G_PER_KWH[region]:.3f}g"
-                for mode in MODES
+                for mode in MODES if mode in all_energies[site]
             )
             print(f"{site} {DISPLAY_NAME[region]} ({REGION_INTENSITY_G_PER_KWH[region]:.0f}): {vals}")
+
+    missing = list(dict.fromkeys(missing))
+    if missing:
+        print("[fig3_regional_carbon] PARTIAL/NON_PAPER_GRADE: rendering available cells")
+        for label in missing:
+            print(f"[fig3_regional_carbon] SKIP missing cell: {label}")
+        print(f"[fig3_regional_carbon] missing cell count: {len(missing)}")
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
@@ -256,15 +325,20 @@ def main() -> None:
         draw_site(ax, site, items, all_energies[site])
 
     pending_handles = [
-        Line2D([0], [0], color=COLORS["Phantom-SoM"], linestyle=":", lw=2, label="Phantom-SoM (B1) pending"),
-        Line2D([0], [0], color=COLORS["P-text"], linestyle=":", lw=2, label="P-text (B1) pending"),
-        Line2D([0], [0], color=COLORS["Phantom-prompt"], linestyle=":", lw=2, label="P-prompt (B1) pending"),
+        Line2D([0], [0], color=COLORS["Phantom-SoM"], linestyle=":", lw=2, label=f"Phantom-SoM ({args.baseline}) pending"),
+        Line2D([0], [0], color=COLORS["P-text"], linestyle=":", lw=2, label=f"P-text ({args.baseline}) pending"),
+        Line2D([0], [0], color=COLORS["Phantom-prompt"], linestyle=":", lw=2, label=f"P-prompt ({args.baseline}) pending"),
     ]
-    handles, labels = axes[0].get_legend_handles_labels()
+    handles_by_label: dict[str, Line2D] = {}
+    for ax in axes:
+        handles, labels = ax.get_legend_handles_labels()
+        handles_by_label.update(zip(labels, handles))
+    handles = list(handles_by_label.values())
+    labels = list(handles_by_label)
     axes[1].legend(handles + pending_handles, labels + [h.get_label() for h in pending_handles], loc="upper right", fontsize=8.5)
 
     fig.suptitle(
-        "Regional Carbon Sensitivity (B1 Qwen3-VL-4B local; B0 235B proxy API not measurable)",
+        f"Regional Carbon Sensitivity ({args.baseline} local; B0 235B proxy API not measurable)",
         fontsize=15,
         fontweight="bold",
     )
@@ -275,17 +349,32 @@ def main() -> None:
     fig.text(
         0.5,
         0.02,
-        f"Energy from B1 (Qwen3-VL-4B) NVML measurement on cls (N={_SITE_N['classifieds']}) / red (N={_SITE_N['reddit']}). "
+        f"Energy from {args.baseline} local 4B NVML measurement on cls (N={_SITE_N['classifieds']}) / red (N={_SITE_N['reddit']}). "
         "Per-region intensity from IEA 2023 / ElectricityMaps. "
         "B0 (Qwen3-VL-235B via proxy API) energy is not directly observable on local hardware; B1 measurement serves as a lower-bound reference for representation-driven carbon sensitivity.",
         ha="center",
         fontsize=7.8,
         color="#555555",
     )
+    if missing:
+        fig.text(
+            0.5,
+            0.5,
+            "PARTIAL/NON_PAPER_GRADE",
+            fontsize=25,
+            color="#CC0000",
+            alpha=0.18,
+            ha="center",
+            va="center",
+            rotation=18,
+            zorder=10,
+        )
     fig.tight_layout(rect=(0, 0.07, 1, 0.91))
     fig.savefig(OUT, bbox_inches="tight")
+    plt.close(fig)
     print(OUT)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
