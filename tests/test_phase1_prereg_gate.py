@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import math
 import tempfile
+import csv
 from pathlib import Path
 
 import numpy as np
@@ -90,6 +91,14 @@ def _make_synthetic_cell(tmp: Path, baseline: str, site: str,
     }
 
 
+def _expected_for_cell(cell: dict) -> set[int]:
+    return set(range(cell["n_expected"]))
+
+
+def _expected_by_site(cells: list[dict]) -> dict[str, set[int]]:
+    return {cell["site"]: _expected_for_cell(cell) for cell in cells}
+
+
 # ─── _norm_cdf sanity ───────────────────────────────────────────────────────
 def test_norm_cdf_canonical_values():
     """Φ at known points (no scipy needed)."""
@@ -103,8 +112,8 @@ def test_cell_drop_one_theta_matches_psom_only_fraction(tmp_path):
     """θ_pp should equal `psom_only / common × 100`."""
     cell = _make_synthetic_cell(tmp_path, "B1", "classifieds",
                                 psom_only_count=5, common_count=100)
-    result = _cell_drop_one_theta_se(cell)
-    assert result is not None
+    result = _cell_drop_one_theta_se(cell, expected_ids=_expected_for_cell(cell))
+    assert result["complete_exact"] is True
     assert result["n_tasks"] == 100
     assert result["theta_pp"] == pytest.approx(5.0, abs=1e-9)
     assert result["n_psom_only"] == 5
@@ -114,23 +123,28 @@ def test_cell_drop_one_theta_matches_psom_only_fraction(tmp_path):
 
 
 def test_cell_drop_one_skipped_when_mode_missing(tmp_path):
-    """If any of 6 modes is absent → returns None."""
+    """If any of 6 modes is absent → explicit exact-set diagnostic."""
     cell = _make_synthetic_cell(tmp_path, "B1", "classifieds",
                                 psom_only_count=5, common_count=100)
     # Remove P-prompt directory entirely
     import shutil
     shutil.rmtree(cell["modes"]["P-prompt"])
     cell["modes"].pop("P-prompt")
-    result = _cell_drop_one_theta_se(cell)
-    assert result is None
+    result = _cell_drop_one_theta_se(cell, expected_ids=_expected_for_cell(cell))
+    assert result["complete_exact"] is False
+    assert result["observed_n"]["P-prompt"] == 0
+    assert result["missing_ids"]["P-prompt"] == list(range(100))
 
 
 def test_bootstrap_se_deterministic(tmp_path):
     """Same cell + same seed → identical SE every call (B-176 + prereg lock)."""
     cell = _make_synthetic_cell(tmp_path, "B1", "reddit",
                                 psom_only_count=10, common_count=200)
-    r1 = _cell_drop_one_theta_se(cell, B=PREREG_B, seed=PREREG_SEED)
-    r2 = _cell_drop_one_theta_se(cell, B=PREREG_B, seed=PREREG_SEED)
+    expected = _expected_for_cell(cell)
+    r1 = _cell_drop_one_theta_se(cell, B=PREREG_B, seed=PREREG_SEED,
+                                 expected_ids=expected)
+    r2 = _cell_drop_one_theta_se(cell, B=PREREG_B, seed=PREREG_SEED,
+                                 expected_ids=expected)
     assert r1["se_pp"] == r2["se_pp"]
     assert r1["ci95_lo_pp"] == r2["ci95_lo_pp"]
     assert r1["ci95_hi_pp"] == r2["ci95_hi_pp"]
@@ -142,8 +156,12 @@ def test_bootstrap_se_scales_with_n(tmp_path):
                                       psom_only_count=5, common_count=50)
     cell_big = _make_synthetic_cell(tmp_path / "big", "B1", "reddit",
                                     psom_only_count=20, common_count=200)
-    se_small = _cell_drop_one_theta_se(cell_small)["se_pp"]
-    se_big = _cell_drop_one_theta_se(cell_big)["se_pp"]
+    se_small = _cell_drop_one_theta_se(
+        cell_small, expected_ids=_expected_for_cell(cell_small)
+    )["se_pp"]
+    se_big = _cell_drop_one_theta_se(
+        cell_big, expected_ids=_expected_for_cell(cell_big)
+    )["se_pp"]
     assert se_big < se_small, f"SE should shrink with n; got small={se_small} big={se_big}"
 
 
@@ -247,8 +265,10 @@ def test_build_gate_six_cells_passes(tmp_path):
                              psom_only_count=10, common_count=100)
         for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
-    payload = build_gate(cells)
+    payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     assert payload["gate_status"] == "PASS"
+    assert payload["analysis_status"] == "COMPLETE"
+    assert payload["h1_verdict"] == "PASS"
     assert len(payload["per_cell"]) == 6
     fe = payload["pooled_fe"]
     # θ_FE = 10pp (each cell has 10/100=10% of tasks only P-SoM saves), >> δ=1.0pp
@@ -266,11 +286,13 @@ def test_build_gate_six_cells_at_threshold_fails(tmp_path):
                              psom_only_count=1, common_count=100)
         for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
-    payload = build_gate(cells)
+    payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     fe = payload["pooled_fe"]
     # θ_FE ≈ 1.0pp ≈ δ → z ≈ 0, p ≈ 0.5 > α → FAIL
     assert fe["gate_passed"] is False
     assert payload["gate_status"] == "FAIL"
+    assert payload["analysis_status"] == "COMPLETE"
+    assert payload["h1_verdict"] == "FAIL"
 
 
 def test_build_gate_partial_data_three_cells(tmp_path):
@@ -280,8 +302,10 @@ def test_build_gate_partial_data_three_cells(tmp_path):
                              psom_only_count=10, common_count=100)
         for s in ["classifieds", "reddit", "shopping"]
     ]
-    payload = build_gate(cells)
+    payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     assert payload["gate_status"] == "PARTIAL_DATA"
+    assert payload["analysis_status"] == "PARTIAL"
+    assert payload["h1_verdict"] == "NOT_EVALUATED"
     assert len(payload["per_cell"]) == 3
     assert "pooled_fe" in payload
 
@@ -294,7 +318,7 @@ def test_write_csv_per_cell_and_pooled_rows(tmp_path):
                              psom_only_count=10, common_count=100)
         for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
-    payload = build_gate(cells)
+    payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     out_csv = tmp_path / "phase1_prereg_gate.csv"
     write_csv(payload, out_csv)
     text = out_csv.read_text()
@@ -303,6 +327,9 @@ def test_write_csv_per_cell_and_pooled_rows(tmp_path):
     rows = [r for r in text.splitlines() if r.strip()]
     assert len(rows) == 1 + 6 + 1  # header + cells + pool
     assert any(r.startswith("pooled_FE,") for r in rows)
+    parsed = list(csv.DictReader(out_csv.open(encoding="utf-8")))
+    assert all(row["n_tasks"] == "100" for row in parsed if row["row_type"] == "cell")
+    assert all(None not in row for row in parsed)  # no overflow columns
 
 
 def test_write_json_round_trips(tmp_path):
@@ -311,7 +338,7 @@ def test_write_json_round_trips(tmp_path):
                              psom_only_count=5, common_count=100)
         for s in ["classifieds", "reddit"]
     ]
-    payload = build_gate(cells)
+    payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     out_json = tmp_path / "phase1_prereg_gate.json"
     write_json(payload, out_json)
     loaded = json.loads(out_json.read_text())
@@ -326,7 +353,7 @@ def test_write_md_renders(tmp_path):
                              psom_only_count=10, common_count=100)
         for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
-    payload = build_gate(cells)
+    payload = build_gate(cells, expected_ids_by_site=_expected_by_site(cells))
     out_md = tmp_path / "phase1_prereg_gate.md"
     write_md(payload, out_md)
     text = out_md.read_text()

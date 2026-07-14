@@ -76,6 +76,12 @@ from scripts.analysis.aggregate_phantom_lift import (  # noqa: E402
     MIN_EP_FOR_CELL,
     load,
 )
+from scripts.analysis.lib.atomic_io import atomic_write_text  # noqa: E402
+from scripts.analysis.lib.canonical_task_universe import (  # noqa: E402
+    expected_scored_ids,
+    task_id_set_sha256,
+)
+from scripts.analysis.lib.canonical_cells import PHASE_1A_PLANNED_CELLS  # noqa: E402
 
 # B-176 lock: bootstrap seed=42, B=1000 per prereg "1000-resample".
 # (Note: prereg explicitly says 1000, NOT the 10_000 used in `analyze_run`
@@ -106,36 +112,60 @@ def _norm_cdf(x: float) -> float:
 
 def _cell_drop_one_theta_se(
     cell: Dict, *, B: int = PREREG_B, seed: int = PREREG_SEED,
-) -> Optional[Dict]:
+    expected_ids: Optional[frozenset[int] | set[int]] = None,
+) -> Dict:
     """Compute per-cell drop-one effect + bootstrap SE per prereg spec.
 
-    Returns None if the cell does NOT contain all 6 modes (oracle_6 undefined)
-    OR any present mode is below MIN_EP_FOR_CELL.
+    Returns an explicit ``complete_exact=False`` diagnostic if any mode's
+    observed IDs differ from the canonical scored task universe.  Missing and
+    extra IDs therefore fail closed instead of being hidden by an intersection.
 
     Otherwise returns:
         {baseline, site, n_tasks, theta_pp, se_pp, ci95_lo_pp, ci95_hi_pp,
          oracle_6_pp, oracle_5_no_psom_pp, n_psom_only}
     """
+    if expected_ids is None:
+        expected, task_set_sha = expected_scored_ids(cell["site"])
+    else:
+        expected = frozenset(int(t) for t in expected_ids)
+        task_set_sha = task_id_set_sha256(expected)
+
     # Load per-mode (success, observed) sets via the shared `load` primitive.
     succ: Dict[str, set] = {}
     obs: Dict[str, set] = {}
-    for mode, ep_dir in cell["modes"].items():
-        s, o = load(ep_dir)
-        if len(o) < MIN_EP_FOR_CELL:
-            continue  # skip below-threshold modes (won't make universe anyway)
+    for mode in SIX_MODES:
+        ep_dir = cell.get("modes", {}).get(mode)
+        if ep_dir is None:
+            s, o = set(), set()
+        else:
+            s, o = load(ep_dir)
         succ[mode] = s
         obs[mode] = o
 
-    # Require ALL 6 modes present (prereg: "cells containing all 6 modes").
-    if any(m not in succ for m in SIX_MODES):
-        return None
+    observed_n = {m: len(obs[m]) for m in SIX_MODES}
+    missing_ids = {m: sorted(expected - obs[m]) for m in SIX_MODES}
+    extra_ids = {m: sorted(obs[m] - expected) for m in SIX_MODES}
+    complete_exact = all(obs[m] == expected for m in SIX_MODES)
+    diagnostics = {
+        "baseline": cell["baseline"],
+        "site": cell["site"],
+        "complete_exact": complete_exact,
+        "expected_n": len(expected),
+        "observed_n": observed_n,
+        "missing_ids": missing_ids,
+        "extra_ids": extra_ids,
+        "task_set_sha256": task_set_sha,
+    }
+    if not complete_exact:
+        diagnostics["incomplete_reason"] = (
+            "one or more modes do not exactly match the canonical scored task-ID set"
+        )
+        return diagnostics
 
-    # Universe = intersection of observed task IDs across all 6 modes
-    # (only tasks where every mode reports a result are eligible).
-    universe = set.intersection(*[obs[m] for m in SIX_MODES])
-    n = len(universe)
-    if n < MIN_EP_FOR_CELL:
-        return None
+    # Exact equality makes the prereg universe the canonical scored set, not a
+    # data-dependent intersection of whichever tasks happened to be observed.
+    universe = set(expected)
+    n = len(expected)
 
     universe_sorted = sorted(universe)
 
@@ -170,8 +200,7 @@ def _cell_drop_one_theta_se(
     ci_hi = float(np.quantile(boot_thetas, 0.975))
 
     return {
-        "baseline": cell["baseline"],
-        "site": cell["site"],
+        **diagnostics,
         "n_tasks": n,
         "theta_pp": theta_pp,
         "se_pp": se_pp,
@@ -255,7 +284,10 @@ def _fe_pool(per_cell: List[Dict]) -> Optional[Dict]:
     }
 
 
-def build_gate(cells: List[Dict]) -> Dict:
+def build_gate(
+    cells: List[Dict], *,
+    expected_ids_by_site: Optional[Dict[str, frozenset[int] | set[int]]] = None,
+) -> Dict:
     """End-to-end gate computation across the provided cell list.
 
     Returns a structured payload with per-cell rows + pooled FE result +
@@ -264,12 +296,15 @@ def build_gate(cells: List[Dict]) -> Dict:
     per_cell: List[Dict] = []
     skipped: List[Dict] = []
     for cell in cells:
-        result = _cell_drop_one_theta_se(cell)
-        if result is None:
+        expected_ids = (
+            expected_ids_by_site.get(cell["site"])
+            if expected_ids_by_site is not None else None
+        )
+        result = _cell_drop_one_theta_se(cell, expected_ids=expected_ids)
+        if not result["complete_exact"]:
             skipped.append({
-                "baseline": cell["baseline"],
-                "site": cell["site"],
-                "reason": "missing one or more of the 6 modes OR below MIN_EP_FOR_CELL",
+                **result,
+                "reason": result["incomplete_reason"],
             })
         else:
             per_cell.append(result)
@@ -286,6 +321,16 @@ def build_gate(cells: List[Dict]) -> Dict:
     }
 
     fe = _fe_pool(per_cell)
+    planned = {(site, baseline) for site, baseline in PHASE_1A_PLANNED_CELLS}
+    exact_cells = {(r["site"], r["baseline"]) for r in per_cell}
+    if fe is None:
+        analysis_status = "INSUFFICIENT"
+    elif len(per_cell) == len(planned) and exact_cells == planned:
+        analysis_status = "COMPLETE"
+    else:
+        analysis_status = "PARTIAL"
+    payload["analysis_status"] = analysis_status
+    payload["h1_verdict"] = "NOT_EVALUATED"
     if len(per_cell) == 0:
         payload["gate_status"] = "INSUFFICIENT_DATA"
         payload["gate_status_reason"] = (
@@ -314,6 +359,9 @@ def build_gate(cells: List[Dict]) -> Dict:
             f"p_one_sided={fe['p_one_sided']:.4f}, α={ALPHA}, δ={DELTA_PP}pp."
         )
 
+    if analysis_status == "COMPLETE" and fe is not None:
+        payload["h1_verdict"] = "PASS" if fe["gate_passed"] else "FAIL"
+
     return payload
 
 
@@ -323,16 +371,18 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
     lines = [
         "row_type,baseline,site,k_cells,n_tasks,theta_pp,se_pp,ci95_lo_pp,"
         "ci95_hi_pp,oracle_6_pp,oracle_5_no_psom_pp,n_psom_only,"
-        "z_one_sided,p_one_sided,gate_passed,gate_status",
+        "z_one_sided,p_one_sided,gate_passed,gate_status,analysis_status,h1_verdict",
     ]
     gs = payload.get("gate_status", "UNKNOWN")
+    analysis_status = payload.get("analysis_status", "INSUFFICIENT")
+    h1_verdict = payload.get("h1_verdict", "NOT_EVALUATED")
     for r in payload["per_cell"]:
         lines.append(
-            f"cell,{r['baseline']},{r['site']},,,{r['n_tasks']},"
+            f"cell,{r['baseline']},{r['site']},,{r['n_tasks']},"
             f"{r['theta_pp']:.4f},{r['se_pp']:.4f},"
             f"{r['ci95_lo_pp']:.4f},{r['ci95_hi_pp']:.4f},"
             f"{r['oracle_6_pp']:.4f},{r['oracle_5_no_psom_pp']:.4f},"
-            f"{r['n_psom_only']},,,,{gs}"
+            f"{r['n_psom_only']},,,,{gs},{analysis_status},{h1_verdict}"
         )
     fe = payload.get("pooled_fe")
     if fe is not None:
@@ -341,9 +391,9 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
             f"{fe['theta_FE_pp']:.4f},{fe['se_FE_pp']:.4f},"
             f"{fe['ci95_FE_lo_pp']:.4f},{fe['ci95_FE_hi_pp']:.4f},"
             f",,,{fe['z_one_sided']:.4f},{fe['p_one_sided']:.6f},"
-            f"{fe['gate_passed']},{gs}"
+            f"{fe['gate_passed']},{gs},{analysis_status},{h1_verdict}"
         )
-    out_csv.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(out_csv, "\n".join(lines) + "\n")
 
 
 def _json_default(o):
@@ -367,9 +417,9 @@ def _json_default(o):
 
 def write_json(payload: Dict, out_json: Path) -> None:
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(
+    atomic_write_text(
+        out_json,
         json.dumps(payload, indent=2, ensure_ascii=False, default=_json_default) + "\n",
-        encoding="utf-8",
     )
 
 
@@ -389,6 +439,8 @@ def write_md(payload: Dict, out_md: Path) -> None:
         f"- **seed = {PREREG_SEED}** (B-176 pinned)",
         "",
         f"**Gate status**: `{payload.get('gate_status', 'UNKNOWN')}`",
+        f"**Analysis status**: `{payload.get('analysis_status', 'INSUFFICIENT')}`",
+        f"**H1 verdict**: `{payload.get('h1_verdict', 'NOT_EVALUATED')}`",
         "",
         payload.get("gate_status_reason", ""),
         "",
@@ -434,7 +486,7 @@ def write_md(payload: Dict, out_md: Path) -> None:
         "_codex B2 catch — different estimand) and `meta_phantom_lift.csv` (DerSimonian-Laird_",
         "_random-effects, B-182 marked appendix-only)._",
     ]
-    out_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(out_md, "\n".join(lines) + "\n")
 
 
 def main() -> int:

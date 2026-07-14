@@ -46,6 +46,7 @@ import os
 import statistics
 import subprocess
 import sys
+import uuid
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -73,6 +74,8 @@ from scripts.analysis.aggregate_phase1_prereg_gate import (  # noqa: E402
     PREREG_SEED,
     SIX_MODES,
 )
+from scripts.analysis.lib.atomic_io import atomic_write_text  # noqa: E402
+from scripts.analysis.lib.canonical_cells import PHASE_1A_PLANNED_CELLS  # noqa: E402
 
 DEFAULT_OUT_CSV = REPO / "results/phantom_paper/phase1_full_prereg_decision.csv"
 DEFAULT_OUT_JSON = REPO / "results/phantom_paper/phase1_full_prereg_decision.json"
@@ -121,7 +124,11 @@ def _prereg_sha() -> Optional[str]:
 def _self_code_sha() -> str:
     """SHA of this script + the B-184 helper module (covers H1 + FE pool path)."""
     h = hashlib.sha256()
-    for p in (Path(__file__), REPO / "scripts/analysis/aggregate_phase1_prereg_gate.py"):
+    for p in (
+        Path(__file__),
+        REPO / "scripts/analysis/aggregate_phase1_prereg_gate.py",
+        REPO / "scripts/analysis/lib/canonical_task_universe.py",
+    ):
         with p.open("rb") as f:
             h.update(f.read())
     return h.hexdigest()
@@ -374,6 +381,9 @@ def _h3_axis_per_cell(per_task: Dict[str, Dict[str, Dict]], axis_mode: str,
         "universe_label": "six_arm_complete_case" if universe is not None else "axis_intersection_legacy",
         "unique_count_pp": count_pp,
         "n_unique": int(unique.sum()),
+        # Prereg H3(iii): the >=2-task threshold is a per-cell label only.
+        # It MUST NOT filter the six-cell FE estimand (F4/P0-4).
+        "cell_pass": bool(int(unique.sum()) >= 2),
         "se_pp": se_pp,
         "ci95_lo_pp": ci_lo,
         "ci95_hi_pp": ci_hi,
@@ -394,7 +404,8 @@ def _h3_axis_per_cell(per_task: Dict[str, Dict[str, Dict]], axis_mode: str,
 
 def _pool_bootstrap_percentile_p(per_cell_with_boot: List[Dict], *,
                                   theta_null_pp: float = 1.0,
-                                  alpha: float = 0.05) -> Optional[Dict]:
+                                  alpha: float = 0.05,
+                                  floor_nonpositive_only: bool = False) -> Optional[Dict]:
     """Paired-bootstrap pool replicate FE percentile p-value.
 
     Implements the prereg-locked B-1009 primary gate (preregistration.md §2 H1
@@ -440,9 +451,10 @@ def _pool_bootstrap_percentile_p(per_cell_with_boot: List[Dict], *,
     ses = np.array([float(c["se_pp"]) for c in per_cell_with_boot])
     SE_FLOOR_THRESHOLD_PP = 0.68
     SE_FLOOR_REPLACE_PP = 1.0
-    n_below_floor = int((ses < SE_FLOOR_THRESHOLD_PP).sum())
+    floor_mask = (ses <= 0) if floor_nonpositive_only else (ses < SE_FLOOR_THRESHOLD_PP)
+    n_below_floor = int(floor_mask.sum())
     if n_below_floor > 0:
-        ses = np.where(ses < SE_FLOOR_THRESHOLD_PP, SE_FLOOR_REPLACE_PP, ses)
+        ses = np.where(floor_mask, SE_FLOOR_REPLACE_PP, ses)
     w = 1.0 / (ses ** 2)
     sum_w = float(np.sum(w))
     # IV-weighted pool per iter b: θ_FE_b = Σ(w_i · θ_i_b) / Σw_i
@@ -463,14 +475,128 @@ def _pool_bootstrap_percentile_p(per_cell_with_boot: List[Dict], *,
         "theta_fe_bootstrap_median_pp": theta_fe_bootstrap_median_pp,
         "gate_passed_bootstrap": bool(p_one_sided_bootstrap < alpha),
         "n_below_se_floor": n_below_floor,
+        "n_zero_se_floored_cells": int((np.array(
+            [float(c["se_pp"]) for c in per_cell_with_boot]
+        ) <= 0).sum()),
         "se_floor_threshold_pp": SE_FLOOR_THRESHOLD_PP,
         "se_floor_replace_pp": SE_FLOOR_REPLACE_PP,
+        "se_floor_rule": "ses<=0" if floor_nonpositive_only else "ses<0.68pp",
         "method_note": (
             "Davidson-MacKinnon 2000 / Hall 1992 paired-bootstrap pool: "
             "fixed point-estimate IV weights × per-cell bootstrap θ_i_b → "
             "pooled θ_FE_b distribution; one-sided percentile p at H0: "
             "θ_FE ≤ theta_null_pp; bootstrap percentile two-sided 95% CI."
         ),
+    }
+
+
+H3_MIN_UNIQUE_TASKS = 2
+H3_REQUIRED_CELLS = 6
+
+
+def _h3_axis_pooled_fe(per_cell_list: List[Dict], axis_name: str) -> Dict:
+    """Pool every available planned-cell H3 estimate without outcome filtering.
+
+    ``n_unique < 2`` is recorded only through each row's ``cell_pass`` label and
+    the noise-floor count.  Numeric interim pools are emitted at k=2..5, but an
+    axis verdict is evaluated only for the preregistered exact-six-cell design.
+    """
+    k_input = len(per_cell_list)
+    n_noise = sum(
+        1 for r in per_cell_list if r.get("n_unique", 0) < H3_MIN_UNIQUE_TASKS
+    )
+    base = {
+        "axis": axis_name,
+        "k_cells": k_input,
+        "k_cells_input": k_input,
+        "k_cells_required": H3_REQUIRED_CELLS,
+        "n_noise_floor_cells": n_noise,
+        # Backward-compatible field retained, now truthfully zero because F4
+        # restores all data-bearing planned cells to the pool.
+        "n_noise_floor_cells_skipped": 0,
+        "n_cell_pass": k_input - n_noise,
+        "noise_floor_threshold_unique_tasks": H3_MIN_UNIQUE_TASKS,
+        "analysis_status": (
+            "INSUFFICIENT" if k_input < 2
+            else "COMPLETE" if k_input == H3_REQUIRED_CELLS
+            else "PARTIAL"
+        ),
+        "axis_verdict": "NOT_EVALUATED",
+        "passed": None,
+    }
+    if k_input < 2:
+        return {
+            **base,
+            "theta_FE_pp": None,
+            "se_FE_pp": None,
+            "ci95_FE_lo_pp": None,
+            "ci95_FE_hi_pp": None,
+            "ci95_lo_pp_bootstrap": None,
+            "ci95_hi_pp_bootstrap": None,
+            "p_one_sided_bootstrap": None,
+            "theta_fe_bootstrap_median_pp": None,
+            "z_one_sided": None,
+            "p_one_sided": None,
+            "alpha": ALPHA,
+            "n_zero_se_floored_cells": 0,
+            "reason": "fewer than 2 data-bearing cells; FE pool undefined",
+        }
+
+    thetas = np.array([r["unique_count_pp"] for r in per_cell_list])
+    ses_raw = np.array([r["se_pp"] for r in per_cell_list])
+    zero_mask = ses_raw <= 0
+    n_zero_se = int(zero_mask.sum())
+    # Normative A1.21 degenerate-cell rule for H3: only non-positive SEs are
+    # replaced with the fixed 1.0pp floor; low-but-positive SEs remain inputs.
+    ses = np.where(zero_mask, 1.0, ses_raw)
+    w = 1.0 / (ses ** 2)
+    theta_fe = float(np.sum(w * thetas) / np.sum(w))
+    se_fe = float(math.sqrt(1.0 / np.sum(w)))
+    ci_lo = theta_fe - 1.96 * se_fe
+    ci_hi = theta_fe + 1.96 * se_fe
+    z = theta_fe / max(se_fe, 1e-12)
+    p_one_sided = 1.0 - _norm_cdf(z)
+    boot_payload = _pool_bootstrap_percentile_p(
+        per_cell_list,
+        theta_null_pp=0.0,
+        alpha=ALPHA,
+        floor_nonpositive_only=True,
+    )
+    passed_ci_bootstrap = bool(
+        boot_payload is not None
+        and boot_payload.get("ci95_lo_pp_bootstrap") is not None
+        and boot_payload["ci95_lo_pp_bootstrap"] > 0.0
+    )
+    complete = k_input == H3_REQUIRED_CELLS
+    return {
+        **base,
+        "theta_FE_pp": theta_fe,
+        "se_FE_pp": se_fe,
+        "ci95_FE_lo_pp": ci_lo,
+        "ci95_FE_hi_pp": ci_hi,
+        "ci95_lo_pp_bootstrap": (boot_payload or {}).get("ci95_lo_pp_bootstrap"),
+        "ci95_hi_pp_bootstrap": (boot_payload or {}).get("ci95_hi_pp_bootstrap"),
+        "p_one_sided_bootstrap": (boot_payload or {}).get("p_one_sided_bootstrap"),
+        "theta_fe_bootstrap_median_pp": (boot_payload or {}).get(
+            "theta_fe_bootstrap_median_pp"
+        ),
+        "z_one_sided": z,
+        "p_one_sided": p_one_sided,
+        "alpha": ALPHA,
+        "gate_rule": (
+            "bootstrap_percentile_CI_lower_bound > 0, evaluated only when "
+            "k_cells_input == 6"
+        ),
+        "axis_verdict": (
+            "PASS" if complete and passed_ci_bootstrap
+            else "FAIL" if complete
+            else "NOT_EVALUATED"
+        ),
+        "passed": passed_ci_bootstrap if complete else None,
+        "interim_ci_excludes_zero": passed_ci_bootstrap,
+        "passed_wald_ci_legacy": bool(ci_lo > 0.0),
+        "passed_p_one_sided_legacy": bool(p_one_sided < ALPHA),
+        "n_zero_se_floored_cells": n_zero_se,
     }
 
 
@@ -739,16 +865,25 @@ def _apply_b2_cross_family_downgrade(framing: Dict, per_cell_data: List[Dict]) -
 # Build canonical full decision
 # ---------------------------------------------------------------------------
 
-def build_full_decision(cells: List[Dict]) -> Dict:
+def build_full_decision(
+    cells: List[Dict], *,
+    expected_ids_by_site: Optional[Dict[str, frozenset[int] | set[int]]] = None,
+) -> Dict:
     """End-to-end H1 + H2(a) + H3 axes + I² cap + framing rule."""
     per_cell_data = []
     skipped = []
     for cell in cells:
         # H1 per cell (reuses B-184 path → bit-identical to phase1_prereg_gate)
-        h1_per_cell = _cell_drop_one_theta_se(cell)
-        if h1_per_cell is None:
-            skipped.append({"baseline": cell["baseline"], "site": cell["site"],
-                            "reason": "H1 missing one of 6 modes OR below MIN_EP_FOR_CELL"})
+        expected_ids = (
+            expected_ids_by_site.get(cell["site"])
+            if expected_ids_by_site is not None else None
+        )
+        h1_per_cell = _cell_drop_one_theta_se(cell, expected_ids=expected_ids)
+        if not h1_per_cell["complete_exact"]:
+            skipped.append({
+                **h1_per_cell,
+                "reason": h1_per_cell["incomplete_reason"],
+            })
             continue
         per_task = _load_cell_per_task(cell)
         h2a = _h2a_per_task_ratio(per_task)
@@ -853,6 +988,16 @@ def build_full_decision(cells: List[Dict]) -> Dict:
         "per_cell": per_cell_data,
         "skipped_cells": skipped,
     }
+
+    planned = {(site, baseline) for site, baseline in PHASE_1A_PLANNED_CELLS}
+    exact_cells = {(c["site"], c["baseline"]) for c in per_cell_data}
+    if len(per_cell_data) < 2:
+        payload["analysis_status"] = "INSUFFICIENT"
+    elif len(per_cell_data) == len(planned) and exact_cells == planned:
+        payload["analysis_status"] = "COMPLETE"
+    else:
+        payload["analysis_status"] = "PARTIAL"
+    payload["h1_verdict"] = "NOT_EVALUATED"
 
     # B-1002 (/stress A2.4a P0-1-A* Claude OOB, 2026-05-18): paper-grade strict
     # k=6 gate. Pre-fix code branched k<2→INSUFFICIENT_DATA, k=2-5→silently pools.
@@ -988,77 +1133,6 @@ def build_full_decision(cells: List[Dict]) -> Dict:
 
     # H3 axis-1 FE pool
     h3a_per_cell = [c["h3_axis1"] for c in per_cell_data if c["h3_axis1"] is not None]
-    # B-949 (/stress A2.3a P0-7-B, 2026-05-17): H3 gate threshold reform —
-    # pre-fix used `p_one_sided < α` (z > 1.645 at α=0.05) but prereg
-    # `preregistration.md:163` writes gate as "FE CI excludes 0" (z > 1.96
-    # = 95% CI lower > 0). The two are NOT equivalent: one-sided p<0.05 is
-    # easier to pass than CI-excludes-0. Per-cell `n_unique=1` floor from
-    # `preregistration.md:165` ("≥ 2 tasks per cell") was also unenforced —
-    # noise-floor cells slipped into FE pool. Fix: gate on CI-lower-bound > 0
-    # (matches prereg prose) AND skip per-cell n_unique<2 cells from FE pool
-    # input + emit `noise_floor_cells_skipped` for transparency.
-    H3_MIN_UNIQUE_TASKS = 2  # per prereg L165
-
-    def _h3_axis_pooled_fe(per_cell_list, axis_name):
-        # Skip per-cell n_unique < 2 (sampling noise floor)
-        filtered = [r for r in per_cell_list if r.get("n_unique", 0) >= H3_MIN_UNIQUE_TASKS]
-        n_noise_skipped = len(per_cell_list) - len(filtered)
-        if len(filtered) < 2:
-            return None, {"n_noise_skipped": n_noise_skipped, "k_after_filter": len(filtered)}
-        thetas = np.array([r["unique_count_pp"] for r in filtered])
-        ses = np.array([r["se_pp"] for r in filtered])
-        zero_se = int((ses <= 0).sum())
-        if zero_se > 0:
-            ses = np.where(ses <= 0, 1.0, ses)
-        w = 1.0 / (ses ** 2)
-        theta_fe = float(np.sum(w * thetas) / np.sum(w))
-        se_fe = float(math.sqrt(1.0 / np.sum(w)))
-        ci_lo = theta_fe - 1.96 * se_fe
-        ci_hi = theta_fe + 1.96 * se_fe
-        z = theta_fe / max(se_fe, 1e-12)
-        p_one_sided = 1.0 - _norm_cdf(z)
-        # B-949: gate = CI excludes 0 (matches prereg §2 H3 prose L163), NOT
-        # one-sided p<α. Both quantities reported for transparency.
-        passed_ci = bool(ci_lo > 0.0)
-        passed_p_legacy = bool(p_one_sided < ALPHA)
-        # B-1302 (/stress A2.3d P1-6-AC sibling of P0-1, 2026-05-18): bootstrap
-        # percentile CI gate for H3 axes — matches H1 B-1009 amend semantics.
-        # Pre-fix CI was Wald `theta_FE ± 1.96 · SE_FE`; now also emit bootstrap
-        # percentile CI from per-cell `boot_pp` arrays exposed by B-1302
-        # substrate fix in `_h3_axis_per_cell`. CI gate (canonical per B-949)
-        # switches to bootstrap percentile CI lower bound > 0; Wald CI retained
-        # as legacy transparency.
-        boot_payload = _pool_bootstrap_percentile_p(
-            filtered, theta_null_pp=0.0, alpha=ALPHA,
-        )
-        passed_ci_bootstrap = (
-            bool(boot_payload.get("ci95_lo_pp_bootstrap", 0.0) > 0.0)
-            if boot_payload is not None else False
-        )
-        return {
-            "k_cells": len(filtered),
-            "k_cells_input": len(per_cell_list),
-            "n_noise_floor_cells_skipped": n_noise_skipped,
-            "noise_floor_threshold_unique_tasks": H3_MIN_UNIQUE_TASKS,
-            "theta_FE_pp": theta_fe,
-            "se_FE_pp": se_fe,
-            "ci95_FE_lo_pp": ci_lo,
-            "ci95_FE_hi_pp": ci_hi,
-            # B-1302: bootstrap percentile CI fields (primary CI gate)
-            "ci95_lo_pp_bootstrap": (boot_payload or {}).get("ci95_lo_pp_bootstrap"),
-            "ci95_hi_pp_bootstrap": (boot_payload or {}).get("ci95_hi_pp_bootstrap"),
-            "p_one_sided_bootstrap": (boot_payload or {}).get("p_one_sided_bootstrap"),
-            "theta_fe_bootstrap_median_pp": (boot_payload or {}).get("theta_fe_bootstrap_median_pp"),
-            "z_one_sided": z,
-            "p_one_sided": p_one_sided,  # transparency normal-Z (legacy B-949 row)
-            "alpha": ALPHA,
-            "gate_rule": "bootstrap_percentile_CI_lower_bound > 0  (B-1302 primary; legacy Wald CI retained as transparency)",
-            "passed": passed_ci_bootstrap,  # B-1302: bootstrap percentile gate (primary)
-            "passed_wald_ci_legacy": passed_ci,  # B-949 Wald CI now legacy transparency
-            "passed_p_one_sided_legacy": passed_p_legacy,  # normal-Z legacy transparency
-            "n_zero_se_floored_cells": zero_se,
-        }, None
-
     # B-1007 (/stress A2.4a P1-10-B* codex F2 OOB, 2026-05-18): Holm m=2 across
     # {axis1, axis2} H3 sub-family for the legacy p-value transparency channel.
     # Note: canonical CI-based gate (B-949) is CLOSED-FORM decision rule, NOT
@@ -1067,8 +1141,8 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     # carry Holm m=2 so reviewer demanding FWER (m=2 H3 sub-family per prereg
     # §3 family rules) finds the correction emitted. Compute Holm AFTER both
     # axes pool, attach `passed_p_holm_m2` field to each axis result.
-    h3a_result, h3a_skip = _h3_axis_pooled_fe(h3a_per_cell, "axis1")
-    payload["h3_axis1_pooled_fe"] = h3a_result if h3a_result is not None else h3a_skip
+    h3a_result = _h3_axis_pooled_fe(h3a_per_cell, "axis1")
+    payload["h3_axis1_pooled_fe"] = h3a_result
 
     # B-1054 (/stress A2.3c Mode A F1 + Mode B B5, 2026-05-18): per-cell
     # Holm-significance transparency count for H3 axis-1 (prereg §3 line 408 +
@@ -1079,8 +1153,8 @@ def build_full_decision(cells: List[Dict]) -> Dict:
 
     # H3 axis-2 FE pool
     h3b_per_cell = [c["h3_axis2"] for c in per_cell_data if c["h3_axis2"] is not None]
-    h3b_result, h3b_skip = _h3_axis_pooled_fe(h3b_per_cell, "axis2")
-    payload["h3_axis2_pooled_fe"] = h3b_result if h3b_result is not None else h3b_skip
+    h3b_result = _h3_axis_pooled_fe(h3b_per_cell, "axis2")
+    payload["h3_axis2_pooled_fe"] = h3b_result
 
     # B-1054 H3 axis-2 transparency count (parity with H1 + axis-1)
     h3b_theta_se = [(float(c.get("unique_count_pp") or 0.0), float(c.get("se_pp") or 0.0))
@@ -1091,9 +1165,9 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     # Sorted ascending: smallest p compared against α/m, next against α/(m-1).
     # Closed-form CI gate (B-949) is independent and already canonical.
     h3_p_pairs = []
-    if h3a_result is not None and "p_one_sided" in h3a_result:
+    if h3a_result.get("p_one_sided") is not None:
         h3_p_pairs.append(("axis1", h3a_result["p_one_sided"], h3a_result))
-    if h3b_result is not None and "p_one_sided" in h3b_result:
+    if h3b_result.get("p_one_sided") is not None:
         h3_p_pairs.append(("axis2", h3b_result["p_one_sided"], h3b_result))
     h3_p_pairs.sort(key=lambda x: x[1])
     m = len(h3_p_pairs)
@@ -1129,14 +1203,12 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     payload["h1_primary_gate_method"] = h1_primary_p_method
     payload["h1_primary_p_one_sided"] = h1_primary_p
     payload["h1_transparency_p_one_sided_normal_approx"] = fe.get("p_one_sided")
+    if payload["analysis_status"] == "COMPLETE":
+        payload["h1_verdict"] = "PASS" if h1_pass else "FAIL"
     h2a_falsified = payload["h2a_summary"]["falsified"]
-    # B-1001 (/stress A2.4a P0-3-B* codex F1 OOB, 2026-05-18, Phase 4 verified):
-    # `_h3_axis_pooled_fe` returns `(None, skip_dict)` when `n_unique<2` filter
-    # leaves <2 cells; skip_dict is populated (non-None) but DOES NOT contain
-    # `passed` key. Pre-fix `["passed"]` index → KeyError CRASH on Phase 1a
-    # first canonical run if H1 has ≥2 cells but H3 axis has noise-floor
-    # filtered cells. Defensive `.get("passed", False)` lets framing rule treat
-    # skip path as "axis cannot evaluate → does not contribute to R1/R2".
+    # F4/F5 (2026-07-14): H3 now returns one explicit status-union schema.  At
+    # interim k<6, ``passed`` is None and ``axis_verdict=NOT_EVALUATED``; the
+    # defensive bool conversion keeps interim evidence out of final framing.
     h3a_pass = bool(payload.get("h3_axis1_pooled_fe", {}).get("passed", False))
     h3b_pass = bool(payload.get("h3_axis2_pooled_fe", {}).get("passed", False))
     h1_isq_cap = isq_payload.get("heterogeneity_cap_at_r3", False)
@@ -1220,9 +1292,15 @@ def write_json(payload: Dict, out_json: Path, *,
         "input_csv_path": str(input_csv_path) if input_csv_path else None,
         "git_commit_sha": _git_commit_sha(),
     }
-    out_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False,
-                        default=lambda o: o.tolist() if isinstance(o, np.ndarray) else float(o)) + "\n",
-                        encoding="utf-8")
+    atomic_write_text(
+        out_json,
+        json.dumps(
+            payload,
+            indent=2,
+            ensure_ascii=False,
+            default=lambda o: o.tolist() if isinstance(o, np.ndarray) else float(o),
+        ) + "\n",
+    )
 
 
 def write_csv(payload: Dict, out_csv: Path) -> None:
@@ -1245,10 +1323,12 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
         "h1_p_one_sided_bootstrap,h1_ci_lo_pp_bootstrap,h1_ci_hi_pp_bootstrap,"
         "h2a_median_ratio,h2a_rel_diff_pct,h2a_within_band,"
         "h3a_unique_count_pp,h3a_se_pp,h3b_unique_count_pp,h3b_se_pp,"
-        "i_squared_pct,framing_rule,gate_status,"
+        "i_squared_pct,framing_rule,gate_status,analysis_status,h1_verdict,"
         "n_h1_holm_sig,n_h3a_holm_sig,n_h3b_holm_sig",
     ]
     gs = payload.get("gate_status", "UNKNOWN")
+    analysis_status = payload.get("analysis_status", "INSUFFICIENT")
+    h1_verdict = payload.get("h1_verdict", "NOT_EVALUATED")
     framing_rule = payload.get("framing_rule", {}).get("rule", "")
     isq = payload.get("h1_heterogeneity", {}).get("I_squared_pct")
     isq_str = f"{isq:.2f}" if isq is not None else ""
@@ -1270,7 +1350,7 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
             str(h2a.get("per_cell_pass", "")),
             _f(h3a.get("unique_count_pp")), _f(h3a.get("se_pp")),
             _f(h3b.get("unique_count_pp")), _f(h3b.get("se_pp")),
-            "", "", gs,
+            "", "", gs, analysis_status, h1_verdict,
             "", "", "",  # B-1054 n_holm_sig fields aggregate; cell-level empty
         ]
         lines.append(",".join(cell_line_parts))
@@ -1295,12 +1375,12 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
             f"{fe.get('p_one_sided', 0):.6f},"
             f"{_f(p_boot) or ''},{_f(ci_lo_boot) or ''},{_f(ci_hi_boot) or ''},"
             f",,{'true' if not h2a_sum.get('falsified', False) else 'false'},"
-            f"{h3a_fe.get('theta_FE_pp', 0):.4f},{h3a_fe.get('se_FE_pp', 0):.4f},"
-            f"{h3b_fe.get('theta_FE_pp', 0):.4f},{h3b_fe.get('se_FE_pp', 0):.4f},"
-            f"{isq_str},{framing_rule},{gs},"
+            f"{_f(h3a_fe.get('theta_FE_pp'))},{_f(h3a_fe.get('se_FE_pp'))},"
+            f"{_f(h3b_fe.get('theta_FE_pp'))},{_f(h3b_fe.get('se_FE_pp'))},"
+            f"{isq_str},{framing_rule},{gs},{analysis_status},{h1_verdict},"
             f"{n_h1},{n_h3a},{n_h3b}"
         )
-    out_csv.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(out_csv, "\n".join(lines) + "\n")
 
 
 def write_md(payload: Dict, out_md: Path) -> None:
@@ -1320,6 +1400,8 @@ def write_md(payload: Dict, out_md: Path) -> None:
         "(B-184) + retired `preregistration_decision_test.py` (DL-contaminated path retired A1.21).",
         "",
         f"**Gate status**: `{payload.get('gate_status', 'UNKNOWN')}`",
+        f"**Analysis status**: `{payload.get('analysis_status', 'INSUFFICIENT')}`",
+        f"**H1 verdict**: `{payload.get('h1_verdict', 'NOT_EVALUATED')}`",
         "",
         payload.get("gate_status_reason", ""),
         "",
@@ -1410,14 +1492,29 @@ def write_md(payload: Dict, out_md: Path) -> None:
         lines.append("")
 
     for axis_idx, (axis_name, h3_fe) in enumerate([("axis-1 P-text", h3a_fe), ("axis-2 P-prompt", h3b_fe)], 1):
-        if h3_fe is None:
-            lines += [f"## H3 {axis_name} — insufficient data", ""]
+        if not isinstance(h3_fe, dict) or h3_fe.get("theta_FE_pp") is None:
+            status = h3_fe.get("analysis_status", "INSUFFICIENT") if isinstance(h3_fe, dict) else "INSUFFICIENT"
+            reason = h3_fe.get("reason", "FE pool unavailable") if isinstance(h3_fe, dict) else "FE pool unavailable"
+            lines += [
+                f"## H3 {axis_name} — {status.lower()}",
+                "",
+                f"- **Axis verdict**: `NOT_EVALUATED`",
+                f"- **Reason**: {reason}",
+                "",
+            ]
             continue
-        sig = "✅ **PASSED**" if h3_fe["passed"] else "❌ **NOT YET**"
+        axis_verdict = h3_fe.get("axis_verdict", "NOT_EVALUATED")
+        sig = (
+            "✅ **PASSED**" if axis_verdict == "PASS"
+            else "❌ **FAILED**" if axis_verdict == "FAIL"
+            else "⚠️ **NOT_EVALUATED (INTERIM)**"
+        )
         lines += [
             f"## H3 {axis_name} — FE inverse-variance pool over unique-count",
             "",
             f"- **k = {h3_fe['k_cells']}** cells",
+            f"- **Analysis status**: `{h3_fe.get('analysis_status', 'UNKNOWN')}`; "
+            f"**axis verdict**: `{axis_verdict}`",
             f"- **θ_FE = +{h3_fe['theta_FE_pp']:.3f}pp** (SE = {h3_fe['se_FE_pp']:.3f}pp)",
             f"- **95% CI**: [{h3_fe['ci95_FE_lo_pp']:.3f}, {h3_fe['ci95_FE_hi_pp']:.3f}]pp",
             f"- **z** = θ_FE / SE_FE = **{h3_fe['z_one_sided']:.3f}**",
@@ -1451,7 +1548,45 @@ def write_md(payload: Dict, out_md: Path) -> None:
         f"- **Git commit SHA**: `{prov.get('git_commit_sha', 'n/a')}`",
         "",
     ]
-    out_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(out_md, "\n".join(lines) + "\n")
+
+
+def write_outputs_atomic(
+    payload: Dict,
+    out_csv: Path,
+    out_json: Path,
+    out_md: Path,
+    *,
+    manifest_path: Optional[Path] = None,
+    input_csv_path: Optional[Path] = None,
+) -> None:
+    """Render all three artifacts before replacing any destination.
+
+    Individual writers are atomic as well; this staging layer additionally
+    prevents a later schema/render error (notably Markdown) from leaving an
+    updated CSV/JSON paired with a stale or missing sibling artifact.
+    """
+    destinations = [Path(out_csv), Path(out_json), Path(out_md)]
+    token = f"{os.getpid()}.{uuid.uuid4().hex}"
+    staged = [p.with_name(f".{p.name}.{token}.staged") for p in destinations]
+    try:
+        write_csv(payload, staged[0])
+        write_json(
+            payload,
+            staged[1],
+            manifest_path=manifest_path,
+            input_csv_path=input_csv_path,
+        )
+        write_md(payload, staged[2])
+        for src, dst in zip(staged, destinations):
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(src, dst)
+    finally:
+        for path in staged:
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
 
 
 def main() -> int:
@@ -1496,9 +1631,13 @@ def main() -> int:
 
     payload = build_full_decision(cells_to_use)
 
-    write_csv(payload, Path(args.output_csv))
-    write_json(payload, Path(args.output_json), manifest_path=manifest_path)
-    write_md(payload, Path(args.output_md))
+    write_outputs_atomic(
+        payload,
+        Path(args.output_csv),
+        Path(args.output_json),
+        Path(args.output_md),
+        manifest_path=manifest_path,
+    )
 
     framing = payload.get("framing_rule", {})
     print(f"[A1.21 B-515] gate_status={payload['gate_status']} "
