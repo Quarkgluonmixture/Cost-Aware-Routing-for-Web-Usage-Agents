@@ -107,6 +107,7 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 | B1 | classifieds | Vision | n/a | n/a | 0.533 | 0.806 | 0.707 | 12.500 | tok=ep_mean_margin; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | reddit | DOM | n/a | n/a | 0.595 | 0.683 | 0.634 | 6.829 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B1 | reddit | P-SoM | n/a | n/a | 0.503 | 0.645 | 0.546 | 6.829 | tok=ep_mean_margin; verb=ep_min_verbalized; beh=max_repeat_streak |
+| B1 | reddit | P-prompt | n/a | n/a | 0.706 | 0.646 | 0.659 | 6.341 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B1 | reddit | P-text | n/a | n/a | 0.688 | 0.685 | 0.641 | 6.829 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B1 | reddit | SoM | n/a | n/a | 0.506 | 0.667 | 0.519 | 8.293 | tok=ep_mean_entropy; verb=ep_mean_verbalized; beh=max_repeat_streak |
 | B1 | reddit | Vision | n/a | n/a | n/a | n/a | n/a | 2.927 |  |
@@ -121,7 +122,7 @@ E3 highlights:
 - B0/classifieds: honest-commit mode None (ECE n/a); best-signal mode B0/classifieds/P-SoM (AUROC 0.766).
 - B0/reddit: honest-commit mode None (ECE n/a); best-signal mode B0/reddit/Vision (AUROC 0.877).
 - B1/classifieds: honest-commit mode None (ECE n/a); best-signal mode B1/classifieds/DOM (AUROC 0.870).
-- B1/reddit: honest-commit mode None (ECE n/a); best-signal mode B1/reddit/P-text (AUROC 0.688).
+- B1/reddit: honest-commit mode None (ECE n/a); best-signal mode B1/reddit/P-prompt (AUROC 0.706).
 - B2/classifieds: honest-commit mode None (ECE n/a); best-signal mode B2/classifieds/P-text (AUROC 0.934).
 
 Outcome 0a SR cross-reference: canonical per-mode SR values are attached from `sr_per_mode.json`. Because B0 ECE is absent from the existing analyzer outputs, calibration claims remain limited to the fields actually emitted by each baseline.
@@ -245,6 +246,7 @@ Each E3 row is sourced from existing analyzer outputs; calibration source is nul
 | B1/classifieds/Vision | `results/visualwebarena/phase1/B1_vision_classifieds_20260605_012235_349047872_327631_R28622/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
 | B1/reddit/DOM | `results/visualwebarena/phase1/B1_dom_reddit_20260703/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B1/reddit/P-SoM | `results/visualwebarena/phase1/B1_phantom_som_reddit_20260711/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
+| B1/reddit/P-prompt | `results/visualwebarena/phase1/B1_phantom_prompt_reddit_20260713/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B1/reddit/P-text | `results/visualwebarena/phase1/B1_phantom_text_reddit_20260710/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B1/reddit/SoM | `results/visualwebarena/phase1/B1_som_reddit_20260706/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B1/reddit/Vision | `results/visualwebarena/phase1/B1_vision_reddit_20260708_002122_732634080_205180_R16847/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | n/a | n/a |
@@ -388,5 +390,5 @@ Overall pass: False.
 |---|---|
 | E1 N reddit | 205 / 205 |
 | E1 N classifieds | 224 / 224 |
-| E3 cells | 28 / 28 |
-| P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 96, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 123, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |
+| E3 cells | 29 / 29 |
+| P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 96, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |

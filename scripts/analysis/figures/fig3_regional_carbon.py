@@ -52,8 +52,8 @@ from lib.run_registry import get_cells as _get_cells  # noqa: E402
 # §139.8: scored-set sizes (total − N/A excluded at load) from the single
 # source of truth, not pre-exclusion 234/210. Labels derive from the count.
 from p79.experiment.analysis import scored_task_count as _scored_task_count
-from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
-from scripts.analysis.lib.episode_rows import load_task_rows
+from lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from lib.episode_rows import load_task_rows  # noqa: E402
 
 _SITE_IDS = {
     site: expected_scored_ids(site)[0] for site in ("classifieds", "reddit")

@@ -28,6 +28,7 @@ Computed as `avg_total_energy_kwh × $0.12/kWh` (DGX Spark, UK industrial rate p
 | reddit | SoM | 22.2 | 0.01103 | 0.00243 | $0.001324 |
 | reddit | Vision | 23.1 | 0.00830 | 0.00183 | $0.000996 |
 | reddit | P-text | 25.5 | 0.01078 | 0.00237 | $0.001294 |
+| reddit | P-prompt | 23.7 | 0.01109 | 0.00244 | $0.001331 |
 | reddit | P-SoM | 25.2 | 0.01116 | 0.00246 | $0.001340 |
 | classifieds | DOM | 21.4 | 0.00564 | 0.00124 | $0.000677 |
 | classifieds | SoM | 18.0 | 0.00482 | 0.00106 | $0.000578 |
@@ -53,7 +54,7 @@ Computed as `avg_total_energy_kwh × $0.12/kWh` (DGX Spark, UK industrial rate p
 
 | site | avg B0 API ($/ep) | avg B1 electricity ($/ep) | ratio (B0/B1) |
 |---|---:|---:|---:|
-| reddit | $0.1043 | $0.001254 | 83× |
+| reddit | $0.1043 | $0.001267 | 82× |
 | classifieds | $0.0694 | $0.000648 | 107× |
 
 The qualitative cost gap between API and local inference is large (2–3 orders of magnitude per these data) but is fundamentally a deployment-mode comparison, not a model-size ratio. Reporting a single multiplier (e.g. '30x') without specifying the cost class is misleading.

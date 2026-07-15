@@ -1390,6 +1390,30 @@
         "source_run": "results/visualwebarena/phase1/B1_phantom_som_reddit_20260711",
         "source_table": "results/visualwebarena/phase1/B1_phantom_som_reddit_20260711/analysis/signals/combined/tables/auroc_all_metrics.csv"
       },
+      "B1/reddit/P-prompt": {
+        "AUROC_behavioral_max": 0.658654,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.70633,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.645833,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0_sr_pct": 6.341463,
+        "mode": "P-prompt",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_phantom_prompt_reddit_20260713",
+        "source_table": "results/visualwebarena/phase1/B1_phantom_prompt_reddit_20260713/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
       "B1/reddit/P-text": {
         "AUROC_behavioral_max": 0.640613,
         "AUROC_behavioral_n": 205,
@@ -1630,8 +1654,8 @@
         "sr_cross_reference": "Canonical SR attached from sr_per_mode.json when available."
       },
       "B1/reddit": {
-        "best_signal_AUROC": 0.688482,
-        "best_signal_AUROC_mode": "B1/reddit/P-text",
+        "best_signal_AUROC": 0.70633,
+        "best_signal_AUROC_mode": "B1/reddit/P-prompt",
         "honest_commit_mode_lowest_ECE_verbal": null,
         "lowest_ECE_verbal": null,
         "sr_cross_reference": "Canonical SR attached from sr_per_mode.json when available."
@@ -2309,9 +2333,9 @@
         "status": "complete but excluded by design"
       },
       "B1_phantom_prompt_reddit_20260713": {
-        "episodes": 123,
+        "episodes": 205,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
-        "status": "partial / pending"
+        "status": "complete but excluded by design"
       },
       "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {
         "episodes": 224,
@@ -2372,8 +2396,8 @@
       "reddit/P-text_vs_P-SoM": true
     },
     "E3_cell_count": {
-      "expected": 28,
-      "observed": 28,
+      "expected": 29,
+      "observed": 29,
       "pass": true
     },
     "E4_action_dist_sum_checks": {
