@@ -23,6 +23,15 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> 🔭 **2026-07-15 深夜 UPDATE — 机会成本调度实战 + 两轨制预案就绪 + k=4 → 明晚 k=5** ⭐⭐⭐ 最新先读 (详 笔记 §367-§370):
+> - **🔥 FIRE 现状 (需接管)**: **B0 pprompt resume 运行中** (run 20260709, 96/205 起步, ETA ~07-16 晚; user 批准中断 B2 dom@40/205 抢 proxy 窗口, §369)。**orchestrator 已被刻意停掉**。A100 watchdog (pid 1061406) 会 ntfy 完成/异常。
+> - **🔲 B0 pprompt 完成时 (ntfy 响) 接管 SOP**: ① A100 `validate_fire_manifest --populate --apply` bind → ② rsync fire_manifest → DGX promote 进 run_manifest (30 条) → ③ `make analysis FAST=1` (**k=5**) → ④ **重启 orchestrator v2** (`setsid nohup bash scripts/maintenance/orchestrate_reddit_boundaries.sh > logs/orchestrate_red_v3_$(date +%Y%m%d).log 2>&1 &` @ A100 repo 根; 它 resume B2 dom@40/205 + 续 B2 链, 重启自动重置 pprompt 重试计数) → ⑤ 刷 draft interim 槽 + 周会材料若还没开会。**若 pprompt abort** (proxy 再死): 直接做 ④ (orchestrator 会在后续 boundary 重试 pprompt)。
+> - **📋 07-16 周会材料就绪**: brief v2.2 (`deliverables/weekly_meeting_brief_2026-07-16.md`) + 看板 (`周报/dashboard.html` 已对齐两轨制) + **PROTOCOL_NOTE_06 草案** (`prereg_amendments/..._20260716_DRAFT.md`, DRAFT/NOT-IN-FORCE)。**核心签字项 = 两轨制**: k=5 提交基线 (签字后 ~07-17/18 即可 verdict) + B2 齐则无条件升 k=6。激活 = NOTE_06 §6 十分钟序列 (签字→去 DRAFT→打 witness tag→amendment log 行)。k=5 版 abstract/§1/§4/§8 披露句已在 branch_prewrites §8 预写。
+> - **router 学不会的五层诊断** (学长追问备答): 有效标签少一个量级 (成功并集才有标签, B1_red 仅 26) / 单次 rollout 标签噪声 / 成本平局裁决非模式亲和 / intent 特征不含答案 (covariate 红旗) / oracle 天花板≠可学性。15 格 sweep 证明非假设类问题。修复路径 = 多 rollout / 更强模型 (B3 MiMo, 8 月) / 运行时特征 (paper-2)。
+> - Episode 级并行三重锁死 (§4 方法文本承诺 / 并发状态污染×Fix-4 / §5.4 latency 可比性) — 已归档 §369, 不再议。
+> - 全部 commits 已 push (`278db06`); 测试 1485/0。
+>
+
 > 🔭 **2026-07-14 深夜 UPDATE — 投稿系统实测 = OpenReview 非 CMT + 官方模板 7 页压线 + 07-16 线下周会** ⭐⭐⭐ 最新先读:
 > - **OpenReview 修正 (user 注册实测)**: AAAI-27 = OpenReview 表单。deadline 双标注: abstract **Jul 22 11:59AM UTC-0 = Jul 21 23:59 AoE** / full **Jul 29 11:59AM UTC-0 = Jul 28 23:59 AoE** / **reviewer-nomination 冻结 Jul 21 AoE** (资格作者未提名=desk-reject 风险)。abstract+TL;DR 复制源已备: `deliverables/openreview_abstract_tldr_2026-07-14.md` (248 词/槽位 0)。
 > - **官方模板页数账 (author kit aaai2027.sty/bst 已入)**: 正文**恰好第 7 页末结束** (refs pp.8-9) — 压线合规零余量, verdict splice 增词用 cut_prewrites 抵消。convert.sh 三个官方模式断点已修 (kit 命名/affiliations/双 bibstyle)。
