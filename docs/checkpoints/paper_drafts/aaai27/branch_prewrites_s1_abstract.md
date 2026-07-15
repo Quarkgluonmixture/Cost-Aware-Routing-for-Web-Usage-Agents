@@ -113,3 +113,67 @@ Multimodal web agents built on Set-of-Marks (SoM) receive a bundled observation:
 
 verdict day 流程: 读 gate JSON → 本文件选支 → splice → 填 «槽» → 删 (R-CONDITIONAL) 标记与另一支
 → banned grep → 词数 → /stress。本文件是 runbook 第 2-4 步的输入。
+
+## 8. k=5 提交预写（K5-CONDITIONAL；DRAFT-PENDING-ADVISOR；NOT-IN-FORCE）
+
+> 本节只在
+> `PROTOCOL_NOTE_06_K5_EARLY_VERDICT_20260716_DRAFT.md` 经学长签字、完成 witness
+> 与 OSF 知会并正式生效后可用。当前不得据此选支、splice 或改 `aaai27_main.md`。
+> 若 B2 Reddit 在提交前 land 并 bind，本节全部作废，必须按 k=6 重生 slotsheet
+> 并重 splice。`(K5-CONDITIONAL)` 是预写标记，正式落稿时须随条件句一起处理。
+
+### 8.1 §4 透明披露句（一句）
+
+> **(K5-CONDITIONAL)** Five of the six pre-registered cells were complete at the submission verdict; the sixth (Gemma-3 Reddit) remained in background collection and, under advisor-signed time-constrained Protocol Note 06, was not part of that verdict.
+
+### 8.2 §8 statistics paragraph 对应替换
+
+> **(K5-CONDITIONAL)** The registered primary estimand is the fixed-effects inverse-variance weighted average over six fixed `(site, model)` cells. Under advisor-signed time-constrained Protocol Note 06, the submission verdict applies the otherwise unchanged task-paired per-cell bootstrap and fixed-effects pooling mechanism to the five landed cells; it therefore estimates only the finite-design average of those five cells, not the missing Gemma-3 Reddit effect or the registered six-cell average, and every pooled verdict is interpreted **on the five landed cells**. Because Gemma evidence is limited to its single Classifieds cell, the B-1284 cross-family modifier is applied automatically: any otherwise available R-tier is downgraded one step (R1→R2 or R2→R3), the submission is capped at R2, and no cross-site Gemma replication is claimed. B2 Reddit collection continued in the background, with an unconditional commitment to regenerate the complete k=6 verdict and replace this paragraph if the cell landed and was provenance-bound before submission.
+
+### 8.3 Abstract / §1 的 k=5 专用替换
+
+**检查结果。** 两份完整 abstract 把 `«K»` 直接填成 `5` 后语法上成立，
+但“over five complete cells”没有满足 NOTE_06 要求的 **“on the five landed
+cells”** 限定，而且原句 “Across ... three backbones” 容易误读为 Gemma 已跨两站
+复现。因此 k=5 不得只做 `«K» → 5`；须用下列文本替换。
+
+#### Branch A 完整 abstract：替换 scope + H1/H3 三句
+
+将 §6 Branch A 从 “Across VisualWebArena ...” 到 “registered site-level union
+estimand.” 的三句替换为：
+
+> **(K5-CONDITIONAL)** Across the five landed cells—Classifieds and Reddit for both Qwen backbones, and Classifieds only for Gemma—we compare this menu with DOM, full SoM, and Vision. **On the five landed cells**, the temporarily amended fixed-effects pooled drop-one gate passes: removing P-SoM costs «THETA»pp of oracle coverage (95% CI [«CI_LO», «CI_HI»], one-sided p=«P_BOOT» against +1.0pp). On those same five landed cells, both structural axes also pass: «AX1»pp (95% CI [«AX1_CI_LO», «AX1_CI_HI»]) and «AX2»pp (95% CI [«AX2_CI_LO», «AX2_CI_HI»]); P-SoM uniquely solves «UNIQ_CLS» Classifieds and «UNIQ_RED» Reddit task IDs under the registered site-level union estimand.
+
+#### Branch B 完整 abstract：替换 scope + H1/H3 + ladder 四句
+
+将 §6 Branch B 从 “Across VisualWebArena ...” 到 “not flagship-arm
+superiority.” 的四句替换为：
+
+> **(K5-CONDITIONAL)** Across the five landed cells—Classifieds and Reddit for both Qwen backbones, and Classifieds only for Gemma—we compare this menu with DOM, full SoM, and Vision. **On the five landed cells**, P-SoM's pooled drop-one contribution does not clear the pre-registered +1.0pp substantive threshold («THETA»pp, 95% CI [«CI_LO», «CI_HI»], one-sided p=«P_BOOT»). On those same five landed cells, both structural axes pass: «AX1»pp (95% CI [«AX1_CI_LO», «AX1_CI_HI»]) and «AX2»pp (95% CI [«AX2_CI_LO», «AX2_CI_HI»]); P-SoM uniquely solves «UNIQ_CLS» Classifieds and «UNIQ_RED» Reddit task IDs under the registered site-level union estimand. Following the registered framing ladder as temporarily applied under Protocol Note 06, we therefore claim a non-redundant representation region with small per-arm irreplaceable coverage on those five cells, not flagship-arm superiority.
+
+#### §1 ¶3：修正 “both sites and within each backbone”
+
+Branch A / B 各自保留原段其余内容，但把会暗示 Gemma 两站齐全的句首替换为：
+
+> **(K5-CONDITIONAL)** Across the five landed cells—both sites for the two Qwen backbones and Classifieds only for Gemma—the phantom arms behave as *distinct routing arms*:
+
+随后直接接各分支原句的 “they solve tasks ...”。Gemma 只能写 single-cell direction；
+不得写 cross-site Gemma replication 或 “within each backbone on both sites”。
+
+#### §1 ¶4：hero-gate 句
+
+Branch A：
+
+> **(K5-CONDITIONAL)** On the five landed cells, the temporarily amended pooled P-SoM contribution gate **passes**: «THETA»pp (95% CI [«CI_LO», «CI_HI»], p = «P_BOOT» against the +1.0pp substantive threshold). Under the automatic B-1284 modifier for missing Gemma-3 Reddit, the resulting claim tier is downgraded one step and capped at R2. The drop-one number is an *oracle ceiling*, not a realized router gain; it motivates the registered oracle-vs-realized comparison in §6.
+
+Branch B：
+
+> **(K5-CONDITIONAL)** On the five landed cells, the temporarily amended pooled P-SoM contribution gate **does not pass**: «THETA»pp (95% CI [«CI_LO», «CI_HI»], p = «P_BOOT» against the +1.0pp substantive threshold). Per the registered framing ladder as temporarily applied under Protocol Note 06, the paper's claim therefore rests on the structural gates (§5.3) and the by-construction cost profile—not on flagship-arm superiority—and the automatic B-1284 modifier further forbids a cross-site Gemma replication claim. The drop-one estimate remains reported in full as characterization; §6 evaluates the routing menu independently of this branch.
+
+### 8.4 k=5 splice 后专用自检
+
+- 全文每个 k=5 pooled verdict 的首次出现均含 **“on the five landed cells”**。
+- 全文搜索 `over five complete cells`、`over the 5 complete cells`、`within each backbone`
+  并逐一确认没有暗示 Gemma Reddit 已 land。
+- §4 句、§8 paragraph、B-1284 one-tier downgrade / R2 cap 三者同时存在。
+- 若 B2 Reddit 已 bind：停止本清单，删除全部 `(K5-CONDITIONAL)` 文本并回 k=6 runbook。
