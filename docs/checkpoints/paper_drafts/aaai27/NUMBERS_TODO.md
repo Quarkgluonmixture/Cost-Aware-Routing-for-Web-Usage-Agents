@@ -45,6 +45,16 @@ B-1640 runtime 会 loud-fail) — 若 B2_reddit 同地板, H10 ≥5/6 判据数�
 **canonical** `results/phantom_paper/l1_router/` 重跑同链 (rehearsal 目录只是预演, 勿混用), 再 rsync
 lr_fold pkls → A100 (Pass-2 queue 的 artifact gate 检查 30 pkl)。
 
+**⚠️ 2026-07-15 offline replay 更新 (隔离目录 `l1_router_offline_20260715/`, 笔记 §367)**:
+① **H10 可训性恶化至 3/4 cell 无完整 policy**: B1_reddit 虽 6/6 condition 齐但 union-success
+仅 26 labels → 0/5 fold 可训 (同 B2_cls 16-label 地板); B1_cls 4/5 — **H10 ≥5/6 已结构性不可达
+(≤4/6 上限, 与调度无关)**。② 唯一完整 cell B0_cls 的 OOF offline routed SR = 25.45% <
+best-single SoM 27.23% (−1.79pp, 成本 +4.42%) — 当前 learned router 无附加值证据 (§6 预锁降级
+规则的直接佐证; oracle 43.30% ceiling 仍在 = complementarity 主张不受影响)。③ **extractor 坑**:
+`extract_50_features.py` 无 `--manifest` CLI, canonical manifest JSON 缺失时静默 glob 会把
+stale run (B1_3mode_20260413) 抓成第 7 条 — **canonical 重跑前必须先给脚本加 manifest 白名单
+(或复用 offline 目录的 scratch 模式), 否则 canonical 训练数据被污染**。
+
 **产出命令**: `python scripts/analysis/aggregate_phase1_full_prereg_decision.py` (H1/H2a/H3/R-rule) ·
 `python scripts/analysis/aggregate_h10_pareto.py` (H10) · `make analysis` (全管线)。
 
