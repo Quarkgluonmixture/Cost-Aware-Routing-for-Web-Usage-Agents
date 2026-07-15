@@ -5,12 +5,18 @@ import pytest
 from scripts.analysis.router_offline_replay import DISPLAY_MODES
 from scripts.analysis.router_prior_baselines import (
     DISCLAIMER,
+    LITERATURE_MINING_ROWS,
     aggregate_episode_confidence,
+    difficulty_trigger,
     efficiency_metrics,
     majority_oracle_vote,
     performance_gap_recovered,
     render_markdown,
     simulate_cascade_task,
+    simulate_two_stage_task,
+    trajectory_failure_signals,
+    validate_literature_sources,
+    vardanyan_should_escalate,
 )
 
 
@@ -109,6 +115,105 @@ def test_cascade_full_escalation_reaches_final_mode():
     assert row["success"] is True
 
 
+def test_vardanyan_escalation_uses_step_failures_not_evaluator_outcome():
+    clean = [
+        {
+            "parse_valid": True,
+            "action_success": True,
+            "valid_agent_action": True,
+            "page_changed": False,
+        },
+        {
+            "parse_valid": True,
+            "action_success": True,
+            "valid_agent_action": True,
+            "page_changed": True,
+        },
+    ]
+    assert vardanyan_should_escalate(clean) is False
+
+    stuck = [dict(clean[0]), dict(clean[0])]
+    signals = trajectory_failure_signals(stuck)
+    assert signals["two_step_no_change"] is True
+    assert vardanyan_should_escalate(stuck) is True
+
+    parse_failed = [dict(clean[0], parse_valid=False, parse_failure_reason="bad_id")]
+    assert vardanyan_should_escalate(parse_failed) is True
+
+
+def test_explicit_empty_finish_is_an_escalation_signal():
+    steps = [
+        {
+            "action_type": "finish",
+            "action": {"answer": "  "},
+            "parse_valid": True,
+            "action_success": True,
+            "valid_agent_action": True,
+            "page_changed": True,
+        }
+    ]
+    assert trajectory_failure_signals(steps)["empty_finish"] is True
+
+
+def test_two_stage_replay_sums_only_executed_trajectory_costs():
+    outcomes = {
+        "dom": {"cost_usd": 1.25, "success": False},
+        "vision": {"cost_usd": 2.5, "success": True},
+    }
+    direct = simulate_two_stage_task(
+        outcomes,
+        start_mode="dom",
+        escalation_mode="vision",
+        escalate=False,
+    )
+    assert direct["executed_modes"] == ["dom"]
+    assert direct["total_billed_cost_usd"] == pytest.approx(1.25)
+    assert direct["success"] is False
+
+    escalated = simulate_two_stage_task(
+        outcomes,
+        start_mode="dom",
+        escalation_mode="vision",
+        escalate=True,
+    )
+    assert escalated["executed_modes"] == ["dom", "vision"]
+    assert escalated["total_billed_cost_usd"] == pytest.approx(3.75)
+    assert escalated["success"] is True
+
+
+def test_lazymcot_length_trigger_uses_strict_fold_threshold():
+    assert difficulty_trigger(19, 18.0) is True
+    assert difficulty_trigger(18, 18.0) is False
+    assert difficulty_trigger(17, 18.0) is False
+    with pytest.raises(ValueError):
+        difficulty_trigger(-1, 18.0)
+
+
+def test_literature_inventory_covers_named_router_families_with_sources():
+    rows = {row[0]: row for row in LITERATURE_MINING_ROWS}
+    expected = {
+        "WebRouter",
+        "Avenir-Web",
+        "PANDO",
+        "DMR",
+        "ModServe",
+        "Dynamic Model Routing and Cascading survey",
+        "BoundaryRouter",
+        "Adaptive Re-Ranking",
+        "LazyMCoT / Focus When Necessary",
+        "Vardanyan browser report",
+        "Read More, Think More",
+        "Agent-E",
+        "FocusAgent",
+        "ReVision",
+    }
+    assert expected <= rows.keys()
+    assert len(rows) == len(LITERATURE_MINING_ROWS) >= 90
+    assert all(":" in row[3] for row in rows.values())
+    assert "UNVERIFIED" in rows["WebRouter"][2]
+    validate_literature_sources()
+
+
 def test_markdown_starts_with_non_gate_banner():
     payload = {
         "points": [
@@ -180,6 +285,8 @@ def test_markdown_starts_with_non_gate_banner():
         },
         "knn": {"points": []},
         "random_noise_floors": {"points": []},
+        "litmined_baselines": {"points": []},
+        "literature_mining_inventory": [],
         "cascade": {
             "primary_signal": "mean_logprob",
             "curves": {

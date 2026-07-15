@@ -4,8 +4,9 @@
 This analysis is deliberately isolated from the preregistered router and H10
 artifacts.  It reuses the locked B0_classifieds task folds, fold-local TF-IDF /
 MI-18 feature assets, canonical Pass-1 outcomes, and
-``total_billed_cost_usd``.  The RouteLLM- and FrugalGPT-style labels denote
-offline adaptations, not faithful reproductions of the source methods.
+``total_billed_cost_usd``.  The RouteLLM-, FrugalGPT-, Vardanyan-, and
+LazyMCoT-style labels denote offline adaptations, not faithful reproductions of
+the source methods.
 """
 from __future__ import annotations
 
@@ -67,12 +68,13 @@ DEFAULT_PARETO = SOURCE_DIR / "pareto/router_pareto_analysis.json"
 DEFAULT_SUCCESS_OOF = SOURCE_DIR / "pareto/cost_aware_success_oof.json"
 DEFAULT_OUT_DIR = SOURCE_DIR / "prior_baselines"
 DEFAULT_REPORT = (
-    REPO / "docs/checkpoints/codex_outputs/router_prior_baselines_2026-07-15.md"
+    REPO
+    / "docs/checkpoints/codex_outputs/router_litmined_baselines_2026-07-15.md"
 )
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
 FORBIDDEN_CANONICAL_OUT = (REPO / "results/phantom_paper/l1_router").resolve()
 
-SCHEMA_VERSION = "2026-07-15-router-prior-baselines-offline-v1"
+SCHEMA_VERSION = "2026-07-15-router-litmined-baselines-offline-v2"
 ARTIFACT_STATUS = "OFFLINE / NON-GATE / POST-HOC EXPLORATORY"
 DISCLAIMER = (
     "OFFLINE / NON-GATE / POST-HOC EXPLORATORY — prior-work-style adaptations "
@@ -86,6 +88,109 @@ CONFIDENCE_AGGREGATIONS = {
     "min_margin": ("min_margin", "min"),
 }
 CONFIDENCE_PRIORITY = tuple(CONFIDENCE_AGGREGATIONS)
+
+LAZYMCOT_START_MODE = "vision"
+LAZYMCOT_ESCALATION_MODE = "som"
+LAZYMCOT_DIFFICULTY_QUANTILE = 0.50
+VARDANYAN_START_MODE = "dom"
+VARDANYAN_ESCALATION_MODE = "vision"
+
+# Local-source-only mining inventory.  Rows intentionally preserve UNVERIFIED
+# flags from the notes instead of upgrading them from model memory.
+LITERATURE_MINING_ROWS = (
+    ("RouteLLM", "query → weak/strong model", "能（已实现）：fold-local TF-IDF/MI-18 cosine kNN 对 six-mode oracle label 投票。", "docs/checkpoints/deliverables/chapter_literature_review.md:62-64; docs/checkpoints/paper_drafts/paper.bib:154-163"),
+    ("FrugalGPT", "query → cheap-to-expensive model cascade", "能（已实现）：按 fold-train cost 排 mode，用观测 confidence 升级并累计全部轨迹 cost。", "docs/checkpoints/deliverables/chapter_literature_review.md:62-64; docs/checkpoints/paper_drafts/paper.bib:166-175"),
+    ("Hybrid LLM", "query → small/large model", "不能：routed object 不同；six-mode 没有 edge/cloud model arms。", "docs/checkpoints/paper_drafts/paper.bib:963-971"),
+    ("CSCR / Cost-Aware Contrastive Routing", "query → dynamic LLM pool", "不能：routed object 不同，且需 model fingerprints/contrastive encoder；现有 kNN 仅作 RouteLLM-style 近似。", "docs/checkpoints/paper_drafts/paper.bib:732-740"),
+    ("WebRouter", "query → model（ca-VIB）", "不能：本地 verified bib 与 scan 对 routed object 冲突，且无 ca-VIB objective/training recipe；UNVERIFIED 方法细节。", "docs/checkpoints/paper_drafts/paper.bib:974-981; docs/literature/routing/literature_scan_output.md:5-22"),
+    ("Adaptive VLM Routing", "GUI action → VLM pool", "不能：routed object 是 model capability，且需 probe-model confidence/safety/live GUI。", "docs/checkpoints/deliverables/chapter_literature_review.md:62-64; docs/checkpoints/paper_drafts/paper.bib:503-507"),
+    ("Runaway is Ashamed / agent early exit", "episode → halt/continue", "不能：需要 live completion verification/step-budget takeover，不是离线选 observation arm。", "docs/checkpoints/deliverables/chapter_literature_review.md:62-64; docs/checkpoints/paper_drafts/paper.bib:776-784"),
+    ("Dynamic Model Routing and Cascading survey", "六范式均为 query → model", "不能：survey 不是 producer；difficulty/preference/clustering/RL/UQ/cascade 六类均选 model。", "docs/checkpoints/paper_drafts/paper.bib:1031-1038"),
+    ("DMR", "agent step → bf16/quantized precision", "不能：没有同任务的 precision-arm trajectories，且需 KL labels + RL。", "docs/checkpoints/deliverables/chapter_literature_review.md:66-68; docs/checkpoints/paper_drafts/paper.bib:820-828"),
+    ("PANDO", "agent compute → planner/actor capacity + skills", "不能：routed object/agent stack 不同，skills、compression、cache 与 routing 不可从 six-mode replay 分离。", "docs/checkpoints/deliverables/chapter_literature_review.md:66-68; docs/checkpoints/paper_drafts/paper.bib:798-806"),
+    ("ReVision", "screenshot history → retained visual patches", "不能：需 patch masks 与 fine-tuned backbone；Pass-1 没有 filtered-visual arm。", "docs/checkpoints/deliverables/chapter_literature_review.md:66-68; docs/checkpoints/paper_drafts/paper.bib:809-817"),
+    ("Avenir-Web", "grounding request → grounding expert", "不能：routed object 是 expert，replay 没有 per-expert outputs。", "docs/checkpoints/deliverables/chapter_literature_review.md:66-68; docs/checkpoints/paper_drafts/paper.bib:189-197"),
+    ("ModServe", "multimodal request/stage → serving resource", "不能：serving scheduling/resource disaggregation，不产生 task-level observation choice。", "docs/checkpoints/deliverables/chapter_literature_review.md:66-68; docs/checkpoints/paper_drafts/paper.bib:200-208"),
+    ("Read More, Think More", "model capability/budget → HTML vs A11y guideline", "能但不新增：B0-Classifieds 单 model/预算下退化为一个 fixed policy，与已有 fixed 点重合。", "docs/checkpoints/paper_drafts/aaai27/aaai27_main.md:93-93; docs/checkpoints/paper_drafts/paper.bib:1041-1048"),
+    ("LazyMCoT / Focus When Necessary", "natural-image sample → direct vs localized re-observation", "能（新实现）：fold-train task-length 中位数作难度 proxy，Vision→SoM；累计两段 cost。", "docs/checkpoints/paper_drafts/paper.bib:1071-1078; docs/literature/raw/2026-06-21-digest.md:31-35"),
+    ("Vardanyan browser report", "A11y-first → selective vision", "能（新实现）：DOM step 失败代理触发 Vision，累计两段独立轨迹 cost。", "docs/checkpoints/paper_drafts/paper.bib:1131-1138; docs/literature/raw/2026-05-29-digest.md:59-65"),
+    ("Agent-E", "task → DOM-text variant", "不能：six-mode 不含 text_only/input_fields/all_fields 三种 DOM 变体。", "docs/checkpoints/paper_drafts/paper.bib:380-385"),
+    ("BoundaryRouter", "query → direct LLM/full agent via early memory", "不能：需 cold-start dual-system experience memory且强调 no-gold routing；replay 只有 gold task outcomes。", "docs/checkpoints/paper_drafts/paper.bib:1081-1088; docs/literature/raw/2026-06-05-digest.md:20-29"),
+    ("Adaptive Re-Ranking", "query → BM25/MiniLM/BGE tier", "能但不新增：oracle-vs-learned-router 形态已由 six-mode oracle + locked LR/cost-aware OOF curve 覆盖；IR routed object 不同。", "docs/checkpoints/paper_drafts/paper.bib:1091-1098; docs/literature/raw/2026-06-28-digest.md:24-24"),
+    ("FocusAgent", "AXTree → retained relevant lines", "不能：Pass-1 没有 retriever-pruned AXTree trajectories。", "docs/checkpoints/deliverables/chapter_literature_review.md:100-104; docs/checkpoints/paper_drafts/paper.bib:178-186"),
+    ("Revisiting Observation Reduction / MFS", "HTML → reduced HTML variant", "不能：需 11 个 reduction outputs/MFS coverage；six-mode 无对应 arms。", "docs/checkpoints/paper_drafts/paper.bib:1061-1068"),
+    ("Sema", "screen stream → structured text + compact visual tokens", "不能：replay 没有 Sema compact-token hybrid arm。", "docs/checkpoints/paper_drafts/paper.bib:1121-1128"),
+    ("MirageDetect", "image-question → answer/abstain/escalate", "不能：需 image + extra CLIP forward/layer features，offline task-text replay 不具备。", "docs/checkpoints/paper_drafts/paper.bib:1111-1118"),
+    ("Signal-Driven Observation", "event signal → when to reread DOM", "不能：position paper、无实现；routes WHEN rather than WHICH representation，且需 live DOM events。", "docs/checkpoints/paper_drafts/paper.bib:1101-1108"),
+    ("Plan-Then-Execute", "task → program/runtime LLM subroutine", "不能：typed-API execution architecture 不在 six-mode trajectory menu。", "docs/checkpoints/paper_drafts/paper.bib:1051-1058"),
+    ("WebChallenger / PageMem", "page → selected structured-DOM sections", "不能：需 offline exploration/PageMem/workflows；是 intra-representation attention。", "docs/checkpoints/paper_drafts/paper.bib:510-517"),
+    ("VisualWebArena observation ablations", "run config → AXTree/screenshot/SoM/HTML", "能但不新增：静态配置已经就是 six fixed policies，不是 runtime router。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:71-74"),
+    ("SeeAct", "deployment choice → grounding view", "能但不新增：静态 grounding comparison 由 fixed DOM/SoM/Vision 点近似；无 per-task selector。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:73-75"),
+    ("WebVoyager", "deployment choice → screenshot+SoM vs text-only", "能但不新增：全程 fixed modality，对应 fixed-point comparison。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:74-76"),
+    ("D2Snap / Beyond Pixels", "DOM → downsampled DOM", "不能：无 downsampled-DOM trajectories；不是多-mode selector。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:14-19"),
+    ("AgentOccam", "observation/history → aligned trimmed text", "不能：无其 rewritten/history-selected observation arm。", "docs/literature/routing/deep-research-report.md:19-22"),
+    ("A11y-Compressor", "A11y nodes → compact A11y", "不能：无 compressed-A11y trajectories。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:63-73"),
+    ("LineRetriever", "DOM/AXTree → navigation-relevant lines", "不能：无 retriever outputs/trajectories。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:10-19"),
+    ("UIFormer", "DOM/tree → DSL-transformed UI representation", "不能：无 synthesized transform outputs；UNVERIFIED scan-only detail。", "docs/literature/routing/literature_scan_output.md:5-21"),
+    ("Less is More / SimpAgent", "screenshot/history → compressed visual stream", "不能：within-visual compression，replay 无该 arm。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:77-89"),
+    ("ShowUI", "screenshot → retained UI visual tokens", "不能：需 model-internal token selection；不是 six-mode task selector。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:38-41; docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:80-81"),
+    ("GUI-KV", "GUI tokens → retain/evict KV entries", "不能：缺 KV traces/cache policy arms。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:52-61"),
+    ("Skip-Vision", "visual tokens → bypass FFN/KV", "不能：model-internal training/inference path 不可由 episode replay重建。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:52-61"),
+    ("PruneVid", "video/visual tokens → retained tokens", "不能：within-representation token pruning；无 web six-mode arm。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:38-41"),
+    ("SCOPE token pruning", "visual tokens → saliency/coverage subset", "不能：within-visual pruning；需 token saliency。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:38-41"),
+    ("GEAR", "KV cache → compressed cache", "不能：cache compression 不产生 selectable observation trajectory。", "docs/literature/routing/deep-research-report.md:17-20"),
+    ("Fit and Prune", "visual tokens → retained subset", "不能：缺 token-level states；routed object 不同。", "docs/literature/routing/deep-research-report.md:17-20"),
+    ("Spatio-Temporal Token Pruning", "GUI tokens → retained spatio-temporal subset", "不能：缺 token masks/filtered trajectories。", "docs/literature/routing/deep-research-report.md:17-20"),
+    ("iSHIFT", "screen → fast/global vs slow/local perception", "能但未新增：概念上可做 Vision→SoM 两段升级，已由 LazyMCoT-style 点覆盖；原法需 perception tokens/model支持。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:111-124"),
+    ("RecAgent", "GUI → filtered components/human fallback", "不能：需 component recommender/human-in-loop；UNVERIFIED 方法细节。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:111-124"),
+    ("DiMo-GUI", "GUI image → text/icon paths + adaptive halt", "不能：需 live iterative zoom/separate visual paths。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:33-41; docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:111-124"),
+    ("V-GEMS / See and Remember", "page → DOM-text agent vs vision agent", "不能：dual-agent binary switch，且论文/id 在本地明确 UNVERIFIED。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:82-90"),
+    ("AMuFC", "claim → text-only vs multimodal verifier", "不能：fact-check domain/routed pipeline different；无 web trajectories。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:75-84"),
+    ("VistaGUI / MP-GUI", "screen → graphic/text/spatial perception paths", "不能：需 modality extractors/adaptive fusion gate。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:75-84"),
+    ("Quantifying and Mitigating Modality Preference", "input → modality weights", "不能：routes internal weighting，非 discrete observation arm；UNVERIFIED transfer。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:75-84"),
+    ("Camel Browser Toolkit", "task demand → SoM/DOM/text interaction", "不能：本地仅概述、无可复现 policy/论文细节，标 UNVERIFIED。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:105-108"),
+    ("AdaptAgent", "demonstration → text-only vs multimodal", "不能：routes adaptation demonstrations rather than task observation；本地无完整方法细节。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:105-109"),
+    ("Accio", "web task → speculative profile fast path/full ReAct", "不能：需 live profile matching + verification + environment handoff。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:43-50"),
+    ("LLM Cascades with Mixture of Thoughts", "reasoning answer → accept/escalate model", "不能：需多 thought samples/answer consistency；routed object 不同。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:21-31"),
+    ("Cascadia", "requests → serving cascade plan/resources", "不能：system load/resource allocation 不在 replay。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:21-31"),
+    ("Unified Routing and Cascading", "query → model/cascade", "不能：cross-model routed object；本地仅 taxonomy。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:5-8"),
+    ("Route-To-Reason", "query → model + reasoning strategy", "不能：six-mode replay 没有 model/strategy factorial arms。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:5-8"),
+    ("EMAFusion", "query → LLM selection/integration", "不能：routed object 是 models；本地仅 taxonomy。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:5-8"),
+    ("Adaptive Reasoning Executor", "query → reasoning executor/strategy", "不能：无相应 compute arms；本地仅 taxonomy。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:5-8"),
+    ("Is Escalation Worth It?", "query → pairwise cascade deferral", "不能：UNVERIFIED local entry，且 cross-model pairwise envelope。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:23-26"),
+    ("CALM", "token/example → compute depth", "不能：model layer halting，不可从 episode trajectories replay。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:7-8"),
+    ("EESD / Speculative Decoding via Early-exiting", "token → exit/draft verification", "不能：decoding-internal routed object。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:7-8"),
+    ("Dr.LLM", "token → dynamic layer route", "不能：model-internal depth，缺 layer states。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:7-9"),
+    ("AdaPonderLM", "token/example → ponder depth", "不能：adaptive compute depth，非 observation selector。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:7-9"),
+    ("ADEPT", "token → early-exit depth", "不能：UNVERIFIED future-dated method，缺 layer-level traces。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:28-31"),
+    ("MuE / You Need Multiple Exiting", "VLM input → encoder/decoder exits", "不能：requires early-exit model architecture。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:28-31"),
+    ("SpecRouter", "draft tokens → speculative route", "不能：token-level draft/verify path 不在 replay。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:8-9"),
+    ("Fast Speculative Edge-Cloud Decoding", "tokens → edge draft/cloud verify/exit", "不能：serving + token-level pipeline 不同。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:8-9"),
+    ("Medusa", "tokens → parallel draft heads/base verification", "不能：UNVERIFIED model-internal decoding method。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:33-36"),
+    ("SDSAT", "tokens → semantic adaptive drafts", "不能：decoding-token object，非 task observation。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:33-36"),
+    ("LLMLingua", "prompt → retained high-information tokens", "不能：需要 compressor outputs；无对应 trajectories。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:63-73"),
+    ("LongLLMLingua", "long context → retained key information", "不能：within-prompt compression，缺 compressed arms。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:43-46"),
+    ("LLMLingua-2", "prompt token → keep/drop", "不能：requires token classifier/compressed trajectories。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:43-46"),
+    ("FastMMoE", "tokens/experts → retained path", "不能：model/expert internals，且本地仅 taxonomy。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:9-10"),
+    ("KVCrush", "KV entries → retain/drop", "不能：缺 cache entries/states；本地仅 taxonomy。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:9-10"),
+    ("KVReviver", "KV entries → retain/revive", "不能：cache-level routed object。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:9-10"),
+    ("RAP", "tokens/cache → retained subset", "不能：token/cache route，缺 internal states。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:9-10"),
+    ("Active Context Compression", "history/context → retained context", "不能：无 compressed-context trajectories；本地仅 taxonomy。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:10-12"),
+    ("BEST-Route", "query → model + sample count", "不能：routed object 是 model/test-time compute，非 representation。", "docs/literature/routing/deep-research-report.md:23-25"),
+    ("OptiRoute / Dynamic Tool Routing", "task → tool/model", "不能：工具池/model池与 six-mode arms 不同；本地无可复现细节。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:60-63"),
+    ("Router-R1", "multi-round query → model pool/aggregation", "不能：UNVERIFIED，需 RL 与多模型调用。", "docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:60-63"),
+    ("MTRouter", "multi-turn history → sequential model", "不能：UNVERIFIED scan-only；routed object 是 model。", "docs/literature/routing/literature_scan_output.md:5-13"),
+    ("Surfer-H", "workflow → specialized policy/localizer/validator", "不能：UNVERIFIED scan-only，需不同 modules/models。", "docs/literature/routing/literature_scan_output.md:5-13"),
+    ("Topaz", "workflow → skill/budget allocation", "不能：UNVERIFIED scan-only；无 skill profiles。", "docs/literature/routing/literature_scan_output.md:5-13"),
+    ("CASTER", "workflow subtask → multi-agent route", "不能：UNVERIFIED scan-only；routed object 是 subagent。", "docs/literature/routing/literature_scan_output.md:5-13"),
+    ("ECCOS", "request → heterogeneous model pool/schedule", "不能：UNVERIFIED scan-only；serving/model axis。", "docs/literature/routing/literature_scan_output.md:5-13"),
+    ("OmniParser", "deployment → screenshot-only parser", "能但不新增：固定 visual design，不是 per-task router；对应 Vision-side fixed comparison。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:11-21"),
+    ("WebSight", "deployment → screenshot-only web agent", "不能：fixed-modality system，不输出 per-task switch。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:11-21"),
+    ("MolmoWeb", "deployment → screenshot-only web agent", "不能：fixed-modality design；本地 arXiv id 未 surfaced，UNVERIFIED。", "docs/literature/routing/The recent literature clusters into eight routing axes; the first six are fairly well populated, while true per-task input-represe.md:11-21"),
+    ("AndroidWorld M3A/SeeAct", "run config → A11y vs SoM", "能但不新增：static mobile-GUI comparison，对应 fixed points；非 web/runtime router。", "docs/literature/routing/deep-research-report.md:31-35"),
+    ("OSWorld-Human", "run config → SS/SS+A11y/SS+A11y+SoM", "能但不新增：static desktop comparison，不是 selector。", "docs/literature/routing/deep-research-report.md:31-36"),
+    ("Set-of-Mark Prompting", "deployment → raw screenshot vs marked screenshot", "能但不新增：定义一个 representation；已有 SoM/Vision fixed points。", "docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:116-125"),
+)
 
 
 def _relative(path: Path) -> str:
@@ -204,6 +309,101 @@ def aggregate_episode_confidence(
     return result
 
 
+def _canonical_steps_path(summary_path: Path) -> Path:
+    suffix = "_summary_v2.json"
+    if not summary_path.name.endswith(suffix):
+        raise ValueError(f"Unexpected episode summary path: {summary_path}")
+    return summary_path.with_name(
+        summary_path.name.removesuffix(suffix) + "_steps_v2.jsonl"
+    )
+
+
+def trajectory_failure_signals(steps: Iterable[dict[str, Any]]) -> dict[str, bool]:
+    """Extract observable, outcome-free escalation signals from one trajectory.
+
+    The decision deliberately excludes evaluator reward and episode ``success``.
+    Every signal is available from the step stream at or before the point at which
+    the cheap trajectory stops.
+    """
+
+    parse_failure = False
+    action_failure = False
+    invalid_agent_action = False
+    two_step_no_change = False
+    empty_finish = False
+    unchanged_streak = 0
+    for step in steps:
+        parse_failure |= step.get("parse_valid") is False
+        action_failure |= step.get("action_success") is False
+        invalid_agent_action |= step.get("valid_agent_action") is False
+        if step.get("page_changed") is False:
+            unchanged_streak += 1
+            two_step_no_change |= unchanged_streak >= 2
+        else:
+            unchanged_streak = 0
+
+        if step.get("action_type") == "finish":
+            action = step.get("action")
+            if isinstance(action, dict):
+                answer_keys = [
+                    key for key in ("answer", "text", "final_answer") if key in action
+                ]
+                if answer_keys and all(
+                    action[key] is None or not str(action[key]).strip()
+                    for key in answer_keys
+                ):
+                    empty_finish = True
+    return {
+        "parse_failure": parse_failure,
+        "action_failure": action_failure,
+        "invalid_agent_action": invalid_agent_action,
+        "two_step_no_change": two_step_no_change,
+        "empty_finish": empty_finish,
+    }
+
+
+def vardanyan_should_escalate(steps: Iterable[dict[str, Any]]) -> bool:
+    """A11y/DOM-first -> vision escalation on any logged failure proxy."""
+
+    return any(trajectory_failure_signals(steps).values())
+
+
+def difficulty_trigger(intent_token_count: int, threshold: float) -> bool:
+    """Strict threshold rule used by the LazyMCoT-style difficulty proxy."""
+
+    value = int(intent_token_count)
+    if value < 0 or not math.isfinite(float(threshold)):
+        raise ValueError("Difficulty trigger requires a non-negative count and finite threshold")
+    return value > float(threshold)
+
+
+def simulate_two_stage_task(
+    task_outcomes: dict[str, dict[str, Any]],
+    *,
+    start_mode: str,
+    escalation_mode: str,
+    escalate: bool,
+) -> dict[str, Any]:
+    """Replay one trajectory or two independent-reset trajectories with summed cost."""
+
+    if start_mode == escalation_mode:
+        raise ValueError("Two-stage modes must be distinct")
+    for mode in (start_mode, escalation_mode):
+        if mode not in task_outcomes:
+            raise ValueError(f"Missing two-stage outcome for mode {mode}")
+    executed = [start_mode, escalation_mode] if escalate else [start_mode]
+    final_mode = executed[-1]
+    return {
+        "final_mode": final_mode,
+        "executed_modes": executed,
+        "n_executed": len(executed),
+        "success": bool(task_outcomes[final_mode]["success"]),
+        "total_billed_cost_usd": sum(
+            float(task_outcomes[mode]["cost_usd"]) for mode in executed
+        ),
+    }
+
+
 def load_observed_confidence(
     outcomes: dict[int, dict[str, dict[str, Any]]],
 ) -> tuple[dict[int, dict[str, dict[str, float | None]]], dict[str, Any]]:
@@ -220,12 +420,7 @@ def load_observed_confidence(
         values[task_id] = {}
         for mode in DISPLAY_MODES:
             summary_path = REPO / outcomes[task_id][mode]["summary_path"]
-            suffix = "_summary_v2.json"
-            if not summary_path.name.endswith(suffix):
-                raise ValueError(f"Unexpected episode summary path: {summary_path}")
-            steps_path = summary_path.with_name(
-                summary_path.name.removesuffix(suffix) + "_steps_v2.jsonl"
-            )
+            steps_path = _canonical_steps_path(summary_path)
             steps = read_jsonl_dedup(
                 steps_path,
                 summary_path=summary_path,
@@ -634,6 +829,198 @@ def build_preexecution_fallback(success_oof: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def run_vardanyan_style_escalation(
+    outcomes: dict[int, dict[str, dict[str, Any]]],
+) -> dict[str, Any]:
+    """DOM-first trajectory, then Vision when an observable failure proxy fires."""
+
+    n_success = 0
+    total_cost = 0.0
+    n_escalated = 0
+    signal_counts: Counter[str] = Counter()
+    final_mode_counts: Counter[str] = Counter()
+    task_records: list[dict[str, Any]] = []
+    for task_id in sorted(outcomes):
+        summary_path = REPO / outcomes[task_id][VARDANYAN_START_MODE]["summary_path"]
+        steps_path = _canonical_steps_path(summary_path)
+        steps = read_jsonl_dedup(
+            steps_path,
+            summary_path=summary_path,
+            strict_identity=True,
+        )
+        if not steps:
+            raise ValueError(f"No DOM steps for Vardanyan-style task {task_id}")
+        signals = trajectory_failure_signals(steps)
+        for signal, fired in signals.items():
+            signal_counts[signal] += int(fired)
+        escalate = any(signals.values())
+        row = simulate_two_stage_task(
+            outcomes[task_id],
+            start_mode=VARDANYAN_START_MODE,
+            escalation_mode=VARDANYAN_ESCALATION_MODE,
+            escalate=escalate,
+        )
+        n_success += int(row["success"])
+        total_cost += float(row["total_billed_cost_usd"])
+        n_escalated += int(escalate)
+        final_mode_counts[row["final_mode"]] += 1
+        task_records.append(
+            {
+                "task_id": task_id,
+                "escalated": escalate,
+                "signals": signals,
+                "steps_path": _relative(steps_path),
+                **row,
+            }
+        )
+    point = _point_from_metric(
+        "vardanyan_dom_to_vision_failure",
+        "Vardanyan-style DOM→Vision failure escalation",
+        "litmined_heuristic_escalation",
+        {
+            "n_tasks": len(outcomes),
+            "n_success": n_success,
+            "sum_total_billed_cost_usd": total_cost,
+        },
+    )
+    return {
+        "protocol": {
+            "source_style": "vardanyan2025browser",
+            "start_mode": VARDANYAN_START_MODE,
+            "escalation_mode": VARDANYAN_ESCALATION_MODE,
+            "decision_rule": (
+                "escalate after any DOM step parse failure, failed/invalid action, "
+                "two consecutive unchanged pages, or finish with an explicitly empty answer"
+            ),
+            "decision_uses_evaluator_success": False,
+            "cost_accounting": (
+                "sum complete independent-reset DOM and Vision Pass-1 trajectories "
+                "when escalation fires"
+            ),
+            "success_accounting": "success of final executed mode only",
+        },
+        "point": {
+            **point,
+            "mean_trajectories_executed": 1.0 + n_escalated / len(outcomes),
+            "escalated_task_fraction": n_escalated / len(outcomes),
+            "n_escalated": n_escalated,
+            "final_mode_counts": dict(sorted(final_mode_counts.items())),
+            "signal_task_counts": dict(sorted(signal_counts.items())),
+        },
+        "task_records": task_records,
+    }
+
+
+def run_lazymcot_style_escalation(
+    outcomes: dict[int, dict[str, dict[str, Any]]],
+    entries: dict[str, dict[str, Any]],
+    fold_map: dict[int, int],
+) -> dict[str, Any]:
+    """Vision-first, task-length difficulty trigger, then SoM re-observation."""
+
+    raw_by_task = {
+        task_id: build_offline_raw_features(
+            entries, PHASE1_ROOT, "classifieds", task_id
+        )[0]
+        for task_id in sorted(outcomes)
+    }
+    fold_thresholds: dict[int, float] = {}
+    for fold_k in range(N_FOLDS):
+        train_lengths = [
+            int(raw_by_task[task_id]["numeric"][3])
+            for task_id in outcomes
+            if fold_map[task_id] != fold_k
+        ]
+        fold_thresholds[fold_k] = _fold_train_quantile_threshold(
+            train_lengths, LAZYMCOT_DIFFICULTY_QUANTILE
+        )
+
+    n_success = 0
+    total_cost = 0.0
+    n_escalated = 0
+    final_mode_counts: Counter[str] = Counter()
+    task_records: list[dict[str, Any]] = []
+    for task_id in sorted(outcomes):
+        fold_k = fold_map[task_id]
+        intent_token_count = int(raw_by_task[task_id]["numeric"][3])
+        threshold = fold_thresholds[fold_k]
+        escalate = difficulty_trigger(intent_token_count, threshold)
+        row = simulate_two_stage_task(
+            outcomes[task_id],
+            start_mode=LAZYMCOT_START_MODE,
+            escalation_mode=LAZYMCOT_ESCALATION_MODE,
+            escalate=escalate,
+        )
+        n_success += int(row["success"])
+        total_cost += float(row["total_billed_cost_usd"])
+        n_escalated += int(escalate)
+        final_mode_counts[row["final_mode"]] += 1
+        task_records.append(
+            {
+                "task_id": task_id,
+                "fold_k": fold_k,
+                "intent_token_count": intent_token_count,
+                "fold_train_median_threshold": threshold,
+                "escalated": escalate,
+                **row,
+            }
+        )
+    point = _point_from_metric(
+        "lazymcot_length_median_vision_to_som",
+        "LazyMCoT-style length trigger Vision→SoM",
+        "litmined_difficulty_escalation",
+        {
+            "n_tasks": len(outcomes),
+            "n_success": n_success,
+            "sum_total_billed_cost_usd": total_cost,
+        },
+    )
+    return {
+        "protocol": {
+            "source_style": "wang2026lazymcot",
+            "outer_folds": N_FOLDS,
+            "same_fold_map": True,
+            "difficulty_proxy": "task intent whitespace-token count",
+            "threshold": "strictly above held-out fold's training median",
+            "threshold_quantile": LAZYMCOT_DIFFICULTY_QUANTILE,
+            "fold_train_thresholds": {
+                str(key): value for key, value in sorted(fold_thresholds.items())
+            },
+            "start_mode": LAZYMCOT_START_MODE,
+            "escalation_mode": LAZYMCOT_ESCALATION_MODE,
+            "decision_uses_evaluator_success": False,
+            "cost_accounting": (
+                "sum complete independent-reset Vision and SoM Pass-1 trajectories "
+                "when escalation fires"
+            ),
+            "success_accounting": "success of final executed mode only",
+        },
+        "point": {
+            **point,
+            "mean_trajectories_executed": 1.0 + n_escalated / len(outcomes),
+            "escalated_task_fraction": n_escalated / len(outcomes),
+            "n_escalated": n_escalated,
+            "final_mode_counts": dict(sorted(final_mode_counts.items())),
+        },
+        "task_records": task_records,
+    }
+
+
+def run_litmined_baselines(
+    outcomes: dict[int, dict[str, dict[str, Any]]],
+    entries: dict[str, dict[str, Any]],
+    fold_map: dict[int, int],
+) -> dict[str, Any]:
+    vardanyan = run_vardanyan_style_escalation(outcomes)
+    lazymcot = run_lazymcot_style_escalation(outcomes, entries, fold_map)
+    return {
+        "implemented_policy_count": 2,
+        "vardanyan_style": vardanyan,
+        "lazymcot_style": lazymcot,
+        "points": [vardanyan["point"], lazymcot["point"]],
+    }
+
+
 def _random_summary(
     policy_id: str,
     label: str,
@@ -806,6 +1193,7 @@ def _compact_point(row: dict[str, Any]) -> dict[str, Any]:
         "tau_quantile",
         "mean_trajectories_executed",
         "escalated_task_fraction",
+        "n_escalated",
         "k",
     ]
     return {key: row[key] for key in keys if key in row}
@@ -877,6 +1265,84 @@ def _table_row(row: dict[str, Any], frontier: set[str]) -> str:
     )
 
 
+def validate_literature_sources(
+    rows: Iterable[tuple[str, str, str, str]] = LITERATURE_MINING_ROWS,
+) -> None:
+    """Fail closed if any cited local file or inclusive line range drifts."""
+
+    line_counts: dict[Path, int] = {}
+    for work, _, _, source_text in rows:
+        chunks = source_text.split("; docs/")
+        references = [chunks[0], *(f"docs/{chunk}" for chunk in chunks[1:])]
+        for reference in references:
+            try:
+                relative_path, span = reference.rsplit(":", 1)
+                start, end = (int(value) for value in span.split("-", 1))
+            except (ValueError, TypeError) as exc:
+                raise ValueError(
+                    f"Malformed literature source for {work}: {reference}"
+                ) from exc
+            path = REPO / relative_path
+            if not path.is_file():
+                raise FileNotFoundError(
+                    f"Missing literature source for {work}: {relative_path}"
+                )
+            if path not in line_counts:
+                line_counts[path] = len(path.read_text().splitlines())
+            if start < 1 or end < start or end > line_counts[path]:
+                raise ValueError(
+                    f"Invalid literature line range for {work}: {reference} "
+                    f"(file has {line_counts[path]} lines)"
+                )
+
+
+def literature_mining_inventory() -> list[dict[str, str]]:
+    """Return the validated local-source inventory in a report-friendly form."""
+
+    validate_literature_sources()
+    return [
+        {
+            "work": work,
+            "routed_object": routed_object,
+            "offline_adaptability": adaptability,
+            "local_source": source,
+        }
+        for work, routed_object, adaptability, source in LITERATURE_MINING_ROWS
+    ]
+
+
+def _markdown_cell(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", " ")
+
+
+def render_literature_inventory(rows: Iterable[dict[str, str]]) -> list[str]:
+    lines = [
+        "## Systematic router/switch mining inventory",
+        "",
+        "Local-source-only inventory; `UNVERIFIED` is preserved wherever the allowed "
+        "notes do not support a stronger claim. “能但不新增” means the idea honestly "
+        "maps to this replay but collapses to an existing fixed/analysis point.",
+        "",
+        "| Prior work | Routed object | Six-mode task-level offline replay adaptation | Local source |",
+        "|---|---|---|---|",
+    ]
+    for row in rows:
+        lines.append(
+            "| "
+            + " | ".join(
+                _markdown_cell(row[key])
+                for key in (
+                    "work",
+                    "routed_object",
+                    "offline_adaptability",
+                    "local_source",
+                )
+            )
+            + " |"
+        )
+    return lines
+
+
 def render_markdown(payload: dict[str, Any], *, report_title: str | None = None) -> str:
     title = report_title or "Router prior-work baselines — offline efficiency suite"
     points = {row["policy_id"]: row for row in payload["points"]}
@@ -890,6 +1356,7 @@ def render_markdown(payload: dict[str, Any], *, report_title: str | None = None)
         row for row in points.values() if row["category"] == "random_noise_floor"
     ]
     cascade_best = [_best_row(rows) for rows in payload["cascade"]["curves"].values()]
+    litmined_rows = payload["litmined_baselines"]["points"]
     best_knn = _best_row(knn_rows)
     best_cascade = _best_row(
         row for rows in payload["cascade"]["curves"].values() for row in rows
@@ -899,6 +1366,7 @@ def render_markdown(payload: dict[str, Any], *, report_title: str | None = None)
         points["router_oof"],
         points["oracle"],
         *knn_rows,
+        *litmined_rows,
         *random_rows,
         *cascade_best,
     ]
@@ -912,11 +1380,17 @@ def render_markdown(payload: dict[str, Any], *, report_title: str | None = None)
         "offline adaptation `(SR_policy − SR_best-single)/(SR_oracle − SR_best-single)`. "
         "Random rows show 1000-repeat mean ± sample SD.",
         "",
-        "## Main operating points",
-        "",
-        "| Policy | SR (%) | Mean billed USD/task | PGR | ΔSR pp / ΔUSD vs best-single | Deployable frontier |",
-        "|---|---:|---:|---:|---:|:---:|",
     ]
+    lines.extend(render_literature_inventory(payload["literature_mining_inventory"]))
+    lines.extend(
+        [
+            "",
+            "## Main operating points",
+            "",
+            "| Policy | SR (%) | Mean billed USD/task | PGR | ΔSR pp / ΔUSD vs best-single | Deployable frontier |",
+            "|---|---:|---:|---:|---:|:---:|",
+        ]
+    )
     lines.extend(_table_row(row, frontier) for row in summary_rows)
     lines.extend(
         [
@@ -951,12 +1425,40 @@ def render_markdown(payload: dict[str, Any], *, report_title: str | None = None)
             f"{'yes' if row['policy_id'] in frontier else 'no'} |"
         )
 
+    lines.extend(
+        [
+            "",
+            "## Newly mined web/observation-router adaptations",
+            "",
+            "Both policies use only pre-evaluator decision signals and sum the full "
+            "canonical billed cost of every replayed trajectory. Because Pass-1 arms "
+            "were run from independent resets, these are conservative two-trajectory "
+            "accounting simulations, not live state hand-offs.",
+            "",
+            "| Policy | SR (%) | Mean billed USD/task | PGR | Escalated tasks | Mean trajectories | Frontier |",
+            "|---|---:|---:|---:|---:|---:|:---:|",
+        ]
+    )
+    for row in litmined_rows:
+        lines.append(
+            f"| {row['label']} | {row['success_rate_pct']:.2f} | "
+            f"{row['mean_cost_usd']:.6f} | "
+            f"{_format_pgr(row.get('performance_gap_recovered'))} | "
+            f"{row['n_escalated']} ({row['escalated_task_fraction']:.1%}) | "
+            f"{row['mean_trajectories_executed']:.2f} | "
+            f"{'yes' if row['policy_id'] in frontier else 'no'} |"
+        )
+
     lines.extend(["", "## Dominance conclusion", ""])
     deployable_labels = [points[policy_id]["label"] for policy_id in payload["pareto"]["deployable_frontier"]]
     hindsight_labels = [points[policy_id]["label"] for policy_id in payload["pareto"]["hindsight_augmented_frontier"]]
     lines.append(f"Deployable frontier after adding every point: **{', '.join(deployable_labels)}**.")
     lines.append(f"With the hindsight oracle included: **{', '.join(hindsight_labels)}**.")
-    for policy_id in ["router_oof", *(row["policy_id"] for row in knn_rows)]:
+    for policy_id in [
+        "router_oof",
+        *(row["policy_id"] for row in knn_rows),
+        *(row["policy_id"] for row in litmined_rows),
+    ]:
         dominators = payload["pareto"]["dominated_by"][policy_id]
         text = ", ".join(f"{row['policy_id']} ({row['type']})" for row in dominators) or "none"
         lines.append(f"- `{policy_id}` dominators: {text}.")
@@ -987,6 +1489,19 @@ def render_markdown(payload: dict[str, Any], *, report_title: str | None = None)
             "logprob/margin rather than a learned response scorer or cascade optimizer. Each "
             "Pass-1 trajectory originally starts from an independent reset; summing them is an "
             "offline accounting simulation, not a live stateful cascade.",
+            "- **Vardanyan-style, not production-report reproduction (`vardanyan2025browser`).** "
+            "The report's documented triggers are canvas apps, charts, or a missing accessibility "
+            "tree. Those page-semantic triggers are not logged in the replay, so the adaptation "
+            "uses outcome-free step failures (parse/action/unchanged-page/explicit empty finish) "
+            "and escalates a complete DOM trajectory to a complete Vision trajectory.",
+            "- **LazyMCoT-style, not LazyMCoT reproduction (`wang2026lazymcot`).** The source uses "
+            "first-token statistics, a small GBDT, conformal thresholding, and localized-panel "
+            "re-observation in natural-image VQA. The adaptation uses only task-text length, a "
+            "fold-training median threshold, and a complete Vision→SoM replay on VWA.",
+            "- **WebRouter not implemented (`webrouter2025`).** The allowed local sources expose "
+            "only the ca-VIB name and query-to-model scope, not a reproducible objective; a routing "
+            "scan also conflicts with the verified bibliography by calling its object compressed "
+            "prompts. Implementing a made-up cost regularizer would violate the local-source-only rule.",
             "- **Noise floors are study-specific controls.** Uniform random and inverse-fold-train-cost "
             "random are not claimed as implementations from either cited paper.",
             "- **PGR is an offline adaptation.** RouteLLM normalizes between weak and strong models; "
@@ -1072,6 +1587,7 @@ def run_analysis(
         )
     else:
         cascade = build_preexecution_fallback(success_oof)
+    litmined = run_litmined_baselines(outcomes, entries, fold_map)
     random_floors = run_random_noise_floors(
         outcomes,
         fold_map,
@@ -1091,6 +1607,7 @@ def run_analysis(
             for curve in cascade["curves"].values()
             for row in curve
         ],
+        *[dict(row) for row in litmined["points"]],
         *[dict(row) for row in random_floors["points"]],
     ]
     all_points = [
@@ -1116,6 +1633,13 @@ def run_analysis(
         signal: [by_id[row["policy_id"]] for row in rows]
         for signal, rows in cascade["curves"].items()
     }
+    litmined["points"] = [by_id[row["policy_id"]] for row in litmined["points"]]
+    litmined["vardanyan_style"]["point"] = by_id[
+        litmined["vardanyan_style"]["point"]["policy_id"]
+    ]
+    litmined["lazymcot_style"]["point"] = by_id[
+        litmined["lazymcot_style"]["point"]["policy_id"]
+    ]
     plane_points = [_compact_point(row) for row in all_points]
     pareto = build_combined_pareto(plane_points)
     best_knn = _best_row(knn["points"])
@@ -1180,7 +1704,24 @@ def run_analysis(
                 "fold-cost-ordered six-mode trajectory cascade using observed B0 "
                 "logprob/margin aggregates; not FrugalGPT's learned cascade selection/scoring"
             ),
+            "vardanyan2025browser": (
+                "DOM-first then Vision on logged parse/action/no-progress proxies; "
+                "the report's production triggers are canvas/charts/missing a11y, and "
+                "offline replay must sum independent full trajectories"
+            ),
+            "wang2026lazymcot": (
+                "Vision-first then SoM when task-text length exceeds the fold-training "
+                "median; substitutes a static intent-length proxy for first-token "
+                "statistics and full SoM for localized-panel re-observation"
+            ),
+            "webrouter2025": (
+                "not implemented: local sources identify a cost-aware variational "
+                "information-bottleneck query-to-model router but do not expose an "
+                "exact objective or training recipe; one routing note also conflicts "
+                "with the verified bibliography on the routed object"
+            ),
         },
+        "literature_mining_inventory": literature_mining_inventory(),
         "anchors": {
             "best_single_policy_id": best["policy_id"],
             "best_single_success_rate_pct": best_sr,
@@ -1193,6 +1734,7 @@ def run_analysis(
         "confidence_probe": confidence_probe,
         "knn": knn,
         "cascade": cascade,
+        "litmined_baselines": litmined,
         "random_noise_floors": random_floors,
         "pareto": pareto,
         "summary": {
@@ -1203,6 +1745,9 @@ def run_analysis(
             "best_cascade_success_rate_pct": best_cascade["success_rate_pct"],
             "best_cascade_mean_cost_usd": best_cascade["mean_cost_usd"],
             "primary_cascade_signal": cascade["primary_signal"],
+            "litmined_policy_ids": [
+                row["policy_id"] for row in litmined["points"]
+            ],
             "locked_lr_on_combined_deployable_frontier": "router_oof" in pareto[
                 "deployable_frontier"
             ],
@@ -1254,7 +1799,7 @@ def main() -> int:
     md_path.write_text(render_markdown(payload))
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(
-        render_markdown(payload, report_title="Codex execution report — router prior baselines")
+        render_markdown(payload, report_title="Codex execution report — router lit-mined baselines")
     )
     print(f"Wrote: {json_path}")
     print(f"Wrote: {md_path}")

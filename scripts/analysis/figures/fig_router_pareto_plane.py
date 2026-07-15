@@ -37,6 +37,8 @@ ORACLE_GREEN = "#2E8B57"
 CURVE_ORANGE = "#E07A2D"
 KNN_RED = "#C44E52"
 CASCADE_BROWN = "#8C613C"
+VARDANYAN_TEAL = "#238B8E"
+LAZYMCOT_PINK = "#C05A8A"
 INK = "#202124"
 GRID = "#E7E9EC"
 
@@ -479,6 +481,49 @@ def _draw_b0_prior_full(
         zorder=5,
         label="kNN",
     )
+    litmined = {
+        row["policy_id"]: row for row in prior["litmined_baselines"]["points"]
+    }
+    vardanyan = litmined["vardanyan_dom_to_vision_failure"]
+    lazymcot = litmined["lazymcot_length_median_vision_to_som"]
+    ax.scatter(
+        [vardanyan["mean_cost_usd"]],
+        [vardanyan["success_rate_pct"]],
+        color=VARDANYAN_TEAL,
+        marker="X",
+        s=62,
+        edgecolor="white",
+        linewidth=0.7,
+        zorder=6,
+        label="Vardanyan-style",
+    )
+    ax.scatter(
+        [lazymcot["mean_cost_usd"]],
+        [lazymcot["success_rate_pct"]],
+        color=LAZYMCOT_PINK,
+        marker="P",
+        s=62,
+        edgecolor="white",
+        linewidth=0.7,
+        zorder=6,
+        label="LazyMCoT-style",
+    )
+    _annotate(
+        ax,
+        vardanyan,
+        f"DOM→Vision failure\n{vardanyan['success_rate_pct']:.1f}% @ ${vardanyan['mean_cost_usd']:.3f}",
+        (-5, -35),
+        fontsize=6.7,
+        color=VARDANYAN_TEAL,
+    )
+    _annotate(
+        ax,
+        lazymcot,
+        f"Length→SoM\n{lazymcot['success_rate_pct']:.1f}% @ ${lazymcot['mean_cost_usd']:.3f}",
+        (15, 24),
+        fontsize=6.7,
+        color=LAZYMCOT_PINK,
+    )
     signal = prior["cascade"]["primary_signal"]
     cascade = prior["cascade"]["curves"][signal]
     ax.plot(
@@ -491,16 +536,18 @@ def _draw_b0_prior_full(
         label=f"Cascade ({signal})",
         zorder=3,
     )
-    for row in (cascade[0], cascade[-1]):
+    # The q=0 endpoint exactly overlaps the fixed-Vision point in this cell, so
+    # label only the far endpoint; annotating both makes the low-cost cluster illegible.
+    for row in (cascade[-1],):
         _annotate(
             ax,
             row,
             f"q={row['tau_quantile']:.2f}\n{row['success_rate_pct']:.1f}% @ ${row['mean_cost_usd']:.3f}",
-            (5, 6 if row is cascade[0] else -5),
+            (5, -5),
             fontsize=6.8,
             color=CASCADE_BROWN,
         )
-    ax.set_title("B0 prior-work envelope · full cascade cost span", loc="left", fontsize=10.0, fontweight="bold")
+    ax.set_title("B0 lit-mined envelope · full cascade cost span", loc="left", fontsize=10.0, fontweight="bold")
     ax.set_xlabel("Mean billed cost/task (API USD)", fontsize=8.2)
     ax.set_ylabel("Success rate (%)", fontsize=8.2)
     ax.set_xlim(0.052, 0.435)
