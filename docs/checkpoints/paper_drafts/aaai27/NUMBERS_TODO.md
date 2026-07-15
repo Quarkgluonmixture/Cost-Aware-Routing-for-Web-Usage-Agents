@@ -111,3 +111,9 @@ stale run (B1_3mode_20260413) 抓成第 7 条 — **canonical 重跑前必须先
 - [ ] 匿名化 pass（host 名 / 用户名 / OSF 匿名视图）
 - [ ] LaTeX 转换 (pandoc → aaai27.sty)
 - [ ] **commit 本 prose 前必须跑 /stress (+ codex + gemini chain)** — CLAUDE.md auto-trigger #2
+
+## 4. K5 激活后的字数账 (2026-07-15)
+
+- **PROTOCOL_NOTE_06 激活变更集给 §4(+1 句) / §8(+1 段) 净增 ~210 词** (`wc -w` 6085→6295 raw)。
+  7 页零余量 → 最终打包时用 cut_prewrites 抵消; 若 k=6 升级触发, 删全部 K5-CONDITIONAL 语言自动回吐。
+- [ ] verdict-day 打包前重跑 convert.sh 页数账 (checklist item 6b) 确认正文仍 ≤ 第 7 页末

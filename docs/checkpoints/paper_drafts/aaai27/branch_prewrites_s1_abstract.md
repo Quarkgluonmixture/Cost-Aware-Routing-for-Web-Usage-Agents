@@ -114,13 +114,16 @@ Multimodal web agents built on Set-of-Marks (SoM) receive a bundled observation:
 verdict day 流程: 读 gate JSON → 本文件选支 → splice → 填 «槽» → 删 (R-CONDITIONAL) 标记与另一支
 → banned grep → 词数 → /stress。本文件是 runbook 第 2-4 步的输入。
 
-## 8. k=5 提交预写（K5-CONDITIONAL；DRAFT-PENDING-ADVISOR；NOT-IN-FORCE）
+## 8. k=5 提交预写（K5-CONDITIONAL；**ACTIVATED 2026-07-15** per signed PROTOCOL_NOTE_06）
 
-> 本节只在
-> `PROTOCOL_NOTE_06_K5_EARLY_VERDICT_20260716_DRAFT.md` 经学长签字、完成 witness
-> 与 OSF 知会并正式生效后可用。当前不得据此选支、splice 或改 `aaai27_main.md`。
+> **状态更新 2026-07-15**: 学长已于 2026-07-15 周会口头 APPROVE，
+> `PROTOCOL_NOTE_06_K5_EARLY_VERDICT_20260716.md`（已去 DRAFT 后缀）激活，witness tag
+> `protocol-note-06-k5-early-verdict-signed-20260715`，OSF 知会已排队。
+> **§8.1（§4 披露句）与 §8.2（§8 statistics 段）已于激活变更集 splice 进
+> `aaai27_main.md`**；§8.3 的 abstract/§1 替换仅在 k=5 verdict-day splice 时使用
+> （数字槽从 Protocol-Note-06 授权的 k=5 slotsheet 填，禁手抄 interim）。
 > 若 B2 Reddit 在提交前 land 并 bind，本节全部作废，必须按 k=6 重生 slotsheet
-> 并重 splice。`(K5-CONDITIONAL)` 是预写标记，正式落稿时须随条件句一起处理。
+> 并重 splice、删除全部 K5-CONDITIONAL 语言。
 
 ### 8.1 §4 透明披露句（一句）
 

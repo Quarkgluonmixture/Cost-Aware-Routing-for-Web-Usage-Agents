@@ -1,6 +1,6 @@
 ---
 title: Time-constrained k=5 submission verdict with unconditional k=6 upgrade — temporary deviation from the six-planned-cell estimand
-status: DRAFT — pending advisor sign-off 2026-07-16 meeting; NOT in force
+status: SIGNED / IN FORCE — advisor verbal APPROVE at 2026-07-15 meeting (held ahead of the planned 2026-07-16 date); §6 activation sequence completed 2026-07-15
 parent_doi: 10.17605/OSF.IO/9QCWU
 parent_lock_tag: preregistration-locked @ ef609a3
 prior_amendments:
@@ -16,18 +16,19 @@ prior_amendments:
   - PROTOCOL_NOTE_03_RESUME_ON_ABORT_20260622
   - PROTOCOL_NOTE_04_REDDIT_IDENTITY_RESET_20260625
   - PROTOCOL_NOTE_05_ANALYSIS_ESTIMAND_CONFORMANCE_20260714
-witness_tag: <PENDING-ADVISOR-SIGNOFF-AND-FINALIZING-COMMIT-NO-TAG-CREATED>
-osf_notice: DRAFT — pending advisor sign-off; notify OSF amendment log only if activated
-decided_by: <PENDING — advisor decision at 2026-07-16 meeting>
-effective_at: NOT IN FORCE — no k=5 branch selection, splice, or paper claim is authorized by this draft
+witness_tag: protocol-note-06-k5-early-verdict-signed-20260715 (created at the finalizing commit)
+osf_notice: QUEUED 2026-07-15 — post text in docs/checkpoints/deliverables/osf_notice_protocol_note_06_2026-07-15.md, then record the OSF URL/timestamp here
+decided_by: Advisor (senior mentor / 学长) — verbal APPROVE at the 2026-07-15 meeting; reported and acknowledged by first author (Jiaming Wei) in the working session; one-line written (chat) confirmation requested for archive
+effective_at: 2026-07-15 (Europe/London) — two-track policy in force; the k=5 verdict itself is authorized only through the Protocol-Note-06 slotsheet once the five fixed cells are landed and bound
 ---
 
 # PROTOCOL_NOTE_06 — Time-constrained k=5 early verdict
 
-> **DRAFT-PENDING-ADVISOR / NOT-IN-FORCE.** This file is a complete prewrite for
-> the 2026-07-16 meeting. It does not authorize a k=5 verdict, branch selection,
-> tag, preregistration edit, OSF notice, or paper splice unless the activation
-> conditions in §6 are completed.
+> **SIGNED / IN FORCE (2026-07-15).** The advisor approved the two-track policy
+> at the 2026-07-15 meeting (held ahead of the planned 2026-07-16 date) and the
+> §6 activation sequence was completed the same day. The k=5 verdict remains
+> authorized only through the Protocol-Note-06 slotsheet once the five fixed
+> cells are landed and bound; the §3 unconditional k=6 upgrade rule stands.
 
 ## 0. Scope — a time-constrained deviation from “over the 6 planned cells”
 
@@ -179,13 +180,13 @@ appear later in Methods.
 
 **Meeting decision (check exactly one):**
 
-- [ ] **APPROVE** the two-track k=5 baseline / unconditional k=6 upgrade policy.
+- [x] **APPROVE** the two-track k=5 baseline / unconditional k=6 upgrade policy.
 - [ ] **REJECT**; retain the locked six-cell-only verdict policy.
 
-Advisor name: `<PENDING>`  
-Advisor signature or witnessed written confirmation: `<PENDING>`  
-Decision timestamp (with timezone): `<PENDING>`  
-Student acknowledgement: `<PENDING>`
+Advisor name: senior mentor (学长) — full name to be appended by the first author together with the archived written confirmation  
+Advisor signature or witnessed written confirmation: verbal APPROVE at the 2026-07-15 meeting; a one-line written (chat) confirmation was requested on 2026-07-15 — archive pointer to be appended here  
+Decision timestamp (with timezone): 2026-07-15 meeting (Europe/London); recorded in-session 2026-07-15 ~17:10 Europe/London  
+Student acknowledgement: Jiaming Wei, 2026-07-15 — acknowledged in the working session; activation executed the same day
 
 If approved, the ten-minute activation sequence is: fill this block → change
 frontmatter from DRAFT/NOT-IN-FORCE to the signed status → create the finalizing
