@@ -23,7 +23,14 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-15 深夜 UPDATE — 机会成本调度实战 + 两轨制预案就绪 + k=4 → 明晚 k=5** ⭐⭐⭐ 最新先读 (详 笔记 §367-§370):
+> 🔭 **2026-07-15 晚 UPDATE — 两轨制已签字激活 (周会提前一天) + Pareto 重构 land + D7 story 版待拍板** ⭐⭐⭐ 最新先读 (详 笔记 §371-§373):
+> - **✅ NOTE_06 两轨制 IN FORCE**: 学长 07-15 周会口头 APPROVE → 当日激活 (commit `765d31a` + tag `protocol-note-06-k5-early-verdict-signed-20260715`; 四项披露已落, §4/§8 K5 段已 splice, +210 词记 NUMBERS_TODO §4)。**k=5 verdict 现在只等 B0 pprompt land+bind** → 走下方 SOP ①-③ 后用 **Protocol-Note-06 授权 slotsheet** (`--h10-pending` 分次模式) 出 verdict → §8.3 abstract/§1 替换 splice。
+> - **🔲 USER 行动清单 (Jul 21 AoE 冻结倒计时)**: ① 作者名单+reciprocal reviewer 提名 (问题清单已发学长, 等回复→填 OpenReview); ② 学长一行书面确认两轨制 (归档 NOTE_06 §6); ③ OSF 知会发布 (`deliverables/osf_notice_protocol_note_06_2026-07-15.md`) + 回填 URL; ④ D7 story 版拍板 (读 §2.0/§2.8, 备份在同 dir)。
+> - **🆕 学长新指令: router-baseline (prior work) efficiency 对比** — offline replay 基座实现 RouteLLM-style / FrugalGPT-cascade / kNN baseline (OFFLINE/NON-GATE, §6/supplement 增强); codex 任务已排队/派发 (笔记 §373 ③)。
+> - **✅ Pareto 重构 land (§371)**: oracle 双轴支配全 menu (43.3% @ $0.0623); locked router 离前沿; post-hoc τ=0.10 越过 fixed 前沿 (29.9% @ $0.0705, 只作 paper-2 teaser)。看板 router 屏已换 Pareto 散点; §6 prewrite 两版在 `prewrites_s6_pareto.md`。
+> - **✅ B3 = MiMo-VL 8 月先行, 之后扩展其他模型** (学长拍板)。
+>
+> 🔭 **2026-07-15 深夜 UPDATE — 机会成本调度实战 + 两轨制预案就绪 + k=4 → 明晚 k=5** ⭐⭐⭐ (详 笔记 §367-§370):
 > - **🔥 FIRE 现状 (需接管)**: **B0 pprompt resume 运行中** (run 20260709, 96/205 起步, ETA ~07-16 晚; user 批准中断 B2 dom@40/205 抢 proxy 窗口, §369)。**orchestrator 已被刻意停掉**。A100 watchdog (pid 1061406) 会 ntfy 完成/异常。
 > - **🔲 B0 pprompt 完成时 (ntfy 响) 接管 SOP**: ① A100 `validate_fire_manifest --populate --apply` bind → ② rsync fire_manifest → DGX promote 进 run_manifest (30 条) → ③ `make analysis FAST=1` (**k=5**) → ④ **重启 orchestrator v2** (`setsid nohup bash scripts/maintenance/orchestrate_reddit_boundaries.sh > logs/orchestrate_red_v3_$(date +%Y%m%d).log 2>&1 &` @ A100 repo 根; 它 resume B2 dom@40/205 + 续 B2 链, 重启自动重置 pprompt 重试计数) → ⑤ 刷 draft interim 槽 + 周会材料若还没开会。**若 pprompt abort** (proxy 再死): 直接做 ④ (orchestrator 会在后续 boundary 重试 pprompt)。
 > - **📋 07-16 周会材料就绪**: brief v2.2 (`deliverables/weekly_meeting_brief_2026-07-16.md`) + 看板 (`周报/dashboard.html` 已对齐两轨制) + **PROTOCOL_NOTE_06 草案** (`prereg_amendments/..._20260716_DRAFT.md`, DRAFT/NOT-IN-FORCE)。**核心签字项 = 两轨制**: k=5 提交基线 (签字后 ~07-17/18 即可 verdict) + B2 齐则无条件升 k=6。激活 = NOTE_06 §6 十分钟序列 (签字→去 DRAFT→打 witness tag→amendment log 行)。k=5 版 abstract/§1/§4/§8 披露句已在 branch_prewrites §8 预写。
