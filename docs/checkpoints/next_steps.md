@@ -25,7 +25,7 @@ updated: 2026-06-27
 
 > 🔭 **2026-07-15 晚 UPDATE — 两轨制已签字激活 (周会提前一天) + Pareto 重构 land + D7 story 版待拍板** ⭐⭐⭐ 最新先读 (详 笔记 §371-§373):
 > - **✅ NOTE_06 两轨制 IN FORCE**: 学长 07-15 周会口头 APPROVE → 当日激活 (commit `765d31a` + tag `protocol-note-06-k5-early-verdict-signed-20260715`; 四项披露已落, §4/§8 K5 段已 splice, +210 词记 NUMBERS_TODO §4)。**k=5 verdict 现在只等 B0 pprompt land+bind** → 走下方 SOP ①-③ 后用 **Protocol-Note-06 授权 slotsheet** (`--h10-pending` 分次模式) 出 verdict → §8.3 abstract/§1 替换 splice。
-> - **🔲 USER 行动清单 (Jul 21 AoE 冻结倒计时)**: ① 作者名单+reciprocal reviewer 提名 (问题清单已发学长, 等回复→填 OpenReview); ② 学长一行书面确认两轨制 (归档 NOTE_06 §6); ③ OSF 知会发布 (`deliverables/osf_notice_protocol_note_06_2026-07-15.md`) + 回填 URL; ④ D7 story 版拍板 (读 §2.0/§2.8, 备份在同 dir)。
+> - **🔲 USER 行动清单 (Jul 21 AoE 冻结倒计时)**: ① **作者已定**: Jiaming Wei (一作) / Zekun Wu / Adriano Koshiyama / **Maria Perez-Ortiz 暂定→冻结前须确认**; **互审提名 = Zekun Wu** → 填 OpenReview (需各作者注册邮箱/profile + COI); ② 学长一行书面确认两轨制 (归档 NOTE_06 §6); ③ OSF 知会发布 (`deliverables/osf_notice_protocol_note_06_2026-07-15.md`) + 回填 URL; ④ D7 story 版拍板 (读 §2.0/§2.8, 备份在同 dir)。
 > - **🆕 学长新指令: router-baseline (prior work) efficiency 对比** — offline replay 基座实现 RouteLLM-style / FrugalGPT-cascade / kNN baseline (OFFLINE/NON-GATE, §6/supplement 增强); codex 任务已排队/派发 (笔记 §373 ③)。
 > - **✅ Pareto 重构 land (§371)**: oracle 双轴支配全 menu (43.3% @ $0.0623); locked router 离前沿; post-hoc τ=0.10 越过 fixed 前沿 (29.9% @ $0.0705, 只作 paper-2 teaser)。看板 router 屏已换 Pareto 散点; §6 prewrite 两版在 `prewrites_s6_pareto.md`。
 > - **✅ B3 = MiMo-VL 8 月先行, 之后扩展其他模型** (学长拍板)。

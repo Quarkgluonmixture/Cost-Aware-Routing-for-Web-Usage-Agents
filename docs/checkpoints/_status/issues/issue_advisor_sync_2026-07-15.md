@@ -29,9 +29,17 @@ updated: 2026-07-15
    - 顺带采纳 router 文献的 efficiency 指标惯例 (如 PGR/APGR 类 "每美元收回多少 oracle gap")
    - 定位: §6/supplement 增强 + 审稿人 "为何不比较既有 router" 的预防; deadline 前 offline 可行, live 版 paper-2
 
+## Decisions (追记 2026-07-15 晚 — 作者名单落定)
+
+4. **作者名单**: Jiaming Wei (一作) / Zekun Wu / Adriano Koshiyama / Maria Perez-Ortiz (**暂定** — Jul 21 AoE 冻结前须确认)
+5. **Reciprocal reviewer 提名 = Zekun Wu**
+6. **Prior-work baseline 范围扩展** (user 补充指令): 除 RouteLLM/FrugalGPT 外, 还要覆盖 lit review 里的其他 router/switch 类工作 (web-agent router, model-switch 等) — 从 D7 §2.3 + paper.bib 系统开采, 可适配的做 "-style" offline baseline, 不可适配的写明原因
+
 ## Open (user 行动)
 
-- [ ] 作者名单 + reciprocal reviewer 提名: 已给学长发问题清单 (资格判定 ≥2 一作 / ≥5 合作 archival; OpenReview profile; COI) — Jul 21 AoE 冻结
+- [ ] OpenReview 填表: 作者四人 (需各自 OpenReview 注册邮箱/profile + 单位 + COI) + 提名 Zekun Wu — Jul 21 AoE 前
+- [ ] **Maria Perez-Ortiz 暂定 → 确认** (冻结前必须落定; 挂名需其知情同意)
+- [ ] Zekun Wu 资格自查确认 (≥2 一作 archival 或 ≥5 合作 archival)
 - [ ] 学长一行书面确认两轨制 (归档进 NOTE_06 §6)
 - [ ] OSF 知会发布 (`deliverables/osf_notice_protocol_note_06_2026-07-15.md`)
 - [ ] D7 story 版章节交付 (读 §2.0/§2.8 后拍板哪版)
