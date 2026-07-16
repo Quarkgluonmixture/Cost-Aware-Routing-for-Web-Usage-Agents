@@ -112,3 +112,13 @@ On B0-Classifieds, RouteLLM-style kNN peaks at 26.79% SR and $0.0707/task (PGR �
 | AndroidWorld M3A/SeeAct | run config → A11y vs SoM | 能但不新增：static mobile-GUI comparison，对应 fixed points；非 web/runtime router。 | docs/literature/routing/deep-research-report.md:31-35 |
 | OSWorld-Human | run config → SS/SS+A11y/SS+A11y+SoM | 能但不新增：static desktop comparison，不是 selector。 | docs/literature/routing/deep-research-report.md:31-36 |
 | Set-of-Mark Prompting | deployment → raw screenshot vs marked screenshot | 能但不新增：定义一个 representation；已有 SoM/Vision fixed points。 | docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:116-125 |
+
+## §5 Cross-cell replication — DRAFT-PENDING-REVIEW
+
+### Replication-success version — COUNTERFACTUAL TEMPLATE, DO NOT USE (69 words)
+
+With the decision recipe selected only on B0-Classifieds and frozen at τ=0.10, the within-cell five-fold B0-Reddit replay reaches [SR]% at $[cost]/task, improving on its best fixed policy ([best SR]%, $[best cost]) on [both/the prespecified] axis. The paired task bootstrap gives ΔSR=[x] pp (95% CI [a,b]) and Δcost=$[y] (CI [c,d]), with router dominance in [r]% of resamples. This would constitute cross-cell replication, while remaining offline/non-gate evidence from reused Pass-1 trajectories.
+
+### Replication-failure version — CURRENT RESULT (69 words)
+
+With τ=0.10 selected only on B0-Classifieds and frozen before Reddit evaluation, the within-cell five-fold B0-Reddit replay yields 11.22% SR at $0.1010/task, versus best-single DOM at 14.63% and $0.1013. Thus the router saves $0.00024/task but loses 3.41 pp, failing to reproduce the joint gain despite remaining non-dominated. Paired bootstrap CIs span zero for ΔSR (−7.80,+0.98 pp) and Δcost (−$0.00639,+$0.00613); router dominance occurs in 4.3% of resamples. This is offline/non-gate evidence.
