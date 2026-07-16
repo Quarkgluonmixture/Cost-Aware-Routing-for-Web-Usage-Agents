@@ -122,3 +122,9 @@ With the decision recipe selected only on B0-Classifieds and frozen at τ=0.10, 
 ### Replication-failure version — CURRENT RESULT (69 words)
 
 With τ=0.10 selected only on B0-Classifieds and frozen before Reddit evaluation, the within-cell five-fold B0-Reddit replay yields 11.22% SR at $0.1010/task, versus best-single DOM at 14.63% and $0.1013. Thus the router saves $0.00024/task but loses 3.41 pp, failing to reproduce the joint gain despite remaining non-dominated. Paired bootstrap CIs span zero for ΔSR (−7.80,+0.98 pp) and Δcost (−$0.00639,+$0.00613); router dominance occurs in 4.3% of resamples. This is offline/non-gate evidence.
+
+## §6 Literature-efficiency positioning — SUPPLEMENT CANDIDATE (68 words)
+
+Efficiency reports are positioning only, not points on our Pareto plane: prior work compresses different objects under different tasks and accounting. FocusAgent reports >50% AXTree pruning, ReVision ~46% visual-token reduction, Sema 130–210× transport compression, and LLMLingua up to 20× prompt compression. P-SoM instead removes page-screenshot tokens by construction while retaining comparable text; its five-cell paired cost ratios are 1.01/1.04/1.08/1.00/0.98, while the archive latency advantage awaits canonical retry-adjusted recomputation.
+
+> Provenance (not part of candidate prose): FocusAgent `docs/literature/routing/Systematizing-Efficiency-in-Multimodal-Agents-From-Model-Cascades-to-Input-Repre.md:66`; ReVision `docs/checkpoints/paper_drafts/paper.bib:817`; Sema `docs/checkpoints/paper_drafts/paper.bib:1128`; LLMLingua `docs/literature/routing/compass_artifact_wf-a2769e2a-a0f4-463f-8c0c-17d2916bb323_text_markdown.md:44`; P-SoM construction/cost/latency `docs/checkpoints/paper_drafts/aaai27/aaai27_main.md:121-123,198`. `[V]` latency remains archive-vintage; canonical retry-adjusted value is pending.
