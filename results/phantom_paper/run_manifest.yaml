@@ -333,6 +333,14 @@ cells:
     condition_subdir: phase1_phantom_som_router_0
     grade: paper-grade
     notes: "A100 fire, bound 2026-07-09 (205 ep, promote 2026-07-14 via staging fire_manifest sync 配方); diag pending"
+
+  - baseline: B0
+    site: reddit
+    mode: P-prompt
+    run_dir: B0_phantom_prompt_reddit_20260709
+    condition_subdir: phase1_phantom_prompt_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-16 (205 ep, watchdog in-pipeline auto-bind; §369 机会成本调度 resume 96→205; promote 2026-07-16); B0_red 六模式齐 → k=5; diag pending"
   - baseline: B1
     site: reddit
     mode: DOM

@@ -213,6 +213,13 @@
    "episodes": 205,
    "bound_date": "2026-07-15",
    "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "reddit|B0|phantom_prompt": {
+   "run_id": "B0_phantom_prompt_reddit_20260709",
+   "condition_id": "phase1_phantom_prompt_router_0",
+   "episodes": 205,
+   "bound_date": "2026-07-16",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
   }
  }
 }
