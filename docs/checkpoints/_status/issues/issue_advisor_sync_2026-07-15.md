@@ -3,7 +3,8 @@ type: issue
 category: decision
 status: active
 priority: high
-action: NOTE_06 两轨制已激活 → B0 pprompt land 即 k=5 verdict; B3=MiMo 8月启动; router-baseline efficiency 对比 (offline) 排队; 作者名单+提名待学长回复
+action: 决定全部执行完毕 (k=5 verdict Branch B 落稿 §380 / router-baseline 套件 §374-376 / B3 排期 task_b3_mimo); 余 user 行动 = OpenReview 表单 + Maria 确认 + 学长书面一行 + OSF 发布
+updated: 2026-07-16
 created: 2026-07-15
 updated: 2026-07-15
 ---
