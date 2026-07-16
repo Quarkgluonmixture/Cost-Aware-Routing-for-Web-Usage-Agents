@@ -236,6 +236,26 @@ def _load_cell_per_task(
     return by_mode
 
 
+def _psom_unique_ids(per_task: Dict[str, Dict[str, Dict]]) -> set:
+    """Within-cell P-SoM-unique task IDs (NUMBERS_TODO §1.1 UNIQ slot rule).
+
+    A task qualifies iff P-SoM success == 1.0 AND every one of the five other
+    arms has an explicit success == 0.0.  Any None/missing success among the
+    six arms excludes the task (fail-closed): uniqueness cannot be asserted
+    against an arm whose outcome is unknown.
+    """
+    psom_rows = per_task.get("P-SoM", {})
+    other_modes = [m for m in SIX_MODES if m != "P-SoM"]
+    unique: set = set()
+    for tid, row in psom_rows.items():
+        if row.get("success") != 1.0:
+            continue
+        others = [per_task.get(m, {}).get(tid, {}).get("success") for m in other_modes]
+        if all(s == 0.0 for s in others):
+            unique.add(int(tid))
+    return unique
+
+
 def _h2a_per_task_ratio(per_task: Dict[str, Dict[str, Dict]]) -> Optional[Dict]:
     """H2(a) per-task cost ratio median falsification check.
 
@@ -908,6 +928,12 @@ def build_full_decision(
     """End-to-end H1 + H2(a) + H3 axes + I² cap + framing rule."""
     per_cell_data = []
     skipped = []
+    # UNIQ_CLS/UNIQ_RED registered slot source (NUMBERS_TODO §1.1 rows 78-79):
+    # per site, union across landed backbones of {t: P-SoM succeeds AND every
+    # other menu arm explicitly fails within that cell}, deduplicated task IDs.
+    # Tasks with any None success among the six arms are excluded (fail-closed).
+    site_unique_psom: Dict[str, set] = {}
+    site_unique_cells: Dict[str, List[str]] = {}
     for cell in cells:
         rows_by_mode = load_cell_task_rows(cell, modes=SIX_MODES)
         # H1 per cell (reuses B-184 path → bit-identical to phase1_prereg_gate)
@@ -948,6 +974,11 @@ def build_full_decision(
                                       universe=six_arm_universe, seed=axis1_seed)
         h3_axis2 = _h3_axis_per_cell(per_task, "P-prompt", ref_mode="P-SoM",
                                       universe=six_arm_universe, seed=axis2_seed)
+        cell_unique = _psom_unique_ids(per_task)
+        site_unique_psom.setdefault(cell["site"], set()).update(cell_unique)
+        site_unique_cells.setdefault(cell["site"], []).append(
+            f"{cell['baseline']}_{cell['site']} (+{len(cell_unique)})"
+        )
         per_cell_data.append({
             "baseline": cell["baseline"],
             "site": cell["site"],
@@ -1026,6 +1057,18 @@ def build_full_decision(
         "heterogeneity_cap_pct": HETEROGENEITY_CAP_PCT,
         "per_cell": per_cell_data,
         "skipped_cells": skipped,
+        # Registered NUMBERS_TODO §1.1 UNIQ_CLS/UNIQ_RED source fields.
+        # Union covers exactly the landed complete_exact cells in `per_cell`
+        # (at k=5 this is the PROTOCOL_NOTE_06 fixed set; at k=6 all backbones).
+        "site_unique_psom_union": {
+            site: {
+                "n_unique_task_ids": len(ids),
+                "task_ids": sorted(ids),
+                "cells_in_union": site_unique_cells.get(site, []),
+                "rule": "P-SoM success AND all five other arms explicit fail, per cell; task IDs deduplicated across backbones",
+            }
+            for site, ids in sorted(site_unique_psom.items())
+        },
     }
     if protocol_note_06_k5:
         payload.update({

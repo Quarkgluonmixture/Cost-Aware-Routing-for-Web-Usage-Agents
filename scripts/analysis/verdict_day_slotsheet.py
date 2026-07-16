@@ -803,6 +803,20 @@ def build_sheet(
             f"[{decimal_format(g(axis, 'ci95_lo_pp_bootstrap'))}, "
             f"{decimal_format(g(axis, 'ci95_hi_pp_bootstrap'))}]{qualifier_suffix} | {axis_key} |"
         )
+    # UNIQ_CLS/UNIQ_RED — registered NUMBERS_TODO §1.1 slots; fail-closed when
+    # the producer field is absent (legacy artifacts predating the field).
+    uniq = g(dec, "site_unique_psom_union", default=None)
+    for slot_name, site_key in (("UNIQ_CLS", "classifieds"), ("UNIQ_RED", "reddit")):
+        if isinstance(uniq, dict) and site_key in uniq:
+            n_uniq = uniq[site_key].get("n_unique_task_ids")
+            add(
+                f"| {slot_name} | {n_uniq}{qualifier_suffix} | "
+                f"site_unique_psom_union.{site_key}.n_unique_task_ids |"
+            )
+        else:
+            add(
+                f"| {slot_name} | FAIL-CLOSED (producer field site_unique_psom_union.{site_key} absent — regenerate decision artifact) | — |"
+            )
     if pass1_only:
         add("")
         add("### H10/router slots")
