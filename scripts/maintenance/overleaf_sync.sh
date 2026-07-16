@@ -20,7 +20,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 LATEX_DIR="$REPO/docs/checkpoints/paper_drafts/aaai27/latex"
 BUILD="$LATEX_DIR/build"
-OL="${OVERLEAF_GIT_DIR:-}"
+OL="${OVERLEAF_GIT_DIR:-$HOME/overleaf-aaai27}"
 MSG="${1:-sync: aaai27_main.md $(cd "$REPO" && git rev-parse --short HEAD)}"
 
 if [[ -z "$OL" || ! -d "$OL/.git" ]]; then
