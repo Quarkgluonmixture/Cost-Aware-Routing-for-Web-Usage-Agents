@@ -132,6 +132,43 @@ docs/prereg_amendments/PROTOCOL_NOTE_04_REDDIT_IDENTITY_RESET_20260625.md;
 docs/prereg_amendments/PROTOCOL_NOTE_05_ANALYSIS_ESTIMAND_CONFORMANCE_20260714.md.
 -->
 
+## S2.6 Per-cell drop-one estimates, five landed cells (Protocol Note 06)
+
+Per-cell per-arm drop-one losses with 95% task-paired bootstrap CIs, regenerated from the canonical fig0c producer at the k=5 verdict (2026-07-16); the main text shows the cls-B0 panel (Table 3) and this table preserves full per-cell visibility as the protocol note requires. The B2-Reddit cell is absent (background completion track).
+
+| panel | mode | drop-one pp | CI95 |
+|---|---|---:|---:|
+| B0 classifieds | DOM | +1.79 | [+0.00, +3.57] |
+| B0 classifieds | SoM | +2.68 | [+0.89, +4.91] |
+| B0 classifieds | Vision | +4.02 | [+1.79, +6.70] |
+| B0 classifieds | P-text | +0.89 | [+0.00, +2.23] |
+| B0 classifieds | P-prompt | +2.68 | [+0.89, +4.91] |
+| B0 classifieds | P-SoM | +0.89 | [+0.00, +2.23] |
+| B0 reddit | DOM | +1.46 | [+0.00, +2.93] |
+| B0 reddit | SoM | +1.95 | [+0.49, +3.90] |
+| B0 reddit | Vision | +1.95 | [+0.49, +3.90] |
+| B0 reddit | P-text | +0.98 | [+0.00, +2.44] |
+| B0 reddit | P-prompt | +0.98 | [+0.00, +2.44] |
+| B0 reddit | P-SoM | +0.98 | [+0.00, +2.44] |
+| B1 classifieds | DOM | +0.45 | [+0.00, +1.34] |
+| B1 classifieds | SoM | +4.46 | [+1.79, +7.14] |
+| B1 classifieds | Vision | +4.02 | [+1.77, +7.14] |
+| B1 classifieds | P-text | +0.45 | [+0.00, +1.34] |
+| B1 classifieds | P-prompt | +0.89 | [+0.00, +2.23] |
+| B1 classifieds | P-SoM | +1.34 | [+0.00, +3.13] |
+| B1 reddit | DOM | +0.49 | [+0.00, +1.46] |
+| B1 reddit | SoM | +0.49 | [+0.00, +1.46] |
+| B1 reddit | Vision | +0.98 | [+0.00, +2.44] |
+| B1 reddit | P-text | +0.49 | [+0.00, +1.46] |
+| B1 reddit | P-prompt | +0.98 | [+0.00, +2.44] |
+| B1 reddit | P-SoM | +0.00 | [+0.00, +0.00] |
+| B2 classifieds | DOM | +0.45 | [+0.00, +1.34] |
+| B2 classifieds | SoM | +2.23 | [+0.45, +4.46] |
+| B2 classifieds | Vision | +2.23 | [+0.45, +4.03] |
+| B2 classifieds | P-text | +0.00 | [+0.00, +0.00] |
+| B2 classifieds | P-prompt | +0.00 | [+0.00, +0.00] |
+| B2 classifieds | P-SoM | +0.45 | [+0.00, +1.34] |
+
 # S3 Quarantine and Abort Taxonomy
 
 ## S3.1 Append-only registry
