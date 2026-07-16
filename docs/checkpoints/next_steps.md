@@ -23,7 +23,12 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-15 晚 UPDATE — 两轨制已签字激活 (周会提前一天) + Pareto 重构 land + D7 story 版待拍板** ⭐⭐⭐ 最新先读 (详 笔记 §371-§373):
+> 🔭 **2026-07-16 凌晨 UPDATE — B0 pprompt LAND → k=5 数据完备, SOP 全通, verdict-day 就绪** ⭐⭐⭐ 最新先读 (详 笔记 §378):
+> - **✅ B0 pprompt 205/205 (01:35Z, SR 12.68%)** → bind/promote/analysis/orchestrator-restart 全通 (run_manifest **30 conditions**, B2 dom 已 resume 向 k=6 窗口)。
+> - **📊 k=5 interim**: H1 **+0.795pp [0.27,1.49] p=0.743 不过线** (B0·red 实测 +0.98, archive +3.3 未兑现); H3 **双轴过线** (+1.26/+2.60, p=0.0); H2a 5/5 → 指向 **Branch B** (Route C'-S, 预写已备)。artifact 仍 PARTIAL/NOT_EVALUATED — **正式 verdict 必须走 VERDICT_DAY_RUNBOOK + Protocol-Note-06 授权 k=5 slotsheet (`--h10-pending`), 禁手抄 interim 进 draft**。
+> - **🔜 白天动作 (user 醒后)**: ① 跑 verdict-day runbook k=5 严格路径 → 选支 (大概率 B) → §8.3 abstract/§1 替换 splice → cut_prewrites 抵词数 → /stress + Mode B/C chain → convert.sh 页数账; ② OpenReview 填表 (作者 4 人 + 提名 Zekun Wu + 贴 abstract); ③ Maria 确认 + 学长书面一行 + OSF 发布。
+>
+> 🔭 **2026-07-15 晚 UPDATE — 两轨制已签字激活 (周会提前一天) + Pareto 重构 land + D7 story 版待拍板** ⭐⭐⭐ (详 笔记 §371-§373):
 > - **✅ NOTE_06 两轨制 IN FORCE**: 学长 07-15 周会口头 APPROVE → 当日激活 (commit `765d31a` + tag `protocol-note-06-k5-early-verdict-signed-20260715`; 四项披露已落, §4/§8 K5 段已 splice, +210 词记 NUMBERS_TODO §4)。**k=5 verdict 现在只等 B0 pprompt land+bind** → 走下方 SOP ①-③ 后用 **Protocol-Note-06 授权 slotsheet** (`--h10-pending` 分次模式) 出 verdict → §8.3 abstract/§1 替换 splice。
 > - **🔲 USER 行动清单 (Jul 21 AoE 冻结倒计时)**: ① **作者已定**: Jiaming Wei (一作) / Zekun Wu / Adriano Koshiyama / **Maria Perez-Ortiz 暂定→冻结前须确认**; **互审提名 = Zekun Wu** → 填 OpenReview (需各作者注册邮箱/profile + COI); ② 学长一行书面确认两轨制 (归档 NOTE_06 §6); ③ OSF 知会发布 (`deliverables/osf_notice_protocol_note_06_2026-07-15.md`) + 回填 URL; ④ D7 story 版拍板 (读 §2.0/§2.8, 备份在同 dir)。
 > - **🆕 学长新指令: router-baseline (prior work) efficiency 对比** — offline replay 基座实现 RouteLLM-style / FrugalGPT-cascade / kNN baseline (OFFLINE/NON-GATE, §6/supplement 增强); codex 任务已排队/派发 (笔记 §373 ③)。
