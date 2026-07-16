@@ -279,11 +279,43 @@
         "std_jaccard": 0.441438
       },
       "axis_1_text_alt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 65,
+            "1": 48,
+            "2": 31,
+            "3": 27,
+            "4": 12,
+            "5": 10,
+            "6": 4,
+            "7": 4,
+            "8": 3,
+            "9": 1
+          },
+          "left_mean": 1.82439,
+          "right_hist": {
+            "0": 74,
+            "1": 45,
+            "2": 41,
+            "3": 14,
+            "4": 11,
+            "5": 11,
+            "6": 3,
+            "7": 2,
+            "8": 3,
+            "9": 1
+          },
+          "right_mean": 1.62439,
+          "union_mean": 3.107317
+        },
         "contrast": "P-prompt vs P-SoM",
         "left_mode": "P-prompt",
-        "n": 0,
+        "mean_decision_divergence": 0.670199,
+        "mean_jaccard": 0.329801,
+        "median_jaccard": 0.0,
+        "n": 205,
         "right_mode": "P-SoM",
-        "skipped": true
+        "std_jaccard": 0.427995
       },
       "axis_2_prompt": {
         "click_target_set_size": {
@@ -325,11 +357,43 @@
         "std_jaccard": 0.448006
       },
       "axis_2_prompt_alt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 75,
+            "1": 48,
+            "11": 1,
+            "2": 35,
+            "3": 16,
+            "4": 14,
+            "5": 8,
+            "6": 3,
+            "7": 3,
+            "9": 2
+          },
+          "left_mean": 1.609756,
+          "right_hist": {
+            "0": 65,
+            "1": 48,
+            "2": 31,
+            "3": 27,
+            "4": 12,
+            "5": 10,
+            "6": 4,
+            "7": 4,
+            "8": 3,
+            "9": 1
+          },
+          "right_mean": 1.82439,
+          "union_mean": 3.15122
+        },
         "contrast": "DOM vs P-prompt",
         "left_mode": "DOM",
-        "n": 0,
+        "mean_decision_divergence": 0.687272,
+        "mean_jaccard": 0.312728,
+        "median_jaccard": 0.0,
+        "n": 205,
         "right_mode": "P-prompt",
-        "skipped": true
+        "std_jaccard": 0.434333
       },
       "axis_3_image": {
         "click_target_set_size": {
@@ -764,16 +828,54 @@
         "right_mode": "P-SoM"
       },
       "DOM_vs_P-prompt": {
-        "case_studies": [],
-        "case_study_task_ids": [],
-        "early_divergence_rate": null,
-        "first_divergent_step_histogram": {},
-        "late_divergence_rate": null,
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 11,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 2,
+            "trajectory_jaccard": 0.2
+          },
+          {
+            "first_divergent_step": 6,
+            "left_n_steps": 30,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 98,
+            "trajectory_jaccard": 1.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 100,
+            "trajectory_jaccard": 0.0
+          }
+        ],
+        "case_study_task_ids": [
+          2,
+          98,
+          100
+        ],
+        "early_divergence_rate": 0.888889,
+        "first_divergent_step_histogram": {
+          "0": 8,
+          "1": 6,
+          "2": 1,
+          "3": 1,
+          "5": 1,
+          "6": 1
+        },
+        "late_divergence_rate": 0.0,
         "left_mode": "DOM",
-        "median_first_divergent_step": null,
-        "n_symmetric_diff_tasks": 0,
-        "right_mode": "P-prompt",
-        "skipped": true
+        "median_first_divergent_step": 1.0,
+        "n_symmetric_diff_tasks": 18,
+        "right_mode": "P-prompt"
       },
       "DOM_vs_P-text": {
         "case_studies": [
@@ -872,16 +974,51 @@
         "right_mode": "SoM"
       },
       "P-prompt_vs_P-SoM": {
-        "case_studies": [],
-        "case_study_task_ids": [],
-        "early_divergence_rate": null,
-        "first_divergent_step_histogram": {},
-        "late_divergence_rate": null,
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 11,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 12,
+            "trajectory_jaccard": 0.2
+          },
+          {
+            "first_divergent_step": 2,
+            "left_n_steps": 15,
+            "left_success": true,
+            "right_n_steps": 11,
+            "right_success": false,
+            "task_id": 93,
+            "trajectory_jaccard": 0.125
+          }
+        ],
+        "case_study_task_ids": [
+          11,
+          93,
+          12
+        ],
+        "early_divergence_rate": 1.0,
+        "first_divergent_step_histogram": {
+          "0": 15,
+          "1": 3,
+          "2": 1
+        },
+        "late_divergence_rate": 0.0,
         "left_mode": "P-prompt",
-        "median_first_divergent_step": null,
-        "n_symmetric_diff_tasks": 0,
-        "right_mode": "P-SoM",
-        "skipped": true
+        "median_first_divergent_step": 0,
+        "n_symmetric_diff_tasks": 19,
+        "right_mode": "P-SoM"
       },
       "P-text_vs_P-SoM": {
         "case_studies": [
@@ -1125,6 +1262,30 @@
         "site": "reddit",
         "source_run": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
         "source_table": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/P-prompt": {
+        "AUROC_behavioral_max": 0.644284,
+        "AUROC_behavioral_n": 205,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.575419,
+        "AUROC_token_n": 205,
+        "AUROC_token_signal": "ep_min_margin",
+        "AUROC_verbal": 0.657606,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_min_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0_sr_pct": 12.682927,
+        "mode": "P-prompt",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260709",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260709/analysis/signals/combined/tables/auroc_all_metrics.csv"
       },
       "B0/reddit/P-text": {
         "AUROC_behavioral_max": 0.654229,
@@ -1957,21 +2118,42 @@
         "axis_1_text_alt": {
           "left_mode": "P-prompt",
           "mean_per_task_fraction_shift": {
-            "back": null,
-            "click": null,
-            "finish": null,
-            "forward": null,
-            "other": null,
-            "scroll": null,
-            "select_option": null,
-            "tab_focus": null,
-            "type": null,
-            "wait": null
+            "back": -0.019596,
+            "click": -0.0193,
+            "finish": -0.024796,
+            "forward": 0.0,
+            "other": -0.006789,
+            "scroll": -0.004836,
+            "select_option": 0.004895,
+            "tab_focus": 0.074385,
+            "type": -0.00413,
+            "wait": 0.000166
           },
-          "n": 0,
+          "n": 205,
           "right_mode": "P-SoM",
-          "skipped": true,
-          "top_abs_shifts": []
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": 0.074385
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": -0.024796
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.019596
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.0193
+            },
+            {
+              "action_type": "other",
+              "mean_fraction_shift": -0.006789
+            }
+          ]
         },
         "axis_2_prompt": {
           "left_mode": "P-text",
@@ -2016,21 +2198,42 @@
         "axis_2_prompt_alt": {
           "left_mode": "DOM",
           "mean_per_task_fraction_shift": {
-            "back": null,
-            "click": null,
-            "finish": null,
-            "forward": null,
-            "other": null,
-            "scroll": null,
-            "select_option": null,
-            "tab_focus": null,
-            "type": null,
-            "wait": null
+            "back": 0.022812,
+            "click": 0.017677,
+            "finish": -0.005658,
+            "forward": 0.0,
+            "other": 0.007195,
+            "scroll": -0.037716,
+            "select_option": -0.002298,
+            "tab_focus": 0.002709,
+            "type": -0.007352,
+            "wait": 0.002632
           },
-          "n": 0,
+          "n": 205,
           "right_mode": "P-prompt",
-          "skipped": true,
-          "top_abs_shifts": []
+          "skipped": false,
+          "top_abs_shifts": [
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.037716
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": 0.022812
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": 0.017677
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.007352
+            },
+            {
+              "action_type": "other",
+              "mean_fraction_shift": 0.007195
+            }
+          ]
         },
         "axis_3_image": {
           "left_mode": "P-SoM",
@@ -2211,6 +2414,18 @@
         "type": 0.132362,
         "wait": 0.003213
       },
+      "B0/reddit/P-prompt": {
+        "back": 0.106446,
+        "click": 0.466288,
+        "finish": 0.027414,
+        "forward": 0.0,
+        "other": 0.035564,
+        "scroll": 0.149173,
+        "select_option": 0.020499,
+        "tab_focus": 0.03754,
+        "type": 0.152877,
+        "wait": 0.004199
+      },
       "B0/reddit/P-text": {
         "back": 0.080628,
         "click": 0.431572,
@@ -2277,6 +2492,15 @@
         "site": "classifieds"
       },
       {
+        "action_type": "tab_focus",
+        "high_fraction": 0.151638,
+        "high_mode": "P-SoM",
+        "low_fraction": 0.03754,
+        "low_mode": "P-prompt",
+        "ratio": 4.039369,
+        "site": "reddit"
+      },
+      {
         "action_type": "scroll",
         "high_fraction": 0.367934,
         "high_mode": "Vision",
@@ -2286,12 +2510,21 @@
         "site": "reddit"
       },
       {
-        "action_type": "tab_focus",
-        "high_fraction": 0.151638,
-        "high_mode": "P-SoM",
-        "low_fraction": 0.04211,
-        "low_mode": "DOM",
-        "ratio": 3.600978,
+        "action_type": "back",
+        "high_fraction": 0.106446,
+        "high_mode": "P-prompt",
+        "low_fraction": 0.044547,
+        "low_mode": "Vision",
+        "ratio": 2.389513,
+        "site": "reddit"
+      },
+      {
+        "action_type": "type",
+        "high_fraction": 0.152877,
+        "high_mode": "P-prompt",
+        "low_fraction": 0.072284,
+        "low_mode": "Vision",
+        "ratio": 2.11495,
         "site": "reddit"
       },
       {
@@ -2302,20 +2535,11 @@
         "low_mode": "Vision",
         "ratio": 2.10487,
         "site": "classifieds"
-      },
-      {
-        "action_type": "type",
-        "high_fraction": 0.149798,
-        "high_mode": "P-text",
-        "low_fraction": 0.072284,
-        "low_mode": "Vision",
-        "ratio": 2.072357,
-        "site": "reddit"
       }
     ]
   },
   "data_status": {
-    "missing_e1_cell_count": 2,
+    "missing_e1_cell_count": 0,
     "p_prompt": {
       "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {
         "episodes": 224,
@@ -2323,9 +2547,9 @@
         "status": "complete but excluded by design"
       },
       "B0_phantom_prompt_reddit_20260709": {
-        "episodes": 96,
+        "episodes": 205,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
-        "status": "partial / pending"
+        "status": "complete but excluded by design"
       },
       "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {
         "episodes": 224,
@@ -2355,6 +2579,7 @@
       "reddit": {
         "DOM": "results/visualwebarena/phase1/B0_dom_reddit_20260625_154833_928747130_2827521_R11344/phase1_dom_router_0/episodes",
         "P-SoM": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/phase1_phantom_som_router_0/episodes",
+        "P-prompt": "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260709/phase1_phantom_prompt_router_0/episodes",
         "P-text": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/phase1_phantom_text_router_0/episodes",
         "SoM": "results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936/phase1_som_router_0/episodes",
         "Vision": "results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/phase1_vision_router_0/episodes"
@@ -2377,7 +2602,9 @@
       "classifieds/axis_3_image": true,
       "classifieds/compound_DOM_to_PSoM": true,
       "reddit/axis_1_text": true,
+      "reddit/axis_1_text_alt": true,
       "reddit/axis_2_prompt": true,
+      "reddit/axis_2_prompt_alt": true,
       "reddit/axis_3_image": true,
       "reddit/compound_DOM_to_PSoM": true
     },
@@ -2396,8 +2623,8 @@
       "reddit/P-text_vs_P-SoM": true
     },
     "E3_cell_count": {
-      "expected": 29,
-      "observed": 29,
+      "expected": 30,
+      "observed": 30,
       "pass": true
     },
     "E4_action_dist_sum_checks": {
@@ -2430,6 +2657,10 @@
         "sum": 1.0
       },
       "B0/reddit/P-SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/P-prompt": {
         "pass": true,
         "sum": 1.0
       },

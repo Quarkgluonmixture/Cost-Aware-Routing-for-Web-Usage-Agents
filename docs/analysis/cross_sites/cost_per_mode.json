@@ -60,6 +60,18 @@
           "paper_cost_class": "API_total_billed_dollars",
           "paper_cost_estimand": "avg_total_billed_cost_usd (AMENDMENT_01 \u00a71 PRIMARY)"
         },
+        "P-prompt": {
+          "available": true,
+          "run_subpath": "B0_phantom_prompt_reddit_20260709/phase1_phantom_prompt_router_0",
+          "avg_steps": 19.75121951219512,
+          "avg_token_cost_usd_yaml_rate": 0.10106936835569987,
+          "avg_energy_kwh": null,
+          "avg_electricity_usd": null,
+          "avg_co2e_kg": null,
+          "paper_cost_usd": 0.1010692243902439,
+          "paper_cost_class": "API_total_billed_dollars",
+          "paper_cost_estimand": "avg_total_billed_cost_usd (AMENDMENT_01 \u00a71 PRIMARY)"
+        },
         "P-SoM": {
           "available": true,
           "run_subpath": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/phase1_phantom_som_router_0",
@@ -360,9 +372,9 @@
   },
   "deployment_class_ratios": {
     "reddit": {
-      "avg_B0_API_dollars": 0.104292,
+      "avg_B0_API_dollars": 0.103755,
       "avg_B1_electricity_dollars": 0.00126703,
-      "ratio_B0_over_B1": 82.31,
+      "ratio_B0_over_B1": 81.89,
       "note": "ratio across deployment classes, not capability tiers"
     },
     "classifieds": {

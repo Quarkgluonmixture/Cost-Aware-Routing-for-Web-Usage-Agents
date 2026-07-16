@@ -107,6 +107,27 @@
             "tab_focus": 19,
             "type": 72
           }
+        },
+        "Phantom-prompt": {
+          "n_tasks": 205,
+          "mean_url_set_size": 4.107317,
+          "mean_url_path_set_size": 3.473171,
+          "mean_n_steps": 19.75122,
+          "finish_rate": 0.541463,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.006944,
+          "mean_n_type_actions": 3.019512,
+          "mean_max_keyword_repeat": 1.936585,
+          "mean_distinct_keywords": 1.404878,
+          "first_action_type_counts": {
+            "click": 108,
+            "finish": 1,
+            "hover": 2,
+            "new_tab": 1,
+            "scroll": 16,
+            "tab_focus": 27,
+            "type": 50
+          }
         }
       },
       "classifieds": {
@@ -743,15 +764,55 @@
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.468145,
+          "url_decision_divergence": 0.531855,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.006944,
+          "target_hit_rate_diff": 0.006944,
+          "target_hit_rate_diff_pct_pts": 0.694444,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 1,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.180488,
+          "distinct_keywords_diff": 0.102439,
+          "n_type_actions_diff": 0.019512,
+          "n_steps_diff": -0.404878,
+          "finish_rate_diff": 0.029268,
+          "first_action_divergence_rate": 0.268293,
+          "first_action_target_url_path_divergence_rate": 0.526829,
           "contrast": "P-prompt minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-prompt"
         },
         "axis_1_text_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 203,
+          "url_jaccard_mean": 0.413199,
+          "url_decision_divergence": 0.586801,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 143,
+          "target_hit_rate_left": 0.006993,
+          "target_hit_rate_right": 0.006993,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.142857,
+          "distinct_keywords_diff": -0.197044,
+          "n_type_actions_diff": 0,
+          "n_steps_diff": 3.083744,
+          "finish_rate_diff": -0.133005,
+          "first_action_divergence_rate": 0.29064,
+          "first_action_target_url_path_divergence_rate": 0.576355,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
@@ -2065,6 +2126,14 @@
       },
       "B0/reddit/compound_dom_to_psom": {
         "value": 0.405795,
+        "pass": true
+      },
+      "B0/reddit/axis_2_prompt_alt": {
+        "value": 0.468145,
+        "pass": true
+      },
+      "B0/reddit/axis_1_text_alt": {
+        "value": 0.413199,
         "pass": true
       },
       "B0/reddit/endpoint_dom_to_som": {

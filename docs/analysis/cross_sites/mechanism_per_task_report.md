@@ -12,8 +12,8 @@ E1 asks whether modes click into the same server-determined page transitions. Ja
 | reddit | axis_2_prompt (P-text vs P-SoM) | 205 | 0.409 | 0.448 | 0.167 | 0.591 | 1.527 | 1.624 | 2.785 |
 | reddit | axis_3_image (P-SoM vs SoM) | 205 | 0.313 | 0.429 | 0.000 | 0.687 | 1.624 | 1.254 | 2.610 |
 | reddit | compound_DOM_to_PSoM (DOM vs P-SoM) | 205 | 0.308 | 0.425 | 0.000 | 0.692 | 1.610 | 1.624 | 2.937 |
-| reddit | axis_2_prompt_alt (DOM vs P-prompt) | 0 (pending) | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
-| reddit | axis_1_text_alt (P-prompt vs P-SoM) | 0 (pending) | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| reddit | axis_2_prompt_alt (DOM vs P-prompt) | 205 | 0.313 | 0.434 | 0.000 | 0.687 | 1.610 | 1.824 | 3.151 |
+| reddit | axis_1_text_alt (P-prompt vs P-SoM) | 205 | 0.330 | 0.428 | 0.000 | 0.670 | 1.824 | 1.624 | 3.107 |
 | classifieds | axis_1_text (DOM vs P-text) | 224 | 0.315 | 0.436 | 0.000 | 0.685 | 1.304 | 1.549 | 2.616 |
 | classifieds | axis_2_prompt (P-text vs P-SoM) | 224 | 0.340 | 0.439 | 0.000 | 0.660 | 1.549 | 1.473 | 2.714 |
 | classifieds | axis_3_image (P-SoM vs SoM) | 224 | 0.313 | 0.445 | 0.000 | 0.687 | 1.473 | 1.121 | 2.406 |
@@ -26,8 +26,8 @@ Per-axis interpretation:
 - axis_2_prompt: reddit Jaccard 0.409; classifieds Jaccard 0.340. Lower values indicate that the modes use different URL-changing click decisions.
 - axis_3_image: reddit Jaccard 0.313; classifieds Jaccard 0.313. Lower values indicate that the modes use different URL-changing click decisions.
 - compound_DOM_to_PSoM: reddit Jaccard 0.308; classifieds Jaccard 0.332. Lower values indicate that the modes use different URL-changing click decisions.
-- axis_2_prompt_alt: reddit Jaccard n/a; classifieds Jaccard 0.313. Lower values indicate that the modes use different URL-changing click decisions.
-- axis_1_text_alt: reddit Jaccard n/a; classifieds Jaccard 0.306. Lower values indicate that the modes use different URL-changing click decisions.
+- axis_2_prompt_alt: reddit Jaccard 0.313; classifieds Jaccard 0.313. Lower values indicate that the modes use different URL-changing click decisions.
+- axis_1_text_alt: reddit Jaccard 0.330; classifieds Jaccard 0.306. Lower values indicate that the modes use different URL-changing click decisions.
 
 Case-study anchors from E2 below should be read with E1: tasks with low click-transition overlap often diverge before the final answer, not merely at finish time.
 
@@ -41,8 +41,8 @@ E2 filters to symmetric-difference tasks, where exactly one side of the contrast
 | reddit | P-text_vs_P-SoM | 21 | 0 | 100.0% | 0.0% | 11, 100, 12 |
 | reddit | P-SoM_vs_SoM | 21 | 0.000 | 95.0% | 0.0% | 4, 21, 11 |
 | reddit | DOM_vs_P-SoM | 21 | 0 | 100.0% | 0.0% | 2, 58, 11 |
-| reddit | DOM_vs_P-prompt | 0 | n/a | n/a | n/a |  |
-| reddit | P-prompt_vs_P-SoM | 0 | n/a | n/a | n/a |  |
+| reddit | DOM_vs_P-prompt | 18 | 1.000 | 88.9% | 0.0% | 2, 98, 100 |
+| reddit | P-prompt_vs_P-SoM | 19 | 0 | 100.0% | 0.0% | 11, 93, 12 |
 | classifieds | DOM_vs_P-text | 22 | 1.000 | 95.5% | 0.0% | 132, 75, 137 |
 | classifieds | P-text_vs_P-SoM | 18 | 2.000 | 72.2% | 0.0% | 16, 12, 60 |
 | classifieds | P-SoM_vs_SoM | 46 | 1.000 | 93.5% | 0.0% | 17, 75, 49 |
@@ -63,6 +63,12 @@ E2 case studies:
 - reddit DOM_vs_P-SoM task_2: first divergent step 0, trajectory Jaccard 0.200, left_success=True, right_success=False, steps 11 vs 28.
 - reddit DOM_vs_P-SoM task_11: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 30 vs 30.
 - reddit DOM_vs_P-SoM task_58: first divergent step 2, trajectory Jaccard 0.333, left_success=True, right_success=False, steps 30 vs 32.
+- reddit DOM_vs_P-prompt task_2: first divergent step 0, trajectory Jaccard 0.200, left_success=True, right_success=False, steps 11 vs 30.
+- reddit DOM_vs_P-prompt task_98: first divergent step 6, trajectory Jaccard 1.000, left_success=True, right_success=False, steps 30 vs 30.
+- reddit DOM_vs_P-prompt task_100: first divergent step 0, trajectory Jaccard 0.000, left_success=True, right_success=False, steps 30 vs 30.
+- reddit P-prompt_vs_P-SoM task_11: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 30 vs 30.
+- reddit P-prompt_vs_P-SoM task_12: first divergent step 0, trajectory Jaccard 0.200, left_success=False, right_success=True, steps 30 vs 30.
+- reddit P-prompt_vs_P-SoM task_93: first divergent step 2, trajectory Jaccard 0.125, left_success=True, right_success=False, steps 15 vs 11.
 - classifieds DOM_vs_P-text task_75: first divergent step 8, trajectory Jaccard 1.000, left_success=True, right_success=False, steps 10 vs 30.
 - classifieds DOM_vs_P-text task_132: first divergent step 0, trajectory Jaccard 0.000, left_success=True, right_success=False, steps 13 vs 30.
 - classifieds DOM_vs_P-text task_137: first divergent step 0, trajectory Jaccard 0.111, left_success=False, right_success=True, steps 6 vs 17.
@@ -96,6 +102,7 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 | B0 | classifieds | Vision | n/a | n/a | 0.620 | 0.692 | 0.764 | 25.000 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=action_diversity |
 | B0 | reddit | DOM | n/a | n/a | 0.614 | 0.760 | 0.685 | 14.634 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=max_repeat_streak |
 | B0 | reddit | P-SoM | n/a | n/a | 0.607 | 0.737 | 0.673 | 11.220 | tok=ep_min_margin; verb=ep_min_verbalized; beh=url_revisit_count |
+| B0 | reddit | P-prompt | n/a | n/a | 0.575 | 0.658 | 0.644 | 12.683 | tok=ep_min_margin; verb=ep_min_verbalized; beh=url_revisit_count |
 | B0 | reddit | P-text | n/a | n/a | 0.688 | 0.695 | 0.654 | 13.659 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=url_revisit_max |
 | B0 | reddit | SoM | n/a | n/a | 0.588 | 0.576 | 0.714 | 14.634 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B0 | reddit | Vision | n/a | n/a | 0.788 | 0.854 | 0.877 | 7.805 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
@@ -141,6 +148,7 @@ E4 expands the Macro dimension from a few hand-picked action metrics to the full
 | B0/classifieds/Vision | 0.353 | 0.164 | 0.295 | 0.080 | 0.000 | 0.051 | 0.000 | 0.044 | 0.006 | 0.005 |
 | B0/reddit/DOM | 0.465 | 0.149 | 0.191 | 0.023 | 0.000 | 0.080 | 0.000 | 0.025 | 0.042 | 0.024 |
 | B0/reddit/P-SoM | 0.442 | 0.132 | 0.126 | 0.024 | 0.003 | 0.074 | 0.000 | 0.018 | 0.152 | 0.029 |
+| B0/reddit/P-prompt | 0.466 | 0.153 | 0.149 | 0.020 | 0.004 | 0.106 | 0.000 | 0.027 | 0.038 | 0.036 |
 | B0/reddit/P-text | 0.432 | 0.150 | 0.127 | 0.015 | 0.001 | 0.081 | 0.000 | 0.016 | 0.150 | 0.029 |
 | B0/reddit/SoM | 0.483 | 0.115 | 0.098 | 0.044 | 0.002 | 0.063 | 0.000 | 0.025 | 0.147 | 0.024 |
 | B0/reddit/Vision | 0.319 | 0.072 | 0.368 | 0.008 | 0.002 | 0.045 | 0.000 | 0.015 | 0.138 | 0.033 |
@@ -153,8 +161,8 @@ Paired action-fraction shifts by axis (right-minus-left):
 | reddit | axis_2_prompt | 205 | type -0.018 | click 0.014 | scroll 0.007 |
 | reddit | axis_3_image | 205 | finish 0.035 | scroll -0.026 | click 0.023 |
 | reddit | compound_DOM_to_PSoM | 205 | tab_focus 0.077 | scroll -0.043 | finish -0.030 |
-| reddit | axis_2_prompt_alt | 0 |  |  |  |
-| reddit | axis_1_text_alt | 0 |  |  |  |
+| reddit | axis_2_prompt_alt | 205 | scroll -0.038 | back 0.023 | click 0.018 |
+| reddit | axis_1_text_alt | 205 | tab_focus 0.074 | finish -0.025 | back -0.020 |
 | classifieds | axis_1_text | 224 | type -0.031 | back 0.013 | scroll 0.013 |
 | classifieds | axis_2_prompt | 224 | scroll 0.012 | back -0.011 | finish 0.009 |
 | classifieds | axis_3_image | 224 | scroll -0.054 | finish 0.034 | select_option 0.018 |
@@ -166,10 +174,11 @@ Uncommon-action highlights:
 - classifieds other: SoM 0.027 vs DOM 0.002 (13.5x).
 - reddit select_option: SoM 0.044 vs Vision 0.008 (5.7x).
 - classifieds tab_focus: P-prompt 0.016 vs SoM 0.003 (5.6x).
+- reddit tab_focus: P-SoM 0.152 vs P-prompt 0.038 (4.0x).
 - reddit scroll: Vision 0.368 vs SoM 0.098 (3.8x).
-- reddit tab_focus: P-SoM 0.152 vs DOM 0.042 (3.6x).
+- reddit back: P-prompt 0.106 vs Vision 0.045 (2.4x).
+- reddit type: P-prompt 0.153 vs Vision 0.072 (2.1x).
 - classifieds back: P-text 0.108 vs Vision 0.051 (2.1x).
-- reddit type: P-text 0.150 vs Vision 0.072 (2.1x).
 
 ## Mechanism evidence for paper Section 5
 
@@ -193,8 +202,8 @@ These histograms summarize how many URL-changing click transitions each task pro
 | reddit | axis_2_prompt | P-text | `{"0": 76, "1": 47, "2": 37, "3": 18, "4": 11, "5": 8, "6": 5, "7": 1, "8": 1, "9": 1}` | P-SoM | `{"0": 74, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 3, "7": 2, "8": 3, "9": 1}` |
 | reddit | axis_3_image | P-SoM | `{"0": 74, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 3, "7": 2, "8": 3, "9": 1}` | SoM | `{"0": 80, "1": 58, "2": 32, "3": 16, "4": 12, "5": 4, "6": 2, "7": 1}` |
 | reddit | compound_DOM_to_PSoM | DOM | `{"0": 75, "1": 48, "11": 1, "2": 35, "3": 16, "4": 14, "5": 8, "6": 3, "7": 3, "9": 2}` | P-SoM | `{"0": 74, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 3, "7": 2, "8": 3, "9": 1}` |
-| reddit | axis_2_prompt_alt | DOM | `{}` | P-prompt | `{}` |
-| reddit | axis_1_text_alt | P-prompt | `{}` | P-SoM | `{}` |
+| reddit | axis_2_prompt_alt | DOM | `{"0": 75, "1": 48, "11": 1, "2": 35, "3": 16, "4": 14, "5": 8, "6": 3, "7": 3, "9": 2}` | P-prompt | `{"0": 65, "1": 48, "2": 31, "3": 27, "4": 12, "5": 10, "6": 4, "7": 4, "8": 3, "9": 1}` |
+| reddit | axis_1_text_alt | P-prompt | `{"0": 65, "1": 48, "2": 31, "3": 27, "4": 12, "5": 10, "6": 4, "7": 4, "8": 3, "9": 1}` | P-SoM | `{"0": 74, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 3, "7": 2, "8": 3, "9": 1}` |
 | classifieds | axis_1_text | DOM | `{"0": 81, "1": 71, "2": 31, "3": 26, "4": 4, "5": 6, "6": 1, "7": 3, "8": 1}` | P-text | `{"0": 87, "1": 52, "2": 33, "3": 22, "4": 12, "5": 7, "6": 4, "7": 3, "8": 1, "9": 3}` |
 | classifieds | axis_2_prompt | P-text | `{"0": 87, "1": 52, "2": 33, "3": 22, "4": 12, "5": 7, "6": 4, "7": 3, "8": 1, "9": 3}` | P-SoM | `{"0": 88, "1": 62, "11": 1, "2": 28, "3": 17, "4": 11, "5": 8, "6": 3, "7": 2, "8": 2, "9": 2}` |
 | classifieds | axis_3_image | P-SoM | `{"0": 88, "1": 62, "11": 1, "2": 28, "3": 17, "4": 11, "5": 8, "6": 3, "7": 2, "8": 2, "9": 2}` | SoM | `{"0": 107, "1": 59, "10": 1, "2": 25, "3": 13, "4": 9, "5": 5, "6": 3, "7": 2}` |
@@ -212,8 +221,8 @@ The histogram key is first divergent step. Step 0 means the two modes start from
 | reddit | P-text_vs_P-SoM | `{"0": 16, "1": 3, "2": 2}` |
 | reddit | P-SoM_vs_SoM | `{"0": 12, "1": 4, "2": 2, "3": 1, "6": 1}` |
 | reddit | DOM_vs_P-SoM | `{"0": 14, "1": 6, "2": 1}` |
-| reddit | DOM_vs_P-prompt | `{}` |
-| reddit | P-prompt_vs_P-SoM | `{}` |
+| reddit | DOM_vs_P-prompt | `{"0": 8, "1": 6, "2": 1, "3": 1, "5": 1, "6": 1}` |
+| reddit | P-prompt_vs_P-SoM | `{"0": 15, "1": 3, "2": 1}` |
 | classifieds | DOM_vs_P-text | `{"0": 6, "1": 10, "2": 3, "3": 2, "8": 1}` |
 | classifieds | P-text_vs_P-SoM | `{"0": 3, "1": 5, "2": 4, "3": 1, "4": 1, "7": 2, "8": 2}` |
 | classifieds | P-SoM_vs_SoM | `{"0": 14, "1": 19, "2": 8, "3": 2, "4": 1, "5": 1, "8": 1}` |
@@ -235,6 +244,7 @@ Each E3 row is sourced from existing analyzer outputs; calibration source is nul
 | B0/classifieds/Vision | `results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 222 | 224 |
 | B0/reddit/DOM | `results/visualwebarena/phase1/B0_dom_reddit_20260625_154833_928747130_2827521_R11344/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B0/reddit/P-SoM | `results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
+| B0/reddit/P-prompt | `results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260709/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B0/reddit/P-text | `results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 76 | 76 | 76 |
 | B0/reddit/SoM | `results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B0/reddit/Vision | `results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
@@ -267,8 +277,8 @@ All values are paired per-task action-fraction shifts in the cascade direction, 
 | reddit | axis_2_prompt | 0.014 | -0.018 | 0.007 | 0.004 | 0.002 | -0.004 | -0.000 | -0.002 | -0.000 | -0.003 |
 | reddit | axis_3_image | 0.023 | -0.017 | -0.026 | 0.014 | -0.000 | -0.009 | 0.000 | 0.035 | -0.017 | -0.003 |
 | reddit | compound_DOM_to_PSoM | -0.002 | -0.011 | -0.043 | 0.003 | 0.003 | 0.003 | 0.000 | -0.030 | 0.077 | 0.000 |
-| reddit | axis_2_prompt_alt | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
-| reddit | axis_1_text_alt | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| reddit | axis_2_prompt_alt | 0.018 | -0.007 | -0.038 | -0.002 | 0.003 | 0.023 | 0.000 | -0.006 | 0.003 | 0.007 |
+| reddit | axis_1_text_alt | -0.019 | -0.004 | -0.005 | 0.005 | 0.000 | -0.020 | 0.000 | -0.025 | 0.074 | -0.007 |
 | classifieds | axis_1_text | -0.000 | -0.031 | 0.013 | 0.011 | -0.001 | 0.013 | 0.000 | -0.004 | -0.010 | 0.009 |
 | classifieds | axis_2_prompt | -0.009 | 0.007 | 0.012 | -0.005 | 0.000 | -0.011 | 0.000 | 0.009 | 0.001 | -0.005 |
 | classifieds | axis_3_image | 0.007 | 0.004 | -0.054 | 0.018 | 0.002 | -0.016 | 0.000 | 0.034 | -0.002 | 0.007 |
@@ -322,6 +332,11 @@ Top action types per B0 cell by pooled step fraction.
 | B0/reddit/P-SoM | 3 | type | 0.132 |
 | B0/reddit/P-SoM | 4 | scroll | 0.126 |
 | B0/reddit/P-SoM | 5 | back | 0.074 |
+| B0/reddit/P-prompt | 1 | click | 0.466 |
+| B0/reddit/P-prompt | 2 | type | 0.153 |
+| B0/reddit/P-prompt | 3 | scroll | 0.149 |
+| B0/reddit/P-prompt | 4 | back | 0.106 |
+| B0/reddit/P-prompt | 5 | tab_focus | 0.038 |
 | B0/reddit/P-text | 1 | click | 0.432 |
 | B0/reddit/P-text | 2 | type | 0.150 |
 | B0/reddit/P-text | 3 | tab_focus | 0.150 |
@@ -351,7 +366,9 @@ Top action types per B0 cell by pooled step fraction.
 | E1 Jaccard range classifieds/axis_3_image | [0, 1] | True |
 | E1 Jaccard range classifieds/compound_DOM_to_PSoM | [0, 1] | True |
 | E1 Jaccard range reddit/axis_1_text | [0, 1] | True |
+| E1 Jaccard range reddit/axis_1_text_alt | [0, 1] | True |
 | E1 Jaccard range reddit/axis_2_prompt | [0, 1] | True |
+| E1 Jaccard range reddit/axis_2_prompt_alt | [0, 1] | True |
 | E1 Jaccard range reddit/axis_3_image | [0, 1] | True |
 | E1 Jaccard range reddit/compound_DOM_to_PSoM | [0, 1] | True |
 | E2 first step range classifieds/DOM_vs_P-SoM | [0, 30] | True |
@@ -374,6 +391,7 @@ Top action types per B0 cell by pooled step fraction.
 | E4 action sum B0/classifieds/Vision | 1.000000 | True |
 | E4 action sum B0/reddit/DOM | 1.000000 | True |
 | E4 action sum B0/reddit/P-SoM | 1.000000 | True |
+| E4 action sum B0/reddit/P-prompt | 1.000000 | True |
 | E4 action sum B0/reddit/P-text | 1.000000 | True |
 | E4 action sum B0/reddit/SoM | 1.000000 | True |
 | E4 action sum B0/reddit/Vision | 1.000000 | True |
@@ -390,5 +408,5 @@ Overall pass: False.
 |---|---|
 | E1 N reddit | 205 / 205 |
 | E1 N classifieds | 224 / 224 |
-| E3 cells | 29 / 29 |
-| P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 96, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |
+| E3 cells | 30 / 30 |
+| P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |
