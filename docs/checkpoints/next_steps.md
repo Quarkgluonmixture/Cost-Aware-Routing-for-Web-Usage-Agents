@@ -23,7 +23,13 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-16 凌晨 UPDATE — B0 pprompt LAND → k=5 数据完备, SOP 全通, verdict-day 就绪** ⭐⭐⭐ 最新先读 (详 笔记 §378):
+> 🔭 **2026-07-16 UPDATE — VERDICT DAY 完成: Branch B 落稿 + post-submission 路线拍板** ⭐⭐⭐ 最新先读 (详 笔记 §378-§381):
+> - **✅ k=5 verdict 已 splice**: H1 FAIL (+0.83 [+0.27,+1.49] p=0.7430) / H3 双 PASS (+1.26/+2.60) / H10 fail-closed → **Branch B**。abstract 重写 (250 词整), 三方审计 16 findings 全修 (codex 3 P0: estimand 偷换/超词/R5 隐匿), 官方模板编译过 **正文第 7 页末收** (refs pp.8-9)。数字唯一源 = PN06 slotsheet; commit `c55b16e`+`e4f13cd`。
+> - **📋 剩余 pending 槽 = 合法**: B2-red 行 (×6) / Table 4+§6 H10 / §5.4 latency canonical / K5 标记打包剥离。**若 B2-red 提交前齐 → 无条件 k=6 重灌** (regenerate slotsheet → re-splice → 删 K5 块)。
+> - **🗺️ Post-submission 路线 (user 拍板, 详 tasks.base)**: **B3=MiMo 8 月先行** (适配 7 月下旬 DGX 起步) → **WA 50-task pilot 插空** (prereg §8.8 注册预测, B1 本地) → **shop 期刊版长线**; B0 replicate 附录机会性 (提交前重跑已否决 = outcome-dependent sampling)。
+> - **🔲 USER 行动 (不变, Jul 21 AoE 倒计时)**: OpenReview 填表 (作者 4 人 + 提名 Zekun + 贴 abstract — ⚠️ 表单 abstract 用 `deliverables/openreview_abstract_tldr_2026-07-14.md` verdict-neutral 版, full deadline 前可换成 verdict 版) / Maria 确认 / 学长书面一行 / OSF 发布 / D7 story 版拍板。
+>
+> 🔭 **2026-07-16 凌晨 UPDATE — B0 pprompt LAND → k=5 数据完备, SOP 全通, verdict-day 就绪** ⭐⭐⭐ (详 笔记 §378):
 > - **✅ B0 pprompt 205/205 (01:35Z, SR 12.68%)** → bind/promote/analysis/orchestrator-restart 全通 (run_manifest **30 conditions**, B2 dom 已 resume 向 k=6 窗口)。
 > - **📊 k=5 interim**: H1 **+0.795pp [0.27,1.49] p=0.743 不过线** (B0·red 实测 +0.98, archive +3.3 未兑现); H3 **双轴过线** (+1.26/+2.60, p=0.0); H2a 5/5 → 指向 **Branch B** (Route C'-S, 预写已备)。artifact 仍 PARTIAL/NOT_EVALUATED — **正式 verdict 必须走 VERDICT_DAY_RUNBOOK + Protocol-Note-06 授权 k=5 slotsheet (`--h10-pending`), 禁手抄 interim 进 draft**。
 > - **🔜 白天动作 (user 醒后)**: ① 跑 verdict-day runbook k=5 严格路径 → 选支 (大概率 B) → §8.3 abstract/§1 替换 splice → cut_prewrites 抵词数 → /stress + Mode B/C chain → convert.sh 页数账; ② OpenReview 填表 (作者 4 人 + 提名 Zekun Wu + 贴 abstract); ③ Maria 确认 + 学长书面一行 + OSF 发布。
