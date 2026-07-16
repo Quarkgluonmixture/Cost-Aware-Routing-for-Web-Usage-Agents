@@ -1,11 +1,11 @@
 ---
 type: task
-status: blocked
+status: superseded
 priority: P1
 horizon: next
 order: 4
-blocker: "Fire-6 clean §1 data"
-eta: "~4-6h codex"
+blocker: ""
+eta: "SUPERSEDED 2026-07-16: verdict-day splice + 三方审计 (§380) 完成 prose 定稿轮"
 detail: paper_drafts
 created: 2026-05-22
 updated: 2026-05-22

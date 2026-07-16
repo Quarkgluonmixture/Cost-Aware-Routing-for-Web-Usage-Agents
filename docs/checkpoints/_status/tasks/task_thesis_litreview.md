@@ -1,11 +1,11 @@
 ---
 type: task
-status: active
+status: done
 priority: P0
 horizon: now
 order: 2
 blocker: ""
-eta: "2026-07-13 (D7 self-target; official hard ≤2026-07-20)"
+eta: "DONE 2026-07-15/16: story 版重写 (证据守恒) + 已交学长 (小标题清单已发); 待学长通读反馈"
 detail: deliverables/chapter_literature_review
 created: 2026-06-10
 updated: 2026-06-10

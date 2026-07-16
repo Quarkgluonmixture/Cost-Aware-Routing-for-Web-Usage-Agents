@@ -1,11 +1,11 @@
 ---
 type: task
-status: blocked
+status: done
 priority: P1
 horizon: next
 order: 6
-blocker: "post-data"
-eta: ""
+blocker: ""
+eta: "DONE 2026-07-16: R5 + Amendment-02 Route C-prime-S (lower-claim structural report); B-1284 cap R2"
 detail: paper_planning
 created: 2026-05-22
 updated: 2026-05-22

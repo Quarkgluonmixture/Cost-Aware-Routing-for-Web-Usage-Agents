@@ -1,11 +1,11 @@
 ---
 type: task
-status: blocked
+status: done
 priority: P0
 horizon: next
 order: 3
-blocker: "Pass-1+2 data"
-eta: "2026-07-01 (D5 hero numbers + drop-one gate k=6)"
+blocker: ""
+eta: "DONE 2026-07-16: k=5 verdict (PN06) Branch B 落稿; B2-red 齐则无条件 k=6 重灌"
 detail: preregistration
 created: 2026-05-22
 updated: 2026-06-10

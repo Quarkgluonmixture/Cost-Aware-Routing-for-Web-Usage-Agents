@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "2026-06-26 (D4; §330 watcher: B2 cls ~06-15/16 → red auto-chain ~06-22/23 + buffer)"
+eta: "30/36 conditions bound (五格齐, 2026-07-16); 余 B2-red ×6 后台 (orchestrator v2, ETA ~07-25)"
 detail: phase1_plan
 created: 2026-05-22
 updated: 2026-06-10
