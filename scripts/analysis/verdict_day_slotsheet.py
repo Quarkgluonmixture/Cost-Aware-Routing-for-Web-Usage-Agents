@@ -8,7 +8,9 @@ table blocks.  ``--h10-pending`` is a COMPLETE-only final mode for the interval
 between Pass-1 and Pass-2: H1/H3 slots and Tables 2/3 remain copyable, while all
 H10/router values fail closed behind explicit pending markers.  Verdict logic
 reads ``analysis_status`` and ``h1_verdict``; legacy ``gate_status`` is
-display-only fallback metadata.
+display-only fallback metadata.  ``--protocol-note-06`` is a separately tagged,
+fixed-five authorization with the same Pass-1-only open surface; it never accepts
+PARTIAL or ordinary COMPLETE artifacts.
 """
 from __future__ import annotations
 
@@ -44,6 +46,18 @@ H10_PENDING_ABSTRACT = (
     "Learned-router deployability remains pending until the preregistered "
     "Pass-2 evaluation is complete."
 )
+PROTOCOL_NOTE_06_STATUS = "COMPLETE_K5_PROTOCOL_NOTE_06"
+PROTOCOL_NOTE_06_QUALIFIER = "on the five landed cells"
+PROTOCOL_NOTE_06_WITNESS_TAG = (
+    "protocol-note-06-k5-early-verdict-signed-20260715"
+)
+PROTOCOL_NOTE_06_CELL_IDS = {
+    "B0_classifieds",
+    "B1_classifieds",
+    "B2_classifieds",
+    "B0_reddit",
+    "B1_reddit",
+}
 
 
 def g(d: Any, *keys: str, default: Any = "MISSING") -> Any:
@@ -184,22 +198,55 @@ def validate_artifacts(
     *,
     final: bool,
     h10_pending: bool = False,
+    protocol_note_06: bool = False,
 ) -> tuple[list[str], list[str]]:
     """Return hard validation errors and explicitly disclosed provenance gaps."""
     errors: list[str] = []
     gaps: list[str] = []
     status = dec.get("analysis_status")
-    if status not in {"COMPLETE", "PARTIAL", "INSUFFICIENT"}:
-        errors.append(f"decision analysis_status invalid or missing: {status!r}")
-    if h10_pending:
-        if status != "COMPLETE":
+    pass1_only = h10_pending or protocol_note_06
+    expected_cell_ids = (
+        PROTOCOL_NOTE_06_CELL_IDS if protocol_note_06 else PLANNED_CELL_IDS
+    )
+    if protocol_note_06:
+        if status != PROTOCOL_NOTE_06_STATUS:
             errors.append(
-                "--h10-pending requires decision artifact "
-                f"analysis_status=COMPLETE, got {status!r}; it cannot bypass completeness"
+                "--protocol-note-06 requires decision artifact "
+                f"analysis_status={PROTOCOL_NOTE_06_STATUS}, got {status!r}"
             )
+        if dec.get("protocol_note") != "PROTOCOL_NOTE_06":
+            errors.append("--protocol-note-06 requires protocol_note=PROTOCOL_NOTE_06")
+        if dec.get("verdict_qualifier") != PROTOCOL_NOTE_06_QUALIFIER:
+            errors.append(
+                "--protocol-note-06 requires verdict_qualifier="
+                f"{PROTOCOL_NOTE_06_QUALIFIER!r}"
+            )
+        if dec.get("b1284_one_tier_downgrade") is not True:
+            errors.append("--protocol-note-06 requires b1284_one_tier_downgrade=true")
+        if dec.get("r_tier_cap") != "R2":
+            errors.append("--protocol-note-06 requires r_tier_cap=R2")
+        if dec.get("witness_tag") != PROTOCOL_NOTE_06_WITNESS_TAG:
+            errors.append("--protocol-note-06 witness_tag is missing or unauthorized")
+        fixed_cell_set = dec.get("fixed_cell_set")
+        if (
+            not isinstance(fixed_cell_set, list)
+            or len(fixed_cell_set) != len(PROTOCOL_NOTE_06_CELL_IDS)
+            or set(fixed_cell_set) != PROTOCOL_NOTE_06_CELL_IDS
+        ):
+            errors.append("--protocol-note-06 fixed_cell_set is not the authorized five")
+    elif status not in {"COMPLETE", "PARTIAL", "INSUFFICIENT"}:
+        errors.append(f"decision analysis_status invalid or missing: {status!r}")
+    if pass1_only:
+        if status != "COMPLETE":
+            if not protocol_note_06:
+                errors.append(
+                    "--h10-pending requires decision artifact "
+                    f"analysis_status=COMPLETE, got {status!r}; it cannot bypass completeness"
+                )
         if dec.get("h1_verdict") not in {"PASS", "FAIL"}:
             errors.append(
-                "--h10-pending requires decision artifact h1_verdict in {PASS, FAIL}"
+                f"{'--protocol-note-06' if protocol_note_06 else '--h10-pending'} "
+                "requires decision artifact h1_verdict in {PASS, FAIL}"
             )
     elif final and status != "COMPLETE":
         errors.append(f"final slotsheet requires analysis_status=COMPLETE, got {status!r}")
@@ -231,6 +278,16 @@ def validate_artifacts(
                 )
         if _parse_time(dec.get("captured_at")) is None:
             errors.append("decision required captured_at timestamp missing or invalid")
+        if protocol_note_06 and g(dec, "pooled_h1_bootstrap", "k_cells", default=None) != 5:
+            errors.append("--protocol-note-06 requires pooled_h1_bootstrap.k_cells=5")
+        if protocol_note_06:
+            for axis_key in ("h3_axis1_pooled_fe", "h3_axis2_pooled_fe"):
+                verdict = g(dec, axis_key, "axis_verdict", default=None)
+                if verdict not in {"PASS", "FAIL"}:
+                    errors.append(
+                        f"--protocol-note-06 requires {axis_key}.axis_verdict in "
+                        "{PASS, FAIL}"
+                    )
 
     decision_cells: dict[str, dict[str, Any]] = {}
     per_cell = dec.get("per_cell")
@@ -249,11 +306,11 @@ def validate_artifacts(
                 errors.append(f"decision {cid} does not carry six unique canonical modes")
             if final and not _is_required_string(h1.get("task_set_sha256")):
                 errors.append(f"decision {cid} required task_set_sha256 missing")
-        if final and set(decision_cells) != PLANNED_CELL_IDS:
+        if final and set(decision_cells) != expected_cell_ids:
             errors.append(
-                "decision cells are not exact planned six: "
-                f"missing={sorted(PLANNED_CELL_IDS - set(decision_cells))} "
-                f"extra={sorted(set(decision_cells) - PLANNED_CELL_IDS)}"
+                "decision cells are not the exact authorized scope: "
+                f"missing={sorted(expected_cell_ids - set(decision_cells))} "
+                f"extra={sorted(set(decision_cells) - expected_cell_ids)}"
             )
 
     sr_rows = sr.get("summary_table")
@@ -296,15 +353,20 @@ def validate_artifacts(
                     errors.append(f"SR invalid numeric field for {key}: {field}={value!r}")
     expected_sr_keys = {
         (cid.split("_", 1)[0], cid.split("_", 1)[1], mode)
-        for cid in PLANNED_CELL_IDS for mode in MODE_ORDER
+        for cid in expected_cell_ids for mode in MODE_ORDER
     }
     if final and sr_keys != expected_sr_keys:
         errors.append(
-            f"SR table must contain exact 36 rows; got {len(sr_keys)} unique rows"
+            f"SR table must contain exact {len(expected_sr_keys)} authorized rows; "
+            f"got {len(sr_keys)} unique rows"
         )
 
-    numeric_fig = [r for r in fig0c if r.get("row_type", "numeric") == "numeric"]
-    error_fig = [r for r in fig0c if r.get("row_type") == "panel_error"]
+    scoped_fig = [
+        row for row in fig0c
+        if _cell_id(row.get("baseline"), row.get("site")) in expected_cell_ids
+    ]
+    numeric_fig = [r for r in scoped_fig if r.get("row_type", "numeric") == "numeric"]
+    error_fig = [r for r in scoped_fig if r.get("row_type") == "panel_error"]
     if error_fig:
         errors.append(f"fig0c contains {len(error_fig)} panel-level error rows")
     fig_by_cell: dict[str, list[dict[str, str]]] = {}
@@ -317,7 +379,14 @@ def validate_artifacts(
             errors.append(f"fig0c {cid} is not exact six unique modes")
         if any(str(r.get("complete_exact")).lower() != "true" for r in rows):
             errors.append(f"fig0c {cid} contains non-exact numeric rows")
-        if any(r.get("grade") != "PAPER_GRADE" for r in rows):
+        # The ordinary six-panel fig0c producer globally labels every row
+        # NON_PAPER_GRADE when the absent B2 Reddit panel forces --allow-partial.
+        # NOTE_06 authorizes only the five named panels, so their row-level
+        # complete_exact/is_partial/task-SHA checks below are the binding grade
+        # contract.  Every existing mode continues to reject the global label.
+        if not protocol_note_06 and any(
+            r.get("grade") != "PAPER_GRADE" for r in rows
+        ):
             errors.append(f"fig0c {cid} contains NON_PAPER_GRADE rows")
         if any(str(r.get("is_partial")).lower() == "true" for r in rows):
             errors.append(f"fig0c {cid} contains partial numeric rows")
@@ -385,12 +454,13 @@ def validate_artifacts(
                         f"decision↔fig0c numeric mismatch for {cid}: "
                         f"{fig_field}={fig_value} vs {decision_field}={decision_value}"
                     )
-    if final and set(fig_by_cell) != PLANNED_CELL_IDS:
+    if final and set(fig_by_cell) != expected_cell_ids:
         errors.append(
-            f"fig0c numeric panels must equal planned six; got {sorted(fig_by_cell)}"
+            "fig0c numeric panels must equal the authorized scope; "
+            f"got {sorted(fig_by_cell)}"
         )
 
-    if not h10_pending:
+    if not pass1_only:
         h10_cells = h10.get("per_cell")
         if not isinstance(h10_cells, dict) or not h10_cells:
             errors.append("H10 per_cell is missing or empty")
@@ -495,7 +565,7 @@ def validate_artifacts(
     fig_times = {_parse_time(r.get("captured_at")) for r in numeric_fig}
     fig_times.discard(None)
     provenance_times = [("fig0c", fig_times)]
-    if not h10_pending:
+    if not pass1_only:
         router_time = _parse_time(router.get("captured_at"))
         provenance_times.append(("router", {router_time} if router_time else set()))
     for label, times in provenance_times:
@@ -510,7 +580,7 @@ def validate_artifacts(
     # errors. Rehearsal retains gap-shaped diagnostics for older artifacts.
     if not sr.get("captured_at") and not final:
         gaps.append("SR: captured_at absent; time-window join cannot be enforced")
-    if not h10_pending:
+    if not pass1_only:
         if not h10.get("captured_at") and not final:
             gaps.append("H10: captured_at absent; time-window join cannot be enforced")
         h10_cells = h10.get("per_cell")
@@ -538,20 +608,38 @@ def build_sheet(
     *,
     rehearsal: bool,
     h10_pending: bool = False,
+    protocol_note_06: bool = False,
     errors: list[str],
     gaps: list[str],
 ) -> str:
     lines: list[str] = []
     add = lines.append
+    pass1_only = h10_pending or protocol_note_06
+    expected_cell_ids = (
+        PROTOCOL_NOTE_06_CELL_IDS if protocol_note_06 else PLANNED_CELL_IDS
+    )
+    qualifier_suffix = (
+        f" — {PROTOCOL_NOTE_06_QUALIFIER}" if protocol_note_06 else ""
+    )
     if rehearsal:
         add("# INVALID_FOR_DRAFT — verdict-day rehearsal diagnostics")
+    elif protocol_note_06:
+        add(
+            "# PROTOCOL_NOTE_06 k=5 verdict-day slot sheet "
+            f"(captured_at={g(dec, 'captured_at')})"
+        )
     else:
         add(f"# Verdict-day slot sheet (captured_at={g(dec, 'captured_at')})")
     add("")
     add("> Rounding lock: decimal.Decimal + ROUND_HALF_UP. Final mode is the only copyable source.")
-    if h10_pending:
+    if pass1_only:
         add(f"> **{H10_PENDING_NOTICE}**")
         add("> Copyable scope in this sheet: H1/H3 slots and Tables 2/3 only.")
+    if protocol_note_06:
+        add(
+            "> Authorized temporary verdict **on the five landed cells**; "
+            "B-1284 automatic one-tier downgrade; R-tier cap **R2**."
+        )
     add("")
 
     analysis_status = dec.get("analysis_status")
@@ -562,6 +650,12 @@ def build_sheet(
     add(f"- analysis_status=`{display_status}`")
     add(f"- h1_verdict=`{h1_verdict}`")
     add(f"- legacy gate_status=`{legacy_gate}` (display/fallback only; never branch logic)")
+    if protocol_note_06:
+        add("- protocol_note=`PROTOCOL_NOTE_06`")
+        add(f"- verdict_qualifier=`{PROTOCOL_NOTE_06_QUALIFIER}`")
+        add("- B-1284 one-tier downgrade=`true`; r_tier_cap=`R2`")
+        add(f"- fixed_cell_set=`{sorted(PROTOCOL_NOTE_06_CELL_IDS)}`")
+        add(f"- witness_tag=`{dec.get('witness_tag', 'MISSING')}`")
     boot = g(dec, "pooled_h1_bootstrap", default={})
     fe = g(dec, "pooled_h1_fe", default={})
     add(
@@ -569,7 +663,7 @@ def build_sheet(
         f"theta_FE={decimal_format(g(fe, 'theta_FE_pp'))}pp; "
         f"CI95=[{decimal_format(g(boot, 'ci95_lo_pp_bootstrap'))}, "
         f"{decimal_format(g(boot, 'ci95_hi_pp_bootstrap'))}]pp; "
-        f"k={g(boot, 'k_cells')}"
+        f"k={g(boot, 'k_cells')}{qualifier_suffix}"
     )
     heterogeneity = g(dec, "h1_heterogeneity", default={})
     add(
@@ -582,6 +676,7 @@ def build_sheet(
         add(
             f"- {axis_key}: "
             + " | ".join(f"{key}={scalar_display(value)}" for key, value in scalars(axis).items())
+            + qualifier_suffix
         )
     add("- H2(a) per-cell:")
     for cell in dec.get("per_cell", []):
@@ -590,7 +685,7 @@ def build_sheet(
             f"  - {cell.get('baseline')}·{cell.get('site')}: "
             + " | ".join(f"{key}={scalar_display(value)}" for key, value in scalars(h2).items())
         )
-    if h10_pending:
+    if pass1_only:
         add(f"- H10 operational gate: **{H10_PENDING_NOTICE}**")
     else:
         operational = g(h10, "operational_deployment_gate", default={})
@@ -608,15 +703,27 @@ def build_sheet(
     add("")
 
     add("## B. Branch suggestion")
-    if rehearsal or analysis_status != "COMPLETE":
+    complete_for_mode = (
+        analysis_status == PROTOCOL_NOTE_06_STATUS
+        if protocol_note_06 else analysis_status == "COMPLETE"
+    )
+    if rehearsal or not complete_for_mode:
         add("- **NO_BRANCH** — non-COMPLETE/rehearsal artifacts cannot select or splice a branch.")
     elif h1_verdict == "PASS":
-        add("- **Branch A** (canonical h1_verdict=PASS).")
+        add(f"- **Branch A** (h1_verdict=PASS{qualifier_suffix}).")
     elif h1_verdict == "FAIL":
         ax1 = g(dec, "h3_axis1_pooled_fe", "passed")
         ax2 = g(dec, "h3_axis2_pooled_fe", "passed")
-        add(f"- H1 FAIL; H3 axis1_pass={ax1}, axis2_pass={ax2}.")
-        add("- Both H3 axes pass → Branch B; otherwise use the Amendment-02 ladder.")
+        add(
+            f"- H1 FAIL{qualifier_suffix}; H3 axis1_pass={ax1}{qualifier_suffix}, "
+            f"axis2_pass={ax2}{qualifier_suffix}."
+        )
+        if protocol_note_06 and ax1 is True and ax2 is True:
+            add(
+                f"- **Branch B** — both H3 axes pass {PROTOCOL_NOTE_06_QUALIFIER}."
+            )
+        else:
+            add("- Both H3 axes pass → Branch B; otherwise use the Amendment-02 ladder.")
     else:
         add("- **NO_BRANCH** — canonical h1_verdict is not evaluated.")
     add("")
@@ -662,28 +769,41 @@ def build_sheet(
                 )
         add("")
 
-    if rehearsal or analysis_status != "COMPLETE":
+    if rehearsal or not complete_for_mode:
         add("Copyable §C–§F slots/tables intentionally suppressed.")
         return "\n".join(lines) + "\n"
 
     add("## C. Canonical slot values")
     add("| slot | value | producer field |")
     add("|---|---:|---|")
-    add(f"| THETA | {decimal_format(g(fe, 'theta_FE_pp'))} | pooled_h1_fe.theta_FE_pp |")
+    if protocol_note_06:
+        add(
+            f"| H1_VERDICT | {h1_verdict}{qualifier_suffix} | h1_verdict |"
+        )
+    add(
+        f"| THETA | {decimal_format(g(fe, 'theta_FE_pp'))}{qualifier_suffix} | "
+        "pooled_h1_fe.theta_FE_pp |"
+    )
     add(
         f"| CI_LO / CI_HI | {decimal_format(g(boot, 'ci95_lo_pp_bootstrap'))} / "
-        f"{decimal_format(g(boot, 'ci95_hi_pp_bootstrap'))} | pooled_h1_bootstrap percentile CI |"
+        f"{decimal_format(g(boot, 'ci95_hi_pp_bootstrap'))}{qualifier_suffix} | "
+        "pooled_h1_bootstrap percentile CI |"
     )
-    add(f"| P_BOOT | {decimal_format(g(boot, 'p_one_sided_bootstrap'), 4, signed=False)} | pooled_h1_bootstrap.p_one_sided_bootstrap |")
-    add(f"| K | {g(boot, 'k_cells')} | pooled_h1_bootstrap.k_cells |")
+    add(f"| P_BOOT | {decimal_format(g(boot, 'p_one_sided_bootstrap'), 4, signed=False)}{qualifier_suffix} | pooled_h1_bootstrap.p_one_sided_bootstrap |")
+    add(f"| K | {g(boot, 'k_cells')}{qualifier_suffix} | pooled_h1_bootstrap.k_cells |")
     for axis_name, axis_key in (("AX1", "h3_axis1_pooled_fe"), ("AX2", "h3_axis2_pooled_fe")):
         axis = g(dec, axis_key, default={})
+        if protocol_note_06:
+            add(
+                f"| {axis_name}_VERDICT | {g(axis, 'axis_verdict')}{qualifier_suffix} | "
+                f"{axis_key}.axis_verdict |"
+            )
         add(
             f"| {axis_name} | {decimal_format(g(axis, 'theta_FE_pp'))} "
             f"[{decimal_format(g(axis, 'ci95_lo_pp_bootstrap'))}, "
-            f"{decimal_format(g(axis, 'ci95_hi_pp_bootstrap'))}] | {axis_key} |"
+            f"{decimal_format(g(axis, 'ci95_hi_pp_bootstrap'))}]{qualifier_suffix} | {axis_key} |"
         )
-    if h10_pending:
+    if pass1_only:
         add("")
         add("### H10/router slots")
         add(f"- **{H10_PENDING_NOTICE}**")
@@ -705,6 +825,8 @@ def build_sheet(
     add("## D. Table 2 regen (SR)")
     cells: dict[tuple[str, str], dict[str, dict[str, Any]]] = {}
     for row in sr["summary_table"]:
+        if _cell_id(row.get("baseline"), row.get("site")) not in expected_cell_ids:
+            continue
         cells.setdefault((row["site"], row["baseline"]), {})[row["mode"]] = row
     add("| cell | " + " | ".join(MODE_ORDER) + " |")
     add("|---|" + "---:|" * len(MODE_ORDER))
@@ -719,6 +841,8 @@ def build_sheet(
     for row in fig0c:
         if row.get("row_type", "numeric") != "numeric":
             continue
+        if _cell_id(row.get("baseline"), row.get("site")) not in expected_cell_ids:
+            continue
         add(
             f"| {row['site_baseline']} | {row['mode']} | "
             f"{decimal_format(float(row['drop_one_loss_pp']))} | "
@@ -728,7 +852,7 @@ def build_sheet(
     add("")
 
     add("## F. Table 4 regen (H10)")
-    if h10_pending:
+    if pass1_only:
         add(f"- **{H10_PENDING_NOTICE}**")
         add("- Table 4 numeric rows are intentionally withheld until Pass-2 lands.")
         add(f"- Suggested abstract `<H10-VERDICT>` phrase: “{H10_PENDING_ABSTRACT}”")
@@ -745,7 +869,7 @@ def build_sheet(
 
     add("## G. Post-splice checklist")
     add("1. Run banned-phrase and residual-slot greps from VERDICT_DAY_RUNBOOK.md.")
-    if h10_pending:
+    if pass1_only:
         add("2. Leave §6/Table 4 pending; rerun full final mode after Pass-2 lands.")
     else:
         add("2. Verify [P]→[A] provenance lifts and the router contrast cohort counts.")
@@ -773,13 +897,21 @@ def main(argv: list[str] | None = None) -> int:
             "while withholding H10/router values until Pass-2"
         ),
     )
+    mode.add_argument(
+        "--protocol-note-06", action="store_true",
+        help=(
+            "accept only the authorized NOTE_06 k=5 decision artifact; emit H1/H3 "
+            "and Tables 2/3 with mandatory five-landed-cell qualifiers while "
+            "withholding H10/router/Table 4"
+        ),
+    )
     args = ap.parse_args(argv)
 
     load_errors: list[str] = []
     dec = _load_json(args.decision, "decision artifact", load_errors)
     sr = _load_json(args.sr, "SR artifact", load_errors)
     fig0c = _load_csv(args.fig0c, "fig0c artifact", load_errors)
-    if args.h10_pending:
+    if args.h10_pending or args.protocol_note_06:
         h10: dict[str, Any] = {}
         router: dict[str, Any] = {}
     else:
@@ -789,6 +921,7 @@ def main(argv: list[str] | None = None) -> int:
         dec, h10, sr, fig0c, router,
         final=not args.rehearsal,
         h10_pending=args.h10_pending,
+        protocol_note_06=args.protocol_note_06,
     )
     errors = load_errors + validation_errors
     if errors and not args.rehearsal:
@@ -799,6 +932,7 @@ def main(argv: list[str] | None = None) -> int:
     output = build_sheet(
         dec, h10, sr, fig0c, router,
         rehearsal=args.rehearsal, h10_pending=args.h10_pending,
+        protocol_note_06=args.protocol_note_06,
         errors=errors, gaps=gaps,
     )
     if args.out:

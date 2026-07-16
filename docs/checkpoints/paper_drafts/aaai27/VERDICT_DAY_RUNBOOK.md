@@ -3,7 +3,7 @@
 > **触发时点**: 最后一个 pending cell bind 完成（Pass-1 全 36 → H1/H3 verdict day；Pass-2 router 6
 > cond 完成 → H10 verdict day，可分两次走）。目标 = 从 "数据 land" 到 "draft slot 全填 + 自检过" 一条
 > 命令链走完，**全程零手抄**（本 session 4 个 P0 全是转录/压缩漂移——工具链就是防它）。
-> k<6 提前投稿场景（advisor 预案(a)）同样走本 runbook，但 `analysis_status=PARTIAL` 时只允许 verdict-中性披露；不得选择或 splice 分支。
+> k<6 提前投稿默认同样 fail-closed：`analysis_status=PARTIAL` 时只允许 verdict-中性披露；不得选择或 splice 分支。唯一例外是已签字生效的 PROTOCOL_NOTE_06 固定五格通道，必须使用其单独 producer/slotsheet 与限定语，不能从 PARTIAL 旁路。
 
 ## 0. 前置: 数据 sync（每个 cell land 后即做, 不等 verdict day）
 
@@ -53,6 +53,22 @@ make analysis FAST=1
 该形态只开放 H1/H3 槽与 Tables 2/3；H10/router、Table 4 和 abstract H10 槽均显式
 fail-closed。它不能用于 `PARTIAL`，也不能与 `--rehearsal` 同用。
 
+若固定五格满足 PROTOCOL_NOTE_06，先生成隔离 decision（不会触碰 canonical decision）：
+```bash
+.venv/bin/python3 scripts/analysis/aggregate_phase1_full_prereg_decision.py \
+  --protocol-note-06-k5
+.venv/bin/python3 scripts/analysis/verdict_day_slotsheet.py \
+  --protocol-note-06 \
+  --decision results/phantom_paper/phase1_full_prereg_decision_pn06_k5.json \
+  --sr docs/analysis/cross_sites/sr_per_mode.json \
+  --fig0c results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv \
+  --out /tmp/claude-1012/slotsheet_pn06_k5_$(date +%Y%m%d).md
+```
+该形态只接受 `analysis_status=COMPLETE_K5_PROTOCOL_NOTE_06`，开放面与
+`--h10-pending` 相同，并把 `on the five landed cells` 自动附在每个 H1/H3
+verdict 槽值旁；它与 `--rehearsal` / `--h10-pending` 互斥。B2 Reddit 六模式一旦
+bound，producer 按 NOTE_06 §3 拒绝 k=5，必须重生成完整六格 verdict。
+
 当前 `analysis_status=PARTIAL` 时只用下列 **rehearsal 安全形态**；全部输出进 scratch，禁止拿来
 splice：
 ```bash
@@ -70,7 +86,8 @@ splice：
   --out /tmp/p79_rehearsal_20260714/slotsheet_20260714.md
 ```
 
-- **Step 3 — 读 sheet §A/§B**: `analysis_status` 必须 = `COMPLETE`，且 `h1_verdict ∈ {PASS,FAIL}`。
+- **Step 3 — 读 sheet §A/§B**: 常规通道 `analysis_status` 必须 = `COMPLETE`；NOTE_06
+  通道必须 = `COMPLETE_K5_PROTOCOL_NOTE_06`；两者均须 `h1_verdict ∈ {PASS,FAIL}`。
   确认 branch 建议后**人工对照** prereg §2.5 + Amendment 02 ladder（sheet 只建议不拍板；
   B2 claim-tier gate / I² cap 两个 modifier 在 sheet §A 里看）。
 
@@ -148,7 +165,7 @@ Pass-2 land 后: `python scripts/analysis/aggregate_h10_pareto.py` → 重跑 sl
 
 ## 6. k<6 提前投稿特例（advisor 预案(a) 获批时）
 
-- `analysis_status=PARTIAL` 是预期态；rehearsal sheet 顶部标 `INVALID_FOR_DRAFT`，§B 只输出 `NO_BRANCH`，并抑制可复制槽值/表格。
-- draft 只允许 verdict-中性措辞，并同时落 §4 k<6 透明披露句 + §8 statistics para 对应修改（fixed-cells 设计, k 不齐明写）。
-- pooled k<6 数值仅作 interim 诊断；**不得按 legacy `gate_status` 或 bootstrap boolean 选择分支**。最终分支唯一依据是 `analysis_status=COMPLETE` 后的 `h1_verdict`。
-- 例外出口（不焊死预案(a)）：若 advisor 确认要在 k<6 提前选支投稿，这构成对 prereg "over the 6 planned cells" estimand 的临时偏离 —— 须先落新的 PROTOCOL_NOTE（明确 k<6 pooled gate 的临时定义 + 披露义务）并打 witness tag；在此之前 slotsheet 刻意不提供任何 k<6 选支机制。runbook 层不得自行拍板。
+- 普通 `analysis_status=PARTIAL` 仍只允许 rehearsal：顶部 `INVALID_FOR_DRAFT`，§B=`NO_BRANCH`，并抑制全部可复制槽值/表格；不得按 legacy `gate_status` 或 bootstrap boolean 选支。
+- PROTOCOL_NOTE_06 已签字生效后的唯一 k<6 verdict 出口是 §1 的固定五格隔离通道：状态必须为 `COMPLETE_K5_PROTOCOL_NOTE_06`，每个 pooled verdict 随槽携带 **“on the five landed cells”**，自动应用 B-1284 one-tier downgrade / R2 cap。
+- H10/router、Table 4 与 abstract H10 槽在该通道继续 fail-closed pending；不得把 Pass-1 k=5 授权扩张为 H10 授权。
+- B2 Reddit 若在投稿前 fully land + provenance-bound，NOTE_06 §3 无条件升级触发：k=5 产物对投稿作废，只能重生成 canonical k=6 decision/slotsheet 后重新选支与 splice。

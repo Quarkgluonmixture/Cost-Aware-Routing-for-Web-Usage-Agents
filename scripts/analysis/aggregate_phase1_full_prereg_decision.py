@@ -87,6 +87,39 @@ DEFAULT_OUT_CSV = REPO / "results/phantom_paper/phase1_full_prereg_decision.csv"
 DEFAULT_OUT_JSON = REPO / "results/phantom_paper/phase1_full_prereg_decision.json"
 DEFAULT_OUT_MD = REPO / "results/phantom_paper/phase1_full_prereg_decision.md"
 
+# PROTOCOL_NOTE_06 is an explicitly isolated, temporary k=5 verdict channel.
+# Its paths and metadata are deliberately not configurable through the canonical
+# --output-* flags: invoking the authorization must never replace the registered
+# six-cell artifact, even accidentally.
+PROTOCOL_NOTE_06_PATH = (
+    REPO / "docs/prereg_amendments/PROTOCOL_NOTE_06_K5_EARLY_VERDICT_20260716.md"
+)
+PROTOCOL_NOTE_06_OUT_JSON = (
+    REPO / "results/phantom_paper/phase1_full_prereg_decision_pn06_k5.json"
+)
+PROTOCOL_NOTE_06_OUT_MD = (
+    REPO / "results/phantom_paper/phase1_full_prereg_decision_pn06_k5.md"
+)
+PROTOCOL_NOTE_06_STATUS = "COMPLETE_K5_PROTOCOL_NOTE_06"
+PROTOCOL_NOTE_06_QUALIFIER = "on the five landed cells"
+PROTOCOL_NOTE_06_WITNESS_TAG = (
+    "protocol-note-06-k5-early-verdict-signed-20260715"
+)
+PROTOCOL_NOTE_06_FIXED_CELLS = (
+    ("classifieds", "B0"),
+    ("classifieds", "B1"),
+    ("classifieds", "B2"),
+    ("reddit", "B0"),
+    ("reddit", "B1"),
+)
+PROTOCOL_NOTE_06_FIXED_CELL_IDS = (
+    "B0_classifieds",
+    "B1_classifieds",
+    "B2_classifieds",
+    "B0_reddit",
+    "B1_reddit",
+)
+
 # Prereg §2 H2(a) lock (2026-05-14 Decision 3A + A1.21 P0-9 prereg amend):
 # per-task median ratio cost(P-SoM)/cost(DOM) within ±20% of 1.0 per cell.
 # ANY cell violation → falsified → R4 framing.
@@ -473,7 +506,9 @@ H3_MIN_UNIQUE_TASKS = 2
 H3_REQUIRED_CELLS = 6
 
 
-def _h3_axis_pooled_fe(per_cell_list: List[Dict], axis_name: str) -> Dict:
+def _h3_axis_pooled_fe(
+    per_cell_list: List[Dict], axis_name: str, *, k_required: int = H3_REQUIRED_CELLS,
+) -> Dict:
     """Pool every available planned-cell H3 estimate without outcome filtering.
 
     ``n_unique < 2`` is recorded only through each row's ``cell_pass`` label and
@@ -488,7 +523,7 @@ def _h3_axis_pooled_fe(per_cell_list: List[Dict], axis_name: str) -> Dict:
         "axis": axis_name,
         "k_cells": k_input,
         "k_cells_input": k_input,
-        "k_cells_required": H3_REQUIRED_CELLS,
+        "k_cells_required": k_required,
         "n_noise_floor_cells": n_noise,
         # Backward-compatible field retained, now truthfully zero because F4
         # restores all data-bearing planned cells to the pool.
@@ -497,7 +532,7 @@ def _h3_axis_pooled_fe(per_cell_list: List[Dict], axis_name: str) -> Dict:
         "noise_floor_threshold_unique_tasks": H3_MIN_UNIQUE_TASKS,
         "analysis_status": (
             "INSUFFICIENT" if k_input < 2
-            else "COMPLETE" if k_input == H3_REQUIRED_CELLS
+            else "COMPLETE" if k_input == k_required
             else "PARTIAL"
         ),
         "axis_verdict": "NOT_EVALUATED",
@@ -546,7 +581,7 @@ def _h3_axis_pooled_fe(per_cell_list: List[Dict], axis_name: str) -> Dict:
         and boot_payload.get("ci95_lo_pp_bootstrap") is not None
         and boot_payload["ci95_lo_pp_bootstrap"] > 0.0
     )
-    complete = k_input == H3_REQUIRED_CELLS
+    complete = k_input == k_required
     return {
         **base,
         "theta_FE_pp": theta_fe,
@@ -564,7 +599,7 @@ def _h3_axis_pooled_fe(per_cell_list: List[Dict], axis_name: str) -> Dict:
         "alpha": ALPHA,
         "gate_rule": (
             "bootstrap_percentile_CI_lower_bound > 0, evaluated only when "
-            "k_cells_input == 6"
+            f"k_cells_input == {k_required}"
         ),
         "axis_verdict": (
             "PASS" if complete and passed_ci_bootstrap
@@ -706,7 +741,8 @@ def _load_h10_operational_gate_passed() -> Optional[bool]:
 
 def _apply_framing(h1_pass: bool, h2a_falsified: bool,
                     h3_axis1_pass: bool, h3_axis2_pass: bool,
-                    h1_isq_cap_at_r3: bool, h10_pass: Optional[bool] = None) -> Dict:
+                    h1_isq_cap_at_r3: bool, h10_pass: Optional[bool] = None,
+                    design_scope: str = "over 6-cell design") -> Dict:
     """Apply prereg §2 R1-R5 framing rule with I² cap-only override.
 
     A1.21 P0-3 + P0-11 fix: I² > 75% caps R1/R2 → R3, but does NOT rescue
@@ -748,7 +784,7 @@ def _apply_framing(h1_pass: bool, h2a_falsified: bool,
         return {"rule": "R5",
                 "post_r5_pivot": pivot,
                 "post_r5_pivot_desc": pivot_desc,
-                "framing": "H1 FE superiority failed over 6-cell design (falsifies P-SoM "
+                "framing": f"H1 FE superiority failed {design_scope} (falsifies P-SoM "
                            "deployment-arm superiority claim, NOT phantom concept space "
                            "existence or P-text/P-prompt structural ablation evidence). "
                            "R5 tier unchanged; reporting route = " + pivot
@@ -779,6 +815,26 @@ def _apply_framing(h1_pass: bool, h2a_falsified: bool,
                 "original_rule_pre_cap": primary[0]}
     return {"rule": primary[0], "framing": primary[1], "hook_power": primary[2],
             "heterogeneity_override": False}
+
+
+def _apply_protocol_note_06_b1284_downgrade(framing: Dict) -> Dict:
+    """Apply NOTE_06 §2's automatic one-tier downgrade to an available R-tier.
+
+    This is intentionally separate from the registered six-cell B-1284 helper:
+    the missing B2 Reddit cell itself activates the modifier, independent of the
+    observed direction in the single landed Gemma-Classifieds cell.
+    """
+    rule = framing.get("rule")
+    downgraded = {"R1": "R2", "R2": "R3"}.get(rule, rule)
+    return {
+        **framing,
+        "rule": downgraded,
+        "protocol_note_06_rule_pre_b1284_downgrade": rule,
+        "protocol_note_06_b1284_modifier": (
+            "automatic one-tier downgrade under NOTE_06 §2; R-tier capped at R2; "
+            "no cross-site Gemma replication claim"
+        ),
+    }
 
 
 def _apply_b2_cross_family_downgrade(framing: Dict, per_cell_data: List[Dict]) -> Dict:
@@ -847,6 +903,7 @@ def _apply_b2_cross_family_downgrade(framing: Dict, per_cell_data: List[Dict]) -
 def build_full_decision(
     cells: List[Dict], *,
     expected_ids_by_site: Optional[Dict[str, frozenset[int] | set[int]]] = None,
+    protocol_note_06_k5: bool = False,
 ) -> Dict:
     """End-to-end H1 + H2(a) + H3 axes + I² cap + framing rule."""
     per_cell_data = []
@@ -970,13 +1027,28 @@ def build_full_decision(
         "per_cell": per_cell_data,
         "skipped_cells": skipped,
     }
+    if protocol_note_06_k5:
+        payload.update({
+            "protocol_note": "PROTOCOL_NOTE_06",
+            "verdict_qualifier": PROTOCOL_NOTE_06_QUALIFIER,
+            "b1284_one_tier_downgrade": True,
+            "r_tier_cap": "R2",
+            "fixed_cell_set": list(PROTOCOL_NOTE_06_FIXED_CELL_IDS),
+            "witness_tag": PROTOCOL_NOTE_06_WITNESS_TAG,
+        })
 
-    planned = {(site, baseline) for site, baseline in PHASE_1A_PLANNED_CELLS}
+    planned_source = (
+        PROTOCOL_NOTE_06_FIXED_CELLS
+        if protocol_note_06_k5 else PHASE_1A_PLANNED_CELLS
+    )
+    planned = {(site, baseline) for site, baseline in planned_source}
     exact_cells = {(c["site"], c["baseline"]) for c in per_cell_data}
     if len(per_cell_data) < 2:
         payload["analysis_status"] = "INSUFFICIENT"
     elif len(per_cell_data) == len(planned) and exact_cells == planned:
-        payload["analysis_status"] = "COMPLETE"
+        payload["analysis_status"] = (
+            PROTOCOL_NOTE_06_STATUS if protocol_note_06_k5 else "COMPLETE"
+        )
     else:
         payload["analysis_status"] = "PARTIAL"
     payload["h1_verdict"] = "NOT_EVALUATED"
@@ -991,7 +1063,7 @@ def build_full_decision(
     #   2≤k<6 + paper-grade strict → DEGRADED (emit + warn, but distinct status)
     #   k=6       → 正常 emit
     # Strict mode enabled via P79_PAPER_GRADE env (default 1 per A2.2 B-548 lib).
-    K_REQUIRED_PAPER_GRADE = 6
+    K_REQUIRED_PAPER_GRADE = 5 if protocol_note_06_k5 else 6
     paper_grade_strict = os.environ.get("P79_PAPER_GRADE", "1") == "1"
 
     # Insufficient data branch
@@ -1123,7 +1195,9 @@ def build_full_decision(
     # carry Holm m=2 so reviewer demanding FWER (m=2 H3 sub-family per prereg
     # §3 family rules) finds the correction emitted. Compute Holm AFTER both
     # axes pool, attach `passed_p_holm_m2` field to each axis result.
-    h3a_result = _h3_axis_pooled_fe(h3a_per_cell, "axis1")
+    h3a_result = _h3_axis_pooled_fe(
+        h3a_per_cell, "axis1", k_required=K_REQUIRED_PAPER_GRADE,
+    )
     payload["h3_axis1_pooled_fe"] = h3a_result
 
     # B-1054 (/stress A2.3c Mode A F1 + Mode B B5, 2026-05-18): per-cell
@@ -1135,7 +1209,9 @@ def build_full_decision(
 
     # H3 axis-2 FE pool
     h3b_per_cell = [c["h3_axis2"] for c in per_cell_data if c["h3_axis2"] is not None]
-    h3b_result = _h3_axis_pooled_fe(h3b_per_cell, "axis2")
+    h3b_result = _h3_axis_pooled_fe(
+        h3b_per_cell, "axis2", k_required=K_REQUIRED_PAPER_GRADE,
+    )
     payload["h3_axis2_pooled_fe"] = h3b_result
 
     # B-1054 H3 axis-2 transparency count (parity with H1 + axis-1)
@@ -1185,7 +1261,7 @@ def build_full_decision(
     payload["h1_primary_gate_method"] = h1_primary_p_method
     payload["h1_primary_p_one_sided"] = h1_primary_p
     payload["h1_transparency_p_one_sided_normal_approx"] = fe.get("p_one_sided")
-    if payload["analysis_status"] == "COMPLETE":
+    if payload["analysis_status"] in {"COMPLETE", PROTOCOL_NOTE_06_STATUS}:
         payload["h1_verdict"] = "PASS" if h1_pass else "FAIL"
     h2a_falsified = payload["h2a_summary"]["falsified"]
     # F4/F5 (2026-07-14): H3 now returns one explicit status-union schema.  At
@@ -1200,18 +1276,30 @@ def build_full_decision(
     # claim-tier downgrade applied AFTER base framing (may downgrade R-tier one step or
     # force R5 on Qwen-anchor failure).
     h10_pass = _load_h10_operational_gate_passed()
-    framing = _apply_framing(h1_pass, h2a_falsified, h3a_pass, h3b_pass, h1_isq_cap,
-                             h10_pass=h10_pass)
-    framing = _apply_b2_cross_family_downgrade(framing, per_cell_data)
+    framing = _apply_framing(
+        h1_pass,
+        h2a_falsified,
+        h3a_pass,
+        h3b_pass,
+        h1_isq_cap,
+        h10_pass=h10_pass,
+        design_scope=(
+            PROTOCOL_NOTE_06_QUALIFIER if protocol_note_06_k5 else "over 6-cell design"
+        ),
+    )
+    if protocol_note_06_k5:
+        framing = _apply_protocol_note_06_b1284_downgrade(framing)
+    else:
+        framing = _apply_b2_cross_family_downgrade(framing, per_cell_data)
     payload["framing_rule"] = framing
     payload["h10_pass_for_post_r5"] = h10_pass
 
     # Gate status overall
-    if len(per_cell_data) < 6:
+    if len(per_cell_data) < K_REQUIRED_PAPER_GRADE:
         payload["gate_status"] = "PARTIAL_DATA"
         payload["gate_status_reason"] = (
-            f"{len(per_cell_data)} of 6 planned cells with all 6 modes; pooled result reported "
-            "but does NOT yet match the prereg estimand (which is exactly 6 cells)."
+            f"{len(per_cell_data)} of {K_REQUIRED_PAPER_GRADE} required cells with all 6 modes; "
+            "pooled result reported but does NOT match the active decision estimand."
         )
     elif h1_pass and not h2a_falsified:
         payload["gate_status"] = "PASS"
@@ -1236,6 +1324,12 @@ def build_full_decision(
             f"H2(a) {'falsified' if h2a_falsified else 'not falsified'}; "
             f"framing rule {framing['rule']}."
         )
+    if protocol_note_06_k5:
+        payload["gate_status_reason"] = (
+            f"{payload.get('gate_status_reason', '')} Verdict authorized by "
+            f"PROTOCOL_NOTE_06 {PROTOCOL_NOTE_06_QUALIFIER}; B-1284 automatic "
+            "one-tier downgrade and R2 cap apply."
+        ).strip()
 
     # B-1017 post-FE-pool back-fill: when H1 FE pool succeeded, replace
     # placeholder `<filled-in-post-FE-pool>` strings with actual numbers.
@@ -1248,6 +1342,110 @@ def build_full_decision(
         if ci_lo is not None and ci_hi is not None:
             sub[1]["canonical_value_post_fire"] = f"[{ci_lo:+.2f}, {ci_hi:+.2f}]"
 
+    return payload
+
+
+# ---------------------------------------------------------------------------
+# PROTOCOL_NOTE_06 authorization boundary
+# ---------------------------------------------------------------------------
+
+def _require_protocol_note_06_in_force(
+    note_path: Path = PROTOCOL_NOTE_06_PATH,
+) -> None:
+    """Fail closed unless NOTE_06 exists and its frontmatter status is in force."""
+    if not note_path.is_file():
+        raise RuntimeError(f"PROTOCOL_NOTE_06 file missing: {note_path}")
+    try:
+        text = note_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"cannot read PROTOCOL_NOTE_06: {note_path}: {exc}") from exc
+    if not text.startswith("---\n"):
+        raise RuntimeError("PROTOCOL_NOTE_06 frontmatter missing")
+    end = text.find("\n---", 4)
+    if end < 0:
+        raise RuntimeError("PROTOCOL_NOTE_06 frontmatter is not terminated")
+    status: Optional[str] = None
+    for line in text[4:end].splitlines():
+        if line.startswith("status:"):
+            status = line.split(":", 1)[1].strip()
+            break
+    normalized = (status or "").upper().replace("-", " ")
+    if "IN FORCE" not in normalized or "NOT IN FORCE" in normalized:
+        raise RuntimeError(
+            "PROTOCOL_NOTE_06 frontmatter status must contain 'IN FORCE'; "
+            f"got {status!r}"
+        )
+
+
+def _cell_has_all_six_bound_modes(cell: Dict) -> bool:
+    modes = cell.get("modes")
+    return isinstance(modes, dict) and set(modes) == set(SIX_MODES)
+
+
+def build_protocol_note_06_k5_decision(
+    cells: List[Dict], *,
+    note_path: Path = PROTOCOL_NOTE_06_PATH,
+    expected_ids_by_site: Optional[Dict[str, frozenset[int] | set[int]]] = None,
+) -> Dict:
+    """Validate the NOTE_06 authorization boundary, then compute the fixed k=5 gate.
+
+    No output is written here.  Callers must not invoke an output writer unless
+    this function returns successfully, preserving the no-artifact-on-rejection
+    contract for every precondition failure.
+    """
+    _require_protocol_note_06_in_force(note_path)
+
+    b2_reddit = [
+        cell for cell in cells
+        if cell.get("baseline") == "B2" and cell.get("site") == "reddit"
+    ]
+    if any(_cell_has_all_six_bound_modes(cell) for cell in b2_reddit):
+        raise RuntimeError(
+            "k=6 upgrade rule: regenerate the full six-cell verdict instead"
+        )
+
+    fixed_keys = set(PROTOCOL_NOTE_06_FIXED_CELLS)
+    selected = [
+        cell for cell in cells
+        if (cell.get("site"), cell.get("baseline")) in fixed_keys
+    ]
+    selected_keys = {(cell.get("site"), cell.get("baseline")) for cell in selected}
+    if selected_keys != fixed_keys or len(selected) != len(fixed_keys):
+        missing = sorted(fixed_keys - selected_keys)
+        raise RuntimeError(
+            "PROTOCOL_NOTE_06 requires exactly the fixed five manifest-bound cells; "
+            f"missing={missing}, selected_count={len(selected)}"
+        )
+
+    payload = build_full_decision(
+        selected,
+        expected_ids_by_site=expected_ids_by_site,
+        protocol_note_06_k5=True,
+    )
+    completed_ids = {
+        f"{cell.get('baseline')}_{cell.get('site')}"
+        for cell in payload.get("per_cell", [])
+    }
+    required_ids = set(PROTOCOL_NOTE_06_FIXED_CELL_IDS)
+    if (
+        completed_ids != required_ids
+        or payload.get("skipped_cells")
+        or payload.get("analysis_status") != PROTOCOL_NOTE_06_STATUS
+    ):
+        skipped = [
+            {
+                "cell": f"{cell.get('baseline')}_{cell.get('site')}",
+                "reason": cell.get("reason", cell.get("incomplete_reason")),
+            }
+            for cell in payload.get("skipped_cells", [])
+        ]
+        raise RuntimeError(
+            "PROTOCOL_NOTE_06 requires exactly the fixed five cells to be "
+            "complete_exact under the canonical task-universe/provenance checks; "
+            f"missing={sorted(required_ids - completed_ids)}, skipped={skipped}"
+        )
+    if payload.get("h1_verdict") not in {"PASS", "FAIL"}:
+        raise RuntimeError("PROTOCOL_NOTE_06 H1 verdict was not evaluated")
     return payload
 
 
@@ -1374,8 +1572,14 @@ def write_md(payload: Dict, out_md: Path) -> None:
     h3b_fe = payload.get("h3_axis2_pooled_fe")
     framing = payload.get("framing_rule", {})
 
+    is_pn06 = payload.get("analysis_status") == PROTOCOL_NOTE_06_STATUS
+    title = (
+        "# PROTOCOL_NOTE_06 k=5 decision — H1 + H2(a) + H3 axes"
+        if is_pn06
+        else "# Phase 1 full prereg decision — H1 + H2(a) + H3 axes + framing rule"
+    )
     lines = [
-        "# Phase 1 full prereg decision — H1 + H2(a) + H3 axes + framing rule",
+        title,
         "",
         "**Producer**: `aggregate_phase1_full_prereg_decision.py` (A1.21 P0-2/P0-3/P0-4/P0-11, B-515).",
         "Canonical replacement for the H1-only `phase1_prereg_gate.{csv,json,md}` "
@@ -1395,6 +1599,15 @@ def write_md(payload: Dict, out_md: Path) -> None:
         "## H1 — FE inverse-variance pool over P-SoM drop-one",
         "",
     ]
+    if is_pn06:
+        lines[8:8] = [
+            f"**Protocol note**: `{payload.get('protocol_note')}`",
+            f"**Verdict qualifier**: **{payload.get('verdict_qualifier')}**",
+            f"**Fixed cell set**: `{payload.get('fixed_cell_set')}`",
+            "**B-1284 modifier**: automatic one-tier downgrade; **R2 cap**",
+            f"**Witness tag**: `{payload.get('witness_tag')}`",
+            "",
+        ]
     if fe is not None:
         # B-1301 (/stress A2.3d P0-1-AB*, 2026-05-18): MD primary section now
         # reads bootstrap percentile (PRIMARY per prereg L85 B-1009 amend);
@@ -1617,15 +1830,96 @@ def write_outputs_atomic(
                 pass
 
 
-def main() -> int:
+def write_protocol_note_06_outputs_atomic(
+    payload: Dict,
+    out_json: Path = PROTOCOL_NOTE_06_OUT_JSON,
+    out_md: Path = PROTOCOL_NOTE_06_OUT_MD,
+    *,
+    manifest_path: Optional[Path] = None,
+) -> None:
+    """Atomically replace only the two isolated NOTE_06 artifacts."""
+    destinations = [Path(out_json), Path(out_md)]
+    parent_dirs = {path.parent.resolve() for path in destinations}
+    if len(parent_dirs) != 1:
+        raise ValueError("PROTOCOL_NOTE_06 outputs must share one parent directory")
+    parent = destinations[0].parent
+    parent.mkdir(parents=True, exist_ok=True)
+    token = f"{os.getpid()}.{uuid.uuid4().hex}"
+    staged = [p.with_name(f".{p.name}.{token}.staged") for p in destinations]
+    backups = [p.with_name(f".{p.name}.{token}.backup") for p in destinations]
+    lock_path = parent / ".phase1_full_prereg_decision_pn06_k5.outputs.lock"
+    try:
+        write_json(payload, staged[0], manifest_path=manifest_path)
+        write_md(payload, staged[1])
+        with exclusive_file_lock(lock_path):
+            had_old: list[bool] = []
+            for dst, backup in zip(destinations, backups):
+                exists = dst.exists()
+                had_old.append(exists)
+                if exists:
+                    with dst.open("rb") as source, backup.open("xb") as target:
+                        shutil.copyfileobj(source, target)
+                        target.flush()
+                        os.fsync(target.fileno())
+            fsync_directory(parent)
+            try:
+                for src, dst in zip(staged, destinations):
+                    os.replace(src, dst)
+                fsync_directory(parent)
+            except BaseException as commit_error:
+                rollback_errors: list[str] = []
+                for dst, backup, existed in zip(destinations, backups, had_old):
+                    try:
+                        if existed and backup.exists():
+                            os.replace(backup, dst)
+                        elif not existed:
+                            dst.unlink(missing_ok=True)
+                    except BaseException as rollback_error:
+                        rollback_errors.append(f"{dst}: {rollback_error}")
+                try:
+                    fsync_directory(parent)
+                except BaseException as rollback_fsync_error:
+                    rollback_errors.append(f"directory fsync: {rollback_fsync_error}")
+                if rollback_errors and hasattr(commit_error, "add_note"):
+                    commit_error.add_note(
+                        "Best-effort NOTE_06 output rollback encountered: "
+                        + "; ".join(rollback_errors)
+                    )
+                raise
+    finally:
+        for path in staged + backups:
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
+
+
+def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     ap.add_argument("--run-manifest", default=None,
                     help="Path to run_manifest.yaml (default: results/phantom_paper/run_manifest.yaml via registry). "
                     "A1.21 P0-5 fix: this arg actually propagates to data discovery (was provenance theater).")
-    ap.add_argument("--output-csv", default=str(DEFAULT_OUT_CSV))
-    ap.add_argument("--output-json", default=str(DEFAULT_OUT_JSON))
-    ap.add_argument("--output-md", default=str(DEFAULT_OUT_MD))
-    args = ap.parse_args()
+    ap.add_argument("--output-csv", default=None)
+    ap.add_argument("--output-json", default=None)
+    ap.add_argument("--output-md", default=None)
+    ap.add_argument(
+        "--protocol-note-06-k5",
+        action="store_true",
+        help=(
+            "authorize the isolated fixed-five PROTOCOL_NOTE_06 verdict; writes only "
+            "phase1_full_prereg_decision_pn06_k5.{json,md}"
+        ),
+    )
+    args = ap.parse_args(argv)
+
+    if args.protocol_note_06_k5 and any(
+        value is not None
+        for value in (args.output_csv, args.output_json, args.output_md)
+    ):
+        ap.error(
+            "--protocol-note-06-k5 uses isolated fixed output paths and does not "
+            "accept --output-csv/--output-json/--output-md"
+        )
 
     # B-534 (/stress A1.5b Phase 2 P0-2-B codex OOB, 2026-05-17): manifest
     # propagation closure. Pre-fix `--run-manifest` only fed `write_json()`
@@ -1657,23 +1951,43 @@ def main() -> int:
     except ImportError:
         pass  # canonical_cells.py not present in legacy paths; B-526 require_complete still defends
 
-    payload = build_full_decision(cells_to_use)
-
-    write_outputs_atomic(
-        payload,
-        Path(args.output_csv),
-        Path(args.output_json),
-        Path(args.output_md),
-        manifest_path=manifest_path,
-    )
+    if args.protocol_note_06_k5:
+        try:
+            payload = build_protocol_note_06_k5_decision(
+                cells_to_use, note_path=PROTOCOL_NOTE_06_PATH,
+            )
+        except (RuntimeError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        write_protocol_note_06_outputs_atomic(
+            payload,
+            manifest_path=manifest_path,
+        )
+        output_paths = (
+            PROTOCOL_NOTE_06_OUT_JSON,
+            PROTOCOL_NOTE_06_OUT_MD,
+        )
+    else:
+        payload = build_full_decision(cells_to_use)
+        out_csv = Path(args.output_csv) if args.output_csv else DEFAULT_OUT_CSV
+        out_json = Path(args.output_json) if args.output_json else DEFAULT_OUT_JSON
+        out_md = Path(args.output_md) if args.output_md else DEFAULT_OUT_MD
+        write_outputs_atomic(
+            payload,
+            out_csv,
+            out_json,
+            out_md,
+            manifest_path=manifest_path,
+        )
+        output_paths = (out_csv, out_json, out_md)
 
     framing = payload.get("framing_rule", {})
-    print(f"[A1.21 B-515] gate_status={payload['gate_status']} "
+    channel = "PN06-K5" if args.protocol_note_06_k5 else "A1.21 B-515"
+    print(f"[{channel}] gate_status={payload['gate_status']} "
           f"framing={framing.get('rule', '?')} "
           f"k_cells={len(payload['per_cell'])} skipped={len(payload['skipped_cells'])}")
-    print(f"        → {args.output_csv}")
-    print(f"        → {args.output_json}")
-    print(f"        → {args.output_md}")
+    for path in output_paths:
+        print(f"        → {path}")
     return 0
 
 
