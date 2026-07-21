@@ -119,7 +119,13 @@ SUMMARY_BEFORE=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.j
 #  --exclude artifacts/  large screenshot dir (sync only summaries first, artifacts opt-in)
 #  --exclude episodes/*/step_*.png  (image-only excludes; keep step JSONLs)
 log "rsync ${A100_HOST}:${A100_RESULTS} → ${DGX_RESULTS}"
-RSYNC_OPTS=(-az --partial --append-verify --delete-after --info=stats1)
+# 2026-07-21: wire in the artifacts exclusion that lines 119-120 documented but
+# never applied. The main tree was pulling every run's artifacts/ (screenshots +
+# SoM images, ~35 GB) onto DGX, whose only role is summary/JSONL analysis — A100
+# is the source of truth and retains them. --delete-excluded prunes the already-
+# cached local artifacts on the next sync so DGX stops being the mirror bottleneck.
+RSYNC_OPTS=(-az --partial --append-verify --delete-after --delete-excluded --info=stats1
+            --exclude='artifacts/')
 if [[ "${DRY_RUN}" == "1" ]]; then
   RSYNC_OPTS+=(--dry-run)
   log "DRY-RUN mode (no actual transfer)"
