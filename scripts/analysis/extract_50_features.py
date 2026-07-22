@@ -39,6 +39,11 @@ from p79.policies.router_features import (
     difficulty_to_int,
     estimate_input_tokens,
 )
+try:
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+except ModuleNotFoundError:  # Direct ``python scripts/analysis/...`` execution.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
 
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
@@ -137,6 +142,86 @@ def collect_per_task_outcomes(run_dirs: list[Path], site: str) -> dict[int, dict
             file=sys.stderr,
         )
     return matrix
+
+
+def assess_mode_completeness(
+    cell_id: str, site: str, matrix: dict[int, dict[str, bool]]
+) -> dict[str, Any]:
+    """Per-mode coverage of the canonical scored task universe for one cell.
+
+    B-1887: `collect_per_task_outcomes` globs whatever episode summaries happen to be
+    on disk — it asserts neither that all six modes ran nor that each covers the full
+    scored set. `derive_oracle_label` then reads `outcomes.get(m, False)`, so a mode
+    with NO data is silently scored as a *failure* on every task. A cell that is
+    mid-collection therefore yields plausible-looking oracle labels derived from a
+    truncated menu ("cheapest successful mode" is undefined if a cheaper mode never
+    ran), with no warning.
+
+    This is the mode-level analogue of the episode-level P1-9 guard above ("missing =
+    no data, not a failed task"), and mirrors the fail-closed contract already enforced
+    by `router_offline_replay.load_paper_grade_entries` (exactly six paper-grade modes)
+    + `collect_cell_outcomes` (canonical task-universe check per mode).
+
+    The RAISED invariant is *mode-set consistency*: every mode must cover the same task
+    set, because that is exactly what makes "cheapest successful mode" well-defined per
+    task. Agreement with the canonical scored universe is a strictly stronger property —
+    it is measured and reported here, and warned about loudly, but not raised on, because
+    the gating consumers already enforce it with a SHA check
+    (`router_offline_replay.collect_cell_outcomes`) and synthetic fixtures legitimately
+    use small task sets.
+
+    Returns a provenance dict; the caller decides whether to raise or skip.
+    """
+    seen_by_mode = {m: {tid for tid, modes in matrix.items() if m in modes} for m in MODES}
+    covered = set().union(*seen_by_mode.values()) if matrix else set()
+    n_covered = len(covered)
+
+    by_mode: dict[str, dict[str, Any]] = {}
+    for mode in MODES:
+        seen = seen_by_mode[mode]
+        by_mode[mode] = {
+            "n_seen": len(seen),
+            "n_missing_vs_cell": len(covered - seen),
+            "consistent": seen == covered,
+        }
+    absent = [m for m in MODES if by_mode[m]["n_seen"] == 0]
+    partial = [m for m in MODES if by_mode[m]["n_seen"] and not by_mode[m]["consistent"]]
+
+    # Strictly stronger, reported-not-raised: does the cell cover the canonical scored set?
+    try:
+        expected_ids, expected_sha = expected_scored_ids(site)
+        universe_complete = covered == set(expected_ids)
+        n_expected = len(expected_ids)
+    except Exception as exc:  # dev fixtures / missing configs must not break extraction
+        expected_sha, universe_complete, n_expected = None, None, None
+        print(
+            f"[extract_50_features] {cell_id}: canonical task universe unavailable "
+            f"({exc}) — mode-consistency still enforced.",
+            file=sys.stderr,
+        )
+    if universe_complete is False:
+        print(
+            f"⚠️  [extract_50_features] {cell_id}: all {len(MODES)} modes agree on "
+            f"{n_covered} tasks, but the canonical scored universe has {n_expected}. "
+            f"Labels are well-defined yet the cell is not the paper-grade task set.",
+            file=sys.stderr,
+        )
+
+    return {
+        "canonical_task_universe_sha256": expected_sha,
+        "n_expected_tasks": n_expected,
+        "n_tasks_covered": n_covered,
+        "universe_complete": universe_complete,
+        "by_mode": by_mode,
+        "absent_modes": absent,
+        "partial_modes": partial,
+        "cell_complete": not absent and not partial,
+        "summary": (
+            f"{cell_id}: {len(MODES) - len(absent) - len(partial)}/{len(MODES)} modes "
+            f"cover the cell's {n_covered}-task set; absent={absent}; partial="
+            + str({m: f"{by_mode[m]['n_seen']}/{n_covered}" for m in partial})
+        ),
+    }
 
 
 def _read_step0_from_run(
@@ -238,11 +323,18 @@ def read_task_config(site: str, task_id: int) -> Optional[dict[str, Any]]:
     }
 
 
-def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
+def build_cell_records(
+    baseline: str, site: str, allow_incomplete: bool = False
+) -> dict[str, Any]:
     """Build per-task raw feature records for a (baseline, site) cell.
 
     Returns dict with arrays (task_ids, numeric matrix, binary matrix, intents, labels)
     plus filter stats. Skips tasks with no-success outcomes (B-995 filter).
+
+    Raises ValueError if the cell's six-mode menu is incomplete (B-1887), because the
+    oracle label is then derived over a truncated menu. ``allow_incomplete=True``
+    downgrades that to skipping the cell with the reason recorded in ``error`` +
+    ``mode_completeness``.
     """
     runs, run_provenance = find_pass1_runs_with_provenance(baseline, site)
     cell_id = f"{baseline}_{site}"
@@ -281,6 +373,50 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         sub = collect_per_task_outcomes([r], site)
         for tid, modes in sub.items():
             matrix.setdefault(tid, {}).update(modes)
+
+    # B-1887: fail closed on a mid-collection cell BEFORE any label is derived. Without
+    # this, an absent mode is coerced to "failed on every task" by derive_oracle_label
+    # and the cell contributes plausible-but-wrong oracle labels to the pooled gate.
+    mode_completeness = assess_mode_completeness(cell_id, site, matrix)
+    if not mode_completeness["cell_complete"]:
+        if not allow_incomplete:
+            raise ValueError(
+                f"{mode_completeness['summary']}\n"
+                f"    Oracle labels for an incomplete mode menu are invalid ('cheapest "
+                f"successful mode' is undefined when a cheaper mode has no data), and "
+                f"derive_oracle_label would silently score the absent mode as a failure.\n"
+                f"    Restrict the run with --cells to the complete cells, or pass "
+                f"--allow-incomplete-cells to skip incomplete ones explicitly."
+            )
+        return {
+            "cell_id": cell_id,
+            "baseline": baseline,
+            "site": site,
+            "n_runs": len(runs),
+            "run_provenance": run_provenance,
+            "mode_completeness": mode_completeness,
+            "n_total_tasks": 0,
+            "n_filtered_no_success": 0,
+            "n_dropped_no_config": 0,
+            "dropped_no_config_task_ids": [],
+            "n_step0_missing": 0,
+            "step0_missing_task_ids": [],
+            "n_kept": 0,
+            "all_task_ids": [],
+            "no_success_task_ids": [],
+            "oracle_provenance": {
+                "n_single_success": 0, "n_multi_success": 0,
+                "n_no_success": 0, "n_total_universe": 0,
+                "note": "cell skipped — incomplete mode menu",
+            },
+            "task_ids": [],
+            "intents": [],
+            "X_numeric": np.zeros((0, 5), dtype=float),
+            "X_binary": np.zeros((0, 15), dtype=int),
+            "labels": [],
+            "label_distribution": {},
+            "error": f"incomplete mode menu (skipped): {mode_completeness['summary']}",
+        }
 
     task_ids_sorted = sorted(matrix.keys())
     n_total = len(task_ids_sorted)
@@ -420,6 +556,7 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
         "site": site,
         "n_runs": len(runs),
         "run_provenance": run_provenance,
+        "mode_completeness": mode_completeness,
         "pass1_run_dirs": [r.name for r in runs],
         "n_total_tasks": n_total,
         "n_filtered_no_success": filtered_no_success,
@@ -457,7 +594,9 @@ def build_cell_records(baseline: str, site: str) -> dict[str, Any]:
     }
 
 
-def extract_all_cells(cells: Optional[list[tuple[str, str]]] = None) -> dict[str, Any]:
+def extract_all_cells(
+    cells: Optional[list[tuple[str, str]]] = None, allow_incomplete: bool = False
+) -> dict[str, Any]:
     """Extract raw features for all (baseline, site) cells.
 
     Returns master dict with per-cell records + cross-cell pool arrays for Stage 2 use.
@@ -466,7 +605,7 @@ def extract_all_cells(cells: Optional[list[tuple[str, str]]] = None) -> dict[str
     per_cell = {}
     for baseline, site in cells:
         print(f"\n=== Extracting {baseline} × {site} ===")
-        rec = build_cell_records(baseline, site)
+        rec = build_cell_records(baseline, site, allow_incomplete=allow_incomplete)
         per_cell[rec["cell_id"]] = rec
         if rec.get("error"):
             print(f"  ⚠️  {rec['error']}")
@@ -628,6 +767,15 @@ def main() -> int:
         default=None,
         help="Subset of cells to extract (e.g. B0_classifieds B1_reddit). Default = all 6.",
     )
+    ap.add_argument(
+        "--allow-incomplete-cells",
+        action="store_true",
+        help=(
+            "B-1887: skip (instead of hard-failing on) any cell whose six-mode menu is "
+            "incomplete. Default is fail-closed — oracle labels derived over a truncated "
+            "menu are invalid, and an absent mode is silently scored as a failure."
+        ),
+    )
     args = ap.parse_args()
 
     cells = None
@@ -640,7 +788,7 @@ def main() -> int:
                 continue
             cells.append((parts[0], parts[1]))
 
-    extracted = extract_all_cells(cells)
+    extracted = extract_all_cells(cells, allow_incomplete=args.allow_incomplete_cells)
     save_npz(extracted, Path(args.output))
 
     print("\n=== Summary ===")

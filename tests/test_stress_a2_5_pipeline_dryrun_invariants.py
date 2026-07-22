@@ -22,6 +22,7 @@ the real B0_classifieds Pass-1 data + an isolated archive-replay Pass-2:
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -59,10 +60,14 @@ def _write_summary(ep_dir: Path, site: str, tid: int, success: bool) -> None:
 
 
 def _build_synthetic_pass1(tmp_path: Path, site: str = "classifieds"):
-    """One canonical Pass-1 run dir with dom+som conditions + a partial VWA config tree.
+    """One canonical Pass-1 run dir with all six mode conditions + a partial config tree.
 
     Tasks 0,1,2 -> dom success (label dom); task 3 -> som-only success (label som);
     task 4 -> no success (filtered); task 5 -> dom success BUT config MISSING (dropped).
+
+    The four phantom/vision conditions fail on every task, so every oracle label above is
+    unchanged — they exist because B-1887 requires a cell to carry the full six-mode menu
+    before any label is derived (an absent mode would otherwise be coerced to "failed").
     Returns (phase1_root, vwa_config_root).
     """
     phase1_root = tmp_path / "phase1"
@@ -71,9 +76,15 @@ def _build_synthetic_pass1(tmp_path: Path, site: str = "classifieds"):
     som_ep = run_dir / "phase1_som_router_0" / "episodes"
     dom_success = {0: True, 1: True, 2: True, 3: False, 4: False, 5: True}
     som_success = {0: False, 1: False, 2: False, 3: True, 4: False, 5: False}
+    other_eps = [
+        run_dir / f"phase1_{mode}_router_0" / "episodes"
+        for mode in ("phantom_som", "phantom_text", "phantom_prompt", "vision")
+    ]
     for tid in range(6):
         _write_summary(dom_ep, site, tid, dom_success[tid])
         _write_summary(som_ep, site, tid, som_success[tid])
+        for ep in other_eps:
+            _write_summary(ep, site, tid, False)
 
     vwa_root = tmp_path / "vwa_config"
     cfg_dir = vwa_root / f"test_{site}"
@@ -90,6 +101,70 @@ def _build_synthetic_pass1(tmp_path: Path, site: str = "classifieds"):
             )
         )
     return phase1_root, vwa_root
+
+
+def _patch_roots(monkeypatch, phase1_root, vwa_root):
+    monkeypatch.setattr(e50, "PHASE1_ROOT", phase1_root)
+    monkeypatch.setattr(e50, "VWA_CONFIG", vwa_root)
+
+
+def test_b1887_absent_mode_raises_before_any_label_is_derived(tmp_path, monkeypatch):
+    """A mode with NO data must hard-fail, not be coerced to 'failed on every task'.
+
+    derive_oracle_label reads outcomes.get(mode, False), so an unrun mode silently
+    becomes a failure and 'cheapest successful mode' is computed over a truncated menu.
+    Empirically this let a mid-collection B2_reddit (phantom_prompt unstarted,
+    phantom_som at 74/205) emit 16 plausible-but-invalid oracle labels with no warning.
+    """
+    phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)
+    _patch_roots(monkeypatch, phase1_root, vwa_root)
+    run_dir = phase1_root / "B0_dom_classifieds_20260101_R1"
+    shutil.rmtree(run_dir / "phase1_vision_router_0")
+
+    with pytest.raises(ValueError, match=r"absent=\['vision'\]"):
+        e50.build_cell_records("B0", "classifieds")
+
+
+def test_b1887_partial_mode_raises(tmp_path, monkeypatch):
+    """A mode present but covering fewer tasks than the cell is equally invalid."""
+    phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)
+    _patch_roots(monkeypatch, phase1_root, vwa_root)
+    ep = phase1_root / "B0_dom_classifieds_20260101_R1" / "phase1_vision_router_0" / "episodes"
+    (ep / "classifieds_task_5_summary_v2.json").unlink()
+
+    with pytest.raises(ValueError, match=r"partial=.*vision"):
+        e50.build_cell_records("B0", "classifieds")
+
+
+def test_b1887_allow_incomplete_skips_cell_and_records_reason(tmp_path, monkeypatch):
+    """The opt-out skips the cell loudly — it must never silently include it."""
+    phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)
+    _patch_roots(monkeypatch, phase1_root, vwa_root)
+    run_dir = phase1_root / "B0_dom_classifieds_20260101_R1"
+    shutil.rmtree(run_dir / "phase1_vision_router_0")
+
+    rec = e50.build_cell_records("B0", "classifieds", allow_incomplete=True)
+    assert rec["n_kept"] == 0
+    assert rec["labels"] == []
+    assert "incomplete mode menu" in rec["error"]
+    assert rec["mode_completeness"]["absent_modes"] == ["vision"]
+    assert rec["mode_completeness"]["cell_complete"] is False
+
+
+def test_b1887_complete_cell_passes_and_records_provenance(tmp_path, monkeypatch):
+    """The happy path still yields labels and now carries mode-coverage provenance."""
+    phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)
+    _patch_roots(monkeypatch, phase1_root, vwa_root)
+
+    rec = e50.build_cell_records("B0", "classifieds")
+    mc = rec["mode_completeness"]
+    assert mc["cell_complete"] is True
+    assert mc["absent_modes"] == [] and mc["partial_modes"] == []
+    assert mc["n_tasks_covered"] == 6
+    assert all(m["consistent"] for m in mc["by_mode"].values())
+    # The synthetic cell is deliberately smaller than the canonical scored universe:
+    # that is reported, never raised on (gating consumers enforce the SHA separately).
+    assert mc["universe_complete"] is False
 
 
 def test_g3_task_accounting_identity_all_configs_present(tmp_path, monkeypatch):

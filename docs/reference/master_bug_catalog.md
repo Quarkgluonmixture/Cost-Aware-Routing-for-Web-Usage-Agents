@@ -8519,3 +8519,46 @@ ABORTED `queue_phase1_red_20260701_*.log` (含 PaperGradeAbort/rc=1 文本), 而
 
 **Cross-link**: B-1825/B-1827/B-1840 (前 3 号); 笔记 §363 (proxy outage #3 + detour chronicle, 待写);
 next_steps §0 2026-07-03 块; commit 本节。
+
+## B-1887 — Stage-1 标签抽取无 mode 齐全性守卫: 未跑的 mode 被静默当成"全失败" (2026-07-22)
+
+**B-1887** (oracle-label 污染, **FIXED**, P1-9 同语义家族的 mode 层缺口) —
+`extract_50_features.collect_per_task_outcomes` 只 glob 磁盘上存在的 episode summary,
+**既不断言六个 mode 都跑了, 也不断言每个 mode 覆盖同一任务集**; `derive_oracle_label`
+随后读 `outcomes.get(m, False)` → **一个没有数据的 mode 被当作"在每个任务上都失败"**。
+后果: 采集中的 cell 会产出**看起来正常但无效**的 oracle 标签 —— "最便宜的成功 mode"
+在更便宜的 mode 从没跑过时根本没有定义, 而且全程零警告。
+
+**实证** (2026-07-22 重生成 canonical H10 产物时撞到): 不带 `--cells` 跑 Stage 1,
+`B2_reddit` 被静默拉进池子并产出 16 个 oracle 标签, 实际只有 **4 个完整 mode**
+(`phantom_prompt` 一个 episode 没跑 / `phantom_som` 74→76 of 205 在跑中)。
+两个缺失 mode 在每个任务上都被记为失败。
+
+**讽刺点**: 同文件 `:125-133` 的 P1-9 注释精确警告过同一语义 —— "a MISSING success
+field must NOT be coerced to False — that fabricates a failure outcome and corrupts the
+oracle label"。**守卫加在了 episode 层, mode 层漏了。** 对照 `router_offline_replay`
+的 fail-closed 契约 (`load_paper_grade_entries` 强制恰好六个 paper-grade mode +
+`collect_cell_outcomes` 校验每 mode 的规范任务全集 SHA) —— **两个 loader 严格度不同,
+而产标签的那个是松的**。
+
+**修**: 新增 `assess_mode_completeness()`, 在**任何标签派生之前**调用。
+RAISE 的不变式 = **mode 集一致性**(所有 mode 覆盖同一任务集), 因为这正是让
+"最便宜的成功 mode"良定义的条件; 与规范全集的比对是更强性质, **记录 + stderr 大声警告
+但不 raise**(gating 消费者已用 SHA 严格把关, 且合成 fixture 合法使用小任务集)。
+新增 `--allow-incomplete-cells` 显式 opt-out = 跳过该 cell 并把原因写进
+`error` + `mode_completeness` provenance(绝不静默纳入)。coverage 落进 meta JSON。
+
+**测试**: `tests/test_stress_a2_5_pipeline_dryrun_invariants.py` 加 4 个
+`test_b1887_*`(absent raise / partial raise / opt-out 跳过并记录 / happy path 带
+provenance); G3 fixture 补齐六 mode(新增四个全失败, 原有标签期望一字未变)。
+全套件 **1531 passed / 0 failed**。
+
+**教训**: "缺失 = 无数据"这个语义在**每一层聚合**都要重新守一次 —— episode 层守住了不代表
+mode 层守住了。凡是 `dict.get(key, <falsy default>)` 出现在**标签/结局**派生路径上, 都要问
+"这个 default 会不会把'没测量'伪装成'测量到了阴性'"。
+
+**Cross-link**: P1-9 (`extract_50_features.py:125-133`, episode 层同语义);
+`router_offline_replay.load_paper_grade_entries` + `collect_cell_outcomes` (fail-closed 对照);
+B-995 (no-success → None 而非 fallback "dom"); B-1640 (fold-aware bundle);
+`docs/checkpoints/pre_run/h10_artifact_regen_provenance_2026-07-22.md` §5 (发现现场);
+commit 本节。
