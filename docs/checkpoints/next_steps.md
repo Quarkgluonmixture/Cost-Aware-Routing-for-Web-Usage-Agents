@@ -23,7 +23,17 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-16 UPDATE — VERDICT DAY 完成: Branch B 落稿 + post-submission 路线拍板** ⭐⭐⭐ 最新先读 (详 笔记 §378-§381):
+> 🔭 **2026-07-22 UPDATE — AAAI 撤出 → REALM @ EMNLP workshop ×2 (08-05) + H10 门控管道修复** ⭐⭐⭐ 最新先读 (详 笔记 §383):
+> - **🎯 投稿转向 (user 决策)**: **AAAI-27 不投**。改投 **REALM @ EMNLP 2026** (`realm-workshop.github.io`), direct submission **2026-08-05**, long **8 页正文 + refs/appendix 不限**, 双盲 ACL 2026 style, notif 09-07 / camera 09-14。**两篇都是主线**: **Paper A = phantom 现象篇 (non-archival, 保主会选项)** / **Paper B = 路由阴性结果 + 标签诊断 (archival)**。第二 venue user 待想起。→ `_status/tasks/task_realm_paper_{a,b}_*.md`
+> - **📄 8 页 > AAAI 7 页 + appendix 无限** → 原 `cut_prewrites` 砍词**作废**; Paper A 只需 AAAI→ACL 格式转换 (`aaai27/latex/` 改目标模板)。
+> - **⭐ Paper B 不等数据**: 证据 k-无关, **现在就能整篇写完**; Paper A 的 H1/H3 全随 k=6 移动 → 先写非数字段落。唯一缺的一块 = **LOCO 池化+tier 实训** (prereg L447 已注册槽位)。
+> - **🔧 H10 门控管道断了两个月已修**: canonical `l1_router/` 停在 05-18 `no_data_yet` 占位符 → verdict 一直报 `entropy_unavailable`。**管道理由与科学结论恰好同向, 故无人察觉**。重生成后 `h10_status` ok, `operational_gate_passed` 仍 False。witness = `ddc1e60` + tag `h10-canonical-artifact-regen-k5-20260722` + `pre_run/h10_artifact_regen_provenance_2026-07-22.md`。
+> - **✏️ 稿件三处必改**: ① "two cells" → **"three cells"** (B0_red/B1_red/B2_cls 均 0/5 可训练折) ② 机制口径 = `insufficient_train_data` **不是**熵集中 (熵闸门是过的) ③ 补披露 **Pass-2 从未 fire** (`k_of_n="0/0"` 独立成因)。
+> - **🐛 B-1887 已修** (`554cc7c`, 1531 tests pass): Stage-1 无 mode 齐全性守卫, 未跑的 mode 被当"全失败" → 不加 `--cells` 会静默吃进残缺 B2_reddit。**k=6 重跑前置, 现已解除**。
+> - **🔲 下一步**: ① B2_reddit 收尾 (phantom_som 76/205 在跑, phantom_prompt 未起) ~07-26/27 → bind → **k=6 重灌 + entropy gate 二次 promote** ② Paper B 起稿 (证据齐) ③ Paper A 格式转换 ④ 毕设 D8 **07-24 到期**。
+> - **⚠️ 未 push**: `ddc1e60` + `554cc7c` + 本次 docs commit 均在本地。
+
+> 🔭 **2026-07-16 UPDATE — VERDICT DAY 完成: Branch B 落稿 + post-submission 路线拍板** ⭐⭐⭐ (详 笔记 §378-§381):
 > - **✅ k=5 verdict 已 splice**: H1 FAIL (+0.83 [+0.27,+1.49] p=0.7430) / H3 双 PASS (+1.26/+2.60) / H10 fail-closed → **Branch B**。abstract 重写 (250 词整), 三方审计 16 findings 全修 (codex 3 P0: estimand 偷换/超词/R5 隐匿), 官方模板编译过 **正文第 7 页末收** (refs pp.8-9)。数字唯一源 = PN06 slotsheet; commit `c55b16e`+`e4f13cd`。
 > - **📋 剩余 pending 槽 = 合法**: B2-red 行 (×6) / Table 4+§6 H10 / §5.4 latency canonical / K5 标记打包剥离。**若 B2-red 提交前齐 → 无条件 k=6 重灌** (regenerate slotsheet → re-splice → 删 K5 块)。
 > - **🗺️ Post-submission 路线 (user 拍板, 详 tasks.base)**: **B3=MiMo 8 月先行** (适配 7 月下旬 DGX 起步) → **WA 50-task pilot 插空** (prereg §8.8 注册预测, B1 本地) → **shop 期刊版长线**; B0 replicate 附录机会性 (提交前重跑已否决 = outcome-dependent sampling)。
