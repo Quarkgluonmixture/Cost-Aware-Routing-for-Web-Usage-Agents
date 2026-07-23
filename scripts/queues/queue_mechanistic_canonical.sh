@@ -98,6 +98,9 @@ notify () {
 
 TOTAL=${#CELLS[@]}
 IDX=0; RAN=0; SKIPPED=0
+# Clear any stale marker from a previous sweep so this run's done-monitor can
+# only fire on THIS run's completion (resume runs re-touch it at the end).
+[ "$DRY_RUN" = "1" ] || rm -f "$OUT_ROOT/.SWEEP_DONE"
 echo "[$(date '+%F %H:%M:%S')] mechanistic canonical sweep — $TOTAL cells, deadline $DEADLINE"
 
 for entry in "${CELLS[@]}"; do
@@ -143,6 +146,15 @@ for entry in "${CELLS[@]}"; do
     notify "P79 mechanistic cell FAILED" "$NAME rc=$RC — sweep 继续下一个"
   fi
 done
+
+# DRY_RUN must never touch the completion marker or notify: a dry run that
+# leaves .SWEEP_DONE behind makes the real sweep indistinguishable from a
+# finished one (and fires a false "DONE" push). Empirically bit us 2026-07-23:
+# the dry run's marker tripped the real run's done-monitor 60s after launch.
+if [ "$DRY_RUN" = "1" ]; then
+  echo "[$(date '+%F %H:%M:%S')] dry run finished — $TOTAL cells listed, nothing executed"
+  exit 0
+fi
 
 echo "[$(date '+%F %H:%M:%S')] sweep finished — $RAN ran, $SKIPPED skipped, of $TOTAL"
 touch "$OUT_ROOT/.SWEEP_DONE"
