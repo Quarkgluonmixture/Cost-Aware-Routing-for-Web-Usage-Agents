@@ -1,0 +1,66 @@
+--- /tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/9c564995-f040-44eb-872f-283f8a45a923/scratchpad/pd_new/scripts/ratchet_lint.sh	2026-07-24 23:22:05.042130529 +0100
++++ tools/paper-deslop/scripts/ratchet_lint.sh	2026-07-24 23:26:34.618755662 +0100
+@@ -12,24 +12,41 @@
+ # Why: an AI-drafted manuscript arrives with hundreds of error-level alerts.
+ # Blocking on all of them from day one trains everyone to ignore the gate.
+ # deslopped.txt is the blocking set and it only grows.
++#   scripts/ratchet_lint.sh --root DIR      # resolve pathspecs from DIR
++#                                           # (default: the enclosing git
++#                                           # repo root, which differs from
++#                                           # the pipeline dir in a vendored
++#                                           # install like P79's tools/)
+ set -uo pipefail
+-cd "$(dirname "$0")/.."
++pipeline=$(cd "$(dirname "$0")/.." && pwd)
+ 
+-list=deslopped.txt
++# P79 vendored layout: the pipeline lives in tools/paper-deslop/ while the
++# paper lives in docs/checkpoints/paper_drafts/, so pathspecs resolve from the
++# repo root and Vale needs the vendored config explicitly. PAPER_PATHSPEC
++# overrides which tracked files `--all` considers.
++root=""
++list="$pipeline/deslopped.txt"
+ mode=ratchet
+-vale_args=(--minAlertLevel=error)
++vale_args=(--minAlertLevel=error --config="$pipeline/.vale.ini")
++PAPER_PATHSPEC=${PAPER_PATHSPEC:-"docs/checkpoints/paper_drafts"}
+ 
+ while [ $# -gt 0 ]; do
+     case "$1" in
+         --all)       mode=all ;;
+-        --list)      list=${2:?--list needs a file}; shift ;;
++        --list)      list=$(realpath "${2:?--list needs a file}"); shift ;;
++        --root)      root=${2:?--root needs a directory}; shift ;;
+         --output=*)  vale_args+=("$1") ;;
+-        -h|--help)   sed -n '2,17p' "$0"; exit 0 ;;
++        -h|--help)   sed -n '2,22p' "$0"; exit 0 ;;
+         *)           echo "unknown argument: $1" >&2; exit 2 ;;
+     esac
+     shift
+ done
+ 
++if [ -z "$root" ]; then
++    root=$(git -C "$pipeline" rev-parse --show-toplevel 2>/dev/null || echo "$pipeline")
++fi
++cd "$root"
++
+ if ! command -v vale >/dev/null 2>&1; then
+     echo "vale not found on PATH (brew install vale, or see vale.sh)" >&2
+     exit 2
+@@ -39,10 +56,13 @@
+     exit 2
+ fi
+ 
+-# Paper sources = tracked .tex/.md that are not part of the pipeline itself.
++# Paper sources = tracked .tex/.md under PAPER_PATHSPEC that are not part of
++# the pipeline itself. Upstream excludes docs/ wholesale; P79 keeps its paper
++# inside docs/, so the scope is an explicit pathspec instead of a blocklist.
+ all_sources() {
+-    git ls-files '*.tex' '*.md' \
+-        | grep -vE '^(tests/|\.claude/|\.github/|docs/|README|THIRD_PARTY)' || true
++    git ls-files -- "$PAPER_PATHSPEC" \
++        | grep -E '\.(tex|md)$' \
++        | grep -vE '(^|/)(tests/|README|THIRD_PARTY)' || true
+ }
+ 
+ if [ "$mode" = all ]; then

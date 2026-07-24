@@ -12,7 +12,9 @@ Checks:
   2. citations    -- \\cite/\\citep/\\citet/\\parencite/... keys
                      (plus pandoc @key citations in .md files)
   3. crossrefs    -- \\ref/\\eqref/\\autoref/\\cref keys and \\label keys
-  4. terms        -- occurrence counts of whitelisted domain terms (terms.txt)
+  4. terms        -- occurrence counts of whitelisted domain terms
+                     (terms.txt), matched on word boundaries -- see
+                     term_pattern for the boundary/plural/case rules
   5. protected blocks -- exact (whitespace-normalized) comparison of math
                      ($...$, \\(...\\), \\[...\\], $$...$$, display envs),
                      macro-definition lines, verbatim/lstlisting/\\verb,
@@ -30,7 +32,8 @@ Exit codes: 0 = no drift detected, 1 = drift found (always 0 with
 
 Known blind spots (documented, deliberate):
   - spelled-out numbers ("twenty");
-  - a whitelist term pluralized in place (substring counts still match);
+  - a whitelist term pluralized in place (regular plurals are folded into one
+    count on purpose: rewording around number is legitimate editing);
   - hedge strengthening/weakening and any purely semantic rewording --
     out of scope for a lexical gate; the rewrite layer must emit diffs.
 """
@@ -40,6 +43,7 @@ import argparse
 import re
 import sys
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
 
 CITE_RE = re.compile(
@@ -238,13 +242,52 @@ def load_terms(path: Path) -> list[str]:
     ]
 
 
+def _acronymish(word: str) -> bool:
+    """True for DOM, SoM, AXTree, US -- a capital anywhere but the first
+    letter. 'Transformer' is not acronymish: only its first letter is
+    capitalized, so it may legitimately appear lowercase mid-sentence."""
+    return any(c.isupper() for c in word[1:])
+
+
+@lru_cache(maxsize=None)
+def term_pattern(term: str) -> re.Pattern:
+    """Word-boundary-anchored pattern for one whitelist term.
+
+    Rules, each one paying for a false-positive class seen on real drafts:
+      - spaces and hyphens inside the term match any run of whitespace,
+        tilde, or hyphen, so a hard-wrapped "cost-accuracy trade-off"
+        still counts as one occurrence;
+      - the match must stand on word boundaries, so "DOM" no longer fires
+        inside "random", "domain", or "dominant" and "SoM" no longer fires
+        inside "some" -- without this, short acronyms could not be
+        whitelisted at all, and those are exactly the tokens a rewrite is
+        tempted to touch;
+      - a regular plural or possessive is folded into the same count,
+        keeping the documented "pluralized in place" blind spot rather
+        than turning legitimate rewording into a violation (irregular
+        plurals -- policy/policies, matrix/matrices -- are NOT folded and
+        do show up as drift);
+      - a word with a capital anywhere but the first letter is matched
+        case-sensitively (otherwise a whitelisted "US" or "IT" would count
+        every "us" and "it"); ordinary words stay case-insensitive so that
+        sentence-initial capitalization cannot shift a count.
+    """
+    words = [w for w in re.split(r"[\s-]+", term) if w]
+    if not words:
+        return re.compile(r"(?!)")  # never matches
+    core = r"[\s~-]+".join(
+        re.escape(w) if _acronymish(w) else f"(?i:{re.escape(w)})" for w in words
+    )
+    lead = r"(?<!\w)" if re.match(r"\w", words[0][0]) else ""
+    trail = r"(?:['’]s|e?s)?(?!\w)" if re.match(r"\w", words[-1][-1]) else ""
+    return re.compile(lead + core + trail)
+
+
 def term_counts(text: str, terms: list[str], tex: bool = True) -> Counter:
     text = strip_comments(text, tex)
     counts: Counter = Counter()
     for term in terms:
-        words = [w for w in re.split(r"[\s-]+", term) if w]
-        pattern = re.compile(r"[\s~-]+".join(re.escape(w) for w in words), re.I)
-        n = len(pattern.findall(text))
+        n = len(term_pattern(term).findall(text))
         if n:
             counts[term] = n
     return counts
@@ -271,6 +314,33 @@ def report_section(name: str, count_note: str, lines: list[str], n: int) -> None
         print(line)
 
 
+def term_audit(terms, terms_path, old_raw: str, new_raw: str, args,
+               tex: bool = True) -> int:
+    """Per-term hit counts, so a whitelist can be curated against a real
+    draft before the gate is trusted. Entries that never occur are usually
+    typos or aspirational; a term with a surprising count is worth a look
+    (it may be matching somewhere you did not expect)."""
+    if not terms:
+        print(f"term audit: no terms file found ({terms_path})")
+        return 0
+    old_c, new_c = term_counts(old_raw, terms, tex), term_counts(new_raw, terms, tex)
+    print(f"term audit: {terms_path} ({len(terms)} terms)")
+    print(f"  {'OLD':>6} {'NEW':>6}  term      "
+          f"[{args.old.name} -> {args.new.name}]")
+    dead = 0
+    for term in terms:
+        o, n = old_c.get(term, 0), new_c.get(term, 0)
+        note = ""
+        if o == 0 and n == 0:
+            note, dead = "   <- never occurs (typo, or drop it)", dead + 1
+        elif o != n:
+            note = f"   <- drift {o - n:+d}"
+        print(f"  {o:>6} {n:>6}  {term}{note}")
+    if dead:
+        print(f"  {dead} term(s) never occur in either file")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("old", type=Path)
@@ -279,6 +349,10 @@ def main() -> int:
                     help="whitelist file (default: terms.txt at the repo root, if present)")
     ap.add_argument("--report-only", action="store_true",
                     help="print the report but always exit 0")
+    ap.add_argument("--term-audit", action="store_true",
+                    help="print per-term hit counts for both files and exit 0 "
+                         "(whitelist curation; pass the same file twice to "
+                         "audit terms.txt against one draft)")
     args = ap.parse_args()
 
     for p in (args.old, args.new):
@@ -296,6 +370,9 @@ def main() -> int:
     new_raw = args.new.read_text(errors="replace")
     pandoc = args.new.suffix.lower() in {".md", ".markdown", ".qmd", ".rmd"}
     tex = not pandoc  # `%` is a comment in LaTeX and a percent sign in Markdown
+
+    if args.term_audit:
+        return term_audit(terms, terms_path, old_raw, new_raw, args, tex)
 
     old_prose = prose_only(old_raw, tex)
     new_prose = prose_only(new_raw, tex)

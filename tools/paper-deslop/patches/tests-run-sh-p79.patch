@@ -1,0 +1,45 @@
+--- /tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/9c564995-f040-44eb-872f-283f8a45a923/scratchpad/pd_new/tests/run.sh	2026-07-24 23:22:05.044130533 +0100
++++ tools/paper-deslop/tests/run.sh	2026-07-24 23:26:52.162799261 +0100
+@@ -104,7 +104,9 @@
+ printf 'tests/fixtures/slop.tex\n'                > /tmp/ratchet_dirty.txt
+ printf 'no/such/section.tex\n'                    > /tmp/ratchet_typo.txt
+ check_ratchet() {  # name, list file, expected exit code
+-    out=$(bash scripts/ratchet_lint.sh --list "$2" --output=line 2>&1)
++    # --root .: the fixtures are pathspecs inside the pipeline dir, not the
++    # enclosing repo (P79 vendors this under tools/paper-deslop/).
++    out=$(bash scripts/ratchet_lint.sh --root . --list "$2" --output=line 2>&1)
+     code=$?
+     if [ "$code" -eq "$3" ]; then
+         echo "ok: $1 (exit $code)"
+@@ -120,6 +122,31 @@
+ check_ratchet "unmatched entry fails loudly (never a silent no-op)" \
+     /tmp/ratchet_typo.txt 2
+ 
++echo "== markdown percent signs do not blind the gate"
++# Regression: `%` is a LaTeX comment but a percent sign in Markdown. When the
++# LaTeX rule was applied unconditionally, everything after "81%" on a line was
++# stripped before the number/citation/term checks ran, so drift hiding behind a
++# percent sign was invisible (it surfaced only as an unrelated "comment" alert).
++out=$(python3 scripts/invariant_check.py tests/fixtures/md_percent_base.md \
++        tests/fixtures/md_percent_drift.md --terms terms.txt)
++if [ $? -eq 0 ]; then
++    echo "FAIL: post-% number drift should violate the gate"
++    echo "$out"
++    fail=1
++elif ! grep -qF "removed number: '42.0'" <<<"$out"; then
++    echo "FAIL: expected the drift to be reported as a NUMBER violation, got:"
++    echo "$out"
++    fail=1
++elif ! grep -qE "numbers: +[0-9]+ violation\(s\) \(5 in old\)" <<<"$out"; then
++    # 5 = 4.2 (heading) + 81 + 19 + 42.0 + 3.1. Pre-fix only the first two were
++    # visible; everything after the first `%` was stripped as a LaTeX comment.
++    echo "FAIL: expected all 5 numbers visible to the checker, got:"
++    echo "$out"
++    fail=1
++else
++    echo "ok"
++fi
++
+ echo "== vocabulary file is in sync with terms.txt"
+ before=$(cat styles/config/vocabularies/Paper/accept.txt 2>/dev/null || true)
+ python3 scripts/gen_vale_vocab.py >/dev/null

@@ -30,7 +30,7 @@ While writing (interactive, track A)      On commit / CI (automatic, track B)
 |---|---|---|---|
 | Rewrite | `.claude/skills/deslop-paper/` | sentence rhythm, canned phrases, hedging calibration | interactive, diff-only |
 | Fidelity gate | `scripts/invariant_check.py` | lexical invariant gate: numbers (sign/unit-aware) / citations / cross-refs / terms / protected blocks (math, macros, comments, verbatim, preamble) / sentence-context anchors | blocking after any rewrite |
-| Prose lint | Vale + `styles/` | deterministic AI-tell rules, academically re-tiered | CI, error level blocks |
+| Prose lint | Vale + `styles/` | deterministic AI-tell rules, academically re-tiered | CI, ratcheted: `deslopped.txt` blocks, rest advisory |
 | Grammar | `scripts/grammar_check.py` | grammar/typos/punctuation via **local** LanguageTool | pre-submission pass |
 
 ### The one design rule
@@ -46,6 +46,8 @@ brew install vale          # macOS; see vale.sh for other platforms
 python3 scripts/gen_vale_vocab.py   # after every terms.txt edit
 bash tests/run.sh          # pipeline self-test, should print all ok
 vale path/to/section.tex   # lint a paper file
+scripts/ratchet_lint.sh    # lint the blocking set, exactly as CI does
+scripts/ratchet_lint.sh --all   # advisory: every paper source
 ```
 
 Rewrite loop (inside Claude Code, from a repo containing this pipeline):
@@ -78,15 +80,37 @@ machine.
 Copy these into the paper repository (or start the paper inside this repo):
 
 ```
-.vale.ini  styles/  terms.txt  scripts/  .claude/  .github/workflows/prose-lint.yml
+.vale.ini  styles/  terms.txt  deslopped.txt  scripts/
+.claude/   .github/workflows/prose-lint.yml
 ```
 
 Then:
 
-1. Rewrite `terms.txt` for the paper's own vocabulary and run
+1. Rewrite `terms.txt` for the paper's own vocabulary, check it against the
+   real draft (`--term-audit`, below), and run
    `python3 scripts/gen_vale_vocab.py`.
 2. Commit. CI now: self-tests the pipeline, blocks merge on error-level Vale
-   alerts, and posts an informational invariant-drift report on every PR.
+   alerts **in the files listed in `deslopped.txt`** (empty by default, so
+   nothing blocks on day one), posts a full-repo alert summary as an
+   advisory job summary, and posts an informational invariant-drift report on
+   every PR.
+
+## The ratchet: adopting this on a draft that is already written
+
+An AI-drafted manuscript arrives with hundreds of error-level alerts — one
+real draft opened at 551, over half of them em dashes. A gate that blocks on
+all of them is red from the first push, so it gets ignored, and an ignored
+gate protects nothing. The blocking set is therefore a list you grow:
+
+```
+deslopped.txt     # git pathspecs, one per line; empty = nothing blocks
+```
+
+Deslop a section, get it error-clean, add its path, commit. From then on a
+regression in that file breaks the build, while the untouched chapters stay
+merely advisory. `scripts/ratchet_lint.sh` is the same code path locally and
+in CI. An entry that matches no tracked file is a hard error, not a silent
+no-op — a typo there would quietly protect nothing.
 
 ## terms.txt: the single source of truth
 
@@ -96,6 +120,22 @@ term added there is protected everywhere at once. The inclusion test:
 
 > If this word were replaced by an everyday synonym, would the paper lose a
 > distinguishable, citable, operationalized concept?
+
+Matching is word-bounded, so short acronyms — `DOM`, `SoM`, `AXTree` — are
+safe to list: they will not fire inside `random`, `domain`, `dominant`, or
+`some`. A word with a capital anywhere but the first letter is matched
+case-sensitively (listing `US` does not count every `us`); ordinary words are
+case-insensitive, so sentence-initial capitalization cannot shift a count.
+Regular plurals and possessives fold into the same count; irregular ones
+(`policy`/`policies`) do not.
+
+Curate the list against the actual draft before trusting the gate — a term
+that never occurs is a typo, and a term with a surprising count is matching
+somewhere you did not expect:
+
+```bash
+python3 scripts/invariant_check.py draft.tex draft.tex --term-audit
+```
 
 ## Vale tiering philosophy
 
@@ -110,7 +150,11 @@ re-tiers it for academic writing:
   colon caps — all legitimate scholarly usage; only mechanical stacking is a
   tell.
 - **Warning**: possibly-technical vocabulary ("robust", "comprehensive",
-  "novel") — a human judges whether it is a term of art or puffery.
+  "novel") — a human judges whether it is a term of art or puffery. Also the
+  tricolon rules: without lookarounds or POS tagging they cannot tell three
+  parallel verbs from a plural-noun list ("contains models, datasets X, and
+  metrics Y" fires), and they were the second-largest error source on a real
+  draft.
 - **Error**: canned phrases, em dashes, throat-clearing, vague attribution —
   things with no legitimate academic use.
 
@@ -123,9 +167,14 @@ re-tiers it for academic writing:
   tokens; `TokenIgnores`/`BlockIgnores` in `.vale.ini` strip math, citations,
   and display environments, but expect occasional noise in heavy markup.
 - The gate is **lexical, not semantic**. Documented blind spots: spelled-out
-  numbers ("twenty"); a whitelist term pluralized in place (substring counts
-  still match); hedge strengthening/weakening and any purely semantic
+  numbers ("twenty"); a whitelist term pluralized in place (regular plurals
+  fold into one count on purpose, so rewording around number is not a
+  violation); hedge strengthening/weakening and any purely semantic
   rewording. Those live in the diff review, by design.
+- Whitelist matching is word-bounded but has no morphology beyond regular
+  plurals: an irregular plural (`matrix`/`matrices`) or a term the rewrite
+  legitimately re-inflects shows up as count drift. List both forms, or read
+  the diff and move on.
 - The sentence-context anchor check is a heuristic (each number/citation must
   keep ≥1 content word from its original sentence). It catches swapped
   numbers and rebound citations between claims; it cannot catch a rebind

@@ -1,14 +1,30 @@
-# Ratchet list: paper sources that have already been through /deslop-paper
-# and MUST stay error-clean under Vale. CI blocks on regressions here.
+# Files that are already deslopped and must STAY error-clean.
 #
-# Everything else under docs/checkpoints/paper_drafts/ is linted too, but
-# report-only (see .github/workflows/prose-lint.yml) — the drafts carry a
-# large pre-existing alert backlog (551 error-level alerts measured
-# 2026-07-24, 312 of them em dashes) and blocking on all of it would red-line
-# every push.
+# This is the ratchet. A real AI-drafted manuscript starts with hundreds of
+# error-level Vale alerts; a build that is red from day one gets ignored, and
+# an ignored gate protects nothing. So CI blocks only on the files listed
+# here, and the full-repo lint is advisory (job summary only).
 #
-# Workflow: after /deslop-paper finishes a section and `vale --config=...`
-# reports zero error-level alerts on it, append the repo-relative path here
-# in the same commit. The file never shrinks.
+# Workflow: deslop a section, get it error-clean (`vale path/to/file.tex`),
+# add it below, commit. From then on a regression in that file breaks the
+# build. An empty list is the intended starting point -- zero friction, and
+# the blocking set tightens by itself as the paper gets cleaned.
 #
-# One repo-relative path per line. Lines starting with # are comments.
+# One git pathspec per line: an exact path (`sections/intro.tex`), a
+# directory (`sections/`), or a glob (`sections/*.tex`). Only tracked
+# .tex/.md files are linted. An entry matching nothing is an error, not a
+# silent no-op -- a typo here would quietly protect nothing.
+#
+# Run locally exactly as CI does:
+#   scripts/ratchet_lint.sh          # blocking set
+#   scripts/ratchet_lint.sh --all    # advisory, whole repo
+#
+# P79 notes (vendored install, see VENDORED.md):
+#   - paths are repo-relative (docs/checkpoints/paper_drafts/...), resolved
+#     from the repo root, not from tools/paper-deslop/;
+#   - `make deslop-ratchet` runs exactly what CI runs;
+#   - baseline 2026-07-24, `make deslop-ratchet ALL=1`: 553 error-level
+#     alerts across the 19 tracked draft files, 384 of them em dashes. That
+#     backlog is why nothing is listed yet. (An earlier 551 figure counted
+#     only 12 files -- it globbed `paper_drafts/*.md` and missed the seven
+#     Markdown files under aaai27/; use git ls-files, as ratchet_lint does.)

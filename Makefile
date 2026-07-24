@@ -37,7 +37,8 @@ PYTEST ?= .venv/bin/pytest
         analysis _per_run_all _aggregate _figures _status active \
         glm-update-cells glm-refresh-playbook check-links vwa-generate-configs \
         pre-release-check \
-        deslop-lint deslop-gate deslop-selftest deslop-vocab
+        deslop-lint deslop-gate deslop-selftest deslop-vocab \
+        deslop-ratchet deslop-audit
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -65,6 +66,8 @@ help:
 	@echo "  Paper prose (paper-deslop):"
 	@echo "    make deslop-lint [F=<file>]  # Vale AI-tell lint (default: all paper_drafts)"
 	@echo "    make deslop-gate OLD= NEW=   # lexical invariant gate (numbers/cites/terms)"
+	@echo "    make deslop-ratchet [ALL=1]  # blocking set from deslopped.txt (what CI runs)"
+	@echo "    make deslop-audit [F=<file>] # per-term hit counts (curate terms.txt)"
 	@echo "    make deslop-selftest         # pipeline self-test (fixtures + gate)"
 	@echo "    /deslop-paper                # the interactive rewrite skill (diff-only)"
 	@echo ""
@@ -794,8 +797,28 @@ deslop-gate:
 	@python3 $(DESLOP_DIR)/scripts/invariant_check.py "$(OLD)" "$(NEW)" \
 	  --terms $(DESLOP_DIR)/terms.txt
 
+# Ratcheted lint — byte-for-byte what CI runs. Blocking set = deslopped.txt
+# (a file joins it once /deslop-paper gets it error-clean); ALL=1 lints every
+# draft advisory-style. An entry matching no tracked file exits 2, never a
+# silent no-op.
+#   make deslop-ratchet          # blocking set only
+#   make deslop-ratchet ALL=1    # advisory sweep over all drafts
+deslop-ratchet:
+	@bash $(DESLOP_DIR)/scripts/ratchet_lint.sh $(if $(ALL),--all,) --output=line
+
+# Per-term hit counts against a draft: a whitelisted term with zero
+# occurrences is a typo or wishful thinking. F defaults to the whole corpus.
+#   make deslop-audit
+#   make deslop-audit F=docs/checkpoints/paper_drafts/section4_empirical_findings.md
+deslop-audit:
+	@f="$${F:-/tmp/p79_all_drafts.md}"; \
+	if [ -z "$(F)" ]; then cat $(PAPER_DIR)/*.md $(PAPER_DIR)/aaai27/latex/*.tex > "$$f"; fi; \
+	python3 $(DESLOP_DIR)/scripts/invariant_check.py "$$f" "$$f" \
+	  --terms $(DESLOP_DIR)/terms.txt --term-audit
+
 # Pipeline self-test: Vale fires on the slop fixture, the gate catches all
-# eight adversarial fixtures, vocab is in sync. Run after editing terms.txt.
+# eight adversarial fixtures + the markdown-percent regression, term matching
+# is word-bounded, the ratchet blocks only what it declares, vocab is in sync.
 deslop-selftest:
 	@bash $(DESLOP_DIR)/tests/run.sh
 

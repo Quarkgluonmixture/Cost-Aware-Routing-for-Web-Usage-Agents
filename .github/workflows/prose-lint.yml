@@ -1,10 +1,17 @@
 name: prose-lint
 
-# Adapted from upstream paper-deslop (.github/workflows/prose-lint.yml) for the
-# P79 vendored layout (tools/paper-deslop/) and a ratchet lint policy: the
-# drafts carry a large pre-existing alert backlog, so full-corpus linting is
-# report-only and only tools/paper-deslop/deslopped.txt is blocking.
+# Adapted from upstream paper-deslop for the P79 vendored layout: the pipeline
+# lives in tools/paper-deslop/ and the paper in docs/checkpoints/paper_drafts/,
+# so every entry point takes an explicit path. Blocking/advisory split and the
+# ratchet itself are upstream's; scripts/ratchet_lint.sh is what runs locally
+# too (`make deslop-ratchet`), so CI and laptop agree by construction.
+#
+# Caveat: if this is ever made a REQUIRED status check, a PR touching nothing
+# under the paths below never reports and merge waits forever — drop the
+# `paths:` blocks in that case.
 
+# (paths are duplicated on purpose: GitHub Actions does not support YAML
+# anchors/aliases in workflow files.)
 on:
   pull_request:
     paths:
@@ -20,12 +27,10 @@ on:
 
 env:
   VALE_VERSION: 3.15.2
-  VALE_CONFIG: tools/paper-deslop/.vale.ini
-  PAPER_GLOBS: docs/checkpoints/paper_drafts
+  DESLOP: tools/paper-deslop
 
 jobs:
-  selftest:
-    name: pipeline self-test
+  lint-and-selftest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,69 +42,40 @@ jobs:
             | tar -xz -C "$HOME/.local/bin" vale
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Fixtures + invariant checker (blocking)
-        run: bash tools/paper-deslop/tests/run.sh
+      - name: Pipeline self-test (fixtures + invariant checker)
+        run: bash "$DESLOP/tests/run.sh"
 
-      - name: Vale vocabulary is in sync with terms.txt
+      # The ratchet: only files declared clean in deslopped.txt can break the
+      # build. An empty list blocks nothing, which is the point — the drafts
+      # carry a large pre-existing alert backlog (553 error-level alerts over
+      # 19 draft files at install time, 384 of them em dashes) and a build
+      # that is red from day one gets ignored.
+      - name: Blocking lint (files listed in deslopped.txt)
+        run: bash "$DESLOP/scripts/ratchet_lint.sh"
+
+      - name: Advisory lint (all paper drafts, summary only)
+        if: always()
         run: |
-          python3 tools/paper-deslop/scripts/gen_vale_vocab.py
-          git diff --exit-code tools/paper-deslop/styles/config/vocabularies/Paper/accept.txt \
-            || { echo "::error::accept.txt is stale; run gen_vale_vocab.py and commit it"; exit 1; }
-
-  lint:
-    name: prose lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Vale
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          curl -sL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
-            | tar -xz -C "$HOME/.local/bin" vale
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      # Ratchet: files listed in deslopped.txt have been through the skill and
-      # must stay clean. A regression here fails the build.
-      - name: Deslopped files must stay error-clean (blocking)
-        run: |
-          files=$(grep -vE '^\s*(#|$)' tools/paper-deslop/deslopped.txt || true)
-          if [ -z "$files" ]; then
-            echo "ratchet list is empty — nothing pinned clean yet"
-            exit 0
-          fi
-          missing=0
-          for f in $files; do
-            [ -f "$f" ] || { echo "::error::deslopped.txt lists a missing file: $f"; missing=1; }
-          done
-          [ "$missing" -eq 0 ] || exit 1
-          # shellcheck disable=SC2086
-          vale --config="$VALE_CONFIG" --minAlertLevel=error $files
-
-      # Everything else: visibility without blocking, written to the job summary.
-      - name: Full draft corpus (report-only)
-        continue-on-error: true
-        run: |
-          files=$(git ls-files "$PAPER_GLOBS/**/*.md" "$PAPER_GLOBS/*.md" \
-                               "$PAPER_GLOBS/**/*.tex" "$PAPER_GLOBS/*.tex" || true)
+          bash "$DESLOP/scripts/ratchet_lint.sh" --all --output=line > /tmp/all.txt 2>&1 || true
+          total=$(grep -cE ':[0-9]+:[0-9]+:' /tmp/all.txt || true)
           {
-            echo "## Vale report — all drafts (report-only)"
+            echo "## Prose lint (advisory — does not block)"
             echo ""
-            echo '```'
+            echo "**${total:-0} error-level alert(s)** across docs/checkpoints/paper_drafts/."
+            echo "Blocking set: \`$DESLOP/deslopped.txt\` (add a file once it is error-clean)."
+            echo ""
+            if [ "${total:-0}" -gt 0 ]; then
+              echo "| count | rule |"
+              echo "|---|---|"
+              awk -F: '/:[0-9]+:[0-9]+:/ {print $4}' /tmp/all.txt \
+                | sort | uniq -c | sort -rn | head -15 \
+                | awk '{printf "| %s | `%s` |\n", $1, $2}'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ -n "$files" ]; then
-            # shellcheck disable=SC2086
-            vale --config="$VALE_CONFIG" --minAlertLevel=error --output=line $files \
-              >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
-          else
-            echo "no paper sources found" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
   invariant-report:
-    name: invariant drift (informational)
-    # Report-only by design: ordinary content edits legitimately add numbers
-    # and citations. The BLOCKING use of invariant_check.py is inside the
+    # Report-only: ordinary content edits legitimately add numbers and
+    # citations. The BLOCKING use of invariant_check.py is inside the
     # deslop-paper skill loop, comparing a rewrite against its baseline.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -117,13 +93,14 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           changed=$(git diff --name-only "$base"...HEAD -- \
-                      "$PAPER_GLOBS/*.md" "$PAPER_GLOBS/**/*.md" \
-                      "$PAPER_GLOBS/*.tex" "$PAPER_GLOBS/**/*.tex" || true)
+                      'docs/checkpoints/paper_drafts/*.md' \
+                      'docs/checkpoints/paper_drafts/**/*.md' \
+                      'docs/checkpoints/paper_drafts/**/*.tex' || true)
           for f in $changed; do
             [ -f "$f" ] || continue
             git show "$base:$f" > /tmp/base_version 2>/dev/null || continue
-            python3 tools/paper-deslop/scripts/invariant_check.py /tmp/base_version "$f" \
-              --terms tools/paper-deslop/terms.txt --report-only >> "$GITHUB_STEP_SUMMARY" || true
+            python3 "$DESLOP/scripts/invariant_check.py" /tmp/base_version "$f" \
+              --terms "$DESLOP/terms.txt" --report-only >> "$GITHUB_STEP_SUMMARY" || true
             echo "" >> "$GITHUB_STEP_SUMMARY"
           done
           echo '```' >> "$GITHUB_STEP_SUMMARY"

@@ -21,15 +21,17 @@ layout and are run **from the repo root**:
 | Upstream path | This repo |
 |---|---|
 | `terms.txt` | `tools/paper-deslop/terms.txt` |
+| `deslopped.txt` | `tools/paper-deslop/deslopped.txt` |
 | `scripts/invariant_check.py` | `tools/paper-deslop/scripts/invariant_check.py` |
+| `scripts/ratchet_lint.sh` | `tools/paper-deslop/scripts/ratchet_lint.sh` |
 | `.vale.ini` | `tools/paper-deslop/.vale.ini` (Vale needs `--config=`) |
 | `tests/run.sh` | `tools/paper-deslop/tests/run.sh` (self-contained, `cd`s itself) |
 
 This skill's own files are tracked at `tools/paper-deslop/skill/deslop-paper/`
 and symlinked into `.claude/skills/` (the repo gitignores `.claude/`). Edit the
 tracked copy. Paper sources live in `docs/checkpoints/paper_drafts/` (Markdown
-sections + `aaai27/latex/*.tex`). There are also `make` shortcuts:
-`make deslop-lint [F=<file>]`, `make deslop-gate OLD= NEW=`,
+sections + `aaai27/latex/*.tex`). `make` shortcuts: `make deslop-lint
+[F=<file>]`, `make deslop-gate OLD= NEW=`, `make deslop-ratchet`,
 `make deslop-selftest`. Upstream sync notes: `tools/paper-deslop/VENDORED.md`.
 
 The goal is quality editing, not detector evasion: delete language that
@@ -82,7 +84,12 @@ Flag any hedge you touched in the diff notes explicitly.
    quality collapses and register differences between sections get lost.
 2. **Read `tools/paper-deslop/terms.txt`**. If it does not exist, propose one:
    scan the abstract and section headings for candidate domain terms, show the
-   list, and ask the user to confirm before rewriting anything.
+   list, and ask the user to confirm before rewriting anything. Short acronyms
+   (`DOM`, `SoM`) belong in the list — matching is word-bounded, so they will
+   not fire inside `random` or `some`. Sanity-check a proposed list against
+   the draft with `python3 tools/paper-deslop/scripts/invariant_check.py FILE
+   FILE --terms tools/paper-deslop/terms.txt --term-audit`: a term with zero
+   occurrences is a typo.
 3. **Take the baseline copy** of the target file (see above).
 4. **Edit in two passes** (rhythm first, then patterns — order matters, see
    the catalog below).
@@ -95,6 +102,10 @@ Flag any hedge you touched in the diff notes explicitly.
    must be zero on edited prose). Report both results honestly. The
    `--config` flag is required: Vale searches upward from the cwd for
    `.vale.ini`, and in this repo the config is vendored, not at the root.
+   Once a file is error-clean, propose adding its path to
+   `tools/paper-deslop/deslopped.txt` so CI starts blocking on regressions in
+   it (verify with `make deslop-ratchet`). That list is the ratchet; it is
+   the only thing that makes the lint blocking, and it only grows.
 7. If the session is interactive and the user has not pre-approved batch
    application, wait for their reaction to the diff before moving to the next
    section.

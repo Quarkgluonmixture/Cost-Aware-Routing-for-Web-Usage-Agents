@@ -9,23 +9,35 @@
 #
 # Test for adding a word here: if it were replaced by an everyday synonym,
 # would the paper lose a distinguishable, citable, operationalized concept?
-# One term per line; matching is case-insensitive and treats spaces/hyphens
-# as interchangeable. Lines starting with # are comments.
 #
-# WARNING - matching is SUBSTRING, not word-bounded: invariant_check.term_counts
-# builds `[\s~-]+`-joined regexes with no \b. Short abbreviations therefore
-# false-match. Measured on the P79 drafts: "DOM" hits random/dominance/dominant/
-# domain 90 times, "SoM" hits some/sometimes 7 times. Keep entries to multi-word
-# phrases or long unique tokens; never add a 2-4 letter abbreviation.
+# One term per line; lines starting with # are comments. Matching (see
+# term_pattern in scripts/invariant_check.py):
+#   - spaces and hyphens are interchangeable and wrap-safe, so
+#     "drop-one oracle" also matches "drop one oracle" and
+#     the same phrase broken across two source lines;
+#   - word-bounded, so short acronyms are safe to list: DOM does not match
+#     "random"/"domain"/"dominant", SoM does not match "some";
+#   - regular plurals and possessives count as the same term (DOMs, DOM's);
+#     irregular plurals do not (list "policy" and "policies" separately if
+#     both matter);
+#   - a word with a capital anywhere but the first letter (DOM, SoM, AXTree)
+#     is matched case-sensitively, so listing "US" does not count every
+#     "us"; ordinary words are case-insensitive.
 #
-# P79-specific list (2026-07-24). Counts in comments = occurrences across
-# docs/checkpoints/paper_drafts/ at the time of writing.
+# Curate against a real draft before trusting the gate:
+#   python3 tools/paper-deslop/scripts/invariant_check.py \
+#       docs/checkpoints/paper_drafts/section4_empirical_findings.md \
+#       docs/checkpoints/paper_drafts/section4_empirical_findings.md --term-audit
+#
+# P79 list, curated 2026-07-24 against docs/checkpoints/paper_drafts/ with
+# --term-audit. DOM/SoM are listed because upstream made matching
+# word-bounded; before that they hit random/dominance/domain 90 times and
+# some/sometimes 7 times across the drafts and had to be left out.
 
 # --- Phantom routing space (paper-1 core construct) ---
 phantom routing space
 phantom arm
 phantom mode
-phantom prompt
 P-SoM
 P-text
 P-prompt
@@ -39,20 +51,20 @@ annotated image
 accessibility tree
 AXTree
 SOM_MARKS
+SoM
+DOM
 
 # --- Routing layer ---
 cost-aware routing
 learned router
 rule-based router
 routing signal
-cost-accuracy trade-off
-selective classification
 
 # --- Benchmark, models, agents ---
 VisualWebArena
 multimodal web agent
 Qwen3-VL
-Gemma3-VL
+Gemma-3
 scaffold
 
 # --- Metrics and statistics ---
@@ -61,4 +73,3 @@ AUROC
 Pareto
 fixed-effect
 inverse-variance
-premature termination
