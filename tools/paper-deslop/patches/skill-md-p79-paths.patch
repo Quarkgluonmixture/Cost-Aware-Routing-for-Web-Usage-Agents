@@ -1,5 +1,5 @@
---- /tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/9c564995-f040-44eb-872f-283f8a45a923/scratchpad/pd3/.claude/skills/deslop-paper/SKILL.md	2026-07-25 00:22:06.055103151 +0100
-+++ tools/paper-deslop/skill/deslop-paper/SKILL.md	2026-07-25 00:30:30.568460640 +0100
+--- /tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/9c564995-f040-44eb-872f-283f8a45a923/scratchpad/pd4/.claude/skills/deslop-paper/SKILL.md	2026-07-25 00:45:08.411744501 +0100
++++ tools/paper-deslop/skill/deslop-paper/SKILL.md	2026-07-25 00:46:18.059053151 +0100
 @@ -7,11 +7,28 @@
    before submitting a manuscript. Works on LaTeX and Markdown sources. Always
    produces a reviewable diff with reasons, and mechanically verifies rewrite

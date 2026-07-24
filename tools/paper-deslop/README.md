@@ -109,8 +109,22 @@ PAPER_PATHSPEC='docs/paper/*.md' tools/deslop/scripts/ratchet_lint.sh --all
 ```
 
 `ratchet_lint.sh` finds `deslopped.txt` at the repo root first, then next to
-the pipeline. A `PAPER_PATHSPEC` that matches nothing exits 2 rather than
-reporting a clean run over zero files.
+the pipeline. `PAPER_PATHSPEC` is whitespace-separated unless it contains a
+newline, in which case it is one pathspec per line — use that form when a
+path contains spaces.
+
+Exit codes are the contract: **0** nothing blocking, **1** error-level alerts
+in the blocking set, **2** the lint could not be trusted — an unresolvable
+list entry, a `PAPER_PATHSPEC` that matches nothing, or vale itself failing
+(it exits 2 on runtime errors such as an unreadable path or config). Advisory
+mode downgrades *alerts* to exit 0; it never downgrades a crash. A lint that
+processed zero files and returned success is the failure mode this pipeline
+exists to prevent, so file counts are always printed and `--all` reports what
+it swept.
+
+File selection is NUL-separated and `core.quotePath`-proof, so a manuscript
+at `docs/literature/5.1/Cost-Aware Routing 5.1.md` or `docs/成本感知路由.md`
+is linted rather than word-split into paths that do not exist.
 
 Two gotchas for anything you run by hand in a vendored layout:
 

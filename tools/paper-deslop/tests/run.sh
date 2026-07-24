@@ -141,11 +141,10 @@ printf 'tests/fixtures/rewritten_good.tex\n'      > /tmp/ratchet_clean.txt
 printf 'tests/fixtures/slop.tex\n'                > /tmp/ratchet_dirty.txt
 printf 'no/such/section.tex\n'                    > /tmp/ratchet_typo.txt
 check_ratchet() {  # name, list file, expected exit code
-    # --root .: these fixtures are pathspecs inside the pipeline directory,
-    # not inside the enclosing manuscript repo. Without it the script resolves
-    # them from the repo root, which is correct behaviour but makes these two
-    # cases fail in any vendored install (P79 keeps the pipeline in tools/).
-    out=$(bash scripts/ratchet_lint.sh --root . --list "$2" --output=line 2>&1)
+    # --root is required, not decorative: these lists hold pathspecs relative
+    # to the PIPELINE directory, and without it a vendored install resolves
+    # them against the manuscript repo root and every entry misses.
+    out=$(bash scripts/ratchet_lint.sh --root "$PWD" --list "$2" --output=line 2>&1)
     code=$?
     if [ "$code" -eq "$3" ]; then
         echo "ok: $1 (exit $code)"
@@ -167,13 +166,19 @@ echo "== vendored install: pipeline in a subdirectory, manuscript in docs/"
 # docs/ linted exactly zero files and reported success.
 vendor_parent=$(mktemp -d)
 vendor="$vendor_parent/vendor"
-mkdir -p "$vendor/tools/deslop/scripts" "$vendor/docs"
+mkdir -p "$vendor/tools/deslop/scripts" "$vendor/docs/literature/5.1"
 git init -q "$vendor" 2>/dev/null
 cp .vale.ini "$vendor/tools/deslop/"
 cp -R styles "$vendor/tools/deslop/"
 cp scripts/ratchet_lint.sh "$vendor/tools/deslop/scripts/"
 cp tests/fixtures/md_slop.md "$vendor/docs/paper.md"   # has error-level alerts
 cp tests/fixtures/md_good.md "$vendor/docs/clean.md"   # error-clean
+# Real manuscripts have paths like these. A space used to be word-split into
+# arguments that do not exist, and a non-ASCII name came back from git
+# octal-quoted ("\346\210\220...md"); vale answers either with E100 and exit
+# 2, which advisory mode then reported as a clean run over zero files.
+cp tests/fixtures/md_slop.md "$vendor/docs/literature/5.1/Cost-Aware Routing 5.1.md"
+cp tests/fixtures/md_slop.md "$vendor/docs/成本感知路由.md"
 git -C "$vendor" add -- docs tools
 vendor_lint="$vendor/tools/deslop/scripts/ratchet_lint.sh"
 
@@ -211,6 +216,64 @@ if [ $? -eq 2 ]; then
     echo "ok: PAPER_PATHSPEC matching nothing fails loudly"
 else
     echo "FAIL: a PAPER_PATHSPEC that matches nothing must not look like success"
+    fail=1
+fi
+
+out=$(bash "$vendor_lint" --all --output=line 2>&1)
+code=$?
+if [ "$code" -eq 0 ] \
+   && grep -q 'Cost-Aware Routing 5.1.md' <<<"$out" \
+   && grep -q '成本感知路由.md' <<<"$out"; then
+    echo "ok: paths with spaces and non-ASCII names reach vale intact"
+else
+    echo "FAIL: --all exited $code and did not lint the awkward paths; a space"
+    echo "      was word-split, or git octal-quoted the non-ASCII name"
+    printf '%s\n' "$out" | head -5
+    fail=1
+fi
+
+printf 'docs/literature/5.1/Cost-Aware Routing 5.1.md\n' > "$vendor/deslopped.txt"
+git -C "$vendor" add -- deslopped.txt
+bash "$vendor_lint" >/dev/null 2>&1
+if [ $? -eq 1 ]; then
+    echo "ok: a ratcheted path with spaces reports alerts (1), not a crash (2)"
+else
+    echo "FAIL: a ratcheted path containing spaces must reach vale as one argument"
+    fail=1
+fi
+
+# A vale runtime error (bad config, unreadable path) must never be laundered
+# into a clean advisory run. This is the swallow that hid 394 unlinted files.
+cp "$vendor/tools/deslop/.vale.ini" "$vendor_parent/vale.ini.bak"
+printf 'StylesPath = styles\n\n[*.md]\nBasedOnStyles = NoSuchStyle\n' \
+    > "$vendor/tools/deslop/.vale.ini"
+bash "$vendor_lint" --all >/dev/null 2>&1
+if [ $? -ge 2 ]; then
+    echo "ok: a vale runtime error surfaces instead of exiting 0"
+else
+    echo "FAIL: advisory mode swallowed a vale crash and reported success"
+    fail=1
+fi
+cp "$vendor_parent/vale.ini.bak" "$vendor/tools/deslop/.vale.ini"
+
+# Pipeline-relative pathspecs (what the self-test itself uses) need --root.
+mkdir -p "$vendor/tools/deslop/tests/fixtures"
+cp tests/fixtures/md_good.md "$vendor/tools/deslop/tests/fixtures/"
+git -C "$vendor" add -- tools
+printf 'tests/fixtures/md_good.md\n' > "$vendor_parent/pipeline_list.txt"
+bash "$vendor_lint" --root "$vendor/tools/deslop" \
+    --list "$vendor_parent/pipeline_list.txt" >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "ok: --root makes pipeline-relative list entries resolve"
+else
+    echo "FAIL: --root DIR should resolve list entries relative to DIR"
+    fail=1
+fi
+bash "$vendor_lint" --list "$vendor_parent/pipeline_list.txt" >/dev/null 2>&1
+if [ $? -eq 2 ]; then
+    echo "ok: the same list without --root fails loudly instead of passing empty"
+else
+    echo "FAIL: unresolvable list entries must exit 2, never 0"
     fail=1
 fi
 rm -rf "$vendor_parent"

@@ -61,12 +61,18 @@ jobs:
         env:
           PAPER_PATHSPEC: docs/checkpoints/paper_drafts
         run: |
-          bash "$DESLOP/scripts/ratchet_lint.sh" --all --output=line > /tmp/all.txt 2>&1 || true
+          # "Advisory" means alerts do not block. It does NOT mean a broken
+          # lint passes: `|| true` here would launder a vale crash (exit >=2,
+          # nothing linted) into a green run, which is the failure this
+          # pipeline exists to prevent.
+          status=0
+          bash "$DESLOP/scripts/ratchet_lint.sh" --all --output=line > /tmp/all.txt 2>&1 || status=$?
           total=$(grep -cE ':[0-9]+:[0-9]+:' /tmp/all.txt || true)
+          scope=$(grep -E '^\(advisory: |^no paper sources matched' /tmp/all.txt | head -1)
           {
-            echo "## Prose lint (advisory — does not block)"
+            echo "## Prose lint (advisory — alerts do not block)"
             echo ""
-            echo "**${total:-0} error-level alert(s)** across docs/checkpoints/paper_drafts/."
+            echo "**${total:-0} error-level alert(s)**. ${scope:-lint scope unreported}"
             echo "Blocking set: \`$DESLOP/deslopped.txt\` (add a file once it is error-clean)."
             echo ""
             if [ "${total:-0}" -gt 0 ]; then
@@ -77,6 +83,11 @@ jobs:
                 | awk '{printf "| %s | `%s` |\n", $1, $2}'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ge 2 ]; then
+            echo "::error::the prose lint could not run (exit $status); nothing was linted"
+            cat /tmp/all.txt
+            exit "$status"
+          fi
 
   invariant-report:
     # Report-only: ordinary content edits legitimately add numbers and

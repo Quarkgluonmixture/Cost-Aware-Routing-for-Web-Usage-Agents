@@ -1,13 +1,18 @@
 # Vendored: paper-deslop
 
 Upstream: https://github.com/Quarkgluonmixture/paper-deslop
-Vendored at: `58253e9a8f2c61da3be41ab46696c6e21e06a462` (2026-07-25), MIT.
+Vendored at: `9b3933479039b96fccca692dec795040eb383b13` (2026-07-25), MIT.
 Lineage: `3adb2f5` → `af4bb36` (word-bounded terms, ratchet lint) → `58253e9`
-(Markdown `%` truncation, structural pointers, error tier, vendored installs).
-Both syncs retired local workarounds: the `%`-as-comment fix and the
-`--root` / `PAPER_PATHSPEC` generalization were reported from here and are now
-upstream, so those patches are gone. What remains is layout glue plus two
-filename-robustness fixes found on this repo's own file names.
+(Markdown `%` truncation, structural pointers, error tier, vendored installs)
+→ `9b39334` (NUL-safe file selection, vale crashes no longer laundered).
+
+Every functional patch this repo carried has now been upstreamed: the
+`%`-as-comment fix, the `--root` / `PAPER_PATHSPEC` generalization, the
+filename-safety fixes, and the vendored self-test root. Upstream's versions
+are supersets — NUL-separated `ls-files -z` also survives newlines in paths,
+vale's exit code (`>=2` = runtime error) is a sounder crash signal than
+grepping stderr, and the whole script is bash 3.2 clean, which the local
+`mapfile` version was not. Only layout glue remains.
 
 ## Layout in this repo
 
@@ -47,14 +52,11 @@ Entry points: `make deslop-lint [F=]` · `make deslop-gate OLD= NEW=` ·
 
 ## Local modifications
 
-Patches in `patches/`, regenerable with `diff -u <upstream> <local>`. The
-first two are **upstream-worthy** (they fix or generalize upstream behaviour,
-not P79 preferences); the rest are layout glue.
+One patch in `patches/`, regenerable with `diff -u <upstream> <local>`. It is
+pure layout glue — no behavioural difference from upstream remains.
 
 | Patch | Kind | What |
 |---|---|---|
-| `ratchet-lint-filename-safety.patch` | bug fix | Two ways a file name breaks the lint. (a) The file list was passed as an unquoted `$files`, so a tracked path with a space (`docs/literature/Cost-Aware Routing.md`) was word-split and vale aborted with `E100 [doLint] Runtime error` — which `--all`'s unconditional `exit 0` turned into a silent success. Now an argv array, and a vale runtime error is always reported. (b) `git ls-files` without `core.quotePath=false` returns non-ASCII paths octal-escaped and quoted, naming no existing file; this repo has 6 such tracked Markdown files. |
-| `tests-run-sh-vendored-root.patch` | test fix | `check_ratchet` passes pathspecs that live inside the pipeline dir but never passes `--root`, so both cases resolve against the manuscript repo and fail in **any** vendored install. Adds `--root .`. Upstream's own repo cannot see this: there the pipeline *is* the root. |
 | `skill-md-p79-paths.patch` | layout | SKILL.md: layout table + every `scripts/…`, `terms.txt`, `deslopped.txt` path repointed, `--config=` added to the `vale` step, `PAPER_PATHSPEC` noted. |
 
 `PAPER_PATHSPEC=docs/checkpoints/paper_drafts` is exported by both the

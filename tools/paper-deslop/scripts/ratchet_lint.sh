@@ -4,14 +4,25 @@
 #
 #   scripts/ratchet_lint.sh                 # blocking: error-level alerts in
 #                                           # deslopped.txt files fail (exit 1)
-#   scripts/ratchet_lint.sh --all           # advisory: every paper source,
-#                                           # always exit 0
+#   scripts/ratchet_lint.sh --all           # advisory: every paper source;
+#                                           # alerts exit 0, a vale crash does not
 #   scripts/ratchet_lint.sh --list FILE     # use FILE instead of deslopped.txt
 #   scripts/ratchet_lint.sh --root DIR      # treat DIR as the paper repo root
 #   scripts/ratchet_lint.sh --output=line   # passed through to vale
 #
 #   PAPER_PATHSPEC='docs/paper/*.md'        # override which files count as
-#                                           # manuscript sources
+#                                           # manuscript sources. Whitespace-
+#                                           # separated, unless it contains a
+#                                           # newline, in which case one
+#                                           # pathspec per line (use that when
+#                                           # a path contains spaces).
+#
+# Exit codes: 0 = nothing blocking, 1 = error-level alerts in the blocking
+# set, 2 = the lint could not be trusted (bad list entry, unusable pathspec,
+# or vale itself failed). vale's own codes are read the same way: 0 clean,
+# 1 alerts, >=2 runtime error (E100). A runtime error is never reported as a
+# clean run -- "0 files linted, exit 0" is how a manuscript stays unlinted
+# for weeks while CI stays green.
 #
 # Why the ratchet: an AI-drafted manuscript arrives with hundreds of
 # error-level alerts. Blocking on all of them from day one trains everyone to
@@ -23,6 +34,9 @@
 # root EXCEPT the pipeline's own files, and vale is always pointed at the
 # pipeline's own .vale.ini (vale searches upward from the CWD and would
 # otherwise miss, or mis-resolve, a vendored config).
+#
+# Written for bash 3.2 (system bash on macOS): no mapfile, no ${x,,}, and
+# empty arrays are never expanded under `set -u`.
 set -uo pipefail
 
 PIPE_DIR=$(cd "$(dirname "$0")/.." && pwd -P)
@@ -38,7 +52,7 @@ while [ $# -gt 0 ]; do
         --list)      list=${2:?--list needs a file}; shift ;;
         --root)      root=${2:?--root needs a directory}; shift ;;
         --output=*)  vale_args+=("$1") ;;
-        -h|--help)   sed -n '2,25p' "$0"; exit 0 ;;
+        -h|--help)   sed -n '2,39p' "$0"; exit 0 ;;
         *)           echo "unknown argument: $1" >&2; exit 2 ;;
     esac
     shift
@@ -79,40 +93,63 @@ own_files="^(${prefix_re}tests/|${prefix_re}\.claude/|${prefix_re}\.github/\
 |${prefix_re}docs/|${prefix_re}styles/|${prefix_re}scripts/\
 |${prefix_re}README|${prefix_re}THIRD_PARTY)"
 
-# Default: every tracked .tex/.md under the root. PAPER_PATHSPEC narrows it.
-read -r -a pathspec <<<"${PAPER_PATHSPEC:-*.tex *.md}"
+# Which files count as manuscript sources.
+pathspec=()
+if [ -n "${PAPER_PATHSPEC:-}" ]; then
+    if [[ $PAPER_PATHSPEC == *$'\n'* ]]; then
+        while IFS= read -r p; do
+            [ -n "$p" ] && pathspec+=("$p")
+        done <<<"$PAPER_PATHSPEC"
+    else
+        read -r -a pathspec <<<"$PAPER_PATHSPEC"
+    fi
+else
+    pathspec=('*.tex' '*.md' '*.markdown' '*.qmd' '*.rmd')
+fi
 
-all_sources() {
-    git -C "$root" -c core.quotePath=false ls-files -- "${pathspec[@]}" \
-        | grep -E '\.(tex|md|markdown|qmd|rmd)$' \
-        | grep -vE "$own_files" || true
+# NUL-separated, so a path with spaces ("Cost-Aware Routing 5.1.md") survives
+# instead of being word-split into arguments that do not exist -- vale answers
+# that with E100 and exit 2. -z also bypasses git's octal quoting of non-ASCII
+# paths ("\346\210\220..."), which points at files that do not exist either;
+# core.quotePath=false covers any non -z use.
+#
+# The pipeline-exclusion applies ONLY to the automatic sweep. A path a human
+# wrote into deslopped.txt is linted whatever it looks like -- otherwise a
+# manuscript that happens to live under a pipeline-owned prefix (docs/) could
+# never be ratcheted, which is the same silent-skip bug in the other mode.
+collected=()
+collect() {  # collect <sweep|explicit> <pathspec>...
+    local sweep=$1
+    shift
+    collected=()
+    local f
+    while IFS= read -r -d '' f; do
+        case "$f" in
+            *.tex|*.TEX|*.md|*.MD|*.markdown|*.Markdown|*.qmd|*.QMD \
+            |*.rmd|*.Rmd|*.RMD) ;;
+            *) continue ;;
+        esac
+        if [ "$sweep" = sweep ] && [[ $f =~ $own_files ]]; then
+            continue
+        fi
+        collected+=("$f")
+    done < <(git -C "$root" -c core.quotePath=false ls-files -z -- "$@")
 }
 
-# Pass the file list as an argv array, never as an unquoted $files: a tracked
-# path containing a space ("docs/literature/Cost-Aware Routing.md") would be
-# word-split, vale would abort with "E100 [doLint] Runtime error / argument
-# ... does not exist", and in --all mode the unconditional exit 0 turned that
-# abort into a silent success. A vale runtime error is always reported, even
-# in advisory mode, because it means NOTHING was linted.
-run_vale() {  # newline-separated file list
-    local list=$1 status err
-    local -a argv
-    mapfile -t argv <<<"$list"
-    err=$(mktemp)
-    (cd "$root" && vale "${vale_args[@]}" "${argv[@]}") 2> >(tee "$err" >&2)
-    status=$?
-    if grep -qE 'Runtime error|does not exist' "$err"; then
-        echo "error: vale aborted without linting (see above)" >&2
-        rm -f "$err"
-        return 2
+run_vale() {
+    (cd "$root" && vale "${vale_args[@]}" "$@")
+    local status=$?
+    if [ "$status" -ge 2 ]; then
+        echo "error: vale exited $status -- a runtime error, not an alert count." >&2
+        echo "       $# file(s) were passed and none of them were linted." >&2
+        exit "$status"
     fi
-    rm -f "$err"
-    return $status
+    return "$status"
 }
 
 if [ "$mode" = all ]; then
-    files=$(all_sources)
-    if [ -z "$files" ]; then
+    collect sweep "${pathspec[@]}"
+    if [ ${#collected[@]} -eq 0 ]; then
         # Never silent: a zero-file lint that looks like success is how a
         # manuscript ends up unlinted for weeks.
         echo "no paper sources matched under $root"
@@ -126,8 +163,8 @@ if [ "$mode" = all ]; then
         echo "  PAPER_PATHSPEC='docs/paper/*.md' $0 --all"
         exit 0
     fi
-    run_vale "$files"
-    echo "(advisory: the full-repo lint never blocks)"
+    run_vale "${collected[@]}"
+    echo "(advisory: ${#collected[@]} file(s) linted; alerts here do not block)"
     exit 0
 fi
 
@@ -154,22 +191,36 @@ fi
 
 # Resolve every entry before linting anything: an entry that matches no
 # tracked file is a typo silently protecting nothing, so it fails loudly.
-files=""
+files=()
 bad=0
 while IFS= read -r spec; do
+    spec=${spec#"${spec%%[![:space:]]*}"}        # trim leading whitespace
+    spec=${spec%"${spec##*[![:space:]]}"}        # trim trailing whitespace
     [ -n "$spec" ] || continue
-    matched=$(git -C "$root" -c core.quotePath=false ls-files -- "$spec" \
-        | grep -E '\.(tex|md|markdown|qmd|rmd)$' || true)
-    if [ -z "$matched" ]; then
+    collect explicit "$spec"
+    if [ ${#collected[@]} -eq 0 ]; then
         echo "error: $list entry matches no tracked source under $root: $spec" >&2
         bad=1
         continue
     fi
-    files+="$matched"$'\n'
+    files+=("${collected[@]}")
 done <<<"$specs"
 [ "$bad" -eq 0 ] || exit 2
 
-files=$(printf '%s' "$files" | sed '/^$/d' | sort -u)
-count=$(printf '%s\n' "$files" | wc -l | tr -d ' ')
-echo "ratchet: $count file(s) declared deslopped in $list; error-level alerts block"
-run_vale "$files"
+# Deduplicate without sort: paths may contain spaces, and the list is short.
+unique=()
+for f in ${files[@]+"${files[@]}"}; do
+    dup=0
+    for g in ${unique[@]+"${unique[@]}"}; do
+        if [ "$f" = "$g" ]; then dup=1; break; fi
+    done
+    [ "$dup" -eq 0 ] && unique+=("$f")
+done
+if [ ${#unique[@]} -eq 0 ]; then
+    echo "$list selects no tracked sources"
+    exit 2
+fi
+
+echo "ratchet: ${#unique[@]} file(s) declared deslopped in $list; error-level alerts block"
+run_vale "${unique[@]}"
+exit $?
