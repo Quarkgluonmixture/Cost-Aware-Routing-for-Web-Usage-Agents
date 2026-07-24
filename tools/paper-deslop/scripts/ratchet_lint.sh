@@ -1,82 +1,145 @@
 #!/usr/bin/env bash
-# Ratcheted prose lint. Two modes, same file-selection logic in both, so
-# what you run locally is what CI runs.
+# Ratcheted prose lint. Two modes, same file-selection logic in both, so what
+# you run locally is what CI runs.
 #
 #   scripts/ratchet_lint.sh                 # blocking: error-level alerts in
 #                                           # deslopped.txt files fail (exit 1)
 #   scripts/ratchet_lint.sh --all           # advisory: every paper source,
 #                                           # always exit 0
 #   scripts/ratchet_lint.sh --list FILE     # use FILE instead of deslopped.txt
+#   scripts/ratchet_lint.sh --root DIR      # treat DIR as the paper repo root
 #   scripts/ratchet_lint.sh --output=line   # passed through to vale
 #
-# Why: an AI-drafted manuscript arrives with hundreds of error-level alerts.
-# Blocking on all of them from day one trains everyone to ignore the gate.
-# deslopped.txt is the blocking set and it only grows.
-#   scripts/ratchet_lint.sh --root DIR      # resolve pathspecs from DIR
-#                                           # (default: the enclosing git
-#                                           # repo root, which differs from
-#                                           # the pipeline dir in a vendored
-#                                           # install like P79's tools/)
+#   PAPER_PATHSPEC='docs/paper/*.md'        # override which files count as
+#                                           # manuscript sources
+#
+# Why the ratchet: an AI-drafted manuscript arrives with hundreds of
+# error-level alerts. Blocking on all of them from day one trains everyone to
+# ignore the gate. deslopped.txt is the blocking set and it only grows.
+#
+# Vendored installs are first-class. The pipeline may live in a subdirectory
+# (tools/deslop/, .deslop/, ...) of a repo whose manuscript sits anywhere,
+# including docs/. Paper sources are therefore everything tracked under the
+# root EXCEPT the pipeline's own files, and vale is always pointed at the
+# pipeline's own .vale.ini (vale searches upward from the CWD and would
+# otherwise miss, or mis-resolve, a vendored config).
 set -uo pipefail
-pipeline=$(cd "$(dirname "$0")/.." && pwd)
 
-# P79 vendored layout: the pipeline lives in tools/paper-deslop/ while the
-# paper lives in docs/checkpoints/paper_drafts/, so pathspecs resolve from the
-# repo root and Vale needs the vendored config explicitly. PAPER_PATHSPEC
-# overrides which tracked files `--all` considers.
+PIPE_DIR=$(cd "$(dirname "$0")/.." && pwd -P)
+
+list=""
 root=""
-list="$pipeline/deslopped.txt"
 mode=ratchet
-vale_args=(--minAlertLevel=error --config="$pipeline/.vale.ini")
-PAPER_PATHSPEC=${PAPER_PATHSPEC:-"docs/checkpoints/paper_drafts"}
+vale_args=(--minAlertLevel=error)
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --all)       mode=all ;;
-        --list)      list=$(realpath "${2:?--list needs a file}"); shift ;;
+        --list)      list=${2:?--list needs a file}; shift ;;
         --root)      root=${2:?--root needs a directory}; shift ;;
         --output=*)  vale_args+=("$1") ;;
-        -h|--help)   sed -n '2,22p' "$0"; exit 0 ;;
+        -h|--help)   sed -n '2,25p' "$0"; exit 0 ;;
         *)           echo "unknown argument: $1" >&2; exit 2 ;;
     esac
     shift
 done
 
-if [ -z "$root" ]; then
-    root=$(git -C "$pipeline" rev-parse --show-toplevel 2>/dev/null || echo "$pipeline")
-fi
-cd "$root"
-
 if ! command -v vale >/dev/null 2>&1; then
     echo "vale not found on PATH (brew install vale, or see vale.sh)" >&2
     exit 2
 fi
-if ! git rev-parse --git-dir >/dev/null 2>&1; then
-    echo "not a git repository: file selection uses git ls-files" >&2
+
+# Root = the paper repo, which is NOT necessarily the pipeline directory.
+if [ -z "$root" ]; then
+    root=$(git -C "$PIPE_DIR" rev-parse --show-toplevel 2>/dev/null || true)
+fi
+if [ -z "$root" ]; then
+    echo "not a git repository under $PIPE_DIR: pass --root DIR" >&2
+    exit 2
+fi
+root=$(cd "$root" && pwd -P) || exit 2
+if ! git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "$root is not a git repository (file selection uses git ls-files)" >&2
     exit 2
 fi
 
-# Paper sources = tracked .tex/.md under PAPER_PATHSPEC that are not part of
-# the pipeline itself. Upstream excludes docs/ wholesale; P79 keeps its paper
-# inside docs/, so the scope is an explicit pathspec instead of a blocklist.
+# A vendored .vale.ini is not found by vale's upward search from the root.
+[ -f "$PIPE_DIR/.vale.ini" ] && vale_args+=(--config "$PIPE_DIR/.vale.ini")
+
+# The pipeline's own files, as a path prefix relative to the root ("" when the
+# pipeline IS the root). Everything else under the root is fair game, so a
+# manuscript in docs/ is linted instead of silently skipped.
+prefix=""
+case "$PIPE_DIR" in
+    "$root") prefix="" ;;
+    "$root"/*) prefix="${PIPE_DIR#"$root"/}/" ;;
+esac
+prefix_re=$(printf '%s' "$prefix" | sed 's/[.[\*^$]/\\&/g')
+own_files="^(${prefix_re}tests/|${prefix_re}\.claude/|${prefix_re}\.github/\
+|${prefix_re}docs/|${prefix_re}styles/|${prefix_re}scripts/\
+|${prefix_re}README|${prefix_re}THIRD_PARTY)"
+
+# Default: every tracked .tex/.md under the root. PAPER_PATHSPEC narrows it.
+read -r -a pathspec <<<"${PAPER_PATHSPEC:-*.tex *.md}"
+
 all_sources() {
-    git ls-files -- "$PAPER_PATHSPEC" \
-        | grep -E '\.(tex|md)$' \
-        | grep -vE '(^|/)(tests/|README|THIRD_PARTY)' || true
+    git -C "$root" -c core.quotePath=false ls-files -- "${pathspec[@]}" \
+        | grep -E '\.(tex|md|markdown|qmd|rmd)$' \
+        | grep -vE "$own_files" || true
+}
+
+# Pass the file list as an argv array, never as an unquoted $files: a tracked
+# path containing a space ("docs/literature/Cost-Aware Routing.md") would be
+# word-split, vale would abort with "E100 [doLint] Runtime error / argument
+# ... does not exist", and in --all mode the unconditional exit 0 turned that
+# abort into a silent success. A vale runtime error is always reported, even
+# in advisory mode, because it means NOTHING was linted.
+run_vale() {  # newline-separated file list
+    local list=$1 status err
+    local -a argv
+    mapfile -t argv <<<"$list"
+    err=$(mktemp)
+    (cd "$root" && vale "${vale_args[@]}" "${argv[@]}") 2> >(tee "$err" >&2)
+    status=$?
+    if grep -qE 'Runtime error|does not exist' "$err"; then
+        echo "error: vale aborted without linting (see above)" >&2
+        rm -f "$err"
+        return 2
+    fi
+    rm -f "$err"
+    return $status
 }
 
 if [ "$mode" = all ]; then
     files=$(all_sources)
     if [ -z "$files" ]; then
-        echo "no paper sources to lint (template repo)"
+        # Never silent: a zero-file lint that looks like success is how a
+        # manuscript ends up unlinted for weeks.
+        echo "no paper sources matched under $root"
+        echo "  pathspec:  ${pathspec[*]}${PAPER_PATHSPEC:+  (from PAPER_PATHSPEC)}"
+        echo "  excluding: the pipeline's own files (${prefix:-repo root})"
+        if [ -n "${PAPER_PATHSPEC:-}" ]; then
+            echo "PAPER_PATHSPEC matched nothing -- check it" >&2
+            exit 2
+        fi
+        echo "  set PAPER_PATHSPEC to point at the manuscript, e.g."
+        echo "  PAPER_PATHSPEC='docs/paper/*.md' $0 --all"
         exit 0
     fi
-    # shellcheck disable=SC2086
-    vale "${vale_args[@]}" $files
-    echo "(advisory: the full-repo lint never blocks; the blocking set is $list)"
+    run_vale "$files"
+    echo "(advisory: the full-repo lint never blocks)"
     exit 0
 fi
 
+# Blocking mode: the list lives with the manuscript by default, with the
+# pipeline directory as a fallback for vendored installs.
+if [ -z "$list" ]; then
+    if [ -f "$root/deslopped.txt" ]; then
+        list="$root/deslopped.txt"
+    else
+        list="$PIPE_DIR/deslopped.txt"
+    fi
+fi
 if [ ! -f "$list" ]; then
     echo "$list not found: nothing is ratcheted yet, skipping the blocking lint"
     exit 0
@@ -95,9 +158,10 @@ files=""
 bad=0
 while IFS= read -r spec; do
     [ -n "$spec" ] || continue
-    matched=$(git ls-files -- "$spec" | grep -E '\.(tex|md)$' || true)
+    matched=$(git -C "$root" -c core.quotePath=false ls-files -- "$spec" \
+        | grep -E '\.(tex|md|markdown|qmd|rmd)$' || true)
     if [ -z "$matched" ]; then
-        echo "error: $list entry matches no tracked .tex/.md file: $spec" >&2
+        echo "error: $list entry matches no tracked source under $root: $spec" >&2
         bad=1
         continue
     fi
@@ -108,5 +172,4 @@ done <<<"$specs"
 files=$(printf '%s' "$files" | sed '/^$/d' | sort -u)
 count=$(printf '%s\n' "$files" | wc -l | tr -d ' ')
 echo "ratchet: $count file(s) declared deslopped in $list; error-level alerts block"
-# shellcheck disable=SC2086
-vale "${vale_args[@]}" $files
+run_vale "$files"

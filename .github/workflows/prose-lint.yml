@@ -53,8 +53,13 @@ jobs:
       - name: Blocking lint (files listed in deslopped.txt)
         run: bash "$DESLOP/scripts/ratchet_lint.sh"
 
+      # PAPER_PATHSPEC is scoped to this step, not the job: the self-test
+      # above builds a throwaway repo with a different layout and fails loudly
+      # if it inherits a pathspec that matches nothing there.
       - name: Advisory lint (all paper drafts, summary only)
         if: always()
+        env:
+          PAPER_PATHSPEC: docs/checkpoints/paper_drafts
         run: |
           bash "$DESLOP/scripts/ratchet_lint.sh" --all --output=line > /tmp/all.txt 2>&1 || true
           total=$(grep -cE ':[0-9]+:[0-9]+:' /tmp/all.txt || true)

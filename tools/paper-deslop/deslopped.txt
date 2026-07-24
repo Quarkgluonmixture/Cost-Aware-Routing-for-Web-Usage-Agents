@@ -22,9 +22,12 @@
 # P79 notes (vendored install, see VENDORED.md):
 #   - paths are repo-relative (docs/checkpoints/paper_drafts/...), resolved
 #     from the repo root, not from tools/paper-deslop/;
-#   - `make deslop-ratchet` runs exactly what CI runs;
-#   - baseline 2026-07-24, `make deslop-ratchet ALL=1`: 553 error-level
-#     alerts across the 19 tracked draft files, 384 of them em dashes. That
-#     backlog is why nothing is listed yet. (An earlier 551 figure counted
-#     only 12 files -- it globbed `paper_drafts/*.md` and missed the seven
-#     Markdown files under aaai27/; use git ls-files, as ratchet_lint does.)
+#   - `make deslop-ratchet` runs exactly what CI runs (both export
+#     PAPER_PATHSPEC=docs/checkpoints/paper_drafts; without it --all sweeps
+#     all 394 tracked Markdown files in this repo);
+#   - backlog 2026-07-25 after upstream retiered VerbTricolon /
+#     ContrastiveFormulas / CataphoricForecasting / EmphaticCopula to warning:
+#     456 error-level alerts over 19 draft files, 384 of them em dashes
+#     (was 553 before the retiering).
+#   - section7_discussion.md is down to 1 alert (an em dash inside its
+#     draft-status note); deleting that note makes it ratchet-ready.

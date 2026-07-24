@@ -1,10 +1,13 @@
 # Vendored: paper-deslop
 
 Upstream: https://github.com/Quarkgluonmixture/paper-deslop
-Vendored at: `af4bb36d0ca42454b10e0d884e4f6354d80f122d` (2026-07-24), MIT.
-Previously at `3adb2f5` (2026-07-24); that sync's field findings — substring
-term matching and the all-or-nothing CI lint — are what upstream `af4bb36`
-fixed, so the local workarounds for both are gone from this file.
+Vendored at: `58253e9a8f2c61da3be41ab46696c6e21e06a462` (2026-07-25), MIT.
+Lineage: `3adb2f5` → `af4bb36` (word-bounded terms, ratchet lint) → `58253e9`
+(Markdown `%` truncation, structural pointers, error tier, vendored installs).
+Both syncs retired local workarounds: the `%`-as-comment fix and the
+`--root` / `PAPER_PATHSPEC` generalization were reported from here and are now
+upstream, so those patches are gone. What remains is layout glue plus two
+filename-robustness fixes found on this repo's own file names.
 
 ## Layout in this repo
 
@@ -50,10 +53,13 @@ not P79 preferences); the rest are layout glue.
 
 | Patch | Kind | What |
 |---|---|---|
-| `invariant-check-md-percent.patch` | bug fix | `%` is a LaTeX comment but a percent sign in Markdown. Upstream strips `%`-to-end-of-line unconditionally, so on `.md` everything after the first percent sign escapes the number/citation/term checks. Adds a `tex: bool` parameter threaded from the existing `pandoc` suffix test. |
-| `ratchet-lint-vendored-root.patch` | generalization | `ratchet_lint.sh` assumed the pipeline sits at the repo root: it `cd`s to its own parent and hardcodes an exclude list ending in `docs/`. Adds `--root DIR` (default: enclosing git repo root) and `PAPER_PATHSPEC` (default: `docs/checkpoints/paper_drafts` here), and passes `--config` to Vale. |
-| `skill-md-p79-paths.patch` | layout | SKILL.md: layout table + every `scripts/…`, `terms.txt`, `deslopped.txt` path repointed, `--config=` added to the `vale` step. |
-| `tests-run-sh-p79.patch` | layout + test | `--root .` for the ratchet fixtures (they are pathspecs inside the pipeline dir, not the repo), plus the `markdown percent signs do not blind the gate` regression case. |
+| `ratchet-lint-filename-safety.patch` | bug fix | Two ways a file name breaks the lint. (a) The file list was passed as an unquoted `$files`, so a tracked path with a space (`docs/literature/Cost-Aware Routing.md`) was word-split and vale aborted with `E100 [doLint] Runtime error` — which `--all`'s unconditional `exit 0` turned into a silent success. Now an argv array, and a vale runtime error is always reported. (b) `git ls-files` without `core.quotePath=false` returns non-ASCII paths octal-escaped and quoted, naming no existing file; this repo has 6 such tracked Markdown files. |
+| `tests-run-sh-vendored-root.patch` | test fix | `check_ratchet` passes pathspecs that live inside the pipeline dir but never passes `--root`, so both cases resolve against the manuscript repo and fail in **any** vendored install. Adds `--root .`. Upstream's own repo cannot see this: there the pipeline *is* the root. |
+| `skill-md-p79-paths.patch` | layout | SKILL.md: layout table + every `scripts/…`, `terms.txt`, `deslopped.txt` path repointed, `--config=` added to the `vale` step, `PAPER_PATHSPEC` noted. |
+
+`PAPER_PATHSPEC=docs/checkpoints/paper_drafts` is exported by both the
+Makefile and CI. Upstream's default is every tracked `.tex`/`.md` under the
+root, which here is 394 files of lab notes rather than the manuscript.
 
 `terms.txt` is **fully local** (P79 vocabulary) and deliberately not a patch —
 take upstream's header wholesale when its matching rules change, keep the term

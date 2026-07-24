@@ -12,17 +12,29 @@ Checks:
   2. citations    -- \\cite/\\citep/\\citet/\\parencite/... keys
                      (plus pandoc @key citations in .md files)
   3. crossrefs    -- \\ref/\\eqref/\\autoref/\\cref keys and \\label keys
-  4. terms        -- occurrence counts of whitelisted domain terms
+  4. structrefs   -- literal structural pointers ("§8", "Section 7.2",
+                     "Table 3"), normalized to kind:number and compared as a
+                     multiset. They are pointers, not data: a rewrite may
+                     move one into a completely new sentence, so they are
+                     deliberately kept out of the number and anchor checks
+                     (see structref_tokens)
+  5. terms        -- occurrence counts of whitelisted domain terms
                      (terms.txt), matched on word boundaries -- see
                      term_pattern for the boundary/plural/case rules
-  5. protected blocks -- exact (whitespace-normalized) comparison of math
+  6. protected blocks -- exact (whitespace-normalized) comparison of math
                      ($...$, \\(...\\), \\[...\\], $$...$$, display envs),
                      macro-definition lines, verbatim/lstlisting/\\verb,
                      comments, and the preamble (before \\begin{document})
-  6. anchors      -- each number/citation must stay in a sentence sharing at
+  7. anchors      -- each number/citation must stay in a sentence sharing at
                      least one content word with its original sentence
                      (catches "92% and 4.23% swapped between claims" and
                      "citation moved to a different claim")
+
+Comment and verbatim syntax is per format, decided by the NEW file's
+suffix. LaTeX files use "%" comments and verbatim/lstlisting/\\verb;
+Markdown files (.md/.markdown/.qmd/.rmd) use "<!-- -->" comments, fenced
+code blocks, and inline `code` -- and crucially do NOT treat "%" as a
+comment, since "42.0% [@key]" is ordinary Markdown prose.
 
 Usage:
     invariant_check.py OLD NEW [--terms terms.txt] [--report-only]
@@ -81,6 +93,40 @@ VERBATIM_RE = re.compile(
 MACRO_LINE_RE = re.compile(r"^\s*\\(?:(?:re)?newcommand|providecommand|def)\b")
 COMMENT_RE = re.compile(r"(?<!\\)%(.*)")
 
+# Markdown counterparts. "%" is NOT a comment in Markdown -- treating it as
+# one silently truncated every line containing a percentage, hiding the
+# numbers and citations after it from every check.
+MD_SUFFIXES = frozenset({".md", ".markdown", ".qmd", ".rmd"})
+HTML_COMMENT_RE = re.compile(r"(?s)<!--(.*?)-->")
+FENCE_RE = re.compile(r"(?sm)^[ \t]*(`{3,}|~{3,})[^\n]*\n.*?^[ \t]*\1[ \t]*$")
+INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+
+# Literal structural pointers: "§8", "§~8", "Section 7.2", "Sections 3--4",
+# "Table 3", "Fig. 2b". These are cross-references, not data. In LaTeX they
+# are usually \ref{...} (already covered); Markdown papers write them out.
+STRUCTREF_KINDS = {
+    "§": "sec", "§§": "sec", "section": "sec", "sections": "sec",
+    "sec": "sec", "secs": "sec",
+    "chapter": "chap", "chapters": "chap", "chap": "chap", "chaps": "chap",
+    "ch": "chap",
+    "figure": "fig", "figures": "fig", "fig": "fig", "figs": "fig",
+    "table": "tab", "tables": "tab", "tab": "tab", "tabs": "tab",
+    "equation": "eq", "equations": "eq", "eq": "eq", "eqs": "eq",
+    "appendix": "app", "appendices": "app", "app": "app",
+    "algorithm": "alg", "algorithms": "alg", "alg": "alg",
+    "listing": "lst", "listings": "lst",
+    "theorem": "thm", "lemma": "lem", "proposition": "prop",
+    "corollary": "cor", "definition": "defn", "remark": "rem",
+}
+STRUCTREF_RE = re.compile(
+    r"(?:(§§?)|\b(Sections?|Secs?|Chapters?|Chaps?|Ch|Figures?|Figs?|Tables?"
+    r"|Tabs?|Equations?|Eqs?|Appendi(?:x|ces)|App|Algorithms?|Alg|Listings?"
+    r"|Theorems?|Lemmas?|Propositions?|Corollar(?:y|ies)|Definitions?"
+    r"|Remarks?)\.?)"
+    r"[\s~]*(\d+(?:\.\d+)*[a-z]?(?:\s*--\s*\d+(?:\.\d+)*[a-z]?)?)",
+    re.I,
+)
+
 STOPWORDS = frozenset("""
     that this these those with from than which have been were into over under
     both each could might would should shall also only very much many when
@@ -89,17 +135,13 @@ STOPWORDS = frozenset("""
 """.split())
 
 
-def strip_comments(text: str, tex: bool = True) -> str:
-    """Drop LaTeX line comments; no-op on Markdown.
-
-    Markdown has no `%` comment syntax, so applying the LaTeX rule there
-    silently deletes everything after the first percent sign on a line
-    ("accuracy fell from 81% to 19% \\citep{k}" loses the second number and
-    the citation) and those tokens then escape every downstream check.
-    """
-    if not tex:
-        return text
-    return re.sub(r"(?<!\\)%.*", "", text)
+def strip_comments(text: str, latex: bool = True) -> str:
+    """Blank out comments. In Markdown "%" is a percent sign, not a comment;
+    stripping to end-of-line there hid every number and citation that
+    followed a percentage on the same line."""
+    if latex:
+        return re.sub(r"(?<!\\)%.*", "", text)
+    return HTML_COMMENT_RE.sub(" ", text)
 
 
 def normalize_ws(s: str) -> str:
@@ -107,13 +149,14 @@ def normalize_ws(s: str) -> str:
 
 
 # ---------------------------------------------------------------- protected
-def extract_protected(raw: str, tex: bool = True) -> dict[str, Counter]:
+def extract_protected(raw: str, latex: bool = True) -> dict[str, Counter]:
     """Exact-match inventories of blocks a rewrite must never touch."""
     blocks: dict[str, Counter] = {}
+    comment_re = COMMENT_RE if latex else HTML_COMMENT_RE
     blocks["comment"] = Counter(
-        normalize_ws(m.group(1)) for m in COMMENT_RE.finditer(raw)
-    ) if tex else Counter()
-    text = strip_comments(raw, tex)
+        normalize_ws(m.group(1)) for m in comment_re.finditer(raw)
+    )
+    text = strip_comments(raw, latex)
 
     if "\\begin{document}" in text:
         preamble = text.split("\\begin{document}", 1)[0]
@@ -121,10 +164,12 @@ def extract_protected(raw: str, tex: bool = True) -> dict[str, Counter]:
     else:
         blocks["preamble"] = Counter()
 
-    blocks["verbatim"] = Counter(
-        normalize_ws(m.group(1)) for m in VERBATIM_RE.finditer(text)
-    )
-    text = VERBATIM_RE.sub(" ", text)
+    verbatim: Counter = Counter()
+    for regex in verbatim_regexes(latex):
+        for m in regex.finditer(text):
+            verbatim[normalize_ws(m.group(0))] += 1
+        text = regex.sub(" ", text)
+    blocks["verbatim"] = verbatim
 
     math: Counter = Counter()
     for m in DISPLAY_MATH_RE.finditer(text):
@@ -136,18 +181,28 @@ def extract_protected(raw: str, tex: bool = True) -> dict[str, Counter]:
 
     blocks["macro"] = Counter(
         normalize_ws(line)
-        for line in strip_comments(raw, tex).splitlines()
+        for line in strip_comments(raw, latex).splitlines()
         if MACRO_LINE_RE.match(line)
     )
     return blocks
 
 
-def prose_only(raw: str, tex: bool = True) -> str:
+def verbatim_regexes(latex: bool) -> tuple[re.Pattern, ...]:
+    """Code that must survive verbatim: LaTeX verbatim/lstlisting/\\verb, and
+    in Markdown fenced blocks and inline `code`. Fences come first so that a
+    "$" or "%" inside a code block is never read as markup."""
+    if latex:
+        return (VERBATIM_RE,)
+    return (FENCE_RE, VERBATIM_RE, INLINE_CODE_RE)
+
+
+def prose_only(raw: str, latex: bool = True) -> str:
     """Comment-free text with protected blocks blanked out."""
-    text = strip_comments(raw, tex)
+    text = strip_comments(raw, latex)
     if "\\begin{document}" in text:
         text = text.split("\\begin{document}", 1)[1]
-    text = VERBATIM_RE.sub(" ", text)
+    for regex in verbatim_regexes(latex):
+        text = regex.sub(" ", text)
     text = DISPLAY_MATH_RE.sub(" MATH ", text)
     text = INLINE_MATH_RE.sub(" MATH ", text)
     text = "\n".join(
@@ -175,14 +230,44 @@ def number_tokens(text: str):
         yield tok, (m.start(), end)
 
 
+def structref_tokens(text: str) -> Counter:
+    """Structural pointers as a normalized multiset: "Section 7" , "§7", and
+    "Sec. 7" all become "sec:7", while "Figure 7" stays distinct. A range
+    ("§§7--8") counts as its endpoints, so splitting it into "§7 and §8" is
+    not drift.
+
+    These are counted but NOT anchored. A pointer carries no claim: moving
+    "§8" into a freshly written sentence is exactly what Pass 1 of a deslop
+    rewrite does (split, merge, reposition clauses), and treating "8" as a
+    data point made the gate fire on its own recommended edit. Retargeting
+    (§8 -> §9) still fails here, on the count.
+    """
+    counts: Counter = Counter()
+    for m in STRUCTREF_RE.finditer(text):
+        word = (m.group(1) or m.group(2)).rstrip(".").lower()
+        kind = STRUCTREF_KINDS.get(word)
+        if kind is None:
+            continue
+        for part in re.split(r"\s*--\s*", m.group(3)):
+            counts[f"{kind}:{part.strip()}"] += 1
+    return counts
+
+
+def strip_refs(text: str) -> str:
+    """Remove everything that is a pointer rather than a claim: citation
+    keys, cross-references, labels, and literal structural pointers."""
+    text = CITE_RE.sub(" ", text)
+    text = REF_RE.sub(" ", text)
+    text = LABEL_RE.sub(" ", text)
+    return STRUCTREF_RE.sub(" ", text)
+
+
 def sentences(text: str) -> list[str]:
     return [s for s in re.split(r"(?<=[.!?;])\s+", text) if s.strip()]
 
 
 def content_words(sentence: str) -> frozenset[str]:
-    sentence = CITE_RE.sub(" ", sentence)
-    sentence = REF_RE.sub(" ", sentence)
-    sentence = LABEL_RE.sub(" ", sentence)
+    sentence = strip_refs(sentence)
     sentence = re.sub(r"\\[a-zA-Z@]+", " ", sentence)
     words = re.findall(r"[a-zA-Z]{4,}", sentence.lower())
     return frozenset(w for w in words if w not in STOPWORDS)
@@ -198,10 +283,7 @@ def anchored_tokens(prose: str):
             for key in m.group(1).split(","):
                 if key.strip():
                     cite_anchors.setdefault(key.strip(), []).append(anchor)
-        cleaned = CITE_RE.sub(" ", sent)
-        cleaned = REF_RE.sub(" ", cleaned)
-        cleaned = LABEL_RE.sub(" ", cleaned)
-        for tok, _ in number_tokens(cleaned):
+        for tok, _ in number_tokens(strip_refs(sent)):
             num_anchors.setdefault(tok, []).append(anchor)
     return num_anchors, cite_anchors
 
@@ -283,8 +365,8 @@ def term_pattern(term: str) -> re.Pattern:
     return re.compile(lead + core + trail)
 
 
-def term_counts(text: str, terms: list[str], tex: bool = True) -> Counter:
-    text = strip_comments(text, tex)
+def term_counts(text: str, terms: list[str], latex: bool = True) -> Counter:
+    text = strip_comments(text, latex)
     counts: Counter = Counter()
     for term in terms:
         n = len(term_pattern(term).findall(text))
@@ -315,7 +397,7 @@ def report_section(name: str, count_note: str, lines: list[str], n: int) -> None
 
 
 def term_audit(terms, terms_path, old_raw: str, new_raw: str, args,
-               tex: bool = True) -> int:
+               latex: bool = True) -> int:
     """Per-term hit counts, so a whitelist can be curated against a real
     draft before the gate is trusted. Entries that never occur are usually
     typos or aspirational; a term with a surprising count is worth a look
@@ -323,7 +405,8 @@ def term_audit(terms, terms_path, old_raw: str, new_raw: str, args,
     if not terms:
         print(f"term audit: no terms file found ({terms_path})")
         return 0
-    old_c, new_c = term_counts(old_raw, terms, tex), term_counts(new_raw, terms, tex)
+    old_c = term_counts(old_raw, terms, latex)
+    new_c = term_counts(new_raw, terms, latex)
     print(f"term audit: {terms_path} ({len(terms)} terms)")
     print(f"  {'OLD':>6} {'NEW':>6}  term      "
           f"[{args.old.name} -> {args.new.name}]")
@@ -368,23 +451,24 @@ def main() -> int:
 
     old_raw = args.old.read_text(errors="replace")
     new_raw = args.new.read_text(errors="replace")
-    pandoc = args.new.suffix.lower() in {".md", ".markdown", ".qmd", ".rmd"}
-    tex = not pandoc  # `%` is a comment in LaTeX and a percent sign in Markdown
+    # Comment and verbatim syntax follow the format; "%" is a comment in
+    # LaTeX and a percent sign in Markdown.
+    pandoc = args.new.suffix.lower() in MD_SUFFIXES
+    latex = not pandoc
 
     if args.term_audit:
-        return term_audit(terms, terms_path, old_raw, new_raw, args, tex)
+        return term_audit(terms, terms_path, old_raw, new_raw, args, latex)
 
-    old_prose = prose_only(old_raw, tex)
-    new_prose = prose_only(new_raw, tex)
+    old_prose = prose_only(old_raw, latex)
+    new_prose = prose_only(new_raw, latex)
 
-    print(f"lexical-invariant-gate: {args.old} -> {args.new}")
+    print(f"lexical-invariant-gate: {args.old} -> {args.new}"
+          f"  [{'latex' if latex else 'markdown'}]")
     violations = 0
 
     # 1. numbers (multiset over prose, sign/unit/percent folded in)
-    old_nums = Counter(tok for tok, _ in number_tokens(
-        LABEL_RE.sub(" ", REF_RE.sub(" ", CITE_RE.sub(" ", old_prose)))))
-    new_nums = Counter(tok for tok, _ in number_tokens(
-        LABEL_RE.sub(" ", REF_RE.sub(" ", CITE_RE.sub(" ", new_prose)))))
+    old_nums = Counter(tok for tok, _ in number_tokens(strip_refs(old_prose)))
+    new_nums = Counter(tok for tok, _ in number_tokens(strip_refs(new_prose)))
     lines: list[str] = []
     n = diff_counters("number", old_nums, new_nums, lines)
     report_section("numbers", f"{sum(old_nums.values())} in old", lines, n)
@@ -417,26 +501,34 @@ def main() -> int:
         report_section(name, f"{sum(old_c.values())} in old", lines, n)
         violations += n
 
-    # 4. whitelist terms
+    # 4. structural pointers ("§8", "Section 7.2", "Table 3"): counted, never
+    #    anchored -- a pointer has no claim to be rebound to.
+    old_sr, new_sr = structref_tokens(old_prose), structref_tokens(new_prose)
+    lines = []
+    n = diff_counters("structref", old_sr, new_sr, lines)
+    report_section("structrefs", f"{sum(old_sr.values())} in old", lines, n)
+    violations += n
+
+    # 5. whitelist terms
     if terms:
         lines = []
-        n = diff_counters("term count", term_counts(old_raw, terms, tex),
-                          term_counts(new_raw, terms, tex), lines)
+        n = diff_counters("term count", term_counts(old_raw, terms, latex),
+                          term_counts(new_raw, terms, latex), lines)
         report_section("terms", f"whitelist: {len(terms)} terms", lines, n)
         violations += n
     else:
         print("  terms:      skipped (no terms file found)")
 
-    # 5. protected blocks (exact, whitespace-normalized)
-    old_blocks = extract_protected(old_raw, tex)
-    new_blocks = extract_protected(new_raw, tex)
+    # 6. protected blocks (exact, whitespace-normalized)
+    old_blocks = extract_protected(old_raw, latex)
+    new_blocks = extract_protected(new_raw, latex)
     for kind in ("math", "macro", "preamble", "comment", "verbatim"):
         lines = []
         n = diff_counters(kind, old_blocks[kind], new_blocks[kind], lines)
         report_section(kind, f"{sum(old_blocks[kind].values())} in old", lines, n)
         violations += n
 
-    # 6. anchors: numbers/citations must keep some original sentence context
+    # 7. anchors: numbers/citations must keep some original sentence context
     old_num_a, old_cite_a = anchored_tokens(old_prose)
     new_num_a, new_cite_a = anchored_tokens(new_prose)
     lines = []

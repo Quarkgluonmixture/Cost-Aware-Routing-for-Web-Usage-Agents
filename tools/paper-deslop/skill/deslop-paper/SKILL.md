@@ -15,24 +15,19 @@ description: |
 ## Repo layout (P79 vendored install)
 
 The deterministic layers live under `tools/paper-deslop/`, not at the repo
-root as upstream's README describes. All commands below are written for that
-layout and are run **from the repo root**:
+root as upstream's README describes. Commands below run **from the repo
+root**; the skill's own files are tracked at
+`tools/paper-deslop/skill/deslop-paper/` and symlinked into `.claude/skills/`
+(the repo gitignores `.claude/`), so edit the tracked copy.
 
-| Upstream path | This repo |
-|---|---|
-| `terms.txt` | `tools/paper-deslop/terms.txt` |
-| `deslopped.txt` | `tools/paper-deslop/deslopped.txt` |
-| `scripts/invariant_check.py` | `tools/paper-deslop/scripts/invariant_check.py` |
-| `scripts/ratchet_lint.sh` | `tools/paper-deslop/scripts/ratchet_lint.sh` |
-| `.vale.ini` | `tools/paper-deslop/.vale.ini` (Vale needs `--config=`) |
-| `tests/run.sh` | `tools/paper-deslop/tests/run.sh` (self-contained, `cd`s itself) |
+Paper sources: `docs/checkpoints/paper_drafts/` (Markdown sections +
+`aaai27/latex/*.tex`). `PAPER_PATHSPEC` is already set to that directory in
+the Makefile and CI — without it `ratchet_lint.sh --all` sweeps all 394
+tracked Markdown files in this repo, not the manuscript.
 
-This skill's own files are tracked at `tools/paper-deslop/skill/deslop-paper/`
-and symlinked into `.claude/skills/` (the repo gitignores `.claude/`). Edit the
-tracked copy. Paper sources live in `docs/checkpoints/paper_drafts/` (Markdown
-sections + `aaai27/latex/*.tex`). `make` shortcuts: `make deslop-lint
-[F=<file>]`, `make deslop-gate OLD= NEW=`, `make deslop-ratchet`,
-`make deslop-selftest`. Upstream sync notes: `tools/paper-deslop/VENDORED.md`.
+`make` shortcuts: `deslop-lint [F=]` · `deslop-gate OLD= NEW=` ·
+`deslop-ratchet [ALL=1]` · `deslop-audit [F=]` · `deslop-selftest`.
+Upstream sync notes: `tools/paper-deslop/VENDORED.md`.
 
 The goal is quality editing, not detector evasion: delete language that
 carries no information, restore concrete subjects and causal boundaries,
@@ -47,7 +42,9 @@ NEVER change, in any rewrite:
 
 1. **Numbers** — every statistic, measurement, percentage, count, and unit.
 2. **Citations and cross-references** — `\cite`/`\citep`/`\citet` keys,
-   `\ref`/`\eqref`/`\autoref` targets, `\label` definitions, pandoc `@keys`.
+   `\ref`/`\eqref`/`\autoref` targets, `\label` definitions, pandoc `@keys`,
+   and literal pointers (`§8`, `Section 7.2`, `Table 3`). Moving a pointer
+   into a rewritten sentence is fine; retargeting it (`§8` → `§9`) is not.
 3. **Math** — anything inside `$...$` or math environments, verbatim.
 4. **Whitelisted domain terms** — every term in `tools/paper-deslop/terms.txt`. No
    synonym substitution, no expansion of dash compounds, no "simplification".
@@ -77,6 +74,14 @@ The gate does NOT check hedge strength, claim direction, or argument logic —
 invariant 5 is enforced by YOU and the user's diff review, not by the script.
 Flag any hedge you touched in the diff notes explicitly.
 
+**When a Vale alert and an invariant disagree, the invariant wins.** Some
+rules ask for edits that invariant 5 forbids: `ContrastiveFormulas` fires on
+"a directional pattern, not a correlational claim" and asks you to drop the
+`not a Z` half, which is the part that bounds the claim. Leave it, and say in
+the diff notes that you left it and why. Those rules are warnings, not
+errors, precisely so they cannot force the edit. Never satisfy a linter by
+narrowing or widening a claim.
+
 ## Workflow
 
 1. **Scope one section at a time** (Abstract, Introduction, one subsection of
@@ -87,9 +92,10 @@ Flag any hedge you touched in the diff notes explicitly.
    list, and ask the user to confirm before rewriting anything. Short acronyms
    (`DOM`, `SoM`) belong in the list — matching is word-bounded, so they will
    not fire inside `random` or `some`. Sanity-check a proposed list against
-   the draft with `python3 tools/paper-deslop/scripts/invariant_check.py FILE
-   FILE --terms tools/paper-deslop/terms.txt --term-audit`: a term with zero
-   occurrences is a typo.
+   the draft with
+   `python3 tools/paper-deslop/scripts/invariant_check.py FILE FILE --terms
+   tools/paper-deslop/terms.txt --term-audit`: a term with zero occurrences
+   is a typo.
 3. **Take the baseline copy** of the target file (see above).
 4. **Edit in two passes** (rhythm first, then patterns — order matters, see
    the catalog below).
@@ -101,10 +107,10 @@ Flag any hedge you touched in the diff notes explicitly.
    `vale --config=tools/paper-deslop/.vale.ini <file>` (error-level alerts
    must be zero on edited prose). Report both results honestly. The
    `--config` flag is required: Vale searches upward from the cwd for
-   `.vale.ini`, and in this repo the config is vendored, not at the root.
+   `.vale.ini`, and here the config is vendored, not at the root.
    Once a file is error-clean, propose adding its path to
-   `tools/paper-deslop/deslopped.txt` so CI starts blocking on regressions in
-   it (verify with `make deslop-ratchet`). That list is the ratchet; it is
+   `tools/paper-deslop/deslopped.txt` (verify with `make deslop-ratchet`) so
+   CI starts blocking on regressions in it. That list is the ratchet; it is
    the only thing that makes the lint blocking, and it only grows.
 7. If the session is interactive and the user has not pre-approved batch
    application, wait for their reaction to the diff before moving to the next
@@ -239,7 +245,7 @@ edits alone make prose worse if the cadence stays uniform.
 5. Whitelist scan: every `tools/paper-deslop/terms.txt` term still present,
    same count, same spelling?
 6. Hedge audit: did any claim get stronger or weaker than its evidence?
-7. `invariant_check.py` run and passing? `vale --config=...` error-clean?
+7. `invariant_check.py` run and passing? `vale` error-clean?
 
 ## Attribution
 

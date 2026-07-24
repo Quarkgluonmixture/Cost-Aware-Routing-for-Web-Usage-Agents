@@ -63,6 +63,43 @@ for f in tests/fixtures/bad_*.tex tests/fixtures/rewritten_bad.tex; do
     fi
 done
 
+echo "== markdown: gate passes a faithful rewrite (incl. a fully rewritten §8 sentence)"
+if python3 scripts/invariant_check.py tests/fixtures/md_slop.md \
+        tests/fixtures/md_good.md --terms terms.txt; then
+    echo "ok"
+else
+    echo "FAIL: faithful Markdown rewrite should pass; structural pointers (§8,"
+    echo "      Table 3) are references, not data, and repositioning a clause"
+    echo "      around one is Pass 1 of the rewrite the skill prescribes"
+    fail=1
+fi
+
+echo "== markdown: gate catches the faults '%'-as-comment used to hide"
+for f in tests/fixtures/md_bad_*.md; do
+    name=$(basename "$f" .md)
+    case "$name" in
+        # Both of these sit after a '%' on their line. Under LaTeX comment
+        # rules the rest of the line vanished and the gate reported OK.
+        md_bad_percent)   expect="removed number: '0.9'" ;;
+        md_bad_cite)      expect="removed citation: 'liu2023'" ;;
+        md_bad_structref) expect="removed structref: 'sec:8'" ;;
+        *) echo "FAIL: no expectation registered for $name"; fail=1; continue ;;
+    esac
+    out=$(python3 scripts/invariant_check.py tests/fixtures/md_slop.md "$f" --terms terms.txt)
+    status=$?
+    if [ "$status" -eq 0 ]; then
+        echo "FAIL: $name should violate the gate"
+        echo "$out"
+        fail=1
+    elif ! grep -qF "$expect" <<<"$out"; then
+        echo "FAIL: $name: expected \"$expect\" in gate output, got:"
+        echo "$out"
+        fail=1
+    else
+        echo "ok: $name ($expect)"
+    fi
+done
+
 echo "== whitelist term matching is word-bounded"
 if python3 - <<'PY'
 import sys
@@ -104,8 +141,10 @@ printf 'tests/fixtures/rewritten_good.tex\n'      > /tmp/ratchet_clean.txt
 printf 'tests/fixtures/slop.tex\n'                > /tmp/ratchet_dirty.txt
 printf 'no/such/section.tex\n'                    > /tmp/ratchet_typo.txt
 check_ratchet() {  # name, list file, expected exit code
-    # --root .: the fixtures are pathspecs inside the pipeline dir, not the
-    # enclosing repo (P79 vendors this under tools/paper-deslop/).
+    # --root .: these fixtures are pathspecs inside the pipeline directory,
+    # not inside the enclosing manuscript repo. Without it the script resolves
+    # them from the repo root, which is correct behaviour but makes these two
+    # cases fail in any vendored install (P79 keeps the pipeline in tools/).
     out=$(bash scripts/ratchet_lint.sh --root . --list "$2" --output=line 2>&1)
     code=$?
     if [ "$code" -eq "$3" ]; then
@@ -122,30 +161,59 @@ check_ratchet "regression blocks"         /tmp/ratchet_dirty.txt 1
 check_ratchet "unmatched entry fails loudly (never a silent no-op)" \
     /tmp/ratchet_typo.txt 2
 
-echo "== markdown percent signs do not blind the gate"
-# Regression: `%` is a LaTeX comment but a percent sign in Markdown. When the
-# LaTeX rule was applied unconditionally, everything after "81%" on a line was
-# stripped before the number/citation/term checks ran, so drift hiding behind a
-# percent sign was invisible (it surfaced only as an unrelated "comment" alert).
-out=$(python3 scripts/invariant_check.py tests/fixtures/md_percent_base.md \
-        tests/fixtures/md_percent_drift.md --terms terms.txt)
-if [ $? -eq 0 ]; then
-    echo "FAIL: post-% number drift should violate the gate"
-    echo "$out"
-    fail=1
-elif ! grep -qF "removed number: '42.0'" <<<"$out"; then
-    echo "FAIL: expected the drift to be reported as a NUMBER violation, got:"
-    echo "$out"
-    fail=1
-elif ! grep -qE "numbers: +[0-9]+ violation\(s\) \(5 in old\)" <<<"$out"; then
-    # 5 = 4.2 (heading) + 81 + 19 + 42.0 + 3.1. Pre-fix only the first two were
-    # visible; everything after the first `%` was stripped as a LaTeX comment.
-    echo "FAIL: expected all 5 numbers visible to the checker, got:"
-    echo "$out"
-    fail=1
+echo "== vendored install: pipeline in a subdirectory, manuscript in docs/"
+# The regression: all_sources() used to hard-code an exclusion of docs/ and to
+# assume the pipeline sat at the repo root, so a repo that keeps its paper in
+# docs/ linted exactly zero files and reported success.
+vendor_parent=$(mktemp -d)
+vendor="$vendor_parent/vendor"
+mkdir -p "$vendor/tools/deslop/scripts" "$vendor/docs"
+git init -q "$vendor" 2>/dev/null
+cp .vale.ini "$vendor/tools/deslop/"
+cp -R styles "$vendor/tools/deslop/"
+cp scripts/ratchet_lint.sh "$vendor/tools/deslop/scripts/"
+cp tests/fixtures/md_slop.md "$vendor/docs/paper.md"   # has error-level alerts
+cp tests/fixtures/md_good.md "$vendor/docs/clean.md"   # error-clean
+git -C "$vendor" add -- docs tools
+vendor_lint="$vendor/tools/deslop/scripts/ratchet_lint.sh"
+
+out=$(bash "$vendor_lint" --all --output=line 2>&1)
+if grep -q 'docs/paper.md' <<<"$out"; then
+    echo "ok: advisory lint reaches a manuscript in docs/"
 else
-    echo "ok"
+    echo "FAIL: vendored --all found no manuscript (silent zero-file lint)"
+    echo "$out"
+    fail=1
 fi
+
+printf 'docs/clean.md\n' > "$vendor/deslopped.txt"
+git -C "$vendor" add -- deslopped.txt
+bash "$vendor_lint" >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "ok: root deslopped.txt is honoured from a vendored pipeline"
+else
+    echo "FAIL: clean ratcheted file should pass from a vendored install"
+    fail=1
+fi
+
+printf 'docs/paper.md\n' > "$vendor/deslopped.txt"
+git -C "$vendor" add -- deslopped.txt
+bash "$vendor_lint" >/dev/null 2>&1
+if [ $? -eq 1 ]; then
+    echo "ok: regression in a ratcheted docs/ file blocks"
+else
+    echo "FAIL: dirty ratcheted file should exit 1 from a vendored install"
+    fail=1
+fi
+
+PAPER_PATHSPEC='docs/nowhere/*.md' bash "$vendor_lint" --all >/dev/null 2>&1
+if [ $? -eq 2 ]; then
+    echo "ok: PAPER_PATHSPEC matching nothing fails loudly"
+else
+    echo "FAIL: a PAPER_PATHSPEC that matches nothing must not look like success"
+    fail=1
+fi
+rm -rf "$vendor_parent"
 
 echo "== vocabulary file is in sync with terms.txt"
 before=$(cat styles/config/vocabularies/Paper/accept.txt 2>/dev/null || true)

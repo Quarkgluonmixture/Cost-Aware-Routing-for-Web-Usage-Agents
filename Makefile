@@ -775,6 +775,10 @@ launch:
 # Vale's config is vendored, not at the repo root, so every invocation needs --config.
 VALE          ?= vale
 DESLOP_DIR    ?= tools/paper-deslop
+# ratchet_lint.sh defaults to every tracked .tex/.md under the repo root; in
+# this repo that is 394 Markdown files of lab notes, so the manuscript scope is
+# passed per-target. NOT exported: the self-test builds a throwaway repo with a
+# different layout, and an inherited PAPER_PATHSPEC makes it fail-loud there.
 DESLOP_CONFIG ?= $(DESLOP_DIR)/.vale.ini
 PAPER_DIR     ?= docs/checkpoints/paper_drafts
 
@@ -804,7 +808,8 @@ deslop-gate:
 #   make deslop-ratchet          # blocking set only
 #   make deslop-ratchet ALL=1    # advisory sweep over all drafts
 deslop-ratchet:
-	@bash $(DESLOP_DIR)/scripts/ratchet_lint.sh $(if $(ALL),--all,) --output=line
+	@PAPER_PATHSPEC='$(PAPER_DIR)' bash $(DESLOP_DIR)/scripts/ratchet_lint.sh \
+	  $(if $(ALL),--all,) --output=line
 
 # Per-term hit counts against a draft: a whitelisted term with zero
 # occurrences is a typo or wishful thinking. F defaults to the whole corpus.

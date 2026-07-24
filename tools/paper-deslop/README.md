@@ -29,7 +29,7 @@ While writing (interactive, track A)      On commit / CI (automatic, track B)
 | Layer | Tool | Role | Mode |
 |---|---|---|---|
 | Rewrite | `.claude/skills/deslop-paper/` | sentence rhythm, canned phrases, hedging calibration | interactive, diff-only |
-| Fidelity gate | `scripts/invariant_check.py` | lexical invariant gate: numbers (sign/unit-aware) / citations / cross-refs / terms / protected blocks (math, macros, comments, verbatim, preamble) / sentence-context anchors | blocking after any rewrite |
+| Fidelity gate | `scripts/invariant_check.py` | lexical invariant gate: numbers (sign/unit-aware) / citations / cross-refs / structural pointers (§8, Table 3) / terms / protected blocks (math, macros, comments, verbatim, preamble) / sentence-context anchors | blocking after any rewrite |
 | Prose lint | Vale + `styles/` | deterministic AI-tell rules, academically re-tiered | CI, ratcheted: `deslopped.txt` blocks, rest advisory |
 | Grammar | `scripts/grammar_check.py` | grammar/typos/punctuation via **local** LanguageTool | pre-submission pass |
 
@@ -95,6 +95,34 @@ Then:
    advisory job summary, and posts an informational invariant-drift report on
    every PR.
 
+### Vendored install (pipeline in a subdirectory)
+
+The pipeline does not have to sit at the repo root, and the manuscript does
+not have to sit outside `docs/`. With the pipeline vendored at, say,
+`tools/deslop/`, paper sources are everything tracked under the repo root
+except the pipeline's own files:
+
+```bash
+tools/deslop/scripts/ratchet_lint.sh --all          # root auto-detected via git
+tools/deslop/scripts/ratchet_lint.sh --root .       # or state it explicitly
+PAPER_PATHSPEC='docs/paper/*.md' tools/deslop/scripts/ratchet_lint.sh --all
+```
+
+`ratchet_lint.sh` finds `deslopped.txt` at the repo root first, then next to
+the pipeline. A `PAPER_PATHSPEC` that matches nothing exits 2 rather than
+reporting a clean run over zero files.
+
+Two gotchas for anything you run by hand in a vendored layout:
+
+- **Vale needs the config path.** It searches upward from the working
+  directory and will not find (or will mis-resolve `StylesPath` for) a
+  vendored `.vale.ini`: `vale --config tools/deslop/.vale.ini docs/paper.md`.
+  `ratchet_lint.sh` passes `--config` for you.
+- **The gate needs the terms path**:
+  `python3 tools/deslop/scripts/invariant_check.py OLD NEW --terms terms.txt`
+  (the default is `terms.txt` beside the pipeline, which may not be the
+  paper's own list).
+
 ## The ratchet: adopting this on a draft that is already written
 
 An AI-drafted manuscript arrives with hundreds of error-level alerts — one
@@ -158,6 +186,17 @@ re-tiers it for academic writing:
 - **Error**: canned phrases, em dashes, throat-clearing, vague attribution —
   things with no legitimate academic use.
 
+One rule decides the error tier: **it may not demand an edit the rewrite
+layer is forbidden to make.** `ContrastiveFormulas` failed that test — it
+matches the bare appositive "a directional pattern, not a correlational
+claim", and the `not a Z` half is what bounds the claim, which SKILL.md
+invariant 5 protects. A contradiction like that is invisible from inside
+either layer; it only shows up when you run a full rewrite on a real
+section, which is the argument for deslopping one section by hand before
+tuning tiers. `CataphoricForecasting` ("Two caveats bound the transfer") and
+`EmphaticCopula` (italicized *not* in a claim-scope sentence) are demoted for
+the same reason: normal scholarly moves, human's call.
+
 ## Known limitations
 
 - Vale sees hard-wrapped LaTeX line by line for some multi-word upstream
@@ -183,6 +222,18 @@ re-tiers it for academic writing:
   multi-line macro bodies are only partially covered.
 - `invariant_check.py` treats `4.23\%` vs `4.23 percent` as a violation
   (deliberately strict).
+- Comment and verbatim syntax is chosen from the NEW file's suffix: `%`
+  comments and `verbatim`/`\verb` for LaTeX, `<!-- -->` and fenced/inline
+  code for `.md`/`.markdown`/`.qmd`/`.rmd`. A LaTeX file that is really
+  Markdown (or the reverse) gets the wrong rules — in Markdown that once
+  meant everything after a percentage on a line was invisible to every
+  check.
+- Structural pointers (`§8`, `Section 7.2`, `Table 3`) are compared as a
+  normalized multiset (`sec:8`, `tab:3`) and deliberately excluded from the
+  number and anchor checks: they are references, not data, and a rewrite is
+  supposed to be free to move them into new sentences. Retargeting one
+  (`§8` → `§9`) still fails, on the count. `Section 7` and `§7` are the same
+  pointer; `Figure 7` is not.
 - Warning-tier vocabulary rules cannot tell "robust optimization" (term of
   art) from "robust and comprehensive solution" (slop). That judgment stays
   human.
