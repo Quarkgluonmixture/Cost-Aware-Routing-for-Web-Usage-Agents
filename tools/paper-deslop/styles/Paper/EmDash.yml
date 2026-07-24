@@ -1,0 +1,15 @@
+---
+# Flags em dashes in all common spellings: literal em/en dash characters
+# and the LaTeX '---' ligature (both "word---word" and " --- " spacing).
+# Deliberately does NOT flag '--' (the LaTeX en-dash for ranges, 10--20)
+# or decorative comment rules (%------).
+#
+# Implementation notes, learned the hard way:
+#   - Vale's regex engine (Go RE2) has no lookarounds.
+#   - Negated character classes around '---' silently fail to match here,
+#     so the guards are spelled as explicit \w / \s alternatives.
+extends: existence
+message: "Em dash (or an en dash used as one). House style: use a comma, period, or parentheses instead. (Ranges are fine and not flagged: 10--20 in LaTeX, 10–20 in Markdown.)"
+level: error
+raw:
+  - '(\w---\w|\s---\s|—|\s–\s)'

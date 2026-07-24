@@ -1,0 +1,93 @@
+--- /tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/9c564995-f040-44eb-872f-283f8a45a923/scratchpad/paper-deslop/.claude/skills/deslop-paper/SKILL.md	2026-07-24 22:25:00.582396749 +0100
++++ tools/paper-deslop/skill/deslop-paper/SKILL.md	2026-07-24 22:39:28.379316057 +0100
+@@ -7,11 +7,31 @@
+   before submitting a manuscript. Works on LaTeX and Markdown sources. Always
+   produces a reviewable diff with reasons, and mechanically verifies rewrite
+   invariants (numbers, citations, cross-refs, whitelisted terms) with
+-  scripts/invariant_check.py.
++  tools/paper-deslop/scripts/invariant_check.py.
+ ---
+ 
+ # Deslop-paper: de-AI an academic manuscript without changing its claims
+ 
++## Repo layout (P79 vendored install)
++
++The deterministic layers live under `tools/paper-deslop/`, not at the repo
++root as upstream's README describes. All commands below are written for that
++layout and are run **from the repo root**:
++
++| Upstream path | This repo |
++|---|---|
++| `terms.txt` | `tools/paper-deslop/terms.txt` |
++| `scripts/invariant_check.py` | `tools/paper-deslop/scripts/invariant_check.py` |
++| `.vale.ini` | `tools/paper-deslop/.vale.ini` (Vale needs `--config=`) |
++| `tests/run.sh` | `tools/paper-deslop/tests/run.sh` (self-contained, `cd`s itself) |
++
++This skill's own files are tracked at `tools/paper-deslop/skill/deslop-paper/`
++and symlinked into `.claude/skills/` (the repo gitignores `.claude/`). Edit the
++tracked copy. Paper sources live in `docs/checkpoints/paper_drafts/` (Markdown
++sections + `aaai27/latex/*.tex`). There are also `make` shortcuts:
++`make deslop-lint [F=<file>]`, `make deslop-gate OLD= NEW=`,
++`make deslop-selftest`. Upstream sync notes: `tools/paper-deslop/VENDORED.md`.
++
+ The goal is quality editing, not detector evasion: delete language that
+ carries no information, restore concrete subjects and causal boundaries,
+ keep claim strength aligned with evidence strength, and make the paper read
+@@ -27,7 +47,7 @@
+ 2. **Citations and cross-references** — `\cite`/`\citep`/`\citet` keys,
+    `\ref`/`\eqref`/`\autoref` targets, `\label` definitions, pandoc `@keys`.
+ 3. **Math** — anything inside `$...$` or math environments, verbatim.
+-4. **Whitelisted domain terms** — every term in the repo's `terms.txt`. No
++4. **Whitelisted domain terms** — every term in `tools/paper-deslop/terms.txt`. No
+    synonym substitution, no expansion of dash compounds, no "simplification".
+    Term repetition is a feature of scientific writing, not a defect.
+ 5. **Claim strength and direction** — "may reduce" must not become "reduces",
+@@ -40,7 +60,9 @@
+ or `cp` if the file is not committed). After editing, always run:
+ 
+ ```bash
+-python3 scripts/invariant_check.py /tmp/baseline.tex path/to/file.tex --terms terms.txt
++python3 tools/paper-deslop/scripts/invariant_check.py \
++    /tmp/baseline.tex path/to/file.tex \
++    --terms tools/paper-deslop/terms.txt
+ ```
+ 
+ The gate catches lexical drift: numbers (with sign and unit), citation and
+@@ -58,7 +80,7 @@
+ 1. **Scope one section at a time** (Abstract, Introduction, one subsection of
+    Discussion, ...). Never batch-rewrite a whole paper in one pass; review
+    quality collapses and register differences between sections get lost.
+-2. **Read `terms.txt`** at the repo root. If it does not exist, propose one:
++2. **Read `tools/paper-deslop/terms.txt`**. If it does not exist, propose one:
+    scan the abstract and section headings for candidate domain terms, show the
+    list, and ask the user to confirm before rewriting anything.
+ 3. **Take the baseline copy** of the target file (see above).
+@@ -68,9 +90,11 @@
+    equivalent before/after listing per paragraph) with a one-line reason per
+    change, grouped by pattern name. Do not present a rewritten wall of text
+    without the diff.
+-6. **Run the checks**: `invariant_check.py` (must pass), and `vale <file>`
+-   if Vale is installed (error-level alerts must be zero on edited prose).
+-   Report both results honestly.
++6. **Run the checks**: `invariant_check.py` (must pass), and
++   `vale --config=tools/paper-deslop/.vale.ini <file>` (error-level alerts
++   must be zero on edited prose). Report both results honestly. The
++   `--config` flag is required: Vale searches upward from the cwd for
++   `.vale.ini`, and in this repo the config is vendored, not at the root.
+ 7. If the session is interactive and the user has not pre-approved batch
+    application, wait for their reaction to the diff before moving to the next
+    section.
+@@ -201,10 +225,10 @@
+ 3. Connective chain: did any edit leave two adjacent sentences with no
+    logical link (connective or echoed noun)?
+ 4. Em dash scan over the edited text: zero `—`/`---` remaining?
+-5. Whitelist scan: every `terms.txt` term still present, same count, same
+-   spelling?
++5. Whitelist scan: every `tools/paper-deslop/terms.txt` term still present,
++   same count, same spelling?
+ 6. Hedge audit: did any claim get stronger or weaker than its evidence?
+-7. `invariant_check.py` run and passing? `vale` error-clean?
++7. `invariant_check.py` run and passing? `vale --config=...` error-clean?
+ 
+ ## Attribution
+ 

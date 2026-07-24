@@ -36,7 +36,8 @@ PYTEST ?= .venv/bin/pytest
         aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism \
         analysis _per_run_all _aggregate _figures _status active \
         glm-update-cells glm-refresh-playbook check-links vwa-generate-configs \
-        pre-release-check
+        pre-release-check \
+        deslop-lint deslop-gate deslop-selftest deslop-vocab
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -60,6 +61,12 @@ help:
 	@echo "    summary-collect / aggregate-cost-electricity / analyze-mechanism"
 	@echo "    analyze-layer0 / analyze-layer1 / analyze-layer2 / analyze-layer3 (Phase 1 layered)"
 	@echo "    figures / fig12-micro-heatmap"
+	@echo ""
+	@echo "  Paper prose (paper-deslop):"
+	@echo "    make deslop-lint [F=<file>]  # Vale AI-tell lint (default: all paper_drafts)"
+	@echo "    make deslop-gate OLD= NEW=   # lexical invariant gate (numbers/cites/terms)"
+	@echo "    make deslop-selftest         # pipeline self-test (fixtures + gate)"
+	@echo "    /deslop-paper                # the interactive rewrite skill (diff-only)"
 	@echo ""
 	@echo "  All targets:                 grep '^[a-z]' Makefile | sed 's/:.*//' | sort -u"
 
@@ -760,3 +767,38 @@ launch:
 	fi
 	@RESET=$${RESET:-1} DRY=$${DRY:-0} FORCE_NO_CHECK=$${FORCE_NO_CHECK:-0} \
 	  bash scripts/maintenance/launch.sh "$(BASELINE)" "$(SITE)" "$(MODE)" "$(TARGET_SECTION)" "$(PRIORITY)"
+
+# ---- Paper prose: paper-deslop pipeline (tools/paper-deslop/, see VENDORED.md) ----
+# Vale's config is vendored, not at the repo root, so every invocation needs --config.
+VALE          ?= vale
+DESLOP_DIR    ?= tools/paper-deslop
+DESLOP_CONFIG ?= $(DESLOP_DIR)/.vale.ini
+PAPER_DIR     ?= docs/checkpoints/paper_drafts
+
+# Vale AI-tell lint. Default scope = all paper drafts; F=<file> for one file.
+#   make deslop-lint
+#   make deslop-lint F=docs/checkpoints/paper_drafts/section1_intro.md
+#   make deslop-lint LEVEL=suggestion      # LEVEL = error (default) | warning | suggestion
+deslop-lint:
+	@$(VALE) --config=$(DESLOP_CONFIG) --minAlertLevel=$${LEVEL:-error} \
+	  $${F:-$$(git ls-files '$(PAPER_DIR)/*.md' '$(PAPER_DIR)/**/*.md' '$(PAPER_DIR)/**/*.tex')}
+
+# Lexical invariant gate: run after ANY rewrite, blocking.
+#   make deslop-gate OLD=/tmp/baseline.md NEW=docs/checkpoints/paper_drafts/section1_intro.md
+deslop-gate:
+	@if [ -z "$(OLD)" ] || [ -z "$(NEW)" ]; then \
+	  echo "Usage: make deslop-gate OLD=<baseline file> NEW=<rewritten file>"; \
+	  echo "  baseline:  git show HEAD:<path> > /tmp/baseline.md"; \
+	  exit 64; \
+	fi
+	@python3 $(DESLOP_DIR)/scripts/invariant_check.py "$(OLD)" "$(NEW)" \
+	  --terms $(DESLOP_DIR)/terms.txt
+
+# Pipeline self-test: Vale fires on the slop fixture, the gate catches all
+# eight adversarial fixtures, vocab is in sync. Run after editing terms.txt.
+deslop-selftest:
+	@bash $(DESLOP_DIR)/tests/run.sh
+
+# Regenerate the Vale vocabulary from terms.txt (commit both files).
+deslop-vocab:
+	@python3 $(DESLOP_DIR)/scripts/gen_vale_vocab.py

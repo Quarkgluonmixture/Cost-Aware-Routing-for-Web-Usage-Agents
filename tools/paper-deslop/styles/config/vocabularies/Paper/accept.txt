@@ -1,0 +1,32 @@
+(?i)phantom routing space
+(?i)phantom arm
+(?i)phantom mode
+(?i)phantom prompt
+(?i)P-SoM
+(?i)P-text
+(?i)P-prompt
+(?i)drop-one oracle
+(?i)complementarity
+(?i)representation routing
+(?i)observation mode
+(?i)annotated image
+(?i)accessibility tree
+(?i)AXTree
+(?i)SOM_MARKS
+(?i)cost-aware routing
+(?i)learned router
+(?i)rule-based router
+(?i)routing signal
+(?i)cost-accuracy trade-off
+(?i)selective classification
+(?i)VisualWebArena
+(?i)multimodal web agent
+(?i)Qwen3-VL
+(?i)Gemma3-VL
+(?i)scaffold
+(?i)adjusted_success
+(?i)AUROC
+(?i)Pareto
+(?i)fixed-effect
+(?i)inverse-variance
+(?i)premature termination

@@ -1,0 +1,28 @@
+---
+# Inter-word gaps are \s+ (not literal spaces) so phrases still match when
+# hard-wrapped LaTeX source splits them across lines.
+extends: existence
+message: "Canned academic phrase: '%s'. Replace with the specific claim, mechanism, or number it is gesturing at."
+level: error
+ignorecase: true
+tokens:
+  - serv\w+\s+as\s+a\s+testament
+  - stands?\s+as\s+a\s+testament
+  - seamlessly\s+integrat\w+
+  - in\s+today['’]s\s+rapidly\s+evolving
+  - rapidly\s+evolving\s+(?:landscape|field|world)
+  - unlock(?:s|ing)?\s+new\s+possibilities
+  - transformative\s+potential
+  - navigat\w+\s+the\s+complexit\w+
+  - underscor\w+\s+the\s+(?:importance|significance|need|critical)
+  - highlight\w*\s+the\s+importance\s+of
+  - it\s+is\s+worth\s+noting\s+that
+  - it['’]s\s+worth\s+noting\s+that
+  - it\s+should\s+be\s+emphasized\s+that
+  - plays?\s+a\s+(?:pivotal|crucial|vital|key)\s+role
+  - mark(?:s|ed)?\s+a\s+significant\s+(?:step|milestone|advance|shift)
+  - represents?\s+a\s+paradigm\s+shift
+  - growing\s+body\s+of\s+(?:literature|evidence|research|work)
+  - paves?\s+the\s+way\s+for
+  - holds?\s+(?:great|immense|significant)\s+promise
+  - opens?\s+(?:up\s+)?new\s+avenues

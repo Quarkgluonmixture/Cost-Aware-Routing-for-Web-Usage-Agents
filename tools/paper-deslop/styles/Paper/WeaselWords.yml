@@ -1,0 +1,10 @@
+---
+extends: existence
+message: "Weasel adjective: '%s'. Fine if it names a technical property or a concrete claim; otherwise replace with the specific property or number."
+level: warning
+ignorecase: true
+tokens:
+  - novel
+  - groundbreaking
+  - cutting-edge
+  - holistic

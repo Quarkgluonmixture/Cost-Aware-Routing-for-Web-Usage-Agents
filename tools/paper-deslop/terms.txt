@@ -1,0 +1,64 @@
+# Domain-term whitelist: the single source of truth for terms that must
+# survive any rewrite untouched (no synonym substitution, no expansion of
+# dash compounds, no "simplification").
+#
+# Consumed by:
+#   - .claude/skills/deslop-paper/SKILL.md  (rewrite layer, hard constraint)
+#   - scripts/invariant_check.py            (occurrence counts must not drift)
+#   - scripts/gen_vale_vocab.py             (Vale vocabulary exceptions)
+#
+# Test for adding a word here: if it were replaced by an everyday synonym,
+# would the paper lose a distinguishable, citable, operationalized concept?
+# One term per line; matching is case-insensitive and treats spaces/hyphens
+# as interchangeable. Lines starting with # are comments.
+#
+# WARNING - matching is SUBSTRING, not word-bounded: invariant_check.term_counts
+# builds `[\s~-]+`-joined regexes with no \b. Short abbreviations therefore
+# false-match. Measured on the P79 drafts: "DOM" hits random/dominance/dominant/
+# domain 90 times, "SoM" hits some/sometimes 7 times. Keep entries to multi-word
+# phrases or long unique tokens; never add a 2-4 letter abbreviation.
+#
+# P79-specific list (2026-07-24). Counts in comments = occurrences across
+# docs/checkpoints/paper_drafts/ at the time of writing.
+
+# --- Phantom routing space (paper-1 core construct) ---
+phantom routing space
+phantom arm
+phantom mode
+phantom prompt
+P-SoM
+P-text
+P-prompt
+drop-one oracle
+complementarity
+
+# --- Representation / observation vocabulary ---
+representation routing
+observation mode
+annotated image
+accessibility tree
+AXTree
+SOM_MARKS
+
+# --- Routing layer ---
+cost-aware routing
+learned router
+rule-based router
+routing signal
+cost-accuracy trade-off
+selective classification
+
+# --- Benchmark, models, agents ---
+VisualWebArena
+multimodal web agent
+Qwen3-VL
+Gemma3-VL
+scaffold
+
+# --- Metrics and statistics ---
+adjusted_success
+AUROC
+Pareto
+fixed-effect
+inverse-variance
+premature termination

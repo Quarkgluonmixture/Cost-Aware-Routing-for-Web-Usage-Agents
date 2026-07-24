@@ -1,0 +1,14 @@
+# Ratchet list: paper sources that have already been through /deslop-paper
+# and MUST stay error-clean under Vale. CI blocks on regressions here.
+#
+# Everything else under docs/checkpoints/paper_drafts/ is linted too, but
+# report-only (see .github/workflows/prose-lint.yml) — the drafts carry a
+# large pre-existing alert backlog (551 error-level alerts measured
+# 2026-07-24, 312 of them em dashes) and blocking on all of it would red-line
+# every push.
+#
+# Workflow: after /deslop-paper finishes a section and `vale --config=...`
+# reports zero error-level alerts on it, append the repo-relative path here
+# in the same commit. The file never shrinks.
+#
+# One repo-relative path per line. Lines starting with # are comments.

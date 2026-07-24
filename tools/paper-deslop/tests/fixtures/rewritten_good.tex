@@ -1,0 +1,19 @@
+% Test fixture. Expectations live in tests/run.sh.
+\newcommand{\method}{RepRoute}
+
+\section{Introduction}\label{sec:intro}
+
+Multimodal web agents must trade accuracy against inference cost: a task may
+be as small as clicking one link or as long as a multi-step search session.
+Representation routing manages the cost-accuracy trade-off with selective
+classification over each request; the routing decision boundary is a simple
+threshold, $y = x + 1$.
+
+Prior work analyzes routing for web agents~\cite{wang2025routing}.
+Benchmark studies of multi-step tool use report similar cost
+profiles~\cite{chen2024agents} (see pp.~10--12 of the supplement).
+
+Our method \method{} achieves 92\% accuracy. Representation routing reduces
+inference cost by 4.23\% on average (11.58\% in the best case), with median
+routing latency of 5 ms, as described in Section~\ref{sec:method}. Ablating
+the router shifts accuracy by -0.8 points (p = .05).

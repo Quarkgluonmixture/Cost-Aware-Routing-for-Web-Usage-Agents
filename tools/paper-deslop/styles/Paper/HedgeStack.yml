@@ -1,0 +1,7 @@
+---
+extends: existence
+message: "Stacked hedging in one clause. Keep one calibrated hedge (e.g., 'may') and drop the rest; multi-layer hedges read as non-committal filler."
+level: suggestion
+scope: sentence
+raw:
+  - '(?i)\b(?:may|might|could|potentially|possibly|perhaps)\b[^.;:]{0,60}\b(?:may|might|could|potentially|possibly|perhaps)\b'

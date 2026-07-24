@@ -1,0 +1,129 @@
+name: prose-lint
+
+# Adapted from upstream paper-deslop (.github/workflows/prose-lint.yml) for the
+# P79 vendored layout (tools/paper-deslop/) and a ratchet lint policy: the
+# drafts carry a large pre-existing alert backlog, so full-corpus linting is
+# report-only and only tools/paper-deslop/deslopped.txt is blocking.
+
+on:
+  pull_request:
+    paths:
+      - 'docs/checkpoints/paper_drafts/**'
+      - 'tools/paper-deslop/**'
+      - '.github/workflows/prose-lint.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'docs/checkpoints/paper_drafts/**'
+      - 'tools/paper-deslop/**'
+      - '.github/workflows/prose-lint.yml'
+
+env:
+  VALE_VERSION: 3.15.2
+  VALE_CONFIG: tools/paper-deslop/.vale.ini
+  PAPER_GLOBS: docs/checkpoints/paper_drafts
+
+jobs:
+  selftest:
+    name: pipeline self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vale
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
+            | tar -xz -C "$HOME/.local/bin" vale
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Fixtures + invariant checker (blocking)
+        run: bash tools/paper-deslop/tests/run.sh
+
+      - name: Vale vocabulary is in sync with terms.txt
+        run: |
+          python3 tools/paper-deslop/scripts/gen_vale_vocab.py
+          git diff --exit-code tools/paper-deslop/styles/config/vocabularies/Paper/accept.txt \
+            || { echo "::error::accept.txt is stale; run gen_vale_vocab.py and commit it"; exit 1; }
+
+  lint:
+    name: prose lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vale
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
+            | tar -xz -C "$HOME/.local/bin" vale
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Ratchet: files listed in deslopped.txt have been through the skill and
+      # must stay clean. A regression here fails the build.
+      - name: Deslopped files must stay error-clean (blocking)
+        run: |
+          files=$(grep -vE '^\s*(#|$)' tools/paper-deslop/deslopped.txt || true)
+          if [ -z "$files" ]; then
+            echo "ratchet list is empty — nothing pinned clean yet"
+            exit 0
+          fi
+          missing=0
+          for f in $files; do
+            [ -f "$f" ] || { echo "::error::deslopped.txt lists a missing file: $f"; missing=1; }
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          # shellcheck disable=SC2086
+          vale --config="$VALE_CONFIG" --minAlertLevel=error $files
+
+      # Everything else: visibility without blocking, written to the job summary.
+      - name: Full draft corpus (report-only)
+        continue-on-error: true
+        run: |
+          files=$(git ls-files "$PAPER_GLOBS/**/*.md" "$PAPER_GLOBS/*.md" \
+                               "$PAPER_GLOBS/**/*.tex" "$PAPER_GLOBS/*.tex" || true)
+          {
+            echo "## Vale report — all drafts (report-only)"
+            echo ""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$files" ]; then
+            # shellcheck disable=SC2086
+            vale --config="$VALE_CONFIG" --minAlertLevel=error --output=line $files \
+              >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          else
+            echo "no paper sources found" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  invariant-report:
+    name: invariant drift (informational)
+    # Report-only by design: ordinary content edits legitimately add numbers
+    # and citations. The BLOCKING use of invariant_check.py is inside the
+    # deslop-paper skill loop, comparing a rewrite against its baseline.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Invariant drift vs base branch
+        run: |
+          base="origin/${{ github.base_ref }}"
+          {
+            echo "## Invariant drift vs \`${{ github.base_ref }}\`"
+            echo ""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          changed=$(git diff --name-only "$base"...HEAD -- \
+                      "$PAPER_GLOBS/*.md" "$PAPER_GLOBS/**/*.md" \
+                      "$PAPER_GLOBS/*.tex" "$PAPER_GLOBS/**/*.tex" || true)
+          for f in $changed; do
+            [ -f "$f" ] || continue
+            git show "$base:$f" > /tmp/base_version 2>/dev/null || continue
+            python3 tools/paper-deslop/scripts/invariant_check.py /tmp/base_version "$f" \
+              --terms tools/paper-deslop/terms.txt --report-only >> "$GITHUB_STEP_SUMMARY" || true
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
