@@ -85,7 +85,16 @@ STOPWORDS = frozenset("""
 """.split())
 
 
-def strip_comments(text: str) -> str:
+def strip_comments(text: str, tex: bool = True) -> str:
+    """Drop LaTeX line comments; no-op on Markdown.
+
+    Markdown has no `%` comment syntax, so applying the LaTeX rule there
+    silently deletes everything after the first percent sign on a line
+    ("accuracy fell from 81% to 19% \\citep{k}" loses the second number and
+    the citation) and those tokens then escape every downstream check.
+    """
+    if not tex:
+        return text
     return re.sub(r"(?<!\\)%.*", "", text)
 
 
@@ -94,13 +103,13 @@ def normalize_ws(s: str) -> str:
 
 
 # ---------------------------------------------------------------- protected
-def extract_protected(raw: str) -> dict[str, Counter]:
+def extract_protected(raw: str, tex: bool = True) -> dict[str, Counter]:
     """Exact-match inventories of blocks a rewrite must never touch."""
     blocks: dict[str, Counter] = {}
     blocks["comment"] = Counter(
         normalize_ws(m.group(1)) for m in COMMENT_RE.finditer(raw)
-    )
-    text = strip_comments(raw)
+    ) if tex else Counter()
+    text = strip_comments(raw, tex)
 
     if "\\begin{document}" in text:
         preamble = text.split("\\begin{document}", 1)[0]
@@ -123,15 +132,15 @@ def extract_protected(raw: str) -> dict[str, Counter]:
 
     blocks["macro"] = Counter(
         normalize_ws(line)
-        for line in strip_comments(raw).splitlines()
+        for line in strip_comments(raw, tex).splitlines()
         if MACRO_LINE_RE.match(line)
     )
     return blocks
 
 
-def prose_only(raw: str) -> str:
+def prose_only(raw: str, tex: bool = True) -> str:
     """Comment-free text with protected blocks blanked out."""
-    text = strip_comments(raw)
+    text = strip_comments(raw, tex)
     if "\\begin{document}" in text:
         text = text.split("\\begin{document}", 1)[1]
     text = VERBATIM_RE.sub(" ", text)
@@ -229,8 +238,8 @@ def load_terms(path: Path) -> list[str]:
     ]
 
 
-def term_counts(text: str, terms: list[str]) -> Counter:
-    text = strip_comments(text)
+def term_counts(text: str, terms: list[str], tex: bool = True) -> Counter:
+    text = strip_comments(text, tex)
     counts: Counter = Counter()
     for term in terms:
         words = [w for w in re.split(r"[\s-]+", term) if w]
@@ -286,9 +295,10 @@ def main() -> int:
     old_raw = args.old.read_text(errors="replace")
     new_raw = args.new.read_text(errors="replace")
     pandoc = args.new.suffix.lower() in {".md", ".markdown", ".qmd", ".rmd"}
+    tex = not pandoc  # `%` is a comment in LaTeX and a percent sign in Markdown
 
-    old_prose = prose_only(old_raw)
-    new_prose = prose_only(new_raw)
+    old_prose = prose_only(old_raw, tex)
+    new_prose = prose_only(new_raw, tex)
 
     print(f"lexical-invariant-gate: {args.old} -> {args.new}")
     violations = 0
@@ -333,16 +343,16 @@ def main() -> int:
     # 4. whitelist terms
     if terms:
         lines = []
-        n = diff_counters("term count", term_counts(old_raw, terms),
-                          term_counts(new_raw, terms), lines)
+        n = diff_counters("term count", term_counts(old_raw, terms, tex),
+                          term_counts(new_raw, terms, tex), lines)
         report_section("terms", f"whitelist: {len(terms)} terms", lines, n)
         violations += n
     else:
         print("  terms:      skipped (no terms file found)")
 
     # 5. protected blocks (exact, whitespace-normalized)
-    old_blocks = extract_protected(old_raw)
-    new_blocks = extract_protected(new_raw)
+    old_blocks = extract_protected(old_raw, tex)
+    new_blocks = extract_protected(new_raw, tex)
     for kind in ("math", "macro", "preamble", "comment", "verbatim"):
         lines = []
         n = diff_counters(kind, old_blocks[kind], new_blocks[kind], lines)

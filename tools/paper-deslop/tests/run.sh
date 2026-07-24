@@ -63,6 +63,31 @@ for f in tests/fixtures/bad_*.tex tests/fixtures/rewritten_bad.tex; do
     fi
 done
 
+echo "== markdown percent signs do not blind the gate"
+# Regression: `%` is a LaTeX comment but a percent sign in Markdown. When the
+# LaTeX rule was applied unconditionally, everything after "81%" on a line was
+# stripped before the number/citation/term checks ran, so drift hiding behind a
+# percent sign was invisible (it surfaced only as an unrelated "comment" alert).
+out=$(python3 scripts/invariant_check.py tests/fixtures/md_percent_base.md \
+        tests/fixtures/md_percent_drift.md --terms terms.txt)
+if [ $? -eq 0 ]; then
+    echo "FAIL: post-% number drift should violate the gate"
+    echo "$out"
+    fail=1
+elif ! grep -qF "removed number: '42.0'" <<<"$out"; then
+    echo "FAIL: expected the drift to be reported as a NUMBER violation, got:"
+    echo "$out"
+    fail=1
+elif ! grep -qE "numbers: +[0-9]+ violation\(s\) \(5 in old\)" <<<"$out"; then
+    # 5 = 4.2 (heading) + 81 + 19 + 42.0 + 3.1. Pre-fix only the first two were
+    # visible; everything after the first `%` was stripped as a LaTeX comment.
+    echo "FAIL: expected all 5 numbers visible to the checker, got:"
+    echo "$out"
+    fail=1
+else
+    echo "ok"
+fi
+
 echo "== vocabulary file is in sync with terms.txt"
 before=$(cat styles/config/vocabularies/Paper/accept.txt 2>/dev/null || true)
 python3 scripts/gen_vale_vocab.py >/dev/null
