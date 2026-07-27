@@ -21,28 +21,40 @@ We state both with hedges because the trajectory metrics that back them are desc
 The behavioural claim is that the two knobs have distinguishable behavioural signatures,
 which is consistent with §3.2 finding them separately consequential; it is not a mechanism.
 
-### 4.2 One measurement that constrains the story
+### 4.2 One measurement, and which knob owns it
 
-The compact renumbering of the mark legend produces a **2.3–24.8× lower rate of hallucinated
-element references** than the native accessibility-tree numbering. The ratio is per backbone,
-not per cell: 0.04% against 0.39% at B0, 0.12% against 2.98% at B1, and 7.84% against 18.21%
-at B2, so the reduction is largest at B1 and smallest at the weakest backbone.
-Element-reference failures are a recognised bottleneck for multimodal web agents
-[@zheng2024seeact; @zheng2024uground]. Native ids are sparse and non-semantic; the legend's ids run
-1..K. Whatever else the text axis does, it makes the element-reference space smaller and
-denser, and models refer outside it far less often.
+Hallucinated element references (actions naming an element id absent from the observation)
+are a recognised bottleneck for multimodal web agents [@zheng2024seeact; @zheng2024uground].
+Because the 2×2 was run, we can ask which knob moves them instead of assuming.
 
-This cuts against a natural reading of §3.2's asymmetry. If compact ids were the dominant
-mechanism, axis-1 (the text axis) should carry more unique coverage than axis-2. It carries
-less. So reference hallucination is real and measurable but is not what the text axis is
-mostly doing for coverage.
+Neither knob owns the effect. P-SoM has the lowest rate in all six cells and P-prompt the
+highest in five of six; at reddit · B2 the two differ by 33.06% of action-steps against 7.78%.
+Substituting the mark legend for the accessibility tree lowers the rate in six of six cells
+under the SoM prompt, but in only three of six under the DOM prompt. Moving from the DOM prompt
+to the SoM prompt lowers it in six of six cells when the text is the legend, and raises it in
+five of six when the text is the accessibility tree. Each knob's sign depends on the other
+knob's setting, so this is an interaction and not a property of either payload alone.
+
+What the pattern tracks is agreement between the id scheme the prompt advertises and the one
+the text supplies. The two matched arms sit low and the mismatched arms high, worst at
+P-prompt, where the prompt announces numbered marks and the text carries sparse native ids.
+Part of that is mechanical: a prompt advertising ids 1..K induces references in that range,
+which lie outside an accessibility tree. We therefore read it as a behavioural cost of
+representational mismatch, not as an account of what drives coverage. The axis magnitudes of
+§3.2 cannot supply that account either, because each axis differences a single-displacement arm
+against P-SoM, leaving the *other* knob as the factor that varies inside the difference: axis-1
+holds the mark legend fixed across both its arms, and axis-2 the SoM prompt.
 
 ### 4.3 The outer boundary of what representation can fix
 
-We ran a deterministic failure-pattern scan over all 36 landed conditions and aggregated the
-signatures cross-mode. The four highest-frequency failure signatures are **mode-invariant**:
-they occur at comparable rates under every one of the six modes. Changing the representation
-does not address them.
+We ran a deterministic failure-pattern scan over all 36 landed conditions, at one frozen
+ruleset version, and aggregated the signatures cross-mode. The four highest-frequency
+signatures (budget exhausted without finishing, degenerate element resolution,
+perception-loss loops, and URL self-loops) are **near mode-invariant**: across the five
+text-bearing modes their episode-level rates span 7.4 to 13.7 percentage points. Changing the
+text representation does not address them. The single large excursion is degenerate element
+resolution under Vision, 20.7% against 59.5% under DOM, where a coordinate action space has no
+element ids to fail to resolve; the category lapses rather than the failure being fixed.
 
 Two companion observations bound the space from the same direction. The rate at which agents
 fail on comment-and-reply tasks is capped at a level no mode improves on. And adding the

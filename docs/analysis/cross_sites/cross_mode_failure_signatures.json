@@ -1,0 +1,1227 @@
+{
+ "producer": "scripts/analysis/aggregate_cross_mode_failure_signatures.py",
+ "ruleset_version": "8-reddit-p41p46-b1890fix",
+ "n_conditions": 36,
+ "run_ids": {
+  "B0_dom_classifieds": "B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
+  "B0_dom_reddit": "B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
+  "B0_phantom_prompt_classifieds": "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+  "B0_phantom_prompt_reddit": "B0_phantom_prompt_reddit_20260709",
+  "B0_phantom_som_classifieds": "B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031",
+  "B0_phantom_som_reddit": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
+  "B0_phantom_text_classifieds": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
+  "B0_phantom_text_reddit": "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
+  "B0_som_classifieds": "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+  "B0_som_reddit": "B0_som_reddit_20260627_035453_162107997_3024022_R20936",
+  "B0_vision_classifieds": "B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
+  "B0_vision_reddit": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
+  "B1_dom_classifieds": "B1_dom_classifieds_20260603_103630_477435114_112846_R17188",
+  "B1_dom_reddit": "B1_dom_reddit_20260703",
+  "B1_phantom_prompt_classifieds": "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516",
+  "B1_phantom_prompt_reddit": "B1_phantom_prompt_reddit_20260713",
+  "B1_phantom_som_classifieds": "B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199",
+  "B1_phantom_som_reddit": "B1_phantom_som_reddit_20260711",
+  "B1_phantom_text_classifieds": "B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933",
+  "B1_phantom_text_reddit": "B1_phantom_text_reddit_20260710",
+  "B1_som_classifieds": "B1_som_classifieds_20260604_072456_562166453_226675_R31705",
+  "B1_som_reddit": "B1_som_reddit_20260706",
+  "B1_vision_classifieds": "B1_vision_classifieds_20260605_012235_349047872_327631_R28622",
+  "B1_vision_reddit": "B1_vision_reddit_20260708_002122_732634080_205180_R16847",
+  "B2_dom_classifieds": "B2_dom_classifieds_20260609_214713_553762009_985526_R21521",
+  "B2_dom_reddit": "B2_dom_reddit_20260715",
+  "B2_phantom_prompt_classifieds": "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175",
+  "B2_phantom_prompt_reddit": "B2_phantom_prompt_reddit_20260723",
+  "B2_phantom_som_classifieds": "B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577",
+  "B2_phantom_som_reddit": "B2_phantom_som_reddit_20260722",
+  "B2_phantom_text_classifieds": "B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219",
+  "B2_phantom_text_reddit": "B2_phantom_text_reddit_20260720",
+  "B2_som_classifieds": "B2_som_classifieds_20260611_210828_923656661_1218867_R3380",
+  "B2_som_reddit": "B2_som_reddit_20260717",
+  "B2_vision_classifieds": "B2_vision_classifieds_20260612_221910_098760264_1351451_R9288",
+  "B2_vision_reddit": "B2_vision_reddit_20260719"
+ },
+ "part_a_signature_frequency": {
+  "episodes_per_mode": {
+   "dom": 1287,
+   "som": 1287,
+   "vision": 1287,
+   "phantom_text": 1287,
+   "phantom_prompt": 1287,
+   "phantom_som": 1287
+  },
+  "episodes_total": 7722,
+  "rules": [
+   {
+    "rule_id": "P31",
+    "rule_name": "budget\u8017\u5c3d\u672a\u5b8c\u6210",
+    "overall_pct": 49.624449624449625,
+    "per_mode_pct": {
+     "dom": 47.24164724164724,
+     "som": 44.83294483294483,
+     "vision": 49.65034965034965,
+     "phantom_text": 54.07925407925408,
+     "phantom_prompt": 49.65034965034965,
+     "phantom_som": 52.292152292152295
+    },
+    "spread_all_modes_pp": 9.246309246309245,
+    "spread_text_bearing_pp": 9.246309246309245,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P36",
+    "rule_name": "WALK_FAIL_DEGENERATE",
+    "overall_pct": 48.717948717948715,
+    "per_mode_pct": {
+     "dom": 59.51825951825952,
+     "som": 45.84304584304584,
+     "vision": 20.66822066822067,
+     "phantom_text": 52.05905205905206,
+     "phantom_prompt": 57.34265734265734,
+     "phantom_som": 56.87645687645688
+    },
+    "spread_all_modes_pp": 38.85003885003885,
+    "spread_text_bearing_pp": 13.675213675213676,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P5",
+    "rule_name": "\u611f\u77e5\u7f3a\u5931\u5faa\u73af",
+    "overall_pct": 43.31779331779332,
+    "per_mode_pct": {
+     "dom": 44.21134421134421,
+     "som": 37.995337995338,
+     "vision": 55.32245532245532,
+     "phantom_text": 35.97513597513598,
+     "phantom_prompt": 45.84304584304584,
+     "phantom_som": 40.55944055944056
+    },
+    "spread_all_modes_pp": 19.347319347319342,
+    "spread_text_bearing_pp": 9.867909867909866,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P14",
+    "rule_name": "URL \u81ea\u73af",
+    "overall_pct": 26.767676767676768,
+    "per_mode_pct": {
+     "dom": 24.242424242424242,
+     "som": 23.931623931623932,
+     "vision": 37.21833721833722,
+     "phantom_text": 20.97902097902098,
+     "phantom_prompt": 28.36052836052836,
+     "phantom_som": 25.874125874125873
+    },
+    "spread_all_modes_pp": 16.23931623931624,
+    "spread_text_bearing_pp": 7.3815073815073795,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P45",
+    "rule_name": "IDENTICAL_FAILED_ACTION_STREAK",
+    "overall_pct": 26.767676767676768,
+    "per_mode_pct": {
+     "dom": 37.2960372960373,
+     "som": 29.914529914529915,
+     "vision": 0.0,
+     "phantom_text": 25.563325563325563,
+     "phantom_prompt": 36.75213675213675,
+     "phantom_som": 31.08003108003108
+    },
+    "spread_all_modes_pp": 37.2960372960373,
+    "spread_text_bearing_pp": 11.732711732711735,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P43",
+    "rule_name": "PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT",
+    "overall_pct": 19.994819994819995,
+    "per_mode_pct": {
+     "dom": 29.68142968142968,
+     "som": 0.0,
+     "vision": 0.0,
+     "phantom_text": 30.14763014763015,
+     "phantom_prompt": 29.99222999222999,
+     "phantom_som": 30.14763014763015
+    },
+    "spread_all_modes_pp": 30.14763014763015,
+    "spread_text_bearing_pp": 30.14763014763015,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P33",
+    "rule_name": "\u5bfc\u822a\u81f3\u88f8\u56fe\u7247URL\u5e7b\u89c9",
+    "overall_pct": 16.058016058016058,
+    "per_mode_pct": {
+     "dom": 20.435120435120435,
+     "som": 13.053613053613054,
+     "vision": 10.48951048951049,
+     "phantom_text": 17.793317793317794,
+     "phantom_prompt": 17.715617715617714,
+     "phantom_som": 16.86091686091686
+    },
+    "spread_all_modes_pp": 9.945609945609945,
+    "spread_text_bearing_pp": 7.381507381507381,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P44",
+    "rule_name": "HALLUCINATED_ELEMENT_REF",
+    "overall_pct": 13.51981351981352,
+    "per_mode_pct": {
+     "dom": 20.9013209013209,
+     "som": 8.080808080808081,
+     "vision": 0.0,
+     "phantom_text": 16.006216006216007,
+     "phantom_prompt": 27.35042735042735,
+     "phantom_som": 8.78010878010878
+    },
+    "spread_all_modes_pp": 27.35042735042735,
+    "spread_text_bearing_pp": 19.26961926961927,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P12",
+    "rule_name": "\u4ece\u4e0d\u7ffb\u9875",
+    "overall_pct": 12.587412587412587,
+    "per_mode_pct": {
+     "dom": 12.587412587412587,
+     "som": 16.23931623931624,
+     "vision": 9.246309246309247,
+     "phantom_text": 10.8003108003108,
+     "phantom_prompt": 14.996114996114995,
+     "phantom_som": 11.655011655011656
+    },
+    "spread_all_modes_pp": 6.993006993006992,
+    "spread_text_bearing_pp": 5.439005439005438,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P25",
+    "rule_name": "\u8de8\u7ad9\u4efb\u52a1\u8df3\u8fc7\u5176\u4e2d\u4e00\u7ad9",
+    "overall_pct": 10.23051023051023,
+    "per_mode_pct": {
+     "dom": 8.003108003108004,
+     "som": 11.577311577311578,
+     "vision": 10.48951048951049,
+     "phantom_text": 11.188811188811188,
+     "phantom_prompt": 8.624708624708624,
+     "phantom_som": 11.4996114996115
+    },
+    "spread_all_modes_pp": 3.5742035742035743,
+    "spread_text_bearing_pp": 3.5742035742035743,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P4",
+    "rule_name": "\u6839\u8282\u70b9\u8bef\u64cd\u4f5c",
+    "overall_pct": 7.381507381507381,
+    "per_mode_pct": {
+     "dom": 0.3885003885003885,
+     "som": 10.256410256410257,
+     "vision": 0.0,
+     "phantom_text": 13.90831390831391,
+     "phantom_prompt": 0.4662004662004662,
+     "phantom_som": 19.26961926961927
+    },
+    "spread_all_modes_pp": 19.26961926961927,
+    "spread_text_bearing_pp": 18.88111888111888,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P18",
+    "rule_name": "cheapest\u6f0f\u4ef7\u683c\u6392\u5e8f",
+    "overall_pct": 6.099456099456099,
+    "per_mode_pct": {
+     "dom": 6.526806526806527,
+     "som": 6.138306138306138,
+     "vision": 6.216006216006216,
+     "phantom_text": 5.516705516705517,
+     "phantom_prompt": 6.216006216006216,
+     "phantom_som": 5.982905982905983
+    },
+    "spread_all_modes_pp": 1.0101010101010104,
+    "spread_text_bearing_pp": 1.0101010101010104,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P17",
+    "rule_name": "click-back\u632f\u8361",
+    "overall_pct": 6.021756021756022,
+    "per_mode_pct": {
+     "dom": 6.293706293706293,
+     "som": 5.361305361305361,
+     "vision": 2.7195027195027195,
+     "phantom_text": 7.614607614607615,
+     "phantom_prompt": 7.536907536907537,
+     "phantom_som": 6.6045066045066045
+    },
+    "spread_all_modes_pp": 4.895104895104895,
+    "spread_text_bearing_pp": 2.2533022533022535,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P20",
+    "rule_name": "\u8bc4\u6d4b\u76ee\u6807\u9875\u4ece\u672a\u8bbf\u95ee",
+    "overall_pct": 4.61020461020461,
+    "per_mode_pct": {
+     "dom": 4.73970473970474,
+     "som": 4.195804195804196,
+     "vision": 5.205905205905206,
+     "phantom_text": 4.584304584304585,
+     "phantom_prompt": 4.351204351204351,
+     "phantom_som": 4.584304584304585
+    },
+    "spread_all_modes_pp": 1.0101010101010104,
+    "spread_text_bearing_pp": 0.543900543900544,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P6",
+    "rule_name": "\u89c6\u89c9\u4efb\u52a1 DOM \u5fc5\u7136\u5931\u8d25",
+    "overall_pct": 4.118104118104118,
+    "per_mode_pct": {
+     "dom": 24.708624708624708,
+     "som": 0.0,
+     "vision": 0.0,
+     "phantom_text": 0.0,
+     "phantom_prompt": 0.0,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 24.708624708624708,
+    "spread_text_bearing_pp": 24.708624708624708,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P10",
+    "rule_name": "\u8de8\u6b65\u6570\u503c\u8bb0\u5fc6\u5931\u8d25",
+    "overall_pct": 2.318052318052318,
+    "per_mode_pct": {
+     "dom": 2.874902874902875,
+     "som": 2.797202797202797,
+     "vision": 1.320901320901321,
+     "phantom_text": 2.797202797202797,
+     "phantom_prompt": 2.097902097902098,
+     "phantom_som": 2.0202020202020203
+    },
+    "spread_all_modes_pp": 1.5540015540015542,
+    "spread_text_bearing_pp": 0.8547008547008548,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P7",
+    "rule_name": "sCity=\u5dde\u540d",
+    "overall_pct": 2.2921522921522923,
+    "per_mode_pct": {
+     "dom": 1.7871017871017871,
+     "som": 2.331002331002331,
+     "vision": 2.4864024864024863,
+     "phantom_text": 2.1756021756021755,
+     "phantom_prompt": 2.4864024864024863,
+     "phantom_som": 2.4864024864024863
+    },
+    "spread_all_modes_pp": 0.6993006993006992,
+    "spread_text_bearing_pp": 0.6993006993006992,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P16",
+    "rule_name": "\u89c6\u89c9\u56fe\u50cf\u5185\u5bb9DOM\u5fc5\u8d25",
+    "overall_pct": 2.059052059052059,
+    "per_mode_pct": {
+     "dom": 12.354312354312354,
+     "som": 0.0,
+     "vision": 0.0,
+     "phantom_text": 0.0,
+     "phantom_prompt": 0.0,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 12.354312354312354,
+    "spread_text_bearing_pp": 12.354312354312354,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P46",
+    "rule_name": "COMMENT_INTENT_NO_TYPE",
+    "overall_pct": 1.8648018648018647,
+    "per_mode_pct": {
+     "dom": 1.7094017094017093,
+     "som": 1.8648018648018647,
+     "vision": 3.0303030303030303,
+     "phantom_text": 1.2432012432012431,
+     "phantom_prompt": 1.6317016317016317,
+     "phantom_som": 1.7094017094017093
+    },
+    "spread_all_modes_pp": 1.7871017871017871,
+    "spread_text_bearing_pp": 0.6216006216006216,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P2",
+    "rule_name": "\u5bb9\u5668\u8282\u70b9\u8bef\u70b9",
+    "overall_pct": 1.6317016317016317,
+    "per_mode_pct": {
+     "dom": 3.8073038073038075,
+     "som": 0.6993006993006993,
+     "vision": 0.0,
+     "phantom_text": 1.0878010878010878,
+     "phantom_prompt": 3.5742035742035743,
+     "phantom_som": 0.6216006216006216
+    },
+    "spread_all_modes_pp": 3.8073038073038075,
+    "spread_text_bearing_pp": 3.185703185703186,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P19",
+    "rule_name": "url_match\u8fc7\u65e9\u641c\u7d22\u9875finish",
+    "overall_pct": 1.4763014763014763,
+    "per_mode_pct": {
+     "dom": 1.6317016317016317,
+     "som": 1.8648018648018647,
+     "vision": 1.6317016317016317,
+     "phantom_text": 1.0878010878010878,
+     "phantom_prompt": 1.0878010878010878,
+     "phantom_som": 1.554001554001554
+    },
+    "spread_all_modes_pp": 0.777000777000777,
+    "spread_text_bearing_pp": 0.777000777000777,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P27",
+    "rule_name": "\u627e\u4e0d\u5230\u5373\u653e\u5f03",
+    "overall_pct": 1.3468013468013469,
+    "per_mode_pct": {
+     "dom": 1.1655011655011656,
+     "som": 2.097902097902098,
+     "vision": 2.0202020202020203,
+     "phantom_text": 0.4662004662004662,
+     "phantom_prompt": 0.8547008547008547,
+     "phantom_som": 1.4763014763014763
+    },
+    "spread_all_modes_pp": 1.6317016317016317,
+    "spread_text_bearing_pp": 1.6317016317016317,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P30",
+    "rule_name": "\u5230\u8fbe\u6b63\u786eitem\u540e\u79bb\u5f00",
+    "overall_pct": 1.1525511525511525,
+    "per_mode_pct": {
+     "dom": 1.2432012432012431,
+     "som": 0.6216006216006216,
+     "vision": 0.2331002331002331,
+     "phantom_text": 1.6317016317016317,
+     "phantom_prompt": 1.320901320901321,
+     "phantom_som": 1.8648018648018647
+    },
+    "spread_all_modes_pp": 1.6317016317016315,
+    "spread_text_bearing_pp": 1.2432012432012431,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P13",
+    "rule_name": "\u641c\u7d22\u4ee3\u66ff\u6d4f\u89c8",
+    "overall_pct": 1.1137011137011137,
+    "per_mode_pct": {
+     "dom": 2.1756021756021755,
+     "som": 0.777000777000777,
+     "vision": 0.2331002331002331,
+     "phantom_text": 1.7871017871017871,
+     "phantom_prompt": 0.8547008547008547,
+     "phantom_som": 0.8547008547008547
+    },
+    "spread_all_modes_pp": 1.9425019425019423,
+    "spread_text_bearing_pp": 1.3986013986013985,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P23",
+    "rule_name": "oldest\u8bef\u7528\u4ef7\u683c\u6392\u5e8f",
+    "overall_pct": 0.8288008288008288,
+    "per_mode_pct": {
+     "dom": 0.6993006993006993,
+     "som": 0.9324009324009324,
+     "vision": 0.6993006993006993,
+     "phantom_text": 0.8547008547008547,
+     "phantom_prompt": 0.8547008547008547,
+     "phantom_som": 0.9324009324009324
+    },
+    "spread_all_modes_pp": 0.2331002331002331,
+    "spread_text_bearing_pp": 0.2331002331002331,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P24",
+    "rule_name": "\u4e0d\u786e\u5b9a\u4ecdfinish",
+    "overall_pct": 0.5439005439005439,
+    "per_mode_pct": {
+     "dom": 0.5439005439005439,
+     "som": 0.6993006993006993,
+     "vision": 0.4662004662004662,
+     "phantom_text": 0.5439005439005439,
+     "phantom_prompt": 0.4662004662004662,
+     "phantom_som": 0.5439005439005439
+    },
+    "spread_all_modes_pp": 0.2331002331002331,
+    "spread_text_bearing_pp": 0.2331002331002331,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P22",
+    "rule_name": "\u56fe\u4e0a\u6570\u5b57dom\u4e0d\u53ef\u8bfb",
+    "overall_pct": 0.4921004921004921,
+    "per_mode_pct": {
+     "dom": 0.6216006216006216,
+     "som": 0.3885003885003885,
+     "vision": 0.3885003885003885,
+     "phantom_text": 0.5439005439005439,
+     "phantom_prompt": 0.4662004662004662,
+     "phantom_som": 0.5439005439005439
+    },
+    "spread_all_modes_pp": 0.2331002331002331,
+    "spread_text_bearing_pp": 0.2331002331002331,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P37",
+    "rule_name": "URL_HALLUCINATION",
+    "overall_pct": 0.47915047915047915,
+    "per_mode_pct": {
+     "dom": 0.5439005439005439,
+     "som": 0.3885003885003885,
+     "vision": 0.2331002331002331,
+     "phantom_text": 0.5439005439005439,
+     "phantom_prompt": 0.6216006216006216,
+     "phantom_som": 0.5439005439005439
+    },
+    "spread_all_modes_pp": 0.3885003885003885,
+    "spread_text_bearing_pp": 0.2331002331002331,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P28",
+    "rule_name": "benchmark-FP\u8d27\u5e01tokenize",
+    "overall_pct": 0.24605024605024606,
+    "per_mode_pct": {
+     "dom": 0.1554001554001554,
+     "som": 0.3885003885003885,
+     "vision": 0.4662004662004662,
+     "phantom_text": 0.0777000777000777,
+     "phantom_prompt": 0.2331002331002331,
+     "phantom_som": 0.1554001554001554
+    },
+    "spread_all_modes_pp": 0.3885003885003885,
+    "spread_text_bearing_pp": 0.3108003108003108,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P15",
+    "rule_name": "gallery\u884c\u4f4d\u7f6eDOM\u4e0d\u53ef\u5b9a\u4f4d",
+    "overall_pct": 0.2331002331002331,
+    "per_mode_pct": {
+     "dom": 1.3986013986013985,
+     "som": 0.0,
+     "vision": 0.0,
+     "phantom_text": 0.0,
+     "phantom_prompt": 0.0,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 1.3986013986013985,
+    "spread_text_bearing_pp": 1.3986013986013985,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P38",
+    "rule_name": "DOM_URL_AS_IMAGE",
+    "overall_pct": 0.2331002331002331,
+    "per_mode_pct": {
+     "dom": 0.3885003885003885,
+     "som": 0.0,
+     "vision": 0.0,
+     "phantom_text": 0.3108003108003108,
+     "phantom_prompt": 0.3108003108003108,
+     "phantom_som": 0.3885003885003885
+    },
+    "spread_all_modes_pp": 0.3885003885003885,
+    "spread_text_bearing_pp": 0.3885003885003885,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P41",
+    "rule_name": "PASSIVE_MUST_EXCLUDE_FP",
+    "overall_pct": 0.16835016835016836,
+    "per_mode_pct": {
+     "dom": 0.0777000777000777,
+     "som": 0.1554001554001554,
+     "vision": 0.2331002331002331,
+     "phantom_text": 0.1554001554001554,
+     "phantom_prompt": 0.1554001554001554,
+     "phantom_som": 0.2331002331002331
+    },
+    "spread_all_modes_pp": 0.1554001554001554,
+    "spread_text_bearing_pp": 0.1554001554001554,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P35",
+    "rule_name": "MUTATION_MISSING",
+    "overall_pct": 0.1554001554001554,
+    "per_mode_pct": {
+     "dom": 0.1554001554001554,
+     "som": 0.0777000777000777,
+     "vision": 0.3108003108003108,
+     "phantom_text": 0.0777000777000777,
+     "phantom_prompt": 0.1554001554001554,
+     "phantom_som": 0.1554001554001554
+    },
+    "spread_all_modes_pp": 0.2331002331002331,
+    "spread_text_bearing_pp": 0.0777000777000777,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P1",
+    "rule_name": "\u5143\u7d20\u4e2d\u5fc3\u8d8a\u754c",
+    "overall_pct": 0.1295001295001295,
+    "per_mode_pct": {
+     "dom": 0.0,
+     "som": 0.0,
+     "vision": 0.777000777000777,
+     "phantom_text": 0.0,
+     "phantom_prompt": 0.0,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 0.777000777000777,
+    "spread_text_bearing_pp": 0.0,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P42",
+    "rule_name": "MULTI_SITE_SINGLE_SITE_GROUNDING",
+    "overall_pct": 0.11655011655011654,
+    "per_mode_pct": {
+     "dom": 0.1554001554001554,
+     "som": 0.0777000777000777,
+     "vision": 0.0,
+     "phantom_text": 0.1554001554001554,
+     "phantom_prompt": 0.1554001554001554,
+     "phantom_som": 0.1554001554001554
+    },
+    "spread_all_modes_pp": 0.1554001554001554,
+    "spread_text_bearing_pp": 0.0777000777000777,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P32",
+    "rule_name": "\u6587\u672c\u8bef\u5165\u4ef7\u683cfilter",
+    "overall_pct": 0.1036001036001036,
+    "per_mode_pct": {
+     "dom": 0.0777000777000777,
+     "som": 0.2331002331002331,
+     "vision": 0.0,
+     "phantom_text": 0.0777000777000777,
+     "phantom_prompt": 0.0777000777000777,
+     "phantom_som": 0.1554001554001554
+    },
+    "spread_all_modes_pp": 0.2331002331002331,
+    "spread_text_bearing_pp": 0.1554001554001554,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P21",
+    "rule_name": "dom\u6a21\u5f0f\u89c6\u89c9\u5e7b\u89c9",
+    "overall_pct": 0.0777000777000777,
+    "per_mode_pct": {
+     "dom": 0.4662004662004662,
+     "som": 0.0,
+     "vision": 0.0,
+     "phantom_text": 0.0,
+     "phantom_prompt": 0.0,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 0.4662004662004662,
+    "spread_text_bearing_pp": 0.4662004662004662,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P29",
+    "rule_name": "benchmark-FP\u8bed\u4e49yes/no",
+    "overall_pct": 0.06475006475006476,
+    "per_mode_pct": {
+     "dom": 0.0,
+     "som": 0.1554001554001554,
+     "vision": 0.0777000777000777,
+     "phantom_text": 0.0777000777000777,
+     "phantom_prompt": 0.0777000777000777,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 0.1554001554001554,
+    "spread_text_bearing_pp": 0.1554001554001554,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P11",
+    "rule_name": "\u6700\u65b0+\u5730\u70b9\u7ec4\u5408",
+    "overall_pct": 0.03885003885003885,
+    "per_mode_pct": {
+     "dom": 0.0777000777000777,
+     "som": 0.0,
+     "vision": 0.0,
+     "phantom_text": 0.0777000777000777,
+     "phantom_prompt": 0.0777000777000777,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 0.0777000777000777,
+    "spread_text_bearing_pp": 0.0777000777000777,
+    "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P40",
+    "rule_name": "LUCKY_NUMERIC_FP",
+    "overall_pct": 0.01295001295001295,
+    "per_mode_pct": {
+     "dom": 0.0,
+     "som": 0.0777000777000777,
+     "vision": 0.0,
+     "phantom_text": 0.0,
+     "phantom_prompt": 0.0,
+     "phantom_som": 0.0
+    },
+    "spread_all_modes_pp": 0.0777000777000777,
+    "spread_text_bearing_pp": 0.0777000777000777,
+    "structurally_zero_under_vision": true
+   }
+  ]
+ },
+ "part_b_hallucinated_references": {
+  "per_cell_per_mode": {
+   "classifieds\u00b7B0": {
+    "DOM": {
+     "ep_total": 224,
+     "ep_failed": 185,
+     "act_all": 2254,
+     "act_failed": 2029,
+     "hall_all": 34,
+     "hall_failed": 34,
+     "rate_all_pct": 1.5084294587400178,
+     "rate_failed_pct": 1.6757023164120257,
+     "run_id": "B0_dom_classifieds_20260525_194618_553890342_530647_R21557"
+    },
+    "P-prompt": {
+     "ep_total": 224,
+     "ep_failed": 180,
+     "act_all": 2139,
+     "act_failed": 1918,
+     "hall_all": 45,
+     "hall_failed": 41,
+     "rate_all_pct": 2.1037868162692845,
+     "rate_failed_pct": 2.1376433785192908,
+     "run_id": "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655"
+    },
+    "P-SoM": {
+     "ep_total": 224,
+     "ep_failed": 189,
+     "act_all": 2159,
+     "act_failed": 2000,
+     "hall_all": 3,
+     "hall_failed": 2,
+     "rate_all_pct": 0.13895321908290875,
+     "rate_failed_pct": 0.1,
+     "run_id": "B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031"
+    },
+    "P-text": {
+     "ep_total": 224,
+     "ep_failed": 189,
+     "act_all": 2175,
+     "act_failed": 2006,
+     "hall_all": 11,
+     "hall_failed": 11,
+     "rate_all_pct": 0.5057471264367817,
+     "rate_failed_pct": 0.5483549351944168,
+     "run_id": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183"
+    },
+    "SoM": {
+     "ep_total": 224,
+     "ep_failed": 163,
+     "act_all": 2037,
+     "act_failed": 1813,
+     "hall_all": 1,
+     "hall_failed": 1,
+     "rate_all_pct": 0.049091801669121256,
+     "rate_failed_pct": 0.05515719801434087,
+     "run_id": "B0_som_classifieds_20260526_041601_863239369_602235_R5313"
+    },
+    "Vision": {
+     "ep_total": 224,
+     "ep_failed": 168,
+     "act_all": 2125,
+     "act_failed": 1893,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "run_id": "B0_vision_classifieds_20260526_141916_610351680_689390_R32024"
+    }
+   },
+   "reddit\u00b7B0": {
+    "DOM": {
+     "ep_total": 205,
+     "ep_failed": 175,
+     "act_all": 2633,
+     "act_failed": 2339,
+     "hall_all": 10,
+     "hall_failed": 9,
+     "rate_all_pct": 0.379794910748196,
+     "rate_failed_pct": 0.3847798204360838,
+     "run_id": "B0_dom_reddit_20260625_154833_928747130_2827521_R11344"
+    },
+    "P-prompt": {
+     "ep_total": 205,
+     "ep_failed": 179,
+     "act_all": 2590,
+     "act_failed": 2319,
+     "hall_all": 9,
+     "hall_failed": 9,
+     "rate_all_pct": 0.3474903474903475,
+     "rate_failed_pct": 0.38809831824062097,
+     "run_id": "B0_phantom_prompt_reddit_20260709"
+    },
+    "P-SoM": {
+     "ep_total": 205,
+     "ep_failed": 182,
+     "act_all": 2795,
+     "act_failed": 2492,
+     "hall_all": 1,
+     "hall_failed": 0,
+     "rate_all_pct": 0.03577817531305903,
+     "rate_failed_pct": 0.0,
+     "run_id": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173"
+    },
+    "P-text": {
+     "ep_total": 205,
+     "ep_failed": 177,
+     "act_all": 2813,
+     "act_failed": 2443,
+     "hall_all": 6,
+     "hall_failed": 6,
+     "rate_all_pct": 0.21329541414859582,
+     "rate_failed_pct": 0.24559967253376996,
+     "run_id": "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139"
+    },
+    "SoM": {
+     "ep_total": 205,
+     "ep_failed": 175,
+     "act_all": 2634,
+     "act_failed": 2388,
+     "hall_all": 2,
+     "hall_failed": 1,
+     "rate_all_pct": 0.07593014426727411,
+     "rate_failed_pct": 0.04187604690117253,
+     "run_id": "B0_som_reddit_20260627_035453_162107997_3024022_R20936"
+    },
+    "Vision": {
+     "ep_total": 205,
+     "ep_failed": 189,
+     "act_all": 1899,
+     "act_failed": 1809,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "run_id": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559"
+    }
+   },
+   "classifieds\u00b7B1": {
+    "DOM": {
+     "ep_total": 224,
+     "ep_failed": 210,
+     "act_all": 3344,
+     "act_failed": 3290,
+     "hall_all": 68,
+     "hall_failed": 68,
+     "rate_all_pct": 2.0334928229665072,
+     "rate_failed_pct": 2.066869300911854,
+     "run_id": "B1_dom_classifieds_20260603_103630_477435114_112846_R17188"
+    },
+    "P-prompt": {
+     "ep_total": 224,
+     "ep_failed": 209,
+     "act_all": 3107,
+     "act_failed": 3003,
+     "hall_all": 134,
+     "hall_failed": 134,
+     "rate_all_pct": 4.312841969745736,
+     "rate_failed_pct": 4.462204462204462,
+     "run_id": "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516"
+    },
+    "P-SoM": {
+     "ep_total": 224,
+     "ep_failed": 209,
+     "act_all": 3414,
+     "act_failed": 3207,
+     "hall_all": 12,
+     "hall_failed": 9,
+     "rate_all_pct": 0.351493848857645,
+     "rate_failed_pct": 0.2806361085126286,
+     "run_id": "B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199"
+    },
+    "P-text": {
+     "ep_total": 224,
+     "ep_failed": 207,
+     "act_all": 3610,
+     "act_failed": 3503,
+     "hall_all": 143,
+     "hall_failed": 143,
+     "rate_all_pct": 3.961218836565097,
+     "rate_failed_pct": 4.082215244076506,
+     "run_id": "B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933"
+    },
+    "SoM": {
+     "ep_total": 224,
+     "ep_failed": 192,
+     "act_all": 2839,
+     "act_failed": 2421,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "run_id": "B1_som_classifieds_20260604_072456_562166453_226675_R31705"
+    },
+    "Vision": {
+     "ep_total": 224,
+     "ep_failed": 196,
+     "act_all": 2154,
+     "act_failed": 1961,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "run_id": "B1_vision_classifieds_20260605_012235_349047872_327631_R28622"
+    }
+   },
+   "reddit\u00b7B1": {
+    "DOM": {
+     "ep_total": 205,
+     "ep_failed": 191,
+     "act_all": 3611,
+     "act_failed": 3398,
+     "hall_all": 106,
+     "hall_failed": 82,
+     "rate_all_pct": 2.9354749376903904,
+     "rate_failed_pct": 2.413184226015303,
+     "run_id": "B1_dom_reddit_20260703"
+    },
+    "P-prompt": {
+     "ep_total": 205,
+     "ep_failed": 192,
+     "act_all": 3628,
+     "act_failed": 3435,
+     "hall_all": 142,
+     "hall_failed": 137,
+     "rate_all_pct": 3.914002205071665,
+     "rate_failed_pct": 3.988355167394469,
+     "run_id": "B1_phantom_prompt_reddit_20260713"
+    },
+    "P-SoM": {
+     "ep_total": 205,
+     "ep_failed": 191,
+     "act_all": 4162,
+     "act_failed": 3872,
+     "hall_all": 5,
+     "hall_failed": 3,
+     "rate_all_pct": 0.12013455069678039,
+     "rate_failed_pct": 0.07747933884297521,
+     "run_id": "B1_phantom_som_reddit_20260711"
+    },
+    "P-text": {
+     "ep_total": 205,
+     "ep_failed": 191,
+     "act_all": 3922,
+     "act_failed": 3693,
+     "hall_all": 117,
+     "hall_failed": 95,
+     "rate_all_pct": 2.9831718510963796,
+     "rate_failed_pct": 2.5724343352288113,
+     "run_id": "B1_phantom_text_reddit_20260710"
+    },
+    "SoM": {
+     "ep_total": 205,
+     "ep_failed": 188,
+     "act_all": 3544,
+     "act_failed": 3218,
+     "hall_all": 16,
+     "hall_failed": 16,
+     "rate_all_pct": 0.45146726862302483,
+     "rate_failed_pct": 0.49720323182100684,
+     "run_id": "B1_som_reddit_20260706"
+    },
+    "Vision": {
+     "ep_total": 205,
+     "ep_failed": 199,
+     "act_all": 2385,
+     "act_failed": 2333,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "run_id": "B1_vision_reddit_20260708_002122_732634080_205180_R16847"
+    }
+   },
+   "classifieds\u00b7B2": {
+    "DOM": {
+     "ep_total": 224,
+     "ep_failed": 221,
+     "act_all": 4593,
+     "act_failed": 4560,
+     "hall_all": 244,
+     "hall_failed": 244,
+     "rate_all_pct": 5.312431961680819,
+     "rate_failed_pct": 5.350877192982456,
+     "run_id": "B2_dom_classifieds_20260609_214713_553762009_985526_R21521"
+    },
+    "P-prompt": {
+     "ep_total": 224,
+     "ep_failed": 220,
+     "act_all": 3928,
+     "act_failed": 3894,
+     "hall_all": 577,
+     "hall_failed": 577,
+     "rate_all_pct": 14.689409368635438,
+     "rate_failed_pct": 14.817668207498716,
+     "run_id": "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175"
+    },
+    "P-SoM": {
+     "ep_total": 224,
+     "ep_failed": 222,
+     "act_all": 4213,
+     "act_failed": 4192,
+     "hall_all": 104,
+     "hall_failed": 104,
+     "rate_all_pct": 2.468549727035367,
+     "rate_failed_pct": 2.480916030534351,
+     "run_id": "B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577"
+    },
+    "P-text": {
+     "ep_total": 224,
+     "ep_failed": 223,
+     "act_all": 4009,
+     "act_failed": 3979,
+     "hall_all": 334,
+     "hall_failed": 334,
+     "rate_all_pct": 8.331254676976803,
+     "rate_failed_pct": 8.394068861522996,
+     "run_id": "B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219"
+    },
+    "SoM": {
+     "ep_total": 224,
+     "ep_failed": 219,
+     "act_all": 4505,
+     "act_failed": 4433,
+     "hall_all": 102,
+     "hall_failed": 102,
+     "rate_all_pct": 2.2641509433962264,
+     "rate_failed_pct": 2.300924881570043,
+     "run_id": "B2_som_classifieds_20260611_210828_923656661_1218867_R3380"
+    },
+    "Vision": {
+     "ep_total": 224,
+     "ep_failed": 219,
+     "act_all": 3409,
+     "act_failed": 3358,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "run_id": "B2_vision_classifieds_20260612_221910_098760264_1351451_R9288"
+    }
+   },
+   "reddit\u00b7B2": {
+    "DOM": {
+     "ep_total": 205,
+     "ep_failed": 197,
+     "act_all": 4946,
+     "act_failed": 4744,
+     "hall_all": 895,
+     "hall_failed": 873,
+     "rate_all_pct": 18.095430651031137,
+     "rate_failed_pct": 18.402192242833053,
+     "run_id": "B2_dom_reddit_20260715"
+    },
+    "P-prompt": {
+     "ep_total": 205,
+     "ep_failed": 204,
+     "act_all": 4686,
+     "act_failed": 4669,
+     "hall_all": 1549,
+     "hall_failed": 1549,
+     "rate_all_pct": 33.05591122492531,
+     "rate_failed_pct": 33.17626900835297,
+     "run_id": "B2_phantom_prompt_reddit_20260723"
+    },
+    "P-SoM": {
+     "ep_total": 205,
+     "ep_failed": 202,
+     "act_all": 4808,
+     "act_failed": 4739,
+     "hall_all": 374,
+     "hall_failed": 374,
+     "rate_all_pct": 7.778702163061564,
+     "rate_failed_pct": 7.891960329183372,
+     "run_id": "B2_phantom_som_reddit_20260722"
+    },
+    "P-text": {
+     "ep_total": 205,
+     "ep_failed": 200,
+     "act_all": 4535,
+     "act_failed": 4405,
+     "hall_all": 395,
+     "hall_failed": 383,
+     "rate_all_pct": 8.710033076074973,
+     "rate_failed_pct": 8.69466515323496,
+     "run_id": "B2_phantom_text_reddit_20260720"
+    },
+    "SoM": {
+     "ep_total": 205,
+     "ep_failed": 202,
+     "act_all": 4661,
+     "act_failed": 4579,
+     "hall_all": 409,
+     "hall_failed": 401,
+     "rate_all_pct": 8.774940999785453,
+     "rate_failed_pct": 8.757370604935575,
+     "run_id": "B2_som_reddit_20260717"
+    },
+    "Vision": {
+     "ep_total": 205,
+     "ep_failed": 200,
+     "act_all": 2533,
+     "act_failed": 2480,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "run_id": "B2_vision_reddit_20260719"
+    }
+   }
+  },
+  "quadrant_definition": {
+   "DOM": {
+    "text": "AXTree",
+    "prompt": "DOM"
+   },
+   "P-text": {
+    "text": "legend",
+    "prompt": "DOM"
+   },
+   "P-prompt": {
+    "text": "AXTree",
+    "prompt": "SoM"
+   },
+   "P-SoM": {
+    "text": "legend",
+    "prompt": "SoM"
+   }
+  },
+  "decomposition": [
+   {
+    "cell": "classifieds\u00b7B0",
+    "rates_pct": {
+     "DOM": 1.5084294587400178,
+     "P-text": 0.5057471264367817,
+     "P-prompt": 2.1037868162692845,
+     "P-SoM": 0.13895321908290875
+    },
+    "text_effect_at_DOM_prompt_pp": -1.0026823323032361,
+    "text_effect_at_SoM_prompt_pp": -1.9648335971863757,
+    "prompt_effect_on_AXTree_pp": 0.5953573575292668,
+    "prompt_effect_on_legend_pp": -0.3667939073538729,
+    "lowest_arm": "P-SoM",
+    "highest_arm": "P-prompt"
+   },
+   {
+    "cell": "classifieds\u00b7B1",
+    "rates_pct": {
+     "DOM": 2.0334928229665072,
+     "P-text": 3.961218836565097,
+     "P-prompt": 4.312841969745736,
+     "P-SoM": 0.351493848857645
+    },
+    "text_effect_at_DOM_prompt_pp": 1.9277260135985896,
+    "text_effect_at_SoM_prompt_pp": -3.9613481208880907,
+    "prompt_effect_on_AXTree_pp": 2.2793491467792286,
+    "prompt_effect_on_legend_pp": -3.6097249877074518,
+    "lowest_arm": "P-SoM",
+    "highest_arm": "P-prompt"
+   },
+   {
+    "cell": "classifieds\u00b7B2",
+    "rates_pct": {
+     "DOM": 5.312431961680819,
+     "P-text": 8.331254676976803,
+     "P-prompt": 14.689409368635438,
+     "P-SoM": 2.468549727035367
+    },
+    "text_effect_at_DOM_prompt_pp": 3.0188227152959843,
+    "text_effect_at_SoM_prompt_pp": -12.220859641600072,
+    "prompt_effect_on_AXTree_pp": 9.37697740695462,
+    "prompt_effect_on_legend_pp": -5.8627049499414365,
+    "lowest_arm": "P-SoM",
+    "highest_arm": "P-prompt"
+   },
+   {
+    "cell": "reddit\u00b7B0",
+    "rates_pct": {
+     "DOM": 0.379794910748196,
+     "P-text": 0.21329541414859582,
+     "P-prompt": 0.3474903474903475,
+     "P-SoM": 0.03577817531305903
+    },
+    "text_effect_at_DOM_prompt_pp": -0.16649949659960017,
+    "text_effect_at_SoM_prompt_pp": -0.31171217217728847,
+    "prompt_effect_on_AXTree_pp": -0.03230456325784847,
+    "prompt_effect_on_legend_pp": -0.17751723883553677,
+    "lowest_arm": "P-SoM",
+    "highest_arm": "DOM"
+   },
+   {
+    "cell": "reddit\u00b7B1",
+    "rates_pct": {
+     "DOM": 2.9354749376903904,
+     "P-text": 2.9831718510963796,
+     "P-prompt": 3.914002205071665,
+     "P-SoM": 0.12013455069678039
+    },
+    "text_effect_at_DOM_prompt_pp": 0.04769691340598925,
+    "text_effect_at_SoM_prompt_pp": -3.7938676543748846,
+    "prompt_effect_on_AXTree_pp": 0.9785272673812746,
+    "prompt_effect_on_legend_pp": -2.8630373003995992,
+    "lowest_arm": "P-SoM",
+    "highest_arm": "P-prompt"
+   },
+   {
+    "cell": "reddit\u00b7B2",
+    "rates_pct": {
+     "DOM": 18.095430651031137,
+     "P-text": 8.710033076074973,
+     "P-prompt": 33.05591122492531,
+     "P-SoM": 7.778702163061564
+    },
+    "text_effect_at_DOM_prompt_pp": -9.385397574956164,
+    "text_effect_at_SoM_prompt_pp": -25.277209061863747,
+    "prompt_effect_on_AXTree_pp": 14.960480573894174,
+    "prompt_effect_on_legend_pp": -0.9313309130134089,
+    "lowest_arm": "P-SoM",
+    "highest_arm": "P-prompt"
+   }
+  ],
+  "summary": {
+   "n_cells": 6,
+   "cells_where_P_SoM_lowest": 6,
+   "cells_where_P_prompt_highest": 5,
+   "cells_text_effect_negative_at_SoM_prompt": 6,
+   "cells_text_effect_negative_at_DOM_prompt": 3,
+   "cells_prompt_effect_negative_on_legend": 6,
+   "cells_prompt_effect_negative_on_AXTree": 1
+  }
+ }
+}
