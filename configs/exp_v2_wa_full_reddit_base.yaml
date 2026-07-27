@@ -1,0 +1,31 @@
+# WA reddit FULL scored set — lifts the 10-task pilot restriction (2026-07-27)
+#
+# Why a separate layer instead of editing `exp_v2_wa_base.yaml`: the 10-per-site
+# stratified draw in that file is the sample registered by prereg §8.8
+# (B-1296/B-1627) and reproducible from `scripts/queues/_wa_pilot_task_sample.py`.
+# The pilot has now run all 6 modes on it and validated the pipeline end to end
+# (it is what surfaced B-1888). Editing the registered sample in place would make
+# that registration unverifiable, so the pilot base stays byte-identical and the
+# full-scale runs inherit through this layer.
+#
+# What changes: `task.task_ids.reddit` is deleted, so `load_tasks` applies no ID
+# filter and the site's whole scored pool runs — 104 tasks (106 total − 2 N/A per
+# §139.8). `shopping` / `shopping_admin` keep their pilot draws; neither has a
+# reset implementation (B-647 lifts reset for wa reddit only, since it shares the
+# VWA postmill container), so full-scale runs on those two sites would not be
+# paper-grade clean and are deliberately not enabled here.
+#
+# The `{__delete__: true}` sentinel is B-574's explicit "unset an inherited key";
+# a plain `reddit: []` would also disable filtering, but the sentinel says
+# "remove the pilot restriction" rather than "the pilot sample is empty".
+#
+# This is a 3-level defaults chain (condition → this → wa_base → base) and so
+# depends on the recursive resolution landed as B-1888 — pre-fix it would have
+# silently dropped both the wa layer and the base layer.
+
+defaults:
+  - configs/exp_v2_wa_base.yaml
+
+task:
+  task_ids:
+    reddit: {__delete__: true}

@@ -440,11 +440,33 @@ for cmd in "$@"; do
   #     ("应该百分百 paper grade"): require exact match. `PAPER_GRADE_ALLOW_PARTIAL=1`
   #     env override for explicit pilot/dirty mode. SITE_EXPECTED_N values
   #     switched to post-exclusion scored_task_count (cls=224 / red=205 /
-  #     shop=435 per memory `reference_fp_architecture_2026-05-14`); WA stays
-  #     at pre-exclusion since WA has no N/A taxonomy (per prereg).
+  #     shop=435 per memory `reference_fp_architecture_2026-05-14`).
+  #     [B-1894 RETRACTED the rest of this sentence, which read "WA stays at
+  #     pre-exclusion since WA has [no NA] taxonomy (per prereg)" — see below.]
+  #
+  # B-1894 (2026-07-27): the WA row above was WRONG and its justification was
+  # counterfactual. 笔记 §137 / task #76 (2026-05-14) established the N/A
+  # exclusion as "一条统一 config 规则, 无 per-site edge case" and counted the N/A
+  # tasks on all six sites — including wa-shop 19 / wa-admin 6 / wa-red 2. The
+  # runner has excluded them since (`exclude_na_tasks` defaults true), so a
+  # full-scale WA paper-grade chain would produce 104 reddit episodes against an
+  # expected 106 and FATAL at this sentinel. It was never hit because WA had only
+  # ever run as the 10-task pilot with PAPER_GRADE_ALLOW_PARTIAL=1. The 2026-05-17
+  # EXPECTED_N sweep updated the three VWA sites and left the three WA sites
+  # behind under that false rationale.
+  #
+  # These stay hardcoded — this runs inside the fire path and must not acquire a
+  # runtime dependency mid-chain. `tests/test_b1894_wa_expected_n.py` pins the
+  # table to `scored_task_count`, so drift fails in CI instead of at hour 85 of a
+  # run. Regenerate with:
+  #   .venv/bin/python3 -c "from p79.experiment.analysis import scored_task_count as s; \
+  #     print({k: s(v, b) for k, v, b in [('classifieds','classifieds','visualwebarena'), \
+  #     ('reddit','reddit','visualwebarena'), ('shopping','shopping','visualwebarena'), \
+  #     ('wa_shopping','shopping','webarena'), ('wa_shopping_admin','shopping_admin','webarena'), \
+  #     ('wa_reddit','reddit','webarena')]})"
   declare -A SITE_EXPECTED_N=(
     [classifieds]=224 [reddit]=205 [shopping]=435
-    [wa_shopping]=192 [wa_shopping_admin]=182 [wa_reddit]=106
+    [wa_shopping]=173 [wa_shopping_admin]=176 [wa_reddit]=104
   )
 
   # B-631 P0-2: structural site-key parse, NOT substring loop. Benchmark

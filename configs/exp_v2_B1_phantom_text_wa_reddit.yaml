@@ -3,7 +3,7 @@
 
 
 defaults:
-  - configs/exp_v2_wa_base.yaml
+  - configs/exp_v2_wa_full_reddit_base.yaml   # full 104-task scored set (2026-07-27); pilot base kept intact
 
 experiment:
   phase: "phase1"

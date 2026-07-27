@@ -4450,7 +4450,7 @@ Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fi
 - **Source**: Mode B codex F5 OOB (user picked Option A from triaged Q3)
 - **Code**: `queue_chain.sh:267-269` pre-fix `if expected > 0 and ep < expected * 0.9: FATAL` — 90% partial pass; `SITE_EXPECTED_N` hardcoded pre-exclusion (234/210/466).
 - **Attack**: Reddit 189/210 (= 90%) passes sentinel + chain advance; paper §1 hero N=205 (post-exclusion) → denominator drift between chain advancement + paper write → reviewer catches partial-cell math.
-- **Fix**: Exact match `ep != expected_n` → FATAL by default; `PAPER_GRADE_ALLOW_PARTIAL=1` env override for explicit pilot/dirty mode (WARN + advance). SITE_EXPECTED_N switched to post-exclusion scored_task_count (cls=224, red=205, shop=435 per `[reference_fp_architecture_2026-05-14]`); WA stays pre-exclusion (no N/A taxonomy per prereg).
+- **Fix**: Exact match `ep != expected_n` → FATAL by default; `PAPER_GRADE_ALLOW_PARTIAL=1` env override for explicit pilot/dirty mode (WARN + advance). SITE_EXPECTED_N switched to post-exclusion scored_task_count (cls=224, red=205, shop=435 per `[reference_fp_architecture_2026-05-14]`). ⚠️ **B-1894 (2026-07-27) 撤回本行原有的后半句** ("WA stays pre-exclusion, [no NA] taxonomy per prereg") —— 该说法与笔记 §137 task #76 直接矛盾 (WA 三站各有 2/19/6 个 N/A 任务, runner 一直在排除), 导致全量 WA paper-grade chain 必 FATAL。WA 三站已改 173/176/104。
 
 ### B-636. P2-2-C phantom_dom legacy naming drift — merged into B-630 (user directive sweep)
 
@@ -8866,3 +8866,101 @@ POST-ANALYSIS。新增 `P79_WATCHDOG_SKIP_BOOTSTRAP_REPORT=1` → `last_report_t
 **Cross-link**: B-1840 / B-1825 / B-1827 (同家族前 3 次); 2026-07-03 FIRELOG queue_chain_*
 修 (第 4 次, 见 fire6_monitor.sh:40-46 注释); B-1888 (同日另一个"WA 路径从未被执行过"的暴雷);
 笔记 §387.10。
+
+---
+
+## B-1894 — WA 三站的 `SITE_EXPECTED_N` 停在 pre-exclusion, 且理由是反事实的: 全量 WA paper-grade chain 必在收尾 sentinel FATAL (2026-07-27)
+
+**B-1894** (paper-grade gate / stale constant, **FIXED**) —
+
+`queue_chain.sh` 每跑完一个 condition 会用 `SITE_EXPECTED_N[<site>]` 做**精确**
+episode 数校验 (B-635: `ep != expected_n` → FATAL, `PAPER_GRADE_ALLOW_PARTIAL=1`
+才降级为 WARN)。这张表里 WA 三站是:
+
+```
+[wa_shopping]=192 [wa_shopping_admin]=182 [wa_reddit]=106     # ← 全是 raw 总数
+```
+
+而 runner 加载时按 §139.8 排除 N/A (`exclude_na_tasks` 默认 true), 实际产出:
+
+| site | raw | N/A | runner 实产 | 表里写 |
+|---|---|---|---|---|
+| wa reddit | 106 | 2 | **104** | 106 ❌ |
+| wa shopping | 192 | 19 | **173** | 192 ❌ |
+| wa shopping_admin | 182 | 6 | **176** | 182 ❌ |
+
+→ **任何全量 WA paper-grade chain 都会在第一个 condition 收尾时 FATAL**
+(`episodes=104 != expected=106`)。
+
+**为什么两个月没被发现**: WA 至今只以 10-task pilot 形式跑过, 且 pilot 必开
+`PAPER_GRADE_ALLOW_PARTIAL=1` (10 != 106 本来就不等), 于是这条路径永远走 WARN 分支。
+与 B-1888 / B-647 同源: **WA 这条路从来没有被真正执行过**。
+
+**⚠️ 真正值得记的是错误的理由, 不是错误的数字。** 该表上方注释写:
+
+> SITE_EXPECTED_N values switched to post-exclusion scored_task_count
+> (cls=224 / red=205 / shop=435 …); **WA stays at pre-exclusion since WA has no
+> N/A taxonomy (per prereg)**
+
+这句**与笔记直接矛盾**。笔记 §137 / task #76 (2026-05-14) 落 N/A 排除时写的是
+"一条统一 config 规则, **无 per-site edge case**", 并逐站点了数:
+"cls 10 / red 5 / shop 31 / **wa-shop 19 / wa-admin 6 / wa-red 2** = 1390 的 5.3%"。
+同一条笔记还预告了本 bug: "⚠️ 下游 `EXPECTED_N` sweep 待做"。
+所以 2026-05-17 那次 sweep 只做了 VWA 三站, WA 三站被留下, 并**补了一个凭空的理由**
+把这个遗漏说成是设计。
+
+**Fix**: 两处表改 post-exclusion (`queue_chain.sh` gate + `launch.sh` cell-frontmatter
+`n:` 种子, 后者仅显示层); 保持硬编码 (在 fire path 内, 不给它加运行时依赖),
+改由 `tests/test_b1894_wa_expected_n.py` 解析 bash 表并逐格比对 `scored_task_count` —
+**漂移在 CI 炸, 不在第 85 小时炸**。该测试还断言那句 "no N/A taxonomy" 不得复活:
+**数字改对但错误理由还立着, 下一个作者会把它"改回去"**。
+
+**教训**: 一个常量表被部分更新时, **没被更新的那几行往往会长出一个解释**。
+本次那句解释比数字本身危险 —— 数字错了会被实测抓到, 理由错了会让实测结论被驳回。
+校验常量表的测试应当同时钉住**数字**和**否定掉已被证伪的理由文本**。
+
+**Cross-link**: B-635 (精确校验的来源); B-1888 + B-647 (同日同源"WA 路径未被执行过");
+笔记 §137 task #76 (被违背的单一规则 + 本 bug 的预告) · §387.15。
+
+---
+
+## B-1895 — 跨站 episode 里出现「整条 `|AND|` 规格被当单个 URL 导航」的 obs_url (77/720) 🔎 DIAGNOSED, 根因未定 (2026-07-27)
+
+**B-1895** (scaffold 异常, **已诊断未定根因**) —
+
+VWA reddit 有 40 个跨站任务, `start_url` 形如
+`__REDDIT__/f/x/38990 |AND| __WIKIPEDIA__/.../Landing`。上游
+`browser_env/envs.py:214` **正确**按 `" |AND| "` 拆分并逐个 `new_page().goto()`,
+再把 `pages[0]` 设为当前页 —— 多标签页基座是好的, 实测 **141/720 (19.6%) 的跨站
+episode 确实落到过 `localhost:8888`**。
+
+但 **77/720 (10.7%)** 的 episode 里出现过这样一个 `obs_url`:
+
+```
+http://localhost:9999/f/dataisbeautiful/38990%20%7CAND%7C%20http://localhost:8888/...
+                                          ^^^^^^^^^^^^^^^^ = " |AND| " URL-encoded
+```
+
+即**整条多标签页规格被当成单个 URL 拼在 reddit host 后面导航了**。
+
+**已排除的来源**: (1) 不是初始导航 —— 出现该 URL 的 episode 在 step 0 的 `obs_url`
+是干净的; (2) 不是 `new_tab` —— 上游 `ActionTypes.NEW_TAB` 只做 `browser_ctx.new_page()`,
+开的是空白页 (actions.py:1427-1428)。B0_dom task 58 的实例里, step 5 的动作恰是
+`new_tab`, 之后 obs_url 即变成该拼接串, 三步后又变回 `localhost:9999/`。
+
+**分布**: B0 21 / B1 56 / **B2 0**。B2 完全不产生 → 与模型发出的动作相关, 但上面两条
+已排除了最直接的两个 agent 动作通道。**根因未定, 不猜。**
+
+**影响评估 (已做, 结论是有限)**: 不影响 AMENDMENT_08 两个排除 —— task 58 的 9 次成功
+在**任何 URL 形态下** wikipedia host 都未被加载 (host 提取口径), task 160 是单站任务。
+但它可能压低了跨站类的 SR (1.53% vs 纯 reddit 8.25%), 所以**跨站类的低 SR 目前不能
+干净地归因为"模型不会跨站取证"** —— 这正是 AMENDMENT_08 §2 不排除整个跨站类的另一个理由。
+
+**⚠️ 计量陷阱 (本次自己踩了一次)**: 判断"是否到过 wikipedia"**必须做 host 提取**
+(`^https?://([^/]+)`), 不能用 `":8888" in url` 子串匹配 —— 该拼接串里含 `:8888`,
+子串口径会把它误计为"到过", 使 141 episodes / 2265 steps 虚报成 181 / 2984。
+
+**待办**: 若要用跨站结果, 需先定根因 (查 P79 wrapper 的 goto/url 归一化 + agent prompt
+里是否原样暴露了未拆分的 start_url)。当前不阻塞 paper-1 (跨站类不进任何主张)。
+
+**Cross-link**: B-1894 (同日, 同属 WA/跨站路径的欠执行); AMENDMENT_08 §2; 笔记 §387.15。

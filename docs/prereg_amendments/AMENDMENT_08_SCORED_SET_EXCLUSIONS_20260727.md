@@ -140,17 +140,37 @@ column and lose nothing else.
 ## §2 — What is NOT excluded, and why
 
 The cross-site class as a whole is **not** excluded, though it would be a defensible
-scope decision: 40 of 205 reddit tasks (19.5%) declare a second site, and they run at
-**1.91% SR (11/576 episodes) against 8.25% (245/2970) for the reddit-only tasks** —
-a 4.3× gap; the 8 shopping-cross tasks are 0/144.
+scope decision. 40 of 205 reddit tasks (19.5%) declare a second site, and across the
+18 Pass-1 conditions they run at:
 
-Excluding the class would raise reddit pooled SR from 6.94% to 7.86%. It is left in
-because (a) the paper's site scope is a data-collection fact, not a task-eligibility
-criterion, and the cross-site tasks are part of the benchmark's reddit split as
-published; (b) the depressed SR is a *finding about cross-site grounding*, not an
-eval defect — tasks 49 and 66 show the class is solvable as designed. The arm is
-reported as informational in §5 so a reviewer can see that the tier-B single-task
-exclusion is not standing in for a much larger unstated one.
+| group | tasks | episodes | successes | SR |
+|---|---|---|---|---|
+| cross-site (any second site) | 40 | 720 | 11 | **1.53%** |
+| — of which wikipedia-declaring | 32 | 576 | 11 | 1.91% |
+| — of which shopping-declaring only | 8 | 144 | 0 | 0.00% |
+| reddit-only | 165 | 2970 | 245 | **8.25%** |
+
+a 5.4× gap. Excluding the class would raise reddit pooled SR from 6.94% to 7.86%.
+
+It is left in because (a) the paper's site scope is a data-collection fact, not a
+task-eligibility criterion, and the cross-site tasks are part of the benchmark's
+reddit split as published; (b) the depressed SR is a *finding about cross-site
+grounding*, not an eval defect. The class is reachable and solvable as designed:
+the multi-tab `|AND|` start_url is split and pre-opened by the upstream env
+(`browser_env/envs.py:214`), the agent action space exposes `tab_focus` / `goto`
+and the prompt instructs their use, **141 of the 720 cross-site episodes (19.6%)
+did land on `localhost:8888`**, and tasks 49 and 66 were solved with genuine
+second-site grounding. The arm is reported as informational in §5 so a reviewer
+can see that the tier-B single-task exclusion is not standing in for a much larger
+unstated one.
+
+One scaffold anomaly on this class is recorded but not resolved: in 77 of the 720
+cross-site episodes (10.7%) an `obs_url` appears that is the URL-encoded *whole*
+`|AND|` specification navigated as a single URL. It is not produced by the initial
+navigation (step 0 is clean) nor by `new_tab` (upstream `new_page()` opens blank),
+and B2 never produces it. See B-1895. It does not bear on either exclusion: task 58's
+9 successes reach the reference string with the wikipedia **host** never loaded under
+any URL form, and task 160 is single-site.
 
 ## §3 — Two denominators, deliberately kept apart
 

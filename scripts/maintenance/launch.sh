@@ -82,9 +82,15 @@ declare -A SITE_3=(
   [classifieds]="cls" [reddit]="red" [shopping]="shop"
   [wa_shopping]="wa_shop" [wa_shopping_admin]="wa_admin" [wa_reddit]="wa_red"
 )
+# B-1894 (2026-07-27): post-§139.8 scored counts, was the pre-exclusion raw
+# totals on all six sites (234/210/466 + 192/182/106). Only seeds the `n:` field
+# of a freshly created cell note — the `glm-update-cells` cron maintains it from
+# `scored_task_count` afterwards — so the drift was cosmetic here, unlike the
+# same table in `queue_chain.sh` which gates a chain. Pinned by
+# `tests/test_b1894_wa_expected_n.py`.
 declare -A SITE_N=(
-  [classifieds]=234 [reddit]=210 [shopping]=466
-  [wa_shopping]=192 [wa_shopping_admin]=182 [wa_reddit]=106
+  [classifieds]=224 [reddit]=205 [shopping]=435
+  [wa_shopping]=173 [wa_shopping_admin]=176 [wa_reddit]=104
 )
 
 LABEL="${MODE_LABEL[$MODE]}"
