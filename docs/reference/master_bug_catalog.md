@@ -8612,3 +8612,108 @@ WA 从 2026-05-15 生成 config 起**一次都没 fire 过**, 所以没有任何
 **Cross-link**: B-647 (同日解除的 WA reset guard —— 两者都是"WA 路径从未被执行过"暴露出来的);
 `p79/backends/factory.py:67` (显式 dispatch, 崩溃现场);
 `configs/exp_v2_wa_base.yaml` (唯一的二级中间层); commit 本节。
+
+---
+
+
+## B-1889 — reddit task 160 是 must_exclude-only eval: 13/13 判成功的轨迹都不可能真完成任务 (2026-07-27)
+
+**B-1889** (benchmark-FP, **待决策 — 排除与否属 prereg 级改动, 不自行处置**) —
+`reddit task 160` ("subscribe to all subreddits that **start with the letter 'i'** and have a
+female usb to male lightning connector image in their top 3 posts") 是 **mutation 任务**,
+但 `eval.program_html` **只有 must_exclude 负向检查**, 无任何 must_include / exact_match:
+
+```
+locator: func:get_query_text(__page__, "#sidebar > section > ul")
+required_contents: { must_exclude: ["IAmA", "InternetIsBeautiful", "iphone"] }
+```
+
+且该 task `require_reset=true` → reset 后空账号的订阅列表天然不含这三项 → **一次订阅都不做 = score 1.0**。
+
+**范围**: 全 210 个 reddit task 中**只有这一个**是 negative-only eval (全量扫描确认)。
+
+**实证 (轨迹硬约束, 不依赖任何统计字段)**: 该 task 在 18 个 reddit condition 中 **13 个判成功**。
+订阅按钮只存在于 `/f/<forum>` 页面上, 因此"是否进过 forum 页"是可从 `steps_v2.jsonl` 的
+`obs_url` 直接验证的硬前提:
+
+- **10 / 13 全程从未访问任何 `/f/<forum>` 页面** → 结构上不可能完成订阅。
+- 余下 3 个进过 forum 页, 但进的是 `memes` / `MachineLearning`+`relationship_advice` /
+  `AskReddit`+`Search` —— **没有一个以 'i' 开头**, 同样不可能满足任务要求。
+
+→ **13/13 全部是被动通过**, 无一例真正完成任务。两个独立 Tier-2 sub-agent
+(B2_vision / B2_phantom_prompt) 从轨迹侧分别独立得出同一结论。
+
+**分布非均匀, 这是危险处**: B0(235B) 仅 2/6 mode 受影响, B1(Qwen3-4B) **6/6**, B2(Gemma3-4B) 5/6。
+**模型越弱越倾向"什么都不做", 就越容易白嫖这一分** → 该 FP 系统性给弱模型送分、压缩 model 间
+SR 差距, 不是可忽略的均匀噪声。
+
+**影响量化**: 13 个 cell 各 -0.49pp, 其余 5 个不变。定性变化一处:
+**B2_phantom_prompt 1/205 (0.49%) → 0/205 (0.00%)** —— 其唯一成功即此例。
+对 hero metric (drop-one oracle unique-solve) 影响小 —— 它在 13 个 cell 都"成功", 不构成
+任何 mode 的独解, 不进 unique-solve 计数。
+
+**与 §139.8 N/A 排除同构**: N/A task 被预注册排除的理由是"评测器无法区分 reasoned N/A 与提前退出";
+task 160 是同一问题的另一面 —— 评测器无法区分"完成了订阅"与"什么都没做"。两者都是
+**eval 不具判别力**, 而非模型表现差异。
+
+**为什么现有 P35 抓不到**: `check_p35` (MUTATION_MISSING) 要求 `eval_source` 含 `item_edit`
+或 locator 含 `.comments_list`, 且 `agent_finished == True`。task 160 的 locator 是 sidebar
+订阅列表, 且 13 例中多数 `agent_finished == False` → 两个条件都不满足, 是真实检测盲区。
+
+**处置 (待 user / advisor 决策)**: 排除 scored set = 改 estimand = prereg 级改动。选项:
+(a) 比照 §139.8 增列预注册排除 + PROTOCOL_NOTE 披露; (b) 保留但在 §8 披露该 FP 及其非均匀分布;
+(c) 保留且不披露 (不推荐)。
+
+**建议落的检测规则** (与排除决策无关, 纯 0-token):
+`PASSIVE_MUST_EXCLUDE_FP` = `success==True` 且该 task 的 program_html `required_contents`
+只含 `must_exclude` → 标记候选人工复核。**注意实现时不要使用
+`effective_mutating_action_count` 作为判据 —— 见 B-1890, 该字段恒为 0。**
+
+**Cross-link**: §139.8 (N/A 预注册排除, 同构先例); B-1890 (最初误用的死字段);
+[[reference_vwa_design_quirks]] (require_reset 仅 cls 生效); 笔记 §387.7。
+
+---
+
+## B-1890 — footprint 统计字段是从未填充的 schema 预留槽, 恒为 0 (2026-07-27)
+
+**B-1890** (陷阱字段 / 假阴性风险, **未修 — 需决定是实现还是显式标记为未测量**) —
+`EpisodeSummaryV2` 的一组 footprint 字段**在 schema 中存在、类型合法、值看起来正常**,
+但 runner **从未填充过它们**:
+
+| 字段 | 实测值 |
+|---|---|
+| `effective_mutating_action_count` | **0** (全部 558/558 抽样 episode) |
+| `destructive_action_count` | 0 |
+| `submit_create_count` | 0 |
+| `cart_mutation_count` | 0 |
+| `repeated_same_mutating_action_count` | 0 |
+| `footprint_risk_score` | None |
+
+`p79/experiment/types.py:587-600` 的注释写明了预期语义
+(`action_success AND page_changed AND action_type ∈ {type, click_submit, ...}`), 但同段末尾
+明确写着 **"Defer to follow-up since runner aggregation requires action heuristic spec lock;
+field reservation closes schema gap"** —— 即这是**只占位、未实现**。
+
+**为什么危险**: 字段名读起来像测量结果, 默认值 `0` 又恰好是一个**语义上合法的观测值**
+("这个 episode 没有产生任何突变动作")。任何分析代码写
+`if summary["effective_mutating_action_count"] == 0: ...` 都会得到 **100% 命中**,
+并把它当成一个惊人的发现。
+
+**实证 (本 session 亲身踩中)**: 诊断 B-1889 时, 我用该字段扫全部 18 个 reddit condition,
+得到"256 个 success 中 114 个是零突变的 mutation-task"——看起来是重大发现, 实际上只是
+"该字段恒为 0"的重述。两个 Tier-2 sub-agent 也各自把它写进了证据链。
+改用轨迹硬约束 (`obs_url` 是否到达过 `/f/<forum>`) 重做后结论才站得住 (见 B-1889)。
+
+**与 B-1887 同构**: B-1887 的教训是 "`dict.get(key, <falsy default>)` 出现在标签/结局派生
+路径上, 必问这个 default 会不会把'没测量'伪装成'测量到阴性'"。B-1890 是**同一陷阱的
+schema 层版本** —— 不是 `.get()` 的 default, 而是 dataclass 的 default, 落盘后与真实测量
+值无法区分。**JSON 里的 `0` 不带 provenance。**
+
+**处置选项**: (a) 实现填充逻辑 (需先锁 action 启发式规格, 即注释里 defer 的原因);
+(b) 改默认值为 `None` 并在 schema 注释标注 "未测量", 让误用立刻 TypeError 而非静默假阴性
+—— 但会破坏既有 JSONL 兼容性, 需 migration; (c) 至少在 `schema_migrations/` 的字段 catalog
+中显式标注 NOT-POPULATED, 并加一条测试断言"若某字段全库恒为默认值, 必须在 catalog 中登记为
+未实现"。**建议 (c) 优先** —— 成本最低且直接防住误用。
+
+**Cross-link**: B-1887 (同构教训, mode 层); B-1889 (本字段导致的误判现场);
+`p79/experiment/types.py:587-602`; `p79/experiment/schema_migrations/v2.py:162`。
