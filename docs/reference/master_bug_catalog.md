@@ -8766,3 +8766,61 @@ framework fallback 仍执行了某种降级动作, 顶层于是记 `action_succe
 `p79/envs/locator_dispatch.py` (walk_fail 来源); P36 `check_p36` (唯一绕过 action_success 的规则);
 笔记 §387.7; 发现路径 = B2_phantom_text Tier-2 sub-agent 报告 + 本条实测复核 (原报告把根因归为
 "scroll 被误判为 page_changed", 实测显示那只是第二重压制, 主因是 action_success 语义脱节)。
+
+---
+
+## B-1892 — reddit task 58 是 parametric-knowledge 捷径: 8/9 判成功的轨迹从未做跨站取证 (2026-07-27)
+
+**B-1892** (benchmark-FP, **待决策 — 与 B-1889 同属 prereg 级, 不自行处置**) —
+`reddit task 58` (`sites: [wikipedia, reddit]`, string_match)
+intent = *"Who is the author of the most popular novel adapted anime in year 2012?"*
+参考答案 **Reki Kawahara**(《刀剑神域》作者)。任务设计意图是**跨站信息检索**
+(在 reddit 找到线索 → 去本地 wikipedia 取证), 但**这个答案是广为人知的常识**,
+模型可直接从预训练参数知识作答, 无需访问任何站点。
+
+**实证 (轨迹硬约束)**: 该 task 在 18 个 condition 中 **9 个判成功**。跨站取证的硬前提是
+访问过 `localhost:8888`(本地 kiwix wikipedia), 可从 `obs_url` 直接验证:
+
+- **8 / 9 全程从未访问 `localhost:8888`** —— 未做任何跨站取证。
+- 唯一取证的是 **B0_dom**(跑满 30 步那条)。
+- 步数分布佐证: 未取证的 8 条多在 3–21 步内结束(B1_dom 仅 3 步、B0_phantom_prompt 4 步),
+  即"想都没想就答对了"。
+
+**范围限定 (重要, 防夸大)**: reddit 共 **40 个多站点任务**(`sites` 长度 >1), 它们在 18 个
+cell 上**总共只产生 11 个成功**(这类任务本身极难)。其中 8 个未取证, **且全部是 task 58 这一个**。
+→ **不是 40 个任务的系统性问题, 是这一个任务的答案恰好是常识。** 其余多站点任务没有出现
+同类捷径成功。
+
+**与 B-1889 的机制差异**: 两者都属"eval 不具判别力", 但成因不同 ——
+- B-1889 (task 160): **eval 只查负向条件** → 什么都不做也满足。是 eval **写法**的问题。
+- B-1892 (task 58): eval 写法没问题, 是**任务选题**让 parametric knowledge 能绕过取证路径。
+  benchmark 文献里的"知识泄漏"(knowledge leakage)。
+
+**合并影响 (B-1889 + B-1892)**:
+
+| model | 受影响情况 |
+|---|---|
+| B0 | 4 个 cell 各 −1 |
+| **B1** | **5 个 mode 各 −2**(两个 FP 都中) + vision −1 |
+| B2 | 5 个 cell 各 −1, phantom_som −2 |
+
+合计 18 cell 汇总 SR **6.94% → 6.37% (−0.57pp)**; 15/18 cell 受影响;
+**B2_phantom_prompt 归零 (0.49% → 0.00%)**。
+
+⚠️ **分布模式值得单独注意**: 受影响最重的是 **B1(中等能力)** 而非 B2。白嫖这类 FP 需要
+"做了一点但没做对" —— 太强(B0 常真把任务做完, 反而不落入 FP 判定)和太弱(B2 连目标页面
+都进不去)都不容易中。**这意味着 FP 对 SR 的污染不是单调随能力递减的, 简单的"给弱模型送分"
+描述并不准确**(B-1889 单独看时的初步印象需按此修正)。
+
+**处置**: 同 B-1889 —— 排除 scored set 属 prereg 级改动, 三选项 (预注册排除 / 保留但披露 /
+保留不披露)。**建议与 B-1889 打包成同一个 PROTOCOL_NOTE 一并决策**, 因为两者同属
+"eval 不具判别力"且影响集合重叠。
+
+**检测规则建议** (0-token): `MULTI_SITE_TASK_SINGLE_SITE_GROUNDING` =
+`success==True` 且 `task.sites` 长度 >1 且全轨迹 `obs_url` 只覆盖其中 1 个站点
+→ 标记"疑似参数知识捷径成功"候选复核。**注意这是候选标记而非自动排除** —— 模型确实可能
+先在 reddit 看到答案再直接作答(合法), 需人工看轨迹判定。
+
+**Cross-link**: B-1889 (同批 benchmark-FP, 建议打包决策); B-1890 (勿用 footprint 字段判据);
+P25 (`check_p25` 跨站任务跳过其中一站 —— 现有规则已能命中, 但它只在 failed 侧生效,
+success 侧需新增 gate); 笔记 §387.9; 发现路径 = B1_som Tier-2 sub-agent + 本条跨 18-cell 复核。
