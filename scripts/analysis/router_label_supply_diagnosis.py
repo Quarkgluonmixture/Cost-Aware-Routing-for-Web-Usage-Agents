@@ -324,9 +324,31 @@ def measure_tiebreak_arbitrariness(pool: dict) -> dict[str, Any]:
 
 
 def build(pool: dict) -> dict[str, Any]:
-    universe_sha = {
-        site: expected_scored_ids(site)[1] for site in ("classifieds", "reddit")
-    }
+    # B-1906: do NOT re-derive the digest here. `test_universe_consumption_lint`
+    # caught the first draft of this function doing `expected_scored_ids(site)[1]`
+    # — the exact SHA-only pattern that lint exists to ban, written on the same
+    # day as the lint. Read the digest the upstream feature cache already recorded
+    # alongside the rows it actually kept, so this artifact cannot claim a
+    # universe its input does not have. Cross-check it against the canonical set
+    # and fail closed on disagreement.
+    universe_sha: dict[str, str] = {}
+    for cid, rec in pool["meta"].get("per_cell_summary", {}).items():
+        up = rec.get("universe_provenance") or {}
+        site = _site_of(cid)
+        sha = up.get("content_task_ids_sha256")
+        if not sha:
+            raise ValueError(
+                f"{cid}: feature cache carries no content_task_ids_sha256 — "
+                f"regenerate it with extract_50_features.py (B-1904)."
+            )
+        if universe_sha.setdefault(site, sha) != sha:
+            raise ValueError(f"{site}: cells disagree on the task universe digest")
+        canonical = expected_scored_ids(site)
+        if sha != canonical[1]:
+            raise ValueError(
+                f"{site}: feature cache universe {sha[:12]} != canonical scored "
+                f"{canonical[1][:12]} — the cache predates the current scored set."
+            )
     return {
         "post_hoc_exploratory": True,
         "h10_eligible": False,
