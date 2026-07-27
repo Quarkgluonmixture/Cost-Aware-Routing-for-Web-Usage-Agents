@@ -23,6 +23,94 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> 🎯 **2026-07-27 (四) — 起稿 EMNLP/REALM 双稿的交接。先读这一整块再动笔。** ⭐⭐⭐⭐
+>
+> ### 1. 结论已定: H1 失败, 走预注册的 Route C'-S
+>
+> k=6 重灌 + 零预设三家 /stress 审计后的**权威数字** (产物 `results/phantom_paper/phase1_full_prereg_decision.json`):
+>
+> ```
+> H1  P-SoM drop-one 优越性     FAIL   θ_FE=0.749pp (bootstrap PRIMARY) p=0.807 vs H0 θ≤1.0pp
+>                                       per-cell: cls/B0 .893 red/B0 .985 cls/B1 1.339
+>                                                 red/B1 .000 cls/B2 .446 red/B2 .493   I²=0%
+> H3  axis-1                    PASS   θ_FE=1.3528pp  p=1.186e-05   (Holm m=2 通过)
+>     axis-2                    PASS   θ_FE=2.0877pp  p=7.515e-07   (Holm m=2 通过)
+> H2(a) cost 带                 未证伪  6/6 cell 在带内, n=1281
+> → framing R5, post_r5_pivot = C_prime_structure (AMENDMENT_02 §4 预注册路线)
+> ```
+>
+> **I²=0% 是最要紧的一个数**: 六 cell **一致地小**, 不是噪声掩盖。再加 cell 也推不过 1.0pp。这个 FAIL 是稳的。
+>
+> **Paper A 的 framing 必须改, 但论点不倒**: task note 原本写的主张就是「H3 双轴 PASS + 各臂独解 + cost 剖面」,
+> H3 两轴都以 p~1e-5/1e-7 通过 → **论点毫发无伤, 要改的是 hero metric 的措辞**:
+> CLAUDE.md 里「drop-one oracle 1.7-3.3pp = THE principal hero metric」在 6-mode 全组合下实测是 **0.0-1.3pp**,
+> 那个 1.7-3.3pp 来自 archive/partial portfolio, **一律不能再用**。改为 §1 以 H3 结构分解立论。
+>
+> ### 2. ⚠️ 起稿前必须先拍一个 estimand 决策: B-1898
+>
+> prereg L103-111 把 SE floor 锁在 `ses <= 0` (恰好为零, "edge-case backstop"), 但 **H1 的实现用 `ses < 0.68`**
+> (本次 4/6 cell 触发), H3 用预注册规则。0.68 在 prereg 里是 Agresti-Coull 的**缓冲交叉核对值**, 被实现成阈值。
+>
+> | 规则 | θ_FE | z vs 1.0pp | gate |
+> |---|---|---|---|
+> | 实现 `ses<0.68` | **0.7897** | −0.585 | FAIL |
+> | 预注册 `ses<=0` | **0.6533** | −1.417 | FAIL |
+>
+> 判决不变, 但**审稿人照 prereg 重算得 0.6533 而不是论文写的 0.7897 —— 数字对不上就是 kill**。
+> 三选一 (推荐 **a+c**): (a) 实现对齐 prereg; (b) 补 0.68 的预注册说明; (c) 两者都报作敏感性。
+> **这个不定, 任何 H1 数字都不该进稿。**
+>
+> ### 3. 🚫 绝对不要引用的数字 (本 session 自己推翻的)
+>
+> | 出处 | 错的 | 对的 |
+> |---|---|---|
+> | 笔记 §387.9 | 汇总 SR **6.37%** | **6.40%** |
+> | 笔记 §387.9 | task58 取证 8/9 | **9/9 全未取证** |
+> | 笔记 §387.16.3 | triage 成本 **−38%~−45%** | **−9.5%~−30.6%** (B-1899) |
+> | §387.16.3 推论 | 「成本这半值 40% 且标签充足所以有戏」 | **作废** — 5/6 cell 里不用 router 的 `cheapest` 省得更多 |
+> | 旧 hook | drop-one **1.7-3.3pp** hero | 6-mode 实测 **0.0-1.3pp** |
+>
+> ### 4. Paper B 现在有四条独立路径, 全部阴性, 论证闭合
+>
+> 1. 假设类 15 格 sweep (§383.4 已有) · 2. 监督侧三种标签定义 (§383.4) · 3. 池化换可识别性 (§383.4)
+> 4. **新增 (§387.16 + §388)**: 把 oracle 拆成 triage / route 两半 —— which-mode 半败在**标签供给**
+>    (16-97 个/cell); triage 半**标签够 (203/224 全有)、AUROC 也够 (5/6 cell 0.65-0.72, 4/6 超最强单协变量)**,
+>    **仍然失败**: 诚实嵌套阈值下两个 B0 cell 只省 −0.9%/−0.4%; **0/6 cell Pareto 胜过平凡的
+>    always-cheapest**; label-shuffle 零分布下 cls·B1/cls·B2 与噪声无法区分; 存活两个 Holm at m=6 全灭。
+>    → **两半都失败, 败因不同** = 比弱阳性强得多的结果。
+>
+> ### 5. 手上的产物 (直接可引)
+>
+> - `phase1_full_prereg_decision.{json,md,csv}` — 三假设同一 universe (1281), 权威 verdict
+> - `docs/analysis/cross_sites/amendment08_sensitivity.md` — 4 臂敏感性 + hero 暴露面
+> - `docs/analysis/cross_sites/router_objective_ordering.md` — 策略对比 (已修 B-1899/B-1900)
+> - `docs/analysis/cross_sites/router_triage_learnability.md` — 含嵌套阈值诚实行 + always-cheapest 基线 + shuffle 零分布 + Holm
+> - `docs/analysis/cross_sites/sr_per_mode.json` — 36 行全 complete, reddit 分母 203
+> - 两个 router 产物均带 `post_hoc_exploratory=True / h10_eligible=False`, **不得用于事后挽救 H1**
+>
+> ### 6. 起稿建议顺序 (剩 9 天)
+>
+> 1. **先拍 B-1898** (30 min, 上面三选一) → 否则 H1 数字全悬
+> 2. **Paper B 起稿** (它是 archival 且证据最全、与 k 无关, 风险最大因为在零) — 建议 2 天
+> 3. **Paper A 改 framing + 全量改数** — AAAI→ACL 格式转换 (8 页比 AAAI 7 页宽, 原砍词工作作废) + 40 个 `<TBD>` + 20 处 "5 of 6"/PN06 两轨制段落删除
+> 4. WA 全量数据 ~07-31 落 → 可作 Paper A 跨 benchmark 附录 (非必需)
+> 5. 08-01~02 再跑一轮 /stress 双链, 08-03~04 收尾
+>
+> ### 7. 无人值守的两条后台 (不需要干预)
+>
+> - **A100**: WA pilot 6-mode×10 收尾 (psom 2/10) → 退出后**自动**起全量 6-mode×**104** chain,
+>   ETA ~3.5 天, `P79_PAPER_GRADE=1` 无 partial 旁路 (B-1894 已把 gate 修成 104)。
+> - **DGX**: mechanistic supervisor 38587 → sweep 38603, 1/24 完成, cell-2 在跑。断了自动重启,
+>   连 3 次秒死则停并推 ntfy。DEADLINE=08-01, 按 14h/cell 本来就跑不完 → 到点自截断, 拿前几个 P1 cell。
+>   **thesis scope, 不在 08-05 关键路径上。**
+>
+> ### 8. 🔲 待接续: Mode B (codex) 审计
+>
+> 本 session 结束时 codex 仍在跑 (30+ min, submission band 内, 在做 sibling propagation 全库 grep)。
+> 输出 `docs/checkpoints/codex_outputs/session_full_FINAL_2026-07-27_144418.md`;
+> 落地后追加笔记 **§388.7** + 三家统一 bug 表。**它可能还会推翻更多东西, 起稿前先读它。**
+
+
 > 🚦 **2026-07-27 (三) — 前一块的 6 步清单已全部完成; 下一步 = k=6 重灌** ⭐⭐⭐ (详 笔记 §387.15)
 >
 > **✅ 已落地** (commit `dc15837` / `de3ff66` / `147ec12`, **已 push**):
