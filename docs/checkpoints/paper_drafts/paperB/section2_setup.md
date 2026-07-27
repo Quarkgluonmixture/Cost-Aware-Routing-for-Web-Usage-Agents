@@ -28,8 +28,8 @@ classifieds and 203 on reddit after the preregistered exclusions.
 
 ### 2.2 What a routing label is
 
-The router we set out to build is offline and per-task: given features available before
-the agent acts, predict which mode to use. Two supervision targets are natural.
+The router we set out to build is offline and per-task: from what is known before the
+agent acts, predict which mode to use. Two supervision targets are natural.
 
 **Which-mode.** The label is the identity of the cheapest mode that solved the task,
 which is what an oracle would have chosen. It is undefined when no mode solved the task,
@@ -41,7 +41,7 @@ spend, sending predicted-hopeless tasks to the cheapest mode and the rest to the
 strongest.
 
 The distinction matters for the rest of the paper because the two targets fail for
-opposite reasons — the first for want of labels, the second in spite of having them.
+opposite reasons: the first for want of labels, the second in spite of having them.
 
 ### 2.3 Features
 
@@ -62,7 +62,7 @@ cross-backbone pooling incoherent.
 Success is the benchmark's own binary judgement. Cost is the billed cost per episode,
 measured within a backbone: the API-served model reports commercial pricing and the
 locally-served models report electricity-derived cost, so absolute cost is never pooled
-across backbones — only ratios within a backbone are compared.
+across backbones. Only ratios within a backbone are compared.
 
 All routing results are computed by offline replay over completed episodes. We never
 serve a router live, which means the numbers here exclude router inference overhead and

@@ -26,8 +26,8 @@ requires the successes the router was supposed to help produce.
 ### 4.2 The supply is below the threshold for fitting anything
 
 Counting examples understates the problem, because a multiclass fit needs examples *per
-class per fold*. Applying a minimum of ten training rows per class in a five-fold split —
-the threshold used by our pipeline, and unremarkable as practice — leaves:
+class per fold*. Applying a minimum of ten training rows per class in a five-fold split:
+the threshold used by our pipeline, and unremarkable as practice, leaves:
 
 | cell | labels | classes | classes surviving the filter | trainable |
 |---|---|---|---|---|
@@ -44,11 +44,11 @@ and the other two. Training the full pipeline end to end confirms the arithmetic
 trains completely across all five folds, one trains in four of five, and the remaining four
 produce no usable model.
 
-A reviewer might reasonably ask whether the threshold is the problem. It is not, in the
-sense that matters. Lowering it does not create examples; it only permits fitting classes
-represented by a handful of rows, which converts an honest refusal into an overfitted model
-whose cross-validated performance we would then have to discount anyway. The binding
-constraint is the count.
+A reviewer might reasonably ask whether the threshold is itself the problem. Lowering it
+would not create examples. It would only permit fitting classes represented by a handful of
+rows, converting an honest refusal into an overfitted model whose cross-validated
+performance we would then have to discount anyway. The binding constraint is the count of
+labelled examples, and no threshold changes that.
 
 ### 4.3 The supervision is also arbitrary where it exists
 
@@ -73,8 +73,8 @@ against measured per-task cost:
 | reddit · B2 | 15 | 3 (20.0%) | **2 (13.3%)** |
 
 On 12.5% to 54.6% of labels, the mode recorded as "cheapest successful" was not the
-cheapest successful mode. Cost varies per task — the same mode is not uniformly cheaper
-across a site — so a static priority order cannot track it.
+cheapest successful mode. Cost varies per task, the same mode is not uniformly cheaper
+across a site, so a static priority order cannot track it.
 
 We note that the exact-tie case, where two successful modes cost the same and the list
 order is the only tiebreaker, occurs in **zero** rows across all six cells. Billed cost is
@@ -83,7 +83,7 @@ as tiebreak arbitrariness, as we did in earlier drafts of this analysis, underst
 The defect is not that ties are broken by a list; it is that the list is used *instead of*
 the cost measurement it claims to approximate.
 
-### 4.4 What this does and does not show
+### 4.4 Scope of the supply argument
 
 It shows that at these success rates, which-mode supervision is unavailable in the
 quantity a six-class model needs, and that where it is available it is noisy in a way

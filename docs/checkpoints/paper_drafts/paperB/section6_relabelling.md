@@ -8,7 +8,7 @@ trades supply for identifiability, and its accounting points at the one target t
 ### 6.1 Continuous labels: closed by the benchmark
 
 The cleanest fix would be to regress on a graded quality signal rather than classify a
-discrete winner — partial credit turns every episode into a training example regardless of
+discrete winner, partial credit turns every episode into a training example regardless of
 whether it succeeded.
 
 VisualWebArena does not provide one. Across 7,963 episodes the evaluator emits exactly two
@@ -28,7 +28,7 @@ does not add rows. A cell with 15 labels spread over five classes still has 15 l
 merging them into two. Coarsening changes the ratio of examples to parameters; it does not
 change the absolute supply, and the absolute supply is what fails.
 
-This is worth separating from §6.4, where a specific binary collapse *does* help — for a
+This is worth separating from §6.4, where a specific binary collapse *does* help, for a
 different reason, having to do with agreement across backbones rather than with class count.
 
 ### 6.3 Pooling across backbones: supply for identifiability
@@ -47,8 +47,8 @@ answers for one input.
 | reddit | 25 | 14 | **56.0%** | **83.7%** |
 
 More than half of the shared tasks carry contradictory supervision. The Bayes ceiling is
-the accuracy of the best possible rule on the pooled set — emit the modal label for each
-distinct feature vector — and it caps any task-feature classifier at 79.2% and 83.7%.
+the accuracy of the best possible rule on the pooled set, emit the modal label for each
+distinct feature vector, and it caps any task-feature classifier at 79.2% and 83.7%.
 
 The interpretation is not that pooling is a mistake. It is that pooling changes the
 question being asked. A model trained on the pooled set is estimating "which mode is best
@@ -59,8 +59,8 @@ by discarding the conditioning variable that makes the label well-defined.
 ### 6.4 Cost tier: the one target that is both supplied and identified
 
 The conflicts in §6.3 are about *which mode*. They are much rarer when the question is
-*whether the task needs the screenshot*. Collapsing the six modes into two tiers —
-image-bearing (SoM, Vision) and text-only (DOM and the three P-modes) — and repeating the
+*whether the task needs the screenshot*. Collapsing the six modes into two tiers:
+image-bearing (SoM, Vision) and text-only (DOM and the three P-modes), and repeating the
 measurement:
 
 | site | which-mode ceiling | cost-tier ceiling | tier agreement across backbones |
@@ -70,7 +70,7 @@ measurement:
 
 The ceiling rises by 10.7 and 13.0 points **without a single new solve event**. Nothing was
 collected; the same successes were re-described. Backbones disagree sharply about which of
-six modes is best and agree substantially about whether the image is needed — 88% of shared
+six modes is best and agree substantially about whether the image is needed. 88% of shared
 reddit tasks receive the same tier from every backbone that solved them.
 
 This is the one place in our results where a relabelling is genuinely free. It is also, we

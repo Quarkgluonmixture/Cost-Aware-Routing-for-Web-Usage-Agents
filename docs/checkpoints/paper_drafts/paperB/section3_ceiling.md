@@ -35,8 +35,8 @@ never pays for anything captures much of it for free. Measuring the router again
 best-single credits it with a saving that a one-line policy already delivers.
 
 We can quantify that directly. Substituting always-cheapest for the oracle in the table
-above recovers a substantial share of the available saving in every cell while losing
-accuracy — the trade the rest of the paper is about:
+above recovers a substantial share of the available saving in every cell, at the price of
+accuracy. That trade is what the rest of the paper is about:
 
 | cell | always-cheapest SR | vs best single | always-cheapest cost | vs best single |
 |---|---|---|---|---|

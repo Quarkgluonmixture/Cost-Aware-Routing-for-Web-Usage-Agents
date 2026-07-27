@@ -31,3 +31,10 @@
 #     (was 553 before the retiering).
 #   - section7_discussion.md is down to 1 alert (an em dash inside its
 #     draft-status note); deleting that note makes it ratchet-ready.
+docs/checkpoints/paper_drafts/paperB/section1_intro.md
+docs/checkpoints/paper_drafts/paperB/section2_setup.md
+docs/checkpoints/paper_drafts/paperB/section3_ceiling.md
+docs/checkpoints/paper_drafts/paperB/section4_supply.md
+docs/checkpoints/paper_drafts/paperB/section5_triage.md
+docs/checkpoints/paper_drafts/paperB/section6_relabelling.md
+docs/checkpoints/paper_drafts/paperB/section7_discussion.md

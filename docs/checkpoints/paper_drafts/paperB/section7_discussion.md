@@ -16,9 +16,9 @@ task set, so the per-task complementarity that a router would exploit is not mea
 §3 ceiling is a measurement of that complementarity, and it is the reason we consider the
 routing question worth asking despite answering it negatively.
 
-**Negative results and evaluation practice.** Our methodological findings — that nesting
+**Negative results and evaluation practice.** Our methodological findings, that nesting
 the operating-point selection changes conclusions, and that the choice of baseline decides
-whether a saving exists — are instances of concerns raised repeatedly in evaluation
+whether a saving exists, are instances of concerns raised repeatedly in evaluation
 methodology work. We report them as concrete measurements rather than as recommendations:
 §5.2 quantifies the nesting effect at −0.99 to +1.34 percentage points, and §5.3 shows the
 baseline switch removing every saving.
@@ -27,11 +27,11 @@ baseline switch removing every saving.
 
 ### 8.1 What we claim
 
-Within the regime studied — VisualWebArena classifieds and reddit, six observation modes,
-three backbones spanning 4B to 235B parameters and two model families, agent success rates
-between 2% and 43% — a learned per-task mode router is not available, and the obstruction is
-the production rate of supervision rather than the choice of hypothesis class, label
-definition, or estimator.
+Our claim is scoped to the regime we studied: VisualWebArena classifieds and reddit, six
+observation modes, three backbones spanning 4B to 235B parameters across two model
+families, and agent success rates between 2% and 43%. In that regime a learned per-task
+mode router is not available, and the obstruction is the production rate of supervision
+rather than the choice of hypothesis class, label definition, or estimator.
 
 We claim this at three levels of strength. The supply obstruction (§4) is arithmetic: labels
 equal successes, and four of six cells fall below any usable threshold. The value
@@ -65,9 +65,9 @@ outcomes could reopen §6.1 without changing §4.
 flatters the router. Since the result is negative, this strengthens rather than weakens it,
 but it means we have not measured a deployment.
 
-**No live routing.** We never served a router, so we cannot report the interaction between
-routing decisions and multi-step trajectory dynamics — a mode chosen at step 0 is used for
-the whole episode in our replay, and an adaptive mid-episode switch is unexamined.
+**No live routing.** We never served a router, so the interaction between routing
+decisions and multi-step trajectory dynamics goes unmeasured. A mode chosen at step 0 is
+used for the whole episode in our replay; adaptive mid-episode switching is unexamined.
 
 **Cost is not pooled across backbones.** API pricing and electricity-derived cost differ by
 roughly three orders of magnitude per token, so we compare ratios within a backbone only.
@@ -81,7 +81,7 @@ before building it. In four of our six cells that fixed policy is not Pareto-dom
 anything we could learn, and in one it dominates the learned router outright.
 
 For benchmark designers, §6.1 identifies a low-cost intervention with disproportionate
-value. A graded per-task score — even three levels — would convert every episode into a
+value. A graded per-task score (even three levels) would convert every episode into a
 training signal instead of only the successful ones, and would reopen a route that is
 currently closed by a design decision rather than by anything intrinsic to the task.
 
