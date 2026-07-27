@@ -1,0 +1,517 @@
+{
+ "producer": "scripts/analysis/aggregate_evaluator_score_granularity.py",
+ "paper_grade": {
+  "grade": "paper-grade",
+  "n_conditions_resolved": 36,
+  "n_conditions_unresolved": 0,
+  "unresolved": [],
+  "n_episodes_scored": 7722,
+  "n_score_missing": 0,
+  "n_score_non_numeric": 0,
+  "distinct_values": [
+   0.0,
+   1.0
+  ],
+  "value_counts": {
+   "0.0": 7055,
+   "1.0": 667
+  },
+  "per_condition": {
+   "B0_DOM_classifieds": {
+    "run_dir": "B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
+    "condition_subdir": "phase1_dom_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 185,
+     "1.0": 39
+    }
+   },
+   "B0_SoM_classifieds": {
+    "run_dir": "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+    "condition_subdir": "phase1_som_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 163,
+     "1.0": 61
+    }
+   },
+   "B0_Vision_classifieds": {
+    "run_dir": "B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
+    "condition_subdir": "phase1_vision_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 168,
+     "1.0": 56
+    }
+   },
+   "B0_P-text_classifieds": {
+    "run_dir": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
+    "condition_subdir": "phase1_phantom_text_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 189,
+     "1.0": 35
+    }
+   },
+   "B0_P-SoM_classifieds": {
+    "run_dir": "B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031",
+    "condition_subdir": "phase1_phantom_som_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 189,
+     "1.0": 35
+    }
+   },
+   "B0_P-prompt_classifieds": {
+    "run_dir": "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+    "condition_subdir": "phase1_phantom_prompt_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 180,
+     "1.0": 44
+    }
+   },
+   "B1_DOM_classifieds": {
+    "run_dir": "B1_dom_classifieds_20260603_103630_477435114_112846_R17188",
+    "condition_subdir": "phase1_dom_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 210,
+     "1.0": 14
+    }
+   },
+   "B1_P-prompt_classifieds": {
+    "run_dir": "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516",
+    "condition_subdir": "phase1_phantom_prompt_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 209,
+     "1.0": 15
+    }
+   },
+   "B1_P-SoM_classifieds": {
+    "run_dir": "B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199",
+    "condition_subdir": "phase1_phantom_som_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 209,
+     "1.0": 15
+    }
+   },
+   "B1_P-text_classifieds": {
+    "run_dir": "B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933",
+    "condition_subdir": "phase1_phantom_text_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 207,
+     "1.0": 17
+    }
+   },
+   "B1_SoM_classifieds": {
+    "run_dir": "B1_som_classifieds_20260604_072456_562166453_226675_R31705",
+    "condition_subdir": "phase1_som_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 192,
+     "1.0": 32
+    }
+   },
+   "B1_Vision_classifieds": {
+    "run_dir": "B1_vision_classifieds_20260605_012235_349047872_327631_R28622",
+    "condition_subdir": "phase1_vision_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 196,
+     "1.0": 28
+    }
+   },
+   "B2_DOM_classifieds": {
+    "run_dir": "B2_dom_classifieds_20260609_214713_553762009_985526_R21521",
+    "condition_subdir": "phase1_dom_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 221,
+     "1.0": 3
+    }
+   },
+   "B2_P-prompt_classifieds": {
+    "run_dir": "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175",
+    "condition_subdir": "phase1_phantom_prompt_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 220,
+     "1.0": 4
+    }
+   },
+   "B2_P-SoM_classifieds": {
+    "run_dir": "B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577",
+    "condition_subdir": "phase1_phantom_som_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 222,
+     "1.0": 2
+    }
+   },
+   "B2_P-text_classifieds": {
+    "run_dir": "B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219",
+    "condition_subdir": "phase1_phantom_text_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 223,
+     "1.0": 1
+    }
+   },
+   "B2_SoM_classifieds": {
+    "run_dir": "B2_som_classifieds_20260611_210828_923656661_1218867_R3380",
+    "condition_subdir": "phase1_som_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 219,
+     "1.0": 5
+    }
+   },
+   "B2_Vision_classifieds": {
+    "run_dir": "B2_vision_classifieds_20260612_221910_098760264_1351451_R9288",
+    "condition_subdir": "phase1_vision_router_0",
+    "n_episodes": 224,
+    "n_scored": 224,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 219,
+     "1.0": 5
+    }
+   },
+   "B0_DOM_reddit": {
+    "run_dir": "B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
+    "condition_subdir": "phase1_dom_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 175,
+     "1.0": 30
+    }
+   },
+   "B0_SoM_reddit": {
+    "run_dir": "B0_som_reddit_20260627_035453_162107997_3024022_R20936",
+    "condition_subdir": "phase1_som_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 175,
+     "1.0": 30
+    }
+   },
+   "B0_Vision_reddit": {
+    "run_dir": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
+    "condition_subdir": "phase1_vision_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 189,
+     "1.0": 16
+    }
+   },
+   "B0_P-text_reddit": {
+    "run_dir": "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
+    "condition_subdir": "phase1_phantom_text_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 177,
+     "1.0": 28
+    }
+   },
+   "B0_P-SoM_reddit": {
+    "run_dir": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
+    "condition_subdir": "phase1_phantom_som_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 182,
+     "1.0": 23
+    }
+   },
+   "B0_P-prompt_reddit": {
+    "run_dir": "B0_phantom_prompt_reddit_20260709",
+    "condition_subdir": "phase1_phantom_prompt_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 179,
+     "1.0": 26
+    }
+   },
+   "B1_DOM_reddit": {
+    "run_dir": "B1_dom_reddit_20260703",
+    "condition_subdir": "phase1_dom_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 191,
+     "1.0": 14
+    }
+   },
+   "B1_SoM_reddit": {
+    "run_dir": "B1_som_reddit_20260706",
+    "condition_subdir": "phase1_som_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 188,
+     "1.0": 17
+    }
+   },
+   "B1_Vision_reddit": {
+    "run_dir": "B1_vision_reddit_20260708_002122_732634080_205180_R16847",
+    "condition_subdir": "phase1_vision_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 199,
+     "1.0": 6
+    }
+   },
+   "B1_P-text_reddit": {
+    "run_dir": "B1_phantom_text_reddit_20260710",
+    "condition_subdir": "phase1_phantom_text_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 191,
+     "1.0": 14
+    }
+   },
+   "B1_P-SoM_reddit": {
+    "run_dir": "B1_phantom_som_reddit_20260711",
+    "condition_subdir": "phase1_phantom_som_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 191,
+     "1.0": 14
+    }
+   },
+   "B1_P-prompt_reddit": {
+    "run_dir": "B1_phantom_prompt_reddit_20260713",
+    "condition_subdir": "phase1_phantom_prompt_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 192,
+     "1.0": 13
+    }
+   },
+   "B2_DOM_reddit": {
+    "run_dir": "B2_dom_reddit_20260715",
+    "condition_subdir": "phase1_dom_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 197,
+     "1.0": 8
+    }
+   },
+   "B2_SoM_reddit": {
+    "run_dir": "B2_som_reddit_20260717",
+    "condition_subdir": "phase1_som_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 202,
+     "1.0": 3
+    }
+   },
+   "B2_Vision_reddit": {
+    "run_dir": "B2_vision_reddit_20260719",
+    "condition_subdir": "phase1_vision_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 200,
+     "1.0": 5
+    }
+   },
+   "B2_P-text_reddit": {
+    "run_dir": "B2_phantom_text_reddit_20260720",
+    "condition_subdir": "phase1_phantom_text_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 200,
+     "1.0": 5
+    }
+   },
+   "B2_P-SoM_reddit": {
+    "run_dir": "B2_phantom_som_reddit_20260722",
+    "condition_subdir": "phase1_phantom_som_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 202,
+     "1.0": 3
+    }
+   },
+   "B2_P-prompt_reddit": {
+    "run_dir": "B2_phantom_prompt_reddit_20260723",
+    "condition_subdir": "phase1_phantom_prompt_router_0",
+    "n_episodes": 205,
+    "n_scored": 205,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 204,
+     "1.0": 1
+    }
+   }
+  }
+ },
+ "archived": {
+  "grade": "archived",
+  "n_conditions_resolved": 3,
+  "n_conditions_unresolved": 12,
+  "unresolved": [
+   "B0_DOM_reddit",
+   "B0_SoM_reddit",
+   "B0_Vision_reddit",
+   "B0_P-text_reddit",
+   "B0_P-prompt_reddit",
+   "B0_P-SoM_reddit",
+   "B1_P-text_classifieds",
+   "B1_P-SoM_classifieds",
+   "B1_P-prompt_classifieds",
+   "B1_DOM_reddit",
+   "B1_SoM_reddit",
+   "B1_Vision_reddit"
+  ],
+  "n_episodes_scored": 3,
+  "n_score_missing": 0,
+  "n_score_non_numeric": 0,
+  "distinct_values": [
+   0.0
+  ],
+  "value_counts": {
+   "0.0": 3
+  },
+  "per_condition": {
+   "B1_DOM_classifieds": {
+    "run_dir": "B1_3mode_classifieds_20260413",
+    "condition_subdir": "phase1_dom_router_0",
+    "n_episodes": 1,
+    "n_scored": 1,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 1
+    }
+   },
+   "B1_SoM_classifieds": {
+    "run_dir": "B1_3mode_classifieds_20260413",
+    "condition_subdir": "phase1_som_router_0",
+    "n_episodes": 1,
+    "n_scored": 1,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 1
+    }
+   },
+   "B1_Vision_classifieds": {
+    "run_dir": "B1_3mode_classifieds_20260413",
+    "condition_subdir": "phase1_vision_router_0",
+    "n_episodes": 1,
+    "n_scored": 1,
+    "n_score_missing": 0,
+    "n_score_non_numeric": 0,
+    "value_counts": {
+     "0.0": 1
+    }
+   }
+  }
+ }
+}

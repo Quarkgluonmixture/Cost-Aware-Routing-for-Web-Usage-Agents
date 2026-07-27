@@ -97,8 +97,8 @@ target anywhere in the paper; only its ceiling is measured.*
 
 The cleanest fix would be to regress on a graded quality signal rather than classify a discrete
 winner: partial credit turns every episode into a training example regardless of whether it
-succeeded. VisualWebArena does not provide one. Across 7,963 episodes the evaluator emits
-exactly two values, 0.0 and 1.0, in a 7,278 / 685 split. This is a property of the benchmark's
+succeeded. VisualWebArena does not provide one. Across the 7,722 episodes of our 36 landed
+conditions the evaluator emits exactly two values, 0.0 and 1.0, in a 7,055 / 667 split. This is a property of the benchmark's
 evaluation design rather than of our pipeline, and it forecloses the route entirely.
 
 ### B.2 Coarser classes

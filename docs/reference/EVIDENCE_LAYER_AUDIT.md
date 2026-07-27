@@ -33,6 +33,17 @@ audience: self + advisor
 - `aggregate_cross_site.py` (419 lines) — cross-site narrative findings
 - `aggregate_cost_electricity.py` — cost + electricity
 - `aggregate_sr_fp_per_mode.py` — FP-adjusted SR
+- `aggregate_cross_mode_failure_signatures.py` — **paper A §4.2 + §4.3 provenance** (added
+  2026-07-28, closes stress findings #3 / #17). Part A = per-rule × per-mode signature
+  frequency over the 36 landed conditions at one frozen ruleset; Part B = hallucinated
+  element-reference rate per (site, backbone, mode) plus the text × prompt 2×2 decomposition.
+  Before this, §4.3's "cross-mode aggregation" had no named product and §4.2's rates lived
+  only in a hand-written prose string at `write_digests.py:170`.
+  → `docs/analysis/cross_sites/cross_mode_failure_signatures.{md,json}`
+- `aggregate_evaluator_score_granularity.py` — **paper B appendix B.1 provenance** (added
+  2026-07-28, closes stress finding #16). Distinct evaluator `score` values over the
+  manifest's paper-grade cells; reports what it finds rather than asserting the expected two.
+  → `docs/analysis/cross_sites/evaluator_score_granularity.{md,json}`
 
 **Cross-site / mechanism**: `docs/analysis/cross_sites/` (`axis1_microbehavior` / `axis_effect_size` / `mechanism_per_task`)
 
