@@ -77,16 +77,29 @@ for PAPER in "${PAPERS[@]}"; do
   sed -e "s|{title_generated\.tex}|{${PAPER}_title.tex}|g" \
       -e "s|{abstract_generated\.tex}|{${PAPER}_abstract.tex}|g" \
       -e "s|{body_generated\.tex}|{${PAPER}_body.tex}|g" \
+      -e "s|{limitations_generated\.tex}|{${PAPER}_limitations.tex}|g" \
       -e "s|{appendix_generated\.tex}|{${PAPER}_appendix.tex}|g" \
       "$BUILD/main.tex" > "$OL/main_$PAPER.tex"
   cp "$BUILD/title_generated.tex"    "$OL/${PAPER}_title.tex"
   cp "$BUILD/abstract_generated.tex" "$OL/${PAPER}_abstract.tex"
   cp "$BUILD/body_generated.tex"     "$OL/${PAPER}_body.tex"
-  if [[ -f "$BUILD/appendix_generated.tex" ]]; then
-    cp "$BUILD/appendix_generated.tex" "$OL/${PAPER}_appendix.tex"
-  else
-    rm -f "$OL/${PAPER}_appendix.tex"
-  fi
+  for optional_part in limitations appendix; do
+    if [[ -f "$BUILD/${optional_part}_generated.tex" ]]; then
+      cp "$BUILD/${optional_part}_generated.tex" "$OL/${PAPER}_${optional_part}.tex"
+    else
+      rm -f "$OL/${PAPER}_${optional_part}.tex"
+    fi
+  done
+
+  # Every \input the rewritten main still points at must exist in the project,
+  # or Overleaf fails to compile on a file the sed rename missed. This caught a
+  # missing limitations rename on 2026-07-27, after it had already been pushed.
+  while read -r referenced; do
+    if [[ ! -f "$OL/$referenced" ]]; then
+      echo "✗ main_$PAPER.tex references $referenced, which is not in the project" >&2
+      exit 4
+    fi
+  done < <(grep -oE '\\input\{[^}]+\}' "$OL/main_$PAPER.tex" | sed 's/.*{//; s/}//')
   cp "$BUILD/acl.sty" "$BUILD/acl_natbib.bst" "$BUILD/paper.bib" "$OL/"
   cp "$BUILD"/figures/*.pdf "$OL/figures/" 2>/dev/null || true
 done

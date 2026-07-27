@@ -55,7 +55,7 @@ reddit) crossed with three
 backbones. **B0** is Qwen3-VL-235B-A22B served through an API. **B1** is Qwen3-VL-4B served
 locally. **B2** is Gemma3-VL-4B, also local, from a different model family. B0 against B1
 spans capability within one family; B1 against B2 spans families at matched parameter
-count. Neither contrast is a clean single-variable ablation, and §5 records the asymmetries
+count. Neither contrast is a clean single-variable ablation, and the Limitations section records the asymmetries
 we did not control.
 
 Each cell runs all six modes over the same task set: 224 classifieds tasks and 203 reddit

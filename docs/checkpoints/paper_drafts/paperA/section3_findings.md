@@ -94,7 +94,7 @@ least. On **reddit · B2** the ordering inverts: DOM is strongest at 3.94% and P
 zero. That cell's single success under P-prompt was a task later excluded from the scored
 set by protocol amendment, so the arm's scored rate is exactly 0 of 203. We report it
 rather than smoothing it; a 4B cross-family model at 0.5–4% success is near the floor where
-mode comparisons stop discriminating, and §5 treats that as a scope limit.
+mode comparisons stop discriminating, and the Limitations section treats that as a scope limit.
 
 Complementarity, in contrast, is a per-task property and survives these rates: **P-SoM
 uniquely solves 6 classifieds and 3 reddit tasks** that none of the other five modes solves.

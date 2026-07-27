@@ -103,4 +103,4 @@ Our contributions:
 3. A preregistered positive result on structure: neither single-axis arm is absorbed by the
    compound arm, which establishes the region as decomposable (§3.2).
 4. A behavioural account of what each knob changes, and a disclosure of what we did not
-   measure, including a routing pass that was designed and never run (§4, §5).
+   measure, including a routing pass that was designed and never run (§4, Limitations).
