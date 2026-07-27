@@ -23,9 +23,34 @@ updated: 2026-07-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🎯 **2026-07-28 凌晨 — 两篇稿已 LaTeX 化、进 8 页限、上 Overleaf、三家 stress 过一轮。
-> 剩下的是 5 条需重生成产物的 finding + 学长/OpenReview 的人工动作。** ⭐⭐⭐⭐⭐
-> (详 笔记 §396 / §396.5 / §396.6 / §396.7)
+> 🎯 **2026-07-28 — §0-C 台账 5 条全部落地 + 自审又修了 3 条我自己引入的。
+> 两篇稿 8 页限内、门全绿、1626 tests pass。剩下的基本只有人工动作。** ⭐⭐⭐⭐⭐
+> (详 笔记 §397; 上一轮 §396)
+>
+> ### 本轮做完了什么 (commit `a59d731` → `120888f`, 7 个)
+>
+> | # | 结果 |
+> |---|---|
+> | **#3** | §4.2 机制推断改成真 2×2。**正文只留换分母也成立的两条**: legend 在 SoM prompt 下 6/6 降幻觉, 且降幅 6/6 格 > DOM prompt 下的降幅。交互结论保住 |
+> | **#16/#17** | 两个新产物。§6.1 三元组 → **7,686 / 7,041 / 645** (scored 口径, 18×224+18×203); §4.3 mode-invariance 改成实测 spread 7.4-13.7pp + vision 例外单说 |
+> | **#11** | 置换 200 → **10000**。red·B2 **p=0.00050** (原 0.0050 = 地板), 裁定不变但现在由数据决定。附录 C 说清测的是整格阈值而非嵌套策略 |
+> | **#9** | 修掉一条**假前提**("同 task 同特征向量" —— reddit 80% 共享 task 其行不同)。天花板数**维持 79.2/83.7** (按特征向量分组 = 单例膨胀, reddit 75% 行是单例) |
+> | **#8** | 查清**没有可用同模式 null** (唯一近似重跑是 B-1884 修复前的截断跑)。不硬跑, 改在不计页数的 Limitations 里说全, 明说 axis-1 的 1.35pp 余量更不宽裕 |
+>
+> **新产物 (各一条命令重生成)**:
+> `aggregate_cross_mode_failure_signatures.py` → `cross_mode_failure_signatures.{md,json}` ·
+> `aggregate_evaluator_score_granularity.py` → `evaluator_score_granularity.{md,json}`。
+> 均已登记进 `EVIDENCE_LAYER_AUDIT §0`。
+>
+> ### ⚠️ 下轮动数字前必读 (笔记 §397.5/§397.6)
+>
+> 1. **跨 AI 报的那条往往不是最深的那条** —— #9 报"分组错"实为"前提假", #11 报"次数少"
+>    实为"裁定由 B 而非数据决定"。照着报的修 = 修一半。
+> 2. **算完换个正交口径复核自己** —— 我给 #3 的第一版有两个计数只在 action-step 分母下
+>    成立, 换 episode incidence 就塌。产物里现在有一张"哪些陈述扛得住换分母"的表,
+>    **只有标 yes 的才准进正文**。
+> 3. **防线按能力布不按字面布** —— 我的新脚本经 `_discover_episodes` 读 episode, 源码里
+>    没有 `_summary_v2.json`, 直接绕过昨天刚立的 B-1906 棘轮。棘轮已扩。
 >
 > ### 先跑再信 (三条命令, 别照搬下面的数)
 >
@@ -49,19 +74,20 @@ updated: 2026-07-27
 > 构建根是**新建的** `paper_drafts/latex/`, **不是** `aaai27/latex/` —— 后者是 AAAI 存档,
 > 被 `tests/test_dayaudit_rounda_20260714.py::test_f03` 的 fixture 钉住, 别动。
 >
-> ### 2. 🔴 下一步 = §0-C 台账里剩的 5 条 (全部需重生成产物)
+> ### 2. 🔴 下一步 (台账已清空, 以下按优先级)
 >
-> | # | 内容 | 代价 | 备注 |
-> |---|---|---|---|
-> | **#3** | **§4.2 机制推断用错了轴** — axis-1 = \|P-text \ P-SoM\|, 两臂**都**用紧凑 id, 该轴上 compact-id 是**常量**, 所以「若 compact id 是主机制则 axis-1 应更大」推不出来; 变化的是 axis-2, 而 axis-2 更大 → **正确推断与稿子写的相反** | ~1h, 纯散文 | **唯一还会动 Paper A 结论表述的**, 优先 |
-> | #8 | H3 无同模式重跑 null (self-oracle noise floor)。项目自己的 `extract_50_features.py:636` 早警告过 N=1 oracle 需噪声天花板; 2026-05-15 Mode C 提过同一条, **两个月没 defuse** | 2-4h (有重跑) / 1-3d (需新跑) | 若保留「structure」大标题则是 P0 |
-> | #9 | 身份可辨天花板按 `task_id` 分组而非按实际特征向量; codex 称重算后 79.17/83.70 → ~83.93/91.30 | 2-4h | 会动 §6.3 + A.4 |
-> | #11 | 唯一显著格 (red·B2) 用 200 次置换且与选择步骤共污染 | 1-2h | 会动 §5.4 |
-> | #16/#17 | §6.1 的 7,963/7,278/685 无产物 (按 manifest 实测 39 condition 得 7725/7058/667, **核心主张成立**: 只有 0.0/1.0) · §4.3 "36 landed conditions cross-mode 聚合" 无命名产物 (cross_sites 只有 `cross_mode_failure_taxonomy_B0_classifieds.md` 单格) | 各 ~30-60min | traceability gap, 非假陈述 |
+> | 优先 | 事项 | 谁 |
+> |---|---|---|
+> | **P0** | **REALM OpenReview 投稿 (08-05)** — 作者/COI/abstract 见 `deliverables/` | **user** |
+> | **P0** | **学长看 Overleaf 两篇** | **user** |
+> | P1 | **毕设 D8** (results+discussion 章) **已过期**; D9 全稿 08-10 与 REALM 08-05 撞期 | user 决策 |
+> | P2 | 本 session 改动**未跑跨 AI 链** (Mode B/C)。这 5 条本身就是三家审计的产出, 我只跑了 Claude 自审 (抓到 3 条我自己引入的 P0)。要补就 scope = 本 session 改动 | 可选 |
+> | P2 | A100 WA 全量跑完后 (~3 天) 才有窗口补 **#8 的同模式重跑** (WA reddit 与 VWA reddit 共用 postmill 容器, 不能并跑) | 排队 |
 >
-> **动手前必读**: 本 session §396.7 的教训 —— codex #4 那条「明显该修」实际是在推翻
-> `router_features.py:78-101` 的 2026-06-09 F2/B-1806 裁定。**跨 AI 审计的建议, 先查它是不是
-> 已经被裁定过再动手**; codex/gemini 是冷读, 看不见代码注释里的历史裁定。
+> **动手前必读** (两条并列):
+> - §396.7 —— 跨 AI 的「明显该修」**先查是不是已被裁定过** (codex #4 在推翻
+>   `router_features.py:78-101` 的 2026-06-09 F2/B-1806)。冷读模型看不见代码注释里的历史裁定。
+> - §397.6 —— 跨 AI **报的那条往往不是最深的那条**, 且**自己修完要换个正交口径复核**。
 >
 > ### 3. 页数怎么调 (本 session 学到的, 别重踩)
 >
@@ -87,12 +113,16 @@ updated: 2026-07-27
 > | venn/lift 旧图 | B0_red 独解 6 · B2_red 2 | **5** · **1** (B-1907) |
 > | §383.4 | 「~1/4 标签由 tie-break 决定」 | **不成立** — true_tie 全 0; 真相是两个定义分歧 12.5-54.6% |
 > | Paper B 旧 abstract | oracle「只赢成本 13–22%」 | **+3.45~+16.07pp 且 −13.7%~−35.3%** |
-> | Paper A 旧 §4.2 | 幻觉引用降 **5–25×** | **2.3–24.8×**, 且是 per-**backbone** 不是 per-cell |
+> | Paper A 旧 §4.2 | 幻觉引用降 **5–25×** | 该比值是 **DOM vs P-SoM 的复合对比**, 不能归给文本轴; §4.2 已改成 2×2 分解, 不再引这个比值 |
+> | 07-28 中途版 §6.3 | 天花板 **83.9/89.1** (按特征向量) | **79.2/83.7** — 特征向量分组单例膨胀 (reddit 75% 的行是单例, 单例按定义 100%) |
+> | 07-28 中途版 §4.2 | "P-SoM 六格最低 / P-prompt 五格最高" | **换 episode 分母就塌** (5/6 · 3/6)。只引产物里标 `quotable=yes` 的两条 |
+> | #11 旧记 | red·B2 p = **0.0050** | **0.00050** (B=200 时 0.0050 是地板 1/201, 不是测量值) |
 >
-> ### 5. 后台两条 (⚠️ 跑命令核)
+> ### 5. 后台两条 (⚠️ 跑命令核; 07-28 00:41 BST 两条均存活)
 >
-> - **A100 WA 全量**: chain pid **2658570**, 6 mode × 104, step **1/6** (dom) 在跑。ETA ~3 天。
-> - **DGX mechanistic**: 38617 跑 `p1_fwd_strong_red`, 08-01 自截断, **非关键路径**。
+> - **A100 WA 全量**: chain pid **2658570** (5h41m), 6 mode × 104, step **1/6** (dom,
+>   run `B1_dom_wa_reddit_..._R13217`) 在跑。ETA ~3 天。**A100=UTC / DGX=BST**, 差 1h。
+> - **DGX mechanistic**: 38617 (10h27m) 跑 `p1_fwd_strong_red`, 08-01 自截断, **非关键路径**。
 >
 > ### 6. 人工动作 (只有 user 能做)
 >
@@ -100,7 +130,16 @@ updated: 2026-07-27
 > - 学长看 Overleaf 两篇
 > - **毕设 D8** (results+discussion 章) **已过期**, D9 全稿 08-10 与 REALM 08-05 撞期
 >
-> **距 08-05 还有 8 天。git 与 Overleaf 均已同步, 未推 0。**
+> **距 08-05 还有 8 天。本轮 7 个 commit 在本地, 未 push (需 user 授权); Overleaf 未同步。**
+>
+> ### 7. 收尾时的门 (三条都跑过, 全绿)
+>
+> ```bash
+> make deslop-ratchet                                                    # PASS
+> cd docs/checkpoints/paper_drafts/latex && bash convert.sh paperA --submission \
+>   && bash convert.sh paperB --submission                               # 两篇 content 均 ≤ p8
+> .venv/bin/python3 -m pytest -q                                         # 1626 passed / 0 failed
+> ```
 
 ---
 
