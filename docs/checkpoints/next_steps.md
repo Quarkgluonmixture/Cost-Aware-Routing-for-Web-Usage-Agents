@@ -23,7 +23,16 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-22 UPDATE — AAAI 撤出 → REALM @ EMNLP workshop ×2 (08-05) + H10 门控管道修复** ⭐⭐⭐ 最新先读 (详 笔记 §383):
+> 🔭 **2026-07-27 UPDATE — k=6 数据齐 + WA pilot 首次点火 + B-1888/B-647 两雷** ⭐⭐⭐ 最新先读 (详 笔记 §387):
+> - **✅ k=6 数据完备**: `B2_phantom_prompt_reddit_20260723` 07-25 08:19 落 205/205 → **B2 reddit 六 mode 全齐**。**下一步 = bind → promote → k=6 重灌** (走 NUMBERS_TODO §0 配方), 随后稿件三处必改 (§383: "two cells"→"three cells" / 机制口径 `insufficient_train_data` / 补披露 Pass-2 从未 fire) + **B-1284 cross-family modifier 具备解除条件** + Protocol Note 06 两轨制披露块可删。距 REALM 08-05 还有 9 天。
+> - **🔥 A100 在跑 WA pilot** (非 k=6 关键路径, 占的是 GPU 不是分析算力): `queue_chain` 6-mode **B1 × WA reddit**, 每 mode 10 task (prereg §8.8 分层采样), run_id 形如 `B1_<mode>_wa_reddit_2026072x`, log `logs/queue_chain_wa_red_b1_20260727b.log`。**RESET_BEFORE=1 全程 paper-grade**。完成时 ntfy `p79-claude`。
+> - **⚠️ A100 GPU 曾整机不可用**: 07-24 `unattended-upgrades` 升 nvidia 用户态到 580.173.02 而内核模块仍 580.159.03 → `nvidia-smi` 直接失败。已用 `rmmod`+`modprobe` 原地修 (无需 reboot, 绕开 KubeVirt detach p-79)。**长期不跑 GPU 后应主动验一次 `nvidia-smi`**。
+> - **🐛 B-1888 (已修, commit `0e6429c`)**: `defaults:` 继承只解析一层 → **55 个 WA config 从未继承 base 层** (缺 backend type / token 单价 / 碳强度 / tool-calling)。VWA 全是一级链故不受影响, 已用 123-config SHA 快照证明 **VWA 侧逐字节不变**。1536 passed。
+> - **🐛 B-647 partial lift (commit `55755cc`)**: WA reddit reset 解除封印 (WA/VWA 共用同一 postmill 容器 + 同一 `.auth/reddit_state.json`)。**遗留风险**: site flock 是 per-(site,**benchmark**) 的, 共用容器下粒度错 → 理论上 WA reddit 与 VWA reddit 可并发互毁站点状态, **两者不要同时跑**。
+> - **📊 reddit 15 条 /diag Tier-1 已全扫** (`/tmp/diag_red/*.json`, 3075 ep, 0 token)。**B2 reddit SR 仅 0.49–3.90%** 且 no-hit 比例塌到 0.5–4% (B0/B1 是 11–23%) = 失败模式高度同质; **P36 密度为 B0 的 4.5 倍**。**进 k=6 前须先定性 P36 是 agent-limit 还是 scaffold** — Tier-2 已就此深挖 (B2 六 mode)。Tier-3 digest 15 份 + reddit 规则批 (R1-R8/H2) → `8-reddit-*` freeze 全量重扫 = 未完成。
+> - **⚠️ 未 push**: `0e6429c` + `55755cc` + `3a599b1` 在本地。
+
+> 🔭 **2026-07-22 UPDATE — AAAI 撤出 → REALM @ EMNLP workshop ×2 (08-05) + H10 门控管道修复** ⭐⭐⭐ (详 笔记 §383):
 > - **🎯 投稿转向 (user 决策)**: **AAAI-27 不投**。改投 **REALM @ EMNLP 2026** (`realm-workshop.github.io`), direct submission **2026-08-05**, long **8 页正文 + refs/appendix 不限**, 双盲 ACL 2026 style, notif 09-07 / camera 09-14。**两篇都是主线**: **Paper A = phantom 现象篇 (non-archival, 保主会选项)** / **Paper B = 路由阴性结果 + 标签诊断 (archival)**。第二 venue user 待想起。→ `_status/tasks/task_realm_paper_{a,b}_*.md`
 > - **📄 8 页 > AAAI 7 页 + appendix 无限** → 原 `cut_prewrites` 砍词**作废**; Paper A 只需 AAAI→ACL 格式转换 (`aaai27/latex/` 改目标模板)。
 > - **⭐ Paper B 不等数据**: 证据 k-无关, **现在就能整篇写完**; Paper A 的 H1/H3 全随 k=6 移动 → 先写非数字段落。唯一缺的一块 = **LOCO 池化+tier 实训** (prereg L447 已注册槽位)。
