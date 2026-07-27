@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-06-27
+updated: 2026-07-27
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,86 @@ updated: 2026-06-27
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> 🎯 **2026-07-27 (五) 更深夜 — LaTeX 管线通了, 三家 stress 跑完了, 引用补齐了。
+> 现在的问题变成一个: Paper B §3 的 oracle 口径要不要重做。** ⭐⭐⭐⭐⭐ (详 笔记 §396)
+>
+> **先跑再信**:
+> `cd docs/checkpoints/paper_drafts/latex && bash convert.sh paperA && bash convert.sh paperB`
+> · `make deslop-ratchet` · `paper_grade_check.py` (A100) · `make active` (DGX)
+>
+> ### 0-A. 三件事的状态
+>
+> | | 状态 |
+> |---|---|
+> | **(1) LaTeX 化 + Overleaf** | ✅ 管线完成。**未 push 到 Overleaf** —— 等 Paper B 定稿再推, 免得学长看到一版待重写的 §3 |
+> | **(2) /stress 三家链** | ✅ 跑完 (A 10 / B 21 / C 10 findings), 3-phase 后检做了, 已汇入笔记 §396 |
+> | **(3) 补真引用** | ✅ 0 → 86 处, paper.bib 新增 3 条方法学经典 |
+>
+> **管线怎么用** (新建 `paper_drafts/latex/`, **不是** `aaai27/latex/` —— 后者是 AAAI 存档,
+> 被 `test_dayaudit_rounda_20260714.py::test_f03` 的 fixture 钉住, 别动):
+> ```
+> bash convert.sh paperA              # → build/paperA/main.pdf
+> bash convert.sh paperB --submission # 严格门: 0 TODO + 0 未定义引用 + refs 起始页 ≤ 9
+> bash scripts/maintenance/overleaf_sync.sh          # 两篇都推
+> bash scripts/maintenance/overleaf_sync.sh paperA   # 只推 A
+> ```
+> Overleaf 侧: **菜单 → Main document → `main_paperA.tex` / `main_paperB.tex`** 切编译目标。
+>
+> ### 0-B. 🔴 唯一的拦路问题: Paper B §3 的 oracle 列错位 (三家 P0 共识)
+>
+> Table 2 的 "oracle" 列**六格逐位**等于产物 `triage_only`, 而 §3 散文写的是 `oracle_sr_cost`
+> 的定义。真 oracle 有 **+3.45~+16.07pp SR** 增益 → §3 标题 / "the ceiling is entirely in
+> cost" / abstract 的 "13–22%" 全是错的 (那个 22% 还对不上任何一行产物)。
+>
+> **好消息**: 产物 `router_objective_ordering.md` 已经把 ceiling 劈成两半, 而两半正好各被
+> §4/§5 杀一个 —— `triage_only` 只要二元标签 (§5 杀) / `route_only` 要 which-mode 标签 (§4 杀)。
+> Paper B contribution #1 原文就是要 "separate" 这两半。**改完是兑现自己的贡献, 不是打补丁。**
+>
+> **需 user 决策**: 是 (a) 只重写 §3 散文 + 换用 `oracle_sr_cost` 行 (~1.5h, 我可以自走),
+> 还是 (b) 连 codex #4 一起做 —— 按测量成本重算 which-mode 标签, 重生成 label-supply /
+> conflict / tier / router 全套产物 (~1 focused day)。
+> **(b) 的诱因很强**: codex 只读重算给出 4/6 不可训 → **5/6**, **阴性结论更强**。
+>
+> ### 0-C. 未落地的 findings (全部需产物重生成, 按代价排)
+>
+> | # | 来源 | 内容 | 代价 |
+> |---|---|---|---|
+> | 1 | A+B+C | §3 oracle 列 = `triage_only` (见 0-B) | 1.5h ~ 1d |
+> | 6 | A+B+C | `cheapest` 六格全 = **Vision** → §2.1 前提句错; §6.4 "cost tier" 是误名 (该档同时装最贵 SoM 和最便宜 Vision) | ~1h |
+> | 4 | B | `derive_oracle_label` 按硬编码顺序取首个成功臂, 非成本最小 → 全套标签产物重生成 | 1-3h |
+> | 5 | B | Table 12 把 triage (203-224 全任务) 与 cost-tier (仅已解任务) 并成一行 | 1-2h |
+> | 3/8 | A+B+C | H3 无同模式重跑 null (self-oracle noise floor); **且 §4.2 机制推断用错轴** —— axis-1 两臂都用紧凑 id, 该轴上 compact-id 是常量, 推不出结论, 正确推断与稿子写的相反 | 2-4h (有重跑) / 1-3d (需新跑) |
+> | 9 | B | 身份可辨天花板按 task_id 分组而非按实际特征向量; codex 称重算后 79.17/83.70 → ~83.93/91.30 | 2-4h |
+> | 17 | A+B | §4.3 "36 landed conditions cross-mode 聚合" 无命名产物 (cross_sites 只有 `cross_mode_failure_taxonomy_B0_classifieds.md` 单格) | ~1h |
+> | 16 | A+B | §6.1 的 7,963/7,278/685 无产物; 按 manifest 实测 39 condition = 7725/7058/667。**核心主张成立** (只有 0.0/1.0) | ~30min |
+> | 7 | B | I²=0 被当成同质性的正面证据, 但 4/6 格 SE 先被 floor 过 | 30-45min |
+> | 11 | B | 唯一显著格用 200 次置换且与选择步骤共污染 | 1-2h |
+>
+> ### 0-D. 页数账 (实测, 别猜)
+>
+> - **Paper A: 9 页总, refs 起 p8 → 正文 8 页, 限内。** 0 TODO / 0 未定义引用。
+> - **Paper B: 12 页总, refs 起 p11 → 正文 10 页, 超 2 页。**
+>   实测过的杠杆: 12 张表全撤 = 省 2 页 (即散文自己就顶满 8 页) · 表格字号三档
+>   (`\small`/`\footnotesize`/`\scriptsize`) **页数完全不变** (代价在浮动体排布不在墨水) ·
+>   单栏 `table` 省 1 页但**表头溢出撞邻栏且 LaTeX 不报 Overfull** (已否决, 靠渲 PNG 眼看抓到)。
+>   → 排版到 9 页见底。**差的 1 页只能来自散文或附录**; `convert.sh` 已支持可选 `appendix.md`。
+>
+> ### 0-E. Mode B 的一个坑, 下次注意
+>
+> codex 引的文件名 (`section3_oracle_complementarity.md` / `section2_experimental_setup.md`
+> / `section1_introduction.md` …) **在仓库里不存在** —— 它按语义自行重命名了, 行号也不可跳。
+> 内容与数字逐条抽查**全部正确**, 所以是路径 confabulation 不是读错文件。
+> **下次 prompt 要显式给文件清单 + 要求逐字回引路径。**
+>
+> ### 0-F. 我这一 session 已改的 6 处 (commit `79d305d`)
+>
+> "preregistered exclusions" → 如实的 post-hoc 披露 (两篇) · Table 3 表头 Holm→raw + 正文补
+> Holm 后值 · "5–25×" → 2.3–24.8× 且 per-backbone (含上游 `write_digests.py:170` 修正) ·
+> triage 的 TF-IDF 误述 (两处) · noise floor "exceeded"→"met or exceeded" ·
+> margin −0.004→−0.005 + abstract AUROC 补 "in five of six cells"。
+>
+> **22 + 3 = 25 个 commit 全部未 push。距 08-05 还有 9 天。**
 
 > 🎯 **2026-07-27 (五) 深夜 — 两篇 8 页稿都已成型。剩下的是 LaTeX 化 + stress + 投。** ⭐⭐⭐⭐
 >
