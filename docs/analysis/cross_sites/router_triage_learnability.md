@@ -64,23 +64,30 @@ A prior-only predictor scores 0.500 by construction. The single-feature column i
 
 | cell | observed SR-lossless saving | median under shuffled labels | p |
 |---|---|---|---|
-| classifieds·B0 | 0.0% | 4.2% | 1.000 |
+| classifieds·B0 | 0.0% | 2.9% | 1.000 |
 | reddit·B0 | 0.0% | 0.0% | 1.000 |
-| classifieds·B1 | 10.6% | 10.1% | 0.475 |
-| reddit·B1 | 14.4% | 0.7% | 0.025 |
-| classifieds·B2 | 20.8% | 20.7% | 0.455 |
-| reddit·B2 | 26.5% | 4.1% | 0.035 |
+| classifieds·B1 | 10.6% | 10.6% | 0.502 |
+| reddit·B1 | 14.4% | 0.5% | 0.030 |
+| classifieds·B2 | 20.8% | 20.7% | 0.463 |
+| reddit·B2 | 26.5% | 6.3% | 0.005 |
 
-200 label permutations per cell, same CV and same threshold sweep. The sweep picks its operating point post hoc, so it can extract an apparent saving from pure noise; this column is how much.
+200 permutations per cell. The permutation unit is the whole task bundle (y, succ, cost) against X — permuting only `y` leaves the label disconnected from the outcomes that define it, and its error is not one-directional (measured cls/B1 0.478→0.503 but red/B2 0.040→**0.005**). p is the plus-one Monte Carlo estimator (k+1)/(B+1). The sweep still picks its operating point post hoc, so this column is how much of the observed saving a signal-free pipeline reproduces.
 
 
 ## 4. Verdict
 
-Holm at α=0.05 over the m=6 cells tested (the sweep was run once per cell, so the family is the six cells):
+Holm at α=0.05 over the m=6 cells tested (the sweep was run once per cell, so the family is the six cells) — **1 of 6 reject**:
 
-- reddit·B1: p=0.025 vs 0.0083 → **stop, no cell survives**
+- reddit·B2: p=0.005 vs 0.0083 → reject null
+- reddit·B1: p=0.030 vs 0.0100 → **stop — this and all larger p unrejected**
 
 Cells where the learned triage Pareto-beats the trivial always-cheapest fixed policy: **0 of 6**.
 
-Read together: the label is predictable (AUROC 0.65-0.72 in 5/6 cells, and unlike the which-mode task it clears the best single covariate in 4/6), but the prediction does not convert into operational value. Two cells yield no SR-lossless saving at all; two more yield savings a label-shuffled classifier matches; the two that beat their own null do not survive multiplicity correction. So the triage half joins the which-mode half as unlearnable here — but for a different reason. Which-mode fails on label supply (16-97 labels, 笔记 §383.4). Triage has the labels and the AUROC and still fails, because at 2-27% base SR the decision that matters is a narrow margin against a trivial fixed policy.
+Read together — and note this is a **narrower** negative than an earlier draft of this file claimed. The label is predictable (AUROC 0.65-0.72 in 5/6 cells, and unlike the which-mode task it clears the best single covariate in 4/6). Two cells yield no SR-lossless saving at all; two more yield savings a signal-free pipeline reproduces (p ~= 0.50). **One cell, reddit/B2, has a saving that survives Holm at m=6 (p=0.005 vs 0.0083)** — under the corrected bundle-permutation null; the earlier y-only null reported 0.040 for that cell and supported a blanket 'nothing survives' claim, which was wrong.
+
+What still holds, and is the load-bearing statement: **no cell's learned triage Pareto-beats the trivial always-cheapest fixed policy** (0 of 6). In reddit/B2 specifically the learned policy keeps 1.97pp more SR than always-cheapest but pays ~2.4% more cost — a genuine trade-off point, not a dominating one, and not something a deployment would prefer without a stated SR price. So: a detectable signal in one of six cells, worth less than the policy you get for free.
+
+⚠️ Two caveats that cap how far even that reading can go. (1) The operating point is still not fully out-of-sample: `best_mode` / `cheap_mode` are chosen on all six cells' realized outcomes, and the `nested` row's training-side scores come from models whose folds include the outer test rows — a true nested design needs inner-CV scores and per-outer-fold mode selection. (2) The threshold sweep remains post hoc, so the null (which shares it) is the only thing keeping the reported saving honest.
+
+Contrast with the which-mode half: that one fails on label SUPPLY (16-97 labels per cell, 笔记 §383.4). Triage has the labels and the AUROC and still does not beat a fixed policy — a different failure mode, at 2-27% base SR where almost every task is hopeless and 'always take the cheap one' is already close to optimal.
 

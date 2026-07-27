@@ -104,11 +104,39 @@ updated: 2026-06-27
 >   连 3 次秒死则停并推 ntfy。DEADLINE=08-01, 按 14h/cell 本来就跑不完 → 到点自截断, 拿前几个 P1 cell。
 >   **thesis scope, 不在 08-05 关键路径上。**
 >
-> ### 8. 🔲 待接续: Mode B (codex) 审计
+> ### 8. ✅ Mode B (codex) 已落地 — 又翻了一条结论, 且留下 3 个待修 (详 笔记 §388.7)
 >
-> 本 session 结束时 codex 仍在跑 (30+ min, submission band 内, 在做 sibling propagation 全库 grep)。
-> 输出 `docs/checkpoints/codex_outputs/session_full_FINAL_2026-07-27_144418.md`;
-> 落地后追加笔记 **§388.7** + 三家统一 bug 表。**它可能还会推翻更多东西, 起稿前先读它。**
+> codex 33.9 min / 30KB / 6 个 P0。它做了我没做的一步: **全库调用点普查**。结果:
+>
+> **🔴 已修**: **B-1901** — `_psom_unique_ids` 不带 universe →
+> `site_unique_psom_union.reddit` 是 `[11, 12, **58**, 179]` n=4, **被排除的 task 58 坐在
+> 「各臂独解」这个论文级证据槽里**（正是 H1 失败后 Paper A 要倚重的那条）。修后 `[11,12,179]` n=3。
+>
+> **🔴 已修 + ⚠️ 又翻一条结论**: **B-1902** — 置换零分布只打乱 `y` 却仍用**原任务**的
+> `succ`/`cost` 评估（被打乱的标签与定义它的 outcome 脱钩）; 且用 `k/B` 而非 `(k+1)/(B+1)`。
+> **误差方向不统一**: cls/B1 0.478→0.503（旧偏小），**red/B2 0.040→0.005（旧偏大 8×）**。
+> → **red/B2 现在通过 Holm at m=6**（0.0050 < 0.00833）。
+> 我原写的「两个存活的一个都不过校正」**是错的**，产物已改。
+> **承重句仍成立**: **0/6 cell 的 learned triage 能 Pareto 胜过平凡 always-cheapest**
+> （red/B2 那格 learned 多保 1.97pp SR 但多花 2.4% 成本 = 真权衡点非压制点）。
+> → 起稿时的正确说法: **六格里一格有可检测信号，但价值不如那条白送的固定策略。**
+>
+> **🟠 待修 3 条（起稿前至少要知道）**:
+> - **B-1903** — 我今天加的「nested honest」阈值**其实没真嵌套**（训练侧复用全局 OOF 分数，
+>   而那些分数的模型训练集含当前外折测试行；`best_mode`/`cheap_mode` 也用全量结局选）。
+>   证据: 半嵌套下 SR 差 `-1.786…-0.893, 0.0` pp → "无损"本身是选择性产物。
+>   **⚠️ 要引用任何 triage 运营数字，必须先做真嵌套 CV。**
+> - **B-1904** — `extract_50_features` 把 collected 集当 complete → canonical
+>   `raw_features_phase1a.json` 两个 reddit cell 都是 `n_total=205`（应 203），fold 产物
+>   **无 scored-universe SHA**，且缓存池**完全没有 B2_reddit**（pre-k=6）。**router 相关数字要重抽。**
+> - **B-1905** — `aggregate_phantom_lift` 的论文级 oracle 效应 universe 从不与 scored IDs 取交集;
+>   实测三个 reddit cell 全 `n_expected=205 / n_common=205 / is_partial=False`。
+>   **lift / meta / 依赖 figure 全部要重生成。**
+>
+> **📌 横切教训（第三次同型）**: universe 一致性**不是"修三个假设"就完事** ——
+> 我今天三次修 universe 三次漏，每次都是"不在正在看的那条调用链上"。
+> **修横切关注点必须 grep 普查，不能顺着调用链走。** codex 的输出自带
+> `Q5 caller census` + `Q7 propagation ledger` 两份普查表，起稿前照着核一遍。
 
 
 > 🚦 **2026-07-27 (三) — 前一块的 6 步清单已全部完成; 下一步 = k=6 重灌** ⭐⭐⭐ (详 笔记 §387.15)

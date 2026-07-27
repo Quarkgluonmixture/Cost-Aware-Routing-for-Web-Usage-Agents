@@ -240,7 +240,8 @@ def _load_cell_per_task(
     return by_mode
 
 
-def _psom_unique_ids(per_task: Dict[str, Dict[str, Dict]]) -> set:
+def _psom_unique_ids(per_task: Dict[str, Dict[str, Dict]],
+                     universe: Optional[set] = None) -> set:
     """Within-cell P-SoM-unique task IDs (NUMBERS_TODO §1.1 UNIQ slot rule).
 
     A task qualifies iff P-SoM success == 1.0 AND every one of the five other
@@ -248,7 +249,17 @@ def _psom_unique_ids(per_task: Dict[str, Dict[str, Dict]]) -> set:
     six arms excludes the task (fail-closed): uniqueness cannot be asserted
     against an arm whose outcome is unknown.
     """
+    # AMENDMENT_08 (B-1901): restrict to the canonical SCORED set. Without this the
+    # "each arm uniquely solves tasks no other arm does" slot — a paper-facing
+    # figure, and one Paper A leans on harder now that H1 has failed — counts
+    # protocol-excluded tasks. Measured before the fix: reddit union reported
+    # `[11, 12, 58, 179]` (n=4), where 58 is a task AMENDMENT_08 removes; correct
+    # count is 3. Missed by the same-day H1/H2a/H3 universe fix because this is a
+    # separate function outside those three code paths.
     psom_rows = per_task.get("P-SoM", {})
+    if universe is not None:
+        _keep = {int(x) for x in universe}
+        psom_rows = {t: r for t, r in psom_rows.items() if int(t) in _keep}
     other_modes = [m for m in SIX_MODES if m != "P-SoM"]
     unique: set = set()
     for tid, row in psom_rows.items():
@@ -1020,7 +1031,7 @@ def build_full_decision(
                                       universe=six_arm_universe, seed=axis1_seed)
         h3_axis2 = _h3_axis_per_cell(per_task, "P-prompt", ref_mode="P-SoM",
                                       universe=six_arm_universe, seed=axis2_seed)
-        cell_unique = _psom_unique_ids(per_task)
+        cell_unique = _psom_unique_ids(per_task, universe=set(expected_ids))
         site_unique_psom.setdefault(cell["site"], set()).update(cell_unique)
         site_unique_cells.setdefault(cell["site"], []).append(
             f"{cell['baseline']}_{cell['site']} (+{len(cell_unique)})"

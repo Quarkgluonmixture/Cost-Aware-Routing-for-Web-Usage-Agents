@@ -9186,3 +9186,128 @@ solvable/not 标签"。
 **"运行时每一个分支决策所需的信息, 部署时拿得到吗"**。级联的分支条件正是评测结果本身。
 
 **Cross-link**: B-1899 (同批); 笔记 §387.17
+
+---
+
+## B-1901 — 排除掉的 task 58 坐在「各臂独解」这个论文级证据槽里 (2026-07-27)
+
+**B-1901** (estimand 泄漏, **FIXED**, cross-AI Mode B codex P0 OOB) —
+
+`aggregate_phase1_full_prereg_decision.py:1023` 调 `_psom_unique_ids(per_task)` **不带 universe**。
+决策产物实测:
+
+```
+site_unique_psom_union.reddit.task_ids = [11, 12, 58, 179]   n=4   ← 58 是 AMENDMENT_08 排除掉的
+                                        修后 [11, 12, 179]   n=3
+```
+
+**为什么这条特别难受**: 「各臂独解任务」是 Paper A 在 H1 失败后要倚重的证据之一
+(§1 主张里的 "各臂独解" 那一条), 而它把一个被排除的 task 算了进来。
+
+**为什么我同日修 universe 时漏了它**: 我修的是 H1 / H2(a) / H3 三个假设的代码路径,
+而 `_psom_unique_ids` 是**第四个独立函数**, 不在那三条路径上。
+**教训: universe 一致性不是"修三个假设"就完事 —— 要枚举所有从 `per_task` 派生
+paper-facing 数字的函数。** codex 的做法是 grep 全库调用点普查 (它的 Q5/Q7 输出),
+这正是我该做而没做的一步。
+
+**Cross-link**: 笔记 §388.7; AMENDMENT_08 §3 (第三次被自己的产物证伪)
+
+---
+
+## B-1902 — 置换零分布只打乱 y, 与定义 y 的 outcome 脱钩; 且用 k/B 不用 (k+1)/(B+1) → 翻了一个结论 (2026-07-27)
+
+**B-1902** (统计, **FIXED**, cross-AI Mode B codex P0 OOB) —
+
+`router_triage_learnability.py` 的零分布 `rng.permutation(y)` 后, 仍用**原任务**的
+`succ` / `cost` 字典评估策略。被打乱的 "solvable" 标签因此与**定义 solvability 和策略成本的
+那些 outcome 脱钩** —— 它不是所测策略的置换零分布。
+
+正确的置换单元是**整个任务 bundle** `(y, succ_by_mode, cost_by_mode)` 相对 `X`。
+
+**⚠️ 误差方向不统一, 这才是它要命的地方** (实测, 与 codex 报的数字逐位吻合):
+
+| cell | 旧 (只打乱 y) +1 | **新 (bundle) +1** | 方向 |
+|---|---|---|---|
+| cls/B1 | 0.4776 | 0.5025 | 旧的偏小 |
+| **red/B2** | 0.0398 | **0.0050** | **旧的偏大 8 倍** |
+
+另: 原用 `exceedances / B`, 应为 **`(k+1)/(B+1)`** —— `k/B` 会把"B 次抽样里没出现"报成 0,
+在小 k 处**无歧义地偏小**。
+
+**结论被翻**: 新 p 下 **red/B2 通过 Holm at m=6** (0.0050 < 0.05/6 = 0.00833)。
+我原先写的「两个存活的一个都不过校正」**是错的**, 相关行已改。
+
+**保住的那半 (承重句)**: **仍然 0/6 cell 的 learned triage 能 Pareto 胜过平凡的
+always-cheapest**。red/B2 那格 learned 多保 1.97pp SR 但多花 ~2.4% 成本 = 真权衡点,
+非压制点。→ "六格里一格有可检测信号, 但价值不如白送的固定策略"。
+
+**教训**: 置换检验的**单元**必须是"打乱后仍自洽的最小语义包"。只打乱 label 而把 outcome
+留在原位, 造出的是一个既非原假设也非备择假设的第三种世界, 而它偏哪边**不可预测** ——
+这次一个 cell 偏保守一个偏激进。**"我加了置换零分布"不等于"我控制了假阳性"。**
+
+**Cross-link**: 笔记 §388.7; Mode C F4 (同一支的另一面: 零分布与观测统计量过拟合能力不等)
+
+---
+
+## B-1903 — 「nested honest」阈值其实没真嵌套 + mode 选择用了全量结局 (2026-07-27)
+
+**B-1903** (统计, **待修 — 属重设计, 不连夜动**) —
+
+本 session 为修 in-sample 阈值而加的 `learned_nested_honest`, codex 指出**仍不是真嵌套**:
+
+1. 它在训练侧复用**全局 OOF 分数**, 而那些分数来自**训练集包含当前外折测试行**的模型
+   → 外折测试标签经由阈值选择回流;
+2. `best_mode` / `cheap_mode` 是用**全部六格的已实现结局**选的, 每个外折并未各自重选;
+3. 阈值扫本身仍是后验挑点。
+
+实测证据 (codex): nested 减 baseline 的 SR 差为
+`-1.786, -0.985, -0.446, -0.985, -0.893, 0.0` pp —— **那个在全局看"无损"的设定, 即使在这个
+半嵌套算法下也没能保持无损**, 说明"无损"本身是选择性产物。
+
+**真修法 (待做)**: 每个外折内, mode 与阈值**只用外折训练数据**选; 阈值训练侧的分数由
+**内层 CV** 产生; scaler/LR 在外折训练全量上重拟合; 外折测试只评一次; 只聚合外折测试决策。
+
+**为什么不连夜做**: 这是重设计而非补丁, 且它只会让阴性结论**更强**
+(半嵌套已显示"无损"不成立)。起稿前若要引用任何 triage 运营数字, **必须先做这个**。
+
+**Cross-link**: 笔记 §388.7; 我的 Mode A F1 + Mode C F3 (发现 in-sample 阈值) 的续集
+
+---
+
+## B-1904 — router 特征抽取把 collected universe 当 complete, 训练与缓存都落在被排除的 task 上 (2026-07-27)
+
+**B-1904** (标签污染, **待修**, cross-AI Mode B codex P0) —
+
+`extract_50_features.py` 里 `universe_complete=False` **只发警告**;
+`cell_complete` 的含义仅是"各 mode 互相一致", 所以六个 mode 在**更宽的 collected 集**上
+一致就照样进 label / fold / 训练。
+
+实测既有 canonical 产物:
+- `results/phantom_paper/l1_router/raw_features_phase1a.json`: 两个 reddit cell 均
+  `n_total_tasks=205` / `n_routable_universe=205` (应为 203)
+- `B0_reddit_fold_assignment.json`: `n_tasks=205`, 且**没有 scored-universe SHA**
+- 该缓存池**完全没有 B2_reddit** (pre-k=6 vintage)
+
+**待修**: label 派生前先与 `expected_scored_ids(site)` 取交集; 容忍已知 collected extras 后
+要求**精确相等**; 每个下游 model/fold 产物持久化 universe SHA + run-manifest SHA + 源 run 映射;
+现有缓存作废。
+
+**Cross-link**: 笔记 §388.7; B-1896 (同一脚本的 run 白名单问题); AMENDMENT_08 §3
+
+---
+
+## B-1905 — `aggregate_phantom_lift` 的论文级 oracle 效应仍算在 collected 集上 (2026-07-27)
+
+**B-1905** (estimand 泄漏, **待修**, cross-AI Mode B codex P0) —
+
+`aggregate_phantom_lift.py:575/590` 的 universe 只是**已观测臂的交集**, 从不与 canonical
+scored IDs 取交集; 而 `cell["n_expected"]` 仍来自面向 collection 的 run registry。
+
+codex 直接执行实测: 三个 reddit cell 全部 `n_expected=205` / `n_common=205` /
+`lift_6_vs_3_n_universe=205` / `is_partial=False`。
+
+**待修**: 每个 per-comparison universe 与 `expected_scored_ids(site)` 取交集并带上其 SHA;
+protocol-excluded 的已观测 task 只能算 tolerated extras, **永不进 estimand**;
+重生成全部 lift / meta / 依赖它们的 figure 产物。
+
+**Cross-link**: 笔记 §388.7; B-1901 (同类第四处); AMENDMENT_08 §3

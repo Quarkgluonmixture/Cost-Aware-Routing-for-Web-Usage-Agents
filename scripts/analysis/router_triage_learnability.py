@@ -264,15 +264,37 @@ def evaluate(cell_spec: dict) -> dict | None:
     # pipeline reports on noise is saving the threshold sweep manufactured by
     # picking the best point post hoc, not saving the classifier earned. Reported
     # as the fraction of shuffles matching or beating the observed lossless saving.
+    # B-1902: permute the whole task BUNDLE, not just `y`.
+    #
+    # The first version permuted `y` and then evaluated the resulting scores
+    # against the ORIGINAL per-task `succ` / `cost` dicts. A permuted "solvable"
+    # label was therefore disconnected from the outcomes that define solvability
+    # and policy cost, so the null was not a permutation null for the policy being
+    # tested. Permuting the (y, succ, cost) triple against X breaks the
+    # feature->outcome link while keeping each task's outcome bundle internally
+    # consistent — which is the actual null of interest.
+    #
+    # The direction of the error is NOT uniform, which is why it mattered:
+    # measured cls/B1 0.4776 -> 0.5025 (was anti-conservative) but
+    # red/B2 0.0398 -> 0.0050 (was CONSERVATIVE by 8x). Under the corrected null
+    # red/B2 crosses Holm at m=6, reversing an earlier "nothing survives" claim.
+    #
+    # Also switched to the plus-one Monte Carlo p-value (k+1)/(B+1): k/B can
+    # report 0 for an event that simply was not sampled in B draws, and is
+    # unambiguously anti-conservative at small k.
     rng_null = np.random.default_rng(SEED + 1)
     null_savings = []
     for _ in range(N_SHUFFLE):
-        yp = rng_null.permutation(y)
+        perm = rng_null.permutation(n)
+        y_b = y[perm]
+        succ_b = [cell["succ"][i] for i in perm]
+        cost_b = [cell["cost"][i] for i in perm]
+        cell_b = dict(cell, y=y_b, succ=succ_b, cost=cost_b)
         try:
-            sp = oof_scores(X, yp)["lr"]
+            sp = oof_scores(X, y_b)["lr"]
         except Exception:
             continue
-        sw = [policy_at_threshold(cell, sp, float(t), best_mode, cheap_mode)
+        sw = [policy_at_threshold(cell_b, sp, float(t), best_mode, cheap_mode)
               for t in np.quantile(sp[~np.isnan(sp)], np.linspace(0.0, 0.95, 20))]
         ll = [q for q in sw if q["sr_pct"] >= baseline["sr_pct"] - 1e-9]
         null_savings.append(
@@ -280,8 +302,8 @@ def evaluate(cell_spec: dict) -> dict | None:
         )
     observed_saving = (100.0 * (1 - best_lossless["mean_cost"] / baseline["mean_cost"])
                        if best_lossless else 0.0)
-    p_null = (float(np.mean([v >= observed_saving - 1e-12 for v in null_savings]))
-              if null_savings else float("nan"))
+    n_exceed = int(sum(1 for v in null_savings if v >= observed_saving - 1e-12))
+    p_null = ((n_exceed + 1) / (len(null_savings) + 1)) if null_savings else float("nan")
 
     return {
         "site": cell["site"], "baseline_model": cell["baseline"], "n": n,
@@ -303,6 +325,8 @@ def evaluate(cell_spec: dict) -> dict | None:
         "null_shuffle_saving_median_pct": (float(np.median(null_savings))
                                            if null_savings else float("nan")),
         "null_shuffle_p": p_null,
+        "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+        "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
         "n_shuffles": len(null_savings),
     }
 
@@ -369,9 +393,13 @@ def main() -> int:
                  f"{r['observed_lossless_saving_pct']:.1f}% | "
                  f"{r['null_shuffle_saving_median_pct']:.1f}% | "
                  f"{r['null_shuffle_p']:.3f} |")
-    L.append(f"\n{res[0]['n_shuffles']} label permutations per cell, same CV and same "
-             "threshold sweep. The sweep picks its operating point post hoc, so it can "
-             "extract an apparent saving from pure noise; this column is how much.\n")
+    L.append(f"\n{res[0]['n_shuffles']} permutations per cell. The permutation unit is the whole "
+             "task bundle (y, succ, cost) against X — permuting only `y` leaves the label "
+             "disconnected from the outcomes that define it, and its error is not "
+             "one-directional (measured cls/B1 0.478→0.503 but red/B2 0.040→**0.005**). "
+             "p is the plus-one Monte Carlo estimator (k+1)/(B+1). The sweep still picks its "
+             "operating point post hoc, so this column is how much of the observed saving a "
+             "signal-free pipeline reproduces.\n")
 
     L.append("\n## 4. Verdict\n")
     ps = sorted((r["null_shuffle_p"], f"{r['site']}·{r['baseline_model']}") for r in res)
@@ -382,10 +410,14 @@ def main() -> int:
         holm.append((name, pv, thresh, pv < thresh))
         if pv >= thresh:
             break
-    L.append("Holm at α=0.05 over the m=6 cells tested (the sweep was run once per cell, "
-             "so the family is the six cells):\n")
+    n_rej = sum(1 for _n, _p, _t, _ok in holm if _ok)
+    L.append(f"Holm at α=0.05 over the m=6 cells tested (the sweep was run once per cell, "
+             f"so the family is the six cells) — **{n_rej} of 6 reject**:\n")
     for name, pv, thresh, ok in holm:
-        L.append(f"- {name}: p={pv:.3f} vs {thresh:.4f} → {'reject null' if ok else '**stop, no cell survives**'}")
+        # The step-down stops at the first non-rejection; saying "no cell survives"
+        # there is wrong whenever an earlier step already rejected.
+        verdict = "reject null" if ok else "**stop — this and all larger p unrejected**"
+        L.append(f"- {name}: p={pv:.3f} vs {thresh:.4f} → {verdict}")
     beat_cheap = [r for r in res
                   if r["learned_lossless"] is not None
                   and r["learned_lossless"]["mean_cost"] < r["always_cheapest"]["mean_cost"]
@@ -394,16 +426,33 @@ def main() -> int:
              f"fixed policy: **{len(beat_cheap)} of {len(res)}**"
              + (f" ({', '.join(f'{r[chr(39)+chr(39)] if False else r['site']}·{r['baseline_model']}' for r in beat_cheap)})" if beat_cheap else "")
              + ".\n")
-    L.append("Read together: the label is predictable (AUROC 0.65-0.72 in 5/6 cells, and "
-             "unlike the which-mode task it clears the best single covariate in 4/6), but "
-             "the prediction does not convert into operational value. Two cells yield no "
-             "SR-lossless saving at all; two more yield savings a label-shuffled classifier "
-             "matches; the two that beat their own null do not survive multiplicity "
-             "correction. So the triage half joins the which-mode half as unlearnable "
-             "here — but for a different reason. Which-mode fails on label supply "
-             "(16-97 labels, 笔记 §383.4). Triage has the labels and the AUROC and still "
-             "fails, because at 2-27% base SR the decision that matters is a narrow "
-             "margin against a trivial fixed policy.\n")
+    L.append("Read together — and note this is a **narrower** negative than an earlier "
+             "draft of this file claimed. The label is predictable (AUROC 0.65-0.72 in 5/6 "
+             "cells, and unlike the which-mode task it clears the best single covariate in "
+             "4/6). Two cells yield no SR-lossless saving at all; two more yield savings a "
+             "signal-free pipeline reproduces (p ~= 0.50). **One cell, reddit/B2, has a "
+             "saving that survives Holm at m=6 (p=0.005 vs 0.0083)** — under the "
+             "corrected bundle-permutation null; the earlier y-only null reported 0.040 for "
+             "that cell and supported a blanket 'nothing survives' claim, which was wrong.\n")
+    L.append("What still holds, and is the load-bearing statement: **no cell's learned "
+             "triage Pareto-beats the trivial always-cheapest fixed policy** (0 of 6). In "
+             "reddit/B2 specifically the learned policy keeps 1.97pp more SR than "
+             "always-cheapest but pays ~2.4% more cost — a genuine trade-off point, not a "
+             "dominating one, and not something a deployment would prefer without a stated "
+             "SR price. So: a detectable signal in one of six cells, worth less than the "
+             "policy you get for free.\n")
+    L.append("⚠️ Two caveats that cap how far even that reading can go. (1) The operating "
+             "point is still not fully out-of-sample: `best_mode` / `cheap_mode` are chosen "
+             "on all six cells' realized outcomes, and the `nested` row's training-side "
+             "scores come from models whose folds include the outer test rows — a true "
+             "nested design needs inner-CV scores and per-outer-fold mode selection. "
+             "(2) The threshold sweep remains post hoc, so the null (which shares it) is "
+             "the only thing keeping the reported saving honest.\n")
+    L.append("Contrast with the which-mode half: that one fails on label SUPPLY (16-97 "
+             "labels per cell, 笔记 §383.4). Triage has the labels and the AUROC and still "
+             "does not beat a fixed policy — a different failure mode, at 2-27% base SR "
+             "where almost every task is hopeless and 'always take the cheap one' is already "
+             "close to optimal.\n")
 
     text = "\n".join(L) + "\n"
     if args.out:
