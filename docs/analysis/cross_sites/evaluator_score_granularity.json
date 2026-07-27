@@ -5,7 +5,7 @@
   "n_conditions_resolved": 36,
   "n_conditions_unresolved": 0,
   "unresolved": [],
-  "n_episodes_scored": 7722,
+  "n_episodes_scored": 7686,
   "n_score_missing": 0,
   "n_score_non_numeric": 0,
   "distinct_values": [
@@ -13,8 +13,19 @@
    1.0
   ],
   "value_counts": {
-   "0.0": 7055,
-   "1.0": 667
+   "0.0": 7041,
+   "1.0": 645
+  },
+  "protocol_excluded": {
+   "n_episodes": 36,
+   "distinct_values": [
+    0.0,
+    1.0
+   ],
+   "value_counts": {
+    "0.0": 14,
+    "1.0": 22
+   }
   },
   "per_condition": {
    "B0_DOM_classifieds": {
@@ -27,6 +38,15 @@
     "value_counts": {
      "0.0": 185,
      "1.0": 39
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B0_SoM_classifieds": {
@@ -39,6 +59,15 @@
     "value_counts": {
      "0.0": 163,
      "1.0": 61
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B0_Vision_classifieds": {
@@ -51,6 +80,15 @@
     "value_counts": {
      "0.0": 168,
      "1.0": 56
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B0_P-text_classifieds": {
@@ -63,6 +101,15 @@
     "value_counts": {
      "0.0": 189,
      "1.0": 35
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B0_P-SoM_classifieds": {
@@ -75,6 +122,15 @@
     "value_counts": {
      "0.0": 189,
      "1.0": 35
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B0_P-prompt_classifieds": {
@@ -87,6 +143,15 @@
     "value_counts": {
      "0.0": 180,
      "1.0": 44
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B1_DOM_classifieds": {
@@ -99,6 +164,15 @@
     "value_counts": {
      "0.0": 210,
      "1.0": 14
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B1_P-prompt_classifieds": {
@@ -111,6 +185,15 @@
     "value_counts": {
      "0.0": 209,
      "1.0": 15
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B1_P-SoM_classifieds": {
@@ -123,6 +206,15 @@
     "value_counts": {
      "0.0": 209,
      "1.0": 15
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B1_P-text_classifieds": {
@@ -135,6 +227,15 @@
     "value_counts": {
      "0.0": 207,
      "1.0": 17
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B1_SoM_classifieds": {
@@ -147,6 +248,15 @@
     "value_counts": {
      "0.0": 192,
      "1.0": 32
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B1_Vision_classifieds": {
@@ -159,6 +269,15 @@
     "value_counts": {
      "0.0": 196,
      "1.0": 28
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B2_DOM_classifieds": {
@@ -171,6 +290,15 @@
     "value_counts": {
      "0.0": 221,
      "1.0": 3
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B2_P-prompt_classifieds": {
@@ -183,6 +311,15 @@
     "value_counts": {
      "0.0": 220,
      "1.0": 4
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B2_P-SoM_classifieds": {
@@ -195,6 +332,15 @@
     "value_counts": {
      "0.0": 222,
      "1.0": 2
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B2_P-text_classifieds": {
@@ -207,6 +353,15 @@
     "value_counts": {
      "0.0": 223,
      "1.0": 1
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B2_SoM_classifieds": {
@@ -219,6 +374,15 @@
     "value_counts": {
      "0.0": 219,
      "1.0": 5
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B2_Vision_classifieds": {
@@ -231,222 +395,438 @@
     "value_counts": {
      "0.0": 219,
      "1.0": 5
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "n_kept": 224
     }
    },
    "B0_DOM_reddit": {
     "run_dir": "B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
     "condition_subdir": "phase1_dom_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 175,
-     "1.0": 30
+     "0.0": 174,
+     "1.0": 29
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B0_SoM_reddit": {
     "run_dir": "B0_som_reddit_20260627_035453_162107997_3024022_R20936",
     "condition_subdir": "phase1_som_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 175,
+     "0.0": 173,
      "1.0": 30
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B0_Vision_reddit": {
     "run_dir": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
     "condition_subdir": "phase1_vision_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 189,
-     "1.0": 16
+     "0.0": 188,
+     "1.0": 15
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B0_P-text_reddit": {
     "run_dir": "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
     "condition_subdir": "phase1_phantom_text_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 177,
-     "1.0": 28
+     "0.0": 176,
+     "1.0": 27
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B0_P-SoM_reddit": {
     "run_dir": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
     "condition_subdir": "phase1_phantom_som_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 182,
-     "1.0": 23
+     "0.0": 181,
+     "1.0": 22
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B0_P-prompt_reddit": {
     "run_dir": "B0_phantom_prompt_reddit_20260709",
     "condition_subdir": "phase1_phantom_prompt_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 179,
-     "1.0": 26
+     "0.0": 178,
+     "1.0": 25
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B1_DOM_reddit": {
     "run_dir": "B1_dom_reddit_20260703",
     "condition_subdir": "phase1_dom_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 191,
-     "1.0": 14
+     "1.0": 12
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "1.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B1_SoM_reddit": {
     "run_dir": "B1_som_reddit_20260706",
     "condition_subdir": "phase1_som_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 188,
-     "1.0": 17
+     "1.0": 15
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "1.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B1_Vision_reddit": {
     "run_dir": "B1_vision_reddit_20260708_002122_732634080_205180_R16847",
     "condition_subdir": "phase1_vision_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 199,
-     "1.0": 6
+     "0.0": 198,
+     "1.0": 5
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B1_P-text_reddit": {
     "run_dir": "B1_phantom_text_reddit_20260710",
     "condition_subdir": "phase1_phantom_text_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 191,
-     "1.0": 14
+     "1.0": 12
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "1.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B1_P-SoM_reddit": {
     "run_dir": "B1_phantom_som_reddit_20260711",
     "condition_subdir": "phase1_phantom_som_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 191,
-     "1.0": 14
+     "1.0": 12
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "1.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B1_P-prompt_reddit": {
     "run_dir": "B1_phantom_prompt_reddit_20260713",
     "condition_subdir": "phase1_phantom_prompt_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 192,
-     "1.0": 13
+     "1.0": 11
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "1.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B2_DOM_reddit": {
     "run_dir": "B2_dom_reddit_20260715",
     "condition_subdir": "phase1_dom_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 197,
+     "0.0": 195,
      "1.0": 8
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B2_SoM_reddit": {
     "run_dir": "B2_som_reddit_20260717",
     "condition_subdir": "phase1_som_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 202,
-     "1.0": 3
+     "0.0": 201,
+     "1.0": 2
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B2_Vision_reddit": {
     "run_dir": "B2_vision_reddit_20260719",
     "condition_subdir": "phase1_vision_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 200,
-     "1.0": 5
+     "0.0": 199,
+     "1.0": 4
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B2_P-text_reddit": {
     "run_dir": "B2_phantom_text_reddit_20260720",
     "condition_subdir": "phase1_phantom_text_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 200,
-     "1.0": 5
+     "0.0": 199,
+     "1.0": 4
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B2_P-SoM_reddit": {
     "run_dir": "B2_phantom_som_reddit_20260722",
     "condition_subdir": "phase1_phantom_som_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 202,
-     "1.0": 3
+     "1.0": 1
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "1.0": 2
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    },
    "B2_P-prompt_reddit": {
     "run_dir": "B2_phantom_prompt_reddit_20260723",
     "condition_subdir": "phase1_phantom_prompt_router_0",
     "n_episodes": 205,
-    "n_scored": 205,
+    "n_scored": 203,
     "n_score_missing": 0,
     "n_score_non_numeric": 0,
     "value_counts": {
-     "0.0": 204,
-     "1.0": 1
+     "0.0": 203
+    },
+    "protocol_excluded": {
+     "n_episodes": 2,
+     "value_counts": {
+      "0.0": 1,
+      "1.0": 1
+     }
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "content_task_ids_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+     "n_kept": 203
     }
    }
   }
@@ -478,6 +858,11 @@
   "value_counts": {
    "0.0": 3
   },
+  "protocol_excluded": {
+   "n_episodes": 0,
+   "distinct_values": [],
+   "value_counts": {}
+  },
   "per_condition": {
    "B1_DOM_classifieds": {
     "run_dir": "B1_3mode_classifieds_20260413",
@@ -488,6 +873,15 @@
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 1
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "49e165525ebdb26f765e7bbab7689c4772a55771dd3ce3b1786d75188895cf03",
+     "n_kept": 1
     }
    },
    "B1_SoM_classifieds": {
@@ -499,6 +893,15 @@
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 1
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "49e165525ebdb26f765e7bbab7689c4772a55771dd3ce3b1786d75188895cf03",
+     "n_kept": 1
     }
    },
    "B1_Vision_classifieds": {
@@ -510,6 +913,15 @@
     "n_score_non_numeric": 0,
     "value_counts": {
      "0.0": 1
+    },
+    "protocol_excluded": {
+     "n_episodes": 0,
+     "value_counts": {}
+    },
+    "universe_provenance": {
+     "canonical_task_universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+     "content_task_ids_sha256": "49e165525ebdb26f765e7bbab7689c4772a55771dd3ce3b1786d75188895cf03",
+     "n_kept": 1
     }
    }
   }

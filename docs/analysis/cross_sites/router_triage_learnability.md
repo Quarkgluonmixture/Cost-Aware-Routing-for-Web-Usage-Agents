@@ -64,22 +64,25 @@ A prior-only predictor scores 0.500 by construction. The single-feature column i
 
 | cell | observed SR-lossless saving | median under shuffled labels | p |
 |---|---|---|---|
-| classifieds·B0 | 0.0% | 2.9% | 1.000 |
+| classifieds·B0 | 0.0% | 3.3% | 1.000 |
 | reddit·B0 | 0.0% | 0.0% | 1.000 |
-| classifieds·B1 | 10.6% | 10.6% | 0.502 |
-| reddit·B1 | 14.4% | 0.5% | 0.030 |
-| classifieds·B2 | 20.8% | 20.7% | 0.463 |
-| reddit·B2 | 26.5% | 6.3% | 0.005 |
+| classifieds·B1 | 10.6% | 10.1% | 0.483 |
+| reddit·B1 | 14.4% | 1.0% | 0.015 |
+| classifieds·B2 | 20.8% | 20.8% | 0.515 |
+| reddit·B2 | 26.5% | 5.5% | 0.000 |
 
-200 permutations per cell. The permutation unit is the whole task bundle (y, succ, cost) against X — permuting only `y` leaves the label disconnected from the outcomes that define it, and its error is not one-directional (measured cls/B1 0.478→0.503 but red/B2 0.040→**0.005**). p is the plus-one Monte Carlo estimator (k+1)/(B+1). The sweep still picks its operating point post hoc, so this column is how much of the observed saving a signal-free pipeline reproduces.
+Smallest reportable p at B=10000 is 1/(B+1) = 1.00e-04; Holm's tightest threshold over six cells is 0.05/6 = 8.33e-3. B is therefore not what decides any cell's verdict (it was at B=200, where the floor 4.98e-3 sat inside the threshold and the surviving cell reported exactly it).
+
+
+10000 permutations per cell. The permutation unit is the whole task bundle (y, succ, cost) against X — permuting only `y` leaves the label disconnected from the outcomes that define it, and its error is not one-directional (measured cls/B1 0.478→0.503 but red/B2 0.040→**0.005**). p is the plus-one Monte Carlo estimator (k+1)/(B+1). The sweep still picks its operating point post hoc, so this column is how much of the observed saving a signal-free pipeline reproduces.
 
 
 ## 4. Verdict
 
 Holm at α=0.05 over the m=6 cells tested (the sweep was run once per cell, so the family is the six cells) — **1 of 6 reject**:
 
-- reddit·B2: p=0.005 vs 0.0083 → reject null
-- reddit·B1: p=0.030 vs 0.0100 → **stop — this and all larger p unrejected**
+- reddit·B2: p=0.000 vs 0.0083 → reject null
+- reddit·B1: p=0.015 vs 0.0100 → **stop — this and all larger p unrejected**
 
 Cells where the learned triage Pareto-beats the trivial always-cheapest fixed policy: **0 of 6**.
 

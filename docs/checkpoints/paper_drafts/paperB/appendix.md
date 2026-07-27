@@ -103,8 +103,9 @@ in the paper; only its ceiling is measured.*
 
 The cleanest fix would be to regress on a graded quality signal rather than classify a discrete
 winner: partial credit turns every episode into a training example regardless of whether it
-succeeded. VisualWebArena does not provide one. Across the 7,722 episodes of our 36 landed
-conditions the evaluator emits exactly two values, 0.0 and 1.0, in a 7,055 / 667 split. This is a property of the benchmark's
+succeeded. VisualWebArena does not provide one. Across the 7,686 scored episodes of our 36 landed
+conditions the evaluator emits exactly two values, 0.0 and 1.0, in a 7,041 / 645 split, as do
+the 36 protocol-excluded episodes we do not score. This is a property of the benchmark's
 evaluation design rather than of our pipeline, and it forecloses the route entirely.
 
 ### B.2 Coarser classes
@@ -156,6 +157,18 @@ four successes that the fixed policy does not collect, against four collected by
 policy overall. The permutation null detects that enrichment. A globally ordered score is not
 required to produce it, which is why the cell's AUROC of 0.483, below both chance and its own
 best single covariate at 0.711, is consistent with a real saving.
+
+Two properties of that test are worth recording. It runs 10,000 draws and reports the plus-one
+Monte Carlo estimator (k+1)/(B+1), whose floor is therefore 1.0 × 10⁻⁴, two orders below the
+tightest Holm threshold of 8.3 × 10⁻³. That matters because at the 200 draws we first used, the
+floor was 5.0 × 10⁻³, this cell reported exactly it, and whether it could clear the threshold at
+all was a function of the draw count rather than of the data; at 10,000 draws four of the draws
+match or beat the observed saving, so p = 5.0 × 10⁻⁴ is measured. Second, the quantity tested
+is the saving at an operating point selected against whole-cell outcomes, which is not the
+nested policy of Table 6. Null and observation select that point the same way, so the null
+absorbs the selection optimism and the comparison is fair, but the point is not one a
+deployment could occupy, and §5.3's conclusion rests on the nested numbers rather than on this
+test.
 
 ### B.5 Supply and trainability under both label definitions
 

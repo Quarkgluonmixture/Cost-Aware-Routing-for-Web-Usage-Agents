@@ -27,12 +27,14 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from scripts.analysis.lib.canonical_task_universe import restrict_to_scored  # noqa: E402
 from scripts.analysis.lib.run_registry import load_manifest  # noqa: E402
 
 PHASE1 = ROOT / "results" / "visualwebarena" / "phase1"
@@ -51,39 +53,73 @@ def condition_dir(cell: dict) -> Path | None:
     return d if d.is_dir() else None
 
 
+_TASK_RE = re.compile(r"_task_(\d+)_summary_v2\.json$")
+
+
 def tally(cell: dict) -> dict | None:
+    """Score value counts for one condition, split scored vs protocol-excluded.
+
+    B-1906 lint (test_universe_consumption_lint): reading `*_summary_v2.json`
+    without consulting the canonical universe silently folds the AMENDMENT_08
+    protocol-excluded reddit tasks (58, 160) into the denominator. The headline
+    here is therefore the SCORED set, matching every other denominator in the
+    paper; the excluded episodes are counted separately rather than dropped,
+    because for this particular claim — that the evaluator emits only two values
+    — they are additional evidence and it would be odd to discard them silently.
+    """
     d = condition_dir(cell)
     if d is None:
         return None
-    scores: collections.Counter = collections.Counter()
+    by_task: dict[int, float | None] = {}
     missing = 0
     non_numeric = 0
     for f in sorted(d.glob("*_summary_v2.json")):
+        m = _TASK_RE.search(f.name)
+        if m is None:
+            continue
         try:
             s = json.loads(f.read_text(encoding="utf-8")).get("score")
         except (json.JSONDecodeError, OSError):
             continue
+        tid = int(m.group(1))
         if s is None:
             missing += 1
-            continue
-        if not isinstance(s, (int, float)) or isinstance(s, bool):
+            by_task[tid] = None
+        elif not isinstance(s, (int, float)) or isinstance(s, bool):
             non_numeric += 1
-            continue
-        scores[float(s)] += 1
+            by_task[tid] = None
+        else:
+            by_task[tid] = float(s)
+
+    kept, prov = restrict_to_scored(by_task, cell["site"], label=cell.get("run_dir", ""))
+    scores: collections.Counter = collections.Counter(
+        v for v in kept.values() if v is not None)
+    excluded_scores: collections.Counter = collections.Counter(
+        v for t, v in by_task.items() if t not in kept and v is not None)
     return {
         "run_dir": cell.get("run_dir"),
         "condition_subdir": cell.get("condition_subdir"),
-        "n_episodes": sum(scores.values()) + missing + non_numeric,
+        "n_episodes": len(by_task),
         "n_scored": sum(scores.values()),
         "n_score_missing": missing,
         "n_score_non_numeric": non_numeric,
         "value_counts": {str(k): v for k, v in sorted(scores.items())},
+        "protocol_excluded": {
+            "n_episodes": len(by_task) - len(kept),
+            "value_counts": {str(k): v for k, v in sorted(excluded_scores.items())},
+        },
+        "universe_provenance": {
+            k: prov[k] for k in (
+                "canonical_task_universe_sha256", "content_task_ids_sha256",
+                "n_expected", "n_kept") if k in prov
+        },
     }
 
 
 def collect(cells: list[dict], grade: str) -> dict:
     per_condition = {}
     pooled: collections.Counter = collections.Counter()
+    excluded: collections.Counter = collections.Counter()
     missing = non_numeric = 0
     unresolved = []
     for c in cells:
@@ -97,6 +133,8 @@ def collect(cells: list[dict], grade: str) -> dict:
         per_condition[key] = t
         for k, v in t["value_counts"].items():
             pooled[float(k)] += v
+        for k, v in t["protocol_excluded"]["value_counts"].items():
+            excluded[float(k)] += v
         missing += t["n_score_missing"]
         non_numeric += t["n_score_non_numeric"]
     return {
@@ -109,6 +147,11 @@ def collect(cells: list[dict], grade: str) -> dict:
         "n_score_non_numeric": non_numeric,
         "distinct_values": sorted(pooled),
         "value_counts": {str(k): pooled[k] for k in sorted(pooled)},
+        "protocol_excluded": {
+            "n_episodes": sum(excluded.values()),
+            "distinct_values": sorted(excluded),
+            "value_counts": {str(k): excluded[k] for k in sorted(excluded)},
+        },
         "per_condition": per_condition,
     }
 
@@ -118,7 +161,10 @@ def render_md(pg: dict, arch: dict) -> str:
     counts = pg["value_counts"]
     L = ["# Evaluator score granularity — landed Phase-1a conditions\n"]
     L.append("Regenerate: `python3 scripts/analysis/aggregate_evaluator_score_granularity.py`\n")
-    L.append("Universe: `grade: paper-grade` cells of `results/phantom_paper/run_manifest.yaml`.\n")
+    L.append("Universe: `grade: paper-grade` cells of `results/phantom_paper/run_manifest.yaml`, "
+             "restricted to the canonical SCORED task set so the denominator matches every "
+             "other rate in the paper. AMENDMENT_08 protocol-excluded episodes are counted "
+             "separately below rather than dropped.\n")
     L.append(f"\n**{pg['n_conditions_resolved']} conditions · "
              f"{pg['n_episodes_scored']} scored episodes.**\n")
     L.append(f"\nDistinct evaluator `score` values observed: **{len(vals)}** "
@@ -135,6 +181,11 @@ def render_md(pg: dict, arch: dict) -> str:
     if pg["unresolved"]:
         L.append(f"\n⚠️ Unresolved conditions ({len(pg['unresolved'])}): "
                  + ", ".join(pg["unresolved"]))
+    ex = pg["protocol_excluded"]
+    L.append(f"\nProtocol-excluded episodes (AMENDMENT_08, reddit tasks 58 and 160): "
+             f"{ex['n_episodes']}, distinct values "
+             f"{', '.join(f'{v:g}' for v in ex['distinct_values']) or 'none'}. Counting them "
+             f"in would give {tot + ex['n_episodes']} episodes and change no conclusion.\n")
     L.append("\nThe evaluator is binary, so no graded quality target exists to regress on. "
              "This is a property of the benchmark's evaluation design, not of our pipeline.\n")
     L.append(f"\nArchived (pre-fix) conditions, reported separately and never pooled into the "

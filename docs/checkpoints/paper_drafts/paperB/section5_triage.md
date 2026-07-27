@@ -80,10 +80,9 @@ in the highest-solvable reddit cell.
 ### 5.4 The one significant cell, and why it does not help
 
 We test each cell's cost saving against a permutation null in which the task bundle (label,
-per-mode outcomes, per-mode costs) is shuffled relative to the features, holding the selection
-procedure fixed so that the null and the observation share it. Under Holm correction
-[@holm1979sequentially] across the six cells, one saving survives: reddit · B2, at p = 0.0050
-against a threshold of 0.0083. That cell's AUROC is 0.483, below chance. The two facts are not
+per-mode outcomes, per-mode costs) is shuffled relative to the features, over 10,000 draws
+(Appendix C records the draw count and which operating point is tested). Under Holm correction [@holm1979sequentially] across the six cells, one saving survives:
+reddit · B2, at p = 0.00050 against a threshold of 0.0083. That cell's AUROC is 0.483, below chance. The two facts are not
 in conflict: AUROC scores the global ranking and the saving comes from the tail, where 11
 retained tasks carry four successes the fixed policy does not collect (Appendix C).
 
