@@ -159,32 +159,73 @@ def measure_trainability(pool: dict) -> dict[str, Any]:
     }
 
 
+def _feature_key(x_num, x_bin) -> tuple:
+    """Exact identity of one row's model input.
+
+    Every feature is an integer-valued count or a 0/1 flag, so exact tuple equality
+    is the right notion of "same input" and the grouping is stable under rounding
+    (verified 2026-07-28 at 0-12 decimals: identical group counts).
+    """
+    return (tuple(float(v) for v in x_num), tuple(int(v) for v in x_bin))
+
+
 def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
     """Pooling fixes supply but breaks identifiability.
 
-    The router features are computed from the task config + step-0 observation
-    and carry NO model identity, so two cells of the same site that share a
-    task_id present the SAME X. When their oracle labels differ, a task-feature
-    classifier is being asked to output two different answers for one input.
+    The router features carry no *explicit* model identity, so the natural reading is
+    that two cells sharing a task_id present the same X. That reading was wired into
+    this function until 2026-07-28 (stress finding #9): the Bayes ceiling grouped rows
+    by `task_id`, on a comment asserting "distinct X (= a task, since features are
+    task-only)". The assertion is false. Three of the five numeric features
+    (`dom_complexity`, `text_length`, `tokens_input_text`) are read from that cell's
+    own step-0 observation, so the same task rendered by a different backbone/mode can
+    yield a different vector — measured at 31.5% of shared classifieds tasks and 80.0%
+    of shared reddit tasks.
+
+    Both ceilings are therefore reported, because they answer different questions:
+
+      by_feature_vector — the true Bayes ceiling for the feature set actually fitted.
+                          Higher, because rows a task_id grouping merged are in fact
+                          distinguishable inputs.
+      by_task_identity  — the ceiling if only task identity is usable, i.e. treating
+                          the incidental observation differences as noise a deployed
+                          router should not lean on.
+
+    The paper's argument needs only that both are ceilings well below what a useful
+    router requires; it should not quote the lower one as if it were the former.
     """
     labels, cells, tids = pool["labels"], pool["cell_ids"], pool["task_ids"]
+    x_num, x_bin = pool["X_numeric"], pool["X_binary"]
     by_site: dict[str, dict[int, list[str]]] = defaultdict(lambda: defaultdict(list))
-    for lab, cid, tid in zip(labels.tolist(), cells.tolist(), tids.tolist()):
-        by_site[_site_of(cid)][int(tid)].append(lab)
+    feat_site: dict[str, dict[tuple, list[str]]] = defaultdict(lambda: defaultdict(list))
+    feat_of_task: dict[str, dict[int, set]] = defaultdict(lambda: defaultdict(set))
+    for i, (lab, cid, tid) in enumerate(zip(labels.tolist(), cells.tolist(), tids.tolist())):
+        site = _site_of(cid)
+        by_site[site][int(tid)].append(lab)
+        key = _feature_key(x_num[i], x_bin[i])
+        feat_site[site][key].append(lab)
+        feat_of_task[site][int(tid)].add(key)
 
     out = {}
     for site, per_task in sorted(by_site.items()):
         shared = {t: ls for t, ls in per_task.items() if len(ls) >= 2}
         conflicting = {t: ls for t, ls in shared.items() if len(set(ls)) > 1}
-        # Bayes ceiling over the pooled rows: for each distinct X (= a task,
-        # since features are task-only) the best possible rule emits the modal
-        # label, so accuracy is capped by the modal share.
         n_rows = sum(len(ls) for ls in per_task.values())
-        n_best = sum(Counter(ls).most_common(1)[0][1] for ls in per_task.values())
-        # Same computation restricted to the cost tier (2 classes).
+        # Ceiling A: group by task identity (what a router that sees only the task can do).
+        n_best_task = sum(Counter(ls).most_common(1)[0][1] for ls in per_task.values())
+        # Ceiling B: group by the actual input vector (the true Bayes ceiling).
+        per_feat = feat_site[site]
+        n_best_feat = sum(Counter(ls).most_common(1)[0][1] for ls in per_feat.values())
+        # How often the "same task ⇒ same X" premise actually holds.
+        split = sum(1 for t in shared if len(feat_of_task[site][t]) > 1)
+        # Same computation restricted to the cost tier (2 classes), both groupings.
         n_best_tier = sum(
             Counter(_tier(m) for m in ls).most_common(1)[0][1]
             for ls in per_task.values()
+        )
+        n_best_tier_feat = sum(
+            Counter(_tier(m) for m in ls).most_common(1)[0][1]
+            for ls in per_feat.values()
         )
         tier_shared = {
             t: ls for t, ls in shared.items()
@@ -196,10 +237,18 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
             "n_tasks_conflicting": len(conflicting),
             "conflict_rate_pct": round(100.0 * len(conflicting) / len(shared), 2)
             if shared else None,
-            "bayes_ceiling_which_mode_pct": round(100.0 * n_best / n_rows, 2)
+            "n_distinct_feature_vectors": len(per_feat),
+            "n_shared_tasks_with_split_features": split,
+            "shared_tasks_split_rate_pct": round(100.0 * split / len(shared), 2)
+            if shared else None,
+            "bayes_ceiling_which_mode_pct": round(100.0 * n_best_feat / n_rows, 2)
             if n_rows else None,
-            "bayes_ceiling_cost_tier_pct": round(100.0 * n_best_tier / n_rows, 2)
+            "bayes_ceiling_which_mode_by_task_identity_pct":
+                round(100.0 * n_best_task / n_rows, 2) if n_rows else None,
+            "bayes_ceiling_cost_tier_pct": round(100.0 * n_best_tier_feat / n_rows, 2)
             if n_rows else None,
+            "bayes_ceiling_cost_tier_by_task_identity_pct":
+                round(100.0 * n_best_tier / n_rows, 2) if n_rows else None,
             "tier_agreement_rate_pct": round(100.0 * len(tier_shared) / len(shared), 2)
             if shared else None,
             "n_pooled_rows": n_rows,
@@ -211,7 +260,11 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
             "are the point: re-slicing the SAME features from 'which of six "
             "modes' down to 'image or text-only' raises the attainable ceiling "
             "without inventing a single new solve event — the only relabelling "
-            "that buys anything."
+            "that buys anything. Ceilings are grouped by distinct feature vector; "
+            "the `_by_task_identity_` variants group by task_id instead and are "
+            "lower, because three observation-derived features differ across cells "
+            "for the same task (see measure_conflict_and_ceiling docstring, "
+            "stress finding #9 2026-07-28)."
         ),
     }
 
@@ -497,14 +550,23 @@ def render(p: dict) -> str:
     i = p["identifiability"]
     L.append("## 3. Pooling fixes supply and breaks identifiability\n")
     L.append("| site | tasks shared by 2+ cells | conflicting | conflict rate | "
-             "Bayes ceiling (which-mode) | Bayes ceiling (cost tier) | tier agreement |")
-    L.append("|---|---|---|---|---|---|---|")
+             "Bayes ceiling (which-mode) | same, task-identity grouping | "
+             "Bayes ceiling (cost tier) | tier agreement |")
+    L.append("|---|---|---|---|---|---|---|---|")
     for site, r in i["per_site"].items():
         L.append(f"| {site} | {r['n_tasks_shared_by_2plus_cells']} | "
                  f"{r['n_tasks_conflicting']} | **{r['conflict_rate_pct']}%** | "
                  f"{r['bayes_ceiling_which_mode_pct']}% | "
+                 f"{r['bayes_ceiling_which_mode_by_task_identity_pct']}% | "
                  f"**{r['bayes_ceiling_cost_tier_pct']}%** | "
                  f"{r['tier_agreement_rate_pct']}% |")
+    L.append("\n| site | distinct feature vectors | shared tasks whose rows differ in X |")
+    L.append("|---|---|---|")
+    for site, r in i["per_site"].items():
+        L.append(f"| {site} | {r['n_distinct_feature_vectors']} of {r['n_pooled_rows']} rows | "
+                 f"{r['n_shared_tasks_with_split_features']} of "
+                 f"{r['n_tasks_shared_by_2plus_cells']} "
+                 f"(**{r['shared_tasks_split_rate_pct']}%**) |")
     L.append(f"\n{i['note']}\n")
 
     tb = p["tiebreak"]

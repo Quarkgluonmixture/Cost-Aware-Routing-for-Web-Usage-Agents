@@ -43,5 +43,4 @@ always-taking-the-cheapest-mode before building it, because in none of our six c
 anything we learned Pareto-dominate that fixed policy. Benchmark designers have a low-cost
 intervention in §6: a graded per-task score would make every episode a training signal
 [@lu2025agentrewardbench; @pan2024webcanvas]. And routing supervision
-is a by-product of capability: until agents succeed often enough to produce it, routing
-machinery has no training signal to fit.
+is a by-product of capability, so until agents succeed more often there is nothing to fit.

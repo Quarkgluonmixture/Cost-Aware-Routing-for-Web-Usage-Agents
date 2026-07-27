@@ -60,7 +60,8 @@ vectoriser over the intent text; the triage results in §5 do **not**, so every 
 comes from the twenty numeric and binary features alone.
 
 One property drives §6: **the set contains no model identity**, so two backbones facing the
-same task produce the same feature vector. That is right for a deployment selecting a mode for
+same task produce near-identical feature vectors (A.4). That is right for a deployment
+selecting a mode for
 a fixed backbone, and it is exactly what makes cross-backbone pooling incoherent.
 
 ### 2.4 Evaluation protocol

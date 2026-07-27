@@ -72,7 +72,20 @@ NUMERIC = ["dom_complexity", "text_length", "tokens_input_text",
 BINARY = ["has_reference_image"] + sorted(INTENT_REGEX.keys())
 SEED = 42
 N_FOLDS = 5
-N_SHUFFLE = 200
+
+# Permutation count for the label-shuffle null.
+#
+# Raised 200 -> 10000 on 2026-07-28 (stress finding #11). The plus-one estimator
+# (k+1)/(B+1) floors at 1/(B+1), so B=200 could not report anything below 0.004975
+# — and red·B2, the one cell that survives Holm, sat exactly there with k=0. Its
+# p was therefore not a measurement of how extreme the saving is, it was "zero of
+# 200". Worse, whether that cell could clear its Holm threshold (0.05/6 = 0.008333)
+# was decided by B rather than by the data: at B=100 the floor is 0.009901 and no
+# amount of signal could have passed. B=10000 floors at 9.999e-5, two orders below
+# the threshold, so the verdict is data-determined across any plausible B.
+#
+# Cost: ~40 s at B=200, ~30 min at B=10000 (6 cells, 5-fold LR refit per draw).
+N_SHUFFLE = 10000
 
 
 def _feature_row(runs, site: str, tid: int) -> tuple[list[float], list[int]] | None:
@@ -410,9 +423,14 @@ def evaluate(cell_spec: dict) -> dict | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
+    global N_SHUFFLE
     ap.add_argument("--out", type=Path)
     ap.add_argument("--json-out", type=Path)
+    ap.add_argument("--n-shuffle", type=int, default=N_SHUFFLE,
+                    help="permutation draws for the label-shuffle null; the plus-one "
+                         "estimator floors at 1/(B+1), so B bounds the smallest reportable p")
     args = ap.parse_args()
+    N_SHUFFLE = args.n_shuffle
 
     res = [r for r in (evaluate(c) for c in CELLS) if r]
     L = ["# Is the triage half of routing learnable?\n",
@@ -470,6 +488,11 @@ def main() -> int:
                  f"{r['observed_lossless_saving_pct']:.1f}% | "
                  f"{r['null_shuffle_saving_median_pct']:.1f}% | "
                  f"{r['null_shuffle_p']:.3f} |")
+    _b = res[0]["n_shuffles"]
+    L.append(f"\nSmallest reportable p at B={_b} is 1/(B+1) = {1.0 / (_b + 1):.2e}; "
+             "Holm's tightest threshold over six cells is 0.05/6 = 8.33e-3. B is therefore "
+             "not what decides any cell's verdict (it was at B=200, where the floor 4.98e-3 "
+             "sat inside the threshold and the surviving cell reported exactly it).\n")
     L.append(f"\n{res[0]['n_shuffles']} permutations per cell. The permutation unit is the whole "
              "task bundle (y, succ, cost) against X — permuting only `y` leaves the label "
              "disconnected from the outcomes that define it, and its error is not "
@@ -567,7 +590,9 @@ def main() -> int:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
         args.json_out.write_text(json.dumps(
             {"post_hoc_exploratory": True, "h10_eligible": False,
-             "protocol": {"folds": N_FOLDS, "seed": SEED,
+             "protocol": {"folds": N_FOLDS, "seed": SEED, "n_shuffle": N_SHUFFLE,
+                          "min_reportable_p": 1.0 / (N_SHUFFLE + 1),
+                          "holm_tightest_threshold_m6": 0.05 / 6,
                           "features": NUMERIC + BINARY, "model": "L2 logistic regression"},
              "cells": res}, indent=1, ensure_ascii=False, default=float), encoding="utf-8")
         print(f"wrote {args.json_out}")

@@ -63,31 +63,37 @@ inside each outer fold. Nesting moves the result in both directions.*
 
 Per-site detail for the conflict rates and Bayes ceilings quoted in §6.3.
 
-| site | tasks labelled in ≥2 cells | conflicting | conflict rate | Bayes ceiling |
-|---|---|---|---|---|
-| classifieds | 54 | 31 | **57.4%** | **79.2%** |
-| reddit | 25 | 14 | **56.0%** | **83.7%** |
+| site | tasks labelled in ≥2 cells | conflicting | conflict rate | Bayes ceiling | ceiling, task-identity grouping |
+|---|---|---|---|---|---|
+| classifieds | 54 | 31 | **57.4%** | **83.9%** | 79.2% |
+| reddit | 25 | 14 | **56.0%** | **89.1%** | 83.7% |
 
 *Table 11: Per-site detail behind §6.3. A conflict is one task on which two cells recorded
-different oracle modes; since the features carry no model identity, both rows present the same
-input. The Bayes ceiling is the accuracy of emitting the modal label per distinct feature
-vector.*
+different oracle modes. The Bayes ceiling is the accuracy of emitting the modal label per
+distinct feature vector, over all pooled labelled rows (168 on classifieds, 92 on reddit), a
+row being one (task, backbone) pair on which that backbone solved the task. The last column
+groups instead by task identity, which is the ceiling if the small cross-cell differences in
+the three observation-derived features are treated as unusable. Those differences are not
+negligible in frequency: rows of the same task differ in at least one feature on 31.5% of
+shared classifieds tasks and 80.0% of shared reddit tasks, so the two groupings are genuinely
+different questions rather than rounding.*
 
 ### A.5 The screenshot-modality tier
 
-Per-site detail for the ceilings quoted in §6.4. Both columns are measured over tasks solved
-by at least two backbones, which is the only set on which a tier label exists for more than
-one backbone.
+Per-site detail for the ceilings quoted in §6.4, on the same pooled labelled rows and the same
+grouping as A.4. The tier agreement column is the exception: it is defined only on tasks
+labelled by two or more backbones, since agreement needs two labels to compare.
 
 | site | which-mode ceiling | tier ceiling | tier agreement across backbones |
 |---|---|---|---|
-| classifieds | 79.2% | **89.9%** | 68.5% |
-| reddit | 83.7% | **96.7%** | 88.0% |
+| classifieds | 83.9% | **92.3%** | 68.5% |
+| reddit | 89.1% | **97.8%** | 88.0% |
 
-*Table 12: Per-site detail behind §6.4, over tasks solved by at least two backbones. The
-ceiling rises on the same solve events, because backbones that disagree about which mode is
-best still agree about whether the screenshot is needed. No classifier is fitted to this
-target anywhere in the paper; only its ceiling is measured.*
+*Table 12: Per-site detail behind §6.4. The ceiling rises on the same solve events, because
+backbones that disagree about which mode is best still agree about whether the screenshot is
+needed. Under the task-identity grouping of A.4's last column the tier ceilings are 89.9% and
+96.7%, so the gain survives either grouping. No classifier is fitted to this target anywhere
+in the paper; only its ceiling is measured.*
 
 ## B. Derivations for the four relabelling routes
 
@@ -111,10 +117,21 @@ different reason, having to do with agreement across backbones rather than with 
 
 Six cells at 15–97 labels become 260 pooled examples and every class clears the minimum-count
 filter, so supply is solved. Identifiability is not. The features carry no model identity, so
-two backbones facing the same task on the same site produce the same feature vector, and when
-their oracle labels differ a task-feature classifier is being asked to emit two different
-answers for one input. The Bayes ceiling reported in A.4 is the accuracy of the best possible
-rule on the pooled set, which is to emit the modal label for each distinct feature vector.
+two backbones facing the same task on the same site produce near-identical feature vectors, and
+where they are identical and the oracle labels differ, a classifier is being asked to emit two
+different answers for one input. The Bayes ceiling reported in A.4 is the accuracy of the best
+possible rule on the pooled set, which is to emit the modal label for each distinct feature
+vector.
+
+They are only near-identical, not identical, because `dom_complexity`, `text_length` and
+`tokens_input_text` are read from the backbone's own step-0 observation rather than from the
+task config. On 31.5% of shared classifieds tasks and 80.0% of shared reddit tasks the rows
+therefore differ somewhere, which raises the ceiling above the value a task-identity grouping
+gives (A.4, last column). We report the feature-vector grouping as the headline because it is
+the ceiling for the input a classifier actually receives, and the task-identity grouping
+alongside it because a router should not be credited with reading backbone identity out of
+incidental observation jitter. Both are far below what a deployable which-mode router needs,
+which is the only thing the argument turns on.
 
 ### B.4 Screenshot tier
 
@@ -122,8 +139,9 @@ The tier label is derived from the same solve events as the which-mode label, by
 oracle mode to image-bearing (SoM, Vision) or text-only (DOM, P-text, P-prompt, P-SoM). No new
 episodes are involved, which is why the ceiling rises without a single new solve event. The
 tier is defined only on tasks that some mode solved, so its denominator is the solved set and
-not the full task universe; A.5 reports it over tasks solved by at least two backbones, the
-only set on which cross-backbone agreement is defined.
+not the full task universe. A.5's ceilings run over the whole pooled labelled set, as in A.4;
+only its agreement column is restricted to tasks labelled by two or more backbones, that being
+the only set on which cross-backbone agreement is defined.
 
 ## C. The reddit · B2 saving in detail
 
