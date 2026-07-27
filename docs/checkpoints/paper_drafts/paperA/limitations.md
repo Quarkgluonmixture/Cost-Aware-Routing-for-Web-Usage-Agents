@@ -17,6 +17,19 @@ SE floor moved θ_FE upward by de-weighting the smallest-effect cells. Both the 
 rule and its superseded predecessor fail the gate, so no decision turns on this, but a
 reader recomputing from the per-cell table should know which rule produced the pooled number.
 
+**No same-mode null for the structural test.** Each H3 axis is a set difference between two
+arms, and a set difference between stochastic runs is non-zero even when both runs come from
+one policy. Our interval is a paired bootstrap over tasks, so it reflects which tasks were
+sampled and not how one task's outcome varies across repeats of the same condition. Every
+condition here is a single rollout at temperature 0, which removes decoding variance but not
+the environment's [@he2025nondeterminism]. No same-mode replicate exists in our data to
+calibrate against, so both axes are separated from zero by the preregistered gate rather than
+from a measured noise floor, and axis-1 at 1.35 pp has the less comfortable margin of the two.
+The nearest repeat in our archive is a truncated pre-fix reddit DOM run: on its 148-task
+overlap with the canonical run the two disagree on ten tasks, but nine fall the same way and
+the success count rises from 12 to 20, so it measures a repaired defect rather than run-to-run
+variation. Repeating one cell in one mode is the first experiment we would run.
+
 **Mechanism is absent.** §4 reports behavioural correlates, not mechanisms. Activation-level
 analysis of the two-knob account is not in this paper.
 

@@ -43,7 +43,9 @@ them as the minimum for a negative result to be usable by anyone else.
 
 The phantom routing space is structured: two axes, each separately consequential, neither
 absorbed by their compound. This is a preregistered result at p = 1.19 × 10⁻⁵ and
-7.52 × 10⁻⁷ over six cells with bootstrap CIs excluding zero.
+7.52 × 10⁻⁷ over six cells with bootstrap CIs excluding zero. Those intervals are over tasks
+and not over repeated runs, and no same-mode replicate exists to set a floor against, which
+the Limitations section states as the first gap to close.
 
 P-SoM is not a superior deployment arm. This is a preregistered negative at p = 0.807 with
 I² = 0.0%, which we report as the primary Phase 1a outcome because the decision rule makes
