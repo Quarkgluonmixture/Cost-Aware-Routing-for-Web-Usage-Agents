@@ -23,7 +23,15 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🔭 **2026-07-27 UPDATE — k=6 数据齐 + WA pilot 首次点火 + B-1888/B-647 两雷** ⭐⭐⭐ 最新先读 (详 笔记 §387):
+> 🔭 **2026-07-27 UPDATE (二) — /diag v8 freeze 完成: 36 condition 同版本, cross-mode 解锁** ⭐⭐⭐ (详 笔记 §387.13):
+> - **✅ 规则批落码** (`dfa546c`): `RULESET_VERSION = 8-reddit-p41p46-b1890fix`。修 2 条 (B-1890 死字段 guard / P33 reddit 路径) + 新增 6 条 (P41-P46)。新增 `diag_rescan_all.py` 做 36-condition 重扫 + 版本一致性校验 (不一致 exit 1)。**reddit 18 + cls 18 全部落 v8, 36 份 digest 均补 v8 数字块 → cross-mode / cross-site 聚合解锁**。测试 1569 passed。
+> - **⚠️ cls 行为非字节不变** (与 v6→v7 的 H1 不同): P35/P39 旧命中被移除 (抽查确认旧命中是错的) + P33 在 cls +1 例 (task 233 的 `sites` 漏声明跨站)。**cls 聚合请用 digest 里的 v8 数字块, 不要用正文旧数**。
+> - **⭐ 首个 cross-mode 矩阵的结论对 paper 直接相关**: 占比最高的四条失败签名 (P31/P36/P5/P14) **全部 mode-无关** → 换表征救不了。与 §387.8 (comment 天花板 4x) / §387.10 (补图增益 ≈0) 共同界定 **routing 空间的外边界比 drop-one oracle 数字看起来的窄** —— **discussion 须三条并排写**, 否则 oracle 会被读成"还有这么多能靠 routing 拿到"。
+> - **🐛 本轮新增 bug**: B-1888 (defaults 只解析一层) · B-1889 (task 160 passive FP, **待 prereg 级决策**) · B-1890 (footprint 字段恒 0 陷阱) · B-1891 (`action_success` 语义脱节 → **Phase 3 的 M3 retry 会失效**, 启动前必修) · B-1892 (task 58 参数知识捷径, **待决策**) · B-1893 (fire6 硬编码 VWA 路径致假告警, 已修)。
+> - **🔲 diag 剩余欠账**: `SINGLE_TARGET_FINISH_ON_MULTI_TARGET_TASK` (多目标任务提前收工, 需实体抽取非纯字段比较) + P27 `ABANDONMENT_RE` 扩充 —— 留下一轮。
+> - **⚠️ 未 push**: 本 session 15 个 commit 全在本地。
+
+> 🔭 **2026-07-27 UPDATE — k=6 数据齐 + WA pilot 首次点火 + B-1888/B-647 两雷** ⭐⭐⭐ (详 笔记 §387):
 > - **✅ k=6 数据完备**: `B2_phantom_prompt_reddit_20260723` 07-25 08:19 落 205/205 → **B2 reddit 六 mode 全齐**。**下一步 = bind → promote → k=6 重灌** (走 NUMBERS_TODO §0 配方), 随后稿件三处必改 (§383: "two cells"→"three cells" / 机制口径 `insufficient_train_data` / 补披露 Pass-2 从未 fire) + **B-1284 cross-family modifier 具备解除条件** + Protocol Note 06 两轨制披露块可删。距 REALM 08-05 还有 9 天。
 > - **🔥 A100 在跑 WA pilot** (非 k=6 关键路径, 占的是 GPU 不是分析算力): `queue_chain` 6-mode **B1 × WA reddit**, 每 mode 10 task (prereg §8.8 分层采样), run_id 形如 `B1_<mode>_wa_reddit_2026072x`, log `logs/queue_chain_wa_red_b1_20260727b.log`。**RESET_BEFORE=1 全程 paper-grade**。完成时 ntfy `p79-claude`。
 > - **⚠️ A100 GPU 曾整机不可用**: 07-24 `unattended-upgrades` 升 nvidia 用户态到 580.173.02 而内核模块仍 580.159.03 → `nvidia-smi` 直接失败。已用 `rmmod`+`modprobe` 原地修 (无需 reboot, 绕开 KubeVirt detach p-79)。**长期不跑 GPU 后应主动验一次 `nvidia-smi`**。
