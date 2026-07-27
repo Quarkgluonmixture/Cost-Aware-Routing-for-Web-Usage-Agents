@@ -124,3 +124,17 @@ episodes are involved, which is why the ceiling rises without a single new solve
 tier is defined only on tasks that some mode solved, so its denominator is the solved set and
 not the full task universe; A.5 reports it over tasks solved by at least two backbones, the
 only set on which cross-backbone agreement is defined.
+
+## C. The reddit · B2 saving in detail
+
+§5.4 reports that the one cell whose cost saving survives Holm correction has an AUROC below
+chance. The mechanism is tail enrichment rather than a globally ordered score.
+
+Reddit · B2 sends 192 of 203 tasks (95%) to the cheap mode with no accuracy loss, which is
+unsurprising in a cell where only 7.4% of tasks are solvable at all: almost nothing in that 95%
+was going to succeed under any mode. The policy therefore differs from the free always-cheapest
+policy by five percent of the allocation. The 11 tasks it holds back for the strong mode carry
+four successes that the fixed policy does not collect, against four collected by the fixed
+policy overall. The permutation null detects that enrichment. A globally ordered score is not
+required to produce it, which is why the cell's AUROC of 0.483, below both chance and its own
+best single covariate at 0.711, is consistent with a real saving.

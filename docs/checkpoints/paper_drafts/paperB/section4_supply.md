@@ -19,13 +19,11 @@ to the very quantity the router is supposed to improve.
 the labelled column equals the number of solved tasks. Six classes have to be discriminated
 from between 15 and 97 examples.*
 
-The largest cell has 97 examples for a six-class problem. The smallest has 15, and in the
-two B2 cells one class never appears at all. Pooled across cells the total is 260.
-
-These are not small numbers because we sampled a small benchmark. They are small because
-the benchmark is hard for these agents, and the label is a by-product of succeeding at it.
-The relationship is mechanical: labelled examples equal successes, so improving the router
-requires the successes the router was supposed to help produce.
+The largest cell has 97 examples for a six-class problem, the smallest 15, and in the two B2
+cells one class never appears. Pooled across cells the total is 260. These are small not
+because we sampled a small benchmark but because the benchmark is hard for these agents and
+the label is a by-product of succeeding at it: labelled examples equal successes, so improving
+the router requires the successes the router was supposed to help produce.
 
 ### 4.2 The supply is below the threshold for fitting anything
 
@@ -83,10 +81,9 @@ the cost measurement it claims to approximate.
 
 ### 4.4 Scope of the supply argument
 
-The argument shows that at these success rates which-mode supervision is unavailable in the
-quantity a six-class model needs, and that where it is available it is noisy in a way
-traceable to the label definition rather than to the environment. It does not show that mode
-selection is unlearnable in principle: on a benchmark where agents succeed at 60% a cell would
-produce several hundred labels, and §4.1's mechanism predicts the router becomes trainable
-there. Within the 2–43% regime current web agents occupy, the constraint is structural. The
-supervision arrives at the rate the agent succeeds, and that rate is what needed improving.
+At these success rates which-mode supervision is unavailable in the quantity a six-class model
+needs, and where it is available it is noisy in a way traceable to the label definition rather
+than to the environment. This does not show mode selection is unlearnable in principle: at 60%
+success a cell would produce several hundred labels. Within the 2–43% regime current web agents
+occupy, the constraint is structural, because supervision arrives at the rate the agent
+succeeds and that rate is what needed improving.

@@ -25,6 +25,21 @@
 
 \graphicspath{{figures/}}
 
+% Float placement. LaTeX defaults to at most two floats at the top of a page and
+% insists text occupy at least 20% of it; a results section with a table every
+% page or two therefore defers floats and dumps several of them together pages
+% later, which both separates each table from its text and pushes the body over
+% the page limit. Measured on paper B 2026-07-27: tables 1-4 all landed on page 5
+% while their text sat on pages 2-4. These values let a page carry more float and
+% less text before deferring.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+
 % A visible but line-breakable marker. Only the yellow tag is boxed so a
 % long verdict description cannot create an unbreakable overfull hbox.
 \newcommand{\todo}[1]{%

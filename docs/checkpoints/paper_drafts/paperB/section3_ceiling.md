@@ -1,25 +1,26 @@
 ## 3. The routing ceiling has two halves, and they need different labels
 
-Before asking whether a router can be learned, we measure what a perfect one would win.
-The oracle sees each task's outcome under all six modes and picks the cheapest mode that
-succeeded, by measured per-episode cost, falling back to the cheapest mode when nothing
-succeeded. Its success rate is therefore the union of per-mode successes by construction,
-which is the `solvable` column: the two agree to the task in every cell, and that agreement
-is the check that the oracle is implemented as defined rather than a self-standing result.
+Before asking whether a router can be learned, we measure what a perfect one would win. The
+oracle sees each task's outcome under all six modes and picks the cheapest mode that succeeded,
+by measured per-episode cost, falling back to the cheapest when nothing succeeded. Its success
+rate is therefore the union of per-mode successes by construction, which is the `solvable`
+column; the two agree to the task in every cell, and that agreement is a check on the
+implementation rather than a result.
 
-| cell | tasks | solvable | best single SR / cost | always-cheapest SR / cost | oracle SR / cost |
+| cell | n | solvable | best single | cheapest | oracle |
 |---|---|---|---|---|---|
-| classifieds · B0 | 224 | 43.3% | 27.23% / 0.07236 | 25.00% / 0.06481 | **43.30%** / **0.05777** |
-| reddit · B0 | 203 | 26.1% | 14.78% / 0.11045 | 7.39% / 0.09807 | **26.11%** / **0.09534** |
-| classifieds · B1 | 224 | 24.6% | 14.29% / 0.06028 | 12.50% / 0.04316 | **24.55%** / **0.04171** |
-| reddit · B1 | 203 | 11.8% | 7.39% / 0.08000 | 2.46% / 0.05240 | **11.82%** / **0.05178** |
-| classifieds · B2 | 224 | 7.1% | 2.23% / 0.09075 | 2.23% / 0.07065 | **7.14%** / **0.06953** |
-| reddit · B2 | 203 | 7.4% | 3.94% / 0.09479 | 1.97% / 0.06833 | **7.39%** / **0.06958** |
+| cls · B0 | 224 | 43.3% | 27.23 / 0.07236 | 25.00 / 0.06481 | **43.30** / **0.05777** |
+| red · B0 | 203 | 26.1% | 14.78 / 0.11045 | 7.39 / 0.09807 | **26.11** / **0.09534** |
+| cls · B1 | 224 | 24.6% | 14.29 / 0.06028 | 12.50 / 0.04316 | **24.55** / **0.04171** |
+| red · B1 | 203 | 11.8% | 7.39 / 0.08000 | 2.46 / 0.05240 | **11.82** / **0.05178** |
+| cls · B2 | 224 | 7.1% | 2.23 / 0.09075 | 2.23 / 0.07065 | **7.14** / **0.06953** |
+| red · B2 | 203 | 7.4% | 3.94 / 0.09479 | 1.97 / 0.06833 | **7.39** / **0.06958** |
 
-*Table 1: The routing ceiling. The oracle picks the cheapest mode that solved each task, so
-its success rate equals the solvable column by construction. Always-cheapest is the
-lowest-mean-cost mode applied everywhere. Cost is per-episode billed cost and is never
-compared across backbones.*
+*Table 1: The routing ceiling, over classifieds (cls) and reddit (red). The last three columns
+give success rate (%) and mean per-episode billed cost (USD). The oracle picks the cheapest
+mode that solved each task, so its success rate equals the solvable column by construction;
+"cheapest" is the lowest-mean-cost mode applied everywhere. Cost is never compared across
+backbones.*
 
 The opportunity is large on both axes. Against the best single mode the oracle gains **3.45 to
 16.07 percentage points** of success rate and spends **13.7% to 35.3% less**. A router built on

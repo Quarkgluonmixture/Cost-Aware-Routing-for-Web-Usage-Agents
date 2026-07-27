@@ -1,12 +1,9 @@
 ## 5. Triage routing has the labels, the signal, and no value
 
-Section 4's failure is about supply. The obvious response is to pick a target whose labels
-are not conditional on success. Triage does that: the label is whether *any* mode solves
-the task, defined for every task in the universe. Supply goes from 15–97 examples to 203
-or 224, and the problem becomes binary.
-
-This section shows that it still fails, that the failure is not a supply failure, and that
-the reason is the baseline.
+Section 4's failure is about supply, so the obvious response is a target whose labels are not
+conditional on success. Triage is one: the label is whether *any* mode solves the task, defined
+for every task, which takes supply from 15–97 examples to 203 or 224 and makes the problem
+binary. It still fails, and not for want of labels.
 
 ### 5.1 The label is predictable
 
@@ -23,12 +20,9 @@ the reason is the baseline.
 is the best single covariate used alone, so the margin isolates what the multivariate model
 adds. The reddit · B2 row is below chance and is the subject of §5.4.*
 
-In five of six cells cross-validated AUROC is 0.651–0.717, and in four it beats the best
-single covariate used alone. Whether a task is solvable by anything is genuinely
-predictable from task features, noticeably more so than which mode will solve it.
-
-The sixth cell is discussed in §5.4, because it turns out to be the only cell with a
-statistically detectable saving.
+In five of six cells cross-validated AUROC is 0.651–0.717, and in four it beats the best single
+covariate used alone. Whether a task is solvable by anything is genuinely predictable from task
+features, noticeably more so than which mode will solve it.
 
 ### 5.2 Nesting the operating point
 
@@ -88,19 +82,13 @@ available only in the cell with the highest solvable rate on reddit.
 
 ### 5.4 The one significant cell, and why it does not help
 
-We test each cell's cost saving against a permutation null in which the task bundle
-(label, per-mode outcomes, per-mode costs) is shuffled relative to the features, holding
-the selection procedure fixed so that the null and the observation share it. Under
-Holm correction [@holm1979sequentially] across the six cells, one saving survives: reddit · B2, at p = 0.0050
-against a threshold of 0.0083.
-
-That cell has AUROC 0.483, below chance and below its own best single covariate at 0.711. The
-two facts are not in conflict: AUROC scores the *global* ranking and the saving comes from the
-*tail*. Reddit · B2 sends 192 of 203 tasks (95%) to the cheap mode with no accuracy loss, which
-is unsurprising where only 7.4% of tasks are solvable at all. It therefore differs from the
-free fixed policy by five percent of the allocation, and the 11 tasks it holds back carry four
-successes the fixed policy does not collect. The permutation test detects that enrichment; a
-globally ordered score is not required to produce it, and AUROC does not see it.
+We test each cell's cost saving against a permutation null in which the task bundle (label,
+per-mode outcomes, per-mode costs) is shuffled relative to the features, holding the selection
+procedure fixed so that the null and the observation share it. Under Holm correction
+[@holm1979sequentially] across the six cells, one saving survives: reddit · B2, at p = 0.0050
+against a threshold of 0.0083. That cell's AUROC is 0.483, below chance. The two facts are not
+in conflict: AUROC scores the global ranking and the saving comes from the tail, where 11
+retained tasks carry four successes the fixed policy does not collect (Appendix C).
 
 So the honest reading of §5 is not "the label is predictable, yet triage fails". It is:
 

@@ -87,7 +87,7 @@ case "$PAPER" in
     # two-column so its header does not wrap to three lines. Tables 2-7 were
     # rendered and checked at one column on 2026-07-27. The appendix has no page
     # pressure, so its tables stay two-column.
-    SINGLE_COL_BODY='2 3 4 5 6 7'
+    SINGLE_COL_BODY='1 2 3 4 5 6 7'
     ;;
 esac
 
