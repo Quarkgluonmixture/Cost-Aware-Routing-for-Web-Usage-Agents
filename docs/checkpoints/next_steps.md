@@ -85,7 +85,7 @@ updated: 2026-07-27
 > |---|---|---|---|
 > | ~~1~~ | A+B+C | §3 oracle 列 = `triage_only` — **已修 `9d11178`** | done |
 > | ~~6~~ | A+B+C | Vision 最便宜 / "cost tier" 误名 — **已修 `9d11178`** (更名 screenshot tier) | done |
-> | 4 | B | `derive_oracle_label` 按硬编码顺序取首个成功臂, 非成本最小 → 全套标签产物重生成 | 1-3h |
+> | ~~4~~ | B | **已按方案 (c) 落地 `9383bd2`** — 但 codex 的建议是在推翻 2026-06-09 的 F2/B-1806 裁定 (实测成本 tie-break 已被考察并否决: 序跨 cell 不稳 + 成本对结果内生 + n_succ 太小)。改为**报两版**: canonical 仍是顺序表, 新增 `derive_cost_oracle_label` 作敏感性。**codex 的 4/6→5/6 复现了** (翻 cls·B1), 阴性更强。顺带兑现 B-1806 挂了两个月的 §6 披露欠账。 | done |
 > | ~~5~~ | B | Table 12 分母合并 — **已修 `9d11178`** (拆两行 + 各标分母) | done |
 > | 3/8 | A+B+C | H3 无同模式重跑 null (self-oracle noise floor); **且 §4.2 机制推断用错轴** —— axis-1 两臂都用紧凑 id, 该轴上 compact-id 是常量, 推不出结论, 正确推断与稿子写的相反 | 2-4h (有重跑) / 1-3d (需新跑) |
 > | 9 | B | 身份可辨天花板按 task_id 分组而非按实际特征向量; codex 称重算后 79.17/83.70 → ~83.93/91.30 | 2-4h |
