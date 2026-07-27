@@ -1,0 +1,91 @@
+## 7. Related work
+
+**Cost-aware routing for LLM serving.** A body of work routes queries among models of
+differing price, typically learning a predictor of whether the cheap model suffices.
+These systems operate in a regime unlike ours in two respects that our results suggest are
+decisive: the cheap model succeeds often, so supervision is plentiful, and the task is
+single-turn, so the outcome is observed immediately and cheaply. Our §4 argument is that the
+first property is what makes their supervision available, and our §5 argument is that even
+when it is available, the baseline the router must beat is the fixed cheap policy rather
+than the expensive one.
+
+**Web agents and observation modes.** Benchmarks and agents in this area treat DOM-derived
+text, screenshots, and annotated screenshots as design choices fixed per system. Where
+multiple modes are compared, the comparison is usually between systems rather than within a
+task set, so the per-task complementarity that a router would exploit is not measured. Our
+§3 ceiling is a measurement of that complementarity, and it is the reason we consider the
+routing question worth asking despite answering it negatively.
+
+**Negative results and evaluation practice.** Our methodological findings — that nesting
+the operating-point selection changes conclusions, and that the choice of baseline decides
+whether a saving exists — are instances of concerns raised repeatedly in evaluation
+methodology work. We report them as concrete measurements rather than as recommendations:
+§5.2 quantifies the nesting effect at −0.99 to +1.34 percentage points, and §5.3 shows the
+baseline switch removing every saving.
+
+## 8. Discussion
+
+### 8.1 What we claim
+
+Within the regime studied — VisualWebArena classifieds and reddit, six observation modes,
+three backbones spanning 4B to 235B parameters and two model families, agent success rates
+between 2% and 43% — a learned per-task mode router is not available, and the obstruction is
+the production rate of supervision rather than the choice of hypothesis class, label
+definition, or estimator.
+
+We claim this at three levels of strength. The supply obstruction (§4) is arithmetic: labels
+equal successes, and four of six cells fall below any usable threshold. The value
+obstruction (§5) is empirical and rests on a specific baseline choice we argue is the correct
+one. The closure argument (§6) is that the available escape routes fail for three different
+reasons, which is what distinguishes a closed negative result from an unfinished search.
+
+### 8.2 What we do not claim
+
+We do not claim that mode routing is unlearnable in general. §4.1's mechanism predicts the
+opposite as agents improve: at 60% success a cell would yield several hundred labels and
+become trainable. The prediction is falsifiable and we would welcome its falsification.
+
+We do not claim the ceiling is illusory. §3 measures 9.5% to 30.6% of recoverable cost, and
+an oracle reaches it. Our result is that the recoverable portion is largely also reachable
+by a fixed policy, so the *learned* component adds little.
+
+We do not claim our router is the best possible one. It is a logistic model over 20 features
+plus fold-local TF-IDF, and a stronger model might extract more signal. But §5.1 shows the
+signal is already present at AUROC 0.65–0.72 and §5.3 shows that converting it into value
+fails at the policy-comparison step, not at the prediction step. A better predictor does not
+address that.
+
+### 8.3 Limitations
+
+**Two sites, one benchmark.** Site-level effects and benchmark-level evaluation design
+(notably the binary score of §6.1) are not separable at this scale. A benchmark with graded
+outcomes could reopen §6.1 without changing §4.
+
+**Offline replay.** All routing results exclude router inference cost and latency, which
+flatters the router. Since the result is negative, this strengthens rather than weakens it,
+but it means we have not measured a deployment.
+
+**No live routing.** We never served a router, so we cannot report the interaction between
+routing decisions and multi-step trajectory dynamics — a mode chosen at step 0 is used for
+the whole episode in our replay, and an adaptive mid-episode switch is unexamined.
+
+**Cost is not pooled across backbones.** API pricing and electricity-derived cost differ by
+roughly three orders of magnitude per token, so we compare ratios within a backbone only.
+Cross-backbone cost statements would be unit collisions.
+
+### 8.4 Implications
+
+For practitioners, the operational recommendation is uncomfortable but concrete: at current
+web-agent success rates, compare any proposed router against always-taking-the-cheapest-mode
+before building it. In four of our six cells that fixed policy is not Pareto-dominated by
+anything we could learn, and in one it dominates the learned router outright.
+
+For benchmark designers, §6.1 identifies a low-cost intervention with disproportionate
+value. A graded per-task score — even three levels — would convert every episode into a
+training signal instead of only the successful ones, and would reopen a route that is
+currently closed by a design decision rather than by anything intrinsic to the task.
+
+For research on cost-aware agents, our results suggest the sequencing is backwards. Routing
+supervision is a by-product of capability. Until agents succeed often enough to produce it,
+effort spent on routing machinery is spent on a component whose training signal does not
+yet exist.
