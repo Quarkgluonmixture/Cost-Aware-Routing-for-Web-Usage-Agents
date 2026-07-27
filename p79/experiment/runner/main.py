@@ -74,6 +74,7 @@ from p79.experiment.types import (
 # the class that calls e.g. `_parse_seeds(...)` resolves correctly.
 from p79.experiment.runner.helpers import (
     _parse_seeds,
+    _action_intent_fulfilled,
     _action_signature,
     _action_signature_soft,
     _action_signature_fuzzy,
@@ -2666,6 +2667,7 @@ class ExperimentRunner:
         router_state = RouterState()
         prev_action_success: Optional[bool] = None
         prev_page_changed: Optional[bool] = None
+        prev_action_intent_fulfilled: Optional[bool] = None   # B-1891
 
         step_records: List[Dict[str, Any]] = []
         trigger_distribution: Counter = Counter()
@@ -2833,6 +2835,7 @@ class ExperimentRunner:
                     state=router_state,
                     prev_action_success=prev_action_success,
                     prev_page_changed=prev_page_changed,
+                    prev_action_intent_fulfilled=prev_action_intent_fulfilled,
                     checklist_status=latest_checklist_status,
                 )
             trigger_distribution.update(triggers)
@@ -3821,6 +3824,25 @@ class ExperimentRunner:
             # `_primary` field is the canonical evidence layer for paper §3.
             step_record["locator_route_meta"] = next_info.get("locator_route_meta")
             step_record["locator_route_meta_primary"] = _primary_locator_route_meta
+            # B-1891: `action_success` answers "did the framework avoid raising",
+            # which is not the same question as "was the agent's intent carried
+            # out". When the locator reports walk_fail — the referenced element
+            # has no actionable ancestor — a degraded fallback still runs and
+            # `action_success` comes back True. This field answers the second
+            # question, so a stuck episode is visible without having to reach
+            # into `locator_route_meta` (which is what made P36 the only /diag
+            # rule able to see this class of failure).
+            #
+            # ADDITIVE ONLY. `action_success` keeps its exact meaning and its
+            # exact values, so the agent-facing FAILED feedback in
+            # `format_history()`, every landed step record, and every SR number
+            # are untouched. `_ACTION_INTENT_FAILURE_MARKERS` is deliberately a
+            # locator-error allowlist rather than "any error string" — a new
+            # locator error class should have to be classified on purpose, not
+            # silently start suppressing this signal.
+            step_record["action_intent_fulfilled"] = _action_intent_fulfilled(
+                bool(action_success), next_info.get("locator_route_meta")
+            )
             step_record["locator_route_meta_retry"] = (
                 next_info.get("locator_route_meta") if retry_was_applied else None
             )
@@ -3972,6 +3994,7 @@ class ExperimentRunner:
             obs = next_obs
             current_info = safe_next_info
             prev_action_success = action_success
+            prev_action_intent_fulfilled = step_record.get("action_intent_fulfilled")  # B-1891
             # /stress A1.10 P0-2-AB* (2026-05-16): router input now consumes
             # the **agent-visible** page-change signal, not raw runner-internal
             # page_changed (any-reason). Pre-fix the B-09 split landed only at

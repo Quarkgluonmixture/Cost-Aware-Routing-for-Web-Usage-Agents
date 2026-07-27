@@ -980,6 +980,12 @@ def audit_router_fire_rate(run_root: Path) -> Dict[str, Any]:
     """
     counts: Dict[str, int] = {t: 0 for t in _NUMERIC_ROUTER_TRIGGERS}
     counts["__streak_or_action_failed__"] = 0
+    # B-1891: the new trigger gets its OWN bucket rather than joining
+    # `__streak_or_action_failed__`. Folding it in would make that bucket's
+    # counts incomparable between pre- and post-fix runs; leaving it unlisted
+    # would drop it on the floor, since a name matching neither branch below is
+    # silently discarded — the same class of silent loss B-1891 is about.
+    counts["intent_unfulfilled_streak"] = 0
     total_steps = 0
     for jsonl in sorted(run_root.rglob("*_steps_v2.jsonl")):
         with open(jsonl, "r", encoding="utf-8") as f:

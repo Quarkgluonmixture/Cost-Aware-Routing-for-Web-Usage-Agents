@@ -9,6 +9,9 @@ from typing import Any, Dict, List, Optional, Tuple
 class RouterState:
     unchanged_streak: int = 0
     no_progress_streak: int = 0
+    # B-1891: counts steps whose locator reported the agent's target unreachable.
+    # Kept separate from `no_progress_streak` on purpose — see `decide()`.
+    intent_unfulfilled_streak: int = 0
     checklist_stall_streak: int = 0
     prev_checklist_completed: Optional[int] = None
     # 3-way routing state
@@ -54,6 +57,13 @@ class RuleBasedRouter:
         self.safe_fallback_target = str(router_cfg.get("safe_fallback_target", "phantom_som"))
         self.latch_after_fallback = bool(router_cfg.get("latch_after_fallback", False))
 
+        # B-1891: threshold for the `intent_unfulfilled_streak` trigger. Same
+        # default as `no_progress_steps_trigger` so the two are read on equal
+        # footing, but configurable independently.
+        self.intent_unfulfilled_steps_trigger = int(
+            thresholds.get("intent_unfulfilled_steps_trigger", self.no_progress_steps_trigger)
+        )
+
     def decide(
         self,
         router_enabled: bool,
@@ -63,6 +73,7 @@ class RuleBasedRouter:
         prev_action_success: Optional[bool],
         prev_page_changed: Optional[bool],
         checklist_status: Optional[Dict[str, Any]] = None,
+        prev_action_intent_fulfilled: Optional[bool] = None,
     ) -> Tuple[str, List[str], Dict[str, float], RouterState]:
         start = time.time()
 
@@ -78,6 +89,29 @@ class RuleBasedRouter:
             state.no_progress_streak = 0
             state.success_streak += 1
 
+        # B-1891: `action_success` drifted into meaning "the framework did not
+        # raise", not "the agent's intent was carried out". When the locator
+        # reports `walk_fail` (no actionable ancestor for the referenced element)
+        # the framework still executes a degraded fallback and the top level
+        # records success=True. Measured on B2_phantom_text_reddit task 103:
+        # 29 of 31 steps walk_fail, action_success True 31/31, page_changed True
+        # 31/31 (scroll_changed), trigger_distribution {} — an episode stuck for
+        # its whole budget registered nothing.
+        #
+        # This is tracked in its OWN streak and emitted under its OWN trigger
+        # name rather than folded into `no_progress_streak`. Folding it in would
+        # have been the more natural fix, but every landed condition's
+        # `trigger_distribution` was produced under the old counting, and the WA
+        # cross-benchmark arm is collected after this change — reusing the
+        # existing key would silently make the two incomparable. Existing keys
+        # keep byte-identical semantics; the previously invisible failure mode
+        # shows up as a new key. Consumers that sum ALL trigger values (rather
+        # than named ones) will see totals rise on post-fix runs.
+        if prev_action_intent_fulfilled is False:
+            state.intent_unfulfilled_streak += 1
+        elif prev_action_intent_fulfilled is True:
+            state.intent_unfulfilled_streak = 0
+
         triggers: List[str] = []
 
         dom_parse_start = time.time()
@@ -92,6 +126,9 @@ class RuleBasedRouter:
             triggers.append("page_unchanged_streak")
         if state.no_progress_streak >= self.no_progress_steps_trigger:
             triggers.append("no_progress_streak")
+        # B-1891: the streak `no_progress_streak` cannot see (see above).
+        if state.intent_unfulfilled_streak >= self.intent_unfulfilled_steps_trigger:
+            triggers.append("intent_unfulfilled_streak")
 
         # DOM complexity / text length triggers (from state_change enrichment)
         if state.dom_complexity_history:

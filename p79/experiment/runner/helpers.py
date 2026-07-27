@@ -26,6 +26,39 @@ def _parse_seeds(seed_value: Any) -> List[int]:
     return [int(seed_value)]
 
 
+# B-1891: locator errors that mean "the agent's target was not actionable", as
+# distinct from a transient or unrelated dispatch note. An allowlist rather than
+# a truthy check on the error string, so a newly introduced locator error class
+# has to be classified deliberately instead of silently counting as fulfilled.
+# Sources: `p79/envs/locator_dispatch.py`.
+_ACTION_INTENT_FAILURE_MARKERS = (
+    "walk_fail",                      # no actionable ancestor within the walk
+    "obs_nodes_info missing union_bound",  # referenced element absent from the observation
+)
+
+
+def _action_intent_fulfilled(
+    action_success: bool, locator_route_meta: Optional[Dict[str, Any]]
+) -> bool:
+    """Was the agent's intent actually carried out on this step? — B-1891.
+
+    `action_success` degraded into "the framework did not raise": on a locator
+    `walk_fail` a fallback still executes and the top level records True. This
+    returns False for those steps so a stuck episode is countable without
+    parsing `locator_route_meta` at every call site.
+
+    A step that already failed outright is unfulfilled by definition.
+    """
+    if not action_success:
+        return False
+    if not isinstance(locator_route_meta, dict):
+        return True
+    err = locator_route_meta.get("error")
+    if not isinstance(err, str) or not err:
+        return True
+    return not any(m in err for m in _ACTION_INTENT_FAILURE_MARKERS)
+
+
 def _action_signature(action: Dict[str, Any]) -> str:
     """Compact fingerprint of an action for cycle detection (strict: includes element_id).
 

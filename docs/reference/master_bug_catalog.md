@@ -8618,7 +8618,7 @@ WA 从 2026-05-15 生成 config 起**一次都没 fire 过**, 所以没有任何
 
 ## B-1889 — reddit task 160 是 must_exclude-only eval: 13/13 判成功的轨迹都不可能真完成任务 (2026-07-27)
 
-**B-1889** (benchmark-FP, **待决策 — 排除与否属 prereg 级改动, 不自行处置**) —
+**B-1889** (benchmark-FP, **✅ RESOLVED 2026-07-27 via AMENDMENT_08 — tier A 排除出计分集**) —
 `reddit task 160` ("subscribe to all subreddits that **start with the letter 'i'** and have a
 female usb to male lightning connector image in their top 3 posts") 是 **mutation 任务**,
 但 `eval.program_html` **只有 must_exclude 负向检查**, 无任何 must_include / exact_match:
@@ -8676,7 +8676,7 @@ task 160 是同一问题的另一面 —— 评测器无法区分"完成了订�
 
 ## B-1890 — footprint 统计字段是从未填充的 schema 预留槽, 恒为 0 (2026-07-27)
 
-**B-1890** (陷阱字段 / 假阴性风险, **未修 — 需决定是实现还是显式标记为未测量**) —
+**B-1890** (陷阱字段 / 假阴性风险, **✅ 防线已落 2026-07-27 (选项 c) — 字段仍未实现, 但已显式登记 + 加双向测试**) —
 `EpisodeSummaryV2` 的一组 footprint 字段**在 schema 中存在、类型合法、值看起来正常**,
 但 runner **从未填充过它们**:
 
@@ -8722,7 +8722,7 @@ schema 层版本** —— 不是 `.get()` 的 default, 而是 dataclass 的 defa
 
 ## B-1891 — `action_success` 与 locator 结果语义脱节, 叠加 scroll 计入 page_changed → 全部 loop trigger 哑火 (2026-07-27)
 
-**B-1891** (诊断信号缺口, **未修 — Phase 1 不影响 SR, 但会让 Phase 3 的 M3 retry 完全失效**) —
+**B-1891** (诊断信号缺口, **✅ FIXED 2026-07-27 — 按选项 (b) 加字段, 不动 `action_success`**) —
 一个 episode 可以连续 29 步被 locator 明确判定"找不到可操作目标", 而**所有** loop/no-progress
 trigger 一次都不触发。
 
@@ -8759,7 +8759,31 @@ framework fallback 仍执行了某种降级动作, 顶层于是记 `action_succe
 既有 step_record 语义 → 需评估对已落地数据的可比性影响, 属 estimand-adjacent, 需 witness);
 (b) 新增 `action_intent_fulfilled` 布尔字段与 `action_success` 并存, trigger 改用新字段
 (向后兼容, 推荐); (c) 至少让 `no_progress_streak` 额外把 `locator_route_meta.error` 计入
-判据。**Phase 3 启动前必须解决其一。**
+判据。
+
+**✅ 实施 (2026-07-27) —— 选 (b), 且比 (b) 更保守一步**:
+
+- `helpers._action_intent_fulfilled(action_success, locator_route_meta)` +
+  step_record 新字段 `action_intent_fulfilled`。判据是 locator 错误的**白名单**
+  (`walk_fail` / `obs_nodes_info missing union_bound`) 而非"error 非空"——
+  新的 locator 错误类必须被**显式分类**, 不能悄悄开始压制本信号。
+- **不改 `action_success`** (否决 (a))。它喂给 `format_history()` 里 agent 可见的
+  "FAILED" 反馈 → 改它就是改轨迹, 且会追溯性重定义每一条已落盘 step record 的含义。
+  §322 当初把该方向定为 "post-fire 审" 是对的。
+- **不并进 `no_progress_streak`** (否决 (c))。改用**独立 streak + 独立 trigger 名**
+  `intent_unfulfilled_streak`: 既有 trigger 名的计数语义**逐字节不变**, 之前完全不可见的
+  失败模式以**新键**出现。理由是 WA cross-benchmark 臂在本次改动**之后**采集 ——
+  复用旧键会让两臂静默不可比。⚠️ 对 trigger_distribution 做**全键求和**的消费者
+  (而非按名取) 会看到 post-fix run 总数上升。
+- `aggregate_phantom_lift.audit_router_fire_rate` 给新 trigger **单独一个桶**
+  (并进 `__streak_or_action_failed__` 会让那个桶前后不可比; 不加则会被静默丢弃 ——
+  正是本 bug 的同类失效)。
+- **Phase 1 零行为影响**已验证: `early_stop_enabled` 默认 False (advisor 5/5 取消早停,
+  只留诊断), `baseline_retry_on_no_progress` 默认 False 且 paper-grade 禁止开启
+  → trigger 在 Phase 1 不驱动任何控制流。Phase 3 的 M3 retry 改读新 streak。
+- test 9 条 (`tests/test_b1891_action_intent_fulfilled.py`), 含一条**守住这个决定本身**的
+  断言: `action_success` 必须仍原样透传, 后续若要改属 estimand-adjacent 需自己的 witness。
+  mock-env 端到端验证字段已落盘。
 
 **Cross-link**: `p79/experiment/router.py:69-94` (trigger 判定);
 `p79/experiment/state_change.py:175-181` (AGENT_VISIBLE_REASONS, 含 scroll_changed —— 该设计正确);
@@ -8771,7 +8795,7 @@ framework fallback 仍执行了某种降级动作, 顶层于是记 `action_succe
 
 ## B-1892 — reddit task 58 是 parametric-knowledge 捷径: 8/9 判成功的轨迹从未做跨站取证 (2026-07-27)
 
-**B-1892** (benchmark-FP, **待决策 — 与 B-1889 同属 prereg 级, 不自行处置**) —
+**B-1892** (benchmark-FP, **✅ RESOLVED 2026-07-27 via AMENDMENT_08 — tier B 排除出计分集**) —
 `reddit task 58` (`sites: [wikipedia, reddit]`, string_match)
 intent = *"Who is the author of the most popular novel adapted anime in year 2012?"*
 参考答案 **Reki Kawahara**(《刀剑神域》作者)。任务设计意图是**跨站信息检索**
@@ -8964,3 +8988,29 @@ http://localhost:9999/f/dataisbeautiful/38990%20%7CAND%7C%20http://localhost:888
 里是否原样暴露了未拆分的 start_url)。当前不阻塞 paper-1 (跨站类不进任何主张)。
 
 **Cross-link**: B-1894 (同日, 同属 WA/跨站路径的欠执行); AMENDMENT_08 §2; 笔记 §387.15。
+
+---
+
+### B-1890 防线实施记录 (2026-07-27, 选项 c)
+
+字段**仍未实现** —— 落的是"不许再有人在它上面建结论"的防线:
+
+- `schema_migrations/v2.py::NOT_POPULATED_BY_RUNNER` —— 7 个 footprint 字段显式登记为
+  runner 从不赋值, 每条带原因。**列在此处的字段不得用作分析判据。**
+  某个字段真被实现时, 必须在同一个 commit 删掉它的登记。
+- `tests/test_b1890_reserved_fields.py` **双向**锁:
+  1. 登记的字段若开始被 runner 写入 → fail (登记过期了, 分析者在白白绕开一个可用字段);
+  2. **全库扫描**: 任何 numeric schema 字段若在采样的 600 条已落盘 episode 里从未偏离
+     默认值, 而又不在两个名单里 → fail。这才是抓**下一个**同类字段的那一半。
+
+**首次运行该扫描立刻抓到 7 个字段** —— `seed` / `retries` / `escalation_count` /
+`image_encode_error_step_count` / `partial_recovery_step_count` /
+`screenshot_timeout_recovered_count` / `screenshot_timeout_recovered_total_ms`。
+**逐个查了赋值点**, 7 个**全部**是 runner 真算的、真为 0 (router 在 Phase 1 关闭故
+escalation 恒 0; `seed` 的 schema 默认恰好等于配置值 42 = config 回显非测量; 其余是
+罕见事件计数器), 因此归入 `CONSTANT_BY_NATURE` 并各自写明理由 ——
+**没有一个是 B-1890 同类**。测试另有一条断言要求该名单的每条都写理由,
+防止它退化成橡皮图章。
+
+**Cross-link**: B-1887 (同一陷阱的 `dict.get` 形态); 笔记 §387.7 结论三 (踩坑经过) · §387.15。
+

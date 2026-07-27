@@ -345,6 +345,40 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
 }
 
 
+# B-1890 (2026-07-27): fields that are RESERVED — declared in the schema and
+# written to every record, but never assigned a measured value by the runner.
+# They serialize as their default, which for a count field is `0` — a perfectly
+# legal observation. Nothing in the JSON distinguishes "measured zero" from
+# "never measured", so an analyst reading a landed episode has no way to tell.
+#
+# This bit the project on 2026-07-27: a headline claim ("114 of 256 successes
+# were zero-mutation mutation tasks") was derived from
+# `effective_mutating_action_count == 0` before anyone checked that all 558
+# sampled episodes carried 0 because the runner never writes the field. The
+# number and two downstream evidence chains were retracted.
+#
+# Anything listed here MUST NOT be used as an analysis predicate. When a runner
+# implementation lands for one of these, delete its entry in the same commit —
+# `tests/test_b1890_reserved_fields.py` fails if a listed field starts being
+# populated, and equally if an unlisted field is constant-at-default across the
+# whole results library.
+#
+# Related but distinct: B-1887 was the `dict.get(key, falsy_default)` form of
+# the same trap; this is its schema-layer sibling. `0` carries no provenance.
+NOT_POPULATED_BY_RUNNER: Dict[str, str] = {
+    # P1-17-C* + Gemini F3 footprint telemetry — reserved 2026-05-18, still
+    # unimplemented; `types.py:598-602` says "Defer to follow-up since runner
+    # aggregation requires action heuristic spec lock".
+    "effective_mutating_action_count": "footprint telemetry reserved, runner never stamps it (B-1890)",
+    "destructive_action_count": "footprint telemetry reserved (B-1890)",
+    "cart_mutation_count": "footprint telemetry reserved (B-1890)",
+    "submit_create_count": "footprint telemetry reserved (B-1890)",
+    "delete_remove_count": "footprint telemetry reserved (B-1890)",
+    "cycle_mutating_action_count": "footprint telemetry reserved (B-1890)",
+    "repeated_same_mutating_action_count": "footprint telemetry reserved (B-1890)",
+}
+
+
 def fill_defaults(record: dict, defaults: Optional[Dict[str, Any]] = None) -> dict:
     """Return a copy of `record` with missing keys filled from `defaults`.
 
