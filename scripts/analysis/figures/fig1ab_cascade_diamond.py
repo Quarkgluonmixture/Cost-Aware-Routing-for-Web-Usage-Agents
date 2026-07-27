@@ -28,8 +28,17 @@ OUT = ROOT / "results/phantom_paper/figures/fig1ab_cascade_diamond.png"
 # source of truth (total − N/A). `strict=True` because the prompt_status
 # completion test below (`min(200, expected)`) silently maps expected=0 to
 # "complete" on n=0, which would mark missing data as paper-grade-done.
-from p79.experiment.analysis import scored_task_count as _scored_task_count
+from p79.experiment.analysis import (
+    paper_scored_task_count as _paper_scored_task_count,
+    scored_task_count as _scored_task_count,
+)
+# AMENDMENT_08 keeps these two apart on purpose. `EXPECTED_N` drives the
+# `min(200, expected)` COLLECTION-progress label ("in progress: n/expected"),
+# where n counts landed episode files — so it must stay the collection count
+# (red 205) or a complete run would render as 205/203. `SCORED_N` is the
+# scoring denominator quoted in captions.
 EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
+SCORED_N = {_s: _paper_scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
 SITE_SHORT = {"reddit": "red", "classifieds": "cls"}
 
 # F40 audit fix 2026-05-09: STEP_DIRS now resolved via run_registry,
@@ -218,7 +227,9 @@ def read_axis_n_note() -> str:
     bad = [key for key, row in checks.items() if isinstance(row, dict) and not row.get("pass")]
     if bad:
         return f"Live step metrics; axis_effect_size n-check warnings: {len(bad)} cells."
-    expected = data.get("validation", {}).get("expected_n", EXPECTED_N)
+    # Caption quotes the SCORED N (what the axis tables divide by), not the
+    # collection count; the fallback must match the artifact it stands in for.
+    expected = data.get("validation", {}).get("expected_n", SCORED_N)
     return f"Live step metrics aligned with axis_effect_size.json n-checks: reddit N={expected.get('reddit')}, cls N={expected.get('classifieds')}."
 
 

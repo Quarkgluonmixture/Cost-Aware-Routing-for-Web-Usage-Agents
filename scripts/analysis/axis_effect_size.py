@@ -43,7 +43,7 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
-from p79.experiment.analysis import scored_task_count
+from p79.experiment.analysis import paper_scored_task_count
 from p79.experiment.io_utils import read_jsonl_dedup
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -524,7 +524,7 @@ def main() -> None:
         "validation": {
             # §139.8: scored-set sizes (total − N/A excluded at load) from the
             # single source of truth, not pre-exclusion 234/210.
-            "expected_n": {_s: scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")},
+            "expected_n": {_s: paper_scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")},
             "non_negligible_thresholds": {"cohen_d_z_abs_gt": 0.1, "cohen_h_abs_gt": 0.1},
             "n_checks": {},
             "consistency_checks": {},

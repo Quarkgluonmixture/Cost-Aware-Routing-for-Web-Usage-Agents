@@ -4,6 +4,7 @@ import copy
 import json
 import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -23,6 +24,101 @@ def _is_na_task(task: Dict[str, Any]) -> bool:
     """
     ref = (task.get("eval") or {}).get("reference_answers") or {}
     return isinstance(ref, dict) and ref.get("fuzzy_match") == "N/A"
+
+
+@dataclass(frozen=True)
+class ProtocolExclusion:
+    """One task removed from the SCORED set by a preregistration amendment.
+
+    Distinct from the §139.8 N/A exclusion in one operational respect: N/A tasks
+    are dropped at **task-load** time (the runner never sees them), whereas
+    protocol exclusions are dropped at **analysis** time only. The runner keeps
+    collecting these episodes on purpose — see `PROTOCOL_EXCLUSIONS` below.
+    """
+
+    task_id: int
+    tier: str       # "A" = config-derivable + outcome-blind; "B" = config-suggestive + trajectory-confirmed
+    rule: str       # the uniform criterion this task instantiates
+    reason: str
+    amendment: str
+
+
+# AMENDMENT_08 (2026-07-27) — tasks excluded from the SCORED set because their
+# eval cannot distinguish the capability the task names from something else.
+#
+# Two properties keep this from being a hand-pick, and both are stated in the
+# amendment so a reviewer can check them without our data:
+#
+#   * each entry instantiates a **uniform rule** evaluated over a pre-defined
+#     class (all 210 reddit tasks for tier A; all 40 cross-site reddit tasks
+#     for tier B), not a per-task judgement;
+#   * `tier` records how much of the warrant is derivable from the task config
+#     alone. Tier A needs no data at all. Tier B needs trajectories to confirm,
+#     so it is outcome-adjacent and is reported as a separate sensitivity arm.
+#
+# These are NOT applied in `load_tasks`. The runner still collects them, which
+# (a) keeps every landed run's episode count equal to `scored_task_count` so
+# the fire-completeness contract is unchanged for old and new runs alike, and
+# (b) keeps the with/without sensitivity arms computable from any run, instead
+# of only from the runs that predate the amendment.
+PROTOCOL_EXCLUSIONS: Dict[tuple, tuple] = {
+    ("visualwebarena", "reddit"): (
+        ProtocolExclusion(
+            task_id=160,
+            tier="A",
+            rule=(
+                "program_html eval whose required_contents carry only `must_exclude` "
+                "and no positive check — doing nothing scores 1, so the eval cannot "
+                "separate a completed task from an untouched one"
+            ),
+            reason=(
+                "Intent asks the agent to subscribe to every 'i' subreddit whose top-3 "
+                "posts contain a given image; the eval only asserts that the sidebar "
+                "does NOT list IAmA / InternetIsBeautiful / iphone. The intended "
+                "subscription is never verified. Same defect as the §139.8 N/A tasks "
+                "(zero discriminative signal for the named capability), opposite sign: "
+                "trivially passable instead of un-passable."
+            ),
+            amendment="AMENDMENT_08",
+        ),
+        ProtocolExclusion(
+            task_id=58,
+            tier="B",
+            rule=(
+                "cross-site task whose reference answer is recoverable from parametric "
+                "knowledge — every success reaches the reference string without ever "
+                "loading a host from the task's own `sites` list beyond the start site"
+            ),
+            reason=(
+                "`sites: [wikipedia, reddit]`, exact_match 'Reki Kawahara' for 'author of "
+                "the most popular novel adapted anime in year 2012' (Sword Art Online). "
+                "Applying the rule to all 40 cross-site reddit tasks selects exactly this "
+                "one: it takes 9 of the 11 cross-site successes observed across the 18 "
+                "Pass-1 reddit conditions, and 0 of those 9 ever loaded localhost:8888, "
+                "while the 2 successes on the other two solvable cross-site tasks (49, 66) "
+                "both did. Wikipedia was reachable throughout (2265 steps landed on it "
+                "across the cross-site episodes), so this is a task property, not an "
+                "environment gap."
+            ),
+            amendment="AMENDMENT_08",
+        ),
+    ),
+}
+
+
+def protocol_excluded_task_ids(
+    site: str,
+    benchmark: str = "visualwebarena",
+    *,
+    tiers: tuple = ("A", "B"),
+) -> frozenset:
+    """Task IDs removed from the SCORED set for (site, benchmark) — AMENDMENT_08.
+
+    `tiers` selects which warrant strengths to apply, so the sensitivity arms
+    ("none" / "A only" / "A+B") are the same code path as the primary analysis.
+    """
+    entries = PROTOCOL_EXCLUSIONS.get((benchmark.lower(), site.lower()), ())
+    return frozenset(e.task_id for e in entries if e.tier in tiers)
 
 
 PLACEHOLDER_DEFAULTS = {

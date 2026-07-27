@@ -99,8 +99,10 @@ ACTION_TYPES = [
 
 # §139.8: scored-set sizes (total − N/A excluded at load) from the single
 # source of truth, not pre-exclusion 234/210.
-from p79.experiment.analysis import scored_task_count as _scored_task_count
-EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
+from p79.experiment.analysis import paper_scored_task_count as _paper_scored_task_count
+# AMENDMENT_08: scoring denominator (red 203) — the per-task axis tables are built
+# from the scored universe, so an n-check against 205 would fail on every reddit cell.
+EXPECTED_N = {_s: _paper_scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
 MAX_STEPS = 30
 
 

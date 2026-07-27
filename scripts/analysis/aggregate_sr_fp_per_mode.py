@@ -27,10 +27,11 @@ except ModuleNotFoundError:  # pragma: no cover - supports direct script executi
     sys.path.append(str(Path(__file__).resolve().parents[2]))
     from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
 
-from p79.experiment.analysis import scored_task_count
+from p79.experiment.analysis import paper_scored_task_count
 from scripts.analysis.lib.atomic_io import atomic_write_text
 from scripts.analysis.lib.canonical_task_universe import (
     expected_scored_ids,
+    protocol_excluded_in_universe,
     task_id_set_sha256,
 )
 
@@ -127,10 +128,19 @@ def aggregate_cell(
         expected_set = frozenset(int(t) for t in expected_ids)
         task_set_sha = task_id_set_sha256(expected_set)
     observed_ids = frozenset(rows)
+    # AMENDMENT_08: the runner still COLLECTS the protocol-excluded tasks (so
+    # the fire-completeness contract is identical pre/post amendment), but they
+    # are not SCORED. A landed reddit run therefore holds 205 episodes against a
+    # 203-task scored set. Those two extras are expected, not contamination —
+    # counting them as `extra_ids` would flip every reddit cell to incomplete.
+    protocol_excluded = protocol_excluded_in_universe(site) if expected_ids is None else frozenset()
     missing_ids = sorted(expected_set - observed_ids)
-    extra_ids = sorted(observed_ids - expected_set)
+    extra_ids = sorted(observed_ids - expected_set - protocol_excluded)
+    protocol_excluded_observed = sorted(observed_ids & protocol_excluded)
     expected_n = len(expected_set)
-    exact_set = observed_ids == expected_set and not task_id_mismatch_files
+    exact_set = (
+        not missing_ids and not extra_ids and not task_id_mismatch_files
+    )
     canonical_rows = {tid: rows[tid] for tid in expected_set if tid in rows}
     # Post-strict: every row has `success: bool`. The defensive `== True` keeps
     # the intent crystal clear (paper §1 hero number rides on this line).
@@ -145,7 +155,11 @@ def aggregate_cell(
     # run_registry / mechanism_per_task) already use strict=True; this
     # was the lone holdout post-§139.8.
     if expected_ids is None:
-        expected_n_from_count = scored_task_count(site, "visualwebarena", strict=True)
+        # AMENDMENT_08: cross-check against the SCORING denominator
+        # (`paper_scored_task_count`), not the collection denominator.
+        expected_n_from_count = paper_scored_task_count(
+            site, "visualwebarena", strict=True
+        )
         if expected_n != expected_n_from_count:
             raise ValueError(
                 f"canonical task helper/count mismatch for {site}: "
@@ -218,8 +232,13 @@ def aggregate_cell(
         "task_set_sha256": task_set_sha,
         "missing_ids": missing_ids,
         "extra_ids": extra_ids,
+        # AMENDMENT_08 transparency: collected-but-not-scored task IDs. Non-empty
+        # is the expected state for reddit; empty for classifieds.
+        "protocol_excluded_observed": protocol_excluded_observed,
         "task_id_mismatch_files": task_id_mismatch_files,
-        "completeness_ratio": round(n_total / expected_n, 6) if expected_n else 0.0,
+        # Ratio over the SCORED set only — `n_total` counts the protocol-excluded
+        # episodes too, so dividing it by `expected_n` would report >1.0.
+        "completeness_ratio": round(len(canonical_rows) / expected_n, 6) if expected_n else 0.0,
         "n_success": n_success,
         "sr_denominator_n": expected_n,
         "sr_pct": round(pct(n_success, expected_n), 6),

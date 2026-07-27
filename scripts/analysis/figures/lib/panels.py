@@ -11,7 +11,8 @@ PANELS lists. New baseline addition → 1 file change in `run_registry.BASELINES
 manifest, all figures pick it up.
 
 Companion `expected_n_canonical(site)` helper unifies `/stress A1.20 P1-1-AB`
-fix — hardcoded `234/210` vs canonical `scored_task_count(...) = 224/205` post-§139.8.
+fix — hardcoded `234/210` vs canonical `paper_scored_task_count(...) = 224/203`
+(post-§139.8 N/A exclusion + AMENDMENT_08 protocol exclusions).
 """
 from __future__ import annotations
 
@@ -37,7 +38,7 @@ except ModuleNotFoundError:  # pragma: no cover - supports direct script executi
 # /stress A1.20 P1-1-AB (2026-05-17): canonical N from p79.experiment.analysis
 # replaces hardcoded `expected=234/210` in fig0c/0d/0e/0f. `scored_task_count`
 # returns post-§139.8 N/A-excluded values (cls=224 / red=205).
-from p79.experiment.analysis import scored_task_count
+from p79.experiment.analysis import paper_scored_task_count
 
 
 @dataclass(frozen=True)
@@ -70,7 +71,7 @@ def expected_n_canonical(site: str) -> int:
     Use everywhere figures need `expected_n`; do NOT hardcode 234/210/466 anymore.
     /stress A1.20 P1-1-AB fix (2026-05-17, A1.19 §139.8 catalog tail).
     """
-    return scored_task_count(site, "visualwebarena", strict=True)
+    return paper_scored_task_count(site, "visualwebarena", strict=True)
 
 
 def paper_grade_panels(

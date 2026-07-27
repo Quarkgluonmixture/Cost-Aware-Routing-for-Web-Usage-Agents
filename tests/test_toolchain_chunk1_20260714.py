@@ -95,12 +95,39 @@ def test_f2_h1_missing_and_extra_ids_fail_closed_with_persisted_diff(tmp_path):
 
 
 def test_f2_canonical_helper_matches_locked_operational_counts():
+    """Post-AMENDMENT_08 the two denominators diverge on reddit and must not be
+    conflated: 205 episodes are COLLECTED, 203 of them are SCORED."""
+    from scripts.analysis.lib.canonical_task_universe import collected_task_ids
+
     cls_ids, cls_sha = expected_scored_ids("classifieds")
     red_ids, red_sha = expected_scored_ids("reddit")
     assert len(cls_ids) == 224
-    assert len(red_ids) == 205
+    assert len(red_ids) == 203
+    assert len(collected_task_ids("classifieds")) == 224
+    assert len(collected_task_ids("reddit")) == 205
     assert len(cls_sha) == len(red_sha) == 64
     assert cls_sha != red_sha
+
+
+def test_amendment08_classifieds_universe_is_byte_identical():
+    """The amendment touches reddit only. Pinning the classifieds SHA makes any
+    future exclusion that silently widens to cls fail here rather than in a
+    figure."""
+    _, cls_sha = expected_scored_ids("classifieds")
+    assert cls_sha == (
+        "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e"
+    )
+
+
+def test_amendment08_pre_amendment_universe_is_exactly_recoverable():
+    """`tiers=()` must reproduce the pre-amendment reddit universe bit-for-bit —
+    that is what makes the sensitivity arms an honest comparison rather than a
+    re-derivation."""
+    pre_ids, pre_sha = expected_scored_ids("reddit", "visualwebarena", ())
+    assert len(pre_ids) == 205
+    assert pre_sha == (
+        "41b1a918356a563c3b94c2db0b1d3c3d589a68340fca938617ef2b52b63f837b"
+    )
 
 
 def test_f3_sr_exact_set_and_fixed_canonical_denominator(tmp_path):

@@ -51,14 +51,16 @@ from lib.run_registry import get_cells as _get_cells  # noqa: E402
 
 # §139.8: scored-set sizes (total − N/A excluded at load) from the single
 # source of truth, not pre-exclusion 234/210. Labels derive from the count.
-from p79.experiment.analysis import scored_task_count as _scored_task_count
+from p79.experiment.analysis import paper_scored_task_count as _paper_scored_task_count
 from lib.canonical_task_universe import expected_scored_ids  # noqa: E402
 from lib.episode_rows import load_task_rows  # noqa: E402
 
 _SITE_IDS = {
     site: expected_scored_ids(site)[0] for site in ("classifieds", "reddit")
 }
-_SITE_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("classifieds", "reddit")}
+# AMENDMENT_08: scoring denominator (red 203), not the collection count — these
+# N values appear in axis labels and captions describing the scored set.
+_SITE_N = {_s: _paper_scored_task_count(_s, "visualwebarena", strict=True) for _s in ("classifieds", "reddit")}
 _SITE_LABELS = {
     "classifieds": f"Classifieds (N={_SITE_N['classifieds']})",
     "reddit": f"Reddit (N={_SITE_N['reddit']})",

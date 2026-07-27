@@ -2565,6 +2565,11 @@
         "episodes": 224,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "complete but excluded by design"
+      },
+      "B2_phantom_prompt_reddit_20260723": {
+        "episodes": 205,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "complete but excluded by design"
       }
     },
     "step_dirs": {

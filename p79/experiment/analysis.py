@@ -85,6 +85,13 @@ def scored_task_count(
     paper-grade completion checks to silently mark missing data as complete
     (`run_registry.is_complete`, `fig1ab_cascade_diamond` 200-or-expected
     threshold). Paper-grade paths should pass `strict=True`.
+
+    AMENDMENT_08 (2026-07-27) scope note: this function stays the **collection**
+    denominator — the episode count a run is required to produce, unchanged at
+    cls=224 / red=205. Completeness checks (`validate_run`, `run_registry`,
+    `paper_grade_check`, `active_processes`, `clear_tasks`) must keep using it,
+    because the runner still collects the protocol-excluded tasks. The
+    **scoring** denominator is `paper_scored_task_count` (red=203).
     """
     tasks = _load_site_tasks(site, benchmark)
     if tasks is None:
@@ -98,6 +105,36 @@ def scored_task_count(
     n_total = len(tasks)
     n_na = len(_load_na_task_ids(site, benchmark))
     return max(0, n_total - n_na)
+
+
+def paper_scored_task_count(
+    site: str,
+    benchmark: str = "visualwebarena",
+    *,
+    strict: bool = False,
+    tiers: tuple = ("A", "B"),
+) -> int:
+    """Scoring denominator = collection denominator minus AMENDMENT_08 exclusions.
+
+    Post-AMENDMENT_08: cls=224 (unchanged, no exclusions), red=203 (was 205).
+    `tiers` drives the sensitivity arms — `()` reproduces the pre-amendment
+    denominator, `("A",)` applies only the outcome-blind exclusion.
+
+    Use this wherever a success RATE is formed. Use `scored_task_count` only to
+    ask whether a run produced all the episodes it was supposed to.
+    """
+    from p79.experiment.tasks import protocol_excluded_task_ids
+
+    base = scored_task_count(site, benchmark, strict=strict)
+    if base == 0:
+        return 0
+    excluded = protocol_excluded_task_ids(site, benchmark, tiers=tiers)
+    # Intersect with the collected set so an exclusion whose task is already
+    # N/A-dropped (or absent from this site's config) cannot double-subtract.
+    tasks = _load_site_tasks(site, benchmark) or []
+    na = _load_na_task_ids(site, benchmark)
+    live = {int(t["task_id"]) for t in tasks} - na
+    return max(0, base - len(excluded & live))
 
 
 # §139.8: `compute_adjusted_success` + `compute_adjusted_success_batch` were
@@ -1206,14 +1243,23 @@ def _compute_statistical_tests(
         ci_lo = float(np.percentile(boot_means, 2.5))
         ci_hi = float(np.percentile(boot_means, 97.5))
         # B-597: best-effort scored-set N lookup for auditor cross-check.
+        # AMENDMENT_08: the bootstrap below resamples the OBSERVED episodes, so
+        # `scored_set_n` stays the collection count (what the run owes) and the
+        # amendment's scoring count is reported beside it rather than swapped in —
+        # pairing a 203 denominator with a 205-episode bootstrap would misreport.
         scored_set_n: Optional[int] = None
+        paper_scored_n: Optional[int] = None
         if "benchmark_site" in sub.columns and "benchmark" in sub.columns:
             try:
                 site_val = str(sub["benchmark_site"].iloc[0])
                 bench_val = str(sub["benchmark"].iloc[0])
                 scored_set_n = scored_task_count(site_val, bench_val, strict=False)
+                paper_scored_n = paper_scored_task_count(
+                    site_val, bench_val, strict=False
+                )
             except Exception:
                 scored_set_n = None
+                paper_scored_n = None
         results["bootstrap_ci"][cid] = {
             "success_rate": float(successes.mean()),
             "ci_lower_95": ci_lo,
@@ -1222,13 +1268,17 @@ def _compute_statistical_tests(
             # B-597: paper §3.5 estimand disclosure.
             "estimand": "conditional_on_observed_n",
             "scored_set_n_hero_table": scored_set_n,
+            "paper_scored_set_n": paper_scored_n,
             "estimand_note": (
                 "Bootstrap CI denominator = observed n_episodes. "
-                "Paper §1 Hero SR denominator = scored_task_count (cls 224 / red 205 / "
+                "Collection denominator = scored_task_count (cls 224 / red 205 / "
                 "shop 435 post-§139.8 N/A exclude, B-91 upstream guard). "
-                "At Phase 1 rerun completion n_episodes == scored_set_n_hero_table and "
-                "the two estimands converge; in-progress CIs are conditional-on-observed "
-                "and MUST NOT be quoted as final paper §3.5 numbers."
+                "Paper §1 Hero SR denominator = paper_scored_task_count "
+                "(cls 224 / red 203 post-AMENDMENT_08 protocol exclusions). "
+                "At Phase 1 rerun completion n_episodes == scored_set_n_hero_table; "
+                "the hero estimand additionally drops the AMENDMENT_08 tasks, so "
+                "these CIs are conditional-on-observed and MUST NOT be quoted as "
+                "final paper §3.5 numbers."
             ),
         }
         flat_rows.append({
@@ -1618,20 +1668,40 @@ def _analyze_per_site(
             row["success_rate"] = sr_observed  # legacy alias
             row["success_rate_observed"] = sr_observed
             row["n_success"] = n_success
-            # Scored-set denominator (post-§139.8 N/A exclusion).
+            # Scored-set denominator (post-§139.8 N/A exclusion, post-AMENDMENT_08
+            # protocol exclusions). The numerator has to be restricted to the same
+            # set as the denominator — dropping tasks from the denominator alone
+            # would inflate the rate by exactly the successes on those tasks.
             try:
-                scored_n = scored_task_count(str(site), bench_val, strict=False)
+                scored_n = paper_scored_task_count(str(site), bench_val, strict=False)
             except Exception:
                 scored_n = 0
+            n_success_scored = n_success
+            n_protocol_excluded_observed = 0
+            try:
+                from p79.experiment.tasks import protocol_excluded_task_ids
+
+                excluded = protocol_excluded_task_ids(str(site), bench_val)
+                if excluded and "task_id" in grp.columns:
+                    tid_series = pd.to_numeric(grp["task_id"], errors="coerce")
+                    keep = ~tid_series.isin(list(excluded))
+                    n_protocol_excluded_observed = int((~keep).sum())
+                    n_success_scored = int(success_numeric[keep].sum())
+            except Exception:
+                pass
             row["scored_set_n"] = scored_n if scored_n > 0 else None
+            row["n_success_scored_set"] = n_success_scored
+            row["n_protocol_excluded_observed"] = n_protocol_excluded_observed
             row["success_rate_scored_set"] = (
-                float(n_success / scored_n) if scored_n and scored_n > 0 else None
+                float(n_success_scored / scored_n) if scored_n and scored_n > 0 else None
             )
             row["estimand_note"] = (
                 "success_rate_observed denominator=n_episodes_observed (in-progress); "
-                "success_rate_scored_set denominator=scored_task_count(site) "
-                "(post-§139.8 N/A exclusion, canonical paper-§4 estimand). "
-                "Two estimands converge when n_episodes_observed == scored_set_n."
+                "success_rate_scored_set = n_success_scored_set / "
+                "paper_scored_task_count(site) (post-§139.8 N/A exclusion + "
+                "AMENDMENT_08 protocol exclusions, canonical paper-§4 estimand). "
+                "Two estimands converge when n_episodes_observed == scored_set_n "
+                "and n_protocol_excluded_observed == 0."
             )
         if "steps" in grp.columns:
             row["avg_steps"] = float(pd.to_numeric(grp["steps"], errors="coerce").mean())
