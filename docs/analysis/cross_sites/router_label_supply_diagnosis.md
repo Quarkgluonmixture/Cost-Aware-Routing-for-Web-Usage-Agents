@@ -32,15 +32,17 @@ Across 6 cells the trainable-label count spans **15-97**; pooled total **260**. 
 
 ## 3. Pooling fixes supply and breaks identifiability
 
-| site | tasks shared by 2+ cells | conflicting | conflict rate | Bayes ceiling (which-mode) | same, task-identity grouping | Bayes ceiling (cost tier) | tier agreement |
+| site | tasks shared by 2+ cells | conflicting | conflict rate | Bayes ceiling (which-mode) | same, feature-vector grouping | Bayes ceiling (cost tier) | tier agreement |
 |---|---|---|---|---|---|---|---|
-| classifieds | 54 | 31 | **57.41%** | 83.93% | 79.17% | **92.26%** | 68.52% |
-| reddit | 25 | 14 | **56.0%** | 89.13% | 83.7% | **97.83%** | 88.0% |
+| classifieds | 54 | 31 | **57.41%** | 79.17% | 83.93% | **89.88%** | 68.52% |
+| reddit | 25 | 14 | **56.0%** | 83.7% | 89.13% | **96.74%** | 88.0% |
 
-| site | distinct feature vectors | shared tasks whose rows differ in X |
-|---|---|---|
-| classifieds | 117 of 168 rows | 17 of 54 (**31.48%**) |
-| reddit | 78 of 92 rows | 20 of 25 (**80.0%**) |
+Headline ceilings group by task identity. The feature-vector column is the plug-in ceiling for the exact vectors and is singleton-inflated — a group of one scores 100% by construction:
+
+| site | distinct feature vectors | singletons | shared tasks whose rows differ in X |
+|---|---|---|---|
+| classifieds | 117 of 168 rows | 74 (**44.05%** of rows) | 17 of 54 (**31.48%**) |
+| reddit | 78 of 92 rows | 69 (**75.0%** of rows) | 20 of 25 (**80.0%**) |
 
 conflict_rate is over tasks covered by >=2 cells. The two ceilings are the point: re-slicing the SAME features from 'which of six modes' down to 'image or text-only' raises the attainable ceiling without inventing a single new solve event — the only relabelling that buys anything. Ceilings are grouped by distinct feature vector; the `_by_task_identity_` variants group by task_id instead and are lower, because three observation-derived features differ across cells for the same task (see measure_conflict_and_ceiling docstring, stress finding #9 2026-07-28).
 

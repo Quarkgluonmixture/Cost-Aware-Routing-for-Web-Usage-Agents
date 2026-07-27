@@ -63,20 +63,25 @@ inside each outer fold. Nesting moves the result in both directions.*
 
 Per-site detail for the conflict rates and Bayes ceilings quoted in §6.3.
 
-| site | tasks labelled in ≥2 cells | conflicting | conflict rate | Bayes ceiling | ceiling, task-identity grouping |
+| site | tasks labelled in ≥2 cells | conflicting | conflict rate | Bayes ceiling | ceiling, exact-vector grouping |
 |---|---|---|---|---|---|
-| classifieds | 54 | 31 | **57.4%** | **83.9%** | 79.2% |
-| reddit | 25 | 14 | **56.0%** | **89.1%** | 83.7% |
+| classifieds | 54 | 31 | **57.4%** | **79.2%** | 83.9% |
+| reddit | 25 | 14 | **56.0%** | **83.7%** | 89.1% |
 
 *Table 11: Per-site detail behind §6.3. A conflict is one task on which two cells recorded
 different oracle modes. The Bayes ceiling is the accuracy of emitting the modal label per
-distinct feature vector, over all pooled labelled rows (168 on classifieds, 92 on reddit), a
-row being one (task, backbone) pair on which that backbone solved the task. The last column
-groups instead by task identity, which is the ceiling if the small cross-cell differences in
-the three observation-derived features are treated as unusable. Those differences are not
-negligible in frequency: rows of the same task differ in at least one feature on 31.5% of
-shared classifieds tasks and 80.0% of shared reddit tasks, so the two groupings are genuinely
-different questions rather than rounding.*
+task, over all pooled labelled rows (168 on classifieds, 92 on reddit), a row being one
+(task, backbone) pair on which that backbone solved the task.*
+
+*The last column is the same quantity grouped by the exact feature vector instead. It is
+higher, and we do not use it, for two reasons. Rows of one task are not always identical:
+three of the five numeric features are read from that backbone's own step-0 observation, so
+they differ somewhere on 31.5% of shared classifieds tasks and 80.0% of shared reddit tasks.
+But that grouping then leaves 74 of 117 classifieds groups and 69 of 78 reddit groups with a
+single member, covering 44% and 75% of rows, and a singleton scores 100% by construction. The
+higher number therefore measures how unique the vectors are more than it measures
+identifiability, and a router serving one backbone could not recover backbone identity from
+that jitter anyway.*
 
 ### A.5 The screenshot-modality tier
 
@@ -86,14 +91,14 @@ labelled by two or more backbones, since agreement needs two labels to compare.
 
 | site | which-mode ceiling | tier ceiling | tier agreement across backbones |
 |---|---|---|---|
-| classifieds | 83.9% | **92.3%** | 68.5% |
-| reddit | 89.1% | **97.8%** | 88.0% |
+| classifieds | 79.2% | **89.9%** | 68.5% |
+| reddit | 83.7% | **96.7%** | 88.0% |
 
 *Table 12: Per-site detail behind §6.4. The ceiling rises on the same solve events, because
 backbones that disagree about which mode is best still agree about whether the screenshot is
-needed. Under the task-identity grouping of A.4's last column the tier ceilings are 89.9% and
-96.7%, so the gain survives either grouping. No classifier is fitted to this target anywhere
-in the paper; only its ceiling is measured.*
+needed. Under A.4's exact-vector grouping the tier ceilings are 92.3% and 97.8%, so the gain
+survives either grouping. No classifier is fitted to this target anywhere in the paper; only
+its ceiling is measured.*
 
 ## B. Derivations for the four relabelling routes
 
@@ -127,12 +132,11 @@ vector.
 They are only near-identical, not identical, because `dom_complexity`, `text_length` and
 `tokens_input_text` are read from the backbone's own step-0 observation rather than from the
 task config. On 31.5% of shared classifieds tasks and 80.0% of shared reddit tasks the rows
-therefore differ somewhere, which raises the ceiling above the value a task-identity grouping
-gives (A.4, last column). We report the feature-vector grouping as the headline because it is
-the ceiling for the input a classifier actually receives, and the task-identity grouping
-alongside it because a router should not be credited with reading backbone identity out of
-incidental observation jitter. Both are far below what a deployable which-mode router needs,
-which is the only thing the argument turns on.
+therefore differ somewhere. Grouping by the exact vector rather than by task raises the
+ceiling (A.4, last column), and we report but do not adopt that number: it leaves most groups
+with one member, and a group of one is scored perfectly whatever the labels do, so it inflates
+with feature sparsity rather than tracking identifiability. Both numbers are far below what a
+deployable which-mode router needs, which is the only thing the argument turns on.
 
 ### B.4 Screenshot tier
 

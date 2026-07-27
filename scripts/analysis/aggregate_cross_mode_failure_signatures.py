@@ -48,6 +48,9 @@ from diag_pattern_match import (  # noqa: E402
 )
 from diag_rescan_all import CANONICAL, _discover_cls, scan  # noqa: E402
 
+sys.path.insert(0, str(ROOT))
+from scripts.analysis.lib.canonical_task_universe import restrict_to_scored  # noqa: E402
+
 PHASE1 = ROOT / "results" / "visualwebarena" / "phase1"
 OUT_DIR = ROOT / "docs" / "analysis" / "cross_sites"
 
@@ -115,9 +118,15 @@ def part_a(scans: dict[str, dict]) -> dict:
     den: dict[str, int] = collections.defaultdict(int)
     names: dict[str, str] = {}
     for key, d in scans.items():
-        _, mode, _ = parse_key(key)
-        den[mode] += len(d["results"])
-        for ep in d["results"]:
+        _, mode, site = parse_key(key)
+        # Same SCORED restriction as Part B. The scan JSONs carry every collected
+        # episode, so without this the reddit denominators would be 205 rather than
+        # the 203 every other rate in the paper uses.
+        by_task = {int(ep["task_id"]): ep for ep in d["results"]
+                   if ep.get("task_id") is not None}
+        kept, _prov = restrict_to_scored(by_task, site)
+        den[mode] += len(kept)
+        for ep in kept.values():
             for rule in {h["rule_id"] for h in ep["hits"]}:
                 num[(rule, mode)] += 1
             for h in ep["hits"]:
@@ -145,25 +154,40 @@ def part_a(scans: dict[str, dict]) -> dict:
     }
 
 
-def measure_refs(run_dir: Path) -> dict:
-    """Hallucinated-reference counts over action-steps, all episodes and failed-only."""
-    out = {"ep_total": 0, "ep_failed": 0, "act_all": 0, "act_failed": 0,
-           "hall_all": 0, "hall_failed": 0}
+def measure_refs(run_dir: Path, site: str) -> dict:
+    """Hallucinated-reference counts under two denominators.
+
+    Two, because they answer different questions and the answers differ. The
+    action-step rate weights an episode by how many actions it took, so an episode
+    that deadlocks on one invalid id for thirty steps contributes thirty times as
+    much as an episode that misfires once. Episode incidence — the share of
+    episodes with at least one hallucinated reference — removes that weighting.
+    Any claim in the paper is stated only if it holds under both (self-audit
+    2026-07-28: three of five candidate claims did not).
+
+    Restricted to the canonical SCORED task set (B-1906 discipline). This reads
+    episodes through `_discover_episodes`, so it never names `*_summary_v2.json`
+    and the universe-consumption lint's source grep cannot see it — the call to
+    `restrict_to_scored` below is what keeps the denominator honest.
+    """
+    out = {"ep_total": 0, "ep_failed": 0, "ep_with_hall": 0,
+           "act_all": 0, "act_failed": 0, "hall_all": 0, "hall_failed": 0}
+    per_task: dict[int, dict] = {}
     for steps_path, summary_path, _cfg in _discover_episodes(run_dir, None, None):
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         steps = _load_steps(steps_path)
         if not steps:
             continue
+        tid = summary.get("task_id", steps[0].get("task_id"))
+        if tid is None:
+            continue
         ok = bool(summary.get("success"))
-        out["ep_total"] += 1
-        out["ep_failed"] += 0 if ok else 1
+        rec = {"ok": ok, "act": 0, "hall": 0}
         seen: set = set()
         for s in steps:
             if _action_type(s) not in ACTION_TYPES:
                 continue
-            out["act_all"] += 1
-            if not ok:
-                out["act_failed"] += 1
+            rec["act"] += 1
             hit = False
             for err in _locator_errors(s):
                 if MISSING_UNION_BOUND_RE.search(err):
@@ -172,9 +196,20 @@ def measure_refs(run_dir: Path) -> dict:
                         seen.add(k)
                         hit = True
             if hit:
-                out["hall_all"] += 1
-                if not ok:
-                    out["hall_failed"] += 1
+                rec["hall"] += 1
+        per_task[int(tid)] = rec
+
+    kept, prov = restrict_to_scored(per_task, site)
+    for rec in kept.values():
+        out["ep_total"] += 1
+        out["ep_failed"] += 0 if rec["ok"] else 1
+        out["ep_with_hall"] += 1 if rec["hall"] else 0
+        out["act_all"] += rec["act"]
+        out["hall_all"] += rec["hall"]
+        if not rec["ok"]:
+            out["act_failed"] += rec["act"]
+            out["hall_failed"] += rec["hall"]
+    out["universe_sha256"] = prov.get("content_task_ids_sha256")
     return out
 
 
@@ -183,53 +218,73 @@ def part_b(targets: dict[str, str]) -> dict:
     cells: dict[str, dict[str, dict]] = collections.defaultdict(dict)
     for key, run in sorted(targets.items()):
         model, mode, site = parse_key(key)
-        m = measure_refs(PHASE1 / run)
+        m = measure_refs(PHASE1 / run, site)
         m["rate_all_pct"] = 100.0 * m["hall_all"] / m["act_all"] if m["act_all"] else 0.0
         m["rate_failed_pct"] = (100.0 * m["hall_failed"] / m["act_failed"]
                                 if m["act_failed"] else 0.0)
+        m["episode_incidence_pct"] = (100.0 * m["ep_with_hall"] / m["ep_total"]
+                                      if m["ep_total"] else 0.0)
         m["run_id"] = run
         cells[f"{site}·{model}"][mode] = m
 
-    decomposition = []
-    for cell, bymode in sorted(cells.items()):
-        if not all(m in bymode for m in QUADRANT):
-            continue
-        r = {m: bymode[m]["rate_all_pct"] for m in QUADRANT}
-        decomposition.append({
-            "cell": cell,
-            "rates_pct": {PAPER_NAME[m]: r[m] for m in QUADRANT},
-            # text knob (AXTree -> legend) held at each prompt family
-            "text_effect_at_DOM_prompt_pp": r["phantom_text"] - r["dom"],
-            "text_effect_at_SoM_prompt_pp": r["phantom_som"] - r["phantom_prompt"],
-            # prompt knob (DOM -> SoM) held at each text payload
-            "prompt_effect_on_AXTree_pp": r["phantom_prompt"] - r["dom"],
-            "prompt_effect_on_legend_pp": r["phantom_som"] - r["phantom_text"],
-            "lowest_arm": PAPER_NAME[min(r, key=lambda m: r[m])],
-            "highest_arm": PAPER_NAME[max(r, key=lambda m: r[m])],
-        })
+    def _decompose(field: str) -> list[dict]:
+        rows = []
+        for cell, bymode in sorted(cells.items()):
+            if not all(m in bymode for m in QUADRANT):
+                continue
+            r = {m: bymode[m][field] for m in QUADRANT}
+            rows.append({
+                "cell": cell,
+                "rates_pct": {PAPER_NAME[m]: r[m] for m in QUADRANT},
+                # text knob (AXTree -> legend) held at each prompt family
+                "text_effect_at_DOM_prompt_pp": r["phantom_text"] - r["dom"],
+                "text_effect_at_SoM_prompt_pp": r["phantom_som"] - r["phantom_prompt"],
+                # prompt knob (DOM -> SoM) held at each text payload
+                "prompt_effect_on_AXTree_pp": r["phantom_prompt"] - r["dom"],
+                "prompt_effect_on_legend_pp": r["phantom_som"] - r["phantom_text"],
+                "lowest_arm": PAPER_NAME[min(r, key=lambda m: r[m])],
+                "highest_arm": PAPER_NAME[max(r, key=lambda m: r[m])],
+            })
+        return rows
 
-    def _count(pred) -> int:
-        return sum(1 for d in decomposition if pred(d))
+    def _summary(rows: list[dict]) -> dict:
+        def c(pred) -> int:
+            return sum(1 for d in rows if pred(d))
+        return {
+            "n_cells": len(rows),
+            "cells_where_P_SoM_lowest": c(lambda d: d["lowest_arm"] == "P-SoM"),
+            "cells_where_P_prompt_highest": c(lambda d: d["highest_arm"] == "P-prompt"),
+            "cells_text_effect_negative_at_SoM_prompt":
+                c(lambda d: d["text_effect_at_SoM_prompt_pp"] < 0),
+            "cells_text_effect_negative_at_DOM_prompt":
+                c(lambda d: d["text_effect_at_DOM_prompt_pp"] < 0),
+            # The interaction itself: is the legend's reduction bigger under the
+            # SoM prompt than under the DOM prompt?
+            "cells_reduction_larger_at_SoM_prompt":
+                c(lambda d: d["text_effect_at_SoM_prompt_pp"]
+                  < d["text_effect_at_DOM_prompt_pp"]),
+            "cells_prompt_effect_negative_on_legend":
+                c(lambda d: d["prompt_effect_on_legend_pp"] < 0),
+            "cells_prompt_effect_negative_on_AXTree":
+                c(lambda d: d["prompt_effect_on_AXTree_pp"] < 0),
+        }
 
+    by_step = _decompose("rate_all_pct")
+    by_episode = _decompose("episode_incidence_pct")
+    s_step, s_ep = _summary(by_step), _summary(by_episode)
+    robust = {k: (s_step[k], s_ep[k]) for k in s_step if k != "n_cells"}
     return {
         "per_cell_per_mode": {c: {PAPER_NAME[m]: v for m, v in bm.items()}
                               for c, bm in cells.items()},
         "quadrant_definition": {PAPER_NAME[m]: {"text": t, "prompt": p}
                                 for m, (t, p) in QUADRANT.items()},
-        "decomposition": decomposition,
-        "summary": {
-            "n_cells": len(decomposition),
-            "cells_where_P_SoM_lowest": _count(lambda d: d["lowest_arm"] == "P-SoM"),
-            "cells_where_P_prompt_highest": _count(lambda d: d["highest_arm"] == "P-prompt"),
-            "cells_text_effect_negative_at_SoM_prompt":
-                _count(lambda d: d["text_effect_at_SoM_prompt_pp"] < 0),
-            "cells_text_effect_negative_at_DOM_prompt":
-                _count(lambda d: d["text_effect_at_DOM_prompt_pp"] < 0),
-            "cells_prompt_effect_negative_on_legend":
-                _count(lambda d: d["prompt_effect_on_legend_pp"] < 0),
-            "cells_prompt_effect_negative_on_AXTree":
-                _count(lambda d: d["prompt_effect_on_AXTree_pp"] < 0),
-        },
+        "decomposition_by_action_step": by_step,
+        "decomposition_by_episode_incidence": by_episode,
+        "summary_by_action_step": s_step,
+        "summary_by_episode_incidence": s_ep,
+        # A claim is quotable in the paper only where both denominators agree at 6/6.
+        "denominator_robust_at_6_of_6": sorted(
+            k for k, (a, b) in robust.items() if a == b == s_step["n_cells"]),
     }
 
 
@@ -263,46 +318,68 @@ def render_md(a: dict, b: dict, ruleset: str) -> str:
         f"{r['rule_id']} {r['spread_all_modes_pp']:.1f} pp" for r in top4) + ".")
 
     L.append("\n## Part B — hallucinated element references (paper A §4.2)\n")
-    L.append("Rate over action-steps (click / type / select_option). `all` = every "
-             "episode (the estimand the original measurement used); `failed` = failed "
-             "episodes only (what `check_p44` itself can see).\n")
-    L.append("\n| cell | " + " | ".join(PAPER_NAME[m] for m in MODES) + " |")
-    L.append("|" + "---|" * (len(MODES) + 1))
-    for cell in sorted(b["per_cell_per_mode"]):
-        bm = b["per_cell_per_mode"][cell]
-        row = " | ".join(f"{bm[PAPER_NAME[m]]['rate_all_pct']:.3f}" if PAPER_NAME[m] in bm
-                         else "—" for m in MODES)
-        L.append(f"| {cell} | {row} |")
+    L.append("Two denominators, because they disagree. **action-step** = share of "
+             "click / type / select_option steps naming an absent id, which weights an "
+             "episode by how many actions it took; **episode incidence** = share of episodes "
+             "with at least one such step, which does not. A thirty-step deadlock on one "
+             "invalid id moves the first a great deal and the second by one episode.\n")
+    L.append("Restricted to the canonical SCORED task set.\n")
+    for field, title in (("rate_all_pct", "By action-step"),
+                         ("episode_incidence_pct", "By episode incidence")):
+        L.append(f"\n### {title}\n")
+        L.append("| cell | " + " | ".join(PAPER_NAME[m] for m in MODES) + " |")
+        L.append("|" + "---|" * (len(MODES) + 1))
+        for cell in sorted(b["per_cell_per_mode"]):
+            bm = b["per_cell_per_mode"][cell]
+            row = " | ".join(f"{bm[PAPER_NAME[m]][field]:.3f}" if PAPER_NAME[m] in bm
+                             else "—" for m in MODES)
+            L.append(f"| {cell} | {row} |")
 
     L.append("\n### The 2x2: which knob moves the rate\n")
     L.append("P-text = legend text under the DOM prompt; P-prompt = AXTree text under the "
              "SoM prompt. So the text knob is read at a fixed prompt family and vice versa.\n")
-    L.append("\n| cell | text @ DOM prompt | text @ SoM prompt | prompt @ AXTree | "
-             "prompt @ legend | lowest | highest |")
-    L.append("|" + "---|" * 7)
-    for d in b["decomposition"]:
-        L.append(f"| {d['cell']} | {d['text_effect_at_DOM_prompt_pp']:+.3f} | "
-                 f"{d['text_effect_at_SoM_prompt_pp']:+.3f} | "
-                 f"{d['prompt_effect_on_AXTree_pp']:+.3f} | "
-                 f"{d['prompt_effect_on_legend_pp']:+.3f} | {d['lowest_arm']} | "
-                 f"{d['highest_arm']} |")
+    for key, title in (("decomposition_by_action_step", "By action-step"),
+                       ("decomposition_by_episode_incidence", "By episode incidence")):
+        L.append(f"\n**{title}**\n")
+        L.append("| cell | text @ DOM prompt | text @ SoM prompt | prompt @ AXTree | "
+                 "prompt @ legend | lowest | highest |")
+        L.append("|" + "---|" * 7)
+        for d in b[key]:
+            L.append(f"| {d['cell']} | {d['text_effect_at_DOM_prompt_pp']:+.3f} | "
+                     f"{d['text_effect_at_SoM_prompt_pp']:+.3f} | "
+                     f"{d['prompt_effect_on_AXTree_pp']:+.3f} | "
+                     f"{d['prompt_effect_on_legend_pp']:+.3f} | {d['lowest_arm']} | "
+                     f"{d['highest_arm']} |")
 
-    s = b["summary"]
-    n = s["n_cells"]
-    L.append(f"\n- P-SoM is the lowest-rate arm in **{s['cells_where_P_SoM_lowest']}/{n}** cells; "
-             f"P-prompt the highest in **{s['cells_where_P_prompt_highest']}/{n}**.")
-    L.append(f"- Substituting the legend for the AXTree lowers the rate in "
-             f"**{s['cells_text_effect_negative_at_SoM_prompt']}/{n}** cells under the SoM "
-             f"prompt but only **{s['cells_text_effect_negative_at_DOM_prompt']}/{n}** under "
-             "the DOM prompt.")
-    L.append(f"- Moving to the SoM prompt lowers the rate in "
-             f"**{s['cells_prompt_effect_negative_on_legend']}/{n}** cells when the text is the "
-             f"legend, and in **{s['cells_prompt_effect_negative_on_AXTree']}/{n}** when it is "
-             "the AXTree.")
-    L.append("\nThe sign of each knob's effect depends on the other knob's setting, so the "
-             "rate is not attributable to either knob as a main effect. The arms in which "
-             "the prompt's advertised id scheme and the text's actual id scheme agree "
-             "(DOM, P-SoM) behave differently from the two mismatched arms.\n")
+    ss, se = b["summary_by_action_step"], b["summary_by_episode_incidence"]
+    n = ss["n_cells"]
+    L.append("\n### Which statements survive both denominators\n")
+    L.append("| statement | by action-step | by episode incidence | quotable |")
+    L.append("|---|---|---|---|")
+    labels = [
+        ("cells_reduction_larger_at_SoM_prompt",
+         "legend's reduction is larger under the SoM prompt than the DOM prompt"),
+        ("cells_text_effect_negative_at_SoM_prompt",
+         "legend lowers the rate under the SoM prompt"),
+        ("cells_prompt_effect_negative_on_legend",
+         "SoM prompt lowers the rate when the text is the legend"),
+        ("cells_where_P_SoM_lowest", "P-SoM is the lowest arm"),
+        ("cells_where_P_prompt_highest", "P-prompt is the highest arm"),
+        ("cells_text_effect_negative_at_DOM_prompt",
+         "legend lowers the rate under the DOM prompt"),
+        ("cells_prompt_effect_negative_on_AXTree",
+         "SoM prompt lowers the rate when the text is the AXTree"),
+    ]
+    for k, text in labels:
+        ok = "**yes**" if ss[k] == se[k] == n else "no"
+        L.append(f"| {text} | {ss[k]}/{n} | {se[k]}/{n} | {ok} |")
+    L.append("\nOnly the rows marked **yes** are stated in the paper. The interaction claim "
+             "rests on the first row: the legend's effect on reference hallucination depends "
+             "on which prompt it is paired with, in every cell under either denominator. The "
+             "arms in which the prompt's advertised id scheme and the text's actual id scheme "
+             "agree behave differently from the two mismatched arms.\n")
+    L.append("Rows marked *no* are real under one denominator and not the other, which is "
+             "why the second denominator is computed at all rather than assumed to agree.\n")
     return "\n".join(L)
 
 
@@ -324,7 +401,9 @@ def main() -> int:
     print("Part A done — top rules:",
           ", ".join(r["rule_id"] for r in a["rules"][:4]))
     b = part_b(targets)
-    print("Part B done —", b["summary"])
+    print("Part B done — denominator-robust at 6/6:", b["denominator_robust_at_6_of_6"])
+    print("  by action-step:      ", b["summary_by_action_step"])
+    print("  by episode incidence:", b["summary_by_episode_incidence"])
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     payload = {

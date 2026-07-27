@@ -184,15 +184,20 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
 
     Both ceilings are therefore reported, because they answer different questions:
 
-      by_feature_vector — the true Bayes ceiling for the feature set actually fitted.
-                          Higher, because rows a task_id grouping merged are in fact
-                          distinguishable inputs.
-      by_task_identity  — the ceiling if only task identity is usable, i.e. treating
-                          the incidental observation differences as noise a deployed
-                          router should not lean on.
+      by_task_identity  — HEADLINE. The ceiling when only task identity is usable, i.e.
+                          treating the incidental observation differences as jitter a
+                          deployed router should not lean on.
+      by_feature_vector — the plug-in Bayes ceiling for the exact vectors fitted.
 
-    The paper's argument needs only that both are ceilings well below what a useful
-    router requires; it should not quote the lower one as if it were the former.
+    The headline is the task-identity number, and the reason is a finite-sample one that
+    the first version of this fix (2026-07-28, later that day) got wrong. "Modal share per
+    distinct x" is a plug-in estimate, and it is optimistically biased when x is
+    high-cardinality: a singleton group scores 100% by construction. Here 74 of 117
+    classifieds groups and 69 of 78 reddit groups are singletons, covering 44% and 75% of
+    rows, so the feature-vector number is largely a count of how unique the vectors are
+    rather than a measure of identifiability. The task-identity grouping is coarser, so
+    less inflated, and it is also the coarsening that matches the deployment question: a
+    router serving one backbone cannot recover backbone identity from observation jitter.
     """
     labels, cells, tids = pool["labels"], pool["cell_ids"], pool["task_ids"]
     x_num, x_bin = pool["X_numeric"], pool["X_binary"]
@@ -211,11 +216,12 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
         shared = {t: ls for t, ls in per_task.items() if len(ls) >= 2}
         conflicting = {t: ls for t, ls in shared.items() if len(set(ls)) > 1}
         n_rows = sum(len(ls) for ls in per_task.values())
-        # Ceiling A: group by task identity (what a router that sees only the task can do).
+        # Ceiling A (HEADLINE): group by task identity.
         n_best_task = sum(Counter(ls).most_common(1)[0][1] for ls in per_task.values())
-        # Ceiling B: group by the actual input vector (the true Bayes ceiling).
+        # Ceiling B: group by the exact input vector. Plug-in, singleton-inflated.
         per_feat = feat_site[site]
         n_best_feat = sum(Counter(ls).most_common(1)[0][1] for ls in per_feat.values())
+        n_singleton = sum(1 for ls in per_feat.values() if len(ls) == 1)
         # How often the "same task ⇒ same X" premise actually holds.
         split = sum(1 for t in shared if len(feat_of_task[site][t]) > 1)
         # Same computation restricted to the cost tier (2 classes), both groupings.
@@ -238,17 +244,22 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
             "conflict_rate_pct": round(100.0 * len(conflicting) / len(shared), 2)
             if shared else None,
             "n_distinct_feature_vectors": len(per_feat),
+            "n_singleton_feature_vectors": n_singleton,
+            "singleton_share_of_rows_pct": round(100.0 * n_singleton / n_rows, 2)
+            if n_rows else None,
             "n_shared_tasks_with_split_features": split,
             "shared_tasks_split_rate_pct": round(100.0 * split / len(shared), 2)
             if shared else None,
-            "bayes_ceiling_which_mode_pct": round(100.0 * n_best_feat / n_rows, 2)
+            # HEADLINE = task-identity grouping (see docstring: the feature-vector
+            # plug-in is singleton-inflated and overstates identifiability).
+            "bayes_ceiling_which_mode_pct": round(100.0 * n_best_task / n_rows, 2)
             if n_rows else None,
-            "bayes_ceiling_which_mode_by_task_identity_pct":
-                round(100.0 * n_best_task / n_rows, 2) if n_rows else None,
-            "bayes_ceiling_cost_tier_pct": round(100.0 * n_best_tier_feat / n_rows, 2)
+            "bayes_ceiling_which_mode_by_feature_vector_pct":
+                round(100.0 * n_best_feat / n_rows, 2) if n_rows else None,
+            "bayes_ceiling_cost_tier_pct": round(100.0 * n_best_tier / n_rows, 2)
             if n_rows else None,
-            "bayes_ceiling_cost_tier_by_task_identity_pct":
-                round(100.0 * n_best_tier / n_rows, 2) if n_rows else None,
+            "bayes_ceiling_cost_tier_by_feature_vector_pct":
+                round(100.0 * n_best_tier_feat / n_rows, 2) if n_rows else None,
             "tier_agreement_rate_pct": round(100.0 * len(tier_shared) / len(shared), 2)
             if shared else None,
             "n_pooled_rows": n_rows,
@@ -260,11 +271,12 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
             "are the point: re-slicing the SAME features from 'which of six "
             "modes' down to 'image or text-only' raises the attainable ceiling "
             "without inventing a single new solve event — the only relabelling "
-            "that buys anything. Ceilings are grouped by distinct feature vector; "
-            "the `_by_task_identity_` variants group by task_id instead and are "
-            "lower, because three observation-derived features differ across cells "
-            "for the same task (see measure_conflict_and_ceiling docstring, "
-            "stress finding #9 2026-07-28)."
+            "that buys anything. Headline ceilings group by task_id; the "
+            "`_by_feature_vector_` variants group by the exact input vector and are "
+            "HIGHER, because three observation-derived features differ across cells for "
+            "the same task and most resulting groups are singletons scoring 100% by "
+            "construction (see measure_conflict_and_ceiling docstring, stress finding #9 "
+            "2026-07-28)."
         ),
     }
 
@@ -550,20 +562,25 @@ def render(p: dict) -> str:
     i = p["identifiability"]
     L.append("## 3. Pooling fixes supply and breaks identifiability\n")
     L.append("| site | tasks shared by 2+ cells | conflicting | conflict rate | "
-             "Bayes ceiling (which-mode) | same, task-identity grouping | "
+             "Bayes ceiling (which-mode) | same, feature-vector grouping | "
              "Bayes ceiling (cost tier) | tier agreement |")
     L.append("|---|---|---|---|---|---|---|---|")
     for site, r in i["per_site"].items():
         L.append(f"| {site} | {r['n_tasks_shared_by_2plus_cells']} | "
                  f"{r['n_tasks_conflicting']} | **{r['conflict_rate_pct']}%** | "
                  f"{r['bayes_ceiling_which_mode_pct']}% | "
-                 f"{r['bayes_ceiling_which_mode_by_task_identity_pct']}% | "
+                 f"{r['bayes_ceiling_which_mode_by_feature_vector_pct']}% | "
                  f"**{r['bayes_ceiling_cost_tier_pct']}%** | "
                  f"{r['tier_agreement_rate_pct']}% |")
-    L.append("\n| site | distinct feature vectors | shared tasks whose rows differ in X |")
-    L.append("|---|---|---|")
+    L.append("\nHeadline ceilings group by task identity. The feature-vector column is the "
+             "plug-in ceiling for the exact vectors and is singleton-inflated — a group of "
+             "one scores 100% by construction:\n")
+    L.append("| site | distinct feature vectors | singletons | shared tasks whose rows differ in X |")
+    L.append("|---|---|---|---|")
     for site, r in i["per_site"].items():
         L.append(f"| {site} | {r['n_distinct_feature_vectors']} of {r['n_pooled_rows']} rows | "
+                 f"{r['n_singleton_feature_vectors']} "
+                 f"(**{r['singleton_share_of_rows_pct']}%** of rows) | "
                  f"{r['n_shared_tasks_with_split_features']} of "
                  f"{r['n_tasks_shared_by_2plus_cells']} "
                  f"(**{r['shared_tasks_split_rate_pct']}%**) |")

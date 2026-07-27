@@ -207,12 +207,24 @@ def test_no_ids_discarding_tuple_unpack() -> None:
     )
 
 
+# Reading episodes THROUGH a helper never names `*_summary_v2.json`, so a literal
+# grep for the filename misses it.  Found 2026-07-28 when
+# `aggregate_cross_mode_failure_signatures.py` reached every episode via
+# `_discover_episodes` and sailed past this lint with reddit denominators of 205.
+# Any new helper that hands out episode paths belongs in this set.
+EPISODE_READER_MARKERS = ("_summary_v2.json", "_discover_episodes")
+
+
 def _unrestricted_episode_readers() -> list[str]:
-    """Analysis producers that read summaries without touching the universe."""
+    """Analysis producers that read summaries without touching the universe.
+
+    Detects both direct readers (the filename literal) and transitive ones (a
+    helper that yields episode paths).
+    """
     out: list[str] = []
     for path in _py_files():
         src = path.read_text(encoding="utf-8")
-        if "_summary_v2.json" not in src:
+        if not any(marker in src for marker in EPISODE_READER_MARKERS):
             continue
         if any(name in src for name in CANONICAL_NAMES):
             continue

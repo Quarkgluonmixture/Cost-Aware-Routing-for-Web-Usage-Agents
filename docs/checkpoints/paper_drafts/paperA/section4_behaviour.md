@@ -27,17 +27,22 @@ Hallucinated element references (actions naming an element id absent from the ob
 are a recognised bottleneck for multimodal web agents [@zheng2024seeact; @zheng2024uground].
 Because the 2×2 was run, we can ask which knob moves them instead of assuming.
 
-Neither knob owns the effect. P-SoM has the lowest rate in all six cells and P-prompt the
-highest in five of six; at reddit · B2 the two differ by 33.06% of action-steps against 7.78%.
-Substituting the mark legend for the accessibility tree lowers the rate in six of six cells
-under the SoM prompt, but in only three of six under the DOM prompt. Moving from the DOM prompt
-to the SoM prompt lowers it in six of six cells when the text is the legend, and raises it in
-five of six when the text is the accessibility tree. Each knob's sign depends on the other
-knob's setting, so this is an interaction and not a property of either payload alone.
+Neither knob owns the effect. Substituting the mark legend for the accessibility tree lowers
+the rate in all six cells when the prompt is the SoM prompt, and in all six that reduction is
+larger than the one the same substitution produces under the DOM prompt: at reddit · B2, 25.4
+against 9.4 points of action-steps. The text knob's effect therefore depends on which prompt it
+is paired with, which makes this an interaction rather than a property of either payload alone.
+
+We state only those two counts because they are the two that survive changing the denominator.
+A rate per action-step weights an episode by how many actions it took, and an episode that
+deadlocks on one invalid id for thirty steps dominates one that misfires once, so we also
+counted the share of episodes containing at least one such reference. Several other readings do
+not survive: P-SoM is the lowest-rate arm in six of six cells per action-step but five of six
+by episode incidence, and P-prompt the highest in five of six against three of six.
 
 What the pattern tracks is agreement between the id scheme the prompt advertises and the one
-the text supplies. The two matched arms sit low and the mismatched arms high, worst at
-P-prompt, where the prompt announces numbered marks and the text carries sparse native ids.
+the text supplies. The legend pays off where the prompt has announced numbered marks and much
+less where it has not, which is the interaction stated above read as a mechanism.
 Part of that is mechanical: a prompt advertising ids 1..K induces references in that range,
 which lie outside an accessibility tree. We therefore read it as a behavioural cost of
 representational mismatch, not as an account of what drives coverage. The axis magnitudes of
@@ -53,7 +58,7 @@ signatures (budget exhausted without finishing, degenerate element resolution,
 perception-loss loops, and URL self-loops) are **near mode-invariant**: across the five
 text-bearing modes their episode-level rates span 7.4 to 13.7 percentage points. Changing the
 text representation does not address them. The single large excursion is degenerate element
-resolution under Vision, 20.7% against 59.5% under DOM, where a coordinate action space has no
+resolution under Vision, 20.7% against 59.6% under DOM, where a coordinate action space has no
 element ids to fail to resolve; the category lapses rather than the failure being fixed.
 
 Two companion observations bound the space from the same direction. The rate at which agents

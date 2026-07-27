@@ -17,15 +17,15 @@ of examples to parameters, not the absolute supply, and the absolute supply is w
 pooled examples and every class clears the minimum-count filter, but the features carry no
 model identity (§2.3), so a pooled row barely says which backbone it describes. Of the tasks
 labelled in two or more cells, **57.4%** on classifieds and **56.0%** on reddit carry
-conflicting labels, capping any classifier on these features at **83.9%** and **89.1%**
-(Appendix A.4, which also reports a stricter grouping). Pooling is less a mistake than a
+conflicting labels, capping any task-feature classifier at **79.2%** and **83.7%**
+(Appendix A.4). Pooling is less a mistake than a
 change of question: it estimates which mode is best marginalising over backbones, and a
 deployment has one backbone and needs the answer for that one.
 
 **The screenshot tier is the one target both supplied and identified.** Those conflicts are
 about *which mode*. They are much rarer when the question is *whether the task needs the
 screenshot*: collapsing the six modes into image-bearing (SoM, Vision) and text-only (DOM and
-the three P-modes) raises the ceiling to **92.3%** and **97.8%**, by 8.3 and 8.7 points,
+the three P-modes) raises the ceiling to **89.9%** and **96.7%**, by 10.7 and 13.0 points,
 **without a single new solve event** (Appendix A.5). Backbones disagree sharply about which of
 six modes is best and agree substantially about whether the image is needed at all.
 
@@ -40,9 +40,9 @@ screenshot, and it is defined only on solved tasks.
 |---|---|---|---|
 | which-mode, per cell | **fails** (15–97 labels, 4/6 cells untrainable) | fine | closed by §4 |
 | continuous target | would fix | fine | closed: benchmark score is binary |
-| pooled which-mode | fixed (260) | **fails** (56–57% conflict, ceiling 84–89%) | wrong estimand |
+| pooled which-mode | fixed (260) | **fails** (56–57% conflict, ceiling 79–84%) | wrong estimand |
 | triage (binary) | fine (203–224, every task) | fine | learnable, **and beaten by a fixed policy** (§5) |
-| screenshot tier | fine, but only on solved tasks | fine (ceiling 92–98%, over solved tasks) | ceiling measured; no tier classifier trained |
+| screenshot tier | fine, but only on solved tasks | fine (ceiling 90–97%, over solved tasks) | ceiling measured; no tier classifier trained |
 
 *Table 7: The five supervision targets against the two requirements a trainable router needs.
 Each closed route is closed for a different reason, which is what makes the negative result
