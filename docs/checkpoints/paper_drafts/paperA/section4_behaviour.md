@@ -23,8 +23,10 @@ which is consistent with §3.2 finding them separately consequential; it is not 
 
 ### 4.2 One measurement that constrains the story
 
-The compact renumbering of the mark legend produces a **5–25× lower rate of hallucinated
-element references** than the native accessibility-tree numbering, varying by cell.
+The compact renumbering of the mark legend produces a **2.3–24.8× lower rate of hallucinated
+element references** than the native accessibility-tree numbering. The ratio is per backbone,
+not per cell: 0.04% against 0.39% at B0, 0.12% against 2.98% at B1, and 7.84% against 18.21%
+at B2, so the reduction is largest at B1 and smallest at the weakest backbone.
 Element-reference failures are a recognised bottleneck for multimodal web agents
 [@zheng2024seeact; @zheng2024uground]. Native ids are sparse and non-semantic; the legend's ids run
 1..K. Whatever else the text axis does, it makes the element-reference space smaller and

@@ -10,9 +10,9 @@ for two unrelated reasons. Choosing *which* mode fails on label supply. A traini
 exists only where some mode succeeded, so at 7–43% solvable rates the six cells yield
 15–97 labels each; under a minimum-class filter, four of the six have no trainable
 classifier at all. Choosing *whether* to spend fails despite having supply: the
-solvable/hopeless label is available for every task and predictable at AUROC 0.65–0.72,
-yet under fully nested cross-validation no cell's learned triage Pareto-dominates the
-trivial policy of always taking the cheapest mode. We then show that relabelling cannot
+solvable/hopeless label is available for every task and predictable at AUROC 0.65–0.72 in
+five of six cells, yet under fully nested cross-validation no cell's learned triage
+Pareto-dominates the trivial policy of always taking the cheapest mode. We then show that relabelling cannot
 rescue either half. The benchmark's score is binary, so there is no partial credit to
 regress on; pooling across backbones restores supply but breaks identifiability, because
 the routing features are functions of the task alone and 56–57% of shared tasks carry

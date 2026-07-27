@@ -69,9 +69,9 @@ the compound arm misses. Axis-1 counts tasks in P-text but not P-SoM and pools a
 **θ_FE = 1.3528 pp** with bootstrap CI **[0.799, 2.026]**; axis-2 counts tasks in P-prompt
 but not P-SoM and pools at **2.0877 pp** with CI **[1.399, 2.919]**. Both survive Holm
 correction over the two-axis family on the legacy Wald channel (p = 1.19 × 10⁻⁵ and
-7.52 × 10⁻⁷). Five of six cells exceed the preregistered noise floor of two unique tasks
-on each axis; the number of individually Holm-significant cells is three of six on axis-1
-and four of six on axis-2.
+7.52 × 10⁻⁷). Five of six cells meet or exceed the preregistered noise floor of two unique
+tasks on each axis; the number of individually Holm-significant cells is three of six on
+axis-1 and four of six on axis-2.
 
 The interpretation is the paper's main claim. **The compound arm does not absorb the
 single-axis arms.** Switching the text format alone, and switching the prompt family alone,

@@ -40,7 +40,7 @@ Appendix D as a labelled robustness row, and both fail.
 
 ### 3.2 H3 passes on both axes: the compound arm absorbs neither single-axis arm
 
-| axis | estimand | θ_FE | bootstrap 95% CI | Wald p (Holm, m=2) | cells above noise floor | individually Holm-significant |
+| axis | estimand | θ_FE | bootstrap 95% CI | Wald p (raw) | cells above noise floor | individually Holm-significant |
 |---|---|---|---|---|---|---|
 | axis-1 | \|P-text \\ P-SoM\| | **1.3528 pp** | **[0.799, 2.026]** | 1.19 × 10⁻⁵ | 5 of 6 | 3 of 6 |
 | axis-2 | \|P-prompt \\ P-SoM\| | **2.0877 pp** | **[1.399, 2.919]** | 7.52 × 10⁻⁷ | 5 of 6 | 4 of 6 |
@@ -50,9 +50,12 @@ single-axis arm solves and the compound arm does not. Both pool clear of zero af
 correction over the two-axis family.*
 
 Each axis counts, per cell, the tasks a single-axis arm solves and the compound arm does
-not. Both pool well clear of zero and both survive Holm correction over the two-axis family.
-The preregistered noise floor of two unique tasks is exceeded in five of six cells on each
-axis.
+not. Both pool well clear of zero. The p-values in the table are the raw legacy Wald
+channel; Holm correction over the two-axis family multiplies the smaller by two, giving
+1.50 × 10⁻⁶ and 1.19 × 10⁻⁵, so both still clear α = 0.05 by four orders of magnitude. The
+preregistered gate is the bootstrap percentile interval, not either p-value.
+The preregistered noise floor of two unique tasks is met or exceeded in five of six cells on
+each axis; requiring strictly more than two leaves four of six on axis-1.
 
 This is the paper's positive result. Moving only
 the text payload leaves behind tasks that moving both payload and prompt does not recover.

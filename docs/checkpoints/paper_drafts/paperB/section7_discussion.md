@@ -62,8 +62,9 @@ We do not claim the ceiling is illusory. §3 measures 9.5% to 30.6% of recoverab
 an oracle reaches it. Our result is that the recoverable portion is largely also reachable
 by a fixed policy, so the *learned* component adds little.
 
-We do not claim our router is the best possible one. It is a logistic model over 20 features
-plus fold-local TF-IDF, and a stronger model might extract more signal. But §5.1 shows the
+We do not claim our router is the best possible one. The triage model is a logistic model over
+20 numeric and binary features with no text features at all, and a stronger model, or one that
+used the intent text, might extract more signal. But §5.1 shows the
 signal is already present at AUROC 0.65–0.72 and §5.3 shows that converting it into value
 fails at the policy-comparison step, not at the prediction step. A better predictor does not
 address that.

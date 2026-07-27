@@ -29,7 +29,16 @@ family boundary: a 235B mixture-of-experts model served through an API (B0), a 4
 dense model served locally (B1), and a 4B model from a different family (B2). Crossing
 sites with backbones gives six cells. Each cell contains six modes over the same task
 set, so within a cell every mode faces an identical task universe: 224 tasks on
-classifieds and 203 on reddit after the preregistered exclusions.
+classifieds and 203 on reddit.
+
+The reddit figure is 205 as collected and 203 as scored. Two reddit tasks were removed from
+the scored set by an amendment written **after all thirty-six conditions had run and been
+analysed**: it is post-hoc and outcome-visible, not preregistered, and we label it that way
+wherever the denominator appears.
+One removed task scores inaction as success; the other is answerable from parametric
+knowledge without loading the second site its configuration declares. Each criterion was
+applied as a uniform rule over the whole reddit pool and each selects one task. Pooled reddit
+success moves from 6.94% to 6.40%.
 
 ### 2.2 What a routing label is
 
@@ -55,7 +64,10 @@ to a mode: the task intent text, properties derivable from the task configuratio
 the first observation. Concretely, five numeric features (DOM complexity, text length,
 input token estimate, intent token count, a task-difficulty field) and fifteen binary
 features (whether the task supplies a reference image, plus fourteen intent-category
-regex matches), with the raw intent text held for fold-local TF-IDF.
+regex matches). The which-mode pipeline additionally fits a fold-local TF-IDF vectoriser over
+the raw intent text. The triage results in §5 do **not**: that pipeline omits the text
+features deliberately, so every triage number we report comes from the twenty numeric and
+binary features alone.
 
 One property of this feature set drives §6: **it contains no model identity**. Two
 backbones facing the same task produce the same feature vector. This is the right choice

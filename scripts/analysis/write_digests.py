@@ -167,7 +167,7 @@ T2 = {
   p36="见下方两层核查 —— 结论是 walk_fail **既非 P-SoM 特有也不随能力单调**。",
   findings=[
     "⭐ **[SOM_MARKS] 两层核查（这是 hero mode 能否宣称 scaffold 干净的关键证据）**。我在 sub-agent 数字基础上补了 dom/som 对照，结果比原报告强得多：",
-    "  · **(a) 幻觉引用率**（引用了 observation 里不存在的 element_id）：P-SoM **B0 0.04% / B1 0.12% / B2 7.84%**；同 model 的 dom 是 **0.39% / 2.98% / 18.21%**。→ **dom 在每个模型上都最差，P-SoM 干净 5–25×**。机制：dom 用原生 AXTree id（median 7839–18729，max 691695），P-SoM 用紧凑编号 1..N（median 15–17，max 176）—— 抄 5-6 位稀疏整数 vs 2-3 位紧凑编号。→ 这条催生了 **P44**。",
+    "  · **(a) 幻觉引用率**（引用了 observation 里不存在的 element_id）：P-SoM **B0 0.04% / B1 0.12% / B2 7.84%**；同 model 的 dom 是 **0.39% / 2.98% / 18.21%**。→ **dom 在每个模型上都最差，P-SoM 干净 2.3–24.8×**（B0 9.75× / B1 24.83× / B2 2.32×；2026-07-27 /stress Mode A A-5 修正：旧文字写 “5–25×”，下界与自己列的 B2 一对数字矛盾，且 paper A §4.2 已照抄继承）。机制：dom 用原生 AXTree id（median 7839–18729，max 691695），P-SoM 用紧凑编号 1..N（median 15–17，max 176）—— 抄 5-6 位稀疏整数 vs 2-3 位紧凑编号。→ 这条催生了 **P44**。",
     "  · **(b) walk_fail 率**：P-SoM B0 13.3% / B1 29.5% / B2 21.9%；dom 23.5% / 18.5% / 35.2%。**3 个模型里 2 个是 dom 更差**，且不随能力单调 → 在 (model, mode) 格间就是噪声，**不能写成「walk 可执行性随能力劣化」**。",
     "⚠️ **同时修正了 4 个 sub-agent 的集体误判**：它们都断言 `obs_nodes_info missing union_bound`（幻觉引用分支）「一次都没出现」。在各自 6–8 个样本里成立，**总体上不成立**（B2 上 374 次 psom / 895 次 dom）。walk_fail 与幻觉引用是**并存**的两条分支。",
     "**task 19** — 点 [SOM_MARKS] 里的 img href 跳到 `/submission_images/*.jpg` 裸图页（reddit 版 P33），旧正则漏检。",

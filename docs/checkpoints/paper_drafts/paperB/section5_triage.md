@@ -16,7 +16,7 @@ the reason is the baseline.
 | reddit · B0 | 203 | 26.1% | 0.666 | 0.612 | +0.054 |
 | classifieds · B1 | 224 | 24.6% | **0.717** | 0.627 | +0.090 |
 | reddit · B1 | 203 | 11.8% | 0.685 | 0.637 | +0.048 |
-| classifieds · B2 | 224 | 7.1% | 0.651 | 0.655 | −0.004 |
+| classifieds · B2 | 224 | 7.1% | 0.651 | 0.655 | −0.005 |
 | reddit · B2 | 203 | 7.4% | **0.483** | 0.711 | −0.228 |
 
 *Table 7: Predictability of the triage label. AUROC is cross-validated; the comparison column

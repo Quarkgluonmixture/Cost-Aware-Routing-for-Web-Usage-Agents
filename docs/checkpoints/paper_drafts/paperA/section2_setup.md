@@ -59,7 +59,19 @@ count. Neither contrast is a clean single-variable ablation, and §5 records the
 we did not control.
 
 Each cell runs all six modes over the same task set: 224 classifieds tasks and 203 reddit
-tasks after the preregistered exclusions. Success is the benchmark's own binary judgement.
+tasks. Success is the benchmark's own binary judgement.
+
+The reddit denominator requires disclosure. It is 205 as collected and 203 as scored, because
+two reddit tasks were removed from the scored set by a protocol amendment that we wrote
+**after all six modes had run in all six cells and after we had inspected the outcomes**. It
+is a post-hoc, outcome-visible amendment and we do not present it as preregistered. One
+removed task has an evaluator that scores inaction as success; the other has a reference
+answer recoverable without visiting the second site its own configuration declares. Both
+criteria were applied as uniform rules over the whole reddit task pool rather than
+task-by-task, and each rule selects exactly one task. The amendment moves the pooled reddit
+success rate from 6.94% to 6.40%, and it removes drop-one credit from P-SoM in the one cell
+where it touches the H1 estimand at all, so it works against this paper's own hypothesis.
+Sensitivity to including both tasks is reported in Appendix D.
 
 ### 2.4 What was preregistered
 
