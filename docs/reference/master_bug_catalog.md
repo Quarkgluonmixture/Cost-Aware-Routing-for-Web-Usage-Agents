@@ -8562,3 +8562,53 @@ mode 层守住了。凡是 `dict.get(key, <falsy default>)` 出现在**标签/�
 B-995 (no-success → None 而非 fallback "dom"); B-1640 (fold-aware bundle);
 `docs/checkpoints/pre_run/h10_artifact_regen_provenance_2026-07-22.md` §5 (发现现场);
 commit 本节。
+
+---
+
+## B-1888 — `defaults:` 继承只解析一层: 所有 WA config 从未继承 base (2026-07-27)
+
+**B-1888** (config 继承断链, **FIXED**, 潜伏约两个月) —
+`load_experiment_config` 展开 `defaults:` 时, 用**裸 `yaml.safe_load`** 读每个 default 文件
+(`config.py:190-191` 修前), **不递归解析那个文件自己的 `defaults:`**。于是二级继承链的第二级
+从来没被走过 —— 被引用文件里的 `defaults` 只是作为一个惰性的**普通 key** 合了进来。
+
+**为什么潜伏这么久**: VWA 的每个 per-condition config 都是**一级**继承
+(`exp_v2_B1_dom_reddit.yaml` → `exp_v2_base.yaml`), 一级链在旧代码下完全正确。
+而 **55 个 WA config 全是二级** (`exp_v2_B1_dom_wa_reddit.yaml` → `exp_v2_wa_base.yaml`
+→ `exp_v2_base.yaml`) —— 它们解析出来**整个 base 层是缺的**。
+WA 从 2026-05-15 生成 config 起**一次都没 fire 过**, 所以没有任何东西去踩它。
+
+**实证 (2026-07-27 WA reddit pilot 首次点火)**: runner 起来 40 秒即崩 ——
+`ValueError: Backend cfg missing required 'type' field (backend_id=local_4b)`
+(`p79/backends/factory.py:67` 的显式 dispatch)。`backends.local_4b` 只解析出
+`{max_new_tokens, temperature}` (WA per-condition 层自己写的两个), base 层的
+`type/path/quantization/device/min_free_vram_gb/dom_mode/mock_mode` 全部缺席。
+**丢的远不止 backend type**: token 单价 (`input_cost_per_1k`)、碳强度
+(`carbon_intensity_g_per_kwh: 220`)、`use_tool_calling` 等 paper-grade 契约字段
+在 WA 上全都没继承 —— 即使当初 fire 成功了, 产出的成本/碳数字也会是错的。
+
+**修**: 抽出 `_load_defaults_chain(path, _seen)` 递归解析被引用文件自身的 `defaults:`,
+并带**环检测** (`_seen` frozenset → 循环时 raise 而非无限递归)。另抽
+`_normalize_defaults_field` / `_resolve_default_path` 两个 helper 消除重复。
+**外层 fold 顺序一行未改** —— 仍是 `DEFAULT_CONFIG` 起手、按 defaults 顺序 merge、
+最后 merge 本文件 —— 这是保证既有行为不变的关键。
+
+**Fire-immutability 证明** (改的是 fire-path 代码, 必须证): 对全部 123 个 config 取
+`load_experiment_config` 结果的 SHA256 (剔除 `experiment.run_id` —— 它每次调用现 mint,
+是唯一的非确定性字段), 用 `git stash` 拿旧代码跑一遍、新代码跑一遍:
+**VWA 侧 68 个 config 全部逐字节不变 (changed = 0)**; 变的是 55 个 WA per-condition config
+(= 修复目标) ; `exp_v2_wa_base.yaml` 自身**也不变** —— 它是一级继承, 旧代码本就解析正确,
+这一条恰好反向印证了 bug 的边界就是"二级及以上"。
+
+**测试**: `tests/test_b1888_config_defaults_chain.py` 5 条 —— VWA 单层不变 / WA 二级达到 base /
+**全 config 扫描断言 default_backend 必有 `type`** (防第三级或新 benchmark 家族重蹈) /
+环检测 raise / `defaults` key 不泄漏进解析结果。全套件 **1536 passed / 0 failed**
+(基线 1531 + 本 5)。
+
+**教训**: 继承机制的测试必须覆盖**比现存最深链再深一层**。仓库里所有真正在跑的 config 都是
+一级链, 于是"继承能用"被一级链的成功持续证实了两个月, 而二级链的失败**没有任何一个消费者**
+去触发。一个只有一种深度在用的递归结构, 等于没测过递归。
+
+**Cross-link**: B-647 (同日解除的 WA reset guard —— 两者都是"WA 路径从未被执行过"暴露出来的);
+`p79/backends/factory.py:67` (显式 dispatch, 崩溃现场);
+`configs/exp_v2_wa_base.yaml` (唯一的二级中间层); commit 本节。
