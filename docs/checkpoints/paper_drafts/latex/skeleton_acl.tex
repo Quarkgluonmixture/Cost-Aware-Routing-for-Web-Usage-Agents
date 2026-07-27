@@ -85,6 +85,15 @@
 
 \input{body_generated.tex}
 
+% Everything above this label is counted against the venue's content limit.
+% Limitations, references and appendices below it are not.
+\label{content-end}
+
+% ACL requires an unnumbered Limitations section after the body (acl_latex.tex
+% ships it as \section*{Limitations}), and venue policy does not count it
+% against the content page limit. convert.sh fills this in from limitations.md.
+@@LIMITATIONS_INPUT@@
+
 % The labels let the dry-run report locate the page on which references
 % begin without forcing a page break (which would distort the page count).
 \label{refs-start}

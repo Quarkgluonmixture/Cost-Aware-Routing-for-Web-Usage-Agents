@@ -78,14 +78,13 @@ dominance requires no worse on both axes; no cell achieves it. The parenthetical
 router's deltas relative to the fixed policy.*
 
 **No cell Pareto-dominates the fixed policy.** Every cell where the router retains more
-accuracy pays more to do it; the one cell where it costs about the same retains less. In
-classifieds · B2 the router is dominated outright, worse accuracy *and* higher cost than
-taking the cheapest mode everywhere.
+accuracy pays more to do it, and in classifieds · B2 it is dominated outright, worse on both
+axes than taking the cheapest mode everywhere.
 
-These are trade-off points, not wins. A deployment could rationally choose the reddit · B0
-row (5.42 percentage points of accuracy for 0.3% more cost is a good exchange) but that
-is a decision about how much accuracy is worth, not a demonstration that routing pays for
-itself. And it is available only in the cell with the highest solvable rate on reddit.
+These are trade-off points, not wins. A deployment could rationally choose the reddit · B0 row,
+where 5.42 points of accuracy cost 0.3% more, but that is a judgement about how much accuracy
+is worth rather than a demonstration that the router beats the free alternative, and it is
+available only in the cell with the highest solvable rate on reddit.
 
 ### 5.4 The one significant cell, and why it does not help
 
@@ -95,15 +94,13 @@ the selection procedure fixed so that the null and the observation share it. Und
 Holm correction [@holm1979sequentially] across the six cells, one saving survives: reddit · B2, at p = 0.0050
 against a threshold of 0.0083.
 
-That cell has AUROC 0.483, below chance, and below its own best single covariate at 0.711.
-The two facts are not in conflict, and the reason is instructive. AUROC scores the *global*
-ranking. The saving comes from the *tail*. Reddit · B2 sends 192 of 203 tasks (95%) to the
-cheap mode with no accuracy loss. That is unsurprising in a cell where only 7.4% of tasks
-are solvable at all: almost nothing in that 95% was going to succeed under any mode. The
-policy therefore differs from the free fixed one by five percent of the allocation, and
-the 11 tasks it holds back for the strong mode carry four successes that the fixed policy
-does not collect. The permutation test detects that enrichment. A globally ordered score is not
-required to produce it, and AUROC does not see it.
+That cell has AUROC 0.483, below chance and below its own best single covariate at 0.711. The
+two facts are not in conflict: AUROC scores the *global* ranking and the saving comes from the
+*tail*. Reddit · B2 sends 192 of 203 tasks (95%) to the cheap mode with no accuracy loss, which
+is unsurprising where only 7.4% of tasks are solvable at all. It therefore differs from the
+free fixed policy by five percent of the allocation, and the 11 tasks it holds back carry four
+successes the fixed policy does not collect. The permutation test detects that enrichment; a
+globally ordered score is not required to produce it, and AUROC does not see it.
 
 So the honest reading of §5 is not "the label is predictable, yet triage fails". It is:
 
@@ -111,7 +108,6 @@ So the honest reading of §5 is not "the label is predictable, yet triage fails"
 > policy to save money. What decides the outcome is whether a handful of tail tasks fall on
 > the correct side of the threshold, and at n = 203 that handful is four successes.
 
-This is why we regard the negative result as robust rather than underpowered. The
-quantities that would need to improve are not "more data to estimate the score better":
-the score is already better than the strongest single feature in four cells. They are
-"more solve events in the tail", which returns to §4's constraint.
+This is why we regard the negative result as robust rather than underpowered. What would have
+to improve is not the score, which already beats the strongest single feature in four cells,
+but the number of solve events in the tail, which returns to §4's constraint.

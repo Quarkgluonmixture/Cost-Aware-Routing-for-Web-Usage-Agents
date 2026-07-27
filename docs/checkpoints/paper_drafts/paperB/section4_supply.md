@@ -46,17 +46,14 @@ the threshold used by our pipeline, and unremarkable as practice, leaves:
 Fewer than two surviving classes leaves nothing to discriminate between, which is the state
 of four of the six cells.*
 
-**Four of six cells admit no classifier**: fewer than two classes survive, so there is
-nothing to discriminate between. Of the two that survive, one retains three of six classes
-and the other two. Training the full pipeline end to end confirms the arithmetic: one cell
-trains completely across all five folds, one trains in four of five, and the remaining four
-produce no usable model.
+**Four of six cells admit no classifier**: fewer than two classes survive, so there is nothing
+to discriminate between. Of the two that survive, one retains three of six classes and the
+other two. Training the pipeline end to end confirms the arithmetic: one cell trains across all
+five folds, one in four of five, and the remaining four produce no usable model.
 
-A reviewer might reasonably ask whether the threshold is itself the problem. Lowering it
-would not create examples. It would only permit fitting classes represented by a handful of
-rows, converting an honest refusal into an overfitted model whose cross-validated
-performance we would then have to discount anyway. The binding constraint is the count of
-labelled examples, and no threshold changes that.
+Lowering the threshold would not create examples. It would only permit fitting classes
+represented by a handful of rows, converting an honest refusal into an overfitted model whose
+cross-validated performance we would then discount anyway.
 
 ### 4.3 The supervision is also arbitrary where it exists
 

@@ -59,21 +59,16 @@ a six-class model needs. The triage half needs the binary label, which §5 shows
 and predictable and still buys nothing a fixed policy does not already deliver. Neither half
 of the ceiling survives, and each fails for its own reason.
 
-### 3.2 The cost half is largest where the agent is weakest
+### 3.2 Why the fixed baseline is the one that matters
 
-Within classifieds the triage saving grows monotonically as the solvable rate falls: 12.8% at
-43.3% solvable, 19.4% at 24.6%, 21.3% at 7.1%; reddit shows the same direction without being
-monotone. The mechanism is unflattering. When almost every task is hopeless, almost every task
-can be sent to the cheapest mode without losing anything, so the advantage over "use the best
-mode everywhere" is large precisely because failure is cheap to reach.
+The cost half is largest where the agent is weakest: within classifieds the triage saving grows
+from 12.8% at 43.3% solvable to 21.3% at 7.1%. The mechanism is unflattering. When almost every
+task is hopeless, almost every task can be sent to the cheapest mode without losing anything,
+so a policy that never pays for anything captures much of that saving for free. Table 1 shows
+always-cheapest already spending 10.4% to 34.5% less than the best single mode while giving up
+0.00 to 7.39 points of success rate, and on classifieds · B2 giving up nothing at all.
 
-This is why §2.5 insists on the always-cheapest baseline: a policy that never pays for anything
-captures much of that saving for free. Table 1 shows it already spending 10.4% to 34.5% less
-than the best single mode, giving up 0.00 to 7.39 points of success rate. On classifieds · B2
-it gives up nothing at all while costing 22.1% less, so in that cell the cost half is already
-solved by a fixed policy and any learned router can at best tie it.
-
-The remaining cells define the actual target. A useful router must land somewhere the oracle
-reaches and always-cheapest does not: recover accuracy that always-cheapest gives up, or cost
-that it does not, without giving back the other. Sections 4 and 5 show that neither of the two
-natural supervision targets gets there.
+That is why §2.5 measures against it. A useful router must land somewhere the oracle reaches
+and always-cheapest does not: recover accuracy that always-cheapest gives up, or cost that it
+does not, without giving back the other. Sections 4 and 5 show that neither supervision target
+gets there.

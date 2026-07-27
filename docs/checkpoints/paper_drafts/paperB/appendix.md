@@ -88,3 +88,39 @@ one backbone.
 ceiling rises on the same solve events, because backbones that disagree about which mode is
 best still agree about whether the screenshot is needed. No classifier is fitted to this
 target anywhere in the paper; only its ceiling is measured.*
+
+## B. Derivations for the four relabelling routes
+
+§6 states the outcome of each route. This appendix gives the derivation.
+
+### B.1 Continuous labels
+
+The cleanest fix would be to regress on a graded quality signal rather than classify a discrete
+winner: partial credit turns every episode into a training example regardless of whether it
+succeeded. VisualWebArena does not provide one. Across 7,963 episodes the evaluator emits
+exactly two values, 0.0 and 1.0, in a 7,278 / 685 split. This is a property of the benchmark's
+evaluation design rather than of our pipeline, and it forecloses the route entirely.
+
+### B.2 Coarser classes
+
+§4.2's obstruction is that four of six cells have fewer than ten labelled rows in more than one
+class. Merging classes does not add rows. The binary collapse of §6 does help, but for a
+different reason, having to do with agreement across backbones rather than with class count.
+
+### B.3 Pooling across backbones
+
+Six cells at 15–97 labels become 260 pooled examples and every class clears the minimum-count
+filter, so supply is solved. Identifiability is not. The features carry no model identity, so
+two backbones facing the same task on the same site produce the same feature vector, and when
+their oracle labels differ a task-feature classifier is being asked to emit two different
+answers for one input. The Bayes ceiling reported in A.4 is the accuracy of the best possible
+rule on the pooled set, which is to emit the modal label for each distinct feature vector.
+
+### B.4 Screenshot tier
+
+The tier label is derived from the same solve events as the which-mode label, by mapping each
+oracle mode to image-bearing (SoM, Vision) or text-only (DOM, P-text, P-prompt, P-SoM). No new
+episodes are involved, which is why the ceiling rises without a single new solve event. The
+tier is defined only on tasks that some mode solved, so its denominator is the solved set and
+not the full task universe; A.5 reports it over tasks solved by at least two backbones, the
+only set on which cross-backbone agreement is defined.

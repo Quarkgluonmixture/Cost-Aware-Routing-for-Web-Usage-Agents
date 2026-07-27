@@ -3,38 +3,33 @@
 **Cost-aware routing for LLM serving.** A body of work routes queries among models of
 differing price, typically learning a predictor of whether the cheap model suffices
 [@chen2023frugalgpt; @ding2024hybridllm; @ong2025routellm; @gupta2024cascades;
-@webrouter2025], with uncertainty and calibration as the usual routing signal
-[@guo2017calibration; @kadavath2022know; @peale2026flexibleRouting], and recent surveys
-covering the design space [@moslem2026routingsurvey]. Serving-system work routes by modality
-and stage rather than by query [@qiu2025modserve]. These systems operate in a regime unlike
-ours in two respects that our results suggest are decisive: the cheap model succeeds often, so
-supervision is plentiful, and the task is single-turn, so the outcome is observed immediately
-and cheaply. Multi-step agent routing is more recent and closer to our setting
-[@wang2026boundaryrouter; @li2026dmr]; it has not, to our knowledge, reported the supply
-accounting of §4. Our §4 argument is that the first property is what makes the serving
-literature's supervision available, and our §5 argument is that even when it is available,
-the baseline the router must beat is the fixed cheap policy rather than the expensive one.
+@webrouter2025], usually on an uncertainty or calibration signal
+[@guo2017calibration; @kadavath2022know; @peale2026flexibleRouting] and surveyed by
+[@moslem2026routingsurvey]; serving systems route by modality and stage rather than by query
+[@qiu2025modserve]. That regime differs from ours in two respects our results suggest are
+decisive: the cheap model succeeds often, so supervision is plentiful, and the task is
+single-turn, so the outcome is observed immediately. Multi-step agent routing is closer to our
+setting [@wang2026boundaryrouter; @li2026dmr] but has not, to our knowledge, reported the
+supply accounting of §4. Our §5 adds that even where supervision is available, the baseline to
+beat is the fixed cheap policy rather than the expensive one.
 
-**Web agents and observation modes.** Benchmarks and agents in this area treat DOM-derived
-text [@zhou2024webarena; @deng2023mind2web; @agentoccam2025], screenshots
-[@he2024webvoyager], and annotated screenshots [@koh2024visualwebarena; @zheng2024seeact] as
-design choices fixed per system. Where multiple modes are compared, the comparison is usually
-between systems rather than within a task set, so the per-task complementarity that a router
-would exploit is not measured; the exception is work that varies observation content while
-holding the system fixed [@enomoto2026observation; @schiepanski2025d2snap], which measures
-cost and accuracy but not per-task disagreement. Our §3 ceiling is a measurement of that
-complementarity, and it is the reason we consider the routing question worth asking despite
-answering it negatively.
+**Web agents and observation modes.** Benchmarks and agents treat DOM-derived text
+[@zhou2024webarena; @deng2023mind2web; @agentoccam2025], screenshots [@he2024webvoyager], and
+annotated screenshots [@koh2024visualwebarena; @zheng2024seeact] as design choices fixed per
+system, so cross-mode comparisons are between systems rather than within a task set and the
+per-task complementarity a router would exploit goes unmeasured. Work that varies observation
+content while holding the system fixed [@enomoto2026observation; @schiepanski2025d2snap]
+measures cost and accuracy but not per-task disagreement. Our §3 ceiling measures exactly that,
+and it is why we consider the routing question worth asking despite answering it negatively.
 
-**Negative results and evaluation practice.** Our methodological findings, that nesting
-the operating-point selection changes conclusions [@cawley2010overfitting], and that the
-choice of baseline decides whether a saving exists, are instances of concerns raised
-repeatedly in evaluation methodology work [@lipton2018troubling], and specifically in web-agent
-evaluation, where reported progress has proved sensitive to harness and judging details
-[@xue2025illusion; @elhattami2025webarenaverified; @lu2025agentrewardbench;
-@he2025nondeterminism]. We report them as concrete measurements rather than as
-recommendations: §5.2 quantifies the nesting effect at −0.99 to +1.34 percentage points, and
-§5.3 shows the baseline switch removing every saving.
+**Negative results and evaluation practice.** That nesting the operating-point selection
+changes conclusions [@cawley2010overfitting] and that the choice of baseline decides whether a
+saving exists are instances of concerns raised repeatedly in evaluation methodology
+[@lipton2018troubling], and specifically in web-agent evaluation, where reported progress has
+proved sensitive to harness and judging details [@xue2025illusion;
+@elhattami2025webarenaverified; @lu2025agentrewardbench; @he2025nondeterminism]. We report
+them as measurements rather than recommendations: §5.2 quantifies the nesting effect and §5.3
+shows the baseline switch removing every saving.
 
 ## 8. Discussion
 
@@ -66,30 +61,14 @@ more signal. But §5.1 shows the signal is already present and §5.3 shows that 
 into value fails at the policy-comparison step, not at the prediction step. A better predictor
 does not address that.
 
-### 8.3 Limitations
-
-**Two sites, one benchmark.** Site-level effects and benchmark-level evaluation design
-(notably the binary score of §6.1) are not separable at this scale. A benchmark with graded
-outcomes could reopen §6.1 without changing §4.
-
-**Offline replay, no live routing.** We never served a router. All results exclude router
-inference cost and latency, which flatters the router and therefore strengthens a negative
-result, but it means we have not measured a deployment. A mode chosen at step 0 is used for
-the whole episode in our replay, so the interaction between routing decisions and multi-step
-trajectory dynamics, including adaptive mid-episode switching, is unexamined.
-
-**Cost is not pooled across backbones.** API pricing and electricity-derived cost differ by
-roughly three orders of magnitude per token, so we compare ratios within a backbone only.
-Cross-backbone cost statements would be unit collisions.
-
-### 8.4 Implications
+### 8.3 Implications
 
 For practitioners, the operational recommendation is uncomfortable but concrete: at current
 web-agent success rates, compare any proposed router against always-taking-the-cheapest-mode
 before building it. In none of our six cells did anything we learned Pareto-dominate that
 fixed policy, and in one the fixed policy dominates the learned router outright.
 
-For benchmark designers, §6.1 identifies a low-cost intervention with disproportionate
+For benchmark designers, §6 identifies a low-cost intervention with disproportionate
 value. A graded per-task score (even three levels) would convert every episode into a
 training signal instead of only the successful ones, and would reopen a route that is
 currently closed by a design decision rather than by anything intrinsic to the task. Work on

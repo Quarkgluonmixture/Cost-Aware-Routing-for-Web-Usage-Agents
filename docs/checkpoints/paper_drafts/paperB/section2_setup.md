@@ -6,24 +6,22 @@ We evaluate on VisualWebArena [@koh2024visualwebarena], on the classifieds and r
 Every task is run under six observation modes that differ in what the agent receives at each
 step:
 
-DOM sends the accessibility tree under a prompt naming it as an accessibility tree. SoM sends
-a screenshot with numbered marks plus a legend naming them. Vision sends an unannotated
-screenshot and no text payload. The three P-modes are text-only variants that keep either the
-mark legend, the SoM prompt, or both, while removing the per-step screenshot. Appendix A.1
-gives the full grid.
+DOM sends the accessibility tree under a prompt that names it an accessibility tree. SoM sends
+a screenshot with
+numbered marks plus a legend naming them. Vision sends an unannotated screenshot and no text
+payload. The three P-modes keep the mark legend, the SoM prompt, or both, while removing the
+per-step screenshot. Appendix A.1 gives the full grid.
 
-Their internal structure matters here only through what they cost, and the measured costs do
-not follow the obvious rule. Modes without a per-step screenshot do cost roughly what DOM
-costs. But **Vision is the cheapest mode in all six cells**, below every text-only mode,
+The modes matter here only through what they cost, and the measured costs do not follow the
+obvious rule. **Vision is the cheapest mode in all six cells**, below every text-only mode,
 because dropping the accessibility tree saves more input tokens than the screenshot adds. Cost
-here tracks a mode's token count per step, not the presence of an image, and any tier built on
+tracks a mode's token count per step, not the presence of an image, so any tier built on
 "image versus text" is a modality partition rather than a cost one.
 
-Three backbones span roughly two orders of magnitude of capability and cross a model
-family boundary: a 235B mixture-of-experts model served through an API (B0), a 4B
-dense model served locally (B1), and a 4B model from a different family (B2). Crossing
-sites with backbones gives six cells. Each cell contains six modes over the same task
-set, so within a cell every mode faces an identical task universe: 224 tasks on
+Three backbones span roughly two orders of magnitude of capability and cross a family
+boundary: a 235B mixture-of-experts model served through an API (B0), a 4B dense model served
+locally (B1), and a 4B model from a different family (B2). Crossing sites with backbones gives
+six cells, each running all six modes over an identical task universe: 224 tasks on
 classifieds and 203 on reddit.
 
 The reddit figure is 205 as collected and 203 as scored. Two reddit tasks were removed from

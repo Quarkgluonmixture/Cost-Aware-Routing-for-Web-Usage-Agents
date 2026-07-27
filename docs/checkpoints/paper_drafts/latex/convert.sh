@@ -68,6 +68,8 @@ case "$PAPER" in
     )
     EXPECTED_TABLES=4
     FIGURES=(fig_f1_diamond_schematic.pdf fig_f2_h1_forest.pdf)
+    # Paper A is inside its page budget with all four tables two-column.
+    SINGLE_COL_BODY=''
     ;;
   paperB)
     SECTIONS=(
@@ -81,6 +83,11 @@ case "$PAPER" in
     )
     EXPECTED_TABLES=12
     FIGURES=()
+    # Table 1 (the ceiling) is the headline and has six columns; it stays
+    # two-column so its header does not wrap to three lines. Tables 2-7 were
+    # rendered and checked at one column on 2026-07-27. The appendix has no page
+    # pressure, so its tables stay two-column.
+    SINGLE_COL_BODY='2 3 4 5 6 7'
     ;;
 esac
 
@@ -198,9 +205,28 @@ pandoc "${PANDOC_ARGS[@]}" "$BUILD_DIR/body.md" \
 # tables whose headers are plain `l` columns then overrun the column and print
 # on top of the neighbouring text, with no Overfull warning to catch it. Width
 # safety beats one page; the page budget is managed by the appendix instead.
+# SINGLE_COL lists the 1-based indices, in document order, of tables to place in
+# a one-column `table` float instead of a two-column `table*`. Two-column is the
+# default because it is always width-safe.
+#
+# Why this is a per-table list and not a rule. A single-column float is much
+# cheaper in pages (measured 2026-07-27 on paper B: seven two-column tables cost
+# 2 pages over the prose, the same seven single-column cost 1), but whether a
+# given table survives the narrower measure depends on its content, not on
+# anything derivable from the markup. Pandoc emits plain `l` columns whenever the
+# cells are short relative to the FULL text width; those columns do not reflow,
+# so in one column a long header can run past the column edge -- and it does so
+# **without an Overfull warning**, printing on top of the neighbouring text. That
+# is what happened to paper B's six-mode table (header "annotated screenshot"),
+# caught only by rendering the page to an image. So: default to table*, move a
+# table into this list only after looking at the rendered page, and re-check the
+# list whenever a table's columns or headers change.
 cat > "$BUILD_DIR/floatify.pl" <<'FLOATIFY'
 local $/;
 my $t = <STDIN>;
+my %single = map { $_ => 1 } split /\s+/, ($ENV{SINGLE_COL} // '');
+my $seen = 0;
+
 $t =~ s{\{\\def\\LTcaptype\{none\}\s*%[^\n]*\n}{}g;
 $t =~ s{(\\end\{longtable\})\s*\n\}}{$1}g;
 $t =~ s{\\begin\{longtable\}\[\]}{\\begin{tabular}}g;
@@ -210,8 +236,12 @@ $t =~ s{\\endlastfoot\s*}{}g;
 
 sub floatify {
   my ($tabular, $caption) = @_;
-  return "\\begin{table*}[t]\n\\centering\n\\caption{$caption}\n\\small\n"
-       . "\\setlength{\\tabcolsep}{4pt}\n$tabular\n\\end{table*}\n\n";
+  $seen++;
+  my ($env, $place, $size, $sep) = $single{$seen}
+    ? ("table",  "[tbp]", "\\footnotesize", "3pt")
+    : ("table*", "[t]",   "\\small",        "4pt");
+  return "\\begin{$env}$place\n\\centering\n\\caption{$caption}\n$size\n"
+       . "\\setlength{\\tabcolsep}{$sep}\n$tabular\n\\end{$env}\n\n";
 }
 
 $t =~ s{(\\begin\{tabular\}.*?\\end\{tabular\})\s*\\emph\{Table\s+[0-9]+:\s*([^\n]*)\}\s*}
@@ -221,8 +251,24 @@ $t =~ s{\\emph\{Table\s+[0-9]+:\s*([^\n]*)\}\s*(\\begin\{tabular\}.*?\\end\{tabu
 print $t;
 FLOATIFY
 
-perl "$BUILD_DIR/floatify.pl" \
+SINGLE_COL="$SINGLE_COL_BODY" perl "$BUILD_DIR/floatify.pl" \
   < "$BUILD_DIR/body_pandoc.tex" > "$BUILD_DIR/body_generated.tex"
+
+# Limitations. ACL requires this as an unnumbered section after the body, and
+# venue policy does not count it against the content page limit. It is a
+# separate source file rather than a numbered subsection so that the requirement
+# is visibly met and the page accounting is honest.
+LIMITATIONS_SOURCE="$DRAFT_DIR/limitations.md"
+LIMITATIONS_INPUT=''
+if [[ -f "$LIMITATIONS_SOURCE" ]]; then
+  perl -Mutf8 -CSDA -0777 -pe '
+    s{<!--.*?-->}{}gs;
+    s{\$(?=\d)}{\\\$}g;
+  ' "$LIMITATIONS_SOURCE" > "$BUILD_DIR/limitations_sanitized.md"
+  pandoc "${PANDOC_ARGS[@]}" "$BUILD_DIR/limitations_sanitized.md" \
+    > "$BUILD_DIR/limitations_generated.tex"
+  LIMITATIONS_INPUT='\section*{Limitations}\input{limitations_generated.tex}'
+fi
 
 # Optional appendix. REALM does not count references or appendices against the
 # 8-page content limit, so supporting tables live here rather than being cut.
@@ -239,7 +285,7 @@ if [[ -f "$APPENDIX_SOURCE" ]]; then
   ' "$APPENDIX_SOURCE" > "$BUILD_DIR/appendix_sanitized.md"
   pandoc "${PANDOC_ARGS[@]}" "$BUILD_DIR/appendix_sanitized.md" \
     > "$BUILD_DIR/appendix_pandoc.tex"
-  perl "$BUILD_DIR/floatify.pl" \
+  SINGLE_COL="" perl "$BUILD_DIR/floatify.pl" \
     < "$BUILD_DIR/appendix_pandoc.tex" > "$BUILD_DIR/appendix_generated.tex"
   APPENDIX_INPUT='\appendix\input{appendix_generated.tex}'
   if rg -q '\\begin\{longtable\}' "$BUILD_DIR/appendix_generated.tex"; then
@@ -284,6 +330,7 @@ fi
 # several hundred log lines away from the actual cause. Say it here instead.
 TEX_PARTS=("$BUILD_DIR/body_generated.tex" "$BUILD_DIR/abstract_generated.tex")
 [[ -f "$BUILD_DIR/appendix_generated.tex" ]] && TEX_PARTS+=("$BUILD_DIR/appendix_generated.tex")
+[[ -f "$BUILD_DIR/limitations_generated.tex" ]] && TEX_PARTS+=("$BUILD_DIR/limitations_generated.tex")
 CITE_COUNT="$({ rg -o '\\cite[a-zA-Z]*\{' "${TEX_PARTS[@]}" || true; } | wc -l)"
 if [[ "$CITE_COUNT" -eq 0 ]]; then
   printf 'ERROR: no \\cite commands in the generated TeX. bibtex would emit an empty\n' >&2
@@ -297,9 +344,10 @@ if rg -q '\\begin\{longtable\}|\\end\{longtable\}' "$BUILD_DIR/body_generated.te
   rg -n '\\begin\{longtable\}' "$BUILD_DIR/body_generated.tex" >&2 || true
   exit 2
 fi
-# Counted over body plus appendix, so moving a table across that boundary to
-# manage the page budget does not silently change what the assertion covers.
-ACTUAL_TABLES="$({ rg -o '\\begin\{table\*\}' "${TEX_PARTS[@]}" || true; } | wc -l)"
+# Counted over body plus appendix, and over both float classes, so neither
+# moving a table across that boundary nor switching it to one column silently
+# changes what the assertion covers.
+ACTUAL_TABLES="$({ rg -o '\\begin\{table\*?\}' "${TEX_PARTS[@]}" || true; } | wc -l)"
 if [[ "${ACTUAL_TABLES:-0}" -ne "$EXPECTED_TABLES" ]]; then
   printf 'ERROR: expected %s converted table* environments across body+appendix, found %s\n' \
     "$EXPECTED_TABLES" "${ACTUAL_TABLES:-0}" >&2
@@ -324,11 +372,13 @@ fi
 
 VENUE_SETUP_SED="${VENUE_SETUP//\\/\\\\}"
 APPENDIX_INPUT_SED="${APPENDIX_INPUT//\\/\\\\}"
+LIMITATIONS_INPUT_SED="${LIMITATIONS_INPUT//\\/\\\\}"
 sed \
   -e "s|@@VENUE_SETUP@@|$VENUE_SETUP_SED|g" \
   -e "s|@@BIB_STYLE@@|$BIB_STYLE|g" \
   -e "s|@@TEMPLATE_VERSION@@|$TEMPLATE_VERSION|g" \
   -e "s|@@APPENDIX_INPUT@@|$APPENDIX_INPUT_SED|g" \
+  -e "s|@@LIMITATIONS_INPUT@@|$LIMITATIONS_INPUT_SED|g" \
   "$SKELETON" > "$BUILD_DIR/main.tex"
 printf '%s\n' "$BUILD_MODE" > "$BUILD_DIR/build_mode.txt"
 
@@ -340,12 +390,16 @@ printf '%s\n' "$BUILD_MODE" > "$BUILD_DIR/build_mode.txt"
 PAGES="$(pdfinfo "$BUILD_DIR/main.pdf" | awk '/^Pages:/ { print $2 }')"
 TODO_COUNT="$({ rg -o '\\todo\{' "$BUILD_DIR/abstract_generated.tex" "$BUILD_DIR/body_generated.tex" || true; } | wc -l)"
 REF_PAGE="$(sed -n 's/.*\\newlabel{refs-start}{{[^}]*}{\([^}]*\)}.*/\1/p' "$BUILD_DIR/main.aux" | tail -n 1)"
+# Content = everything up to \label{content-end}. Limitations, references and
+# appendices sit after it and are not counted by the venue.
+CONTENT_PAGE="$(sed -n 's/.*\\newlabel{content-end}{{[^}]*}{\([^}]*\)}.*/\1/p' "$BUILD_DIR/main.aux" | tail -n 1)"
 UNDEF_CITES="$({ rg -o 'Citation .* undefined' "$BUILD_DIR/main.log" || true; } | wc -l)"
 
 printf '\nPaper: %s\n' "$PAPER"
 printf 'Build mode: %s\n' "$BUILD_MODE"
 printf 'PDF: %s (%s pages)\n' "$BUILD_DIR/main.pdf" "$PAGES"
-printf 'Reference start page: %s (REALM content limit is 8)\n' "${REF_PAGE:-unknown}"
+printf 'Content ends on page: %s (REALM content limit is 8)\n' "${CONTENT_PAGE:-unknown}"
+printf 'Reference start page: %s\n' "${REF_PAGE:-unknown}"
 printf 'Visible TODO slots: %s\n' "$TODO_COUNT"
 printf 'Undefined citations: %s\n' "$UNDEF_CITES"
 
@@ -361,12 +415,12 @@ if [[ "$SUBMISSION" -eq 1 ]]; then
     rg -n 'Citation .* undefined' "$BUILD_DIR/main.log" >&2 || true
     SUBMISSION_FAILED=1
   fi
-  if [[ -z "${REF_PAGE:-}" ]]; then
-    printf 'ERROR: --submission could not locate the reference start page\n' >&2
+  if [[ -z "${CONTENT_PAGE:-}" ]]; then
+    printf 'ERROR: --submission could not locate the content-end label\n' >&2
     SUBMISSION_FAILED=1
-  elif [[ "$REF_PAGE" -gt 9 ]]; then
-    printf 'ERROR: --submission requires content within 8 pages; references start on page %s\n' \
-      "$REF_PAGE" >&2
+  elif [[ "$CONTENT_PAGE" -gt 8 ]]; then
+    printf 'ERROR: --submission requires content within 8 pages; content ends on page %s\n' \
+      "$CONTENT_PAGE" >&2
     SUBMISSION_FAILED=1
   fi
   [[ "$SUBMISSION_FAILED" -eq 0 ]] || exit 2
