@@ -451,6 +451,34 @@ except Exception:
   export RUN_TS_FULL="${ts_full}"
 }
 
+# ---------- 4b. WA reset support predicate (B-647 partial lift, 2026-07-27) ----------
+# wa_reset_supported <benchmark> <site>
+#   rc=0 → RESET_BEFORE=1 can be honoured for this (benchmark, site) pair.
+#   rc=1 → caller must hard-fail (no silent skip; that was the original B-647 bug).
+#
+# The B-647 scaffold (2026-05-17) assumed WA would need its OWN docker stack
+# (`wa_reddit` / `wa_shopping` containers) plus WA-specific auth credentials, and
+# so hard-failed every WA reset. That assumption does not hold on the A100
+# paper-grade host: WA and VWA share ONE container set. WA reddit *is* the
+# `vwa-reddit` postmill container, from the same
+# `postmill-populated-exposed-withimg` image, reached on the same port, and
+# authenticated by the same `.auth/reddit_state.json` under the same account
+# (`storage_state` is byte-identical across both benchmarks' reddit task files).
+# VWA is a fork of WebArena, so for reddit the reset semantics are identical
+# rather than merely analogous.
+#
+# WA reddit therefore routes to the existing `_reset_vwa_local_reddit`
+# (docker rm -f + docker run; the image self-seeds) with zero new reset code and
+# zero new credentials. WA shopping / shopping_admin stay unsupported for exactly
+# the reason VWA shopping is: the Magento DB restore is genuinely unimplemented
+# (rc=78 sentinel in `_reset_vwa_local_shopping`).
+wa_reset_supported() {
+  local benchmark="${1:?benchmark required}" site="${2:?site required}"
+  [[ "${benchmark}" != "wa" ]] && return 0   # VWA path unchanged
+  [[ "${site}" == "reddit" ]] && return 0    # shares the VWA postmill container
+  return 1                                    # WA shopping / shopping_admin: no reset impl
+}
+
 # ---------- 5. Reset + auth gate (B-224 hard-fail) ----------
 # reset_and_auth_gate <site> <repo_dir> <python_bin> <log_prefix> <reset_label>
 #   Source reset_vwa_sites.sh, call reset_vwa_sites, sleep 15s, run

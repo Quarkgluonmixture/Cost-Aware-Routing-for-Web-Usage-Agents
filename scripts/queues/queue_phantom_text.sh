@@ -152,12 +152,12 @@ else
   # ---------- Optional: site reset before launch ----------
   # IMPORTANT: reset AFTER idempotent runner check (race fixed 2026-04-28 §104).
   # A1.13 P0-1 (2026-05-16) propagated B-224 hard-fail via reset_and_auth_gate.
-  if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
+  if [[ "${RESET_BEFORE:-0}" == "1" ]] && wa_reset_supported "${BENCHMARK}" "${SITE}"; then
     reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_text" --reset-label "phantom_text_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     # B-647 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
-    echo "[phantom_text][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-647)." >&2
-    echo "[phantom_text][error] scripts/maintenance/reset_wa_sites.sh is scaffold only; fill per-site bodies + remove this guard for WA paper-grade." >&2
+    echo "[phantom_text][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported for site=${SITE} (B-647 remainder; reddit IS supported)." >&2
+    echo "[phantom_text][error] WA reddit routes to the VWA postmill reset (shared container); WA shopping/shopping_admin still need a Magento DB restore, same gap as VWA shopping." >&2
     exit 1
   fi
 

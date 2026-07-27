@@ -201,7 +201,7 @@ else
   # a runner is attached destroys site state under it (race condition fixed
   # 2026-04-28 — see 实验笔记 §104). reset_and_auth_gate (in lib) enforces
   # B-224 hard-fail (no soft-warn fallthrough).
-  if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
+  if [[ "${RESET_BEFORE:-0}" == "1" ]] && wa_reset_supported "${BENCHMARK}" "${SITE}"; then
     reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "baseline" --reset-label "baseline_${MODE}_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     # B-647 (A1.13 P1-4-BC codex F7 + gemini G6 fix, 2026-05-17): hard-fail
@@ -210,8 +210,8 @@ else
     # scaffold lands here (returns rc=78 "not implemented" until Phase 1b impl).
     # To bypass paper-grade gate intentionally (e.g., explicit dirty dev run):
     # set RESET_BEFORE=0 + accept watchdog-reactive-only auth refresh.
-    echo "[baseline][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-647)." >&2
-    echo "[baseline][error] scripts/maintenance/reset_wa_sites.sh is scaffold only; per-site reset bodies + auth_required_gate WA support are pending." >&2
+    echo "[baseline][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported for site=${SITE} (B-647 remainder; reddit IS supported)." >&2
+    echo "[baseline][error] WA reddit routes to the VWA postmill reset (shared container); WA shopping/shopping_admin still need a Magento DB restore, same gap as VWA shopping." >&2
     echo "[baseline][error] To proceed: (a) implement reset_wa_sites.sh per its header roadmap, OR (b) set RESET_BEFORE=0 for explicit dirty run." >&2
     exit 1
   fi
