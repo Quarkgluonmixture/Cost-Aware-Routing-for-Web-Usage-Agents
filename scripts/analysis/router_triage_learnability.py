@@ -210,43 +210,120 @@ def evaluate(cell_spec: dict) -> dict | None:
     # already ties on SR it wins outright. A learned triage has to beat THIS.
     always_cheap = {"sr_pct": per_mode_sr[cheap_mode], "mean_cost": per_mode_cost[cheap_mode]}
 
-    # ---- Honest operating point: NESTED threshold selection.
+    # ---- Honest operating point: FULLY NESTED cross-validation.
     #
-    # The sweep below picks the threshold by looking at realized outcomes on the
-    # WHOLE cell, so its "SR-lossless" point is in-sample with respect to the
-    # threshold even though the scores are out-of-fold. Cross-AI audit and self
-    # audit flagged this independently (2026-07-27). It is retained because the
-    # permutation null shares the same selection step — so the p-values compare
-    # like with like — but it must NOT be read as an achievable operating point.
-    # `nested` below is the achievable one: per outer fold, choose the threshold
-    # on the training folds only, then apply it blind to the held-out fold.
-    nested_hits = nested_spend = 0
+    # The sweep further down picks its threshold by looking at realized outcomes
+    # on the WHOLE cell, so its "SR-lossless" point is in-sample with respect to
+    # the threshold even though the scores are out-of-fold. Claude, codex and
+    # gemini each flagged that independently (2026-07-27). It is retained because
+    # the permutation null shares the same selection step — so those p-values
+    # compare like with like — but it is NOT an achievable operating point.
+    #
+    # B-1903 (fixed 2026-07-27): the first attempt at an honest point, added the
+    # same day, was only HALF nested and codex caught it. Three leaks:
+    #   (1) it scored held-out rows with `sc["lr"]`, the GLOBAL out-of-fold score
+    #       — whose fold split is a different random permutation, so the model
+    #       behind a training row's score was fitted on data including the
+    #       current outer test rows;
+    #   (2) `best_mode` / `cheap_mode` came from whole-cell SR/cost (L195-196),
+    #       i.e. chosen with knowledge of the outcomes being predicted;
+    #   (3) `base_tr_sr`, the SR floor the threshold must preserve, was computed
+    #       against that whole-cell-selected `best_mode`.
+    # Evidence it mattered: even half-nested, the SR delta was already
+    # -1.786…-0.893, 0.0 pp — the "lossless" reading was a selection artifact.
+    #
+    # Properly nested, per outer fold, using ONLY that fold's training rows:
+    #   a. re-select best_mode / cheap_mode from training-row SR and cost;
+    #   b. produce inner-CV out-of-fold scores over the training rows, and pick
+    #      the threshold against those (never against outer-test rows);
+    #   c. refit the LR on all training rows and score the outer-test rows with
+    #      that model alone;
+    #   d. apply (threshold, modes) blind to the outer-test rows.
+    # Nothing crossing into an outer test fold has seen it.
+    from sklearn.linear_model import LogisticRegression
+
+    def _fit_score(Xtr_raw, ytr, Xte_raw):
+        """Standardise on train, fit, return P(y=1) for the test rows."""
+        if len(np.unique(ytr)) < 2:
+            return None
+        mu, sd = Xtr_raw.mean(0), Xtr_raw.std(0)
+        sd = np.where(sd == 0, 1.0, sd)
+        lr = LogisticRegression(max_iter=2000, C=1.0)
+        lr.fit((Xtr_raw - mu) / sd, ytr)
+        return lr.predict_proba((Xte_raw - mu) / sd)[:, 1]
+
+    nested_hits = nested_spend = 0.0
     nested_sent_cheap = 0
+    nested_folds: list[dict] = []
     rng_n = np.random.default_rng(SEED)
     idx_n = rng_n.permutation(n)
-    for f in np.array_split(idx_n, N_FOLDS):
+    outer_folds = np.array_split(idx_n, N_FOLDS)
+
+    for f in outer_folds:
         tr = np.setdiff1d(idx_n, f)
-        sc_tr = sc["lr"][tr]
-        if np.all(np.isnan(sc_tr)):
-            thr_star = -np.inf
-        else:
-            base_tr_sr = 100.0 * sum(cell["succ"][i][best_mode] for i in tr) / len(tr)
-            cands = np.quantile(sc_tr[~np.isnan(sc_tr)], np.linspace(0.0, 0.95, 20))
-            thr_star, best_c = -np.inf, None
+
+        # (a) modes re-selected on training rows only.
+        tr_sr = {m: sum(cell["succ"][i][m] for i in tr) / len(tr) for m in SIX_MODES}
+        tr_cost = {m: sum(cell["cost"][i][m] for i in tr) / len(tr) for m in SIX_MODES}
+        best_o = max(SIX_MODES, key=lambda m: tr_sr[m])
+        cheap_o = min(SIX_MODES, key=lambda m: tr_cost[m])
+
+        # (b) inner-CV OOF scores over the training rows.
+        inner_oof = np.full(len(tr), np.nan)
+        rng_i = np.random.default_rng(SEED + 1)
+        tr_shuf = rng_i.permutation(len(tr))
+        for g in np.array_split(tr_shuf, N_FOLDS):
+            in_tr = np.setdiff1d(tr_shuf, g)
+            p = _fit_score(X[tr][in_tr], y[tr][in_tr], X[tr][g])
+            if p is not None:
+                inner_oof[g] = p
+
+        # (c) threshold chosen against inner OOF + training outcomes only.
+        thr_star = -np.inf
+        if not np.all(np.isnan(inner_oof)):
+            base_tr_sr = 100.0 * tr_sr[best_o]
+            cands = np.quantile(inner_oof[~np.isnan(inner_oof)], np.linspace(0.0, 0.95, 20))
+            best_c = None
             for thr in cands:
-                h = sum(cell["succ"][i][cheap_mode if sc["lr"][i] < thr else best_mode] for i in tr)
-                c = sum(cell["cost"][i][cheap_mode if sc["lr"][i] < thr else best_mode] for i in tr)
+                h = c = 0.0
+                for pos, i in enumerate(tr):
+                    if np.isnan(inner_oof[pos]):
+                        use = best_o
+                    else:
+                        use = cheap_o if inner_oof[pos] < thr else best_o
+                    h += cell["succ"][i][use]
+                    c += cell["cost"][i][use]
                 if 100.0 * h / len(tr) >= base_tr_sr - 1e-9 and (best_c is None or c < best_c):
                     thr_star, best_c = float(thr), c
-        for i in f:
-            use = cheap_mode if sc["lr"][i] < thr_star else best_mode
-            nested_sent_cheap += (use == cheap_mode)
+
+        # (d) score the outer-test rows with a model fitted on training rows only.
+        score_te = _fit_score(X[tr], y[tr], X[f])
+        fold_cheap = 0
+        for pos, i in enumerate(f):
+            s = None if score_te is None else score_te[pos]
+            use = best_o if s is None else (cheap_o if s < thr_star else best_o)
+            fold_cheap += use == cheap_o
+            nested_sent_cheap += use == cheap_o
             nested_hits += cell["succ"][i][use]
             nested_spend += cell["cost"][i][use]
+        nested_folds.append({
+            "n_test": int(len(f)), "best_mode": best_o, "cheap_mode": cheap_o,
+            "threshold": None if thr_star == -np.inf else round(float(thr_star), 6),
+            "n_sent_cheap": int(fold_cheap),
+        })
+
     policies_nested = {
         "sr_pct": 100.0 * nested_hits / n, "mean_cost": nested_spend / n,
         "n_sent_cheap": int(nested_sent_cheap),
-        "note": "threshold chosen on train folds only, applied blind to held-out fold",
+        "per_outer_fold": nested_folds,
+        "note": (
+            "FULLY nested (B-1903): per outer fold the modes are re-selected on "
+            "training rows, the threshold is chosen on inner-CV out-of-fold "
+            "scores over training rows, and the outer-test rows are scored by an "
+            "LR fitted on training rows only. Nothing that touches an outer test "
+            "fold has seen it. This is the only achievable operating point here; "
+            "the whole-cell sweep below is selection-contaminated by construction."
+        ),
     }
 
     # Threshold sweep on the OOF score; report the operating point that keeps SR
@@ -441,13 +518,23 @@ def main() -> int:
              "dominating one, and not something a deployment would prefer without a stated "
              "SR price. So: a detectable signal in one of six cells, worth less than the "
              "policy you get for free.\n")
-    L.append("⚠️ Two caveats that cap how far even that reading can go. (1) The operating "
-             "point is still not fully out-of-sample: `best_mode` / `cheap_mode` are chosen "
-             "on all six cells' realized outcomes, and the `nested` row's training-side "
-             "scores come from models whose folds include the outer test rows — a true "
-             "nested design needs inner-CV scores and per-outer-fold mode selection. "
-             "(2) The threshold sweep remains post hoc, so the null (which shares it) is "
-             "the only thing keeping the reported saving honest.\n")
+    L.append("⚠️ What is and is not out-of-sample. The **nested** row is now FULLY nested "
+             "(B-1903, 2026-07-27): per outer fold the modes are re-selected from training-row "
+             "SR/cost, the threshold is chosen against inner-CV out-of-fold scores over the "
+             "training rows only, and the outer-test rows are scored by an LR fitted on "
+             "training rows alone — nothing that touches an outer test fold has seen it. "
+             "An earlier revision of this file claimed a nested operating point while "
+             "reusing the GLOBAL out-of-fold scores (whose folds include the outer test rows) "
+             "and a whole-cell choice of `best_mode`/`cheap_mode`; codex caught that, and the "
+             "numbers here supersede it. The remaining caveat is that the threshold **sweep** "
+             "rows are still post hoc by construction, which is why the permutation null "
+             "shares that same selection step — the null is what keeps the swept saving "
+             "honest, and the nested row is what an actual deployment would get.\n")
+    L.append("One thing the nested design exposes that the whole-cell version hid: "
+             "`best_mode` is **not stable across folds**. In reddit·B0 the five outer folds "
+             "select DOM, DOM, SoM, SoM, DOM. A pipeline that picks one best mode from all "
+             "realized outcomes is therefore not merely optimistic about the threshold — it "
+             "is reporting a mode choice that its own resampling does not reproduce.\n")
     L.append("Contrast with the which-mode half: that one fails on label SUPPLY (16-97 "
              "labels per cell, 笔记 §383.4). Triage has the labels and the AUROC and still "
              "does not beat a fixed policy — a different failure mode, at 2-27% base SR "

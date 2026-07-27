@@ -9295,7 +9295,7 @@ always-cheapest**。red/B2 那格 learned 多保 1.97pp SR 但多花 ~2.4% 成�
 
 ## B-1903 — 「nested honest」阈值其实没真嵌套 + mode 选择用了全量结局 (2026-07-27)
 
-**B-1903** (统计, **待修 — 属重设计, 不连夜动**) —
+**B-1903** (统计, **FIXED 2026-07-27** — 重设计已落, 见文末) —
 
 本 session 为修 in-sample 阈值而加的 `learned_nested_honest`, codex 指出**仍不是真嵌套**:
 
@@ -9320,7 +9320,7 @@ always-cheapest**。red/B2 那格 learned 多保 1.97pp SR 但多花 ~2.4% 成�
 
 ## B-1904 — router 特征抽取把 collected universe 当 complete, 训练与缓存都落在被排除的 task 上 (2026-07-27)
 
-**B-1904** (标签污染, **待修**, cross-AI Mode B codex P0) —
+**B-1904** (标签污染, **FIXED 2026-07-27**, cross-AI Mode B codex P0) —
 
 `extract_50_features.py` 里 `universe_complete=False` **只发警告**;
 `cell_complete` 的含义仅是"各 mode 互相一致", 所以六个 mode 在**更宽的 collected 集**上
@@ -9766,3 +9766,65 @@ task 名字里的 "(正确 PID …)" 暗示前面那些是修正尝试 —— **
 paper-grade 数据"。本次没出事只因为 flock 存在。
 
 **Cross-link**: 笔记 §391; B-1914 / B-1915 / B-1917; CLAUDE.md「Liveness / cleanup」
+
+
+---
+
+## B-1903 / B-1904 落地记录 (2026-07-27) — router 数据链重建
+
+两条必须**一起**做: 先修 B-1903 的嵌套逻辑, 随后 B-1904 重抽 fold 会让它全部重算一遍。
+
+### B-1904 (数据层) — 特征/fold 重抽
+
+`extract_50_features` 此前只把 canonical scored universe 拿来**比较并警告**, docstring 写的
+免责理由是 "gating consumers already enforce it with a SHA check
+(`router_offline_replay.collect_cell_outcomes`)"。**该理由不成立**: 那个消费者校验的是它自己读的
+episode 目录, **从不打开这个特征缓存**。于是这条链上没有任何检查, 落地缓存两个 reddit cell
+都是 205 集、无任何 universe 摘要、且整个缺 `B2_reddit` (07-22 生成, 早于 B2 reddit 第六个
+mode 07-25 落地)。
+
+**改动**: `matrix` 构造后立即 `restrict_to_scored` (**限制而非拒绝** —— runner 按契约必须采集
+58/160); 裁不满则 fail-closed。**检查顺序有讲究**: universe gate 必须排在 mode-completeness
+gate **之后** —— 缺 mode 是更基础的缺陷 ("cheapest successful mode" 无定义), 先报 universe
+会把它盖住, 这正是 `absent=['vision']` 那组 fixture 替我抓出来的。合成 fixture 走
+`allow_incomplete=True` 显式出口。
+
+**重抽结果**: 6 cell 全 `complete=True`; 3 个 reddit cell `scored=203/kept=203/
+dropped=[58,160]`, SHA `1ce29c8b` **MATCH**; 3 个 cls `224/224/[]`, SHA `b0f3b8b0` **MATCH**;
+pooled **249 → 260** (补 B2_reddit 15 行); 6 个 fold 全 `universe_matches_canonical_scored=True`。
+`canonical == content` 的 MATCH 由 B-1906 的机制保证 —— content 摘要由**实际留下的行**算出,
+所以 MATCH 真的意味着标签与内容一致。
+
+**Stage3 训练结果与修复前逐格一致** (B0_cls complete / B1_cls `folds_ok=[0,1,2,3]` / 其余空)
+→ 1/6 **不是回归**, 而是 Paper B「which-mode 半败在标签供给」的实证; 新增的 B2_reddit
+15 个标签同样不足。
+
+### B-1903 (统计层) — 真嵌套 CV
+
+同日加的「nested honest」有三处泄漏 (codex 抓出):
+1. held-out 行用**全局 OOF 分数** `sc["lr"]` 打分, 而它的 fold 划分是另一个随机置换 →
+   训练行分数背后的模型, 其训练集**包含当前外折测试行**;
+2. `best_mode` / `cheap_mode` 取自**全 cell** SR/cost (L195-196);
+3. 阈值要守的 SR 下界 `base_tr_sr` 又是对着那个全 cell 选出的 `best_mode` 算的。
+
+**真嵌套实现** (每外折只用该折训练行): (a) 重选 `best_mode`/`cheap_mode`; (b) 训练行上跑
+**内层 CV** 产生 OOF 分数, 阈值只对着它选; (c) 训练行全量 refit LR 给外折测试行打分;
+(d) 阈值+mode 盲应用于外折测试行。**没有任何触及外折测试集的东西见过它。**
+
+**结果 (ΔSR 相对半嵌套, 有正有负)**: cls·B0 **+1.34** / cls·B1 +0.45 / cls·B2 0.00 /
+red·B0 **−0.99** / red·B1 −0.49 / red·B2 0.00。cls·B0 反而升, 因为每折重选 mode 带来**真实的
+自适应收益** (选择只用训练折, 不是泄漏)。
+
+**⭐ 承重句在真嵌套下依然成立**: **0/6 cell 的 learned triage 能 Pareto 胜过平凡
+always-cheapest**。cls·B0 SR 高 1.79pp 但 cost 高 11%; red·B2 SR 高 1.97pp 但 cost 高 2.4%
+—— 都是真权衡点, 非压制点。
+
+**⭐ 真嵌套还暴露一条新证据**: **`best_mode` 跨折不稳定** —— red·B0 的五个外折分别选
+DOM / DOM / SoM / SoM / DOM。**用全量结局挑一个 best mode 的管线, 不只是对阈值过于乐观,
+它报告的那个 mode 选择连自己的重采样都复现不出来。** 已写进
+`router_triage_learnability.md` 的披露段。
+
+`router_objective_ordering` 重跑后数字**未变** (它不依赖 nested 阈值)。测试 **1622 passed**。
+
+**Cross-link**: 笔记 §392; B-1906 (content-SHA 机制); B-1911 (fold 缓存阻断的报错指向本条);
+§388.7.3 (codex 原始指认)

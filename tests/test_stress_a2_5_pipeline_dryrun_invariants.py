@@ -165,7 +165,12 @@ def test_b1887_complete_cell_passes_and_records_provenance(tmp_path, monkeypatch
     phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)
     _patch_roots(monkeypatch, phase1_root, vwa_root)
 
-    rec = e50.build_cell_records("B0", "classifieds")
+    # B-1904 (2026-07-27): these fixtures use a 6-task synthetic universe on
+    # purpose — they assert the G3 accounting identity / B-1887 provenance, not
+    # scored-universe coverage. `allow_incomplete=True` is the explicit opt-out
+    # the extractor now requires for a non-paper-grade cache; without it the
+    # universe gate (6 of 224 scored tasks) fires before the assertion under test.
+    rec = e50.build_cell_records("B0", "classifieds", allow_incomplete=True)
     mc = rec["mode_completeness"]
     assert mc["cell_complete"] is True
     assert mc["absent_modes"] == [] and mc["partial_modes"] == []
@@ -185,7 +190,12 @@ def test_g3_task_accounting_identity_all_configs_present(tmp_path, monkeypatch):
     )
     _patch_roots(monkeypatch, phase1_root, vwa_root)
 
-    rec = e50.build_cell_records("B0", "classifieds")
+    # B-1904 (2026-07-27): these fixtures use a 6-task synthetic universe on
+    # purpose — they assert the G3 accounting identity / B-1887 provenance, not
+    # scored-universe coverage. `allow_incomplete=True` is the explicit opt-out
+    # the extractor now requires for a non-paper-grade cache; without it the
+    # universe gate (6 of 224 scored tasks) fires before the assertion under test.
+    rec = e50.build_cell_records("B0", "classifieds", allow_incomplete=True)
     assert rec["n_total_tasks"] == 6
     assert rec["n_filtered_no_success"] == 1  # task 4
     assert rec["n_dropped_no_config"] == 0
@@ -205,7 +215,12 @@ def test_g3_missing_config_counted_not_silently_dropped(tmp_path, monkeypatch):
     phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)  # task 5 cfg omitted
     _patch_roots(monkeypatch, phase1_root, vwa_root)
 
-    rec = e50.build_cell_records("B0", "classifieds")
+    # B-1904 (2026-07-27): these fixtures use a 6-task synthetic universe on
+    # purpose — they assert the G3 accounting identity / B-1887 provenance, not
+    # scored-universe coverage. `allow_incomplete=True` is the explicit opt-out
+    # the extractor now requires for a non-paper-grade cache; without it the
+    # universe gate (6 of 224 scored tasks) fires before the assertion under test.
+    rec = e50.build_cell_records("B0", "classifieds", allow_incomplete=True)
     assert rec["n_total_tasks"] == 6
     assert rec["n_filtered_no_success"] == 1  # task 4 (no success)
     assert rec["n_dropped_no_config"] == 1  # task 5 (labeled dom, config missing)
@@ -226,7 +241,10 @@ def test_g3_dropped_count_surfaced_in_saved_meta(tmp_path, monkeypatch):
     phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)
     _patch_roots(monkeypatch, phase1_root, vwa_root)
 
-    extracted = e50.extract_all_cells([("B0", "classifieds")])
+    # B-1904: synthetic 6-task universe (see the sibling fixtures above).
+    extracted = e50.extract_all_cells(
+        [("B0", "classifieds")], allow_incomplete=True
+    )
     out = tmp_path / "raw_features_phase1a.npz"
     e50.save_npz(extracted, out)
     meta = json.loads((tmp_path / "raw_features_phase1a.json").read_text())

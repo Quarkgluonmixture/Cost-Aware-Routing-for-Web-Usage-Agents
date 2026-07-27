@@ -26,37 +26,37 @@ A prior-only predictor scores 0.500 by construction. The single-feature column i
 | classifieds·B0 | best-single (`SoM`) | 27.23 | 0.07236 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 25.00 | 0.06481 | -2.23pp | -10.4% | 224/224 |
 | | oracle triage | 27.23 | 0.06312 | +0.00pp | -12.8% | 127/224 |
-| | **learned, nested threshold (honest)** | 25.45 | 0.07172 | -1.79pp | -0.9% | 47/224 |
+| | **learned, nested threshold (honest)** | 26.79 | 0.07197 | -0.45pp | -0.5% | 14/224 |
 | | learned, SR-lossless (in-sample threshold) | 27.23 | 0.07236 | +0.00pp | -0.0% | 0/224 |
 | | learned, ≤1pp give-back (in-sample threshold) | 26.34 | 0.06988 | -0.89pp | -3.4% | 78/224 |
 | reddit·B0 | best-single (`SoM`) | 14.78 | 0.11045 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 7.39 | 0.09807 | -7.39pp | -11.2% | 203/203 |
 | | oracle triage | 14.78 | 0.09998 | +0.00pp | -9.5% | 150/203 |
-| | **learned, nested threshold (honest)** | 13.79 | 0.11001 | -0.99pp | -0.4% | 12/203 |
+| | **learned, nested threshold (honest)** | 12.81 | 0.09836 | -1.97pp | -10.9% | 55/203 |
 | | learned, SR-lossless (in-sample threshold) | 14.78 | 0.11045 | +0.00pp | -0.0% | 0/203 |
 | | learned, ≤1pp give-back (in-sample threshold) | 14.78 | 0.11045 | +0.00pp | -0.0% | 0/203 |
 | classifieds·B1 | best-single (`SoM`) | 14.29 | 0.06028 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 12.50 | 0.04316 | -1.79pp | -28.4% | 224/224 |
 | | oracle triage | 14.29 | 0.04858 | +0.00pp | -19.4% | 169/224 |
-| | **learned, nested threshold (honest)** | 13.84 | 0.05392 | -0.45pp | -10.5% | 59/224 |
+| | **learned, nested threshold (honest)** | 14.29 | 0.05757 | +0.00pp | -4.5% | 26/224 |
 | | learned, SR-lossless (in-sample threshold) | 14.29 | 0.05388 | +0.00pp | -10.6% | 53/224 |
 | | learned, ≤1pp give-back (in-sample threshold) | 13.39 | 0.05106 | -0.89pp | -15.3% | 101/224 |
 | reddit·B1 | best-single (`SoM`) | 7.39 | 0.08000 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 2.46 | 0.05240 | -4.93pp | -34.5% | 203/203 |
 | | oracle triage | 7.39 | 0.05554 | +0.00pp | -30.6% | 179/203 |
-| | **learned, nested threshold (honest)** | 6.40 | 0.06779 | -0.99pp | -15.3% | 93/203 |
+| | **learned, nested threshold (honest)** | 5.91 | 0.06970 | -1.48pp | -12.9% | 81/203 |
 | | learned, SR-lossless (in-sample threshold) | 7.39 | 0.06847 | +0.00pp | -14.4% | 91/203 |
 | | learned, ≤1pp give-back (in-sample threshold) | 6.40 | 0.06369 | -0.99pp | -20.4% | 122/203 |
 | classifieds·B2 | best-single (`SoM`) | 2.23 | 0.09075 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 2.23 | 0.07065 | +0.00pp | -22.1% | 224/224 |
 | | oracle triage | 2.23 | 0.07145 | +0.00pp | -21.3% | 208/224 |
-| | **learned, nested threshold (honest)** | 1.34 | 0.07326 | -0.89pp | -19.3% | 199/224 |
+| | **learned, nested threshold (honest)** | 1.34 | 0.07247 | -0.89pp | -20.1% | 201/224 |
 | | learned, SR-lossless (in-sample threshold) | 2.23 | 0.07190 | +0.00pp | -20.8% | 212/224 |
 | | learned, ≤1pp give-back (in-sample threshold) | 2.23 | 0.07190 | +0.00pp | -20.8% | 212/224 |
 | reddit·B2 | best-single (`DOM`) | 3.94 | 0.09479 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 1.97 | 0.06833 | -1.97pp | -27.9% | 203/203 |
 | | oracle triage | 3.94 | 0.06974 | +0.00pp | -26.4% | 188/203 |
-| | **learned, nested threshold (honest)** | 3.94 | 0.06996 | +0.00pp | -26.2% | 189/203 |
+| | **learned, nested threshold (honest)** | 3.94 | 0.06964 | +0.00pp | -26.5% | 192/203 |
 | | learned, SR-lossless (in-sample threshold) | 3.94 | 0.06964 | +0.00pp | -26.5% | 192/203 |
 | | learned, ≤1pp give-back (in-sample threshold) | 3.94 | 0.06964 | +0.00pp | -26.5% | 192/203 |
 
@@ -87,7 +87,9 @@ Read together — and note this is a **narrower** negative than an earlier draft
 
 What still holds, and is the load-bearing statement: **no cell's learned triage Pareto-beats the trivial always-cheapest fixed policy** (0 of 6). In reddit/B2 specifically the learned policy keeps 1.97pp more SR than always-cheapest but pays ~2.4% more cost — a genuine trade-off point, not a dominating one, and not something a deployment would prefer without a stated SR price. So: a detectable signal in one of six cells, worth less than the policy you get for free.
 
-⚠️ Two caveats that cap how far even that reading can go. (1) The operating point is still not fully out-of-sample: `best_mode` / `cheap_mode` are chosen on all six cells' realized outcomes, and the `nested` row's training-side scores come from models whose folds include the outer test rows — a true nested design needs inner-CV scores and per-outer-fold mode selection. (2) The threshold sweep remains post hoc, so the null (which shares it) is the only thing keeping the reported saving honest.
+⚠️ What is and is not out-of-sample. The **nested** row is now FULLY nested (B-1903, 2026-07-27): per outer fold the modes are re-selected from training-row SR/cost, the threshold is chosen against inner-CV out-of-fold scores over the training rows only, and the outer-test rows are scored by an LR fitted on training rows alone — nothing that touches an outer test fold has seen it. An earlier revision of this file claimed a nested operating point while reusing the GLOBAL out-of-fold scores (whose folds include the outer test rows) and a whole-cell choice of `best_mode`/`cheap_mode`; codex caught that, and the numbers here supersede it. The remaining caveat is that the threshold **sweep** rows are still post hoc by construction, which is why the permutation null shares that same selection step — the null is what keeps the swept saving honest, and the nested row is what an actual deployment would get.
+
+One thing the nested design exposes that the whole-cell version hid: `best_mode` is **not stable across folds**. In reddit·B0 the five outer folds select DOM, DOM, SoM, SoM, DOM. A pipeline that picks one best mode from all realized outcomes is therefore not merely optimistic about the threshold — it is reporting a mode choice that its own resampling does not reproduce.
 
 Contrast with the which-mode half: that one fails on label SUPPLY (16-97 labels per cell, 笔记 §383.4). Triage has the labels and the AUROC and still does not beat a fixed policy — a different failure mode, at 2-27% base SR where almost every task is hopeless and 'always take the cheap one' is already close to optimal.
 

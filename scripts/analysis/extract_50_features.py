@@ -418,23 +418,6 @@ def build_cell_records(
     # and the cell contributes plausible-but-wrong oracle labels to the pooled gate.
     mode_completeness = assess_mode_completeness(cell_id, site, matrix)
     mode_completeness["universe_provenance"] = universe_provenance
-
-    # B-1904: the scored-universe check is now RAISED, not just warned about. A
-    # cell whose modes agree with each other but cover fewer tasks than the
-    # protocol scores is not the paper-grade task set, and every router number
-    # built on it silently uses a different denominator than H1/H2/H3.
-    if universe_provenance.get("universe_complete") is False and not allow_incomplete:
-        raise ValueError(
-            f"{cell_id}: feature extraction covers "
-            f"{universe_provenance['n_kept']}/"
-            f"{universe_provenance['n_scored_universe']} canonical scored tasks "
-            f"(missing={universe_provenance['missing_from_universe'][:10]}).\n"
-            f"    Router features/folds built on a partial universe cannot be "
-            f"compared against H1/H2/H3, which are formed over the full scored "
-            f"set (B-1904).\n"
-            f"    Fix the missing episodes, or pass --allow-incomplete-cells to "
-            f"produce an explicitly non-paper-grade cache."
-        )
     if not mode_completeness["cell_complete"]:
         if not allow_incomplete:
             raise ValueError(
@@ -474,6 +457,28 @@ def build_cell_records(
             "label_distribution": {},
             "error": f"incomplete mode menu (skipped): {mode_completeness['summary']}",
         }
+
+    # B-1904: the scored-universe check is RAISED, not just warned about. Ordered
+    # AFTER the mode-completeness gate on purpose: an absent MODE is the more
+    # basic defect ("cheapest successful mode" is undefined), and reporting a
+    # partial universe first would mask it — which is exactly what the
+    # `absent=['vision']` fixtures caught when this check was placed earlier.
+    # A cell whose modes agree with each other but cover fewer tasks than the
+    # protocol scores is not the paper-grade task set, and every router number
+    # built on it silently uses a different denominator than H1/H2/H3.
+    if universe_provenance.get("universe_complete") is False and not allow_incomplete:
+        raise ValueError(
+            f"{cell_id}: feature extraction covers "
+            f"{universe_provenance['n_kept']}/"
+            f"{universe_provenance['n_scored_universe']} canonical scored tasks "
+            f"(missing={universe_provenance['missing_from_universe'][:10]}).\n"
+            f"    Router features/folds built on a partial universe cannot be "
+            f"compared against H1/H2/H3, which are formed over the full scored "
+            f"set (B-1904).\n"
+            f"    Fix the missing episodes, or pass --allow-incomplete-cells to "
+            f"produce an explicitly non-paper-grade cache (synthetic fixtures "
+            f"with small task sets belong here)."
+        )
 
     task_ids_sorted = sorted(matrix.keys())
     n_total = len(task_ids_sorted)
