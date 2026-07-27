@@ -23,97 +23,100 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🎯 **2026-07-27 (五) 夜 — Paper B 全稿已成, Paper A 只改了立论。先读这块再动笔。** ⭐⭐⭐⭐
+> 🎯 **2026-07-27 (五) 深夜 — 两篇 8 页稿都已成型。剩下的是 LaTeX 化 + stress + 投。** ⭐⭐⭐⭐
 >
-> **先跑一遍再信任何数字**: `paper_grade_check.py` (A100) · `make active` (DGX) ·
-> `vale --config=tools/paper-deslop/.vale.ini docs/checkpoints/paper_drafts/paperB/`
-> 上一版 handoff 写「后台不需要干预」而实际全量 WA 跑了 0 个 task(§390), 教训见 §7。
+> **先跑再信**: `paper_grade_check.py` (A100) · `make active` (DGX) ·
+> `vale --config=tools/paper-deslop/.vale.ini docs/checkpoints/paper_drafts/paperA/ paperB/`
+> (上一版 handoff 写「后台不需要干预」而全量 WA 实际跑了 0 个 task, §390。)
 >
-> ### 1. 权威结论 (未变, 产物 `phase1_full_prereg_decision.json`)
+> ### 1. 权威结论 (产物 `phase1_full_prereg_decision.json`)
 >
 > ```
-> H1  P-SoM drop-one    FAIL   θ_FE=0.7897pp / bootstrap 中位 0.7490 / CI[0.2858,1.4471]
->                              p=0.807 vs H0 θ≤1.0pp; per-cell 一致地小, 加 cell 也推不过
-> H3  axis-1            PASS   θ_FE=1.3528pp  p=1.19e-05   5/6 cell 单独通过
->     axis-2            PASS   θ_FE=2.0877pp  p=7.52e-07   5/6 cell 单独通过
-> H2(a) cost 带          未证伪  6/6 cell 在带内, n=1281
-> → framing R5 + C'-S 结构支点; P-SoM 独解 6 cls + 3 red
+> H1  P-SoM drop-one   FAIL  θ_FE=0.7897pp / boot 中位 0.7490 / CI[0.2858,1.4471] / p=0.807
+>                            I²=0.0% Q=1.4265(df=5) → 小效应而非功效不足, 加 cell 无用
+>                            4 个 cell 触发 SE floor, 方向是**反的**(降权最小效应 cell → θ 抬高)
+> H3  axis-1 |P-text \ P-SoM|    PASS  1.3528pp CI[0.799,2.026]  p=1.19e-05
+>     axis-2 |P-prompt \ P-SoM|  PASS  2.0877pp CI[1.399,2.919]  p=7.52e-07
+>     → 承重句: **compound 臂吸收不了两个单轴臂** → 有轴的空间, 不是一个点
+>     5/6 cell 过 noise floor(2 任务); 单独 Holm 显著 axis-1 3/6 · axis-2 4/6
+> H2(a) cost 带         未证伪  6/6 cell 在带内, n=1281 paired
+> → framing R5 + C'-S; P-SoM 独解 6 cls + 3 red
 > ```
 >
-> **B-1898 已解决, 不需要再拍**: 0.68pp 阈值 2026-05-18 就锁在 prereg L718, AMENDMENT_03
-> 有 git tag 且明写 L103-111 是 stale prose。**H1 报 0.7897; 0.6533 不得表述为「预注册规则
-> 的结果」。** 详 catalog B-1898 落地记录。
+> **B-1898 已解决**: 0.68pp 阈值 2026-05-18 锁在 prereg L718, AMENDMENT_03 有 tag。
+> **H1 报 0.7897; 0.6533 不得表述为「预注册规则的结果」。**
 >
-> ### 2. ✅ Paper B — 全稿已成, 可直接进 LaTeX
+> ### 2. ✅ 两篇 8 页稿都已成型, deslop 全过
 >
-> `docs/checkpoints/paper_drafts/paperB/section{1..7}*.md`, 7 节 **6647 词** ≈ 8 页正文。
-> deslop 已过: **0 errors / 7-of-7 invariant PASS / em dash 全零**, 已入
-> `tools/paper-deslop/deslopped.txt` (CI 起拦 error 级回归)。
-> 数字**逐位可追溯**到 `router_triage_learnability.json` + `router_label_supply_diagnosis.json`
-> (28 项核对 25 项逐位吻合, 3 项为论文用 1 位小数的正确舍入)。
+> | | 路径 | 词数 | deslop |
+> |---|---|---|---|
+> | **Paper A** 现象篇 | `paper_drafts/paperA/section{1..5}*.md` | 4440 | 0 errors · 5/5 invariant PASS |
+> | **Paper B** 路由阴性 | `paper_drafts/paperB/section{1..7}*.md` | 6647 | 0 errors · 7/7 invariant PASS |
 >
-> **下一步**: ACL 模板套排 + 补 related work 的实际引用 (§7 目前是无 cite 的占位散文)。
+> 12 个文件已入 `tools/paper-deslop/deslopped.txt` (CI 起拦 error 级回归)。
+> 数字**逐位可追溯**到产物。**两篇都投 workshop** (REALM @ EMNLP, 08-05, 双盲 ACL 8 页)。
 >
-> ### 3. ⚠️ Paper A — 只改了 §1 立论, 剩下的比之前记的多得多
+> ⚠️ **原 `paper_drafts/section*.md` (53741 词) 是素材档案, 不是投稿稿** —— 所有 /stress
+> 结论内联在里面, 有审计价值, 但 §2-§8 从未同步 H1 FAIL/H3 立论。**投稿用 paperA/**。
 >
-> **已改**: §1 立论从已 FAIL 的 H1 换到两轴 PASS 的 H3; H1 FAIL 作为 Phase 1a 主结果**前置**
-> 而非 caveat; archive 3.33/2.56pp 降 Appendix D 并注明不得引作效应量。
-> **k=6 数字此前一处都没进 Paper A** —— 这是扫描出来的, 不要假设别处已同步。
+> ### 3. 🔴 剩下三件 (按顺序)
 >
-> **🔴 真实剩余工作 (之前的估计低估了量级)**:
-> - **53741 词 → 8 页约需 6500 词 = 8× 压缩, 等于重写。** 真正的问题不是改数字, 是
->   **它不是一篇论文**, 而是把每条 /stress 结论都内联进散文的审计文档。
->   → **目标形态看 `paperB/`**: 干净散文, 审计痕迹留在 catalog 与笔记里。
-> - 实测 TBD 只剩 **14 处** (不是 40), 禁引数字大多已清 —— 所以工作量集中在压缩与重写。
-> - §2-§8 尚未同步 H1 FAIL / H3 立论; §4 的 lift 表要用重生成后的 `phantom_lift.csv`
->   (B-1905 修后 90 个字段变化, 全在 3 个 reddit cell)。
+> **(1) LaTeX 化 + Overleaf —— user 已拍 (a): 一个项目放两篇**
+> - clone 在 `~/overleaf-aaai27` (只有 7-16 我们自己 sync 的初始上传, **无网页端编辑待回流**,
+>   push 不会覆盖谁)。`OVERLEAF_GIT_DIR` 未设但 `overleaf_sync.sh` 默认就是它。
+> - 三处要改: 模板 **AAAI → ACL 2026**(现在是 `aaai2027.sty`/`.bst`) · `convert.sh` 的
+>   `SOURCE_MD` 写死 `aaai27_main.md` → 要支持 paperA/paperB 两个 main · 一个项目两个 main.tex
+> - `convert.sh` 已有 `--submission` 模式(TODO 槽非零则 fail), 复用它
+>
+> **(2) `/stress` 三家链 (user 已授权)** —— 两篇稿是全新 prose, 从未被 stress 过。
+> Mode A(Claude) + Mode B(`codex --sandbox danger-full-access`) + Mode C(`agy -p`,
+> 见 `scripts/maintenance/agy_stress_clean.sh`)。scope = pre-fire/submission band
+> (findings ≥7 / ≥10)。**跑完必做 3-phase 后检**(I/O sanity · 深度+scope · runtime)。
+>
+> **(3) Paper B 补真引用** —— §7 related work 现在是**无 cite 的占位散文**, archival 稿
+> 不能这样投。Paper A §5 同样缺 cite。`paper_drafts/paper.bib` 有现成 key 可用。
 >
 > ### 4. 🚫 不要引用的数字
 >
 > | 出处 | 错的 | 对的 |
 > |---|---|---|
-> | 旧 hook / §1 | drop-one **1.7-3.3pp** hero | 6-mode k=6 实测 **0.0-1.3pp**, H1 FAIL |
-> | B-1898 旧记 | 「实现比预注册严, 该报 0.6533」 | **反了** — 报 **0.7897** |
+> | 旧 hook / 老 §1 | drop-one **1.7-3.3pp** hero | 6-mode k=6 **0.0-1.3pp**, H1 FAIL |
+> | B-1898 旧记 | 该报 0.6533 | **反了** — 报 **0.7897** |
 > | 笔记 §387.9 | 汇总 SR 6.37% | **6.40%** |
 > | §387.16.3 | triage 成本 −38%~−45% | **−9.5%~−30.6%** |
-> | venn / lift 旧图 | B0_red P-SoM-only 6 · B2_red 2 | **5** · **1** (B-1907) |
+> | venn/lift 旧图 | B0_red 独解 6 · B2_red 2 | **5** · **1** (B-1907) |
 > | §383.4 | 「~1/4 标签由 tie-break 决定」 | **不成立** — true_tie 全 0; 真缺陷是 12.5-54.6% 顺序选了更贵的 |
-> | §383.4 reddit | 矛盾率 45.5% / 上限 87.7% / tier 95.5% | **56.0% / 83.7% / 88.0%** (3-cell 后) |
+> | §383.4 reddit | 矛盾率 45.5% / 上限 87.7% / tier 95.5% | **56.0% / 83.7% / 88.0%** |
 >
-> ### 5. 手上产物 (全部可重跑)
+> ### 5. 产物 (全部可重跑)
 >
 > `phase1_full_prereg_decision.{json,md,csv}` · `router_triage_learnability.{md,json}` ·
-> **`router_label_supply_diagnosis.{md,json}` (新, Paper B §4/§6 主体)** ·
-> `router_objective_ordering.{md,json}` · `sr_per_mode.json` (36 行, reddit 分母 203) ·
-> `amendment08_sensitivity.md` · `phantom_lift.csv` (B-1905 修后)
-> 两个 router 产物均带 `post_hoc_exploratory=True / h10_eligible=False`。
+> `router_label_supply_diagnosis.{md,json}` (Paper B §4/§6 主体) ·
+> `router_objective_ordering.{md,json}` · `sr_per_mode.json` (reddit 分母 203) ·
+> `phantom_lift.csv` (B-1905 修后) · `amendment08_sensitivity.md`
 >
-> ### 6. 本 session 修完的 bug (catalog B-1901~B-1918)
+> ### 6. 本 session 修完的 bug (catalog B-1901~B-1918, 测试 1626 passed)
 >
-> universe 族全线: **B-1905** phantom_lift · **B-1906** SHA-only 绕过互校(+常驻 lint 带
-> 只减不增棘轮) · **B-1907** venn 把 tier-A 假成功算成 P-SoM 独家能力 · **B-1908** fig0c
-> 失败退出却留下崭新未验证的图 · **B-1909** fig3 默认路径 caption/数据不一致 · **B-1910**
-> clear_tasks 拒掉 CLAUDE.md 自己的示例 · **B-1912** power_analysis · **B-1913** digest 分母
-> · **B-1903** 真嵌套 CV · **B-1904** router 数据链重建 · **B-1914/1915/1917/1918** 自动化
-> 可靠性 · **B-1916** FORCE_NEW 缺失差点让 P-SoM 主角臂整个非 paper-grade。
-> 测试 **1626 passed**。
+> universe 族全线 + 自动化可靠性。三条最结构性: **B-1906** SHA-only 绕过跨产物互校
+> (+ 常驻 lint 带只减不增棘轮) · **B-1903** 真嵌套 CV · **B-1916** FORCE_NEW 缺失差点让
+> P-SoM 主角臂整个非 paper-grade。**横切教训**: 三条都不是算错了, 而是把验证责任交给了
+> 一个不会执行它的地方(抄来的 SHA / 不读该产物的下游 / 与外折无关的 OOF 事实)。
 >
-> ### 7. 后台 (⚠️ 不要信文字, 跑命令核)
+> ### 7. 后台 (⚠️ 跑命令核, 别信文字)
 >
-> - **A100 WA 全量**: chain pid **2658570**, 6 mode × 104, `FORCE_NEW=1` 六臂同契约从零,
->   run_id 形如 `B1_dom_wa_reddit_20260727_180024_...`; 6 个 pilot 目录留作归档。
->   monitor `b3ulth366` 在盯(三态 probe, ssh 失败**不下判断**)。ETA ~3-4 天。
->   **A100 是 UTC, DGX 是 BST** —— 对时间线先 `date` 两端(§391 踩过)。
-> - **DGX mechanistic**: supervisor 38587 → sweep 38603 → 38617 跑 `p1_fwd_strong_red`。
->   DEADLINE 08-01 到点自截断。**thesis scope, 不在 08-05 关键路径。**
+> - **A100 WA 全量**: chain pid **2658570**, 6 mode × 104, `FORCE_NEW=1` 六臂同契约;
+>   monitor `b3ulth366` 三态 probe(ssh 失败**不下判断**)。ETA ~3-4 天。
+>   **A100=UTC / DGX=BST**, 对时间线先 `date` 两端(§391 踩过)。
+> - **DGX mechanistic**: 38617 跑 `p1_fwd_strong_red`, 08-01 自截断, **非关键路径**。
 >
-> ### 8. 剩余欠账 (不阻塞起稿)
+> ### 8. 仍未决 / 欠账
 >
-> `UNIVERSE_TRIAGE_PENDING` 里 ~34 个脚本(棘轮钉住不会再长) · Paper B §7 缺真引用 ·
-> Paper A 的 8× 压缩 · 毕设 D8 (results+discussion 章, **07-24 已过期**, D9 全稿 08-10
-> 与 REALM 08-05 撞期, 仍未决)。
+> - **毕设 D8** (results+discussion 章) **已过期 4 天**, D9 全稿 08-10 与 REALM 08-05 撞期
+> - `UNIVERSE_TRIAGE_PENDING` 里 ~34 个脚本(棘轮钉住不会长)
+> - `deslop` 教训: 机械 em dash 替换**两次**造出逗号拼接(paperA/paperB 各一次)。
+>   若有第三篇, **先写 replacement 表逐处判断**, 不要先跑正则再补救。
 >
-> **距 REALM 08-05 还有 9 天。** 全部 commit **未 push**。
+> **距 08-05 还有 9 天。22 个 commit 全部未 push。**
 
 > 🚦 **2026-07-27 (三) — 前一块的 6 步清单已全部完成; 下一步 = k=6 重灌** ⭐⭐⭐ (详 笔记 §387.15)
 >
