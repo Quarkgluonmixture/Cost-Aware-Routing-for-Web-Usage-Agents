@@ -9650,3 +9650,119 @@ monitor 不检查**。→ 长任务 monitor 的收尾动作若是「启动另一
 否则整条接力静默断裂且报 exit 0。
 
 **Cross-link**: 笔记 §390; B-1914 (被它掩盖的 bug); CLAUDE.md「长任务必配 done-monitor」
+
+---
+
+## B-1916 — 全量 chain 少一个 `FORCE_NEW=1`, 差点让 P-SoM 主角臂整个 resume 成非 paper-grade (2026-07-27)
+
+**B-1916** (采集契约混合, **FIXED 2026-07-27**, user decision "b") —
+
+`queue_chain.sh:363-365` 的注释写着:
+
+> "FORCE_NEW propagated explicitly … **paper-grade master chain exports FORCE_NEW=1 so each
+> cell gets a fresh timestamped run_id, never resumes**"
+
+但下面第两行是 `FORCE_NEW="${FORCE_NEW:-0}"` —— **默认 0**, 而
+`_launch_wa_full_reddit.sh` **从未 export 过它**。`FORCE_NEW=0` 时 `mint_run_id` 会
+resume-glob `${cfg_name}_[0-9]*`, 正好匹配 pilot 目录 `B1_dom_wa_reddit_20260727`。
+
+**若不修会得到的数据** (这是本条的要害, 不是风格问题):
+
+| 臂 | 会发生什么 |
+|---|---|
+| 5 个非主角 mode | 各保留 pilot 的 10 个 episode (采集于 `P79_PAPER_GRADE=0 PAPER_GRADE_ALLOW_PARTIAL=1`) + 补跑 94 个 paper-grade → **单个 cell 内混两套采集契约** |
+| **phantom_som (论文主角臂)** | pilot 期它已被切到 full base 并跑到 104 → 全量 chain 判「已满」**整臂 skip** → **P-SoM 每一个 episode 都是非 paper-grade** |
+
+`P79_PAPER_GRADE` 实际管三件事: evaluator 依赖失败时 raise 而非静默记 `success=False` ·
+watchdog 对 error episode fail-closed 而不做 denominator surgery · B0 GLM hard-block
+(B1 本地模型不涉及)。实测 6 个 pilot 目录**全部 clean** (无 `error` /
+`needs_reevaluation` / `sr_excluded`, `success` 均为 bool), 所以那两道防线的差别在已落数据上
+**没有实际发生** —— 但"没发生"是事后观察, **不是采集契约**, 而 §1 附录写不出
+"P-SoM 臂整个在非 paper-grade 契约下采集"这句话。
+
+**FIXED**: launcher `export FORCE_NEW=1` + 注释写明代价。实测生效 —— 新 run_id
+`B1_dom_wa_reddit_20260727_180024_017253388_2658596_R13217`, 6 个 pilot 目录原样留作归档。
+
+**教训**: 注释声称的行为 (`master chain exports FORCE_NEW=1`) 与实际调用方
+(`${FORCE_NEW:-0}` + launcher 不 export) 之间没有任何检查。这是本 session 第三处同型
+(另两处: B-1898 的 `SINGLE source mirrored` 两边都是局部字面量 · B-1906 的
+`canonical_task_universe_sha256` 只抄摘要不裁数据) —— **"注释描述的契约"必须有会红的东西守着。**
+
+**Cross-link**: 笔记 §391; B-1914 (同一 launcher 的另一个缺陷); B-1898 / B-1906 (同型);
+AMENDMENT_08
+
+---
+
+## B-1917 — done-monitor 把「ssh 探测失败」当成「被监视的进程已死」 (2026-07-27)
+
+**B-1917** (监控假阳性, **FIXED 2026-07-27**) —
+
+远端 done-monitor 的惯用写法:
+
+```bash
+if ! timeout 90 ssh HOST "kill -0 ${PID}"; then alive=0; break; fi
+```
+
+**ssh 本身失败与 pid 不存在无法区分** —— 网络抖动 / connect timeout / bastion banner /
+主机名解析失败, 全都是非零退出。于是 monitor 判定"被监视的任务结束了"并触发下一阶段。
+
+**实证 (2026-07-27, 我自己写的 monitor)**: DGX 18:58:12 报 "pilot chain exited — firing full
+chain", 但 pilot chain (pid 2579194) 直到约 2 分钟后我手动 kill 才真正结束。
+**只有 `queue_chain` 的 flock 挡住了这次 double-fire**。
+
+**诊断被时区拖慢**: A100 跑 **UTC**, DGX 跑 **BST** —— chain log 里的 `17:58:14` 与 monitor
+output 里的 `18:58:12` 是**同一时刻**, 一开始被误读成"另一个 monitor 抢跑"。
+→ **跨机对时间线时先 `date` 两端。**
+
+**FIXED**: probe 改为让远端明说是哪一种, 三态互不混淆:
+
+```bash
+probe=$(ssh ... "kill -0 $PID 2>/dev/null && echo P79_ALIVE || echo P79_DEAD" | grep -oE 'P79_(ALIVE|DEAD)')
+case "$probe" in
+  P79_ALIVE) ;;                       # 继续等
+  P79_DEAD)  verdict=dead; break ;;   # 唯一可下判断的分支
+  *) consec_fail++; ... ;;            # 不可达 → 永不下判断, 连续 6 次 (~30min) 才 high-priority ntfy
+esac
+```
+
+干测三态: 真 pid → `P79_ALIVE` · 假 pid → `P79_DEAD` · 不可达主机 → **空串**。
+
+**教训 (与 B-1915 合并成一条规则)**: B-1915 是「done-condition 触发了但它守的那件事失败了,
+monitor 不检查」; 本条是「done-condition **根本没触发**, 只是探测失败了」。
+两者同源 —— **monitor 里任何一个 `if ! <check>` 都必须回答"这是条件不满足, 还是我没测到?"**。
+远端探测必须让被测方回话, 不能只看退出码。
+
+**⚠️ 顺带撤回一条错判**: 我先前据 `.locks/p79_reddit_vwa.lock` (残留 4 天) 与
+`p79_classifieds_vwa.lock` (残留 41 天) 判「site lock 泄漏是系统性隐患」。**错。**
+该锁是**真 flock** (`exec 9>"$LOCK_FILE"` + `flock -n 9`), 进程死亡时**内核自动释放**;
+残留文件只是空 marker, 不阻塞任何东西 (`queue_chain.sh:261-264` 的注释已写明
+"presence + flock state matter")。17:58 那次被拦是因为 pilot chain **真的活着并持有 fd 9**
+—— 完全正确的行为。无需 stale-lock 检测。
+
+**Cross-link**: 笔记 §391; B-1915 (同源前半); CLAUDE.md「长任务必配 done-monitor」
+Tier 2 SSH+qstat 示例同样有此形状
+
+---
+
+## B-1918 — 三个 monitor 等同一个接力点, 互相 double-fire (2026-07-27)
+
+**B-1918** (流程, **登记备查**) —
+
+前一 session 为同一件事 (「pilot chain 退出 → 起全量 WA」) 留下了**三个**后台 monitor:
+
+| task | 行为 |
+|---|---|
+| `bcfwkfzw2` "Arm auto-chain: fire full-scale WA run when pilot exits" | fire → 撞 B-1914 死 → 报 exit 0 |
+| `b92ozy4og` "pilot 模式重启剩余 5 个 mode" | fire → 只 echo "launched" → 报 exit 0 |
+| `bhaexkpch` "WA chain monitor (正确 PID 2579194)" | 观察型, 只打印 counts, 无害 |
+
+CLAUDE.md 明写「**已建 monitor 不要 duplicate —— 一个任务一个 monitor**」。三个之中两个会
+fire, 于是它们互相制造 double-fire; 全靠 `queue_chain` 的 flock 兜住。
+task 名字里的 "(正确 PID …)" 暗示前面那些是修正尝试 —— **修正的做法应该是停掉旧 monitor,
+而不是再 arm 一个**。
+
+**为什么值得单独登记**: monitor 的可靠性缺陷 (B-1915 不校验 / B-1917 探测失败当死亡) 在
+**只有一个 monitor** 时最多是"没接上力"; 在**多个 monitor 并存**时会升级为"并发写同一批
+paper-grade 数据"。本次没出事只因为 flock 存在。
+
+**Cross-link**: 笔记 §391; B-1914 / B-1915 / B-1917; CLAUDE.md「Liveness / cleanup」

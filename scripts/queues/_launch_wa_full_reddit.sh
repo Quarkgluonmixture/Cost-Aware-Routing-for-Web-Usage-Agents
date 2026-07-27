@@ -63,6 +63,25 @@ export RESET_BEFORE=1
 export P79_PAPER_GRADE=1
 unset PAPER_GRADE_ALLOW_PARTIAL
 
+# B-1916 (user decision "b", 2026-07-27): FORCE_NEW=1 is REQUIRED here, and its
+# absence was a live defect rather than a preference.
+#
+# `queue_chain.sh:363-365` says "paper-grade master chain exports FORCE_NEW=1 so
+# each cell gets a fresh timestamped run_id, never resumes" — but the call two
+# lines down is `FORCE_NEW="${FORCE_NEW:-0}"` and this launcher never exported
+# it.  With FORCE_NEW=0, `mint_run_id` resume-globs `${cfg_name}_[0-9]*`, which
+# matches the existing pilot dirs (`B1_dom_wa_reddit_20260727`, …).  The full run
+# would then have RESUMED the pilot cells: 5 modes would keep their 10 episodes
+# collected under `P79_PAPER_GRADE=0 PAPER_GRADE_ALLOW_PARTIAL=1` and top up to
+# 104 under paper-grade, and phantom_som — the paper's headline arm — would have
+# been skipped wholesale as "already 104", every episode of it non-paper-grade.
+# One cell would have mixed two collection contracts silently.
+#
+# FORCE_NEW=1 mints a fresh timestamped run_id per cell, so all six arms are
+# collected from zero under one contract and the pilot dirs stay untouched as
+# archives.
+export FORCE_NEW=1
+
 setsid nohup bash scripts/queues/queue_chain.sh "${STEPS[@]}" \
   > "${LOG}" 2>&1 < /dev/null &
 
