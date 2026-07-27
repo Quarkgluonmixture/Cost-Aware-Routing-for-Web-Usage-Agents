@@ -23,101 +23,88 @@ updated: 2026-07-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🎯 **2026-07-27 (五) 更深夜 — LaTeX 管线通了, 三家 stress 跑完了, 引用补齐了。
-> 现在的问题变成一个: Paper B §3 的 oracle 口径要不要重做。** ⭐⭐⭐⭐⭐ (详 笔记 §396)
+> 🎯 **2026-07-28 凌晨 — 两篇稿已 LaTeX 化、进 8 页限、上 Overleaf、三家 stress 过一轮。
+> 剩下的是 5 条需重生成产物的 finding + 学长/OpenReview 的人工动作。** ⭐⭐⭐⭐⭐
+> (详 笔记 §396 / §396.5 / §396.6 / §396.7)
 >
-> **先跑再信**:
-> `cd docs/checkpoints/paper_drafts/latex && bash convert.sh paperA && bash convert.sh paperB`
-> · `make deslop-ratchet` · `paper_grade_check.py` (A100) · `make active` (DGX)
+> ### 先跑再信 (三条命令, 别照搬下面的数)
 >
-> ### 0-A. 三件事的状态
->
-> | | 状态 |
-> |---|---|
-> | **(1) LaTeX 化 + Overleaf** | ✅ 管线完成。**未 push 到 Overleaf** —— 等 Paper B 定稿再推, 免得学长看到一版待重写的 §3 |
-> | **(2) /stress 三家链** | ✅ 跑完 (A 10 / B 21 / C 10 findings), 3-phase 后检做了, 已汇入笔记 §396 |
-> | **(3) 补真引用** | ✅ 0 → 86 处, paper.bib 新增 3 条方法学经典 |
->
-> **管线怎么用** (新建 `paper_drafts/latex/`, **不是** `aaai27/latex/` —— 后者是 AAAI 存档,
-> 被 `test_dayaudit_rounda_20260714.py::test_f03` 的 fixture 钉住, 别动):
+> ```bash
+> cd docs/checkpoints/paper_drafts/latex && bash convert.sh paperA --submission && bash convert.sh paperB --submission
+> make deslop-ratchet                     # vale, 12 文件阻塞集
+> ssh condense-a100 'date -u; ps -o pid,etime -p 2658570; pgrep -af run_experiment'
 > ```
-> bash convert.sh paperA              # → build/paperA/main.pdf
-> bash convert.sh paperB --submission # 严格门: 0 TODO + 0 未定义引用 + refs 起始页 ≤ 9
-> bash scripts/maintenance/overleaf_sync.sh          # 两篇都推
-> bash scripts/maintenance/overleaf_sync.sh paperA   # 只推 A
-> ```
-> Overleaf 侧: **菜单 → Main document → `main_paperA.tex` / `main_paperB.tex`** 切编译目标。
+> **A100 是 UTC / DGX 是 BST** —— 对时间线先 `date` 两端。
 >
-> ### 0-B′. ✅ 方案 (a) 完成, 且 **两篇都进 8 页限内** (commit `9d11178`→`ce55d78`)
+> ### 1. 两篇稿的状态
 >
-> **§3 口径改正**: 换用散文实际定义的 `oracle_sr_cost`, 六格重取自产物。真数字 =
-> 精度 **+3.45~+16.07pp** 且成本 **−13.7%~−35.3%**, 不是「只赢成本」。新 §3.1 把天花板
-> 劈成两半 (`triage_only` 只要二元标签 → §5 杀 / `route_only` 要 which-mode 标签 → §4 杀),
-> 兑现了 contribution #1。自洽检查写进正文: oracle SR ≡ solvable 列 (定义恒等式)。
->
-> **同轮修掉的三家共识第二条 P0**: Vision 六格最便宜 → §1/§2.1 前提句改写,
-> §6.4 "cost tier" 更名 **screenshot tier**, §4.3 补因果 (MODES 顺序就是按那个被否证的
-> 前提排的 —— codex #4 与 #6 同根)。表 12 拆分母 (codex #5)。
->
-> **⭐ ACL 合规缺口 (顺带发现)**: ACL 要求未编号独立 `\section*{Limitations}` 且不计页数,
-> 两篇原本都只有编号子节。已加 `limitations.md` 支持 + skeleton `\label{content-end}`,
-> **页数门改为量 content-end** (否则 Limitations/附录被误算进 8 页)。
->
-> **⭐ 页数真凶不是字数, 是浮动体排队**: 砍到 6100 词仍 9 页; 逐页数表发现表 1-4 全堆在
-> p5 左栏。根因 = Table 1 是 `table*`, 跨栏浮动只能落页顶, 排队时后面浮动体被保序卡住。
-> 全改单栏后表格分布 2/2/2/1, **立刻 9 页→8 页**。
-> **教训: 页数超了先 `pdftotext` 逐页数表, 再决定砍不砍字。**
->
-> **现状**: paperA 正文 8 页 · paperB 正文 8 页 · **两篇 `--submission` exit 0**
-> (0 TODO / 0 未定义引用 / content-end ≤ p8) · vale 0 error。
-> paperB 计页正文 7741 → 5972 词 (−22%), 另有不计页 limitations 224 + appendix 1244。
->
-> **✅ 已推 Overleaf** (项目 `6a59017b…`, 旧 AAAI 产物已清): 扁平双 main,
-> **菜单 → Main document → `main_paperA.tex` / `main_paperB.tex`** 切编译目标。
-> 推的时候踩到并修掉一个自己刚引入的 bug: sync 的 sed 漏了 `limitations` 的重命名 →
-> 首推上去的 main_paperB 引用了项目里不存在的文件。已加**推前断言**逐个核 `\input` 目标存在。
-> **✅ 已 push 到 origin** (`0ab783b..4b3335a`, 33 commits, 分支
-> `fix/b1878-reddit-reference-image`)。
->
-> ### 0-C. 未落地的 findings (全部需产物重生成, 按代价排)
->
-> | # | 来源 | 内容 | 代价 |
+> | | 页数 | 门 | Overleaf |
 > |---|---|---|---|
-> | ~~1~~ | A+B+C | §3 oracle 列 = `triage_only` — **已修 `9d11178`** | done |
-> | ~~6~~ | A+B+C | Vision 最便宜 / "cost tier" 误名 — **已修 `9d11178`** (更名 screenshot tier) | done |
-> | ~~4~~ | B | **已按方案 (c) 落地 `9383bd2`** — 但 codex 的建议是在推翻 2026-06-09 的 F2/B-1806 裁定 (实测成本 tie-break 已被考察并否决: 序跨 cell 不稳 + 成本对结果内生 + n_succ 太小)。改为**报两版**: canonical 仍是顺序表, 新增 `derive_cost_oracle_label` 作敏感性。**codex 的 4/6→5/6 复现了** (翻 cls·B1), 阴性更强。顺带兑现 B-1806 挂了两个月的 §6 披露欠账。 | done |
-> | ~~5~~ | B | Table 12 分母合并 — **已修 `9d11178`** (拆两行 + 各标分母) | done |
-> | 3/8 | A+B+C | H3 无同模式重跑 null (self-oracle noise floor); **且 §4.2 机制推断用错轴** —— axis-1 两臂都用紧凑 id, 该轴上 compact-id 是常量, 推不出结论, 正确推断与稿子写的相反 | 2-4h (有重跑) / 1-3d (需新跑) |
-> | 9 | B | 身份可辨天花板按 task_id 分组而非按实际特征向量; codex 称重算后 79.17/83.70 → ~83.93/91.30 | 2-4h |
-> | 17 | A+B | §4.3 "36 landed conditions cross-mode 聚合" 无命名产物 (cross_sites 只有 `cross_mode_failure_taxonomy_B0_classifieds.md` 单格) | ~1h |
-> | 16 | A+B | §6.1 的 7,963/7,278/685 无产物; 按 manifest 实测 39 condition = 7725/7058/667。**核心主张成立** (只有 0.0/1.0) | ~30min |
-> | 7 | B | I²=0 被当成同质性的正面证据, 但 4/6 格 SE 先被 floor 过 | 30-45min |
-> | 11 | B | 唯一显著格用 200 次置换且与选择步骤共污染 | 1-2h |
+> | **Paper A** 现象篇 | 正文 8 页 | `--submission` PASS | `main_paperA.tex` |
+> | **Paper B** 路由阴性 | 正文 8 页 | `--submission` PASS | `main_paperB.tex` |
 >
-> ### 0-D. 页数账 (实测, 别猜)
+> 一个 Overleaf 项目放两篇 (clone `~/overleaf-aaai27`, 目录名是历史遗留)。
+> **切编译目标 = Overleaf 菜单 → Main document**。同步: `bash scripts/maintenance/overleaf_sync.sh`。
 >
-> - **Paper A: 9 页总, refs 起 p8 → 正文 8 页, 限内。** 0 TODO / 0 未定义引用。
-> - **Paper B: 12 页总, refs 起 p11 → 正文 10 页, 超 2 页。**
->   实测过的杠杆: 12 张表全撤 = 省 2 页 (即散文自己就顶满 8 页) · 表格字号三档
->   (`\small`/`\footnotesize`/`\scriptsize`) **页数完全不变** (代价在浮动体排布不在墨水) ·
->   单栏 `table` 省 1 页但**表头溢出撞邻栏且 LaTeX 不报 Overfull** (已否决, 靠渲 PNG 眼看抓到)。
->   → 排版到 9 页见底。**差的 1 页只能来自散文或附录**; `convert.sh` 已支持可选 `appendix.md`。
+> 构建根是**新建的** `paper_drafts/latex/`, **不是** `aaai27/latex/` —— 后者是 AAAI 存档,
+> 被 `tests/test_dayaudit_rounda_20260714.py::test_f03` 的 fixture 钉住, 别动。
 >
-> ### 0-E. Mode B 的一个坑, 下次注意
+> ### 2. 🔴 下一步 = §0-C 台账里剩的 5 条 (全部需重生成产物)
 >
-> codex 引的文件名 (`section3_oracle_complementarity.md` / `section2_experimental_setup.md`
-> / `section1_introduction.md` …) **在仓库里不存在** —— 它按语义自行重命名了, 行号也不可跳。
-> 内容与数字逐条抽查**全部正确**, 所以是路径 confabulation 不是读错文件。
-> **下次 prompt 要显式给文件清单 + 要求逐字回引路径。**
+> | # | 内容 | 代价 | 备注 |
+> |---|---|---|---|
+> | **#3** | **§4.2 机制推断用错了轴** — axis-1 = \|P-text \ P-SoM\|, 两臂**都**用紧凑 id, 该轴上 compact-id 是**常量**, 所以「若 compact id 是主机制则 axis-1 应更大」推不出来; 变化的是 axis-2, 而 axis-2 更大 → **正确推断与稿子写的相反** | ~1h, 纯散文 | **唯一还会动 Paper A 结论表述的**, 优先 |
+> | #8 | H3 无同模式重跑 null (self-oracle noise floor)。项目自己的 `extract_50_features.py:636` 早警告过 N=1 oracle 需噪声天花板; 2026-05-15 Mode C 提过同一条, **两个月没 defuse** | 2-4h (有重跑) / 1-3d (需新跑) | 若保留「structure」大标题则是 P0 |
+> | #9 | 身份可辨天花板按 `task_id` 分组而非按实际特征向量; codex 称重算后 79.17/83.70 → ~83.93/91.30 | 2-4h | 会动 §6.3 + A.4 |
+> | #11 | 唯一显著格 (red·B2) 用 200 次置换且与选择步骤共污染 | 1-2h | 会动 §5.4 |
+> | #16/#17 | §6.1 的 7,963/7,278/685 无产物 (按 manifest 实测 39 condition 得 7725/7058/667, **核心主张成立**: 只有 0.0/1.0) · §4.3 "36 landed conditions cross-mode 聚合" 无命名产物 (cross_sites 只有 `cross_mode_failure_taxonomy_B0_classifieds.md` 单格) | 各 ~30-60min | traceability gap, 非假陈述 |
 >
-> ### 0-F. 我这一 session 已改的 6 处 (commit `79d305d`)
+> **动手前必读**: 本 session §396.7 的教训 —— codex #4 那条「明显该修」实际是在推翻
+> `router_features.py:78-101` 的 2026-06-09 F2/B-1806 裁定。**跨 AI 审计的建议, 先查它是不是
+> 已经被裁定过再动手**; codex/gemini 是冷读, 看不见代码注释里的历史裁定。
 >
-> "preregistered exclusions" → 如实的 post-hoc 披露 (两篇) · Table 3 表头 Holm→raw + 正文补
-> Holm 后值 · "5–25×" → 2.3–24.8× 且 per-backbone (含上游 `write_digests.py:170` 修正) ·
-> triage 的 TF-IDF 误述 (两处) · noise floor "exceeded"→"met or exceeded" ·
-> margin −0.004→−0.005 + abstract AUROC 补 "in five of six cells"。
+> ### 3. 页数怎么调 (本 session 学到的, 别重踩)
 >
-> **22 + 3 = 25 个 commit 全部未 push。距 08-05 还有 9 天。**
+> **超页先数表, 再决定砍不砍字。** 砍字不可逆, 浮动体是免费的:
+> ```bash
+> cd docs/checkpoints/paper_drafts/latex/build/paperB
+> for p in $(seq 1 9); do echo "p$p: $(pdftotext -f $p -l $p main.pdf - | grep -cE '^Table [0-9]+:')"; done
+> ```
+> 本轮真凶: Table 1 是 `table*`, 跨栏浮动只能落页顶, 排队时 LaTeX 保序 → 后面所有表被卡住,
+> 落地时一栏倾泻 4 张。全改单栏后 **一个字没砍就 9 页 → 8 页**。
+> `convert.sh` 的 `SINGLE_COL_BODY` 是 **per-paper 显式清单不是规则** —— pandoc 只在单元格相对
+> **全宽**够短时才出 `l` 列, 而 `l` 列不折行, 单栏下长表头会越界压到邻栏**且不报 Overfull**。
+> **改了表就得渲染成 PNG 眼看一遍。** 本 session 两次靠眼看抓到 LaTeX 静默放过的错。
+>
+> ### 4. 🚫 不要引用的数字
+>
+> | 出处 | 错的 | 对的 |
+> |---|---|---|
+> | 旧 hook / 老 §1 | drop-one **1.7-3.3pp** hero | 6-mode k=6 **0.0-1.3pp**, H1 FAIL |
+> | B-1898 旧记 | 该报 0.6533 | **反了** — 报 **0.7897** |
+> | 笔记 §387.9 | 汇总 SR 6.37% | **6.40%** |
+> | §387.16.3 | triage 成本 −38%~−45% | **−9.5%~−30.6%** |
+> | venn/lift 旧图 | B0_red 独解 6 · B2_red 2 | **5** · **1** (B-1907) |
+> | §383.4 | 「~1/4 标签由 tie-break 决定」 | **不成立** — true_tie 全 0; 真相是两个定义分歧 12.5-54.6% |
+> | Paper B 旧 abstract | oracle「只赢成本 13–22%」 | **+3.45~+16.07pp 且 −13.7%~−35.3%** |
+> | Paper A 旧 §4.2 | 幻觉引用降 **5–25×** | **2.3–24.8×**, 且是 per-**backbone** 不是 per-cell |
+>
+> ### 5. 后台两条 (⚠️ 跑命令核)
+>
+> - **A100 WA 全量**: chain pid **2658570**, 6 mode × 104, step **1/6** (dom) 在跑。ETA ~3 天。
+> - **DGX mechanistic**: 38617 跑 `p1_fwd_strong_red`, 08-01 自截断, **非关键路径**。
+>
+> ### 6. 人工动作 (只有 user 能做)
+>
+> - REALM OpenReview 投稿 (08-05); 作者/COI/abstract 见 `deliverables/`
+> - 学长看 Overleaf 两篇
+> - **毕设 D8** (results+discussion 章) **已过期**, D9 全稿 08-10 与 REALM 08-05 撞期
+>
+> **距 08-05 还有 8 天。git 与 Overleaf 均已同步, 未推 0。**
+
+---
+
+<details><summary>07-27 深夜及更早的 handoff 块 (历史, 数字可能已被上面取代)</summary>
 
 > 🎯 **2026-07-27 (五) 深夜 — 两篇 8 页稿都已成型。剩下的是 LaTeX 化 + stress + 投。** ⭐⭐⭐⭐
 >
@@ -568,6 +555,8 @@ ssh condense-a100 'cd /home/ubuntu/workspace/p79 && .venv/bin/python3 scripts/an
 > **reboot 后验证** (而非手动起): `curl -sf localhost:9999` (reddit) + `curl -sf localhost:4399` (homepage) 都 HTTP 200; homepage `@reboot` 首次 reboot 后建议确认一次。**全 docker 站自动回来** (restart policy): classifieds / classifieds_db / vwa-shopping / vwa-wikipedia + 现在 vwa-reddit。**WHY**: Gate 3 fire 2026-05-23 因 homepage down 被 Gate 4 拦 → reddit `restart=no` + flask homepage 曾是 2 个 reboot 盲区, 2026-06-02 修掉 (docker restart policy + @reboot cron); fail-closed 拦住 = preflight 工作正常。
 
 ---
+
+</details>
 
 ## §1 ROADMAP — dynamic (`tasks.base` ← edit `_status/tasks/*.md` frontmatter)
 
