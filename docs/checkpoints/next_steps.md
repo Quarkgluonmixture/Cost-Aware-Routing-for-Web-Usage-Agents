@@ -23,6 +23,41 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> 🚦 **2026-07-27 — 下个 session 的第一件事: 执行 user 已拍板的 (a) + 修 B-1891** ⭐⭐⭐ 未完成, 有 deadline
+>
+> **背景**: user 2026-07-27 拍板 **(a)** = B-1889(task 160) + B-1892(task 58) **按 §139.8 N/A 先例
+> 预注册排除出 scored set + PROTOCOL_NOTE 披露**; 并指示 "bug 你也修了吧"(= B-1891 一并修)。
+> 距 **REALM 08-05 仅 9 天**, 且 **k=6 重灌会把这个选择烤进两篇论文的所有数字** → 先做这个, 再做重灌。
+>
+> **⚠️ 执行时必须保留的关键区分**(详 笔记 §387.14): 两个 task 的排除依据强度不同 ——
+> **task 160 强**(判据"eval 只有 must_exclude 无正向检查" = 纯 config 可推导, outcome-blind,
+> 与 §139.8 同构); **task 58 弱**(因被观察到成功才进入视野, 带 outcome-adjacent 成分, 正是此前
+> 否决 "B0 replicate 提交前重跑" 时援引的同类风险)。→ NOTE 须**如实标注差异** + 附**带/不带各自**
+> 的敏感性分析。**不要把两者写成同等强度的排除。**
+>
+> **执行清单 (按序)**:
+> 1. 摸清 `p79/experiment/analysis.py::scored_task_count` 与 `task.exclude_na_tasks` 的现有排除机制
+>    (§139.8 的 N/A 排除走的是 **task load 层**, 见 `aggregate_cross_site.py:164` 注释), 决定新排除
+>    放 load 层还是 analysis 层 —— **注意 fire-immutability**: 已落盘数据不可改, 排除只能在读取侧。
+> 2. 写 `docs/checkpoints/prereg_amendments/PROTOCOL_NOTE_07_*.md` (目录当前为空, 编号从既有
+>    NOTE_06 续) + preregistration.md amendment log 行 + **git tag witness**
+>    (per [[feedback_pre_fire_protocol_witness]]: canonical-protocol 变更需自己的 tag)。
+> 3. 实现排除 + 敏感性分析 (SR 带/不带, 15/18 cell 受影响, 汇总 6.94%→6.37%,
+>    **B2_phantom_prompt 会归零 0.49%→0.00%**)。
+> 4. **B-1891 修**: `action_success` 语义脱节 → 所有 loop trigger 哑火。选项见 catalog
+>    (推荐 (b) 新增 `action_intent_fulfilled` 字段并存, trigger 改读新字段, 向后兼容)。
+>    **Phase 1 不影响 SR, 但 Phase 3 的 M3 retry 依赖 `no_progress_streak` → 启动前必修。**
+> 5. **B-1890 防线** (可选, catalog 建议 (c)): 在 schema catalog 显式标注 6 个 footprint 字段
+>    NOT-POPULATED + 加测试断言"全库恒为默认值的字段必须登记"。
+> 6. 然后才是 **k=6 重灌** (bind → promote → `make analysis`) → 两篇 REALM 稿 splice 数字。
+>
+> **另外两个 user 未答的问题**(下次问): ① 15 个 commit 要不要 push ② 要不要起 **毕设 D8**
+> (results+discussion 章, **07-24 已过期 3 天**, 下一环 D9 全稿 08-10 与 REALM 08-05 撞期)。
+>
+> **WA pilot**: A100 chain 自走中 (dom/som/vision 各 10/10, phantom_text 起步), 无需干预;
+> 完成时 ntfy `p79-claude`。chain pid 2579194, log `logs/queue_chain_wa_red_b1_20260727c.log`。
+
+
 > 🔭 **2026-07-27 UPDATE (二) — /diag v8 freeze 完成: 36 condition 同版本, cross-mode 解锁** ⭐⭐⭐ (详 笔记 §387.13):
 > - **✅ 规则批落码** (`dfa546c`): `RULESET_VERSION = 8-reddit-p41p46-b1890fix`。修 2 条 (B-1890 死字段 guard / P33 reddit 路径) + 新增 6 条 (P41-P46)。新增 `diag_rescan_all.py` 做 36-condition 重扫 + 版本一致性校验 (不一致 exit 1)。**reddit 18 + cls 18 全部落 v8, 36 份 digest 均补 v8 数字块 → cross-mode / cross-site 聚合解锁**。测试 1569 passed。
 > - **⚠️ cls 行为非字节不变** (与 v6→v7 的 H1 不同): P35/P39 旧命中被移除 (抽查确认旧命中是错的) + P33 在 cls +1 例 (task 233 的 `sites` 漏声明跨站)。**cls 聚合请用 digest 里的 v8 数字块, 不要用正文旧数**。
