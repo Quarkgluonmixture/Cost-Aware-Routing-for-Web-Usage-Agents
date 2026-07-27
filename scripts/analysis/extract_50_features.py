@@ -40,10 +40,16 @@ from p79.policies.router_features import (
     estimate_input_tokens,
 )
 try:
-    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        restrict_to_scored,
+    )
 except ModuleNotFoundError:  # Direct ``python scripts/analysis/...`` execution.
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        restrict_to_scored,
+    )
 
 REPO = Path(__file__).resolve().parents[2]
 PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
@@ -164,11 +170,18 @@ def assess_mode_completeness(
 
     The RAISED invariant is *mode-set consistency*: every mode must cover the same task
     set, because that is exactly what makes "cheapest successful mode" well-defined per
-    task. Agreement with the canonical scored universe is a strictly stronger property —
-    it is measured and reported here, and warned about loudly, but not raised on, because
-    the gating consumers already enforce it with a SHA check
-    (`router_offline_replay.collect_cell_outcomes`) and synthetic fixtures legitimately
-    use small task sets.
+    task.
+
+    B-1904 (2026-07-27): agreement with the canonical scored universe is a strictly
+    stronger property, and it is now ALSO raised on — by the caller, after
+    `restrict_to_scored`. The previous rationale for only warning ("the gating
+    consumers already enforce it with a SHA check via
+    `router_offline_replay.collect_cell_outcomes`") was wrong: that consumer
+    validates the episode directories IT reads and never opens this feature
+    cache, so no downstream check covered this artifact. The landed cache proved
+    it — both reddit cells sat at 205 tasks with no scored-universe SHA at all.
+    Synthetic fixtures keep their small task sets via `--allow-incomplete-cells`,
+    which is now the single explicit opt-out for a non-paper-grade cache.
 
     Returns a provenance dict; the caller decides whether to raise or skip.
     """
@@ -374,10 +387,54 @@ def build_cell_records(
         for tid, modes in sub.items():
             matrix.setdefault(tid, {}).update(modes)
 
+    # B-1904 (/stress Mode B codex, fixed 2026-07-27): restrict to the CANONICAL
+    # SCORED universe before anything is derived from `matrix`.
+    #
+    # Pre-fix this function only *compared* against the scored set and printed a
+    # warning, on the stated grounds that "the gating consumers already enforce it
+    # with a SHA check (`router_offline_replay.collect_cell_outcomes`)".  That
+    # reasoning does not hold: `collect_cell_outcomes` validates the episode
+    # directories IT reads and never opens this feature cache, so nothing
+    # downstream was checking this artifact's universe.  The landed canonical
+    # cache showed the consequence — both reddit cells at n_total_tasks=205
+    # (should be 203), no scored-universe SHA anywhere, and every router number
+    # derived on top of the two AMENDMENT_08 protocol-excluded tasks.
+    #
+    # Restriction (not rejection) is correct here: the runner is REQUIRED to
+    # collect 58/160, so their presence is contract-compliant. What must fail
+    # closed is a cell that, after restriction, still does not cover the scored
+    # set — that is missing data, handled below via `universe_complete`.
+    universe_provenance: dict[str, Any] = {}
+    try:
+        matrix, universe_provenance = restrict_to_scored(
+            matrix, site, label=cell_id
+        )
+    except ValueError:
+        # Foreign IDs (neither scored nor protocol-excluded) = contamination.
+        raise
+
     # B-1887: fail closed on a mid-collection cell BEFORE any label is derived. Without
     # this, an absent mode is coerced to "failed on every task" by derive_oracle_label
     # and the cell contributes plausible-but-wrong oracle labels to the pooled gate.
     mode_completeness = assess_mode_completeness(cell_id, site, matrix)
+    mode_completeness["universe_provenance"] = universe_provenance
+
+    # B-1904: the scored-universe check is now RAISED, not just warned about. A
+    # cell whose modes agree with each other but cover fewer tasks than the
+    # protocol scores is not the paper-grade task set, and every router number
+    # built on it silently uses a different denominator than H1/H2/H3.
+    if universe_provenance.get("universe_complete") is False and not allow_incomplete:
+        raise ValueError(
+            f"{cell_id}: feature extraction covers "
+            f"{universe_provenance['n_kept']}/"
+            f"{universe_provenance['n_scored_universe']} canonical scored tasks "
+            f"(missing={universe_provenance['missing_from_universe'][:10]}).\n"
+            f"    Router features/folds built on a partial universe cannot be "
+            f"compared against H1/H2/H3, which are formed over the full scored "
+            f"set (B-1904).\n"
+            f"    Fix the missing episodes, or pass --allow-incomplete-cells to "
+            f"produce an explicitly non-paper-grade cache."
+        )
     if not mode_completeness["cell_complete"]:
         if not allow_incomplete:
             raise ValueError(
@@ -739,6 +796,16 @@ def save_npz(extracted: dict[str, Any], out_path: Path) -> None:
                 "label_distribution": rec["label_distribution"],
                 "oracle_provenance": rec.get("oracle_provenance", {}),
                 "run_provenance": rec.get("run_provenance", {}),
+                # B-1904: persist the scored-universe provenance. Pre-fix this
+                # cache carried NO universe digest of any kind, so a consumer
+                # could not tell a 203-task cell from a 205-task one — and the
+                # landed artifact was in fact 205 with no way to notice.
+                # `content_task_ids_sha256` is computed from the rows that
+                # survived restriction, so it cannot be a correct-looking label
+                # over the wrong contents (see B-1906).
+                "universe_provenance": rec.get("mode_completeness", {}).get(
+                    "universe_provenance", {}
+                ),
                 "error": rec.get("error"),
             }
             for cid, rec in extracted["per_cell"].items()

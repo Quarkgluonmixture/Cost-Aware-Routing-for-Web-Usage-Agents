@@ -59,6 +59,18 @@ from sklearn.feature_selection import SelectKBest, mutual_info_classif
 from sklearn.model_selection import KFold
 
 REPO = Path(__file__).resolve().parents[2]
+try:
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        task_id_set_sha256,
+    )
+except ModuleNotFoundError:  # Direct ``python scripts/analysis/...`` execution.
+    sys.path.insert(0, str(REPO))
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        task_id_set_sha256,
+    )
+
 OUT_DIR = REPO / "results/phantom_paper/l1_router"
 
 FOLD_SEED = 42
@@ -489,10 +501,27 @@ def run_stage2(npz_path: Path, out_dir: Path, k: int = N_SELECTED) -> dict[str, 
     labeled_by_cell = Counter(str(c) for c in cell_ids.tolist())
     for cell_id, fold_map in fold_assignments.items():
         n_labeled = labeled_by_cell.get(cell_id, 0)
+        # B-1904 (2026-07-27): stamp the scored-universe provenance onto every fold
+        # map. Pre-fix these files carried n_tasks and nothing else, so a fold map
+        # built over the pre-AMENDMENT_08 205-task reddit universe was
+        # indistinguishable from a correct 203-task one — and the landed artifacts
+        # were in fact 205. `content_task_ids_sha256` is derived from the task IDs
+        # THIS map actually assigns, so a fold map whose universe drifts from the
+        # canonical set cannot present a matching digest (cf. B-1906).
+        _site = _site_of_cell(cell_id)
+        _scored_ids, _scored_sha = expected_scored_ids(_site)
+        _map_ids = frozenset(int(t) for t in fold_map)
         (out_dir / f"{cell_id}_fold_assignment.json").write_text(
             json.dumps(
                 {
                     "cell_id": cell_id,
+                    "site": _site,
+                    "canonical_task_universe_sha256": _scored_sha,
+                    "content_task_ids_sha256": task_id_set_sha256(_map_ids),
+                    "n_scored_universe": len(_scored_ids),
+                    "universe_matches_canonical_scored": _map_ids == frozenset(
+                        int(t) for t in _scored_ids
+                    ),
                     "n_splits": N_SPLITS,
                     "seed": FOLD_SEED,
                     "fold_assignment": {str(tid): fk for tid, fk in fold_map.items()},
