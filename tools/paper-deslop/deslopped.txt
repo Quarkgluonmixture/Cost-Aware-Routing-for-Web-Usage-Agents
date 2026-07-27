@@ -38,3 +38,8 @@ docs/checkpoints/paper_drafts/paperB/section4_supply.md
 docs/checkpoints/paper_drafts/paperB/section5_triage.md
 docs/checkpoints/paper_drafts/paperB/section6_relabelling.md
 docs/checkpoints/paper_drafts/paperB/section7_discussion.md
+docs/checkpoints/paper_drafts/paperA/section1_intro.md
+docs/checkpoints/paper_drafts/paperA/section2_setup.md
+docs/checkpoints/paper_drafts/paperA/section3_findings.md
+docs/checkpoints/paper_drafts/paperA/section4_behaviour.md
+docs/checkpoints/paper_drafts/paperA/section5_discussion.md
