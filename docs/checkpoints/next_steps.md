@@ -23,39 +23,43 @@ updated: 2026-06-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> 🚦 **2026-07-27 — 下个 session 的第一件事: 执行 user 已拍板的 (a) + 修 B-1891** ⭐⭐⭐ 未完成, 有 deadline
+> 🚦 **2026-07-27 (三) — 前一块的 6 步清单已全部完成; 下一步 = k=6 重灌** ⭐⭐⭐ (详 笔记 §387.15)
 >
-> **背景**: user 2026-07-27 拍板 **(a)** = B-1889(task 160) + B-1892(task 58) **按 §139.8 N/A 先例
-> 预注册排除出 scored set + PROTOCOL_NOTE 披露**; 并指示 "bug 你也修了吧"(= B-1891 一并修)。
-> 距 **REALM 08-05 仅 9 天**, 且 **k=6 重灌会把这个选择烤进两篇论文的所有数字** → 先做这个, 再做重灌。
+> **✅ 已落地** (commit `dc15837` / `de3ff66` / `147ec12`, **已 push**):
+> 1. **AMENDMENT_08** (不是 PROTOCOL_NOTE_07 —— `PROTOCOL_NOTE_01 §0` 把 AMENDMENT 命名空间
+>    保留给动 `scored_task_count` / sample-pool composition 的改动, 本次两条都命中)。
+>    reddit **计分**分母 205→**203**, **收集**分母保持 205 (runner 仍采集这两个 task ——
+>    这让完整性契约跨 amendment 边界不变, 且两条敏感性臂对任何 run 都算得出来)。
+>    tag `prereg-amendment-08-scored-set-exclusions-20260727`。
+> 2. **判据强弱如实分层**: tier A (task 160, config 可推导 outcome-blind) / tier B (task 58,
+>    需轨迹确认)。`tiers=()` 精确复现旧 universe SHA → 敏感性臂是**比较**不是重算。
+> 3. **敏感性** (`docs/analysis/cross_sites/amendment08_sensitivity.md`): reddit pooled
+>    `none` 6.94% → `A` 6.62% → **`A+B` 6.40%** / `A+B+X` 7.86% (仅参考); cls 四臂全 10.19%。
+>    ⚠️ **6.37% 是错的** (§387.9 原数扣了分子没减分母 + B0 少数一格) → **一律用 6.40%**。
+> 4. **B-1891 FIXED** (选项 b + 更保守): 加 `action_intent_fulfilled` 字段 + **独立** trigger
+>    `intent_unfulfilled_streak`。**不动 `action_success`** (它喂 agent 可见的 FAILED 反馈),
+>    **不并进 `no_progress_streak`** (WA 臂在改动后采集, 复用旧键会静默不可比)。
+> 5. **B-1890 防线**: `NOT_POPULATED_BY_RUNNER` 登记 + **双向**测试 (全库扫描抓下一个同类字段)。
+>    首跑抓到 7 个, 逐个查赋值点后确认全部是真算真为 0, 归 `CONSTANT_BY_NATURE` 各写理由。
+> 6. **B-1894** (新, user "查笔记"指令直接产出): `queue_chain.sh` 的 WA `SITE_EXPECTED_N` 停在
+>    pre-exclusion (106/192/182 vs 实产 104/173/176) → **全量 WA paper-grade chain 必 FATAL**。
+>    错的理由 ("WA has no N/A taxonomy") 与笔记 §137 task #76 直接矛盾。已修 + 加测试同时钉住
+>    数字**和**否定该理由文本。**B-1895**: 跨站 `|AND|` 畸形 obs_url 77/720, 根因未定。
 >
-> **⚠️ 执行时必须保留的关键区分**(详 笔记 §387.14): 两个 task 的排除依据强度不同 ——
-> **task 160 强**(判据"eval 只有 must_exclude 无正向检查" = 纯 config 可推导, outcome-blind,
-> 与 §139.8 同构); **task 58 弱**(因被观察到成功才进入视野, 带 outcome-adjacent 成分, 正是此前
-> 否决 "B0 replicate 提交前重跑" 时援引的同类风险)。→ NOTE 须**如实标注差异** + 附**带/不带各自**
-> 的敏感性分析。**不要把两者写成同等强度的排除。**
+> **▶ 下一步 = k=6 重灌** (bind → promote → `make analysis`, 走 NUMBERS_TODO §0 配方)
+> → 两篇 REALM 稿 splice 数字。**注意**: reddit universe SHA 已从 `41b1a918…` 变为 `1ce29c8b…`,
+> 所有带旧 SHA 的 reddit 产物都是陈旧的, **必须全部重生成** (产物间 SHA 互校会自动抓出漏网的)。
 >
-> **执行清单 (按序)**:
-> 1. 摸清 `p79/experiment/analysis.py::scored_task_count` 与 `task.exclude_na_tasks` 的现有排除机制
->    (§139.8 的 N/A 排除走的是 **task load 层**, 见 `aggregate_cross_site.py:164` 注释), 决定新排除
->    放 load 层还是 analysis 层 —— **注意 fire-immutability**: 已落盘数据不可改, 排除只能在读取侧。
-> 2. 写 `docs/checkpoints/prereg_amendments/PROTOCOL_NOTE_07_*.md` (目录当前为空, 编号从既有
->    NOTE_06 续) + preregistration.md amendment log 行 + **git tag witness**
->    (per [[feedback_pre_fire_protocol_witness]]: canonical-protocol 变更需自己的 tag)。
-> 3. 实现排除 + 敏感性分析 (SR 带/不带, 15/18 cell 受影响, 汇总 6.94%→6.37%,
->    **B2_phantom_prompt 会归零 0.49%→0.00%**)。
-> 4. **B-1891 修**: `action_success` 语义脱节 → 所有 loop trigger 哑火。选项见 catalog
->    (推荐 (b) 新增 `action_intent_fulfilled` 字段并存, trigger 改读新字段, 向后兼容)。
->    **Phase 1 不影响 SR, 但 Phase 3 的 M3 retry 依赖 `no_progress_streak` → 启动前必修。**
-> 5. **B-1890 防线** (可选, catalog 建议 (c)): 在 schema catalog 显式标注 6 个 footprint 字段
->    NOT-POPULATED + 加测试断言"全库恒为默认值的字段必须登记"。
-> 6. 然后才是 **k=6 重灌** (bind → promote → `make analysis`) → 两篇 REALM 稿 splice 数字。
+> **仍未答**: 要不要起 **毕设 D8** (results+discussion 章, **07-24 已过期 3 天**,
+> 下一环 D9 全稿 08-10 与 REALM 08-05 撞期)。
 >
-> **另外两个 user 未答的问题**(下次问): ① 15 个 commit 要不要 push ② 要不要起 **毕设 D8**
-> (results+discussion 章, **07-24 已过期 3 天**, 下一环 D9 全稿 08-10 与 REALM 08-05 撞期)。
->
-> **WA pilot**: A100 chain 自走中 (dom/som/vision 各 10/10, phantom_text 起步), 无需干预;
-> 完成时 ntfy `p79-claude`。chain pid 2579194, log `logs/queue_chain_wa_red_b1_20260727c.log`。
+> **WA (A100, 无人值守自走)**: pilot 6-mode × 10 task 收尾中 (第 5/6 个 mode)。
+> **pilot 退出后会自动起全量 chain** —— 6 mode × **104** task (放开 10-task 限制:
+> n=10 的 95% CI ≈ ±25-30pp, 撑不起任何结论), ETA **~3.5 天**,
+> `RESET_BEFORE=1` + `P79_PAPER_GRADE=1` 无 partial 旁路 (B-1894 已把 gate 修成 104)。
+> launcher `scripts/queues/_launch_wa_full_reddit.sh`, pid 落 `.wa_full_chain.pid`,
+> log `logs/queue_chain_wa_red_b1_full_<ts>.log`, 起飞时 ntfy `p79-claude`。
+> WA shopping/shopping_admin **不放开** (无 reset 实现, 跑出来非 paper-grade 干净)。
 
 
 > 🔭 **2026-07-27 UPDATE (二) — /diag v8 freeze 完成: 36 condition 同版本, cross-mode 解锁** ⭐⭐⭐ (详 笔记 §387.13):
@@ -64,7 +68,7 @@ updated: 2026-06-27
 > - **⭐ 首个 cross-mode 矩阵的结论对 paper 直接相关**: 占比最高的四条失败签名 (P31/P36/P5/P14) **全部 mode-无关** → 换表征救不了。与 §387.8 (comment 天花板 4x) / §387.10 (补图增益 ≈0) 共同界定 **routing 空间的外边界比 drop-one oracle 数字看起来的窄** —— **discussion 须三条并排写**, 否则 oracle 会被读成"还有这么多能靠 routing 拿到"。
 > - **🐛 本轮新增 bug**: B-1888 (defaults 只解析一层) · B-1889 (task 160 passive FP, **待 prereg 级决策**) · B-1890 (footprint 字段恒 0 陷阱) · B-1891 (`action_success` 语义脱节 → **Phase 3 的 M3 retry 会失效**, 启动前必修) · B-1892 (task 58 参数知识捷径, **待决策**) · B-1893 (fire6 硬编码 VWA 路径致假告警, 已修)。
 > - **🔲 diag 剩余欠账**: `SINGLE_TARGET_FINISH_ON_MULTI_TARGET_TASK` (多目标任务提前收工, 需实体抽取非纯字段比较) + P27 `ABANDONMENT_RE` 扩充 —— 留下一轮。
-> - **⚠️ 未 push**: 本 session 15 个 commit 全在本地。
+> - **✅ 已 push** (user 2026-07-27 授权): 本 session 全部 commit 已上 origin。
 
 > 🔭 **2026-07-27 UPDATE — k=6 数据齐 + WA pilot 首次点火 + B-1888/B-647 两雷** ⭐⭐⭐ (详 笔记 §387):
 > - **✅ k=6 数据完备**: `B2_phantom_prompt_reddit_20260723` 07-25 08:19 落 205/205 → **B2 reddit 六 mode 全齐**。**下一步 = bind → promote → k=6 重灌** (走 NUMBERS_TODO §0 配方), 随后稿件三处必改 (§383: "two cells"→"three cells" / 机制口径 `insufficient_train_data` / 补披露 Pass-2 从未 fire) + **B-1284 cross-family modifier 具备解除条件** + Protocol Note 06 两轨制披露块可删。距 REALM 08-05 还有 9 天。
