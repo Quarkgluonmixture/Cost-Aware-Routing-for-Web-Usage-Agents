@@ -26,33 +26,39 @@ A prior-only predictor scores 0.500 by construction. The single-feature column i
 | classifieds·B0 | best-single (`SoM`) | 27.23 | 0.07236 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 25.00 | 0.06481 | -2.23pp | -10.4% | 224/224 |
 | | oracle triage | 27.23 | 0.06312 | +0.00pp | -12.8% | 127/224 |
-| | learned, SR-lossless | 27.23 | 0.07236 | +0.00pp | -0.0% | 0/224 |
-| | learned, ≤1pp SR give-back | 26.34 | 0.06988 | -0.89pp | -3.4% | 78/224 |
+| | **learned, nested threshold (honest)** | 25.45 | 0.07172 | -1.79pp | -0.9% | 47/224 |
+| | learned, SR-lossless (in-sample threshold) | 27.23 | 0.07236 | +0.00pp | -0.0% | 0/224 |
+| | learned, ≤1pp give-back (in-sample threshold) | 26.34 | 0.06988 | -0.89pp | -3.4% | 78/224 |
 | reddit·B0 | best-single (`SoM`) | 14.78 | 0.11045 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 7.39 | 0.09807 | -7.39pp | -11.2% | 203/203 |
 | | oracle triage | 14.78 | 0.09998 | +0.00pp | -9.5% | 150/203 |
-| | learned, SR-lossless | 14.78 | 0.11045 | +0.00pp | -0.0% | 0/203 |
-| | learned, ≤1pp SR give-back | 14.78 | 0.11045 | +0.00pp | -0.0% | 0/203 |
+| | **learned, nested threshold (honest)** | 13.79 | 0.11001 | -0.99pp | -0.4% | 12/203 |
+| | learned, SR-lossless (in-sample threshold) | 14.78 | 0.11045 | +0.00pp | -0.0% | 0/203 |
+| | learned, ≤1pp give-back (in-sample threshold) | 14.78 | 0.11045 | +0.00pp | -0.0% | 0/203 |
 | classifieds·B1 | best-single (`SoM`) | 14.29 | 0.06028 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 12.50 | 0.04316 | -1.79pp | -28.4% | 224/224 |
 | | oracle triage | 14.29 | 0.04858 | +0.00pp | -19.4% | 169/224 |
-| | learned, SR-lossless | 14.29 | 0.05388 | +0.00pp | -10.6% | 53/224 |
-| | learned, ≤1pp SR give-back | 13.39 | 0.05106 | -0.89pp | -15.3% | 101/224 |
+| | **learned, nested threshold (honest)** | 13.84 | 0.05392 | -0.45pp | -10.5% | 59/224 |
+| | learned, SR-lossless (in-sample threshold) | 14.29 | 0.05388 | +0.00pp | -10.6% | 53/224 |
+| | learned, ≤1pp give-back (in-sample threshold) | 13.39 | 0.05106 | -0.89pp | -15.3% | 101/224 |
 | reddit·B1 | best-single (`SoM`) | 7.39 | 0.08000 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 2.46 | 0.05240 | -4.93pp | -34.5% | 203/203 |
 | | oracle triage | 7.39 | 0.05554 | +0.00pp | -30.6% | 179/203 |
-| | learned, SR-lossless | 7.39 | 0.06847 | +0.00pp | -14.4% | 91/203 |
-| | learned, ≤1pp SR give-back | 6.40 | 0.06369 | -0.99pp | -20.4% | 122/203 |
+| | **learned, nested threshold (honest)** | 6.40 | 0.06779 | -0.99pp | -15.3% | 93/203 |
+| | learned, SR-lossless (in-sample threshold) | 7.39 | 0.06847 | +0.00pp | -14.4% | 91/203 |
+| | learned, ≤1pp give-back (in-sample threshold) | 6.40 | 0.06369 | -0.99pp | -20.4% | 122/203 |
 | classifieds·B2 | best-single (`SoM`) | 2.23 | 0.09075 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 2.23 | 0.07065 | +0.00pp | -22.1% | 224/224 |
 | | oracle triage | 2.23 | 0.07145 | +0.00pp | -21.3% | 208/224 |
-| | learned, SR-lossless | 2.23 | 0.07190 | +0.00pp | -20.8% | 212/224 |
-| | learned, ≤1pp SR give-back | 2.23 | 0.07190 | +0.00pp | -20.8% | 212/224 |
+| | **learned, nested threshold (honest)** | 1.34 | 0.07326 | -0.89pp | -19.3% | 199/224 |
+| | learned, SR-lossless (in-sample threshold) | 2.23 | 0.07190 | +0.00pp | -20.8% | 212/224 |
+| | learned, ≤1pp give-back (in-sample threshold) | 2.23 | 0.07190 | +0.00pp | -20.8% | 212/224 |
 | reddit·B2 | best-single (`DOM`) | 3.94 | 0.09479 | — | — | — |
 | | **always-cheapest (`Vision`)** — the fixed policy a router must beat | 1.97 | 0.06833 | -1.97pp | -27.9% | 203/203 |
 | | oracle triage | 3.94 | 0.06974 | +0.00pp | -26.4% | 188/203 |
-| | learned, SR-lossless | 3.94 | 0.06964 | +0.00pp | -26.5% | 192/203 |
-| | learned, ≤1pp SR give-back | 3.94 | 0.06964 | +0.00pp | -26.5% | 192/203 |
+| | **learned, nested threshold (honest)** | 3.94 | 0.06996 | +0.00pp | -26.2% | 189/203 |
+| | learned, SR-lossless (in-sample threshold) | 3.94 | 0.06964 | +0.00pp | -26.5% | 192/203 |
+| | learned, ≤1pp give-back (in-sample threshold) | 3.94 | 0.06964 | +0.00pp | -26.5% | 192/203 |
 
 ## 3. Is the saving real, or manufactured by the threshold sweep?
 

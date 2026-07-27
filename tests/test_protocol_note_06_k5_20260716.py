@@ -83,7 +83,10 @@ def _install_synthetic_statistics(monkeypatch) -> None:
 
     monkeypatch.setattr(full, "_cell_drop_one_theta_se", fake_h1)
     monkeypatch.setattr(full, "_load_cell_per_task", lambda *_args, **_kwargs: {})
-    monkeypatch.setattr(full, "_h2a_per_task_ratio", lambda *_args: {
+# `universe=` kwarg added 2026-07-27 (AMENDMENT_08: H2(a) must score the same
+    # scored set as H1/H3). `**_kw` keeps this stub signature-agnostic so a future
+    # kwarg addition fails in the producer, not here.
+    monkeypatch.setattr(full, "_h2a_per_task_ratio", lambda *_args, **_kw: {
         "n_paired_tasks": 100,
         "n_ratios_computed": 100,
         "n_dom_zero_skipped": 0,

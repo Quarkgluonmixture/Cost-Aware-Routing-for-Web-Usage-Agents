@@ -210,6 +210,45 @@ def evaluate(cell_spec: dict) -> dict | None:
     # already ties on SR it wins outright. A learned triage has to beat THIS.
     always_cheap = {"sr_pct": per_mode_sr[cheap_mode], "mean_cost": per_mode_cost[cheap_mode]}
 
+    # ---- Honest operating point: NESTED threshold selection.
+    #
+    # The sweep below picks the threshold by looking at realized outcomes on the
+    # WHOLE cell, so its "SR-lossless" point is in-sample with respect to the
+    # threshold even though the scores are out-of-fold. Cross-AI audit and self
+    # audit flagged this independently (2026-07-27). It is retained because the
+    # permutation null shares the same selection step — so the p-values compare
+    # like with like — but it must NOT be read as an achievable operating point.
+    # `nested` below is the achievable one: per outer fold, choose the threshold
+    # on the training folds only, then apply it blind to the held-out fold.
+    nested_hits = nested_spend = 0
+    nested_sent_cheap = 0
+    rng_n = np.random.default_rng(SEED)
+    idx_n = rng_n.permutation(n)
+    for f in np.array_split(idx_n, N_FOLDS):
+        tr = np.setdiff1d(idx_n, f)
+        sc_tr = sc["lr"][tr]
+        if np.all(np.isnan(sc_tr)):
+            thr_star = -np.inf
+        else:
+            base_tr_sr = 100.0 * sum(cell["succ"][i][best_mode] for i in tr) / len(tr)
+            cands = np.quantile(sc_tr[~np.isnan(sc_tr)], np.linspace(0.0, 0.95, 20))
+            thr_star, best_c = -np.inf, None
+            for thr in cands:
+                h = sum(cell["succ"][i][cheap_mode if sc["lr"][i] < thr else best_mode] for i in tr)
+                c = sum(cell["cost"][i][cheap_mode if sc["lr"][i] < thr else best_mode] for i in tr)
+                if 100.0 * h / len(tr) >= base_tr_sr - 1e-9 and (best_c is None or c < best_c):
+                    thr_star, best_c = float(thr), c
+        for i in f:
+            use = cheap_mode if sc["lr"][i] < thr_star else best_mode
+            nested_sent_cheap += (use == cheap_mode)
+            nested_hits += cell["succ"][i][use]
+            nested_spend += cell["cost"][i][use]
+    policies_nested = {
+        "sr_pct": 100.0 * nested_hits / n, "mean_cost": nested_spend / n,
+        "n_sent_cheap": int(nested_sent_cheap),
+        "note": "threshold chosen on train folds only, applied blind to held-out fold",
+    }
+
     # Threshold sweep on the OOF score; report the operating point that keeps SR
     # whole (the only kind of saving that is free) and the best-cost point within
     # a 1pp SR give-back.
@@ -259,6 +298,7 @@ def evaluate(cell_spec: dict) -> dict | None:
         "oracle_triage": oracle,
         "learned_lossless": best_lossless,
         "learned_within_1pp": best_1pp,
+        "learned_nested_honest": policies_nested,
         "observed_lossless_saving_pct": observed_saving,
         "null_shuffle_saving_median_pct": (float(np.median(null_savings))
                                            if null_savings else float("nan")),
@@ -309,8 +349,9 @@ def main() -> int:
         L.append(f"| | oracle triage | {o['sr_pct']:.2f} | {o['mean_cost']:.5f} | "
                  f"{o['sr_pct']-b['sr_pct']:+.2f}pp | "
                  f"{100*(o['mean_cost']/b['mean_cost']-1):+.1f}% | {o['n_sent_cheap']}/{r['n']} |")
-        for key, label in (("learned_lossless", "learned, SR-lossless"),
-                           ("learned_within_1pp", "learned, ≤1pp SR give-back")):
+        for key, label in (("learned_nested_honest", "**learned, nested threshold (honest)**"),
+                           ("learned_lossless", "learned, SR-lossless (in-sample threshold)"),
+                           ("learned_within_1pp", "learned, ≤1pp give-back (in-sample threshold)")):
             p = r[key]
             if p is None:
                 L.append(f"| | {label} | — | — | none exists | — | — |")

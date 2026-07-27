@@ -65,6 +65,10 @@ from scripts.analysis.aggregate_phantom_lift import (  # noqa: E402
     MIN_EP_FOR_CELL,
     get_aggregator_cells,  # A1.21 P1-3 (B-530): lazy fn, was frozen CELLS constant
 )
+from scripts.analysis.lib.canonical_task_universe import (  # noqa: E402
+    expected_scored_ids,
+    protocol_excluded_in_universe,
+)
 from scripts.analysis.aggregate_phase1_prereg_gate import (  # noqa: E402
     _cell_drop_one_theta_se,
     _fe_pool,
@@ -256,7 +260,8 @@ def _psom_unique_ids(per_task: Dict[str, Dict[str, Dict]]) -> set:
     return unique
 
 
-def _h2a_per_task_ratio(per_task: Dict[str, Dict[str, Dict]]) -> Optional[Dict]:
+def _h2a_per_task_ratio(per_task: Dict[str, Dict[str, Dict]],
+                        universe: Optional[set] = None) -> Optional[Dict]:
     """H2(a) per-task cost ratio median falsification check.
 
     A1.21 P0-9 fix (prereg §2 H2(a) lock amend 2026-05-17):
@@ -270,6 +275,11 @@ def _h2a_per_task_ratio(per_task: Dict[str, Dict[str, Dict]]) -> Optional[Dict]:
     dom = per_task.get("DOM", {})
     psom = per_task.get("P-SoM", {})
     common = sorted(set(dom.keys()) & set(psom.keys()))
+    # AMENDMENT_08: restrict to the canonical SCORED set. Without this, H2(a)
+    # ran on every task present on disk (reddit 205) while H1 ran on the scored
+    # set (203) — three hypotheses, two denominators, one output table.
+    if universe is not None:
+        common = [t for t in common if t in universe]
     ratios: List[float] = []
     n_dom_zero = 0
     n_dom_missing = 0
@@ -941,8 +951,19 @@ def build_full_decision(
             expected_ids_by_site.get(cell["site"])
             if expected_ids_by_site is not None else None
         )
+        # AMENDMENT_08: resolve the canonical scored set HERE rather than relying on
+        # `_cell_drop_one_theta_se`'s internal fallback. The fallback gave H1 the
+        # right universe while leaving `expected_ids=None` at this call site, so the
+        # H2(a) / H3 intersection below silently no-op'd and those two hypotheses kept
+        # running on the wider on-disk set. One resolved variable, three hypotheses.
+        if expected_ids is None:
+            expected_ids = expected_scored_ids(cell["site"])[0]
         h1_per_cell = _cell_drop_one_theta_se(
-            cell, expected_ids=expected_ids, rows_by_mode=rows_by_mode
+            cell, expected_ids=expected_ids, rows_by_mode=rows_by_mode,
+            # Passing `expected_ids` explicitly opts out of the gate's own
+            # AMENDMENT_08 carve-out, so hand it the tolerated ids directly —
+            # otherwise every reddit cell fails `complete_exact` again.
+            tolerate_extra_ids=protocol_excluded_in_universe(cell["site"]),
         )
         if not h1_per_cell["complete_exact"]:
             skipped.append({
@@ -951,12 +972,37 @@ def build_full_decision(
             })
             continue
         per_task = _load_cell_per_task(cell, rows_by_mode=rows_by_mode)
-        h2a = _h2a_per_task_ratio(per_task)
         # B-948 (/stress A2.3a P0-6-B*, 2026-05-17): compute six-arm complete-
         # case universe ONCE per cell + pass to both axis tests → matches
         # `aggregate_phantom_lift.py:655-658` universe semantics. Pre-fix
         # axis-only intersection drifted H3 universe vs lift script.
         six_arm_universe = _six_arm_complete_case_universe(per_task)
+        # AMENDMENT_08: `_six_arm_complete_case_universe` derives the universe from
+        # WHAT IS ON DISK (every task with all six modes present). That was the right
+        # semantics when the scored set equalled the collected set; post-amendment it
+        # is 2 reddit tasks too wide, and it feeds H2(a) + both H3 axes — including
+        # the H3 verdict the R5 fallback route rests on. Intersect with the canonical
+        # scored set so all three hypotheses share one denominator.
+        if six_arm_universe is not None and expected_ids is not None:
+            # `per_task` keys are str (loader convention) while
+            # `expected_scored_ids` yields int — B-1013's fail-loud assertion only
+            # rejects MIXED types inside the common set, so a uniform-but-different
+            # type against an outside comparison set slips through it. Normalise
+            # both sides to int before intersecting; a naive `t in set(expected_ids)`
+            # silently yields the empty set (verified: 0 vs 203).
+            _keep = {int(x) for x in expected_ids}
+            six_arm_universe = [t for t in six_arm_universe if int(t) in _keep]
+            if not six_arm_universe:
+                raise ValueError(
+                    f"{cell['baseline']}_{cell['site']}: six-arm universe is EMPTY after "
+                    f"intersecting with the canonical scored set. Almost certainly a "
+                    f"task_id type mismatch, not real data loss. Refusing to emit — an "
+                    f"empty H2(a) reports 'not falsified' because falsification is "
+                    f"impossible on zero tasks, which reads as a pass."
+                )
+        h2a = _h2a_per_task_ratio(
+            per_task, universe=set(six_arm_universe) if six_arm_universe is not None else None
+        )
         # B-1006 (/stress A2.4a P2-20-B* codex F8 OOB, 2026-05-18): per-axis seed
         # stratification. Pre-fix both axis1+axis2 called `_h3_axis_per_cell`
         # with identical `PREREG_SEED=42` → identical bootstrap resample indices →
@@ -1280,10 +1326,31 @@ def build_full_decision(
             p_holm = max(p_holm, h3_p_pairs[rank - 1][2].get("p_holm_m2_legacy", 0.0))
         result_dict["p_holm_m2_legacy"] = p_holm
         result_dict["passed_p_holm_m2_legacy"] = bool(p_holm < ALPHA)
+        # B-1897 (/stress 2026-07-27, Mode C P0 OOB): the previous wording read
+        # "Canonical gate is CI_lower_bound > 0 (closed-form, no p-family). Holm
+        # m=2 applied to legacy p-value for transparency only." That rationale is
+        # wrong: a 95% CI excluding 0 is isomorphic to rejecting at α=0.05, so two
+        # uncorrected 95% CIs over {axis1, axis2} inflate FWER exactly as two
+        # uncorrected p-values do. "Closed-form" is not an exemption from
+        # multiplicity — being an interval rather than a p-value changes the
+        # presentation, not the error rate.
+        #
+        # The correction was always COMPUTED (p_holm_m2_legacy); only the stated
+        # justification for treating it as optional was defective. This note now
+        # reports the Holm verdict as load-bearing rather than decorative, which
+        # matters more after 2026-07-27 than before: with H1 failed, the R5
+        # fallback route (C_prime_structure) rests entirely on these two axes, so
+        # the family is the paper's claim, not a side panel.
         result_dict["family_correction_note"] = (
-            "Canonical gate is CI_lower_bound > 0 (closed-form, no p-family). "
-            "Holm m=2 applied to legacy p-value for transparency only (B-1007)."
+            "Family = {H3 axis1, axis2}, m=2. Both the CI gate and the Holm-adjusted "
+            "p-value are reported and BOTH must hold; the CI is not exempt from "
+            "multiplicity (a 95% CI excluding 0 is isomorphic to a test at alpha=0.05). "
+            "For a strictly FWER-controlled interval read the CI at 1-alpha/m. "
+            "Supersedes the pre-B-1897 note that called the CI gate 'closed-form, no "
+            "p-family'."
         )
+        result_dict["family_size_m"] = 2
+        result_dict["ci_level_for_fwer_control"] = 1.0 - ALPHA / 2.0
 
     # Apply framing rule with I² cap-only
     # B-1301 (/stress A2.3d P0-1-AB* 3-AI overlap OOB, 2026-05-18): primary H1

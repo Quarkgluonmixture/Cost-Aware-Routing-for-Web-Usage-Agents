@@ -9055,3 +9055,134 @@ run, 没有就 glob + 对 >1 个 canonical run 只发警告**, 然后
 
 **Cross-link**: 笔记 §367 (预警) · §387.16 (落地) · B-1887 (同族: mode 层缺数据被当失败) ·
 `p79/policies/pass1_manifest.py` · `scripts/analysis/write_pass1_run_manifest.py`
+
+---
+
+## B-1897 — H3 的族校正理由写错: 「闭式 CI 所以不用 p-family」在数学上站不住 (2026-07-27)
+
+**B-1897** (统计表述, **FIXED**, cross-AI Mode C P0 OOB) —
+
+`aggregate_phase1_full_prereg_decision.py:1329` 原文:
+
+> "Canonical gate is CI_lower_bound > 0 (**closed-form, no p-family**). Holm m=2 applied to
+> legacy p-value for transparency only (B-1007)."
+
+**攻击 (Mode C)**: 用"它是闭式区间不是 p 值"当免除族校正的理由是错的 —— 95% CI 不含 0 与
+α=0.05 拒绝原假设**同构**, 两条未校正 95% CI (axis1 / axis2) 膨胀 FWER 到约 0.0975,
+与两个未校正 p 值完全一样。"闭式"改变的是呈现形式, 不是错误率。
+
+**为什么今天才要紧**: 以前 H3 只是佐证, 这条注释没人计较。**2026-07-27 H1 失败后,
+R5 的 `C_prime_structure` 降级路线整个压在 H3 两轴上** —— 族就是论文的主张本身,
+不再是侧栏。
+
+**实质无损**: 校正本来就在算 (`p_holm_m2_legacy`), 只有"可以不当真"这个理由是坏的。
+实测两轴从容通过: axis2 p=7.515e-07 vs Holm 门槛 0.025; axis1 p=1.186e-05 vs 0.05。
+CI 也离 0 很远 ([0.725, 1.980] / [1.237, 2.938]), 换 97.5% CI 同样不含 0。
+
+**Fix**: 注释改为"族 = {axis1, axis2}, m=2, **CI 与 Holm 都必须成立**, CI 不豁免多重性;
+要严格 FWER 控制的区间请读 1−α/m 水平", 并 emit `family_size_m` + `ci_level_for_fwer_control`。
+
+**教训**: 一句"某某所以不需要校正"的理由, 在它所守护的假设从佐证升为主张的那一刻,
+就从措辞问题变成承重问题。**升级承重时要重读旧豁免。**
+
+**Cross-link**: B-1007 (原注释来源); 笔记 §387.17; AMENDMENT_02 §4 (R5 pivot 定义)
+
+---
+
+## B-1898 — H1 的 SE floor 实现比预注册更严 (ses<0.68 vs 预注册 ses<=0), 与 H3 不对称 (2026-07-27)
+
+**B-1898** (code↔prereg 不一致, **待决策 — 属 estimand 层, 不自行改**) —
+
+preregistration.md line 103-111 把 degenerate-cell SE floor 反复限定为**恰好为零**:
+
+> "when a cell's paired bootstrap **SE_i = 0 exactly**" · "SE floor fires only when
+> `(ses <= 0).sum() > 0`" · "floor is **edge-case backstop**"
+
+而实现分两套:
+
+| | 规则 | 本次 6-cell 触发 |
+|---|---|---|
+| **H1** (`_fe_pool` L1204/1208) | `ses < 0.68` → 换成 1.0pp | **4 个 cell** |
+| **H3** (`floor_nonpositive_only=True`, L607) | `ses <= 0` → 换成 1.0pp | 1 个 cell |
+
+`0.68` 在 prereg 里是 Agresti-Coull 的**缓冲交叉核对值** ("≈ 0.68pp ≤ floor (cushion)"),
+被实现成了**触发阈值**。所以 **H1 被按一条比预注册更严的规则惩罚, 而 H3 按预注册规则执行**。
+
+**⚠️ 发现路径与结论方向相反 (记账)**: cross-AI Mode C 报的是
+"selective SE flooring engineers a fallback rescue —— 主门被苛待以迫使 H1 失败、
+fallback 门被豁免以放它通过"。**方向是反的。** 实测两条规则下的 H1:
+
+| SE-floor 规则 | n_floored | θ_FE | SE_FE | z vs 1.0pp | gate |
+|---|---|---|---|---|---|
+| 实现 `ses<0.68` | 4 | 0.7897 | 0.3593 | −0.585 | FAIL |
+| **预注册 `ses<=0`** | 1 | **0.6533** | 0.2446 | **−1.417** | FAIL |
+
+超额 flooring 其实**偏向 H1**: 它把 θ 最小且 SE 也最小的两个 cell (cls/B2 θ=0.446 se=0.445;
+red/B2 θ=0.493 se=0.472) 降权, 把 θ_FE 从 0.653 抬到 0.790。→ **不改判决, 且按预注册重算
+H1 败得更彻底。**
+
+**为什么仍是 P1 必报**: 审稿人照 prereg line 111 重算会得到 **0.6533 而不是论文写的 0.7897**。
+数字对不上就是 kill, 无论方向。
+
+**待决策 (属 estimand 层)**: (a) 实现改回 `ses<=0` 对齐 prereg (H1 θ_FE 变 0.6533, 判决不变);
+(b) 保留实现并在 AMENDMENT 里补 0.68 阈值的预注册说明 (它有 Agresti-Coull 依据, 但那依据在
+prereg 里的角色是 cushion 不是 threshold); (c) 两者都报作敏感性。**推荐 (a)+(c)**。
+
+**Cross-link**: prereg line 103-111 (locked 2026-05-17 /stress A1.19 P0-1 + A1.21 P0-10);
+笔记 §387.17; cross-AI Mode C F6 (发现者, 结论方向需修正)
+
+---
+
+## B-1899 — `router_objective_ordering` 的 fallback 隐含一个 per-instance 成本预言机, 虚高 41-43% (2026-07-27)
+
+**B-1899** (分析层, **FIXED**, cross-AI Mode C P0 OOB) —
+
+`triage_only` / `oracle_sr` / `oracle_sr_cost` 三条策略对"无人能解"的任务用
+`min(cost[m][t] for m in SIX_MODES)` —— **每任务跨 mode 的最小成本**。
+
+那不是"改用最便宜的 mode"(一个不需要实例知识的固定选择), 而是**事先知道这个具体任务在哪个
+mode 上最便宜** = per-instance 成本预言机。而这三条策略被宣传为"只需要一个二元
+solvable/not 标签"。
+
+**实证虚高** (hopeless 子集上):
+
+| cell | per-task-min (代码) | 全局最便宜 mode (文档所称) | 虚高 |
+|---|---|---|---|
+| cls/B0 | 0.04438 | 0.07778 (Vision) | **42.9%** |
+| red/B0 | 0.06144 | 0.10454 (Vision) | **41.2%** |
+
+**头条数字随之改写**: `triage_only` 从 −38%~−45% 降到 **−9.5%~−30.6%**;
+`oracle_sr_cost` 从 −42%~−54% 降到 −13.7%~−35.3%。
+
+**且推论作废**: 修正后 **5/6 cell 里那条不需要任何 router 的 `cheapest` 固定策略省得更多**
+(代价是 −1.79~−7.39pp SR), cls/B2 更是**零 SR 代价地 Pareto 压制 oracle triage**
+(−22.1% vs −21.3%, SR 同为 2.23%)。→ "成本这半值 40% 且标签充足所以有戏"整条不成立。
+
+**Mode C 是怎么一眼看出来的 (值得学)**: 它做了一步**我自己审三轮都没做的算术** ——
+报出的 mean cost 0.04418 **低于任何单个 mode 的均值** (最低 Vision 0.06481),
+而任何"选一个 mode"的策略都不可能低于所有 mode 的均值下界。
+**一个越过物理下界的数字, 不需要读代码就知道错了。**
+
+**Fix**: fallback 改 `cost[cheapest_mode][t]`; 全文重生成。
+`router_triage_learnability.py` **不受影响** (它永远路由到具名 mode, 已核)。
+
+**Cross-link**: 笔记 §387.16.3 (被推翻的原结论, 已加删除线) + §387.17; B-1900 (同批同源)
+
+---
+
+## B-1900 — cost-first 级联被标 "oracle-free", 但停在首次成功需要成功预言机 (2026-07-27)
+
+**B-1900** (分析层标签, **FIXED**, cross-AI Mode C P0 OOB) —
+
+`cascade_cost_first` 按成本升序试 mode, `if succ[m][t]: break`。**那个 `succ` 是评测真值。**
+部署时没有评测器, agent 也不能完美自评 —— 所以真实级联会在**每个**任务上把 6 个 mode 全跑完,
+成本远高于报出的值。原 `"kind": "oracle-free"` 是错的。
+
+**Fix**: 改标 `"kind": "oracle (success-detection)"` + 增列
+`mean_cost_all_six_no_detector` (无检测器时的真实成本)。原报出的 +341%~+463% 保留为
+**该策略族的乐观下界**, 不是可部署成本。
+
+**教训**: 「oracle-free」这个标签要问的不是"用没用真值标签训练", 而是
+**"运行时每一个分支决策所需的信息, 部署时拿得到吗"**。级联的分支条件正是评测结果本身。
+
+**Cross-link**: B-1899 (同批); 笔记 §387.17

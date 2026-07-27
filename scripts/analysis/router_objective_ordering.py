@@ -126,6 +126,18 @@ def evaluate(cell: dict) -> dict | None:
     # policies use different fallbacks would fold a "DOM vs Vision on unsolvable
     # tasks" difference into what is supposed to measure the tie-break alone.
     # (An earlier version of this script did exactly that and inflated the gap.)
+    # The fallback for tasks nothing solves is the cost of the GLOBALLY CHEAPEST
+    # MODE on that task — not `min over modes of cost[m][t]`.
+    #
+    # An earlier version used the per-task minimum, which silently required a
+    # per-instance COST oracle: knowing, before acting, which mode would happen to
+    # be cheapest on this particular task. That is a far stronger (and
+    # unimplementable) assumption than the binary solvable/not label these
+    # policies are advertised as needing, and it was worth 41-43% of the fallback
+    # cost (cls/B0 0.04438 vs 0.07778; red/B0 0.06144 vs 0.10454 on the hopeless
+    # subset) — i.e. most of the headline "triage" saving was this artefact.
+    # Caught by cross-AI audit 2026-07-27: the reported mean cost was below EVERY
+    # single mode's mean, which no choose-one-mode policy can achieve.
     solved = 0
     cost_arbitrary = []      # tie-break = hardcoded MODES order (§383.4)
     cost_cheapest = []       # tie-break = cost
@@ -133,7 +145,7 @@ def evaluate(cell: dict) -> dict | None:
     n_ties = 0
     for t in tasks:
         solvers = [m for m in SIX_MODES if succ[m][t]]
-        fallback = min(cost[m][t] for m in SIX_MODES)
+        fallback = cost[cheapest_mode][t]
         if not solvers:
             cost_arbitrary.append(fallback)
             cost_cheapest.append(fallback)
@@ -182,8 +194,13 @@ def evaluate(cell: dict) -> dict | None:
             tri_cost.append(cost[best_sr_mode][t])
             rte_cost.append(cost[min(solvers, key=lambda m: cost[m][t])][t])
         else:
-            cheap = min(cost[m][t] for m in SIX_MODES)
-            tri_cost.append(cheap)
+            # Same correction as above: the globally cheapest MODE, not the
+            # per-task minimum. Note `route_only` deliberately keeps the best-SR
+            # mode here — that is what isolates the two halves — so the two rows
+            # are NOT symmetric on this subset and the comparison between them
+            # reads as "what does each half buy on top of best-single", not
+            # "which half is better". Flagged in the report.
+            tri_cost.append(cost[cheapest_mode][t])
             rte_cost.append(cost[best_sr_mode][t])
     policies["triage_only"] = {
         "kind": "oracle-half", "sr_pct": per_mode[best_sr_mode]["sr_pct"],
@@ -216,7 +233,16 @@ def evaluate(cell: dict) -> dict | None:
         casc_cost.append(spent)
         attempts_hist[k] = attempts_hist.get(k, 0) + 1
     policies["cascade_cost_first"] = {
-        "kind": "oracle-free", "sr_pct": 100.0 * casc_solved / n,
+        # NOT oracle-free (corrected 2026-07-27 after cross-AI audit): stopping at
+        # the first success requires knowing that the attempt succeeded, which in
+        # deployment means either a perfect self-evaluator or the grader itself.
+        # Without one, a cascade pays all six attempts on EVERY task, so the
+        # numbers below are the optimistic bound for this policy family, not a
+        # deployable cost. The all-six cost is reported alongside.
+        "kind": "oracle (success-detection)", "sr_pct": 100.0 * casc_solved / n,
+        "mean_cost_all_six_no_detector": _mean(
+            sum(cost[m][t] for m in SIX_MODES) for t in tasks
+        ),
         "mean_cost": _mean(casc_cost),
         "attempts_hist": dict(sorted(attempts_hist.items())),
         "escalation_order": list(cost_order),

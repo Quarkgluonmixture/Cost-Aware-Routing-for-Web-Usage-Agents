@@ -17,14 +17,14 @@ Cost = `total_billed_cost_usd` (paper §1 canonical estimand), mean per task, **
 | `single:P-SoM` | fixed | 15.62 | 0.07206 | -11.61pp | -0.4% |
 | `cheapest` | fixed | 25.00 | 0.06481 | -2.23pp | -10.4% |
 | `best_sr` | fixed | 27.23 | 0.07236 | +0.00pp | +0.0% |
-| `triage_only` | oracle-half | 27.23 | 0.04418 | +0.00pp | -38.9% |
+| `triage_only` | oracle-half | 27.23 | 0.06312 | +0.00pp | -12.8% |
 | `route_only` | oracle-half | 43.30 | 0.06701 | +16.07pp | -7.4% |
-| `oracle_sr` | oracle | 43.30 | 0.04366 | +16.07pp | -39.7% |
-| `oracle_sr_cost` | oracle | 43.30 | 0.03884 | +16.07pp | -46.3% |
-| `cascade_cost_first` | oracle-free | 43.30 | 0.31896 | +16.07pp | +340.8% |
+| `oracle_sr` | oracle | 43.30 | 0.06259 | +16.07pp | -13.5% |
+| `oracle_sr_cost` | oracle | 43.30 | 0.05777 | +16.07pp | -20.2% |
+| `cascade_cost_first` | oracle (success-detection) | 43.30 | 0.31896 | +16.07pp | +340.8% |
 
-- **Tie-break, isolated**: both rows have identical SR (43.30%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.04366 → 0.03884 (-11.1%). Only **68 of 224** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01589 each.
-- **Where the oracle's advantage comes from**: 127/224 (56.7%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -38.9% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 224 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +16.07pp SR at -7.4% cost, and needs the which-mode label that only exists on the 97 solved tasks.
+- **Tie-break, isolated**: both rows have identical SR (43.30%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.06259 → 0.05777 (-7.7%). Only **68 of 224** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01589 each.
+- **Where the oracle's advantage comes from**: 127/224 (56.7%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -12.8% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 224 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +16.07pp SR at -7.4% cost, and needs the which-mode label that only exists on the 97 solved tasks.
 - **cost-first cascade** reaches 43.30% (+16.07pp vs best single) at +340.8% cost; escalation order Vision → P-prompt → P-text → DOM → P-SoM → SoM; attempts histogram {1: 56, 2: 25, 3: 3, 4: 5, 5: 2, 6: 133}.
 
 ## reddit · B0  (n=203)
@@ -39,14 +39,14 @@ Cost = `total_billed_cost_usd` (paper §1 canonical estimand), mean per task, **
 | `single:P-SoM` | fixed | 10.84 | 0.10814 | -3.94pp | -2.1% |
 | `cheapest` | fixed | 7.39 | 0.09807 | -7.39pp | -11.2% |
 | `best_sr` | fixed | 14.78 | 0.11045 | +0.00pp | +0.0% |
-| `triage_only` | oracle-half | 14.78 | 0.06813 | +0.00pp | -38.3% |
+| `triage_only` | oracle-half | 14.78 | 0.09998 | +0.00pp | -9.5% |
 | `route_only` | oracle-half | 26.11 | 0.10581 | +11.33pp | -4.2% |
-| `oracle_sr` | oracle | 26.11 | 0.06609 | +11.33pp | -40.2% |
-| `oracle_sr_cost` | oracle | 26.11 | 0.06349 | +11.33pp | -42.5% |
-| `cascade_cost_first` | oracle-free | 26.11 | 0.54588 | +11.33pp | +394.2% |
+| `oracle_sr` | oracle | 26.11 | 0.09794 | +11.33pp | -11.3% |
+| `oracle_sr_cost` | oracle | 26.11 | 0.09534 | +11.33pp | -13.7% |
+| `cascade_cost_first` | oracle (success-detection) | 26.11 | 0.54588 | +11.33pp | +394.2% |
 
-- **Tie-break, isolated**: both rows have identical SR (26.11%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.06609 → 0.06349 (-3.9%). Only **36 of 203** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01470 each.
-- **Where the oracle's advantage comes from**: 150/203 (73.9%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -38.3% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 203 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +11.33pp SR at -4.2% cost, and needs the which-mode label that only exists on the 53 solved tasks.
+- **Tie-break, isolated**: both rows have identical SR (26.11%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.09794 → 0.09534 (-2.7%). Only **36 of 203** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01470 each.
+- **Where the oracle's advantage comes from**: 150/203 (73.9%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -9.5% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 203 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +11.33pp SR at -4.2% cost, and needs the which-mode label that only exists on the 53 solved tasks.
 - **cost-first cascade** reaches 26.11% (+11.33pp vs best single) at +394.2% cost; escalation order Vision → DOM → P-prompt → P-text → P-SoM → SoM; attempts histogram {1: 15, 2: 23, 3: 5, 4: 4, 5: 2, 6: 154}.
 
 ## classifieds · B1  (n=224)
@@ -61,14 +61,14 @@ Cost = `total_billed_cost_usd` (paper §1 canonical estimand), mean per task, **
 | `single:P-SoM` | fixed | 6.70 | 0.05970 | -7.59pp | -1.0% |
 | `cheapest` | fixed | 12.50 | 0.04316 | -1.79pp | -28.4% |
 | `best_sr` | fixed | 14.29 | 0.06028 | +0.00pp | +0.0% |
-| `triage_only` | oracle-half | 14.29 | 0.03465 | +0.00pp | -42.5% |
+| `triage_only` | oracle-half | 14.29 | 0.04858 | +0.00pp | -19.4% |
 | `route_only` | oracle-half | 24.55 | 0.05340 | +10.27pp | -11.4% |
-| `oracle_sr` | oracle | 24.55 | 0.02948 | +10.27pp | -51.1% |
-| `oracle_sr_cost` | oracle | 24.55 | 0.02778 | +10.27pp | -53.9% |
-| `cascade_cost_first` | oracle-free | 24.55 | 0.29779 | +10.27pp | +394.1% |
+| `oracle_sr` | oracle | 24.55 | 0.04340 | +10.27pp | -28.0% |
+| `oracle_sr_cost` | oracle | 24.55 | 0.04171 | +10.27pp | -30.8% |
+| `cascade_cost_first` | oracle (success-detection) | 24.55 | 0.29779 | +10.27pp | +394.1% |
 
-- **Tie-break, isolated**: both rows have identical SR (24.55%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.02948 → 0.02778 (-5.8%). Only **29 of 224** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01311 each.
-- **Where the oracle's advantage comes from**: 169/224 (75.4%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -42.5% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 224 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +10.27pp SR at -11.4% cost, and needs the which-mode label that only exists on the 55 solved tasks.
+- **Tie-break, isolated**: both rows have identical SR (24.55%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.04340 → 0.04171 (-3.9%). Only **29 of 224** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01311 each.
+- **Where the oracle's advantage comes from**: 169/224 (75.4%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -19.4% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 224 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +10.27pp SR at -11.4% cost, and needs the which-mode label that only exists on the 55 solved tasks.
 - **cost-first cascade** reaches 24.55% (+10.27pp vs best single) at +394.1% cost; escalation order Vision → P-text → DOM → P-SoM → SoM → P-prompt; attempts histogram {1: 28, 2: 10, 3: 2, 4: 3, 5: 10, 6: 171}.
 
 ## reddit · B1  (n=203)
@@ -83,14 +83,14 @@ Cost = `total_billed_cost_usd` (paper §1 canonical estimand), mean per task, **
 | `single:P-SoM` | fixed | 5.91 | 0.07480 | -1.48pp | -6.5% |
 | `cheapest` | fixed | 2.46 | 0.05240 | -4.93pp | -34.5% |
 | `best_sr` | fixed | 7.39 | 0.08000 | +0.00pp | +0.0% |
-| `triage_only` | oracle-half | 7.39 | 0.04371 | +0.00pp | -45.4% |
+| `triage_only` | oracle-half | 7.39 | 0.05554 | +0.00pp | -30.6% |
 | `route_only` | oracle-half | 11.82 | 0.07625 | +4.43pp | -4.7% |
-| `oracle_sr` | oracle | 11.82 | 0.04164 | +4.43pp | -48.0% |
-| `oracle_sr_cost` | oracle | 11.82 | 0.03996 | +4.43pp | -50.1% |
-| `cascade_cost_first` | oracle-free | 11.82 | 0.39675 | +4.43pp | +395.9% |
+| `oracle_sr` | oracle | 11.82 | 0.05347 | +4.43pp | -33.2% |
+| `oracle_sr_cost` | oracle | 11.82 | 0.05178 | +4.43pp | -35.3% |
+| `cascade_cost_first` | oracle (success-detection) | 11.82 | 0.39675 | +4.43pp | +395.9% |
 
-- **Tie-break, isolated**: both rows have identical SR (11.82%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.04164 → 0.03996 (-4.0%). Only **17 of 203** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.02013 each.
-- **Where the oracle's advantage comes from**: 179/203 (88.2%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -45.4% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 203 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +4.43pp SR at -4.7% cost, and needs the which-mode label that only exists on the 24 solved tasks.
+- **Tie-break, isolated**: both rows have identical SR (11.82%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.05347 → 0.05178 (-3.2%). Only **17 of 203** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.02013 each.
+- **Where the oracle's advantage comes from**: 179/203 (88.2%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -30.6% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 203 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +4.43pp SR at -4.7% cost, and needs the which-mode label that only exists on the 24 solved tasks.
 - **cost-first cascade** reaches 11.82% (+4.43pp vs best single) at +395.9% cost; escalation order Vision → P-text → DOM → P-SoM → P-prompt → SoM; attempts histogram {1: 5, 2: 10, 3: 5, 4: 1, 5: 2, 6: 180}.
 
 ## classifieds · B2  (n=224)
@@ -105,14 +105,14 @@ Cost = `total_billed_cost_usd` (paper §1 canonical estimand), mean per task, **
 | `single:P-SoM` | fixed | 0.89 | 0.08456 | -1.34pp | -6.8% |
 | `cheapest` | fixed | 2.23 | 0.07065 | +0.00pp | -22.1% |
 | `best_sr` | fixed | 2.23 | 0.09075 | +0.00pp | +0.0% |
-| `triage_only` | oracle-half | 2.23 | 0.05107 | +0.00pp | -43.7% |
+| `triage_only` | oracle-half | 2.23 | 0.07145 | +0.00pp | -21.3% |
 | `route_only` | oracle-half | 7.14 | 0.08883 | +4.91pp | -2.1% |
-| `oracle_sr` | oracle | 7.14 | 0.04943 | +4.91pp | -45.5% |
-| `oracle_sr_cost` | oracle | 7.14 | 0.04915 | +4.91pp | -45.8% |
-| `cascade_cost_first` | oracle-free | 7.14 | 0.46699 | +4.91pp | +414.6% |
+| `oracle_sr` | oracle | 7.14 | 0.06981 | +4.91pp | -23.1% |
+| `oracle_sr_cost` | oracle | 7.14 | 0.06953 | +4.91pp | -23.4% |
+| `cascade_cost_first` | oracle (success-detection) | 7.14 | 0.46699 | +4.91pp | +414.6% |
 
-- **Tie-break, isolated**: both rows have identical SR (7.14%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.04943 → 0.04915 (-0.6%). Only **4 of 224** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01561 each.
-- **Where the oracle's advantage comes from**: 208/224 (92.9%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -43.7% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 224 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +4.91pp SR at -2.1% cost, and needs the which-mode label that only exists on the 16 solved tasks.
+- **Tie-break, isolated**: both rows have identical SR (7.14%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.06981 → 0.06953 (-0.4%). Only **4 of 224** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01561 each.
+- **Where the oracle's advantage comes from**: 208/224 (92.9%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -21.3% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 224 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +4.91pp SR at -2.1% cost, and needs the which-mode label that only exists on the 16 solved tasks.
 - **cost-first cascade** reaches 7.14% (+4.91pp vs best single) at +414.6% cost; escalation order Vision → P-text → DOM → P-prompt → P-SoM → SoM; attempts histogram {1: 5, 2: 1, 3: 3, 4: 1, 5: 1, 6: 213}.
 
 ## reddit · B2  (n=203)
@@ -127,12 +127,12 @@ Cost = `total_billed_cost_usd` (paper §1 canonical estimand), mean per task, **
 | `single:P-SoM` | fixed | 0.49 | 0.09451 | -3.45pp | -0.3% |
 | `cheapest` | fixed | 1.97 | 0.06833 | -1.97pp | -27.9% |
 | `best_sr` | fixed | 3.94 | 0.09479 | +0.00pp | +0.0% |
-| `triage_only` | oracle-half | 3.94 | 0.05503 | +0.00pp | -42.0% |
+| `triage_only` | oracle-half | 3.94 | 0.06974 | +0.00pp | -26.4% |
 | `route_only` | oracle-half | 7.39 | 0.09463 | +3.45pp | -0.2% |
-| `oracle_sr` | oracle | 7.39 | 0.05490 | +3.45pp | -42.1% |
-| `oracle_sr_cost` | oracle | 7.39 | 0.05487 | +3.45pp | -42.1% |
-| `cascade_cost_first` | oracle-free | 7.39 | 0.53356 | +3.45pp | +462.9% |
+| `oracle_sr` | oracle | 7.39 | 0.06961 | +3.45pp | -26.6% |
+| `oracle_sr_cost` | oracle | 7.39 | 0.06958 | +3.45pp | -26.6% |
+| `cascade_cost_first` | oracle (success-detection) | 7.39 | 0.53356 | +3.45pp | +462.9% |
 
-- **Tie-break, isolated**: both rows have identical SR (7.39%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.05490 → 0.05487 (-0.1%). Only **3 of 203** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.00201 each.
-- **Where the oracle's advantage comes from**: 188/203 (92.6%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -42.0% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 203 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +3.45pp SR at -0.2% cost, and needs the which-mode label that only exists on the 15 solved tasks.
+- **Tie-break, isolated**: both rows have identical SR (7.39%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.06961 → 0.06958 (-0.0%). Only **3 of 203** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.00201 each.
+- **Where the oracle's advantage comes from**: 188/203 (92.6%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -26.4% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 203 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +3.45pp SR at -0.2% cost, and needs the which-mode label that only exists on the 15 solved tasks.
 - **cost-first cascade** reaches 7.39% (+3.45pp vs best single) at +462.9% cost; escalation order Vision → P-text → P-SoM → DOM → P-prompt → SoM; attempts histogram {1: 4, 2: 3, 3: 1, 4: 6, 6: 189}.
