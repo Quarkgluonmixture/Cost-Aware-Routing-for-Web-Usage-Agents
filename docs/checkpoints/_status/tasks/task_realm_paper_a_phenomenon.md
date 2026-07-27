@@ -13,6 +13,10 @@ updated: 2026-07-22
 
 # Paper A — phantom routing space 现象篇 (REALM @ EMNLP 2026, **non-archival**)
 
+> **venue 决定 (user 2026-07-27)**: **两篇都投 workshop** (REALM @ EMNLP 2026)。
+> Paper A 不再为主会保留 non-archival 形态 → 8 页压缩取舍可果断; 双盲 ACL 格式。
+
+
 **主张**: 菜单存在且非冗余 —— H3 双轴 PASS + 各臂独解任务 + cost 构造性剖面。
 
 **归档选择 = non-archival** (决策 2026-07-22, 笔记 §383.1): REALM 的 non-archival 轨明确允许
