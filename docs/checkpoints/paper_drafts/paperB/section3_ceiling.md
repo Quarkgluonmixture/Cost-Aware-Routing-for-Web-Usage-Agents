@@ -13,6 +13,10 @@ succeeded, falling back to the cheapest mode when nothing succeeded.
 | classifieds · B2 | 224 | 7.1% | 2.23% | 2.23% | 0.07145 | 0.09075 | **−21.3%** |
 | reddit · B2 | 203 | 7.4% | 3.94% | 3.94% | 0.06974 | 0.09479 | **−26.4%** |
 
+*Table 2: The oracle ceiling. The oracle picks the cheapest mode that solved each task.
+Success rate matches the best single mode in every cell; the entire ceiling is cost. Cost is
+per-episode billed cost and is never compared across backbones.*
+
 Two features of this table shape everything that follows.
 
 **The ceiling is entirely in cost.** Oracle success rate equals best-single success rate
@@ -46,6 +50,10 @@ accuracy. That trade is what the rest of the paper is about:
 | reddit · B1 | 2.46% | −4.93pp | 0.05240 | −34.5% |
 | classifieds · B2 | 2.23% | ±0.00pp | 0.07065 | −22.1% |
 | reddit · B2 | 1.97% | −1.97pp | 0.06833 | −27.9% |
+
+*Table 3: The always-cheapest fixed policy against the best single mode. This policy needs
+no model, no features, and no inference, and it already captures much of Table 2's cost
+saving. It is the baseline §5.3 measures the learned router against.*
 
 Note the classifieds · B2 row: always-cheapest matches the best single mode's success rate
 exactly while costing 22% less. In that cell the routing problem is already solved by a

@@ -34,12 +34,14 @@ result stands without it.
 
 A web agent's observation mode is usually named as one thing. In practice it is at least
 three: what text the model receives, how the prompt describes that text, and whether a
-screenshot with numbered marks is attached. Systems fix all three together, so a comparison
-between modes is a comparison between bundles.
+screenshot with numbered marks is attached. Systems fix all three together
+[@zhou2024webarena; @koh2024visualwebarena; @deng2023mind2web; @he2024webvoyager], so a
+comparison between modes is a comparison between bundles.
 
 This paper takes the bundle apart on one boundary: the screenshot stays off. From a DOM
 baseline (accessibility tree, DOM prompt, no image) two knobs remain. Swapping the text
-payload for the Set-of-Mark legend while keeping the DOM prompt gives **P-text**. Keeping
+payload for the Set-of-Mark legend [@yang2023som] while keeping the DOM prompt gives
+**P-text**. Keeping
 the accessibility tree while switching to the SoM prompt gives **P-prompt**. Doing both
 gives **P-SoM**. We call these three arms the **phantom routing space**: they use the
 vocabulary of marked-screenshot prompting without the marked screenshot.

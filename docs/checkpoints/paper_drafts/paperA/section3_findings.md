@@ -15,11 +15,15 @@
 | Cochran Q (df = 5) | 1.4265 |
 | **I²** | **0.0%** |
 
+*Table 2: H1, the preregistered superiority test on P-SoM's drop-one oracle contribution.
+The verdict is FAIL, and I² = 0.0% locates the failure in the effect size rather than in the
+precision.*
+
 P-SoM's drop-one oracle contribution pools below the preregistered margin, and the test
 does not come close: p = 0.807 against α = 0.05.
 
-The heterogeneity statistics are what make this a usable negative result rather than an
-inconclusive one. I² = 0.0% with Q = 1.43 on 5 degrees of freedom says the six cells are
+The heterogeneity statistics [@higgins2002quantifying] are what make this a usable negative
+result rather than an inconclusive one. I² = 0.0% with Q = 1.43 on 5 degrees of freedom says the six cells are
 consistent with a common small effect. Two readings are therefore excluded. It is not one
 outlying cell dragging the pool, and it is not six noisy cells whose intervals happen to
 straddle the margin. Collecting more cells from the same design would narrow the interval
@@ -40,6 +44,10 @@ Appendix D as a labelled robustness row, and both fail.
 |---|---|---|---|---|---|---|
 | axis-1 | \|P-text \\ P-SoM\| | **1.3528 pp** | **[0.799, 2.026]** | 1.19 × 10⁻⁵ | 5 of 6 | 3 of 6 |
 | axis-2 | \|P-prompt \\ P-SoM\| | **2.0877 pp** | **[1.399, 2.919]** | 7.52 × 10⁻⁷ | 5 of 6 | 4 of 6 |
+
+*Table 3: H3, the preregistered decomposition. Each axis counts per cell the tasks a
+single-axis arm solves and the compound arm does not. Both pool clear of zero after Holm
+correction over the two-axis family.*
 
 Each axis counts, per cell, the tasks a single-axis arm solves and the compound arm does
 not. Both pool well clear of zero and both survive Holm correction over the two-axis family.
@@ -68,6 +76,10 @@ correlates we can measure.
 | reddit · B0 | 14.29 | **14.78** | 7.39 | 13.30 | 12.32 | 10.84 |
 | reddit · B1 | 5.91 | **7.39** | 2.46 | 5.91 | 5.42 | 5.91 |
 | reddit · B2 | **3.94** | 0.99 | 1.97 | 1.97 | 0.00 | 0.49 |
+
+*Table 4: Success rate (%) per mode per cell, bold for the best arm in each row. Full SoM
+leads in five of six cells. Single-arm rates are reported for context; the paper's claims
+rest on the per-task set differences reported in §3.1 and §3.2, not on these means.*
 
 Full SoM is the strongest single arm in five of six cells, and on classifieds the margin is
 large: 27.23% against P-SoM's 15.62% at B0. **We do not claim that any phantom arm replaces

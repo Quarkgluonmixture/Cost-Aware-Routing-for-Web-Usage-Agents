@@ -11,7 +11,8 @@ The cleanest fix would be to regress on a graded quality signal rather than clas
 discrete winner, partial credit turns every episode into a training example regardless of
 whether it succeeded.
 
-VisualWebArena does not provide one. Across 7,963 episodes the evaluator emits exactly two
+VisualWebArena does not provide one [@koh2024visualwebarena]. Across 7,963 episodes the
+evaluator emits exactly two
 values, 0.0 and 1.0, in a 7,278 / 685 split. There is no partial credit to regress on. This
 is a property of the benchmark's evaluation design, not of our pipeline, and it forecloses
 the route entirely: any continuous target would have to be a surrogate we invented, at
@@ -46,6 +47,11 @@ answers for one input.
 | classifieds | 54 | 31 | **57.4%** | **79.2%** |
 | reddit | 25 | 14 | **56.0%** | **83.7%** |
 
+*Table 10: The identifiability cost of pooling which-mode labels across backbones. A conflict
+is one task on which two cells recorded different oracle modes; since the features carry no
+model identity, both rows present the same input. The Bayes ceiling is the accuracy of
+emitting the modal label per distinct feature vector.*
+
 More than half of the shared tasks carry contradictory supervision. The Bayes ceiling is
 the accuracy of the best possible rule on the pooled set, emit the modal label for each
 distinct feature vector, and it caps any task-feature classifier at 79.2% and 83.7%.
@@ -68,6 +74,10 @@ measurement:
 | classifieds | 79.2% | **89.9%** | 68.5% |
 | reddit | 83.7% | **96.7%** | 88.0% |
 
+*Table 11: Re-slicing the six modes into two cost tiers. The ceiling rises on the same solve
+events, because backbones that disagree about which mode is best still agree about whether
+the screenshot is needed.*
+
 The ceiling rises by 10.7 and 13.0 points **without a single new solve event**. Nothing was
 collected; the same successes were re-described. Backbones disagree sharply about which of
 six modes is best and agree substantially about whether the image is needed. 88% of shared
@@ -87,6 +97,10 @@ and §5 explains why tractable was not enough.
 | continuous target | would fix | fine | closed: benchmark score is binary |
 | pooled which-mode | fixed (260) | **fails** (56–57% conflict, ceiling 79–84%) | wrong estimand |
 | triage / cost tier | fine (203–224) | fine (ceiling 90–97%) | learnable, **and beaten by a fixed policy** |
+
+*Table 12: The four supervision targets against the two requirements a trainable router
+needs. Each closed route is closed for a different reason, which is what makes the negative
+result closed rather than provisional.*
 
 The four routes fail in three distinct ways, which is the argument for regarding the
 negative result as closed rather than provisional: it is not one obstruction that a better

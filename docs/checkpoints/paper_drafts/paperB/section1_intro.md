@@ -25,9 +25,11 @@ our estimator.
 
 ## 1. Introduction
 
-A multimodal web agent can observe a browser in more than one way. The accessibility
-tree can be read as text. A screenshot can be looked at directly. Between those two sits
-a screenshot annotated with numbered marks, paired with a textual legend that names them.
+A multimodal web agent can observe a browser in more than one way
+[@zhou2024webarena; @koh2024visualwebarena; @deng2023mind2web]. The accessibility
+tree can be read as text. A screenshot can be looked at directly [@he2024webvoyager]. Between
+those two sits a screenshot annotated with numbered marks, paired with a textual legend that
+names them [@yang2023som].
 
 These modes differ in what they cost. Rendering and encoding an annotated screenshot at
 every step is the dominant expense in a vision-language agent loop, and a text-only mode
@@ -35,10 +37,11 @@ avoids it entirely.
 
 That cost difference invites an obvious idea. If modes differ in price and each solves a
 somewhat different set of tasks, then a router that predicts the right mode per task
-should buy accuracy at a discount. The idea is attractive enough that it appears as
-future work in many agent papers, and cost-aware model selection is an active area for
-single-turn LLM serving. We set out to build such a router for web agents and to measure
-what it bought.
+should buy accuracy at a discount. Cost-aware model selection is an active area for
+single-turn LLM serving [@chen2023frugalgpt; @ding2024hybridllm; @ong2025routellm;
+@gupta2024cascades; @moslem2026routingsurvey], and its transfer to multi-step agents is
+beginning to be studied [@wang2026boundaryrouter; @li2026dmr]. We set out to build such a
+router for web agents and to measure what it bought.
 
 It bought nothing, and we can say precisely why.
 
@@ -107,7 +110,9 @@ unavailable at this operating point, stated in terms that transfer:
 We also report two methodological findings that we believe generalise beyond this study.
 First, in a low-success regime, a high AUROC is neither necessary nor sufficient for a
 triage policy to save money; what decides the outcome is whether a handful of tail tasks
-land on the correct side, and at n=203 that handful is four successes. Second, the
+land on the correct side, and at n=203 that handful is four successes. A ranking metric
+that does not license the downstream operational claim has been reported in adjacent
+agent settings as well [@li2026aucnotenough]. Second, the
 comparison that determines whether a learned router is worth deploying is not against the
 best single mode but against the cheapest single mode, and switching to that baseline
 removes every saving we measured.

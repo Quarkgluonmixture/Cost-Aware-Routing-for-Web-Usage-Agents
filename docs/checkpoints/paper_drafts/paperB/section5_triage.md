@@ -19,6 +19,10 @@ the reason is the baseline.
 | classifieds · B2 | 224 | 7.1% | 0.651 | 0.655 | −0.004 |
 | reddit · B2 | 203 | 7.4% | **0.483** | 0.711 | −0.228 |
 
+*Table 7: Predictability of the triage label. AUROC is cross-validated; the comparison column
+is the best single covariate used alone, so the margin isolates what the multivariate model
+adds. The reddit · B2 row is below chance and is the subject of §5.4.*
+
 In five of six cells cross-validated AUROC is 0.651–0.717, and in four it beats the best
 single covariate used alone. Whether a task is solvable by anything is genuinely
 predictable from task features, noticeably more so than which mode will solve it.
@@ -31,8 +35,8 @@ statistically detectable saving.
 Turning a score into a policy requires a threshold: below it, send to the cheapest mode;
 above it, send to the strongest. Selecting that threshold against realised outcomes on the
 whole cell makes the resulting operating point in-sample, even when the scores themselves
-are out-of-fold. So does selecting *which* mode is "strongest" and "cheapest" from
-whole-cell outcomes.
+are out-of-fold [@cawley2010overfitting]. So does selecting *which* mode is "strongest" and
+"cheapest" from whole-cell outcomes.
 
 We therefore report a fully nested design. Within each outer fold, and using only that
 fold's training rows: the best-success and cheapest modes are re-selected; an inner
@@ -51,6 +55,10 @@ it is not the usual story of honest evaluation being uniformly worse:
 | reddit · B0 | 13.79% | 12.81% | **−0.99pp** |
 | reddit · B1 | 6.40% | 5.91% | −0.49pp |
 | reddit · B2 | 3.94% | 3.94% | ±0.00pp |
+
+*Table 8: Effect of nesting the operating-point selection. The naive column selects the
+threshold and the strongest and cheapest modes from whole-cell outcomes; the nested column
+re-derives all three inside each outer fold. Nesting moves the result in both directions.*
 
 The two classifieds gains come from re-selecting the mode per fold: the fold-local choice
 is sometimes better adapted than the global one, and because that selection uses only
@@ -78,6 +86,10 @@ Against always-cheapest, it does not:
 | classifieds · B2 | 1.34% / 0.07247 | 2.23% / 0.07065 | no (−0.89pp SR, +2.6% cost) |
 | reddit · B2 | 3.94% / 0.06964 | 1.97% / 0.06833 | no (+1.97pp SR, +1.9% cost) |
 
+*Table 9: The nested triage policy against the always-cheapest fixed policy. Pareto
+dominance requires no worse on both axes; no cell achieves it. The parenthetical gives the
+router's deltas relative to the fixed policy.*
+
 **No cell Pareto-dominates the fixed policy.** Every cell where the router retains more
 accuracy pays more to do it; the one cell where it costs about the same retains less. In
 classifieds · B2 the router is dominated outright, worse accuracy *and* higher cost than
@@ -93,7 +105,7 @@ itself. And it is available only in the cell with the highest solvable rate on r
 We test each cell's cost saving against a permutation null in which the task bundle
 (label, per-mode outcomes, per-mode costs) is shuffled relative to the features, holding
 the selection procedure fixed so that the null and the observation share it. Under
-Holm correction across the six cells, one saving survives: reddit · B2, at p = 0.0050
+Holm correction [@holm1979sequentially] across the six cells, one saving survives: reddit · B2, at p = 0.0050
 against a threshold of 0.0083.
 
 That cell has AUROC 0.483, below chance, and below its own best single covariate at 0.711.

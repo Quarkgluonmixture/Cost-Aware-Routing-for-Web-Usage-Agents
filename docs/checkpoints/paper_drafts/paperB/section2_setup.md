@@ -2,8 +2,9 @@
 
 ### 2.1 Modes, backbones, sites
 
-We evaluate on VisualWebArena, on the classifieds and reddit sites. Every task is run
-under six observation modes that differ in what the agent receives at each step:
+We evaluate on VisualWebArena [@koh2024visualwebarena], on the classifieds and reddit sites.
+Every task is run under six observation modes that differ in what the agent receives at each
+step:
 
 | mode | text payload | prompt family | annotated screenshot |
 |---|---|---|---|
@@ -13,6 +14,10 @@ under six observation modes that differ in what the agent receives at each step:
 | P-text | mark legend | DOM | no |
 | P-prompt | accessibility tree | SoM | no |
 | P-SoM | mark legend | SoM | no |
+
+*Table 1: The six observation modes. For this paper the operative distinction is the last
+column: the two image-bearing modes carry a per-step screenshot and the four text-only modes
+do not.*
 
 The three P-modes are text-only variants that keep either the mark legend, the SoM prompt,
 or both, while removing the per-step screenshot. For the purposes of this paper their
@@ -61,8 +66,8 @@ cross-backbone pooling incoherent.
 
 Success is the benchmark's own binary judgement. Cost is the billed cost per episode,
 measured within a backbone: the API-served model reports commercial pricing and the
-locally-served models report electricity-derived cost, so absolute cost is never pooled
-across backbones. Only ratios within a backbone are compared.
+locally-served models report electricity-derived cost [@strubell2019energy], so absolute cost
+is never pooled across backbones. Only ratios within a backbone are compared.
 
 All routing results are computed by offline replay over completed episodes. We never
 serve a router live, which means the numbers here exclude router inference overhead and

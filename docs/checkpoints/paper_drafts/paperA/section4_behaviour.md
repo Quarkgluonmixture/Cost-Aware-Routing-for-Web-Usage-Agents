@@ -24,7 +24,9 @@ which is consistent with §3.2 finding them separately consequential; it is not 
 ### 4.2 One measurement that constrains the story
 
 The compact renumbering of the mark legend produces a **5–25× lower rate of hallucinated
-element references** than the native accessibility-tree numbering, varying by cell. Native ids are sparse and non-semantic; the legend's ids run
+element references** than the native accessibility-tree numbering, varying by cell.
+Element-reference failures are a recognised bottleneck for multimodal web agents
+[@zheng2024seeact; @zheng2024uground]. Native ids are sparse and non-semantic; the legend's ids run
 1..K. Whatever else the text axis does, it makes the element-reference space smaller and
 denser, and models refer outside it far less often.
 
@@ -43,7 +45,8 @@ does not address them.
 Two companion observations bound the space from the same direction. The rate at which agents
 fail on comment-and-reply tasks is capped at a level no mode improves on. And adding the
 marked screenshot back yields near-zero marginal gain in the cells where the text arms
-already succeed.
+already succeed, which matches reports that vision-language models often ignore much of the
+image content [@tong2024eyes; @kaduri2024whatsintheimage; @zhou2026visualignorance].
 
 Read together with §3.2, this gives the honest shape of the result. The phantom space is
 structured, and its axes are separately real, but the region of agent failure that any
@@ -54,8 +57,9 @@ the oracle figures without it will over-read what routing could recover.
 ### 4.4 Router: designed, not run
 
 The preregistered design included a second pass in which a learned router selects a mode per
-task at run time, gated by a Pareto criterion against single-mode baselines. **That pass was
-never executed.** Zero Pass-2 runs exist across all six cells.
+task at run time, gated by a Pareto criterion against single-mode baselines, in the manner
+of cost-aware routing for single-turn serving [@chen2023frugalgpt; @ong2025routellm].
+**That pass was never executed.** Zero Pass-2 runs exist across all six cells.
 
 We disclose this because the design document, the gating code, and the analysis pipeline for
 it all exist and are cited in our preregistration, so a reader could reasonably assume

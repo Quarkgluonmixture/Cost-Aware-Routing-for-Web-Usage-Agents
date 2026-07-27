@@ -1,0 +1,104 @@
+% Pandoc/LaTeX driver template for the REALM @ EMNLP 2026 submissions.
+% ACL 2026 style, double-blind. convert.sh replaces the @@...@@ tokens and
+% writes build/<paper>/main.tex.
+%
+% One skeleton serves both papers; everything paper-specific arrives through
+% the tokens, so a preamble fix cannot land in one paper and miss the other.
+\documentclass[11pt]{article}
+@@VENUE_SETUP@@
+
+% Package set follows the official acl_latex.tex ordering. times/latexsym/
+% inconsolata are the kit's own choices and are kept verbatim so the output
+% matches what the ACL Overleaf template produces.
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+
+\graphicspath{{figures/}}
+
+% A visible but line-breakable marker. Only the yellow tag is boxed so a
+% long verdict description cannot create an unbreakable overfull hbox.
+\newcommand{\todo}[1]{%
+  \begingroup\color{red!75!black}\bfseries
+  \colorbox{yellow!45}{\strut TODO}\,#1\endgroup}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% pdfLaTeX mappings for the Unicode used by the Markdown masters. Keeping
+% these here also makes unsupported source glyphs explicit and auditable: a
+% new glyph in the prose fails the build instead of dropping silently.
+\DeclareUnicodeCharacter{00A7}{\S}
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{00B2}{\ensuremath{{}^{2}}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{03B4}{\ensuremath{\delta}}
+\DeclareUnicodeCharacter{03B8}{\ensuremath{\theta}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+\DeclareUnicodeCharacter{2013}{--}
+\DeclareUnicodeCharacter{2014}{---}
+\DeclareUnicodeCharacter{2026}{\ldots}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{21D2}{\ensuremath{\Rightarrow}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2216}{\ensuremath{\setminus}}
+\DeclareUnicodeCharacter{221E}{\ensuremath{\infty}}
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2284}{\ensuremath{\not\subset}}
+\DeclareUnicodeCharacter{2070}{\ensuremath{{}^{0}}}
+\DeclareUnicodeCharacter{2074}{\ensuremath{{}^{4}}}
+\DeclareUnicodeCharacter{2075}{\ensuremath{{}^{5}}}
+\DeclareUnicodeCharacter{2076}{\ensuremath{{}^{6}}}
+\DeclareUnicodeCharacter{2077}{\ensuremath{{}^{7}}}
+\DeclareUnicodeCharacter{207B}{\ensuremath{{}^{-}}}
+
+\ifdefined\pdfinfo
+  \pdfinfo{/TemplateVersion (@@TEMPLATE_VERSION@@)}
+\fi
+
+\title{\input{title_generated.tex}}
+% acl.sty's [review] option anonymizes the author block itself, so no
+% \author is set here. The proxy fallback has no such macro, hence the guard.
+\makeatletter
+\@ifundefined{acl@anonymizetrue}{\author{Anonymous submission}}{}
+\makeatother
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{abstract_generated.tex}
+\end{abstract}
+
+\input{body_generated.tex}
+
+% The labels let the dry-run report locate the page on which references
+% begin without forcing a page break (which would distort the page count).
+\label{refs-start}
+\bibliography{paper}
+% acl.sty issues \bibliographystyle{acl_natbib} internally; a second call
+% makes bibtex error "Illegal, another \bibstyle". Only set it ourselves when
+% the style file has not already done so (proxy mode).
+\makeatletter
+\@ifundefined{acl@finalcopytrue}{\bibliographystyle{@@BIB_STYLE@@}}{}
+\makeatother
+\label{document-end}
+
+% Appendix after the references, per ACL convention. Empty when the paper has
+% no appendix.md; convert.sh substitutes the \appendix + \input pair.
+@@APPENDIX_INPUT@@
+
+\end{document}

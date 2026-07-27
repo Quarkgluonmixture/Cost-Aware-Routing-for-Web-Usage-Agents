@@ -15,6 +15,10 @@ to the very quantity the router is supposed to improve.
 | classifieds · B2 | 224 | **16** | 7.1% | 5/6 |
 | reddit · B2 | 203 | **15** | 7.4% | 5/6 |
 
+*Table 4: Which-mode label supply. A label exists only where some mode solved the task, so
+the labelled column equals the number of solved tasks. Six classes have to be discriminated
+from between 15 and 97 examples.*
+
 The largest cell has 97 examples for a six-class problem. The smallest has 15, and in the
 two B2 cells one class never appears at all. Pooled across cells the total is 260.
 
@@ -37,6 +41,10 @@ the threshold used by our pipeline, and unremarkable as practice, leaves:
 | reddit · B1 | 24 | 6 | 0 | **no** |
 | classifieds · B2 | 16 | 5 | 0 | **no** |
 | reddit · B2 | 15 | 5 | 0 | **no** |
+
+*Table 5: Classes surviving a minimum of ten training rows per class in a five-fold split.
+Fewer than two surviving classes leaves nothing to discriminate between, which is the state
+of four of the six cells.*
 
 **Four of six cells admit no classifier**: fewer than two classes survive, so there is
 nothing to discriminate between. Of the two that survive, one retains three of six classes
@@ -71,6 +79,10 @@ against measured per-task cost:
 | reddit · B1 | 24 | 17 (70.8%) | **9 (37.5%)** |
 | classifieds · B2 | 16 | 4 (25.0%) | **2 (12.5%)** |
 | reddit · B2 | 15 | 3 (20.0%) | **2 (13.3%)** |
+
+*Table 6: Where the label disagrees with the cost measurement it claims to encode. The last
+column counts labelled tasks on which the hardcoded priority list selected a mode that was
+strictly more expensive than another mode that also succeeded on that task.*
 
 On 12.5% to 54.6% of labels, the mode recorded as "cheapest successful" was not the
 cheapest successful mode. Cost varies per task, the same mode is not uniformly cheaper

@@ -1,25 +1,39 @@
 ## 5. Related work
 
 **Observation modes in web agents.** Benchmarks and agent systems in this area fix the
-observation mode per system: DOM-derived text, screenshots, or Set-of-Mark annotated
-screenshots with a textual legend. Comparisons across modes are therefore comparisons across
-systems, which bundles the text payload, the prompt family, and the image together. Our
-contribution is to unbundle two of those three on a fixed image setting, and §3.2 is the
+observation mode per system: DOM-derived text [@zhou2024webarena; @deng2023mind2web;
+@agentoccam2025], screenshots [@he2024webvoyager], or Set-of-Mark annotated screenshots with
+a textual legend [@koh2024visualwebarena; @zheng2024seeact]. Comparisons across modes are
+therefore comparisons across systems, which bundles the text payload, the prompt family, and
+the image together. Work on reducing the observation itself
+[@enomoto2026observation; @schiepanski2025d2snap] varies how much text is sent while holding
+the prompt family and the image fixed, which is one of our two axes rather than both. Our
+contribution is to unbundle two of the three on a fixed image setting, and §3.2 is the
 measurement that shows the unbundling was not vacuous.
 
-**Set-of-Mark prompting.** SoM was introduced for the multimodal setting, pairing a marked
-image with a textual legend so that visual objects can be named by number. Later
-multimodal-agent systems explored marked-screenshot and omni-modal grounding as system
-designs. None treats the legend text as a variable separable from the image, which is the
-configuration our P-text and P-SoM arms occupy.
+**Set-of-Mark prompting.** SoM was introduced for the multimodal setting [@yang2023som],
+pairing a marked image with a textual legend so that visual objects can be named by number.
+Later multimodal-agent systems explored marked-screenshot and omni-modal grounding as system
+designs [@zheng2024uground; @yang2025magma; @li2025ferretui2]. None treats the legend text as
+a variable separable from the image, which is the configuration our P-text and P-SoM arms
+occupy. That the arms function at all is less surprising in the light of evidence that
+vision-language models often decide with limited reliance on the supplied image
+[@tong2024eyes; @kaduri2024whatsintheimage; @zhou2026visualignorance;
+@asadi2026mirageillusionvisualunderstanding], and that visually prompted evaluations are
+fragile to exactly this kind of perturbation [@feng2025visually].
 
 **Prompt-format sensitivity.** That language models are sensitive to prompt formatting
-independent of content is established for single-turn tasks. §3.2's axis-2 result is a
-multi-step agentic instance: holding the text payload fixed and changing only how the prompt
-describes it leaves behind a measurable set of tasks the compound change does not recover.
+independent of content is established for single-turn tasks
+[@sclar2024promptformat; @mishra2022reframing]. §3.2's axis-2 result is a multi-step agentic
+instance: holding the text payload fixed and changing only how the prompt describes it leaves
+behind a measurable set of tasks the compound change does not recover.
 
 **Negative results with preregistration.** We report a failed preregistered superiority test
-alongside a passed preregistered structural test. The heterogeneity statistics in §3.1 are
+alongside a passed preregistered structural test, in a literature where progress claims for
+web agents have been shown to rest on fragile evaluation
+[@xue2025illusion; @elhattami2025webarenaverified; @lu2025agentrewardbench] and where the
+distinction between a measured effect and an argued one is a recurring concern
+[@lipton2018troubling]. The heterogeneity statistics in §3.1 [@higgins2002quantifying] are
 what let us distinguish "small effect" from "insufficient power", and we regard reporting
 them as the minimum for a negative result to be usable by anyone else.
 
