@@ -163,6 +163,76 @@ def _merge_dict(base: Dict[str, Any], update: Dict[str, Any]) -> Dict[str, Any]:
     return merged
 
 
+def _normalize_defaults_field(cfg: Dict[str, Any]) -> list:
+    """Read a config's `defaults:` field as a list.
+
+    Tolerates the single-string form (`defaults: "base.yaml"`) — wrapping it
+    avoids iterating the characters of the string.
+    """
+    defaults = cfg.get("defaults", [])
+    if isinstance(defaults, str):
+        return [defaults]
+    if not isinstance(defaults, (list, tuple)):
+        return []
+    return list(defaults)
+
+
+def _resolve_default_path(default_cfg: str, referrer: Path) -> Path:
+    """Resolve a `defaults:` entry: try as given (cwd-relative), then relative
+    to the file that referenced it."""
+    default_path = Path(default_cfg)
+    if not default_path.exists():
+        candidate = referrer.parent / default_cfg
+        if candidate.exists():
+            default_path = candidate
+    if not default_path.exists():
+        raise FileNotFoundError(f"Referenced default config not found: {default_cfg}")
+    return default_path
+
+
+def _load_defaults_chain(path: Path, _seen: frozenset = frozenset()) -> Dict[str, Any]:
+    """Load one config file with its OWN `defaults:` chain already applied.
+
+    Returns the raw merged body (DEFAULT_CONFIG is NOT folded in here — that
+    stays the caller's job, so the outer fold order is unchanged).
+
+    B-1888 (2026-07-27): this function is why multi-level inheritance works at
+    all. `load_experiment_config` used to read each `defaults:` entry with a
+    bare `yaml.safe_load`, so a base config's own `defaults:` was never
+    followed — it was merged in as an inert `defaults` KEY. Single-level chains
+    (every VWA per-condition config -> exp_v2_base.yaml) were unaffected and so
+    the gap stayed invisible for two months. Two-level chains were not: all 55
+    WA configs inherit exp_v2_wa_base.yaml, which in turn declares
+    exp_v2_base.yaml — meaning every WA config silently resolved WITHOUT the
+    base layer. That drops `backends.local_4b.type` (the crash that surfaced
+    this), and with it the model path, the OOM guard, token pricing, carbon
+    intensity, and the tool-calling defaults. It only surfaced now because WA
+    had never been fired.
+
+    For a base file that declares no `defaults:` of its own, the return value
+    equals the old `yaml.safe_load` result minus the absent `defaults` key —
+    so single-level chains parse byte-identically to before (asserted by
+    `test_defaults_chain_vwa_single_level_unchanged`).
+    """
+    resolved = path.resolve()
+    if resolved in _seen:
+        cycle = " -> ".join(str(p) for p in (*_seen, resolved))
+        raise ValueError(f"Circular `defaults:` reference in config chain: {cycle}")
+    _seen = _seen | {resolved}
+
+    with open(path, "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+
+    acc: Dict[str, Any] = {}
+    for default_cfg in _normalize_defaults_field(cfg):
+        acc = _merge_dict(acc, _load_defaults_chain(
+            _resolve_default_path(default_cfg, path), _seen))
+
+    body = dict(cfg)
+    body.pop("defaults", None)
+    return _merge_dict(acc, body)
+
+
 def load_experiment_config(config_path: str) -> Dict[str, Any]:
     path = Path(config_path)
     if not path.exists():
@@ -171,24 +241,10 @@ def load_experiment_config(config_path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
 
-    defaults = cfg.get("defaults", [])
-    # Tolerate single-string form (`defaults: "base.yaml"`) — wrap in list to
-    # avoid iterating characters of the string.
-    if isinstance(defaults, str):
-        defaults = [defaults]
-    elif not isinstance(defaults, (list, tuple)):
-        defaults = []
     merged = copy.deepcopy(DEFAULT_CONFIG)
-    for default_cfg in defaults:
-        default_path = Path(default_cfg)
-        if not default_path.exists():
-            candidate = path.parent / default_cfg
-            if candidate.exists():
-                default_path = candidate
-        if not default_path.exists():
-            raise FileNotFoundError(f"Referenced default config not found: {default_cfg}")
-        with open(default_path, "r", encoding="utf-8") as f:
-            base_piece = yaml.safe_load(f) or {}
+    for default_cfg in _normalize_defaults_field(cfg):
+        # B-1888: recurse, so a base config's own `defaults:` is honoured.
+        base_piece = _load_defaults_chain(_resolve_default_path(default_cfg, path))
         merged = _merge_dict(merged, base_piece)
 
     cfg_no_defaults = dict(cfg)
