@@ -45,10 +45,12 @@ import numpy as np
 
 try:
     from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     import sys
     sys.path.append(str(Path(__file__).resolve().parents[2]))
     from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
 
 try:
     from scipy import stats as sp_stats
@@ -572,8 +574,19 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     # `n_common` reported in the CSV = |universe_5| if P-text present,
     # else |universe_psom_only| (closest match to historical semantics).
 
+    # B-1905 (/stress Mode B codex 2026-07-27): every per-comparison universe is
+    # additionally intersected with the CANONICAL SCORED set.  Pre-fix these were
+    # observed-arm intersections only, so all three reddit cells ran at
+    # n_expected=205 / n_common=205 / is_partial=False — i.e. the paper-level
+    # oracle effects silently scored the two AMENDMENT_08 protocol-excluded
+    # tasks.  Intersecting here (rather than at each use site) keeps the F07
+    # per-comparison semantics intact: each contrast still sees only its own
+    # arms, just restricted to tasks the protocol actually scores.
+    _scored_ids, _scored_sha = expected_scored_ids(cell["site"])
+    _scored = set(_scored_ids)
+
     def _universe(arms: list) -> set:
-        return set.intersection(*[obs[a] for a in arms if a in obs])
+        return set.intersection(*[obs[a] for a in arms if a in obs]) & _scored
 
     universe_psom_only = _universe(["DOM", "SoM", "Vision", "P-SoM"])
     universe_pdom_only = _universe(["DOM", "SoM", "Vision", "P-text"]) if has_pdom else set()
@@ -764,8 +777,18 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         h3_axis1_count = h3_axis1_ci_lo = h3_axis1_ci_hi = h3_axis1_mcnemar_p = None
         h3_axis2_count = h3_axis2_ci_lo = h3_axis2_ci_hi = h3_axis2_mcnemar_p = None
 
-    is_partial = (any(len(o) < cell["n_expected"] for o in obs.values()) or not has_pdom
-                  or not has_pprompt)
+    # B-1905 (cont.): `cell["n_expected"]` comes from run_registry, which tracks
+    # COLLECTION progress (reddit 205).  Now that every universe is restricted to
+    # the scored set, comparing against 205 would mark all three reddit cells
+    # `is_partial=True` for doing exactly the right thing.  Coverage is judged
+    # against the SCORED set, and the collection count is kept alongside so a
+    # genuinely short run is still distinguishable from a fully-collected one.
+    n_expected_scored = len(_scored)
+    is_partial = (
+        any(len(o & _scored) < n_expected_scored for o in obs.values())
+        or not has_pdom
+        or not has_pprompt
+    )
 
     def maybe_round(value, ndigits=4):
         return None if value is None else round(value, ndigits)
@@ -774,7 +797,9 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "baseline": cell["baseline"],
         "site": cell["site"],
         "n_common": n,
-        "n_expected": cell["n_expected"],
+        "n_expected": n_expected_scored,
+        "n_expected_collected": cell["n_expected"],
+        "canonical_task_universe_sha256": _scored_sha,
         "is_partial": is_partial,
         "has_pdom": has_pdom,
         "has_pprompt": has_pprompt,

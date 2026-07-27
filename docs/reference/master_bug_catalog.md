@@ -9298,7 +9298,7 @@ always-cheapest**。red/B2 那格 learned 多保 1.97pp SR 但多花 ~2.4% 成�
 
 ## B-1905 — `aggregate_phantom_lift` 的论文级 oracle 效应仍算在 collected 集上 (2026-07-27)
 
-**B-1905** (estimand 泄漏, **待修**, cross-AI Mode B codex P0) —
+**B-1905** (estimand 泄漏, **FIXED 2026-07-27**, cross-AI Mode B codex P0) —
 
 `aggregate_phantom_lift.py:575/590` 的 universe 只是**已观测臂的交集**, 从不与 canonical
 scored IDs 取交集; 而 `cell["n_expected"]` 仍来自面向 collection 的 run registry。
@@ -9306,8 +9306,230 @@ scored IDs 取交集; 而 `cell["n_expected"]` 仍来自面向 collection 的 ru
 codex 直接执行实测: 三个 reddit cell 全部 `n_expected=205` / `n_common=205` /
 `lift_6_vs_3_n_universe=205` / `is_partial=False`。
 
-**待修**: 每个 per-comparison universe 与 `expected_scored_ids(site)` 取交集并带上其 SHA;
-protocol-excluded 的已观测 task 只能算 tolerated extras, **永不进 estimand**;
-重生成全部 lift / meta / 依赖它们的 figure 产物。
+**FIXED 2026-07-27** (核 codex 三份普查表时落地): `_universe()` 现在统一 `& _scored`
+(一处改法保住 F07 的 per-comparison 语义 — 每个对比仍只看自己的臂, 只是裁到计分集);
+`n_expected` 改为**计分集**大小并新增 `n_expected_collected` 保留采集数
+(**不改这一处会让三个 reddit cell 因为做对了事而被标 `is_partial=True`** —— 这正是
+"修一处漏一处"的典型, 必须同批改); 产物新增 `canonical_task_universe_sha256`。
 
-**Cross-link**: 笔记 §388.7; B-1901 (同类第四处); AMENDMENT_08 §3
+**实测 delta**: 重跑 `phantom_lift.csv` **90 个字段变化, 全部落在 3 个 reddit cell**
+(cls 无排除 → 逐字节不变, 是干净的对照)。最重两条:
+`B2_reddit.psom_only_count` **2 → 1** (与独立在 venn 上量化的结果一致, 见 B-1907);
+`B2_reddit.sr_pprompt` **0.4878 → 0.0** (该臂唯一的成功就是被排除的 task)。
+所有 reddit oracle 值降 0.4-0.9pp。
+
+**交叉验证**: 修后 `phantom_lift.csv` 的 36 个 SR 与已是 203 分母的
+`docs/analysis/cross_sites/sr_per_mode.json` **逐行吻合 (0 mismatch)** —— 修复前两个
+canonical 产物一个用 205 一个用 203, 互相矛盾。
+
+**Cross-link**: 笔记 §388.7/§389; B-1901 (同类第四处); B-1906 (同族横切防线); AMENDMENT_08 §3
+
+---
+
+## B-1906 — `expected_scored_ids()` 的「只取 SHA」消费方式绕过跨产物 SHA 互校 (2026-07-27)
+
+**B-1906** (防线失效 / 横切, **FIXED 2026-07-27**, 核 codex Q7 普查表时净新增) —
+
+`expected_scored_ids()` 返回 `(ids, sha)`。于是**只写 `[1]` 就能拿到一个看起来合规的血统
+标签, 而数据一行没动**: 产物的 `outcome_provenance.canonical_task_universe_sha256` 正确,
+行却停在更宽的 COLLECTED 集。
+
+**这比完全不接 canonical 更坏**: 设计来抓 universe 漂移的**跨产物 SHA 互校必然放行**,
+因为它比的正是那个被抄过来的正确摘要。防线本身被绕过, 而不是没设防。
+
+**AST 实测暴露面** (`scripts/analysis/**`): 生产代码 1 处 (`aggregate_h10_pareto.py:764`),
+且下游 `fig_f2_h1_forest.py:88` 只比 `len()` + 靠 `task_set_sha256` 兜底 —— 这道兜底
+**假设上游产物的 SHA 是照它自己的数据算的**, 恰好被本 bug 破掉, 于是串联防线整条失效。
+
+**FIXED — 三层, 都不是打补丁**:
+1. **新 API** `scripts/analysis/lib/canonical_task_universe.py::restrict_to_scored()` —
+   返回 `(裁后容器, provenance)`, provenance 里的 `content_task_ids_sha256`
+   **由裁后实际内容算出, 不从 canonical 抄**。"标签对、内容宽" 在结构上无法表达。
+2. **h10_pareto 改诚实**: 它的 estimand universe 本来就是 router∩baseline 交集而**不是**
+   计分集, 贴 canonical SHA 属于错误标注。改为同时记 canonical 血统 + 实际 ID 集 +
+   `estimand_equals_canonical_scored` / `n_outside_canonical_scored`。
+   (Pass-2 全 6 格 = 0 run, 故此处是潜伏缺陷而非活跃污染。)
+3. **常驻 lint** `tests/test_universe_consumption_lint.py` — 把笔记 §388.7.1 那句
+   「修横切必须 grep 普查」变成每次 `make test` 都跑的普查:
+   禁 `expected_scored_ids(...)[1]` / 禁 `_, sha = ...`; 加**默认拒绝**扫描
+   (读 `*_summary_v2.json` 却不碰 canonical universe 的脚本一律失败) +
+   `EPISODE_READER_EXEMPT` (真豁免, 每条须写理由) / `UNIVERSE_TRIAGE_PENDING`
+   (待修, **棘轮: 只减不增**, 且修好必须移出, 否则陈旧条目会给下次回归打掩护)。
+
+**⚠️ 真实暴露面比 codex Q7 ledger 大**: 默认拒绝扫描抓到 **35 个** analysis 脚本从不引用
+canonical universe, 其中 **23 个写入 paper 产物目录**; codex 的 ledger 覆盖约 60%。
+问题不是「还有 3 处漏网」, 而是「这一族有 ~35 个入口, 此前每次只修看得见的那条调用链」。
+本次修掉 4 个 (phantom_lift / venn / fig0c / fig3), 其余在 `UNIVERSE_TRIAGE_PENDING` 里
+被棘轮钉住。
+
+**Cross-link**: 笔记 §389; B-1901/B-1904/B-1905 (同族前四处); B-1907~B-1912
+
+---
+
+## B-1907 — 「各臂独解」Venn 图把被排除的 task 算成 P-SoM 的独家能力 (2026-07-27)
+
+**B-1907** (论文级证据槽污染, **FIXED 2026-07-27**, 核 Q7 类3 时量化出来) —
+
+`fig_phantom_structure_venn.py:122` 的 `common = set.intersection(*obs.values())` 是
+COLLECTED universe, 于是 AMENDMENT_08 排除的 reddit task **坐在这张图存在的意义所在
+——「各臂唯一解决」区域里**。
+
+**实测影响** (独立复现 venn 逻辑, 过滤前后对比):
+
+| cell | P-SoM-only 现状 | ∩ 计分集后 | 污染源 |
+|---|---|---|---|
+| B0_reddit | **6** | **5** | task **160** |
+| B2_reddit | **2** | **1** | task **58** |
+| 4 个 cls cell | 不变 | 不变 | 无排除 |
+
+**为什么最刺眼**: task **160 是 tier A** (passive FP, config 可推导, outcome-blind) ——
+"P-SoM 独家解决 160" 实际是**把一个假成功算成 P-SoM 的独家能力**; 而 H1 已 FAIL,
+「各臂独解」正是 §1 转而要倚重的那个证据槽。与 **B-1901 同性质、不同调用点**:
+B-1901 修的是 `_psom_unique_ids` 在 prereg_decision 产物里, 这张图没被那次修覆盖。
+
+**FIXED**: `common` 与 `expected_scored_ids(site)` 取交。数字与 B-1905 独立重跑
+`phantom_lift.csv` 得到的 `B2_reddit.psom_only_count 2→1` **相互印证**。
+
+**Cross-link**: 笔记 §389; B-1901; B-1905; B-1906; AMENDMENT_08 §3
+
+---
+
+## B-1908 — `fig0c` 验证失败仍写盘, 且 reddit panel 缺 AMENDMENT_08 carve-out (2026-07-27)
+
+**B-1908** (产物可信度, **FIXED 2026-07-27**) —
+
+两个缺陷叠在一起:
+
+1. **失败退出 ≠ 没留下产物**: `fig0c_drop_one_oracle.py` 先 `savefig` + 写 CSV, **之后**才
+   做 exact paper-grade 检查并 `return 2`。实测 `exit=2` 但 PNG mtime 是本次运行时间 ——
+   磁盘上留着一张"看起来是刚生成的、实际未通过验证"的论文图。看 `ls -lt` 的人、或任何
+   忽略退出码的 Makefile 步骤, 都会把它当成当前图。
+2. **每个 reddit panel 必然失败**: `obs[m] != expected_ids` 比的是 205 vs 203, 于是
+   condition **正因为按契约采集了那两个 task 而被判不合格**, 六格图长期出不来。
+
+**FIXED**: 验证移到写盘**之前** (失败则 PNG/CSV 一个都不产生, 并提示 `--allow-partial`
+才产水印探索版); 各臂先 `& expected_ids` 再比对, protocol-excluded 单独计入
+`excluded_seen`。修后 `exit=0`, 六格全部通过 exact 校验。
+
+**Cross-link**: 笔记 §389; B-1906; AMENDMENT_08 §3
+
+---
+
+## B-1909 — `fig3` 默认路径产出「标签 N=203 / 数据 205 行」的图 (2026-07-27)
+
+**B-1909** (caption↔数据不一致, **FIXED 2026-07-27**, codex 归类有偏差) —
+
+codex Q7 把 `fig3_regional_carbon.py` 归入「exact-set failure (strict loader rejects
+collected extras)」。实测**它跑通了并覆盖了 PNG** —— 因为 `--strict` 是
+`action="store_true"`, **默认 off**:
+
+- `strict=True` 路径: 用 canonical ids, `observed != canonical` 就 raise ✓ (codex 说的这条)
+- `strict=False` (**默认**): 遍历 `ep_dir` 全部 `*_summary_v2.json`, **完全不过滤**;
+  而轴标签 `_SITE_N` 用的是 `paper_scored_task_count` = **203**
+
+→ 默认调用**静默**产出「caption 写 N=203、数据是 205 行」的论文图。真正的归类是 Q7 类3
+(scored count with unfiltered rows), 不是类2, 且默认路径才是常走的那条。
+
+**FIXED**: 非 strict 路径同样按 canonical ids 过滤; strict 路径的 exact 检查先剔除
+protocol-excluded 再比。两条路径现在给出**完全相同**的数字 (reddit
+`median_energy=0.00825622 kWh, n=203`) —— 差别回归为 fail-closed vs fail-soft on
+MISSING, 而不是"测的是哪个 universe"。
+
+**Cross-link**: 笔记 §389; B-1906; B-1908
+
+---
+
+## B-1910 — `clear_tasks` 把「计分数」当成 task_id 上界, CLAUDE.md 的示例命令直接被拒 (2026-07-27)
+
+**B-1910** (运维阻断, **FIXED 2026-07-27**, codex Q5 caller census 唯一 flagged 项) —
+
+codex 的 caller census 判 `clear_tasks.py:455` 为 "Wrong abstraction: count used as
+maximum ID"。核实**成立, 且比它描述的严重**:
+
+VWA task_id 是**连续的** `0..N_total-1`, 而 `scored_task_count` 减掉了 N/A 排除, 所以这个
+上界**低于最高合法 ID**:
+
+| site | 当 cap 的计数 | 真实 max task_id | 后果 |
+|---|---|---|---|
+| shopping | 435 | **465** | `--tasks 0-465` **REJECTED** |
+| classifieds | 224 | **233** | `--tasks 0-233` **REJECTED** |
+| reddit | 205 | **209** | `--tasks 206` **REJECTED** |
+
+`make clean-tasks ... TASKS=0-465` —— **CLAUDE.md 里写的 canonical 示例** —— 必然报错。
+这是 B-886 修「操作员打错范围」时引入的: 修的问题是真的, 用的抽象是错的
+(「计数 ≈ 上界」)。
+
+**FIXED**: cap 改为从 site task config 实读 `max(task_id)`; 报错文案同步改
+(旧文案写 "task_id > scored_task_count" 会把人引向错误的心智模型); 测试
+`test_b1910_cap_is_max_task_id_not_scored_count` 同时钉住**三站的全量合法区间可解析**
+**和**「两个 count 都 ≤ max_id, 因此都不是上界」这个不变式。
+
+**Cross-link**: 笔记 §389; B-886 (被本条修正的那次修复); codex Q5 caller census
+
+---
+
+## B-1911 — exact-set 检查把「契约要求采集的 task」当成污染而 fail (2026-07-27)
+
+**B-1911** (管线阻断, **PARTIAL 2026-07-27**) —
+
+AMENDMENT_08 明确规定 runner **仍然采集** protocol-excluded task (让完整性契约跨
+amendment 边界不变), 于是落地的 reddit condition 是 205 集 vs 203 计分集。若干严格
+producer 把这 2 个 ID 当 `extra` 直接 raise:
+
+- `router_offline_replay.py:209` — 实测 `extra=[58, 160]` **逐字复现 codex 报告**
+- `cost_aware_router_replication.py` — 同根 (import 前者)
+- **`cross_object_pareto.py:81`** — **codex 漏列**。同型 `raise`, 只因 `SITE="classifieds"`
+  (cls 无排除) 而**潜伏未触发**; 一旦 cls 出现任何 protocol exclusion 立刻炸
+
+**FIXED (replay 侧)**: protocol-excluded 行在装配时跳过 (不进 `outcomes` —— 对未计分
+task 做 router replay 不是一个计分结局), 但仍留在 `seen` 里, 使 exact 检查能区分
+「契约内但不计分」与「真污染」; `extra` 的定义收紧为 `seen - scored - protocol_excluded`。
+
+**⚠️ 仍阻断 (指向 B-1904, 有意不放宽)**: 修完 replay 后暴露下一层 ——
+`fold_assignment` 缓存是 **pre-AMENDMENT_08 的 205 集且无 canonical SHA**。
+**故意不容忍**: 静默丢掉那 2 个 fold 条目 = 复用一个在**不同 universe 上算出分层**的
+切分, 是同一缺陷的更安静版本。改为在报错里指名这是 B-1904 并给出正确修法
+(重生成 Stage 2/3 产物)。→ **router 数字重抽仍是待办, 且须与 B-1903 真嵌套 CV 一并做。**
+
+**Cross-link**: 笔记 §389; B-1903; B-1904; AMENDMENT_08 §3
+
+---
+
+## B-1912 — `power_analysis` 的 reddit N 硬编码在 205 (2026-07-27)
+
+**B-1912** (appendix 数字, **FIXED 2026-07-27**) —
+
+`power_analysis.py:176-180` 的 `sites` 表硬编码 `("reddit", 205)`, 而该表在论文里是当作
+**计分集**上的 power 报的。AMENDMENT_08 后应为 203。
+
+效应量小但性质要命: MDE **7.768pp → 7.806pp** (与 codex 直算逐位吻合) ——
+这是**审稿人能照着 paper 里写的 N 自己重算的 appendix 数字**, 对不上就是算术错误。
+
+**FIXED**: 三站 N 一律从 `paper_scored_task_count(strict=True)` 取。实测输出
+`| reddit | 203 | 0.0781 | 7.81pp |`。
+
+**Cross-link**: 笔记 §389; B-1906; AMENDMENT_08 §3
+
+---
+
+## B-1913 — `write_digests` 的 SR 叙述仍用 205 分母, 且「扣分子不减分母」同型复发 (2026-07-27)
+
+**B-1913** (叙述层不一致, **待修**, 核 Q7 类8 时发现) —
+
+`write_digests.py` 生成的 18 份 reddit diag digest 里, **SR 一律写成 205 分母**
+(落地实证 `B0_som_reddit_diag_digest.md:25` = `| SR | **14.63%** (30/205) |`)。
+paper 引 6.40% / `sr_per_mode.json` 用 203, 附录 digest 说 14.63%(30/205) —— 审稿人翻到
+附录就对不上。
+
+**更要紧的是同型错误复发**: `write_digests.py:134` 写
+「扣除 task 160 后 som 7.80% vs dom 6.34% (17 vs 14 个成功, n=205 下…)」——
+**分子扣了 task 160, 分母还留着 205**。这与 handoff §3 禁引表里
+「§387.9 汇总 SR 6.37% → 6.40%」是**同一个错法的第二个实例**, 说明它不是一次笔误。
+
+**注意修法**: 这些是**硬编码在生成器里的叙述字符串**, 不是算出来的, 所以要改文本而非改
+逻辑; 且 `write_digests.py` 已在 `EPISODE_READER_EXEMPT` 里 (diag 叙述本就该基于
+COLLECTED 集 —— 被排除的 episode 仍有失败模式值得统计), **豁免的是失败分析, 不是它内嵌
+的那几个 scored rate**。另: task 160 现已被 AMENDMENT_08 排除, `:100` 那句
+「唯一那个 success (task 160) 不可信 → 修正后真实 SR = 0/205」分子分母**都**过时了。
+
+**Cross-link**: 笔记 §389; §387.9 (同型第一例); B-1889 (task 160 passive FP); AMENDMENT_08

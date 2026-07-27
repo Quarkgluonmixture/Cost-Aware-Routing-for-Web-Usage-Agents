@@ -192,8 +192,42 @@ def test_b868_parse_task_ids_negative_raises():
 
 def test_b868_parse_task_ids_over_max_raises():
     mod = _load_clear_tasks_module()
-    with pytest.raises(ValueError, match="scored_task_count"):
+    with pytest.raises(ValueError, match="max task_id in site config"):
         mod._parse_task_ids("9999", max_task_id=224)
+
+
+def test_b1910_cap_is_max_task_id_not_scored_count():
+    """B-1910: the cap must admit every legal task ID, including N/A-excluded ones.
+
+    VWA task IDs are contiguous 0..N_total-1 while `scored_task_count` subtracts
+    the N/A exclusions, so using the count as the cap rejected real tasks —
+    including `TASKS=0-465`, the canonical shopping example in CLAUDE.md.
+    """
+    import json as _json
+
+    from p79.experiment.analysis import (
+        _resolve_site_config,
+        paper_scored_task_count,
+        scored_task_count,
+    )
+
+    mod = _load_clear_tasks_module()
+    for site in ("classifieds", "reddit", "shopping"):
+        cfg = _resolve_site_config(site, "visualwebarena")
+        assert cfg is not None, site
+        ids = [int(t["task_id"]) for t in _json.load(open(cfg))]
+        max_id = max(ids)
+
+        # Both counts sit at or below the highest legal ID; neither is a bound.
+        assert scored_task_count(site, "visualwebarena", strict=True) <= max_id
+        assert paper_scored_task_count(site, "visualwebarena", strict=True) <= max_id
+
+        # The full legal range parses under the correct cap...
+        parsed = mod._parse_task_ids(f"0-{max_id}", max_task_id=max_id)
+        assert parsed == sorted(ids), site
+        # ...and one past the end is still rejected.
+        with pytest.raises(ValueError, match="max task_id in site config"):
+            mod._parse_task_ids(str(max_id + 1), max_task_id=max_id)
 
 
 def test_b868_parse_task_ids_empty_segment_raises():

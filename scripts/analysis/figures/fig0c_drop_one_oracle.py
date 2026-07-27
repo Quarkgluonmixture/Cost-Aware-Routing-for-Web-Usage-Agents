@@ -30,6 +30,7 @@ try:
     from scripts.analysis.figures.lib.panels import paper_grade_panels
     from scripts.analysis.lib.canonical_task_universe import (
         expected_scored_ids,
+        protocol_excluded_in_universe,
         task_id_set_sha256,
     )
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
@@ -38,6 +39,7 @@ except ModuleNotFoundError:  # pragma: no cover - supports direct script executi
     from scripts.analysis.figures.lib.panels import paper_grade_panels
     from scripts.analysis.lib.canonical_task_universe import (
         expected_scored_ids,
+        protocol_excluded_in_universe,
         task_id_set_sha256,
     )
 
@@ -160,18 +162,31 @@ def load_panel_sets(
         expected_ids = frozenset(int(t) for t in expected_override)
         expected_sha = task_id_set_sha256(expected_ids)
 
+    # B-1908 (cont.): the runner keeps COLLECTING the AMENDMENT_08 protocol-
+    # excluded tasks, so a landed reddit condition observes 205 IDs against a
+    # 203-task scored set.  Restrict each arm to the scored universe and count
+    # the excluded IDs separately; without this every reddit panel failed the
+    # exact check for holding exactly the episodes the protocol asked for.
+    _excluded = (
+        frozenset()
+        if expected_override is not None
+        else protocol_excluded_in_universe(panel["site"])
+    )
+
     registered_modes = set(panel.get("modes", {}))
     canonical_modes = set(MODES)
     sets: dict[str, set[int]] = {}
     obs: dict[str, set[int]] = {}
+    excluded_seen: dict[str, list[int]] = {}
     for mode in MODES:
         ep_dir = panel.get("modes", {}).get(mode)
         if ep_dir is None:
             successes, observed = set(), set()
         else:
             successes, observed = load_success_set(ep_dir)
-        sets[mode] = successes
-        obs[mode] = observed
+        excluded_seen[mode] = sorted(observed & _excluded)
+        sets[mode] = successes & expected_ids
+        obs[mode] = observed & expected_ids
 
     partial_modes = {m for m in MODES if obs[m] != expected_ids}
     complete_exact = (
@@ -519,6 +534,23 @@ def main(argv: list[str] | None = None) -> int:
                  fontsize=24, color="#CC0000", alpha=0.18, ha="center",
                  va="center", rotation=18, zorder=10)
     fig.tight_layout(rect=(0, 0.06, 1, 0.93))
+
+    # B-1908 (/stress Mode B codex follow-up, 2026-07-27): validate BEFORE
+    # writing.  Pre-fix the figure and CSV were written first and the exact
+    # paper-grade check returned 2 afterwards, so a failing run still left a
+    # freshly-timestamped PNG on disk.  Anyone reading `ls -lt` — or a Makefile
+    # step that ignores exit status — would treat an unvalidated panel as the
+    # current figure.  Fail closed with nothing written instead.
+    validation_failed = not args.allow_partial and not all(exact_panels)
+    if validation_failed:
+        print(
+            "error: one or more panels failed exact paper-grade validation — "
+            "no figure or CSV written (pass --allow-partial to produce a "
+            "watermarked exploratory version)",
+            file=sys.stderr,
+        )
+        return 2
+
     fig.savefig(out_path, bbox_inches="tight")
     print(out_path)
     # Data sidecar lives alongside other cross-condition aggregations
@@ -535,9 +567,6 @@ def main(argv: list[str] | None = None) -> int:
         writer.writeheader()
         writer.writerows(csv_rows)
     print(csv_path)
-    if not args.allow_partial and not all(exact_panels):
-        print("error: one or more panels failed exact paper-grade validation", file=sys.stderr)
-        return 2
     return 0
 
 

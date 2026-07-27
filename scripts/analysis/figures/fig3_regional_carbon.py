@@ -166,6 +166,11 @@ def median_energy_kwh(
             raise ValueError("strict energy loading requires canonical expected_ids")
         canonical_ids = frozenset(int(task_id) for task_id in expected_ids)
         rows = load_task_rows(ep_dir, strict_mode="strict")
+        # B-1909: drop the AMENDMENT_08 protocol-excluded episodes before the
+        # exact-set check — the runner is REQUIRED to collect them, so their
+        # presence is contract-compliant, not drift.  Anything still left over
+        # after this is genuine contamination and must fail.
+        rows = {tid: row for tid, row in rows.items() if int(tid) in canonical_ids}
         observed_ids = frozenset(rows)
         if observed_ids != canonical_ids:
             raise RuntimeError(
@@ -190,11 +195,24 @@ def median_energy_kwh(
             values.append(float(value))
         return statistics.median(values), len(values)
 
+    # B-1909 (/stress Mode B codex follow-up, 2026-07-27): the non-strict path
+    # used to iterate every summary on disk, so a reddit panel was drawn from
+    # 205 episodes while its axis label read "N=203" (`_SITE_N` is the SCORED
+    # count).  `--strict` was the only path that noticed, and it is off by
+    # default (`action="store_true"`), so the routine invocation silently
+    # produced a figure whose caption and data disagreed.  Restrict here too;
+    # the difference between the two paths is now fail-closed vs fail-soft on
+    # MISSING tasks, not which universe is measured.
+    canonical_ids = (
+        frozenset(int(t) for t in expected_ids) if expected_ids is not None else None
+    )
     values: list[float] = []
     seen: set[int] = set()
     for path in sorted(ep_dir.glob("*_summary_v2.json")):
         tid = task_id(path)
         if tid in seen:
+            continue
+        if canonical_ids is not None and tid not in canonical_ids:
             continue
         seen.add(tid)
         with path.open() as f:

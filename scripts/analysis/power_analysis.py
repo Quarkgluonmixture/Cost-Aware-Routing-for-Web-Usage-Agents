@@ -173,10 +173,17 @@ def main():
     one_sided = not args.two_sided
     z_label = "1.645 one-sided" if one_sided else "1.96 two-sided"
 
+    # B-1912 (/stress Mode B codex Q7 propagation ledger, 2026-07-27): these
+    # were hardcoded, and reddit's 205 is the COLLECTED count — the paper quotes
+    # this table as power over the SCORED set, which AMENDMENT_08 cut to 203.
+    # Measured effect is small (MDE 7.768pp → 7.806pp at the reddit row) but it
+    # is an appendix number a reviewer can recompute from the stated N, so a
+    # stale denominator here reads as an arithmetic error in the paper.
+    from p79.experiment.analysis import paper_scored_task_count
+
     sites = [
-        ("classifieds", 224),
-        ("reddit", 205),
-        ("shopping", 435),
+        (site, paper_scored_task_count(site, "visualwebarena", strict=True))
+        for site in ("classifieds", "reddit", "shopping")
     ]
 
     lines = [

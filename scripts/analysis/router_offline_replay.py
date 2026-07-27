@@ -31,10 +31,16 @@ from p79.policies.router_features import (
     estimate_input_tokens,
 )
 try:
-    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        protocol_excluded_in_universe,
+    )
 except ModuleNotFoundError:  # Direct ``python scripts/analysis/...`` execution.
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+    from scripts.analysis.lib.canonical_task_universe import (
+        expected_scored_ids,
+        protocol_excluded_in_universe,
+    )
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -192,6 +198,15 @@ def collect_cell_outcomes(
             if task_id in seen:
                 raise ValueError(f"Duplicate task summary for {cell_id}/{mode}/task {task_id}")
             seen.add(task_id)
+            # B-1911 (/stress Mode B codex follow-up, 2026-07-27): AMENDMENT_08
+            # keeps the runner COLLECTING the protocol-excluded tasks, so a
+            # landed reddit condition holds 205 episodes against a 203-task
+            # scored set. Skip those rows here rather than at the check below:
+            # they must not enter `outcomes` (a router replay over an unscored
+            # task is not a scored outcome), while `seen` still records them so
+            # the check can tell "expected-but-unscored" from "contamination".
+            if task_id not in expected_ids:
+                continue
             cost = float(record["total_billed_cost_usd"])
             if not math.isfinite(cost) or cost < 0:
                 raise ValueError(f"Invalid billed cost {cost!r} in {summary_path}")
@@ -204,16 +219,21 @@ def collect_cell_outcomes(
                 "summary_path": str(summary_path.relative_to(REPO)),
             }
         missing = sorted(expected_ids - seen)
-        extra = sorted(seen - expected_ids)
+        # Only IDs that are neither scored NOR protocol-excluded are drift.
+        protocol_excluded = protocol_excluded_in_universe(site)
+        excluded_seen = sorted(seen & protocol_excluded)
+        extra = sorted(seen - expected_ids - protocol_excluded)
         if missing or extra:
             raise ValueError(
                 f"Canonical task universe mismatch for {cell_id}/{mode}: "
                 f"n_seen={len(seen)}, missing={missing[:10]}, extra={extra[:10]}"
             )
+        entry = {**entry, "protocol_excluded_observed": excluded_seen}
         source_rows[mode] = {
             **entry,
             "condition_dir": str(condition_dir.relative_to(REPO)),
-            "n_tasks": len(seen),
+            "n_tasks": len(seen & expected_ids),
+            "n_collected": len(seen),
         }
 
     if set(outcomes) != set(expected_ids):
@@ -419,8 +439,26 @@ def replay_cell(
     if set(fold_assignment) != set(outcomes):
         missing = sorted(set(outcomes) - set(fold_assignment))
         extra = sorted(set(fold_assignment) - set(outcomes))
+        # B-1904 (/stress Mode B codex, 2026-07-27): the cached fold maps were
+        # built pre-AMENDMENT_08 over the 205-task COLLECTED reddit set and
+        # carry no canonical-universe SHA, so they cannot be validated against
+        # the scored set they are now being replayed on.  Deliberately NOT
+        # tolerated: silently dropping the two extra fold entries would reuse a
+        # split whose stratification was computed over a different universe,
+        # which is a quieter version of the same defect. Regenerate instead.
+        hint = ""
+        if extra and not missing:
+            excluded = sorted(protocol_excluded_in_universe(cell_id.split("_", 1)[1]))
+            if set(extra) <= set(excluded):
+                hint = (
+                    f" — these are exactly the AMENDMENT_08 protocol-excluded IDs "
+                    f"{excluded}, i.e. this fold map predates the amendment "
+                    f"(B-1904). Regenerate the Stage 2/3 artifacts against the "
+                    f"scored universe; do not drop the entries in place."
+                )
         raise ValueError(
-            f"Fold-map universe mismatch for {cell_id}: missing={missing[:10]}, extra={extra[:10]}"
+            f"Fold-map universe mismatch for {cell_id}: "
+            f"missing={missing[:10]}, extra={extra[:10]}{hint}"
         )
 
     folds_ok = {int(fold) for fold in meta.get("folds_ok", [])}

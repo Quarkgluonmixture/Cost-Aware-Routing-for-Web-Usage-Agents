@@ -38,7 +38,9 @@ Safety guards (/stress A1.24 B-873~B-889, 2026-05-17):
       two concurrent clear_tasks invocations from leaving half-deleted state.
     - `--site` is validated against `_VALID_SITES` (whitelist enforces CLAUDE.md
       "VWA 只有 shopping/reddit/classifieds 三站" hard rule at the entry script).
-    - `_parse_task_ids` rejects `lo > hi` ranges and `task_id > scored_task_count`.
+    - `_parse_task_ids` rejects `lo > hi` ranges and IDs above the site
+      config's maximum task_id (B-1910: NOT the scored count, which is
+      smaller than the highest legal ID).
     - Every deletion (manual mode) writes an Option K
       `event_type="manual_task_cleared"` event to the condition's
       trajectory_events.jsonl (parity with watchdog L1697/L1860
@@ -134,9 +136,13 @@ def _parse_task_ids(spec: str, *, max_task_id: Optional[int] = None) -> List[int
     B-886 (/stress A1.24 P1-5-A, 2026-05-17): sanity guards added —
     rejects `lo > hi` (typo `100-99` previously silently produced empty
     range, reported as "skipped 0 (not found)", misleading operator),
-    rejects negatives, and caps at `max_task_id` if provided (passed in
-    by main() from `scored_task_count(site)`). Operator typo `--tasks
-    100-99` now raises immediately instead of pretending success.
+    rejects negatives, and caps at `max_task_id` if provided. Operator typo
+    `--tasks 100-99` now raises immediately instead of pretending success.
+
+    B-1910 (2026-07-27): `max_task_id` is the site config's MAXIMUM task_id,
+    supplied by main().  It used to be `scored_task_count(site)` — a count,
+    which is strictly smaller than the highest legal ID once N/A tasks are
+    excluded, so legal high-numbered tasks were rejected as typos.
     """
     ids: set[int] = set()
     for part in spec.split(","):
@@ -175,7 +181,7 @@ def _parse_task_ids(spec: str, *, max_task_id: Optional[int] = None) -> List[int
     if max_task_id is not None and any(t > max_task_id for t in ids):
         over = sorted(t for t in ids if t > max_task_id)
         raise ValueError(
-            f"--tasks contains task_id > scored_task_count ({max_task_id}): {over[:5]}"
+            f"--tasks contains task_id > max task_id in site config ({max_task_id}): {over[:5]}"
             f"{'...' if len(over) > 5 else ''} — likely typo or wrong site"
         )
     return sorted(ids)
@@ -447,14 +453,26 @@ def main() -> int:
     site = args.site
 
     # B-886 (/stress A1.24 P1-5-A): pass max_task_id cap to _parse_task_ids.
-    # Best-effort scored_task_count lookup; fall back to None if site config
-    # missing (legacy archive runs).
+    #
+    # B-1910 (/stress Mode B codex Q5 caller census follow-up, 2026-07-27): the
+    # cap used to be `scored_task_count(site)`, which is a COUNT, not an upper
+    # bound on task IDs.  VWA task IDs are contiguous 0..N_total-1 while the
+    # scored count subtracts the N/A exclusions, so the cap sat BELOW the
+    # highest legal ID and rejected real tasks:
+    #     shopping  scored 435  vs  max id 465   → `--tasks 0-465` REJECTED
+    #     classifieds     224  vs         233   → `--tasks 0-233` REJECTED
+    #     reddit          205  vs         209   → `--tasks 206`   REJECTED
+    # `make clean-tasks ... TASKS=0-465` — the canonical example in CLAUDE.md —
+    # could not run.  Derive the bound from the task config's actual maximum ID.
     _max_tid: Optional[int] = None
     try:
-        from p79.experiment.analysis import scored_task_count as _sct
-        _max_tid = _sct(site, "visualwebarena", strict=False)
-        if _max_tid <= 0:
-            _max_tid = None  # config missing → don't enforce cap
+        from p79.experiment.analysis import _resolve_site_config
+        _cfg_path = _resolve_site_config(site, "visualwebarena")
+        if _cfg_path is not None:
+            with open(_cfg_path) as _f:
+                _specs = json.load(_f)
+            _ids = [int(t["task_id"]) for t in _specs if "task_id" in t]
+            _max_tid = max(_ids) if _ids else None
     except Exception:
         pass  # legacy or analysis-deps missing — fall through without cap
     try:

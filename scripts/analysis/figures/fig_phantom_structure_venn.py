@@ -35,10 +35,12 @@ except ImportError:  # pragma: no cover
 
 try:
     from scripts.analysis.lib.run_registry import get_cells, BASELINES
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
     from scripts.analysis.figures.lib.panels import paper_grade_panels
 except ModuleNotFoundError:  # pragma: no cover
     sys.path.append(str(Path(__file__).resolve().parents[3]))
     from scripts.analysis.lib.run_registry import get_cells, BASELINES
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
     from scripts.analysis.figures.lib.panels import paper_grade_panels
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -118,8 +120,18 @@ def draw_panel(ax: plt.Axes, baseline: str, site: str, title: str) -> None:
         ax.axis("off")
         return
 
-    # Common task universe (intersection of observed)
-    common = set.intersection(*obs.values())
+    # Common task universe (intersection of observed) ∩ canonical scored set.
+    #
+    # B-1907 (/stress Mode B codex follow-up, 2026-07-27): the intersection
+    # alone is the COLLECTED universe, so the AMENDMENT_08 protocol-excluded
+    # reddit tasks sat inside the per-arm "uniquely solves" regions this figure
+    # exists to show.  Measured impact before the fix: B0_reddit P-SoM-only
+    # 6→5 (task 160) and B2_reddit 2→1 (task 58).  Task 160 is a tier-A passive
+    # false positive, so the pre-fix panel credited P-SoM with uniquely solving
+    # a task nothing actually solved — in the one evidence slot §1 leans on
+    # after H1 failed.  Same defect class as B-1901, different call site.
+    scored_ids, _scored_sha = expected_scored_ids(site)
+    common = set.intersection(*obs.values()) & set(scored_ids)
     n = len(common)
     if n == 0:
         ax.text(0.5, 0.5, "no common task universe",

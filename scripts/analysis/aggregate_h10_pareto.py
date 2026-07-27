@@ -760,9 +760,23 @@ def build_verdict(
     # the full prereg decision producer.  The digest is site-specific, so it is
     # carried by every cell record rather than collapsed into an undefined
     # top-level/global hash.
+    #
+    # B-1906 (/stress Mode B codex follow-up, 2026-07-27): this used to be
+    # `expected_scored_ids(site)[1]` — the canonical digest alone.  H10's actual
+    # estimand universe is the router∩baseline intersection (`common_sorted`
+    # inside analyze_cell), NOT the canonical scored set, so stamping records
+    # with the canonical digest asserted a provenance the rows do not have, and
+    # the cross-artifact SHA check would have passed on it.  Keep the canonical
+    # digest as the universe LINEAGE, and record its ID set so any consumer can
+    # verify what the digest is a digest OF rather than trusting the label.
+    _scored_by_site = {
+        site: expected_scored_ids(site) for site in {site for _, site in cells}
+    }
     task_set_sha256_by_site = {
-        site: expected_scored_ids(site)[1]
-        for site in {site for _, site in cells}
+        site: sha for site, (_ids, sha) in _scored_by_site.items()
+    }
+    scored_universe_by_site = {
+        site: sorted(ids) for site, (ids, _sha) in _scored_by_site.items()
     }
 
     # B-1872 (/stress Mode A P1-1-A* 2026-06-09): JOINT P-prompt 6th-arm eligibility,
@@ -799,6 +813,23 @@ def build_verdict(
             phantom_prompt_in_baselines=pp_joint_eligible,
         )
         rec["task_set_sha256"] = task_set_sha256_by_site[site]
+        # B-1906: state explicitly what that digest is a digest OF, and how the
+        # cell's actual estimand universe relates to it.  A bare canonical SHA
+        # over a router∩baseline row set is the failure mode this records against.
+        scored_ids = scored_universe_by_site[site]
+        rec["task_universe_provenance"] = {
+            "canonical_scored_n": len(scored_ids),
+            "canonical_scored_sha256": task_set_sha256_by_site[site],
+            "estimand_universe": "router ∩ baseline common tasks (see n_common_tasks)",
+            "estimand_equals_canonical_scored": (
+                rec.get("n_common_tasks") == len(scored_ids)
+            ),
+            "n_outside_canonical_scored": (
+                None
+                if rec.get("common_task_ids") is None
+                else len(set(rec["common_task_ids"]) - set(scored_ids))
+            ),
+        }
         per_cell_results[rec["cell_id"]] = rec
 
     # Operational deployment gate (two-layer: cell-level + grid-level)
