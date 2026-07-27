@@ -45,7 +45,17 @@ MODE="${1:-healthcheck}"
 # 30-min tick (3 false alerts 10:30/11:00/11:30Z). Include queue_chain_* family.
 FIRELOG="$(ls -t logs/queue_phase1_cls_*.log logs/queue_phase1_red_*.log logs/queue_chain_*.log logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
 [ -z "$FIRELOG" ] && FIRELOG="logs/fire6_phase1a.log"
-RESULTS="results/visualwebarena/phase1"
+# B-1893 (2026-07-27): benchmark-aware. Pre-fix this was hardcoded to
+# `results/visualwebarena/phase1`, so while a WA (WebArena) chain was running —
+# whose data lands in `results/webarena/phase1` — `_orch_up` saw the live chain
+# but `_recent_step` searched only the VWA tree and found nothing fresh
+# → a false "orch up but NO step in 60min (stall?)" alert every 30-min tick
+# (6 spurious alerts over 10h on 2026-07-27 during the WA pilot).
+# Same naming-drift root cause as B-1840 / the FIRELOG family fix above:
+# a monitor bound to one benchmark's path silently mis-reports the other's fire.
+# Both dirs are passed to `find`; a missing dir is tolerated (2>/dev/null).
+RESULTS_DIRS=(results/visualwebarena/phase1 results/webarena/phase1)
+RESULTS="${RESULTS_DIRS[0]}"   # kept for any single-path legacy reference
 
 # B-1840 (2026-05-23): the real long-lived orchestrator is queue_chain.sh —
 # `queue_phase1_paper_grade.sh launch` is a launcher that spawns queue_chain.sh then
@@ -54,11 +64,11 @@ RESULTS="results/visualwebarena/phase1"
 # (live fire) OR the launcher (brief launch window). orch DOWN at fire END (chain exits
 # after 18 conditions) is still a real "COMPLETED or DIED" signal — intended.
 _orch_up()      { pgrep -f 'queue_chain.sh' >/dev/null 2>&1 || pgrep -f 'queue_phase1_paper_grade.sh launch' >/dev/null 2>&1; }
-_recent_step()  { find "$RESULTS" -name '*steps*.jsonl' -newermt '-60 min' ! -path '*smoke*' 2>/dev/null | head -1; }
+_recent_step()  { find "${RESULTS_DIRS[@]}" -name '*steps*.jsonl' -newermt '-60 min' ! -path '*smoke*' 2>/dev/null | head -1; }
 _local_runner() { pgrep -af 'run_experiment.py' 2>/dev/null | grep -qE '/exp_v2_B[12]_'; }
 _gpu_mib()      { nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ' || echo 0; }
 _cur_cond()     { pgrep -af 'run_experiment.py.*--config' 2>/dev/null | grep -oE 'exp_v2_B[012]_[a-z_]+_(classifieds|reddit|shopping)' | head -1; }
-_n_done()       { find "$RESULTS" -name 'condition_summary_v2.json' -path '*_2*' ! -path '*smoke*' 2>/dev/null | wc -l | tr -d ' '; }
+_n_done()       { find "${RESULTS_DIRS[@]}" -name 'condition_summary_v2.json' -path '*_2*' ! -path '*smoke*' 2>/dev/null | wc -l | tr -d ' '; }
 
 if [[ "$MODE" == "heartbeat" ]]; then
   orch=$(_orch_up && echo up || echo DOWN)

@@ -2073,7 +2073,18 @@ def main() -> int:
 
     # Timers
     last_new_episode_ts: float = time.time()
-    last_report_ts: float = 0.0  # 0 → trigger initial report immediately after bootstrap
+    # 0 → trigger initial report immediately after bootstrap.
+    # B-1893 (2026-07-27): that bootstrap report is once-per-WATCHDOG, i.e.
+    # once per condition. On a 205-task condition (~36h) it is negligible; on a
+    # short-condition sweep it is the dominant ntfy source — the WA pilot runs
+    # 6 conditions of 10 tasks each, so the bootstrap report alone pushes 6
+    # notifications in a day on top of the per-condition POST-ANALYSIS ones.
+    # `P79_WATCHDOG_SKIP_BOOTSTRAP_REPORT=1` starts the timer at now, so the
+    # first status push waits a full --report-interval-mins. IDLE / DOWN /
+    # stall alerts are unaffected (they do not consult last_report_ts), so
+    # suppressing this costs no failure visibility.
+    _skip_bootstrap = os.environ.get("P79_WATCHDOG_SKIP_BOOTSTRAP_REPORT", "0") == "1"
+    last_report_ts: float = time.time() if _skip_bootstrap else 0.0
     idle_alerted: bool = False
     # (recent episodes computed from seen_keys - reported_keys at report time)
     idle_alert_secs = max(60, args.idle_alert_mins * 60)
@@ -2092,6 +2103,7 @@ def main() -> int:
         f"[watchdog] run_id={run_id} condition={args.condition or '*'} "
         f"poll={args.poll_secs}s report_every={args.report_interval_mins}min "
         f"idle_alert={args.idle_alert_mins}min"
+        + (" bootstrap_report=SKIPPED" if _skip_bootstrap else "")
     )
 
     # Manual immediate-status trigger (signal):

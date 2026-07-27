@@ -8824,3 +8824,45 @@ cell 上**总共只产生 11 个成功**(这类任务本身极难)。其中 8 �
 **Cross-link**: B-1889 (同批 benchmark-FP, 建议打包决策); B-1890 (勿用 footprint 字段判据);
 P25 (`check_p25` 跨站任务跳过其中一站 —— 现有规则已能命中, 但它只在 failed 侧生效,
 success 侧需新增 gate); 笔记 §387.9; 发现路径 = B1_som Tier-2 sub-agent + 本条跨 18-cell 复核。
+
+---
+
+## B-1893 — fire6_monitor 硬编码 VWA 路径: WA fire 期间每 30min 一条假 stall 告警 (2026-07-27)
+
+**B-1893** (监控误报, **FIXED**, naming-drift 家族第 5 次) —
+`fire6_monitor.sh` 的 `RESULTS` 硬编码为 `results/visualwebarena/phase1`, 而 WA(WebArena)
+数据落在 `results/webarena/phase1`。于是 WA chain 运行期间:
+
+- `_orch_up` → **true**(`queue_chain.sh` 确实在跑)
+- `_recent_step` → 只在 VWA 树下 find → **永远找不到新文件**
+- → `orch up but NO step in 60min (stall?)` **每 30min cron tick 一条**
+
+**实证 2026-07-27 WA pilot**: 10h 内 6 条假 stall(00:00/00:30/01:00/08:00/08:30/09:00Z),
+占该窗口 ntfy 总量 9 条中的 6 条 = **主要噪声源**。同期 `_n_done` 也少计 WA 已完成 condition。
+
+**与 B-1825 / B-1827 / B-1840 / 2026-07-03 FIRELOG 修的是同一类病**:
+监控器绑定到某一个 benchmark / 某一种 log 命名, 另一条路径的 fire 就被静默误报。
+**这是第 5 次同根因复发。**
+
+**修**: `RESULTS_DIRS=(results/visualwebarena/phase1 results/webarena/phase1)`,
+`_recent_step` / `_n_done` 改用 `"${RESULTS_DIRS[@]}"`(缺目录由 `2>/dev/null` 容忍)。
+**实测验证**: 修后 `find` 立即命中 `results/webarena/phase1/B1_vision_wa_reddit_20260727/.../
+reddit_task_581_steps_v2.jsonl`, `healthcheck` 跑一次 **完全静默 rc=0**(修前必报 stall)。
+
+**顺带修的第二个噪声源**: watchdog 的 bootstrap status report 是**每 watchdog 一次 =
+每 condition 一次**。205-task condition (~36h) 上可忽略, 但**短 condition 扫描上它是主导项**
+—— WA pilot 6 个 condition × 10 task, 光 bootstrap 就 6 条, 外加每 condition 一条
+POST-ANALYSIS。新增 `P79_WATCHDOG_SKIP_BOOTSTRAP_REPORT=1` → `last_report_ts` 从 `now`
+起算, 首条 status 等满一个 `--report-interval-mins`。**IDLE / DOWN / stall 告警不看
+`last_report_ts`, 故抑制它不损失任何故障可见性**。启动 banner 会打 `bootstrap_report=SKIPPED`。
+(注: 该开关对**已启动**的 chain 无效 —— watchdog 在启动时读 env; 2026-07-27 的 WA chain
+已在运行故未享受, 留给后续 launch。)
+
+**教训**: 每加一个 benchmark / 一种 log 命名, 都要回头扫一遍监控层的路径常量 ——
+监控器的假阴性(该报没报)和假阳性(不该报却报)都会训练操作者忽略告警, 后者尤其危险,
+因为它把真告警淹掉。建议后续给 `RESULTS_DIRS` 这类常量加一条测试: 断言它覆盖
+`configs/` 里出现过的所有 `experiment.benchmark` 取值。
+
+**Cross-link**: B-1840 / B-1825 / B-1827 (同家族前 3 次); 2026-07-03 FIRELOG queue_chain_*
+修 (第 4 次, 见 fire6_monitor.sh:40-46 注释); B-1888 (同日另一个"WA 路径从未被执行过"的暴雷);
+笔记 §387.10。
