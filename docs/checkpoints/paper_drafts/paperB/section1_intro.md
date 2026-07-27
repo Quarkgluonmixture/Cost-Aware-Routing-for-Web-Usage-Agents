@@ -3,27 +3,21 @@
 Cost-aware routing promises to cut the price of multimodal web agents: send each task
 to the cheapest observation mode that can solve it. We test that promise on
 VisualWebArena with six observation modes, three model backbones, and two sites, and
-report a negative result with a diagnosis. The routing ceiling itself is real and splits in
-two. An oracle that picks the cheapest successful mode per task gains 3.4 to 16.1 points of
-success rate over the best single mode while spending 13.7% to 35.3% less; of that, an
-accuracy-neutral half worth 9.5–30.6% of cost needs only a binary solvable/hopeless label,
-while the accuracy-bearing half needs a per-mode one. The router cannot be learned either
-way, and it fails twice over, for two unrelated reasons, one per half. Choosing *which* mode fails on label supply. A training label
-exists only where some mode succeeded, so at 7–43% solvable rates the six cells yield
-15–97 labels each; under a minimum-class filter, four of the six have no trainable
-classifier at all. Choosing *whether* to spend fails despite having supply: the
-solvable/hopeless label is available for every task and predictable at AUROC 0.65–0.72 in
-five of six cells, yet under fully nested cross-validation no cell's learned triage
-Pareto-dominates the trivial policy of always taking the cheapest mode. We then show that relabelling cannot
-rescue either half. The benchmark's score is binary, so there is no partial credit to
-regress on; pooling across backbones restores supply but breaks identifiability, because
-the routing features are functions of the task alone and 56–57% of shared tasks carry
-contradictory labels. One re-slicing does help. Collapsing six modes into a binary
-"does this need the screenshot" tier raises the attainable ceiling from 79–84% to 90–97%,
-and it manufactures no new solve events at all. We argue that the binding constraint on
-learned routing for web agents is the production rate of supervision rather than the
-hypothesis class, and that this constraint belongs to the benchmark regime rather than to
-our estimator.
+report a negative result with a diagnosis. The ceiling is real and splits in two: an oracle
+that picks the cheapest successful mode per task gains 3.4 to 16.1 points of success rate over
+the best single mode while spending 13.7% to 35.3% less, and the accuracy-neutral half of that
+saving needs only a binary label where the accuracy-bearing half needs a per-mode one. Neither
+half survives supervision. Choosing *which* mode fails on supply: a label exists only where
+some mode succeeded, so at 7–43% solvable rates the six cells yield 15–97 labels each, and
+four of six admit no trainable classifier under a minimum-class filter. Choosing *whether* to
+spend has the supply and fails anyway: the label is defined everywhere and predictable at
+AUROC 0.65–0.72 in five of six cells, yet under fully nested cross-validation no cell's
+learned triage Pareto-dominates always taking the cheapest mode. Relabelling rescues neither.
+The benchmark's score is binary, so there is no partial credit to regress on, and pooling
+across backbones restores supply while breaking identifiability, with 56–57% of shared tasks
+carrying contradictory labels. Asking only whether a task needs the screenshot does help,
+raising the attainable ceiling from 79–84% to 90–97% while manufacturing no new solve events. The binding constraint on learned routing for web agents is the production rate
+of supervision, and it belongs to the benchmark regime rather than to our estimator.
 
 ## 1. Introduction
 
@@ -52,56 +46,40 @@ It bought nothing, and we can say precisely why.
 The first thing to establish is that the opportunity is real, because a negative routing
 result is uninteresting if the modes are redundant. They are not. An oracle that sees the
 outcome and picks the cheapest successful mode per task beats the strongest single mode on
-both axes at once: for our largest backbone, +16.07pp of success rate at 20.2% less cost on
-classifieds and +11.33pp at 13.7% less on reddit.
+both axes at once, by 3.45 to 16.07 points of success rate and 13.7% to 35.3% of cost (§3).
 
-What matters for the rest of the paper is that this ceiling decomposes, and that the two
-pieces are not reachable by the same supervision. Holding the mode choice fixed and only
-deciding whether to spend recovers 9.5% to 30.6% of cost at no accuracy change, and needs
-one bit per task. Choosing among the modes that actually solved a task recovers the 3.45 to
-16.07 points of accuracy, and needs to name a mode. One obstruction closes each piece.
-
-The second thing is that this opportunity does not survive contact with supervision, and
-it fails in two distinguishable ways.
+What matters for the rest of the paper is that this ceiling decomposes, and the two pieces
+are not reachable by the same supervision. Deciding only whether to spend, without changing
+which mode solves anything, recovers the cost and needs one bit per task. Choosing among the
+modes that actually solved a task recovers the accuracy and needs to name a mode. One
+obstruction closes each piece.
 
 **Choosing which mode is not learnable, because labels are not produced.** The natural
-supervision for a mode-selection router is the identity of the cheapest mode that solved
-each task. Such a label exists only for tasks that were solved. At the solvable rates we observe
-(43.3% down to 7.1% across six site-backbone cells) this yields between 97 and 15
-labelled examples per cell, spread over six classes. Applying the same
-minimum-class threshold any practitioner would apply before fitting a multiclass model,
-four of the six cells contain no trainable classifier at all: fewer than two classes
-survive. This is not a modelling failure that a better estimator repairs. Labels come
-into existence only when the agent succeeds, and no re-slicing of the supervision changes
-how many successes the benchmark produced.
+supervision is the identity of the cheapest mode that solved each task, and it exists only
+for tasks that were solved. At the success rates these agents reach that yields tens of
+examples per cell over six classes, and under the minimum-class threshold any practitioner
+would apply before fitting a multiclass model, four of six cells contain no trainable
+classifier at all (§4). No better estimator repairs this. Labels come into existence only
+when the agent succeeds, and no re-slicing of the supervision changes how many successes
+the benchmark produced.
 
-**Choosing whether to spend is learnable and still worthless.** A weaker router only
-decides, per task, whether to pay for the expensive mode or send the task to the cheap
-one. Its label asks only whether the task is solvable by anything, and that is defined
-for every task, so the supply problem disappears: 203 or 224 labels per cell instead of
-15 to 97. And it is
-predictable: cross-validated AUROC reaches 0.651–0.717 in five of six cells, clearing the
-best single covariate in four. Under fully nested cross-validation, where the mode
-choice, the decision threshold, and the scoring model are all re-derived inside each
-outer fold, **no cell's learned triage Pareto-dominates the trivial fixed policy of
-always taking the cheapest mode**. One cell yields a saving that survives multiple-testing
-correction, and inspecting it is instructive: it sends 95% of its tasks to the cheap mode,
-differing from the free fixed policy by five percent of the allocation, in a cell where
-only 7.4% of tasks are solvable at all. Its AUROC is 0.483, below chance. The saving comes from enrichment in the tail rather
-than from a globally ordered score.
+**Choosing whether to spend is learnable and still worthless.** A weaker router only decides,
+per task, whether to pay for the expensive mode. Its label asks whether the task is solvable
+by anything, so it is defined everywhere, and it is predictable above the best single
+covariate in most cells. Under fully nested cross-validation, where the mode choice, the
+threshold, and the scoring model are all re-derived inside each outer fold, **no cell's
+learned triage Pareto-dominates the trivial fixed policy of always taking the cheapest
+mode** (§5). The one cell whose saving survives multiple-testing correction has an AUROC
+below chance, and its saving comes from tail enrichment rather than from a globally ordered
+score.
 
-**Relabelling does not rescue either half.** Three routes are available and all are
-closed. Regressing on a continuous quality signal is impossible because the benchmark's
-score is binary: across 7,963 episodes we observe only 0 and 1, with no partial credit.
-Pooling labels across backbones does fix supply, and it breaks identifiability in exchange:
-the routing features are computed from the task and the first observation, carrying no
-model identity, so two backbones facing the same task present the same feature vector.
-On tasks covered by more than one cell, 57.4% (classifieds) and 56.0% (reddit) carry
-contradictory labels, which caps any task-feature classifier at 79.2% and 83.7% accuracy
-respectively. The one re-slicing that pays is to stop asking which of six modes and ask
-only whether the task needs the screenshot: the same features, the same solve events, and
-a ceiling of 89.9% and 96.7%. Backbones disagree sharply about which mode is best, while
-agreeing substantially about whether the image is needed at all.
+**Relabelling does not rescue either half.** Regressing on a graded quality signal is
+impossible because the benchmark's score is binary. Pooling labels across backbones fixes
+supply and breaks identifiability in exchange, since the features carry no model identity and
+more than half of the tasks shared between cells then carry contradictory labels. The one
+re-slicing that pays is to stop asking which of six modes and ask only whether the task needs
+the screenshot: the same features, the same solve events, and a materially higher ceiling
+(§6).
 
 Our contribution is therefore not a router. It is an account of why this router is
 unavailable at this operating point, stated in terms that transfer:
@@ -116,12 +94,11 @@ unavailable at this operating point, stated in terms that transfer:
 4. A relabelling analysis that closes the obvious escape routes and identifies the one
    that is open, together with the identifiability cost of pooling (§6).
 
-We also report two methodological findings that we believe generalise beyond this study.
-First, in a low-success regime, a high AUROC is neither necessary nor sufficient for a
-triage policy to save money; what decides the outcome is whether a handful of tail tasks
-land on the correct side, and at n=203 that handful is four successes. A ranking metric
-that does not license the downstream operational claim has been reported in adjacent
-agent settings as well [@li2026aucnotenough]. Second, the
-comparison that determines whether a learned router is worth deploying is not against the
-best single mode but against the cheapest single mode, and switching to that baseline
-removes every saving we measured.
+Two methodological findings generalise beyond this study. First, in a low-success regime a
+high AUROC is neither necessary nor sufficient for a triage policy to save money; what decides
+the outcome is whether a handful of tail tasks are routed to the expensive mode, and at
+n = 203 that handful is four successes. A ranking metric that does not license the downstream operational
+claim has been reported in adjacent agent settings as well [@li2026aucnotenough]. Second, the
+comparison that decides whether a learned router is worth deploying is not against the best
+single mode but against the cheapest one, and switching baselines removes every saving we
+measured.

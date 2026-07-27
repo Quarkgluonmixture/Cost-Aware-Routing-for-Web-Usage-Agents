@@ -20,17 +20,13 @@ which point it is no longer supervision about task success.
 
 ### 6.2 Coarser classes: closed by the count, not the class structure
 
-The second fix is to reduce the number of classes. Six modes is a lot to discriminate with
-97 examples; collapsing to two should help.
-
-It does not, when the collapse is only about class count. §4.2's obstruction is that four
-of six cells have fewer than ten labelled rows in more than one class, and merging classes
-does not add rows. A cell with 15 labels spread over five classes still has 15 labels after
-merging them into two. Coarsening changes the ratio of examples to parameters; it does not
-change the absolute supply, and the absolute supply is what fails.
-
-This is worth separating from §6.4, where a specific binary collapse *does* help, for a
-different reason, having to do with agreement across backbones rather than with class count.
+The second fix is to reduce the number of classes, and it does not work when the collapse is
+only about class count. §4.2's obstruction is that four of six cells have fewer than ten
+labelled rows in more than one class, and merging classes does not add rows: a cell with 15
+labels over five classes still has 15 after merging them into two. Coarsening changes the
+ratio of examples to parameters, not the absolute supply, and the absolute supply is what
+fails. §6.4's binary collapse does help, but for a different reason, having to do with
+agreement across backbones rather than with class count.
 
 ### 6.3 Pooling across backbones: supply for identifiability
 
@@ -90,7 +86,7 @@ explains why tractable was not enough for the one bit we did train.
 | triage (binary) | fine (203–224, every task) | fine | learnable, **and beaten by a fixed policy** (§5) |
 | screenshot tier | fine, but only on solved tasks | fine (ceiling 90–97%, over solved tasks) | ceiling measured; no tier classifier trained |
 
-*Table 12: The five supervision targets against the two requirements a trainable router
+*Table 7: The five supervision targets against the two requirements a trainable router
 needs. Each closed route is closed for a different reason, which is what makes the negative
 result closed rather than provisional. Supply and identifiability are judged on that target's
 own denominator, which differs between the last two rows.*

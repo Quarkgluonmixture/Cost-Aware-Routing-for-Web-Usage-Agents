@@ -19,7 +19,7 @@ the reason is the baseline.
 | classifieds · B2 | 224 | 7.1% | 0.651 | 0.655 | −0.005 |
 | reddit · B2 | 203 | 7.4% | **0.483** | 0.711 | −0.228 |
 
-*Table 7: Predictability of the triage label. AUROC is cross-validated; the comparison column
+*Table 5: Predictability of the triage label. AUROC is cross-validated; the comparison column
 is the best single covariate used alone, so the margin isolates what the multivariate model
 adds. The reddit · B2 row is below chance and is the subject of §5.4.*
 
@@ -44,14 +44,12 @@ cross-validation produces out-of-fold scores; the threshold is chosen against th
 scores; and a model refitted on the training rows scores the held-out rows. Nothing that
 touches an outer test fold has seen it.
 
-The nesting changes the numbers in both directions, which is worth stating plainly because
-it is not the usual story of honest evaluation being uniformly worse: the shift runs from
-**−0.99pp** on reddit · B0 to **+1.34pp** on classifieds · B0, with per-cell values in
-Appendix A.3.
-
-The two classifieds gains come from re-selecting the mode per fold: the fold-local choice
-is sometimes better adapted than the global one, and because that selection uses only
-training rows it is a legitimate gain rather than leakage.
+Nesting moves the result in both directions, from **−0.99pp** on reddit · B0 to **+1.34pp**
+on classifieds · B0 (Appendix A.3), which is worth stating plainly because it is not the usual
+story of honest evaluation being uniformly worse. The two classifieds gains come from
+re-selecting the mode per fold: the fold-local choice is sometimes better adapted than the
+global one, and because that selection uses only training rows it is a legitimate gain rather
+than leakage.
 
 The nested design also exposes something the whole-cell version conceals. **The
 best-success mode is not stable across folds.** In reddit · B0 the five outer folds select
@@ -75,7 +73,7 @@ Against always-cheapest, it does not:
 | classifieds · B2 | 1.34% / 0.07247 | 2.23% / 0.07065 | no (−0.89pp SR, +2.6% cost) |
 | reddit · B2 | 3.94% / 0.06964 | 1.97% / 0.06833 | no (+1.97pp SR, +1.9% cost) |
 
-*Table 9: The nested triage policy against the always-cheapest fixed policy. Pareto
+*Table 6: The nested triage policy against the always-cheapest fixed policy. Pareto
 dominance requires no worse on both axes; no cell achieves it. The parenthetical gives the
 router's deltas relative to the fixed policy.*
 

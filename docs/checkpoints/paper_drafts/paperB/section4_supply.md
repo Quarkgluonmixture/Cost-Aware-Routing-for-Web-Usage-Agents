@@ -15,7 +15,7 @@ to the very quantity the router is supposed to improve.
 | classifieds · B2 | 224 | **16** | 7.1% | 5/6 |
 | reddit · B2 | 203 | **15** | 7.4% | 5/6 |
 
-*Table 4: Which-mode label supply. A label exists only where some mode solved the task, so
+*Table 3: Which-mode label supply. A label exists only where some mode solved the task, so
 the labelled column equals the number of solved tasks. Six classes have to be discriminated
 from between 15 and 97 examples.*
 
@@ -42,7 +42,7 @@ the threshold used by our pipeline, and unremarkable as practice, leaves:
 | classifieds · B2 | 16 | 5 | 0 | **no** |
 | reddit · B2 | 15 | 5 | 0 | **no** |
 
-*Table 5: Classes surviving a minimum of ten training rows per class in a five-fold split.
+*Table 4: Classes surviving a minimum of ten training rows per class in a five-fold split.
 Fewer than two surviving classes leaves nothing to discriminate between, which is the state
 of four of the six cells.*
 
@@ -86,13 +86,10 @@ the cost measurement it claims to approximate.
 
 ### 4.4 Scope of the supply argument
 
-It shows that at these success rates, which-mode supervision is unavailable in the
+The argument shows that at these success rates which-mode supervision is unavailable in the
 quantity a six-class model needs, and that where it is available it is noisy in a way
-traceable to the label definition rather than to the environment.
-
-It does not show that mode selection is unlearnable in principle. A benchmark on which
-agents succeed at 60% would produce several hundred labels per cell, and the argument in
-§4.1 predicts that the router becomes trainable there. Our claim is scoped to the regime
-current web agents actually occupy on this benchmark, which is 2% to 43% success. Within
-that regime the constraint is structural: the supervision arrives at the rate the agent
-succeeds, and that rate is what needed improving.
+traceable to the label definition rather than to the environment. It does not show that mode
+selection is unlearnable in principle: on a benchmark where agents succeed at 60% a cell would
+produce several hundred labels, and §4.1's mechanism predicts the router becomes trainable
+there. Within the 2–43% regime current web agents occupy, the constraint is structural. The
+supervision arrives at the rate the agent succeeds, and that rate is what needed improving.

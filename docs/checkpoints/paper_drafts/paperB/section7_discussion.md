@@ -40,17 +40,14 @@ recommendations: §5.2 quantifies the nesting effect at −0.99 to +1.34 percent
 
 ### 8.1 What we claim
 
-Our claim is scoped to the regime we studied: VisualWebArena classifieds and reddit, six
-observation modes, three backbones spanning 4B to 235B parameters across two model
-families, and agent success rates between 2% and 43%. In that regime a learned per-task
-mode router is not available, and the obstruction is the production rate of supervision
-rather than the choice of hypothesis class, label definition, or estimator.
-
-We claim this at three levels of strength. The supply obstruction (§4) is arithmetic: labels
-equal successes, and four of six cells fall below any usable threshold. The value
-obstruction (§5) is empirical and rests on a specific baseline choice we argue is the correct
-one. The closure argument (§6) is that the available escape routes fail for three different
-reasons, which is what distinguishes a closed negative result from an unfinished search.
+Our claim is scoped to the regime we studied, and within it a learned per-task mode router is
+not available, with the obstruction lying in the production rate of supervision rather than in
+the hypothesis class, the label definition, or the estimator. The three components carry
+different weights. The supply obstruction (§4) is arithmetic: labels equal successes, and four
+of six cells fall below any usable threshold. The value obstruction (§5) is empirical and
+rests on a baseline choice we argue is the correct one. The closure argument (§6) is that the
+escape routes fail for three different reasons, which is what distinguishes a closed negative
+result from an unfinished search.
 
 ### 8.2 What we do not claim
 
@@ -58,18 +55,16 @@ We do not claim that mode routing is unlearnable in general. §4.1's mechanism p
 opposite as agents improve: at 60% success a cell would yield several hundred labels and
 become trainable. The prediction is falsifiable and we would welcome its falsification.
 
-We do not claim the ceiling is illusory. §3 measures a real one, and it is larger than the
-cost figure alone: 3.45 to 16.07 points of success rate as well as 13.7% to 35.3% of cost. Our
-result is about which parts of it supervision can reach. The accuracy-neutral 9.5–30.6% is
-largely also reachable by a fixed policy, so the *learned* component adds little there; the
-accuracy-bearing part is not reachable at all, because its label is not produced.
+We do not claim the ceiling is illusory. §3 measures a real one on both axes. Our result is
+about which parts of it supervision can reach: the accuracy-neutral part is largely also
+reachable by a fixed policy, so the *learned* component adds little there, and the
+accuracy-bearing part is not reachable at all because its label is not produced.
 
 We do not claim our router is the best possible one. The triage model is a logistic model over
-20 numeric and binary features with no text features at all, and a stronger model, or one that
-used the intent text, might extract more signal. But §5.1 shows the
-signal is already present at AUROC 0.65–0.72 and §5.3 shows that converting it into value
-fails at the policy-comparison step, not at the prediction step. A better predictor does not
-address that.
+20 numeric and binary features with no text features at all, and a stronger model might extract
+more signal. But §5.1 shows the signal is already present and §5.3 shows that converting it
+into value fails at the policy-comparison step, not at the prediction step. A better predictor
+does not address that.
 
 ### 8.3 Limitations
 
@@ -77,13 +72,11 @@ address that.
 (notably the binary score of §6.1) are not separable at this scale. A benchmark with graded
 outcomes could reopen §6.1 without changing §4.
 
-**Offline replay.** All routing results exclude router inference cost and latency, which
-flatters the router. Since the result is negative, this strengthens rather than weakens it,
-but it means we have not measured a deployment.
-
-**No live routing.** We never served a router, so the interaction between routing
-decisions and multi-step trajectory dynamics goes unmeasured. A mode chosen at step 0 is
-used for the whole episode in our replay; adaptive mid-episode switching is unexamined.
+**Offline replay, no live routing.** We never served a router. All results exclude router
+inference cost and latency, which flatters the router and therefore strengthens a negative
+result, but it means we have not measured a deployment. A mode chosen at step 0 is used for
+the whole episode in our replay, so the interaction between routing decisions and multi-step
+trajectory dynamics, including adaptive mid-episode switching, is unexamined.
 
 **Cost is not pooled across backbones.** API pricing and electricity-derived cost differ by
 roughly three orders of magnitude per token, so we compare ratios within a backbone only.
@@ -93,8 +86,8 @@ Cross-backbone cost statements would be unit collisions.
 
 For practitioners, the operational recommendation is uncomfortable but concrete: at current
 web-agent success rates, compare any proposed router against always-taking-the-cheapest-mode
-before building it. In four of our six cells that fixed policy is not Pareto-dominated by
-anything we could learn, and in one it dominates the learned router outright.
+before building it. In none of our six cells did anything we learned Pareto-dominate that
+fixed policy, and in one the fixed policy dominates the learned router outright.
 
 For benchmark designers, §6.1 identifies a low-cost intervention with disproportionate
 value. A graded per-task score (even three levels) would convert every episode into a

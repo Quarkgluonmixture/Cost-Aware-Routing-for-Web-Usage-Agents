@@ -16,7 +16,7 @@ is the check that the oracle is implemented as defined rather than a self-standi
 | classifieds · B2 | 224 | 7.1% | 2.23% / 0.09075 | 2.23% / 0.07065 | **7.14%** / **0.06953** |
 | reddit · B2 | 203 | 7.4% | 3.94% / 0.09479 | 1.97% / 0.06833 | **7.39%** / **0.06958** |
 
-*Table 2: The routing ceiling. The oracle picks the cheapest mode that solved each task, so
+*Table 1: The routing ceiling. The oracle picks the cheapest mode that solved each task, so
 its success rate equals the solvable column by construction. Always-cheapest is the
 lowest-mean-cost mode applied everywhere. Cost is per-episode billed cost and is never
 compared across backbones.*
@@ -48,7 +48,7 @@ identity exists only for tasks something solved.
 | classifieds · B2 | ±0.00pp / **−21.3%** | **+4.91pp** / −2.1% |
 | reddit · B2 | ±0.00pp / **−26.4%** | **+3.45pp** / −0.2% |
 
-*Table 3: The ceiling decomposed. Both columns are deltas against the best single mode. The
+*Table 2: The ceiling decomposed. Both columns are deltas against the best single mode. The
 triage half is accuracy-neutral by construction and carries 9.5–30.6% of cost saving; the
 route half carries 3.45–16.07pp of success rate and much less cost. The two halves require
 different labels, and the rest of the paper fails on one obstruction per half.*
@@ -62,20 +62,16 @@ of the ceiling survives, and each fails for its own reason.
 ### 3.2 The cost half is largest where the agent is weakest
 
 Within classifieds the triage saving grows monotonically as the solvable rate falls: 12.8% at
-43.3% solvable, 19.4% at 24.6%, 21.3% at 7.1%. Reddit shows the same direction without being
+43.3% solvable, 19.4% at 24.6%, 21.3% at 7.1%; reddit shows the same direction without being
 monotone. The mechanism is unflattering. When almost every task is hopeless, almost every task
 can be sent to the cheapest mode without losing anything, so the advantage over "use the best
 mode everywhere" is large precisely because failure is cheap to reach.
 
-This is why §2.5 insists on the always-cheapest baseline. If much of the cost saving comes from
-not paying for hopeless tasks, then a policy that never pays for anything captures much of it
-for free. Table 2 shows always-cheapest already spending 10.4% to 34.5% less than the best
-single mode, at a success-rate cost of 0.00 to 7.39 percentage points. Measuring a router
-against best-single credits it with a saving a one-line policy already delivers.
-
-Note the classifieds · B2 row: always-cheapest matches the best single mode's success rate
-exactly while costing 22.1% less. In that cell the cost half of the routing problem is already
-solved by a fixed policy, and any learned router can at best tie it.
+This is why §2.5 insists on the always-cheapest baseline: a policy that never pays for anything
+captures much of that saving for free. Table 1 shows it already spending 10.4% to 34.5% less
+than the best single mode, giving up 0.00 to 7.39 points of success rate. On classifieds · B2
+it gives up nothing at all while costing 22.1% less, so in that cell the cost half is already
+solved by a fixed policy and any learned router can at best tie it.
 
 The remaining cells define the actual target. A useful router must land somewhere the oracle
 reaches and always-cheapest does not: recover accuracy that always-cheapest gives up, or cost
