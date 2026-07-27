@@ -9014,3 +9014,44 @@ escalation 恒 0; `seed` 的 schema 默认恰好等于配置值 42 = config 回�
 
 **Cross-link**: B-1887 (同一陷阱的 `dict.get` 形态); 笔记 §387.7 结论三 (踩坑经过) · §387.15。
 
+
+---
+
+## B-1896 — Pass-1 run 白名单一直没落地: 6 个 cell 里 2 个把陈旧/被取代的 run 混进 router 标签 (2026-07-27)
+
+**B-1896** (标签污染, **FIXED**) —
+
+`p79/policies/pass1_manifest.discover_runs` 的设计是: **有 manifest 就严格限定到列出的
+run, 没有就 glob + 对 >1 个 canonical run 只发警告**, 然后
+`collect_per_task_outcomes` 按 **newest-wins 无优先级规则**覆盖。
+
+笔记 §367 (2026-07-15) 已经预警过并写明"canonical 重跑前必须先给脚本加 manifest 白名单
+(否则 canonical 训练数据被污染)"。**白名单一直没落地。** 2026-07-27 抽全 6 cell 特征时
+实测命中, 而且是两处:
+
+```
+[pass1_manifest] B0_reddit: 7 canonical Pass-1 runs with no manifest; ...
+[pass1_manifest] B1_classifieds: 7 canonical Pass-1 runs with no manifest; ...
+```
+
+| cell | 多出来的那条 | 性质 |
+|---|---|---|
+| `B0_reddit` | `B0_dom_reddit_20260621_..._R819` | 被 `..._R11344` 取代的旧 DOM run (run_manifest.yaml 里 canonical 的是后者) |
+| `B1_classifieds` | `B1_3mode_classifieds_20260413` | **正是 §367 点名的那条 stale run** |
+
+→ 这两个 cell 的 per-(task, mode) outcome 被两条 run 交替覆盖, oracle 标签因此不确定。
+`n_kept` 也随之漂移。
+
+**Fix**: `scripts/analysis/write_pass1_run_manifest.py` 从
+`results/phantom_paper/run_manifest.yaml` 的 **grade == paper-grade** 条目生成白名单
+(而不是手列) —— 这样 router 眼里的"canonical run"不可能与 aggregator 眼里的漂开。
+落盘 `results/phantom_paper/l1_router/pass1_run_manifest.json`; 带 `--check` 可校验一致性。
+修后 6 个 cell 全部 `6 runs / manifest_used=True`。
+
+**教训**: 一个"有就严格、没有就宽松+警告"的机制, **在白名单没落地之前等于没有机制** ——
+而警告只在有人读日志时才存在。§367 读到了、记下了、也写了必须先做, 然后 12 天里没人做,
+直到今天为了别的事重抽特征才撞上。**预警不等于防线**; 让宽松分支 fail-closed, 或者把
+生成器接进管线, 才是。
+
+**Cross-link**: 笔记 §367 (预警) · §387.16 (落地) · B-1887 (同族: mode 层缺数据被当失败) ·
+`p79/policies/pass1_manifest.py` · `scripts/analysis/write_pass1_run_manifest.py`

@@ -27,7 +27,8 @@ def test_b1810_discover_runs_rejects_smoke_and_router(tmp_path):
     for d in (canonical, smoke, router):
         d.mkdir()
 
-    runs, prov = pm.discover_runs(root, "B0", "classifieds", router=False)
+    runs, prov = pm.discover_runs(root, "B0", "classifieds", router=False,
+                             manifest_path=root / "_absent.json")
     names = [r.name for r in runs]
     assert canonical.name in names           # canonical kept
     assert smoke.name not in names           # smoke rejected (was silently included)
@@ -42,7 +43,8 @@ def test_b1810_discover_runs_router_kind_selects_router(tmp_path):
     (root / "B0_dom_classifieds_20260521_R9755").mkdir()
     router = root / "B0_router_learned_classifieds_20260521_R2"
     router.mkdir()
-    runs, _ = pm.discover_runs(root, "B0", "classifieds", router=True)
+    runs, _ = pm.discover_runs(root, "B0", "classifieds", router=True,
+                        manifest_path=root / "_absent.json")
     assert [r.name for r in runs] == [router.name]
 
 
@@ -71,6 +73,7 @@ def test_b1810_discover_runs_multi_run_overwrite_warning(tmp_path):
     root.mkdir()
     for name in ("B0_dom_classifieds_A_R1", "B0_dom_classifieds_B_R2"):
         (root / name).mkdir()
-    runs, prov = pm.discover_runs(root, "B0", "classifieds", router=False)
+    runs, prov = pm.discover_runs(root, "B0", "classifieds", router=False,
+                             manifest_path=root / "_absent.json")
     assert len(runs) == 2
     assert any("overwritten" in w or "precedence" in w for w in prov["warnings"])

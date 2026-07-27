@@ -106,6 +106,15 @@ def _build_synthetic_pass1(tmp_path: Path, site: str = "classifieds"):
 def _patch_roots(monkeypatch, phase1_root, vwa_root):
     monkeypatch.setattr(e50, "PHASE1_ROOT", phase1_root)
     monkeypatch.setattr(e50, "VWA_CONFIG", vwa_root)
+    # B-1896: these tests build their own synthetic run universe, so they must also
+    # detach from the repo's real Pass-1 whitelist. Before that whitelist existed
+    # (2026-07-27) `discover_runs` silently fell through to globbing and the tests
+    # passed by accident; once it existed the synthetic runs were filtered out and
+    # every one of them failed. A test that constructs its own world should say so
+    # rather than depend on a file not being there.
+    import p79.policies.pass1_manifest as _pm
+
+    monkeypatch.setattr(_pm, "DEFAULT_MANIFEST", str(phase1_root / "_no_manifest.json"))
 
 
 def test_b1887_absent_mode_raises_before_any_label_is_derived(tmp_path, monkeypatch):
@@ -174,8 +183,7 @@ def test_g3_task_accounting_identity_all_configs_present(tmp_path, monkeypatch):
     (vwa_root / "test_classifieds" / "5.json").write_text(
         json.dumps({"intent": "sort by newest", "image": None, "reasoning_difficulty": "easy"})
     )
-    monkeypatch.setattr(e50, "PHASE1_ROOT", phase1_root)
-    monkeypatch.setattr(e50, "VWA_CONFIG", vwa_root)
+    _patch_roots(monkeypatch, phase1_root, vwa_root)
 
     rec = e50.build_cell_records("B0", "classifieds")
     assert rec["n_total_tasks"] == 6
@@ -195,8 +203,7 @@ def test_g3_missing_config_counted_not_silently_dropped(tmp_path, monkeypatch):
     cell could report n_kept=0 (submodule unchecked) and look like a benign empty pool.
     """
     phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)  # task 5 cfg omitted
-    monkeypatch.setattr(e50, "PHASE1_ROOT", phase1_root)
-    monkeypatch.setattr(e50, "VWA_CONFIG", vwa_root)
+    _patch_roots(monkeypatch, phase1_root, vwa_root)
 
     rec = e50.build_cell_records("B0", "classifieds")
     assert rec["n_total_tasks"] == 6
@@ -217,8 +224,7 @@ def test_g3_dropped_count_surfaced_in_saved_meta(tmp_path, monkeypatch):
     """The persisted companion JSON must expose n_dropped_no_config per cell (diagnosable
     from the artifact alone, not just stdout)."""
     phase1_root, vwa_root = _build_synthetic_pass1(tmp_path)
-    monkeypatch.setattr(e50, "PHASE1_ROOT", phase1_root)
-    monkeypatch.setattr(e50, "VWA_CONFIG", vwa_root)
+    _patch_roots(monkeypatch, phase1_root, vwa_root)
 
     extracted = e50.extract_all_cells([("B0", "classifieds")])
     out = tmp_path / "raw_features_phase1a.npz"
