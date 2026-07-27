@@ -48,32 +48,31 @@ updated: 2026-07-27
 > ```
 > Overleaf 侧: **菜单 → Main document → `main_paperA.tex` / `main_paperB.tex`** 切编译目标。
 >
-> ### 0-B′. ✅ 方案 (a) 已做完 (commit `9d11178`) — 现在的拦路问题换成了页数
+> ### 0-B′. ✅ 方案 (a) 完成, 且 **两篇都进 8 页限内** (commit `9d11178`→`ce55d78`)
 >
-> §3 换用 `oracle_sr_cost` 六格重取 · 新 §3.1 把天花板劈成两半并各自对上 §4/§5 ·
-> Vision-最便宜前提修正 (§1/§2.1/§6.4 更名 screenshot tier) · 表 12 拆分母 ·
-> 5 张支撑表进附录 (27 数据行 26 行逐字节一致, 唯一差异是有意的表头更名) ·
-> §5.3 "13%–27%" → **0.5%–26.5%**。
+> **§3 口径改正**: 换用散文实际定义的 `oracle_sr_cost`, 六格重取自产物。真数字 =
+> 精度 **+3.45~+16.07pp** 且成本 **−13.7%~−35.3%**, 不是「只赢成本」。新 §3.1 把天花板
+> 劈成两半 (`triage_only` 只要二元标签 → §5 杀 / `route_only` 要 which-mode 标签 → §4 杀),
+> 兑现了 contribution #1。自洽检查写进正文: oracle SR ≡ solvable 列 (定义恒等式)。
 >
-> **剩下的是取舍, 不是错误**: Paper B 正文 **7741 词 + 7 张表 = 10 页**, 限 8 页。
-> 最便宜的砍法是 §1 (1455 词, 其中大量数字在 §3–§5 原地又出现一遍 —— 砍重复不损失论证)。
-> 其余分布: §5 1231 · §6 1077 · §7 1043 · §2 989 · §4 975 · §3 971。
-> 附录 733 词不计入。
+> **同轮修掉的三家共识第二条 P0**: Vision 六格最便宜 → §1/§2.1 前提句改写,
+> §6.4 "cost tier" 更名 **screenshot tier**, §4.3 补因果 (MODES 顺序就是按那个被否证的
+> 前提排的 —— codex #4 与 #6 同根)。表 12 拆分母 (codex #5)。
 >
-> ### 0-B. (已解决, 保留供追溯) Paper B §3 的 oracle 列错位 (三家 P0 共识)
+> **⭐ ACL 合规缺口 (顺带发现)**: ACL 要求未编号独立 `\section*{Limitations}` 且不计页数,
+> 两篇原本都只有编号子节。已加 `limitations.md` 支持 + skeleton `\label{content-end}`,
+> **页数门改为量 content-end** (否则 Limitations/附录被误算进 8 页)。
 >
-> Table 2 的 "oracle" 列**六格逐位**等于产物 `triage_only`, 而 §3 散文写的是 `oracle_sr_cost`
-> 的定义。真 oracle 有 **+3.45~+16.07pp SR** 增益 → §3 标题 / "the ceiling is entirely in
-> cost" / abstract 的 "13–22%" 全是错的 (那个 22% 还对不上任何一行产物)。
+> **⭐ 页数真凶不是字数, 是浮动体排队**: 砍到 6100 词仍 9 页; 逐页数表发现表 1-4 全堆在
+> p5 左栏。根因 = Table 1 是 `table*`, 跨栏浮动只能落页顶, 排队时后面浮动体被保序卡住。
+> 全改单栏后表格分布 2/2/2/1, **立刻 9 页→8 页**。
+> **教训: 页数超了先 `pdftotext` 逐页数表, 再决定砍不砍字。**
 >
-> **好消息**: 产物 `router_objective_ordering.md` 已经把 ceiling 劈成两半, 而两半正好各被
-> §4/§5 杀一个 —— `triage_only` 只要二元标签 (§5 杀) / `route_only` 要 which-mode 标签 (§4 杀)。
-> Paper B contribution #1 原文就是要 "separate" 这两半。**改完是兑现自己的贡献, 不是打补丁。**
+> **现状**: paperA 正文 8 页 · paperB 正文 8 页 · **两篇 `--submission` exit 0**
+> (0 TODO / 0 未定义引用 / content-end ≤ p8) · vale 0 error。
+> paperB 计页正文 7741 → 5972 词 (−22%), 另有不计页 limitations 224 + appendix 1244。
 >
-> **需 user 决策**: 是 (a) 只重写 §3 散文 + 换用 `oracle_sr_cost` 行 (~1.5h, 我可以自走),
-> 还是 (b) 连 codex #4 一起做 —— 按测量成本重算 which-mode 标签, 重生成 label-supply /
-> conflict / tier / router 全套产物 (~1 focused day)。
-> **(b) 的诱因很强**: codex 只读重算给出 4/6 不可训 → **5/6**, **阴性结论更强**。
+> **仍未推 Overleaf** —— 现在可以推了 (`bash scripts/maintenance/overleaf_sync.sh`)。
 >
 > ### 0-C. 未落地的 findings (全部需产物重生成, 按代价排)
 >
