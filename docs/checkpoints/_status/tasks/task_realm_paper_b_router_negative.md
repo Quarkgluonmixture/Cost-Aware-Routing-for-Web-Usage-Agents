@@ -21,32 +21,71 @@ updated: 2026-07-22
 **⭐ 不阻塞于 k=6**: 核心证据是**结构性事实**, B2_reddit 进来只多一行, 论点一字不改 →
 **现在就能整篇写完**。(反之 Paper A 的 hero 数字全随 k=6 移动。)
 
-## 证据清单 (全部已在手, 2026-07-22)
+## 证据清单 (**2026-07-27 刷新为 k=6 实测**; 旧版是 07-22 的 k=5 数字, 已 superseded)
 
-| 条 | 数字 |
-|---|---|
-| 路由天花板存在性 | oracle 43.3% vs 最强单模 27.2% (cls·B0); 97 可解任务中 36 个在最强单模之外 |
-| 标签供给 | 每 cell **16-97** 个可训练标签; B2_cls 可解率 7.1% / B1_red 12.7% |
-| 可训练性 | `N_MIN_CLASS_TRAIN=10` → **3/5 cell 零可训练折**; Stage 3 终判 **1/5 cells fully trained** |
-| 连续标签路已堵 | VWA `score` 纯二值 {0,1} (7963 episodes: 7278/685), **无部分分** |
-| tier 化不救 | 6 路→2 路类数减少, 但绝对标签量仍卡死 |
-| 池化解供给 | 249 个标签, 六类全过 min-class 过滤器 |
-| 池化的代价 | 特征是任务的函数 → 同 X 矛盾 y: **cls 57.4% / red 45.5% 矛盾** |
-| Bayes 上限 | 纯任务特征分类器: **cls 79.2% / red 87.7%** |
-| 唯一自洽组合 | **池化 + cost-tier 二分类** (tier 跨 cell 一致性 red **95.5%** / cls 68.5%) |
-| tie-break 任意性 | **约 1/4 标签由 `MODES` 硬编码顺序决定而非数据** (26%/29%/25%/18%/15%) |
+> ⚠️ 全部有可重跑来源。**不要再引 07-22 那批** —— 那三个 scratch 脚本
+> (`label_supply_sweep` / `label_trainability` / `pooled_label_conflict`) 已丢失,
+> 数字也随 B2_reddit 入池 + reddit 转 203 集而移动。
 
-三条独立路径(假设类 15 格 sweep 已有 / 监督侧三种定义 / 池化换可识别性)都指向同一瓶颈 → 论证闭合。
+**产物**: `router_label_supply_diagnosis.{md,json}` (新, 本次重建) ·
+`router_triage_learnability.{md,json}` · `router_objective_ordering.{md,json}` ·
+`sr_per_mode.json` · `phase1_full_prereg_decision.json`
 
-## 待办
+### A. 路由天花板存在 (oracle 远高于任何单模)
 
-- [ ] 起稿 (8 页, ACL 2026 style, 双盲)
-- [ ] **LOCO 池化+tier 实训** —— 唯一缺的一块: "它到底有没有用"。落在 prereg L447 已注册的
-      LOCO cross-cell appendix sensitivity 槽位内
-- [ ] 全部 exploratory 产物按 `post_hoc_exploratory=True / h10_eligible=False` stamp 归档
-- [ ] /stress + Mode B/C chain
+| cell | oracle triage SR | 最强单模 SR | 可解率 |
+|---|---|---|---|
+| cls·B0 | 27.23% | 27.23% | 43.3% |
+| red·B0 | 14.78% | 14.78% | 26.1% |
+| cls·B1 | 14.29% | 14.29% | 24.6% |
 
-## 纪律
+(oracle 与最强单模 SR 相同、cost 更低 —— 天花板体现在**成本**维度: cls·B0
+0.06312 vs 0.07236, red·B0 0.09998 vs 0.11045。)
 
-所有标签重定义分析均为 **post-hoc exploratory, 非 H10-eligible, 不入 gating family**
-(沿用 `router_model_sweep_summary.csv` 既有 stamp 约定)。**绝不**用于事后挽救 H10 判定。
+### B. which-mode 半: 败在标签**供给**
+
+| cell | 计分集 | 可训练标签 | 可解率 | min-class 过滤后存活类数 | 可训练? |
+|---|---|---|---|---|---|
+| B0_cls | 224 | **97** | 43.3% | 3 (dom/pprompt/som) | yes |
+| B0_red | 203 | **53** | 26.1% | 1 (dom) | **no** |
+| B1_cls | 224 | **55** | 24.6% | 2 (dom/som) | yes |
+| B1_red | 203 | **24** | 11.8% | 0 | **no** |
+| B2_cls | 224 | **16** | 7.1% | 0 | **no** |
+| B2_red | 203 | **15** | 7.4% | 0 | **no** |
+
+**4/6 cell 无可训练分类器**; Stage3 终判 **1/6 cells fully trained** (仅 B0_cls;
+B1_cls folds_ok=[0,1,2,3])。pooled **260** (原 249)。
+
+### C. 换标签定义救不了 (三条路径)
+
+- **连续标签**: VWA `score` 纯二值 {0,1} (7963 episodes: 7278/685), 无部分分 → 路堵死
+- **池化解供给、破可识别性**: 特征全是任务的函数(14 intent 正则 + difficulty +
+  has_ref_image, 无模型信息) → 同 X 矛盾 y。cls **57.41%** / red **56.0%** 矛盾率
+  (07-22 red 记 45.5%, 是 2-cell 时代的数)
+- **Bayes 上限**: which-mode cls **79.17%** / red **83.70%**
+- **cost-tier 重切是唯一有收益的重标注**: 上限抬到 cls **89.88%** / red **96.74%**,
+  且**不需要制造任何新 solve 事件**; tier 一致性 cls 68.52% / red 88.0%
+
+### D. ⭐ triage 半: 标签够、AUROC 够, 仍然失败 (§387.16 / §392)
+
+- 标签**充足** (203/224 全有), AUROC **0.651-0.717** 在 5/6 cell, 4/6 超最强单协变量
+- **真嵌套 CV 下** (B-1903 修正后): **0/6 cell 能 Pareto 胜过平凡 always-cheapest**
+- 唯一 Holm 通过的 red·B2 (p=0.0050) **AUROC 只有 0.483** → saving 来自**尾部富集**
+  而非全局判别: 把 192/203=95% 扔给便宜模式, 与免费固定策略只差 5 个百分点的分配,
+  那 11 个留守任务含 4 个成功 (§394)
+- **`best_mode` 跨折不稳定**: red·B0 五折选 DOM/DOM/SoM/SoM/DOM → 用全量结局挑一个
+  best mode 的管线, 报告的 mode 选择连自己的重采样都复现不出来
+
+### E. 监督本身的任意性 (推翻旧提法)
+
+- 旧说「~1/4 标签由 MODES 硬编码顺序 tie-break 决定」→ **不成立**: `true_tie` 在
+  6 个 cell **全是 0** (cost 是连续浮点, 恰好相等不发生), tie-break 分支从未触发
+- **真实缺陷更严重**: **12.5-54.64%** 的标签上 MODES 顺序返回了一个**严格更贵**的
+  成功 mode, 而其 docstring 声称 "ascending prior cost" 并被当作 cheapest-successful
+  的代理 → 那些标签连「最便宜的成功 mode」都不是
+
+### 论点 (四条独立路径闭合)
+
+瓶颈是标签的**产生率**, 不是假设类、不是标签**定义方式**、也不是 triage 侧的
+**标签量或可预测性**。标签只在任务被解开时诞生; 成功率 2-27% 时无法凭重新切分制造事件。
+而 triage 侧即便标签与 AUROC 都够, 仍然赢不过一条白送的固定策略。
