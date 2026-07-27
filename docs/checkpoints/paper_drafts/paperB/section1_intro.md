@@ -3,10 +3,12 @@
 Cost-aware routing promises to cut the price of multimodal web agents: send each task
 to the cheapest observation mode that can solve it. We test that promise on
 VisualWebArena with six observation modes, three model backbones, and two sites, and
-report a negative result with a diagnosis. The routing ceiling itself is real: an oracle
-that picks the cheapest successful mode per task matches the best single mode's success
-rate at 13–22% lower cost. The router, however, cannot be learned, and it fails twice over,
-for two unrelated reasons. Choosing *which* mode fails on label supply. A training label
+report a negative result with a diagnosis. The routing ceiling itself is real and splits in
+two. An oracle that picks the cheapest successful mode per task gains 3.4 to 16.1 points of
+success rate over the best single mode while spending 13.7% to 35.3% less; of that, an
+accuracy-neutral half worth 9.5–30.6% of cost needs only a binary solvable/hopeless label,
+while the accuracy-bearing half needs a per-mode one. The router cannot be learned either
+way, and it fails twice over, for two unrelated reasons, one per half. Choosing *which* mode fails on label supply. A training label
 exists only where some mode succeeded, so at 7–43% solvable rates the six cells yield
 15–97 labels each; under a minimum-class filter, four of the six have no trainable
 classifier at all. Choosing *whether* to spend fails despite having supply: the
@@ -31,9 +33,11 @@ tree can be read as text. A screenshot can be looked at directly [@he2024webvoya
 those two sits a screenshot annotated with numbered marks, paired with a textual legend that
 names them [@yang2023som].
 
-These modes differ in what they cost. Rendering and encoding an annotated screenshot at
-every step is the dominant expense in a vision-language agent loop, and a text-only mode
-avoids it entirely.
+These modes differ in what they cost, and not in the direction the design suggests. What
+dominates the bill is how many tokens a mode sends per step, which is why the mode carrying an
+unannotated screenshot and no accessibility tree turns out to be the cheapest of the six in
+every cell we measure, below every text-only mode. Cost is worth routing on; "does it carry an
+image" is not the axis that predicts it.
 
 That cost difference invites an obvious idea. If modes differ in price and each solves a
 somewhat different set of tasks, then a router that predicts the right mode per task
@@ -47,11 +51,15 @@ It bought nothing, and we can say precisely why.
 
 The first thing to establish is that the opportunity is real, because a negative routing
 result is uninteresting if the modes are redundant. They are not. An oracle that sees the
-outcome and picks the cheapest successful mode per task matches the strongest single
-mode's success rate while spending 13% less on classifieds and 22% less on reddit for
-our largest backbone. The gap is entirely in cost rather than accuracy, which already
-tells us something about where the achievable value lies: not in solving more tasks, but
-in not overpaying for the ones that get solved.
+outcome and picks the cheapest successful mode per task beats the strongest single mode on
+both axes at once: for our largest backbone, +16.07pp of success rate at 20.2% less cost on
+classifieds and +11.33pp at 13.7% less on reddit.
+
+What matters for the rest of the paper is that this ceiling decomposes, and that the two
+pieces are not reachable by the same supervision. Holding the mode choice fixed and only
+deciding whether to spend recovers 9.5% to 30.6% of cost at no accuracy change, and needs
+one bit per task. Choosing among the modes that actually solved a task recovers the 3.45 to
+16.07 points of accuracy, and needs to name a mode. One obstruction closes each piece.
 
 The second thing is that this opportunity does not survive contact with supervision, and
 it fails in two distinguishable ways.
@@ -99,7 +107,8 @@ Our contribution is therefore not a router. It is an account of why this router 
 unavailable at this operating point, stated in terms that transfer:
 
 1. A ceiling measurement that separates the accuracy-neutral, cost-bearing part of the
-   routing opportunity from the accuracy-bearing part (§3).
+   routing opportunity from the accuracy-bearing part, and shows that the two parts need
+   different supervision (§3).
 2. A supply argument showing that mode-selection supervision is produced at the success
    rate, and a demonstration that this is binding rather than incidental (§4).
 3. A triage result showing that adequate supply and adequate predictability are jointly

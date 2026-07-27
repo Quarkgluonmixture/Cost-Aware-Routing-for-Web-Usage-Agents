@@ -68,21 +68,10 @@ across cells. For those tasks the label is whichever successful mode a hardcoded
 reaches first. The list is documented as being in ascending cost order, which would make
 it a sound proxy for "cheapest successful".
 
-Second, that documentation is wrong often enough to matter. Comparing the list's pick
-against measured per-task cost:
-
-| cell | labels | multi-success | list picked a strictly pricier mode |
-|---|---|---|---|
-| classifieds · B0 | 97 | 68 (70.1%) | **53 (54.6%)** |
-| reddit · B0 | 53 | 36 (67.9%) | **23 (43.4%)** |
-| classifieds · B1 | 55 | 29 (52.7%) | **26 (47.3%)** |
-| reddit · B1 | 24 | 17 (70.8%) | **9 (37.5%)** |
-| classifieds · B2 | 16 | 4 (25.0%) | **2 (12.5%)** |
-| reddit · B2 | 15 | 3 (20.0%) | **2 (13.3%)** |
-
-*Table 6: Where the label disagrees with the cost measurement it claims to encode. The last
-column counts labelled tasks on which the hardcoded priority list selected a mode that was
-strictly more expensive than another mode that also succeeded on that task.*
+Second, that documentation is wrong often enough to matter, and §2.1 says why: the order was
+built on the assumption that image-bearing modes are the expensive ones, and measured cost
+does not agree. Comparing the list's pick against measured per-task cost, per cell
+(Appendix A.2):
 
 On 12.5% to 54.6% of labels, the mode recorded as "cheapest successful" was not the
 cheapest successful mode. Cost varies per task, the same mode is not uniformly cheaper

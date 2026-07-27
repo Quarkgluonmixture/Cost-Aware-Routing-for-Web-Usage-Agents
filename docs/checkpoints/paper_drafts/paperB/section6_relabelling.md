@@ -42,19 +42,11 @@ backbones facing the same task on the same site produce the same feature vector.
 oracle labels differ, a task-feature classifier is being asked to emit two different
 answers for one input.
 
-| site | tasks labelled in ≥2 cells | conflicting | conflict rate | Bayes ceiling |
-|---|---|---|---|---|
-| classifieds | 54 | 31 | **57.4%** | **79.2%** |
-| reddit | 25 | 14 | **56.0%** | **83.7%** |
-
-*Table 10: The identifiability cost of pooling which-mode labels across backbones. A conflict
-is one task on which two cells recorded different oracle modes; since the features carry no
-model identity, both rows present the same input. The Bayes ceiling is the accuracy of
-emitting the modal label per distinct feature vector.*
-
-More than half of the shared tasks carry contradictory supervision. The Bayes ceiling is
-the accuracy of the best possible rule on the pooled set, emit the modal label for each
-distinct feature vector, and it caps any task-feature classifier at 79.2% and 83.7%.
+Of the tasks labelled in two or more cells, **57.4%** on classifieds (31 of 54) and **56.0%**
+on reddit (14 of 25) carry conflicting labels (Appendix A.4). More than half of the shared
+tasks therefore carry contradictory supervision. The Bayes ceiling is the accuracy of the best
+possible rule on the pooled set, emit the modal label for each distinct feature vector, and it
+caps any task-feature classifier at **79.2%** and **83.7%** respectively.
 
 The interpretation is not that pooling is a mistake. It is that pooling changes the
 question being asked. A model trained on the pooled set is estimating "which mode is best
@@ -62,46 +54,49 @@ for this task, marginalising over backbones", which is not the quantity a deploy
 a deployment has one backbone and needs the answer for that backbone. Pooling buys examples
 by discarding the conditioning variable that makes the label well-defined.
 
-### 6.4 Cost tier: the one target that is both supplied and identified
+### 6.4 Screenshot tier: the one target that is both supplied and identified
 
 The conflicts in §6.3 are about *which mode*. They are much rarer when the question is
-*whether the task needs the screenshot*. Collapsing the six modes into two tiers:
+*whether the task needs the screenshot*. Collapsing the six modes into two tiers,
 image-bearing (SoM, Vision) and text-only (DOM and the three P-modes), and repeating the
-measurement:
+measurement, the ceiling rises from 79.2% to **89.9%** on classifieds and from 83.7% to
+**96.7%** on reddit, with tier agreement across backbones of 68.5% and 88.0% (Appendix A.5).
 
-| site | which-mode ceiling | cost-tier ceiling | tier agreement across backbones |
-|---|---|---|---|
-| classifieds | 79.2% | **89.9%** | 68.5% |
-| reddit | 83.7% | **96.7%** | 88.0% |
-
-*Table 11: Re-slicing the six modes into two cost tiers. The ceiling rises on the same solve
-events, because backbones that disagree about which mode is best still agree about whether
-the screenshot is needed.*
+We call this a screenshot tier and not a cost tier deliberately. As §2.1 records, the
+image-bearing tier contains both the most expensive mode (SoM) and the cheapest (Vision), so
+the partition separates modalities and not prices, and nothing in this subsection supports a
+cost claim.
 
 The ceiling rises by 10.7 and 13.0 points **without a single new solve event**. Nothing was
 collected; the same successes were re-described. Backbones disagree sharply about which of
 six modes is best and agree substantially about whether the image is needed. 88% of shared
 reddit tasks receive the same tier from every backbone that solved them.
 
-This is the one place in our results where a relabelling is genuinely free. It is also, we
-note, a considerably less interesting router: it decides one bit, and §5 has already shown
-that a one-bit decision does not beat always-cheapest at these success rates. The
-identifiability analysis explains *why* triage was the more tractable of our two targets,
-and §5 explains why tractable was not enough.
+This is the one place in our results where a relabelling is genuinely free. Two things it is
+not. It is not a trained router: we measure its ceiling and never fit a classifier to it, so
+we make no claim about whether the tier bit is predictable from task features. And it is not
+the bit §5 tested. §5's bit asks whether a task is solvable at all; this one asks whether a
+solved task needed the screenshot, and it is defined only on solved tasks. The identifiability
+analysis explains *why* a one-bit target is more tractable than a six-class one, and §5
+explains why tractable was not enough for the one bit we did train.
 
-### 6.5 Summary of the four routes
+### 6.5 Summary of the five supervision targets
 
 | route | supply | identifiability | outcome |
 |---|---|---|---|
 | which-mode, per cell | **fails** (15–97 labels, 4/6 cells untrainable) | fine | closed by §4 |
 | continuous target | would fix | fine | closed: benchmark score is binary |
 | pooled which-mode | fixed (260) | **fails** (56–57% conflict, ceiling 79–84%) | wrong estimand |
-| triage / cost tier | fine (203–224) | fine (ceiling 90–97%) | learnable, **and beaten by a fixed policy** |
+| triage (binary) | fine (203–224, every task) | fine | learnable, **and beaten by a fixed policy** (§5) |
+| screenshot tier | fine, but only on solved tasks | fine (ceiling 90–97%, over solved tasks) | ceiling measured; no tier classifier trained |
 
-*Table 12: The four supervision targets against the two requirements a trainable router
+*Table 12: The five supervision targets against the two requirements a trainable router
 needs. Each closed route is closed for a different reason, which is what makes the negative
-result closed rather than provisional.*
+result closed rather than provisional. Supply and identifiability are judged on that target's
+own denominator, which differs between the last two rows.*
 
-The four routes fail in three distinct ways, which is the argument for regarding the
+The four closed routes fail in three distinct ways, which is the argument for regarding the
 negative result as closed rather than provisional: it is not one obstruction that a better
-method might route around, but supply, estimand, and value failing separately.
+method might route around, but supply, estimand, and value failing separately. The fifth row
+is not closed; it is unattempted, and §6.4 says why we regard it as the one target worth
+attempting next.

@@ -6,23 +6,18 @@ We evaluate on VisualWebArena [@koh2024visualwebarena], on the classifieds and r
 Every task is run under six observation modes that differ in what the agent receives at each
 step:
 
-| mode | text payload | prompt family | annotated screenshot |
-|---|---|---|---|
-| DOM | accessibility tree | DOM | no |
-| SoM | mark legend | SoM | **yes** |
-| Vision | none | vision | **yes** (unannotated) |
-| P-text | mark legend | DOM | no |
-| P-prompt | accessibility tree | SoM | no |
-| P-SoM | mark legend | SoM | no |
+DOM sends the accessibility tree under a prompt naming it as an accessibility tree. SoM sends
+a screenshot with numbered marks plus a legend naming them. Vision sends an unannotated
+screenshot and no text payload. The three P-modes are text-only variants that keep either the
+mark legend, the SoM prompt, or both, while removing the per-step screenshot. Appendix A.1
+gives the full grid.
 
-*Table 1: The six observation modes. For this paper the operative distinction is the last
-column: the two image-bearing modes carry a per-step screenshot and the four text-only modes
-do not.*
-
-The three P-modes are text-only variants that keep either the mark legend, the SoM prompt,
-or both, while removing the per-step screenshot. For the purposes of this paper their
-internal structure matters only in that they are cheap: any mode without a per-step
-screenshot costs roughly what DOM costs, and the two image-bearing modes cost more.
+Their internal structure matters here only through what they cost, and the measured costs do
+not follow the obvious rule. Modes without a per-step screenshot do cost roughly what DOM
+costs. But **Vision is the cheapest mode in all six cells**, below every text-only mode,
+because dropping the accessibility tree saves more input tokens than the screenshot adds. Cost
+here tracks a mode's token count per step, not the presence of an image, and any tier built on
+"image versus text" is a modality partition rather than a cost one.
 
 Three backbones span roughly two orders of magnitude of capability and cross a model
 family boundary: a 235B mixture-of-experts model served through an API (B0), a 4B
@@ -45,9 +40,12 @@ success moves from 6.94% to 6.40%.
 The router we set out to build is offline and per-task: from what is known before the
 agent acts, predict which mode to use. Two supervision targets are natural.
 
-**Which-mode.** The label is the identity of the cheapest mode that solved the task,
-which is what an oracle would have chosen. It is undefined when no mode solved the task,
-and such tasks are the majority everywhere. This target has six classes.
+**Which-mode.** The label is meant to be the identity of the cheapest mode that solved the
+task, which is what an oracle would have chosen. Our pipeline produces it by walking a fixed
+mode list in assumed-ascending-cost order and taking the first success; §4.3 measures how
+often that disagrees with the measured cost, and the disagreement is large enough to be a
+finding in its own right. The label is undefined when no mode solved the task, and such tasks
+are the majority everywhere. This target has six classes.
 
 **Triage.** The label is binary: did any mode solve this task. It is defined for every
 task in the universe. A triage router does not choose among modes; it decides whether to

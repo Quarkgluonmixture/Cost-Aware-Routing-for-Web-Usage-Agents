@@ -58,9 +58,11 @@ We do not claim that mode routing is unlearnable in general. §4.1's mechanism p
 opposite as agents improve: at 60% success a cell would yield several hundred labels and
 become trainable. The prediction is falsifiable and we would welcome its falsification.
 
-We do not claim the ceiling is illusory. §3 measures 9.5% to 30.6% of recoverable cost, and
-an oracle reaches it. Our result is that the recoverable portion is largely also reachable
-by a fixed policy, so the *learned* component adds little.
+We do not claim the ceiling is illusory. §3 measures a real one, and it is larger than the
+cost figure alone: 3.45 to 16.07 points of success rate as well as 13.7% to 35.3% of cost. Our
+result is about which parts of it supervision can reach. The accuracy-neutral 9.5–30.6% is
+largely also reachable by a fixed policy, so the *learned* component adds little there; the
+accuracy-bearing part is not reachable at all, because its label is not produced.
 
 We do not claim our router is the best possible one. The triage model is a logistic model over
 20 numeric and binary features with no text features at all, and a stronger model, or one that

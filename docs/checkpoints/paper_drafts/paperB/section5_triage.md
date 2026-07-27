@@ -45,20 +45,9 @@ scores; and a model refitted on the training rows scores the held-out rows. Noth
 touches an outer test fold has seen it.
 
 The nesting changes the numbers in both directions, which is worth stating plainly because
-it is not the usual story of honest evaluation being uniformly worse:
-
-| cell | naive nesting SR | fully nested SR | Δ |
-|---|---|---|---|
-| classifieds · B0 | 25.45% | 26.79% | **+1.34pp** |
-| classifieds · B1 | 13.84% | 14.29% | +0.45pp |
-| classifieds · B2 | 1.34% | 1.34% | ±0.00pp |
-| reddit · B0 | 13.79% | 12.81% | **−0.99pp** |
-| reddit · B1 | 6.40% | 5.91% | −0.49pp |
-| reddit · B2 | 3.94% | 3.94% | ±0.00pp |
-
-*Table 8: Effect of nesting the operating-point selection. The naive column selects the
-threshold and the strongest and cheapest modes from whole-cell outcomes; the nested column
-re-derives all three inside each outer fold. Nesting moves the result in both directions.*
+it is not the usual story of honest evaluation being uniformly worse: the shift runs from
+**−0.99pp** on reddit · B0 to **+1.34pp** on classifieds · B0, with per-cell values in
+Appendix A.3.
 
 The two classifieds gains come from re-selecting the mode per fold: the fold-local choice
 is sometimes better adapted than the global one, and because that selection uses only
@@ -73,7 +62,7 @@ not reproduce.
 ### 5.3 The comparison that matters
 
 Against the best single mode, the nested triage policy looks reasonable: it holds accuracy
-within a percentage point or two and cuts cost by 13% to 27%.
+within two percentage points and cuts cost by 0.5% to 26.5%.
 
 Against always-cheapest, it does not:
 
