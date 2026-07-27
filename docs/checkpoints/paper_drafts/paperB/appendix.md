@@ -138,3 +138,38 @@ four successes that the fixed policy does not collect, against four collected by
 policy overall. The permutation null detects that enrichment. A globally ordered score is not
 required to produce it, which is why the cell's AUROC of 0.483, below both chance and its own
 best single covariate at 0.711, is consistent with a real saving.
+
+### B.5 Supply and trainability under both label definitions
+
+§4.3 keeps the prior-order label and reports the measured-cost rule as a sensitivity. Supply is
+identical under both by construction, since each labels exactly the tasks some mode solved, so
+only the class distribution and through it trainability can move. The relabelled column equals
+the "order picked a strictly pricier mode" column of A.2 exactly, which is the consistency check
+one wants: a label moves if and only if the order's pick was not the measured cheapest.
+
+| cell | labels | relabelled | prior order: surviving classes | measured cost: surviving classes |
+|---|---|---|---|---|
+| classifieds · B0 | 97 | 53 | 3 (DOM, P-prompt, SoM) | 2 (SoM, Vision) |
+| reddit · B0 | 53 | 23 | 1 (DOM) — **no** | 1 (P-text) — **no** |
+| classifieds · B1 | 55 | 26 | 2 (DOM, SoM) | 1 (Vision) — **no** |
+| reddit · B1 | 24 | 9 | 0 — **no** | 0 — **no** |
+| classifieds · B2 | 16 | 2 | 0 — **no** | 0 — **no** |
+| reddit · B2 | 15 | 2 | 0 — **no** | 0 — **no** |
+
+*Table 13: Trainability under the two label definitions. "Surviving" counts classes clearing ten
+training rows in a five-fold split; **no** marks a cell with fewer than two, where no classifier
+exists. Four of six cells are untrainable under the reported label and five of six under the
+measured-cost alternative, so the supply argument does not depend on the choice.*
+
+The single cell that changes, classifieds · B1, loses a class rather than gaining one: the
+prior-order label keeps DOM and SoM above the threshold, the measured-cost label concentrates
+enough of those rows onto Vision that only Vision survives. The alternative definition therefore
+strengthens the negative result, which is a reason to report it and not a reason to adopt it.
+
+### C.1 The best-success mode is not stable across folds
+
+The nested design of §5.2 re-selects the best-success mode inside every outer fold, which
+exposes something the whole-cell version conceals. In reddit · B0 the five outer folds select
+DOM, DOM, SoM, SoM, DOM. A pipeline that picks one best mode from all realised outcomes is
+therefore not merely optimistic about its threshold; it reports a mode choice that its own
+resampling does not reproduce.

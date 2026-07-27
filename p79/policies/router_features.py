@@ -173,8 +173,43 @@ def derive_oracle_label(outcomes: dict[str, bool]) -> Optional[str]:
     collapse the label semantics (a no-success task is not a "dom is best" task).
     Callers filter None out of the *trainable* rows but must still route the task
     at serve time (see C1 universe-vs-trainable separation).
+
+    This is the CANONICAL label. Every paper number that says "which-mode label"
+    comes from here. See `derive_cost_oracle_label` for the sensitivity variant
+    and for why it is not canonical.
     """
     for m in MODES:
         if outcomes.get(m, False):
             return m
     return None
+
+
+def derive_cost_oracle_label(
+    outcomes: dict[str, bool], costs: dict[str, float]
+) -> Optional[str]:
+    """SENSITIVITY ONLY. Cheapest successful mode by MEASURED episode cost.
+
+    Not the canonical label, and deliberately a separate function rather than a
+    flag on `derive_oracle_label`, so that no caller can switch estimand by
+    passing an argument. The F2 note above records why the measured tie-break was
+    examined on landed Pass-1 data (2026-06-09) and rejected as the canonical
+    definition:
+
+      (a) the measured per-mode cost order is unstable across cells — P-prompt is
+          the second-cheapest mode on classifieds/B0 and the dearest on
+          classifieds/B1, so "cheapest" is not a property of the mode;
+      (b) `total_billed_cost_usd` is realised episode cost, dominated by step
+          count, and step count depends on how the episode went. Defining the
+          label by it puts outcome information into a target that a pre-action
+          router has to predict from pre-action features;
+      (c) per-mode success counts (14-61) are too small to pin an order.
+
+    It exists so paper B can report, as a labelled sensitivity, whether its
+    supply and trainability conclusions depend on which of the two defensible
+    label definitions is used. Ties (identical measured cost, empirically zero
+    rows in Pass-1) fall back to MODES order so the function is total.
+    """
+    solvers = [m for m in MODES if outcomes.get(m, False)]
+    if not solvers:
+        return None
+    return min(solvers, key=lambda m: (costs.get(m, float("inf")), MODES.index(m)))

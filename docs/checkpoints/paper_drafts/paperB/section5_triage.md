@@ -45,11 +45,8 @@ re-selecting the mode per fold: the fold-local choice is sometimes better adapte
 global one, and because that selection uses only training rows it is a legitimate gain rather
 than leakage.
 
-The nested design also exposes something the whole-cell version conceals. **The
-best-success mode is not stable across folds.** In reddit · B0 the five outer folds select
-DOM, DOM, SoM, SoM, DOM. A pipeline that picks one best mode from all realised outcomes is
-not merely optimistic about its threshold; it reports a mode choice its own resampling does
-not reproduce.
+The nested design also exposes something the whole-cell version conceals: **the best-success
+mode is not stable across folds** (Appendix C).
 
 ### 5.3 The comparison that matters
 
@@ -77,8 +74,8 @@ axes than taking the cheapest mode everywhere.
 
 These are trade-off points, not wins. A deployment could rationally choose the reddit · B0 row,
 where 5.42 points of accuracy cost 0.3% more, but that is a judgement about how much accuracy
-is worth rather than a demonstration that the router beats the free alternative, and it is
-available only in the cell with the highest solvable rate on reddit.
+is worth, not a demonstration that the router beats the free alternative, and it exists only
+in the highest-solvable reddit cell.
 
 ### 5.4 The one significant cell, and why it does not help
 

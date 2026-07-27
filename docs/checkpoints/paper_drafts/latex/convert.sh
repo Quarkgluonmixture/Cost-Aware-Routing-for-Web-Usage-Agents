@@ -81,7 +81,7 @@ case "$PAPER" in
       section6_relabelling.md
       section7_discussion.md
     )
-    EXPECTED_TABLES=12
+    EXPECTED_TABLES=13
     FIGURES=()
     # Table 1 (the ceiling) is the headline and has six columns; it stays
     # two-column so its header does not wrap to three lines. Tables 2-7 were

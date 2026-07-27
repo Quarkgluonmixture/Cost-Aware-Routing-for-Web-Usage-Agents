@@ -2,9 +2,9 @@
 
 ### 4.1 Labels are produced at the success rate
 
-A which-mode label is the identity of the cheapest successful mode. It therefore exists
-only for tasks that were solved by something. This couples the size of the training set
-to the very quantity the router is supposed to improve.
+A which-mode label names the cheapest mode that solved the task (§4.3 makes "cheapest"
+precise), so it exists only for tasks something solved. That couples the size of the training
+set to the very quantity the router is supposed to improve.
 
 | cell | scored tasks | labelled | solvable | classes present |
 |---|---|---|---|---|
@@ -53,37 +53,36 @@ Lowering the threshold would not create examples. It would only permit fitting c
 represented by a handful of rows, converting an honest refusal into an overfitted model whose
 cross-validated performance we would then discount anyway.
 
-### 4.3 The supervision is also arbitrary where it exists
+Nor does the count turn on the label definition. §4.3 gives a second defensible one;
+relabelling under it leaves supply identical by construction and moves the untrainable count
+from four cells to **five** (Appendix B.5), the flipped cell losing a class rather than gaining
+one.
 
-Two facts about the labels we *do* have are worth recording, because they bound how much
-signal the surviving cells could carry even in principle.
+### 4.3 Two defensible labels, and which one we report
 
-First, most labelled tasks were solved by more than one mode: 20% to 71% of labelled rows
-across cells. For those tasks the label is whichever successful mode a hardcoded list
-reaches first. The list is documented as being in ascending cost order, which would make
-it a sound proxy for "cheapest successful".
+Most labelled tasks were solved by more than one mode, 20% to 71% of rows, so on most rows
+something must choose among the winners. Two rules are available and they disagree on 12.5% to
+54.6% of labels (Appendix A.2). The one we report walks a fixed mode list in **prior** cost
+order, text-only ahead of image-bearing, and takes the first success; the alternative takes the
+cheapest success by **measured** per-episode cost. §2.1 says why they differ: measured cost is
+dominated by how many steps an episode took, not by whether it carried an image.
 
-Second, that documentation is wrong often enough to matter, and §2.1 says why: the order was
-built on the assumption that image-bearing modes are the expensive ones, and measured cost
-does not agree. Comparing the list's pick against measured per-task cost, per cell
-(Appendix A.2):
+We report the prior-order rule for three reasons, each checked on the landed data. The measured
+per-mode order is not stable across cells, so "cheapest" is not a property of a mode: P-prompt
+is second-cheapest on classifieds · B0 and dearest on classifieds · B1. Measured episode cost is
+endogenous to the outcome, so a label defined by it smuggles outcome information into a target a
+pre-action router must predict from pre-action features. And per-mode success counts of 14 to 61
+are too few to pin an order. Appendix B.5 reports both.
 
-On 12.5% to 54.6% of labels, the mode recorded as "cheapest successful" was not the
-cheapest successful mode. Cost varies per task, the same mode is not uniformly cheaper
-across a site, so a static priority order cannot track it.
-
-We note that the exact-tie case, where two successful modes cost the same and the list
-order is the only tiebreaker, occurs in **zero** rows across all six cells. Billed cost is
-a continuous quantity; two modes costing precisely the same does not happen. Framing this
-as tiebreak arbitrariness, as we did in earlier drafts of this analysis, understates it.
-The defect is not that ties are broken by a list; it is that the list is used *instead of*
-the cost measurement it claims to approximate.
+Two successful modes never cost exactly the same: the exact-tie case occurs in **zero** rows
+across all six cells, billed cost being continuous. Earlier drafts framed the disagreement as
+tiebreak arbitrariness, which was wrong twice over. It is not a tie, and it is not
+arbitrariness, but two rules answering slightly different questions.
 
 ### 4.4 Scope of the supply argument
 
 At these success rates which-mode supervision is unavailable in the quantity a six-class model
-needs, and where it is available it is noisy in a way traceable to the label definition rather
-than to the environment. This does not show mode selection is unlearnable in principle: at 60%
-success a cell would produce several hundred labels. Within the 2–43% regime current web agents
-occupy, the constraint is structural, because supervision arrives at the rate the agent
-succeeds and that rate is what needed improving.
+needs, under either label definition. This does not show mode selection is unlearnable in
+principle: at 60% success a cell would produce several hundred labels. Within the 2–43% regime
+current web agents occupy the constraint is structural, because supervision arrives at the rate
+the agent succeeds and that rate is what needed improving.

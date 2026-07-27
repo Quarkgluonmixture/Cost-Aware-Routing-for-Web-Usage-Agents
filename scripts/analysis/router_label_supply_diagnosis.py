@@ -216,6 +216,104 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
     }
 
 
+def _load_cell_outcomes_and_costs(cid: str) -> dict[str, dict[int, dict]] | None:
+    """Per-mode {task_id: row} for one cell, or None if any mode is missing."""
+    from scripts.analysis.lib.episode_rows import load_task_rows  # noqa: PLC0415
+    from scripts.analysis.lib.run_registry import get_cells  # noqa: PLC0415
+
+    display = {
+        "dom": "DOM", "som": "SoM", "vision": "Vision",
+        "phantom_text": "P-text", "phantom_prompt": "P-prompt", "phantom_som": "P-SoM",
+    }
+    baseline, site = cid.split("_", 1)
+    dirs = {c.mode: c.episodes_dir for c in get_cells(baseline=baseline, site=site)}
+    rows_by_mode = {m: (load_task_rows(dirs[d]) if dirs.get(d) else {})
+                    for m, d in display.items()}
+    if any(not rows_by_mode[m] for m in MODES):
+        return None
+    return rows_by_mode
+
+
+def measure_label_definition_sensitivity(pool: dict) -> dict[str, Any]:
+    """Do supply and trainability survive the OTHER defensible label definition?
+
+    The canonical which-mode label is `derive_oracle_label` (first success in
+    MODES order, ascending PRIOR cost). `derive_cost_oracle_label` is the
+    alternative: cheapest successful mode by MEASURED episode cost. The F2 note
+    in `router_features.py` records why the measured variant is not canonical
+    (unstable across cells, endogenous to the outcome, too few successes to pin
+    an order); this measurement exists so the paper can say whether the negative
+    result depends on that choice rather than merely asserting that it does not.
+
+    Relabelling cannot change SUPPLY — both definitions label exactly the tasks
+    some mode solved — so only the class DISTRIBUTION, and through it
+    trainability, can move.
+    """
+    from p79.policies.router_features import derive_cost_oracle_label  # noqa: PLC0415
+
+    COST_FIELD = "total_billed_cost_usd"
+    labels, cells, tids = pool["labels"], pool["cell_ids"], pool["task_ids"]
+
+    per_cell: dict[str, Any] = {}
+    for cid in sorted(set(cells.tolist())):
+        rows_by_mode = _load_cell_outcomes_and_costs(cid)
+        if rows_by_mode is None:
+            per_cell[cid] = {"error": "missing mode data"}
+            continue
+        sel = cells == cid
+        canonical, measured, n_moved = [], [], 0
+        for tid, lab in zip(tids[sel].tolist(), labels[sel].tolist()):
+            outcomes = {
+                m: (rows_by_mode[m].get(int(tid)) or {}).get("success") is True
+                for m in MODES
+            }
+            costs = {
+                m: float((rows_by_mode[m].get(int(tid)) or {}).get(COST_FIELD) or 0.0)
+                for m in MODES if outcomes[m]
+            }
+            alt = derive_cost_oracle_label(outcomes, costs)
+            canonical.append(lab)
+            measured.append(alt)
+            if alt is not None and alt != lab:
+                n_moved += 1
+
+        def _trainable(ys: list) -> dict:
+            dist = Counter(y for y in ys if y is not None)
+            keep = {c: n for c, n in dist.items()
+                    if n * (N_SPLITS - 1) / N_SPLITS >= N_MIN_CLASS_TRAIN}
+            return {
+                "label_distribution": dict(sorted(dist.items())),
+                "classes_surviving_min_filter": sorted(keep),
+                "trainable": len(keep) >= 2,
+            }
+
+        per_cell[cid] = {
+            "n_labels": int(sel.sum()),
+            "n_labels_moved_by_relabel": n_moved,
+            "canonical": _trainable(canonical),
+            "measured_cost": _trainable(measured),
+        }
+
+    ok = [v for v in per_cell.values() if "error" not in v]
+    return {
+        "per_cell": per_cell,
+        "n_cells": len(ok),
+        "n_untrainable_canonical": sum(1 for v in ok if not v["canonical"]["trainable"]),
+        "n_untrainable_measured_cost": sum(
+            1 for v in ok if not v["measured_cost"]["trainable"]
+        ),
+        "supply_is_invariant": True,
+        "note": (
+            "Supply is identical by construction: both definitions label exactly "
+            "the solved tasks. Only the class distribution moves, so this "
+            "measures whether the trainability headline depends on the label "
+            "definition. Canonical = derive_oracle_label; the measured-cost "
+            "variant is a sensitivity, not a proposed replacement (F2 note in "
+            "router_features.py)."
+        ),
+    }
+
+
 def measure_tiebreak_arbitrariness(pool: dict) -> dict[str, Any]:
     """Share of labels the hardcoded MODES order gets WRONG on cost.
 
@@ -363,6 +461,7 @@ def build(pool: dict) -> dict[str, Any]:
         "trainability": measure_trainability(pool),
         "identifiability": measure_conflict_and_ceiling(pool),
         "tiebreak": measure_tiebreak_arbitrariness(pool),
+        "label_definition_sensitivity": measure_label_definition_sensitivity(pool),
     }
 
 
@@ -446,6 +545,42 @@ def render(p: dict) -> str:
             "scratch script that no longer exists; that figure is not reproduced here "
             "and is not the same quantity — it is superseded by the two measured "
             "columns above rather than reconciled to.\n"
+        )
+
+    sens = p.get("label_definition_sensitivity")
+    if sens:
+        L.append("## 7. Does the result depend on the label definition?\n")
+        L.append(
+            "Canonical = `derive_oracle_label` (first success in MODES order, ascending "
+            "PRIOR cost). Sensitivity = `derive_cost_oracle_label` (cheapest successful "
+            "by MEASURED episode cost). The measured variant is **not** a proposed "
+            "replacement: the F2 note in `router_features.py` records why it was "
+            "examined on landed Pass-1 data and rejected as canonical (order unstable "
+            "across cells, cost endogenous to the outcome, too few successes per mode). "
+            "Supply is identical under both by construction, so only trainability can "
+            "move.\n"
+        )
+        L.append("| cell | labels | relabelled | canonical: surviving / trainable | "
+                 "measured cost: surviving / trainable |")
+        L.append("|---|---|---|---|---|")
+        for cid, r in sens["per_cell"].items():
+            if "error" in r:
+                L.append(f"| {cid} | — | — | {r['error']} | — |")
+                continue
+            c, m = r["canonical"], r["measured_cost"]
+            L.append(
+                f"| {cid} | {r['n_labels']} | {r['n_labels_moved_by_relabel']} | "
+                f"{len(c['classes_surviving_min_filter'])} / "
+                f"{'yes' if c['trainable'] else '**no**'} | "
+                f"{len(m['classes_surviving_min_filter'])} / "
+                f"{'yes' if m['trainable'] else '**no**'} |"
+            )
+        L.append(
+            f"\n**{sens['n_untrainable_canonical']} of {sens['n_cells']} cells are "
+            f"untrainable under the canonical label and "
+            f"{sens['n_untrainable_measured_cost']} of {sens['n_cells']} under the "
+            f"measured-cost label.** The supply argument does not turn on which of the "
+            f"two definitions is used.\n"
         )
     return "\n".join(L) + "\n"
 

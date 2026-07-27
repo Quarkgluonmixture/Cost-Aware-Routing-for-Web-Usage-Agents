@@ -26,6 +26,11 @@ The opportunity is large on both axes. Against the best single mode the oracle g
 16.07 percentage points** of success rate and spends **13.7% to 35.3% less**. A router built on
 this ceiling would be neither purely a cost optimiser nor purely an accuracy optimiser.
 
+One property of this oracle matters later. It breaks ties by *measured* episode cost, which is
+realised after the fact and dominated by step count, so the cost column is an upper bound in a
+stronger sense than the success column: unreachable not only because the outcome is unknown
+before acting but because the cost is. §4.3 returns to this.
+
 ### 3.1 Splitting the ceiling by the label each half requires
 
 The two axes are not reachable by the same supervision, and separating them decides what the

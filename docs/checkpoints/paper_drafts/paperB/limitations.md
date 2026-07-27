@@ -12,9 +12,7 @@ trajectory dynamics, including adaptive mid-episode switching, is unexamined.
 roughly three orders of magnitude per token, so we compare ratios within a backbone only.
 Cross-backbone cost statements would be unit collisions.
 
-**One label definition, measured against another.** The which-mode label our pipeline produces
-walks a fixed mode list and takes the first success, and §4.3 measures how often that disagrees
-with the measured cost it is meant to encode. We report the disagreement rather than
-regenerating the label, so the supply and identifiability numbers in §4 and §6 are computed on
-the list-order label. The direction of the resulting bias is not obvious a priori; a
-recomputation under measured cost is the first thing we would run next.
+**One label definition, reported against another.** The which-mode numbers in §4 and §6 use the
+prior-order label. §4.3 gives the reasons and Appendix B.5 recomputes supply and trainability
+under the measured-cost alternative, which strengthens the result rather than weakening it. We
+have not repeated the identifiability analysis of §6 under the alternative label.

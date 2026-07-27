@@ -58,3 +58,18 @@ Three nested quantities, do not conflate them. `multi_success_pct` = the order w
 
 笔记 §383.4 reported ~1/4 of labels as order-decided (B0_cls 25/97) from a scratch script that no longer exists; that figure is not reproduced here and is not the same quantity — it is superseded by the two measured columns above rather than reconciled to.
 
+## 7. Does the result depend on the label definition?
+
+Canonical = `derive_oracle_label` (first success in MODES order, ascending PRIOR cost). Sensitivity = `derive_cost_oracle_label` (cheapest successful by MEASURED episode cost). The measured variant is **not** a proposed replacement: the F2 note in `router_features.py` records why it was examined on landed Pass-1 data and rejected as canonical (order unstable across cells, cost endogenous to the outcome, too few successes per mode). Supply is identical under both by construction, so only trainability can move.
+
+| cell | labels | relabelled | canonical: surviving / trainable | measured cost: surviving / trainable |
+|---|---|---|---|---|
+| B0_classifieds | 97 | 53 | 3 / yes | 2 / yes |
+| B0_reddit | 53 | 23 | 1 / **no** | 1 / **no** |
+| B1_classifieds | 55 | 26 | 2 / yes | 1 / **no** |
+| B1_reddit | 24 | 9 | 0 / **no** | 0 / **no** |
+| B2_classifieds | 16 | 2 | 0 / **no** | 0 / **no** |
+| B2_reddit | 15 | 2 | 0 / **no** | 0 / **no** |
+
+**4 of 6 cells are untrainable under the canonical label and 5 of 6 under the measured-cost label.** The supply argument does not turn on which of the two definitions is used.
+
