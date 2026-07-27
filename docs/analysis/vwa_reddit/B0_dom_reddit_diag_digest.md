@@ -15,6 +15,32 @@
 
 ---
 
+## 0. v7 重扫补记（2026-07-27）
+
+本 digest 正文的三子集与 per-rule 数字是 **v6 扫描**（H1 site-gate 的动机依据，保留原样不改）。
+reddit 六 mode × 三 model 现已全部在 **`7-p6p16clsgate-b1860coord`** 下重扫完成，
+本 condition 的 v7 实测如下 —— **跨 condition 聚合请用这一组**（skill 硬纪律：聚合前 verify 全 digest 同版本）：
+
+| 指标 | v6（正文） | **v7（聚合用）** |
+|---|---|---|
+| SR | 14.6% (30/205) | **14.63% (30/205)** — 不变 |
+| failed + hit | 137 | **130** |
+| **failed NO-hit** | 38 | **45** |
+| success + hit | 10 | **1** |
+
+v7 per-rule（failed 侧，step-level）：
+`P36`=585 · `P5`=96 · `P31`=94 · `P14`=18 · `P12`=15 · `P25`=15 · `P27`=3 · `P10`=2 · `P4`=1，
+**`P6`=0 · `P16`=0**（H1 site-gate 生效，正文 §4/§5/§7 预告的跨站误报清零已兑现）。
+
+正文 §3 的 Tier-2 结论（38 个 no-hit 全覆盖深挖 → 7 个 reddit 特有失败族、0 scaffold-bug、0 benchmark-FP）
+**仍然成立**：v7 新增的 7 个 no-hit 是原先被 P6/P16 跨站误报"遮住"的 episode，属同一 agent-limit 家族。
+⚠️ 但有一处需按新证据修正：正文断言"success 侧 10/10 真成功、0 benchmark-FP"——
+本 cell 的 success **不含** task 160，故 **B-1889 不影响本 cell**；该断言在本 cell 维持有效。
+
+**Cross-link**: 笔记 §387.6 / §387.7 · master_bug_catalog B-1889 / B-1890 · `/tmp/diag_red/B0_dom.json`
+
+---
+
 ## 1. 三分类统计
 
 | 类别 | failed (175) | 占比 | 说明 |
