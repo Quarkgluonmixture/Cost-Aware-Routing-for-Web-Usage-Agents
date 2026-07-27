@@ -133,6 +133,17 @@ H2A_MARGIN_PCT = 20.0  # +20% = 1.20× per prereg lock L120-145
 # I² > 75% caps framing power at R3, does NOT rescue failed H1.
 HETEROGENEITY_CAP_PCT = 75.0
 
+# Degenerate-cell SE floor, prereg §2 H1 (trigger codified at 0.68pp on
+# 2026-05-18 per B-1003 / Appendix A; code aligned 2026-05-24 per AMENDMENT_03,
+# witness tag `prereg-amendment-03-implementation-alignment-20260524`).
+# B-1898 (2026-07-27): hoisted from function-local literals to module scope.
+# AMENDMENT_03 calls this producer the SINGLE source that the transparency
+# producer mirrors, but while both values were local literals that mirroring
+# was untestable and held only by coincidence.  `test_h1_canonical_alignment`
+# now imports both and asserts they agree.
+SE_FLOOR_THRESHOLD_PP = 0.68
+SE_FLOOR_REPLACE_PP = 1.0
+
 
 def _git_commit_sha() -> Optional[str]:
     try:
@@ -500,10 +511,13 @@ def _pool_bootstrap_percentile_p(per_cell_with_boot: List[Dict], *,
     if boot_matrix.shape[0] != k:
         return None
     B_count = boot_matrix.shape[1]
-    # Per-cell point-estimate SE (post B-1003 threshold-aware floor)
+    # Per-cell point-estimate SE (post B-1003 threshold-aware floor).
+    # B-1898 (2026-07-27): the two constants were function-LOCAL here while
+    # AMENDMENT_03 described this producer as the "SINGLE source mirrored by"
+    # the transparency producer.  Local literals cannot be imported, so nothing
+    # could actually check the mirroring — the two copies were merely equal by
+    # coincidence.  Hoisted to module scope so the alignment is testable.
     ses = np.array([float(c["se_pp"]) for c in per_cell_with_boot])
-    SE_FLOOR_THRESHOLD_PP = 0.68
-    SE_FLOOR_REPLACE_PP = 1.0
     floor_mask = (ses <= 0) if floor_nonpositive_only else (ses < SE_FLOOR_THRESHOLD_PP)
     n_below_floor = int(floor_mask.sum())
     if n_below_floor > 0:

@@ -106,3 +106,74 @@ def test_no_stale_legacy_gate_as_primary_in_figures_and_prose():
             if ties_primary and not qualified:
                 bad.append(f"{p.name}:{i}: {line.strip()[:120]}")
     assert not bad, "stale legacy-gate-as-§1-PRIMARY references:\n" + "\n".join(bad)
+
+
+# ---------------------------------------------------------------------------
+# B-1898 (2026-07-27): prereg PROSE ↔ code constant, not just code ↔ code.
+#
+# The 0.68pp trigger threshold was codified 2026-05-18 (B-1003) and the code was
+# aligned 2026-05-24 (AMENDMENT_03), but preregistration.md §2 H1 L103-111 kept
+# describing the superseded "SE = 0 exactly" rule until 2026-07-27.  A /stress
+# pass then read that stale paragraph, recomputed θ_FE = 0.6533pp under it, and
+# reported the IMPLEMENTATION as deviating from the preregistration — when in
+# fact the prose was the stale side.  A reviewer doing the same thing gets a
+# number that does not match the paper.
+#
+# These tests make the two surfaces fail together instead of drifting apart.
+# ---------------------------------------------------------------------------
+
+PREREG = REPO / "docs/checkpoints/pre_run/preregistration.md"
+
+
+def _se_floor_paragraph() -> str:
+    text = PREREG.read_text(encoding="utf-8")
+    start = text.index("**Degenerate-cell SE floor protocol")
+    end = text.index("**Heterogeneity", start)
+    return text[start:end]
+
+
+def test_prereg_se_floor_prose_states_the_locked_threshold():
+    """The paragraph must name 0.68pp as the TRIGGER, matching the code."""
+    from scripts.analysis.aggregate_phase1_full_prereg_decision import (
+        SE_FLOOR_THRESHOLD_PP,
+    )
+
+    para = _se_floor_paragraph()
+    assert f"{SE_FLOOR_THRESHOLD_PP}pp" in para, (
+        "preregistration.md's degenerate-cell paragraph no longer names the "
+        f"locked trigger threshold {SE_FLOOR_THRESHOLD_PP}pp that the canonical "
+        "producer implements (B-1898)."
+    )
+
+
+def test_prereg_se_floor_prose_does_not_reassert_the_superseded_rule():
+    """`SE = 0 exactly` must not reappear as the operative trigger.
+
+    It may still be MENTIONED (the zero case is a subset of `< 0.68pp`, and the
+    2026-07-27 sync note quotes the old wording to explain what changed), but it
+    must not be stated as the condition under which the floor fires.
+    """
+    para = _se_floor_paragraph()
+    banned = (
+        "when a cell's paired bootstrap SE_i = 0 exactly",
+        "SE floor fires only when `(ses <= 0)",
+    )
+    hits = [b for b in banned if b in para]
+    assert not hits, (
+        "the superseded `SE = 0 exactly` trigger wording is back in the prereg "
+        f"paragraph: {hits} — that is the exact drift B-1898 was filed for."
+    )
+
+
+def test_both_producers_still_mirror_one_threshold():
+    """Canonical and transparency producers must not re-split (AMENDMENT_03)."""
+    from scripts.analysis.aggregate_phase1_full_prereg_decision import (
+        SE_FLOOR_THRESHOLD_PP as canonical_threshold,
+    )
+    from scripts.analysis.aggregate_phase1_prereg_gate import (
+        SE_FLOOR_REPLACE_PP as transparency_replace,
+        SE_FLOOR_THRESHOLD_PP as transparency_threshold,
+    )
+
+    assert canonical_threshold == transparency_threshold == 0.68
+    assert transparency_replace == 1.0

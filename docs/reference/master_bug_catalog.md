@@ -9091,7 +9091,7 @@ CI 也离 0 很远 ([0.725, 1.980] / [1.237, 2.938]), 换 97.5% CI 同样不含 
 
 ## B-1898 — H1 的 SE floor 实现比预注册更严 (ses<0.68 vs 预注册 ses<=0), 与 H3 不对称 (2026-07-27)
 
-**B-1898** (code↔prereg 不一致, **待决策 — 属 estimand 层, 不自行改**) —
+**B-1898** (prereg 文档内部不一致, **RESOLVED 2026-07-27 — 方向与初判相反, 见文末**) —
 
 preregistration.md line 103-111 把 degenerate-cell SE floor 反复限定为**恰好为零**:
 
@@ -9123,6 +9123,50 @@ H1 败得更彻底。**
 
 **为什么仍是 P1 必报**: 审稿人照 prereg line 111 重算会得到 **0.6533 而不是论文写的 0.7897**。
 数字对不上就是 kill, 无论方向。
+
+---
+
+### ✅ RESOLVED 2026-07-27 — **「实现偏离预注册」这个判断是反的**
+
+起稿前照 handoff §8 核 codex 普查表时顺带查证。上面整条的前提 ——
+「0.68 只是 prereg 里的交叉核对缓冲值, 被实现成了阈值」—— **不成立**:
+
+| 证据 | 内容 |
+|---|---|
+| prereg **L718** Appendix A, **2026-05-18** | "/stress A2.4a … **SE floor threshold codified at 0.68pp** Agresti-Coull anchor" (B-1003) |
+| `AMENDMENT_03`, **2026-05-24** | 把代码从 `<= 0` 对齐到**已锁的** `< 0.68`; 明写 "**Floor REPLACE value 1.0pp + δ unchanged → implementation alignment, NOT an estimand change**" |
+| git tag | `prereg-amendment-03-implementation-alignment-20260524` (witness 存在) |
+| `AMENDMENT_03` **L113-121** | "…**L103-111 is stale prose, not a competing lock**. A follow-up honesty-surface edit to L103-111 … is recommended at the next paper-finalize pass" |
+
+→ **0.68pp 阈值 2026-05-18 就锁了**, 实现是对的; **stale 的是 prereg L103-111 那段散文**,
+而 AMENDMENT_03 早已把这个 gap 记为 known+witnessed 并**预告了修正**, 只是那个 follow-up
+从未落地。原条目 (以及 handoff §2 的「三选一」) 里的选项 **(a)「实现对齐 prereg」是错的
+方向** —— 照做会把 estimand 倒退回 2026-05-18 之前。
+
+**0.6533 不是「预注册规则的结果」**, 而是**已被取代的散文**的结果; 只能作**标注过的稳健性行**
+出现, 不得表述为 "what the preregistration says"。**论文里 H1 该报 θ_FE = 0.7897pp。**
+
+**落地 (= 执行 AMENDMENT_03 L117 预告的 follow-up, 非新 amendment, 无 estimand 变更)**:
+1. prereg L103-111 触发条件改为 `SE_i < 0.68pp`, Implementation 指针改指 canonical producer,
+   并加一段 2026-07-27 wording-sync note 说明"0.6533 不得报作预注册结果";
+2. **同段 A1.21 defense 里第二处** stale 措辞 (`fires only when (ses <= 0)`) 一并标注为历史状态
+   —— 这处是新加的测试替我抓出来的, 我自己只改了主段落;
+3. `SE_FLOOR_THRESHOLD_PP` / `SE_FLOOR_REPLACE_PP` 从**函数局部字面量提到模块级**。
+   AMENDMENT_03 称 canonical producer 是 "SINGLE source mirrored by" transparency producer,
+   但两处都是局部字面量 → **这个 mirroring 从来无法被检验, 只是碰巧相等**;
+4. 新增 3 个测试 (`tests/test_h1_canonical_alignment.py`) 钉住 **prereg 散文 ↔ 代码常量**
+   (不只是 code↔code): 散文必须写出锁定阈值 · 被取代的 `SE = 0 exactly` 触发措辞不得复活 ·
+   两个 producer 的常量必须相等。
+
+**验证**: H1 权威数字**一分未动** —— `theta_FE_pp=0.7896872` / `p_one_sided_bootstrap=0.807`
+/ `verdict=FAIL` / `se_floor_rule="ses<0.68pp"` / `n_below_se_floor=4`。测试 1622 passed。
+
+**教训**: 「代码与预注册不一致」时, **stale 的那一侧未必是代码**。判定方向前必须查
+amendment 台账 + git witness tag —— 本例里 amendment 不但存在, 还**提前写好了正确修法**,
+只是没人回来执行。
+
+**Cross-link**: 笔记 §388.3 (初判) + §389 (推翻); AMENDMENT_03 L113-121;
+prereg L718 (2026-05-18 B-1003 lock); tag `prereg-amendment-03-implementation-alignment-20260524`
 
 **待决策 (属 estimand 层)**: (a) 实现改回 `ses<=0` 对齐 prereg (H1 θ_FE 变 0.6533, 判决不变);
 (b) 保留实现并在 AMENDMENT 里补 0.68 阈值的预注册说明 (它有 Agresti-Coull 依据, 但那依据在

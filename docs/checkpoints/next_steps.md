@@ -46,19 +46,26 @@ updated: 2026-06-27
 > CLAUDE.md 里「drop-one oracle 1.7-3.3pp = THE principal hero metric」在 6-mode 全组合下实测是 **0.0-1.3pp**,
 > 那个 1.7-3.3pp 来自 archive/partial portfolio, **一律不能再用**。改为 §1 以 H3 结构分解立论。
 >
-> ### 2. ⚠️ 起稿前必须先拍一个 estimand 决策: B-1898
+> ### 2. ✅ B-1898 已解决 (2026-07-27) — 原判断方向是反的, **不需要再拍**
 >
-> prereg L103-111 把 SE floor 锁在 `ses <= 0` (恰好为零, "edge-case backstop"), 但 **H1 的实现用 `ses < 0.68`**
-> (本次 4/6 cell 触发), H3 用预注册规则。0.68 在 prereg 里是 Agresti-Coull 的**缓冲交叉核对值**, 被实现成阈值。
+> 前一版这里写"起稿前必须先拍 estimand 决策, 三选一推荐 a+c"。**查证后前提不成立**:
 >
-> | 规则 | θ_FE | z vs 1.0pp | gate |
-> |---|---|---|---|
-> | 实现 `ses<0.68` | **0.7897** | −0.585 | FAIL |
-> | 预注册 `ses<=0` | **0.6533** | −1.417 | FAIL |
+> - prereg **L718** Appendix A **2026-05-18** 就写了 "SE floor threshold **codified at
+>   0.68pp** Agresti-Coull anchor" (B-1003); `AMENDMENT_03` (2026-05-24, git tag
+>   `prereg-amendment-03-implementation-alignment-20260524`) 把代码对齐到这个**已锁**的值,
+>   并明写 L103-111 是 "**stale prose, not a competing lock**" + 预告了修正措辞的 follow-up。
+> - → **实现 `ses<0.68` 是对的, stale 的是 prereg 那段散文。** 原三选一里的
+>   **(a)「实现对齐 prereg」是错的方向**, 照做会把 estimand 倒退回 2026-05-18 之前。
 >
-> 判决不变, 但**审稿人照 prereg 重算得 0.6533 而不是论文写的 0.7897 —— 数字对不上就是 kill**。
-> 三选一 (推荐 **a+c**): (a) 实现对齐 prereg; (b) 补 0.68 的预注册说明; (c) 两者都报作敏感性。
-> **这个不定, 任何 H1 数字都不该进稿。**
+> **已落地** = 执行 AMENDMENT_03 早就预告但没做的 follow-up (非新 amendment, 无 estimand 变更):
+> prereg L103-111 措辞同步 + 第二处 stale 措辞标为历史状态 + 两个 SE-floor 常量提到模块级
+> (原本是函数局部字面量, AMENDMENT_03 声称的 "single source mirrored" **从来无法被检验**)
+> + 3 个新测试钉住 **prereg 散文 ↔ 代码常量**。
+>
+> **H1 数字一分未动**: `θ_FE=0.7896872pp` / `p_bootstrap=0.807` / `FAIL` / `n_below_floor=4`。
+>
+> 📌 **起稿时 H1 报 0.7897pp**。**0.6533 不得表述为「预注册规则的结果」** —— 它是已被取代的
+> 散文的结果, 只能作标注过的稳健性行出现。
 >
 > ### 3. 🚫 绝对不要引用的数字 (本 session 自己推翻的)
 >
@@ -69,6 +76,8 @@ updated: 2026-06-27
 > | 笔记 §387.16.3 | triage 成本 **−38%~−45%** | **−9.5%~−30.6%** (B-1899) |
 > | §387.16.3 推论 | 「成本这半值 40% 且标签充足所以有戏」 | **作废** — 5/6 cell 里不用 router 的 `cheapest` 省得更多 |
 > | 旧 hook | drop-one **1.7-3.3pp** hero | 6-mode 实测 **0.0-1.3pp** |
+> | B-1898 旧记 | 「实现比预注册严, 该报 0.6533」 | **反了** — 0.68 是 2026-05-18 锁的, 报 **0.7897** |
+> | venn / lift 旧图 | B0_red P-SoM-only **6** · B2_red **2** | **5** · **1** (B-1907, 含 tier-A 假成功 task 160) |
 >
 > ### 4. Paper B 现在有四条独立路径, 全部阴性, 论证闭合
 >
@@ -104,41 +113,45 @@ updated: 2026-06-27
 >   连 3 次秒死则停并推 ntfy。DEADLINE=08-01, 按 14h/cell 本来就跑不完 → 到点自截断, 拿前几个 P1 cell。
 >   **thesis scope, 不在 08-05 关键路径上。**
 >
-> ### 8. ✅ Mode B (codex) 已落地 — 又翻了一条结论, 且留下 3 个待修 (详 笔记 §388.7)
+> ### 8. ✅ codex 三份普查表已核完 + 修完一批 (2026-07-27, 详 笔记 §389 / catalog B-1905~B-1913)
 >
-> codex 33.9 min / 30KB / 6 个 P0。它做了我没做的一步: **全库调用点普查**。结果:
+> 照上一版这里的指示逐条实证了 Q4 / Q5 / Q7。**三份表基本站得住** (Q5 基数 36 · Q7 的
+> `extra=[58,160]` · MDE 7.768→7.806 · Q4 的 5/6 字段, 均**逐位吻合**), 但核的过程又翻出
+> 四类它没说到的:
 >
-> **🔴 已修**: **B-1901** — `_psom_unique_ids` 不带 universe →
-> `site_unique_psom_union.reddit` 是 `[11, 12, **58**, 179]` n=4, **被排除的 task 58 坐在
-> 「各臂独解」这个论文级证据槽里**（正是 H1 失败后 Paper A 要倚重的那条）。修后 `[11,12,179]` n=3。
+> **🔴 净新增最重: B-1906 防线被自己绕过.** `expected_scored_ids()` 返回 `(ids, sha)`,
+> **只写 `[1]` 就拿到合规血统标签而数据一行没动** → 产物带**正确的** canonical SHA + 宽集的行
+> → 专门抓 universe 漂移的**跨产物 SHA 互校必然放行**。比不接 canonical 更坏。
+> 根因不是"忘了过滤", 是 API 让「记 SHA」和「过滤数据」成了两个可独立完成的动作。
 >
-> **🔴 已修 + ⚠️ 又翻一条结论**: **B-1902** — 置换零分布只打乱 `y` 却仍用**原任务**的
-> `succ`/`cost` 评估（被打乱的标签与定义它的 outcome 脱钩）; 且用 `k/B` 而非 `(k+1)/(B+1)`。
-> **误差方向不统一**: cls/B1 0.478→0.503（旧偏小），**red/B2 0.040→0.005（旧偏大 8×）**。
-> → **red/B2 现在通过 Holm at m=6**（0.0050 < 0.00833）。
-> 我原写的「两个存活的一个都不过校正」**是错的**，产物已改。
-> **承重句仍成立**: **0/6 cell 的 learned triage 能 Pareto 胜过平凡 always-cheapest**
-> （red/B2 那格 learned 多保 1.97pp SR 但多花 2.4% 成本 = 真权衡点非压制点）。
-> → 起稿时的正确说法: **六格里一格有可检测信号，但价值不如那条白送的固定策略。**
+> **🔴 B-1907 (论文级): venn 把一个假成功算成 P-SoM 独家能力.** B0_reddit P-SoM-only
+> **6→5** (task 160) / B2_reddit **2→1** (task 58); **160 是 tier A passive FP**。而 H1 已 FAIL,
+> 「各臂独解」正是 §1 要倚重的槽。与 B-1901 同性质、不同调用点。
 >
-> **🟠 待修 3 条（起稿前至少要知道）**:
-> - **B-1903** — 我今天加的「nested honest」阈值**其实没真嵌套**（训练侧复用全局 OOF 分数，
->   而那些分数的模型训练集含当前外折测试行；`best_mode`/`cheap_mode` 也用全量结局选）。
->   证据: 半嵌套下 SR 差 `-1.786…-0.893, 0.0` pp → "无损"本身是选择性产物。
->   **⚠️ 要引用任何 triage 运营数字，必须先做真嵌套 CV。**
-> - **B-1904** — `extract_50_features` 把 collected 集当 complete → canonical
->   `raw_features_phase1a.json` 两个 reddit cell 都是 `n_total=205`（应 203），fold 产物
->   **无 scored-universe SHA**，且缓存池**完全没有 B2_reddit**（pre-k=6）。**router 相关数字要重抽。**
-> - **B-1905** — `aggregate_phantom_lift` 的论文级 oracle 效应 universe 从不与 scored IDs 取交集;
->   实测三个 reddit cell 全 `n_expected=205 / n_common=205 / is_partial=False`。
->   **lift / meta / 依赖 figure 全部要重生成。**
+> **📊 真实暴露面比 Q7 ledger 大一倍**: 默认拒绝扫描抓到 **35 个** analysis 脚本从不引用
+> canonical universe, **23 个写入 paper 产物目录**; codex 覆盖约 60%。
+> → 不是"还有 3 处漏网", 是**这一族有 ~35 个入口**。
 >
-> **📌 横切教训（第三次同型）**: universe 一致性**不是"修三个假设"就完事** ——
-> 我今天三次修 universe 三次漏，每次都是"不在正在看的那条调用链上"。
-> **修横切关注点必须 grep 普查，不能顺着调用链走。** codex 的输出自带
-> `Q5 caller census` + `Q7 propagation ledger` 两份普查表，起稿前照着核一遍。
-
-
+> **⚠️ codex 两处归类偏差 + 一处漏列**: `fig3` 默认 `strict=off` → 静默产出
+> **caption N=203 / 数据 205 行**的图 (类3 非类2, 且默认路径才是常走的);
+> `cross_object_pareto` 同型 raise 未列, 因 cls 无排除而潜伏。
+>
+> **已修**: B-1905 (phantom_lift, **90 字段变化全在 3 个 reddit cell**, cls 逐字节不变 =
+> 干净对照; `B2_reddit.sr_pprompt` **0.4878→0.0**; 修后 36 个 SR 与 `sr_per_mode.json`
+> **0 mismatch**, 修复前两个 canonical 产物互相矛盾) · B-1906 (新 API `restrict_to_scored`
+> 让 content-sha 由裁后内容算出 + **常驻 lint 带只减不增棘轮**) · B-1907 · B-1908 (fig0c
+> **失败退出却留下崭新未验证的图**) · B-1909 · B-1910 (CLAUDE.md 的 `TASKS=0-465` 示例必然被拒)
+> · B-1912。测试 **1622 passed**。
+>
+> **🔲 仍待办 (按起稿相关性排序)**:
+> 1. **B-1913** — `write_digests` 的 SR 叙述仍 205 分母, 且 `:134`「扣除 task 160 后…n=205」
+>    **分子扣了分母没减** = 禁引表里 §387.9 那个错法的**第二个实例**。改文本非改逻辑。
+> 2. **B-1911 + B-1904 + B-1903 (一整块, router 数字重抽)** — `router_offline_replay` 的
+>    protocol-excluded 已修好, 但随即暴露 fold 缓存是 pre-AMENDMENT_08 的 205 集且无 SHA。
+>    **有意不放宽** (静默丢 fold 条目 = 复用在不同 universe 上算出的分层), 报错已指名 B-1904。
+>    **必须与 B-1903 真嵌套 CV 一并做** —— 起稿引用任何 triage 运营数字前的硬前提。
+> 3. **`UNIVERSE_TRIAGE_PENDING` 里剩 ~34 个脚本** — 棘轮钉住不会再长, 按需逐个 drain。
+>
 > 🚦 **2026-07-27 (三) — 前一块的 6 步清单已全部完成; 下一步 = k=6 重灌** ⭐⭐⭐ (详 笔记 §387.15)
 >
 > **✅ 已落地** (commit `dc15837` / `de3ff66` / `147ec12`, **已 push**):
