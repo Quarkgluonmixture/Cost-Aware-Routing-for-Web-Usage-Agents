@@ -72,7 +72,12 @@ updated: 2026-07-27
 > (0 TODO / 0 未定义引用 / content-end ≤ p8) · vale 0 error。
 > paperB 计页正文 7741 → 5972 词 (−22%), 另有不计页 limitations 224 + appendix 1244。
 >
-> **仍未推 Overleaf** —— 现在可以推了 (`bash scripts/maintenance/overleaf_sync.sh`)。
+> **✅ 已推 Overleaf** (项目 `6a59017b…`, 旧 AAAI 产物已清): 扁平双 main,
+> **菜单 → Main document → `main_paperA.tex` / `main_paperB.tex`** 切编译目标。
+> 推的时候踩到并修掉一个自己刚引入的 bug: sync 的 sed 漏了 `limitations` 的重命名 →
+> 首推上去的 main_paperB 引用了项目里不存在的文件。已加**推前断言**逐个核 `\input` 目标存在。
+> **✅ 已 push 到 origin** (`0ab783b..4b3335a`, 33 commits, 分支
+> `fix/b1878-reddit-reference-image`)。
 >
 > ### 0-C. 未落地的 findings (全部需产物重生成, 按代价排)
 >
