@@ -8717,3 +8717,52 @@ schema 层版本** —— 不是 `.get()` 的 default, 而是 dataclass 的 defa
 
 **Cross-link**: B-1887 (同构教训, mode 层); B-1889 (本字段导致的误判现场);
 `p79/experiment/types.py:587-602`; `p79/experiment/schema_migrations/v2.py:162`。
+
+---
+
+## B-1891 — `action_success` 与 locator 结果语义脱节, 叠加 scroll 计入 page_changed → 全部 loop trigger 哑火 (2026-07-27)
+
+**B-1891** (诊断信号缺口, **未修 — Phase 1 不影响 SR, 但会让 Phase 3 的 M3 retry 完全失效**) —
+一个 episode 可以连续 29 步被 locator 明确判定"找不到可操作目标", 而**所有** loop/no-progress
+trigger 一次都不触发。
+
+**实证** (`B2_phantom_text_reddit_20260720` task 103, 31 步):
+
+| 字段 | 值 |
+|---|---|
+| `locator_route_meta.error` 含 `walk_fail` | **29 / 31** |
+| `action_success == True` | **31 / 31**（含全部 29 个 walk_fail 步） |
+| `page_changed == True` | **31 / 31** |
+| `state_change_reasons` | `scroll_changed` **×29** + 零星 title/content/url 各 1-2 |
+| `trigger_distribution` | **{}（空）** |
+
+**两个 trigger 被各自独立压制** (`p79/experiment/router.py:69-94`):
+- `no_progress_streak` 由 **`prev_action_success`** 驱动 → 恒 True → 永不累积 → 不触发。
+- `unchanged_streak` 由 **`prev_page_changed`** 驱动 → 恒 True（靠 29 次 `scroll_changed`）→ 永不累积 → 不触发。
+
+**根因是前者, 不是后者**。`scroll_changed` 被计入 `AGENT_VISIBLE_REASONS`
+(`state_change.py:175-181`) 是**正确的** —— 滚动确实改变了 agent 能看到的内容。
+真正的缺口是 **`action_success` 的语义已经漂移成"框架没抛异常"**, 而不是"agent 的意图被执行了":
+locator 明确报告 `walk_fail:no_actionable_within_walk` (即找不到 agent 所指元素的可操作祖先),
+framework fallback 仍执行了某种降级动作, 顶层于是记 `action_success=True`。
+**locator 层的失败信号在顶层被抹平了。**
+
+**影响面**:
+- **Phase 1 (flat mode) 不影响 SR** —— trigger 在 Phase 1 只做诊断记录, 不驱动纠正。
+- ⚠️ **Phase 3 的 M3 retry 会完全失效** —— 它依赖 `no_progress_streak`, 而该计数在这类
+  episode 上恒为 0。"检测到了但没有纠正机制"是 Phase 1 的设计预期; "根本没检测到"不是。
+- **一切基于 `trigger_distribution` 的分析都会低估卡死率** —— 本例 29/31 步卡死却记 `{}`。
+- 解释了一个此前没解释的现象: **P36 是唯一抓住这类失败的规则**, 因为它直接读
+  `locator_route_meta.error`, **绕过了 `action_success`**。其余基于 trigger 的机制全瞎。
+
+**处置选项**: (a) 让 `action_success` 在 locator walk_fail 时记 False (最直接, 但会改变
+既有 step_record 语义 → 需评估对已落地数据的可比性影响, 属 estimand-adjacent, 需 witness);
+(b) 新增 `action_intent_fulfilled` 布尔字段与 `action_success` 并存, trigger 改用新字段
+(向后兼容, 推荐); (c) 至少让 `no_progress_streak` 额外把 `locator_route_meta.error` 计入
+判据。**Phase 3 启动前必须解决其一。**
+
+**Cross-link**: `p79/experiment/router.py:69-94` (trigger 判定);
+`p79/experiment/state_change.py:175-181` (AGENT_VISIBLE_REASONS, 含 scroll_changed —— 该设计正确);
+`p79/envs/locator_dispatch.py` (walk_fail 来源); P36 `check_p36` (唯一绕过 action_success 的规则);
+笔记 §387.7; 发现路径 = B2_phantom_text Tier-2 sub-agent 报告 + 本条实测复核 (原报告把根因归为
+"scroll 被误判为 page_changed", 实测显示那只是第二重压制, 主因是 action_success 语义脱节)。
