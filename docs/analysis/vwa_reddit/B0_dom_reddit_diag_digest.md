@@ -23,10 +23,13 @@
 
 | 指标 | v8 |
 |---|---|
-| SR | **14.63%** (30/205) |
+| SR | **14.29%** (29/203) |
 | failed + hit | 158 |
 | **failed NO-hit** | **17** |
 | success + hit | 10 |
+
+> ⚠️ **B-1913 (2026-07-27)**: 上表 SR 已对齐 AMENDMENT_08 计分集 (reddit **203**)。此前写作 collected 分母 205 —— 那是 scored rate 配 collected 分母。分子同样按计分集重取 (被排除的 task 58/160 若曾计为成功则一并移出)。**权威来源 `docs/analysis/cross_sites/sr_per_mode.json`**；本文件其余 `/205` 计数是 episode 级覆盖率, collected 分母正确, 未改。
+
 
 v8 新规则在本 condition 的 failed 侧命中: {'P44': 9, 'P45': 67, 'P46': 6, 'P43': 56}；
 success 侧: {'P42': 1}。
@@ -45,7 +48,7 @@ reddit 六 mode × 三 model 现已全部在 **`7-p6p16clsgate-b1860coord`** 下
 
 | 指标 | v6（正文） | **v7（聚合用）** |
 |---|---|---|
-| SR | 14.6% (30/205) | **14.63% (30/205)** — 不变 |
+| SR | 14.6% (30/205) | **14.63% (30/205)** — 不变 (ruleset 版本对比, collected 分母口径一致故可比; paper SR 见 `sr_per_mode.json` = 29/203) |
 | failed + hit | 137 | **130** |
 | **failed NO-hit** | 38 | **45** |
 | success + hit | 10 | **1** |

@@ -21,10 +21,13 @@
 
 | 指标 | v8 |
 |---|---|
-| SR | **7.80%** (16/205) |
+| SR | **7.39%** (15/203) |
 | failed + hit | 159 |
 | **failed NO-hit** | **30** |
 | success + hit | 4 |
+
+> ⚠️ **B-1913 (2026-07-27)**: 上表 SR 已对齐 AMENDMENT_08 计分集 (reddit **203**)。此前写作 collected 分母 205 —— 那是 scored rate 配 collected 分母。分子同样按计分集重取 (被排除的 task 58/160 若曾计为成功则一并移出)。**权威来源 `docs/analysis/cross_sites/sr_per_mode.json`**；本文件其余 `/205` 计数是 episode 级覆盖率, collected 分母正确, 未改。
+
 
 v8 新规则 failed 侧命中: {'P46': 4}；success 侧: {'P41': 1}。
 

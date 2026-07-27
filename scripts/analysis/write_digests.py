@@ -97,7 +97,7 @@ T2 = {
   p36="**真死因**。4 个抽样 episode 全部同一死法：命中一次 walk_fail 后连续 27–30 步原样重复，占该 episode 全部预算的 90–100%。sub-agent 另做了全 205 集结构扫描：**160/205 集（78%）至少命中一次 walk_fail，20/205 集单集内 ≥20/30 步被同一失败点击霸占**，总计 1458 次 step 级 walk_fail（与 Tier-1 的 1450 吻合）。",
   findings=[
     "⭐ **SR=0.49% 是真实能力崩溃，不是测量故障** —— 关键证据是**跨 baseline 的严格单调梯度**：B0(235B) 12.68% → B1(Qwen3-4B) 6.34% → B2(Gemma3-4B) 0.49%。若是 harness/infra 故障，三个 baseline 应**同等程度**失灵，而不是随模型规模/家族精确分级。token/延迟/cost 记账均正常，无 error 字段、无 auth 失败痕迹。",
-    "⭐ **唯一那个 success（task 160）不可信** → B-1889。**本 cell 修正后真实 SR = 0/205 = 0.00%**。",
+    "⭐ **唯一那个 success（task 160）不可信** → B-1889，且该 task 已由 **AMENDMENT_08 tier A** 正式移出计分集。所以 **0/203 = 0.00%** 不再是本 digest 的事后修正，而就是 `sr_per_mode.json` 里的权威数字。**旧写法「0/205」把 scored rate 算在 collected 分母上** (B-1913)。",
     "**P-prompt 的 SoM-prompt × AXTree-text 组合是设计固有、非实现 bug**：代码确认（`_shared_vl_utils.py::build_mode_prompt_dispatch_table` + `som.py::prepare_observation_for_mode`）phantom_prompt 明确路由到 SoM system prompt + AXTree 原生文本 + 无图，element_id 用的是与 dom 模式**完全相同**的原生 AXTree id（`mark_count=0`，未走 seq 映射）→ walk_fail 与「提示-观测错配」正交，不是 ID 体系混乱导致点了不存在的编号。可归因于该刻意错配的是两个**间接**效应：(a) 无图像通道 → 失去独立视觉线索去发现自己卡死；(b) SoM prompt 反复宣称「你会收到标注截图」而实际没有，可能侵蚀 grounding 校准 —— 所有卡死点击的 confidence 都标 0.95（虚假自信）。**建议作为跨家族鲁棒性差异的证据写进分析，不建议改 harness。**",
   ],
   why="见上：perseveration 是主因，phantom_prompt 的无图像通道 + prompt/观测刻意错配放大了它。",
@@ -131,7 +131,7 @@ T2 = {
     "**task 175 / 203** — 「过早放弃」型：1-2 步内 confidence=0.0 直接 finish。task 203 的放弃措辞只写在 `thought` 里、`answer` 为空字符串，因此 P27 完全看不到。",
     "**task 58** 触发 P25 且判成功 → 本 digest 首次提出该跨站捷径疑点，后经跨 18-cell 复核确立为 **B-1892**。",
   ],
-  why="标注图对 B1 的净增益边际：扣除 task 160 后 som 7.80% vs dom 6.34%（17 vs 14 个成功，n=205 下大概率是噪声量级）。真正撑住 B1 表现的是 **DOM/AXTree 文本本身** —— B1_vision（无文本纯截图）只有 2.93%，远低于所有含文本的 mode。",
+  why="标注图对 B1 的净增益边际：**som 7.39% (15/203) vs dom 5.91% (12/203)**，差 1.48pp = 3 个 task，n=203 下是噪声量级。真正撑住 B1 表现的是 **DOM/AXTree 文本本身** —— B1_vision（无文本纯截图）只有 **2.46% (5/203)**，远低于所有含文本的 mode。（B-1913：旧写法「扣除 task 160 后 som 7.80% vs dom 6.34%（17 vs 14 个成功，n=205）」有三处错 —— 分子扣了 task 160 而分母仍是 205；括号里的计数 17/14 与百分比 7.80/6.34（=16/205、13/205）自相矛盾；且 AMENDMENT_08 已把 160 移出计分集，无需再手工扣。数字一律以 `sr_per_mode.json` 为准。）",
   rules=["P27 `ABANDONMENT_RE` 加 'unable to determine' + 扫 `thought`（本 condition 5 个 no-hit 中 2 个因此漏检）",
          "`EMPTY_ANSWER_SURRENDER`（finish 且 answer=='' 且 confidence==0.0）",
          "`REAL_REDDIT_PATH_HALLUCINATION`（goto url 匹配 `/r/<name>` ≥2 次）"],
