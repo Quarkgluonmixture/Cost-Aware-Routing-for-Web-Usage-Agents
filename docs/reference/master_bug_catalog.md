@@ -9577,3 +9577,76 @@ COLLECTED 集 —— 被排除的 episode 仍有失败模式值得统计), **豁
 「唯一那个 success (task 160) 不可信 → 修正后真实 SR = 0/205」分子分母**都**过时了。
 
 **Cross-link**: 笔记 §389; §387.9 (同型第一例); B-1889 (task 160 passive FP); AMENDMENT_08
+
+---
+
+## B-1914 — 全量 WA chain 的 launcher 漏引号 → 6 步炸成 27 步, 开跑 0 秒就死 (2026-07-27)
+
+**B-1914** (静默不执行, **FIXED 2026-07-27**) —
+
+`scripts/queues/_launch_wa_full_reddit.sh` 调 `queue_chain.sh` 时**每个 step 都没加引号**:
+
+```bash
+setsid nohup bash scripts/queues/queue_chain.sh \
+  queue_baseline.sh B1 dom reddit wa \      # ← 应为 "queue_baseline.sh B1 dom reddit wa"
+  queue_baseline.sh B1 som reddit wa \
+  ...
+```
+
+`queue_chain.sh` 的契约是**一个 argv = 一个完整的「脚本+参数」字符串** (pilot chain 就是那样调的,
+log 里可见正确引号)。无引号 → 6 个意图 step 摊成 **27 个 token 各成一步**, `[1/27]` 是裸
+`queue_baseline.sh` 无参数 → 打印 Usage → `rc=2` → `[FATAL] queue script rc=2, no run_id
+minted` → 整链 abort。
+
+**实际后果 (2026-07-27 17:09:03)**: 全量 WA chain **跑了 0 个 task, 0 个 run_id**。
+fail-closed 生效 —— **数据零污染, 且没有与仍在跑的 pilot psom 形成同 site 并发**。
+但**没人知道它死了**: 见 B-1915。
+
+**发现路径**: 本次 session 收尾时例行核 handoff §7「无人值守的两条后台」, 发现 monitor 报的
+`pid=2650917` 在 A100 上不存在 → 追 log 追到 `[1/27]`。若不核这一步, 会一直以为
+「ETA ~3.5 天的全量 WA 在跑」。
+
+**FIXED**: step 改 bash 数组 + 逐个引号; 加**两道断言** (`${#STEPS[@]} -ne 6` → exit 3;
+任一 step 不含空格 = 丢了参数 → exit 3), 让未来再次丢引号**响亮地失败**而不是摊成单 token;
+launcher 开头加 reddit runner 占用检查 (CLAUDE.md hard rule #1 + WA/VWA 共用 postmill 容器),
+实测在 psom 跑着时正确 `REFUSED / exit=4`; 另修 `$!` —— `setsid nohup … &` 的 `$!` 是
+**setsid 自己**的 pid (fork 后立刻退出), 记下来就是死 pid, 改为按刚铸的 log 路径 pgrep 真 pid。
+
+**⚠️ 该脚本原先只存在于 A100、不在版本管理** —— 这是它能带着这个 bug 活下来的直接原因
+(没有 diff、没有 review、没有测试)。本次已纳入 git; A100 旧版备份为
+`_launch_wa_full_reddit.sh.b1914_broken_backup`, 两端 md5 一致 `0d8e847c…`。
+
+**Cross-link**: 笔记 §390; B-1915 (同一次失败的另一半); B-1894 (WA expected_n); CLAUDE.md
+"禁止裸用 run_experiment / 必须走 queue script"
+
+---
+
+## B-1915 — done-monitor 把「launch attempted」当成成功就 exit 0, 于是 B-1914 静默两小时 (2026-07-27)
+
+**B-1915** (监控假阳性, **FIXED 2026-07-27**) —
+
+上一 session arm 的 auto-chain monitor 在 fire 后只 `echo "[18:09:03] full chain launch
+attempted"` 便 **exit 0**。它**既不校验链是否真的活着, 也不重试**。于是 B-1914 那次
+「启动即死」被记为一次成功的接力, harness 收到的是 `status=completed / exit code 0`。
+
+两个独立缺陷叠加:
+
+1. **done-condition 误判**: monitor 在 **17:09** 判定 pilot 已退出并 fire, 但 pilot chain
+   (pid 2579194) 此刻**仍在跑第 5 步 psom** —— 到 18:41 核查时仍然 alive。
+   (psom 之所以远超 pilot 的 10 task, 是因为 6 个 WA config 的 `defaults` 已被切到
+   `exp_v2_wa_full_reddit_base.yaml`, 而 psom 是唯一在切换**之后**启动的那一步 → 它直接吃了
+   104 全量, 现 15/104。)
+2. **不校验 + 不重试**: "attempted" ≠ "running"。
+
+**FIXED**: 新 monitor (a) done-condition 用 pilot chain **真 PID** 的 `kill -0`
+(Tier 3 PID-based, 远端 pid 不可能 self-match 本地 bash 字符串, 符合 CLAUDE.md 的
+「禁止 pattern 自匹配」); (b) fire 后 `sleep 60` 再 `pgrep` **校验链真在跑**;
+(c) 三种结局各自 ntfy —— LAUNCHED / FAILED-to-start (high priority) / 24h TIMEOUT-not-fired。
+**"验证而非信任" 是这条的核心**: B-1914 恰好是一次「看起来成功的启动」。
+
+**教训**: CLAUDE.md 的 done-monitor 章节此前只管「done-condition 会不会 self-match」。
+这次的失败模式是**另一类**: done-condition 正确触发了, 但**它守的那件事本身失败了, 而
+monitor 不检查**。→ 长任务 monitor 的收尾动作若是「启动另一个任务」, 必须校验那个任务活着,
+否则整条接力静默断裂且报 exit 0。
+
+**Cross-link**: 笔记 §390; B-1914 (被它掩盖的 bug); CLAUDE.md「长任务必配 done-monitor」
