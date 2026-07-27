@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from gen_diag_digest import build, tier1_section, RUNS, OUT
 
 DATE = "2026-07-27"
+RULESET = "8-reddit-p41p46-b1890fix"
 
 # Tier-2 findings, per condition. None = not deep-dived this round.
 T2 = {
@@ -103,11 +104,141 @@ T2 = {
   rules=["把 `P35(MUTATION_MISSING)` 泛化为 `PASSIVE_MUST_EXCLUDE_FP`（去掉 `agent_finished==True` 与 locator 白名单限定）—— 当前 P35 恰好漏掉 task 160 这类 sidebar 场景。⚠️ 实现时**不要**用 `effective_mutating_action_count` 做判据（B-1890：该字段恒为 0）",
          "`P36-fatal`：同一 (action_type, element_id) 的 walk_fail 连续占满几乎整个预算 → 与「偶发可自愈」型 walk_fail 区分开，对路由信号设计也有用"],
 ),
+
+# ---- B1 (Qwen3-VL-4B) reddit, Tier-2 2026-07-27 ----
+"B1_dom_reddit": dict(
+  scope="7 ep（no-hit 分层抽样 5 + success 审计 2）· 1 sonnet sub-agent",
+  counts="agent-limit 5 · benchmark-FP 2（两个 success 均判 FP）· scaffold-bug 0 · unclear 0",
+  p36="B1 **也有** perseveration，但形态是「谱系」而非 B2 那种单一死循环：task 160 在 step 3/4/5/6 连续 4 次同一 `walk_fail:no_actionable_within_walk`（同 element_id=3949），step 15/16 复发 2 次；task 114 则是语义级循环（连续 17/23 步在三个 forum 名的字面搜索间打转），最终靠切换到直接 URL 导航跳出，代价是耗掉 74% 预算。即「locator 层刚性重复（未能自纠）」到「策略层松散重复但最终自纠」的连续谱。",
+  findings=[
+    "⚠️ **P36 计数被系统性低估**：task 160 真实发生了 6 次 walk_fail，但因该 episode `success=true`、而 P36 对 success episode 直接 `return []`，这些完全没进 Tier-1 统计。（v8 未改此行为——success-safe 是刻意设计，但读 P36 数字时要知道它只覆盖 failed 侧。）",
+    "**task 91 / 95 / 102** — dom 模式 `input_image=0`，任务要读帖子配图的颜色/计数。task 102 诚实认输，**task 95 则在零视觉输入下自信幻觉**（thought 称「I can see the snow... appears white」，真值 purple/pink，confidence 0.95）。",
+    "**task 138** — 正确从参考图提取姓名 Patrick、正确导航到 account 页、正确输入用户名，**但直接 finish 未点任何 Save/提交**，修改未持久化。这是「差最后一步」类失败。",
+    "**task 58 / 160** — 两个 success 均判 benchmark-FP（→ B-1892 / B-1889）。",
+  ],
+  why="B1 在「放弃」与「固执」之间偏向**过早放弃**（多个 episode 1-2 步内 confidence=0.0 直接 finish），而 B2 偏向**过度固执**。量化对照：B1_som 188 failed 中 P36 命中 54.8% / P31 命中 67.0%；B2_som 202 failed 中 64.9% / 83.7% —— 两项 B2 都显著更高。",
+  rules=["`P-unsaved-form`（最后一个非 finish 动作是 type 表单字段，其后无提交类 click 即 finish，且 eval 要求字段持久化）—— 命中 task 138 这类「差最后一步」",
+         "P27 `ABANDONMENT_RE` 扩充 'unable to determine' + 同时扫 `thought` 字段（现仅扫 answer/text）"],
+),
+"B1_som_reddit": dict(
+  scope="7 ep（no-hit 5 + success 审计 2）· 1 sonnet sub-agent",
+  counts="agent-limit 5 · **benchmark-FP 2（两个 success 全部可疑）** · scaffold-bug 0 · unclear 0",
+  p36=None,
+  findings=[
+    "✅ **标注图确实送达模型**：每步 `image_meta` 的 `input_image` token 数非零（576 或 1344），`som.enabled=true`，`mark_count` 在 2–136 间正常变化 —— 机制层面没坏。",
+    "**但抽样的 5 个 no-hit 没有一个是「看错/点错标注框」** —— 全部败在上游的视觉推理 / 计数 / OCR / 指令理解。",
+    "**task 132** — 用真实 reddit 的 `/r/<sub>` 路径规范（本站应为 `/f/<sub>`）反复 goto，造成 4 次同构 404 循环。这是**预训练先验污染站内导航**的清晰例子。",
+    "**task 175 / 203** — 「过早放弃」型：1-2 步内 confidence=0.0 直接 finish。task 203 的放弃措辞只写在 `thought` 里、`answer` 为空字符串，因此 P27 完全看不到。",
+    "**task 58** 触发 P25 且判成功 → 本 digest 首次提出该跨站捷径疑点，后经跨 18-cell 复核确立为 **B-1892**。",
+  ],
+  why="标注图对 B1 的净增益边际：扣除 task 160 后 som 7.80% vs dom 6.34%（17 vs 14 个成功，n=205 下大概率是噪声量级）。真正撑住 B1 表现的是 **DOM/AXTree 文本本身** —— B1_vision（无文本纯截图）只有 2.93%，远低于所有含文本的 mode。",
+  rules=["P27 `ABANDONMENT_RE` 加 'unable to determine' + 扫 `thought`（本 condition 5 个 no-hit 中 2 个因此漏检）",
+         "`EMPTY_ANSWER_SURRENDER`（finish 且 answer=='' 且 confidence==0.0）",
+         "`REAL_REDDIT_PATH_HALLUCINATION`（goto url 匹配 `/r/<name>` ≥2 次）"],
+),
+"B1_vision_reddit": dict(
+  scope="6 ep（no-hit 5 + success 1）· 1 sonnet sub-agent + 全 condition 扩展扫描",
+  counts="agent-limit 5 · benchmark-FP 1 · scaffold-bug 0 · unclear 0",
+  p36=None,
+  findings=[
+    "⭐ **主导失败是「动作模态错误」而非 grounding 或 perception**：要求发真实评论的任务里，模型从不用 `type`，一律用 `finish(answer=...)` 把答案当文字描述交上去。**task 103 的视觉判断完全正确**（'blue' 与 reference 字面一致）却仍判失败 —— 答案没写进评论框。→ 这条观察催生了 **P46**。",
+    "✅ **坐标映射无 scaffold bug**：全 condition 2386 个带坐标动作全量扫描，`x_regime`/`y_regime` 全为 `qwen_0_1000`，**0 例 `true_oob`、0 例 `malformed`**，仅 1 例 `dead_zone` 且仍 `recovered=true`。问题在「点哪」不在「点到哪去了」。",
+    "**submission_images 陷阱**：点帖子缩略图直接跳裸图页（缩略图 href 就是图片文件本身）。vision 无语义标签只能靠坐标猜，比 dom/som 更易踩中。→ 这条催生了 **P33 的 reddit 路径扩展**。",
+  ],
+  why="动作模态错误 + 语义级选错目标的复合体，且 reddit 站本身评论/发帖类任务占比高，使 vision 在缺少文本结构辅助定位时被放大打击 —— 比 dom (6.83%) 低一半以上。",
+  rules=["→ 已落码为 **P46**（COMMENT_INTENT_NO_TYPE）与 **P33 reddit 路径扩展**"],
+),
+"B1_phantom_text_reddit": dict(
+  scope="7 ep（no-hit 5 + success 2）· 1 sonnet sub-agent + 全 run 扫描",
+  counts="agent-limit 5 · benchmark-FP 2 · scaffold-bug 0（但复核出一个真实检测缺陷，见下）",
+  p36=None,
+  findings=[
+    "🐛 **scroll-only 状态变化确实存在于 B1**：全 run 5226 步中 23 步的 `page_change_reasons` 恰好只含 `scroll_changed`，且全部仍记 `page_changed=True`。但**它不是这些 episode 的主因** —— 我复核后确立的真根因是 `action_success` 语义脱节（→ **B-1891**）：`no_progress_streak` 由 `prev_action_success` 驱动而非 `page_changed`，两个 trigger 是被**各自独立**压制的。",
+    "**4/5 no-hit 是指令-观测错配**：任务显式或隐式要求看图，而 phantom_text 剥离页面截图。分两种子模式 —— 纯页面内嵌图（零信息，task 104 高置信度编造「0 kirbies」）vs 任务级参考图可见但页面帖子图不可见（task 133，能看懂参考图却无法在页面里核对是哪个帖子）。",
+    "**task 104 的高置信度幻觉值得单独记**：模型**不知道自己看不见**，会把无信息状态包装成「已观察」的确定性陈述。",
+  ],
+  why="见上：指令-观测错配为主，叠加 perseveration。",
+  rules=["→ 已落码为 **P43**（但按 §387.10 的受控对比结果改成了**中性标签**，不是 sub-agent 提议的「结构性不可解」）",
+         "B-1891 的修复（`action_success` 语义）属 runner 层，未在本批规则内"],
+),
+"B1_phantom_som_reddit": dict(
+  scope="7 ep（no-hit 5 + success 2）· 1 sonnet sub-agent（首次因 session limit 中断，已重放）+ 我的独立全量复算",
+  counts="agent-limit 5 · benchmark-FP 2 · scaffold-bug 0 · unclear 0",
+  p36="见下方两层核查 —— 结论是 walk_fail **既非 P-SoM 特有也不随能力单调**。",
+  findings=[
+    "⭐ **[SOM_MARKS] 两层核查（这是 hero mode 能否宣称 scaffold 干净的关键证据）**。我在 sub-agent 数字基础上补了 dom/som 对照，结果比原报告强得多：",
+    "  · **(a) 幻觉引用率**（引用了 observation 里不存在的 element_id）：P-SoM **B0 0.04% / B1 0.12% / B2 7.84%**；同 model 的 dom 是 **0.39% / 2.98% / 18.21%**。→ **dom 在每个模型上都最差，P-SoM 干净 5–25×**。机制：dom 用原生 AXTree id（median 7839–18729，max 691695），P-SoM 用紧凑编号 1..N（median 15–17，max 176）—— 抄 5-6 位稀疏整数 vs 2-3 位紧凑编号。→ 这条催生了 **P44**。",
+    "  · **(b) walk_fail 率**：P-SoM B0 13.3% / B1 29.5% / B2 21.9%；dom 23.5% / 18.5% / 35.2%。**3 个模型里 2 个是 dom 更差**，且不随能力单调 → 在 (model, mode) 格间就是噪声，**不能写成「walk 可执行性随能力劣化」**。",
+    "⚠️ **同时修正了 4 个 sub-agent 的集体误判**：它们都断言 `obs_nodes_info missing union_bound`（幻觉引用分支）「一次都没出现」。在各自 6–8 个样本里成立，**总体上不成立**（B2 上 374 次 psom / 895 次 dom）。walk_fail 与幻觉引用是**并存**的两条分支。",
+    "**task 19** — 点 [SOM_MARKS] 里的 img href 跳到 `/submission_images/*.jpg` 裸图页（reddit 版 P33），旧正则漏检。",
+  ],
+  why="P-SoM 的失败集中在「无页面截图 → 无法把参考图与页面缩略图做比对」（task 19/139），以及与其他 mode 共通的 perseveration。**scaffold 层在 element-引用维度不仅干净，而且优于 dom。**",
+  rules=["→ 已落码为 **P44**（HALLUCINATED_ELEMENT_REF，此前零覆盖）与 **P33 reddit 路径扩展**"],
+),
+"B1_phantom_prompt_reddit": dict(
+  scope="7 ep（no-hit 5 + success 2）· 1 sonnet sub-agent",
+  counts="agent-limit 5 · benchmark-FP 2 · scaffold-bug 0 · unclear 0",
+  p36="B1 在同一构造下也有 perseveration（task 142 连续 12 步猜不同 element_id），但**恢复能力明显更强** —— 最终靠 scroll 找回评论框并完成提交动作。",
+  findings=[
+    "⭐ **同一 P-prompt 构造下 B1 与 B2 的差异，正是「SR 梯度反映能力而非构造缺陷」的直接证据**。代码层确认两者面对**完全相同**的构造（`mark_count=0`、element_id 用原生 AXTree id、SoM prompt 仍宣称会给标注截图但从不发图）。差异在应对：(a) **B1 校准更诚实** —— task 152 直接给 confidence=0.0 并拒答，不像 B2 那样固定虚高 0.95；(b) **B1 会恢复** —— task 142 在 12 次误点后自行脱困。",
+    "**幻觉措辞要分两类，不能混为一谈**：真幻觉（task 152 逐字出现「no image is visible in **the provided screenshot**」，而该 mode 从未提供 screenshot）vs 术语混用（task 132/138 说「the image」实指**真实存在**的任务级参考图 —— 参考图所有 mode 都发，不算幻觉）。",
+    "**比幻觉更危险的模式**：task 142 编造具体日期、task 58 编造「评论里写着」的假引用来源，且配 0.95–1.0 高置信度。与 B2 的核心风险同质，只是发生率低得多。",
+  ],
+  why="构造缺陷是共同的，能力决定了伤害大小 —— 这正是 B0 12.68% > B1 6.34% > B2 0.49% 梯度的解释。",
+  rules=["→ 已落码为 **P43**（中性标签版）"],
+),
+# ---- B0 (Qwen3-VL-235B-A22B) reddit phantom 系, Tier-2 2026-07-27 ----
+"B0_phantom_text_reddit": dict(
+  scope="7 ep（no-hit 5 + success 审计 2）· 1 sonnet sub-agent",
+  counts="agent-limit 5 · scaffold-bug 1（P39 误报，见下）· benchmark-FP 1 · unclear 0",
+  p36=None,
+  findings=[
+    "⭐ **B0 的失败形态与 B2 本质不同**：对「零信号」任务，B0 **快速优雅放弃**（task 120 仅 1 步就诚实承认无法判断）；即使编造错误答案（task 147/149）也在 5–7 步内干净收场，不做无意义重试。但 B0 **确实会**在「UI 反馈模糊」时短程重复（task 41 连续 17 步、task 129 连续 10 步点同一 toggle），关键区别是**规模减半**（10–17 步 vs B2 的 20–30）**且会自我打断**（task 129 第 11 步出现元推理「the button says Unsubscribe... I will assume... finish」主动跳出）。",
+    "⭐ **4/5 no-hit 是「表征而非能力」的失败**（task 41/120/147/149）：所需信息在 phantom_text 的文本 substrate 里根本不存在。其中 2/5 命中同一个 `intent_template_id=60`（「数图中 X 数量」）→ **系统性任务族缺陷而非零散噪声**。只有 1/5（task 129）是即使有图也答错的语义粒度错误。⚠️ 但注意 §387.10 的受控对比显示，给这类任务补上截图的实测增益 ≈0 —— 所以「表征失败」不等于「换 mode 就能救」。",
+    "🐛 **task 19 的 P39 命中是假警报** → 直接催生 **B-1890 的规则层修复**：P39 判据 `effective_mutating_action_count` 恒为 0，而逐步核查显示 step 2 有一次真实生效的点赞，且 eval 用 isolated context 直接查服务端状态。**v8 已把 P35/P39 改为从 step record 派生突变计数**，本 condition 的 P39 命中在 v8 下已消失。",
+  ],
+  why="B0 遇到结构性缺图任务时「快速合理化猜测后主动止损」，而非「卡死重复直到预算耗尽」。",
+  rules=["→ 已落码：**P39/P35 的 B-1890 修复**、**P43**（中性标签版）"],
+),
+"B0_phantom_som_reddit": dict(
+  scope="6 ep（no-hit 5 + success 1）· 1 sonnet sub-agent + 全 condition 0-token 结构扫描",
+  counts="agent-limit 5 · benchmark-FP 1 · scaffold-bug 0 · unclear 0",
+  p36="见 B1_phantom_som_reddit 的两层核查表 —— B0 是其中的干净端（幻觉 0.04% / walk_fail 13.3%）。",
+  findings=[
+    "⭐ **[SOM_MARKS] 一致性必须分两层说，不能一句「一致」带过**（这条方法论提醒来自本 agent，很到位）：",
+    "  · **存在性层：非常干净** —— 2796 个带 element_id 的 action 里仅 1 例越界（0.036%）。**这一层可以放心写进论文正文。**",
+    "  · **可执行性层：不能说零** —— walk_fail 覆盖 88/205 episode、356/4669 step（7.6%），其中 304 步最终失败。建议写法：可写「[SOM_MARKS] 编号幻觉率 <0.1%」，但**不要**无保留地写「零列了点不动」。",
+    "**task 82 / 202** — 「多目标任务提前收工」：eval 要求 8 个 / 11 个不同目标，agent 只碰了 1 个就 finish 并自称全部完成。",
+    "**task 120** — 严格结构性不可解：start_url 本身就是裸图片、无参考图、DOM 无内容。",
+  ],
+  why="P-SoM 在 B0 上的失败以「参考图↔页面缩略图无法比对」和「多目标覆盖不全」为主，scaffold 层干净。",
+  rules=["`SINGLE_TARGET_FINISH_ON_MULTI_TARGET_TASK`（eval must_include 含 N>1 个实体但轨迹交互的 distinct target < N 即 finish）—— mode-agnostic，本批**未落码**，留待下一轮（需要实体抽取，非纯字段比较）"],
+),
+"B0_phantom_prompt_reddit": dict(
+  scope="6 ep（no-hit 5 + success 1）· 1 sonnet sub-agent + 全 48 no-hit 的 task-config 级扫描",
+  counts="agent-limit 5 · unclear 1 · scaffold-bug 0 · benchmark-FP 0",
+  p36=None,
+  findings=[
+    "⭐ **本 condition 的 no-hit 是全 18 条里最多的（48/205 = 23.4%）**，扫描显示 **39/48（81%）命中「图像相关」信号**，本次抽样 5/5 全部落在该桶。→ 这是 P43 落码的最直接依据。",
+    "⭐ **规则库的结构性偏置**：这类失败「过程干净利落，只是给错了答案」（短 episode、无循环、无预算耗尽、无 URL 自环），**恰好精确避开所有现有 P-rule 的触发条件** —— 现有规则大多是「过程性」病理探测器，而这一整类是「结局性」的。",
+    "🔍 **一条重要的代码事实核实**（本 agent 主动查证，纠正了初始假设）：B0 proxy 的 `reference_images` **无视 observation_mode 一律真实发送**（task 109 实测 `image_payload_bytes_ref=172032`），只有**页面实时截图**才受 phantom 约束。→ 这条事实后来收窄了另外 4 个 agent 的「phantom = 完全无图」推断。",
+    "**B0 未表现出 B2 的灾难性 perseveration**：5 个 episode 步数 2/13/8/5/23（上限 30），**全部主动 finish，无一跑满预算**。confidence 有起伏（0.7–1.0）而非 B2 的恒定 0.95，但在「盲猜终局」动作上依然普遍偏高。",
+  ],
+  why="信息在该 mode 的 substrate 里不存在 → B0 快速合理化猜测后止损。这是能力天花板与表征限制的叠加，但 §387.10 显示补图并不能兑现预期增益。",
+  rules=["→ 已落码为 **P43**（中性标签版，命名刻意避开 sub-agent 提议的「guaranteed fail」）"],
+),
 }
 
-BANNER = """> **定位声明**：本 digest 是**单 condition** 的失败归因，不下 cross-mode / cross-model 结论。
-> 跨 mode 定量比较须等 reddit 规则批（R1–R8 + H2）落地、`RULESET_VERSION` 升到 `8-reddit-*`
-> 并全量重扫后再做（/diag skill「discover-then-freeze」硬纪律）。
+BANNER = """> **定位声明**：本 digest 是**单 condition** 的失败归因，其中的 per-rule 分布只描述它自己。
+>
+> ✅ **discover-then-freeze 已完成**（2026-07-27）：reddit 规则批 P41–P46 + B-1890 修复 + P33
+> reddit 路径扩展已落码，`RULESET_VERSION` = `8-reddit-p41p46-b1890fix`，**全部 36 个 canonical
+> condition（reddit 18 + cls 18）已在该版本下重扫**，版本一致性由
+> `scripts/analysis/diag_rescan_all.py` 校验 → **cross-mode / cross-model 定量聚合现已解锁**。
+>
+> ⚠️ v7→v8 的 cls 行为**不是**字节不变，差异全部经过定性核实：`P35`/`P39` 的旧命中因
+> B-1890 死字段修复而移除（抽查确认那些 episode 确实有 6–8 个突变步，旧命中是错的）；
+> `P33` 在 cls 上 +1 例（cls task 233 的 intent 实际要求访问 reddit，旧正则漏检）。
 """
 
 def render(key):
@@ -163,10 +294,14 @@ def render(key):
 
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    todo = [k for k in RUNS if k not in ("B0_dom", "B0_som", "B0_vision")]
+    # B0 dom/som/vision reddit 的 digest 是更早手写的 (含各自的 Tier-2 深挖记录),
+    # 只在文件里追加 v8 补记, 不由本脚本整体重写 —— 见 --refresh-header。
+    HANDWRITTEN = {"B0_dom_reddit", "B0_som_reddit", "B0_vision_reddit"}
+    todo = [k for k in RUNS if k.endswith("_reddit") and k not in HANDWRITTEN]
     for k in todo:
-        model, mode = k.split("_", 1)
-        p = OUT / f"{model}_{mode}_reddit_diag_digest.md"
+        # key already carries the site suffix (`<model>_<mode>_<site>`), which IS the
+        # digest basename — do not re-append it.
+        p = OUT / f"{k}_diag_digest.md"
         p.write_text(render(k))
         print(f"wrote {p.relative_to(Path('/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents'))}")
     print(f"\n{len(todo)} digests written")

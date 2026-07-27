@@ -15,6 +15,28 @@
 
 ---
 
+## 0b. v8 freeze 补记（2026-07-27）
+
+`RULESET_VERSION` 已升至 **`8-reddit-p41p46-b1890fix`**（reddit 规则批 P41–P46 + B-1890 修复 + P33 reddit
+路径扩展）。全部 36 个 canonical condition 已在该版本下重扫 → **cross-mode 聚合解锁**。
+本 condition 的 v8 数字如下，**跨 condition 聚合请用这一组**：
+
+| 指标 | v8 |
+|---|---|
+| SR | **14.63%** (30/205) |
+| failed + hit | 158 |
+| **failed NO-hit** | **17** |
+| success + hit | 10 |
+
+v8 新规则在本 condition 的 failed 侧命中: {'P44': 9, 'P45': 67, 'P46': 6, 'P43': 56}；
+success 侧: {'P42': 1}。
+
+正文各节的 Tier-2 定性结论不受版本变更影响（新规则只是把此前 no-hit 的 episode 归了类，
+未推翻任何已有归因）。**若本 condition 的 success 含 task 160 / task 58，请一并读
+master_bug_catalog 的 B-1889 / B-1892** —— 那两个是评测器缺陷而非模型表现。
+
+---
+
 ## 0. v7 重扫补记（2026-07-27）
 
 本 digest 正文的三子集与 per-rule 数字是 **v6 扫描**（H1 site-gate 的动机依据，保留原样不改）。

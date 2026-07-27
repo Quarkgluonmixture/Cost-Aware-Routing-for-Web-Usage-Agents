@@ -77,7 +77,7 @@ from urllib.parse import urlparse
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "7-p6p16clsgate-b1860coord"
+RULESET_VERSION = "8-reddit-p41p46-b1890fix"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -219,10 +219,54 @@ P6_IMAGE_VISUAL_MATCH_RE = re.compile(
 # raw image (still unreadable to the model) → hallucinates an answer. Signal is mode-
 # agnostic (any mode landing on a bare image URL is lost) but structurally phantom_som-
 # induced. Naturally success-safe: a raw image URL is never the item page url_match wants.
+# 2026-07-27 (reddit discover batch): the classifieds-only `/oc-content/uploads/`
+# path missed reddit's equivalent trap entirely. Postmill serves submission images
+# at `/submission_images/<hash>.<ext>`, and reddit episodes land there constantly —
+# clicking a post thumbnail (whose href IS the raw image file, not the post page)
+# navigates to a near-empty DOM with the image the text-only modes cannot read.
+# Verified present across B0/B1/B2 reddit Tier-2 samples (B1_vision task 172/176/177,
+# B2_ptext task 103, B1_psom task 19). Union of both site conventions keeps cls
+# behaviour byte-identical (the cls alternative is unchanged and reddit URLs never
+# matched the old pattern).
 RAW_IMAGE_URL_RE = re.compile(
-    r"/oc-content/uploads/.*\.(?:png|jpe?g|gif|webp)(?:$|\?)",
+    r"(?:/oc-content/uploads/|/submission_images/).*\.(?:png|jpe?g|gif|webp)(?:$|\?)",
     re.IGNORECASE,
 )
+
+# --- reddit discover batch 2026-07-27 (ruleset 7-* → 8-reddit-*) ---
+# Sources: 9 Tier-2 sub-agents over reddit × {B0,B1,B2} × 6 modes, then every
+# population-level claim re-verified by 0-token full scan (笔记 §387.6-§387.12).
+
+# P43: intent needs visual information. Deliberately BROAD — the rule pairs it with
+# "this mode delivers no page screenshot", and the combination is reported as a
+# neutral (task × mode) label, NOT as a predicted failure. §387.10 measured the
+# actual effect of restoring the screenshot on exactly this task set (dom→som:
+# B0 +0.00 / B1 +1.56 / B2 +0.00 pp) — i.e. these tasks are NOT "structurally
+# unsolvable without the image", they are hard for every representation. The label
+# exists so the 64 reddit tasks in this bucket stop being invisible to Tier-1.
+VISUAL_INTENT_RE = re.compile(
+    r"\b(image|picture|photo|screenshot)\b|\bcolou?r of\b|"
+    r"\bhow many\b[^.]{0,40}\bin (?:the|this)\b",
+    re.IGNORECASE,
+)
+
+# P46: intents whose completion requires committing text to the site (a comment /
+# reply). §387.8 measured these at 2.11% SR pooled over 18 cells vs 8.49% for the
+# rest (4.0x), consistent in 18/18 cells. Word-bounded and deliberately NARROWER
+# than MUTATION_INTENT_RE: widening to post/submit/create/edit/upvote erases the
+# gap entirely (7.23% vs 6.01%), so "mutation task" is the wrong abstraction here.
+COMMENT_INTENT_RE = re.compile(
+    r"\b(comment|reply|replies|saying)\b",
+    re.IGNORECASE,
+)
+
+# P44: the locator's OTHER error branch. `walk_fail:*` means "element resolved but
+# no actionable ancestor"; this one means the referenced element_id was not in
+# obs_nodes_info at all — i.e. a hallucinated reference. Four Tier-2 sub-agents
+# independently reported this branch "never occurs"; that held in their 6-8 episode
+# samples but NOT in the population (§387.12: B2 fires it on 7.84% of psom and
+# 18.21% of dom action-steps). No existing rule covers it.
+MISSING_UNION_BOUND_RE = re.compile(r"missing union_bound", re.IGNORECASE)
 
 P34_GIVEUP_RE = re.compile(
     r"cannot verify|image not visible|not listed|\[\]",
@@ -340,6 +384,77 @@ def _step_has_walk_fail(step: Dict) -> bool:
         if isinstance(meta, dict) and "walk_fail" in str(meta.get("error", "")):
             return True
     return False
+
+
+def _locator_errors(step: Dict) -> List[str]:
+    """All non-empty locator error strings on a step, across primary/retry slots."""
+    errors = []
+    for key in ("locator_route_meta", "locator_route_meta_primary", "locator_route_meta_retry"):
+        meta = step.get(key)
+        if isinstance(meta, dict):
+            err = str(meta.get("error", "") or "")
+            if err:
+                errors.append(err)
+    return errors
+
+
+def _action_type(step: Dict) -> str:
+    """Action type, tolerating both the nested and the flattened step-record shapes."""
+    act = step.get("action")
+    if isinstance(act, dict) and act.get("action_type"):
+        return str(act.get("action_type"))
+    return str(step.get("action_type") or "")
+
+
+def _action_element_id(step: Dict) -> Optional[int]:
+    act = step.get("action")
+    raw = act.get("element_id") if isinstance(act, dict) else step.get("element_id")
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _count_mutating_steps(steps: List[Dict]) -> int:
+    """Derive the count of state-mutating actions from the step records.
+
+    B-1890 (2026-07-27): `summary["effective_mutating_action_count"]` — and its five
+    siblings — are schema slots the runner has NEVER populated; every episode on disk
+    carries 0 (`types.py:587-602` defers the aggregation "until action heuristic spec
+    lock"). Two existing rules (P35, P39) guard on `!= 0: return []`, so that guard has
+    always been a NO-OP: it never filtered anything, while reading as though the rule
+    had verified an absence of mutation. Both rules were therefore looser than their
+    docstrings claim.
+
+    This derives the count the way `types.py:587` specifies — action_success AND
+    page_changed AND a mutating action_type — so the guard becomes real. `click` is
+    included because on Postmill the mutating controls (Subscribe, upvote, Save) are
+    buttons/links, and a click that both succeeded and changed the page is the only
+    signal available; the false-positive direction (counting a navigational click as a
+    mutation) makes P35/P39 STRICTER than the broken version, never looser, so it
+    cannot manufacture new hits.
+    """
+    n = 0
+    for s in steps:
+        if _action_type(s) not in ("type", "click", "select_option", "key_enter"):
+            continue
+        if s.get("action_success") is not True:
+            continue
+        if s.get("page_changed") is not True:
+            continue
+        n += 1
+    return n
+
+
+def _visited_hosts(steps: List[Dict]) -> Set[str]:
+    """Distinct `host:port` values seen in obs_url over the episode."""
+    hosts = set()
+    for s in steps:
+        url = str(s.get("obs_url") or "")
+        m = re.match(r"https?://([^/]+)", url)
+        if m:
+            hosts.add(m.group(1))
+    return hosts
 
 
 def _walk_fail_errors(step: Dict) -> List[str]:
@@ -1351,7 +1466,7 @@ def check_p34(steps: List[Dict], summary: Dict, config: Dict, mode: str) -> List
     )]
 
 
-def check_p35(_steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+def check_p35(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
     """P35: mutation missing — program_html side-effect task finished without mutation."""
     if summary.get("success"):
         return []
@@ -1362,13 +1477,16 @@ def check_p35(_steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Li
     locators = _program_html_locators(config)
     if "item_edit" not in eval_source and not any(".comments_list" in loc for loc in locators):
         return []
-    if int(summary.get("effective_mutating_action_count") or 0) != 0:
+    # B-1890 fix (2026-07-27): was `summary["effective_mutating_action_count"]`, a
+    # never-populated schema slot that is 0 for every episode on disk → this guard
+    # was a no-op. Derived from step records instead (see _count_mutating_steps).
+    if _count_mutating_steps(steps) != 0:
         return []
     if summary.get("agent_finished") is not True:
         return []
     return [PatternHit(
         "P35", "MUTATION_MISSING", None,
-        "program_html side-effect task finished with effective_mutating_action_count=0",
+        "program_html side-effect task finished with 0 derived mutating steps",
         is_scaffold=False,
     )]
 
@@ -1438,7 +1556,7 @@ def check_p38(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Lis
     )]
 
 
-def check_p39(_steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+def check_p39(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
     """P39: success without mutation — diagnostic benchmark-FP for mutation tasks."""
     if summary.get("success") is not True:
         return []
@@ -1448,13 +1566,14 @@ def check_p39(_steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Li
     intent = config.get("intent", "")
     if not MUTATION_INTENT_RE.search(intent):
         return []
-    if int(summary.get("effective_mutating_action_count") or 0) != 0:
+    # B-1890 fix (2026-07-27): see check_p35 — the old field is never populated.
+    if _count_mutating_steps(steps) != 0:
         return []
     if summary.get("agent_finished") is not False:
         return []
     return [PatternHit(
         "P39", "SUCCESS_NO_MUTATION", None,
-        "success=True mutation task with effective_mutating_action_count=0 and agent_finished=False",
+        "success=True mutation task with 0 derived mutating steps and agent_finished=False",
         is_scaffold=False,
     )]
 
@@ -1475,6 +1594,263 @@ def check_p40(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Lis
     return [PatternHit(
         "P40", "LUCKY_NUMERIC_FP", None,
         f"string_match success with trivial reference tokens {sorted(ref_tokens)} and no item-detail visit",
+        is_scaffold=False,
+    )]
+
+
+# --- reddit discover batch P41-P46 (2026-07-27, ruleset 7-* → 8-reddit-*) ---
+# Provenance: 9 Tier-2 sub-agents over reddit × {B0,B1,B2} × 6 modes. Every
+# population-level claim below was re-verified by 0-token full scan before landing;
+# three sub-agent claims were REJECTED at that step and are not encoded here
+# (see 笔记 §387.10 / §387.12 for what was dropped and why).
+
+
+def check_p41(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P41: passive must_exclude FP — negative-only eval satisfiable by doing nothing.
+
+    B-1889. A `program_html` check whose `required_contents` carries ONLY
+    `must_exclude` is satisfied by an agent that never acts, because the post-reset
+    state already excludes the listed distractors. reddit task 160 is the only such
+    task in the 210-task pool, yet it was scored success in 13 of 18 conditions, and
+    a trajectory hard-constraint check (Subscribe controls exist only on
+    `/f/<forum>` pages) showed 13/13 could not have completed it: 10 never reached
+    any forum page, the other 3 only reached forums not starting with 'i'.
+
+    success-side diagnostic: marks the episode for review, does not alter SR.
+    Deliberately NOT keyed on `effective_mutating_action_count` (B-1890 — always 0).
+
+    Gating note (corrected 2026-07-27 after a first pass fired only 1 of the 13 known
+    cases): the rule does NOT require zero derived mutating steps. "Passable by doing
+    nothing" is a property of the EVAL SHAPE, not of the individual trajectory, and
+    `_count_mutating_steps` counts navigational clicks as mutations — every task-160
+    episode typed in the search box and clicked around, so a mutation gate suppressed
+    12 of 13 true positives. The derived count is reported in the detail string
+    instead, for the reviewer to weigh.
+    """
+    if summary.get("success") is not True:
+        return []
+    ev = config.get("eval") or {}
+    blocks = ev.get("program_html") or []
+    if not blocks:
+        return []
+    saw_required = False
+    for blk in blocks:
+        rc = (blk or {}).get("required_contents") or {}
+        if not rc:
+            continue
+        saw_required = True
+        if rc.get("must_include") or rc.get("exact_match") or rc.get("fuzzy_match"):
+            return []          # has a positive check → not vacuously satisfiable
+    if not saw_required:
+        return []
+    n_mut = _count_mutating_steps(steps)
+    return [PatternHit(
+        "P41", "PASSIVE_MUST_EXCLUDE_FP", None,
+        f"success on a must_exclude-only program_html eval "
+        f"(no positive check → satisfiable without acting); derived mutating steps={n_mut}",
+        is_scaffold=False,
+    )]
+
+
+def check_p42(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P42: multi-site task answered from one site — parametric-knowledge shortcut.
+
+    B-1892. reddit task 58 (`sites: [wikipedia, reddit]`) asks for the author of the
+    most popular novel-adapted anime of 2012; the answer is common knowledge, so the
+    cross-site retrieval the task was designed to measure can be bypassed. 8 of the
+    9 conditions that scored it success never loaded `localhost:8888` at all.
+
+    Scope note: 40 reddit tasks are multi-site but they yield only 11 successes total
+    across 18 cells, and 8 of those 11 are this one task — so this is a per-task
+    selection issue, not a systematic property of multi-site tasks. Kept as a
+    review-candidate flag, NOT an automatic exclusion: reading the answer off a
+    reddit comment and then answering directly is legitimate.
+
+    ⚠️ Known under-fire: the gate reads `config["sites"]`, which does not always
+    declare every site an intent actually requires. cls task 233 declares
+    `sites: ["classifieds"]` while its intent reads "the characters in the image ON
+    REDDIT ... shown in the listing on the classifieds site" (found 2026-07-27 while
+    verifying the P33 path extension, which caught that episode visiting
+    localhost:9999). Tasks whose cross-site requirement lives only in the intent
+    prose are invisible to this rule. Tightening it would need intent-side host
+    detection; left as-is because a false ACCUSATION of an ungrounded answer is worse
+    than a miss for a review-candidate flag.
+    """
+    if summary.get("success") is not True:
+        return []
+    sites = config.get("sites") or []
+    if len(sites) < 2:
+        return []
+    hosts = _visited_hosts(steps)
+    if len(hosts) >= len(sites):
+        return []
+    return [PatternHit(
+        "P42", "MULTI_SITE_SINGLE_SITE_GROUNDING", None,
+        f"success on {len(sites)}-site task ({','.join(map(str, sites))}) "
+        f"but visited only {len(hosts)} host(s): {sorted(hosts)}",
+        is_scaffold=False,
+    )]
+
+
+def check_p43(steps: List[Dict], summary: Dict, config: Dict, mode: str) -> List[PatternHit]:
+    """P43: page-embedded visual info, mode delivers no page screenshot.
+
+    Closes the structural gap in P34, which gates on `config["image"]` being truthy
+    and therefore only ever fires for tasks carrying a TASK-LEVEL reference image.
+    Tasks whose visual information lives in the page (a post's own attached image)
+    have an empty `image` field, so P34 never saw them — 64 reddit tasks, previously
+    invisible to every Tier-1 rule.
+
+    ⚠️ Naming and framing are deliberate. Five sub-agents proposed calling this
+    "structurally unsolvable / guaranteed fail". A controlled dom→som comparison on
+    exactly this task set (same AXTree substrate, ± the annotated screenshot) measured
+    B0 +0.00pp / B1 +1.56pp / B2 +0.00pp — restoring the screenshot barely helps, so
+    the tasks are hard for every representation rather than blocked by the missing
+    image (笔记 §387.10). This rule therefore emits a NEUTRAL (task × mode) label and
+    must not be read as a predicted failure.
+
+    Also relevant: reference images ARE delivered in every mode
+    (`runner/main.py:2628-2631`), so "phantom == no visual input" is false; only the
+    page screenshot is withheld.
+    """
+    if summary.get("success"):
+        return []
+    if config.get("image"):
+        return []                      # task-level reference image present → P34's domain
+    if mode not in ("dom", "phantom_text", "phantom_prompt", "phantom_som"):
+        return []                      # som / vision do deliver a page screenshot
+    if not VISUAL_INTENT_RE.search(str(config.get("intent") or "")):
+        return []
+    if any(int(((s.get("tokens") or {}).get("input_image")) or 0) for s in steps):
+        return []                      # some image did reach the model → not blind
+    return [PatternHit(
+        "P43", "PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT", None,
+        f"visual-intent task with no reference image, mode={mode} withholds the page "
+        f"screenshot, input_image=0 across {len(steps)} steps (neutral label — "
+        f"§387.10 measured ~0pp gain from restoring the screenshot)",
+        is_scaffold=False,
+    )]
+
+
+def check_p44(steps: List[Dict], summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P44: hallucinated element reference — element_id absent from obs_nodes_info.
+
+    The locator's second error branch, orthogonal to `walk_fail:*`. `walk_fail` means
+    the element resolved but had no actionable ancestor; `missing union_bound` means
+    the referenced id was not in the observation at all.
+
+    Four Tier-2 sub-agents independently asserted this branch "never occurs" and
+    concluded walk_fail can never indicate a hallucinated reference. That held in
+    their 6-8 episode samples and is false in the population (笔记 §387.12):
+
+        hallucinated-reference rate over action-steps
+                     P-SoM     dom      SoM
+        B0 (235B)     0.04%   0.39%    0.08%
+        B1 (Qwen 4B)  0.12%   2.98%    0.45%
+        B2 (Gemma 4B) 7.84%  18.21%    8.84%
+
+    Monotone in model capability across all three modes, and dom is the worst mode for
+    every model — consistent with dom asking the model to copy sparse 5-6 digit native
+    AXTree ids (median 7839-18729) where [SOM_MARKS] uses compact 1..N (median 15-17).
+    No prior rule covered this at all.
+    """
+    if summary.get("success"):
+        return []
+    hits = []
+    seen: Set[Tuple[Optional[int], str]] = set()
+    for s in steps:
+        if _action_type(s) not in ("click", "type", "select_option"):
+            continue
+        for err in _locator_errors(s):
+            if not MISSING_UNION_BOUND_RE.search(err):
+                continue
+            key = (s.get("step_idx"), err)
+            if key in seen:
+                continue
+            seen.add(key)
+            eid = _action_element_id(s)
+            hits.append(PatternHit(
+                "P44", "HALLUCINATED_ELEMENT_REF", s.get("step_idx"),
+                f"{_action_type(s)} element_id={eid} not in obs_nodes_info ({err})",
+                is_scaffold=False,
+            ))
+    return hits
+
+
+def check_p45(steps: List[Dict], summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P45: identical failed action streak — same (action_type, element_id) ≥3× failing.
+
+    Converged proposal from 4 sub-agents (B2 dom/ptext/psom/pprompt). The existing P36
+    counts walk_fail step-wise without regard to consecutiveness, so a one-off locator
+    miss and a 29-step deadlock look the same in aggregate. Observed deadlocks ran
+    27-30 consecutive repeats of one failing (action_type, element_id) pair, consuming
+    90-100% of the step budget, while the model kept receiving explicit FAILED feedback
+    in its 8-step history window.
+
+    Fires per streak (not per step) so one episode contributes one hit per deadlock.
+    Threshold 3 is the point at which the history window has already shown the failure.
+    """
+    if summary.get("success"):
+        return []
+    hits = []
+    run_key = None
+    run_len = 0
+    run_start = None
+    for s in steps:
+        at = _action_type(s)
+        eid = _action_element_id(s)
+        failed = (s.get("action_success") is not True) or bool(_locator_errors(s))
+        key = (at, eid) if at in ("click", "type", "select_option") and eid is not None else None
+        if key is not None and failed and key == run_key:
+            run_len += 1
+        else:
+            if run_key is not None and run_len >= 3:
+                hits.append(PatternHit(
+                    "P45", "IDENTICAL_FAILED_ACTION_STREAK", run_start,
+                    f"{run_key[0]} element_id={run_key[1]} repeated {run_len}x consecutively, all failing",
+                    is_scaffold=False,
+                ))
+            run_key = key if (key is not None and failed) else None
+            run_len = 1 if run_key is not None else 0
+            run_start = s.get("step_idx") if run_key is not None else None
+    if run_key is not None and run_len >= 3:
+        hits.append(PatternHit(
+            "P45", "IDENTICAL_FAILED_ACTION_STREAK", run_start,
+            f"{run_key[0]} element_id={run_key[1]} repeated {run_len}x consecutively, all failing",
+            is_scaffold=False,
+        ))
+    return hits
+
+
+def check_p46(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P46: comment/reply intent never committed text — action-modality mismatch.
+
+    The agent treats "leave a comment saying X" as a question-answering task: it puts
+    the answer in `finish(answer=...)` and never issues a `type`, so the evaluator
+    (which reads the site's comment content) finds nothing. Observed with the answer
+    semantically CORRECT and still scored 0 (B1_vision task 103's answer matched the
+    reference verbatim), which is what separates this from a perception error.
+
+    Scope: §387.8 measured comment/reply-intent tasks at 2.11% SR pooled over 18 cells
+    vs 8.49% for the rest (4.0x), direction consistent in 18/18 cells. The intent
+    regex is intentionally narrow — broadening it to any mutation verb collapses the
+    gap (7.23% vs 6.01%), so this is about comment/reply specifically, not mutation.
+    """
+    if summary.get("success"):
+        return []
+    if not COMMENT_INTENT_RE.search(str(config.get("intent") or "")):
+        return []
+    if any(_action_type(s) == "type" and s.get("action_success") is True for s in steps):
+        return []                      # it did commit text somewhere
+    finish = _find_finish_step(steps)
+    if finish is None:
+        return []                      # ran out of budget instead — P31's domain
+    answer = _finish_answer(steps)
+    if not answer:
+        return []
+    return [PatternHit(
+        "P46", "COMMENT_INTENT_NO_TYPE", finish.get("step_idx"),
+        f"comment/reply intent finished with an answer but zero successful type actions: {answer[:70]}",
         is_scaffold=False,
     )]
 
@@ -1524,6 +1900,13 @@ ALL_RULES: Dict[str, Any] = {
     "P38": check_p38,
     "P39": check_p39,
     "P40": check_p40,
+    # reddit discover batch 2026-07-27 (ruleset 8-reddit-*)
+    "P41": check_p41,   # success-side benchmark-FP: must_exclude-only eval (B-1889)
+    "P42": check_p42,   # success-side benchmark-FP: multi-site answered from 1 site (B-1892)
+    "P43": check_p43,   # neutral label: page-embedded visual info, mode has no screenshot
+    "P44": check_p44,   # hallucinated element ref (missing union_bound) — was uncovered
+    "P45": check_p45,   # identical failed action streak >=3 (P36 consecutiveness)
+    "P46": check_p46,   # comment/reply intent never committed text
 }
 
 

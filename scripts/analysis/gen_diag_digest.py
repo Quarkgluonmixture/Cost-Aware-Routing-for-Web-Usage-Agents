@@ -9,24 +9,20 @@ import json, collections, sys
 from pathlib import Path
 
 REPO = Path("/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents")
-SCAN = Path("/tmp/diag_red")
+SCAN = Path("/tmp/diag_v8")
 OUT = REPO / "docs/analysis/vwa_reddit"
 
-RUNS = {
- "B0_dom":"B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
- "B0_som":"B0_som_reddit_20260627_035453_162107997_3024022_R20936",
- "B0_vision":"B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
- "B0_phantom_text":"B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
- "B0_phantom_som":"B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
- "B0_phantom_prompt":"B0_phantom_prompt_reddit_20260709",
- "B1_dom":"B1_dom_reddit_20260703","B1_som":"B1_som_reddit_20260706",
- "B1_vision":"B1_vision_reddit_20260708_002122_732634080_205180_R16847",
- "B1_phantom_text":"B1_phantom_text_reddit_20260710","B1_phantom_som":"B1_phantom_som_reddit_20260711",
- "B1_phantom_prompt":"B1_phantom_prompt_reddit_20260713",
- "B2_dom":"B2_dom_reddit_20260715","B2_som":"B2_som_reddit_20260717","B2_vision":"B2_vision_reddit_20260719",
- "B2_phantom_text":"B2_phantom_text_reddit_20260720","B2_phantom_som":"B2_phantom_som_reddit_20260722",
- "B2_phantom_prompt":"B2_phantom_prompt_reddit_20260723",
-}
+# Canonical (model, mode, site) → run-dir map lives in diag_rescan_all so the scan
+# outputs and the digests cannot drift apart. Keys are `<model>_<mode>_<site>`, which
+# is also the digest basename and the scan filename stem.
+import importlib.util as _ilu
+_rs_spec = _ilu.spec_from_file_location("diag_rescan_all", REPO / "scripts" / "analysis" / "diag_rescan_all.py")
+_rs = _ilu.module_from_spec(_rs_spec)
+sys.modules["diag_rescan_all"] = _rs
+_rs_spec.loader.exec_module(_rs)
+RUNS = dict(_rs.CANONICAL)
+RUNS.update(_rs._discover_cls())
+
 MODEL_LABEL = {"B0":"Qwen3-VL-235B-A22B (proxy)","B1":"Qwen3-VL-4B (local)","B2":"Gemma3-VL `google/gemma-3-4b-it` (local)"}
 RULE_NAME = {
  "P1":"元素中心越界","P2":"容器节点误点","P3":"Thought-Action 解耦","P4":"根节点误操作",
@@ -40,6 +36,10 @@ RULE_NAME = {
  "P32":"文本误入价格 filter","P33":"导航至裸图片 URL 幻觉","P34":"VISUAL_BLIND_IMAGE_TASK",
  "P35":"MUTATION_MISSING","P36":"WALK_FAIL_DEGENERATE","P37":"URL_HALLUCINATION",
  "P38":"DOM_URL_AS_IMAGE","P39":"SUCCESS_NO_MUTATION(success侧)","P40":"LUCKY_NUMERIC_FP(success侧)",
+ # reddit discover batch v8 (2026-07-27)
+ "P41":"PASSIVE_MUST_EXCLUDE_FP(success侧, B-1889)","P42":"MULTI_SITE_SINGLE_SITE_GROUNDING(success侧, B-1892)",
+ "P43":"PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT(中性标签)","P44":"HALLUCINATED_ELEMENT_REF",
+ "P45":"IDENTICAL_FAILED_ACTION_STREAK","P46":"COMMENT_INTENT_NO_TYPE",
 }
 
 def rid(h): return h.get("rule_id") if isinstance(h, dict) else str(h)
@@ -47,7 +47,9 @@ def rid(h): return h.get("rule_id") if isinstance(h, dict) else str(h)
 def build(key):
     d = json.load(open(SCAN / f"{key}.json"))
     res = d["results"]
-    model, mode = key.split("_", 1)
+    parts = key.split("_")
+    model, site = parts[0], parts[-1]
+    mode = "_".join(parts[1:-1])
     n = len(res)
     succ = [e for e in res if e["success"]]
     fh = [e for e in res if not e["success"] and e["hits"]]

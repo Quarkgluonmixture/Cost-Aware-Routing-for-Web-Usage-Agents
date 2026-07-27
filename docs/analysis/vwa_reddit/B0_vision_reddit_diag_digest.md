@@ -9,6 +9,30 @@
 > ⚠️ 单 condition digest, 不下 cross-mode 定量结论 (discover-then-freeze; reddit 6-mode 齐后 v8 freeze 重扫)。
 > 与 som digest (`B0_som_reddit_diag_digest.md`) 同日同 site — 跨 mode 定性对照见 §6 (标 provisional)。
 
+
+## 0b. v8 freeze 补记（2026-07-27）
+
+`RULESET_VERSION` 已升至 **`8-reddit-p41p46-b1890fix`**（reddit 规则批 P41–P46 + B-1890 修复 + P33 reddit
+路径扩展）。**全部 36 个 canonical condition（reddit 18 + cls 18）已在该版本下重扫**，
+版本一致性由 `scripts/analysis/diag_rescan_all.py` 校验 → **cross-mode 聚合解锁**
+（正文顶部"待 v8 freeze 重扫"的前置条件现已满足）。
+
+本 condition 的 v8 数字 —— **跨 condition 聚合请用这一组**：
+
+| 指标 | v8 |
+|---|---|
+| SR | **7.80%** (16/205) |
+| failed + hit | 159 |
+| **failed NO-hit** | **30** |
+| success + hit | 4 |
+
+v8 新规则 failed 侧命中: {'P46': 4}；success 侧: {'P41': 1}。
+
+正文的 Tier-2 定性结论不受版本变更影响 —— 新规则只是把此前 no-hit 的 episode 归了类，
+未推翻任何已有归因。**若本 condition 的 success 含 task 160 / task 58，请一并读
+master_bug_catalog B-1889 / B-1892**（评测器缺陷，非模型表现）。
+
+---
 ## 1. 三分类统计 (Tier-2 深挖 37 no-hit + 5 verify)
 
 | 类别 | 计数 | 说明 |

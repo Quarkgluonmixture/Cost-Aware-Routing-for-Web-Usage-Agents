@@ -7,6 +7,35 @@
 
 > ⚠️ 单 condition digest，不下 cross-mode 结论。cross-mode 定量待 B1+B2 cls freeze。
 
+
+## 0v8. v8 freeze 补记（2026-07-27）— cls 行为**不是**字节不变
+
+`RULESET_VERSION` 升至 **`8-reddit-p41p46-b1890fix`**。该批规则源自 **reddit** discover，但有两处**确实改变了 cls 行为**，
+均已逐条定性核实（不是回归）：
+
+1. **B-1890 修复**：`P35`/`P39` 原先 guard 在 `effective_mutating_action_count`，而该字段从未被 runner
+   填充、恒为 0 → guard 是 **no-op**，规则比其 docstring 声称的更宽松。v8 改为从 step record 派生突变计数。
+   抽查确认被移除的旧命中确实有 6–8 个突变步（即**旧命中是错的**）。
+2. **P33 正则扩展**：加入 reddit 的 `/submission_images/` 路径。cls 侧因此 **+1 例**（cls task 233 —— 它的
+   `sites` 只写 classifieds，但 intent 实际要求"the characters in the image **on Reddit**"，
+   该 episode 真的访问了 `localhost:9999`，旧正则漏检）。
+
+本 condition 的 v8 数字 —— **跨 condition / 跨站聚合请用这一组**：
+
+| 指标 | v8 |
+|---|---|
+| SR | **2.23%** (5/224) |
+| failed + hit | 214 |
+| **failed NO-hit** | **5** |
+| success + hit | 0 |
+
+v8 新规则 failed 侧: 无；success 侧: 无。
+（`P43` 在 cls 上大量命中属预期 —— 它标记"intent 需要视觉 + 该 mode 无页面截图"这一**中性组合**，
+并非预测失败；§387.10 实测补上截图的增益 ≈0。）
+
+全部 36 个 canonical condition 现处同一版本 → **cross-mode / cross-site 聚合解锁**。
+
+---
 ## 1. 三分类统计
 
 | 类别 | 占比 | 说明 |

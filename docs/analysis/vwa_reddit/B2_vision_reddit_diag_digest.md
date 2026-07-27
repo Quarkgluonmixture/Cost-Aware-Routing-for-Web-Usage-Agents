@@ -1,10 +1,17 @@
 # /diag digest — B2 × `vision` × reddit
 
-*生成 2026-07-27（Tier-1 全量 + Tier-2 深挖）*
+*生成 2026-07-27（Tier-1 全量 + Tier-2 未深挖）*
 
-> **定位声明**：本 digest 是**单 condition** 的失败归因，不下 cross-mode / cross-model 结论。
-> 跨 mode 定量比较须等 reddit 规则批（R1–R8 + H2）落地、`RULESET_VERSION` 升到 `8-reddit-*`
-> 并全量重扫后再做（/diag skill「discover-then-freeze」硬纪律）。
+> **定位声明**：本 digest 是**单 condition** 的失败归因，其中的 per-rule 分布只描述它自己。
+>
+> ✅ **discover-then-freeze 已完成**（2026-07-27）：reddit 规则批 P41–P46 + B-1890 修复 + P33
+> reddit 路径扩展已落码，`RULESET_VERSION` = `8-reddit-p41p46-b1890fix`，**全部 36 个 canonical
+> condition（reddit 18 + cls 18）已在该版本下重扫**，版本一致性由
+> `scripts/analysis/diag_rescan_all.py` 校验 → **cross-mode / cross-model 定量聚合现已解锁**。
+>
+> ⚠️ v7→v8 的 cls 行为**不是**字节不变，差异全部经过定性核实：`P35`/`P39` 的旧命中因
+> B-1890 死字段修复而移除（抽查确认那些 episode 确实有 6–8 个突变步，旧命中是错的）；
+> `P33` 在 cls 上 +1 例（cls task 233 的 intent 实际要求访问 reddit，旧正则漏检）。
 
 
 ## 1. Header
@@ -16,8 +23,8 @@
 | **Site / Mode / Model** | reddit / `vision` / B2 = Gemma3-VL `google/gemma-3-4b-it` (local) |
 | **Episodes** | 205 |
 | **SR** | **2.44%** (5 success / 200 failed) |
-| **ruleset_version** | `7-p6p16clsgate-b1860coord` |
-| **Tier-1 三子集** | failed+hit 192 · **failed-NO-hit 8** · success+hit 0 |
+| **ruleset_version** | `8-reddit-p41p46-b1890fix` |
+| **Tier-1 三子集** | failed+hit 199 · **failed-NO-hit 1** · success+hit 2 |
 
 ## 2. Tier-1 规则分布（failed 侧）
 
@@ -28,46 +35,38 @@
 | `P31` | budget 耗尽未完成 | 170 | 170 |
 | `P14` | URL 自环 | 94 | 79 |
 | `P1` | 元素中心越界 | 57 | 9 |
+| `P33` | 导航至裸图片 URL 幻觉 | 33 | 33 |
 | `P25` | 跨站任务跳过其中一站 | 33 | 33 |
 | `P12` | 从不翻页 | 15 | 15 |
+| `P46` | COMMENT_INTENT_NO_TYPE | 15 | 15 |
 | `P10` | 跨步数值记忆失败 | 3 | 3 |
 | `P27` | 找不到即放弃 | 1 | 1 |
 
-**success 侧 fire 的规则**: 无（success 侧 0 命中）
+**success 侧 fire 的规则（presence-only 误报审计对象）**: `P33`×1, `P41`×1
 
-**failed-NO-hit episode（deterministic 盲区）**: [64, 69, 76, 89, 91, 103, 141, 148]
+**failed-NO-hit episode（deterministic 盲区）**: [64]
 
 **success episode**: [77, 78, 98, 120, 160]
 
 
 ## 3. Tier-2 深挖
 
-**覆盖范围**：8 ep（no-hit 7 + success 1）· 1 sonnet sub-agent
+**本轮未做 Tier-2 深挖。**
 
-**三分类**：agent-limit 7 · benchmark-FP 1（task 160）· scaffold-bug 0 · unclear 0
+依 /diag skill 的跨-condition 预算纪律，Tier-2 只投给 (a) SR 异常低 / (b) 新 site-mode / (c) no-hit 比例 >25% 的 condition。本 condition 的 SR 落在该 model 的常规区间、no-hit 比例为 0.5%（<25%），故本轮排在 B2 六条之后。
 
-### 具体发现
+**待深挖子集已就绪**：failed-NO-hit 1 个（见 §2 列表）+ success-with-hits 2 个（presence-only 误报审计）。
 
-- **主导失败模式是「动作模态错误」，比 grounding/perception 更根本**：5 个要求「发一条真实评论」的任务（69/76/89/91/103）里，模型从未使用 `type`，一律用 `finish(answer=...)` 把答案当文字描述交上去。**task 103 的视觉判断完全正确**（'blue' 与 reference 字面精确一致），但答案没写进评论框，评测读站点内容时依然判失败。
-- **坐标映射类 scaffold bug 已排除**：全部 8 个 episode `image_meta_recorded=True`、`input_image_tokens=768`（截图确实送进模型）；click 的 `coordinate_normalization` 全部 `recovered=true / true_oob=false / malformed=false`，无系统性错位。点击命中的是「错的」元素（帖子缩略图本身指向裸图文件），属语义级选错目标。
-- **submission_images URL 陷阱**：点击帖内缩略图直接跳到 `/submission_images/*.jpg` 裸图页，丢失评论框上下文。vision mode 无语义标签只能靠坐标猜，比 dom/som 更容易踩中（站点结构 + 模型选择的复合问题，非 runner bug）。
-- **task 160 = benchmark-FP** → B-1889。
-
-### 为什么这个 cell 是 2.44%
-
-vision mode（只有坐标、没有 element_id）下模型把「评论/发帖类操作任务」系统性误解成「纯 QA 问答任务」，跨 5/7 个 no-hit episode 可复现，比单个 perception 误判（数错 Jupiter 数量、少读一个零）更具规律性。
+⚠️ 因此本 digest 的三分类**不完整** —— 未深挖不等于「无 scaffold-bug / 无 benchmark-FP」，只代表本轮没有查。请勿据此下「pipeline 干净」结论。
 
 ## 4. 🔁 Self-evolving — 提议规则
 
-- `never-posted-comment`：eval locator 含 `reddit_get_latest_comment_content_by_username` 类函数 且全程 `type` 成功次数=0 → 把「答案生成了但从未提交」从「感知错误」里精确剥离
-- `success-via-inaction`：success 且 agent_finished=false 且全程 obs_url 唯一值=1（=start_url）→ 强制复核
-
-> 这些提议**尚未落码**。按 discover-then-freeze 纪律，reddit 六 mode × 三 model 的 discover 产物应合并成一批（R1–R8 + H2）后统一 bump `RULESET_VERSION` 到 `8-reddit-*` 并全量重扫，而不是逐条落码逐次重扫。
+待 Tier-2 深挖后补。
 
 ## 5. Actionable
 
 - ⚠️ **本 cell 的 success 含 task 160（B-1889 benchmark-FP）**。若排除，SR 2.44% → 1.95%。排除与否属 prereg 级改动，**待 user / advisor 决策**，本 digest 不自行调整数字。
-- 未发现需要开 B-number 的 scaffold-bug（本轮范围内）。
+- scaffold-bug 情况未知（Tier-2 未做）。
 
 ---
 
