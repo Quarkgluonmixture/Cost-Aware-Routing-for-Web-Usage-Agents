@@ -156,14 +156,29 @@ updated: 2026-06-27
 > **失败退出却留下崭新未验证的图**) · B-1909 · B-1910 (CLAUDE.md 的 `TASKS=0-465` 示例必然被拒)
 > · B-1912。测试 **1622 passed**。
 >
-> **🔲 仍待办 (按起稿相关性排序)**:
+> **✅ 已啃完 (2026-07-27 晚, 详 笔记 §392 / catalog B-1903·B-1904 落地记录)**:
+>
+> - **B-1904 FIXED** — router 特征/fold 重抽: 6 cell 全 complete, reddit `203/203/
+>   dropped=[58,160]` SHA `1ce29c8b` **MATCH**, pooled **249→260** (补 B2_reddit),
+>   6 个 fold 全 `matches_canonical_scored=True`。Stage3 训练结果**与修复前逐格一致**
+>   → 1/6 不是回归, 是「which-mode 半败在标签供给」的实证。
+> - **B-1903 FIXED** — 真嵌套 CV (每外折重选 mode + 阈值只看训练行的内层 CV OOF +
+>   held-out 由只用训练行 refit 的 LR 打分)。
+>   **⭐ 承重句站住: 0/6 cell 的 learned triage 能 Pareto 胜过 always-cheapest。**
+>   ΔSR 有正有负 (cls·B0 **+1.34** / red·B0 **−0.99**) —— cls·B0 反而升是每折重选 mode 的
+>   真实自适应收益, 非泄漏。
+>   **⭐ 多出一条新证据**: `best_mode` **跨折不稳定** (red·B0 五折选 DOM/DOM/SoM/SoM/DOM)
+>   → 用全量结局挑一个 best mode 的管线, 报告的 mode 选择连自己的重采样都复现不出来。
+> - **B-1911 解除** — fold 缓存已是 203 集带 SHA, `router_offline_replay` 的阻断前提消失。
+>
+> 📌 **Paper B 现在可以起稿** —— triage 运营数字建立在诚实评估上, 不再是"审稿人一问就撤回"。
+> `router_objective_ordering` 重跑数字未变。测试 **1622 passed**。
+>
+> **🔲 剩余 (不阻塞起稿)**:
 > 1. **B-1913** — `write_digests` 的 SR 叙述仍 205 分母, 且 `:134`「扣除 task 160 后…n=205」
->    **分子扣了分母没减** = 禁引表里 §387.9 那个错法的**第二个实例**。改文本非改逻辑。
-> 2. **B-1911 + B-1904 + B-1903 (一整块, router 数字重抽)** — `router_offline_replay` 的
->    protocol-excluded 已修好, 但随即暴露 fold 缓存是 pre-AMENDMENT_08 的 205 集且无 SHA。
->    **有意不放宽** (静默丢 fold 条目 = 复用在不同 universe 上算出的分层), 报错已指名 B-1904。
->    **必须与 B-1903 真嵌套 CV 一并做** —— 起稿引用任何 triage 运营数字前的硬前提。
-> 3. **`UNIVERSE_TRIAGE_PENDING` 里剩 ~34 个脚本** — 棘轮钉住不会再长, 按需逐个 drain。
+>    分子扣了分母没减 = §387.9 那个错法的第二个实例。改文本非改逻辑。
+> 2. **`UNIVERSE_TRIAGE_PENDING` 里剩 ~34 个脚本** — 棘轮钉住不会再长, 按需 drain。
+> 3. **WA 全量 chain** 在跑 (见 §7), 是 Paper A 跨 benchmark 附录, 非必需。
 >
 > 🚦 **2026-07-27 (三) — 前一块的 6 步清单已全部完成; 下一步 = k=6 重灌** ⭐⭐⭐ (详 笔记 §387.15)
 >
