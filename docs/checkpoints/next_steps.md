@@ -48,7 +48,19 @@ updated: 2026-07-27
 > ```
 > Overleaf 侧: **菜单 → Main document → `main_paperA.tex` / `main_paperB.tex`** 切编译目标。
 >
-> ### 0-B. 🔴 唯一的拦路问题: Paper B §3 的 oracle 列错位 (三家 P0 共识)
+> ### 0-B′. ✅ 方案 (a) 已做完 (commit `9d11178`) — 现在的拦路问题换成了页数
+>
+> §3 换用 `oracle_sr_cost` 六格重取 · 新 §3.1 把天花板劈成两半并各自对上 §4/§5 ·
+> Vision-最便宜前提修正 (§1/§2.1/§6.4 更名 screenshot tier) · 表 12 拆分母 ·
+> 5 张支撑表进附录 (27 数据行 26 行逐字节一致, 唯一差异是有意的表头更名) ·
+> §5.3 "13%–27%" → **0.5%–26.5%**。
+>
+> **剩下的是取舍, 不是错误**: Paper B 正文 **7741 词 + 7 张表 = 10 页**, 限 8 页。
+> 最便宜的砍法是 §1 (1455 词, 其中大量数字在 §3–§5 原地又出现一遍 —— 砍重复不损失论证)。
+> 其余分布: §5 1231 · §6 1077 · §7 1043 · §2 989 · §4 975 · §3 971。
+> 附录 733 词不计入。
+>
+> ### 0-B. (已解决, 保留供追溯) Paper B §3 的 oracle 列错位 (三家 P0 共识)
 >
 > Table 2 的 "oracle" 列**六格逐位**等于产物 `triage_only`, 而 §3 散文写的是 `oracle_sr_cost`
 > 的定义。真 oracle 有 **+3.45~+16.07pp SR** 增益 → §3 标题 / "the ceiling is entirely in
@@ -67,10 +79,10 @@ updated: 2026-07-27
 >
 > | # | 来源 | 内容 | 代价 |
 > |---|---|---|---|
-> | 1 | A+B+C | §3 oracle 列 = `triage_only` (见 0-B) | 1.5h ~ 1d |
-> | 6 | A+B+C | `cheapest` 六格全 = **Vision** → §2.1 前提句错; §6.4 "cost tier" 是误名 (该档同时装最贵 SoM 和最便宜 Vision) | ~1h |
+> | ~~1~~ | A+B+C | §3 oracle 列 = `triage_only` — **已修 `9d11178`** | done |
+> | ~~6~~ | A+B+C | Vision 最便宜 / "cost tier" 误名 — **已修 `9d11178`** (更名 screenshot tier) | done |
 > | 4 | B | `derive_oracle_label` 按硬编码顺序取首个成功臂, 非成本最小 → 全套标签产物重生成 | 1-3h |
-> | 5 | B | Table 12 把 triage (203-224 全任务) 与 cost-tier (仅已解任务) 并成一行 | 1-2h |
+> | ~~5~~ | B | Table 12 分母合并 — **已修 `9d11178`** (拆两行 + 各标分母) | done |
 > | 3/8 | A+B+C | H3 无同模式重跑 null (self-oracle noise floor); **且 §4.2 机制推断用错轴** —— axis-1 两臂都用紧凑 id, 该轴上 compact-id 是常量, 推不出结论, 正确推断与稿子写的相反 | 2-4h (有重跑) / 1-3d (需新跑) |
 > | 9 | B | 身份可辨天花板按 task_id 分组而非按实际特征向量; codex 称重算后 79.17/83.70 → ~83.93/91.30 | 2-4h |
 > | 17 | A+B | §4.3 "36 landed conditions cross-mode 聚合" 无命名产物 (cross_sites 只有 `cross_mode_failure_taxonomy_B0_classifieds.md` 单格) | ~1h |
