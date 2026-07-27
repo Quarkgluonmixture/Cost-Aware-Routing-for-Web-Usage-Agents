@@ -105,13 +105,26 @@ updated: 2026-06-27
 > 4. WA 全量数据 ~07-31 落 → 可作 Paper A 跨 benchmark 附录 (非必需)
 > 5. 08-01~02 再跑一轮 /stress 双链, 08-03~04 收尾
 >
-> ### 7. 无人值守的两条后台 (不需要干预)
+> ### 7. ⚠️ 后台两条 — 其中一条曾经是假的 (2026-07-27 核出, 详 笔记 §390)
 >
-> - **A100**: WA pilot 6-mode×10 收尾 (psom 2/10) → 退出后**自动**起全量 6-mode×**104** chain,
->   ETA ~3.5 天, `P79_PAPER_GRADE=1` 无 partial 旁路 (B-1894 已把 gate 修成 104)。
-> - **DGX**: mechanistic supervisor 38587 → sweep 38603, 1/24 完成, cell-2 在跑。断了自动重启,
->   连 3 次秒死则停并推 ntfy。DEADLINE=08-01, 按 14h/cell 本来就跑不完 → 到点自截断, 拿前几个 P1 cell。
->   **thesis scope, 不在 08-05 关键路径上。**
+> **📌 教训先写在前面**: 上一版这里写「不需要干预」。**核了才发现全量 WA chain 跑了 0 个 task**
+> —— monitor 报 exit 0、harness 显示 completed, 而链在启动后 0 秒就死了 (B-1914 漏引号 →
+> 6 步炸成 27 步; B-1915 monitor 只报 "attempted" 不校验)。
+> **→ 接手时不要信 handoff 里的「在跑/ETA」文字, 跑一遍命令核。**
+>
+> - **A100 WA**: 6 个 WA config 的 `defaults` 已切 `exp_v2_wa_full_reddit_base.yaml`,
+>   而 **psom 是唯一在切换之后启动的那步** → 它直接吃了 104 全量 (核查时 15/104),
+>   其余 5 mode 仍是 pilot 的 10 个。所以时序**不是**「pilot 收尾→起全量」, 而是
+>   **psom 先吃全量、其余 5 个稍后补**。pilot chain pid **2579194** 仍 alive。
+>   - launcher 已修 + 纳入 git (`scripts/queues/_launch_wa_full_reddit.sh`, 两端 md5
+>     `0d8e847c…`), 带 step-数断言 + reddit-runner 占用检查 (实测 psom 跑着时 `REFUSED exit=4`)
+>   - 新 monitor 已 arm: 等 pid 2579194 真死 → fire → **sleep 60 后 pgrep 校验真在跑** →
+>     三结局各自 ntfy。ETA: psom 剩 ~89 task ≈ 12h, 之后 5 mode × 104 ≈ 3 天
+>   - **🔲 待你定**: 现状会得到 psom×104 + 其余 5×(10 然后补 104)。若想让顺序回到原计划
+>     (6 mode 齐头并进跑全量), 现在是干预窗口 —— 但 psom 的 104 不会白跑。
+> - **DGX mechanistic**: supervisor 38587 → sweep 38603 → 当前 38617 在跑
+>   `p1_fwd_strong_red` (stage2b continuation, 24 task, tier strong)。DEADLINE=08-01,
+>   按 14h/cell 本就跑不完 → 到点自截断拿前几个 P1 cell。**thesis scope, 不在 08-05 关键路径。**
 >
 > ### 8. ✅ codex 三份普查表已核完 + 修完一批 (2026-07-27, 详 笔记 §389 / catalog B-1905~B-1913)
 >
