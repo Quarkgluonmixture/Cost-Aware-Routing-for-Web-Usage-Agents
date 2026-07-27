@@ -384,6 +384,52 @@ cells:
     condition_subdir: phase1_phantom_prompt_router_0
     grade: paper-grade
     notes: "A100 fire, bound 2026-07-15 (205 ep, promote 2026-07-15 sync 配方); diag pending"
+  # k=6 completion — B2 reddit six modes, promoted 2026-07-27 (笔记 §387.15).
+  # This is the sixth and last (site, model) cell; with it the H1/H3 gates run at
+  # k=6 instead of k=5, so PROTOCOL_NOTE_06's two-track disclosure retires and the
+  # B-1284 cross-family modifier becomes releasable.
+  - baseline: B2
+    site: reddit
+    mode: DOM
+    run_dir: B2_dom_reddit_20260715
+    condition_subdir: phase1_dom_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-17 (205 ep, promote 2026-07-27 sync 配方); /diag v8 done"
+  - baseline: B2
+    site: reddit
+    mode: SoM
+    run_dir: B2_som_reddit_20260717
+    condition_subdir: phase1_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-19 (205 ep, promote 2026-07-27 sync 配方); /diag v8 done"
+  - baseline: B2
+    site: reddit
+    mode: Vision
+    run_dir: B2_vision_reddit_20260719
+    condition_subdir: phase1_vision_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-20 (205 ep, promote 2026-07-27 sync 配方); /diag v8 done"
+  - baseline: B2
+    site: reddit
+    mode: P-text
+    run_dir: B2_phantom_text_reddit_20260720
+    condition_subdir: phase1_phantom_text_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-22 (205 ep, promote 2026-07-27 sync 配方); /diag v8 done"
+  - baseline: B2
+    site: reddit
+    mode: P-SoM
+    run_dir: B2_phantom_som_reddit_20260722
+    condition_subdir: phase1_phantom_som_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-23 (205 ep, promote 2026-07-27 sync 配方); /diag v8 done"
+  - baseline: B2
+    site: reddit
+    mode: P-prompt
+    run_dir: B2_phantom_prompt_reddit_20260723
+    condition_subdir: phase1_phantom_prompt_router_0
+    grade: paper-grade
+    notes: "A100 fire, bound 2026-07-25 (205 ep, promote 2026-07-27 sync 配方); /diag v8 done"
 
 in_flight:
   - baseline: B1

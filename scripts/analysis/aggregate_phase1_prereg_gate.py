@@ -75,6 +75,7 @@ from scripts.analysis.aggregate_phantom_lift import CELLS, MIN_EP_FOR_CELL  # no
 from scripts.analysis.lib.atomic_io import atomic_write_text  # noqa: E402
 from scripts.analysis.lib.canonical_task_universe import (  # noqa: E402
     expected_scored_ids,
+    protocol_excluded_in_universe,
     task_id_set_sha256,
 )
 from scripts.analysis.lib.canonical_cells import PHASE_1A_PLANNED_CELLS  # noqa: E402
@@ -122,6 +123,7 @@ def _cell_drop_one_theta_se(
     cell: Dict, *, B: int = PREREG_B, seed: int = PREREG_SEED,
     expected_ids: Optional[frozenset[int] | set[int]] = None,
     rows_by_mode: Optional[Dict[str, Dict[int, Dict]]] = None,
+    tolerate_extra_ids: Optional[frozenset[int] | set[int]] = None,
 ) -> Dict:
     """Compute per-cell drop-one effect + bootstrap SE per prereg spec.
 
@@ -153,10 +155,29 @@ def _cell_drop_one_theta_se(
             task_id for task_id, row in rows.items() if row["success"] is True
         }
 
+    # AMENDMENT_08: the runner still COLLECTS the protocol-excluded tasks, so a
+    # landed reddit cell holds 205 episodes against a 203-task scored set. Those
+    # two are expected, not contamination. Without this carve-out all three
+    # reddit cells fail `complete_exact`, get skipped, and the gate silently
+    # runs at k=3 on classifieds alone — which reads out as framing=R5 (paper
+    # death) purely as an artifact. `expected_ids` callers pass their own
+    # universe and opt out.
+    # An explicit `expected_ids` caller states its own universe, so the default
+    # carve-out does not apply — but a sensitivity arm (AMENDMENT_08 §5) needs to
+    # say "this narrower universe, and these landed-but-unscored ids are still
+    # expected". `tolerate_extra_ids` is that knob; without it every arm except
+    # the pre-amendment one fails `complete_exact` and the comparison the
+    # amendment promises cannot be reproduced.
+    if expected_ids is None:
+        protocol_excluded = protocol_excluded_in_universe(cell["site"])
+    else:
+        protocol_excluded = frozenset(int(t) for t in (tolerate_extra_ids or ()))
     observed_n = {m: len(obs[m]) for m in SIX_MODES}
     missing_ids = {m: sorted(expected - obs[m]) for m in SIX_MODES}
-    extra_ids = {m: sorted(obs[m] - expected) for m in SIX_MODES}
-    complete_exact = all(obs[m] == expected for m in SIX_MODES)
+    extra_ids = {m: sorted(obs[m] - expected - protocol_excluded) for m in SIX_MODES}
+    complete_exact = all(
+        not missing_ids[m] and not extra_ids[m] for m in SIX_MODES
+    )
     diagnostics = {
         "baseline": cell["baseline"],
         "site": cell["site"],
@@ -165,6 +186,10 @@ def _cell_drop_one_theta_se(
         "observed_n": observed_n,
         "missing_ids": missing_ids,
         "extra_ids": extra_ids,
+        # AMENDMENT_08 transparency: collected-but-not-scored IDs actually seen.
+        "protocol_excluded_observed": {
+            m: sorted(obs[m] & protocol_excluded) for m in SIX_MODES
+        },
         "task_set_sha256": task_set_sha,
     }
     if not complete_exact:

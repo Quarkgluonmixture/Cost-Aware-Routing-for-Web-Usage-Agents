@@ -44,6 +44,12 @@ Computed as `avg_total_energy_kwh × $0.12/kWh` (DGX Spark, UK industrial rate p
 
 | site | mode | avg_steps | avg_energy_kwh | avg_co2e_kg | avg_electricity_usd ($/ep) |
 |---|---|---:|---:|---:|---:|
+| reddit | DOM | 28.4 | 0.01224 | 0.00269 | $0.001468 |
+| reddit | SoM | 26.4 | 0.01142 | 0.00251 | $0.001370 |
+| reddit | Vision | 26.9 | 0.01018 | 0.00224 | $0.001222 |
+| reddit | P-text | 27.3 | 0.01236 | 0.00272 | $0.001484 |
+| reddit | P-prompt | 27.7 | 0.01102 | 0.00242 | $0.001322 |
+| reddit | P-SoM | 27.9 | 0.01167 | 0.00257 | $0.001400 |
 | classifieds | DOM | 27.4 | 0.00742 | 0.00163 | $0.000890 |
 | classifieds | SoM | 24.4 | 0.00695 | 0.00153 | $0.000834 |
 | classifieds | Vision | 28.2 | 0.00777 | 0.00171 | $0.000932 |

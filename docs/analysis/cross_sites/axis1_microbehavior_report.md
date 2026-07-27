@@ -10,7 +10,7 @@ Axis 1 decision-quality vs macro-frequency test (B0): B0 reddit=n/a cls=n/a; ver
 | B0 | classifieds | 224 | 0.849 | 0.151 | 0.00 pp | 172 | -0.397 | -0.174 | 0.308 | n/a | n/a |
 | B1 | reddit | 205 | 0.509 | 0.491 | 0.00 pp | 144 | 0.717 | 0.088 | 0.244 | n/a | n/a |
 | B1 | classifieds | 224 | 0.880 | 0.120 | 0.00 pp | 172 | 0.353 | 0.094 | 0.188 | n/a | n/a |
-| B2 | reddit | — | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| B2 | reddit | 205 | 0.292 | 0.708 | 0.69 pp | 144 | 0.112 | -0.229 | 0.449 | n/a | n/a |
 | B2 | classifieds | 224 | 0.619 | 0.381 | 0.00 pp | 172 | 0.411 | 0.196 | 0.567 | n/a | n/a |
 
 All signed differences are cascade-direction right-minus-left, so axis 1 is P-text minus DOM. Classifieds search-keyword levels should be read by axis differential, because OSClass tasks normally use search pages.
@@ -25,14 +25,14 @@ Direct test of the hook claim: even when aggregate macro action frequencies conv
 | B0 | classifieds | 224 | 0.863 | 0.137 | 0.00 pp | 0.281 |
 | B1 | reddit | 205 | 0.434 | 0.566 | 0.00 pp | 0.371 |
 | B1 | classifieds | 224 | 0.834 | 0.166 | 0.00 pp | 0.277 |
-| B2 | reddit | — | n/a | n/a | n/a | n/a |
+| B2 | reddit | 205 | 0.277 | 0.723 | 0.00 pp | 0.366 |
 | B2 | classifieds | 224 | 0.611 | 0.389 | 0.00 pp | 0.621 |
 
 ## Cross-site Validity
 
 Neither site clears the decision-over-macro ratio threshold (B0), so the paper should not claim that axis 1 primarily changes decision quality.
 
-Validation checks: B0 axis-1 N is reddit 205/205 and classifieds 224/224. Target URLs were extracted for reddit 144/205 and classifieds 172/224 tasks. B1 axis-1 (P-text minus DOM) cannot be computed yet because B1 P-text data is pending; B1 compound (DOM ↔ P-SoM) is computed for cls only.
+Validation checks: B0 axis-1 N is reddit 205/203 and classifieds 224/224. Target URLs were extracted for reddit 144/203 and classifieds 172/224 tasks. B1 axis-1 (P-text minus DOM) cannot be computed yet because B1 P-text data is pending; B1 compound (DOM ↔ P-SoM) is computed for cls only.
 
 ## Case Studies
 

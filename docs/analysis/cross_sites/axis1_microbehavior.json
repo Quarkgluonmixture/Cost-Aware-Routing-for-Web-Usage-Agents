@@ -527,7 +527,132 @@
       }
     },
     "B2": {
-      "reddit": {},
+      "reddit": {
+        "DOM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.497561,
+          "mean_url_path_set_size": 3.204878,
+          "mean_n_steps": 28.404878,
+          "finish_rate": 0.073171,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 3.292683,
+          "mean_max_keyword_repeat": 2.6,
+          "mean_distinct_keywords": 0.785366,
+          "first_action_type_counts": {
+            "click": 141,
+            "goto": 47,
+            "scroll": 4,
+            "tab_focus": 1,
+            "type": 11,
+            "wait": 1
+          }
+        },
+        "Vision": {
+          "n_tasks": 205,
+          "mean_url_set_size": 1.878049,
+          "mean_url_path_set_size": 1.770732,
+          "mean_n_steps": 26.941463,
+          "finish_rate": 0.15122,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.321951,
+          "mean_max_keyword_repeat": 1.785366,
+          "mean_distinct_keywords": 0.702439,
+          "first_action_type_counts": {
+            "click": 91,
+            "goto": 45,
+            "scroll": 56,
+            "tab_focus": 6,
+            "type": 7
+          }
+        },
+        "SoM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 2.907317,
+          "mean_url_path_set_size": 2.682927,
+          "mean_n_steps": 26.395122,
+          "finish_rate": 0.160976,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.897561,
+          "mean_max_keyword_repeat": 2.468293,
+          "mean_distinct_keywords": 0.619512,
+          "first_action_type_counts": {
+            "click": 141,
+            "finish": 3,
+            "goto": 29,
+            "scroll": 7,
+            "select_option": 3,
+            "tab_focus": 2,
+            "type": 9,
+            "wait": 11
+          }
+        },
+        "Phantom-SoM": {
+          "n_tasks": 205,
+          "mean_url_set_size": 2.77561,
+          "mean_url_path_set_size": 2.55122,
+          "mean_n_steps": 27.863415,
+          "finish_rate": 0.053659,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.770732,
+          "mean_max_keyword_repeat": 2.117073,
+          "mean_distinct_keywords": 0.756098,
+          "first_action_type_counts": {
+            "click": 143,
+            "finish": 1,
+            "goto": 37,
+            "scroll": 2,
+            "select_option": 2,
+            "type": 9,
+            "wait": 11
+          }
+        },
+        "P-text": {
+          "n_tasks": 205,
+          "mean_url_set_size": 2.64878,
+          "mean_url_path_set_size": 2.453659,
+          "mean_n_steps": 27.312195,
+          "finish_rate": 0.058537,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.006944,
+          "mean_n_type_actions": 2.97561,
+          "mean_max_keyword_repeat": 2.712195,
+          "mean_distinct_keywords": 0.556098,
+          "first_action_type_counts": {
+            "click": 98,
+            "finish": 1,
+            "goto": 78,
+            "scroll": 1,
+            "select_option": 1,
+            "tab_focus": 4,
+            "type": 13,
+            "wait": 9
+          }
+        },
+        "Phantom-prompt": {
+          "n_tasks": 205,
+          "mean_url_set_size": 3.258537,
+          "mean_url_path_set_size": 3.097561,
+          "mean_n_steps": 27.712195,
+          "finish_rate": 0.043902,
+          "target_hit_n": 144,
+          "target_hit_rate": 0.0,
+          "mean_n_type_actions": 2.273171,
+          "mean_max_keyword_repeat": 1.673171,
+          "mean_distinct_keywords": 0.809756,
+          "first_action_type_counts": {
+            "click": 151,
+            "goto": 34,
+            "scroll": 6,
+            "select_option": 1,
+            "type": 7,
+            "wait": 6
+          }
+        }
+      },
       "classifieds": {
         "DOM": {
           "n_tasks": 224,
@@ -1424,50 +1549,190 @@
     "B2": {
       "reddit": {
         "axis_1_text": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.2925,
+          "url_decision_divergence": 0.7075,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.006944,
+          "target_hit_rate_diff": 0.006944,
+          "target_hit_rate_diff_pct_pts": 0.694444,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 1,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.112195,
+          "distinct_keywords_diff": -0.229268,
+          "n_type_actions_diff": -0.317073,
+          "n_steps_diff": -1.092683,
+          "finish_rate_diff": -0.014634,
+          "first_action_divergence_rate": 0.44878,
+          "first_action_target_url_path_divergence_rate": 0.634146,
           "contrast": "P-text minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-text"
         },
         "axis_2_prompt": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.34223,
+          "url_decision_divergence": 0.65777,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.006944,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": -0.006944,
+          "target_hit_rate_diff_pct_pts": -0.694444,
+          "target_hit_mcnemar": {
+            "left_only": 1,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.595122,
+          "distinct_keywords_diff": 0.2,
+          "n_type_actions_diff": -0.204878,
+          "n_steps_diff": 0.55122,
+          "finish_rate_diff": -0.004878,
+          "first_action_divergence_rate": 0.414634,
+          "first_action_target_url_path_divergence_rate": 0.57561,
           "contrast": "P-SoM minus P-text",
           "left_mode": "P-text",
           "right_mode": "P-SoM"
         },
         "axis_3_image": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.292644,
+          "url_decision_divergence": 0.707356,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.35122,
+          "distinct_keywords_diff": -0.136585,
+          "n_type_actions_diff": 0.126829,
+          "n_steps_diff": -1.468293,
+          "finish_rate_diff": 0.107317,
+          "first_action_divergence_rate": 0.37561,
+          "first_action_target_url_path_divergence_rate": 0.653659,
           "contrast": "SoM minus P-SoM",
           "left_mode": "P-SoM",
           "right_mode": "SoM"
         },
         "compound_dom_to_psom": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.276896,
+          "url_decision_divergence": 0.723104,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.482927,
+          "distinct_keywords_diff": -0.029268,
+          "n_type_actions_diff": -0.521951,
+          "n_steps_diff": -0.541463,
+          "finish_rate_diff": -0.019512,
+          "first_action_divergence_rate": 0.365854,
+          "first_action_target_url_path_divergence_rate": 0.639024,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.304776,
+          "url_decision_divergence": 0.695224,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.926829,
+          "distinct_keywords_diff": 0.02439,
+          "n_type_actions_diff": -1.019512,
+          "n_steps_diff": -0.692683,
+          "finish_rate_diff": -0.029268,
+          "first_action_divergence_rate": 0.37561,
+          "first_action_target_url_path_divergence_rate": 0.653659,
           "contrast": "P-prompt minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-prompt"
         },
         "axis_1_text_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.299068,
+          "url_decision_divergence": 0.700932,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.443902,
+          "distinct_keywords_diff": -0.053659,
+          "n_type_actions_diff": 0.497561,
+          "n_steps_diff": 0.15122,
+          "finish_rate_diff": 0.009756,
+          "first_action_divergence_rate": 0.370732,
+          "first_action_target_url_path_divergence_rate": 0.590244,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
-          "n": 0,
-          "skipped": true,
+          "n": 205,
+          "url_jaccard_mean": 0.228065,
+          "url_decision_divergence": 0.771935,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 144,
+          "target_hit_rate_left": 0.0,
+          "target_hit_rate_right": 0.0,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.131707,
+          "distinct_keywords_diff": -0.165854,
+          "n_type_actions_diff": -0.395122,
+          "n_steps_diff": -2.009756,
+          "finish_rate_diff": 0.087805,
+          "first_action_divergence_rate": 0.4,
+          "first_action_target_url_path_divergence_rate": 0.717073,
           "contrast": "SoM minus DOM",
           "left_mode": "DOM",
           "right_mode": "SoM"
@@ -2054,6 +2319,15 @@
     "B1_classifieds_macro_axis1_effects": {},
     "B1_classifieds_macro_mean_abs_effect": null,
     "B1_classifieds_ratio": null,
+    "B2_reddit_decision_effects": {
+      "url_decision_divergence": 0.7075,
+      "target_hit_abs_diff": 0.006944,
+      "first_action_divergence_rate": 0.44878,
+      "mean_abs_decision_effect": 0.387742
+    },
+    "B2_reddit_macro_axis1_effects": {},
+    "B2_reddit_macro_mean_abs_effect": null,
+    "B2_reddit_ratio": null,
     "B2_classifieds_decision_effects": {
       "url_decision_divergence": 0.380713,
       "target_hit_abs_diff": 0.0,
@@ -2071,14 +2345,14 @@
   },
   "validation": {
     "expected_axis1_n": {
-      "reddit": 205,
+      "reddit": 203,
       "classifieds": 224
     },
     "axis1_n_checks": {
       "B0/reddit": {
         "observed": 205,
-        "expected": 205,
-        "pass": true
+        "expected": 203,
+        "pass": false
       },
       "B0/classifieds": {
         "observed": 224,
@@ -2087,13 +2361,18 @@
       },
       "B1/reddit": {
         "observed": 205,
-        "expected": 205,
-        "pass": true
+        "expected": 203,
+        "pass": false
       },
       "B1/classifieds": {
         "observed": 224,
         "expected": 224,
         "pass": true
+      },
+      "B2/reddit": {
+        "observed": 205,
+        "expected": 203,
+        "pass": false
       },
       "B2/classifieds": {
         "observed": 224,
@@ -2222,6 +2501,34 @@
       },
       "B1/classifieds/endpoint_dom_to_som": {
         "value": 0.863272,
+        "pass": true
+      },
+      "B2/reddit/axis_1_text": {
+        "value": 0.2925,
+        "pass": true
+      },
+      "B2/reddit/axis_2_prompt": {
+        "value": 0.34223,
+        "pass": true
+      },
+      "B2/reddit/axis_3_image": {
+        "value": 0.292644,
+        "pass": true
+      },
+      "B2/reddit/compound_dom_to_psom": {
+        "value": 0.276896,
+        "pass": true
+      },
+      "B2/reddit/axis_2_prompt_alt": {
+        "value": 0.304776,
+        "pass": true
+      },
+      "B2/reddit/axis_1_text_alt": {
+        "value": 0.299068,
+        "pass": true
+      },
+      "B2/reddit/endpoint_dom_to_som": {
+        "value": 0.228065,
         "pass": true
       },
       "B2/classifieds/axis_1_text": {

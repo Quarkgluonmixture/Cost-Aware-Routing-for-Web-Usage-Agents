@@ -219,3 +219,51 @@ def test_aggregator_still_flags_a_genuinely_unexpected_task_id(tmp_path):
     row = aggregate_cell("B0", "reddit", "dom", ep)
     assert row["extra_ids"] == [9999]
     assert row["complete"] is False
+
+
+# --------------------------------------------------------------------------- #
+# the H1 gate aggregator must not treat the excluded episodes as contamination
+# --------------------------------------------------------------------------- #
+
+def test_gate_aggregator_does_not_skip_reddit_cells():
+    """The near-miss this test exists for: `aggregate_phase1_prereg_gate` runs its
+    OWN completeness check, separate from `aggregate_sr_fp_per_mode`. Fixing only
+    the latter left all three reddit cells failing `complete_exact`, so the gate
+    silently ran at k=3 on classifieds alone and reported framing=R5 — a paper-death
+    verdict produced entirely by dropped data."""
+    from scripts.analysis.aggregate_phantom_lift import CELLS
+    from scripts.analysis.aggregate_phase1_prereg_gate import _cell_drop_one_theta_se
+
+    reddit_cells = [c for c in CELLS if c["site"] == "reddit"]
+    if not reddit_cells:
+        pytest.skip("no reddit cells registered in this checkout")
+    for cell in reddit_cells:
+        r = _cell_drop_one_theta_se(cell)
+        if r.get("expected_n") != 203:
+            pytest.skip("landed reddit data absent on this host")
+        assert r["complete_exact"] is True, (
+            f"{cell['baseline']}/reddit skipped: extra_ids={r.get('extra_ids')}"
+        )
+        for mode, extras in r["protocol_excluded_observed"].items():
+            assert extras == [58, 160], f"{mode}: {extras}"
+
+
+def test_gate_sensitivity_arms_are_reproducible():
+    """AMENDMENT_08 §5 promises a reviewer can recompute each arm. That needs the
+    gate to accept a narrower universe AND the landed-but-unscored ids together —
+    without `tolerate_extra_ids` every arm but the pre-amendment one fails
+    `complete_exact` and the promised comparison cannot be run."""
+    from scripts.analysis.aggregate_phantom_lift import CELLS
+    from scripts.analysis.aggregate_phase1_prereg_gate import _cell_drop_one_theta_se
+
+    cell = next((c for c in CELLS if c["site"] == "reddit"), None)
+    if cell is None:
+        pytest.skip("no reddit cell registered")
+    for tiers in ((), ("A",), ("A", "B")):
+        ids, _ = expected_scored_ids("reddit", "visualwebarena", tiers)
+        tol = collected_task_ids("reddit") - ids
+        r = _cell_drop_one_theta_se(cell, expected_ids=ids, tolerate_extra_ids=tol)
+        if "n_tasks" not in r:
+            pytest.skip("landed reddit data absent on this host")
+        assert r["complete_exact"] is True, f"tiers={tiers}: {r.get('extra_ids')}"
+        assert r["n_tasks"] == len(ids)

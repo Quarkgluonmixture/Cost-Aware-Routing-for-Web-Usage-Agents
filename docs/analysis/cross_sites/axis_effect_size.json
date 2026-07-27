@@ -2166,7 +2166,7 @@
   },
   "validation": {
     "expected_n": {
-      "reddit": 205,
+      "reddit": 203,
       "classifieds": 224
     },
     "non_negligible_thresholds": {
@@ -2176,162 +2176,162 @@
     "n_checks": {
       "B0/reddit/search_loop/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/search_loop/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/search_loop/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/search_loop/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/type_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/type_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/type_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/type_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/scroll_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/scroll_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/scroll_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/scroll_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/selfcorr_count/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/selfcorr_count/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/selfcorr_count/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/selfcorr_count/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/click_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/click_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/click_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/click_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/finish_rate/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/finish_rate/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/finish_rate/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/finish_rate/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/n_steps/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/n_steps/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/n_steps/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/n_steps/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/action_repeat_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/action_repeat_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/action_repeat_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/reddit/action_repeat_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B0/classifieds/search_loop/text": {
@@ -2496,162 +2496,162 @@
       },
       "B1/reddit/search_loop/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/search_loop/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/search_loop/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/search_loop/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/type_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/type_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/type_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/type_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/scroll_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/scroll_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/scroll_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/scroll_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/selfcorr_count/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/selfcorr_count/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/selfcorr_count/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/selfcorr_count/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/click_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/click_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/click_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/click_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/finish_rate/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/finish_rate/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/finish_rate/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/finish_rate/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/n_steps/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/n_steps/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/n_steps/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/n_steps/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/action_repeat_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/action_repeat_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/action_repeat_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/reddit/action_repeat_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B1/classifieds/search_loop/text": {
@@ -2816,162 +2816,162 @@
       },
       "B2/reddit/search_loop/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/search_loop/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/search_loop/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/search_loop/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/type_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/type_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/type_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/type_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/scroll_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/scroll_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/scroll_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/scroll_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/selfcorr_count/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/selfcorr_count/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/selfcorr_count/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/selfcorr_count/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/click_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/click_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/click_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/click_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/finish_rate/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/finish_rate/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/finish_rate/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/finish_rate/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/n_steps/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/n_steps/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/n_steps/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/n_steps/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/action_repeat_frac/text": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/action_repeat_frac/prompt": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/action_repeat_frac/image": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/reddit/action_repeat_frac/compound": {
         "observed": 0,
-        "expected": 205,
+        "expected": 203,
         "pass": false
       },
       "B2/classifieds/search_loop/text": {

@@ -100,30 +100,36 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 | B0 | classifieds | P-text | n/a | n/a | 0.620 | 0.601 | 0.708 | 15.625 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=action_diversity |
 | B0 | classifieds | SoM | n/a | n/a | 0.651 | 0.657 | 0.753 | 27.232 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=action_diversity |
 | B0 | classifieds | Vision | n/a | n/a | 0.620 | 0.692 | 0.764 | 25.000 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=action_diversity |
-| B0 | reddit | DOM | n/a | n/a | 0.614 | 0.760 | 0.685 | 14.634 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=max_repeat_streak |
-| B0 | reddit | P-SoM | n/a | n/a | 0.607 | 0.737 | 0.673 | 11.220 | tok=ep_min_margin; verb=ep_min_verbalized; beh=url_revisit_count |
-| B0 | reddit | P-prompt | n/a | n/a | 0.575 | 0.658 | 0.644 | 12.683 | tok=ep_min_margin; verb=ep_min_verbalized; beh=url_revisit_count |
-| B0 | reddit | P-text | n/a | n/a | 0.688 | 0.695 | 0.654 | 13.659 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=url_revisit_max |
-| B0 | reddit | SoM | n/a | n/a | 0.588 | 0.576 | 0.714 | 14.634 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
-| B0 | reddit | Vision | n/a | n/a | 0.788 | 0.854 | 0.877 | 7.805 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B0 | reddit | DOM | n/a | n/a | 0.614 | 0.760 | 0.685 | 14.286 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B0 | reddit | P-SoM | n/a | n/a | 0.607 | 0.737 | 0.673 | 10.837 | tok=ep_min_margin; verb=ep_min_verbalized; beh=url_revisit_count |
+| B0 | reddit | P-prompt | n/a | n/a | 0.575 | 0.658 | 0.644 | 12.315 | tok=ep_min_margin; verb=ep_min_verbalized; beh=url_revisit_count |
+| B0 | reddit | P-text | n/a | n/a | 0.688 | 0.695 | 0.654 | 13.300 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=url_revisit_max |
+| B0 | reddit | SoM | n/a | n/a | 0.588 | 0.576 | 0.714 | 14.778 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B0 | reddit | Vision | n/a | n/a | 0.788 | 0.854 | 0.877 | 7.389 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B1 | classifieds | DOM | n/a | n/a | 0.753 | 0.702 | 0.870 | 6.250 | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | classifieds | P-SoM | n/a | n/a | 0.704 | 0.727 | 0.631 | 6.696 | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | classifieds | P-prompt | n/a | n/a | 0.631 | 0.659 | 0.727 | 6.696 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=action_diversity |
 | B1 | classifieds | P-text | n/a | n/a | 0.743 | 0.723 | 0.828 | 7.589 | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | classifieds | SoM | n/a | n/a | 0.635 | 0.737 | 0.527 | 14.286 | tok=ep_mean_logprob; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | classifieds | Vision | n/a | n/a | 0.533 | 0.806 | 0.707 | 12.500 | tok=ep_mean_margin; verb=ep_mean_verbalized; beh=action_diversity |
-| B1 | reddit | DOM | n/a | n/a | 0.595 | 0.683 | 0.634 | 6.829 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
-| B1 | reddit | P-SoM | n/a | n/a | 0.503 | 0.645 | 0.546 | 6.829 | tok=ep_mean_margin; verb=ep_min_verbalized; beh=max_repeat_streak |
-| B1 | reddit | P-prompt | n/a | n/a | 0.706 | 0.646 | 0.659 | 6.341 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
-| B1 | reddit | P-text | n/a | n/a | 0.688 | 0.685 | 0.641 | 6.829 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
-| B1 | reddit | SoM | n/a | n/a | 0.506 | 0.667 | 0.519 | 8.293 | tok=ep_mean_entropy; verb=ep_mean_verbalized; beh=max_repeat_streak |
-| B1 | reddit | Vision | n/a | n/a | n/a | n/a | n/a | 2.927 |  |
+| B1 | reddit | DOM | n/a | n/a | 0.595 | 0.683 | 0.634 | 5.911 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B1 | reddit | P-SoM | n/a | n/a | 0.503 | 0.645 | 0.546 | 5.911 | tok=ep_mean_margin; verb=ep_min_verbalized; beh=max_repeat_streak |
+| B1 | reddit | P-prompt | n/a | n/a | 0.706 | 0.646 | 0.659 | 5.419 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B1 | reddit | P-text | n/a | n/a | 0.688 | 0.685 | 0.641 | 5.911 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B1 | reddit | SoM | n/a | n/a | 0.506 | 0.667 | 0.519 | 7.389 | tok=ep_mean_entropy; verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B1 | reddit | Vision | n/a | n/a | n/a | n/a | n/a | 2.463 |  |
 | B2 | classifieds | DOM | n/a | n/a | 0.682 | 0.671 | 0.915 | 1.339 | tok=ep_mean_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B2 | classifieds | P-SoM | n/a | n/a | 0.836 | 0.367 | 0.881 | 0.893 | tok=ep_max_entropy; verb=ep_min_verbalized; beh=action_diversity |
 | B2 | classifieds | P-prompt | n/a | n/a | 0.652 | 0.497 | 0.933 | 1.786 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=max_repeat_streak |
 | B2 | classifieds | P-text | n/a | n/a | 0.919 | 0.934 | 0.659 | 0.446 | tok=ep_max_entropy; verb=ep_min_verbalized; beh=max_repeat_streak |
 | B2 | classifieds | SoM | n/a | n/a | 0.637 | 0.663 | 0.647 | 2.232 | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B2 | classifieds | Vision | n/a | n/a | 0.807 | 0.655 | 0.620 | 2.232 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_max |
+| B2 | reddit | DOM | n/a | n/a | 0.562 | 0.361 | 0.740 | 3.941 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=max_repeat_streak |
+| B2 | reddit | P-SoM | n/a | n/a | 0.662 | 0.320 | 0.865 | 0.493 | tok=ep_max_entropy; verb=ep_min_verbalized; beh=url_unique_count |
+| B2 | reddit | P-prompt | n/a | n/a | 0.775 | 0.179 | 0.875 | 0.000 | tok=ep_mean_logprob; verb=ep_min_verbalized; beh=url_unique_count |
+| B2 | reddit | P-text | n/a | n/a | 0.604 | 0.262 | 0.737 | 1.970 | tok=ep_max_entropy; verb=ep_min_verbalized; beh=url_unique_count |
+| B2 | reddit | SoM | n/a | n/a | 0.589 | 0.252 | 0.755 | 0.985 | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B2 | reddit | Vision | n/a | n/a | 0.519 | 0.579 | 0.593 | 1.970 | tok=ep_mean_margin; verb=ep_min_verbalized; beh=url_revisit_max |
 
 E3 highlights:
 - B0/classifieds: honest-commit mode None (ECE n/a); best-signal mode B0/classifieds/P-SoM (AUROC 0.766).
@@ -131,6 +137,7 @@ E3 highlights:
 - B1/classifieds: honest-commit mode None (ECE n/a); best-signal mode B1/classifieds/DOM (AUROC 0.870).
 - B1/reddit: honest-commit mode None (ECE n/a); best-signal mode B1/reddit/P-prompt (AUROC 0.706).
 - B2/classifieds: honest-commit mode None (ECE n/a); best-signal mode B2/classifieds/P-text (AUROC 0.934).
+- B2/reddit: honest-commit mode None (ECE n/a); best-signal mode B2/reddit/P-prompt (AUROC 0.875).
 
 Outcome 0a SR cross-reference: canonical per-mode SR values are attached from `sr_per_mode.json`. Because B0 ECE is absent from the existing analyzer outputs, calibration claims remain limited to the fields actually emitted by each baseline.
 
@@ -266,6 +273,12 @@ Each E3 row is sourced from existing analyzer outputs; calibration source is nul
 | B2/classifieds/P-text | `results/visualwebarena/phase1/B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 221 | 224 |
 | B2/classifieds/SoM | `results/visualwebarena/phase1/B2_som_classifieds_20260611_210828_923656661_1218867_R3380/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
 | B2/classifieds/Vision | `results/visualwebarena/phase1/B2_vision_classifieds_20260612_221910_098760264_1351451_R9288/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
+| B2/reddit/DOM | `results/visualwebarena/phase1/B2_dom_reddit_20260715/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
+| B2/reddit/P-SoM | `results/visualwebarena/phase1/B2_phantom_som_reddit_20260722/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 204 | 205 |
+| B2/reddit/P-prompt | `results/visualwebarena/phase1/B2_phantom_prompt_reddit_20260723/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
+| B2/reddit/P-text | `results/visualwebarena/phase1/B2_phantom_text_reddit_20260720/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 204 | 205 |
+| B2/reddit/SoM | `results/visualwebarena/phase1/B2_som_reddit_20260717/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 203 | 205 |
+| B2/reddit/Vision | `results/visualwebarena/phase1/B2_vision_reddit_20260719/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 
 ## Appendix D: E4 full action-shift matrix
 
@@ -357,7 +370,7 @@ Top action types per B0 cell by pooled step fraction.
 
 | validation check | value | pass |
 |---|---|---|
-| axis1 N reddit | 205 / 205 | True |
+| axis1 N reddit | 205 / 203 | False |
 | axis1 N classifieds | 224 / 224 | True |
 | E1 Jaccard range classifieds/axis_1_text | [0, 1] | True |
 | E1 Jaccard range classifieds/axis_1_text_alt | [0, 1] | True |
@@ -406,7 +419,7 @@ Overall pass: False.
 
 | check | result |
 |---|---|
-| E1 N reddit | 205 / 205 |
+| E1 N reddit | 205 / 203 |
 | E1 N classifieds | 224 / 224 |
-| E3 cells | 30 / 30 |
+| E3 cells | 36 / 36 |
 | P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B2_phantom_prompt_reddit_20260723": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |

@@ -299,7 +299,74 @@
       }
     },
     "B2": {
-      "reddit": {},
+      "reddit": {
+        "DOM": {
+          "available": true,
+          "run_subpath": "B2_dom_reddit_20260715/phase1_dom_router_0",
+          "avg_steps": 28.40487804878049,
+          "avg_token_cost_usd_yaml_rate": 0.09463931750801831,
+          "avg_energy_kwh": 0.01223554433075167,
+          "avg_electricity_usd": 0.0014682653196902004,
+          "avg_co2e_kg": 0.002691819752765367,
+          "paper_cost_usd": 0.0014682653196902004,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "SoM": {
+          "available": true,
+          "run_subpath": "B2_som_reddit_20260717/phase1_som_router_0",
+          "avg_steps": 26.39512195121951,
+          "avg_token_cost_usd_yaml_rate": 0.11157695058462637,
+          "avg_energy_kwh": 0.011415578328799508,
+          "avg_electricity_usd": 0.0013698693994559409,
+          "avg_co2e_kg": 0.0025114272323358915,
+          "paper_cost_usd": 0.0013698693994559409,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "Vision": {
+          "available": true,
+          "run_subpath": "B2_vision_reddit_20260719/phase1_vision_router_0",
+          "avg_steps": 26.941463414634146,
+          "avg_token_cost_usd_yaml_rate": 0.06833157607953291,
+          "avg_energy_kwh": 0.010179801446801601,
+          "avg_electricity_usd": 0.0012215761736161922,
+          "avg_co2e_kg": 0.002239556318296352,
+          "paper_cost_usd": 0.0012215761736161922,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-text": {
+          "available": true,
+          "run_subpath": "B2_phantom_text_reddit_20260720/phase1_phantom_text_router_0",
+          "avg_steps": 27.31219512195122,
+          "avg_token_cost_usd_yaml_rate": 0.08855177614812303,
+          "avg_energy_kwh": 0.012363777217334363,
+          "avg_electricity_usd": 0.0014836532660801236,
+          "avg_co2e_kg": 0.00272003098781356,
+          "paper_cost_usd": 0.0014836532660801236,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-prompt": {
+          "available": true,
+          "run_subpath": "B2_phantom_prompt_reddit_20260723/phase1_phantom_prompt_router_0",
+          "avg_steps": 27.71219512195122,
+          "avg_token_cost_usd_yaml_rate": 0.09936634196744519,
+          "avg_energy_kwh": 0.011018025127070707,
+          "avg_electricity_usd": 0.0013221630152484849,
+          "avg_co2e_kg": 0.0024239655279555553,
+          "paper_cost_usd": 0.0013221630152484849,
+          "paper_cost_class": "electricity_equivalent"
+        },
+        "P-SoM": {
+          "available": true,
+          "run_subpath": "B2_phantom_som_reddit_20260722/phase1_phantom_som_router_0",
+          "avg_steps": 27.86341463414634,
+          "avg_token_cost_usd_yaml_rate": 0.0943989550149834,
+          "avg_energy_kwh": 0.011668375354697065,
+          "avg_electricity_usd": 0.0014002050425636478,
+          "avg_co2e_kg": 0.002567042578033354,
+          "paper_cost_usd": 0.0014002050425636478,
+          "paper_cost_class": "electricity_equivalent"
+        }
+      },
       "classifieds": {
         "DOM": {
           "available": true,
