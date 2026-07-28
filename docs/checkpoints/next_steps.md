@@ -156,9 +156,14 @@ updated: 2026-07-27
 >
 > - **A100 WA 全量**: chain pid **2658570** 存活 (13h28m), 6 mode × 104, 仍在 step **1/6**
 >   (dom, run `B1_dom_wa_reddit_..._R13217`)。ETA ~3 天。**A100=UTC / DGX=BST**, 差 1h。
-> - **DGX mechanistic**: ✅ **已完成** 07-28 03:34 (比 08-01 自截断提前), pid 38617 已退。
->   产物在 `results/mechanistic/canonical/p1_fwd_strong_red/` (results.json + curves.png +
->   pilot_summary.md)。**属 §5 mechanism, advisor 2026-05-14 已搁置 → 存档不进当前 paper。**
+> - **DGX mechanistic sweep**: ⚠️ **在跑, 不是做完了** (2026-07-28 更正)。真对象是 **sweep 驱动
+>   pid 38603** (`logs/mechanistic_canonical/.sweep.pid`) + supervisor, 活了 23h; **24 cell 里
+>   做完 2 个**, cell 3/24 `p1_rev_reverse_cls` 正跑 (worker pid 1638252, 占 21.7 GB VRAM)。
+>   单 cell ~800-845min → **08-01 deadline 会在第 7-8 个 cell 截断, 跑不完 24 个**。
+>   ⛔ 上一版说"已完成"是**只查了 worker pid 38617**(它确实在 03:34 干净跑完了 cell 2) 就
+>   宣布整体完成 —— **查子进程不查驱动**, 与本轮另外三次错同型。
+>   **属 §5 mechanism (advisor 2026-05-14 已搁置, 不进当前 paper), 却在挡 `task_b3_mimo`
+>   的 DGX 适配窗口 ("适配 2026-07 下旬") —— 停不停是 user 决定。**
 >
 > ### 6. 人工动作 (只有 user 能做)
 >
