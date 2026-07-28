@@ -20,10 +20,10 @@ purpose: Phase 1 结论提取的进度与接力点 — 新 session 从这里接�
 | 批 | 内容 | 条数 | token | 谁做 | 状态 | 产出 |
 |---|---|---|---|---|---|---|
 | **B** | RETRACTED + CLAIM_UNVERIFIED | 248 | 59.6K | Claude 主 session | ✅ **完成** 07-28 | `retracted.md` |
-| **C** | MEASURED 无数字 | 30 | 7.6K | Claude 主 session | ⬜ 未开始 | `measured_qualitative.md` |
-| **E** | DATA + ADJUDICATED 带数字 | 49 | 14.4K | Claude 主 session | ⬜ 未开始 | `data_inventory.md` |
-| **A** | ADJUDICATED（裁定） | 831 | ~250K | Claude 分轮 | ⬜ 未开始，需 2–3 个 session | `adjudicated.md` |
-| **D** | MEASURED 带数字 | 875 | ~260K | subagent ×4 | ✅ D1/D2/D3 完成 · 🔄 D4 在跑 | `measured_D1..D4.md` |
+| **C** | MEASURED 无数字 | 30 | 7.6K | Claude 主 session | ✅ **完成** 07-28 | `measured_qualitative.md` |
+| **E** | DATA（49 条） | 49 | 14.4K | Claude 主 session | ✅ **完成** 07-28 | `data_inventory.md` |
+| **A** | ADJUDICATED（裁定） | 831 | ~250K | Claude 分轮 | ⬜ **唯一剩余批次**，需新 session（2–3 轮） | `adjudicated.md` |
+| **D** | MEASURED 带数字 | 875 | ~260K | subagent ×4 | ✅ **D1/D2/D3/D4 全部完成**（D4: 58 主题 / 13 矛盾 / §397.10 五条修正全部落位） | `measured_D1..D4.md` |
 
 ## 分批数据在哪
 
@@ -89,3 +89,21 @@ print({t: sum(1 for r in rs if r['type']==t) for t in
 > 读 `docs/reference/known/conclusions/PROGRESS.md`，接着做未完成的批次。
 
 然后按表格挑一个 ⬜ 或 🔄 的批开始，做完**立即落盘并更新本文件的状态列**。
+
+## 主 session 已裁的悬案（新 session 不必重裁）
+
+- **§397.9「符号相反 = 真交互」仍然成立。** 台账给它挂了 `named by RETRACTED §397.10` 的 flag，
+  D4 保守并列（其矛盾 #9）。裁定依据：§397.10(1) 修正的是"compact namespace 只有两个 mode"
+  这个隐含说法（实为三个，SoM 也在内），而该论证用的两组比较（DOM/P-prompt 都 native、
+  P-text/P-SoM 都 1..K）**恰恰被 §397.10 确认**；主 session 另有实测支持（模型输出的 element_id：
+  p-som 1/12/68 · p-text 1/13/72 vs p-prompt 139/4074/26235 · dom 2/3606/61833）。
+
+## 合并阶段待做（只有主 session 能做，subagent 结构上做不到）
+
+1. **跨批作废交叉标注**：B 批持有全部 156 条 RETRACTED，D1–D4 各自看不见它们
+   （按 type 切批导致同一主题的 MEASURED 与 RETRACTED 分家）。D1 已实证撞上这个：
+   我给它的例子里 §103「少 ~50%」它找不到，因为那条是 RETRACTED 在 B 批。
+   ⇒ 合并时须按 § 号把 B 批作废回标到 D1–D4 的主题上。
+2. **D3 报「§299.4 的 Δ−3.2pp 不在其批次」** —— 须确认该记录归到了哪批，没有整体漏掉。
+3. **矛盾清单汇总**：D1 13 条 + D2 10 条 + D3 6 条 + D4 13 条 + B 批若干，去重后成一张表。
+   其中"只有 user 能判"的那类（"user 拍板 X" / "advisor 收口 Y"）单独分节。
