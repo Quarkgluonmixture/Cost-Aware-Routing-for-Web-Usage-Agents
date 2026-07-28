@@ -63,8 +63,8 @@ degrees of freedom, so the six cells agree that the effect is small. This is not
 one cell dragging a pool, and it is not a case of wide intervals hiding an effect.
 Additional cells would tighten the interval around a value below the margin.
 
-**Does the space have internal structure?** Yes, and both axes clear their gates by a wide
-margin. The preregistered decomposition asks whether either single-axis arm solves tasks
+**Does the space have internal structure?** Both axes clear their preregistered gates, though
+that gate tests against zero rather than against a same-mode noise floor (Limitations). The preregistered decomposition asks whether either single-axis arm solves tasks
 the compound arm misses. Axis-1 counts tasks in P-text but not P-SoM and pools at
 **θ_FE = 1.3528 pp** with bootstrap CI **[0.799, 2.026]**; axis-2 counts tasks in P-prompt
 but not P-SoM and pools at **2.0877 pp** with CI **[1.399, 2.919]**. Both survive Holm

@@ -21,45 +21,55 @@ We state both with hedges because the trajectory metrics that back them are desc
 The behavioural claim is that the two knobs have distinguishable behavioural signatures,
 which is consistent with §3.2 finding them separately consequential; it is not a mechanism.
 
-### 4.2 One measurement, and which knob owns it
+### 4.2 One measurement, reported descriptively
 
 Hallucinated element references (actions naming an element id absent from the observation)
-are a recognised bottleneck for multimodal web agents [@zheng2024seeact; @zheng2024uground].
-Because the 2×2 was run, we can ask which knob moves them instead of assuming.
+are a recognised bottleneck for multimodal web agents [@zheng2024seeact; @zheng2024uground],
+and the 2×2 lets us see how they distribute over the four image-free arms. We report that
+distribution and deliberately stop short of calling it an interaction.
 
-Neither knob owns the effect. Substituting the mark legend for the accessibility tree lowers
-the rate in all six cells when the prompt is the SoM prompt, and in all six that reduction is
-larger than the one the same substitution produces under the DOM prompt: at reddit · B2, 25.4
-against 9.4 points of action-steps. The text knob's effect therefore depends on which prompt it
-is paired with, which makes this an interaction rather than a property of either payload alone.
+P-SoM carries the lowest rate of the four arms in all six cells when the rate is taken per
+action-step, and P-prompt the highest in five of six. Substituting the mark legend for the
+accessibility tree lowers the rate in all six cells under the SoM prompt, and by more than the
+same substitution achieves under the DOM prompt: at reddit · B2, 25.4 against 9.4 points.
 
-We state only those two counts because they are the two that survive changing the denominator.
-A rate per action-step weights an episode by how many actions it took, and an episode that
-deadlocks on one invalid id for thirty steps dominates one that misfires once, so we also
-counted the share of episodes containing at least one such reference. Several other readings do
-not survive: P-SoM is the lowest-rate arm in six of six cells per action-step but five of six
-by episode incidence, and P-prompt the highest in five of six against three of six.
+Two reasons not to promote that to an interaction claim. First, most of it is forced. Whenever
+P-SoM is the minimum arm and P-prompt the maximum, their difference is the largest of any pair
+by construction, so "the reduction is larger under the SoM prompt" follows from the ordering
+rather than from any joint effect; that configuration holds in five of six cells. Second, the
+ordering itself is denominator-dependent. A rate per action-step weights an episode by how many
+actions it took, so an episode deadlocking on one invalid id for thirty steps outweighs one
+that misfires once. Counting instead the share of episodes with at least one such reference,
+P-SoM is lowest in five of six cells and P-prompt highest in three of six. The comparison still
+favours the SoM prompt in six of six under that denominator, and there only two of the six are
+forced by the ordering, which is the strongest form in which we can put it.
 
-What the pattern tracks is agreement between the id scheme the prompt advertises and the one
-the text supplies. The legend pays off where the prompt has announced numbered marks and much
-less where it has not, which is the interaction stated above read as a mechanism.
-Part of that is mechanical: a prompt advertising ids 1..K induces references in that range,
-which lie outside an accessibility tree. We therefore read it as a behavioural cost of
-representational mismatch, not as an account of what drives coverage. The axis magnitudes of
-§3.2 cannot supply that account either, because each axis differences a single-displacement arm
-against P-SoM, leaving the *other* knob as the factor that varies inside the difference: axis-1
-holds the mark legend fixed across both its arms, and axis-2 the SoM prompt.
+Descriptively, the arms in which the prompt's advertised id scheme matches the one the text
+supplies carry fewer such references, and part of that is mechanical: a prompt advertising ids
+1..K induces references in that range, which lie outside an accessibility tree. We read it as a
+behavioural correlate of representational mismatch, not as an account of what drives coverage.
+The axis magnitudes of §3.2 cannot supply that account either, because each axis differences a
+single-displacement arm against P-SoM, leaving the *other* knob as the factor that varies inside
+the difference: axis-1 holds the mark legend fixed across both its arms, and axis-2 the SoM
+prompt.
 
 ### 4.3 The outer boundary of what representation can fix
 
 We ran a deterministic failure-pattern scan over all 36 landed conditions, at one frozen
 ruleset version, and aggregated the signatures cross-mode. The four highest-frequency
 signatures (budget exhausted without finishing, degenerate element resolution,
-perception-loss loops, and URL self-loops) are **near mode-invariant**: across the five
-text-bearing modes their episode-level rates span 7.4 to 13.7 percentage points. Changing the
-text representation does not address them. The single large excursion is degenerate element
-resolution under Vision, 20.7% against 59.6% under DOM, where a coordinate action space has no
-element ids to fail to resolve; the category lapses rather than the failure being fixed.
+perception-loss loops, and URL self-loops) are **similar after pooling**: pooled over the six
+cells, each one's episode-level rate differs across the five text-bearing modes by no more than
+7.4 to 13.7 percentage points, depending on the signature.
+
+That is a weaker statement than mode-invariance and we do not make the stronger one. Pooling
+sums numerators and denominators across cells before the rate is formed, so cell-level
+variation cancels: within a single cell the same four signatures span up to 15.1, 27.3, 48.3
+and 36.1 points respectively. What survives is that no mode escapes these four signatures at
+the pooled level, not that any individual cell shows them at equal rates. The largest single
+excursion is degenerate element resolution under Vision, 20.7% against 59.6% under DOM, where a
+coordinate action space has no element ids to fail to resolve; the category lapses rather than
+the failure being fixed.
 
 Two companion observations bound the space from the same direction. The rate at which agents
 fail on comment-and-reply tasks is capped at a level no mode improves on. And adding the

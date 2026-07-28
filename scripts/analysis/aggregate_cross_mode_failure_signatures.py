@@ -116,9 +116,16 @@ def part_a(scans: dict[str, dict]) -> dict:
     """Episode-level hit rate per (rule, mode), pooled over the six cells."""
     num: dict[tuple[str, str], int] = collections.defaultdict(int)
     den: dict[str, int] = collections.defaultdict(int)
+    # Per-cell, because pooling first cancels cell x mode variation and can make a
+    # signature look mode-invariant when no individual cell is (codex Mode B finding
+    # 3, 2026-07-28: pooled text-bearing spreads of 7-14 pp coexist with within-cell
+    # spreads up to ~48 pp).
+    cnum: dict[tuple[str, str, str], int] = collections.defaultdict(int)
+    cden: dict[tuple[str, str], int] = collections.defaultdict(int)
     names: dict[str, str] = {}
     for key, d in scans.items():
-        _, mode, site = parse_key(key)
+        model, mode, site = parse_key(key)
+        cell = f"{site}·{model}"
         # Same SCORED restriction as Part B. The scan JSONs carry every collected
         # episode, so without this the reddit denominators would be 205 rather than
         # the 203 every other rate in the paper uses.
@@ -126,17 +133,28 @@ def part_a(scans: dict[str, dict]) -> dict:
                    if ep.get("task_id") is not None}
         kept, _prov = restrict_to_scored(by_task, site)
         den[mode] += len(kept)
+        cden[(cell, mode)] = len(kept)
         for ep in kept.values():
             for rule in {h["rule_id"] for h in ep["hits"]}:
                 num[(rule, mode)] += 1
+                cnum[(rule, cell, mode)] += 1
             for h in ep["hits"]:
                 names[h["rule_id"]] = h["rule_name"]
 
     total_eps = sum(den[m] for m in MODES)
+    cells = sorted({c for c, _ in cden})
     rules = []
     for rule in sorted({r for r, _ in num}):
         per_mode = {m: 100.0 * num[(rule, m)] / den[m] for m in MODES}
         text_only = [per_mode[m] for m in TEXT_BEARING]
+        # Within-cell spread over the text-bearing modes, per cell.
+        per_cell_spread = {}
+        for c in cells:
+            rates = [100.0 * cnum[(rule, c, m)] / cden[(c, m)]
+                     for m in TEXT_BEARING if cden.get((c, m))]
+            if rates:
+                per_cell_spread[c] = max(rates) - min(rates)
+        spreads = sorted(per_cell_spread.values())
         rules.append({
             "rule_id": rule,
             "rule_name": names.get(rule, ""),
@@ -144,12 +162,16 @@ def part_a(scans: dict[str, dict]) -> dict:
             "per_mode_pct": per_mode,
             "spread_all_modes_pp": max(per_mode.values()) - min(per_mode.values()),
             "spread_text_bearing_pp": max(text_only) - min(text_only),
+            "within_cell_spread_text_bearing_pp": per_cell_spread,
+            "within_cell_spread_max_pp": max(spreads) if spreads else None,
+            "within_cell_spread_median_pp": spreads[len(spreads) // 2] if spreads else None,
             "structurally_zero_under_vision": per_mode["vision"] == 0.0,
         })
     rules.sort(key=lambda r: -r["overall_pct"])
     return {
         "episodes_per_mode": {m: den[m] for m in MODES},
         "episodes_total": total_eps,
+        "cells": cells,
         "rules": rules,
     }
 
@@ -312,10 +334,23 @@ def render_md(a: dict, b: dict, ruleset: str) -> str:
     top4 = a["rules"][:4]
     L.append("\n**Top four signatures**: " + ", ".join(
         f"{r['rule_id']} ({r['overall_pct']:.1f}%)" for r in top4) + ".")
-    L.append("Spread across the five text-bearing modes: " + ", ".join(
+    L.append("Spread across the five text-bearing modes, **pooled over cells**: " + ", ".join(
         f"{r['rule_id']} {r['spread_text_bearing_pp']:.1f} pp" for r in top4) + ".")
     L.append("Including `vision`: " + ", ".join(
         f"{r['rule_id']} {r['spread_all_modes_pp']:.1f} pp" for r in top4) + ".")
+    L.append("\n⚠️ **The pooled spread is not a within-cell spread.** Pooling sums numerators "
+             "and denominators over the six cells before the rate is formed, so cell × mode "
+             "variation cancels. Per cell, over the same five text-bearing modes:\n")
+    L.append("| rule | pooled spread | max within-cell | median within-cell | worst cell |")
+    L.append("|---|---|---|---|---|")
+    for r in top4:
+        wc = r["within_cell_spread_text_bearing_pp"]
+        worst = max(wc, key=wc.get) if wc else "—"
+        L.append(f"| {r['rule_id']} | {r['spread_text_bearing_pp']:.1f} pp | "
+                 f"**{r['within_cell_spread_max_pp']:.1f} pp** | "
+                 f"{r['within_cell_spread_median_pp']:.1f} pp | {worst} |")
+    L.append("\nSo \"mode-invariant\" is only defensible as *similar after pooling*. No claim "
+             "that any individual cell shows mode-invariance is supported here.\n")
 
     L.append("\n## Part B — hallucinated element references (paper A §4.2)\n")
     L.append("Two denominators, because they disagree. **action-step** = share of "

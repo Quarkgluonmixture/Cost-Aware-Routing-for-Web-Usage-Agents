@@ -222,6 +222,14 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
         per_feat = feat_site[site]
         n_best_feat = sum(Counter(ls).most_common(1)[0][1] for ls in per_feat.values())
         n_singleton = sum(1 for ls in per_feat.values() if len(ls) == 1)
+        # The headline grouping is ALSO a resubstitution estimate: a task labelled by
+        # only one backbone is its own group and scores 100% whatever the labels do
+        # (codex Mode B finding 1, 2026-07-28). Coarsening X shrank this problem from
+        # 44%/75% of rows to ~30%/37%; it did not remove it.
+        n_task_singleton = sum(1 for ls in per_task.values() if len(ls) == 1)
+        shared_rows = n_rows - n_task_singleton
+        n_best_shared = sum(Counter(ls).most_common(1)[0][1]
+                            for ls in per_task.values() if len(ls) >= 2)
         # How often the "same task ⇒ same X" premise actually holds.
         split = sum(1 for t in shared if len(feat_of_task[site][t]) > 1)
         # Same computation restricted to the cost tier (2 classes), both groupings.
@@ -247,6 +255,13 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
             "n_singleton_feature_vectors": n_singleton,
             "singleton_share_of_rows_pct": round(100.0 * n_singleton / n_rows, 2)
             if n_rows else None,
+            # Resubstitution disclosure for the HEADLINE (task-identity) grouping.
+            "n_singleton_tasks": n_task_singleton,
+            "singleton_task_share_of_rows_pct":
+                round(100.0 * n_task_singleton / n_rows, 2) if n_rows else None,
+            "modal_agreement_on_shared_tasks_only_pct":
+                round(100.0 * n_best_shared / shared_rows, 2) if shared_rows else None,
+            "n_rows_on_shared_tasks": shared_rows,
             "n_shared_tasks_with_split_features": split,
             "shared_tasks_split_rate_pct": round(100.0 * split / len(shared), 2)
             if shared else None,
@@ -271,7 +286,8 @@ def measure_conflict_and_ceiling(pool: dict) -> dict[str, Any]:
             "are the point: re-slicing the SAME features from 'which of six "
             "modes' down to 'image or text-only' raises the attainable ceiling "
             "without inventing a single new solve event — the only relabelling "
-            "that buys anything. Headline ceilings group by task_id; the "
+            "that buys anything, though 'attainable ceiling' overstates it — see the "
+            "resubstitution warning above. Headline figures group by task_id; the "
             "`_by_feature_vector_` variants group by the exact input vector and are "
             "HIGHER, because three observation-derived features differ across cells for "
             "the same task and most resulting groups are singletons scoring 100% by "
@@ -562,8 +578,8 @@ def render(p: dict) -> str:
     i = p["identifiability"]
     L.append("## 3. Pooling fixes supply and breaks identifiability\n")
     L.append("| site | tasks shared by 2+ cells | conflicting | conflict rate | "
-             "Bayes ceiling (which-mode) | same, feature-vector grouping | "
-             "Bayes ceiling (cost tier) | tier agreement |")
+             "in-sample modal agreement (which-mode) | same, feature-vector grouping | "
+             "in-sample modal agreement (cost tier) | tier agreement |")
     L.append("|---|---|---|---|---|---|---|---|")
     for site, r in i["per_site"].items():
         L.append(f"| {site} | {r['n_tasks_shared_by_2plus_cells']} | "
@@ -572,15 +588,21 @@ def render(p: dict) -> str:
                  f"{r['bayes_ceiling_which_mode_by_feature_vector_pct']}% | "
                  f"**{r['bayes_ceiling_cost_tier_pct']}%** | "
                  f"{r['tier_agreement_rate_pct']}% |")
-    L.append("\nHeadline ceilings group by task identity. The feature-vector column is the "
-             "plug-in ceiling for the exact vectors and is singleton-inflated — a group of "
-             "one scores 100% by construction:\n")
-    L.append("| site | distinct feature vectors | singletons | shared tasks whose rows differ in X |")
-    L.append("|---|---|---|---|")
+    L.append("\n⚠️ **Both columns are resubstitution (in-sample) estimates, not Bayes "
+             "ceilings.** Each scores the same rows it took the modal label from, so any group "
+             "with a single member is correct by construction. Call it *in-sample modal "
+             "agreement*; an out-of-sample ceiling needs leave-one-backbone-out prediction or "
+             "a shrinkage estimator, neither of which is computed here.\n")
+    L.append("| site | singleton tasks (headline grouping) | agreement on shared tasks only | "
+             "singleton feature vectors | shared tasks whose rows differ in X |")
+    L.append("|---|---|---|---|---|")
     for site, r in i["per_site"].items():
-        L.append(f"| {site} | {r['n_distinct_feature_vectors']} of {r['n_pooled_rows']} rows | "
+        L.append(f"| {site} | {r['n_singleton_tasks']} of {r['n_pooled_rows']} rows "
+                 f"(**{r['singleton_task_share_of_rows_pct']}%**) | "
+                 f"**{r['modal_agreement_on_shared_tasks_only_pct']}%** "
+                 f"(n={r['n_rows_on_shared_tasks']}) | "
                  f"{r['n_singleton_feature_vectors']} "
-                 f"(**{r['singleton_share_of_rows_pct']}%** of rows) | "
+                 f"({r['singleton_share_of_rows_pct']}% of rows) | "
                  f"{r['n_shared_tasks_with_split_features']} of "
                  f"{r['n_tasks_shared_by_2plus_cells']} "
                  f"(**{r['shared_tasks_split_rate_pct']}%**) |")

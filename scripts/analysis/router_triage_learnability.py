@@ -390,6 +390,15 @@ def evaluate(cell_spec: dict) -> dict | None:
         null_savings.append(
             100.0 * (1 - min(q["mean_cost"] for q in ll) / baseline["mean_cost"]) if ll else 0.0
         )
+    # Draws that raise are skipped above, so a silent exception would shrink B for
+    # one cell only and the plus-one floor reported for it would be wrong (codex Mode
+    # B finding 7). Fail loud rather than report a p against a denominator nobody sees.
+    if len(null_savings) != N_SHUFFLE:
+        raise RuntimeError(
+            f"{cell['site']}/{cell['baseline']}: {len(null_savings)} of {N_SHUFFLE} "
+            "permutation draws completed. A short draw count changes this cell's "
+            "plus-one floor, so the reported p is not comparable across cells."
+        )
     observed_saving = (100.0 * (1 - best_lossless["mean_cost"] / baseline["mean_cost"])
                        if best_lossless else 0.0)
     n_exceed = int(sum(1 for v in null_savings if v >= observed_saving - 1e-12))
@@ -483,11 +492,17 @@ def main() -> int:
     L.append("\n## 3. Is the saving real, or manufactured by the threshold sweep?\n")
     L.append("| cell | observed SR-lossless saving | median under shuffled labels | p |")
     L.append("|---|---|---|---|")
+    # `.3f` rendered the B=10000 floor (4.9995e-4) as "0.000", i.e. as if the
+    # plus-one estimator had reported an impossible zero — the exact thing the
+    # estimator exists to prevent (codex Mode B finding 7, 2026-07-28).
+    def _fmt_p(p: float) -> str:
+        return f"{p:.4g}" if p < 1e-3 else f"{p:.3f}"
+
     for r in res:
         L.append(f"| {r['site']}·{r['baseline_model']} | "
                  f"{r['observed_lossless_saving_pct']:.1f}% | "
                  f"{r['null_shuffle_saving_median_pct']:.1f}% | "
-                 f"{r['null_shuffle_p']:.3f} |")
+                 f"{_fmt_p(r['null_shuffle_p'])} |")
     _b = res[0]["n_shuffles"]
     L.append(f"\nSmallest reportable p at B={_b} is 1/(B+1) = {1.0 / (_b + 1):.2e}; "
              "Holm's tightest threshold over six cells is 0.05/6 = 8.33e-3. B is therefore "
@@ -496,7 +511,8 @@ def main() -> int:
     L.append(f"\n{res[0]['n_shuffles']} permutations per cell. The permutation unit is the whole "
              "task bundle (y, succ, cost) against X — permuting only `y` leaves the label "
              "disconnected from the outcomes that define it, and its error is not "
-             "one-directional (measured cls/B1 0.478→0.503 but red/B2 0.040→**0.005**). "
+             "one-directional (measured at B=200: cls/B1 0.478→0.503 but red/B2 "
+             "0.040→0.005; both figures are from that era, not from the current B). "
              "p is the plus-one Monte Carlo estimator (k+1)/(B+1). The sweep still picks its "
              "operating point post hoc, so this column is how much of the observed saving a "
              "signal-free pipeline reproduces.\n")
@@ -511,13 +527,14 @@ def main() -> int:
         if pv >= thresh:
             break
     n_rej = sum(1 for _n, _p, _t, _ok in holm if _ok)
+    _surv = [h for h in holm if h[3]]
     L.append(f"Holm at α=0.05 over the m=6 cells tested (the sweep was run once per cell, "
              f"so the family is the six cells) — **{n_rej} of 6 reject**:\n")
     for name, pv, thresh, ok in holm:
         # The step-down stops at the first non-rejection; saying "no cell survives"
         # there is wrong whenever an earlier step already rejected.
         verdict = "reject null" if ok else "**stop — this and all larger p unrejected**"
-        L.append(f"- {name}: p={pv:.3f} vs {thresh:.4f} → {verdict}")
+        L.append(f"- {name}: p={_fmt_p(pv)} vs {thresh:.4f} → {verdict}")
     beat_cheap = [r for r in res
                   if r["learned_lossless"] is not None
                   and r["learned_lossless"]["mean_cost"] < r["always_cheapest"]["mean_cost"]
@@ -530,10 +547,16 @@ def main() -> int:
              "draft of this file claimed. In five of six cells the label is predictable "
              "(AUROC 0.651-0.717, and unlike the which-mode task it clears the best single "
              "covariate in 4/6). Two cells yield no SR-lossless saving at all; two more "
-             "yield savings a signal-free pipeline reproduces (p ~= 0.50). **One cell, "
-             "reddit/B2, has a saving that survives Holm at m=6 (p=0.005 vs 0.0083)** — "
-             "under the corrected bundle-permutation null; the earlier y-only null reported "
-             "0.040 for that cell and supported a blanket 'nothing survives' claim, which "
+             "yield savings a signal-free pipeline reproduces (p ~= 0.50). "
+             # Generated, not hardcoded: this sentence carried `p=0.005` from the
+             # B=200 era for one commit after B rose to 10000 (codex finding 7).
+             + (f"**{'One cell' if len(_surv) == 1 else str(len(_surv)) + ' cells'}, "
+                + ", ".join(f"{n} (p={_fmt_p(p)} vs {t:.4f})" for n, p, t, _o in _surv)
+                + f", {'has' if len(_surv) == 1 else 'have'} a saving that survives Holm "
+                "at m=6** — "
+                if _surv else "**No cell's saving survives Holm at m=6** — ")
+             + "under the corrected bundle-permutation null; the earlier y-only null reported "
+             "0.040 for reddit/B2 and supported a blanket 'nothing survives' claim, which "
              "was wrong.\n")
     L.append("⚠️ **The sixth cell is the significant one, and its AUROC is 0.483** — below "
              "chance, and below its own best single covariate (0.711). That is not a "

@@ -37,14 +37,14 @@ Across 6 cells the trainable-label count spans **15-97**; pooled total **260**. 
 | classifieds | 54 | 31 | **57.41%** | 79.17% | 83.93% | **89.88%** | 68.52% |
 | reddit | 25 | 14 | **56.0%** | 83.7% | 89.13% | **96.74%** | 88.0% |
 
-Headline ceilings group by task identity. The feature-vector column is the plug-in ceiling for the exact vectors and is singleton-inflated — a group of one scores 100% by construction:
+⚠️ **Both columns are resubstitution (in-sample) estimates, not Bayes ceilings.** Each scores the same rows it took the modal label from, so any group with a single member is correct by construction. Call it *in-sample modal agreement*; an out-of-sample ceiling needs leave-one-backbone-out prediction or a shrinkage estimator, neither of which is computed here.
 
-| site | distinct feature vectors | singletons | shared tasks whose rows differ in X |
-|---|---|---|---|
-| classifieds | 117 of 168 rows | 74 (**44.05%** of rows) | 17 of 54 (**31.48%**) |
-| reddit | 78 of 92 rows | 69 (**75.0%** of rows) | 20 of 25 (**80.0%**) |
+| site | singleton tasks (headline grouping) | agreement on shared tasks only | singleton feature vectors | shared tasks whose rows differ in X |
+|---|---|---|---|---|
+| classifieds | 50 of 168 rows (**29.76%**) | **70.34%** (n=118) | 74 (44.05% of rows) | 17 of 54 (**31.48%**) |
+| reddit | 34 of 92 rows (**36.96%**) | **74.14%** (n=58) | 69 (75.0% of rows) | 20 of 25 (**80.0%**) |
 
-conflict_rate is over tasks covered by >=2 cells. The two ceilings are the point: re-slicing the SAME features from 'which of six modes' down to 'image or text-only' raises the attainable ceiling without inventing a single new solve event — the only relabelling that buys anything. Ceilings are grouped by distinct feature vector; the `_by_task_identity_` variants group by task_id instead and are lower, because three observation-derived features differ across cells for the same task (see measure_conflict_and_ceiling docstring, stress finding #9 2026-07-28).
+conflict_rate is over tasks covered by >=2 cells. The two ceilings are the point: re-slicing the SAME features from 'which of six modes' down to 'image or text-only' raises the attainable ceiling without inventing a single new solve event — the only relabelling that buys anything. Headline ceilings group by task_id; the `_by_feature_vector_` variants group by the exact input vector and are HIGHER, because three observation-derived features differ across cells for the same task and most resulting groups are singletons scoring 100% by construction (see measure_conflict_and_ceiling docstring, stress finding #9 2026-07-28).
 
 ## 4. How much of the supervision is a list literal
 

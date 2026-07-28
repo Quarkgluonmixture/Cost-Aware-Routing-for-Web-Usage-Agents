@@ -61,44 +61,52 @@ inside each outer fold. Nesting moves the result in both directions.*
 
 ### A.4 Identifiability of pooled which-mode labels
 
-Per-site detail for the conflict rates and Bayes ceilings quoted in §6.3.
+Per-site detail for the conflict rates and modal-agreement figures quoted in §6.3.
 
-| site | tasks labelled in ≥2 cells | conflicting | conflict rate | Bayes ceiling | ceiling, exact-vector grouping |
-|---|---|---|---|---|---|
-| classifieds | 54 | 31 | **57.4%** | **79.2%** | 83.9% |
-| reddit | 25 | 14 | **56.0%** | **83.7%** | 89.1% |
+| site | tasks labelled in ≥2 cells | conflicting | conflict rate | in-sample modal agreement | same, on shared tasks only | same, exact-vector grouping |
+|---|---|---|---|---|---|---|
+| classifieds | 54 | 31 | **57.4%** | **79.2%** | 70.3% (n=118) | 83.9% |
+| reddit | 25 | 14 | **56.0%** | **83.7%** | 74.1% (n=58) | 89.1% |
 
 *Table 11: Per-site detail behind §6.3. A conflict is one task on which two cells recorded
-different oracle modes. The Bayes ceiling is the accuracy of emitting the modal label per
-task, over all pooled labelled rows (168 on classifieds, 92 on reddit), a row being one
+different oracle modes. In-sample modal agreement is the accuracy of emitting the modal label
+per task, over all pooled labelled rows (168 on classifieds, 92 on reddit), a row being one
 (task, backbone) pair on which that backbone solved the task.*
 
-*The last column is the same quantity grouped by the exact feature vector instead. It is
-higher, and we do not use it, for two reasons. Rows of one task are not always identical:
-three of the five numeric features are read from that backbone's own step-0 observation, so
-they differ somewhere on 31.5% of shared classifieds tasks and 80.0% of shared reddit tasks.
-But that grouping then leaves 74 of 117 classifieds groups and 69 of 78 reddit groups with a
-single member, covering 44% and 75% of rows, and a singleton scores 100% by construction. The
-higher number therefore measures how unique the vectors are more than it measures
-identifiability, and a router serving one backbone could not recover backbone identity from
-that jitter anyway.*
+*We call it agreement and not a Bayes ceiling because it is a resubstitution estimate: it scores
+the same rows it took the modal label from, so a task labelled by only one backbone is correct
+by construction. That describes 50 of 168 classifieds rows (29.8%) and 34 of 92 reddit rows
+(37.0%); restricted to tasks two or more backbones label, agreement falls to 70.3% and 74.1%.
+An out-of-sample bound would need leave-one-backbone-out prediction or a shrinkage estimator,
+and would be lower still. Every number here is therefore an optimistic bound on what a pooled
+classifier could reach, which is the direction the argument needs.*
+
+*The last column groups by the exact feature vector instead of by task. Rows of one task are not
+always identical, because three of the five numeric features are read from that backbone's own
+step-0 observation, so they differ somewhere on 31.5% of shared classifieds tasks and 80.0% of
+shared reddit tasks. We report but do not use that grouping: it leaves 74 of 117 classifieds
+groups and 69 of 78 reddit groups with a single member, covering 44% and 75% of rows, so it is
+even more inflated than the headline, and a router serving one backbone could not recover
+backbone identity from that jitter anyway.*
 
 ### A.5 The screenshot-modality tier
 
-Per-site detail for the ceilings quoted in §6.4, on the same pooled labelled rows and the same
-grouping as A.4. The tier agreement column is the exception: it is defined only on tasks
-labelled by two or more backbones, since agreement needs two labels to compare.
+Per-site detail for §6.4, on the same pooled labelled rows and the same grouping as A.4. The
+agreement column is the exception: it is defined only on tasks labelled by two or more
+backbones, since agreement needs two labels to compare.
 
-| site | which-mode ceiling | tier ceiling | tier agreement across backbones |
-|---|---|---|---|
-| classifieds | 79.2% | **89.9%** | 68.5% |
-| reddit | 83.7% | **96.7%** | 88.0% |
+| site | which-mode modal agreement | tier modal agreement | tier agreement across backbones | six-way agreement across backbones |
+|---|---|---|---|---|
+| classifieds | 79.2% | **89.9%** | **68.5%** | 42.6% |
+| reddit | 83.7% | **96.7%** | **88.0%** | 44.0% |
 
-*Table 12: Per-site detail behind §6.4. The ceiling rises on the same solve events, because
-backbones that disagree about which mode is best still agree about whether the screenshot is
-needed. Under A.4's exact-vector grouping the tier ceilings are 92.3% and 97.8%, so the gain
-survives either grouping. No classifier is fitted to this target anywhere in the paper; only
-its ceiling is measured.*
+*Table 12: Per-site detail behind §6.4, over the same solve events. Columns two and three carry
+the same resubstitution caveat as A.4, and column three additionally rises for an arithmetic
+reason: merging six classes into two can only increase a modal share. The claim that backbones
+agree about the screenshot therefore rests on the last two columns, which measure agreement
+between two backbones' labels directly rather than against a modal label. Under A.4's
+exact-vector grouping the tier figures are 92.3% and 97.8%. No classifier is fitted to this
+target anywhere in the paper.*
 
 ## B. Derivations for the four relabelling routes
 
@@ -125,28 +133,31 @@ Six cells at 15–97 labels become 260 pooled examples and every class clears th
 filter, so supply is solved. Identifiability is not. The features carry no model identity, so
 two backbones facing the same task on the same site produce near-identical feature vectors, and
 where they are identical and the oracle labels differ, a classifier is being asked to emit two
-different answers for one input. The Bayes ceiling reported in A.4 is the accuracy of the best
-possible rule on the pooled set, which is to emit the modal label for each distinct feature
-vector.
+different answers for one input. The figure reported in A.4 is the accuracy of emitting the modal
+label per group, scored on the rows the label came from. It is an in-sample bound on what a
+pooled classifier could reach, not a Bayes ceiling, and A.4 gives the resubstitution caveat.
 
 They are only near-identical, not identical, because `dom_complexity`, `text_length` and
 `tokens_input_text` are read from the backbone's own step-0 observation rather than from the
 task config. On 31.5% of shared classifieds tasks and 80.0% of shared reddit tasks the rows
-therefore differ somewhere. Grouping by the exact vector rather than by task raises the
-ceiling (A.4, last column), and we report but do not adopt that number: it leaves most groups
-with one member, and a group of one is scored perfectly whatever the labels do, so it inflates
-with feature sparsity rather than tracking identifiability. Both numbers are far below what a
-deployable which-mode router needs, which is the only thing the argument turns on.
+therefore differ somewhere. Grouping by the exact vector rather than by task raises the figure
+(A.4, last column), and we report but do not adopt that number: it leaves most groups with one
+member, and a group of one is scored perfectly whatever the labels do, so it inflates with
+feature sparsity rather than tracking identifiability. Every version of the number is an
+optimistic bound and all of them are far below what a deployable which-mode router needs, which
+is the only thing the argument turns on.
 
 ### B.4 Screenshot tier
 
 The tier label is derived from the same solve events as the which-mode label, by mapping each
 oracle mode to image-bearing (SoM, Vision) or text-only (DOM, P-text, P-prompt, P-SoM). No new
-episodes are involved, which is why the ceiling rises without a single new solve event. The
-tier is defined only on tasks that some mode solved, so its denominator is the solved set and
-not the full task universe. A.5's ceilings run over the whole pooled labelled set, as in A.4;
-only its agreement column is restricted to tasks labelled by two or more backbones, that being
-the only set on which cross-backbone agreement is defined.
+episodes are involved, which is why the figure rises without a single new solve event. Part of
+that rise is arithmetic — two classes admit a larger modal share than six — so the agreement
+columns rather than the modal-agreement columns carry the claim. The tier is defined only on
+tasks that some mode solved, so its denominator is the solved set and not the full task
+universe. A.5's modal-agreement columns run over the whole pooled labelled set, as in A.4; the
+two agreement columns are restricted to tasks labelled by two or more backbones, that being the
+only set on which cross-backbone agreement is defined.
 
 ## C. The reddit · B2 saving in detail
 
@@ -165,7 +176,7 @@ best single covariate at 0.711, is consistent with a real saving.
 Two properties of that test are worth recording. It runs 10,000 draws and reports the plus-one
 Monte Carlo estimator (k+1)/(B+1), whose floor is therefore 1.0 × 10⁻⁴, two orders below the
 tightest Holm threshold of 8.3 × 10⁻³. That matters because at the 200 draws we first used, the
-floor was 5.0 × 10⁻³, this cell reported exactly it, and whether it could clear the threshold at
+floor was 1/201 = 4.98 × 10⁻³, this cell reported exactly it, and whether it could clear the threshold at
 all was a function of the draw count rather than of the data; at 10,000 draws four of the draws
 match or beat the observed saving, so p = 5.0 × 10⁻⁴ is measured. Second, the quantity tested
 is the saving at an operating point selected against whole-cell outcomes, which is not the

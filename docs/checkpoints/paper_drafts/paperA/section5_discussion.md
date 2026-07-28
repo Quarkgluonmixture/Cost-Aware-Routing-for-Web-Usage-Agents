@@ -43,9 +43,10 @@ them as the minimum for a negative result to be usable by anyone else.
 
 The phantom routing space is structured: two axes, each separately consequential, neither
 absorbed by their compound. This is a preregistered result at p = 1.19 × 10⁻⁵ and
-7.52 × 10⁻⁷ over six cells with bootstrap CIs excluding zero. Those intervals are over tasks
-and not over repeated runs, and no same-mode replicate exists to set a floor against, which
-the Limitations section states as the first gap to close.
+7.52 × 10⁻⁷ over six cells with bootstrap CIs excluding zero. We flag the strength honestly:
+the gate tests against zero, and zero is not the null a set difference between stochastic runs
+should be tested against. What is established is the magnitude, not that it clears a noise
+floor. The Limitations section states what that leaves open.
 
 P-SoM is not a superior deployment arm. This is a preregistered negative at p = 0.807 with
 I² = 0.0%, which we report as the primary Phase 1a outcome because the decision rule makes
@@ -60,7 +61,7 @@ If the two axes were redundant, the design space for image-free web agents would
 from DOM to P-SoM and the only question would be how far along it to sit. §3.2 says it is not a line: text payload and prompt
 family can be chosen separately, and each choice reaches tasks the other does not.
 
-What §4.3 adds is the boundary: the failure modes that dominate at these success rates are
-mode-invariant, so representation choice operates on a narrower slice of the failure
+What §4.3 adds is the boundary: no mode escapes the failure modes that dominate at these
+success rates, so representation choice operates on a narrower slice of the failure
 distribution than the oracle arithmetic suggests. Both statements are needed. The space is
 real and decomposable, and it is small.
