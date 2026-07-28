@@ -14,21 +14,31 @@ audience: the next session (start here, not at next_steps §0)
 
 ## Why this exists
 
-The 2026-07-27/28 session redid work that had already been done, and got it wrong, three
-times in one sitting. Each time the user had to catch it. The pattern was NOT insufficient
-depth — it was **reasoning forward from just-read code without first asking whether the thing
-had already been measured or already been adjudicated**. Concretely:
+The 2026-07-27/28 session redid work that had already been done, and got it wrong, **five
+times in one sitting**. Each time the user had to catch it. Four of the five share one shape:
+**reasoning forward from just-read code without first asking whether the thing had already
+been measured, already been adjudicated, or already exists**.
 
 | I claimed | Reality | Already existed |
 |---|---|---|
 | "no same-mode replicate exists" | 15 manifest pairs + a dedicated clean replicate dir | `compare_cross_run_same_condition.py` prints the exact statistic; §302.1 has the number (6.7/7.6pp) |
 | derived a "detector sensitivity" story for the id channel | the id channel was measured properly, with an id-agnostic metric | `b0_paired_idperturb_replay.py` + `docs/checkpoints/probes/*idperturb*.json` (B1 20%, B0 12.5%) |
 | labelled Vision as a native-id arm | Vision is coordinate-based, zero element ids | any step record: `coordinate_type: qwen_0_1000` |
+| "the DGX mechanistic job finished" | one *worker* finished; the **24-cell sweep driver** is still running | `logs/mechanistic_canonical/.sweep.pid` + `sweep_supervised_*.log` |
 
-`§396.7` had recorded this exact lesson ("check whether it was already adjudicated before
-acting") one round earlier. It recurred anyway. **So the fix is not a resolution, it is an
-artifact: an index from question → prior finding.** The chronicle is ~20k lines / ~400
-sections, append-only; grep only works when you already guess the right keyword.
+The fifth has a **different shape and therefore a different fix**: I claimed the mechanistic
+sweep was "blocking B3's DGX window". It blocks nothing — B3 *fires on the A100* (its own
+frontmatter says so, and I had quoted that line), and the DGX is the shared-contention host
+*reserved* for mechanistic work precisely because contention does not matter there. That was
+not a missing lookup; it was **failing to apply a rule already loaded in context** (CLAUDE.md's
+three-tier compute table and host-role split).
+
+So there are two fixes, not one:
+- for the first four — **an index from question → prior finding** (Phase 0). The chronicle is
+  ~20k lines / ~400 sections, append-only; grep only works when you already guess the keyword.
+- for the fifth — **re-read the host-role table before reasoning about scheduling at all.**
+  `§396.7` had already recorded the general lesson one round earlier and it still recurred, so
+  a resolution is not enough; it has to be a step in a checklist (Phase 5).
 
 ## 🚨 Read this before trusting anything
 
@@ -67,11 +77,18 @@ DATA        what exists | path | grade (clean / pre-fix / archived) | what it ca
 COMPUTE     what is running or planned | host | status | ETA | what it unblocks | what it BLOCKS
 ```
 
-`COMPUTE` exists because the previous session twice mis-stated run status — it told the user a
-finished DGX job was still running, and it did not know that a wanted experiment was queued
-behind an unrelated one. Both are the same defect as the `DATA` misses: **state that lives only
-in a process table or in someone's head**. Every entry needs the *blocks* field, not just ETA,
-because the binding constraint here is mutual exclusion, not duration.
+`COMPUTE` exists because the previous session mis-stated run status twice in opposite
+directions: it reported a **running** 24-cell sweep as finished (it had checked a worker pid
+instead of the sweep driver), and it did not know a wanted experiment was queued behind an
+unrelated one. Same defect as the `DATA` misses: **state that lives only in a process table.**
+
+Two field rules follow from those two errors:
+- record the **driver pid or pidfile**, never a worker pid — a child exiting says nothing about
+  the job;
+- record **what each entry blocks**, not just its ETA — the binding constraint on this project
+  is mutual exclusion (shared containers, shared auth state), not duration. And check the
+  host-role table before asserting a block: DGX contention is tolerable by design for
+  non-paper-grade work, so "same host" does not imply "blocks".
 
 Seed entries already known (verify each, do not trust this table):
 - MEASURED: id-perturbation flip B1 **20.0%** / B0 **12.5%**, within-group consistency B1
@@ -94,7 +111,7 @@ COMPUTE — verified 2026-07-28 against `ps` / `_status/tasks/*.md` frontmatter,
 | what | host | status | ETA | unblocks / BLOCKS |
 |---|---|---|---|---|
 | WA reddit full, 6 modes × 104 | A100, chain pid 2658570 | **running**, step 1/6 (dom, `B1_dom_wa_reddit_..._R13217`) | ~3 days from 07-27 18:00Z | benchmark-generalisation annex. **BLOCKS every VWA reddit run** — shared postmill container + shared `.auth/reddit_state.json` (B-647). This is what a fresh reddit replicate queues behind |
-| **mechanistic canonical sweep, 24 cells** | DGX **sweep driver pid 38603** (`.sweep.pid`) + supervisor (poll 300s, ≤40 restarts) | ⚠️ **RUNNING**, 2/24 done, cell 3/24 `p1_rev_reverse_cls` in flight as worker pid 1638252, **21.7 GB VRAM** | cells take ~800-845 min each; 2 cells burned ~27 h ⇒ the **08-01 sweep deadline truncates it around cell 7-8**, it will never reach 24 | §5 mechanism, **shelved** by advisor 2026-05-14 ⇒ archive only, feeds no current paper. **BLOCKS `task_b3_mimo`, whose frontmatter says "适配 2026-07 下旬 (DGX)" — a shelved workstream is holding the GPU a roadmap workstream needs.** Stopping it is a user decision |
+| **mechanistic canonical sweep, 24 cells** | DGX **sweep driver pid 38603** (`.sweep.pid`) + supervisor (poll 300s, ≤40 restarts) | ⚠️ **RUNNING**, 2/24 done, cell 3/24 `p1_rev_reverse_cls` in flight as worker pid 1638252, **21.7 GB VRAM** | cells take ~800-845 min each; 2 cells burned ~27 h ⇒ the **08-01 sweep deadline truncates it around cell 7-8**, it will never reach 24 | §5 mechanism, **shelved** by advisor 2026-05-14 ⇒ archive only, feeds no current paper. **Blocks nothing.** DGX is the shared-contention host reserved for dev / curation / mechanistic precisely because contention does not matter there; paper-grade fire moved to the A100 on 2026-05-14. It uses 21.7 of ~128 GB and one process, inside CLAUDE.md's "1-2 processes" envelope. `task_b3_mimo` **fires on the A100** (its own frontmatter says so) and only its adaptation touches the DGX, which coexists fine |
 | ~~cell 2 `p1_fwd_strong_red`, worker pid 38617~~ | DGX | that ONE CELL finished cleanly 07-28 03:34 (24 tasks, `run_manifest.json` emitted, log ends `pilot DONE`) | — | ⚠️ **2026-07-28: the previous session read this single worker's exit as the whole sweep completing.** Checking a worker pid instead of `.sweep.pid` is the same defect as the DATA misses above — verify the driver, not a child |
 | `task_pass1_baseline` | A100 | active, 36/36 landed | — | the k=6 substrate both papers use |
 | **`task_pass2_router` — live router pass** | — | **SUPERSEDED, NEVER FIRED** | — | ⚠️ paperA §4.4 discloses this. `k_of_n = 0/0`. Replaced by the offline suite; live router is paper-2 |

@@ -162,8 +162,10 @@ updated: 2026-07-27
 >   单 cell ~800-845min → **08-01 deadline 会在第 7-8 个 cell 截断, 跑不完 24 个**。
 >   ⛔ 上一版说"已完成"是**只查了 worker pid 38617**(它确实在 03:34 干净跑完了 cell 2) 就
 >   宣布整体完成 —— **查子进程不查驱动**, 与本轮另外三次错同型。
->   **属 §5 mechanism (advisor 2026-05-14 已搁置, 不进当前 paper), 却在挡 `task_b3_mimo`
->   的 DGX 适配窗口 ("适配 2026-07 下旬") —— 停不停是 user 决定。**
+>   属 §5 mechanism (advisor 2026-05-14 已搁置, 不进当前 paper), 但**不挡任何东西**:
+>   DGX 就是留给 dev/curation/mechanistic 的共享争抢机 (paper-grade fire 2026-05-14 已迁 A100),
+>   占 21.7/~128 GB 单进程, 在 CLAUDE.md "一次 1-2 进程" 范围内。**B3 的 fire 在 A100**
+>   (其 frontmatter 自己写的), 只有适配碰 DGX 且可共存。
 >
 > ### 6. 人工动作 (只有 user 能做)
 >
