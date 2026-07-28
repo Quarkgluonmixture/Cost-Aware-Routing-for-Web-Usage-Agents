@@ -129,3 +129,85 @@ A1–A4 共 51 条待核。**一律两侧并列，不选边** —— 在没有�
 - **element-ID namespace**：不 patch → §295 证伪前提 → AMENDMENT_07 sequential →
   §298.4 "red herring" 被拽回 → §302 线性分解 RETRACT → §397.9 表 → §397.10(1) 修正为三个 mode
 - **router**：v1–v6 → v7 walk-back（learned-only）→ 离线负结果链（0/6 Pareto 胜出）
+
+
+---
+
+# 结论层**之外**还有什么（2026-07-28 user 点出，台账不覆盖）
+
+台账只抽 `实验笔记.md`。以下都是独立产物，**查台账查不到**，新 session 必须单独看。
+
+## 1. Canvas —— 可视化框架，四层证据的原始形态在这
+
+`docs/checkpoints/canvas/`（Obsidian canvas，非 markdown，grep 不到内容）
+
+| 文件 | 节点 | 装的什么 |
+|---|---|---|
+| `paper_section2_framework.canvas` | 42 | **Evidence ⫨ Explanation 双层 + Zoom 1-4 + 四维证据**（§108 的可视化） |
+| `dual_track_taxonomy.canvas` | 19 | **3×3 干预分类学**：(i) Bug fix / (ii) Affordance synthesis / (iii) Channel addition × L1 Server-side / L2 Agent-pipeline / L3 LLM-internal |
+| `experiment_matrix.canvas` | 33 | paper architecture + 六个 mode 的定义（text/prompt/image/cost 四属性） |
+
+`dual_track_taxonomy` 与 MAG 论文（agent-environment co-design）直接对得上，
+而它**从未进过任何 paper draft**。读法：`python3 -c "import json;d=json.load(open(...));
+[print(n.get('text','')[:200]) for n in d['nodes']]"`
+
+## 2. /diag 失败归因 —— 41 个 per-condition digest
+
+`docs/analysis/vwa_{classifieds,reddit}/<model>_<mode>_<site>_diag_digest.md`
+
+三分类：**scaffold-bug / agent-limit / benchmark-FP**，含 P-rule presence-vs-causation 的
+逐条 caveat。台账有 20 条相关记录，**远少于 41 个 digest** ⇒ 覆盖不全，
+写 failure analysis 必须直接读 digest。
+
+## 3. 正在跑的（状态会变，别信这里的快照，去查）
+
+| 什么 | 在哪 | 查法 |
+|---|---|---|
+| mechanistic canonical sweep 24 cell | DGX，**驱动 pid 在 `.sweep.pid`**（不是 worker pid） | `cat logs/mechanistic_canonical/.sweep.pid && ps -p $(cat ...)` |
+| WA reddit 全量 6 模式 | A100 | `_status/tasks/*.md` frontmatter |
+
+⚠️ §397.10(4) 的教训：**查驱动 pid，不查 worker pid** —— 一个子进程退出不说明任务结束。
+
+## 4. 未来实验（尚无数据，别当证据）
+
+- **B3 = MiMo-VL** 跨族第三模型：DGX 适配 → **A100 fire**（12 conditions ≈ 2-2.5 周）
+- **Phase 1b shop 扩展**：shop × 3 models × 6 modes，2026-09+ 期
+- **WA 其他站点**：shopping / shopping_admin **故意不开**（无 reset 实现 ⇒ 不可能 paper-grade）
+
+## 5. Router 的真实状态（2026-07-28 查证）
+
+**live router 一次都没跑过。** `task_pass2_router` = `SUPERSEDED 2026-07-16`：
+H10 结构 fail-closed（≤3/6 可训）+ 会议拍板不打 live Pass-2 ⇒ live router 推 paper-2。
+现有全部是 **offline replay**（`results/phantom_paper/l1_router_offline_20260715/` 等，
+产物自带 OFFLINE / NON-GATE 大字标注）。
+
+**offline 为什么全负 —— 五层各自独立失败**：
+
+| 层 | 失败点 | 证据 |
+|---|---|---|
+| ① 标签供给 | solvable 7-43% ⇒ 每 cell 仅 15-97 标签 ⇒ **4/6 cell 训不出**；B0·red **0/5 folds** | §379 |
+| ② 打不过白送的 | **0/6 Pareto 支配 always-cheapest**；cls·B2 把 212/224 送去最便宜 = 重新发现"永远用 Vision"，−20.8% 还不如固定策略 | §387.16.4 |
+| ③ 标签不是它声称的 | **12.5-54.64% 的标签**上 MODES 顺序返回了**严格更贵**的成功 mode，而 docstring 声称 ascending prior cost | §395.2 |
+| ④ best_mode 不稳 | red·B0 五折选 **DOM/DOM/SoM/SoM/DOM** —— "连自己的重采样都复现不出来" | §392.2 |
+| ⑤ AUROC ⇏ 可用 | red·B2 是唯一显著格，AUROC **0.483**（低于随机） | §394 |
+
+② 在三重加严下均成立（诚实阈值 §388.4 / bundle 置换 §388.7.2 / 真嵌套 §392.2）。
+
+## 6. 已知未落地的裁定（`find_unlanded.py` 首跑）
+
+- **§108 四维证据框架** —— 代码 4/4，两稿 0
+- **§135.2 HKSJ** —— §215 承诺"新增 Appendix-D-bis HKSJ-adjusted RE sensitivity 行"，两稿 0 次
+- **§155.3 `Raw/Adjusted/Same-task`** —— SR 三口径，代码 2/3，稿中 0
+- **§178.5 / §211.2 / §109.17** —— benchmark / 模型族 / industry 定位在稿中全 0 ⇒ related work 偏薄
+
+## 7. per-mode 四维画像 —— 定了框架但从没按 mode 算过
+
+2×2 的目的是 **disentangle 两个效应**（§103），做完归因就停了；
+**Vision 结构性地不在 2×2 网格上**（无 AXTree text）⇒ 连顺带算到的机会都没有。
+
+2026-07-28 首次按 mode 跑 Macro 维，Vision 画像极强：
+`scroll_frac` **6/6 cell 最高，是其他 mode 的 2.6–10 倍**；`type_frac` 最低
+（B1·cla 0.0713 vs DOM 0.3449）。机制假设（**未验**）：viewport-only ⇒ 只能靠滚动探索。
+`per_task_metrics(baseline, site, mode)` 已是 per-mode 签名，补齐是纯分析不需重跑。
+
+⚠️ `B0·red · P-SoM` 抛 `read_jsonl_dedup: summary identity mismatch`，36 个组合唯一报错，待查。
