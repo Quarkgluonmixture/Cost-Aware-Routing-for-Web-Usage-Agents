@@ -2,7 +2,7 @@
 type: plan
 status: active
 created: 2026-07-28
-purpose: zero-preset rebuild of the two REALM papers — anti-redo ledger first, then claims, then rewrite
+purpose: zero-preset rebuild — Phase 0/0b/1 DONE. 状态与接手点见本文顶部「当前状态」
 audience: the next session (start here, not at next_steps §0)
 ---
 
@@ -11,6 +11,59 @@ audience: the next session (start here, not at next_steps §0)
 > **User decision 2026-07-28**: do ALL phases, no scaling down. Previous session's
 > handoff (`next_steps.md §0`) is still valid for *state*, but this doc supersedes it for
 > *what to do next*.
+
+## ⏱ 当前状态（2026-07-28 更新，新 session 从这里读）
+
+| Phase | 状态 | 产出 |
+|---|---|---|
+| −1 清污 | ✅ | limitations 假陈述已改 |
+| **0 台账** | ✅ | **2033 条** `docs/reference/known/ledger.jsonl`；入口 `KNOWN.md`；查询 `known.py`；核验 `verify_ledger.py`（99.6% 可追溯） |
+| **0b 噪声地板** | ✅ | `docs/analysis/cross_sites/phase0b_noise_floor.md` —— 两对 clean replicate，**H3 两轴 1.35/2.09pp 均低于地板 4.9–7.6pp** |
+| **1 结论层** | ✅ | **253 节 / 9377 行** `known/conclusions/` —— **入口 `INDEX.md`（213 行，先读它）** |
+| 2 创新与反论 | ⬜ | 需先过台账过滤再发 cross-AI |
+| **3 论文结构** | 🔶 **已拍板：两篇合并成一篇** | 见下 |
+| 4 重写 | ⬜ | deadline **08-05**（REALM @ EMNLP，archival，双盲 ACL，**8 页**） |
+| 5 memory/CLAUDE.md | ⬜ | |
+
+### 新 session 第一步
+
+> 读 `docs/reference/known/conclusions/INDEX.md`
+
+它含：五批产出导航 · 按问题找 · **M1–M11 错误模式** · 5 条已知限制 ·
+已裁悬案 · 演化链 · **「结论层之外还有什么」七节**（canvas / diag / 在跑的实验 /
+未来实验 / router 真状态 / 未落地裁定 / per-mode 缺口）。
+
+### 工具
+
+```bash
+known.py <kw>              # 查台账单条（强制打印 caveats）
+trace_claim.py "6.7pp"     # 四层追溯：结论层→台账→笔记→artifact（带单位查，裸数字会误命中）
+verify_ledger.py           # 台账 vs 笔记的数字可追溯性
+find_unlanded.py           # 找"定了但没落地"的裁定
+```
+
+### 论文结构决策（user 拍板 2026-07-28）
+
+**两篇合并成一篇**。不是因为两篇都弱 —— **Paper B 强、Paper A 弱**。焊接点是 Phase 0b
+新增的第 ③ 步：
+
+> ① ceiling 高（+3.4~16.1pp，省 13.7-35.3%）→ ② 有结构基础（H3 双轴独立）→
+> ③ **但结构小于同模式重跑地板** → ④ 且学不到（0/6 Pareto）
+> ⇒ **表征路由的上限真实存在，但既不稳定也不可达**
+
+第 ③ 步两篇现在都没有，它同时关掉 A 的正面结果、补上 B「为什么不是估计器问题」的另一半。
+
+### 待办（user 2026-07-28 列，按依赖排序）
+
+1. **合并论文骨架 + 取舍清单** ← 先做，它决定下面各项补到什么精度
+2. **补 §108 四维 × per-mode 画像** —— Macro 维已跑通（Vision `scroll_frac` 6/6 最高、2.6–10×）
+3. **补 §135.2 HKSJ appendix 行** —— §215 明确承诺过，两稿 0 次，数据现成（§172.8）
+4. **router pooling 分层实验** —— 现有 pooling 把同族(B0+B1)与跨族(带 B2)混算，
+   冲突率 cls 57.4% / red 56.0%。**只 pool 两个 Qwen 没试过**，同族冲突率大概率更低。
+   另：标签有三档，越粗越好学 —— which-mode 79/84% → **cost-tier 89.9/96.7%** →
+   whether-screenshot 90-97%；**中间那档没被当主线**
+5. **逐条核对 conclusion** —— 待骨架定后，按「承载论文推理的前提」筛（不是按「进不进论文」）
+6. **查 `B0·red·P-SoM` 的 `read_jsonl_dedup: summary identity mismatch`** —— 36 组合唯一报错
 
 ## Why this exists
 
