@@ -1,0 +1,69 @@
+---
+type: reference
+status: active
+created: 2026-07-28
+purpose: anti-redo ledger — "has this already been measured / adjudicated / retracted?"
+---
+
+# KNOWN — 防重做台账
+
+`docs/checkpoints/实验笔记.md` 是 2 万行 / 396 节的 append-only 时序记录。**grep 只在你已经猜对关键词时有用**，而"这件事是不是已经做过了"恰恰是猜不到关键词的那类问题。这一层是给那类问题用的。
+
+建于 2026-07-28（REBUILD_PLAN Phase 0），起因是一个 session 在一次会话里重做了已完成的工作**五次**，每次都要用户纠正。
+
+## 怎么查
+
+```bash
+.venv/bin/python3 scripts/maintenance/known.py oracle              # 含 "oracle" 的全部
+.venv/bin/python3 scripts/maintenance/known.py -t MEASURED self_drop
+.venv/bin/python3 scripts/maintenance/known.py --section 302       # §302 及 §302.x
+.venv/bin/python3 scripts/maintenance/known.py --flagged           # 被后续作废记录点名的
+.venv/bin/python3 scripts/maintenance/known.py --absent            # artifact 确认已丢的
+.venv/bin/python3 scripts/maintenance/known.py --stats
+```
+
+输出**永远**带 `caveats` 和作废标记。丢 caveat 是这个台账最危险的失效模式 —— 一个没有 scope 的数字正好会招来它本该阻止的那种误用。
+
+## 下结论前问四句
+
+来自五次实际错误，不是通用建议：
+
+1. 这个量**已经被测过**了吗？（查台账，别翻 chronicle）
+2. 这个决定**已经被裁定**过了吗？（裁定常常写在代码注释里）
+3. 被比较的各臂之间，这个指标的**判定基准是同一个**吗？
+4. 这是 in-sample 还是 out-of-sample？
+
+第 5 条不在台账能力范围内，只能靠人：**推理"什么挡着什么"之前，先回读主机角色表**（CLAUDE.md 三层算力）。2026-07-28 那次凭空造出的算力冲突，规则当时就在 context 里。
+
+## 五种记录
+
+| type | 回答的问题 | 数量 |
+|---|---|---|
+| `MEASURED` | 这个量测过吗？值多少、什么 scope、什么 caveat | 905 |
+| `ADJUDICATED` | 这个决定拍过吗？为什么这么定 | 831 |
+| `RETRACTED` | 这个说法死了吗？为什么、被什么取代 | 156 |
+| `CLAIM_UNVERIFIED` | 这是推论还是测量？（原文自称待验的一律进这里） | 92 |
+| `DATA` | 什么数据存在、在哪、什么等级、能支撑什么 | 49 |
+
+共 **2033** 条，覆盖 §1–§397.10。数据：`docs/reference/known/ledger.jsonl`。
+
+## ⚠️ 台账不能做的事
+
+台账本身也可能变成污染源。已知边界：
+
+1. **记录来自 chronicle 文本，不是从数据重算。** "台账说测过 X" = "笔记里记着测过 X"。`artifact_exists ✓` 只说明文件在磁盘上，**不代表那个数字被复核过**。要用于论文，回到 artifact 复算。
+2. **`⚑ named by RETRACTED §N` 是待查线索，不是判定。** 它只表示某条作废记录提到了这个 §，谁对谁错要人来判。曾用 token 重叠自动匹配，中文无空格导致约 50% 误报，已改为只认作废记录里**明写的 § 号**（192 → 119 条）。
+3. **`superseded_by` 只在同一分块内可靠。** 台账由 7 个 agent 按 § 区间并行抽取，每个只看自己那块，所以"后面的 § 作废了前面的"这类关系**只有跨块 flag 那一条通道**，且是线索级。
+4. **19 条 artifact 确认已丢**（`--absent` 可列）。那些 MEASURED 目前只有笔记文本一个来源，不可复核。
+5. **21 条 artifact 是"路径搬了家"不是"文件没了"**（如 `docs/analysis/phantom_paper/*` → `results/phantom_paper/*`）。合并时按 basename 全库回查修正了。若不修，台账会说"这个测量的 artifact 不存在"，下游读成"不可复现"→ **正好去重做**。
+6. **同一个量在不同 § 有多套不可比数字，一律并列保留、不合并。** 抽取时明确禁止取平均或折算。见 §397.10 的"不许做加减法"清单。
+
+## 重建 / 追加
+
+```bash
+.venv/bin/python3 docs/reference/known/rebuild_ledger.py
+```
+
+按 § 区间分块并行抽取 → 合并 → artifact basename 回查修复 → 跨块作废链接。新增 § 时按同样 schema 追加到 `ledger.jsonl` 即可，无需重跑全量。
+
+相关：`docs/checkpoints/REBUILD_PLAN.md`（这个台账为什么存在）、`docs/analysis/cross_sites/phase0b_noise_floor.md`（Phase 0b 与之并行的噪声地板测量）。
