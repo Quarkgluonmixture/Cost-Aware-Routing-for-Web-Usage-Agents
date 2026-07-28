@@ -58,10 +58,19 @@ find_unlanded.py           # 找"定了但没落地"的裁定
 1. **合并论文骨架 + 取舍清单** ← 先做，它决定下面各项补到什么精度
 2. **补 §108 四维 × per-mode 画像** —— Macro 维已跑通（Vision `scroll_frac` 6/6 最高、2.6–10×）
 3. **补 §135.2 HKSJ appendix 行** —— §215 明确承诺过，两稿 0 次，数据现成（§172.8）
-4. **router pooling 分层实验** —— 现有 pooling 把同族(B0+B1)与跨族(带 B2)混算，
-   冲突率 cls 57.4% / red 56.0%。**只 pool 两个 Qwen 没试过**，同族冲突率大概率更低。
-   另：标签有三档，越粗越好学 —— which-mode 79/84% → **cost-tier 89.9/96.7%** →
-   whether-screenshot 90-97%；**中间那档没被当主线**
+4. **router：同族 pooled × cost-tier 可学性** ← ✅ 分层已跑，规格已写，**待执行**
+   - 分层结果（`router_pooling_by_family.py`，产物 `cross_sites/router_pooling_by_family.json`）：
+     同族 B0+B1 冲突 **48.0% / 45.0%** vs 跨族最高 **81.8%**；混合的 57.4%/56.0% 是被跨族拉高的平均。
+     **cost-tier 上同族 reddit 只有 5.0% 冲突、97.5% 天花板。**
+   - ⇒ 现有 router 负结果全建立在「跨族池 × which-mode」= **最不利角落**，
+     最有利角落**从没训过**
+   - **执行规格：`docs/checkpoints/EXP_SPEC_pooled_tier_router.md`**（含 6 条不可动的
+     已裁定 + 3 条必须的对照臂 + 5 条已知限制）
+   - 两个结果都有用：支配 ⇒ Paper B 结论要实质改；不支配 ⇒ 结论加限定后更强
+   - ⚠️ 标签语义已查证：`derive_oracle_label` 是 **lexicographic —— 先 SR 后 cost**
+     （在成功的 mode 里按 `MODES` 先验顺序取第一个）。而 B-1806 实测该先验顺序与实际
+     成本不符且**跨 cell 反转**（B0 实测最便宜的 vision 在列表里排最后）⇒ §395.2 的
+     12.5-54.64%。**cost-tier 标签不需要 tier 内排序，结构上免疫这个缺陷**
 5. **逐条核对 conclusion** —— 待骨架定后，按「承载论文推理的前提」筛（不是按「进不进论文」）
 6. **查 `B0·red·P-SoM` 的 `read_jsonl_dedup: summary identity mismatch`** —— 36 组合唯一报错
 
