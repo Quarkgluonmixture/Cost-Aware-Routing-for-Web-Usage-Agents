@@ -155,7 +155,10 @@ updated: 2026-07-27
 > - 学长看 Overleaf 两篇
 > - **毕设 D8** (results+discussion 章) **已过期**, D9 全稿 08-10 与 REALM 08-05 撞期
 >
-> **距 08-05 还有 8 天。git 已推到 origin; Overleaf 未同步 (`bash scripts/maintenance/overleaf_sync.sh`)。**
+> **距 08-05 还有 8 天。git 已推 origin; Overleaf 已同步** (`a4550b2 = repo 2115173`,
+> `SUBMISSION=1` 严格门通过, 两篇 limitations 均已拷入)。学长可直接看。
+> ⚠️ Overleaf 网页端编辑**不自动回流** —— 内容冻结前一律改 md 再 sync, 防双源漂移。
+> 切编译目标: Overleaf 菜单 → Main document → `main_paperA.tex` / `main_paperB.tex`。
 >
 > ### 7. 收尾时的门 (三条都跑过, 全绿)
 >
