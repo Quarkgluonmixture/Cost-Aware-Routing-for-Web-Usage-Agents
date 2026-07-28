@@ -47,6 +47,25 @@ purpose: anti-redo ledger — "has this already been measured / adjudicated / re
 
 共 **2033** 条，覆盖 §1–§397.10。数据：`docs/reference/known/ledger.jsonl`。
 
+## 怎么核验台账本身
+
+```bash
+.venv/bin/python3 docs/reference/known/verify_ledger.py              # 汇总
+.venv/bin/python3 docs/reference/known/verify_ledger.py --show-fail  # 逐条看存疑的
+.venv/bin/python3 docs/reference/known/verify_ledger.py --section 302
+```
+
+把每条记录里的数字拿去源文档比对，三级判定：**在被引 §** / **在笔记别处**（引用不够精确，非编造；笔记头部有分类索引表，且 `[finding]` 类按写作规范就是一行指针）/ **在 analysis 文档**（指针型 § 的目标）/ **哪都找不到**。
+
+2026-07-28 首跑：1097 条带可核数字，**1093 条（99.6%）可追溯**，4 条查不到的全是 DATA 类记录里 artifact 文件名的时间戳（笔记正文本不会写，文件实测存在）。**未发现凭空捏造的数字。**
+
+**核验器查不出的三件事**（比它能查的更重要）：
+1. **数字被安到错的语义上** —— 数字真实存在，但对应的 quantity/scope 抄错了
+2. **笔记本身记错了** —— 台账忠实复制一个错误。台账与笔记同源，互查永远发现不了
+3. **漏记** —— 只能验已记录的，验不出该记而没记的
+
+要把某条用于论文，回到 artifact 复算，别停在台账。
+
 ## ⚠️ 台账不能做的事
 
 台账本身也可能变成污染源。已知边界：
