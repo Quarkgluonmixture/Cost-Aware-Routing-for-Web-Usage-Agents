@@ -141,11 +141,13 @@ updated: 2026-07-27
 > | 07-28 中途版 §4.3 | 四签名 "mode-invariant" | **"similar after pooling"** — 格内 spread 达 48.3pp |
 > | §6.4 旧句 | tier "raises the ceiling to 89.9/96.7" 证明 backbone 一致 | 上升有算术成分; 一致性证据是**直接 agreement 68.5/88.0 vs 六路 42.6/44.0** |
 >
-> ### 5. 后台两条 (⚠️ 跑命令核; 07-28 00:41 BST 两条均存活)
+> ### 5. 后台 (⚠️ 跑命令核; 下列为 07-28 08:28 BST 实测)
 >
-> - **A100 WA 全量**: chain pid **2658570** (5h41m), 6 mode × 104, step **1/6** (dom,
->   run `B1_dom_wa_reddit_..._R13217`) 在跑。ETA ~3 天。**A100=UTC / DGX=BST**, 差 1h。
-> - **DGX mechanistic**: 38617 (10h27m) 跑 `p1_fwd_strong_red`, 08-01 自截断, **非关键路径**。
+> - **A100 WA 全量**: chain pid **2658570** 存活 (13h28m), 6 mode × 104, 仍在 step **1/6**
+>   (dom, run `B1_dom_wa_reddit_..._R13217`)。ETA ~3 天。**A100=UTC / DGX=BST**, 差 1h。
+> - **DGX mechanistic**: ✅ **已完成** 07-28 03:34 (比 08-01 自截断提前), pid 38617 已退。
+>   产物在 `results/mechanistic/canonical/p1_fwd_strong_red/` (results.json + curves.png +
+>   pilot_summary.md)。**属 §5 mechanism, advisor 2026-05-14 已搁置 → 存档不进当前 paper。**
 >
 > ### 6. 人工动作 (只有 user 能做)
 >
