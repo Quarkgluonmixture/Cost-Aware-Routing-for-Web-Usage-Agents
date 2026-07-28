@@ -19,11 +19,11 @@ purpose: Phase 1 结论提取的进度与接力点 — 新 session 从这里接�
 
 | 批 | 内容 | 条数 | token | 谁做 | 状态 | 产出 |
 |---|---|---|---|---|---|---|
-| **B** | RETRACTED + CLAIM_UNVERIFIED | 248 | 59.6K | Claude 主 session | 🔄 读到第 88/248 行 | `retracted.md` |
+| **B** | RETRACTED + CLAIM_UNVERIFIED | 248 | 59.6K | Claude 主 session | ✅ **完成** 07-28 | `retracted.md` |
 | **C** | MEASURED 无数字 | 30 | 7.6K | Claude 主 session | ⬜ 未开始 | `measured_qualitative.md` |
 | **E** | DATA + ADJUDICATED 带数字 | 49 | 14.4K | Claude 主 session | ⬜ 未开始 | `data_inventory.md` |
 | **A** | ADJUDICATED（裁定） | 831 | ~250K | Claude 分轮 | ⬜ 未开始，需 2–3 个 session | `adjudicated.md` |
-| **D** | MEASURED 带数字 | 875 | ~260K | subagent ×4 | 🔄 4 个已派发 2026-07-28 | `measured_D1..D4.md` |
+| **D** | MEASURED 带数字 | 875 | ~260K | subagent ×4 | ✅ D1/D2/D3 完成 · 🔄 D4 在跑 | `measured_D1..D4.md` |
 
 ## 分批数据在哪
 
