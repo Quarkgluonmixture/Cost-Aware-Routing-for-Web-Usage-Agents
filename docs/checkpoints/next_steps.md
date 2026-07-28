@@ -23,6 +23,10 @@ updated: 2026-07-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> 🚨 **2026-07-28 起改走零预设重建 —— 新 session 先读 [[REBUILD_PLAN]] 而不是本节。**
+> 本节仍然是 *状态* 的来源 (跑了什么 / 数字 / 后台), 但 *下一步做什么* 由 REBUILD_PLAN 定。
+> ⚠️ **上一轮 (§397.4-§397.9) 的结论一律视为待验**; 必须连 **笔记 §397.10 (作废条目)** 一起读。
+
 > 🎯 **2026-07-28 — §0-C 台账 5 条落地 + 自审 3 条 + 跨 AI 三家 14 条全部落地。
 > 两篇稿 8 页限内、门全绿、1626 tests pass、已 push。剩下只有人工动作。** ⭐⭐⭐⭐⭐
 > (详 笔记 §397 / §397.7; 上一轮 §396)
@@ -141,7 +145,9 @@ updated: 2026-07-27
 > | 07-28 中途版 §6.3 | 天花板 **83.9/89.1** (按特征向量) | **79.2/83.7** — 特征向量分组单例膨胀 (reddit 75% 的行是单例, 单例按定义 100%) |
 > | 07-28 中途版 §4.2 | "P-SoM 六格最低 / P-prompt 五格最高" | **换 episode 分母就塌** (5/6 · 3/6)。只引产物里标 `quotable=yes` 的两条 |
 > | #11 旧记 | red·B2 p = **0.0050** | **0.0005** (B=200 时 0.0050 是地板 1/201, 不是测量值) |
-> | 07-28 中途版 §4.2 | 任何 **legend vs AXTree** 的幻觉率对比 (含 "P-SoM 六格最低" / "降幅更大" / 旧 "2.3-24.8×") | **全部作废 — 跨 id-namespace 不可比** (稀疏 nodeId vs 稠密 1..K, 探测器灵敏度不同)。只准引同 namespace 的两个 prompt 对比 |
+> | 07-28 中途版 §4.2 | 任何 **legend vs AXTree** 的幻觉率对比 (含 "P-SoM 六格最低" / "降幅更大" / 旧 "2.3-24.8×" / 旧 "SoM 0.08 vs dom") | **全部作废** — 跨 id-namespace。⚠️ **compact namespace 是 som/P-SoM/P-text 三个不是两个**; **Vision 无 element id** (坐标动作), 其 0.000 结构性不适用。详 §397.10 |
+> | §397.9 我那套"探测器灵敏度"论证 | 当成 §4.2 的机制 | **别用** — 这条 id 噪声早有正经测量 (`b0_paired_idperturb` probes: B1 本地 temp0 组内一致性 1.0, id-shuffle 改变决策 **20%**; B0 12.5%)。§298.3 已写明 dom/p-prompt 承担、SoM-family 经 AMENDMENT_07 消除 |
+> | §397.4 "只有一对同模式重跑且污染" | 当成 #8 的结论 | **错, 我搜漏了** — manifest 15 组有第二 run (archived/pre-fix) + `results/repro_replicates/B0_vision_classifieds_R24792_clean_replicate/` 是**干净**的; `compare_cross_run_same_condition.py` 专门算这个数; **§302.1 早有: self_drop 6.7/7.6pp** vs H3 轴 1.35/2.09pp |
 > | 07-28 中途版 §6.3/A.4 | "Bayes ceiling" | **in-sample modal agreement** — 是 resubstitution 估计, 数不变但名字换了 |
 > | 07-28 中途版 §4.3 | 四签名 "mode-invariant" | **"similar after pooling"** — 格内 spread 达 48.3pp |
 > | §6.4 旧句 | tier "raises the ceiling to 89.9/96.7" 证明 backbone 一致 | 上升有算术成分; 一致性证据是**直接 agreement 68.5/88.0 vs 六路 42.6/44.0** |

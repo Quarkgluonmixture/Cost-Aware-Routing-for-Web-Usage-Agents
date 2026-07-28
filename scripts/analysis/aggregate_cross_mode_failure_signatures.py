@@ -88,6 +88,20 @@ PAPER_NAME = {
     "phantom_text": "P-text", "phantom_prompt": "P-prompt", "phantom_som": "P-SoM",
 }
 
+# Which id namespace each mode's dispatch map is keyed by. Authoritative source is
+# `runner/main.py:2853-2860`: the SoM-FAMILY modes (som / phantom_som /
+# phantom_text) get the seq-keyed 1..K map; the AXTree modes (dom / p-prompt /
+# vision) leave it None and the env keeps its native nodeId-keyed map.
+#
+# ⚠️ SoM is renumbered too — it is NOT only the two phantom legend arms (user
+# correction 2026-07-28). Any SoM-vs-DOM hallucinated-reference ratio is therefore
+# just as cross-namespace as a P-SoM-vs-DOM one, including the one still quoted in
+# `write_digests.py`. Comparable pairs are those sharing a value here.
+ID_NAMESPACE = {
+    "dom": "native", "phantom_prompt": "native", "vision": "native (no marks)",
+    "som": "compact 1..K", "phantom_som": "compact 1..K", "phantom_text": "compact 1..K",
+}
+
 
 def parse_key(key: str) -> tuple[str, str, str]:
     """`B0_phantom_som_reddit` -> (B0, phantom_som, reddit)."""
@@ -383,10 +397,19 @@ def render_md(a: dict, b: dict, ruleset: str) -> str:
              "with at least one such step, which does not. A thirty-step deadlock on one "
              "invalid id moves the first a great deal and the second by one episode.\n")
     L.append("Restricted to the canonical SCORED task set.\n")
+    L.append("\n🚨 **Rates are comparable only WITHIN an id namespace** (row 2 of each table "
+             "below). The metric counts actions naming an id the dispatch map lacks, and that "
+             "map is keyed by raw CDP nodeIds for the AXTree modes but re-keyed to sequential "
+             "1..K for the SoM-family modes (`runner/main.py:2853-2860`). Under sparse native "
+             "ids almost any slip lands outside the valid set and is counted; under dense 1..K "
+             "a *wrong* element choice usually still names a valid id and is NOT counted. "
+             "**SoM is renumbered too**, so a SoM-vs-DOM ratio is exactly as cross-namespace "
+             "as a P-SoM-vs-DOM one.\n")
     for field, title in (("rate_all_pct", "By action-step"),
                          ("episode_incidence_pct", "By episode incidence")):
         L.append(f"\n### {title}\n")
         L.append("| cell | " + " | ".join(PAPER_NAME[m] for m in MODES) + " |")
+        L.append("| *id namespace* | " + " | ".join(f"*{ID_NAMESPACE[m]}*" for m in MODES) + " |")
         L.append("|" + "---|" * (len(MODES) + 1))
         for cell in sorted(b["per_cell_per_mode"]):
             bm = b["per_cell_per_mode"][cell]

@@ -25,10 +25,15 @@ produce. Against zero the gate is close to guaranteed to pass, so passing it is 
 and the interval's width does not repair this — it is a paired bootstrap over tasks, so it
 reflects which tasks were sampled and not how one task's outcome varies across repeats of the
 same condition. Every condition here is a single rollout at temperature 0, which removes
-decoding variance but not the environment's [@he2025nondeterminism]. No same-mode replicate
-exists in our data to calibrate against. What the axes therefore establish is the *sign and
-magnitude* of a difference, 1.35 pp and 2.09 pp, not that either clears a noise floor; axis-1
-has the less comfortable margin of the two.
+decoding variance but not the environment's [@he2025nondeterminism]. We hold one same-condition
+replicate pair, on the strongest backbone under the screenshot-only mode, and treating its two
+runs as a spurious pair of arms yields set differences of 6.7 and 7.6 points, several times the
+axis magnitudes reported above. That figure is an upper bound and is not directly transferable:
+it is measured on the API-served mixture-of-experts backbone, whose repeated identical inputs
+already disagree, whereas the two locally served backbones are deterministic under repeated
+identical input. Establishing the floor that H3 actually needs requires the same measurement on
+a locally served cell, which we have not run. What the axes establish in the meantime is the
+*sign and magnitude* of a difference, 1.35 pp and 2.09 pp, not that either clears a noise floor.
 The nearest repeat in our archive is a truncated pre-fix reddit DOM run: on its 148-task
 overlap with the canonical run the two disagree on ten tasks, but nine fall the same way and
 the success count rises from 12 to 20, so it measures a repaired defect rather than run-to-run
