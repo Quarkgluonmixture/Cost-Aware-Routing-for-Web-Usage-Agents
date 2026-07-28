@@ -61,13 +61,27 @@ MODES = ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"
 TEXT_BEARING = [m for m in MODES if m != "vision"]
 ACTION_TYPES = ("click", "type", "select_option")
 
-# The phantom quadrant: (text payload, prompt family). This is the 2x2 whose
-# interaction Part B measures.
+# The phantom quadrant: (text payload, prompt family, id namespace the dispatch
+# map is keyed by).
+#
+# ⚠️ The id namespace decides which comparisons the hallucinated-reference metric
+# can support at all (user objection 2026-07-28, confirmed in som.py:180-207).
+# The metric counts action steps naming an element id absent from
+# `obs_nodes_info`. For AXTree arms that map stays keyed by the raw CDP nodeId, a
+# sparse space (median 7,839-18,729, max 691,695), so essentially any slip lands
+# outside it and is counted. For legend arms `build_som_text_from_obs_text`
+# re-keys it to sequential 1..K (median K = 15-17, max 176), a dense space in
+# which a *wrong* element choice usually still names a VALID id and is therefore
+# NOT counted. The detector is far more sensitive under sparse ids.
+#
+# Consequence: only contrasts holding the namespace fixed are comparable —
+# DOM vs P-prompt, and P-text vs P-SoM. Any legend-vs-AXTree contrast compares
+# two different detectors and is reported below marked as such.
 QUADRANT = {
-    "dom": ("AXTree", "DOM"),
-    "phantom_text": ("legend", "DOM"),
-    "phantom_prompt": ("AXTree", "SoM"),
-    "phantom_som": ("legend", "SoM"),
+    "dom": ("AXTree", "DOM", "native"),
+    "phantom_text": ("legend", "DOM", "compact"),
+    "phantom_prompt": ("AXTree", "SoM", "native"),
+    "phantom_som": ("legend", "SoM", "compact"),
 }
 PAPER_NAME = {
     "dom": "DOM", "som": "SoM", "vision": "Vision",
@@ -298,8 +312,18 @@ def part_b(targets: dict[str, str]) -> dict:
     return {
         "per_cell_per_mode": {c: {PAPER_NAME[m]: v for m, v in bm.items()}
                               for c, bm in cells.items()},
-        "quadrant_definition": {PAPER_NAME[m]: {"text": t, "prompt": p}
-                                for m, (t, p) in QUADRANT.items()},
+        "quadrant_definition": {PAPER_NAME[m]: {"text": t, "prompt": p, "id_namespace": n}
+                                for m, (t, p, n) in QUADRANT.items()},
+        "comparable_contrasts": {
+            "prompt_effect_on_AXTree_pp": "DOM vs P-prompt, both native ids — COMPARABLE",
+            "prompt_effect_on_legend_pp": "P-text vs P-SoM, both compact ids — COMPARABLE",
+            "text_effect_at_DOM_prompt_pp":
+                "DOM vs P-text, native vs compact — NOT COMPARABLE (different detector)",
+            "text_effect_at_SoM_prompt_pp":
+                "P-prompt vs P-SoM, native vs compact — NOT COMPARABLE (different detector)",
+            "lowest_arm/highest_arm":
+                "ranks all four arms across namespaces — NOT COMPARABLE",
+        },
         "decomposition_by_action_step": by_step,
         "decomposition_by_episode_incidence": by_episode,
         "summary_by_action_step": s_step,
@@ -373,6 +397,16 @@ def render_md(a: dict, b: dict, ruleset: str) -> str:
     L.append("\n### The 2x2: which knob moves the rate\n")
     L.append("P-text = legend text under the DOM prompt; P-prompt = AXTree text under the "
              "SoM prompt. So the text knob is read at a fixed prompt family and vice versa.\n")
+    L.append("\n🚨 **Only the two prompt-effect columns are comparable.** The metric counts "
+             "action steps naming an id absent from the dispatch map, and that map is keyed by "
+             "raw CDP nodeIds for the AXTree arms (sparse: median 7,839-18,729, max 691,695) "
+             "but re-keyed to sequential 1..K for the legend arms (dense: median K = 15-17, "
+             "max 176; `som.py` `build_som_text_from_obs_text`). Under sparse ids almost any "
+             "slip is outside the valid set and is counted; under dense ids a *wrong* element "
+             "choice usually still names a valid id and is NOT counted. So a legend-vs-AXTree "
+             "difference mixes a behaviour change with a detector-sensitivity change. The text "
+             "columns and the lowest/highest ranks below are printed for completeness and must "
+             "not be read as effects.\n")
     for key, title in (("decomposition_by_action_step", "By action-step"),
                        ("decomposition_by_episode_incidence", "By episode incidence")):
         L.append(f"\n**{title}**\n")
@@ -388,33 +422,40 @@ def render_md(a: dict, b: dict, ruleset: str) -> str:
 
     ss, se = b["summary_by_action_step"], b["summary_by_episode_incidence"]
     n = ss["n_cells"]
-    L.append("\n### Which statements survive both denominators\n")
-    L.append("| statement | by action-step | by episode incidence | quotable |")
+    L.append("\n### Which statements are comparable, and which survive both denominators\n")
+    L.append("| statement | comparable? | by action-step | by episode incidence |")
     L.append("|---|---|---|---|")
     labels = [
-        ("cells_reduction_larger_at_SoM_prompt",
+        ("cells_prompt_effect_negative_on_AXTree", True,
+         "SoM prompt LOWERS the rate when ids are native (so 6−n cells RAISE it)"),
+        ("cells_prompt_effect_negative_on_legend", True,
+         "SoM prompt LOWERS the rate when ids are compact"),
+        ("cells_reduction_larger_at_SoM_prompt", False,
          "legend's reduction is larger under the SoM prompt than the DOM prompt"),
-        ("cells_text_effect_negative_at_SoM_prompt",
+        ("cells_text_effect_negative_at_SoM_prompt", False,
          "legend lowers the rate under the SoM prompt"),
-        ("cells_prompt_effect_negative_on_legend",
-         "SoM prompt lowers the rate when the text is the legend"),
-        ("cells_where_P_SoM_lowest", "P-SoM is the lowest arm"),
-        ("cells_where_P_prompt_highest", "P-prompt is the highest arm"),
-        ("cells_text_effect_negative_at_DOM_prompt",
+        ("cells_text_effect_negative_at_DOM_prompt", False,
          "legend lowers the rate under the DOM prompt"),
-        ("cells_prompt_effect_negative_on_AXTree",
-         "SoM prompt lowers the rate when the text is the AXTree"),
+        ("cells_where_P_SoM_lowest", False, "P-SoM is the lowest arm"),
+        ("cells_where_P_prompt_highest", False, "P-prompt is the highest arm"),
     ]
-    for k, text in labels:
-        ok = "**yes**" if ss[k] == se[k] == n else "no"
-        L.append(f"| {text} | {ss[k]}/{n} | {se[k]}/{n} | {ok} |")
-    L.append("\nOnly the rows marked **yes** are stated in the paper. The interaction claim "
-             "rests on the first row: the legend's effect on reference hallucination depends "
-             "on which prompt it is paired with, in every cell under either denominator. The "
-             "arms in which the prompt's advertised id scheme and the text's actual id scheme "
-             "agree behave differently from the two mismatched arms.\n")
-    L.append("Rows marked *no* are real under one denominator and not the other, which is "
-             "why the second denominator is computed at all rather than assumed to agree.\n")
+    for k, comparable, text in labels:
+        tag = "**yes**" if comparable else "**NO — cross-namespace**"
+        L.append(f"| {text} | {tag} | {ss[k]}/{n} | {se[k]}/{n} |")
+    L.append(f"\nThe paper states only the two comparable rows. Together they are an "
+             f"interaction with opposite signs: moving to the SoM prompt **raises** the rate "
+             f"when the text supplies native ids ({n - ss['cells_prompt_effect_negative_on_AXTree']}"
+             f"/{n} cells by action-step, "
+             f"{n - se['cells_prompt_effect_negative_on_AXTree']}/{n} by episode) and "
+             f"**lowers** it when the text supplies the 1..K legend "
+             f"({ss['cells_prompt_effect_negative_on_legend']}/{n} and "
+             f"{se['cells_prompt_effect_negative_on_legend']}/{n}). Both halves hold the id "
+             "namespace fixed, so neither is a detector artefact, and the sign flip is what a "
+             "prompt-text mismatch account predicts: a prompt announcing marks 1..K helps when "
+             "the text has them and hurts when it does not.\n")
+    L.append("The rows marked NOT comparable are printed so the asymmetry is visible, not as "
+             "evidence. Note that they are also the rows that move most between the two "
+             "denominators.\n")
     return "\n".join(L)
 
 

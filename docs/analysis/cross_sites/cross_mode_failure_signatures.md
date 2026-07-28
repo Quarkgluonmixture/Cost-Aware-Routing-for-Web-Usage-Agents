@@ -28,8 +28,20 @@ Episode-level hit rate: share of episodes in which the signature fires at least 
 | P18 | cheapest漏价格排序 | 6.1 | 6.6 | 6.2 | 6.2 | 5.5 | 6.2 | 6.0 | 1.0 | 1.0 |
 
 **Top four signatures**: P31 (49.8%), P36 (48.8%), P5 (43.5%), P14 (26.9%).
-Spread across the five text-bearing modes: P31 9.3 pp, P36 13.7 pp, P5 9.9 pp, P14 7.4 pp.
+Spread across the five text-bearing modes, **pooled over cells**: P31 9.3 pp, P36 13.7 pp, P5 9.9 pp, P14 7.4 pp.
 Including `vision`: P31 9.3 pp, P36 38.9 pp, P5 19.5 pp, P14 16.3 pp.
+
+⚠️ **The pooled spread is not a within-cell spread.** Pooling sums numerators and denominators over the six cells before the rate is formed, so cell × mode variation cancels. Per cell, over the same five text-bearing modes:
+
+| rule | pooled spread | max within-cell | median within-cell | worst cell |
+|---|---|---|---|---|
+| P31 | 9.3 pp | **15.3 pp** | 12.8 pp | reddit·B0 |
+| P36 | 13.7 pp | **27.6 pp** | 23.2 pp | reddit·B2 |
+| P5 | 9.9 pp | **48.8 pp** | 15.6 pp | reddit·B2 |
+| P14 | 7.4 pp | **36.5 pp** | 16.3 pp | reddit·B2 |
+
+So "mode-invariant" is only defensible as *similar after pooling*. No claim that any individual cell shows mode-invariance is supported here.
+
 
 ## Part B — hallucinated element references (paper A §4.2)
 
@@ -65,6 +77,9 @@ Restricted to the canonical SCORED task set.
 P-text = legend text under the DOM prompt; P-prompt = AXTree text under the SoM prompt. So the text knob is read at a fixed prompt family and vice versa.
 
 
+🚨 **Only the two prompt-effect columns are comparable.** The metric counts action steps naming an id absent from the dispatch map, and that map is keyed by raw CDP nodeIds for the AXTree arms (sparse: median 7,839-18,729, max 691,695) but re-keyed to sequential 1..K for the legend arms (dense: median K = 15-17, max 176; `som.py` `build_som_text_from_obs_text`). Under sparse ids almost any slip is outside the valid set and is counted; under dense ids a *wrong* element choice usually still names a valid id and is NOT counted. So a legend-vs-AXTree difference mixes a behaviour change with a detector-sensitivity change. The text columns and the lowest/highest ranks below are printed for completeness and must not be read as effects.
+
+
 **By action-step**
 
 | cell | text @ DOM prompt | text @ SoM prompt | prompt @ AXTree | prompt @ legend | lowest | highest |
@@ -87,18 +102,18 @@ P-text = legend text under the DOM prompt; P-prompt = AXTree text under the SoM 
 | reddit·B1 | -0.493 | -14.778 | +3.941 | -10.345 | P-SoM | P-prompt |
 | reddit·B2 | -37.438 | -45.813 | +13.793 | +5.419 | P-text | P-prompt |
 
-### Which statements survive both denominators
+### Which statements are comparable, and which survive both denominators
 
-| statement | by action-step | by episode incidence | quotable |
+| statement | comparable? | by action-step | by episode incidence |
 |---|---|---|---|
-| legend's reduction is larger under the SoM prompt than the DOM prompt | 6/6 | 6/6 | **yes** |
-| legend lowers the rate under the SoM prompt | 6/6 | 6/6 | **yes** |
-| SoM prompt lowers the rate when the text is the legend | 6/6 | 5/6 | no |
-| P-SoM is the lowest arm | 6/6 | 5/6 | no |
-| P-prompt is the highest arm | 5/6 | 3/6 | no |
-| legend lowers the rate under the DOM prompt | 3/6 | 5/6 | no |
-| SoM prompt lowers the rate when the text is the AXTree | 1/6 | 1/6 | no |
+| SoM prompt LOWERS the rate when ids are native (so 6−n cells RAISE it) | **yes** | 1/6 | 1/6 |
+| SoM prompt LOWERS the rate when ids are compact | **yes** | 6/6 | 5/6 |
+| legend's reduction is larger under the SoM prompt than the DOM prompt | **NO — cross-namespace** | 6/6 | 6/6 |
+| legend lowers the rate under the SoM prompt | **NO — cross-namespace** | 6/6 | 6/6 |
+| legend lowers the rate under the DOM prompt | **NO — cross-namespace** | 3/6 | 5/6 |
+| P-SoM is the lowest arm | **NO — cross-namespace** | 6/6 | 5/6 |
+| P-prompt is the highest arm | **NO — cross-namespace** | 5/6 | 3/6 |
 
-Only the rows marked **yes** are stated in the paper. The interaction claim rests on the first row: the legend's effect on reference hallucination depends on which prompt it is paired with, in every cell under either denominator. The arms in which the prompt's advertised id scheme and the text's actual id scheme agree behave differently from the two mismatched arms.
+The paper states only the two comparable rows. Together they are an interaction with opposite signs: moving to the SoM prompt **raises** the rate when the text supplies native ids (5/6 cells by action-step, 5/6 by episode) and **lowers** it when the text supplies the 1..K legend (6/6 and 5/6). Both halves hold the id namespace fixed, so neither is a detector artefact, and the sign flip is what a prompt-text mismatch account predicts: a prompt announcing marks 1..K helps when the text has them and hurts when it does not.
 
-Rows marked *no* are real under one denominator and not the other, which is why the second denominator is computed at all rather than assumed to agree.
+The rows marked NOT comparable are printed so the asymmetry is visible, not as evidence. Note that they are also the rows that move most between the two denominators.

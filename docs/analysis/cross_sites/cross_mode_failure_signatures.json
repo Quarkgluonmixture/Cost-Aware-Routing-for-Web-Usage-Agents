@@ -50,6 +50,14 @@
    "phantom_som": 1281
   },
   "episodes_total": 7686,
+  "cells": [
+   "classifieds\u00b7B0",
+   "classifieds\u00b7B1",
+   "classifieds\u00b7B2",
+   "reddit\u00b7B0",
+   "reddit\u00b7B1",
+   "reddit\u00b7B2"
+  ],
   "rules": [
    {
     "rule_id": "P31",
@@ -65,6 +73,16 @@
     },
     "spread_all_modes_pp": 9.289617486338798,
     "spread_text_bearing_pp": 9.289617486338798,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 4.910714285714285,
+     "classifieds\u00b7B1": 10.267857142857142,
+     "classifieds\u00b7B2": 12.5,
+     "reddit\u00b7B0": 15.270935960591139,
+     "reddit\u00b7B1": 13.793103448275858,
+     "reddit\u00b7B2": 12.807881773399018
+    },
+    "within_cell_spread_max_pp": 15.270935960591139,
+    "within_cell_spread_median_pp": 12.807881773399018,
     "structurally_zero_under_vision": false
    },
    {
@@ -81,6 +99,16 @@
     },
     "spread_all_modes_pp": 38.87587822014052,
     "spread_text_bearing_pp": 13.661202185792355,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 24.10714285714286,
+     "classifieds\u00b7B1": 23.214285714285715,
+     "classifieds\u00b7B2": 6.696428571428569,
+     "reddit\u00b7B0": 15.270935960591132,
+     "reddit\u00b7B1": 16.748768472906406,
+     "reddit\u00b7B2": 27.586206896551722
+    },
+    "within_cell_spread_max_pp": 27.586206896551722,
+    "within_cell_spread_median_pp": 23.214285714285715,
     "structurally_zero_under_vision": false
    },
    {
@@ -97,6 +125,16 @@
     },
     "spread_all_modes_pp": 19.516003122560498,
     "spread_text_bearing_pp": 9.914129586260735,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 8.928571428571427,
+     "classifieds\u00b7B1": 15.625000000000004,
+     "classifieds\u00b7B2": 14.732142857142854,
+     "reddit\u00b7B0": 11.330049261083744,
+     "reddit\u00b7B1": 16.748768472906406,
+     "reddit\u00b7B2": 48.76847290640394
+    },
+    "within_cell_spread_max_pp": 48.76847290640394,
+    "within_cell_spread_median_pp": 15.625000000000004,
     "structurally_zero_under_vision": false
    },
    {
@@ -113,6 +151,16 @@
     },
     "spread_all_modes_pp": 16.31537861046058,
     "spread_text_bearing_pp": 7.416081186572988,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 4.464285714285715,
+     "classifieds\u00b7B1": 7.589285714285715,
+     "classifieds\u00b7B2": 14.285714285714285,
+     "reddit\u00b7B0": 16.25615763546798,
+     "reddit\u00b7B1": 19.704433497536947,
+     "reddit\u00b7B2": 36.453201970443345
+    },
+    "within_cell_spread_max_pp": 36.453201970443345,
+    "within_cell_spread_median_pp": 16.25615763546798,
     "structurally_zero_under_vision": false
    },
    {
@@ -129,6 +177,16 @@
     },
     "spread_all_modes_pp": 37.39266198282592,
     "spread_text_bearing_pp": 11.787665886026545,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 5.803571428571429,
+     "classifieds\u00b7B1": 13.392857142857142,
+     "classifieds\u00b7B2": 17.410714285714285,
+     "reddit\u00b7B0": 10.83743842364532,
+     "reddit\u00b7B1": 17.73399014778325,
+     "reddit\u00b7B2": 48.27586206896551
+    },
+    "within_cell_spread_max_pp": 48.27586206896551,
+    "within_cell_spread_median_pp": 17.410714285714285,
     "structurally_zero_under_vision": true
    },
    {
@@ -145,6 +203,16 @@
     },
     "spread_all_modes_pp": 30.288836846213897,
     "spread_text_bearing_pp": 30.288836846213897,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 30.803571428571427,
+     "classifieds\u00b7B1": 31.25,
+     "classifieds\u00b7B2": 31.696428571428573,
+     "reddit\u00b7B0": 28.571428571428573,
+     "reddit\u00b7B1": 30.049261083743843,
+     "reddit\u00b7B2": 31.03448275862069
+    },
+    "within_cell_spread_max_pp": 31.696428571428573,
+    "within_cell_spread_median_pp": 31.03448275862069,
     "structurally_zero_under_vision": true
    },
    {
@@ -161,6 +229,16 @@
     },
     "spread_all_modes_pp": 9.992193598750974,
     "spread_text_bearing_pp": 7.5722092115534725,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 5.803571428571429,
+     "classifieds\u00b7B1": 1.7857142857142858,
+     "classifieds\u00b7B2": 23.214285714285715,
+     "reddit\u00b7B0": 11.33004926108374,
+     "reddit\u00b7B1": 6.896551724137929,
+     "reddit\u00b7B2": 11.822660098522167
+    },
+    "within_cell_spread_max_pp": 23.214285714285715,
+    "within_cell_spread_median_pp": 11.33004926108374,
     "structurally_zero_under_vision": false
    },
    {
@@ -177,6 +255,16 @@
     },
     "spread_all_modes_pp": 27.40046838407494,
     "spread_text_bearing_pp": 19.28181108508977,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 6.25,
+     "classifieds\u00b7B1": 20.089285714285715,
+     "classifieds\u00b7B2": 33.48214285714286,
+     "reddit\u00b7B0": 3.9408866995073892,
+     "reddit\u00b7B1": 14.285714285714286,
+     "reddit\u00b7B2": 52.2167487684729
+    },
+    "within_cell_spread_max_pp": 52.2167487684729,
+    "within_cell_spread_median_pp": 20.089285714285715,
     "structurally_zero_under_vision": true
    },
    {
@@ -193,6 +281,16 @@
     },
     "spread_all_modes_pp": 6.947697111631538,
     "spread_text_bearing_pp": 5.386416861826698,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 1.3392857142857144,
+     "classifieds\u00b7B1": 4.464285714285715,
+     "classifieds\u00b7B2": 14.732142857142861,
+     "reddit\u00b7B0": 11.330049261083744,
+     "reddit\u00b7B1": 8.866995073891626,
+     "reddit\u00b7B2": 24.13793103448276
+    },
+    "within_cell_spread_max_pp": 24.13793103448276,
+    "within_cell_spread_median_pp": 11.330049261083744,
     "structurally_zero_under_vision": false
    },
    {
@@ -209,6 +307,16 @@
     },
     "spread_all_modes_pp": 3.5909445745511324,
     "spread_text_bearing_pp": 3.5909445745511324,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 3.1249999999999996,
+     "classifieds\u00b7B1": 1.7857142857142856,
+     "classifieds\u00b7B2": 0.44642857142857206,
+     "reddit\u00b7B0": 10.83743842364532,
+     "reddit\u00b7B1": 4.926108374384237,
+     "reddit\u00b7B2": 3.448275862068966
+    },
+    "within_cell_spread_max_pp": 10.83743842364532,
+    "within_cell_spread_median_pp": 3.448275862068966,
     "structurally_zero_under_vision": false
    },
    {
@@ -225,6 +333,16 @@
     },
     "spread_all_modes_pp": 19.359875097580016,
     "spread_text_bearing_pp": 18.969555035128806,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 3.1250000000000004,
+     "classifieds\u00b7B1": 28.125,
+     "classifieds\u00b7B2": 39.732142857142854,
+     "reddit\u00b7B0": 8.866995073891626,
+     "reddit\u00b7B1": 17.24137931034483,
+     "reddit\u00b7B2": 22.167487684729064
+    },
+    "within_cell_spread_max_pp": 39.732142857142854,
+    "within_cell_spread_median_pp": 22.167487684729064,
     "structurally_zero_under_vision": true
    },
    {
@@ -241,6 +359,16 @@
     },
     "spread_all_modes_pp": 1.0148321623731462,
     "spread_text_bearing_pp": 1.0148321623731462,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 3.571428571428572,
+     "classifieds\u00b7B1": 5.357142857142858,
+     "classifieds\u00b7B2": 4.017857142857142,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 5.357142857142858,
+    "within_cell_spread_median_pp": 3.571428571428572,
     "structurally_zero_under_vision": false
    },
    {
@@ -257,6 +385,16 @@
     },
     "spread_all_modes_pp": 4.918032786885245,
     "spread_text_bearing_pp": 2.263856362217018,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 6.696428571428569,
+     "classifieds\u00b7B1": 7.589285714285715,
+     "classifieds\u00b7B2": 2.6785714285714284,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 7.589285714285715,
+    "within_cell_spread_median_pp": 2.6785714285714284,
     "structurally_zero_under_vision": false
    },
    {
@@ -273,6 +411,16 @@
     },
     "spread_all_modes_pp": 1.0148321623731453,
     "spread_text_bearing_pp": 0.5464480874316937,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.8928571428571423,
+     "classifieds\u00b7B1": 2.2321428571428568,
+     "classifieds\u00b7B2": 0.8928571428571441,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 2.2321428571428568,
+    "within_cell_spread_median_pp": 0.8928571428571423,
     "structurally_zero_under_vision": false
    },
    {
@@ -289,6 +437,16 @@
     },
     "spread_all_modes_pp": 24.824355971896956,
     "spread_text_bearing_pp": 24.824355971896956,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 47.32142857142857,
+     "classifieds\u00b7B1": 47.32142857142857,
+     "classifieds\u00b7B2": 47.32142857142857,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 47.32142857142857,
+    "within_cell_spread_median_pp": 47.32142857142857,
     "structurally_zero_under_vision": true
    },
    {
@@ -305,6 +463,16 @@
     },
     "spread_all_modes_pp": 1.5612802498048401,
     "spread_text_bearing_pp": 0.858704137392662,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 2.2321428571428577,
+     "classifieds\u00b7B1": 2.232142857142857,
+     "classifieds\u00b7B2": 0.4464285714285713,
+     "reddit\u00b7B0": 1.477832512315271,
+     "reddit\u00b7B1": 2.4630541871921183,
+     "reddit\u00b7B2": 2.4630541871921183
+    },
+    "within_cell_spread_max_pp": 2.4630541871921183,
+    "within_cell_spread_median_pp": 2.2321428571428577,
     "structurally_zero_under_vision": false
    },
    {
@@ -321,6 +489,16 @@
     },
     "spread_all_modes_pp": 0.7025761124121781,
     "spread_text_bearing_pp": 0.7025761124121781,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.8928571428571432,
+     "classifieds\u00b7B1": 4.017857142857142,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 4.017857142857142,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": false
    },
    {
@@ -337,6 +515,16 @@
     },
     "spread_all_modes_pp": 12.412177985948478,
     "spread_text_bearing_pp": 12.412177985948478,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 23.660714285714285,
+     "classifieds\u00b7B1": 23.660714285714285,
+     "classifieds\u00b7B2": 23.660714285714285,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 23.660714285714285,
+    "within_cell_spread_median_pp": 23.660714285714285,
     "structurally_zero_under_vision": true
    },
    {
@@ -353,6 +541,16 @@
     },
     "spread_all_modes_pp": 1.7954722872755657,
     "spread_text_bearing_pp": 0.624512099921936,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.44642857142857145,
+     "classifieds\u00b7B1": 0.8928571428571428,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 2.4630541871921183,
+     "reddit\u00b7B1": 2.955665024630542,
+     "reddit\u00b7B2": 3.4482758620689657
+    },
+    "within_cell_spread_max_pp": 3.4482758620689657,
+    "within_cell_spread_median_pp": 2.4630541871921183,
     "structurally_zero_under_vision": false
    },
    {
@@ -369,6 +567,16 @@
     },
     "spread_all_modes_pp": 3.8251366120218577,
     "spread_text_bearing_pp": 3.200624512099922,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 11.160714285714286,
+     "classifieds\u00b7B1": 3.1250000000000004,
+     "classifieds\u00b7B2": 5.357142857142858,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 11.160714285714286,
+    "within_cell_spread_median_pp": 3.1250000000000004,
     "structurally_zero_under_vision": true
    },
    {
@@ -385,6 +593,16 @@
     },
     "spread_all_modes_pp": 0.78064012490242,
     "spread_text_bearing_pp": 0.78064012490242,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 2.2321428571428568,
+     "classifieds\u00b7B1": 3.125000000000001,
+     "classifieds\u00b7B2": 1.3392857142857142,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 3.125000000000001,
+    "within_cell_spread_median_pp": 1.3392857142857142,
     "structurally_zero_under_vision": false
    },
    {
@@ -401,6 +619,16 @@
     },
     "spread_all_modes_pp": 1.4832162373145978,
     "spread_text_bearing_pp": 1.4832162373145978,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 3.1250000000000004,
+     "classifieds\u00b7B1": 3.5714285714285716,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.9852216748768472,
+     "reddit\u00b7B1": 1.9704433497536946,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 3.5714285714285716,
+    "within_cell_spread_median_pp": 1.9704433497536946,
     "structurally_zero_under_vision": false
    },
    {
@@ -417,6 +645,16 @@
     },
     "spread_all_modes_pp": 1.639344262295082,
     "spread_text_bearing_pp": 1.249024199843872,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 3.5714285714285716,
+     "classifieds\u00b7B1": 1.3392857142857144,
+     "classifieds\u00b7B2": 2.232142857142857,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 3.5714285714285716,
+    "within_cell_spread_median_pp": 1.3392857142857144,
     "structurally_zero_under_vision": false
    },
    {
@@ -433,6 +671,16 @@
     },
     "spread_all_modes_pp": 1.9516003122560501,
     "spread_text_bearing_pp": 1.4051522248243562,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 1.7857142857142858,
+     "classifieds\u00b7B1": 7.142857142857142,
+     "classifieds\u00b7B2": 0.8928571428571429,
+     "reddit\u00b7B0": 0.49261083743842365,
+     "reddit\u00b7B1": 2.955665024630542,
+     "reddit\u00b7B2": 0.9852216748768473
+    },
+    "within_cell_spread_max_pp": 7.142857142857142,
+    "within_cell_spread_median_pp": 1.7857142857142858,
     "structurally_zero_under_vision": false
    },
    {
@@ -449,6 +697,16 @@
     },
     "spread_all_modes_pp": 0.23419203747072603,
     "spread_text_bearing_pp": 0.23419203747072603,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.4464285714285716,
+     "classifieds\u00b7B1": 0.8928571428571428,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.8928571428571428,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": false
    },
    {
@@ -465,6 +723,16 @@
     },
     "spread_all_modes_pp": 0.23419203747072598,
     "spread_text_bearing_pp": 0.23419203747072598,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 1.3392857142857144,
+     "classifieds\u00b7B1": 2.232142857142857,
+     "classifieds\u00b7B2": 0.8928571428571429,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 2.232142857142857,
+    "within_cell_spread_median_pp": 0.8928571428571429,
     "structurally_zero_under_vision": false
    },
    {
@@ -481,6 +749,16 @@
     },
     "spread_all_modes_pp": 0.23419203747072603,
     "spread_text_bearing_pp": 0.23419203747072603,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 1.7857142857142858,
+     "classifieds\u00b7B1": 0.4464285714285713,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.49261083743842365
+    },
+    "within_cell_spread_max_pp": 1.7857142857142858,
+    "within_cell_spread_median_pp": 0.4464285714285713,
     "structurally_zero_under_vision": false
    },
    {
@@ -497,6 +775,16 @@
     },
     "spread_all_modes_pp": 0.39032006245121,
     "spread_text_bearing_pp": 0.23419203747072603,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.4464285714285716,
+     "classifieds\u00b7B1": 1.3392857142857144,
+     "classifieds\u00b7B2": 0.44642857142857145,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 1.3392857142857144,
+    "within_cell_spread_median_pp": 0.44642857142857145,
     "structurally_zero_under_vision": false
    },
    {
@@ -513,6 +801,16 @@
     },
     "spread_all_modes_pp": 0.39032006245121,
     "spread_text_bearing_pp": 0.312256049960968,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.8928571428571428,
+     "classifieds\u00b7B1": 0.44642857142857145,
+     "classifieds\u00b7B2": 0.44642857142857145,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.8928571428571428,
+    "within_cell_spread_median_pp": 0.44642857142857145,
     "structurally_zero_under_vision": false
    },
    {
@@ -529,6 +827,16 @@
     },
     "spread_all_modes_pp": 1.405152224824356,
     "spread_text_bearing_pp": 1.405152224824356,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 2.6785714285714284,
+     "classifieds\u00b7B1": 2.6785714285714284,
+     "classifieds\u00b7B2": 2.6785714285714284,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 2.6785714285714284,
+    "within_cell_spread_median_pp": 2.6785714285714284,
     "structurally_zero_under_vision": true
    },
    {
@@ -545,6 +853,16 @@
     },
     "spread_all_modes_pp": 0.39032006245121,
     "spread_text_bearing_pp": 0.39032006245121,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.8928571428571429,
+     "classifieds\u00b7B1": 0.8928571428571429,
+     "classifieds\u00b7B2": 0.8928571428571429,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.8928571428571429,
+    "within_cell_spread_median_pp": 0.8928571428571429,
     "structurally_zero_under_vision": true
    },
    {
@@ -561,6 +879,16 @@
     },
     "spread_all_modes_pp": 0.234192037470726,
     "spread_text_bearing_pp": 0.078064012490242,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.0,
+     "classifieds\u00b7B1": 0.44642857142857145,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.44642857142857145,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": false
    },
    {
@@ -577,6 +905,16 @@
     },
     "spread_all_modes_pp": 0.78064012490242,
     "spread_text_bearing_pp": 0.0,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.0,
+     "classifieds\u00b7B1": 0.0,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.0,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": false
    },
    {
@@ -593,6 +931,16 @@
     },
     "spread_all_modes_pp": 0.234192037470726,
     "spread_text_bearing_pp": 0.156128024980484,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.44642857142857145,
+     "classifieds\u00b7B1": 0.0,
+     "classifieds\u00b7B2": 1.3392857142857142,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 1.3392857142857142,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": true
    },
    {
@@ -609,6 +957,16 @@
     },
     "spread_all_modes_pp": 0.468384074941452,
     "spread_text_bearing_pp": 0.468384074941452,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 2.232142857142857,
+     "classifieds\u00b7B1": 0.44642857142857145,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 2.232142857142857,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": true
    },
    {
@@ -625,6 +983,16 @@
     },
     "spread_all_modes_pp": 0.156128024980484,
     "spread_text_bearing_pp": 0.156128024980484,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.44642857142857145,
+     "classifieds\u00b7B1": 0.44642857142857145,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.44642857142857145,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": false
    },
    {
@@ -641,6 +1009,16 @@
     },
     "spread_all_modes_pp": 0.078064012490242,
     "spread_text_bearing_pp": 0.078064012490242,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.44642857142857145,
+     "classifieds\u00b7B1": 0.0,
+     "classifieds\u00b7B2": 0.44642857142857145,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.44642857142857145,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": true
    },
    {
@@ -657,6 +1035,16 @@
     },
     "spread_all_modes_pp": 0.078064012490242,
     "spread_text_bearing_pp": 0.078064012490242,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.0,
+     "classifieds\u00b7B1": 0.0,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.49261083743842365,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 0.49261083743842365,
+    "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": true
    }
   ]
@@ -1183,20 +1571,31 @@
   "quadrant_definition": {
    "DOM": {
     "text": "AXTree",
-    "prompt": "DOM"
+    "prompt": "DOM",
+    "id_namespace": "native"
    },
    "P-text": {
     "text": "legend",
-    "prompt": "DOM"
+    "prompt": "DOM",
+    "id_namespace": "compact"
    },
    "P-prompt": {
     "text": "AXTree",
-    "prompt": "SoM"
+    "prompt": "SoM",
+    "id_namespace": "native"
    },
    "P-SoM": {
     "text": "legend",
-    "prompt": "SoM"
+    "prompt": "SoM",
+    "id_namespace": "compact"
    }
+  },
+  "comparable_contrasts": {
+   "prompt_effect_on_AXTree_pp": "DOM vs P-prompt, both native ids \u2014 COMPARABLE",
+   "prompt_effect_on_legend_pp": "P-text vs P-SoM, both compact ids \u2014 COMPARABLE",
+   "text_effect_at_DOM_prompt_pp": "DOM vs P-text, native vs compact \u2014 NOT COMPARABLE (different detector)",
+   "text_effect_at_SoM_prompt_pp": "P-prompt vs P-SoM, native vs compact \u2014 NOT COMPARABLE (different detector)",
+   "lowest_arm/highest_arm": "ranks all four arms across namespaces \u2014 NOT COMPARABLE"
   },
   "decomposition_by_action_step": [
    {

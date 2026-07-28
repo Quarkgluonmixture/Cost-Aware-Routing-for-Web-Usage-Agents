@@ -21,33 +21,34 @@ We state both with hedges because the trajectory metrics that back them are desc
 The behavioural claim is that the two knobs have distinguishable behavioural signatures,
 which is consistent with §3.2 finding them separately consequential; it is not a mechanism.
 
-### 4.2 One measurement, reported descriptively
+### 4.2 One measurement, and the half of the 2×2 it can support
 
 Hallucinated element references (actions naming an element id absent from the observation)
-are a recognised bottleneck for multimodal web agents [@zheng2024seeact; @zheng2024uground],
-and the 2×2 lets us see how they distribute over the four image-free arms. We report that
-distribution and deliberately stop short of calling it an interaction.
+are a recognised bottleneck for multimodal web agents [@zheng2024seeact; @zheng2024uground].
+The 2×2 would let us ask which knob moves them, except that only half of it is measurable with
+this metric, and saying which half is the substance of this section.
 
-P-SoM carries the lowest rate of the four arms in all six cells when the rate is taken per
-action-step, and P-prompt the highest in five of six. Substituting the mark legend for the
-accessibility tree lowers the rate in all six cells under the SoM prompt, and by more than the
-same substitution achieves under the DOM prompt: at reddit · B2, 25.4 against 9.4 points.
+The metric counts
+actions naming an id the dispatch map does not contain, and the two text payloads are keyed in
+different id namespaces: the accessibility tree keeps raw node ids, which are sparse, while the
+mark legend renumbers to 1..K, which is dense and short. Under sparse ids almost any slip falls
+outside the valid set and is counted; under dense ids a *wrong* element choice usually still
+names a valid id and is not counted. A legend-against-tree comparison therefore mixes a change
+in behaviour with a change in detector sensitivity, and we do not report one.
 
-Two reasons not to promote that to an interaction claim. First, most of it is forced. Whenever
-P-SoM is the minimum arm and P-prompt the maximum, their difference is the largest of any pair
-by construction, so "the reduction is larger under the SoM prompt" follows from the ordering
-rather than from any joint effect; that configuration holds in five of six cells. Second, the
-ordering itself is denominator-dependent. A rate per action-step weights an episode by how many
-actions it took, so an episode deadlocking on one invalid id for thirty steps outweighs one
-that misfires once. Counting instead the share of episodes with at least one such reference,
-P-SoM is lowest in five of six cells and P-prompt highest in three of six. The comparison still
-favours the SoM prompt in six of six under that denominator, and there only two of the six are
-forced by the ordering, which is the strongest form in which we can put it.
+The two contrasts that hold the namespace fixed are comparable, and they disagree in sign, which
+is an interaction that no detector asymmetry can produce: each sign is a fact internal to one
+namespace. Holding the accessibility tree, moving from the DOM prompt to the SoM prompt
+**raises** the rate in five of six cells; holding the mark legend, the same move **lowers** it in
+six of six. Counting instead the share of episodes containing at least one such reference, the
+pattern is five of six and five of six, so the flip survives a denominator change that the
+cross-namespace comparisons do not.
 
-Descriptively, the arms in which the prompt's advertised id scheme matches the one the text
-supplies carry fewer such references, and part of that is mechanical: a prompt advertising ids
-1..K induces references in that range, which lie outside an accessibility tree. We read it as a
-behavioural correlate of representational mismatch, not as an account of what drives coverage.
+That flip is what a prompt-text mismatch predicts. The SoM prompt tells the model to refer to
+numbered marks; when the text supplies them this helps, and when the text supplies sparse node
+ids instead the model is being invited to emit references the observation cannot satisfy. We
+read it as a behavioural correlate of representational mismatch, not as an account of what
+drives coverage.
 The axis magnitudes of §3.2 cannot supply that account either, because each axis differences a
 single-displacement arm against P-SoM, leaving the *other* knob as the factor that varies inside
 the difference: axis-1 holds the mark legend fixed across both its arms, and axis-2 the SoM
