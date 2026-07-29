@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-07-27
+updated: 2026-07-29
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,60 @@ updated: 2026-07-27
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> ## 🔴 2026-07-29 最新交接 —— 先读这块，再读下面的历史块
+>
+> ### 现在卡在哪：等 user 标完 508 条结论
+>
+> **账本** `docs/checkpoints/deliverables/advisor_ledger.html`（gitignore，由
+> `scripts/analysis/build_advisor_ledger.py` 重新生成）。VSCode → Live Server 打开。
+> user 正在逐条裁定（✓认可 / ✗有问题 / ?不确定 + 备注，存 localStorage）。
+>
+> **接下来的顺序**（user 定的，不要跳步）：
+> 1. user 标完 508 条 → 点「导出给 Claude」→ 粘进对话
+> 2. Claude 与 user 先过一遍「有问题 / 不确定」的
+> 3. **基于这些**生成真正的对账议程 → 和学长定
+> 4. 定完才写骨架
+>
+> ⚠️ 账本里那 7 条「要定的」是 **Claude 的初步建议，不是议程**。真议程从 user 标的结果长出来。
+>
+> ### 本轮（§399–§404，8 个 commit `6d603b8`→`961b4ab`，**未 push**）
+>
+> REBUILD_PLAN 待办 **2 / 4 / 6 全部结清**：
+> - **待办 4** router 最有利角落：严格支配 always-cheapest **0/26** · 在经验 Pareto 前沿上 **0/26**
+>   ⇒ 负结果在最有利配置下依旧成立。副产品 **per-task cost headroom 22–46%**（可独立进论文）
+> - **待办 2** 四维画像首跑：7 个 6/6 一致签名里**经验发现 0 个**（3 架构下游 + 4 构造必然）
+> - **待办 6** blocker 根因：quarantine→resume 写了新 summary 没换 steps，全库仅 **2/7686**
+>
+> **cross-AI 双家审计**（codex `gpt-5.6-sol` + agy Gemini，均 PASS）：7 条真问题全修，
+> **其中 3 条改了结论**；另 2 条 Gemini 指控经实证**证伪**（H-pool 数学不可能 / bootstrap N=4 退化）。
+>
+> **B2·reddit Tier-2 补齐**：14/14 全 agent-limit，scaffold-bug 0 · benchmark-FP 0
+> ⇒ 该格 ~1–4% SR 是真能力地板。索引自称不完整 **9 → 3**。
+>
+> **撞出的 benchmark bug**：`require_reset` 在 reddit 是 no-op ⇒ 订阅跨 episode 累积。
+> 逐 episode 实查 **泄漏 6 · earned 31**，实质只影响 B2·DOM 一格（8→5）。
+> **user 已定**：归独立 bug paper，主 paper 一句披露 + 指针，**scored universe 保持 203**。
+>
+> ### user 本轮三条决定
+> 1. sidebar 泄漏 → 独立 benchmark bug paper，不扩展 AMENDMENT_08
+> 2. **B1/B2 重跑地板不用测** —— 确定性已实证（§298.2 133/133 · §397.10 1.000/1.000 · 全 A100 单型号）
+> 3. mechanistic sweep 继续跑（pid 38603，deadline 08-01），与 **WA** 一并进「要和学长对的 Phase 1」
+>    → 已写入 `_status/tasks/task_analysis_gating.md`
+>
+> ### ⚠️ 我在本轮犯的错（同型四次，见 §403.2 / §404.1）
+> 全是**把更弱的东西当成更强的结论**：解析失败当成测量为零 · 「有风险的集合」说成
+> 「已污染的集合」· 文本共现当成数据模式 · **把「我认为重要的子集」当成交付物**（流程层）。
+> 第四次「没应用 context 里已有的 host-role 规则」是 REBUILD_PLAN 第五类错误**第三次复发**
+> → 修复已进结论层 `INDEX §0`（常驻事实节 + checklist 规则）。
+>
+> ### 结论层三处结构性补漏
+> `INDEX §0` 常驻事实（CLAUDE.md/memory 独有、三道防线都扫不到）· `§2` diag 覆盖度重写 ·
+> `§1` canvas 逐个裁定 · `measured_D4` 附录 A（§398 噪声地板）与附录 B（diag Y1–Y5）。
+>
+> ### deadline
+> **08-05 REALM @ EMNLP**（今天 07-29，剩一周）。骨架未定 —— 它卡着下游三项。
+
 
 > 🚨 **2026-07-28 起改走零预设重建 —— 新 session 先读 [[REBUILD_PLAN]] 而不是本节。**
 > 本节仍然是 *状态* 的来源 (跑了什么 / 数字 / 后台), 但 *下一步做什么* 由 REBUILD_PLAN 定。

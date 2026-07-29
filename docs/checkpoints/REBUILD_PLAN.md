@@ -12,6 +12,17 @@ audience: the next session (start here, not at next_steps §0)
 > handoff (`next_steps.md §0`) is still valid for *state*, but this doc supersedes it for
 > *what to do next*.
 
+## 🔴 2026-07-29 — 当前卡点：等 user 标完 508 条结论账本
+
+**账本** `docs/checkpoints/deliverables/advisor_ledger.html`（VSCode → Live Server）。
+user 逐条裁定 ✓认可 / ✗有问题 / ?不确定 → 导出 → Claude 与 user 过「有问题/不确定」
+→ **基于这些**生成对账议程 → 和学长定 → **才写骨架**。顺序不要跳。
+
+**待办 2 / 4 / 6 已结清**（§399–§404，8 commit 未 push）。剩 **1**（骨架，卡在账本）·
+**3**（HKSJ appendix 行）· **5**（逐条核对 conclusion —— 就是 user 正在做的这件事）。
+
+---
+
 ## ⏱ 当前状态（2026-07-28 更新，新 session 从这里读）
 
 | Phase | 状态 | 产出 |
@@ -58,10 +69,12 @@ find_unlanded.py           # 找"定了但没落地"的裁定
 1. **合并论文骨架 + 取舍清单** ← 先做，它决定下面各项补到什么精度
 2. ~~**补 §108 四维 × per-mode 画像**~~ ← ✅ **已执行 2026-07-28，见 §400.2**
    - 产物 `docs/analysis/cross_sites/per_mode_four_dimension_profile.{md,json}`
-   - 四维 × 6 mode × 6 cell 全跑。18 指标里 **7 个 6/6 一致极值全是 Vision，
-     但只有 3 个是经验发现**（`scroll_frac` 1.25–6.77× / `action-fail rate` 1.06–1.60× /
-     `no-op rate` 1.07–1.58×）；另 4 个（`locator fallback` / `tokens` / `cost` /
-     `cost_rel_dom`）是 **⚙️ by construction，不得当行为发现引用**
+   - 四维 × 6 mode × 6 cell 全跑。18 指标里 **7 个 6/6 一致极值全是 Vision**，
+     经 cross-AI 复审后三分类（§401.2 修正了初版的二分）：**经验发现 0 个** ·
+     ◆ **架构下游 3 个**（`scroll_frac` 1.25–6.77× / `action-fail` 1.06–1.60× /
+     `no-op` 1.07–1.58× —— 同一条机械链：坐标寻址→点不准→页面不变→被迫滚动）·
+     ⚙️ **构造必然 4 个**（`locator fallback` / `tokens` / `cost` / `cost_rel_dom`）。
+     **◆ 与 ⚙️ 都不得当行为发现引用。**
    - ⚠️ canvas 数字 stale（仍写 `drop-one 1.7-3.8pp`，k=6 后 H1 已 FAIL）—— 产物零引用 canvas
 3. **补 §135.2 HKSJ appendix 行** —— §215 明确承诺过，两稿 0 次，数据现成（§172.8）
 4. ~~**router：同族 pooled × cost-tier 可学性**~~ ← ✅ **已执行 2026-07-28，见 §399**
