@@ -174,6 +174,57 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--rule);
   .dec-h{flex-wrap:wrap} .tally{margin-left:0;width:100%}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ── verdict system ───────────────────────────────── */
+.prog{display:flex;align-items:center;gap:12px;padding:10px 14px;
+  border:1px solid var(--rule);border-top:none;background:var(--panel);
+  font-size:13px;flex-wrap:wrap}
+.bar{flex:1;min-width:160px;height:7px;background:var(--panel-2);
+  border:1px solid var(--rule);position:relative;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.prog b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.prog .mini{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+.prog .mini s{text-decoration:none;color:var(--ok)}
+.prog .mini u{text-decoration:none;color:var(--dead)}
+.prog .mini q{quotes:none;color:var(--warn)}
+.btn{appearance:none;font-family:var(--sans);font-size:13px;padding:5px 12px;
+  border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+:root[data-theme="dark"] .btn,@media (prefers-color-scheme:dark){.btn{color:#0F1416}}
+.btn.ghost{background:none;color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+
+tr.cur{background:var(--accent-soft)}
+tr.cur td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+td.vd{white-space:nowrap;width:1%}
+.vbtn{appearance:none;font-family:var(--mono);font-size:13px;line-height:1;
+  width:26px;height:24px;border:1px solid var(--rule);background:var(--panel);
+  color:var(--ink-faint);cursor:pointer;margin-right:2px}
+.vbtn:hover{border-color:var(--ink-faint)}
+.vbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.vbtn[data-on="ok"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.vbtn[data-on="issue"]{background:var(--dead);border-color:var(--dead);color:#fff}
+.vbtn[data-on="unsure"]{background:var(--warn);border-color:var(--warn);color:#fff}
+:root[data-theme="dark"] .vbtn[data-on]{color:#10161A}
+.note{width:100%;margin-top:6px;font-family:var(--sans);font-size:12.5px;
+  padding:5px 8px;border:1px solid var(--rule);background:var(--panel-2);
+  color:var(--ink);resize:vertical;min-height:30px;display:none}
+.note.show{display:block}
+.kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--rule);
+  border-bottom-width:2px;padding:1px 5px;color:var(--ink-faint);background:var(--panel-2)}
+.hint{font-size:12.5px;color:var(--ink-soft);display:flex;gap:14px;
+  flex-wrap:wrap;align-items:center;margin-bottom:12px}
+dialog{border:1px solid var(--ink);background:var(--panel);color:var(--ink);
+  padding:0;max-width:min(720px,92vw);width:100%}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--rule);
+  font-family:var(--serif);font-size:18px;font-weight:600}
+dialog .db{padding:16px 18px}
+dialog textarea{width:100%;height:300px;font-family:var(--mono);font-size:12px;
+  border:1px solid var(--rule);background:var(--panel-2);color:var(--ink);padding:10px}
+dialog .df{padding:12px 18px;border-top:1px solid var(--rule);display:flex;
+  gap:8px;justify-content:flex-end}
+.stage{border-left:3px solid var(--warn);background:var(--warn-bg);
+  padding:10px 14px;font-size:13.5px;margin-bottom:18px}
 </style>
 </head>
 <body>
@@ -188,7 +239,23 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--rule);
      从结论层与台账机械抽取——因此「有没有遗漏」这件事本身是可核的。</p>
   <div class="cov" id="cov"></div>
   <div class="covnote" id="covnote"></div>
+  <div class="prog">
+    <span>裁定进度 <b id="pdone">0</b> / <b id="ptotal">0</b></span>
+    <span class="bar"><i id="pbar"></i></span>
+    <span class="mini" id="pmini"></span>
+    <button class="btn" id="exp">导出给 Claude</button>
+    <button class="btn ghost" id="expall">导出全部</button>
+  </div>
 </header>
+
+<dialog id="dlg">
+  <div class="dh">复制下面全部内容，粘给 Claude</div>
+  <div class="db"><textarea id="out" readonly></textarea></div>
+  <div class="df">
+    <button class="btn ghost" id="dlclose">关闭</button>
+    <button class="btn" id="dlcopy">复制到剪贴板</button>
+  </div>
+</dialog>
 
 <nav id="nav" role="tablist"></nav>
 
@@ -231,8 +298,12 @@ document.getElementById('gen').textContent = '生成 ' + D.gen;
 /* ── view: decide ── */
 document.getElementById('v-decide').innerHTML = `
   <h2>要定的</h2>
-  <p class="lede">这一区是<b>人工判断</b>，不是抽取结果——列出我认为需要你们两人拍板的问题。
-     每条给出选项、我的建议、以及不定的后果。这也是会议的议程。</p>
+  <div class="stage"><b>这只是我的初步建议，不是最终议程。</b>
+     正确的顺序是：你先去「全部结论」把 ${D.sec.length} 条逐条裁一遍
+     （✓ 认可 / ✗ 有问题 / ? 不确定），导出给我；真正要和学长过的清单，
+     应该从你标出的「有问题」和「不确定」里长出来，而不是我预先猜。</div>
+  <p class="lede">下面 7 条是我目前看到的、需要拍板的问题——每条给出选项、我的建议、
+     以及不定的后果。等你标完之后会重写。</p>
   ` + D.dec.map(d => `
   <article class="dec">
     <div class="dec-h"><span class="dec-id">${esc(d.id)}</span>
@@ -249,11 +320,50 @@ document.getElementById('v-decide').innerHTML = `
 /* ── view: sections (the bulk) ── */
 const FILE_META = {};
 D.sec.forEach(s => { FILE_META[s.f] = s.k; });
-let q = '', filt = new Set();
+let q = '', filt = new Set(), cur = -1, view = [];
+
+/* verdict store: key = "file|title" → {v:'ok'|'issue'|'unsure', n:note} */
+const KEY = 'p79-ledger-verdicts';
+let V = {};
+try { V = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { V = {}; }
+const kOf = s => s.f + '|' + s.t;
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(V)); } catch (e) {} };
+
+function progress() {
+  const n = D.sec.length;
+  let ok = 0, issue = 0, unsure = 0;
+  Object.values(V).forEach(r => { if (r.v === 'ok') ok++;
+    else if (r.v === 'issue') issue++; else if (r.v === 'unsure') unsure++; });
+  const done = ok + issue + unsure;
+  document.getElementById('pdone').textContent = done;
+  document.getElementById('ptotal').textContent = n;
+  document.getElementById('pbar').style.width = (100 * done / n) + '%';
+  document.getElementById('pmini').innerHTML =
+    `<s>认可 ${ok}</s> · <u>有问题 ${issue}</u> · <q>不确定 ${unsure}</q> · 未看 ${n - done}`;
+}
+
+function setV(key, v) {
+  const r = V[key] || {};
+  r.v = (r.v === v) ? undefined : v;          // 再点一次取消
+  if (!r.v && !r.n) delete V[key]; else V[key] = r;
+  save(); progress();
+  document.querySelectorAll(`[data-k="${CSS.escape(key)}"] .vbtn`).forEach(b =>
+    b.setAttribute('data-on', (V[key] && V[key].v === b.dataset.v) ? b.dataset.v : ''));
+}
+
+function setCur(i) {
+  const rows = document.querySelectorAll('tr[data-k]');
+  if (!rows.length) return;
+  cur = Math.max(0, Math.min(i, rows.length - 1));
+  rows.forEach((r, j) => r.classList.toggle('cur', j === cur));
+  rows[cur].scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
 
 function render() {
   const ql = q.trim().toLowerCase();
-  const rows = D.sec.filter(s => {
+  view = D.sec.filter(s => {
+    const r = V[kOf(s)];
+    if (filt.has('todo') && r && r.v) return false;
     if (filt.has('dead') && !s.d) return false;
     if (filt.has('live') && s.d) return false;
     if (filt.has('open') && !s.o) return false;
@@ -261,40 +371,59 @@ function render() {
     return (s.t + ' ' + s.x + ' ' + s.r.join(' ')).toLowerCase().includes(ql);
   });
   const byFile = {};
-  rows.forEach(s => (byFile[s.f] = byFile[s.f] || []).push(s));
-  document.getElementById('tally').textContent =
-    `${rows.length} / ${D.sec.length} 条`;
+  view.forEach(s => (byFile[s.f] = byFile[s.f] || []).push(s));
+  document.getElementById('tally').textContent = `${view.length} / ${D.sec.length} 条`;
   const body = Object.keys(byFile).sort().map(f => `
-    <details class="grp"${ql || filt.size ? ' open' : ''}>
+    <details class="grp" open>
       <summary>${esc(f)}<span class="era">${esc(FILE_META[f]||'')}</span>
         <span class="gn">${byFile[f].length}</span></summary>
       <div class="tblwrap"><table>
-        <thead><tr><th style="width:26%">条目</th><th>摘要</th>
-          <th style="width:9%">状态</th><th style="width:11%">§</th>
-          <th style="width:6%">台账</th></tr></thead>
-        <tbody>${byFile[f].map(s => `
-          <tr class="${s.d?'dead':''}">
-            <td><span class="ti ${s.l===3?'l3':''}">${esc(s.t)}</span></td>
+        <thead><tr><th style="width:11%">裁定</th><th style="width:22%">条目</th>
+          <th>摘要</th><th style="width:8%">状态</th><th style="width:10%">§</th></tr></thead>
+        <tbody>${byFile[f].map(s => { const k = kOf(s), r = V[k] || {};
+          return `<tr data-k="${esc(k)}" class="${s.d?'dead':''}">
+            <td class="vd">
+              <button class="vbtn" data-v="ok" data-on="${r.v==='ok'?'ok':''}"
+                title="认可（键 1）">✓</button>
+              <button class="vbtn" data-v="issue" data-on="${r.v==='issue'?'issue':''}"
+                title="有问题（键 2）">✗</button>
+              <button class="vbtn" data-v="unsure" data-on="${r.v==='unsure'?'unsure':''}"
+                title="不确定（键 3）">?</button>
+            </td>
+            <td><span class="ti ${s.l===3?'l3':''}">${esc(s.t)}</span>
+              <textarea class="note ${r.n?'show':''}" rows="2"
+                placeholder="备注（键 N 打开）">${esc(r.n||'')}</textarea></td>
             <td class="ex">${esc(s.x)}${s.x.length>=240?'…':''}</td>
             <td>${s.d?'<span class="pill p-dead">作废</span>':''}
                 ${s.o?'<span class="pill p-open">待决</span>':''}
                 ${!s.d&&!s.o?'<span class="pill p-ok">现行</span>':''}</td>
-            <td class="refs">${s.r.map(r=>'§'+esc(r)).join(' ')}</td>
-            <td class="nrec">${s.n||''}</td>
-          </tr>`).join('')}</tbody>
+            <td class="refs">${s.r.map(x=>'§'+esc(x)).join(' ')}</td>
+          </tr>`; }).join('')}</tbody>
       </table></div>
     </details>`).join('');
   document.getElementById('rows').innerHTML = body ||
     '<div class="empty">没有匹配的条目。</div>';
+  cur = -1;
+  progress();
 }
 
 document.getElementById('v-sections').innerHTML = `
   <h2>全部结论</h2>
-  <p class="lede">结论层 ${D.sec.length} 条，按来源文件分组，默认收起。
-     搜索会展开所有命中组。<b>作废</b>的条目保留在册并加删除线——不是删掉，
+  <p class="lede">结论层 ${D.sec.length} 条，一条不落。<b>请逐条裁定</b>——
+     ✓ 认可 · ✗ 有问题 · ? 不确定。标记存在这台电脑的浏览器里，关掉页面不会丢；
+     标完点右上角「导出给 Claude」。<b>作废</b>的条目保留在册并加删除线——不是删掉，
      是标死，这样引用到已死结论时能当场看见。</p>
+  <div class="hint">
+    <span><span class="kbd">J</span> <span class="kbd">K</span> 上一条 / 下一条</span>
+    <span><span class="kbd">1</span> 认可 <span class="kbd">2</span> 有问题
+      <span class="kbd">3</span> 不确定</span>
+    <span><span class="kbd">N</span> 写备注</span>
+    <span><span class="kbd">/</span> 跳到搜索</span>
+    <span style="color:var(--ink-faint)">再按一次同一个键 = 取消该标记</span>
+  </div>
   <div class="ctl">
     <input id="q" type="search" placeholder="搜索标题、摘要、§ 号…" aria-label="搜索条目">
+    <button class="chip" data-f="todo" aria-pressed="false">只看还没裁的</button>
     <button class="chip" data-f="live" aria-pressed="false">只看现行</button>
     <button class="chip" data-f="dead" aria-pressed="false">只看作废</button>
     <button class="chip" data-f="open" aria-pressed="false">只看待决</button>
@@ -305,13 +434,115 @@ document.getElementById('v-sections').innerHTML = `
 document.getElementById('q').addEventListener('input', e => { q = e.target.value; render(); });
 document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
   const f = b.dataset.f, on = b.getAttribute('aria-pressed') === 'true';
-  if (f === 'live' || f === 'dead') { filt.delete('live'); filt.delete('dead');
+  if (f === 'live' || f === 'dead') {           // 这两个互斥
+    filt.delete('live'); filt.delete('dead');
     document.querySelectorAll('.chip').forEach(x => {
-      if (x.dataset.f === 'live' || x.dataset.f === 'dead') x.setAttribute('aria-pressed','false'); }); }
+      if (x.dataset.f === 'live' || x.dataset.f === 'dead')
+        x.setAttribute('aria-pressed', 'false'); });
+  }
   if (on) filt.delete(f); else filt.add(f);
   b.setAttribute('aria-pressed', String(!on));
   render();
 }));
+
+/* 点按钮裁定 / 备注失焦即存 */
+document.getElementById('rows').addEventListener('click', e => {
+  const b = e.target.closest('.vbtn'); if (!b) return;
+  const tr = b.closest('tr[data-k]');
+  setV(tr.dataset.k, b.dataset.v);
+  document.querySelectorAll('tr[data-k]').forEach((r, j) => {
+    if (r === tr) { cur = j; r.classList.add('cur'); } else r.classList.remove('cur'); });
+});
+document.getElementById('rows').addEventListener('change', e => {
+  const ta = e.target.closest('.note'); if (!ta) return;
+  const k = ta.closest('tr[data-k]').dataset.k;
+  const r = V[k] || {};
+  r.n = ta.value.trim();
+  if (!r.v && !r.n) delete V[k]; else V[k] = r;
+  save();
+});
+
+/* 键盘 */
+document.addEventListener('keydown', e => {
+  if (document.getElementById('v-sections').hidden) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') {
+    if (e.key === 'Escape') e.target.blur();
+    return;
+  }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const rows = document.querySelectorAll('tr[data-k]');
+  const k = e.key.toLowerCase();
+  if (k === 'j') { e.preventDefault(); setCur(cur + 1); }
+  else if (k === 'k') { e.preventDefault(); setCur(cur - 1); }
+  else if (k === '/') { e.preventDefault(); document.getElementById('q').focus(); }
+  else if (['1','2','3'].includes(k) && cur >= 0 && rows[cur]) {
+    e.preventDefault();
+    setV(rows[cur].dataset.k, {1:'ok',2:'issue',3:'unsure'}[k]);
+  } else if (k === 'n' && cur >= 0 && rows[cur]) {
+    e.preventDefault();
+    const ta = rows[cur].querySelector('.note');
+    ta.classList.add('show'); ta.focus();
+  }
+});
+
+/* 导出 */
+function buildExport(all) {
+  const pick = D.sec.map(s => ({ s, r: V[kOf(s)] })).filter(x => x.r && x.r.v);
+  const grp = { issue: [], unsure: [], ok: [] };
+  pick.forEach(x => grp[x.r.v].push(x));
+  const n = D.sec.length, done = pick.length;
+  const L = [];
+  L.push(`# 结论账本裁定结果`);
+  L.push(`已裁定 ${done} / ${n}（认可 ${grp.ok.length} · 有问题 ${grp.issue.length} · 不确定 ${grp.unsure.length}）`);
+  L.push('');
+  const dump = (key, label) => {
+    if (!grp[key].length) return;
+    L.push(`## ${label}（${grp[key].length}）`);
+    grp[key].forEach(({s, r}) => {
+      L.push(`- [${s.f}] ${s.t}${s.r.length ? '  ' + s.r.map(x=>'§'+x).join(' ') : ''}`);
+      if (r.n) L.push(`      备注：${r.n}`);
+    });
+    L.push('');
+  };
+  dump('issue', '有问题');
+  dump('unsure', '不确定');
+  if (all) {
+    dump('ok', '认可');
+  } else {
+    // 标了「认可」但写了备注的，仍要导出——写备注本身就说明有话要说，
+    // 默认视图吞掉它会让那句话永远到不了对面。
+    const okNoted = grp.ok.filter(x => x.r.n);
+    if (okNoted.length) {
+      L.push(`## 认可但留了备注（${okNoted.length}）`);
+      okNoted.forEach(({s, r}) => {
+        L.push(`- [${s.f}] ${s.t}${s.r.length ? '  ' + s.r.map(x=>'§'+x).join(' ') : ''}`);
+        L.push(`      备注：${r.n}`);
+      });
+      L.push('');
+    }
+    const silent = grp.ok.length - okNoted.length;
+    if (silent) L.push(`（另有 ${silent} 条标为认可且无备注，未列出）`);
+  }
+  return L.join('\n');
+}
+const dlg = document.getElementById('dlg');
+function openExport(all) {
+  document.getElementById('out').value = buildExport(all);
+  dlg.showModal();
+}
+document.getElementById('exp').addEventListener('click', () => openExport(false));
+document.getElementById('expall').addEventListener('click', () => openExport(true));
+document.getElementById('dlclose').addEventListener('click', () => dlg.close());
+document.getElementById('dlcopy').addEventListener('click', async () => {
+  const ta = document.getElementById('out');
+  try { await navigator.clipboard.writeText(ta.value);
+        document.getElementById('dlcopy').textContent = '已复制 ✓'; }
+  catch (err) { ta.select(); document.execCommand('copy');
+        document.getElementById('dlcopy').textContent = '已复制 ✓'; }
+  setTimeout(() => { document.getElementById('dlcopy').textContent = '复制到剪贴板'; }, 1800);
+});
+
 render();
 
 /* ── view: coverage ── */

@@ -124,48 +124,86 @@ def ledger_by_section(rows: list[dict]) -> dict[str, list[dict]]:
 # Judgement, not extraction. Kept in the producer (not a side file) so it is
 # versioned with the derived material and cannot drift out of sync unnoticed.
 DECISIONS = [
-    {"id": "D1", "title": "合并后的论文骨架 —— 8 页装什么",
-     "why": "REBUILD_PLAN 待办 1。它决定下游三项补到什么精度；不定则待办 3/5 是盲做。",
-     "options": ["先定骨架再补细节（原计划）", "边写边定", "先写 §4 结果再倒推结构"],
-     "recommend": "先定骨架。今天 07-29，deadline 08-05。",
-     "cost_of_not_deciding": "下游三项全部盲做，最后 2 天堆在一起。",
-     "evidence": ["REBUILD_PLAN Phase 3", "§398.8 两篇合一的焊接点"]},
-    {"id": "D2", "title": "9 条「旧稿写过、拆两篇时丢了」进不进",
-     "why": "工具捞的，不靠我判断。合并回一篇时最容易永久丢失。",
-     "options": ["逐条过（约 15 分钟）", "只过我标必进的 4 条", "全部不进"],
-     "recommend": "逐条过。其中 §109.17（novelty 防御）和 §338（B2 配置辩护）不进就是留攻击面。",
-     "cost_of_not_deciding": "合并时静默丢失，且没人会再发现。",
-     "evidence": ["find_unlanded_allDrafts_2026-07-29.txt", "§401 差集分析"]},
-    {"id": "D3", "title": "噪声地板写不写进主文、怎么写",
-     "why": "同条件重跑地板 4.9–7.6pp > H3 两轴的 1.35/2.09pp。写=承认正面结果站不住；不写=隐瞒。",
-     "options": ["主文明写 + 据此收窄 claim", "只进 limitations", "进 appendix"],
-     "recommend": "必须写。位置和措辞是取舍，建议主文一句 + limitations 展开。",
-     "cost_of_not_deciding": "审稿人自己算出来 = 致命；上一稿已有过一次假陈述被抓的记录（§397.10）。",
-     "evidence": ["§398.2 Phase 0b", "measured_D4 附录 A/Z1"]},
-    {"id": "D4", "title": "canvas 里学长 5/5 提的 3 件，至今未 lock",
-     "why": "2026-05-05 提出，到今天近三个月。其中「env-side pilot 进 paper-1 还是 paper-2」在 8 页 scope 下需重裁。",
-     "options": ["会上逐条 lock", "全部推 paper-2", "只 lock hook 那条"],
-     "recommend": "会上 lock。这是学长自己提的，不该由我们单方面决定。",
-     "cost_of_not_deciding": "第四个月继续悬着。",
-     "evidence": ["dual_track_taxonomy.canvas 末节", "conclusions/INDEX §1 裁定"]},
-    {"id": "D5", "title": "mechanistic sweep 跑完了怎么用 + WA 进不进 Phase 1",
-     "why": "sweep 08-01 完成，论文 08-05 交；mechanism 线 2026-05-14 已暂搁。user 已定「到时候看」，与 WA 一并对。",
-     "options": ["跑完存档不用", "进 appendix", "重启 mechanism 线"],
-     "recommend": "存档不用 —— 8 页装不下，且 scope 已收窄。",
-     "cost_of_not_deciding": "最后 4 天变成干扰。",
+    {"id": "D1", "title": "8 页里放什么、砍什么",
+     "why": "投的是 8 页的会议论文，而手上的材料远超 8 页。先定好放什么再动笔，"
+            "还是边写边砍？这一条不定，下面几件都只能瞎补。",
+     "options": ["先把结构定死，再按结构补细节",
+                 "边写边定，写到哪算哪",
+                 "先把结果那一章写出来，再倒推前后文该写什么"],
+     "recommend": "先定结构。今天 7 月 29，8 月 5 号截稿，只剩一周。",
+     "cost_of_not_deciding": "补细节的三件事全是瞎补，最后两天全堆在一起。",
+     "evidence": ["REBUILD_PLAN 第 3 阶段", "§398.8 两篇合一的理由"]},
+
+    {"id": "D2", "title": "以前写过、拆成两篇时弄丢的 9 个内容，捡不捡回来",
+     "why": "论文原本是两篇，后来决定合成一篇。工具比对发现有 9 处内容"
+            "在更早的稿子里写过，拆成两篇的时候丢了。合并回一篇是把它们捡回来的"
+            "最后机会——再不捡就永久没了，而且没人会再发现。",
+     "options": ["9 条逐个过，大概 15 分钟",
+                 "只看我标了「必须捡」的那 4 条",
+                 "都不捡，就按现在两篇的内容合"],
+     "recommend": "逐个过。其中两条是防守用的：一条挡「你这个业界早就做了」，"
+                  "一条挡「B2 模型才 1% 是不是你配错了」。不捡就是留着挨打。",
+     "cost_of_not_deciding": "合并的时候静默丢失，之后不会再有人发现。",
+     "evidence": ["find_unlanded 全稿扫描结果", "§401 差集分析"]},
+
+    {"id": "D3", "title": "「同样条件重跑两次结果就不一样」这件事写不写进正文",
+     "why": "同一个模型、同一批题目、同样设置，重跑一遍，成功率会差 4.9 到 7.6 个百分点。"
+            "而我们论文里那个正面发现只有 1.35 和 2.09 个百分点——比重跑的波动还小。"
+            "写进去等于自己承认那个发现站不住；不写就是隐瞒。",
+     "options": ["正文写明，并据此把结论说得更保守",
+                 "只在「局限」那一节提",
+                 "放到附录"],
+     "recommend": "必须写，不写是硬伤。写在哪、怎么措辞是可以商量的——"
+                  "我倾向正文一句带过，局限那节展开。",
+     "cost_of_not_deciding": "审稿人自己就能算出来，那时候是致命的。"
+                             "上一版稿子已经因为一句不实陈述被抓过一次。",
+     "evidence": ["§398.2 重跑地板实测", "结论层 measured_D4 附录 A"]},
+
+    {"id": "D4", "title": "学长 5 月 5 号提的三个问题，到现在还没定",
+     "why": "那三个问题记在一张 canvas 图里，从 5 月 5 号挂到今天，快三个月。"
+            "其中一个是「要不要做一个服务器端的小实验放进这篇论文」——"
+            "现在只有 8 页，这个问题得重新答一遍。",
+     "options": ["会上三条一次性定掉",
+                 "全部推到下一篇论文",
+                 "只定其中关于论文卖点那一条"],
+     "recommend": "会上定掉。这是学长自己提的问题，不该我们单方面替他决定。",
+     "cost_of_not_deciding": "挂到第四个月。",
+     "evidence": ["dual_track_taxonomy.canvas 最后一节", "结论层 INDEX §1"]},
+
+    {"id": "D5", "title": "还在跑的那个实验，跑完了用不用",
+     "why": "一个 24 组的机理实验在服务器上跑着，8 月 1 号完成，论文 8 月 5 号交。"
+            "但这条研究线 5 月中就决定暂时搁置了。跑完的数据是用、是存档、还是重启这条线？"
+            "另外 WebArena 那批数据要不要算进来，一起定。",
+     "options": ["跑完存档，这篇不用",
+                 "放进附录",
+                 "重新把机理这条线捡起来"],
+     "recommend": "存档不用。8 页装不下，而且论文范围已经收窄了。",
+     "cost_of_not_deciding": "最后 4 天它会变成干扰项。",
      "evidence": ["_status/tasks/task_analysis_gating.md", "§402.7"]},
-    {"id": "D6", "title": "codex 指控「router 实验用错了学习器」",
-     "why": "codex 说该用 per-cell LR head + TF-IDF/MI（§216.1 规格），我用了 pooled head + 20 raw features。",
-     "options": ["接受并重跑", "维持 + 在文中说明理由", "作为 appendix sensitivity"],
-     "recommend": "维持。池化实验本质上必须 pooled head，否则不是池化；TF-IDF 省略有 §367 先例。但这条该你们裁，不该我自裁。",
-     "cost_of_not_deciding": "审稿人可能提同样的问题。",
-     "evidence": ["§401.4", "§216.1 CV 协议", "§367 TF-IDF 无增益"]},
-    {"id": "D7", "title": "sidebar 泄漏的披露口径",
-     "why": "user 已定归 benchmark bug paper、scored universe 保持 203。主 paper 那一句怎么写待定。",
-     "options": ["一句话 + 指针", "limitations 一段", "完全不提（bug paper 单独讲）"],
-     "recommend": "一句话 + 指针。实质只影响 B2·DOM 一格（8→5）。",
-     "cost_of_not_deciding": "bug paper 和主 paper 都不提 = 漏报。",
-     "evidence": ["reddit_sidebar_leakage_audit.md", "§402.6/§402.7"]},
+
+    {"id": "D6", "title": "外部审计说我那个路由实验方法用错了",
+     "why": "我做了一个实验：把两个模型的数据合到一起训练一个「该用哪种输入格式」的分类器。"
+            "外部 AI 审计说，按原定方案应该给每个模型单独训一个，不该合训。"
+            "我的看法是：这个实验的目的就是测「合起来训行不行」，分开训就不是这个实验了。"
+            "但这条该你们裁，不该我自己说了算。",
+     "options": ["接受意见，按分开训重跑",
+                 "维持现在的做法，在文中说明为什么",
+                 "两种都做，一个进正文一个进附录"],
+     "recommend": "维持。但这是我的一面之词，需要你们判断。",
+     "cost_of_not_deciding": "审稿人可能提一模一样的问题。",
+     "evidence": ["§401.4", "§216.1 原定方案", "§367 相关先例"]},
+
+    {"id": "D7", "title": "reddit 有 6 道题的成败取决于跑的顺序",
+     "why": "reddit 网站在每道题之间不会重置状态，而有几道题是靠「用户订阅了哪些板块」"
+            "来判分的。于是前面题目留下的订阅会让后面的题「白捡」一个成功。"
+            "已经逐个查过：真正受影响的是 6 个 episode，其中 3 个集中在同一格。"
+            "你已经定了这归到另一篇 bug 论文，主论文只需一句话带过——那句话怎么写？",
+     "options": ["一句话说明 + 指向 bug 论文",
+                 "在局限那节写一段",
+                 "主论文完全不提，全放 bug 论文"],
+     "recommend": "一句话 + 指针。影响面确实小（只有一格从 8 降到 5）。",
+     "cost_of_not_deciding": "两边都不提就是漏报。",
+     "evidence": ["reddit_sidebar_leakage_audit.md", "§402.6 / §402.7"]},
 ]
 
 RUNNING = [
