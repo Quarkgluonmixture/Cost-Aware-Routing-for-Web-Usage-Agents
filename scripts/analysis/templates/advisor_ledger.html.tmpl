@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>P79 对账账本 — REALM 投稿前</title>
+<style>
+:root{
+  --paper:#F7F8F7; --ink:#1A1D1F; --ink-soft:#4A524F; --ink-faint:#6B7370;
+  --rule:#D9DEDB; --rule-soft:#E8EBE9; --panel:#FFFFFF; --panel-2:#F1F3F2;
+  --accent:#1F6F5C; --accent-soft:#E4EFEA;
+  --ok:#2D7A5F; --warn:#B0761E; --dead:#8C3A3A;
+  --ok-bg:#E6F1EB; --warn-bg:#FAF1DF; --dead-bg:#F6E7E7;
+  --serif:Georgia,"Songti SC","Source Han Serif SC",serif;
+  --sans:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,"Cascadia Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#14171A; --ink:#E6E9E8; --ink-soft:#A8B2AE; --ink-faint:#7C8582;
+    --rule:#2A2F32; --rule-soft:#22272A; --panel:#191D20; --panel-2:#1F2427;
+    --accent:#4FB396; --accent-soft:#16302A;
+    --ok:#4FB396; --warn:#D9A24A; --dead:#D07A7A;
+    --ok-bg:#15302A; --warn-bg:#332A17; --dead-bg:#34201F;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171A; --ink:#E6E9E8; --ink-soft:#A8B2AE; --ink-faint:#7C8582;
+  --rule:#2A2F32; --rule-soft:#22272A; --panel:#191D20; --panel-2:#1F2427;
+  --accent:#4FB396; --accent-soft:#16302A;
+  --ok:#4FB396; --warn:#D9A24A; --dead:#D07A7A;
+  --ok-bg:#15302A; --warn-bg:#332A17; --dead-bg:#34201F;
+}
+:root[data-theme="light"]{
+  --paper:#F7F8F7; --ink:#1A1D1F; --ink-soft:#4A524F; --ink-faint:#6B7370;
+  --rule:#D9DEDB; --rule-soft:#E8EBE9; --panel:#FFFFFF; --panel-2:#F1F3F2;
+  --accent:#1F6F5C; --accent-soft:#E4EFEA;
+  --ok:#2D7A5F; --warn:#B0761E; --dead:#8C3A3A;
+  --ok-bg:#E6F1EB; --warn-bg:#FAF1DF; --dead-bg:#F6E7E7;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 80px}
+
+/* ── masthead ─────────────────────────────────────── */
+header{border-bottom:2px solid var(--ink);padding:28px 0 16px;margin-bottom:0}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+h1{font-family:var(--serif);font-size:34px;line-height:1.15;margin:0 0 8px;
+  font-weight:600;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--ink-soft);max-width:62ch;margin:0}
+
+/* ── coverage bar: the trust basis, first thing seen ── */
+.cov{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);margin:20px 0 0}
+.cov div{background:var(--panel);padding:12px 14px}
+.cov .n{font-family:var(--mono);font-size:24px;font-variant-numeric:tabular-nums;
+  font-weight:600;letter-spacing:-.02em;line-height:1.1}
+.cov .l{font-size:11px;color:var(--ink-faint);margin-top:3px;
+  letter-spacing:.04em;text-transform:uppercase;font-family:var(--mono)}
+.cov .n.warn{color:var(--warn)} .cov .n.dead{color:var(--dead)}
+.cov .n.acc{color:var(--accent)}
+.covnote{font-size:13px;color:var(--ink-soft);border:1px solid var(--rule);
+  border-top:none;background:var(--panel-2);padding:10px 14px}
+
+/* ── nav ──────────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:20;background:var(--paper);
+  border-bottom:1px solid var(--rule);display:flex;gap:0;flex-wrap:wrap;
+  margin-top:24px}
+nav button{appearance:none;background:none;border:none;border-bottom:2px solid transparent;
+  font-family:var(--sans);font-size:14px;color:var(--ink-faint);padding:11px 15px;
+  cursor:pointer;white-space:nowrap}
+nav button:hover{color:var(--ink)}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);
+  font-weight:600}
+nav button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+nav .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+  margin-left:5px;font-variant-numeric:tabular-nums}
+
+section[hidden]{display:none}
+.panel{padding-top:26px}
+h2{font-family:var(--serif);font-size:22px;margin:0 0 6px;font-weight:600}
+.lede{color:var(--ink-soft);max-width:70ch;margin:0 0 20px;font-size:14px}
+
+/* ── decisions ────────────────────────────────────── */
+.dec{border:1px solid var(--rule);background:var(--panel);margin-bottom:14px}
+.dec-h{display:flex;gap:12px;align-items:baseline;padding:14px 16px;
+  border-bottom:1px solid var(--rule-soft)}
+.dec-id{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);
+  background:var(--accent-soft);padding:2px 7px;letter-spacing:.03em}
+.dec-t{font-family:var(--serif);font-size:17px;font-weight:600;flex:1}
+.dec-b{padding:14px 16px;display:grid;gap:12px}
+.dec-b .why{color:var(--ink-soft);font-size:14px}
+.opts{display:flex;flex-wrap:wrap;gap:7px}
+.opt{border:1px solid var(--rule);padding:4px 10px;font-size:13px;
+  background:var(--panel-2);color:var(--ink-soft)}
+.rec{border-left:3px solid var(--accent);padding:8px 12px;background:var(--accent-soft);
+  font-size:14px}
+.rec b{color:var(--accent)}
+.risk{font-size:13px;color:var(--dead);display:flex;gap:7px;align-items:flex-start}
+.risk::before{content:"不定则";font-family:var(--mono);font-size:11px;
+  border:1px solid var(--dead);padding:0 5px;flex:none;margin-top:2px}
+.srcs{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:11px;
+  color:var(--ink-faint)}
+.srcs span{border-bottom:1px dotted var(--rule)}
+
+/* ── controls + table ─────────────────────────────── */
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;
+  padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.ctl input{flex:1;min-width:200px;font-family:var(--sans);font-size:14px;
+  padding:7px 10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink)}
+.ctl input:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+.chip{appearance:none;font-family:var(--sans);font-size:13px;padding:5px 11px;
+  border:1px solid var(--rule);background:var(--panel);color:var(--ink-soft);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tally{font-family:var(--mono);font-size:12px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums;margin-left:auto}
+
+.grp{margin-bottom:8px;border:1px solid var(--rule);background:var(--panel)}
+.grp>summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:14px;
+  display:flex;align-items:center;gap:10px;list-style:none;background:var(--panel-2)}
+.grp>summary::-webkit-details-marker{display:none}
+.grp>summary::before{content:"▸";font-family:var(--mono);color:var(--ink-faint);
+  transition:transform .12s}
+.grp[open]>summary::before{transform:rotate(90deg)}
+.grp>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.grp .era{font-weight:400;color:var(--ink-faint);font-size:12px;font-family:var(--mono)}
+.grp .gn{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-faint);font-weight:600;
+  padding:8px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr.dead td{color:var(--ink-faint)}
+tr.dead .ti{text-decoration:line-through;text-decoration-color:var(--dead)}
+.ti{font-weight:600}
+.ti.l3{font-weight:500;padding-left:14px;position:relative}
+.ti.l3::before{content:"└";position:absolute;left:0;color:var(--rule);
+  font-family:var(--mono)}
+.ex{color:var(--ink-soft);font-size:12.5px;line-height:1.5;max-width:70ch}
+.pill{display:inline-block;font-family:var(--mono);font-size:10px;padding:1px 6px;
+  letter-spacing:.04em;white-space:nowrap;border:1px solid}
+.p-dead{color:var(--dead);background:var(--dead-bg);border-color:var(--dead)}
+.p-open{color:var(--warn);background:var(--warn-bg);border-color:var(--warn)}
+.p-ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok)}
+.refs{font-family:var(--mono);font-size:11px;color:var(--ink-faint);white-space:nowrap}
+.nrec{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;
+  color:var(--ink-faint);text-align:right}
+.empty{padding:30px;text-align:center;color:var(--ink-faint);font-size:14px}
+
+/* ── running ──────────────────────────────────────── */
+.run{border:1px solid var(--rule);background:var(--panel);padding:14px 16px;
+  margin-bottom:10px}
+.run h3{margin:0 0 4px;font-size:15px;font-family:var(--serif)}
+.run .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);
+  margin-bottom:8px}
+.run code{font-family:var(--mono);font-size:12px;background:var(--panel-2);
+  padding:2px 6px;display:inline-block;overflow-wrap:anywhere}
+.run .note{font-size:13px;color:var(--ink-soft);margin-top:8px}
+
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);
+  display:flex;gap:16px;flex-wrap:wrap}
+@media (max-width:640px){
+  h1{font-size:26px} .cov .n{font-size:20px}
+  .dec-h{flex-wrap:wrap} .tally{margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">P79 · 与学长对账 · REALM @ EMNLP 投稿前</div>
+  <h1>结论账本</h1>
+  <p class="sub">结论层全部条目、台账索引、待决清单与覆盖度自证。除「要定的」一区为人工判断外，
+     其余均由 <span style="font-family:var(--mono);font-size:13px">build_advisor_ledger.py</span>
+     从结论层与台账机械抽取——因此「有没有遗漏」这件事本身是可核的。</p>
+  <div class="cov" id="cov"></div>
+  <div class="covnote" id="covnote"></div>
+</header>
+
+<nav id="nav" role="tablist"></nav>
+
+<section id="v-decide" class="panel"></section>
+<section id="v-sections" class="panel" hidden></section>
+<section id="v-coverage" class="panel" hidden></section>
+<section id="v-running" class="panel" hidden></section>
+
+<footer>
+  <span id="gen"></span>
+  <span>真源 · docs/checkpoints/deliverables/advisor_ledger.json</span>
+  <span>producer · scripts/analysis/build_advisor_ledger.py</span>
+</footer>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* coverage bar — the trust basis */
+const c = D.cov;
+const covCells = [
+  ['n', c.n_sections_total, '结论层条目 全数纳入'],
+  ['acc', c.n_sections_l2 + ' / ' + c.n_sections_l3, '主题 / 子项'],
+  ['dead', c.n_sections_dead, '已标作废'],
+  ['warn', c.n_sections_with_open_question, '含待决问题'],
+  ['n', c.n_ledger_records, '台账记录'],
+  ['n', c.n_conclusion_files, '结论层文件'],
+];
+document.getElementById('cov').innerHTML = covCells.map(([k,n,l]) =>
+  `<div><div class="n ${k==='n'?'':k}">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('');
+const lt = c.ledger_types;
+document.getElementById('covnote').innerHTML =
+  `台账构成 · ${Object.entries(lt).map(([k,v])=>`${esc(k)} <b>${v}</b>`).join(' · ')}
+   ｜ 导航文件不计入条目数（${c.nav_files_excluded.map(esc).join(' · ')}）
+   ｜ 条目数按标题层级枚举，比结论层自述的「253 节」更细，二者口径不同而非矛盾。`;
+document.getElementById('gen').textContent = '生成 ' + D.gen;
+
+/* ── view: decide ── */
+document.getElementById('v-decide').innerHTML = `
+  <h2>要定的</h2>
+  <p class="lede">这一区是<b>人工判断</b>，不是抽取结果——列出我认为需要你们两人拍板的问题。
+     每条给出选项、我的建议、以及不定的后果。这也是会议的议程。</p>
+  ` + D.dec.map(d => `
+  <article class="dec">
+    <div class="dec-h"><span class="dec-id">${esc(d.id)}</span>
+      <span class="dec-t">${esc(d.title)}</span></div>
+    <div class="dec-b">
+      <div class="why">${esc(d.why)}</div>
+      <div class="opts">${d.options.map(o=>`<span class="opt">${esc(o)}</span>`).join('')}</div>
+      <div class="rec"><b>建议 ·</b> ${esc(d.recommend)}</div>
+      <div class="risk">${esc(d.cost_of_not_deciding)}</div>
+      <div class="srcs">${d.evidence.map(e=>`<span>${esc(e)}</span>`).join('')}</div>
+    </div>
+  </article>`).join('');
+
+/* ── view: sections (the bulk) ── */
+const FILE_META = {};
+D.sec.forEach(s => { FILE_META[s.f] = s.k; });
+let q = '', filt = new Set();
+
+function render() {
+  const ql = q.trim().toLowerCase();
+  const rows = D.sec.filter(s => {
+    if (filt.has('dead') && !s.d) return false;
+    if (filt.has('live') && s.d) return false;
+    if (filt.has('open') && !s.o) return false;
+    if (!ql) return true;
+    return (s.t + ' ' + s.x + ' ' + s.r.join(' ')).toLowerCase().includes(ql);
+  });
+  const byFile = {};
+  rows.forEach(s => (byFile[s.f] = byFile[s.f] || []).push(s));
+  document.getElementById('tally').textContent =
+    `${rows.length} / ${D.sec.length} 条`;
+  const body = Object.keys(byFile).sort().map(f => `
+    <details class="grp"${ql || filt.size ? ' open' : ''}>
+      <summary>${esc(f)}<span class="era">${esc(FILE_META[f]||'')}</span>
+        <span class="gn">${byFile[f].length}</span></summary>
+      <div class="tblwrap"><table>
+        <thead><tr><th style="width:26%">条目</th><th>摘要</th>
+          <th style="width:9%">状态</th><th style="width:11%">§</th>
+          <th style="width:6%">台账</th></tr></thead>
+        <tbody>${byFile[f].map(s => `
+          <tr class="${s.d?'dead':''}">
+            <td><span class="ti ${s.l===3?'l3':''}">${esc(s.t)}</span></td>
+            <td class="ex">${esc(s.x)}${s.x.length>=240?'…':''}</td>
+            <td>${s.d?'<span class="pill p-dead">作废</span>':''}
+                ${s.o?'<span class="pill p-open">待决</span>':''}
+                ${!s.d&&!s.o?'<span class="pill p-ok">现行</span>':''}</td>
+            <td class="refs">${s.r.map(r=>'§'+esc(r)).join(' ')}</td>
+            <td class="nrec">${s.n||''}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+    </details>`).join('');
+  document.getElementById('rows').innerHTML = body ||
+    '<div class="empty">没有匹配的条目。</div>';
+}
+
+document.getElementById('v-sections').innerHTML = `
+  <h2>全部结论</h2>
+  <p class="lede">结论层 ${D.sec.length} 条，按来源文件分组，默认收起。
+     搜索会展开所有命中组。<b>作废</b>的条目保留在册并加删除线——不是删掉，
+     是标死，这样引用到已死结论时能当场看见。</p>
+  <div class="ctl">
+    <input id="q" type="search" placeholder="搜索标题、摘要、§ 号…" aria-label="搜索条目">
+    <button class="chip" data-f="live" aria-pressed="false">只看现行</button>
+    <button class="chip" data-f="dead" aria-pressed="false">只看作废</button>
+    <button class="chip" data-f="open" aria-pressed="false">只看待决</button>
+    <span class="tally" id="tally"></span>
+  </div>
+  <div id="rows"></div>`;
+
+document.getElementById('q').addEventListener('input', e => { q = e.target.value; render(); });
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+  const f = b.dataset.f, on = b.getAttribute('aria-pressed') === 'true';
+  if (f === 'live' || f === 'dead') { filt.delete('live'); filt.delete('dead');
+    document.querySelectorAll('.chip').forEach(x => {
+      if (x.dataset.f === 'live' || x.dataset.f === 'dead') x.setAttribute('aria-pressed','false'); }); }
+  if (on) filt.delete(f); else filt.add(f);
+  b.setAttribute('aria-pressed', String(!on));
+  render();
+}));
+render();
+
+/* ── view: coverage ── */
+document.getElementById('v-coverage').innerHTML = `
+  <h2>覆盖度自证</h2>
+  <p class="lede">「不能有遗漏」不能靠承诺，只能靠可核的枚举。这一区说明这份账本
+     扫了什么、没扫什么、以及哪些是<b>已知的未知</b>。</p>
+  <div class="grp" style="padding:0"><div class="tblwrap"><table>
+    <thead><tr><th>扫描对象</th><th>结果</th></tr></thead><tbody>
+    <tr><td class="ti">结论层文件</td><td class="ex">
+      ${c.conclusion_files_scanned.map(esc).join(' · ')}<br>
+      <b>${c.n_conclusion_files} 个全部纳入</b>；导航文件
+      ${c.nav_files_excluded.map(esc).join(' / ')} 不计入（它们是索引不是结论）。</td></tr>
+    <tr><td class="ti">条目枚举</td><td class="ex">按 Markdown 标题层级机械枚举，
+      ${c.n_sections_total} 条（主题 ${c.n_sections_l2} · 子项 ${c.n_sections_l3}）。
+      未做人工筛选，因此不存在「我认为不重要所以没列」的条目。</td></tr>
+    <tr><td class="ti">台账</td><td class="ex">${c.n_ledger_records} 条，
+      按 § 号与结论层条目关联（表格最后一列是关联数）。关联为 0 不代表没证据，
+      可能是该条目未引用 § 号。</td></tr>
+    <tr><td class="ti">已知未覆盖</td><td class="ex">
+      <b>41 个 /diag digest 的正文</b>——只索引了三分类与覆盖度，逐条 P-rule 细节未纳入；
+      写 failure analysis 必须直接读 digest。<br>
+      <b>3 个 digest 仍自称归因不完整</b>（B0·som·cls / B0·som·red / 一个 replicate）——
+      那三格的 scaffold-bug 与 benchmark-FP 是<b>未知不是零</b>。<br>
+      <b>只写在 CLAUDE.md / memory 的常驻事实</b>——台账数据源是实验笔记，
+      散文形式的常驻配置结构性扫不到（见结论层 INDEX §0）。</td></tr>
+    <tr><td class="ti">口径说明</td><td class="ex">本页 ${c.n_sections_total} 条与结论层自述的
+      「253 节」不矛盾：前者枚举所有标题层级，后者按五批产出统计主题数。</td></tr>
+    </tbody></table></div></div>`;
+
+/* ── view: running ── */
+document.getElementById('v-running').innerHTML = `
+  <h2>在跑的</h2>
+  <p class="lede">状态会变。<b>不要信这页的快照，用右边的命令去查。</b></p>
+  ` + D.run.map(r => `
+  <div class="run">
+    <h3>${esc(r.what)}</h3>
+    <div class="meta">${esc(r.where)}</div>
+    <code>${esc(r.how_to_check)}</code>
+    <div class="note">${esc(r.note)}</div>
+  </div>`).join('');
+
+/* ── nav ── */
+const VIEWS = [
+  ['v-decide', '要定的', D.dec.length],
+  ['v-sections', '全部结论', D.sec.length],
+  ['v-coverage', '覆盖度自证', ''],
+  ['v-running', '在跑的', D.run.length],
+];
+const nav = document.getElementById('nav');
+nav.innerHTML = VIEWS.map(([id, label, n], i) =>
+  `<button role="tab" data-v="${id}" aria-selected="${i===0}">${esc(label)}${
+    n!==''?`<span class="cnt">${n}</span>`:''}</button>`).join('');
+nav.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  nav.querySelectorAll('button').forEach(x =>
+    x.setAttribute('aria-selected', String(x === b)));
+  VIEWS.forEach(([id]) =>
+    document.getElementById(id).hidden = (id !== b.dataset.v));
+});
+</script>
+
+</body>
+</html>
