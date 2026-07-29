@@ -493,7 +493,20 @@ function buildExport(all) {
   pick.forEach(x => grp[x.r.v].push(x));
   const n = D.sec.length, done = pick.length;
   const L = [];
-  L.push(`# 结论账本裁定结果`);
+  L.push(`# 结论账本裁定结果 — P79 / REALM 投稿前对账`);
+  L.push('');
+  L.push('> 给 Claude 的说明（这段是自动带上的，不用删）：');
+  L.push('> 这是 user 在结论账本上逐条裁定的结果。账本由');
+  L.push('> `scripts/analysis/build_advisor_ledger.py` 从 `docs/reference/known/conclusions/`');
+  L.push('> 全量机械枚举生成（不是人工挑的子集）。方括号里是来源文件，');
+  L.push('> 用「文件 + 标题」可以在结论层里 grep 到原文；§ 号可用 `known.py` / `trace_claim.py` 追溯。');
+  L.push('>');
+  L.push('> **接下来该做的**（顺序不要跳，见 REBUILD_PLAN 顶部 / next_steps §0）：');
+  L.push('> 1. 先和 user 一起过「有问题」和「不确定」两组 —— 逐条查证，不要凭印象');
+  L.push('> 2. 基于过完的结果，生成真正的对账议程（账本里那 7 条「要定的」只是初步建议，不是议程）');
+  L.push('> 3. 拿议程和学长定 → 定完才写 8 页骨架');
+  L.push('> deadline 2026-08-05 REALM @ EMNLP。');
+  L.push('');
   L.push(`已裁定 ${done} / ${n}（认可 ${grp.ok.length} · 有问题 ${grp.issue.length} · 不确定 ${grp.unsure.length}）`);
   L.push('');
   const dump = (key, label) => {
