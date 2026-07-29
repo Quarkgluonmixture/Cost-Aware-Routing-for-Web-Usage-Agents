@@ -223,30 +223,24 @@ per-rule 细节、Tier-2 深挖、P-rule 误报审计只存在于 digest 本体�
 
 **覆盖度实况（这才是索引的主要产出）**：
 
-| 状态 | 数量 |
+| 状态 | 数量（2026-07-29 补完 B2·reddit 后）|
 |---|---|
-| 三分类可读 | **31 / 41** |
-| **digest 自己声明归因不完整** | **9 / 41** |
+| 三分类可读 | **37 / 41** |
+| **digest 自己声明归因不完整** | **3 / 41**（补前 9）|
 | 指针文件（故意不含数字，转 run-specific digest）| 1 / 41 |
-| 无法解析 | **0** |
-| 含 non-agent-limit 信号 | **30 个** |
-| **结构化计数非零**（确有 benchmark-FP 或 scaffold-bug）| **17 个** |
+| 无法解析 | **0**（补前 29）|
 
 **condition 覆盖是全的**：41 = 36 paper-grade condition（6 cell × 6 mode）+ 5 run-specific。
 
-⚠️ **但完成度不均，而且缺口成片**——9 个自称不完整的分布不是随机的：
+✅ **B2·reddit 六个 mode 的 Tier-2 已于 2026-07-29 补齐**（§402）：14 个 no-hit failed
+**全部 agent-limit**，scaffold-bug 0 · benchmark-FP 0 ⇒ 该格 ~1–4% SR 是真能力地板。
 
-| cell | 自称不完整的 mode |
-|---|---|
-| **B2 · reddit** | **六个 mode 全部**（dom · som · vision · P-text · P-prompt · P-SoM）|
-| B0 · classifieds | dom · som |
-| B0 · reddit | som |
+⚠️ **仍自称不完整的 3 个**：`B0_som_classifieds` · `B0_som_reddit` ·
+`B0_dom_classifieds_R31194`（replicate）。这三格的 scaffold-bug / benchmark-FP
+仍是**未知不是零**。
 
-⇒ **B2·reddit 整格的 Tier-2 从没做过**，那一格的 scaffold-bug / benchmark-FP 是**未知不是零**。
-任何「pipeline 不制造低 SR」的陈述都不能覆盖这一格。
-
-⇒ **corpus 级结论不可作**（索引标 `not admissible`）。写 failure analysis 仍须直接读 digest，
-但现在能先定位到那 17 个**确有非零计数**的。
+⇒ **corpus 级结论仍不可作**（索引标 `not admissible`）——因为那 3 个。
+**实质结论已进结论层** → `measured_D4.md` 附录 B（Y1–Y5）。
 
 **为什么之前 29 个「解析不了」**：不是 digest 有问题，是解析器只认一种表格形状。
 digest 实际有 **4 种 layout**（/diag skill 不同时期演进）：A 每类一行的表（3 个）·

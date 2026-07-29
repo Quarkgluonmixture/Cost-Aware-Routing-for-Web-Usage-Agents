@@ -71,3 +71,32 @@
 ---
 
 **Cross-link**: 笔记 §387.6 / §387.7 · master_bug_catalog B-1889 (task 160 passive-FP) / B-1890 (footprint 字段恒 0，勿用作判据) · `/tmp/diag_red/` Tier-1 原始扫描产物
+
+---
+
+## Tier-2 补记（2026-07-29）— 此前本 digest 只有 Tier-1
+
+`§401.6` 查出 B2·reddit 六个 mode **全部只做了 Tier-1**，三分类因此不完整。本轮补齐。
+
+**Tier-1 全扫（ruleset `8-reddit-p41p46-b1890fix`）**：205 episode，scaffold 规则命中 **0**。
+Tier-2 深挖目标 = 本 cell 的 no-hit failed + success-with-hit。
+
+**Tier-2 结论（六 mode 合计 14 个 no-hit failed）**：**全部 agent-limit**，
+high confidence ×14；**scaffold-bug 0 · benchmark-FP 0**。
+两个候选显式排除：task 179 `invalid_select_option` = parse guard 正常工作
+（`consumes_agent_action_budget=false`，无预算泄漏）；task 64/vision
+`policy_blocked_offsite` = 护栏按设计工作。
+
+⇒ 本 cell 的 ~1–4% SR 是**真能力地板**（与 §338 六源收敛一致，现有 Tier-2 逐条背书）。
+
+⚠️ **但 success 侧另有发现，不属本 cell 的能力问题**：reddit 有 **7 个 task 共读
+`#sidebar > section > ul`**，而 `require_reset` 在 reddit 是 no-op（`envs.py:172`），
+**订阅状态在 run 内 205 个 episode 间累积** ⇒ 这批 task 的成败由**执行顺序**决定。
+实证 B2·dom 的 178/188/189 三个判成功却从未访问过所需 forum。
+task 58/160 已 protocol-excluded，**170/171/178/188/189/190 仍在 scored universe**，
+裁定待 user/advisor。详见 实验笔记 §402.5 与 `known/conclusions/measured_D4.md` 附录 B。
+
+**新 P-rule 提议**（success-FP 全 0）：P43 正则修 · URLMATCH_FINISH_ON_SEARCH
+（P19 补 `/search?q=` —— 它此前对整个 reddit 站失明）· CONJUNCTIVE_EVAL_PARTIAL ·
+SUBMIT_INTENT_NEVER_REACHED_FORM · SELF_ACCOUNT_ONLY。
+**SUCCESSFUL_NOOP_REPEAT 明确不落地**（success-FP 16.8%，反例 B2·som task 130）。

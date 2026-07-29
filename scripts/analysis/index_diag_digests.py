@@ -95,6 +95,11 @@ FAILED_N = re.compile(r"failed\s*\((\d+)\)", re.IGNORECASE)
 INCOMPLETE = re.compile(
     r"三分类\s*\*{0,2}不完整|未深挖不等于|情况未知|Tier-2\s*未做|"
     r"请勿据此下.*干净|未.*深挖|not\s+investigated", re.IGNORECASE)
+# A digest that was later completed keeps its original "incomplete" wording as
+# history — the Tier-2 addendum sits below it and says so. Without this, the
+# index reports a resolved gap as still open forever, purely because the record
+# of the gap is (correctly) not deleted.
+RESOLVED = re.compile(r"Tier-2\s*补记|Tier-2\s+addendum|本轮补齐", re.IGNORECASE)
 
 # Free-text signals that a non-agent-limit cause is present somewhere in the
 # digest even when the structured table is absent. Deliberately over-inclusive:
@@ -144,7 +149,10 @@ def parse(path: Path) -> dict:
     head = HEADLINE.search(txt)
     failed = FAILED_N.search(txt)
     incomplete = INCOMPLETE.search(txt)
+    resolved = RESOLVED.search(txt)
     pointer = POINTER.search(txt)
+    if resolved:
+        incomplete = None  # the gap is recorded but has since been closed
 
     if pointer and not counts:
         coverage = "pointer"
@@ -152,6 +160,8 @@ def parse(path: Path) -> dict:
         coverage = "parsed"
     elif incomplete:
         coverage = "self_declared_incomplete"
+    elif resolved:
+        coverage = "parsed"
     else:
         coverage = "unparsed"
 

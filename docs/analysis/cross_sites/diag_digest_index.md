@@ -1,6 +1,6 @@
 # /diag digest index — failure attribution coverage
 
-- **41 digests**: 31 with a readable three-way split · 9 that declare their own attribution incomplete · 1 pointer files (numbers live in the run-specific digests they forward to) · 0 this script still cannot parse
+- **41 digests**: 37 with a readable three-way split · 3 that declare their own attribution incomplete · 1 pointer files (numbers live in the run-specific digests they forward to) · 0 this script still cannot parse
 - built by `scripts/analysis/index_diag_digests.py`
 - **navigation layer only** — per-rule detail, Tier-2 deep dives and P-rule false-positive audits exist solely in the digests
 
@@ -42,12 +42,12 @@ Classes: **agent-limit** = model capability · **scaffold-bug** = our pipeline �
 | B2 | classifieds | phantom_text | ✅ | — | 100 | 0 | 0 | — |
 | B2 | classifieds | som | ✅ | — | 100 | 0 | 0 | — |
 | B2 | classifieds | vision | ✅ | — | 100 | 0 | 0 | — |
-| B2 | reddit | dom | ⚠️ 自称不完整 | — | **?** | **?** | **?** | FP |
-| B2 | reddit | phantom_prompt | ⚠️ 自称不完整 | — | **?** | **?** | **?** | FP |
-| B2 | reddit | phantom_som | ⚠️ 自称不完整 | — | **?** | **?** | **?** | FP |
-| B2 | reddit | phantom_text | ⚠️ 自称不完整 | — | **?** | **?** | **?** | FP |
-| B2 | reddit | som | ⚠️ 自称不完整 | — | **?** | **?** | **?** | FP |
-| B2 | reddit | vision | ⚠️ 自称不完整 | — | **?** | **?** | **?** | FP |
+| B2 | reddit | dom | ✅ | — | 0 | 0 | 0 | FP |
+| B2 | reddit | phantom_prompt | ✅ | — | 0 | 0 | 0 | FP |
+| B2 | reddit | phantom_som | ✅ | — | 0 | 0 | 0 | FP |
+| B2 | reddit | phantom_text | ✅ | — | 0 | 0 | 0 | FP |
+| B2 | reddit | som | ✅ | — | 0 | 0 | 0 | FP |
+| B2 | reddit | vision | ✅ | — | 0 | 0 | 0 | FP |
 
 ## ⚠️ Digests carrying a non-agent-limit signal
 
@@ -91,16 +91,10 @@ For these, a blank scaffold-bug / benchmark-FP cell means **not investigated**. 
 - **B0_dom_classifieds_R31194** — matched `未逐个证因。"agent-limit 主导"应读作"35 深挖` · `docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md`
 - **B0_som_classifieds** — matched `未深挖` · `docs/analysis/vwa_classifieds/B0_som_classifieds_diag_digest.md`
 - **B0_som_reddit** — matched `未补录前本 digest 三分类统计基于 34/40 深挖` · `docs/analysis/vwa_reddit/B0_som_reddit_diag_digest.md`
-- **B2_dom_reddit** — matched `未深挖` · `docs/analysis/vwa_reddit/B2_dom_reddit_diag_digest.md`
-- **B2_phantom_prompt_reddit** — matched `未深挖` · `docs/analysis/vwa_reddit/B2_phantom_prompt_reddit_diag_digest.md`
-- **B2_phantom_som_reddit** — matched `未深挖` · `docs/analysis/vwa_reddit/B2_phantom_som_reddit_diag_digest.md`
-- **B2_phantom_text_reddit** — matched `未深挖` · `docs/analysis/vwa_reddit/B2_phantom_text_reddit_diag_digest.md`
-- **B2_som_reddit** — matched `未深挖` · `docs/analysis/vwa_reddit/B2_som_reddit_diag_digest.md`
-- **B2_vision_reddit** — matched `未深挖` · `docs/analysis/vwa_reddit/B2_vision_reddit_diag_digest.md`
 
 ## Corpus-level verdict
 
-**Not admissible.** Only 31/41 digests expose a machine-readable attribution table, so no statement of the form "the pipeline is clean across all conditions" can be made from this index. The per-condition rows above are the usable unit.
+**Not admissible.** Only 37/41 digests expose a machine-readable attribution table, so no statement of the form "the pipeline is clean across all conditions" can be made from this index. The per-condition rows above are the usable unit.
 
 ## Run-specific digests (replicates / ablation arms)
 

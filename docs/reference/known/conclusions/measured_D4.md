@@ -1296,3 +1296,71 @@ vs **p-prompt** 139/4074/26235 · **dom** 2/3606/61833
 **§397.10(1) 的 id-namespace 归属正确**，AMENDMENT_07 的重键在生产数据上确实生效。
 
 **证据**: §398.2
+
+---
+
+# 附录 B — /diag 失败归因的实质结论（2026-07-29 首次进结论层）
+
+> 此前结论层只有 `INDEX §2` 的**覆盖度索引**，没有 diag 到底测出了什么。
+> 本节补实质结论。逐条细节仍在 41 个 digest 本体，本节只承载跨 corpus 立得住的。
+
+## Y1. scaffold-bug 近乎不存在，benchmark-FP 是系统性的
+
+**当前值**（31 个三分类可读的 digest）：
+
+| 类 | 非零的 digest 数 | 规模 |
+|---|---|---|
+| **scaffold-bug** | **4 / 31** | 合计约 5 个 episode（最大 `B2_dom_cls_R17895` ~2% = 4 ep）|
+| **benchmark-FP** | **15 / 31** | 最大 `B0_som_reddit` 4 个；`B2_P-prompt_cls` 3/9 |
+| agent-limit | 31 / 31 | 主导 |
+
+⇒ **可写的结论**：在已查的格子上，低成功率**不是我们的 pipeline 制造的** ——
+scaffold-bug 在 31 个 condition 里只有 4 个非零、合计约 5 个 episode。
+⚠️ 但这句**不能覆盖 B2·reddit 之外的 9 个自称不完整的 digest**（见 `INDEX §2`）。
+
+## Y2. B2·reddit 的 Tier-2 已补齐（§402.1）
+
+**14 个 no-hit failed 全部 agent-limit**（high confidence ×14），**scaffold-bug 0 · benchmark-FP 0**。
+两个候选显式排除：task 179 的 `invalid_select_option` 是 parse guard 正常工作
+（`consumes_agent_action_budget=false`，无预算泄漏）；task 64/vision 的
+`policy_blocked_offsite` 是护栏按设计工作。
+
+⇒ B2·reddit 的 ~1–4% SR 是**真能力地板**，与 §338 六源收敛一致，现有 Tier-2 逐条背书。
+
+**B1↔B2 matched-capability 对照**（paper 想要的那个）：task 129 B1 在 **5/6** mode 解出而 B2 全败；
+task 171 同样 **5/6 vs 0**。同 4B 量级、跨族 ⇒ 这些**不是结构不可解，是 B2 能力失败**。
+
+## Y3. ⚠️ reddit sidebar 任务的跨 episode 泄漏（§402.5）
+
+**7 个 reddit task 共读一个选择器** `#sidebar > section > ul`，而 `require_reset` 在 reddit 是
+no-op（`envs.py:172` `TODO(jykoh)`）⇒ **订阅状态在 run 内 205 个 episode 之间累积**。
+
+**实证**：B2·dom 三个判成功的 task（178 / 188 / 189）**全都从没访问过它们需要订阅的 forum**。
+18 个 cell 上 `must_exclude`(160) 与 `must_include`(178/188/189) **完美反相关**
+⇒ 判定由**执行顺序**决定，与 agent 能力无关。
+
+**占各 cell 成功数**：B2·SoM **50.0%** · B2·DOM **37.5%** · B1·P-text/P-SoM **33.3%** ·
+B1·SoM 20.0% · B0·DOM 17.2%。
+
+**B-1889/B-1892 只修了一半** —— 58/160 已 protocol-excluded，
+**170/171/178/188/189/190 六个仍在 scored universe**。
+⚠️ **裁定待 user/advisor**（排除 task 是 preregistration 级动作）。
+
+## Y4. task 64 是 distractor-contradiction，不是表征测试（§402.2）
+
+"Iran" 在 **19/19** reddit run（3 model × 6 mode）里出现 **0 次，0 成功**。
+页面可读文本断言 **Chile** 是当前第三大樱桃产国，而 gold 是 2012 年的 **Iran**。
+模型按 mode 各自编不同国家（US / Chile / Turkey / Ukraine）——
+**变的只是编哪个，不是能不能读到** ⇒ task 属性非 mode 属性。建议进 benchmark-noise 审计。
+
+## Y5. 两条 diag 规则的结构性失明（§402.3）
+
+- **P19 对整个 reddit 站失明** —— `diag_pattern_match.py:1010/1036/1045` 三处硬编码
+  classifieds 的 `page=search`，reddit 是 `/search?q=` ⇒ **18 个 reddit condition 从未 fire 过它**；
+  补上后全语料 fire **144 次，success-FP 0**
+- **`tokens.input_image` 对 B0 是字段缺失**（B0 som/vision **0 个 step** 带该字段，
+  B1 max=1984 / B2 max=2304）⇒ P43 及任何 keyed on image token 的规则**对 B0 静默失明**
+- 另：**`page_changed` 不是 progress 信号** —— 19.8%（17383/87693）的失败步报
+  `page_changed=True` 但 URL 未变且原因全 cosmetic
+
+**证据**: §401.6 / §402；`docs/analysis/cross_sites/diag_digest_index.md`；41 个 per-condition digest
