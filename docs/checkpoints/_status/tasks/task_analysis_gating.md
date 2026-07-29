@@ -39,3 +39,11 @@ AAAI 撤出后 deadline 变 **08-05 (REALM)**, B2_reddit ~07-26/27 落地 → k=
 2. **机制口径**: 熵闸门**是过的** (2.1-2.2 bits vs 1.0)，阻断是 `insufficient_train_data`
    (`N_MIN_CLASS_TRAIN=10`)，**不是**标签集中
 3. **补披露 Pass-2 从未 fire** (每 cell `Pass-2 runs: 0` → `k_of_n="0/0"` 是独立成因)
+
+## 要和学长对的 Phase 1 清单（2026-07-29 user 定）
+
+不在本轮定去留，对账时一并过：
+
+- **mechanistic canonical sweep**（24 cell，driver pid 38603，deadline 08-01）——
+  mechanism 线 2026-05-14 已暂搁，跑完了用 / 不用 / 存档待定
+- **WA（WebArena）** —— 现为 future work，是否进 Phase 1 待对

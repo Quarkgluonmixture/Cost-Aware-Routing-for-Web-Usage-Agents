@@ -1339,12 +1339,25 @@ no-op（`envs.py:172` `TODO(jykoh)`）⇒ **订阅状态在 run 内 205 个 epis
 18 个 cell 上 `must_exclude`(160) 与 `must_include`(178/188/189) **完美反相关**
 ⇒ 判定由**执行顺序**决定，与 agent 能力无关。
 
-**占各 cell 成功数**：B2·SoM **50.0%** · B2·DOM **37.5%** · B1·P-text/P-SoM **33.3%** ·
-B1·SoM 20.0% · B0·DOM 17.2%。
+**逐 episode 实查后的真实规模（§402.6）**：**LEAKED 6 · earned 31 · failed 107**。
 
-**B-1889/B-1892 只修了一半** —— 58/160 已 protocol-excluded，
-**170/171/178/188/189/190 六个仍在 scored universe**。
-⚠️ **裁定待 user/advisor**（排除 task 是 preregistration 级动作）。
+| cell · mode | scored 成功 | 其中泄漏 | 占比 |
+|---|---|---|---|
+| **B2 · DOM** | 8 | **3** | **37.5%** |
+| B0 · Vision | 15 | 1 | 6.7% |
+| B1 · SoM | 15 | 1 | 6.7% |
+| B0 · DOM | 29 | 1 | 3.4% |
+| 其余 14 格 | — | **0** | **0.0%** |
+
+⚠️ **一条自我纠正**：初报「reddit SR 里 10–37% 受污染」是**过度警报** —— 那是
+「sidebar task 占成功数的比例」，不是「泄漏占成功数的比例」。**31/37 的 sidebar
+成功是真挣来的**（确实访问了目标 forum）。实质受影响的只有 **B2·DOM 一格（8→5）**。
+
+**读 sidebar 的是 9 个 task 不是 7 个** —— 手数漏了 158(`aww`) 与 159(`newark|nyc`)；
+机器扫 locator 比手数可靠。
+
+**裁定（user 2026-07-29）**：归入**独立 benchmark bug paper**，主 paper 一句披露 + 指针；
+**不扩展 AMENDMENT_08，scored universe 保持 203**。task 58/160 的既有排除不变。
 
 ## Y4. task 64 是 distractor-contradiction，不是表征测试（§402.2）
 
