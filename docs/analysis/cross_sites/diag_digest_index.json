@@ -1,8 +1,9 @@
 {
  "n_digests": 41,
- "n_parsed": 3,
+ "n_parsed": 31,
+ "n_pointer": 1,
  "n_self_declared_incomplete": 9,
- "n_unparsed": 29,
+ "n_unparsed": 0,
  "corpus_verdict_admissible": false,
  "digests": [
   {
@@ -14,8 +15,20 @@
    "path": "docs/analysis/vwa_classifieds/B0_dom_classifieds_diag_digest.md",
    "n_lines": 74,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -30,8 +43,18 @@
    "path": "docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md",
    "n_lines": 152,
    "n_failed": null,
-   "attribution": {},
+   "attribution": {
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
    "coverage": "self_declared_incomplete",
+   "table_layout": "B/C",
    "incomplete_quote": "未逐个证因。\"agent-limit 主导\"应读作\"35 深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -46,8 +69,22 @@
    "path": "docs/analysis/vwa_classifieds/B0_dom_classifieds_R21557_diag_digest.md",
    "n_lines": 193,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 28,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": true,
@@ -62,8 +99,30 @@
    "path": "docs/analysis/vwa_classifieds/B0_phantom_prompt_classifieds_diag_digest.md",
    "n_lines": 130,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 100,
+     "pct": null,
+     "raw": "~100% of diagnosed"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "**0**"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "**0**"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -78,8 +137,30 @@
    "path": "docs/analysis/vwa_classifieds/B0_phantom_som_classifieds_diag_digest.md",
    "n_lines": 151,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 100,
+     "pct": null,
+     "raw": "~100% of diagnosed"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "**0**"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "**0**"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -105,6 +186,7 @@
     }
    },
    "coverage": "parsed",
+   "table_layout": "A",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -119,8 +201,22 @@
    "path": "docs/analysis/vwa_classifieds/B0_som_classifieds_diag_digest.md",
    "n_lines": 253,
    "n_failed": null,
-   "attribution": {},
+   "attribution": {
+    "agent-limit": {
+     "n": 33,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
    "coverage": "self_declared_incomplete",
+   "table_layout": "B/C",
    "incomplete_quote": "未深挖",
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": true,
@@ -136,7 +232,8 @@
    "n_lines": 62,
    "n_failed": null,
    "attribution": {},
-   "coverage": "unparsed",
+   "coverage": "pointer",
+   "table_layout": null,
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -151,8 +248,30 @@
    "path": "docs/analysis/vwa_classifieds/B0_vision_classifieds_R24792_diag_digest.md",
    "n_lines": 167,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 49,
+     "pct": null,
+     "raw": "**49** (no-hit)"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "**0** (task 40 forensic 翻案)"
+    },
+    "unclear": {
+     "n": 1,
+     "pct": null,
+     "raw": "**1** (task 129)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "**0**"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -174,6 +293,7 @@
     }
    },
    "coverage": "parsed",
+   "table_layout": "A",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -207,6 +327,7 @@
     }
    },
    "coverage": "parsed",
+   "table_layout": "A",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -221,8 +342,22 @@
    "path": "docs/analysis/vwa_reddit/B0_phantom_prompt_reddit_diag_digest.md",
    "n_lines": 85,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -237,8 +372,22 @@
    "path": "docs/analysis/vwa_reddit/B0_phantom_som_reddit_diag_digest.md",
    "n_lines": 90,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -253,8 +402,22 @@
    "path": "docs/analysis/vwa_reddit/B0_phantom_text_reddit_diag_digest.md",
    "n_lines": 85,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": true,
@@ -269,8 +432,30 @@
    "path": "docs/analysis/vwa_reddit/B0_som_reddit_diag_digest.md",
    "n_lines": 136,
    "n_failed": null,
-   "attribution": {},
+   "attribution": {
+    "agent-limit": {
+     "n": 41,
+     "pct": null,
+     "raw": "41 (37 no-hit + 4 verify-确认)"
+    },
+    "benchmark-fp": {
+     "n": 4,
+     "pct": null,
+     "raw": "4"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
    "coverage": "self_declared_incomplete",
+   "table_layout": "D",
    "incomplete_quote": "未补录前本 digest 三分类统计基于 34/40 深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -285,8 +470,30 @@
    "path": "docs/analysis/vwa_reddit/B0_vision_reddit_diag_digest.md",
    "n_lines": 106,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 40,
+     "pct": null,
+     "raw": "40 (35 no-hit + 5 verify 全 AL)"
+    },
+    "benchmark-fp": {
+     "n": 2,
+     "pct": null,
+     "raw": "2"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -301,8 +508,22 @@
    "path": "docs/analysis/vwa_classifieds/B1_dom_classifieds_diag_digest.md",
    "n_lines": 230,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 17,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -317,8 +538,25 @@
    "path": "docs/analysis/vwa_classifieds/B1_phantom_prompt_classifieds_diag_digest.md",
    "n_lines": 197,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 22,
+     "pct": null,
+     "raw": "压倒 (22/22 failed 深挖)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0 confirmed"
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null,
+     "raw": "**1 (success 侧)**"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -333,8 +571,25 @@
    "path": "docs/analysis/vwa_classifieds/B1_phantom_som_classifieds_diag_digest.md",
    "n_lines": 152,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 45,
+     "pct": null,
+     "raw": "压倒 (~45/50)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0 confirmed"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -349,8 +604,25 @@
    "path": "docs/analysis/vwa_classifieds/B1_phantom_text_classifieds_diag_digest.md",
    "n_lines": 154,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 40,
+     "pct": null,
+     "raw": "压倒 (~40/43 深挖)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0 confirmed, **1 测量隐患候选**"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -365,8 +637,14 @@
    "path": "docs/analysis/vwa_classifieds/B1_som_classifieds_diag_digest.md",
    "n_lines": 199,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 46,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": true,
@@ -381,8 +659,25 @@
    "path": "docs/analysis/vwa_classifieds/B1_vision_classifieds_diag_digest.md",
    "n_lines": 176,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 44,
+     "pct": null,
+     "raw": "压倒 (~44/48 深挖)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "**0**"
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null,
+     "raw": "1 confirmed (task 20) + 候选"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -397,8 +692,22 @@
    "path": "docs/analysis/vwa_reddit/B1_dom_reddit_diag_digest.md",
    "n_lines": 90,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 2,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -413,8 +722,22 @@
    "path": "docs/analysis/vwa_reddit/B1_phantom_prompt_reddit_diag_digest.md",
    "n_lines": 89,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 2,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -429,8 +752,22 @@
    "path": "docs/analysis/vwa_reddit/B1_phantom_som_reddit_diag_digest.md",
    "n_lines": 90,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 2,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -445,8 +782,22 @@
    "path": "docs/analysis/vwa_reddit/B1_phantom_text_reddit_diag_digest.md",
    "n_lines": 86,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 2,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -461,8 +812,22 @@
    "path": "docs/analysis/vwa_reddit/B1_som_reddit_diag_digest.md",
    "n_lines": 87,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 2,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -477,8 +842,22 @@
    "path": "docs/analysis/vwa_reddit/B1_vision_reddit_diag_digest.md",
    "n_lines": 79,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -493,8 +872,25 @@
    "path": "docs/analysis/vwa_classifieds/B2_dom_classifieds_diag_digest.md",
    "n_lines": 71,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 100,
+     "pct": null,
+     "raw": "~100% (221/221 failed)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -509,8 +905,25 @@
    "path": "docs/analysis/vwa_classifieds/B2_dom_classifieds_R17895_diag_digest.md",
    "n_lines": 177,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 95,
+     "pct": null,
+     "raw": "**~95%**"
+    },
+    "scaffold-bug": {
+     "n": 2,
+     "pct": null,
+     "raw": "**~2% (4 ep)**"
+    },
+    "unclear": {
+     "n": 1,
+     "pct": null,
+     "raw": "<1%"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -525,8 +938,25 @@
    "path": "docs/analysis/vwa_classifieds/B2_phantom_prompt_classifieds_diag_digest.md",
    "n_lines": 82,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 6,
+     "pct": null,
+     "raw": "6/9 Tier-2"
+    },
+    "benchmark-fp": {
+     "n": 3,
+     "pct": null,
+     "raw": "**3/9** (task 5/110/142)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -541,8 +971,25 @@
    "path": "docs/analysis/vwa_classifieds/B2_phantom_som_classifieds_diag_digest.md",
    "n_lines": 79,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 99,
+     "pct": null,
+     "raw": "~99% (7/8 Tier-2)"
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null,
+     "raw": "1 (task 142)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -557,8 +1004,25 @@
    "path": "docs/analysis/vwa_classifieds/B2_phantom_text_classifieds_diag_digest.md",
    "n_lines": 78,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 100,
+     "pct": null,
+     "raw": "~100% (223/223 failed)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0 (1 telemetry gap)"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -573,8 +1037,25 @@
    "path": "docs/analysis/vwa_classifieds/B2_som_classifieds_diag_digest.md",
    "n_lines": 79,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 100,
+     "pct": null,
+     "raw": "~100% (219/219 failed)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -589,8 +1070,25 @@
    "path": "docs/analysis/vwa_classifieds/B2_vision_classifieds_diag_digest.md",
    "n_lines": 80,
    "n_failed": null,
-   "attribution": {},
-   "coverage": "unparsed",
+   "attribution": {
+    "agent-limit": {
+     "n": 100,
+     "pct": null,
+     "raw": "~100% (219/219 failed)"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
@@ -607,6 +1105,7 @@
    "n_failed": null,
    "attribution": {},
    "coverage": "self_declared_incomplete",
+   "table_layout": null,
    "incomplete_quote": "未深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -623,6 +1122,7 @@
    "n_failed": null,
    "attribution": {},
    "coverage": "self_declared_incomplete",
+   "table_layout": null,
    "incomplete_quote": "未深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -639,6 +1139,7 @@
    "n_failed": null,
    "attribution": {},
    "coverage": "self_declared_incomplete",
+   "table_layout": null,
    "incomplete_quote": "未深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -655,6 +1156,7 @@
    "n_failed": null,
    "attribution": {},
    "coverage": "self_declared_incomplete",
+   "table_layout": null,
    "incomplete_quote": "未深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -671,6 +1173,7 @@
    "n_failed": null,
    "attribution": {},
    "coverage": "self_declared_incomplete",
+   "table_layout": null,
    "incomplete_quote": "未深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,
@@ -687,6 +1190,7 @@
    "n_failed": null,
    "attribution": {},
    "coverage": "self_declared_incomplete",
+   "table_layout": null,
    "incomplete_quote": "未深挖",
    "free_text_fp_signal": true,
    "free_text_scaffold_signal": false,

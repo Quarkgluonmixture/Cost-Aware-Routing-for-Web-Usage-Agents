@@ -50,11 +50,43 @@ DIGEST_GLOB = "docs/analysis/vwa_*/*_diag_digest.md"
 
 CLASSES = ("agent-limit", "scaffold-bug", "benchmark-fp", "unclear")
 
-# Structured §1 table row: "| **agent-limit** | **175** | **100%** | ..."
+# The digests use two different §1 layouts, from different eras of the /diag skill.
+#
+# LAYOUT A — one table row per class:
+#     | **agent-limit** | **175** | **100%** | ...
+# LAYOUT B — the whole split compressed into a single cell:
+#     | 三分类 (29 深挖) | **agent-limit 100%**（17 failed 深挖 = 17 agent-limit
+#     + **0 scaffold-bug + 0 benchmark-FP**）· 12 success-hit = ... |
+#
+# The first version of this script only knew layout A, parsed 3 of 41, and called
+# the other 38 unreadable. Most of them are layout B and perfectly readable.
 ROW = re.compile(
     r"^\|\s*\*{0,2}(agent-limit|scaffold-bug|benchmark-FP|unclear)\*{0,2}\s*\|"
     r"\s*\*{0,2}([\d,]+)\*{0,2}\s*\|\s*\*{0,2}([\d.]+)\s*%",
     re.IGNORECASE | re.MULTILINE)
+# layout B: "<N> agent-limit", "0 scaffold-bug", "0 benchmark-FP" anywhere in the
+# 三分类 line. Counts only, no percentage — the denominator is stated separately.
+INLINE = re.compile(
+    r"\*{0,2}(\d+)\*{0,2}\s*\*{0,2}(agent-limit|scaffold-bug|benchmark-FP)\*{0,2}",
+    re.IGNORECASE)
+# LAYOUT C — same idea, class first: "三分类：agent-limit 5 · benchmark-FP 2 · scaffold-bug 0"
+INLINE_REV = re.compile(
+    r"\*{0,2}(agent-limit|scaffold-bug|benchmark-FP)\*{0,2}\s*[:：]?\s*\*{0,2}(\d+)\b",
+    re.IGNORECASE)
+TRICLASS_LINE = re.compile(r"^.*三分类.*$", re.MULTILINE)
+# LAYOUT D — table row whose count column is prose:
+#   | **agent-limit** | ~100% (221/221 failed) | ... |
+#   | scaffold-bug    | 0                      | ... |
+ROW_LOOSE = re.compile(
+    r"^\|\s*\*{0,2}(agent-limit|scaffold-bug|benchmark-FP|unclear)\*{0,2}\s*\|"
+    r"\s*([^|]{1,60})\|",
+    re.IGNORECASE | re.MULTILINE)
+FIRST_INT = re.compile(r"(\d[\d,]*)")
+
+# A pointer digest carries no numbers ON PURPOSE and forwards to run-specific
+# digests (dual-run preservation, 笔记 §297-298). Counting it as "unparsed"
+# conflates "deliberately empty" with "failed to read".
+POINTER = re.compile(r"指针文件|不含数字|digest pointer", re.IGNORECASE)
 HEADLINE = re.compile(r"^>\s*\*{0,2}Headline\*{0,2}\s*[:：]?\s*(.+)$", re.MULTILINE)
 FAILED_N = re.compile(r"failed\s*\((\d+)\)", re.IGNORECASE)
 
@@ -88,11 +120,35 @@ def parse(path: Path) -> dict:
 
     counts = {k.lower(): {"n": int(n.replace(",", "")), "pct": float(p)}
               for k, n, p in ROW.findall(txt)}
+    layout = "A" if counts else None
+    if not counts:
+        # layouts B and C — scan the 三分类 line(s) in both orderings
+        for line in TRICLASS_LINE.findall(txt):
+            for n, k in INLINE.findall(line):
+                counts.setdefault(k.lower(), {"n": int(n), "pct": None})
+            for k, n in INLINE_REV.findall(line):
+                counts.setdefault(k.lower(), {"n": int(n), "pct": None})
+        if counts:
+            layout = "B/C"
+    if not counts:
+        # layout D — table row whose count column is prose ("~100% (221/221 failed)")
+        for k, col in ROW_LOOSE.findall(txt):
+            m = FIRST_INT.search(col)
+            if m:
+                counts.setdefault(k.lower(),
+                                  {"n": int(m.group(1).replace(",", "")), "pct": None,
+                                   "raw": col.strip()})
+        if counts:
+            layout = "D"
+
     head = HEADLINE.search(txt)
     failed = FAILED_N.search(txt)
     incomplete = INCOMPLETE.search(txt)
+    pointer = POINTER.search(txt)
 
-    if counts and not incomplete:
+    if pointer and not counts:
+        coverage = "pointer"
+    elif counts and not incomplete:
         coverage = "parsed"
     elif incomplete:
         coverage = "self_declared_incomplete"
@@ -105,7 +161,7 @@ def parse(path: Path) -> dict:
         "n_lines": len(txt.splitlines()),
         "n_failed": int(failed.group(1)) if failed else None,
         "attribution": counts,
-        "coverage": coverage,
+        "coverage": coverage, "table_layout": layout,
         "incomplete_quote": incomplete.group(0) if incomplete else None,
         "free_text_fp_signal": bool(FP_SIGNAL.search(txt)),
         "free_text_scaffold_signal": bool(SCAFFOLD_SIGNAL.search(txt)),
@@ -130,6 +186,7 @@ def main() -> int:
     n_parsed = sum(1 for r in rows if r["coverage"] == "parsed")
     n_inc = sum(1 for r in rows if r["coverage"] == "self_declared_incomplete")
     n_unp = sum(1 for r in rows if r["coverage"] == "unparsed")
+    n_ptr = sum(1 for r in rows if r["coverage"] == "pointer")
     flagged = [r for r in rows
                if r["free_text_fp_signal"] or r["free_text_scaffold_signal"]
                or (r["attribution"].get("scaffold-bug", {}).get("n") or 0) > 0
@@ -138,18 +195,22 @@ def main() -> int:
     def cell(r, key):
         c = r["attribution"].get(key)
         if c:
-            return f"{c['n']} ({c['pct']:.0f}%)"
-        return "**?**" if r["coverage"] != "parsed" else "—"
+            # layout B gives counts without a percentage; do not invent one
+            return f"{c['n']} ({c['pct']:.0f}%)" if c["pct"] is not None else str(c["n"])
+        if r["coverage"] == "pointer":
+            return "↪"
+        return "**?**" if r["coverage"] != "parsed" else "0"
 
     COV = {"parsed": "✅", "self_declared_incomplete": "⚠️ 自称不完整",
-           "unparsed": "❔ 未解析"}
+           "unparsed": "❔ 未解析", "pointer": "↪ 指针(数字在 run digest)"}
 
     L: list[str] = []
     L.append("# /diag digest index — failure attribution coverage")
     L.append("")
-    L.append(f"- **{len(rows)} digests**: {n_parsed} with a machine-readable "
-             f"three-way table · {n_inc} that declare their own attribution "
-             f"incomplete · {n_unp} whose table this script could not parse")
+    L.append(f"- **{len(rows)} digests**: {n_parsed} with a readable three-way "
+             f"split · {n_inc} that declare their own attribution incomplete · "
+             f"{n_ptr} pointer files (numbers live in the run-specific digests "
+             f"they forward to) · {n_unp} this script still cannot parse")
     L.append("- built by `scripts/analysis/index_diag_digests.py`")
     L.append("- **navigation layer only** — per-rule detail, Tier-2 deep dives and "
              "P-rule false-positive audits exist solely in the digests")
@@ -218,8 +279,11 @@ def main() -> int:
 
     L.append("## Corpus-level verdict")
     L.append("")
-    if n_parsed == len(rows):
-        L.append("All digests parsed; a corpus-level statement is admissible.")
+    resolved = n_parsed + n_ptr
+    if resolved == len(rows):
+        L.append(f"All {len(rows)} digests resolve ({n_parsed} parsed + {n_ptr} "
+                 "pointer). A corpus-level statement is admissible **only if** the "
+                 "self-declared-incomplete set is empty as well.")
     else:
         L.append(f"**Not admissible.** Only {n_parsed}/{len(rows)} digests expose a "
                  "machine-readable attribution table, so no statement of the form "
@@ -246,9 +310,9 @@ def main() -> int:
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text("\n".join(L), encoding="utf-8")
     a.json_out.write_text(json.dumps(
-        {"n_digests": len(rows), "n_parsed": n_parsed,
+        {"n_digests": len(rows), "n_parsed": n_parsed, "n_pointer": n_ptr,
          "n_self_declared_incomplete": n_inc, "n_unparsed": n_unp,
-         "corpus_verdict_admissible": n_parsed == len(rows),
+         "corpus_verdict_admissible": (n_parsed + n_ptr) == len(rows) and n_inc == 0,
          "digests": rows}, ensure_ascii=False, indent=1), encoding="utf-8")
     print("\n".join(L))
     print(f"\nwrote {a.out}\nwrote {a.json_out}")

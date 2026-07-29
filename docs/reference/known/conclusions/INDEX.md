@@ -225,13 +225,33 @@ per-rule 细节、Tier-2 深挖、P-rule 误报审计只存在于 digest 本体�
 
 | 状态 | 数量 |
 |---|---|
-| 有机器可读的三分类表 | **3 / 41** |
+| 三分类可读 | **31 / 41** |
 | **digest 自己声明归因不完整** | **9 / 41** |
-| 表格未能解析 | **29 / 41** |
-| 含 non-agent-limit 信号（结构化非零 或 自由文本提及 benchmark-FP / scaffold） | **21 个** |
+| 指针文件（故意不含数字，转 run-specific digest）| 1 / 41 |
+| 无法解析 | **0** |
+| 含 non-agent-limit 信号 | **30 个** |
+| **结构化计数非零**（确有 benchmark-FP 或 scaffold-bug）| **17 个** |
 
-⇒ **corpus 级结论不可作**（索引里标 `not admissible`）。写 failure analysis 仍须直接读 digest，
-但现在能先按索引定位到那 21 个**必须读**的。
+**condition 覆盖是全的**：41 = 36 paper-grade condition（6 cell × 6 mode）+ 5 run-specific。
+
+⚠️ **但完成度不均，而且缺口成片**——9 个自称不完整的分布不是随机的：
+
+| cell | 自称不完整的 mode |
+|---|---|
+| **B2 · reddit** | **六个 mode 全部**（dom · som · vision · P-text · P-prompt · P-SoM）|
+| B0 · classifieds | dom · som |
+| B0 · reddit | som |
+
+⇒ **B2·reddit 整格的 Tier-2 从没做过**，那一格的 scaffold-bug / benchmark-FP 是**未知不是零**。
+任何「pipeline 不制造低 SR」的陈述都不能覆盖这一格。
+
+⇒ **corpus 级结论不可作**（索引标 `not admissible`）。写 failure analysis 仍须直接读 digest，
+但现在能先定位到那 17 个**确有非零计数**的。
+
+**为什么之前 29 个「解析不了」**：不是 digest 有问题，是解析器只认一种表格形状。
+digest 实际有 **4 种 layout**（/diag skill 不同时期演进）：A 每类一行的表（3 个）·
+B/C 三分类压在单行、数字与类名顺序两种（14 个）· D 三列表但计数列是散文
+（`~100% (221/221 failed)`，17 个）· 指针文件（1 个）。四种全认后 **未解析归零**。
 
 > ⚠️ **B-1913 教训（2026-07-29）**：本索引第一版只匹配一种表格形状，解析中 2/41，
 > 把未解析当成零，于是打印出「**None.** 每个 condition 都是 100% agent-limit，
