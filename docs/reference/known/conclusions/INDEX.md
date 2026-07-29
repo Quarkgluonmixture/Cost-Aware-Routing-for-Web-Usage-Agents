@@ -129,6 +129,7 @@ A1–A4 共 51 条待核。**一律两侧并列，不选边** —— 在没有�
 - **element-ID namespace**：不 patch → §295 证伪前提 → AMENDMENT_07 sequential →
   §298.4 "red herring" 被拽回 → §302 线性分解 RETRACT → §397.9 表 → §397.10(1) 修正为三个 mode
 - **router**：v1–v6 → v7 walk-back（learned-only）→ 离线负结果链（0/6 Pareto 胜出）
+  → §399 最有利角落复测（同族池 × cost-tier）**0/26 支配 · 0/26 在前沿上**，加严不改判
 
 
 ---
@@ -136,6 +137,30 @@ A1–A4 共 51 条待核。**一律两侧并列，不选边** —— 在没有�
 # 结论层**之外**还有什么（2026-07-28 user 点出，台账不覆盖）
 
 台账只抽 `实验笔记.md`。以下都是独立产物，**查台账查不到**，新 session 必须单独看。
+
+## 0. ⚠️ 常驻事实 —— 只写在 `CLAUDE.md` / memory 里，三道防线全都看不见
+
+**2026-07-29 实证的盲区。** 台账的数据源是实验笔记，结论层的数据源是台账，
+`find_unlanded.py` 只认斜杠多元组 —— 所以**凡是以散文形式写在 `CLAUDE.md` 或 memory 里的
+常驻配置，三者都扫不到**。当天的实例：讨论噪声通道时列了「跨 GPU greedy ±3–5pp」，
+而 paper-grade fire **全部在单一 A100 型号上跑**，那条根本不适用；这条信息在
+`CLAUDE.md:124` 和 `CLAUDE.md:144-146` 明写着，且加载在 context 里。
+REBUILD_PLAN 开头把这类错误单列为**第五类**——「不是缺一次查询，是没有应用一条已经
+加载在 context 里的规则」——这是它第三次复发。
+
+**下面这些只在 `CLAUDE.md` / memory 有，动手前必须直接去读，不要指望台账**：
+
+| 常驻事实 | 位置 | 为什么要紧 |
+|---|---|---|
+| **paper-grade fire host = Condenser A100 VM**（A100-PCIE-40GB，VWA docker self-hosted），**不是** DGX→quark Tailscale；standing decision 2026-05-14 | `CLAUDE.md:124` + memory `project_paper_grade_target_host` | 决定跨 GPU / 环境类 limitation 适不适用。可用 step record 的 `energy.cpu_arch` 验证：**A100 = x86_64，DGX Spark = aarch64**（2026-07-29 扫 24 condition，96/96 全 x86_64） |
+| **三层算力的角色划分**（DGX 共享争抢 = dev/mechanistic · A100 独占 = paper-grade fire · Myriad = 批处理，CGNAT 连不了 VWA） | `CLAUDE.md:144-146` | 任何「这个跑在哪 / 挡没挡别的」的推理都必须先读它 |
+| **实验启动 hard rules**（同 site 只能跑一个 baseline；必须 reset；禁裸跑 runner，五个 queue script 二选一；同一物理 host 只跑一条 site chain） | `CLAUDE.md:170-185` | 违反会产生 paper-grade 污染数据 |
+| **B0 proxy 协议 shim**（Anthropic URL + OpenAI tools schema + 顶层 `tool_calls`/`logprobs`；`tool_choice="required"`；GLM rescue 已物理删除） | `CLAUDE.md` B0 段 + memory `reference_aws_proxy_hybrid_shim` | 影响 B0 的可复现性叙述与 confidence 字段可用性 |
+| **cost/latency canonical estimand**、**FP 体系已退役**、**condition vs cell 术语** | `CLAUDE.md` + 对应 memory | 写方法学章节时的口径来源 |
+
+> **checklist 规则（REBUILD_PLAN Phase 5 要落的那条）**：
+> **凡涉及「哪台机器 / 什么硬件 / 跑在哪 / 挡没挡别的」的推理，先回读上表，再往下想。**
+> §396.7 已经把这条教训记过一次而它仍复发 —— 所以它必须是一个步骤，不是一条决心。
 
 ## 1. Canvas —— 可视化框架，四层证据的原始形态在这
 
@@ -147,17 +172,79 @@ A1–A4 共 51 条待核。**一律两侧并列，不选边** —— 在没有�
 | `dual_track_taxonomy.canvas` | 19 | **3×3 干预分类学**：(i) Bug fix / (ii) Affordance synthesis / (iii) Channel addition × L1 Server-side / L2 Agent-pipeline / L3 LLM-internal |
 | `experiment_matrix.canvas` | 33 | paper architecture + 六个 mode 的定义（text/prompt/image/cost 四属性） |
 
-`dual_track_taxonomy` 与 MAG 论文（agent-environment co-design）直接对得上，
-而它**从未进过任何 paper draft**。读法：`python3 -c "import json;d=json.load(open(...));
+⚠️ `CLAUDE.md` 的 canvas 清单写的是「phantom_space + paper_section2_framework +
+experiment_matrix」，但 **`phantom_space.canvas` 不存在**（2026-07-29 实证），实际第三个是
+`dual_track_taxonomy.canvas`。
+
+读法：`python3 -c "import json;d=json.load(open(...));
 [print(n.get('text','')[:200]) for n in d['nodes']]"`
 
-## 2. /diag 失败归因 —— 41 个 per-condition digest
+### 2026-07-29 逐个核完的裁定
+
+**① `dual_track_taxonomy.canvas`（19 节点）— 两块必进，其余不进 8 页**
+
+装的是**论文的定位坐标系**：3 类干预（(i) Bug fix / (ii) Affordance synthesis /
+(iii) Channel addition）× 3 层（L1 Server-side / L2 Agent-pipeline / L3 LLM-internal）。
+
+| 内容 | 裁定 |
+|---|---|
+| **paper-1 niche = (ii)×L3 inference-time only**，4 个 sub-tier 里的最后一格：Pretraining-time = **Magma**(MS, Qwen3-VL backbone) · Fine-tune-time = **ScribeAgent**(CMU, Qwen 7B, WA 51.3%) · RAG offline-explore = **AppAgent-v2**(Tencent) · **inference-time only = 我们，无人占** | ✅ **必进 §2 related work** —— 这是回答「你和谁不一样」的最短路径，且与 §109.17 的 novelty 防御同源 |
+| **~34 条 environment fix**（(i)×L1 ~6 § + (i)×L2 ~28 §，笔记 §1–§108）；canvas 自注「→ paper §3 footnote disclose + Appendix」 | ✅ **必进 §3 footnote** —— 不写就是 reproducibility 漏洞（"你改了 benchmark 吗"） |
+| 完整 3×3 矩阵本体 | ❌ 内部 framing 工具，不是结论，8 页放不下 |
+| **GRL layer ~28 §**（flagship: walk-up click **94.4% off-target → >80%**） | ❌ 归**独立 bug paper**（CLAUDE.md 已有该规划），不占主 paper 篇幅 |
+| **NLWeb**(MS, 已部署 Tripadvisor+Shopify) · **A2A**(Google, 0 done) env-side pilot | ❌ canvas 自标 paper-2 / future |
+| **Gap ~7 § self-perception**（agent 不知页面状态）| ⏸ 原指向 §5 mechanism，随 mechanism 暂搁 |
+
+⚠️ **canvas 末节写着「学长 5/5 sync 想 lock 的 3 件」——2026-05-05 提出，至今（07-29）
+近三个月未 lock**，其中「Env-side pilot 进 paper-1 §7.x 还是 paper-2」在 8 页 workshop
+scope 下需重新裁。**这三件应进和学长的对账清单。**
+
+**② `paper_section2_framework.canvas`（42 节点）— 四维已跑完，但数字不可引用**
+
+框架本体（Evidence ⫨ Explanation 双层 + Zoom 1-4 + 4×4 = 16 sub-cells）有效；
+cross-mode 那一列已于 2026-07-28/29 全部实测（见上 §7）。
+⚠️ **canvas 单元格里的数字是 2026-05-03 快照且多条已 retract**（仍写 `drop-one 1.7-3.8pp`、
+`B0 red P-text +3.81 CI sig`，而 k=6 后 **H1 已 FAIL**）——**框架可引用，数字一律重算**。
+
+**③ `experiment_matrix.canvas`（33 节点）— instructional，注意 scope 已收窄**
+
+自标 *"Instructional / 指导性 (NOT status tracking)"*。含 VWA(910 task) + WA(480 task)
+= 6 站 ~1390 task/condition 的全景。⚠️ **paper-1 现 scope 只有 VWA cls+red**，
+WA 与 shopping 部分是更早期规划，读时不要当作当前 scope。
+
+## 2. /diag 失败归因 —— 41 个 per-condition digest（2026-07-29 已建索引）
 
 `docs/analysis/vwa_{classifieds,reddit}/<model>_<mode>_<site>_diag_digest.md`
+三分类：**scaffold-bug / agent-limit / benchmark-FP**，含 P-rule presence-vs-causation 的逐条 caveat。
 
-三分类：**scaffold-bug / agent-limit / benchmark-FP**，含 P-rule presence-vs-causation 的
-逐条 caveat。台账有 20 条相关记录，**远少于 41 个 digest** ⇒ 覆盖不全，
-写 failure analysis 必须直接读 digest。
+**索引已建** → `docs/analysis/cross_sites/diag_digest_index.{md,json}`
+（producer `scripts/analysis/index_diag_digests.py`）。它是**导航层不是替代**——
+per-rule 细节、Tier-2 深挖、P-rule 误报审计只存在于 digest 本体。
+
+**覆盖度实况（这才是索引的主要产出）**：
+
+| 状态 | 数量 |
+|---|---|
+| 有机器可读的三分类表 | **3 / 41** |
+| **digest 自己声明归因不完整** | **9 / 41** |
+| 表格未能解析 | **29 / 41** |
+| 含 non-agent-limit 信号（结构化非零 或 自由文本提及 benchmark-FP / scaffold） | **21 个** |
+
+⇒ **corpus 级结论不可作**（索引里标 `not admissible`）。写 failure analysis 仍须直接读 digest，
+但现在能先按索引定位到那 21 个**必须读**的。
+
+> ⚠️ **B-1913 教训（2026-07-29）**：本索引第一版只匹配一种表格形状，解析中 2/41，
+> 把未解析当成零，于是打印出「**None.** 每个 condition 都是 100% agent-limit，
+> 零 scaffold bug、零 benchmark-FP，pipeline 没有制造低成功率」。**两个方向都是假的**——
+> `B1_som_classifieds` 写着 benchmark-FP ≈1.5%，`B2_vision_reddit` 含 success 侧
+> benchmark-FP（task 160 / B-1889）。而后者第 60 行**早就写下了那条被脚本违反的警告**：
+>
+> > ⚠️ 本 digest 的三分类**不完整** —— 未深挖不等于「无 scaffold-bug / 无 benchmark-FP」，
+> > 只代表本轮没有查。**请勿据此下「pipeline 干净」结论。**
+>
+> 现在脚本区分 `parsed` / `self_declared_incomplete` / `unparsed` 三态，
+> **空白一律显示 `?`（= 没查，不是零）**，且只有全部解析成功才允许 corpus 级陈述。
+> 这是 M2「查代理量不查真对象」的同型：**把解析失败当成测量结果**。
 
 ## 3. 正在跑的（状态会变，别信这里的快照，去查）
 
@@ -191,7 +278,22 @@ H10 结构 fail-closed（≤3/6 可训）+ 会议拍板不打 live Pass-2 ⇒ li
 | ④ best_mode 不稳 | red·B0 五折选 **DOM/DOM/SoM/SoM/DOM** —— "连自己的重采样都复现不出来" | §392.2 |
 | ⑤ AUROC ⇏ 可用 | red·B2 是唯一显著格，AUROC **0.483**（低于随机） | §394 |
 
-② 在三重加严下均成立（诚实阈值 §388.4 / bundle 置换 §388.7.2 / 真嵌套 §392.2）。
+② 在**四重**加严下均成立（诚实阈值 §388.4 / bundle 置换 §388.7.2 / 真嵌套 §392.2 /
+**最有利角落 §399**）。§399 用独立 producer 把 ② 放到它最有利的配置下复测 —— 同族池
+（B0+B1，which-mode 冲突 45-48% vs 跨族 81.8%）× cost-tier 标签（结构上免疫 ③ 的缺陷，
+plug-in 天花板 97.5%）：**严格支配 0/26 arm×cell**，**相对六固定 mode 菜单非支配 0/26**
+（router 从未落在经验 Pareto 前沿上）。唯一过锁定判据（95% 非支配 vs always-cheapest）的
+reddit·B0 在 7 臂里过 5 臂 —— 含跨族、含 which-mode、**含 per-cell 训练** ⇒ 与同族/粗粒度/
+池化三者都无关，真因是该格 always-cheapest（Vision 7.39% SR）本身弱。
+⚠️ 引用 pass 率必须说明是哪一档：**非支配 = admissibility，支配 = superiority**（§399.3）。
+
+⚠️ **§401 两条修正**：(a) 那句「同族/粗粒度/池化都不是原因」是从「两 arm 都过 0.95」推的，
+**该推理无效**——反例就在同表：reddit·B0 which-mode **15.27%@0.10415** 优于 cost-tier
+**14.29%@0.10803** 的两个轴，却因都及格被判等价；且 reddit tier 标签 **63/14**（少数类 18%）
+严重不平衡，粒度与标签变异在唯一通过的 cell 上混淆。现改报共现 + 点估计。
+(b) 「H-pool 数学上不可能（Vision 是成本下界）」的反驳**已被证伪**——Vision 只是 per-mode
+mean 最低，在 **47–71% 的 task 上不是最便宜**，per-task cost oracle 便宜 **22–46%**。
+那张 headroom 表是 cost-routing 上界，可独立进论文。
 
 ## 6. 已知未落地的裁定（`find_unlanded.py` 首跑）
 
@@ -200,14 +302,44 @@ H10 结构 fail-closed（≤3/6 可训）+ 会议拍板不打 live Pass-2 ⇒ li
 - **§155.3 `Raw/Adjusted/Same-task`** —— SR 三口径，代码 2/3，稿中 0
 - **§178.5 / §211.2 / §109.17** —— benchmark / 模型族 / industry 定位在稿中全 0 ⇒ related work 偏薄
 
-## 7. per-mode 四维画像 —— 定了框架但从没按 mode 算过
+## 7. per-mode 四维画像 —— ✅ 已跑完（2026-07-28，§400）
 
-2×2 的目的是 **disentangle 两个效应**（§103），做完归因就停了；
+历史：2×2 的目的是 **disentangle 两个效应**（§103），做完归因就停了；
 **Vision 结构性地不在 2×2 网格上**（无 AXTree text）⇒ 连顺带算到的机会都没有。
+此前只有 Macro 维按 mode 跑过一次。
 
-2026-07-28 首次按 mode 跑 Macro 维，Vision 画像极强：
-`scroll_frac` **6/6 cell 最高，是其他 mode 的 2.6–10 倍**；`type_frac` 最低
-（B1·cla 0.0713 vs DOM 0.3449）。机制假设（**未验**）：viewport-only ⇒ 只能靠滚动探索。
-`per_task_metrics(baseline, site, mode)` 已是 per-mode 签名，补齐是纯分析不需重跑。
+**现状**：四维 × 6 mode × 6 cell 全部跑完 →
+`docs/analysis/cross_sites/per_mode_four_dimension_profile.{md,json}`。
 
-⚠️ `B0·red · P-SoM` 抛 `read_jsonl_dedup: summary identity mismatch`，36 个组合唯一报错，待查。
+18 个指标里 **7 个有 6/6 cell 一致的极值 mode，全部是 Vision** ——
+但**经验发现是 0 个**（§401.2 修正了 §400.2 的二分类）：
+
+| 类 | 指标 | 幅度 |
+|---|---|---|
+| **经验** | —— | **0 条** |
+| ◆ 架构下游 | `scroll_frac` Vision 6/6 最高 | **1.25–6.77×** 次高 mode |
+| ◆ 架构下游 | `action-execution failure rate` Vision 6/6 最高 | 1.06–1.60× |
+| ◆ 架构下游 | `page-unchanged (no-op) rate` Vision 6/6 最高 | 1.07–1.58× |
+| ⚙️ 构造必然 | `locator fallback rate` Vision 6/6 最低 | Vision 发坐标零 element id，**几乎不进 locator 路径** |
+| ⚙️ 构造必然 | `tokens` / `cost` / `cost_rel_dom` Vision 6/6 最低 | 不带 AXTree 文本 |
+
+⚠️ **◆ 与 ⚙️ 都不得当行为发现引用。** ⚙️ 是设计的重述；**◆ 三条同属一条机械链**
+——坐标寻址 → 点不准 → 页面不变 → 被迫滚动重定位，幅度真实但**方向可从设计预测**
+（Gemini cross-AI 2026-07-29 抓，§401.2 落地）。升格 ◆ 为行为发现需先建立
+「坐标寻址系统应得多少」的基线，再证明 Vision 超出它——本画像没做。
+机制解释属 Explanation 层，canvas 自己的 reviewer caveat「Evidence ≠ Explanation」适用。
+
+⚠️ 另三处已修（§401）：**tie 曾被 display order 静默打破**（B2·cls 的 SoM 与 Vision
+都是 2.2321%/5 solves；修正后 `unique solves` 的最高 mode 由 SoM 3/6 变 **Vision 2.5/6**）·
+**跨 mode 曾未配对**（B0·red 拿 P-SoM 201 task 对比其余 203）· **step 级比率的 estimand
+未声明**（现并列报 task-macro 与 pooled-step，两者差距可观：B1·cls Vision action-fail
+**0.4540 vs 0.6386**）。
+
+⚠️ **canvas 数字已 stale，别照抄**：`Efficiency × mode` 仍写 `drop-one 1.7-3.8pp`、
+`Outcome × task` 仍写 `B0 red P-text +3.81 CI sig` —— 那是 2026-05-03 k=4/5 快照，
+k=6 后 **H1 已 FAIL**（θ_FE 0.7897, p=0.807, §395.6）。产物里没有一个数字取自 canvas。
+
+✅ `B0·red · P-SoM` 的 `read_jsonl_dedup: summary identity mismatch` **已定根因**（§400.1）：
+quarantine→resume rerun 写了新 summary 但没换 steps JSONL，只影响 **task 87 / 149 两个 episode**。
+全库审计 `audit_steps_summary_identity.py`：36 组合 / 7686 scored episode 仅此 2 个 = **0.03%**，
+其余 4 个带 stale/quarantine 的 condition 全部通过 ⇒ 个案非流程缺陷。

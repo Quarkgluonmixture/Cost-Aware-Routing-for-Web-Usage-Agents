@@ -1,9 +1,24 @@
 ---
 type: spec
-status: ready-to-run
+status: executed
 created: 2026-07-28
+executed: 2026-07-28
 purpose: 同族 pooled × cost-tier router 的可学性实验 — 规格，供新 session 直接执行
 ---
+
+> **已执行 2026-07-28 — H-pool 不支持。** 产物
+> `docs/analysis/cross_sites/router_pooled_tier_learnability.{md,json}`，
+> producer `scripts/analysis/router_pooled_tier_learnability.py`，chronicle 见 实验笔记 §399。
+> 严格支配 always-cheapest 0/26 arm×cell（最有利角落 0/4）；相对六固定 mode 菜单非支配 0/26。
+>
+> **本规格的两处需要下次注意**：
+> 1. **§2 与 §3 口径分叉** —— §2 把 H-pool 写成「Pareto **支配**」，§3 把判据锁成
+>    「95% **非支配**」。非支配是 admissibility（+7pp SR 换 +10% cost 也算过），
+>    支配是 superiority。只跑锁定判据会给出与假设相反方向的 headline。产物已改三档并列报。
+> 2. **§4 第 5 步的对照臂不够** —— 只隔离了「同族」与「粒度」，没隔离**池化本身**。
+>    执行时补了第 5 臂 `per_cell × cost_tier`，事后看它是信息量最大的一臂：
+>    唯一通过锁定判据的 reddit·B0 在 per-cell 训练下同样通过，
+>    所以那些 pass 不是池化的功劳。（同型风险即 §316 所指。）
 
 # 实验规格：同族 pooled × cost-tier router
 

@@ -53,6 +53,10 @@ Claude 主 session 逐条通读，2026-07-28。这批全是**实现层事实** �
 | learned triage Pareto 胜过 always-cheapest 的 cell 数 | **0 / 6** | 6 cells, k=6 | §387.16.4 |
 | Prereg-style multiclass LR 可训折数 | **0/5 fail closed**（每 fold 只剩 DOM） | B0·reddit, 55 个 oracle-labeled task, min_class_n_train=10 | §379 |
 | best_mode 跨折稳定性 | red·B0 五个外折选 **DOM/DOM/SoM/SoM/DOM** | 5 外折 | §392.2 |
+| 最有利角落（同族池 × cost-tier）能支配 always-cheapest 的 arm×cell 数 | **0 / 26**；相对六固定 mode 菜单非支配也是 **0 / 26** | 2 site × {同族, 全池, per-cell} × {cost-tier, which-mode} | §399.1 |
+| 唯一过锁定判据的格，其 pass 共现 | reddit·B0 过 5/7 臂 —— 跨族也过、which-mode 也过、**per-cell 训练也过** | reddit·B0, 7 arms | §399.2 |
+| ⚠️ 上一行**不能读成因果** | 「都过 0.95」推不出「因子无效」。反例同表：which-mode **15.27%@0.10415** 两轴都优于 cost-tier **14.29%@0.10803**；且 reddit tier 标签 63/14（少数类 18%）严重不平衡 ⇒ 粒度与标签变异混淆 | reddit·B0 | §401.3 |
+| always-cheapest 是不是成本下界 | **不是**。Vision 在 **47.3–70.9%** 的 task 上不是该 task 最便宜的；per-task cost oracle 便宜 **22.2–46.2%** ⇒ Pareto 支配不被定义排除 | 6 cells | §401.1 |
 
 §387.16.4 的 caveat 值得整段留着：
 

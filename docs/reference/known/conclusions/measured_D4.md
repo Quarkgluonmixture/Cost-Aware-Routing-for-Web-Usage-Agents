@@ -331,14 +331,38 @@ B=10000 重跑: red·B2 **p = 0.00050**（10000 次里 4 次达到），裁定�
 **当前值 (真嵌套, 6 cells, k=6)**: learned triage vs baseline ΔSR = **cls·B0 +1.34 / cls·B1 +0.45 / cls·B2 0 / red·B0 −0.99 / red·B1 −0.49 / red·B2 0 pp**。
 **承重句: 0/6 cell 的 learned triage 能 Pareto 胜过 always-cheapest**；两个权衡点 —— cls·B0 SR 高 **1.79pp** 但 cost 高 **11%**；red·B2 SR 高 **1.97pp** 但 cost 高 **2.4%** → **真权衡点非压制点**。
 
+**§399 加严（2026-07-28，最有利角落也不翻）**: 承重句被独立管线在**它最有利的配置**下复测 ——
+同族池（B0+B1，which-mode 冲突 45-48% vs 跨族 81.8%）× cost-tier 标签（结构上免疫 §395.2 缺陷，
+plug-in 天花板 97.5%）。26 个 arm×cell：**严格支配 always-cheapest 0/26**（最有利角落 0/4）；
+**相对六固定 mode 菜单非支配 0/26** —— router 从未落在经验 Pareto 前沿上。
+⇒ 可写的加强表述：路由打不过固定廉价策略，**即使同族、标签粗到免疫 tie-break 缺陷、天花板 97.5%**。
+
+**§401 cross-AI 双家复审后的两条修正**：(a) 「同族/粗粒度/池化都不是原因」的因果表述**收回** ——
+它建立在「两 arm 都过 0.95 非支配线」上，而反例就在同一张表（reddit·B0 which-mode
+15.27%@0.10415 两轴都优于 cost-tier 14.29%@0.10803）；且 reddit tier 标签 63/14
+（少数类 18%）严重不平衡，粒度贡献与标签变异混淆。现只报共现与点估计。
+(b) 「always-cheapest 是成本下界所以支配不可能」的反驳**已被证伪** —— Vision 只是
+per-mode mean 最低，**47.3–70.9% 的 task 上不是最便宜**，per-task cost oracle 便宜
+**22.2–46.2%**（该 headroom 表可独立进论文）。**核心结论 0/26 支配 · 0/26 在前沿上 不变。**
+
 **演变 / 已作废**:
 - §388.4 in-sample 阈值修复（3-AI 重合发现）: 两个 B0 cell 的节省是 **−0.9% / −0.4%**（几乎为零），「0/6 Pareto 胜过 always-cheapest」在诚实阈值下依然成立 —— **但该"嵌套"其实没真嵌套**（B-1903）。
 - §388.7.3 半嵌套 ΔSR: **−1.786, −0.985, −0.446, −0.985, −0.893, 0.0 pp** → 「那个全局看『无损』的设定在半嵌套下就已经不无损」。
 - §392.2 真嵌套落地（held-out 行改用只由训练行 refit 的 LR 打分，best_mode/cheap_mode 每外折重选，阈值只对着训练行的内层 CV OOF 选）。
+- §399.1/§399.2 同族 pooled × cost-tier 复测（**加严不改判**，见上）。
 
 **caveats**: 「cls·B0 反而升 —— 每折重选 mode 带来**真实的自适应收益**（选择只用训练折，非泄漏），**不是"更诚实就一定更差"**」；`router_objective_ordering` 重跑数字未变；测试 1622 passed。B-1903 当时明记「起稿前若要引用任何 triage 运营数字必须先做」。
 
-**证据**: §388.4 / §388.7.3 / §392.2；`docs/analysis/cross_sites/router_triage_learnability.md`
+⚠️ **§399.4 新增 caveat —— 本节数字的 producer 有 2/20 死特征**：
+`router_triage_learnability.py:98` 的 `_feature_row` 从 **step-0 记录**读 `intent_token_count`
+与 `reasoning_difficulty`，而 step-0 **不含**这两个字段 ⇒ 静默 0-fill。canonical 路径
+（`extract_raw_features` / `extract_50_features:333`）是从 **task config** 取难度、从 intent 串算 token 数。
+**方向性**：特征更少只会让 learned 臂更弱，而本节是负结果 ⇒ 这些数字**偏保守，结论不翻**；
+但**若要引用本节任何 AUROC 绝对值须先重跑**。同型于 §312.5 P1-9（missing-field 静默当失败）。
+§399 的 producer 走 canonical 路径，未继承此缺陷。
+
+**证据**: §388.4 / §388.7.3 / §392.2 / §399；`docs/analysis/cross_sites/router_triage_learnability.md`；
+`docs/analysis/cross_sites/router_pooled_tier_learnability.md`
 
 **原文片段**: 「0/6 cell 的 learned triage 能 Pareto 胜过 always-cheapest; cls·B0 SR 高 1.79pp 但 cost 高 11%; red·B2 SR 高 1.97pp 但 cost 高 2.4% — 真权衡点非压制点」(§392.2)
 
@@ -1225,3 +1249,50 @@ floor pilot 根因 = **DGX external/visualwebarena/config_files 不全 + creds �
 ---
 
 *本文件由 D4 批 217 条 MEASURED 记录聚合而成。共 **58 个主题**（A 6 · B 16 · C 1 · D 9 · E 6 · F 5 · G 6 · H 9）+ 孤条 4 条，矛盾清单 13 条，§397.10 修正 5 条。数字一律原样抄写，未做任何算术。*
+
+---
+
+# 附录 — §398 起的补充（结论层建成之后新增）
+
+> D1–D4 四批覆盖到 **§397.10**，是 2026-07-28 结论层建成时的截止点。此后的 § 由本节补。
+> §399/§400/§401 已分别写入 B11 节、`INDEX §7`、`measured_qualitative §5`；本节只补 **§398**。
+
+## Z1. §398.2 Phase 0b — 同模式重跑的噪声地板
+
+**当前值（两对 clean replicate，均 B0·classifieds，n=224）**：
+
+| pair | SR archive → current | Δ SR | self_drop a→c | self_drop c→a | discordance | κ | flips 分类 |
+|---|---|---|---|---|---|---|---|
+| **dom** R31194 ↔ R21557 | 15.2% → 17.4% | +2.2pp | **4.9pp** (11/224) | **7.1pp** (16/224) | 12.1pp | 0.559 | 27 model-nondeterm / 0 reset / 0 未分类 |
+| **vision** R24792 ↔ R32024 | 24.1% → 25.0% | +0.9pp | **6.7pp** (15/224) | **7.6pp** (17/224) | 14.3pp | 0.614 | 30 / 0 / 0 |
+
+**三条判读**：
+1. **地板不是 vision-specific** —— 同一 (model, site) 的两个不同 mode 给出 4.9–7.6pp
+   self_drop，两对均 **0 reset 污染**（起始 URL 全一致）。vision 行**逐位复现 §302.1**
+   （6.7/7.6/14.3/0.614）；**dom 行是新的**（README:52 此前只有 partial@88 的快照）。
+2. **pre-fix 上界这条路是断的** —— manifest 有 **19 组** ≥2-run（不是计划说的 15），
+   但多数第二个 run 目录不在磁盘。唯一存在的 `B1_3mode_classifieds_20260413`：
+   目录在、`test -d` 过、manifest 写 `expected_n=234`，三个 subdir **各只剩 1 个 episode**。
+   ⇒ **B1/B2 本地格 replicate 一个都没有**（这条直接决定 §8 limitations 怎么写）。
+3. **fixed-marginal permutation null 从未被执行过** —— 跑出来 **0/24 arm×cell 为正**；
+   且 null 方向不对（6/6 cell 观测 Jaccard 在 null p95 之上，中位数 3.75×–23.04×，
+   高重叠必然压低独解）。⚠️ 但它只在旧 omnibus draft 与 `paper_drafts_locked/` 里，
+   **`paperA/` grep 全空** ⇒ 不是待投论文的活缺陷。
+
+**caveats**: 工具自带警告须原样携带 —— *"instability proxy, NOT H1 drop-one bias
+correction；same-mode discordance ≠ P-SoM-vs-5-competitors false-unique；小样本/
+可能混代码版本 = upper-bound risk trigger"*。⚠️ **禁止与其他 noise 数字做算术**（§302 类别错误）。
+
+**证据**: §398.2；`docs/analysis/cross_sites/phase0b_noise_floor.md`；
+`compare_cross_run_same_condition.py`（未改代码）
+
+## Z2. §398.2 id-regime 实证 — AMENDMENT_07 确实生效
+
+**当前值**（模型实际输出的 element_id，min/median/max）：
+B1·**p-som** 1/12/68 · **p-text** 1/13/72（mark_count 33/35）
+vs **p-prompt** 139/4074/26235 · **dom** 2/3606/61833
+
+⇒ SoM-family 拿到的是 1..K 紧凑编号，DOM / P-prompt 仍是原生稀疏 nodeId ——
+**§397.10(1) 的 id-namespace 归属正确**，AMENDMENT_07 的重键在生产数据上确实生效。
+
+**证据**: §398.2

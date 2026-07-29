@@ -56,23 +56,36 @@ find_unlanded.py           # 找"定了但没落地"的裁定
 ### 待办（user 2026-07-28 列，按依赖排序）
 
 1. **合并论文骨架 + 取舍清单** ← 先做，它决定下面各项补到什么精度
-2. **补 §108 四维 × per-mode 画像** —— Macro 维已跑通（Vision `scroll_frac` 6/6 最高、2.6–10×）
+2. ~~**补 §108 四维 × per-mode 画像**~~ ← ✅ **已执行 2026-07-28，见 §400.2**
+   - 产物 `docs/analysis/cross_sites/per_mode_four_dimension_profile.{md,json}`
+   - 四维 × 6 mode × 6 cell 全跑。18 指标里 **7 个 6/6 一致极值全是 Vision，
+     但只有 3 个是经验发现**（`scroll_frac` 1.25–6.77× / `action-fail rate` 1.06–1.60× /
+     `no-op rate` 1.07–1.58×）；另 4 个（`locator fallback` / `tokens` / `cost` /
+     `cost_rel_dom`）是 **⚙️ by construction，不得当行为发现引用**
+   - ⚠️ canvas 数字 stale（仍写 `drop-one 1.7-3.8pp`，k=6 后 H1 已 FAIL）—— 产物零引用 canvas
 3. **补 §135.2 HKSJ appendix 行** —— §215 明确承诺过，两稿 0 次，数据现成（§172.8）
-4. **router：同族 pooled × cost-tier 可学性** ← ✅ 分层已跑，规格已写，**待执行**
-   - 分层结果（`router_pooling_by_family.py`，产物 `cross_sites/router_pooling_by_family.json`）：
-     同族 B0+B1 冲突 **48.0% / 45.0%** vs 跨族最高 **81.8%**；混合的 57.4%/56.0% 是被跨族拉高的平均。
-     **cost-tier 上同族 reddit 只有 5.0% 冲突、97.5% 天花板。**
-   - ⇒ 现有 router 负结果全建立在「跨族池 × which-mode」= **最不利角落**，
-     最有利角落**从没训过**
-   - **执行规格：`docs/checkpoints/EXP_SPEC_pooled_tier_router.md`**（含 6 条不可动的
-     已裁定 + 3 条必须的对照臂 + 5 条已知限制）
-   - 两个结果都有用：支配 ⇒ Paper B 结论要实质改；不支配 ⇒ 结论加限定后更强
-   - ⚠️ 标签语义已查证：`derive_oracle_label` 是 **lexicographic —— 先 SR 后 cost**
-     （在成功的 mode 里按 `MODES` 先验顺序取第一个）。而 B-1806 实测该先验顺序与实际
-     成本不符且**跨 cell 反转**（B0 实测最便宜的 vision 在列表里排最后）⇒ §395.2 的
-     12.5-54.64%。**cost-tier 标签不需要 tier 内排序，结构上免疫这个缺陷**
+4. ~~**router：同族 pooled × cost-tier 可学性**~~ ← ✅ **已执行 2026-07-28，见 §399**
+   - 产物 `docs/analysis/cross_sites/router_pooled_tier_learnability.{md,json}`；
+     producer `scripts/analysis/router_pooled_tier_learnability.py`
+   - **结论：H-pool 不支持 —— 走「不支配 ⇒ 结论加限定后更强」这一支。**
+     26 个 arm×cell：严格支配 always-cheapest **0/26**（最有利角落 0/4）；
+     相对六固定 mode 菜单非支配 **0/26**（router 从未落在经验 Pareto 前沿上）。
+   - 锁定判据（95% 非支配 vs always-cheapest）过了 5/26，**但全在 reddit·B0，且
+     同族/跨族、tier/which-mode、pooled/per-cell 三组对照全都过** ⇒ 与本实验要测的
+     三个因素无关，真正原因是该格 always-cheapest（Vision 7.39% SR）特别弱。
+   - ⚠️ **规格 §2 与 §3 口径分叉**：§2 写「支配」，§3 锁「非支配」。只跑锁定判据会
+     报出与假设相反方向的 headline。产物现三档并列报，引用 pass 率必须说明是哪一档。
+   - Paper B 可写的加强表述：路由打不过固定廉价策略，**即使同族、标签粗到免疫
+     tie-break 缺陷、天花板 97.5%**。→ Phase 3 的合并骨架**不需要因此改动**。
 5. **逐条核对 conclusion** —— 待骨架定后，按「承载论文推理的前提」筛（不是按「进不进论文」）
-6. **查 `B0·red·P-SoM` 的 `read_jsonl_dedup: summary identity mismatch`** —— 36 组合唯一报错
+6. ~~**查 `B0·red·P-SoM` 的 `read_jsonl_dedup: summary identity mismatch`**~~
+   ← ✅ **已定根因 2026-07-28，见 §400.1**
+   - quarantine→resume rerun 写了新 summary 但**没换 steps JSONL**；只影响 task **87 / 149**
+   - 全库审计（新 `scripts/analysis/audit_steps_summary_identity.py`）：
+     36 组合 / 7686 scored episode 仅此 2 个 = **0.03%**；其余 4 个带 stale/quarantine 的
+     condition 全部通过 ⇒ **个案非流程缺陷**
+   - 处理：Outcome/Efficiency 读 summary 不受影响（是 clean rerun 且 condition 已 bound）；
+     Macro/Micro 排除这 2 个并披露
 
 ## Why this exists
 

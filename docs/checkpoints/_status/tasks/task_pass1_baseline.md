@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "30/36 conditions bound (五格齐, 2026-07-16); 余 B2-red ×6 后台 (orchestrator v2, ETA ~07-25)"
+eta: "36/36 conditions 全齐 — 2026-07-29 实证 (audit_steps_summary_identity.py: 6 cell × 6 mode, 7686 scored episode, B2-red 六 mode 各 203/203)"
 detail: phase1_plan
 created: 2026-05-22
-updated: 2026-06-10
+updated: 2026-07-29
 ---
 
 # Pass-1 baseline (36 cond) lands
