@@ -1,14 +1,14 @@
 ---
 type: task
-status: pending
+status: active
 priority: P2
 horizon: next
 order: 2
 blocker: ""
-eta: "2026-08 插空 (B3 适配期间隙; B1 本地, proxy 免疫, ~数天)"
+eta: "🔄 A100 在跑（2026-07-29 实测）: B1×reddit×6mode queue_chain — dom ✅106 · som ✅106 · vision 🔄92/106 · 余 P-text/P-prompt/P-SoM；每 mode ~15h ⇒ 预计 07-31~08-01 齐"
 detail: preregistration.md §8.8 B-1296 registered prediction
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-29
 ---
 
 # WA 50 任务 pilot — 兑现注册预测 (插空任务)

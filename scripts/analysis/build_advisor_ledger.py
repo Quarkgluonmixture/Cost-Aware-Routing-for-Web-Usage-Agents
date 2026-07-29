@@ -207,12 +207,19 @@ DECISIONS = [
 ]
 
 RUNNING = [
-    {"what": "mechanistic canonical sweep（24 cell）", "where": "DGX",
-     "how_to_check": "cat logs/mechanistic_canonical/.sweep.pid && ps -p $(cat ...)",
-     "note": "driver pid 38603，deadline 08-01。查驱动 pid 不查 worker pid（§397.10(4) 教训）"},
-    {"what": "WA reddit 全量 6 模式", "where": "A100",
-     "how_to_check": "docs/checkpoints/_status/tasks/*.md frontmatter",
-     "note": "现为 future work，是否进 Phase 1 待对"},
+    {"what": "WebArena（WA）reddit — B1 × 6 个输入格式", "where": "A100（不是 DGX）",
+     "how_to_check": "ssh condense-a100 'pgrep -af run_experiment; "
+                     "ls results/webarena/phase1/'",
+     "note": "🔄 2026-07-29 14:11 实测在跑。整条链 queue_chain：dom ✅106 题完成 · "
+             "som ✅106 完成 · vision 🔄 92/106 在跑 · 余 P-text / P-prompt / P-SoM。"
+             "每个 mode 约 15 小时 ⇒ **预计 07-31～08-01 全部跑完，赶在 08-05 交稿前**。"
+             "⚠️ 这批数据是否进论文，需要和学长定。"},
+    {"what": "机理实验 sweep（24 组）", "where": "DGX 本机",
+     "how_to_check": "ps -p $(cat logs/mechanistic_canonical/.sweep.pid) -o pid,etime,cmd",
+     "note": "✅ 2026-07-29 15:10 实测在跑（driver pid 38603，已跑 2 天）。"
+             "预计 08-01 完成。这条研究线 5 月中已暂搁 —— 跑完是用、是存档、"
+             "还是重启，待和学长定。"
+             "⚠️ 查 driver pid，不要查 worker pid（§397.10(4) 的教训）。"},
 ]
 
 
