@@ -1,0 +1,512 @@
+{
+ "n_combinations": 36,
+ "n_episodes": 7686,
+ "n_mismatch": 2,
+ "missing_combinations": [],
+ "per_condition": [
+  {
+   "cell": "B0_classifieds",
+   "mode": "DOM",
+   "episodes_dir": "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557/phase1_dom_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_classifieds",
+   "mode": "SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/phase1_som_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_classifieds",
+   "mode": "Vision",
+   "episodes_dir": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/phase1_vision_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_classifieds",
+   "mode": "P-text",
+   "episodes_dir": "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183/phase1_phantom_text_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_classifieds",
+   "mode": "Phantom-SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031/phase1_phantom_som_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_classifieds",
+   "mode": "Phantom-prompt",
+   "episodes_dir": "results/visualwebarena/phase1/B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655/phase1_phantom_prompt_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_reddit",
+   "mode": "DOM",
+   "episodes_dir": "results/visualwebarena/phase1/B0_dom_reddit_20260625_154833_928747130_2827521_R11344/phase1_dom_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_reddit",
+   "mode": "SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936/phase1_som_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_reddit",
+   "mode": "Vision",
+   "episodes_dir": "results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/phase1_vision_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B0_reddit",
+   "mode": "P-text",
+   "episodes_dir": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/phase1_phantom_text_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": [
+    "reddit_task_80_summary_v2.needs_reeval.1782815471.json"
+   ]
+  },
+  {
+   "cell": "B0_reddit",
+   "mode": "Phantom-SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/phase1_phantom_som_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 201,
+   "n_mismatch": 2,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [
+    87,
+    149
+   ],
+   "mismatch_detail": [
+    {
+     "task_id": 149,
+     "error": "ValueError",
+     "msg": "read_jsonl_dedup: summary identity mismatch for /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents/results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R2"
+    },
+    {
+     "task_id": 87,
+     "error": "ValueError",
+     "msg": "read_jsonl_dedup: summary identity mismatch for /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents/results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R2"
+    }
+   ],
+   "stale_backups": [
+    "reddit_task_149_steps_v2.stale_1783486491.jsonl",
+    "reddit_task_155_steps_v2.stale_1783584745.jsonl",
+    "reddit_task_87_steps_v2.stale_1783032514.jsonl"
+   ],
+   "quarantined_summaries": [
+    "reddit_task_149_summary_v2.needs_reeval.1783486491.json",
+    "reddit_task_155_summary_v2.needs_reeval.1783584745.json",
+    "reddit_task_87_summary_v2.needs_reeval.1783032514.json"
+   ]
+  },
+  {
+   "cell": "B0_reddit",
+   "mode": "Phantom-prompt",
+   "episodes_dir": "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260709/phase1_phantom_prompt_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [
+    "reddit_task_70_steps_v2.stale_1783941726.jsonl",
+    "reddit_task_99_steps_v2.stale_1784124642.jsonl"
+   ],
+   "quarantined_summaries": [
+    "reddit_task_70_summary_v2.needs_reeval.1783941726.json",
+    "reddit_task_99_summary_v2.needs_reeval.1784124641.json"
+   ]
+  },
+  {
+   "cell": "B1_classifieds",
+   "mode": "DOM",
+   "episodes_dir": "results/visualwebarena/phase1/B1_dom_classifieds_20260603_103630_477435114_112846_R17188/phase1_dom_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_classifieds",
+   "mode": "SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B1_som_classifieds_20260604_072456_562166453_226675_R31705/phase1_som_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_classifieds",
+   "mode": "Vision",
+   "episodes_dir": "results/visualwebarena/phase1/B1_vision_classifieds_20260605_012235_349047872_327631_R28622/phase1_vision_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_classifieds",
+   "mode": "P-text",
+   "episodes_dir": "results/visualwebarena/phase1/B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933/phase1_phantom_text_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_classifieds",
+   "mode": "Phantom-SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199/phase1_phantom_som_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_classifieds",
+   "mode": "Phantom-prompt",
+   "episodes_dir": "results/visualwebarena/phase1/B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516/phase1_phantom_prompt_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_reddit",
+   "mode": "DOM",
+   "episodes_dir": "results/visualwebarena/phase1/B1_dom_reddit_20260703/phase1_dom_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_reddit",
+   "mode": "SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B1_som_reddit_20260706/phase1_som_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_reddit",
+   "mode": "Vision",
+   "episodes_dir": "results/visualwebarena/phase1/B1_vision_reddit_20260708_002122_732634080_205180_R16847/phase1_vision_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [
+    "reddit_task_33_steps_v2.stale_1783496231.jsonl"
+   ],
+   "quarantined_summaries": [
+    "reddit_task_33_summary_v2.needs_reeval.1783496231.json"
+   ]
+  },
+  {
+   "cell": "B1_reddit",
+   "mode": "P-text",
+   "episodes_dir": "results/visualwebarena/phase1/B1_phantom_text_reddit_20260710/phase1_phantom_text_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_reddit",
+   "mode": "Phantom-SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B1_phantom_som_reddit_20260711/phase1_phantom_som_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B1_reddit",
+   "mode": "Phantom-prompt",
+   "episodes_dir": "results/visualwebarena/phase1/B1_phantom_prompt_reddit_20260713/phase1_phantom_prompt_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_classifieds",
+   "mode": "DOM",
+   "episodes_dir": "results/visualwebarena/phase1/B2_dom_classifieds_20260609_214713_553762009_985526_R21521/phase1_dom_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_classifieds",
+   "mode": "SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B2_som_classifieds_20260611_210828_923656661_1218867_R3380/phase1_som_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_classifieds",
+   "mode": "Vision",
+   "episodes_dir": "results/visualwebarena/phase1/B2_vision_classifieds_20260612_221910_098760264_1351451_R9288/phase1_vision_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_classifieds",
+   "mode": "P-text",
+   "episodes_dir": "results/visualwebarena/phase1/B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219/phase1_phantom_text_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_classifieds",
+   "mode": "Phantom-SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577/phase1_phantom_som_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_classifieds",
+   "mode": "Phantom-prompt",
+   "episodes_dir": "results/visualwebarena/phase1/B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175/phase1_phantom_prompt_router_0/episodes",
+   "n_step_files": 224,
+   "n_ok": 224,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 0,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_reddit",
+   "mode": "DOM",
+   "episodes_dir": "results/visualwebarena/phase1/B2_dom_reddit_20260715/phase1_dom_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [
+    "reddit_task_45_steps_v2.stale_1784166020.jsonl"
+   ],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_reddit",
+   "mode": "SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B2_som_reddit_20260717/phase1_som_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_reddit",
+   "mode": "Vision",
+   "episodes_dir": "results/visualwebarena/phase1/B2_vision_reddit_20260719/phase1_vision_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_reddit",
+   "mode": "P-text",
+   "episodes_dir": "results/visualwebarena/phase1/B2_phantom_text_reddit_20260720/phase1_phantom_text_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_reddit",
+   "mode": "Phantom-SoM",
+   "episodes_dir": "results/visualwebarena/phase1/B2_phantom_som_reddit_20260722/phase1_phantom_som_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  },
+  {
+   "cell": "B2_reddit",
+   "mode": "Phantom-prompt",
+   "episodes_dir": "results/visualwebarena/phase1/B2_phantom_prompt_reddit_20260723/phase1_phantom_prompt_router_0/episodes",
+   "n_step_files": 203,
+   "n_ok": 203,
+   "n_mismatch": 0,
+   "n_collected_but_unscored": 2,
+   "mismatched_tasks": [],
+   "mismatch_detail": [],
+   "stale_backups": [],
+   "quarantined_summaries": []
+  }
+ ]
+}

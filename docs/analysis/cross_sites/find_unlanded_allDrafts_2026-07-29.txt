@@ -1,0 +1,28 @@
+53 个多元组框架名（已滤基建路径）    [31m2 个在两稿一个成分都没出现[0m
+
+§            框架                                                        代码  判读
+--------------------------------------------------------------------------------------------
+§130.2       cell-autoupdate/error-scan/check-links/myriad-watche    0/4   [33m定了·下游都没痕迹[0m
+§167a.7      plan-meta/process-artifact/checklist-                   0/3   [33m定了·下游都没痕迹[0m
+
+[33m⚠️ 只覆盖『斜杠多元组』这一种框架写法。单名词框架、隐含约定、以散文而非命名结构记录的裁定，本工具看不见。[0m
+53 个多元组框架名（已滤基建路径）    [31m2 个在两稿一个成分都没出现[0m
+
+§            框架                                                        代码  判读
+--------------------------------------------------------------------------------------------
+§130.2       cell-autoupdate/error-scan/check-links/myriad-watche    0/4   [33m定了·下游都没痕迹[0m
+§167a.7      plan-meta/process-artifact/checklist-                   0/3   [33m定了·下游都没痕迹[0m
+
+[32m—— 已落地的（对照）——[0m
+§93          sort/filter/compare/count/latest/color/image/price/l paper 10/10
+§108.20      DOM/SoM/Vision/P-text/P-prompt/P-SoM                 paper 6/6
+§148.2/§148.6 length/token/char/byte/payload                       paper 5/5
+§108         Outcome/Macro/Micro/Efficiency                       paper 4/4
+§116.3/§116.12/§116.13 Setup/Run/Results/Analysis/Publication               paper 4/5
+§148.3-§148.5 steps/tokens/cost/latency                            paper 4/4
+§187         schema/action/tokens/latency                         paper 4/4
+§244         prompt/action/schema/accounting                      paper 4/4
+§251.4       task/action/evaluator/termination                    paper 4/4
+§281         producer/figure/README/prose                         paper 4/4
+
+[33m⚠️ 只覆盖『斜杠多元组』这一种框架写法。单名词框架、隐含约定、以散文而非命名结构记录的裁定，本工具看不见。[0m

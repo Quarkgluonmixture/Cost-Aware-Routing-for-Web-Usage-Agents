@@ -1,0 +1,4066 @@
+{
+ "schema_version": "2026-07-28-router-pooled-tier-learnability-v1",
+ "generated_utc": "2026-07-29T09:03:15+00:00",
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "spec": "docs/checkpoints/EXP_SPEC_pooled_tier_router.md",
+ "protocol": {
+  "cv": "task-held-out 5-fold, shared fold map per site",
+  "nesting": "tier->mode map, always-cheapest and threshold all re-derived per outer fold from training tasks only",
+  "bootstrap_B": 1000,
+  "pareto_threshold": 0.95,
+  "cost_field": "total_billed_cost_usd",
+  "seed": 42
+ },
+ "limitations": [
+  "n is small: the same-family pool shares only 50 tasks on classifieds and 20 on reddit (labelled rows: cls 152, red 77). Every per-cell contrast below is underpowered and the fold-to-fold variation is correspondingly large.",
+  "A ceiling is not learnability (§394): red·B2 is the only cell of six whose triage signal survived Holm, and its AUROC was 0.483. A 97.5% tier ceiling bounds what a perfect classifier could do; it says nothing about whether this one does.",
+  "The 48% / 45% which-mode conflict may be a real backbone difference or may be noise; the present data cannot separate the two. Phase 0b measured a 4.9-7.6pp same-condition replicate floor, which is the scale the disagreement must clear before it can be read as a model property.",
+  "B0 and B1 costs are NOT comparable (B0 bills a proxy API; B1/B2 are electricity-derived). Pooling is used for labels and features only — every (SR, cost) pair and every Pareto verdict is computed inside a single cell.",
+  "post_hoc_exploratory=True / h10_eligible=False. This is not the preregistered H10 gate and must never be cited as one; it is an exploratory probe of a corner the negative result never covered, in the manner of router_objective_ordering.md.",
+  "Non-dominance is not dominance, and the two tallies must not be merged. The locked §3 rule (95% paired-bootstrap non-dominance vs always-cheapest) is an admissibility criterion: a policy buying +7pp SR for +10% cost passes it. H-pool as worded in §2 asks for dominance. Any reader quoting a pass rate must say which of the two it is.",
+  "A low tier-conflict rate can mean agreement or it can mean the label barely varies. The same-family reddit pool is 63 text_only vs 14 image, and B1·reddit alone is 20 vs 4 — so reddit's 5.0% conflict / 97.5% ceiling partly reflects a near-constant label rather than two backbones agreeing on a hard call. The class balance is reported per pool above for exactly this reason.",
+  "The which-mode arms carry no min-class filter. train_l1_router's Stage-3 N_MIN_CLASS_TRAIN=10 rule would leave several folds with fewer than two trainable classes and the control arm could not run at all; per-fold class counts are reported instead so the reader can see which classes were never learnable."
+ ],
+ "results": {
+  "classifieds": {
+   "n_universe": 224,
+   "universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
+   "fold_sizes": {
+    "0": 45,
+    "1": 45,
+    "2": 45,
+    "3": 45,
+    "4": 44
+   },
+   "arms": {
+    "same_family|cost_tier": {
+     "pool": "same_family",
+     "label": "cost_tier",
+     "backbones": [
+      "B0",
+      "B1"
+     ],
+     "per_cell": {
+      "B0_classifieds": {
+       "cell_id": "B0_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 25.0,
+        "mean_cost": 0.07382240625
+       },
+       "router_sr_ci_pct": [
+        19.642857142857142,
+        30.80357142857143
+       ],
+       "router_cost_ci": [
+        0.06640953738839286,
+        0.08161933102678573
+       ],
+       "always_cheapest": {
+        "sr_pct": 25.0,
+        "mean_cost": 0.06480720982142858
+       },
+       "best_sr_ref": {
+        "sr_pct": 27.232142857142854,
+        "mean_cost": 0.07235666964285714
+       },
+       "delta_sr_vs_cheapest_pp": 0.0,
+       "delta_cost_vs_cheapest_pct": 13.910792415553953,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.468,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.172,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.004,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "phantom_prompt": 91,
+        "som": 133
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      },
+      "B1_classifieds": {
+       "cell_id": "B1_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 12.053571428571429,
+        "mean_cost": 0.05739019647321429
+       },
+       "router_sr_ci_pct": [
+        8.024553571428573,
+        16.517857142857142
+       ],
+       "router_cost_ci": [
+        0.052213036731026785,
+        0.062306487493303565
+       ],
+       "always_cheapest": {
+        "sr_pct": 12.5,
+        "mean_cost": 0.04315559388392857
+       },
+       "best_sr_ref": {
+        "sr_pct": 14.285714285714285,
+        "mean_cost": 0.06027517504464286
+       },
+       "delta_sr_vs_cheapest_pp": -0.44642857142857123,
+       "delta_cost_vs_cheapest_pct": 32.98437423331762,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.336,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.31,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 19,
+        "phantom_text": 76,
+        "som": 129
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 128,
+       "train_label_counts": {
+        "0": 77,
+        "1": 51
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.126915,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.314324,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 130,
+       "train_label_counts": {
+        "0": 75,
+        "1": 55
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.306735,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.272576,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 113,
+       "train_label_counts": {
+        "0": 66,
+        "1": 47
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.005838,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.326269,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 113,
+       "train_label_counts": {
+        "0": 66,
+        "1": 47
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.42439,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.292547,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 180,
+       "n_test_tasks": 44,
+       "n_train_rows": 124,
+       "train_label_counts": {
+        "0": 72,
+        "1": 52
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.697076,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.14655,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "same_family|which_mode": {
+     "pool": "same_family",
+     "label": "which_mode",
+     "backbones": [
+      "B0",
+      "B1"
+     ],
+     "per_cell": {
+      "B0_classifieds": {
+       "cell_id": "B0_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 22.767857142857142,
+        "mean_cost": 0.06877173214285714
+       },
+       "router_sr_ci_pct": [
+        17.410714285714285,
+        28.57142857142857
+       ],
+       "router_cost_ci": [
+        0.06207755089285714,
+        0.07584825223214285
+       ],
+       "always_cheapest": {
+        "sr_pct": 25.0,
+        "mean_cost": 0.06480720982142858
+       },
+       "best_sr_ref": {
+        "sr_pct": 27.232142857142854,
+        "mean_cost": 0.07235666964285714
+       },
+       "delta_sr_vs_cheapest_pp": -2.2321428571428577,
+       "delta_cost_vs_cheapest_pct": 6.117409362866422,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.254,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.223,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.046,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 85,
+        "phantom_prompt": 34,
+        "phantom_som": 7,
+        "phantom_text": 3,
+        "som": 77,
+        "vision": 18
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      },
+      "B1_classifieds": {
+       "cell_id": "B1_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 12.053571428571429,
+        "mean_cost": 0.05607111825892857
+       },
+       "router_sr_ci_pct": [
+        8.035714285714286,
+        16.517857142857142
+       ],
+       "router_cost_ci": [
+        0.0509515153203125,
+        0.061109178378348214
+       ],
+       "always_cheapest": {
+        "sr_pct": 12.5,
+        "mean_cost": 0.04315559388392857
+       },
+       "best_sr_ref": {
+        "sr_pct": 14.285714285714285,
+        "mean_cost": 0.06027517504464286
+       },
+       "delta_sr_vs_cheapest_pp": -0.44642857142857123,
+       "delta_cost_vs_cheapest_pct": 29.927810540013965,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.366,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.352,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 85,
+        "phantom_prompt": 34,
+        "phantom_som": 7,
+        "phantom_text": 3,
+        "som": 77,
+        "vision": 18
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 128,
+       "train_label_counts": {
+        "dom": 47,
+        "phantom_prompt": 12,
+        "phantom_som": 14,
+        "phantom_text": 4,
+        "som": 36,
+        "vision": 15
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 130,
+       "train_label_counts": {
+        "dom": 46,
+        "phantom_prompt": 12,
+        "phantom_som": 14,
+        "phantom_text": 3,
+        "som": 41,
+        "vision": 14
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 113,
+       "train_label_counts": {
+        "dom": 40,
+        "phantom_prompt": 14,
+        "phantom_som": 9,
+        "phantom_text": 3,
+        "som": 33,
+        "vision": 14
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 113,
+       "train_label_counts": {
+        "dom": 39,
+        "phantom_prompt": 8,
+        "phantom_som": 14,
+        "phantom_text": 5,
+        "som": 35,
+        "vision": 12
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 180,
+       "n_test_tasks": 44,
+       "n_train_rows": 124,
+       "train_label_counts": {
+        "dom": 40,
+        "phantom_prompt": 14,
+        "phantom_som": 13,
+        "phantom_text": 5,
+        "som": 35,
+        "vision": 17
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "all_three|cost_tier": {
+     "pool": "all_three",
+     "label": "cost_tier",
+     "backbones": [
+      "B0",
+      "B1",
+      "B2"
+     ],
+     "per_cell": {
+      "B0_classifieds": {
+       "cell_id": "B0_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 24.107142857142858,
+        "mean_cost": 0.07426653571428572
+       },
+       "router_sr_ci_pct": [
+        18.73883928571429,
+        29.910714285714285
+       ],
+       "router_cost_ci": [
+        0.06679172366071429,
+        0.08170503191964285
+       ],
+       "always_cheapest": {
+        "sr_pct": 25.0,
+        "mean_cost": 0.06480720982142858
+       },
+       "best_sr_ref": {
+        "sr_pct": 27.232142857142854,
+        "mean_cost": 0.07235666964285714
+       },
+       "delta_sr_vs_cheapest_pp": -0.8928571428571425,
+       "delta_cost_vs_cheapest_pct": 14.59610114202048,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.345,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.124,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.002,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "phantom_prompt": 123,
+        "som": 101
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      },
+      "B1_classifieds": {
+       "cell_id": "B1_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 11.160714285714286,
+        "mean_cost": 0.05895907727678572
+       },
+       "router_sr_ci_pct": [
+        6.696428571428571,
+        15.178571428571427
+       ],
+       "router_cost_ci": [
+        0.053730738266741074,
+        0.0637004560658482
+       ],
+       "always_cheapest": {
+        "sr_pct": 12.5,
+        "mean_cost": 0.04315559388392857
+       },
+       "best_sr_ref": {
+        "sr_pct": 14.285714285714285,
+        "mean_cost": 0.06027517504464286
+       },
+       "delta_sr_vs_cheapest_pp": -1.3392857142857137,
+       "delta_cost_vs_cheapest_pct": 36.61977966370304,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.212,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.171,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 25,
+        "phantom_text": 82,
+        "som": 117
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      },
+      "B2_classifieds": {
+       "cell_id": "B2_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 1.7857142857142856,
+        "mean_cost": 0.07401745808035716
+       },
+       "router_sr_ci_pct": [
+        0.4464285714285714,
+        3.571428571428571
+       ],
+       "router_cost_ci": [
+        0.07130042895647322,
+        0.07682324489062499
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.232142857142857,
+        "mean_cost": 0.07065426732142857
+       },
+       "best_sr_ref": {
+        "sr_pct": 1.3392857142857142,
+        "mean_cost": 0.07453213977678572
+       },
+       "delta_sr_vs_cheapest_pp": -0.44642857142857156,
+       "delta_cost_vs_cheapest_pct": 4.760067419039782,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.18,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.167,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 8,
+        "phantom_prompt": 43,
+        "som": 3,
+        "vision": 170
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 143,
+       "train_label_counts": {
+        "0": 82,
+        "1": 61
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.394271,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.394271,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.001651,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 144,
+       "train_label_counts": {
+        "0": 81,
+        "1": 63
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.227221,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.3323,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.007981,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 123,
+       "train_label_counts": {
+        "0": 70,
+        "1": 53
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.399111,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.507152,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.004484,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 126,
+       "train_label_counts": {
+        "0": 71,
+        "1": 55
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.450201,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.268319,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.865253,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 180,
+       "n_test_tasks": 44,
+       "n_train_rows": 136,
+       "train_label_counts": {
+        "0": 76,
+        "1": 60
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.771633,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.170485,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.026665,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "all_three|which_mode": {
+     "pool": "all_three",
+     "label": "which_mode",
+     "backbones": [
+      "B0",
+      "B1",
+      "B2"
+     ],
+     "per_cell": {
+      "B0_classifieds": {
+       "cell_id": "B0_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 25.44642857142857,
+        "mean_cost": 0.06989885714285714
+       },
+       "router_sr_ci_pct": [
+        20.089285714285715,
+        31.25
+       ],
+       "router_cost_ci": [
+        0.06313166350446428,
+        0.07736087232142858
+       ],
+       "always_cheapest": {
+        "sr_pct": 25.0,
+        "mean_cost": 0.06480720982142858
+       },
+       "best_sr_ref": {
+        "sr_pct": 27.232142857142854,
+        "mean_cost": 0.07235666964285714
+       },
+       "delta_sr_vs_cheapest_pp": 0.44642857142856984,
+       "delta_cost_vs_cheapest_pct": 7.856606287260637,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.555,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.487,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.046,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 90,
+        "phantom_prompt": 31,
+        "phantom_som": 6,
+        "phantom_text": 3,
+        "som": 71,
+        "vision": 23
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      },
+      "B1_classifieds": {
+       "cell_id": "B1_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 12.053571428571429,
+        "mean_cost": 0.057316519419642865
+       },
+       "router_sr_ci_pct": [
+        7.5892857142857135,
+        16.517857142857142
+       ],
+       "router_cost_ci": [
+        0.05212150146428571,
+        0.06222898049107143
+       ],
+       "always_cheapest": {
+        "sr_pct": 12.5,
+        "mean_cost": 0.04315559388392857
+       },
+       "best_sr_ref": {
+        "sr_pct": 14.285714285714285,
+        "mean_cost": 0.06027517504464286
+       },
+       "delta_sr_vs_cheapest_pp": -0.44642857142857123,
+       "delta_cost_vs_cheapest_pct": 32.813650007462705,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.364,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.326,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 90,
+        "phantom_prompt": 31,
+        "phantom_som": 6,
+        "phantom_text": 3,
+        "som": 71,
+        "vision": 23
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      },
+      "B2_classifieds": {
+       "cell_id": "B2_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 0.8928571428571428,
+        "mean_cost": 0.084547563125
+       },
+       "router_sr_ci_pct": [
+        0.0,
+        2.232142857142857
+       ],
+       "router_cost_ci": [
+        0.08114698822767859,
+        0.0882050401439732
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.232142857142857,
+        "mean_cost": 0.07065426732142857
+       },
+       "best_sr_ref": {
+        "sr_pct": 1.3392857142857142,
+        "mean_cost": 0.07453213977678572
+       },
+       "delta_sr_vs_cheapest_pp": -1.3392857142857144,
+       "delta_cost_vs_cheapest_pct": 19.663774504045794,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.0,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.0,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 90,
+        "phantom_prompt": 31,
+        "phantom_som": 6,
+        "phantom_text": 3,
+        "som": 71,
+        "vision": 23
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 143,
+       "train_label_counts": {
+        "dom": 49,
+        "phantom_prompt": 12,
+        "phantom_som": 16,
+        "phantom_text": 5,
+        "som": 41,
+        "vision": 20
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 144,
+       "train_label_counts": {
+        "dom": 49,
+        "phantom_prompt": 12,
+        "phantom_som": 16,
+        "phantom_text": 4,
+        "som": 45,
+        "vision": 18
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 123,
+       "train_label_counts": {
+        "dom": 43,
+        "phantom_prompt": 14,
+        "phantom_som": 10,
+        "phantom_text": 3,
+        "som": 35,
+        "vision": 18
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 126,
+       "train_label_counts": {
+        "dom": 41,
+        "phantom_prompt": 8,
+        "phantom_som": 16,
+        "phantom_text": 6,
+        "som": 40,
+        "vision": 15
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 180,
+       "n_test_tasks": 44,
+       "n_train_rows": 136,
+       "train_label_counts": {
+        "dom": 42,
+        "phantom_prompt": 14,
+        "phantom_som": 14,
+        "phantom_text": 6,
+        "som": 39,
+        "vision": 21
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "per_cell|cost_tier|B0": {
+     "pool": "per_cell",
+     "label": "cost_tier",
+     "backbones": [
+      "B0"
+     ],
+     "per_cell": {
+      "B0_classifieds": {
+       "cell_id": "B0_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 24.107142857142858,
+        "mean_cost": 0.07656995535714287
+       },
+       "router_sr_ci_pct": [
+        18.75,
+        29.464285714285715
+       ],
+       "router_cost_ci": [
+        0.0686024838169643,
+        0.08447546238839285
+       ],
+       "always_cheapest": {
+        "sr_pct": 25.0,
+        "mean_cost": 0.06480720982142858
+       },
+       "best_sr_ref": {
+        "sr_pct": 27.232142857142854,
+        "mean_cost": 0.07235666964285714
+       },
+       "delta_sr_vs_cheapest_pp": -0.8928571428571425,
+       "delta_cost_vs_cheapest_pct": 18.150365627722053,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.335,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.023,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "phantom_prompt": 90,
+        "som": 134
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 81,
+       "train_label_counts": {
+        "0": 54,
+        "1": 27
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.185689,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 82,
+       "train_label_counts": {
+        "0": 54,
+        "1": 28
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.212941,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 73,
+       "train_label_counts": {
+        "0": 47,
+        "1": 26
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.242793,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 71,
+       "train_label_counts": {
+        "0": 47,
+        "1": 24
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.00063,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 180,
+       "n_test_tasks": 44,
+       "n_train_rows": 81,
+       "train_label_counts": {
+        "0": 54,
+        "1": 27
+       },
+       "per_cell": {
+        "B0_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.51947,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "per_cell|cost_tier|B1": {
+     "pool": "per_cell",
+     "label": "cost_tier",
+     "backbones": [
+      "B1"
+     ],
+     "per_cell": {
+      "B1_classifieds": {
+       "cell_id": "B1_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 10.714285714285714,
+        "mean_cost": 0.058987045937499996
+       },
+       "router_sr_ci_pct": [
+        6.696428571428571,
+        14.732142857142858
+       ],
+       "router_cost_ci": [
+        0.053831518296875,
+        0.06420111959151785
+       ],
+       "always_cheapest": {
+        "sr_pct": 12.5,
+        "mean_cost": 0.04315559388392857
+       },
+       "best_sr_ref": {
+        "sr_pct": 14.285714285714285,
+        "mean_cost": 0.06027517504464286
+       },
+       "delta_sr_vs_cheapest_pp": -1.7857142857142863,
+       "delta_cost_vs_cheapest_pct": 36.68458855218575,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.176,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.148,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 35,
+        "phantom_text": 56,
+        "som": 133
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 47,
+       "train_label_counts": {
+        "0": 23,
+        "1": 24
+       },
+       "per_cell": {
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.299935,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 48,
+       "train_label_counts": {
+        "0": 21,
+        "1": 27
+       },
+       "per_cell": {
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.514617,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 40,
+       "train_label_counts": {
+        "0": 19,
+        "1": 21
+       },
+       "per_cell": {
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.777359,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 42,
+       "train_label_counts": {
+        "0": 19,
+        "1": 23
+       },
+       "per_cell": {
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.275838,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 180,
+       "n_test_tasks": 44,
+       "n_train_rows": 43,
+       "train_label_counts": {
+        "0": 18,
+        "1": 25
+       },
+       "per_cell": {
+        "B1_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.315612,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "per_cell|cost_tier|B2": {
+     "pool": "per_cell",
+     "label": "cost_tier",
+     "backbones": [
+      "B2"
+     ],
+     "per_cell": {
+      "B2_classifieds": {
+       "cell_id": "B2_classifieds",
+       "n_tasks": 224,
+       "router": {
+        "sr_pct": 1.7857142857142856,
+        "mean_cost": 0.07403225160714287
+       },
+       "router_sr_ci_pct": [
+        0.4464285714285714,
+        3.571428571428571
+       ],
+       "router_cost_ci": [
+        0.07113081078683038,
+        0.07713495307254464
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.232142857142857,
+        "mean_cost": 0.07065426732142857
+       },
+       "best_sr_ref": {
+        "sr_pct": 1.3392857142857142,
+        "mean_cost": 0.07453213977678572
+       },
+       "delta_sr_vs_cheapest_pp": -0.44642857142857156,
+       "delta_cost_vs_cheapest_pct": 4.7810053288738885,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.18,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.17,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "phantom_prompt": 33,
+        "som": 13,
+        "vision": 178
+       },
+       "cheapest_mode_counts": {
+        "vision": 224
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 15,
+       "train_label_counts": {
+        "0": 5,
+        "1": 10
+       },
+       "per_cell": {
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.016321,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 14,
+       "train_label_counts": {
+        "0": 6,
+        "1": 8
+       },
+       "per_cell": {
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.027141,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 10,
+       "train_label_counts": {
+        "0": 4,
+        "1": 6
+       },
+       "per_cell": {
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.020996,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 179,
+       "n_test_tasks": 45,
+       "n_train_rows": 13,
+       "train_label_counts": {
+        "0": 5,
+        "1": 8
+       },
+       "per_cell": {
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "phantom_prompt",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.699077,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 180,
+       "n_test_tasks": 44,
+       "n_train_rows": 12,
+       "train_label_counts": {
+        "0": 4,
+        "1": 8
+       },
+       "per_cell": {
+        "B2_classifieds": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "vision",
+         "threshold": 0.018738,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    }
+   },
+   "supply": {
+    "same_family": {
+     "pool": "same_family",
+     "backbones": [
+      "B0",
+      "B1"
+     ],
+     "n_labeled_rows": 152,
+     "which_mode_distribution": {
+      "dom": 53,
+      "phantom_prompt": 15,
+      "phantom_som": 16,
+      "phantom_text": 5,
+      "som": 45,
+      "vision": 18
+     },
+     "cost_tier_distribution": {
+      "text_only": 89,
+      "image": 63
+     },
+     "per_cell_labeled": {
+      "B0_classifieds": 97,
+      "B1_classifieds": 55
+     }
+    },
+    "all_three": {
+     "pool": "all_three",
+     "backbones": [
+      "B0",
+      "B1",
+      "B2"
+     ],
+     "n_labeled_rows": 168,
+     "which_mode_distribution": {
+      "dom": 56,
+      "phantom_prompt": 15,
+      "phantom_som": 18,
+      "phantom_text": 6,
+      "som": 50,
+      "vision": 23
+     },
+     "cost_tier_distribution": {
+      "text_only": 95,
+      "image": 73
+     },
+     "per_cell_labeled": {
+      "B0_classifieds": 97,
+      "B1_classifieds": 55,
+      "B2_classifieds": 16
+     }
+    }
+   },
+   "diagnostics": {
+    "backbone_identifiability": {
+     "pair": [
+      "B0_classifieds",
+      "B1_classifieds"
+     ],
+     "n_shared_tasks": 224,
+     "n_feature_rows_identical": 163,
+     "pct_identical": 72.76785714285714,
+     "backbone_auroc_oof": 0.5000697544642857,
+     "note": "AUROC near 0.5 => the pooled features carry no usable backbone identity, so the conflict rate really is same-X-different-y."
+    },
+    "per_task_cost_headroom": {
+     "B0_classifieds": {
+      "cheapest_on_mean": "vision",
+      "n_tasks": 224,
+      "n_tasks_where_cheapest_mode_is_not_the_per_task_floor": 151,
+      "pct_not_floor": 67.41071428571429,
+      "mean_cost_always_cheapest": 0.06480720982142858,
+      "mean_cost_per_task_oracle": 0.034876004464285716,
+      "headroom_pct": -46.184993058050274,
+      "note": "always-cheapest is the lowest-MEAN mode, not a per-task floor; a per-task cost oracle is cheaper, so Pareto dominance is not arithmetically excluded"
+     },
+     "B1_classifieds": {
+      "cheapest_on_mean": "vision",
+      "n_tasks": 224,
+      "n_tasks_where_cheapest_mode_is_not_the_per_task_floor": 109,
+      "pct_not_floor": 48.660714285714285,
+      "mean_cost_always_cheapest": 0.043155593883928575,
+      "mean_cost_per_task_oracle": 0.02544858647321429,
+      "headroom_pct": -41.03061924796844,
+      "note": "always-cheapest is the lowest-MEAN mode, not a per-task floor; a per-task cost oracle is cheaper, so Pareto dominance is not arithmetically excluded"
+     },
+     "B2_classifieds": {
+      "cheapest_on_mean": "vision",
+      "n_tasks": 224,
+      "n_tasks_where_cheapest_mode_is_not_the_per_task_floor": 152,
+      "pct_not_floor": 67.85714285714286,
+      "mean_cost_always_cheapest": 0.07065426732142857,
+      "mean_cost_per_task_oracle": 0.04747066508928571,
+      "headroom_pct": -32.81274169424662,
+      "note": "always-cheapest is the lowest-MEAN mode, not a per-task floor; a per-task cost oracle is cheaper, so Pareto dominance is not arithmetically excluded"
+     }
+    }
+   }
+  },
+  "reddit": {
+   "n_universe": 203,
+   "universe_sha256": "1ce29c8b9fbee6a49cafb95eff8381fcb1b1aea566eea8fa444a65f1a6152c92",
+   "fold_sizes": {
+    "0": 41,
+    "1": 41,
+    "2": 41,
+    "3": 40,
+    "4": 40
+   },
+   "arms": {
+    "same_family|cost_tier": {
+     "pool": "same_family",
+     "label": "cost_tier",
+     "backbones": [
+      "B0",
+      "B1"
+     ],
+     "per_cell": {
+      "B0_reddit": {
+       "cell_id": "B0_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 14.285714285714285,
+        "mean_cost": 0.10802737438423647
+       },
+       "router_sr_ci_pct": [
+        9.852216748768473,
+        18.73152709359605
+       ],
+       "router_cost_ci": [
+        0.10027669002463055,
+        0.11627226490147785
+       ],
+       "always_cheapest": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.0980691921182266
+       },
+       "best_sr_ref": {
+        "sr_pct": 11.330049261083744,
+        "mean_cost": 0.10170531034482758
+       },
+       "delta_sr_vs_cheapest_pp": 6.89655172413793,
+       "delta_cost_vs_cheapest_pct": 10.15424115455632,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.992,
+        "passes": true
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.293,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.01,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 124,
+        "phantom_text": 37,
+        "som": 42
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      },
+      "B1_reddit": {
+       "cell_id": "B1_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 4.433497536945813,
+        "mean_cost": 0.07242845709359605
+       },
+       "router_sr_ci_pct": [
+        1.9704433497536946,
+        7.389162561576355
+       ],
+       "router_cost_ci": [
+        0.06759370882881773,
+        0.0773584345591133
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.4630541871921183,
+        "mean_cost": 0.05240422403940887
+       },
+       "best_sr_ref": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.08000418059113303
+       },
+       "delta_sr_vs_cheapest_pp": 1.9704433497536946,
+       "delta_cost_vs_cheapest_pct": 38.21110496575355,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.868,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.072,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 70,
+        "phantom_som": 26,
+        "phantom_text": 70,
+        "som": 37
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 70,
+       "train_label_counts": {
+        "0": 59,
+        "1": 11
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.114831,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.409202,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 61,
+       "train_label_counts": {
+        "0": 50,
+        "1": 11
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.560978,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.726675,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 58,
+       "train_label_counts": {
+        "0": 46,
+        "1": 12
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.923055,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.71371,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 60,
+       "train_label_counts": {
+        "0": 50,
+        "1": 10
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "phantom_text",
+         "threshold": 0.808022,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.808022,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 59,
+       "train_label_counts": {
+        "0": 47,
+        "1": 12
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.918726,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_som",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.302861,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "same_family|which_mode": {
+     "pool": "same_family",
+     "label": "which_mode",
+     "backbones": [
+      "B0",
+      "B1"
+     ],
+     "per_cell": {
+      "B0_reddit": {
+       "cell_id": "B0_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 15.270935960591133,
+        "mean_cost": 0.10415466502463054
+       },
+       "router_sr_ci_pct": [
+        10.344827586206897,
+        20.19704433497537
+       ],
+       "router_cost_ci": [
+        0.0962583631773399,
+        0.11245961551724139
+       ],
+       "always_cheapest": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.0980691921182266
+       },
+       "best_sr_ref": {
+        "sr_pct": 11.330049261083744,
+        "mean_cost": 0.10170531034482758
+       },
+       "delta_sr_vs_cheapest_pp": 7.8817733990147785,
+       "delta_cost_vs_cheapest_pct": 6.205285039023933,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 1.0,
+        "passes": true
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.652,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.062,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 126,
+        "phantom_prompt": 16,
+        "phantom_som": 8,
+        "phantom_text": 3,
+        "som": 38,
+        "vision": 12
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      },
+      "B1_reddit": {
+       "cell_id": "B1_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 4.433497536945813,
+        "mean_cost": 0.07269498778325123
+       },
+       "router_sr_ci_pct": [
+        1.9704433497536946,
+        7.389162561576355
+       ],
+       "router_cost_ci": [
+        0.06707149151477833,
+        0.07795935941133006
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.4630541871921183,
+        "mean_cost": 0.05240422403940887
+       },
+       "best_sr_ref": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.08000418059113303
+       },
+       "delta_sr_vs_cheapest_pp": 1.9704433497536946,
+       "delta_cost_vs_cheapest_pct": 38.719710320647735,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.856,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.14,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 125,
+        "phantom_prompt": 16,
+        "phantom_som": 8,
+        "phantom_text": 4,
+        "som": 38,
+        "vision": 12
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 70,
+       "train_label_counts": {
+        "dom": 38,
+        "phantom_prompt": 4,
+        "phantom_som": 10,
+        "phantom_text": 7,
+        "som": 6,
+        "vision": 5
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 61,
+       "train_label_counts": {
+        "dom": 30,
+        "phantom_prompt": 5,
+        "phantom_som": 8,
+        "phantom_text": 7,
+        "som": 5,
+        "vision": 6
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 58,
+       "train_label_counts": {
+        "dom": 32,
+        "phantom_prompt": 2,
+        "phantom_som": 7,
+        "phantom_text": 5,
+        "som": 7,
+        "vision": 5
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 60,
+       "train_label_counts": {
+        "dom": 33,
+        "phantom_prompt": 4,
+        "phantom_som": 7,
+        "phantom_text": 6,
+        "som": 6,
+        "vision": 4
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "phantom_text",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 59,
+       "train_label_counts": {
+        "dom": 31,
+        "phantom_prompt": 5,
+        "phantom_som": 8,
+        "phantom_text": 3,
+        "som": 8,
+        "vision": 4
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_som",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "all_three|cost_tier": {
+     "pool": "all_three",
+     "label": "cost_tier",
+     "backbones": [
+      "B0",
+      "B1",
+      "B2"
+     ],
+     "per_cell": {
+      "B0_reddit": {
+       "cell_id": "B0_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 13.30049261083744,
+        "mean_cost": 0.10071449261083744
+       },
+       "router_sr_ci_pct": [
+        8.866995073891626,
+        17.733990147783253
+       ],
+       "router_cost_ci": [
+        0.09278832943349753,
+        0.1088141252463054
+       ],
+       "always_cheapest": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.0980691921182266
+       },
+       "best_sr_ref": {
+        "sr_pct": 11.330049261083744,
+        "mean_cost": 0.10170531034482758
+       },
+       "delta_sr_vs_cheapest_pp": 5.911330049261084,
+       "delta_cost_vs_cheapest_pct": 2.6973817520815624,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.982,
+        "passes": true
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.567,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.25,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 152,
+        "phantom_text": 33,
+        "som": 18
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      },
+      "B1_reddit": {
+       "cell_id": "B1_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 4.433497536945813,
+        "mean_cost": 0.07118982852216749
+       },
+       "router_sr_ci_pct": [
+        1.9704433497536946,
+        7.389162561576355
+       ],
+       "router_cost_ci": [
+        0.0659786300184729,
+        0.07620812710467981
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.4630541871921183,
+        "mean_cost": 0.05240422403940887
+       },
+       "best_sr_ref": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.08000418059113303
+       },
+       "delta_sr_vs_cheapest_pp": 1.9704433497536946,
+       "delta_cost_vs_cheapest_pct": 35.84750051566743,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.868,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.21,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 64,
+        "phantom_som": 15,
+        "phantom_text": 75,
+        "som": 49
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      },
+      "B2_reddit": {
+       "cell_id": "B2_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 1.9704433497536946,
+        "mean_cost": 0.0733862691133005
+       },
+       "router_sr_ci_pct": [
+        0.49261083743842365,
+        4.433497536945813
+       ],
+       "router_cost_ci": [
+        0.06918122386945812,
+        0.077181391182266
+       ],
+       "always_cheapest": {
+        "sr_pct": 1.9704433497536946,
+        "mean_cost": 0.06833131192118228
+       },
+       "best_sr_ref": {
+        "sr_pct": 3.9408866995073892,
+        "mean_cost": 0.0947904618226601
+       },
+       "delta_sr_vs_cheapest_pp": 0.0,
+       "delta_cost_vs_cheapest_pct": 7.397717166544293,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.425,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.425,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 43,
+        "vision": 160
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 84,
+       "train_label_counts": {
+        "0": 69,
+        "1": 15
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.8295,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.829494,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.00549,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 75,
+       "train_label_counts": {
+        "0": 61,
+        "1": 14
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.771882,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.449915,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.004344,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 66,
+       "train_label_counts": {
+        "0": 52,
+        "1": 14
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.864752,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.653143,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.860353,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 74,
+       "train_label_counts": {
+        "0": 60,
+        "1": 14
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "phantom_text",
+         "threshold": 0.689054,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.912831,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.007416,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 69,
+       "train_label_counts": {
+        "0": 54,
+        "1": 15
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.871132,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_som",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.235731,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.006685,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "all_three|which_mode": {
+     "pool": "all_three",
+     "label": "which_mode",
+     "backbones": [
+      "B0",
+      "B1",
+      "B2"
+     ],
+     "per_cell": {
+      "B0_reddit": {
+       "cell_id": "B0_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 14.285714285714285,
+        "mean_cost": 0.10131946798029558
+       },
+       "router_sr_ci_pct": [
+        9.852216748768473,
+        19.21182266009852
+       ],
+       "router_cost_ci": [
+        0.09297663866995075,
+        0.10916568238916256
+       ],
+       "always_cheapest": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.0980691921182266
+       },
+       "best_sr_ref": {
+        "sr_pct": 11.330049261083744,
+        "mean_cost": 0.10170531034482758
+       },
+       "delta_sr_vs_cheapest_pp": 6.89655172413793,
+       "delta_cost_vs_cheapest_pct": 3.3142680100297417,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.998,
+        "passes": true
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.609,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.208,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 102,
+        "phantom_prompt": 20,
+        "phantom_som": 7,
+        "phantom_text": 8,
+        "som": 36,
+        "vision": 30
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      },
+      "B1_reddit": {
+       "cell_id": "B1_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 4.433497536945813,
+        "mean_cost": 0.06930441172413793
+       },
+       "router_sr_ci_pct": [
+        1.9704433497536946,
+        7.389162561576355
+       ],
+       "router_cost_ci": [
+        0.06390576699384236,
+        0.07458448653940887
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.4630541871921183,
+        "mean_cost": 0.05240422403940887
+       },
+       "best_sr_ref": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.08000418059113303
+       },
+       "delta_sr_vs_cheapest_pp": 1.9704433497536946,
+       "delta_cost_vs_cheapest_pct": 32.249666881852555,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.864,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.486,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 101,
+        "phantom_prompt": 20,
+        "phantom_som": 7,
+        "phantom_text": 9,
+        "som": 36,
+        "vision": 30
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      },
+      "B2_reddit": {
+       "cell_id": "B2_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 3.4482758620689653,
+        "mean_cost": 0.09368740054187193
+       },
+       "router_sr_ci_pct": [
+        1.477832512315271,
+        6.403940886699508
+       ],
+       "router_cost_ci": [
+        0.08886174490394089,
+        0.09872933192733989
+       ],
+       "always_cheapest": {
+        "sr_pct": 1.9704433497536946,
+        "mean_cost": 0.06833131192118228
+       },
+       "best_sr_ref": {
+        "sr_pct": 3.9408866995073892,
+        "mean_cost": 0.0947904618226601
+       },
+       "delta_sr_vs_cheapest_pp": 1.477832512315271,
+       "delta_cost_vs_cheapest_pct": 37.10756885501774,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.762,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.491,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 100,
+        "phantom_prompt": 20,
+        "phantom_som": 5,
+        "phantom_text": 8,
+        "som": 36,
+        "vision": 34
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 84,
+       "train_label_counts": {
+        "dom": 45,
+        "phantom_prompt": 4,
+        "phantom_som": 11,
+        "phantom_text": 9,
+        "som": 7,
+        "vision": 8
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 75,
+       "train_label_counts": {
+        "dom": 38,
+        "phantom_prompt": 5,
+        "phantom_som": 9,
+        "phantom_text": 9,
+        "som": 6,
+        "vision": 8
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 66,
+       "train_label_counts": {
+        "dom": 37,
+        "phantom_prompt": 2,
+        "phantom_som": 7,
+        "phantom_text": 6,
+        "som": 8,
+        "vision": 6
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 74,
+       "train_label_counts": {
+        "dom": 40,
+        "phantom_prompt": 4,
+        "phantom_som": 8,
+        "phantom_text": 8,
+        "som": 7,
+        "vision": 7
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "phantom_text",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 69,
+       "train_label_counts": {
+        "dom": 36,
+        "phantom_prompt": 5,
+        "phantom_som": 9,
+        "phantom_text": 4,
+        "som": 8,
+        "vision": 7
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_som",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        },
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.5,
+         "threshold_source": "argmax_default",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "per_cell|cost_tier|B0": {
+     "pool": "per_cell",
+     "label": "cost_tier",
+     "backbones": [
+      "B0"
+     ],
+     "per_cell": {
+      "B0_reddit": {
+       "cell_id": "B0_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 13.30049261083744,
+        "mean_cost": 0.1047027881773399
+       },
+       "router_sr_ci_pct": [
+        8.866995073891626,
+        17.733990147783253
+       ],
+       "router_cost_ci": [
+        0.09684821354679804,
+        0.11295250135467982
+       ],
+       "always_cheapest": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.0980691921182266
+       },
+       "best_sr_ref": {
+        "sr_pct": 11.330049261083744,
+        "mean_cost": 0.10170531034482758
+       },
+       "delta_sr_vs_cheapest_pp": 5.911330049261084,
+       "delta_cost_vs_cheapest_pct": 6.764199761242273,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.981,
+        "passes": true
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.158,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.063,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 151,
+        "phantom_text": 33,
+        "som": 19
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 48,
+       "train_label_counts": {
+        "0": 41,
+        "1": 7
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.839789,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 42,
+       "train_label_counts": {
+        "0": 34,
+        "1": 8
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.714771,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 40,
+       "train_label_counts": {
+        "0": 31,
+        "1": 9
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.900556,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 40,
+       "train_label_counts": {
+        "0": 33,
+        "1": 7
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "phantom_text",
+         "threshold": 0.493895,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 42,
+       "train_label_counts": {
+        "0": 33,
+        "1": 9
+       },
+       "per_cell": {
+        "B0_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.906603,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "per_cell|cost_tier|B1": {
+     "pool": "per_cell",
+     "label": "cost_tier",
+     "backbones": [
+      "B1"
+     ],
+     "per_cell": {
+      "B1_reddit": {
+       "cell_id": "B1_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 4.433497536945813,
+        "mean_cost": 0.07282868871921182
+       },
+       "router_sr_ci_pct": [
+        1.9704433497536946,
+        7.389162561576355
+       ],
+       "router_cost_ci": [
+        0.06778218470197044,
+        0.07787491482389163
+       ],
+       "always_cheapest": {
+        "sr_pct": 2.4630541871921183,
+        "mean_cost": 0.05240422403940887
+       },
+       "best_sr_ref": {
+        "sr_pct": 7.389162561576355,
+        "mean_cost": 0.08000418059113303
+       },
+       "delta_sr_vs_cheapest_pp": 1.9704433497536946,
+       "delta_cost_vs_cheapest_pct": 38.974844211877645,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.868,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.051,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 78,
+        "phantom_som": 29,
+        "phantom_text": 63,
+        "som": 33
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 22,
+       "train_label_counts": {
+        "0": 18,
+        "1": 4
+       },
+       "per_cell": {
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.440665,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 19,
+       "train_label_counts": {
+        "0": 16,
+        "1": 3
+       },
+       "per_cell": {
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.472903,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 18,
+       "train_label_counts": {
+        "0": 15,
+        "1": 3
+       },
+       "per_cell": {
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.757015,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 20,
+       "train_label_counts": {
+        "0": 17,
+        "1": 3
+       },
+       "per_cell": {
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_text",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.257089,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 17,
+       "train_label_counts": {
+        "0": 14,
+        "1": 3
+       },
+       "per_cell": {
+        "B1_reddit": {
+         "mode_for_tier": {
+          "0": "phantom_som",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "som",
+         "threshold": 0.340568,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    },
+    "per_cell|cost_tier|B2": {
+     "pool": "per_cell",
+     "label": "cost_tier",
+     "backbones": [
+      "B2"
+     ],
+     "per_cell": {
+      "B2_reddit": {
+       "cell_id": "B2_reddit",
+       "n_tasks": 203,
+       "router": {
+        "sr_pct": 1.9704433497536946,
+        "mean_cost": 0.07315210827586208
+       },
+       "router_sr_ci_pct": [
+        0.49261083743842365,
+        4.433497536945813
+       ],
+       "router_cost_ci": [
+        0.06915366433743843,
+        0.07698659607758622
+       ],
+       "always_cheapest": {
+        "sr_pct": 1.9704433497536946,
+        "mean_cost": 0.06833131192118228
+       },
+       "best_sr_ref": {
+        "sr_pct": 3.9408866995073892,
+        "mean_cost": 0.0947904618226601
+       },
+       "delta_sr_vs_cheapest_pp": 0.0,
+       "delta_cost_vs_cheapest_pct": 7.055032633122016,
+       "pareto_vs_always_cheapest": {
+        "fraction_non_dominated": 0.425,
+        "passes": false
+       },
+       "pareto_vs_six_fixed_modes": {
+        "fraction_non_dominated": 0.425,
+        "passes": false
+       },
+       "strict_dominance_vs_cheapest": {
+        "fraction_dominating": 0.0,
+        "passes": false
+       },
+       "routed_mode_counts": {
+        "dom": 40,
+        "som": 1,
+        "vision": 162
+       },
+       "cheapest_mode_counts": {
+        "vision": 203
+       }
+      }
+     },
+     "per_outer_fold": [
+      {
+       "fold": 0,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 14,
+       "train_label_counts": {
+        "0": 10,
+        "1": 4
+       },
+       "per_cell": {
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.029019,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 1,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 14,
+       "train_label_counts": {
+        "0": 11,
+        "1": 3
+       },
+       "per_cell": {
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.000204,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 2,
+       "n_train_tasks": 162,
+       "n_test_tasks": 41,
+       "n_train_rows": 8,
+       "train_label_counts": {
+        "0": 6,
+        "1": 2
+       },
+       "per_cell": {
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "som"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.927172,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 3,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 14,
+       "train_label_counts": {
+        "0": 10,
+        "1": 4
+       },
+       "per_cell": {
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.00779,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      },
+      {
+       "fold": 4,
+       "n_train_tasks": 163,
+       "n_test_tasks": 40,
+       "n_train_rows": 10,
+       "train_label_counts": {
+        "0": 7,
+        "1": 3
+       },
+       "per_cell": {
+        "B2_reddit": {
+         "mode_for_tier": {
+          "0": "dom",
+          "1": "vision"
+         },
+         "cheapest": "vision",
+         "best_sr": "dom",
+         "threshold": 0.011388,
+         "threshold_source": "sr_preserving_vs_cheapest",
+         "n_untrainable_fallback": 0
+        }
+       }
+      }
+     ]
+    }
+   },
+   "supply": {
+    "same_family": {
+     "pool": "same_family",
+     "backbones": [
+      "B0",
+      "B1"
+     ],
+     "n_labeled_rows": 77,
+     "which_mode_distribution": {
+      "dom": 41,
+      "phantom_prompt": 5,
+      "phantom_som": 10,
+      "phantom_text": 7,
+      "som": 8,
+      "vision": 6
+     },
+     "cost_tier_distribution": {
+      "text_only": 63,
+      "image": 14
+     },
+     "per_cell_labeled": {
+      "B0_reddit": 53,
+      "B1_reddit": 24
+     }
+    },
+    "all_three": {
+     "pool": "all_three",
+     "backbones": [
+      "B0",
+      "B1",
+      "B2"
+     ],
+     "n_labeled_rows": 92,
+     "which_mode_distribution": {
+      "dom": 49,
+      "phantom_prompt": 5,
+      "phantom_som": 11,
+      "phantom_text": 9,
+      "som": 9,
+      "vision": 9
+     },
+     "cost_tier_distribution": {
+      "text_only": 74,
+      "image": 18
+     },
+     "per_cell_labeled": {
+      "B0_reddit": 53,
+      "B1_reddit": 24,
+      "B2_reddit": 15
+     }
+    }
+   },
+   "diagnostics": {
+    "backbone_identifiability": {
+     "pair": [
+      "B0_reddit",
+      "B1_reddit"
+     ],
+     "n_shared_tasks": 203,
+     "n_feature_rows_identical": 57,
+     "pct_identical": 28.07881773399015,
+     "backbone_auroc_oof": 0.5264626659224927,
+     "note": "AUROC near 0.5 => the pooled features carry no usable backbone identity, so the conflict rate really is same-X-different-y."
+    },
+    "per_task_cost_headroom": {
+     "B0_reddit": {
+      "cheapest_on_mean": "vision",
+      "n_tasks": 203,
+      "n_tasks_where_cheapest_mode_is_not_the_per_task_floor": 144,
+      "pct_not_floor": 70.93596059113301,
+      "mean_cost_always_cheapest": 0.09806919211822661,
+      "mean_cost_per_task_oracle": 0.056822270935960595,
+      "headroom_pct": -42.05899966274942,
+      "note": "always-cheapest is the lowest-MEAN mode, not a per-task floor; a per-task cost oracle is cheaper, so Pareto dominance is not arithmetically excluded"
+     },
+     "B1_reddit": {
+      "cheapest_on_mean": "vision",
+      "n_tasks": 203,
+      "n_tasks_where_cheapest_mode_is_not_the_per_task_floor": 102,
+      "pct_not_floor": 50.24630541871921,
+      "mean_cost_always_cheapest": 0.05240422403940887,
+      "mean_cost_per_task_oracle": 0.03733055443349754,
+      "headroom_pct": -28.764226323770536,
+      "note": "always-cheapest is the lowest-MEAN mode, not a per-task floor; a per-task cost oracle is cheaper, so Pareto dominance is not arithmetically excluded"
+     },
+     "B2_reddit": {
+      "cheapest_on_mean": "vision",
+      "n_tasks": 203,
+      "n_tasks_where_cheapest_mode_is_not_the_per_task_floor": 96,
+      "pct_not_floor": 47.29064039408867,
+      "mean_cost_always_cheapest": 0.06833131192118228,
+      "mean_cost_per_task_oracle": 0.05313663896551724,
+      "headroom_pct": -22.23676456437942,
+      "note": "always-cheapest is the lowest-MEAN mode, not a per-task floor; a per-task cost oracle is cheaper, so Pareto dominance is not arithmetically excluded"
+     }
+    }
+   }
+  }
+ },
+ "verdict": {
+  "headline": "H-pool NOT supported — the same-family × cost-tier router dominates always-cheapest in 0/4 cells and is dominated by the fixed-mode menu in every cell. The most favourable corner (agreeing backbones, coarse label, highest ceiling) does not change the negative result.",
+  "same_family_tier": {
+   "nd": 1,
+   "dom": 0,
+   "ndall": 0,
+   "total": 4
+  },
+  "all_arms": {
+   "nd": 5,
+   "dom": 0,
+   "ndall": 0,
+   "total": 26
+  },
+  "non_dominated_vs_cheapest_by_arm": {
+   "classifieds|same_family|cost_tier": "0/2",
+   "classifieds|same_family|which_mode": "0/2",
+   "classifieds|all_three|cost_tier": "0/3",
+   "classifieds|all_three|which_mode": "0/3",
+   "classifieds|per_cell|cost_tier|B0": "0/1",
+   "classifieds|per_cell|cost_tier|B1": "0/1",
+   "classifieds|per_cell|cost_tier|B2": "0/1",
+   "reddit|same_family|cost_tier": "1/2",
+   "reddit|same_family|which_mode": "1/2",
+   "reddit|all_three|cost_tier": "1/3",
+   "reddit|all_three|which_mode": "1/3",
+   "reddit|per_cell|cost_tier|B0": "1/1",
+   "reddit|per_cell|cost_tier|B1": "0/1",
+   "reddit|per_cell|cost_tier|B2": "0/1"
+  },
+  "dominates_cheapest_by_arm": {
+   "classifieds|same_family|cost_tier": "0/2",
+   "classifieds|same_family|which_mode": "0/2",
+   "classifieds|all_three|cost_tier": "0/3",
+   "classifieds|all_three|which_mode": "0/3",
+   "classifieds|per_cell|cost_tier|B0": "0/1",
+   "classifieds|per_cell|cost_tier|B1": "0/1",
+   "classifieds|per_cell|cost_tier|B2": "0/1",
+   "reddit|same_family|cost_tier": "0/2",
+   "reddit|same_family|which_mode": "0/2",
+   "reddit|all_three|cost_tier": "0/3",
+   "reddit|all_three|which_mode": "0/3",
+   "reddit|per_cell|cost_tier|B0": "0/1",
+   "reddit|per_cell|cost_tier|B1": "0/1",
+   "reddit|per_cell|cost_tier|B2": "0/1"
+  },
+  "non_dominated_vs_six_fixed_by_arm": {
+   "classifieds|same_family|cost_tier": "0/2",
+   "classifieds|same_family|which_mode": "0/2",
+   "classifieds|all_three|cost_tier": "0/3",
+   "classifieds|all_three|which_mode": "0/3",
+   "classifieds|per_cell|cost_tier|B0": "0/1",
+   "classifieds|per_cell|cost_tier|B1": "0/1",
+   "classifieds|per_cell|cost_tier|B2": "0/1",
+   "reddit|same_family|cost_tier": "0/2",
+   "reddit|same_family|which_mode": "0/2",
+   "reddit|all_three|cost_tier": "0/3",
+   "reddit|all_three|which_mode": "0/3",
+   "reddit|per_cell|cost_tier|B0": "0/1",
+   "reddit|per_cell|cost_tier|B1": "0/1",
+   "reddit|per_cell|cost_tier|B2": "0/1"
+  }
+ },
+ "attribution": [
+  "- **classifieds label balance (same-family pool)**: {'text_only': 89, 'image': 63} — minority class is 41% of rows. Balanced enough that majority-class collapse is not the default explanation.",
+  "- **classifieds**: no cell clears the locked rule under any arm (7 arms tested).",
+  "- **reddit label balance (same-family pool)**: {'text_only': 63, 'image': 14} — minority class is 18% of rows. **Severely imbalanced**: a classifier can score well by collapsing to the majority class, so any statement about what the LABEL GRANULARITY contributed is confounded with the label barely varying.",
+  "- **reddit / B0_reddit** clears the locked rule in 5/7 arms: `same_family|cost_tier` 14.29%@0.10803, `same_family|which_mode` 15.27%@0.10415, `all_three|cost_tier` 13.30%@0.10071, `all_three|which_mode` 14.29%@0.10132, `per_cell|cost_tier|B0` 13.30%@0.10470.  Co-occurrence: clears with **and** without the cross-family cell; clears at **both** granularities; clears under **per-cell** training as well as pooled.",
+  "- ⚠️ **These are co-occurrences, not causal attributions.** Two arms can both clear a binary admissibility bar while differing materially in (SR, cost) — the point estimates above show exactly that. Establishing that a factor did or did not move the operating point requires paired task-level contrasts (ΔSR and Δcost with paired bootstrap) or an explicit 2×2 interaction contrast, neither of which is computed here."
+ ],
+ "reading": [
+  "1. **Nothing reaches the front.** Across all 26 arm×cell combinations the router is non-dominated by the six-fixed-mode menu in 0 of them, and dominates always-cheapest in 0. The favourable corner the spec identified — same family, coarse label, highest ceiling — contributes 0/4 and 0/4 respectively.",
+  "2. **The coarse label did not buy a better operating point — and on the one passing cell it was slightly worse.** reddit·B0 same-family: which-mode 15.27% SR at 0.10415 vs cost-tier 14.29% at 0.10803, i.e. the 6-way label is better on both axes there. The §395.2 defect the tier label sidesteps is real, but sidestepping it did not help. ⚠️ Two qualifiers, both from cross-AI review 2026-07-29: (a) this is a point-estimate comparison, not a paired contrast, so it does not establish that granularity is causally inert; (b) on reddit the tier label is severely imbalanced (63 text_only vs 14 image), so a tier classifier can score by collapsing to the majority class — granularity and label-variance are confounded in exactly the cell that passes.",
+  "3. **The one pass is a property of the contrast, not of the router.** reddit·B0's always-cheapest is Vision at 7.39% SR against a best-single reference of 11.33% — an unusually weak baseline. Any routing policy that moves tasks off Vision buys SR there, which is why all five passing arms pass, including per-cell training with no pooling at all.",
+  "4. **The trade-off is genuine but priced.** reddit·B0 reaches 13.3-15.3% SR, above the best single mode, and pays 2.7-10.2% more per task for it. That is a legitimate operating point to report; it is not the dominance H-pool asked for, and the six-mode menu still dominates it in 35-71% of paired replicates.",
+  "5. **Direction for Paper B.** The negative result survives its most favourable test and can now be stated with the qualifier attached rather than as an unexamined generalisation: routing does not beat a fixed cheap policy *even when the pool agrees, the label is coarse and immune to the tie-break defect, and the plug-in ceiling is 97.5%*."
+ ]
+}

@@ -32,8 +32,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LEDGER = ROOT / "docs" / "reference" / "known" / "ledger.jsonl"
+# Every place a draft currently lives. Restricting this to paperA/paperB (the
+# original pair) made the tool answer a narrower question than its output
+# claimed: "absent from both drafts" really meant "absent from two of the four
+# draft trees", so a framework already written up in `aaai27/` or in the older
+# eight-section drafts was still reported as unlanded. Since the two papers are
+# being merged into one REALM submission, the target draft may descend from any
+# of these — the check has to see all of them.
 DRAFTS = [ROOT / "docs/checkpoints/paper_drafts/paperA",
-          ROOT / "docs/checkpoints/paper_drafts/paperB"]
+          ROOT / "docs/checkpoints/paper_drafts/paperB",
+          ROOT / "docs/checkpoints/paper_drafts/aaai27",
+          ROOT / "docs/checkpoints/paper_drafts/latex",
+          ROOT / "docs/checkpoints/paper_drafts"]  # the top-level section*.md set
 CODE = [ROOT / "scripts" / "analysis", ROOT / "p79"]
 
 TUPLE = re.compile(r"\b([A-Za-z][A-Za-z\-]{2,}(?:\s*/\s*[A-Za-z][A-Za-z\-]{2,}){2,})\b")
