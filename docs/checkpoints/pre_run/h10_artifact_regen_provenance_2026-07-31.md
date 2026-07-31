@@ -82,8 +82,21 @@ so the `len(set(y)) < 2` guard rejects every fold.
 Unchanged from k=5, now confirmed at full scope:
 
 - `h10_entropy_gate_passed = true`, `h10_status = "ok"`, `global_entropy_min_bits
-  = 2.0971` (threshold 1.0) — **the entropy DEFER does not fire**. Labels that
-  exist are not concentrated.
+  = 2.0971` (threshold 1.0) — the entropy DEFER does not fire.
+- ⚠️ **Scope of that statement (corrected 2026-07-31 after /stress)**: it holds for
+  the **two cells that produced any trainable fold**, not for all six. A cell whose
+  five folds all fail `insufficient_train_data` yields `cell_entropy_min_bits = NaN`
+  (`train_l1_router.py:508-514`), and NaN is filtered out before the minimum is taken
+  (`:648-651`: `finite_mins = [... if not np.isnan(v)]`). So `gate_passed` was computed
+  from `B0_classifieds` and `B1_classifieds` only. **The label concentration of the
+  other four cells was never measured** — they hold 15–53 labels each, and whether
+  those concentrate on ≤2 modes is unknown.
+- This is **fail-open relative to the registered condition**, which quantifies over
+  *any required cell* (all six are in `aggregate_h10_pareto.CELLS`): "cannot determine"
+  is treated as "no problem" rather than as a DEFER trigger. `_load_h10_entropy_gate`
+  fail-closes when the artifact is **absent**, not when it is present-but-partial.
+  Today this changes nothing (H10 is already `False` via `n_cells_with_data = 0`), but
+  it would let the gate pass once Pass-2 data makes some cells trainable.
 - The operative blocker is `insufficient_train_data`, and independently
   `Pass-2 runs: 0` on every one of the six cells → `n_cells_with_data = 0`.
 
@@ -170,3 +183,82 @@ Pass-2 (learned-router) conditions have still never been fired — `Pass-2 runs:
 on all six cells, which is why `k_of_n_string` is `0/0` independently of
 trainability. H10 cannot move off `0/0` until Pass-2 data exists; that is a data
 gap, not an artifact-staleness gap, and this note does not discharge it.
+
+## 8. Known defects in the pipeline these artifacts came from
+
+Surfaced by the 2026-07-31 `/stress` audit (Claude Mode A + codex Mode B + Gemini
+Mode C). **None of these were fixed before this promote** — they are disclosed here
+so the artifacts are not read as cleaner than they are. Each was fact-checked against
+the code and the landed artifacts before being recorded.
+
+### 8.1 Two "stable core" features are the same variable
+
+`estimate_input_tokens(text_length) = text_length // 4`
+(`p79/policies/router_features.py:59`), and Stage 1 writes **both** `text_length` and
+`tokens_input_text` into the numeric matrix. On the canonical 260 rows,
+`tokens_input_text == floor(text_length / 4)` holds for **260/260** rows,
+**Pearson r = 0.9999998279** (verified independently of the audit).
+
+Both survive into `nontfidf_stability_bands.stable_core_20_raw`, i.e. **2 of the 5
+"stable core" non-TF-IDF features are one measurement and its deterministic copy**.
+A univariate `SelectKBest(MI)` rewards the same signal twice and permanently spends
+2 of 18 slots on it; L1 coefficients over a near-collinear pair are not identifiable.
+
+⇒ **Any feature-importance reading of these artifacts is unreliable.** The routing
+performance numbers themselves are unaffected (the duplicate carries no extra
+information), but "which features matter" cannot be answered from this run.
+
+### 8.2 Training set is conditioned on outcome; deployment is not
+
+`derive_oracle_label` returns `None` when no mode succeeded, and `build_cell_records`
+then `continue`s (`extract_50_features.py:521`) — while the deployment fold universe
+deliberately retains those tasks (`:504`, "the FULL routable task universe (incl.
+no-success tasks)"). Across six cells that is **260 kept of 1,281 cell-task cases —
+79.7% dropped**.
+
+This is selection on `S = max_m success_m`, i.e. **on the dependent variable**, with
+the model then applied to the unconditioned population. Under a cost-aware objective,
+an all-zero reward vector should at minimum select the cheapest action or DEFER,
+rather than removing 79.7% of the target population from the learning problem.
+
+⇒ Treat holdout numbers as conditional on "at least one mode solved this task".
+Long-form reconstruction (`(task, mode, success, cost)` + expected-utility routing)
+is paper-2 backlog, not a k=6 artifact fix.
+
+### 8.3 Stage 1 hard-fails on partial cells but silently drops empty ones
+
+A required cell with runs but incomplete modes raises (`extract_50_features.py:419`,
+`:469`). A required cell with **no runs at all** only records
+`n_kept=0, error="no Pass-1 runs found"` (`:354`), is accepted by `extract_all_cells`,
+dropped at pooling via `if rec["n_kept"] == 0: continue` (`:668`, `:693`), and the CLI
+still writes the artifact and returns 0 (`:863`).
+
+Same shape as §3.1's gate defect, one stage earlier: **partially measurable fails
+loudly; wholly unmeasurable disappears from the denominator.** This run is unaffected
+(all six cells have `n_runs=6`), but a future regeneration missing a required cell
+would train the rest and emit a normal-looking artifact.
+
+### 8.4 Over half the oracle labels have no unique cost-minimiser
+
+`derive_oracle_label` returns the first success in `MODES` order
+(`router_features.py:168`). `MODES` puts the four text-only modes first, and
+`MODE_COST_TIER` (`:103`) assigns **all four the same tier 0** — so within tier 0 the
+"cheapest successful mode" is decided by list position, not by cost. `phantom_som`
+(the paper's hero arm) sits second in that list.
+
+The audit reports 137/260 (52.7%) of labels having multiple minimum-tier successes;
+that specific count is not independently re-derived here, but the mechanism is
+confirmed in code and the source comment already flags the stakes: *"Do NOT silently
+switch to a measured tie-break — that is an oracle-label estimand change."*
+
+⇒ §6 must disclose that the intra-tier tie-break is a **pre-registered list order,
+not a data-driven choice**, and report sensitivity over same-tier permutations.
+
+### 8.5 Verified clean (recorded so it is not re-audited)
+
+**No feature-selection leakage.** TF-IDF vocabulary/IDF fitting
+(`train_l1_router_with_mi.py:250`) and MI selection (`:316`) both occur **inside** the
+fold loop, after `pool_mask` slicing (`:402`, `:428`, `:437`); the per-fold pool sizes
+`202/216/204/204/214` are five independent training-side fits, not one full-pool
+selector reused across folds. Same-site twin tasks are excluded together by
+`build_pool_mask_for_fold` (`:178`, `:214`).
