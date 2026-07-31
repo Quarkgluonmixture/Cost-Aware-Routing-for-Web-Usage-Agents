@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 2
 blocker: "B2_reddit 已齐 (36/36 conditions, 07-29 实证) — 原 blocker 解除。现串在 08-03 对账 → 骨架之后"
-eta: "k=6 重灌 → slotsheet 重生成 → 两篇 REALM 稿 splice (deadline 08-05 周三)。⚠️ h10 artifacts 最新仍是 07-22 的 k=5 版 (h10_artifact_regen_provenance_2026-07-22.md, 自标非提交终态) — 二次 promote 未做"
+eta: "✅ **h10 k=6 二次 promote 已完成 2026-07-31** (witness: h10_artifact_regen_provenance_2026-07-31.md; 全 6 cell 重跑, B2_reddit 0/5 folds 如 label-supply 预测, Stage3 = 1/6 fully trained; **verdict 每个 gate 字段均未变** h10_status=ok / k_of_n=0/0 / gate_passed=False — 实际修的是 provenance 不一致: 07-27 verdict 的 per_cell 已 6 cell 而内嵌 gate 还是 07-22 的 5-cell)。🔄 make analysis FAST=1 在跑 → slotsheet 重生成 → 两篇 splice (deadline 08-05 周三)。⚠️ make analysis 是 routine 路径 (fig0c 带 --allow-partial + NON_PAPER_GRADE 水印); **提交前须走 VERDICT_DAY_RUNBOOK 严格路径** (无该 flag, fail-closed exit 2)"
 detail: preregistration
 created: 2026-05-22
 updated: 2026-07-31
