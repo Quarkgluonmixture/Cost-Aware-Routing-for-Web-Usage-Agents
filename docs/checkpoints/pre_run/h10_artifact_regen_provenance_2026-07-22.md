@@ -1,11 +1,12 @@
 ---
 type: provenance
-status: active
+status: superseded
 gate: H10
 k: 5
 supersedes: results/phantom_paper/l1_router_offline_20260715/h10_entropy_gate.json
+superseded_by: docs/checkpoints/pre_run/h10_artifact_regen_provenance_2026-07-31.md
 created: 2026-07-22
-updated: 2026-07-22
+updated: 2026-07-31
 ---
 
 # H10 canonical router-artifact regeneration — provenance witness (2026-07-22)
