@@ -136,7 +136,7 @@ directory sync — it cannot delete what it does not produce.
 ## 6. SHA256 (first 16 hex) at promote time
 
 Repo `HEAD` = `be40557`. Promoted 2026-07-31; verdict `captured_at`
-2026-07-31T17:12:57Z.
+2026-07-31T17:16:52Z.
 
 | artifact | sha256[:16] |
 |---|---|
@@ -144,7 +144,20 @@ Repo `HEAD` = `be40557`. Promoted 2026-07-31; verdict `captured_at`
 | `l1_router/stage2_summary.json` | `a1c05f6ec8649dc7` |
 | `l1_router/stage3_summary.json` | `46412f3445ae2765` |
 | `l1_router/raw_features_phase1a.npz` | `63ea1cfddee58642` |
-| `h10_pareto_verdict.json` | `d2f690b6d4ef510f` |
+| `h10_pareto_verdict.json` | `8a43acdc0e36e2ba` |
+
+> **The verdict row was re-taken after `make analysis`, and this matters procedurally.**
+> The promote-time value was `d2f690b6d4ef510f` (`captured_at` 17:12:57Z). Running
+> `make analysis FAST=1` afterwards re-ran `h10-pareto-verdict` — it is the last
+> step of `_aggregate` (`Makefile:384`) — which rewrote the file with a new
+> `captured_at` (17:16:52Z) and therefore a new hash. Content is equivalent:
+> `h10_status=ok`, `k_of_n_string=0/0`, `operational_gate_passed=False` on both.
+> The four `l1_router/*` hashes are unaffected, because `make analysis` re-runs
+> the aggregator only, never Stages 1–3.
+>
+> **Rule this implies**: when a promote is followed by `make analysis`, take the
+> witness hashes *after* it. A hash recorded between the two names a file state
+> that no longer exists, which is the one thing a provenance witness must not do.
 
 Pre-promote state preserved at
 `results/phantom_paper/_l1_router_backup_pre_regen_20260731/` (38 files) and
