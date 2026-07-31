@@ -5,7 +5,7 @@ priority: P2
 horizon: next
 order: 2
 blocker: ""
-eta: "✅ **B1×reddit×6mode 已齐** (2026-07-31 15:01 收尾, 6 格 × 104/104 ep, sentinel OK, noise_rate 全 0)。SR: dom/P-text/P-prompt 各 17 · som 14 · P-SoM 12 · vision 10。🔄 **B0×reddit×6mode 07-31 16:18 发车** (~$62, ~3.5 天, ETA 08-04) — 学长的网站覆盖度理由: 真实网页视觉/文字比例均衡, 而 §95 实测 VWA 95.3% visual (剔除后仅剩 43 non-visual) vs WA 480 全算 non-visual。⭐ prereg §8.8 B-1296 的 Jaccard 注册预测**已超额兑现** (注册 50-task, 实跑 104 全量; 15 对全在 0.286-0.611, >0.7 零对, ≤0.5 有 11 对) → 见笔记 §405.6"
+eta: "✅ **B1×reddit×6mode 已齐** (2026-07-31 15:01 收尾, 6 格 × 104/104 ep, sentinel OK, noise_rate 全 0)。SR: dom/P-text/P-prompt 各 17 · som 14 · P-SoM 12 · vision 10。⛔ **B0×reddit chain 07-31 16:54 ABORT** (发车 36min 后; B-1834 episode-count gate 正确拦截 episodes=10 != expected=104)。根因 = **config 继承层不对称**: B1 六格 07-27 被改成继承 `exp_v2_wa_full_reddit_base.yaml` (full 104, 注释「pilot base kept intact」), 而 B0 六格未改, 仍继承 `exp_v2_wa_base.yaml` 的 10-task pilot 采样 (task_ids.reddit = [581,584,597,598,607,635,641,652,715,729])。**待裁定: B0 跑 10 (注册设计) 还是 104 (与 B1 可比, 覆盖度证据需要)**。⚠️ **Jaccard 注册预测的 estimand 我报错过, 已更正**: 注册 PRIMARY = 10-task × **5-mode**(vision 排除) mean-pairwise = **0.690**, 落在 ≤0.5 与 >0.7 之间**未给出判定**, 且样本仅 2-4 元集合 (单 task 翻转即从 1.0 掉到 0.5) 几无分辨力; 我初版报的 104 全量 × 6-mode (0.286-0.611) 是 exploratory 非注册量 → 见笔记 §405.6 更正表"
 detail: preregistration.md §8.8 B-1296 registered prediction
 created: 2026-07-16
 updated: 2026-07-31
