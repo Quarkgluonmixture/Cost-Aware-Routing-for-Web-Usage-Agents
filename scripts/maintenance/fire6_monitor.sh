@@ -43,7 +43,15 @@ MODE="${1:-healthcheck}"
 # absent from this glob, ls -t pinned yesterday's ABORTED queue_phase1_red_* log
 # while _orch_up saw the live detour chain → "FATAL/abort in fire log" spam every
 # 30-min tick (3 false alerts 10:30/11:00/11:30Z). Include queue_chain_* family.
-FIRELOG="$(ls -t logs/queue_phase1_cls_*.log logs/queue_phase1_red_*.log logs/queue_chain_*.log logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
+# 2026-07-31: prefer the orchestrator's own `.latest.log` symlink over a global
+# `ls -t` over every chain log. The old glob included `logs/queue_chain_*.log`,
+# so ANY unrelated chain (e.g. the WA-B0 pilot fired 2026-07-31) became the
+# newest match and got monitored as if it were the paper-grade fire — its FATAL
+# scan, its completion, its everything. queue_phase1_paper_grade.sh:748 already
+# maintains `queue_phase1_<label>.latest.log`, which names the real fire
+# unambiguously; the old glob stays as fallback for pre-symlink-era logs.
+FIRELOG="$(ls -t logs/queue_phase1_*.latest.log 2>/dev/null | head -1)"
+[ -z "$FIRELOG" ] && FIRELOG="$(ls -t logs/queue_phase1_cls_*.log logs/queue_phase1_red_*.log logs/queue_chain_*.log logs/fire6_phase1a*.log logs/fire6_relaunch_*.log 2>/dev/null | head -1)"
 [ -z "$FIRELOG" ] && FIRELOG="logs/fire6_phase1a.log"
 # B-1893 (2026-07-27): benchmark-aware. Pre-fix this was hardcoded to
 # `results/visualwebarena/phase1`, so while a WA (WebArena) chain was running —
@@ -63,7 +71,35 @@ RESULTS="${RESULTS_DIRS[0]}"   # kept for any single-path legacy reference
 # tick mid-fire (§0 line 53 canary-era same naming-drift root cause). Match queue_chain.sh
 # (live fire) OR the launcher (brief launch window). orch DOWN at fire END (chain exits
 # after 18 conditions) is still a real "COMPLETED or DIED" signal — intended.
-_orch_up()      { pgrep -f 'queue_chain.sh' >/dev/null 2>&1 || pgrep -f 'queue_phase1_paper_grade.sh launch' >/dev/null 2>&1; }
+# 2026-07-31: pattern-match → PID. The old test was
+#   pgrep -f 'queue_chain.sh' || pgrep -f 'queue_phase1_paper_grade.sh launch'
+# which cannot distinguish the paper-grade fire from any other chain, because
+# Pass-1 *runs* through queue_chain (see queue_phase1_paper_grade.sh:738) — the
+# name it matches is genuinely shared. Firing the unrelated WA-B0 pilot on
+# 2026-07-31 therefore read as "orchestrator up", and that pilot's normal
+# completion would have fired a false "Pass-1 COMPLETED or DIED" alert.
+#
+# The orchestrator already records its own PID at :745 and symlinks it to
+# `queue_phase1_<label>.latest.pid` at :749, so ask that instead of guessing
+# from process names. `kill -0` on a recorded PID is exact and cannot self-match
+# the way `pgrep -f` on a string this script also contains would.
+#
+# A stale .latest.pid (fire ended, file left behind) fails `kill -0` → orch down,
+# which is the correct reading. If no .latest.pid exists at all, orch is down:
+# `queue_phase1_paper_grade.sh launch` is the canonical paper-grade entry point
+# and always writes one — a hand-run queue_chain is deliberately NOT a fire.
+_fire_pid() {
+  local f pid
+  for f in logs/queue_phase1_*.latest.pid; do
+    [ -e "$f" ] || continue
+    pid="$(cat "$f" 2>/dev/null || true)"
+    if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+      printf '%s' "$pid"; return 0
+    fi
+  done
+  return 1
+}
+_orch_up()      { _fire_pid >/dev/null 2>&1; }
 _recent_step()  { find "${RESULTS_DIRS[@]}" -name '*steps*.jsonl' -newermt '-60 min' ! -path '*smoke*' 2>/dev/null | head -1; }
 _local_runner() { pgrep -af 'run_experiment.py' 2>/dev/null | grep -qE '/exp_v2_B[12]_'; }
 _gpu_mib()      { nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ' || echo 0; }
