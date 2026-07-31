@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "2026-08-05 (同 Paper A deadline); 证据 k-无关故可先写完"
+eta: "2026-08-05 周三 (同 Paper A deadline)。⭐ 证据 k-无关且**不依赖 08-03 对账** → 08-01/02 周末就能整篇写完, 把对账后的 2 天全留给 Paper A"
 detail: docs/checkpoints/实验笔记.md §383.4
 created: 2026-07-22
-updated: 2026-07-22
+updated: 2026-07-31
 ---
 
 # Paper B — 路由阴性结果 + 标签供给诊断 (REALM @ EMNLP 2026, **archival**)

@@ -4,11 +4,11 @@ status: active
 priority: P0
 horizon: now
 order: 0
-blocker: "verdict 数字等 k=6 (B2_reddit ~07-26/27); 非数字段落与格式转换不等"
-eta: "2026-08-05 (REALM @ EMNLP 2026 direct submission)"
+blocker: "对账推迟至 2026-08-03 周一 (学长生病, user 07-31 告知) → 骨架 → 本稿。B2_reddit 已齐 (36/36, 07-29 实证), 不再是 blocker"
+eta: "2026-08-05 周三 (REALM @ EMNLP direct submission) — 对账后仅剩 2 天"
 detail: docs/checkpoints/paper_drafts/aaai27/aaai27_main.md
 created: 2026-07-22
-updated: 2026-07-22
+updated: 2026-07-31
 ---
 
 # Paper A — phantom routing space 现象篇 (REALM @ EMNLP 2026, **non-archival**)

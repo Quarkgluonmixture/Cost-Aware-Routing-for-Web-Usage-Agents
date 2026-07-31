@@ -4,11 +4,11 @@ status: active
 priority: P0
 horizon: now
 order: 2
-blocker: "B2_reddit 收尾 (phantom_som 76/205 在跑, phantom_prompt 未起) ~07-26/27"
-eta: "k=6 重灌 07-27/28 → 两篇 REALM 稿 splice 数字 (deadline 08-05)"
+blocker: "B2_reddit 已齐 (36/36 conditions, 07-29 实证) — 原 blocker 解除。现串在 08-03 对账 → 骨架之后"
+eta: "k=6 重灌 → slotsheet 重生成 → 两篇 REALM 稿 splice (deadline 08-05 周三)。⚠️ h10 artifacts 最新仍是 07-22 的 k=5 版 (h10_artifact_regen_provenance_2026-07-22.md, 自标非提交终态) — 二次 promote 未做"
 detail: preregistration
 created: 2026-05-22
-updated: 2026-07-22
+updated: 2026-07-31
 ---
 
 # Analysis + gating (H1/H2/H3 + H10)

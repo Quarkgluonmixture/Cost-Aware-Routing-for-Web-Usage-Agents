@@ -5,10 +5,10 @@ priority: P2
 horizon: next
 order: 2
 blocker: ""
-eta: "🔄 A100 在跑（2026-07-29 实测）: B1×reddit×6mode queue_chain — dom ✅106 · som ✅106 · vision 🔄92/106 · 余 P-text/P-prompt/P-SoM；每 mode ~15h ⇒ 预计 07-31~08-01 齐"
+eta: "✅ **B1×reddit×6mode 已齐** (2026-07-31 15:01 收尾, 6 格 × 104/104 ep, sentinel OK, noise_rate 全 0)。SR: dom/P-text/P-prompt 各 17 · som 14 · P-SoM 12 · vision 10。🔄 **B0×reddit×6mode 07-31 16:18 发车** (~$62, ~3.5 天, ETA 08-04) — 学长的网站覆盖度理由: 真实网页视觉/文字比例均衡, 而 §95 实测 VWA 95.3% visual (剔除后仅剩 43 non-visual) vs WA 480 全算 non-visual。⭐ prereg §8.8 B-1296 的 Jaccard 注册预测**已超额兑现** (注册 50-task, 实跑 104 全量; 15 对全在 0.286-0.611, >0.7 零对, ≤0.5 有 11 对) → 见笔记 §405.6"
 detail: preregistration.md §8.8 B-1296 registered prediction
 created: 2026-07-16
-updated: 2026-07-29
+updated: 2026-07-31
 ---
 
 # WA 50 任务 pilot — 兑现注册预测 (插空任务)

@@ -4,11 +4,11 @@ status: pending
 priority: P1
 horizon: next
 order: 1
-blocker: "B2-red 完成释放 A100 (ETA ~07-25); 适配期可提前在 DGX 起步"
-eta: "适配 2026-07 下旬 (DGX); fire 2026-08 上旬 (A100, 12 conditions ≈ 2-2.5 周)"
+blocker: "等 WA-B0 chain 释放 A100 (~08-04) —— 同一 host 只能跑一条 site chain (/stress A2.11 P0-5)。原 blocker (B2-red 占 A100) 已解除"
+eta: "floor pilot 08-04 起 (几小时, 10 task × 15 step; ⚠️ 建议抬回 25×30 与 B1/B2 对齐否则 floor 判读无可比基线); pilot 通过则 12 conditions fire (A100, ≈ 2-2.5 周)"
 detail: docs/checkpoints/paper_planning §19 2026-07-16 row
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-31
 ---
 
 # B3 = MiMo-VL-7B 跨族扩展 (post-submission 第一优先)

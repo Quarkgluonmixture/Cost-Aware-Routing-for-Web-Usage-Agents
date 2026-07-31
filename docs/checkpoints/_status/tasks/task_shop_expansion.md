@@ -4,11 +4,11 @@ status: pending
 priority: P3
 horizon: backlog
 order: 9
-blocker: "B3 fire 完成后启动 (A100 serial; 18 conditions ≈ 4-5 周, 含 6 条 B0 proxy 依赖)"
-eta: "2026-09+ (期刊扩展版 / major revision 长线)"
+blocker: "① reset 实测 (实现已 land commit d78fd3b, 但需等 A100 空 ~08-04 才能测 —— 重建 68GB 镜像容器 + indexer reindex 会污染在跑 chain 的 latency); ② 磁盘: A100 42G 是硬上限 (443G 已用里 419G 是 ACTIVE docker images 删不掉), 12 cond × 435 ep ≈ 18.8G ⇒ 需边跑边 rsync 回 DGX"
+eta: "user 2026-07-31 决定重开 (原 P3/backlog/2026-09+ 已 supersede)。新论据 = router 标签供给, 不是站点泛化"
 detail: CLAUDE.md Phase 1b (shop × {B0,B1,B2} × 6 modes)
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-31
 ---
 
 # Shopping 扩展 (Phase 1b) — 期刊版长线, 刻意排后
