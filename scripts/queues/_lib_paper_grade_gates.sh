@@ -694,9 +694,18 @@ except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
     # B-642 (2026-05-17): _reset_rc captured from timeout-wrapped sub-bash above
     # (was `local rc=$?` pre-B-642 when reset_vwa_sites ran in current shell).
     local rc="${_reset_rc}"
-    # B-299 (A1.17 P0-3): rc=78 is the "not implemented" sentinel from
-    # _reset_vwa_local_shopping stub. Surface specific reason rather than generic
-    # "reset failed" so Phase 1b launch operator knows what to implement.
+    # B-299 (A1.17 P0-3): rc=78 is the "not implemented" sentinel a reset stub
+    # returns. Surface the specific reason rather than a generic "reset failed"
+    # so the launch operator knows what to implement.
+    #
+    # 2026-07-31: shopping was the last stub and is now implemented (docker rm +
+    # rebuild, see _reset_vwa_local_shopping) — all three sites return 0/1, so
+    # this branch is currently unreachable. Kept for any future site added as a
+    # stub first. ⚠️ 78 is overloaded in this file: acquire_site_lock (L159) and
+    # its sibling (L902) also return 78 for LOCK CONTENTION. Those are separate
+    # call paths that never reach this branch, but if a reset ever propagates a
+    # lock-contention 78 upward it would be misreported here as "not implemented"
+    # — give a new sentinel its own number rather than reusing 78.
     if [[ "${rc}" == "78" ]]; then
       echo "[${log_prefix}][error] reset NOT IMPLEMENTED for site=${site} (rc=78 sentinel)." >&2
       echo "[${log_prefix}][error] Implement reset_vwa_local_${site} body before paper-grade Phase 1b launch." >&2

@@ -293,18 +293,95 @@ _reset_vwa_local_reddit() {
     return 1
 }
 
-# reset_vwa_local_shopping — placeholder for Phase 1b
-# B-299 (A1.17 2026-05-16 cross-AI A+B P0): pre-fix returned `return 0` which the
-# reset_and_auth_gate treated as success → Phase 1b shopping fires would silently
-# proceed against dirty Magento state (cart/customer/session/search-cache from prior
-# condition). Now returns 78 ("not implemented" sentinel rc); gate translates to
-# hard-fail unless AUTH_GATE_BYPASS=1 explicitly set. Phase 1a (cls+red only) is
-# unaffected because it never calls _reset_vwa_local_shopping.
+# reset_vwa_local_shopping — docker rm + rebuild（shopping_final_0712 self-seeds）
+# B-299 (A1.17 2026-05-16 cross-AI A+B P0) left this as a `return 78` placeholder
+# that hard-failed the gate; implemented 2026-07-31 to unblock Phase 1b.
+#
+# Why rebuild rather than the SQL-restore the B-299 note called for: on the A100
+# self-host, `docker inspect vwa-shopping --format '{{json .Mounts}}'` is `[]` —
+# no volume, no bind mount, so Magento's MySQL data lives entirely in the
+# container's writable layer. `docker rm -f` destroys it with the container and
+# the rebuild comes up on the image's seed state. That makes shopping structurally
+# identical to reddit's postmill (both self-seeding images), so it takes the same
+# route. Enumerating dirty tables to truncate would be strictly more fragile here:
+# it has to stay exhaustive as tasks touch new tables, whereas "throw the container
+# away" cannot miss one. (SQL-restore is what a volume-backed deployment needs.)
+#
+# shopping_admin must be rebuilt in the same call: both sites share ONE container
+# (docker inspect confirms 7770 AND 7780 both bind to vwa-shopping), so passing
+# only `--sites shopping` would drop the 7780 mapping and leave admin unreachable.
+#
+# start_vwa_docker.sh already owns everything the rebuild needs afterwards —
+# Magento base_url patch (config:set + the authoritative SQL UPDATE + a DB-side
+# verify), cache:flush, and indexer:reindex polled to all-Ready (B-311; 5-10 min
+# on the 68GB image). Not reimplemented here.
+#
+# FAIL-CLOSED, and this is the part that matters: start_vwa_docker.sh's
+# find_running_container REUSES an existing container. So if `docker rm` fails,
+# start would quietly attach to the dirty container and report success — exactly
+# the silent-pass class B-299 was created to stop. The container ID is therefore
+# the sentinel: unchanged ID means the rebuild never happened, and that is a hard
+# failure rather than a warning.
 _reset_vwa_local_shopping() {
     local label="$1"
-    echo "[${label}][reset_vwa][local] shopping reset NOT YET IMPLEMENTED — Phase 1b launch blocked" >&2
-    echo "[${label}][reset_vwa][local] implement Magento SQL-restore + cache flush + cart truncate before Phase 1b" >&2
-    return 78
+    local _repo_root
+    _repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+    local old_id
+    old_id=$(docker inspect -f '{{.Id}}' vwa-shopping 2>/dev/null || echo "none")
+
+    docker rm -f vwa-shopping >/dev/null 2>&1 || true
+
+    # Rebuild + base_url patch + cache flush + indexer poll (all inside start_vwa_docker.sh).
+    if ! bash "${_repo_root}/scripts/vwa/start_vwa_docker.sh" \
+            --sites shopping,shopping_admin \
+            --hostname "${VWA_SHOPPING_HOSTNAME:-localhost}"; then
+        echo "[${label}][reset_vwa][local] shopping rebuild FAILED (start_vwa_docker.sh non-zero)" >&2
+        return 1
+    fi
+
+    local new_id
+    new_id=$(docker inspect -f '{{.Id}}' vwa-shopping 2>/dev/null || echo "none")
+    if [[ "${new_id}" == "none" ]]; then
+        echo "[${label}][reset_vwa][local] shopping container absent after rebuild" >&2
+        return 1
+    fi
+    if [[ "${new_id}" == "${old_id}" ]]; then
+        echo "[${label}][reset_vwa][local] shopping REBUILD DID NOT HAPPEN — container id unchanged (${old_id:0:12}). docker rm failed and start reused the dirty container; prior-condition cart/session state is still live." >&2
+        return 1
+    fi
+
+    # HTTP warm-up. The indexer poll inside start_vwa_docker.sh usually outlasts
+    # Magento's boot, but it polls the CLI rather than the storefront — a 500 from
+    # the web tier would go unnoticed there.
+    local i code
+    for i in $(seq 1 60); do
+        code=$(curl -sS -o /dev/null --max-time 5 -w "%{http_code}" \
+            "http://localhost:7770/" 2>/dev/null || echo "000")
+        [[ "${code}" == "200" ]] && break
+        sleep 3
+    done
+    if [[ "${code}" != "200" ]]; then
+        echo "[${label}][reset_vwa][local] shopping storefront warm-up TIMEOUT after 180s (last http=${code})" >&2
+        return 1
+    fi
+
+    # Informational only — the rebuild already guarantees seed state, so these are
+    # a baseline record for future comparison, NOT a gate. A failed query prints
+    # `?` rather than 0: an unreadable count must not read as "measured zero".
+    # MYSQL_PWD env injection per B-747 (keeps the password out of `ps auxe`).
+    local quotes orders customers searches
+    quotes=$(docker exec -e MYSQL_PWD=MyPassword vwa-shopping mysql -u magentouser magentodb -sN \
+        -e "SELECT COUNT(*) FROM quote;" 2>/dev/null || echo "?")
+    orders=$(docker exec -e MYSQL_PWD=MyPassword vwa-shopping mysql -u magentouser magentodb -sN \
+        -e "SELECT COUNT(*) FROM sales_order;" 2>/dev/null || echo "?")
+    customers=$(docker exec -e MYSQL_PWD=MyPassword vwa-shopping mysql -u magentouser magentodb -sN \
+        -e "SELECT COUNT(*) FROM customer_entity;" 2>/dev/null || echo "?")
+    searches=$(docker exec -e MYSQL_PWD=MyPassword vwa-shopping mysql -u magentouser magentodb -sN \
+        -e "SELECT COUNT(*) FROM search_query;" 2>/dev/null || echo "?")
+
+    echo "[${label}][reset_vwa][local] shopping OK (http=200, container ${old_id:0:12}→${new_id:0:12}; seed baseline: quote=${quotes}, sales_order=${orders}, customer_entity=${customers}, search_query=${searches}; shopping_admin 7780 shares this container)"
+    return 0
 }
 
 # reset_vwa_sites <site> [label]
