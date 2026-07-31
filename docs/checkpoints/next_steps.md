@@ -23,7 +23,49 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🔴 2026-07-29 最新交接 —— 先读这块，再读下面的历史块
+> ## 🔴 2026-07-31 最新交接 —— 先读这块
+>
+> ### 在跑的三条（**不要照抄下面的数字，用命令拉实时**）
+>
+> | 位置 | 什么 | 怎么查 |
+> |---|---|---|
+> | **A100** | WA reddit × **B0** × 6 mode chain（07-31 16:18 发车，~3.5 天，~$62） | `ssh condense-a100 "tail -5 ~/workspace/p79/logs/queue_chain_wa_red_b0_full_20260731_161808.log"` |
+> | **DGX** | mechanistic canonical sweep，**22 格**（不是 8 格），跑第 9 格起 | `tail -3 logs/mechanistic_canonical/*.log` · `ls results/mechanistic/canonical/*/pilot_summary.md \| wc -l` |
+> | **DGX** | MiMo-VL-7B 权重下载（为 B3 pilot 预备） | `grep SNAPSHOT_DONE logs/mimo_weights_pull.log` |
+>
+> ### user 本轮三条决定
+>
+> 1. **先跑 WA-B0，不是 MiMo pilot** —— 理由是网站覆盖度（学长：真实网页视觉/文字比例均衡；
+>    台账 §95 实测 VWA **95.3% visual**、剔除后只剩 43 个 non-visual，而 WA 480 个全算 non-visual）
+> 2. **sweep 跑满 22 格** —— 「要占，反正 dgx 免费」（此前建议跑完 P5 就停，已否决）
+> 3. **shop reset 要实现** —— 从 backlog 提为待办，见下
+>
+> ### ⛔ shop 的真 blocker：reset 根本没实现（不是磁盘）
+>
+> `reset_vwa_sites.sh:296-308` 的 `_reset_vwa_local_shopping()` 是 placeholder，`return 78`
+> → gate hard-fail（B-299 的 fail-closed 设计，pre-fix 的 `return 0` 会让 Phase 1b 静默地
+> 在脏 Magento 状态上跑）。要实现三件：**Magento SQL-restore + cache flush + cart truncate**。
+>
+> **实现路径已定位**：shopping 用 `docker run` from `shopping_final_0712` 镜像（68GB，自带
+> Magento + seed DB），与 reddit 的 postmill **同构** ⇒ 走「重建容器」路线即可；
+> `start_vwa_docker.sh` 已封装 base_url patch + cache flush + indexer poll。
+>
+> **另一个前置**（不挡实现，挡 fire）：A100 磁盘 42G free 是**硬上限**——443G 已用里 419GB 是
+> 5 个 ACTIVE docker images（三站容器在用，删不掉）。shop 12 conditions × 435 ep ≈ 18.8G
+> artifacts ⇒ 必须边跑边 rsync 回 DGX（`sync_a100_results.sh`）或等 2TB 扩容。
+>
+> ### 为什么 shop 值得重开（07-16 那次裁定没算这个角度）
+>
+> `router_label_supply_diagnosis`：6 格里 **4 格完全不可训**（需 ≥2 类各过 `N_MIN_CLASS_TRAIN=10`）。
+> 标签数 ≈ scored × 可解率，shop **435 scored** 是 cls(224) 的 2×，外推 B0_shop ~188 /
+> B1_shop ~107 ⇒ 可训 cell **2/6 → 4/9**。且这是 Paper B「瓶颈是标签产生率」主张的**可证伪检验**：
+> 变可训 = 论点精确化 + 一条阈值；不变 = 论点升级。两个方向都是增量。
+>
+> ### deadline
+> **08-05 REALM @ EMNLP**（今天 07-31，剩 5 天）。WA-B0 / sweep / B3 **都不在这条关键路径上** ——
+> Paper B 是 k-无关的（现在就能写完），Paper A 用 VWA 的 k=6 数据。骨架仍卡着下游三项。
+
+> ## 2026-07-29 交接（历史块）
 >
 > ### 现在卡在哪：等 user 标完 508 条结论
 >
