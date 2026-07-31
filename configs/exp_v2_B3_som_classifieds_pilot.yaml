@@ -49,8 +49,16 @@ backends:
     # DGX shared GB10: Stage-0 probe loaded MiMo (~16GB bf16) fine without the
     # VRAM gate; the sm_121 VRAM probe is unreliable, so disable the gate here.
     min_free_vram_gb: 0
-    # Generous headroom: thinking checkpoint emits <think> before the JSON
-    # action (greedy stops at EOS well under this; Stage-0 fit in 512).
-    max_new_tokens: 4096
+    # §339 official-usage audit action ① (2026-06-17→18), applied 2026-07-31:
+    # 4096 → 16384. The -RL thinking checkpoint emits <think>…</think> BEFORE
+    # the JSON action, so a cap sized for ordinary output can still truncate the
+    # action — and a truncated action parses as a failure, indistinguishable in
+    # the summary from a genuine capability floor. That is the one question this
+    # pilot exists to answer, so the cap must not be able to fake the answer.
+    # (Stage-0's 512-token fit was a no-scaffold probe, not an agent step.)
+    # Official MiMo-VL vision evals use 32768; 16384 keeps load/latency sane.
+    # Truncation rate is auditable with no schema change: step JSONL already
+    # records exact output_tokens, so truncated ⟺ output_tokens >= this cap.
+    max_new_tokens: 16384
     temperature: 0.0   # greedy (do_sample=False in agent); matches B0/B1/B2 + Stage-0
     mock_mode: false

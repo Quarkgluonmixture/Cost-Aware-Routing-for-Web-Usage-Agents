@@ -52,7 +52,10 @@ class LocalMiMoBackend:
                     "revision": config.get("revision"),
                     "quantization": config.get("quantization", "none"),
                     "device": config.get("device", "cuda"),
-                    "max_new_tokens": config.get("max_new_tokens", 4096),
+                    # §339 audit ①: 4096 → 16384. Thinking checkpoint emits
+                    # <think> before the JSON action, so a small cap truncates
+                    # the action and the failure masquerades as a model floor.
+                    "max_new_tokens": config.get("max_new_tokens", 16384),
                     "temperature": config.get("temperature", 0.0),
                     "top_p": config.get("top_p", 1.0),
                     "seed": config.get("seed"),
@@ -108,5 +111,22 @@ class LocalMiMoBackend:
                         f"paper_grade=True — cost telemetry contract violation. "
                         f"Unset paper_grade for dev pilot runs (B-813)."
                     )
+        # §339 audit ①: a truncated action parses as a failure, which in the
+        # summary is indistinguishable from a genuine capability floor — the one
+        # confusion this floor pilot cannot afford (cf. §341, where 10/10 "floor"
+        # failures turned out to be missing config_files + creds). output_tokens
+        # is an exact count, so reaching the cap means generation was cut off
+        # mid-action. Warn per occurrence; the post-hoc rate comes from step
+        # JSONL without a schema change (truncated ⟺ output_tokens >= cap).
+        _cap = int(self.config.get("max_new_tokens", 16384))
+        _emitted = meta.get("output_tokens")
+        if isinstance(_emitted, int) and _emitted >= _cap:
+            logger.warning(
+                "MiMo generation hit max_new_tokens=%d (output_tokens=%d) — action "
+                "likely truncated mid-emit. This step's failure is a config "
+                "artifact, NOT a model floor; raise the cap and re-run.",
+                _cap, _emitted,
+            )
+
         meta["infer_ms"] = infer_ms
         return action, meta
