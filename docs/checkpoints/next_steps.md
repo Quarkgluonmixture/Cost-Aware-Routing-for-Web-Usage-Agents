@@ -29,9 +29,21 @@ updated: 2026-07-29
 >
 > | 位置 | 什么 | 怎么查 |
 > |---|---|---|
-> | **A100** | WA reddit × **B0** × 6 mode chain（07-31 16:18 发车，~3.5 天，~$62） | `ssh condense-a100 "tail -5 ~/workspace/p79/logs/queue_chain_wa_red_b0_full_20260731_161808.log"` |
-> | **DGX** | mechanistic canonical sweep，**22 格**（不是 8 格），跑第 9 格起 | `tail -3 logs/mechanistic_canonical/*.log` · `ls results/mechanistic/canonical/*/pilot_summary.md \| wc -l` |
-> | **DGX** | MiMo-VL-7B 权重下载（为 B3 pilot 预备） | `grep SNAPSHOT_DONE logs/mimo_weights_pull.log` |
+> | **A100** | WA reddit × **B0** × 6 mode，**全量 104**（07-31 **19:54 UTC** 重发；16:18 那次 abort 了，见下）。实测 12.7min/ep ⇒ ETA **~08-06**，可能跨 08-05 但不在关键路径上 | `ssh condense-a100 "tail -5 ~/workspace/p79/logs/queue_chain_wa_red_b0_full104_20260731_195425.log"` |
+> | **DGX** | mechanistic canonical sweep，**22 格**（不是 8 格） | `ls results/mechanistic/canonical/*/pilot_summary.md \| wc -l` |
+> | **DGX** | MiMo-VL-7B 权重 ✅ **16G 已就位** | `grep SNAPSHOT_DONE logs/mimo_weights_pull.log` |
+>
+> ⏰ **三个时钟不一样，跨机器读 log 先对齐**：DGX = **BST(+1)** · A100 host = **UTC** ·
+> A100 的 `vwa-reddit` 容器 = **BST**（B-309/B-753 特意设，reddit 有相对时间任务）。
+>
+> ✅ **本轮已完成**：h10 **k=6** 二次 promote（witness `pre_run/h10_artifact_regen_provenance_2026-07-31.md`；
+> 结论未变，修的是「用 k=5 闸门描述 k=6 池」的 provenance 不一致）· `make analysis FAST=1` ·
+> shopping reset 实现（`d78fd3b`，**未实测**，等 A100 空）· B3 截断修复（`46ffa1e`）·
+> fire6_monitor 判据改 PID（已部署到 A100 cron）。
+>
+> ⚠️ **提交前必须再走 verdict-day 严格路径**：`make analysis` 是 routine 路径，
+> `fig0c` 带 `--allow-partial` 且输出打 **NON_PAPER_GRADE 水印**；提交终态走
+> `VERDICT_DAY_RUNBOOK`（不带该 flag，partial 数据 fail-closed exit 2）。
 >
 > ### user 本轮三条决定
 >
