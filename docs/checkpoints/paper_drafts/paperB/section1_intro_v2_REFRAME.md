@@ -58,10 +58,10 @@ screenshot annotated with numbered marks, paired with a legend naming them [@yan
 this fused representation is what most current systems ship.
 
 The question a deployment asks is not which of these is best in the abstract. It has a budget
-of model calls per task and has to spend it. It can spend one call on one channel. It can spend
-two on two different channels. It can spend two on the *same* channel, which costs the same and
-is almost never reported. Cost-aware model selection treats the first two options as the whole
-menu [@chen2023frugalgpt; @ding2024hybridllm; @ong2025routellm; @gupta2024cascades;
+of model calls per task and has to spend it. It can spend one call on one channel, or two on two
+different channels. It can also spend two on the *same* channel. That third option costs what
+the second one costs, and it is almost never reported alongside it. Cost-aware model selection
+treats the first two as the whole menu [@chen2023frugalgpt; @ding2024hybridllm; @ong2025routellm; @gupta2024cascades;
 @moslem2026routingsurvey], and its transfer to multi-step agents inherits that framing
 [@wang2026boundaryrouter; @li2026dmr].
 
@@ -82,38 +82,38 @@ on which is chosen; we group them because practitioners do not distinguish them.
 ### 1.2 Three findings about how to spend
 
 **The ceiling is real and partly counterfeit.** An oracle picking the best channel per task
-beats the best single mode by 3.45 to 16.07 points. That number motivates every routing paper,
-including the one we set out to write, and it is the wrong baseline. A union over arms grows
-whenever any arm is added, including an arm that adds no capability, such as a second run of a
-mode already on the menu. Repetition is not a small effect here: one
+beats the best single mode by 3.45 to 16.07 points. That gap is what motivates a router, and it
+is what motivated ours, but it is measured against the wrong thing. A union over arms grows
+whenever any arm is added, including an arm that adds no capability at all, such as a second run
+of a mode already on the menu. Repetition is not a small effect here: one
 screenshot-only agent reports pass@4 of 94.7% against pass@1 of 78.2% [@gupta2026molmoweb], a
 number offered as test-time scaling that reads equally well as the bar a representation gain
 must clear. Measured against same-condition replicates at matched arm count, one
 extra representation buys 1.97 to 8.65 points and one extra *rerun* buys 2.0 to 7.6 (§3.3). On
 classifieds with the strongest backbone the two are not separable: 7.14 against a 4.91 to 7.59
-band. On WebArena they are, 8.65 against 2.00 to 4.00. The correct statement of the routing
-opportunity is therefore a difference of differences, and it is much smaller than the headline.
+band. On WebArena they are, 8.65 against 2.00 to 4.00. What a router could win is therefore the gap
+between those two gains, not the headline gap, and on one of our two measured cells that
+difference is indistinguishable from zero.
 
 **The default is the expensive answer, and it does not earn the difference.** The fused mode is
 dearest in five of six cells, because the bill is driven by tokens per step and it carries both
-payloads. Its accuracy advantage over the better of the two single-channel alternatives is
-+2.23, +1.79, +1.48, +0.49, +0.00, -2.96 points across the six VWA cells and -2.88 on
-WebArena. The largest of these exactly equals the upper end of the measured rerun band, so
-**no cell shows a fusion advantage that clearly clears the floor**, while the premium ranges
-from +2.5% to +17.7% (§4.2). Nor does fusion appear to contribute a distinct kind of coverage:
-at matched arm count its uniquely solved tasks number 1 to 10 against the unannotated
-screenshot's 1 to 9, one cell ahead, three level, three behind. We state this as a bound rather
+payloads. Its accuracy advantage over the better single-channel alternative runs from +2.23 points down to
+-2.96 across the six VWA cells and is -2.88 on WebArena, while the premium it charges runs from
++2.5% to +17.7%. **The best of those advantages does not exceed the upper end of the measured
+rerun band, and no cell clears it** (§4.2). Nor does fusion appear to contribute a distinct kind of coverage.
+At matched arm count, the tasks it alone solves outnumber those the unannotated screenshot alone
+solves in one cell, tie in three and lose in three, on counts that never exceed ten. We state this as a bound rather
 than a null; §4.2 gives the four reasons it cannot be read as a demonstration that fusion adds
 nothing, the sharpest being that the rerun floor is measured on the other two channels.
 
-**Which channel to add reverses with the workload.** Adding one arm on top of the strongest
-single visual mode, against the reference of adding a *second* visual arm: on classifieds the
-second visual arm wins for three or four of the four text formalisations in every cell, and on WebArena
-reddit the text arm wins for four of four, by 8.65 against 2.88 points, clear of that
-benchmark's rerun floor by 4.65 (§4.3). This is one rule seen twice, not a claim that failed on
+**Which channel to add reverses with the workload.** We add one arm on top of the strongest
+single visual mode and ask whether a text arm beats a *second* visual one. On classifieds the
+visual arm wins, for three or four of the four text formalisations in every cell. On WebArena
+reddit the text arm wins, for all four, by 8.65 points against 2.88, clearing that benchmark's
+rerun floor by 4.65 (§4.3). This is one rule seen twice, not a claim that failed on
 one benchmark. That the best representation is conditional rather than fixed is known
 [@enomoto2026readmore], but there the conditioning variable is the model and both arms are text;
-here it is the workload, across text, pixels and their fusion. VWA specifies 40.0% of its goals with a reference image and WebArena specifies
+here it is the workload, across text, pixels and their fusion. VWA attaches a reference image to 33.7% of the goals we score and WebArena to
 none, so the two span a task-modality axis, and the sign of the comparison follows the axis. The
 mechanism is visible in the setup: the task's reference image is delivered to all six modes, so
 what the text-only modes lack is the *page* screenshot, and a task carrying its own reference
@@ -121,7 +121,7 @@ image is precisely the one that does not need one.
 
 ### 1.3 Why none of it is reachable per request
 
-Four formulations, three of them reported here for the first time in this setting.
+Four formulations, and the fourth obstruction is of a different kind from the first three.
 
 **Choosing the channel is not learnable because labels are produced at the success rate.** The
 identity of the cheapest successful mode exists only for solved tasks, so the six cells yield

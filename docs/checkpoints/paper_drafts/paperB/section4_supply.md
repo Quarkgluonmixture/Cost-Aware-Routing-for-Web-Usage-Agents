@@ -88,7 +88,7 @@ current web agents occupy the constraint is structural, because supervision arri
 the agent succeeds and that rate is what needed improving.
 
 One check outside this benchmark, with the same six modes and B1 on the reddit split of
-WebArena [@zhou2024webarena], whose tasks specify their goal in text alone where 40% of the ones
+WebArena [@zhou2024webarena], whose tasks specify their goal in text alone where 33.7% of the ones
 above attach a reference image. It behaves as predicted from a *more* favourable start: 32 of
 104 tasks are solvable, a higher rate than any B1 cell in Table 3, and all six classes appear,
 yet only one clears the per-class threshold (DOM, 17 of 32), leaving the cell untrainable for the
