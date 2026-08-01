@@ -85,6 +85,15 @@ over the fixed policy has a confidence interval excluding zero. **It does not, i
 still covers zero. That, and not the Pareto verdict alone, is why we do not read +5.42pp as a
 result.
 
+A cost-aware result that reports one cost axis invites the question of the others, so we
+recompute the frontier with latency added. It is a second axis rather than a restatement of the
+first: within a cell it spans 1.12x to 1.40x against cost's 1.12x to 1.63x, and on all three
+classifieds cells the cheapest mode is not the fastest. Adding it widens the frontier in three
+of six cells, once from a single mode to five (Appendix A.8). This cuts both ways and we state
+both. Dominance is strictly harder to achieve on three axes than two, so the finding above
+holds a fortiori; non-dominance is correspondingly cheaper to satisfy, which is a further
+reason we rest the verdict on the marginal-utility interval rather than on non-dominance.
+
 ### 5.4 The one significant cell, and why it does not help
 
 We test each cell's cost saving against a permutation null in which the task bundle (label,

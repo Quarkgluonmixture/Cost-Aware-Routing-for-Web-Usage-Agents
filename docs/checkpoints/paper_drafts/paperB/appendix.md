@@ -173,6 +173,27 @@ five decoder-confidence statistics. Thresholds are swept, not selected out of fo
 best signal is chosen per (cell, fraction) against realised outcomes, so every figure here is an
 upper bound on what an out-of-fold selection would deliver.
 
+### A.8 The multi-metric frontier of §5.3
+
+Latency and cost are computed per episode within a cell and never pooled across backbones.
+Tokens are reported as a check, not as an axis: the bill is computed from them.
+
+| cell | cost span | latency span | cheapest | fastest | success x cost | + latency |
+|---|---|---|---|---|---|---|
+| cls · B0 | 1.12x | 1.18x | Vision | SoM | SoM, Vision | SoM, Vision, P-prompt |
+| red · B0 | 1.13x | 1.40x | Vision | Vision | DOM, SoM, Vision | DOM, SoM, Vision, P-prompt |
+| cls · B1 | 1.46x | 1.20x | Vision | SoM | SoM, Vision | SoM, Vision |
+| red · B1 | 1.53x | 1.35x | Vision | Vision | SoM, Vision, P-text | SoM, Vision, P-text |
+| cls · B2 | 1.28x | 1.12x | Vision | SoM | Vision | DOM, SoM, Vision, P-text, P-prompt |
+| red · B2 | 1.63x | 1.23x | Vision | Vision | DOM, Vision | DOM, Vision |
+
+*Table 15: Non-dominated mode sets on two axes and on three. Adding tokens as a fourth changes
+nothing beyond what latency already changed, in every cell.*
+
+The independence is site-shaped rather than backbone-shaped: on all three classifieds cells the
+cheapest mode is the slowest of the image-bearing pair, and on all three reddit cells the
+cheapest mode is also the fastest.
+
 ## B. Derivations for the four relabelling routes
 
 §6 states the outcome of each route. This appendix gives the derivation.
