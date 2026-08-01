@@ -4,11 +4,11 @@ status: active
 priority: P0
 horizon: now
 order: 1
-blocker: "③④ 两半 (本卡 A-E 证据) 不依赖对账, 周末可写; ①② 两半 (ceiling 数字 + H3 双轴讲法) 等 08-03 对账 → 骨架"
+blocker: "⛔ **页数**: 正文 10 / 上限 8, 而 ①② 尚未定稿。两条便宜路(表内联/挪 Table 7)实测无效 ⇒ 溢出是字数, 下一刀必须删字。08-03 对账要拍 4 条: 删哪三页(建议砍 ②) / 标题退不退 / ②「不成立」认不认 / 六头二元那条路(跑不完)。看板 deliverables/duizhang_board_2026-08-03.html"
 eta: "2026-08-05 周三 (REALM @ EMNLP 2026, archival, 双盲 ACL, **8 页**)"
-detail: docs/checkpoints/实验笔记.md §398.8 (合并拍板) + §383.4 (证据)
+detail: 笔记 §398.8(合并拍板) + §406(噪声审计/跨 AI/③④ 落稿). ③ 已焊进 §3.3 + Appendix A.6; ④ 按跨 AI 加固(§6 四条路→五条开两条); ① 已打对折; ② 两条分支待拨开关
 created: 2026-07-22
-updated: 2026-07-31
+updated: 2026-08-01
 ---
 
 # REALM 稿 (合并 A+B) — 表征路由的上限真实存在, 但既不稳定也不可达
