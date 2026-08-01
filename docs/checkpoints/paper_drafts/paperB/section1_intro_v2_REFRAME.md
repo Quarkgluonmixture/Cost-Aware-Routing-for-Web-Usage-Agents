@@ -100,11 +100,17 @@ dearest in five of six cells, because the bill is driven by tokens per step and 
 payloads. Its accuracy advantage over the better single-channel alternative runs from +2.23 points down to
 -2.96 across the six VWA cells and is -2.88 on WebArena, while the premium it charges runs from
 +2.5% to +17.7%. **The best of those advantages does not exceed the upper end of the measured
-rerun band, and no cell clears it** (§4.2). Nor does fusion appear to contribute a distinct kind of coverage.
-At matched arm count, the tasks it alone solves outnumber those the unannotated screenshot alone
-solves in one cell, tie in three and lose in three, on counts that never exceed ten. We state this as a bound rather
-than a null; §4.2 gives the four reasons it cannot be read as a demonstration that fusion adds
-nothing, the sharpest being that the rerun floor is measured on the other two channels.
+rerun band, and no cell clears it** (§4.2). Nor does the fusion behave like an added capability. Its
+selling point is a specific mechanism, a correspondence between a mark in the image and an
+identifier in the text that neither single channel has, and a mechanism of that kind predicts
+coverage the others cannot reach. At matched arm count the tasks fusion alone solves outnumber
+those the unannotated screenshot alone solves in one cell, tie in three and lose in three. The
+counts never exceed ten, so this is a shape mismatch rather than a refutation, but the shape a
+distinct capability would produce is not the shape we observe. We state this as a bound rather
+than a null, and §4.2 gives the reasons, the sharpest being that the rerun floor is so far
+measured on the other two channels. One caveat we do *not* enter is the identity of the two
+cells where fusion is negative. One of them scores 0.99% and carries no information either way.
+The other is WebArena, which is the cell the next finding predicts fusion should lose.
 
 **Which channel to add reverses with the workload.** We add one arm on top of the strongest
 single visual mode and ask whether a text arm beats a *second* visual one. On classifieds the
@@ -141,8 +147,10 @@ cheap channel and escalates the least confident fraction to the fused one uses a
 larger information set than any pre-action router, which forecloses the reply that our features
 were weak. The oracle version of this cascade is the most attractive operating point we
 measure, paying double on only 2 to 22 tasks to buy 2.2 to 10.8 points for 2% to 12% more.
-A deployable signal recovers 0% to 50% of that headroom, and **no operating point in any of the
-four non-degenerate cells Pareto-beats simply running the fused mode on everything** (§5.3).
+A deployable signal recovers 0% to 50% of that headroom, and how much it recovers turns out not
+to be the binding quantity: **no operating point in any of the four non-degenerate cells
+Pareto-beats simply running the fused mode on everything** (§5.3), so even perfect recovery of
+the signal would be competing against a policy that needs no signal at all.
 The best fixed signal is not a confidence statistic at all but the episode's step count, at
 +0.5 to +1.0 points over a size-matched random escalation; the log-probabilities manage +0.1 to
 +0.4. Because the threshold is swept rather than selected out of fold, and the signal chosen per
@@ -153,9 +161,10 @@ predictability and operating points, and each invites the answer that a larger b
 better estimator would fix it. One obstruction does not. On the cell where two same-condition
 replicates exist, 49 of 224 tasks change outcome between runs, and of the 88 tasks on which the
 channels disagree, and which are therefore the only tasks a router can learn from, **45 are
-tasks we measured to flip** (§5.4). This is a lower bound: two of six arms were replicated, once
-each. A router asked to predict which channel wins is being fitted on labels that a rerun
-rewrites, and no amount of data repairs a target that is not reproducible.
+tasks we measured to flip** (§5.4). This is a lower bound, and the bound runs the
+favourable way: two of six arms were replicated, once each, so replicating more of them can only
+raise the fraction. A router asked to predict which channel wins is being fitted on labels that
+a rerun rewrites, and no amount of data repairs a target that is not reproducible.
 
 ### 1.4 Contributions
 
@@ -184,7 +193,9 @@ always-fused, each beating a different learned or heuristic router.
 Six modes, three backbones, two sites of VisualWebArena and the reddit split of WebArena,
 8,310 scored episodes. Cost is comparable within a cell only, the proxy-served backbone
 reporting a bill and the locally served ones an electricity-derived figure
-[@strubell2019energy], which is also why we do not route across backbones. Two workloads suffice
-to show a sign change and not to characterise the axis it turns on. §3.3 names the rerun
+[@strubell2019energy], which is also why we do not route across backbones. Two workloads cannot characterise the axis the
+reversal turns on, and two workloads with opposite signs are what it takes to establish that
+there is a reversal at all: fitting the dependence needs many points, showing the quantity is
+not a constant needs exactly two that disagree. We claim the second and not the first. §3.3 names the rerun
 quantity precisely: it is run-to-run variation including environment drift, not decoding
 stochasticity.
