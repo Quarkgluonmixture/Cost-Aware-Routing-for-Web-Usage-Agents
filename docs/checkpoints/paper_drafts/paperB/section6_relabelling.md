@@ -1,8 +1,30 @@
-## 6. Relabelling closes three routes and opens one
+## 6. Relabelling closes three routes and opens two
 
 Sections 4 and 5 leave an obvious question: if the supervision is the problem, change the
-supervision. Four redefinitions are available without collecting new data. Appendix B derives
+supervision. Five redefinitions are available without collecting new data. Appendix B derives
 each; the outcomes are what matter here.
+
+**Per-mode binary success drops the winner label entirely, and it is the strongest of the
+five.** §4's scarcity is a property of one target (*the identity of the winning mode*), not of
+the outcome matrix. A task no mode solved is not unlabelled; under a per-mode target it is six
+negative examples. Every cell therefore holds 1,218 or 1,344 observed (task, mode) binary
+outcomes, not 15–97. Fitting one out-of-fold success head $\hat p_m(x)$ per mode and taking the
+cheapest mode with $\hat p_m(x) \ge \tau$ needs neither a graded score nor a unique winner.
+
+We ran it, and it is the only formulation we tested that beats a fixed policy on both axes at a
+point estimate: at $\tau = 0.10$ on classifieds · B0 it reaches **29.91% at \$0.0705**, against
+the best single mode's 27.23% at \$0.0724, or **+2.68pp for 2.5% less**. Two things keep us from
+reporting that as a positive result. Against the baseline §3.2 argues is the one that matters,
+always-cheapest, it is **not** dominant but merely on the frontier (+4.91pp for +8.8%). And the
+threshold is post-hoc: twenty-one values were swept on one out-of-fold replay, the curve peaks
+at $\tau = 0.10$ and declines on both sides, and a frozen $\tau = 0.10$ transferred to reddit
+**failed** at 11.22% against DOM's 14.63% ($\Delta = -3.41$pp, 95% CI $[-7.80, +0.98]$).
+
+We therefore report it as the open route with the strongest prior, not as a result, and we
+withdraw any reading of §4 on which no estimator could exist. What §4 shows is that *the
+hindsight-winner target* is not produced at these success rates. A fully nested, pre-specified
+per-mode success model across all six cells is the experiment that would settle whether the
+routing failure is about supervision at all; we have not run it.
 
 **Continuous labels are closed by the benchmark.** Regressing on a graded quality signal would
 turn every episode into a training example regardless of whether it succeeded, but
@@ -42,13 +64,15 @@ screenshot, and it is defined only on solved tasks.
 | continuous target | would fix | fine | closed: benchmark score is binary |
 | pooled which-mode | fixed (260) | **fails** (56–57% conflict; in-sample modal agreement 79–84%) | wrong estimand |
 | triage (binary) | fine (203–224, every task) | fine | learnable, **and beaten by a fixed policy** (§5) |
+| **per-mode binary** | **fine (1,218–1,344 (task, mode) outcomes)** | fine | **open**: dominates best-single at a post-hoc τ, not always-cheapest; frozen transfer failed |
 | screenshot tier | fine, but only on solved tasks | fine (68–88% cross-backbone agreement, over solved tasks) | agreement measured; no tier classifier trained |
 
-*Table 7: The five supervision targets against the two requirements a trainable router needs.
+*Table 7: The six supervision targets against the two requirements a trainable router needs.
 Each closed route is closed for a different reason, which is what makes the negative result
 closed rather than provisional. Supply and identifiability are judged on that target's own
-denominator, which differs between the last two rows.*
+denominator, which differs across the last three rows.*
 
-The four closed routes fail in three distinct ways, namely supply, estimand and value failing
-separately, rather than one obstruction a better method might route around. The fifth row is not
-closed but unattempted, and it is the one we regard as worth attempting next.
+The three closed routes fail in three distinct ways (supply, estimand and value failing
+separately), rather than one obstruction a better method might route around. The two open rows
+are open for different reasons: the per-mode target has been attempted and is unresolved, the
+screenshot tier has not been attempted at all. Both are what we regard as worth doing next.

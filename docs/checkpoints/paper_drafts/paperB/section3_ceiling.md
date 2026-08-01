@@ -81,8 +81,8 @@ gets there.
 
 ### 3.3 How much of the accuracy half is reproducible by rerunning?
 
-The route half is a union over arms, so any added arm inflates it — including one that adds no
-capability, such as a rerun of a mode already in the menu. For runs $A, B$ of one (model, site,
+The route half is a union over arms, so any added arm inflates it, including one that adds no
+capability such as a rerun of a mode already in the menu. For runs $A, B$ of one (model, site,
 mode) the *rerun drop* $|A \setminus B| / n$ is that same functional, and it is the reference
 the accuracy half has to clear. We measure it on the three same-condition replicate pairs we
 hold, two on classifieds under B0 and one under B1 on the reddit split of WebArena
@@ -95,12 +95,26 @@ different mode added to DOM buys **4.81pp** against **2.00–4.00**, clearing it
 floor estimated from 50 paired tasks. Two backbones with different serving paths and two
 benchmarks agree.
 
-This does **not** make the +16.07pp noise: we hold one rerun arm, not five, and reruns saturate
-too. It establishes that the per-arm premium of representational diversity, at the margin a
-router operates on, is not resolvable against repetition — so the accuracy half is not a measure
-of complementarity between modes. The cost half is untouched, being accuracy-neutral and not a
-union. It also sharpens §§4–6: a router failing to recover the accuracy half is failing to
-recover a partly artefactual quantity.
+Pushed one step further, this reads as a challenge: if repetition buys what representation buys,
+is the ceiling just $\text{pass}@k$? Union-over-reruns is measurable on the pairs we hold. On
+classifieds · B0, two runs of the *cheapest* mode reach **31.70%**, which **exceeds the best
+single mode's 27.23%** and closes 27.8% of the 16.07pp gap, with no labels and no second
+representation. (Two runs of DOM reach only 22.32%, so this is mode-dependent, and Vision is the
+arm with the highest run-to-run discordance.)
+
+The cost axis is what separates them, and it separates them decisively. $\text{pass}@k$ runs
+every task $k$ times; the oracle runs each task once. Two runs of Vision cost \$0.12962 against
+the oracle's \$0.05777, so the oracle **strictly dominates** it, taking 11.60 points more success at
+45% of the price. The ceiling is not a resampling artefact, because it is a ceiling *under a
+single-episode budget*. What repetition does undercut is the reading of the accuracy half as
+complementarity, which is the claim we withdraw.
+
+So this does **not** make the +16.07pp noise: we hold one rerun arm, not five, reruns saturate,
+and any $k>1$ policy pays $k\times$. It establishes the narrower thing: the per-arm premium
+of representational diversity, at the margin a router operates on, is not resolvable against
+repetition. The cost half is untouched, being accuracy-neutral and not a union. It also sharpens
+§§4–6: a router failing to recover the accuracy half is failing to recover a partly artefactual
+quantity.
 
 **What the rerun drop is and is not.** Replicate runs are separated by days, and one of the
 three pairs sits on a site whose per-task reset is a no-op, so accumulated site state

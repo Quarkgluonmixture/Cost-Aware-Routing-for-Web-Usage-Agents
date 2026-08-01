@@ -30,13 +30,16 @@ as measurements rather than recommendations.
 
 ## 8. Discussion
 
-Within the regime we studied, a learned per-task mode router is not available, and the
-obstruction is the production rate of supervision rather than the hypothesis class, the label
-definition, or the estimator. The three obstructions differ in kind: §4's is arithmetic, §5's
-rests on a baseline choice we argue is correct, and §6's is that the escape routes fail for
-three separate reasons. We do not claim mode routing is unlearnable in general, that the
-ceiling is illusory, or that our router is the best possible one: §4.1 predicts trainability as
-agents improve, §3 measures a real ceiling, and §5.3 puts the failure at the policy comparison, not the prediction.
+Within the regime we studied, no learned per-task mode router we built is available, and the
+obstruction is the production rate of *winner* labels rather than the hypothesis class or the
+estimator. The obstructions differ in kind: §4's is arithmetic, §5's rests on a baseline choice
+we argue is correct, and §6's is that three escape routes fail for three separate reasons while
+two stay open. We do not claim mode routing is unlearnable in general, that the ceiling is
+illusory, that our router is the best possible one, or that no target admits enough supervision.
+§6's per-mode success target plainly does, and it is the one we could not close: it wins at a
+post-hoc threshold and fails on transfer, which is a different verdict from the one §4 delivers.
+§4.1 predicts trainability as agents improve, §3 measures a real ceiling, and §5.3 puts the
+triage failure at the policy comparison, not the prediction.
 
 Three implications follow. Practitioners should compare any proposed router against
 always-taking-the-cheapest-mode before building it, because in none of our six cells did

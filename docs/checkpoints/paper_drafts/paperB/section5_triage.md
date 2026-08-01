@@ -1,4 +1,4 @@
-## 5. Triage routing has the labels, the signal, and no value
+## 5. Triage routing has the labels and the signal, and still loses to a fixed policy
 
 Section 4's failure is about supply, so the obvious response is a target whose labels are not
 conditional on success. Triage is one: the label is whether *any* mode solves the task, defined
@@ -76,6 +76,14 @@ These are trade-off points, not wins. A deployment could rationally choose the r
 where 5.42 points of accuracy cost 0.3% more, but that is a judgement about how much accuracy
 is worth, not a demonstration that the router beats the free alternative, and it exists only
 in the highest-solvable reddit cell.
+
+Non-dominance alone would be too weak a bar to rest that on, since a degenerate router that
+collapses onto one fixed mode is non-dominated by construction, so we also report the
+marginal-utility test the pre-registration carries for exactly this purpose: whether the router's accuracy gain
+over the fixed policy has a confidence interval excluding zero. **It does not, in any cell**
+(`k_cells_router_strictly_better = 0/6`). The reddit · B0 row is the closest, and its interval
+still covers zero. That, and not the Pareto verdict alone, is why we do not read +5.42pp as a
+result.
 
 ### 5.4 The one significant cell, and why it does not help
 

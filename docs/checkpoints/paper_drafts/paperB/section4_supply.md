@@ -90,8 +90,8 @@ the agent succeeds and that rate is what needed improving.
 One check outside this benchmark, with the same six modes and B1 on the reddit split of
 WebArena [@zhou2024webarena], whose tasks specify their goal in text alone where 40% of the ones
 above attach a reference image. It behaves as predicted from a *more* favourable start: 32 of
-104 tasks are solvable, a higher rate than any B1 cell in Table 3, and all six classes appear —
-yet one clears the per-class threshold (DOM, 17 of 32), leaving the cell untrainable for the
+104 tasks are solvable, a higher rate than any B1 cell in Table 3, and all six classes appear,
+yet only one clears the per-class threshold (DOM, 17 of 32), leaving the cell untrainable for the
 same reason reddit · B0 is. A higher solve rate does not by itself buy a trainable label set,
 because labels concentrate on whichever mode is strongest. This run is exploratory and outside
 the pre-registered design; we report it as corroboration, not as a seventh cell, and do not

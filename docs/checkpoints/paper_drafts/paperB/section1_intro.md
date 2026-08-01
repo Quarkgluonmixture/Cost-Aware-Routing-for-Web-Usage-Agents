@@ -18,8 +18,7 @@ learned triage Pareto-dominates always taking the cheapest mode. Relabelling res
 The benchmark's score is binary, so there is no partial credit to regress on, and pooling
 across backbones restores supply while breaking identifiability, with 56–57% of shared tasks
 carrying contradictory labels. Asking only whether a task needs the screenshot does help,
-raising the attainable ceiling from 79–84% to 90–97% while manufacturing no new solve events. The binding constraint on learned routing for web agents is the production rate
-of supervision, and it belongs to the benchmark regime rather than to our estimator.
+raising the attainable ceiling from 79–84% to 90–97% while manufacturing no new solve events, and so does dropping the winner label for a per-mode success target, though that one has so far won only at a post-hoc threshold and failed on transfer. What binds is the production rate of *winner* labels, a property of the benchmark regime and of that target; we do not show that no estimator can route at this operating point, and §6 gives the one we could not close.
 
 ## 1. Introduction
 
@@ -51,8 +50,8 @@ outcome and picks the cheapest successful mode per task beats the strongest sing
 both axes at once, by 3.45 to 16.07 points of success rate and 13.7% to 35.3% of cost (§3).
 
 The accuracy side needs one calibration, which we supply rather than assume. A union over arms
-grows when any arm is added, including one that adds nothing — a rerun of a mode already in the
-menu. Against same-condition replicates, one rerun raises the same ceiling by 2.0 to 7.6 points
+grows when any arm is added, including one that adds nothing, such as a rerun of a mode already
+in the menu. Against same-condition replicates, one rerun raises the same ceiling by 2.0 to 7.6 points
 and the best *different* representation raises it by 4.8 to 7.1 (§3.3): at the margin, not
 separable. The cost half is untouched, and the negative result is only reinforced.
 
@@ -67,11 +66,12 @@ supervision is the identity of the cheapest mode that solved each task, and it e
 for tasks that were solved. At the success rates these agents reach that yields tens of
 examples per cell over six classes, and under the minimum-class threshold any practitioner
 would apply before fitting a multiclass model, four of six cells contain no trainable
-classifier at all (§4). No better estimator repairs this. Labels come into existence only
-when the agent succeeds, and no re-slicing of the supervision changes how many successes
-the benchmark produced.
+classifier at all (§4). This is a property of that target: the winning mode's identity comes
+into existence only when the agent succeeds, and no re-slicing of it changes how many successes
+the benchmark produced. A per-mode binary target escapes the scarcity and is the one route we
+leave open (§6).
 
-**Choosing whether to spend is learnable and still worthless.** A weaker router only decides,
+**Choosing whether to spend is learnable and still loses to a fixed policy.** A weaker router only decides,
 per task, whether to pay for the expensive mode. Its label asks whether the task is solvable
 by anything, so it is defined everywhere, and it is predictable above the best single
 covariate in most cells. Under fully nested cross-validation, where the mode choice, the
@@ -84,10 +84,10 @@ score.
 **Relabelling does not rescue either half.** Regressing on a graded quality signal is
 impossible because the benchmark's score is binary. Pooling labels across backbones fixes
 supply and breaks identifiability in exchange, since the features carry no model identity and
-more than half of the tasks shared between cells then carry contradictory labels. The one
-re-slicing that pays is to stop asking which of six modes and ask only whether the task needs
-the screenshot: the same features, the same solve events, and a materially higher ceiling
-(§6).
+more than half of the tasks shared between cells then carry contradictory labels. Two re-slicings survive: asking per mode whether it will
+succeed, which escapes the scarcity but has so far won only at a post-hoc threshold; and asking
+only whether the task needs the screenshot, which buys a materially higher ceiling from the same
+features and the same solve events (§6).
 
 Our contribution is therefore not a router. It is an account of why this router is
 unavailable at this operating point, stated in terms that transfer:
@@ -99,8 +99,8 @@ unavailable at this operating point, stated in terms that transfer:
    rate, and a demonstration that this is binding rather than incidental (§4).
 3. A triage result showing that adequate supply and adequate predictability are jointly
    insufficient, with a fixed policy as the baseline that matters (§5).
-4. A relabelling analysis that closes the obvious escape routes and identifies the one
-   that is open, together with the identifiability cost of pooling (§6).
+4. A relabelling analysis that closes three obvious escape routes and identifies the two that
+   remain open, together with the identifiability cost of pooling (§6).
 
 Two methodological findings generalise beyond this study. First, in a low-success regime a
 high AUROC is neither necessary nor sufficient for a triage policy to save money; what decides
