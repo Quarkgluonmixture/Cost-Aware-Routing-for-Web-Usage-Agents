@@ -116,6 +116,16 @@ repetition. The cost half is untouched, being accuracy-neutral and not a union. 
 §§4–6: a router failing to recover the accuracy half is failing to recover a partly artefactual
 quantity.
 
+The same reference retires a finer claim we had pre-registered. Decomposing the three
+image-free arms along their two knobs, text payload and prompt family, gives two set
+differences against the compound arm that pool at **1.35pp** and **2.09pp**, both with
+bootstrap intervals clear of zero. They are the same functional as the rerun drop, so they are
+directly comparable to it, and axis-1 falls below even the lowest floor we measured while
+axis-2 sits inside its lower half. Clearing a "different from zero" gate is weak evidence when
+two runs of one fixed configuration also clear it, so we report the decomposition as measured
+and withdraw the structural reading it was meant to license. The sign is positive in five of
+six cells on both axes; the magnitude is not one we can distinguish from repetition.
+
 **What the rerun drop is and is not.** Replicate runs are separated by days, and one of the
 three pairs sits on a site whose per-task reset is a no-op, so accumulated site state
 contributes alongside decoding non-determinism. The quantity is therefore run-to-run
