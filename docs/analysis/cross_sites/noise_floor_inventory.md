@@ -49,9 +49,9 @@ A floor is only interpretable against a gain of the **same functional at the sam
 | B1 · WA-red (n=104; floor n=50) | dom @ 16.35% | **4.81pp** (ptext) | 2.00 – 4.00pp | above the band by 0.81pp |
 | B1 · VWA-cls (n=224) | som @ 14.29% | **4.91pp** (vision) | — | no floor measured on this cell |
 | B2 · VWA-cls (n=224) | som @ 2.23% | **2.23pp** (vision) | — | no floor measured on this cell |
-| B0 · VWA-red (n=205) | dom @ 14.63% | **5.37pp** (som) | — | no floor measured on this cell |
-| B1 · VWA-red (n=205) | som @ 8.29% | **1.95pp** (pprompt) | — | no floor measured on this cell |
-| B2 · VWA-red (n=205) | dom @ 3.90% | **2.44pp** (vision) | — | no floor measured on this cell |
+| B0 · VWA-red (n=203) | som @ 14.78% | **4.93pp** (dom) | — | no floor measured on this cell |
+| B1 · VWA-red (n=203) | som @ 7.39% | **1.97pp** (pprompt) | — | no floor measured on this cell |
+| B2 · VWA-red (n=203) | dom @ 3.94% | **1.97pp** (vision) | — | no floor measured on this cell |
 
 Two cells carry a floor, and they differ in model family, benchmark and serving path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. On `B1 · WA-red` it lands **just outside**, by 0.81pp — above the floor, but of the same order, and on a floor estimated from only n=50. Neither cell shows a representation arm worth appreciably more than a rerun arm; one shows it worth no more at all.
 
@@ -67,9 +67,9 @@ Two cells carry a floor, and they differ in model family, benchmark and serving 
 | B1 · WA-red (n=104; floor n=50) | 16.35% | 30.77% | 14.42pp |
 | B1 · VWA-cls (n=224) | 14.29% | 24.55% | 10.27pp |
 | B2 · VWA-cls (n=224) | 2.23% | 7.14% | 4.91pp |
-| B0 · VWA-red (n=205) | 14.63% | 26.83% | 12.20pp |
-| B1 · VWA-red (n=205) | 8.29% | 12.68% | 4.39pp |
-| B2 · VWA-red (n=205) | 3.90% | 8.29% | 4.39pp |
+| B0 · VWA-red (n=203) | 14.78% | 26.11% | 11.33pp |
+| B1 · VWA-red (n=203) | 7.39% | 11.82% | 4.43pp |
+| B2 · VWA-red (n=203) | 3.94% | 7.39% | 3.45pp |
 
 ## 3. Consequence for the paper's four-step spine
 

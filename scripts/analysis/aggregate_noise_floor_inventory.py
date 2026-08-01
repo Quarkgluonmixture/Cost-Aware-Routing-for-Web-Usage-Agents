@@ -202,20 +202,45 @@ def _marginal_gain(succ: dict[str, dict[int, int]], tasks: list[int]) -> dict:
 
 
 def compute_vwa_margins() -> dict[str, dict]:
+    """Per-cell marginal gains, restricted to the CANONICAL SCORED universe.
+
+    `generate_per_task_sr.py` still emits the *collected* set — it is on the
+    `UNIVERSE_TRIAGE_PENDING` ratchet in `tests/test_universe_consumption_lint.py`
+    for exactly that reason — so reddit arrives with 205 rows including the two
+    AMENDMENT_08 protocol-excluded tasks (58, 160). The paper scores 203. We
+    intersect here rather than trusting the CSV; caught by the 2026-08-01 Phase 2
+    cross-AI audit after the first version of this file quoted n=205 for reddit.
+    """
     if not PER_TASK_CSV.exists():
         raise MissingInput(
             f"{PER_TASK_CSV} absent -- regenerate with:\n"
             "  .venv/bin/python3 scripts/analysis/generate_per_task_sr.py "
             "--out results/phantom_paper/per_task_sr.csv")
+    sys.path.insert(0, str(REPO))
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+
     cells: dict[str, list[dict]] = {}
     for r in csv.DictReader(PER_TASK_CSV.open()):
         cells.setdefault(r["cell_id"], []).append(r)
     out = {}
     for cid, rows in sorted(cells.items()):
-        tasks = list(range(len(rows)))
-        succ = {m: {i: (1 if int(float(rows[i][m])) >= 1 else 0) for i in tasks}
+        site = rows[0]["site"]
+        scored, sha = expected_scored_ids(site)
+        kept = [r for r in rows if int(r["task_id"]) in scored]
+        dropped = len(rows) - len(kept)
+        if dropped:
+            LOG.info("%s: dropped %d row(s) outside the canonical scored universe "
+                     "(%s, n=%d, sha=%s)", cid, dropped, site, len(scored), sha[:12])
+        if len(kept) != len(scored):
+            raise MissingInput(
+                f"{cid}: {len(kept)} rows after restriction but the canonical "
+                f"{site} universe has {len(scored)} -- refusing to report a "
+                "marginal gain on an incomplete cell")
+        idx = list(range(len(kept)))
+        succ = {m: {i: (1 if int(float(kept[i][m])) >= 1 else 0) for i in idx}
                 for m in MODE_KEYS}
-        out[cid] = _marginal_gain(succ, tasks)
+        out[cid] = _marginal_gain(succ, idx)
+        out[cid]["universe_sha"] = sha
     return out
 
 
@@ -395,9 +420,9 @@ def main(argv: list[str] | None = None) -> int:
         ("wa_red_B1", "B1 · WA-red (n=104; floor n=50)", f"{wlo:.2f} – {whi:.2f}pp", wlo, whi),
         ("cls_B1", "B1 · VWA-cls (n=224)", "—", None, None),
         ("cls_B2", "B2 · VWA-cls (n=224)", "—", None, None),
-        ("red_B0", "B0 · VWA-red (n=205)", "—", None, None),
-        ("red_B1", "B1 · VWA-red (n=205)", "—", None, None),
-        ("red_B2", "B2 · VWA-red (n=205)", "—", None, None),
+        ("red_B0", "B0 · VWA-red (n=203)", "—", None, None),
+        ("red_B1", "B1 · VWA-red (n=203)", "—", None, None),
+        ("red_B2", "B2 · VWA-red (n=203)", "—", None, None),
     ]
 
     data = {"generated_for_date": args.date, "clean_pairs": clean, "wa_floor": wa_floor,
