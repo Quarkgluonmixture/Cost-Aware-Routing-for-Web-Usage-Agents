@@ -28,10 +28,10 @@ user 逐条裁定 ✓认可 / ✗有问题 / ?不确定 → 导出 → Claude �
 | Phase | 状态 | 产出 |
 |---|---|---|
 | −1 清污 | ✅ | limitations 假陈述已改 |
-| **0 台账** | ✅ | **2033 条** `docs/reference/known/ledger.jsonl`；入口 `KNOWN.md`；查询 `known.py`；核验 `verify_ledger.py`（99.6% 可追溯） |
-| **0b 噪声地板** | ✅ | `docs/analysis/cross_sites/phase0b_noise_floor.md` —— 两对 clean replicate，**H3 两轴 1.35/2.09pp 均低于地板 4.9–7.6pp** |
-| **1 结论层** | ✅ | **253 节 / 9377 行** `known/conclusions/` —— **入口 `INDEX.md`（213 行，先读它）** |
-| 2 创新与反论 | ⬜ | 需先过台账过滤再发 cross-AI |
+| **0 台账** | ✅ | **2082 条**（2026-08-01 补 chunk 9：§398 整节此前 **0 条**，而 ③ 的出处正是 §398.2）`known/ledger.jsonl`；入口 `KNOWN.md`；查询 `known.py`；核验 99.5% |
+| **0b 噪声地板** | ✅ | `phase0b_noise_floor.md` + **`noise_floor_inventory.md`（2026-08-01）**。两轴 1.35/2.09pp 低于 B0 地板 4.9–7.6pp，**也低于新测的 B1 地板 2.0–4.0pp** ⇒ 地板不是 B0/MoE 特有。§7.1 头号待办（B1 replicate）**已关闭**：它一直免费存在于 WA pilot × full 重叠里 |
+| **1 结论层** | ✅ | **253 节 / 9377 行** `known/conclusions/` —— **入口 `INDEX.md`**。2026-08-01 补标 9 处（3 处内部不一致 + 6 处 stale） |
+| 2 创新与反论 | 🔓 **门已开** | blocker「需先过台账过滤」已解除 —— user 标完 508 条 + 2026-08-01 三桶处理完毕。**不依赖 08-03 对账，可随时发** |
 | **3 论文结构** | 🔶 **已拍板：两篇合并成一篇** | 见下 |
 | 4 重写 | ⬜ | deadline **08-05**（REALM @ EMNLP，archival，双盲 ACL，**8 页**） |
 | 5 memory/CLAUDE.md | ⬜ | |

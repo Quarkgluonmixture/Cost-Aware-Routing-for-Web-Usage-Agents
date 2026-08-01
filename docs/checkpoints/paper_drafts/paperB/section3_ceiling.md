@@ -78,3 +78,36 @@ That is why §2.5 measures against it. A useful router must land somewhere the o
 and always-cheapest does not: recover accuracy that always-cheapest gives up, or cost that it
 does not, without giving back the other. Sections 4 and 5 show that neither supervision target
 gets there.
+
+### 3.3 How much of the accuracy half is reproducible by rerunning?
+
+The route half is a union over arms, so any added arm inflates it — including one that adds no
+capability, such as a rerun of a mode already in the menu. For runs $A, B$ of one (model, site,
+mode) the *rerun drop* $|A \setminus B| / n$ is that same functional, and it is the reference
+the accuracy half has to clear. We measure it on the three same-condition replicate pairs we
+hold, two on classifieds under B0 and one under B1 on the reddit split of WebArena
+(Appendix A.6).
+
+The comparison must be made at equal arm count: the route half adds five arms, a rerun adds one.
+At one arm the two are not separable. On classifieds · B0 the best *different* mode added to SoM
+buys **7.14pp**, inside that cell's own **4.91–7.59** rerun band; on WebArena · B1 the best
+different mode added to DOM buys **4.81pp** against **2.00–4.00**, clearing it by 0.81pp on a
+floor estimated from 50 paired tasks. Two backbones with different serving paths and two
+benchmarks agree.
+
+This does **not** make the +16.07pp noise: we hold one rerun arm, not five, and reruns saturate
+too. It establishes that the per-arm premium of representational diversity, at the margin a
+router operates on, is not resolvable against repetition — so the accuracy half is not a measure
+of complementarity between modes. The cost half is untouched, being accuracy-neutral and not a
+union. It also sharpens §§4–6: a router failing to recover the accuracy half is failing to
+recover a partly artefactual quantity.
+
+**What the rerun drop is and is not.** Replicate runs are separated by days, and one of the
+three pairs sits on a site whose per-task reset is a no-op, so accumulated site state
+contributes alongside decoding non-determinism. The quantity is therefore run-to-run
+variation *including environment drift*, not decoding stochasticity, and we name it that
+way. For the comparison above that is the right quantity: the conditions in Table 1 were also
+collected over days, on the same infrastructure, and carry the same drift. It also means the
+locally served row is not evidence that a deterministic decoder yields deterministic episodes.
+Greedy decoding is bit-reproducible at the step level in our own checks; the episode is not,
+because the episode is not only the decoder.

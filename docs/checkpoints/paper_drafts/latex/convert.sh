@@ -81,12 +81,24 @@ case "$PAPER" in
       section6_relabelling.md
       section7_discussion.md
     )
-    EXPECTED_TABLES=13
+    EXPECTED_TABLES=14
     FIGURES=()
-    # Table 1 (the ceiling) is the headline and has six columns; it stays
-    # two-column so its header does not wrap to three lines. Tables 2-7 were
-    # rendered and checked at one column on 2026-07-27. The appendix has no page
-    # pressure, so its tables stay two-column.
+    # All body tables are single-column. Tables 1-7 were rendered and checked at
+    # one column on 2026-07-27; that change alone took the paper from 9 pages to
+    # 8 without cutting a word, because a table* only floats to a page top and a
+    # queue of them tips over into one page.
+    # (An earlier version of this comment claimed Table 1 stayed two-column. It
+    # had not been true since 2026-07-28 — corrected 2026-08-01.)
+    # 2026-08-01: §3.3 added. It briefly carried a 2-row body table; that one
+    # extra float took content from 8 to 10 pages, so it was inlined as prose and
+    # its per-pair detail moved to Appendix A.6 (which is why the count is 14, not
+    # 13 — the table exists, in the appendix). A two-row table is not worth a body
+    # float slot in this document.
+    # Two float experiments that did NOT help, recorded so they are not retried:
+    # inlining the §3.3 table left content at 10, and moving Table 7 to the
+    # appendix left it at 9. The remaining overflow is body prose volume, not
+    # float displacement, so the next page cut has to remove text.
+    # The appendix has no page pressure, so its tables stay two-column.
     SINGLE_COL_BODY='1 2 3 4 5 6 7'
     ;;
 esac

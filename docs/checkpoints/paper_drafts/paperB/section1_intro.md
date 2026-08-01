@@ -6,8 +6,10 @@ VisualWebArena with six observation modes, three model backbones, and two sites,
 report a negative result with a diagnosis. The ceiling is real and splits in two: an oracle
 that picks the cheapest successful mode per task gains 3.4 to 16.1 points of success rate over
 the best single mode while spending 13.7% to 35.3% less, and the accuracy-neutral half of that
-saving needs only a binary label where the accuracy-bearing half needs a per-mode one. Neither
-half survives supervision. Choosing *which* mode fails on supply: a label exists only where
+saving needs only a binary label where the accuracy-bearing half needs a per-mode one. The
+accuracy half is also less solid than it looks: measured against same-condition replicate runs,
+one extra representation buys what one extra rerun of the same mode buys, on two backbones and
+two benchmarks. Neither half survives supervision. Choosing *which* mode fails on supply: a label exists only where
 some mode succeeded, so at 7–43% solvable rates the six cells yield 15–97 labels each, and
 four of six admit no trainable classifier under a minimum-class filter. Choosing *whether* to
 spend has the supply and fails anyway: the label is defined everywhere and predictable at
@@ -47,6 +49,12 @@ The first thing to establish is that the opportunity is real, because a negative
 result is uninteresting if the modes are redundant. They are not. An oracle that sees the
 outcome and picks the cheapest successful mode per task beats the strongest single mode on
 both axes at once, by 3.45 to 16.07 points of success rate and 13.7% to 35.3% of cost (§3).
+
+The accuracy side needs one calibration, which we supply rather than assume. A union over arms
+grows when any arm is added, including one that adds nothing — a rerun of a mode already in the
+menu. Against same-condition replicates, one rerun raises the same ceiling by 2.0 to 7.6 points
+and the best *different* representation raises it by 4.8 to 7.1 (§3.3): at the margin, not
+separable. The cost half is untouched, and the negative result is only reinforced.
 
 What matters for the rest of the paper is that this ceiling decomposes, and the two pieces
 are not reachable by the same supervision. Deciding only whether to spend, without changing

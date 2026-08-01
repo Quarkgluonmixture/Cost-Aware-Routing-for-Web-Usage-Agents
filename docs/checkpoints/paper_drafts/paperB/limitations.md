@@ -1,3 +1,17 @@
+**The rerun reference of §3.3 is thin, and is an upper bound.** Three replicate pairs, two of
+them on one (backbone, site) and the third pooled over 50 paired tasks on a second benchmark.
+None of the six cells in Table 1 has a replicate of its own, so the rerun band is transferred
+across cells rather than measured within them, and cells served locally may sit lower than the
+API-served pairs. The band is therefore an upper bound on instability, which is the
+conservative direction for the *cost* half and the anti-conservative direction for our reading
+of the *accuracy* half — we state the comparison as "not separable at the margin" rather than
+as a subtraction, and we perform no arithmetic between the two quantities. A within-cell
+replicate on each of the six cells would settle it; that is the experiment we did not run.
+
+**We report no five-rerun ceiling.** §3.3 compares one added arm against one added arm. Whether
+five reruns would reach the five-mode union is unmeasured, and nothing in this paper should be
+read as claiming that they would.
+
 **Two sites, one benchmark.** Site-level effects and benchmark-level evaluation design
 (notably the binary score of §6) are not separable at this scale. A benchmark with graded
 outcomes could reopen that route without changing §4.

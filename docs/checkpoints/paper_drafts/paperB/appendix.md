@@ -108,6 +108,39 @@ between two backbones' labels directly rather than against a modal label. Under 
 exact-vector grouping the tier figures are 92.3% and 97.8%. No classifier is fitted to this
 target anywhere in the paper.*
 
+### A.6 The rerun reference of §3.3
+
+Three same-condition replicate pairs exist. Two are end-to-end reruns of landed classifieds
+conditions under B0, produced by a reproducibility exercise. The third was not run for this
+purpose: on the reddit split of WebArena a 10-task pilot draw and the subsequent full run use
+the *same* condition — the full configuration layer only removes the pilot's task-id filter —
+so their overlap on the pilot's tasks is a same-condition rerun, and we read it as one.
+
+| pair | n | $\lvert A \setminus B \rvert$ | $\lvert B \setminus A \rvert$ | discordance |
+|---|---|---|---|---|
+| cls · B0 · DOM | 224 | 7.14 | 4.91 | 12.05% |
+| cls · B0 · Vision | 224 | 7.59 | 6.70 | 14.29% |
+| WA-red · B1, 5 modes pooled | 50 | 2.00 | 4.00 | 6.00% |
+
+*Table 13: Run-to-run instability of a single fixed condition, in percentage points of the task
+universe. On both classifieds pairs every flip is trajectory divergence and step-0 start URLs
+agree on all 224 tasks, so none of it is reset contamination. On WebArena the flips fall
+entirely in Vision (2) and P-prompt (1); DOM, SoM and P-text are stable across all 30 of their
+paired tasks. P-SoM is excluded from that row because its early directory is a restarted
+partial of the full run rather than the pilot draw, and is reported alone: 3 one-directional
+flips over 26 shared tasks, a pattern that reads as state drift rather than symmetric noise.*
+
+Two properties of this reference matter for how §3.3 uses it. It is an **upper bound**: none of
+the six cells in Table 1 has a replicate of its own, so the band is transferred across cells,
+and locally served cells may sit lower than the API-served pairs. And it is run-to-run variation
+**including environment drift**, not decoding stochasticity — replicates are separated by days,
+and one sits on a site whose per-task reset is a no-op, so accumulated site state contributes
+alongside the model. For the §3.3 comparison that is the right quantity, because the conditions
+in Table 1 were also collected over days on the same infrastructure. It also means the locally
+served row is not evidence that a deterministic decoder yields deterministic episodes: greedy
+decoding is bit-reproducible at the step level in our own checks, and the episode is not,
+because the episode is not only the decoder.
+
 ## B. Derivations for the four relabelling routes
 
 §6 states the outcome of each route. This appendix gives the derivation.
@@ -202,7 +235,7 @@ one wants: a label moves if and only if the order's pick was not the measured ch
 | classifieds · B2 | 16 | 2 | 0 — **no** | 0 — **no** |
 | reddit · B2 | 15 | 2 | 0 — **no** | 0 — **no** |
 
-*Table 13: Trainability under the two label definitions. "Surviving" counts classes clearing ten
+*Table 14: Trainability under the two label definitions. "Surviving" counts classes clearing ten
 training rows in a five-fold split; **no** marks a cell with fewer than two, where no classifier
 exists. Four of six cells are untrainable under the reported label and five of six under the
 measured-cost alternative, so the supply argument does not depend on the choice.*
