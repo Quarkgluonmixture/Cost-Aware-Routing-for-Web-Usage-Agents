@@ -18,15 +18,24 @@ system, so cross-mode comparisons are between systems rather than within a task 
 per-task complementarity a router would exploit goes unmeasured. Work that varies observation
 content while holding the system fixed [@enomoto2026observation; @schiepanski2025d2snap]
 measures cost and accuracy but not per-task disagreement, which is what our §3 ceiling
-measures.
+measures. Two results bracket our §4. @enomoto2026readmore show the best representation is
+conditional rather than fixed, though on two text arms with model capability as the
+conditioning variable; and @gupta2026molmoweb train an 8B screenshot-only policy that surpasses
+set-of-mark agents built on much larger closed models, which is evidence against the fused
+representation's necessity from the modelling side where ours is from the accounting side.
 
 **Negative results and evaluation practice.** That nesting the operating-point selection changes
 conclusions [@cawley2010overfitting] and that the choice of baseline decides whether a saving
 exists are instances of concerns raised repeatedly in evaluation methodology
 [@lipton2018troubling], and specifically in web-agent evaluation, where reported progress has
 proved sensitive to harness and judging details [@xue2025illusion;
-@elhattami2025webarenaverified; @lu2025agentrewardbench; @he2025nondeterminism]. We report them
-as measurements rather than recommendations.
+@elhattami2025webarenaverified; @lu2025agentrewardbench; @he2025nondeterminism], and where 23
+repeats of a single tool-calling setup span 18.9 points [@bhat2026benchmarkingbenchmarks].
+Closest to our §3 is @hajimiri2026budgetmatched, who net three online augmentation methods
+against a token-matched baseline that simply buys more actor steps and find the gains largely
+disappear. We apply that accounting to the representation axis, where the matched alternative is
+not more steps but the same configuration run again. We report these as measurements rather than
+recommendations.
 
 ## 8. Discussion
 

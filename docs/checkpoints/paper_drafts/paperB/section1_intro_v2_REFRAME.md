@@ -27,30 +27,25 @@ STILL OPEN AT TIME OF WRITING
 
 ## Abstract
 
-A deployed web agent has a budget of model calls per task, and more than one way to spend it:
+A deployed web agent has a budget of model calls per task and more than one way to spend it:
 different observation channels, or the same channel more than once. We measure both in the same
-units on VisualWebArena and WebArena, across three backbones, six observation modes and 8,310
-scored episodes, and report a negative result about routing together with a positive one about how to
-spend. Three findings. First, the ceiling that motivates representation routing is partly
-counterfeit: adding a second, different representation raises the per-task oracle by 1.97 to
-8.65 points, and simply rerunning the representation already in hand raises it by 2.0 to 7.6,
-so on classifieds with the strongest backbone 69% to 106% of the apparent gain is reproducible
-without changing representation at all. Second, the mode the field defaults to does not earn
-its price: the fused mode carrying both an annotated screenshot and a mark legend is the
-dearest of the six in five of six cells, its accuracy advantage over the better of the two
-single-channel alternatives never clearly exceeds the measured rerun floor, it is negative in
-two cells, and at matched arm count its uniquely solved tasks do not outnumber those of the
-unannotated screenshot alone. Third, which channel to add reverses with the workload: on
-image-specified tasks a second visual view beats adding text, while on text-specified tasks
-adding text beats a second visual view by 8.65 against 2.88 points, clear of that benchmark's
-rerun floor. None of this is reachable per request. Four routing formulations fail, including a
-cascade escalating on the cheap run's own decoder confidence, a post-action signal strictly
-richer than the pre-action features the other three use, and no operating point of it
-Pareto-beats the fixed policy of always paying for the expensive mode. We give the reason that
-does not depend on our sample size: on the cell where replicates exist, 51% of the tasks on
-which the routing choice is even contested are tasks whose outcome we measured to change when
-the same configuration is rerun. Representation choice is a deployment-time configuration
-decision whose payoff must be netted against repetition, not a per-request routing opportunity.
+units across two benchmarks, three backbones, six observation modes and 8,310 scored episodes.
+Three findings. The ceiling that motivates representation routing is partly counterfeit: a
+second, different representation raises the per-task oracle by 1.97 to 8.65 points and a rerun
+of the representation already in hand raises it by 2.0 to 7.6, so in our largest cell 69% to
+106% of the apparent gain needs no change of representation. The mode the field defaults to
+does not earn its price: the fused representation is dearest in five of six cells, yet its
+advantage over the better single-channel alternative clears the measured rerun floor in none of
+them and is negative in two. And which channel to add reverses with the workload, from a second
+visual view on image-specified tasks to the text channel on text-specified ones, there by 8.65
+against 2.88 points and clear of that benchmark's floor. None of it is reachable per request:
+four routing formulations fail, including a cascade escalating on the cheap run's own decoder
+confidence, a post-action signal strictly richer than the pre-action features the others use,
+whose every operating point still loses to always paying for the expensive mode. The reason
+does not depend on our sample size. Where replicates exist, 51% of the tasks on which the
+routing choice is contested are tasks we measured to change outcome when the same configuration
+is rerun. Representation choice is a deployment-time configuration decision whose payoff must be
+netted against repetition, not a per-request routing opportunity.
 
 ## 1. Introduction
 
@@ -70,13 +65,11 @@ menu [@chen2023frugalgpt; @ding2024hybridllm; @ong2025routellm; @gupta2024cascad
 @moslem2026routingsurvey], and its transfer to multi-step agents inherits that framing
 [@wang2026boundaryrouter; @li2026dmr].
 
-Putting the third option on the menu is not our idea. @hajimiri2026budgetmatched give three
-online augmentation methods a token-matched vanilla baseline that simply spends the budget on
-more actor steps, and find that the vanilla baseline matches or surpasses all three, concluding
-that run-to-run variance should be reported as a core evaluation criterion. We ask their
-question of a different axis. Augmentation modules are added to an agent; a representation is
-what the agent *is*, it is the axis the routing literature is built on, and it is the one place
-where the matched alternative is not "more steps" but the identical configuration run again.
+Putting the third option on the menu is not our idea: a token-matched baseline that simply buys
+more actor steps already erases the gains of three online augmentation methods
+[@hajimiri2026budgetmatched]. We ask that question of a different axis. Augmentation is added to
+an agent, whereas a representation is what the agent *is*, and it is the one axis where the
+matched alternative is not more steps but the identical configuration run again.
 
 Throughout we treat the six observation modes we run as instruments for three deployment
 channels. **Text** is the accessibility tree or a mark legend, with either prompt family, four
@@ -92,12 +85,10 @@ on which is chosen; we group them because practitioners do not distinguish them.
 beats the best single mode by 3.45 to 16.07 points. That number motivates every routing paper,
 including the one we set out to write, and it is the wrong baseline. A union over arms grows
 whenever any arm is added, including an arm that adds no capability, such as a second run of a
-mode already on the menu. That repetition is not a small effect in this literature: a
-screenshot-only web agent reports pass@4 of 94.7% against pass@1 of 78.2% on WebVoyager
-[@gupta2026molmoweb], and 23 repeats of one tool-calling evaluation span 18.9 points, enough to
-reorder a leaderboard [@bhat2026benchmarkingbenchmarks]. Those numbers are usually presented as
-test-time scaling or as a reliability problem. We read them as the baseline a representation
-gain has to clear, and measure both sides in the same units. Measured against same-condition replicates at matched arm count, one
+mode already on the menu. Repetition is not a small effect here: one
+screenshot-only agent reports pass@4 of 94.7% against pass@1 of 78.2% [@gupta2026molmoweb], a
+number offered as test-time scaling that reads equally well as the bar a representation gain
+must clear. Measured against same-condition replicates at matched arm count, one
 extra representation buys 1.97 to 8.65 points and one extra *rerun* buys 2.0 to 7.6 (§3.3). On
 classifieds with the strongest backbone the two are not separable: 7.14 against a 4.91 to 7.59
 band. On WebArena they are, 8.65 against 2.00 to 4.00. The correct statement of the routing
@@ -105,30 +96,24 @@ opportunity is therefore a difference of differences, and it is much smaller tha
 
 **The default is the expensive answer, and it does not earn the difference.** The fused mode is
 dearest in five of six cells, because the bill is driven by tokens per step and it carries both
-payloads. Evidence against its necessity is accumulating from the modelling side: an 8B
-screenshot-only policy with no HTML or accessibility tree now surpasses set-of-mark agents built
-on much larger closed models [@gupta2026molmoweb]. We come at it from the accounting side, with
-the same backbone on both arms. Its accuracy advantage over the better of the two single-channel alternatives is
+payloads. Its accuracy advantage over the better of the two single-channel alternatives is
 +2.23, +1.79, +1.48, +0.49, +0.00, -2.96 points across the six VWA cells and -2.88 on
 WebArena. The largest of these exactly equals the upper end of the measured rerun band, so
 **no cell shows a fusion advantage that clearly clears the floor**, while the premium ranges
 from +2.5% to +17.7% (§4.2). Nor does fusion appear to contribute a distinct kind of coverage:
 at matched arm count its uniquely solved tasks number 1 to 10 against the unannotated
 screenshot's 1 to 9, one cell ahead, three level, three behind. We state this as a bound rather
-than a null. The counts are small, no interval accompanies them, the two cells in which fusion
-is outright worse are one WebArena cell and one cell whose absolute success rate is 0.99%, and
-the rerun floor itself is measured on DOM and Vision rather than on the fused mode.
+than a null; §4.2 gives the four reasons it cannot be read as a demonstration that fusion adds
+nothing, the sharpest being that the rerun floor is measured on the other two channels.
 
 **Which channel to add reverses with the workload.** Adding one arm on top of the strongest
 single visual mode, against the reference of adding a *second* visual arm: on classifieds the
-second visual arm wins for three of four text formalisations in every cell, and on WebArena
+second visual arm wins for three or four of the four text formalisations in every cell, and on WebArena
 reddit the text arm wins for four of four, by 8.65 against 2.88 points, clear of that
 benchmark's rerun floor by 4.65 (§4.3). This is one rule seen twice, not a claim that failed on
-one benchmark. That the best representation is conditional rather than fixed is itself known:
-@enomoto2026readmore show compact accessibility trees suit lower-capability models while verbose
-HTML suits higher-capability ones, and recommend selecting adaptively. Their two arms are both
-text and their conditioning variable is the model; ours are text against pixels against their
-fusion, and the conditioning variable is the workload. VWA specifies 40.0% of its goals with a reference image and WebArena specifies
+one benchmark. That the best representation is conditional rather than fixed is known
+[@enomoto2026readmore], but there the conditioning variable is the model and both arms are text;
+here it is the workload, across text, pixels and their fusion. VWA specifies 40.0% of its goals with a reference image and WebArena specifies
 none, so the two span a task-modality axis, and the sign of the comparison follows the axis. The
 mechanism is visible in the setup: the task's reference image is delivered to all six modes, so
 what the text-only modes lack is the *page* screenshot, and a task carrying its own reference
@@ -197,12 +182,9 @@ always-fused, each beating a different learned or heuristic router.
 ### 1.5 Scope
 
 Six modes, three backbones, two sites of VisualWebArena and the reddit split of WebArena,
-8,310 scored episodes (7,686 + 624). Cost is comparable within a cell only: the proxy-served backbone reports
-a bill and the locally served ones an electricity-derived figure [@strubell2019energy], which is
-also why we do not attempt to route across backbones. Two workloads is enough to show a sign
-change and not enough to characterise the axis along which it changes. The rerun floors come
-from replicates separated by days on a site whose per-task reset is a no-op, so the quantity is
-run-to-run variation including environment drift rather than decoding stochasticity; §3.3 argues
-this is the right quantity for the comparison and names it accordingly. Greedy decoding is
-bit-reproducible at the step level in our checks and the episode is still not reproducible,
-because the episode is not only the decoder.
+8,310 scored episodes. Cost is comparable within a cell only, the proxy-served backbone
+reporting a bill and the locally served ones an electricity-derived figure
+[@strubell2019energy], which is also why we do not route across backbones. Two workloads suffice
+to show a sign change and not to characterise the axis it turns on. §3.3 names the rerun
+quantity precisely: it is run-to-run variation including environment drift, not decoding
+stochasticity.
