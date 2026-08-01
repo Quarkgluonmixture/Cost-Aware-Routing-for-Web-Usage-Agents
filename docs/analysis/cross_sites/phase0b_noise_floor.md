@@ -274,7 +274,7 @@ in **B1 20.0% / B0 12.5%**, with within-group consistency **B1 1.000** / B0 0.86
 | plan item | outcome |
 |---|---|
 | clean vs pre-fix reported separately | ✅ clean ×2 done; **pre-fix arm impossible — data absent** |
-| API-served B0 vs locally-served B1/B2 | ⚠️ **B0 only.** No B1/B2 replicate exists on disk |
+| API-served B0 vs locally-served B1/B2 | ✅ **both, as of 2026-08-01.** B1 floor = 2.00 / 4.00 pp on WA-reddit (n=50), from the WA pilot × full-104 overlap that was already on disk. The row's old claim — *"no B1/B2 replicate exists"* — was true of `results/visualwebarena/` and false of the repo. See §7.1 |
 | is 6.7/7.6pp a vision artifact? | ✅ **No** — dom gives 4.9/7.1pp on the same (model, site) |
 | **"does H3 sit inside the noise?"** | ⚠️ **On the only cells where a floor exists, yes.** Both axes (1.35 / 2.09 pp pooled) fall below both B0·cls floors (4.9–7.6 pp). The floors are an upper bound and are B0-only; the locally-served cells are unmeasured. This does not overturn the *sign*, which is what `limitations.md` already claims — and no more |
 | axis-1/axis-2 id-regime hypothesis | ✅ regime map verified in source; hypothesis is **definitional**, its empirical residue needs a new design |
@@ -282,9 +282,27 @@ in **B1 20.0% / B0 12.5%**, with within-group consistency **B1 1.000** / B0 0.86
 
 ## 7. What would actually be needed
 
-1. **A locally-served (B1) same-mode replicate** — the only way to bound the floor for
-   the deterministic backbone; every measurement above is B0/MoE. Queues behind the WA
-   reddit run (~3 days, shared postmill container + `.auth/reddit_state.json`, B-647).
+1. ~~**A locally-served (B1) same-mode replicate**~~ — ✅ **DONE 2026-08-01, and it needed
+   no queue at all: the data was already on disk.** The WA 10-task pilot and the WA
+   full-104 run are the **same condition** (`exp_v2_wa_full_reddit_base.yaml` only deletes
+   `task.task_ids.reddit`), so their task overlap *is* a same-condition rerun. Pooled over
+   the registered pilot draw × 5 clean modes, **n=50**: self_drop **2.00 / 4.00 pp**,
+   discordance **6.00 %**. Flips concentrate entirely in vision (2) and P-prompt (1);
+   dom / som / P-text are 0 for 30 pairs.
+   → `noise_floor_inventory.{md,json}`, producer `aggregate_noise_floor_inventory.py`.
+
+   Two consequences. **(a)** The floor is *not* a B0/MoE artifact — a locally-served,
+   temperature-0, single-GPU backbone also has one, roughly half the B0 magnitude but
+   nowhere near zero. **(b)** It refutes the live `CLAIM_UNVERIFIED` *"B1 是完全确定性的
+   (do_sample=False 贪婪解码 → 重跑 bit-identical)"* and the 2026-07-29 decision
+   *"B1/B2 重跑地板不用测"*: both rested on **step-level** greedy determinism (§298.2
+   133/133, §397.10 within-group 1.000), which is real and is a **different property** —
+   an episode also carries site state, wall-clock and session lifetime.
+
+   ⚠️ Scope: this is WA, not VWA; n=50; and the two runs are days apart on a site whose
+   `require_reset` is a no-op (§402), so the quantity is **run-to-run including
+   environment drift**, never *decoding stochasticity*. For the §2 comparison that is the
+   right quantity — the paper's own conditions were also run days apart.
 2. **A SoM-mode replicate** to decide §299.4's −3.2pp.
 3. **A correctly-specified null for complementarity** — one preserving each task's
    cross-arm difficulty correlation (task-difficulty-stratified or copula-style),

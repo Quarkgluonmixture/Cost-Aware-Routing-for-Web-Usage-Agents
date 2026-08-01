@@ -205,6 +205,11 @@ reddit 69/72 恰好 has_image=True 故修前被 visual_fp 路径短路。
 
 ### 2.5 ⚠️ 矛盾：prereg 与代码曾不一致
 
+> ✅ **已关闭，2026-08-01。** user 裁定备注「上游删除」——该表述已由 RETRACTED §115.1
+> 作废，`preregistration.md` 里的那行不再存在。整套 post-hoc FP 体系亦已随
+> `compute_adjusted_success` 退役（success canonical，见 memory
+> `reference_fp_architecture_2026-05-14`），B-86 经 B-991 关闭。**本条无下游影响。**
+
 §95（04-24）已删 visual_fp，但 `preregistration.md` line 197 一度写
 *"FP filter primary = na_fp + eval_fp + visual_fp combined"*，该表述由 **RETRACTED §115.1** 作废。
 台账在 §95 的**四条**记录上都挂了这个 flag。
@@ -253,7 +258,15 @@ B1 本地推理天然结构化（`do_sample=False` + `max_new_tokens=384`），B
 
 ### 3.4 解析链路与 tool calling 的公平性裁定
 
-**链路定档**（§67 04-15）：`tool_use → text parse (json.loads → regex) → GLM extract → keyword fallback`。
+> 🚫 **链路里的 GLM 一环已物理退役，2026-08-01 补标。** §210（B-991）从
+> `proxy_api_agent.py` 删了约 155 LOC，`use_glm_fallback: true` 现在**无条件 raise
+> RuntimeError**。当前链路 = `tool_use → text parse (json.loads → regex) → keyword fallback`。
+> **公平性裁定本身仍生效**（方案 A 是输出格式切换不改推理能力），而且退役之后它更成立了——
+> 原先「B0 有 GLM 兜底而 B1 没有」正是 B-86 那条不对称的来源。
+> 另：`tool_choice` 已从 `"auto"` 改 `"required"`（Fire-6 RCA 2026-05-20，B-1794：
+> proxy 下 `auto` emit **0%** tool call）。
+
+**链路定档**（§67 04-15，**GLM 一环已删**）：`tool_use → text parse (json.loads → regex) → GLM extract → keyword fallback`。
 
 **公平性裁定原文**（§67）：
 - 方案 A（tool calling）是 **API 层输出格式切换，不改推理能力**；
@@ -1043,6 +1056,11 @@ CSV 不含 benchmark 列导致 **WA shopping 85 个任务被 VWA visual 列表�
 > **读这一节前先知道**：CLAUDE.md 记载 advisor 2026-05-14 *"mechanism 部分先不要管了"*，
 > §5（activation patching / layer probe / logit lens / SAE）整个暂搁。**以下是搁置前的裁定，
 > 对当前 paper scope 不生效**，保留是因为它们解释了"为什么当时那么做"。
+>
+> ⚠️ **「搁置」指的是 paper scope，不是进程，2026-08-01 补标。** mechanistic canonical
+> sweep **仍在 DGX 上跑**（驱动 pid 2386755，22 格）。两件事被这句标题混成了一件：
+> *不进本篇论文*（真）与 *实验停了*（假）。它不挡任何东西——DGX 就是留给
+> dev / curation / mechanistic 的共享争抢机，paper-grade fire 2026-05-14 已迁 A100。
 
 - **§111.1（05-06）三件套 hand-rolled**（因 **nnsight wheel 在 aarch64/GB10 build 失败**）：
   `p79/mechanistic/{extract_hidden_states, linear_probe, activation_patching}.py` +

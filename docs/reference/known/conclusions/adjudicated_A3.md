@@ -568,6 +568,13 @@ cls / shopping / shopping_admin 不动。理由：**postmill 无显式 Logout �
 
 ### 9.4 GLM sidecar / digest 工具的健壮性
 
+> 🚫 **整节 RETIRED，2026-08-01 补标。** digest 管线已按 §196 Q4（Option α）全部退役——
+> 删 `_run_auto_digest` / `_check_digest_completions` / `_purge_digest_records{,_batch}` /
+> `_count_failed_episodes_by_mode` / `_DIGEST_MODES` / `--glm-config` / `--digest-dir`，
+> 6 个 queue 脚本同步去 flag；GLM rescue 本体在 §210（B-991）物理删除。
+> **现存等价物 = `/diag` skill**（`analyze_reason_diagnostics.py` 保留为 operator 手动工具）。
+> 下面的健壮性裁定只作历史，**不要照着修任何还在跑的东西**。
+
 - **§202**：phantom → canonical 映射按 **surface-similarity（图像+文本格式）而非信息深度**，
   依据 memory `project_phantom_space_axes_format_not_information`（**`[SOM_MARKS]` 是 flattened AXTree，1.00× chars**）。
   **只有 DIGEST 决策分支用 `canonical_mode`，原 `obs_mode` 保留给下游 phantom-vs-canonical 分析。**

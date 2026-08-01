@@ -1,0 +1,299 @@
+{
+  "generated_for_date": "2026-08-01",
+  "clean_pairs": [
+    {
+      "n": 224,
+      "sr_a": 0.17410714285714285,
+      "sr_b": 0.15178571428571427,
+      "self_drop_a_to_b_pp": 7.142857142857142,
+      "self_drop_b_to_a_pp": 4.910714285714286,
+      "discordance_pct": 12.053571428571429,
+      "flip_tasks_a_to_b": [
+        4,
+        5,
+        10,
+        11,
+        23,
+        40,
+        45,
+        60,
+        61,
+        79,
+        87,
+        132,
+        146,
+        152,
+        183,
+        222
+      ],
+      "flip_tasks_b_to_a": [
+        16,
+        25,
+        52,
+        56,
+        93,
+        110,
+        137,
+        153,
+        174,
+        181,
+        217
+      ],
+      "label": "B0.cls.dom",
+      "scope": "B0 x classifieds, canonical n=224",
+      "arm_a": "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557/phase1_dom_router_0",
+      "arm_b": "results/repro_replicates/B0_dom_classifieds_R31194_clean_replicate/phase1_dom_router_0"
+    },
+    {
+      "n": 224,
+      "sr_a": 0.25,
+      "sr_b": 0.24107142857142858,
+      "self_drop_a_to_b_pp": 7.5892857142857135,
+      "self_drop_b_to_a_pp": 6.696428571428571,
+      "discordance_pct": 14.285714285714285,
+      "flip_tasks_a_to_b": [
+        45,
+        48,
+        52,
+        60,
+        79,
+        90,
+        97,
+        110,
+        123,
+        139,
+        151,
+        174,
+        179,
+        186,
+        187,
+        203,
+        222
+      ],
+      "flip_tasks_b_to_a": [
+        2,
+        50,
+        54,
+        56,
+        63,
+        64,
+        115,
+        116,
+        118,
+        137,
+        160,
+        161,
+        170,
+        192,
+        217
+      ],
+      "label": "B0.cls.vision",
+      "scope": "B0 x classifieds, canonical n=224",
+      "arm_a": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/phase1_vision_router_0",
+      "arm_b": "results/repro_replicates/B0_vision_classifieds_R24792_clean_replicate/phase1_vision_router_0"
+    }
+  ],
+  "wa_floor": {
+    "n": 50,
+    "self_drop_a_to_b_pp": 2.0,
+    "self_drop_b_to_a_pp": 4.0,
+    "discordance_pct": 6.0,
+    "per_mode": {
+      "dom": {
+        "n": 10,
+        "sr_a": 0.2,
+        "sr_b": 0.2,
+        "self_drop_a_to_b_pp": 0.0,
+        "self_drop_b_to_a_pp": 0.0,
+        "discordance_pct": 0.0,
+        "flip_tasks_a_to_b": [],
+        "flip_tasks_b_to_a": []
+      },
+      "som": {
+        "n": 10,
+        "sr_a": 0.3,
+        "sr_b": 0.3,
+        "self_drop_a_to_b_pp": 0.0,
+        "self_drop_b_to_a_pp": 0.0,
+        "discordance_pct": 0.0,
+        "flip_tasks_a_to_b": [],
+        "flip_tasks_b_to_a": []
+      },
+      "vision": {
+        "n": 10,
+        "sr_a": 0.1,
+        "sr_b": 0.1,
+        "self_drop_a_to_b_pp": 10.0,
+        "self_drop_b_to_a_pp": 10.0,
+        "discordance_pct": 20.0,
+        "flip_tasks_a_to_b": [
+          597
+        ],
+        "flip_tasks_b_to_a": [
+          652
+        ]
+      },
+      "ptext": {
+        "n": 10,
+        "sr_a": 0.2,
+        "sr_b": 0.2,
+        "self_drop_a_to_b_pp": 0.0,
+        "self_drop_b_to_a_pp": 0.0,
+        "discordance_pct": 0.0,
+        "flip_tasks_a_to_b": [],
+        "flip_tasks_b_to_a": []
+      },
+      "pprompt": {
+        "n": 10,
+        "sr_a": 0.3,
+        "sr_b": 0.4,
+        "self_drop_a_to_b_pp": 0.0,
+        "self_drop_b_to_a_pp": 10.0,
+        "discordance_pct": 10.0,
+        "flip_tasks_a_to_b": [],
+        "flip_tasks_b_to_a": [
+          607
+        ]
+      }
+    },
+    "scope": "B1 x WA-reddit, registered 10-task pilot draw x 5 modes",
+    "psom_restart_pair": {
+      "n": 26,
+      "sr_a": 0.3076923076923077,
+      "sr_b": 0.19230769230769232,
+      "self_drop_a_to_b_pp": 11.538461538461538,
+      "self_drop_b_to_a_pp": 0.0,
+      "discordance_pct": 11.538461538461538,
+      "flip_tasks_a_to_b": [
+        30,
+        69,
+        404
+      ],
+      "flip_tasks_b_to_a": [],
+      "scope": "B1 x WA-reddit, P-SoM: 20260727 dir is a RESTARTED PARTIAL of the full run (task ids 27..584, 2/10 overlap with the registered draw), NOT the pilot -- different comparison, reported separately, never pooled above"
+    }
+  },
+  "margins": {
+    "cls_B0": {
+      "n": 224,
+      "best_mode": "sr_som",
+      "best_single_sr_pct": 27.232142857142854,
+      "oracle_6mode_sr_pct": 43.30357142857143,
+      "gain_5_arms_added_pp": 16.071428571428577,
+      "gain_1_best_distinct_arm_pp": 7.142857142857142,
+      "gain_1_best_distinct_arm_mode": "sr_dom",
+      "gain_1_second_arm_pp": 6.696428571428571
+    },
+    "cls_B1": {
+      "n": 224,
+      "best_mode": "sr_som",
+      "best_single_sr_pct": 14.285714285714285,
+      "oracle_6mode_sr_pct": 24.553571428571427,
+      "gain_5_arms_added_pp": 10.267857142857142,
+      "gain_1_best_distinct_arm_pp": 4.910714285714286,
+      "gain_1_best_distinct_arm_mode": "sr_vision",
+      "gain_1_second_arm_pp": 3.571428571428571
+    },
+    "cls_B2": {
+      "n": 224,
+      "best_mode": "sr_som",
+      "best_single_sr_pct": 2.232142857142857,
+      "oracle_6mode_sr_pct": 7.142857142857142,
+      "gain_5_arms_added_pp": 4.910714285714285,
+      "gain_1_best_distinct_arm_pp": 2.232142857142857,
+      "gain_1_best_distinct_arm_mode": "sr_vision",
+      "gain_1_second_arm_pp": 1.7857142857142856
+    },
+    "red_B0": {
+      "n": 205,
+      "best_mode": "sr_dom",
+      "best_single_sr_pct": 14.634146341463413,
+      "oracle_6mode_sr_pct": 26.82926829268293,
+      "gain_5_arms_added_pp": 12.195121951219514,
+      "gain_1_best_distinct_arm_pp": 5.365853658536586,
+      "gain_1_best_distinct_arm_mode": "sr_som",
+      "gain_1_second_arm_pp": 4.878048780487805
+    },
+    "red_B1": {
+      "n": 205,
+      "best_mode": "sr_som",
+      "best_single_sr_pct": 8.292682926829269,
+      "oracle_6mode_sr_pct": 12.682926829268293,
+      "gain_5_arms_added_pp": 4.390243902439024,
+      "gain_1_best_distinct_arm_pp": 1.951219512195122,
+      "gain_1_best_distinct_arm_mode": "sr_pprompt",
+      "gain_1_second_arm_pp": 1.4634146341463417
+    },
+    "red_B2": {
+      "n": 205,
+      "best_mode": "sr_dom",
+      "best_single_sr_pct": 3.902439024390244,
+      "oracle_6mode_sr_pct": 8.292682926829269,
+      "gain_5_arms_added_pp": 4.390243902439025,
+      "gain_1_best_distinct_arm_pp": 2.4390243902439024,
+      "gain_1_best_distinct_arm_mode": "sr_vision",
+      "gain_1_second_arm_pp": 1.4634146341463417
+    },
+    "wa_red_B1": {
+      "n": 104,
+      "best_mode": "dom",
+      "best_single_sr_pct": 16.346153846153847,
+      "oracle_6mode_sr_pct": 30.76923076923077,
+      "gain_5_arms_added_pp": 14.423076923076925,
+      "gain_1_best_distinct_arm_pp": 4.807692307692308,
+      "gain_1_best_distinct_arm_mode": "ptext",
+      "gain_1_second_arm_pp": 4.807692307692308
+    }
+  },
+  "head_to_head": [
+    [
+      "cls_B0",
+      "B0 · VWA-cls (n=224)",
+      "4.91 – 7.59pp",
+      4.910714285714286,
+      7.5892857142857135
+    ],
+    [
+      "wa_red_B1",
+      "B1 · WA-red (n=104; floor n=50)",
+      "2.00 – 4.00pp",
+      2.0,
+      4.0
+    ],
+    [
+      "cls_B1",
+      "B1 · VWA-cls (n=224)",
+      "—",
+      null,
+      null
+    ],
+    [
+      "cls_B2",
+      "B2 · VWA-cls (n=224)",
+      "—",
+      null,
+      null
+    ],
+    [
+      "red_B0",
+      "B0 · VWA-red (n=205)",
+      "—",
+      null,
+      null
+    ],
+    [
+      "red_B1",
+      "B1 · VWA-red (n=205)",
+      "—",
+      null,
+      null
+    ],
+    [
+      "red_B2",
+      "B2 · VWA-red (n=205)",
+      "—",
+      null,
+      null
+    ]
+  ]
+}

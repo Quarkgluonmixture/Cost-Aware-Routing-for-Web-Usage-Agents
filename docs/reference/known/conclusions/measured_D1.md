@@ -1216,6 +1216,13 @@ Top-7 cluster 共享 signature (§113.2): task 0 blue kayak / 81 hurricane book 
 - 原文两处均标「不一致未 reconcile, 不要合并」。(注: 两组均属已作废的 visual_fp 时代定义。)
 
 ### C3. VWA visual task 占比的两套定义
+
+> ⛔ **合并稿不报这个量，2026-08-01 裁定（§406）。** 两套定义原文明写「不可比、不可互换
+> 引用」，且它不承载四步骨架 ①②③④ 任何一步。
+> **要谈 VWA↔WA 的视觉/文字对比，改用 by-construction 的结构事实**：VWA reddit
+> **84/210 = 40.0%** 的 task 带 goal-side reference image；WA reddit **0/106**（task schema
+> 里没有 `image` 字段）。那是数文件得到的，绕开本条的全部争议。
+> ⚠️ 并因此收窄一句：「VWA 全是视觉任务」结构上偏强——只有 40% 带目标图。
 - **§89 自动列表** (`_load_visual_task_ids`): cls **69.2%** / reddit **84.3%** / shopping **57.7%**
 - **§95 Codex 手动审计**: VWA 整体 **95.3%**; cls **96.2%** / reddit **99.5%** / shopping **92.9%**
 - 原文: 「两种不同定义, 数字**不可比、不可互换引用**」。另: §95 审计文件 docstring 写 'manual' 实际是 codex 判定, §100 要求重新独立审计。
@@ -1250,6 +1257,10 @@ Top-7 cluster 共享 signature (§113.2): task 0 blue kayak / 81 hurricane book 
 - [聚合者推论] 可能是"非交互"判定口径微调, 但**原文没说**, 不选边。
 
 ### C9. B0 VWA shopping DOM 的 SR
+
+> ⛔ **答案是「不是 paper-grade，一个数字都不能引」，2026-08-01 裁定。** user 备注问
+> 「paper grade？」——§81 的 16.52% 原文自标「需确认对应哪个 run 才能用」，§103 那个 run
+> 已因 Magento auth bug 被 cleared。合并稿**不含 shopping**，降 future work（§406）。
 - **§81 follow-up**: **16.52% (77/466, 含 task 345 as fail)**
 - **§103**: run `B0_3mode_shopping_20260421` DOM n=466 —— **raw 11.8% / adjusted 0%** (Magento auth bug 期间, 数据已 cleared)
 - §81 原文自标: 「行动规划另记 `B0_3mode_shopping_20260421` (DOM 466 ep) 已因 broken auth 被 cleared — **需确认 16.52% 对应哪个 run 才能用**」。
@@ -1260,6 +1271,10 @@ Top-7 cluster 共享 signature (§113.2): task 0 blue kayak / 81 hurricane book 
 - 原文: 「两处不完全一致, 按各自原文抄」。
 
 ### C11. Early-stop spec-vs-code drift 的起算日期
+
+> ✅ **矛盾无下游影响，已关闭 2026-08-01。** user 裁定备注「early stop 关闭，是 max step」——
+> early-stop 已**全面取消**（见 A1 §五 标题「从『省步数』到『全面取消』」），现在只有 max step。
+> 下面两个日期谁对都不改变任何当前量，按原文并列存档即可。
 - **§116.5 原文**: 4/30 advisor 同意 → 5/8 用户问「关了吗」= **14 天**
 - **§110 advisor sync 记录**: 该 sync 在 **5/5**
 - 原文: 「日期在笔记内**不自洽, 按原文抄录**」。

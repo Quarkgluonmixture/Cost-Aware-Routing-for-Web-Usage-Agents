@@ -888,6 +888,10 @@ scope_note: 2026-05-12 ~ 2026-05-17，router 设计 v1→v7 + §A1 pre-fire 审�
 
 ## 34. GLM sidecar cluster（A1.15b）
 
+> 🚫 **整个 cluster 已不存在，2026-08-01 补标。** GLM rescue 在 §210（B-991）物理删除，
+> digest 管线按 §196 Q4 全部退役，6 个 cron sidecar 随之下线；现存等价物 = `/diag` skill。
+> 以下计数与审计结果只作历史 provenance，**不描述任何在运行的东西**。
+
 **当前值**:
 - **三 chunk 累计**: α (commit d6dd949) **4 fix B-841~B-844 / smoke only / 30min**；β (commit 08d02fd) **3 fix B-845~B-847 / +33 invariant / 90min**；γ **7 fix B-848~B-854 / 70 targeted PASS / 75min**；合计 **14 fixes B-841~B-854 连续，12 个 unique 文件，~3h**
 - **close rate**: **22 unique findings surfaced，16 closed / 4 deferred = 73%**；16 fixes B-841~B-856，~4.5h，4 chunks

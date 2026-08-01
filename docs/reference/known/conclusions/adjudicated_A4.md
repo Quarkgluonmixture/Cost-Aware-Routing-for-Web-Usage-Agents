@@ -314,7 +314,12 @@ canonical deadline 表 = one-pager §4 **双层**（self-target + official hard�
 
 ---
 
-## 四、Paper A / Paper B 的论证结构
+## 四、合并稿的论证结构（原「Paper A / Paper B」）
+
+> ⚠️ **标题已过期，内容没有。** user 2026-07-28 拍板**两篇合并为一篇**（§398.8）——
+> 不是因为两篇都弱，而是 Paper B 强、Paper A 弱。本节以下各条仍然全部生效：它们正是
+> 合并后四步骨架 ①②③④ 的来源。读时把「Paper A」读成 ①②、「Paper B」读成 ④。
+> 第 ③ 步（结构小于同模式重跑地板）两篇原先都没有，见 §398.2 + §406。
 
 ### 4.1 Paper B 论点闭合（§383.4，07-22）
 
@@ -585,6 +590,14 @@ codex 是冷读看不到代码注释里的历史裁定，我看得到，所以�
 | §387.1 | **共享/长 uptime VM 上自动安全更新会制造『用户态已换、内核态没换』的时间炸弹**，且**只在下一次真正用 GPU 时才炸** —— 长期不跑 GPU 的窗口期结束时应主动验一次 `nvidia-smi` | 本次实证（用 `rmmod nvidia_uvm/nvidia_drm/nvidia_modeset/nvidia` + `modprobe` 原地弥合，**不 reboot** 以绕开 KubeVirt 'reboot 前必须 detach p-79 volume' 的坑） |
 
 ### 7.3 §397.9 —— 探测器灵敏度不对称（三家 AI 全漏）
+
+> 🚫 **本节记录的论证本身已被判「别用」，2026-08-01 补标。** `next_steps.md §4`
+> 不要引用的数字表明写：*「§397.9 我那套『探测器灵敏度』论证 → 别用 —— 这条 id 噪声
+> 早有正经测量」*（`b0_paired_idperturb` probes：B1 本地 temp0 组内一致性 1.000、
+> id-shuffle 改变决策 **20.0%**；B0 **12.5%**）。下面的**观察**（两套 id keyspace 稀疏
+> vs 稠密）是对的且仍有解释价值，但**不得作为 §4.2 的机制论证**——要谈 id 通道就引
+> 那组 probe。本节此前与该作废清单不一致，是结论层内部的一处漂移（结论层生成于
+> 07-28/29，作废清单是 07-31 追加的，两者之间没有引用关系）。
 
 **幻觉率指标的判定基准按臂分成两套 key 空间（id-namespace）**：
 - **DOM / P-prompt** 的 text 是 AXTree → map 键是**原生 CDP nodeId，稀疏**（median 7839-18729, max 691695）

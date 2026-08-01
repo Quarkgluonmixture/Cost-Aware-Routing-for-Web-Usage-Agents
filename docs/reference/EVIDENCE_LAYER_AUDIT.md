@@ -44,6 +44,16 @@ audience: self + advisor
   2026-07-28, closes stress finding #16). Distinct evaluator `score` values over the
   manifest's paper-grade cells; reports what it finds rather than asserting the expected two.
   → `docs/analysis/cross_sites/evaluator_score_granularity.{md,json}`
+- `aggregate_noise_floor_inventory.py` — **③ (noise floor) provenance** (added 2026-08-01).
+  Every measured same-condition run-to-run floor in one table, each with its own scope, next
+  to the **arm-count-matched** oracle-ceiling gain it has to be judged against
+  (`|{added arm} ∖ {baseline}| / n`, one arm vs one arm). Supplies the **B1 floor** that
+  `phase0b_noise_floor.md` §7.1 listed as its top open item and believed was queued behind the
+  WA run — it already existed as the WA pilot × full-104 task overlap (same condition; the full
+  base only deletes `task.task_ids.reddit`). Refutes the live `CLAIM_UNVERIFIED` *"B1 是完全确定性的"*
+  and the 2026-07-29 decision *"B1/B2 重跑地板不用测"*, both of which rested on **step-level**
+  greedy determinism, which is not episode-level determinism.
+  → `docs/analysis/cross_sites/noise_floor_inventory.{md,json}`
 
 **Cross-site / mechanism**: `docs/analysis/cross_sites/` (`axis1_microbehavior` / `axis_effect_size` / `mechanism_per_task`)
 
