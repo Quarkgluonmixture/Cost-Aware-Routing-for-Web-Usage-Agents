@@ -54,6 +54,23 @@ audience: self + advisor
   and the 2026-07-29 decision *"B1/B2 重跑地板不用测"*, both of which rested on **step-level**
   greedy determinism, which is not episode-level determinism.
   → `docs/analysis/cross_sites/noise_floor_inventory.{md,json}`
+- `aggregate_confidence_cascade.py` — **④ (routing unlearnable) hardening** (added 2026-08-01).
+  The one routing formulation §§4–6 never tested: a two-tier cascade that runs the cheap mode
+  (`vision`, lowest cost in 6/6 cells) and escalates to the fused mode (`som`, dearest in 5/6)
+  on the cheap run's **own decoder confidence** — a **post-action** signal, i.e. a strictly
+  larger information set than the pre-action features every other section routes on. Closes the
+  reviewer answer *"your features were weak, not the problem unroutable."* Consumes the
+  per-step `confidence` block (B0 4/6 fields, B1/B2 6/6) that the drafts cite **zero** times.
+  **Verdict: no operating point in any of the four non-degenerate cells Pareto-beats the
+  trivial fixed policy of always running the rich mode** (the two apparent wins are cells where
+  the rich mode is simply worse, so the question is moot). The signal is real but small — the
+  best *fixed* signal is `neg_steps` at +0.5 to +1.0pp over a size-matched random escalation,
+  and it is **not a confidence statistic**; the decoder's own logprobs manage +0.1 to +0.4pp.
+  Best signals recover **0–50%** of the oracle cascade's headroom.
+  ⚠️ Thresholds are **swept, not selected out-of-fold**, and the best signal is picked per
+  (cell, fraction) from 8 candidates against realised outcomes ⇒ every number is an **upper
+  bound** on deployable performance, which only strengthens the negative reading.
+  → `docs/analysis/cross_sites/confidence_cascade.{md,json}`
 
 **Cross-site / mechanism**: `docs/analysis/cross_sites/` (`axis1_microbehavior` / `axis_effect_size` / `mechanism_per_task`)
 
