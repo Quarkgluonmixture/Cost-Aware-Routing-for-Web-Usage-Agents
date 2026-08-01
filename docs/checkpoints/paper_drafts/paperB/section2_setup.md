@@ -30,8 +30,9 @@ analysed**: it is post-hoc and outcome-visible, not preregistered, and we label 
 wherever the denominator appears.
 One removed task scores inaction as success; the other is answerable from parametric
 knowledge without loading the second site its configuration declares. Each criterion was
-applied as a uniform rule over the whole reddit pool and each selects one task. Pooled reddit
-success moves from 6.94% to 6.40%.
+applied as a uniform rule over the whole reddit pool and each selects one task. Both are defects
+in the benchmark rather than in a run, and removing them moves pooled reddit success **down**,
+from 6.94% to 6.40%: the amendment costs us success rate on the site where we have least of it.
 
 ### 2.2 What a routing label is
 

@@ -92,15 +92,18 @@ The comparison must be made at equal arm count: the route half adds five arms, a
 At one arm the two are not separable. On classifieds · B0 the best *different* mode added to SoM
 buys **7.14pp**, inside that cell's own **4.91–7.59** rerun band; on WebArena · B1 the best
 different mode added to DOM buys **4.81pp** against **2.00–4.00**, clearing it by 0.81pp on a
-floor estimated from 50 paired tasks. Two backbones with different serving paths and two
-benchmarks agree.
+floor estimated from 50 paired tasks. The two cells that carry a floor differ in backbone
+family, in serving path (a commercial API against a local GPU) and in benchmark, and they agree:
+one arm of representation is worth about one arm of repetition.
 
-Pushed one step further, this reads as a challenge: if repetition buys what representation buys,
-is the ceiling just $\text{pass}@k$? Union-over-reruns is measurable on the pairs we hold. On
-classifieds · B0, two runs of the *cheapest* mode reach **31.70%**, which **exceeds the best
-single mode's 27.23%** and closes 27.8% of the 16.07pp gap, with no labels and no second
-representation. (Two runs of DOM reach only 22.32%, so this is mode-dependent, and Vision is the
-arm with the highest run-to-run discordance.)
+Union-over-reruns is measurable on the pairs we hold, and it yields the most directly usable
+result in this section. On classifieds · B0, **running the cheapest mode twice reaches 31.70%,
+against the best single mode's 27.23%**. Repetition alone closes 27.8% of the 16.07pp routing
+gap, with no labels, no router and no second representation, and a practitioner can act on that
+today. It is mode-dependent: two runs of DOM reach only 22.32%, and Vision is the arm with the
+highest run-to-run discordance, so the recipe is to repeat the mode that is least stable rather
+than the one that is best. The obvious next question is whether the ceiling is then just
+$\text{pass}@k$.
 
 The cost axis is what separates them, and it separates them decisively. $\text{pass}@k$ runs
 every task $k$ times; the oracle runs each task once. Two runs of Vision cost \$0.12962 against
@@ -109,10 +112,10 @@ the oracle's \$0.05777, so the oracle **strictly dominates** it, taking 11.60 po
 single-episode budget*. What repetition does undercut is the reading of the accuracy half as
 complementarity, which is the claim we withdraw.
 
-So this does **not** make the +16.07pp noise: we hold one rerun arm, not five, reruns saturate,
-and any $k>1$ policy pays $k\times$. It establishes the narrower thing: the per-arm premium
-of representational diversity, at the margin a router operates on, is not resolvable against
-repetition. The cost half is untouched, being accuracy-neutral and not a union. It also sharpens
+The claim we make is narrow and exact: **at the one-arm margin a router actually operates on,
+the premium for representational diversity is not resolvable against repetition.** It does
+**not** follow that the +16.07pp is noise, and we do not argue that: we hold one rerun arm
+rather than five, reruns saturate, and any $k>1$ policy pays $k\times$. The cost half is untouched, being accuracy-neutral and not a union. It also sharpens
 §§4–6: a router failing to recover the accuracy half is failing to recover a partly artefactual
 quantity.
 
@@ -123,8 +126,10 @@ bootstrap intervals clear of zero. They are the same functional as the rerun dro
 directly comparable to it, and axis-1 falls below even the lowest floor we measured while
 axis-2 sits inside its lower half. Clearing a "different from zero" gate is weak evidence when
 two runs of one fixed configuration also clear it, so we report the decomposition as measured
-and withdraw the structural reading it was meant to license. The sign is positive in five of
-six cells on both axes; the magnitude is not one we can distinguish from repetition.
+and withdraw the structural reading it was meant to license. What survives is a bound rather
+than a null: the sign is positive in five of six cells on both axes, and the magnitude of each
+knob is at most the run-to-run floor, which for a practitioner choosing among the image-free
+modes means the choice is worth less than one repetition.
 
 **What the rerun drop is and is not.** Replicate runs are separated by days, and one of the
 three pairs sits on a site whose per-task reset is a no-op, so accumulated site state

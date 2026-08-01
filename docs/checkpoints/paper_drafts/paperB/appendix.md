@@ -141,6 +141,38 @@ served row is not evidence that a deterministic decoder yields deterministic epi
 decoding is bit-reproducible at the step level in our own checks, and the episode is not,
 because the episode is not only the decoder.
 
+### A.7 The confidence cascade of §5.5
+
+Cheap tier `vision` (lowest billed cost in 6/6 cells, §2.1), rich tier `som` (dearest in 5/6).
+Escalation reads only the cheap run's own episode: per-step mean and minimum log-probability and
+margin, aggregated to the episode, plus three behavioural counters (step count, no-op rate,
+action-failure rate). Eight candidate scores in all. Cost is charged as cheap-everywhere plus
+rich-on-the-escalated-subset, so an escalated task pays both.
+
+| cell | n | cheap SR | always-rich SR / cost | oracle SR / cost | oracle escalates |
+|---|---|---|---|---|---|
+| cls · B0 | 224 | 25.00% | 27.23% / 1.12x | 33.93% / 1.06x | 20 tasks |
+| cls · B1 | 224 | 12.50% | 14.29% / 1.40x | 19.20% / 1.07x | 15 tasks |
+| cls · B2 | 224 | 2.23% | 2.23% / 1.28x | 4.46% / 1.02x | 5 tasks |
+| red · B0 | 203 | 7.39% | 14.78% / 1.13x | 18.23% / 1.10x | 22 tasks |
+| red · B1 | 203 | 2.46% | 7.39% / 1.53x | 8.37% / 1.12x | 12 tasks |
+| red · B2 | 203 | 1.97% | 0.99% / 1.63x | 2.96% / 1.02x | 2 tasks |
+
+*Table 14: Cascade endpoints. Cost is relative to running the cheap mode on every task.*
+
+No (cell, signal, operating point) combination Pareto-beats always-rich in the four cells where
+the comparison is meaningful. In `cls · B2` and `red · B2` the rich mode is no better or worse
+than the cheap one, so escalation cannot help there by construction and we exclude both from the
+verdict rather than counting them as wins. Escalating nothing is likewise excluded: it is the
+always-cheapest fixed policy, not a cascade.
+
+Averaged over cells, the margin over a size-matched random escalation at the 10 / 20 / 30%
+operating points is +0.53 / +0.97 / +0.95 points for step count, +0.29 / +0.73 / +0.65 for
+action-failure rate, +0.22 / +0.50 / +0.56 for no-op rate, and between +0.05 and +0.46 for the
+five decoder-confidence statistics. Thresholds are swept, not selected out of fold, and the
+best signal is chosen per (cell, fraction) against realised outcomes, so every figure here is an
+upper bound on what an out-of-fold selection would deliver.
+
 ## B. Derivations for the four relabelling routes
 
 §6 states the outcome of each route. This appendix gives the derivation.
@@ -192,32 +224,6 @@ universe. A.5's modal-agreement columns run over the whole pooled labelled set, 
 two agreement columns are restricted to tasks labelled by two or more backbones, that being the
 only set on which cross-backbone agreement is defined.
 
-## C. The reddit · B2 saving in detail
-
-§5.4 reports that the one cell whose cost saving survives Holm correction has an AUROC below
-chance. The mechanism is tail enrichment rather than a globally ordered score.
-
-Reddit · B2 sends 192 of 203 tasks (95%) to the cheap mode with no accuracy loss, which is
-unsurprising in a cell where only 7.4% of tasks are solvable at all: almost nothing in that 95%
-was going to succeed under any mode. The policy therefore differs from the free always-cheapest
-policy by five percent of the allocation. The 11 tasks it holds back for the strong mode carry
-four successes that the fixed policy does not collect, against four collected by the fixed
-policy overall. The permutation null detects that enrichment. A globally ordered score is not
-required to produce it, which is why the cell's AUROC of 0.483, below both chance and its own
-best single covariate at 0.711, is consistent with a real saving.
-
-Two properties of that test are worth recording. It runs 10,000 draws and reports the plus-one
-Monte Carlo estimator (k+1)/(B+1), whose floor is therefore 1.0 × 10⁻⁴, two orders below the
-tightest Holm threshold of 8.3 × 10⁻³. That matters because at the 200 draws we first used, the
-floor was 1/201 = 4.98 × 10⁻³, this cell reported exactly it, and whether it could clear the threshold at
-all was a function of the draw count rather than of the data; at 10,000 draws four of the draws
-match or beat the observed saving, so p = 5.0 × 10⁻⁴ is measured. Second, the quantity tested
-is the saving at an operating point selected against whole-cell outcomes, which is not the
-nested policy of Table 6. Null and observation select that point the same way, so the null
-absorbs the selection optimism and the comparison is fair, but the point is not one a
-deployment could occupy, and §5.3's conclusion rests on the nested numbers rather than on this
-test.
-
 ### B.5 Supply and trainability under both label definitions
 
 §4.3 keeps the prior-order label and reports the measured-cost rule as a sensitivity. Supply is
@@ -244,6 +250,33 @@ The single cell that changes, classifieds · B1, loses a class rather than gaini
 prior-order label keeps DOM and SoM above the threshold, the measured-cost label concentrates
 enough of those rows onto Vision that only Vision survives. The alternative definition therefore
 strengthens the negative result, which is a reason to report it and not a reason to adopt it.
+
+## C. The reddit · B2 saving in detail
+
+§5.4 reports that the one cell whose cost saving survives Holm correction has an AUROC below
+chance. The mechanism is tail enrichment rather than a globally ordered score.
+
+Reddit · B2 sends 192 of 203 tasks (95%) to the cheap mode with no accuracy loss, which is
+unsurprising in a cell where only 7.4% of tasks are solvable at all: almost nothing in that 95%
+was going to succeed under any mode. The policy therefore differs from the free always-cheapest
+policy by five percent of the allocation. The 11 tasks it holds back for the strong mode carry
+four successes that the fixed policy does not collect, against four collected by the fixed
+policy overall. The permutation null detects that enrichment. A globally ordered score is not
+required to produce it, which is why the cell's AUROC of 0.483, below both chance and its own
+best single covariate at 0.711, is consistent with a real saving.
+
+Two properties of that test are worth recording. It runs 10,000 draws and reports the plus-one
+Monte Carlo estimator (k+1)/(B+1), whose floor is therefore 1.0 × 10⁻⁴, two orders below the
+tightest Holm threshold of 8.3 × 10⁻³. That matters because at the 200 draws we first used, the
+floor was 1/201 = 4.98 × 10⁻³, this cell reported exactly it, and whether it could clear the threshold at
+all was a function of the draw count rather than of the data; at 10,000 draws four of the draws
+match or beat the observed saving, so p = 5.0 × 10⁻⁴ is measured. Second, the quantity tested
+is the saving at an operating point selected against whole-cell outcomes, which is not the
+nested policy of Table 6. Null and observation select that point the same way, so the null
+absorbs the selection optimism and the comparison is fair, but the point is not one a
+deployment could occupy, and §5.3's conclusion rests on the nested numbers rather than on this
+test.
+
 
 ### C.1 The best-success mode is not stable across folds
 

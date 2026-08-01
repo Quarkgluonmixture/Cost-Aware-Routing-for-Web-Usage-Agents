@@ -83,9 +83,12 @@ arbitrariness, but two rules answering slightly different questions.
 
 At these success rates which-mode supervision is unavailable in the quantity a six-class model
 needs, under either label definition. This does not show mode selection is unlearnable in
-principle: at 60% success a cell would produce several hundred labels. Within the 2–43% regime
-current web agents occupy the constraint is structural, because supervision arrives at the rate
-the agent succeeds and that rate is what needed improving.
+principle: at 60% success a cell would produce several hundred labels. But the regime where the
+labels arrive is not the regime where the router is worth having. Supervision accrues at the
+rate the agent succeeds, while the value of choosing correctly is highest when it mostly does
+not, so the two move in opposite directions and the constraint binds hardest exactly where
+routing would pay most. That coupling, and not the size of the benchmark, is what §4
+establishes.
 
 One check outside this benchmark, with the same six modes and B1 on the reddit split of
 WebArena [@zhou2024webarena], whose tasks specify their goal in text alone where 33.7% of the ones

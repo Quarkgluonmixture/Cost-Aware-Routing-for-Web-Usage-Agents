@@ -103,3 +103,23 @@ So the honest reading of §5 is not "the label is predictable, yet triage fails"
 This is why we regard the negative result as robust rather than underpowered. What would have
 to improve is not the score, which already beats the strongest single feature in four cells,
 but the number of solve events in the tail, which returns to §4's constraint.
+
+### 5.5 Escalating on the agent's own confidence does not change the verdict
+
+Every result above routes on features available *before* the agent acts, which invites the
+reply that better features would succeed. A cascade sidesteps the reply by running the cheap
+mode first and escalating the least confident episodes to the expensive one, deciding on the
+cheap run's own decoder statistics. That is a strictly larger information set than any
+pre-action router has.
+
+The oracle version is the most attractive operating point anywhere in this paper. Escalating
+exactly the 2 to 22 tasks the fused mode would fix buys 2.2 to 10.8 points for 2% to 12% more
+cost, because it pays twice only where paying twice helps. A deployable signal recovers 0% to
+50% of that headroom, and **in none of the four cells where the question is non-degenerate does
+any operating point Pareto-beat simply running the expensive mode everywhere** (Appendix A.7).
+The best signal is not a confidence statistic at all but the episode's step count, worth +0.5 to
++1.0 points over a size-matched random escalation, against +0.1 to +0.4 for the log-probabilities.
+Thresholds are swept rather than selected out of fold and the signal is chosen per cell against
+realised outcomes, so these are upper bounds, which is the direction that favours the reading
+given. Taken with §5.3, two different fixed policies now beat two different routers: always the
+cheapest mode beats learned triage, and always the dearest beats confidence-triggered escalation.

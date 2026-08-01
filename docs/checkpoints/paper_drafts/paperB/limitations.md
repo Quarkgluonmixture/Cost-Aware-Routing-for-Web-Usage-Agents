@@ -12,8 +12,12 @@ replicate on each of the six cells would settle it; that is the experiment we di
 five reruns would reach the five-mode union is unmeasured, and nothing in this paper should be
 read as claiming that they would.
 
-**Two sites, one benchmark.** Site-level effects and benchmark-level evaluation design
-(notably the binary score of §6) are not separable at this scale. A benchmark with graded
+**Two sites on the main benchmark, one split of a second.** The six cells of Table 1 are two
+VisualWebArena sites; WebArena contributes one reddit split under one backbone, used for the
+rerun floor of §3.3 and the corroboration of §4.4 and never pooled with the six. Site-level
+effects and benchmark-level evaluation design (notably the binary score of §6) are not
+separable at this scale, and two workloads are enough to show that the best channel changes
+with the workload but not to characterise what it changes with. A benchmark with graded
 outcomes could reopen that route without changing §4.
 
 **Offline replay, no live routing.** We never served a router. All results exclude router
@@ -21,6 +25,11 @@ inference cost and latency, which flatters the router and therefore strengthens 
 result, but it means we have not measured a deployment. A mode chosen at step 0 is used for
 the whole episode in our replay, so the interaction between routing decisions and multi-step
 trajectory dynamics, including adaptive mid-episode switching, is unexamined.
+
+**The cascade of §5.5 is a two-tier simulation, not a served system.** It replays completed
+episodes, so an escalated task is charged the full cost of both runs and never benefits from
+stopping the cheap run early, which understates a real cascade's cost advantage. It also uses
+one fixed cheap tier and one fixed rich tier rather than choosing them per cell.
 
 **Cost is not pooled across backbones.** API pricing and electricity-derived cost differ by
 roughly three orders of magnitude per token, so we compare ratios within a backbone only.

@@ -81,7 +81,7 @@ case "$PAPER" in
       section6_relabelling.md
       section7_discussion.md
     )
-    EXPECTED_TABLES=14
+    EXPECTED_TABLES=15
     FIGURES=()
     # All body tables are single-column. Tables 1-7 were rendered and checked at
     # one column on 2026-07-27; that change alone took the paper from 9 pages to

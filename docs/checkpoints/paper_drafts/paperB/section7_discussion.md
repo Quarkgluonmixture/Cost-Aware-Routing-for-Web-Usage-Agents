@@ -39,20 +39,26 @@ recommendations.
 
 ## 8. Discussion
 
-Within the regime we studied, no learned per-task mode router we built is available, and the
-obstruction is the production rate of *winner* labels rather than the hypothesis class or the
-estimator. The obstructions differ in kind: §4's is arithmetic, §5's rests on a baseline choice
-we argue is correct, and §6's is that three escape routes fail for three separate reasons while
-two stay open. We do not claim mode routing is unlearnable in general, that the ceiling is
+Within the regime we studied, no learned per-task mode router we built is available. The
+obstructions differ in kind, which is what makes the result closed rather than provisional:
+§4's is arithmetic, §5.3's rests on a baseline choice we argue is correct, §5.5's survives letting the router see the cheap run
+before it decides, and §6's is that three escape routes fail for
+three separate reasons while two stay open. Only one of them does not depend on our sample
+size. Where we hold replicates, half the tasks on which the channels disagree are tasks whose
+outcome changes when the same configuration is rerun, so the target itself is partly
+irreproducible and no quantity of data repairs that. We do not claim mode routing is unlearnable in general, that the ceiling is
 illusory, that our router is the best possible one, or that no target admits enough supervision.
 §6's per-mode success target plainly does, and it is the one we could not close: it wins at a
 post-hoc threshold and fails on transfer, which is a different verdict from the one §4 delivers.
 §4.1 predicts trainability as agents improve, §3 measures a real ceiling, and §5.3 puts the
 triage failure at the policy comparison, not the prediction.
 
-Three implications follow. Practitioners should compare any proposed router against
-always-taking-the-cheapest-mode before building it, because in none of our six cells did
-anything we learned Pareto-dominate that fixed policy. Benchmark designers have a low-cost
+Three implications follow. Practitioners should compare any proposed router against the fixed
+policy it would replace before building it, in both directions: nothing we learned
+Pareto-dominated always-taking-the-cheapest-mode in any of the six cells, and nothing we
+escalated Pareto-dominated always-taking-the-dearest either. They should also net any
+representation gain against simply running the representation they have twice, which on
+classifieds · B0 outperforms the best single mode outright (§3.3). Benchmark designers have a low-cost
 intervention in §6: a graded per-task score would make every episode a training signal
 [@lu2025agentrewardbench; @pan2024webcanvas]. And routing supervision
 is a by-product of capability, so until agents succeed more often there is nothing to fit.

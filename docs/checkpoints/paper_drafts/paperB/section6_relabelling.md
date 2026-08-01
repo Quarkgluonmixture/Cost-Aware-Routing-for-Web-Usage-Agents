@@ -72,7 +72,14 @@ Each closed route is closed for a different reason, which is what makes the nega
 closed rather than provisional. Supply and identifiability are judged on that target's own
 denominator, which differs across the last three rows.*
 
-The three closed routes fail in three distinct ways (supply, estimand and value failing
-separately), rather than one obstruction a better method might route around. The two open rows
-are open for different reasons: the per-mode target has been attempted and is unresolved, the
-screenshot tier has not been attempted at all. Both are what we regard as worth doing next.
+**The three closed routes fail in three distinct ways**, supply and estimand and value failing
+separately, rather than one obstruction a better method might route around. That is what makes
+the negative result closed rather than provisional: there is no single repair to attempt.
+
+The two open rows are open for different reasons, the per-mode target having been attempted and
+left unresolved and the screenshot tier not attempted at all. Both are worth doing next, and it
+is worth noting where they point. The per-mode target has the most supply of anything we tested
+and still failed to transfer a frozen threshold across sites, which is the same lesson as §5's:
+supply stops being the binding constraint well before a deployable policy appears. And the
+screenshot tier is a decision about which channel to carry, taken once rather than per task,
+which is the shape of the conclusion §1 reaches from the other end.
