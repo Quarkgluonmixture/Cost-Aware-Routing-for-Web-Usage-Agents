@@ -9,8 +9,9 @@ note: this is a coverage map, NOT a findings narrative. Numbers live in the prod
 
 # Evidence layer — what we hold
 
-Written deliberately **before** choosing a frame, so the frame is chosen against coverage rather
-than coverage assembled to fit a frame. Two candidate frames are live and both are listed in §5.
+Written deliberately **before** choosing a frame, so the frame would be chosen against coverage
+rather than coverage assembled to fit a frame. **The frame was chosen on 2026-08-02 and is in
+§5b**, together with the two candidates that died on the way and what killed each.
 
 ## 1. The coverage matrix
 
@@ -25,7 +26,8 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 | **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ **added 08-02** | ✅ | complete |
 | **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ `--with-wa` **added 08-02** | ✅ (the four) | **repaired 08-02** — see §2b |
 | **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ✅ cascade `--with-wa`; the three router products stay VWA (they need the router feature table) | ✅ | complete |
-| *(features)* | `routing_feature_diagnostics` | ✅ | ❌ n/a | ✅ | complete |
+| *(features)* | `routing_feature_diagnostics` · `visual_difficulty_router` | ✅ | ❌ n/a | ✅ | complete |
+| *(efficiency denominator)* | `outcome_efficiency` | ⚠️ 4 of 6 cells carry enough successes | ❌ not wired | ✅ | complete, but see §5c |
 
 ## 2. ~~The one structural gap~~ — RETRACTED 2026-08-02
 
@@ -249,11 +251,67 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    regularity, not a test. Under the canonical estimand mean ρ = −0.067, but the two estimands
    are **identical by construction on 4 of 6 cells**, so only the API-served pair tests it.
 
-**Two frames are live and neither has been chosen.** One organises 1–2 as the conceptual
-contribution (an oracle gap is not a routing opportunity). One organises 3–4 as it (representation
-choice is a deployment-time configuration). Claims 5–9 serve either. The choice is a framing
-decision to be taken with the evidence in front of it, which is the state this document exists to
-create.
+## 5b. The frame, chosen 2026-08-02 against the evidence above
+
+The document was written before a frame was picked, so that the frame would be chosen against
+coverage rather than coverage assembled to fit a frame. It has now been picked, after three
+independent passes (Claude, codex, Gemini) over the same numbers with the candidates withheld
+from each. Two earlier candidates died in that process and both deaths are informative:
+
+* **"The fusion default only beats the wrong channel"** — died on a *factual* premise. It assumed
+  SoM is the field's default. It is not; the mainstream deployment choice is screenshot-only,
+  because it matches OS-level computer-use / GUI-grounding stacks, with DOM as the cheap
+  fallback. SoM is rare. A frame resting on a wrong picture of practice fails no matter how the
+  numbers come out.
+* **"The screenshot is cheapest everywhere and worst somewhere"** (weakness moves between axes) —
+  died on the *latency* leg. Vision is not the slowest on visual workloads: on `cls_B1` it is
+  second-fastest, and its episode-level slowness on the other two is not "because it takes more
+  steps" — on both local backbones its per-step latency is *lower* and only the step count makes
+  the episode longer. All three reviewers reached this independently.
+
+**The frame that survives**, stated at the strength the evidence actually carries:
+
+> **Which channel to add reverses between these two sites, and that choice cannot be pushed down
+> to the individual task.** The reversal appears on four independent functionals — success rates,
+> arm-matched marginal gains, per-arm rerun floors, and paired effect sizes — across three
+> backbones and two benchmarks, at 4.93–7.39pp against a measured rerun band of 0.89–2.23pp.
+> Pushing the decision per-task fails for three independent reasons: the supervision is enriched
+> 3.9–17.4× in instability exactly on the contested rows, five formulations fail including one
+> fitted afterwards on the benchmark's own difficulty annotation, and the intuitive feature is
+> wrong-signed. At the one-arm margin a new representation buys about what a rerun of the
+> existing one buys.
+
+Wording discipline, from the codex pass: say **"classifieds versus reddit"** or "coarse
+site-level selection in these benchmarks", **not** "workload law". Two sites cannot identify the
+causal moderator, and the three backbones share a task set — they establish model robustness of
+the site interaction, not six independent observations.
+
+Claim 3 (fusion) states **"no detectable accuracy premium over the matched single channel"**,
+never "fusion does not work": the interval crossing zero is not equivalence, the pooled effects
+are heterogeneous (I² = 59% and 77%), and the rerun floor was measured on DOM and Vision rather
+than on the fused arm.
+
+## 5c. Efficiency needs a denominator — and this data can only say that much
+
+→ `outcome_efficiency`
+
+Every efficiency figure in this project, and in the literature it sits in, is **per attempt**. A
+deployment buys completed tasks. Switching the denominator to `sum(cost) / sum(success)` moves
+the point-estimate ordering in **2 of the 4 cells** where success counts are high enough for the
+ratio to mean anything, and moves the latency ordering in the same 2. Screenshot-only is cheapest
+per attempt in 6 of 6 cells — by construction, it carries no accessibility-tree text — but
+cheapest per success in only the visual cells.
+
+**What this licenses is the denominator, not a new ranking.** Every pairwise CI overlaps: on
+`cls_B0`, SoM is 0.266 [0.205, 0.355] against Vision's 0.259 [0.200, 0.348]. Four cells and
+overlapping intervals cannot adjudicate which channel is more efficient; they can show that the
+answer depends on a choice the field does not currently state. That is the claim, and it is a
+methodological one.
+
+It does carry one concrete consequence worth a paragraph: **the fused channel is excluded from
+deployments on a per-attempt cost argument, and its per-success latency point estimate is the
+best in all four of those cells.** Not a recommendation to use it — the intervals forbid that —
+but a demonstration that the exclusion rests on the denominator nobody declared.
 
 ## 6. What would refute each claim, and whether we hold it (§G3 sweep, 2026-08-02)
 
