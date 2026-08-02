@@ -90,6 +90,28 @@ audience: self + advisor
   ⚠️ Still missing: a rerun floor for the fused mode itself. Queued on A100.
   → `docs/analysis/cross_sites/fusion_premium.{md,json}`
 
+- `aggregate_conditional_failure_attribution.py` — **the horizontal cut through diag** (added
+  2026-08-02). 36 diag digests and a marginal signature table existed; the drafts cited neither,
+  and neither answered the question complementarity raises: *when one channel uniquely solves a
+  task, how did the other fail on it?* Within a cell the six modes see one task set, so this is
+  paired. Reports **enrichment** = a signature's hit rate among the losing channel's failures on
+  the disagreement set over its rate across all its failures. Licensed by the 2026-07-27 v8
+  ruleset freeze across all 36 conditions; the producer re-asserts single-version at load.
+  **The two directions are strikingly asymmetric.**
+  *Image wins, text fails* (91 tasks, 364 episodes): `P43` PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT
+  **1.66x** on 196 hits, `P16` visual-content-DOM-must-fail **2.18x**, `P27` gives-up-when-not-
+  found **2.98x**, `P17` click-back oscillation **2.20x** — and `P31` budget-exhausted **0.47x**,
+  i.e. the text channel does not grind there, it quits.
+  *Text wins, image fails* (71 tasks, 142 episodes): **nothing** clears 1.5x except one 10-hit
+  row; every other enrichment sits at or below 1.0.
+  ⇒ **The image channel's advantage has a named mechanism. The text channel's does not** — it
+  wins tasks the image channel simply failed to reach, with no distinguishing signature. Any
+  symmetric "match the channel to the modality" story has to carry that asymmetry.
+  ⚠️ TEXT is 4 arms against IMAGE's 2, so the two task counts are not comparable to each other;
+  only within-channel enrichment is read. Enrichment is a ratio, not a test, and carries no
+  interval. Post-hoc.
+  → `docs/analysis/cross_sites/conditional_failure_attribution.{md,json}`
+
 **Cross-site / mechanism**: `docs/analysis/cross_sites/` (`axis1_microbehavior` / `axis_effect_size` / `mechanism_per_task`)
 
 **Figures** (`results/phantom_paper/figures/`, 13 active):
