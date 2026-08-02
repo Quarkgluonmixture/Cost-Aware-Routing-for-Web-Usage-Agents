@@ -73,7 +73,10 @@ UNIVERSE_TRIAGE_PENDING: dict[str, str] = {
     "aggregate_cross_site.py": "cross-site pooling over collected episodes",
     "aggregate_trajectory_covariates.py": "covariate table over collected set",
     "axis1_microbehavior.py": "scored count as denominator, rows unfiltered",
-    "axis_effect_size.py": "scored count as denominator, rows unfiltered",
+    # axis_effect_size.py cleared 2026-08-02 (§408.3): it read 205 reddit step files against a
+    # 203-task scored set, so the two AMENDMENT_08 exclusions were inside every effect size —
+    # and on the P-SoM arm two identity-dropped episodes cancelled them, making the count read
+    # as correct over the wrong tasks. per_task_metrics() now filters on expected_scored_ids().
     "mechanism_per_task.py": "scored count as denominator, rows unfiltered",
     "hero_claim_bootstrap.py": "bootstraps a hero claim over the collected set",
     "generate_per_task_sr.py": "per-task SR table over the collected set",
