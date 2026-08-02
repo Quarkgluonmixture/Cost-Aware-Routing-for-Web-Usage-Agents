@@ -127,6 +127,86 @@ def attribute(cell: dict[str, dict[int, dict]], winners: list[str], losers: list
             "cond": dict(cond), "base": dict(base), "names": names}
 
 
+
+# Candidate mechanisms for the text-wins side, tested directly rather than through the P-rules.
+# The rule-based cut leaves that direction as an UNEXPLAINED RESIDUAL: nothing clears 1.5x. The
+# obvious objection is that the v8/v9 ruleset was discovered on VisualWebArena and can only find
+# VWA-shaped failures, so absence of a signature might be a property of the vocabulary rather
+# than of the world. These six probes bypass the vocabulary — they are computed from raw step
+# fields, not from rule hits — and ask the same question directly. (§G3 claim 7 refuter.)
+TEXT_WINS_PROBES = {
+    "never searched": lambda st, su, mk: not any(
+        any(k in str(x.get("obs_url") or "") for k in mk) for x in st),
+    "ran out of budget (>=30 steps)": lambda st, su, mk: len(st) >= 30,
+    "action failure on over half the steps": lambda st, su, mk: (
+        sum(1 for x in st if x.get("action_success") is False) / len(st)) > 0.5,
+    "page unchanged on over half the steps": lambda st, su, mk: (
+        sum(1 for x in st if x.get("page_changed") is False) / len(st)) > 0.5,
+    "finished in five steps or fewer": lambda st, su, mk: len(st) <= 5,
+    "any parse failure": lambda st, su, mk: any(x.get("parse_valid") is False for x in st),
+}
+
+
+def probe_text_wins(scan_dir: Path) -> dict:
+    """Enrichment of each candidate on the image channel's failures, restricted to the tasks
+    only the text channel solved, against that channel's own failure baseline."""
+    import re as _re
+    from scripts.analysis.lib.run_registry import get_cells
+    import scripts.analysis.diag_pattern_match as _D
+
+    by_cell: dict = {}
+    for c in get_cells(grade="paper-grade"):
+        by_cell.setdefault((c.baseline, c.site), {})[c.mode] = c
+    TEXT_M = {"DOM", "P-text", "P-prompt", "P-SoM"}
+    IMAGE_M = {"SoM", "Vision"}
+    acc = {k: collections.Counter() for k in TEXT_WINS_PROBES}
+    for (bb, site), modes in sorted(by_cell.items()):
+        if len(modes) < 6:
+            continue
+        scored = set(expected_scored_ids(site)[0])
+        mk = ("page=search", "/search") if site == "classifieds" else ("/search",)
+        ep: dict = {}
+        for m, c in modes.items():
+            for pth in c.episodes_dir.glob(f"{site}_task_*_steps_v2.jsonl"):
+                tid = int(_re.search(r"task_(\d+)_", pth.name).group(1))
+                if tid not in scored:
+                    continue
+                sp = pth.with_name(pth.name.replace("_steps_v2.jsonl", "_summary_v2.json"))
+                if not sp.exists():
+                    continue
+                try:
+                    steps = _D._load_steps(pth)
+                    su = json.loads(sp.read_text())
+                except Exception:      # noqa: BLE001 — identity mismatch etc, skip the episode
+                    continue
+                if steps:
+                    ep[(m, tid)] = (bool(su.get("success")), steps, su)
+        tids = {t for (_, t) in ep}
+        won = {t for t in tids
+               if any(ep.get((m, t), (False,))[0] for m in TEXT_M)
+               and not any(ep.get((m, t), (False,))[0] for m in IMAGE_M)}
+        for name, fn in TEXT_WINS_PROBES.items():
+            for m in IMAGE_M:
+                for t in tids:
+                    v = ep.get((m, t))
+                    if v is None or v[0]:
+                        continue
+                    hit = bool(fn(v[1], v[2], mk))
+                    acc[name]["base_n"] += 1
+                    acc[name]["base"] += hit
+                    if t in won:
+                        acc[name]["cond_n"] += 1
+                        acc[name]["cond"] += hit
+    out = {}
+    for name, c in acc.items():
+        cr = c["cond"] / c["cond_n"] if c["cond_n"] else None
+        br = c["base"] / c["base_n"] if c["base_n"] else None
+        out[name] = {"on_disagreement": cr, "baseline": br,
+                     "enrichment": (cr / br) if (cr is not None and br) else None,
+                     "n_disagreement_episodes": c["cond_n"], "n_baseline_episodes": c["base_n"]}
+    return out
+
+
 def build(scan_dir: Path, wa_scan_dir: Path | None = None) -> dict:
     out = {"schema": "2026-08-02-conditional-failure-attribution-v1",
            "post_hoc_exploratory": True, "scan_dir": str(scan_dir),
@@ -142,6 +222,7 @@ def build(scan_dir: Path, wa_scan_dir: Path | None = None) -> dict:
             LOG.info("%s: text-only %d tasks, image-only %d",
                      cid, out["cells"][cid]["text_only"]["n_tasks"],
                      out["cells"][cid]["image_only"]["n_tasks"])
+    out["text_wins_probes"] = probe_text_wins(scan_dir)
     if wa_scan_dir and wa_scan_dir.exists():
         uni = wa_universe(wa_scan_dir)
         cell = load_cell(wa_scan_dir, "B1", "wa_reddit", universe=uni)
@@ -250,6 +331,36 @@ def render(d: dict) -> str:
           "that name a mechanism for the complementarity, and they are the only rows this "
           f"analysis licenses anyone to cite. The reporting floor is {MIN_HITS} pooled hits; rules "
           "below it are omitted rather than shown at unstable ratios."]
+    tw = d.get("text_wins_probes") or {}
+    if tw:
+        L += ["", "## 5. Is the text-wins side unexplained, or just outside the vocabulary?", "",
+              "The rule-based cut leaves that direction as a residual — nothing clears 1.5×. The "
+              "objection writes itself: the ruleset was discovered on VisualWebArena, so it can "
+              "only find VWA-shaped failures, and an absent signature may be a property of the "
+              "vocabulary rather than of the world. These probes bypass the vocabulary "
+              "entirely — each is computed from raw step fields, never from a rule hit — and ask "
+              "the same question directly.", "",
+              "| candidate mechanism | on the disagreement set | that channel's baseline | enrichment |",
+              "|---|---|---|---|"]
+        n_cond = n_base = 0
+        for name, v in tw.items():
+            if v["enrichment"] is None:
+                continue
+            n_cond, n_base = v["n_disagreement_episodes"], v["n_baseline_episodes"]
+            L.append(f"| {name} | {v['on_disagreement']:.3f} | {v['baseline']:.3f} | "
+                     f"**{v['enrichment']:.2f}×** |")
+        best = max((v["enrichment"] or 0) for v in tw.values())
+        L += ["", f"n = {n_cond} disagreement episodes against {n_base} baseline failures. "
+              f"**The largest enrichment is {best:.2f}×**, and most candidates sit *below* 1: on "
+              "the tasks the text channel uniquely solves, the image channel's failures are less "
+              "pathological than its failures elsewhere, not more. That sharpens the original "
+              "wording — it is not merely that it fails the way it fails everywhere, it is that "
+              "it fails **more blandly**: it did not arrive, rather than breaking somewhere "
+              "nameable.", "",
+              "⚠️ Six candidates chosen by us, so this cannot show that no mechanism exists. What "
+              "it does close is the specific objection that the residual is an artifact of a "
+              "VWA-shaped rule vocabulary: these six do not use that vocabulary and find nothing "
+              "either."]
     return "\n".join(L) + "\n"
 
 

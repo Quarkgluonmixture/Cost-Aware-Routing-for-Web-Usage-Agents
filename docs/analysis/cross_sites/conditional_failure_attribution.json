@@ -1150,5 +1150,49 @@
     "phantom_prompt",
     "phantom_som"
   ],
+  "text_wins_probes": {
+    "action failure on over half the steps": {
+      "baseline": 0.4162326388888889,
+      "enrichment": 0.7444374274846156,
+      "n_baseline_episodes": 2304,
+      "n_disagreement_episodes": 142,
+      "on_disagreement": 0.30985915492957744
+    },
+    "any parse failure": {
+      "baseline": 0.10894097222222222,
+      "enrichment": 0.8403568823298356,
+      "n_baseline_episodes": 2304,
+      "n_disagreement_episodes": 142,
+      "on_disagreement": 0.09154929577464789
+    },
+    "finished in five steps or fewer": {
+      "baseline": 0.1410590277777778,
+      "enrichment": 1.1482556879739978,
+      "n_baseline_episodes": 2304,
+      "n_disagreement_episodes": 142,
+      "on_disagreement": 0.1619718309859155
+    },
+    "never searched": {
+      "baseline": 0.4683159722222222,
+      "enrichment": 0.82705687321333,
+      "n_baseline_episodes": 2304,
+      "n_disagreement_episodes": 142,
+      "on_disagreement": 0.3873239436619718
+    },
+    "page unchanged on over half the steps": {
+      "baseline": 0.4314236111111111,
+      "enrichment": 0.7671947176013829,
+      "n_baseline_episodes": 2304,
+      "n_disagreement_episodes": 142,
+      "on_disagreement": 0.33098591549295775
+    },
+    "ran out of budget (>=30 steps)": {
+      "baseline": 0.6575520833333334,
+      "enrichment": 0.8139450564774786,
+      "n_baseline_episodes": 2304,
+      "n_disagreement_episodes": 142,
+      "on_disagreement": 0.5352112676056338
+    }
+  },
   "wa_n": 104
 }

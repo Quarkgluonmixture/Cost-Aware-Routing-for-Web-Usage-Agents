@@ -91,3 +91,20 @@ Several P-rules carry site gates or are structurally inapplicable outside one si
 ## 5. Reading
 
 A signature near 1.0x is the null and most rows sit there: the losing channel mostly fails on these tasks the way it fails on every task. Rows away from 1.0x are the ones that name a mechanism for the complementarity, and they are the only rows this analysis licenses anyone to cite. The reporting floor is 8 pooled hits; rules below it are omitted rather than shown at unstable ratios.
+
+## 5. Is the text-wins side unexplained, or just outside the vocabulary?
+
+The rule-based cut leaves that direction as a residual — nothing clears 1.5×. The objection writes itself: the ruleset was discovered on VisualWebArena, so it can only find VWA-shaped failures, and an absent signature may be a property of the vocabulary rather than of the world. These probes bypass the vocabulary entirely — each is computed from raw step fields, never from a rule hit — and ask the same question directly.
+
+| candidate mechanism | on the disagreement set | that channel's baseline | enrichment |
+|---|---|---|---|
+| never searched | 0.387 | 0.468 | **0.83×** |
+| ran out of budget (>=30 steps) | 0.535 | 0.658 | **0.81×** |
+| action failure on over half the steps | 0.310 | 0.416 | **0.74×** |
+| page unchanged on over half the steps | 0.331 | 0.431 | **0.77×** |
+| finished in five steps or fewer | 0.162 | 0.141 | **1.15×** |
+| any parse failure | 0.092 | 0.109 | **0.84×** |
+
+n = 142 disagreement episodes against 2304 baseline failures. **The largest enrichment is 1.15×**, and most candidates sit *below* 1: on the tasks the text channel uniquely solves, the image channel's failures are less pathological than its failures elsewhere, not more. That sharpens the original wording — it is not merely that it fails the way it fails everywhere, it is that it fails **more blandly**: it did not arrive, rather than breaking somewhere nameable.
+
+⚠️ Six candidates chosen by us, so this cannot show that no mechanism exists. What it does close is the specific objection that the residual is an artifact of a VWA-shaped rule vocabulary: these six do not use that vocabulary and find nothing either.
