@@ -53,7 +53,12 @@ def _finish(idx=1, answer="done"):
 # --------------------------------------------------------------------------- #
 
 def test_ruleset_version_and_registry():
-    assert dpm.RULESET_VERSION == "8-reddit-p41p46-b1890fix"
+    # Ratchet: adding a rule must bump the version, because
+    # aggregate_conditional_failure_attribution asserts a single version across a cell's six
+    # scans and would otherwise aggregate a mixed set silently. Bumped 8 -> 9 on 2026-08-02
+    # when P47/P48 landed from the WA reddit Tier-2/3 round; this batch's own rules stay
+    # registered, which is what the loop below checks.
+    assert dpm.RULESET_VERSION == "9-wa-p47p48"
     for rid in ("P41", "P42", "P43", "P44", "P45", "P46"):
         assert rid in dpm.ALL_RULES, f"{rid} not registered"
 

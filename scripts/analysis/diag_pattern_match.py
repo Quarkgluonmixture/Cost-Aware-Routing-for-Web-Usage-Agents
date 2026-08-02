@@ -77,7 +77,7 @@ from urllib.parse import urlparse
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "8-reddit-p41p46-b1890fix"
+RULESET_VERSION = "9-wa-p47p48"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -1855,6 +1855,119 @@ def check_p46(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Lis
     )]
 
 
+# --- WA reddit Tier-2/3 batch P47-P48 (2026-08-02, ruleset 8-* -> 9-wa-*) ---
+# Both were validated success-safe over the full 624-episode WA cell BEFORE landing: R1 fired on
+# 24 failed / 0 success, R3 on 9 / 0. Two sibling candidates from the same round were rejected on
+# exactly this test and are NOT here: R2 (`NOELEM_ACTION_STREAK`) fired on 15 successes = 17% of
+# them, and R4 (`FORUM_NEVER_VISITED`) on 31 = 36% — R4 being the one the sub-agent rated first.
+# Presence-only rules look strongest right up until the success side is checked.
+
+# Postmill routes where a form is still open: new submission, new forum, edit.
+_FORM_URL_RE = re.compile(r"/submit/|/create_forum|/-/edit", re.I)
+# "there are no results" / "no submissions found" / "nothing was found" family.
+_NEGATIVE_FINISH_RE = re.compile(
+    r"\bno\s+(results?|submissions?|posts?|comments?|matches?)\b|"
+    r"\bnothing\s+(was\s+)?found\b|\bcould\s+not\s+find\b|\bnone\s+found\b", re.I)
+
+
+def check_p47(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P47: typed into a form, then finished without submitting it.
+
+    The last non-finish action is a `type`, no `click` follows it, and the page is still on a
+    form route when `finish` is issued. The text was entered and never committed, so the
+    evaluator reads a site that never changed. This is an agent-limit rather than a scaffold
+    failure: the type itself succeeded and the submit control was present.
+
+    Distinct from P46, which is about comment intents answered in `finish(answer=...)` with no
+    `type` at all. Here the type happened; the submit did not.
+
+    Firing rate on all three cells (mandatory before landing — a zero can be a site gate):
+      VWA classifieds  0.00%  <- SITE GATE, not a measurement. osclass is not Postmill, so
+                               /submit/ does not exist there: 0 of 224 episodes ever reach a
+                               form URL. Never read this zero as evidence.
+      VWA reddit       0.00%  <- a real measurement. Same Postmill app, 12 of 205 episodes DO
+                               reach a form URL, and none of them finishes on one.
+      WA reddit        3.70%  (22 of 594 failed episodes, 0 of 106 successes)
+
+    Count note: the Tier-3 digest reported 24. That figure is the base condition alone
+    (finish while on a form URL); adding the "last non-finish action is a type" clause the
+    digest's own prose specifies brings it to 22. The narrower one is used because it is the
+    stated mechanism — text entered, never committed. The third clause (no click after that
+    type) filters nothing on current data and is kept only as a guard for future runs.
+    """
+    if summary.get("success"):
+        return []
+    finish = _find_finish_step(steps)
+    if finish is None:
+        return []
+    if not _FORM_URL_RE.search(str(finish.get("obs_url") or "")):
+        return []
+    before = [s for s in steps if s is not finish and _action_type(s) != "finish"]
+    if not before:
+        return []
+    if _action_type(before[-1]) != "type":
+        return []
+    # no click between that type and the finish
+    idx = steps.index(before[-1])
+    if any(_action_type(s) == "click" for s in steps[idx + 1:]):
+        return []
+    return [PatternHit(
+        "P47", "PREMATURE_FINISH_ON_FORM", finish.get("step_idx"),
+        f"typed into a form then finished without submitting; url still "
+        f"{str(finish.get('obs_url') or '')[:70]}",
+        is_scaffold=False,
+    )]
+
+
+def check_p48(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
+    """P48: declared "no results" after a single search, in four steps or fewer.
+
+    The agent searched once, read the first page, and finished asserting absence. The
+    counter-example that motivates the rule is a matched pair in the same cell: on the same
+    user and the same site version, one episode reached `/user/<name>/submissions` and found
+    real posts while another asserted there were none.
+
+    Deliberately narrow — coverage is ~1.7% of failures. Widening the step bound pulls in
+    episodes that did search several ways before concluding absence, which is not this failure.
+
+    Firing rate on all three cells (mandatory before landing):
+      VWA classifieds  0.00%  (0 of 3621 failed)
+      VWA reddit       0.29%  (10 of 3434 failed)
+      WA reddit        0.00%  (0 of 594 failed) — the cell it was designed on, see below
+
+    Success side: one success episode matches the pattern, `reddit_task_160` on B0/Vision. It is
+    NOT a counter-example: task 160 is outside the scored universe under AMENDMENT_08, and its
+    eval is `must_exclude`-only, i.e. passive-satisfiable — the "success" is the known false
+    positive catalogued in `reddit_sidebar_leakage_audit.md`. Inside the scored universe the
+    success-side hit count is 0.
+
+    ⚠️ **It does not cover the episodes it was proposed from.** Measured on the WA cell: of 537
+    failed episodes, 379 searched and 5 finished with a negative assertion — and all 5 run to
+    8, 15 and 28 steps, so the four-step bound excludes every one of them. The Tier-3 digest
+    reported 9 for this candidate; the landed regex finds 5, so its phrasing set was wider too.
+    The rule is kept because the mechanism is real and the success side is clean, but its
+    coverage belongs to VWA reddit (10 hits) and NOT to WA (0). Anyone widening the step bound
+    to recover the motivating episodes must re-run the success-safe check first — that bound is
+    the only thing currently separating this from "the agent searched and was right".
+    """
+    if summary.get("success"):
+        return []
+    if len(steps) > 4:
+        return []
+    if not any("/search?q=" in str(s.get("obs_url") or "") for s in steps):
+        return []
+    answer = _finish_answer(steps)
+    if not answer or not _NEGATIVE_FINISH_RE.search(answer):
+        return []
+    finish = _find_finish_step(steps)
+    return [PatternHit(
+        "P48", "PREMATURE_NEGATIVE_AFTER_SEARCH",
+        (finish or steps[-1]).get("step_idx"),
+        f"asserted absence after one search in {len(steps)} steps: {answer[:70]}",
+        is_scaffold=False,
+    )]
+
+
 # ---------------------------------------------------------------------------
 # Rule registry
 # ---------------------------------------------------------------------------
@@ -1907,6 +2020,8 @@ ALL_RULES: Dict[str, Any] = {
     "P44": check_p44,   # hallucinated element ref (missing union_bound) — was uncovered
     "P45": check_p45,   # identical failed action streak >=3 (P36 consecutiveness)
     "P46": check_p46,   # comment/reply intent never committed text
+    "P47": check_p47,   # typed into a form then finished without submitting
+    "P48": check_p48,   # declared "no results" after a single search
 }
 
 

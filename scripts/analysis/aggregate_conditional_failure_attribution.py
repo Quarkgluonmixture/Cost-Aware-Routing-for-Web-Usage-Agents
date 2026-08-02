@@ -256,9 +256,9 @@ def render(d: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--scan-dir", type=Path,
-                    default=REPO / "results/diag_scans/v8_vwa")
+                    default=REPO / "results/diag_scans/v9_vwa")
     ap.add_argument("--wa-scan-dir", type=Path,
-                    default=REPO / "results/diag_scans/v8_wa")
+                    default=REPO / "results/diag_scans/v9_wa")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,

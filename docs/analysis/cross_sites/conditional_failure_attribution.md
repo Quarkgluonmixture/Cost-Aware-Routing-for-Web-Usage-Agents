@@ -38,9 +38,9 @@ Pooled over six cells. 172 losing-channel failure episodes on the disagreement s
 | `P17` | click-back振荡 | 5.8% | 4.2% | **1.39x** | 10 |
 | `P12` | 从不翻页 | 14.0% | 14.8% | **0.95x** | 24 |
 | `P4` | 根节点误操作 | 5.2% | 5.5% | **0.94x** | 9 |
-| `P31` | budget耗尽未完成 | 49.4% | 54.1% | **0.91x** | 85 |
+| `P31` | budget耗尽未完成 | 47.7% | 53.9% | **0.88x** | 82 |
 | `P36` | WALK_FAIL_DEGENERATE | 31.4% | 36.3% | **0.87x** | 54 |
-| `P14` | URL 自环 | 27.9% | 34.2% | **0.81x** | 48 |
+| `P14` | URL 自环 | 27.9% | 34.3% | **0.81x** | 48 |
 | `P5` | 感知缺失循环 | 42.4% | 52.6% | **0.81x** | 73 |
 | `P45` | IDENTICAL_FAILED_ACTION_STREAK | 12.8% | 17.1% | **0.75x** | 22 |
 | `P33` | 导航至裸图片URL幻觉 | 7.6% | 11.7% | **0.65x** **←** | 13 |
@@ -54,7 +54,7 @@ Pooled over six cells. 380 losing-channel failure episodes on the disagreement s
 | `P27` | 找不到即放弃 | 2.9% | 1.0% | **3.01x** **←** | 11 |
 | `P17` | click-back振荡 | 16.1% | 7.1% | **2.26x** **←** | 61 |
 | `P16` | 视觉图像内容DOM必败 | 6.6% | 2.9% | **2.25x** **←** | 25 |
-| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 51.6% | 30.3% | **1.70x** **←** | 196 |
+| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 51.6% | 30.6% | **1.68x** **←** | 196 |
 | `P19` | url_match过早搜索页finish | 2.1% | 1.4% | **1.55x** **←** | 8 |
 | `P30` | 到达正确item后离开 | 2.1% | 1.5% | **1.39x** | 8 |
 | `P4` | 根节点误操作 | 9.2% | 9.0% | **1.02x** | 35 |
@@ -68,7 +68,7 @@ Pooled over six cells. 380 losing-channel failure episodes on the disagreement s
 | `P6` | 视觉任务 DOM 必然失败 | 3.7% | 5.6% | **0.66x** **←** | 14 |
 | `P44` | HALLUCINATED_ELEMENT_REF | 11.3% | 18.8% | **0.60x** **←** | 43 |
 | `P18` | cheapest漏价格排序 | 3.4% | 6.1% | **0.56x** **←** | 13 |
-| `P31` | budget耗尽未完成 | 28.4% | 56.7% | **0.50x** **←** | 108 |
+| `P31` | budget耗尽未完成 | 27.6% | 56.4% | **0.49x** **←** | 105 |
 | `P25` | 跨站任务跳过其中一站 | 2.6% | 9.7% | **0.27x** **←** | 10 |
 
 ## 4. Rules that cannot be compared across sites
