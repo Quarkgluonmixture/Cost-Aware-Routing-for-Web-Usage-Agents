@@ -140,7 +140,61 @@ def _build_step_dirs() -> dict[str, dict[str, dict[str, Path | None]]]:
 STEP_DIRS: dict[str, dict[str, dict[str, Path | None]]] = _build_step_dirs()
 BASELINES = ["B0", "B1", "B2"]
 SITES = ["reddit", "classifieds"]
-SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
+SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search"),
+                  "wa_reddit": ("/search",)}
+
+# --- WebArena as a seventh cell (--with-wa) -------------------------------------------------
+# §G2 found this dimension had no WA cell while the other four step-reading products got one on
+# 2026-08-02. The reason is instructive: this product looked ✅ complete in the coverage matrix
+# while every contrast in it was n=0, so nobody asked whether it covered WA. A bug concealed a
+# hole. Output is split to *_with_wa.* because appending a cell rewrites the /6 consistency
+# denominators and is not a superset of the six-cell result.
+WA_ROOT = ROOT / "results/webarena/phase1"
+WA_GLOBS = {
+    "DOM": "B1_dom_wa_reddit_2026*_R*", "SoM": "B1_som_wa_reddit_2026*_R*",
+    "Vision": "B1_vision_wa_reddit_2026*_R*", "P-text": "B1_phantom_text_wa_reddit_2026*_R*",
+    "P-prompt": "B1_phantom_prompt_wa_reddit_2026*_R*",
+    "Phantom-SoM": "B1_phantom_som_wa_reddit_2026*_R*",
+}
+WA_UNIVERSE: Optional[set] = None      # set by attach_wa(); WA has no AMENDMENT_08 list
+
+
+def attach_wa() -> int:
+    """Add B1 x WA-reddit to STEP_DIRS and SITES. Raises rather than degrading silently."""
+    global WA_UNIVERSE
+    import glob as _glob
+    modes: dict[str, Path] = {}
+    for disp, pat in WA_GLOBS.items():
+        hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat)) if Path(d).is_dir())
+        if not hits:
+            raise SystemExit(f"attach_wa: no run dir for {disp} ({pat})")
+        ep = next(Path(hits[-1]).glob("*/episodes"), None)
+        if ep is None or not ep.is_dir():
+            raise SystemExit(f"attach_wa: no episodes dir under {hits[-1]}")
+        modes[disp] = ep
+    uni = None
+    for ep in modes.values():
+        ids = {int(f.name.split("_task_")[1].split("_")[0])
+               for f in ep.glob("reddit_task_*_summary_v2.json")}
+        uni = ids if uni is None else (uni & ids)
+    if not uni:
+        raise SystemExit("attach_wa: empty task intersection across the six modes")
+    WA_UNIVERSE = uni
+    STEP_DIRS.setdefault("B1", {})["wa_reddit"] = {
+        # STEP_DIRS keys are the axis-script mode names; Vision/P-text carry through unchanged
+        k: modes[k] for k in modes}
+    SITES.append("wa_reddit")
+    return len(uni)
+
+
+def _scored_for(site: str) -> set:
+    """Canonical scored set. WA carries no AMENDMENT_08 exclusion, so its universe is the task
+    set common to all six modes rather than a curated list."""
+    if site == "wa_reddit":
+        if WA_UNIVERSE is None:
+            raise SystemExit("wa_reddit requested without attach_wa()")
+        return WA_UNIVERSE
+    return set(expected_scored_ids(site)[0])
 SELFCORR_TOKENS = ("mistake", "wrong", "try again", "go back")
 
 
@@ -208,8 +262,9 @@ def per_task_metrics(baseline: str, site: str, mode: str) -> dict[int, dict[str,
     # exclusions (58, 160) were inside every effect size. On the P-SoM arm the count even read
     # as correct: two identity-dropped episodes cancelled the two extra ones, giving n=203 and a
     # passing check over the wrong 203 tasks. Compare sets, not counts. (§F audit, 2026-08-02)
-    scored = set(expected_scored_ids(site)[0])
-    for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
+    scored = _scored_for(site)
+    prefix = "reddit" if site == "wa_reddit" else site      # WA files are reddit_task_*
+    for path in sorted(ep_dir.glob(f"{prefix}_task_*_steps_v2.jsonl")):
         tid = step_task_id(path)
         if tid not in scored:
             continue
@@ -694,7 +749,9 @@ def main() -> None:
         "validation": {
             # §139.8: scored-set sizes (total − N/A excluded at load) from the
             # single source of truth, not pre-exclusion 234/210.
-            "expected_n": {_s: paper_scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")},
+            "expected_n": {_s: (len(WA_UNIVERSE) if _s == "wa_reddit"
+                                else paper_scored_task_count(_s, "visualwebarena", strict=True))
+                           for _s in SITES},
             "non_negligible_thresholds": {"cohen_d_z_abs_gt": 0.1, "cohen_h_abs_gt": 0.1},
             "n_checks": {},
             "consistency_checks": {},
@@ -884,8 +941,10 @@ def main() -> None:
     out["validation"]["identity_skipped_episodes"] = {
         "/".join(k): sorted(v) for k, v in sorted(IDENTITY_SKIPS.items())}
     out = round_floats(out)
-    OUT_JSON.write_text(json.dumps(out, indent=2) + "\n")
-    print(f"[json] {OUT_JSON}")
+    _oj = (OUT_JSON.with_name(OUT_JSON.stem + "_with_wa" + OUT_JSON.suffix)
+           if WA_UNIVERSE is not None else OUT_JSON)
+    _oj.write_text(json.dumps(out, indent=2) + "\n")
+    print(f"[json] {_oj}")
 
     # Helper for table rendering — defined BEFORE Tier 1 since both tiers use it
     def fmt(d: dict, binary: bool) -> str:
@@ -1153,9 +1212,16 @@ def main() -> None:
         "(AXTree vs [SOM_MARKS] structure, DOM vs SoM prompting, marginal image). This run finds "
         f"**{_n_anta} antagonistic mechanism pair(s)** that endpoint-only comparison would mask."
     )
-    OUT_MD.write_text("\n".join(lines))
-    print(f"[md]   {OUT_MD}")
+    _om = (OUT_MD.with_name(OUT_MD.stem + "_with_wa" + OUT_MD.suffix)
+           if WA_UNIVERSE is not None else OUT_MD)
+    _om.write_text("\n".join(lines))
+    print(f"[md]   {_om}")
 
 
 if __name__ == "__main__":
+    if "--with-wa" in sys.argv:
+        _n = attach_wa()
+        print(f"[axis_effect_size] WA cell attached: B1 x wa_reddit, n={_n} "
+              f"(task set common to all six modes; WA has no AMENDMENT_08 list)",
+              file=sys.stderr)
     main()

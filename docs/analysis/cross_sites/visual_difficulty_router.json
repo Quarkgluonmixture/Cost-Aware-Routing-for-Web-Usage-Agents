@@ -1,0 +1,160 @@
+{
+  "schema": "2026-08-02-visual-difficulty-router-v1",
+  "post_hoc_exploratory": true,
+  "label": "solvable by any of the six arms (same as router_triage_learnability)",
+  "cells": {
+    "cls_B0": {
+      "n": 224,
+      "n_positive": 97,
+      "n_features_without": 20,
+      "n_features_with": 21,
+      "per_scorer": {
+        "lr": {
+          "auroc_without": 0.6758665476093839,
+          "auroc_with": 0.6694536894228428
+        },
+        "visual_difficulty_alone": {
+          "auroc_without": NaN,
+          "auroc_with": 0.5338095624644857
+        }
+      },
+      "best_scorer": "lr",
+      "auroc_without": 0.6758665476093839,
+      "auroc_with": 0.6694536894228428,
+      "delta_auroc": -0.006412858186541137,
+      "visual_difficulty_dist": {
+        "easy": 67,
+        "medium": 76,
+        "hard": 81
+      }
+    },
+    "red_B0": {
+      "n": 203,
+      "n_positive": 53,
+      "n_features_without": 20,
+      "n_features_with": 21,
+      "per_scorer": {
+        "lr": {
+          "auroc_without": 0.6655345911949686,
+          "auroc_with": 0.6669811320754717
+        },
+        "visual_difficulty_alone": {
+          "auroc_without": NaN,
+          "auroc_with": 0.6303773584905661
+        }
+      },
+      "best_scorer": "lr",
+      "auroc_without": 0.6655345911949686,
+      "auroc_with": 0.6669811320754717,
+      "delta_auroc": 0.001446540880503111,
+      "visual_difficulty_dist": {
+        "easy": 93,
+        "medium": 71,
+        "hard": 39
+      }
+    },
+    "cls_B1": {
+      "n": 224,
+      "n_positive": 55,
+      "n_features_without": 20,
+      "n_features_with": 21,
+      "per_scorer": {
+        "lr": {
+          "auroc_without": 0.7169983862291555,
+          "auroc_with": 0.7031199569661108
+        },
+        "visual_difficulty_alone": {
+          "auroc_without": NaN,
+          "auroc_with": 0.5529854760623991
+        }
+      },
+      "best_scorer": "lr",
+      "auroc_without": 0.7169983862291555,
+      "auroc_with": 0.7031199569661108,
+      "delta_auroc": -0.013878429263044612,
+      "visual_difficulty_dist": {
+        "easy": 67,
+        "medium": 76,
+        "hard": 81
+      }
+    },
+    "red_B1": {
+      "n": 203,
+      "n_positive": 24,
+      "n_features_without": 20,
+      "n_features_with": 21,
+      "per_scorer": {
+        "lr": {
+          "auroc_without": 0.68493947858473,
+          "auroc_with": 0.7126396648044693
+        },
+        "visual_difficulty_alone": {
+          "auroc_without": NaN,
+          "auroc_with": 0.6204608938547486
+        }
+      },
+      "best_scorer": "lr",
+      "auroc_without": 0.68493947858473,
+      "auroc_with": 0.7126396648044693,
+      "delta_auroc": 0.027700186219739242,
+      "visual_difficulty_dist": {
+        "easy": 93,
+        "medium": 71,
+        "hard": 39
+      }
+    },
+    "cls_B2": {
+      "n": 224,
+      "n_positive": 16,
+      "n_features_without": 20,
+      "n_features_with": 21,
+      "per_scorer": {
+        "lr": {
+          "auroc_without": 0.6505408653846154,
+          "auroc_with": 0.6424278846153846
+        },
+        "visual_difficulty_alone": {
+          "auroc_without": NaN,
+          "auroc_with": 0.5697115384615384
+        }
+      },
+      "best_scorer": "lr",
+      "auroc_without": 0.6505408653846154,
+      "auroc_with": 0.6424278846153846,
+      "delta_auroc": -0.008112980769230838,
+      "visual_difficulty_dist": {
+        "easy": 67,
+        "medium": 76,
+        "hard": 81
+      }
+    },
+    "red_B2": {
+      "n": 203,
+      "n_positive": 15,
+      "n_features_without": 20,
+      "n_features_with": 21,
+      "per_scorer": {
+        "lr": {
+          "auroc_without": 0.4828014184397163,
+          "auroc_with": 0.5289007092198581
+        },
+        "visual_difficulty_alone": {
+          "auroc_without": NaN,
+          "auroc_with": 0.7184397163120567
+        }
+      },
+      "best_scorer": "lr",
+      "auroc_without": 0.4828014184397163,
+      "auroc_with": 0.5289007092198581,
+      "delta_auroc": 0.0460992907801418,
+      "visual_difficulty_dist": {
+        "easy": 93,
+        "medium": 71,
+        "hard": 39
+      }
+    }
+  },
+  "mean_delta_auroc": 0.007806958276927928,
+  "n_cells_improved": 3,
+  "n_cells": 6
+}
