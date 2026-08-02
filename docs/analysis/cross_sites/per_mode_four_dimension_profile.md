@@ -1,6 +1,6 @@
 # Per-mode four-dimension evidence profile
 
-- generated: `2026-08-02T09:36:03+00:00`
+- generated: `2026-08-02T13:52:12+00:00`
 - schema: `2026-08-02-per-mode-four-dimension-profile-v2`
 - **post_hoc_exploratory=True / h10_eligible=False**
 - 笔记 §108 evidence layer, cross-mode axis (the paper-headline axis per `paper_section2_framework.canvas`). `INDEX.md §7`: the framework was defined but only the **Macro** dimension had ever been computed per mode. This is the first run of all four.
@@ -38,6 +38,7 @@ A per-mode difference only counts if it holds across cells. `unanimous` = the sa
 | Micro | action failure | action was a click | Vision | 3/6 | P-text | 4/6 | — | 1.00–1.36× |  |
 | Micro | action failure | action was a type | DOM | 2/6 | Vision | 4/6 | — | 1.09–2.19× |  |
 | Micro | page-unchanged (no-op) step rate | Vision | 6/6 | P-text | 3/6 | — | 1.07–1.58× | ◆ **high: Vision 6/6** (arch. downstream) |
+| Micro | scroll action that did not move the viewport | Vision | 5/6 | SoM | 5/6 | — | 1.23–3.50× |  |
 | Micro | no-op despite a SUCCEEDING action | SoM | 5/6 | P-text | 2/6 | — | 1.02–1.50× |  |
 | Micro | page changed but channel did not show it | Vision | 2/6 | Vision | 4/6 | — | 1.03–1.22× |  |
 | Micro | locator fallback rate | P-prompt | 2/6 | Vision | 6/6 | — | 1.00–1.43× | ⚙️ **low: Vision 6/6** (by construction) |
@@ -255,6 +256,8 @@ trajectory metrics on the **224 tasks every mode has a usable trajectory for** (
 | action failure | action was a type *(pooled-step)* | 0.0896 | 0.0130 | 0.0291 | 0.0409 | 0.0723 | 0.0189 |
 | page-unchanged (no-op) step rate *(task-macro)* | 0.2413 | 0.2156 | 0.2629 | 0.2094 | 0.2463 | 0.2206 |
 | page-unchanged (no-op) step rate *(pooled-step)* | 0.2203 | 0.1764 | 0.2671 | 0.1777 | 0.2412 | 0.1999 |
+| scroll action that did not move the viewport *(task-macro)* | 0.0958 | 0.0178 | 0.0718 | 0.0712 | 0.0776 | 0.0780 |
+| scroll action that did not move the viewport *(pooled-step)* | 0.2678 | 0.1036 | 0.1962 | 0.2016 | 0.2845 | 0.2620 |
 | no-op despite a SUCCEEDING action *(task-macro)* | 0.1079 | 0.1339 | 0.1130 | 0.1082 | 0.1138 | 0.1088 |
 | no-op despite a SUCCEEDING action *(pooled-step)* | 0.0469 | 0.0529 | 0.0433 | 0.0446 | 0.0472 | 0.0418 |
 | page changed but channel did not show it *(task-macro)* | 0.0464 | 0.0511 | 0.0579 | 0.0415 | 0.0486 | 0.0424 |
@@ -281,6 +284,8 @@ trajectory metrics on the **201 tasks every mode has a usable trajectory for** (
 | action failure | action was a type *(pooled-step)* | 0.1891 | 0.0598 | 0.0560 | 0.2186 | 0.1626 | 0.1248 |
 | page-unchanged (no-op) step rate *(task-macro)* | 0.2938 | 0.3284 | 0.4304 | 0.3391 | 0.2700 | 0.3353 |
 | page-unchanged (no-op) step rate *(pooled-step)* | 0.3081 | 0.3620 | 0.4708 | 0.3694 | 0.2787 | 0.3656 |
+| scroll action that did not move the viewport *(task-macro)* | 0.1607 | 0.0846 | 0.2681 | 0.1456 | 0.1494 | 0.1596 |
+| scroll action that did not move the viewport *(pooled-step)* | 0.3776 | 0.2993 | 0.5046 | 0.5510 | 0.4727 | 0.5361 |
 | no-op despite a SUCCEEDING action *(task-macro)* | 0.0723 | 0.0769 | 0.0487 | 0.0470 | 0.0757 | 0.0502 |
 | no-op despite a SUCCEEDING action *(pooled-step)* | 0.0244 | 0.0235 | 0.0137 | 0.0150 | 0.0268 | 0.0176 |
 | page changed but channel did not show it *(task-macro)* | 0.0755 | 0.0918 | 0.0637 | 0.0872 | 0.0932 | 0.0973 |
@@ -307,6 +312,8 @@ trajectory metrics on the **224 tasks every mode has a usable trajectory for** (
 | action failure | action was a type *(pooled-step)* | 0.2812 | 0.2558 | 0.2196 | 0.2188 | 0.1829 | 0.3721 |
 | page-unchanged (no-op) step rate *(task-macro)* | 0.3588 | 0.3531 | 0.5476 | 0.3173 | 0.3799 | 0.3811 |
 | page-unchanged (no-op) step rate *(pooled-step)* | 0.3912 | 0.4023 | 0.6549 | 0.3364 | 0.4066 | 0.4196 |
+| scroll action that did not move the viewport *(task-macro)* | 0.2189 | 0.1488 | 0.2778 | 0.1593 | 0.1781 | 0.1690 |
+| scroll action that did not move the viewport *(pooled-step)* | 0.6667 | 0.6116 | 0.6557 | 0.5092 | 0.6700 | 0.5957 |
 | no-op despite a SUCCEEDING action *(task-macro)* | 0.0741 | 0.1043 | 0.0936 | 0.0584 | 0.0704 | 0.0593 |
 | no-op despite a SUCCEEDING action *(pooled-step)* | 0.0175 | 0.0240 | 0.0164 | 0.0159 | 0.0171 | 0.0178 |
 | page changed but channel did not show it *(task-macro)* | 0.0111 | 0.0135 | 0.0182 | 0.0095 | 0.0122 | 0.0149 |
@@ -333,6 +340,8 @@ trajectory metrics on the **203 tasks every mode has a usable trajectory for** (
 | action failure | action was a type *(pooled-step)* | 0.0966 | 0.3261 | 0.0789 | 0.2111 | 0.1343 | 0.2140 |
 | page-unchanged (no-op) step rate *(task-macro)* | 0.2737 | 0.3575 | 0.5817 | 0.3189 | 0.3402 | 0.3681 |
 | page-unchanged (no-op) step rate *(pooled-step)* | 0.2782 | 0.3815 | 0.6496 | 0.3211 | 0.3580 | 0.3883 |
+| scroll action that did not move the viewport *(task-macro)* | 0.0897 | 0.1106 | 0.3016 | 0.1559 | 0.1143 | 0.1459 |
+| scroll action that did not move the viewport *(pooled-step)* | 0.5877 | 0.6587 | 0.7412 | 0.6414 | 0.4745 | 0.6860 |
 | no-op despite a SUCCEEDING action *(task-macro)* | 0.0471 | 0.0607 | 0.0501 | 0.0363 | 0.0450 | 0.0363 |
 | no-op despite a SUCCEEDING action *(pooled-step)* | 0.0122 | 0.0117 | 0.0100 | 0.0079 | 0.0112 | 0.0070 |
 | page changed but channel did not show it *(task-macro)* | 0.0505 | 0.0610 | 0.0223 | 0.0420 | 0.0547 | 0.0591 |
@@ -359,6 +368,8 @@ trajectory metrics on the **224 tasks every mode has a usable trajectory for** (
 | action failure | action was a type *(pooled-step)* | 0.3732 | 0.2579 | 0.6517 | 0.4170 | 0.4938 | 0.2879 |
 | page-unchanged (no-op) step rate *(task-macro)* | 0.5265 | 0.5840 | 0.6850 | 0.4527 | 0.5042 | 0.4328 |
 | page-unchanged (no-op) step rate *(pooled-step)* | 0.5259 | 0.6010 | 0.6923 | 0.4393 | 0.5060 | 0.4264 |
+| scroll action that did not move the viewport *(task-macro)* | 0.0989 | 0.0672 | 0.4434 | 0.1297 | 0.1372 | 0.0993 |
+| scroll action that did not move the viewport *(pooled-step)* | 0.2540 | 0.2330 | 0.5972 | 0.3727 | 0.5534 | 0.4259 |
 | no-op despite a SUCCEEDING action *(task-macro)* | 0.0176 | 0.0246 | 0.0146 | 0.0118 | 0.0095 | 0.0075 |
 | no-op despite a SUCCEEDING action *(pooled-step)* | 0.0046 | 0.0062 | 0.0036 | 0.0023 | 0.0026 | 0.0019 |
 | page changed but channel did not show it *(task-macro)* | 0.0305 | 0.0262 | 0.0167 | 0.0293 | 0.0275 | 0.0265 |
@@ -385,6 +396,8 @@ trajectory metrics on the **203 tasks every mode has a usable trajectory for** (
 | action failure | action was a type *(pooled-step)* | 0.4087 | 0.4649 | 0.7177 | 0.3156 | 0.4653 | 0.4296 |
 | page-unchanged (no-op) step rate *(task-macro)* | 0.5013 | 0.4027 | 0.6686 | 0.2917 | 0.6095 | 0.3250 |
 | page-unchanged (no-op) step rate *(pooled-step)* | 0.4968 | 0.3987 | 0.6912 | 0.2779 | 0.6097 | 0.3150 |
+| scroll action that did not move the viewport *(task-macro)* | 0.1564 | 0.0526 | 0.5473 | 0.0944 | 0.1149 | 0.1368 |
+| scroll action that did not move the viewport *(pooled-step)* | 0.4609 | 0.3226 | 0.7084 | 0.3807 | 0.4120 | 0.4929 |
 | no-op despite a SUCCEEDING action *(task-macro)* | 0.0093 | 0.0192 | 0.0287 | 0.0071 | 0.0054 | 0.0093 |
 | no-op despite a SUCCEEDING action *(pooled-step)* | 0.0026 | 0.0056 | 0.0057 | 0.0020 | 0.0016 | 0.0016 |
 | page changed but channel did not show it *(task-macro)* | 0.0441 | 0.0519 | 0.0046 | 0.0413 | 0.0420 | 0.0335 |
@@ -459,7 +472,7 @@ trajectory metrics on the **203 tasks every mode has a usable trajectory for** (
 
 ## Reading notes
 
-1. **8 of 25 metrics have a unanimous extreme mode — but they fall into three classes, not two: 1 empirical, 3 architecturally downstream, 4 tautological.** The earlier revision of this file used a binary split and put the downstream group on the empirical side; Gemini (cross-AI Mode C, 2026-07-29) attacked that, correctly.
+1. **8 of 26 metrics have a unanimous extreme mode — but they fall into three classes, not two: 1 empirical, 3 architecturally downstream, 4 tautological.** The earlier revision of this file used a binary split and put the downstream group on the empirical side; Gemini (cross-AI Mode C, 2026-07-29) attacked that, correctly.
    **Empirical — not predictable from the design:**
    - `URL-revisit step rate` (Macro): **Vision** highest in 6/6, 1.0–1.1× the next mode
    **◆ Architecturally downstream — real magnitudes, predictable direction.** One causal chain explains all of them: coordinate-only addressing → more off-target clicks → page unchanged → scroll to re-orient. Citing these as behavioural discoveries overstates them; promoting one requires a baseline for what a coordinate-addressed agent *should* score, which this profile does not provide.

@@ -108,6 +108,7 @@ DIMENSIONS: dict[str, list[tuple[str, str]]] = {
         ("click_fail_rate", "action failure | action was a click"),
         ("type_fail_rate", "action failure | action was a type"),
         ("no_change_rate", "page-unchanged (no-op) step rate"),
+        ("scroll_inert_rate", "scroll action that did not move the viewport"),
         ("noop_inert_rate", "no-op despite a SUCCEEDING action"),
         ("visibility_gap_rate", "page changed but channel did not show it"),
         ("locator_fallback_rate", "locator fallback rate"),
@@ -123,7 +124,7 @@ DIMENSIONS: dict[str, list[tuple[str, str]]] = {
     ],
 }
 LOWER_IS_BETTER = {
-    "parse_fail_rate", "action_fail_rate", "no_change_rate",
+    "parse_fail_rate", "action_fail_rate", "no_change_rate", "scroll_inert_rate",
     "locator_fallback_rate", "action_repeat_frac", "mean_cost_usd",
     "cost_rel_dom", "mean_latency_s", "mean_latency_canonical_s", "mean_tokens", "n_steps",
     "cap_hit_rate", "url_revisit_rate", "noop_inert_rate",
@@ -323,6 +324,22 @@ def steps_layer(baseline: str, site: str, mode: str, *, spec: dict | None = None
         parse_fail = sum(1 for s in steps if s.get("parse_valid") is False)
         act_fail = sum(1 for s in steps if s.get("action_success") is False)
         no_change = sum(1 for s in steps if s.get("page_changed") is False)
+        # scroll_inert: a scroll action after which `state_digest.scroll_y` is unchanged —
+        # the agent asked to scroll and the viewport did not move. Added 2026-08-02 from the
+        # §G1 unread-field inventory; `state_digest.scroll_y_before/after` were populated on
+        # every step and read by nothing. Most of that inventory turned out to be dead schema
+        # (retry_count, screenshot_timeout_recovered, destructive_action_count and six others
+        # are 0% or never populated), which is itself the answer to "the metric pool is only
+        # as wide as what we chose".
+        _scroll_steps = [s for s in steps if A._action_type(s) == "scroll"]
+        scroll_inert = sum(
+            1 for s in _scroll_steps
+            if (s.get("state_digest") or {}).get("scroll_y_after") is not None
+            and (s["state_digest"]["scroll_y_after"]
+                 == (s["state_digest"] or {}).get("scroll_y_before")))
+        scroll_denom = sum(
+            1 for s in _scroll_steps
+            if (s.get("state_digest") or {}).get("scroll_y_after") is not None)
         loc_fb = sum(1 for s in steps
                      if isinstance(s.get("locator_route_meta"), dict)
                      and s["locator_route_meta"].get("fallback_used") is True)
@@ -391,6 +408,7 @@ def steps_layer(baseline: str, site: str, mode: str, *, spec: dict | None = None
             "parse_fail_rate": parse_fail / n,
             "action_fail_rate": act_fail / n,
             "no_change_rate": no_change / n,
+            "scroll_inert_rate": (scroll_inert / scroll_denom) if scroll_denom else 0.0,
             "locator_fallback_rate": loc_fb / n,
             "action_repeat_frac": (repeats / (n - 1)) if n > 1 else 0.0,
             "finish_rate": 1.0 if acts[-1] == "finish" else 0.0,
@@ -404,6 +422,7 @@ def steps_layer(baseline: str, site: str, mode: str, *, spec: dict | None = None
             "_click": float(acts.count("click")), "_type": float(acts.count("type")),
             "_scroll": float(acts.count("scroll")), "_parse_fail": float(parse_fail),
             "_act_fail": float(act_fail), "_no_change": float(no_change),
+            "_scroll_inert": float(scroll_inert), "_scroll_denom": float(scroll_denom),
             "_loc_fb": float(loc_fb), "_repeats": float(repeats),
             "_repeat_denom": float(n - 1) if n > 1 else 0.0,
             "_vis_gap": float(vis_gap), "_vis_denom": float(vis_denom),
@@ -425,6 +444,7 @@ POOLED_SPEC = {
     "parse_fail_rate": ("_parse_fail", "_n_steps"),
     "action_fail_rate": ("_act_fail", "_n_steps"),
     "no_change_rate": ("_no_change", "_n_steps"),
+    "scroll_inert_rate": ("_scroll_inert", "_scroll_denom"),
     "locator_fallback_rate": ("_loc_fb", "_n_steps"),
     "action_repeat_frac": ("_repeats", "_repeat_denom"),
     "visibility_gap_rate": ("_vis_gap", "_vis_denom"),
