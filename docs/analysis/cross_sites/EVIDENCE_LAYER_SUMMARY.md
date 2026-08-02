@@ -109,12 +109,19 @@ timestamp line excluded). Three things the seventh cell changed, none of them co
 
 And one exception to a claim made earlier in this document:
 
-4. **WA is the only cell where a cascade operating point Pareto-beats always-rich**, which it does
-   by *matching* its success rate exactly (13.46%) while escalating 30–40% of tasks rather than
-   all of them, at 1.56–1.65× cost against 1.78×. Claim 5 in §5 is amended accordingly.
-   ⚠️ Thresholds are swept rather than held out, 80 combinations are searched per cell, and at
-   n = 104 one task is 0.96pp. Two of 80 points landing on an exact tie is what a search of that
-   size produces by chance, so this is reported as an exception to state, not a result to build on.
+4. ~~**WA is the only cell where a cascade operating point Pareto-beats always-rich**~~ —
+   **WITHDRAWN 2026-08-02 (§H stress P0-2).** Both winning points were tie artefacts:
+   * `min_margin_min`@40% — that signal has **one distinct value across all 104 episodes**, so
+     the "confidence ranking" fell through to the stable sort's task-id order. The reported
+     operating point was literally the first 42 task ids. The signal is now dropped before
+     ranking, and the same defect exists on `red_B2` in VWA.
+   * `neg_steps`@30% — **60 episodes tie at the cutoff** and 28 of them are chosen by task id.
+     Across tie orders the SR spans **8.65–14.42%**, and the reported 13.46% "exact match" with
+     always-rich sits inside that arbitrary span.
+
+   Kept struck through rather than deleted: B0 × WA is still running, so when it lands this must
+   be **re-judged with the fixed script**, not resurrected from the old text and not assumed dead
+   either.
 
 | still open | cost | what it buys |
 |---|---|---|
@@ -139,28 +146,58 @@ And one exception to a claim made earlier in this document:
 
 Stated as claims with their carrying product, so a frame can be chosen against them.
 
-1. **Adding an arm buys 1.97–8.65pp; adding a *rerun* buys 2.0–7.6pp.** At the one-arm margin on
+1. **Adding an arm buys 1.97–7.14pp; adding a *rerun* buys 2.0–7.6pp.** At the one-arm margin on
    `cls_B0` these are not separable. → `noise_floor_inventory`
-2. **Instability is enriched 17.4× on the tasks where the routing choice is contested**, while
-   aggregate SR between the same two runs moves under 2.3pp. → `label_instability`
+   ⚠️ The upper end was previously written as **8.65pp**, which that product does not contain:
+   its largest arm gain is 7.14pp. 8.65 is the WA figure measured from a *different baseline*
+   (the strongest image-bearing mode, 笔记 §407.3), not from the best single mode this table
+   uses. Two more limits belong on the sentence: "buys" is a post-hoc **two-arm oracle-ceiling
+   increment**, not an operational gain; and only two cells carry a floor at all, neither of
+   them on the arm being added.
+2. **Instability is enriched 3.9×–17.4× on the tasks where the routing choice is contested**,
+   while aggregate SR between the same two runs moves under 2.3pp. → `label_instability`
+   The range is not imprecision, it is two defensible definitions. 17.4× defines "contested"
+   over all six arms — correct for the *claim*, since a router chooses among six — but the flips
+   are produced by rerunning two of those six, so the same arms decide both membership and
+   outcome. Rebuilding the difficulty proxy from the other four breaks the circle and gives
+   **3.95×**, with the complement rate rising 2.94% → 11.88%. Neither figure may be quoted
+   alone. A binomial difficulty floor was also run: it predicts *infinite* enrichment (the
+   complement's floor is exactly 0), so the arithmetic deflates this number rather than
+   inflating it — but inside the contested band the excess over that floor is only 1.37×.
 3. **The fused mode is dearest in 5/6 cells and its pooled advantage clears neither the rerun
-   band nor, against DOM, zero.** In 7/7 cells it fails to significantly beat the single channel
+   band nor zero — against either comparator.** In 7/7 cells it fails to beat the single channel
    that suits the workload. → `fusion_premium`
+   Two corrections, both from §H. (a) The pool now resamples **tasks once per site**, because the
+   three backbones inside a site are scored on the same universe and are not independent draws;
+   that moves SoM − Vision from [+0.09, +2.80] to **[−0.01, +2.91]**, so the one interval that
+   excluded zero no longer does. (b) The word *significantly* is gone from the 7/7 sentence: the
+   comparator is picked per cell from the same observed success rates, so those CIs do not hold
+   nominal coverage. Separately, Cochran's Q rejects a common effect (I² = 59% and 77%), so the
+   fixed-effect pool describes no cell in particular and the per-cell table carries the finding.
 4. **Which channel to add reverses with workload modality** (VWA visual, WA text).
    → `noise_floor_inventory` §2 + `fusion_premium` §3
 5. **Four routing formulations fail.** For the cascade on post-action confidence, no operating
-   point Pareto-beats always-rich in any of the six VWA cells where the comparison is
-   non-degenerate. **On WA two of 80 swept points do**, by matching its success rate exactly at
-   lower cost; see §3.4 for why that is stated as an exception rather than a result.
-   → the four router products + `confidence_cascade{,_with_wa}`
+   point Pareto-beats always-rich in any of the four VWA cells where the comparison is
+   non-degenerate. **The WA exception is withdrawn** — both of its winning points were tie
+   artefacts, not thresholds; see §3.4. → the four router products + `confidence_cascade{,_with_wa}`
+   Three qualifications the earlier wording lacked: the non-degeneracy rule (`cheap_sr >=
+   rich_sr`) is **outcome-dependent** and labelled an exact 2.23% = 2.23% tie as "rich worse";
+   the search space is the signals a cell can actually rank with, not `len(SIGNALS) × len(fracs)`,
+   so "2 of 80" was denominator drift; and every number is an **offline splice** — an escalated
+   task takes its outcome from a standalone rich run, whereas a real cascade would start the rich
+   episode after the cheap one had already acted on a stateful site. That sequential outcome is
+   unobserved in this project.
 6. **The four image-free modes are behaviourally non-separable** across 25 metrics × 6 cells,
    while the image-bearing pair is separable mostly by construction.
    → `per_mode_four_dimension_profile` v2
-6b. **P-SoM is nonetheless distinct from both endpoints on 7 (metric, cell) combinations**
-   spanning four of the six cells and all three backbones. That is the multiplicity-corrected
-   figure (both legs clearing Benjamini-Hochberg at FDR 0.05, jointly over 96 Wilcoxon tests);
-   the uncorrected effect-size-only count is 15 and **should not be quoted bare**, and only 2
-   survive Holm. Non-separability among the four image-free modes and separability of P-SoM
+6b. **P-SoM lies off the DOM–SoM segment on 6 (metric, cell) combinations**, spanning four of
+   the six cells and all three backbones. Differing from both endpoints is *not* independence —
+   a mode interpolating between them also differs from both — so the count that matters requires
+   the two legs to disagree in sign, i.e. P-SoM is an extremum rather than a midpoint. On
+   `finish_rate@B1/reddit` it sits ~9pp below **both** endpoints while the endpoints differ from
+   each other by 0.5pp. Of the 7 that survive Benjamini-Hochberg (FDR 0.05, jointly over 96
+   Wilcoxon tests) 6 are off-segment and 1 interpolates; the uncorrected effect-size-only count
+   is 15 and **must not be quoted bare**; 2 survive Holm. Non-separability among the four image-free modes and separability of P-SoM
    from DOM *and* SoM are different questions on different quantities (mode-vs-mode extremes
    versus paired contrasts).
    → `axis_effect_size_report` Tier 1 — **this replaces the "no cells" reading**, which was an
@@ -182,12 +219,18 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    (c) WA's disagreement sets are 15 and 4 tasks. → `conditional_failure_attribution` §4
 8. **The obvious routing feature has the wrong sign**, and the right one was read and dropped.
    → `routing_feature_diagnostics`
-9. **Latency is a second axis, not a restatement of cost**; adding it widens the frontier in 3/6
-   cells — **under either latency estimand**. Re-tested 08-02 against
-   `total_latency_canonical_ms` (retry, busy-wait and recovered-screenshot subtracted): same
-   3/6, identical frontier membership, identical fastest mode in every cell. Only the span
-   narrows, and only on the API-served arm (B0·reddit 1.404× → 1.343×). The raw figure is what
-   §3.3's cross-benchmark span comparison uses. → `multimetric_pareto`
+9. **The latency ordering is not the cost ordering restated.** Mean Spearman
+   ρ(cost, latency) = **−0.095** over six cells, *negative* on all three classifieds cells, and
+   the cheapest mode differs from the fastest in exactly those three — a split that follows the
+   **site**, not the backbone. → `multimetric_pareto`
+   ⚠️ **The frontier-count argument for this claim is retracted.** "Adding latency widens the
+   frontier in 3/6 cells" is not evidence: adding an axis can only weakly enlarge a Pareto
+   frontier, and permuting latency across the six modes (all 720 assignments per cell) widens it
+   with probability 0.75–0.83, expected **4.70 of 6**, `P(≥3 of 6) = 0.978`. The observed 3 is
+   *below* chance. ⚠️ Also note per-cell exact permutation p-values on ρ are not significant —
+   six modes give a Spearman test almost no power — so this is a descriptive cross-cell
+   regularity, not a test. Under the canonical estimand mean ρ = −0.067, but the two estimands
+   are **identical by construction on 4 of 6 cells**, so only the API-served pair tests it.
 
 **Two frames are live and neither has been chosen.** One organises 1–2 as the conceptual
 contribution (an oracle gap is not a routing opportunity). One organises 3–4 as it (representation
@@ -212,13 +255,20 @@ For each claim in §5: the measurement that would refute it, and whether we have
 | 6b | multiplicity correction removing the effect | ✅ **done 08-02** | 15 → **7** under BH, **2** under Holm; the 7 span four cells and all three backbones. §5 now quotes the corrected figure |
 | 7 | a named mechanism on the text-wins side that the v8 ruleset cannot see — it was discovered on VWA, so it can only find VWA-shaped failures | ❌ | this is precisely what `/diag` Tier-2 on WA is for; the asymmetry may be a property of the ruleset rather than of the world |
 | 8 | the feature carrying the intuitive sign in some other cell or benchmark | ✅ all six cells; WA ships no reference images so it cannot arbitrate | closed as far as this data goes |
-| 9 | a different latency estimand changing the verdict; or the frontier widening simply because there are six modes | (a) ✅ **done 08-02** — canonical estimand, unchanged · (b) ❌ no permutation control | (b) is cheap: shuffle latency across modes and count how often 3/6 widening appears by chance |
+| 9 | a different latency estimand changing the verdict; or the frontier widening simply because there are six modes | (a) ✅ · (b) ✅ **done 08-02, and it refuted the claim** | the permutation control was run: expected 4.70/6 widened, `P(≥3)=0.978`. The frontier argument is retracted and claim 9 now rests on ρ(cost, latency) = −0.095 with a site-aligned cheapest≠fastest split |
 
-**Three of these were closed on 08-02** (2b, 6b, 9a) and each was closed by *running* the control
-rather than by arguing it was unnecessary. **Three remain cheap and open**: the `visual_difficulty`
-router fit (5), the latency permutation control (9b), and new metrics from the unread-field
-inventory (6). **Three are not cheap and are therefore limitations**: the third workload (4), the
-SoM floor (1, queued), and the WA-native failure vocabulary (7, needs the Tier-2 session).
+**Five were closed on 08-02** (2b, 6b, 9a, 9b, and the circularity check on 2) and each by
+*running* the control rather than arguing it was unnecessary. Two of them **refuted** what they
+tested: 9b killed the frontier argument, and the circularity check cut claim 2's headline from
+17.4× to a 3.9×–17.4× range. **Two remain cheap and open**: the `visual_difficulty` router fit
+(5) and new metrics from the unread-field inventory (6). **Three are not cheap and are therefore
+limitations**: the third workload (4), the SoM floor (1, queued), and the WA-native failure
+vocabulary (7, needs the Tier-2 session).
+
+A sixth, added by the same round and not yet run: the cascade's outcome for an escalated task is
+spliced from a standalone rich run, but a real cascade would start the rich episode *after* the
+cheap one had acted on a stateful site. No run in this project observes that sequential outcome,
+so claim 5 is about an offline splice and cannot be repaired by reanalysis.
 
 ## 7. Coverage holes per product (§G2 sweep, 2026-08-02)
 
