@@ -253,15 +253,16 @@ For each claim in §5: the measurement that would refute it, and whether we have
 | 5 | any routing formulation we did not try that wins — e.g. one using `visual_difficulty`, or the Tier-1 independence metrics | ⚠️ partial: `visual_difficulty` was diagnosed as read-but-dropped, never *fitted* | cheap and worth doing: fit one router with it and report that it does not rescue, rather than arguing it wouldn't |
 | 6 | any metric on which one image-free mode reaches ≥5/6 | ✅ and it survived adding 6 metrics chosen to find differences | but all 25 metrics are ours; §G1 found **186 unread fields**, so the negative is only as strong as the metric pool |
 | 6b | multiplicity correction removing the effect | ✅ **done 08-02** | 15 → **7** under BH, **2** under Holm; the 7 span four cells and all three backbones. §5 now quotes the corrected figure |
-| 7 | a named mechanism on the text-wins side that the v8 ruleset cannot see — it was discovered on VWA, so it can only find VWA-shaped failures | ❌ | this is precisely what `/diag` Tier-2 on WA is for; the asymmetry may be a property of the ruleset rather than of the world |
+| 7 | a named mechanism on the text-wins side that the ruleset cannot see — it was discovered on VWA, so it can only find VWA-shaped failures | ⚠️ **partial, 08-02** | `/diag` Tier-2 on WA ran (§410) and produced two WA-native rules, `P47`/`P48`, landed at ruleset `9-wa-p47p48`. Re-running the paired cut with them changes nothing: the text-wins side still tops out at `P17` **1.39×**, no signature above 1.5×. **But this is weak**: both rules fall below the `MIN_HITS=8` threshold on the disagreement sets and neither was designed for that direction, so "the asymmetry is a property of the ruleset" is **not yet excluded**. Closing it needs a rule built *for* the text-wins side. |
 | 8 | the feature carrying the intuitive sign in some other cell or benchmark | ✅ all six cells; WA ships no reference images so it cannot arbitrate | closed as far as this data goes |
 | 9 | a different latency estimand changing the verdict; or the frontier widening simply because there are six modes | (a) ✅ · (b) ✅ **done 08-02, and it refuted the claim** | the permutation control was run: expected 4.70/6 widened, `P(≥3)=0.978`. The frontier argument is retracted and claim 9 now rests on ρ(cost, latency) = −0.095 with a site-aligned cheapest≠fastest split |
 
 **Five were closed on 08-02** (2b, 6b, 9a, 9b, and the circularity check on 2) and each by
 *running* the control rather than arguing it was unnecessary. Two of them **refuted** what they
 tested: 9b killed the frontier argument, and the circularity check cut claim 2's headline from
-17.4× to a 3.9×–17.4× range. **Two remain cheap and open**: the `visual_difficulty` router fit
-(5) and new metrics from the unread-field inventory (6). **Three are not cheap and are therefore
+17.4× to a 3.9×–17.4× range. **Three remain cheap and open**: the `visual_difficulty` router fit
+(5), new metrics from the unread-field inventory (6), and a rule built for the text-wins
+direction (7) — the WA Tier-2 round produced two rules but neither targets it. **Three are not cheap and are therefore
 limitations**: the third workload (4), the SoM floor (1, queued), and the WA-native failure
 vocabulary (7, needs the Tier-2 session).
 
