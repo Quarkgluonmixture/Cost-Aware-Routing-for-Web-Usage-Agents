@@ -31,6 +31,7 @@ import glob
 import json
 import logging
 import math
+import random
 import os
 import sys
 from pathlib import Path
@@ -61,7 +62,14 @@ class MissingInput(RuntimeError):
 
 
 class _LCG:
-    """Deterministic uniform integers; avoids a global RNG and keeps the artifact stable."""
+    """RETIRED 2026-08-02 — kept so an older artifact can be regenerated for comparison.
+
+    `below()` takes a modulo of the LOW-ORDER bits of a 31-bit LCG, which are its least random
+    ones. Measured against the closed-form empirical-bootstrap variance it understated the SE by
+    8.5-8.6% on the two largest cells, which then corrupts the inverse-variance weights.
+    (codex Mode B, §H stress.) `random.Random` is deterministic under a fixed seed and has no
+    such defect; it is what `paired_effect` uses now.
+    """
 
     def __init__(self, seed: int) -> None:
         self.s = seed & 0xFFFFFFFF
@@ -119,19 +127,23 @@ def paired_effect(tasks: dict[int, dict[str, int]], a: str, b: str) -> dict:
     n = len(ids)
     diffs = [tasks[t][a] - tasks[t][b] for t in ids]
     est = 100 * sum(diffs) / n
-    rng = _LCG(SEED)
+    rng = random.Random(SEED)
     boots = []
     for _ in range(N_BOOT):
         s = 0
         for _ in range(n):
-            s += diffs[rng.below(n)]
+            s += diffs[rng.randrange(n)]
         boots.append(100 * s / n)
     boots.sort()
     lo, hi = boots[int(0.025 * N_BOOT)], boots[int(0.975 * N_BOOT) - 1]
     # SE from the bootstrap distribution; used for the inverse-variance pool below.
     mu = sum(boots) / len(boots)
     se = math.sqrt(sum((x - mu) ** 2 for x in boots) / (len(boots) - 1))
-    return {"n": n, "est_pp": est, "ci": [lo, hi], "se": se}
+    # The empirical-bootstrap SE of a mean has a closed form; report it so the resampling SE
+    # can be checked rather than trusted.
+    var = sum((x - sum(diffs) / n) ** 2 for x in diffs) / n
+    return {"n": n, "est_pp": est, "ci": [lo, hi], "se": se,
+            "se_exact_pp": 100 * math.sqrt(var / n)}
 
 
 def fe_pool(effects: list[dict]) -> dict:
@@ -144,6 +156,80 @@ def fe_pool(effects: list[dict]) -> dict:
     se = math.sqrt(1 / sum(w))
     return {"k": len(usable), "theta_pp": theta, "se": se,
             "ci": [theta - 1.96 * se, theta + 1.96 * se]}
+
+
+def clustered_pool(cells: dict[str, dict[int, dict[str, int]]], a: str, b: str,
+                   weights: dict[str, float]) -> dict:
+    """FE pool whose SE respects that the cells are not independent.
+
+    Within a site the three backbones are evaluated on the SAME task universe, so effects on
+    `cls_B0` and `cls_B1` share their sampling noise. `fe_pool()` combines them as
+    `sqrt(1/sum(w))`, the independent-cells formula, and understates the pooled SE. Here the
+    bootstrap resamples TASKS ONCE PER SITE and evaluates every backbone in that site on the
+    same resampled set, carrying the cross-backbone correlation through. Weights are held at
+    their point-estimate values — recomputing them inside each replicate would make this a
+    different, self-selecting estimator. (§H stress P1-1, 2026-08-02.)
+    """
+    def site_of(cid: str) -> str:
+        return "wa" if cid.startswith("wa") else cid.split("_")[0]
+
+    by_site: dict[str, list[str]] = {}
+    for cid in cells:
+        by_site.setdefault(site_of(cid), []).append(cid)
+    site_ids = {site: sorted(cells[cids[0]]) for site, cids in by_site.items()}
+    for site, cids in by_site.items():
+        for cid in cids:
+            if sorted(cells[cid]) != site_ids[site]:
+                raise MissingInput(f"{cid} does not share {site}'s task universe; the "
+                                   "clustered resampling assumes it does")
+    diffs = {cid: [cells[cid][t][a] - cells[cid][t][b] for t in site_ids[site_of(cid)]]
+             for cid in cells}
+    wsum = sum(weights[cid] for cid in cells)
+    rng = random.Random(SEED)
+    boots = []
+    for _ in range(N_BOOT):
+        draw = {site: [rng.randrange(len(ids)) for _ in ids] for site, ids in site_ids.items()}
+        theta = 0.0
+        for cid in cells:
+            d, idx = diffs[cid], draw[site_of(cid)]
+            theta += weights[cid] * (100 * sum(d[i] for i in idx) / len(idx))
+        boots.append(theta / wsum)
+    boots.sort()
+    mu = sum(boots) / len(boots)
+    se = math.sqrt(sum((x - mu) ** 2 for x in boots) / (len(boots) - 1))
+    point = sum(weights[cid] * (100 * sum(diffs[cid]) / len(diffs[cid]))
+                for cid in cells) / wsum
+    return {"k": len(cells), "theta_pp": point, "se": se,
+            "ci": [boots[int(0.025 * N_BOOT)], boots[int(0.975 * N_BOOT) - 1]],
+            "clusters": {st_: len(i) for st_, i in site_ids.items()}}
+
+
+def cochran_q(effects: list[dict]) -> dict:
+    """Heterogeneity across cells. A common-effect (FE) pool only means something if it is small."""
+    usable = [e for e in effects if e["se"] > 0]
+    w = [1 / e["se"] ** 2 for e in usable]
+    theta = sum(wi * e["est_pp"] for wi, e in zip(w, usable)) / sum(w)
+    q = sum(wi * (e["est_pp"] - theta) ** 2 for wi, e in zip(w, usable))
+    df = len(usable) - 1
+
+    def chi2_sf(x: float, k: int) -> float:
+        if k <= 0:
+            return 1.0
+        if k % 2 == 0:
+            term = tot = 1.0
+            for i in range(1, k // 2):
+                term *= x / (2 * i)
+                tot += term
+            return math.exp(-x / 2) * tot
+        t = math.erfc(math.sqrt(x / 2))
+        term, tot = math.sqrt(2 * x / math.pi) * math.exp(-x / 2), 0.0
+        for i in range(1, (k - 1) // 2 + 1):
+            tot += term
+            term *= x / (2 * i + 1)
+        return t + tot
+
+    return {"Q": q, "df": df, "p": chi2_sf(q, df),
+            "I2_pct": max(0.0, 100 * (q - df) / q) if q > 0 else 0.0}
 
 
 def build() -> dict:
@@ -159,7 +245,13 @@ def build() -> dict:
             m: 100 * sum(v[m] for v in tasks.values()) / n for m in (FUSED, *COMPARATORS)}
         LOG.info("%s: %s", cid, {c: round(out["cells"][cid][c]["est_pp"], 2) for c in COMPARATORS})
     for c in COMPARATORS:
-        out["pooled"][c] = fe_pool([out["cells"][cid][c] for cid in cells])
+        eff = [out["cells"][cid][c] for cid in cells]
+        out["pooled"][c] = fe_pool(eff)
+        out["pooled"][c]["heterogeneity"] = cochran_q(eff)
+        w = {cid: 1 / out["cells"][cid][c]["se"] ** 2 for cid in cells
+             if out["cells"][cid][c]["se"] > 0}
+        if len(w) == len(cells):
+            out["pooled"][c]["clustered"] = clustered_pool(cells, FUSED, c, w)
     return out
 
 
@@ -193,14 +285,42 @@ def render(d: dict) -> str:
           "|---|---|---|---|---|---|"]
     for c in d["comparators"]:
         p = d["pooled"][c]
-        z = "**yes**" if p["ci"][0] > 0 else "no"
-        f = "**yes**" if p["ci"][0] > hi else "no"
-        L.append(f"| SoM − {c} | {p['k']} | **{p['theta_pp']:+.2f}pp** | "
-                 f"[{p['ci'][0]:+.2f}, {p['ci'][1]:+.2f}] | {z} | {f} |")
+        cl = p.get("clustered") or p
+        z = "**yes**" if cl["ci"][0] > 0 else "no"
+        f = "**yes**" if cl["ci"][0] > hi else "no"
+        L.append(f"| SoM − {c} | {p['k']} | **{cl['theta_pp']:+.2f}pp** | "
+                 f"[{cl['ci'][0]:+.2f}, {cl['ci'][1]:+.2f}] | {z} | {f} |")
     L += ["", f"The band is the measured run-to-run mean-difference floor, {lo} to {hi}pp. "
           "Reading the pooled estimate against it rather than against zero is the point: a "
           "premium has to beat what repetition delivers for the same money, not merely beat "
           "nothing.", "",
+          "**The interval above is the task-clustered one, and that choice changes an answer.** "
+          "Within a site the three backbones are scored on the same task universe, so their "
+          "effects share sampling noise; the textbook `sqrt(1/Σw)` treats them as independent "
+          "and understates the pooled SE. Resampling tasks once per site and evaluating every "
+          "backbone in that site on the same draw gives:", "",
+          "| comparator | independent-cells CI | task-clustered CI | SE |", "|---|---|---|---|"]
+    for c in d["comparators"]:
+        p = d["pooled"][c]
+        cl = p.get("clustered")
+        if not cl:
+            continue
+        L.append(f"| SoM − {c} | [{p['ci'][0]:+.2f}, {p['ci'][1]:+.2f}] | "
+                 f"**[{cl['ci'][0]:+.2f}, {cl['ci'][1]:+.2f}]** | "
+                 f"{p['se']:.3f} → {cl['se']:.3f} |")
+    L += ["", "The one interval that excluded zero (SoM − Vision) no longer does. "
+          "(codex Mode B, §H stress 2026-08-02; its predicted clustered SE of 0.741 matched.)",
+          "",
+          "⚠️ **And a fixed-effect pool is the wrong estimand here regardless.** Cochran's Q "
+          "rejects a common effect for both comparators:", "",
+          "| comparator | Q | df | p | I² |", "|---|---|---|---|---|"]
+    for c in d["comparators"]:
+        h = d["pooled"][c]["heterogeneity"]
+        L.append(f"| SoM − {c} | {h['Q']:.2f} | {h['df']} | {h['p']:.2e} | {h['I2_pct']:.0f}% |")
+    L += ["", "With I² at this level the pooled number describes no cell in particular. It is "
+          "kept because the pre-registration names FE as the primary machinery, but the per-cell "
+          "table in §1 and the workload split in §3 are what carry the finding — and the sign "
+          "change across workloads in §3 is itself why a common-effect model cannot hold.", "",
           "## 3. Fusion against the channel that suits the workload", "",
           "The two columns read together show something neither shows alone. In every cell one of "
           "the two single channels is the stronger, and it is the visual one on all three "
@@ -219,8 +339,13 @@ def render(d: dict) -> str:
                  f"[{e['ci'][0]:+.2f}, {e['ci'][1]:+.2f}] | "
                  f"{'**yes, negative**' if excl else 'no'} |")
     L += ["", f"**{n_incl} of {len(d['cells'])}** intervals include zero and the remaining one is "
-          "negative, so in no cell does fusion significantly beat the channel that suits the "
-          "workload. It beats the channel that does not, by +8.04 and +9.82 points over DOM on "
+          "negative, so in no cell does fusion beat the channel that suits the workload. "
+          "⚠️ The word *significantly* does not belong on that sentence and has been removed: "
+          "the comparator is chosen per cell using the same observed success rates the interval "
+          "is computed from, so these CIs do not retain nominal coverage. Restoring coverage "
+          "needs either a site→channel mapping fixed in advance, or a bootstrap that re-selects "
+          "the comparator inside every resample. Until then this row is descriptive. "
+          "(§H stress P1-2.) It beats the channel that does not, by +8.04 and +9.82 points over DOM on "
           "classifieds and +4.93 and +7.39 over Vision on reddit. Which channel is stronger is "
           "read off each cell and is therefore post hoc, which is why both full columns appear in "
           "§1 and the pooled tests in §2 use comparators fixed in advance.", "",

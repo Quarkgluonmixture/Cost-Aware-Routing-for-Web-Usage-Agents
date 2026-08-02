@@ -353,9 +353,20 @@ def render(data: dict) -> str:
     add("")
     add("### What this licenses, and what it does not")
     add("")
-    add("**Licensed.** At the one-arm margin, a distinct representation is worth no more "
-        "than a rerun of the same representation. Same cell, same `n`, same functional, "
-        "same arm count.")
+    add("**Licensed on `B0 x VWA-cls`.** At the one-arm margin a distinct representation is "
+        "worth no more than a rerun of the same representation: same cell, same `n`, same "
+        "functional, same arm count.")
+    add("")
+    add("⚠️ **The WA row does not have that property and must not be read as if it did.** "
+        "Its rerun figure pools five mode-specific pilot-vs-full comparisons over the "
+        "**10 registered pilot tasks**, giving `pooled_n=50` panels over ten distinct tasks — "
+        "while the distinct-arm column beside it is computed on **104** tasks starting from "
+        "`dom`. Worse for the comparison, `dom`'s own pilot-vs-full is **0 flips in either "
+        "direction**; the 2-4pp band is generated entirely by `vision` and `pprompt`. So it is "
+        "not the rerun of the arm the row's baseline names, the two columns do not share `n`, "
+        "and the five panels are correlated through the same ten tasks. Read the WA line as "
+        "*some* arms of this cell move by 2-4pp under repetition, not as a floor for `dom`. "
+        "(codex Mode B, §H stress P1-6, 2026-08-02.)")
     add("")
     add("**Not licensed.** *\"The whole 6-mode ceiling gain is noise.\"* We hold one rerun "
         "arm, not five, and reruns have their own diminishing returns. The five-arm gain is "

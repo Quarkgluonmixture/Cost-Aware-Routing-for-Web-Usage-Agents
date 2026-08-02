@@ -59,7 +59,16 @@
     }
   },
   "difficulty_null": {
-    "proxy": "k/6 where k = number of the six modes that solved the task",
+    "proxy": "k/6 where k = how many of ['dom', 'som', 'vision', 'ptext', 'pprompt', 'psom'] solved the task",
+    "arms_in_proxy": [
+      "dom",
+      "som",
+      "vision",
+      "ptext",
+      "pprompt",
+      "psom"
+    ],
+    "circular": true,
     "contested": {
       "n": 88,
       "observed_flip_rate": 0.5113636363636364,
@@ -123,5 +132,68 @@
         "binomial_floor": 0.0
       }
     ]
-  }
+  },
+  "difficulty_null_leave_replicated_out": {
+    "proxy": "k/4 where k = how many of ['som', 'ptext', 'pprompt', 'psom'] solved the task",
+    "arms_in_proxy": [
+      "som",
+      "ptext",
+      "pprompt",
+      "psom"
+    ],
+    "circular": false,
+    "contested": {
+      "n": 64,
+      "observed_flip_rate": 0.46875,
+      "binomial_floor": 0.404296875,
+      "observed_over_floor": 1.1594202898550725
+    },
+    "complement": {
+      "n": 160,
+      "observed_flip_rate": 0.11875,
+      "binomial_floor": 0.0
+    },
+    "arithmetic_enrichment": "infinite (complement floor is exactly 0)",
+    "per_k": [
+      {
+        "k": 0,
+        "n": 141,
+        "n_flipped": 10,
+        "observed": 0.07092198581560284,
+        "binomial_floor": 0.0
+      },
+      {
+        "k": 1,
+        "n": 39,
+        "n_flipped": 17,
+        "observed": 0.4358974358974359,
+        "binomial_floor": 0.375
+      },
+      {
+        "k": 2,
+        "n": 15,
+        "n_flipped": 6,
+        "observed": 0.4,
+        "binomial_floor": 0.5
+      },
+      {
+        "k": 3,
+        "n": 10,
+        "n_flipped": 7,
+        "observed": 0.7,
+        "binomial_floor": 0.375
+      },
+      {
+        "k": 4,
+        "n": 19,
+        "n_flipped": 9,
+        "observed": 0.47368421052631576,
+        "binomial_floor": 0.0
+      }
+    ]
+  },
+  "replicated_arms_short": [
+    "dom",
+    "vision"
+  ]
 }

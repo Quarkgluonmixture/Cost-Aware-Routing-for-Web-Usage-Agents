@@ -115,10 +115,17 @@ def build() -> dict:
         }
         LOG.info("%-52s n=%3d flip=%3d (%.1f%%)", name[:52], len(ids), k, 100 * rate)
     out["difficulty_null"] = difficulty_null(flips, solve)
+    # Same computation with the replicated arms removed from the difficulty proxy — see the
+    # docstring of difficulty_null for why the shipped version is circular.
+    repl = {a.rsplit(".", 1)[-1] for a in arms}
+    out["difficulty_null_leave_replicated_out"] = difficulty_null(
+        flips, solve, arms_for_proxy=[m for m in MODES if m not in repl])
+    out["replicated_arms_short"] = sorted(repl)
     return out
 
 
-def difficulty_null(flips: set[int], solve: dict[int, set[str]]) -> dict:
+def difficulty_null(flips: set[int], solve: dict[int, set[str]],
+                    arms_for_proxy: list[str] | None = None) -> dict:
     """How much of the enrichment is arithmetic rather than structure?
 
     "Contested" means at least one arm solved the task and at least one did not, which is by
@@ -138,21 +145,37 @@ def difficulty_null(flips: set[int], solve: dict[int, set[str]]) -> dict:
         the 51% is the band being mid-difficulty, and the excess above that is what is left for
         "structure" to explain.
 
-    ⚠️ The proxy is crude: the six modes are different representations, not six draws from one
-    model, so k/6 estimates difficulty, not p.
+    ⚠️ TWO crudenesses, and the second is the serious one.
+    (a) The six modes are different representations, not six draws from one model, so k/6
+        estimates difficulty rather than p.
+    (b) CIRCULARITY. The flips are defined by rerunning `dom` and `vision`. If those two arms
+        also enter the difficulty proxy, then a task's solve status on them decides BOTH whether
+        it counts as contested AND whether it counts as flipped. Pass `arms_for_proxy` to build
+        the proxy from the OTHER four arms and break the loop; the caller reports both. The
+        difference is large — 17.4x collapses to 3.95x — so neither figure may be quoted alone.
+        (§H stress P0-3, 2026-08-02.)
+
+    Note the six-arm version is still the correct operationalisation of the CLAIM (a router
+    chooses among all six arms, so "contested" must be defined over all six). It is the
+    difficulty control that must not reuse the replicated arms.
     """
-    k = {t: len(s) for t, s in solve.items()}
-    contested = {t for t, s in solve.items() if s and len(s) < len(MODES)}
+    arms = list(arms_for_proxy) if arms_for_proxy is not None else list(MODES)
+    K = len(arms)
+    aset = set(arms)
+    k = {t: len(s & aset) for t, s in solve.items()}
+    contested = {t for t, s in solve.items() if 0 < len(s & aset) < K}
     comp = set(solve) - contested
 
     def obs(S): return len(S & flips) / len(S) if S else None
 
-    def pred(S): return (sum(2 * (k[t] / 6) * (1 - k[t] / 6) for t in S) / len(S)) if S else None
+    def pred(S): return (sum(2 * (k[t] / K) * (1 - k[t] / K) for t in S) / len(S)) if S else None
 
     oc, ok_ = obs(contested), obs(comp)
     pc, pk = pred(contested), pred(comp)
     return {
-        "proxy": "k/6 where k = number of the six modes that solved the task",
+        "proxy": f"k/{K} where k = how many of {arms} solved the task",
+        "arms_in_proxy": arms,
+        "circular": aset & {"dom", "vision"} == {"dom", "vision"},
         "contested": {"n": len(contested), "observed_flip_rate": oc, "binomial_floor": pc,
                       "observed_over_floor": (oc / pc) if pc else None},
         "complement": {"n": len(comp), "observed_flip_rate": ok_, "binomial_floor": pk},
@@ -161,8 +184,8 @@ def difficulty_null(flips: set[int], solve: dict[int, set[str]]) -> dict:
                    "n": sum(1 for t in solve if k[t] == kk),
                    "n_flipped": sum(1 for t in solve if k[t] == kk and t in flips),
                    "observed": obs({t for t in solve if k[t] == kk}),
-                   "binomial_floor": 2 * (kk / 6) * (1 - kk / 6)}
-                  for kk in range(len(MODES) + 1)
+                   "binomial_floor": 2 * (kk / K) * (1 - kk / K)}
+                  for kk in range(K + 1)
                   if any(k[t] == kk for t in solve)],
     }
 
@@ -242,7 +265,33 @@ def render(d: dict) -> str:
                  f"{100 * r['binomial_floor']:.2f}% |")
     L += ["", "⚠️ The proxy is crude: the six modes are different representations, not six draws "
           "from one model, so *k/6* estimates difficulty rather than *p*. The per-*k* rates are "
-          "not monotone in the floor, which is itself evidence the proxy is imperfect."]
+          "not monotone in the floor, which is itself evidence the proxy is imperfect.", ""]
+
+    # The circularity, and what the number becomes without it.
+    lo = d["difficulty_null_leave_replicated_out"]
+    lc, lm = lo["contested"], lo["complement"]
+    enr6 = co["observed_flip_rate"] / cm["observed_flip_rate"]
+    enr4 = lc["observed_flip_rate"] / lm["observed_flip_rate"]
+    L += ["### …and is the proxy circular?", "",
+          f"Yes, partly. The flips are defined by rerunning **{'** and **'.join(d['replicated_arms_short'])}**, "
+          "and those same two arms enter the six-mode difficulty proxy. A task's solve status on "
+          "them therefore decides *both* whether it counts as contested *and* whether it counts "
+          "as flipped. Rebuilding the proxy from the other four arms breaks the loop:", "",
+          "| proxy | contested | complement | enrichment |", "|---|---|---|---|",
+          f"| all six modes (as claimed) | {100 * co['observed_flip_rate']:.2f}% (n={co['n']}) | "
+          f"{100 * cm['observed_flip_rate']:.2f}% (n={cm['n']}) | **{enr6:.2f}×** |",
+          f"| the four not replicated | {100 * lc['observed_flip_rate']:.2f}% (n={lc['n']}) | "
+          f"{100 * lm['observed_flip_rate']:.2f}% (n={lm['n']}) | **{enr4:.2f}×** |", "",
+          f"**Neither figure may be quoted alone.** The six-mode version is the correct "
+          "operationalisation of the *claim* — a router chooses among all six arms, so "
+          "\"contested\" has to be defined over all six — but as a *difficulty control* it "
+          "reuses the arms that define the outcome. The four-arm version is not circular and "
+          f"still shows **{enr4:.2f}×** enrichment, with the complement rate rising from "
+          f"{100 * cm['observed_flip_rate']:.2f}% to {100 * lm['observed_flip_rate']:.2f}% "
+          "because genuinely unstable tasks move out of the contested set. The honest sentence "
+          f"is that instability is enriched on contested tasks by somewhere between "
+          f"{min(enr4, enr6):.1f}× and {max(enr4, enr6):.1f}× depending on whether the "
+          "definition of contested is allowed to see the replicated arms."]
     return "\n".join(L) + "\n"
 
 

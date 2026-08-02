@@ -55,3 +55,14 @@ It also bounds the problem independently of sample size. More data does not repa
 | 6 | 9 | 2 | 22.22% | 0.00% |
 
 ⚠️ The proxy is crude: the six modes are different representations, not six draws from one model, so *k/6* estimates difficulty rather than *p*. The per-*k* rates are not monotone in the floor, which is itself evidence the proxy is imperfect.
+
+### …and is the proxy circular?
+
+Yes, partly. The flips are defined by rerunning **dom** and **vision**, and those same two arms enter the six-mode difficulty proxy. A task's solve status on them therefore decides *both* whether it counts as contested *and* whether it counts as flipped. Rebuilding the proxy from the other four arms breaks the loop:
+
+| proxy | contested | complement | enrichment |
+|---|---|---|---|
+| all six modes (as claimed) | 51.14% (n=88) | 2.94% (n=136) | **17.39×** |
+| the four not replicated | 46.88% (n=64) | 11.88% (n=160) | **3.95×** |
+
+**Neither figure may be quoted alone.** The six-mode version is the correct operationalisation of the *claim* — a router chooses among all six arms, so "contested" has to be defined over all six — but as a *difficulty control* it reuses the arms that define the outcome. The four-arm version is not circular and still shows **3.95×** enrichment, with the complement rate rising from 2.94% to 11.88% because genuinely unstable tasks move out of the contested set. The honest sentence is that instability is enriched on contested tasks by somewhere between 3.9× and 17.4× depending on whether the definition of contested is allowed to see the replicated arms.
