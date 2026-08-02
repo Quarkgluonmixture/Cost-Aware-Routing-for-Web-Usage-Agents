@@ -64,7 +64,11 @@ from scripts.analysis.aggregate_phantom_lift import CELLS  # noqa: E402
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
 from scripts.analysis.lib.episode_rows import load_cell_task_rows  # noqa: E402
 
-SCHEMA_VERSION = "2026-07-28-per-mode-four-dimension-profile-v1"
+SCHEMA_VERSION = "2026-08-02-per-mode-four-dimension-profile-v2"
+
+# Episode step budget (configs/exp_v2_base.yaml `max_steps`, B-700 2026-05-17: 40 -> 30).
+# An episode at the cap did not decide to stop; it ran out.
+MAX_STEPS = 30
 
 DISPLAY_MODES = ("DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM")
 # axis_effect_size keeps two legacy key names; map at the boundary.
@@ -83,15 +87,21 @@ DIMENSIONS: dict[str, list[tuple[str, str]]] = {
     ],
     "Macro": [
         ("n_steps", "steps / episode"),
+        ("cap_hit_rate", "episodes exhausting the step budget"),
         ("click_frac", "click fraction"),
         ("type_frac", "type fraction"),
         ("scroll_frac", "scroll fraction"),
         ("search_loop_rate", "search-loop rate"),
+        ("url_revisit_rate", "URL-revisit step rate"),
     ],
     "Micro": [
         ("parse_fail_rate", "parse-invalid step rate"),
         ("action_fail_rate", "action-execution failure rate"),
+        ("click_fail_rate", "action failure | action was a click"),
+        ("type_fail_rate", "action failure | action was a type"),
         ("no_change_rate", "page-unchanged (no-op) step rate"),
+        ("noop_inert_rate", "no-op despite a SUCCEEDING action"),
+        ("visibility_gap_rate", "page changed but channel did not show it"),
         ("locator_fallback_rate", "locator fallback rate"),
         ("action_repeat_frac", "consecutive same-action rate"),
         ("finish_rate", "episodes ending in finish"),
@@ -107,6 +117,8 @@ LOWER_IS_BETTER = {
     "parse_fail_rate", "action_fail_rate", "no_change_rate",
     "locator_fallback_rate", "action_repeat_frac", "mean_cost_usd",
     "cost_rel_dom", "mean_latency_s", "mean_tokens", "n_steps",
+    "cap_hit_rate", "url_revisit_rate", "noop_inert_rate",
+    "visibility_gap_rate", "click_fail_rate", "type_fail_rate",
 }
 
 # Metrics on which a mode's extreme position follows from how the mode is BUILT,
@@ -139,17 +151,66 @@ BY_CONSTRUCTION: dict[str, str] = {
 # was a surprise. It was not. Promoting any of them to a behavioural finding needs
 # a baseline for what a coordinate-addressed agent *should* score, and then a
 # demonstration that Vision exceeds it — which this profile does not provide.
+#
+# ⚠️ 2026-08-02 AUDIT. Each entry below deletes a whole row of evidence, so each one
+# needs its own support, and until now none had any: they were author-written causal
+# assertions. All three were tested. **None survives as originally written.** The
+# strings have been rewritten to what the data supports; the ◆ marking is kept where
+# a surviving mechanism still makes the direction predictable, and the tests are
+# recorded here so the next reader does not have to rediscover them.
 ARCH_DOWNSTREAM: dict[str, str] = {
-    "action_fail_rate": "coordinate addressing has no element-identity guarantee, "
-                        "so a higher miss rate is the expected consequence, not a "
-                        "discovery about behaviour",
-    "no_change_rate": "a missed click leaves the page unchanged — this is "
-                      "downstream of the action-failure row above, not independent "
-                      "evidence",
-    "scroll_frac": "re-orienting after a no-op, plus viewport-only observation with "
-                   "no AXTree to enumerate off-screen targets, both push toward "
-                   "scrolling; the 1.2-6.8x magnitude is real but its DIRECTION was "
-                   "predictable from the design",
+    "action_fail_rate": "coordinate addressing has no element-identity guarantee, so a "
+                        "higher miss rate is the expected direction. ⚠️ WEAKENED: if that "
+                        "mechanism drove the total, the excess should concentrate in "
+                        "spatially-targeted actions. It does not. Vision leads on "
+                        "click-conditional failure in only 3/6 cells and is the LOWEST "
+                        "mode on type-conditional failure in 4/6. The direction of the "
+                        "total is still predictable; the stated decomposition is not what "
+                        "produces it",
+    "no_change_rate": "largely downstream of the action-failure row above. ⚠️ REFINED: "
+                      "measured, `action_success = False` implies `page_changed = False` "
+                      "in 100% of steps across all six B0 combinations checked, so action "
+                      "failure is a strict SUBSET of no-op and the metric decomposes "
+                      "exactly into it plus a successful-but-inert residual. Vision's high "
+                      "rate is dominated by the first term (85-95% of its no-ops), but the "
+                      "residual is NOT Vision-led — see the separate `noop_inert_rate` row, "
+                      "where SoM is the extreme in 5/6 cells",
+    "scroll_frac": "viewport-only observation with no AXTree to enumerate off-screen "
+                   "targets pushes toward scrolling; the 1.2-6.8x magnitude is real but "
+                   "its DIRECTION was predictable from the design. ⚠️ HALF REFUTED: this "
+                   "entry previously gave a second mechanism, re-orienting after a no-op. "
+                   "Measured on B0 x {cls, red} x {dom, som, vision}, the share of scroll "
+                   "steps whose predecessor was a no-op sits AT OR BELOW the base rate of "
+                   "no-ops in the same run in all six combinations (Vision on classifieds: "
+                   "18.5% against a 36.4% base, 17.9 points below chance). Scrolls are not "
+                   "preferentially preceded by no-ops anywhere. Only the viewport-"
+                   "enumeration mechanism survives and the marking now rests on it alone",
+}
+
+# Metrics added 2026-08-02 that are NOT yet classified either way. Their absence from
+# the two registries above means "nobody has adjudicated this", not "verified clean".
+# Saying so explicitly stops an unflagged row from reading as an endorsed finding.
+UNADJUDICATED: dict[str, str] = {
+    "url_revisit_rate": "Vision is the extreme in 6/6, the only unflagged unanimous row "
+                        "in the grid. A plausible architectural story exists (a channel "
+                        "that cannot enumerate off-screen targets navigates more "
+                        "exploratorily and so returns to pages it has seen), and it has "
+                        "not been tested. Do not cite as a behavioural finding until it is",
+    "cap_hit_rate": "SoM is the extreme (lowest) in 5/6. Reads with `n_steps` (lowest, "
+                    "5/6) and `finish_rate` (highest, 5/6) as one signature rather than "
+                    "three findings: the fused mode terminates sooner and more often by "
+                    "choice. Count it once",
+    "noop_inert_rate": "SoM highest in 5/6. This is the residual of `no_change_rate` after "
+                       "action failures are removed, so it is the part of that metric the "
+                       "◆ marking above does NOT cover",
+    "visibility_gap_rate": "no signal: Vision is the extreme at both ends (highest in 2/6, "
+                           "lowest in 4/6). A two-cell probe on 2026-08-02 read Vision as "
+                           "uniformly highest and that reading did not survive the full "
+                           "grid. Reported so the absence is on the record",
+    "click_fail_rate": "diagnostic for the `action_fail_rate` marking above, not a "
+                       "standalone finding",
+    "type_fail_rate": "diagnostic for the `action_fail_rate` marking above, not a "
+                      "standalone finding",
 }
 
 
@@ -215,7 +276,53 @@ def steps_layer(baseline: str, site: str, mode: str) -> tuple[dict[int, dict], l
             if any(mk in url for mk in search_markers) or (
                     acts[i] == "type" and any(mk in nxt for mk in search_markers)):
                 search_steps += 1
+        # --- metrics added 2026-08-02. Each answers a question the original eighteen
+        # could not, and two of them exist to test markings the profile itself makes.
+        #
+        # visibility_gap: the page moved and the channel did not show it. This is the one
+        #   quantity that is directly about what an observation channel can see, and it was
+        #   absent from a profile whose whole subject is observation channels.
+        # cap_hit: the episode exhausted its 30-step budget rather than terminating. Step
+        #   count is the best escalation signal in the cascade experiment; this asks whether
+        #   what that signal detects is "stuck".
+        # url_revisit: the agent returned to a URL it had already loaded this episode. The
+        #   existing search_loop_rate is one special case of going in circles; this is the
+        #   general one.
+        # noop_inert: a no-op whose action SUCCEEDED. Measured, action failure implies no
+        #   change, so no_change_rate decomposes exactly into action failure plus this
+        #   residual, and the profile's "no-op is downstream of action failure" marking
+        #   applies only to the first term.
+        # {click,type}_fail_rate: failures within one action type. Coordinate addressing
+        #   should hurt spatially-targeted actions specifically; a uniform excess would mean
+        #   the "no element-identity guarantee" story is not what drives the total.
+        vis_denom = sum(1 for s in steps if s.get("page_changed") is True)
+        vis_gap = sum(1 for s in steps if s.get("page_changed") is True
+                      and s.get("agent_visible_changed") is False)
+        inert = sum(1 for s in steps if s.get("page_changed") is False
+                    and s.get("action_success") is True)
+        seen: set[str] = set()
+        revisit = 0
+        for s in steps:
+            after = ((s.get("state_digest") or {}).get("url_after") or "")
+            if after:
+                if after in seen:
+                    revisit += 1
+                seen.add(after)
+        by_type: dict[str, list[int]] = {}
+        for s, a in zip(steps, acts):
+            if a:
+                by_type.setdefault(a, []).append(1 if s.get("action_success") is False else 0)
+        cap_hit = 1.0 if n >= MAX_STEPS else 0.0
+
         per_task[tid] = {
+            "visibility_gap_rate": (vis_gap / vis_denom) if vis_denom else 0.0,
+            "cap_hit_rate": cap_hit,
+            "url_revisit_rate": revisit / n,
+            "noop_inert_rate": inert / n,
+            "click_fail_rate": (sum(by_type["click"]) / len(by_type["click"])
+                                if by_type.get("click") else 0.0),
+            "type_fail_rate": (sum(by_type["type"]) / len(by_type["type"])
+                               if by_type.get("type") else 0.0),
             "n_steps": float(n),
             "click_frac": acts.count("click") / n,
             "type_frac": acts.count("type") / n,
@@ -239,6 +346,13 @@ def steps_layer(baseline: str, site: str, mode: str) -> tuple[dict[int, dict], l
             "_act_fail": float(act_fail), "_no_change": float(no_change),
             "_loc_fb": float(loc_fb), "_repeats": float(repeats),
             "_repeat_denom": float(n - 1) if n > 1 else 0.0,
+            "_vis_gap": float(vis_gap), "_vis_denom": float(vis_denom),
+            "_inert": float(inert), "_revisit": float(revisit),
+            "_cap_hit": cap_hit, "_episode": 1.0,
+            "_click_fail": float(sum(by_type.get("click", []))),
+            "_click_denom": float(len(by_type.get("click", []))),
+            "_type_fail": float(sum(by_type.get("type", []))),
+            "_type_denom": float(len(by_type.get("type", []))),
         }
     return per_task, sorted(skipped)
 
@@ -253,6 +367,12 @@ POOLED_SPEC = {
     "no_change_rate": ("_no_change", "_n_steps"),
     "locator_fallback_rate": ("_loc_fb", "_n_steps"),
     "action_repeat_frac": ("_repeats", "_repeat_denom"),
+    "visibility_gap_rate": ("_vis_gap", "_vis_denom"),
+    "noop_inert_rate": ("_inert", "_n_steps"),
+    "url_revisit_rate": ("_revisit", "_n_steps"),
+    "cap_hit_rate": ("_cap_hit", "_episode"),
+    "click_fail_rate": ("_click_fail", "_click_denom"),
+    "type_fail_rate": ("_type_fail", "_type_denom"),
 }
 
 
@@ -482,7 +602,11 @@ def render(payload: dict) -> str:
     dwn = {k: r for k, r in payload["consistency"].items()
            if r.get("arch_downstream") and (r["unanimous_high"] or r["unanimous_low"])}
     if dwn:
-        L.append("Why each ◆ row is architecturally downstream:")
+        L.append("Why each ◆ row is architecturally downstream. **These are author-written "
+                 "causal assertions, and each one deletes a whole row of evidence, so each "
+                 "needs its own support.** All three were tested on 2026-08-02 and none "
+                 "survived as originally written; the entries below are the rewritten "
+                 "versions and carry the test that forced the rewrite:")
         L.append("")
         for k, r in dwn.items():
             L.append(f"- `{r['label']}` — {r['arch_downstream']}.")
@@ -494,6 +618,16 @@ def render(payload: dict) -> str:
         L.append("")
         for k, r in bc.items():
             L.append(f"- `{r['label']}` — {r['by_construction']}.")
+        L.append("")
+    if UNADJUDICATED:
+        L.append("Metrics added 2026-08-02 and **not yet adjudicated** either way. Absence "
+                 "from the ⚙️ and ◆ lists above means *nobody has ruled on this*, not "
+                 "*verified clean*, and an unflagged unanimous row must not be read as an "
+                 "endorsed behavioural finding:")
+        L.append("")
+        for k, why in UNADJUDICATED.items():
+            lbl = payload["consistency"].get(k, {}).get("label", k)
+            L.append(f"- `{lbl}` — {why}.")
         L.append("")
 
     for dim, metrics in DIMENSIONS.items():
