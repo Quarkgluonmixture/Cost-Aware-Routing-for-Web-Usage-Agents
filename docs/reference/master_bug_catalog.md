@@ -9872,3 +9872,149 @@ sr_per_mode.json" 标注。cls 侧 224 无排除, 逐字节不变。
   必须写在人看的地方, 而不只在测试里。
 
 **Cross-link**: 笔记 §393; §387.9 (同型第一例); B-1889 (task 160 passive FP); AMENDMENT_08
+
+---
+
+## B-1919 落地记录 (2026-08-02) — WA 子树从来没有同步路径, 而 /diag 丢了 config 也不吭声
+
+两个缺陷叠在一起才产生后果, 拆开记因为**修法不同**。
+
+### 缺陷 A — `sync_a100_results.sh` 只同步 VWA
+
+脚本第 49-50 行把源/目标硬编码成单一子树:
+
+```bash
+A100_RESULTS="/home/ubuntu/workspace/p79/results/visualwebarena/phase1/"
+DGX_RESULTS="${REPO_ROOT}/results/visualwebarena/phase1/"
+```
+
+`results/webarena/phase1/` **没有任何自动同步路径** —— 15 分钟 cron 从不碰它。WA 数据到
+DGX 全靠手动 rsync, 带什么过滤器就丢什么。实测: DGX 上 **19/19 个 WA run 的
+`task_configs/` 全空**, 而 A100 上每个 run 都有 104 个 (六个 B1 reddit run 字节级一致
+`md5 8b0b30e35a67`)。VWA run 不受影响 (对照 `B1_dom_reddit_20260703` = 205 个)。
+
+### 缺陷 B — `scan_episodes` config 缺失时静默退化
+
+`scripts/analysis/diag_pattern_match.py:2001`:
+
+```python
+config: Dict = {}
+if config_path.exists():
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+```
+
+不报错、不 warn、输出 JSON 里也不记。**44 条 P-rule 里 28 条读 `config`** → 空 config 下
+全部静默返回 `[]`。缺陷 A 因此**潜伏半个月无人发现**。
+
+### 后果 (WA reddit × B1 × 6 mode, 624 episode)
+
+| 量 | 空 config | 修复后 |
+|---|---|---|
+| success 侧命中 | **0** (六 mode 全 0) | **5** (`P40`, 逐个查证 5/5 是真 benchmark-FP) |
+| `P43` | 0 | 20 |
+| `P46` | 0 | 1 |
+| `P31` 命中 episode 数 | 406 | 390 |
+| failed-NO-hit | 54 | 56 |
+
+`success_with_hits` 六个 mode 全 0 是发现入口 —— VWA 上这个子集从来不空 (cls dom 是 33
+success 全 fire)。**"防线干净" 和 "探测器没通电" 在输出上长得一模一样。**
+
+### 修法
+
+1. **恢复** — 从 A100 拉回全部 WA run 的 `task_configs/`;六个目标 run 逐 episode 覆盖
+   104/104, md5 与 A100 一致。
+2. **堵根因** — `sync_a100_results.sh` 改为循环 `BENCH_SUBTREES`, 覆盖两个 benchmark 子树。
+3. **按子树设 delete 策略** — dry-run 发现给 WA 套用 VWA 那套 `--delete-after
+   --delete-excluded` 会删 **26,207 个路径**。逐条核过: 25,999 个是空 `artifacts/` 目录壳
+   (无害, 正是该 flag 的用途), 但余下是整个 `B0_wa_3mode_shopping_20260417`
+   (192 个 task_configs + run_meta + 2 个 condition_meta, 2026-04 归档骨架, **只在 DGX 上、
+   A100 已无**)。→ WA 子树 **additive-only (`nodelete`)**, VWA 保留 delete
+   (clear_tasks 传播需要, B-841)。同 B-1755 顶层 gallery loop 的防御性先例。
+4. **重扫互证** — `diag_pattern_match.py` 读盘上 config 重跑六个 condition, 与修复前用
+   注入 config 算出的结果做**逐 hit 比对: 6/6 完全一致** (hit 集合 / success 数 / N 全等)。
+
+### 未修 — 缺陷 B 仍在
+
+只修了 A。`scan_episodes` 依然静默退化。建议: config 缺失时 warn 到 stderr + 在输出 JSON
+记 `config_missing` 计数, 让下次同类丢失可见。**不修则同一个坑会以另一种方式再来一次** ——
+这次是 WA 子树没同步, 下次可能是别的路径。
+
+⚠️ **踩过的坑**: 最初用 `external/visualwebarena/config_files/wa/test_reddit.raw.json`
+直接当 config 重扫 —— raw 里 `start_url` 还是占位符 `__REDDIT__` (runner 落盘时会替换,
+`tasks.py:265`), 导致所有比对 URL 的规则 (`P14`/`P19`/`P20`/`P24`/`P30`) 静默失配,
+`P31` 虚高 16。**"一份看起来对的 config" ≠ "runner 当时实际用的那份"。**
+
+**Cross-link**: 笔记 §410; `docs/analysis/wa_reddit/_cell_cross_mode_findings.md` §0;
+B-841 (VWA delete-after 语义); B-1755 (顶层 loop 不加 delete 的先例); B-1761 (--delete-excluded 用途)
+
+---
+
+## B-1920 落地记录 (2026-08-02) — B-06 blast radius 重测: 被剔除的那 18/20 才是大头
+
+**不是新 bug。** 机制 2026-04 就裁定过 (§51/B-57 原生 `<select>` · §60
+`_inject_css_dropdown_options` · B-59 选中态反馈 · B-64 vision CSS 下拉)。本条只改一件事:
+**B-06 的 blast radius 估计**。
+
+### B-06 当时怎么算的
+
+self-replay probe (20 例, 11 cls + 6 red + 3 shop) 测出:
+
+- 2/20 = native `<select>` arg-drop → **算进 blast radius**
+- 18/20 = `OTHER_CUSTOM_DROPDOWN` (ARIA combobox / custom div) → 判为
+  「走 click 路径不走 select_option dispatch」→ **剔除**
+
+→ blast radius = 149 × 0.10 = **15 ep / 0.3% of all ep** → `low priority`, appendix only。
+
+B-06 条目里其实已经写了站点分布 "cls 117 (78%) / red 27 / shop 5 —— majority target 是
+osclass custom location dropdown / **reddit ARIA combobox**"。**信息当时就在手上, 被那句
+剔除判断挡掉了。**
+
+### 那句剔除依据与代码不符
+
+`p79/envs/vwa_wrapper.py:1194` / `:1352` 的 CSS custom dropdown fallback: 扫所有
+`getBoundingClientRect()` 宽高为 0 的隐藏 `<ul>`, 取最近可见祖先当触发器, 距点击点 >150px
+跳过, 在 `:scope > li > a, :scope > li > button` 里 fuzzy 匹配 option label。**匹配不上就**:
+
+```js
+return {matched: false, match_stage: 'none', target_type: 'css',
+        ..., error: 'no_match_in_css_menus'};
+```
+
+`matched:false` → `action_success=False`。**没有任何 click 兜底。** 所以那 18/20 不是
+"走了另一条路", 是**直接失败**, 不该被剔除出 blast radius。
+
+### 重测 (按失败动作数, 非 episode 数)
+
+| 站点 / cell | select_option 尝试 | 成功 | `no_match_in_css_menus` |
+|---|---|---|---|
+| **WA reddit (B1 × 6 mode)** | **1392** | **5 (0.4%)** | **1387** |
+| VWA reddit B1 dom | 48 | 5 (10.4%) | 43 |
+| VWA classifieds B1 dom | 285 | 86 (30.2%) | **0** |
+| VWA classifieds B1 som | 155 | 99 (63.9%) | 9 |
+
+**站点特异, 非 benchmark 特异** —— cls 的 Sort-by / category 走原生 `<select>` (§51 的 JS
+workaround 生效, 30–64% 成功); reddit (Postmill) 的 forum 选择器是自定义 CSS 下拉, fallback
+扫不到。WA reddit 六 mode 分布均匀 (dom 214/215 · som 431/433 · vision 156/156 ·
+ptext 106/106 · psom 226/227 · pprompt 254/255), 覆盖 7–26 episode/mode。
+
+⚠️ **两个数不矛盾, 计数对象不同**: B-06 数「upstream arg-drop 影响几个 episode」;
+本条数「select_option 这个动作实际有多少次没成」。只有后者回答"agent 能不能选下拉框"。
+
+### 影响
+
+- **波及 VWA reddit 计分 cell** (43/48), 且该 cell 已冻结进 v8 结论 → reddit 低分里有一部分
+  是工具够不着而非模型不会。是否改写论文对 reddit cell 的解读 = **待用户裁定**, 未擅动。
+- SR 关联 (WA reddit): 用过 select_option 的 episode SR **5.56%** (6/108) vs 没用过 **15.70%**
+  (81/516)。⚠️ 相关非因果 —— 需要下拉框的任务 (建 forum / 选版块发帖) 本身更难, 两者混在一起。
+- 未修。修法方向: reddit forum 选择器的 DOM 形态需实测 (为什么 hidden-`<ul>` + 150px +
+  `<li><a>` 三个条件匹配不上), 再决定是放宽 fallback 还是加 site-specific handler。
+
+### 教训
+
+**"这个桶不算" 是一句需要证据的断言, 和 "这个桶有多大" 同等重要。** B-06 把 90% 的样本
+剔除掉再报 0.3%, 剔除依据只有一句没验证的机制描述。四个月后同一个机制在另一个站点上
+以 99.6% 失败率重新出现。
+
+**Cross-link**: 笔记 §410.9; B-06 (原估计) · B-57/§51 (native select JS workaround) ·
+B-59 (选中态反馈) · B-64 (vision CSS 下拉) · §60 (`_inject_css_dropdown_options`);
+`docs/analysis/wa_reddit/_cell_cross_mode_findings.md` §5 F1

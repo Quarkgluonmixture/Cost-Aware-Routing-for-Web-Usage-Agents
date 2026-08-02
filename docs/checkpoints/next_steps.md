@@ -23,6 +23,49 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟦 2026-08-02 · WA reddit /diag 完成 + B-1919 修复 —— **这块不覆盖下面那块**（并行的另一条线，论文主线仍看 🟥）
+>
+> chronicle → **笔记 §410**（含 §410.8 修复补记）。数据层结论 → `docs/analysis/wa_reddit/_cell_cross_mode_findings.md`。
+>
+> ### 已完成
+>
+> - **WA reddit × B1 × 6 mode 的 /diag Tier-2 + Tier-3 全做完**：6 份 per-condition digest +
+>   1 份 cell 级发现，落在 **`docs/analysis/wa_reddit/`**（新目录，与 `vwa_reddit/` 严格分开）。
+>   SR 9.62–16.35%，是 VWA reddit 的 2–3 倍。
+> - **B-1919 + A2 已修**：`sync_a100_results.sh` 从来只同步 VWA 子树，`results/webarena/phase1/`
+>   无任何自动同步 → 19/19 个 WA run 的 `task_configs/` 全空 → /diag 44 条规则里 27 条静默失效。
+>   已恢复 + 改脚本覆盖两个 benchmark（**WA 设 additive-only**，理由见 catalog）+ 重扫互证 6/6 一致。
+>   `results/diag_scans/v8_wa/` 现在有效，是唯一数据源。
+>   **A2 同批落码**：`scan_episodes` 遇 config 缺失现在**默认 exit 2**，报错里列出会静默失效的
+>   28 条规则名（派生非硬编码）；`--allow-missing-config` 逃生舱会把缺失数写进输出 JSON。
+>   全量 pytest **1631 passed**。
+>
+> ### 需要你拍板的三件
+>
+> | # | 事 | 为什么要你决定 |
+> |---|---|---|
+> | **A3** | `select_option` 在 reddit 上 **99.6% 失败**（1387/1392）。**机制不是新的** —— §51/B-57/§60/B-59/B-64 在 2026-04-14 就裁定过（你记对了，cls 也有）。新的只有 blast radius：B-06 当年把 18/20 的 custom-dropdown 样本剔除出估计（依据是一句与代码不符的「走 click 路径」），只报 15 ep / 0.3%。已落 **B-1920** 专门改这个估计 | **波及 VWA reddit 计分 cell 且已冻结进 v8 结论**。要不要重新评估该 cell 的解读，是论文层判断。修法方向也待定（放宽 fallback vs site-specific handler） |
+> | ~~A2~~ | ✅ **已修** —— config 缺失默认硬失败 + 逃生舱留痕 `config_missing` + 报错列出会失效的规则名；测试 5 条含实际事故回归 | — |
+> | 清理 | `B0_wa_3mode_shopping_20260417`（888K、192 个 task_configs、**0 个 episode summary** 的 2026-04 骨架，只在 DGX） | 我把 WA 同步设成 additive-only 就是为了不替你删它。要清就手动删，之后可考虑把 WA 也改回 delete |
+>
+> ### 可以直接做的（不需拍板）
+>
+> - **A9**：落两条新规则 —— `R1 PREMATURE_FINISH_ON_FORM`（24 failed / **0 success**）+
+>   `R3 PREMATURE_NEGATIVE_AFTER_SEARCH`（9 / 0），bump `RULESET_VERSION` → 全量重扫 36 VWA + 6 WA。
+>   ⚠️ 另两条候选 **不要落**：`R4 FORUM_NEVER_VISITED` 在 36% 的 success 上 fire（已否决），
+>   `R2 NOELEM_ACTION_STREAK` 17% success 误伤（需先收窄）。
+> - **A4**：`P36` 按元素角色分叉 —— 已坐实 1307 个 walk_fail 步里"元素不在观测里"= **0 次**，
+>   57–74% 落在可交互角色上（scaffold 侧），26–43% 落在 StaticText/heading（agent-limit）。
+> - **A5/A6/A7**：WA task 66 config 域名硬编码（孤例，VWA 干净）· `P40` 的 `detail_markers`
+>   在 reddit 空转 · task 27–31 族全量审计后决定是否移出计分集。
+>
+> ### 未提交
+>
+> 全部改动**未 commit**。涉及：`docs/analysis/wa_reddit/`(新) · `实验笔记.md` §410 ·
+> `master_bug_catalog.md` B-1919 · `sync_a100_results.sh` · `next_steps.md` 本块。
+>
+> ---
+>
 > ## 🟥 2026-08-01 夜 · 论文转向 + 投稿轨改判 —— 这块覆盖下面那块
 >
 > chronicle + 全部数字来源 → **笔记 §407**。下面只写 live / forward。
