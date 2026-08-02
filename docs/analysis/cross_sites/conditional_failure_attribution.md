@@ -71,6 +71,23 @@ Pooled over six cells. 380 losing-channel failure episodes on the disagreement s
 | `P31` | budget耗尽未完成 | 28.4% | 56.7% | **0.50x** **←** | 108 |
 | `P25` | 跨站任务跳过其中一站 | 2.6% | 9.7% | **0.27x** **←** | 10 |
 
-## 4. Reading
+## 4. Rules that cannot be compared across sites
+
+Several P-rules carry site gates or are structurally inapplicable outside one site, so a 0.0% on one site is the gate and not a measurement. Verified firing rates over all episodes, which is the check that must precede any cross-site reading of a row above:
+
+| rule | VWA cls | VWA red | WA red | comparable across sites? |
+|---|---|---|---|---|
+| `P6` visual-task-DOM-must-fail | 7.9% | **0.0%** | **0.0%** | **no** — gated off all reddit |
+| `P16` visual-image-content | 3.9% | **0.0%** | **0.0%** | **no** — gated off all reddit |
+| `P17` click-back oscillation | 11.5% | **0.0%** | **0.0%** | **no** — classifieds only |
+| `P25` cross-site task skips a site | 5.1% | 15.9% | **0.0%** | no — WA has no cross-site tasks |
+| `P43` page-embedded visual, no screenshot | 20.4% | 19.5% | **0.0%** | **yes** — ungated; the 0.0% is real |
+| `P27` gives up when not found | 1.6% | 1.1% | 0.3% | yes |
+| `P31` budget exhausted | 30.8% | 70.2% | 65.1% | yes |
+| `P45` / `P36` / `P5` | 26-50% | 27-47% | 32-50% | yes |
+
+⚠️ `P43` is ungated and its WA zero is a property of the task set: no WA reddit intent matches the visual-intent regex. **But P43 is a neutral (task x mode) label by its own definition, not a failure mechanism.** Its docstring records a controlled dom->som comparison on exactly this task set measuring +0.00 / +1.56 / +0.00 pp from restoring the screenshot. P43 therefore says WHERE the image channel's unique wins sit, and explicitly does not say the text channel failed *because* the screenshot was withheld.
+
+## 5. Reading
 
 A signature near 1.0x is the null and most rows sit there: the losing channel mostly fails on these tasks the way it fails on every task. Rows away from 1.0x are the ones that name a mechanism for the complementarity, and they are the only rows this analysis licenses anyone to cite. The reporting floor is 8 pooled hits; rules below it are omitted rather than shown at unstable ratios.

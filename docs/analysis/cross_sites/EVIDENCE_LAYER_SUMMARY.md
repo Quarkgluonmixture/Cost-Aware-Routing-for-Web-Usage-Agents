@@ -89,16 +89,21 @@ Stated as claims with their carrying product, so a frame can be chosen against t
 6. **The four image-free modes are behaviourally non-separable** across 24 metrics × 6 cells,
    while the image-bearing pair is separable mostly by construction.
    → `per_mode_four_dimension_profile` v2
-7. **The image channel's advantage has a mechanism and it is workload-gated; the text channel's
-   has none on either workload.** On VWA, when the image channel wins the text channel fails with
-   a named signature (`P43` "needs on-page visual content, has no screenshot", 1.66× on 196 hits;
-   `P16` 2.18×; and it quits rather than exhausting its budget, `P27` 2.98× against `P31` 0.47×).
-   When the text channel wins, nothing clears 1.5×. On WA **neither** side clears it, which is
-   the predicted result rather than a gap: `P43`, `P16` and `P6` fire on **0.0%** of 624 WA
-   episodes against 3.9–20.4% on VWA, because WA specifies its goals in text. This is the
-   modality axis in the failure-mode layer, and the fourth functional it appears in.
-   ⚠️ WA's disagreement sets are 15 and 4 tasks; the WA reading is "no mechanism detected", not
-   "no mechanism". → `conditional_failure_attribution`
+7. **When the image channel uniquely wins, the text channel quits early rather than grinding.
+   When the text channel uniquely wins, the image channel fails the way it fails everywhere.**
+   The surviving, ungated, cross-site-comparable signal is `P27` gives-up-when-not-found at
+   **2.98×** together with `P31` budget-exhausted at **0.47×**: on those tasks the text channel
+   abandons instead of running out. On the other side nothing clears 1.5×.
+   ⚠️ Three caveats, each of which cost an earlier version of this line.
+   (a) `P6`, `P16` and `P17` are **gated off or absent on all reddit** (VWA reddit fires them at
+   0.0% too), so any WA-vs-VWA-classifieds contrast on them compares a gate to a measurement.
+   Retracted. (b) `P43` **is** ungated and its WA-vs-VWA-reddit contrast is real and clean,
+   19.5% against 0.0% with the site held constant — **but P43 is a neutral (task × mode) label by
+   its own definition**, and its docstring records a controlled dom→som test on exactly that task
+   set measuring +0.00 / +1.56 / +0.00 pp from restoring the screenshot. It locates the image
+   channel's advantage on visual-intent tasks; it does not explain it, and specifically does not
+   license "the text channel failed because the screenshot was withheld".
+   (c) WA's disagreement sets are 15 and 4 tasks. → `conditional_failure_attribution` §4
 8. **The obvious routing feature has the wrong sign**, and the right one was read and dropped.
    → `routing_feature_diagnostics`
 9. **Latency is a second axis, not a restatement of cost**; adding it widens the frontier in 3/6
