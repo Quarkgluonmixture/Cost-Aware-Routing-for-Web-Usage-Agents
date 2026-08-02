@@ -219,3 +219,39 @@ rather than by arguing it was unnecessary. **Three remain cheap and open**: the 
 router fit (5), the latency permutation control (9b), and new metrics from the unread-field
 inventory (6). **Three are not cheap and are therefore limitations**: the third workload (4), the
 SoM floor (1, queued), and the WA-native failure vocabulary (7, needs the Tier-2 session).
+
+## 7. Coverage holes per product (§G2 sweep, 2026-08-02)
+
+Each product against the seven (site, backbone) units. **·** = not covered.
+
+| product | cls_B0 | cls_B1 | cls_B2 | red_B0 | red_B1 | red_B2 | wa_red_B1 |
+|---|---|---|---|---|---|---|---|
+| `noise_floor_inventory` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `label_instability` | ✅ | · | · | · | · | · | · |
+| `fusion_premium` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `confidence_cascade` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ `_with_wa` |
+| `multimetric_pareto` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ `_with_wa` |
+| `per_mode_four_dimension_profile` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ `_with_wa` |
+| `conditional_failure_attribution` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `routing_feature_diagnostics` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ n/a |
+| **`axis_effect_size`** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **· ← hole** |
+| **`axis1_microbehavior`** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **· ← hole** |
+
+Three of these are **design**, one is an **omission nobody noticed**:
+
+- `label_instability` at 1/7 is not a hole in the product, it is the replicate inventory: only
+  `cls_B0` has any same-condition rerun at all. It widens when the SoM replicate lands.
+- `routing_feature_diagnostics` cannot cover WA — WebArena ships no reference images and no
+  `visual_difficulty` annotation, so the feature it diagnoses does not exist there.
+- **`axis_effect_size` and `axis1_microbehavior` have no WA cell, and that is an omission.**
+  WA step records have been on disk since 08-02, and the other four step-reading products were
+  wired to them the same day. These two were left out because the handoff listed three products
+  to wire and this dimension was believed complete — **a product that is empty raises no
+  question about its coverage, because it looks finished**. A bug concealed a hole.
+
+Why it matters: §2 of `conditional_failure_attribution` and §3.1 here establish the workload
+flip on success rates and on arm-matched marginal gains. The 2×2 layer is where the flip would
+either appear or fail to appear in **paired effect sizes**, which is a different functional and
+would be the strongest form of the claim. Cost to close: the same `wa_spec()` mechanism
+`per_mode_four_dimension_profile.py` already uses (a universe, a mode→dir map, a steps glob),
+plus a `--with-wa` output split so the /6 consistency denominators are not silently rewritten.
