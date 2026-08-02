@@ -114,6 +114,81 @@ enrichment.
 
 ---
 
+## F. Before anything else: the six checks that would have caught tonight
+
+**Every error on 2026-08-02 had one shape.** A measurement instrument returned a value, and the
+value was written down as a property of the world. Not one of them would have been caught by a
+task list, which is what §A–§D above are. Run these as a protocol, not as advice.
+
+| # | check | the error it would have caught |
+|---|---|---|
+| **1** | **A zero from a tool is not a zero in the world.** Before writing any 0.0%, name which of these you ruled out: the instrument is gated for this input · the data is not on this machine · the path or glob is wrong · the field is never populated for this arm. | `find` returned 0 for WA step files → written as "the data was never written" → written as "impossible" → written into a summary as a structural limit. The files were on the paper-grade host (§407.25). And `P6`/`P16`/`P17` return 0.0% on all reddit because they are **site-gated**, which was read as "the mechanism is absent" (§407.26). |
+| **2** | **A direction from fewer than three cells is provisional.** Say "provisional" in the text, and run the full grid before it leaves a scratchpad. | `visibility_gap` read Vision as uniformly highest on two cells. On six, Vision is the **lowest in four** (§407.22). |
+| **3** | **"Impossible" / "contaminated" / "unavailable" needs a measurement, not an absence.** | B0 latency was excluded from the Pareto as proxy-queue-contaminated. Measured, its per-step CV is 0.15–0.22 against the local backbone's 0.11–0.19, and it tracks tokens monotonically (§407.15). Carbon was called "not collected" from one B0 record; B1/B2 log it on every step (§407.20). |
+| **4** | **State the arm count on both sides of any ratio.** | "6 representations buy 16.07pp, a rerun buys 7.6pp, 2.1×" compared five added arms to one. Arm-matched it is 7.14 against 4.91–7.59, indistinguishable (memory `same-name-not-comparable`). |
+| **5** | **Never hand-edit a generated file.** Corrections go in the producer. | The ◆ audit was written into `per_mode_four_dimension_profile.md` and destroyed by the next regeneration (§407.22). |
+| **6** | **A cross-site contrast needs the same-site control.** Before contrasting site A against site B on any rule or metric, report its value on the *other* cell of the same site type. | The WA-versus-VWA-classifieds contrast on `P43` was replaced by WA-reddit versus VWA-reddit, which holds the site type fixed and is the only version that survives (§407.26). |
+
+**One more, specific to reading rules rather than metrics.** A rule can fire and still not explain
+anything. `P43` carries a 1.66× enrichment and its own docstring says it is a **neutral label, not
+a failure prediction**, with a controlled test measuring +0.00 / +1.56 / +0.00 pp from removing the
+condition it names. Read the docstring of every rule before reading its number.
+
+---
+
+## G. Finding evidence nobody has thought of
+
+Three sweeps, in this order. The first two are mechanical and the third is the one that finds
+things.
+
+**G1 — Unconsumed fields.** List every key in a step record and an episode summary, and mark which
+analysis product reads it. Anything unread is a candidate metric nobody has looked at. This sweep
+is how `agent_visible_changed`, `cap_hit`, `url_revisit` and `noop_inert` were found on 08-02,
+after the four-dimension profile had already been called complete at 18 metrics. Known still
+unread: `retry_count`, `fallback_finish`, `error_category`, `text_similarity`, `element_bbox`,
+`select_option_meta`, `intervention_*`, `screenshot_timeout_recovered`.
+
+**G2 — Coverage holes per product.** For each of the nine products, write down which cells, modes,
+sites and backbones it does **not** cover, and whether that is a design choice or an omission
+nobody noticed. `EVIDENCE_LAYER_SUMMARY` §1 is the start of this and it is a matrix, not a proof.
+
+**G3 — Refutation targets.** For each of the nine claims in `EVIDENCE_LAYER_SUMMARY` §5, write the
+measurement that would **refute** it, then check whether we hold that measurement. Where we do
+not, that is either a limitation to state or an experiment to run. This is the sweep that finds
+missing evidence rather than missing metrics, because it starts from what the paper wants to say
+rather than from what the data happens to contain.
+
+---
+
+## H. The stress round, and what it can and cannot promise
+
+Run `/stress` **after** §F and §G, never before: a hostile review of an incomplete evidence layer
+spends its attacks on gaps you already know about.
+
+Feed it `EVIDENCE_LAYER_SUMMARY.md` plus the nine products, and let it chain to the cross-AI
+reviewers as the skill specifies. That chain earned its place on 08-02: a zero-preset external
+review, given the numbers and denied the draft, computed the complement of a statistic we had
+computed only half of. We had 51.1% of contested tasks flipping; it computed 2.9% on the
+complement and therefore **17.4× enrichment**, which converts "benchmarks are noisy" into a
+statement about structure. Zero tool calls, so it was reasoning we could have done and did not.
+
+**What this cannot promise.** Complete and correct are different words and only one of them is
+reachable here.
+
+- **Reachable**: every number traceable to a producer that regenerates it; every claim carrying
+  its scope, its arm count and its denominator; every retraction recorded where someone would
+  otherwise rediscover the retracted version.
+- **Not reachable**: that no result is wrong. Tonight, six products were built and three claims
+  from earlier the same day were retracted, two of them within an hour of being written. The
+  useful target is not zero errors, it is **that an error surfaces before it reaches the paper**,
+  which is what §F is for and what the cross-AI chain is for.
+- **Known to be open regardless**: two workloads cannot characterise the axis they disagree on;
+  the rerun floor rests on two arms replicated once each; the fused mode has no replicate until
+  the queued run lands; local absolute cost is uncalibrated. These are limitations to write, not
+  gaps to close before 08-05.
+
+---
+
 ## E. What is finished, so nobody redoes it
 
 Nine products, each with a producer, a JSON, and a registry entry unless noted.
