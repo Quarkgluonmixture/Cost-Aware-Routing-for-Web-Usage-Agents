@@ -72,6 +72,18 @@ RUNS: dict[str, dict[str, str]] = {
     "red_B1": {"vision": "*B1_vision_reddit_2026*", "som": "*B1_som_reddit_2026*"},
     "red_B2": {"vision": "*B2_vision_reddit_2026*", "som": "*B2_som_reddit_2026*"},
 }
+# WebArena as a seventh cell. Its step records were pulled from the paper-grade host on
+# 2026-08-02 (笔切 §407.25); before that this cell looked impossible and was not.
+# A prediction written here before the run said WA would register DEGENERATE, reasoning that the
+# fused mode scores 13.46% against DOM's 16.35%. That was wrong and is kept as a warning: the
+# cheap tier is `vision` at 9.62%, not DOM, so cheap < rich and the cell is not degenerate.
+# WA is in fact the ONLY cell where any operating point Pareto-beats always-rich, and it does so
+# by matching its success rate exactly (13.46%) while escalating 30-40% of tasks instead of all
+# of them, for 1.56-1.65x cost against 1.78x. Read it with the caveats the rest of this file
+# carries: thresholds are swept rather than held out, 80 combinations are searched per cell, and
+# at n=104 one task is 0.96pp.
+WA_RUNS = {"vision": "B1_vision_wa_reddit_2026*_R*", "som": "B1_som_wa_reddit_2026*_R*"}
+WA_ROOT = REPO / "results/webarena/phase1"
 SITE_OF = {"cls": "classifieds", "red": "reddit"}
 SEARCH_ROOT = REPO / "results/visualwebarena/phase1"
 
@@ -223,7 +235,26 @@ def _oracle(cheap: dict[int, Episode], rich: dict[int, Episode]) -> dict:
             "cost_rel": cost / sum(cheap[t].cost for t in tids)}
 
 
-def build(cells: list[str]) -> dict:
+def wa_cell() -> tuple[dict[int, Episode], dict[int, Episode]]:
+    """Cheap/rich episode maps for B1 x WA-reddit over the tasks both modes ran."""
+    got = {}
+    for m, pat in WA_RUNS.items():
+        hits = [Path(x) for x in glob.glob(str(WA_ROOT / pat)) if os.path.isdir(x)]
+        if not hits:
+            raise MissingInput(f"WA {m}: no run dir for {pat!r}")
+        got[m] = sorted(hits)[-1]
+    ids = None
+    for d in got.values():
+        s = {int(f.name.split("_task_")[1].split("_")[0])
+             for f in (list(d.glob("*/episodes/*summary*.json")) or [])}
+        ids = s if ids is None else (ids & s)
+    if not ids:
+        raise MissingInput("WA: empty task intersection between the cheap and rich arms")
+    return (_read_episodes(got[CHEAP], ids, with_signals=True),
+            _read_episodes(got[RICH], ids, with_signals=False))
+
+
+def build(cells: list[str], with_wa: bool = False) -> dict:
     fracs = [0.0, 0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.75, 1.0]
     out = {"schema": "2026-08-01-confidence-cascade-v1", "cheap": CHEAP, "rich": RICH,
            "fracs": fracs, "cells": {}}
@@ -264,6 +295,32 @@ def build(cells: list[str]) -> dict:
         out["cells"][cid] = cell
         LOG.info("%s: cheap %.2f%% / rich %.2f%% / oracle %.2f%%",
                  cid, base_sr, rich_sr, cell["oracle"]["sr"])
+    if with_wa:
+        cheap, rich = wa_cell()
+        base_sr = 100 * sum(e.success for e in cheap.values()) / len(cheap)
+        rich_sr = 100 * sum(e.success for e in rich.values()) / len(rich)
+        cheap_bill = sum(e.cost for e in cheap.values())
+        always_rich = {"sr": rich_sr,
+                       "cost_rel": sum(e.cost for e in rich.values()) / cheap_bill}
+        cell = {"n": len(cheap), "universe_sha": "wa-intersection", "cheap_sr": base_sr,
+                "rich_sr": rich_sr, "always_rich": always_rich,
+                "oracle": _oracle(cheap, rich), "curves": {}}
+        for sig in SIGNALS:
+            cell["curves"][sig] = _curve(cheap, rich, sig, out["fracs"])
+        wins = [(s, r["frac"]) for s, rows in cell["curves"].items() for r in rows
+                if r["frac"] > 0
+                and r["sr"] >= always_rich["sr"] and r["cost_rel"] <= always_rich["cost_rel"]
+                and (r["sr"] > always_rich["sr"] or r["cost_rel"] < always_rich["cost_rel"])]
+        cell["pareto_beats_always_rich"] = wins
+        cell["rich_mode_is_worse"] = base_sr >= rich_sr
+        head = cell["oracle"]["sr"] - base_sr
+        cell["headroom_captured"] = {
+            f"{f:.0%}": (max(next(x for x in cell["curves"][s] if abs(x["frac"] - f) < 1e-9)["sr"]
+                             for s in SIGNALS) - base_sr) / head * 100 if head > 0 else None
+            for f in (0.10, 0.20, 0.30)}
+        out["cells"]["wa_red_B1"] = cell
+        LOG.info("wa_red_B1: cheap %.2f%% / rich %.2f%% / oracle %.2f%% (rich worse: %s)",
+                 base_sr, rich_sr, cell["oracle"]["sr"], cell["rich_mode_is_worse"])
     return out
 
 
@@ -381,15 +438,21 @@ def render(d: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cells", nargs="*", default=list(RUNS), help="subset of cell ids")
+    ap.add_argument("--with-wa", action="store_true",
+                    help="append B1 x WA-reddit; writes to *_with_wa.* so the six-cell verdict "
+                         "the paper cites is not overwritten")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,
                         format="%(levelname)s %(message)s")
-    d = build(a.cells)
-    OUT_JSON.write_text(json.dumps(d, indent=2))
-    OUT_MD.write_text(render(d))
-    print(f"✓ {OUT_MD.relative_to(REPO)}")
-    print(f"✓ {OUT_JSON.relative_to(REPO)}")
+    d = build(a.cells, a.with_wa)
+    om, oj = OUT_MD, OUT_JSON
+    if a.with_wa:
+        om = OUT_MD.with_name(OUT_MD.stem + "_with_wa" + OUT_MD.suffix)
+        oj = OUT_JSON.with_name(OUT_JSON.stem + "_with_wa" + OUT_JSON.suffix)
+    oj.write_text(json.dumps(d, indent=2))
+    om.write_text(render(d))
+    print(f"✓ {om.relative_to(REPO)}")
     return 0
 
 

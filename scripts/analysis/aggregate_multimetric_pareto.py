@@ -51,17 +51,18 @@ class MissingInput(RuntimeError):
     """Fail loud rather than emit a table built on a partial parse."""
 
 
-def parse_profile() -> dict[str, dict[str, tuple]]:
+def parse_profile(src: Path = SRC, n_expected: int = 6) -> dict[str, dict[str, tuple]]:
     """Read per-cell (SR, cost, latency, tokens) out of the four-dimension profile.
 
     Single-sourced from that document rather than recomputed, so the two can never disagree;
     if its layout changes this raises instead of silently returning fewer cells.
     """
-    if not SRC.exists():
-        raise MissingInput(f"{SRC} not found; run aggregate_per_mode_four_dimension_profile first")
+    if not src.exists():
+        raise MissingInput(f"{src} not found; run per_mode_four_dimension_profile.py first "
+                           "(with --with-wa if you asked for the seven-cell variant)")
     cells: dict[str, dict[str, list]] = {}
     section, cell = None, None
-    for line in SRC.read_text().splitlines():
+    for line in src.read_text().splitlines():
         s = line.strip()
         if s.startswith("## "):
             section = s[3:].strip()
@@ -87,8 +88,8 @@ def parse_profile() -> dict[str, dict[str, tuple]]:
             raise MissingInput(f"{cell}: missing {sorted(missing)} in the profile")
         out[cell] = {m: (d["sr"][i], d["cost"][i], d["lat"][i], d["tok"][i])
                      for i, m in enumerate(MODES)}
-    if len(out) != 6:
-        raise MissingInput(f"expected 6 cells in the profile, parsed {len(out)}")
+    if len(out) != n_expected:
+        raise MissingInput(f"expected {n_expected} cells in {src.name}, parsed {len(out)}")
     return out
 
 
@@ -103,8 +104,8 @@ def frontier(cell: dict[str, tuple], axes) -> list[str]:
     return nd
 
 
-def build() -> dict:
-    data = parse_profile()
+def build(src: Path = SRC, n_expected: int = 6) -> dict:
+    data = parse_profile(src, n_expected)
     res = {"schema": "2026-08-02-multimetric-pareto-v1", "cells": {}}
     for cell, modes in data.items():
         spans = {
@@ -166,14 +167,24 @@ def render(d: dict) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--with-wa", action="store_true",
+                    help="read the seven-cell profile and write to *_with_wa.*. WA has no "
+                         "AMENDMENT_08 and its cost is electricity-derived like B1/B2, so it is "
+                         "within-cell comparable and cross-cell it is not, same as everywhere")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,
                         format="%(levelname)s %(message)s")
-    d = build()
-    OUT_JSON.write_text(json.dumps(d, indent=2))
-    OUT_MD.write_text(render(d))
-    print(f"✓ {OUT_MD.relative_to(REPO)}")
+    src, n, om, oj = SRC, 6, OUT_MD, OUT_JSON
+    if a.with_wa:
+        src = SRC.with_name(SRC.stem + "_with_wa" + SRC.suffix)
+        n = 7
+        om = OUT_MD.with_name(OUT_MD.stem + "_with_wa" + OUT_MD.suffix)
+        oj = OUT_JSON.with_name(OUT_JSON.stem + "_with_wa" + OUT_JSON.suffix)
+    d = build(src, n)
+    oj.write_text(json.dumps(d, indent=2))
+    om.write_text(render(d))
+    print(f"✓ {om.relative_to(REPO)}")
     return 0
 
 

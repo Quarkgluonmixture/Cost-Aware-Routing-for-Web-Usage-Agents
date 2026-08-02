@@ -66,6 +66,14 @@ from scripts.analysis.lib.episode_rows import load_cell_task_rows  # noqa: E402
 
 SCHEMA_VERSION = "2026-08-02-per-mode-four-dimension-profile-v2"
 
+# Why the WA cell is opt-in and writes elsewhere. Consistency is counted as "the same mode is
+# the extreme in k of the N cells", so appending a seventh cell rewrites every denominator and
+# is not a superset of the six-cell result. Empirically it moves things: SoM's three-metric
+# "terminates sooner" signature (fewest steps, least budget exhaustion, most explicit finishes)
+# is 5/6 on the VWA grid and 5/7 with WA, because WA is the one cell where SoM is not the
+# strongest mode. The load-bearing negative is unaffected: the four image-free modes reach the
+# bar on NOTHING under either denominator, which is what licenses grouping them.
+
 # Episode step budget (configs/exp_v2_base.yaml `max_steps`, B-700 2026-05-17: 40 -> 30).
 # An episode at the cap did not decide to stop; it ran out.
 MAX_STEPS = 30
@@ -214,13 +222,56 @@ UNADJUDICATED: dict[str, str] = {
 }
 
 
+# WebArena as a seventh cell. Kept behind --with-wa and appended AFTER the six, so with the
+# flag off every byte of the VWA output is unchanged. WA carries no AMENDMENT_08 exclusion, so
+# its universe is the task set common to all six modes rather than a canonical scored list.
+#
+# The step records for these runs live on the paper-grade host and were missing from the local
+# mirror until 2026-08-02, which briefly read as a structural limit and was a sync gap (笔记
+# §407.25). If this builder raises on a missing steps dir, re-pull rather than concluding the
+# layer is impossible.
+WA_ROOT = REPO / "results/webarena/phase1"
+WA_GLOBS = {
+    "DOM": "B1_dom_wa_reddit_2026*_R*", "SoM": "B1_som_wa_reddit_2026*_R*",
+    "Vision": "B1_vision_wa_reddit_2026*_R*", "P-text": "B1_phantom_text_wa_reddit_2026*_R*",
+    "P-prompt": "B1_phantom_prompt_wa_reddit_2026*_R*",
+    "P-SoM": "B1_phantom_som_wa_reddit_2026*_R*",
+}
+
+
+def wa_spec() -> dict:
+    """B1 x WebArena-reddit as a profile cell. Raises rather than degrading silently."""
+    import glob as _glob
+    modes: dict[str, Path] = {}
+    for disp, pat in WA_GLOBS.items():
+        hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat)) if Path(d).is_dir())
+        if not hits:
+            raise SystemExit(f"wa_spec: no run dir for {disp} ({pat})")
+        ep = next(Path(hits[-1]).glob("*/episodes"), None)
+        if ep is None or not ep.is_dir():
+            raise SystemExit(f"wa_spec: no episodes dir under {hits[-1]}")
+        modes[disp] = ep
+    universe = None
+    for ep in modes.values():
+        ids = {int(f.name.split("_task_")[1].split("_")[0])
+               for f in ep.glob("reddit_task_*_summary_v2.json")}
+        universe = ids if universe is None else (universe & ids)
+    if not universe:
+        raise SystemExit("wa_spec: empty task intersection across the six modes")
+    return {"baseline": "B1", "site": "wa_reddit", "n_expected": len(universe),
+            "modes": modes, "universe": universe,
+            "steps_glob": "reddit_task_*_steps_v2.jsonl"}
+
+
 def _num(v: Any) -> float:
     return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0.0
 
 
 def summary_layer(spec: dict) -> dict[str, dict[int, dict]]:
     """Per-mode task -> summary row over the cell's canonical scored universe."""
-    universe, _ = expected_scored_ids(spec["site"])
+    universe = spec.get("universe")           # WA supplies its own; VWA uses the canonical set
+    if universe is None:
+        universe, _ = expected_scored_ids(spec["site"])
     rows_by_mode = load_cell_task_rows(spec, modes=DISPLAY_MODES)
     out: dict[str, dict[int, dict]] = {}
     for m in DISPLAY_MODES:
@@ -229,13 +280,17 @@ def summary_layer(spec: dict) -> dict[str, dict[int, dict]]:
     return out
 
 
-def steps_layer(baseline: str, site: str, mode: str) -> tuple[dict[int, dict], list[int]]:
+def steps_layer(baseline: str, site: str, mode: str, *, spec: dict | None = None
+                ) -> tuple[dict[int, dict], list[int]]:
     """Per-task step-derived metrics, plus the task ids that had to be skipped.
 
     Skips are identity mismatches (steps file does not belong to its summary).
     They are returned rather than logged so the caller can disclose the count.
     """
-    ep_dir = A.STEP_DIRS.get(baseline, {}).get(site, {}).get(DISPLAY_TO_AXIS[mode])
+    if spec is not None and spec.get("universe") is not None:
+        ep_dir = spec["modes"].get(mode)          # WA: dirs come from the spec, not STEP_DIRS
+    else:
+        ep_dir = A.STEP_DIRS.get(baseline, {}).get(site, {}).get(DISPLAY_TO_AXIS[mode])
     if ep_dir is None or not ep_dir.exists():
         return {}, []
     # A landed reddit condition holds 205 step files against a 203-task SCORED
@@ -244,10 +299,14 @@ def steps_layer(baseline: str, site: str, mode: str) -> tuple[dict[int, dict], l
     # mean. `summary_layer` already restricts to the scored universe; this path
     # must use the same gate or the two data layers silently describe different
     # task sets (test_universe_consumption_lint guards the summary side only).
-    universe, _ = expected_scored_ids(site)
+    universe = spec.get("universe") if spec is not None else None
+    if universe is None:
+        universe, _ = expected_scored_ids(site)
+    glob_pat = (spec.get("steps_glob") if spec is not None else None) \
+        or f"{site}_task_*_steps_v2.jsonl"
     per_task: dict[int, dict] = {}
     skipped: list[int] = []
-    for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
+    for path in sorted(ep_dir.glob(glob_pat)):
         tid = A.step_task_id(path)
         if tid not in universe:
             continue
@@ -386,7 +445,7 @@ def profile_cell(spec: dict) -> dict[str, Any]:
     steps_by_mode: dict[str, dict[int, dict]] = {}
     skipped_by_mode: dict[str, list[int]] = {}
     for m in DISPLAY_MODES:
-        steps_by_mode[m], skipped_by_mode[m] = steps_layer(baseline, site, m)
+        steps_by_mode[m], skipped_by_mode[m] = steps_layer(baseline, site, m, spec=spec)
 
     # (codex Mode B finding, 2026-07-29) Cross-mode comparison must be PAIRED.
     # Excluding the two identity-mismatched episodes removes them from P-SoM
@@ -723,9 +782,18 @@ def main() -> int:
                     default=REPO / "docs/analysis/cross_sites/per_mode_four_dimension_profile.json")
     ap.add_argument("--audit-json", type=Path,
                     default=REPO / "docs/analysis/cross_sites/steps_summary_identity_audit.json")
+    ap.add_argument("--with-wa", action="store_true",
+                    help="append B1 x WebArena-reddit as a seventh cell. Writes to *_with_wa.* "
+                         "so the six-cell grid the paper cites is never overwritten: adding a "
+                         "cell changes every consistency denominator from /6 to /7")
     a = ap.parse_args()
+    if a.with_wa:
+        a.out = a.out.with_name(a.out.stem + "_with_wa" + a.out.suffix)
+        a.json_out = a.json_out.with_name(a.json_out.stem + "_with_wa" + a.json_out.suffix)
 
     cells = [profile_cell(spec) for spec in CELLS]
+    if a.with_wa:
+        cells.append(profile_cell(wa_spec()))
     cons = rank_consistency(cells)
     exclusions = {c["cell_id"]: c["steps_excluded_tasks"]
                   for c in cells if c["steps_excluded_tasks"]}

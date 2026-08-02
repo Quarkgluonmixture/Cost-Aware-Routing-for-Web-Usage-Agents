@@ -1,0 +1,184 @@
+{
+  "schema": "2026-08-02-multimetric-pareto-v1",
+  "cells": {
+    "B0_classifieds": {
+      "spans": {
+        "cost": 1.1164943681530626,
+        "latency": 1.1833770614692654
+      },
+      "cheapest": "Vision",
+      "fastest": "SoM",
+      "cheapest_is_fastest": false,
+      "frontiers": {
+        "success x cost": [
+          "SoM",
+          "Vision"
+        ],
+        "+ latency": [
+          "SoM",
+          "Vision",
+          "P-prompt"
+        ],
+        "+ tokens (not independent)": [
+          "SoM",
+          "Vision",
+          "P-text",
+          "P-prompt"
+        ]
+      }
+    },
+    "B0_reddit": {
+      "spans": {
+        "cost": 1.1262363617824003,
+        "latency": 1.4037529458846547
+      },
+      "cheapest": "Vision",
+      "fastest": "Vision",
+      "cheapest_is_fastest": true,
+      "frontiers": {
+        "success x cost": [
+          "DOM",
+          "SoM",
+          "Vision"
+        ],
+        "+ latency": [
+          "DOM",
+          "SoM",
+          "Vision",
+          "P-prompt"
+        ],
+        "+ tokens (not independent)": [
+          "DOM",
+          "SoM",
+          "Vision",
+          "P-prompt"
+        ]
+      }
+    },
+    "B1_classifieds": {
+      "spans": {
+        "cost": 1.4606116774791473,
+        "latency": 1.196854601671947
+      },
+      "cheapest": "Vision",
+      "fastest": "SoM",
+      "cheapest_is_fastest": false,
+      "frontiers": {
+        "success x cost": [
+          "SoM",
+          "Vision"
+        ],
+        "+ latency": [
+          "SoM",
+          "Vision"
+        ],
+        "+ tokens (not independent)": [
+          "SoM",
+          "Vision"
+        ]
+      }
+    },
+    "B1_reddit": {
+      "spans": {
+        "cost": 1.5267175572519083,
+        "latency": 1.3504172416058873
+      },
+      "cheapest": "Vision",
+      "fastest": "Vision",
+      "cheapest_is_fastest": true,
+      "frontiers": {
+        "success x cost": [
+          "SoM",
+          "Vision",
+          "P-text"
+        ],
+        "+ latency": [
+          "SoM",
+          "Vision",
+          "P-text"
+        ],
+        "+ tokens (not independent)": [
+          "SoM",
+          "Vision",
+          "P-text"
+        ]
+      }
+    },
+    "B2_classifieds": {
+      "spans": {
+        "cost": 1.2845010615711252,
+        "latency": 1.11625918503674
+      },
+      "cheapest": "Vision",
+      "fastest": "SoM",
+      "cheapest_is_fastest": false,
+      "frontiers": {
+        "success x cost": [
+          "Vision"
+        ],
+        "+ latency": [
+          "DOM",
+          "SoM",
+          "Vision",
+          "P-text",
+          "P-prompt"
+        ],
+        "+ tokens (not independent)": [
+          "DOM",
+          "SoM",
+          "Vision",
+          "P-text",
+          "P-prompt"
+        ]
+      }
+    },
+    "B2_reddit": {
+      "spans": {
+        "cost": 1.6332504024586565,
+        "latency": 1.2319733827860806
+      },
+      "cheapest": "Vision",
+      "fastest": "Vision",
+      "cheapest_is_fastest": true,
+      "frontiers": {
+        "success x cost": [
+          "DOM",
+          "Vision"
+        ],
+        "+ latency": [
+          "DOM",
+          "Vision"
+        ],
+        "+ tokens (not independent)": [
+          "DOM",
+          "Vision"
+        ]
+      }
+    },
+    "B1_wa_reddit": {
+      "spans": {
+        "cost": 1.7779767233661594,
+        "latency": 1.0523289365210222
+      },
+      "cheapest": "Vision",
+      "fastest": "DOM",
+      "cheapest_is_fastest": false,
+      "frontiers": {
+        "success x cost": [
+          "Vision",
+          "P-text"
+        ],
+        "+ latency": [
+          "DOM",
+          "Vision",
+          "P-text"
+        ],
+        "+ tokens (not independent)": [
+          "DOM",
+          "Vision",
+          "P-text"
+        ]
+      }
+    }
+  }
+}

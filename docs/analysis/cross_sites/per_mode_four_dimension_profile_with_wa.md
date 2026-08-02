@@ -1,6 +1,6 @@
 # Per-mode four-dimension evidence profile
 
-- generated: `2026-08-02T09:00:17+00:00`
+- generated: `2026-08-02T09:02:31+00:00`
 - schema: `2026-08-02-per-mode-four-dimension-profile-v2`
 - **post_hoc_exploratory=True / h10_eligible=False**
 - 笔记 §108 evidence layer, cross-mode axis (the paper-headline axis per `paper_section2_framework.canvas`). `INDEX.md §7`: the framework was defined but only the **Macro** dimension had ever been computed per mode. This is the first run of all four.
@@ -23,30 +23,30 @@ A per-mode difference only counts if it holds across cells. `unanimous` = the sa
 
 | dim | metric | highest | in | lowest | in | tie | top÷2nd (min–max) | unanimous |
 |---|---|---|---|---|---|---|---|---|
-| Outcome | success rate % | SoM | 4.5/6 | Vision | 2/6 | 2 | 1.03–2.00× |  |
-| Outcome | solves | SoM | 4.5/6 | Vision | 2/6 | 2 | 1.03–2.00× |  |
-| Outcome | unique solves (no other mode got it) | Vision | 2.5/6 | P-text | 1.83/6 | 7 | 1.11–5.00× |  |
-| Macro | steps / episode | P-SoM | 2/6 | SoM | 5/6 | — | 1.00–1.05× |  |
-| Macro | episodes exhausting the step budget | Vision | 2/6 | SoM | 5/6 | — | 1.01–1.09× |  |
-| Macro | click fraction | P-SoM | 3/6 | Vision | 4/6 | — | 1.00–1.16× |  |
-| Macro | type fraction | P-text | 4/6 | Vision | 4/6 | — | 1.03–1.18× |  |
-| Macro | scroll fraction | Vision | 6/6 | SoM | 3/6 | — | 1.25–6.77× | ◆ **high: Vision 6/6** (arch. downstream) |
-| Macro | search-loop rate | DOM | 2/6 | Vision | 4/6 | — | 1.01–1.10× |  |
-| Macro | URL-revisit step rate | Vision | 6/6 | SoM | 4/6 | — | 1.02–1.05× | **high: Vision 6/6** |
-| Micro | parse-invalid step rate | SoM | 2/6 | Vision | 4.5/6 | 1 | 1.03–2.40× |  |
-| Micro | action-execution failure rate | Vision | 6/6 | SoM | 2/6 | — | 1.06–1.60× | ◆ **high: Vision 6/6** (arch. downstream) |
-| Micro | action failure | action was a click | Vision | 3/6 | P-text | 4/6 | — | 1.00–1.36× |  |
-| Micro | action failure | action was a type | DOM | 2/6 | Vision | 4/6 | — | 1.09–2.19× |  |
-| Micro | page-unchanged (no-op) step rate | Vision | 6/6 | P-text | 3/6 | — | 1.07–1.58× | ◆ **high: Vision 6/6** (arch. downstream) |
-| Micro | no-op despite a SUCCEEDING action | SoM | 5/6 | P-text | 2/6 | — | 1.02–1.50× |  |
-| Micro | page changed but channel did not show it | Vision | 2/6 | Vision | 4/6 | — | 1.03–1.22× |  |
-| Micro | locator fallback rate | P-prompt | 2/6 | Vision | 6/6 | — | 1.00–1.43× | ⚙️ **low: Vision 6/6** (by construction) |
-| Micro | consecutive same-action rate | Vision | 4/6 | SoM | 2/6 | — | 1.01–1.19× |  |
-| Micro | episodes ending in finish | SoM | 5/6 | P-SoM | 2/6 | — | 1.01–1.21× |  |
-| Efficiency | billed cost / episode | SoM | 5/6 | Vision | 6/6 | — | 1.00–1.12× | ⚙️ **low: Vision 6/6** (by construction) |
-| Efficiency | cost relative to DOM (within cell) | SoM | 5/6 | Vision | 6/6 | — | 1.00–1.12× | ⚙️ **low: Vision 6/6** (by construction) |
-| Efficiency | latency / episode (s) | P-text | 3/6 | SoM | 3/6 | — | 1.00–1.10× |  |
-| Efficiency | tokens / episode | SoM | 5/6 | Vision | 6/6 | — | 1.03–1.13× | ⚙️ **low: Vision 6/6** (by construction) |
+| Outcome | success rate % | SoM | 4.5/7 | Vision | 3/7 | 3 | 1.03–2.00× |  |
+| Outcome | solves | SoM | 4.5/7 | Vision | 3/7 | 3 | 1.03–2.00× |  |
+| Outcome | unique solves (no other mode got it) | Vision | 2.5/7 | P-SoM | 2.17/7 | 8 | 1.11–5.00× |  |
+| Macro | steps / episode | P-SoM | 2/7 | SoM | 5/7 | — | 1.00–1.05× |  |
+| Macro | episodes exhausting the step budget | Vision | 2/7 | SoM | 5/7 | 1 | 1.01–1.09× |  |
+| Macro | click fraction | P-SoM | 4/7 | Vision | 5/7 | — | 1.00–1.16× |  |
+| Macro | type fraction | P-text | 4/7 | Vision | 5/7 | — | 1.01–1.18× |  |
+| Macro | scroll fraction | Vision | 7/7 | SoM | 3/7 | — | 1.25–7.05× | ◆ **high: Vision 6/6** (arch. downstream) |
+| Macro | search-loop rate | DOM | 2.17/7 | Vision | 4.17/7 | 2 | 1.01–1.10× |  |
+| Macro | URL-revisit step rate | Vision | 7/7 | SoM | 4/7 | — | 1.02–1.05× | **high: Vision 6/6** |
+| Micro | parse-invalid step rate | SoM | 2/7 | Vision | 4.5/7 | 1 | 1.03–2.40× |  |
+| Micro | action-execution failure rate | Vision | 7/7 | SoM | 2/7 | — | 1.06–1.60× | ◆ **high: Vision 6/6** (arch. downstream) |
+| Micro | action failure | action was a click | Vision | 4/7 | P-text | 5/7 | — | 1.00–1.36× |  |
+| Micro | action failure | action was a type | DOM | 2/7 | Vision | 5/7 | — | 1.09–2.19× |  |
+| Micro | page-unchanged (no-op) step rate | Vision | 7/7 | P-text | 4/7 | — | 1.07–1.58× | ◆ **high: Vision 6/6** (arch. downstream) |
+| Micro | no-op despite a SUCCEEDING action | SoM | 6/7 | P-text | 2/7 | — | 1.02–1.50× |  |
+| Micro | page changed but channel did not show it | SoM | 3/7 | Vision | 4/7 | — | 1.03–1.23× |  |
+| Micro | locator fallback rate | P-prompt | 3/7 | Vision | 7/7 | — | 1.00–1.43× | ⚙️ **low: Vision 6/6** (by construction) |
+| Micro | consecutive same-action rate | Vision | 4/7 | SoM | 2/7 | — | 1.00–1.19× |  |
+| Micro | episodes ending in finish | SoM | 5/7 | P-SoM | 2/7 | — | 1.01–1.21× |  |
+| Efficiency | billed cost / episode | SoM | 6/7 | Vision | 7/7 | — | 1.00–1.12× | ⚙️ **low: Vision 6/6** (by construction) |
+| Efficiency | cost relative to DOM (within cell) | SoM | 6/7 | Vision | 7/7 | — | 1.00–1.12× | ⚙️ **low: Vision 6/6** (by construction) |
+| Efficiency | latency / episode (s) | P-text | 3/7 | SoM | 3/7 | — | 1.00–1.10× |  |
+| Efficiency | tokens / episode | SoM | 6/7 | Vision | 7/7 | — | 1.03–1.13× | ⚙️ **low: Vision 6/6** (by construction) |
 
 Why each ◆ row is architecturally downstream. **These are author-written causal assertions, and each one deletes a whole row of evidence, so each needs its own support.** All three were tested on 2026-08-02 and none survived as originally written; the entries below are the rewritten versions and carry the test that forced the rewrite:
 
@@ -119,6 +119,14 @@ Metrics added 2026-08-02 and **not yet adjudicated** either way. Absence from th
 | success rate % | 3.94 | 0.99 | 1.97 | 1.97 | 0.00 | 0.49 |
 | solves | 8 | 2 | 4 | 4 | 0 | 1 |
 | unique solves (no other mode got it) | 6 | 1 | 3 | 1 | 0 | 1 |
+
+### B1_wa_reddit
+
+| metric | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
+|---|---|---|---|---|---|---|
+| success rate % | 16.35 | 13.46 | 9.62 | 16.35 | 16.35 | 11.54 |
+| solves | 17 | 14 | 10 | 17 | 17 | 12 |
+| unique solves (no other mode got it) | 3 | 1 | 1 | 3 | 5 | 1 |
 
 ## Macro
 
@@ -235,6 +243,25 @@ trajectory metrics on the **203 tasks every mode has a usable trajectory for** (
 | search-loop rate | 0.2266 | 0.1478 | 0.1379 | 0.2660 | 0.2709 | 0.2167 |
 | URL-revisit step rate *(task-macro)* | 0.8702 | 0.8574 | 0.9114 | 0.8848 | 0.8734 | 0.8817 |
 | URL-revisit step rate *(pooled-step)* | 0.8775 | 0.8906 | 0.9301 | 0.9033 | 0.8831 | 0.9010 |
+
+### B1_wa_reddit
+
+trajectory metrics on the **104 tasks every mode has a usable trajectory for** (paired); dropped for pairing: {'DOM': 0, 'SoM': 0, 'Vision': 0, 'P-text': 0, 'P-prompt': 0, 'P-SoM': 0}
+
+| metric | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
+|---|---|---|---|---|---|---|
+| steps / episode | 22.64 | 23.91 | 23.12 | 23.33 | 24.50 | 23.79 |
+| episodes exhausting the step budget *(task-macro)* | 0.6250 | 0.7019 | 0.6058 | 0.6154 | 0.7019 | 0.6827 |
+| episodes exhausting the step budget *(pooled-step)* | 0.6250 | 0.7019 | 0.6058 | 0.6154 | 0.7019 | 0.6827 |
+| click fraction *(task-macro)* | 0.4595 | 0.4990 | 0.4503 | 0.4950 | 0.5507 | 0.5690 |
+| click fraction *(pooled-step)* | 0.4522 | 0.5163 | 0.4407 | 0.4823 | 0.5475 | 0.5683 |
+| type fraction *(task-macro)* | 0.3192 | 0.2178 | 0.0969 | 0.3161 | 0.2310 | 0.2486 |
+| type fraction *(pooled-step)* | 0.3367 | 0.2039 | 0.0969 | 0.3347 | 0.2335 | 0.2563 |
+| scroll fraction *(task-macro)* | 0.0231 | 0.0354 | 0.2492 | 0.0280 | 0.0329 | 0.0172 |
+| scroll fraction *(pooled-step)* | 0.0238 | 0.0330 | 0.2757 | 0.0272 | 0.0357 | 0.0214 |
+| search-loop rate | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| URL-revisit step rate *(task-macro)* | 0.7464 | 0.7930 | 0.8070 | 0.7329 | 0.7761 | 0.7721 |
+| URL-revisit step rate *(pooled-step)* | 0.7987 | 0.8633 | 0.8557 | 0.7774 | 0.8218 | 0.8254 |
 
 ## Micro
 
@@ -394,6 +421,32 @@ trajectory metrics on the **203 tasks every mode has a usable trajectory for** (
 | consecutive same-action rate *(pooled-step)* | 0.7772 | 0.7967 | 0.6255 | 0.7468 | 0.7400 | 0.7468 |
 | episodes ending in finish | 0.0739 | 0.1626 | 0.1527 | 0.0591 | 0.0443 | 0.0493 |
 
+### B1_wa_reddit
+
+trajectory metrics on the **104 tasks every mode has a usable trajectory for** (paired); dropped for pairing: {'DOM': 0, 'SoM': 0, 'Vision': 0, 'P-text': 0, 'P-prompt': 0, 'P-SoM': 0}
+
+| metric | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
+|---|---|---|---|---|---|---|
+| parse-invalid step rate *(task-macro)* | 0.0227 | 0.0052 | 0.0072 | 0.0102 | 0.0068 | 0.0144 |
+| parse-invalid step rate *(pooled-step)* | 0.0106 | 0.0048 | 0.0054 | 0.0074 | 0.0035 | 0.0057 |
+| action-execution failure rate *(task-macro)* | 0.2436 | 0.3632 | 0.4158 | 0.2062 | 0.3428 | 0.3431 |
+| action-execution failure rate *(pooled-step)* | 0.2730 | 0.4238 | 0.4877 | 0.2317 | 0.3889 | 0.3868 |
+| action failure | action was a click *(task-macro)* | 0.2012 | 0.2135 | 0.3255 | 0.1967 | 0.3021 | 0.3151 |
+| action failure | action was a click *(pooled-step)* | 0.2911 | 0.3255 | 0.4981 | 0.2530 | 0.3957 | 0.3962 |
+| action failure | action was a type *(task-macro)* | 0.0382 | 0.0842 | 0.0227 | 0.0759 | 0.0699 | 0.0761 |
+| action failure | action was a type *(pooled-step)* | 0.0820 | 0.2919 | 0.2275 | 0.1158 | 0.2034 | 0.2003 |
+| page-unchanged (no-op) step rate *(task-macro)* | 0.2889 | 0.4152 | 0.4563 | 0.2469 | 0.3790 | 0.3821 |
+| page-unchanged (no-op) step rate *(pooled-step)* | 0.2875 | 0.4351 | 0.5023 | 0.2481 | 0.4011 | 0.3989 |
+| no-op despite a SUCCEEDING action *(task-macro)* | 0.0453 | 0.0520 | 0.0405 | 0.0406 | 0.0362 | 0.0391 |
+| no-op despite a SUCCEEDING action *(pooled-step)* | 0.0144 | 0.0113 | 0.0146 | 0.0165 | 0.0122 | 0.0121 |
+| page changed but channel did not show it *(task-macro)* | 0.1346 | 0.1661 | 0.1022 | 0.1126 | 0.0977 | 0.0988 |
+| page changed but channel did not show it *(pooled-step)* | 0.1114 | 0.2242 | 0.1337 | 0.0680 | 0.0852 | 0.0948 |
+| locator fallback rate *(task-macro)* | 0.1390 | 0.1488 | 0.0019 | 0.1045 | 0.1967 | 0.1796 |
+| locator fallback rate *(pooled-step)* | 0.1614 | 0.1632 | 0.0017 | 0.1179 | 0.2217 | 0.2045 |
+| consecutive same-action rate *(task-macro)* | 0.5117 | 0.5730 | 0.5709 | 0.5025 | 0.5218 | 0.5624 |
+| consecutive same-action rate *(pooled-step)* | 0.5433 | 0.6379 | 0.6436 | 0.5314 | 0.5430 | 0.5979 |
+| episodes ending in finish | 0.3269 | 0.2788 | 0.3654 | 0.3846 | 0.2981 | 0.2885 |
+
 ## Efficiency
 
 ### B0_classifieds
@@ -450,13 +503,22 @@ trajectory metrics on the **203 tasks every mode has a usable trajectory for** (
 | latency / episode (s) | 669.92 | 623.01 | 550.02 | 677.61 | 599.28 | 639.96 |
 | tokens / episode | 99015 | 117379 | 70826 | 92346 | 104021 | 98699 |
 
+### B1_wa_reddit
+
+| metric | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
+|---|---|---|---|---|---|---|
+| billed cost / episode | 0.06579 | 0.07944 | 0.04468 | 0.06151 | 0.07386 | 0.06659 |
+| cost relative to DOM (within cell) | 1.0000 | 1.2076 | 0.6792 | 0.9350 | 1.1228 | 1.0122 |
+| latency / episode (s) | 485.20 | 494.79 | 490.73 | 509.87 | 506.32 | 510.59 |
+| tokens / episode | 68491 | 82940 | 45878 | 63727 | 76839 | 68819 |
+
 ## Reading notes
 
 1. **8 of 24 metrics have a unanimous extreme mode — but they fall into three classes, not two: 1 empirical, 3 architecturally downstream, 4 tautological.** The earlier revision of this file used a binary split and put the downstream group on the empirical side; Gemini (cross-AI Mode C, 2026-07-29) attacked that, correctly.
    **Empirical — not predictable from the design:**
    - `URL-revisit step rate` (Macro): **Vision** highest in 6/6, 1.0–1.1× the next mode
    **◆ Architecturally downstream — real magnitudes, predictable direction.** One causal chain explains all of them: coordinate-only addressing → more off-target clicks → page unchanged → scroll to re-orient. Citing these as behavioural discoveries overstates them; promoting one requires a baseline for what a coordinate-addressed agent *should* score, which this profile does not provide.
-   - `scroll fraction` (Macro): **Vision** highest in 6/6, 1.2–6.8× the next mode
+   - `scroll fraction` (Macro): **Vision** highest in 6/6, 1.2–7.1× the next mode
    - `action-execution failure rate` (Micro): **Vision** highest in 6/6, 1.1–1.6× the next mode
    - `page-unchanged (no-op) step rate` (Micro): **Vision** highest in 6/6, 1.1–1.6× the next mode
    **⚙️ By construction — do NOT cite as findings:** `locator fallback rate`, `billed cost / episode`, `cost relative to DOM (within cell)`, `tokens / episode`

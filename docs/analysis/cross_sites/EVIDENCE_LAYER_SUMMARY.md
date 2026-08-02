@@ -20,11 +20,11 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 |---|---|---|---|---|---|
 | **Outcome / SR** | `sr_per_mode` · `fusion_premium` | ✅ | ✅ | ✅ | complete |
 | **Noise / rerun floor** | `noise_floor_inventory` · `phase0b_noise_floor` · `label_instability` | ⚠️ 1 of 6 cells | ✅ 1 pair | ⚠️ 2 of 6 arms | **SoM replicate queued** |
-| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (24 metrics) | ✅ | ⏳ feasible, not yet wired | ✅ | complete on VWA |
-| **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ❌ not yet | ✅ | **WA is feasible, see §3** |
+| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (24 metrics) | ✅ | ✅ `--with-wa` | ✅ | complete |
+| **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ **added 08-02** | ✅ | complete |
 | **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ | ✅ (the four) | complete |
-| **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ⏳ feasible, not yet wired | ✅ | complete on VWA |
+| **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ✅ cascade `--with-wa`; the three router products stay VWA (they need the router feature table) | ✅ | complete |
 | *(features)* | `routing_feature_diagnostics` | ✅ | ❌ n/a | ✅ | complete |
 
 ## 2. ~~The one structural gap~~ — RETRACTED 2026-08-02
@@ -50,13 +50,38 @@ better instrument than the `find`.
 
 WA now enters every layer. §1's matrix is updated accordingly.
 
-## 3. Gaps that are cheap to close
+## 3. WA wiring — done 2026-08-02, and what it changed
 
-| gap | cost | what it buys |
+All three products take `--with-wa` and **write to `*_with_wa.*`**, because appending a cell
+rewrites every consistency denominator from /6 to /7 and is not a superset of the six-cell
+result. With the flag off, the six-cell outputs are byte-identical to before (verified by diff,
+timestamp line excluded). Three things the seventh cell changed, none of them cosmetic:
+
+1. **SoM's behavioural signature is VWA-only.** Fewest steps, least budget exhaustion, most
+   explicit finishes are each 5/6 on the VWA grid and each 5/7 with WA: WA is the single cell
+   that does not show it, and it is also the cell where SoM is not the strongest mode. Fifth
+   appearance of the workload dependence, first in the behavioural layer.
+2. **The load-bearing negative survives.** The four image-free modes reach the bar on **nothing**
+   under either denominator, over 24 metrics. That is what licenses grouping them, and it does
+   not move.
+3. **"Latency is an independent axis" is VWA-only.** WA's latency span is **1.05×**, the smallest
+   anywhere, against a cost span of **1.78×**, the largest anywhere. On WA the modes are within
+   5% of each other on time.
+
+And one exception to a claim made earlier in this document:
+
+4. **WA is the only cell where a cascade operating point Pareto-beats always-rich**, which it does
+   by *matching* its success rate exactly (13.46%) while escalating 30–40% of tasks rather than
+   all of them, at 1.56–1.65× cost against 1.78×. Claim 5 in §5 is amended accordingly.
+   ⚠️ Thresholds are swept rather than held out, 80 combinations are searched per cell, and at
+   n = 104 one task is 0.96pp. Two of 80 points landing on an exact tie is what a search of that
+   size produces by chance, so this is reported as an exception to state, not a result to build on.
+
+| still open | cost | what it buys |
 |---|---|---|
-| **WA into the Pareto** | ~1h. Summaries hold cost, latency and tokens; the producer currently single-sources the VWA profile and would read WA separately | the modality reversal on the efficiency axes, not only on SR. Turns a one-axis claim into two |
-| **WA into Outcome + Efficiency of the four-layer** | ~1h, same data | makes the profile's own coverage gap explicit in the product rather than only here |
-| **SoM replicate** | 7.8h + ~$17, queued on A100 behind the B0×WA chain | the rerun floor for the mode the fusion-premium claim is *about*. Currently borrowed from DOM and Vision |
+| **SoM replicate** | 7.8h + ~$17, armed on A100 behind the B0×WA chain | the rerun floor for the mode the fusion-premium claim is *about*. Currently borrowed from DOM and Vision |
+| **`/diag` Tier-2 on WA** | a session | Tier-1 is done and its ruleset was discovered on VWA, so it finds only VWA-shaped failures. See `HANDOFF_evidence_layer_2026-08-02.md` §B |
+| **§407 into the ledger** | a session | `ledger.jsonl` covers §1–§406 and has **zero** entries for today. See the handoff §C |
 
 ## 4. Gaps that are not cheap, and are therefore limitations
 
@@ -84,8 +109,11 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    that suits the workload. → `fusion_premium`
 4. **Which channel to add reverses with workload modality** (VWA visual, WA text).
    → `noise_floor_inventory` §2 + `fusion_premium` §3
-5. **Four routing formulations fail**, including a cascade on post-action confidence that no
-   operating point makes Pareto-beat always-rich. → the four router products + `confidence_cascade`
+5. **Four routing formulations fail.** For the cascade on post-action confidence, no operating
+   point Pareto-beats always-rich in any of the six VWA cells where the comparison is
+   non-degenerate. **On WA two of 80 swept points do**, by matching its success rate exactly at
+   lower cost; see §3.4 for why that is stated as an exception rather than a result.
+   → the four router products + `confidence_cascade{,_with_wa}`
 6. **The four image-free modes are behaviourally non-separable** across 24 metrics × 6 cells,
    while the image-bearing pair is separable mostly by construction.
    → `per_mode_four_dimension_profile` v2
