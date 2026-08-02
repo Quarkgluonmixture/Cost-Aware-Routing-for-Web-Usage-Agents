@@ -19,6 +19,16 @@ WHAT IT DOES NOT ASSUME
 The escalation decision sees ONLY the cheap run's own episode. No outcome, no expensive-run
 information. That is what a deployment has.
 
+WHAT IT DOES ASSUME, AND CANNOT TEST
+------------------------------------
+When a task escalates, its outcome is taken from a SEPARATE, standalone run of the rich mode.
+A real cascade would start the rich episode AFTER the cheap episode had already acted on a
+stateful website — different cart, different session, different page. That sequential potential
+outcome is unobserved and no run in this project contains it. So every number here estimates an
+OFFLINE SPLICE of two independent conditions, not the post-action cascade it is named after, and
+the bias can run in either direction. This limits the oracle and the confidence curves equally.
+(codex Mode B, §H stress 2026-08-02.)
+
 THE BASELINES THAT MATTER
 -------------------------
 Reporting a cascade curve alone is meaningless — any escalation rule buys accuracy by
@@ -77,11 +87,16 @@ RUNS: dict[str, dict[str, str]] = {
 # A prediction written here before the run said WA would register DEGENERATE, reasoning that the
 # fused mode scores 13.46% against DOM's 16.35%. That was wrong and is kept as a warning: the
 # cheap tier is `vision` at 9.62%, not DOM, so cheap < rich and the cell is not degenerate.
-# WA is in fact the ONLY cell where any operating point Pareto-beats always-rich, and it does so
-# by matching its success rate exactly (13.46%) while escalating 30-40% of tasks instead of all
-# of them, for 1.56-1.65x cost against 1.78x. Read it with the caveats the rest of this file
-# carries: thresholds are swept rather than held out, 80 combinations are searched per cell, and
-# at n=104 one task is 0.96pp.
+#
+# WA was then reported as the ONLY cell where an operating point Pareto-beats always-rich, at two
+# points. BOTH are tie artefacts and the claim is withdrawn (§H stress P0-2, 2026-08-02):
+#   * `min_margin_min`@40% — the signal has ONE distinct value across all 104 episodes, so the
+#     ranking fell through to the stable sort's task-id order. It is now dropped before ranking.
+#   * `neg_steps`@30% — 60 episodes tie at the cutoff and 28 of them are chosen by task id;
+#     SR spans 8.65-14.42% across tie orders, and the reported 13.46% "exact match" with
+#     always-rich sits inside that arbitrary span.
+# B0 x WA is still running as of 2026-08-02; when it lands, rerun this and re-judge rather than
+# assuming either the old exception or its withdrawal carries over.
 WA_RUNS = {"vision": "B1_vision_wa_reddit_2026*_R*", "som": "B1_som_wa_reddit_2026*_R*"}
 WA_ROOT = REPO / "results/webarena/phase1"
 SITE_OF = {"cls": "classifieds", "red": "reddit"}
@@ -177,12 +192,65 @@ def _signals_for(summary_file: Path, task_id: int) -> dict[str, float]:
         "mean_logprob_mean": statistics.fmean(ml),
         "mean_logprob_min": min(ml),
         "min_logprob_min": min(mn) if mn else min(ml),
-        "mean_margin_mean": statistics.fmean(mm) if mm else 0.0,
-        "min_margin_min": min(mgn) if mgn else 0.0,
+        # None, not 0.0, when the backend never populated the field. Substituting a constant
+        # made `min_margin_min` identical across all 104 WA episodes, and the sort that ranks
+        # tasks by "confidence" then fell through to the stable sort's task-id order — so the
+        # reported 40% operating point was literally "the first 42 task ids". A signal with no
+        # variance is not a threshold. (codex Mode B, §H stress 2026-08-02)
+        "mean_margin_mean": statistics.fmean(mm) if mm else None,
+        "min_margin_min": min(mgn) if mgn else None,
         "neg_steps": -float(n),
         "neg_noop_rate": -(noop / n),
         "neg_actfail_rate": -(actfail / n),
     }
+
+
+def usable_signals(cheap: dict[int, Episode], names: list[str]) -> tuple[list[str], dict]:
+    """Drop signals that cannot rank anything, and say which and why.
+
+    A signal is unusable if it is missing on any episode, or if every episode shares one value.
+    In the latter case `sorted(..., key=signal)` is a no-op and the escalation set is decided
+    entirely by the stable sort's tie order — i.e. by task id. The WA cell's `min_margin_min`
+    was exactly this: 104 episodes, one distinct value. (§H stress P0-2)
+    """
+    keep, dropped = [], {}
+    for s in names:
+        vals = [c.signals.get(s) for c in cheap.values()]
+        if any(v is None for v in vals):
+            dropped[s] = f"not populated on {sum(1 for v in vals if v is None)}/{len(vals)} episodes"
+        elif len({round(float(v), 12) for v in vals}) < 2:
+            dropped[s] = (f"no variance: all {len(vals)} episodes share the value "
+                          f"{vals[0]!r}, so ranking falls through to task id")
+        else:
+            keep.append(s)
+    return keep, dropped
+
+
+def _tie_span(cheap: dict[int, Episode], rich: dict[int, Episode], signal: str,
+              k: int) -> dict:
+    """How much of the operating point is decided by tie order rather than by the signal?
+
+    Reports the SR reachable at the same escalation count k if the tasks tied at the cutoff had
+    been broken the other way. A point whose reported SR is inside a wide span is a tie artifact.
+    """
+    tids = sorted(cheap)
+    n = len(tids)
+    scores = {t: float(cheap[t].signals[signal]) for t in tids}
+    order = sorted(tids, key=lambda t: scores[t])
+    if k <= 0 or k >= n:
+        return {"n_tied_at_cutoff": 0, "sr_min": None, "sr_max": None, "tie_decided": 0}
+    cut = scores[order[k - 1]]
+    below = [t for t in tids if scores[t] < cut]
+    tied = [t for t in tids if scores[t] == cut]
+    need = k - len(below)                      # how many of the tied group get escalated
+    gain = sorted((rich[t].success - cheap[t].success for t in tied), reverse=True)
+    base = sum(rich[t].success for t in below) + sum(
+        cheap[t].success for t in tids if t not in below and t not in tied)
+    best = (base + sum(cheap[t].success for t in tied) + sum(gain[:need])) / n
+    worst = (base + sum(cheap[t].success for t in tied) + sum(gain[len(gain) - need:])) / n
+    return {"n_tied_at_cutoff": len(tied), "n_decided_by_tie_order": max(0, need),
+            "sr_min": 100 * worst, "sr_max": 100 * best,
+            "tie_decided": 100 * (best - worst)}
 
 
 def _curve(cheap: dict[int, Episode], rich: dict[int, Episode], signal: str,
@@ -212,6 +280,8 @@ def _curve(cheap: dict[int, Episode], rich: dict[int, Episode], signal: str,
             "cost_rel": cost / base_cost,
             "random_sr": 100 * rand_sr,
             "random_gain_pp": 100 * (rand_sr - sum(cheap[t].success for t in tids) / n),
+            # How much of this point is the signal, and how much is the stable sort's tie order
+            "tie": _tie_span(cheap, rich, signal, k),
         })
     return rows
 
@@ -274,7 +344,10 @@ def build(cells: list[str], with_wa: bool = False) -> dict:
         always_rich = {"sr": rich_sr, "cost_rel": sum(e.cost for e in rich.values()) / cheap_bill}
         cell = {"n": len(cheap), "universe_sha": sha, "cheap_sr": base_sr, "rich_sr": rich_sr,
                 "always_rich": always_rich, "oracle": _oracle(cheap, rich), "curves": {}}
-        for sig in SIGNALS:
+        usable, dropped = usable_signals(cheap, SIGNALS)
+        cell["signals_dropped"] = dropped
+        cell["n_signals_used"] = len(usable)
+        for sig in usable:
             cell["curves"][sig] = _curve(cheap, rich, sig, fracs)
         # Does ANY (signal, operating point) Pareto-beat always-rich? >= SR and <= cost,
         # strictly better on one. This is the whole question.
@@ -285,12 +358,17 @@ def build(cells: list[str], with_wa: bool = False) -> dict:
                 if r["frac"] > 0
                 and r["sr"] >= always_rich["sr"] and r["cost_rel"] <= always_rich["cost_rel"]
                 and (r["sr"] > always_rich["sr"] or r["cost_rel"] < always_rich["cost_rel"])]
+        # Outcome-dependent by construction, and `>=` labels an exact tie as "rich worse"
+        # (cls_B2 is 2.23% vs 2.23%). Both facts are now carried in the flag itself so the
+        # count downstream cannot be read as a property of the design. (§H stress P1-5)
         cell["rich_mode_is_worse"] = base_sr >= rich_sr
+        cell["degeneracy_is_a_tie"] = abs(base_sr - rich_sr) < 1e-9
+        cell["degeneracy_rule"] = "outcome-dependent: cheap_sr >= rich_sr, evaluated post hoc"
         cell["pareto_beats_always_rich"] = wins
         head = cell["oracle"]["sr"] - base_sr
         cell["headroom_captured"] = {
             f"{f:.0%}": (max(next(x for x in cell["curves"][s] if abs(x["frac"] - f) < 1e-9)["sr"]
-                             for s in SIGNALS) - base_sr) / head * 100 if head > 0 else None
+                             for s in cell["curves"]) - base_sr) / head * 100 if head > 0 else None
             for f in (0.10, 0.20, 0.30)}
         out["cells"][cid] = cell
         LOG.info("%s: cheap %.2f%% / rich %.2f%% / oracle %.2f%%",
@@ -305,18 +383,26 @@ def build(cells: list[str], with_wa: bool = False) -> dict:
         cell = {"n": len(cheap), "universe_sha": "wa-intersection", "cheap_sr": base_sr,
                 "rich_sr": rich_sr, "always_rich": always_rich,
                 "oracle": _oracle(cheap, rich), "curves": {}}
-        for sig in SIGNALS:
+        usable, dropped = usable_signals(cheap, SIGNALS)
+        cell["signals_dropped"] = dropped
+        cell["n_signals_used"] = len(usable)
+        for sig in usable:
             cell["curves"][sig] = _curve(cheap, rich, sig, out["fracs"])
         wins = [(s, r["frac"]) for s, rows in cell["curves"].items() for r in rows
                 if r["frac"] > 0
                 and r["sr"] >= always_rich["sr"] and r["cost_rel"] <= always_rich["cost_rel"]
                 and (r["sr"] > always_rich["sr"] or r["cost_rel"] < always_rich["cost_rel"])]
         cell["pareto_beats_always_rich"] = wins
+        # Outcome-dependent by construction, and `>=` labels an exact tie as "rich worse"
+        # (cls_B2 is 2.23% vs 2.23%). Both facts are now carried in the flag itself so the
+        # count downstream cannot be read as a property of the design. (§H stress P1-5)
         cell["rich_mode_is_worse"] = base_sr >= rich_sr
+        cell["degeneracy_is_a_tie"] = abs(base_sr - rich_sr) < 1e-9
+        cell["degeneracy_rule"] = "outcome-dependent: cheap_sr >= rich_sr, evaluated post hoc"
         head = cell["oracle"]["sr"] - base_sr
         cell["headroom_captured"] = {
             f"{f:.0%}": (max(next(x for x in cell["curves"][s] if abs(x["frac"] - f) < 1e-9)["sr"]
-                             for s in SIGNALS) - base_sr) / head * 100 if head > 0 else None
+                             for s in cell["curves"]) - base_sr) / head * 100 if head > 0 else None
             for f in (0.10, 0.20, 0.30)}
         out["cells"]["wa_red_B1"] = cell
         LOG.info("wa_red_B1: cheap %.2f%% / rich %.2f%% / oracle %.2f%% (rich worse: %s)",
@@ -357,6 +443,11 @@ def render(d: dict) -> str:
     L += ["", "The **oracle cascade is the attractive operating point in this table**: it pays "
           "double only on the 2–22 tasks that need it, so it buys +2.2 to +10.8pp for +2% to "
           "+12% cost. Everything below asks how much of that a deployable signal recovers.", "",
+          "> ⚠️ **Every number below is an offline splice.** An escalated task takes its outcome "
+          "from a standalone rich-mode run, but a real cascade would start the rich episode "
+          "*after* the cheap one had already acted on a stateful site. That sequential outcome "
+          "is unobserved in this project, so the bias can run either way — this is a limitation "
+          "of the design, not of the estimator.", "",
           "## 1b. THE VERDICT — does any operating point Pareto-beat *always-rich*?", "",
           "Always running the rich mode is a fixed policy: no signal, no threshold, no fitting. "
           "A cascade that does not beat it on both axes has bought nothing.", "",
@@ -366,16 +457,34 @@ def render(d: dict) -> str:
     for cid, c in d["cells"].items():
         w = c["pareto_beats_always_rich"]
         total_wins += len(w)
-        txt = "**none**" if not w else ", ".join(f"`{s}`@{f:.0%}" for s, f in w[:4])
+        if not w:
+            txt = "**none**"
+        else:
+            parts = []
+            for sname, f in w[:4]:
+                row = next(x for x in c["curves"][sname] if abs(x["frac"] - f) < 1e-9)
+                t = row.get("tie") or {}
+                tag = ""
+                if t.get("n_tied_at_cutoff", 0) > 1 and t.get("tie_decided", 0) > 0:
+                    tag = (f" ⚠️ {t['n_tied_at_cutoff']} tied at the cutoff, "
+                           f"{t.get('n_decided_by_tie_order', 0)} of them picked by task id; "
+                           f"SR spans {t['sr_min']:.2f}–{t['sr_max']:.2f}% over tie orders")
+                parts.append(f"`{sname}`@{f:.0%}{tag}")
+            txt = ", ".join(parts)
         if c["rich_mode_is_worse"]:
-            txt += " · ⚠️ rich mode is *worse* than cheap here, so the cascade question is moot"
+            txt += " · ⚠️ rich mode is *worse than or equal to* cheap here, so the cascade question is moot"
         L.append(f"| `{cid}` | {c['always_rich']['sr']:.2f}% / "
                  f"{c['always_rich']['cost_rel']:.2f}x | {txt} |")
     n_cells_win = sum(1 for c in d["cells"].values() if c["pareto_beats_always_rich"])
-    L += ["", f"**{total_wins} of {len(d['cells']) * len(SIGNALS) * (len(d['fracs']) - 1)} "
-          f"(cell, signal, operating point) combinations Pareto-beat the fixed policy, in "
-          f"{n_cells_win} of {len(d['cells'])} cells.** "
-          "`frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade.", "",
+    # Denominator counts the signals each cell actually ranks with (some are dropped for having
+    # no variance) times the non-zero fractions. Using len(SIGNALS) x len(fracs) overcounts and
+    # was the source of the "2 of 80" figure; the true search space is smaller. (§H stress P1-5)
+    searched = sum(len(c["curves"]) * (len(d["fracs"]) - 1) for c in d["cells"].values())
+    L += ["", f"**{total_wins} of {searched} (cell, signal, operating point) combinations "
+          f"Pareto-beat the fixed policy, in {n_cells_win} of {len(d['cells'])} cells.** "
+          "`frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade. "
+          "The denominator counts only signals a cell can actually rank with; where a signal was "
+          "dropped for having no variance it is not part of the search space.", "",
           "## 1c. Fraction of the oracle's headroom the best signal recovers", "",
           "| cell | 10% | 20% | 30% |", "|---|---|---|---|"]
     for cid, c in d["cells"].items():
@@ -411,13 +520,26 @@ def render(d: dict) -> str:
           "|---|---|---|---|"]
     for sig in SIGNALS:
         cells_ = []
+        n_cells_with = 0
         for f in (0.10, 0.20, 0.30):
             ms = []
             for c in d["cells"].values():
+                if sig not in c["curves"]:      # dropped for no variance / not populated
+                    continue
                 r = next(x for x in c["curves"][sig] if abs(x["frac"] - f) < 1e-9)
                 ms.append(r["sr_gain_pp"] - r["random_gain_pp"])
-            cells_.append(f"{statistics.fmean(ms):+.2f}pp")
-        L.append(f"| `{sig}` | " + " | ".join(cells_) + " |")
+            n_cells_with = max(n_cells_with, len(ms))
+            cells_.append(f"{statistics.fmean(ms):+.2f}pp" if ms else "—")
+        suffix = "" if n_cells_with == len(d["cells"]) else f" ⚠️ {n_cells_with}/{len(d['cells'])} cells"
+        L.append(f"| `{sig}`{suffix} | " + " | ".join(cells_) + " |")
+    dropped_any = {cid: c.get("signals_dropped") or {} for cid, c in d["cells"].items()}
+    if any(dropped_any.values()):
+        L += ["", "**Signals dropped before ranking** — a score with no variance cannot rank "
+              "anything, and `sorted()` then falls through to task id, so the resulting "
+              "\"operating point\" is a set of task ids wearing a threshold's name:"]
+        for cid, dr in dropped_any.items():
+            for sname, why in dr.items():
+                L.append(f"- `{cid}` / `{sname}`: {why}")
 
     L += ["", "## 4. Full curves", ""]
     for cid, c in d["cells"].items():
@@ -425,7 +547,7 @@ def render(d: dict) -> str:
               f"oracle {c['oracle']['sr']:.2f}%)", "",
               "| frac | k | SR | cost | SR gain | random gain | margin |",
               "|---|---|---|---|---|---|---|"]
-        sig = max(SIGNALS, key=lambda s: next(
+        sig = max(c["curves"], key=lambda s: next(
             x for x in c["curves"][s] if abs(x["frac"] - 0.20) < 1e-9)["sr"])
         for r in c["curves"][sig]:
             m = r["sr_gain_pp"] - r["random_gain_pp"]

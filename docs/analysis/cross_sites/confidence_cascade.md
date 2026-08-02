@@ -30,6 +30,8 @@ Cost is relative to running the cheap mode on every task.
 
 The **oracle cascade is the attractive operating point in this table**: it pays double only on the 2–22 tasks that need it, so it buys +2.2 to +10.8pp for +2% to +12% cost. Everything below asks how much of that a deployable signal recovers.
 
+> ⚠️ **Every number below is an offline splice.** An escalated task takes its outcome from a standalone rich-mode run, but a real cascade would start the rich episode *after* the cheap one had already acted on a stateful site. That sequential outcome is unobserved in this project, so the bias can run either way — this is a limitation of the design, not of the estimator.
+
 ## 1b. THE VERDICT — does any operating point Pareto-beat *always-rich*?
 
 Always running the rich mode is a fixed policy: no signal, no threshold, no fitting. A cascade that does not beat it on both axes has bought nothing.
@@ -38,12 +40,12 @@ Always running the rich mode is a fixed policy: no signal, no threshold, no fitt
 |---|---|---|
 | `cls_B0` | 27.23% / 1.12x | **none** |
 | `cls_B1` | 14.29% / 1.40x | **none** |
-| `cls_B2` | 2.23% / 1.28x | `mean_logprob_mean`@5%, `mean_logprob_mean`@10%, `mean_logprob_mean`@15%, `mean_logprob_mean`@20% · ⚠️ rich mode is *worse* than cheap here, so the cascade question is moot |
+| `cls_B2` | 2.23% / 1.28x | `mean_logprob_mean`@5%, `mean_logprob_mean`@10%, `mean_logprob_mean`@15%, `mean_logprob_mean`@20% · ⚠️ rich mode is *worse than or equal to* cheap here, so the cascade question is moot |
 | `red_B0` | 14.78% / 1.13x | **none** |
 | `red_B1` | 7.39% / 1.53x | **none** |
-| `red_B2` | 0.99% / 1.63x | `mean_logprob_mean`@5%, `mean_logprob_mean`@10%, `mean_logprob_mean`@15%, `mean_logprob_mean`@20% · ⚠️ rich mode is *worse* than cheap here, so the cascade question is moot |
+| `red_B2` | 0.99% / 1.63x | `mean_logprob_mean`@5%, `mean_logprob_mean`@10%, `mean_logprob_mean`@15%, `mean_logprob_mean`@20% · ⚠️ rich mode is *worse than or equal to* cheap here, so the cascade question is moot |
 
-**71 of 432 (cell, signal, operating point) combinations Pareto-beat the fixed policy, in 2 of 6 cells.** `frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade.
+**66 of 423 (cell, signal, operating point) combinations Pareto-beat the fixed policy, in 2 of 6 cells.** `frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade. The denominator counts only signals a cell can actually rank with; where a signal was dropped for having no variance it is not part of the search space.
 
 ## 1c. Fraction of the oracle's headroom the best signal recovers
 
@@ -91,10 +93,13 @@ For each cell, the best signal at each escalation fraction, and the margin over 
 | `mean_logprob_min` | +0.16pp | +0.39pp | +0.35pp |
 | `min_logprob_min` | +0.32pp | +0.36pp | -0.04pp |
 | `mean_margin_mean` | +0.05pp | +0.11pp | -0.13pp |
-| `min_margin_min` | +0.46pp | +0.44pp | +0.10pp |
+| `min_margin_min` ⚠️ 5/6 cells | +0.53pp | +0.49pp | +0.07pp |
 | `neg_steps` | +0.53pp | +0.97pp | +0.95pp |
 | `neg_noop_rate` | +0.22pp | +0.50pp | +0.56pp |
 | `neg_actfail_rate` | +0.29pp | +0.73pp | +0.65pp |
+
+**Signals dropped before ranking** — a score with no variance cannot rank anything, and `sorted()` then falls through to task id, so the resulting "operating point" is a set of task ids wearing a threshold's name:
+- `red_B2` / `min_margin_min`: no variance: all 203 episodes share the value 0.0, so ranking falls through to task id
 
 ## 4. Full curves
 
