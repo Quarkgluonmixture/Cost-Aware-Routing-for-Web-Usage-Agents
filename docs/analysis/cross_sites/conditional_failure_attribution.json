@@ -1118,7 +1118,7 @@
     }
   },
   "post_hoc_exploratory": true,
-  "scan_dir": "/tmp/diag_v8",
+  "scan_dir": "/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents/results/diag_scans/v8_vwa",
   "schema": "2026-08-02-conditional-failure-attribution-v1",
   "text_modes": [
     "dom",

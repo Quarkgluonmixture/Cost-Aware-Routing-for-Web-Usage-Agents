@@ -23,7 +23,7 @@ within-channel enrichments are read.
 Scans come from `diag_rescan_all.py` (default `/tmp/diag_v8`, ruleset asserted identical across
 all 36 so cross-mode aggregation is licensed; see the v8 freeze note in the diag digests).
 
-WebArena is included as a seventh cell (`--wa-scan-dir`, default `/tmp/diag_v8_wa`). Its step
+WebArena is included as a seventh cell (`--wa-scan-dir`, default `results/diag_scans/v8_wa`). Its step
 records live on the paper-grade host and were absent from the local mirror, which briefly looked
 like a structural limit and is not one: the rules run on WA unmodified at the same ruleset
 version, and WA reddit is the same Postmill application as VWA reddit. WA carries no AMENDMENT_08
@@ -255,8 +255,10 @@ def render(d: dict) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--scan-dir", type=Path, default=Path("/tmp/diag_v8"))
-    ap.add_argument("--wa-scan-dir", type=Path, default=Path("/tmp/diag_v8_wa"))
+    ap.add_argument("--scan-dir", type=Path,
+                    default=REPO / "results/diag_scans/v8_vwa")
+    ap.add_argument("--wa-scan-dir", type=Path,
+                    default=REPO / "results/diag_scans/v8_wa")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,
