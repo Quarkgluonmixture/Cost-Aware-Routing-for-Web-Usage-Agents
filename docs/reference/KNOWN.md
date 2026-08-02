@@ -45,7 +45,7 @@ purpose: anti-redo ledger — "has this already been measured / adjudicated / re
 | `CLAIM_UNVERIFIED` | 这是推论还是测量？（原文自称待验的一律进这里） | 92 |
 | `DATA` | 什么数据存在、在哪、什么等级、能支撑什么 | 49 |
 
-共 **2142** 条，覆盖 §1–§409。数据：`docs/reference/known/ledger.jsonl`。
+共 **2146** 条，覆盖 §1–§411。数据：`docs/reference/known/ledger.jsonl`。
 
 > chunk 9（2026-08-01，+25 条）补的是一处**承重缺口**：§398 整节此前 **0 条**，而合并稿第 ③ 步（结构小于同模式重跑地板）的出处正是 §398.2 —— user 标完 508 条结论账本时，四步骨架里那一步一条都没被裁到。同批补入 §406。§403–405 属 session log，未收录。
 
