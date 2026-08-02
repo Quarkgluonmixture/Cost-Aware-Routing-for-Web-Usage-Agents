@@ -46,7 +46,37 @@ A100_HOST="condense-a100"
 # stale /mnt/scratch so DGX mirror never saw R19740 fresh data → quark:8765
 # Gallery view always 3+ days behind. Post-fix: 15-min auto-refresh from
 # live LIVE Fire-3 source.
-A100_RESULTS="/home/ubuntu/workspace/p79/results/visualwebarena/phase1/"
+# B-1919 (2026-08-02, /diag WA reddit Tier-2/3): sync BOTH benchmark subtrees.
+# Pre-fix this script only ever pulled visualwebarena/phase1/ — `results/webarena/
+# phase1/` had NO automated sync path at all, so WA data reached DGX only via
+# whatever manual rsync someone happened to run, with whatever filters it
+# happened to carry. Empirically every one of the 19 WA run dirs on DGX had an
+# EMPTY `task_configs/` while A100 held all 104 per run. That silently disabled
+# the 28 of 44 /diag P-rules that read the task config (scan_episodes degrades to
+# `config = {}` without warning), which invalidated every WA diag scan on disk.
+# See docs/analysis/wa_reddit/_cell_cross_mode_findings.md §0.
+A100_RESULTS_BASE="/home/ubuntu/workspace/p79/results"
+DGX_RESULTS_BASE="${REPO_ROOT}/results"
+# Per-subtree delete policy. VWA keeps --delete-after/--delete-excluded: that is
+# what propagates an A100-side clear_tasks.py to the DGX mirror during a
+# paper-grade re-fire (B-841), and VWA's A100 tree is the complete source.
+#
+# WA is additive-only. A dry run on 2026-08-02 showed the delete flags would drop
+# 26,207 paths from results/webarena/phase1/: 25,999 are empty artifacts/ dir
+# shells (harmless, that is what --delete-excluded is for), but the remainder is
+# the whole `B0_wa_3mode_shopping_20260417` run dir — 192 task_configs +
+# run_meta + 2 condition_meta, a 2026-04 archived skeleton that exists ONLY on
+# DGX and is no longer on the A100. Deleting DGX-only history to mirror a host
+# that never had it is the same failure this patch exists to fix, so WA syncs
+# without --delete until someone decides that skeleton is disposable. Same
+# defensive reasoning as the top-level gallery loop below (B-1755).
+BENCH_SUBTREES=(
+  "visualwebarena/phase1:delete"
+  "webarena/phase1:nodelete"
+)
+# Kept for the SUMMARY_BEFORE/AFTER comparison and downstream log lines that
+# name a single primary tree; the rsync loop below covers all of BENCH_SUBTREES.
+A100_RESULTS="${A100_RESULTS_BASE}/visualwebarena/phase1/"
 DGX_RESULTS="${REPO_ROOT}/results/visualwebarena/phase1/"
 
 # B-1755 (2026-05-19 morning, Fire-3 LIVE follow-up + user gallery URL ask):
@@ -77,7 +107,7 @@ A100_TOPLEVEL_DIRS=(
   "B2_unified"
 )
 
-mkdir -p "${DGX_RESULTS}"
+for _entry in "${BENCH_SUBTREES[@]}"; do mkdir -p "${DGX_RESULTS_BASE}/${_entry%%:*}"; done
 
 # B-877 (/stress A1.24 P0-5-AB*, 2026-05-17): single-host flock on sync
 # script to prevent concurrent rsync overlap. A100 sync >15min (slow VPN
@@ -100,7 +130,14 @@ ts() { date +'%Y-%m-%d %H:%M:%S'; }
 log() { echo "[$(ts)] $*"; }
 
 # Pre-sync: snapshot which condition_summary_v2.json files we have locally
-SUMMARY_BEFORE=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.json" 2>/dev/null | sort)
+# (B-1919: across every synced benchmark subtree, not just VWA)
+_summary_snapshot() {
+  local entry
+  for entry in "${BENCH_SUBTREES[@]}"; do
+    find "${DGX_RESULTS_BASE}/${entry%%:*}" -maxdepth 4 -name "condition_summary_v2.json" 2>/dev/null
+  done | sort
+}
+SUMMARY_BEFORE=$(_summary_snapshot)
 
 # rsync flags:
 #  -a  archive (preserve perms / times / symlinks)
@@ -124,8 +161,11 @@ log "rsync ${A100_HOST}:${A100_RESULTS} → ${DGX_RESULTS}"
 # SoM images, ~35 GB) onto DGX, whose only role is summary/JSONL analysis — A100
 # is the source of truth and retains them. --delete-excluded prunes the already-
 # cached local artifacts on the next sync so DGX stops being the mirror bottleneck.
-RSYNC_OPTS=(-az --partial --append-verify --delete-after --delete-excluded --info=stats1
+# B-1919: delete flags split out so they can be applied per subtree (see the
+# BENCH_SUBTREES policy comment).
+RSYNC_OPTS=(-az --partial --append-verify --info=stats1
             --exclude='artifacts/')
+RSYNC_DELETE_OPTS=(--delete-after --delete-excluded)
 if [[ "${DRY_RUN}" == "1" ]]; then
   RSYNC_OPTS+=(--dry-run)
   log "DRY-RUN mode (no actual transfer)"
@@ -149,17 +189,37 @@ RSYNC_LOG="/tmp/rsync_a100_last.${$}.log"
 # 15-min tick raced an active task completion (intermittent all-Fire spam + stale
 # DGX state layer). Real failures still fail: 255 (SSH drop) / 23 (partial) / 30
 # (timeout) / etc. Only rc=24 is whitelisted.
-set +e
-rsync "${RSYNC_OPTS[@]}" \
-  -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
-  "${A100_HOST}:${A100_RESULTS}" "${DGX_RESULTS}" 2>&1 | tee "${RSYNC_LOG}"
-rsync_rc=${PIPESTATUS[0]}
-set -e
-if [[ "${rsync_rc}" -ne 0 && "${rsync_rc}" -ne 24 ]]; then
-  log "✗ rsync failed (rc=${rsync_rc}, SSH chain or A100 unreachable). Retry on next cron run."
-  exit 1
-fi
-[[ "${rsync_rc}" -eq 24 ]] && log "⚠ rsync rc=24 (files vanished mid-sync — live run dir writing, benign; bulk transferred OK)"
+# B-1919: one rsync per benchmark subtree. A missing subtree on the A100 side is
+# skipped rather than fatal (WA is not always present on a VWA-only host), but a
+# subtree that EXISTS and fails to transfer still aborts — silently continuing is
+# exactly how the empty task_configs/ went unnoticed for a fortnight.
+: > "${RSYNC_LOG}"
+for entry in "${BENCH_SUBTREES[@]}"; do
+  sub="${entry%%:*}"
+  policy="${entry##*:}"
+  src="${A100_RESULTS_BASE}/${sub}/"
+  dst="${DGX_RESULTS_BASE}/${sub}/"
+  if ! ssh -o ConnectTimeout=10 "${A100_HOST}" "test -d ${src}" 2>/dev/null; then
+    log "  - skipping ${sub} (not present on A100)"
+    continue
+  fi
+  opts=("${RSYNC_OPTS[@]}")
+  if [[ "${policy}" == "delete" ]]; then
+    opts+=("${RSYNC_DELETE_OPTS[@]}")
+  fi
+  log "rsync ${A100_HOST}:${src} → ${dst} (${policy})"
+  set +e
+  rsync "${opts[@]}" \
+    -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
+    "${A100_HOST}:${src}" "${dst}" 2>&1 | tee -a "${RSYNC_LOG}"
+  rsync_rc=${PIPESTATUS[0]}
+  set -e
+  if [[ "${rsync_rc}" -ne 0 && "${rsync_rc}" -ne 24 ]]; then
+    log "✗ rsync ${sub} failed (rc=${rsync_rc}, SSH chain or A100 unreachable). Retry on next cron run."
+    exit 1
+  fi
+  [[ "${rsync_rc}" -eq 24 ]] && log "⚠ rsync ${sub} rc=24 (files vanished mid-sync — live run dir writing, benign; bulk transferred OK)"
+done
 
 # B-1755 (2026-05-19 morning): rsync top-level watchdog-output dirs too.
 # Separate rsync per dir for fault isolation (one dir's failure doesn't
@@ -218,8 +278,8 @@ else
   log "  - fire_manifest staging pull failed (non-fatal; next tick retries)"
 fi
 
-# Post-sync: detect new condition_summary_v2.json
-SUMMARY_AFTER=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.json" 2>/dev/null | sort)
+# Post-sync: detect new condition_summary_v2.json (B-1919: all subtrees)
+SUMMARY_AFTER=$(_summary_snapshot)
 NEW_SUMMARIES=$(comm -13 <(echo "${SUMMARY_BEFORE}") <(echo "${SUMMARY_AFTER}") | grep -v '^$' || true)
 
 # B-878 (/stress A1.24 P0-5-AB* sub-b, 2026-05-17): also detect DELETED

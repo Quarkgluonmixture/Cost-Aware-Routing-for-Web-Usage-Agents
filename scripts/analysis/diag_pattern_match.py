@@ -1967,6 +1967,35 @@ def _discover_episodes(
 # Main scan
 # ---------------------------------------------------------------------------
 
+class MissingTaskConfigError(RuntimeError):
+    """Raised when episodes have no task config and the caller did not opt in.
+
+    B-1919 (2026-08-02): this used to be a silent `config = {}` fallback. Every
+    rule that reads the task config then returns [] and the scan looks CLEAN —
+    a scan whose config-dependent rules were never actually evaluated is
+    indistinguishable from a scan that found nothing. That is how six WA reddit
+    conditions sat on disk for a fortnight reporting "0 success-side hits" while
+    28 of 44 rules were switched off. Fail loud instead.
+    """
+
+
+def _config_dependent_rules() -> List[str]:
+    """Rule IDs whose check function reads `config` — i.e. what goes dark.
+
+    Derived from the source at call time rather than hardcoded so it cannot
+    drift as rules are added. Only ever invoked on the error path.
+    """
+    import inspect
+    out = []
+    for rule_id, fn in ALL_RULES.items():
+        try:
+            if re.search(r"\bconfig\b", inspect.getsource(fn)):
+                out.append(rule_id)
+        except (OSError, TypeError):      # source unavailable — assume affected
+            out.append(rule_id)
+    return sorted(out, key=lambda r: int(r[1:]))
+
+
 def scan_episodes(
     run_dir: Path,
     *,
@@ -1975,8 +2004,15 @@ def scan_episodes(
     failed_only: bool = False,
     rule_filter: Optional[Set[str]] = None,
     verbose: bool = False,
+    allow_missing_config: bool = False,
 ) -> Dict[str, Any]:
-    """Scan all episodes and return structured results."""
+    """Scan all episodes and return structured results.
+
+    Raises MissingTaskConfigError if any episode lacks its task config, unless
+    `allow_missing_config` is set — in which case the count still lands in the
+    returned dict under `config_missing` so downstream consumers can see that
+    the config-dependent rules were not really evaluated.
+    """
     episodes = _discover_episodes(run_dir, condition_filter, task_filter)
     if not episodes:
         print(f"No episodes found in {run_dir}", file=sys.stderr)
@@ -1988,6 +2024,7 @@ def scan_episodes(
     all_diagnoses: List[Dict] = []
     hit_counts: Dict[str, int] = {r: 0 for r in rules_to_run}
     run_id_cache: Optional[str] = None
+    missing_config_stems: List[str] = []      # B-1919
 
     for steps_path, summary_path, config_path in episodes:
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -2001,6 +2038,9 @@ def scan_episodes(
         config: Dict = {}
         if config_path.exists():
             config = json.loads(config_path.read_text(encoding="utf-8"))
+        else:
+            # B-1919: remember, don't shrug. Reported after the loop.
+            missing_config_stems.append(config_path.stem)
 
         task_id = summary.get("task_id", steps[0].get("task_id", -1))
         cond_id = summary.get("condition_id", steps[0].get("condition_id", ""))
@@ -2043,6 +2083,29 @@ def scan_episodes(
     total = len(all_diagnoses)
     with_hits = sum(1 for d in all_diagnoses if d["hits"])
 
+    # B-1919: a scan missing its task configs is not a clean scan, it is a scan
+    # with most of its rules switched off. Say so, and refuse to hand back a
+    # result that looks authoritative unless the caller explicitly opted in.
+    if missing_config_stems:
+        affected = _config_dependent_rules()
+        msg = (
+            # `total` already counts every episode, including the config-less ones
+            f"{len(missing_config_stems)}/{total} episodes have no "
+            f"task config under {run_dir / 'task_configs'} — "
+            f"{len(affected)} of {len(ALL_RULES)} rules read the task config and would "
+            f"silently return no hits: {', '.join(affected)}. "
+            f"First missing: {', '.join(missing_config_stems[:5])}"
+            + (" ..." if len(missing_config_stems) > 5 else "")
+        )
+        if not allow_missing_config:
+            raise MissingTaskConfigError(
+                msg + ". Restore task_configs/ (the runner writes them via "
+                "p79.experiment.tasks.load_tasks; on a synced mirror they may simply "
+                "not have been transferred) or pass --allow-missing-config to accept "
+                "a partial scan."
+            )
+        print(f"WARNING [B-1919]: {msg}", file=sys.stderr)
+
     run_id = run_id_cache or run_dir.name
 
     result = {
@@ -2052,6 +2115,10 @@ def scan_episodes(
         "rules_applied": sorted(rules_to_run.keys()),
         "total_episodes": total,
         "episodes_with_hits": with_hits,
+        # B-1919: 0 on a healthy scan. Non-zero means the config-dependent rules
+        # were not really evaluated for that many episodes — the number travels
+        # with the artifact so a downstream reader can tell.
+        "config_missing": len(missing_config_stems),
         "results": sorted(all_diagnoses, key=lambda d: (d["condition_id"], d["task_id"])),
         "summary": {
             r: {"count": c, "pct": round(c / total * 100, 1) if total else 0}
@@ -2083,6 +2150,11 @@ def main():
                         help="Output JSON path (default: stdout)")
     parser.add_argument("--verbose", action="store_true",
                         help="Print progress to stderr")
+    parser.add_argument("--allow-missing-config", action="store_true",
+                        help="B-1919: accept episodes with no task config. Off by default — "
+                             "without the config the 27-odd config-reading rules silently "
+                             "return no hits and the scan looks clean. The count still lands "
+                             "in the output JSON as `config_missing`.")
 
     args = parser.parse_args()
 
@@ -2098,14 +2170,19 @@ def main():
             print(f"Warning: unknown rules {unknown}, available: {sorted(ALL_RULES.keys())}", file=sys.stderr)
             rule_filter -= unknown
 
-    result = scan_episodes(
-        args.run_dir,
-        condition_filter=args.condition,
-        task_filter=args.task_id,
-        failed_only=args.failed_only,
-        rule_filter=rule_filter,
-        verbose=args.verbose,
-    )
+    try:
+        result = scan_episodes(
+            args.run_dir,
+            condition_filter=args.condition,
+            task_filter=args.task_id,
+            failed_only=args.failed_only,
+            rule_filter=rule_filter,
+            verbose=args.verbose,
+            allow_missing_config=args.allow_missing_config,
+        )
+    except MissingTaskConfigError as exc:
+        print(f"Error [B-1919]: {exc}", file=sys.stderr)
+        sys.exit(2)
 
     if not result:
         sys.exit(1)
