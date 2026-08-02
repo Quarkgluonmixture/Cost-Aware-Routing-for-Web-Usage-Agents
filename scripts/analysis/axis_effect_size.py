@@ -47,6 +47,15 @@ from p79.experiment.analysis import paper_scored_task_count
 from p79.experiment.io_utils import read_jsonl_dedup
 
 ROOT = Path(__file__).resolve().parents[2]
+# Run as `python3 scripts/analysis/axis_effect_size.py` and sys.path[0] is scripts/analysis/,
+# so `import scripts.analysis.lib.run_registry` below raises ModuleNotFoundError. It used to be
+# caught and downgraded to empty STEP_DIRS, which produced a full report with n=0 everywhere and
+# exit 0 — see the §F audit note in _build_step_dirs().
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/axis_effect_size.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/axis_effect_size_report.md"
@@ -80,11 +89,14 @@ def _build_step_dirs() -> dict[str, dict[str, dict[str, Path | None]]]:
     gracefully).  B2 cells present in registry but with no episode summaries on
     disk emit a stderr warning (not silent skip).
     """
-    try:
-        from scripts.analysis.lib.run_registry import get_cells, BASELINES as REG_BASELINES, SITES as REG_SITES
-    except Exception as exc:  # pragma: no cover
-        warnings.warn(f"[axis_effect_size] run_registry import failed ({exc}); falling back to empty dirs", RuntimeWarning)
-        return {}
+    # DO NOT restore the old `except Exception: warn(); return {}` here. It ran for weeks:
+    # every invocation of this script from the command line hit ModuleNotFoundError, returned
+    # no directories, and wrote a complete-looking report in which every contrast had n=0 and
+    # every negative finding ("no cells show P-SoM distinct from both endpoints", "for every
+    # site x metric the axes sum to the endpoint") was vacuously true over an empty set. The
+    # warning was emitted and lost in normal output; exit status was 0. An analysis that cannot
+    # find its inputs must fail, not describe an empty world. (§F audit, 2026-08-02)
+    from scripts.analysis.lib.run_registry import get_cells, BASELINES as REG_BASELINES, SITES as REG_SITES
 
     # Collect all grades that should be considered, in preference order.
     if _AXIS_GRADE == "paper-grade":
@@ -179,14 +191,35 @@ def _action_type(step: dict) -> Optional[str]:
     return step.get("action_type") or (step.get("action") or {}).get("action_type")
 
 
+# (baseline, site, mode) -> task ids dropped because their step file does not belong to their
+# summary. Two such episodes exist across all 7,686 (audit: steps_summary_identity_audit.json),
+# both in B0_reddit/Phantom-SoM. They are inside the scored universe, so dropping them shrinks
+# every contrast touching that arm from 203 to 201 pairs — reported, not swallowed.
+IDENTITY_SKIPS: dict[tuple[str, str, str], list[int]] = {}
+
+
 def per_task_metrics(baseline: str, site: str, mode: str) -> dict[int, dict[str, Optional[float]]]:
     ep_dir = STEP_DIRS.get(baseline, {}).get(site, {}).get(mode)
     out: dict[int, dict[str, Optional[float]]] = {}
     if ep_dir is None or not ep_dir.exists():
         return out
+    # Restrict to the canonical scored universe, as every other cross-site product does. Without
+    # this, reddit contributed 205 tasks against a scored set of 203 — the two AMENDMENT_08
+    # exclusions (58, 160) were inside every effect size. On the P-SoM arm the count even read
+    # as correct: two identity-dropped episodes cancelled the two extra ones, giving n=203 and a
+    # passing check over the wrong 203 tasks. Compare sets, not counts. (§F audit, 2026-08-02)
+    scored = set(expected_scored_ids(site)[0])
     for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
         tid = step_task_id(path)
-        steps = read_steps(path)
+        if tid not in scored:
+            continue
+        try:
+            steps = read_steps(path)
+        except ValueError:
+            # strict_identity refused the pair. Skipping one episode is right; letting it abort
+            # the whole 36-cell analysis is not, and neither is dropping it silently.
+            IDENTITY_SKIPS.setdefault((baseline, site, mode), []).append(tid)
+            continue
         n = len(steps)
         if n == 0:
             out[tid] = {k: None for k in _ALL_METRIC_KEYS}
@@ -448,6 +481,46 @@ def consistency_check(
     }
 
 
+def diamond_additivity(block: dict, *, binary: bool) -> dict:
+    """Do the two routes from DOM to P-SoM recover the direct contrast?
+
+    Path A goes DOM --text--> P-text --prompt--> P-SoM.
+    Path B goes DOM --prompt--> P-prompt --text--> P-SoM.
+
+    READ THIS BEFORE READING THE NUMBERS. On `mean_diff` this is an ALGEBRAIC IDENTITY, not an
+    empirical test: mean(P-text − DOM) + mean(P-SoM − P-text) = mean(P-SoM − DOM) whenever the
+    three contrasts are averaged over the same tasks. So a zero residual is arithmetic and says
+    nothing about text x prompt interaction, and a NON-zero residual means the legs were summed
+    over DIFFERENT task sets — here, the P-SoM arm losing its two identity-mismatched episodes,
+    which makes `prompt` and `compound` 201-task means while `text` is a 203-task mean.
+
+    Which makes this a useful canary and a worthless finding. It is reported as a base-set
+    consistency check. An interaction test would have to compare effect sizes or fit an
+    interaction term, and this function does not do that. (§F audit, 2026-08-02)
+    """
+    def md(key: str) -> float:
+        return block.get(key, {}).get("mean_diff", float("nan"))
+
+    comp = md("compound_dom_to_psom")
+    a = md("text") + md("prompt")
+    b = md("axis_2_prompt_alt") + md("axis_1_text_alt")
+    tol = 0.1 if binary else 0.005
+    ns = {k: block.get(k, {}).get("n") for k in
+          ("text", "prompt", "axis_2_prompt_alt", "axis_1_text_alt", "compound_dom_to_psom")}
+    return {
+        "path_a_sum": a, "path_b_sum": b, "compound": comp,
+        "residual_a": a - comp, "residual_b": b - comp,
+        "tolerance": tol,
+        "identity_holds_a": bool(not math.isnan(a - comp) and abs(a - comp) <= tol),
+        "identity_holds_b": bool(not math.isnan(b - comp) and abs(b - comp) <= tol),
+        "is_algebraic_identity": True,
+        # Legs touching the P-SoM arm lose the two identity-mismatched episodes, so the paths
+        # are not summed over an identical task set. Residuals below are read against this.
+        "n_per_leg": ns,
+        "n_mismatched_legs": len({v for v in ns.values() if v is not None}) > 1,
+    }
+
+
 def antagonistic_pairs(contrasts: dict[str, dict], *, binary: bool) -> list[dict]:
     key = "cohen_h" if binary else "cohen_d_z"
     axes = list(contrasts)
@@ -488,6 +561,16 @@ def round_floats(obj):
 
 
 def main() -> None:
+    # A report where every contrast has n=0 reads as a set of negative findings; it is actually
+    # a report about an empty input. Refuse to write one.
+    _live = sum(1 for b in STEP_DIRS.values() for s in b.values()
+                for d in s.values() if d is not None and d.exists())
+    if _live == 0:
+        raise SystemExit(
+            "[axis_effect_size] no episode directories resolved from the run registry. "
+            "Every contrast would be n=0 and every negative finding vacuous; refusing to write. "
+            f"STEP_DIRS covers {len(STEP_DIRS)} baselines.")
+
     metrics_def = [
         ("search_loop_bin", True),
         ("type_frac", False),
@@ -531,6 +614,7 @@ def main() -> None:
             "non_negligible_effects": [],
             "axis_1_non_negligible": [],
             "antagonistic_pairs": [],
+            "identity_skipped_episodes": {},
         },
     }
     def empty_contrast() -> dict:
@@ -608,6 +692,8 @@ def main() -> None:
                     "consistency_check": check,
                     "cancellation_patterns": pair_patterns,
                 }
+                site_block[metric_name]["diamond_additivity"] = diamond_additivity(
+                    site_block[metric_name], binary=binary)
                 expected_n = out["validation"]["expected_n"][site]
                 out["validation"]["consistency_checks"][f"{baseline}/{site}/{metric_name}"] = check
                 for pattern in pair_patterns:
@@ -617,10 +703,18 @@ def main() -> None:
                 all_contrasts = {**cascade_contrasts, "compound": compound}
                 for axis_name, contrast in all_contrasts.items():
                     n_key = f"{baseline}/{site}/{metric_name}/{axis_name}"
+                    # An arm whose episodes were dropped for identity mismatch can never reach
+                    # expected_n; the pair count is the intersection, so it loses those tasks on
+                    # both legs. Allow exactly that shortfall and name it, rather than emitting a
+                    # permanent pass=False nobody can act on.
+                    dropped = len({t for (b_, s_, _m), ts in IDENTITY_SKIPS.items()
+                                   if b_ == baseline and s_ == site for t in ts})
+                    obs = contrast.get("n", 0)
                     out["validation"]["n_checks"][n_key] = {
-                        "observed": contrast.get("n", 0),
+                        "observed": obs,
                         "expected": expected_n,
-                        "pass": contrast.get("n", 0) == expected_n,
+                        "identity_dropped": dropped,
+                        "pass": obs == expected_n or (dropped and obs == expected_n - dropped),
                     }
                     if contrast.get("meaningful", False):
                         out["validation"]["non_negligible_effects"].append(
@@ -694,6 +788,8 @@ def main() -> None:
     }
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
+    out["validation"]["identity_skipped_episodes"] = {
+        "/".join(k): sorted(v) for k, v in sorted(IDENTITY_SKIPS.items())}
     out = round_floats(out)
     OUT_JSON.write_text(json.dumps(out, indent=2) + "\n")
     print(f"[json] {OUT_JSON}")
@@ -731,10 +827,33 @@ def main() -> None:
         "search/type/scroll/click %, action repeat, self-correction.\n"
         "  - **2b Micro** — per-step decision quality (separate analysis): URL trajectory "
         "Jaccard, target-page hit rate, search keyword reuse, first-action divergence.\n\n"
-        "**Current data status**: Tier 1 ✅ complete; Tier 2a Macro **partial** (cascade only, "
-        "P-prompt data not yet available — diamond will replace cascade once it arrives); "
-        "Tier 2b Micro tracked separately in `axis1_microbehavior.{json,md}`.\n"
+        "**Current data status**: computed from the run registry at grade "
+        f"`{_AXIS_GRADE}`; Tier 2b Micro is tracked separately in "
+        "`axis1_microbehavior.{json,md}`.\n"
     )
+
+    # Data-integrity banner. This used to live only in the JSON's validation block, where a
+    # `pass: False` on all 288 n-checks sat unread while this report described an empty world
+    # as a set of negative findings (§F audit, 2026-08-02). A reader of the prose must see it.
+    _nc = out["validation"]["n_checks"]
+    _failed = [k for k, v in _nc.items() if not v["pass"]]
+    _observed_any = any(v["observed"] for v in _nc.values())
+    if not _observed_any:
+        lines.append(
+            "> 🚨 **Every contrast below has n = 0.** This report is about an empty input, not "
+            "about the world: each 'no effect' and each 'consistent' verdict is vacuously true "
+            "over an empty set. Do not read anything below as a finding.\n")
+    elif _failed:
+        lines.append(
+            f"> ⚠️ **{len(_failed)} of {len(_nc)} pair-count checks did not reach the expected "
+            "scored-set size** beyond the identity-mismatch allowance. Counts per contrast are "
+            "in `axis_effect_size.json` → `validation.n_checks`.\n")
+    if IDENTITY_SKIPS:
+        _det = "; ".join(f"{b}/{s}/{m}: tasks {sorted(t)}"
+                         for (b, s, m), t in sorted(IDENTITY_SKIPS.items()))
+        lines.append(
+            f"> **Episodes dropped for steps↔summary identity mismatch**: {_det}. Contrasts "
+            "touching those arms pair on the intersection and so lose the task on both legs.\n")
 
     # ----- Tier 1 -----
     lines.append("## Tier 1 — Hook: is P-SoM distinct from both DOM and SoM?\n")
@@ -772,8 +891,8 @@ def main() -> None:
     lines.append("\n## Tier 2a — Mechanism (Macro): cascade decomposition\n")
     lines.append(
         "DOM → P-text (axis 1, text only) → P-SoM (axis 2, prompt only) → SoM (axis 3, image). "
-        "Once P-prompt data arrives this becomes a full diamond with two paths from DOM to P-SoM "
-        "(via P-text or via P-prompt), letting us check prompt × text additivity / interaction.\n"
+        "The second route, through P-prompt, closes this into a full diamond; the two paths and "
+        "their additivity are reported in Tier 2b below.\n"
     )
     lines.append("| baseline | site | metric | text-axis (DOM→P-text) | prompt-axis (P-text→P-SoM) | image-axis (P-SoM→SoM) | dominant cascade axis | consistency |")
     lines.append("|---|---|---|---|---|---|---|---|")
@@ -799,6 +918,52 @@ def main() -> None:
                 )
 
     lines.append("\n★ marks Wilcoxon p<0.05. Effects with |d_z|>0.1 or |h|>0.1 are treated as non-negligible for axis dominance and cancellation checks.")
+
+    # ----- Tier 2b: the diamond's second path -----
+    lines.append("\n## Tier 2b — Diamond: base-set consistency across the two routes\n")
+    lines.append(
+        "Two routes lead from DOM to P-SoM:\n\n"
+        "- **path A** DOM →(text)→ P-text →(prompt)→ P-SoM\n"
+        "- **path B** DOM →(prompt)→ P-prompt →(text)→ P-SoM\n\n"
+        "⚠️ **This is not an interaction test.** On mean differences the agreement is an "
+        "algebraic identity — mean(P-text−DOM) + mean(P-SoM−P-text) = mean(P-SoM−DOM) — whenever "
+        "the legs are averaged over the same tasks. A zero residual is therefore arithmetic and "
+        "carries no evidence about text × prompt interaction. What a **non**-zero residual does "
+        "carry is that the legs were averaged over *different* task sets, which is why the table "
+        "is kept: it is a base-set consistency check that fires automatically. Testing for an "
+        "interaction would require comparing effect sizes or fitting an interaction term, and "
+        "nothing on this page does that.\n")
+    dia = ["| baseline | site | metric | path A | path B | compound | A−comp | B−comp | same base set? |",
+           "|---|---|---|---|---|---|---|---|---|"]
+    n_add = n_tot_d = 0
+    mismatched_legs = False
+    for baseline in BASELINES:
+        for site in SITES:
+            for _metric, _binary in metrics_def:
+                mn = METRIC_LABELS[_metric]
+                d = out["results"][baseline][site].get(mn, {}).get("diamond_additivity")
+                if not d or math.isnan(d["compound"]):
+                    continue
+                n_tot_d += 1
+                ok = d["identity_holds_a"] and d["identity_holds_b"]
+                n_add += ok
+                mismatched_legs |= d["n_mismatched_legs"]
+                verdict = "✅" if ok else (
+                    "⚠️ n differs across legs" if d["n_mismatched_legs"] else "**✗ unexplained**")
+                dia.append(
+                    f"| {baseline} | {site} | {REPORT_METRIC_LABELS.get(mn, mn)} | "
+                    f"{d['path_a_sum']:+.2f} | {d['path_b_sum']:+.2f} | {d['compound']:+.2f} | "
+                    f"{d['residual_a']:+.3f} | {d['residual_b']:+.3f} | {verdict} |")
+    lines.extend(dia)
+    lines.append(
+        f"\n**The identity holds in {n_add} of {n_tot_d} (cell × metric) combinations.** Where it "
+        "does not, the legs were averaged over different task sets, not over a world containing "
+        "an interaction.")
+    if mismatched_legs:
+        lines.append(
+            "The rows that miss are exactly the ones on the B0·reddit P-SoM arm, whose legs are "
+            "summed over 201 tasks against 203 on the others (the two identity-mismatched "
+            "episodes). The residual there is the base-set difference and nothing else.")
 
     lines.append("\n## Cancellation patterns\n")
     cancellations = out["validation"]["antagonistic_pairs"]
@@ -828,12 +993,21 @@ def main() -> None:
         lines.append("No antagonistic pairs met the |0.1| effect-size threshold.")
 
     lines.append("\n## Consistency checks\n")
+    _cc = out["validation"]["consistency_checks"]
+    _cc_live = {k: v for k, v in _cc.items() if not v.get("skipped")}
+    _cc_pass = sum(1 for v in _cc_live.values() if v.get("pass"))
     lines.append(
-        "For every site x metric, text + prompt + image matches the direct SoM minus DOM endpoint within tolerance "
-        "(0.1 percentage points for binary search-loop, 0.005 raw units for fractions/counts)."
+        f"text + prompt + image recovers the direct SoM − DOM endpoint in **{_cc_pass} of "
+        f"{len(_cc_live)}** (site × metric) combinations, at tolerance 0.1 pp for the binary "
+        "metric and 0.005 raw units for fractions and counts.\n\n"
+        "Read this the same way as Tier 2b: on mean differences the three axes summing to the "
+        "endpoint is an **algebraic identity**, so passing is arithmetic rather than evidence "
+        "that the cascade decomposes cleanly. A failure means the legs were averaged over "
+        "different task sets. This sentence used to be a fixed claim that every combination "
+        "passed, which was true of the empty table it was printed under. (§F audit, 2026-08-02)"
     )
 
-    lines.append("\n## Tier 2b — Mechanism (Micro): per-step decision quality\n")
+    lines.append("\n## Tier 2c — Mechanism (Micro): per-step decision quality\n")
     lines.append(
         "Tracked separately in `axis1_microbehavior.{json,md}`. Macro action-frequency metrics "
         "(this file) average per-step decisions; micro metrics directly compare per-step element "
@@ -854,10 +1028,13 @@ def main() -> None:
         )
     else:
         lines.append("\nNo antagonistic pair cleared the |0.1| effect-size threshold.")
+    # The count here was hardcoded at 6 and sat two lines under "No antagonistic pair cleared
+    # the |0.1| threshold", contradicting it. Count what this run actually found.
+    _n_anta = len(cancellations)
     lines.append(
         "\n**4-level cascade design value**: decomposes DOM → SoM into three controlled transitions "
-        "(AXTree vs [SOM_MARKS] structure, DOM vs SoM prompting, marginal image), and "
-        "**reveals 6 antagonistic mechanism pairs** that endpoint-only comparison would mask."
+        "(AXTree vs [SOM_MARKS] structure, DOM vs SoM prompting, marginal image). This run finds "
+        f"**{_n_anta} antagonistic mechanism pair(s)** that endpoint-only comparison would mask."
     )
     OUT_MD.write_text("\n".join(lines))
     print(f"[md]   {OUT_MD}")

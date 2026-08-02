@@ -1,6 +1,6 @@
 # Per-mode four-dimension evidence profile
 
-- generated: `2026-08-02T09:02:31+00:00`
+- generated: `2026-08-02T09:36:20+00:00`
 - schema: `2026-08-02-per-mode-four-dimension-profile-v2`
 - **post_hoc_exploratory=True / h10_eligible=False**
 - 笔记 §108 evidence layer, cross-mode axis (the paper-headline axis per `paper_section2_framework.canvas`). `INDEX.md §7`: the framework was defined but only the **Macro** dimension had ever been computed per mode. This is the first run of all four.
@@ -46,6 +46,7 @@ A per-mode difference only counts if it holds across cells. `unanimous` = the sa
 | Efficiency | billed cost / episode | SoM | 6/7 | Vision | 7/7 | — | 1.00–1.12× | ⚙️ **low: Vision 6/6** (by construction) |
 | Efficiency | cost relative to DOM (within cell) | SoM | 6/7 | Vision | 7/7 | — | 1.00–1.12× | ⚙️ **low: Vision 6/6** (by construction) |
 | Efficiency | latency / episode (s) | P-text | 3/7 | SoM | 3/7 | — | 1.00–1.10× |  |
+| Efficiency | latency canonical / episode (s) | P-text | 3/7 | SoM | 3/7 | — | 1.00–1.04× |  |
 | Efficiency | tokens / episode | SoM | 6/7 | Vision | 7/7 | — | 1.03–1.13× | ⚙️ **low: Vision 6/6** (by construction) |
 
 Why each ◆ row is architecturally downstream. **These are author-written causal assertions, and each one deletes a whole row of evidence, so each needs its own support.** All three were tested on 2026-08-02 and none survived as originally written; the entries below are the rewritten versions and carry the test that forced the rewrite:
@@ -456,6 +457,7 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 | billed cost / episode | 0.06962 | 0.07236 | 0.06481 | 0.06919 | 0.06853 | 0.07206 |
 | cost relative to DOM (within cell) | 1.0000 | 1.0393 | 0.9309 | 0.9938 | 0.9843 | 1.0350 |
 | latency / episode (s) | 114.96 | 106.72 | 126.29 | 123.85 | 109.38 | 121.14 |
+| latency canonical / episode (s) | 114.0638 | 106.0076 | 125.2114 | 120.4008 | 107.7716 | 117.8978 |
 | tokens / episode | 63045 | 67000 | 58302 | 62154 | 62555 | 65334 |
 
 ### B0_reddit
@@ -465,6 +467,7 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 | billed cost / episode | 0.10147 | 0.11045 | 0.09807 | 0.10577 | 0.10163 | 0.10814 |
 | cost relative to DOM (within cell) | 1.0000 | 1.0885 | 0.9665 | 1.0424 | 1.0016 | 1.0657 |
 | latency / episode (s) | 571.95 | 461.37 | 449.78 | 631.38 | 498.45 | 561.99 |
+| latency canonical / episode (s) | 552.5376 | 451.6388 | 418.4608 | 562.0760 | 447.7186 | 532.0163 |
 | tokens / episode | 93303 | 103031 | 88872 | 96214 | 93817 | 99005 |
 
 ### B1_classifieds
@@ -474,6 +477,7 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 | billed cost / episode | 0.05951 | 0.06028 | 0.04316 | 0.05879 | 0.06304 | 0.05970 |
 | cost relative to DOM (within cell) | 1.0000 | 1.0128 | 0.7251 | 0.9878 | 1.0592 | 1.0031 |
 | latency / episode (s) | 308.93 | 261.97 | 269.78 | 313.54 | 301.37 | 311.71 |
+| latency canonical / episode (s) | 308.9298 | 261.9671 | 269.7754 | 313.5402 | 301.3677 | 311.7099 |
 | tokens / episode | 61904 | 62953 | 44524 | 61074 | 65628 | 61985 |
 
 ### B1_reddit
@@ -483,6 +487,7 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 | billed cost / episode | 0.07330 | 0.08000 | 0.05240 | 0.06948 | 0.07656 | 0.07480 |
 | cost relative to DOM (within cell) | 1.0000 | 1.0914 | 0.7149 | 0.9478 | 1.0445 | 1.0204 |
 | latency / episode (s) | 602.63 | 609.05 | 456.57 | 598.58 | 614.02 | 616.56 |
+| latency canonical / episode (s) | 602.6264 | 609.0501 | 456.5728 | 598.5846 | 614.0174 | 616.5584 |
 | tokens / episode | 76462 | 83517 | 53994 | 72222 | 79896 | 77722 |
 
 ### B2_classifieds
@@ -492,6 +497,7 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 | billed cost / episode | 0.07676 | 0.09075 | 0.07065 | 0.07320 | 0.08453 | 0.08456 |
 | cost relative to DOM (within cell) | 1.0000 | 1.1822 | 0.9204 | 0.9536 | 1.1011 | 1.1016 |
 | latency / episode (s) | 402.32 | 374.25 | 417.76 | 399.45 | 396.41 | 411.03 |
+| latency canonical / episode (s) | 402.3194 | 374.2533 | 417.7628 | 399.4490 | 396.4071 | 411.0288 |
 | tokens / episode | 79653 | 95081 | 73126 | 75946 | 87948 | 87931 |
 
 ### B2_reddit
@@ -501,6 +507,7 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 | billed cost / episode | 0.09479 | 0.11160 | 0.06833 | 0.08852 | 0.09940 | 0.09451 |
 | cost relative to DOM (within cell) | 1.0000 | 1.1773 | 0.7209 | 0.9338 | 1.0486 | 0.9970 |
 | latency / episode (s) | 669.92 | 623.01 | 550.02 | 677.61 | 599.28 | 639.96 |
+| latency canonical / episode (s) | 669.9164 | 623.0092 | 550.0212 | 677.6121 | 599.2793 | 639.9556 |
 | tokens / episode | 99015 | 117379 | 70826 | 92346 | 104021 | 98699 |
 
 ### B1_wa_reddit
@@ -510,11 +517,12 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 | billed cost / episode | 0.06579 | 0.07944 | 0.04468 | 0.06151 | 0.07386 | 0.06659 |
 | cost relative to DOM (within cell) | 1.0000 | 1.2076 | 0.6792 | 0.9350 | 1.1228 | 1.0122 |
 | latency / episode (s) | 485.20 | 494.79 | 490.73 | 509.87 | 506.32 | 510.59 |
+| latency canonical / episode (s) | 485.1997 | 494.7877 | 490.7331 | 509.8672 | 506.3233 | 510.5919 |
 | tokens / episode | 68491 | 82940 | 45878 | 63727 | 76839 | 68819 |
 
 ## Reading notes
 
-1. **8 of 24 metrics have a unanimous extreme mode — but they fall into three classes, not two: 1 empirical, 3 architecturally downstream, 4 tautological.** The earlier revision of this file used a binary split and put the downstream group on the empirical side; Gemini (cross-AI Mode C, 2026-07-29) attacked that, correctly.
+1. **8 of 25 metrics have a unanimous extreme mode — but they fall into three classes, not two: 1 empirical, 3 architecturally downstream, 4 tautological.** The earlier revision of this file used a binary split and put the downstream group on the empirical side; Gemini (cross-AI Mode C, 2026-07-29) attacked that, correctly.
    **Empirical — not predictable from the design:**
    - `URL-revisit step rate` (Macro): **Vision** highest in 6/6, 1.0–1.1× the next mode
    **◆ Architecturally downstream — real magnitudes, predictable direction.** One causal chain explains all of them: coordinate-only addressing → more off-target clicks → page unchanged → scroll to re-orient. Citing these as behavioural discoveries overstates them; promoting one requires a baseline for what a coordinate-addressed agent *should* score, which this profile does not provide.

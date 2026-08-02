@@ -118,13 +118,14 @@ DIMENSIONS: dict[str, list[tuple[str, str]]] = {
         ("mean_cost_usd", "billed cost / episode"),
         ("cost_rel_dom", "cost relative to DOM (within cell)"),
         ("mean_latency_s", "latency / episode (s)"),
+        ("mean_latency_canonical_s", "latency canonical / episode (s)"),
         ("mean_tokens", "tokens / episode"),
     ],
 }
 LOWER_IS_BETTER = {
     "parse_fail_rate", "action_fail_rate", "no_change_rate",
     "locator_fallback_rate", "action_repeat_frac", "mean_cost_usd",
-    "cost_rel_dom", "mean_latency_s", "mean_tokens", "n_steps",
+    "cost_rel_dom", "mean_latency_s", "mean_latency_canonical_s", "mean_tokens", "n_steps",
     "cap_hit_rate", "url_revisit_rate", "noop_inert_rate",
     "visibility_gap_rate", "click_fail_rate", "type_fail_rate",
 }
@@ -471,6 +472,14 @@ def profile_cell(spec: dict) -> dict[str, Any]:
                 [_num(r.get(COST_FIELD)) for r in rows.values()]) if n else None,
             "mean_latency_s": statistics.fmean(
                 [_num(r.get("total_latency_ms")) / 1000.0
+                 for r in rows.values()]) if n else None,
+            # total_latency_canonical_ms = minus_retry − busy_wait − recovered_screenshot
+            # (B-1402 / B-1669 / B-1780). types.py:446 says the two are meant to be reported
+            # side by side; only the raw one ever was. It matters on the API-served arm, where
+            # the correction is 11% on B0/reddit P-text and P-prompt against 2-4% on DOM/SoM —
+            # uneven enough across modes to reorder them. (§G1 unconsumed-field sweep, 08-02)
+            "mean_latency_canonical_s": statistics.fmean(
+                [_num(r.get("total_latency_canonical_ms", r.get("total_latency_ms"))) / 1000.0
                  for r in rows.values()]) if n else None,
             "mean_tokens": statistics.fmean(
                 [_num(r.get("total_tokens")) for r in rows.values()]) if n else None,

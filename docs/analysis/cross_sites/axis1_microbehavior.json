@@ -2289,59 +2289,115 @@
       "first_action_divergence_rate": 0.253659,
       "mean_abs_decision_effect": 0.276146
     },
-    "B0_reddit_macro_axis1_effects": {},
-    "B0_reddit_macro_mean_abs_effect": null,
-    "B0_reddit_ratio": null,
+    "B0_reddit_macro_axis1_effects": {
+      "search_loop": -0.169564,
+      "type_frac": 0.028517,
+      "scroll_frac": -0.205646,
+      "selfcorr_count": 0.27866,
+      "click_frac": -0.057046,
+      "finish_rate": -0.299394,
+      "n_steps": 0.276312,
+      "action_repeat_frac": 0.225987
+    },
+    "B0_reddit_macro_mean_abs_effect": 0.192641,
+    "B0_reddit_ratio": 1.433479,
     "B0_classifieds_decision_effects": {
       "url_decision_divergence": 0.15084,
       "target_hit_abs_diff": 0.0,
       "first_action_divergence_rate": 0.308036,
       "mean_abs_decision_effect": 0.152958
     },
-    "B0_classifieds_macro_axis1_effects": {},
-    "B0_classifieds_macro_mean_abs_effect": null,
-    "B0_classifieds_ratio": null,
+    "B0_classifieds_macro_axis1_effects": {
+      "search_loop": -0.011386,
+      "type_frac": -0.169131,
+      "scroll_frac": 0.072348,
+      "selfcorr_count": 0.087557,
+      "click_frac": -0.001259,
+      "finish_rate": -0.069699,
+      "n_steps": 0.022779,
+      "action_repeat_frac": -0.050957
+    },
+    "B0_classifieds_macro_mean_abs_effect": 0.060639,
+    "B0_classifieds_ratio": 2.522423,
     "B1_reddit_decision_effects": {
       "url_decision_divergence": 0.491169,
       "target_hit_abs_diff": 0.0,
       "first_action_divergence_rate": 0.243902,
       "mean_abs_decision_effect": 0.245024
     },
-    "B1_reddit_macro_axis1_effects": {},
-    "B1_reddit_macro_mean_abs_effect": null,
-    "B1_reddit_ratio": null,
+    "B1_reddit_macro_axis1_effects": {
+      "search_loop": 0.020119,
+      "type_frac": 0.032435,
+      "scroll_frac": 0.007683,
+      "selfcorr_count": -0.052873,
+      "click_frac": 0.018642,
+      "finish_rate": -0.22383,
+      "n_steps": 0.20225,
+      "action_repeat_frac": 0.132864
+    },
+    "B1_reddit_macro_mean_abs_effect": 0.086337,
+    "B1_reddit_ratio": 2.837994,
     "B1_classifieds_decision_effects": {
       "url_decision_divergence": 0.119789,
       "target_hit_abs_diff": 0.0,
       "first_action_divergence_rate": 0.1875,
       "mean_abs_decision_effect": 0.10243
     },
-    "B1_classifieds_macro_axis1_effects": {},
-    "B1_classifieds_macro_mean_abs_effect": null,
-    "B1_classifieds_ratio": null,
+    "B1_classifieds_macro_axis1_effects": {
+      "search_loop": 0.065813,
+      "type_frac": 0.087601,
+      "scroll_frac": -0.096899,
+      "selfcorr_count": -0.015099,
+      "click_frac": 0.139044,
+      "finish_rate": -0.054746,
+      "n_steps": 0.100596,
+      "action_repeat_frac": 0.052881
+    },
+    "B1_classifieds_macro_mean_abs_effect": 0.076585,
+    "B1_classifieds_ratio": 1.337467,
     "B2_reddit_decision_effects": {
       "url_decision_divergence": 0.7075,
       "target_hit_abs_diff": 0.006944,
       "first_action_divergence_rate": 0.44878,
       "mean_abs_decision_effect": 0.387742
     },
-    "B2_reddit_macro_axis1_effects": {},
-    "B2_reddit_macro_mean_abs_effect": null,
-    "B2_reddit_ratio": null,
+    "B2_reddit_macro_axis1_effects": {
+      "search_loop": 0.091531,
+      "type_frac": -0.045291,
+      "scroll_frac": -0.037189,
+      "selfcorr_count": 0.052176,
+      "click_frac": -0.192864,
+      "finish_rate": -0.059401,
+      "n_steps": -0.12646,
+      "action_repeat_frac": -0.15686
+    },
+    "B2_reddit_macro_mean_abs_effect": 0.095222,
+    "B2_reddit_ratio": 4.071997,
     "B2_classifieds_decision_effects": {
       "url_decision_divergence": 0.380713,
       "target_hit_abs_diff": 0.0,
       "first_action_divergence_rate": 0.566964,
       "mean_abs_decision_effect": 0.315893
     },
-    "B2_classifieds_macro_axis1_effects": {},
-    "B2_classifieds_macro_mean_abs_effect": null,
-    "B2_classifieds_ratio": null,
+    "B2_classifieds_macro_axis1_effects": {
+      "search_loop": -0.037169,
+      "type_frac": 0.1161,
+      "scroll_frac": 0.153617,
+      "selfcorr_count": 0.1001,
+      "click_frac": -0.475524,
+      "finish_rate": -0.217374,
+      "n_steps": -0.051985,
+      "action_repeat_frac": -0.092561
+    },
+    "B2_classifieds_macro_mean_abs_effect": 0.155554,
+    "B2_classifieds_ratio": 2.030761,
     "verdict_anchor_baselines": [
-      "B0"
+      "B0",
+      "B1",
+      "B2"
     ],
-    "verdict": "not supported",
-    "narrative": "Neither site clears the decision-over-macro ratio threshold (B0), so the paper should not claim that axis 1 primarily changes decision quality."
+    "verdict": "generalizes",
+    "narrative": "Both sites show a larger axis-1 shift in mode-invariant decision anchors than in macro action frequencies (B0+B1+B2), so the claim generalizes beyond the reddit search-loop failure mode."
   },
   "validation": {
     "expected_axis1_n": {
