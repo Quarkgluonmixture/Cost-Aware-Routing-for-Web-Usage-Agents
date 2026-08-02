@@ -23,7 +23,7 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 | **Four-layer profile** | `per_mode_four_dimension_profile` v2 (24 metrics) | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ **added 08-02** | ✅ | complete |
-| **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ | ✅ (the four) | complete |
+| **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ | ✅ (the four) | **repaired 08-02** — see §2b |
 | **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ✅ cascade `--with-wa`; the three router products stay VWA (they need the router feature table) | ✅ | complete |
 | *(features)* | `routing_feature_diagnostics` | ✅ | ❌ n/a | ✅ | complete |
 
@@ -49,6 +49,43 @@ limitation of the study. The user's objection was that it did not sound reasonab
 better instrument than the `find`.
 
 WA now enters every layer. §1's matrix is updated accordingly.
+
+## 2b. The 2×2 ablation row above was ✅ over an empty table — repaired 2026-08-02
+
+The row said complete. Every contrast in the product behind it had **n = 0**, and had for weeks.
+
+`axis_effect_size.py` imports the run registry as `scripts.analysis.lib.run_registry`, which
+needs the repo root on `sys.path`; run from the command line, `sys.path[0]` is `scripts/analysis/`
+and the import raises. The old code caught it, warned, and returned an empty directory map. The
+script then ran to completion and wrote a full report in which every negative finding was
+vacuously true over an empty set — including **"no cells show P-SoM distinct from both endpoints
+simultaneously"**, which is a statement about the paper's hook. Exit status 0. Inside the JSON,
+all 192 pair-count checks read `{observed: 0, expected: 203, pass: false}`: the self-check ran,
+failed, and was connected to no exit — the Markdown a human reads never mentioned it.
+
+With the input restored the finding **reverses**: P-SoM differs from **both** DOM and SoM on
+**15 (metric, cell) combinations** across all six cells, `finish_rate` in five of six. That is
+mechanism-layer support for the independent-arm claim, and it was sitting behind a broken import.
+
+Four things were repaired alongside it, each of the same family:
+
+1. **The canonical scored universe was not applied.** reddit contributed 205 step files against
+   a 203-task scored set, so the two AMENDMENT_08 exclusions were inside every effect size. On
+   the P-SoM arm this produced a *passing* check over the wrong tasks: two identity-dropped
+   episodes cancelled the two extra ones and n read 203. Compare sets, not counts.
+2. **Identity mismatches now skip and report** instead of aborting the 36-cell run (2 episodes
+   of 7,686, B0·reddit·P-SoM tasks 87 and 149; disclosed in a banner).
+3. **The diamond's second path is rendered** — and labelled for what it is. On mean differences
+   the two routes agreeing is an **algebraic identity**, so a zero residual is arithmetic, not
+   evidence about a text × prompt interaction. A non-zero residual means the legs were averaged
+   over different task sets; all three that miss are the 201-vs-203 P-SoM arm.
+4. **`total_latency_canonical_ms` is consumed** (§G1 unconsumed-field sweep). It is
+   `minus_retry − busy_wait − recovered` and `types.py:446` says it is meant to be reported
+   beside the raw figure; no product read it. It matters only on the API-served arm and there
+   **unevenly across modes** — B0·reddit P-text 0.890 and P-prompt 0.898 against DOM 0.966 and
+   SoM 0.979 — enough to swap two modes' order. Claim 9 was re-tested against it and holds: 3/6
+   either way, identical frontier membership, identical fastest mode; only the span moves
+   (1.404× → 1.343×). The profile is now **25 metrics**, not 24.
 
 ## 3. WA wiring — done 2026-08-02, and what it changed
 
@@ -114,9 +151,15 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    non-degenerate. **On WA two of 80 swept points do**, by matching its success rate exactly at
    lower cost; see §3.4 for why that is stated as an exception rather than a result.
    → the four router products + `confidence_cascade{,_with_wa}`
-6. **The four image-free modes are behaviourally non-separable** across 24 metrics × 6 cells,
+6. **The four image-free modes are behaviourally non-separable** across 25 metrics × 6 cells,
    while the image-bearing pair is separable mostly by construction.
    → `per_mode_four_dimension_profile` v2
+6b. **P-SoM is nonetheless distinct from both endpoints on 15 (metric, cell) combinations**
+   spanning all six cells, `finish_rate` in five of six. Non-separability among the four
+   image-free modes and separability of P-SoM from DOM *and* SoM are different questions
+   measured on different quantities (mode-vs-mode extremes versus paired contrasts).
+   → `axis_effect_size_report` Tier 1 — **this replaces the "no cells" reading**, which was an
+   artefact of an empty table; see §2b
 7. **When the image channel uniquely wins, the text channel quits early rather than grinding.
    When the text channel uniquely wins, the image channel fails the way it fails everywhere.**
    The surviving, ungated, cross-site-comparable signal is `P27` gives-up-when-not-found at
@@ -135,7 +178,11 @@ Stated as claims with their carrying product, so a frame can be chosen against t
 8. **The obvious routing feature has the wrong sign**, and the right one was read and dropped.
    → `routing_feature_diagnostics`
 9. **Latency is a second axis, not a restatement of cost**; adding it widens the frontier in 3/6
-   cells. → `multimetric_pareto`
+   cells — **under either latency estimand**. Re-tested 08-02 against
+   `total_latency_canonical_ms` (retry, busy-wait and recovered-screenshot subtracted): same
+   3/6, identical frontier membership, identical fastest mode in every cell. Only the span
+   narrows, and only on the API-served arm (B0·reddit 1.404× → 1.343×). The raw figure is what
+   §3.3's cross-benchmark span comparison uses. → `multimetric_pareto`
 
 **Two frames are live and neither has been chosen.** One organises 1–2 as the conceptual
 contribution (an oracle gap is not a routing opportunity). One organises 3–4 as it (representation
