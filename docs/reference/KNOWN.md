@@ -39,9 +39,9 @@ purpose: anti-redo ledger — "has this already been measured / adjudicated / re
 
 | type | 回答的问题 | 数量 |
 |---|---|---|
-| `MEASURED` | 这个量测过吗？值多少、什么 scope、什么 caveat | 905 |
-| `ADJUDICATED` | 这个决定拍过吗？为什么这么定 | 831 |
-| `RETRACTED` | 这个说法死了吗？为什么、被什么取代 | 156 |
+| `MEASURED` | 这个量测过吗？值多少、什么 scope、什么 caveat | 961 |
+| `ADJUDICATED` | 这个决定拍过吗？为什么这么定 | 863 |
+| `RETRACTED` | 这个说法死了吗？为什么、被什么取代 | 177 |
 | `CLAIM_UNVERIFIED` | 这是推论还是测量？（原文自称待验的一律进这里） | 92 |
 | `DATA` | 什么数据存在、在哪、什么等级、能支撑什么 | 49 |
 
