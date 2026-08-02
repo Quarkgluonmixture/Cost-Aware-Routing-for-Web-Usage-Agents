@@ -20,33 +20,35 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 |---|---|---|---|---|---|
 | **Outcome / SR** | `sr_per_mode` · `fusion_premium` | ✅ | ✅ | ✅ | complete |
 | **Noise / rerun floor** | `noise_floor_inventory` · `phase0b_noise_floor` · `label_instability` | ⚠️ 1 of 6 cells | ✅ 1 pair | ⚠️ 2 of 6 arms | **SoM replicate queued** |
-| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (24 metrics) | ✅ | ❌ **impossible** | ✅ | complete on VWA |
+| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (24 metrics) | ✅ | ⏳ feasible, not yet wired | ✅ | complete on VWA |
 | **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ❌ not yet | ✅ | **WA is feasible, see §3** |
-| **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ❌ **impossible** | ✅ | complete on VWA |
+| **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ **added 08-02** | ✅ | complete |
 | **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ | ✅ (the four) | complete |
-| **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ❌ | ✅ | complete on VWA |
+| **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ⏳ feasible, not yet wired | ✅ | complete on VWA |
 | *(features)* | `routing_feature_diagnostics` | ✅ | ❌ n/a | ✅ | complete |
 
-## 2. The one structural gap: WebArena has no step records
+## 2. ~~The one structural gap~~ — RETRACTED 2026-08-02
 
-**All eight WA runs carry episode summaries and zero step JSONL files.** This is not an oversight
-that can be repaired by analysis; the data was never written.
+An earlier version of this section reported that WebArena carried no step records and that the
+Macro, Micro, cascade and diag layers were therefore **impossible** on it. **That was wrong on
+both counts and the entry is kept, struck through, because the error is instructive.**
 
-| WA can enter | because |
-|---|---|
-| Outcome | summaries carry `success` |
-| Efficiency | summaries carry `total_billed_cost_usd`, `total_latency_ms`, `total_tokens`, `steps`, `total_energy_kwh` |
+What was true: `find results/webarena -name '*steps*'` returned zero on this machine.
+What was false: the inference. The paper-grade host is the source of truth and holds all 104 step
+files for each of the six WA modes; `sync_a100_results.sh` had simply not mirrored them, and its
+own comment says `keep step JSONLs`, so the omission was a sync gap and not a policy. 132.6 MB
+pulled, every field the four layers need present, confidence populated on every step.
 
-| WA cannot enter | because |
-|---|---|
-| Macro / Micro (four-layer) | every metric reads `*_steps_v2.jsonl` |
-| Confidence cascade | escalation reads per-step log-probabilities |
-| diag / conditional failure attribution | the rule scanner walks step records |
+And the rules run on WA **unmodified**: same ruleset `8-reddit-p41p46-b1890fix`, 104 episodes per
+mode, 76-84 with hits. WA reddit is the same Postmill application as VWA reddit. No code change
+was needed beyond pointing `--run-dir` at the other tree.
 
-**Consequence for any claim.** WA is the workload that carries the modality reversal, and it is
-**Outcome-and-Efficiency only**. Any claim that needs behavioural or failure-mode evidence is
-VWA-only and cannot be shown to reverse. The reversal is established on success rates and on
-arm-count-matched marginal gain, and on nothing else. Say so wherever it is claimed.
+**The lesson is the shape of the error, not the fact.** "Absent on this machine" was written down
+as "does not exist", and then as "impossible", and then into a summary document as a structural
+limitation of the study. The user's objection was that it did not sound reasonable, which was a
+better instrument than the `find`.
+
+WA now enters every layer. §1's matrix is updated accordingly.
 
 ## 3. Gaps that are cheap to close
 
@@ -87,10 +89,16 @@ Stated as claims with their carrying product, so a frame can be chosen against t
 6. **The four image-free modes are behaviourally non-separable** across 24 metrics × 6 cells,
    while the image-bearing pair is separable mostly by construction.
    → `per_mode_four_dimension_profile` v2
-7. **The two channels' advantages are asymmetric in kind.** When the image channel wins, the text
-   channel fails with a named signature (`P43` 1.66× on 196 hits). When the text channel wins,
-   the image channel fails the way it fails everywhere, with no enrichment above 1.5×.
-   → `conditional_failure_attribution`
+7. **The image channel's advantage has a mechanism and it is workload-gated; the text channel's
+   has none on either workload.** On VWA, when the image channel wins the text channel fails with
+   a named signature (`P43` "needs on-page visual content, has no screenshot", 1.66× on 196 hits;
+   `P16` 2.18×; and it quits rather than exhausting its budget, `P27` 2.98× against `P31` 0.47×).
+   When the text channel wins, nothing clears 1.5×. On WA **neither** side clears it, which is
+   the predicted result rather than a gap: `P43`, `P16` and `P6` fire on **0.0%** of 624 WA
+   episodes against 3.9–20.4% on VWA, because WA specifies its goals in text. This is the
+   modality axis in the failure-mode layer, and the fourth functional it appears in.
+   ⚠️ WA's disagreement sets are 15 and 4 tasks; the WA reading is "no mechanism detected", not
+   "no mechanism". → `conditional_failure_attribution`
 8. **The obvious routing feature has the wrong sign**, and the right one was read and dropped.
    → `routing_feature_diagnostics`
 9. **Latency is a second axis, not a restatement of cost**; adding it widens the frontier in 3/6

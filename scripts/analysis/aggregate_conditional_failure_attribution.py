@@ -22,6 +22,14 @@ within-channel enrichments are read.
 
 Scans come from `diag_rescan_all.py` (default `/tmp/diag_v8`, ruleset asserted identical across
 all 36 so cross-mode aggregation is licensed; see the v8 freeze note in the diag digests).
+
+WebArena is included as a seventh cell (`--wa-scan-dir`, default `/tmp/diag_v8_wa`). Its step
+records live on the paper-grade host and were absent from the local mirror, which briefly looked
+like a structural limit and is not one: the rules run on WA unmodified at the same ruleset
+version, and WA reddit is the same Postmill application as VWA reddit. WA carries no AMENDMENT_08
+exclusion, so its universe is the task set common to all six modes rather than a canonical scored
+list. It matters here because WA is the workload on which the TEXT channel wins, so it is the
+only place the asymmetry below can be checked against a reversed outcome.
 """
 from __future__ import annotations
 
@@ -53,8 +61,10 @@ class MissingInput(RuntimeError):
     """Fail loud: a partial scan set would silently change every denominator."""
 
 
-def load_cell(scan_dir: Path, bb: str, site: str) -> dict[str, dict[int, dict]]:
-    scored, _ = expected_scored_ids(site)
+def load_cell(scan_dir: Path, bb: str, site: str,
+              universe: set[int] | None = None) -> dict[str, dict[int, dict]]:
+    """`universe=None` means the canonical VWA scored set; WA passes its own."""
+    scored = universe if universe is not None else expected_scored_ids(site)[0]
     out: dict[str, dict[int, dict]] = {}
     versions = set()
     for m in MODES:
@@ -77,9 +87,20 @@ def load_cell(scan_dir: Path, bb: str, site: str) -> dict[str, dict[int, dict]]:
                            "requires one version (see the v8 freeze note)")
     common = set.intersection(*(set(v) for v in out.values()))
     if len(common) != len(scored):
-        raise MissingInput(f"{bb}/{site}: {len(common)} tasks common to all six modes, canonical "
-                           f"universe has {len(scored)}")
+        raise MissingInput(f"{bb}/{site}: {len(common)} tasks common to all six modes, universe "
+                           f"has {len(scored)}")
     return out
+
+
+def wa_universe(scan_dir: Path) -> set[int]:
+    """WA has no AMENDMENT_08 exclusion; the universe is what all six modes ran."""
+    sets = []
+    for m in MODES:
+        p = scan_dir / f"B1_{m}_wa_reddit.json"
+        if not p.exists():
+            raise MissingInput(f"missing WA scan {p}")
+        sets.append({int(e["task_id"]) for e in json.loads(p.read_text())["results"]})
+    return set.intersection(*sets)
 
 
 def attribute(cell: dict[str, dict[int, dict]], winners: list[str], losers: list[str]) -> dict:
@@ -106,7 +127,7 @@ def attribute(cell: dict[str, dict[int, dict]], winners: list[str], losers: list
             "cond": dict(cond), "base": dict(base), "names": names}
 
 
-def build(scan_dir: Path) -> dict:
+def build(scan_dir: Path, wa_scan_dir: Path | None = None) -> dict:
     out = {"schema": "2026-08-02-conditional-failure-attribution-v1",
            "post_hoc_exploratory": True, "scan_dir": str(scan_dir),
            "text_modes": TEXT, "image_modes": IMAGE, "cells": {}}
@@ -121,6 +142,17 @@ def build(scan_dir: Path) -> dict:
             LOG.info("%s: text-only %d tasks, image-only %d",
                      cid, out["cells"][cid]["text_only"]["n_tasks"],
                      out["cells"][cid]["image_only"]["n_tasks"])
+    if wa_scan_dir and wa_scan_dir.exists():
+        uni = wa_universe(wa_scan_dir)
+        cell = load_cell(wa_scan_dir, "B1", "wa_reddit", universe=uni)
+        out["cells"]["wa_red_B1"] = {
+            "text_only": attribute(cell, TEXT, IMAGE),
+            "image_only": attribute(cell, IMAGE, TEXT),
+        }
+        out["wa_n"] = len(uni)
+        LOG.info("wa_red_B1 (n=%d): text-only %d tasks, image-only %d", len(uni),
+                 out["cells"]["wa_red_B1"]["text_only"]["n_tasks"],
+                 out["cells"]["wa_red_B1"]["image_only"]["n_tasks"])
     # pool: sum numerators and denominators across cells rather than averaging ratios
     for side in ("text_only", "image_only"):
         c = collections.Counter(); b = collections.Counter(); names = {}
@@ -201,11 +233,12 @@ def render(d: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--scan-dir", type=Path, default=Path("/tmp/diag_v8"))
+    ap.add_argument("--wa-scan-dir", type=Path, default=Path("/tmp/diag_v8_wa"))
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,
                         format="%(levelname)s %(message)s")
-    d = build(a.scan_dir)
+    d = build(a.scan_dir, a.wa_scan_dir)
     OUT_JSON.write_text(json.dumps(d, indent=2))
     OUT_MD.write_text(render(d))
     print(f"✓ {OUT_MD.relative_to(REPO)}")

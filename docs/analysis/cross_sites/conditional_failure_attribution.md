@@ -24,51 +24,52 @@ The existing signature table is a marginal cut: which rules fire in which mode o
 | `red_B1` | 7 | 4 |
 | `cls_B2` | 6 | 10 |
 | `red_B2` | 9 | 4 |
-| **pooled** | **71** | **91** |
+| `wa_red_B1` | 15 | 4 |
+| **pooled** | **86** | **95** |
 
 ⚠️ TEXT is four arms against IMAGE's two, so a larger text-only count is partly arm count and must not be read as a larger effect.
 
 ## 2. Only the text channel solved it: how the IMAGE channel failed
 
-Pooled over six cells. 142 losing-channel failure episodes on the disagreement set, against 2304 of that channel's failures overall.
+Pooled over six cells. 172 losing-channel failure episodes on the disagreement set, against 2488 of that channel's failures overall.
 
 | rule | name | on disagreement | baseline | enrichment | hits |
 |---|---|---|---|---|---|
-| `P17` | click-back振荡 | 7.0% | 4.5% | **1.56x** **←** | 10 |
-| `P4` | 根节点误操作 | 6.3% | 5.7% | **1.11x** | 9 |
-| `P36` | WALK_FAIL_DEGENERATE | 33.8% | 37.0% | **0.91x** | 48 |
-| `P31` | budget耗尽未完成 | 43.0% | 52.7% | **0.82x** | 61 |
-| `P14` | URL 自环 | 27.5% | 34.2% | **0.80x** | 39 |
-| `P12` | 从不翻页 | 11.3% | 14.2% | **0.79x** | 16 |
-| `P5` | 感知缺失循环 | 38.0% | 52.1% | **0.73x** | 54 |
-| `P33` | 导航至裸图片URL幻觉 | 8.5% | 12.2% | **0.69x** | 12 |
-| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 10.6% | 16.7% | **0.63x** **←** | 15 |
+| `P17` | click-back振荡 | 5.8% | 4.2% | **1.39x** | 10 |
+| `P12` | 从不翻页 | 14.0% | 14.8% | **0.95x** | 24 |
+| `P4` | 根节点误操作 | 5.2% | 5.5% | **0.94x** | 9 |
+| `P31` | budget耗尽未完成 | 49.4% | 54.1% | **0.91x** | 85 |
+| `P36` | WALK_FAIL_DEGENERATE | 31.4% | 36.3% | **0.87x** | 54 |
+| `P14` | URL 自环 | 27.9% | 34.2% | **0.81x** | 48 |
+| `P5` | 感知缺失循环 | 42.4% | 52.6% | **0.81x** | 73 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 12.8% | 17.1% | **0.75x** | 22 |
+| `P33` | 导航至裸图片URL幻觉 | 7.6% | 11.7% | **0.65x** **←** | 13 |
 
 ## 3. Only the image channel solved it: how the TEXT channel failed
 
-Pooled over six cells. 364 losing-channel failure episodes on the disagreement set, against 4737 of that channel's failures overall.
+Pooled over six cells. 380 losing-channel failure episodes on the disagreement set, against 5090 of that channel's failures overall.
 
 | rule | name | on disagreement | baseline | enrichment | hits |
 |---|---|---|---|---|---|
-| `P27` | 找不到即放弃 | 3.0% | 1.0% | **2.98x** **←** | 11 |
-| `P17` | click-back振荡 | 16.8% | 7.6% | **2.20x** **←** | 61 |
-| `P16` | 视觉图像内容DOM必败 | 6.9% | 3.1% | **2.18x** **←** | 25 |
-| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 53.8% | 32.5% | **1.66x** **←** | 196 |
-| `P19` | url_match过早搜索页finish | 2.2% | 1.5% | **1.51x** **←** | 8 |
-| `P30` | 到达正确item后离开 | 2.2% | 1.6% | **1.35x** | 8 |
-| `P4` | 根节点误操作 | 9.3% | 9.2% | **1.01x** | 34 |
-| `P33` | 导航至裸图片URL幻觉 | 17.9% | 18.8% | **0.95x** | 65 |
-| `P10` | 跨步数值记忆失败 | 2.2% | 2.4% | **0.92x** | 8 |
-| `P5` | 感知缺失循环 | 41.5% | 45.2% | **0.92x** | 151 |
-| `P12` | 从不翻页 | 11.8% | 13.6% | **0.87x** | 43 |
-| `P14` | URL 自环 | 22.8% | 27.0% | **0.84x** | 83 |
-| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 29.7% | 35.4% | **0.84x** | 108 |
-| `P36` | WALK_FAIL_DEGENERATE | 44.2% | 61.2% | **0.72x** | 161 |
-| `P6` | 视觉任务 DOM 必然失败 | 3.8% | 6.0% | **0.64x** **←** | 14 |
-| `P44` | HALLUCINATED_ELEMENT_REF | 11.5% | 19.8% | **0.58x** **←** | 42 |
-| `P18` | cheapest漏价格排序 | 3.6% | 6.5% | **0.55x** **←** | 13 |
-| `P31` | budget耗尽未完成 | 26.1% | 55.1% | **0.47x** **←** | 95 |
-| `P25` | 跨站任务跳过其中一站 | 2.7% | 10.4% | **0.26x** **←** | 10 |
+| `P27` | 找不到即放弃 | 2.9% | 1.0% | **3.01x** **←** | 11 |
+| `P17` | click-back振荡 | 16.1% | 7.1% | **2.26x** **←** | 61 |
+| `P16` | 视觉图像内容DOM必败 | 6.6% | 2.9% | **2.25x** **←** | 25 |
+| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 51.6% | 30.3% | **1.70x** **←** | 196 |
+| `P19` | url_match过早搜索页finish | 2.1% | 1.4% | **1.55x** **←** | 8 |
+| `P30` | 到达正确item后离开 | 2.1% | 1.5% | **1.39x** | 8 |
+| `P4` | 根节点误操作 | 9.2% | 9.0% | **1.02x** | 35 |
+| `P33` | 导航至裸图片URL幻觉 | 17.4% | 17.9% | **0.97x** | 66 |
+| `P10` | 跨步数值记忆失败 | 2.1% | 2.2% | **0.94x** | 8 |
+| `P5` | 感知缺失循环 | 42.1% | 45.5% | **0.92x** | 160 |
+| `P12` | 从不翻页 | 12.1% | 13.8% | **0.88x** | 46 |
+| `P14` | URL 自环 | 23.7% | 27.2% | **0.87x** | 90 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 30.5% | 36.1% | **0.84x** | 116 |
+| `P36` | WALK_FAIL_DEGENERATE | 45.8% | 62.1% | **0.74x** | 174 |
+| `P6` | 视觉任务 DOM 必然失败 | 3.7% | 5.6% | **0.66x** **←** | 14 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 11.3% | 18.8% | **0.60x** **←** | 43 |
+| `P18` | cheapest漏价格排序 | 3.4% | 6.1% | **0.56x** **←** | 13 |
+| `P31` | budget耗尽未完成 | 28.4% | 56.7% | **0.50x** **←** | 108 |
+| `P25` | 跨站任务跳过其中一站 | 2.6% | 9.7% | **0.27x** **←** | 10 |
 
 ## 4. Reading
 
