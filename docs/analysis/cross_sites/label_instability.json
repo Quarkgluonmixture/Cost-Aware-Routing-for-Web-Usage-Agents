@@ -57,5 +57,71 @@
       "share_of_all_flips": 100.0,
       "enrichment_vs_complement": 7.4375
     }
+  },
+  "difficulty_null": {
+    "proxy": "k/6 where k = number of the six modes that solved the task",
+    "contested": {
+      "n": 88,
+      "observed_flip_rate": 0.5113636363636364,
+      "binomial_floor": 0.37247474747474746,
+      "observed_over_floor": 1.3728813559322035
+    },
+    "complement": {
+      "n": 136,
+      "observed_flip_rate": 0.029411764705882353,
+      "binomial_floor": 0.0
+    },
+    "arithmetic_enrichment": "infinite (complement floor is exactly 0)",
+    "per_k": [
+      {
+        "k": 0,
+        "n": 127,
+        "n_flipped": 2,
+        "observed": 0.015748031496062992,
+        "binomial_floor": 0.0
+      },
+      {
+        "k": 1,
+        "n": 29,
+        "n_flipped": 15,
+        "observed": 0.5172413793103449,
+        "binomial_floor": 0.2777777777777778
+      },
+      {
+        "k": 2,
+        "n": 25,
+        "n_flipped": 6,
+        "observed": 0.24,
+        "binomial_floor": 0.4444444444444445
+      },
+      {
+        "k": 3,
+        "n": 12,
+        "n_flipped": 10,
+        "observed": 0.8333333333333334,
+        "binomial_floor": 0.5
+      },
+      {
+        "k": 4,
+        "n": 9,
+        "n_flipped": 5,
+        "observed": 0.5555555555555556,
+        "binomial_floor": 0.4444444444444445
+      },
+      {
+        "k": 5,
+        "n": 13,
+        "n_flipped": 9,
+        "observed": 0.6923076923076923,
+        "binomial_floor": 0.27777777777777773
+      },
+      {
+        "k": 6,
+        "n": 9,
+        "n_flipped": 2,
+        "observed": 0.2222222222222222,
+        "binomial_floor": 0.0
+      }
+    ]
   }
 }

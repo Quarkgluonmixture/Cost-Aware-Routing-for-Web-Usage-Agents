@@ -8591,7 +8591,28 @@
         "click_frac@B2/classifieds",
         "action_repeat_frac@B2/classifieds"
       ],
-      "verdict_note": "A cell qualifies for hook support when |effect| > 0.1 (small Cohen's d/h) on the relevant contrast."
+      "verdict_note": "A cell qualifies for hook support when |effect| > 0.1 (small Cohen's d/h) on the relevant contrast.",
+      "multiplicity": {
+        "n_legs": 96,
+        "n_combinations": 48,
+        "effect_only": 15,
+        "effect_and_bh_fdr_0.05": 7,
+        "cells_bh": [
+          "selfcorr_count@B0/reddit",
+          "n_steps@B0/reddit",
+          "type_frac@B1/reddit",
+          "finish_rate@B1/reddit",
+          "click_frac@B1/classifieds",
+          "type_frac@B2/classifieds",
+          "finish_rate@B2/classifieds"
+        ],
+        "effect_and_holm_fwer_0.05": 2,
+        "cells_holm": [
+          "n_steps@B0/reddit",
+          "type_frac@B2/classifieds"
+        ],
+        "note": "both legs (compound and image) must clear the correction for the combination to count; corrections are applied across all legs jointly, not per cell"
+      }
     },
     "tier2_mechanism": {
       "claim": "The compound DOM->P-SoM transition decomposes into text (axis 1) and prompt (axis 2) sub-effects via P-text intermediate.",

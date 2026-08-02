@@ -20,7 +20,7 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 |---|---|---|---|---|---|
 | **Outcome / SR** | `sr_per_mode` · `fusion_premium` | ✅ | ✅ | ✅ | complete |
 | **Noise / rerun floor** | `noise_floor_inventory` · `phase0b_noise_floor` · `label_instability` | ⚠️ 1 of 6 cells | ✅ 1 pair | ⚠️ 2 of 6 arms | **SoM replicate queued** |
-| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (24 metrics) | ✅ | ✅ `--with-wa` | ✅ | complete |
+| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (25 metrics) | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ **added 08-02** | ✅ | complete |
 | **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ | ✅ (the four) | **repaired 08-02** — see §2b |
@@ -64,8 +64,10 @@ all 192 pair-count checks read `{observed: 0, expected: 203, pass: false}`: the 
 failed, and was connected to no exit — the Markdown a human reads never mentioned it.
 
 With the input restored the finding **reverses**: P-SoM differs from **both** DOM and SoM on
-**15 (metric, cell) combinations** across all six cells, `finish_rate` in five of six. That is
-mechanism-layer support for the independent-arm claim, and it was sitting behind a broken import.
+**7 (metric, cell) combinations** spanning four of the six cells and all three backbones — that
+is the multiplicity-corrected count (both legs clearing Benjamini-Hochberg at FDR 0.05 jointly
+over 96 tests); on effect size alone it is 15, and 2 survive Holm. That is mechanism-layer
+support for the independent-arm claim, and it was sitting behind a broken import.
 
 Four things were repaired alongside it, each of the same family:
 
@@ -99,7 +101,7 @@ timestamp line excluded). Three things the seventh cell changed, none of them co
    that does not show it, and it is also the cell where SoM is not the strongest mode. Fifth
    appearance of the workload dependence, first in the behavioural layer.
 2. **The load-bearing negative survives.** The four image-free modes reach the bar on **nothing**
-   under either denominator, over 24 metrics. That is what licenses grouping them, and it does
+   under either denominator, over 25 metrics. That is what licenses grouping them, and it does
    not move.
 3. **"Latency is an independent axis" is VWA-only.** WA's latency span is **1.05×**, the smallest
    anywhere, against a cost span of **1.78×**, the largest anywhere. On WA the modes are within
@@ -154,10 +156,13 @@ Stated as claims with their carrying product, so a frame can be chosen against t
 6. **The four image-free modes are behaviourally non-separable** across 25 metrics × 6 cells,
    while the image-bearing pair is separable mostly by construction.
    → `per_mode_four_dimension_profile` v2
-6b. **P-SoM is nonetheless distinct from both endpoints on 15 (metric, cell) combinations**
-   spanning all six cells, `finish_rate` in five of six. Non-separability among the four
-   image-free modes and separability of P-SoM from DOM *and* SoM are different questions
-   measured on different quantities (mode-vs-mode extremes versus paired contrasts).
+6b. **P-SoM is nonetheless distinct from both endpoints on 7 (metric, cell) combinations**
+   spanning four of the six cells and all three backbones. That is the multiplicity-corrected
+   figure (both legs clearing Benjamini-Hochberg at FDR 0.05, jointly over 96 Wilcoxon tests);
+   the uncorrected effect-size-only count is 15 and **should not be quoted bare**, and only 2
+   survive Holm. Non-separability among the four image-free modes and separability of P-SoM
+   from DOM *and* SoM are different questions on different quantities (mode-vs-mode extremes
+   versus paired contrasts).
    → `axis_effect_size_report` Tier 1 — **this replaces the "no cells" reading**, which was an
    artefact of an empty table; see §2b
 7. **When the image channel uniquely wins, the text channel quits early rather than grinding.
@@ -189,3 +194,28 @@ contribution (an oracle gap is not a routing opportunity). One organises 3–4 a
 choice is a deployment-time configuration). Claims 5–9 serve either. The choice is a framing
 decision to be taken with the evidence in front of it, which is the state this document exists to
 create.
+
+## 6. What would refute each claim, and whether we hold it (§G3 sweep, 2026-08-02)
+
+Written by starting from what the paper wants to say rather than from what the data happens to
+contain — the only sweep of the three that finds missing *evidence* rather than missing metrics.
+For each claim in §5: the measurement that would refute it, and whether we have that measurement.
+
+| # | the measurement that would refute it | held? | consequence |
+|---|---|---|---|
+| 1 | the rerun floor measured **on the arm being added** — if SoM's own floor is far below SoM's marginal gain, the two are separable after all | ❌ floor is on DOM and Vision, one rerun each | this is exactly what the queued SoM replicate buys; until then the claim rests on a floor borrowed from other arms |
+| 2 | (a) a second (cell, arm-pair) where the enrichment is ≈1×; (b) a **difficulty-matched** control, since "contested" is by construction a mid-difficulty band | (a) ❌ one cell, two arms · (b) ✅ **done 08-02** | (b) ran and cut both ways — see `label_instability` §"Is the enrichment just arithmetic?": the arithmetic null predicts *infinite* enrichment, so 17.4× is deflated not inflated; but inside the contested band the excess over the floor is only **1.37×** |
+| 3 | one cell where fusion beats the workload-matched single channel significantly **and** by more than that cell's rerun band | ⚠️ 7 cells tested, but the band is the borrowed one from claim 1 | inherits claim 1's dependency; the 7/7 count is solid, the band is not |
+| 4 | a third workload whose modality sits between the two, or contradicts the predicted sign | ❌ shopping has zero landed directories | stated limitation, not closable before submission |
+| 5 | any routing formulation we did not try that wins — e.g. one using `visual_difficulty`, or the Tier-1 independence metrics | ⚠️ partial: `visual_difficulty` was diagnosed as read-but-dropped, never *fitted* | cheap and worth doing: fit one router with it and report that it does not rescue, rather than arguing it wouldn't |
+| 6 | any metric on which one image-free mode reaches ≥5/6 | ✅ and it survived adding 6 metrics chosen to find differences | but all 25 metrics are ours; §G1 found **186 unread fields**, so the negative is only as strong as the metric pool |
+| 6b | multiplicity correction removing the effect | ✅ **done 08-02** | 15 → **7** under BH, **2** under Holm; the 7 span four cells and all three backbones. §5 now quotes the corrected figure |
+| 7 | a named mechanism on the text-wins side that the v8 ruleset cannot see — it was discovered on VWA, so it can only find VWA-shaped failures | ❌ | this is precisely what `/diag` Tier-2 on WA is for; the asymmetry may be a property of the ruleset rather than of the world |
+| 8 | the feature carrying the intuitive sign in some other cell or benchmark | ✅ all six cells; WA ships no reference images so it cannot arbitrate | closed as far as this data goes |
+| 9 | a different latency estimand changing the verdict; or the frontier widening simply because there are six modes | (a) ✅ **done 08-02** — canonical estimand, unchanged · (b) ❌ no permutation control | (b) is cheap: shuffle latency across modes and count how often 3/6 widening appears by chance |
+
+**Three of these were closed on 08-02** (2b, 6b, 9a) and each was closed by *running* the control
+rather than by arguing it was unnecessary. **Three remain cheap and open**: the `visual_difficulty`
+router fit (5), the latency permutation control (9b), and new metrics from the unread-field
+inventory (6). **Three are not cheap and are therefore limitations**: the third workload (4), the
+SoM floor (1, queued), and the WA-native failure vocabulary (7, needs the Tier-2 session).

@@ -481,6 +481,67 @@ def consistency_check(
     }
 
 
+def multiplicity_filtered_independence(out: dict, metrics_def: list) -> dict:
+    """Re-run the Tier 1 independence verdict with multiplicity control on both legs.
+
+    The headline count asks only |effect| > 0.1, over 48 (cell, metric) combinations and 96
+    Wilcoxon tests. A count built that way is the first thing a reviewer attacks, so this
+    reports what survives when each leg must also clear Benjamini-Hochberg (FDR) and Holm
+    (FWER) across ALL legs at once. Effect size stays a requirement — significance alone on
+    n=201..224 would let trivial differences in.
+    """
+    legs, keyed = [], []
+    for baseline in BASELINES:
+        for site in SITES:
+            for metric, _b in metrics_def:
+                mn = METRIC_LABELS[metric]
+                blk = out["results"][baseline].get(site, {}).get(mn)
+                if not blk or not blk["compound_dom_to_psom"].get("n"):
+                    continue
+                c, i = blk["compound_dom_to_psom"], blk["image"]
+                ec = c.get("cohen_h", c.get("cohen_d_z"))
+                ei = i.get("cohen_h", i.get("cohen_d_z"))
+                if ec is None or ei is None or c.get("wilcoxon_p") is None \
+                        or i.get("wilcoxon_p") is None:
+                    continue
+                keyed.append((f"{mn}@{baseline}/{site}", len(legs), len(legs) + 1,
+                              abs(ec) > 0.1 and abs(ei) > 0.1))
+                legs += [c["wilcoxon_p"], i["wilcoxon_p"]]
+
+    def bh(p, q=0.05):
+        order = sorted(range(len(p)), key=lambda i: p[i])
+        cut = 0
+        for rank, i in enumerate(order, 1):
+            if p[i] <= rank / len(p) * q:
+                cut = rank
+        return set(order[:cut])
+
+    def holm(p, a=0.05):
+        order = sorted(range(len(p)), key=lambda i: p[i])
+        keep = set()
+        for rank, i in enumerate(order, 1):
+            if p[i] <= a / (len(p) - rank + 1):
+                keep.add(i)
+            else:
+                break
+        return keep
+
+    if not legs:
+        return {"n_legs": 0}
+    kb, kh = bh(legs), holm(legs)
+    eff = [k for k, *_ , ok in keyed if ok]
+    both_bh = [k for k, a, b, ok in keyed if ok and a in kb and b in kb]
+    both_holm = [k for k, a, b, ok in keyed if ok and a in kh and b in kh]
+    return {
+        "n_legs": len(legs), "n_combinations": len(keyed),
+        "effect_only": len(eff),
+        "effect_and_bh_fdr_0.05": len(both_bh), "cells_bh": both_bh,
+        "effect_and_holm_fwer_0.05": len(both_holm), "cells_holm": both_holm,
+        "note": "both legs (compound and image) must clear the correction for the combination "
+                "to count; corrections are applied across all legs jointly, not per cell",
+    }
+
+
 def diamond_additivity(block: dict, *, binary: bool) -> dict:
     """Do the two routes from DOM to P-SoM recover the direct contrast?
 
@@ -752,6 +813,11 @@ def main() -> None:
                 else:
                     psom_indistinct.append(cell)
 
+    # The count above uses |effect| > 0.1 and no p at all, over 48 (cell, metric) combinations
+    # and 96 individual contrasts. Reporting it bare invites the obvious attack, so the same
+    # verdict is recomputed requiring BOTH legs to survive multiplicity control. (§G3, 08-02)
+    survivors = multiplicity_filtered_independence(out, metrics_def)
+
     out["interpretation"] = {
         "tier1_hook": {
             "claim": "P-SoM is an independent routing arm: its macro behavior is meaningfully distinct from BOTH DOM and SoM (not collapsible to either).",
@@ -760,6 +826,7 @@ def main() -> None:
             "psom_distinct_from_som_only": psom_distinct_from_som_only,
             "psom_indistinct_from_either": psom_indistinct,
             "verdict_note": "A cell qualifies for hook support when |effect| > 0.1 (small Cohen's d/h) on the relevant contrast.",
+            "multiplicity": survivors,
         },
         "tier2_mechanism": {
             "claim": "The compound DOM->P-SoM transition decomposes into text (axis 1) and prompt (axis 2) sub-effects via P-text intermediate.",
@@ -878,6 +945,18 @@ def main() -> None:
     lines.append("\n**P-SoM independence verdict** (cells where P-SoM differs from BOTH DOM and SoM, |effect|>0.1):")
     if independence["psom_distinct_from_both_dom_and_som"]:
         lines.append(f"- **Independent on**: {', '.join(independence['psom_distinct_from_both_dom_and_som'])}")
+    _mp = independence.get("multiplicity") or {}
+    if _mp.get("n_legs"):
+        lines.append(
+            f"\n> **Multiplicity.** That count asks only |effect| > 0.1, across "
+            f"{_mp['n_combinations']} (cell, metric) combinations and {_mp['n_legs']} Wilcoxon "
+            f"tests. Requiring **both** legs to also clear a correction applied jointly over all "
+            f"legs: **{_mp['effect_and_bh_fdr_0.05']} survive Benjamini-Hochberg** (FDR 0.05) and "
+            f"**{_mp['effect_and_holm_fwer_0.05']} survive Holm** (FWER 0.05), against "
+            f"{_mp['effect_only']} on effect size alone. The BH set spans "
+            f"{len({c.split('@')[1] for c in _mp['cells_bh']})} of the six cells, so it is not "
+            f"one cell's accident: {', '.join(_mp['cells_bh']) or '—'}. Report the corrected "
+            f"count, not the bare one.")
     else:
         lines.append("- **No cells show P-SoM distinct from both endpoints simultaneously**")
     if independence["psom_distinct_from_dom_only"]:

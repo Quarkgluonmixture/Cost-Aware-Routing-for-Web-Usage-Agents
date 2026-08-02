@@ -114,7 +114,57 @@ def build() -> dict:
             "enrichment_vs_complement": (rate / base_rate) if base_rate else None,
         }
         LOG.info("%-52s n=%3d flip=%3d (%.1f%%)", name[:52], len(ids), k, 100 * rate)
+    out["difficulty_null"] = difficulty_null(flips, solve)
     return out
+
+
+def difficulty_null(flips: set[int], solve: dict[int, set[str]]) -> dict:
+    """How much of the enrichment is arithmetic rather than structure?
+
+    "Contested" means at least one arm solved the task and at least one did not, which is by
+    definition a mid-difficulty band. A task whose true per-run success rate is p flips between
+    two runs with probability 2p(1-p) — maximal near p=0.5 and zero at either end. So a reviewer
+    can ask whether the enrichment is just that the complement is full of tasks nobody solves.
+
+    Taking k/6 (how many of the six modes solved it) as a difficulty proxy for p, this reports
+    the flip rate the arithmetic alone would produce. Two things fall out, and they point in
+    opposite directions — both belong in the paper:
+
+      * the complement's predicted rate is exactly 0 (k=0 and k=6 both give 2p(1-p)=0), so the
+        arithmetic enrichment is INFINITE. The observed 17x is therefore not inflated by this
+        mechanism; it is deflated by it. Nine all-solved tasks flip twice, which the model
+        forbids outright.
+      * inside the contested band the observed rate exceeds the floor by only ~1.4x. So most of
+        the 51% is the band being mid-difficulty, and the excess above that is what is left for
+        "structure" to explain.
+
+    ⚠️ The proxy is crude: the six modes are different representations, not six draws from one
+    model, so k/6 estimates difficulty, not p.
+    """
+    k = {t: len(s) for t, s in solve.items()}
+    contested = {t for t, s in solve.items() if s and len(s) < len(MODES)}
+    comp = set(solve) - contested
+
+    def obs(S): return len(S & flips) / len(S) if S else None
+
+    def pred(S): return (sum(2 * (k[t] / 6) * (1 - k[t] / 6) for t in S) / len(S)) if S else None
+
+    oc, ok_ = obs(contested), obs(comp)
+    pc, pk = pred(contested), pred(comp)
+    return {
+        "proxy": "k/6 where k = number of the six modes that solved the task",
+        "contested": {"n": len(contested), "observed_flip_rate": oc, "binomial_floor": pc,
+                      "observed_over_floor": (oc / pc) if pc else None},
+        "complement": {"n": len(comp), "observed_flip_rate": ok_, "binomial_floor": pk},
+        "arithmetic_enrichment": "infinite (complement floor is exactly 0)",
+        "per_k": [{"k": kk,
+                   "n": sum(1 for t in solve if k[t] == kk),
+                   "n_flipped": sum(1 for t in solve if k[t] == kk and t in flips),
+                   "observed": obs({t for t in solve if k[t] == kk}),
+                   "binomial_floor": 2 * (kk / 6) * (1 - kk / 6)}
+                  for kk in range(len(MODES) + 1)
+                  if any(k[t] == kk for t in solve)],
+    }
 
 
 def render(d: dict) -> str:
@@ -157,6 +207,42 @@ def render(d: dict) -> str:
           "It also bounds the problem independently of sample size. More data does not repair a "
           "target that a rerun rewrites, so this obstruction is of a different kind from the "
           "supply and predictability results, which a larger or easier benchmark could move."]
+
+    # The obvious attack on the enrichment, answered with a number rather than an argument.
+    dn = d["difficulty_null"]
+    co, cm = dn["contested"], dn["complement"]
+    L += ["", "## Is the enrichment just arithmetic?", "",
+          "\"Contested\" means at least one arm solved the task and at least one did not, which "
+          "is by definition a **mid-difficulty band**. A task with true per-run success rate *p* "
+          "flips between two runs with probability *2p(1−p)*: maximal near 0.5, zero at either "
+          "end. So the enrichment could be nothing but the complement being full of tasks nobody "
+          "solves. Taking *k/6* — how many of the six modes solved it — as a difficulty proxy:",
+          "",
+          "| set | n | observed flip rate | binomial floor *2p(1−p)* |",
+          "|---|---|---|---|",
+          f"| contested | {co['n']} | {100 * co['observed_flip_rate']:.2f}% | "
+          f"{100 * co['binomial_floor']:.2f}% |",
+          f"| complement | {cm['n']} | {100 * cm['observed_flip_rate']:.2f}% | "
+          f"{100 * cm['binomial_floor']:.2f}% |", "",
+          "**The attack fails, and it fails in the unexpected direction.** The complement's "
+          "predicted rate is exactly zero — *k*=0 and *k*=6 both give *2p(1−p)*=0 — so the "
+          "arithmetic enrichment is **infinite**. The observed figure is therefore *deflated* by "
+          "this mechanism, not inflated: the complement flips more than the model permits at "
+          "all, including two of the nine tasks that every mode solved.", "",
+          "**But the same table limits the claim.** Inside the contested band the observed rate "
+          f"exceeds the floor by only **{co['observed_over_floor']:.2f}×** "
+          f"({100 * co['observed_flip_rate']:.1f}% against {100 * co['binomial_floor']:.1f}%). "
+          "Most of the 51% is the band being mid-difficulty; the excess above that floor is what "
+          "is left for structure to carry. The honest sentence is that instability concentrates "
+          "on contested tasks **and** that being contested is itself most of the reason.", "",
+          "| *k* solved | n | flipped | observed | floor |",
+          "|---|---|---|---|---|"]
+    for r in dn["per_k"]:
+        L.append(f"| {r['k']} | {r['n']} | {r['n_flipped']} | {100 * r['observed']:.2f}% | "
+                 f"{100 * r['binomial_floor']:.2f}% |")
+    L += ["", "⚠️ The proxy is crude: the six modes are different representations, not six draws "
+          "from one model, so *k/6* estimates difficulty rather than *p*. The per-*k* rates are "
+          "not monotone in the floor, which is itself evidence the proxy is imperfect."]
     return "\n".join(L) + "\n"
 
 
