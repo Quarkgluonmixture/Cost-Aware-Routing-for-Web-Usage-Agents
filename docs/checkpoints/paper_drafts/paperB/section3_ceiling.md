@@ -74,7 +74,7 @@ so a policy that never pays for anything captures much of that saving for free. 
 always-cheapest already spending 10.4% to 34.5% less than the best single mode while giving up
 0.00 to 7.39 points of success rate, and on classifieds · B2 giving up nothing at all.
 
-That is why §2.5 measures against it. A useful router must land somewhere the oracle reaches
+That is why §2.6 measures against it. A useful router must land somewhere the oracle reaches
 and always-cheapest does not: recover accuracy that always-cheapest gives up, or cost that it
 does not, without giving back the other. Sections 4 and 5 show that neither supervision target
 gets there.

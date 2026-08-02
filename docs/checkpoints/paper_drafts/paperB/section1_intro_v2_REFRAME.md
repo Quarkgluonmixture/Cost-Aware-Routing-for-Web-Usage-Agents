@@ -75,9 +75,9 @@ Throughout we treat the six observation modes we run as instruments for three de
 channels. **Text** is the accessibility tree or a mark legend, with either prompt family, four
 combinations in total. **Vision** is an unannotated screenshot addressed by coordinates, with no
 element identifiers. **Fused** is the annotated screenshot with its legend, the only condition
-in which a mark in the image and an identifier in the text refer to the same object. Section 2.3
-reports the four text formalisations separately and shows that the conclusions below do not turn
-on which is chosen; we group them because practitioners do not distinguish them.
+in which a mark in the image and an identifier in the text refer to the same object. Section 2.5
+shows that the four text formalisations are behaviourally non-separable across cells, which is
+why we group them, and Appendix A.1 keeps them apart wherever a number would change; we group them because practitioners do not distinguish them.
 
 ### 1.2 Three findings about how to spend
 

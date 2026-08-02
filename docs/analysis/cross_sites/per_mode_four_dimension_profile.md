@@ -42,11 +42,13 @@ A per-mode difference only counts if it holds across cells. `unanimous` = the sa
 | Efficiency | latency / episode (s) | P-text | 3/6 | SoM | 3/6 | — | 1.00–1.10× |  |
 | Efficiency | tokens / episode | SoM | 5/6 | Vision | 6/6 | — | 1.03–1.13× | ⚙️ **low: Vision 6/6** (by construction) |
 
-Why each ◆ row is architecturally downstream:
+Why each ◆ row is architecturally downstream. ⚠️ These are **author-written causal assertions**, and each one deletes a whole row of evidence, so each one needs its own support. Two of the three were tested on 2026-08-02 and neither survived intact; the third (`action-execution failure rate`) is still untested:
 
-- `scroll fraction` — re-orienting after a no-op, plus viewport-only observation with no AXTree to enumerate off-screen targets, both push toward scrolling; the 1.2-6.8x magnitude is real but its DIRECTION was predictable from the design.
+- `scroll fraction` — viewport-only observation with no AXTree to enumerate off-screen targets pushes toward scrolling; the 1.2-6.8x magnitude is real but its DIRECTION was predictable from the design.
+  ⚠️ **2026-08-02 correction.** This entry originally gave a second mechanism, *re-orienting after a no-op*, and that mechanism is **refuted**. Measured on B0 x {cls, red} x {dom, som, vision}, the share of scroll steps whose predecessor was a no-op sits **at or below the base rate of no-ops in the same run, in all six combinations** (Vision on classifieds: 18.5% against a 36.4% base, i.e. 17.9 points *below* chance). Scrolls are not preferentially preceded by no-ops anywhere. Only the viewport-enumeration mechanism survives, and the ◆ marking rests on it alone.
 - `action-execution failure rate` — coordinate addressing has no element-identity guarantee, so a higher miss rate is the expected consequence, not a discovery about behaviour.
-- `page-unchanged (no-op) step rate` — a missed click leaves the page unchanged — this is downstream of the action-failure row above, not independent evidence.
+- `page-unchanged (no-op) step rate` — a missed click leaves the page unchanged, so this is largely downstream of the action-failure row above.
+  ⚠️ **2026-08-02 refinement.** Measured, the implication `action_success = False` ⟹ `page_changed = False` holds in **100%** of steps across all six B0 combinations checked, so action-failure is a strict *subset* of no-op and the metric decomposes exactly: `no-op = action failure + action succeeded but the page did not move`. Vision's high no-op rate is indeed dominated by the first term (85-95% of its no-ops). The **residual is not Vision-led**: on classifieds, 33.7% of SoM's no-ops sit on a successful action against Vision's 14.6%. The row should therefore be read as downstream *for Vision*, and the successful-but-inert component reported separately rather than dismissed with it.
 
 Why each ⚙️ row is architectural:
 

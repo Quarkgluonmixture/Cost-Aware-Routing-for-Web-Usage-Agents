@@ -87,7 +87,37 @@ Cross-validation is five-fold throughout, and where a threshold or a mode choice
 selected, §5 reports a fully nested design in which every such choice is re-derived inside each
 outer fold.
 
-### 2.5 Baselines that matter
+### 2.5 Whether the six modes are six things
+
+Grouping the four image-free modes, or treating any of the six as a distinct object, is an
+assumption worth checking before the rest of the paper leans on it. We profile all six on
+eighteen behavioural and efficiency metrics per cell, and ask of each metric whether the same
+mode is the extreme in at least five of the six cells.
+
+**The four image-free modes reach that bar on nothing.** Not on steps per episode, click or
+type fraction, search-loop rate, parse-invalid rate, action-failure rate, no-op rate,
+consecutive-repeat rate, or how episodes terminate. Their highest cross-cell consistency on any
+of the eighteen is four of six, and for two of them it is two of six. Whatever separates a mark
+legend from an accessibility tree, or a DOM-style prompt from a SoM-style one, it does not
+produce a behaviour that reproduces across cells. That is the licence for reporting them as
+four formalisations of one channel, and Appendix A.1 keeps them separate wherever a number
+would change.
+
+The two image-bearing modes do reach it, and here we have to be careful about what that buys.
+Vision is the extreme in all six cells on seven metrics, and **every one of the seven follows
+from how it is built**: it emits coordinates and carries no element identifiers, so a lower
+locator-fallback rate and a higher action-failure rate are consequences rather than
+discoveries, and a page it cannot enumerate is a page it must scroll. We report the magnitudes,
+some of which are large (scroll fraction runs 1.25 to 6.77 times the next mode), and we do not
+read any of them as a behavioural finding. SoM reaches five of six on five metrics, of which
+three are likewise cost or token quantities that follow from sending both a screenshot
+and a legend. **Two are
+not**: it takes the fewest steps per episode and it most often ends with an explicit finish
+action. Those two are the only cross-cell behavioural regularities in the grid that are not
+downstream of construction, and both say the same thing, which is that the fused mode commits
+sooner.
+
+### 2.6 Baselines that matter
 
 Two baselines appear throughout and the choice between them determines whether the router looks
 useful. **Best single mode** is the highest-success mode in the cell; comparing against it asks
