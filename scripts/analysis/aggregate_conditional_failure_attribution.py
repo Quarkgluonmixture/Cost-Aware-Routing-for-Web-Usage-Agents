@@ -262,7 +262,10 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,
                         format="%(levelname)s %(message)s")
     d = build(a.scan_dir, a.wa_scan_dir)
-    OUT_JSON.write_text(json.dumps(d, indent=2))
+    # sort_keys because the per-rule counts are Counters filled by iterating sets, so their key
+    # order varies between processes. Same numbers, different order — which is enough to make a
+    # replay diff unreadable and therefore to make the §F5 replay check useless.
+    OUT_JSON.write_text(json.dumps(d, indent=2, sort_keys=True))
     OUT_MD.write_text(render(d))
     print(f"✓ {OUT_MD.relative_to(REPO)}")
     return 0

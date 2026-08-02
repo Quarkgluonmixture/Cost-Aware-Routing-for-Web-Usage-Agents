@@ -39,10 +39,12 @@ Arm-count matched: on top of that stratum's strongest text mode, the best gain f
 |---|---|---|---|
 | `cls_B0` | 13.85 vs 9.23 (+4.62) | 17.61 vs 5.66 (+11.95) | **no** |
 | `cls_B1` | 4.62 vs 4.62 (+0.00) | 11.95 vs 0.63 (+11.32) | **no** |
-| `cls_B2` | 4.62 vs 0.00 (+4.62) | 1.89 vs 0.63 (+1.26) | yes |
-| `red_B0` | 7.59 vs 6.33 (+1.27) | 4.84 vs 2.42 (+2.42) | **no** |
-| `red_B1` | 3.80 vs 5.06 (-1.27) | 1.61 vs 0.81 (+0.81) | **no** |
-| `red_B2` | 1.27 vs 1.27 (+0.00) | 3.23 vs 0.81 (+2.42) | **no** |
+| `cls_B2` | 4.62 vs 0.00 (+4.62) ‡ +4.62…+4.62 | 1.89 vs 0.63 (+1.26) ‡ +1.26…+1.26 | yes |
+| `red_B0` | 7.59 vs 6.33 (+1.27) | 4.84 vs 2.42 (+2.42) ‡ +2.42…+2.42 | **no** |
+| `red_B1` | 3.80 vs 5.06 (-1.27) | 1.61 vs 0.81 (+0.81) ‡ -0.81…+0.81 | **no** |
+| `red_B2` | 1.27 vs 1.27 (+0.00) | 3.23 vs 0.81 (+2.42) ‡ +1.61…+2.42 | **no** |
+
+‡ marks a stratum where **the strongest text mode is not unique** — 5 of 12 strata — and gives the range of the same difference under every equally-strongest base. The winner there is decided by as little as one task (`cls_B2` with-image: two modes tied at one solve), so the printed pair is one draw from that range and only the range is a property of the data. The verdict column is recomputed over all combinations: **6 of 6 cells return the same answer under every tie-break**, which is what makes the count below readable.
 
 **The intuition holds in 1 of 6 cells.** In the two largest it is reversed: the image-bearing arm is worth more on the tasks that do *not* ship a reference image.
 

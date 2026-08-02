@@ -77,6 +77,17 @@ def load() -> dict[str, list[dict]]:
     return cells
 
 
+def strongest_text_modes(rows: list[dict]) -> list[str]:
+    """Every text mode tied for most tasks solved, in a fixed order.
+
+    Returns a list, not a mode, because in the low-success cells the winner is decided by a
+    single task: cls_B2/with-image has psom and pprompt tied at one solve each.
+    """
+    cnt = {m: sum(m in r["solve"] for r in rows) for m in TEXT}
+    top = max(cnt.values())
+    return sorted(m for m, v in cnt.items() if v == top)
+
+
 def marginal(rows: list[dict], cands: set[str], base_mode: str) -> float:
     """Best gain from adding ONE arm out of `cands` on top of `base_mode`. Arm-count matched."""
     n = len(rows)
@@ -108,16 +119,32 @@ def build() -> dict:
             entry["sr"][label] = {m: 100 * sum(m in r["solve"] for r in grp) / len(grp)
                                   for m in MODES} if grp else {}
             if grp:
-                strongest_text = max(TEXT, key=lambda m: sum(m in r["solve"] for r in grp))
+                # NOT `max(TEXT, key=...)`: TEXT is a set, so on a tie max() returns whichever
+                # element the set happened to iterate first, and str hashing is randomised per
+                # process. Five of twelve (cell, stratum) groups are tied — red_B1/without three
+                # ways — so two runs of this script printed different numbers and opposite signs
+                # for the same data (§F5 replay, 2026-08-02). Sort, and carry the tie forward.
+                tied = strongest_text_modes(grp)
+                base = tied[0]
                 entry.setdefault("marginal", {})[label] = {
-                    "base_text_mode": strongest_text,
-                    "add_image_arm": marginal(grp, IMAGE, strongest_text),
-                    "add_text_arm": marginal(grp, TEXT, strongest_text),
+                    "base_text_mode": base,
+                    "base_text_mode_tied": tied,
+                    "add_image_arm": marginal(grp, IMAGE, base),
+                    "add_text_arm": marginal(grp, TEXT, base),
+                    # the same two quantities under every other equally-strongest base
+                    "delta_over_tied_bases": sorted(
+                        marginal(grp, IMAGE, b) - marginal(grp, TEXT, b) for b in tied),
                 }
         m = entry["marginal"]
         entry["intuition_holds"] = (
             m["with_ref_image"]["add_image_arm"] - m["with_ref_image"]["add_text_arm"]
             > m["without_ref_image"]["add_image_arm"] - m["without_ref_image"]["add_text_arm"])
+        # A verdict read off one arbitrary tie-break is not a verdict. True only if the cell
+        # returns the same answer under every combination of equally-strongest base modes.
+        entry["intuition_holds_stable"] = len({
+            di > dn
+            for di in m["with_ref_image"]["delta_over_tied_bases"]
+            for dn in m["without_ref_image"]["delta_over_tied_bases"]}) == 1
         out["has_reference_image"][cid] = entry
 
         vd: dict[str, dict] = {}
@@ -166,16 +193,36 @@ def render(d: dict) -> str:
           "| cell | with a reference image | without one | intuition holds? |",
           "|---|---|---|---|"]
     holds = 0
+    n_tied = 0
     for cid, e in d["has_reference_image"].items():
         a, b = e["marginal"]["with_ref_image"], e["marginal"]["without_ref_image"]
-        da = a["add_image_arm"] - a["add_text_arm"]
-        db = b["add_image_arm"] - b["add_text_arm"]
         holds += e["intuition_holds"]
-        L.append(f"| `{cid}` | {a['add_image_arm']:.2f} vs {a['add_text_arm']:.2f} "
-                 f"({da:+.2f}) | {b['add_image_arm']:.2f} vs {b['add_text_arm']:.2f} "
-                 f"({db:+.2f}) | {'yes' if e['intuition_holds'] else '**no**'} |")
+        cs = []
+        for side in (a, b):
+            delta = side["add_image_arm"] - side["add_text_arm"]
+            cell = (f"{side['add_image_arm']:.2f} vs {side['add_text_arm']:.2f} ({delta:+.2f})")
+            span = side["delta_over_tied_bases"]
+            if len(side["base_text_mode_tied"]) > 1:
+                n_tied += 1
+                cell += f" ‡ {span[0]:+.2f}…{span[-1]:+.2f}"
+            cs.append(cell)
+        verdict = "yes" if e["intuition_holds"] else "**no**"
+        if not e["intuition_holds_stable"]:
+            verdict += " ⚠️ tie-break-dependent"
+        L.append(f"| `{cid}` | {cs[0]} | {cs[1]} | {verdict} |")
     n_cells = len(d["has_reference_image"])
-    L += ["", f"**The intuition holds in {holds} of {n_cells} cells.** In the two largest it is "
+    n_unstable = sum(1 for e in d["has_reference_image"].values()
+                     if not e["intuition_holds_stable"])
+    L += ["",
+          f"‡ marks a stratum where **the strongest text mode is not unique** — {n_tied} of "
+          f"{2 * n_cells} strata — and gives the range of the same difference under every "
+          "equally-strongest base. The winner there is decided by as little as one task "
+          "(`cls_B2` with-image: two modes tied at one solve), so the printed pair is one draw "
+          "from that range and only the range is a property of the data. The verdict column is "
+          f"recomputed over all combinations: **{n_cells - n_unstable} of {n_cells} cells return "
+          "the same answer under every tie-break**, which is what makes the count below readable.",
+          "",
+          f"**The intuition holds in {holds} of {n_cells} cells.** In the two largest it is "
           "reversed: the image-bearing arm is worth more on the tasks that do *not* ship a "
           "reference image.", "",
           "The mechanism is in the harness, not the data. `reference_images` is passed into "
