@@ -20,7 +20,7 @@ phantom_prompt, phantom_som}, IMAGE = {som, vision}. Note this is 4 arms against
 `text_only` and `image_only` counts are NOT comparable to each other as effect sizes; only the
 within-channel enrichments are read.
 
-Scans come from `diag_rescan_all.py` (default `/tmp/diag_v8`, ruleset asserted identical across
+Scans come from `diag_rescan_all.py` (default `results/diag_scans/v8_vwa`, ruleset asserted identical across
 all 36 so cross-mode aggregation is licensed; see the v8 freeze note in the diag digests).
 
 WebArena is included as a seventh cell (`--wa-scan-dir`, default `results/diag_scans/v8_wa`). Its step
