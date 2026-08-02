@@ -112,6 +112,29 @@ audience: self + advisor
   interval. Post-hoc.
   → `docs/analysis/cross_sites/conditional_failure_attribution.{md,json}`
 
+- `aggregate_label_instability.py` — **where the instability sits** (added 2026-08-02).
+  `noise_floor_inventory` says how much a rerun moves an aggregate; this says *which tasks* move.
+  On `cls_B0`, 49 of 224 tasks flip between the two replicated arms, and they are not spread
+  evenly: **the 88 tasks on which the arms disagree, 39.3% of the cell, carry 91.8% of all
+  observed flips at a 51.1% flip rate against 2.9% on the complement, an enrichment of 17.4x.**
+  Every stratum a router would train on lands at 16.5-17.6x. The framing came from a zero-preset
+  external review; we had computed the 51% and never its complement.
+  ⚠️ One cell, two of six arms, once each ⇒ every figure is a LOWER bound, which is the
+  favourable direction: more replication can only add flips to the disagreement set.
+  → `docs/analysis/cross_sites/label_instability.{md,json}`
+- `aggregate_routing_feature_diagnostics.py` — **the two obvious features, and what they
+  actually predict** (added 2026-08-02). (a) `has_reference_image` is in the router's feature set
+  and is what a human would route on; **the sign is backwards.** Arm-count matched, the image-
+  bearing arm is worth more on tasks WITHOUT a reference image, and the intuition holds in 1 of 6
+  cells. Mechanism is in the harness: `main.py` passes `reference_images` into
+  `BackendStepContext` with **no per-mode filter**, so all six modes get the task's picture and
+  what the image-free modes lack is the PAGE screenshot. (b) `visual_difficulty`, the VWA-native
+  annotation of how visually the page must be read, is **read by `extract_50_features.py:334` and
+  then not placed in the feature table**; its gap rises monotonically (+1.41 / +2.15 / +2.42pp)
+  but is carried by classifieds and reverses on reddit. Also fixes the corpus figure: **33.7%**
+  of scored VWA tasks ship a reference image, not the 40% the drafts carried.
+  → `docs/analysis/cross_sites/routing_feature_diagnostics.{md,json}`
+
 **Cross-site / mechanism**: `docs/analysis/cross_sites/` (`axis1_microbehavior` / `axis_effect_size` / `mechanism_per_task`)
 
 **Figures** (`results/phantom_paper/figures/`, 13 active):

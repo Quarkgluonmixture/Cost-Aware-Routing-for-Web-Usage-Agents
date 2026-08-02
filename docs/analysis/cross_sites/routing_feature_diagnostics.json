@@ -1,0 +1,315 @@
+{
+  "schema": "2026-08-02-routing-feature-diagnostics-v1",
+  "post_hoc_exploratory": true,
+  "visual_difficulty_in_feature_table": false,
+  "numeric_features": [
+    "dom_complexity",
+    "text_length",
+    "tokens_input_text",
+    "intent_token_count",
+    "reasoning_difficulty"
+  ],
+  "has_reference_image": {
+    "cls_B0": {
+      "n_img": 65,
+      "n_txt": 159,
+      "sr": {
+        "with_ref_image": {
+          "dom": 33.84615384615385,
+          "som": 40.0,
+          "vision": 30.76923076923077,
+          "ptext": 35.38461538461539,
+          "pprompt": 36.92307692307692,
+          "psom": 32.30769230769231
+        },
+        "without_ref_image": {
+          "dom": 10.69182389937107,
+          "som": 22.0125786163522,
+          "vision": 22.641509433962263,
+          "ptext": 7.547169811320755,
+          "pprompt": 12.578616352201259,
+          "psom": 8.80503144654088
+        }
+      },
+      "marginal": {
+        "with_ref_image": {
+          "base_text_mode": "pprompt",
+          "add_image_arm": 13.846153846153847,
+          "add_text_arm": 9.23076923076923
+        },
+        "without_ref_image": {
+          "base_text_mode": "pprompt",
+          "add_image_arm": 17.61006289308176,
+          "add_text_arm": 5.660377358490566
+        }
+      },
+      "intuition_holds": false
+    },
+    "cls_B1": {
+      "n_img": 65,
+      "n_txt": 159,
+      "sr": {
+        "with_ref_image": {
+          "dom": 13.846153846153847,
+          "som": 15.384615384615385,
+          "vision": 10.76923076923077,
+          "ptext": 16.923076923076923,
+          "pprompt": 10.76923076923077,
+          "psom": 15.384615384615385
+        },
+        "without_ref_image": {
+          "dom": 3.1446540880503147,
+          "som": 13.836477987421384,
+          "vision": 13.20754716981132,
+          "ptext": 3.7735849056603774,
+          "pprompt": 5.031446540880503,
+          "psom": 3.1446540880503147
+        }
+      },
+      "marginal": {
+        "with_ref_image": {
+          "base_text_mode": "ptext",
+          "add_image_arm": 4.615384615384615,
+          "add_text_arm": 4.615384615384615
+        },
+        "without_ref_image": {
+          "base_text_mode": "pprompt",
+          "add_image_arm": 11.949685534591195,
+          "add_text_arm": 0.6289308176100629
+        }
+      },
+      "intuition_holds": false
+    },
+    "cls_B2": {
+      "n_img": 65,
+      "n_txt": 159,
+      "sr": {
+        "with_ref_image": {
+          "dom": 0.0,
+          "som": 4.615384615384615,
+          "vision": 3.076923076923077,
+          "ptext": 0.0,
+          "pprompt": 1.5384615384615385,
+          "psom": 1.5384615384615385
+        },
+        "without_ref_image": {
+          "dom": 1.8867924528301887,
+          "som": 1.2578616352201257,
+          "vision": 1.8867924528301887,
+          "ptext": 0.6289308176100629,
+          "pprompt": 1.8867924528301887,
+          "psom": 0.6289308176100629
+        }
+      },
+      "marginal": {
+        "with_ref_image": {
+          "base_text_mode": "pprompt",
+          "add_image_arm": 4.615384615384615,
+          "add_text_arm": 0.0
+        },
+        "without_ref_image": {
+          "base_text_mode": "dom",
+          "add_image_arm": 1.8867924528301887,
+          "add_text_arm": 0.6289308176100629
+        }
+      },
+      "intuition_holds": true
+    },
+    "red_B0": {
+      "n_img": 79,
+      "n_txt": 124,
+      "sr": {
+        "with_ref_image": {
+          "dom": 25.31645569620253,
+          "som": 26.582278481012658,
+          "vision": 11.39240506329114,
+          "ptext": 22.78481012658228,
+          "pprompt": 21.518987341772153,
+          "psom": 20.253164556962027
+        },
+        "without_ref_image": {
+          "dom": 7.258064516129032,
+          "som": 7.258064516129032,
+          "vision": 4.838709677419355,
+          "ptext": 7.258064516129032,
+          "pprompt": 6.451612903225806,
+          "psom": 4.838709677419355
+        }
+      },
+      "marginal": {
+        "with_ref_image": {
+          "base_text_mode": "dom",
+          "add_image_arm": 7.594936708860759,
+          "add_text_arm": 6.329113924050633
+        },
+        "without_ref_image": {
+          "base_text_mode": "dom",
+          "add_image_arm": 4.838709677419355,
+          "add_text_arm": 2.4193548387096775
+        }
+      },
+      "intuition_holds": false
+    },
+    "red_B1": {
+      "n_img": 79,
+      "n_txt": 124,
+      "sr": {
+        "with_ref_image": {
+          "dom": 11.39240506329114,
+          "som": 13.924050632911392,
+          "vision": 5.063291139240507,
+          "ptext": 12.658227848101266,
+          "pprompt": 10.126582278481013,
+          "psom": 11.39240506329114
+        },
+        "without_ref_image": {
+          "dom": 2.4193548387096775,
+          "som": 3.225806451612903,
+          "vision": 0.8064516129032258,
+          "ptext": 1.6129032258064515,
+          "pprompt": 2.4193548387096775,
+          "psom": 2.4193548387096775
+        }
+      },
+      "marginal": {
+        "with_ref_image": {
+          "base_text_mode": "ptext",
+          "add_image_arm": 3.7974683544303796,
+          "add_text_arm": 5.063291139240507
+        },
+        "without_ref_image": {
+          "base_text_mode": "dom",
+          "add_image_arm": 1.6129032258064515,
+          "add_text_arm": 0.8064516129032258
+        }
+      },
+      "intuition_holds": false
+    },
+    "red_B2": {
+      "n_img": 79,
+      "n_txt": 124,
+      "sr": {
+        "with_ref_image": {
+          "dom": 8.860759493670885,
+          "som": 2.5316455696202533,
+          "vision": 0.0,
+          "ptext": 3.7974683544303796,
+          "pprompt": 0.0,
+          "psom": 1.2658227848101267
+        },
+        "without_ref_image": {
+          "dom": 0.8064516129032258,
+          "som": 0.0,
+          "vision": 3.225806451612903,
+          "ptext": 0.8064516129032258,
+          "pprompt": 0.0,
+          "psom": 0.0
+        }
+      },
+      "marginal": {
+        "with_ref_image": {
+          "base_text_mode": "dom",
+          "add_image_arm": 1.2658227848101267,
+          "add_text_arm": 1.2658227848101267
+        },
+        "without_ref_image": {
+          "base_text_mode": "dom",
+          "add_image_arm": 3.225806451612903,
+          "add_text_arm": 0.8064516129032258
+        }
+      },
+      "intuition_holds": false
+    }
+  },
+  "visual_difficulty": {
+    "cls_B0": {
+      "easy": {
+        "n": 66,
+        "gap_best_image_minus_best_text": 1.5151515151515156
+      },
+      "medium": {
+        "n": 77,
+        "gap_best_image_minus_best_text": 6.493506493506494
+      },
+      "hard": {
+        "n": 81,
+        "gap_best_image_minus_best_text": 14.814814814814817
+      }
+    },
+    "cls_B1": {
+      "easy": {
+        "n": 66,
+        "gap_best_image_minus_best_text": 7.575757575757574
+      },
+      "medium": {
+        "n": 77,
+        "gap_best_image_minus_best_text": 3.896103896103895
+      },
+      "hard": {
+        "n": 81,
+        "gap_best_image_minus_best_text": 8.641975308641975
+      }
+    },
+    "cls_B2": {
+      "easy": {
+        "n": 66,
+        "gap_best_image_minus_best_text": 1.5151515151515151
+      },
+      "medium": {
+        "n": 77,
+        "gap_best_image_minus_best_text": 3.896103896103896
+      },
+      "hard": {
+        "n": 81,
+        "gap_best_image_minus_best_text": -1.2345679012345678
+      }
+    },
+    "red_B0": {
+      "easy": {
+        "n": 93,
+        "gap_best_image_minus_best_text": -3.225806451612904
+      },
+      "medium": {
+        "n": 71,
+        "gap_best_image_minus_best_text": 2.8169014084507022
+      },
+      "hard": {
+        "n": 39,
+        "gap_best_image_minus_best_text": -5.128205128205129
+      }
+    },
+    "red_B1": {
+      "easy": {
+        "n": 93,
+        "gap_best_image_minus_best_text": 3.225806451612902
+      },
+      "medium": {
+        "n": 71,
+        "gap_best_image_minus_best_text": -1.4084507042253511
+      },
+      "hard": {
+        "n": 39,
+        "gap_best_image_minus_best_text": -2.5641025641025643
+      }
+    },
+    "red_B2": {
+      "easy": {
+        "n": 93,
+        "gap_best_image_minus_best_text": -2.150537634408602
+      },
+      "medium": {
+        "n": 71,
+        "gap_best_image_minus_best_text": -2.816901408450704
+      },
+      "hard": {
+        "n": 39,
+        "gap_best_image_minus_best_text": 0.0
+      }
+    }
+  },
+  "corpus": {
+    "n_scored": 1281,
+    "n_with_reference_image": 432,
+    "pct_with_reference_image": 33.723653395784545
+  }
+}

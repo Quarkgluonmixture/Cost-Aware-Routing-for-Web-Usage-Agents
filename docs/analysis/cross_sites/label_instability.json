@@ -1,0 +1,61 @@
+{
+  "schema": "2026-08-02-label-instability-v1",
+  "post_hoc_exploratory": true,
+  "cell": "cls_B0",
+  "n": 224,
+  "n_flipped": 49,
+  "replicated_arms": [
+    "B0.cls.dom",
+    "B0.cls.vision"
+  ],
+  "strata": {
+    "which-mode label rows (any mode solved)": {
+      "n_tasks": 97,
+      "share_of_cell": 43.30357142857143,
+      "n_flipped": 47,
+      "flip_rate_pct": 48.45360824742268,
+      "share_of_all_flips": 95.91836734693878,
+      "enrichment_vs_complement": 16.474226804123713
+    },
+    "\u2026of those, the arms DISAGREE (the choice matters)": {
+      "n_tasks": 88,
+      "share_of_cell": 39.285714285714285,
+      "n_flipped": 45,
+      "flip_rate_pct": 51.13636363636363,
+      "share_of_all_flips": 91.83673469387755,
+      "enrichment_vs_complement": 17.386363636363637
+    },
+    "three-way channel decision is contested": {
+      "n_tasks": 74,
+      "share_of_cell": 33.035714285714285,
+      "n_flipped": 36,
+      "flip_rate_pct": 48.64864864864865,
+      "share_of_all_flips": 73.46938775510205,
+      "enrichment_vs_complement": 16.54054054054054
+    },
+    "exactly one mode solved it (label unambiguous)": {
+      "n_tasks": 29,
+      "share_of_cell": 12.946428571428571,
+      "n_flipped": 15,
+      "flip_rate_pct": 51.724137931034484,
+      "share_of_all_flips": 30.612244897959183,
+      "enrichment_vs_complement": 17.586206896551726
+    },
+    "COMPLEMENT: no mode solved, or all did": {
+      "n_tasks": 136,
+      "share_of_cell": 60.714285714285715,
+      "n_flipped": 4,
+      "flip_rate_pct": 2.941176470588235,
+      "share_of_all_flips": 8.16326530612245,
+      "enrichment_vs_complement": 1.0
+    },
+    "whole cell": {
+      "n_tasks": 224,
+      "share_of_cell": 100.0,
+      "n_flipped": 49,
+      "flip_rate_pct": 21.875,
+      "share_of_all_flips": 100.0,
+      "enrichment_vs_complement": 7.4375
+    }
+  }
+}
