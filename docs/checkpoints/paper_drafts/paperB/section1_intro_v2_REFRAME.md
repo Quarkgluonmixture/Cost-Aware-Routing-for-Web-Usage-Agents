@@ -97,16 +97,26 @@ difference is indistinguishable from zero.
 
 **The default is the expensive answer, and it does not earn the difference.** The fused mode is
 dearest in five of six cells, because the bill is driven by tokens per step and it carries both
-payloads. Its accuracy advantage over the better single-channel alternative runs from +2.23 points down to
--2.96 across the six VWA cells and is -2.88 on WebArena, while the premium it charges runs from
-+2.5% to +17.7%. **The best of those advantages does not exceed the upper end of the measured
-rerun band, and no cell clears it** (§4.2). Nor does the fusion behave like an added capability. Its
-selling point is a specific mechanism, a correspondence between a mark in the image and an
-identifier in the text that neither single channel has, and a mechanism of that kind predicts
-coverage the others cannot reach. At matched arm count the tasks fusion alone solves outnumber
-those the unannotated screenshot alone solves in one cell, tie in three and lose in three. The
-counts never exceed ten, so this is a shape mismatch rather than a refutation, but the shape a
-distinct capability would produce is not the shape we observe. We state this as a bound rather
+payloads, and it charges between +2.5% and +17.7% for them. Against comparators fixed in
+advance, one arm each and paired over tasks, the fixed-effect pool across seven cells puts its
+advantage at **+1.43pp [+0.12, +2.75] over the unannotated screenshot and +0.89pp [-0.40, +2.18]
+over the accessibility tree**. The second interval does not exclude zero and neither clears the
+measured rerun band of 0.89 to 2.23 points, so on this evidence **the premium buys less than a
+repetition of what the deployment already has** (§4.2).
+
+The per-cell structure says something the pool cannot. In each cell one single channel is the
+stronger, the visual one on all three classifieds cells and the text one on all four reddit
+splits, and **against that channel fusion's interval includes zero in six of seven cells and is
+negative in the seventh**. It beats the channel that does not suit the workload, by 8 to 10
+points over the accessibility tree on classifieds and 5 to 7 over the screenshot on reddit. Read
+together with the reversal below, this is what fusion appears to be worth: not a capability
+neither channel has, but insurance against picking the wrong one. Nor does it behave like an
+added capability on coverage either. Its selling point is a correspondence between a mark in the
+image and an identifier in the text that neither single channel has, and a mechanism of that
+kind predicts tasks the others cannot reach; at matched arm count the tasks fusion alone solves
+outnumber those the screenshot alone solves in one cell, tie in three and lose in three, on
+counts that never exceed ten. That is a shape mismatch rather than a refutation, but it is not
+the shape a distinct capability would produce. We state this as a bound rather
 than a null, and §4.2 gives the reasons, the sharpest being that the rerun floor is so far
 measured on the other two channels. One caveat we do *not* enter is the identity of the two
 cells where fusion is negative. One of them scores 0.99% and carries no information either way.

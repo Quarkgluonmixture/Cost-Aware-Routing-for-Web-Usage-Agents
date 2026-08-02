@@ -72,6 +72,24 @@ audience: self + advisor
   bound** on deployable performance, which only strengthens the negative reading.
   → `docs/analysis/cross_sites/confidence_cascade.{md,json}`
 
+- `aggregate_fusion_premium.py` — **fusion-premium claim, count to test** (added 2026-08-02).
+  §4.2 first rested on a *count* ("no cell clears the rerun floor") over an effect defined as
+  `SR(som) - max(SR(best text), SR(vision))`. A maximum over two noisy quantities biases the
+  comparator up and the fusion advantage down, i.e. **in the direction that favoured our own
+  claim**. This replaces it with paired bootstrap intervals against **a priori fixed** single-arm
+  comparators (`som - vision`, `som - dom`), 10,000 resamples on a seeded LCG so the artifact is
+  stable, then the FE inverse-variance pool the pre-registration uses for its primary gate.
+  Post-hoc and exploratory; not the pre-registered H1 and not gated.
+  **Pooled over 7 cells: +1.43pp [+0.12, +2.75] over Vision, +0.89pp [-0.40, +2.18] over DOM.**
+  The second does not exclude zero; neither clears the 0.89–2.23pp rerun band.
+  §3 adds the structural reading: in each cell one single channel is stronger (visual on all
+  three classifieds cells, text on all four reddit splits) and **against that channel fusion's
+  interval includes zero in 6/7 cells and is negative in the 7th**, while beating the
+  workload-mismatched channel by 8–10pp (classifieds, vs DOM) and 5–7pp (reddit, vs Vision).
+  Fusion reads as insurance against picking the wrong channel, not as a capability.
+  ⚠️ Still missing: a rerun floor for the fused mode itself. Queued on A100.
+  → `docs/analysis/cross_sites/fusion_premium.{md,json}`
+
 **Cross-site / mechanism**: `docs/analysis/cross_sites/` (`axis1_microbehavior` / `axis_effect_size` / `mechanism_per_task`)
 
 **Figures** (`results/phantom_paper/figures/`, 13 active):
