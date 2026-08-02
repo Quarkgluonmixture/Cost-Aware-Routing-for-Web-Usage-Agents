@@ -9951,6 +9951,54 @@ B-841 (VWA delete-after 语义); B-1755 (顶层 loop 不加 delete 的先例); B
 
 ## B-1920 落地记录 (2026-08-02) — B-06 blast radius 重测: 被剔除的那 18/20 才是大头
 
+### 实测 (2026-08-02, 从 `select_option_meta` 全量算, 非 probe)
+
+不用 20 例 probe 外推了 —— runner 每次 select_option dispatch 都写 `select_option_meta`
+(`dispatch_path` / `target_type` / `success` / `error`)。该字段此前**从未被任何分析读过**
+(§408.4 未消费字段 sweep 列出的其中一个)。全 36 个 paper-grade condition, **6,468 次
+dispatch**:
+
+| target_type | ok | fail | n | fail% |
+|---|---|---|---|---|
+| `select` (native) | 3353 | 30 | 3383 | **0.9%** |
+| `css` (custom dropdown) | 1027 | 2029 | 3056 | **66.4%** |
+
+**方向与 B-06 的处理完全相反。** B-06 把 native `<select>` 算进 blast radius、把 custom
+dropdown 以「走 click 路径不走 select_option dispatch」剔除。实测: native 几乎不失败,
+而被剔除的那一桶承载了 **2029/2059 = 98.5%** 的全部失败, 且它走的就是 select_option 的
+`element_id` 分派 (error = `no_match_in_css_menus`), 不是 click 路径。
+
+| 量 | B-06 报的 | 实测 |
+|---|---|---|
+| blast radius | 15 ep / 0.3% | **383 episodes** |
+| 逐 site 失败率 | — | reddit **74.9%** (806/1076) · classifieds 23.8% (1282/5392) |
+| 受影响的 distinct task | — | reddit **54** · classifieds 137 |
+
+`dispatch_path` 另给一条: `coordinate` 路径失败率 **82.3%** (928/1127) 对 `element_id` 的
+21.3% —— 坐标寻址在下拉上几乎不工作。
+
+### 对论文解读的影响: **主要结论不动, 但要加一条 limitation**
+
+reddit 的 54 个受影响 task = 计分 cell (n=203) 的 **26.6%**。但它**不是**跨 mode 差的来源:
+
+1. **SR gap 的符号在 mode 与 cell 之间都不一致** —— red_B0 上 som **+2.57pp** 而 pprompt
+   **−6.69pp**; red_B1 上 dom **+2.04** 而 vision −0.83; red_B2 上 psom **+1.85** 而
+   dom −2.85。系统性压制应当同向, 不一致说明这批 task 主要是**本来就更难**
+   (需要下拉交互), SR 低是难度而非 bug 的直接读数。
+2. **触发率池化后共模** —— 六个 mode 的 dispatch 份额 13.6%–20.8%, max/min = **1.53×**。
+   同一个 wrapper、同一条 CSS fallback, 对所有臂是同一个机制。
+
+⚠️ **但逐 cell 不共模**: B1_reddit 上 SoM 仅 11 次 dispatch 对 DOM 的 48 (4.4×),
+B2_reddit 上 Vision 148 对 DOM 30 (4.9×)。⇒ **池化结论安全, 单个 cell 在这 54 个 task 上的
+mode 排序不稳**, limitations 需写明。
+
+### 方法论
+
+B-06 用 20 例 probe 外推, 本次用 6,468 次 dispatch 的既有 telemetry 直接数。差 25 倍的
+blast radius 估计, 差别不在统计而在**「这个桶不算」当年是一句无证据的断言** —— 而它旁边
+就写着 "cls 117 / red 27" 的站点分布。
+
+
 **不是新 bug。** 机制 2026-04 就裁定过 (§51/B-57 原生 `<select>` · §60
 `_inject_css_dropdown_options` · B-59 选中态反馈 · B-64 vision CSS 下拉)。本条只改一件事:
 **B-06 的 blast radius 估计**。
