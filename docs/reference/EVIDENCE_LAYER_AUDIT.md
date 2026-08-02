@@ -135,6 +135,39 @@ audience: self + advisor
   of scored VWA tasks ship a reference image, not the 40% the drafts carried.
   → `docs/analysis/cross_sites/routing_feature_diagnostics.{md,json}`
 
+- `aggregate_multimetric_pareto.py` — **third Pareto axis** (added 2026-08-02, closes the long-open
+  `_status/audit/audit_s8_multimetric_pareto`). Single-sources `per_mode_four_dimension_profile.md`
+  so the two can never disagree. Latency is an independent axis, not a restatement of cost: spans
+  1.12–1.40x against cost's 1.12–1.63x, and **the cheapest mode is not the fastest in 3/6 cells —
+  and those three are exactly the three classifieds cells.** Adding it widens the frontier in 3/6,
+  once from one mode to five. Cuts both ways and the product says so: dominance is harder on three
+  axes so §5.3's negative holds a fortiori, but non-dominance is cheaper to satisfy.
+  Carbon was tested as a fifth axis and **rejected on instrument grounds, not principle**:
+  `use_pynvml: true` is configured but every step records `source: psutil_profile` at ~66W mean,
+  CV 0.03, on a device rated several times that, and it correlates with wall-clock latency at
+  r = 0.9999 in all four cells that have it. Tokens change nothing beyond latency, as expected.
+  → `docs/analysis/cross_sites/multimetric_pareto.{md,json}`
+- `per_mode_four_dimension_profile.py` **v2** (2026-08-02, was v1 2026-07-28). **18 → 24 metrics**:
+  `visibility_gap_rate`, `cap_hit_rate`, `url_revisit_rate`, `noop_inert_rate`, and action-failure
+  conditioned on the action being a click or a type. Two were added specifically to test the
+  profile's own ◆ markings. **The four image-free modes still reach ≥5/6 on nothing after six
+  metrics were added to look for a difference**, which is the licence for treating them as one
+  channel. Also adds an `UNADJUDICATED` registry that renders into the output, so an unflagged
+  unanimous row can no longer read as an endorsed finding.
+  ⚠️ **All three ◆ "architecturally downstream" markings were tested and none survived as
+  written**: `scroll_frac`'s no-op-re-orientation mechanism is refuted (scroll-after-no-op sits at
+  or below the no-op base rate in 6/6 combinations), `no_change_rate` decomposes exactly because
+  `action_success = False` implies `page_changed = False` in 100% of steps and the residual is
+  SoM-led not Vision-led, and `action_fail_rate`'s coordinate-addressing story does not produce
+  the click-concentration it predicts. The rewritten strings carry the tests.
+  → `docs/analysis/cross_sites/per_mode_four_dimension_profile.{md,json}`
+- `EVIDENCE_LAYER_SUMMARY.md` — **the coverage map** (added 2026-08-02). Written deliberately
+  before any frame was chosen, so the frame is chosen against coverage rather than coverage
+  assembled to fit a frame. Seven-dimension matrix, the cheap gaps, the expensive gaps that are
+  therefore limitations, and **nine frame-independent claims** with their carrying products. §2 is
+  kept struck through rather than deleted because the retracted error is instructive.
+  → `docs/analysis/cross_sites/EVIDENCE_LAYER_SUMMARY.md`
+
 **Cross-site / mechanism**: `docs/analysis/cross_sites/` (`axis1_microbehavior` / `axis_effect_size` / `mechanism_per_task`)
 
 **Figures** (`results/phantom_paper/figures/`, 13 active):
