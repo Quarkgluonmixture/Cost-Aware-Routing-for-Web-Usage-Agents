@@ -59,6 +59,6 @@ backends:
     # Official MiMo-VL vision evals use 32768; 16384 keeps load/latency sane.
     # Truncation rate is auditable with no schema change: step JSONL already
     # records exact output_tokens, so truncated ⟺ output_tokens >= this cap.
-    max_new_tokens: 16384
+    max_new_tokens: 4096
     temperature: 0.0   # greedy (do_sample=False in agent); matches B0/B1/B2 + Stage-0
     mock_mode: false

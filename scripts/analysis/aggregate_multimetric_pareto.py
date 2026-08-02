@@ -5,6 +5,14 @@
 planned. §5.3 reports non-dominance on (success, cost) only, and a cost-aware paper that
 reports one cost axis invites the obvious question.
 
+Carbon was considered as a fifth axis and rejected on measurement, not on principle. The four
+locally-served cells do log `co2e_kg` on every step, but the recorded `source` is
+`psutil_profile` rather than NVML, so the figure is a host-level estimate: it averages 66W at a
+coefficient of variation of 0.03 on a device rated several times that, and it correlates with
+wall-clock latency at r = 0.9999 in all four cells. A near-constant power estimate times elapsed
+time is latency in other units. The two API-served cells have no local draw at all
+(`source: disabled`), so a carbon axis would also exist on only four of six cells.
+
 Latency is a genuinely independent axis here, not a restatement of cost. Across modes within a
 cell it spans 1.12x to 1.40x against cost's 1.12x to 1.63x, and the two disagree in direction:
 on classifieds B0 the cheapest mode is also the slowest. Tokens are NOT independent, being what

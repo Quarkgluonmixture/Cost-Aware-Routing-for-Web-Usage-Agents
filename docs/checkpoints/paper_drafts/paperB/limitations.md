@@ -31,6 +31,16 @@ episodes, so an escalated task is charged the full cost of both runs and never b
 stopping the cheap run early, which understates a real cascade's cost advantage. It also uses
 one fixed cheap tier and one fixed rich tier rather than choosing them per cell.
 
+**We report no carbon axis, and the reason is an instrument failure rather than a choice.**
+Energy logging is configured for the serving accelerator and requests NVML, but every step
+record on the locally-served backbones carries `source: psutil_profile`, so the figure recorded
+is a host-level estimate and not the accelerator's draw. It averages 66W with a coefficient of
+variation of 0.03 against a device rated several times that, and it is collinear with wall-clock
+latency at $r = 0.9999$ in all four cells where it exists, which is what a near-constant power
+estimate multiplied by elapsed time must be. We therefore report latency and treat the carbon
+column as uninformative rather than as a fifth axis. Calibrated per-accelerator energy would be
+a genuine addition and we do not have it.
+
 **Cost is not pooled across backbones.** API pricing and electricity-derived cost differ by
 roughly three orders of magnitude per token, so we compare ratios within a backbone only.
 Cross-backbone cost statements would be unit collisions.

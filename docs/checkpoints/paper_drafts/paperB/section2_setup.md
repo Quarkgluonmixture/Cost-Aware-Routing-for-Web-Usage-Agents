@@ -69,8 +69,14 @@ a fixed backbone, and it is exactly what makes cross-backbone pooling incoherent
 
 Success is the benchmark's own binary judgement. Cost is the billed cost per episode,
 measured within a backbone: the API-served model reports commercial pricing and the
-locally-served models report electricity-derived cost [@strubell2019energy], so absolute cost
-is never pooled across backbones. Only ratios within a backbone are compared.
+locally-served models report a GPU-hour amortisation applied per token
+[@strubell2019energy]. **Only ratios within a backbone are compared, and the local figures
+carry a second reason for that restriction beyond the unit mismatch.** Their per-token constant
+was derived for a different accelerator than the one the runs were served on, so its absolute
+level is uncalibrated. Because it is a single constant multiplying token counts, every
+within-cell comparison between modes is unaffected, which is the only comparison we draw from
+it; the absolute dollar figures printed for the local backbones should be read as a token
+count in different units.
 
 All routing results come from offline replay over completed episodes, so they exclude router
 inference overhead and therefore *flatter* the router relative to a real deployment. That is
