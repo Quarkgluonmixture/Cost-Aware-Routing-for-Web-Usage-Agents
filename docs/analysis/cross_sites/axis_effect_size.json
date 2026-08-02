@@ -38,6 +38,7 @@
         "search_loop": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": 57,
             "mean_diff": -13.432836,
             "diff_units": "pct_pts",
             "cohen_h": -0.274549,
@@ -51,6 +52,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": 49,
             "mean_diff": -8.374384,
             "diff_units": "pct_pts",
             "cohen_h": -0.169564,
@@ -64,6 +66,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": 30,
             "mean_diff": -4.975124,
             "diff_units": "pct_pts",
             "cohen_h": -0.103508,
@@ -77,6 +80,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": 49,
             "mean_diff": 2.487562,
             "diff_units": "pct_pts",
             "cohen_h": 0.052136,
@@ -90,6 +94,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": 43,
             "mean_diff": -4.433498,
             "diff_units": "pct_pts",
             "cohen_h": -0.089226,
@@ -103,6 +108,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": 46,
             "mean_diff": -8.955224,
             "diff_units": "pct_pts",
             "cohen_h": -0.184519,
@@ -116,6 +122,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": 60,
             "mean_diff": -10.837438,
             "diff_units": "pct_pts",
             "cohen_h": -0.220532,
@@ -162,6 +169,7 @@
         "type_frac": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.011241,
             "diff_units": "fraction",
             "cohen_d_z": -0.066885,
@@ -179,6 +187,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.004903,
             "diff_units": "fraction",
             "cohen_d_z": 0.028517,
@@ -196,6 +205,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.016027,
             "diff_units": "fraction",
             "cohen_d_z": -0.097619,
@@ -213,6 +223,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.014324,
             "diff_units": "fraction",
             "cohen_d_z": -0.084092,
@@ -230,6 +241,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.006928,
             "diff_units": "fraction",
             "cohen_d_z": -0.045588,
@@ -247,6 +259,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.004451,
             "diff_units": "fraction",
             "cohen_d_z": -0.02488,
@@ -264,6 +277,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.026134,
             "diff_units": "fraction",
             "cohen_d_z": -0.14437,
@@ -314,6 +328,7 @@
         "scroll_frac": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.04197,
             "diff_units": "fraction",
             "cohen_d_z": -0.181765,
@@ -331,6 +346,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.048811,
             "diff_units": "fraction",
             "cohen_d_z": -0.205646,
@@ -348,6 +364,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 0.007658,
             "diff_units": "fraction",
             "cohen_d_z": 0.040992,
@@ -365,6 +382,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.024868,
             "diff_units": "fraction",
             "cohen_d_z": -0.148048,
@@ -382,6 +400,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.037427,
             "diff_units": "fraction",
             "cohen_d_z": -0.18488,
@@ -399,6 +418,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.002139,
             "diff_units": "fraction",
             "cohen_d_z": -0.009882,
@@ -416,6 +436,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.068314,
             "diff_units": "fraction",
             "cohen_d_z": -0.308892,
@@ -466,6 +487,7 @@
         "selfcorr_count": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 0.756219,
             "diff_units": "count",
             "cohen_d_z": 0.222559,
@@ -479,6 +501,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.901478,
             "diff_units": "count",
             "cohen_d_z": 0.27866,
@@ -492,6 +515,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.164179,
             "diff_units": "count",
             "cohen_d_z": -0.065163,
@@ -505,6 +529,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.691542,
             "diff_units": "count",
             "cohen_d_z": -0.258003,
@@ -518,6 +543,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.334975,
             "diff_units": "count",
             "cohen_d_z": 0.12923,
@@ -531,6 +557,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 0.422886,
             "diff_units": "count",
             "cohen_d_z": 0.129127,
@@ -544,6 +571,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.054187,
             "diff_units": "count",
             "cohen_d_z": 0.021178,
@@ -598,6 +626,7 @@
         "click_frac": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.002294,
             "diff_units": "fraction",
             "cohen_d_z": -0.009488,
@@ -615,6 +644,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.014051,
             "diff_units": "fraction",
             "cohen_d_z": -0.057046,
@@ -632,6 +662,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 0.010902,
             "diff_units": "fraction",
             "cohen_d_z": 0.052946,
@@ -649,6 +680,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 0.021128,
             "diff_units": "fraction",
             "cohen_d_z": 0.080782,
@@ -666,6 +698,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.018072,
             "diff_units": "fraction",
             "cohen_d_z": 0.073239,
@@ -683,6 +716,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.022164,
             "diff_units": "fraction",
             "cohen_d_z": -0.097868,
@@ -700,6 +734,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.021111,
             "diff_units": "fraction",
             "cohen_d_z": 0.070123,
@@ -750,6 +785,7 @@
         "finish_rate": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": 68,
             "mean_diff": -9.950249,
             "diff_units": "pct_pts",
             "cohen_h": -0.200061,
@@ -763,6 +799,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": 64,
             "mean_diff": -14.778325,
             "diff_units": "pct_pts",
             "cohen_h": -0.299394,
@@ -776,6 +813,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": 54,
             "mean_diff": 4.975124,
             "diff_units": "pct_pts",
             "cohen_h": 0.102392,
@@ -789,6 +827,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": 66,
             "mean_diff": 7.960199,
             "diff_units": "pct_pts",
             "cohen_h": 0.160257,
@@ -802,6 +841,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": 48,
             "mean_diff": 2.955665,
             "diff_units": "pct_pts",
             "cohen_h": 0.05918,
@@ -815,6 +855,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": 68,
             "mean_diff": -12.935323,
             "diff_units": "pct_pts",
             "cohen_h": -0.259832,
@@ -828,6 +869,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": 66,
             "mean_diff": -1.970443,
             "diff_units": "pct_pts",
             "cohen_h": -0.039412,
@@ -889,6 +931,7 @@
         "n_steps": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 2.716418,
             "diff_units": "count",
             "cohen_d_z": 0.245146,
@@ -902,6 +945,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 3.0,
             "diff_units": "count",
             "cohen_d_z": 0.276312,
@@ -915,6 +959,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.318408,
             "diff_units": "count",
             "cohen_d_z": -0.031689,
@@ -928,6 +973,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -2.820896,
             "diff_units": "count",
             "cohen_d_z": -0.252462,
@@ -941,6 +987,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.300493,
             "diff_units": "count",
             "cohen_d_z": -0.030012,
@@ -954,6 +1001,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 3.029851,
             "diff_units": "count",
             "cohen_d_z": 0.257165,
@@ -967,6 +1015,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.059113,
             "diff_units": "count",
             "cohen_d_z": -0.005012,
@@ -1021,6 +1070,7 @@
         "action_repeat_frac": {
           "compound_dom_to_psom": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 0.073483,
             "diff_units": "fraction",
             "cohen_d_z": 0.201689,
@@ -1038,6 +1088,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.087625,
             "diff_units": "fraction",
             "cohen_d_z": 0.225987,
@@ -1055,6 +1106,7 @@
           },
           "prompt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.01618,
             "diff_units": "fraction",
             "cohen_d_z": -0.055529,
@@ -1072,6 +1124,7 @@
           },
           "image": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": -0.010754,
             "diff_units": "fraction",
             "cohen_d_z": -0.032919,
@@ -1089,6 +1142,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.00662,
             "diff_units": "fraction",
             "cohen_d_z": -0.020571,
@@ -1106,6 +1160,7 @@
           },
           "axis_1_text_alt": {
             "n": 201,
+            "n_discordant": null,
             "mean_diff": 0.080596,
             "diff_units": "fraction",
             "cohen_d_z": 0.219353,
@@ -1123,6 +1178,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.064693,
             "diff_units": "fraction",
             "cohen_d_z": 0.163155,
@@ -1175,6 +1231,7 @@
         "search_loop": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": 31,
             "mean_diff": -2.232143,
             "diff_units": "pct_pts",
             "cohen_h": -0.055964,
@@ -1188,6 +1245,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": 29,
             "mean_diff": -0.446429,
             "diff_units": "pct_pts",
             "cohen_h": -0.011386,
@@ -1201,6 +1259,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": 26,
             "mean_diff": -1.785714,
             "diff_units": "pct_pts",
             "cohen_h": -0.044578,
@@ -1214,6 +1273,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": 38,
             "mean_diff": -9.821429,
             "diff_units": "pct_pts",
             "cohen_h": -0.22512,
@@ -1227,6 +1287,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": 36,
             "mean_diff": -5.357143,
             "diff_units": "pct_pts",
             "cohen_h": -0.130787,
@@ -1240,6 +1301,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": 31,
             "mean_diff": 3.125,
             "diff_units": "pct_pts",
             "cohen_h": 0.074823,
@@ -1253,6 +1315,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": 45,
             "mean_diff": -12.053571,
             "diff_units": "pct_pts",
             "cohen_h": -0.281084,
@@ -1299,6 +1362,7 @@
         "type_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.023797,
             "diff_units": "fraction",
             "cohen_d_z": -0.13952,
@@ -1316,6 +1380,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.030739,
             "diff_units": "fraction",
             "cohen_d_z": -0.169131,
@@ -1333,6 +1398,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.006942,
             "diff_units": "fraction",
             "cohen_d_z": 0.049178,
@@ -1350,6 +1416,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.004466,
             "diff_units": "fraction",
             "cohen_d_z": 0.029863,
@@ -1367,6 +1434,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.01617,
             "diff_units": "fraction",
             "cohen_d_z": -0.090614,
@@ -1384,6 +1452,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.007627,
             "diff_units": "fraction",
             "cohen_d_z": -0.05406,
@@ -1401,6 +1470,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.019331,
             "diff_units": "fraction",
             "cohen_d_z": -0.098114,
@@ -1451,6 +1521,7 @@
         "scroll_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.025039,
             "diff_units": "fraction",
             "cohen_d_z": 0.133508,
@@ -1468,6 +1539,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.012561,
             "diff_units": "fraction",
             "cohen_d_z": 0.072348,
@@ -1485,6 +1557,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.012478,
             "diff_units": "fraction",
             "cohen_d_z": 0.06289,
@@ -1502,6 +1575,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.053859,
             "diff_units": "fraction",
             "cohen_d_z": -0.253474,
@@ -1519,6 +1593,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.009432,
             "diff_units": "fraction",
             "cohen_d_z": -0.055658,
@@ -1536,6 +1611,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.034471,
             "diff_units": "fraction",
             "cohen_d_z": 0.192215,
@@ -1553,6 +1629,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.02882,
             "diff_units": "fraction",
             "cohen_d_z": -0.138087,
@@ -1603,6 +1680,7 @@
         "selfcorr_count": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.035714,
             "diff_units": "count",
             "cohen_d_z": -0.019663,
@@ -1616,6 +1694,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.200893,
             "diff_units": "count",
             "cohen_d_z": 0.087557,
@@ -1629,6 +1708,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.236607,
             "diff_units": "count",
             "cohen_d_z": -0.115461,
@@ -1642,6 +1722,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.196429,
             "diff_units": "count",
             "cohen_d_z": -0.091074,
@@ -1655,6 +1736,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.178571,
             "diff_units": "count",
             "cohen_d_z": -0.11122,
@@ -1668,6 +1750,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.142857,
             "diff_units": "count",
             "cohen_d_z": 0.079869,
@@ -1681,6 +1764,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.232143,
             "diff_units": "count",
             "cohen_d_z": -0.09909,
@@ -1727,6 +1811,7 @@
         "click_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.009555,
             "diff_units": "fraction",
             "cohen_d_z": -0.056188,
@@ -1744,6 +1829,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.000218,
             "diff_units": "fraction",
             "cohen_d_z": -0.001259,
@@ -1761,6 +1847,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.009336,
             "diff_units": "fraction",
             "cohen_d_z": -0.058508,
@@ -1778,6 +1865,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.006881,
             "diff_units": "fraction",
             "cohen_d_z": 0.035446,
@@ -1795,6 +1883,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.006139,
             "diff_units": "fraction",
             "cohen_d_z": 0.036255,
@@ -1812,6 +1901,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.015693,
             "diff_units": "fraction",
             "cohen_d_z": -0.086188,
@@ -1829,6 +1919,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.002674,
             "diff_units": "fraction",
             "cohen_d_z": -0.012925,
@@ -1879,6 +1970,7 @@
         "finish_rate": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": 43,
             "mean_diff": -4.910714,
             "diff_units": "pct_pts",
             "cohen_h": -0.108539,
@@ -1892,6 +1984,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": 45,
             "mean_diff": -3.125,
             "diff_units": "pct_pts",
             "cohen_h": -0.069699,
@@ -1905,6 +1998,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": 54,
             "mean_diff": -1.785714,
             "diff_units": "pct_pts",
             "cohen_h": -0.038841,
@@ -1918,6 +2012,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": 54,
             "mean_diff": 5.357143,
             "diff_units": "pct_pts",
             "cohen_h": 0.118702,
@@ -1931,6 +2026,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": 46,
             "mean_diff": -1.785714,
             "diff_units": "pct_pts",
             "cohen_h": -0.040119,
@@ -1944,6 +2040,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": 41,
             "mean_diff": -3.125,
             "diff_units": "pct_pts",
             "cohen_h": -0.06842,
@@ -1957,6 +2054,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": 57,
             "mean_diff": 0.446429,
             "diff_units": "pct_pts",
             "cohen_h": 0.010163,
@@ -2003,6 +2101,7 @@
         "n_steps": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.625,
             "diff_units": "count",
             "cohen_d_z": 0.066496,
@@ -2016,6 +2115,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.223214,
             "diff_units": "count",
             "cohen_d_z": 0.022779,
@@ -2029,6 +2129,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.401786,
             "diff_units": "count",
             "cohen_d_z": 0.039106,
@@ -2042,6 +2143,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -2.566964,
             "diff_units": "count",
             "cohen_d_z": -0.245719,
@@ -2055,6 +2157,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.651786,
             "diff_units": "count",
             "cohen_d_z": -0.067912,
@@ -2068,6 +2171,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 1.276786,
             "diff_units": "count",
             "cohen_d_z": 0.126837,
@@ -2081,6 +2185,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -1.941964,
             "diff_units": "count",
             "cohen_d_z": -0.187504,
@@ -2127,6 +2232,7 @@
         "action_repeat_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.007554,
             "diff_units": "fraction",
             "cohen_d_z": 0.029721,
@@ -2144,6 +2250,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.014022,
             "diff_units": "fraction",
             "cohen_d_z": -0.050957,
@@ -2161,6 +2268,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.021576,
             "diff_units": "fraction",
             "cohen_d_z": 0.08576,
@@ -2178,6 +2286,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.031761,
             "diff_units": "fraction",
             "cohen_d_z": -0.116971,
@@ -2195,6 +2304,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.002668,
             "diff_units": "fraction",
             "cohen_d_z": -0.010153,
@@ -2212,6 +2322,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.010222,
             "diff_units": "fraction",
             "cohen_d_z": 0.040369,
@@ -2229,6 +2340,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.024206,
             "diff_units": "fraction",
             "cohen_d_z": -0.08073,
@@ -2283,6 +2395,7 @@
         "search_loop": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": 42,
             "mean_diff": -3.940887,
             "diff_units": "pct_pts",
             "cohen_h": -0.079776,
@@ -2296,6 +2409,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": 36,
             "mean_diff": 0.985222,
             "diff_units": "pct_pts",
             "cohen_h": 0.020119,
@@ -2309,6 +2423,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": 44,
             "mean_diff": -4.926108,
             "diff_units": "pct_pts",
             "cohen_h": -0.099895,
@@ -2322,6 +2437,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": 62,
             "mean_diff": -14.778325,
             "diff_units": "pct_pts",
             "cohen_h": -0.296835,
@@ -2335,6 +2451,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": 36,
             "mean_diff": -2.955665,
             "diff_units": "pct_pts",
             "cohen_h": -0.05992,
@@ -2348,6 +2465,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": 44,
             "mean_diff": -0.985222,
             "diff_units": "pct_pts",
             "cohen_h": -0.019856,
@@ -2361,6 +2479,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": 72,
             "mean_diff": -18.719212,
             "diff_units": "pct_pts",
             "cohen_h": -0.376611,
@@ -2407,6 +2526,7 @@
         "type_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.072456,
             "diff_units": "fraction",
             "cohen_d_z": -0.300579,
@@ -2424,6 +2544,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.007298,
             "diff_units": "fraction",
             "cohen_d_z": 0.032435,
@@ -2441,6 +2562,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.079755,
             "diff_units": "fraction",
             "cohen_d_z": -0.328676,
@@ -2458,6 +2580,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.036817,
             "diff_units": "fraction",
             "cohen_d_z": -0.158844,
@@ -2475,6 +2598,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.089487,
             "diff_units": "fraction",
             "cohen_d_z": -0.42811,
@@ -2492,6 +2616,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.017031,
             "diff_units": "fraction",
             "cohen_d_z": 0.099253,
@@ -2509,6 +2634,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.109273,
             "diff_units": "fraction",
             "cohen_d_z": -0.389082,
@@ -2559,6 +2685,7 @@
         "scroll_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.01028,
             "diff_units": "fraction",
             "cohen_d_z": -0.074488,
@@ -2576,6 +2703,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.001122,
             "diff_units": "fraction",
             "cohen_d_z": 0.007683,
@@ -2593,6 +2721,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.011403,
             "diff_units": "fraction",
             "cohen_d_z": -0.070549,
@@ -2610,6 +2739,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.039416,
             "diff_units": "fraction",
             "cohen_d_z": 0.156575,
@@ -2627,6 +2757,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.014623,
             "diff_units": "fraction",
             "cohen_d_z": -0.095033,
@@ -2644,6 +2775,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.004343,
             "diff_units": "fraction",
             "cohen_d_z": 0.042312,
@@ -2661,6 +2793,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.029136,
             "diff_units": "fraction",
             "cohen_d_z": 0.111833,
@@ -2711,6 +2844,7 @@
         "selfcorr_count": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.256158,
             "diff_units": "count",
             "cohen_d_z": -0.120116,
@@ -2724,6 +2858,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.123153,
             "diff_units": "count",
             "cohen_d_z": -0.052873,
@@ -2737,6 +2872,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.133005,
             "diff_units": "count",
             "cohen_d_z": -0.074525,
@@ -2750,6 +2886,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.098522,
             "diff_units": "count",
             "cohen_d_z": -0.062247,
@@ -2763,6 +2900,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.108374,
             "diff_units": "count",
             "cohen_d_z": 0.042992,
@@ -2776,6 +2914,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.364532,
             "diff_units": "count",
             "cohen_d_z": -0.166779,
@@ -2789,6 +2928,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.35468,
             "diff_units": "count",
             "cohen_d_z": -0.181373,
@@ -2835,6 +2975,7 @@
         "click_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.109047,
             "diff_units": "fraction",
             "cohen_d_z": 0.369823,
@@ -2852,6 +2993,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.005126,
             "diff_units": "fraction",
             "cohen_d_z": 0.018642,
@@ -2869,6 +3011,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.10392,
             "diff_units": "fraction",
             "cohen_d_z": 0.326115,
@@ -2886,6 +3029,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.00632,
             "diff_units": "fraction",
             "cohen_d_z": -0.016273,
@@ -2903,6 +3047,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.074376,
             "diff_units": "fraction",
             "cohen_d_z": 0.257168,
@@ -2920,6 +3065,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.034671,
             "diff_units": "fraction",
             "cohen_d_z": 0.136193,
@@ -2937,6 +3083,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.102727,
             "diff_units": "fraction",
             "cohen_d_z": 0.278672,
@@ -2987,6 +3134,7 @@
         "finish_rate": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": 55,
             "mean_diff": -9.359606,
             "diff_units": "pct_pts",
             "cohen_h": -0.211922,
@@ -3000,6 +3148,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": 54,
             "mean_diff": -9.852217,
             "diff_units": "pct_pts",
             "cohen_h": -0.22383,
@@ -3013,6 +3162,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": 41,
             "mean_diff": 0.492611,
             "diff_units": "pct_pts",
             "cohen_h": 0.011907,
@@ -3026,6 +3176,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": 52,
             "mean_diff": 9.852217,
             "diff_units": "pct_pts",
             "cohen_h": 0.222503,
@@ -3039,6 +3190,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": 50,
             "mean_diff": -0.985222,
             "diff_units": "pct_pts",
             "cohen_h": -0.021296,
@@ -3052,6 +3204,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": 43,
             "mean_diff": -8.374384,
             "diff_units": "pct_pts",
             "cohen_h": -0.190626,
@@ -3065,6 +3218,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": 61,
             "mean_diff": 0.492611,
             "diff_units": "pct_pts",
             "cohen_h": 0.01058,
@@ -3119,6 +3273,7 @@
         "n_steps": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 1.729064,
             "diff_units": "count",
             "cohen_d_z": 0.165142,
@@ -3132,6 +3287,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 2.1133,
             "diff_units": "count",
             "cohen_d_z": 0.20225,
@@ -3145,6 +3301,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.384236,
             "diff_units": "count",
             "cohen_d_z": -0.043678,
@@ -3158,6 +3315,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -2.793103,
             "diff_units": "count",
             "cohen_d_z": -0.231452,
@@ -3171,6 +3329,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.275862,
             "diff_units": "count",
             "cohen_d_z": 0.026882,
@@ -3184,6 +3343,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 1.453202,
             "diff_units": "count",
             "cohen_d_z": 0.169292,
@@ -3197,6 +3357,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -1.064039,
             "diff_units": "count",
             "cohen_d_z": -0.085776,
@@ -3251,6 +3412,7 @@
         "action_repeat_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.079187,
             "diff_units": "fraction",
             "cohen_d_z": 0.249061,
@@ -3268,6 +3430,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.045507,
             "diff_units": "fraction",
             "cohen_d_z": 0.132864,
@@ -3285,6 +3448,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.03368,
             "diff_units": "fraction",
             "cohen_d_z": 0.108412,
@@ -3302,6 +3466,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.007747,
             "diff_units": "fraction",
             "cohen_d_z": 0.020103,
@@ -3319,6 +3484,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.028565,
             "diff_units": "fraction",
             "cohen_d_z": 0.078028,
@@ -3336,6 +3502,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.050622,
             "diff_units": "fraction",
             "cohen_d_z": 0.153422,
@@ -3353,6 +3520,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.086934,
             "diff_units": "fraction",
             "cohen_d_z": 0.228927,
@@ -3405,6 +3573,7 @@
         "search_loop": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": 43,
             "mean_diff": -4.017857,
             "diff_units": "pct_pts",
             "cohen_h": -0.093711,
@@ -3418,6 +3587,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": 34,
             "mean_diff": 2.678571,
             "diff_units": "pct_pts",
             "cohen_h": 0.065813,
@@ -3431,6 +3601,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": 35,
             "mean_diff": -6.696429,
             "diff_units": "pct_pts",
             "cohen_h": -0.159524,
@@ -3444,6 +3615,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": 51,
             "mean_diff": -9.375,
             "diff_units": "pct_pts",
             "cohen_h": -0.203184,
@@ -3457,6 +3629,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": 40,
             "mean_diff": -5.357143,
             "diff_units": "pct_pts",
             "cohen_h": -0.123876,
@@ -3470,6 +3643,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": 37,
             "mean_diff": 1.339286,
             "diff_units": "pct_pts",
             "cohen_h": 0.030166,
@@ -3483,6 +3657,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": 56,
             "mean_diff": -13.392857,
             "diff_units": "pct_pts",
             "cohen_h": -0.296895,
@@ -3529,6 +3704,7 @@
         "type_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.132652,
             "diff_units": "fraction",
             "cohen_d_z": -0.451504,
@@ -3546,6 +3722,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.022225,
             "diff_units": "fraction",
             "cohen_d_z": 0.087601,
@@ -3563,6 +3740,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.154877,
             "diff_units": "fraction",
             "cohen_d_z": -0.546407,
@@ -3580,6 +3758,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.001364,
             "diff_units": "fraction",
             "cohen_d_z": -0.005106,
@@ -3597,6 +3776,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.135583,
             "diff_units": "fraction",
             "cohen_d_z": -0.497585,
@@ -3614,6 +3794,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.002931,
             "diff_units": "fraction",
             "cohen_d_z": 0.013011,
@@ -3631,6 +3812,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.134016,
             "diff_units": "fraction",
             "cohen_d_z": -0.435821,
@@ -3681,6 +3863,7 @@
         "scroll_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.016957,
             "diff_units": "fraction",
             "cohen_d_z": -0.06462,
@@ -3698,6 +3881,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.023193,
             "diff_units": "fraction",
             "cohen_d_z": -0.096899,
@@ -3715,6 +3899,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.006235,
             "diff_units": "fraction",
             "cohen_d_z": 0.025481,
@@ -3732,6 +3917,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.016999,
             "diff_units": "fraction",
             "cohen_d_z": -0.061742,
@@ -3749,6 +3935,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.008846,
             "diff_units": "fraction",
             "cohen_d_z": -0.032696,
@@ -3766,6 +3953,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.008112,
             "diff_units": "fraction",
             "cohen_d_z": -0.036643,
@@ -3783,6 +3971,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.033956,
             "diff_units": "fraction",
             "cohen_d_z": -0.113162,
@@ -3833,6 +4022,7 @@
         "selfcorr_count": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.008929,
             "diff_units": "count",
             "cohen_d_z": -0.006804,
@@ -3846,6 +4036,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.017857,
             "diff_units": "count",
             "cohen_d_z": -0.015099,
@@ -3859,6 +4050,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.008929,
             "diff_units": "count",
             "cohen_d_z": 0.007318,
@@ -3872,6 +4064,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.223214,
             "diff_units": "count",
             "cohen_d_z": 0.148945,
@@ -3885,6 +4078,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.21875,
             "diff_units": "count",
             "cohen_d_z": 0.128695,
@@ -3898,6 +4092,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.227679,
             "diff_units": "count",
             "cohen_d_z": -0.165236,
@@ -3911,6 +4106,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.214286,
             "diff_units": "count",
             "cohen_d_z": 0.124775,
@@ -3957,6 +4153,7 @@
         "click_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.190272,
             "diff_units": "fraction",
             "cohen_d_z": 0.61421,
@@ -3974,6 +4171,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.035042,
             "diff_units": "fraction",
             "cohen_d_z": 0.139044,
@@ -3991,6 +4189,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.15523,
             "diff_units": "fraction",
             "cohen_d_z": 0.525571,
@@ -4008,6 +4207,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.067503,
             "diff_units": "fraction",
             "cohen_d_z": -0.168802,
@@ -4025,6 +4225,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.129277,
             "diff_units": "fraction",
             "cohen_d_z": 0.468858,
@@ -4042,6 +4243,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.060995,
             "diff_units": "fraction",
             "cohen_d_z": 0.21169,
@@ -4059,6 +4261,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.122769,
             "diff_units": "fraction",
             "cohen_d_z": 0.359324,
@@ -4124,6 +4327,7 @@
         "finish_rate": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": 73,
             "mean_diff": 1.339286,
             "diff_units": "pct_pts",
             "cohen_h": 0.02716,
@@ -4137,6 +4341,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": 58,
             "mean_diff": -2.678571,
             "diff_units": "pct_pts",
             "cohen_h": -0.054746,
@@ -4150,6 +4355,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": 63,
             "mean_diff": 4.017857,
             "diff_units": "pct_pts",
             "cohen_h": 0.081905,
@@ -4163,6 +4369,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": 73,
             "mean_diff": 8.482143,
             "diff_units": "pct_pts",
             "cohen_h": 0.170233,
@@ -4176,6 +4383,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": 67,
             "mean_diff": -0.446429,
             "diff_units": "pct_pts",
             "cohen_h": -0.009082,
@@ -4189,6 +4397,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": 46,
             "mean_diff": 1.785714,
             "diff_units": "pct_pts",
             "cohen_h": 0.036242,
@@ -4202,6 +4411,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": 80,
             "mean_diff": 9.821429,
             "diff_units": "pct_pts",
             "cohen_h": 0.197392,
@@ -4248,6 +4458,7 @@
         "n_steps": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.125,
             "diff_units": "count",
             "cohen_d_z": -0.010931,
@@ -4261,6 +4472,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 1.071429,
             "diff_units": "count",
             "cohen_d_z": 0.100596,
@@ -4274,6 +4486,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -1.196429,
             "diff_units": "count",
             "cohen_d_z": -0.107992,
@@ -4287,6 +4500,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -3.25,
             "diff_units": "count",
             "cohen_d_z": -0.252549,
@@ -4300,6 +4514,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.013393,
             "diff_units": "count",
             "cohen_d_z": 0.001166,
@@ -4313,6 +4528,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.138393,
             "diff_units": "count",
             "cohen_d_z": -0.013145,
@@ -4326,6 +4542,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -3.375,
             "diff_units": "count",
             "cohen_d_z": -0.246889,
@@ -4387,6 +4604,7 @@
         "action_repeat_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.018716,
             "diff_units": "fraction",
             "cohen_d_z": 0.047603,
@@ -4404,6 +4622,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.018033,
             "diff_units": "fraction",
             "cohen_d_z": 0.052881,
@@ -4421,6 +4640,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.000683,
             "diff_units": "fraction",
             "cohen_d_z": 0.001849,
@@ -4438,6 +4658,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.071037,
             "diff_units": "fraction",
             "cohen_d_z": -0.17393,
@@ -4455,6 +4676,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.033934,
             "diff_units": "fraction",
             "cohen_d_z": -0.089767,
@@ -4472,6 +4694,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.05265,
             "diff_units": "fraction",
             "cohen_d_z": 0.152214,
@@ -4489,6 +4712,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.052321,
             "diff_units": "fraction",
             "cohen_d_z": -0.128426,
@@ -4543,6 +4767,7 @@
         "search_loop": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": 54,
             "mean_diff": -0.985222,
             "diff_units": "pct_pts",
             "cohen_h": -0.02372,
@@ -4556,6 +4781,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": 62,
             "mean_diff": 3.940887,
             "diff_units": "pct_pts",
             "cohen_h": 0.091531,
@@ -4569,6 +4795,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": 58,
             "mean_diff": -4.926108,
             "diff_units": "pct_pts",
             "cohen_h": -0.115251,
@@ -4582,6 +4809,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": 50,
             "mean_diff": -6.896552,
             "diff_units": "pct_pts",
             "cohen_h": -0.179369,
@@ -4595,6 +4823,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": 51,
             "mean_diff": 4.433498,
             "diff_units": "pct_pts",
             "cohen_h": 0.102647,
@@ -4608,6 +4837,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": 51,
             "mean_diff": -5.418719,
             "diff_units": "pct_pts",
             "cohen_h": -0.126367,
@@ -4621,6 +4851,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": 50,
             "mean_diff": -7.881773,
             "diff_units": "pct_pts",
             "cohen_h": -0.20309,
@@ -4667,6 +4898,7 @@
         "type_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.01474,
             "diff_units": "fraction",
             "cohen_d_z": -0.07027,
@@ -4684,6 +4916,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.00969,
             "diff_units": "fraction",
             "cohen_d_z": -0.045291,
@@ -4701,6 +4934,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.00505,
             "diff_units": "fraction",
             "cohen_d_z": -0.023153,
@@ -4718,6 +4952,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.009143,
             "diff_units": "fraction",
             "cohen_d_z": 0.044866,
@@ -4735,6 +4970,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.027859,
             "diff_units": "fraction",
             "cohen_d_z": -0.147461,
@@ -4752,6 +4988,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.013119,
             "diff_units": "fraction",
             "cohen_d_z": 0.073474,
@@ -4769,6 +5006,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.005597,
             "diff_units": "fraction",
             "cohen_d_z": -0.024969,
@@ -4819,6 +5057,7 @@
         "scroll_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.006191,
             "diff_units": "fraction",
             "cohen_d_z": 0.054243,
@@ -4836,6 +5075,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.003664,
             "diff_units": "fraction",
             "cohen_d_z": -0.037189,
@@ -4853,6 +5093,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.009855,
             "diff_units": "fraction",
             "cohen_d_z": 0.09332,
@@ -4870,6 +5111,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.004617,
             "diff_units": "fraction",
             "cohen_d_z": -0.040247,
@@ -4887,6 +5129,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.0101,
             "diff_units": "fraction",
             "cohen_d_z": 0.08697,
@@ -4904,6 +5147,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.003909,
             "diff_units": "fraction",
             "cohen_d_z": -0.036987,
@@ -4921,6 +5165,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.001574,
             "diff_units": "fraction",
             "cohen_d_z": 0.013134,
@@ -4971,6 +5216,7 @@
         "selfcorr_count": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.024631,
             "diff_units": "count",
             "cohen_d_z": 0.019422,
@@ -4984,6 +5230,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.059113,
             "diff_units": "count",
             "cohen_d_z": 0.052176,
@@ -4997,6 +5244,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.034483,
             "diff_units": "count",
             "cohen_d_z": -0.025522,
@@ -5010,6 +5258,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.019704,
             "diff_units": "count",
             "cohen_d_z": 0.015101,
@@ -5023,6 +5272,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.093596,
             "diff_units": "count",
             "cohen_d_z": 0.076646,
@@ -5036,6 +5286,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.068966,
             "diff_units": "count",
             "cohen_d_z": -0.058058,
@@ -5049,6 +5300,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.044335,
             "diff_units": "count",
             "cohen_d_z": 0.031965,
@@ -5095,6 +5347,7 @@
         "click_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.015635,
             "diff_units": "fraction",
             "cohen_d_z": -0.047229,
@@ -5112,6 +5365,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.06345,
             "diff_units": "fraction",
             "cohen_d_z": -0.192864,
@@ -5129,6 +5383,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.047815,
             "diff_units": "fraction",
             "cohen_d_z": 0.142538,
@@ -5146,6 +5401,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.005923,
             "diff_units": "fraction",
             "cohen_d_z": -0.016647,
@@ -5163,6 +5419,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.020234,
             "diff_units": "fraction",
             "cohen_d_z": -0.067056,
@@ -5180,6 +5437,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.004599,
             "diff_units": "fraction",
             "cohen_d_z": 0.016069,
@@ -5197,6 +5455,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.021558,
             "diff_units": "fraction",
             "cohen_d_z": -0.057727,
@@ -5255,6 +5514,7 @@
         "finish_rate": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": 19,
             "mean_diff": -2.463054,
             "diff_units": "pct_pts",
             "cohen_h": -0.102964,
@@ -5268,6 +5528,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": 17,
             "mean_diff": -1.477833,
             "diff_units": "pct_pts",
             "cohen_h": -0.059401,
@@ -5281,6 +5542,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": 16,
             "mean_diff": -0.985222,
             "diff_units": "pct_pts",
             "cohen_h": -0.043563,
@@ -5294,6 +5556,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": 35,
             "mean_diff": 11.330049,
             "diff_units": "pct_pts",
             "cohen_h": 0.382374,
@@ -5307,6 +5570,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": 18,
             "mean_diff": -2.955665,
             "diff_units": "pct_pts",
             "cohen_h": -0.126296,
@@ -5320,6 +5584,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": 17,
             "mean_diff": 0.492611,
             "diff_units": "pct_pts",
             "cohen_h": 0.023332,
@@ -5333,6 +5598,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": 34,
             "mean_diff": 8.866995,
             "diff_units": "pct_pts",
             "cohen_h": 0.27941,
@@ -5379,6 +5645,7 @@
         "n_steps": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.517241,
             "diff_units": "count",
             "cohen_d_z": -0.053555,
@@ -5392,6 +5659,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -1.123153,
             "diff_units": "count",
             "cohen_d_z": -0.12646,
@@ -5405,6 +5673,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.605911,
             "diff_units": "count",
             "cohen_d_z": 0.057225,
@@ -5418,6 +5687,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -1.527094,
             "diff_units": "count",
             "cohen_d_z": -0.136917,
@@ -5431,6 +5701,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.70936,
             "diff_units": "count",
             "cohen_d_z": -0.083923,
@@ -5444,6 +5715,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.192118,
             "diff_units": "count",
             "cohen_d_z": 0.019609,
@@ -5457,6 +5729,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -2.044335,
             "diff_units": "count",
             "cohen_d_z": -0.215548,
@@ -5503,6 +5776,7 @@
         "action_repeat_frac": {
           "compound_dom_to_psom": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.045077,
             "diff_units": "fraction",
             "cohen_d_z": -0.172548,
@@ -5520,6 +5794,7 @@
           },
           "text": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.042347,
             "diff_units": "fraction",
             "cohen_d_z": -0.15686,
@@ -5537,6 +5812,7 @@
           },
           "prompt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.002731,
             "diff_units": "fraction",
             "cohen_d_z": -0.009739,
@@ -5554,6 +5830,7 @@
           },
           "image": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.034664,
             "diff_units": "fraction",
             "cohen_d_z": 0.120651,
@@ -5571,6 +5848,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.046486,
             "diff_units": "fraction",
             "cohen_d_z": -0.185471,
@@ -5588,6 +5866,7 @@
           },
           "axis_1_text_alt": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": 0.001409,
             "diff_units": "fraction",
             "cohen_d_z": 0.005507,
@@ -5605,6 +5884,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 203,
+            "n_discordant": null,
             "mean_diff": -0.010413,
             "diff_units": "fraction",
             "cohen_d_z": -0.036043,
@@ -5665,6 +5945,7 @@
         "search_loop": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": 70,
             "mean_diff": 3.571429,
             "diff_units": "pct_pts",
             "cohen_h": 0.075702,
@@ -5678,6 +5959,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": 72,
             "mean_diff": -1.785714,
             "diff_units": "pct_pts",
             "cohen_h": -0.037169,
@@ -5691,6 +5973,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": 62,
             "mean_diff": 5.357143,
             "diff_units": "pct_pts",
             "cohen_h": 0.112871,
@@ -5704,6 +5987,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": 79,
             "mean_diff": -6.696429,
             "diff_units": "pct_pts",
             "cohen_h": -0.140504,
@@ -5717,6 +6001,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": 58,
             "mean_diff": -1.785714,
             "diff_units": "pct_pts",
             "cohen_h": -0.037169,
@@ -5730,6 +6015,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": 68,
             "mean_diff": 5.357143,
             "diff_units": "pct_pts",
             "cohen_h": 0.112871,
@@ -5743,6 +6029,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": 75,
             "mean_diff": -3.125,
             "diff_units": "pct_pts",
             "cohen_h": -0.064802,
@@ -5797,6 +6084,7 @@
         "type_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.060435,
             "diff_units": "fraction",
             "cohen_d_z": -0.2902,
@@ -5814,6 +6102,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.025881,
             "diff_units": "fraction",
             "cohen_d_z": 0.1161,
@@ -5831,6 +6120,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.086317,
             "diff_units": "fraction",
             "cohen_d_z": -0.409543,
@@ -5848,6 +6138,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.061074,
             "diff_units": "fraction",
             "cohen_d_z": 0.297078,
@@ -5865,6 +6156,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.064624,
             "diff_units": "fraction",
             "cohen_d_z": -0.318076,
@@ -5882,6 +6174,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.004189,
             "diff_units": "fraction",
             "cohen_d_z": 0.024952,
@@ -5899,6 +6192,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.000639,
             "diff_units": "fraction",
             "cohen_d_z": 0.002767,
@@ -5964,6 +6258,7 @@
         "scroll_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.002221,
             "diff_units": "fraction",
             "cohen_d_z": 0.026445,
@@ -5981,6 +6276,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.012261,
             "diff_units": "fraction",
             "cohen_d_z": 0.153617,
@@ -5998,6 +6294,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.010041,
             "diff_units": "fraction",
             "cohen_d_z": -0.112249,
@@ -6015,6 +6312,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.000222,
             "diff_units": "fraction",
             "cohen_d_z": 0.002956,
@@ -6032,6 +6330,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.016818,
             "diff_units": "fraction",
             "cohen_d_z": 0.174805,
@@ -6049,6 +6348,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.014597,
             "diff_units": "fraction",
             "cohen_d_z": -0.145344,
@@ -6066,6 +6366,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.002443,
             "diff_units": "fraction",
             "cohen_d_z": 0.031931,
@@ -6124,6 +6425,7 @@
         "selfcorr_count": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.017857,
             "diff_units": "count",
             "cohen_d_z": -0.023763,
@@ -6137,6 +6439,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.102679,
             "diff_units": "count",
             "cohen_d_z": 0.1001,
@@ -6150,6 +6453,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.120536,
             "diff_units": "count",
             "cohen_d_z": -0.111257,
@@ -6163,6 +6467,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.071429,
             "diff_units": "count",
             "cohen_d_z": -0.105174,
@@ -6176,6 +6481,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.049107,
             "diff_units": "count",
             "cohen_d_z": -0.077103,
@@ -6189,6 +6495,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.03125,
             "diff_units": "count",
             "cohen_d_z": 0.053964,
@@ -6202,6 +6509,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.089286,
             "diff_units": "count",
             "cohen_d_z": -0.12476,
@@ -6263,6 +6571,7 @@
         "click_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.003421,
             "diff_units": "fraction",
             "cohen_d_z": 0.010951,
@@ -6280,6 +6589,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.135721,
             "diff_units": "fraction",
             "cohen_d_z": -0.475524,
@@ -6297,6 +6607,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.139143,
             "diff_units": "fraction",
             "cohen_d_z": 0.485298,
@@ -6314,6 +6625,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.035317,
             "diff_units": "fraction",
             "cohen_d_z": -0.097358,
@@ -6331,6 +6643,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.005271,
             "diff_units": "fraction",
             "cohen_d_z": -0.017092,
@@ -6348,6 +6661,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.008692,
             "diff_units": "fraction",
             "cohen_d_z": 0.026532,
@@ -6365,6 +6679,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.031896,
             "diff_units": "fraction",
             "cohen_d_z": -0.090025,
@@ -6423,6 +6738,7 @@
         "finish_rate": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": 26,
             "mean_diff": -7.142857,
             "diff_units": "pct_pts",
             "cohen_h": -0.255588,
@@ -6436,6 +6752,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": 32,
             "mean_diff": -6.25,
             "diff_units": "pct_pts",
             "cohen_h": -0.217374,
@@ -6449,6 +6766,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": 22,
             "mean_diff": -0.892857,
             "diff_units": "pct_pts",
             "cohen_h": -0.038214,
@@ -6462,6 +6780,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": 30,
             "mean_diff": 9.821429,
             "diff_units": "pct_pts",
             "cohen_h": 0.333242,
@@ -6475,6 +6794,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": 26,
             "mean_diff": -5.357143,
             "diff_units": "pct_pts",
             "cohen_h": -0.181635,
@@ -6488,6 +6808,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": 20,
             "mean_diff": -1.785714,
             "diff_units": "pct_pts",
             "cohen_h": -0.073953,
@@ -6501,6 +6822,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": 42,
             "mean_diff": 2.678571,
             "diff_units": "pct_pts",
             "cohen_h": 0.077653,
@@ -6555,6 +6877,7 @@
         "n_steps": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 1.0,
             "diff_units": "count",
             "cohen_d_z": 0.114579,
@@ -6568,6 +6891,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.535714,
             "diff_units": "count",
             "cohen_d_z": -0.051985,
@@ -6581,6 +6905,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 1.535714,
             "diff_units": "count",
             "cohen_d_z": 0.160408,
@@ -6594,6 +6919,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -4.017857,
             "diff_units": "count",
             "cohen_d_z": -0.362589,
@@ -6607,6 +6933,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.459821,
             "diff_units": "count",
             "cohen_d_z": 0.049649,
@@ -6620,6 +6947,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.540179,
             "diff_units": "count",
             "cohen_d_z": 0.061248,
@@ -6633,6 +6961,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -3.017857,
             "diff_units": "count",
             "cohen_d_z": -0.250903,
@@ -6687,6 +7016,7 @@
         "action_repeat_frac": {
           "compound_dom_to_psom": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.018922,
             "diff_units": "fraction",
             "cohen_d_z": 0.064389,
@@ -6704,6 +7034,7 @@
           },
           "text": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.02785,
             "diff_units": "fraction",
             "cohen_d_z": -0.092561,
@@ -6721,6 +7052,7 @@
           },
           "prompt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.046772,
             "diff_units": "fraction",
             "cohen_d_z": 0.159387,
@@ -6738,6 +7070,7 @@
           },
           "image": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.021608,
             "diff_units": "fraction",
             "cohen_d_z": -0.067205,
@@ -6755,6 +7088,7 @@
           },
           "axis_2_prompt_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.002994,
             "diff_units": "fraction",
             "cohen_d_z": 0.01113,
@@ -6772,6 +7106,7 @@
           },
           "axis_1_text_alt": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": 0.015928,
             "diff_units": "fraction",
             "cohen_d_z": 0.055038,
@@ -6789,6 +7124,7 @@
           },
           "endpoint_dom_to_som": {
             "n": 224,
+            "n_discordant": null,
             "mean_diff": -0.002687,
             "diff_units": "fraction",
             "cohen_d_z": -0.00816,
@@ -8611,7 +8947,19 @@
           "n_steps@B0/reddit",
           "type_frac@B2/classifieds"
         ],
-        "note": "both legs (compound and image) must clear the correction for the combination to count; corrections are applied across all legs jointly, not per cell"
+        "bh_and_off_segment": 6,
+        "cells_bh_off_segment": [
+          "selfcorr_count@B0/reddit",
+          "n_steps@B0/reddit",
+          "finish_rate@B1/reddit",
+          "click_frac@B1/classifieds",
+          "type_frac@B2/classifieds",
+          "finish_rate@B2/classifieds"
+        ],
+        "cells_bh_interpolating": [
+          "type_frac@B1/reddit"
+        ],
+        "note": "both legs (compound and image) must clear the correction for the combination to count; corrections are applied across all legs jointly, not per cell. `off_segment` additionally requires the two legs to disagree in sign."
       }
     },
     "tier2_mechanism": {

@@ -411,6 +411,11 @@ def paired_contrast(
         wilcoxon_p = wilcoxon_signed_rank_p(diffs)
     result = {
         "n": len(pairs),
+        # For a binary metric only DISCORDANT pairs carry information; `n` is the pairing count
+        # and overstates it badly (finish_rate on B2/classifieds: n=224, 26 discordant).
+        # Wilcoxon here is fine — it has a tie correction and agrees with McNemar exact to
+        # within a factor — but a reader sizing the claim needs the smaller number.
+        "n_discordant": sum(1 for x in diffs if x != 0) if binary else None,
         "mean_diff": mean_diff,
         "diff_units": diff_units,
         effect_label: effect,
@@ -453,8 +458,18 @@ def effect_value(result: dict, binary: bool) -> float:
     return float(value)
 
 
+# Cohen's conventional "small" boundary. It is a convention, not a property of this data, and
+# it is applied to two different quantities: d_z for continuous metrics and h for the binary
+# one. They are not on the same scale (h is an arcsine-transformed proportion difference), so a
+# single number cannot mean the same thing for both. Kept because changing it post hoc would be
+# worse than an arbitrary-but-declared threshold, and because every verdict that depends on it
+# is now also reported under multiplicity control, where the p-values do the discriminating.
+# (§H stress P2-3, 2026-08-02.)
+EFFECT_THRESHOLD = {"cohen_d_z": 0.1, "cohen_h": 0.1}
+
+
 def meaningful(result: dict, binary: bool) -> bool:
-    threshold = 0.1
+    threshold = EFFECT_THRESHOLD["cohen_h" if binary else "cohen_d_z"]
     value = effect_value(result, binary)
     return bool(not math.isnan(value) and abs(value) > threshold)
 
@@ -490,7 +505,7 @@ def multiplicity_filtered_independence(out: dict, metrics_def: list) -> dict:
     (FWER) across ALL legs at once. Effect size stays a requirement — significance alone on
     n=201..224 would let trivial differences in.
     """
-    legs, keyed = [], []
+    legs, keyed, offseg = [], [], {}
     for baseline in BASELINES:
         for site in SITES:
             for metric, _b in metrics_def:
@@ -504,8 +519,11 @@ def multiplicity_filtered_independence(out: dict, metrics_def: list) -> dict:
                 if ec is None or ei is None or c.get("wilcoxon_p") is None \
                         or i.get("wilcoxon_p") is None:
                     continue
-                keyed.append((f"{mn}@{baseline}/{site}", len(legs), len(legs) + 1,
+                key = f"{mn}@{baseline}/{site}"
+                keyed.append((key, len(legs), len(legs) + 1,
                               abs(ec) > 0.1 and abs(ei) > 0.1))
+                # opposite-signed legs => P-SoM lies outside the DOM..SoM segment
+                offseg[key] = (c.get("mean_diff", 0) > 0) != (i.get("mean_diff", 0) > 0)
                 legs += [c["wilcoxon_p"], i["wilcoxon_p"]]
 
     def bh(p, q=0.05):
@@ -532,13 +550,21 @@ def multiplicity_filtered_independence(out: dict, metrics_def: list) -> dict:
     eff = [k for k, *_ , ok in keyed if ok]
     both_bh = [k for k, a, b, ok in keyed if ok and a in kb and b in kb]
     both_holm = [k for k, a, b, ok in keyed if ok and a in kh and b in kh]
+    off = [k for k in both_bh if offseg.get(k)]
     return {
         "n_legs": len(legs), "n_combinations": len(keyed),
         "effect_only": len(eff),
         "effect_and_bh_fdr_0.05": len(both_bh), "cells_bh": both_bh,
         "effect_and_holm_fwer_0.05": len(both_holm), "cells_holm": both_holm,
+        # Differing from both endpoints is not the same as being an independent direction: a
+        # mode that INTERPOLATES between DOM and SoM also differs from both. P-SoM is off the
+        # segment when the two legs have opposite signs, i.e. it is an extremum rather than a
+        # midpoint. (§H stress P1-3 + gemini F2, 2026-08-02.)
+        "bh_and_off_segment": len(off), "cells_bh_off_segment": off,
+        "cells_bh_interpolating": [k for k in both_bh if not offseg.get(k)],
         "note": "both legs (compound and image) must clear the correction for the combination "
-                "to count; corrections are applied across all legs jointly, not per cell",
+                "to count; corrections are applied across all legs jointly, not per cell. "
+                "`off_segment` additionally requires the two legs to disagree in sign.",
     }
 
 
@@ -957,6 +983,18 @@ def main() -> None:
             f"{len({c.split('@')[1] for c in _mp['cells_bh']})} of the six cells, so it is not "
             f"one cell's accident: {', '.join(_mp['cells_bh']) or '—'}. Report the corrected "
             f"count, not the bare one.")
+        lines.append(
+            f"\n> **Distinct from both endpoints is not the same as independent.** A mode that "
+            f"*interpolates* between DOM and SoM also differs from both. P-SoM is off the "
+            f"DOM–SoM segment — an extremum rather than a midpoint — exactly when the two legs "
+            f"disagree in sign. Of the {_mp['effect_and_bh_fdr_0.05']} BH survivors, "
+            f"**{_mp['bh_and_off_segment']} are off the segment** and "
+            f"{len(_mp['cells_bh_interpolating'])} interpolate"
+            + (f" ({', '.join(_mp['cells_bh_interpolating'])})"
+               if _mp['cells_bh_interpolating'] else "")
+            + ". The off-segment count is the one that supports an independent arm; on "
+            f"`finish_rate@B1/reddit` P-SoM sits about 9pp below *both* endpoints while the "
+            f"endpoints differ from each other by 0.5pp.")
     else:
         lines.append("- **No cells show P-SoM distinct from both endpoints simultaneously**")
     if independence["psom_distinct_from_dom_only"]:
