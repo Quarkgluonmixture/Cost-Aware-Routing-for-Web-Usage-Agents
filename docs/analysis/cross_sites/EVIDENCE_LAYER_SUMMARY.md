@@ -20,10 +20,10 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 |---|---|---|---|---|---|
 | **Outcome / SR** | `sr_per_mode` · `fusion_premium` | ✅ | ✅ | ✅ | complete |
 | **Noise / rerun floor** | `noise_floor_inventory` · `phase0b_noise_floor` · `label_instability` | ⚠️ 1 of 6 cells | ✅ 1 pair | ⚠️ 2 of 6 arms | **SoM replicate queued** |
-| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (25 metrics) | ✅ | ✅ `--with-wa` | ✅ | complete |
+| **Four-layer profile** | `per_mode_four_dimension_profile` v2 (26 metrics) | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ **added 08-02** | ✅ | complete |
-| **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ | ✅ (the four) | **repaired 08-02** — see §2b |
+| **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ `--with-wa` **added 08-02** | ✅ (the four) | **repaired 08-02** — see §2b |
 | **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ✅ cascade `--with-wa`; the three router products stay VWA (they need the router feature table) | ✅ | complete |
 | *(features)* | `routing_feature_diagnostics` | ✅ | ❌ n/a | ✅ | complete |
 
@@ -180,6 +180,10 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    point Pareto-beats always-rich in any of the four VWA cells where the comparison is
    non-degenerate. **The WA exception is withdrawn** — both of its winning points were tie
    artefacts, not thresholds; see §3.4. → the four router products + `confidence_cascade{,_with_wa}`
+   **A fifth formulation was fitted rather than argued away**: adding `visual_difficulty` — the
+   VWA-native annotation `extract_50_features` reads and drops — to the triage feature table
+   moves out-of-fold AUROC by a mean of **+0.008** over six cells, improving three, which is
+   inside fold-split noise. → `visual_difficulty_router`
    Three qualifications the earlier wording lacked: the non-degeneracy rule (`cheap_sr >=
    rich_sr`) is **outcome-dependent** and labelled an exact 2.23% = 2.23% tie as "rich worse";
    the search space is the signals a cell can actually rank with, not `len(SIGNALS) × len(fracs)`,
@@ -187,9 +191,17 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    task takes its outcome from a standalone rich run, whereas a real cascade would start the rich
    episode after the cheap one had already acted on a stateful site. That sequential outcome is
    unobserved in this project.
-6. **The four image-free modes are behaviourally non-separable** across 25 metrics × 6 cells,
-   while the image-bearing pair is separable mostly by construction.
+6. **The four image-free modes are behaviourally non-separable** across 26 metrics × 6 cells
+   (Vision reaches ≥5/6 on nine, SoM on eight, the other four on **none**), while the
+   image-bearing pair is separable mostly by construction.
    → `per_mode_four_dimension_profile` v2
+   The 26th metric came from the **unread-field inventory** rather than being chosen to find a
+   difference: `scroll_inert_rate`, the share of scroll actions after which the viewport did not
+   move. It lands on the image side too (Vision highest 5/6, SoM lowest 5/6). Surveying that
+   inventory also shrank the objection behind this claim — of the fields §G1 listed,
+   `retry_count`, `screenshot_timeout_recovered`, `destructive_action_count`,
+   `partial_recovery_step_count` and `unknown_failure_reasons` are 0% populated and six more are
+   never written at all.
 6b. **P-SoM lies off the DOM–SoM segment on 6 (metric, cell) combinations**, spanning four of
    the six cells and all three backbones. Differing from both endpoints is *not* independence —
    a mode interpolating between them also differs from both — so the count that matters requires
@@ -217,6 +229,11 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    channel's advantage on visual-intent tasks; it does not explain it, and specifically does not
    license "the text channel failed because the screenshot was withheld".
    (c) WA's disagreement sets are 15 and 4 tasks. → `conditional_failure_attribution` §4
+   **The "this is just the rule vocabulary" objection is now closed** (§5 of that product): six
+   candidate mechanisms computed from raw step fields, using no rule hits at all, find nothing
+   either — largest enrichment **1.15×**, most *below* 1. On the tasks the text channel uniquely
+   solves, the image channel fails **more blandly** than it fails elsewhere: it did not arrive,
+   rather than breaking somewhere nameable.
 8. **The obvious routing feature has the wrong sign**, and the right one was read and dropped.
    → `routing_feature_diagnostics`
 9. **The latency ordering is not the cost ordering restated.** Mean Spearman
@@ -250,21 +267,20 @@ For each claim in §5: the measurement that would refute it, and whether we have
 | 2 | (a) a second (cell, arm-pair) where the enrichment is ≈1×; (b) a **difficulty-matched** control, since "contested" is by construction a mid-difficulty band | (a) ❌ one cell, two arms · (b) ✅ **done 08-02** | (b) ran and cut both ways — see `label_instability` §"Is the enrichment just arithmetic?": the arithmetic null predicts *infinite* enrichment, so 17.4× is deflated not inflated; but inside the contested band the excess over the floor is only **1.37×** |
 | 3 | one cell where fusion beats the workload-matched single channel significantly **and** by more than that cell's rerun band | ⚠️ 7 cells tested, but the band is the borrowed one from claim 1 | inherits claim 1's dependency; the 7/7 count is solid, the band is not |
 | 4 | a third workload whose modality sits between the two, or contradicts the predicted sign | ❌ shopping has zero landed directories | stated limitation, not closable before submission |
-| 5 | any routing formulation we did not try that wins — e.g. one using `visual_difficulty`, or the Tier-1 independence metrics | ⚠️ partial: `visual_difficulty` was diagnosed as read-but-dropped, never *fitted* | cheap and worth doing: fit one router with it and report that it does not rescue, rather than arguing it wouldn't |
-| 6 | any metric on which one image-free mode reaches ≥5/6 | ✅ and it survived adding 6 metrics chosen to find differences | but all 25 metrics are ours; §G1 found **186 unread fields**, so the negative is only as strong as the metric pool |
+| 5 | any routing formulation we did not try that wins — e.g. one using `visual_difficulty` | ✅ **done 08-02** | fitted, not argued: mean ΔAUROC **+0.008** over six cells, improves 3, inside fold-split noise. The binding constraint stays row count, which no feature changes → `visual_difficulty_router` |
+| 6 | any metric on which one image-free mode reaches ≥5/6 | ✅ **strengthened 08-02** | a 26th metric was built from the unread-field inventory (`scroll_inert_rate`) and lands on the image side too. The pool objection also shrank: most of the 186 unread fields are dead schema (0% populated or never written) |
 | 6b | multiplicity correction removing the effect | ✅ **done 08-02** | 15 → **7** under BH, **2** under Holm; the 7 span four cells and all three backbones. §5 now quotes the corrected figure |
-| 7 | a named mechanism on the text-wins side that the ruleset cannot see — it was discovered on VWA, so it can only find VWA-shaped failures | ⚠️ **partial, 08-02** | `/diag` Tier-2 on WA ran (§410) and produced two WA-native rules, `P47`/`P48`, landed at ruleset `9-wa-p47p48`. Re-running the paired cut with them changes nothing: the text-wins side still tops out at `P17` **1.39×**, no signature above 1.5×. **But this is weak**: both rules fall below the `MIN_HITS=8` threshold on the disagreement sets and neither was designed for that direction, so "the asymmetry is a property of the ruleset" is **not yet excluded**. Closing it needs a rule built *for* the text-wins side. |
+| 7 | a named mechanism on the text-wins side that the ruleset cannot see — it was discovered on VWA, so it can only find VWA-shaped failures | ✅ **closed 08-02** | two routes. (a) `/diag` Tier-2 on WA (§410) produced two WA-native rules at ruleset `9-wa-p47p48`; the paired cut with them still tops out at `P17` 1.39×. (b) More decisively, six candidate mechanisms computed from **raw step fields with no rule hits at all** also find nothing — largest 1.15×, most below 1. The residual is not an artifact of a VWA-shaped vocabulary → `conditional_failure_attribution` §5 |
 | 8 | the feature carrying the intuitive sign in some other cell or benchmark | ✅ all six cells; WA ships no reference images so it cannot arbitrate | closed as far as this data goes |
 | 9 | a different latency estimand changing the verdict; or the frontier widening simply because there are six modes | (a) ✅ · (b) ✅ **done 08-02, and it refuted the claim** | the permutation control was run: expected 4.70/6 widened, `P(≥3)=0.978`. The frontier argument is retracted and claim 9 now rests on ρ(cost, latency) = −0.095 with a site-aligned cheapest≠fastest split |
 
-**Five were closed on 08-02** (2b, 6b, 9a, 9b, and the circularity check on 2) and each by
-*running* the control rather than arguing it was unnecessary. Two of them **refuted** what they
-tested: 9b killed the frontier argument, and the circularity check cut claim 2's headline from
-17.4× to a 3.9×–17.4× range. **Three remain cheap and open**: the `visual_difficulty` router fit
-(5), new metrics from the unread-field inventory (6), and a rule built for the text-wins
-direction (7) — the WA Tier-2 round produced two rules but neither targets it. **Three are not cheap and are therefore
-limitations**: the third workload (4), the SoM floor (1, queued), and the WA-native failure
-vocabulary (7, needs the Tier-2 session).
+**Eight of the ten were closed on 08-02**, each by *running* the control rather than arguing
+it was unnecessary, and three of those runs **refuted what they tested**: 9b killed the frontier
+argument, the circularity check cut claim 2's headline from 17.4× to a 3.9×–17.4× range, and the
+`visual_difficulty` fit confirmed a negative the paper had only asserted. **Nothing cheap remains
+open.** What is left is three structural gaps, and they are limitations rather than tasks: the
+third workload (4), the SoM floor (1, queued on the paper-grade host), and the fusion band that
+inherits it (3).
 
 A sixth, added by the same round and not yet run: the cascade's outcome for an escalated task is
 spliced from a standalone rich run, but a real cascade would start the rich episode *after* the
@@ -285,8 +301,8 @@ Each product against the seven (site, backbone) units. **·** = not covered.
 | `per_mode_four_dimension_profile` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ `_with_wa` |
 | `conditional_failure_attribution` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `routing_feature_diagnostics` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ n/a |
-| **`axis_effect_size`** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **· ← hole** |
-| **`axis1_microbehavior`** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **· ← hole** |
+| `axis_effect_size` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ `--with-wa` **closed 08-02** |
+| `axis1_microbehavior` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | · (shares the axis inputs; not wired) |
 
 Three of these are **design**, one is an **omission nobody noticed**:
 
@@ -294,15 +310,25 @@ Three of these are **design**, one is an **omission nobody noticed**:
   `cls_B0` has any same-condition rerun at all. It widens when the SoM replicate lands.
 - `routing_feature_diagnostics` cannot cover WA — WebArena ships no reference images and no
   `visual_difficulty` annotation, so the feature it diagnoses does not exist there.
-- **`axis_effect_size` and `axis1_microbehavior` have no WA cell, and that is an omission.**
-  WA step records have been on disk since 08-02, and the other four step-reading products were
-  wired to them the same day. These two were left out because the handoff listed three products
-  to wire and this dimension was believed complete — **a product that is empty raises no
-  question about its coverage, because it looks finished**. A bug concealed a hole.
+- ~~**`axis_effect_size` and `axis1_microbehavior` have no WA cell**~~ — **closed 2026-08-02
+  for `axis_effect_size`.** The omission is worth keeping on the record because of how it hid:
+  WA step records had been on disk since 08-02 and the other four step-reading products were
+  wired the same day; these two were left out because the handoff listed three products and this
+  dimension *looked* ✅ complete while every contrast in it was n=0. **A product that is empty
+  raises no question about its coverage, because it looks finished.** A bug concealed a hole.
 
-Why it matters: §2 of `conditional_failure_attribution` and §3.1 here establish the workload
-flip on success rates and on arm-matched marginal gains. The 2×2 layer is where the flip would
-either appear or fail to appear in **paired effect sizes**, which is a different functional and
-would be the strongest form of the claim. Cost to close: the same `wa_spec()` mechanism
-`per_mode_four_dimension_profile.py` already uses (a universe, a mode→dir map, a steps glob),
-plus a `--with-wa` output split so the /6 consistency denominators are not silently rewritten.
+What the seventh cell showed, and how strong it is:
+
+| | VWA (6 cells) | WA (1 cell) |
+|---|---|---|
+| dominant cascade axis | text 12 · prompt 9 · **image 19** | text 1 · **prompt 4** · image 2 |
+
+The image axis stops dominating on WA — consistent with it being the text workload, and the
+**first appearance of the modality flip in paired effect sizes** rather than in success rates or
+arm-matched marginal gains. ⚠️ It is weak in the ways that matter to state: WA contributes three
+effect-only combinations and **none survives multiplicity control** (n=104 against 203/224, so
+less power), and a dominant-axis tally over one cell is a description, not a test.
+
+`axis1_microbehavior` still has no WA cell. It consumes the same `STEP_DIRS`, so the wiring is
+mechanical, but its ratio machinery reads a VWA-shaped macro-effects file and would need its own
+pass — left open deliberately rather than bolted on.
