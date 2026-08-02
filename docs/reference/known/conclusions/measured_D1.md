@@ -389,7 +389,26 @@
 
 **关联测量** (§106): axis1_microbehavior ratio = mean(|axis-1 effect on decision-quality metrics|) / mean(|axis-1 effect on macro-action-freq metrics|) —— **reddit 2.28 ✓ / cls 1.02 (边界, technically ✓)**; verdict = generalizes。
 
-**已作废**: 无。
+> ⚠️ **SUPERSEDED 2026-08-02 (§408.2)** —— 上面两组数出自 **pre-Phase-A** 数据。在此之后
+> `axis_effect_size.py` 的每一次命令行调用都因 `ModuleNotFoundError` 静默降级成空输入
+> (STEP_DIRS = {}), 产物变成 **192 个 contrast 全部 n=0** 而报告照常生成, 所以 §397 之后
+> 任何读这两个产物的地方读到的都是空表上的 vacuously-true 否定。修复后在 **paper-grade
+> 全数据 (3 baseline × 2 site × 6 mode, 36 格)** 上的终值:
+>
+> | 量 | §106 (pre-Phase-A) | 2026-08-02 (paper-grade) |
+> |---|---|---|
+> | antagonistic pairs | 6 | **21** |
+> | axis-1 decision/macro ratio | reddit 2.28 / cls **1.02 (边界)** | B0 1.43/2.52 · B1 2.84/1.34 · B2 4.07/2.03 —— **六格最低 1.34** |
+> | verdict | generalizes (cls 勉强) | generalizes, **anchor = B0+B1+B2** |
+> | dominant cascade axis | — | text 12 · prompt 9 · **image 19** |
+> | P-SoM 同时区别于 DOM 与 SoM | 报告称「没有任何一格」 | **15 个 (metric, cell)**, 覆盖 6 格; `finish_rate` 5/6 |
+>
+> **这是 supersede 不是修正** —— 两批数据不同 (pre-Phase-A 的 trajectory-derived 指标本条
+> caveats 已标 contaminated)。且 **§407.12 已把 2×2 从主张降级为 §2 构造效度检查**, 所以
+> 数字复活不等于该把它抬回主张位置。post-hoc, 192 个 contrast 未校正多重比较。
+> 证据 → `axis_effect_size_report.md` Tier 1/2a/2b + `axis1_microbehavior_report.md`。
+
+**已作废**: §106 的两组数值已被 2026-08-02 paper-grade 重算 supersede (见上方 ⚠️ 块)。
 
 **caveats**: pre-Phase-A trajectory-derived 指标, §124.4 critique 3 标 **contaminated**; ★ 是原文自带显著标记; **cls ratio 1.02 是边界值**; 该组 pair 的意义是「endpoint DOM↔SoM 比较看不到」。
 
@@ -1223,6 +1242,14 @@ Top-7 cluster 共享 signature (§113.2): task 0 blue kayak / 81 hurricane book 
 > **84/210 = 40.0%** 的 task 带 goal-side reference image；WA reddit **0/106**（task schema
 > 里没有 `image` 字段）。那是数文件得到的，绕开本条的全部争议。
 > ⚠️ 并因此收窄一句：「VWA 全是视觉任务」结构上偏强——只有 40% 带目标图。
+>
+> ⚠️ **口径更正 2026-08-02（§407.17）** —— 上面的 84/210 = 40.0% 是 **reddit 单站的全集**
+> （pre-N/A-exclusion）。**计分宇宙**下是 reddit **79/203 = 38.9%** · classifieds
+> **65/224 = 29.0%** · **合计 432/1281 = 33.7%**。论文里那句
+> "VWA specifies 40.0% of its goals with a reference image" 把单站全集数写成了 VWA 整体，
+> 而且加了个 `.0` 给它一个不存在的精度；已改为 33.7%。
+> 逐站差异（29.0 vs 38.9）不伤模态轴论证——轴是 **VWA-vs-WA** 不是 cls-vs-red，WA 是 0%。
+> 引用本行时务必带上口径（单站/全集 vs 跨站/计分）。
 - **§89 自动列表** (`_load_visual_task_ids`): cls **69.2%** / reddit **84.3%** / shopping **57.7%**
 - **§95 Codex 手动审计**: VWA 整体 **95.3%**; cls **96.2%** / reddit **99.5%** / shopping **92.9%**
 - 原文: 「两种不同定义, 数字**不可比、不可互换引用**」。另: §95 审计文件 docstring 写 'manual' 实际是 codex 判定, §100 要求重新独立审计。

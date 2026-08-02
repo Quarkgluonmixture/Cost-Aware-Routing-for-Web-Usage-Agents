@@ -414,6 +414,12 @@ Tier B per-layer 原始计数（arch-match / curr / other）：task 93 = 30/6/0�
 - **B0 som vs dom 的 proxy input_tokens 中位数差**：som 中位 **4300** vs dom **3221**，差 **1079 ≈ 1280x720 图 token 1228 (= w×h/750)**（§260）。
 - **cross-baseline cost basis 相差约 1000×**：B0 商业 API USD vs B1+B2 electricity-derived USD（§220.3 §222）；`api_usd ($0.005/1K tok)` vs `electricity_usd_derived ($0.0000005/1K tok)`（§222）。
 - **carbon**：B0 `energy.source=disabled`（远程 Bedrock 本地 GPU idle = 本质 N/A）vs B1/B2 `psutil_profile/pynvml`（实测 B1 co2e_kg=5.42e-5）（§260 Part E）。
+  > ⚠️ **更正 2026-08-02 (§407.20)** —— B1/B2 的 source **不是** `psutil_profile/pynvml` 二选一，
+  > 而是 **一律 `psutil_profile`**：config 写着 `use_pynvml: true` + `hardware_profile:
+  > a100_pcie_40gb`，但 **NVML 静默回落到 psutil，而 psutil 读 CPU 不读 GPU**。实测
+  > `power_watts` 均值 **66.3 / 66.7 W**、CV = 0.03，而 A100 PCIe 40GB 满载 200–250W。
+  > ⇒ 碳列是**壁钟时间换了个单位**（co2e~latency r = **0.9999** 四格全部），
+  > **不报碳的理由是仪器没在测那个东西，不是它与 cost 冗余**。r=0.9999 是症状不是结论。
 - **LLM evaluator (judge) API 成本估算**：VWA gpt-4o-mini judge 累计约 **150K-250K 次调用，约 $10-$80 USD 区间**（§220.3，"是估算区间不是账单实测"）。
 - accounting reset 落地（§248）：StepRecordV2 +3 flag / EpisodeSummaryV2 +5 counter +3 cost；Smoke A 三 baseline "canonical+wasted==billed 全为 True"（§250.2）。
 
