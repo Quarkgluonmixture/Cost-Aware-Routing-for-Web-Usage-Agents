@@ -19,6 +19,7 @@ proxy api key — separate batch).
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -454,15 +455,117 @@ def test_queue_chain_exports_chain_lock_held():
     """B-704: queue_chain.sh must export `P79_CHAIN_LOCK_HELD` after acquiring
     its FD-9 lock so leaf scripts called under the chain can skip double-acquire
     (would otherwise FATAL exit since FD-7 lock on same file blocks).
+
+    B-1934 (2026-08-03): the identity is now the CONTAINER key from
+    `site_lock_key`, not the old `"${this_site}:${this_benchmark}"` literal —
+    shopping / shopping_admin / vwa / wa all name one docker container, so the
+    lock had to stop keying on the label. Asserting the literal would only pin
+    the old string; what actually has to hold is that BOTH sides derive the
+    identity from the same function, so chain and leaf agree.
     """
     chain = REPO_ROOT / "scripts/queues/queue_chain.sh"
     text = chain.read_text(encoding="utf-8")
     assert "P79_CHAIN_LOCK_HELD" in text, (
         "queue_chain.sh must export P79_CHAIN_LOCK_HELD for leaf-script coordination"
     )
-    assert 'export P79_CHAIN_LOCK_HELD="${this_site}:${this_benchmark}"' in text, (
-        "queue_chain.sh export must use canonical site:benchmark identity form"
+    assert 'export P79_CHAIN_LOCK_HELD="${THIS_LOCK_KEY}"' in text, (
+        "queue_chain.sh export must use the container-key identity form (B-1934)"
     )
+    assert 'THIS_LOCK_KEY="$(site_lock_key' in text, (
+        "queue_chain.sh must derive THIS_LOCK_KEY via lib site_lock_key, not hand-build it"
+    )
+    lib = (REPO_ROOT / "scripts/queues/_lib_paper_grade_gates.sh").read_text(encoding="utf-8")
+    assert '_lock_key="$(site_lock_key' in lib, (
+        "acquire_site_lock must compare P79_CHAIN_LOCK_HELD against site_lock_key output "
+        "— if the two sides derive the identity differently, chain→leaf delegation breaks"
+    )
+
+
+def test_site_lock_key_groups_shared_containers():
+    """B-1934: the site lock must key on the docker container, not (site, benchmark).
+
+    On the A100 paper-grade host WA and VWA share one container set: shopping
+    (7770) and shopping_admin (7780) are both `vwa-shopping`, and each
+    benchmark's version of a site is the same container. The pre-fix key
+    `p79_<site>_<benchmark>.lock` therefore handed out concurrent exclusive
+    locks on ONE Magento instance — two resets racing on the same DB.
+    """
+    lib = REPO_ROOT / "scripts/queues/_lib_paper_grade_gates.sh"
+    out = subprocess.run(
+        ["bash", "-c",
+         f'source "{lib}" 2>/dev/null; '
+         'for p in "classifieds vwa" "reddit vwa" "reddit wa" "shopping vwa" '
+         '"shopping wa" "shopping_admin vwa" "shopping_admin wa" "gitlab wa"; do '
+         'set -- $p; echo "$1/$2=$(site_lock_key "$1" "$2")"; done'],
+        capture_output=True, text=True, check=True,
+    )
+    keys = dict(line.split("=") for line in out.stdout.strip().splitlines())
+
+    magento = ["shopping/vwa", "shopping/wa", "shopping_admin/vwa", "shopping_admin/wa"]
+    assert len({keys[k] for k in magento}) == 1, (
+        f"all four Magento (site, benchmark) pairs must share one lock key, got "
+        f"{ {k: keys[k] for k in magento} } — a split key permits two chains to "
+        f"reset the same container concurrently"
+    )
+    assert keys["reddit/vwa"] == keys["reddit/wa"], (
+        "WA reddit IS the vwa-reddit postmill container (§387.3) — same lock"
+    )
+    assert keys["classifieds/vwa"] != keys["shopping/vwa"], (
+        "classifieds and shopping are genuinely different containers"
+    )
+    assert keys["reddit/vwa"] != keys["shopping/vwa"], (
+        "reddit and shopping are genuinely different containers"
+    )
+    # Unknown site keeps the narrow per-(site,benchmark) form: without evidence
+    # of container sharing, widening would invent contention that isn't there.
+    assert keys["gitlab/wa"] == "gitlab_wa", (
+        "unknown sites must fall back to the per-(site,benchmark) key"
+    )
+
+
+def test_container_runner_pattern_covers_both_benchmarks():
+    """B-1934: collision/wait patterns must see runners of BOTH benchmarks.
+
+    Three call sites (`assert_no_other_site_chain_running`,
+    `assert_no_cross_mode_collision`, `queue_chain.sh::_collision_match`) each
+    filtered WA runners out of VWA's view via `grep -v "_wa_"`, on the premise
+    that the stacks were separate. They are not, so a live WA shopping runner
+    did not stop a VWA shopping chain from resetting the container under it.
+    """
+    lib = REPO_ROOT / "scripts/queues/_lib_paper_grade_gates.sh"
+    out = subprocess.run(
+        ["bash", "-c", f'source "{lib}" 2>/dev/null; container_runner_pattern shopping vwa'],
+        capture_output=True, text=True, check=True,
+    )
+    pattern = out.stdout.strip()
+    assert pattern, "container_runner_pattern must emit a pattern for shopping"
+
+    should_match = [
+        "run_experiment.py --run_id B0_dom_shopping_20260803_x",
+        "run_experiment.py --run_id B0_dom_wa_shopping_20260803_x",
+        "run_experiment.py --run_id B0_dom_wa_shopping_admin_20260803_x",
+        "run_experiment.py --run_id B0_dom_shopping_admin_20260803_x",
+    ]
+    for cmdline in should_match:
+        assert re.search(pattern, cmdline), (
+            f"shopping container pattern {pattern!r} must match {cmdline!r} — every "
+            f"one of these runners mutates the same vwa-shopping container"
+        )
+    for cmdline in ["run_experiment.py --run_id B0_dom_classifieds_20260803_x",
+                    "run_experiment.py --run_id B0_dom_reddit_20260803_x"]:
+        assert not re.search(pattern, cmdline), (
+            f"shopping pattern {pattern!r} must not match unrelated site {cmdline!r}"
+        )
+
+    # The `grep -v "_wa_"` filters must be gone from live code (comments explaining
+    # their removal are fine).
+    for path in [lib, REPO_ROOT / "scripts/queues/queue_chain.sh"]:
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            code = line.split("#", 1)[0]
+            assert 'grep -v "_wa_"' not in code, (
+                f"{path.name}:{lineno} still filters WA runners out of the collision "
+                f"check — that is the B-1934 blind spot"
+            )
 
 
 def test_gate1_tbd_detection_broadened():
@@ -520,3 +623,53 @@ def test_no_python_smoke_when_bash_missing():
     """Sanity guard: this whole file assumes bash. If bash absent, skip clean."""
     if shutil.which("bash") is None:
         pytest.skip("bash not available on this host")
+
+
+def test_lock_refusal_propagates_nonzero_exit():
+    """B-1937 (codex Mode B P0, 2026-08-03): a refused lock must NOT exit 0.
+
+    The four leaf scripts guarded both their site lock and their watchdog lock
+    with `if ! acquire_X ...; then exit $?; fi`. Inside that branch `$?` is the
+    status of the `!` operator — always 0 — so a leaf that could not acquire the
+    lock exited 0 and every caller read that as success. The watchdog-lock site
+    is worse than the site-lock one: it runs AFTER the runner is spawned, so the
+    script could exit 0 while leaving a paper-grade runner with no watchdog.
+
+    This asserts BEHAVIOUR, not source shape. A grep-for-`|| exit` test would
+    pass against the broken form too, which is precisely why the bug survived a
+    green suite.
+    """
+    for leaf in ("queue_baseline.sh", "queue_phantom_som.sh",
+                 "queue_phantom_text.sh", "queue_phantom_prompt.sh"):
+        raw = (REPO_ROOT / "scripts/queues" / leaf).read_text(encoding="utf-8")
+        # Strip comments — the B-1937 fix QUOTES the broken form to explain it,
+        # and a naive substring check flags the explanation as the defect.
+        code = "\n".join(
+            line for line in raw.splitlines() if not line.lstrip().startswith("#")
+        )
+        for fn in ("acquire_site_lock", "acquire_watchdog_lock"):
+            assert f"if ! {fn}" not in code, (
+                f"{leaf}: `if ! {fn} ...; then exit $?` swallows the rc — "
+                f"inside that branch $? is the status of `!`, always 0 (B-1937)"
+            )
+            assert f"{fn} " in code, f"{leaf}: lost its {fn} call entirely"
+
+    # The idiom itself must actually propagate. Simulate rc=78 (lock contention)
+    # through the exact construct the scripts now use.
+    broken = subprocess.run(
+        ["bash", "-c", 'acq(){ return 78; }; if ! acq; then exit $?; fi'],
+    ).returncode
+    fixed = subprocess.run(
+        ["bash", "-c", 'acq(){ return 78; }; acq || exit $?'],
+    ).returncode
+    assert broken == 0, "sanity: the OLD idiom is supposed to be the broken one"
+    assert fixed == 78, (
+        f"`cmd || exit $?` must propagate the real rc, got {fixed} — without this "
+        f"every container-lock guarantee built on acquire_site_lock is decorative"
+    )
+
+    # ...and the success path must not be harmed.
+    ok = subprocess.run(
+        ["bash", "-c", 'set -euo pipefail; acq(){ return 0; }; acq || exit $?; exit 0'],
+    ).returncode
+    assert ok == 0, "successful acquisition must fall through, not exit"

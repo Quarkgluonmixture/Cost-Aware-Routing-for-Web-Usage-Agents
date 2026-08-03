@@ -118,6 +118,51 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "timeout_s": 30,
         "fail_closed": False,
     },
+    # B-1936 / PROTOCOL_NOTE_07 (2026-08-03): shopping per-task cart isolation
+    # — **ENABLED** per user decision after the /stress 3-AI round.
+    # Upstream's `require_reset` is a no-op on shopping (envs.py:172 implements
+    # classifieds only); 108 of 466 VWA shopping tasks mutate the cart and 104
+    # are graded by loading the cart page, so within a condition the cart
+    # accumulates and those substring evaluators drift toward false success.
+    #
+    # Why enabled rather than disclosed (reverses the 2026-08-03 morning call):
+    #   * the "cross-site estimand consistency" argument for leaving it was
+    #     FALSE — classifieds already gets 22 per-task full-site resets from
+    #     upstream while reddit/shopping get none, so there is no consistency to
+    #     protect (only heterogeneity to choose between);
+    #   * shopping is PRE-DATA (zero VWA shopping runs on disk), so this defines
+    #     shopping's estimand instead of changing a measured one, and the same
+    #     fix after firing would cost 18 condition re-runs;
+    #   * meta-analysis handles documented protocol heterogeneity; it cannot
+    #     launder unidirectional measurement error.
+    # reddit keeps its accumulation (already bound; §402.7 disclose-only stands).
+    #
+    # Cleared before EVERY shopping task, not just the 19 upstream flags: those
+    # flags hit only 1 of the 10 tasks actually at risk, and they cannot see the
+    # diffuse channel (an agent adding to the cart while exploring any task).
+    # Idempotent — on an empty cart the DELETE matches 0 rows.
+    #
+    # fail_closed = "auto" (B-1943): hard-fail under P79_PAPER_GRADE=1, warn on
+    # dev boxes. A silent clear failure under fire would let a condition run over
+    # an unknown cart state, indistinguishable from clean in every summary.
+    "shopping_cart_reset": {
+        "enabled": True,
+        "container": "vwa-shopping",
+        "db": "magentodb",
+        "db_user": "magentouser",
+        "db_password": "MyPassword",
+        "quote_table": "quote",
+        "quote_item_table": "quote_item",
+        # "" → $VWA_SHOPPING_USER, then the WebArena seed account emma.lopez.
+        "customer_email": "",
+        "sql_override": "",
+        "timeout_s": 30,
+        # "auto" = hard-fail under P79_PAPER_GRADE=1, warn otherwise (B-1943).
+        # Unconditional True broke every dev/smoke run on a box without the
+        # shopping container; unconditional False was the silent-skip codex F7
+        # flagged. "auto" is the same shape as VWA_RESET_MODE.
+        "fail_closed": "auto",
+    },
     "analysis": {
         "outputs": {
             "save_plots": True,

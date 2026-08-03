@@ -80,9 +80,11 @@ source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
 init_paper_grade_env "${REPO_DIR}"
 assert_a100_url_locality
 # B-704 (A1.14 Chunk d P1-4): per-(site, benchmark) flock at leaf entry.
-if ! acquire_site_lock "${SITE}" "${BENCHMARK}" "queue_phantom_som"; then
-  exit $?
-fi
+# B-1937 (2026-08-03): was `if ! acquire_site_lock; then exit $?; fi` — inside that
+# branch `$?` is the status of `!`, i.e. ALWAYS 0, so a refused lock
+# exited 0 and the caller read it as success. `|| exit $?` evaluates
+# `$?` when exit runs, where it still holds the real rc (78 = contention).
+acquire_site_lock "${SITE}" "${BENCHMARK}" "queue_phantom_som" || exit $?
 trap "release_site_lock" EXIT INT TERM
 
 # ---------- B0 PROXY API key 加载 ----------
@@ -131,11 +133,12 @@ else
   # 实验笔记 §104). A1.13 P0-1 (2026-05-16) propagated B-224 hard-fail to phantom:
   # reset_and_auth_gate aborts on auth failure unless AUTH_GATE_BYPASS=1.
   if [[ "${RESET_BEFORE:-0}" == "1" ]] && wa_reset_supported "${BENCHMARK}" "${SITE}"; then
-    reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_som" --reset-label "phantom_som_${SITE}"
+    reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_som" --reset-label "phantom_som_${SITE}" --benchmark "${BENCHMARK}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    # B-647 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
-    echo "[phantom_som][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported for site=${SITE} (B-647 remainder; reddit IS supported)." >&2
-    echo "[phantom_som][error] WA reddit routes to the VWA postmill reset (shared container); WA shopping/shopping_admin still need a Magento DB restore, same gap as VWA shopping." >&2
+    # B-647 (A1.13 P1-4-BC fix, 2026-05-17) + B-1930 (2026-08-03, WA shopping
+    # routes to the shared Magento container): see queue_baseline.sh equivalent.
+    echo "[phantom_som][error] RESET_BEFORE=1 but no reset implementation for benchmark=${BENCHMARK} site=${SITE}." >&2
+    echo "[phantom_som][error] Supported: all VWA sites; WA reddit / shopping / shopping_admin (B-1930, shared containers)." >&2
     exit 1
   fi
 
@@ -178,9 +181,11 @@ RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
 # B-907 (/stress A2.2 P0-5-B* codex F1 OOB, 2026-05-17): per-RUN_ID flock —
 # sibling propagation from queue_baseline.sh. See lib `acquire_watchdog_lock`
 # header for full rationale.
-if ! acquire_watchdog_lock "${RUN_ID}" "queue_phantom_som"; then
-  exit $?
-fi
+# B-1937 (2026-08-03): was `if ! acquire_watchdog_lock; then exit $?; fi` — inside that
+# branch `$?` is the status of `!`, i.e. ALWAYS 0, so a refused lock
+# exited 0 and the caller read it as success. `|| exit $?` evaluates
+# `$?` when exit runs, where it still holds the real rc (78 = contention).
+acquire_watchdog_lock "${RUN_ID}" "queue_phantom_som" || exit $?
 trap "release_watchdog_lock; release_site_lock" EXIT INT TERM
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[phantom_som] watchdog for ${RUN_ID} already running, skipping spawn"

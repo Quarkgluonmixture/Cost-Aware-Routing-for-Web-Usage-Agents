@@ -89,3 +89,41 @@ def test_no_file_still_claims_wa_has_no_na_taxonomy():
         "stale 'WA has no N/A taxonomy' justification still present at: "
         f"{offenders} — see 笔记 §137 task #76 for the refuting counts"
     )
+
+
+def test_paper_grade_check_wa_counts_match_the_launch_side_table():
+    """B-1941 (/stress Mode A F7, 2026-08-03): the analysis side must agree.
+
+    B-1933 added a THIRD copy of the WA scored counts, in
+    `scripts/maintenance/paper_grade_check.py::WA_SCORED_FALLBACK`, because the
+    Phase 1a fire manifest deliberately carries only the three VWA sites (adding
+    WA rows would edit a preregistration artifact to describe runs it does not
+    bind). A comment there says "keep the two in sync" — a comment is not a
+    guard, which is exactly how the launch-side numbers drifted for two months
+    before B-1894. Drift here is worse than cosmetic: the launch side would
+    accept a condition at 173 episodes while the verification side calls the
+    same run incomplete, or vice versa.
+    """
+    import ast
+
+    src = (REPO / "scripts" / "maintenance" / "paper_grade_check.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    fallback = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id == "WA_SCORED_FALLBACK" for t in node.targets
+        ):
+            fallback = ast.literal_eval(node.value)
+    assert fallback is not None, "WA_SCORED_FALLBACK not found in paper_grade_check.py"
+
+    launch_side = _parse_bash_table(REPO / "scripts" / "queues" / "queue_chain.sh", "SITE_EXPECTED_N")
+    for site, n in fallback.items():
+        assert site in launch_side, (
+            f"paper_grade_check knows site {site!r} but queue_chain.sh's "
+            f"SITE_EXPECTED_N does not — one side gained a site the other lacks"
+        )
+        assert launch_side[site] == n, (
+            f"{site}: paper_grade_check says {n}, queue_chain.sh says "
+            f"{launch_side[site]} — the launch side and the verification side "
+            f"disagree on how many episodes make a complete condition"
+        )

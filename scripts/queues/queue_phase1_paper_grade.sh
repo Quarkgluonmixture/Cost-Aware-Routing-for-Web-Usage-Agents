@@ -29,7 +29,15 @@
 #   bash scripts/queues/queue_phase1_paper_grade.sh launch             # Phase 1a (cls+red, 36 conditions)
 #   bash scripts/queues/queue_phase1_paper_grade.sh launch cls         # only classifieds Phase 1a chain (18 conditions)
 #   bash scripts/queues/queue_phase1_paper_grade.sh launch red         # only reddit Phase 1a chain (18 conditions)
-#   bash scripts/queues/queue_phase1_paper_grade.sh launch phase1b     # Phase 1b shop chain (18 conditions, deferred to post-workshop)
+#   bash scripts/queues/queue_phase1_paper_grade.sh launch phase1b     # Phase 1b VWA shop chain (18 conditions, deferred to post-workshop)
+#   bash scripts/queues/queue_phase1_paper_grade.sh launch wa_shop        # WA shopping (18 conditions, 173 scored tasks each)
+#   bash scripts/queues/queue_phase1_paper_grade.sh launch wa_shop_admin  # WA shopping_admin (18 conditions, 176 scored tasks each)
+#
+# B-1935 (2026-08-03): the three shop chains above all mutate the SAME Magento
+# container (`vwa-shopping`, 7770 storefront + 7780 admin). WA is not a second
+# stack — it is the same container reached through WA's task files. They share
+# one container lock (B-1934) and must be run one after another; a second launch
+# while one is alive aborts, which is the gate doing its job.
 #
 # Phase 1a conditions (36 total):
 #   cls chain (18 conditions, B0 → B1 → B2 sequential):
@@ -420,9 +428,11 @@ except Exception as e:
   local missing_cfg=0
   local builders_to_check
   case "${SITE_FILTER}" in
-    all|cls|red) builders_to_check="build_cls_chain build_red_chain" ;;
-    phase1b)     builders_to_check="build_shop_chain" ;;
-    *)           builders_to_check="build_cls_chain build_red_chain" ;;
+    all|cls|red)     builders_to_check="build_cls_chain build_red_chain" ;;
+    phase1b)         builders_to_check="build_shop_chain" ;;
+    wa_shop)         builders_to_check="build_wa_shop_chain" ;;         # B-1935
+    wa_shop_admin)   builders_to_check="build_wa_shop_admin_chain" ;;   # B-1935
+    *)               builders_to_check="build_cls_chain build_red_chain" ;;
   esac
   for builder in ${builders_to_check}; do
     while IFS= read -r cmd; do
@@ -462,20 +472,35 @@ except Exception as e:
       # shellcheck disable=SC1091
       source scripts/queues/_lib_paper_grade_gates.sh
     fi
-    g8_rc=0
-    assert_quarantine_gate classifieds "0-233" 1 || g8_rc=$?
-    if [ "$g8_rc" -ne 0 ]; then
-      log "  FAIL: cls quarantine registry gate HALT (rc=$g8_rc)"
-      errors=$((errors+1))
-    fi
-    g8_rc=0
-    assert_quarantine_gate reddit "0-209" 1 || g8_rc=$?
-    if [ "$g8_rc" -ne 0 ]; then
-      log "  FAIL: red quarantine registry gate HALT (rc=$g8_rc)"
-      errors=$((errors+1))
-    fi
+    # B-1939 (codex Mode B F5, 2026-08-03): the gate must examine the sites this
+    # launch will actually touch. Pre-fix it hardcoded cls 0-233 + red 0-209
+    # regardless of SITE_FILTER, so `launch wa_shop` passed a quarantine check on
+    # two unrelated sites and printed "All gates passed" while any unresolved WA
+    # shopping/admin quarantine event stayed invisible. A gate that always
+    # inspects the same thing is not a gate for anything else.
+    declare -a _g8_sites=()
+    case "${SITE_FILTER}" in
+      all|"")        _g8_sites=("classifieds:0-233" "reddit:0-209") ;;
+      cls)           _g8_sites=("classifieds:0-233") ;;
+      red)           _g8_sites=("reddit:0-209") ;;
+      phase1b)       _g8_sites=("shopping:0-465") ;;
+      wa_shop)       _g8_sites=("wa_shopping:0-191") ;;
+      wa_shop_admin) _g8_sites=("wa_shopping_admin:0-181") ;;
+      *)
+        log "  FAIL: Gate 8 has no quarantine policy for SITE_FILTER=${SITE_FILTER} — refusing to pass a gate that inspects nothing relevant"
+        errors=$((errors+1)) ;;
+    esac
+    for _g8 in "${_g8_sites[@]}"; do
+      _g8_site="${_g8%%:*}"; _g8_range="${_g8##*:}"
+      g8_rc=0
+      assert_quarantine_gate "${_g8_site}" "${_g8_range}" 1 || g8_rc=$?
+      if [ "$g8_rc" -ne 0 ]; then
+        log "  FAIL: ${_g8_site} quarantine registry gate HALT (rc=$g8_rc)"
+        errors=$((errors+1))
+      fi
+    done
     if [ "$errors" -eq 0 ]; then
-      log "  OK (no unclassified quarantine events for cls 0-233 or red 0-209)"
+      log "  OK (no unclassified quarantine events for: ${_g8_sites[*]})"
     fi
   else
     # /stress 2026-05-20 Track A F3 P0-3-A: paper-grade hard rule "always clean"
@@ -523,15 +548,26 @@ config_for_cmd() {
   read -r -a parts <<< "$cmd"
   local script="${parts[0]}"
   local baseline="${parts[1]}"
+  # B-1935 (2026-08-03): benchmark-aware site token. The leaf scripts take
+  # benchmark as a trailing optional arg (`... shopping wa`), and the config
+  # naming convention puts it in FRONT of the site (`exp_v2_B0_dom_wa_shopping`),
+  # so it cannot be appended positionally — pre-fix any WA chain step resolved to
+  # the VWA config path and Gate 7 would have reported it missing.
+  local site bench
   case "$script" in
-    queue_baseline.sh)        # <baseline> <mode> <site>
-      echo "configs/exp_v2_${baseline}_${parts[2]}_${parts[3]}.yaml" ;;
-    queue_phantom_som.sh)     # <baseline> <site>
-      echo "configs/exp_v2_${baseline}_phantom_som_${parts[2]}.yaml" ;;
-    queue_phantom_text.sh|queue_phantom_dom.sh)  # <baseline> <site> (dom = back-compat symlink)
-      echo "configs/exp_v2_${baseline}_phantom_text_${parts[2]}.yaml" ;;
-    queue_phantom_prompt.sh)  # <baseline> <site>
-      echo "configs/exp_v2_${baseline}_phantom_prompt_${parts[2]}.yaml" ;;
+    queue_baseline.sh)  site="${parts[3]}"; bench="${parts[4]:-vwa}" ;;
+    *)                  site="${parts[2]}"; bench="${parts[3]:-vwa}" ;;
+  esac
+  [[ "${bench}" == "wa" ]] && site="wa_${site}"
+  case "$script" in
+    queue_baseline.sh)        # <baseline> <mode> <site> [benchmark]
+      echo "configs/exp_v2_${baseline}_${parts[2]}_${site}.yaml" ;;
+    queue_phantom_som.sh)     # <baseline> <site> [benchmark]
+      echo "configs/exp_v2_${baseline}_phantom_som_${site}.yaml" ;;
+    queue_phantom_text.sh|queue_phantom_dom.sh)  # <baseline> <site> [benchmark] (dom = back-compat symlink)
+      echo "configs/exp_v2_${baseline}_phantom_text_${site}.yaml" ;;
+    queue_phantom_prompt.sh)  # <baseline> <site> [benchmark]
+      echo "configs/exp_v2_${baseline}_phantom_prompt_${site}.yaml" ;;
     *) echo "UNKNOWN_SCRIPT:${script}" ;;
   esac
 }
@@ -546,17 +582,24 @@ config_for_cmd() {
 _condition_complete() {
   local cmd="$1"
   local -a p; read -r -a p <<< "$cmd"
-  local script="${p[0]}" bl="${p[1]}" mode site
+  local script="${p[0]}" bl="${p[1]}" mode site bench
   case "$script" in
-    queue_baseline.sh)                            mode="${p[2]}";        site="${p[3]}" ;;
-    queue_phantom_som.sh)                         mode="phantom_som";    site="${p[2]}" ;;
-    queue_phantom_text.sh|queue_phantom_dom.sh)   mode="phantom_text";   site="${p[2]}" ;;
-    queue_phantom_prompt.sh)                      mode="phantom_prompt"; site="${p[2]}" ;;
+    queue_baseline.sh)                            mode="${p[2]}";        site="${p[3]}"; bench="${p[4]:-vwa}" ;;
+    queue_phantom_som.sh)                         mode="phantom_som";    site="${p[2]}"; bench="${p[3]:-vwa}" ;;
+    queue_phantom_text.sh|queue_phantom_dom.sh)   mode="phantom_text";   site="${p[2]}"; bench="${p[3]:-vwa}" ;;
+    queue_phantom_prompt.sh)                      mode="phantom_prompt"; site="${p[2]}"; bench="${p[3]:-vwa}" ;;
     *) return 1 ;;
   esac
-  REPO_DIR="${REPO_DIR}" python3 - "$site" "$bl" "$mode" <<'PY'
+  # B-1935: qualify the manifest key by benchmark. Pre-fix a WA step looked up
+  # the bare site, so `queue_baseline.sh B0 dom shopping wa` queried the VWA key
+  # `shopping|B0|dom` — and under RESUME_MISSING=1 a COMPLETED VWA shopping
+  # condition would mark the WA step done and silently drop it from the chain.
+  # WA conditions are absent from the Phase 1a manifest by design, so the lookup
+  # correctly misses and the step runs fresh.
+  [[ "${bench}" == "wa" ]] && site="wa_${site}"
+  REPO_DIR="${REPO_DIR}" python3 - "$site" "$bl" "$mode" "$bench" <<'PY'
 import json, os, sys
-site, bl, mode = sys.argv[1:4]
+site, bl, mode, bench = sys.argv[1:5]
 repo = os.environ.get("REPO_DIR", ".")
 try:
     d = json.load(open(os.path.join(repo, "docs/checkpoints/pre_run/fire_manifest.json")))
@@ -567,7 +610,19 @@ if not cond:
     sys.exit(1)
 scored = int(d.get("scored_task_count", {}).get(site, 10**9))
 cond_id = cond.get("condition_id", f"phase1_{mode}_router_0")
-summ = os.path.join(repo, "results/visualwebarena/phase1", cond["run_id"], cond_id, "condition_summary_v2.json")
+# B-1938 (codex Mode B F3, 2026-08-03): results root must follow the benchmark.
+# Pre-fix this was hardcoded to `results/visualwebarena/phase1`, but WA runs land
+# in `results/webarena/phase1` (both dirs exist on disk). B-1935 exposed
+# `_resume_filter_done` on the two new WA builders, so RESUME_MISSING advertised
+# a resume that could never find WA data — interrupt at condition 17/18 and all
+# 16 finished conditions would be re-run, each re-resetting the container.
+# NOTE this alone does not make WA resume work: WA conditions are absent from the
+# Phase 1a fire manifest by design, so the `conditions` lookup above still misses
+# and every WA step runs fresh. That is correct-but-inert. Making WA resume
+# actually functional needs its own manifest namespace (codex F3 defuse, 3-6h) —
+# until then WA resume is a no-op, not a wrong answer.
+_root = "results/webarena/phase1" if bench == "wa" else "results/visualwebarena/phase1"
+summ = os.path.join(repo, _root, cond["run_id"], cond_id, "condition_summary_v2.json")
 try:
     eps = int(json.load(open(summ)).get("episodes", 0))
 except Exception:
@@ -670,6 +725,65 @@ queue_phantom_prompt.sh B2 shopping
 EOF
 }
 
+build_wa_shop_chain() {
+  # WA shopping: 6 modes per model, B0 → B1 → B2 sequential = 18 conditions,
+  # 173 scored tasks each (post-N/A-exclusion, B-1894).
+  #
+  # B-1935 (2026-08-03): launches under the SAME container key as the VWA shop
+  # chain ("magento", see lib site_lock_key) — WA shopping is the `vwa-shopping`
+  # container reached through WA's task file, not a second stack. So this chain
+  # and build_shop_chain can never run concurrently; the container lock refuses
+  # the second one. Run them one after the other, not in parallel, and expect
+  # `launch wa_shop` to abort while a VWA shop chain is alive. That is the gate
+  # working, not a misfire.
+  _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
+queue_baseline.sh B0 dom shopping wa
+queue_baseline.sh B0 som shopping wa
+queue_baseline.sh B0 vision shopping wa
+queue_phantom_text.sh B0 shopping wa
+queue_phantom_som.sh B0 shopping wa
+queue_phantom_prompt.sh B0 shopping wa
+queue_baseline.sh B1 dom shopping wa
+queue_baseline.sh B1 som shopping wa
+queue_baseline.sh B1 vision shopping wa
+queue_phantom_text.sh B1 shopping wa
+queue_phantom_som.sh B1 shopping wa
+queue_phantom_prompt.sh B1 shopping wa
+queue_baseline.sh B2 dom shopping wa
+queue_baseline.sh B2 som shopping wa
+queue_baseline.sh B2 vision shopping wa
+queue_phantom_text.sh B2 shopping wa
+queue_phantom_som.sh B2 shopping wa
+queue_phantom_prompt.sh B2 shopping wa
+EOF
+}
+
+build_wa_shop_admin_chain() {
+  # WA shopping_admin: 6 modes per model = 18 conditions, 176 scored tasks each
+  # (B-1894). Same container as both shop chains above (7780 and 7770 are one
+  # container), hence the same lock and the same one-at-a-time constraint.
+  _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
+queue_baseline.sh B0 dom shopping_admin wa
+queue_baseline.sh B0 som shopping_admin wa
+queue_baseline.sh B0 vision shopping_admin wa
+queue_phantom_text.sh B0 shopping_admin wa
+queue_phantom_som.sh B0 shopping_admin wa
+queue_phantom_prompt.sh B0 shopping_admin wa
+queue_baseline.sh B1 dom shopping_admin wa
+queue_baseline.sh B1 som shopping_admin wa
+queue_baseline.sh B1 vision shopping_admin wa
+queue_phantom_text.sh B1 shopping_admin wa
+queue_phantom_som.sh B1 shopping_admin wa
+queue_phantom_prompt.sh B1 shopping_admin wa
+queue_baseline.sh B2 dom shopping_admin wa
+queue_baseline.sh B2 som shopping_admin wa
+queue_baseline.sh B2 vision shopping_admin wa
+queue_phantom_text.sh B2 shopping_admin wa
+queue_phantom_som.sh B2 shopping_admin wa
+queue_phantom_prompt.sh B2 shopping_admin wa
+EOF
+}
+
 # ---------------------------------------------------------------------------
 # Launch
 # ---------------------------------------------------------------------------
@@ -694,7 +808,21 @@ dry_run() {
   log ""
   log "Phase 1b total: 18 conditions (launch separately via 'launch phase1b shop' post-workshop)."
   log ""
-  log "Run with 'launch' for Phase 1a default, or 'launch phase1b shop' for shop expansion."
+  log "=== WA shopping (B-1935, 2026-08-03) ==="
+  log ""
+  log "WA shop chain (18 conditions, 6 modes × B0+B1+B2, 173 scored tasks each):"
+  build_wa_shop_chain | sed 's/^/  /'
+  log ""
+  log "WA shop_admin chain (18 conditions, 6 modes × B0+B1+B2, 176 scored tasks each):"
+  build_wa_shop_admin_chain | sed 's/^/  /'
+  log ""
+  log "⚠️  All three shop chains (phase1b / wa_shop / wa_shop_admin) mutate ONE"
+  log "    Magento container (vwa-shopping, ports 7770+7780). They hold the same"
+  log "    container lock and must run sequentially; launching a second one while"
+  log "    another is alive aborts by design (B-1934)."
+  log ""
+  log "Run with 'launch' for Phase 1a default, 'launch phase1b' for VWA shop,"
+  log "or 'launch wa_shop' / 'launch wa_shop_admin' for the WA expansions."
 }
 
 launch_chain() {
@@ -966,9 +1094,24 @@ case "$MODE" in
         ;;
       phase1b)
         log "=== Phase 1b launch (main-paper shop expansion) ==="
+        assert_no_other_site_chain_running "shop" "queue_phase1"
         launch_chain "shop" build_shop_chain
         ;;
-      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b)" ;;
+      wa_shop)
+        # B-1935: WA shopping rides the same Magento container as VWA shopping,
+        # so it declares self_site "shop" — the host-chain check must treat the
+        # two as one site, and the container lock will refuse a second chain on
+        # it regardless.
+        log "=== WA shopping launch (18 conditions, 173 scored tasks/condition) ==="
+        assert_no_other_site_chain_running "shop" "queue_phase1"
+        launch_chain "shop" build_wa_shop_chain
+        ;;
+      wa_shop_admin)
+        log "=== WA shopping_admin launch (18 conditions, 176 scored tasks/condition) ==="
+        assert_no_other_site_chain_running "shop" "queue_phase1"
+        launch_chain "shop" build_wa_shop_admin_chain
+        ;;
+      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b|wa_shop|wa_shop_admin)" ;;
     esac
     # B-705 (A1.14 Chunk d P2-2): summary message now reflects actual SITE_FILTER
     # mode. Pre-fix line always said "Phase 1a rerun (36 conditions...)" even when
@@ -981,6 +1124,8 @@ case "$MODE" in
       cls)     log "Phase 1a Pass-1 cls-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
       red)     log "Phase 1a Pass-1 red-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
       phase1b) log "Phase 1b shop chain launched (18 conditions, B0+B1+B2 × 6 modes; main-paper expansion). Monitor:" ;;
+      wa_shop) log "WA shopping chain launched (18 conditions, B0+B1+B2 × 6 modes, 173 scored tasks each). Shares the Magento container with VWA shop — run those two sequentially. Monitor:" ;;
+      wa_shop_admin) log "WA shopping_admin chain launched (18 conditions, B0+B1+B2 × 6 modes, 176 scored tasks each). Same Magento container as both shop chains. Monitor:" ;;
       *)       log "Launch completed for SITE_FILTER=${SITE_FILTER}. Monitor:" ;;
     esac
     log ""

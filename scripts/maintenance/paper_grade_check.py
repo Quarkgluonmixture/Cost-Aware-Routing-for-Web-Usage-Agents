@@ -40,11 +40,58 @@ IMAGE_MODES = ("som", "vision")  # modes that MUST produce per-step artifact ima
 PARSE_ERR_THRESHOLD = 0.01
 
 
+# B-1933 (2026-08-03): WA scored-task counts. The manifest's `scored_task_count`
+# covers only the three VWA sites because it is the Phase 1a fire lock, and Phase
+# 1a is VWA-only — adding WA rows there would edit a pre-registration artifact to
+# describe runs it does not bind. These live here instead, and they are not a
+# fresh estimate: 173 / 176 / 104 are the post-N/A-exclusion counts adjudicated in
+# B-1894, the same numbers `queue_chain.sh`'s SITE_EXPECTED_N asserts against at
+# launch. Keep the two in sync; a disagreement means one of them drifted.
+WA_SCORED_FALLBACK = {
+    "wa_shopping": 173,
+    "wa_shopping_admin": 176,
+    "wa_reddit": 104,
+}
+
+
 def _site_of(run_name: str) -> str:
-    for s in ("classifieds", "reddit", "shopping"):
+    """Resolve run_id → site key, longest-prefix first.
+
+    B-1933: the previous version tested membership in ("classifieds", "reddit",
+    "shopping") and returned the first hit, so every WA run resolved to its VWA
+    namesake — `B0_dom_wa_shopping_<ts>` contains the substring "shopping" and
+    came back as `shopping`, and `..._wa_shopping_admin_...` did too. The run was
+    then checked against the VWA expectation (435 vs its real 173, or 205 vs 104
+    for reddit), so a complete WA condition read as incomplete and a bound one
+    raised a false BOUND-run-incomplete issue. `queue_chain.sh:476` already fixed
+    this same substring collision at launch time (B-1894); this is the analysis
+    side of it, which was missed.
+
+    Order matters: `wa_shopping_admin` must be tested before `wa_shopping`,
+    which must be tested before `shopping`.
+    """
+    for s in ("wa_shopping_admin", "wa_shopping", "wa_reddit",
+              "classifieds", "reddit", "shopping"):
         if s in run_name:
             return s
     return "?"
+
+
+def _expected_scored(site: str, scored: dict) -> int | None:
+    """Expected scored-task count for a site, or None when genuinely unknown.
+
+    B-1933: returns None rather than a 10**9 sentinel. The old sentinel made an
+    unknown site indistinguishable from a hugely-incomplete one — `ep < 10**9` is
+    always true, so an unrecognised run either vanished from the report (unbound)
+    or produced a nonsense "incomplete (224 < scored 1000000000)" line. An
+    unmeasured expectation must be reported as unmeasured, not silently coerced
+    into a comparison that always fails.
+    """
+    if site in scored:
+        return int(scored[site])
+    if site in WA_SCORED_FALLBACK:
+        return WA_SCORED_FALLBACK[site]
+    return None
 
 
 def _mode_of(cond_id: str) -> str:
@@ -99,8 +146,17 @@ def main() -> int:
             issues.append(f"{tag}: condition_summary unreadable")
             continue
         ep = int(s.get("episodes", 0))
-        exp = int(scored.get(site, 10 ** 9))
+        exp = _expected_scored(site, scored)
         is_bound = run_name in bound_runs
+        if exp is None:
+            # B-1933: surface it instead of comparing against a sentinel. A run
+            # whose site we cannot name is exactly the case where a silent pass
+            # is most dangerous — nothing else in this loop would flag it.
+            issues.append(
+                f"{tag}: cannot determine expected scored count "
+                f"(site={site!r} from run_name={run_name!r}) — episode-count check SKIPPED"
+            )
+            continue
         # 1. episode count vs scored
         if ep > exp:
             # over-complete = dedup-failure / double-run contamination (always an issue)

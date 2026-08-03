@@ -74,6 +74,81 @@ init_paper_grade_env() {
 }
 
 # ---------- 1b. Per-(site, benchmark) flock — leaf script protection (B-704) ----------
+# site_lock_key <site> <benchmark>
+#
+# B-1934 (2026-08-03): the site lock must name the DOCKER CONTAINER being
+# mutated, not the (site, benchmark) label. Those two were treated as the same
+# thing and they are not.
+#
+# The old lock file was `p79_${site}_${benchmark}.lock`, justified in
+# queue_chain.sh:259 as "lock is per (site, benchmark) so VWA shopping + WA
+# shopping_admin can run concurrently (no docker container collision)". That
+# justification is the same false premise §387.3 retracted for reddit: on the
+# A100 paper-grade host WA and VWA share ONE container set. Concretely, every
+# pair the old scheme deliberately allowed to run concurrently is in fact one
+# container:
+#   • shopping (7770) and shopping_admin (7780) are BOTH `vwa-shopping`
+#     (docker inspect: one container, two port bindings) — which is exactly why
+#     `_reset_vwa_local_shopping` has to rebuild them together;
+#   • WA shopping and VWA shopping are that same container again;
+#   • WA reddit and VWA reddit are both `vwa-reddit`.
+# So a lock that separates them grants two chains simultaneous write access to
+# one Magento/Postmill instance: two resets racing, two logins to one account,
+# carts and posted listings bleeding across conditions. It is the precise
+# failure the lock exists to prevent, permitted by the lock's own key.
+#
+# Mapping to physical container groups:
+#   classifieds            → classifieds   (`classifieds` + `classifieds_db`)
+#   reddit      (vwa|wa)   → reddit        (`vwa-reddit`)
+#   shopping / shopping_admin (vwa|wa) → magento (`vwa-shopping`, 7770 + 7780)
+# The benchmark argument is accepted and deliberately ignored for these sites:
+# benchmark is a task-file property, and a task file cannot give you a second
+# container. It is still read for unknown sites, which fall back to the old
+# per-(site,benchmark) key so a genuinely separate future stack keeps its own
+# lock rather than silently sharing one.
+site_lock_key() {
+  local site="${1:?site required}" benchmark="${2:-vwa}"
+  case "${site}" in
+    classifieds)               echo "classifieds" ;;
+    reddit)                    echo "reddit" ;;
+    shopping|shopping_admin)   echo "magento" ;;
+    *)                         echo "${site}_${benchmark}" ;;
+  esac
+}
+
+# container_runner_pattern <site> <benchmark>
+#
+# ERE fragment matching the run_id of ANY runner touching the same container as
+# (site, benchmark). Emitted as the `_<site>_<8-digit-date>_` anchor the run_id
+# minter guarantees, widened across the benchmark prefix and the admin suffix
+# where those denote one container.
+#
+# B-1934: single source for the three places that each built this by hand and
+# each got the same thing wrong — `assert_no_other_site_chain_running`,
+# `queue_chain.sh::_collision_match`, and the VWA/WA `grep -v "_wa_"` filter
+# both of them applied. All three excluded WA runners from VWA's view (and vice
+# versa) on the theory that the stacks were separate. They are not, so "one
+# baseline per site at a time" (CLAUDE.md hard rule #1) was enforced against the
+# label rather than the machine: a WA shopping runner mid-episode did not stop a
+# VWA shopping chain from resetting the Magento container underneath it, and
+# shopping/shopping_admin did not stop each other at all.
+#
+# The B-637 anchoring stays intact — the 8-digit date token after the site name
+# is what keeps `_shopping_` from matching unrelated ids — only the deliberate
+# cross-benchmark blindness is removed.
+container_runner_pattern() {
+  local site="${1:?site required}" benchmark="${2:-vwa}"
+  case "$(site_lock_key "${site}" "${benchmark}")" in
+    classifieds) echo "_classifieds_[0-9]{8}_" ;;
+    reddit)      echo "_(wa_)?reddit_[0-9]{8}_" ;;
+    magento)     echo "_(wa_)?shopping(_admin)?_[0-9]{8}_" ;;
+    # Unknown site: keep the narrow benchmark-specific form. Without evidence
+    # that it shares a container, widening the pattern would invent contention.
+    *) if [[ "${benchmark}" == "wa" ]]; then echo "_wa_${site}_[0-9]{8}_"
+       else echo "_${site}_[0-9]{8}_"; fi ;;
+  esac
+}
+
 # acquire_site_lock <site> <benchmark> [<label>]
 # release_site_lock
 #
@@ -119,7 +194,13 @@ acquire_site_lock() {
   # (subshell inherits fd 9 but opens its own fd 7 → second EX conflicts with
   # parent chain's first EX). Therefore we keep the shortcut but harden with
   # fs-level verification — the "stale env" attack is closed, re-entrance preserved.
-  if [[ "${P79_CHAIN_LOCK_HELD:-}" == "${site}:${benchmark}" ]]; then
+  # B-1934: compare on the container key, so a leaf running under a chain that
+  # holds e.g. the magento lock for `shopping` is recognised when the leaf is
+  # `shopping_admin` (same container) instead of trying to acquire a second
+  # exclusive lock on the resource its own parent already holds.
+  local _lock_key
+  _lock_key="$(site_lock_key "${site}" "${benchmark}")"
+  if [[ "${P79_CHAIN_LOCK_HELD:-}" == "${_lock_key}" ]]; then
     local _chain_pid="${P79_CHAIN_PID:-}"
     if [[ -z "${_chain_pid}" ]]; then
       echo "[${label}][FATAL] P79_CHAIN_LOCK_HELD set but P79_CHAIN_PID missing — env-bypass refused (B-905)" >&2
@@ -132,7 +213,7 @@ acquire_site_lock() {
       return 1
     fi
     # Verify chain still holds fd 9 pointing at expected lock file
-    local _expected_lock="${REPO_DIR:-$(pwd)}/.locks/p79_${site}_${benchmark}.lock"
+    local _expected_lock="${REPO_DIR:-$(pwd)}/.locks/p79_${_lock_key}.lock"
     local _chain_fd9_target=""
     if [[ -L "/proc/${_chain_pid}/fd/9" ]]; then
       _chain_fd9_target="$(readlink "/proc/${_chain_pid}/fd/9" 2>/dev/null || true)"
@@ -142,17 +223,18 @@ acquire_site_lock() {
       echo "[${label}][FATAL]   Chain process alive but no longer holds expected lock fd. Unset env vars + re-launch." >&2
       return 1
     fi
-    echo "[${label}][lock] parent queue_chain pid=${_chain_pid} verified holds ${site}:${benchmark} (skip leaf acquire, B-905)" >&2
+    echo "[${label}][lock] parent queue_chain pid=${_chain_pid} verified holds ${_lock_key} (for site=${site} benchmark=${benchmark}; skip leaf acquire, B-905)" >&2
     SITE_LOCK_FD=""
     return 0
   fi
   local repo_dir="${REPO_DIR:-$(pwd)}"
   local lock_dir="${repo_dir}/.locks"
   mkdir -p "${lock_dir}" 2>/dev/null || true
-  local lock_file="${lock_dir}/p79_${site}_${benchmark}.lock"
+  local lock_file="${lock_dir}/p79_${_lock_key}.lock"
   exec 7>"${lock_file}"
   if ! flock -n 7; then
-    echo "[${label}][FATAL] another paper-grade process holds lock for site=${site} benchmark=${benchmark}" >&2
+    echo "[${label}][FATAL] another paper-grade process holds lock ${_lock_key} (requested site=${site} benchmark=${benchmark})" >&2
+    echo "[${label}][FATAL] the lock names a docker container, so the holder may be a different site on the SAME container (B-1934: shopping/shopping_admin and vwa/wa all share one)" >&2
     echo "[${label}][FATAL] lock file: ${lock_file}" >&2
     echo "[${label}][FATAL] if stale (prior process crashed), 'rm ${lock_file}' to force-release" >&2
     exec 7>&-
@@ -469,21 +551,48 @@ except Exception:
 #
 # WA reddit therefore routes to the existing `_reset_vwa_local_reddit`
 # (docker rm -f + docker run; the image self-seeds) with zero new reset code and
-# zero new credentials. WA shopping / shopping_admin stay unsupported for exactly
-# the reason VWA shopping is: the Magento DB restore is genuinely unimplemented
-# (rc=78 sentinel in `_reset_vwa_local_shopping`).
+# zero new credentials.
+#
+# B-1930 (2026-08-03): the same argument extends to shopping / shopping_admin,
+# and the clause that used to exclude them ("the Magento DB restore is genuinely
+# unimplemented, rc=78 sentinel in `_reset_vwa_local_shopping`") was stale — it
+# outlived its own premise by four months. `_reset_vwa_local_shopping` stopped
+# being a stub on 2026-07-31 (docker rm + rebuild via start_vwa_docker.sh); this
+# very file says so at the rc=78 branch below ("shopping was the last stub and is
+# now implemented ... this branch is currently unreachable"). Two statements in
+# one file contradicted each other and the false one gated the launch path.
+#
+# Container sharing holds for shopping exactly as it does for reddit, and the
+# task files say so rather than merely suggesting it: WA `test_shopping.raw.json`
+# and VWA `test_shopping.json` both carry `sites: ["shopping"]`, both resolve
+# `__SHOPPING__` to the same endpoint, and both name the byte-identical
+# `./.auth/shopping_state.json` under the same account. shopping_admin rides the
+# SAME container (docker inspect: 7770 and 7780 both bind vwa-shopping), which is
+# why `_reset_vwa_local_shopping` rebuilds both together.
+#
+# The predicate is kept rather than deleted: it is the hard-fail hook for any
+# (benchmark, site) pair added as a stub in future. Today every supported pair
+# resolves, so it returns 0 throughout — an unknown site is rejected earlier, by
+# the per-script site whitelist.
 wa_reset_supported() {
   local benchmark="${1:?benchmark required}" site="${2:?site required}"
   [[ "${benchmark}" != "wa" ]] && return 0   # VWA path unchanged
-  [[ "${site}" == "reddit" ]] && return 0    # shares the VWA postmill container
-  return 1                                    # WA shopping / shopping_admin: no reset impl
+  case "${site}" in
+    reddit)                    return 0 ;;   # shares the VWA postmill container
+    shopping|shopping_admin)   return 0 ;;   # shares the VWA Magento container (B-1930)
+  esac
+  return 1                                    # any future WA site added without a reset impl
 }
 
 # ---------- 5. Reset + auth gate (B-224 hard-fail) ----------
-# reset_and_auth_gate <site> <repo_dir> <python_bin> <log_prefix> <reset_label>
+# reset_and_auth_gate --site S --repo R --python P --log-prefix L --reset-label T
+#                     [--benchmark vwa|wa]
 #   Source reset_vwa_sites.sh, call reset_vwa_sites, sleep 15s, run
 #   auth_required_gate. Hard-fail on auth gate failure unless AUTH_GATE_BYPASS=1.
-#   Caller responsible for guarding with RESET_BEFORE=1 + BENCHMARK!=wa.
+#   Caller guards with RESET_BEFORE=1 + wa_reset_supported. `--benchmark` is
+#   optional (default vwa) and only affects which DATASET the login subprocess
+#   runs under; the reset itself is benchmark-independent because WA and VWA
+#   share one container set on the paper-grade host (B-1930).
 reset_and_auth_gate() {
   # B-645 (A1.13 P1-12 gemini G9, 2026-05-17): named args. Pre-fix 5 positional
   # args (site, repo, python, log_prefix, reset_label); caller swap-order bugs
@@ -492,7 +601,17 @@ reset_and_auth_gate() {
   # with `--`; legacy positional otherwise for back-compat) — new code should
   # use named form. Form 4 callers in queue_baseline / queue_phantom_{som,text,
   # prompt} migrated to named in this commit.
-  local site="" repo_dir="" python_bin="" log_prefix="" reset_label=""
+  # B-1932 (2026-08-03): `--benchmark` added. `auth_required_gate` has always
+  # taken a `benchmark` argument and used it to pick the DATASET the Playwright
+  # login subprocess runs under (`webarena` vs `visualwebarena`,
+  # auth_refresh.py:330), but this gate never passed one, so every WA login was
+  # performed as visualwebarena. It went unnoticed because the only WA site with
+  # a working reset path was reddit, whose login flow is DATASET-independent, and
+  # because shopping_admin is special-cased to `webarena` inside auth_refresh
+  # regardless of the argument. WA shopping is the case that is neither: it needs
+  # the argument to be correct. Optional and defaulting to vwa, so the four
+  # existing VWA callers are unchanged.
+  local site="" repo_dir="" python_bin="" log_prefix="" reset_label="" benchmark="vwa"
   if [[ "${1:-}" == --* ]]; then
     while [[ $# -gt 0 ]]; do
       case "$1" in
@@ -501,6 +620,7 @@ reset_and_auth_gate() {
         --python|--python-bin) python_bin="$2"; shift 2 ;;
         --log-prefix)   log_prefix="$2"; shift 2 ;;
         --reset-label)  reset_label="$2"; shift 2 ;;
+        --benchmark)    benchmark="$2"; shift 2 ;;
         --) shift; break ;;
         *) echo "[reset_and_auth_gate][error] unknown arg: $1" >&2; return 2 ;;
       esac
@@ -538,10 +658,29 @@ reset_and_auth_gate() {
   # SQL + ~1s cleanup), shopping/all keeps 120s default. Empirically reddit needs
   # ~60-120s warm, occasional 130-160s; 240s is generous + matches callee 180s + 60s
   # buffer.
+  # B-1931 (2026-08-03): shopping needed its own case and never had one — it fell
+  # through to the 120s default, which is shorter than the reset's own documented
+  # floor, so a shopping reset could not succeed under this gate at any point
+  # since `_reset_vwa_local_shopping` landed (2026-07-31). Worst-case callee cost,
+  # read off the code rather than estimated:
+  #   docker rm -f + docker run + settle          ~10s   (start_vwa_docker.sh:187)
+  #   base_url config:set + SQL UPDATE + verify   ~20s   (3× retry on DB warm race)
+  #   cache:flush                                 ~10s
+  #   indexer:reindex polled to all-Ready        ≤600s   (poll_max=60 × 10s, B-311)
+  #   storefront HTTP warm-up poll               ≤180s   (60 × 3s, this file's callee)
+  #   ────────────────────────────────────────────────
+  #   ≈820s worst case → 900s with headroom.
+  # The failure this caused was worse than a plain abort: `timeout` fires AFTER
+  # `docker rm -f` has already destroyed the container but BEFORE the rebuild
+  # finishes, so the chain aborts leaving shopping with no container at all —
+  # the next condition's preflight then reports an unreachable site rather than
+  # a reset timeout, pointing the operator at the wrong layer.
+  # shopping_admin resolves to the same rebuild (one container, two ports).
   local _reset_timeout
   case "${site}" in
     reddit) _reset_timeout=240 ;;
     classifieds) _reset_timeout=$([[ "${VWA_RESTART_DOCKER:-0}" == "1" ]] && echo 240 || echo 120) ;;  # Gate3: +docker restart wait (db+http ≤120s) needs headroom over 120s
+    shopping|shopping_admin) _reset_timeout=900 ;;  # B-1931: Magento rebuild + indexer poll
     *) _reset_timeout=120 ;;
   esac
   # Fire-6 RCA (/stress 2026-05-20): VWA_RESET_TIMEOUT env override for slow
@@ -557,6 +696,16 @@ reset_and_auth_gate() {
   if [[ "${VWA_RESTART_DOCKER:-0}" == "1" && "${site}" == "classifieds" && "${_reset_timeout}" -lt 240 ]]; then
     echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s too low for cls docker-restart path; clamping to 240s (B-1839)" >&2
     _reset_timeout=240
+  fi
+  # B-1931 (cont): same clamp for shopping. Without it the B-1839 failure mode
+  # reappears on a different site — a residual `VWA_RESET_TIMEOUT` exported in an
+  # earlier debug session silently erases the 900s the Magento rebuild needs, and
+  # the resulting `timeout 124` reads as "reset failed" rather than "operator env
+  # is stale". The floor is not overridable downward because no legitimate
+  # shopping reset finishes under it; raising it via the env still works.
+  if [[ "${site}" == "shopping" || "${site}" == "shopping_admin" ]] && (( _reset_timeout < 900 )); then
+    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s below the Magento rebuild floor; clamping to 900s (B-1931)" >&2
+    _reset_timeout=900
   fi
   local _reset_rc
   # B-864 (/stress A1.23 P1-7 AB, 2026-05-17): process-group kill + SIGTERM trap.
@@ -641,13 +790,20 @@ reset_and_auth_gate() {
     # generous (typical auth refresh ~5-15s); timeout 124 → treat as auth FAIL
     # (handled by the outer else branch). Re-uses existing FATAL surface so
     # operator sees same error class.
+    # B-1932: map the queue-script vocabulary (`vwa` / `wa`) onto the dataset
+    # names auth_refresh compares against (`visualwebarena` / `webarena`). The
+    # two vocabularies are not interchangeable — passing `wa` straight through
+    # would fail the `benchmark == "webarena"` test and silently select the VWA
+    # dataset, which is the bug this parameter exists to fix.
+    local _auth_benchmark="visualwebarena"
+    [[ "${benchmark}" == "wa" ]] && _auth_benchmark="webarena"
     if timeout 60s "${python_bin}" -c "
 import sys
 sys.path.insert(0, '${repo_dir}')
 from pathlib import Path
 from p79.utils.auth_refresh import auth_required_gate, AuthRefreshFailure, AuthRefreshConfigError
 try:
-    auth_required_gate('${site}', Path('${repo_dir}/.auth'))
+    auth_required_gate('${site}', Path('${repo_dir}/.auth'), benchmark='${_auth_benchmark}')
     print('[${log_prefix}][gate] auth_required_gate PASS')
     sys.exit(0)
 except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
@@ -742,13 +898,13 @@ assert_no_cross_mode_collision() {
   local run_id="${4:?run_id required}"
   local log_prefix="${5:-leaf}"
 
+  # B-1934: container-scoped pattern (see lib `container_runner_pattern`). The
+  # leaf entry point had the same VWA/WA split as the chain layer, so a manual
+  # `queue_baseline.sh B0 dom shopping` would not see a live WA shopping runner
+  # on the very container it was about to reset — the standalone-leaf path
+  # CLAUDE.md documents as supported.
   local site_pattern
-  if [[ "${benchmark}" == "wa" ]]; then
-    site_pattern="_wa_${site}_[0-9]{8}_"
-  else
-    # VWA: anchor `_<site>_<date>_` but filter WA siblings post-match.
-    site_pattern="_${site}_[0-9]{8}_"
-  fi
+  site_pattern="$(container_runner_pattern "${site}" "${benchmark}")"
 
   # R2-P0-2-B* (/stress Phase 0 post-fix Mode B codex F2 OOB, 2026-05-19):
   # pre-fix `_${baseline}_` filter only matches same-baseline runners. Cross-
@@ -760,9 +916,9 @@ assert_no_cross_mode_collision() {
   local site_collisions
   site_collisions="$(pgrep -af "run_experiment.*${site_pattern}" 2>/dev/null \
                      | grep -v -F "${run_id}" || true)"
-  if [[ "${benchmark}" == "vwa" && -n "${site_collisions}" ]]; then
-    site_collisions="$(echo "${site_collisions}" | grep -v "_wa_" || true)"
-  fi
+  # B-1934: the `grep -v "_wa_"` that stood here is removed — a WA runner on the
+  # shared container is a real collision, not substring noise. Self-match is
+  # still excluded above by exact run_id.
   if [[ -n "${site_collisions}" ]]; then
     # Discriminate same-baseline vs cross-baseline within site_collisions.
     local same_baseline_collisions
@@ -837,9 +993,22 @@ assert_no_other_site_chain_running() {
   local _gates_lib_dir
   _gates_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
   local pidfile_dir="${_gates_lib_dir}/logs"
+  # B-1940 (/stress Mode A F3, 2026-08-03): the PIDFILE check no longer skips
+  # self_site; only the runner-pgrep check below does.
+  #
+  # Why: B-1935 gave `shop` three launch entry points (phase1b / wa_shop /
+  # wa_shop_admin) that all mutate ONE Magento container and all declare
+  # self_site="shop". With the old blanket skip they did not check each other,
+  # so `launch wa_shop` followed by `launch wa_shop_admin` waved both through;
+  # the container flock caught it, but only after the orchestrator had reported
+  # "launched" and returned 0, leaving the chain to die in a detached log.
+  #
+  # Checking one's own pidfile is safe here because of ORDERING: this assertion
+  # runs BEFORE `launch_chain` writes the pidfile, so a live pid found under
+  # one's own key is necessarily a PREVIOUS chain, never oneself. The
+  # runner-pgrep check keeps the skip — a same-site runner may legitimately be
+  # the one this launch is resuming, and matching it would also risk self-match.
   for site in cls red shop; do
-    [[ "${site}" == "${self_site}" ]] && continue
-
     # Pidfile check first (closes 30-90s chain bash prep race window)
     local pidfile="${pidfile_dir}/queue_phase1_${site}.latest.pid"
     if [[ -f "${pidfile}" ]]; then
@@ -850,16 +1019,31 @@ assert_no_other_site_chain_running() {
       fi
     fi
 
-    # Runner pgrep check (existing — catches active runner phase)
+    # Runner pgrep check (existing — catches active runner phase).
+    # B-1940: THIS check keeps the self_site skip that the pidfile check above
+    # dropped. A live same-site runner can legitimately be the one this launch is
+    # resuming (RESET_BEFORE=0 explicit-resume), and same-site runner collisions
+    # are already owned by `assert_no_cross_mode_collision` + the container lock.
+    [[ "${site}" == "${self_site}" ]] && continue
+
+    # B-1934: the patterns now COVER the WA runners instead of excluding them,
+    # and `grep -v "_wa_"` is gone. That filter encoded the same false premise as
+    # the old lock key — it assumed a WA runner touches a different docker stack,
+    # so seeing one meant nothing for VWA. On the A100 host it is the same
+    # container, so filtering WA out is filtering out precisely the contention
+    # this function exists to detect: a live WA shopping runner would not have
+    # stopped a VWA shopping chain from launching onto the Magento instance it
+    # was mid-episode on. shopping_admin is folded into `shop` for the same
+    # reason (7780 and 7770 are one container).
     local runner_match
     local site_run_pattern=""
     case "${site}" in
-      cls) site_run_pattern="run_experiment.*_classifieds_[0-9]{8}_" ;;
-      red) site_run_pattern="run_experiment.*_reddit_[0-9]{8}_" ;;
-      shop) site_run_pattern="run_experiment.*_shopping_[0-9]{8}_" ;;
+      cls)  site_run_pattern="run_experiment.*$(container_runner_pattern classifieds vwa)" ;;
+      red)  site_run_pattern="run_experiment.*$(container_runner_pattern reddit vwa)" ;;
+      shop) site_run_pattern="run_experiment.*$(container_runner_pattern shopping vwa)" ;;
     esac
     if [[ -n "${site_run_pattern}" ]]; then
-      runner_match="$(pgrep -af "${site_run_pattern}" 2>/dev/null | grep -v "_wa_" || true)"
+      runner_match="$(pgrep -af "${site_run_pattern}" 2>/dev/null || true)"
       if [[ -n "${runner_match}" ]]; then
         other_chains="${other_chains}\n[${site} runner-active]\n${runner_match}"
       fi

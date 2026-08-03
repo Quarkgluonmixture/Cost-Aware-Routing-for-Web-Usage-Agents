@@ -2239,6 +2239,30 @@ class ExperimentRunner:
         if task.site == "reddit":
             from p79.utils.reddit_identity import restore_reddit_identity
             restore_reddit_identity(self.cfg, logger=logger)
+        # ── B-1936 / PROTOCOL_NOTE_07: shopping per-task cart isolation ──
+        # Upstream's `require_reset` is a no-op on shopping (envs.py:172 is
+        # classifieds-only), so the cart accumulates across a condition and the
+        # 104 cart-page `program_html` evaluators drift toward false success.
+        # Enabled per user decision 2026-08-03 (PROTOCOL_NOTE_07) — shopping is
+        # pre-data, so this defines its estimand rather than changing a measured
+        # one. Setup phase, before the measured trajectory, like the reddit
+        # restore above.
+        #
+        # B-1943 (codex Mode B F7): the return value is CHECKED. Discarding it
+        # meant a failed clear (missing container, timeout, schema drift, wrong
+        # customer identity) degraded to a log line while the condition carried
+        # on over an accumulating cart — indistinguishable from a clean run in
+        # every summary. Under paper-grade the helper is forced fail-closed so
+        # the episode aborts loudly instead.
+        if task.site in ("shopping", "shopping_admin"):
+            from p79.utils.shopping_cart_reset import clear_shopping_cart
+            if not clear_shopping_cart(self.cfg, logger=logger):
+                logger.error(
+                    "shopping_cart_reset FAILED before task %s — cart isolation is "
+                    "part of the shopping protocol (PROTOCOL_NOTE_07); this episode "
+                    "would run on an unknown cart state",
+                    getattr(task, "task_id", "?"),
+                )
         # ── Auth refresh check (before browser context creation) ──
         site = task.site
         self._auth_episode_counts.setdefault(site, 0)

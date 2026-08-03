@@ -55,9 +55,28 @@ def test_tier_selection_drives_the_sensitivity_arms():
 
 
 def test_sites_without_exclusions_are_untouched():
-    for site in ("classifieds", "shopping"):
-        assert protocol_excluded_task_ids(site) == frozenset()
+    # AMENDMENT_09 (2026-08-03) gave shopping its own tier-A entries, so the
+    # "no exclusions" set is classifieds + both WA sites. Reddit and shopping
+    # are asserted by their own tests.
+    assert protocol_excluded_task_ids("classifieds") == frozenset()
     assert protocol_excluded_task_ids("reddit", "webarena") == frozenset()
+    assert protocol_excluded_task_ids("shopping", "webarena") == frozenset()
+    assert protocol_excluded_task_ids("shopping_admin", "webarena") == frozenset()
+
+
+def test_amendment09_shopping_exclusions():
+    """AMENDMENT_09: the SAME tier-A rule, applied to shopping, pre-data.
+
+    463/465 are conditional "add X to cart IF ..." tasks whose condition is
+    false, so their program_html carries only `must_exclude` — an agent that
+    never opens the page scores 1. Verified as a uniform rule, not a pick: the
+    predicate selects exactly these 2 of 466 VWA shopping tasks and 0 of the 192
+    WA shopping / 182 WA shopping_admin tasks.
+    """
+    assert protocol_excluded_task_ids("shopping") == frozenset({463, 465})
+    assert protocol_excluded_task_ids("shopping", tiers=("A",)) == frozenset({463, 465})
+    # tier B is empty for shopping — nothing here needed trajectories to warrant
+    assert protocol_excluded_task_ids("shopping", tiers=("B",)) == frozenset()
 
 
 # --------------------------------------------------------------------------- #

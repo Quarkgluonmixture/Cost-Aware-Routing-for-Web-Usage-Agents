@@ -248,40 +248,49 @@ for cmd in "$@"; do
     this_benchmark="${cmd_args[3]:-vwa}"    # 4th token (default vwa)
   fi
 
-  # B-646 (A1.13 P1-7 codex F4 OOB, 2026-05-17): per-(site,benchmark) flock
-  # acquired before collision check, held for entire iteration (collision check
-  # + reset/auth + launch + wait + sentinel). Pre-fix pgrep-based collision
-  # detection is TOCTOU — two chains fired in tight window (master orchestrator
-  # + manual retry, or 2 manual chains) both see empty pgrep, both reset_and_auth,
-  # both launch runner attached to same docker user account → session race +
-  # cross-mode contamination. flock-nb defends:
+  # B-646 (A1.13 P1-7 codex F4 OOB, 2026-05-17): flock acquired before collision
+  # check, held for entire iteration (collision check + reset/auth + launch +
+  # wait + sentinel). Pre-fix pgrep-based collision detection is TOCTOU — two
+  # chains fired in tight window (master orchestrator + manual retry, or 2 manual
+  # chains) both see empty pgrep, both reset_and_auth, both launch runner
+  # attached to same docker user account → session race + cross-mode
+  # contamination. flock-nb defends:
   #   • single chain: acquires + holds → other chains see lock + FATAL exit;
-  #   • lock is per (site, benchmark) so VWA shopping + WA shopping_admin can
-  #     run concurrently (no docker container collision);
   #   • lock auto-releases when fd 9 closes (at end of iteration `exec 9>&-` or
   #     subshell exit).
-  # Stale lock handling: rm `${LOCK_DIR}/p79_${site}_${benchmark}.lock` to
-  # force-release (lock file is empty marker; presence + flock state matter).
+  #
+  # B-1934 (2026-08-03): the key is now the CONTAINER (`site_lock_key`), not
+  # (site, benchmark). The bullet that used to sit here — "lock is per (site,
+  # benchmark) so VWA shopping + WA shopping_admin can run concurrently (no
+  # docker container collision)" — was false on the A100 paper-grade host, where
+  # shopping, shopping_admin, and both benchmarks' versions of each are all the
+  # single `vwa-shopping` container. The old key therefore issued two exclusive
+  # locks on one Magento instance and called that safe. See lib `site_lock_key`.
+  # Stale lock handling: rm `${LOCK_DIR}/p79_<key>.lock` to force-release (lock
+  # file is empty marker; presence + flock state matter).
   if [[ -n "${this_site}" && -n "${this_benchmark}" ]]; then
     LOCK_DIR="${REPO_DIR}/.locks"
     mkdir -p "${LOCK_DIR}" 2>/dev/null || true
-    LOCK_FILE="${LOCK_DIR}/p79_${this_site}_${this_benchmark}.lock"
+    THIS_LOCK_KEY="$(site_lock_key "${this_site}" "${this_benchmark}")"
+    LOCK_FILE="${LOCK_DIR}/p79_${THIS_LOCK_KEY}.lock"
     exec 9>"${LOCK_FILE}"
     if ! flock -n 9; then
-      log "  [FATAL] another paper-grade chain holds lock for site=${this_site} benchmark=${this_benchmark}"
+      log "  [FATAL] another paper-grade chain holds lock ${THIS_LOCK_KEY} (requested site=${this_site} benchmark=${this_benchmark})"
+      log "  the lock names a docker container — the holder may be a different site/benchmark on the SAME container (B-1934)"
       log "  lock file: ${LOCK_FILE}"
       log "  if lock is stale (prior chain crashed), 'rm ${LOCK_FILE}' to force-release before retry"
       if command -v curl > /dev/null; then
-        curl -L -d "queue_chain ABORT (${this_baseline} ${this_site} ${this_benchmark}): another chain holds site lock; possible double-fire" \
+        curl -L -d "queue_chain ABORT (${this_baseline} ${this_site} ${this_benchmark}): another chain holds container lock ${THIS_LOCK_KEY}; possible double-fire" \
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
       fi
       exit 1
     fi
-    log "  [lock] acquired ${LOCK_FILE} (held until iteration end)"
+    log "  [lock] acquired ${LOCK_FILE} (container key=${THIS_LOCK_KEY}, held until iteration end)"
     # B-704 (A1.14 Chunk d P1-4 codex F5 OOB B, 2026-05-17): export site-lock
     # identity for leaf scripts so they can skip double-acquire when invoked
-    # under this chain (lib `acquire_site_lock` checks this var).
-    export P79_CHAIN_LOCK_HELD="${this_site}:${this_benchmark}"
+    # under this chain (lib `acquire_site_lock` checks this var). B-1934: the
+    # exported value is the container key, matching what the leaf computes.
+    export P79_CHAIN_LOCK_HELD="${THIS_LOCK_KEY}"
     # B-905 (/stress A2.2 P0-4-A* OOB, 2026-05-17): export chain PID so leaf
     # `acquire_site_lock` can verify chain process is alive + still holds the
     # advertised lock fd (defends against stale env-bypass leak — debug shell
@@ -290,40 +299,31 @@ for cmd in "$@"; do
     # fd 9 pointing at expected lock file before granting leaf skip-acquire.
     export P79_CHAIN_PID=$$
   fi
-  # B-637 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor.
-  # Pre-fix pgrep `_${this_site}_` substring overlap problems:
-  #   (a) `_shopping_` substring-matched `_shopping_admin_` → VWA shopping
-  #       waited for WA shopping_admin to finish (unrelated docker stack).
-  #   (b) VWA `_shopping_` substring-matched WA `_wa_shopping_` AND vice
-  #       versa → cross-benchmark wait loop even though docker stacks separate.
-  # Fix: build benchmark-aware site pattern that anchors on the 8-digit date
-  # token after the site name (which is structural — mint_run_id always inserts
-  # YYYYMMDD right after CFG_NAME). For VWA: `_${this_site}_[0-9]{8}_` plus
-  # `grep -v _wa_` exclusion to suppress WA processes. For WA: prefix `_wa_`
-  # required. Empirical:
-  #   `_shopping_[0-9]{8}_` does NOT match `B0_dom_shopping_admin_20260517_X`
-  #   (because `_shopping_` is followed by `admin_`, not 8 digits).
-  if [[ "${this_benchmark}" == "wa" ]]; then
-    this_site_pattern="_wa_${this_site}_[0-9]{8}_"
-  else
-    # VWA pattern: match `_<site>_<date>_` but exclude `_wa_<site>_<date>_`.
-    # Done with grep -v at call site since pgrep ERE lacks negative lookbehind.
-    this_site_pattern="_${this_site}_[0-9]{8}_"
-  fi
-  # Helper: returns 0 if any process matches site pattern for given baseline,
-  # 1 otherwise. Excludes WA processes when this_benchmark=vwa.
+  # B-637 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor on the
+  # 8-digit date token after the site name (structural — mint_run_id always
+  # inserts YYYYMMDD right after CFG_NAME), so `_shopping_` cannot match
+  # arbitrary ids containing the word.
+  #
+  # B-1934 (2026-08-03): the pattern is now built by `container_runner_pattern`
+  # and the `grep -v "_wa_"` exclusion is gone. B-637's two cases were framed as
+  # false positives to suppress:
+  #   (a) VWA shopping waiting for WA shopping_admin "(unrelated docker stack)"
+  #   (b) VWA `_shopping_` matching WA `_wa_shopping_` "even though docker
+  #       stacks separate"
+  # Both parentheticals are false on the A100 paper-grade host: shopping,
+  # shopping_admin and both benchmarks' versions are one `vwa-shopping`
+  # container. So these were not false positives — they were the only signal
+  # that a chain was about to reset a container another runner was live on, and
+  # suppressing them turned CLAUDE.md hard rule #1 into a check on the run_id
+  # string rather than on the machine. Waiting is the correct behaviour.
+  this_site_pattern="$(container_runner_pattern "${this_site}" "${this_benchmark}")"
+  # Helper: returns 0 if any process matches the container pattern for the given
+  # baseline, 1 otherwise.
   _collision_match() {
     local baseline_pat="$1"
     local out
     out="$(pgrep -af "run_experiment.*${baseline_pat}.*${this_site_pattern}" 2>/dev/null || true)"
-    if [[ -z "${out}" ]]; then
-      return 1
-    fi
-    if [[ "${this_benchmark}" == "vwa" ]]; then
-      # Exclude WA processes captured by substring overlap.
-      out="$(echo "${out}" | grep -v "_wa_" || true)"
-      [[ -z "${out}" ]] && return 1
-    fi
+    [[ -z "${out}" ]] && return 1
     return 0
   }
 

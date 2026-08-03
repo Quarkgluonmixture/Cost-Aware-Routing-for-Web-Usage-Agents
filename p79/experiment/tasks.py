@@ -103,6 +103,57 @@ PROTOCOL_EXCLUSIONS: Dict[tuple, tuple] = {
             amendment="AMENDMENT_08",
         ),
     ),
+    # AMENDMENT_09 (2026-08-03) — the SAME tier-A rule, applied to shopping.
+    #
+    # This is a rule extension, not a new judgement: the tier-A predicate written
+    # for AMENDMENT_08 ("program_html eval carrying only `must_exclude` and no
+    # positive check") was evaluated verbatim over all 466 VWA shopping tasks and
+    # selects exactly these two; the same predicate over WA shopping (192) and WA
+    # shopping_admin (182) selects none. Nothing was hand-picked and nothing was
+    # tuned — the rule is older than the site it is being applied to.
+    #
+    # STRONGER WARRANT THAN AMENDMENT_08: that one was explicitly post-hoc
+    # (all 36 Pass-1 conditions had landed and the SR effect was known when the
+    # criteria were written). This one is **pre-data** — no VWA shopping run
+    # exists on disk (the §103-era runs were cleared), so the exclusion cannot
+    # have been selected for its effect on any number. Effect on the scored
+    # denominator: shopping 435 → 433.
+    ("visualwebarena", "shopping"): (
+        ProtocolExclusion(
+            task_id=463,
+            tier="A",
+            rule=(
+                "program_html eval whose required_contents carry only `must_exclude` "
+                "and no positive check — doing nothing scores 1, so the eval cannot "
+                "separate a completed task from an untouched one"
+            ),
+            reason=(
+                "Intent is conditional: 'Add this (in any size) to my cart IF at least "
+                "one of the posters has the word \"inspire\" printed on it'. The condition "
+                "is false, so the eval asserts only that the Motivational-Posters product "
+                "is absent from the cart. An agent that never opens the page scores 1 — "
+                "identical in structure to reddit 160, and identical in kind to the "
+                "§139.8 N/A exclusions (zero discriminative signal for the named "
+                "capability), with the sign flipped: trivially passable, not un-passable."
+            ),
+            amendment="AMENDMENT_09",
+        ),
+        ProtocolExclusion(
+            task_id=465,
+            tier="A",
+            rule=(
+                "program_html eval whose required_contents carry only `must_exclude` "
+                "and no positive check — doing nothing scores 1, so the eval cannot "
+                "separate a completed task from an untouched one"
+            ),
+            reason=(
+                "Same construction as 463 with a different trigger word ('happy') and "
+                "product (iHAPPYWALL bathroom canvas). Both are selected by the uniform "
+                "rule; neither is a per-task judgement."
+            ),
+            amendment="AMENDMENT_09",
+        ),
+    ),
 }
 
 

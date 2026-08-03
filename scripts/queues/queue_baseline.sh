@@ -111,9 +111,11 @@ assert_a100_url_locality
 # flock at leaf entry. Skips if parent queue_chain holds the lock (via
 # P79_CHAIN_LOCK_HELD env). Manual leaf invocation outside any chain →
 # leaf acquires its own. trap release on EXIT/INT/TERM.
-if ! acquire_site_lock "${SITE}" "${BENCHMARK}" "queue_baseline"; then
-  exit $?
-fi
+# B-1937 (2026-08-03): was `if ! acquire_site_lock; then exit $?; fi` — inside that
+# branch `$?` is the status of `!`, i.e. ALWAYS 0, so a refused lock
+# exited 0 and the caller read it as success. `|| exit $?` evaluates
+# `$?` when exit runs, where it still holds the real rc (78 = contention).
+acquire_site_lock "${SITE}" "${BENCHMARK}" "queue_baseline" || exit $?
 trap "release_site_lock" EXIT INT TERM
 
 # ---------- BUG-6 NOTE (2026-05-16 A1.13 audit P1-4-A): vestigial QUARK_TZ removed ----------
@@ -202,17 +204,21 @@ else
   # 2026-04-28 — see 实验笔记 §104). reset_and_auth_gate (in lib) enforces
   # B-224 hard-fail (no soft-warn fallthrough).
   if [[ "${RESET_BEFORE:-0}" == "1" ]] && wa_reset_supported "${BENCHMARK}" "${SITE}"; then
-    reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "baseline" --reset-label "baseline_${MODE}_${SITE}"
+    reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "baseline" --reset-label "baseline_${MODE}_${SITE}" --benchmark "${BENCHMARK}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     # B-647 (A1.13 P1-4-BC codex F7 + gemini G6 fix, 2026-05-17): hard-fail
     # instead of silent skip. Pre-fix WA paths printed "skipping" + proceeded
-    # with stale auth/cart → paper-grade contamination invisible. reset_wa_sites.sh
-    # scaffold lands here (returns rc=78 "not implemented" until Phase 1b impl).
-    # To bypass paper-grade gate intentionally (e.g., explicit dirty dev run):
-    # set RESET_BEFORE=0 + accept watchdog-reactive-only auth refresh.
-    echo "[baseline][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported for site=${SITE} (B-647 remainder; reddit IS supported)." >&2
-    echo "[baseline][error] WA reddit routes to the VWA postmill reset (shared container); WA shopping/shopping_admin still need a Magento DB restore, same gap as VWA shopping." >&2
-    echo "[baseline][error] To proceed: (a) implement reset_wa_sites.sh per its header roadmap, OR (b) set RESET_BEFORE=0 for explicit dirty run." >&2
+    # with stale auth/cart → paper-grade contamination invisible.
+    #
+    # B-1930 (2026-08-03): every WA site in the whitelist now has a reset, so
+    # this branch is unreachable in practice — WA reddit routes to the VWA
+    # postmill reset and WA shopping/shopping_admin to the VWA Magento rebuild,
+    # both because the two benchmarks share one container set on the paper-grade
+    # host. It stays as the hard-fail hook for a future site added without one:
+    # reaching it means an unimplemented reset, never a silent skip.
+    echo "[baseline][error] RESET_BEFORE=1 but no reset implementation for benchmark=${BENCHMARK} site=${SITE}." >&2
+    echo "[baseline][error] Supported: all VWA sites; WA reddit / shopping / shopping_admin (B-1930, shared containers)." >&2
+    echo "[baseline][error] To proceed: (a) add the site to reset_vwa_sites.sh + wa_reset_supported, OR (b) set RESET_BEFORE=0 for explicit dirty run." >&2
     exit 1
   fi
 
@@ -277,9 +283,11 @@ fi
 # RUN_ID + shared WD_STATE mutual overwrite. Lock on fd 8 (held until script
 # end via existing trap chain). Skip-acquire path: queue_chain.sh leaf already
 # attached; lock contention with another watchdog process → rc=78 FATAL.
-if ! acquire_watchdog_lock "${RUN_ID}" "queue_baseline"; then
-  exit $?
-fi
+# B-1937 (2026-08-03): was `if ! acquire_watchdog_lock; then exit $?; fi` — inside that
+# branch `$?` is the status of `!`, i.e. ALWAYS 0, so a refused lock
+# exited 0 and the caller read it as success. `|| exit $?` evaluates
+# `$?` when exit runs, where it still holds the real rc (78 = contention).
+acquire_watchdog_lock "${RUN_ID}" "queue_baseline" || exit $?
 # Extend existing release trap (acquire_site_lock set EXIT INT TERM at line 105)
 trap "release_watchdog_lock; release_site_lock" EXIT INT TERM
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then

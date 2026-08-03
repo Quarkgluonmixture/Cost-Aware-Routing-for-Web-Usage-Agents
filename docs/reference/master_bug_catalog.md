@@ -10688,3 +10688,87 @@ bug」, 但**同一个缺陷类三周前刚被 user 裁定为「披露不修」*
 **Cross-link**: §387.3 (前提被推翻的第一处); B-1894 (发射侧的同类子串碰撞); B-1884 (reddit
 的同类 per-task 补偿); B-1839 (cls 的同类 timeout floor); B-637 (日期锚点, 保留); B-311
 (indexer 轮询 10min, B-1931 的成本来源); B-747 (MYSQL_PWD env 注入)
+
+---
+
+## B-1937 ~ B-1943 落地记录 (2026-08-03) — /stress 3-AI 轮次: 一条 P0 废掉了本轮改动, 一条裁定被反转
+
+`/stress` milestone scope, Mode A (Claude) + Mode B (codex, 510s/9 findings) + Mode C
+(agy Gemini 3.1 Pro, 40s/6 findings)。详见 实验笔记 §424.9 + §424.10。
+
+### B-1937 ⚠️ 全轮最重要 — 拿不到锁却报成功 (codex Mode B P0, 我完全没看见)
+
+```bash
+if ! acquire_site_lock ...; then exit $?; fi     # 4 文件 × 2 处 = 8 处
+```
+`!` 反转退出码 ⇒ **分支内 `$?` 恒为 0** ⇒ 脚本 `exit 0`。实证: `acquire(){ return 78; }` 走这个
+构造, 脚本 exit **0**。watchdog lock 那处在 runner 启动**之后** ⇒ 可以「exit 0 且留下一个无人
+监控的 paper-grade runner」。
+
+**与 B-1934 的恶性交互**: 本轮做的正是让锁**更严**(新抓 shopping/admin/vwa/wa 四种旧放行的碰撞)
+⇒ 每多抓一次就多一次静默 exit 0 ⇒ **B-1934 的实际收益接近零**。
+
+**修**: `cmd || exit $?`(实测传播 78 且不误伤成功路径)。**测试断言行为而非源码形状** ——
+grep-for-`|| exit` 对坏写法同样通过, 这正是它能在全绿套件下存活的原因。
+
+### B-1938 — `_condition_complete` 硬编码 VWA results root (codex F3)
+
+WA 数据在 `results/webarena/phase1`。B-1935 给两条 WA builder 挂了 `_resume_filter_done` 宣传
+resume, 但它**结构上永远找不到 WA 数据** ⇒ 中断在 17/18 后用 RESUME_MISSING 重启 = 16 个已完成
+condition 全部重跑 + 容器再 reset。修为 benchmark-aware root。**注意仍是 inert**: WA condition
+按设计不在 Phase 1a manifest 里, 所以 lookup 照样 miss —— 正确但无效, 真要能 resume 需要 WA 自己的
+manifest namespace (codex 估 3-6h, 未做)。
+
+### B-1939 — Gate 8 quarantine 恒查 cls/red (codex F5)
+
+不随 `SITE_FILTER` 变 ⇒ `launch wa_shop` 通过的是**别的站**的 quarantine 检查, WA 未决事件不可见
+却报 "All gates passed"。修为按 SITE_FILTER 派生站点+范围; 无策略的 filter **fail-closed**
+(一个永远只看同一样东西的 gate, 对别的东西就不是 gate)。
+
+### B-1940 — 我加的那道闸不挡它最该挡的情况 (Mode A F3)
+
+`assert_no_other_site_chain_running` 的 `[[ site == self_site ]] && continue` 让三条 shop 入口
+(phase1b/wa_shop/wa_shop_admin, 都声明 self_site=shop, 都是同一个 Magento 容器)**互不检查**。
+容器 flock 兜住但表现为「报 launched 后在 detached 日志里静默死」。修: **pidfile 检查**不再跳过
+self_site(该断言在 `launch_chain` 写 pidfile **之前**运行, 所以查到的必是前一条链, 不可能是自己);
+**runner-pgrep 检查保留 skip**(同 site runner 可能正是本次要 resume 的那个)。
+
+### B-1941 — 我自己造的双份真相没人守 (Mode A F7)
+
+WA scored count 同时活在 `queue_chain.sh:SITE_EXPECTED_N` 与 `paper_grade_check.py:WA_SCORED_FALLBACK`,
+我在注释里写了「keep in sync」—— **注释不是守卫**, 而这正是 B-1894 之前那些数字漂移两个月的方式。
+加进 `test_b1894_wa_expected_n.py` 的一致性断言。
+
+### B-1942 — `rc==0` 不证明动过任何行 (codex F8; 让「开启 cart 清理」从危险变安全的前提)
+
+MySQL 零行匹配也返回 0 ⇒ `VWA_SHOPPING_USER` 若是用户名而非 email → 零行匹配 → 返回 True →
+**cart 原封不动却报告已清**。**以为自己干净比知道自己脏更坏** —— 前者在所有 summary 里都不可见。
+加 post-clear 断言: 该 customer 的 quote **存在**且已空; `quotes==0` 判失败并直指这个最可能的误配。
+
+### B-1943 — runner 丢弃返回值 + fail_closed 的限定语 (codex F7)
+
+runner 原先丢弃 `clear_shopping_cart()` 的返回值 ⇒ 清理失败只记 warning, condition 继续跑在累积
+cart 上。现在检查返回值。
+
+⚠️ **自查教训**: codex 原话是「**When enabled under paper-grade**, require fail-closed」, 我实现成
+**无条件** fail-closed ⇒ 本机 9 个 runner smoke test 全红(开发机没有 shopping 容器, 清理抛异常,
+episode 被 quarantine)。**照抄建议的结论而漏掉它的限定语, 会把一个安全改进变成 regression。**
+改为 `fail_closed: "auto"` = `P79_PAPER_GRADE=1` 下 True / 否则 False, 与仓库既有的
+`VWA_RESET_MODE=auto` + AUTH_GATE_BYPASS paper-grade 硬阻断同形。
+
+### 裁定反转 (§424.7 → §424.10): shopping cart 改为 per-task 隔离
+
+Gemini 打掉了「披露不修」三条支柱里的两条: **(a) 跨站一致性是假的** —— cls 已有 22 个 per-task
+全站 reset 而 reddit/shopping 为 0; **(b) 分母错** —— 6-10/**104** cart-graded (≈6-10%, 单向)
+而非 /435 (≈2%)。决定性因素是 **shopping pre-data**: 现在定 = 定义 estimand, fire 后同样的修
+= 重跑 18 个 condition。落地 = **PROTOCOL_NOTE_07**(每 task 清 cart) + **AMENDMENT_09**(463/465
+scored-set 排除, 435→433, 与 cart 无关的 evaluator 缺陷)。reddit **不重开**(§402.7 继续有效)。
+
+⚠️ **Phase 4b 核伪**: Gemini 另一条 P0 声称「inverse-variance 假设独立 Bernoulli, `p(1-p)/n` 缩小
+SE」—— **机制陈述错误**(per-cell θ/SE 来自 paired bootstrap B=1000 而非解析公式), 已降级并重写为
+「bootstrap 的可交换性假设被位置依赖破坏」, 另补上双方都漏的**配对差分交互放大**(更好的模式加更多
+cart ⇒ 下游假成功更多 ⇒ 放大自己的优势)。1-AI unique 的 P0 必须 100% 事实核验, 就是为这个。
+
+**Cross-link**: 实验笔记 §424.9 + §424.10; PROTOCOL_NOTE_07 + AMENDMENT_09 + 2026-08-03 CORRECTION
+(预注册 Appendix A 三行); AMENDMENT_08 (463/465 所用 tier-A 规则的出处); B-1894 (发射侧同类漂移);
+B-1934 (被 B-1937 废掉又救回的容器锁)

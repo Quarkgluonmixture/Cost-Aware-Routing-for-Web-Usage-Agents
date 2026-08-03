@@ -98,27 +98,45 @@ updated: 2026-07-29
 > 共用容器锁，必须串行；第二条启动时 abort 是 B-1934 的闸在工作，不是故障。
 > stale lock 清理名字变了：`.locks/p79_magento.lock`（原 `p79_shopping_vwa.lock`）。
 >
-> ### 🔵 fire 之后要做的（不阻塞 fire）
+> ### 🔴 shopping fire 前唯一必做：在 A100 验一次 cart-reset SQL
 >
-> **敏感性分析：排除下列 task 重算 shopping SR。** ⚠️ **分母口径已更正**（/stress Gemini P1-7）：
-> 不是 6-10 / **435**（≈2%），而是 6-10 / **104**（cart-graded 子集，≈**6-10%**），且误差**单向**
-> （只产生假成功）⇒ 系统性抬高"购物车操作"这一子能力。敏感性分析应报**整簇 104 个**的排除结果，
-> 而不只排"最差的 6-10 个"。⚠️ **§424.7 的裁定本身待重议**（见 §424.10）：
-> 依据 (a) 跨站一致性已被证伪（cls 有 22 个 per-task reset）、(b) 分母已改写，仅 (c) 存活。
+> `p79/utils/shopping_cart_reset.py` 现在**默认启用**（PROTOCOL_NOTE_07），但那段 SQL 从未在活
+> Magento 上跑过（DGX 无 shopping 容器）。fire 下 `fail_closed` 解析为 True，schema 不符会**中止
+> condition** —— 正确的失败，但仍是失败。**先验**：
 >
-> | 站 | task | 机制 |
+> ```bash
+> # 1. quote 表结构 + 该账号是否真有 quote 行（B-1942 防的就是"零行匹配也返回 0"）
+> docker exec -e MYSQL_PWD=MyPassword vwa-shopping mysql -u magentouser -N -B magentodb -e \
+>   "SELECT COUNT(*) FROM quote WHERE customer_email='emma.lopez@gmail.com';"   # 必须 >= 1
+> # 2. 干跑（幂等；空 cart 上应返回 True 且 items=0）
+> P79_PAPER_GRADE=1 .venv/bin/python3 -c \
+>   "from p79.utils.shopping_cart_reset import clear_shopping_cart; print(clear_shopping_cart({}))"
+> # 3. 顺手量一次 docker exec 往返耗时（我用的 100-400ms 是行业典型值，非实测）
+> ```
+> schema 意外 → 改 config 的 `shopping_cart_reset` 块（所有标识符可覆盖），不必改代码。
+>
+> ### 📋 shopping 协议现状（写 paper 时按这个表披露，不要主张统一）
+>
+> | 站 | per-task 状态处理 | 来源 |
 > |---|---|---|
-> | VWA shopping | **86/87**、**223/224**、**348/349** | 每对两个 task 的 `must_include` 目标字符串**完全相同** |
-> | VWA shopping | **453**（`"Green"`）、**455**（`"Gray"`） | 目标是短词，任何含该词的残留商品都可能误判 |
-> | WA shopping_admin | **773/774** | 两个 task 的 eval **逐字相同**；先跑的删完 review，后跑的不做事即通过 |
+> | classifieds | 22 个点**全站 reset** | upstream 实现（我们没加） |
+> | reddit | **无**（+ 一个 identity 复原例外） | upstream `TODO`；累积已 bound，§402.7 披露不修 |
+> | shopping | **每 task 清 cart** | PROTOCOL_NOTE_07（本次新增；shopping pre-data） |
 >
-> 做法：对每对，看后跑那个是否 success 且轨迹无有效操作 → 计入偏倚上界；然后排除重算 pooled。
+> ⚠️ 清 cart **不等于**与 cls 对齐——cls 是全站 reset。真对齐需 19 个点整容器 rebuild
+> ≈ 4.75h/condition，不可行。异质性是继承来的，只能披露。
 >
-> ### 🔒 不要动的
+> ### 🔵 fire 之后（不阻塞）
 >
-> `shopping_cart_reset.enabled` **必须保持 `False`**。开启 = 引入未声明的 per-task 条件
-> = estimand 变更，需 PROTOCOL_NOTE / AMENDMENT。`test_disabled_by_default_is_a_noop` 是承重
-> 断言。理由见 §424.7（跨站 estimand 一致性 > 单站干净；且 §402.7 已对同一缺陷类裁定披露不修）。
+> **敏感性分析**：cart 隔离开启后，下列 task 的残留通道已关闭，但仍应报一次排除对照，证明结论
+> 不依赖它们。分母用 **104（cart-graded 子集）** 不是 435。
+>
+> | 站 | task | 机制 | 现在还漏吗 |
+> |---|---|---|---|
+> | VWA shopping | 86/87、223/224、348/349 | 两 task 的 `must_include` 目标串完全相同 | 已被 PN_07 关闭 |
+> | VWA shopping | 453 `"Green"`、455 `"Gray"` | 目标是短词 | 已被 PN_07 关闭 |
+> | VWA shopping | **463/465** | 不作为即得分 1 | **已排除**（AMENDMENT_09，435→433） |
+> | WA shopping_admin | **773/774** | 两 task 的 eval **逐字相同**，先跑的删完 review 后跑的白过 | ⚠️ **未处理** —— 与 cart 无关，属 admin 站的同类 eval 缺陷，待裁定是否照 AMENDMENT_09 扩展 |
 >
 
 > ## 🟦 2026-08-03 · diag 质量审计 session 交接（**给动 `diag_scans/` 的那个 session**）
