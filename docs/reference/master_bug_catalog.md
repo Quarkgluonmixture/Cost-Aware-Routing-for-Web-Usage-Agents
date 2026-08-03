@@ -10343,9 +10343,15 @@ B0_som_classifieds  P7 21→0 · P23 9→0 · P4 5→0 · P33 6→0 · P36 129�
 ### 根因
 
 ```
-v9  run_id = B0_som_classifieds_20260526_041601_..._R5313   224 episode  (canonical)
-v10 run_id = B0_som_classifieds_20260803_084743_..._R30696   51 episode  (som replicate)
+v9  run_id = B0_som_classifieds_20260526_041601_..._R5313   224 episode  (canonical, 已完成)
+v10 run_id = B0_som_classifieds_20260803_084743_..._R30696   51 episode  (som replicate, 进行中)
 ```
+
+> ⚠️ **更正 (同日晚)**: 初稿把后者写成"51-episode 的残缺 run", 不准确。它是 `next_steps §0`
+> 记录在案的**有意 SoM replicate**, 目标 224 ep (实测 2.9 min/ep, A100 上仍在跑; DGX 侧看到的
+> 51 只是 15min cron 的同步快照)。**这让教训更强而不是更弱** —— 问题不在于它当时是残的,
+> 而在于**工具无法区分 canonical 与 replicate**: 等它跑满 224 ep, 按 mtime 选 run 依然会选中它,
+> 且那时 episode 数也不再能当作警报信号。
 
 `diag_rescan_all.py:77` 用 `sorted(PHASE1.glob(pat), key=mtime, reverse=True)` 取 `cands[0]`,
 即**按最新 mtime 选 run**。当天新建的 som replicate run 因此劫持了该 condition。

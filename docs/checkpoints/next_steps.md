@@ -23,6 +23,128 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟦 2026-08-03 · diag 质量审计 session 交接（**给动 `diag_scans/` 的那个 session**）
+>
+> chronicle → **笔记 §416.1–§416.14**。commits `cc429f7` → `915aa00`。
+>
+> ### 你等的那件事已经完成
+>
+> 下方 08-03 块写的「`conditional_failure_attribution` 未接：依赖 `diag_scans/`，另一 session 在动」——
+> **就是这个 session，现在动完了，可以接了**：
+>
+> - `RULESET_VERSION` 9 → **`11-intent-text-fallback`**，**48 个 canonical condition 全部同版本**
+> - 扫描产物：`results/diag_scans/v11_vwa/`（36）+ `v11_wa/`（12）。**v9/v10 目录留着仅供 diff，别再读**
+> - 48 份 digest 已批量补 v11 数字块（`docs/analysis/{vwa_classifieds,vwa_reddit,wa_reddit}/`）
+>
+> ### 🔴 三条会改变你怎么读 diag 数字的结论
+>
+> | 结论 | 影响 |
+> |---|---|
+> | **P36(51%) / P31(50%) 是 risk-marker 不是死因** — 10 例跨 benchmark 因果验证 | **per-rule 表是症状分布，不是死因分布**。别拿它当失败归因引用 |
+> | **`P2`/`P4` 在 vision 上是假 0**（依赖 `element_bbox`，vision 的 click 无 locator 元数据）；**`P36` 在 vision 上只覆盖 type 步** | vision 那一列**不可与 dom/som 并表**，须标"字段不可用" |
+> | **P43 的「中性标签」定位只在 reddit 成立** | 见下，这条可能对 frame 有用 |
+>
+> ### ⭐ P43 → 可能是个 frame 候选（下方 08-03 块说 frame 三版都被判弱）
+>
+> §407.26(b) 记 P43 是"中性标签、补图无用"，依据 `+0.00/+1.56/+0.00pp`。**那是 reddit 64 个任务的数字**；
+> P43 跨站触发而 **classifieds 的 71 个命中从未被检验**。在那里重做同样的受控 dom→som 对比：
+>
+> ```
+> B0/cls  n=71   dom  9.9% → som 29.6%   Δ=+19.72pp
+> B1/cls  n=71   dom  1.4% → som 14.1%   Δ=+12.68pp
+> B0/red  n=64   dom 12.5% → som 12.5%   Δ= +0.00pp   ← 台账依据
+> ```
+>
+> ⇒ **P43 子集是一个可事前识别（0-token 规则命中）、routing 能救（+12.7~19.7pp）的任务集**。
+> 这比"某 mode 平均更好"强得多。**未接进任何 figure/§6 证据链** —— 若 frame 要找抓手，这是现成的一条。
+>
+> ### 其他产出
+>
+> - **新 bug**：`B-1923` 发帖限流（Postmill `@RateLimit(1h,max=3)` 源码坐实）· `B-1924` task 646 大小写不可通过 ·
+>   `B-1925` `_format_history` 从不写 thought · `B-1926` `page_changed` 假阳性 · `B-1927` replicate run 劫持重扫
+> - **`page_changed` 修正口径**（B-1926，你裁定的方案 3 = 只改分析层）：
+>   `scripts/analysis/page_change_corrected_metrics.py` → `docs/analysis/cross_sites/page_change_corrected.json`。
+>   **Micro 主结论稳健**（no_change_rate 最高=Vision 在 6/6 cell 不变），router streak≥2 触发 **5321→5910 (+11.1%)**
+> - **数据质量审计总表**：`docs/analysis/_data_quality_audit.md`（字段级三类缺陷 + 分层可信度 + Q1–Q7 actionable）
+> - **重跑结论**：**当前没有必须重跑的 run**。唯一候选是修 `select_option` 后重跑那 383 ep（B-1920），
+>   但 B-1920 已论证主结论不动，只需 limitation
+>
+> ### ⚠️ 两个坑
+>
+> 1. **`diag_rescan_all.py` 必须带 `--baseline-dir`** —— 否则按 mtime 选 run，会被那个**仍在跑的
+>    SoM replicate**（`..._R30696`）劫持（B-1927 已修成"有 baseline 就锁 run_id"）。
+>    replicate 与 canonical **同目录同名同 seed 无标识**，跑满 224 ep 后 episode 数也不再能当警报。
+> 2. **`.claude/` 被 gitignore** → `SKILL.md` 的 v11 更新（47 条规则 + P43 更正 + P48 过窄说明）**只在本地**，
+>    不会随 commit 传播
+>
+> ### 未做 / 待裁定
+>
+> - `page_changed` 判定在 **runner 层**的修复（fire 路径 + estimand-adjacent，需 witness）—— 你已选方案 3 绕开
+> - `select_option` CSS dropdown 分派修复（B-1920，修法未定）
+> - `_format_history` 加 thought（B-1925，修了要全量重跑，属能力改进非污染修复）
+> - **未跑 `/stress`** —— 本 session 没碰 paper prose，产出是审计与工具层；但 P43 那条若进 §6 证据链，
+>   建议引用前补一次
+
+
+
+> ## 🟩 2026-08-03 · 第 8 格落地 + 证据层接线 + 对账板 —— **最新，先读这块**
+>
+> chronicle → **笔记 §414 / §415 / §416**（frame 三版皆判弱→转对账板 · 第 8 格落地 · WA 全量接线）。
+>
+> ### 对账用的东西（今天 08-03 与学长）
+>
+> - **证据台**：`docs/checkpoints/deliverables/evidence_board_2026-08-03_local.html`（双击即开，自带主题开关）
+>   · 可分享链接 `https://claude.ai/code/artifact/9db9913e-be88-4f37-b217-6eb6ad83b565`（默认私有，页面右上分享）
+>   · 12 个区块，数据由脚本从产物 JSON 直抽（零手抄），改产物后重跑抽取脚本即可刷新
+> - **frame 未定** —— 我提的三版（§5b / 双地板 / 融合不值这个价）都被判撑不住，
+>   板子末节「要拍的板」摆了四个待决点，**没有替你选**。deadline **08-05**，走**非归档轨**（已拍板）。
+>
+> ### 在跑的（跨主机，注意 A100 比 DGX 慢 1 小时）
+>
+> | 在哪 | 什么 | 怎么查 |
+> |---|---|---|
+> | **A100** | SoM replicate `B0_som_classifieds_20260803_084743_..._R30696`（224 ep，实测 2.9 min/ep → ~10.7h，A100 时间 19:30 前后完） | `ssh condense-a100 'cd /home/ubuntu/workspace/p79; find results/visualwebarena/phase1/B0_som_classifieds_20260803_*/ -path "*episodes*" -name "*summary*.json" | wc -l'`　←　**仓库在 `/home/ubuntu/workspace/p79`**，不是 `~/p79` |
+> | **DGX** | mechanistic canonical **只剩最后一格** `p4_som_pprompt_red`（23/24 完成，08-03 11:15 起算约 3.7h） | 单格 done 判据 = **`pilot_summary.md` 非空**（不是 `results.json`——那个在跑到一半时就已存在且体积很大，拿它判会误报完成）；全 sweep 判据 = `results/mechanistic/canonical/.SWEEP_DONE`。已挂 monitor |
+>
+> ⚠️ 原 armed chain `logs/som_replicate/chain.sh` **已死**（24h cap 到点时 WA 还在跑）。重启用的是
+> `logs/som_replicate/fire_now.sh`。**`queue_baseline` 默认 resume**，做 replicate 必须 `FORCE_NEW=1`，
+> 否则它会 glob 到原始 run 并当续跑。
+>
+> ### 证据层接线状态（实证，非照抄）
+>
+> **8/8 已接**：`per_mode_four_dimension_profile` · `fusion_premium` · `noise_floor_inventory` ·
+> `multimetric_pareto` · `axis_effect_size` · `confidence_cascade` · `outcome_efficiency`
+> （`--with-wa` 现在同时挂 B1 与 B0；`noise_floor` 的 B0 无 pilot 故**有 margin 无 floor**）
+>
+> **未接**：`conditional_failure_attribution` 7/8（依赖 `diag_scans/`，另一 session 在动）·
+> `axis1_microbehavior` 6/8（连 B1×WA 都没有，需单独一遍）· `cost_per_mode` 6/8（第二成本口径）·
+> `routing_feature_diagnostics` / `visual_difficulty_router`（**设计上确实不适用**，验过）· `label_instability` 1/8
+>
+> ### ✅ 三处措辞已改（08-03），并且审证据层又挖出四件 —— chronicle 见 **笔记 §418**
+>
+> 三处（Vision 成本 7/8 且非构造性 · claim 9 的 5/8 且「跟着站点走」不再成立 · fusion 聚类 CI
+> `[+0.06, +2.93]` 排除零但下界远低于地板下沿）全部改进 `EVIDENCE_LAYER_SUMMARY`，连带 claim
+> 3/6、§1 矩阵、§7 表格（/7→/8 加 `wa_red_B0` 列）、开头 frame 状态（§5b 已死、当前无 frame）。
+>
+> **新挖出的四件**：
+> 1. **两个同族 bug** —— `aggregate_fusion_premium.py:317` 和 `per_mode_four_dimension_profile.py`
+>    的旁注列，结论**硬编码在生成器里**，每次重跑把自己再写一遍，跟隔壁数据驱动的列自相矛盾。已改成派生。
+> 2. **唯一那条「融合显著输了」是环境送的** —— `red_B2` SoM−DOM 的 8 个 DOM 成功里 3 个是 sidebar
+>    泄漏；置 0 后 −2.96pp → **−1.48pp 跨零**。新产物 `leakage_sensitivity.py`。模态反转不受影响。
+> 3. **reddit-only 混杂** —— 站外导航 1.05–2.13%（classifieds ~0），且 reddit 容器站内 `env_step`
+>    是 classifieds 的 **1.69×**。新产物 `offsite_navigation_audit.py`。
+> 4. **「四种路由全失败」太强** —— `router_objective_ordering`（138 行，从未被引用）里 oracle triage
+>    在 **6/6 格零 SR 损失省 9.5–30.6%**，learned triage 在 `cls_B1` 上 **out-of-fold +0.00pp/−4.5%**。
+>    which-mode 路由失败，triage 路由没有。
+>
+> 未做：`mechanism_per_task_report`（425 行，最大的未引用产物）**仍未整合** —— 它加什么是 framing
+> 判断不是接线活。WA 两格的 leakage **仍未 audit**（手查两个 episode 都是 earned，但那不是 audit）。
+>
+> ### 未提交
+>
+> `docs/analysis/cross_sites/*`（7 个产物重算）+ `scripts/analysis/*`（6 个脚本参数化）+ 笔记 §414-416 + 板子两份。
+> ⚠️ `docs/analysis/wa_reddit/*_diag_digest.md` 是**另一 session 的改动**，commit 时不要混进来。
+
 > ## 🟦 2026-08-02 · WA reddit /diag 完成 + B-1919 修复 —— **这块不覆盖下面那块**（并行的另一条线，论文主线仍看 🟥）
 >
 > chronicle → **笔记 §410**（含 §410.8 修复补记）。数据层结论 → `docs/analysis/wa_reddit/_cell_cross_mode_findings.md`。
