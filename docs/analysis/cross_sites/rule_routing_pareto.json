@@ -1,0 +1,555 @@
+{
+  "schema": 1,
+  "post_hoc_exploratory": true,
+  "h10_eligible": false,
+  "generated": "2026-08-03T12:56:34+00:00",
+  "predicate": "\\b(image|picture|photo|screenshot)\\b|\\bcolou?r of\\b|\\bhow many\\b[^.]{0,40}\\bin (?:the|this)\\b",
+  "cells": {
+    "cls_B0": {
+      "n_flagged": 71,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 17.410714285714285,
+          "cost": 0.06961906696428571,
+          "latency_s": 114.95955165262733,
+          "latency_canonical_s": 114.0638004371098
+        },
+        "always-SoM": {
+          "sr_pct": 27.232142857142858,
+          "cost": 0.07235666964285714,
+          "latency_s": 106.72429014423064,
+          "latency_canonical_s": 106.00759377011231
+        },
+        "always-Vision": {
+          "sr_pct": 25.0,
+          "cost": 0.06480720982142858,
+          "latency_s": 126.28667851111719,
+          "latency_canonical_s": 125.21138859540224
+        },
+        "always-P-text": {
+          "sr_pct": 15.625,
+          "cost": 0.06918624107142858,
+          "latency_s": 123.84936686179468,
+          "latency_canonical_s": 120.40075611535993
+        },
+        "always-P-prompt": {
+          "sr_pct": 19.642857142857142,
+          "cost": 0.0685255,
+          "latency_s": 109.38391917518207,
+          "latency_canonical_s": 107.77156754157373
+        },
+        "always-P-SoM": {
+          "sr_pct": 15.625,
+          "cost": 0.07205735267857143,
+          "latency_s": 121.14442640117237,
+          "latency_canonical_s": 117.89780763004508
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 24.553571428571427,
+          "cost": 0.06809388010204082,
+          "latency_s": 118.54984632652368,
+          "latency_canonical_s": 117.59718775514
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 23.660714285714285,
+          "cost": 0.07048678924186862,
+          "latency_s": 112.34926787094801,
+          "latency_canonical_s": 111.51027064533828
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 24.107142857142858,
+          "cost": 0.07019115369897959,
+          "latency_s": 118.42132915220965,
+          "latency_canonical_s": 115.83863769342875
+        }
+      },
+      "frontier": [
+        "always-P-prompt",
+        "always-SoM",
+        "always-Vision",
+        "rule: flag\u2192SoM else DOM",
+        "rule: flag\u2192SoM else P-text",
+        "rule: flag\u2192Vision else DOM"
+      ],
+      "dominated_by": {
+        "always-DOM": [
+          "always-P-prompt"
+        ],
+        "always-SoM": [],
+        "always-Vision": [],
+        "always-P-text": [
+          "always-P-prompt",
+          "rule: flag\u2192Vision else DOM"
+        ],
+        "always-P-prompt": [],
+        "always-P-SoM": [
+          "always-DOM",
+          "always-P-prompt",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192Vision else DOM": [],
+        "rule: flag\u2192SoM else DOM": [],
+        "rule: flag\u2192SoM else P-text": []
+      }
+    },
+    "cls_B1": {
+      "n_flagged": 71,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 6.25,
+          "cost": 0.05951416254464286,
+          "latency_s": 308.92978988587856,
+          "latency_canonical_s": 308.92978988587856
+        },
+        "always-SoM": {
+          "sr_pct": 14.285714285714286,
+          "cost": 0.06027517504464286,
+          "latency_s": 261.96710124611855,
+          "latency_canonical_s": 261.96710124611855
+        },
+        "always-Vision": {
+          "sr_pct": 12.5,
+          "cost": 0.043155593883928575,
+          "latency_s": 269.77543610015084,
+          "latency_canonical_s": 269.77543610015084
+        },
+        "always-P-text": {
+          "sr_pct": 7.589285714285714,
+          "cost": 0.05879092379464286,
+          "latency_s": 313.54021845332215,
+          "latency_canonical_s": 313.54021845332215
+        },
+        "always-P-prompt": {
+          "sr_pct": 6.696428571428571,
+          "cost": 0.06303546700892858,
+          "latency_s": 301.36770043947865,
+          "latency_canonical_s": 301.36770043947865
+        },
+        "always-P-SoM": {
+          "sr_pct": 6.696428571428571,
+          "cost": 0.059696479732142864,
+          "latency_s": 311.70985080833947,
+          "latency_canonical_s": 311.70985080833947
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 11.607142857142858,
+          "cost": 0.05432908051379146,
+          "latency_s": 296.5192581055809,
+          "latency_canonical_s": 296.5192581055809
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 10.267857142857142,
+          "cost": 0.059755376328125005,
+          "latency_s": 294.04429482595464,
+          "latency_canonical_s": 294.04429482595464
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 11.160714285714286,
+          "cost": 0.05926137843191964,
+          "latency_s": 297.19338219568175,
+          "latency_canonical_s": 297.19338219568175
+        }
+      },
+      "frontier": [
+        "always-SoM",
+        "always-Vision"
+      ],
+      "dominated_by": {
+        "always-DOM": [
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "always-SoM": [],
+        "always-Vision": [],
+        "always-P-text": [
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM"
+        ],
+        "always-P-prompt": [
+          "always-SoM",
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "always-P-SoM": [
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192Vision else DOM": [
+          "always-Vision"
+        ],
+        "rule: flag\u2192SoM else DOM": [
+          "always-Vision"
+        ],
+        "rule: flag\u2192SoM else P-text": [
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM"
+        ]
+      }
+    },
+    "cls_B2": {
+      "n_flagged": 71,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 1.3392857142857142,
+          "cost": 0.07676412973214286,
+          "latency_s": 402.3193643742374,
+          "latency_canonical_s": 402.3193643742374
+        },
+        "always-SoM": {
+          "sr_pct": 2.232142857142857,
+          "cost": 0.0907508425,
+          "latency_s": 374.2532824778131,
+          "latency_canonical_s": 374.2532824778131
+        },
+        "always-Vision": {
+          "sr_pct": 2.232142857142857,
+          "cost": 0.07065426732142857,
+          "latency_s": 417.76278529103314,
+          "latency_canonical_s": 417.76278529103314
+        },
+        "always-P-text": {
+          "sr_pct": 0.44642857142857145,
+          "cost": 0.07320177482142858,
+          "latency_s": 399.4490066564509,
+          "latency_canonical_s": 399.4490066564509
+        },
+        "always-P-prompt": {
+          "sr_pct": 1.7857142857142858,
+          "cost": 0.08452656950892858,
+          "latency_s": 396.40708421383584,
+          "latency_canonical_s": 396.40708421383584
+        },
+        "always-P-SoM": {
+          "sr_pct": 0.8928571428571429,
+          "cost": 0.08456373169642858,
+          "latency_s": 411.02878131611004,
+          "latency_canonical_s": 411.02878131611004
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 1.7857142857142858,
+          "cost": 0.07482752155731824,
+          "latency_s": 407.2143772541146,
+          "latency_canonical_s": 407.2143772541146
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 1.3392857142857142,
+          "cost": 0.08119741815409758,
+          "latency_s": 393.4234187731386,
+          "latency_canonical_s": 393.4234187731386
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 1.3392857142857142,
+          "cost": 0.07876420252311862,
+          "latency_s": 391.46286193911476,
+          "latency_canonical_s": 391.46286193911476
+        }
+      },
+      "frontier": [
+        "always-DOM",
+        "always-P-prompt",
+        "always-P-text",
+        "always-SoM",
+        "always-Vision",
+        "rule: flag\u2192SoM else P-text",
+        "rule: flag\u2192Vision else DOM"
+      ],
+      "dominated_by": {
+        "always-DOM": [],
+        "always-SoM": [],
+        "always-Vision": [],
+        "always-P-text": [],
+        "always-P-prompt": [],
+        "always-P-SoM": [
+          "always-DOM",
+          "always-P-prompt",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192Vision else DOM": [],
+        "rule: flag\u2192SoM else DOM": [
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192SoM else P-text": []
+      }
+    },
+    "red_B0": {
+      "n_flagged": 63,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 14.285714285714286,
+          "cost": 0.10147060591133004,
+          "latency_s": 571.9533361014475,
+          "latency_canonical_s": 552.5376049873277
+        },
+        "always-SoM": {
+          "sr_pct": 14.77832512315271,
+          "cost": 0.11045337931034484,
+          "latency_s": 461.3732800871281,
+          "latency_canonical_s": 451.6387592254601
+        },
+        "always-Vision": {
+          "sr_pct": 7.389162561576355,
+          "cost": 0.09806919211822661,
+          "latency_s": 449.77585884033164,
+          "latency_canonical_s": 418.4607942221787
+        },
+        "always-P-text": {
+          "sr_pct": 13.300492610837438,
+          "cost": 0.10576826108374383,
+          "latency_s": 631.3828275532558,
+          "latency_canonical_s": 562.0760443915287
+        },
+        "always-P-prompt": {
+          "sr_pct": 12.31527093596059,
+          "cost": 0.10162965024630541,
+          "latency_s": 498.44655133468177,
+          "latency_canonical_s": 447.71862572167305
+        },
+        "always-P-SoM": {
+          "sr_pct": 10.83743842364532,
+          "cost": 0.10813512807881773,
+          "latency_s": 561.9875271461281,
+          "latency_canonical_s": 532.0163069487793
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 13.300492610837438,
+          "cost": 0.10041499473416002,
+          "latency_s": 534.0361879859288,
+          "latency_canonical_s": 510.927560267109
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 14.285714285714286,
+          "cost": 0.10425836317309327,
+          "latency_s": 537.6353876832104,
+          "latency_canonical_s": 521.2241700957136
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 13.300492610837438,
+          "cost": 0.10722226329199933,
+          "latency_s": 578.6212438568713,
+          "latency_canonical_s": 527.8024041675764
+        }
+      },
+      "frontier": [
+        "always-DOM",
+        "always-P-prompt",
+        "always-SoM",
+        "always-Vision",
+        "rule: flag\u2192SoM else DOM",
+        "rule: flag\u2192Vision else DOM"
+      ],
+      "dominated_by": {
+        "always-DOM": [],
+        "always-SoM": [],
+        "always-Vision": [],
+        "always-P-text": [
+          "always-DOM",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM"
+        ],
+        "always-P-prompt": [],
+        "always-P-SoM": [
+          "always-P-prompt",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192Vision else DOM": [],
+        "rule: flag\u2192SoM else DOM": [],
+        "rule: flag\u2192SoM else P-text": [
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM"
+        ]
+      }
+    },
+    "red_B1": {
+      "n_flagged": 63,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 5.911330049261084,
+          "cost": 0.07330131733990149,
+          "latency_s": 602.6264342369117,
+          "latency_canonical_s": 602.6264342369117
+        },
+        "always-SoM": {
+          "sr_pct": 7.389162561576355,
+          "cost": 0.08000418059113301,
+          "latency_s": 609.050123272271,
+          "latency_canonical_s": 609.050123272271
+        },
+        "always-Vision": {
+          "sr_pct": 2.4630541871921183,
+          "cost": 0.05240422403940887,
+          "latency_s": 456.5728186245622,
+          "latency_canonical_s": 456.5728186245622
+        },
+        "always-P-text": {
+          "sr_pct": 5.911330049261084,
+          "cost": 0.06947853921182266,
+          "latency_s": 598.5845973844011,
+          "latency_canonical_s": 598.5845973844011
+        },
+        "always-P-prompt": {
+          "sr_pct": 5.41871921182266,
+          "cost": 0.07656218467980296,
+          "latency_s": 614.0174077802104,
+          "latency_canonical_s": 614.0174077802104
+        },
+        "always-P-SoM": {
+          "sr_pct": 5.911330049261084,
+          "cost": 0.07479701950738916,
+          "latency_s": 616.5584190361606,
+          "latency_canonical_s": 616.5584190361606
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 4.926108374384237,
+          "cost": 0.06681601252250723,
+          "latency_s": 557.299450081355,
+          "latency_canonical_s": 557.299450081355
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 6.403940886699507,
+          "cost": 0.07538151627993886,
+          "latency_s": 604.6199929030577,
+          "latency_canonical_s": 604.6199929030577
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 6.896551724137931,
+          "cost": 0.07274511757091898,
+          "latency_s": 601.8325192116711,
+          "latency_canonical_s": 601.8325192116711
+        }
+      },
+      "frontier": [
+        "always-P-text",
+        "always-SoM",
+        "always-Vision",
+        "rule: flag\u2192SoM else P-text",
+        "rule: flag\u2192Vision else DOM"
+      ],
+      "dominated_by": {
+        "always-DOM": [
+          "always-P-text",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "always-SoM": [],
+        "always-Vision": [],
+        "always-P-text": [],
+        "always-P-prompt": [
+          "always-DOM",
+          "always-P-text",
+          "rule: flag\u2192SoM else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "always-P-SoM": [
+          "always-DOM",
+          "always-P-text",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192Vision else DOM": [],
+        "rule: flag\u2192SoM else DOM": [
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192SoM else P-text": []
+      }
+    },
+    "red_B2": {
+      "n_flagged": 63,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 3.9408866995073892,
+          "cost": 0.09479046182266011,
+          "latency_s": 669.9163802586165,
+          "latency_canonical_s": 669.9163802586165
+        },
+        "always-SoM": {
+          "sr_pct": 0.9852216748768473,
+          "cost": 0.11160030108374384,
+          "latency_s": 623.0091513530374,
+          "latency_canonical_s": 623.0091513530374
+        },
+        "always-Vision": {
+          "sr_pct": 1.9704433497536946,
+          "cost": 0.06833131192118228,
+          "latency_s": 550.0211918142629,
+          "latency_canonical_s": 550.0211918142629
+        },
+        "always-P-text": {
+          "sr_pct": 1.9704433497536946,
+          "cost": 0.08851566783251232,
+          "latency_s": 677.6121237231006,
+          "latency_canonical_s": 677.6121237231006
+        },
+        "always-P-prompt": {
+          "sr_pct": 0.0,
+          "cost": 0.09940042886699509,
+          "latency_s": 599.2792678619253,
+          "latency_canonical_s": 599.2792678619253
+        },
+        "always-P-SoM": {
+          "sr_pct": 0.49261083743842365,
+          "cost": 0.09450881167487685,
+          "latency_s": 639.9556262986414,
+          "latency_canonical_s": 639.9556262986414
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 5.41871921182266,
+          "cost": 0.08657900150840837,
+          "latency_s": 632.7075286724379,
+          "latency_canonical_s": 632.7075286724379
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 3.4482758620689653,
+          "cost": 0.10000730848989299,
+          "latency_s": 655.3589643913679,
+          "latency_canonical_s": 655.3589643913679
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 1.477832512315271,
+          "cost": 0.09567986435875658,
+          "latency_s": 660.6663736772189,
+          "latency_canonical_s": 660.6663736772189
+        }
+      },
+      "frontier": [
+        "always-Vision",
+        "rule: flag\u2192Vision else DOM"
+      ],
+      "dominated_by": {
+        "always-DOM": [
+          "rule: flag\u2192Vision else DOM"
+        ],
+        "always-SoM": [
+          "always-Vision"
+        ],
+        "always-Vision": [],
+        "always-P-text": [
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM"
+        ],
+        "always-P-prompt": [
+          "always-Vision"
+        ],
+        "always-P-SoM": [
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM"
+        ],
+        "rule: flag\u2192Vision else DOM": [],
+        "rule: flag\u2192SoM else DOM": [
+          "rule: flag\u2192Vision else DOM"
+        ],
+        "rule: flag\u2192SoM else P-text": [
+          "always-Vision",
+          "rule: flag\u2192Vision else DOM"
+        ]
+      }
+    }
+  }
+}

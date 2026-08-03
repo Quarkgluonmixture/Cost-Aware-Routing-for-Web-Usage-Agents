@@ -1,0 +1,247 @@
+{
+  "schema": 1,
+  "post_hoc_exploratory": true,
+  "h10_eligible": false,
+  "generated": "2026-08-03T10:26:55+00:00",
+  "local_hosts": [
+    "0.0.0.0",
+    "127.0.0.1",
+    "localhost"
+  ],
+  "cells": [
+    {
+      "cell": "B0\u00b7VWA-cla",
+      "n_steps": 20646,
+      "n_offsite": 0,
+      "pct_steps": 0.0,
+      "n_episodes": 1344,
+      "n_episodes_offsite": 0,
+      "pct_episodes": 0.0,
+      "median_env_ms_onsite": 4493.372797966003,
+      "median_env_ms_offsite": null,
+      "mean_env_ms_onsite": 5397.564802984622,
+      "mean_env_ms_offsite": null,
+      "top_hosts": []
+    },
+    {
+      "cell": "B0\u00b7VWA-red",
+      "n_steps": 26425,
+      "n_offsite": 478,
+      "pct_steps": 1.8088930936613057,
+      "n_episodes": 1230,
+      "n_episodes_offsite": 36,
+      "pct_episodes": 2.926829268292683,
+      "median_env_ms_onsite": 11349.076747894287,
+      "median_env_ms_offsite": 10007.469892501831,
+      "mean_env_ms_onsite": 18921.223410155293,
+      "mean_env_ms_offsite": 11636.038872487376,
+      "top_hosts": [
+        [
+          "consent.yahoo.com",
+          106
+        ],
+        [
+          "www.hollywoodreporter.com",
+          82
+        ],
+        [
+          "www.theguardian.com",
+          78
+        ],
+        [
+          "www.cnbc.com",
+          52
+        ],
+        [
+          "www.yahoo.com",
+          25
+        ]
+      ]
+    },
+    {
+      "cell": "B1\u00b7VWA-cla",
+      "n_steps": 27927,
+      "n_offsite": 0,
+      "pct_steps": 0.0,
+      "n_episodes": 1344,
+      "n_episodes_offsite": 0,
+      "pct_episodes": 0.0,
+      "median_env_ms_onsite": 5749.615669250488,
+      "median_env_ms_offsite": null,
+      "mean_env_ms_onsite": 5903.67185004472,
+      "mean_env_ms_offsite": null,
+      "top_hosts": []
+    },
+    {
+      "cell": "B1\u00b7VWA-red",
+      "n_steps": 29309,
+      "n_offsite": 501,
+      "pct_steps": 1.7093725476815995,
+      "n_episodes": 1230,
+      "n_episodes_offsite": 54,
+      "pct_episodes": 4.390243902439025,
+      "median_env_ms_onsite": 7848.262429237366,
+      "median_env_ms_offsite": 6348.586559295654,
+      "mean_env_ms_onsite": 16480.667744178434,
+      "mean_env_ms_offsite": 8539.604581996591,
+      "top_hosts": [
+        [
+          "postmill.xyz",
+          147
+        ],
+        [
+          "www.bobvila.com",
+          58
+        ],
+        [
+          "www.theguardian.com",
+          58
+        ],
+        [
+          "consent.yahoo.com",
+          41
+        ],
+        [
+          "www.archdaily.com",
+          29
+        ]
+      ]
+    },
+    {
+      "cell": "B2\u00b7VWA-cla",
+      "n_steps": 36529,
+      "n_offsite": 58,
+      "pct_steps": 0.1587779572394536,
+      "n_episodes": 1344,
+      "n_episodes_offsite": 4,
+      "pct_episodes": 0.2976190476190476,
+      "median_env_ms_onsite": 4655.653953552246,
+      "median_env_ms_offsite": 14884.247660636902,
+      "mean_env_ms_onsite": 4744.480479790249,
+      "mean_env_ms_offsite": 22123.076940404957,
+      "top_hosts": [
+        [
+          "osclass-classifieds.com",
+          47
+        ],
+        [
+          "www.cloudflare.com",
+          8
+        ],
+        [
+          "osclasspoint.com",
+          2
+        ],
+        [
+          "www.onetrust.com",
+          1
+        ]
+      ]
+    },
+    {
+      "cell": "B2\u00b7VWA-red",
+      "n_steps": 33749,
+      "n_offsite": 719,
+      "pct_steps": 2.1304334943257577,
+      "n_episodes": 1230,
+      "n_episodes_offsite": 49,
+      "pct_episodes": 3.983739837398374,
+      "median_env_ms_onsite": 9324.457049369812,
+      "median_env_ms_offsite": 4850.476503372192,
+      "mean_env_ms_onsite": 13641.91008595095,
+      "mean_env_ms_offsite": 14332.124024339446,
+      "top_hosts": [
+        [
+          "postmill.xyz",
+          261
+        ],
+        [
+          "www.wfsb.com",
+          96
+        ],
+        [
+          "newsroom.kelloggcompany.com",
+          41
+        ],
+        [
+          "www.cloudflare.com",
+          40
+        ],
+        [
+          "omnitype.com",
+          32
+        ]
+      ]
+    },
+    {
+      "cell": "B1\u00b7WA-red",
+      "n_steps": 14695,
+      "n_offsite": 278,
+      "pct_steps": 1.8917999319496428,
+      "n_episodes": 624,
+      "n_episodes_offsite": 40,
+      "pct_episodes": 6.410256410256411,
+      "median_env_ms_onsite": 6808.506965637207,
+      "median_env_ms_offsite": 6104.8606634140015,
+      "mean_env_ms_onsite": 13426.791006709927,
+      "mean_env_ms_offsite": 9980.080868700425,
+      "top_hosts": [
+        [
+          "imgur.com",
+          46
+        ],
+        [
+          "www.supercluster.com",
+          29
+        ],
+        [
+          "eu.detroitnews.com",
+          27
+        ],
+        [
+          "help.imgur.com",
+          25
+        ],
+        [
+          "deadline.com",
+          23
+        ]
+      ]
+    },
+    {
+      "cell": "B0\u00b7WA-red",
+      "n_steps": 11703,
+      "n_offsite": 123,
+      "pct_steps": 1.0510125608818253,
+      "n_episodes": 624,
+      "n_episodes_offsite": 21,
+      "pct_episodes": 3.3653846153846154,
+      "median_env_ms_onsite": 6613.228321075439,
+      "median_env_ms_offsite": 11404.967069625854,
+      "mean_env_ms_onsite": 12409.755540182348,
+      "mean_env_ms_offsite": 13553.510505009473,
+      "top_hosts": [
+        [
+          "www.supercluster.com",
+          68
+        ],
+        [
+          "www.publishersweekly.com",
+          15
+        ],
+        [
+          "spaceagency.supercluster.com",
+          12
+        ],
+        [
+          "imgur.com",
+          6
+        ],
+        [
+          "www.publichealth.columbia.edu",
+          6
+        ]
+      ]
+    }
+  ]
+}
