@@ -36,9 +36,15 @@ OL="${OVERLEAF_GIT_DIR:-$HOME/overleaf-aaai27}"
 
 PAPERS=()
 case "${1:-}" in
-  paperA|paperB) PAPERS=("$1"); shift ;;
-  "") PAPERS=(paperA paperB) ;;
-  *) echo "✗ 未知参数: $1 (要 paperA / paperB / 空)" >&2; exit 1 ;;
+  paperA|paperB|realm) PAPERS=("$1"); shift ;;
+  # 2026-08-03: both old drafts were archived to
+  # docs/archive/paper_drafts_pre_rewrite_2026-08-03/ and the rewrite happens in realm/.
+  # paperA was removed from the Overleaf project; paperB's .tex files are left in place,
+  # FROZEN at their 2026-07-28 build, as the advisor's reference copy. Its Markdown source
+  # is archived, so `convert.sh paperB` cannot run and must not be attempted — hence the
+  # default is realm alone. Passing `paperB` explicitly will fail, deliberately and loudly.
+  "") PAPERS=(realm) ;;
+  *) echo "✗ 未知参数: $1 (要 paperA / paperB / realm / 空)" >&2; exit 1 ;;
 esac
 MSG="${1:-sync: REALM drafts $(cd "$REPO" && git rev-parse --short HEAD)}"
 
@@ -118,5 +124,5 @@ else
   git commit -q -m "$MSG"
   git push -q origin master 2>/dev/null || git push -q origin main
   echo "✓ pushed: $MSG"
-  echo "  Overleaf 菜单 → Main document → main_paperA.tex / main_paperB.tex 切换编译目标"
+  echo "  Overleaf 菜单 → Main document → main_realm.tex (当前) 或 main_paperB.tex (冻结参照)"
 fi
