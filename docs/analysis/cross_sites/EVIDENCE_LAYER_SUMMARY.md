@@ -440,9 +440,21 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    text side and **2 of 3** on the visual side, not 8 of 8. The reversal is still there in the
    *ordering*; its magnitude is not what the quoted range implies.
 5. **Four routing formulations fail.** For the cascade on post-action confidence, no operating
-   point Pareto-beats always-rich in any of the four VWA cells where the comparison is
-   non-degenerate. **The WA exception is withdrawn** — both of its winning points were tie
-   artefacts, not thresholds; see §3.4. → the four router products + `confidence_cascade{,_with_wa}`
+   point beats always-rich **on success rate** in any of the **six comparable cells** — two of
+   the eight are degenerate (the rich arm is *worse* there, so the cascade's premise fails),
+   and that exclusion rule (`cheap_sr >= rich_sr`) is outcome-dependent.
+   ⚠️ *Corrected 2026-08-03: the counts in the previous wording were all wrong, in three
+   different ways.* It said "four VWA cells", which was right only while the WA rows were
+   being dropped before render (`cell_get`, fixed same day) — with them the comparable set is
+   six, four VWA plus both WA. It said the WA exception was withdrawn because **"both"** of its
+   winning points were tie artefacts; the table prints **three**, and `Table 20`'s own caption
+   said **"the one"**. Three sources, three counts, and none matched the product — which
+   survived precisely because the WA rows were invisible, so the sentence could not be checked
+   against the rows it described. **The verdict itself stands**: all three points on `WA·B1`
+   merely *match* always-rich's SR at lower cost, 44–60 of its 104 episodes are tied at the
+   cutoff, the ranking falls through to task id, and the reachable SR spans 8.65–14.42. The
+   table now reports strictly-better and SR-tied separately so the two cannot be conflated
+   again. → the four router products + `confidence_cascade{,_with_wa}`
    **A fifth formulation was fitted rather than argued away**: adding `visual_difficulty` — the
    VWA-native annotation `extract_50_features` reads and drops — to the triage feature table
    moves out-of-fold AUROC by a mean of **+0.008** over six cells, improving three, which is

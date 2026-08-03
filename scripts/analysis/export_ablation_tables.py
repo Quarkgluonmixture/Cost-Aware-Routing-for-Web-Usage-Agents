@@ -608,7 +608,11 @@ def t_per_success():
     rows = ["| cell | content? | cheapest/attempt | cheapest/success | fastest/attempt | "
             "fastest/success | max solves |", "|---|---|---|---|---|---|---|"]
     for cell, r in d["cells"].items():
-        rows.append(f"| {_PROF_CELL.get(cell, cell.replace('_', '·'))} | "
+        # cell_label() rather than the raw fallback: `outcome_efficiency` keys the WA cells
+        # `wa_B0`, which `_PROF_CELL` does not carry, so the fallback rendered them `wa·B0`
+        # in lower case beside `cls·B0`. Two spellings in one column is how a reader — and
+        # three times today, me — concludes the WA rows are missing when they are present.
+        rows.append(f"| {cell_label(cell) if cell not in _PROF_CELL else _PROF_CELL[cell]} | "
                     f"{'yes' if r.get('has_content') else '**no**'} | "
                     f"{r.get('cheapest_per_attempt')} | {r.get('cheapest_per_success')} | "
                     f"{r.get('fastest_per_attempt')} | {r.get('fastest_per_success')} | "
@@ -622,31 +626,73 @@ def t_per_success():
         "declared, not any ranking. Source: `outcome_efficiency.json`.")
 
 
+def _split_cascade_beats(r: dict) -> tuple[list, list]:
+    """Split the Pareto-beating points into strictly-better-SR and merely-SR-tied.
+
+    A point 'beats' always-rich when it is no worse on either axis and better on one, so a
+    point whose SR *equals* the rich arm and costs less counts as a win. On `wa_red_B1` all
+    three such points sit at exactly the rich arm's SR while 44-60 of 104 episodes are tied
+    at the cutoff — the ranking falls through to task id and the achievable SR spans
+    8.65-14.42. Reporting one number let the prose say the WA exception was withdrawn (as a
+    tie artefact, correctly) while this table kept printing 3, and nobody could see the
+    contradiction because the WA rows were being dropped before render (see `cell_get`).
+    """
+    rich = r.get("rich_sr")
+    strict: list = []
+    tied: list = []
+    for sig, frac in (r.get("pareto_beats_always_rich") or []):
+        pt = next((p for p in (r.get("curves") or {}).get(sig, [])
+                   if abs(p.get("frac", -1) - frac) < 1e-9), None)
+        if pt is None or rich is None:
+            strict.append((sig, frac))
+        elif abs(pt.get("sr", 0.0) - rich) < 1e-9:
+            tied.append((sig, frac))
+        else:
+            strict.append((sig, frac))
+    return strict, tied
+
+
 def t_cascade():
     d = load("confidence_cascade_with_wa")
-    rows = ["| cell | n | cheap SR | rich SR | always-rich cost | oracle SR | "
-            "operating points that Pareto-beat always-rich | signals dropped |",
-            "|---|---|---|---|---|---|---|---|"]
+    rows = ["| cell | n | cheap SR | rich SR | always-rich cost | oracle SR | comparable? | "
+            "beats always-rich — strictly / SR-tied | signals dropped |",
+            "|---|---|---|---|---|---|---|---|---|"]
+    n_strict_comparable = 0
+    n_comparable = 0
     for c in CELLS:
         r = cell_get(d["cells"], c)
         if not r:
             continue
         ar, orc = r.get("always_rich", {}), r.get("oracle", {})
-        beats = r.get("pareto_beats_always_rich") or []
+        strict, tied = _split_cascade_beats(r)
+        degenerate = bool(r.get("rich_mode_is_worse"))
+        if not degenerate:
+            n_comparable += 1
+            n_strict_comparable += len(strict)
         rows.append(f"| {CELL_LABEL[c]} | {r['n']} | {r['cheap_sr']:.2f} | {r['rich_sr']:.2f} | "
                     f"{ar.get('cost_rel', float('nan')):.3f}× | "
                     f"{orc.get('sr', float('nan')):.2f} | "
-                    f"{('**' + str(len(beats)) + '**') if beats else '0'} | "
+                    f"{'— *(rich is worse)*' if degenerate else 'yes'} | "
+                    f"{('**' + str(len(strict)) + '**') if strict else '0'} / {len(tied)} | "
                     f"{len(r.get('signals_dropped') or [])} |")
     return "\n".join(rows), (
         f"Confidence-triggered cascade, {d['cheap']} → {d['rich']}. The escalation decision "
-        "sees only the cheap run's own episode — no outcome, no rich-run information. "
-        "⚠️ **Every number is an offline splice**: an escalated task takes its outcome from a "
-        "standalone rich run, whereas a real cascade would start the rich episode after the "
-        "cheap one had already acted on a stateful site. That sequential outcome is "
-        "unobserved in this project. `signals dropped` counts confidence signals with too few "
-        "distinct values to rank with — dropping them is what removed the one apparent WA "
-        "win, which was a tie artefact. Source: `confidence_cascade_with_wa.json`.")
+        f"sees only the cheap run's own episode — no outcome, no rich-run information. "
+        f"**In {n_strict_comparable} of the {n_comparable} comparable cells does any operating "
+        f"point beat always-rich on success rate**; the cells marked *rich is worse* are "
+        f"excluded because the cascade's premise fails there, and that exclusion rule "
+        f"(`cheap_sr >= rich_sr`) is **outcome-dependent**. ⚠️ **The two counts are split for a "
+        f"reason.** A point also 'wins' by matching always-rich's SR at lower cost, and every "
+        f"such point here is a **tie artefact**: on `WA·B1` all of them sit at exactly the rich "
+        f"arm's SR while 44-60 of 104 episodes are tied at the cutoff, so the ranking falls "
+        f"through to task id and the reachable SR spans 8.65-14.42. Counting the two together "
+        f"is what let this table print a WA win for months while the prose said the WA "
+        f"exception was withdrawn — the rows disagreed with the sentence and nobody could see "
+        f"it, because the WA rows were dropped before render until 2026-08-03. "
+        f"⚠️ **Every number is an offline splice**: an escalated task takes its outcome from a "
+        f"standalone rich run, whereas a real cascade would start the rich episode after the "
+        f"cheap one had already acted on a stateful site. That sequential outcome is "
+        f"unobserved in this project. Source: `confidence_cascade_with_wa.json`.")
 
 
 def t_cascade_control():
