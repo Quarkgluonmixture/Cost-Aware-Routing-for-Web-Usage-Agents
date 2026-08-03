@@ -23,6 +23,41 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟩 2026-08-03 深夜 · 证据层**覆盖**审计 + 机制解冻（**最新，先读这块**）
+>
+> chronicle → **笔记 §427**。commits `6730148`(B-1945) + `27f07f2`(覆盖审计)。**未推。**
+> Overleaf 已重建：`convert.sh realm` → 19 页 / 0 undefined citation / 0 TODO。
+> Dashboard `deliverables/evidence_board_2026-08-03{,_local}.html` 已更新三处（该目录 gitignored，不入库）。
+>
+> ### 这个 session 干了什么（一句话）
+> 上一轮审的是「数字对不对」，这一轮审的是「**算出来的东西有没有人用**」。
+> 双起点 cross-AI（Claude 从散文出发 / codex 从磁盘出发、零预设），**两侧发现零重合**。
+> 证据表 **35 → 40 张**。
+>
+> ### 🔴 会改变你怎么写 frame 的三条
+>
+> | 结论 | 影响 |
+> |---|---|
+> | **「路由失败」只报了一半** | 对 always-rich 失败 ≠ 信号没信息。对**同预算随机升级** 24/24 全胜（+0.10~+3.95pp），恢复 oracle 头顶空间 0–57%。claim 5 已改为「信号是有信息的，仍然不够」。⚠️ 样本内上界 |
+> | **frame 四条支柱全是事后统计量** | 已补第五条且是唯一事前的：ex-ante 谓词只读 task config，`cls·B0` **+22.54pp [+9.86,+33.80]** vs `red·B0` **−3.17pp** —— 符号翻转在跑任何 episode 之前就可见 → §5b |
+> | **机制层解冻，但比原记录弱** | patching 的内容特异性靠**层剖面**（真实臂收敛峰 L14 / 任务打乱塌到 L00），**不靠幅度**（0.188 vs 0.157，只差 19%）。两张表带着这个限制进了证据单 |
+>
+> ### 🟡 下一个 session 立刻可做
+>
+> 1. **两个 commit 未推** —— `git push` 需你确认
+> 2. **协议路径产物**：三个 backbone 走三条不同的模型→动作协议（B0 原生 tool call 99.98% / B1 裸 JSON 0% 修复 / B2 围栏 JSON 99.89% repaired_fenced）。Table 13 只报了协议**之后**的浏览器派发，前半段没有产物
+> 3. **失败 episode 的成本能耗**：`wasted_cost_usd` 7,055 个非零、`wasted_energy_kwh` 4,904 个非零，cross-site CSV 里没有这两列
+> 4. **`axis1_microbehavior` 仍无 WA 格**（其余产物都接了）
+>
+> ### ⚠️ 两条流程教训（比结论更值钱）
+>
+> - **codex 在 audit 里自行改了代码**（`--sandbox danger-full-access` + 「inventory 而非提议」的措辞约束不住）。改动质量高、已逐条审查接受并补登 catalog，但**下轮 coverage audit 的 prompt 必须显式写 `do not modify files`**
+> - **本轮两次「只取一半的量」都得到自洽但错误的结论**：只看位移不看收敛 → 差点判机制死亡；只数 `WA·` 前缀不看原始键 → 差点误报一条 P0。**对照组和另一半口径必须同时进表**
+>
+> ### 遗留（pre-existing，未动）
+> `test_universe_consumption_lint` 的 ratchet 判定是**字符串匹配而非语义检查**（源码出现 `expected_scored_ids` 即算「已限制」），而 `mechanism_per_task.py` 的 pending 注释说的是 "rows unfiltered" —— 两者不一致。22 个测试失败全部 pre-existing。
+
+
 > ## 🟦 2026-08-03 晚 · 证据层独立审计 session 交接（**给做 cross-AI 或写 frame 的下一个 session**）
 >
 > chronicle → **笔记 §422–§426**。commits `da6178f` → `82d46d0`（7 个）。Overleaf 已同步到 `5b1e246`，
