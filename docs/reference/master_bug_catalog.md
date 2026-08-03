@@ -10815,3 +10815,101 @@ audit 的 prompt 需显式写 **do not modify files**。
 **Cross-link**: 实验笔记 §427; CLAUDE.md 编码约定 (JSONL 统一入口); `axis_effect_size.py:241`
 (同批数据的正确口径); `tests/test_universe_consumption_lint.py` 的 `UNIVERSE_TRIAGE_PENDING`
 ratchet (pre-existing 失败, 判定为字符串匹配而非语义检查 —— 见 §427 遗留项)
+
+---
+
+## B-1949 ~ B-1952 落地记录 (2026-08-03) — 首次真实 shopping fire: 三个只有真环境能暴露的缺陷
+
+前四条 (B-1930~B-1943) 都是静态审计/单元测试抓的。这五条**全部只在真容器上才会显形**,
+其中两条是我自己"修复"引入的。
+
+### B-1949 — Magento 的 quote 行是惰性创建的, 我的守卫把干净态判成了误配
+
+A100 实测种子态: `quote` **0 行** / `quote_item` **0 行**, 而 `customer_entity` 27 行
+(emma.lopez 在) + `sales_order` 189 行。**Magento 只在顾客首次加购时才建 quote 行。**
+
+而我为修 codex 的 B-1942 写的检查是 `if quotes == 0: fail("customer never found")` ——
+把两种「零」混为一谈: 「email 配错」vs「购物车从没被用过」。fire 下 `fail_closed=True`
+⇒ **每个 shopping condition 的第一个 task 都 abort**。
+
+**修**: 身份探测改查 `customer_entity`, 与有没有 quote 行无关。
+**单元测试全绿也没抓到** —— mock 的正是我自己错误的假设。
+
+### (原拟 B-1945) `mechanism_per_task.py` 裸读 JSONL — **与另一 session 重复, 见上方 B-1945**
+
+并发撞号: 另一 session 在同一天独立发现并记录了这条 (L10778 `## B-1945 落地记录`), 内容一致。
+本 session 的实现侧补充 (仅记差异部分):
+- 改用 canonical reader + `strict_identity=True` 后**立刻在已 bound 的 paper-grade 数据里抓到
+  2 个 identity mismatch**: `B0_phantom_som_reddit_R28173` task 149 (summary.steps=13 vs jsonl=18)
+  与 task 87 (11 vs 14)。全量扫 **8096 个 episode**: 仅此 2 个, 整个语料 **restart 段 = 0**。
+- 多出的是真实 step 记录(连续 step_idx, `action_success=True`), 形态像 summary 写入早于末几步
+  flush 的写序竞争。两个都 `success=False` ⇒ **SR 不受影响**, 只影响按 step 计数的表。
+- 处置: **逐 episode** 排除 + 末尾大声汇报, 而非整脚本崩在 0.025% 异常上。
+
+### B-1950 — B0-only shopping chain (scope 决策的落地)
+
+实测 (38 个已落地 condition, **在 A100 量**): **4.38 MB/ep** · B0 **322 s/task**。
+⚠️ 同样的测量在 DGX 上得 132 KB/ep —— **DGX 没同步 artifacts, 差 27 倍**, 而 task frontmatter
+里那个 "12 cond ≈ 18.8G" 的旧估就是这么来的。
+
+| scope | 磁盘 | wallclock |
+|---|---|---|
+| 3 baseline × 2 shop 站 (36 cond) | **46.8 GB** | 54.3 天 |
+| **B0-only × 2 站 (12+2 replicate)** | **18.3 GB** | **15.8 天** |
+
+A100 仅剩 41 GB ⇒ 全跑装不下。user 选 B0-only, 依据是项目自己的措辞纪律:
+「三个 backbone 共享同一 task set 建立的是模型稳健性, **不是六个独立观测**」—— 那么站点轴 +1
+只需要一个 backbone。每站含 1 条 replicate 臂(§242/§293 两条 CLAIM_UNVERIFIED 挂在噪声地板上)。
+
+### B-1951 — 登记在案的 replicate 臂不是 ghost (含反向守卫)
+
+`validate_fire_manifest` 里**完全没有 replicate 概念** ⇒ phase1/ 下任何多出的完整 run 一律判
+ghost ⇒ 写 `.locks/manifest_bind_halt.marker` ⇒ 挡住所有 relaunch。
+而 B0·cls·SoM 的 replicate (R30696) 恰恰**故意**留在 phase1/ 下(另两条 replicate 在
+`results/repro_replicates/` 所以从来看不见)。笔记 §424.4(2) 明记这次 halt 是
+「**B-1927 的守卫按设计工作 … 非故障**」。
+
+**修**: 用既有的单一来源 —— `aggregate_noise_floor_inventory.py::CLEAN_PAIRS` 就是 replicate
+登记处(每对写明 canonical arm 与 replicate arm)。validator 以 `ast.literal_eval` 读它(不 import,
+零副作用), 把登记为 arm_b 的 run 排除出 ghost 判定, **并显式打印「registered replicate (not a
+ghost)」而非静默放行**。registry 读不到 → 注册空集 = fail closed(退回旧行为)。
+
+**同时加反向守卫**: 若 manifest 绑的 run_id 正是某对的 **arm_b** ⇒ exit 1, 报
+「binding the replicate collapses the noise-floor comparison」。
+
+> ⚠️ **这条守卫是照着我自己刚犯的错写的。** 我把这个 halt 当成待修故障, 手动把 manifest 从
+> canonical R5313 改绑到 replicate R30696 —— 而 `--apply` 的 `NEVER overwrite` 语义本身就是答案,
+> 我看到「工具不肯改」却得出「那我绕过工具」。若未被 user 叫停, §424.1 那张噪声地板表的两条臂
+> 会变成同一个 run, **地板测量当场塌掉**, 而那张表正是当天刚拿来裁定 §242/§293 的。
+> 已用备份逐字节回退。**教训: 一个工具明确拒绝做某事时, 那个拒绝往往就是结论, 不是障碍。**
+
+### B-1952 — reset 失败是因为**太快**, 不是太慢 (首次真实 shopping fire)
+
+chain 在 condition [1/7] fail-closed, **90 秒**内结束, B-1931 的 900s 预算一秒没用上。
+
+```bash
+docker run ... shopping_final_0712    # 全新容器 (141GB 镜像)
+sleep 10                              # ← 对 docker start 够, 对 fresh run 远远不够
+docker exec ... setup:store-config:set --base-url=...    # mysqld 未起, 打在死 socket 上
+docker exec ... mysql ... UPDATE core_config_data ...    # 同上
+actual_url=$(SELECT ...)              # 读回镜像出厂值
+[[ != want ]] && return 1             # ← 失败点
+```
+实测: `docker run` 后 10s, 容器内 mysqld 进程数 **0**。
+
+**连锁后果 = §103 复活**: `metis.lti.cs.cmu.edu` 是**镜像自带**的 base_url, 每次
+`docker rm -f` + 重建都会带回来, 唯一去掉它的就是这个补丁。补丁静默 no-op ⇒ 站点 302 到
+A100 解析不了的域名 ⇒ 与 2026-04 §103 诊断的状态一模一样。**「修过又回来」的老 bug, 根因是
+修的是运行态而重建会还原出厂态。**
+
+**修**: `sleep 10` → 轮询 `SELECT 1` 直到 query-ready (60×5s, 与
+`_reset_vwa_local_classifieds` 等 classifieds_db 同法; `mysqladmin ping` 不够 —— 它在服务器
+能应答之前就返回)。轮询超时 → `return 1` 并明说「拒绝在此时打补丁, 否则会静默 no-op」。
+**同时**: 两处 base_url 补丁的 `>/dev/null 2>&1` 改为捕获 stderr 并在非零时打印 —— BUG-5 当年
+去掉了 `|| true` 使失败不能被**忽略**, 但 `2>&1` 使失败不能被**读到**: 这次整个事故在磁盘上
+只留下一行 "rebuild FAILED", 真因(mysqld 没起)一个字都没有。verify 失败时若读回值含 `metis`,
+额外点名这是 §103 形态。
+
+**Cross-link**: 实验笔记 §428 (本轮) + §424 (另一 session 的 SoM 重跑, 编号撞车已改我方为 §428);
+§103 (metis base_url 首次诊断); B-1927 (被误当故障的那个守卫); B-1931 (外层 timeout, 与本条互补
+但不重叠); B-1942/1943 (codex 提出、我实现错的那两条)

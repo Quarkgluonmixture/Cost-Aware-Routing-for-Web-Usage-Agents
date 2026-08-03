@@ -142,9 +142,9 @@ def test_enabled_by_default_under_protocol_note_07():
 
 
 def test_zero_rows_is_not_success():
-    """B-1942 (codex F8) + B-1944 (A100 live check): which zero means failure.
+    """B-1942 (codex F8) + B-1949 (A100 live check): which zero means failure.
 
-    B-1944 is the correction the live container forced: Magento creates the
+    B-1949 is the correction the live container forced: Magento creates the
     quote row LAZILY, so on the seed image `quote` is empty (measured: 0 rows,
     with customer_entity=27 and sales_order=189). The first version treated
     "no quote row" as "customer not found" and would have aborted the first task

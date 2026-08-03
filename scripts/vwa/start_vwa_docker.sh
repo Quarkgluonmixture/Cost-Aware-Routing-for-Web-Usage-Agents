@@ -184,24 +184,90 @@ start_shopping() {
       # legacy QUARK_TZ as fallback for transition. See init_paper_grade_env.
       docker run --name "${container_name}" -e TZ="${P79_VWA_TZ:-${QUARK_TZ:-Europe/London}}" ${port_args} -d shopping_final_0712 >/dev/null
     fi
-    sleep 10
+    # B-1952 (2026-08-03, first live shopping fire): wait for mysqld to be
+    # QUERY-READY, don't sleep a constant.
+    #
+    # `sleep 10` was enough for `docker start` on an existing container and is
+    # nowhere near enough for a fresh `docker run` off the 141 GB
+    # shopping_final_0712 image. Observed on the first real shopping launch:
+    # 10s after `docker run`, `pgrep mysqld` inside the container was still 0,
+    # so both base_url patches below (config:set AND the authoritative SQL
+    # UPDATE) executed against a dead socket, were swallowed by their
+    # `>/dev/null 2>&1`, and the verify SELECT that follows read back the
+    # image-baked `http://metis.lti.cs.cmu.edu:7770/`. `start_vwa_docker.sh`
+    # then `return 1`, `_reset_vwa_local_shopping` reported "rebuild FAILED",
+    # and the chain fail-closed at condition [1/7] — 90 seconds in, having used
+    # none of B-1931's 900s budget. **The reset failed by being too FAST, not
+    # too slow**, which is why raising the outer timeout did not touch it.
+    #
+    # Failing this way also resurrects §103: the metis base_url is what the
+    # IMAGE ships. Every `docker rm -f` + rebuild restores it, and the only
+    # thing that removes it is the patch below. A patch that silently no-ops is
+    # therefore indistinguishable from the original bug — the site 302s to a
+    # hostname the A100 cannot resolve.
+    #
+    # Poll the same way `_reset_vwa_local_classifieds` waits on classifieds_db:
+    # `SELECT 1` proves grant tables loaded AND the DB is queryable, which
+    # `mysqladmin ping` does not (it returns as soon as the server accepts a
+    # connection, before it can answer). 60 × 5s = 5 min ceiling; measured cold
+    # start is well under that, and the enclosing reset budget is 900s.
+    local _my_ok=0 _i
+    for _i in $(seq 1 60); do
+      if docker exec -e MYSQL_PWD=MyPassword "${container_name}" \
+           mysql -u magentouser magentodb -sN -e "SELECT 1" >/dev/null 2>&1; then
+        _my_ok=1
+        echo "[START] Magento mysqld query-ready after $((_i*5))s"
+        break
+      fi
+      sleep 5
+    done
+    if (( _my_ok == 0 )); then
+      echo "[START] ✗ Magento mysqld NOT query-ready after 300s — refusing to patch base_url" >&2
+      echo "[START]   (patching now would silently no-op and leave the image-baked" >&2
+      echo "[START]    metis.lti.cs.cmu.edu base_url active — see B-1952 / 笔记 §103)" >&2
+      return 1
+    fi
   fi
   # BUG-5 fix (2026-05-16, codex Attack 2): strip `|| true` from Magento patches.
   # Silently swallowing failures was masking patch-not-applied bugs → image-baked
   # metis URL stays active → BUG-4 hang cascade for Phase 1b shop.
-  docker exec "${container_name}" /var/www/magento2/bin/magento setup:store-config:set --base-url="http://${HOSTNAME_VALUE}:7770" >/dev/null 2>&1
+  # B-1952: keep stderr instead of discarding it. BUG-5 removed `|| true` so a
+  # failure could no longer be *ignored*, but `>/dev/null 2>&1` still meant a
+  # failure could not be *read*: the first live shopping fire produced exactly
+  # one line — "rebuild FAILED (start_vwa_docker.sh non-zero)" — with the actual
+  # cause (mysqld not up, both patches hitting a dead socket) nowhere on disk.
+  # Non-fatal here because the authoritative check is the DB verify below; this
+  # is diagnosis, not control flow.
+  local _cfgset_err
+  if ! _cfgset_err=$(docker exec "${container_name}" \
+        /var/www/magento2/bin/magento setup:store-config:set \
+        --base-url="http://${HOSTNAME_VALUE}:7770" 2>&1 >/dev/null); then
+    echo "[START] ⚠️  setup:store-config:set non-zero: ${_cfgset_err:0:200}" >&2
+  fi
   # B-747 (/stress A1.17 cold-start P1-4 AB* OOB, 2026-05-17, B-717 sibling):
   # MYSQL_PWD env replaces `-pMyPassword` argv. `docker exec -e MYSQL_PWD ...`
   # propagates env into container; mysql client reads MYSQL_PWD via libmysqlclient.
   # `ps auxe` on A100 VM (UCL Condense multi-user surface) no longer leaks
   # plaintext Magento DB password.
-  docker exec -e MYSQL_PWD=MyPassword "${container_name}" mysql -u magentouser magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url');" >/dev/null 2>&1
+  local _sql_err
+  if ! _sql_err=$(docker exec -e MYSQL_PWD=MyPassword "${container_name}" mysql -u magentouser magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url');" 2>&1 >/dev/null); then
+    echo "[START] ⚠️  base_url SQL UPDATE non-zero: ${_sql_err:0:200}" >&2
+  fi
   # Verify DB-side base_url actually patched (config:set caches stale via app/etc; SQL UPDATE is authoritative)
   local actual_url
   actual_url=$(docker exec -e MYSQL_PWD=MyPassword "${container_name}" mysql -u magentouser magentodb -sN -e \
                "SELECT value FROM core_config_data WHERE path='web/unsecure/base_url';" 2>/dev/null || echo "?")
   if [[ "${actual_url}" != "http://${HOSTNAME_VALUE}:7770/" ]]; then
     echo "[START] ✗ Magento base_url patch FAILED: got '${actual_url}' want 'http://${HOSTNAME_VALUE}:7770/'" >&2
+    # B-1952: name the §103 failure mode explicitly. `metis.lti.cs.cmu.edu` is
+    # what the IMAGE ships, so reading it back means the patch no-opped and the
+    # storefront will 302 to a host the A100 cannot resolve — the exact state
+    # §103 diagnosed in 2026-04 and that returns on every rebuild.
+    if [[ "${actual_url}" == *metis* ]]; then
+      echo "[START]   ↳ this is the image-baked value (§103): the patch did not take." >&2
+      echo "[START]   ↳ usual cause = mysqld not query-ready yet; the poll above should" >&2
+      echo "[START]     have prevented it, so check whether the container is healthy." >&2
+    fi
     return 1
   fi
   docker exec "${container_name}" /var/www/magento2/bin/magento cache:flush >/dev/null 2>&1

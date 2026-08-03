@@ -125,7 +125,7 @@ SCOPE / LIMITS
         an email belongs returns False with the diagnostic, and under
         ``P79_PAPER_GRADE=1`` it raises;
       - **the seed state has quote=0 / quote_item=0 rows** (customer_entity=27,
-        sales_order=189). This is what forced B-1944.
+        sales_order=189). This is what forced B-1949.
 
     Still not exercised: a NON-TRIVIAL clear (put an item in, clear it, confirm
     it is gone). The runs above were all against an empty cart, so the DELETE
@@ -167,7 +167,7 @@ _DEFAULTS = {
     "db_password": "MyPassword",
     "quote_table": "quote",
     "quote_item_table": "quote_item",
-    # B-1944: identity is probed here, not in `quote` — Magento creates the
+    # B-1949: identity is probed here, not in `quote` — Magento creates the
     # quote row lazily, so a clean cart legitimately has none.
     "customer_table": "customer_entity",
     # "" → falls back to $VWA_SHOPPING_USER, then to the WebArena seed account.
@@ -252,7 +252,7 @@ def build_verify_sql(c: dict) -> str:
     you are clean when you are not is worse than knowing you are dirty: the
     former is invisible in every summary.
 
-    B-1944 (A100 live verification, 2026-08-03): the identity probe must hit
+    B-1949 (A100 live verification, 2026-08-03): the identity probe must hit
     ``customer_entity``, NOT ``quote``. The first version asserted ``quotes >= 1``
     and would have aborted the first task of every shopping condition, because
     **Magento creates the quote row lazily** — measured on the live A100 seed
@@ -339,7 +339,7 @@ def clear_shopping_cart(
     if customer == 0:
         # The misconfiguration that would otherwise pass silently: the identity
         # does not resolve, so every DELETE matched zero rows for a reason that
-        # has nothing to do with the cart being clean. (B-1944: probed against
+        # has nothing to do with the cart being clean. (B-1949: probed against
         # customer_entity — an absent QUOTE row is normal, an absent CUSTOMER is
         # not.)
         return _fail(

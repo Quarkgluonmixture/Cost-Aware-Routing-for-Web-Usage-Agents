@@ -4,7 +4,7 @@ status: pending
 priority: P1
 horizon: next
 order: 1
-blocker: "等 WA-B0 chain 释放 A100 (~08-04) —— 同一 host 只能跑一条 site chain (/stress A2.11 P0-5)。原 blocker (B2-red 占 A100) 已解除"
+blocker: "✅ 已解除 2026-08-03 — WA-B0 chain 今早 06:24 跑完释放 A100; 且 `local_mimo` backend 此前只在 DGX 有、A100 缺失(这就是 B3_som_classifieds_20260803 崩在 `Unsupported backend type: local_mimo` 产出 0 episode 的根因), 今日 rsync 已到位"
 eta: "floor pilot 08-04 起 (几小时, 10 task × 15 step; ⚠️ 建议抬回 25×30 与 B1/B2 对齐否则 floor 判读无可比基线); pilot 通过则 12 conditions fire (A100, ≈ 2-2.5 周)"
 detail: docs/checkpoints/paper_planning §19 2026-07-16 row
 created: 2026-07-16

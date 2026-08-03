@@ -4,8 +4,8 @@ status: pending
 priority: P3
 horizon: backlog
 order: 9
-blocker: "① reset 实测 (实现已 land commit d78fd3b, 但需等 A100 空 ~08-04 才能测 —— 重建 68GB 镜像容器 + indexer reindex 会污染在跑 chain 的 latency); ② 磁盘: A100 42G 是硬上限 (443G 已用里 419G 是 ACTIVE docker images 删不掉), 12 cond × 435 ep ≈ 18.8G ⇒ 需边跑边 rsync 回 DGX"
-eta: "user 2026-07-31 决定重开 (原 P3/backlog/2026-09+ 已 supersede)。新论据 = router 标签供给, 不是站点泛化"
+blocker: "① reset 实测 ✅ 已完成 2026-08-03 (A100 真容器: schema 全对 + 非平凡清理端到端通过 + B-1942 守卫有效; PROTOCOL_NOTE_07 每-task 清 cart 已启用) ② **磁盘/wallclock 实测后大幅上修** — 旧估 12cond≈18.8G 基于错误的每-ep 体积。A100 实测 **4.38 MB/ep** (som 7.46, DGX 上量到的 132KB 是缺 artifacts 的假象): VWA shop 18cond=**33.5GB/38.8天**, WA shop 18cond=**13.3GB/15.4天**, 两个都跑=**46.8GB/54.3天** (hard rule #3 强制串行) vs **A100 仅剩 41GB** ⇒ 全跑装不下, 必须边跑边 rsync 或缩 scope"
+eta: "user 2026-07-31 决定重开 (原 P3/backlog/2026-09+ 已 supersede)。新论据 = router 标签供给 + (2026-08-03 另一 session) frame 的站点轴 +1。⚠️ **scope 未定**: 全 3-baseline × 2 站 = 54 天不可行; 若按「backbone 非独立观测」的措辞纪律, **B0-only × 2 站 = 6+6 cond ≈ 13.6 天 / 15.6 GB** 即可交付站点轴 +1"
 detail: CLAUDE.md Phase 1b (shop × {B0,B1,B2} × 6 modes)
 created: 2026-07-16
 updated: 2026-07-31

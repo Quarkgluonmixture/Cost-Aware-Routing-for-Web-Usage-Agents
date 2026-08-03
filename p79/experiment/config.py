@@ -153,7 +153,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "db_password": "MyPassword",
         "quote_table": "quote",
         "quote_item_table": "quote_item",
-        # B-1944: identity probed against customer_entity, NOT quote — Magento
+        # B-1949: identity probed against customer_entity, NOT quote — Magento
         # creates the quote row lazily, so a clean cart legitimately has none
         # (A100 seed measured: quote=0 rows, customer_entity=27, sales_order=189).
         "customer_table": "customer_entity",

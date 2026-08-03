@@ -42,6 +42,90 @@ SITES = ("classifieds", "reddit", "shopping")
 DATE_RE = re.compile(r"(\d{8})")
 
 
+NOISE_INVENTORY = REPO / "scripts/analysis/aggregate_noise_floor_inventory.py"
+_PHASE1_PREFIX = "results/visualwebarena/phase1/"
+
+
+def registered_replicate_run_ids() -> frozenset[str]:
+    """Run IDs registered as the REPLICATE arm of a same-condition pair.
+
+    B-1951 (2026-08-03): a deliberate same-condition replicate — the second run
+    used to measure the stochastic noise floor — is not a ghost. Two of the three
+    existing replicates (B0.cls.dom, B0.cls.vision) live under
+    ``results/repro_replicates/`` and were therefore invisible to this scanner by
+    construction. The third (B0.cls.som, run R30696) was deliberately kept under
+    ``results/visualwebarena/phase1/`` — see 实验笔记 §424.4(2), which records
+    the resulting halt as *"B-1927 的守卫按设计工作 … 非故障"* — and it is the arm
+    that finally answered §242 (the drop-one oracle's 1.7-3.3pp does NOT clear the
+    2.32-2.53pp exchangeability floor).
+
+    So the scanner needs to tell "second run I meant to make" from "second run
+    that should not exist". The registry already exists and is authoritative:
+    ``CLEAN_PAIRS`` in ``aggregate_noise_floor_inventory.py`` names, per pair, the
+    canonical arm and the replicate arm. Read via ``ast.literal_eval`` rather than
+    import so this stays side-effect-free and keeps working if that module grows
+    heavier imports.
+
+    Only arm_b entries UNDER phase1/ matter — a replicate parked in
+    ``repro_replicates/`` never reaches ghost detection anyway.
+    """
+    import ast
+
+    try:
+        tree = ast.parse(NOISE_INVENTORY.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError):
+        # Registry unreadable → register nothing. Fail CLOSED: every extra run
+        # stays a ghost, which is the pre-B-1951 behaviour.
+        return frozenset()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == "CLEAN_PAIRS" for t in node.targets):
+            continue
+        try:
+            pairs = ast.literal_eval(node.value)
+        except ValueError:
+            return frozenset()
+        out = set()
+        for entry in pairs:
+            if len(entry) != 3:
+                continue
+            _label, _arm_a, arm_b = entry
+            if isinstance(arm_b, str) and arm_b.startswith(_PHASE1_PREFIX):
+                out.add(arm_b[len(_PHASE1_PREFIX):].split("/")[0])
+        return frozenset(out)
+    return frozenset()
+
+
+def registered_replicate_pairs() -> list[tuple[str, str, str]]:
+    """(label, canonical_run_id, replicate_run_id) for pairs whose replicate is under phase1/."""
+    import ast
+
+    try:
+        tree = ast.parse(NOISE_INVENTORY.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError):
+        return []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id == "CLEAN_PAIRS" for t in node.targets
+        ):
+            try:
+                pairs = ast.literal_eval(node.value)
+            except ValueError:
+                return []
+            out = []
+            for entry in pairs:
+                if len(entry) != 3:
+                    continue
+                label, arm_a, arm_b = entry
+                if not (isinstance(arm_b, str) and arm_b.startswith(_PHASE1_PREFIX)):
+                    continue
+                a = arm_a[len(_PHASE1_PREFIX):].split("/")[0] if arm_a.startswith(_PHASE1_PREFIX) else arm_a
+                out.append((label, a, arm_b[len(_PHASE1_PREFIX):].split("/")[0]))
+            return out
+    return []
+
+
 def condition_id_for_mode(mode: str) -> str:
     # Matches phase1a_status.sh:condition_id_for_mode + queue conditions.py labels.
     return f"phase1_{mode}_router_0"
@@ -99,6 +183,20 @@ def main() -> int:
     bound_run_ids = {c["run_id"] for c in conditions.values() if "run_id" in c}
 
     ghosts: list[str] = []
+    replicate_notes: list[str] = []
+    # B-1951: the registry of deliberate second runs, plus the inverse guard.
+    _replicate_run_ids = registered_replicate_run_ids()
+    inverted_bindings: list[str] = []
+    for _label, _canon, _rep in registered_replicate_pairs():
+        for _k, _c in conditions.items():
+            if _c.get("run_id") == _rep:
+                inverted_bindings.append(
+                    f"{_k}: manifest binds '{_rep}', which {NOISE_INVENTORY.name} "
+                    f"registers as the REPLICATE arm of pair '{_label}' "
+                    f"(canonical is '{_canon}'). Binding the replicate as "
+                    f"authoritative collapses the noise-floor comparison — both "
+                    f"arms become the same run and the floor it measures vanishes."
+                )
     unbound_singletons: dict[str, str] = {}
     unbound_ambiguous: list[str] = []
     over_complete: list[str] = []  # B-1834: episodes > scored = contamination
@@ -127,10 +225,16 @@ def main() -> int:
                     # scored) → real double-count risk. A partial/aborted extra (e.g.
                     # an interrupted re-fire) is NOT a ghost: it's below the scored
                     # count so the aggregator's scored-count gate already excludes it.
+                    # B-1951: a run registered as the replicate arm of a
+                    # same-condition pair is a deliberate second run, not a ghost.
                     complete_ghosts = [
                         r for r in runs if r != auth
+                        and r not in _replicate_run_ids
                         and episodes_in(RESULTS_ROOT / r / cid / "condition_summary_v2.json") >= exp
                     ]
+                    _excused = [r for r in runs if r != auth and r in _replicate_run_ids]
+                    for r in _excused:
+                        replicate_notes.append(f"{key}: registered replicate '{r}' (not a ghost)")
                     if complete_ghosts:
                         for r in complete_ghosts:
                             eps = episodes_in(RESULTS_ROOT / r / cid / "condition_summary_v2.json")
@@ -234,6 +338,15 @@ def main() -> int:
         print("  Fix: a run with MORE than scored episodes = dedup failure / double-run. "
               "Investigate (scripts/maintenance/clear_tasks.py the duplicate task data) "
               "before binding/aggregating.", file=sys.stderr)
+        return 1
+    if replicate_notes:
+        for n in replicate_notes:
+            print(f"[validate_fire_manifest][replicate] {n}")
+    if inverted_bindings:
+        print("[validate_fire_manifest][FAIL] manifest binds a REPLICATE arm as authoritative:")
+        for n in inverted_bindings:
+            print(f"  ✗ {n}")
+        print("  Fix: rebind the condition to the canonical arm (arm_a of the pair).")
         return 1
     if ghosts:
         print(f"[validate_fire_manifest][FAIL] {len(ghosts)} GHOST run(s) — aggregation must halt:", file=sys.stderr)

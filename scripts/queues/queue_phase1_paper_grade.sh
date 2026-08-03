@@ -483,8 +483,8 @@ except Exception as e:
       all|"")        _g8_sites=("classifieds:0-233" "reddit:0-209") ;;
       cls)           _g8_sites=("classifieds:0-233") ;;
       red)           _g8_sites=("reddit:0-209") ;;
-      phase1b)       _g8_sites=("shopping:0-465") ;;
-      wa_shop)       _g8_sites=("wa_shopping:0-191") ;;
+      phase1b|shop_b0)  _g8_sites=("shopping:0-465") ;;
+      wa_shop|wa_shop_b0) _g8_sites=("wa_shopping:0-191") ;;
       wa_shop_admin) _g8_sites=("wa_shopping_admin:0-181") ;;
       *)
         log "  FAIL: Gate 8 has no quarantine policy for SITE_FILTER=${SITE_FILTER} — refusing to pass a gate that inspects nothing relevant"
@@ -725,6 +725,64 @@ queue_phantom_prompt.sh B2 shopping
 EOF
 }
 
+build_shop_b0_chain() {
+  # B0-only VWA shopping: 6 modes + 1 replicate arm = 7 conditions.
+  #
+  # WHY B0-ONLY (user decision 2026-08-03, option 1 of 3):
+  # The frame needs the SITE axis extended (cls + red = 2 sites is too thin to
+  # separate "site-specific" from noise). It does not need a third backbone on a
+  # third site: the project's own wording discipline says three backbones sharing
+  # one task set establish model robustness of the site interaction, NOT three
+  # independent observations. Applying that rule consistently, the site axis +1
+  # costs ONE backbone, not three.
+  #
+  # Measured (38 landed conditions on A100, 2026-08-03) — this is why:
+  #   3 baselines × 2 shop sites = 36 cond = 46.8 GB / 54.3 days  ← 41 GB free
+  #   B0 only    × 2 shop sites = 12 cond = 15.6 GB / 13.6 days   ← fits
+  # Per-episode disk is 4.38 MB measured ON A100 (som 7.46). Do NOT re-measure
+  # this on DGX: DGX lacks the synced artifacts and reports 132 KB, a 27× low
+  # reading that is how the stale "12 cond ≈ 18.8G" estimate happened.
+  #
+  # REPLICATE ARM (last line, deliberate duplicate): re-runs B0 dom to give this
+  # site a stochastic noise floor. Without it every shopping effect size has no
+  # comparable noise band — and two ledger entries hang on exactly that:
+  # §242 (drop-one oracle 1.7-3.3pp must be shown to clear the stochastic floor,
+  # "重跑尚未做") and §293 (if H1 strict clears by only 1-2pp and the replicate
+  # floor is also 1-2pp, the hero wording must be downgraded). Adding the floor
+  # after the fact costs a whole second campaign; adding it here costs 1 condition.
+  # `FORCE_NEW=1` (exported by launch_chain) mints a distinct run_id, so the
+  # duplicate becomes its own run rather than resuming the first.
+  _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
+queue_baseline.sh B0 dom shopping
+queue_baseline.sh B0 som shopping
+queue_baseline.sh B0 vision shopping
+queue_phantom_text.sh B0 shopping
+queue_phantom_som.sh B0 shopping
+queue_phantom_prompt.sh B0 shopping
+queue_baseline.sh B0 dom shopping
+EOF
+}
+
+build_wa_shop_b0_chain() {
+  # B0-only WA shopping: 6 modes + 1 replicate arm = 7 conditions, 173 scored
+  # tasks each. Same rationale as build_shop_b0_chain; this is the second
+  # independent evidence line the site-axis argument asks for.
+  #
+  # ⚠️ SAME Magento container as the VWA shop chain (7770/7780 both bind
+  # vwa-shopping), so these two chains are SEQUENTIAL, never parallel — the
+  # container lock (B-1934) enforces it and CLAUDE.md hard rule #3 requires it.
+  # Budget the wallclock serially: ~11.3 days (VWA) + ~4.5 days (WA).
+  _resume_filter_done <<EOF  # B-1825: RESUME_MISSING=1 drops manifest-complete conditions
+queue_baseline.sh B0 dom shopping wa
+queue_baseline.sh B0 som shopping wa
+queue_baseline.sh B0 vision shopping wa
+queue_phantom_text.sh B0 shopping wa
+queue_phantom_som.sh B0 shopping wa
+queue_phantom_prompt.sh B0 shopping wa
+queue_baseline.sh B0 dom shopping wa
+EOF
+}
+
 build_wa_shop_chain() {
   # WA shopping: 6 modes per model, B0 → B1 → B2 sequential = 18 conditions,
   # 173 scored tasks each (post-N/A-exclusion, B-1894).
@@ -808,7 +866,21 @@ dry_run() {
   log ""
   log "Phase 1b total: 18 conditions (launch separately via 'launch phase1b shop' post-workshop)."
   log ""
-  log "=== WA shopping (B-1935, 2026-08-03) ==="
+  log "=== ⭐ B0-only shopping (B-1950, user 决定 2026-08-03 — 这是当前要跑的) ==="
+  log ""
+  log "VWA shop B0-only (7 conditions = 6 modes + 1 replicate, 435 scored tasks each):"
+  build_shop_b0_chain | sed 's/^/  /'
+  log ""
+  log "WA shop B0-only (7 conditions = 6 modes + 1 replicate, 173 scored tasks each):"
+  build_wa_shop_b0_chain | sed 's/^/  /'
+  log ""
+  log "  实测成本 (38 个已落地 condition, A100 量): 4.38 MB/ep · B0 322 s/task"
+  log "    VWA shop 7 cond ≈ 13.1 GB / 11.3 天    WA shop 7 cond ≈ 5.2 GB / 4.5 天"
+  log "    合计 ≈ 18.3 GB / 15.8 天 (串行, 同一 Magento 容器)  vs A100 可用 41 GB"
+  log "  对照 — 全 3-baseline 版本 (build_shop_chain + build_wa_shop_chain):"
+  log "    36 cond ≈ 46.8 GB / 54.3 天 ⇒ 装不下 41 GB, 故未选"
+  log ""
+  log "=== WA shopping 全 3-baseline (B-1935; 未选, 保留) ==="
   log ""
   log "WA shop chain (18 conditions, 6 modes × B0+B1+B2, 173 scored tasks each):"
   build_wa_shop_chain | sed 's/^/  /'
@@ -1097,6 +1169,20 @@ case "$MODE" in
         assert_no_other_site_chain_running "shop" "queue_phase1"
         launch_chain "shop" build_shop_chain
         ;;
+      shop_b0)
+        # B-1950 (user decision 2026-08-03): B0-only VWA shopping, 6 modes + 1
+        # replicate = 7 conditions. Declares self_site "shop" — same Magento
+        # container as every other shop chain, so the host-chain check and the
+        # container lock both treat them as one site.
+        log "=== VWA shopping B0-only (7 conditions: 6 modes + 1 replicate; ~11.3 天, ~13.1 GB) ==="
+        assert_no_other_site_chain_running "shop" "queue_phase1"
+        launch_chain "shop" build_shop_b0_chain
+        ;;
+      wa_shop_b0)
+        log "=== WA shopping B0-only (7 conditions: 6 modes + 1 replicate; ~4.5 天, ~5.2 GB) ==="
+        assert_no_other_site_chain_running "shop" "queue_phase1"
+        launch_chain "shop" build_wa_shop_b0_chain
+        ;;
       wa_shop)
         # B-1935: WA shopping rides the same Magento container as VWA shopping,
         # so it declares self_site "shop" — the host-chain check must treat the
@@ -1111,7 +1197,7 @@ case "$MODE" in
         assert_no_other_site_chain_running "shop" "queue_phase1"
         launch_chain "shop" build_wa_shop_admin_chain
         ;;
-      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b|wa_shop|wa_shop_admin)" ;;
+      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b|shop_b0|wa_shop|wa_shop_b0|wa_shop_admin)" ;;
     esac
     # B-705 (A1.14 Chunk d P2-2): summary message now reflects actual SITE_FILTER
     # mode. Pre-fix line always said "Phase 1a rerun (36 conditions...)" even when
@@ -1124,6 +1210,8 @@ case "$MODE" in
       cls)     log "Phase 1a Pass-1 cls-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
       red)     log "Phase 1a Pass-1 red-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
       phase1b) log "Phase 1b shop chain launched (18 conditions, B0+B1+B2 × 6 modes; main-paper expansion). Monitor:" ;;
+      shop_b0) log "VWA shopping B0-only launched (7 conditions = 6 modes + 1 replicate arm, 435 scored tasks each). Same Magento container as every shop chain — run wa_shop_b0 AFTER this finishes, not alongside. Monitor:" ;;
+      wa_shop_b0) log "WA shopping B0-only launched (7 conditions = 6 modes + 1 replicate arm, 173 scored tasks each). Monitor:" ;;
       wa_shop) log "WA shopping chain launched (18 conditions, B0+B1+B2 × 6 modes, 173 scored tasks each). Shares the Magento container with VWA shop — run those two sequentially. Monitor:" ;;
       wa_shop_admin) log "WA shopping_admin chain launched (18 conditions, B0+B1+B2 × 6 modes, 176 scored tasks each). Same Magento container as both shop chains. Monitor:" ;;
       *)       log "Launch completed for SITE_FILTER=${SITE_FILTER}. Monitor:" ;;
