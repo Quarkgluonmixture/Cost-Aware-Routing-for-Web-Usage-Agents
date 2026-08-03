@@ -7,7 +7,7 @@ producer: scripts/analysis/export_ablation_tables.py
 
 ## Ablation tables
 
-<!-- GENERATED 2026-08-03T20:48:46+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-08-03T21:13:59+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 

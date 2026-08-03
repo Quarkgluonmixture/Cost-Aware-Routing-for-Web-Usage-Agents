@@ -25,9 +25,10 @@ updated: 2026-07-29
 
 > ## 🟩 2026-08-03 深夜 · 证据层**覆盖**审计 + 机制解冻（**最新，先读这块**）
 >
-> chronicle → **笔记 §427**。commits `6730148`(B-1945) + `27f07f2`(覆盖审计)。**未推。**
-> Overleaf 已重建：`convert.sh realm` → 19 页 / 0 undefined citation / 0 TODO。
-> Dashboard `deliverables/evidence_board_2026-08-03{,_local}.html` 已更新三处（该目录 gitignored，不入库）。
+> chronicle → **笔记 §427**。commits `6730148`(B-1945) + `27f07f2`(覆盖审计) + 收尾。**GitHub 未推**（需你确认）。
+> **Overleaf 已推** —— `overleaf_sync.sh realm`，19 页 / 0 undefined citation / 0 TODO。
+> **对账板 = `deliverables/duizhang_board_2026-08-04.html`**（40 格 / 13 条展开 / 79KB，gitignored 不入库）。
+> ⚠️ 同目录的 `evidence_board_2026-08-03*.html` 是**更早的另一块板**，本轮曾误改过它三处，未还原 —— 若要保持单一对账口径，删掉或还原那两个文件。
 >
 > ### 这个 session 干了什么（一句话）
 > 上一轮审的是「数字对不对」，这一轮审的是「**算出来的东西有没有人用**」。
