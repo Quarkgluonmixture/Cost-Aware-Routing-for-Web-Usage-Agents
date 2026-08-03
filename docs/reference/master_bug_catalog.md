@@ -10263,8 +10263,33 @@ text_similarity       : 0.42–0.75 (在 text_length 相同的步之间也振荡
 trigger_distribution  : {}       ← watchdog 一次都没触发
 ```
 
-页面里有个**易变片段**（疑似 CSRF nonce / 时间戳）每次渲染都不同 → 顶起
-`content_changed` + `form_value_changed` → `page_changed=True`。两个下游后果:
+**精确根因链**（2026-08-03 数据质量审计补全，`p79/experiment/state_change.py`）:
+
+```python
+# L206 / config.py:84 / exp_v2_base.yaml:105
+similarity_threshold = 0.95          # 相当严格
+_TEXT_TRUNCATION_LIMIT = 20000       # task 651 的 text_length ~2716 → 走 SequenceMatcher 分支
+
+similarity = SequenceMatcher(None, text_before, text_after).ratio()
+if similarity < similarity_threshold:
+    changes.append("content_changed")
+```
+
+1. 页面含**多个分散的 volatile 元素**（相对时间戳 "3 minutes ago" 等，非单个 CSRF nonce）
+2. 每次渲染都变 → **SequenceMatcher 对分散小改动极敏感**：task 651 的 `text_length`
+   只抖 4.7%（2716–2843），`text_similarity` 却掉到 **0.42–0.75**
+3. < 0.95 阈值 → `content_changed`
+4. ⚠️ **`content_changed` ∈ `AGENT_VISIBLE_REASONS`**（与 `interactive_elements_changed` /
+   `form_value_changed` / `dom_complexity_changed` 等 `RUNNER_INTERNAL_REASONS` 不同）
+   → **`page_changed` 与 `agent_visible_changed` 被同时顶起**
+
+第 4 步是 `visibility_gap_rate` 抓不到它的原因 —— B-09 的两层拆分设计本身正确
+（internal reason 已被排除在 agent-visible 之外），但 `content_changed` 这一条的**判定粒度太粗**，
+不区分"实质内容变化"与"分散的时间戳抖动"。
+
+全量佐证：`content_changed` 是最主导的 reason，占有-reason step 的 **88.5%**（16 condition 抽样）。
+
+两个下游后果:
 
 1. **模型收到错误的正反馈** —— `_format_history` 对 `page_changed=True` 渲染成
    `"OK (page changed)"`（`_shared_vl_utils.py:370-377` / `proxy_api_agent.py:538-545`）。

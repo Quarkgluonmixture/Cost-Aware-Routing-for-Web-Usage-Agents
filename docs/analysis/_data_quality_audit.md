@@ -103,9 +103,100 @@ B1/B2 的 0 都是假 0**。
   （task 651 上 30/30 全 True，`page_changed=True AND agent_visible_changed=False` 命中 0）
 - **先例**：`p79/experiment/router.py:95-99` 注释已记同现象（VWA B2 task 103，触发 reason 是 `scroll_changed`）
 
+### 3.1 精确根因（2026-08-03 补，`state_change.py`）
+
+```python
+similarity_threshold   = 0.95     # config.py:84 / exp_v2_base.yaml:105
+_TEXT_TRUNCATION_LIMIT = 20000    # 超过则走 md5 二值判定 (差 1 字节 → similarity=0.0)
+similarity = SequenceMatcher(None, text_before, text_after).ratio()
+if similarity < similarity_threshold: changes.append("content_changed")
+```
+
+链条：**多个分散的 volatile 元素**（相对时间戳等）→ SequenceMatcher 对分散小改动极敏感
+（task 651 `text_length` 只抖 4.7%，`similarity` 掉到 **0.42–0.75**）→ < 0.95 → `content_changed`
+→ ⚠️ **`content_changed` ∈ `AGENT_VISIBLE_REASONS`** → `page_changed` 与 `agent_visible_changed`
+**同时**被顶起。
+
+**B-09 的两层拆分设计本身是正确的**（`RUNNER_INTERNAL_REASONS` = interactive_elements /
+form_fields / dom_complexity / text_length / form_value 已被排除在 agent-visible 之外），
+问题出在 `content_changed` 这一条**判定粒度太粗**，不区分实质变化与时间戳抖动。
+
+全量佐证：`content_changed` 占有-reason step 的 **88.5%**（16 condition 抽样），是最主导的 reason。
+
+### 3.2 附带发现：`dom_complexity` 命名误导
+
+```python
+"dom_complexity": text.count("\n") + 1      # state_change.py:102
+```
+
+**它不是 DOM 复杂度，是可见文本的行数。** 任何把它当"DOM 节点数 / 结构复杂度"解释的分析都是错的。
+（本审计用它做"文本结构是否变化"的代理是成立的，但语义须说明。）
+
 ---
 
 ## 4. 分层可信度结论
+
+### 4.0 P36 / P31 —— 两条最大规则的可信度（跨 benchmark 10 例因果验证）
+
+| benchmark | P36 | P31 |
+|---|---|---|
+| WA reddit | **3/3 risk-marker** | **3/3 risk-marker** |
+| VWA (cls + reddit) | **2/2 risk-marker** | **2/2 risk-marker** |
+
+**10 例跨 benchmark 一致：两条都是 presence marker，不是 causal attributor。**
+而它们分别覆盖 51–53% 和 49.9–54.3% 的 failed episode。
+
+**P36 另有两项独立的可信度折扣**：
+
+1. **vision 上分母不同**（§2.1）—— 只覆盖 type 步，click 步（占 2–20 倍）无 `locator_route_meta`
+2. **16.3% 的 click 命中是无害的** —— `dispatch_id_based_type` 有独立的 DOM walk-up
+   (`_JS_RESOLVE_INPUT`)，失败的 pre-focus click 从不阻塞随后针对同一 `element_id` 的 type。
+   全量实测「click walk_fail 但同一 id 后被成功 type」：
+
+   | mode | 无害 / walk_fail click | 占比 |
+   |---|---:|---:|
+   | phantom_som | 941 / 4576 | **20.6%** |
+   | som | 567 / 4230 | 13.4% |
+   | phantom_text | 342 / 3037 | 11.3% |
+   | phantom_prompt | 419 / 4536 | 9.2% |
+   | dom | 269 / 4368 | **6.2%** |
+   | **合计** | **3862 / 23712** | **16.3%** |
+
+   ⚠️ **跨 mode 不均**（psom 20.6% vs dom 6.2%）→ 这层噪声本身就有 mode 偏向。
+
+**综合结论：P36 作为定量分析量的可信度低**（risk-marker + 分母不同 + 16.3% 有偏噪声）。
+**建议**：收窄为"click walk_fail 且该 element_id 此后未被成功 type"，并在 vision 上标注 type-only 分母。
+
+### 4.0b 🔴 P43 的「中性标签」定位在 classifieds 上不成立 —— §407.26(b) 需 retract
+
+台账 **§407.26** [RETRACTED] 的 (b) 项写：
+
+> P43 是它自己 docstring 写明的中性 (task × mode) 标签而非失败预测，**§387.10 在它的任务集上做过
+> 控制实验，恢复截图测得 +0.00/+1.56/+0.00pp** —— 它定位效应，不解释效应
+
+**本轮在 P43 命中的 task 子集上重做受控 dom→som 对比**（全 48 condition）：
+
+| | P43 子集 n | dom SR | som SR | Δ |
+|---|---:|---:|---:|---:|
+| **B0 / classifieds** | 71 | 9.9% | 29.6% | **+19.72pp** |
+| **B1 / classifieds** | 71 | 1.4% | 14.1% | **+12.68pp** |
+| B2 / classifieds | 71 | 2.8% | 2.8% | +0.00pp（地板效应，SR 2.8% 无区分力） |
+| B0 / reddit | 64 | 12.5% | 12.5% | +0.00pp |
+| B1 / reddit | 64 | 6.2% | 7.8% | +1.56pp |
+| B2 / reddit | 64 | 1.6% | 1.6% | +0.00pp |
+
+**台账记录的 `+0.00/+1.56/+0.00` 正是 reddit 那一行。** §387.10 的受控实验只覆盖了 reddit 的
+64 个任务，而 **P43 跨站触发**（不像 P6/P16 那样 gate 到 classifieds），**classifieds 的 71 个命中
+从未被这样检验** —— 在那里补图带来 **+12.7 ~ +19.7pp**。
+
+**结论**：
+1. **P43 在 classifieds 上是 death-cause，不是中性标签**（两个独立 Tier-2 样本 + 全量受控对比一致）
+2. §407.26(b) 犯的是 **scope over-generalization** —— 把单站受控实验的结论推广到跨站规则的全部命中
+3. ⚠️ **这条错误被一个 `[RETRACTED]` 条目固化了** —— 台账里 RETRACTED 状态的条目仍在传播其内部论证
+
+**对 paper 的正面意义**：P43 子集是一个**可事前识别、routing 能救**的任务集
+（classifieds 上 dom→som +19.72pp）—— 这是 routing 价值的直接证据，比"某 mode 平均更好"强得多。
+建议接入 §6 router 的证据链。
 
 ### 4.1 diag 层
 
@@ -140,6 +231,75 @@ B1/B2 的 0 都是假 0**。
 那 **161 个 episode 上 `page_unchanged_streak` 永不累积**，`trigger_distribution` 全空。
 §105 先例已明写同类污染的下游清单：*router signal AUROC / wasted_cost / no_op_rate 都受污染，
 paper §5/§6 数字需校*。**这是同类问题第二次出现。**
+
+---
+
+## 4.5 Outcome / Efficiency 两维度体检（2026-08-03 补）
+
+### 4.5.1 B0 的 Efficiency 字段结构性缺失（条件性失效，②类）
+
+| 子字段 | B0 | B1 | B2 |
+|---|---:|---:|---:|
+| `energy.{kwh, co2e_kg, power_watts}` | **0%** | 100% | 100% |
+| `latency_ms.{generate, preprocessing}` | **0%** | 100% | 100% |
+| `tokens.{input_image, input_text}` | **0%** | 100% | 100% |
+| `tokens.thinking` | 0% | 0% | 0% | ← 死字段（①类） |
+
+B0 走 API proxy，不本地推理 → 无能耗、无 preprocessing 分段、无图文 token 拆分。**架构使然。**
+
+⚠️ **后果**：任何用 `tokens.input_image` / `input_text` 做**跨模型**比较的分析，**B0 的 0 是假 0**。
+Efficiency 3b（Image embedding / total-token gap）若依赖图文拆分，B0 上不可用，只能用 `total_tokens`。
+
+### 4.5.2 `cost_total_mixed_unit_warn` —— 警告为真，量级可忽略
+
+```
+触发率:  B0 58774/58774 = 100.00%   ·   B1 0%   ·   B2 0%
+```
+
+**含义**（`types.py:279-283` + B-1559）：B0 的 `total_billed_cost_usd` 混了两种单位 ——
+API cost (`api_usd`) + 本地 scaffold cost (`electricity_usd_derived`，来自 `obs_prepare` /
+`router_overhead`)，两者尺度差 ~1000×。B1/B2 单一 basis 故不 warn。
+
+**实测混入量**（`obs_prepare + router_overhead` 占 `total`）：
+
+| | 全体占比 | 单 condition 最高 |
+|---|---:|---|
+| B0 | **0.0039%** | `B0_som_wa_reddit` 0.0214% |
+| B1 | 0.0067% | `B1_som_wa_reddit` 0.0357% |
+| B2 | 0.0060% | `B2_som_reddit` 0.0284% |
+
+→ **警告技术上正确，但对 §1 "cost ≈ DOM" 无实质影响**（混入 < 0.03%）。
+B1/B2 的本地占比反而更高，只是单一 basis 不触发 warn。**建议 §8 一句 disclose，不需重算。**
+
+（附带观察：`som` mode 的 `obs_prepare` 比其他 mode 高一个量级 —— 生成标注图的成本，符合预期。）
+
+### 4.5.3 Outcome 维度
+
+依赖 `success`（已知 benchmark-FP 问题，见 §B2/§B4 与 §402.7）与 `confidence`
+（B0 只有 4/6 子字段填充，CLAUDE.md 已记：entropy=None per top-2 truncation）。
+→ **0g Routing AUROC 若消费 entropy，B0 上不可用**；本次未展开验证，列入 §6 待办。
+
+---
+
+## 4.6 P0-3 完成：router escalation 触发率重算
+
+`router.py:80-83` 的 `unchanged_streak` 由 `prev_page_changed` 驱动。用 §3 的修正口径
+（`page_changed=True` 但 url/scroll_y 不变且 `text_similarity>0.95` → 视为 unchanged）重算
+`streak≥2` 的触发：
+
+| mode | episode | streak≥2 实测 | 修正后 | 漏检 | 漏检率 |
+|---|---:|---:|---:|---:|---:|
+| som | 1287 | 668 | 755 | +87 | **13.0%** |
+| phantom_som | 1287 | 731 | 822 | +91 | 12.4% |
+| phantom_text | 1287 | 695 | 773 | +78 | 11.2% |
+| dom | 1287 | 744 | 817 | +73 | 9.8% |
+| phantom_prompt | 1287 | 804 | 879 | +75 | 9.3% |
+| vision | 1287 | 937 | 988 | +51 | **5.4%** |
+| **合计** | **7722** | **4579** | **5034** | **+455** | **9.9%** |
+
+**结论**：rule-based router 的 escalation 触发率被**系统性低估约 10%**，且**跨 mode 不均**
+（som 13.0% vs vision 5.4%）。→ **paper §6 里凡涉及 escalation 触发率的跨 mode 比较都会被扭曲**，
+需按此校正或加披露。
 
 ---
 
