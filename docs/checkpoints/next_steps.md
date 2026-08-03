@@ -23,6 +23,64 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟦 2026-08-03 晚 · 证据层独立审计 session 交接（**给做 cross-AI 或写 frame 的下一个 session**）
+>
+> chronicle → **笔记 §422–§426**。commits `da6178f` → `82d46d0`（7 个）。Overleaf 已同步到 `5b1e246`，
+> 之后还有两个 commit 未推（见下方「立刻可做」）。
+>
+> ### 这个 session 干了什么（一句话）
+> 独立审计证据层 → 找到 **八个同一形状的缺陷**，全部是「数据/产物在，但降级是静默的，降级后看起来完全正常」。
+> 没有一个是靠更仔细读代码找到的，全部来自**让产物报告自己的完整度**。
+>
+> ### 🔴 会改变你怎么读现有数字的四条
+>
+> | 结论 | 影响 |
+> |---|---|
+> | **重跑地带 `0.89–2.23pp` 是两次抽样不是界** | 零假设 SD 2.32–2.53pp，单侧 95% 门槛 **3.8–4.2pp**。「超出噪声」的格子从 7 个降到 4 个 |
+> | **`4.93–7.39pp` 是子区间** | 全集 −0.99 到 +7.39pp，**第三个 VWA-reddit 格符号相反**。原句写死在 `aggregate_fusion_premium.py` 里 |
+> | **三个效率量全是估计量依赖的** | 时延（模型只占一步 22–67%，4/8 格最快模式翻转）· 本地成本（按 token vs 按 GPU 时间，2/4 格最便宜变）· 碳排（r=0.9935 就是时间本身，且 B0 根本没有） |
+> | **执行路径是未报告的中介** | 三条投递路径动作成功率 89% / 39% / 16%；**Vision 按构造只能走最弱那条**。审稿人「是不是你们点击实现太烂」的反驳**部分正确** |
+>
+> ### 🟢 关掉的三个结构性缺口
+>
+> - **融合臂自己的重跑地板**（SoM replicate 224/224）→ 带子没动，claim 1/3 从外推变成实测；顺带裁定 `known.py` **§242**（1.7–3.3pp 落在噪声内，答案是「不」）与 **§293**（触发器不响，但因为 H1 早已 FAIL）
+> - **路由从来没在 WebArena 上跑过** → oracle triage / learned triage / pooled tier 三个全接上，负结论现在覆盖两个基准
+> - **26 个行为指标第一次有噪声参照** → 25 个活指标 22 个跨模式差 > 重跑带；掉的**正好是时延那两个**（0.87× / 0.84×），与时延分解**两条独立路径同一结论**
+>
+> ### ⚠️ 三条「看起来修好了、其实没有」的陷阱
+>
+> 1. **B-1929**：`sync_a100_results.sh` 的 `--delete` 每 15 分钟删掉 DGX 本地算出来的 `analysis/reason_diagnostics/`。
+>    ⇒ 在这台机器上跑 `make analyze` 是徒劳的。已加 `--filter='protect ...'` 并**跨 cron 周期验收通过**。
+>    **任何 DGX 侧派生的 per-run 产物都要检查是否在保护名单里。**
+> 2. **B-1928**：`router_triage_learnability` 20 个特征里 3 个恒为 0（两个月前有人发现、写在**别的文件注释里**、没修）。
+>    修后 AUROC 普遍上升，但 `reasoning_difficulty`（基准自带人工标注）成了 5/6 格的最强单特征 ⇒
+>    **「看着学得会，是因为偷看了答案本」**。
+> 3. **WA 泄漏审计未校准** → `persistent_state_leakage_audit`。WA 两格 0 命中，但同判据在已知的 VWA 上多报 3.7 倍。
+>    **⚠️ unaudited 标记保留**；那个零是证据不是结论。
+>
+> ### 立刻可做（按价值排序）
+>
+> 1. **推 Overleaf**：`bash scripts/maintenance/overleaf_sync.sh`（落后两个 commit，35 张表）
+> 2. **cross-AI**：**别扫「整个证据层」**——那样只会重复上面八个。最高价值 scope 是**「这些修复本身对不对」**，
+>    因为那几处我既当运动员又当裁判。P0 两条：**McNemar 零假设 SD 当地板**是否成立（它把门槛从 2.23 抬到 3.8–4.2pp）、
+>    **`dispatch_path` 写成「外部效度限制而非混淆」**这个因果措辞是否站得住。
+>    最小喂料集：`EVIDENCE_LAYER_SUMMARY.md`（§4a/§4c/§4e/claim 4/claim 6/claim 9）+ `noise_floor_inventory.md`
+>    + `dispatch_path_audit.md` + `latency_decomposition.md` + `replicate_metric_noise.md` + 七个 commit 的 diff。
+>    ⚠️ prompt 里**不要写我的结论**（`feedback_zero_preset_cross_ai_verification`）。
+> 3. **对账看板**：`docs/checkpoints/deliverables/duizhang_board_2026-08-04.html`（本地文件，gitignore 内，34 个证据格 + 8 张详细卡，已是最终版）
+>
+> ### 工具（新增，以后复用）
+>
+> - `check_summary_numbers.py` — 散文数字 vs 产物交叉核对（**别手改 SUMMARY 里的数**，改完跑它）
+> - `audit_field_consumption.py` — 311 字段 × 146 脚本消费矩阵，分 OK/THIN/**CONSTANT**/ORPHAN/DEAD/GENERIC
+> - `replicate_metric_noise.py` · `latency_decomposition.py` · `energy_carbon_audit.py` · `local_cost_estimand_audit.py` · `dispatch_path_audit.py`
+>
+> ### 一条应该变成默认的做法
+>
+> **任何新判据，先在有答案的地方跑一遍。** WA 泄漏审计如果只跑 WA，会得到一个漂亮的 0 和一句
+> 「WA 没问题」，而那个 0 出自假阳率 14 倍的测试 —— 且它看起来会完全正常。多跑两个 cell 成本是零。
+>
+
 > ## 🟩 2026-08-03 · shopping reset / paper-grade 打通（VWA + WA）— **无阻塞，可直接 fire**
 >
 > chronicle → **笔记 §424**；缺陷详情 → **master_bug_catalog B-1930 ~ B-1936**。
