@@ -31,7 +31,7 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 | **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ both WA cells, **v11 rescan 08-03** | ⚠️ **vision column not co-tabulable** — see §1b | complete |
 | **2×2 ablation** | `axis_effect_size_report` · profile §2.5 non-separability | ✅ | ✅ `--with-wa` **added 08-02** | ✅ (the four) | **repaired 08-02** — see §2b |
-| **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `confidence_cascade` | ✅ | ✅ cascade `--with-wa`; the three router products stay VWA (they need the router feature table) | ✅ | complete |
+| **Routing attempts** | `router_label_supply_diagnosis` · `router_triage_learnability` · `router_pooled_tier_learnability` · `router_objective_ordering` · `confidence_cascade` | ✅ | ✅ cascade `--with-wa`; **`router_objective_ordering` (oracle) and `router_triage_learnability` (learned) wired 2026-08-03**; `router_pooled_tier_learnability` + `router_label_supply_diagnosis` still VWA | ✅ | **WA closed 08-03** — see §5b, §5e |
 | *(features)* | `routing_feature_diagnostics` · `visual_difficulty_router` | ✅ | ❌ n/a | ✅ | complete |
 | *(efficiency denominator)* | `outcome_efficiency` | ⚠️ **6 of 8** cells carry enough successes (both B2 cells do not) | ✅ both cells **wired 08-03** | ✅ | complete, but see §5c |
 | *(validity)* | `reddit_sidebar_leakage_audit` · `leakage_sensitivity` · `offsite_navigation_audit` | ✅ | ⚠️ off-site ✅, leakage unaudited | ✅ | **added 08-03** — see §3b, §8b, claim 9 |
@@ -450,7 +450,21 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    still unexplained**, and the sentence above stands there unchanged.
 8. **The obvious routing feature has the wrong sign**, and the right one was read and dropped.
    → `routing_feature_diagnostics`
-9. **The latency ordering is not the cost ordering restated.** Mean Spearman
+9. ⚠️ **BEFORE the numbers below: 22–67% of every latency figure in this project is the
+   model; the rest is the browser and the container.** → `latency_decomposition`
+   (new 2026-08-03). `latency_ms.backend_infer` isolates the model call, is written on
+   100% of steps, and was **read by no analysis script** until today —
+   `audit_field_consumption` found it. Removing the environment changes **which mode is
+   fastest in 4 of 8 cells**, and the flips are not scattered: **4 of 5 reddit-family
+   cells flip and 0 of 3 classifieds cells do**, i.e. exactly where the container is
+   slowest. So any sentence naming *which* mode is fastest is partly a sentence about
+   this deployment's Docker stack. **What survives estimand choice is the weaker claim
+   that the two orderings disagree** — that is about two rankings, not about which mode
+   wins, and the count below should be read as carrying only that. Two things the same
+   product rules out: SoM's annotation pass costs 15–21 ms against a 6,000–37,000 ms step,
+   and runtime sleeps are under 2% of a step.
+
+   **The latency ordering is not the cost ordering restated.** Mean Spearman
    ρ(cost, latency) = **−0.014** over eight cells, *negative* on all three classifieds cells, and
    the cheapest mode differs from the fastest in **5 of 8**. → `multimetric_pareto`
    ⚠️ **The "follows the site" reading did not survive the eighth cell.** On the six-cell grid
@@ -716,6 +730,9 @@ Each product against the **eight** (site, backbone) units — `wa_red_B0` landed
 | `leakage_sensitivity` **new 08-03** | n/a | n/a | n/a | ✅ | ✅ | ✅ | ⚠️ unaudited | ⚠️ unaudited |
 | `routing_feature_diagnostics` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ n/a | ❌ n/a |
 | `visual_difficulty_router` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ n/a | ❌ n/a |
+| `router_objective_ordering` **wired 08-03** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `router_triage_learnability` **wired 08-03** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ `--with-wa` | ✅ `--with-wa` |
+| `router_pooled_tier_learnability` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | · | · |
 
 Three of these are **design**, one is an **omission nobody noticed**:
 

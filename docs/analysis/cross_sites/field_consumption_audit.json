@@ -1,0 +1,4670 @@
+{
+ "n_steps": 4304,
+ "n_episodes": 216,
+ "per_cell": 6,
+ "n_scripts_indexed": 142,
+ "fields": [
+  {
+   "kind": "step",
+   "field": "run_id",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "B0_dom_classifieds_20260",
+    "B0_phantom_prompt_classi",
+    "B0_phantom_som_classifie",
+    "B0_phantom_text_classifi"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "task_id",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "0",
+    "100",
+    "101",
+    "102"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "seed",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "42"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "som.enabled",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "router.enabled",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.total",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "7965.304374694824",
+    "8159.353494644165",
+    "8281.960010528564",
+    "8478.969097137451"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "tokens.input",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "3314",
+    "3574",
+    "3734",
+    "3825"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "tokens.output",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "111",
+    "113",
+    "83",
+    "86"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "tokens.total",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "3406",
+    "3687",
+    "3820",
+    "3936"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "cost_usd.input",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "0.003314",
+    "0.003574",
+    "0.003734",
+    "0.0038250000000000003"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "cost_usd.output",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "0.000415",
+    "0.00043",
+    "0.00046",
+    "0.000485"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "cost_usd.model",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "0.003774",
+    "0.004139",
+    "0.004164",
+    "0.00438"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "cost_usd.total",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "0.003774005500793457",
+    "0.004139005620956421",
+    "0.0041640067558288574",
+    "0.0043800063819885255"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "energy.source",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "disabled",
+    "psutil_profile"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "episode",
+   "field": "run_id",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "B0_dom_classifieds_20260",
+    "B0_phantom_prompt_classi",
+    "B0_phantom_som_classifie",
+    "B0_phantom_text_classifi"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "episode",
+   "field": "task_id",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "0",
+    "100",
+    "101",
+    "102"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "episode",
+   "field": "seed",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "42"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "episode",
+   "field": "success",
+   "populated_pct": 100.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta.success",
+   "populated_pct": 61.1,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta_primary.success",
+   "populated_pct": 61.1,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta.error",
+   "populated_pct": 23.8,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "TimeoutError: ElementHan",
+    "obs_nodes_info missing u",
+    "walk_fail:no_actionable_",
+    "walk_fail:no_input_withi"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta_primary.error",
+   "populated_pct": 23.8,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "TimeoutError: ElementHan",
+    "obs_nodes_info missing u",
+    "walk_fail:no_actionable_",
+    "walk_fail:no_input_withi"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "action.text",
+   "populated_pct": 9.4,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "Any other pics?",
+    "RV\n",
+    "RVs\n",
+    "Recreational Vehicle\n"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.text",
+   "populated_pct": 9.4,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "Any other pics?",
+    "RV\n",
+    "RVs\n",
+    "Recreational Vehicle\n"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.success",
+   "populated_pct": 5.7,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.success",
+   "populated_pct": 5.7,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "action.url",
+   "populated_pct": 2.1,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "/art-crafts",
+    "/index.php?page=item&id=",
+    "/index.php?page=search&s",
+    "/search?q=Pittsburgh+pai"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.url",
+   "populated_pct": 2.1,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "/art-crafts",
+    "/index.php?page=item&id=",
+    "/index.php?page=search&s",
+    "/search?q=Pittsburgh+pai"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.error",
+   "populated_pct": 1.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "no_match_in_css_menus",
+    "obs_nodes_info_missing_u"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.error",
+   "populated_pct": 1.0,
+   "n_consumers": -1,
+   "consumers": [],
+   "sample_values": [
+    "no_match_in_css_menus",
+    "obs_nodes_info_missing_u"
+   ],
+   "klass": "GENERIC"
+  },
+  {
+   "kind": "step",
+   "field": "router.overhead_ms.router_decision_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.010728836059570312",
+    "0.01621246337890625",
+    "0.0171661376953125",
+    "0.018358230590820312"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "router.overhead_ms.extra_dom_parse_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0011920928955078125",
+    "0.001430511474609375",
+    "0.0016689300537109375",
+    "0.0019073486328125"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "router.overhead_ms.extra_screenshot_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "router.overhead_ms.extra_model_calls",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "router.overhead_ms.routing_retry_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "module_flags.m1_dom_select_fallback",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "module_flags.m2_dom_first_input_fallback",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "module_flags.m3_failure_trigger_retry",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "module_flags.m4_two_stage_generation_grounding",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.obs_prepare",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.08153915405273438",
+    "0.08440017700195312",
+    "0.08630752563476562",
+    "0.09298324584960938"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.backend_infer",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1579.5044898986816",
+    "1595.3419208526611",
+    "1818.3403015136719",
+    "1906.7678451538086"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.backend_infer_minus_retry",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1579.5044898986816",
+    "1595.3419208526611",
+    "1818.3403015136719",
+    "1906.7678451538086"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.router_decision",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.010728836059570312",
+    "0.01621246337890625",
+    "0.0171661376953125",
+    "0.018358230590820312"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.total_minus_retry",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "7965.304374694824",
+    "8159.353494644165",
+    "8281.960010528564",
+    "8478.969097137451"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.runtime_sleep",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0",
+    "500.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.runtime_sleep_primary",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0",
+    "500.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.runtime_sleep_retry",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "cost_usd.router_overhead",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.0013580322265624e-09",
+    "1.0547637939453125e-09",
+    "1.1749267578125e-09",
+    "1.2416839599609375e-09"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "cost_usd.obs_prepare",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "4.566192626953125e-09",
+    "4.7264099121093745e-09",
+    "4.833221435546875e-09",
+    "5.207061767578125e-09"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "retry_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "artifact_paths.screenshot",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "results/visualwebarena/p"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.title_after",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "blue kayak - Classifieds",
+    "blue kayak - page 2 - Cl",
+    "blue kayak - page 3 - Cl",
+    "blue kayak - page 4 - Cl"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.form_fields_changed",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta_recorded",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "cost_total_mixed_unit_warn",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_source",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "text_json",
+    "tool_call"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "screenshot_timeout_recovered",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "screenshot_timeout_recovered_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "consumes_agent_action_budget",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "counts_as_runner_iteration",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "retries",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_router_overhead_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.8812179565429688e-08",
+    "3.3418655395507816e-08",
+    "3.48339080810547e-08",
+    "3.765106201171875e-08"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_router_overhead_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.09202957153320312",
+    "0.10085105895996094",
+    "0.33593177795410156",
+    "0.5967617034912109"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "unverified_timeout_event",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "eval_context_mode",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "agent_page",
+    "isolated_program_html_co",
+    "no_browser_required"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "eval_isolated_context_used",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "eval_goto_latency_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.06093102274462581",
+    "0.06410700734704733",
+    "0.19618798978626728",
+    "0.6303279951680452"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "eval_goto_timeout",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "diagnostic_replay",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "screenshot_timeout_recovered_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "screenshot_timeout_recovered_total_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.title_changed",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1",
+    "14",
+    "18",
+    "3"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "busy_wait_free_steps",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0",
+    "1",
+    "26",
+    "27"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "busy_wait_total_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0",
+    "2719111.3753318787",
+    "2924047.6038455963",
+    "2930654.1352272034"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "wasted_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0",
+    "0.023680036542892458",
+    "0.023853031108856202",
+    "0.11800419125938415"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "wasted_energy_kwh",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0",
+    "0.001014674979812569",
+    "0.0011695903077059322",
+    "0.0019420245630542437"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "component_breakdown.model_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.023680000000000003",
+    "0.023853",
+    "0.09150000000000001",
+    "0.11800400000000001"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "component_breakdown.router_overhead_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.8812179565429688e-08",
+    "3.3418655395507816e-08",
+    "3.48339080810547e-08",
+    "3.765106201171875e-08"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "component_breakdown.obs_prepare_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.578407287597656e-07",
+    "1.6160583496093752e-07",
+    "1.61752700805664e-07",
+    "2.59552001953125e-08"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_input_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.020645",
+    "0.021073",
+    "0.081525",
+    "0.10482399999999999"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_output_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0027800000000000004",
+    "0.003035",
+    "0.009975",
+    "0.013180000000000002"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_obs_prepare_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.578407287597656e-07",
+    "1.6160583496093752e-07",
+    "1.61752700805664e-07",
+    "2.59552001953125e-08"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "energy_partial",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "energy_step_complete_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0",
+    "1",
+    "30",
+    "4"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "partial_recovery_step_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "wallclock_end",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "2026-05-25T19:52:25.5326",
+    "2026-05-25T23:37:40.7376",
+    "2026-05-25T23:38:29.5983",
+    "2026-05-25T23:42:23.6921"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "resume_fingerprint",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "20a778ce5cee6adf",
+    "297c729de2b36a15",
+    "483c9e2b52902df1",
+    "802f879071d42cca"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "evaluator_authority_mode",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "post_B545_vwa_score_only"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "reward_override_applied",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "runner_intervention_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "about_blank_recovery_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "destructive_action_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "cart_mutation_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "submit_create_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "delete_remove_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "cycle_mutating_action_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "repeated_same_mutating_action_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "agent_action_step_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "14",
+    "19",
+    "30",
+    "4"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "valid_action_step_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "14",
+    "19",
+    "30",
+    "4"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "model_call_attempt_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "14",
+    "19",
+    "30",
+    "4"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "runner_iteration_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "14",
+    "20",
+    "30",
+    "4"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "parse_error_injected_wait_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "canonical_action_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.023680000000000003",
+    "0.023853",
+    "0.09150000000000001",
+    "0.11800400000000001"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "protocol_wasted_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0",
+    "0.0019745799999999897",
+    "0.0022645300000000007",
+    "0.00666781000000001"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "cost_total_mixed_unit_warn",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "artifact_image_saves_ok",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "12",
+    "19",
+    "30",
+    "5"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "artifact_image_saves_fail",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "reset_goto_timeout_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0",
+    "1"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "reset_goto_retry_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0",
+    "1"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "reset_goto_recovered",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "reset_goto_latency_ms_per_attempt",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "energy_window_partial_step_count",
+   "populated_pct": 100.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.title_before",
+   "populated_pct": 95.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "blue kayak - Classifieds",
+    "blue kayak - page 2 - Cl",
+    "blue kayak - page 3 - Cl",
+    "blue kayak - page 4 - Cl"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.content_changed",
+   "populated_pct": 88.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "12",
+    "2",
+    "22",
+    "25"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.form_value_changed",
+   "populated_pct": 88.0,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "18",
+    "20",
+    "3",
+    "4"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.interactive_elements_changed",
+   "populated_pct": 87.5,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "11",
+    "16",
+    "2",
+    "20"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.url_changed",
+   "populated_pct": 83.8,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "16",
+    "17",
+    "2",
+    "3"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.dom_complexity_changed",
+   "populated_pct": 83.3,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "11",
+    "12",
+    "2",
+    "3"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "evaluator_blip2_device",
+   "populated_pct": 83.3,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "cuda"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.text_length_changed",
+   "populated_pct": 81.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "13",
+    "15",
+    "2",
+    "3"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.form_fields_changed",
+   "populated_pct": 81.5,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "11",
+    "12",
+    "21",
+    "24"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.generate",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "5531.062364578247",
+    "5610.095024108887",
+    "5826.27272605896",
+    "5836.7860317230225"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.kwh",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.00021409024556477864",
+    "0.00022336140058106847",
+    "0.00023794107432166737",
+    "0.0002693786804212464"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.co2e_kg",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "4.70998540242513e-05",
+    "4.913950812783506e-05",
+    "5.234703635076682e-05",
+    "5.92633096926742e-05"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.power_watts",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "63.25",
+    "64.0",
+    "64.25",
+    "64.75"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.window_sample_count",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.energy_window_partial",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.cpu_arch",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "x86_64"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.cpu_rapl_available",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_token_count_method",
+   "populated_pct": 68.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "exact_id_match"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_co2e_kg",
+   "populated_pct": 66.7,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "0.0002232284955587652",
+    "0.0002573098676953051",
+    "0.00039614406948553193",
+    "0.0004272454038719336"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "state_change_reason_distribution.scroll_changed",
+   "populated_pct": 48.1,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "11",
+    "2",
+    "20",
+    "22"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "text_parse_path",
+   "populated_pct": 38.8,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "repaired_fenced",
+    "repaired_raw_decode"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "episode",
+   "field": "eval_target_url",
+   "populated_pct": 33.3,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "http://localhost:9980/in",
+    "http://localhost:9999/f/"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "tool_call_valid",
+   "populated_pct": 31.1,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "text_fallback_used",
+   "populated_pct": 31.1,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "tool_call_emitted",
+   "populated_pct": 31.1,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "tool_call_parse_path",
+   "populated_pct": 31.1,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "tool_calls"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action.element_id_coerced_from_string",
+   "populated_pct": 24.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.element_id_coerced_from_string",
+   "populated_pct": 24.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.direction",
+   "populated_pct": 16.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "down",
+    "up"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.direction",
+   "populated_pct": 16.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "down",
+    "up"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_payload_bytes_total",
+   "populated_pct": 15.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "142084",
+    "146220",
+    "155184",
+    "171632"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "artifact_paths.som_image",
+   "populated_pct": 14.8,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "results/visualwebarena/p"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_payload_bytes_ref",
+   "populated_pct": 10.8,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "142084",
+    "155184",
+    "171632",
+    "234912"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_over_cap",
+   "populated_pct": 8.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_payload_bytes",
+   "populated_pct": 8.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "141924",
+    "146220",
+    "181060",
+    "184088"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_payload_bytes_screenshot",
+   "populated_pct": 8.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "141924",
+    "146220",
+    "181060",
+    "184088"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_quality",
+   "populated_pct": 8.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "85"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.image_compressed",
+   "populated_pct": 8.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action.coordinate_type",
+   "populated_pct": 8.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "normalized",
+    "qwen_0_1000"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.coordinate_type",
+   "populated_pct": 8.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "normalized",
+    "qwen_0_1000"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.x_regime",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "normalized",
+    "qwen_0_1000",
+    "true_oob"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.y_regime",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "normalized",
+    "qwen_0_1000"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.x_scale",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.0",
+    "1000.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.y_scale",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.0",
+    "1000.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.recovered",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.true_oob",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.x_regime",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "normalized",
+    "qwen_0_1000",
+    "true_oob"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.y_regime",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "normalized",
+    "qwen_0_1000"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.x_scale",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.0",
+    "1000.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.y_scale",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1.0",
+    "1000.0"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.recovered",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.true_oob",
+   "populated_pct": 8.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "ORPHAN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.selected_text_before",
+   "populated_pct": 3.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "Arts + crafts",
+    "Mark as...",
+    "Rvs + campers",
+    "Select a category"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.selected_text_after",
+   "populated_pct": 3.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "Arts + crafts",
+    "Mark as...",
+    "Rvs + campers"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.selected_text_before",
+   "populated_pct": 3.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "Arts + crafts",
+    "Mark as...",
+    "Rvs + campers",
+    "Select a category"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.selected_text_after",
+   "populated_pct": 3.9,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "Arts + crafts",
+    "Mark as...",
+    "Rvs + campers"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "episode",
+   "field": "reset_retry_reason",
+   "populated_pct": 1.4,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "TimeoutError: Page.goto:"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.clicked_text",
+   "populated_pct": 0.8,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "Higher price first",
+    "Lower price first"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.clicked_text",
+   "populated_pct": 0.8,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "Higher price first",
+    "Lower price first"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.x_regime",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "qwen_0_1000"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.y_regime",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "qwen_0_1000"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.x_scale",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1000.0"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.y_scale",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1000.0"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.recovered",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.true_oob",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.x_regime",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "qwen_0_1000"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.y_regime",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "qwen_0_1000"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.x_scale",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1000.0"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.y_scale",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1000.0"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.recovered",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.true_oob",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "network_retry_count",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "1",
+    "2",
+    "23",
+    "3"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "network_retry_wait_ms",
+   "populated_pct": 0.6,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "340746.8945980072",
+    "40127.18081474304",
+    "40138.05818557739",
+    "40141.33334159851"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "action.element_id_coerced_from_list",
+   "populated_pct": 0.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.element_id_coerced_from_list",
+   "populated_pct": 0.2,
+   "n_consumers": 0,
+   "consumers": [],
+   "sample_values": [
+    "True"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "som.mark_count",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "0",
+    "30",
+    "43",
+    "64"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.env_step",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "offsite_navigation_audit.py"
+   ],
+   "sample_values": [
+    "6095.333576202393",
+    "6320.468425750732",
+    "6390.612602233887",
+    "6799.999237060547"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "done",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reddit_selflink_cycle.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "retry_action_applied",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_locator_route_metrics.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "valid_agent_action",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "no_op_rate",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "collect_analysis_summary.py"
+   ],
+   "sample_values": [
+    "0.0",
+    "0.07142857142857142",
+    "0.13333333333333333",
+    "0.16666666666666666"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "escalation_count",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "artifacts_dir",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "router_offline_replay.py"
+   ],
+   "sample_values": [
+    "results/visualwebarena/p"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "eval_source_agent_url",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "http://localhost:9980/",
+    "http://localhost:9980/in",
+    "http://localhost:9999/co",
+    "http://localhost:9999/f/"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_latency_canonical_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "173051.0380268097",
+    "177136.86895370483",
+    "218663.88845443726",
+    "264541.122674942"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_latency_minus_retry_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "cross_object_pareto.py"
+   ],
+   "sample_values": [
+    "173051.0380268097",
+    "177136.86895370483",
+    "218663.88845443726",
+    "264541.122674942"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "image_encode_error_step_count",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_sr_fp_per_mode.py"
+   ],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "wallclock_start",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_trajectory_covariates.py"
+   ],
+   "sample_values": [
+    "2026-05-25T19:47:45.5916",
+    "2026-05-25T23:36:33.1393",
+    "2026-05-25T23:37:40.7550",
+    "2026-05-25T23:38:29.6160"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "needs_reevaluation",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_trajectory_covariates.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "effective_mutating_action_count",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "0"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.dispatch_path",
+   "populated_pct": 70.4,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "coord_keyboard_fallback",
+    "coord_locator_route",
+    "coord_mouse_click",
+    "element_id_framework"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.dispatch_path",
+   "populated_pct": 70.4,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "coord_keyboard_fallback",
+    "coord_locator_route",
+    "coord_mouse_click",
+    "element_id_framework"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "tokens.input_text",
+   "populated_pct": 68.9,
+   "n_consumers": 1,
+   "consumers": [
+    "extract_50_features.py"
+   ],
+   "sample_values": [
+    "2151",
+    "2414",
+    "2460",
+    "2662"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "tokens.input_image",
+   "populated_pct": 68.9,
+   "n_consumers": 1,
+   "consumers": [
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "0",
+    "1248",
+    "1344",
+    "576"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.mean_entropy",
+   "populated_pct": 68.9,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_confidence_calibration.py"
+   ],
+   "sample_values": [
+    "0.10834870706832286",
+    "0.1278768661460749",
+    "0.1338377264926358",
+    "0.16970699818630336"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.max_entropy",
+   "populated_pct": 68.9,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_confidence_calibration.py"
+   ],
+   "sample_values": [
+    "1.0342432260513306",
+    "1.0934652090072632",
+    "1.1514195203781128",
+    "1.216951847076416"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta.fallback_used",
+   "populated_pct": 61.1,
+   "n_consumers": 1,
+   "consumers": [
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta.action_kind",
+   "populated_pct": 61.1,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "click",
+    "type",
+    "type_coord"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta_primary.fallback_used",
+   "populated_pct": 61.1,
+   "n_consumers": 1,
+   "consumers": [
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta_primary.action_kind",
+   "populated_pct": 61.1,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "click",
+    "type",
+    "type_coord"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "trigger_distribution.action_failed",
+   "populated_pct": 60.2,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_phantom_lift.py"
+   ],
+   "sample_values": [
+    "1",
+    "13",
+    "25",
+    "4"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "page_change_reasons",
+   "populated_pct": 57.9,
+   "n_consumers": 1,
+   "consumers": [
+    "about_blank_frequency.py"
+   ],
+   "sample_values": [],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "trigger_distribution.page_unchanged_streak",
+   "populated_pct": 48.6,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_phantom_lift.py"
+   ],
+   "sample_values": [
+    "12",
+    "2",
+    "3",
+    "4"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "trigger_distribution.no_progress_streak",
+   "populated_pct": 46.8,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_phantom_lift.py"
+   ],
+   "sample_values": [
+    "1",
+    "10",
+    "2",
+    "3"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta.target_tag",
+   "populated_pct": 37.3,
+   "n_consumers": 1,
+   "consumers": [
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "A",
+    "BUTTON",
+    "INPUT",
+    "TEXTAREA"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "locator_route_meta_primary.target_tag",
+   "populated_pct": 37.3,
+   "n_consumers": 1,
+   "consumers": [
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "A",
+    "BUTTON",
+    "INPUT",
+    "TEXTAREA"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.dead_zone",
+   "populated_pct": 8.2,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.dead_zone",
+   "populated_pct": 8.2,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.action_kind",
+   "populated_pct": 5.7,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "select_option"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.dispatch_path",
+   "populated_pct": 5.7,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "coordinate",
+    "element_id",
+    "missing_obs"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.action_kind",
+   "populated_pct": 5.7,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "select_option"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.dispatch_path",
+   "populated_pct": 5.7,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "coordinate",
+    "element_id",
+    "missing_obs"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.matched",
+   "populated_pct": 5.6,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.match_stage",
+   "populated_pct": 5.6,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "ci",
+    "exact",
+    "fuzzy",
+    "none"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.target_type",
+   "populated_pct": 5.6,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "css",
+    "select"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.matched",
+   "populated_pct": 5.6,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.match_stage",
+   "populated_pct": 5.6,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "ci",
+    "exact",
+    "fuzzy",
+    "none"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.target_type",
+   "populated_pct": 5.6,
+   "n_consumers": 1,
+   "consumers": [
+    "aggregate_select_option_dispatch.py"
+   ],
+   "sample_values": [
+    "css",
+    "select"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "parse_failure_reason",
+   "populated_pct": 1.3,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "invalid_action_type",
+    "invalid_element_id",
+    "invalid_select_option",
+    "multiple_actions"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.dead_zone",
+   "populated_pct": 0.6,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.dead_zone",
+   "populated_pct": 0.6,
+   "n_consumers": 1,
+   "consumers": [
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "benchmark",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "export_ablation_tables.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "visualwebarena"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "text_similarity",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "diag_pattern_match.py",
+    "page_change_corrected_metrics.py"
+   ],
+   "sample_values": [
+    "0.09056192034915439",
+    "0.14403990024937655",
+    "0.16040901102412525",
+    "0.21822066229207995"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.scroll_y_before",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "0",
+    "1440",
+    "1815",
+    "1915"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.scroll_y_after",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "0",
+    "1440",
+    "1815",
+    "1915"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "benchmark",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "export_ablation_tables.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "visualwebarena"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "page_unchanged_rate",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_cross_representation.py",
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [
+    "0.0",
+    "0.07142857142857142",
+    "0.13333333333333333",
+    "0.16666666666666666"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "p95_step_latency_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "collect_analysis_summary.py",
+    "fig3c_latency_per_step.py"
+   ],
+   "sample_values": [
+    "12533.310508727956",
+    "8513.628017902374",
+    "8567.894041538239",
+    "8632.74793624878"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_model_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "aggregate_phase1_full_prereg_decision.py",
+    "generate_per_task_sr.py"
+   ],
+   "sample_values": [
+    "0.023680000000000003",
+    "0.023853",
+    "0.09150000000000001",
+    "0.11800400000000001"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "component_breakdown.total_energy_kwh",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_cross_representation.py",
+    "fig3_regional_carbon.py"
+   ],
+   "sample_values": [
+    "0.0",
+    "0.001014674979812569",
+    "0.0011695903077059322",
+    "0.0018006548612978725"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "trajectory_incomplete",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.fallback",
+   "populated_pct": 70.4,
+   "n_consumers": 2,
+   "consumers": [
+    "cost_aware_router_replication.py",
+    "router_pareto_analysis.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.fallback",
+   "populated_pct": 70.4,
+   "n_consumers": 2,
+   "consumers": [
+    "cost_aware_router_replication.py",
+    "router_pareto_analysis.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "episode",
+   "field": "total_energy_kwh",
+   "populated_pct": 66.7,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_cross_representation.py",
+    "fig3_regional_carbon.py"
+   ],
+   "sample_values": [
+    "0.001014674979812569",
+    "0.0011695903077059322",
+    "0.0018006548612978725",
+    "0.0019420245630542437"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "element_bbox",
+   "populated_pct": 62.0,
+   "n_consumers": 2,
+   "consumers": [
+    "compare_cross_run_same_condition.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "error_category",
+   "populated_pct": 40.4,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "b0_vision_coordinate_errors.py"
+   ],
+   "sample_values": [
+    "invalid_action_type",
+    "invalid_element_id",
+    "invalid_select_option",
+    "no_progress"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "router.trigger_reason",
+   "populated_pct": 39.2,
+   "n_consumers": 2,
+   "consumers": [
+    "aggregate_phantom_lift.py",
+    "analyze_reason_diagnostics.py"
+   ],
+   "sample_values": [],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.coordinate_normalization.malformed",
+   "populated_pct": 8.2,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.coordinate_normalization.malformed",
+   "populated_pct": 8.2,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.coordinate_normalization.malformed",
+   "populated_pct": 0.6,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.coordinate_normalization.malformed",
+   "populated_pct": 0.6,
+   "n_consumers": 2,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "reward",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "analyze_confidence_calibration.py",
+    "analyze_reddit_selflink_cycle.py",
+    "axis1_microbehavior.py"
+   ],
+   "sample_values": [
+    "0.0",
+    "1.0"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "fallback_finish",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "analyze_cross_representation.py",
+    "analyze_reason_diagnostics.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.mean_logprob",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "-0.0991024717308681",
+    "-0.11845606240902436",
+    "-0.16477139818864184",
+    "-0.16539296312882673"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.min_logprob",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "-1.2317516803741455",
+    "-1.3885797262191772",
+    "-2.1606407165527344",
+    "-2.4640450477600098"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.mean_margin",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "100.18693690043618",
+    "112.97293813590049",
+    "120.51766299887755",
+    "126.4694767182332"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.min_margin",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "-0.8750000298023224",
+    "-1.7500000894069672",
+    "-2.375000022351742",
+    "-3.249999910593033"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "agent_visible_changed",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "about_blank_frequency.py",
+    "analyze_reason_diagnostics.py",
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "score",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "aggregate_evaluator_score_granularity.py",
+    "analyze_reddit_selflink_cycle.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "0.0",
+    "1.0"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "benchmark_noise",
+   "populated_pct": 100.0,
+   "n_consumers": 3,
+   "consumers": [
+    "aggregate_sr_fp_per_mode.py",
+    "analyze_reason_diagnostics.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.option_label",
+   "populated_pct": 5.7,
+   "n_consumers": 3,
+   "consumers": [
+    "b0_paired_idperturb_replay.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py"
+   ],
+   "sample_values": [
+    "Arts + Crafts",
+    "Arts + crafts",
+    "Higher price first",
+    "Lower price first"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.option_label",
+   "populated_pct": 5.7,
+   "n_consumers": 3,
+   "consumers": [
+    "b0_paired_idperturb_replay.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py"
+   ],
+   "sample_values": [
+    "Arts + Crafts",
+    "Arts + crafts",
+    "Higher price first",
+    "Lower price first"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "router.decision",
+   "populated_pct": 100.0,
+   "n_consumers": 4,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "fig_f2_h1_forest.py",
+    "preregistration_decision_test.py",
+    "verdict_day_slotsheet.py"
+   ],
+   "sample_values": [
+    "dom",
+    "phantom_prompt",
+    "phantom_som",
+    "phantom_text"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "total_latency_ms",
+   "populated_pct": 100.0,
+   "n_consumers": 4,
+   "consumers": [
+    "aggregate_h10_pareto.py",
+    "aggregate_outcome_efficiency.py",
+    "analyze_cross_representation.py",
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "173051.0380268097",
+    "177136.86895370483",
+    "218663.88845443726",
+    "264541.122674942"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "agent_finished",
+   "populated_pct": 100.0,
+   "n_consumers": 4,
+   "consumers": [
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reddit_selflink_cycle.py",
+    "diag_pattern_match.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.confidence",
+   "populated_pct": 92.5,
+   "n_consumers": 4,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "l2_partial_trajectory_auroc.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "0.6",
+    "0.7",
+    "0.75",
+    "0.8"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.verbalized",
+   "populated_pct": 92.5,
+   "n_consumers": 4,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "l2_partial_trajectory_auroc.py",
+    "mechanism_per_task.py"
+   ],
+   "sample_values": [
+    "0.6",
+    "0.7",
+    "0.75",
+    "0.8"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.confidence",
+   "populated_pct": 92.5,
+   "n_consumers": 4,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "l2_partial_trajectory_auroc.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "0.6",
+    "0.7",
+    "0.75",
+    "0.8"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.scroll_direction",
+   "populated_pct": 16.6,
+   "n_consumers": 4,
+   "consumers": [
+    "b0_paired_idperturb_replay.py",
+    "compare_cross_run_same_condition.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py"
+   ],
+   "sample_values": [
+    "down",
+    "up"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.scroll_direction",
+   "populated_pct": 16.6,
+   "n_consumers": 4,
+   "consumers": [
+    "b0_paired_idperturb_replay.py",
+    "compare_cross_run_same_condition.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py"
+   ],
+   "sample_values": [
+    "down",
+    "up"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.url_before",
+   "populated_pct": 100.0,
+   "n_consumers": 5,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "audit_reddit_sidebar_leakage.py",
+    "compare_cross_run_same_condition.py",
+    "diag_pattern_match.py",
+    "page_change_corrected_metrics.py"
+   ],
+   "sample_values": [
+    "http://localhost:9980/",
+    "http://localhost:9980/in",
+    "http://localhost:9999/",
+    "http://localhost:9999/f/"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "parse_valid",
+   "populated_pct": 100.0,
+   "n_consumers": 5,
+   "consumers": [
+    "aggregate_conditional_failure_attribution.py",
+    "analyze_reason_diagnostics.py",
+    "per_mode_four_dimension_profile.py",
+    "router_prior_baselines.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "total_tokens",
+   "populated_pct": 100.0,
+   "n_consumers": 5,
+   "consumers": [
+    "analyze_cross_representation.py",
+    "analyze_reason_diagnostics.py",
+    "cross_object_pareto.py",
+    "layered_status.py",
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "107460",
+    "131003",
+    "131958",
+    "21252"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.coordinate",
+   "populated_pct": 8.9,
+   "n_consumers": 5,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "analyze_confidence_calibration.py",
+    "analyze_reason_diagnostics.py",
+    "b0_vision_coordinate_errors.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.coordinate",
+   "populated_pct": 8.9,
+   "n_consumers": 5,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "analyze_confidence_calibration.py",
+    "analyze_reason_diagnostics.py",
+    "b0_vision_coordinate_errors.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.text_length",
+   "populated_pct": 100.0,
+   "n_consumers": 6,
+   "consumers": [
+    "cost_aware_router_replication.py",
+    "extract_50_features.py",
+    "p1_archive_simulation.py",
+    "router_offline_replay.py",
+    "router_pooled_tier_learnability.py",
+    "router_triage_learnability.py"
+   ],
+   "sample_values": [
+    "2602",
+    "2862",
+    "3397",
+    "3951"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.thought",
+   "populated_pct": 95.8,
+   "n_consumers": 6,
+   "consumers": [
+    "analyze_comment_selflink_loop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "axis_effect_size.py",
+    "diag_pattern_match.py",
+    "fig1c_strategy_gradient.py"
+   ],
+   "sample_values": [
+    "I am on the search resul",
+    "I need to find the cheap",
+    "I need to scroll down to",
+    "I need to search for a b"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.thought",
+   "populated_pct": 95.8,
+   "n_consumers": 6,
+   "consumers": [
+    "analyze_comment_selflink_loop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "axis_effect_size.py",
+    "diag_pattern_match.py",
+    "fig1c_strategy_gradient.py"
+   ],
+   "sample_values": [
+    "I am on the search resul",
+    "I need to find the cheap",
+    "I need to scroll down to",
+    "I need to search for a b"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "benchmark_site",
+   "populated_pct": 100.0,
+   "n_consumers": 7,
+   "consumers": [
+    "about_blank_frequency.py",
+    "aggregate_cross_site.py",
+    "aggregate_locator_route_metrics.py",
+    "aggregate_select_option_dispatch.py",
+    "aggregate_trajectory_covariates.py",
+    "analyze_cross_representation.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "classifieds",
+    "reddit"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "image_meta.pipeline",
+   "populated_pct": 100.0,
+   "n_consumers": 7,
+   "consumers": [
+    "cost_aware_router_replication.py",
+    "intelligent_baseline_ladder.py",
+    "l1_archive_simulation.py",
+    "router_covariate_baseline.py",
+    "router_model_sweep.py",
+    "router_pareto_analysis.py",
+    "train_l1_router.py"
+   ],
+   "sample_values": [
+    "hf_processor_pil",
+    "proxy_jpeg_data_url"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "cost_unit_basis",
+   "populated_pct": 100.0,
+   "n_consumers": 7,
+   "consumers": [
+    "aggregate_cross_site.py",
+    "aggregate_h10_pareto.py",
+    "cross_object_pareto.py",
+    "generate_per_task_sr.py",
+    "router_offline_replay.py",
+    "router_pareto_analysis.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "api_usd",
+    "electricity_usd_derived"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "benchmark_site",
+   "populated_pct": 100.0,
+   "n_consumers": 7,
+   "consumers": [
+    "about_blank_frequency.py",
+    "aggregate_cross_site.py",
+    "aggregate_locator_route_metrics.py",
+    "aggregate_select_option_dispatch.py",
+    "aggregate_trajectory_covariates.py",
+    "analyze_cross_representation.py",
+    "diag_pattern_match.py"
+   ],
+   "sample_values": [
+    "classifieds",
+    "reddit"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "total_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 7,
+   "consumers": [
+    "aggregate_h10_pareto.py",
+    "aggregate_phase1_full_prereg_decision.py",
+    "analyze_cross_representation.py",
+    "analyze_reason_diagnostics.py",
+    "collect_analysis_summary.py",
+    "generate_per_task_sr.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "0.023680036542892458",
+    "0.0238530311088562",
+    "0.09150011735916139",
+    "0.11800419125938418"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "cost_unit_basis",
+   "populated_pct": 100.0,
+   "n_consumers": 7,
+   "consumers": [
+    "aggregate_cross_site.py",
+    "aggregate_h10_pareto.py",
+    "cross_object_pareto.py",
+    "generate_per_task_sr.py",
+    "router_offline_replay.py",
+    "router_pareto_analysis.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "api_usd",
+    "electricity_usd_derived"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.answer",
+   "populated_pct": 2.2,
+   "n_consumers": 7,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "b0_paired_idperturb_replay.py",
+    "compare_cross_run_same_condition.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "router_prior_baselines.py",
+    "write_digests.py"
+   ],
+   "sample_values": [
+    "61",
+    "No blue kayaks were foun",
+    "The height of the most r",
+    "The most expensive paint"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.answer",
+   "populated_pct": 2.2,
+   "n_consumers": 7,
+   "consumers": [
+    "analyze_reason_diagnostics.py",
+    "b0_paired_idperturb_replay.py",
+    "compare_cross_run_same_condition.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "router_prior_baselines.py",
+    "write_digests.py"
+   ],
+   "sample_values": [
+    "61",
+    "No blue kayaks were foun",
+    "The height of the most r",
+    "The most expensive paint"
+   ],
+   "klass": "DEAD"
+  },
+  {
+   "kind": "step",
+   "field": "step_idx",
+   "populated_pct": 100.0,
+   "n_consumers": 8,
+   "consumers": [
+    "aggregate_cross_mode_failure_signatures.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "diag_pattern_match.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action_success",
+   "populated_pct": 100.0,
+   "n_consumers": 8,
+   "consumers": [
+    "aggregate_conditional_failure_attribution.py",
+    "aggregate_confidence_cascade.py",
+    "analyze_reason_diagnostics.py",
+    "b0_vision_coordinate_errors.py",
+    "diag_pattern_match.py",
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.url_after",
+   "populated_pct": 100.0,
+   "n_consumers": 8,
+   "consumers": [
+    "about_blank_frequency.py",
+    "analyze_confidence_calibration.py",
+    "analyze_reason_diagnostics.py",
+    "audit_reddit_sidebar_leakage.py",
+    "compare_cross_run_same_condition.py",
+    "diag_pattern_match.py",
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py"
+   ],
+   "sample_values": [
+    "http://localhost:9980/",
+    "http://localhost:9980/in",
+    "http://localhost:9999/",
+    "http://localhost:9999/f/"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "state_digest.dom_complexity",
+   "populated_pct": 100.0,
+   "n_consumers": 8,
+   "consumers": [
+    "cost_aware_router_replication.py",
+    "extract_50_features.py",
+    "intelligent_baseline_ladder.py",
+    "l1_archive_simulation.py",
+    "p1_archive_simulation.py",
+    "router_offline_replay.py",
+    "router_pooled_tier_learnability.py",
+    "router_triage_learnability.py"
+   ],
+   "sample_values": [
+    "33",
+    "36",
+    "45",
+    "67"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.preprocessing",
+   "populated_pct": 68.9,
+   "n_consumers": 8,
+   "consumers": [
+    "cost_aware_router_replication.py",
+    "intelligent_baseline_ladder.py",
+    "l1_archive_simulation.py",
+    "router_covariate_baseline.py",
+    "router_model_sweep.py",
+    "router_pareto_analysis.py",
+    "router_prior_baselines.py",
+    "train_l1_router.py"
+   ],
+   "sample_values": [
+    "20.713329315185547",
+    "22.80426025390625",
+    "24.379730224609375",
+    "26.25441551208496"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "condition_id",
+   "populated_pct": 100.0,
+   "n_consumers": 9,
+   "consumers": [
+    "about_blank_frequency.py",
+    "aggregate_failure_modes.py",
+    "aggregate_trajectory_covariates.py",
+    "analyze_confidence_calibration.py",
+    "analyze_cross_representation.py",
+    "analyze_reason_diagnostics.py",
+    "collect_analysis_summary.py",
+    "diag_pattern_match.py",
+    "validate_fire_manifest.py"
+   ],
+   "sample_values": [
+    "phase1_dom_router_0",
+    "phase1_phantom_prompt_ro",
+    "phase1_phantom_som_route",
+    "phase1_phantom_text_rout"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "page_changed",
+   "populated_pct": 100.0,
+   "n_consumers": 9,
+   "consumers": [
+    "about_blank_frequency.py",
+    "aggregate_conditional_failure_attribution.py",
+    "aggregate_confidence_cascade.py",
+    "analyze_reason_diagnostics.py",
+    "b0_vision_coordinate_errors.py",
+    "diag_pattern_match.py",
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "condition_id",
+   "populated_pct": 100.0,
+   "n_consumers": 9,
+   "consumers": [
+    "about_blank_frequency.py",
+    "aggregate_failure_modes.py",
+    "aggregate_trajectory_covariates.py",
+    "analyze_confidence_calibration.py",
+    "analyze_cross_representation.py",
+    "analyze_reason_diagnostics.py",
+    "collect_analysis_summary.py",
+    "diag_pattern_match.py",
+    "validate_fire_manifest.py"
+   ],
+   "sample_values": [
+    "phase1_dom_router_0",
+    "phase1_phantom_prompt_ro",
+    "phase1_phantom_som_route",
+    "phase1_phantom_text_rout"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "observation_mode",
+   "populated_pct": 100.0,
+   "n_consumers": 11,
+   "consumers": [
+    "aggregate_cross_site.py",
+    "aggregate_locator_route_metrics.py",
+    "aggregate_select_option_dispatch.py",
+    "analyze_confidence_calibration.py",
+    "analyze_cross_representation.py",
+    "analyze_reason_diagnostics.py",
+    "collect_analysis_summary.py",
+    "compare_b0_b1.py",
+    "diag_pattern_match.py",
+    "mechanism_per_task.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "dom",
+    "phantom_prompt",
+    "phantom_som",
+    "phantom_text"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.element_id",
+   "populated_pct": 65.1,
+   "n_consumers": 11,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "b0_paired_idperturb_replay.py",
+    "compare_cross_run_same_condition.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "diag_pattern_match.py",
+    "fig2f_first_divergence.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py"
+   ],
+   "sample_values": [
+    "140",
+    "1651",
+    "3373",
+    "4554"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.element_id",
+   "populated_pct": 65.1,
+   "n_consumers": 11,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "b0_paired_idperturb_replay.py",
+    "compare_cross_run_same_condition.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "diag_pattern_match.py",
+    "fig2f_first_divergence.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py"
+   ],
+   "sample_values": [
+    "140",
+    "1651",
+    "3373",
+    "4554"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "steps",
+   "populated_pct": 100.0,
+   "n_consumers": 12,
+   "consumers": [
+    "about_blank_frequency.py",
+    "analyze_cross_representation.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "cross_mode_failure_taxonomy.py",
+    "export_ablation_tables.py",
+    "fig1ab_cascade_diamond.py",
+    "fig2f_first_divergence.py",
+    "layered_status.py",
+    "mechanism_per_task.py",
+    "page_change_corrected_metrics.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "14",
+    "19",
+    "30",
+    "4"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "sr_excluded",
+   "populated_pct": 100.0,
+   "n_consumers": 12,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "aggregate_fusion_premium.py",
+    "aggregate_noise_floor_inventory.py",
+    "aggregate_outcome_efficiency.py",
+    "b0_paired_idperturb_replay.py",
+    "compare_cross_run_same_condition.py",
+    "representation_class_comparison.py",
+    "router_objective_ordering.py",
+    "router_pooled_tier_learnability.py",
+    "router_triage_learnability.py",
+    "tier_a_id_perturbation.py",
+    "visual_intent_routing.py"
+   ],
+   "sample_values": [
+    "False"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "schema_version",
+   "populated_pct": 100.0,
+   "n_consumers": 15,
+   "consumers": [
+    "aggregate_h10_pareto.py",
+    "aggregate_sr_fp_per_mode.py",
+    "cost_aware_router_replication.py",
+    "extract_50_features.py",
+    "intelligent_baseline_ladder.py",
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py",
+    "router_covariate_baseline.py",
+    "router_model_sweep.py",
+    "router_offline_replay.py",
+    "router_pareto_analysis.py",
+    "router_pooled_tier_learnability.py",
+    "router_prior_baselines.py",
+    "train_l1_router.py",
+    "train_l1_router_with_mi.py"
+   ],
+   "sample_values": [
+    "2.0"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "schema_version",
+   "populated_pct": 100.0,
+   "n_consumers": 15,
+   "consumers": [
+    "aggregate_h10_pareto.py",
+    "aggregate_sr_fp_per_mode.py",
+    "cost_aware_router_replication.py",
+    "extract_50_features.py",
+    "intelligent_baseline_ladder.py",
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py",
+    "router_covariate_baseline.py",
+    "router_model_sweep.py",
+    "router_offline_replay.py",
+    "router_pareto_analysis.py",
+    "router_pooled_tier_learnability.py",
+    "router_prior_baselines.py",
+    "train_l1_router.py",
+    "train_l1_router_with_mi.py"
+   ],
+   "sample_values": [
+    "2.0"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "episode",
+   "field": "total_billed_cost_usd",
+   "populated_pct": 100.0,
+   "n_consumers": 15,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "aggregate_h10_pareto.py",
+    "aggregate_outcome_efficiency.py",
+    "aggregate_phase1_full_prereg_decision.py",
+    "cost_aware_router_replication.py",
+    "cross_object_pareto.py",
+    "per_mode_four_dimension_profile.py",
+    "router_label_supply_diagnosis.py",
+    "router_model_sweep.py",
+    "router_objective_ordering.py",
+    "router_offline_replay.py",
+    "router_pareto_analysis.py",
+    "router_pooled_tier_learnability.py",
+    "router_prior_baselines.py",
+    "router_triage_learnability.py"
+   ],
+   "sample_values": [
+    "0.023680000000000003",
+    "0.023853",
+    "0.09150000000000001",
+    "0.11800400000000001"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "obs_url",
+   "populated_pct": 100.0,
+   "n_consumers": 19,
+   "consumers": [
+    "aggregate_conditional_failure_attribution.py",
+    "analyze_comment_selflink_loop.py",
+    "analyze_comment_selflink_loop_v2.py",
+    "analyze_confidence_calibration.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "analyze_search_over_browse.py",
+    "audit_reddit_sidebar_leakage.py",
+    "axis1_microbehavior.py",
+    "axis_effect_size.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "fig1ab_cascade_diamond.py",
+    "fig1c_strategy_gradient.py",
+    "layered_status.py",
+    "mechanism_per_task.py",
+    "offsite_navigation_audit.py",
+    "per_mode_four_dimension_profile.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "http://localhost:9980/",
+    "http://localhost:9980/in",
+    "http://localhost:9999/",
+    "http://localhost:9999/f/"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action_type",
+   "populated_pct": 100.0,
+   "n_consumers": 26,
+   "consumers": [
+    "aggregate_diagnostic_controls_and_dialogs.py",
+    "analyze_comment_selflink_loop.py",
+    "analyze_comment_selflink_loop_v2.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "analyze_search_over_browse.py",
+    "axis1_microbehavior.py",
+    "axis_effect_size.py",
+    "b0_paired_idperturb_replay.py",
+    "b0_vision_coordinate_errors.py",
+    "compare_cross_run_same_condition.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "fig1ab_cascade_diamond.py",
+    "fig1c_strategy_gradient.py",
+    "fig2c_keyword_repeat.py",
+    "fig2f_first_divergence.py",
+    "layered_status.py",
+    "mechanism_per_task.py",
+    "router_prior_baselines.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "back",
+    "click",
+    "finish",
+    "scroll"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action.action_type",
+   "populated_pct": 100.0,
+   "n_consumers": 26,
+   "consumers": [
+    "aggregate_diagnostic_controls_and_dialogs.py",
+    "analyze_comment_selflink_loop.py",
+    "analyze_comment_selflink_loop_v2.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "analyze_search_over_browse.py",
+    "axis1_microbehavior.py",
+    "axis_effect_size.py",
+    "b0_paired_idperturb_replay.py",
+    "b0_vision_coordinate_errors.py",
+    "compare_cross_run_same_condition.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "fig1ab_cascade_diamond.py",
+    "fig1c_strategy_gradient.py",
+    "fig2c_keyword_repeat.py",
+    "fig2f_first_divergence.py",
+    "layered_status.py",
+    "mechanism_per_task.py",
+    "router_prior_baselines.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "back",
+    "click",
+    "finish",
+    "scroll"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "raw_action.action_type",
+   "populated_pct": 100.0,
+   "n_consumers": 26,
+   "consumers": [
+    "aggregate_diagnostic_controls_and_dialogs.py",
+    "analyze_comment_selflink_loop.py",
+    "analyze_comment_selflink_loop_v2.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "analyze_search_over_browse.py",
+    "axis1_microbehavior.py",
+    "axis_effect_size.py",
+    "b0_paired_idperturb_replay.py",
+    "b0_vision_coordinate_errors.py",
+    "compare_cross_run_same_condition.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "fig1ab_cascade_diamond.py",
+    "fig1c_strategy_gradient.py",
+    "fig2c_keyword_repeat.py",
+    "fig2f_first_divergence.py",
+    "layered_status.py",
+    "mechanism_per_task.py",
+    "router_prior_baselines.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "back",
+    "click",
+    "finish",
+    "scroll"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed.action_type",
+   "populated_pct": 86.9,
+   "n_consumers": 26,
+   "consumers": [
+    "aggregate_diagnostic_controls_and_dialogs.py",
+    "analyze_comment_selflink_loop.py",
+    "analyze_comment_selflink_loop_v2.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "analyze_search_over_browse.py",
+    "axis1_microbehavior.py",
+    "axis_effect_size.py",
+    "b0_paired_idperturb_replay.py",
+    "b0_vision_coordinate_errors.py",
+    "compare_cross_run_same_condition.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "fig1ab_cascade_diamond.py",
+    "fig1c_strategy_gradient.py",
+    "fig2c_keyword_repeat.py",
+    "fig2f_first_divergence.py",
+    "layered_status.py",
+    "mechanism_per_task.py",
+    "router_prior_baselines.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "click",
+    "goto",
+    "hover",
+    "scroll"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.action_type",
+   "populated_pct": 86.9,
+   "n_consumers": 26,
+   "consumers": [
+    "aggregate_diagnostic_controls_and_dialogs.py",
+    "analyze_comment_selflink_loop.py",
+    "analyze_comment_selflink_loop_v2.py",
+    "analyze_confidence_calibration.py",
+    "analyze_noninteractive_click_earlystop.py",
+    "analyze_reason_diagnostics.py",
+    "analyze_reddit_selflink_cycle.py",
+    "analyze_search_over_browse.py",
+    "axis1_microbehavior.py",
+    "axis_effect_size.py",
+    "b0_paired_idperturb_replay.py",
+    "b0_vision_coordinate_errors.py",
+    "compare_cross_run_same_condition.py",
+    "compare_pilot_t0_vs_paper_grade.py",
+    "cross_mode_failure_taxonomy.py",
+    "diag_pattern_match.py",
+    "fig1ab_cascade_diamond.py",
+    "fig1c_strategy_gradient.py",
+    "fig2c_keyword_repeat.py",
+    "fig2f_first_divergence.py",
+    "layered_status.py",
+    "mechanism_per_task.py",
+    "router_prior_baselines.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py",
+    "validate_run.py"
+   ],
+   "sample_values": [
+    "click",
+    "goto",
+    "hover",
+    "scroll"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "artifact_paths.dom",
+   "populated_pct": 100.0,
+   "n_consumers": 54,
+   "consumers": [
+    "aggregate_conditional_failure_attribution.py",
+    "aggregate_cross_mode_failure_signatures.py",
+    "aggregate_failure_modes.py",
+    "aggregate_fusion_premium.py",
+    "aggregate_h10_pareto.py",
+    "aggregate_label_instability.py",
+    "aggregate_noise_floor_inventory.py",
+    "aggregate_outcome_efficiency.py",
+    "aggregate_routing_feature_diagnostics.py",
+    "amendment08_sensitivity.py",
+    "analyze_confidence_calibration.py",
+    "analyze_reason_diagnostics.py",
+    "axis1_microbehavior.py",
+    "b0_paired_idperturb_replay.py",
+    "b0_vision_coordinate_errors.py",
+    "compare_b0_b1.py",
+    "cross_mode_routable_deepdive.py",
+    "diag_pattern_match.py",
+    "diag_rescan_all.py",
+    "export_ablation_tables.py",
+    "extract_50_features.py",
+    "fig0g_routing_auroc_heatmap.py",
+    "fig1ab_cascade_diamond.py",
+    "hero_claim_bootstrap.py",
+    "intelligent_baseline_ladder.py",
+    "l1_archive_simulation.py",
+    "layered_status.py",
+    "leakage_sensitivity.py",
+    "mechanism_per_task.py",
+    "offsite_navigation_audit.py",
+    "p1_archive_simulation.py",
+    "representation_class_comparison.py",
+    "router_archive_diagnostic.py",
+    "router_label_supply_diagnosis.py",
+    "router_objective_ordering.py",
+    "router_offline_replay.py",
+    "router_pooled_tier_learnability.py",
+    "router_prior_baselines.py",
+    "router_triage_learnability.py",
+    "rule_routing_pareto.py",
+    "stage4_axis2_layer_profile.py",
+    "stage4_axis2_per_task_fragility.py",
+    "stage4_format_variation_analyze.py",
+    "stage4_h1_per_task_fragility.py",
+    "stage4_layer_axis_emergence.py",
+    "stage4_logit_lens_axis2.py",
+    "stage4_pca_cosine_gap.py",
+    "stage4_robustness.py",
+    "stage4_w6_l04_tokenization.py",
+    "tier_a_id_perturbation.py",
+    "tier_b_id_patching.py",
+    "validate_fire_manifest.py",
+    "validate_run.py",
+    "visual_intent_routing.py"
+   ],
+   "sample_values": [
+    "results/visualwebarena/p"
+   ],
+   "klass": "OK"
+  }
+ ]
+}

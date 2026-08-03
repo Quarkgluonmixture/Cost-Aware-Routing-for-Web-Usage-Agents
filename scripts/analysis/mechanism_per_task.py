@@ -23,6 +23,7 @@ import csv
 import json
 import math
 import re
+import sys
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -70,9 +71,47 @@ def _conf_runs_from_registry() -> list[tuple[str, str, Path]]:
     return out
 
 
+
+# --- WebArena reddit, added 2026-08-03 ------------------------------------------------
+# This report was the largest computed-but-never-cited artifact in the evidence layer
+# (EVIDENCE_LAYER_SUMMARY §8). Two things were needed before it could be integrated:
+# WA coverage, and the scored-universe restriction applied below — its reddit tables
+# read N=205 while the canonical scored set is 203, i.e. the two AMENDMENT_08 exclusions
+# were inside every mechanism number. That is the same defect §2b repaired in
+# axis_effect_size; the module-level EXPECTED_N here already named 203, so the check and
+# the tables disagreed with each other.
+WA_ROOT = ROOT / "results/webarena/phase1"
+WA_STEM = {"DOM": "dom", "SoM": "som", "Vision": "vision", "P-text": "phantom_text",
+           "P-prompt": "phantom_prompt", "P-SoM": "phantom_som"}
+
+
+def _wa_step_dirs(baseline: str) -> dict[str, Path]:
+    """{mode: episodes_dir} for WebArena reddit, globbed rather than registry-resolved
+    (the run registry indexes VWA only)."""
+    out: dict[str, Path] = {}
+    for mode, stem in WA_STEM.items():
+        hits = [p for p in WA_ROOT.glob(f"{baseline}_{stem}_wa_reddit_2026*_R*")
+                if p.is_dir() and "ABORTED" not in p.name]
+        if len(hits) != 1:
+            continue
+        eps = sorted(hits[0].glob("*/episodes"))
+        if eps:
+            out[mode] = eps[0]
+    return out
+
+
 STEP_DIRS = _step_dirs_from_registry("B0")
 B1_STEP_DIRS = _step_dirs_from_registry("B1")
+for _bl, _dirs in (("B0", STEP_DIRS), ("B1", B1_STEP_DIRS)):
+    _wa = _wa_step_dirs(_bl)
+    if _wa:
+        _dirs["wa_reddit"] = _wa
 CONF_RUNS = _conf_runs_from_registry()
+
+# Render loops iterate THIS, not a literal. Until 2026-08-03 nine separate loops each
+# spelled the site list out by hand, so the moment a third benchmark loaded, its block was
+# computed into the JSON and silently dropped from the report a human reads.
+SITES = tuple(STEP_DIRS.keys())
 
 AXIS_CONTRASTS = {
     "axis_1_text": ("DOM", "P-text"),
@@ -217,10 +256,38 @@ def summary_success(summary_path: Path) -> bool | None:
     return None
 
 
+# WA episode files are named `reddit_task_<id>_*` even though the site key is wa_reddit.
+_FILE_PREFIX = {"wa_reddit": "reddit"}
+
+
+def _scored_ids(site: str) -> set[int] | None:
+    """Canonical scored task ids, or None when the site has no exclusion list.
+
+    Restricting here rather than at each contrast fixes all four evidence blocks at
+    once: every E1/E2/E4 intersection is `set(left) & set(right)` over these dicts, so
+    a task outside the scored universe was silently inside every mechanism number.
+    reddit read N=205 against a canonical 203.
+    """
+    if site in ("wa_reddit",):
+        return None                      # WebArena ships no exclusion list
+    try:
+        from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+        ids, _sha = expected_scored_ids(site)
+        return set(ids)
+    except Exception:                    # noqa: BLE001 — fail open, but say so
+        print(f"[mechanism] WARN: no canonical universe for {site}; tasks unrestricted",
+              file=sys.stderr)
+        return None
+
+
 def load_mode_tasks(site: str, mode: str, ep_dir: Path) -> dict[int, dict[str, Any]]:
     tasks: dict[int, dict[str, Any]] = {}
-    for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
+    keep = _scored_ids(site)
+    prefix = _FILE_PREFIX.get(site, site)
+    for path in sorted(ep_dir.glob(f"{prefix}_task_*_steps_v2.jsonl")):
         tid = task_id_from_path(path)
+        if keep is not None and tid not in keep:
+            continue
         steps = read_steps(path)
         summary_path = path.with_name(path.name.replace("_steps_v2.jsonl", "_summary_v2.json"))
         click_targets: set[tuple[str, str]] = set()
@@ -784,7 +851,7 @@ def headline_implications(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, 
     cls_e1 = e1["classifieds"]["compound_DOM_to_PSoM"]
     e2_dom_psom = {
         site: e2[site]["DOM_vs_P-SoM"]
-        for site in ("reddit", "classifieds")
+        for site in SITES
     }
     best_e3 = max(
         e3["cells"].items(),
@@ -849,7 +916,7 @@ def write_report(out: dict[str, Any]) -> None:
         "| site | contrast | N | mean Jaccard | std | median | mean divergence | left size | right size | union size |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    for site in ("reddit", "classifieds"):
+    for site in SITES:
         for axis, block in e1[site].items():
             if block.get("skipped") or block.get("n", 0) == 0 or block.get("mean_jaccard") is None:
                 lines.append(
@@ -886,7 +953,7 @@ def write_report(out: dict[str, Any]) -> None:
         "| site | contrast | symmetric diff N | median first step | early rate | late rate | case tasks |",
         "|---|---|---:|---:|---:|---:|---|",
     ]
-    for site in ("reddit", "classifieds"):
+    for site in SITES:
         for contrast, block in e2[site].items():
             lines.append(
                 f"| {site} | {contrast} | {block['n_symmetric_diff_tasks']} | "
@@ -894,7 +961,7 @@ def write_report(out: dict[str, Any]) -> None:
                 f"{fmt_pct(block['late_divergence_rate'])} | {', '.join(str(x) for x in block['case_study_task_ids'])} |"
             )
     lines += ["", "E2 case studies:"]
-    for site in ("reddit", "classifieds"):
+    for site in SITES:
         for contrast, block in e2[site].items():
             for case in block["case_studies"]:
                 lines.append(
@@ -961,7 +1028,7 @@ def write_report(out: dict[str, Any]) -> None:
         "| site | axis | N | top shift 1 | top shift 2 | top shift 3 |",
         "|---|---|---:|---|---|---|",
     ]
-    for site in ("reddit", "classifieds"):
+    for site in SITES:
         for axis, block in e4["axis_contrasts"][site].items():
             top = block.get("top_abs_shifts", [])[:3]
             labels = [f"{item['action_type']} {fmt(item['mean_fraction_shift'])}" for item in top]
@@ -999,7 +1066,7 @@ def write_report(out: dict[str, Any]) -> None:
         "| site | axis | left mode | left hist | right mode | right hist |",
         "|---|---|---|---|---|---|",
     ]
-    for site in ("reddit", "classifieds"):
+    for site in SITES:
         for axis, block in e1[site].items():
             if block.get("skipped") or block.get("n", 0) == 0:
                 lines.append(
@@ -1022,7 +1089,7 @@ def write_report(out: dict[str, Any]) -> None:
         "| site | contrast | histogram |",
         "|---|---|---|",
     ]
-    for site in ("reddit", "classifieds"):
+    for site in SITES:
         for contrast, block in e2[site].items():
             lines.append(f"| {site} | {contrast} | `{json.dumps(block['first_divergent_step_histogram'], sort_keys=True)}` |")
     lines += [
@@ -1050,7 +1117,7 @@ def write_report(out: dict[str, Any]) -> None:
         "| site | axis | click | type | scroll | select | wait | back | forward | finish | tab_focus | other |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    for site in ("reddit", "classifieds"):
+    for site in SITES:
         for axis, block in e4["axis_contrasts"][site].items():
             shifts = block["mean_per_task_fraction_shift"]
             lines.append(

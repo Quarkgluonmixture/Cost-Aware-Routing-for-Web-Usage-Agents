@@ -650,6 +650,115 @@ def label_supply(cells: list[dict], pool_name: str) -> dict[str, Any]:
 
 
 # ── orchestration ────────────────────────────────────────────────────────────
+# --- WebArena reddit, added 2026-08-03 ------------------------------------------------
+# This was the last routing product still VisualWebArena-only, and it tests the corner
+# most likely to work: same-family pooling with a coarse two-value label. WebArena is
+# exactly that corner by construction — both its cells are Qwen, so `same_family` is the
+# only pool it can form and `all_three` is structurally absent (B2 never ran WA).
+# It is also the site with the most per-task routing room in the study (36/104 tasks have
+# more than one solver, against 68/224 on the largest VWA cell).
+#
+# Two features do not exist on WebArena and are zero-filled here rather than dropped:
+# `reasoning_difficulty` (a VWA task-config annotation) and `has_reference_image` (WA
+# ships none). That is acceptable HERE and not in `router_triage_learnability`, because
+# this product never compares an AUROC across sites — every arm is scored inside one
+# site against that site's own always-cheapest baseline. The zero-fill is disclosed in
+# LIMITATIONS and the two columns are constant, so they cannot carry signal either way.
+WA_ROOT_PT = REPO / "results/webarena/phase1"
+WA_STEM_PT = {"DOM": "dom", "SoM": "som", "Vision": "vision", "P-text": "phantom_text",
+              "P-prompt": "phantom_prompt", "P-SoM": "phantom_som"}
+
+
+def _wa_run_dir_pt(baseline: str, display_mode: str) -> Path | None:
+    hits = [p for p in WA_ROOT_PT.glob(
+        f"{baseline}_{WA_STEM_PT[display_mode]}_wa_reddit_2026*_R*")
+        if p.is_dir() and "ABORTED" not in p.name]
+    return hits[0] if len(hits) == 1 else None
+
+
+def build_wa_cell(baseline: str) -> dict | None:
+    """WA counterpart of build_cell. Universe = the six-mode intersection (104);
+    WebArena ships no exclusion list, so there is no canonical sha to carry."""
+    rows_by_mode: dict[str, dict[int, dict]] = {}
+    run_dirs: dict[str, Path] = {}
+    for m in DISPLAY_MODES:
+        d = _wa_run_dir_pt(baseline, m)
+        if d is None:
+            return None
+        run_dirs[m] = d
+        rows: dict[int, dict] = {}
+        for f in (list(d.glob("*/episodes/*summary*.json"))
+                  or list(d.glob("episodes/*summary*.json"))):
+            try:
+                rec = json.loads(f.read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not rec.get("sr_excluded"):
+                rows[int(rec["task_id"])] = rec
+        if not rows:
+            return None
+        rows_by_mode[m] = rows
+    universe = sorted(set.intersection(*(set(v) for v in rows_by_mode.values())))
+    if len(universe) < 50:
+        return None
+
+    dom_run = run_dirs["DOM"]
+    task_ids, X, succ, cost, label_mode = [], [], [], [], []
+    n_no_feature = 0
+    for t in universe:
+        cfg_f = dom_run / "task_configs" / f"reddit_task_{t}.json"
+        # site="reddit": WA episode files keep the bare site prefix in their names.
+        step0 = read_step0_features([dom_run], "reddit", t)
+        if not cfg_f.exists() or step0 is None:
+            n_no_feature += 1
+            continue
+        try:
+            cfg = json.loads(cfg_f.read_text())
+        except (OSError, json.JSONDecodeError):
+            n_no_feature += 1
+            continue
+        raw = extract_raw_features(
+            intent=str(cfg.get("intent", "")),
+            has_reference_image=False,          # structurally absent on WebArena
+            dom_complexity=int(step0.get("dom_complexity", 0) or 0),
+            text_length=int(step0.get("text_length", 0) or 0),
+            tokens_input_text=int(step0.get("tokens_input_text", 0) or 0),
+            reasoning_difficulty=0,             # structurally absent on WebArena
+        )
+        s = {DISPLAY_TO_CANON[m]: rows_by_mode[m][t].get("success") is True
+             for m in DISPLAY_MODES}
+        c = {DISPLAY_TO_CANON[m]: float(rows_by_mode[m][t].get(COST_FIELD) or 0.0)
+             for m in DISPLAY_MODES}
+        task_ids.append(t)
+        X.append(list(raw["numeric"]) + list(raw["binary"]))
+        succ.append(s)
+        cost.append(c)
+        label_mode.append(derive_oracle_label(s))
+
+    label_tier: list[int | None] = []
+    for i, lab in enumerate(label_mode):
+        if lab is None:
+            label_tier.append(None)
+            continue
+        via_label = MODE_COST_TIER[lab]
+        via_rule = 0 if any(succ[i][m] for m in TEXT_MODES) else 1
+        if via_label != via_rule:
+            raise AssertionError(
+                f"{baseline}_wa_reddit task {task_ids[i]}: tier via oracle label "
+                f"({via_label}) != tier via 'any text-only success' ({via_rule}).")
+        label_tier.append(via_label)
+
+    return {
+        "cell_id": f"{baseline}_wa_reddit", "site": "wa_reddit", "baseline": baseline,
+        "task_ids": task_ids, "X": np.asarray(X, dtype=float),
+        "succ": succ, "cost": cost,
+        "label_mode": label_mode, "label_tier": label_tier,
+        "n_no_feature": n_no_feature, "n_universe": len(universe),
+        "universe_sha256": "wa-six-mode-intersection(no exclusion list)",
+        "n_labeled": sum(1 for l in label_mode if l is not None),
+    }
+
+
 def build_all() -> dict[str, dict[str, dict]]:
     out: dict[str, dict[str, dict]] = {}
     for spec in CELLS:
@@ -657,6 +766,10 @@ def build_all() -> dict[str, dict[str, dict]]:
         if cell is None:
             continue
         out.setdefault(spec["site"], {})[spec["baseline"]] = cell
+    for bb in ("B0", "B1"):
+        wa = build_wa_cell(bb)
+        if wa is not None:
+            out.setdefault("wa_reddit", {})[bb] = wa
     return out
 
 
@@ -714,6 +827,15 @@ def analyse(by_site: dict) -> dict[str, Any]:
 
 
 LIMITATIONS = [
+    "WebArena (added 2026-08-03) carries neither `reasoning_difficulty` nor a "
+    "reference image, so those two of the twenty features are zero-filled on its "
+    "cells and cannot contribute there. That is tolerable in THIS product and not in "
+    "router_triage_learnability, because nothing here compares a score across sites: "
+    "every arm is judged inside one site against that site's own always-cheapest "
+    "baseline. WebArena also has no cross-family backbone — B2 never ran it — so its "
+    "`all_three` row is B0+B1 and is therefore IDENTICAL to `same_family` by "
+    "construction, not by result. Read the two WA rows as one arm reported twice; the "
+    "cross-family contrast this product is partly about cannot be formed there at all.",
     "n is small: the same-family pool shares only 50 tasks on classifieds and 20 "
     "on reddit (labelled rows: cls 152, red 77). Every per-cell contrast below is "
     "underpowered and the fold-to-fold variation is correspondingly large.",

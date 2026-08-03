@@ -10,8 +10,8 @@
       "n_features_with": 21,
       "per_scorer": {
         "lr": {
-          "auroc_without": 0.6758665476093839,
-          "auroc_with": 0.6694536894228428
+          "auroc_without": 0.7261953080607192,
+          "auroc_with": 0.7260329572205536
         },
         "visual_difficulty_alone": {
           "auroc_without": NaN,
@@ -19,9 +19,9 @@
         }
       },
       "best_scorer": "lr",
-      "auroc_without": 0.6758665476093839,
-      "auroc_with": 0.6694536894228428,
-      "delta_auroc": -0.006412858186541137,
+      "auroc_without": 0.7261953080607192,
+      "auroc_with": 0.7260329572205536,
+      "delta_auroc": -0.00016235084016558154,
       "visual_difficulty_dist": {
         "easy": 67,
         "medium": 76,
@@ -35,8 +35,8 @@
       "n_features_with": 21,
       "per_scorer": {
         "lr": {
-          "auroc_without": 0.6655345911949686,
-          "auroc_with": 0.6669811320754717
+          "auroc_without": 0.780062893081761,
+          "auroc_with": 0.7755345911949686
         },
         "visual_difficulty_alone": {
           "auroc_without": NaN,
@@ -44,9 +44,9 @@
         }
       },
       "best_scorer": "lr",
-      "auroc_without": 0.6655345911949686,
-      "auroc_with": 0.6669811320754717,
-      "delta_auroc": 0.001446540880503111,
+      "auroc_without": 0.780062893081761,
+      "auroc_with": 0.7755345911949686,
+      "delta_auroc": -0.00452830188679243,
       "visual_difficulty_dist": {
         "easy": 93,
         "medium": 71,
@@ -60,8 +60,8 @@
       "n_features_with": 21,
       "per_scorer": {
         "lr": {
-          "auroc_without": 0.7169983862291555,
-          "auroc_with": 0.7031199569661108
+          "auroc_without": 0.7323292092522862,
+          "auroc_with": 0.7261968800430338
         },
         "visual_difficulty_alone": {
           "auroc_without": NaN,
@@ -69,9 +69,9 @@
         }
       },
       "best_scorer": "lr",
-      "auroc_without": 0.7169983862291555,
-      "auroc_with": 0.7031199569661108,
-      "delta_auroc": -0.013878429263044612,
+      "auroc_without": 0.7323292092522862,
+      "auroc_with": 0.7261968800430338,
+      "delta_auroc": -0.00613232920925233,
       "visual_difficulty_dist": {
         "easy": 67,
         "medium": 76,
@@ -85,8 +85,8 @@
       "n_features_with": 21,
       "per_scorer": {
         "lr": {
-          "auroc_without": 0.68493947858473,
-          "auroc_with": 0.7126396648044693
+          "auroc_without": 0.8642923649906891,
+          "auroc_with": 0.8626629422718808
         },
         "visual_difficulty_alone": {
           "auroc_without": NaN,
@@ -94,9 +94,9 @@
         }
       },
       "best_scorer": "lr",
-      "auroc_without": 0.68493947858473,
-      "auroc_with": 0.7126396648044693,
-      "delta_auroc": 0.027700186219739242,
+      "auroc_without": 0.8642923649906891,
+      "auroc_with": 0.8626629422718808,
+      "delta_auroc": -0.0016294227188082822,
       "visual_difficulty_dist": {
         "easy": 93,
         "medium": 71,
@@ -110,8 +110,8 @@
       "n_features_with": 21,
       "per_scorer": {
         "lr": {
-          "auroc_without": 0.6505408653846154,
-          "auroc_with": 0.6424278846153846
+          "auroc_without": 0.6424278846153846,
+          "auroc_with": 0.6295072115384616
         },
         "visual_difficulty_alone": {
           "auroc_without": NaN,
@@ -119,9 +119,9 @@
         }
       },
       "best_scorer": "lr",
-      "auroc_without": 0.6505408653846154,
-      "auroc_with": 0.6424278846153846,
-      "delta_auroc": -0.008112980769230838,
+      "auroc_without": 0.6424278846153846,
+      "auroc_with": 0.6295072115384616,
+      "delta_auroc": -0.012920673076923017,
       "visual_difficulty_dist": {
         "easy": 67,
         "medium": 76,
@@ -135,8 +135,8 @@
       "n_features_with": 21,
       "per_scorer": {
         "lr": {
-          "auroc_without": 0.4828014184397163,
-          "auroc_with": 0.5289007092198581
+          "auroc_without": 0.6152482269503546,
+          "auroc_with": 0.6553191489361702
         },
         "visual_difficulty_alone": {
           "auroc_without": NaN,
@@ -144,9 +144,9 @@
         }
       },
       "best_scorer": "lr",
-      "auroc_without": 0.4828014184397163,
-      "auroc_with": 0.5289007092198581,
-      "delta_auroc": 0.0460992907801418,
+      "auroc_without": 0.6152482269503546,
+      "auroc_with": 0.6553191489361702,
+      "delta_auroc": 0.04007092198581552,
       "visual_difficulty_dist": {
         "easy": 93,
         "medium": 71,
@@ -154,7 +154,7 @@
       }
     }
   },
-  "mean_delta_auroc": 0.007806958276927928,
-  "n_cells_improved": 3,
+  "mean_delta_auroc": 0.0024496407089789804,
+  "n_cells_improved": 1,
   "n_cells": 6
 }

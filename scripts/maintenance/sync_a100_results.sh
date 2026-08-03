@@ -164,7 +164,22 @@ log "rsync ${A100_HOST}:${A100_RESULTS} → ${DGX_RESULTS}"
 # B-1919: delete flags split out so they can be applied per subtree (see the
 # BENCH_SUBTREES policy comment).
 RSYNC_OPTS=(-az --partial --append-verify --info=stats1
-            --exclude='artifacts/')
+            --exclude='artifacts/'
+            # B-1929 (2026-08-03): DGX-DERIVED artifacts must survive --delete-after.
+            #
+            # `analysis/reason_diagnostics/` is produced by `make analyze` ON DGX from the
+            # step JSONLs; it does not exist on the A100 and never will. With --delete-after
+            # on this subtree, rsync deleted it within 15 minutes of every backfill — so
+            # `aggregate_failure_modes.py`, whose only input it is, could never hold data.
+            # The product had been an empty 197-byte document for weeks and the diagnosis
+            # "nobody ran make analyze" was wrong: running it locally was FUTILE, because
+            # the next cron tick removed the output.
+            #
+            # `--filter='protect_...'` marks the path as delete-exempt on the receiver
+            # without excluding it from transfer, which is exactly the semantics needed:
+            # A100 never sends it, and DGX never loses it.
+            --filter='protect analysis/reason_diagnostics/'
+            --filter='protect analysis/reason_diagnostics/**')
 RSYNC_DELETE_OPTS=(--delete-after --delete-excluded)
 if [[ "${DRY_RUN}" == "1" ]]; then
   RSYNC_OPTS+=(--dry-run)

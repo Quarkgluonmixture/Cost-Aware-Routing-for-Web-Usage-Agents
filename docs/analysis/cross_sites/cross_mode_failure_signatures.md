@@ -1,6 +1,6 @@
 # Cross-mode failure signatures — 36 landed Phase-1a conditions
 
-Ruleset `11-intent-text-fallback` · 7686 episodes over 36 conditions (2 sites x 3 backbones x 6 modes).
+Ruleset `11-intent-text-fallback` · 7649 episodes over 36 conditions (2 sites x 3 backbones x 6 modes).
 
 Regenerate: `python3 scripts/analysis/aggregate_cross_mode_failure_signatures.py`
 
@@ -14,29 +14,29 @@ Episode-level hit rate: share of episodes in which the signature fires at least 
 
 | rule | name | overall % | DOM | SoM | Vision | P-text | P-prompt | P-SoM | spread (all) | spread (text-bearing) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P31 | budget耗尽未完成 | 49.8 | 47.3 | 45.0 | 49.8 | 54.3 | 49.8 | 52.5 | 9.3 | 9.3 |
-| P36 | WALK_FAIL_DEGENERATE | 43.9 | 55.8 | 39.2 | 20.7 | 46.9 | 53.5 | 47.2 | 35.1 | 16.6 |
-| P5 | 感知缺失循环 | 43.5 | 44.3 | 38.1 | 55.6 | 36.1 | 46.0 | 40.7 | 19.5 | 9.9 |
-| P45 | IDENTICAL_FAILED_ACTION_STREAK | 26.8 | 37.4 | 30.0 | 0.0 | 25.6 | 36.8 | 31.2 | 37.4 | 11.8 |
-| P14 | URL 自环 | 26.3 | 24.0 | 23.1 | 36.9 | 20.2 | 27.8 | 25.5 | 16.7 | 7.6 |
-| P43 | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 20.0 | 29.7 | 0.0 | 0.0 | 30.2 | 30.1 | 30.3 | 30.3 | 30.3 |
-| P33 | 导航至裸图片URL幻觉 | 16.1 | 20.5 | 13.0 | 10.5 | 17.9 | 17.8 | 16.9 | 10.0 | 7.6 |
-| P44 | HALLUCINATED_ELEMENT_REF | 13.5 | 20.9 | 8.1 | 0.0 | 16.0 | 27.4 | 8.8 | 27.4 | 19.3 |
-| P12 | 从不翻页 | 12.6 | 12.6 | 16.2 | 9.3 | 10.9 | 15.1 | 11.7 | 6.9 | 5.4 |
-| P25 | 跨站任务跳过其中一站 | 10.0 | 7.8 | 11.4 | 10.3 | 11.0 | 8.4 | 11.3 | 3.6 | 3.6 |
-| P4 | 根节点误操作 | 7.4 | 0.4 | 10.3 | 0.0 | 13.9 | 0.5 | 19.4 | 19.4 | 19.0 |
+| P31 | budget耗尽未完成 | 49.9 | 47.3 | 45.4 | 49.8 | 54.3 | 49.8 | 52.5 | 8.8 | 8.8 |
+| P36 | WALK_FAIL_DEGENERATE | 44.1 | 55.8 | 40.6 | 20.7 | 46.9 | 53.5 | 47.2 | 35.1 | 15.2 |
+| P5 | 感知缺失循环 | 43.6 | 44.3 | 38.7 | 55.6 | 36.1 | 46.0 | 40.7 | 19.5 | 9.9 |
+| P45 | IDENTICAL_FAILED_ACTION_STREAK | 26.9 | 37.4 | 30.4 | 0.0 | 25.6 | 36.8 | 31.2 | 37.4 | 11.8 |
+| P14 | URL 自环 | 26.3 | 24.0 | 23.3 | 36.9 | 20.2 | 27.8 | 25.5 | 16.7 | 7.6 |
+| P43 | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 20.1 | 29.7 | 0.0 | 0.0 | 30.2 | 30.1 | 30.3 | 30.3 | 30.3 |
+| P33 | 导航至裸图片URL幻觉 | 16.1 | 20.5 | 13.2 | 10.5 | 17.9 | 17.8 | 16.9 | 10.0 | 7.3 |
+| P44 | HALLUCINATED_ELEMENT_REF | 13.6 | 20.9 | 8.4 | 0.0 | 16.0 | 27.4 | 8.8 | 27.4 | 19.0 |
+| P12 | 从不翻页 | 12.7 | 12.6 | 16.5 | 9.3 | 10.9 | 15.1 | 11.7 | 7.2 | 5.6 |
+| P25 | 跨站任务跳过其中一站 | 10.0 | 7.8 | 10.9 | 10.3 | 11.0 | 8.4 | 11.3 | 3.5 | 3.5 |
+| P4 | 根节点误操作 | 7.4 | 0.4 | 10.5 | 0.0 | 13.9 | 0.5 | 19.4 | 19.4 | 19.0 |
 | P18 | cheapest漏价格排序 | 6.1 | 6.6 | 6.2 | 6.2 | 5.5 | 6.2 | 6.0 | 1.0 | 1.0 |
 
-**Top four signatures**: P31 (49.8%), P36 (43.9%), P5 (43.5%), P45 (26.8%).
-Spread across the five text-bearing modes, **pooled over cells**: P31 9.3 pp, P36 16.6 pp, P5 9.9 pp, P45 11.8 pp.
-Including `vision`: P31 9.3 pp, P36 35.1 pp, P5 19.5 pp, P45 37.4 pp.
+**Top four signatures**: P31 (49.9%), P36 (44.1%), P5 (43.6%), P45 (26.9%).
+Spread across the five text-bearing modes, **pooled over cells**: P31 8.8 pp, P36 15.2 pp, P5 9.9 pp, P45 11.8 pp.
+Including `vision`: P31 8.8 pp, P36 35.1 pp, P5 19.5 pp, P45 37.4 pp.
 
 ⚠️ **The pooled spread is not a within-cell spread.** Pooling sums numerators and denominators over the six cells before the rate is formed, so cell × mode variation cancels. Per cell, over the same five text-bearing modes:
 
 | rule | pooled spread | max within-cell | median within-cell | worst cell |
 |---|---|---|---|---|
-| P31 | 9.3 pp | **15.3 pp** | 12.8 pp | reddit·B0 |
-| P36 | 16.6 pp | **31.0 pp** | 26.3 pp | reddit·B2 |
+| P31 | 8.8 pp | **15.3 pp** | 12.8 pp | reddit·B0 |
+| P36 | 15.2 pp | **31.0 pp** | 22.5 pp | reddit·B2 |
 | P5 | 9.9 pp | **48.8 pp** | 15.6 pp | reddit·B2 |
 | P45 | 11.8 pp | **48.3 pp** | 17.4 pp | reddit·B2 |
 
@@ -58,7 +58,7 @@ Restricted to the canonical SCORED task set.
 | cell | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
 | *id namespace* | *native* | *compact 1..K* | *native (no marks)* | *compact 1..K* | *native* | *compact 1..K* |
 |---|---|---|---|---|---|---|
-| classifieds·B0 | 1.508 | 0.000 | 0.000 | 0.506 | 2.104 | 0.139 |
+| classifieds·B0 | 1.508 | 0.298 | 0.000 | 0.506 | 2.104 | 0.139 |
 | classifieds·B1 | 2.033 | 0.000 | 0.000 | 3.961 | 4.313 | 0.351 |
 | classifieds·B2 | 5.312 | 2.264 | 0.000 | 8.331 | 14.689 | 2.469 |
 | reddit·B0 | 0.384 | 0.076 | 0.000 | 0.214 | 0.349 | 0.036 |
@@ -70,7 +70,7 @@ Restricted to the canonical SCORED task set.
 | cell | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
 | *id namespace* | *native* | *compact 1..K* | *native (no marks)* | *compact 1..K* | *native* | *compact 1..K* |
 |---|---|---|---|---|---|---|
-| classifieds·B0 | 6.696 | 0.000 | 0.000 | 4.018 | 4.911 | 0.893 |
+| classifieds·B0 | 6.696 | 1.070 | 0.000 | 4.018 | 4.911 | 0.893 |
 | classifieds·B1 | 8.929 | 0.000 | 0.000 | 20.089 | 14.732 | 3.125 |
 | classifieds·B2 | 36.607 | 17.411 | 0.000 | 33.482 | 50.893 | 19.196 |
 | reddit·B0 | 3.941 | 0.985 | 0.000 | 2.956 | 3.941 | 0.493 |

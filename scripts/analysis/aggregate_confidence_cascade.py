@@ -110,6 +110,16 @@ SEARCH_ROOT = REPO / "results/visualwebarena/phase1"
 SIGNALS = [
     "mean_logprob_mean", "mean_logprob_min", "min_logprob_min",
     "mean_margin_mean", "min_margin_min",
+    # The model's OWN stated confidence, added 2026-08-03. It was recorded on every step
+    # from the beginning (`confidence.verbalized`, 75-82% of B0 steps and ~100% of B1/B2)
+    # and this product never looked at it — while `mechanism_per_task` E3 was reporting it
+    # as often the STRONGEST single signal available (B0·reddit·Vision 0.854 AUROC against
+    # 0.788 token-level; B1·cls·Vision 0.806 against 0.533). A negative result about
+    # "confidence-triggered escalation" that omits the most obvious confidence signal is
+    # not a negative result about confidence, and it is the first thing a reviewer checks.
+    # Note it is INVERTED on B2: verbalized AUROC there runs 0.18-0.37, i.e. Gemma is
+    # systematically most confident when it is wrong. The sweep is left free to find that.
+    "verbalized_mean", "verbalized_min",
     "neg_steps",           # fewer steps = more confident (cap-hit ⇒ likely stuck)
     "neg_noop_rate",       # fewer no-op steps = more confident
     "neg_actfail_rate",    # fewer failed actions = more confident
@@ -168,7 +178,7 @@ def _signals_for(summary_file: Path, task_id: int) -> dict[str, float]:
     steps_glob = list(summary_file.parent.glob(f"*task_{task_id}_steps*.jsonl"))
     if not steps_glob:
         raise MissingInput(f"no step JSONL for task {task_id} beside {summary_file}")
-    ml, mn, mm, mgn, noop, actfail, n = [], [], [], [], 0, 0, 0
+    ml, mn, mm, mgn, vb, noop, actfail, n = [], [], [], [], [], 0, 0, 0
     for line in steps_glob[0].read_text().splitlines():
         if not line.strip():
             continue
@@ -179,7 +189,8 @@ def _signals_for(summary_file: Path, task_id: int) -> dict[str, float]:
         n += 1
         c = r.get("confidence") or {}
         for key, bucket in (("mean_logprob", ml), ("min_logprob", mn),
-                            ("mean_margin", mm), ("min_margin", mgn)):
+                            ("mean_margin", mm), ("min_margin", mgn),
+                            ("verbalized", vb)):
             v = c.get(key)
             if v is not None:
                 bucket.append(float(v))
@@ -202,6 +213,10 @@ def _signals_for(summary_file: Path, task_id: int) -> dict[str, float]:
         # variance is not a threshold. (codex Mode B, §H stress 2026-08-02)
         "mean_margin_mean": statistics.fmean(mm) if mm else None,
         "min_margin_min": min(mgn) if mgn else None,
+        # Same None-not-0.0 discipline as the margins above: an episode where the model
+        # never emitted a self-report must not be ranked as "least confident".
+        "verbalized_mean": statistics.fmean(vb) if vb else None,
+        "verbalized_min": min(vb) if vb else None,
         "neg_steps": -float(n),
         "neg_noop_rate": -(noop / n),
         "neg_actfail_rate": -(actfail / n),
@@ -497,8 +512,29 @@ def render(d: dict) -> str:
     # no variance) times the non-zero fractions. Using len(SIGNALS) x len(fracs) overcounts and
     # was the source of the "2 of 80" figure; the true search space is smaller. (§H stress P1-5)
     searched = sum(len(c["curves"]) * (len(d["fracs"]) - 1) for c in d["cells"].values())
-    L += ["", f"**{total_wins} of {searched} (cell, signal, operating point) combinations "
-          f"Pareto-beat the fixed policy, in {n_cells_win} of {len(d['cells'])} cells.** "
+    # The bare count above the table said "in 3 of 8 cells" while every one of those three
+    # rows carried an annotation saying it was moot or a tie artefact — a headline
+    # contradicting its own table, the §4d defect class. Split the tally so the number a
+    # reader quotes is the one the table supports (fixed 2026-08-03).
+    _degenerate = [cid for cid, c in d["cells"].items()
+                   if c["pareto_beats_always_rich"] and c["rich_mode_is_worse"]]
+    _comparable = [cid for cid, c in d["cells"].items() if not c["rich_mode_is_worse"]]
+    _comparable_wins = [cid for cid in _comparable
+                        if d["cells"][cid]["pareto_beats_always_rich"]]
+    L += ["", f"⚠️ **Read the cell count, not the combination count.** Of "
+          f"{len(d['cells'])} cells, **{len(_comparable)} pose the cascade question at "
+          f"all** — in the other {len(_degenerate)} the rich mode is no better than the "
+          f"cheap one, so there is nothing to escalate *to* and any 'win' is an artefact "
+          f"of that. Among the comparable cells, **{len(_comparable_wins)} "
+          + ("shows a Pareto-beating operating point**"
+             if len(_comparable_wins) == 1 else "show Pareto-beating operating points**")
+          + (f" ({', '.join('`' + c + '`' for c in _comparable_wins)}, and the table "
+             "above records why that one is not a threshold)" if _comparable_wins else "")
+          + ".", "",
+          f"For completeness the raw search tally is **{total_wins} of {searched} "
+          f"(cell, signal, operating point) combinations, in {n_cells_win} of "
+          f"{len(d['cells'])} cells** — but {len(_degenerate)} of those {n_cells_win} "
+          f"cells are the degenerate ones just named. "
           "`frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade. "
           "The denominator counts only signals a cell can actually rank with; where a signal was "
           "dropped for having no variance it is not part of the search space.", "",

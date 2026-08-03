@@ -47,7 +47,9 @@ Always running the rich mode is a fixed policy: no signal, no threshold, no fitt
 | `red_B1` | 7.39% / 1.53x | **none** |
 | `red_B2` | 0.99% / 1.63x | `mean_logprob_mean`@5%, `mean_logprob_mean`@10%, `mean_logprob_mean`@15%, `mean_logprob_mean`@20% · ⚠️ rich mode is *worse than or equal to* cheap here, so the cascade question is moot |
 
-**66 of 423 (cell, signal, operating point) combinations Pareto-beat the fixed policy, in 2 of 6 cells.** `frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade. The denominator counts only signals a cell can actually rank with; where a signal was dropped for having no variance it is not part of the search space.
+⚠️ **Read the cell count, not the combination count.** Of 6 cells, **4 pose the cascade question at all** — in the other 2 the rich mode is no better than the cheap one, so there is nothing to escalate *to* and any 'win' is an artefact of that. Among the comparable cells, **0 show Pareto-beating operating points**.
+
+For completeness the raw search tally is **79 of 495 (cell, signal, operating point) combinations, in 2 of 6 cells** — but 2 of those 2 cells are the degenerate ones just named. `frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade. The denominator counts only signals a cell can actually rank with; where a signal was dropped for having no variance it is not part of the search space.
 
 ## 1c. Fraction of the oracle's headroom the best signal recovers
 
@@ -85,7 +87,7 @@ For each cell, the best signal at each escalation fraction, and the margin over 
 | `red_B2` | 20% | `mean_logprob_min` | 1.97% | +0.00pp | -0.20pp | **+0.20pp** ✅ |
 | `red_B2` | 30% | `mean_margin_mean` | 1.97% | +0.00pp | -0.30pp | **+0.30pp** ✅ |
 
-⚠️ The best signal is picked per (cell, fraction) from 8 candidates against realised outcomes, so these margins are in-sample maxima over a signal menu. Treat them as an upper bound on what an out-of-fold selection could deliver.
+⚠️ The best signal is picked per (cell, fraction) from 10 candidates against realised outcomes, so these margins are in-sample maxima over a signal menu. Treat them as an upper bound on what an out-of-fold selection could deliver.
 
 ## 3. Per-signal margin over random, averaged across cells
 
@@ -96,11 +98,17 @@ For each cell, the best signal at each escalation fraction, and the margin over 
 | `min_logprob_min` | +0.32pp | +0.36pp | -0.04pp |
 | `mean_margin_mean` | +0.05pp | +0.11pp | -0.13pp |
 | `min_margin_min` ⚠️ 5/6 cells | +0.53pp | +0.49pp | +0.07pp |
+| `verbalized_mean` ⚠️ 4/6 cells | +0.03pp | +0.30pp | +0.79pp |
+| `verbalized_min` ⚠️ 4/6 cells | +0.17pp | +0.30pp | -0.02pp |
 | `neg_steps` | +0.53pp | +0.97pp | +0.95pp |
 | `neg_noop_rate` | +0.22pp | +0.50pp | +0.56pp |
 | `neg_actfail_rate` | +0.29pp | +0.73pp | +0.65pp |
 
 **Signals dropped before ranking** — a score with no variance cannot rank anything, and `sorted()` then falls through to task id, so the resulting "operating point" is a set of task ids wearing a threshold's name:
+- `cls_B0` / `verbalized_mean`: not populated on 2/224 episodes
+- `cls_B0` / `verbalized_min`: not populated on 2/224 episodes
+- `red_B1` / `verbalized_mean`: not populated on 1/203 episodes
+- `red_B1` / `verbalized_min`: not populated on 1/203 episodes
 - `red_B2` / `min_margin_min`: no variance: all 203 episodes share the value 0.0, so ranking falls through to task id
 
 ## 4. Full curves

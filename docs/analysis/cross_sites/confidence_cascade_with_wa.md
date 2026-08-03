@@ -48,10 +48,12 @@ Always running the rich mode is a fixed policy: no signal, no threshold, no fitt
 | `red_B0` | 14.78% / 1.13x | **none** |
 | `red_B1` | 7.39% / 1.53x | **none** |
 | `red_B2` | 0.99% / 1.63x | `mean_logprob_mean`@5%, `mean_logprob_mean`@10%, `mean_logprob_mean`@15%, `mean_logprob_mean`@20% · ⚠️ rich mode is *worse than or equal to* cheap here, so the cascade question is moot |
-| `wa_red_B1` | 13.46% / 1.78x | `neg_steps`@30% ⚠️ 60 tied at the cutoff, 28 of them picked by task id; SR spans 8.65–14.42% over tie orders |
+| `wa_red_B1` | 13.46% / 1.78x | `verbalized_min`@30% ⚠️ 44 tied at the cutoff, 18 of them picked by task id; SR spans 8.65–14.42% over tie orders, `verbalized_min`@40% ⚠️ 44 tied at the cutoff, 29 of them picked by task id; SR spans 8.65–14.42% over tie orders, `neg_steps`@30% ⚠️ 60 tied at the cutoff, 28 of them picked by task id; SR spans 8.65–14.42% over tie orders |
 | `wa_red_B0` | 22.12% / 1.05x | **none** |
 
-**67 of 558 (cell, signal, operating point) combinations Pareto-beat the fixed policy, in 3 of 8 cells.** `frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade. The denominator counts only signals a cell can actually rank with; where a signal was dropped for having no variance it is not part of the search space.
+⚠️ **Read the cell count, not the combination count.** Of 8 cells, **6 pose the cascade question at all** — in the other 2 the rich mode is no better than the cheap one, so there is nothing to escalate *to* and any 'win' is an artefact of that. Among the comparable cells, **1 shows a Pareto-beating operating point** (`wa_red_B1`, and the table above records why that one is not a threshold).
+
+For completeness the raw search tally is **82 of 666 (cell, signal, operating point) combinations, in 3 of 8 cells** — but 2 of those 3 cells are the degenerate ones just named. `frac=0` is excluded throughout — it is the always-cheap fixed policy, not a cascade. The denominator counts only signals a cell can actually rank with; where a signal was dropped for having no variance it is not part of the search space.
 
 ## 1c. Fraction of the oracle's headroom the best signal recovers
 
@@ -64,7 +66,7 @@ Always running the rich mode is a fixed policy: no signal, no threshold, no fitt
 | `red_B1` | 33% | 50% | 50% |
 | `red_B2` | 0% | 0% | 0% |
 | `wa_red_B1` | 43% | 43% | 57% |
-| `wa_red_B0` | 36% | 36% | 36% |
+| `wa_red_B0` | 36% | 36% | 45% |
 
 ## 2. Does the confidence signal beat a signal-free escalation of the same size?
 
@@ -92,12 +94,12 @@ For each cell, the best signal at each escalation fraction, and the margin over 
 | `red_B2` | 30% | `mean_margin_mean` | 1.97% | +0.00pp | -0.30pp | **+0.30pp** ✅ |
 | `wa_red_B1` | 10% | `neg_noop_rate` | 12.50% | +2.88pp | +0.37pp | **+2.51pp** ✅ |
 | `wa_red_B1` | 20% | `neg_steps` | 12.50% | +2.88pp | +0.78pp | **+2.11pp** ✅ |
-| `wa_red_B1` | 30% | `neg_steps` | 13.46% | +3.85pp | +1.15pp | **+2.70pp** ✅ |
+| `wa_red_B1` | 30% | `verbalized_min` | 13.46% | +3.85pp | +1.15pp | **+2.70pp** ✅ |
 | `wa_red_B0` | 10% | `neg_steps` | 23.08% | +3.85pp | +0.28pp | **+3.57pp** ✅ |
 | `wa_red_B0` | 20% | `neg_steps` | 23.08% | +3.85pp | +0.58pp | **+3.26pp** ✅ |
-| `wa_red_B0` | 30% | `neg_steps` | 23.08% | +3.85pp | +0.86pp | **+2.99pp** ✅ |
+| `wa_red_B0` | 30% | `verbalized_mean` | 24.04% | +4.81pp | +0.86pp | **+3.95pp** ✅ |
 
-⚠️ The best signal is picked per (cell, fraction) from 8 candidates against realised outcomes, so these margins are in-sample maxima over a signal menu. Treat them as an upper bound on what an out-of-fold selection could deliver.
+⚠️ The best signal is picked per (cell, fraction) from 10 candidates against realised outcomes, so these margins are in-sample maxima over a signal menu. Treat them as an upper bound on what an out-of-fold selection could deliver.
 
 ## 3. Per-signal margin over random, averaged across cells
 
@@ -108,11 +110,17 @@ For each cell, the best signal at each escalation fraction, and the margin over 
 | `min_logprob_min` | +0.64pp | +0.58pp | +0.08pp |
 | `mean_margin_mean` | -0.04pp | -0.21pp | -0.71pp |
 | `min_margin_min` ⚠️ 6/8 cells | +0.71pp | +0.63pp | +0.07pp |
+| `verbalized_mean` ⚠️ 6/8 cells | +0.07pp | +0.30pp | +1.16pp |
+| `verbalized_min` ⚠️ 6/8 cells | +0.16pp | +0.46pp | +0.93pp |
 | `neg_steps` | +0.92pp | +1.40pp | +1.42pp |
 | `neg_noop_rate` | +0.80pp | +0.92pp | +1.01pp |
 | `neg_actfail_rate` | +0.86pp | +1.10pp | +0.96pp |
 
 **Signals dropped before ranking** — a score with no variance cannot rank anything, and `sorted()` then falls through to task id, so the resulting "operating point" is a set of task ids wearing a threshold's name:
+- `cls_B0` / `verbalized_mean`: not populated on 2/224 episodes
+- `cls_B0` / `verbalized_min`: not populated on 2/224 episodes
+- `red_B1` / `verbalized_mean`: not populated on 1/203 episodes
+- `red_B1` / `verbalized_min`: not populated on 1/203 episodes
 - `red_B2` / `min_margin_min`: no variance: all 203 episodes share the value 0.0, so ranking falls through to task id
 - `wa_red_B1` / `min_margin_min`: no variance: all 104 episodes share the value 0.0, so ranking falls through to task id
 

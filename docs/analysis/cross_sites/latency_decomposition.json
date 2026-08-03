@@ -1,0 +1,427 @@
+{
+ "schema": "2026-08-03-latency-decomposition-v1",
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "cells": {
+  "B0·classifieds": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 7365.829396507014,
+     "backend_infer": 1993.8557709245442,
+     "obs_prepare": 0.0974356582563038,
+     "env_step": 5303.715397618728,
+     "runtime_sleep": 49.9141876430206
+    },
+    "SoM": {
+     "total": 7809.9447867715335,
+     "backend_infer": 2353.675057630218,
+     "obs_prepare": 15.514929829684398,
+     "env_step": 5345.962382344318,
+     "runtime_sleep": 51.29042796471741
+    },
+    "Vision": {
+     "total": 7952.829909049831,
+     "backend_infer": 2131.082799081424,
+     "obs_prepare": 0.09646863457457484,
+     "env_step": 5716.733324484172,
+     "runtime_sleep": 42.0298003935901
+    },
+    "P-text": {
+     "total": 7823.535864930064,
+     "backend_infer": 2276.7361972672215,
+     "obs_prepare": 0.7417711644137706,
+     "env_step": 5456.192024199222,
+     "runtime_sleep": 43.42921601804851
+    },
+    "P-prompt": {
+     "total": 7314.029222459935,
+     "backend_infer": 1991.2843957587854,
+     "obs_prepare": 0.09523953964461142,
+     "env_step": 5254.023313878188,
+     "runtime_sleep": 42.985074626865675
+    },
+    "P-SoM": {
+     "total": 7463.242990611278,
+     "backend_infer": 2090.4017413410024,
+     "obs_prepare": 0.7196715300363807,
+     "env_step": 5294.083494361084,
+     "runtime_sleep": 33.55335533553355
+    }
+   },
+   "fastest_by_total": "P-prompt",
+   "fastest_by_model_only": "P-prompt",
+   "fastest_agrees": true,
+   "model_share_of_total": 0.2807172747856176
+  },
+  "B0·reddit": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 28381.887631748676,
+     "backend_infer": 5482.526777789992,
+     "obs_prepare": 0.10458324447144382,
+     "env_step": 22770.823616718393,
+     "runtime_sleep": 23.959341723136497
+    },
+    "SoM": {
+     "total": 22909.199590250657,
+     "backend_infer": 4897.577252935381,
+     "obs_prepare": 19.698798525719827,
+     "env_step": 17901.865725571894,
+     "runtime_sleep": 23.884962222763832
+    },
+    "Vision": {
+     "total": 19222.609857722324,
+     "backend_infer": 5841.281040046966,
+     "obs_prepare": 0.10866947498710297,
+     "env_step": 13272.46119280176,
+     "runtime_sleep": 6.619037612943896
+    },
+    "P-text": {
+     "total": 27263.73989714095,
+     "backend_infer": 7678.666010040552,
+     "obs_prepare": 1.4306068319235288,
+     "env_step": 19453.42750982345,
+     "runtime_sleep": 13.791640144281773
+    },
+    "P-prompt": {
+     "total": 25030.925703507997,
+     "backend_infer": 5389.933910332188,
+     "obs_prepare": 0.10552197864067998,
+     "env_step": 19537.288239927286,
+     "runtime_sleep": 16.053346505309953
+    },
+    "P-SoM": {
+     "total": 24796.734166824477,
+     "backend_infer": 4330.815630159278,
+     "obs_prepare": 1.2110906026173924,
+     "env_step": 20350.50019152697,
+     "runtime_sleep": 16.384664810451916
+    }
+   },
+   "fastest_by_total": "Vision",
+   "fastest_by_model_only": "P-SoM",
+   "fastest_agrees": false,
+   "model_share_of_total": 0.22777533662072352
+  },
+  "B0·wa_reddit": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 16834.545352859714,
+     "backend_infer": 3507.0978240749437,
+     "obs_prepare": 0.10295376139149028,
+     "env_step": 13239.421592478739,
+     "runtime_sleep": 51.851851851851855
+    },
+    "SoM": {
+     "total": 15593.21636588777,
+     "backend_infer": 3819.169277396084,
+     "obs_prepare": 19.923390895538752,
+     "env_step": 11586.810516982696,
+     "runtime_sleep": 70.24793388429752
+    },
+    "Vision": {
+     "total": 15093.146269468916,
+     "backend_infer": 3763.9545987766633,
+     "obs_prepare": 0.10294070358538546,
+     "env_step": 11229.253405353047,
+     "runtime_sleep": 25.128865979381445
+    },
+    "P-text": {
+     "total": 16706.942203559764,
+     "backend_infer": 3447.8729008932523,
+     "obs_prepare": 1.3010406772450251,
+     "env_step": 13167.121725439561,
+     "runtime_sleep": 29.669260700389106
+    },
+    "P-prompt": {
+     "total": 15365.69013319037,
+     "backend_infer": 3314.8885605571504,
+     "obs_prepare": 0.10411911182575398,
+     "env_step": 11965.988079438339,
+     "runtime_sleep": 65.59684684684684
+    },
+    "P-SoM": {
+     "total": 17076.037172128028,
+     "backend_infer": 3452.384600346909,
+     "obs_prepare": 1.3681331746661596,
+     "env_step": 13503.246801852938,
+     "runtime_sleep": 35.732387227572225
+    }
+   },
+   "fastest_by_total": "Vision",
+   "fastest_by_model_only": "P-prompt",
+   "fastest_agrees": false,
+   "model_share_of_total": 0.22039371965482465
+  },
+  "B1·classifieds": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 14446.821071907474,
+     "backend_infer": 8018.8979928329245,
+     "obs_prepare": 0.10659938565375661,
+     "env_step": 6369.299324320353,
+     "runtime_sleep": 112.31732776617955
+    },
+    "SoM": {
+     "total": 14546.512315104252,
+     "backend_infer": 8575.09523420329,
+     "obs_prepare": 16.54868487621453,
+     "env_step": 5897.0847850278515,
+     "runtime_sleep": 53.04908279623203
+    },
+    "Vision": {
+     "total": 13375.320426390836,
+     "backend_infer": 7840.90565811907,
+     "obs_prepare": 0.10630867026347193,
+     "env_step": 5439.562421923667,
+     "runtime_sleep": 32.425852146967685
+    },
+    "P-text": {
+     "total": 13962.824837682736,
+     "backend_infer": 7962.502499129142,
+     "obs_prepare": 0.8215770095764524,
+     "env_step": 5937.764795779234,
+     "runtime_sleep": 94.43339960238569
+    },
+    "P-prompt": {
+     "total": 14084.365720518093,
+     "backend_infer": 8324.109080935628,
+     "obs_prepare": 0.11001492800156458,
+     "env_step": 5703.587606857049,
+     "runtime_sleep": 53.20258710619654
+    },
+    "P-SoM": {
+     "total": 14662.538131261663,
+     "backend_infer": 8557.730121604538,
+     "obs_prepare": 0.8185813027437572,
+     "env_step": 6046.5906394824715,
+     "runtime_sleep": 66.67366652666946
+    }
+   },
+   "fastest_by_total": "Vision",
+   "fastest_by_model_only": "Vision",
+   "fastest_agrees": true,
+   "model_share_of_total": 0.5792216440547057
+  },
+  "B1·reddit": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 25812.384605407715,
+     "backend_infer": 7784.89715074856,
+     "obs_prepare": 0.1033082828298833,
+     "env_step": 17932.11455292415,
+     "runtime_sleep": 28.902337228714526
+    },
+    "SoM": {
+     "total": 27228.721458484502,
+     "backend_infer": 8740.929269623044,
+     "obs_prepare": 19.971098809753446,
+     "env_step": 18385.207417926806,
+     "runtime_sleep": 10.654657293497364
+    },
+    "Vision": {
+     "total": 19635.294639608357,
+     "backend_infer": 7878.979974988901,
+     "obs_prepare": 0.10341971312973632,
+     "env_step": 11614.164961636154,
+     "runtime_sleep": 1.3733361504331292
+    },
+    "P-text": {
+     "total": 23347.64291516584,
+     "backend_infer": 7364.923576034899,
+     "obs_prepare": 1.0397069717886072,
+     "env_step": 15883.927445871548,
+     "runtime_sleep": 31.668580176042862
+    },
+    "P-prompt": {
+     "total": 25805.1877658523,
+     "backend_infer": 7760.352051117957,
+     "obs_prepare": 0.10097309544445879,
+     "env_step": 17956.51044106085,
+     "runtime_sleep": 17.941843679109095
+    },
+    "P-SoM": {
+     "total": 24425.58852341463,
+     "backend_infer": 7964.8162584931715,
+     "obs_prepare": 1.4407289381842754,
+     "env_step": 16362.787365058099,
+     "runtime_sleep": 14.252472367655614
+    }
+   },
+   "fastest_by_total": "Vision",
+   "fastest_by_model_only": "P-text",
+   "fastest_agrees": false,
+   "model_share_of_total": 0.3247407388755073
+  },
+  "B1·wa_reddit": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 21427.077186487284,
+     "backend_infer": 7465.210966648822,
+     "obs_prepare": 0.10856762053860221,
+     "env_step": 13885.905931051622,
+     "runtime_sleep": 70.06369426751593
+    },
+    "SoM": {
+     "total": 20690.761892777347,
+     "backend_infer": 7923.419474884358,
+     "obs_prepare": 21.142666916028535,
+     "env_step": 12675.918382192933,
+     "runtime_sleep": 93.88821873743466
+    },
+    "Vision": {
+     "total": 21220.88972763807,
+     "backend_infer": 7276.893535820213,
+     "obs_prepare": 0.10501391674525525,
+     "env_step": 13745.06416370368,
+     "runtime_sleep": 33.264033264033266
+    },
+    "P-text": {
+     "total": 21857.45639311609,
+     "backend_infer": 7556.547459156574,
+     "obs_prepare": 1.6049056237921278,
+     "env_step": 14226.240765920673,
+     "runtime_sleep": 35.03709810387469
+    },
+    "P-prompt": {
+     "total": 20666.259022578713,
+     "backend_infer": 7865.067308888518,
+     "obs_prepare": 0.09935065004477509,
+     "env_step": 12716.283023825246,
+     "runtime_sleep": 71.23233908948194
+    },
+    "P-SoM": {
+     "total": 21463.84536940529,
+     "backend_infer": 8395.142395841372,
+     "obs_prepare": 1.3249602737981847,
+     "env_step": 12995.700236280405,
+     "runtime_sleep": 53.15278900565885
+    }
+   },
+   "fastest_by_total": "P-prompt",
+   "fastest_by_model_only": "Vision",
+   "fastest_agrees": false,
+   "model_share_of_total": 0.36506428711764916
+  },
+  "B2·classifieds": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 14691.80593737026,
+     "backend_infer": 10187.601041941523,
+     "obs_prepare": 0.10508685614178846,
+     "env_step": 4454.517471040154,
+     "runtime_sleep": 74.74731007499184
+    },
+    "SoM": {
+     "total": 15359.607049290975,
+     "backend_infer": 10230.511739691696,
+     "obs_prepare": 16.22328512744617,
+     "env_step": 5063.076286841854,
+     "runtime_sleep": 115.79333089043605
+    },
+    "Vision": {
+     "total": 14788.063196142766,
+     "backend_infer": 10038.81157966691,
+     "obs_prepare": 0.10472110339573451,
+     "env_step": 4697.584635275504,
+     "runtime_sleep": 100.11061946902655
+    },
+    "P-text": {
+     "total": 14878.047471074991,
+     "backend_infer": 9891.793092620464,
+     "obs_prepare": 0.6837978052228719,
+     "env_step": 4935.430754646337,
+     "runtime_sleep": 98.10442301296973
+    },
+    "P-prompt": {
+     "total": 14236.842530687707,
+     "backend_infer": 9410.486886645425,
+     "obs_prepare": 0.10251666330958628,
+     "env_step": 4777.9211801501715,
+     "runtime_sleep": 38.15937149270483
+    },
+    "P-SoM": {
+     "total": 14481.039165588023,
+     "backend_infer": 9687.003023034185,
+     "obs_prepare": 0.7302974447134569,
+     "env_step": 4742.515723335552,
+     "runtime_sleep": 38.92733564013841
+    }
+   },
+   "fastest_by_total": "P-prompt",
+   "fastest_by_model_only": "P-prompt",
+   "fastest_agrees": true,
+   "model_share_of_total": 0.6721991845712301
+  },
+  "B2·reddit": {
+   "per_mode_ms": {
+    "DOM": {
+     "total": 23543.310411275714,
+     "backend_infer": 9115.171498169753,
+     "obs_prepare": 0.09912423368542747,
+     "env_step": 14355.885569549357,
+     "runtime_sleep": 26.01751674394642
+    },
+    "SoM": {
+     "total": 23557.668217403614,
+     "backend_infer": 9158.071436870563,
+     "obs_prepare": 21.439998301003914,
+     "env_step": 14296.254102678357,
+     "runtime_sleep": 16.170763260025872
+    },
+    "Vision": {
+     "total": 20575.342042407716,
+     "backend_infer": 8753.224313507342,
+     "obs_prepare": 0.09607072975591065,
+     "env_step": 11759.333627283973,
+     "runtime_sleep": 54.95201883034583
+    },
+    "P-text": {
+     "total": 24817.17590937382,
+     "backend_infer": 9359.286399414803,
+     "obs_prepare": 1.7722457791039041,
+     "env_step": 15373.715115223724,
+     "runtime_sleep": 17.1459189140918
+    },
+    "P-prompt": {
+     "total": 21697.972951987074,
+     "backend_infer": 9210.861807535954,
+     "obs_prepare": 0.09627003124997852,
+     "env_step": 12420.236867197254,
+     "runtime_sleep": 24.731561344833658
+    },
+    "P-SoM": {
+     "total": 22988.4144127035,
+     "backend_infer": 9191.607971777436,
+     "obs_prepare": 1.445118160474868,
+     "env_step": 13718.861781373746,
+     "runtime_sleep": 23.4593837535014
+    }
+   },
+   "fastest_by_total": "Vision",
+   "fastest_by_model_only": "Vision",
+   "fastest_agrees": true,
+   "model_share_of_total": 0.399389632441895
+  }
+ },
+ "n_cells": 8,
+ "n_fastest_flips": 4,
+ "flip_cells": [
+  "B0·reddit",
+  "B0·wa_reddit",
+  "B1·reddit",
+  "B1·wa_reddit"
+ ],
+ "model_share_min": 0.22039371965482465,
+ "model_share_max": 0.6721991845712301,
+ "flips_by_family": {
+  "reddit": [
+   4,
+   5
+  ],
+  "classifieds": [
+   0,
+   3
+  ]
+ }
+}

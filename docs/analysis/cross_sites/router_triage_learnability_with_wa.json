@@ -1,0 +1,806 @@
+{
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "protocol": {
+  "folds": 5,
+  "seed": 42,
+  "n_shuffle": 10000,
+  "min_reportable_p": 9.999000099990002e-05,
+  "holm_tightest_threshold_m6": 0.008333333333333333,
+  "holm_tightest_threshold": 0.00625,
+  "features": [
+   "dom_complexity",
+   "text_length",
+   "tokens_input_text",
+   "intent_token_count",
+   "intent_account_action",
+   "intent_action_word",
+   "intent_aggregate",
+   "intent_color",
+   "intent_compare",
+   "intent_compose",
+   "intent_filter",
+   "intent_form_fill",
+   "intent_nav",
+   "intent_question",
+   "intent_search",
+   "intent_sort",
+   "intent_temporal",
+   "intent_visual_attribute"
+  ],
+  "n_features": 18,
+  "features_dropped_for_match": [
+   "reasoning_difficulty",
+   "has_reference_image"
+  ],
+  "model": "L2 logistic regression"
+ },
+ "cells": [
+  {
+   "site": "classifieds",
+   "baseline_model": "B0",
+   "n": 224,
+   "n_features": 18,
+   "dead_features": [
+    "intent_account_action",
+    "intent_action_word",
+    "intent_filter"
+   ],
+   "n_live_features": 15,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 43.30357142857143,
+   "best_mode": "SoM",
+   "cheap_mode": "Vision",
+   "baseline_policy": {
+    "sr_pct": 27.232142857142858,
+    "mean_cost": 0.07235666964285714
+   },
+   "auroc_lr": 0.6826041074762562,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.6071109667992531,
+   "best_single_feature": "dom_complexity",
+   "auroc_lr_minus_best_feature": 0.07549314067700308,
+   "always_cheapest": {
+    "sr_pct": 25.0,
+    "mean_cost": 0.06480720982142858
+   },
+   "oracle_triage": {
+    "sr_pct": 27.232142857142858,
+    "mean_cost": 0.06311516517857142,
+    "n_sent_cheap": 127,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 27.232142857142858,
+    "mean_cost": 0.06730307142857142,
+    "n_sent_cheap": 56,
+    "threshold": 0.27696523828571207
+   },
+   "learned_within_1pp": {
+    "sr_pct": 27.232142857142858,
+    "mean_cost": 0.06730307142857142,
+    "n_sent_cheap": 56,
+    "threshold": 0.27696523828571207
+   },
+   "learned_nested_honest": {
+    "sr_pct": 26.785714285714285,
+    "mean_cost": 0.07128520089285714,
+    "n_sent_cheap": 18,
+    "per_outer_fold": [
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.187249,
+      "n_sent_cheap": 6
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.017292,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.006924,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.208647,
+      "n_sent_cheap": 12
+     },
+     {
+      "n_test": 44,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.000382,
+      "n_sent_cheap": 0
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 6.984288026562869,
+   "null_shuffle_saving_median_pct": 3.314172094165968,
+   "null_shuffle_p": 0.24227577242275772,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  },
+  {
+   "site": "reddit",
+   "baseline_model": "B0",
+   "n": 203,
+   "n_features": 18,
+   "dead_features": [
+    "intent_action_word"
+   ],
+   "n_live_features": 17,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 26.108374384236456,
+   "best_mode": "SoM",
+   "cheap_mode": "Vision",
+   "baseline_policy": {
+    "sr_pct": 14.77832512315271,
+    "mean_cost": 0.11045337931034484
+   },
+   "auroc_lr": 0.699559748427673,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.6850943396226415,
+   "best_single_feature": "intent_token_count",
+   "auroc_lr_minus_best_feature": 0.014465408805031443,
+   "always_cheapest": {
+    "sr_pct": 7.389162561576355,
+    "mean_cost": 0.09806919211822661
+   },
+   "oracle_triage": {
+    "sr_pct": 14.77832512315271,
+    "mean_cost": 0.09997756650246299,
+    "n_sent_cheap": 150,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 14.77832512315271,
+    "mean_cost": 0.11045337931034482,
+    "n_sent_cheap": 0,
+    "threshold": 0.0019920727469876437
+   },
+   "learned_within_1pp": {
+    "sr_pct": 13.793103448275861,
+    "mean_cost": 0.1095979950738916,
+    "n_sent_cheap": 11,
+    "threshold": 0.04577534069977434
+   },
+   "learned_nested_honest": {
+    "sr_pct": 12.807881773399014,
+    "mean_cost": 0.0992846256157636,
+    "n_sent_cheap": 43,
+    "per_outer_fold": [
+     {
+      "n_test": 41,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.172347,
+      "n_sent_cheap": 21
+     },
+     {
+      "n_test": 41,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.25357,
+      "n_sent_cheap": 21
+     },
+     {
+      "n_test": 41,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.004311,
+      "n_sent_cheap": 1
+     },
+     {
+      "n_test": 40,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.002476,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 40,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.00338,
+      "n_sent_cheap": 0
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 1.1102230246251565e-14,
+   "null_shuffle_saving_median_pct": 2.220446049250313e-14,
+   "null_shuffle_p": 1.0,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  },
+  {
+   "site": "classifieds",
+   "baseline_model": "B1",
+   "n": 224,
+   "n_features": 18,
+   "dead_features": [
+    "intent_account_action",
+    "intent_action_word",
+    "intent_filter"
+   ],
+   "n_live_features": 15,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 24.553571428571427,
+   "best_mode": "SoM",
+   "cheap_mode": "Vision",
+   "baseline_policy": {
+    "sr_pct": 14.285714285714286,
+    "mean_cost": 0.06027517504464286
+   },
+   "auroc_lr": 0.7047337278106509,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.6308768154922001,
+   "best_single_feature": "intent_token_count",
+   "auroc_lr_minus_best_feature": 0.07385691231845082,
+   "always_cheapest": {
+    "sr_pct": 12.5,
+    "mean_cost": 0.043155593883928575
+   },
+   "oracle_triage": {
+    "sr_pct": 14.285714285714286,
+    "mean_cost": 0.04857646736607141,
+    "n_sent_cheap": 169,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 14.285714285714286,
+    "mean_cost": 0.05873545049107144,
+    "n_sent_cheap": 12,
+    "threshold": 0.020980227184010478
+   },
+   "learned_within_1pp": {
+    "sr_pct": 13.392857142857142,
+    "mean_cost": 0.053859948883928574,
+    "n_sent_cheap": 56,
+    "threshold": 0.10002578751207068
+   },
+   "learned_nested_honest": {
+    "sr_pct": 14.285714285714286,
+    "mean_cost": 0.05866520696428573,
+    "n_sent_cheap": 15,
+    "per_outer_fold": [
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.03404,
+      "n_sent_cheap": 7
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.023546,
+      "n_sent_cheap": 1
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.072225,
+      "n_sent_cheap": 7
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.001036,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 44,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.003975,
+      "n_sent_cheap": 0
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 2.5544920482288402,
+   "null_shuffle_saving_median_pct": 10.051445486669913,
+   "null_shuffle_p": 0.7409259074092591,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  },
+  {
+   "site": "reddit",
+   "baseline_model": "B1",
+   "n": 203,
+   "n_features": 18,
+   "dead_features": [
+    "intent_action_word"
+   ],
+   "n_live_features": 17,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 11.822660098522167,
+   "best_mode": "SoM",
+   "cheap_mode": "Vision",
+   "baseline_policy": {
+    "sr_pct": 7.389162561576355,
+    "mean_cost": 0.08000418059113301
+   },
+   "auroc_lr": 0.7227653631284916,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.6642225325884544,
+   "best_single_feature": "intent_token_count",
+   "auroc_lr_minus_best_feature": 0.05854283054003717,
+   "always_cheapest": {
+    "sr_pct": 2.4630541871921183,
+    "mean_cost": 0.05240422403940887
+   },
+   "oracle_triage": {
+    "sr_pct": 7.389162561576355,
+    "mean_cost": 0.05554082403940886,
+    "n_sent_cheap": 179,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 7.389162561576355,
+    "mean_cost": 0.07057045507389163,
+    "n_sent_cheap": 71,
+    "threshold": 0.04941606936240868
+   },
+   "learned_within_1pp": {
+    "sr_pct": 6.403940886699507,
+    "mean_cost": 0.0669492166995074,
+    "n_sent_cheap": 112,
+    "threshold": 0.08337240841344708
+   },
+   "learned_nested_honest": {
+    "sr_pct": 6.403940886699507,
+    "mean_cost": 0.07020673403940887,
+    "n_sent_cheap": 78,
+    "per_outer_fold": [
+     {
+      "n_test": 41,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.019308,
+      "n_sent_cheap": 6
+     },
+     {
+      "n_test": 41,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.115225,
+      "n_sent_cheap": 28
+     },
+     {
+      "n_test": 41,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.074098,
+      "n_sent_cheap": 21
+     },
+     {
+      "n_test": 40,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.010708,
+      "n_sent_cheap": 7
+     },
+     {
+      "n_test": 40,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.064079,
+      "n_sent_cheap": 16
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 11.791540701420466,
+   "null_shuffle_saving_median_pct": 1.0106651655726606,
+   "null_shuffle_p": 0.0334966503349665,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  },
+  {
+   "site": "classifieds",
+   "baseline_model": "B2",
+   "n": 224,
+   "n_features": 18,
+   "dead_features": [
+    "intent_account_action",
+    "intent_action_word",
+    "intent_filter"
+   ],
+   "n_live_features": 15,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 7.142857142857142,
+   "best_mode": "SoM",
+   "cheap_mode": "Vision",
+   "baseline_policy": {
+    "sr_pct": 2.232142857142857,
+    "mean_cost": 0.0907508425
+   },
+   "auroc_lr": 0.6460336538461539,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.6553485576923077,
+   "best_single_feature": "intent_compare",
+   "auroc_lr_minus_best_feature": -0.009314903846153855,
+   "always_cheapest": {
+    "sr_pct": 2.232142857142857,
+    "mean_cost": 0.07065426732142857
+   },
+   "oracle_triage": {
+    "sr_pct": 2.232142857142857,
+    "mean_cost": 0.07145360410714287,
+    "n_sent_cheap": 208,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 2.232142857142857,
+    "mean_cost": 0.07219568566964288,
+    "n_sent_cheap": 212,
+    "threshold": 0.22344149112941095
+   },
+   "learned_within_1pp": {
+    "sr_pct": 2.232142857142857,
+    "mean_cost": 0.07219568566964288,
+    "n_sent_cheap": 212,
+    "threshold": 0.22344149112941095
+   },
+   "learned_nested_honest": {
+    "sr_pct": 1.3392857142857142,
+    "mean_cost": 0.07385447696428571,
+    "n_sent_cheap": 186,
+    "per_outer_fold": [
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.305756,
+      "n_sent_cheap": 45
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.268967,
+      "n_sent_cheap": 44
+     },
+     {
+      "n_test": 45,
+      "best_mode": "Vision",
+      "cheap_mode": "Vision",
+      "threshold": 0.001177,
+      "n_sent_cheap": 45
+     },
+     {
+      "n_test": 45,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.007125,
+      "n_sent_cheap": 9
+     },
+     {
+      "n_test": 44,
+      "best_mode": "SoM",
+      "cheap_mode": "Vision",
+      "threshold": 0.198385,
+      "n_sent_cheap": 43
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 20.446263989623148,
+   "null_shuffle_saving_median_pct": 20.832797050105334,
+   "null_shuffle_p": 0.6818318168183182,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  },
+  {
+   "site": "reddit",
+   "baseline_model": "B2",
+   "n": 203,
+   "n_features": 18,
+   "dead_features": [
+    "intent_action_word"
+   ],
+   "n_live_features": 17,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 7.389162561576355,
+   "best_mode": "DOM",
+   "cheap_mode": "Vision",
+   "baseline_policy": {
+    "sr_pct": 3.9408866995073892,
+    "mean_cost": 0.09479046182266011
+   },
+   "auroc_lr": 0.525886524822695,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.7895390070921986,
+   "best_single_feature": "intent_token_count",
+   "auroc_lr_minus_best_feature": -0.26365248226950355,
+   "always_cheapest": {
+    "sr_pct": 1.9704433497536946,
+    "mean_cost": 0.06833131192118228
+   },
+   "oracle_triage": {
+    "sr_pct": 3.9408866995073892,
+    "mean_cost": 0.06974266536945807,
+    "n_sent_cheap": 188,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 4.433497536945813,
+    "mean_cost": 0.06949744576354676,
+    "n_sent_cheap": 192,
+    "threshold": 0.27953691458493546
+   },
+   "learned_within_1pp": {
+    "sr_pct": 4.433497536945813,
+    "mean_cost": 0.06949744576354676,
+    "n_sent_cheap": 192,
+    "threshold": 0.27953691458493546
+   },
+   "learned_nested_honest": {
+    "sr_pct": 4.433497536945813,
+    "mean_cost": 0.0690972066502463,
+    "n_sent_cheap": 191,
+    "per_outer_fold": [
+     {
+      "n_test": 41,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.446637,
+      "n_sent_cheap": 41
+     },
+     {
+      "n_test": 41,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.215331,
+      "n_sent_cheap": 37
+     },
+     {
+      "n_test": 41,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.060223,
+      "n_sent_cheap": 38
+     },
+     {
+      "n_test": 40,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.457368,
+      "n_sent_cheap": 39
+     },
+     {
+      "n_test": 40,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.237526,
+      "n_sent_cheap": 36
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 26.68308136997275,
+   "null_shuffle_saving_median_pct": 5.548208763028084,
+   "null_shuffle_p": 0.00039996000399960006,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  },
+  {
+   "site": "wa_reddit",
+   "baseline_model": "B0",
+   "n": 104,
+   "n_features": 18,
+   "dead_features": [
+    "intent_action_word",
+    "intent_color",
+    "intent_compare",
+    "intent_filter",
+    "intent_form_fill"
+   ],
+   "n_live_features": 13,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 51.92307692307693,
+   "best_mode": "P-text",
+   "cheap_mode": "DOM",
+   "baseline_policy": {
+    "sr_pct": 35.57692307692308,
+    "mean_cost": 0.08478059615384616
+   },
+   "auroc_lr": 0.5542592592592592,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.607037037037037,
+   "best_single_feature": "dom_complexity",
+   "auroc_lr_minus_best_feature": -0.05277777777777781,
+   "always_cheapest": {
+    "sr_pct": 26.923076923076923,
+    "mean_cost": 0.07530692307692308
+   },
+   "oracle_triage": {
+    "sr_pct": 35.57692307692308,
+    "mean_cost": 0.0757312211538462,
+    "n_sent_cheap": 50,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 35.57692307692308,
+    "mean_cost": 0.08103369230769233,
+    "n_sent_cheap": 16,
+    "threshold": 0.32333676448960647
+   },
+   "learned_within_1pp": {
+    "sr_pct": 35.57692307692308,
+    "mean_cost": 0.08103369230769233,
+    "n_sent_cheap": 16,
+    "threshold": 0.32333676448960647
+   },
+   "learned_nested_honest": {
+    "sr_pct": 32.69230769230769,
+    "mean_cost": 0.08648574038461537,
+    "n_sent_cheap": 6,
+    "per_outer_fold": [
+     {
+      "n_test": 21,
+      "best_mode": "P-text",
+      "cheap_mode": "DOM",
+      "threshold": 0.099843,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 21,
+      "best_mode": "P-text",
+      "cheap_mode": "DOM",
+      "threshold": 0.388037,
+      "n_sent_cheap": 2
+     },
+     {
+      "n_test": 21,
+      "best_mode": "P-text",
+      "cheap_mode": "DOM",
+      "threshold": 0.17466,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 21,
+      "best_mode": "P-text",
+      "cheap_mode": "DOM",
+      "threshold": 0.343572,
+      "n_sent_cheap": 4
+     },
+     {
+      "n_test": 20,
+      "best_mode": "P-text",
+      "cheap_mode": "P-prompt",
+      "threshold": 0.059104,
+      "n_sent_cheap": 0
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 4.41952995866477,
+   "null_shuffle_saving_median_pct": 0.5613358100127808,
+   "null_shuffle_p": 0.1857814218578142,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  },
+  {
+   "site": "wa_reddit",
+   "baseline_model": "B1",
+   "n": 104,
+   "n_features": 18,
+   "dead_features": [
+    "intent_action_word",
+    "intent_color",
+    "intent_compare",
+    "intent_filter",
+    "intent_form_fill"
+   ],
+   "n_live_features": 13,
+   "n_no_feature": 0,
+   "solvable_rate_pct": 30.76923076923077,
+   "best_mode": "DOM",
+   "cheap_mode": "Vision",
+   "baseline_policy": {
+    "sr_pct": 16.346153846153847,
+    "mean_cost": 0.06578607615384616
+   },
+   "auroc_lr": 0.7578125,
+   "auroc_prior": 0.5,
+   "auroc_best_single_feature": 0.7102864583333334,
+   "best_single_feature": "dom_complexity",
+   "auroc_lr_minus_best_feature": 0.04752604166666663,
+   "always_cheapest": {
+    "sr_pct": 9.615384615384615,
+    "mean_cost": 0.04468445634615385
+   },
+   "oracle_triage": {
+    "sr_pct": 16.346153846153847,
+    "mean_cost": 0.04814090163461538,
+    "n_sent_cheap": 72,
+    "threshold": 0.5
+   },
+   "learned_lossless": {
+    "sr_pct": 16.346153846153847,
+    "mean_cost": 0.06331326278846153,
+    "n_sent_cheap": 11,
+    "threshold": 0.050958404890357654
+   },
+   "learned_within_1pp": {
+    "sr_pct": 15.384615384615385,
+    "mean_cost": 0.04847009653846153,
+    "n_sent_cheap": 57,
+    "threshold": 0.2642759250731134
+   },
+   "learned_nested_honest": {
+    "sr_pct": 13.461538461538462,
+    "mean_cost": 0.06427656471153845,
+    "n_sent_cheap": 14,
+    "per_outer_fold": [
+     {
+      "n_test": 21,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.095923,
+      "n_sent_cheap": 3
+     },
+     {
+      "n_test": 21,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.022197,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 21,
+      "best_mode": "P-prompt",
+      "cheap_mode": "Vision",
+      "threshold": 0.012875,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 21,
+      "best_mode": "DOM",
+      "cheap_mode": "Vision",
+      "threshold": 0.009016,
+      "n_sent_cheap": 0
+     },
+     {
+      "n_test": 20,
+      "best_mode": "P-text",
+      "cheap_mode": "Vision",
+      "threshold": 0.309098,
+      "n_sent_cheap": 11
+     }
+    ],
+    "note": "FULLY nested (B-1903): per outer fold the modes are re-selected on training rows, the threshold is chosen on inner-CV out-of-fold scores over training rows, and the outer-test rows are scored by an LR fitted on training rows only. Nothing that touches an outer test fold has seen it. This is the only achievable operating point here; the whole-cell sweep below is selection-contaminated by construction."
+   },
+   "observed_lossless_saving_pct": 3.758870432706385,
+   "null_shuffle_saving_median_pct": 2.9361767621647217,
+   "null_shuffle_p": 0.4430556944305569,
+   "null_p_estimator": "(k+1)/(B+1) plus-one Monte Carlo",
+   "null_permutation_unit": "task bundle (y, succ_by_mode, cost_by_mode) vs X",
+   "n_shuffles": 10000
+  }
+ ]
+}

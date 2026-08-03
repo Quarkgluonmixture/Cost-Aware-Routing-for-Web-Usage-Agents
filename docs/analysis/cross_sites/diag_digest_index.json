@@ -13,7 +13,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B0_dom_classifieds_diag_digest.md",
-   "n_lines": 74,
+   "n_lines": 130,
    "n_failed": null,
    "attribution": {
     "scaffold-bug": {
@@ -97,7 +97,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B0_phantom_prompt_classifieds_diag_digest.md",
-   "n_lines": 130,
+   "n_lines": 184,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -135,7 +135,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B0_phantom_som_classifieds_diag_digest.md",
-   "n_lines": 151,
+   "n_lines": 203,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -173,7 +173,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B0_phantom_text_classifieds_diag_digest.md",
-   "n_lines": 229,
+   "n_lines": 282,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -199,7 +199,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B0_som_classifieds_diag_digest.md",
-   "n_lines": 253,
+   "n_lines": 301,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -229,7 +229,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B0_vision_classifieds_diag_digest.md",
-   "n_lines": 62,
+   "n_lines": 106,
    "n_failed": null,
    "attribution": {},
    "coverage": "pointer",
@@ -306,7 +306,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B0_dom_reddit_diag_digest.md",
-   "n_lines": 198,
+   "n_lines": 237,
    "n_failed": 175,
    "attribution": {
     "agent-limit": {
@@ -340,7 +340,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B0_phantom_prompt_reddit_diag_digest.md",
-   "n_lines": 85,
+   "n_lines": 123,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -370,7 +370,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B0_phantom_som_reddit_diag_digest.md",
-   "n_lines": 90,
+   "n_lines": 129,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -400,7 +400,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B0_phantom_text_reddit_diag_digest.md",
-   "n_lines": 85,
+   "n_lines": 125,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -430,7 +430,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B0_som_reddit_diag_digest.md",
-   "n_lines": 136,
+   "n_lines": 175,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -468,7 +468,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B0_vision_reddit_diag_digest.md",
-   "n_lines": 106,
+   "n_lines": 139,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -506,7 +506,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B1_dom_classifieds_diag_digest.md",
-   "n_lines": 230,
+   "n_lines": 285,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -536,7 +536,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B1_phantom_prompt_classifieds_diag_digest.md",
-   "n_lines": 197,
+   "n_lines": 249,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -569,7 +569,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B1_phantom_som_classifieds_diag_digest.md",
-   "n_lines": 152,
+   "n_lines": 204,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -602,7 +602,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B1_phantom_text_classifieds_diag_digest.md",
-   "n_lines": 154,
+   "n_lines": 206,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -635,7 +635,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B1_som_classifieds_diag_digest.md",
-   "n_lines": 199,
+   "n_lines": 250,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -657,7 +657,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B1_vision_classifieds_diag_digest.md",
-   "n_lines": 176,
+   "n_lines": 223,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -690,7 +690,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B1_dom_reddit_diag_digest.md",
-   "n_lines": 90,
+   "n_lines": 129,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -720,7 +720,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B1_phantom_prompt_reddit_diag_digest.md",
-   "n_lines": 89,
+   "n_lines": 129,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -750,7 +750,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B1_phantom_som_reddit_diag_digest.md",
-   "n_lines": 90,
+   "n_lines": 130,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -780,7 +780,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B1_phantom_text_reddit_diag_digest.md",
-   "n_lines": 86,
+   "n_lines": 125,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -810,7 +810,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B1_som_reddit_diag_digest.md",
-   "n_lines": 87,
+   "n_lines": 126,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -840,7 +840,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B1_vision_reddit_diag_digest.md",
-   "n_lines": 79,
+   "n_lines": 113,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -870,7 +870,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B2_dom_classifieds_diag_digest.md",
-   "n_lines": 71,
+   "n_lines": 120,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -936,7 +936,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B2_phantom_prompt_classifieds_diag_digest.md",
-   "n_lines": 82,
+   "n_lines": 125,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -969,7 +969,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B2_phantom_som_classifieds_diag_digest.md",
-   "n_lines": 79,
+   "n_lines": 123,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -1002,7 +1002,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B2_phantom_text_classifieds_diag_digest.md",
-   "n_lines": 78,
+   "n_lines": 124,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -1035,7 +1035,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B2_som_classifieds_diag_digest.md",
-   "n_lines": 79,
+   "n_lines": 124,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -1068,7 +1068,7 @@
    "site": "classifieds",
    "run": null,
    "path": "docs/analysis/vwa_classifieds/B2_vision_classifieds_diag_digest.md",
-   "n_lines": 80,
+   "n_lines": 122,
    "n_failed": null,
    "attribution": {
     "agent-limit": {
@@ -1101,7 +1101,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B2_dom_reddit_diag_digest.md",
-   "n_lines": 105,
+   "n_lines": 144,
    "n_failed": null,
    "attribution": {},
    "coverage": "parsed",
@@ -1118,7 +1118,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B2_phantom_prompt_reddit_diag_digest.md",
-   "n_lines": 105,
+   "n_lines": 144,
    "n_failed": null,
    "attribution": {},
    "coverage": "parsed",
@@ -1135,7 +1135,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B2_phantom_som_reddit_diag_digest.md",
-   "n_lines": 105,
+   "n_lines": 144,
    "n_failed": null,
    "attribution": {},
    "coverage": "parsed",
@@ -1152,7 +1152,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B2_phantom_text_reddit_diag_digest.md",
-   "n_lines": 104,
+   "n_lines": 142,
    "n_failed": null,
    "attribution": {},
    "coverage": "parsed",
@@ -1169,7 +1169,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B2_som_reddit_diag_digest.md",
-   "n_lines": 104,
+   "n_lines": 142,
    "n_failed": null,
    "attribution": {},
    "coverage": "parsed",
@@ -1186,7 +1186,7 @@
    "site": "reddit",
    "run": null,
    "path": "docs/analysis/vwa_reddit/B2_vision_reddit_diag_digest.md",
-   "n_lines": 102,
+   "n_lines": 137,
    "n_failed": null,
    "attribution": {},
    "coverage": "parsed",

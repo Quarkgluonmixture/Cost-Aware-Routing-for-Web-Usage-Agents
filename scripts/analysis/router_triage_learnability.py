@@ -70,8 +70,119 @@ COST_FIELD = "total_billed_cost_usd"
 NUMERIC = ["dom_complexity", "text_length", "tokens_input_text",
            "intent_token_count", "reasoning_difficulty"]
 BINARY = ["has_reference_image"] + sorted(INTENT_REGEX.keys())
+ALL_FEATURES = NUMERIC + BINARY
 SEED = 42
 N_FOLDS = 5
+
+# --- WebArena reddit, added 2026-08-03 ------------------------------------------------
+# Why: every learned-router product in this project was VWA-only, and `wa_B0` holds the
+# densest per-task routing space in the study (36/104 = 34.6%) with the largest oracle
+# headroom (+16.35pp). The negative "the triage half is barely learnable" was therefore
+# measured only where routing has the least to work with.
+#
+# The blocker was never the data. `extract_50_features.PHASE1_ROOT` is a VWA path
+# constant, and 18 of the 20 features are benchmark-agnostic: the step-0 numerics come
+# from `state_digest` (present and populated on WA), the 14 intent regexes run on
+# `intent`, which every WA task config carries.
+#
+# TWO features genuinely do not exist on WebArena:
+#   * `reasoning_difficulty`  -- a VWA task-config annotation
+#   * `has_reference_image`   -- WA ships no reference images at all
+# Zero-filling them and comparing against the VWA 20-feature numbers would be the same
+# defect the class comparison had: an unmatched column beside matched ones. So `--with-wa`
+# drops both **on every cell** and reports a matched 18-feature model across all eight.
+# The 20-feature VWA result is left untouched in the default output.
+WA_ROOT = REPO / "results/webarena/phase1"
+WA_STEM = {"DOM": "dom", "SoM": "som", "Vision": "vision", "P-text": "phantom_text",
+           "P-prompt": "phantom_prompt", "P-SoM": "phantom_som"}
+WA_CELLS = [{"site": "wa_reddit", "baseline": b, "_wa": True} for b in ("B0", "B1")]
+VWA_ONLY_FEATURES = ["reasoning_difficulty", "has_reference_image"]
+
+# Set by main(); build_cell always emits all 20 columns and evaluate() slices.
+ACTIVE_NAMES: list[str] = list(ALL_FEATURES)
+ACTIVE_IDX: list[int] = list(range(len(ALL_FEATURES)))
+
+
+def _wa_run_dir(baseline: str, mode: str) -> Path | None:
+    hits = [p for p in WA_ROOT.glob(f"{baseline}_{WA_STEM[mode]}_wa_reddit_2026*_R*")
+            if p.is_dir() and "ABORTED" not in p.name]
+    return hits[0] if len(hits) == 1 else None
+
+
+def _wa_task_config(baseline: str, tid: int) -> dict | None:
+    d = _wa_run_dir(baseline, "DOM")
+    if d is None:
+        return None
+    f = d / "task_configs" / f"reddit_task_{tid}.json"
+    if not f.exists():
+        return None
+    try:
+        return json.loads(f.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _wa_rows(baseline: str) -> dict[str, dict[int, dict]] | None:
+    """{mode: {task_id: {"success": bool, COST_FIELD: float}}} over WA's 104-task set."""
+    out: dict[str, dict[int, dict]] = {}
+    for m in SIX_MODES:
+        d = _wa_run_dir(baseline, m)
+        if d is None:
+            return None
+        rows: dict[int, dict] = {}
+        files = list(d.glob("*/episodes/*summary*.json")) or list(d.glob("episodes/*summary*.json"))
+        for f in files:
+            try:
+                rec = json.loads(f.read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            if rec.get("sr_excluded"):
+                continue
+            rows[int(rec["task_id"])] = rec
+        if not rows:
+            return None
+        out[m] = rows
+    return out
+
+
+def build_wa_cell(cell: dict) -> dict | None:
+    """WA counterpart of build_cell. Universe = the six-mode intersection (104), the
+    convention every other WA-wired product in this repo uses; WA has no exclusion list."""
+    baseline = cell["baseline"]
+    rows_by_mode = _wa_rows(baseline)
+    if rows_by_mode is None:
+        return None
+    universe = sorted(set.intersection(*(set(v) for v in rows_by_mode.values())))
+    dom_run = _wa_run_dir(baseline, "DOM")
+    tids, X, y, succ, cost = [], [], [], [], []
+    n_no_feature = 0
+    for t in universe:
+        cfg = _wa_task_config(baseline, t)
+        # site="reddit": WA episode files are named `reddit_task_<id>_steps_v2.jsonl`.
+        step0 = read_step0_features([dom_run], "reddit", t) if dom_run else None
+        if cfg is None or step0 is None:
+            n_no_feature += 1
+            continue
+        intent = str(cfg.get("intent", ""))
+        num = [float(step0.get("dom_complexity", 0) or 0),
+               float(step0.get("text_length", 0) or 0),
+               float(step0.get("tokens_input_text", 0) or 0),
+               float(len(intent.split())),
+               0.0]                      # reasoning_difficulty: absent on WA, dropped below
+        bins = compute_intent_binaries(intent)
+        binv = [0] + [int(bins[k]) for k in sorted(INTENT_REGEX.keys())]  # has_ref_image: n/a
+        s = {m: rows_by_mode[m][t].get("success") is True for m in SIX_MODES}
+        c = {m: float(rows_by_mode[m][t].get(COST_FIELD) or 0.0) for m in SIX_MODES}
+        tids.append(t)
+        X.append(num + binv)
+        y.append(int(any(s.values())))
+        succ.append(s)
+        cost.append(c)
+    if len(tids) < 50:
+        return None
+    return {"site": cell["site"], "baseline": baseline, "task_ids": tids,
+            "X": np.asarray(X, dtype=float), "y": np.asarray(y, dtype=int),
+            "succ": succ, "cost": cost, "n_no_feature": n_no_feature}
 
 # Permutation count for the label-shuffle null.
 #
@@ -89,15 +200,38 @@ N_SHUFFLE = 10000
 
 
 def _feature_row(runs, site: str, tid: int) -> tuple[list[float], list[int]] | None:
+    """B-1928 (2026-08-03): three of the twenty features were identically zero in every
+    cell, so this product has been fitting on seventeen while its own header said twenty.
+
+      * `intent_token_count` and `reasoning_difficulty` were read out of `step0`, which
+        `read_step0_features` only ever fills with dom_complexity / text_length /
+        tokens_input_text — `.get(k, 0.0)` then returned 0.0 for both, silently.
+      * `has_reference_image` was read as `cfg.get("image")`, but `cfg` here is the
+        *return value* of `read_task_config`, which exposes the already-derived boolean
+        under `has_reference_image` and does not carry `image` at all. Always 0.
+
+    The third one matters most: `has_reference_image` is the single feature
+    `routing_feature_diagnostics` (claim 8) is entirely about, and this product could not
+    see it. Field order and the token-count definition now match
+    `extract_50_features.py:545-570` exactly, so train and serve agree.
+    """
     cfg = read_task_config(site, tid)
     if cfg is None:
         return None
     step0 = read_step0_features(runs, site, tid)
     if step0 is None:
         return None
-    num = [float(step0.get(k, 0.0) or 0.0) for k in NUMERIC]
-    bins = compute_intent_binaries(str(cfg.get("intent", "")))
-    binv = [int(bool(cfg.get("image")))] + [int(bins[k]) for k in sorted(INTENT_REGEX.keys())]
+    intent = str(cfg.get("intent", "") or "")
+    num = [
+        float(step0.get("dom_complexity", 0) or 0),
+        float(step0.get("text_length", 0) or 0),
+        float(step0.get("tokens_input_text", 0) or 0),
+        float(len(intent.split())),                          # intent_token_count
+        float(cfg.get("reasoning_difficulty", 0) or 0),
+    ]
+    bins = compute_intent_binaries(intent)
+    binv = ([int(bool(cfg.get("has_reference_image")))]
+            + [int(bins[k]) for k in sorted(INTENT_REGEX.keys())])
     return num, binv
 
 
@@ -174,7 +308,16 @@ def oof_scores(X: np.ndarray, y: np.ndarray) -> dict[str, np.ndarray]:
         oof_lr[f] = lr.predict_proba(Xte)[:, 1]
         oof_prior[f] = y[tr].mean()               # constant = train-fold base rate
         for j in range(X.shape[1]):
-            # single-feature score, oriented by the train fold so it cannot peek
+            # single-feature score, oriented by the train fold so it cannot peek.
+            # A zero-variance column in the train fold has no correlation to take a
+            # sign from: np.corrcoef returns NaN, `NaN >= 0` is False, and the column
+            # silently got sign -1. Harmless for its AUROC (a constant scores 0.500
+            # either way) but it emitted a divide warning per fold per column and hid
+            # the fact that WebArena leaves 5 of the 14 intent regexes identically
+            # zero — the regexes were written against VWA phrasing. Made explicit.
+            if np.std(Xtr[:, j]) == 0:
+                best_feat_oof[j][f] = np.zeros(len(Xte))
+                continue
             sign = 1.0 if np.corrcoef(Xtr[:, j], y[tr])[0, 1] >= 0 else -1.0
             best_feat_oof[j][f] = sign * Xte[:, j]
     return {"lr": oof_lr, "prior": oof_prior, "per_feature": best_feat_oof}
@@ -197,11 +340,17 @@ def policy_at_threshold(cell: dict, score: np.ndarray, thr: float,
 
 
 def evaluate(cell_spec: dict) -> dict | None:
-    cell = build_cell(cell_spec)
+    cell = build_wa_cell(cell_spec) if cell_spec.get("_wa") else build_cell(cell_spec)
     if cell is None:
         return None
-    X, y = cell["X"], cell["y"]
+    # Slice to the active feature set. build_* always emits all 20 columns so the
+    # default path is unchanged; `--with-wa` narrows to the 18 both benchmarks carry.
+    X, y = cell["X"][:, ACTIVE_IDX], cell["y"]
     n = len(y)
+    # Features with no variance in this cell carry no information no matter what the
+    # model does with them. Reporting the count keeps "18 features" from being read as
+    # "18 usable features": on WebArena five intent regexes never fire.
+    dead_features = [ACTIVE_NAMES[j] for j in range(X.shape[1]) if np.std(X[:, j]) == 0]
 
     per_mode_sr = {m: 100.0 * sum(s[m] for s in cell["succ"]) / n for m in SIX_MODES}
     per_mode_cost = {m: sum(c[m] for c in cell["cost"]) / n for m in SIX_MODES}
@@ -210,7 +359,7 @@ def evaluate(cell_spec: dict) -> dict | None:
 
     sc = oof_scores(X, y)
     auroc_lr = _auroc(y, sc["lr"])
-    feat_names = NUMERIC + BINARY
+    feat_names = ACTIVE_NAMES
     per_feat = {feat_names[j]: _auroc(y, v) for j, v in sc["per_feature"].items()}
     best_feat = max(per_feat, key=lambda k: (per_feat[k] if per_feat[k] == per_feat[k] else -1))
 
@@ -406,6 +555,8 @@ def evaluate(cell_spec: dict) -> dict | None:
 
     return {
         "site": cell["site"], "baseline_model": cell["baseline"], "n": n,
+        "n_features": len(ACTIVE_NAMES), "dead_features": dead_features,
+        "n_live_features": len(ACTIVE_NAMES) - len(dead_features),
         "n_no_feature": cell["n_no_feature"],
         "solvable_rate_pct": 100.0 * y.mean(),
         "best_mode": best_mode, "cheap_mode": cheap_mode,
@@ -438,15 +589,38 @@ def main() -> int:
     ap.add_argument("--n-shuffle", type=int, default=N_SHUFFLE,
                     help="permutation draws for the label-shuffle null; the plus-one "
                          "estimator floors at 1/(B+1), so B bounds the smallest reportable p")
+    ap.add_argument("--with-wa", action="store_true",
+                    help="add the two WebArena-reddit cells AND drop the two VWA-only "
+                         "features on every cell, so all eight are fitted on the same 18. "
+                         "Write to *_with_wa.* — this is not a superset of the six-cell "
+                         "result, the feature set differs.")
     args = ap.parse_args()
     N_SHUFFLE = args.n_shuffle
 
-    res = [r for r in (evaluate(c) for c in CELLS) if r]
+    global ACTIVE_NAMES, ACTIVE_IDX
+    cells = list(CELLS)
+    if args.with_wa:
+        cells += WA_CELLS
+        ACTIVE_NAMES = [f for f in ALL_FEATURES if f not in VWA_ONLY_FEATURES]
+        ACTIVE_IDX = [ALL_FEATURES.index(f) for f in ACTIVE_NAMES]
+
+    res = [r for r in (evaluate(c) for c in cells) if r]
+    n_feat = len(ACTIVE_NAMES)
     L = ["# Is the triage half of routing learnable?\n",
-         "`post_hoc_exploratory=True`, `h10_eligible=False`. Task-held-out 5-fold CV "
-         "per cell, seed 42, L2 LR on the 20 raw features, fold-local standardisation.\n",
+         f"`post_hoc_exploratory=True`, `h10_eligible=False`. Task-held-out {N_FOLDS}-fold CV "
+         f"per cell, seed {SEED}, L2 LR on the {n_feat} raw features, fold-local "
+         "standardisation.\n",
          "Triage policy: predicted-hopeless → cheapest mode, otherwise → best-SR mode. "
          "The oracle row knows the true label; the learned rows use out-of-fold scores.\n"]
+    if args.with_wa:
+        L.append(
+            "⚠️ **Eight cells on a matched 18-feature set.** WebArena carries no reference "
+            "images and no `reasoning_difficulty` annotation, so those two features are "
+            "**dropped on every cell here**, including the six VWA ones. Zero-filling them "
+            "on WA and comparing against the 20-feature VWA numbers would put an unmatched "
+            "column beside matched ones — the defect the deployment-class table had. The "
+            "20-feature VWA result therefore lives in `router_triage_learnability.md` and is "
+            "*not* a subset of this table: every number below was refitted.\n")
 
     L.append("\n## 1. Can the label be predicted at all?\n")
     L.append("| cell | n | solvable % | AUROC LR | AUROC best single feature | Δ | that feature |")
@@ -460,6 +634,43 @@ def main() -> int:
     L.append("\nA prior-only predictor scores 0.500 by construction. The single-feature "
              "column is the §367 check: if the LR does not clear it, 'learnable' means "
              "'learnable by one covariate', which is not a router.\n")
+    # The §367 check, tallied rather than left for the reader — it is the whole point of
+    # the column and B-1928 moved it.
+    _clears = [r for r in res if r["auroc_lr_minus_best_feature"] > 0]
+    _bestfeats: dict[str, int] = {}
+    for r in res:
+        _bestfeats[r["best_single_feature"]] = _bestfeats.get(r["best_single_feature"], 0) + 1
+    _modal, _modal_n = max(_bestfeats.items(), key=lambda kv: kv[1])
+    _margins = sorted(r["auroc_lr_minus_best_feature"] for r in _clears)
+    L.append(
+        f"\n**The §367 tally: the LR clears its own best single feature in {len(_clears)} of "
+        f"{len(res)} cells**, by {_margins[0]:+.3f} to {_margins[-1]:+.3f}. The single feature "
+        f"is `{_modal}` in {_modal_n} of {len(res)}. "
+        + ("⚠️ **`reasoning_difficulty` is a human-authored annotation that ships with "
+           "VisualWebArena's task configs.** A cell whose triage label is predicted almost as "
+           "well by that one column as by the whole model is not demonstrating a learned "
+           "router — it is reading the benchmark's own statement of how hard the task is, "
+           "which no deployment has. WebArena carries no such annotation, which is the "
+           "cleanest available check on how much of this generalises.\n"
+           if _modal in ("reasoning_difficulty", "has_reference_image") else "\n"))
+    dead = {f"{r['site']}·{r['baseline_model']}": r.get("dead_features") or [] for r in res}
+    if any(dead.values()):
+        L.append("\n⚠️ **Not every feature is live in every cell.** A column with no variance "
+                 "carries no information whatever the model does with it, so the header's "
+                 f"{n_feat} is a ceiling, not a count of usable features:\n")
+        L.append("| cell | live features | dead (zero-variance) |")
+        L.append("|---|---|---|")
+        for r in res:
+            d = r.get("dead_features") or []
+            L.append(f"| {r['site']}·{r['baseline_model']} | {r['n_live_features']}/"
+                     f"{r['n_features']} | "
+                     + (", ".join(f"`{x}`" for x in d) if d else "—") + " |")
+        L.append("\nThe WebArena rows lose five intent regexes outright. Those regexes were "
+                 "written against VisualWebArena phrasing, and WebArena words its intents "
+                 "differently — the same mismatch that makes the ex-ante visual-intent "
+                 "predicate flag only 5 of 104 WA tasks. So the WA cells are fitted on **13** "
+                 "live features against the VWA cells' 18, and the comparison is matched on "
+                 "the feature *set*, not on the feature *support*.\n")
 
     L.append("\n## 2. What does the policy actually buy?\n")
     L.append("| cell | policy | SR % | mean cost | ΔSR | Δcost | sent to cheapest |")
@@ -616,7 +827,12 @@ def main() -> int:
              "protocol": {"folds": N_FOLDS, "seed": SEED, "n_shuffle": N_SHUFFLE,
                           "min_reportable_p": 1.0 / (N_SHUFFLE + 1),
                           "holm_tightest_threshold_m6": 0.05 / 6,
-                          "features": NUMERIC + BINARY, "model": "L2 logistic regression"},
+                          "holm_tightest_threshold": 0.05 / max(len(res), 1),
+                          "features": ACTIVE_NAMES, "n_features": len(ACTIVE_NAMES),
+                          "features_dropped_for_match": (
+                              VWA_ONLY_FEATURES if len(ACTIVE_NAMES) < len(ALL_FEATURES)
+                              else []),
+                          "model": "L2 logistic regression"},
              "cells": res}, indent=1, ensure_ascii=False, default=float), encoding="utf-8")
         print(f"wrote {args.json_out}")
     return 0

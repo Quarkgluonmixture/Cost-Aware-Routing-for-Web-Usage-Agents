@@ -18,14 +18,14 @@ Same triage label and same out-of-fold logistic regression as `router_triage_lea
 
 | cell | n | positives | AUROC without | AUROC with | Δ |
 |---|---|---|---|---|---|
-| `cls_B0` | 224 | 97 | 0.6759 | 0.6695 | -0.0064 |
-| `red_B0` | 203 | 53 | 0.6655 | 0.6670 | +0.0014 |
-| `cls_B1` | 224 | 55 | 0.7170 | 0.7031 | -0.0139 |
-| `red_B1` | 203 | 24 | 0.6849 | 0.7126 | +0.0277 |
-| `cls_B2` | 224 | 16 | 0.6505 | 0.6424 | -0.0081 |
-| `red_B2` | 203 | 15 | 0.4828 | 0.5289 | +0.0461 |
+| `cls_B0` | 224 | 97 | 0.7262 | 0.7260 | -0.0002 |
+| `red_B0` | 203 | 53 | 0.7801 | 0.7755 | -0.0045 |
+| `cls_B1` | 224 | 55 | 0.7323 | 0.7262 | -0.0061 |
+| `red_B1` | 203 | 24 | 0.8643 | 0.8627 | -0.0016 |
+| `cls_B2` | 224 | 16 | 0.6424 | 0.6295 | -0.0129 |
+| `red_B2` | 203 | 15 | 0.6152 | 0.6553 | +0.0401 |
 
-**Mean ΔAUROC = +0.0078** over 6 cells; it improves 3 of them.
+**Mean ΔAUROC = +0.0024** over 6 cells; it improves 1 of them.
 
 That is inside the noise of a fold split on cells this size. **The feature does not rescue the router**, and the reason is the one the supply argument already gives: the constraint is the number of usable labelled rows, not their separability. A better feature cannot manufacture labels.
 

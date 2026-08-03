@@ -10382,3 +10382,115 @@ v10 run_id = B0_som_classifieds_20260803_084743_..._R30696   51 episode  (som re
 
 **Cross-link**: 笔记 §416.12; `scripts/analysis/diag_rescan_all.py`;
 §297.3 (既有 clean replicate 在 repro_replicates/) · §293 (replicate 用于 run-to-run noise floor)
+
+---
+
+## B-1928 落地记录 (2026-08-03) — 学出来的 triage 路由器有 3/20 个特征恒为零, 其中一个正是 claim 8 的主角
+
+**症状**: `router_triage_learnability.py` 自称 "L2 LR on the 20 raw features"。实际每个 cell 里
+有三列的标准差恒为 0 —— 模型从来没见过它们。
+
+**根因** (两处独立, 都在 `_feature_row`):
+
+1. `num = [float(step0.get(k, 0.0) or 0.0) for k in NUMERIC]` —— `NUMERIC` 有 5 项, 而
+   `read_step0_features` 只填 `dom_complexity` / `text_length` / `tokens_input_text` 三项。
+   `intent_token_count` 和 `reasoning_difficulty` 走 `.get(默认 0.0)` 静默取零。
+2. `binv = [int(bool(cfg.get("image")))] + ...` —— 这里的 `cfg` 是 **`read_task_config` 的返回值**,
+   它把布尔值放在 `has_reference_image` 键下, 压根不含 `image` 键 (`image` 是它读的**原始**
+   config 的键)。所以 `has_reference_image` 也恒为 0。
+
+**为什么活了这么久**: 缺陷 (1) **已经被发现过**, 记在
+`router_pooled_tier_learnability.py:181-187` 的注释里 ——
+"Deliberately NOT the `step0.get("reasoning_difficulty")` shortcut used by
+router_triage_learnability.py:98 — ... that path silently zeroes 2 of the 5 numeric features"。
+发现的人在**另一个文件里绕过并写了注释, 没有回来修原处**。台账 §399.4 也记了这条, 附带
+"要引用该系列 AUROC 绝对值需先重跑" —— 而该产物从未重跑, §5b 一直在引它的 AUROC 和
+`cls_B1` 那个正结果。缺陷 (2) 从未被发现: §399.4 说 2 个死特征, 实际是 3 个。
+
+一个恒零列不会报错、不会警告、不会让任何 self-check 失败 —— 它只是让模型变弱一点点。
+这与 §420 §2b 的空产物同属一类: **降级是静默的, 而降级后的结果看起来完全正常**。
+
+**发现方式**: 不是审这个文件。是给 `--with-wa` 加"每格有几个特征是活的"这一列披露 ——
+表一打出来, `intent_token_count` 在六个 VWA 格里全零方差, 而它是 intent 的词数,
+在 224 个不同任务上不可能是常数。**披露列比审计更早发现它。**
+
+**影响 (修前 → 修后, n_shuffle=20 预览, 六格 20 特征)**:
+
+| cell | AUROC LR | 最佳单特征 | Δ |
+|---|---|---|---|
+| cls·B0 | 0.676 → **0.726** | `dom_complexity` 0.607 → `reasoning_difficulty` 0.711 | +0.069 → **+0.015** |
+| red·B0 | 0.666 → **0.780** | `intent_nav` 0.612 → `reasoning_difficulty` 0.692 | +0.054 → **+0.088** |
+| cls·B1 | 0.717 → **0.732** | `intent_compare` 0.627 → `reasoning_difficulty` 0.719 | +0.090 → **+0.013** |
+| red·B1 | 0.685 → **0.864** | `intent_account_action` 0.637 → `has_reference_image` 0.735 | +0.048 → **+0.129** |
+| cls·B2 | 0.651 → **0.642** | `intent_compare` 0.655 → `reasoning_difficulty` 0.685 | −0.005 → **−0.042** |
+| red·B2 | 0.483 → **0.615** | `dom_complexity` 0.711 → `reasoning_difficulty` 0.800 | −0.228 → **−0.184** |
+
+**方向出人意料, 且对论文更重要的是第二列不是第一列。** 台账 §399.4 判断
+"特征更少只让 learned 臂更弱 ⇒ 负结果偏保守不翻" —— 前半句对 (AUROC 普遍上升), 后半句需要修正:
+**§367 检验 (LR 要跑赢自己的最佳单特征) 的余量塌了。** 修后 `reasoning_difficulty` 在 6 格里
+5 格是最佳单特征, LR 相对它的优势从 +0.048~+0.090 掉到 +0.013~+0.129 (两格为负)。
+而 `reasoning_difficulty` 是 **VisualWebArena 任务配置里人工标注的难度**。一个 triage 标签能被
+这一列预测得几乎和整个模型一样好, 说明的不是"路由器学得会", 而是**它在读基准自己写下的
+「这题有多难」—— 任何真实部署都没有这一列**。WebArena 不带这个标注, 恰好是最干净的检验。
+
+**修**: `_feature_row` 改为 —— 难度从 task config 取、token 数从 intent 串算、
+`has_reference_image` 读正确的键, 字段顺序与 `extract_50_features.py:545-570` 逐项对齐 (train ≡ serve)。
+同批加两项**结构性防复发**:
+- `oof_scores` 对零方差列显式返回常数分而不是让 `np.corrcoef` 吐 NaN 再被 `NaN >= 0` 悄悄判成 −1
+  (原先每折每列刷一条 RuntimeWarning, 没人看)
+- 产物新增 "live features / dead (zero-variance)" 表, 让 "18 个特征" 不能被读成 "18 个可用特征"
+
+**姊妹脚本已核**: `router_pooled_tier_learnability.py` 走 `extract_raw_features` canonical 路径,
+`aggregate_routing_feature_diagnostics.py` 直接读原始 config —— 两者都没继承此缺陷。
+
+**教训**: **在别处写注释绕过一个 bug, 等于把它埋得更深** —— 注释证明有人知道, 而知道的人
+不在受影响的产物旁边留下任何痕迹。修不了就该在**出问题的那个文件**里 raise 或 warn,
+而不是在绕过它的文件里解释为什么不用它。
+
+**Cross-link**: 笔记 §422.10; 台账 §399.4 (记了 2/3 个死特征 + "引用前需重跑" 但从未重跑);
+`router_pooled_tier_learnability.py:181-187` (注释里的既有认知);
+claim 8 / `routing_feature_diagnostics` (`has_reference_image` 是其全部主题)
+
+---
+
+## B-1929 落地记录 (2026-08-03) — A100 同步的 `--delete` 每 15 分钟删掉 DGX 本地算出来的分析产物
+
+**症状**: `aggregate_failure_modes.py` 的产物长期是 197 字节空文档 (见 B-1928 同批 §422.2)。
+当时诊断为「38/38 run 缺 `analysis/reason_diagnostics/` 输入, 没人跑过 `make analyze`」,
+于是回填了 35/36 个 run, 产物变成 351 行, 判为已修。
+
+**几小时后再跑, 又是 0 cells, 36 个 run 全部缺输入。** 盘上 `reason_diagnostics` 目录数 = **0**。
+
+**根因**: `sync_a100_results.sh` 的 `BENCH_SUBTREES` 里
+`"visualwebarena/phase1:delete"` —— VWA 子树用 `--delete-after --delete-excluded` 同步,
+而 cron 每 15 分钟跑一次。`analysis/reason_diagnostics/` 是 **DGX 本地从 step JSONL 算出来的**,
+A100 上不存在也永远不会有 ⇒ 每次 rsync 都把它当作「本地多出来的东西」删掉。
+
+**所以原先那句诊断是错的**: 不是「没人跑 `make analyze`」, 而是
+**「在这台机器上跑 `make analyze` 是徒劳的 —— 输出活不过下一个 cron tick」**。
+任何 DGX 侧派生的 per-run 产物都有同一个命运, 这是结构性的, 不是这一个产物的问题。
+
+**修**: 给 rsync 加两条 protect 过滤规则 ——
+
+```
+--filter='protect analysis/reason_diagnostics/'
+--filter='protect analysis/reason_diagnostics/**'
+```
+
+`protect` 的语义正好对口: 在接收端标记为**免删**, 但不排除传输 (A100 本来也不发它)。
+本地对照实验证实: 带 protect 的派生文件存活, 不带的被删。
+⚠️ rsync 会打一句 `cannot delete non-empty directory: <run>/analysis` —— 这是它被挡住的
+正常提示, **不是错误**, 不要照着去「修」。
+
+**教训**: **一个「修好了但会自己变回去」的缺陷, 看起来和「没修」一模一样。**
+B-1928 那次我验证的是「修完当场产物有 351 行」, 而不是「一小时后还有 351 行」。
+派生产物的正确验收是**在下一个自动化周期之后再看一眼**, 否则验的是修复动作而不是修复效果。
+同理: `aggregate_failure_modes` 的 fail-loud (B-1928) 这次立了大功 —— 它在 refresh 链里
+直接 exit 1 把问题喊了出来, 而修之前它会安静地再写一份空文档。**止血比补数据先做是对的。**
+
+**待查**: 还有哪些 DGX 侧派生物在 `results/visualwebarena/phase1/` 下同样会被删?
+`analysis/signals/` 与 `analysis/results/` 目前存活, 说明它们在 A100 侧也存在 (随 run 一起产出),
+但这一点没有被任何断言保护 —— 值得单独扫一次。
+
+**Cross-link**: 笔记 §422.11; B-1928 (同批, 症状相同根因不同); B-841 (--delete-after 的引入理由);
+`scripts/maintenance/sync_a100_results.sh` BENCH_SUBTREES 策略注释

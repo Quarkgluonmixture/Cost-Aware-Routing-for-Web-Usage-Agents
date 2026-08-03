@@ -43,13 +43,13 @@
  "part_a_signature_frequency": {
   "episodes_per_mode": {
    "dom": 1281,
-   "som": 1281,
+   "som": 1244,
    "vision": 1281,
    "phantom_text": 1281,
    "phantom_prompt": 1281,
    "phantom_som": 1281
   },
-  "episodes_total": 7686,
+  "episodes_total": 7649,
   "cells": [
    "classifieds\u00b7B0",
    "classifieds\u00b7B1",
@@ -62,17 +62,17 @@
    {
     "rule_id": "P31",
     "rule_name": "budget\u8017\u5c3d\u672a\u5b8c\u6210",
-    "overall_pct": 49.76580796252927,
+    "overall_pct": 49.86272715387632,
     "per_mode_pct": {
      "dom": 47.30679156908665,
-     "som": 44.96487119437939,
+     "som": 45.41800643086817,
      "vision": 49.804839968774395,
      "phantom_text": 54.25448868071819,
      "phantom_prompt": 49.804839968774395,
      "phantom_som": 52.459016393442624
     },
-    "spread_all_modes_pp": 9.289617486338798,
-    "spread_text_bearing_pp": 9.289617486338798,
+    "spread_all_modes_pp": 8.836482249850022,
+    "spread_text_bearing_pp": 8.836482249850022,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 4.910714285714285,
      "classifieds\u00b7B1": 10.267857142857142,
@@ -88,19 +88,19 @@
    {
     "rule_id": "P36",
     "rule_name": "WALK_FAIL_DEGENERATE",
-    "overall_pct": 43.88498568826438,
+    "overall_pct": 44.136488429860115,
     "per_mode_pct": {
      "dom": 55.81576893052303,
-     "som": 39.188134270101486,
+     "som": 40.59485530546624,
      "vision": 20.68696330991413,
      "phantom_text": 46.91647150663544,
      "phantom_prompt": 53.47384855581577,
      "phantom_som": 47.22872755659641
     },
     "spread_all_modes_pp": 35.1288056206089,
-    "spread_text_bearing_pp": 16.627634660421542,
+    "spread_text_bearing_pp": 15.220913625056788,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 26.339285714285715,
+     "classifieds\u00b7B0": 22.52673796791444,
      "classifieds\u00b7B1": 27.67857142857143,
      "classifieds\u00b7B2": 7.142857142857139,
      "reddit\u00b7B0": 16.748768472906402,
@@ -108,16 +108,16 @@
      "reddit\u00b7B2": 31.03448275862069
     },
     "within_cell_spread_max_pp": 31.03448275862069,
-    "within_cell_spread_median_pp": 26.339285714285715,
+    "within_cell_spread_median_pp": 22.52673796791444,
     "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P5",
     "rule_name": "\u611f\u77e5\u7f3a\u5931\u5faa\u73af",
-    "overall_pct": 43.46864428831642,
+    "overall_pct": 43.58739704536541,
     "per_mode_pct": {
      "dom": 44.340359094457455,
-     "som": 38.095238095238095,
+     "som": 38.665594855305464,
      "vision": 55.5815768930523,
      "phantom_text": 36.0655737704918,
      "phantom_prompt": 45.97970335675254,
@@ -126,7 +126,7 @@
     "spread_all_modes_pp": 19.516003122560498,
     "spread_text_bearing_pp": 9.914129586260735,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 8.928571428571427,
+     "classifieds\u00b7B0": 10.993601986249043,
      "classifieds\u00b7B1": 15.625000000000004,
      "classifieds\u00b7B2": 14.732142857142854,
      "reddit\u00b7B0": 11.330049261083744,
@@ -140,10 +140,10 @@
    {
     "rule_id": "P45",
     "rule_name": "IDENTICAL_FAILED_ACTION_STREAK",
-    "overall_pct": 26.841009627894874,
+    "overall_pct": 26.892404235847824,
     "per_mode_pct": {
      "dom": 37.39266198282592,
-     "som": 29.97658079625293,
+     "som": 30.385852090032156,
      "vision": 0.0,
      "phantom_text": 25.604996096799375,
      "phantom_prompt": 36.84621389539422,
@@ -152,7 +152,7 @@
     "spread_all_modes_pp": 37.39266198282592,
     "spread_text_bearing_pp": 11.787665886026545,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 5.803571428571429,
+     "classifieds\u00b7B0": 7.68716577540107,
      "classifieds\u00b7B1": 13.392857142857142,
      "classifieds\u00b7B2": 17.410714285714285,
      "reddit\u00b7B0": 10.83743842364532,
@@ -166,10 +166,10 @@
    {
     "rule_id": "P14",
     "rule_name": "URL \u81ea\u73af",
-    "overall_pct": 26.25552953421806,
+    "overall_pct": 26.304092038174925,
     "per_mode_pct": {
      "dom": 23.965651834504293,
-     "som": 23.106947697111632,
+     "som": 23.311897106109324,
      "vision": 36.924277907884466,
      "phantom_text": 20.218579234972676,
      "phantom_prompt": 27.79078844652615,
@@ -178,7 +178,7 @@
     "spread_all_modes_pp": 16.70569867291179,
     "spread_text_bearing_pp": 7.572209211553474,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 4.9107142857142865,
+     "classifieds\u00b7B0": 6.347880061115356,
      "classifieds\u00b7B1": 7.142857142857142,
      "classifieds\u00b7B2": 14.732142857142854,
      "reddit\u00b7B0": 16.25615763546798,
@@ -192,7 +192,7 @@
    {
     "rule_id": "P43",
     "rule_name": "PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT",
-    "overall_pct": 20.036429872495447,
+    "overall_pct": 20.133350764805858,
     "per_mode_pct": {
      "dom": 29.66432474629196,
      "som": 0.0,
@@ -218,19 +218,19 @@
    {
     "rule_id": "P33",
     "rule_name": "\u5bfc\u822a\u81f3\u88f8\u56fe\u7247URL\u5e7b\u89c9",
-    "overall_pct": 16.094197241738225,
+    "overall_pct": 16.145901425022878,
     "per_mode_pct": {
      "dom": 20.530835284933644,
-     "som": 12.958626073380172,
+     "som": 13.183279742765274,
      "vision": 10.53864168618267,
      "phantom_text": 17.87665886026542,
      "phantom_prompt": 17.798594847775174,
      "phantom_som": 16.861826697892273
     },
     "spread_all_modes_pp": 9.992193598750974,
-    "spread_text_bearing_pp": 7.5722092115534725,
+    "spread_text_bearing_pp": 7.3475555421683705,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 5.803571428571429,
+     "classifieds\u00b7B0": 5.896676852559207,
      "classifieds\u00b7B1": 1.7857142857142858,
      "classifieds\u00b7B2": 23.214285714285715,
      "reddit\u00b7B0": 11.33004926108374,
@@ -244,17 +244,17 @@
    {
     "rule_id": "P44",
     "rule_name": "HALLUCINATED_ELEMENT_REF",
-    "overall_pct": 13.544106167056986,
+    "overall_pct": 13.62269577722578,
     "per_mode_pct": {
      "dom": 20.921155347384854,
-     "som": 8.118657298985168,
+     "som": 8.440514469453376,
      "vision": 0.0,
      "phantom_text": 16.00312256049961,
      "phantom_prompt": 27.40046838407494,
      "phantom_som": 8.821233411397346
     },
     "spread_all_modes_pp": 27.40046838407494,
-    "spread_text_bearing_pp": 19.28181108508977,
+    "spread_text_bearing_pp": 18.959953914621565,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 6.25,
      "classifieds\u00b7B1": 20.089285714285715,
@@ -270,17 +270,17 @@
    {
     "rule_id": "P12",
     "rule_name": "\u4ece\u4e0d\u7ffb\u9875",
-    "overall_pct": 12.63335935467083,
+    "overall_pct": 12.655249052163681,
     "per_mode_pct": {
      "dom": 12.646370023419204,
-     "som": 16.237314597970336,
+     "som": 16.479099678456592,
      "vision": 9.289617486338798,
      "phantom_text": 10.850897736143638,
      "phantom_prompt": 15.066354410616706,
      "phantom_som": 11.7096018735363
     },
-    "spread_all_modes_pp": 6.947697111631538,
-    "spread_text_bearing_pp": 5.386416861826698,
+    "spread_all_modes_pp": 7.189482192117794,
+    "spread_text_bearing_pp": 5.628201942312954,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 1.3392857142857144,
      "classifieds\u00b7B1": 4.464285714285715,
@@ -296,19 +296,19 @@
    {
     "rule_id": "P25",
     "rule_name": "\u8de8\u7ad9\u4efb\u52a1\u8df3\u8fc7\u5176\u4e2d\u4e00\u7ad9",
-    "overall_pct": 10.04423627374447,
+    "overall_pct": 9.96208654726108,
     "per_mode_pct": {
      "dom": 7.8064012490242,
-     "som": 11.397345823575332,
+     "som": 10.932475884244372,
      "vision": 10.304449648711945,
      "phantom_text": 11.007025761124122,
      "phantom_prompt": 8.430913348946136,
      "phantom_som": 11.319281811085089
     },
-    "spread_all_modes_pp": 3.5909445745511324,
-    "spread_text_bearing_pp": 3.5909445745511324,
+    "spread_all_modes_pp": 3.5128805620608894,
+    "spread_text_bearing_pp": 3.5128805620608894,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 3.1249999999999996,
+     "classifieds\u00b7B0": 3.8411955691367456,
      "classifieds\u00b7B1": 1.7857142857142856,
      "classifieds\u00b7B2": 0.44642857142857206,
      "reddit\u00b7B0": 10.83743842364532,
@@ -316,16 +316,16 @@
      "reddit\u00b7B2": 3.448275862068966
     },
     "within_cell_spread_max_pp": 10.83743842364532,
-    "within_cell_spread_median_pp": 3.448275862068966,
+    "within_cell_spread_median_pp": 3.8411955691367456,
     "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P4",
     "rule_name": "\u6839\u8282\u70b9\u8bef\u64cd\u4f5c",
-    "overall_pct": 7.403070517824617,
+    "overall_pct": 7.41273369067852,
     "per_mode_pct": {
      "dom": 0.39032006245121,
-     "som": 10.304449648711945,
+     "som": 10.45016077170418,
      "vision": 0.0,
      "phantom_text": 13.895394223263075,
      "phantom_prompt": 0.468384074941452,
@@ -334,7 +334,7 @@
     "spread_all_modes_pp": 19.359875097580016,
     "spread_text_bearing_pp": 18.969555035128806,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 3.1250000000000004,
+     "classifieds\u00b7B0": 4.017857142857143,
      "classifieds\u00b7B1": 28.125,
      "classifieds\u00b7B2": 39.732142857142854,
      "reddit\u00b7B0": 8.866995073891626,
@@ -348,10 +348,10 @@
    {
     "rule_id": "P18",
     "rule_name": "cheapest\u6f0f\u4ef7\u683c\u6392\u5e8f",
-    "overall_pct": 6.128024980483997,
+    "overall_pct": 6.131520460190875,
     "per_mode_pct": {
      "dom": 6.557377049180328,
-     "som": 6.167056986729118,
+     "som": 6.189710610932476,
      "vision": 6.24512099921936,
      "phantom_text": 5.542544886807182,
      "phantom_prompt": 6.24512099921936,
@@ -374,19 +374,19 @@
    {
     "rule_id": "P17",
     "rule_name": "click-back\u632f\u8361",
-    "overall_pct": 6.049960967993755,
+    "overall_pct": 6.026931625049026,
     "per_mode_pct": {
      "dom": 6.323185011709602,
-     "som": 5.386416861826698,
+     "som": 5.22508038585209,
      "vision": 2.73224043715847,
      "phantom_text": 7.6502732240437155,
      "phantom_prompt": 7.572209211553474,
      "phantom_som": 6.63544106167057
     },
     "spread_all_modes_pp": 4.918032786885245,
-    "spread_text_bearing_pp": 2.263856362217018,
+    "spread_text_bearing_pp": 2.4251928381916255,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 6.696428571428569,
+     "classifieds\u00b7B0": 6.538865546218485,
      "classifieds\u00b7B1": 7.589285714285715,
      "classifieds\u00b7B2": 2.6785714285714284,
      "reddit\u00b7B0": 0.0,
@@ -400,19 +400,19 @@
    {
     "rule_id": "P20",
     "rule_name": "\u8bc4\u6d4b\u76ee\u6807\u9875\u4ece\u672a\u8bbf\u95ee",
-    "overall_pct": 4.631798074421026,
+    "overall_pct": 4.654203163812263,
     "per_mode_pct": {
      "dom": 4.761904761904762,
-     "som": 4.215456674473068,
+     "som": 4.340836012861736,
      "vision": 5.2302888368462135,
      "phantom_text": 4.605776736924278,
      "phantom_prompt": 4.371584699453552,
      "phantom_som": 4.605776736924278
     },
-    "spread_all_modes_pp": 1.0148321623731453,
-    "spread_text_bearing_pp": 0.5464480874316937,
+    "spread_all_modes_pp": 0.8894528239844774,
+    "spread_text_bearing_pp": 0.4210687490430258,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 0.8928571428571423,
+     "classifieds\u00b7B0": 0.701871657754011,
      "classifieds\u00b7B1": 2.2321428571428568,
      "classifieds\u00b7B2": 0.8928571428571441,
      "reddit\u00b7B0": 0.0,
@@ -420,13 +420,13 @@
      "reddit\u00b7B2": 0.0
     },
     "within_cell_spread_max_pp": 2.2321428571428568,
-    "within_cell_spread_median_pp": 0.8928571428571423,
+    "within_cell_spread_median_pp": 0.701871657754011,
     "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P6",
     "rule_name": "\u89c6\u89c9\u4efb\u52a1 DOM \u5fc5\u7136\u5931\u8d25",
-    "overall_pct": 4.137392661982826,
+    "overall_pct": 4.157406196888482,
     "per_mode_pct": {
      "dom": 24.824355971896956,
      "som": 0.0,
@@ -450,38 +450,12 @@
     "structurally_zero_under_vision": true
    },
    {
-    "rule_id": "P10",
-    "rule_name": "\u8de8\u6b65\u6570\u503c\u8bb0\u5fc6\u5931\u8d25",
-    "overall_pct": 2.3289097059588864,
-    "per_mode_pct": {
-     "dom": 2.888368462138954,
-     "som": 2.810304449648712,
-     "vision": 1.327088212334114,
-     "phantom_text": 2.810304449648712,
-     "phantom_prompt": 2.107728337236534,
-     "phantom_som": 2.029664324746292
-    },
-    "spread_all_modes_pp": 1.5612802498048401,
-    "spread_text_bearing_pp": 0.858704137392662,
-    "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 2.2321428571428577,
-     "classifieds\u00b7B1": 2.232142857142857,
-     "classifieds\u00b7B2": 0.4464285714285713,
-     "reddit\u00b7B0": 1.477832512315271,
-     "reddit\u00b7B1": 2.4630541871921183,
-     "reddit\u00b7B2": 2.4630541871921183
-    },
-    "within_cell_spread_max_pp": 2.4630541871921183,
-    "within_cell_spread_median_pp": 2.2321428571428577,
-    "structurally_zero_under_vision": false
-   },
-   {
     "rule_id": "P7",
     "rule_name": "sCity=\u5dde\u540d",
-    "overall_pct": 2.302888368462139,
+    "overall_pct": 2.287880768727938,
     "per_mode_pct": {
      "dom": 1.795472287275566,
-     "som": 2.34192037470726,
+     "som": 2.2508038585209005,
      "vision": 2.498048399687744,
      "phantom_text": 2.185792349726776,
      "phantom_prompt": 2.498048399687744,
@@ -490,7 +464,7 @@
     "spread_all_modes_pp": 0.7025761124121781,
     "spread_text_bearing_pp": 0.7025761124121781,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 0.8928571428571432,
+     "classifieds\u00b7B0": 1.5016233766233773,
      "classifieds\u00b7B1": 4.017857142857142,
      "classifieds\u00b7B2": 0.0,
      "reddit\u00b7B0": 0.0,
@@ -502,9 +476,35 @@
     "structurally_zero_under_vision": false
    },
    {
+    "rule_id": "P10",
+    "rule_name": "\u8de8\u6b65\u6570\u503c\u8bb0\u5fc6\u5931\u8d25",
+    "overall_pct": 2.248659955549745,
+    "per_mode_pct": {
+     "dom": 2.888368462138954,
+     "som": 2.3311897106109325,
+     "vision": 1.327088212334114,
+     "phantom_text": 2.810304449648712,
+     "phantom_prompt": 2.107728337236534,
+     "phantom_som": 2.029664324746292
+    },
+    "spread_all_modes_pp": 1.5612802498048401,
+    "spread_text_bearing_pp": 0.858704137392662,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 2.330022918258213,
+     "classifieds\u00b7B1": 2.232142857142857,
+     "classifieds\u00b7B2": 0.4464285714285713,
+     "reddit\u00b7B0": 1.477832512315271,
+     "reddit\u00b7B1": 2.4630541871921183,
+     "reddit\u00b7B2": 2.4630541871921183
+    },
+    "within_cell_spread_max_pp": 2.4630541871921183,
+    "within_cell_spread_median_pp": 2.330022918258213,
+    "structurally_zero_under_vision": false
+   },
+   {
     "rule_id": "P16",
     "rule_name": "\u89c6\u89c9\u56fe\u50cf\u5185\u5bb9DOM\u5fc5\u8d25",
-    "overall_pct": 2.068696330991413,
+    "overall_pct": 2.078703098444241,
     "per_mode_pct": {
      "dom": 12.412177985948478,
      "som": 0.0,
@@ -530,17 +530,17 @@
    {
     "rule_id": "P46",
     "rule_name": "COMMENT_INTENT_NO_TYPE",
-    "overall_pct": 1.873536299765808,
+    "overall_pct": 1.8825990325532749,
     "per_mode_pct": {
      "dom": 1.7174082747853239,
-     "som": 1.873536299765808,
+     "som": 1.9292604501607717,
      "vision": 3.0444964871194378,
      "phantom_text": 1.249024199843872,
      "phantom_prompt": 1.639344262295082,
      "phantom_som": 1.7174082747853239
     },
     "spread_all_modes_pp": 1.7954722872755657,
-    "spread_text_bearing_pp": 0.624512099921936,
+    "spread_text_bearing_pp": 0.6802362503168997,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 0.44642857142857145,
      "classifieds\u00b7B1": 0.8928571428571428,
@@ -556,10 +556,10 @@
    {
     "rule_id": "P2",
     "rule_name": "\u5bb9\u5668\u8282\u70b9\u8bef\u70b9",
-    "overall_pct": 1.639344262295082,
+    "overall_pct": 1.6472741534841155,
     "per_mode_pct": {
      "dom": 3.8251366120218577,
-     "som": 0.702576112412178,
+     "som": 0.7234726688102894,
      "vision": 0.0,
      "phantom_text": 1.092896174863388,
      "phantom_prompt": 3.590944574551132,
@@ -582,17 +582,17 @@
    {
     "rule_id": "P19",
     "rule_name": "url_match\u8fc7\u65e9\u641c\u7d22\u9875finish",
-    "overall_pct": 1.483216237314598,
+    "overall_pct": 1.4903909007713427,
     "per_mode_pct": {
      "dom": 1.639344262295082,
-     "som": 1.873536299765808,
+     "som": 1.9292604501607717,
      "vision": 1.639344262295082,
      "phantom_text": 1.092896174863388,
      "phantom_prompt": 1.092896174863388,
      "phantom_som": 1.56128024980484
     },
-    "spread_all_modes_pp": 0.78064012490242,
-    "spread_text_bearing_pp": 0.78064012490242,
+    "spread_all_modes_pp": 0.8363642752973837,
+    "spread_text_bearing_pp": 0.8363642752973837,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 2.2321428571428568,
      "classifieds\u00b7B1": 3.125000000000001,
@@ -608,19 +608,19 @@
    {
     "rule_id": "P27",
     "rule_name": "\u627e\u4e0d\u5230\u5373\u653e\u5f03",
-    "overall_pct": 1.2750455373406193,
+    "overall_pct": 1.2289188129167212,
     "per_mode_pct": {
      "dom": 1.092896174863388,
-     "som": 1.95160031225605,
+     "som": 1.6881028938906752,
      "vision": 1.95160031225605,
      "phantom_text": 0.468384074941452,
      "phantom_prompt": 0.78064012490242,
      "phantom_som": 1.405152224824356
     },
     "spread_all_modes_pp": 1.4832162373145978,
-    "spread_text_bearing_pp": 1.4832162373145978,
+    "spread_text_bearing_pp": 1.2197188189492232,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 3.1250000000000004,
+     "classifieds\u00b7B0": 2.232142857142857,
      "classifieds\u00b7B1": 3.5714285714285716,
      "classifieds\u00b7B2": 0.0,
      "reddit\u00b7B0": 0.9852216748768472,
@@ -634,45 +634,45 @@
    {
     "rule_id": "P30",
     "rule_name": "\u5230\u8fbe\u6b63\u786eitem\u540e\u79bb\u5f00",
-    "overall_pct": 1.1579495186052564,
+    "overall_pct": 1.1766243953457969,
     "per_mode_pct": {
      "dom": 1.249024199843872,
-     "som": 0.624512099921936,
+     "som": 0.7234726688102894,
      "vision": 0.234192037470726,
      "phantom_text": 1.639344262295082,
      "phantom_prompt": 1.327088212334114,
      "phantom_som": 1.873536299765808
     },
     "spread_all_modes_pp": 1.639344262295082,
-    "spread_text_bearing_pp": 1.249024199843872,
+    "spread_text_bearing_pp": 1.1500636309555188,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 3.5714285714285716,
+     "classifieds\u00b7B0": 2.9483384262796033,
      "classifieds\u00b7B1": 1.3392857142857144,
      "classifieds\u00b7B2": 2.232142857142857,
      "reddit\u00b7B0": 0.0,
      "reddit\u00b7B1": 0.0,
      "reddit\u00b7B2": 0.0
     },
-    "within_cell_spread_max_pp": 3.5714285714285716,
+    "within_cell_spread_max_pp": 2.9483384262796033,
     "within_cell_spread_median_pp": 1.3392857142857144,
     "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P13",
     "rule_name": "\u641c\u7d22\u4ee3\u66ff\u6d4f\u89c8",
-    "overall_pct": 1.1189175123601354,
+    "overall_pct": 1.1635507909530658,
     "per_mode_pct": {
      "dom": 2.185792349726776,
-     "som": 0.78064012490242,
+     "som": 1.045016077170418,
      "vision": 0.234192037470726,
      "phantom_text": 1.795472287275566,
      "phantom_prompt": 0.8587041373926619,
      "phantom_som": 0.8587041373926619
     },
     "spread_all_modes_pp": 1.9516003122560501,
-    "spread_text_bearing_pp": 1.4051522248243562,
+    "spread_text_bearing_pp": 1.3270882123341141,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 1.7857142857142858,
+     "classifieds\u00b7B0": 1.3392857142857144,
      "classifieds\u00b7B1": 7.142857142857142,
      "classifieds\u00b7B2": 0.8928571428571429,
      "reddit\u00b7B0": 0.49261083743842365,
@@ -680,49 +680,75 @@
      "reddit\u00b7B2": 0.9852216748768473
     },
     "within_cell_spread_max_pp": 7.142857142857142,
-    "within_cell_spread_median_pp": 1.7857142857142858,
+    "within_cell_spread_median_pp": 1.3392857142857144,
     "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P23",
     "rule_name": "oldest\u8bef\u7528\u4ef7\u683c\u6392\u5e8f",
-    "overall_pct": 0.8326827998959146,
+    "overall_pct": 0.8367106811347889,
     "per_mode_pct": {
      "dom": 0.702576112412178,
-     "som": 0.936768149882904,
+     "som": 0.9646302250803859,
      "vision": 0.702576112412178,
      "phantom_text": 0.8587041373926619,
      "phantom_prompt": 0.8587041373926619,
      "phantom_som": 0.936768149882904
     },
-    "spread_all_modes_pp": 0.23419203747072603,
-    "spread_text_bearing_pp": 0.23419203747072603,
+    "spread_all_modes_pp": 0.2620541126682079,
+    "spread_text_bearing_pp": 0.2620541126682079,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 0.4464285714285716,
+     "classifieds\u00b7B0": 1.2414056531703586,
      "classifieds\u00b7B1": 0.8928571428571428,
      "classifieds\u00b7B2": 0.0,
      "reddit\u00b7B0": 0.0,
      "reddit\u00b7B1": 0.0,
      "reddit\u00b7B2": 0.0
     },
-    "within_cell_spread_max_pp": 0.8928571428571428,
+    "within_cell_spread_max_pp": 1.2414056531703586,
     "within_cell_spread_median_pp": 0.0,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P22",
+    "rule_name": "\u56fe\u4e0a\u6570\u5b57dom\u4e0d\u53ef\u8bfb",
+    "overall_pct": 0.5098705713165119,
+    "per_mode_pct": {
+     "dom": 0.624512099921936,
+     "som": 0.48231511254019294,
+     "vision": 0.39032006245121,
+     "phantom_text": 0.546448087431694,
+     "phantom_prompt": 0.468384074941452,
+     "phantom_som": 0.546448087431694
+    },
+    "spread_all_modes_pp": 0.23419203747072603,
+    "spread_text_bearing_pp": 0.156128024980484,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 1.2509549274255156,
+     "classifieds\u00b7B1": 0.4464285714285713,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.0,
+     "reddit\u00b7B1": 0.0,
+     "reddit\u00b7B2": 0.49261083743842365
+    },
+    "within_cell_spread_max_pp": 1.2509549274255156,
+    "within_cell_spread_median_pp": 0.4464285714285713,
     "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P24",
     "rule_name": "\u4e0d\u786e\u5b9a\u4ecdfinish",
-    "overall_pct": 0.546448087431694,
+    "overall_pct": 0.5098705713165119,
     "per_mode_pct": {
      "dom": 0.546448087431694,
-     "som": 0.702576112412178,
+     "som": 0.48231511254019294,
      "vision": 0.468384074941452,
      "phantom_text": 0.546448087431694,
      "phantom_prompt": 0.468384074941452,
      "phantom_som": 0.546448087431694
     },
-    "spread_all_modes_pp": 0.23419203747072598,
-    "spread_text_bearing_pp": 0.23419203747072598,
+    "spread_all_modes_pp": 0.07806401249024203,
+    "spread_text_bearing_pp": 0.07806401249024203,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 1.3392857142857144,
      "classifieds\u00b7B1": 2.232142857142857,
@@ -736,45 +762,19 @@
     "structurally_zero_under_vision": false
    },
    {
-    "rule_id": "P22",
-    "rule_name": "\u56fe\u4e0a\u6570\u5b57dom\u4e0d\u53ef\u8bfb",
-    "overall_pct": 0.4944054124381993,
-    "per_mode_pct": {
-     "dom": 0.624512099921936,
-     "som": 0.39032006245121,
-     "vision": 0.39032006245121,
-     "phantom_text": 0.546448087431694,
-     "phantom_prompt": 0.468384074941452,
-     "phantom_som": 0.546448087431694
-    },
-    "spread_all_modes_pp": 0.23419203747072603,
-    "spread_text_bearing_pp": 0.23419203747072603,
-    "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 1.7857142857142858,
-     "classifieds\u00b7B1": 0.4464285714285713,
-     "classifieds\u00b7B2": 0.0,
-     "reddit\u00b7B0": 0.0,
-     "reddit\u00b7B1": 0.0,
-     "reddit\u00b7B2": 0.49261083743842365
-    },
-    "within_cell_spread_max_pp": 1.7857142857142858,
-    "within_cell_spread_median_pp": 0.4464285714285713,
-    "structurally_zero_under_vision": false
-   },
-   {
     "rule_id": "P37",
     "rule_name": "URL_HALLUCINATION",
-    "overall_pct": 0.48139474368982565,
+    "overall_pct": 0.4837233625310498,
     "per_mode_pct": {
      "dom": 0.546448087431694,
-     "som": 0.39032006245121,
+     "som": 0.40192926045016075,
      "vision": 0.234192037470726,
      "phantom_text": 0.546448087431694,
      "phantom_prompt": 0.624512099921936,
      "phantom_som": 0.546448087431694
     },
     "spread_all_modes_pp": 0.39032006245121,
-    "spread_text_bearing_pp": 0.23419203747072603,
+    "spread_text_bearing_pp": 0.22258283947177526,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 0.4464285714285716,
      "classifieds\u00b7B1": 1.3392857142857144,
@@ -790,33 +790,33 @@
    {
     "rule_id": "P28",
     "rule_name": "benchmark-FP\u8d27\u5e01tokenize",
-    "overall_pct": 0.24720270621909965,
+    "overall_pct": 0.24839848346189045,
     "per_mode_pct": {
      "dom": 0.156128024980484,
-     "som": 0.39032006245121,
+     "som": 0.40192926045016075,
      "vision": 0.468384074941452,
      "phantom_text": 0.078064012490242,
      "phantom_prompt": 0.234192037470726,
      "phantom_som": 0.156128024980484
     },
     "spread_all_modes_pp": 0.39032006245121,
-    "spread_text_bearing_pp": 0.312256049960968,
+    "spread_text_bearing_pp": 0.3238652479599188,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 0.8928571428571428,
+     "classifieds\u00b7B0": 1.1578495034377387,
      "classifieds\u00b7B1": 0.44642857142857145,
      "classifieds\u00b7B2": 0.44642857142857145,
      "reddit\u00b7B0": 0.0,
      "reddit\u00b7B1": 0.0,
      "reddit\u00b7B2": 0.0
     },
-    "within_cell_spread_max_pp": 0.8928571428571428,
+    "within_cell_spread_max_pp": 1.1578495034377387,
     "within_cell_spread_median_pp": 0.44642857142857145,
     "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P15",
     "rule_name": "gallery\u884c\u4f4d\u7f6eDOM\u4e0d\u53ef\u5b9a\u4f4d",
-    "overall_pct": 0.234192037470726,
+    "overall_pct": 0.23532487906915936,
     "per_mode_pct": {
      "dom": 1.405152224824356,
      "som": 0.0,
@@ -842,7 +842,7 @@
    {
     "rule_id": "P38",
     "rule_name": "DOM_URL_AS_IMAGE",
-    "overall_pct": 0.234192037470726,
+    "overall_pct": 0.23532487906915936,
     "per_mode_pct": {
      "dom": 0.39032006245121,
      "som": 0.0,
@@ -868,10 +868,10 @@
    {
     "rule_id": "P49",
     "rule_name": "SUBMIT_PAGE_ANCHOR_MISCLICK",
-    "overall_pct": 0.20817069997397866,
+    "overall_pct": 0.20917767028369721,
     "per_mode_pct": {
      "dom": 0.234192037470726,
-     "som": 0.234192037470726,
+     "som": 0.24115755627009647,
      "vision": 0.0,
      "phantom_text": 0.39032006245121,
      "phantom_prompt": 0.078064012490242,
@@ -894,10 +894,10 @@
    {
     "rule_id": "P35",
     "rule_name": "MUTATION_MISSING",
-    "overall_pct": 0.156128024980484,
+    "overall_pct": 0.15688325271277292,
     "per_mode_pct": {
      "dom": 0.156128024980484,
-     "som": 0.078064012490242,
+     "som": 0.08038585209003216,
      "vision": 0.312256049960968,
      "phantom_text": 0.078064012490242,
      "phantom_prompt": 0.156128024980484,
@@ -920,17 +920,17 @@
    {
     "rule_id": "P48",
     "rule_name": "PREMATURE_NEGATIVE_AFTER_SEARCH",
-    "overall_pct": 0.156128024980484,
+    "overall_pct": 0.15688325271277292,
     "per_mode_pct": {
      "dom": 0.0,
-     "som": 0.702576112412178,
+     "som": 0.7234726688102894,
      "vision": 0.078064012490242,
      "phantom_text": 0.0,
      "phantom_prompt": 0.078064012490242,
      "phantom_som": 0.078064012490242
     },
-    "spread_all_modes_pp": 0.702576112412178,
-    "spread_text_bearing_pp": 0.702576112412178,
+    "spread_all_modes_pp": 0.7234726688102894,
+    "spread_text_bearing_pp": 0.7234726688102894,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 0.0,
      "classifieds\u00b7B1": 0.0,
@@ -946,7 +946,7 @@
    {
     "rule_id": "P1",
     "rule_name": "\u5143\u7d20\u4e2d\u5fc3\u8d8a\u754c",
-    "overall_pct": 0.13010668748373666,
+    "overall_pct": 0.13073604392731075,
     "per_mode_pct": {
      "dom": 0.0,
      "som": 0.0,
@@ -972,17 +972,17 @@
    {
     "rule_id": "P32",
     "rule_name": "\u6587\u672c\u8bef\u5165\u4ef7\u683cfilter",
-    "overall_pct": 0.10408534998698933,
+    "overall_pct": 0.10458883514184861,
     "per_mode_pct": {
      "dom": 0.078064012490242,
-     "som": 0.234192037470726,
+     "som": 0.24115755627009647,
      "vision": 0.0,
      "phantom_text": 0.078064012490242,
      "phantom_prompt": 0.078064012490242,
      "phantom_som": 0.156128024980484
     },
-    "spread_all_modes_pp": 0.234192037470726,
-    "spread_text_bearing_pp": 0.156128024980484,
+    "spread_all_modes_pp": 0.24115755627009647,
+    "spread_text_bearing_pp": 0.16309354377985447,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 0.44642857142857145,
      "classifieds\u00b7B1": 0.0,
@@ -998,7 +998,7 @@
    {
     "rule_id": "P21",
     "rule_name": "dom\u6a21\u5f0f\u89c6\u89c9\u5e7b\u89c9",
-    "overall_pct": 0.078064012490242,
+    "overall_pct": 0.07844162635638646,
     "per_mode_pct": {
      "dom": 0.468384074941452,
      "som": 0.0,
@@ -1024,17 +1024,17 @@
    {
     "rule_id": "P29",
     "rule_name": "benchmark-FP\u8bed\u4e49yes/no",
-    "overall_pct": 0.06505334374186833,
+    "overall_pct": 0.052294417570924304,
     "per_mode_pct": {
      "dom": 0.0,
-     "som": 0.156128024980484,
+     "som": 0.08038585209003216,
      "vision": 0.078064012490242,
      "phantom_text": 0.078064012490242,
      "phantom_prompt": 0.078064012490242,
      "phantom_som": 0.0
     },
-    "spread_all_modes_pp": 0.156128024980484,
-    "spread_text_bearing_pp": 0.156128024980484,
+    "spread_all_modes_pp": 0.08038585209003216,
+    "spread_text_bearing_pp": 0.08038585209003216,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 0.44642857142857145,
      "classifieds\u00b7B1": 0.44642857142857145,
@@ -1050,7 +1050,7 @@
    {
     "rule_id": "P11",
     "rule_name": "\u6700\u65b0+\u5730\u70b9\u7ec4\u5408",
-    "overall_pct": 0.039032006245121,
+    "overall_pct": 0.03922081317819323,
     "per_mode_pct": {
      "dom": 0.078064012490242,
      "som": 0.0,
@@ -1076,17 +1076,17 @@
    {
     "rule_id": "P40",
     "rule_name": "LUCKY_NUMERIC_FP",
-    "overall_pct": 0.013010668748373666,
+    "overall_pct": 0.013073604392731076,
     "per_mode_pct": {
      "dom": 0.0,
-     "som": 0.078064012490242,
+     "som": 0.08038585209003216,
      "vision": 0.0,
      "phantom_text": 0.0,
      "phantom_prompt": 0.0,
      "phantom_som": 0.0
     },
-    "spread_all_modes_pp": 0.078064012490242,
-    "spread_text_bearing_pp": 0.078064012490242,
+    "spread_all_modes_pp": 0.08038585209003216,
+    "spread_text_bearing_pp": 0.08038585209003216,
     "within_cell_spread_text_bearing_pp": {
      "classifieds\u00b7B0": 0.0,
      "classifieds\u00b7B1": 0.0,
@@ -1161,17 +1161,17 @@
      "run_id": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183"
     },
     "SoM": {
-     "ep_total": 77,
-     "ep_failed": 53,
-     "ep_with_hall": 0,
-     "act_all": 646,
-     "act_failed": 555,
-     "hall_all": 0,
-     "hall_failed": 0,
-     "universe_sha256": "e7ce605ae6a6995bdd452d371d693a279ee8adf69b8c906dae7b1afe2bb01dd7",
-     "rate_all_pct": 0.0,
-     "rate_failed_pct": 0.0,
-     "episode_incidence_pct": 0.0,
+     "ep_total": 187,
+     "ep_failed": 129,
+     "ep_with_hall": 2,
+     "act_all": 1679,
+     "act_failed": 1477,
+     "hall_all": 5,
+     "hall_failed": 5,
+     "universe_sha256": "895f41ac6b6ea69e622943fd67ed2a0681b580857e5964db06deedffd58a9bb0",
+     "rate_all_pct": 0.29779630732578916,
+     "rate_failed_pct": 0.33852403520649965,
+     "episode_incidence_pct": 1.0695187165775402,
      "run_id": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696"
     },
     "Vision": {

@@ -1,6 +1,6 @@
 # Pooled × cost-tier router learnability (same-family corner)
 
-- generated: `2026-07-29T09:03:15+00:00`
+- generated: `2026-08-03T16:40:05+00:00`
 - schema: `2026-07-28-router-pooled-tier-learnability-v1`
 - **post_hoc_exploratory=True / h10_eligible=False** — not the preregistered H10 gate.
 - protocol: task-held-out 5-fold (§216.1), fully nested (§392.2), per-cell paired bootstrap B=1000 at 95% non-dominance (§150b.4 / B-1550)
@@ -10,15 +10,15 @@
 
 > A router trained on the same-family pool (B0+B1) with cost-tier labels Pareto-dominates always-cheapest on ≥1 site.
 
-**Verdict: H-pool NOT supported — the same-family × cost-tier router dominates always-cheapest in 0/4 cells and is dominated by the fixed-mode menu in every cell. The most favourable corner (agreeing backbones, coarse label, highest ceiling) does not change the negative result.**
+**Verdict: H-pool NOT supported — the same-family × cost-tier router dominates always-cheapest in 0/6 cells and is dominated by the fixed-mode menu in every cell. The most favourable corner (agreeing backbones, coarse label, highest ceiling) does not change the negative result.**
 
 Three tallies, because the hypothesis and the locked test are not the same question. Non-dominance says the router is *admissible*; dominance says it is *better*. H-pool is worded as dominance (spec §2); the locked decision rule is non-dominance (spec §3).
 
 | tally | same-family × cost-tier | all arms |
 |---|---|---|
-| non-dominated vs always-cheapest (locked §3 rule) | **1/4** | 5/26 |
-| **dominates** always-cheapest (H-pool as worded, §2) | **0/4** | 0/26 |
-| non-dominated vs all six fixed modes (on the front at all) | **0/4** | 0/26 |
+| non-dominated vs always-cheapest (locked §3 rule) | **1/6** | 7/36 |
+| **dominates** always-cheapest (H-pool as worded, §2) | **0/6** | 0/36 |
+| non-dominated vs all six fixed modes (on the front at all) | **0/6** | 0/36 |
 
 ### Attribution — what, if anything, caused a pass
 
@@ -26,11 +26,13 @@ Three tallies, because the hypothesis and the locked test are not the same quest
 - **classifieds**: no cell clears the locked rule under any arm (7 arms tested).
 - **reddit label balance (same-family pool)**: {'text_only': 63, 'image': 14} — minority class is 18% of rows. **Severely imbalanced**: a classifier can score well by collapsing to the majority class, so any statement about what the LABEL GRANULARITY contributed is confounded with the label barely varying.
 - **reddit / B0_reddit** clears the locked rule in 5/7 arms: `same_family|cost_tier` 14.29%@0.10803, `same_family|which_mode` 15.27%@0.10415, `all_three|cost_tier` 13.30%@0.10071, `all_three|which_mode` 14.29%@0.10132, `per_cell|cost_tier|B0` 13.30%@0.10470.  Co-occurrence: clears with **and** without the cross-family cell; clears at **both** granularities; clears under **per-cell** training as well as pooled.
+- **wa_reddit label balance (same-family pool)**: {'text_only': 76, 'image': 10} — minority class is 12% of rows. **Severely imbalanced**: a classifier can score well by collapsing to the majority class, so any statement about what the LABEL GRANULARITY contributed is confounded with the label barely varying.
+- **wa_reddit / B1_wa_reddit** clears the locked rule in 2/6 arms: `same_family|which_mode` 16.35%@0.06108, `all_three|which_mode` 16.35%@0.06108.  Co-occurrence: clears with **and** without the cross-family cell.
 - ⚠️ **These are co-occurrences, not causal attributions.** Two arms can both clear a binary admissibility bar while differing materially in (SR, cost) — the point estimates above show exactly that. Establishing that a factor did or did not move the operating point requires paired task-level contrasts (ΔSR and Δcost with paired bootstrap) or an explicit 2×2 interaction contrast, neither of which is computed here.
 
 ### How to read this
 
-1. **Nothing reaches the front.** Across all 26 arm×cell combinations the router is non-dominated by the six-fixed-mode menu in 0 of them, and dominates always-cheapest in 0. The favourable corner the spec identified — same family, coarse label, highest ceiling — contributes 0/4 and 0/4 respectively.
+1. **Nothing reaches the front.** Across all 36 arm×cell combinations the router is non-dominated by the six-fixed-mode menu in 0 of them, and dominates always-cheapest in 0. The favourable corner the spec identified — same family, coarse label, highest ceiling — contributes 0/6 and 0/6 respectively.
 2. **The coarse label did not buy a better operating point — and on the one passing cell it was slightly worse.** reddit·B0 same-family: which-mode 15.27% SR at 0.10415 vs cost-tier 14.29% at 0.10803, i.e. the 6-way label is better on both axes there. The §395.2 defect the tier label sidesteps is real, but sidestepping it did not help. ⚠️ Two qualifiers, both from cross-AI review 2026-07-29: (a) this is a point-estimate comparison, not a paired contrast, so it does not establish that granularity is causally inert; (b) on reddit the tier label is severely imbalanced (63 text_only vs 14 image), so a tier classifier can score by collapsing to the majority class — granularity and label-variance are confounded in exactly the cell that passes.
 3. **The one pass is a property of the contrast, not of the router.** reddit·B0's always-cheapest is Vision at 7.39% SR against a best-single reference of 11.33% — an unusually weak baseline. Any routing policy that moves tasks off Vision buys SR there, which is why all five passing arms pass, including per-cell training with no pooling at all.
 4. **The trade-off is genuine but priced.** reddit·B0 reaches 13.3-15.3% SR, above the best single mode, and pays 2.7-10.2% more per task for it. That is a legitimate operating point to report; it is not the dominance H-pool asked for, and the six-mode menu still dominates it in 35-71% of paired replicates.
@@ -166,13 +168,72 @@ A cross-AI reviewer argued H-pool is arithmetically unsatisfiable because the ch
 - `per_cell|cost_tier|B1` / B1_reddit: routed {'dom': 78, 'phantom_som': 29, 'phantom_text': 63, 'som': 33}; always-cheapest picked {'vision': 203}
 - `per_cell|cost_tier|B2` / B2_reddit: routed {'dom': 40, 'som': 1, 'vision': 162}; always-cheapest picked {'vision': 203}
 
+## wa_reddit
+
+universe N=104 (sha `wa-six-mode-`), fold sizes {0: 21, 1: 21, 2: 21, 3: 21, 4: 20}
+
+### Label supply
+
+| pool | labelled rows | which-mode classes | cost-tier split |
+|---|---|---|---|
+| `same_family` (B0+B1) | 86 | dom=45, phantom_prompt=8, phantom_som=9, phantom_text=14, som=5, vision=5 | text_only=76, image=10 |
+| `all_three` (B0+B1) | 86 | dom=45, phantom_prompt=8, phantom_som=9, phantom_text=14, som=5, vision=5 | text_only=76, image=10 |
+
+### Are the pooled features backbone-identifiable?
+
+B0_wa_reddit vs B1_wa_reddit: 19/104 shared tasks have bit-identical feature rows (18.3%); out-of-fold AUROC for predicting the backbone from X = **0.897**.
+
+> AUROC near 0.5 => the pooled features carry no usable backbone identity, so the conflict rate really is same-X-different-y.
+
+### Is always-cheapest a cost floor? (No.)
+
+A cross-AI reviewer argued H-pool is arithmetically unsatisfiable because the cheapest mode is cheapest by construction. That holds only if it is cheapest on every task. It is not — it has the lowest **mean**.
+
+| cell | cheapest-on-mean | tasks where it is NOT the per-task floor | always-cheapest cost | per-task oracle | headroom |
+|---|---|---|---|---|---|
+| B0_wa_reddit | dom | 91/104 = 87.5% | 0.07531 | 0.04286 | **-43.1%** |
+| B1_wa_reddit | vision | 50/104 = 48.1% | 0.04468 | 0.03228 | **-27.8%** |
+
+> So Pareto dominance is **not** excluded by definition; the failure below is empirical. The headroom column is also the cost-routing upper bound in its own right.
+
+### Operating points
+
+`best-SR ref` is the best single mode chosen per training fold — it shows how weak or strong the always-cheapest contrast is in that cell, which is what decides whether beating it means anything.
+
+| arm | cell | router SR% | router cost | cheapest SR% | cheapest cost | best-SR ref% | ΔSR pp | Δcost % | ND vs cheapest | **dominates** | ND vs 6 fixed |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `same_family|cost_tier` | B0_wa_reddit | 30.77 | 0.08355 | 26.92 | 0.07860 | 35.58 | +3.85 | +6.3 | 0.833 fail | 0.159 fail | 0.483 fail |
+| `same_family|cost_tier` | B1_wa_reddit | 15.38 | 0.06959 | 9.62 | 0.04468 | 13.46 | +5.77 | +55.7 | 0.941 fail | 0.000 fail | 0.133 fail |
+| `same_family|which_mode` | B0_wa_reddit | 25.96 | 0.07973 | 26.92 | 0.07860 | 35.58 | -0.96 | +1.4 | 0.523 fail | 0.213 fail | 0.176 fail |
+| `same_family|which_mode` | B1_wa_reddit | 16.35 | 0.06108 | 9.62 | 0.04468 | 13.46 | +6.73 | +36.7 | 0.950 PASS | 0.000 fail | 0.709 fail |
+| `all_three|cost_tier` | B0_wa_reddit | 30.77 | 0.08355 | 26.92 | 0.07860 | 35.58 | +3.85 | +6.3 | 0.833 fail | 0.159 fail | 0.483 fail |
+| `all_three|cost_tier` | B1_wa_reddit | 15.38 | 0.06959 | 9.62 | 0.04468 | 13.46 | +5.77 | +55.7 | 0.941 fail | 0.000 fail | 0.133 fail |
+| `all_three|which_mode` | B0_wa_reddit | 25.96 | 0.07973 | 26.92 | 0.07860 | 35.58 | -0.96 | +1.4 | 0.523 fail | 0.213 fail | 0.176 fail |
+| `all_three|which_mode` | B1_wa_reddit | 16.35 | 0.06108 | 9.62 | 0.04468 | 13.46 | +6.73 | +36.7 | 0.950 PASS | 0.000 fail | 0.709 fail |
+| `per_cell|cost_tier|B0` | B0_wa_reddit | 30.77 | 0.08759 | 26.92 | 0.07860 | 35.58 | +3.85 | +11.4 | 0.815 fail | 0.034 fail | 0.090 fail |
+| `per_cell|cost_tier|B1` | B1_wa_reddit | 12.50 | 0.06613 | 9.62 | 0.04468 | 13.46 | +2.88 | +48.0 | 0.769 fail | 0.000 fail | 0.042 fail |
+
+### What the router actually selected
+
+- `same_family|cost_tier` / B0_wa_reddit: routed {'phantom_text': 79, 'som': 17, 'vision': 8}; always-cheapest picked {'dom': 84, 'phantom_prompt': 20}
+- `same_family|cost_tier` / B1_wa_reddit: routed {'dom': 36, 'phantom_prompt': 1, 'phantom_text': 35, 'som': 32}; always-cheapest picked {'vision': 104}
+- `same_family|which_mode` / B0_wa_reddit: routed {'dom': 68, 'phantom_prompt': 4, 'phantom_som': 5, 'phantom_text': 22, 'som': 1, 'vision': 4}; always-cheapest picked {'dom': 84, 'phantom_prompt': 20}
+- `same_family|which_mode` / B1_wa_reddit: routed {'dom': 66, 'phantom_prompt': 7, 'phantom_som': 6, 'phantom_text': 20, 'som': 1, 'vision': 4}; always-cheapest picked {'vision': 104}
+- `all_three|cost_tier` / B0_wa_reddit: routed {'phantom_text': 79, 'som': 17, 'vision': 8}; always-cheapest picked {'dom': 84, 'phantom_prompt': 20}
+- `all_three|cost_tier` / B1_wa_reddit: routed {'dom': 36, 'phantom_prompt': 1, 'phantom_text': 35, 'som': 32}; always-cheapest picked {'vision': 104}
+- `all_three|which_mode` / B0_wa_reddit: routed {'dom': 68, 'phantom_prompt': 4, 'phantom_som': 5, 'phantom_text': 22, 'som': 1, 'vision': 4}; always-cheapest picked {'dom': 84, 'phantom_prompt': 20}
+- `all_three|which_mode` / B1_wa_reddit: routed {'dom': 66, 'phantom_prompt': 7, 'phantom_som': 6, 'phantom_text': 20, 'som': 1, 'vision': 4}; always-cheapest picked {'vision': 104}
+- `per_cell|cost_tier|B0` / B0_wa_reddit: routed {'phantom_text': 79, 'som': 20, 'vision': 5}; always-cheapest picked {'dom': 84, 'phantom_prompt': 20}
+- `per_cell|cost_tier|B1` / B1_wa_reddit: routed {'dom': 38, 'phantom_prompt': 20, 'phantom_text': 38, 'som': 8}; always-cheapest picked {'vision': 104}
+
 ## Known limitations (not optional)
 
-1. n is small: the same-family pool shares only 50 tasks on classifieds and 20 on reddit (labelled rows: cls 152, red 77). Every per-cell contrast below is underpowered and the fold-to-fold variation is correspondingly large.
-2. A ceiling is not learnability (§394): red·B2 is the only cell of six whose triage signal survived Holm, and its AUROC was 0.483. A 97.5% tier ceiling bounds what a perfect classifier could do; it says nothing about whether this one does.
-3. The 48% / 45% which-mode conflict may be a real backbone difference or may be noise; the present data cannot separate the two. Phase 0b measured a 4.9-7.6pp same-condition replicate floor, which is the scale the disagreement must clear before it can be read as a model property.
-4. B0 and B1 costs are NOT comparable (B0 bills a proxy API; B1/B2 are electricity-derived). Pooling is used for labels and features only — every (SR, cost) pair and every Pareto verdict is computed inside a single cell.
-5. post_hoc_exploratory=True / h10_eligible=False. This is not the preregistered H10 gate and must never be cited as one; it is an exploratory probe of a corner the negative result never covered, in the manner of router_objective_ordering.md.
-6. Non-dominance is not dominance, and the two tallies must not be merged. The locked §3 rule (95% paired-bootstrap non-dominance vs always-cheapest) is an admissibility criterion: a policy buying +7pp SR for +10% cost passes it. H-pool as worded in §2 asks for dominance. Any reader quoting a pass rate must say which of the two it is.
-7. A low tier-conflict rate can mean agreement or it can mean the label barely varies. The same-family reddit pool is 63 text_only vs 14 image, and B1·reddit alone is 20 vs 4 — so reddit's 5.0% conflict / 97.5% ceiling partly reflects a near-constant label rather than two backbones agreeing on a hard call. The class balance is reported per pool above for exactly this reason.
-8. The which-mode arms carry no min-class filter. train_l1_router's Stage-3 N_MIN_CLASS_TRAIN=10 rule would leave several folds with fewer than two trainable classes and the control arm could not run at all; per-fold class counts are reported instead so the reader can see which classes were never learnable.
+1. WebArena (added 2026-08-03) carries neither `reasoning_difficulty` nor a reference image, so those two of the twenty features are zero-filled on its cells and cannot contribute there. That is tolerable in THIS product and not in router_triage_learnability, because nothing here compares a score across sites: every arm is judged inside one site against that site's own always-cheapest baseline. WebArena also has no cross-family backbone — B2 never ran it — so its `all_three` row is B0+B1 and is therefore IDENTICAL to `same_family` by construction, not by result. Read the two WA rows as one arm reported twice; the cross-family contrast this product is partly about cannot be formed there at all.
+2. n is small: the same-family pool shares only 50 tasks on classifieds and 20 on reddit (labelled rows: cls 152, red 77). Every per-cell contrast below is underpowered and the fold-to-fold variation is correspondingly large.
+3. A ceiling is not learnability (§394): red·B2 is the only cell of six whose triage signal survived Holm, and its AUROC was 0.483. A 97.5% tier ceiling bounds what a perfect classifier could do; it says nothing about whether this one does.
+4. The 48% / 45% which-mode conflict may be a real backbone difference or may be noise; the present data cannot separate the two. Phase 0b measured a 4.9-7.6pp same-condition replicate floor, which is the scale the disagreement must clear before it can be read as a model property.
+5. B0 and B1 costs are NOT comparable (B0 bills a proxy API; B1/B2 are electricity-derived). Pooling is used for labels and features only — every (SR, cost) pair and every Pareto verdict is computed inside a single cell.
+6. post_hoc_exploratory=True / h10_eligible=False. This is not the preregistered H10 gate and must never be cited as one; it is an exploratory probe of a corner the negative result never covered, in the manner of router_objective_ordering.md.
+7. Non-dominance is not dominance, and the two tallies must not be merged. The locked §3 rule (95% paired-bootstrap non-dominance vs always-cheapest) is an admissibility criterion: a policy buying +7pp SR for +10% cost passes it. H-pool as worded in §2 asks for dominance. Any reader quoting a pass rate must say which of the two it is.
+8. A low tier-conflict rate can mean agreement or it can mean the label barely varies. The same-family reddit pool is 63 text_only vs 14 image, and B1·reddit alone is 20 vs 4 — so reddit's 5.0% conflict / 97.5% ceiling partly reflects a near-constant label rather than two backbones agreeing on a hard call. The class balance is reported per pool above for exactly this reason.
+9. The which-mode arms carry no min-class filter. train_l1_router's Stage-3 N_MIN_CLASS_TRAIN=10 rule would leave several folds with fewer than two trainable classes and the control arm could not run at all; per-fold class counts are reported instead so the reader can see which classes were never learnable.

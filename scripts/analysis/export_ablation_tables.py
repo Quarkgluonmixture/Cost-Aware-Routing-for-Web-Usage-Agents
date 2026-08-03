@@ -422,6 +422,35 @@ def t_pareto():
         "any single ρ. Source: `multimetric_pareto_with_wa.json`.")
 
 
+def t_latency_split():
+    d = load("latency_decomposition")
+    rows = ["| cell | mean step (ms) | model call (ms) | model share | fastest by total "
+            "| fastest by model only | same? |", "|---|---|---|---|---|---|---|"]
+    for cell, r in d["cells"].items():
+        pm = r["per_mode_ms"]
+        tot = sum(v["total"] for v in pm.values()) / len(pm)
+        inf = sum(v["backend_infer"] for v in pm.values()) / len(pm)
+        rows.append(f"| {cell} | {tot:,.0f} | {inf:,.0f} | "
+                    f"**{100 * r['model_share_of_total']:.1f}%** | {r['fastest_by_total']} "
+                    f"| {r['fastest_by_model_only']} | "
+                    f"{'yes' if r['fastest_agrees'] else '**no**'} |")
+    red, red_n = d["flips_by_family"]["reddit"]
+    cls, cls_n = d["flips_by_family"]["classifieds"]
+    return "\n".join(rows), (
+        f"What a latency number contains. Every latency figure elsewhere in this paper is the "
+        f"whole step; `backend_infer` isolates the model call and was read by no analysis "
+        f"script until 2026-08-03. **The model is "
+        f"{100 * d['model_share_min']:.0f}–{100 * d['model_share_max']:.0f}% of the measured "
+        f"time**; the rest is the browser and the container, which "
+        f"`offsite_navigation_audit` measures at 1.69× between the two sites. Removing it "
+        f"**changes which mode is fastest in {d['n_fastest_flips']} of {d['n_cells']} cells**, "
+        f"and not at random: {red} of {red_n} reddit-family cells flip against {cls} of "
+        f"{cls_n} classifieds cells — the flips land where the container is slowest. A "
+        f"sentence naming the fastest mode is therefore partly a sentence about this "
+        f"deployment. What survives estimand choice is only that the two orderings disagree. "
+        f"Source: `latency_decomposition.json`.")
+
+
 def t_per_success():
     d = load("outcome_efficiency")
     rows = ["| cell | content? | cheapest/attempt | cheapest/success | fastest/attempt | "
@@ -821,6 +850,7 @@ TABLES = [
     ("prof-micro", "Full matrix — Micro dimension", t_prof_micro),
     ("prof-eff", "Full matrix — Efficiency dimension", t_prof_efficiency),
     ("pareto", "Multi-metric Pareto", t_pareto),
+    ("latency-split", "What a latency number contains", t_latency_split),
     ("per-success", "Per-attempt versus per-success", t_per_success),
     ("fusion", "Fusion premium against the rerun band", t_fusion),
     ("exante", "Ex-ante visual-intent partition", t_exante),
