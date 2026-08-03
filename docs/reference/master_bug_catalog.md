@@ -10913,3 +10913,25 @@ A100 解析不了的域名 ⇒ 与 2026-04 §103 诊断的状态一模一样。*
 **Cross-link**: 实验笔记 §428 (本轮) + §424 (另一 session 的 SoM 重跑, 编号撞车已改我方为 §428);
 §103 (metis base_url 首次诊断); B-1927 (被误当故障的那个守卫); B-1931 (外层 timeout, 与本条互补
 但不重叠); B-1942/1943 (codex 提出、我实现错的那两条)
+
+### B-1953 — indexer 轮询按迭代计数而非墙钟, 使 B-1931 的预算算错
+
+`start_vwa_docker.sh` 的 indexer 轮询写作 `for poll_i in $(seq 1 60); do ...; sleep 10; done`,
+被读成「10 分钟上限」—— **B-1931 正是据此把 reset timeout 定为 900s**。但每次迭代还要跑一个
+`docker exec ... magento indexer:status`, 而**这个调用恰恰在 reindex 忙的时候最慢**。真实上限是
+`60 × (10s + status 调用耗时)`, **无上界**。
+
+**实测**: 一次真实 reset 在 **24.5 分钟**时仍在运行 (后续观测 31 分钟仍未结束) ⇒ 若走
+`reset_and_auth_gate`, 会在第 15 分钟被我自己设的 timeout 杀掉, **而且是在 `docker rm -f` 之后** ——
+正是 B-1931 条目里描述的那个最坏形态。
+
+**修**: 轮询改为墙钟 deadline (`MAGENTO_REINDEX_MAX_S`, 默认 1800s), 收尾判断与提示同步改;
+`reset_and_auth_gate` 的 shopping timeout **900 → 2400s** (覆盖 1800 indexer + 重建 + mysqld 等待
++ base_url + cache flush + 180s warm-up + 余量), floor clamp 同步。
+
+> **教训**: 「N 次迭代 × sleep S」不是「N×S 秒」——**只有当循环体本身耗时可忽略时才成立**。
+> 这次循环体是一个在负载下会变慢的 `docker exec`, 于是预算算少了一半以上。B-1952 与本条是同一天
+> 同一个函数里的两个时间 bug, 方向相反: 一个等得不够(固定 sleep), 一个算得不够(迭代当墙钟)。
+> **两者的共同修法都是「等条件 / 卡墙钟」, 而不是「调数字」。**
+
+**Cross-link**: B-1931 (被本条修正的预算) · B-1952 (同函数, 反方向) · B-311 (indexer 轮询的引入)

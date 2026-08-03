@@ -117,65 +117,47 @@ updated: 2026-07-29
 > 「WA 没问题」，而那个 0 出自假阳率 14 倍的测试 —— 且它看起来会完全正常。多跑两个 cell 成本是零。
 >
 
-> ## 🟩 2026-08-03 · shopping reset / paper-grade 打通（VWA + WA）— **无阻塞，可直接 fire**
+> ## 🟩 2026-08-03 · shopping B0 chain 已发 —— VWA 在跑, WA 自动接续
 >
-> chronicle → **笔记 §424**；缺陷详情 → **master_bug_catalog B-1930 ~ B-1936**。
+> chronicle → **笔记 §428**（含 §428.12 首次真实 fire）· 缺陷 → **B-1930~B-1943 + B-1949~B-1953**
 >
-> ### 可直接用
+> ### 在跑什么
 >
-> | 命令 | 说明 |
-> |---|---|
-> | `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B0 dom shopping` | VWA shopping，reset 现在真能跑完（timeout 120s→900s，B-1931） |
-> | `... queue_baseline.sh B0 dom shopping wa` | WA shopping，reset 不再被拒（B-1930） |
-> | `bash scripts/queues/queue_phase1_paper_grade.sh launch phase1b` | VWA shop 18 conditions |
-> | `... launch wa_shop` / `... launch wa_shop_admin` | WA shopping / shopping_admin 各 18 conditions（B-1935） |
->
-> ⚠️ **三条 shop 链是同一个 Magento 容器**（`vwa-shopping`，7770 storefront + 7780 admin），
-> 共用容器锁，必须串行；第二条启动时 abort 是 B-1934 的闸在工作，不是故障。
-> stale lock 清理名字变了：`.locks/p79_magento.lock`（原 `p79_shopping_vwa.lock`）。
->
-> ### ✅ A100 已同步 + cart-reset 已实测（2026-08-03）
->
-> **代码同步**：`rsync -avc p79 scripts tests` DGX→A100（98 新增 + 49 更新 = 80 个 commit 的差异）。
-> 按笔记 §16904 既有约定走 rsync 而非 git pull；**排除** `configs/`（A100 那 6 个 WA reddit config
-> 指向 `wa_full_reddit_base.yaml` 是 7-31 的决定，DGX 没跟上）+ `vwa_env_remote.sh`（A100 本地凭据）。
-> 9 个核心文件 checksum 两边一致。**无 `--delete`**，A100 独有的 probe/备份都在。
->
-> **实测通过**（真实 `vwa-shopping` 容器）：
-> - `clear_shopping_cart({})` → True，`customer resolved, items=0`
-> - B-1942 守卫：错身份 → False + 精确诊断；`P79_PAPER_GRADE=1` 下 raise
-> - schema：8 个 quote 列 + `quote_item.quote_id` + 三张表 `ON DELETE CASCADE` 全对
->
-> **顺带解锁 B3**：`local_mimo` backend DGX 有、A100 没有 —— 这就是 `B3_som_classifieds_20260803`
-> 崩在 `ValueError: Unsupported backend type: local_mimo`（0 episode）的原因，同步后已到位。
->
-> ⚠️ **仍未测**：非平凡清理（塞一件商品进去 → 清 → 确认没了）。以上都是空 cart，DELETE 每次匹配
-> 0 行 —— 语句能解析、判别逻辑能区分，都验了，但**没观察过它真的删掉东西**。
->
-> ### 📋 shopping 协议现状（写 paper 时按这个表披露，不要主张统一）
->
-> | 站 | per-task 状态处理 | 来源 |
+> | | scope | 成本 |
 > |---|---|---|
-> | classifieds | 22 个点**全站 reset** | upstream 实现（我们没加） |
-> | reddit | **无**（+ 一个 identity 复原例外） | upstream `TODO`；累积已 bound，§402.7 披露不修 |
-> | shopping | **每 task 清 cart** | PROTOCOL_NOTE_07（本次新增；shopping pre-data） |
+> | **VWA shop**（跑中） | B0 × 6 mode + **1 replicate** = 7 cond × 435 task | ~11.3 天 · 13.1 GB · ~$94 |
+> | **WA shop**（自动接续） | B0 × 6 mode + 1 replicate = 7 cond × 173 task | ~4.5 天 · 5.2 GB · ~$37 |
 >
-> ⚠️ 清 cart **不等于**与 cls 对齐——cls 是全站 reset。真对齐需 19 个点整容器 rebuild
-> ≈ 4.75h/condition，不可行。异质性是继承来的，只能披露。
+> **两条必须串行**（同一 `vwa-shopping` 容器，7770+7780），已挂
+> `scripts/queues/_launch_wa_shop_after_vwa.sh` 自动接续：等 VWA 的 done sentinel、
+> **要求 `rc=0`**、再验 storefront 200，任一不满足就拒绝发并 ntfy。
 >
-> ### 🔵 fire 之后（不阻塞）
+> **为什么是 B0-only**：3 baseline × 2 站 = 36 cond = **46.8 GB / 54.3 天**，而 A100 只剩 41 GB。
+> 依据项目自己的措辞纪律（「三个 backbone 建立的是模型稳健性，**不是六个独立观测**」），
+> 站点轴 +1 只需要一个 backbone。实测口径：**4.38 MB/ep · B0 322 s/task**（在 **A100** 量；
+> DGX 量得 132 KB/ep 是缺 artifacts 的假象，差 27 倍 —— 旧 frontmatter 的 18.8G 估算就是这么来的）。
 >
-> **敏感性分析**：cart 隔离开启后，下列 task 的残留通道已关闭，但仍应报一次排除对照，证明结论
-> 不依赖它们。分母用 **104（cart-graded 子集）** 不是 435。
+> ### fire 期间不要做的
 >
-> | 站 | task | 机制 | 现在还漏吗 |
-> |---|---|---|---|
-> | VWA shopping | 86/87、223/224、348/349 | 两 task 的 `must_include` 目标串完全相同 | 已被 PN_07 关闭 |
-> | VWA shopping | 453 `"Green"`、455 `"Gray"` | 目标是短词 | 已被 PN_07 关闭 |
-> | VWA shopping | **463/465** | 不作为即得分 1 | **已排除**（AMENDMENT_09，435→433） |
-> | WA shopping_admin | **773/774** | 两 task 的 eval **逐字相同**，先跑的删完 review 后跑的白过 | ⚠️ **未处理** —— 与 cart 无关，属 admin 站的同类 eval 缺陷，待裁定是否照 AMENDMENT_09 扩展 |
+> - **不要在 A100 上 `git pull` / `checkout`** —— sequential chain 每个 condition 新进程重读磁盘代码
+> - **不要发第二条 shop 链** —— 容器锁会拒，但会表现为「报 launched 后在 detached 日志里静默死」
+> - 单文件对齐用 rsync；整体对齐等 chain 完成
 >
-
+> ### fire 之后要做的
+>
+> 1. **敏感性分析**：排除下列 task 重算 shopping SR，分母用 **104（cart-graded 子集）不是 435**
+>    | 站 | task | 机制 | 现状 |
+>    |---|---|---|---|
+>    | VWA shop | 86/87、223/224、348/349 | `must_include` 目标串完全相同 | PROTOCOL_NOTE_07 已关闭残留通道 |
+>    | VWA shop | 453 `"Green"`、455 `"Gray"` | 目标是短词 | 同上 |
+>    | VWA shop | **463/465** | 不作为即得分 1 | **已排除**（AMENDMENT_09，435→433）|
+>    | WA admin | **773/774** | 两 task 的 eval **逐字相同** | ⚠️ **未处理**，待裁定是否照 AMENDMENT_09 扩展 |
+> 2. **B3 (MiMo) floor pilot** —— blocker 已全解除（`local_mimo` backend 今日同步到位，
+>    这就是 `B3_som_classifieds_20260803` 崩在 `Unsupported backend type` 产出 0 episode 的根因）。
+>    ⚠️ frontmatter 自带警告：**要用 25 task × 30 step**，上次 pilot 的 10×15 与 B1/B2 不可比
+> 3. `cost_usd` 在已落地 B0 summary 里**普遍为空**（逐 condition + 逐 episode 都翻过）——
+>    paper §1 的 cost claim 依赖它，值得单独查
+>
 > ## 🟦 2026-08-03 · diag 质量审计 session 交接（**给动 `diag_scans/` 的那个 session**）
 >
 > chronicle → **笔记 §416.1–§416.14**。commits `cc429f7` → `915aa00`。

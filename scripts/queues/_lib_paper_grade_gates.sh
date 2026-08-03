@@ -680,7 +680,14 @@ reset_and_auth_gate() {
   case "${site}" in
     reddit) _reset_timeout=240 ;;
     classifieds) _reset_timeout=$([[ "${VWA_RESTART_DOCKER:-0}" == "1" ]] && echo 240 || echo 120) ;;  # Gate3: +docker restart wait (db+http ≤120s) needs headroom over 120s
-    shopping|shopping_admin) _reset_timeout=900 ;;  # B-1931: Magento rebuild + indexer poll
+    # B-1953 (2026-08-03, measured): 900s was sized from a MISREAD budget —
+    # the indexer poll's "60 iterations x sleep 10 = 10min" ignored that each
+    # iteration also runs `docker exec magento indexer:status`, which is slow
+    # precisely when the reindex is busy. A real reset was still running at
+    # 24.5 min. 2400s covers the new wall-clock-bounded indexer ceiling
+    # (MAGENTO_REINDEX_MAX_S, default 1800) plus rebuild + mysqld wait +
+    # base_url + cache flush + the 180s storefront warm-up, with headroom.
+    shopping|shopping_admin) _reset_timeout=2400 ;;
     *) _reset_timeout=120 ;;
   esac
   # Fire-6 RCA (/stress 2026-05-20): VWA_RESET_TIMEOUT env override for slow
@@ -703,9 +710,9 @@ reset_and_auth_gate() {
   # the resulting `timeout 124` reads as "reset failed" rather than "operator env
   # is stale". The floor is not overridable downward because no legitimate
   # shopping reset finishes under it; raising it via the env still works.
-  if [[ "${site}" == "shopping" || "${site}" == "shopping_admin" ]] && (( _reset_timeout < 900 )); then
-    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s below the Magento rebuild floor; clamping to 900s (B-1931)" >&2
-    _reset_timeout=900
+  if [[ "${site}" == "shopping" || "${site}" == "shopping_admin" ]] && (( _reset_timeout < 2400 )); then
+    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s below the Magento rebuild floor; clamping to 2400s (B-1953)" >&2
+    _reset_timeout=2400
   fi
   local _reset_rc
   # B-864 (/stress A1.23 P1-7 AB, 2026-05-17): process-group kill + SIGTERM trap.
