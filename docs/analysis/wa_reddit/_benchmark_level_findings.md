@@ -498,6 +498,75 @@ vision mode 天然 0 命中（坐标点击无 `target_tag`）→ 规则 mode-spe
 
 ---
 
+## W. 波及面 —— 本轮发现对 VWA 36 份 diag 与 Macro/Micro 证据层的影响
+
+> 本节**跨 benchmark**，不限于 WA reddit。回答"这些问题会不会波及其他 diag 和所有 macro/micro"。
+
+### W1. 对 VWA 36 份 diag 的波及
+
+| 本轮发现 | 波及 VWA | 台账是否已有 |
+|---|---|---|
+| **P36 / P31 是 risk-marker**（V1） | ✅ 36 份 digest 的 per-rule 表同为**症状分布** | **§317 已实证** — B1 som cls 上 `P31 failed 集 causal verify 0/4`、`success-fire 10/10 presence-only` |
+| **`_finish_answer()` 不读 `thought`**（V3） | ✅ `P22/P24/P27/P29/P46` 在全部 36 condition 上都受影响，且是**跨模型**偏差（B0 写 `answer`，B1 只写 `thought`） | ❌ 新 |
+| **B-1926 `page_changed` 假阳性** | ✅ **VWA 148 episode**（WA 仅 13），集中在 B2_ptext_red 20 · B2_psom_red 16 · B0_som_red 15 · B2_psom_cls 11 | **`router.py:95-99` 注释已记 VWA B2_phantom_text_reddit task 103**（同现象，触发 reason 是 `scroll_changed`）；§105 有同类先例 |
+| **B-1925 `_format_history` 丢 thought** | ✅ 所有 baseline 所有 run | ❌ 新 |
+| **B2 tokenize 假阴性** | 已查 → VWA 仅 2 task / 8 ep，且都不是决定性败因（见 §B2 VWA 对照） | §361.4 `token-granularity 族` |
+
+### W2. 对 Micro 维度的波及（四维度框架）
+
+`per_mode_four_dimension_profile.py` 有 **4 个 Micro 指标 + 1 个 Macro 指标**直接建在
+`page_changed` 上：`no_change_rate` / `noop_inert_rate` / `scroll_inert_rate` /
+`visibility_gap_rate`（Micro）+ `url_revisit_rate`（Macro）。
+
+**step 级疑似假阳性率**（判据：`page_changed=True` 且 url 不变 且 scroll_y 不变 且
+`text_similarity > 0.95`），VWA 36 condition：
+
+```
+vision 9.02% > som 7.90% > phantom_prompt 6.86% > dom 6.40% > phantom_som 6.32% > phantom_text 5.48%
+```
+
+**⚠️ `visibility_gap_rate` 抓不到这类假阳性** —— task 651 的 `agent_visible_changed` 是
+**30/30 全 True**，volatile 片段同时顶起了 `page_changed` 和 `agent_visible_changed`，
+所以 `page_changed=True AND agent_visible_changed=False` 命中 0。这个指标覆盖的是另一类问题。
+
+**敏感性分析（把疑似假阳性 step 重算为 no-change，看跨 mode 排序是否翻转）**：
+
+| cell | `no_change_rate` 最高 | 最低 | |
+|---|---|---|---|
+| B0/cls | vision → vision | som → **phantom_text** | ⚠ 最低端翻转 |
+| B0/red · B1/cls · B1/red · B2/cls · B2/red | vision → vision | 各自不变 | ✓ |
+
+**结论：主结论（`no_change_rate` 最高 = Vision）在 6/6 cell 稳健**；污染方向与现有结论一致
+（vision 假阳性率最高 9.02%，修正只会加强），**最低端有 1/6 cell 翻转** → 涉及"哪个 mode
+最低"的表述需要加脚注或改用区间。
+
+### W3. 对 Macro 维度的波及
+
+Macro 的四个条目（1a Tier-1 hook / 1b cascade / 1c strategy gradient / 1d action vocabulary）
+分别源自 `axis_effect_size.json` 和 `mechanism_per_task.json`，**不直接消费 `page_changed`**。
+唯一相关的是 `url_revisit_rate`（建在 URL 序列上，不受 page-change 判定影响）。
+→ **Macro 维度受本轮发现的影响小。**
+
+### W4. 对 router（paper §6）的波及 —— 这条最需要注意
+
+`p79/experiment/router.py:80-83` 的 `unchanged_streak` 直接由 `prev_page_changed` 驱动，
+`page_unchanged_streak` 是 escalation 触发器之一。在那 **161 个（VWA 148 + WA 13）
+`page_changed` 恒 True 的 episode 上，router 的这条触发器永不累积** ——
+`trigger_distribution` 全空，episode 卡满预算却"什么都没登记"。
+
+`router.py` 自己的注释已经记录了这个现象（VWA B2 task 103）。**§105 先例明写同类污染的后果**：
+> router signal AUROC / wasted_cost / no_op_rate 都受污染，paper §5/§6 数字需校
+
+→ **paper §6 router 分析里凡涉及 rule-based escalation 触发率的数字，需要按此校验。**
+
+### W5. 尚未评估的
+
+- **377 个 `failed+hit` 的死因**（本轮只验了 6 个）· **B1 那批 80 个 Tier-2 归因**（一个没验）
+- **VWA 36 份 digest 的 Tier-2 归因**（本轮完全没碰）
+- `Efficiency` 与 `Outcome` 两个维度对 `page_changed` 的依赖（本节只查了 Macro/Micro）
+
+---
+
 ## 8. 可 actionable 项
 
 | # | 事项 | 类型 | 优先级 | B-number 候选 |
