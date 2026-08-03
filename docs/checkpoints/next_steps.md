@@ -94,7 +94,7 @@ updated: 2026-07-29
 > ### 下一个 session 的第一件事
 >
 > **零预设审证据层**，prompt 已写好：
-> `docs/checkpoints/codex_prompts/evidence_layer_audit_2026-08-04.md`
+> `docs/reference/EVIDENCE_LAYER_AUDIT_PROMPT.md`
 > 五个问题：该进没进 / 进了少了 / 进了错了 / 不该进 / 没算但有用。
 > ⚠️ 那个 prompt **明写不要读笔记**（会预设），用 `known.py` 查台账代替。
 >
