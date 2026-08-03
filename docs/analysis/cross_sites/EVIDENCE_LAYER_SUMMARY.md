@@ -494,6 +494,14 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    at which **P-text clears it on two metrics** and this load-bearing negative appears to break.
    It does not break; the threshold was misread. Same data, wrong denominator, opposite claim.
    → `per_mode_four_dimension_profile` v2
+   ⚠️ **The magnitudes behind this consistency bar now have a noise reference**
+   (→ `replicate_metric_noise`, 2026-08-03). Consistency and magnitude are different
+   questions — a metric can put the same mode on top in every cell while the gap is tiny —
+   and until now only the consistency half was reported. On `cls_B0`, **22 of 25 metrics
+   have a cross-mode spread larger than a rerun of one arm produces**, several by 5–22×
+   (`action_repeat_frac` 21.9×, `scroll_frac` 16.9×, `locator_fallback_rate` 11.8×). So the
+   behavioural layer is not made of differences a rerun could manufacture — with the
+   latency pair as the named exception.
    The 26th metric came from the **unread-field inventory** rather than being chosen to find a
    difference: `scroll_inert_rate`, the share of scroll actions after which the viewport did not
    move. It lands on the image side too (Vision highest 5/6, SoM lowest 5/6). Surveying that
@@ -548,6 +556,17 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    still unexplained**, and the sentence above stands there unchanged.
 8. **The obvious routing feature has the wrong sign**, and the right one was read and dropped.
    → `routing_feature_diagnostics`
+9. ⚠️ **AND: on `cls_B0` the mode-to-mode latency spread is SMALLER than one rerun of a
+   single mode moves it.** → `replicate_metric_noise` (new 2026-08-03). Three replicated
+   arms give a per-metric run-to-run band for all 26 behavioural metrics. **22 of 25 live
+   metrics have a cross-mode spread larger than that band** — and the three that do not are
+   `parse_fail_rate` (1.00×) and **both latency metrics: `mean_latency_s` 0.87×,
+   `mean_latency_canonical_s` 0.84×**. Two independent routes now say the same thing: the
+   estimand decomposition below, and this one. **The latency axis does not resolve modes
+   above run-to-run movement on this cell.** Claim 9's safe form — *the cost ordering and
+   the latency ordering disagree*, a statement about two rankings — survives both; any
+   sentence naming a mode as fastest survives neither.
+
 9. ⚠️ **BEFORE the numbers below: 22–67% of every latency figure in this project is the
    model; the rest is the browser and the container.** → `latency_decomposition`
    (new 2026-08-03). `latency_ms.backend_infer` isolates the model call, is written on

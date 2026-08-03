@@ -507,6 +507,35 @@ def t_estimands():
         "`local_cost_estimand_audit.json`, `energy_carbon_audit.json`.")
 
 
+def t_metric_noise():
+    d = load("replicate_metric_noise")
+    rows = ["| dimension | metric | cross-mode spread | rerun band | ratio | > a rerun? |",
+            "|---|---|---|---|---|---|"]
+    for r in d["metrics"]:
+        if "excluded" in r:
+            rows.append(f"| {r['dimension']} | `{r['metric']}` | — | — | — "
+                        f"| *{r['excluded']}* |")
+            continue
+        rows.append(f"| {r['dimension']} | `{r['metric']}` | "
+                    f"{r['cross_mode_spread']:.3f} | {r['band_max']:.3f} | "
+                    f"{r['ratio']:.2f}x | {'**yes**' if r['exceeds_noise'] else 'no'} |")
+    fails = [r for r in d["metrics"]
+             if "excluded" not in r and not r["exceeds_noise"]]
+    return "\n".join(rows), (
+        f"Behavioural metrics against run-to-run movement, `B0 x classifieds`, three "
+        f"replicated arms (dom, vision, som). `rerun band` is the largest "
+        f"|metric(run A) - metric(run B)| over those arms; `cross-mode spread` is max-min "
+        f"over the six modes. **{d['n_exceeding_noise']} of {d['n_metrics_live']} metrics "
+        f"exceed the band**, several by 5-22x. The exceptions are "
+        + ", ".join(f"`{r['metric']}` ({r['ratio']:.2f}x)" for r in
+                    sorted(fails, key=lambda r: r["ratio"])) +
+        " — i.e. **both latency metrics**, which `latency_decomposition` reaches "
+        "independently by decomposing the step into model and container. Every other "
+        "efficiency and behavioural claim in this paper is judged against a rerun band; "
+        "these 26 metrics were not, until this table. One cell, one rerun per arm: a point "
+        "estimate, not a threshold. Source: `replicate_metric_noise.json`.")
+
+
 def t_per_success():
     d = load("outcome_efficiency")
     rows = ["| cell | content? | cheapest/attempt | cheapest/success | fastest/attempt | "
@@ -909,6 +938,7 @@ TABLES = [
     ("latency-split", "What a latency number contains", t_latency_split),
     ("estimands", "Three efficiency quantities, three estimand choices", t_estimands),
     ("dispatch", "What actually delivered the click", t_dispatch),
+    ("metric-noise", "Behavioural metrics against run-to-run noise", t_metric_noise),
     ("per-success", "Per-attempt versus per-success", t_per_success),
     ("fusion", "Fusion premium against the rerun band", t_fusion),
     ("exante", "Ex-ante visual-intent partition", t_exante),

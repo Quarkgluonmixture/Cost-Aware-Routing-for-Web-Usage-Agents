@@ -1,0 +1,372 @@
+{
+ "schema": "2026-08-03-replicate-metric-noise-v1",
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "cell": "B0·classifieds",
+ "arms_replicated": [
+  "DOM",
+  "SoM",
+  "Vision"
+ ],
+ "n_metrics_total": 26,
+ "n_metrics_live": 25,
+ "n_exceeding_noise": 22,
+ "metrics": [
+  {
+   "dimension": "Outcome",
+   "metric": "sr_pct",
+   "label": "success rate %",
+   "band_per_arm": {
+    "DOM": 2.232142857142856,
+    "Vision": 0.8928571428571423,
+    "SoM": 2.2321428571428577
+   },
+   "band_max": 2.2321428571428577,
+   "cross_mode_spread": 11.607142857142858,
+   "ratio": 5.199999999999999,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Outcome",
+   "metric": "n_success",
+   "label": "solves",
+   "band_per_arm": {
+    "DOM": 5.0,
+    "Vision": 2.0,
+    "SoM": 5.0
+   },
+   "band_max": 5.0,
+   "cross_mode_spread": 26.0,
+   "ratio": 5.2,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Outcome",
+   "metric": "n_unique_solves",
+   "label": "unique solves (no other mode got it)",
+   "excluded": "cross-mode by construction"
+  },
+  {
+   "dimension": "Macro",
+   "metric": "n_steps",
+   "label": "steps / episode",
+   "band_per_arm": {
+    "DOM": 0.3392857142857153,
+    "Vision": 0.4687499999999982,
+    "SoM": 0.10267857142857117
+   },
+   "band_max": 0.4687499999999982,
+   "cross_mode_spread": 2.5669642857142865,
+   "ratio": 5.4761904761904985,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Macro",
+   "metric": "cap_hit_rate",
+   "label": "episodes exhausting the step budget",
+   "band_per_arm": {
+    "DOM": 0.008928571428571452,
+    "Vision": 0.04464285714285715,
+    "SoM": 0.004464285714285698
+   },
+   "band_max": 0.04464285714285715,
+   "cross_mode_spread": 0.0625,
+   "ratio": 1.3999999999999997,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Macro",
+   "metric": "click_frac",
+   "label": "click fraction",
+   "band_per_arm": {
+    "DOM": 0.008656464524751939,
+    "Vision": 0.014339727669272162,
+    "SoM": 0.006034699148439682
+   },
+   "band_max": 0.014339727669272162,
+   "cross_mode_spread": 0.041193789333480335,
+   "ratio": 2.8727037419094303,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Macro",
+   "metric": "type_frac",
+   "label": "type fraction",
+   "band_per_arm": {
+    "DOM": 0.011470917343955889,
+    "Vision": 0.01863185140040305,
+    "SoM": 0.009976334247681184
+   },
+   "band_max": 0.01863185140040305,
+   "cross_mode_spread": 0.07837301874547106,
+   "ratio": 4.206399947123648,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Macro",
+   "metric": "scroll_frac",
+   "label": "scroll fraction",
+   "band_per_arm": {
+    "DOM": 0.001015837972275696,
+    "Vision": 0.004371435507351085,
+    "SoM": 0.0062759439359244
+   },
+   "band_max": 0.0062759439359244,
+   "cross_mode_spread": 0.10572409321141688,
+   "ratio": 16.845926969843863,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Macro",
+   "metric": "search_loop_rate",
+   "label": "search-loop rate",
+   "band_per_arm": {
+    "DOM": 0.004464285714285698,
+    "Vision": 0.017857142857142905,
+    "SoM": 0.004464285714285698
+   },
+   "band_max": 0.017857142857142905,
+   "cross_mode_spread": 0.1205357142857143,
+   "ratio": 6.749999999999983,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Macro",
+   "metric": "url_revisit_rate",
+   "label": "URL-revisit step rate",
+   "band_per_arm": {
+    "DOM": 0.022223716437247742,
+    "Vision": 0.00855935285042897,
+    "SoM": 0.005251592036479291
+   },
+   "band_max": 0.022223716437247742,
+   "cross_mode_spread": 0.08132049632373528,
+   "ratio": 3.6591762927391938,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "parse_fail_rate",
+   "label": "parse-invalid step rate",
+   "band_per_arm": {
+    "DOM": 1.9325912183055052e-05,
+    "Vision": 0.00014400921658986175,
+    "SoM": 0.0020949912222953697
+   },
+   "band_max": 0.0020949912222953697,
+   "cross_mode_spread": 0.0020949912222953697,
+   "ratio": 1.0,
+   "exceeds_noise": false
+  },
+  {
+   "dimension": "Micro",
+   "metric": "action_fail_rate",
+   "label": "action-execution failure rate",
+   "band_per_arm": {
+    "DOM": 0.014019173814102184,
+    "Vision": 0.004164068335674759,
+    "SoM": 0.009033185890149772
+   },
+   "band_max": 0.014019173814102184,
+   "cross_mode_spread": 0.06821715049761469,
+   "ratio": 4.865989351597425,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "click_fail_rate",
+   "label": "action failure | action was a click",
+   "band_per_arm": {
+    "DOM": 0.02540945265282532,
+    "Vision": 0.008432537221756686,
+    "SoM": 0.017937988496680712
+   },
+   "band_max": 0.02540945265282532,
+   "cross_mode_spread": 0.06307253981368034,
+   "ratio": 2.482247086367962,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "type_fail_rate",
+   "label": "action failure | action was a type",
+   "band_per_arm": {
+    "DOM": 0.001137749630091979,
+    "Vision": 0.005365111322306702,
+    "SoM": 0.0056945060632948834
+   },
+   "band_max": 0.0056945060632948834,
+   "cross_mode_spread": 0.030061888485388134,
+   "ratio": 5.279103780248519,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "no_change_rate",
+   "label": "page-unchanged (no-op) step rate",
+   "band_per_arm": {
+    "DOM": 0.007384457545550449,
+    "Vision": 0.002780646473426185,
+    "SoM": 0.009191811391565413
+   },
+   "band_max": 0.009191811391565413,
+   "cross_mode_spread": 0.05348474452724597,
+   "ratio": 5.8187382496038405,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "scroll_inert_rate",
+   "label": "scroll action that did not move the viewport",
+   "band_per_arm": {
+    "DOM": 0.011316648491940653,
+    "Vision": 0.0001068467429182346,
+    "SoM": 0.01667189407870415
+   },
+   "band_max": 0.01667189407870415,
+   "cross_mode_spread": 0.07798280185652699,
+   "ratio": 4.677501037877775,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "noop_inert_rate",
+   "label": "no-op despite a SUCCEEDING action",
+   "band_per_arm": {
+    "DOM": 0.006634716268551735,
+    "Vision": 0.0013834218622485739,
+    "SoM": 0.00015862550141565457
+   },
+   "band_max": 0.006634716268551735,
+   "cross_mode_spread": 0.02600897878456576,
+   "ratio": 3.920134295395145,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "visibility_gap_rate",
+   "label": "page changed but channel did not show it",
+   "band_per_arm": {
+    "DOM": 0.010512778028218997,
+    "Vision": 0.001818679407117399,
+    "SoM": 0.006432041842771109
+   },
+   "band_max": 0.010512778028218997,
+   "cross_mode_spread": 0.016440183112938586,
+   "ratio": 1.5638286158814456,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "locator_fallback_rate",
+   "label": "locator fallback rate",
+   "band_per_arm": {
+    "DOM": 0.006454966741580262,
+    "Vision": 0.001383845428852544,
+    "SoM": 0.002990848188322348
+   },
+   "band_max": 0.006454966741580262,
+   "cross_mode_spread": 0.0762511735745505,
+   "ratio": 11.812791084324502,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "action_repeat_frac",
+   "label": "consecutive same-action rate",
+   "band_per_arm": {
+    "DOM": 0.002920449806348424,
+    "Vision": 0.004372199319282566,
+    "SoM": 0.0009202209305722575
+   },
+   "band_max": 0.004372199319282566,
+   "cross_mode_spread": 0.09567163780190813,
+   "ratio": 21.881810689638662,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Micro",
+   "metric": "finish_rate",
+   "label": "episodes ending in finish",
+   "band_per_arm": {
+    "DOM": 0.0,
+    "Vision": 0.03571428571428581,
+    "SoM": 0.004464285714285698
+   },
+   "band_max": 0.03571428571428581,
+   "cross_mode_spread": 0.0535714285714286,
+   "ratio": 1.499999999999997,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Efficiency",
+   "metric": "mean_cost_usd",
+   "label": "billed cost / episode",
+   "band_per_arm": {
+    "DOM": 0.002328625000000001,
+    "Vision": 0.0017884017857142803,
+    "SoM": 8.80357142857141e-05
+   },
+   "band_max": 0.002328625000000001,
+   "cross_mode_spread": 0.0075494598214285585,
+   "ratio": 3.2420247233575847,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Efficiency",
+   "metric": "cost_rel_dom",
+   "label": "cost relative to DOM (within cell)",
+   "band_per_arm": {
+    "DOM": 0.0,
+    "Vision": 0.025688390604713618,
+    "SoM": 0.0012645345323412105
+   },
+   "band_max": 0.025688390604713618,
+   "cross_mode_spread": 0.10843954322601601,
+   "ratio": 4.221344376713043,
+   "exceeds_noise": true
+  },
+  {
+   "dimension": "Efficiency",
+   "metric": "mean_latency_s",
+   "label": "latency / episode (s)",
+   "band_per_arm": {
+    "DOM": 1.4756840286510453,
+    "Vision": 0.38269053505999295,
+    "SoM": 22.48765552682535
+   },
+   "band_max": 22.48765552682535,
+   "cross_mode_spread": 19.56238836688655,
+   "ratio": 0.8699167569314076,
+   "exceeds_noise": false
+  },
+  {
+   "dimension": "Efficiency",
+   "metric": "mean_latency_canonical_s",
+   "label": "latency canonical / episode (s)",
+   "band_per_arm": {
+    "DOM": 0.5004306073699638,
+    "Vision": 0.33429964206048624,
+    "SoM": 22.846149326435167
+   },
+   "band_max": 22.846149326435167,
+   "cross_mode_spread": 19.203794825289933,
+   "ratio": 0.840570310160291,
+   "exceeds_noise": false
+  },
+  {
+   "dimension": "Efficiency",
+   "metric": "mean_tokens",
+   "label": "tokens / episode",
+   "band_per_arm": {
+    "DOM": 2186.0535714285725,
+    "Vision": 1715.2053571428623,
+    "SoM": 20.642857142855064
+   },
+   "band_max": 2186.0535714285725,
+   "cross_mode_spread": 8697.977678571428,
+   "ratio": 3.9788492799320343,
+   "exceeds_noise": true
+  }
+ ]
+}
