@@ -973,9 +973,29 @@ On task 582 it walks the full `/create_forum` form and lands on `/f/Cyberpunk`. 
 
 The plainer explanation holds: subscribing and creating are single-control operations with an
 unambiguous UI target, and are simply easier than finding information. Part of WA's higher SR is
-a task-mix property. ⚠️ This is a **two-episode hand check, not an audit** — `leakage_sensitivity`
-is marked ⚠️ unaudited on both WA cells, and the mechanism (`require_reset` gated on classifieds)
-applies to any Postmill site. What is now known is that the first two suspects were innocent.
+a task-mix property.
+
+⚠️ **Audited 2026-08-03, and the two-episode check was too kind to itself.**
+`audit_reddit_sidebar_leakage.py --with-wa` now runs the VWA test over all five WA sidebar tasks
+× 2 backbones × 6 modes: **50 scored episodes, 0 LEAKED, 37 earned, 13 failed** — no scored
+success was obtained without ever reaching the required forum. Three things that check could not
+see, and that the earlier paragraph implied were settled:
+* **Visiting is not subscribing.** The test asks whether the episode reached the forum, which is
+  a *lower bound* on leakage: an episode can arrive at a forum an earlier episode subscribed to,
+  read `Unsubscribe`, and finish without acting. **One such case is hand-confirmed** — `B1`/DOM
+  task 597 finishes on *"a visible 'Unsubscribe 1 subscriber' button, indicating the user is
+  already subscribed"*. It scores `earned` here. So the sentence above about 597 was reading a
+  different (cell, mode) than the one that leaks.
+* **The window is open.** Target forums are reached by many non-target tasks inside one run
+  (`B1`/DOM: `books` by 13 others, `machinelearning` by 8, `pittsburgh` by 4, `consoles` by 2).
+  The mechanism is available on WA; it simply did not produce a never-visited success.
+* **A text heuristic was tried and rejected**, so no second count is published: flagging
+  "says already-subscribed, never says clicked-subscribe" returns 6 of 37 and *misses* the
+  hand-confirmed 597, which says both while deliberating. Separating deliberation from action
+  needs subscription state around each click, which `state_digest` does not carry.
+
+Net: the hole moved from **unaudited** to **bounded** — no never-visited success on either WA
+cell, an unquantified residue of arrival-already-subscribed cases with one confirmed instance.
 
 One thing the trace did surface: on task 595 the agent left the benchmark entirely and spent 25
 of 30 steps on `supercluster.com`. That generalised into `offsite_navigation_audit` — see claim 9.

@@ -80,6 +80,47 @@ def sidebar_tasks() -> dict[int, dict]:
     return out
 
 
+WA_RAW = REPO / "external/visualwebarena/config_files/wa/test_reddit.raw.json"
+WA_SIDEBAR_SELECTOR = "#sidebar > section"
+
+
+def wa_sidebar_tasks() -> dict[int, dict]:
+    """WebArena's subscription-sidebar tasks — the same defect surface, never audited.
+
+    Added 2026-08-03 after a coverage sweep asked which evidence still has no WA cell.
+    `leakage_sensitivity` covered `red_B0/B1/B2` only, and `EVIDENCE_LAYER_SUMMARY` §8b
+    had hand-traced exactly two WA episodes while saying in the same breath that two
+    episodes are not an audit.
+
+    The mechanism transfers verbatim: WA reddit is the same Postmill image, the
+    `require_reset` gate is the same `"classifieds" in sites` test, and five of its 106
+    tasks (595-599, "subscribe to forum X") are scored by reading `#sidebar > section`
+    for a forum name. VWA's selector carries a trailing `> ul`; the enclosing section is
+    the same subscription list. WA ships one raw config array rather than per-task files,
+    so the task list is read differently — that is the only difference.
+    """
+    out: dict[int, dict] = {}
+    if not WA_RAW.is_file():
+        return out
+    for cfg in json.loads(WA_RAW.read_text()):
+        for block in (cfg.get("eval", {}).get("program_html") or []):
+            if WA_SIDEBAR_SELECTOR not in str(block.get("locator", "")):
+                continue
+            rc = block.get("required_contents") or {}
+            inc = rc.get("must_include") or []
+            exc = rc.get("must_exclude") or []
+            wanted = {w.strip().lower()
+                      for clause in inc for w in str(clause).split("|OR|")}
+            out[int(cfg["task_id"])] = {
+                "task_id": int(cfg["task_id"]),
+                "intent": cfg.get("intent", ""),
+                "must_include": inc, "must_exclude": exc,
+                "wanted_forums": sorted(wanted),
+                "passive_satisfiable": bool(exc) and not inc,
+            }
+    return out
+
+
 def forums_visited(steps_path: Path) -> set[str]:
     seen: set[str] = set()
     if not steps_path.is_file():
@@ -110,7 +151,15 @@ def main() -> int:
                     default=REPO / "docs/analysis/cross_sites/reddit_sidebar_leakage_audit.md")
     ap.add_argument("--json-out", type=Path,
                     default=REPO / "docs/analysis/cross_sites/reddit_sidebar_leakage_audit.json")
+    ap.add_argument("--with-wa", action="store_true",
+                    help="also audit WebArena reddit (tasks 595-599, same Postmill defect); "
+                         "writes to *_with_wa.* so the VWA-only product stays byte-stable")
     a = ap.parse_args()
+
+    if a.with_wa:
+        for suffix in ("out", "json_out"):
+            p = getattr(a, suffix)
+            setattr(a, suffix, p.with_name(p.name.replace(".", "_with_wa.", 1)))
 
     tasks = sidebar_tasks()
     scored, _ = expected_scored_ids("reddit")
@@ -145,6 +194,44 @@ def main() -> int:
                     "in_scored_universe": tid in scored,
                     "protocol_excluded": tid in excluded,
                 })
+
+    wa_tasks: dict[int, dict] = {}
+    if a.with_wa:
+        wa_tasks = wa_sidebar_tasks()
+        if not wa_tasks:
+            raise SystemExit(f"--with-wa: no sidebar tasks found in {WA_RAW}")
+        for baseline in A.WA_BASELINES:
+            # attach_wa raises rather than degrading, and sets A.WA_UNIVERSE to the task
+            # set common to all six modes — WA carries no AMENDMENT_08 exclusion list.
+            A.attach_wa(baseline)
+            for mode, axis_key in A._REGISTRY_MODE_TO_AXIS_KEY.items():
+                ep = A.STEP_DIRS.get(baseline, {}).get("wa_reddit", {}).get(axis_key)
+                if ep is None or not ep.exists():
+                    continue
+                for tid, spec in sorted(wa_tasks.items()):
+                    summ = ep / f"reddit_task_{tid}_summary_v2.json"
+                    if not summ.is_file():
+                        continue
+                    success = json.loads(summ.read_text()).get("success") is True
+                    visited = forums_visited(ep / f"reddit_task_{tid}_steps_v2.jsonl")
+                    hit = sorted(set(spec["wanted_forums"]) & visited)
+                    if spec["passive_satisfiable"]:
+                        verdict = "passive-satisfiable" if success else "failed"
+                    elif not success:
+                        verdict = "failed"
+                    elif hit:
+                        verdict = "earned"
+                    else:
+                        verdict = "LEAKED"
+                    rows.append({
+                        "cell": f"{baseline}_wa_reddit", "baseline": baseline, "mode": mode,
+                        "task_id": tid, "success": success, "verdict": verdict,
+                        "wanted": spec["wanted_forums"], "visited_target": hit,
+                        "n_forums_visited": len(visited),
+                        "in_scored_universe": tid in (A.WA_UNIVERSE or set()),
+                        "protocol_excluded": False,
+                        "benchmark": "webarena",
+                    })
 
     scored_rows = [r for r in rows if r["in_scored_universe"]]
     leaked = [r for r in scored_rows if r["verdict"] == "LEAKED"]
@@ -214,10 +301,55 @@ def main() -> int:
                  f"`{', '.join(r['visited_target'])}`")
     L.append("")
 
+    if a.with_wa:
+        wa_rows = [r for r in rows if r.get("benchmark") == "webarena"]
+        wa_scored = [r for r in wa_rows if r["in_scored_universe"]]
+        wa_leak = [r for r in wa_scored if r["verdict"] == "LEAKED"]
+        wa_earn = [r for r in wa_scored if r["verdict"] == "earned"]
+        L.append("")
+        L.append("## WebArena reddit (tasks 595-599) — first audit, 2026-08-03")
+        L.append("")
+        L.append(f"- **{len(wa_tasks)} tasks** scored by `{WA_SIDEBAR_SELECTOR}`, same Postmill "
+                 "image and the same `require_reset` no-op as VWA reddit")
+        L.append(f"- {len(wa_scored)} scored episodes across both WA backbones x 6 modes: "
+                 f"**{len(wa_leak)} LEAKED**, {len(wa_earn)} earned, "
+                 f"{sum(1 for r in wa_scored if r['verdict'] == 'failed')} failed")
+        L.append("")
+        L.append("⚠️ **What this zero does and does not mean.** The `earned` test is "
+                 "*did the episode visit the required forum* — the same test VWA uses, so the "
+                 "two are comparable, and it is a **lower bound on leakage**. Visiting is not "
+                 "subscribing: an episode can arrive at a forum an *earlier* episode already "
+                 "subscribed to, read `Unsubscribe` on the button, and finish without acting. "
+                 "That is a leak this test scores as earned.")
+        L.append("")
+        L.append("**The leakage window is open on WA.** Within one run the target forums are "
+                 "reached by many non-target tasks (on `B1`/DOM: `books` by 13 other tasks, "
+                 "`machinelearning` by 8, `pittsburgh` by 4, `consoles` by 2; only `space` is "
+                 "touched by its own task alone). So the mechanism is available here; what the "
+                 "audit establishes is that **no scored success was obtained without ever "
+                 "reaching the forum**, not that no success inherited a subscription.")
+        L.append("")
+        L.append("**One arrival-already-subscribed case is confirmed by hand**: `B1`/DOM task "
+                 "597, whose final step reads *\"a visible \'Unsubscribe 1 subscriber\' "
+                 "button, indicating the user is already subscribed ... so the task is "
+                 "complete\"*. It is scored `earned` here because it did visit `consoles`.")
+        L.append("")
+        L.append("**A text heuristic was tried and rejected.** Flagging episodes whose "
+                 "reasoning says *already subscribed* without saying *clicked subscribe* "
+                 "returns 6 of 37 — but it misses the hand-confirmed 597 above, because that "
+                 "episode says both (it deliberates: *I need to click the 'Unsubscribe'* and "
+                 "*I will click the 'Subscribe'*). Model self-report cannot separate "
+                 "deliberation from action, so no count is published from it. Deciding this "
+                 "mechanically needs the subscription state before and after each click, which "
+                 "`state_digest` does not carry.")
+        L.append("")
+
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text("\n".join(L), encoding="utf-8")
     a.json_out.write_text(json.dumps(
         {"selector": SIDEBAR_SELECTOR, "tasks": tasks,
+         "wa_selector": WA_SIDEBAR_SELECTOR if a.with_wa else None,
+         "wa_tasks": wa_tasks or None,
          "n_leaked": len(leaked), "n_earned": len(earned),
          "n_passive_satisfiable": len(passive), "rows": rows},
         ensure_ascii=False, indent=1), encoding="utf-8")

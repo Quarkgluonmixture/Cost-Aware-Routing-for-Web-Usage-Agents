@@ -1,0 +1,3620 @@
+{
+ "selector": "#sidebar > section > ul",
+ "tasks": {
+  "158": {
+   "task_id": 158,
+   "intent": "Can you subscribe to all subreddits that start with the letter 'a' and have a dog image in their top 3 posts of all time?",
+   "must_include": [
+    "aww"
+   ],
+   "must_exclude": [
+    "allentown",
+    "arlingtonva",
+    "Art",
+    "AskReddit",
+    "askscience"
+   ],
+   "wanted_forums": [
+    "aww"
+   ],
+   "passive_satisfiable": false
+  },
+  "159": {
+   "task_id": 159,
+   "intent": "Can you subscribe to all subreddits that start with the letter 'n' and have a downtown image in their top 3 posts of all time?",
+   "must_include": [
+    "Newark",
+    "nyc"
+   ],
+   "must_exclude": [
+    "newhampshire",
+    "newhaven",
+    "newjersey",
+    "news",
+    "nosleep",
+    "nottheonion"
+   ],
+   "wanted_forums": [
+    "newark",
+    "nyc"
+   ],
+   "passive_satisfiable": false
+  },
+  "160": {
+   "task_id": 160,
+   "intent": "Can you subscribe to all subreddits that start with the letter 'i' and have a female usb to male lightning connector image in their top 3 posts of all time?",
+   "must_include": [],
+   "must_exclude": [
+    "IAmA",
+    "InternetIsBeautiful",
+    "iphone"
+   ],
+   "wanted_forums": [],
+   "passive_satisfiable": true
+  },
+  "170": {
+   "task_id": 170,
+   "intent": "Can you subscribe to the forum that is most likely to contain posts like this?",
+   "must_include": [
+    "sports"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "sports"
+   ],
+   "passive_satisfiable": false
+  },
+  "171": {
+   "task_id": 171,
+   "intent": "Can you subscribe to the forum that is most likely to contain posts like this?",
+   "must_include": [
+    "MechanicalKeyboards"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "mechanicalkeyboards"
+   ],
+   "passive_satisfiable": false
+  },
+  "178": {
+   "task_id": 178,
+   "intent": "Can you subscribe to the forum for this city?",
+   "must_include": [
+    "nyc"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "nyc"
+   ],
+   "passive_satisfiable": false
+  },
+  "188": {
+   "task_id": 188,
+   "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+   "must_include": [
+    "iphone |OR| technology"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "iphone",
+    "technology"
+   ],
+   "passive_satisfiable": false
+  },
+  "189": {
+   "task_id": 189,
+   "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+   "must_include": [
+    "MachineLearning |OR| deeplearning |OR| singularity"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "passive_satisfiable": false
+  },
+  "190": {
+   "task_id": 190,
+   "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+   "must_include": [
+    "Art"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "art"
+   ],
+   "passive_satisfiable": false
+  }
+ },
+ "wa_selector": "#sidebar > section",
+ "wa_tasks": {
+  "595": {
+   "task_id": 595,
+   "intent": "Open the thread of a trending post on the forum \"space\" and subscribe.",
+   "must_include": [
+    "space"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "space"
+   ],
+   "passive_satisfiable": false
+  },
+  "596": {
+   "task_id": 596,
+   "intent": "Open the thread of a trending post on the forum \"books\" and subscribe.",
+   "must_include": [
+    "books"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "books"
+   ],
+   "passive_satisfiable": false
+  },
+  "597": {
+   "task_id": 597,
+   "intent": "Open the thread of a trending post on the forum \"consoles\" and subscribe.",
+   "must_include": [
+    "consoles"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "consoles"
+   ],
+   "passive_satisfiable": false
+  },
+  "598": {
+   "task_id": 598,
+   "intent": "Open the thread of a trending post on the forum \"pittsburgh\" and subscribe.",
+   "must_include": [
+    "pittsburgh"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "pittsburgh"
+   ],
+   "passive_satisfiable": false
+  },
+  "599": {
+   "task_id": 599,
+   "intent": "Open the thread of a trending post on the forum \"machine learning\" and subscribe.",
+   "must_include": [
+    "MachineLearning"
+   ],
+   "must_exclude": [],
+   "wanted_forums": [
+    "machinelearning"
+   ],
+   "passive_satisfiable": false
+  }
+ },
+ "n_leaked": 6,
+ "n_earned": 68,
+ "n_passive_satisfiable": 13,
+ "rows": [
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 4,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 160,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 171,
+   "success": true,
+   "verdict": "LEAKED",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 178,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 189,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 190,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [
+    "art"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 160,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 171,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [
+    "mechanicalkeyboards"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 178,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "technology"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 189,
+   "success": true,
+   "verdict": "LEAKED",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [
+    "newark"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 160,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 178,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 189,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [
+    "newark"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 3,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 178,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone",
+    "technology"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 3,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 160,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 178,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 189,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [
+    "deeplearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B0_reddit",
+   "baseline": "B0",
+   "mode": "P-prompt",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [
+    "newark"
+   ],
+   "n_forums_visited": 3,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 171,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [
+    "mechanicalkeyboards"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 4,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 171,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [
+    "mechanicalkeyboards"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 189,
+   "success": true,
+   "verdict": "LEAKED",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 188,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [
+    "newark"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 171,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [
+    "mechanicalkeyboards"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 178,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 189,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 171,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [
+    "mechanicalkeyboards"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 178,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 188,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 189,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 3,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 171,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [
+    "mechanicalkeyboards"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [
+    "nyc"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 188,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [
+    "iphone"
+   ],
+   "n_forums_visited": 3,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 189,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_reddit",
+   "baseline": "B1",
+   "mode": "P-prompt",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 160,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 178,
+   "success": true,
+   "verdict": "LEAKED",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 3,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 188,
+   "success": true,
+   "verdict": "LEAKED",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 189,
+   "success": true,
+   "verdict": "LEAKED",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "DOM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 170,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [
+    "sports"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 4,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 188,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "SoM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 188,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "Vision",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 188,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-text",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 188,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-SoM",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 158,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "aww"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 159,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "newark",
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 160,
+   "success": true,
+   "verdict": "passive-satisfiable",
+   "wanted": [],
+   "visited_target": [],
+   "n_forums_visited": 2,
+   "in_scored_universe": false,
+   "protocol_excluded": true
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 170,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "sports"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 171,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "mechanicalkeyboards"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 178,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "nyc"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 188,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "iphone",
+    "technology"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 189,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "deeplearning",
+    "machinelearning",
+    "singularity"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B2_reddit",
+   "baseline": "B2",
+   "mode": "P-prompt",
+   "task_id": 190,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "art"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 595,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [
+    "space"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 596,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "DOM",
+   "task_id": 599,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 595,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 596,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "SoM",
+   "task_id": 599,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 2,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 595,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 597,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 598,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "Vision",
+   "task_id": 599,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 595,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [
+    "space"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-text",
+   "task_id": 599,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 595,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [
+    "space"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B1_wa_reddit",
+   "baseline": "B1",
+   "mode": "P-SoM",
+   "task_id": 599,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 595,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "DOM",
+   "task_id": 599,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 595,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 0,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "SoM",
+   "task_id": 599,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 595,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [
+    "space"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "Vision",
+   "task_id": 599,
+   "success": false,
+   "verdict": "failed",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 595,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [
+    "space"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-text",
+   "task_id": 599,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 595,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "space"
+   ],
+   "visited_target": [
+    "space"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 596,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "books"
+   ],
+   "visited_target": [
+    "books"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 597,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "consoles"
+   ],
+   "visited_target": [
+    "consoles"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 598,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "pittsburgh"
+   ],
+   "visited_target": [
+    "pittsburgh"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  },
+  {
+   "cell": "B0_wa_reddit",
+   "baseline": "B0",
+   "mode": "P-SoM",
+   "task_id": 599,
+   "success": true,
+   "verdict": "earned",
+   "wanted": [
+    "machinelearning"
+   ],
+   "visited_target": [
+    "machinelearning"
+   ],
+   "n_forums_visited": 1,
+   "in_scored_universe": true,
+   "protocol_excluded": false,
+   "benchmark": "webarena"
+  }
+ ]
+}

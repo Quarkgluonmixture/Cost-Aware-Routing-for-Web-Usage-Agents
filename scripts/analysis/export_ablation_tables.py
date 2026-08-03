@@ -1218,30 +1218,57 @@ def t_cost_class():
 
 
 def t_leak_audit():
-    d = load("reddit_sidebar_leakage_audit")
-    rows = ["| cell · mode | scored successes | of which LEAKED | share |",
-            "|---|---|---|---|"]
+    # Prefer the WA-inclusive run. The VWA-only product stays on disk byte-stable, but a
+    # table that silently covers three of five cells is the coverage hole this whole audit
+    # was about — WebArena reddit runs the same Postmill image with the same reset no-op.
+    try:
+        d = load("reddit_sidebar_leakage_audit_with_wa")
+        wa = True
+    except MissingProduct:
+        d = load("reddit_sidebar_leakage_audit")
+        wa = False
+    rows = ["| benchmark | cell · mode | scored successes | of which LEAKED | share |",
+            "|---|---|---|---|---|"]
     agg = {}
     for r in d["rows"]:
         if not r.get("in_scored_universe"):
             continue
-        k = (r["baseline"], r["mode"])
+        # keyed on cell, not baseline: WA reuses B0/B1, so a baseline-only key silently
+        # merges a VWA row into a WA one.
+        k = (r.get("benchmark", "visualwebarena"), r["baseline"], r["mode"])
         a = agg.setdefault(k, {"succ": 0, "leak": 0})
         if r["success"]:
             a["succ"] += 1
         if r["verdict"] == "LEAKED":
             a["leak"] += 1
-    for (b, m), a in sorted(agg.items()):
+    for (bench, base, m), a in sorted(agg.items()):
         if not a["succ"]:
             continue
-        rows.append(f"| {b} · {m} | {a['succ']} | {a['leak']} | "
-                    f"{100*a['leak']/a['succ']:.1f}% |")
+        # the benchmark column already separates the two, so the cell column carries the
+        # backbone alone — WA and VWA both spell theirs B0/B1.
+        rows.append(f"| {'WA' if bench == 'webarena' else 'VWA'} | {base} · {m} | "
+                    f"{a['succ']} | {a['leak']} | {100*a['leak']/a['succ']:.1f}% |")
+    n_wa_leak = sum(1 for r in d["rows"]
+                    if r.get("benchmark") == "webarena" and r.get("in_scored_universe")
+                    and r["verdict"] == "LEAKED")
+    n_wa_scored = sum(1 for r in d["rows"]
+                      if r.get("benchmark") == "webarena" and r.get("in_scored_universe"))
+    wa_note = (
+        f" **WebArena audited 2026-08-03** (first time): {n_wa_scored} scored episodes over its "
+        f"{len(d.get('wa_tasks') or {})} sidebar tasks, **{n_wa_leak} leaked**. ⚠️ That zero is a "
+        f"*lower bound*, not a clearance — the test asks whether the episode reached the forum, "
+        f"and an episode can arrive at a forum an earlier one subscribed to, read `Unsubscribe`, "
+        f"and finish without acting. One such case is hand-confirmed (`B1`/DOM task 597) and "
+        f"scores `earned` here; a text heuristic for the pattern was tried and rejected because "
+        f"model self-report cannot separate deliberating from acting."
+    ) if wa else ""
     return "\n".join(rows), (
-        f"Which successes were earned. `{d['selector']}` is read by {len(d['tasks'])} reddit "
+        f"Which successes were earned. `{d['selector']}` is read by {len(d['tasks'])} VWA reddit "
         f"tasks; `require_reset` is a no-op on reddit so subscriptions accumulate. "
         f"**LEAKED** = scored success by an episode that never visited the required forum. "
-        f"{d['n_leaked']} leaked, {d['n_earned']} earned. Table 20 recomputes every contrast "
-        f"with the leaked ones zeroed. Source: `reddit_sidebar_leakage_audit.json`.")
+        f"On VWA: {d['n_leaked']} leaked, {d['n_earned']} earned; {T('leakage')} recomputes every "
+        f"contrast with the leaked ones zeroed.{wa_note} "
+        f"Source: `reddit_sidebar_leakage_audit{'_with_wa' if wa else ''}.json`.")
 
 
 TABLES = [

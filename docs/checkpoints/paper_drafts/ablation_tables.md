@@ -7,7 +7,7 @@ producer: scripts/analysis/export_ablation_tables.py
 
 ## Ablation tables
 
-<!-- GENERATED 2026-08-03T22:22:50+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-08-03T22:35:47+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 
@@ -923,22 +923,32 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 <!-- BEGIN table:leakaudit -->
 
-| cell · mode | scored successes | of which LEAKED | share |
-|---|---|---|---|
-| B0 · DOM | 5 | 1 | 20.0% |
-| B0 · P-SoM | 2 | 0 | 0.0% |
-| B0 · P-prompt | 3 | 0 | 0.0% |
-| B0 · P-text | 3 | 0 | 0.0% |
-| B0 · SoM | 3 | 0 | 0.0% |
-| B0 · Vision | 2 | 1 | 50.0% |
-| B1 · DOM | 2 | 0 | 0.0% |
-| B1 · P-SoM | 4 | 0 | 0.0% |
-| B1 · P-prompt | 2 | 0 | 0.0% |
-| B1 · P-text | 4 | 0 | 0.0% |
-| B1 · SoM | 3 | 1 | 33.3% |
-| B2 · DOM | 3 | 3 | 100.0% |
-| B2 · SoM | 1 | 0 | 0.0% |
+| benchmark | cell · mode | scored successes | of which LEAKED | share |
+|---|---|---|---|---|
+| VWA | B0 · DOM | 5 | 1 | 20.0% |
+| VWA | B0 · P-SoM | 2 | 0 | 0.0% |
+| VWA | B0 · P-prompt | 3 | 0 | 0.0% |
+| VWA | B0 · P-text | 3 | 0 | 0.0% |
+| VWA | B0 · SoM | 3 | 0 | 0.0% |
+| VWA | B0 · Vision | 2 | 1 | 50.0% |
+| VWA | B1 · DOM | 2 | 0 | 0.0% |
+| VWA | B1 · P-SoM | 4 | 0 | 0.0% |
+| VWA | B1 · P-prompt | 2 | 0 | 0.0% |
+| VWA | B1 · P-text | 4 | 0 | 0.0% |
+| VWA | B1 · SoM | 3 | 1 | 33.3% |
+| VWA | B2 · DOM | 3 | 3 | 100.0% |
+| VWA | B2 · SoM | 1 | 0 | 0.0% |
+| WA | B0 · DOM | 3 | 0 | 0.0% |
+| WA | B0 · P-SoM | 5 | 0 | 0.0% |
+| WA | B0 · P-text | 5 | 0 | 0.0% |
+| WA | B0 · SoM | 3 | 0 | 0.0% |
+| WA | B0 · Vision | 3 | 0 | 0.0% |
+| WA | B1 · DOM | 4 | 0 | 0.0% |
+| WA | B1 · P-SoM | 5 | 0 | 0.0% |
+| WA | B1 · P-text | 5 | 0 | 0.0% |
+| WA | B1 · SoM | 3 | 0 | 0.0% |
+| WA | B1 · Vision | 1 | 0 | 0.0% |
 
-*Table 40: Earned versus leaked successes. Which successes were earned. `#sidebar > section > ul` is read by 9 reddit tasks; `require_reset` is a no-op on reddit so subscriptions accumulate. **LEAKED** = scored success by an episode that never visited the required forum. 6 leaked, 31 earned. Table 20 recomputes every contrast with the leaked ones zeroed. Source: `reddit_sidebar_leakage_audit.json`.*
+*Table 40: Earned versus leaked successes. Which successes were earned. `#sidebar > section > ul` is read by 9 VWA reddit tasks; `require_reset` is a no-op on reddit so subscriptions accumulate. **LEAKED** = scored success by an episode that never visited the required forum. On VWA: 6 leaked, 68 earned; Table 28 recomputes every contrast with the leaked ones zeroed. **WebArena audited 2026-08-03** (first time): 50 scored episodes over its 5 sidebar tasks, **0 leaked**. **Caution:** That zero is a *lower bound*, not a clearance — the test asks whether the episode reached the forum, and an episode can arrive at a forum an earlier one subscribed to, read `Unsubscribe`, and finish without acting. One such case is hand-confirmed (`B1`/DOM task 597) and scores `earned` here; a text heuristic for the pattern was tried and rejected because model self-report cannot separate deliberating from acting. Source: `reddit_sidebar_leakage_audit_with_wa.json`.*
 
 <!-- END table:leakaudit -->
