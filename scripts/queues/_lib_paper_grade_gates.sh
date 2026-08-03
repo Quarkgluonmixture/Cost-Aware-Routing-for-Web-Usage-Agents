@@ -785,7 +785,11 @@ assert_no_cross_mode_collision() {
     if [[ -n "${cross_baseline_collisions}" ]]; then
       echo "[${log_prefix}][FATAL] cross-baseline same-site runner already active (R2-P0-2-B* /stress Phase 0 post-fix 2026-05-19):" >&2
       echo "${cross_baseline_collisions}" | sed 's/^/  /' >&2
-      echo "[${log_prefix}][FATAL] paper-grade hard rule: 同 site 同时只能跑一个 baseline (B0 XOR B1 XOR B2)" >&2
+      # Baseline set is enumerated in the message only; the CHECK above is pattern-based
+      # (pgrep on site, then grep on `_${baseline}_`), so it covers any baseline without
+      # a whitelist. Kept generic so adding B3 does not leave the message stale — the
+      # 2026-08-03 B3 wiring found five queue scripts with hardcoded B0|B1|B2 lists.
+      echo "[${log_prefix}][FATAL] paper-grade hard rule: 同 site 同时只能跑一个 baseline (exactly one of B0/B1/B2/B3/…)" >&2
       echo "[${log_prefix}][FATAL] CLAUDE.md hard rule #1: shared docker container + same user account → cross-pollination" >&2
       echo "[${log_prefix}][FATAL] options: (a) wait for existing run to complete; (b) 'pkill -f run_experiment.*_${site}_' (DESTRUCTIVE); (c) queue_chain.sh orchestration with cls/red/shop sequencing" >&2
       if command -v curl > /dev/null; then

@@ -1,0 +1,72 @@
+# B3 (MiMo-VL-7B-RL-2508) som classifieds — full condition, A100.
+#
+# Supersedes exp_v2_B3_som_classifieds_pilot.yaml for the actual run. The pilot's
+# 10-task / 15-step shape existed because DGX's shared GB10 gave ~3min/step (§340);
+# the A100 is uncontended, and a 25-task probe would cost 3-5h to produce a number
+# that cannot enter the paper. This runs the full canonical 224-task classifieds set
+# at B1/B2's 30 steps, so one run answers both questions at once:
+#   * does MiMo floor on our fixed-JSON scaffold (the §339/§342 open question — the
+#     floor pilot has never yet produced a valid number, both attempts died on DGX
+#     infra, not on the model), and
+#   * if it does not floor, this IS condition 1 of the 12 (§381 post-submission plan).
+# `som` is the strongest single mode on classifieds (B1 14.29%, B2 2.23%), so a floor
+# here is the cheapest possible refutation: if the best mode floors, the other five
+# need not run.
+#
+# Thinking is suppressed (see backends below). That choice is what makes the 4096
+# token cap an equal one rather than a handicap — see the comment on max_new_tokens.
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B3_som_classifieds"
+
+task:
+  include_sites: ["classifieds"]
+
+runtime:
+  # 30 = B0/B1/B2 parity. The pilot's 15 was a DGX time-saving measure and would have
+  # made any floor comparison against B1/B2 non-comparable.
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["som"]
+
+backends:
+  default_backend: "local_mimo"
+  local_mimo:
+    type: "local_mimo"
+    path: "XiaomiMiMo/MiMo-VL-7B-RL-2508"
+    # Pinned to the cached snapshot SHA (refs/main 2026-06-16) for reproducibility.
+    # Explicit (non-null) so the runner's B-83 logic does NOT forward the top-level
+    # Qwen model.revision into this cross-family backend.
+    revision: "4bfb270765825d2fa059011deb4c96fdd579be6f"
+    quantization: "none"
+    device: "cuda"
+    min_free_vram_gb: 0
+    # Suppress the `<think>…</think>` prefix. MiMoVLAgent appends `/no_think` as the
+    # FINAL user content element, which is what the official card requires ("after
+    # /no_think, there shouldn't be any user content like image or video") — a
+    # text-level append would sit before the screenshot in the reference-image layout
+    # and be silently void. See tests/test_mimo_no_think.py.
+    #
+    # Why suppress rather than leave it on: 4096 is what B0/B1/B2 get, and equality of
+    # the TOTAL token budget is only equality of the ACTION budget when nothing else
+    # consumes it first. A thinking checkpoint spends part of 4096 on reasoning before
+    # emitting the action, so the same number would be a smaller action budget — and a
+    # truncated action parses as a failure indistinguishable from a capability floor,
+    # which is the one thing this run must not confuse. Suppressing thinking makes the
+    # shared cap genuinely shared. (The alternative — thinking on, cap raised to 16384
+    # — is also defensible but leaves the cap unequal; commit 46ffa1e took that route,
+    # b2fd1b5 reverted it for parity without addressing the asymmetry underneath.)
+    #
+    # DEVIATION TO DISCLOSE (§8): this is not MiMo's shipped default mode, and the
+    # official card recommends temperature 0.3 / top_p 0.95 while we run greedy 0.0
+    # for cross-baseline parity. Both are deliberate and both belong in the writeup.
+    disable_thinking: true
+    max_new_tokens: 4096
+    temperature: 0.0   # greedy (do_sample=False in agent); matches B0/B1/B2
+    mock_mode: false

@@ -126,3 +126,63 @@ class MiMoVLAgent(Qwen3VLAgent):
         # Canonical 7-key mode→prompt dispatch (byte-identical with B0/B1/B2).
         self._system_prompts = _shared_build_mode_prompt_dispatch_table()
         self.system_prompt = self._system_prompts["dom"]
+
+        # Optional thinking suppression. Off by default so the checkpoint behaves as
+        # shipped; turn on per-condition in the config.
+        self.disable_thinking = bool(config.get("model", {}).get("disable_thinking", False))
+        if self.disable_thinking:
+            self._install_no_think_hook()
+
+    def _install_no_think_hook(self) -> None:
+        """Append MiMo's ``/no_think`` sentinel as the LAST user content element.
+
+        The official model card is specific about placement: "``/no_think`` command must
+        be the very last part of user message, which means after ``/no_think``, there
+        shouldn't be any user content like image or video." That rules out simply
+        appending it to the instruction text — the inherited ``Qwen3VLAgent.step()``
+        puts the screenshot *after* the text whenever reference images are present
+        (``qwen3vl_agent.py`` appends ``[Current screenshot]`` + image at the end), so a
+        text-level append would leave an image after the sentinel and silently void it.
+
+        Wrapping ``apply_chat_template`` on THIS instance's processor is the narrow fix:
+        the paper-grade B0/B1 import path (``Qwen3VLAgent``) is untouched, and
+        ``process_vision_info`` still receives the caller's original ``messages``, so
+        image extraction is unaffected either way.
+        """
+        original = self.processor.apply_chat_template
+
+        def _with_no_think(messages, *args, **kwargs):
+            patched = self._append_no_think(messages)
+            return original(patched, *args, **kwargs)
+
+        self.processor.apply_chat_template = _with_no_think
+        logger.info(
+            "MiMoVLAgent: thinking suppression ON — '/no_think' appended as the final "
+            "user content element (official placement requirement)."
+        )
+
+    @staticmethod
+    def _append_no_think(messages: Any) -> Any:
+        """Return a shallow-copied ``messages`` with ``/no_think`` last in the final user turn.
+
+        Copies rather than mutating: the caller reuses the same list for
+        ``process_vision_info``, and an in-place append would make the two views diverge
+        from what the caller wrote.
+        """
+        if not isinstance(messages, list) or not messages:
+            return messages
+        out = list(messages)
+        for i in range(len(out) - 1, -1, -1):
+            msg = out[i]
+            if not isinstance(msg, dict) or msg.get("role") != "user":
+                continue
+            content = msg.get("content")
+            if isinstance(content, list):
+                new_content = list(content) + [{"type": "text", "text": "/no_think"}]
+            elif isinstance(content, str):
+                new_content = content + " /no_think"
+            else:
+                return messages  # unrecognised shape — leave it alone rather than guess
+            out[i] = {**msg, "content": new_content}
+            return out
+        return messages
