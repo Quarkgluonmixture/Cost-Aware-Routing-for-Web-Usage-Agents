@@ -110,7 +110,7 @@ def test_docker_argv_passes_password_via_env_not_argv():
 
 
 _ENABLED = {"shopping_cart_reset": {"enabled": True}}
-_OK = mock.Mock(returncode=0, stdout="1\t0\n", stderr="")   # quotes=1, items=0
+_OK = mock.Mock(returncode=0, stdout="1\t0\n", stderr="")   # customer=1, items=0
 
 
 def test_enabled_by_default_under_protocol_note_07():
@@ -142,7 +142,14 @@ def test_enabled_by_default_under_protocol_note_07():
 
 
 def test_zero_rows_is_not_success():
-    """B-1942 (codex Mode B F8): rc==0 proves the SQL parsed, not that it matched.
+    """B-1942 (codex F8) + B-1944 (A100 live check): which zero means failure.
+
+    B-1944 is the correction the live container forced: Magento creates the
+    quote row LAZILY, so on the seed image `quote` is empty (measured: 0 rows,
+    with customer_entity=27 and sales_order=189). The first version treated
+    "no quote row" as "customer not found" and would have aborted the first task
+    of every shopping condition. Identity is probed against customer_entity;
+    an empty cart with no quote row is the normal clean state.
 
     MySQL exits 0 when a valid DELETE/UPDATE matches zero rows. A wrong
     `customer_email` — a username where an email belongs is the realistic case —
@@ -153,9 +160,9 @@ def test_zero_rows_is_not_success():
     # `test_customer_not_found_fails_closed_loudly` covers the raising path.
     _SOFT_LOCAL = {"shopping_cart_reset": {"enabled": True, "fail_closed": False}}
 
-    # verify reports quotes=0 → customer never found → must NOT be success
-    seq = [mock.Mock(returncode=0, stdout="", stderr=""),          # the clear
-           mock.Mock(returncode=0, stdout="0\t0\n", stderr="")]   # verify: no quote
+    # verify reports customer=0 → identity never resolved → must NOT be success
+    seq = [mock.Mock(returncode=0, stdout="", stderr=""),            # the clear
+           mock.Mock(returncode=0, stdout="0\t0\n", stderr="")]     # verify: no customer
     with mock.patch("p79.utils.shopping_cart_reset.subprocess.run", side_effect=seq):
         assert clear_shopping_cart(_SOFT_LOCAL) is False
 
@@ -178,7 +185,7 @@ def test_customer_not_found_fails_closed_loudly():
            mock.Mock(returncode=0, stdout="0\t0\n", stderr="")]
     cfg = {"shopping_cart_reset": {"enabled": True, "fail_closed": True}}
     with mock.patch("p79.utils.shopping_cart_reset.subprocess.run", side_effect=seq):
-        with pytest.raises(RuntimeError, match="no quote row"):
+        with pytest.raises(RuntimeError, match="not found in customer_entity"):
             clear_shopping_cart(cfg)
 
 

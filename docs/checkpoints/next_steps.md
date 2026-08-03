@@ -98,22 +98,23 @@ updated: 2026-07-29
 > 共用容器锁，必须串行；第二条启动时 abort 是 B-1934 的闸在工作，不是故障。
 > stale lock 清理名字变了：`.locks/p79_magento.lock`（原 `p79_shopping_vwa.lock`）。
 >
-> ### 🔴 shopping fire 前唯一必做：在 A100 验一次 cart-reset SQL
+> ### ✅ A100 已同步 + cart-reset 已实测（2026-08-03）
 >
-> `p79/utils/shopping_cart_reset.py` 现在**默认启用**（PROTOCOL_NOTE_07），但那段 SQL 从未在活
-> Magento 上跑过（DGX 无 shopping 容器）。fire 下 `fail_closed` 解析为 True，schema 不符会**中止
-> condition** —— 正确的失败，但仍是失败。**先验**：
+> **代码同步**：`rsync -avc p79 scripts tests` DGX→A100（98 新增 + 49 更新 = 80 个 commit 的差异）。
+> 按笔记 §16904 既有约定走 rsync 而非 git pull；**排除** `configs/`（A100 那 6 个 WA reddit config
+> 指向 `wa_full_reddit_base.yaml` 是 7-31 的决定，DGX 没跟上）+ `vwa_env_remote.sh`（A100 本地凭据）。
+> 9 个核心文件 checksum 两边一致。**无 `--delete`**，A100 独有的 probe/备份都在。
 >
-> ```bash
-> # 1. quote 表结构 + 该账号是否真有 quote 行（B-1942 防的就是"零行匹配也返回 0"）
-> docker exec -e MYSQL_PWD=MyPassword vwa-shopping mysql -u magentouser -N -B magentodb -e \
->   "SELECT COUNT(*) FROM quote WHERE customer_email='emma.lopez@gmail.com';"   # 必须 >= 1
-> # 2. 干跑（幂等；空 cart 上应返回 True 且 items=0）
-> P79_PAPER_GRADE=1 .venv/bin/python3 -c \
->   "from p79.utils.shopping_cart_reset import clear_shopping_cart; print(clear_shopping_cart({}))"
-> # 3. 顺手量一次 docker exec 往返耗时（我用的 100-400ms 是行业典型值，非实测）
-> ```
-> schema 意外 → 改 config 的 `shopping_cart_reset` 块（所有标识符可覆盖），不必改代码。
+> **实测通过**（真实 `vwa-shopping` 容器）：
+> - `clear_shopping_cart({})` → True，`customer resolved, items=0`
+> - B-1942 守卫：错身份 → False + 精确诊断；`P79_PAPER_GRADE=1` 下 raise
+> - schema：8 个 quote 列 + `quote_item.quote_id` + 三张表 `ON DELETE CASCADE` 全对
+>
+> **顺带解锁 B3**：`local_mimo` backend DGX 有、A100 没有 —— 这就是 `B3_som_classifieds_20260803`
+> 崩在 `ValueError: Unsupported backend type: local_mimo`（0 episode）的原因，同步后已到位。
+>
+> ⚠️ **仍未测**：非平凡清理（塞一件商品进去 → 清 → 确认没了）。以上都是空 cart，DELETE 每次匹配
+> 0 行 —— 语句能解析、判别逻辑能区分，都验了，但**没观察过它真的删掉东西**。
 >
 > ### 📋 shopping 协议现状（写 paper 时按这个表披露，不要主张统一）
 >

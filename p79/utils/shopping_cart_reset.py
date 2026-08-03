@@ -112,15 +112,27 @@ SCOPE / LIMITS
   * Targets the logged-in customer's quote. A cart built while the session had
     silently dropped to guest (``customer_email IS NULL``) is not matched —
     that state is itself an auth failure and is caught by ``auth_required_gate``.
-  * 🔴 **The SQL has NOT been executed against a live Magento instance yet** —
-    it was written on the DGX dev box, which has no shopping container. The
-    column set is Magento 2 standard (``quote.items_count`` / ``items_qty`` /
-    ``subtotal`` / ``grand_total`` and their ``base_`` twins), and
-    ``quote_item_option`` cascades from ``quote_item`` by FK. **Verify on the
-    A100 before the first shopping fire** — under fire ``fail_closed`` resolves
-    True, so a schema mismatch aborts the condition rather than passing silently.
-    That is the right failure, but still a failure. Every identifier is
-    config-overridable, so a schema surprise is a config edit, not a code change.
+  * **A100 live verification 2026-08-03 — EXERCISED end-to-end.** Against the
+    running ``vwa-shopping`` container:
+
+      - all 8 assumed ``quote`` columns exist; ``quote_item.quote_id`` exists;
+        ``quote_address_item`` / ``quote_item`` / ``quote_item_option`` all
+        declare ``ON DELETE CASCADE`` off ``quote_item``, so the item delete
+        carries its dependents out;
+      - ``clear_shopping_cart({})`` runs and returns True —
+        *"ok for emma.lopez@gmail.com (customer resolved, items=0)"*;
+      - the B-1942 guard fires correctly on a wrong identity: a username where
+        an email belongs returns False with the diagnostic, and under
+        ``P79_PAPER_GRADE=1`` it raises;
+      - **the seed state has quote=0 / quote_item=0 rows** (customer_entity=27,
+        sales_order=189). This is what forced B-1944.
+
+    Still not exercised: a NON-TRIVIAL clear (put an item in, clear it, confirm
+    it is gone). The runs above were all against an empty cart, so the DELETE
+    matched zero rows every time — the statements are proven to parse and the
+    verification logic is proven to discriminate, but the delete has not yet been
+    observed removing anything. Every identifier is config-overridable, so a
+    schema surprise is a config edit, not a code change.
 
 Runs WHERE THE RUNNER RUNS (the A100 self-hosted VWA host), shelling to
 ``docker exec vwa-shopping ...``. ``fail_closed`` defaults to **"auto"**
@@ -155,6 +167,9 @@ _DEFAULTS = {
     "db_password": "MyPassword",
     "quote_table": "quote",
     "quote_item_table": "quote_item",
+    # B-1944: identity is probed here, not in `quote` — Magento creates the
+    # quote row lazily, so a clean cart legitimately has none.
+    "customer_table": "customer_entity",
     # "" → falls back to $VWA_SHOPPING_USER, then to the WebArena seed account.
     # CLAUDE.md hard rule #1 records shop's shared account as emma.lopez.
     "customer_email": "",
@@ -227,7 +242,7 @@ def build_clear_cart_sql(c: dict) -> str:
 
 
 def build_verify_sql(c: dict) -> str:
-    """Post-clear assertion: the customer's quote EXISTS and is now empty.
+    """Post-clear assertion: the identity RESOLVES and no line items survive.
 
     B-1942 (codex Mode B F8, 2026-08-03): ``rc == 0`` does not mean anything was
     cleared. MySQL exits 0 when a syntactically valid DELETE/UPDATE matches zero
@@ -237,16 +252,26 @@ def build_verify_sql(c: dict) -> str:
     you are clean when you are not is worse than knowing you are dirty: the
     former is invisible in every summary.
 
-    This emits two counts on one line: how many quote rows exist for the target
-    customer, and how many line items survive under them. The caller requires
-    ``quotes >= 1`` — "customer not found" and "cart already empty" are different
-    facts and only the second is success.
+    B-1944 (A100 live verification, 2026-08-03): the identity probe must hit
+    ``customer_entity``, NOT ``quote``. The first version asserted ``quotes >= 1``
+    and would have aborted the first task of every shopping condition, because
+    **Magento creates the quote row lazily** — measured on the live A100 seed
+    container: ``quote`` = 0 rows and ``quote_item`` = 0 rows, while
+    ``customer_entity`` = 27 rows with ``emma.lopez@gmail.com`` present and
+    ``sales_order`` = 189. A cart that has never been used simply has no quote.
+    Conflating "no quote row" with "customer not found" turned the clean state
+    into a hard failure. The two zero-states are:
+
+      * ``customer == 0`` → the identity is wrong. Real misconfiguration.
+      * ``items == 0`` with no quote row → the cart is empty. Normal, and the
+        state every task should start from.
     """
     q = str(c["quote_table"])
     qi = str(c["quote_item_table"])
+    ce = str(c["customer_table"])
     email = _sqlq(c["customer_email"])
     return (
-        f"SELECT (SELECT COUNT(*) FROM {q} WHERE customer_email='{email}') AS quotes, "
+        f"SELECT (SELECT COUNT(*) FROM {ce} WHERE email='{email}') AS customer, "
         f"(SELECT COUNT(*) FROM {qi} qi INNER JOIN {q} q ON qi.quote_id=q.entity_id "
         f"WHERE q.customer_email='{email}') AS items;"
     )
@@ -310,19 +335,23 @@ def clear_shopping_cart(
     fields = (v.stdout or "").split()
     if len(fields) < 2 or not all(f.isdigit() for f in fields[:2]):
         return _fail(f"verify returned unparseable output {(v.stdout or '')!r:.120}")
-    quotes, items = int(fields[0]), int(fields[1])
-    if quotes == 0:
-        # The single most likely misconfiguration, and the one that would
-        # otherwise pass silently: no quote row for this identity at all.
+    customer, items = int(fields[0]), int(fields[1])
+    if customer == 0:
+        # The misconfiguration that would otherwise pass silently: the identity
+        # does not resolve, so every DELETE matched zero rows for a reason that
+        # has nothing to do with the cart being clean. (B-1944: probed against
+        # customer_entity — an absent QUOTE row is normal, an absent CUSTOMER is
+        # not.)
         return _fail(
-            f"no quote row for customer_email={c['customer_email']!r} — the cart was "
-            f"NOT cleared, the customer was never found (check VWA_SHOPPING_USER: an "
-            f"account username where an email is expected produces exactly this)"
+            f"customer_email={c['customer_email']!r} not found in "
+            f"{c['customer_table']} — the cart was NOT verified clean, the identity "
+            f"never resolved (check VWA_SHOPPING_USER: an account username where an "
+            f"email is expected produces exactly this)"
         )
     if items != 0:
-        return _fail(f"cart still holds {items} item(s) after clear (quotes={quotes})")
+        return _fail(f"cart still holds {items} item(s) after clear")
     log.info(
-        "shopping_cart_reset: ok for %s (quotes=%d, items=0)",
-        c["customer_email"], quotes,
+        "shopping_cart_reset: ok for %s (customer resolved, items=0)",
+        c["customer_email"],
     )
     return True
