@@ -29,11 +29,21 @@
         "null_sd_mean_diff_pp": 2.525381361380527,
         "null_one_sided_95_pp": 4.154252339470967,
         "null_two_sided_95_pp": 4.949747468305834
+      },
+      {
+        "label": "B0.cls.som",
+        "scope": "B0 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 29,
+        "abs_mean_diff_pp": 2.232142857142857,
+        "null_sd_mean_diff_pp": 2.4040914317564748,
+        "null_one_sided_95_pp": 3.9547304052394012,
+        "null_two_sided_95_pp": 4.71201920624269
       }
     ],
     "observed_min_pp": 0.89,
     "observed_max_pp": 2.23,
-    "n_draws": 2,
+    "n_draws": 3,
     "null_sd_min_pp": 2.32,
     "null_sd_max_pp": 2.53,
     "one_sided_95_min_pp": 3.82,

@@ -26,7 +26,7 @@ Rows are the seven evidence dimensions. Columns are the units they cover. **W** 
 | dimension | product | VWA 6 cells | WA | 6 modes | status |
 |---|---|---|---|---|---|
 | **Outcome / SR** | `sr_per_mode` · `fusion_premium` | ✅ | ✅ | ✅ | complete |
-| **Noise / rerun floor** | `noise_floor_inventory` · `phase0b_noise_floor` · `label_instability` | ⚠️ 1 of 6 cells | ✅ 1 pair | ⚠️ 2 of 6 arms | **SoM replicate queued** |
+| **Noise / rerun floor** | `noise_floor_inventory` · `phase0b_noise_floor` · `label_instability` | ⚠️ 1 of 6 cells | ✅ 1 pair | ⚠️ **3 of 6 arms (was 2)** | **SoM replicate landed 08-03 — §4a-bis** |
 | **Four-layer profile** | `per_mode_four_dimension_profile` v2 (26 metrics) | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **Multi-metric Pareto** | `multimetric_pareto` | ✅ | ✅ `--with-wa` | ✅ | complete |
 | **diag / failure attribution** | `cross_mode_failure_signatures` (marginal) · `conditional_failure_attribution` (paired) | ✅ | ✅ both WA cells, **v11 rescan 08-03** | ⚠️ **vision column not co-tabulable** — see §1b | complete |
@@ -159,7 +159,7 @@ And one exception to a claim made earlier in this document:
 
 | still open | cost | what it buys |
 |---|---|---|
-| **SoM replicate** | 7.8h + ~$17, armed on A100 behind the B0×WA chain | the rerun floor for the mode the fusion-premium claim is *about*. Currently borrowed from DOM and Vision |
+| ~~**SoM replicate**~~ | ~~7.8h + ~$17~~ | ✅ **DONE 2026-08-03, 224/224.** The band did not move (§4a-bis) — claims 1 and 3 no longer extrapolate a floor onto the arm they are about |
 | **`/diag` Tier-2 on WA** | a session | Tier-1 is done and its ruleset was discovered on VWA, so it finds only VWA-shaped failures. See `HANDOFF_evidence_layer_2026-08-02.md` §B |
 | **§407 into the ledger** | a session | `ledger.jsonl` covers §1–§406 and has **zero** entries for today. See the handoff §C |
 
@@ -229,29 +229,41 @@ them had never been written down anywhere.
     1.9–4.1% of tokens and sweeping the ratio 2×→10× reorders **0 of 4** cells.
   * **B0 is unaffected** — it pays a real API bill at published rates.
 
-**4a-bis. Two verdicts the ledger is holding for tonight's replicate**
+**4a-bis. Two ledger verdicts — SETTLED 2026-08-03, the SoM replicate landed**
 
-`known.py` carries these as `CLAIM_UNVERIFIED`, both blocked on the same missing measurement,
-both filed months before the replicate was queued. Recording them here so the data lands on a
-question rather than on nobody:
+`known.py` carried these as `CLAIM_UNVERIFIED` for months, both blocked on the same missing
+measurement. The B0·classifieds·SoM replicate finished at 224/224 on 2026-08-03 and
+`noise_floor_inventory` now carries **three** replicated arms on that cell (dom, vision, som).
 
-- **§242** — *"drop-one oracle's 1.7–3.3pp must be shown to exceed the stochastic noise floor
-  (B0 cls shows 12% per-task flip); run the same condition twice and measure the SR standard
-  deviation."* `why_unverified: 重跑尚未做`. The SoM replicate **is** that rerun.
-- **§293** — *conditional*: if H1 strict clears only 1–2pp **and** the replicate noise floor is
-  also 1–2pp or more, the hero wording must be **downgraded** from "P-SoM has stable unique
-  task-solving contribution" to "pre-registered single-run oracle evidence, with reproducibility
-  caveat." `why_unverified: 依赖尚未做的 replicate-calibrated sensitivity`.
+- **§242** — *"drop-one oracle's 1.7–3.3pp must be shown to exceed the stochastic noise floor;
+  run the same condition twice and measure the SR standard deviation."* → **ANSWERED, and the
+  answer is no.** Three same-condition pairs give mean-difference draws of 0.89 / 2.23 / 2.23pp
+  and exchangeability-null SDs of **2.32 / 2.53 / 2.40pp**. A 1.7–3.3pp effect sits **inside**
+  that spread — a single rerun can produce it. The measurement §242 asked for exists and it
+  does not clear the bar §242 set.
+- **§293** — *conditional*: if H1 strict clears only 1–2pp **and** the replicate floor is also
+  ≥1–2pp, downgrade the hero wording. → **The trigger does not fire, but only because the
+  stronger thing already happened.** Its antecedent assumes H1 clears 1–2pp; at k=6 H1 FAILED
+  outright (θ_FE 0.79pp, p=0.807, §395.6), so there is no hero wording left to downgrade. The
+  floor half of the condition *is* satisfied (2.32–2.53pp ≥ 1–2pp). Recorded this way rather
+  than as "not applicable", because a reader who only sees "trigger did not fire" would take
+  it as reassurance.
 
-§293 is a **trigger, not a task**: when the replicate lands it either fires or it does not, and
-the answer is mechanical. It should be evaluated before the number is quoted anywhere else.
+**What the replicate actually bought.** No number downstream moved: SoM's own set-difference
+floor (5.36–7.59pp, → `noise_floor_inventory`) sits inside the band DOM and Vision defined, and
+its mean-difference draw is 2.23pp, identical to DOM's. So the band stays 0.89–2.23pp and every
+verdict in `fusion_premium`
+is unchanged. **That is the result** — claims 1 and 3 previously rested on a floor measured on
+two arms and extrapolated to the third, which is the arm claim 3 is about; they now rest on a
+measurement. A robustness confirmation is worth less than a correction only if you already knew
+which way it would go.
 
 **4b. Open and closable, with what each buys**
 
-- **Replicates on the other four arms, and more than one rerun each.** Every instability figure
-  is a lower bound from two arms replicated once. The SoM replicate (running 2026-08-03, ~8.6h +
-  ~$17) closes the one that matters most: claims 1 and 3 currently rest on a floor **borrowed
-  from DOM and Vision**, while claim 3 is *about* the SoM arm.
+- **Replicates on the other three arms, and more than one rerun each.** Every instability
+  figure is still a lower bound from arms replicated **once**. The SoM replicate closed the one
+  that mattered most on 2026-08-03 — claims 1 and 3 no longer borrow a floor for the arm claim 3
+  is about — so what remains open is P-text, P-prompt and P-SoM, plus a second rerun of any arm.
 - **Wiring, hours each**: `axis1_microbehavior` and `cost_per_mode` have no WA cell;
   `conditional_failure_attribution` has no `wa_B0`. `mechanism_per_task_report` (425 lines) is
   computed and unintegrated — what it adds over `axis_effect_size` is a framing call, not wiring.
@@ -356,6 +368,9 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    uses. Two more limits belong on the sentence: "buys" is a post-hoc **two-arm oracle-ceiling
    increment**, not an operational gain; and only two cells carry a floor at all, neither of
    them on the arm being added.
+   ⚠️ *Updated 2026-08-03: on `cls_B0` the replicated arm count rose from two to **three**
+   (dom, vision, **som**) and the band did not move — SoM's own floor lands inside it. Still
+   two **cells**, but no longer an extrapolation onto the arm claim 3 is about. → §4a-bis.*
 2. **Instability is enriched 3.9×–17.4× on the tasks where the routing choice is contested**,
    while aggregate SR between the same two runs moves under 2.3pp. → `label_instability`
    The range is not imprecision, it is two defensible definitions. 17.4× defines "contested"
@@ -723,8 +738,7 @@ the site interaction, not six independent observations.
 
 Claim 3 (fusion) states **"no detectable accuracy premium over the matched single channel"**,
 never "fusion does not work": the interval crossing zero is not equivalence, the pooled effects
-are heterogeneous (I² = 53% and 75%), and the rerun floor was measured on DOM and Vision rather
-than on the fused arm — **and that floor is two draws, not a bound**: the same replicate pairs
+are heterogeneous (I² = 53% and 75%), and the rerun floor **was** measured on DOM and Vision rather than on the fused arm — until 2026-08-03, when the SoM replicate landed and left the band unchanged (§4a-bis) — **and that floor is two draws, not a bound**: the same replicate pairs
 put `SD(ΔSR)` at 2.32–2.53pp under the exchangeability null, so an effect only becomes unlikely
 for one rerun to manufacture at ~3.8–4.2pp, not at the band's 2.23pp upper edge
 (`noise_floor_inventory` §1b, added 2026-08-03).
@@ -766,7 +780,7 @@ For each claim in §5: the measurement that would refute it, and whether we have
 
 | # | the measurement that would refute it | held? | consequence |
 |---|---|---|---|
-| 1 | the rerun floor measured **on the arm being added** — if SoM's own floor is far below SoM's marginal gain, the two are separable after all | ❌ floor is on DOM and Vision, one rerun each | this is exactly what the queued SoM replicate buys; until then the claim rests on a floor borrowed from other arms |
+| 1 | the rerun floor measured **on the arm being added** — if SoM's own floor is far below SoM's marginal gain, the two are separable after all | ✅ **held 2026-08-03** — SoM replicated, 3 arms on `cls_B0` | ran, and did **not** separate them: SoM's own floor 5.36–7.59pp sits inside the DOM/Vision band and its mean-difference draw is 2.23pp, identical to DOM's. The claim survives on a measurement instead of an extrapolation |
 | 2 | (a) a second (cell, arm-pair) where the enrichment is ≈1×; (b) a **difficulty-matched** control, since "contested" is by construction a mid-difficulty band | (a) ❌ one cell, two arms · (b) ✅ **done 08-02** | (b) ran and cut both ways — see `label_instability` §"Is the enrichment just arithmetic?": the arithmetic null predicts *infinite* enrichment, so 17.4× is deflated not inflated; but inside the contested band the excess over the floor is only **1.37×** |
 | 3 | one cell where fusion beats the workload-matched single channel significantly **and** by more than that cell's rerun band | ⚠️ **8** cells tested, but the band is the borrowed one from claim 1 | inherits claim 1's dependency; the 8/8 count is solid, the band is not. **`cls_B0`'s +2.23pp is exactly the band's upper edge** (both are 5/224) — an equality, not a win |
 | 4 | a third workload whose modality sits between the two, or contradicts the predicted sign | ❌ shopping has zero landed directories | stated limitation, not closable before submission |

@@ -47,6 +47,8 @@
       ],
       "label": "B0.cls.dom",
       "scope": "B0 x classifieds, canonical n=224",
+      "partial": false,
+      "n_missing": 0,
       "arm_a": "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557/phase1_dom_router_0",
       "arm_b": "results/repro_replicates/B0_dom_classifieds_R31194_clean_replicate/phase1_dom_router_0"
     },
@@ -101,8 +103,63 @@
       ],
       "label": "B0.cls.vision",
       "scope": "B0 x classifieds, canonical n=224",
+      "partial": false,
+      "n_missing": 0,
       "arm_a": "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/phase1_vision_router_0",
       "arm_b": "results/repro_replicates/B0_vision_classifieds_R24792_clean_replicate/phase1_vision_router_0"
+    },
+    {
+      "n": 224,
+      "sr_a": 0.27232142857142855,
+      "sr_b": 0.29464285714285715,
+      "self_drop_a_to_b_pp": 5.357142857142857,
+      "self_drop_b_to_a_pp": 7.5892857142857135,
+      "discordance_pct": 12.946428571428573,
+      "discordant_count": 29,
+      "mean_diff_pp": -2.232142857142857,
+      "abs_mean_diff_pp": 2.232142857142857,
+      "null_sd_mean_diff_pp": 2.4040914317564748,
+      "null_one_sided_95_pp": 3.9547304052394012,
+      "null_two_sided_95_pp": 4.71201920624269,
+      "flip_tasks_a_to_b": [
+        25,
+        49,
+        54,
+        83,
+        101,
+        118,
+        131,
+        148,
+        149,
+        165,
+        171,
+        179
+      ],
+      "flip_tasks_b_to_a": [
+        1,
+        12,
+        22,
+        56,
+        60,
+        75,
+        78,
+        105,
+        116,
+        124,
+        125,
+        139,
+        147,
+        161,
+        206,
+        217,
+        222
+      ],
+      "label": "B0.cls.som",
+      "scope": "B0 x classifieds, canonical n=224",
+      "partial": false,
+      "n_missing": 0,
+      "arm_a": "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/phase1_som_router_0",
+      "arm_b": "results/visualwebarena/phase1/B0_som_classifieds_20260803_084743_413015398_3677519_R30696/phase1_som_router_0"
     }
   ],
   "wa_floor": {
@@ -389,15 +446,35 @@
         "null_sd_mean_diff_pp": 2.525381361380527,
         "null_one_sided_95_pp": 4.154252339470967,
         "null_two_sided_95_pp": 4.949747468305834
+      },
+      {
+        "label": "B0.cls.som",
+        "scope": "B0 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 29,
+        "abs_mean_diff_pp": 2.232142857142857,
+        "null_sd_mean_diff_pp": 2.4040914317564748,
+        "null_one_sided_95_pp": 3.9547304052394012,
+        "null_two_sided_95_pp": 4.71201920624269
       }
     ],
     "observed_min_pp": 0.89,
     "observed_max_pp": 2.23,
-    "n_draws": 2,
+    "n_draws": 3,
     "null_sd_min_pp": 2.32,
     "null_sd_max_pp": 2.53,
     "one_sided_95_min_pp": 3.82,
     "one_sided_95_max_pp": 4.15,
     "reading": "observed_* is a range of 2 draws and must never be quoted as a threshold on its own; one_sided_95_* is the level an effect must reach before a single rerun would be unlikely to produce it"
+  },
+  "cls_band": {
+    "n_arms": 3,
+    "arm_names": "dom, vision, som",
+    "band_lo_pp": 4.910714285714286,
+    "band_hi_pp": 7.5892857142857135,
+    "has_som": true,
+    "som_lo": 5.357142857142857,
+    "som_hi": 7.5892857142857135,
+    "som_absdiff": 2.232142857142857
   }
 }

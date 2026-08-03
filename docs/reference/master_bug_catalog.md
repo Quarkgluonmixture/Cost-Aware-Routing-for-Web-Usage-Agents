@@ -10494,3 +10494,197 @@ B-1928 那次我验证的是「修完当场产物有 351 行」, 而不是「一
 
 **Cross-link**: 笔记 §422.11; B-1928 (同批, 症状相同根因不同); B-841 (--delete-after 的引入理由);
 `scripts/maintenance/sync_a100_results.sh` BENCH_SUBTREES 策略注释
+
+---
+
+## B-1930 ~ B-1936 落地记录 (2026-08-03) — shopping 的 reset / paper-grade 打通, 外加锁粒度建在一个已被推翻的前提上
+
+一次任务下的 7 个缺陷, 分三类。**共同根因是同一个过期前提**: 「WA 和 VWA 各跑各的 docker
+stack」。这个前提在 §387.3 (reddit) 已被 retract, 但只 retract 了 reddit 那一处, 其余引用
+它的代码继续按错的前提运行。
+
+### B-1930 — WA shopping/shopping_admin 的 reset 被一句已经作废的注释挡着
+
+`wa_reset_supported()` (lib §4b) 对 WA shopping 返回 1 (不支持), 理由写在注释里:
+「the Magento DB restore is genuinely unimplemented (rc=78 sentinel in
+`_reset_vwa_local_shopping`)」。
+
+**该理由 2026-07-31 就失效了** —— `_reset_vwa_local_shopping` 那天从 stub 变成了真实现
+(docker rm + rebuild)。**同一个文件的 700 行处自己写着**「shopping was the last stub and is
+now implemented ... this branch is currently unreachable」。一个文件里两句话互相矛盾, 而
+错的那句在 gate 路径上。
+
+证据同 §387.3 的形状: WA `test_shopping.raw.json` 与 VWA `test_shopping.json` 都声明
+`sites: ["shopping"]`, 都把 `__SHOPPING__` 解析到同一端点, 都用同一份
+`.auth/shopping_state.json`。shopping_admin (7780) 就是同一个 `vwa-shopping` 容器的第二个
+端口 —— 这正是 `_reset_vwa_local_shopping` 必须把两者一起 rebuild 的原因。
+
+**修**: WA 三站全部路由到既有 VWA reset。predicate 保留作未来新站的 hard-fail 钩子。
+5 个 queue 脚本 (4 个文件 + 1 个 symlink) 的 FATAL 文案同步。
+`reset_wa_sites.sh` 从 rc=78 scaffold 改为委托 wrapper。
+
+### B-1931 — VWA shopping 的 reset 自 2026-07-31 落地起就不可能成功过
+
+`reset_and_auth_gate` 按站点分配 `timeout`: reddit 240s, classifieds 120/240s,
+**其余一律 120s**。shopping 从来没有自己的分支。而它的 callee 成本下界 (读代码而非估计):
+
+| 阶段 | 上限 | 出处 |
+|---|---|---|
+| docker rm -f + run + settle | ~10s | `start_vwa_docker.sh:187` |
+| base_url patch + verify | ~20s | 3× retry on DB warm race |
+| cache:flush | ~10s | |
+| **indexer:reindex 轮询到 all-Ready** | **≤600s** | `poll_max=60 × 10s` (B-311) |
+| storefront HTTP warm-up | ≤180s | 60 × 3s |
+| 合计 | **≈820s** | vs 给它的 **120s** |
+
+**失败形态比单纯 abort 更坏**: `timeout` 在 `docker rm -f` 之后、rebuild 完成之前开火,
+于是链条中止时 shopping **一个容器都不剩**。下一个 condition 的 preflight 报的是「站点不可达」,
+把运维指向错误的层。
+
+**修**: shopping/shopping_admin → 900s, 并加 floor clamp (残留的 `VWA_RESET_TIMEOUT` 不能把它
+压回去 —— 与 B-1839 对 cls 做的同一件事)。
+
+### B-1932 — `reset_and_auth_gate` 从不把 benchmark 传给 auth 层 (⚠️ **正确性修复, 效果未验证**)
+
+> **诚实标注 (user 决定 2026-08-03)**: 这条是「参数本该传而没传」的正确性修复, 但**没有实证
+> 它改变了行为**。`refresh_site_auth` 已经显式收到 `base_urls`, 而 DATASET env 在登录子进程里
+> 只经 VWA `env_config` 解析 URL —— 很可能是 no-op。零风险 (传对不会更坏), 但单独跑一次 A100
+> 验证的成本 > 收益, 故不验; shopping fire 时自然会暴露。**不要把它当作已验证的行为修复引用。**
+
+`auth_required_gate` 一直有 `benchmark` 参数, 用来决定 Playwright 登录子进程跑在哪个
+DATASET 下 (`auth_refresh.py:330`), 但这个 gate 从来没传过, 所以每次 WA 登录都以
+visualwebarena 身份执行。之所以没被发现: 唯一有 reset 路径的 WA 站是 reddit, 它的登录流程
+与 DATASET 无关; 而 shopping_admin 在 auth_refresh 内部被无条件特判成 webarena。
+**WA shopping 是唯一两头都不占的那个。**
+
+**修**: `--benchmark` 参数 (可选, 默认 vwa), 并做 `wa`→`webarena` 词表映射 —— 直接透传 `wa`
+会匹配不上 `benchmark == "webarena"` 而静默选回 VWA, 正是这个参数要修的 bug。
+
+### B-1933 — `paper_grade_check.py` 把每个 WA run 认成它的 VWA 同名站
+
+`_site_of` 在 `("classifieds", "reddit", "shopping")` 里取第一个子串命中。
+`B0_dom_wa_shopping_<ts>` 含 "shopping" ⇒ 判为 `shopping` ⇒ 拿 VWA 的 435 去比对它真实的
+173; `wa_shopping_admin` 同理; `wa_reddit` 拿 205 比 104。**跑满的 WA condition 会被报成
+未完成**, manifest-bound 的还会报 BOUND-run-incomplete。
+
+`queue_chain.sh:476` 早在 B-1894 就修过同一个子串碰撞, 但只修了发射侧, 分析侧漏了。
+
+**修**: 最长前缀优先匹配 (`wa_shopping_admin` → `wa_shopping` → `shopping`)。
+WA 的 scored count (173/176/104) 放在 `paper_grade_check.py` 而**不是** `fire_manifest.json`
+—— manifest 是 Phase 1a 的 fire lock, 往里加它不绑定的 run 等于改预注册产物。
+顺带把 `10**9` 哨兵换成 `None` + 显式 issue: 旧哨兵让「站点不认识」和「差得离谱」无法区分
+(`ep < 10**9` 恒真)。
+
+### B-1934 ⚠️ 最严重 — 站点锁的 key 建在被推翻的前提上, 于是它允许的并发恰好全是同容器互踩
+
+锁文件是 `p79_${site}_${benchmark}.lock`, 理由白纸黑字写在 `queue_chain.sh:259`:
+「lock is per (site, benchmark) **so VWA shopping + WA shopping_admin can run concurrently
+(no docker container collision)**」。
+
+**这句话里被允许并发的每一对, 实际上都是同一个容器**:
+- shopping (7770) 与 shopping_admin (7780) 都是 `vwa-shopping` (docker inspect: 一个容器两个端口绑定);
+- WA shopping 与 VWA shopping 又是同一个;
+- WA reddit 与 VWA reddit 都是 `vwa-reddit`。
+
+即: 这把锁把「两条链同时写一个 Magento 实例」定义成了安全 —— 两个 reset 对撞、两个登录抢同
+一账号、cart 跨 condition 串味。**正是它存在的目的, 被它自己的 key 放行。**
+
+同一前提还长在另外三处, 全都主动把 WA 过滤掉 (`grep -v "_wa_"`):
+`assert_no_other_site_chain_running` / `assert_no_cross_mode_collision` /
+`queue_chain.sh::_collision_match`。于是 CLAUDE.md hard rule #1「同 site 单 baseline」实际
+是在对 run_id 字符串生效, 而不是对机器生效 —— 一个正在跑的 WA reddit runner **拦不住** VWA
+reddit 链把 postmill 容器重建掉。**这个洞在 WA reddit 上今天就是活的。**
+
+**修**: 引入 `site_lock_key <site> <benchmark>` (容器身份: classifieds / reddit / magento)
++ `container_runner_pattern` (单一来源, 取代三份手写正则), 三处 `grep -v "_wa_"` 全部移除。
+未知站点仍退回窄的 per-(site,benchmark) key —— 没有证据说它共容器时, 放宽等于凭空制造争用。
+B-637 的 8 位日期锚点保留 (那部分是对的), 只拆掉刻意的跨 benchmark 失明。
+
+### B-1935 — WA shopping 的 paper-grade 编排缺位
+
+`config_for_cmd` 按位置拼 config 名, 但 benchmark 在文件名里位于 site **之前**
+(`exp_v2_B0_dom_wa_shopping.yaml`), 追加解析不出来; `_condition_complete` 用裸 site 名查
+manifest, 于是 `... shopping wa` 会命中 VWA 的 `shopping|B0|dom` —— **RESUME_MISSING=1 时,
+一个跑完的 VWA shopping condition 会把 WA 那一步标记为已完成并静默丢掉。**
+
+**修**: 两处都做 benchmark 限定; 新增 `build_wa_shop_chain` / `build_wa_shop_admin_chain` +
+`launch wa_shop` / `launch wa_shop_admin`; 三条 shop 链共用 label `shop` (pidfile 互斥要靠它)
+并都过 `assert_no_other_site_chain_running` —— 顺带补上 phase1b 分支原本缺的这道检查。
+
+### B-1936 — shopping cart 跨 episode 累积 (⚠️ **量化结论保留, 修复 DEFAULT OFF —— 见文末裁定更正**)
+
+upstream 的 `require_reset` **只实现 classifieds** (`envs.py:172`, `TODO(jykoh)`)。
+reddit 在 B-1884 拿到了 P79 的补偿 (`restore_reddit_identity`), **shopping 一直没有**。
+
+在 `test_shopping.json` (466 task) 上实测:
+
+| 量 | 值 |
+|---|---|
+| 往 cart 加东西的 task | **108** |
+| evaluator 读 cart 页 (`program_html` → `/checkout/cart`) | **104** |
+| upstream 标了 `require_reset` 的 | **19** (且对 shopping 是 no-op) |
+| **加购物车但没被标的** | **89** |
+
+一个 condition 顺序跑完, cart 单调累积, 偏倚**双向**:
+- **假成功**: evaluator 是对 cart 页面做 `must_include` 子串匹配。cart 里每多一件商品就多一个
+  商品名字符串, 后面的 task 白捡命中的概率随位置单调上升。
+- **假失败**: task 289/320/321 用 JS locator 读 `data-item-qty` 要求精确值 ("3"/"48"/"400"),
+  前序加过同款 ⇒ 数量累加 ⇒ 做对了也判错。
+
+两个方向都随 task 位置放大 ⇒ **与顺序相关的系统性偏倚, 不是会被平均掉的噪声**, 且落在约 24%
+的 scored shopping task 上。
+
+### ⛔ 裁定更正 (同日, user challenge) —— 上面的量化成立, 但「修」是越权的
+
+user 当场质疑:「task 不 reset 是我们的哲学, classifieds 也不是这样的」。查证结果:
+
+**哲学部分 user 是对的, 而且是他自己裁过的**:
+- **§402.7 (2026-07-29, user 裁定)**: reddit sidebar 泄漏 —— **同一缺陷类**(`require_reset`
+  no-op ⇒ 状态跨 episode 累积) —— 判为**「披露, 不修」**: 归独立 cross-benchmark bug paper,
+  主 paper 一句披露 + 指针, scored universe 保持 203。
+- **§352.3 / §359.6**: `shop (cart 累积)` 早已在案, 且选定对策是 **per-condition FORCE_NEW**
+  (整轮重跑), **不是 per-task 清理**。
+- **§357.3 / §357.6**: reddit 的 `restore_reddit_identity` 是**刻意收窄的唯一例外** —— 它过
+  GRL 判据 (**复原 substrate 属 IN / 改测什么属 OUT**), 走 PROTOCOL_NOTE_04, 且**不修就
+  fail-closed** (改名直接把登录打死, condition 跑不完)。
+
+**清 cart 过不了那条 GRL 判据**: 它不是复原 harness 运行所需的 substrate, 而是把一个有偏的
+SR 变成干净的 SR —— 不修照样跑得完。按项目自己的规则属 OUT。额外代价: 一旦开启, 新 shopping
+数据与盘上任何既有 shopping 数据不可比。
+
+**classifieds 那半句需要更正 (user 记忆在机制层不准)**: cls 的 per-task reset **确实在跑** ——
+`env.reset(options={config_file})` → `setup()` → `envs.py:172` `POST page=reset`;
+`CLASSIFIEDS_RESET_TOKEN` 已配 (`scripts/vwa_env*.sh`) 且 `preflight_v2.sh:180` 强制要求它存在。
+所以 cls 与 reddit/shopping 机制上**确有**不同 —— 但那是 **upstream 自带行为, 不是 P79 加的**,
+这多半是记忆的来源。P79 自己从不加 per-task reset, 这条立场成立。
+
+**落地状态**: `p79/utils/shopping_cart_reset.py` 已写好并测试, 但 **`enabled` 默认 `False`,
+默认路径 0 次 subprocess 调用 (实测)**。挂点留在 runner 里, 是为了「将来若 advisor 批准, 开启
+是改一行 config 而不是 fire 中途改代码」。`test_disabled_by_default_is_a_noop` 是承重断言,
+**没有 PROTOCOL_NOTE / AMENDMENT 不要翻它**。
+
+**这份量化今天的正确用途 = 披露材料**, 喂给 §402.7 已经指定的那个 cross-benchmark bug paper
+(reddit sidebar 泄漏也在那儿) —— 而不是喂给一个静默的 estimand 变更。
+
+两个设计判断仍由测试锁住 (供将来真要启用时参考):
+- **为什么不按 `require_reset` 标记来做**: 标记本身漏了 89 个, 且 agent 在任何 task 里探索时
+  都可能往 cart 里加东西 —— 按标记走等于继承 upstream 的盲区。
+- **为什么清空是安全的**: 全部 466 VWA + 192 WA + 182 WA-admin task 里, 没有一个依赖 cart 的
+  既有内容 (提到 cart 的都是往里加)。有 test 守着, 将来若出现依赖 cart 初始态的 task 会失败。
+
+⚠️ **若将来启用, 先补两件事**: (1) 这段 SQL **尚未在活 Magento 上跑过** (DGX 无 shopping 容器),
+列名取自 Magento 2 标准 schema, `quote_item_option` 按外键从 `quote_item` 级联 —— 必须在 A100
+验; (2) 已下单的订单 (task 272/273 会 checkout) 不回滚, 那要靠 per-condition 容器 rebuild。
+
+**教训 (这条比缺陷本身重要)**: 我把「upstream 有个 TODO 没实现」直接读成了「这是个待修的
+bug」, 但**同一个缺陷类三周前刚被 user 裁定为「披露不修」**, 而我没查就动手实现了修复。
+`known.py` 台账正是为这件事存在的 —— **动手前查它, 不是写完再查**。「upstream 漏了」与
+「我们应该补上」之间, 隔着一个 estimand 决策, 那个决策不归代码做。
+
+**教训**: 一个前提被推翻时, retract 的是**结论**, 但引用该前提的代码不会自己跟着改。
+§387.3 只修了 reddit 那一处, 同一句错话在锁、在三处碰撞检测、在 gate predicate 里各留了一份
+拷贝, 又活了 4 个月。**下次 retract 一个前提, 应该 grep 它的措辞而不只是修触发它的那一处。**
+
+**Cross-link**: §387.3 (前提被推翻的第一处); B-1894 (发射侧的同类子串碰撞); B-1884 (reddit
+的同类 per-task 补偿); B-1839 (cls 的同类 timeout floor); B-637 (日期锚点, 保留); B-311
+(indexer 轮询 10min, B-1931 的成本来源); B-747 (MYSQL_PWD env 注入)

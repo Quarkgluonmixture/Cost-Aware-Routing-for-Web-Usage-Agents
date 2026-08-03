@@ -23,6 +23,44 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟩 2026-08-03 · shopping reset / paper-grade 打通（VWA + WA）— **无阻塞，可直接 fire**
+>
+> chronicle → **笔记 §424**；缺陷详情 → **master_bug_catalog B-1930 ~ B-1936**。
+>
+> ### 可直接用
+>
+> | 命令 | 说明 |
+> |---|---|
+> | `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B0 dom shopping` | VWA shopping，reset 现在真能跑完（timeout 120s→900s，B-1931） |
+> | `... queue_baseline.sh B0 dom shopping wa` | WA shopping，reset 不再被拒（B-1930） |
+> | `bash scripts/queues/queue_phase1_paper_grade.sh launch phase1b` | VWA shop 18 conditions |
+> | `... launch wa_shop` / `... launch wa_shop_admin` | WA shopping / shopping_admin 各 18 conditions（B-1935） |
+>
+> ⚠️ **三条 shop 链是同一个 Magento 容器**（`vwa-shopping`，7770 storefront + 7780 admin），
+> 共用容器锁，必须串行；第二条启动时 abort 是 B-1934 的闸在工作，不是故障。
+> stale lock 清理名字变了：`.locks/p79_magento.lock`（原 `p79_shopping_vwa.lock`）。
+>
+> ### 🔵 fire 之后要做的（不阻塞 fire）
+>
+> **敏感性分析：排除下列 task 重算 shopping SR。** 它们的判定会被同 condition 内前序 task 的
+> 副作用满足（穷举静态分析，非抽样）。裁定为「披露不修」(§424.7)，做这一步是把「已知偏倚」
+> 变成「已量化且不影响结论」：
+>
+> | 站 | task | 机制 |
+> |---|---|---|
+> | VWA shopping | **86/87**、**223/224**、**348/349** | 每对两个 task 的 `must_include` 目标字符串**完全相同** |
+> | VWA shopping | **453**（`"Green"`）、**455**（`"Gray"`） | 目标是短词，任何含该词的残留商品都可能误判 |
+> | WA shopping_admin | **773/774** | 两个 task 的 eval **逐字相同**；先跑的删完 review，后跑的不做事即通过 |
+>
+> 做法：对每对，看后跑那个是否 success 且轨迹无有效操作 → 计入偏倚上界；然后排除重算 pooled。
+>
+> ### 🔒 不要动的
+>
+> `shopping_cart_reset.enabled` **必须保持 `False`**。开启 = 引入未声明的 per-task 条件
+> = estimand 变更，需 PROTOCOL_NOTE / AMENDMENT。`test_disabled_by_default_is_a_noop` 是承重
+> 断言。理由见 §424.7（跨站 estimand 一致性 > 单站干净；且 §402.7 已对同一缺陷类裁定披露不修）。
+>
+
 > ## 🟦 2026-08-03 · diag 质量审计 session 交接（**给动 `diag_scans/` 的那个 session**）
 >
 > chronicle → **笔记 §416.1–§416.14**。commits `cc429f7` → `915aa00`。

@@ -19,6 +19,7 @@ Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_noise_floor_inventory.
 |---|---|---|---|---|---|
 | `B0.cls.dom` | B0 x classifieds, canonical n=224 | 224 | **7.14pp** | **4.91pp** | 12.05% |
 | `B0.cls.vision` | B0 x classifieds, canonical n=224 | 224 | **7.59pp** | **6.70pp** | 14.29% |
+| `B0.cls.som` | B0 x classifieds, canonical n=224 | 224 | **5.36pp** | **7.59pp** | 12.95% |
 | `B1.wa-red` (**new**) | B1 x WA-reddit, registered 10-task pilot draw x 5 modes | 50 | **2.00pp** | **4.00pp** | 6.00% |
 
 ### 1b. The mean-difference floor is two draws, not a bound
@@ -29,6 +30,7 @@ The set-difference functional above is the one claim 1 needs. Claims 3 and 4 com
 |---|---|---|---|---|---|---|
 | `B0.cls.dom` | 224 | 27 | 2.23pp | **2.32pp** | 3.82pp | ±4.55pp |
 | `B0.cls.vision` | 224 | 32 | 0.89pp | **2.53pp** | 4.15pp | ±4.95pp |
+| `B0.cls.som` | 224 | 29 | 2.23pp | **2.40pp** | 3.95pp | ±4.71pp |
 
 ⚠️ **The band's upper edge (2.23pp) is of the same order as one standard deviation (2.32–2.53pp).** So "clears the band" is not "clears the noise": an effect has to reach roughly **3.82–4.15pp** before a single rerun would be unlikely to produce it by itself. Both readings are reported because they answer different questions — *what did repetition actually deliver* (the two draws) versus *what could repetition deliver* (the null spread) — and the second is the one an effect size has to be judged against. Reading a 2.2pp effect against a 2.23pp "measured floor" is comparing a draw to a draw.
 
@@ -68,6 +70,8 @@ A floor is only interpretable against a gain of the **same functional at the sam
 | B2 · VWA-red (n=203) | dom @ 3.94% | **1.97pp** (vision) | — | no floor measured on this cell |
 
 Two cells carry a floor, and they differ in model family, benchmark and serving path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. On `B1 · WA-red` it lands **just outside**, by 0.81pp — above the floor, but of the same order, and on a floor estimated from only n=50. Neither cell shows a representation arm worth appreciably more than a rerun arm; one shows it worth no more at all.
+
+⚠️ **`B0 · VWA-cls` now carries 3 replicated arms, not one** (dom, vision, som) — the band above is the min/max over all of them. The `som` pair landed 2026-08-03 and it is the one that matters most: **claim 3 is about the fused arm, and until that day its floor was borrowed from DOM and Vision.** The borrowed band turned out to be right — SoM's own set-difference floor 5.36–7.59pp sits inside it and its mean-difference draw is 2.23pp, matching DOM's, so no number downstream moves. That is a robustness result rather than a correction, and it is worth more than the numbers: the claim no longer rests on an extrapolation.
 
 ### What this licenses, and what it does not
 

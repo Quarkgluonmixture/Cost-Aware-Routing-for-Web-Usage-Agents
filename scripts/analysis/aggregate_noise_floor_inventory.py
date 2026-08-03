@@ -47,6 +47,12 @@ from pathlib import Path
 LOG = logging.getLogger("noise-floor-inventory")
 
 REPO = Path(__file__).resolve().parents[2]
+# Run from the command line, sys.path[0] is scripts/analysis/ and `import scripts.…`
+# raises. §2b records what that cost once already: axis_effect_size caught the ImportError,
+# warned, returned an empty directory map, and wrote a full report in which every negative
+# finding was vacuously true over an empty set — exit 0. Put the root on the path instead
+# of catching the symptom.
+sys.path.insert(0, str(REPO))
 PER_TASK_CSV = REPO / "results/phantom_paper/per_task_sr.csv"
 OUT_MD = REPO / "docs/analysis/cross_sites/noise_floor_inventory.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/noise_floor_inventory.json"
@@ -62,7 +68,20 @@ CLEAN_PAIRS = [
     ("B0.cls.vision",
      "results/visualwebarena/phase1/B0_vision_classifieds_20260526_141916_610351680_689390_R32024/phase1_vision_router_0",
      "results/repro_replicates/B0_vision_classifieds_R24792_clean_replicate/phase1_vision_router_0"),
+    # The arm claims 1 and 3 are ABOUT. Queued 2026-08-03 precisely because the band those
+    # claims are read against was measured on DOM and Vision and borrowed for SoM.
+    ("B0.cls.som",
+     "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/phase1_som_router_0",
+     "results/visualwebarena/phase1/B0_som_classifieds_20260803_084743_413015398_3677519_R30696/phase1_som_router_0"),
 ]
+
+# A replicate that is still running has a task set that merely LOOKS like a scored universe:
+# `_pair_stats` intersects the two runs, so a pair short of the canonical set silently
+# reports a floor at n=222 with no indication that two tasks never ran. Today's lesson
+# (B-1928, B-1929, the empty failure_modes product) is that a partially-complete artifact
+# reads exactly like a complete one, so the completeness check is explicit and fails loud.
+# `--allow-partial-replicate` exists for interim inspection and marks the output.
+REQUIRE_FULL_UNIVERSE = True
 
 # --- WA reddit: pilot (10-task registered draw) vs full-104, same condition ----------
 # prereg 8.8 / B-1296 registered pilot sample, reproducible from _wa_pilot_task_sample.py
@@ -152,15 +171,34 @@ def _pair_stats(a: dict[int, int], b: dict[int, int], restrict: list[int] | None
     }
 
 
-def compute_clean_pairs() -> list[dict]:
+def compute_clean_pairs(allow_partial: bool = False) -> list[dict]:
+    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+    scored, _sha = expected_scored_ids("classifieds")
+    scored = set(scored)
     rows = []
     for label, ra, rb in CLEAN_PAIRS:
         pa, pb = REPO / ra, REPO / rb
         for p in (pa, pb):
             if not p.is_dir():
                 raise MissingInput(f"{label}: replicate arm not on disk: {p}")
-        st = _pair_stats(_episode_success(pa), _episode_success(pb))
-        st.update(label=label, scope="B0 x classifieds, canonical n=224",
+        sa, sb = _episode_success(pa), _episode_success(pb)
+        # Completeness gate — see REQUIRE_FULL_UNIVERSE. A replicate mid-flight yields a
+        # perfectly well-formed floor over whatever it has finished, and nothing downstream
+        # can tell that from a finished one.
+        missing = sorted(scored - (set(sa) & set(sb)))
+        if missing:
+            msg = (f"{label}: {len(missing)} of {len(scored)} canonical tasks absent from the "
+                   f"pair (first few: {missing[:5]}). A floor computed here would be over "
+                   f"n={len(set(sa) & set(sb))} while every consumer reads it as n={len(scored)}.")
+            if REQUIRE_FULL_UNIVERSE and not allow_partial:
+                raise MissingInput(msg + "  Re-run when the replicate finishes, or pass "
+                                         "--allow-partial-replicate to inspect it anyway.")
+            LOG.warning("PARTIAL %s", msg)
+        st = _pair_stats(sa, sb, restrict=sorted(scored))
+        st.update(label=label,
+                  scope=("B0 x classifieds, canonical n=224" if not missing
+                         else f"B0 x classifieds, PARTIAL n={st['n']} of {len(scored)}"),
+                  partial=bool(missing), n_missing=len(missing),
                   arm_a=str(pa.relative_to(REPO)), arm_b=str(pb.relative_to(REPO)))
         rows.append(st)
         LOG.info("clean pair %s: self_drop %.2f / %.2f pp, discordance %.2f%% (n=%d)",
@@ -410,12 +448,26 @@ def render(data: dict) -> str:
             f"| **{one:.2f}pp** ({g['gain_1_best_distinct_arm_mode'].replace('sr_', '')}) "
             f"| {floor_txt} | {verdict} |")
     add("")
-    add("Two cells carry a floor, and they differ in model family, benchmark and serving "
-        "path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. "
-        "On `B1 · WA-red` it lands **just outside**, by 0.81pp — above the floor, but of "
-        "the same order, and on a floor estimated from only n=50. Neither cell shows a "
-        "representation arm worth appreciably more than a rerun arm; one shows it worth "
-        "no more at all.")
+    add(f"Two cells carry a floor, and they differ in model family, benchmark and serving "
+        f"path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. "
+        f"On `B1 · WA-red` it lands **just outside**, by 0.81pp — above the floor, but of "
+        f"the same order, and on a floor estimated from only n=50. Neither cell shows a "
+        f"representation arm worth appreciably more than a rerun arm; one shows it worth "
+        f"no more at all.")
+    add("")
+    _cb = data.get("cls_band", {})
+    if _cb.get("n_arms", 0) > 1:
+        add(f"⚠️ **`B0 · VWA-cls` now carries {_cb['n_arms']} replicated arms, not one** "
+            f"({_cb['arm_names']}) — the band above is the min/max over all of them. "
+            + (f"The `som` pair landed 2026-08-03 and it is the one that matters most: "
+               f"**claim 3 is about the fused arm, and until that day its floor was "
+               f"borrowed from DOM and Vision.** The borrowed band turned out to be right "
+               f"— SoM's own set-difference floor {_cb['som_lo']:.2f}–{_cb['som_hi']:.2f}pp "
+               f"sits inside it and its mean-difference draw is {_cb['som_absdiff']:.2f}pp, "
+               f"matching DOM's, so no number downstream moves. That is a robustness "
+               f"result rather than a correction, and it is worth more than the numbers: "
+               f"the claim no longer rests on an extrapolation."
+               if _cb.get("has_som") else ""))
     add("")
     add("### What this licenses, and what it does not")
     add("")
@@ -469,13 +521,16 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--date", default="2026-08-01", help="stamp written into frontmatter")
+    p.add_argument("--allow-partial-replicate", action="store_true",
+                   help="compute a floor from a replicate that has not finished; the row "
+                        "is marked PARTIAL and must not be quoted as a floor")
     p.add_argument("--require-complete", action="store_true",
                    help="exit 2 if any input is missing instead of raising")
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
     try:
-        clean = compute_clean_pairs()
+        clean = compute_clean_pairs(allow_partial=args.allow_partial_replicate)
         wa_floor = compute_wa_floor()
         margins = compute_vwa_margins()
         margins["wa_red_B1"] = compute_wa_margin("B1")
@@ -484,12 +539,16 @@ def main(argv: list[str] | None = None) -> int:
         LOG.error("missing input: %s", exc)
         return 2 if args.require_complete else 1
 
-    dom = next(r for r in clean if r["label"] == "B0.cls.dom")
-    vis = next(r for r in clean if r["label"] == "B0.cls.vision")
-    lo = min(dom["self_drop_a_to_b_pp"], dom["self_drop_b_to_a_pp"],
-             vis["self_drop_a_to_b_pp"], vis["self_drop_b_to_a_pp"])
-    hi = max(dom["self_drop_a_to_b_pp"], dom["self_drop_b_to_a_pp"],
-             vis["self_drop_a_to_b_pp"], vis["self_drop_b_to_a_pp"])
+    # Derived over EVERY B0-classifieds replicate pair, not over a hardcoded dom+vision.
+    # The SoM pair landed 2026-08-03 and appeared in §1 while this band, four lines below
+    # it, still described two arms — a table and the prose above it disagreeing, which is
+    # the defect class §4d of the summary is about. Adding a fourth pair now needs no edit.
+    cls_pairs = [r for r in clean if r["label"].startswith("B0.cls.")]
+    _drops = [v for r in cls_pairs
+              for v in (r["self_drop_a_to_b_pp"], r["self_drop_b_to_a_pp"])]
+    lo, hi = min(_drops), max(_drops)
+    n_cls_arms = len(cls_pairs)
+    cls_arm_names = ", ".join(r["label"].rsplit(".", 1)[-1] for r in cls_pairs)
     wlo = min(wa_floor["self_drop_a_to_b_pp"], wa_floor["self_drop_b_to_a_pp"])
     whi = max(wa_floor["self_drop_a_to_b_pp"], wa_floor["self_drop_b_to_a_pp"])
 
@@ -533,8 +592,19 @@ def main(argv: list[str] | None = None) -> int:
                     "reach before a single rerun would be unlikely to produce it"),
     }
 
+    _som = [r for r in cls_pairs if r["label"].endswith(".som")]
+    cls_band = {"n_arms": n_cls_arms, "arm_names": cls_arm_names,
+                "band_lo_pp": lo, "band_hi_pp": hi, "has_som": bool(_som)}
+    if _som:
+        _s0 = _som[0]
+        cls_band.update(
+            som_lo=min(_s0["self_drop_a_to_b_pp"], _s0["self_drop_b_to_a_pp"]),
+            som_hi=max(_s0["self_drop_a_to_b_pp"], _s0["self_drop_b_to_a_pp"]),
+            som_absdiff=_s0["abs_mean_diff_pp"])
+
     data = {"generated_for_date": args.date, "clean_pairs": clean, "wa_floor": wa_floor,
-            "margins": margins, "head_to_head": head_to_head, "floor_band": floor_band}
+            "margins": margins, "head_to_head": head_to_head, "floor_band": floor_band,
+            "cls_band": cls_band}
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False))
