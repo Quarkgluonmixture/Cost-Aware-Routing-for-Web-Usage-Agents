@@ -195,12 +195,24 @@ them had never been written down anywhere.
 - **The sequential cascade outcome.** Claim 5's escalated tasks take their outcome from a
   standalone rich run; a real cascade starts the rich episode *after* the cheap one has acted on
   a stateful site. No run in this project observes that, and no reanalysis can produce it.
-- **Calibrated per-accelerator energy.** `use_pynvml: true` is configured but every step records
-  `source: psutil_profile` at ~66W on a device rated several times that, so the carbon column is
-  wall-clock in other units and is reported as uninformative rather than as an axis.
+- **Calibrated per-accelerator energy — now measured, and worse than the assertion.**
+  → `energy_carbon_audit` (new 2026-08-03). This entry asserted for weeks that the carbon
+  column is "wall-clock in other units"; **it had never been checked.** It is: over 24
+  conditions per-step energy correlates with per-step latency at **r = 0.966–0.9998
+  (mean 0.9935)** at a recorded **66.3 W**. Two things the assertion missed. (a)
+  `configs/exp_v2_base.yaml:95` sets `use_pynvml: true` and every step records
+  `source: psutil_profile` — **the configuration asked for the GPU counter and the runtime
+  used the CPU estimate**, which is why 66 W; nothing failed loudly because no product read
+  the field. (b) **B0 has no energy at all** (`source: disabled`, 0% populated over 5,740
+  steps). It is API-served so that is correct, but it means a carbon comparison across the
+  three backbones is not uncalibrated — it is **impossible**, and the missing backbone is
+  the one every headline number uses.
 - **Absolute local cost.** The per-token constant for the locally-served backbones was derived
   for a different accelerator than the runs were served on. Within-cell ratios are unaffected
   because it is a single multiplier; absolute dollar figures for B1/B2 are uncalibrated.
+  ⚠️ **Still an unmeasured assertion**, of exactly the shape the energy entry above turned out
+  to have. Nobody has checked which constant is in force, where it came from, or how far off
+  it is. → the same treatment `energy_carbon_audit` gave carbon would settle it.
 
 **4a-bis. Two verdicts the ledger is holding for tonight's replicate**
 
@@ -254,12 +266,6 @@ and not merely on the denominator. Also unresolved: `aggregate_h10_pareto.py`'s 
 threshold is a six-cell design** — whether it becomes 7/8 at eight cells is a preregistration
 decision, deliberately not taken here (see claim 6 for why carrying the literal numerator across a
 denominator change reverses a load-bearing negative).
-- **Calibrated per-accelerator energy.** `use_pynvml: true` is configured but every step records
-  `source: psutil_profile` at ~66W on a device rated several times that, so the carbon column is
-  wall-clock in other units and is reported as uninformative rather than as an axis.
-- **Absolute local cost.** The per-token constant for the locally-served backbones was derived
-  for a different accelerator than the runs were served on. Within-cell ratios are unaffected
-  because it is a single multiplier; absolute dollar figures for B1/B2 are uncalibrated.
 
 ## 5. What the layer supports, independent of frame
 

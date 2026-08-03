@@ -1,0 +1,219 @@
+{
+ "schema": "2026-08-03-energy-carbon-audit-v1",
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "conditions": [
+  {
+   "cell": "B1·classifieds",
+   "mode": "DOM",
+   "n_steps": 487,
+   "r_energy_latency": 0.9945314027175005,
+   "mean_power_w": 65.67043121149898,
+   "sd_power_w": 1.801695647509248
+  },
+  {
+   "cell": "B1·classifieds",
+   "mode": "SoM",
+   "n_steps": 342,
+   "r_energy_latency": 0.9931251587006663,
+   "mean_power_w": 66.26169590643275,
+   "sd_power_w": 1.7575677774476932
+  },
+  {
+   "cell": "B1·classifieds",
+   "mode": "Vision",
+   "n_steps": 421,
+   "r_energy_latency": 0.9658721213125571,
+   "mean_power_w": 66.17399049881236,
+   "sd_power_w": 1.8975028570587995
+  },
+  {
+   "cell": "B1·classifieds",
+   "mode": "P-text",
+   "n_steps": 520,
+   "r_energy_latency": 0.9925546020379532,
+   "mean_power_w": 65.73461538461538,
+   "sd_power_w": 1.885101977998968
+  },
+  {
+   "cell": "B1·classifieds",
+   "mode": "P-prompt",
+   "n_steps": 465,
+   "r_energy_latency": 0.9881949184358819,
+   "mean_power_w": 66.01505376344086,
+   "sd_power_w": 1.9028951477540879
+  },
+  {
+   "cell": "B1·classifieds",
+   "mode": "P-SoM",
+   "n_steps": 466,
+   "r_energy_latency": 0.9992802996540703,
+   "mean_power_w": 66.05364806866953,
+   "sd_power_w": 1.803167693316845
+  },
+  {
+   "cell": "B1·reddit",
+   "mode": "DOM",
+   "n_steps": 584,
+   "r_energy_latency": 0.9998276675601159,
+   "mean_power_w": 65.92294520547945,
+   "sd_power_w": 1.7833934936412503
+  },
+  {
+   "cell": "B1·reddit",
+   "mode": "SoM",
+   "n_steps": 588,
+   "r_energy_latency": 0.9996662881213427,
+   "mean_power_w": 66.45450680272108,
+   "sd_power_w": 2.7667149892221237
+  },
+  {
+   "cell": "B1·reddit",
+   "mode": "Vision",
+   "n_steps": 634,
+   "r_energy_latency": 0.995871897367999,
+   "mean_power_w": 66.41561514195584,
+   "sd_power_w": 2.314484432064546
+  },
+  {
+   "cell": "B1·reddit",
+   "mode": "P-text",
+   "n_steps": 604,
+   "r_energy_latency": 0.999842680915541,
+   "mean_power_w": 65.65480132450331,
+   "sd_power_w": 1.779854650363924
+  },
+  {
+   "cell": "B1·reddit",
+   "mode": "P-prompt",
+   "n_steps": 561,
+   "r_energy_latency": 0.9995887090614024,
+   "mean_power_w": 66.1470588235294,
+   "sd_power_w": 2.481075483788147
+  },
+  {
+   "cell": "B1·reddit",
+   "mode": "P-SoM",
+   "n_steps": 630,
+   "r_energy_latency": 0.9997499151239754,
+   "mean_power_w": 66.01626984126985,
+   "sd_power_w": 2.3181977585660394
+  },
+  {
+   "cell": "B2·classifieds",
+   "mode": "DOM",
+   "n_steps": 645,
+   "r_energy_latency": 0.9917036822476455,
+   "mean_power_w": 66.25658914728682,
+   "sd_power_w": 1.8469163473180765
+  },
+  {
+   "cell": "B2·classifieds",
+   "mode": "SoM",
+   "n_steps": 666,
+   "r_energy_latency": 0.9890068531608621,
+   "mean_power_w": 67.00975975975976,
+   "sd_power_w": 2.174599670299895
+  },
+  {
+   "cell": "B2·classifieds",
+   "mode": "Vision",
+   "n_steps": 687,
+   "r_energy_latency": 0.9861926801210207,
+   "mean_power_w": 67.01128093158661,
+   "sd_power_w": 1.9373747122116145
+  },
+  {
+   "cell": "B2·classifieds",
+   "mode": "P-text",
+   "n_steps": 622,
+   "r_energy_latency": 0.9919000196682953,
+   "mean_power_w": 66.25844051446946,
+   "sd_power_w": 1.8865078522726992
+  },
+  {
+   "cell": "B2·classifieds",
+   "mode": "P-prompt",
+   "n_steps": 631,
+   "r_energy_latency": 0.9901600881669625,
+   "mean_power_w": 66.25633914421553,
+   "sd_power_w": 1.9046609123003784
+  },
+  {
+   "cell": "B2·classifieds",
+   "mode": "P-SoM",
+   "n_steps": 718,
+   "r_energy_latency": 0.9917859140454012,
+   "mean_power_w": 66.1483286908078,
+   "sd_power_w": 1.8554868548615546
+  },
+  {
+   "cell": "B2·reddit",
+   "mode": "DOM",
+   "n_steps": 685,
+   "r_energy_latency": 0.9996087987398771,
+   "mean_power_w": 66.33795620437957,
+   "sd_power_w": 2.101359705338577
+  },
+  {
+   "cell": "B2·reddit",
+   "mode": "SoM",
+   "n_steps": 683,
+   "r_energy_latency": 0.9954383158028509,
+   "mean_power_w": 66.92496339677892,
+   "sd_power_w": 2.476416397906417
+  },
+  {
+   "cell": "B2·reddit",
+   "mode": "Vision",
+   "n_steps": 679,
+   "r_energy_latency": 0.9998496007606553,
+   "mean_power_w": 66.93151693667157,
+   "sd_power_w": 2.455851878678293
+  },
+  {
+   "cell": "B2·reddit",
+   "mode": "P-text",
+   "n_steps": 696,
+   "r_energy_latency": 0.9834534233816185,
+   "mean_power_w": 66.92744252873563,
+   "sd_power_w": 6.888305916687314
+  },
+  {
+   "cell": "B2·reddit",
+   "mode": "P-prompt",
+   "n_steps": 690,
+   "r_energy_latency": 0.9980963963380324,
+   "mean_power_w": 66.31449275362318,
+   "sd_power_w": 2.0004999637640473
+  },
+  {
+   "cell": "B2·reddit",
+   "mode": "P-SoM",
+   "n_steps": 636,
+   "r_energy_latency": 0.9990156575398222,
+   "mean_power_w": 66.04481132075472,
+   "sd_power_w": 1.749089105863163
+  }
+ ],
+ "source_counts": {
+  "B0": {
+   "disabled": 5740
+  },
+  "B1": {
+   "psutil_profile": 6302
+  },
+  "B2": {
+   "psutil_profile": 8038
+  }
+ },
+ "r_min": 0.9658721213125571,
+ "r_max": 0.9998496007606553,
+ "r_mean": 0.993513212124252,
+ "power_mean_w": 66.28927305424993,
+ "power_sd_w": 0.4010465228977759,
+ "backbones_with_energy": [
+  "B1",
+  "B2"
+ ]
+}
