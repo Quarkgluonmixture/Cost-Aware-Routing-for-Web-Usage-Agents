@@ -291,7 +291,7 @@ start_shopping() {
   # `60 x (10s + status_duration)` = unbounded. Measured: a reset still running
   # at 24.5 min, i.e. it would have been killed by B-1931's 900s budget mid-way,
   # right after `docker rm -f` had already destroyed the container.
-  local poll_deadline=$(( $(date +%s) + ${MAGENTO_REINDEX_MAX_S:-1800} ))
+  local poll_deadline=$(( $(date +%s) + ${MAGENTO_REINDEX_MAX_S:-4200} ))
   local poll_i=0
   while (( $(date +%s) < poll_deadline )); do
     poll_i=$(( poll_i + 1 ))
@@ -316,13 +316,13 @@ start_shopping() {
     total_rows=$(echo "${idx_status}" | awk -F: '/:/ && NF {n++} END {print n+0}')
     non_ready=$(echo "${idx_status}" | awk -F: '/:/ && NF && $2 !~ /Ready/ {n++} END {print n+0}')
     if (( total_rows > 0 && non_ready == 0 )); then
-      echo "[START] Magento indexer all Ready after $(( $(date +%s) - (poll_deadline - ${MAGENTO_REINDEX_MAX_S:-1800}) ))s / ${poll_i} polls (${total_rows} indexers)"
+      echo "[START] Magento indexer all Ready after $(( $(date +%s) - (poll_deadline - ${MAGENTO_REINDEX_MAX_S:-4200}) ))s / ${poll_i} polls (${total_rows} indexers)"
       break
     fi
     sleep 10
   done
   if (( $(date +%s) >= poll_deadline )); then
-    echo "[START] ⚠️  Magento indexer:reindex did NOT reach all-Ready within ${MAGENTO_REINDEX_MAX_S:-1800}s — shop search/autocomplete tasks may fail" >&2
+    echo "[START] ⚠️  Magento indexer:reindex did NOT reach all-Ready within ${MAGENTO_REINDEX_MAX_S:-4200}s — shop search/autocomplete tasks may fail" >&2
   fi
 }
 

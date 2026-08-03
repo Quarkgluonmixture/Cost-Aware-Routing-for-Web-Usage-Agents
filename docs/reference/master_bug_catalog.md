@@ -10935,3 +10935,41 @@ A100 解析不了的域名 ⇒ 与 2026-04 §103 诊断的状态一模一样。*
 > **两者的共同修法都是「等条件 / 卡墙钟」, 而不是「调数字」。**
 
 **Cross-link**: B-1931 (被本条修正的预算) · B-1952 (同函数, 反方向) · B-311 (indexer 轮询的引入)
+
+### B-1954 — reset timeout 第三次设错; 附「重建是否为协议要求」的裁定材料
+
+**timeout**: B-1931 设 900s(据错算的 600s indexer 上限), B-1953 设 2400s/内层 1800s
+(据一次 24.5 分钟的观测)。**两次都猜低**。今晚实测: `21:56:31` reset 开始 →
+`22:59:20` 外层 SIGKILL(rc=137) = **3769s**, 且此时 indexer 已 warn 未在 1800s 内完成;
+杀掉后 reindex 在容器内自行跑完(11/11 Ready)。⇒ 内层 **4200s** / 外层 **6000s**。
+**两个数不独立**: 外层必须 ≥ 内层 + 重建 + mysqld 等待 + base_url + cache flush + warm-up;
+B-1953 给内层 1800、外层 2400, 只剩 600s 给其余全部步骤 —— 这是**结构性**不够, 不是数字小。
+
+> **教训**: 同一个数字我调了三次, 前两次都是「读代码估上界」或「取一次观测」。
+> 正确做法是**量到完成为止**再设。这个 141GB Magento 的 `catalogsearch_fulltext` 全量
+> reindex 是 **60+ 分钟**级别, 不是十几分钟级别。
+
+#### 「per-condition 必须重建容器」不是协议要求 (user 提问 2026-08-03)
+
+预注册只有一句: **「Reset-before-each-cell protocol (`RESET_BEFORE=1`) ensures clean start
+state」** —— 规定的是**结果**(每个 condition 从干净态开始), 不是**手段**。AMENDMENT_01
+(canonical protocol) 无容器重建条款。三站实际做法**各不相同**:
+
+| 站 | 实际动作 | 代价 | 为什么这么做 |
+|---|---|---|---|
+| classifieds | HTTP `POST page=reset` + 5 表 SQL 哨兵 + PHP 缓存清理 + `docker **restart**` | ~30-60s | OSClass 自带 reset endpoint; restart 是 B-1839 为「与 reddit 对称」补的 |
+| reddit | `docker rm -f` + `docker run` | ~60-120s | postmill 镜像**自带种子 DB**, 重建即回种子态 |
+| shopping | `docker rm -f` + 重建 + **全量 reindex** | **60+ 分钟** | 2026-07-31 选定, 理由是「无 volume mount ⇒ DB 在容器写层 ⇒ rm 即回滚」 |
+
+**shopping 的代价是实现选择的副作用, 不是协议要求。** `docker rm -f` 扔掉的是**整个数据层**,
+包括已建好的搜索索引; 而实验要清的只是 **cart / order / session** —— **商品目录及其索引实验
+根本不改**。所以现状是「用重建整个数据库连同索引, 来清理一个购物车」。reddit 那个手段成立是
+因为 postmill 没有需要重算一小时的派生结构; 搬到 Magento 上代价被放大两个数量级。
+
+**未裁定的替代方案**: 保留容器 + 只回滚会被实验改动的表(`quote` / `quote_item` /
+`sales_order` / session / `search_query` / customer 地址…)。**不违反协议**(协议要的是干净起点),
+但属 estimand-adjacent —— 需先实证「回滚这些表 ≡ 重建容器」(比对 fresh 容器与跑过任务的容器
+的表级 diff)才能换。**当前 fire 按重建方案跑, 该优化不在本轮 scope。**
+
+**Cross-link**: B-1931 / B-1953 (同一数字的前两次) · B-1952 (同函数反方向) · B-1839 (cls 的
+docker restart) · `_reset_vwa_local_{classifieds,reddit,shopping}` 三个实现

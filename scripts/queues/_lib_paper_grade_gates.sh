@@ -680,6 +680,16 @@ reset_and_auth_gate() {
   case "${site}" in
     reddit) _reset_timeout=240 ;;
     classifieds) _reset_timeout=$([[ "${VWA_RESTART_DOCKER:-0}" == "1" ]] && echo 240 || echo 120) ;;  # Gate3: +docker restart wait (db+http ≤120s) needs headroom over 120s
+    # B-1954 (2026-08-03, MEASURED not estimated — third attempt at this number):
+    #   21:56:31 reset start → 22:59:20 SIGKILL at 2400s outer = 3769s elapsed,
+    #   with the indexer having already warned it missed its own 1800s ceiling;
+    #   the reindex then finished on its own inside the container (11/11 Ready).
+    # So: indexer alone > 1800s, whole reset > 3769s. Inner 4200 / outer 6000
+    # leaves 1800s for rebuild + mysqld wait + base_url + cache flush + warm-up.
+    # The two numbers are NOT independent: outer must exceed inner PLUS every
+    # other step. B-1953 set inner 1800 / outer 2400 and left only 600s for the
+    # rest, which is what SIGKILLed a reset whose work had actually succeeded.
+    #
     # B-1953 (2026-08-03, measured): 900s was sized from a MISREAD budget —
     # the indexer poll's "60 iterations x sleep 10 = 10min" ignored that each
     # iteration also runs `docker exec magento indexer:status`, which is slow
@@ -687,7 +697,7 @@ reset_and_auth_gate() {
     # 24.5 min. 2400s covers the new wall-clock-bounded indexer ceiling
     # (MAGENTO_REINDEX_MAX_S, default 1800) plus rebuild + mysqld wait +
     # base_url + cache flush + the 180s storefront warm-up, with headroom.
-    shopping|shopping_admin) _reset_timeout=2400 ;;
+    shopping|shopping_admin) _reset_timeout=6000 ;;
     *) _reset_timeout=120 ;;
   esac
   # Fire-6 RCA (/stress 2026-05-20): VWA_RESET_TIMEOUT env override for slow
@@ -710,8 +720,8 @@ reset_and_auth_gate() {
   # the resulting `timeout 124` reads as "reset failed" rather than "operator env
   # is stale". The floor is not overridable downward because no legitimate
   # shopping reset finishes under it; raising it via the env still works.
-  if [[ "${site}" == "shopping" || "${site}" == "shopping_admin" ]] && (( _reset_timeout < 2400 )); then
-    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s below the Magento rebuild floor; clamping to 2400s (B-1953)" >&2
+  if [[ "${site}" == "shopping" || "${site}" == "shopping_admin" ]] && (( _reset_timeout < 6000 )); then
+    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s below the Magento rebuild floor; clamping to 6000s (B-1954)" >&2
     _reset_timeout=2400
   fi
   local _reset_rc
