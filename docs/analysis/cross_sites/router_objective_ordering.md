@@ -136,3 +136,64 @@ Cost = `total_billed_cost_usd` (paper §1 canonical estimand), mean per task, **
 - **Tie-break, isolated**: both rows have identical SR (7.39%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.06961 → 0.06958 (-0.0%). Only **3 of 203** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.00201 each.
 - **Where the oracle's advantage comes from**: 188/203 (92.6%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -26.4% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 203 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +3.45pp SR at -0.2% cost, and needs the which-mode label that only exists on the 15 solved tasks.
 - **cost-first cascade** reaches 7.39% (+3.45pp vs best single) at +462.9% cost; escalation order Vision → P-text → P-SoM → DOM → P-prompt → SoM; attempts histogram {1: 4, 2: 3, 3: 1, 4: 6, 6: 189}.
+
+## wa_reddit · B0  (n=104)
+
+| policy | kind | SR % | mean cost | ΔSR vs best-single | Δcost vs best-single |
+|---|---|---|---|---|---|
+| `single:DOM` | fixed | 26.92 | 0.07531 | -8.65pp | -11.2% |
+| `single:SoM` | fixed | 22.12 | 0.09110 | -13.46pp | +7.5% |
+| `single:Vision` | fixed | 19.23 | 0.08640 | -16.35pp | +1.9% |
+| `single:P-text` | fixed | 35.58 | 0.08478 | +0.00pp | +0.0% |
+| `single:P-prompt` | fixed | 25.96 | 0.07747 | -9.62pp | -8.6% |
+| `single:P-SoM` | fixed | 25.00 | 0.08498 | -10.58pp | +0.2% |
+| `cheapest` | fixed | 26.92 | 0.07531 | -8.65pp | -11.2% |
+| `best_sr` | fixed | 35.58 | 0.08478 | +0.00pp | +0.0% |
+| `triage_only` | oracle-half | 35.58 | 0.07573 | +0.00pp | -10.7% |
+| `route_only` | oracle-half | 51.92 | 0.07106 | +16.35pp | -16.2% |
+| `oracle_sr` | oracle | 51.92 | 0.06813 | +16.35pp | -19.6% |
+| `oracle_sr_cost` | oracle | 51.92 | 0.06201 | +16.35pp | -26.9% |
+| `cascade_cost_first` | oracle (success-detection) | 51.92 | 0.35260 | +16.35pp | +315.9% |
+
+- **Tie-break, isolated**: both rows have identical SR (51.92%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.06813 → 0.06201 (-9.0%). Only **36 of 104** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01767 each.
+- **Where the oracle's advantage comes from**: 50/104 (48.1%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -10.7% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 104 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +16.35pp SR at -16.2% cost, and needs the which-mode label that only exists on the 54 solved tasks.
+- **cost-first cascade** reaches 51.92% (+16.35pp vs best single) at +315.9% cost; escalation order DOM → P-prompt → P-text → P-SoM → Vision → SoM; attempts histogram {1: 28, 2: 9, 3: 10, 4: 1, 5: 4, 6: 52}.
+
+## wa_reddit · B1  (n=104)
+
+| policy | kind | SR % | mean cost | ΔSR vs best-single | Δcost vs best-single |
+|---|---|---|---|---|---|
+| `single:DOM` | fixed | 16.35 | 0.06579 | +0.00pp | +0.0% |
+| `single:SoM` | fixed | 13.46 | 0.07944 | -2.88pp | +20.8% |
+| `single:Vision` | fixed | 9.62 | 0.04468 | -6.73pp | -32.1% |
+| `single:P-text` | fixed | 16.35 | 0.06151 | +0.00pp | -6.5% |
+| `single:P-prompt` | fixed | 16.35 | 0.07386 | +0.00pp | +12.3% |
+| `single:P-SoM` | fixed | 11.54 | 0.06659 | -4.81pp | +1.2% |
+| `cheapest` | fixed | 9.62 | 0.04468 | -6.73pp | -32.1% |
+| `best_sr` | fixed | 16.35 | 0.06579 | +0.00pp | +0.0% |
+| `triage_only` | oracle-half | 16.35 | 0.04814 | +0.00pp | -26.8% |
+| `route_only` | oracle-half | 30.77 | 0.06136 | +14.42pp | -6.7% |
+| `oracle_sr` | oracle | 30.77 | 0.04658 | +14.42pp | -29.2% |
+| `oracle_sr_cost` | oracle | 30.77 | 0.04372 | +14.42pp | -33.5% |
+| `cascade_cost_first` | oracle (success-detection) | 30.77 | 0.33457 | +14.42pp | +408.6% |
+
+- **Tie-break, isolated**: both rows have identical SR (30.77%) and identical treatment of the tasks nothing solves, so the whole gap is the tie-break: 0.04658 → 0.04372 (-6.1%). Only **18 of 104** tasks have >1 solver — those are the ones §383.4's hardcoded `MODES` order was silently deciding — and switching their tie-break to cost saves 0.01655 each.
+- **Where the oracle's advantage comes from**: 72/104 (69.2%) of tasks are solved by NO mode. `triage_only` — keep the best-SR mode but spend the cheapest on those — gives -26.8% cost at **zero** SR change, and needs only a binary solvable/not label (available for all 104 tasks). `route_only` — choose among solvers, best-SR elsewhere — gives the +14.42pp SR at -6.7% cost, and needs the which-mode label that only exists on the 32 solved tasks.
+- **cost-first cascade** reaches 30.77% (+14.42pp vs best single) at +408.6% cost; escalation order Vision → P-text → DOM → P-SoM → P-prompt → SoM; attempts histogram {1: 10, 2: 10, 3: 5, 4: 1, 5: 5, 6: 73}.
+
+## Across cells
+
+| cell | n | best single | `triage_only` ΔSR | Δcost | `route_only` ΔSR | >1 solver | share | no solver |
+|---|---|---|---|---|---|---|---|---|
+| `classifieds·B0` | 224 | 27.23% | +0.00pp | -12.8% | +16.07pp | 68 | 30.4% | 56.7% |
+| `reddit·B0` | 203 | 14.78% | +0.00pp | -9.5% | +11.33pp | 36 | 17.7% | 73.9% |
+| `classifieds·B1` | 224 | 14.29% | +0.00pp | -19.4% | +10.27pp | 29 | 12.9% | 75.4% |
+| `reddit·B1` | 203 | 7.39% | +0.00pp | -30.6% | +4.43pp | 17 | 8.4% | 88.2% |
+| `classifieds·B2` | 224 | 2.23% | +0.00pp | -21.3% | +4.91pp | 4 | 1.8% | 92.9% |
+| `reddit·B2` | 203 | 3.94% | +0.00pp | -26.4% | +3.45pp | 3 | 1.5% | 92.6% |
+| `wa_reddit·B0` | 104 | 35.58% | +0.00pp | -10.7% | +16.35pp | 36 | 34.6% | 48.1% |
+| `wa_reddit·B1` | 104 | 16.35% | +0.00pp | -26.8% | +14.42pp | 18 | 17.3% | 69.2% |
+
+- **`triage_only` is free in 8 of 8 cells**: zero SR change by construction, -9.5% to -30.6% cost. Its label is binary and defined on every task, so its supply never binds.
+- **Routing space and routing supply move in opposite directions.** `wa_reddit·B0` has the densest per-task routing space at 34.6% of tasks (36 rows) and `reddit·B2` the sparsest at 1.5% (3 rows) — but in *absolute* rows the densest cell supplies 36, which is the same order as the mid-grid cells. A bigger share of a smaller benchmark is not more supervision.
+- ⚠️ Everything above is an **oracle**: it says what a perfect chooser would have gotten on runs that already landed. `router_triage_learnability` is the out-of-fold counterpart and stays VWA-only, because it needs `extract_50_features`, whose paths are VWA constants. So the WA rows here extend the *upper bound* to both benchmarks; they do not extend the learned result.

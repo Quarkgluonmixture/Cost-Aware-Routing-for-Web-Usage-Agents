@@ -39,6 +39,7 @@ import glob
 import hashlib
 import json
 import logging
+import math
 import os
 import sys
 from pathlib import Path
@@ -123,13 +124,29 @@ def _pair_stats(a: dict[int, int], b: dict[int, int], restrict: list[int] | None
     n = len(common)
     a_not_b = [t for t in common if a[t] and not b[t]]
     b_not_a = [t for t in common if b[t] and not a[t]]
+    # --- the mean-difference functional, and the sampling spread it is a draw FROM ----
+    # |SR(a) - SR(b)| is one observation of a random quantity, not a bound on it. Under
+    # the exchangeability null (the two runs are the same condition, so each discordant
+    # task flips either way with probability 1/2) the mean difference is
+    #     D = (2X - d) / n,  X ~ Binom(d, 1/2),  d = discordant count
+    # so Var(2X - d) = 4 * d * 1/4 = d  and  SD(D) = sqrt(d) / n.
+    # Quoting max(two draws) as "the measured floor" understates it whenever that max is
+    # of the same order as this SD -- which is the case on both B0 x classifieds pairs.
+    d_count = len(a_not_b) + len(b_not_a)
+    null_sd_pp = math.sqrt(d_count) / n * 100 if d_count else 0.0
     return {
         "n": n,
         "sr_a": sum(a[t] for t in common) / n,
         "sr_b": sum(b[t] for t in common) / n,
         "self_drop_a_to_b_pp": len(a_not_b) / n * 100,
         "self_drop_b_to_a_pp": len(b_not_a) / n * 100,
-        "discordance_pct": (len(a_not_b) + len(b_not_a)) / n * 100,
+        "discordance_pct": d_count / n * 100,
+        "discordant_count": d_count,
+        "mean_diff_pp": (len(a_not_b) - len(b_not_a)) / n * 100,
+        "abs_mean_diff_pp": abs(len(a_not_b) - len(b_not_a)) / n * 100,
+        "null_sd_mean_diff_pp": null_sd_pp,
+        "null_one_sided_95_pp": 1.645 * null_sd_pp,
+        "null_two_sided_95_pp": 1.960 * null_sd_pp,
         "flip_tasks_a_to_b": a_not_b,
         "flip_tasks_b_to_a": b_not_a,
     }
@@ -301,6 +318,40 @@ def render(data: dict) -> str:
     add(f"| `B1.wa-red` (**new**) | {w['scope']} | {w['n']} | **{w['self_drop_a_to_b_pp']:.2f}pp** "
         f"| **{w['self_drop_b_to_a_pp']:.2f}pp** | {w['discordance_pct']:.2f}% |")
     add("")
+    add("### 1b. The mean-difference floor is two draws, not a bound")
+    add("")
+    add("The set-difference functional above is the one claim 1 needs. Claims 3 and 4 "
+        "compare **mean** success rates between two modes, and the matched floor for that "
+        "is `|SR(a) − SR(b)|` on the same replicate pairs — which is where the band "
+        "`0.89–2.23pp` comes from. Those two numbers are **one observation each of a "
+        "random quantity**, and the quantity's own spread is computable from the "
+        "discordant counts already in the table above. Under the exchangeability null "
+        "(same condition, so each discordant task flips either way with probability ½) "
+        "`D = (2X − d)/n` with `X ~ Binom(d, ½)`, so `SD(D) = √d / n`:")
+    add("")
+    add("| pair | n | discordant d | observed \\|ΔSR\\| | **SD(ΔSR) under the null** | one-sided 95% | two-sided 95% |")
+    add("|---|---|---|---|---|---|---|")
+    band = data["floor_band"]
+    for r in band["rows"]:
+        add(f"| `{r['label']}` | {r['n']} | {r['discordant_count']} "
+            f"| {r['abs_mean_diff_pp']:.2f}pp | **{r['null_sd_mean_diff_pp']:.2f}pp** "
+            f"| {r['null_one_sided_95_pp']:.2f}pp | ±{r['null_two_sided_95_pp']:.2f}pp |")
+    add("")
+    add(f"⚠️ **The band's upper edge ({band['observed_max_pp']:.2f}pp) is of the same order "
+        f"as one standard deviation ({band['null_sd_min_pp']:.2f}–{band['null_sd_max_pp']:.2f}pp).** "
+        "So \"clears the band\" is not \"clears the noise\": an effect has to reach roughly "
+        f"**{band['one_sided_95_min_pp']:.2f}–{band['one_sided_95_max_pp']:.2f}pp** before a "
+        "single rerun would be unlikely to produce it by itself. Both readings are reported "
+        "because they answer different questions — *what did repetition actually deliver* "
+        "(the two draws) versus *what could repetition deliver* (the null spread) — and the "
+        "second is the one an effect size has to be judged against. Reading a 2.2pp effect "
+        "against a 2.23pp \"measured floor\" is comparing a draw to a draw.")
+    add("")
+    add("⚠️ This null assumes only exchangeability of the two runs; it does **not** model "
+        "environment drift, which is one-directional and is what the P-SoM restart pair "
+        "below shows. Where drift is present the true spread is larger than `√d / n`, so "
+        "these thresholds are themselves a lower bound.")
+    add("")
     add("### The B1 floor was not missing — it was unrecognised")
     add("")
     add("`phase0b_noise_floor.md` §7.1 lists *a locally-served (B1) same-mode replicate* as "
@@ -453,8 +504,37 @@ def main(argv: list[str] | None = None) -> int:
         ("red_B2", "B2 · VWA-red (n=203)", "—", None, None),
     ]
 
+    # --- the mean-difference band, and the sampling spread it is drawn from -----------
+    # Consumers (aggregate_fusion_premium.py) read `floor_band` rather than hardcoding a
+    # literal tuple: FLOOR_MEAN_PP was a hand-copied constant for months.
+    band_rows = [
+        {k: r[k] for k in ("label", "scope", "n", "discordant_count", "abs_mean_diff_pp",
+                           "null_sd_mean_diff_pp", "null_one_sided_95_pp",
+                           "null_two_sided_95_pp")}
+        for r in clean
+    ]
+    _obs = [r["abs_mean_diff_pp"] for r in band_rows]
+    _sd = [r["null_sd_mean_diff_pp"] for r in band_rows]
+    _os95 = [r["null_one_sided_95_pp"] for r in band_rows]
+    floor_band = {
+        "functional": "mean difference |SR(a) - SR(b)| on same-condition replicate pairs",
+        "rows": band_rows,
+        # what repetition actually delivered -- two draws, NOT a bound
+        "observed_min_pp": round(min(_obs), 2),
+        "observed_max_pp": round(max(_obs), 2),
+        "n_draws": len(band_rows),
+        # what repetition COULD deliver -- the null spread those draws came from
+        "null_sd_min_pp": round(min(_sd), 2),
+        "null_sd_max_pp": round(max(_sd), 2),
+        "one_sided_95_min_pp": round(min(_os95), 2),
+        "one_sided_95_max_pp": round(max(_os95), 2),
+        "reading": ("observed_* is a range of 2 draws and must never be quoted as a "
+                    "threshold on its own; one_sided_95_* is the level an effect must "
+                    "reach before a single rerun would be unlikely to produce it"),
+    }
+
     data = {"generated_for_date": args.date, "clean_pairs": clean, "wa_floor": wa_floor,
-            "margins": margins, "head_to_head": head_to_head}
+            "margins": margins, "head_to_head": head_to_head, "floor_band": floor_band}
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False))

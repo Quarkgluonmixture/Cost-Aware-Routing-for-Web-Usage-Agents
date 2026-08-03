@@ -1,0 +1,854 @@
+{
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "cost_field": "total_billed_cost_usd",
+ "cells": [
+  {
+   "site": "classifieds",
+   "baseline": "B0",
+   "n_tasks": 224,
+   "best_sr_mode": "SoM",
+   "cheapest_mode": "Vision",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 17.410714285714285,
+     "mean_cost": 0.06961906696428571,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 27.232142857142858,
+     "mean_cost": 0.07235666964285714,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 25.0,
+     "mean_cost": 0.06480720982142858,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 15.625,
+     "mean_cost": 0.06918624107142858,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 19.642857142857142,
+     "mean_cost": 0.0685255,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 15.625,
+     "mean_cost": 0.07205735267857143,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 27.232142857142858,
+     "mean_cost": 0.07235666964285714,
+     "kind": "fixed",
+     "pick": "SoM"
+    },
+    "cheapest": {
+     "sr_pct": 25.0,
+     "mean_cost": 0.06480720982142858,
+     "kind": "fixed",
+     "pick": "Vision"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 43.30357142857143,
+     "mean_cost": 0.06259461607142858,
+     "n_multi_solver_tasks": 68,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 43.30357142857143,
+     "mean_cost": 0.057770062500000004,
+     "n_multi_solver_tasks": 68,
+     "mean_saving_per_tied_task": 0.01589264705882353,
+     "total_saving_over_set": 1.0807,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 27.232142857142858,
+     "mean_cost": 0.06311516517857144,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 43.30357142857143,
+     "mean_cost": 0.06701156696428572,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 127,
+     "pct": 56.69642857142857
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 43.30357142857143,
+     "mean_cost_all_six_no_detector": 0.41655204017857145,
+     "mean_cost": 0.3189629285714286,
+     "attempts_hist": {
+      "1": 56,
+      "2": 25,
+      "3": 3,
+      "4": 5,
+      "5": 2,
+      "6": 133
+     },
+     "escalation_order": [
+      "Vision",
+      "P-prompt",
+      "P-text",
+      "DOM",
+      "P-SoM",
+      "SoM"
+     ]
+    }
+   }
+  },
+  {
+   "site": "reddit",
+   "baseline": "B0",
+   "n_tasks": 203,
+   "best_sr_mode": "SoM",
+   "cheapest_mode": "Vision",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 14.285714285714286,
+     "mean_cost": 0.10147060591133004,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 14.77832512315271,
+     "mean_cost": 0.11045337931034484,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.09806919211822661,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 13.300492610837438,
+     "mean_cost": 0.10576826108374383,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 12.31527093596059,
+     "mean_cost": 0.10162965024630541,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 10.83743842364532,
+     "mean_cost": 0.10813512807881773,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 14.77832512315271,
+     "mean_cost": 0.11045337931034484,
+     "kind": "fixed",
+     "pick": "SoM"
+    },
+    "cheapest": {
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.09806919211822661,
+     "kind": "fixed",
+     "pick": "Vision"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 26.108374384236452,
+     "mean_cost": 0.09794422660098523,
+     "n_multi_solver_tasks": 36,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 26.108374384236452,
+     "mean_cost": 0.09533684236453202,
+     "n_multi_solver_tasks": 36,
+     "mean_saving_per_tied_task": 0.014702750000000002,
+     "total_saving_over_set": 0.5292990000000001,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 14.77832512315271,
+     "mean_cost": 0.09997756650246306,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 26.108374384236452,
+     "mean_cost": 0.1058126551724138,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 150,
+     "pct": 73.89162561576354
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 26.108374384236452,
+     "mean_cost_all_six_no_detector": 0.6255262167487685,
+     "mean_cost": 0.5458775911330049,
+     "attempts_hist": {
+      "1": 15,
+      "2": 23,
+      "3": 5,
+      "4": 4,
+      "5": 2,
+      "6": 154
+     },
+     "escalation_order": [
+      "Vision",
+      "DOM",
+      "P-prompt",
+      "P-text",
+      "P-SoM",
+      "SoM"
+     ]
+    }
+   }
+  },
+  {
+   "site": "classifieds",
+   "baseline": "B1",
+   "n_tasks": 224,
+   "best_sr_mode": "SoM",
+   "cheapest_mode": "Vision",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 6.25,
+     "mean_cost": 0.05951416254464286,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 14.285714285714286,
+     "mean_cost": 0.06027517504464286,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 12.5,
+     "mean_cost": 0.043155593883928575,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 7.589285714285714,
+     "mean_cost": 0.05879092379464286,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 6.696428571428571,
+     "mean_cost": 0.06303546700892858,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 6.696428571428571,
+     "mean_cost": 0.059696479732142864,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 14.285714285714286,
+     "mean_cost": 0.06027517504464286,
+     "kind": "fixed",
+     "pick": "SoM"
+    },
+    "cheapest": {
+     "sr_pct": 12.5,
+     "mean_cost": 0.043155593883928575,
+     "kind": "fixed",
+     "pick": "Vision"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 24.553571428571427,
+     "mean_cost": 0.043402664285714286,
+     "n_multi_solver_tasks": 29,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 24.553571428571427,
+     "mean_cost": 0.041705149642857146,
+     "n_multi_solver_tasks": 29,
+     "mean_saving_per_tied_task": 0.01311183724137931,
+     "total_saving_over_set": 0.38024328,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 14.285714285714286,
+     "mean_cost": 0.04857646736607143,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 24.553571428571427,
+     "mean_cost": 0.05340385732142857,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 169,
+     "pct": 75.44642857142857
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 24.553571428571427,
+     "mean_cost_all_six_no_detector": 0.34446780200892857,
+     "mean_cost": 0.29779136401785716,
+     "attempts_hist": {
+      "1": 28,
+      "2": 10,
+      "3": 2,
+      "4": 3,
+      "5": 10,
+      "6": 171
+     },
+     "escalation_order": [
+      "Vision",
+      "P-text",
+      "DOM",
+      "P-SoM",
+      "SoM",
+      "P-prompt"
+     ]
+    }
+   }
+  },
+  {
+   "site": "reddit",
+   "baseline": "B1",
+   "n_tasks": 203,
+   "best_sr_mode": "SoM",
+   "cheapest_mode": "Vision",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 5.911330049261084,
+     "mean_cost": 0.07330131733990149,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.08000418059113301,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 2.4630541871921183,
+     "mean_cost": 0.05240422403940887,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 5.911330049261084,
+     "mean_cost": 0.06947853921182266,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 5.41871921182266,
+     "mean_cost": 0.07656218467980296,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 5.911330049261084,
+     "mean_cost": 0.07479701950738916,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.08000418059113301,
+     "kind": "fixed",
+     "pick": "SoM"
+    },
+    "cheapest": {
+     "sr_pct": 2.4630541871921183,
+     "mean_cost": 0.05240422403940887,
+     "kind": "fixed",
+     "pick": "Vision"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 11.822660098522167,
+     "mean_cost": 0.05347040714285715,
+     "n_multi_solver_tasks": 17,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 11.822660098522167,
+     "mean_cost": 0.05178432507389163,
+     "n_multi_solver_tasks": 17,
+     "mean_saving_per_tied_task": 0.02013380352941177,
+     "total_saving_over_set": 0.34227466000000006,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.05554082403940887,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 11.822660098522167,
+     "mean_cost": 0.07624768162561577,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 179,
+     "pct": 88.17733990147784
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 11.822660098522167,
+     "mean_cost_all_six_no_detector": 0.42654746536945815,
+     "mean_cost": 0.3967527110837438,
+     "attempts_hist": {
+      "1": 5,
+      "2": 10,
+      "3": 5,
+      "4": 1,
+      "5": 2,
+      "6": 180
+     },
+     "escalation_order": [
+      "Vision",
+      "P-text",
+      "DOM",
+      "P-SoM",
+      "P-prompt",
+      "SoM"
+     ]
+    }
+   }
+  },
+  {
+   "site": "classifieds",
+   "baseline": "B2",
+   "n_tasks": 224,
+   "best_sr_mode": "SoM",
+   "cheapest_mode": "Vision",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 1.3392857142857142,
+     "mean_cost": 0.07676412973214286,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 2.232142857142857,
+     "mean_cost": 0.0907508425,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 2.232142857142857,
+     "mean_cost": 0.07065426732142857,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 0.44642857142857145,
+     "mean_cost": 0.07320177482142858,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 1.7857142857142858,
+     "mean_cost": 0.08452656950892858,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 0.8928571428571429,
+     "mean_cost": 0.08456373169642858,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 2.232142857142857,
+     "mean_cost": 0.0907508425,
+     "kind": "fixed",
+     "pick": "SoM"
+    },
+    "cheapest": {
+     "sr_pct": 2.232142857142857,
+     "mean_cost": 0.07065426732142857,
+     "kind": "fixed",
+     "pick": "Vision"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 7.142857142857143,
+     "mean_cost": 0.06980841026785714,
+     "n_multi_solver_tasks": 4,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 7.142857142857143,
+     "mean_cost": 0.06952958120535714,
+     "n_multi_solver_tasks": 4,
+     "mean_saving_per_tied_task": 0.0156144275,
+     "total_saving_over_set": 0.06245771,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 2.232142857142857,
+     "mean_cost": 0.07145360410714285,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 7.142857142857143,
+     "mean_cost": 0.08882681959821428,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 208,
+     "pct": 92.85714285714286
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 7.142857142857143,
+     "mean_cost_all_six_no_detector": 0.48046131558035715,
+     "mean_cost": 0.46699310375,
+     "attempts_hist": {
+      "1": 5,
+      "2": 1,
+      "3": 3,
+      "4": 1,
+      "5": 1,
+      "6": 213
+     },
+     "escalation_order": [
+      "Vision",
+      "P-text",
+      "DOM",
+      "P-prompt",
+      "P-SoM",
+      "SoM"
+     ]
+    }
+   }
+  },
+  {
+   "site": "reddit",
+   "baseline": "B2",
+   "n_tasks": 203,
+   "best_sr_mode": "DOM",
+   "cheapest_mode": "Vision",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 3.9408866995073892,
+     "mean_cost": 0.09479046182266011,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 0.9852216748768473,
+     "mean_cost": 0.11160030108374384,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 1.9704433497536946,
+     "mean_cost": 0.06833131192118228,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 1.9704433497536946,
+     "mean_cost": 0.08851566783251232,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 0.0,
+     "mean_cost": 0.09940042886699509,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 0.49261083743842365,
+     "mean_cost": 0.09450881167487685,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 3.9408866995073892,
+     "mean_cost": 0.09479046182266011,
+     "kind": "fixed",
+     "pick": "DOM"
+    },
+    "cheapest": {
+     "sr_pct": 1.9704433497536946,
+     "mean_cost": 0.06833131192118228,
+     "kind": "fixed",
+     "pick": "Vision"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.06961328428571428,
+     "n_multi_solver_tasks": 3,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.06958361871921183,
+     "n_multi_solver_tasks": 3,
+     "mean_saving_per_tied_task": 0.0020073700000000035,
+     "total_saving_over_set": 0.006022110000000011,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 3.9408866995073892,
+     "mean_cost": 0.06974266536945814,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 7.389162561576355,
+     "mean_cost": 0.09463141517241379,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 188,
+     "pct": 92.61083743842364
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 7.389162561576355,
+     "mean_cost_all_six_no_detector": 0.5571469832019705,
+     "mean_cost": 0.5335585645320198,
+     "attempts_hist": {
+      "1": 4,
+      "2": 3,
+      "3": 1,
+      "4": 6,
+      "6": 189
+     },
+     "escalation_order": [
+      "Vision",
+      "P-text",
+      "P-SoM",
+      "DOM",
+      "P-prompt",
+      "SoM"
+     ]
+    }
+   }
+  },
+  {
+   "site": "wa_reddit",
+   "baseline": "B0",
+   "n_tasks": 104,
+   "best_sr_mode": "P-text",
+   "cheapest_mode": "DOM",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 26.923076923076923,
+     "mean_cost": 0.07530692307692308,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 22.115384615384617,
+     "mean_cost": 0.09110223076923077,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 19.23076923076923,
+     "mean_cost": 0.08639858653846154,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 35.57692307692308,
+     "mean_cost": 0.08478059615384616,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 25.96153846153846,
+     "mean_cost": 0.07746976923076923,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 25.0,
+     "mean_cost": 0.08498372115384616,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 35.57692307692308,
+     "mean_cost": 0.08478059615384616,
+     "kind": "fixed",
+     "pick": "P-text"
+    },
+    "cheapest": {
+     "sr_pct": 26.923076923076923,
+     "mean_cost": 0.07530692307692308,
+     "kind": "fixed",
+     "pick": "DOM"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 51.92307692307692,
+     "mean_cost": 0.06812674038461539,
+     "n_multi_solver_tasks": 36,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 51.92307692307692,
+     "mean_cost": 0.06200853846153846,
+     "n_multi_solver_tasks": 36,
+     "mean_saving_per_tied_task": 0.017674805555555555,
+     "total_saving_over_set": 0.636293,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 35.57692307692308,
+     "mean_cost": 0.07573122115384615,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 51.92307692307692,
+     "mean_cost": 0.07105791346153846,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 50,
+     "pct": 48.07692307692308
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 51.92307692307692,
+     "mean_cost_all_six_no_detector": 0.500041826923077,
+     "mean_cost": 0.352599201923077,
+     "attempts_hist": {
+      "1": 28,
+      "2": 9,
+      "3": 10,
+      "4": 1,
+      "5": 4,
+      "6": 52
+     },
+     "escalation_order": [
+      "DOM",
+      "P-prompt",
+      "P-text",
+      "P-SoM",
+      "Vision",
+      "SoM"
+     ]
+    }
+   }
+  },
+  {
+   "site": "wa_reddit",
+   "baseline": "B1",
+   "n_tasks": 104,
+   "best_sr_mode": "DOM",
+   "cheapest_mode": "Vision",
+   "policies": {
+    "single:DOM": {
+     "sr_pct": 16.346153846153847,
+     "mean_cost": 0.06578607615384616,
+     "kind": "fixed"
+    },
+    "single:SoM": {
+     "sr_pct": 13.461538461538462,
+     "mean_cost": 0.0794411176923077,
+     "kind": "fixed"
+    },
+    "single:Vision": {
+     "sr_pct": 9.615384615384615,
+     "mean_cost": 0.04468445634615385,
+     "kind": "fixed"
+    },
+    "single:P-text": {
+     "sr_pct": 16.346153846153847,
+     "mean_cost": 0.06150959480769231,
+     "kind": "fixed"
+    },
+    "single:P-prompt": {
+     "sr_pct": 16.346153846153847,
+     "mean_cost": 0.07386315615384616,
+     "kind": "fixed"
+    },
+    "single:P-SoM": {
+     "sr_pct": 11.538461538461538,
+     "mean_cost": 0.06659091932692308,
+     "kind": "fixed"
+    },
+    "best_sr": {
+     "sr_pct": 16.346153846153847,
+     "mean_cost": 0.06578607615384616,
+     "kind": "fixed",
+     "pick": "DOM"
+    },
+    "cheapest": {
+     "sr_pct": 9.615384615384615,
+     "mean_cost": 0.04468445634615385,
+     "kind": "fixed",
+     "pick": "Vision"
+    },
+    "oracle_sr": {
+     "kind": "oracle",
+     "sr_pct": 30.76923076923077,
+     "mean_cost": 0.04658219413461539,
+     "n_multi_solver_tasks": 18,
+     "note": "tie among solvers broken by hardcoded MODES order"
+    },
+    "oracle_sr_cost": {
+     "kind": "oracle",
+     "sr_pct": 30.76923076923077,
+     "mean_cost": 0.04371789557692308,
+     "n_multi_solver_tasks": 18,
+     "mean_saving_per_tied_task": 0.01654928055555556,
+     "total_saving_over_set": 0.29788705000000004,
+     "note": "identical fallback to oracle_sr on unsolved tasks; only the tie-break differs"
+    },
+    "triage_only": {
+     "kind": "oracle-half",
+     "sr_pct": 16.346153846153847,
+     "mean_cost": 0.04814090163461539,
+     "note": "best-SR mode, cheapest on unsolvable; needs only a solvable/not label"
+    },
+    "route_only": {
+     "kind": "oracle-half",
+     "sr_pct": 30.76923076923077,
+     "mean_cost": 0.061363070096153854,
+     "note": "optimal among solvers, best-SR mode on unsolvable; needs the scarce which-mode label"
+    },
+    "_unsolvable": {
+     "kind": "meta",
+     "n": 72,
+     "pct": 69.23076923076923
+    },
+    "cascade_cost_first": {
+     "kind": "oracle (success-detection)",
+     "sr_pct": 30.76923076923077,
+     "mean_cost_all_six_no_detector": 0.3918753204807693,
+     "mean_cost": 0.33456598173076924,
+     "attempts_hist": {
+      "1": 10,
+      "2": 10,
+      "3": 5,
+      "4": 1,
+      "5": 5,
+      "6": 73
+     },
+     "escalation_order": [
+      "Vision",
+      "P-text",
+      "DOM",
+      "P-SoM",
+      "P-prompt",
+      "SoM"
+     ]
+    }
+   }
+  }
+ ]
+}

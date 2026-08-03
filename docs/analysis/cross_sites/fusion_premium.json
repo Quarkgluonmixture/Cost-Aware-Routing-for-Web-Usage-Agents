@@ -1,5 +1,5 @@
 {
-  "schema": "2026-08-02-fusion-premium-v1",
+  "schema": "2026-08-03-fusion-premium-v2",
   "post_hoc_exploratory": true,
   "n_boot": 10000,
   "seed": 20260802,
@@ -7,6 +7,39 @@
     0.89,
     2.23
   ],
+  "floor_band": {
+    "functional": "mean difference |SR(a) - SR(b)| on same-condition replicate pairs",
+    "rows": [
+      {
+        "label": "B0.cls.dom",
+        "scope": "B0 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 27,
+        "abs_mean_diff_pp": 2.232142857142857,
+        "null_sd_mean_diff_pp": 2.319710902994032,
+        "null_one_sided_95_pp": 3.815924435425183,
+        "null_two_sided_95_pp": 4.546633369868303
+      },
+      {
+        "label": "B0.cls.vision",
+        "scope": "B0 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 32,
+        "abs_mean_diff_pp": 0.8928571428571428,
+        "null_sd_mean_diff_pp": 2.525381361380527,
+        "null_one_sided_95_pp": 4.154252339470967,
+        "null_two_sided_95_pp": 4.949747468305834
+      }
+    ],
+    "observed_min_pp": 0.89,
+    "observed_max_pp": 2.23,
+    "n_draws": 2,
+    "null_sd_min_pp": 2.32,
+    "null_sd_max_pp": 2.53,
+    "one_sided_95_min_pp": 3.82,
+    "one_sided_95_max_pp": 4.15,
+    "reading": "observed_* is a range of 2 draws and must never be quoted as a threshold on its own; one_sided_95_* is the level an effect must reach before a single rerun would be unlikely to produce it"
+  },
   "fused": "som",
   "comparators": [
     "vision",

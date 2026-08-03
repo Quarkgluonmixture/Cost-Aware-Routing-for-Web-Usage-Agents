@@ -298,8 +298,12 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    one that answers the question, and it reads *no*.
    (b) The word *significantly* is gone from the 8/8 sentence: the comparator is picked per cell
    from the same observed success rates, so those CIs do not hold nominal coverage.
-   (c) Cochran's Q rejects a common effect (I² = 59% and 77%), so the fixed-effect pool describes
-   no cell in particular and the per-cell table carries the finding.
+   (c) Cochran's Q rejects a common effect (I² = **53% and 75%**), so the fixed-effect pool
+   describes no cell in particular and the per-cell table carries the finding.
+   ⚠️ *Corrected 2026-08-03: this read `59% and 77%` in two places, including the frame
+   paragraph in §5b. `fusion_premium.json` says 52.8 / 75.0. Both were hand-copied from the
+   seven-cell version and neither moved when `wa_red_B0` landed. Now guarded by
+   `scripts/analysis/check_summary_numbers.py`.*
    **No cell wins out of band.** `cls_B0`'s +2.23pp is the largest, and it is *exactly* the
    rerun band's upper edge — both quantities are 5/224, so this is an equality, not a margin.
 3b. **The only cell that showed fusion *significantly beaten* rests on accumulated site state.**
@@ -316,6 +320,16 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    disfavours the paper's own caution, which is why it is reported rather than quietly adopted.
 4. **Which channel to add reverses with workload modality** (VWA visual, WA text).
    → `noise_floor_inventory` §2 + `fusion_premium` §3
+   ⚠️ **The `4.93–7.39pp` figure quoted for this everywhere is a subrange, and the correction
+   matters (2026-08-03).** It came from a sentence hardcoded in `aggregate_fusion_premium.py`
+   naming the two largest cells on each side. Derived over all eight, `SoM − Vision` where the
+   text channel is stronger runs **−0.99 to +7.39pp** (red_B2 −0.99, wa_B0 +2.88, wa_B1 +3.85,
+   red_B1 +4.93, red_B0 +7.39) and `SoM − DOM` where the visual channel is stronger runs
+   **+0.89 to +9.82pp** (cls_B2 +0.89, cls_B1 +8.04, cls_B0 +9.82). So the third VWA-reddit
+   cell carries the **opposite sign**, and a range starting at +4.93 is one with the sign
+   change removed. Against the rerun null (~3.8–4.2pp, §1b) the count is **2 of 5** on the
+   text side and **2 of 3** on the visual side, not 8 of 8. The reversal is still there in the
+   *ordering*; its magnitude is not what the quoted range implies.
 5. **Four routing formulations fail.** For the cascade on post-action confidence, no operating
    point Pareto-beats always-rich in any of the four VWA cells where the comparison is
    non-degenerate. **The WA exception is withdrawn** — both of its winning points were tie
@@ -337,10 +351,16 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    The failures above are all **which-mode** routing — choose among six arms per task. There is a
    second half to the decision, and it behaves differently:
    * **Oracle triage** — keep the best-SR mode, but spend the cheapest on tasks nothing solves —
-     gives **zero SR change** at **−9.5% to −30.6% cost in 6 of 6 cells**. Its label is binary
-     (solvable / not) and is **defined on every task**, where the which-mode label exists only on
-     the 16–97 tasks something solves. Claim 5's stated binding constraint is row count; triage
-     is the formulation that constraint does not bind.
+     gives **zero SR change** at **−9.5% to −30.6% cost in 8 of 8 cells** (⬆ from 6 of 6: the two
+     WA cells were wired 2026-08-03 and land at −10.7% and −26.8%, inside the existing range).
+     Its label is binary (solvable / not) and is **defined on every task**, where the which-mode
+     label exists only on the 16–97 tasks something solves. Claim 5's stated binding constraint
+     is row count; triage is the formulation that constraint does not bind.
+     ⚠️ This is the **only** routing product that now covers both benchmarks. It is an oracle —
+     `router_triage_learnability` is its out-of-fold counterpart and stays VWA-only because
+     `extract_50_features` hardcodes VWA paths. So the WA rows extend the *upper bound* across
+     benchmarks; they do not extend the learned result, and that gap is now the sharpest one in
+     the routing story: the cell with the most headroom has no learned router run on it.
    * **Learned triage, honest out-of-fold** (nested threshold, task-held-out 5-fold): `cls_B1`
      reaches **+0.00pp SR at −4.5% cost** — a real win, not an oracle. The other three carrying
      cells give −0.45pp/−0.5%, −1.48pp/−12.9%, −1.97pp/−10.9%. AUROC 0.651–0.717 clears the
@@ -350,12 +370,21 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    is lossless, but "four formulations fail" reads as a closed door over a result the repo holds.
 5d. **The ceiling on any router is set by how few tasks anything solves.**
    → same product, never stated in this document
-   Per cell, the share of tasks **no mode solves** is 56.7% / 73.9% / 75.4% / 88.2% / 92.9% /
-   92.6%. And the share with **more than one** solver — the tasks where a per-task choice even
-   exists — is 68/224, 36/203, 29/224, 17/203, 4/224, 3/203, i.e. **1.5% to 30%**. On `cls_B2`
-   and `red_B2` the entire per-task routing space is 3–4 tasks. This is the most direct available
-   measurement of why per-task routing has so little to work with, and it is a property of the
-   difficulty of the benchmark rather than of any method.
+   Per cell, the share of tasks **no mode solves** is 48.1% / 56.7% / 69.2% / 73.9% / 75.4% /
+   88.2% / 92.6% / 92.9%. And the share with **more than one** solver — the tasks where a
+   per-task choice even exists — is 36/104, 68/224, 18/104, 36/203, 29/224, 17/203, 3/203,
+   4/224, i.e. **1.5% to 34.6%**. On `cls_B2` and `red_B2` the entire per-task routing space is
+   3–4 tasks. This is the most direct available measurement of why per-task routing has so
+   little to work with, and it is a property of the difficulty of the benchmark rather than of
+   any method. → `router_objective_ordering` §"Across cells"
+   ⚠️ **Stated over six cells until 2026-08-03, and the two missing ones were the favourable
+   end.** `wa_B0` has the *smallest* unsolvable share (48.1%), the *densest* routing space
+   (34.6%) and the *largest* oracle headroom (+16.35pp) anywhere in the study — so "routing has
+   nothing to work with" was being read off the six cells where it has least. **The correction
+   does not overturn it, for a reason worth stating separately:** density and supply move in
+   opposite directions. `wa_B0`'s 34.6% is 36 trainable rows, the same absolute count as
+   `red_B0`'s 17.7%, because WA is a 104-task benchmark. A larger share of a smaller set is not
+   more supervision, and the which-mode label supply stays 3–68 rows across all eight cells.
    Adjacent, and also uncited: the evaluator emits **two distinct values** over all 7,686 scored
    episodes (0 and 1; 8.39% are 1). There is no graded target to regress on — a property of the
    benchmark's design, not of this pipeline. → `evaluator_score_granularity`
@@ -515,9 +544,22 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    ⚠️ **The tempting number is arm-count, not evidence.** Dropping the whole no-image class
    costs +2.68 to +22.12pp against +0.49 to +4.46pp for the others — but it has four arms and
    they have one each. Arm-matched (add ONE arm to each cell's best), the largest gain lands
-   on no-image 4 times and vision-only 3 times: **class membership does not predict marginal
-   value**. The product computes the unmatched figure anyway, labelled, because a reader
-   would otherwise compute it without the caveat.
+   on no-image 4 times and vision-only 3 times (`wa_B0` ties): **class membership does not
+   predict marginal value**. The product computes the unmatched figure anyway, labelled,
+   because a reader would otherwise compute it without the caveat.
+   ⚠️ **The class table in §1 was not arm-matched either — §1b, added 2026-08-03.** Its
+   `no-image` column is `max` over **four** arms while the other two columns are single arms:
+   the same maximum-over-noisy-quantities bias `fusion_premium` removed on the comparator
+   side, left in place on the table the class claim is actually read from. Redone at one arm
+   per class (**DOM / Vision / SoM** — the three shapes that exist outside this study), two
+   things happen and they point opposite ways:
+   * **The conclusion survives, and gets stronger.** The tally is unchanged (hybrid 4,
+     no-image 3, 1 tie) and **vision-only is still never the sole best class, 0 of 8**. That
+     version is immune to the arm-count objection; the reported one is not. Quote it instead.
+   * **The headline effect size does not survive.** `wa_B0`'s no-image lead over hybrid is
+     **+4.81pp**, not +13.46pp — the larger figure is carried by **P-text**, an arm constructed
+     for this study, under a class description that reads "what a deployment ships". Use §1b
+     for any class *gap*; only the *ordering* is safe to take from §1.
    ⚠️ Everything here is an oracle over landed runs — what a perfect chooser could have had.
 5c. **And routing on the best available signal still loses to not routing.**
    → `rule_routing_pareto` (new 2026-08-03)
@@ -566,6 +608,17 @@ from each. Two earlier candidates died in that process and both deaths are infor
 > wrong-signed. At the one-arm margin a new representation buys about what a rerun of the
 > existing one buys.
 
+⚠️ **Both numbers in that sentence were audited on 2026-08-03 and both are softer than they
+read.** Kept verbatim above because the paragraph is an autopsy exhibit, not a live claim —
+but nothing should be lifted from it without these two corrections:
+* `4.93–7.39pp` is a **subrange**. Over all eight cells the text-stronger side runs −0.99 to
+  +7.39pp, i.e. the third VWA-reddit cell has the opposite sign. See claim 4.
+* `0.89–2.23pp` is **two draws, not a bound**. The same pairs put `SD(ΔSR)` at 2.32–2.53pp
+  under the exchangeability null, so the level a single rerun is unlikely to manufacture is
+  ~3.8–4.2pp. See `noise_floor_inventory` §1b. Under that yardstick the headroom the sentence
+  claims (~3×) is closer to ~1.2–1.8×, and one of its two cells falls inside the null.
+A frame resting on this pair needs the corrected numbers, or a different pair.
+
 Wording discipline, from the codex pass: say **"classifieds versus reddit"** or "coarse
 site-level selection in these benchmarks", **not** "workload law". Two sites cannot identify the
 causal moderator, and the three backbones share a task set — they establish model robustness of
@@ -573,8 +626,11 @@ the site interaction, not six independent observations.
 
 Claim 3 (fusion) states **"no detectable accuracy premium over the matched single channel"**,
 never "fusion does not work": the interval crossing zero is not equivalence, the pooled effects
-are heterogeneous (I² = 59% and 77%), and the rerun floor was measured on DOM and Vision rather
-than on the fused arm.
+are heterogeneous (I² = 53% and 75%), and the rerun floor was measured on DOM and Vision rather
+than on the fused arm — **and that floor is two draws, not a bound**: the same replicate pairs
+put `SD(ΔSR)` at 2.32–2.53pp under the exchangeability null, so an effect only becomes unlikely
+for one rerun to manufacture at ~3.8–4.2pp, not at the band's 2.23pp upper edge
+(`noise_floor_inventory` §1b, added 2026-08-03).
 
 ## 5c. Efficiency needs a denominator — and this data can only say that much
 
@@ -622,7 +678,7 @@ For each claim in §5: the measurement that would refute it, and whether we have
 | 6b | multiplicity correction removing the effect | ✅ **done 08-02** | 15 → **7** under BH, **2** under Holm; the 7 span four cells and all three backbones. §5 now quotes the corrected figure |
 | 7 | a named mechanism on the text-wins side that the ruleset cannot see — it was discovered on VWA, so it can only find VWA-shaped failures | ✅ **closed 08-02** | two routes. (a) `/diag` Tier-2 on WA (§410) produced two WA-native rules at ruleset `9-wa-p47p48`; the paired cut with them still tops out at `P17` 1.39×. (b) More decisively, six candidate mechanisms computed from **raw step fields with no rule hits at all** also find nothing — largest 1.15×, most below 1. The residual is not an artifact of a VWA-shaped vocabulary → `conditional_failure_attribution` §5 |
 | 8 | the feature carrying the intuitive sign in some other cell or benchmark | ✅ all six VWA cells; neither WA cell ships reference images so they cannot arbitrate | closed as far as this data goes |
-| 9 | a different latency estimand changing the verdict; or the frontier widening simply because there are six modes | (a) ✅ · (b) ✅ **done 08-02, and it refuted the claim** | the permutation control was run: expected 4.70/6 widened, `P(≥3)=0.978`. The frontier argument is retracted and claim 9 now rests on ρ(cost, latency) = −0.095 with a site-aligned cheapest≠fastest split |
+| 9 | a different latency estimand changing the verdict; or the frontier widening simply because there are six modes | (a) ✅ · (b) ✅ **done 08-02, and it refuted the claim** | the permutation control was run: expected 4.70/6 widened, `P(≥3)=0.978`. The frontier argument is retracted and claim 9 now rests on ρ(cost, latency) = **−0.014 over eight cells** with cheapest≠fastest in **5 of 8** — ⚠️ *this row said −0.095 (the six-cell mean) and "site-aligned split" until 2026-08-03; claim 9 itself retracted the site reading when the eighth cell landed, and this ledger did not follow. A refutation ledger that contradicts the claim it audits is worse than none.* Note also that a mean ρ near zero over cells whose ρ runs −0.60 to +0.77 is evidence of **heterogeneity**, not independence; the 5-of-8 count is the safe statement and the mean should not be quoted beside it |
 
 **Eight of the ten were closed on 08-02**, each by *running* the control rather than arguing
 it was unnecessary, and three of those runs **refuted what they tested**: 9b killed the frontier

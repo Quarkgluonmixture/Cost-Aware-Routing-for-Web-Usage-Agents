@@ -34,6 +34,27 @@ Best-class tally (**sole** winners; ties counted separately): **hybrid** 4/8, **
 
 **vision-only is never the sole best class in any cell.** Where it appears to win, the win is a tie — and on `cls_B2` that tie is between two arms at 2.23% (5 successes out of 224), i.e. at the floor. A tie resolved by dict order is how this nearly became a claim.
 
+## 1b. The same comparison at one arm per class
+
+§1's `no-image` column is a **maximum over four arms**; the other two columns are single arms. A maximum over noisy quantities is biased up, so §1 is not like-for-like. This panel fixes arm count at 1 and uses the arm of each class that exists outside this study — **DOM** (P-text / P-prompt / P-SoM are constructed here), **Vision**, **SoM**.
+
+| cell | no-image (DOM) | vision-only | hybrid (SoM) | winner | §1 winner | gap vs hybrid: 1-arm | §1 (max-of-4) |
+|---|---|---|---|---|---|---|---|
+| `cls_B0` | 17.41% | 25.00% | 27.23% | **hybrid** | hybrid | -9.82pp | -7.59pp |
+| `cls_B1` | 6.25% | 12.50% | 14.29% | **hybrid** | hybrid | -8.04pp | -6.70pp |
+| `cls_B2` | 1.34% | 2.23% | 2.23% | **tie: hybrid+vision-only** | tie: hybrid+vision-only | -0.89pp | -0.45pp |
+| `red_B0` | 14.29% | 7.39% | 14.78% | **hybrid** | hybrid | -0.49pp | -0.49pp |
+| `red_B1` | 5.91% | 2.46% | 7.39% | **hybrid** | hybrid | -1.48pp | -1.48pp |
+| `red_B2` | 3.94% | 1.97% | 0.99% | **no-image** | no-image | +2.96pp | +2.96pp |
+| `wa_B0` | 26.92% | 19.23% | 22.12% | **no-image** | no-image | +4.81pp | +13.46pp |
+| `wa_B1` | 16.35% | 9.62% | 13.46% | **no-image** | no-image | +2.88pp | +2.88pp |
+
+Arm-matched tally (sole winners): **hybrid** 4/8, **no-image** 3/8, plus 1 tied cell(s).
+
+**The tally does not move** when arm count is held fixed, and vision-only is still never the sole best class. That is the robustness statement §1 could not make: the class conclusion survives the most obvious attack on it.
+
+⚠️ **The effect sizes do move, and by a lot.** On `wa_B0` the no-image lead over hybrid is **+13.46pp** in §1 and **+4.81pp** here — §1's figure is carried by `P-text`, an arm constructed for this study rather than one a deployment ships. Any sentence quoting a class *gap* should quote this panel's number; only the *ordering* is safe to take from §1.
+
 ## 2. Dropping a whole class — ⚠️ NOT arm-matched
 
 How much oracle coverage disappears if a class is unavailable. **The no-image class has four arms and the others have one each**, so a larger number here is mostly arm count. Reported because the figure is the obvious one to compute and would otherwise be computed by a reader without the caveat attached.

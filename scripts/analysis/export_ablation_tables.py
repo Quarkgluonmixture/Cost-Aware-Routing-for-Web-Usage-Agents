@@ -138,6 +138,35 @@ def t_class() -> tuple[str, str]:
     return "\n".join(rows), cap
 
 
+def t_class_1arm() -> tuple[str, str]:
+    d = load("representation_class_comparison")
+    rows = ["| cell | no-image (DOM) | vision-only (Vision) | hybrid (SoM) | sole best "
+            "| gap vs hybrid | Table 2 gap |", "|---|---|---|---|---|---|---|"]
+    for c in CELLS:
+        if c not in d["cells"]:
+            continue
+        r = d["cells"][c]
+        o = r.get("one_arm_per_class")
+        if not o:
+            continue
+        s, w = o["sr"], o["winners"]
+        top = w[0] if len(w) == 1 else "tie: " + "+".join(w)
+        rows.append(f"| {CELL_LABEL[c]} | {s['no-image']:.2f} | {s['vision-only']:.2f} | "
+                    f"{s['hybrid']:.2f} | {top} | "
+                    f"{o['gap_noimage_minus_hybrid_pp']:+.2f} | "
+                    f"{o['gap_maxof4_minus_hybrid_pp']:+.2f} |")
+    cap = ("The same comparison at **one arm per class** (%). Table 2's no-image column is a "
+           "maximum over four arms while the other two are single arms, so it is biased up; "
+           "this panel uses the arm of each class that exists outside this study. **The "
+           "ordering does not move** — hybrid 4, no-image 3, one tie, and vision-only is never "
+           "a sole best in either version — which is the robustness statement Table 2 cannot "
+           "make. **The gaps do move**: on `WA·B0` the no-image lead is +4.81pp here against "
+           "+13.46pp there, because Table 2's figure is carried by P-text. Quote this table for "
+           "any class gap; Table 2 only for the ordering. "
+           "Source: `representation_class_comparison.json`.")
+    return "\n".join(rows), cap
+
+
 def t_class_ablate() -> tuple[str, str]:
     d = load("representation_class_comparison")
     rows = ["| cell | all six | −no-image | −vision-only | −hybrid | +1 no-image | "
@@ -784,6 +813,7 @@ def t_leak_audit():
 TABLES = [
     ("sr", "Success rate per mode", t_sr),
     ("class", "Best arm per deployment class", t_class),
+    ("class-1arm", "Deployment classes at one arm each", t_class_1arm),
     ("class-ablate", "Class ablation, unmatched and arm-matched", t_class_ablate),
     ("nonsep", "Behavioural non-separability", t_nonsep),
     ("prof-outcome", "Full matrix — Outcome dimension", t_prof_outcome),

@@ -157,6 +157,74 @@ def main() -> None:
               "between two arms at 2.23% (5 successes out of 224), i.e. at the floor. A tie "
               "resolved by dict order is how this nearly became a claim.", ""]
 
+    # --- 1b. arm-matched restatement of §1 -------------------------------------------
+    # §1's no-image column is max over FOUR arms while the other two columns are single
+    # arms. A maximum over noisy quantities biases that column up (the same defect
+    # aggregate_fusion_premium.py:15 fixed on the comparator side), so §1 cannot be read
+    # as a like-for-like class comparison even though it is where the class claim is read
+    # from. This panel holds arm count fixed at 1 and uses the arm of each class that
+    # exists outside this study: DOM (P-text / P-prompt / P-SoM are constructed here),
+    # Vision, SoM.
+    SHIPPED = {"no-image": "dom", "vision-only": "vision", "hybrid": "som"}
+    L += ["## 1b. The same comparison at one arm per class", "",
+          "§1's `no-image` column is a **maximum over four arms**; the other two columns are "
+          "single arms. A maximum over noisy quantities is biased up, so §1 is not like-for-"
+          "like. This panel fixes arm count at 1 and uses the arm of each class that exists "
+          "outside this study — **DOM** (P-text / P-prompt / P-SoM are constructed here), "
+          "**Vision**, **SoM**.", "",
+          "| cell | no-image (DOM) | vision-only | hybrid (SoM) | winner | §1 winner | "
+          "gap vs hybrid: 1-arm | §1 (max-of-4) |",
+          "|---|---|---|---|---|---|---|---|"]
+    matched_count: dict[str, int] = {}
+    n_tie_1v1 = 0
+    gap_shrink: list[tuple[str, float, float]] = []
+    for cid in CELL_ORDER:
+        if cid not in cells:
+            continue
+        rec = out["cells"][cid]
+        s = rec["single_sr"]
+        one = {k: s[m] for k, m in SHIPPED.items()}
+        hi1 = max(one.values())
+        win1 = sorted(k for k in one if abs(one[k] - hi1) < 1e-9)
+        top1 = win1[0] if len(win1) == 1 else "tie: " + "+".join(win1)
+        if len(win1) == 1:
+            matched_count[win1[0]] = matched_count.get(win1[0], 0) + 1
+        else:
+            n_tie_1v1 += 1
+        gap1 = one["no-image"] - one["hybrid"]
+        gap4 = rec["class_best"]["no-image"] - rec["class_best"]["hybrid"]
+        gap_shrink.append((cid, gap1, gap4))
+        rec["one_arm_per_class"] = {"arms": SHIPPED, "sr": one, "winners": win1,
+                                    "gap_noimage_minus_hybrid_pp": gap1,
+                                    "gap_maxof4_minus_hybrid_pp": gap4}
+        L.append(f"| `{cid}` | {one['no-image']:.2f}% | {one['vision-only']:.2f}% | "
+                 f"{one['hybrid']:.2f}% | **{top1}** | {rec['best_class']} | "
+                 f"{gap1:+.2f}pp | {gap4:+.2f}pp |")
+    never1 = [k for k in CLASSES if matched_count.get(k, 0) == 0]
+    L += ["", "Arm-matched tally (sole winners): "
+          + (", ".join(f"**{k}** {v}/{len(out['cells'])}" for k, v in sorted(
+              matched_count.items(), key=lambda kv: -kv[1])) or "none")
+          + (f", plus {n_tie_1v1} tied cell(s)" if n_tie_1v1 else "") + ".", ""]
+    _same = (matched_count == best_class_count)
+    L += [("**The tally does not move** when arm count is held fixed"
+           if _same else
+           "⚠️ **The tally moves** when arm count is held fixed — §1's ordering is "
+           "partly an arm-count artefact")
+          + (f", and {', '.join(never1)} is still never the sole best class."
+             if never1 else ".")
+          + " That is the robustness statement §1 could not make: the class conclusion "
+            "survives the most obvious attack on it.", ""]
+    _worst = max(gap_shrink, key=lambda r: abs(r[2]) - abs(r[1]))
+    L += [f"⚠️ **The effect sizes do move, and by a lot.** On `{_worst[0]}` the no-image "
+          f"lead over hybrid is **{_worst[2]:+.2f}pp** in §1 and **{_worst[1]:+.2f}pp** here "
+          f"— §1's figure is carried by "
+          f"`{PRETTY[out['cells'][_worst[0]]['class_best_arm']['no-image']]}`, an arm "
+          "constructed for this study rather than one a deployment ships. Any sentence "
+          "quoting a class *gap* should quote this panel's number; only the *ordering* is "
+          "safe to take from §1.", ""]
+    out["arm_matched_class_count"] = matched_count
+    out["arm_matched_tally_matches_unmatched"] = _same
+
     # --- 2. unmatched drop (labelled) ---
     L += ["## 2. Dropping a whole class — ⚠️ NOT arm-matched", "",
           "How much oracle coverage disappears if a class is unavailable. **The no-image class "

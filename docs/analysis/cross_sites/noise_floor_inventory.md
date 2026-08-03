@@ -21,6 +21,19 @@ Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_noise_floor_inventory.
 | `B0.cls.vision` | B0 x classifieds, canonical n=224 | 224 | **7.59pp** | **6.70pp** | 14.29% |
 | `B1.wa-red` (**new**) | B1 x WA-reddit, registered 10-task pilot draw x 5 modes | 50 | **2.00pp** | **4.00pp** | 6.00% |
 
+### 1b. The mean-difference floor is two draws, not a bound
+
+The set-difference functional above is the one claim 1 needs. Claims 3 and 4 compare **mean** success rates between two modes, and the matched floor for that is `|SR(a) − SR(b)|` on the same replicate pairs — which is where the band `0.89–2.23pp` comes from. Those two numbers are **one observation each of a random quantity**, and the quantity's own spread is computable from the discordant counts already in the table above. Under the exchangeability null (same condition, so each discordant task flips either way with probability ½) `D = (2X − d)/n` with `X ~ Binom(d, ½)`, so `SD(D) = √d / n`:
+
+| pair | n | discordant d | observed \|ΔSR\| | **SD(ΔSR) under the null** | one-sided 95% | two-sided 95% |
+|---|---|---|---|---|---|---|
+| `B0.cls.dom` | 224 | 27 | 2.23pp | **2.32pp** | 3.82pp | ±4.55pp |
+| `B0.cls.vision` | 224 | 32 | 0.89pp | **2.53pp** | 4.15pp | ±4.95pp |
+
+⚠️ **The band's upper edge (2.23pp) is of the same order as one standard deviation (2.32–2.53pp).** So "clears the band" is not "clears the noise": an effect has to reach roughly **3.82–4.15pp** before a single rerun would be unlikely to produce it by itself. Both readings are reported because they answer different questions — *what did repetition actually deliver* (the two draws) versus *what could repetition deliver* (the null spread) — and the second is the one an effect size has to be judged against. Reading a 2.2pp effect against a 2.23pp "measured floor" is comparing a draw to a draw.
+
+⚠️ This null assumes only exchangeability of the two runs; it does **not** model environment drift, which is one-directional and is what the P-SoM restart pair below shows. Where drift is present the true spread is larger than `√d / n`, so these thresholds are themselves a lower bound.
+
 ### The B1 floor was not missing — it was unrecognised
 
 `phase0b_noise_floor.md` §7.1 lists *a locally-served (B1) same-mode replicate* as the top thing still needed, queued behind the WA run. It already existed: the WA 10-task pilot and the WA full-104 run are the **same condition** — `exp_v2_wa_full_reddit_base.yaml` only deletes `task.task_ids.reddit` — so their task overlap is a same-condition rerun. Per-mode:

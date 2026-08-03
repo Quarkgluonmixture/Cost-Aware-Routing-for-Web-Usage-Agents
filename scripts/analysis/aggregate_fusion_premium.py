@@ -52,9 +52,26 @@ N_BOOT = 10000
 # move between runs. A fixed LCG is enough for a paired bootstrap over <= 224 items.
 SEED = 20260802
 
-# Measured run-to-run bands, mean-difference scale (noise_floor_inventory.md §1). These are the
-# only two we hold; applying them to other cells is an extrapolation and is labelled as one.
-FLOOR_MEAN_PP = (0.89, 2.23)
+# Measured run-to-run band, mean-difference scale. READ from noise_floor_inventory.json rather
+# than hardcoded: it was the literal tuple `(0.89, 2.23)` here for months, i.e. a conclusion
+# frozen in a producer while its own source recomputed on every run (the §4d defect class).
+# The product supplies two readings and both are used below:
+#   observed_*      the two draws repetition actually delivered -- NOT a threshold
+#   one_sided_95_*  the level an effect must reach before one rerun is unlikely to produce it
+NOISE_FLOOR_JSON = REPO / "docs/analysis/cross_sites/noise_floor_inventory.json"
+
+
+def load_floor_band() -> dict:
+    """Fail loud: a hardcoded fallback is how the old constant went stale unnoticed."""
+    if not NOISE_FLOOR_JSON.exists():
+        raise MissingInput(
+            f"{NOISE_FLOOR_JSON} absent -- run aggregate_noise_floor_inventory.py first. "
+            "No fallback band is applied on purpose.")
+    band = json.loads(NOISE_FLOOR_JSON.read_text()).get("floor_band")
+    if not band or not band.get("rows"):
+        raise MissingInput(
+            f"{NOISE_FLOOR_JSON} carries no floor_band -- regenerate the inventory.")
+    return band
 
 
 class MissingInput(RuntimeError):
@@ -241,8 +258,11 @@ def build() -> dict:
     # three VWA backbones share their site's cluster).
     cells["wa_red_B1"] = load_wa("B1")
     cells["wa_red_B0"] = load_wa("B0")
-    out = {"schema": "2026-08-02-fusion-premium-v1", "post_hoc_exploratory": True,
-           "n_boot": N_BOOT, "seed": SEED, "floor_mean_pp": FLOOR_MEAN_PP,
+    band = load_floor_band()
+    out = {"schema": "2026-08-03-fusion-premium-v2", "post_hoc_exploratory": True,
+           "n_boot": N_BOOT, "seed": SEED,
+           "floor_mean_pp": [band["observed_min_pp"], band["observed_max_pp"]],
+           "floor_band": band,
            "fused": FUSED, "comparators": COMPARATORS, "cells": {}, "pooled": {}}
     for cid, tasks in cells.items():
         out["cells"][cid] = {c: paired_effect(tasks, FUSED, c) for c in COMPARATORS}
@@ -263,6 +283,8 @@ def build() -> dict:
 
 def render(d: dict) -> str:
     lo, hi = d["floor_mean_pp"]
+    band = d["floor_band"]
+    null_lo, null_hi = band["one_sided_95_min_pp"], band["one_sided_95_max_pp"]
     L = ["---", "type: analysis", "status: complete", "created: 2026-08-02",
          "purpose: turn §4.2's fusion-premium claim from a count over cells into a paired test "
          "against a priori comparators",
@@ -287,19 +309,30 @@ def render(d: dict) -> str:
                  f"[{v['ci'][0]:+.2f}, {v['ci'][1]:+.2f}] | {m['est_pp']:+.2f}pp | "
                  f"[{m['ci'][0]:+.2f}, {m['ci'][1]:+.2f}] |")
     L += ["", "## 2. Fixed-effect pool", "",
-          "| comparator | k | pooled θ | 95% CI | clears 0? | clears the rerun band? |",
-          "|---|---|---|---|---|---|"]
+          "| comparator | k | pooled θ | 95% CI | clears 0? | clears the observed band? "
+          "| clears the rerun **null**? |",
+          "|---|---|---|---|---|---|---|"]
     for c in d["comparators"]:
         p = d["pooled"][c]
         cl = p.get("clustered") or p
         z = "**yes**" if cl["ci"][0] > 0 else "no"
         f = "**yes**" if cl["ci"][0] > hi else "no"
+        nn = "**yes**" if cl["ci"][0] > null_hi else "no"
         L.append(f"| SoM − {c} | {p['k']} | **{cl['theta_pp']:+.2f}pp** | "
-                 f"[{cl['ci'][0]:+.2f}, {cl['ci'][1]:+.2f}] | {z} | {f} |")
+                 f"[{cl['ci'][0]:+.2f}, {cl['ci'][1]:+.2f}] | {z} | {f} | {nn} |")
     L += ["", f"The band is the measured run-to-run mean-difference floor, {lo} to {hi}pp. "
           "Reading the pooled estimate against it rather than against zero is the point: a "
           "premium has to beat what repetition delivers for the same money, not merely beat "
           "nothing.", "",
+          f"⚠️ **Two bands, and the last column is the one that answers the question.** "
+          f"`{lo}–{hi}pp` is what {band['n_draws']} reruns *happened to* deliver — two draws "
+          f"from a random quantity, not a bound on it. That quantity's own spread is "
+          f"computable from the same pairs' discordant counts: `SD(ΔSR) = √d/n` gives "
+          f"**{band['null_sd_min_pp']}–{band['null_sd_max_pp']}pp**, i.e. the band's upper "
+          f"edge is about one standard deviation. An effect only becomes unlikely for a "
+          f"single rerun to manufacture at roughly **{null_lo}–{null_hi}pp** (one-sided 95%). "
+          "Both are reported; nothing here should be read as clearing noise on the strength "
+          "of the observed band alone. → `noise_floor_inventory` §1b.", "",
           "**The interval above is the task-clustered one, and that choice changes an answer.** "
           "Within a site the three backbones are scored on the same task universe, so their "
           "effects share sampling noise; the textbook `sqrt(1/Σw)` treats them as independent "
@@ -359,17 +392,22 @@ def render(d: dict) -> str:
           "classifieds cells and the text one on all four reddit splits. Against **that** channel, "
           "fusion's interval includes zero everywhere but one, where it is significantly "
           "negative.", "",
-          "| cell | stronger single channel | SoM - that channel | 95% CI | excludes 0? |",
-          "|---|---|---|---|---|"]
+          "| cell | stronger single channel | SoM - that channel | 95% CI | excludes 0? "
+          "| \\|effect\\| > rerun null? |",
+          "|---|---|---|---|---|---|"]
     n_incl = 0
+    weak_gains: dict[str, list[tuple[str, float]]] = {"dom": [], "vision": []}
     for cid, c in d["cells"].items():
         strong = "vision" if d["sr"][cid]["vision"] >= d["sr"][cid]["dom"] else "dom"
+        weak = "dom" if strong == "vision" else "vision"
         e = c[strong]
         excl = e["ci"][0] > 0 or e["ci"][1] < 0
         n_incl += not excl
+        weak_gains[weak].append((cid, c[weak]["est_pp"]))
         L.append(f"| `{cid}` | {strong} | {e['est_pp']:+.2f}pp | "
                  f"[{e['ci'][0]:+.2f}, {e['ci'][1]:+.2f}] | "
-                 f"{'**yes, negative**' if excl else 'no'} |")
+                 f"{'**yes, negative**' if excl else 'no'} | "
+                 f"{'yes' if abs(e['est_pp']) > null_hi else 'no'} |")
     L += ["", f"**{n_incl} of {len(d['cells'])}** intervals include zero and the remaining one is "
           "negative, so in no cell does fusion beat the channel that suits the workload. "
           "⚠️ The word *significantly* does not belong on that sentence and has been removed: "
@@ -377,8 +415,23 @@ def render(d: dict) -> str:
           "is computed from, so these CIs do not retain nominal coverage. Restoring coverage "
           "needs either a site→channel mapping fixed in advance, or a bootstrap that re-selects "
           "the comparator inside every resample. Until then this row is descriptive. "
-          "(§H stress P1-2.) It beats the channel that does not, by +8.04 and +9.82 points over DOM on "
-          "classifieds and +4.93 and +7.39 over Vision on reddit. Which channel is stronger is "
+          "(§H stress P1-2.) Against the channel that does *not* suit the workload it does "
+          "better — but the full set must be quoted, not its top end:", ""]
+    for weak, label in (("dom", "over DOM, where the visual channel is stronger"),
+                        ("vision", "over Vision, where the text channel is stronger")):
+        rows = sorted(weak_gains[weak], key=lambda kv: kv[1])
+        L.append(f"- `SoM − {weak}` {label}: "
+                 + ", ".join(f"{cid} {v:+.2f}pp" for cid, v in rows)
+                 + f"  → range **{rows[0][1]:+.2f} to {rows[-1][1]:+.2f}pp**, "
+                 + f"{sum(1 for _, v in rows if abs(v) > null_hi)} of {len(rows)} above the "
+                   "rerun null.")
+    L += ["",
+          "⚠️ **Derived from the table above, not typed.** Until 2026-08-03 this paragraph "
+          "hardcoded four of these numbers and named only the two largest on each side — the "
+          "source of the `4.93-7.39pp` string quoted downstream. The dropped cells are not "
+          "cosmetic: on the text-stronger side the smallest is **negative**, so a range "
+          "starting at +4.93 is a subrange with the sign change removed. Which channel is "
+          "stronger is "
           "read off each cell and is therefore post hoc, which is why both full columns appear in "
           "§1 and the pooled tests in §2 use comparators fixed in advance.", "",
           "## 4. What this does and does not settle", "",

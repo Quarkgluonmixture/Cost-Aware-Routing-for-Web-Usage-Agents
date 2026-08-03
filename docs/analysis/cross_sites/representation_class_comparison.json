@@ -2,7 +2,7 @@
   "schema": 1,
   "post_hoc_exploratory": true,
   "h10_eligible": false,
-  "generated": "2026-08-03T13:04:48+00:00",
+  "generated": "2026-08-03T14:50:01+00:00",
   "classes": {
     "no-image": [
       "dom",
@@ -43,6 +43,23 @@
         "hybrid"
       ],
       "is_tie": false,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 17.410714285714285,
+          "vision-only": 25.0,
+          "hybrid": 27.232142857142858
+        },
+        "winners": [
+          "hybrid"
+        ],
+        "gap_noimage_minus_hybrid_pp": -9.821428571428573,
+        "gap_maxof4_minus_hybrid_pp": -7.589285714285715
+      },
       "drop_class_unmatched": {
         "no-image": 9.375,
         "vision-only": 4.017857142857146,
@@ -83,6 +100,23 @@
         "hybrid"
       ],
       "is_tie": false,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 6.25,
+          "vision-only": 12.5,
+          "hybrid": 14.285714285714286
+        },
+        "winners": [
+          "hybrid"
+        ],
+        "gap_noimage_minus_hybrid_pp": -8.035714285714286,
+        "gap_maxof4_minus_hybrid_pp": -6.696428571428572
+      },
       "drop_class_unmatched": {
         "no-image": 5.357142857142854,
         "vision-only": 4.017857142857142,
@@ -124,6 +158,24 @@
         "vision-only"
       ],
       "is_tie": true,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 1.3392857142857142,
+          "vision-only": 2.232142857142857,
+          "hybrid": 2.232142857142857
+        },
+        "winners": [
+          "hybrid",
+          "vision-only"
+        ],
+        "gap_noimage_minus_hybrid_pp": -0.892857142857143,
+        "gap_maxof4_minus_hybrid_pp": -0.4464285714285714
+      },
       "drop_class_unmatched": {
         "no-image": 2.678571428571429,
         "vision-only": 2.2321428571428577,
@@ -164,6 +216,23 @@
         "hybrid"
       ],
       "is_tie": false,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 14.285714285714286,
+          "vision-only": 7.389162561576355,
+          "hybrid": 14.77832512315271
+        },
+        "winners": [
+          "hybrid"
+        ],
+        "gap_noimage_minus_hybrid_pp": -0.4926108374384235,
+        "gap_maxof4_minus_hybrid_pp": -0.4926108374384235
+      },
       "drop_class_unmatched": {
         "no-image": 7.881773399014776,
         "vision-only": 1.970443349753694,
@@ -204,6 +273,23 @@
         "hybrid"
       ],
       "is_tie": false,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 5.911330049261084,
+          "vision-only": 2.4630541871921183,
+          "hybrid": 7.389162561576355
+        },
+        "winners": [
+          "hybrid"
+        ],
+        "gap_noimage_minus_hybrid_pp": -1.4778325123152714,
+        "gap_maxof4_minus_hybrid_pp": -1.4778325123152714
+      },
       "drop_class_unmatched": {
         "no-image": 3.4482758620689644,
         "vision-only": 0.985221674876847,
@@ -244,6 +330,23 @@
         "no-image"
       ],
       "is_tie": false,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 3.9408866995073892,
+          "vision-only": 1.9704433497536946,
+          "hybrid": 0.9852216748768473
+        },
+        "winners": [
+          "no-image"
+        ],
+        "gap_noimage_minus_hybrid_pp": 2.955665024630542,
+        "gap_maxof4_minus_hybrid_pp": 2.955665024630542
+      },
       "drop_class_unmatched": {
         "no-image": 4.433497536945813,
         "vision-only": 1.4778325123152714,
@@ -284,6 +387,23 @@
         "no-image"
       ],
       "is_tie": false,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 26.923076923076923,
+          "vision-only": 19.23076923076923,
+          "hybrid": 22.115384615384617
+        },
+        "winners": [
+          "no-image"
+        ],
+        "gap_noimage_minus_hybrid_pp": 4.807692307692307,
+        "gap_maxof4_minus_hybrid_pp": 13.461538461538463
+      },
       "drop_class_unmatched": {
         "no-image": 22.115384615384613,
         "vision-only": 3.8461538461538396,
@@ -325,6 +445,23 @@
         "no-image"
       ],
       "is_tie": false,
+      "one_arm_per_class": {
+        "arms": {
+          "no-image": "dom",
+          "vision-only": "vision",
+          "hybrid": "som"
+        },
+        "sr": {
+          "no-image": 16.346153846153847,
+          "vision-only": 9.615384615384615,
+          "hybrid": 13.461538461538462
+        },
+        "winners": [
+          "no-image"
+        ],
+        "gap_noimage_minus_hybrid_pp": 2.884615384615385,
+        "gap_maxof4_minus_hybrid_pp": 2.884615384615385
+      },
       "drop_class_unmatched": {
         "no-image": 14.423076923076923,
         "vision-only": 0.9615384615384635,
@@ -341,6 +478,11 @@
       ]
     }
   },
+  "arm_matched_class_count": {
+    "hybrid": 4,
+    "no-image": 3
+  },
+  "arm_matched_tally_matches_unmatched": true,
   "best_class_count": {
     "hybrid": 4,
     "no-image": 3

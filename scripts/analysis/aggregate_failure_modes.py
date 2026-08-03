@@ -202,14 +202,18 @@ def main():
               "falling back to PHASE1_DIR.glob('B*')", file=_sys.stderr)
         _unique_run_dirs = sorted([d for d in PHASE1_DIR.glob("B*") if d.is_dir()])
 
+    _missing_csv: list[str] = []
+    _unparsed: list[str] = []
     for run_dir in _unique_run_dirs:
         if not run_dir.is_dir():
             continue
         baseline, site = parse_run(run_dir.name)
         if not baseline or not site:
+            _unparsed.append(run_dir.name)
             continue
         cond_csv = run_dir / "analysis/reason_diagnostics/condition_reason_summary.csv"
         if not cond_csv.exists():
+            _missing_csv.append(run_dir.name)
             continue
         with cond_csv.open() as f:
             reader = csv.DictReader(f)
@@ -285,6 +289,29 @@ def main():
             "buckets": bucket_pct,
             "source_runs": sorted(set(sources[ck])),
         }
+
+    # --- fail loud on an empty product ------------------------------------------------
+    # This script wrote a complete-looking, entirely empty document on exit 0 from
+    # (at least) 2026-08-03 back, because every run_dir was skipped by the `cond_csv`
+    # existence check above. A finished-looking artifact raises no questions, so the
+    # emptiness survived three coverage sweeps. Refuse to write instead.
+    import sys as _sys
+    if _missing_csv:
+        print(f"[failure_modes] WARN: {len(_missing_csv)}/{len(_unique_run_dirs)} run_dirs "
+              f"have no analysis/reason_diagnostics/condition_reason_summary.csv "
+              f"(e.g. {_missing_csv[0]}). Regenerate with: "
+              f"make analyze RUN=results/.../<run>   (or analyze_reason_diagnostics.py "
+              f"--run-dir <run>)", file=_sys.stderr)
+    if _unparsed:
+        print(f"[failure_modes] WARN: {len(_unparsed)} run_dir name(s) did not parse: "
+              f"{_unparsed[:3]}", file=_sys.stderr)
+    if not result["cells"]:
+        raise SystemExit(
+            f"[failure_modes] REFUSING to write an empty product: 0 cells from "
+            f"{len(_unique_run_dirs)} paper-grade run_dirs "
+            f"({len(_missing_csv)} missing reason_diagnostics, {len(_unparsed)} unparsed "
+            f"names). The previous behaviour was to write a header-only markdown and "
+            f"exit 0, which is how this went unnoticed. Fix the input, then rerun.")
 
     OUT_JSON.write_text(json.dumps(result, indent=2))
     print(f"[failure_modes] wrote {OUT_JSON}")

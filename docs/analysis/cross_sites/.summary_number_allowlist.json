@@ -1,0 +1,46 @@
+{
+ "8.65pp @ `cls_B0` these are not separable. → `noise_floor_inventory` ⚠️ The upp": {
+  "reason": "quoted inside its own retraction — the sentence says this product does NOT contain it",
+  "context": "`cls_B0` these are not separable. → `noise_floor_inventory` ⚠️ The upper end was previously written as **8.65pp**, which that product does not contain: its largest arm gain is 7.14pp. 8.65 is the WA figure measured from "
+ },
+ "8.65 @ `cls_B0` these are not separable. → `noise_floor_inventory` ⚠️ The upp": {
+  "reason": "quoted inside its own retraction — the sentence says this product does NOT contain it",
+  "context": "`cls_B0` these are not separable. → `noise_floor_inventory` ⚠️ The upper end was previously written as **8.65pp**, which that product does not contain: its largest arm gain is 7.14pp. 8.65 is the WA figure measured from "
+ },
+ "77% @ neither comparator.** In 8/8 cells it fails to beat the single channel": {
+  "reason": "historical value quoted inside the 2026-08-03 correction note (true value 53/75)",
+  "context": "neither comparator.** In 8/8 cells it fails to beat the single channel that suits the workload. → `fusion_premium` Three corrections. (a) The pool resamples **tasks once per site**, because the three backbones inside a s"
+ },
+ "−10.7% @ gives **zero SR change** at **−9.5% to −30.6% cost in 8 of 8 cells** (": {
+  "reason": "lives in router_objective_ordering; block cites router_triage_learnability for the out-of-fold counterpart",
+  "context": "gives **zero SR change** at **−9.5% to −30.6% cost in 8 of 8 cells** (⬆ from 6 of 6: the two WA cells were wired 2026-08-03 and land at −10.7% and −26.8%, inside the existing range). Its label is binary (solvable / not) "
+ },
+ "29.6% @ → `visual_intent_routing` (new 2026-08-03) The predicate is a regex ov": {
+  "reason": "historical: the outcome-filtered production-rule figure, kept for contrast with the corrected one",
+  "context": "→ `visual_intent_routing` (new 2026-08-03) The predicate is a regex over the task intent plus \"task carries no reference image\". Both read the task config: no model call, no episode, no tokens. On classifieds it flags 71"
+ },
+ "35.58% @ hybrid takes VWA, no-image takes **both** WebArena cells, by **13.46pp": {
+  "reason": "lives in representation_class_comparison / sr table; block boundary put it beside fusion_premium",
+  "context": "hybrid takes VWA, no-image takes **both** WebArena cells, by **13.46pp** on `wa_B0` (P-text 35.58% against SoM 22.12%). That is claim 4 restated as the decision a deployment actually faces — *ship vision at all?* — rathe"
+ },
+ "+4.46pp @ hybrid takes VWA, no-image takes **both** WebArena cells, by **13.46pp": {
+  "reason": "lives in representation_class_comparison drop-class table; same block-boundary case",
+  "context": "hybrid takes VWA, no-image takes **both** WebArena cells, by **13.46pp** on `wa_B0` (P-text 35.58% against SoM 22.12%). That is claim 4 restated as the decision a deployment actually faces — *ship vision at all?* — rathe"
+ },
+ "+22.54pp @ → `rule_routing_pareto` (new 2026-08-03) Claim 10 found a 0-token sign": {
+  "reason": "lives in visual_intent_routing; quoted here because rule_routing_pareto turns that signal into a policy",
+  "context": "→ `rule_routing_pareto` (new 2026-08-03) Claim 10 found a 0-token signal worth +22.54pp on the subset it flags. Turning it into a policy: flagged→Vision, else→DOM. On `cls_B0` that yields **24.55%**, exactly `always-DOM`"
+ },
+ "7.14pp @ → `rule_routing_pareto` (new 2026-08-03) Claim 10 found a 0-token sign": {
+  "reason": "arithmetic shown in-line (71/224 x 22.54pp); derived, not read from a product",
+  "context": "→ `rule_routing_pareto` (new 2026-08-03) Claim 10 found a 0-token signal worth +22.54pp on the subset it flags. Turning it into a policy: flagged→Vision, else→DOM. On `cls_B0` that yields **24.55%**, exactly `always-DOM`"
+ },
+ "22.54pp @ → `rule_routing_pareto` (new 2026-08-03) Claim 10 found a 0-token sign": {
+  "reason": "same as +22.54pp — visual_intent_routing's effect, cited from the policy product",
+  "context": "→ `rule_routing_pareto` (new 2026-08-03) Claim 10 found a 0-token signal worth +22.54pp on the subset it flags. Turning it into a policy: flagged→Vision, else→DOM. On `cls_B0` that yields **24.55%**, exactly `always-DOM`"
+ },
+ "53% @ Claim 3 (fusion) states **\"no detectable accuracy premium over the mat": {
+  "reason": "lives in fusion_premium; this block cites noise_floor_inventory for the adjacent band point",
+  "context": "Claim 3 (fusion) states **\"no detectable accuracy premium over the matched single channel\"**, never \"fusion does not work\": the interval crossing zero is not equivalence, the pooled effects are heterogeneous (I² = 53% an"
+ }
+}
