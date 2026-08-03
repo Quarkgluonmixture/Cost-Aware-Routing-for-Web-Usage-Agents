@@ -766,7 +766,13 @@ def t_triage_learn():
         f"Mean ΔAUROC = **{d['mean_delta_auroc']:+.4f}** over {len(d['cells'])} cells, "
         f"improving {d['n_cells_improved']} — inside fold-split noise. `solvable` is the "
         f"positive count: the label exists for every task, unlike the which-mode label. "
-        f"Source: `visual_difficulty_router.json`.")
+        f"⚠️ **Six cells, not eight, and the reason is the finding.** `visual_difficulty` is a "
+        f"VisualWebArena task-config annotation; WebArena's 106 reddit configs carry **none of** "
+        f"`visual_difficulty`, `reasoning_difficulty`, `overall_difficulty` or `image` — the "
+        f"field simply is not there, so the contrast cannot be computed rather than computing "
+        f"to zero. That absence is what makes WA the clean test elsewhere: where a router can "
+        f"read the benchmark's own difficulty annotation it looks learnable, and WA is the "
+        f"setting where it cannot. Source: `visual_difficulty_router.json`.")
 
 
 def t_feature_sign():
@@ -786,8 +792,11 @@ def t_feature_sign():
         "The intuitive routing feature. A task shipping a reference image ought to route to a "
         "mode that can see images — the table shows which mode is actually best on each side "
         "of that split. ⚠️ Reference images are delivered in **every** mode, so this feature "
-        "does not separate what it appears to. WebArena ships no reference images, so it "
-        "cannot arbitrate. Source: `routing_feature_diagnostics.json`.")
+        "does not separate what it appears to. **WebArena cannot arbitrate**: its 106 reddit "
+        "configs carry no `image` field at all — nor any of the three difficulty annotations — "
+        "so both of this table's stratifiers are undefined there. Six cells is the whole "
+        "population for this question, not a coverage gap. "
+        "Source: `routing_feature_diagnostics.json`.")
 
 
 def _cond_side(side: str, label: str):
