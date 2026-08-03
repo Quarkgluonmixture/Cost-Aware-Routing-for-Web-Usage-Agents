@@ -451,6 +451,62 @@ def t_latency_split():
         f"Source: `latency_decomposition.json`.")
 
 
+def t_dispatch():
+    d = load("dispatch_path_audit")
+    fam = d["path_families"]
+    rows = ["| delivery path | actions | action success |", "|---|---|---|"]
+    order = sorted(fam.items(), key=lambda kv: -kv[1]["success"])
+    for k, v in order:
+        rows.append(f"| {k.replace('_', ' ')} | {v['n']:,} | **{100*v['success']:.1f}%** |")
+    fb = d["fallback_share_by_backbone"]
+    cap = (
+        "How each action reached the browser. **`Vision` is on the coordinate path by "
+        "construction** — it emits no element ids — so its action success is capped by this "
+        f"harness's coordinate implementation ({100*fam['coord']['success']:.0f}%) rather "
+        f"than by the {100*fam['id_locator']['success']:.0f}% the element-id path achieves. "
+        "That is not a confound to remove (it is what screenshot-only *is*), but the Vision "
+        "arm measures our grounding code as much as the representation. Separately the "
+        "element-id fallback share rises with backbone weakness — "
+        + " · ".join(f"{b} {100*v['mean']:.0f}%" for b, v in fb.items())
+        + " on the text arms: *how often* a run falls back is a model property, the "
+        f"fallback's own {100*fam['id_framework']['success']:.0f}% success is ours. "
+        "No success rate elsewhere is adjusted by this; it bounds external validity. "
+        "Source: `dispatch_path_audit.json`.")
+    return "\n".join(rows), cap
+
+
+def t_estimands():
+    lat = load("latency_decomposition")
+    cost = load("local_cost_estimand_audit")
+    eng = load("energy_carbon_audit")
+    rows = ["| quantity | what the reported number is | what changes under the alternative |",
+            "|---|---|---|"]
+    rows.append(
+        f"| latency | whole step | model call is only "
+        f"{100*lat['model_share_min']:.0f}–{100*lat['model_share_max']:.0f}% of it; removing "
+        f"the container **changes the fastest mode in {lat['n_fastest_flips']} of "
+        f"{lat['n_cells']} cells** |")
+    rows.append(
+        f"| local cost | price per token | the constant assumes "
+        f"{cost['config_constants']['derived_from_assumed_tok_per_s']:.0f} tok/s against "
+        f"{cost['measured_tok_per_s_min']:.0f}–{cost['measured_tok_per_s_max']:.0f} measured; "
+        f"pricing by GPU-time **changes the cheapest mode in "
+        f"{len(cost['cheapest_flips_token_vs_time'])} of {cost['n_cells']} local cells** |")
+    rows.append(
+        f"| energy / carbon | kWh from a CPU estimate | r(energy, latency) = "
+        f"{eng['r_min']:.3f}–{eng['r_max']:.3f} at {eng['power_mean_w']:.0f} W — it **is** "
+        f"elapsed time; and it does not exist for B0 at all |")
+    return "\n".join(rows), (
+        "Three efficiency quantities, three estimand choices, none of them previously "
+        "stated. Each row's right-hand column is what a defensible alternative definition "
+        "does to the per-mode ordering. The pattern is the finding: **efficiency claims in "
+        "this setting are estimand-dependent, and the estimand is usually left implicit.** "
+        "The local-cost constant was additionally derived for a DGX Spark while every run "
+        "was served on an A100 — the same config file migrated its energy profile and not "
+        "its cost block. Sources: `latency_decomposition.json`, "
+        "`local_cost_estimand_audit.json`, `energy_carbon_audit.json`.")
+
+
 def t_per_success():
     d = load("outcome_efficiency")
     rows = ["| cell | content? | cheapest/attempt | cheapest/success | fastest/attempt | "
@@ -851,6 +907,8 @@ TABLES = [
     ("prof-eff", "Full matrix — Efficiency dimension", t_prof_efficiency),
     ("pareto", "Multi-metric Pareto", t_pareto),
     ("latency-split", "What a latency number contains", t_latency_split),
+    ("estimands", "Three efficiency quantities, three estimand choices", t_estimands),
+    ("dispatch", "What actually delivered the click", t_dispatch),
     ("per-success", "Per-attempt versus per-success", t_per_success),
     ("fusion", "Fusion premium against the rerun band", t_fusion),
     ("exante", "Ex-ante visual-intent partition", t_exante),

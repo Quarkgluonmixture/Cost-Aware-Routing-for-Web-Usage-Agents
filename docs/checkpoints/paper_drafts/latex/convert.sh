@@ -92,12 +92,12 @@ case "$PAPER" in
     # deployment-class table, whose no-image column is a max over four arms while the
     # other two are single arms) and `latency-split` (the model is 22-67% of a measured step,
     # and removing the container changes the fastest mode in 4 of 8 cells).
-    EXPECTED_TABLES=32
+    EXPECTED_TABLES=34
     FIGURES=()
     # Every table single-column: widest is 11 columns, longest is 66 rows, and a table*
-    # float only reaches a page top — a queue of 32 of them in two-column mode does not
+    # float only reaches a page top — a queue of 34 of them in two-column mode does not
     # place at all. This is a working document, so page count is not managed here.
-    SINGLE_COL_BODY="$(seq 1 32 | tr '\n' ' ')"
+    SINGLE_COL_BODY="$(seq 1 34 | tr '\n' ' ')"
     # Every table here is wide (up to 11 columns) and long (up to 66 rows). Two-column mode
     # cannot hold them, so this draft is built single-column and page count is not managed —
     # it is a working document for choosing a claim, not a submission.
