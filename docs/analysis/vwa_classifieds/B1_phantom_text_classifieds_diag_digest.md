@@ -152,3 +152,55 @@ no-hit failed = **25** (coverage 87.9%); success-fire (FP源) = P5×2 P10×2 P14
 - **benchmark-FP / exclude**: 无新增 (P19 组 0 真 FP)。
 - **routing 证据**: task 17 visual-attribute-verification deadlock = 与 §320 task 40 (text-in-image rescue) 不同的第二类 routing-rescuable failure (属性确认型) → freeze 后 cross-mode 验"换 SoM/Vision 给视觉确认能否救活"。
 - **freeze step TODO**: 合并 B1 dom(§318)+som(§317)+vision(§320)+ptext 四 condition 规则提议 → 去重 (MUTATION_MISSING / WALK_FAIL / VISUAL_BLIND 收敛) → 落码 + bump version + 全量重扫 → 解锁 cross-mode 定量。**cross-mode 定量仍禁** (6-mode 未齐, 剩 psom 跑中 R26199)。
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933` |
+| Episodes | 224（success 17 · SR 7.59%） |
+| 三子集 | failed+hit 193 · failed-NO-hit 14 · success+hit 1 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P36` | WALK_FAIL_DEGENERATE | 1025 | 137 |
+| `P5` | 感知缺失循环 | 142 | 91 |
+| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 69 | 69 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 97 | 69 |
+| `P31` | budget耗尽未完成 | 61 | 61 |
+| `P17` | click-back振荡 | 52 | 52 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 143 | 45 |
+| `P4` | 根节点误操作 | 198 | 41 |
+| `P18` | cheapest漏价格排序 | 35 | 35 |
+| `P14` | URL 自环 | 33 | 30 |
+| `P20` | 评测目标页从未访问 | 20 | 20 |
+| `P25` | 跨站任务跳过其中一站 | 13 | 13 |
+| `P19` | url_match过早搜索页finish | 12 | 12 |
+| `P13` | 搜索代替浏览 | 11 | 11 |
+| `P7` | sCity=州名 | 12 | 11 |
+| `P10` | 跨步数值记忆失败 | 15 | 9 |
+| `P12` | 从不翻页 | 8 | 8 |
+| `P30` | 到达正确item后离开 | 7 | 7 |
+| `P33` | 导航至裸图片URL幻觉 | 6 | 6 |
+| `P2` | 容器节点误点 | 37 | 6 |
+| `P24` | 不确定仍finish | 4 | 4 |
+| `P37` | URL_HALLUCINATION | 4 | 4 |
+| `P22` | 图上数字dom不可读 | 2 | 2 |
+| `P23` | oldest误用价格排序 | 2 | 2 |
+| `P38` | DOM_URL_AS_IMAGE | 2 | 2 |
+| `P27` | 找不到即放弃 | 1 | 1 |
+| `P35` | MUTATION_MISSING | 1 | 1 |
+| `P46` | COMMENT_INTENT_NO_TYPE | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

@@ -77,7 +77,7 @@ from urllib.parse import urlparse
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "10-p49-p36p14-narrow"
+RULESET_VERSION = "11-intent-text-fallback"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -371,11 +371,43 @@ def _find_finish_step(steps: List[Dict]) -> Optional[Dict]:
 
 
 def _finish_answer(steps: List[Dict]) -> str:
+    """The text the agent actually SUBMITTED as its answer.
+
+    Deliberately does NOT fall back to `thought` — see `_finish_intent_text` for why
+    that distinction matters. Rules that compare answer *content* (P37/P38: does the
+    submitted answer contain example.com / localhost) and P46 (did the agent submit an
+    answer at all) must keep using this.
+    """
     s = _find_finish_step(steps)
     if not s:
         return ""
     a = s.get("action", {}) or {}
     return str(a.get("answer", "") or a.get("text", "") or "")
+
+
+def _finish_intent_text(steps: List[Dict]) -> str:
+    """Answer text, falling back to the finish step's `thought` when answer is empty.
+
+    v11 (2026-08-03 数据质量审计). Motivation: `P48` was proposed FROM B1 data yet fires
+    0 times on B1 and 15 times on B0. Root cause found during the audit — B0 (proxy 235B)
+    habitually restates its conclusion into `answer`, while B1 (local 4B) leaves `answer`
+    empty and keeps the reasoning in `thought`. A rule that detects a *stated belief*
+    ("there are no results") therefore became a model-behaviour detector rather than a
+    failure detector. 9 further B1 episodes already cleared P48's step gate and were
+    excluded on this alone.
+
+    ⚠️ Use ONLY for rules matching an INTENT/WORDING (P34 give-up phrasing, P48 negative
+    conclusion). Do NOT use for rules comparing submitted answer CONTENT (P37/P38) —
+    a model mentioning "example.com" while reasoning is not the same as submitting it —
+    nor for P46, whose whole point is that `answer` is absent.
+    """
+    a = _finish_answer(steps)
+    if a:
+        return a
+    s = _find_finish_step(steps)
+    if not s:
+        return ""
+    return str((s.get("action", {}) or {}).get("thought", "") or "")
 
 
 def _step_has_walk_fail(step: Dict) -> bool:
@@ -1465,7 +1497,7 @@ def check_p34(steps: List[Dict], summary: Dict, config: Dict, mode: str) -> List
     input_image = sum(int(((s.get("tokens") or {}).get("input_image")) or 0) for s in steps)
     if input_image != 0:
         return []
-    answer = _finish_answer(steps)
+    answer = _finish_intent_text(steps)   # v11: intent wording, thought fallback OK
     if not answer or not P34_GIVEUP_RE.search(answer):
         return []
     return [PatternHit(
@@ -2062,7 +2094,7 @@ def check_p48(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Lis
         return []
     if not any("/search?q=" in str(s.get("obs_url") or "") for s in steps):
         return []
-    answer = _finish_answer(steps)
+    answer = _finish_intent_text(steps)   # v11: intent wording, thought fallback OK
     if not answer or not _NEGATIVE_FINISH_RE.search(answer):
         return []
     finish = _find_finish_step(steps)

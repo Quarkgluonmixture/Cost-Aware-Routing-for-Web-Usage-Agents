@@ -77,3 +77,48 @@ v8 新规则 failed 侧: {'P45': 214, 'P44': 102}；success 侧: 无。
 
 - 无 scaffold-bug B-number · 无 benchmark-FP task 排除。
 - **B2 som cls = agent-limit 地板**；⚠️ presence-only 伪成功 (87/124) = B2 SR 含 runner-救活成分，paper SR 报告需注「B2 真实能力 < 名义 SR」(post-fire, B-1869 sibling)。
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B2_som_classifieds_20260611_210828_923656661_1218867_R3380` |
+| Episodes | 224（success 5 · SR 2.23%） |
+| 三子集 | failed+hit 215 · failed-NO-hit 4 · success+hit 1 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P36` | WALK_FAIL_DEGENERATE | 1657 | 167 |
+| `P5` | 感知缺失循环 | 244 | 153 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 214 | 132 |
+| `P31` | budget耗尽未完成 | 115 | 115 |
+| `P14` | URL 自环 | 121 | 98 |
+| `P12` | 从不翻页 | 79 | 79 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 102 | 39 |
+| `P4` | 根节点误操作 | 116 | 34 |
+| `P18` | cheapest漏价格排序 | 28 | 28 |
+| `P33` | 导航至裸图片URL幻觉 | 27 | 27 |
+| `P20` | 评测目标页从未访问 | 23 | 23 |
+| `P25` | 跨站任务跳过其中一站 | 12 | 12 |
+| `P2` | 容器节点误点 | 12 | 6 |
+| `P32` | 文本误入价格filter | 3 | 3 |
+| `P13` | 搜索代替浏览 | 2 | 2 |
+| `P22` | 图上数字dom不可读 | 2 | 2 |
+| `P10` | 跨步数值记忆失败 | 2 | 2 |
+| `P28` | benchmark-FP货币tokenize | 1 | 1 |
+| `P19` | url_match过早搜索页finish | 1 | 1 |
+| `P17` | click-back振荡 | 1 | 1 |
+| `P37` | URL_HALLUCINATION | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

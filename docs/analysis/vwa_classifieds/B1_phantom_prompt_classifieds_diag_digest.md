@@ -195,3 +195,55 @@ success-hit 审计 6/6 hit 全 presence-only (hit_causal=false), 但 **task 5 �
 - **routing 证据 (paper §4/§6)**: pprompt 三类 routing-rescuable 失败齐: text-in-image rescue (§320 t40) / attribute-verification deadlock (§321 t17) / **correct-item-rejected (本 run t111)**。+ HERO mode 论点: 视觉盲 image-dependent / walk_fail 退化引用 = 应 route AWAY → vision/SoM。
 - **🧊 FREEZE STEP TODO (pprompt = 第6/最后 mode, 6-mode 齐)**: 合并 **B1 cls 6 condition** (dom §318 / som §317 / vision §320 / ptext §321 / psom §322 / pprompt 本 run) 规则提议 → 去重 (WALK_FAIL ∪ click变体 / VISUAL_BLIND success-safe / DOM-URL 双 surface 分支 / MUTATION_MISSING / **P18 sOrder guard** / **DELETE_FALSE_SUCCESS** / P19 eval_type guard) → 落码 `diag_pattern_match.py` + **bump `RULESET_VERSION` → `6-*`** + `diag_autorun.sh` **全量重扫** 所有 condition 拉齐版本 → **解锁 cross-mode 定量** + **B1 cls = 第 2 完整 cell → k_cells=2 → §1 hero drop-one gate 出数** (现 INSUFFICIENT_DATA)。
 - ⚠️ **cross-mode / cross-model 定量比较仍禁直至 freeze** (discover-then-freeze 硬纪律 #1; 本 digest 的 P4 / walk_fail 跨 mode 对照仅 mechanism-level qualitative, 非定量 gate; 数字待 freeze 全量重扫拉齐 `ruleset_version` 后才可比)。
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516` |
+| Episodes | 224（success 15 · SR 6.70%） |
+| 三子集 | failed+hit 196 · failed-NO-hit 13 · success+hit 2 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P36` | WALK_FAIL_DEGENERATE | 795 | 131 |
+| `P5` | 感知缺失循环 | 155 | 100 |
+| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 69 | 69 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 88 | 65 |
+| `P17` | click-back振荡 | 59 | 59 |
+| `P31` | budget耗尽未完成 | 54 | 54 |
+| `P14` | URL 自环 | 45 | 44 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 134 | 33 |
+| `P18` | cheapest漏价格排序 | 28 | 28 |
+| `P12` | 从不翻页 | 18 | 18 |
+| `P20` | 评测目标页从未访问 | 16 | 16 |
+| `P7` | sCity=州名 | 16 | 14 |
+| `P19` | url_match过早搜索页finish | 11 | 11 |
+| `P25` | 跨站任务跳过其中一站 | 10 | 10 |
+| `P2` | 容器节点误点 | 26 | 9 |
+| `P30` | 到达正确item后离开 | 8 | 8 |
+| `P13` | 搜索代替浏览 | 7 | 7 |
+| `P10` | 跨步数值记忆失败 | 9 | 5 |
+| `P33` | 导航至裸图片URL幻觉 | 5 | 5 |
+| `P27` | 找不到即放弃 | 4 | 4 |
+| `P37` | URL_HALLUCINATION | 4 | 4 |
+| `P24` | 不确定仍finish | 2 | 2 |
+| `P22` | 图上数字dom不可读 | 2 | 2 |
+| `P23` | oldest误用价格排序 | 2 | 2 |
+| `P38` | DOM_URL_AS_IMAGE | 2 | 2 |
+| `P35` | MUTATION_MISSING | 2 | 2 |
+| `P46` | COMMENT_INTENT_NO_TYPE | 2 | 2 |
+| `P28` | benchmark-FP货币tokenize | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

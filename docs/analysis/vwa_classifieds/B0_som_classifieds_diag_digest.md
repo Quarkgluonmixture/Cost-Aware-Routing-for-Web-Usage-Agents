@@ -251,3 +251,51 @@ P10 carveout 提议 (modify existing rule, bump ruleset):
 - R21557 dom digest (B0 dom cls, **同步刷新**)
 - R9725 archived som digest (旧版本, supersedes by 本文件)
 - diag SKILL.md "跨 condition / cross-mode 工作协议" (discover-then-freeze 协议 + 通用 vs mode-specific 分层)
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B0_som_classifieds_20260526_041601_863239369_602235_R5313` |
+| Episodes | 224（success 61 · SR 27.23%） |
+| 三子集 | failed+hit 106 · failed-NO-hit 57 · success+hit 10 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P31` | budget耗尽未完成 | 29 | 29 |
+| `P17` | click-back振荡 | 26 | 26 |
+| `P36` | WALK_FAIL_DEGENERATE | 99 | 25 |
+| `P5` | 感知缺失循环 | 26 | 19 |
+| `P7` | sCity=州名 | 21 | 19 |
+| `P14` | URL 自环 | 17 | 15 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 19 | 15 |
+| `P20` | 评测目标页从未访问 | 13 | 13 |
+| `P18` | cheapest漏价格排序 | 11 | 11 |
+| `P25` | 跨站任务跳过其中一站 | 11 | 11 |
+| `P27` | 找不到即放弃 | 9 | 9 |
+| `P10` | 跨步数值记忆失败 | 9 | 9 |
+| `P23` | oldest误用价格排序 | 8 | 8 |
+| `P19` | url_match过早搜索页finish | 5 | 5 |
+| `P33` | 导航至裸图片URL幻觉 | 5 | 5 |
+| `P24` | 不确定仍finish | 5 | 5 |
+| `P12` | 从不翻页 | 4 | 4 |
+| `P28` | benchmark-FP货币tokenize | 3 | 3 |
+| `P37` | URL_HALLUCINATION | 3 | 3 |
+| `P4` | 根节点误操作 | 5 | 2 |
+| `P30` | 到达正确item后离开 | 1 | 1 |
+| `P2` | 容器节点误点 | 1 | 1 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 1 | 1 |
+| `P29` | benchmark-FP语义yes/no | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

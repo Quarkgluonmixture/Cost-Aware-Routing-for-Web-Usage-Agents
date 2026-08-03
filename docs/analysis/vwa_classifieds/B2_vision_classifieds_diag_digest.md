@@ -78,3 +78,45 @@ AND eval_context_mode='agent_page'  →  presence_only_rescued
 - 无 scaffold-bug · 无 benchmark-FP。
 - **B2 vision cls = agent-limit 地板** (P5 感知缺失 6-mode 最严重 = 纯像素无文本兜底)。
 - ⚠️ **presence-only 伪成功跨 som+vision 复现** = B2 url_match SR 系统性含 runner-救活成分 (paper 需注 + post-fire P-rule, B-1869 sibling)。
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B2_vision_classifieds_20260612_221910_098760264_1351451_R9288` |
+| Episodes | 224（success 5 · SR 2.23%） |
+| 三子集 | failed+hit 214 · failed-NO-hit 5 · success+hit 0 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P5` | 感知缺失循环 | 329 | 170 |
+| `P36` | WALK_FAIL_DEGENERATE | 824 | 144 |
+| `P31` | budget耗尽未完成 | 104 | 104 |
+| `P14` | URL 自环 | 118 | 97 |
+| `P18` | cheapest漏价格排序 | 32 | 32 |
+| `P20` | 评测目标页从未访问 | 25 | 25 |
+| `P12` | 从不翻页 | 13 | 13 |
+| `P25` | 跨站任务跳过其中一站 | 13 | 13 |
+| `P17` | click-back振荡 | 7 | 7 |
+| `P19` | url_match过早搜索页finish | 4 | 4 |
+| `P10` | 跨步数值记忆失败 | 2 | 2 |
+| `P13` | 搜索代替浏览 | 2 | 2 |
+| `P22` | 图上数字dom不可读 | 2 | 2 |
+| `P33` | 导航至裸图片URL幻觉 | 2 | 2 |
+| `P27` | 找不到即放弃 | 1 | 1 |
+| `P24` | 不确定仍finish | 1 | 1 |
+| `P30` | 到达正确item后离开 | 1 | 1 |
+| `P1` | 元素中心越界 | 4 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

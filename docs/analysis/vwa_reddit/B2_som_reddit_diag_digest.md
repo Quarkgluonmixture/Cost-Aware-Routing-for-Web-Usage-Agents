@@ -102,3 +102,41 @@ task 58/160 已 protocol-excluded，**170/171/178/188/189/190 仍在 scored univ
 （P19 补 `/search?q=` —— 它此前对整个 reddit 站失明）· CONJUNCTIVE_EVAL_PARTIAL ·
 SUBMIT_INTENT_NEVER_REACHED_FORM · SELF_ACCOUNT_ONLY。
 **SUCCESSFUL_NOOP_REPEAT 明确不落地**（success-FP 16.8%，反例 B2·som task 130）。
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B2_som_reddit_20260717` |
+| Episodes | 205（success 3 · SR 1.46%） |
+| 三子集 | failed+hit 197 · failed-NO-hit 5 · success+hit 1 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P31` | budget耗尽未完成 | 169 | 169 |
+| `P36` | WALK_FAIL_DEGENERATE | 1194 | 127 |
+| `P5` | 感知缺失循环 | 205 | 112 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 189 | 106 |
+| `P14` | URL 自环 | 87 | 69 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 401 | 58 |
+| `P12` | 从不翻页 | 50 | 50 |
+| `P25` | 跨站任务跳过其中一站 | 35 | 35 |
+| `P33` | 导航至裸图片URL幻觉 | 33 | 33 |
+| `P4` | 根节点误操作 | 115 | 29 |
+| `P46` | COMMENT_INTENT_NO_TYPE | 8 | 8 |
+| `P10` | 跨步数值记忆失败 | 6 | 6 |
+| `P13` | 搜索代替浏览 | 2 | 2 |
+| `P49` | SUBMIT_PAGE_ANCHOR_MISCLICK | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

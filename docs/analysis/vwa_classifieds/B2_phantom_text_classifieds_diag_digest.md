@@ -76,3 +76,49 @@ v8 新规则 failed 侧: {'P44': 334, 'P45': 209, 'P43': 71}；success 侧: 无�
 - 无 fatal scaffold-bug；**telemetry gap**: `effective_mutating_action_count` 漏计 GET-based 删除 (post-fire 候选，cross-ref B-1869 测量隐患族)。
 - **B2 phantom_text cls = 0.4% 最低地板**；⚠️ **唯一 success 是 presence-only** → 名义 SR 虚高，真实 SR ≈ 0。
 - **presence-only 伪成功跨 som+vision+phantom_text 三 mode 系统性** = B2 url_match/mutation success 普遍含「runner 救活」。
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219` |
+| Episodes | 224（success 1 · SR 0.45%） |
+| 三子集 | failed+hit 218 · failed-NO-hit 5 · success+hit 0 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P36` | WALK_FAIL_DEGENERATE | 1521 | 178 |
+| `P31` | budget耗尽未完成 | 143 | 143 |
+| `P5` | 感知缺失循环 | 237 | 123 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 209 | 109 |
+| `P14` | URL 自环 | 96 | 80 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 334 | 75 |
+| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 71 | 71 |
+| `P33` | 导航至裸图片URL幻觉 | 66 | 66 |
+| `P4` | 根节点误操作 | 153 | 55 |
+| `P12` | 从不翻页 | 52 | 52 |
+| `P18` | cheapest漏价格排序 | 26 | 26 |
+| `P20` | 评测目标页从未访问 | 25 | 25 |
+| `P25` | 跨站任务跳过其中一站 | 13 | 13 |
+| `P2` | 容器节点误点 | 6 | 5 |
+| `P30` | 到达正确item后离开 | 5 | 5 |
+| `P17` | click-back振荡 | 5 | 5 |
+| `P10` | 跨步数值记忆失败 | 11 | 3 |
+| `P22` | 图上数字dom不可读 | 2 | 2 |
+| `P11` | 最新+地点组合 | 1 | 1 |
+| `P38` | DOM_URL_AS_IMAGE | 1 | 1 |
+| `P19` | url_match过早搜索页finish | 1 | 1 |
+| `P13` | 搜索代替浏览 | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

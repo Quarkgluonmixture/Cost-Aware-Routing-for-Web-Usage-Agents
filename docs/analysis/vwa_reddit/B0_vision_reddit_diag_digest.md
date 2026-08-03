@@ -104,3 +104,36 @@ effective_mutating_action_count==0`) · P5 加 dead-end-URL 子信号分级 (§4
 - [ ] scored_task_count 是否豁免 103/104 = estimand 决策, defer advisor (B-1885 §处置; 现状 205 分母不动)
 - [ ] v8 freeze 时: per-rule 折扣 per-mode 标定 (§4 catch) + R-vis-* 落码
 - [ ] B0 red 剩余 psom (在跑) / pprompt land 后各自 /diag → reddit B0 4 digest 齐
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B0_vision_reddit_20260628_094255_184327569_3222015_R17559` |
+| Episodes | 205（success 16 · SR 7.80%） |
+| 三子集 | failed+hit 158 · failed-NO-hit 31 · success+hit 4 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P31` | budget耗尽未完成 | 134 | 134 |
+| `P5` | 感知缺失循环 | 203 | 107 |
+| `P14` | URL 自环 | 121 | 81 |
+| `P33` | 导航至裸图片URL幻觉 | 59 | 59 |
+| `P25` | 跨站任务跳过其中一站 | 37 | 37 |
+| `P12` | 从不翻页 | 28 | 28 |
+| `P36` | WALK_FAIL_DEGENERATE | 23 | 13 |
+| `P46` | COMMENT_INTENT_NO_TYPE | 4 | 4 |
+| `P27` | 找不到即放弃 | 4 | 4 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

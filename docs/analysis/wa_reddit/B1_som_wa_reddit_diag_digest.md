@@ -111,3 +111,39 @@
 ## 5. 可 actionable 项
 
 见 [[_cell_cross_mode_findings]] §8（A1–A9）。本 mode 无独有的 actionable 项。
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B1_som_wa_reddit_20260728_090436_011011933_2760426_R301` |
+| Episodes | 104（success 14 · SR 13.46%） |
+| 三子集 | failed+hit 81 · failed-NO-hit 9 · success+hit 1 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P31` | budget耗尽未完成 | 66 | 66 |
+| `P5` | 感知缺失循环 | 60 | 45 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 53 | 42 |
+| `P36` | WALK_FAIL_DEGENERATE | 280 | 30 |
+| `P12` | 从不翻页 | 27 | 27 |
+| `P14` | URL 自环 | 32 | 25 |
+| `P49` | SUBMIT_PAGE_ANCHOR_MISCLICK | 9 | 9 |
+| `P4` | 根节点误操作 | 26 | 6 |
+| `P48` | PREMATURE_NEGATIVE_AFTER_SEARCH | 5 | 5 |
+| `P33` | 导航至裸图片URL幻觉 | 3 | 3 |
+| `P47` | PREMATURE_FINISH_ON_FORM | 3 | 3 |
+| `P10` | 跨步数值记忆失败 | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。

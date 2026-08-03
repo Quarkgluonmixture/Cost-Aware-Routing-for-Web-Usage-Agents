@@ -85,3 +85,42 @@
 ---
 
 **Cross-link**: 笔记 §387.6 / §387.7 · master_bug_catalog B-1889 (task 160 passive-FP) / B-1890 (footprint 字段恒 0，勿用作判据) · `/tmp/diag_red/` Tier-1 原始扫描产物
+
+---
+
+### v11 数字块（`11-intent-text-fallback`，2026-08-03 补）
+
+> 本 digest 正文成稿于更早的 ruleset。v10 落了 **+P49 / P36 carve-out / P14 carve-out**，
+> v11 给 **P34/P48 换用 `_finish_intent_text()`**（answer 为空时 fallback 读 `thought`——
+> B0 惯于把结论写进 `answer`，B1 留在 `thought`，旧口径因此变成了模型行为检测器）。
+> 全部 48 个 canonical condition 已在 v11 下重扫，**cross-mode / cross-model 聚合以本块为准**。
+
+| 字段 | 值 |
+|---|---|
+| Run | `B1_som_reddit_20260706` |
+| Episodes | 205（success 17 · SR 8.29%） |
+| 三子集 | failed+hit 169 · failed-NO-hit 19 · success+hit 6 |
+| config_missing | 0 |
+
+| 规则 | 含义 | step 级 | episode 级 |
+|---|---|---:|---:|
+| `P31` | budget耗尽未完成 | 126 | 126 |
+| `P5` | 感知缺失循环 | 113 | 77 |
+| `P36` | WALK_FAIL_DEGENERATE | 676 | 74 |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 85 | 58 |
+| `P14` | URL 自环 | 58 | 47 |
+| `P25` | 跨站任务跳过其中一站 | 38 | 38 |
+| `P33` | 导航至裸图片URL幻觉 | 33 | 33 |
+| `P12` | 从不翻页 | 26 | 26 |
+| `P4` | 根节点误操作 | 106 | 22 |
+| `P48` | PREMATURE_NEGATIVE_AFTER_SEARCH | 7 | 7 |
+| `P46` | COMMENT_INTENT_NO_TYPE | 6 | 6 |
+| `P44` | HALLUCINATED_ELEMENT_REF | 16 | 5 |
+| `P27` | 找不到即放弃 | 5 | 5 |
+| `P10` | 跨步数值记忆失败 | 2 | 2 |
+| `P49` | SUBMIT_PAGE_ANCHOR_MISCLICK | 1 | 1 |
+
+> ⚠️ **解读约束**（`docs/analysis/_data_quality_audit.md`）：
+> ① 本表是**症状分布，不是死因分布** —— P36/P31 经 10 例跨 benchmark 因果验证均判为 risk-marker；
+> ② `P2`/`P4` 依赖 `element_bbox`，在 **vision 上结构性为 0（假 0）**；
+> ③ `P36` 在 vision 上只覆盖 `type` 步（click 无 `locator_route_meta`）→ **分母与 dom/som 不同**。
