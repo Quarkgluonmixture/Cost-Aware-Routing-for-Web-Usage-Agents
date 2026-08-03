@@ -96,18 +96,20 @@ def load_vwa() -> dict[str, dict[int, dict[str, int]]]:
     return cells
 
 
-def load_wa() -> dict[int, dict[str, int]]:
-    pats = {"dom": "B1_dom_wa_reddit_20260727_180024*", "som": "B1_som_wa_reddit_20260728_090436*",
-            "vision": "B1_vision_wa_reddit_20260729_002545*",
-            "ptext": "B1_phantom_text_wa_reddit_20260729_154551*",
-            "pprompt": "B1_phantom_prompt_wa_reddit_20260730_073250*",
-            "psom": "B1_phantom_som_wa_reddit_20260730_231304*"}
+WA_MODE_STEM = {"dom": "dom", "som": "som", "vision": "vision",
+                "ptext": "phantom_text", "pprompt": "phantom_prompt", "psom": "phantom_som"}
+
+
+def load_wa(baseline: str = "B1") -> dict[int, dict[str, int]]:
+    """<baseline> x WebArena-reddit. B0 landed 2026-08-03, so the run dirs are no longer
+    a fixed set of timestamps — glob on the run-id suffix and reject ABORTED skeletons."""
+    pats = {m: f"{baseline}_{stem}_wa_reddit_2026*_R*" for m, stem in WA_MODE_STEM.items()}
     per: dict[str, dict[int, int]] = {}
     for m, pat in pats.items():
         hits = [Path(p) for p in glob.glob(str(REPO / "results/webarena/phase1" / pat))
-                if os.path.isdir(p)]
+                if os.path.isdir(p) and "ABORTED" not in p]
         if len(hits) != 1:
-            raise MissingInput(f"WA {m}: expected 1 run dir for {pat!r}, got {len(hits)}")
+            raise MissingInput(f"WA[{baseline}] {m}: expected 1 run dir for {pat!r}, got {len(hits)}")
         d = {}
         for f in (list(hits[0].glob("*/episodes/*summary*.json"))
                   or list(hits[0].glob("episodes/*summary*.json"))):
@@ -234,7 +236,11 @@ def cochran_q(effects: list[dict]) -> dict:
 
 def build() -> dict:
     cells = load_vwa()
-    cells["wa_red_B1"] = load_wa()
+    # Both WA backbones. They share the site cluster in the pooled resample because they
+    # are scored on the same 104-task universe — not independent draws (same reason the
+    # three VWA backbones share their site's cluster).
+    cells["wa_red_B1"] = load_wa("B1")
+    cells["wa_red_B0"] = load_wa("B0")
     out = {"schema": "2026-08-02-fusion-premium-v1", "post_hoc_exploratory": True,
            "n_boot": N_BOOT, "seed": SEED, "floor_mean_pp": FLOOR_MEAN_PP,
            "fused": FUSED, "comparators": COMPARATORS, "cells": {}, "pooled": {}}
@@ -308,8 +314,34 @@ def render(d: dict) -> str:
         L.append(f"| SoM − {c} | [{p['ci'][0]:+.2f}, {p['ci'][1]:+.2f}] | "
                  f"**[{cl['ci'][0]:+.2f}, {cl['ci'][1]:+.2f}]** | "
                  f"{p['se']:.3f} → {cl['se']:.3f} |")
-    L += ["", "The one interval that excluded zero (SoM − Vision) no longer does. "
-          "(codex Mode B, §H stress 2026-08-02; its predicted clustered SE of 0.741 matched.)",
+    # This verdict was hardcoded prose until 2026-08-03 ("the one interval that
+    # excluded zero no longer does"). It was true of the six-cell pool, and it kept
+    # printing itself unchanged after the seventh and eighth cells reversed it —
+    # while the data-driven table three lines up said the opposite. Derive it.
+    flipped, kept = [], []
+    for c in d["comparators"]:
+        p = d["pooled"][c]
+        cl = p.get("clustered")
+        if not cl:
+            continue
+        if p["ci"][0] > 0 and cl["ci"][0] <= 0:
+            flipped.append(c)
+        elif cl["ci"][0] > 0:
+            kept.append((c, cl["ci"][0]))
+    if flipped:
+        L += ["", "Clustering removes the zero-exclusion for "
+              + ", ".join(f"`SoM − {c}`" for c in flipped) + "."]
+    elif kept:
+        L += ["", "Clustering widens every interval without changing a verdict: "
+              + ", ".join(f"`SoM − {c}` still excludes zero (lower bound {b:+.2f}pp)"
+                          for c, b in kept)
+              + f". ⚠️ Read that against the band, not against zero: a lower bound of "
+                f"{min(b for _, b in kept):+.2f}pp sits below the rerun band's floor of "
+                f"{lo}pp, so excluding zero here is **not** a premium claim — the "
+                "`clears the rerun band?` column above is the one that answers the question."]
+    else:
+        L += ["", "No comparator's clustered interval excludes zero."]
+    L += ["(codex Mode B, §H stress 2026-08-02; its predicted clustered SE of 0.741 matched.)",
           "",
           "⚠️ **And a fixed-effect pool is the wrong estimand here regardless.** Cochran's Q "
           "rejects a common effect for both comparators:", "",

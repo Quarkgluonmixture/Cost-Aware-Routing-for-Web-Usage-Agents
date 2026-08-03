@@ -302,9 +302,10 @@ def render(d: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--with-wa", action="store_true",
-                    help="read the seven-cell profile and write to *_with_wa.*. WA has no "
-                         "AMENDMENT_08 and its cost is electricity-derived like B1/B2, so it is "
-                         "within-cell comparable and cross-cell it is not, same as everywhere")
+                    help="read the WA-inclusive profile (6 VWA + every WA cell) and write to "
+                         "*_with_wa.*. WA has no AMENDMENT_08; B1xWA cost is electricity-derived "
+                         "like the other local cells while B0xWA is API-billed, so within-cell "
+                         "comparison holds and cross-cell does not, same as everywhere")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,
@@ -312,7 +313,14 @@ def main() -> int:
     src, n, om, oj = SRC, 6, OUT_MD, OUT_JSON
     if a.with_wa:
         src = SRC.with_name(SRC.stem + "_with_wa" + SRC.suffix)
-        n = 7
+        # Expected cell count is read from the profile's own JSON rather than written as a
+        # literal here: WA went from one cell to two on 2026-08-03 (B0xWA landed), and a
+        # hardcoded 7 would have failed loudly — which it did. The check still fails loud,
+        # it just compares the Markdown against its own producer instead of against a guess.
+        pj = src.with_suffix(".json")
+        if not pj.is_file():
+            raise MissingInput(f"profile JSON absent: {pj}")
+        n = len(json.loads(pj.read_text())["cells"])
         om = OUT_MD.with_name(OUT_MD.stem + "_with_wa" + OUT_MD.suffix)
         oj = OUT_JSON.with_name(OUT_JSON.stem + "_with_wa" + OUT_JSON.suffix)
     d = build(src, n)

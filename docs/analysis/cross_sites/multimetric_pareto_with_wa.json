@@ -263,6 +263,43 @@
         "n_permutations": 720,
         "observed_widen": true
       }
+    },
+    "B0_wa_reddit": {
+      "spans": {
+        "cost": 1.2096667109281636,
+        "latency": 1.2875381097560978
+      },
+      "cheapest": "DOM",
+      "fastest": "P-prompt",
+      "cheapest_is_fastest": false,
+      "frontiers": {
+        "success x cost": [
+          "DOM",
+          "P-text"
+        ],
+        "+ latency": [
+          "DOM",
+          "P-text",
+          "P-prompt"
+        ],
+        "+ tokens (not independent)": [
+          "DOM",
+          "P-text",
+          "P-prompt"
+        ]
+      },
+      "independence": {
+        "spearman_rho_cost_latency": 0.2571428571428571,
+        "exact_p_one_sided": 0.32916666666666666,
+        "spearman_rho_cost_latency_canonical": 0.2571428571428571,
+        "canonical_equals_raw": false,
+        "n_modes": 6
+      },
+      "frontier_null": {
+        "p_widen_under_null": 0.75,
+        "n_permutations": 720,
+        "observed_widen": true
+      }
     }
   }
 }

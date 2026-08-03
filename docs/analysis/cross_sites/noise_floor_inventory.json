@@ -249,6 +249,16 @@
       "gain_1_best_distinct_arm_pp": 4.807692307692308,
       "gain_1_best_distinct_arm_mode": "ptext",
       "gain_1_second_arm_pp": 4.807692307692308
+    },
+    "wa_red_B0": {
+      "n": 104,
+      "best_mode": "ptext",
+      "best_single_sr_pct": 35.57692307692308,
+      "oracle_6mode_sr_pct": 51.92307692307693,
+      "gain_5_arms_added_pp": 16.34615384615385,
+      "gain_1_best_distinct_arm_pp": 5.769230769230769,
+      "gain_1_best_distinct_arm_mode": "dom",
+      "gain_1_second_arm_pp": 5.769230769230769
     }
   },
   "head_to_head": [
@@ -265,6 +275,13 @@
       "2.00 – 4.00pp",
       2.0,
       4.0
+    ],
+    [
+      "wa_red_B0",
+      "B0 · WA-red (n=104; no pilot → no floor)",
+      "—",
+      null,
+      null
     ],
     [
       "cls_B1",

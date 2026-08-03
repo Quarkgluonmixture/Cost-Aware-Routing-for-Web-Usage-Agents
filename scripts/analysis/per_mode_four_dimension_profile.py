@@ -201,7 +201,7 @@ ARCH_DOWNSTREAM: dict[str, str] = {
 # the two registries above means "nobody has adjudicated this", not "verified clean".
 # Saying so explicitly stops an unflagged row from reading as an endorsed finding.
 UNADJUDICATED: dict[str, str] = {
-    "url_revisit_rate": "Vision is the extreme in 6/6, the only unflagged unanimous row "
+    "url_revisit_rate": "Vision is the extreme in every cell, the only unflagged unanimous row "
                         "in the grid. A plausible architectural story exists (a channel "
                         "that cannot enumerate off-screen targets navigates more "
                         "exploratorily and so returns to pages it has seen), and it has "
@@ -233,22 +233,30 @@ UNADJUDICATED: dict[str, str] = {
 # §407.25). If this builder raises on a missing steps dir, re-pull rather than concluding the
 # layer is impossible.
 WA_ROOT = REPO / "results/webarena/phase1"
-WA_GLOBS = {
-    "DOM": "B1_dom_wa_reddit_2026*_R*", "SoM": "B1_som_wa_reddit_2026*_R*",
-    "Vision": "B1_vision_wa_reddit_2026*_R*", "P-text": "B1_phantom_text_wa_reddit_2026*_R*",
-    "P-prompt": "B1_phantom_prompt_wa_reddit_2026*_R*",
-    "P-SoM": "B1_phantom_som_wa_reddit_2026*_R*",
+# Parameterised on backbone 2026-08-03: B0 x WA landed 07:23 that morning, three days
+# before the estimate in HANDOFF_frame_rethink §1 ("no new data before the deadline").
+# WA is no longer a single cell, so the glob templates carry a {b} slot rather than a
+# hardcoded B1. Both WA cells are appended under --with-wa; the consistency denominator
+# is computed from len(cells), so it follows automatically (/6 → /8).
+WA_GLOB_TMPL = {
+    "DOM": "{b}_dom_wa_reddit_2026*_R*", "SoM": "{b}_som_wa_reddit_2026*_R*",
+    "Vision": "{b}_vision_wa_reddit_2026*_R*", "P-text": "{b}_phantom_text_wa_reddit_2026*_R*",
+    "P-prompt": "{b}_phantom_prompt_wa_reddit_2026*_R*",
+    "P-SoM": "{b}_phantom_som_wa_reddit_2026*_R*",
 }
+WA_BASELINES = ("B1", "B0")
 
 
-def wa_spec() -> dict:
-    """B1 x WebArena-reddit as a profile cell. Raises rather than degrading silently."""
+def wa_spec(baseline: str = "B1") -> dict:
+    """<baseline> x WebArena-reddit as a profile cell. Raises rather than degrading silently."""
     import glob as _glob
     modes: dict[str, Path] = {}
-    for disp, pat in WA_GLOBS.items():
-        hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat)) if Path(d).is_dir())
+    for disp, tmpl in WA_GLOB_TMPL.items():
+        pat = tmpl.format(b=baseline)
+        hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat))
+                      if Path(d).is_dir() and "ABORTED" not in d)
         if not hits:
-            raise SystemExit(f"wa_spec: no run dir for {disp} ({pat})")
+            raise SystemExit(f"wa_spec[{baseline}]: no run dir for {disp} ({pat})")
         ep = next(Path(hits[-1]).glob("*/episodes"), None)
         if ep is None or not ep.is_dir():
             raise SystemExit(f"wa_spec: no episodes dir under {hits[-1]}")
@@ -259,8 +267,8 @@ def wa_spec() -> dict:
                for f in ep.glob("reddit_task_*_summary_v2.json")}
         universe = ids if universe is None else (universe & ids)
     if not universe:
-        raise SystemExit("wa_spec: empty task intersection across the six modes")
-    return {"baseline": "B1", "site": "wa_reddit", "n_expected": len(universe),
+        raise SystemExit(f"wa_spec[{baseline}]: empty task intersection across the six modes")
+    return {"baseline": baseline, "site": "wa_reddit", "n_expected": len(universe),
             "modes": modes, "universe": universe,
             "steps_glob": "reddit_task_*_steps_v2.jsonl"}
 
@@ -663,7 +671,7 @@ def render(payload: dict) -> str:
              "the design. Neither may be cited as a behavioural finding. "
              "`tie` counts cells where two or more modes share the extreme — those "
              "cells contribute a fractional count, so ordering can never manufacture "
-             "a 6/6.")
+             "a unanimous row.")
     L.append("")
     L.append("| dim | metric | highest | in | lowest | in | tie | top÷2nd (min–max) | unanimous |")
     L.append("|---|---|---|---|---|---|---|---|---|")
@@ -672,11 +680,15 @@ def render(payload: dict) -> str:
         if r["top_vs_second_ratio_min"] is not None:
             ratio = (f"{r['top_vs_second_ratio_min']:.2f}–"
                      f"{r['top_vs_second_ratio_max']:.2f}×")
+        # The denominator is derived, not literal: this said "6/6" until 2026-08-03 and kept
+        # saying it after the seventh and eighth cells landed, contradicting the count column
+        # two cells to its left in the same row. Anything a reader compares must move together.
         mark = ""
+        n = r["n_cells"]
         if r["unanimous_high"]:
-            mark = f"**high: {r['highest_mode']} 6/6**"
+            mark = f"**high: {r['highest_mode']} {n}/{n}**"
         elif r["unanimous_low"]:
-            mark = f"**low: {r['lowest_mode']} 6/6**"
+            mark = f"**low: {r['lowest_mode']} {n}/{n}**"
         if mark and r.get("by_construction"):
             mark = "⚙️ " + mark + " (by construction)"
         elif mark and r.get("arch_downstream"):
@@ -706,6 +718,17 @@ def render(payload: dict) -> str:
         L.append("")
         for k, r in bc.items():
             L.append(f"- `{r['label']}` — {r['by_construction']}.")
+        L.append("")
+    # The three registries below are hand-written adjudications, recorded when the grid had six
+    # cells. Their embedded "n/6" counts are frozen prose, unlike every table in this document,
+    # which is derived. Say so once rather than letting a reader compare a stale count against a
+    # live one two lines away — that mismatch was a real defect elsewhere (2026-08-03).
+    n_cells_now = next(iter(payload["consistency"].values()))["n_cells"]
+    if n_cells_now != 6:
+        L.append(f"⚠️ **The `n/6` counts inside the adjudications above and below are frozen "
+                 f"prose from the six-cell grid; this run has {n_cells_now} cells.** They record "
+                 "*why a metric was flagged*, not a current tally — the tables in this document "
+                 "are the live counts. The flags themselves were not re-adjudicated.")
         L.append("")
     if UNADJUDICATED:
         L.append("Metrics added 2026-08-02 and **not yet adjudicated** either way. Absence "
@@ -763,7 +786,8 @@ def reading(cells: list[dict], cons: dict) -> list[str]:
         if r["unanimous_high"] and r["top_vs_second_ratio_min"] is not None:
             ratio = (f", {r['top_vs_second_ratio_min']:.1f}–"
                      f"{r['top_vs_second_ratio_max']:.1f}× the next mode")
-        return f"   - `{r['label']}` ({r['dimension']}): **{mode}** {side} in 6/6{ratio}"
+        n = r["n_cells"]
+        return f"   - `{r['label']}` ({r['dimension']}): **{mode}** {side} in {n}/{n}{ratio}"
 
     out.append(
         f"1. **{len(unan)} of {len(cons)} metrics have a unanimous extreme mode — "
@@ -812,9 +836,10 @@ def main() -> int:
     ap.add_argument("--audit-json", type=Path,
                     default=REPO / "docs/analysis/cross_sites/steps_summary_identity_audit.json")
     ap.add_argument("--with-wa", action="store_true",
-                    help="append B1 x WebArena-reddit as a seventh cell. Writes to *_with_wa.* "
-                         "so the six-cell grid the paper cites is never overwritten: adding a "
-                         "cell changes every consistency denominator from /6 to /7")
+                    help="append every WebArena-reddit cell (B1, then B0 — landed 2026-08-03) "
+                         "after the six VWA cells. Writes to *_with_wa.* so the six-cell grid "
+                         "the paper cites is never overwritten: adding cells changes every "
+                         "consistency denominator from /6 to /8")
     a = ap.parse_args()
     if a.with_wa:
         a.out = a.out.with_name(a.out.stem + "_with_wa" + a.out.suffix)
@@ -822,7 +847,8 @@ def main() -> int:
 
     cells = [profile_cell(spec) for spec in CELLS]
     if a.with_wa:
-        cells.append(profile_cell(wa_spec()))
+        for wb in WA_BASELINES:
+            cells.append(profile_cell(wa_spec(wb)))
     cons = rank_consistency(cells)
     exclusions = {c["cell_id"]: c["steps_excluded_tasks"]
                   for c in cells if c["steps_excluded_tasks"]}

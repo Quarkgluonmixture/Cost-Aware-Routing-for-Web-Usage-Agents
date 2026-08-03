@@ -49,6 +49,71 @@ TASK_CONFIGS = {
 }
 
 # ---------------------------------------------------------------------------
+# WebArena (opt-in via --with-wa). Wired 2026-08-03.
+# ---------------------------------------------------------------------------
+# WA differs from VWA in three ways that all have to be handled here rather than
+# generically: it has no aggregated `test_<site>.json` (each run mirrors the configs it
+# ran into its own `task_configs/`), it is absent from the run registry (so episode dirs
+# are globbed), and it has no AMENDMENT_08 list (the universe is the six-mode task
+# intersection). Outputs go to `*_with_wa.*` so the six-cell artifacts stay byte-identical
+# — appending a cell rewrites every consistency denominator and is not a superset.
+#
+# `B2 x wa_reddit` can never be filled: B2 never ran WebArena. It is skipped, not warned
+# about, because a warning implies something recoverable.
+WA_ROOT = ROOT / "results/webarena/phase1"
+WA_SITE = "wa_reddit"
+WA_BASELINES = ["B0", "B1"]
+WA_MODE_STEM = {"DOM": "dom", "SoM": "som", "Vision": "vision",
+                "Phantom-SoM": "phantom_som", "P-text": "phantom_text",
+                "Phantom-prompt": "phantom_prompt"}
+MACRO_JSON_WA = ROOT / "docs/analysis/cross_sites/axis_effect_size_with_wa.json"
+OUT_JSON_WA = ROOT / "docs/analysis/cross_sites/axis1_microbehavior_with_wa.json"
+OUT_MD_WA = ROOT / "docs/analysis/cross_sites/axis1_microbehavior_report_with_wa.md"
+
+
+def _wa_run_dir(baseline: str, mode_key: str) -> Path | None:
+    import glob as _glob
+    pat = f"{baseline}_{WA_MODE_STEM[mode_key]}_wa_reddit_2026*_R*"
+    hits = [Path(p) for p in _glob.glob(str(WA_ROOT / pat))
+            if Path(p).is_dir() and "ABORTED" not in p]
+    return hits[0] if len(hits) == 1 else None
+
+
+def _wa_episodes_dir(baseline: str, mode_key: str) -> Path | None:
+    d = _wa_run_dir(baseline, mode_key)
+    if d is None:
+        return None
+    for cand in sorted(d.glob("*/episodes")):
+        return cand
+    ep = d / "episodes"
+    return ep if ep.is_dir() else None
+
+
+def load_wa_task_configs(baseline: str = "B0") -> dict[int, dict[str, Any]]:
+    """Same shape as `load_task_configs`, rebuilt from a run's mirrored configs."""
+    d = _wa_run_dir(baseline, "DOM")
+    if d is None:
+        return {}
+    cfg_dir = d / "task_configs"
+    if not cfg_dir.is_dir():
+        return {}
+    configs: dict[int, dict[str, Any]] = {}
+    for p in sorted(cfg_dir.glob("reddit_task_*.json")):
+        try:
+            row = json.loads(p.read_text())
+        except Exception:
+            continue
+        eval_block = row.get("eval") or {}
+        target = eval_block.get("reference_url")
+        if not target:
+            target = first_non_empty_url(eval_block.get("program_html") or [])
+        configs[int(row["task_id"])] = {
+            "intent": row.get("intent", ""),
+            "target_url": target.strip() if isinstance(target, str) and target.strip() else None,
+        }
+    return configs
+
+# ---------------------------------------------------------------------------
 # Registry-driven STEP_DIRS construction (A-fix: replaces hardcoded run_ids)
 # ---------------------------------------------------------------------------
 # Maps registry PAPER_MODES → axis-script mode key names.  This file uses the
@@ -128,6 +193,33 @@ def _build_step_dirs() -> dict[str, dict[str, dict[str, Path | None]]]:
 STEP_DIRS: dict[str, dict[str, dict[str, Path | None]]] = _build_step_dirs()
 BASELINES = ["B0", "B1", "B2"]
 SITES_LIST = ["reddit", "classifieds"]
+
+# --with-wa injects the WA cell into the same structures the six-cell path uses, so every
+# downstream function is untouched. Set by main(); module state rather than a parameter
+# because STEP_DIRS/EXPECTED_N are read at module scope by several helpers.
+WITH_WA = False
+
+
+def _enable_wa() -> None:
+    """Add wa_reddit to STEP_DIRS / SITES_LIST / EXPECTED_N. Idempotent."""
+    global WITH_WA
+    if WITH_WA:
+        return
+    any_cell = False
+    for b in WA_BASELINES:
+        dirs = {k: _wa_episodes_dir(b, k) for k in _REGISTRY_MODE_TO_AXIS_KEY.values()}
+        if not any(v is not None for v in dirs.values()):
+            continue
+        STEP_DIRS.setdefault(b, {})[WA_SITE] = dirs
+        any_cell = True
+    if not any_cell:
+        print("[axis1_microbehavior] --with-wa: no WA run dirs found; staying six-cell",
+              file=sys.stderr)
+        return
+    if WA_SITE not in SITES_LIST:
+        SITES_LIST.append(WA_SITE)
+    EXPECTED_N[WA_SITE] = len(load_wa_task_configs("B0") or load_wa_task_configs("B1"))
+    WITH_WA = True
 SKIPPED_TASK_INPUTS: list[str] = []
 
 MODE_LABELS = {
@@ -163,6 +255,8 @@ from p79.experiment.analysis import paper_scored_task_count as _paper_scored_tas
 # AMENDMENT_08: per-task contrasts run over the SCORED universe (red 203), so the
 # n-check must compare against the scoring denominator or it fails on every cell.
 EXPECTED_N = {_s: _paper_scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
+# WA has no AMENDMENT_08 list, so its expected n is the six-mode intersection and is only
+# knowable after the configs are read; --with-wa fills it in _enable_wa().
 REPORT_CASE_REDDIT = [23, 30, 4]
 
 
@@ -306,7 +400,12 @@ def per_task_mode_metrics(baseline: str, site: str, mode: str, task_configs: dic
     out: dict[int, dict[str, Any]] = {}
     if ep_dir is None or not ep_dir.exists():
         return out
-    for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
+    # WA episode files are named for the underlying site (`reddit_task_N`), not for the
+    # cell key we use here (`wa_reddit`) — the benchmark prefix lives in the run dir, not
+    # in the filename. Without this the glob silently matches nothing and the cell reads
+    # as "missing mode" rather than as a path bug.
+    file_stem = "reddit" if site == WA_SITE else site
+    for path in sorted(ep_dir.glob(f"{file_stem}_task_*_steps_v2.jsonl")):
         task_id = task_id_from_path(path)
         try:
             steps = read_steps(path)
@@ -450,9 +549,11 @@ def contrast_metrics(left: dict[int, dict[str, Any]], right: dict[int, dict[str,
 
 
 def macro_axis1_effects(baseline: str, site: str) -> dict[str, float]:
-    if not MACRO_JSON.exists():
+    # WA effects only exist in the with-wa artifact; the six-cell one has no wa_reddit key.
+    src = MACRO_JSON_WA if WITH_WA else MACRO_JSON
+    if not src.exists():
         return {}
-    data = read_json(MACRO_JSON)
+    data = read_json(src)
     # New schema: results[baseline][site][metric]; fall back to legacy results[site][metric] if needed.
     results = data.get("results", {})
     if baseline in results and site in results[baseline]:
@@ -571,13 +672,25 @@ def format_paths(paths: list[str]) -> str:
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--with-wa", action="store_true",
+                    help="append the WA reddit cell and write to *_with_wa.* "
+                         "(the six-cell outputs stay byte-identical)")
+    args = ap.parse_args()
+    if args.with_wa:
+        _enable_wa()
     SKIPPED_TASK_INPUTS.clear()
-    task_configs = {site: load_task_configs(site) for site in SITES_LIST}
+    task_configs = {site: (load_wa_task_configs("B0") or load_wa_task_configs("B1"))
+                          if site == WA_SITE else load_task_configs(site)
+                    for site in SITES_LIST}
     # metrics_by_baseline[baseline][site][mode] -> dict task_id -> per-task metric
     metrics_by_baseline: dict[str, dict[str, dict[str, dict[int, dict[str, Any]]]]] = {}
     for baseline in BASELINES:
         metrics_by_baseline[baseline] = {}
         for site in SITES_LIST:
+            if site == WA_SITE and baseline not in WA_BASELINES:
+                continue          # B2 never ran WebArena
             metrics_by_baseline[baseline][site] = {}
             for mode in ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text", "Phantom-prompt"]:
                 metrics_by_baseline[baseline][site][mode] = per_task_mode_metrics(
@@ -603,6 +716,8 @@ def main() -> None:
     for baseline in BASELINES:
         axis_contrasts[baseline] = {}
         for site in SITES_LIST:
+            if site not in metrics_by_baseline[baseline]:
+                continue          # B2 x wa_reddit: never ran, skipped upstream
             axis_contrasts[baseline][site] = {}
             site_metrics = metrics_by_baseline[baseline][site]
             if baseline == "B0":
@@ -659,6 +774,8 @@ def main() -> None:
     site_ratios: dict[str, float | None] = {}
     for baseline in BASELINES:
         for site in SITES_LIST:
+            if site not in axis_contrasts.get(baseline, {}):
+                continue          # B2 x wa_reddit: never ran
             axis1 = axis_contrasts[baseline][site].get("axis_1_text", {})
             if axis1.get("skipped") or axis1.get("n", 0) == 0:
                 site_ratios[f"{baseline}/{site}"] = None
@@ -692,18 +809,25 @@ def main() -> None:
             for b in anchor_baselines
         )
 
-    reddit_ok = _site_ok("reddit")
-    classifieds_ok = _site_ok("classifieds")
+    # Iterate SITES_LIST rather than naming the two VWA sites. Until 2026-08-03 this read
+    # `_site_ok("reddit")` and `_site_ok("classifieds")` literally, so adding the WA cell
+    # left the verdict unchanged not because WA passed but because WA was never consulted.
+    # A verdict that cannot see a new site is worse than one that fails on it.
+    site_ok = {s: _site_ok(s) for s in SITES_LIST}
+    ratio_block["site_ok"] = site_ok
+    n_ok = sum(1 for v in site_ok.values() if v)
+    reddit_ok = site_ok.get("reddit", False)
+    classifieds_ok = site_ok.get("classifieds", False)
     anchor_label = "+".join(anchor_baselines)
     ratio_block["verdict_anchor_baselines"] = anchor_baselines
 
-    if reddit_ok and classifieds_ok:
+    if n_ok == len(site_ok) and site_ok:
         verdict = "generalizes"
         narrative = (
             f"Both sites show a larger axis-1 shift in mode-invariant decision anchors than in macro action "
             f"frequencies ({anchor_label}), so the claim generalizes beyond the reddit search-loop failure mode."
         )
-    elif reddit_ok or classifieds_ok:
+    elif n_ok:
         verdict = "site-specific"
         narrative = (
             f"Only one site clears the decision-over-macro ratio threshold ({anchor_label}), so the claim should be framed as "
@@ -745,8 +869,9 @@ def main() -> None:
     }
 
     out = round_floats(out)
-    OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    OUT_JSON.write_text(json.dumps(out, indent=2) + "\n")
+    out_json = OUT_JSON_WA if WITH_WA else OUT_JSON
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(out, indent=2) + "\n")
 
     lines: list[str] = []
     lines.append("## Headline finding")
@@ -871,9 +996,9 @@ def main() -> None:
             "decision-quality effect than macro-frequency effect on either site."
         )
 
-    OUT_MD.write_text("\n".join(lines) + "\n")
-    print(f"[json] {OUT_JSON}")
-    print(f"[md]   {OUT_MD}")
+    (OUT_MD_WA if WITH_WA else OUT_MD).write_text("\n".join(lines) + "\n")
+    print(f"[json] {OUT_JSON_WA if WITH_WA else OUT_JSON}")
+    print(f"[md]   {OUT_MD_WA if WITH_WA else OUT_MD}")
     print(f"[verdict] {verdict}")
 
 

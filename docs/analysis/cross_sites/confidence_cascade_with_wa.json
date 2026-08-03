@@ -9672,6 +9672,1395 @@
         "20%": 42.857142857142854,
         "30%": 57.14285714285714
       }
+    },
+    "wa_red_B0": {
+      "n": 104,
+      "universe_sha": "wa-intersection",
+      "cheap_sr": 19.23076923076923,
+      "rich_sr": 22.115384615384617,
+      "always_rich": {
+        "sr": 22.115384615384617,
+        "cost_rel": 1.0544412173765751
+      },
+      "oracle": {
+        "k": 11,
+        "sr": 29.807692307692307,
+        "cost": 9.785789,
+        "cost_rel": 1.089070189338256
+      },
+      "curves": {
+        "mean_logprob_mean": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 19.230769230769234,
+            "cost": 9.781208,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.088560365292657,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 19.230769230769234,
+            "cost": 10.371792,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.1542870459619565,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 20.192307692307693,
+            "cost": 11.155885,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.2415495356772774,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 20.192307692307693,
+            "cost": 11.546374,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.2850074448110742,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 19.230769230769234,
+            "cost": 12.52501,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.393920818460683,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 20.192307692307693,
+            "cost": 13.140803,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.4624530338092026,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 20.192307692307693,
+            "cost": 14.138214999999999,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.5734560071707013,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 25.0,
+            "cost": 16.563290000000002,
+            "sr_gain_pp": 5.769230769230768,
+            "cost_rel": 1.8433450155490216,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 25.0,
+              "sr_max": 25.0,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ],
+        "mean_logprob_min": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 19.230769230769234,
+            "cost": 9.606651,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0691337431735495,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 18.269230769230766,
+            "cost": 10.172364,
+            "sr_gain_pp": -0.9615384615384637,
+            "cost_rel": 1.132092505519755,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 18.269230769230766,
+              "sr_max": 18.269230769230766,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 18.269230769230766,
+            "cost": 10.890255999999999,
+            "sr_gain_pp": -0.9615384615384637,
+            "cost_rel": 1.2119874201111507,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 18.269230769230766,
+              "sr_max": 18.269230769230766,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 20.192307692307693,
+            "cost": 11.31164,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.2588836645186392,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 21.153846153846153,
+            "cost": 12.159120999999999,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.353200667790483,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 20.192307692307693,
+            "cost": 13.373294999999999,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.488327299692069,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 21.153846153846153,
+            "cost": 14.188713,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.5790759798086975,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 25.0,
+            "cost": 16.999568,
+            "sr_gain_pp": 5.769230769230768,
+            "cost_rel": 1.8918988280279248,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 25.0,
+              "sr_max": 25.0,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ],
+        "min_logprob_min": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 20.192307692307693,
+            "cost": 9.531092,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.0607247069235128,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 21.153846153846153,
+            "cost": 9.99755,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.1126372816150727,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 21.153846153846153,
+            "cost": 10.790792,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.2009179726386638,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 21.153846153846153,
+            "cost": 11.315432999999999,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.2593057912606074,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 21.153846153846153,
+            "cost": 12.438353,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.3842766747541833,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 21.153846153846153,
+            "cost": 13.466323,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.4986804783242424,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 24.03846153846154,
+            "cost": 14.472031999999999,
+            "sr_gain_pp": 4.8076923076923075,
+            "cost_rel": 1.6106068330667356,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 24.03846153846154,
+              "sr_max": 24.03846153846154,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 25.0,
+            "cost": 16.78955,
+            "sr_gain_pp": 5.769230769230768,
+            "cost_rel": 1.868525715954443,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 25.0,
+              "sr_max": 25.0,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ],
+        "mean_margin_mean": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 20.192307692307693,
+            "cost": 9.2902,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.0339155966872233,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 19.230769230769234,
+            "cost": 9.65034,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0739959354303006,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 19.230769230769234,
+            "cost": 10.193626,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.1344587746438606,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 19.230769230769234,
+            "cost": 10.77323,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.1989634801940425,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 17.307692307692307,
+            "cost": 11.739989999999999,
+            "sr_gain_pp": -1.9230769230769247,
+            "cost_rel": 1.306555161993502,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 17.307692307692307,
+              "sr_max": 17.307692307692307,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 17.307692307692307,
+            "cost": 12.76218,
+            "sr_gain_pp": -1.9230769230769247,
+            "cost_rel": 1.4203157036156109,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 17.307692307692307,
+              "sr_max": 17.307692307692307,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 16.346153846153847,
+            "cost": 13.867046,
+            "sr_gain_pp": -2.8846153846153855,
+            "cost_rel": 1.5432773394952932,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 16.346153846153847,
+              "sr_max": 16.346153846153847,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 19.230769230769234,
+            "cost": 16.596972,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.8470935188242599,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 19.230769230769234,
+              "sr_max": 19.230769230769234,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ],
+        "min_margin_min": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 20.192307692307693,
+            "cost": 9.491050999999999,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.056268504214534,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 21.153846153846153,
+            "cost": 10.061147,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.1197150549894368,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 21.153846153846153,
+            "cost": 10.777629,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.1994530492786506,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 21.153846153846153,
+            "cost": 11.218996,
+            "sr_gain_pp": 1.9230769230769218,
+            "cost_rel": 1.2485732216283365,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 21.153846153846153,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 20.192307692307693,
+            "cost": 12.564897,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.3983598823565158,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 2,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 23.076923076923077,
+            "cost": 13.637068,
+            "sr_gain_pp": 3.8461538461538463,
+            "cost_rel": 1.517682859172487,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 23.076923076923077,
+              "sr_max": 23.076923076923077,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 23.076923076923077,
+            "cost": 14.485427999999999,
+            "sr_gain_pp": 3.8461538461538463,
+            "cost_rel": 1.612097687228457,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 23.076923076923077,
+              "sr_max": 23.076923076923077,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 24.03846153846154,
+            "cost": 16.556111,
+            "sr_gain_pp": 4.8076923076923075,
+            "cost_rel": 1.842546057499828,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 24.03846153846154,
+              "sr_max": 24.03846153846154,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ],
+        "neg_steps": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 22.115384615384613,
+            "cost": 9.351336,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.0407194829242332,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 59,
+              "n_decided_by_tie_order": 5,
+              "sr_min": 19.230769230769234,
+              "sr_max": 24.03846153846154,
+              "tie_decided": 4.8076923076923075
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 23.076923076923077,
+            "cost": 10.03354,
+            "sr_gain_pp": 3.8461538461538463,
+            "cost_rel": 1.1166426445055135,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 59,
+              "n_decided_by_tie_order": 10,
+              "sr_min": 19.230769230769234,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 6.730769230769232
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 23.076923076923077,
+            "cost": 10.787977999999999,
+            "sr_gain_pp": 3.8461538461538463,
+            "cost_rel": 1.200604799780267,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 59,
+              "n_decided_by_tie_order": 16,
+              "sr_min": 19.230769230769234,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 6.730769230769232
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 23.076923076923077,
+            "cost": 11.558688,
+            "sr_gain_pp": 3.8461538461538463,
+            "cost_rel": 1.2863778821167948,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 59,
+              "n_decided_by_tie_order": 21,
+              "sr_min": 19.230769230769234,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 6.730769230769232
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 23.076923076923077,
+            "cost": 12.928028,
+            "sr_gain_pp": 3.8461538461538463,
+            "cost_rel": 1.4387730924640083,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 59,
+              "n_decided_by_tie_order": 31,
+              "sr_min": 19.230769230769234,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 6.730769230769232
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 25.0,
+            "cost": 13.734428999999999,
+            "sr_gain_pp": 5.769230769230768,
+            "cost_rel": 1.5285182616836346,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 59,
+              "n_decided_by_tie_order": 42,
+              "sr_min": 19.230769230769234,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 6.730769230769232
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 25.961538461538463,
+            "cost": 15.001439999999999,
+            "sr_gain_pp": 6.730769230769232,
+            "cost_rel": 1.669525175859247,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 59,
+              "n_decided_by_tie_order": 52,
+              "sr_min": 19.230769230769234,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 6.730769230769232
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 24.03846153846154,
+            "cost": 16.896179,
+            "sr_gain_pp": 4.8076923076923075,
+            "cost_rel": 1.8803925634022014,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 2,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 24.03846153846154,
+              "sr_max": 24.03846153846154,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ],
+        "neg_noop_rate": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 20.192307692307693,
+            "cost": 9.719562999999999,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.0816998319394693,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 22.115384615384613,
+            "cost": 10.102568,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.1243248392707637,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 3,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 22.115384615384613,
+              "tie_decided": 0.9615384615384609
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 22.115384615384613,
+            "cost": 10.644366,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.1846220774845742,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 3,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 22.115384615384613,
+              "sr_max": 22.115384615384613,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 22.115384615384613,
+            "cost": 11.153822,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.2413199423557166,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 2,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 22.115384615384613,
+              "sr_max": 22.115384615384613,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 23.076923076923077,
+            "cost": 11.940767,
+            "sr_gain_pp": 3.8461538461538463,
+            "cost_rel": 1.3288998339872236,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 23.076923076923077,
+              "sr_max": 23.076923076923077,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 25.0,
+            "cost": 13.08666,
+            "sr_gain_pp": 5.769230769230768,
+            "cost_rel": 1.4564274054964175,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 3,
+              "n_decided_by_tie_order": 3,
+              "sr_min": 25.0,
+              "sr_max": 25.0,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 24.03846153846154,
+            "cost": 13.697772,
+            "sr_gain_pp": 4.8076923076923075,
+            "cost_rel": 1.5244386676998924,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 4,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 24.03846153846154,
+              "sr_max": 24.03846153846154,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 24.03846153846154,
+            "cost": 15.881015,
+            "sr_gain_pp": 4.8076923076923075,
+            "cost_rel": 1.7674139523071346,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 2,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 24.03846153846154,
+              "sr_max": 24.03846153846154,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ],
+        "neg_actfail_rate": [
+          {
+            "frac": 0.0,
+            "k": 0,
+            "sr": 19.230769230769234,
+            "cost": 8.985453,
+            "sr_gain_pp": 0.0,
+            "cost_rel": 1.0,
+            "random_sr": 19.230769230769234,
+            "random_gain_pp": 0.0,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          },
+          {
+            "frac": 0.05,
+            "k": 5,
+            "sr": 20.192307692307693,
+            "cost": 9.719562999999999,
+            "sr_gain_pp": 0.9615384615384609,
+            "cost_rel": 1.0816998319394693,
+            "random_sr": 19.369452662721894,
+            "random_gain_pp": 0.13868343195266308,
+            "tie": {
+              "n_tied_at_cutoff": 1,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 20.192307692307693,
+              "sr_max": 20.192307692307693,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.1,
+            "k": 10,
+            "sr": 22.115384615384613,
+            "cost": 10.102568,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.1243248392707637,
+            "random_sr": 19.50813609467456,
+            "random_gain_pp": 0.27736686390532617,
+            "tie": {
+              "n_tied_at_cutoff": 3,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 21.153846153846153,
+              "sr_max": 22.115384615384613,
+              "tie_decided": 0.9615384615384609
+            }
+          },
+          {
+            "frac": 0.15,
+            "k": 16,
+            "sr": 22.115384615384613,
+            "cost": 10.553752,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.1745375553130153,
+            "random_sr": 19.67455621301775,
+            "random_gain_pp": 0.4437869822485174,
+            "tie": {
+              "n_tied_at_cutoff": 3,
+              "n_decided_by_tie_order": 3,
+              "sr_min": 22.115384615384613,
+              "sr_max": 22.115384615384613,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.2,
+            "k": 21,
+            "sr": 22.115384615384613,
+            "cost": 11.288243999999999,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.2562799004123664,
+            "random_sr": 19.813239644970412,
+            "random_gain_pp": 0.5824704142011805,
+            "tie": {
+              "n_tied_at_cutoff": 5,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 22.115384615384613,
+              "sr_max": 22.115384615384613,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.3,
+            "k": 31,
+            "sr": 22.115384615384613,
+            "cost": 12.162578,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 1.3535854007583146,
+            "random_sr": 20.09060650887574,
+            "random_gain_pp": 0.8598372781065095,
+            "tie": {
+              "n_tied_at_cutoff": 2,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 22.115384615384613,
+              "sr_max": 22.115384615384613,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.4,
+            "k": 42,
+            "sr": 25.0,
+            "cost": 13.194392,
+            "sr_gain_pp": 5.769230769230768,
+            "cost_rel": 1.4684170069110596,
+            "random_sr": 20.395710059171595,
+            "random_gain_pp": 1.1649408284023637,
+            "tie": {
+              "n_tied_at_cutoff": 2,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 25.0,
+              "sr_max": 25.0,
+              "tie_decided": 0.0
+            }
+          },
+          {
+            "frac": 0.5,
+            "k": 52,
+            "sr": 25.0,
+            "cost": 14.128295,
+            "sr_gain_pp": 5.769230769230768,
+            "cost_rel": 1.5723520005057063,
+            "random_sr": 20.673076923076923,
+            "random_gain_pp": 1.4423076923076898,
+            "tie": {
+              "n_tied_at_cutoff": 2,
+              "n_decided_by_tie_order": 1,
+              "sr_min": 25.0,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 0.9615384615384637
+            }
+          },
+          {
+            "frac": 0.75,
+            "k": 78,
+            "sr": 24.03846153846154,
+            "cost": 16.882095,
+            "sr_gain_pp": 4.8076923076923075,
+            "cost_rel": 1.878825141036295,
+            "random_sr": 21.394230769230766,
+            "random_gain_pp": 2.1634615384615365,
+            "tie": {
+              "n_tied_at_cutoff": 28,
+              "n_decided_by_tie_order": 2,
+              "sr_min": 22.115384615384613,
+              "sr_max": 25.961538461538463,
+              "tie_decided": 3.8461538461538494
+            }
+          },
+          {
+            "frac": 1.0,
+            "k": 104,
+            "sr": 22.115384615384613,
+            "cost": 18.460085,
+            "sr_gain_pp": 2.884615384615383,
+            "cost_rel": 2.054441217376575,
+            "random_sr": 22.115384615384613,
+            "random_gain_pp": 2.884615384615383,
+            "tie": {
+              "n_tied_at_cutoff": 0,
+              "sr_min": null,
+              "sr_max": null,
+              "tie_decided": 0
+            }
+          }
+        ]
+      },
+      "signals_dropped": {},
+      "n_signals_used": 8,
+      "pareto_beats_always_rich": [],
+      "rich_mode_is_worse": false,
+      "degeneracy_is_a_tie": false,
+      "degeneracy_rule": "outcome-dependent: cheap_sr >= rich_sr, evaluated post hoc",
+      "headroom_captured": {
+        "10%": 36.36363636363637,
+        "20%": 36.36363636363637,
+        "30%": 36.36363636363637
+      }
     }
   }
 }

@@ -24,10 +24,11 @@ Two claims are separable here and only one needs our data. That a deployment may
 | `B2_classifieds` | 1.28x | 1.12x | Vision | SoM | **no** | -0.600 |
 | `B2_reddit` | 1.63x | 1.23x | Vision | Vision | yes | -0.029 |
 | `B1_wa_reddit` | 1.78x | 1.05x | Vision | DOM | **no** | +0.200 |
+| `B0_wa_reddit` | 1.21x | 1.29x | DOM | P-prompt | **no** | +0.257 |
 
-Mean **ρ = -0.053** over 7 cells — the two orderings are close to uncorrelated, and on the classifieds cells they run *opposite*: the cheapest mode is the slowest. The cheapest mode is not the fastest in **4 of 7** cells, and those cells are `B0_classifieds`, `B1_classifieds`, `B1_wa_reddit`, `B2_classifieds` — the split follows the **site**, not the backbone.
+Mean **ρ = -0.014** over 8 cells — the two orderings are close to uncorrelated, and on the classifieds cells they run *opposite*: the cheapest mode is the slowest. The cheapest mode is not the fastest in **5 of 8** cells, and those cells are `B0_classifieds`, `B0_wa_reddit`, `B1_classifieds`, `B1_wa_reddit`, `B2_classifieds` — the split follows the **site**, not the backbone.
 
-**Under the canonical latency estimand** (retry, busy-wait and recovered-screenshot subtracted) the mean is ρ = -0.029. ⚠️ That agreement is weaker evidence than it looks: the two estimands are **identical by construction** on 5 of 7 cells (the locally-served ones have no retry, busy-wait or screenshot-timeout to subtract), so only the API-served cells test it at all.
+**Under the canonical latency estimand** (retry, busy-wait and recovered-screenshot subtracted) the mean is ρ = +0.007. ⚠️ That agreement is weaker evidence than it looks: the two estimands are **identical by construction** on 5 of 8 cells (the locally-served ones have no retry, busy-wait or screenshot-timeout to subtract), so only the API-served cells test it at all.
 
 ⚠️ Per-cell exact permutation p-values on ρ are not significant (six modes give a Spearman test almost no power), so this is a descriptive structure and not a test. The cross-cell regularity is what carries it: three classifieds cells all put `Vision` cheapest and `SoM` fastest, three reddit cells all put `Vision` at both.
 
@@ -44,8 +45,9 @@ An earlier version of this document argued §1 from frontier growth — the fron
 | `B2_classifieds` | yes | 0.833 |
 | `B2_reddit` | no | 0.778 |
 | `B1_wa_reddit` | yes | 0.800 |
+| `B0_wa_reddit` | yes | 0.750 |
 
-Expected widened cells under the null: **5.50 of 7**. Observed: **4**. P(at least 4 widen | null) = **0.958**. The observed count is *below* chance, so frontier growth carries no information about whether latency is independent. It is reported here only so nobody reconstructs the retracted argument.
+Expected widened cells under the null: **6.25 of 8**. Observed: **5**. P(at least 5 widen | null) = **0.926**. The observed count is *below* chance, so frontier growth carries no information about whether latency is independent. It is reported here only so nobody reconstructs the retracted argument.
 
 ## 3. What the frontier count still legitimately says
 
@@ -58,6 +60,7 @@ Expected widened cells under the null: **5.50 of 7**. Observed: **4**. P(at leas
 | `B2_classifieds` | Vision (1) | **DOM, SoM, Vision, P-text, P-prompt (5)** | 5 |
 | `B2_reddit` | DOM, Vision (2) | **DOM, Vision (2)** | 2 |
 | `B1_wa_reddit` | Vision, P-text (2) | **DOM, Vision, P-text (3)** | 3 |
+| `B0_wa_reddit` | DOM, P-text (2) | **DOM, P-text, P-prompt (3)** | 3 |
 
 Read as *width*, not as evidence: Pareto dominance is strictly harder to achieve against three axes, so §5.3's negative result (no learned policy dominates a fixed one) holds a fortiori. Non-dominance becomes correspondingly cheaper to satisfy, so wherever the paper treats non-dominance as informative it must be read against a frontier this wide.
 

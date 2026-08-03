@@ -52,6 +52,56 @@ N_BOOT = 10000
 SEED = 20260802
 MIN_SUCC_FOR_CONTENT = 10       # below this the ratio is a direction, not a measurement
 
+# --- WebArena ------------------------------------------------------------------------
+# The run registry carries only the VWA cls/red cells, so WA is globbed directly. WA has
+# no AMENDMENT_08 exclusion list: its universe is the task set common to all six modes,
+# the same rule per_mode_four_dimension_profile and axis_effect_size use.
+WA_ROOT = REPO / "results/webarena/phase1"
+WA_MODE_STEM = {"DOM": "dom", "SoM": "som", "Vision": "vision",
+                "P-text": "phantom_text", "P-prompt": "phantom_prompt", "P-SoM": "phantom_som"}
+WA_BASELINES = ("B1", "B0")
+
+
+def load_wa_cell(baseline: str) -> dict[str, list[tuple[int, float, float]]]:
+    """mode -> [(success, cost, latency_s)] for <baseline> x WA-reddit."""
+    import glob as _glob
+    eps: dict[str, Path] = {}
+    for disp, stem in WA_MODE_STEM.items():
+        pat = f"{baseline}_{stem}_wa_reddit_2026*_R*"
+        hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat))
+                      if Path(d).is_dir() and "ABORTED" not in d)
+        if not hits:
+            raise MissingInput(f"WA[{baseline}]/{disp}: no run dir for {pat!r}")
+        ep = next(Path(hits[-1]).glob("*/episodes"), None)
+        if ep is None or not ep.is_dir():
+            raise MissingInput(f"WA[{baseline}]/{disp}: no episodes dir under {hits[-1]}")
+        eps[disp] = ep
+    universe = None
+    for ep in eps.values():
+        ids = {int(re.search(r"task_(\d+)_", f.name).group(1))
+               for f in ep.glob("reddit_task_*_summary_v2.json")}
+        universe = ids if universe is None else (universe & ids)
+    if not universe:
+        raise MissingInput(f"WA[{baseline}]: empty task intersection across the six modes")
+    out: dict[str, list] = {}
+    for disp, ep in eps.items():
+        rows = []
+        for f in ep.glob("reddit_task_*_summary_v2.json"):
+            tid = int(re.search(r"task_(\d+)_", f.name).group(1))
+            if tid not in universe:
+                continue
+            sm = json.loads(f.read_text())
+            if sm.get("sr_excluded"):
+                continue
+            if COST_FIELD not in sm or sm.get("total_latency_ms") is None:
+                raise MissingInput(f"{f}: missing {COST_FIELD} or total_latency_ms")
+            rows.append((1 if sm.get("success") else 0, float(sm[COST_FIELD]),
+                         float(sm["total_latency_ms"]) / 1000.0))
+        if len(rows) != len(universe):
+            raise MissingInput(f"WA[{baseline}]/{disp}: {len(rows)} rows, universe has {len(universe)}")
+        out[disp] = rows
+    return out
+
 
 class MissingInput(RuntimeError):
     """Fail loud rather than divide by a success count from a partial read."""
@@ -118,10 +168,12 @@ def build() -> dict:
     out = {"schema": "2026-08-02-outcome-efficiency-v1", "post_hoc_exploratory": True,
            "estimand": "sum(cost) / sum(success) over the cell's scored tasks",
            "n_boot": N_BOOT, "seed": SEED, "cells": {}}
-    for baseline in ("B0", "B1", "B2"):
-        for site in ("classifieds", "reddit"):
-            cid = f"{'cls' if site == 'classifieds' else 'red'}_{baseline}"
-            data = load_cell(baseline, site, reg)
+    plan = [(b, s_, f"{'cls' if s_ == 'classifieds' else 'red'}_{b}")
+            for b in ("B0", "B1", "B2") for s_ in ("classifieds", "reddit")]
+    plan += [(b, "wa_reddit", f"wa_{b}") for b in WA_BASELINES]
+    for baseline, site, cid in plan:
+            data = (load_wa_cell(baseline) if site == "wa_reddit"
+                    else load_cell(baseline, site, reg))
             per_mode = {m: per_success(rows) for m, rows in data.items()}
             att = {m: sum(r[1] for r in rows) / len(rows) for m, rows in data.items()}
             lat_att = {m: sum(r[2] for r in rows) / len(rows) for m, rows in data.items()}

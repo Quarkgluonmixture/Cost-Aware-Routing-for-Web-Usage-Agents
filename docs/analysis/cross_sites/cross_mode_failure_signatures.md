@@ -1,6 +1,6 @@
 # Cross-mode failure signatures — 36 landed Phase-1a conditions
 
-Ruleset `8-reddit-p41p46-b1890fix` · 7686 episodes over 36 conditions (2 sites x 3 backbones x 6 modes).
+Ruleset `11-intent-text-fallback` · 7686 episodes over 36 conditions (2 sites x 3 backbones x 6 modes).
 
 Regenerate: `python3 scripts/analysis/aggregate_cross_mode_failure_signatures.py`
 
@@ -15,10 +15,10 @@ Episode-level hit rate: share of episodes in which the signature fires at least 
 | rule | name | overall % | DOM | SoM | Vision | P-text | P-prompt | P-SoM | spread (all) | spread (text-bearing) |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P31 | budget耗尽未完成 | 49.8 | 47.3 | 45.0 | 49.8 | 54.3 | 49.8 | 52.5 | 9.3 | 9.3 |
-| P36 | WALK_FAIL_DEGENERATE | 48.8 | 59.6 | 45.9 | 20.7 | 52.2 | 57.5 | 57.1 | 38.9 | 13.7 |
+| P36 | WALK_FAIL_DEGENERATE | 43.9 | 55.8 | 39.2 | 20.7 | 46.9 | 53.5 | 47.2 | 35.1 | 16.6 |
 | P5 | 感知缺失循环 | 43.5 | 44.3 | 38.1 | 55.6 | 36.1 | 46.0 | 40.7 | 19.5 | 9.9 |
-| P14 | URL 自环 | 26.9 | 24.4 | 24.0 | 37.4 | 21.1 | 28.5 | 26.0 | 16.3 | 7.4 |
 | P45 | IDENTICAL_FAILED_ACTION_STREAK | 26.8 | 37.4 | 30.0 | 0.0 | 25.6 | 36.8 | 31.2 | 37.4 | 11.8 |
+| P14 | URL 自环 | 26.3 | 24.0 | 23.1 | 36.9 | 20.2 | 27.8 | 25.5 | 16.7 | 7.6 |
 | P43 | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 20.0 | 29.7 | 0.0 | 0.0 | 30.2 | 30.1 | 30.3 | 30.3 | 30.3 |
 | P33 | 导航至裸图片URL幻觉 | 16.1 | 20.5 | 13.0 | 10.5 | 17.9 | 17.8 | 16.9 | 10.0 | 7.6 |
 | P44 | HALLUCINATED_ELEMENT_REF | 13.5 | 20.9 | 8.1 | 0.0 | 16.0 | 27.4 | 8.8 | 27.4 | 19.3 |
@@ -27,18 +27,18 @@ Episode-level hit rate: share of episodes in which the signature fires at least 
 | P4 | 根节点误操作 | 7.4 | 0.4 | 10.3 | 0.0 | 13.9 | 0.5 | 19.4 | 19.4 | 19.0 |
 | P18 | cheapest漏价格排序 | 6.1 | 6.6 | 6.2 | 6.2 | 5.5 | 6.2 | 6.0 | 1.0 | 1.0 |
 
-**Top four signatures**: P31 (49.8%), P36 (48.8%), P5 (43.5%), P14 (26.9%).
-Spread across the five text-bearing modes, **pooled over cells**: P31 9.3 pp, P36 13.7 pp, P5 9.9 pp, P14 7.4 pp.
-Including `vision`: P31 9.3 pp, P36 38.9 pp, P5 19.5 pp, P14 16.3 pp.
+**Top four signatures**: P31 (49.8%), P36 (43.9%), P5 (43.5%), P45 (26.8%).
+Spread across the five text-bearing modes, **pooled over cells**: P31 9.3 pp, P36 16.6 pp, P5 9.9 pp, P45 11.8 pp.
+Including `vision`: P31 9.3 pp, P36 35.1 pp, P5 19.5 pp, P45 37.4 pp.
 
 ⚠️ **The pooled spread is not a within-cell spread.** Pooling sums numerators and denominators over the six cells before the rate is formed, so cell × mode variation cancels. Per cell, over the same five text-bearing modes:
 
 | rule | pooled spread | max within-cell | median within-cell | worst cell |
 |---|---|---|---|---|
 | P31 | 9.3 pp | **15.3 pp** | 12.8 pp | reddit·B0 |
-| P36 | 13.7 pp | **27.6 pp** | 23.2 pp | reddit·B2 |
+| P36 | 16.6 pp | **31.0 pp** | 26.3 pp | reddit·B2 |
 | P5 | 9.9 pp | **48.8 pp** | 15.6 pp | reddit·B2 |
-| P14 | 7.4 pp | **36.5 pp** | 16.3 pp | reddit·B2 |
+| P45 | 11.8 pp | **48.3 pp** | 17.4 pp | reddit·B2 |
 
 So "mode-invariant" is only defensible as *similar after pooling*. No claim that any individual cell shows mode-invariance is supported here.
 
@@ -50,11 +50,15 @@ Two denominators, because they disagree. **action-step** = share of click / type
 Restricted to the canonical SCORED task set.
 
 
+🚨 **Rates are comparable only WITHIN an id namespace** (row 2 of each table below). The metric counts actions naming an id the dispatch map lacks, and that map is keyed by raw CDP nodeIds for the AXTree modes but re-keyed to sequential 1..K for the SoM-family modes (`runner/main.py:2853-2860`). Under sparse native ids almost any slip lands outside the valid set and is counted; under dense 1..K a *wrong* element choice usually still names a valid id and is NOT counted. **SoM is renumbered too**, so a SoM-vs-DOM ratio is exactly as cross-namespace as a P-SoM-vs-DOM one.
+
+
 ### By action-step
 
 | cell | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
+| *id namespace* | *native* | *compact 1..K* | *native (no marks)* | *compact 1..K* | *native* | *compact 1..K* |
 |---|---|---|---|---|---|---|
-| classifieds·B0 | 1.508 | 0.049 | 0.000 | 0.506 | 2.104 | 0.139 |
+| classifieds·B0 | 1.508 | 0.000 | 0.000 | 0.506 | 2.104 | 0.139 |
 | classifieds·B1 | 2.033 | 0.000 | 0.000 | 3.961 | 4.313 | 0.351 |
 | classifieds·B2 | 5.312 | 2.264 | 0.000 | 8.331 | 14.689 | 2.469 |
 | reddit·B0 | 0.384 | 0.076 | 0.000 | 0.214 | 0.349 | 0.036 |
@@ -64,8 +68,9 @@ Restricted to the canonical SCORED task set.
 ### By episode incidence
 
 | cell | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
+| *id namespace* | *native* | *compact 1..K* | *native (no marks)* | *compact 1..K* | *native* | *compact 1..K* |
 |---|---|---|---|---|---|---|
-| classifieds·B0 | 6.696 | 0.446 | 0.000 | 4.018 | 4.911 | 0.893 |
+| classifieds·B0 | 6.696 | 0.000 | 0.000 | 4.018 | 4.911 | 0.893 |
 | classifieds·B1 | 8.929 | 0.000 | 0.000 | 20.089 | 14.732 | 3.125 |
 | classifieds·B2 | 36.607 | 17.411 | 0.000 | 33.482 | 50.893 | 19.196 |
 | reddit·B0 | 3.941 | 0.985 | 0.000 | 2.956 | 3.941 | 0.493 |

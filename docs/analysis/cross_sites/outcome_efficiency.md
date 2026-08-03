@@ -24,10 +24,12 @@ Every efficiency figure elsewhere in this project is **per attempt**. A deployme
 | `red_B1` | 15 | Vision | **SoM** ←flips | Vision | **SoM** ←flips |
 | `cls_B2` ⚠️ | 5 | Vision | **Vision** | SoM | **SoM** |
 | `red_B2` ⚠️ | 8 | Vision | **DOM** ←flips | Vision | **DOM** ←flips |
+| `wa_B1` | 17 | Vision | **P-text** ←flips | DOM | **DOM** |
+| `wa_B0` | 37 | DOM | **P-text** ←flips | P-prompt | **P-text** ←flips |
 
-⚠️ marks cells whose best mode has fewer than 10 successes; their ratios are directions at best. The 4 unmarked cells are where this has content.
+⚠️ marks cells whose best mode has fewer than 10 successes; their ratios are directions at best. The 6 unmarked cells are where this has content.
 
-Among those 4: the cheapest-per-attempt mode stops being cheapest-per-success in **2**, and the fastest-per-attempt mode stops being fastest-per-success in **2**.
+Among those 6: the cheapest-per-attempt mode stops being cheapest-per-success in **4**, and the fastest-per-attempt mode stops being fastest-per-success in **3**.
 
 ## 2. The three channels, side by side
 
@@ -51,6 +53,12 @@ Among those 4: the cheapest-per-attempt mode stops being cheapest-per-success in
 | `red_B2` | DOM | 0.0948 | 3.94 | **2.405** | [1.395, 6.424] | **16999** | [9718, 45674] |
 | `red_B2` | SoM | 0.1116 | 0.99 | **11.327** | [4.451, 23.478] | **63235** | [24222, 135165] |
 | `red_B2` | Vision | 0.0683 | 1.97 | **3.468** | [1.683, 14.061] | **27914** | [13260, 114243] |
+| `wa_B1` | DOM | 0.0658 | 16.35 | **0.402** | [0.266, 0.725] | **2968** | [1931, 5350] |
+| `wa_B1` | SoM | 0.0794 | 13.46 | **0.590** | [0.376, 1.152] | **3676** | [2312, 7193] |
+| `wa_B1` | Vision | 0.0447 | 9.62 | **0.465** | [0.275, 0.986] | **5104** | [2909, 11448] |
+| `wa_B0` | DOM | 0.0753 | 26.92 | **0.280** | [0.197, 0.435] | **1055** | [725, 1660] |
+| `wa_B0` | SoM | 0.0911 | 22.12 | **0.412** | [0.281, 0.667] | **1231** | [818, 1995] |
+| `wa_B0` | Vision | 0.0864 | 19.23 | **0.449** | [0.300, 0.751] | **1757** | [1160, 2957] |
 
 ## 3. What this does and does not license
 

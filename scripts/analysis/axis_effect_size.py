@@ -150,27 +150,33 @@ SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/searc
 # hole. Output is split to *_with_wa.* because appending a cell rewrites the /6 consistency
 # denominators and is not a superset of the six-cell result.
 WA_ROOT = ROOT / "results/webarena/phase1"
-WA_GLOBS = {
-    "DOM": "B1_dom_wa_reddit_2026*_R*", "SoM": "B1_som_wa_reddit_2026*_R*",
-    "Vision": "B1_vision_wa_reddit_2026*_R*", "P-text": "B1_phantom_text_wa_reddit_2026*_R*",
-    "P-prompt": "B1_phantom_prompt_wa_reddit_2026*_R*",
-    "Phantom-SoM": "B1_phantom_som_wa_reddit_2026*_R*",
+# Parameterised on backbone 2026-08-03 (B0 x WA landed 07:23 that morning). Before this,
+# results["B0"]["wa_reddit"] existed as a key with every contrast at n=0 -- structurally
+# present, empty in content, which reads as coverage unless the n is checked (the §2b shape).
+WA_GLOB_TMPL = {
+    "DOM": "{b}_dom_wa_reddit_2026*_R*", "SoM": "{b}_som_wa_reddit_2026*_R*",
+    "Vision": "{b}_vision_wa_reddit_2026*_R*", "P-text": "{b}_phantom_text_wa_reddit_2026*_R*",
+    "P-prompt": "{b}_phantom_prompt_wa_reddit_2026*_R*",
+    "Phantom-SoM": "{b}_phantom_som_wa_reddit_2026*_R*",
 }
+WA_BASELINES = ("B1", "B0")
 WA_UNIVERSE: Optional[set] = None      # set by attach_wa(); WA has no AMENDMENT_08 list
 
 
-def attach_wa() -> int:
-    """Add B1 x WA-reddit to STEP_DIRS and SITES. Raises rather than degrading silently."""
+def attach_wa(baseline: str = "B1") -> int:
+    """Add <baseline> x WA-reddit to STEP_DIRS and SITES. Raises rather than degrading silently."""
     global WA_UNIVERSE
     import glob as _glob
     modes: dict[str, Path] = {}
-    for disp, pat in WA_GLOBS.items():
-        hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat)) if Path(d).is_dir())
+    for disp, tmpl in WA_GLOB_TMPL.items():
+        pat = tmpl.format(b=baseline)
+        hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat))
+                      if Path(d).is_dir() and "ABORTED" not in d)
         if not hits:
-            raise SystemExit(f"attach_wa: no run dir for {disp} ({pat})")
+            raise SystemExit(f"attach_wa[{baseline}]: no run dir for {disp} ({pat})")
         ep = next(Path(hits[-1]).glob("*/episodes"), None)
         if ep is None or not ep.is_dir():
-            raise SystemExit(f"attach_wa: no episodes dir under {hits[-1]}")
+            raise SystemExit(f"attach_wa[{baseline}]: no episodes dir under {hits[-1]}")
         modes[disp] = ep
     uni = None
     for ep in modes.values():
@@ -178,12 +184,19 @@ def attach_wa() -> int:
                for f in ep.glob("reddit_task_*_summary_v2.json")}
         uni = ids if uni is None else (uni & ids)
     if not uni:
-        raise SystemExit("attach_wa: empty task intersection across the six modes")
-    WA_UNIVERSE = uni
-    STEP_DIRS.setdefault("B1", {})["wa_reddit"] = {
+        raise SystemExit(f"attach_wa[{baseline}]: empty task intersection across the six modes")
+    # WA_UNIVERSE is a single global consumed by _scored_for("wa_reddit"), so a second
+    # backbone must agree with the first rather than silently overwrite it.
+    if WA_UNIVERSE is None:
+        WA_UNIVERSE = uni
+    elif WA_UNIVERSE != uni:
+        raise SystemExit(f"attach_wa[{baseline}]: task universe differs from the first WA cell "
+                         f"({len(uni)} vs {len(WA_UNIVERSE)}); a shared scored set is assumed")
+    STEP_DIRS.setdefault(baseline, {})["wa_reddit"] = {
         # STEP_DIRS keys are the axis-script mode names; Vision/P-text carry through unchanged
         k: modes[k] for k in modes}
-    SITES.append("wa_reddit")
+    if "wa_reddit" not in SITES:
+        SITES.append("wa_reddit")
     return len(uni)
 
 
@@ -1031,6 +1044,17 @@ def main() -> None:
     if independence["psom_distinct_from_both_dom_and_som"]:
         lines.append(f"- **Independent on**: {', '.join(independence['psom_distinct_from_both_dom_and_som'])}")
     _mp = independence.get("multiplicity") or {}
+    # `results` is a (baseline x site) grid, and a cell can exist as an all-n=0 shell: B2 x
+    # wa_reddit is one permanently, because B2 never ran WebArena. A plain len() over the grid
+    # reports 9 for what is an 8-cell study, so count cells that carry at least one contrast.
+    _n_real_cells = sum(
+        1
+        for _sites in out["results"].values()
+        for _blk in _sites.values()
+        if any(cn.get("n", 0) > 0
+               for _m in _blk.values() if isinstance(_m, dict)
+               for cn in _m.values() if isinstance(cn, dict))
+    )
     if _mp.get("n_legs"):
         lines.append(
             f"\n> **Multiplicity.** That count asks only |effect| > 0.1, across "
@@ -1039,7 +1063,8 @@ def main() -> None:
             f"legs: **{_mp['effect_and_bh_fdr_0.05']} survive Benjamini-Hochberg** (FDR 0.05) and "
             f"**{_mp['effect_and_holm_fwer_0.05']} survive Holm** (FWER 0.05), against "
             f"{_mp['effect_only']} on effect size alone. The BH set spans "
-            f"{len({c.split('@')[1] for c in _mp['cells_bh']})} of the six cells, so it is not "
+            f"{len({c.split('@')[1] for c in _mp['cells_bh']})} of the {_n_real_cells} cells, "
+            "so it is not "
             f"one cell's accident: {', '.join(_mp['cells_bh']) or '—'}. Report the corrected "
             f"count, not the bare one.")
         lines.append(
@@ -1220,8 +1245,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     if "--with-wa" in sys.argv:
-        _n = attach_wa()
-        print(f"[axis_effect_size] WA cell attached: B1 x wa_reddit, n={_n} "
-              f"(task set common to all six modes; WA has no AMENDMENT_08 list)",
-              file=sys.stderr)
+        for _wb in WA_BASELINES:
+            _n = attach_wa(_wb)
+            print(f"[axis_effect_size] WA cell attached: {_wb} x wa_reddit, n={_n} "
+                  f"(task set common to all six modes; WA has no AMENDMENT_08 list)",
+                  file=sys.stderr)
     main()

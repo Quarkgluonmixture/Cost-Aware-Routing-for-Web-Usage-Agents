@@ -1,6 +1,6 @@
 {
  "producer": "scripts/analysis/aggregate_cross_mode_failure_signatures.py",
- "ruleset_version": "8-reddit-p41p46-b1890fix",
+ "ruleset_version": "11-intent-text-fallback",
  "n_conditions": 36,
  "run_ids": {
   "B0_dom_classifieds": "B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
@@ -11,7 +11,7 @@
   "B0_phantom_som_reddit": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
   "B0_phantom_text_classifieds": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
   "B0_phantom_text_reddit": "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
-  "B0_som_classifieds": "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+  "B0_som_classifieds": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696",
   "B0_som_reddit": "B0_som_reddit_20260627_035453_162107997_3024022_R20936",
   "B0_vision_classifieds": "B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
   "B0_vision_reddit": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
@@ -88,27 +88,27 @@
    {
     "rule_id": "P36",
     "rule_name": "WALK_FAIL_DEGENERATE",
-    "overall_pct": 48.82903981264637,
+    "overall_pct": 43.88498568826438,
     "per_mode_pct": {
-     "dom": 59.56284153005465,
-     "som": 45.90163934426229,
+     "dom": 55.81576893052303,
+     "som": 39.188134270101486,
      "vision": 20.68696330991413,
-     "phantom_text": 52.2248243559719,
-     "phantom_prompt": 57.533177205308355,
-     "phantom_som": 57.0647931303669
+     "phantom_text": 46.91647150663544,
+     "phantom_prompt": 53.47384855581577,
+     "phantom_som": 47.22872755659641
     },
-    "spread_all_modes_pp": 38.87587822014052,
-    "spread_text_bearing_pp": 13.661202185792355,
+    "spread_all_modes_pp": 35.1288056206089,
+    "spread_text_bearing_pp": 16.627634660421542,
     "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 24.10714285714286,
-     "classifieds\u00b7B1": 23.214285714285715,
-     "classifieds\u00b7B2": 6.696428571428569,
-     "reddit\u00b7B0": 15.270935960591132,
-     "reddit\u00b7B1": 16.748768472906406,
-     "reddit\u00b7B2": 27.586206896551722
+     "classifieds\u00b7B0": 26.339285714285715,
+     "classifieds\u00b7B1": 27.67857142857143,
+     "classifieds\u00b7B2": 7.142857142857139,
+     "reddit\u00b7B0": 16.748768472906402,
+     "reddit\u00b7B1": 18.226600985221673,
+     "reddit\u00b7B2": 31.03448275862069
     },
-    "within_cell_spread_max_pp": 27.586206896551722,
-    "within_cell_spread_median_pp": 23.214285714285715,
+    "within_cell_spread_max_pp": 31.03448275862069,
+    "within_cell_spread_median_pp": 26.339285714285715,
     "structurally_zero_under_vision": false
    },
    {
@@ -138,32 +138,6 @@
     "structurally_zero_under_vision": false
    },
    {
-    "rule_id": "P14",
-    "rule_name": "URL \u81ea\u73af",
-    "overall_pct": 26.893052302888368,
-    "per_mode_pct": {
-     "dom": 24.355971896955502,
-     "som": 24.043715846994534,
-     "vision": 37.39266198282592,
-     "phantom_text": 21.07728337236534,
-     "phantom_prompt": 28.493364558938328,
-     "phantom_som": 25.995316159250585
-    },
-    "spread_all_modes_pp": 16.31537861046058,
-    "spread_text_bearing_pp": 7.416081186572988,
-    "within_cell_spread_text_bearing_pp": {
-     "classifieds\u00b7B0": 4.464285714285715,
-     "classifieds\u00b7B1": 7.589285714285715,
-     "classifieds\u00b7B2": 14.285714285714285,
-     "reddit\u00b7B0": 16.25615763546798,
-     "reddit\u00b7B1": 19.704433497536947,
-     "reddit\u00b7B2": 36.453201970443345
-    },
-    "within_cell_spread_max_pp": 36.453201970443345,
-    "within_cell_spread_median_pp": 16.25615763546798,
-    "structurally_zero_under_vision": false
-   },
-   {
     "rule_id": "P45",
     "rule_name": "IDENTICAL_FAILED_ACTION_STREAK",
     "overall_pct": 26.841009627894874,
@@ -188,6 +162,32 @@
     "within_cell_spread_max_pp": 48.27586206896551,
     "within_cell_spread_median_pp": 17.410714285714285,
     "structurally_zero_under_vision": true
+   },
+   {
+    "rule_id": "P14",
+    "rule_name": "URL \u81ea\u73af",
+    "overall_pct": 26.25552953421806,
+    "per_mode_pct": {
+     "dom": 23.965651834504293,
+     "som": 23.106947697111632,
+     "vision": 36.924277907884466,
+     "phantom_text": 20.218579234972676,
+     "phantom_prompt": 27.79078844652615,
+     "phantom_som": 25.526932084309134
+    },
+    "spread_all_modes_pp": 16.70569867291179,
+    "spread_text_bearing_pp": 7.572209211553474,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 4.9107142857142865,
+     "classifieds\u00b7B1": 7.142857142857142,
+     "classifieds\u00b7B2": 14.732142857142854,
+     "reddit\u00b7B0": 16.25615763546798,
+     "reddit\u00b7B1": 20.197044334975367,
+     "reddit\u00b7B2": 36.453201970443345
+    },
+    "within_cell_spread_max_pp": 36.453201970443345,
+    "within_cell_spread_median_pp": 16.25615763546798,
+    "structurally_zero_under_vision": false
    },
    {
     "rule_id": "P43",
@@ -866,6 +866,32 @@
     "structurally_zero_under_vision": true
    },
    {
+    "rule_id": "P49",
+    "rule_name": "SUBMIT_PAGE_ANCHOR_MISCLICK",
+    "overall_pct": 0.20817069997397866,
+    "per_mode_pct": {
+     "dom": 0.234192037470726,
+     "som": 0.234192037470726,
+     "vision": 0.0,
+     "phantom_text": 0.39032006245121,
+     "phantom_prompt": 0.078064012490242,
+     "phantom_som": 0.312256049960968
+    },
+    "spread_all_modes_pp": 0.39032006245121,
+    "spread_text_bearing_pp": 0.312256049960968,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.0,
+     "classifieds\u00b7B1": 0.0,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.9852216748768473,
+     "reddit\u00b7B1": 0.49261083743842365,
+     "reddit\u00b7B2": 1.477832512315271
+    },
+    "within_cell_spread_max_pp": 1.477832512315271,
+    "within_cell_spread_median_pp": 0.49261083743842365,
+    "structurally_zero_under_vision": true
+   },
+   {
     "rule_id": "P35",
     "rule_name": "MUTATION_MISSING",
     "overall_pct": 0.156128024980484,
@@ -888,6 +914,32 @@
      "reddit\u00b7B2": 0.0
     },
     "within_cell_spread_max_pp": 0.44642857142857145,
+    "within_cell_spread_median_pp": 0.0,
+    "structurally_zero_under_vision": false
+   },
+   {
+    "rule_id": "P48",
+    "rule_name": "PREMATURE_NEGATIVE_AFTER_SEARCH",
+    "overall_pct": 0.156128024980484,
+    "per_mode_pct": {
+     "dom": 0.0,
+     "som": 0.702576112412178,
+     "vision": 0.078064012490242,
+     "phantom_text": 0.0,
+     "phantom_prompt": 0.078064012490242,
+     "phantom_som": 0.078064012490242
+    },
+    "spread_all_modes_pp": 0.702576112412178,
+    "spread_text_bearing_pp": 0.702576112412178,
+    "within_cell_spread_text_bearing_pp": {
+     "classifieds\u00b7B0": 0.0,
+     "classifieds\u00b7B1": 0.0,
+     "classifieds\u00b7B2": 0.0,
+     "reddit\u00b7B0": 0.9852216748768473,
+     "reddit\u00b7B1": 3.4482758620689653,
+     "reddit\u00b7B2": 0.0
+    },
+    "within_cell_spread_max_pp": 3.4482758620689653,
     "within_cell_spread_median_pp": 0.0,
     "structurally_zero_under_vision": false
    },
@@ -1109,18 +1161,18 @@
      "run_id": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183"
     },
     "SoM": {
-     "ep_total": 224,
-     "ep_failed": 163,
-     "ep_with_hall": 1,
-     "act_all": 2037,
-     "act_failed": 1813,
-     "hall_all": 1,
-     "hall_failed": 1,
-     "universe_sha256": "b0f3b8b0b002843981cf12a8dc2db5479d73ac7ca03190bda37c27a26a508d0e",
-     "rate_all_pct": 0.049091801669121256,
-     "rate_failed_pct": 0.05515719801434087,
-     "episode_incidence_pct": 0.44642857142857145,
-     "run_id": "B0_som_classifieds_20260526_041601_863239369_602235_R5313"
+     "ep_total": 77,
+     "ep_failed": 53,
+     "ep_with_hall": 0,
+     "act_all": 646,
+     "act_failed": 555,
+     "hall_all": 0,
+     "hall_failed": 0,
+     "universe_sha256": "e7ce605ae6a6995bdd452d371d693a279ee8adf69b8c906dae7b1afe2bb01dd7",
+     "rate_all_pct": 0.0,
+     "rate_failed_pct": 0.0,
+     "episode_incidence_pct": 0.0,
+     "run_id": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696"
     },
     "Vision": {
      "ep_total": 224,

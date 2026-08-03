@@ -97,7 +97,10 @@ RUNS: dict[str, dict[str, str]] = {
 #     always-rich sits inside that arbitrary span.
 # B0 x WA is still running as of 2026-08-02; when it lands, rerun this and re-judge rather than
 # assuming either the old exception or its withdrawal carries over.
-WA_RUNS = {"vision": "B1_vision_wa_reddit_2026*_R*", "som": "B1_som_wa_reddit_2026*_R*"}
+# Parameterised on backbone 2026-08-03 (B0 x WA landed 07:23). CHEAP/RICH are mode names,
+# so only the {b} slot varies.
+WA_RUN_TMPL = {"vision": "{b}_vision_wa_reddit_2026*_R*", "som": "{b}_som_wa_reddit_2026*_R*"}
+WA_BASELINES = ("B1", "B0")
 WA_ROOT = REPO / "results/webarena/phase1"
 SITE_OF = {"cls": "classifieds", "red": "reddit"}
 SEARCH_ROOT = REPO / "results/visualwebarena/phase1"
@@ -305,13 +308,15 @@ def _oracle(cheap: dict[int, Episode], rich: dict[int, Episode]) -> dict:
             "cost_rel": cost / sum(cheap[t].cost for t in tids)}
 
 
-def wa_cell() -> tuple[dict[int, Episode], dict[int, Episode]]:
-    """Cheap/rich episode maps for B1 x WA-reddit over the tasks both modes ran."""
+def wa_cell(baseline: str = "B1") -> tuple[dict[int, Episode], dict[int, Episode]]:
+    """Cheap/rich episode maps for <baseline> x WA-reddit over the tasks both modes ran."""
     got = {}
-    for m, pat in WA_RUNS.items():
-        hits = [Path(x) for x in glob.glob(str(WA_ROOT / pat)) if os.path.isdir(x)]
+    for m, tmpl in WA_RUN_TMPL.items():
+        pat = tmpl.format(b=baseline)
+        hits = [Path(x) for x in glob.glob(str(WA_ROOT / pat))
+                if os.path.isdir(x) and "ABORTED" not in x]
         if not hits:
-            raise MissingInput(f"WA {m}: no run dir for {pat!r}")
+            raise MissingInput(f"WA[{baseline}] {m}: no run dir for {pat!r}")
         got[m] = sorted(hits)[-1]
     ids = None
     for d in got.values():
@@ -319,7 +324,7 @@ def wa_cell() -> tuple[dict[int, Episode], dict[int, Episode]]:
              for f in (list(d.glob("*/episodes/*summary*.json")) or [])}
         ids = s if ids is None else (ids & s)
     if not ids:
-        raise MissingInput("WA: empty task intersection between the cheap and rich arms")
+        raise MissingInput(f"WA[{baseline}]: empty task intersection between cheap and rich")
     return (_read_episodes(got[CHEAP], ids, with_signals=True),
             _read_episodes(got[RICH], ids, with_signals=False))
 
@@ -374,39 +379,40 @@ def build(cells: list[str], with_wa: bool = False) -> dict:
         LOG.info("%s: cheap %.2f%% / rich %.2f%% / oracle %.2f%%",
                  cid, base_sr, rich_sr, cell["oracle"]["sr"])
     if with_wa:
-        cheap, rich = wa_cell()
-        base_sr = 100 * sum(e.success for e in cheap.values()) / len(cheap)
-        rich_sr = 100 * sum(e.success for e in rich.values()) / len(rich)
-        cheap_bill = sum(e.cost for e in cheap.values())
-        always_rich = {"sr": rich_sr,
-                       "cost_rel": sum(e.cost for e in rich.values()) / cheap_bill}
-        cell = {"n": len(cheap), "universe_sha": "wa-intersection", "cheap_sr": base_sr,
-                "rich_sr": rich_sr, "always_rich": always_rich,
-                "oracle": _oracle(cheap, rich), "curves": {}}
-        usable, dropped = usable_signals(cheap, SIGNALS)
-        cell["signals_dropped"] = dropped
-        cell["n_signals_used"] = len(usable)
-        for sig in usable:
-            cell["curves"][sig] = _curve(cheap, rich, sig, out["fracs"])
-        wins = [(s, r["frac"]) for s, rows in cell["curves"].items() for r in rows
-                if r["frac"] > 0
-                and r["sr"] >= always_rich["sr"] and r["cost_rel"] <= always_rich["cost_rel"]
-                and (r["sr"] > always_rich["sr"] or r["cost_rel"] < always_rich["cost_rel"])]
-        cell["pareto_beats_always_rich"] = wins
-        # Outcome-dependent by construction, and `>=` labels an exact tie as "rich worse"
-        # (cls_B2 is 2.23% vs 2.23%). Both facts are now carried in the flag itself so the
-        # count downstream cannot be read as a property of the design. (§H stress P1-5)
-        cell["rich_mode_is_worse"] = base_sr >= rich_sr
-        cell["degeneracy_is_a_tie"] = abs(base_sr - rich_sr) < 1e-9
-        cell["degeneracy_rule"] = "outcome-dependent: cheap_sr >= rich_sr, evaluated post hoc"
-        head = cell["oracle"]["sr"] - base_sr
-        cell["headroom_captured"] = {
-            f"{f:.0%}": (max(next(x for x in cell["curves"][s] if abs(x["frac"] - f) < 1e-9)["sr"]
-                             for s in cell["curves"]) - base_sr) / head * 100 if head > 0 else None
-            for f in (0.10, 0.20, 0.30)}
-        out["cells"]["wa_red_B1"] = cell
-        LOG.info("wa_red_B1: cheap %.2f%% / rich %.2f%% / oracle %.2f%% (rich worse: %s)",
-                 base_sr, rich_sr, cell["oracle"]["sr"], cell["rich_mode_is_worse"])
+        for _wb in WA_BASELINES:
+            cheap, rich = wa_cell(_wb)
+            base_sr = 100 * sum(e.success for e in cheap.values()) / len(cheap)
+            rich_sr = 100 * sum(e.success for e in rich.values()) / len(rich)
+            cheap_bill = sum(e.cost for e in cheap.values())
+            always_rich = {"sr": rich_sr,
+                           "cost_rel": sum(e.cost for e in rich.values()) / cheap_bill}
+            cell = {"n": len(cheap), "universe_sha": "wa-intersection", "cheap_sr": base_sr,
+                    "rich_sr": rich_sr, "always_rich": always_rich,
+                    "oracle": _oracle(cheap, rich), "curves": {}}
+            usable, dropped = usable_signals(cheap, SIGNALS)
+            cell["signals_dropped"] = dropped
+            cell["n_signals_used"] = len(usable)
+            for sig in usable:
+                cell["curves"][sig] = _curve(cheap, rich, sig, out["fracs"])
+            wins = [(s, r["frac"]) for s, rows in cell["curves"].items() for r in rows
+                    if r["frac"] > 0
+                    and r["sr"] >= always_rich["sr"] and r["cost_rel"] <= always_rich["cost_rel"]
+                    and (r["sr"] > always_rich["sr"] or r["cost_rel"] < always_rich["cost_rel"])]
+            cell["pareto_beats_always_rich"] = wins
+            # Outcome-dependent by construction, and `>=` labels an exact tie as "rich worse"
+            # (cls_B2 is 2.23% vs 2.23%). Both facts are now carried in the flag itself so the
+            # count downstream cannot be read as a property of the design. (§H stress P1-5)
+            cell["rich_mode_is_worse"] = base_sr >= rich_sr
+            cell["degeneracy_is_a_tie"] = abs(base_sr - rich_sr) < 1e-9
+            cell["degeneracy_rule"] = "outcome-dependent: cheap_sr >= rich_sr, evaluated post hoc"
+            head = cell["oracle"]["sr"] - base_sr
+            cell["headroom_captured"] = {
+                f"{f:.0%}": (max(next(x for x in cell["curves"][s] if abs(x["frac"] - f) < 1e-9)["sr"]
+                                 for s in cell["curves"]) - base_sr) / head * 100 if head > 0 else None
+                for f in (0.10, 0.20, 0.30)}
+            out["cells"][f"wa_red_{_wb}"] = cell
+            LOG.info(f"wa_red_{_wb}: cheap %.2f%% / rich %.2f%% / oracle %.2f%% (rich worse: %s)",
+                     base_sr, rich_sr, cell["oracle"]["sr"], cell["rich_mode_is_worse"])
     return out
 
 
@@ -421,8 +427,19 @@ def render(d: dict) -> str:
         "producer: scripts/analysis/aggregate_confidence_cascade.py", "---", "",
         "# Confidence-triggered cascade", "",
         "Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_confidence_cascade.py`", "",
-        f"Cheap tier = **{d['cheap']}** (lowest cost in 6/6 cells). "
-        f"Rich tier = **{d['rich']}** (dearest in 5/6; the field's default).",
+        # This said "lowest cost in 6/6 cells" / "dearest in 5/6" until 2026-08-03. Both counts
+        # were hardcoded, this script has no per-mode cost to check them against, and the /6
+        # denominator survived the seventh and eighth cells landing. The eighth also falsified
+        # the first count outright. State where the tiers come from and disclose the exception
+        # instead of asserting a tally this producer cannot compute.
+        f"Cheap tier = **{d['cheap']}**, rich tier = **{d['rich']}** — fixed **a priori** from "
+        "the six-cell cost ordering in `multimetric_pareto`, not chosen per cell (choosing per "
+        "cell would make the cells incomparable).",
+        "",
+        f"⚠️ **The tiers are not cost-ordered in every cell.** On `wa_B0` the cheapest mode is "
+        f"`dom`, not `{d['cheap']}`. On that cell this is still a fixed-pair escalation and the "
+        "SR arithmetic is unaffected, but it is not a cheap→rich escalation in the cost sense, "
+        "and its cost column should not be read as one.",
         "",
         "The escalation decision sees only the cheap run's own episode — no outcome, no "
         "rich-run information. Two nulls accompany every point: **random** escalates the same "

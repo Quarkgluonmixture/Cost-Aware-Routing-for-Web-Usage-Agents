@@ -11,7 +11,9 @@ producer: scripts/analysis/aggregate_confidence_cascade.py
 
 Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_confidence_cascade.py`
 
-Cheap tier = **vision** (lowest cost in 6/6 cells). Rich tier = **som** (dearest in 5/6; the field's default).
+Cheap tier = **vision**, rich tier = **som** — fixed **a priori** from the six-cell cost ordering in `multimetric_pareto`, not chosen per cell (choosing per cell would make the cells incomparable).
+
+⚠️ **The tiers are not cost-ordered in every cell.** On `wa_B0` the cheapest mode is `dom`, not `vision`. On that cell this is still a fixed-pair escalation and the SR arithmetic is unaffected, but it is not a cheap→rich escalation in the cost sense, and its cost column should not be read as one.
 
 The escalation decision sees only the cheap run's own episode — no outcome, no rich-run information. Two nulls accompany every point: **random** escalates the same number of tasks signal-free (exact expectation, not sampled), and **oracle** escalates exactly the tasks the rich mode would fix.
 

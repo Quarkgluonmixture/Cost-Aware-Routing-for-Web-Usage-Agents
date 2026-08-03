@@ -8,7 +8,7 @@ horizontal one, and it is the question the complementarity result actually raise
     On the tasks only the text channel solves, what did the image channel do wrong?
     On the tasks only the image channel solves, what did the text channel do wrong?
 
-The 36 v8 scans carry a rule-hit list per (condition, task), and the six modes see an identical
+The 36 scans carry a rule-hit list per (condition, task), and the six modes see an identical
 task set within a cell, so the comparison is paired at the task level. The quantity reported is
 an ENRICHMENT: a signature's hit rate among the losing channel's failures on the disagreement
 set, against that same channel's hit rate over all its failures in the same cell. A ratio near 1
@@ -20,10 +20,10 @@ phantom_prompt, phantom_som}, IMAGE = {som, vision}. Note this is 4 arms against
 `text_only` and `image_only` counts are NOT comparable to each other as effect sizes; only the
 within-channel enrichments are read.
 
-Scans come from `diag_rescan_all.py` (default `results/diag_scans/v8_vwa`, ruleset asserted identical across
-all 36 so cross-mode aggregation is licensed; see the v8 freeze note in the diag digests).
+Scans come from `diag_rescan_all.py` (default `results/diag_scans/v11_vwa`, ruleset asserted identical across
+all 36 so cross-mode aggregation is licensed — the loader hard-fails if they disagree).
 
-WebArena is included as a seventh cell (`--wa-scan-dir`, default `results/diag_scans/v8_wa`). Its step
+WebArena contributes two cells (`--wa-scan-dir`, default `results/diag_scans/v11_wa`). Its step
 records live on the paper-grade host and were absent from the local mirror, which briefly looked
 like a structural limit and is not one: the rules run on WA unmodified at the same ruleset
 version, and WA reddit is the same Postmill application as VWA reddit. WA carries no AMENDMENT_08
@@ -84,7 +84,7 @@ def load_cell(scan_dir: Path, bb: str, site: str,
         out[m] = rows
     if len(versions) != 1:
         raise MissingInput(f"{bb}/{site}: scans span rulesets {versions}; cross-mode aggregation "
-                           "requires one version (see the v8 freeze note)")
+                           "requires one version — rescan the odd one out")
     common = set.intersection(*(set(v) for v in out.values()))
     if len(common) != len(scored):
         raise MissingInput(f"{bb}/{site}: {len(common)} tasks common to all six modes, universe "
@@ -130,9 +130,10 @@ def attribute(cell: dict[str, dict[int, dict]], winners: list[str], losers: list
 
 # Candidate mechanisms for the text-wins side, tested directly rather than through the P-rules.
 # The rule-based cut leaves that direction as an UNEXPLAINED RESIDUAL: nothing clears 1.5x. The
-# obvious objection is that the v8/v9 ruleset was discovered on VisualWebArena and can only find
+# obvious objection is that the ruleset was discovered on VisualWebArena and can only find
 # VWA-shaped failures, so absence of a signature might be a property of the vocabulary rather
-# than of the world. These six probes bypass the vocabulary — they are computed from raw step
+# than of the world. (Partly answered since: v9 added the WA-native P47/P48 and the ruleset is
+# now v11, so the vocabulary is no longer VWA-only — but it is still a vocabulary.) These six probes bypass the vocabulary — they are computed from raw step
 # fields, not from rule hits — and ask the same question directly. (§G3 claim 7 refuter.)
 TEXT_WINS_PROBES = {
     "never searched": lambda st, su, mk: not any(
@@ -224,16 +225,24 @@ def build(scan_dir: Path, wa_scan_dir: Path | None = None) -> dict:
                      out["cells"][cid]["image_only"]["n_tasks"])
     out["text_wins_probes"] = probe_text_wins(scan_dir)
     if wa_scan_dir and wa_scan_dir.exists():
+        # B0 x WA landed 2026-08-03; this loaded only B1 until then, which is why the
+        # coverage table read 7/8 for this product. Both are present in v11_wa.
         uni = wa_universe(wa_scan_dir)
-        cell = load_cell(wa_scan_dir, "B1", "wa_reddit", universe=uni)
-        out["cells"]["wa_red_B1"] = {
-            "text_only": attribute(cell, TEXT, IMAGE),
-            "image_only": attribute(cell, IMAGE, TEXT),
-        }
         out["wa_n"] = len(uni)
-        LOG.info("wa_red_B1 (n=%d): text-only %d tasks, image-only %d", len(uni),
-                 out["cells"]["wa_red_B1"]["text_only"]["n_tasks"],
-                 out["cells"]["wa_red_B1"]["image_only"]["n_tasks"])
+        for wb in ("B1", "B0"):
+            probe = wa_scan_dir / f"{wb}_dom_wa_reddit.json"
+            if not probe.exists():
+                LOG.info("wa %s: absent from %s — skipping", wb, wa_scan_dir.name)
+                continue
+            cell = load_cell(wa_scan_dir, wb, "wa_reddit", universe=uni)
+            cid = f"wa_red_{wb}"
+            out["cells"][cid] = {
+                "text_only": attribute(cell, TEXT, IMAGE),
+                "image_only": attribute(cell, IMAGE, TEXT),
+            }
+            LOG.info("%s (n=%d): text-only %d tasks, image-only %d", cid, len(uni),
+                     out["cells"][cid]["text_only"]["n_tasks"],
+                     out["cells"][cid]["image_only"]["n_tasks"])
     # pool: sum numerators and denominators across cells rather than averaging ratios
     for side in ("text_only", "image_only"):
         c = collections.Counter(); b = collections.Counter(); names = {}
@@ -367,9 +376,9 @@ def render(d: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--scan-dir", type=Path,
-                    default=REPO / "results/diag_scans/v9_vwa")
+                    default=REPO / "results/diag_scans/v11_vwa")
     ap.add_argument("--wa-scan-dir", type=Path,
-                    default=REPO / "results/diag_scans/v9_wa")
+                    default=REPO / "results/diag_scans/v11_wa")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,

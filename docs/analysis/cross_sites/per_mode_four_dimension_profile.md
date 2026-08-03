@@ -1,6 +1,6 @@
 # Per-mode four-dimension evidence profile
 
-- generated: `2026-08-02T13:52:12+00:00`
+- generated: `2026-08-03T10:42:51+00:00`
 - schema: `2026-08-02-per-mode-four-dimension-profile-v2`
 - **post_hoc_exploratory=True / h10_eligible=False**
 - 笔记 §108 evidence layer, cross-mode axis (the paper-headline axis per `paper_section2_framework.canvas`). `INDEX.md §7`: the framework was defined but only the **Macro** dimension had ever been computed per mode. This is the first run of all four.
@@ -19,7 +19,7 @@ Blast radius measured by `audit_steps_summary_identity.py`: **2 of 7686 episodes
 
 A per-mode difference only counts if it holds across cells. `unanimous` = the same mode is the extreme in all 6 cells.
 
-⚙️ = the extreme follows from how the mode is **built** (tautology). ◆ = the magnitude is real but its **direction was predictable** from the design. Neither may be cited as a behavioural finding. `tie` counts cells where two or more modes share the extreme — those cells contribute a fractional count, so ordering can never manufacture a 6/6.
+⚙️ = the extreme follows from how the mode is **built** (tautology). ◆ = the magnitude is real but its **direction was predictable** from the design. Neither may be cited as a behavioural finding. `tie` counts cells where two or more modes share the extreme — those cells contribute a fractional count, so ordering can never manufacture a unanimous row.
 
 | dim | metric | highest | in | lowest | in | tie | top÷2nd (min–max) | unanimous |
 |---|---|---|---|---|---|---|---|---|
@@ -65,7 +65,7 @@ Why each ⚙️ row is architectural:
 
 Metrics added 2026-08-02 and **not yet adjudicated** either way. Absence from the ⚙️ and ◆ lists above means *nobody has ruled on this*, not *verified clean*, and an unflagged unanimous row must not be read as an endorsed behavioural finding:
 
-- `URL-revisit step rate` — Vision is the extreme in 6/6, the only unflagged unanimous row in the grid. A plausible architectural story exists (a channel that cannot enumerate off-screen targets navigates more exploratorily and so returns to pages it has seen), and it has not been tested. Do not cite as a behavioural finding until it is.
+- `URL-revisit step rate` — Vision is the extreme in every cell, the only unflagged unanimous row in the grid. A plausible architectural story exists (a channel that cannot enumerate off-screen targets navigates more exploratorily and so returns to pages it has seen), and it has not been tested. Do not cite as a behavioural finding until it is.
 - `episodes exhausting the step budget` — SoM is the extreme (lowest) in 5/6. Reads with `n_steps` (lowest, 5/6) and `finish_rate` (highest, 5/6) as one signature rather than three findings: the fused mode terminates sooner and more often by choice. Count it once.
 - `no-op despite a SUCCEEDING action` — SoM highest in 5/6. This is the residual of `no_change_rate` after action failures are removed, so it is the part of that metric the ◆ marking above does NOT cover.
 - `page changed but channel did not show it` — no signal: Vision is the extreme at both ends (highest in 2/6, lowest in 4/6). A two-cell probe on 2026-08-02 read Vision as uniformly highest and that reading did not survive the full grid. Reported so the absence is on the record.

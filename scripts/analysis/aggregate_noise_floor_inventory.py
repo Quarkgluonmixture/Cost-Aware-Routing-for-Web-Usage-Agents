@@ -79,6 +79,10 @@ WA_PAIRS = {  # mode -> (pilot glob, full glob)
     "psom": ("B1_phantom_som_wa_reddit_20260727", "B1_phantom_som_wa_reddit_20260730_231304*"),
 }
 WA_CLEAN_MODES = ["dom", "som", "vision", "ptext", "pprompt"]
+# Backbone-agnostic mode -> run-dir stem, for WA cells that have no registered pilot
+# (B0 x WA landed 2026-08-03). WA_PAIRS above stays B1-only: it encodes the pilot pairing.
+WA_MODE_STEM = {"dom": "dom", "som": "som", "vision": "vision",
+                "ptext": "phantom_text", "pprompt": "phantom_prompt", "psom": "phantom_som"}
 
 
 class MissingInput(RuntimeError):
@@ -103,7 +107,8 @@ def _episode_success(condition_dir: Path) -> dict[int, int]:
 
 
 def _resolve_one(pattern: str) -> Path:
-    hits = [Path(p) for p in glob.glob(str(REPO / WA_ROOT / pattern)) if os.path.isdir(p)]
+    hits = [Path(p) for p in glob.glob(str(REPO / WA_ROOT / pattern))
+            if os.path.isdir(p) and "ABORTED" not in p]
     if len(hits) != 1:
         raise MissingInput(f"expected exactly 1 run dir for {pattern!r}, got {len(hits)}")
     return hits[0]
@@ -244,10 +249,20 @@ def compute_vwa_margins() -> dict[str, dict]:
     return out
 
 
-def compute_wa_margin() -> dict:
+def compute_wa_margin(baseline: str = "B1") -> dict:
+    """Arm-matched marginal gain on <baseline> x WA-reddit.
+
+    B1 resolves through WA_PAIRS (its full-run globs carry the registered-pilot pairing);
+    any other backbone globs on the run-id suffix. B0 x WA landed 2026-08-03 and has no
+    pilot draw, so it contributes a margin but no floor -- the floor row stays B1-only.
+    """
     succ = {}
-    for m, (_pilot, full) in WA_PAIRS.items():
-        succ[m] = _episode_success(_resolve_one(full))
+    if baseline == "B1":
+        for m, (_pilot, full) in WA_PAIRS.items():
+            succ[m] = _episode_success(_resolve_one(full))
+    else:
+        for m, stem in WA_MODE_STEM.items():
+            succ[m] = _episode_success(_resolve_one(f"{baseline}_{stem}_wa_reddit_2026*_R*"))
     tasks = sorted(set.intersection(*[set(v) for v in succ.values()]))
     return _marginal_gain(succ, tasks)
 
@@ -412,7 +427,8 @@ def main(argv: list[str] | None = None) -> int:
         clean = compute_clean_pairs()
         wa_floor = compute_wa_floor()
         margins = compute_vwa_margins()
-        margins["wa_red_B1"] = compute_wa_margin()
+        margins["wa_red_B1"] = compute_wa_margin("B1")
+        margins["wa_red_B0"] = compute_wa_margin("B0")
     except MissingInput as exc:
         LOG.error("missing input: %s", exc)
         return 2 if args.require_complete else 1
@@ -429,6 +445,7 @@ def main(argv: list[str] | None = None) -> int:
     head_to_head = [
         ("cls_B0", "B0 · VWA-cls (n=224)", f"{lo:.2f} – {hi:.2f}pp", lo, hi),
         ("wa_red_B1", "B1 · WA-red (n=104; floor n=50)", f"{wlo:.2f} – {whi:.2f}pp", wlo, whi),
+        ("wa_red_B0", "B0 · WA-red (n=104; no pilot → no floor)", "—", None, None),
         ("cls_B1", "B1 · VWA-cls (n=224)", "—", None, None),
         ("cls_B2", "B2 · VWA-cls (n=224)", "—", None, None),
         ("red_B0", "B0 · VWA-red (n=203)", "—", None, None),
