@@ -1,0 +1,299 @@
+{
+ "schema": "2026-08-03-local-cost-estimand-v1",
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "config_constants": {
+  "input_per_1k": 0.00093,
+  "output_per_1k": 0.00185,
+  "derived_from_dollars_per_hour": 0.2,
+  "derived_from_assumed_tok_per_s": 60.0,
+  "derived_for_device": "DGX Spark GB10",
+  "runs_served_on": "a100-jiaming-test (A100-PCIE-40GB)"
+ },
+ "measured_tok_per_s_min": 247.99262508712252,
+ "measured_tok_per_s_max": 551.3888099392344,
+ "throughput_underestimate_min": 4.133210418118709,
+ "throughput_underestimate_max": 9.18981349898724,
+ "output_share_min": 0.019128583476348025,
+ "output_share_max": 0.0410264652309011,
+ "n_cells": 4,
+ "cheapest_flips_token_vs_time": [
+  "B1·reddit",
+  "B2·classifieds"
+ ],
+ "cheapest_flips_on_output_ratio": [],
+ "cells": {
+  "B1·classifieds": {
+   "DOM": {
+    "in_tok": 2788.8465227817746,
+    "out_tok": 96.91846522781775,
+    "model_ms": 7881.885509125049,
+    "measured_tok_per_s": 366.1262250851871,
+    "cost_by_token": 0.002772926426858513,
+    "cost_by_gpu_time": 0.00043788252828472495,
+    "output_share": 0.03358501666993528,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "SoM": {
+    "in_tok": 3587.8068535825546,
+    "out_tok": 110.97507788161994,
+    "model_ms": 8994.209174426545,
+    "measured_tok_per_s": 411.2403725255814,
+    "cost_by_token": 0.0035419642679127726,
+    "cost_by_gpu_time": 0.0004996782874681414,
+    "output_share": 0.03000314155792637,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "Vision": {
+    "in_tok": 2163.2942708333335,
+    "out_tok": 90.76041666666667,
+    "model_ms": 7658.234054222703,
+    "measured_tok_per_s": 294.33086943289857,
+    "cost_by_token": 0.0021797704427083337,
+    "cost_by_gpu_time": 0.00042545744745681684,
+    "output_share": 0.04026540135427245,
+    "cheapest_by_token": true,
+    "cheapest_by_gpu_time": true
+   },
+   "P-text": {
+    "in_tok": 2661.71662763466,
+    "out_tok": 97.36065573770492,
+    "model_ms": 8039.652074527964,
+    "measured_tok_per_s": 343.1836673770935,
+    "cost_by_token": 0.002655513676814988,
+    "cost_by_gpu_time": 0.0004466473374737758,
+    "output_share": 0.03528739710353562,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "P-prompt": {
+    "in_tok": 3082.156334231806,
+    "out_tok": 99.67924528301887,
+    "model_ms": 8274.938561524343,
+    "measured_tok_per_s": 384.51470737308927,
+    "cost_by_token": 0.003050811994609164,
+    "cost_by_gpu_time": 0.0004597188089735746,
+    "output_share": 0.03132759150874108,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "P-SoM": {
+    "in_tok": 2959.6563981042655,
+    "out_tok": 115.92417061611374,
+    "model_ms": 9185.679241944263,
+    "measured_tok_per_s": 334.8234232561113,
+    "cost_by_token": 0.0029669401658767775,
+    "cost_by_gpu_time": 0.0005103155134413479,
+    "output_share": 0.03769180095462268,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   }
+  },
+  "B1·reddit": {
+   "DOM": {
+    "in_tok": 3526.9856262833678,
+    "out_tok": 100.80082135523614,
+    "model_ms": 7867.370372435395,
+    "measured_tok_per_s": 461.1180452809417,
+    "cost_by_token": 0.003466578151950719,
+    "cost_by_gpu_time": 0.0004370761318019665,
+    "output_share": 0.02778576490378846,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "SoM": {
+    "in_tok": 3974.9065040650407,
+    "out_tok": 113.45528455284553,
+    "model_ms": 8809.31378428529,
+    "measured_tok_per_s": 464.09537550030404,
+    "cost_by_token": 0.003906555325203252,
+    "cost_by_gpu_time": 0.0004894063213491828,
+    "output_share": 0.027750793696562817,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "Vision": {
+    "in_tok": 2644.775828460039,
+    "out_tok": 97.10136452241716,
+    "model_ms": 7712.545854538737,
+    "measured_tok_per_s": 355.5087055163368,
+    "cost_by_token": 0.0026392790448343077,
+    "cost_by_gpu_time": 0.00042847476969659653,
+    "output_share": 0.035414191697183885,
+    "cheapest_by_token": true,
+    "cheapest_by_gpu_time": false
+   },
+   "P-text": {
+    "in_tok": 3140.209109730849,
+    "out_tok": 97.8944099378882,
+    "model_ms": 7380.585152169932,
+    "measured_tok_per_s": 438.7326279565675,
+    "cost_by_token": 0.0031014991304347825,
+    "cost_by_gpu_time": 0.0004100325084538852,
+    "output_share": 0.030232019866956863,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": true
+   },
+   "P-prompt": {
+    "in_tok": 3624.8586065573772,
+    "out_tok": 117.55532786885246,
+    "model_ms": 8554.548459463433,
+    "measured_tok_per_s": 437.47650178849597,
+    "cost_by_token": 0.003588595860655738,
+    "cost_by_gpu_time": 0.000475252692192413,
+    "output_share": 0.031411631617622095,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "P-SoM": {
+    "in_tok": 3342.375245579568,
+    "out_tok": 130.08251473477407,
+    "model_ms": 9076.283518598215,
+    "measured_tok_per_s": 382.5858627266246,
+    "cost_by_token": 0.0033490616306483304,
+    "cost_by_gpu_time": 0.0005042379732554564,
+    "output_share": 0.03746122306265244,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   }
+  },
+  "B2·classifieds": {
+   "DOM": {
+    "in_tok": 2744.3653136531366,
+    "out_tok": 108.83579335793358,
+    "model_ms": 10442.885383908599,
+    "measured_tok_per_s": 273.219613365436,
+    "cost_by_token": 0.0027536059594095944,
+    "cost_by_gpu_time": 0.0005801602991060334,
+    "output_share": 0.0381451532072153,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "SoM": {
+    "in_tok": 3701.5276752767527,
+    "out_tok": 106.45387453874538,
+    "model_ms": 10402.381702102859,
+    "measured_tok_per_s": 366.06823887703604,
+    "cost_by_token": 0.0036393604059040594,
+    "cost_by_gpu_time": 0.00057791009456127,
+    "output_share": 0.027955459643417446,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "Vision": {
+    "in_tok": 2477.536332179931,
+    "out_tok": 105.99307958477509,
+    "model_ms": 10417.767104393059,
+    "measured_tok_per_s": 247.99262508712252,
+    "cost_by_token": 0.0025001959861591697,
+    "cost_by_gpu_time": 0.0005787648391329478,
+    "output_share": 0.0410264652309011,
+    "cheapest_by_token": true,
+    "cheapest_by_gpu_time": false
+   },
+   "P-text": {
+    "in_tok": 2635.740458015267,
+    "out_tok": 108.16030534351145,
+    "model_ms": 10169.123141820193,
+    "measured_tok_per_s": 269.8266827033075,
+    "cost_by_token": 0.0026513351908396946,
+    "cost_by_gpu_time": 0.0005649512856566774,
+    "output_share": 0.03941844646419123,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "P-prompt": {
+    "in_tok": 3104.383647798742,
+    "out_tok": 114.37945492662473,
+    "model_ms": 10034.848938947953,
+    "measured_tok_per_s": 320.7585009309388,
+    "cost_by_token": 0.003098678784067086,
+    "cost_by_gpu_time": 0.0005574916077193307,
+    "output_share": 0.03553521998241443,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "P-SoM": {
+    "in_tok": 2922.334500875657,
+    "out_tok": 105.55341506129596,
+    "model_ms": 9350.998980360147,
+    "measured_tok_per_s": 323.8036836808997,
+    "cost_by_token": 0.002913044903677758,
+    "cost_by_gpu_time": 0.0005194999433533416,
+    "output_share": 0.034860410289868145,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": true
+   }
+  },
+  "B2·reddit": {
+   "DOM": {
+    "in_tok": 3863.8481012658226,
+    "out_tok": 102.66726943942133,
+    "model_ms": 9233.331111628582,
+    "measured_tok_per_s": 429.5866056086477,
+    "cost_by_token": 0.003783313182640145,
+    "cost_by_gpu_time": 0.0005129628395349212,
+    "output_share": 0.02588349214468496,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "SoM": {
+    "in_tok": 4786.172661870503,
+    "out_tok": 93.33812949640287,
+    "model_ms": 8849.491871089387,
+    "measured_tok_per_s": 551.3888099392344,
+    "cost_by_token": 0.004623816115107914,
+    "cost_by_gpu_time": 0.0004916384372827437,
+    "output_share": 0.019128583476348025,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "Vision": {
+    "in_tok": 2874.382405745063,
+    "out_tok": 97.49730700179533,
+    "model_ms": 8539.073957361054,
+    "measured_tok_per_s": 348.0330217991576,
+    "cost_by_token": 0.0028535456552962303,
+    "cost_by_gpu_time": 0.0004743929976311696,
+    "output_share": 0.03280661279244045,
+    "cheapest_by_token": true,
+    "cheapest_by_gpu_time": true
+   },
+   "P-text": {
+    "in_tok": 3780.6402116402114,
+    "out_tok": 101.24514991181658,
+    "model_ms": 9225.19598394054,
+    "measured_tok_per_s": 420.79164153365565,
+    "cost_by_token": 0.0037032989241622574,
+    "cost_by_gpu_time": 0.0005125108879966968,
+    "output_share": 0.026081437364069263,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "P-prompt": {
+    "in_tok": 3756.9814814814813,
+    "out_tok": 99.9949494949495,
+    "model_ms": 8794.489231575219,
+    "measured_tok_per_s": 438.56741755150136,
+    "cost_by_token": 0.0036789834343434347,
+    "cost_by_gpu_time": 0.0004885827350875121,
+    "output_share": 0.025925735167024292,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   },
+   "P-SoM": {
+    "in_tok": 3743.8129921259842,
+    "out_tok": 97.38976377952756,
+    "model_ms": 8663.416230303095,
+    "measured_tok_per_s": 443.3819931760481,
+    "cost_by_token": 0.0036619171456692915,
+    "cost_by_gpu_time": 0.00048130090168350536,
+    "output_share": 0.025353976337177033,
+    "cheapest_by_token": false,
+    "cheapest_by_gpu_time": false
+   }
+  }
+ }
+}

@@ -207,12 +207,27 @@ them had never been written down anywhere.
   steps). It is API-served so that is correct, but it means a carbon comparison across the
   three backbones is not uncalibrated — it is **impossible**, and the missing backbone is
   the one every headline number uses.
-- **Absolute local cost.** The per-token constant for the locally-served backbones was derived
-  for a different accelerator than the runs were served on. Within-cell ratios are unaffected
-  because it is a single multiplier; absolute dollar figures for B1/B2 are uncalibrated.
-  ⚠️ **Still an unmeasured assertion**, of exactly the shape the energy entry above turned out
-  to have. Nobody has checked which constant is in force, where it came from, or how far off
-  it is. → the same treatment `energy_carbon_audit` gave carbon would settle it.
+- **Absolute local cost — measured 2026-08-03, and the second sentence was wrong.**
+  → `local_cost_estimand_audit`. The old text read: *"derived for a different accelerator …
+  Within-cell ratios are unaffected because it is a single multiplier; absolute dollar
+  figures for B1/B2 are uncalibrated."* First half confirmed with a citation, second half
+  **refuted**.
+  * **Provenance.** `exp_v2_base.yaml:66-81` derives the constant from *"DGX Spark GB10
+    ~$0.20/hr, ~60 tok/s"*. All 36 conditions ran on `a100-jiaming-test`. The same file's
+    **energy** block *was* migrated (`hardware_profile: a100_pcie_40gb`, B-118, "dgx_spark
+    profile retired per A100 migration"); the **cost** block four lines above was not. One
+    half of the hardware assumption migrated, the other did not, in one file. A second
+    internal clash: the cost derivation assumes **140 W**, the telemetry records **66.3 W**.
+  * **The assumed throughput is off 4–9×.** ~60 tok/s assumed against **248–551 tok/s**
+    measured — **and it varies by mode**, which is why a fixed price-per-token cannot
+    preserve an ordering over modes with different token density.
+  * **So within-cell ratios ARE affected.** Pricing the same episodes by GPU-time instead of
+    by token **changes which mode is cheapest in 2 of 4 local cells** (`B1·reddit`,
+    `B2·classifieds`). The per-mode cost ordering on locally-served backbones is
+    **estimand-dependent** — the same shape `latency_decomposition` found for latency.
+  * The two-constants worry (input vs output rate) is harmless on its own: output is
+    1.9–4.1% of tokens and sweeping the ratio 2×→10× reorders **0 of 4** cells.
+  * **B0 is unaffected** — it pays a real API bill at published rates.
 
 **4a-bis. Two verdicts the ledger is holding for tonight's replicate**
 
