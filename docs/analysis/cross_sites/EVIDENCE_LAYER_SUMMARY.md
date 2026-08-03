@@ -274,6 +274,17 @@ which way it would go.
   tasks, reweight, or disclose and keep? Tasks 58 and 160 went through AMENDMENT_08 for less.
 - **Whether to audit the WA cells for the same defect.** Two hand-traced episodes came back
   *earned* (§8b), which is evidence about two episodes.
+  ⚠️ **Attempted 2026-08-03 and the attempt is only partly usable** →
+  `persistent_state_leakage_audit`. A criterion derived from each evaluator's own config,
+  run on **both** benchmarks so the known VWA answer acts as a control. It failed that
+  control: it reports **22** VWA leaks against the established **6**, i.e. over-flags ~3.7×.
+  Three filters were tried (86 → 30 → 22) and then the generalisation was abandoned rather
+  than tuned, because fitting a heuristic to an answer already in hand is not validation.
+  **The WA result is nevertheless informative because the error is one-sided**: every
+  version over-flagged, never under-flagged, and this one finds **0 on both WA cells**. A
+  test that cries wolf 3.7× too often where the truth is known, and finds nothing on WA, is
+  stronger evidence than §8b's two hand-traces and weaker than an audit. **The ⚠️ unaudited
+  marks stay** until a criterion that reproduces the 6 exists.
 - **Whether off-site steps stay in the latency estimand.** 1.05–2.13% of reddit steps, 0.00–0.16%
   of classifieds steps, and they are *faster* than on-site ones (claim 9).
 

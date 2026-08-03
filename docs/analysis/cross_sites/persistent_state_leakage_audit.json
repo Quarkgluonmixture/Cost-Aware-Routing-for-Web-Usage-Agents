@@ -1,0 +1,403 @@
+{
+ "schema": "2026-08-03-persistent-state-leakage-v1",
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "cells": [
+  {
+   "cell": "wa_B0",
+   "per_mode": {
+    "DOM": {
+     "n_state_scored_successes": 6,
+     "earned": 6,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "SoM": {
+     "n_state_scored_successes": 4,
+     "earned": 4,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "Vision": {
+     "n_state_scored_successes": 5,
+     "earned": 5,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "P-text": {
+     "n_state_scored_successes": 8,
+     "earned": 8,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "P-prompt": {
+     "n_state_scored_successes": 7,
+     "earned": 7,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "P-SoM": {
+     "n_state_scored_successes": 9,
+     "earned": 9,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    }
+   },
+   "total_state_scored_successes": 39,
+   "total_leaked": 0,
+   "leak_share": 0.0
+  },
+  {
+   "cell": "wa_B1",
+   "per_mode": {
+    "DOM": {
+     "n_state_scored_successes": 4,
+     "earned": 4,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "SoM": {
+     "n_state_scored_successes": 3,
+     "earned": 3,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "Vision": {
+     "n_state_scored_successes": 1,
+     "earned": 1,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "P-text": {
+     "n_state_scored_successes": 5,
+     "earned": 5,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "P-prompt": {
+     "n_state_scored_successes": 4,
+     "earned": 4,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "P-SoM": {
+     "n_state_scored_successes": 5,
+     "earned": 5,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    }
+   },
+   "total_state_scored_successes": 22,
+   "total_leaked": 0,
+   "leak_share": 0.0
+  },
+  {
+   "cell": "red_B0",
+   "per_mode": {
+    "DOM": {
+     "n_state_scored_successes": 5,
+     "earned": 2,
+     "leaked": 3,
+     "leak_share": 0.6,
+     "leak_tasks": [
+      {
+       "task_id": 171,
+       "targets": [
+        "/f/mechanicalkeyboards"
+       ]
+      },
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "SoM": {
+     "n_state_scored_successes": 3,
+     "earned": 2,
+     "leaked": 1,
+     "leak_share": 0.3333333333333333,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      }
+     ]
+    },
+    "Vision": {
+     "n_state_scored_successes": 2,
+     "earned": 0,
+     "leaked": 2,
+     "leak_share": 1.0,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "P-text": {
+     "n_state_scored_successes": 3,
+     "earned": 1,
+     "leaked": 2,
+     "leak_share": 0.6666666666666666,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "P-prompt": {
+     "n_state_scored_successes": 3,
+     "earned": 1,
+     "leaked": 2,
+     "leak_share": 0.6666666666666666,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "P-SoM": {
+     "n_state_scored_successes": 2,
+     "earned": 1,
+     "leaked": 1,
+     "leak_share": 0.5,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      }
+     ]
+    }
+   },
+   "total_state_scored_successes": 18,
+   "total_leaked": 11,
+   "leak_share": 0.6111111111111112
+  },
+  {
+   "cell": "red_B1",
+   "per_mode": {
+    "DOM": {
+     "n_state_scored_successes": 2,
+     "earned": 1,
+     "leaked": 1,
+     "leak_share": 0.5,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      }
+     ]
+    },
+    "SoM": {
+     "n_state_scored_successes": 3,
+     "earned": 1,
+     "leaked": 2,
+     "leak_share": 0.6666666666666666,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "Vision": {
+     "n_state_scored_successes": 0,
+     "earned": 0,
+     "leaked": 0,
+     "leak_share": null,
+     "leak_tasks": []
+    },
+    "P-text": {
+     "n_state_scored_successes": 4,
+     "earned": 2,
+     "leaked": 2,
+     "leak_share": 0.5,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "P-prompt": {
+     "n_state_scored_successes": 2,
+     "earned": 1,
+     "leaked": 1,
+     "leak_share": 0.5,
+     "leak_tasks": [
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "P-SoM": {
+     "n_state_scored_successes": 4,
+     "earned": 2,
+     "leaked": 2,
+     "leak_share": 0.5,
+     "leak_tasks": [
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    }
+   },
+   "total_state_scored_successes": 15,
+   "total_leaked": 8,
+   "leak_share": 0.5333333333333333
+  },
+  {
+   "cell": "red_B2",
+   "per_mode": {
+    "DOM": {
+     "n_state_scored_successes": 3,
+     "earned": 0,
+     "leaked": 3,
+     "leak_share": 1.0,
+     "leak_tasks": [
+      {
+       "task_id": 178,
+       "targets": [
+        "/f/nyc"
+       ]
+      },
+      {
+       "task_id": 188,
+       "targets": [
+        "/f/iphone |or| technology"
+       ]
+      },
+      {
+       "task_id": 189,
+       "targets": [
+        "/f/machinelearning |or| deeplearning |or| singularity"
+       ]
+      }
+     ]
+    },
+    "SoM": {
+     "n_state_scored_successes": 1,
+     "earned": 1,
+     "leaked": 0,
+     "leak_share": 0.0,
+     "leak_tasks": []
+    },
+    "Vision": {
+     "n_state_scored_successes": 0,
+     "earned": 0,
+     "leaked": 0,
+     "leak_share": null,
+     "leak_tasks": []
+    },
+    "P-text": {
+     "n_state_scored_successes": 0,
+     "earned": 0,
+     "leaked": 0,
+     "leak_share": null,
+     "leak_tasks": []
+    },
+    "P-prompt": {
+     "n_state_scored_successes": 0,
+     "earned": 0,
+     "leaked": 0,
+     "leak_share": null,
+     "leak_tasks": []
+    },
+    "P-SoM": {
+     "n_state_scored_successes": 0,
+     "earned": 0,
+     "leaked": 0,
+     "leak_share": null,
+     "leak_tasks": []
+    }
+   },
+   "total_state_scored_successes": 4,
+   "total_leaked": 3,
+   "leak_share": 0.75
+  }
+ ],
+ "wa_total_leaked": 0,
+ "vwa_total_leaked": 22
+}
