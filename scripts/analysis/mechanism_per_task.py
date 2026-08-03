@@ -144,9 +144,22 @@ from p79.experiment.analysis import paper_scored_task_count as _paper_scored_tas
 EXPECTED_N = {_s: _paper_scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
 MAX_STEPS = 30
 
+# B-1945: episodes dropped because their JSONL and summary disagree on identity.
+# Populated by load_mode_tasks, reported at the end of main() — an exclusion the
+# operator never sees is the same failure mode as the silent `continue` this
+# replaced.
+INTEGRITY_EXCLUSIONS: list[tuple[str, str]] = []
+
 
 def read_json(path: Path) -> Any:
-    return json.loads(path.read_text())
+    # B-1945: name the file in the traceback. A bare `json.loads` on a truncated
+    # summary raised a JSONDecodeError carrying only a byte offset, so the
+    # operator got "Expecting value: line 1 column 1" with no idea which of
+    # ~1400 episode summaries produced it.
+    try:
+        return json.loads(path.read_text(encoding="utf-8", errors="replace"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{path}: malformed JSON ({exc})") from exc
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -156,15 +169,33 @@ def read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def read_steps(path: Path) -> list[dict[str, Any]]:
-    out: list[dict[str, Any]] = []
-    with path.open(encoding="utf-8") as handle:
-        for line in handle:
-            try:
-                out.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return out
+def read_steps(path: Path, summary_path: Path | None = None) -> list[dict[str, Any]]:
+    """Read an episode's step JSONL through the canonical dedup reader.
+
+    B-1945 (2026-08-03, cross-session codex finding): this used to be a bare
+    per-line ``json.loads`` with ``except JSONDecodeError: continue`` and no
+    restart dedup. CLAUDE.md makes the canonical reader mandatory — *"读取
+    JSONL 统一用 p79.experiment.io_utils.read_jsonl_dedup，自带 restart dedup +
+    corrupt 行处理"* — and this file used it zero times. Two consequences:
+
+      * **Restart artifacts were counted twice.** When a runner restarts an
+        episode it appends a fresh ``step_idx=0`` segment to the same file. The
+        old loop concatenated both segments, so every per-task action count,
+        URL trajectory and click-target set here silently mixed the abandoned
+        attempt with the real one.
+      * **Corrupt lines vanished without a trace.** ``continue`` dropped them
+        with no counter and no log, so a truncated write looked like a shorter
+        episode rather than a damaged file.
+
+    Passing ``summary_path`` additionally validates the surviving segment
+    against the summary's authoritative identity (run_id / condition_id / seed /
+    site / task_id / steps). ``strict_identity=True`` because this script feeds
+    paper §5 per-task tables: a restart-crash tail that belongs to a different
+    run must fail loudly here, not be averaged into a mechanism claim.
+    """
+    from p79.experiment.io_utils import read_jsonl_dedup
+
+    return read_jsonl_dedup(path, summary_path, strict_identity=True)
 
 
 def task_id_from_path(path: Path) -> int:
@@ -288,8 +319,25 @@ def load_mode_tasks(site: str, mode: str, ep_dir: Path) -> dict[int, dict[str, A
         tid = task_id_from_path(path)
         if keep is not None and tid not in keep:
             continue
-        steps = read_steps(path)
+        # B-1945: summary_path is computed BEFORE the read so the dedup reader
+        # can validate the surviving segment's identity against it. It used to
+        # be derived on the next line and never passed in.
         summary_path = path.with_name(path.name.replace("_steps_v2.jsonl", "_summary_v2.json"))
+        try:
+            steps = read_steps(path, summary_path if summary_path.exists() else None)
+        except ValueError as exc:
+            # B-1945: fail loud PER EPISODE, not per run. `strict_identity=True`
+            # raises when the JSONL and its summary disagree on identity — an
+            # episode we cannot trust for step-level tables. Letting that abort
+            # the whole script would mean a 0.025%-prevalence anomaly (measured:
+            # 2 of 8096 episodes, both in B0/phantom_som/reddit R28173, where the
+            # summary undercounts steps by 3-5 against contiguous, well-formed
+            # step records — a summary/JSONL write-ordering race) blocks every
+            # mechanism table. So: drop the episode, remember it, and report the
+            # whole list loudly at the end. Excluded ≠ silently averaged in,
+            # which is what the pre-B-1945 bare json.loads did.
+            INTEGRITY_EXCLUSIONS.append((str(path), str(exc).split(";")[0]))
+            continue
         click_targets: set[tuple[str, str]] = set()
         url_trajectory: list[str] = []
         action_counts = Counter({name: 0 for name in ACTION_TYPES})
@@ -1210,6 +1258,17 @@ def main() -> None:
     print(f"[json] {OUT_JSON}")
     print(f"[md]   {OUT_MD}")
     print(f"[validation] pass={out['validation']['pass']}")
+    # B-1945: an exclusion nobody sees is the silent `continue` this replaced.
+    if INTEGRITY_EXCLUSIONS:
+        print(f"\n[integrity] ⚠️  {len(INTEGRITY_EXCLUSIONS)} episode(s) EXCLUDED — "
+              f"JSONL/summary identity mismatch (not trusted for step-level tables):")
+        for pth, why in INTEGRITY_EXCLUSIONS:
+            print(f"  - {Path(pth).parts[-4]}/{Path(pth).name}")
+            print(f"      {why}")
+        print("[integrity] these are dropped from every table above; "
+              "investigate before citing step counts for those cells.")
+    else:
+        print("[integrity] no episodes excluded (all JSONL/summary identities agree)")
 
 
 if __name__ == "__main__":

@@ -9,11 +9,11 @@ E1 asks whether modes click into the same server-determined page transitions. Ja
 | site | contrast | N | mean Jaccard | std | median | mean divergence | left size | right size | union size |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | reddit | axis_1_text (DOM vs P-text) | 203 | 0.335 | 0.443 | 0.000 | 0.665 | 1.596 | 1.537 | 2.847 |
-| reddit | axis_2_prompt (P-text vs P-SoM) | 203 | 0.408 | 0.448 | 0.167 | 0.592 | 1.537 | 1.611 | 2.783 |
-| reddit | axis_3_image (P-SoM vs SoM) | 203 | 0.315 | 0.430 | 0.000 | 0.685 | 1.611 | 1.236 | 2.581 |
-| reddit | compound_DOM_to_PSoM (DOM vs P-SoM) | 203 | 0.310 | 0.426 | 0.000 | 0.690 | 1.596 | 1.611 | 2.916 |
+| reddit | axis_2_prompt (P-text vs P-SoM) | 201 | 0.406 | 0.448 | 0.167 | 0.594 | 1.537 | 1.617 | 2.791 |
+| reddit | axis_3_image (P-SoM vs SoM) | 201 | 0.313 | 0.429 | 0.000 | 0.687 | 1.617 | 1.244 | 2.592 |
+| reddit | compound_DOM_to_PSoM (DOM vs P-SoM) | 201 | 0.307 | 0.426 | 0.000 | 0.693 | 1.592 | 1.617 | 2.920 |
 | reddit | axis_2_prompt_alt (DOM vs P-prompt) | 203 | 0.316 | 0.435 | 0.000 | 0.684 | 1.596 | 1.828 | 3.138 |
-| reddit | axis_1_text_alt (P-prompt vs P-SoM) | 203 | 0.333 | 0.429 | 0.000 | 0.667 | 1.828 | 1.611 | 3.094 |
+| reddit | axis_1_text_alt (P-prompt vs P-SoM) | 201 | 0.330 | 0.428 | 0.000 | 0.670 | 1.836 | 1.617 | 3.109 |
 | classifieds | axis_1_text (DOM vs P-text) | 224 | 0.315 | 0.436 | 0.000 | 0.685 | 1.304 | 1.549 | 2.616 |
 | classifieds | axis_2_prompt (P-text vs P-SoM) | 224 | 0.340 | 0.439 | 0.000 | 0.660 | 1.549 | 1.473 | 2.714 |
 | classifieds | axis_3_image (P-SoM vs SoM) | 224 | 0.313 | 0.445 | 0.000 | 0.687 | 1.473 | 1.121 | 2.406 |
@@ -29,11 +29,11 @@ E1 asks whether modes click into the same server-determined page transitions. Ja
 
 Per-axis interpretation:
 - axis_1_text: reddit Jaccard 0.335; classifieds Jaccard 0.315. Lower values indicate that the modes use different URL-changing click decisions.
-- axis_2_prompt: reddit Jaccard 0.408; classifieds Jaccard 0.340. Lower values indicate that the modes use different URL-changing click decisions.
-- axis_3_image: reddit Jaccard 0.315; classifieds Jaccard 0.313. Lower values indicate that the modes use different URL-changing click decisions.
-- compound_DOM_to_PSoM: reddit Jaccard 0.310; classifieds Jaccard 0.332. Lower values indicate that the modes use different URL-changing click decisions.
+- axis_2_prompt: reddit Jaccard 0.406; classifieds Jaccard 0.340. Lower values indicate that the modes use different URL-changing click decisions.
+- axis_3_image: reddit Jaccard 0.313; classifieds Jaccard 0.313. Lower values indicate that the modes use different URL-changing click decisions.
+- compound_DOM_to_PSoM: reddit Jaccard 0.307; classifieds Jaccard 0.332. Lower values indicate that the modes use different URL-changing click decisions.
 - axis_2_prompt_alt: reddit Jaccard 0.316; classifieds Jaccard 0.313. Lower values indicate that the modes use different URL-changing click decisions.
-- axis_1_text_alt: reddit Jaccard 0.333; classifieds Jaccard 0.306. Lower values indicate that the modes use different URL-changing click decisions.
+- axis_1_text_alt: reddit Jaccard 0.330; classifieds Jaccard 0.306. Lower values indicate that the modes use different URL-changing click decisions.
 
 Case-study anchors from E2 below should be read with E1: tasks with low click-transition overlap often diverge before the final answer, not merely at finish time.
 
@@ -184,7 +184,7 @@ E4 expands the Macro dimension from a few hand-picked action metrics to the full
 | B0/classifieds/SoM | 0.312 | 0.252 | 0.170 | 0.101 | 0.001 | 0.079 | 0.000 | 0.054 | 0.003 | 0.027 |
 | B0/classifieds/Vision | 0.353 | 0.164 | 0.295 | 0.080 | 0.000 | 0.051 | 0.000 | 0.044 | 0.006 | 0.005 |
 | B0/reddit/DOM | 0.465 | 0.148 | 0.192 | 0.023 | 0.000 | 0.080 | 0.000 | 0.025 | 0.043 | 0.024 |
-| B0/reddit/P-SoM | 0.442 | 0.131 | 0.127 | 0.024 | 0.003 | 0.074 | 0.000 | 0.018 | 0.153 | 0.029 |
+| B0/reddit/P-SoM | 0.440 | 0.132 | 0.126 | 0.024 | 0.003 | 0.073 | 0.000 | 0.018 | 0.154 | 0.029 |
 | B0/reddit/P-prompt | 0.466 | 0.153 | 0.150 | 0.021 | 0.004 | 0.106 | 0.000 | 0.027 | 0.038 | 0.036 |
 | B0/reddit/P-text | 0.432 | 0.149 | 0.127 | 0.016 | 0.001 | 0.081 | 0.000 | 0.016 | 0.150 | 0.029 |
 | B0/reddit/SoM | 0.483 | 0.115 | 0.098 | 0.044 | 0.002 | 0.062 | 0.000 | 0.024 | 0.148 | 0.024 |
@@ -201,11 +201,11 @@ Paired action-fraction shifts by axis (right-minus-left):
 | site | axis | N | top shift 1 | top shift 2 | top shift 3 |
 |---|---|---:|---|---|---|
 | reddit | axis_1_text | 203 | tab_focus 0.078 | scroll -0.049 | finish -0.030 |
-| reddit | axis_2_prompt | 203 | type -0.017 | click 0.014 | scroll 0.007 |
-| reddit | axis_3_image | 203 | finish 0.037 | scroll -0.026 | click 0.021 |
-| reddit | compound_DOM_to_PSoM | 203 | tab_focus 0.078 | scroll -0.042 | finish -0.033 |
+| reddit | axis_2_prompt | 201 | type -0.016 | click 0.011 | scroll 0.008 |
+| reddit | axis_3_image | 201 | finish 0.037 | scroll -0.025 | click 0.021 |
+| reddit | compound_DOM_to_PSoM | 201 | tab_focus 0.079 | scroll -0.042 | finish -0.032 |
 | reddit | axis_2_prompt_alt | 203 | scroll -0.037 | back 0.022 | click 0.018 |
-| reddit | axis_1_text_alt | 203 | tab_focus 0.075 | finish -0.026 | back -0.019 |
+| reddit | axis_1_text_alt | 201 | tab_focus 0.076 | finish -0.026 | click -0.022 |
 | classifieds | axis_1_text | 224 | type -0.031 | back 0.013 | scroll 0.013 |
 | classifieds | axis_2_prompt | 224 | scroll 0.012 | back -0.011 | finish 0.009 |
 | classifieds | axis_3_image | 224 | scroll -0.054 | finish 0.034 | select_option 0.018 |
@@ -226,12 +226,12 @@ Uncommon-action highlights:
 - reddit select_option: SoM 0.044 vs Vision 0.008 (5.7x).
 - classifieds tab_focus: P-prompt 0.016 vs SoM 0.003 (5.6x).
 - wa_reddit other: Vision 0.045 vs P-SoM 0.009 (5.2x).
-- reddit tab_focus: P-SoM 0.153 vs P-prompt 0.038 (4.1x).
+- reddit tab_focus: P-SoM 0.154 vs P-prompt 0.038 (4.1x).
 - reddit scroll: Vision 0.369 vs SoM 0.098 (3.8x).
 
 ## Mechanism evidence for paper Section 5
 
-Available DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.310 on reddit; 0.332 on classifieds.
+Available DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.307 on reddit; 0.332 on classifieds.
 
 Boundary divergence is usually visible early among symmetric-difference tasks: DOM vs P-SoM early rates are reddit 100.0% and classifieds 95.5%.
 
@@ -248,11 +248,11 @@ These histograms summarize how many URL-changing click transitions each task pro
 | site | axis | left mode | left hist | right mode | right hist |
 |---|---|---|---|---|---|
 | reddit | axis_1_text | DOM | `{"0": 75, "1": 47, "11": 1, "2": 35, "3": 16, "4": 14, "5": 7, "6": 3, "7": 3, "9": 2}` | P-text | `{"0": 75, "1": 46, "2": 37, "3": 18, "4": 11, "5": 8, "6": 5, "7": 1, "8": 1, "9": 1}` |
-| reddit | axis_2_prompt | P-text | `{"0": 75, "1": 46, "2": 37, "3": 18, "4": 11, "5": 8, "6": 5, "7": 1, "8": 1, "9": 1}` | P-SoM | `{"0": 73, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` |
-| reddit | axis_3_image | P-SoM | `{"0": 73, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` | SoM | `{"0": 80, "1": 57, "2": 32, "3": 16, "4": 12, "5": 3, "6": 2, "7": 1}` |
-| reddit | compound_DOM_to_PSoM | DOM | `{"0": 75, "1": 47, "11": 1, "2": 35, "3": 16, "4": 14, "5": 7, "6": 3, "7": 3, "9": 2}` | P-SoM | `{"0": 73, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` |
+| reddit | axis_2_prompt | P-text | `{"0": 74, "1": 46, "2": 37, "3": 17, "4": 11, "5": 8, "6": 5, "7": 1, "8": 1, "9": 1}` | P-SoM | `{"0": 72, "1": 45, "2": 40, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` |
+| reddit | axis_3_image | P-SoM | `{"0": 72, "1": 45, "2": 40, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` | SoM | `{"0": 79, "1": 56, "2": 32, "3": 16, "4": 12, "5": 3, "6": 2, "7": 1}` |
+| reddit | compound_DOM_to_PSoM | DOM | `{"0": 74, "1": 47, "11": 1, "2": 35, "3": 16, "4": 13, "5": 7, "6": 3, "7": 3, "9": 2}` | P-SoM | `{"0": 72, "1": 45, "2": 40, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` |
 | reddit | axis_2_prompt_alt | DOM | `{"0": 75, "1": 47, "11": 1, "2": 35, "3": 16, "4": 14, "5": 7, "6": 3, "7": 3, "9": 2}` | P-prompt | `{"0": 64, "1": 48, "2": 31, "3": 26, "4": 12, "5": 10, "6": 4, "7": 4, "8": 3, "9": 1}` |
-| reddit | axis_1_text_alt | P-prompt | `{"0": 64, "1": 48, "2": 31, "3": 26, "4": 12, "5": 10, "6": 4, "7": 4, "8": 3, "9": 1}` | P-SoM | `{"0": 73, "1": 45, "2": 41, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` |
+| reddit | axis_1_text_alt | P-prompt | `{"0": 63, "1": 48, "2": 30, "3": 26, "4": 12, "5": 10, "6": 4, "7": 4, "8": 3, "9": 1}` | P-SoM | `{"0": 72, "1": 45, "2": 40, "3": 14, "4": 11, "5": 11, "6": 2, "7": 2, "8": 3, "9": 1}` |
 | classifieds | axis_1_text | DOM | `{"0": 81, "1": 71, "2": 31, "3": 26, "4": 4, "5": 6, "6": 1, "7": 3, "8": 1}` | P-text | `{"0": 87, "1": 52, "2": 33, "3": 22, "4": 12, "5": 7, "6": 4, "7": 3, "8": 1, "9": 3}` |
 | classifieds | axis_2_prompt | P-text | `{"0": 87, "1": 52, "2": 33, "3": 22, "4": 12, "5": 7, "6": 4, "7": 3, "8": 1, "9": 3}` | P-SoM | `{"0": 88, "1": 62, "11": 1, "2": 28, "3": 17, "4": 11, "5": 8, "6": 3, "7": 2, "8": 2, "9": 2}` |
 | classifieds | axis_3_image | P-SoM | `{"0": 88, "1": 62, "11": 1, "2": 28, "3": 17, "4": 11, "5": 8, "6": 3, "7": 2, "8": 2, "9": 2}` | SoM | `{"0": 107, "1": 59, "10": 1, "2": 25, "3": 13, "4": 9, "5": 5, "6": 3, "7": 2}` |
@@ -341,11 +341,11 @@ All values are paired per-task action-fraction shifts in the cascade direction, 
 | site | axis | click | type | scroll | select | wait | back | forward | finish | tab_focus | other |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | reddit | axis_1_text | -0.014 | 0.005 | -0.049 | -0.002 | 0.000 | 0.008 | 0.000 | -0.030 | 0.078 | 0.003 |
-| reddit | axis_2_prompt | 0.014 | -0.017 | 0.007 | 0.004 | 0.002 | -0.005 | -0.000 | -0.003 | -0.000 | -0.003 |
-| reddit | axis_3_image | 0.021 | -0.014 | -0.026 | 0.015 | -0.000 | -0.010 | 0.000 | 0.037 | -0.017 | -0.004 |
-| reddit | compound_DOM_to_PSoM | 0.000 | -0.012 | -0.042 | 0.003 | 0.003 | 0.003 | 0.000 | -0.033 | 0.078 | 0.000 |
+| reddit | axis_2_prompt | 0.011 | -0.016 | 0.008 | 0.004 | 0.002 | -0.004 | -0.000 | -0.002 | -0.000 | -0.003 |
+| reddit | axis_3_image | 0.021 | -0.014 | -0.025 | 0.015 | -0.000 | -0.012 | 0.000 | 0.037 | -0.018 | -0.004 |
+| reddit | compound_DOM_to_PSoM | -0.002 | -0.011 | -0.042 | 0.003 | 0.003 | 0.003 | 0.000 | -0.032 | 0.079 | 0.000 |
 | reddit | axis_2_prompt_alt | 0.018 | -0.007 | -0.037 | -0.002 | 0.003 | 0.022 | 0.000 | -0.007 | 0.003 | 0.007 |
-| reddit | axis_1_text_alt | -0.018 | -0.005 | -0.005 | 0.005 | -0.000 | -0.019 | 0.000 | -0.026 | 0.075 | -0.007 |
+| reddit | axis_1_text_alt | -0.022 | -0.004 | -0.002 | 0.005 | -0.000 | -0.019 | 0.000 | -0.026 | 0.076 | -0.007 |
 | classifieds | axis_1_text | -0.000 | -0.031 | 0.013 | 0.011 | -0.001 | 0.013 | 0.000 | -0.004 | -0.010 | 0.009 |
 | classifieds | axis_2_prompt | -0.009 | 0.007 | 0.012 | -0.005 | 0.000 | -0.011 | 0.000 | 0.009 | 0.001 | -0.005 |
 | classifieds | axis_3_image | 0.007 | 0.004 | -0.054 | 0.018 | 0.002 | -0.016 | 0.000 | 0.034 | -0.002 | 0.007 |
@@ -400,11 +400,11 @@ Top action types per B0 cell by pooled step fraction.
 | B0/reddit/DOM | 3 | type | 0.148 |
 | B0/reddit/DOM | 4 | back | 0.080 |
 | B0/reddit/DOM | 5 | tab_focus | 0.043 |
-| B0/reddit/P-SoM | 1 | click | 0.442 |
-| B0/reddit/P-SoM | 2 | tab_focus | 0.153 |
-| B0/reddit/P-SoM | 3 | type | 0.131 |
-| B0/reddit/P-SoM | 4 | scroll | 0.127 |
-| B0/reddit/P-SoM | 5 | back | 0.074 |
+| B0/reddit/P-SoM | 1 | click | 0.440 |
+| B0/reddit/P-SoM | 2 | tab_focus | 0.154 |
+| B0/reddit/P-SoM | 3 | type | 0.132 |
+| B0/reddit/P-SoM | 4 | scroll | 0.126 |
+| B0/reddit/P-SoM | 5 | back | 0.073 |
 | B0/reddit/P-prompt | 1 | click | 0.466 |
 | B0/reddit/P-prompt | 2 | type | 0.153 |
 | B0/reddit/P-prompt | 3 | scroll | 0.150 |

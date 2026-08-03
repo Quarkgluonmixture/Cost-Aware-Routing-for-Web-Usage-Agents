@@ -10772,3 +10772,46 @@ cart ⇒ 下游假成功更多 ⇒ 放大自己的优势)。1-AI unique 的 P0 �
 **Cross-link**: 实验笔记 §424.9 + §424.10; PROTOCOL_NOTE_07 + AMENDMENT_09 + 2026-08-03 CORRECTION
 (预注册 Appendix A 三行); AMENDMENT_08 (463/465 所用 tier-A 规则的出处); B-1894 (发射侧同类漂移);
 B-1934 (被 B-1937 废掉又救回的容器锁)
+
+---
+
+## B-1945 落地记录 (2026-08-03) — 证据层覆盖审计: 一个绕过 canonical reader 的分析脚本
+
+`/stress` 证据层 coverage scope, Mode A (Claude, prose→disk) + Mode B (codex, disk→prose,
+1200s/10 findings)。分工按**起点**切而非按文件切, 两侧发现零重合。详见 实验笔记 §427。
+
+### B-1945 — `mechanism_per_task.py` 裸读 JSONL, 绕过 restart dedup 与 identity 校验 (codex Mode B P1)
+
+```python
+def read_steps(path):                       # 修复前
+    for line in path.open():
+        try: out.append(json.loads(line))
+        except json.JSONDecodeError: continue
+```
+
+CLAUDE.md 编码约定写明「**读取 JSONL 统一用 `p79.experiment.io_utils.read_jsonl_dedup`**,
+自带 restart dedup + corrupt 行处理」, 而这个文件用了 **0 次**。两个后果:
+
+- **restart 段被重复计数** —— runner 重启 episode 时向同文件追加新的 `step_idx=0` 段, 旧循环把两
+  段拼在一起, 于是 E1 click-target 集合 / E2 轨迹 / E4 动作词表**把废弃的那次尝试混进了真实的那次**
+- **损坏行无声消失** —— `continue` 不计数不记录, 截断的写入看起来只是「这个 episode 短一点」
+
+对照组: `axis_effect_size.py:241` 一直用 `strict_identity=True`, 因此**同一批数据在两个脚本里
+口径不同** —— 它丢弃的 2 个 episode 被 `mechanism_per_task` 照单全收, 多吃 8 个 step。
+
+**根因 (codex 实测)**: `B0/phantom_som/reddit R28173` 的 task 87 / 149, summary 记 11 / 13 步而
+物理 JSONL 有 14 / 18 步, 是 summary/JSONL 写序竞争, 全库 **2/8096 = 0.025%**。
+
+**落地**: `read_steps()` 改走 `read_jsonl_dedup(path, summary_path, strict_identity=True)`;
+identity 不匹配的 episode **逐个丢弃并在 `main()` 末尾大声列出**(不是整体 abort —— 0.025% 的异常
+不该阻塞全部 mechanism 表; 但「无人看见的排除」正是它替换掉的那个静默 `continue`)。产物重算后
+reddit 侧**只有 P-SoM 相关对比** N 203 → 201, 不含 P-SoM 的行仍是 203, Jaccard 只动第三位小数。
+
+⚠️ **过程记录**: 这条是 codex 在 audit 中**自行动手修的**, 未经审查即进工作区。改动本身质量高
+(引 CLAUDE.md 约定 / 逐 episode fail-loud / 排除项大声报告 / 诊断到根因), 事后审查接受。但
+`--sandbox danger-full-access` + 「inventory 而非提议」的 prompt 措辞不足以约束只读, 下轮 coverage
+audit 的 prompt 需显式写 **do not modify files**。
+
+**Cross-link**: 实验笔记 §427; CLAUDE.md 编码约定 (JSONL 统一入口); `axis_effect_size.py:241`
+(同批数据的正确口径); `tests/test_universe_consumption_lint.py` 的 `UNIVERSE_TRIAGE_PENDING`
+ratchet (pre-existing 失败, 判定为字符串匹配而非语义检查 —— 见 §427 遗留项)

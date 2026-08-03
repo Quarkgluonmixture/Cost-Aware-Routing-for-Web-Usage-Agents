@@ -281,9 +281,9 @@
       "axis_1_text_alt": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 64,
+            "0": 63,
             "1": 48,
-            "2": 31,
+            "2": 30,
             "3": 26,
             "4": 12,
             "5": 10,
@@ -292,11 +292,11 @@
             "8": 3,
             "9": 1
           },
-          "left_mean": 1.827586,
+          "left_mean": 1.835821,
           "right_hist": {
-            "0": 73,
+            "0": 72,
             "1": 45,
-            "2": 41,
+            "2": 40,
             "3": 14,
             "4": 11,
             "5": 11,
@@ -305,25 +305,25 @@
             "8": 3,
             "9": 1
           },
-          "right_mean": 1.610837,
-          "union_mean": 3.093596
+          "right_mean": 1.616915,
+          "union_mean": 3.109453
         },
         "contrast": "P-prompt vs P-SoM",
         "left_mode": "P-prompt",
-        "mean_decision_divergence": 0.666949,
-        "mean_jaccard": 0.333051,
+        "mean_decision_divergence": 0.670269,
+        "mean_jaccard": 0.329731,
         "median_jaccard": 0.0,
-        "n": 203,
+        "n": 201,
         "right_mode": "P-SoM",
-        "std_jaccard": 0.428843
+        "std_jaccard": 0.42838
       },
       "axis_2_prompt": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 75,
+            "0": 74,
             "1": 46,
             "2": 37,
-            "3": 18,
+            "3": 17,
             "4": 11,
             "5": 8,
             "6": 5,
@@ -331,11 +331,11 @@
             "8": 1,
             "9": 1
           },
-          "left_mean": 1.536946,
+          "left_mean": 1.537313,
           "right_hist": {
-            "0": 73,
+            "0": 72,
             "1": 45,
-            "2": 41,
+            "2": 40,
             "3": 14,
             "4": 11,
             "5": 11,
@@ -344,17 +344,17 @@
             "8": 3,
             "9": 1
           },
-          "right_mean": 1.610837,
-          "union_mean": 2.783251
+          "right_mean": 1.616915,
+          "union_mean": 2.791045
         },
         "contrast": "P-text vs P-SoM",
         "left_mode": "P-text",
-        "mean_decision_divergence": 0.592335,
-        "mean_jaccard": 0.407665,
+        "mean_decision_divergence": 0.594498,
+        "mean_jaccard": 0.405502,
         "median_jaccard": 0.166667,
-        "n": 203,
+        "n": 201,
         "right_mode": "P-SoM",
-        "std_jaccard": 0.447968
+        "std_jaccard": 0.448105
       },
       "axis_2_prompt_alt": {
         "click_target_set_size": {
@@ -398,9 +398,9 @@
       "axis_3_image": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 73,
+            "0": 72,
             "1": 45,
-            "2": 41,
+            "2": 40,
             "3": 14,
             "4": 11,
             "5": 11,
@@ -409,10 +409,10 @@
             "8": 3,
             "9": 1
           },
-          "left_mean": 1.610837,
+          "left_mean": 1.616915,
           "right_hist": {
-            "0": 80,
-            "1": 57,
+            "0": 79,
+            "1": 56,
             "2": 32,
             "3": 16,
             "4": 12,
@@ -420,37 +420,37 @@
             "6": 2,
             "7": 1
           },
-          "right_mean": 1.236453,
-          "union_mean": 2.581281
+          "right_mean": 1.243781,
+          "union_mean": 2.59204
         },
         "contrast": "P-SoM vs SoM",
         "left_mode": "P-SoM",
-        "mean_decision_divergence": 0.684707,
-        "mean_jaccard": 0.315293,
+        "mean_decision_divergence": 0.686545,
+        "mean_jaccard": 0.313455,
         "median_jaccard": 0.0,
-        "n": 203,
+        "n": 201,
         "right_mode": "SoM",
-        "std_jaccard": 0.430187
+        "std_jaccard": 0.429031
       },
       "compound_DOM_to_PSoM": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 75,
+            "0": 74,
             "1": 47,
             "11": 1,
             "2": 35,
             "3": 16,
-            "4": 14,
+            "4": 13,
             "5": 7,
             "6": 3,
             "7": 3,
             "9": 2
           },
-          "left_mean": 1.596059,
+          "left_mean": 1.59204,
           "right_hist": {
-            "0": 73,
+            "0": 72,
             "1": 45,
-            "2": 41,
+            "2": 40,
             "3": 14,
             "4": 11,
             "5": 11,
@@ -459,17 +459,17 @@
             "8": 3,
             "9": 1
           },
-          "right_mean": 1.610837,
-          "union_mean": 2.916256
+          "right_mean": 1.616915,
+          "union_mean": 2.920398
         },
         "contrast": "DOM vs P-SoM",
         "left_mode": "DOM",
-        "mean_decision_divergence": 0.690127,
-        "mean_jaccard": 0.309873,
+        "mean_decision_divergence": 0.693014,
+        "mean_jaccard": 0.306986,
         "median_jaccard": 0.0,
-        "n": 203,
+        "n": 201,
         "right_mode": "P-SoM",
-        "std_jaccard": 0.426445
+        "std_jaccard": 0.425704
       }
     },
     "wa_reddit": {
@@ -2778,80 +2778,80 @@
         "axis_1_text_alt": {
           "left_mode": "P-prompt",
           "mean_per_task_fraction_shift": {
-            "back": -0.019422,
-            "click": -0.018069,
-            "finish": -0.025893,
+            "back": -0.019355,
+            "click": -0.022164,
+            "finish": -0.025528,
             "forward": 0.0,
-            "other": -0.007009,
-            "scroll": -0.004505,
-            "select_option": 0.004943,
-            "tab_focus": 0.075118,
-            "type": -0.005023,
-            "wait": -0.00014
+            "other": -0.007079,
+            "scroll": -0.002139,
+            "select_option": 0.004992,
+            "tab_focus": 0.075865,
+            "type": -0.004451,
+            "wait": -0.000141
           },
-          "n": 203,
+          "n": 201,
           "right_mode": "P-SoM",
           "skipped": false,
           "top_abs_shifts": [
             {
               "action_type": "tab_focus",
-              "mean_fraction_shift": 0.075118
+              "mean_fraction_shift": 0.075865
             },
             {
               "action_type": "finish",
-              "mean_fraction_shift": -0.025893
-            },
-            {
-              "action_type": "back",
-              "mean_fraction_shift": -0.019422
+              "mean_fraction_shift": -0.025528
             },
             {
               "action_type": "click",
-              "mean_fraction_shift": -0.018069
+              "mean_fraction_shift": -0.022164
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.019355
             },
             {
               "action_type": "other",
-              "mean_fraction_shift": -0.007009
+              "mean_fraction_shift": -0.007079
             }
           ]
         },
         "axis_2_prompt": {
           "left_mode": "P-text",
           "mean_per_task_fraction_shift": {
-            "back": -0.004555,
-            "click": 0.014055,
-            "finish": -0.002714,
-            "forward": -0.000159,
-            "other": -0.002716,
-            "scroll": 0.006879,
-            "select_option": 0.004125,
-            "tab_focus": -0.000271,
-            "type": -0.016854,
-            "wait": 0.00221
+            "back": -0.004008,
+            "click": 0.010902,
+            "finish": -0.001746,
+            "forward": -0.00016,
+            "other": -0.002743,
+            "scroll": 0.007658,
+            "select_option": 0.004166,
+            "tab_focus": -0.000274,
+            "type": -0.016027,
+            "wait": 0.002232
           },
-          "n": 203,
+          "n": 201,
           "right_mode": "P-SoM",
           "skipped": false,
           "top_abs_shifts": [
             {
               "action_type": "type",
-              "mean_fraction_shift": -0.016854
+              "mean_fraction_shift": -0.016027
             },
             {
               "action_type": "click",
-              "mean_fraction_shift": 0.014055
+              "mean_fraction_shift": 0.010902
             },
             {
               "action_type": "scroll",
-              "mean_fraction_shift": 0.006879
-            },
-            {
-              "action_type": "back",
-              "mean_fraction_shift": -0.004555
+              "mean_fraction_shift": 0.007658
             },
             {
               "action_type": "select_option",
-              "mean_fraction_shift": 0.004125
+              "mean_fraction_shift": 0.004166
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.004008
             }
           ]
         },
@@ -2898,80 +2898,80 @@
         "axis_3_image": {
           "left_mode": "P-SoM",
           "mean_per_task_fraction_shift": {
-            "back": -0.010249,
-            "click": 0.021108,
-            "finish": 0.03663,
+            "back": -0.011606,
+            "click": 0.021128,
+            "finish": 0.036663,
             "forward": 0.0,
-            "other": -0.00391,
-            "scroll": -0.026383,
-            "select_option": 0.014582,
-            "tab_focus": -0.017463,
-            "type": -0.014183,
-            "wait": -0.000133
+            "other": -0.003949,
+            "scroll": -0.024868,
+            "select_option": 0.014727,
+            "tab_focus": -0.017637,
+            "type": -0.014324,
+            "wait": -0.000134
           },
-          "n": 203,
+          "n": 201,
           "right_mode": "SoM",
           "skipped": false,
           "top_abs_shifts": [
             {
               "action_type": "finish",
-              "mean_fraction_shift": 0.03663
+              "mean_fraction_shift": 0.036663
             },
             {
               "action_type": "scroll",
-              "mean_fraction_shift": -0.026383
+              "mean_fraction_shift": -0.024868
             },
             {
               "action_type": "click",
-              "mean_fraction_shift": 0.021108
+              "mean_fraction_shift": 0.021128
             },
             {
               "action_type": "tab_focus",
-              "mean_fraction_shift": -0.017463
+              "mean_fraction_shift": -0.017637
             },
             {
               "action_type": "select_option",
-              "mean_fraction_shift": 0.014582
+              "mean_fraction_shift": 0.014727
             }
           ]
         },
         "compound_DOM_to_PSoM": {
           "left_mode": "DOM",
           "mean_per_task_fraction_shift": {
-            "back": 0.00297,
-            "click": 4e-06,
-            "finish": -0.032505,
+            "back": 0.003261,
+            "click": -0.002294,
+            "finish": -0.032,
             "forward": 0.0,
-            "other": 0.000421,
-            "scroll": -0.041931,
-            "select_option": 0.002622,
-            "tab_focus": 0.077853,
-            "type": -0.011951,
-            "wait": 0.002518
+            "other": 0.000425,
+            "scroll": -0.04197,
+            "select_option": 0.002648,
+            "tab_focus": 0.078628,
+            "type": -0.011241,
+            "wait": 0.002543
           },
-          "n": 203,
+          "n": 201,
           "right_mode": "P-SoM",
           "skipped": false,
           "top_abs_shifts": [
             {
               "action_type": "tab_focus",
-              "mean_fraction_shift": 0.077853
+              "mean_fraction_shift": 0.078628
             },
             {
               "action_type": "scroll",
-              "mean_fraction_shift": -0.041931
+              "mean_fraction_shift": -0.04197
             },
             {
               "action_type": "finish",
-              "mean_fraction_shift": -0.032505
+              "mean_fraction_shift": -0.032
             },
             {
               "action_type": "type",
-              "mean_fraction_shift": -0.011951
+              "mean_fraction_shift": -0.011241
             },
             {
               "action_type": "back",
-              "mean_fraction_shift": 0.00297
+              "mean_fraction_shift": 0.003261
             }
           ]
         }
@@ -3305,16 +3305,16 @@
         "wait": 0.000244
       },
       "B0/reddit/P-SoM": {
-        "back": 0.073571,
-        "click": 0.442287,
-        "finish": 0.017691,
+        "back": 0.07343,
+        "click": 0.440148,
+        "finish": 0.017814,
         "forward": 0.0,
-        "other": 0.02891,
-        "scroll": 0.126645,
-        "select_option": 0.023948,
-        "tab_focus": 0.152751,
-        "type": 0.131392,
-        "wait": 0.002805
+        "other": 0.029111,
+        "scroll": 0.126439,
+        "select_option": 0.024115,
+        "tab_focus": 0.153813,
+        "type": 0.132305,
+        "wait": 0.002824
       },
       "B0/reddit/P-prompt": {
         "back": 0.106151,
@@ -3494,11 +3494,11 @@
       },
       {
         "action_type": "tab_focus",
-        "high_fraction": 0.152751,
+        "high_fraction": 0.153813,
         "high_mode": "P-SoM",
         "low_fraction": 0.037698,
         "low_mode": "P-prompt",
-        "ratio": 4.051916,
+        "ratio": 4.080085,
         "site": "reddit"
       },
       {
@@ -3611,7 +3611,7 @@
   },
   "method": "Per-task mechanism evidence over B0 reddit/classifieds five-mode runs. E1 uses URL-changing click transition sets, E2 uses first divergent URL-signature step on symmetric-difference adjusted-success tasks, E3 aggregates existing confidence analyzer outputs across paper-grade B0/B1 cells without recomputing calibration, and E4 reports full action_type distributions. Element ids are not used because they are not mode-invariant or step-invariant.",
   "paper_section5_implications": {
-    "E1_headline": "Available DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.310 on reddit; 0.332 on classifieds.",
+    "E1_headline": "Available DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.307 on reddit; 0.332 on classifieds.",
     "E2_headline": "Boundary divergence is usually visible early among symmetric-difference tasks: DOM vs P-SoM early rates are reddit 100.0% and classifieds 95.5%.",
     "E3_headline": "The strongest calibration/routing cell is B2/classifieds/P-text with max AUROC 0.934; B0 token ECE is unavailable in existing per-run outputs.",
     "E4_headline": "The largest action-vocabulary shift is wa_reddit axis_1_text type (0.115 right-minus-left)."
