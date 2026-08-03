@@ -10326,3 +10326,53 @@ reference_url 而被豁免; P45 (连续相同失败动作) 因 `action_success=T
 
 **Cross-link**: 笔记 §416.8; `_benchmark_level_findings.md` 验证轮节;
 B-1925 (同函数, 丢 thought) · P31/P45 夹缝 · 盲复检 C 发现 (2026-08-03 验证轮)
+
+---
+
+## B-1927 落地记录 (2026-08-03) — replicate run 与 canonical 同名同 seed 同目录, 按 mtime 选 run 的工具会被劫持
+
+### 症状
+
+落 v10 规则批后跑 `diag_rescan_all.py --baseline-dir v9_vwa` 做 per-rule diff, 结果
+`B0_som_classifieds` 一格显示 **~20 条规则同时大幅下降** —— 而该批只改了 P36/P14 并新增 P49:
+
+```
+B0_som_classifieds  P7 21→0 · P23 9→0 · P4 5→0 · P33 6→0 · P36 129→12 · P31 29→10 · ...
+```
+
+### 根因
+
+```
+v9  run_id = B0_som_classifieds_20260526_041601_..._R5313   224 episode  (canonical)
+v10 run_id = B0_som_classifieds_20260803_084743_..._R30696   51 episode  (som replicate)
+```
+
+`diag_rescan_all.py:77` 用 `sorted(PHASE1.glob(pat), key=mtime, reverse=True)` 取 `cands[0]`,
+即**按最新 mtime 选 run**。当天新建的 som replicate run 因此劫持了该 condition。
+
+**replicate run 在结构上无法与 canonical 区分**:
+- 落在**同一个** `results/visualwebarena/phase1/` 目录 (既有的两个 clean replicate 在
+  `results/repro_replicates/`, 但这个不在)
+- `run_meta.json` 的 `experiment.name` **与 canonical 逐字相同** (`B0_som_classifieds`)
+- `seed` 同为 42
+- **没有任何 replicate 标识字段**
+
+⇒ 只有 run_id 里的时间戳能区分, 而按时间戳选恰恰选中它。
+
+### 修
+
+`_discover_cls(baseline_dir)`: 给了 `--baseline-dir` 时, 把每个 condition **锁定**到 baseline
+所用的 run_id (baseline run 不存在才回退到最新, 并打印 ⚠️ 提示)。
+
+理由: **与 baseline 的 diff 只有在两次扫描覆盖同一批 run 时才有意义**。锁定让这件事变成结构性
+保证, 而不是"需要有人记得检查"。修后重扫: `B0_som_classifieds` 恢复 R5313/224ep, 全 36 condition
+的 diff 只剩 P36/P14/P49 三条预期变化。
+
+### 教训
+
+**同名 + 同 seed + 同目录 + 无标识 = 一个只能靠时间戳区分的实体**, 任何"取最新"的启发式都会踩。
+更稳的做法是让 replicate 携带显式标识 (`run_meta` 加 `replicate: true` 或落到独立目录, 比照
+`results/repro_replicates/`), 否则每个消费 `phase1/` 的工具都要各自实现一遍防御。
+
+**Cross-link**: 笔记 §416.12; `scripts/analysis/diag_rescan_all.py`;
+§297.3 (既有 clean replicate 在 repro_replicates/) · §293 (replicate 用于 run-to-run noise floor)

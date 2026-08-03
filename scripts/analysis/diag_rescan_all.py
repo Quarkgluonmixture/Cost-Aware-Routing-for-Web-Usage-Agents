@@ -62,23 +62,50 @@ MODE_OF = {
 }
 
 
-def _discover_cls() -> dict:
+def _discover_cls(baseline_dir=None) -> dict:
     """Resolve cls conditions by globbing — their run dirs carry random suffixes.
 
     Digest basenames without an explicit R-suffix (e.g. `B0_som_classifieds`) refer
     to whichever run the digest header names; we pick the newest matching dir and
     print it so the mapping is auditable rather than silent.
+
+    ⚠️ B-1927 (2026-08-03): "newest by mtime" is NOT the same as "canonical". A
+    replicate run lands in the SAME `phase1/` directory under the SAME
+    `experiment.name` with the SAME seed — nothing in `run_meta.json` marks it as a
+    replicate, so only the run_id timestamp distinguishes it. On 2026-08-03 a
+    51-episode `B0_som_classifieds` replicate hijacked the rescan away from the
+    224-episode canonical run, and the resulting per-rule diff showed ~20 rules
+    "changing" that the rule batch had never touched.
+
+    Fix: when a baseline scan dir is supplied, PIN each condition to the run_id the
+    baseline used. A diff against a baseline is only meaningful if both scans cover
+    the same runs; pinning makes that structural rather than a thing to remember.
     """
+    pinned = {}
+    if baseline_dir is not None:
+        for f in Path(baseline_dir).glob("*_classifieds.json"):
+            try:
+                rid = json.loads(f.read_text(encoding="utf-8")).get("run_id")
+            except Exception:
+                continue
+            if rid:
+                pinned[f.stem] = rid
+
     out = {}
     for model in ("B0", "B1", "B2"):
         for mode in MODE_OF:
             key = f"{model}_{mode}_classifieds"
+            if key in pinned and (PHASE1 / pinned[key]).is_dir():
+                out[key] = pinned[key]
+                continue
             pat = f"{model}_{mode}_classifieds*"
             cands = sorted(PHASE1.glob(pat), key=lambda p: p.stat().st_mtime, reverse=True)
             # exclude longer-mode false prefixes (som must not match phantom_som)
             cands = [c for c in cands if re.match(rf"^{model}_{mode}_classifieds(_|$)", c.name)]
             if cands:
                 out[key] = cands[0].name
+                if key in pinned:
+                    print(f"  ⚠ {key}: baseline run {pinned[key]} 不存在, 回退到最新 {cands[0].name}")
     return out
 
 
@@ -124,7 +151,7 @@ def main() -> int:
 
     targets = dict(CANONICAL)
     if "classifieds" in args.sites:
-        cls = _discover_cls()
+        cls = _discover_cls(args.baseline_dir)
         print(f"cls 目录解析 ({len(cls)}):")
         for k, v in sorted(cls.items()):
             print(f"    {k:28s} → {v}")

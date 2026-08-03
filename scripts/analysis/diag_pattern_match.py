@@ -77,7 +77,7 @@ from urllib.parse import urlparse
 # this version OR editing ALL_RULES, MANUALLY update SKILL.md's "当前 P-rules" list +
 # "当前相位" section. (R31194 session left them stale at "13 条 / 1-dom" for ~half a
 # month because the skill doc has no git tracking to flag the drift.)
-RULESET_VERSION = "9-wa-p47p48"
+RULESET_VERSION = "10-p49-p36p14-narrow"
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -915,6 +915,15 @@ def check_p14(steps: List[Dict], _summary: Dict, _config: Dict, _mode: str) -> L
         url = run[0].get("obs_url", "")
         if not url or url == start_url:
             return
+        # v10 carve-out (2026-08-03 数据质量审计): a run that spans essentially the
+        # WHOLE of a short episode is a single "click in → read → finish" decision,
+        # not a self-loop. Two VWA causal-verification samples (cls task 50 / 119,
+        # both 4 steps) showed the opposite of "stuck": 119 navigated to the correct
+        # item in ONE click and then misread a price from the image. Calling that
+        # "URL 自环 / no progress" inverts the meaning. Require that the episode did
+        # something outside this run before treating the run as a loop.
+        if len(steps) <= 6 and (run_end - run_start) >= len(steps) - 1:
+            return
         # R9725 FP-narrowing: productive same-URL is not "stuck"
         if any(s.get("action_type") == "type" for s in run):
             return
@@ -1491,15 +1500,56 @@ def check_p35(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Lis
     )]
 
 
+def _successfully_typed_element_ids(steps: List[Dict]) -> Set[Any]:
+    """element_ids that a later `type` action reached successfully via the locator route.
+
+    `dispatch_id_based_type` runs its OWN DOM walk-up (`_JS_RESOLVE_INPUT`), so a
+    failed pre-focus *click* on the same element never blocks the subsequent type.
+    Used by P36 to drop that harmless class of walk_fail.
+    """
+    out: Set[Any] = set()
+    for s in steps:
+        if s.get("action_type") != "type" or not s.get("action_success"):
+            continue
+        for key in ("locator_route_meta", "locator_route_meta_primary"):
+            meta = s.get(key)
+            if isinstance(meta, dict) and meta.get("success"):
+                eid = (s.get("action") or {}).get("element_id")
+                if eid is not None:
+                    out.add(eid)
+                break
+    return out
+
+
 def check_p36(steps: List[Dict], summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
-    """P36: mode-robust walk failure — locator walk_fail while trying to act."""
+    """P36: mode-robust walk failure — locator walk_fail while trying to act.
+
+    v10 carve-out (2026-08-03 数据质量审计): a `click` walk_fail whose element_id is
+    LATER reached by a successful `type` is harmless — `dispatch_id_based_type` has an
+    independent DOM walk-up, so the failed pre-focus click blocked nothing. Empirically
+    16.3% of all P36 click hits (3862/23712) were of this class, and the share is
+    mode-skewed (phantom_som 20.6% vs dom 6.2%), i.e. it injected a BIASED noise floor
+    into every cross-mode comparison. Verified across 48 conditions.
+
+    ⚠️ Known scope limits (documented, not fixed here):
+      - vision mode: `click` carries no `locator_route_meta` at all (0/914–0/2270),
+        so P36 only ever sees `type` steps there → the vision column has a DIFFERENT
+        denominator and is not comparable to dom/som.
+      - 10 cross-benchmark causal-verification samples judged P36 a *risk marker*,
+        not a death cause. Do not read P36 counts as a death-cause distribution.
+    """
     if summary.get("success"):
         return []
     hits = []
     seen: Set[Tuple[int, str]] = set()
+    typed_ok = _successfully_typed_element_ids(steps)
     for s in steps:
         if s.get("action_type") not in ("click", "type"):
             continue
+        if s.get("action_type") == "click":
+            eid = (s.get("action") or {}).get("element_id")
+            if eid is not None and eid in typed_ok:
+                continue  # v10: superseded by a successful type on the same element
         for err in _walk_fail_errors(s):
             if not ("no_input_within_walk" in err or "no_actionable_within_walk" in err):
                 continue
@@ -1919,6 +1969,62 @@ def check_p47(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> Lis
     )]
 
 
+def check_p49(steps: List[Dict], summary: Dict, _config: Dict, _mode: str) -> List[PatternHit]:
+    """P49: on a /submit/ form page, repeatedly clicked an anchor (<A>) instead of the
+    form's own submit BUTTON, and the episode never left /submit/.
+
+    The site's top navbar carries a "Submit" LINK (`target_tag='A'`, bbox y=0) that sits
+    next to nothing in the AXTree to distinguish it from the form's real submit control.
+    Clicking it reloads a blank /submit/<forum> form, silently discarding whatever was
+    typed — the model then re-types and re-clicks, producing a self-reinforcing loop.
+    Confirmed as the death cause in causal verification of WA som task 610/614 and by
+    the dom-B/psom-B Tier-2 batches.
+
+    Gate design (2026-08-03, success-safe verified on all 48 conditions):
+      >=2 anchor clicks while on /submit/   AND   final obs_url still under /submit/
+
+    The terminal condition is what makes it clean: dropping it yields 106 failed / 14
+    success hits (11.7% false-alarm); adding it yields **71 failed / 0 success**.
+    Raising the click threshold instead does NOT help (>=3 → 47/0, >=5 → 18/0) — the
+    win comes from the outcome gate, not from a stricter process threshold.
+
+    Relation to existing rules: nearly disjoint from P47 (which REQUIRES no click after
+    the last type) — overlap is 2 episodes. 55 of the 71 also carry P31, so the value is
+    not extra coverage (net new vs P47+P31 is 14) but **attribution quality**: it turns
+    "budget exhausted" (a verified risk-marker with no explanatory content) into a named
+    mechanism. vision mode never fires it — its clicks carry no `locator_route_meta`.
+    """
+    if summary.get("success"):
+        return []
+    n_anchor = 0
+    first_idx = None
+    last_url = ""
+    for s in steps:
+        u = s.get("obs_url") or (s.get("state_digest") or {}).get("url_after") or ""
+        if u:
+            last_url = str(u)
+        if s.get("action_type") != "click":
+            continue
+        url_before = s.get("obs_url") or (s.get("state_digest") or {}).get("url_before") or ""
+        if "/submit/" not in str(url_before):
+            continue
+        for key in ("locator_route_meta", "locator_route_meta_primary"):
+            meta = s.get(key)
+            if isinstance(meta, dict) and str(meta.get("target_tag", "") or "").upper() == "A":
+                n_anchor += 1
+                if first_idx is None:
+                    first_idx = s.get("step_idx")
+                break
+    if n_anchor >= 2 and "/submit/" in last_url:
+        return [PatternHit(
+            "P49", "SUBMIT_PAGE_ANCHOR_MISCLICK", first_idx,
+            f"{n_anchor} clicks on anchor(<A>) elements while on /submit/; "
+            f"episode ended still on {last_url[:70]}",
+            is_scaffold=False,
+        )]
+    return []
+
+
 def check_p48(steps: List[Dict], summary: Dict, config: Dict, _mode: str) -> List[PatternHit]:
     """P48: declared "no results" after a single search, in four steps or fewer.
 
@@ -2022,6 +2128,7 @@ ALL_RULES: Dict[str, Any] = {
     "P46": check_p46,   # comment/reply intent never committed text
     "P47": check_p47,   # typed into a form then finished without submitting
     "P48": check_p48,   # declared "no results" after a single search
+    "P49": check_p49,   # /submit/ page: anchor(<A>) misclick loop, never left form
 }
 
 
