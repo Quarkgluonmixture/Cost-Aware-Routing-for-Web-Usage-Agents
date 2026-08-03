@@ -66,6 +66,16 @@ def populated(v) -> bool:
     return v is not None and v != "" and v != [] and v != {}
 
 
+def informative(values: set) -> bool:
+    """A field that never varies carries no information regardless of how often it is
+    written. The first version of this tool only asked "is it non-null", so
+    `effective_mutating_action_count` — which is 0 on all 5,148 episodes, while the
+    reddit leakage audit proves agents do mutate state — passed as populated and was
+    classified THIN rather than dead. Same defect class as everything else found today:
+    a degraded field that looks healthy. Constants are now called out."""
+    return len(values) > 1
+
+
 def sample_records(per_cell: int) -> tuple[dict, dict, int, int]:
     """(step_stats, ep_stats, n_steps, n_eps) — populated counts per flattened field."""
     from scripts.analysis.lib.run_registry import get_cells
@@ -90,7 +100,7 @@ def sample_records(per_cell: int) -> tuple[dict, dict, int, int]:
                         for k, v in rec.items():
                             if populated(v):
                                 step_hits[k] += 1
-                                if len(step_vals[k]) < 6 and not isinstance(v, (list, dict)):
+                                if len(step_vals[k]) < 12 and not isinstance(v, (list, dict)):
                                     step_vals[k].add(str(v)[:24])
                     sm = sp.with_name(sp.name.replace("_steps_v2.jsonl", "_summary_v2.json"))
                     if not sm.exists():
@@ -103,7 +113,7 @@ def sample_records(per_cell: int) -> tuple[dict, dict, int, int]:
                     for k, v in rec.items():
                         if populated(v):
                             ep_hits[k] += 1
-                            if len(ep_vals[k]) < 6 and not isinstance(v, (list, dict)):
+                            if len(ep_vals[k]) < 12 and not isinstance(v, (list, dict)):
                                 ep_vals[k].add(str(v)[:24])
     return ({k: (v, step_vals[k]) for k, v in step_hits.items()},
             {k: (v, ep_vals[k]) for k, v in ep_hits.items()}, n_steps, n_eps)
@@ -159,6 +169,9 @@ def main() -> int:
                 klass, n = "GENERIC", -1
             elif pct < a.min_populated:
                 klass, n = "DEAD", len(cons)
+            elif not informative(vals):
+                # written every step and never different — carries nothing
+                klass, n = "CONSTANT", len(cons)
             elif not cons:
                 klass, n = "ORPHAN", 0
             elif len(cons) <= a.max_consumers:
@@ -177,7 +190,7 @@ def main() -> int:
     print(f"[audit] sampled {n_steps} steps / {n_eps} episodes over "
           f"{a.per_cell} episodes per cell; {len(index)} analysis scripts indexed")
     print(f"[audit] {len(rows)} distinct fields — "
-          + " · ".join(f"{k} {len(by[k])}" for k in ("OK", "THIN", "ORPHAN", "DEAD", "GENERIC")))
+          + " · ".join(f"{k} {len(by[k])}" for k in ("OK", "THIN", "CONSTANT", "ORPHAN", "DEAD", "GENERIC")))
 
     for klass, blurb in (
         ("ORPHAN", "populated, and NO analysis script names them — recorded for nothing"),
@@ -194,6 +207,15 @@ def main() -> int:
                   f"[{r['kind']}]   值样例: {vals[:52]}")
             if r["consumers"]:
                 print(f"    {'':50} 消费者: {', '.join(r['consumers'])}")
+
+    const = [r for r in by["CONSTANT"]]
+    if const:
+        print(f"\n=== CONSTANT — written on every step and NEVER varies ({len(const)}) ===")
+        print("  一个从不变化的字段, 无论写得多勤都不携带信息。若它本该变化, 它是坏的。")
+        for r in sorted(const, key=lambda r: (-r["populated_pct"], r["field"])):
+            print(f"  {r['field']:52} {r['populated_pct']:5.1f}%  [{r['kind']}]  "
+                  f"恒为 {r['sample_values'][0] if r['sample_values'] else '?'}"
+                  + (f"   消费者: {', '.join(r['consumers'])}" if r["consumers"] else ""))
 
     dead = [r for r in by["DEAD"]]
     if dead:

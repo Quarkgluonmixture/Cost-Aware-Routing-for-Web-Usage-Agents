@@ -282,6 +282,68 @@ threshold is a six-cell design** — whether it becomes 7/8 at eight cells is a 
 decision, deliberately not taken here (see claim 6 for why carrying the literal numerator across a
 denominator change reverses a load-bearing negative).
 
+## 4e. Instrumentation that is silently dead, and one mediator nobody reported (2026-08-03)
+
+`audit_field_consumption` builds the full matrix of 311 recorded fields against 146
+analysis scripts. §G1 asked only "which fields does nobody read?"; this asks two further
+questions, and both found things.
+
+**(a) 73 fields are written on every record and never vary.** Many are legitimately
+constant (`benchmark`, `seed`, the Phase-2/3 module flags that are off by design). One
+family is not:
+
+> `effective_mutating_action_count` · `cart_mutation_count` · `delete_remove_count` ·
+> `destructive_action_count` · `cycle_mutating_action_count` ·
+> `repeated_same_mutating_action_count` — **six state-mutation counters, all identically
+> zero across 5,148 episodes.**
+
+They are demonstrably wrong, not merely unused. ⚠️ *The first version of this paragraph
+justified that with a bad test — episodes whose step text merely **mentions**
+subscribe/submit, which on Postmill is every page, because the navbar carries both. That
+test proved nothing and is recorded here because the conclusion happening to survive a
+weak test is not a reason to keep the weak test.* The test that does work reads the URL
+trace for an **unambiguous creation event**: `state_digest.url_after` moving from
+`/submit/<forum>` to `/f/<forum>/<new-id>/<slug>`, i.e. the browser landing on a post that
+did not exist a step earlier. Six such episodes, spanning B0·DOM and B0·SoM
+(`reddit_task_{43,112,185}` and `{181,184,208}`) — **all six counters read 0 on every one
+of them**. §3b's leaked-success finding exists *because* agents mutate state;
+`reddit_sidebar_leakage_audit` had to reconstruct that from URL traces precisely because
+this family reports nothing. §G1 listed two of the six as "0% populated" — the other four
+passed its check because a constant `0` is not a null.
+
+⚠️ **This is why the cascade splice-bias bound cannot be computed.** §4a says the
+escalated-task outcome is spliced from a standalone rich run and that no reanalysis can
+repair it. A partial bound *was* available in principle — the share of escalated tasks
+where the cheap arm left the site unchanged, on which the splice is exact — and it is not,
+because the instrumentation that would measure it is dead. Retiring the counters or fixing
+them is a decision for whoever next touches the runner; **until then the splice bias has no
+measured bound, and §4a should say "cannot be bounded" rather than only "cannot be
+repaired".**
+
+**(b) The click delivery path is an unreported mediator.** → `dispatch_path_audit`.
+`action_executed.dispatch_path` records how each action reached the browser. Three paths,
+five-fold different action success:
+
+| path | actions | action success |
+|---|---|---|
+| element-id → locator | 8,857 | **88.9%** |
+| coordinate click | 2,138 | **38.6%** |
+| element-id → framework fallback | 4,564 | **16.1%** |
+
+And the mix is not constant. **`Vision` is on the coordinate path by construction** — it
+emits no element ids — so its action success is capped by this harness's coordinate
+implementation. That is not a confound to remove: it is part of what screenshot-only *is*.
+But it does mean the Vision arm measures our grounding code as much as it measures the
+representation, and **a reader's first alternative explanation for "screenshot-only does
+worst" is "their coordinate clicking is bad" — on this evidence that explanation is partly
+correct.** Separately the fallback share rises monotonically as the backbone weakens
+(**B0 12% · B1 35% · B2 37%** on the text arms): *how often* a run falls back is downstream
+of the model and is a real capability difference, but the fallback's own 16.1% success is
+this harness's, and a better one would narrow every backbone gap that runs through it.
+
+Nothing in (b) changes a success rate. It is an external-validity limit on every per-mode
+and per-backbone gap in this document, and it was not stated anywhere before today.
+
 ## 5. What the layer supports, independent of frame
 
 Stated as claims with their carrying product, so a frame can be chosen against them.

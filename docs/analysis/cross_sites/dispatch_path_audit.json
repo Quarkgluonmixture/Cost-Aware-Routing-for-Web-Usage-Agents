@@ -1,0 +1,678 @@
+{
+ "schema": "2026-08-03-dispatch-path-audit-v1",
+ "post_hoc_exploratory": true,
+ "h10_eligible": false,
+ "path_families": {
+  "id_locator": {
+   "n": 8857,
+   "success": 0.8892401490346619
+  },
+  "id_framework": {
+   "n": 4564,
+   "success": 0.16126205083260298
+  },
+  "coord": {
+   "n": 2138,
+   "success": 0.38587464920486436
+  },
+  "other": {
+   "n": 1530,
+   "success": 0.6588235294117647
+  }
+ },
+ "raw_dispatch_names": {
+  "element_id_locator_route": 8857,
+  "element_id_framework": 4564,
+  "coord_mouse_click": 1784,
+  "whitelisted": 1020,
+  "seq_unresolved_noop": 222,
+  "coord_keyboard_fallback": 170,
+  "coord_locator_route": 169,
+  "offsite_blocked": 136,
+  "relative": 126,
+  "element_id": 13,
+  "coord_true_oob_noop": 13,
+  "id_based_escape_hatch": 10,
+  "noop_serialize_fail": 3,
+  "coord_mouse_hover": 2
+ },
+ "fallback_share_by_backbone": {
+  "B0": {
+   "min": 0.03137254901960784,
+   "max": 0.23325062034739455,
+   "mean": 0.12165049468575213
+  },
+  "B1": {
+   "min": 0.1618181818181818,
+   "max": 0.5227817745803357,
+   "mean": 0.34694418667433247
+  },
+  "B2": {
+   "min": 0.20320855614973263,
+   "max": 0.5373891001267427,
+   "mean": 0.37042849701086805
+  }
+ },
+ "cells": {
+  "B0·classifieds·DOM": {
+   "backbone": "B0",
+   "site": "classifieds",
+   "mode": "DOM",
+   "n_actions": 266,
+   "share": {
+    "id_locator": 0.7744360902255639,
+    "id_framework": 0.22180451127819548,
+    "other": 0.0037593984962406013
+   },
+   "success": {
+    "id_locator": 0.9223300970873787,
+    "id_framework": 0.2711864406779661,
+    "other": 0.0
+   },
+   "action_success_overall": 0.7744360902255639
+  },
+  "B0·classifieds·SoM": {
+   "backbone": "B0",
+   "site": "classifieds",
+   "mode": "SoM",
+   "n_actions": 199,
+   "share": {
+    "id_locator": 0.9296482412060302,
+    "id_framework": 0.06030150753768844,
+    "other": 0.010050251256281407
+   },
+   "success": {
+    "id_locator": 0.8702702702702703,
+    "id_framework": 0.4166666666666667,
+    "other": 0.0
+   },
+   "action_success_overall": 0.8341708542713567
+  },
+  "B0·classifieds·Vision": {
+   "backbone": "B0",
+   "site": "classifieds",
+   "mode": "Vision",
+   "n_actions": 265,
+   "share": {
+    "coord": 1.0
+   },
+   "success": {
+    "coord": 0.6
+   },
+   "action_success_overall": 0.6
+  },
+  "B0·classifieds·P-text": {
+   "backbone": "B0",
+   "site": "classifieds",
+   "mode": "P-text",
+   "n_actions": 255,
+   "share": {
+    "id_locator": 0.9647058823529412,
+    "id_framework": 0.03137254901960784,
+    "other": 0.00392156862745098
+   },
+   "success": {
+    "id_locator": 0.9552845528455285,
+    "id_framework": 0.625,
+    "other": 1.0
+   },
+   "action_success_overall": 0.9450980392156862
+  },
+  "B0·classifieds·P-prompt": {
+   "backbone": "B0",
+   "site": "classifieds",
+   "mode": "P-prompt",
+   "n_actions": 260,
+   "share": {
+    "id_locator": 0.8346153846153846,
+    "id_framework": 0.16153846153846155,
+    "other": 0.0038461538461538464
+   },
+   "success": {
+    "id_locator": 0.9585253456221198,
+    "id_framework": 0.38095238095238093,
+    "other": 1.0
+   },
+   "action_success_overall": 0.8653846153846154
+  },
+  "B0·classifieds·P-SoM": {
+   "backbone": "B0",
+   "site": "classifieds",
+   "mode": "P-SoM",
+   "n_actions": 269,
+   "share": {
+    "id_locator": 0.9219330855018587,
+    "id_framework": 0.07434944237918216,
+    "other": 0.0037174721189591076
+   },
+   "success": {
+    "id_locator": 0.9233870967741935,
+    "id_framework": 0.45,
+    "other": 1.0
+   },
+   "action_success_overall": 0.8884758364312267
+  },
+  "B0·reddit·DOM": {
+   "backbone": "B0",
+   "site": "reddit",
+   "mode": "DOM",
+   "n_actions": 403,
+   "share": {
+    "id_locator": 0.7518610421836228,
+    "id_framework": 0.23325062034739455,
+    "other": 0.01488833746898263
+   },
+   "success": {
+    "id_locator": 0.9900990099009901,
+    "id_framework": 0.2127659574468085,
+    "other": 1.0
+   },
+   "action_success_overall": 0.8089330024813896
+  },
+  "B0·reddit·SoM": {
+   "backbone": "B0",
+   "site": "reddit",
+   "mode": "SoM",
+   "n_actions": 408,
+   "share": {
+    "id_locator": 0.8480392156862745,
+    "id_framework": 0.14705882352941177,
+    "other": 0.004901960784313725
+   },
+   "success": {
+    "id_locator": 0.9884393063583815,
+    "id_framework": 0.06666666666666667,
+    "other": 0.0
+   },
+   "action_success_overall": 0.8480392156862745
+  },
+  "B0·reddit·Vision": {
+   "backbone": "B0",
+   "site": "reddit",
+   "mode": "Vision",
+   "n_actions": 254,
+   "share": {
+    "coord": 0.968503937007874,
+    "other": 0.031496062992125984
+   },
+   "success": {
+    "coord": 0.7764227642276422,
+    "other": 0.375
+   },
+   "action_success_overall": 0.7637795275590551
+  },
+  "B0·reddit·P-text": {
+   "backbone": "B0",
+   "site": "reddit",
+   "mode": "P-text",
+   "n_actions": 441,
+   "share": {
+    "id_locator": 0.8412698412698413,
+    "id_framework": 0.11337868480725624,
+    "other": 0.045351473922902494
+   },
+   "success": {
+    "id_locator": 0.921832884097035,
+    "id_framework": 0.22,
+    "other": 0.85
+   },
+   "action_success_overall": 0.8390022675736961
+  },
+  "B0·reddit·P-prompt": {
+   "backbone": "B0",
+   "site": "reddit",
+   "mode": "P-prompt",
+   "n_actions": 375,
+   "share": {
+    "id_locator": 0.8666666666666667,
+    "id_framework": 0.088,
+    "other": 0.04533333333333334
+   },
+   "success": {
+    "id_locator": 0.9876923076923076,
+    "id_framework": 0.2727272727272727,
+    "other": 0.47058823529411764
+   },
+   "action_success_overall": 0.9013333333333333
+  },
+  "B0·reddit·P-SoM": {
+   "backbone": "B0",
+   "site": "reddit",
+   "mode": "P-SoM",
+   "n_actions": 433,
+   "share": {
+    "id_locator": 0.8983833718244804,
+    "id_framework": 0.08545034642032333,
+    "other": 0.016166281755196306
+   },
+   "success": {
+    "id_locator": 0.9357326478149101,
+    "id_framework": 0.24324324324324326,
+    "other": 1.0
+   },
+   "action_success_overall": 0.8775981524249422
+  },
+  "B1·classifieds·DOM": {
+   "backbone": "B1",
+   "site": "classifieds",
+   "mode": "DOM",
+   "n_actions": 417,
+   "share": {
+    "id_locator": 0.4676258992805755,
+    "id_framework": 0.5227817745803357,
+    "other": 0.009592326139088728
+   },
+   "success": {
+    "id_locator": 0.8512820512820513,
+    "id_framework": 0.2798165137614679,
+    "other": 0.75
+   },
+   "action_success_overall": 0.5515587529976019
+  },
+  "B1·classifieds·SoM": {
+   "backbone": "B1",
+   "site": "classifieds",
+   "mode": "SoM",
+   "n_actions": 306,
+   "share": {
+    "id_locator": 0.6045751633986928,
+    "id_framework": 0.3562091503267974,
+    "coord": 0.013071895424836602,
+    "other": 0.026143790849673203
+   },
+   "success": {
+    "id_locator": 0.8486486486486486,
+    "id_framework": 0.1926605504587156,
+    "coord": 0.0,
+    "other": 1.0
+   },
+   "action_success_overall": 0.6078431372549019
+  },
+  "B1·classifieds·Vision": {
+   "backbone": "B1",
+   "site": "classifieds",
+   "mode": "Vision",
+   "n_actions": 268,
+   "share": {
+    "coord": 1.0
+   },
+   "success": {
+    "coord": 0.16044776119402984
+   },
+   "action_success_overall": 0.16044776119402984
+  },
+  "B1·classifieds·P-text": {
+   "backbone": "B1",
+   "site": "classifieds",
+   "mode": "P-text",
+   "n_actions": 356,
+   "share": {
+    "id_locator": 0.5814606741573034,
+    "id_framework": 0.3848314606741573,
+    "other": 0.033707865168539325
+   },
+   "success": {
+    "id_locator": 0.8888888888888888,
+    "id_framework": 0.38686131386861317,
+    "other": 0.08333333333333333
+   },
+   "action_success_overall": 0.6685393258426966
+  },
+  "B1·classifieds·P-prompt": {
+   "backbone": "B1",
+   "site": "classifieds",
+   "mode": "P-prompt",
+   "n_actions": 317,
+   "share": {
+    "id_locator": 0.5962145110410094,
+    "id_framework": 0.38170347003154576,
+    "coord": 0.006309148264984227,
+    "other": 0.015772870662460567
+   },
+   "success": {
+    "id_locator": 0.7513227513227513,
+    "id_framework": 0.256198347107438,
+    "coord": 0.0,
+    "other": 1.0
+   },
+   "action_success_overall": 0.5615141955835962
+  },
+  "B1·classifieds·P-SoM": {
+   "backbone": "B1",
+   "site": "classifieds",
+   "mode": "P-SoM",
+   "n_actions": 356,
+   "share": {
+    "id_locator": 0.6657303370786517,
+    "id_framework": 0.3202247191011236,
+    "coord": 0.011235955056179775,
+    "other": 0.0028089887640449437
+   },
+   "success": {
+    "id_locator": 0.7974683544303798,
+    "id_framework": 0.32456140350877194,
+    "coord": 0.0,
+    "other": 1.0
+   },
+   "action_success_overall": 0.6376404494382022
+  },
+  "B1·reddit·DOM": {
+   "backbone": "B1",
+   "site": "reddit",
+   "mode": "DOM",
+   "n_actions": 570,
+   "share": {
+    "id_locator": 0.7491228070175439,
+    "id_framework": 0.22105263157894736,
+    "other": 0.02982456140350877
+   },
+   "success": {
+    "id_locator": 0.9882903981264637,
+    "id_framework": 0.12698412698412698,
+    "other": 1.0
+   },
+   "action_success_overall": 0.7982456140350878
+  },
+  "B1·reddit·SoM": {
+   "backbone": "B1",
+   "site": "reddit",
+   "mode": "SoM",
+   "n_actions": 615,
+   "share": {
+    "id_locator": 0.5821138211382114,
+    "id_framework": 0.41300813008130083,
+    "coord": 0.0032520325203252032,
+    "other": 0.0016260162601626016
+   },
+   "success": {
+    "id_locator": 0.9441340782122905,
+    "id_framework": 0.07480314960629922,
+    "coord": 0.0,
+    "other": 1.0
+   },
+   "action_success_overall": 0.5821138211382114
+  },
+  "B1·reddit·Vision": {
+   "backbone": "B1",
+   "site": "reddit",
+   "mode": "Vision",
+   "n_actions": 377,
+   "share": {
+    "coord": 0.9893899204244032,
+    "other": 0.010610079575596816
+   },
+   "success": {
+    "coord": 0.49865951742627346,
+    "other": 0.5
+   },
+   "action_success_overall": 0.4986737400530504
+  },
+  "B1·reddit·P-text": {
+   "backbone": "B1",
+   "site": "reddit",
+   "mode": "P-text",
+   "n_actions": 550,
+   "share": {
+    "id_locator": 0.7345454545454545,
+    "id_framework": 0.1618181818181818,
+    "other": 0.10363636363636364
+   },
+   "success": {
+    "id_locator": 1.0,
+    "id_framework": 0.10112359550561797,
+    "other": 0.8070175438596491
+   },
+   "action_success_overall": 0.8345454545454546
+  },
+  "B1·reddit·P-prompt": {
+   "backbone": "B1",
+   "site": "reddit",
+   "mode": "P-prompt",
+   "n_actions": 543,
+   "share": {
+    "id_locator": 0.6224677716390423,
+    "id_framework": 0.31307550644567217,
+    "coord": 0.01841620626151013,
+    "other": 0.04604051565377532
+   },
+   "success": {
+    "id_locator": 0.9763313609467456,
+    "id_framework": 0.07058823529411765,
+    "coord": 0.0,
+    "other": 1.0
+   },
+   "action_success_overall": 0.6758747697974218
+  },
+  "B1·reddit·P-SoM": {
+   "backbone": "B1",
+   "site": "reddit",
+   "mode": "P-SoM",
+   "n_actions": 608,
+   "share": {
+    "id_locator": 0.5921052631578947,
+    "id_framework": 0.39473684210526316,
+    "coord": 0.009868421052631578,
+    "other": 0.003289473684210526
+   },
+   "success": {
+    "id_locator": 0.9666666666666667,
+    "id_framework": 0.09583333333333334,
+    "coord": 0.0,
+    "other": 1.0
+   },
+   "action_success_overall": 0.6134868421052632
+  },
+  "B2·classifieds·DOM": {
+   "backbone": "B2",
+   "site": "classifieds",
+   "mode": "DOM",
+   "n_actions": 685,
+   "share": {
+    "id_locator": 0.38248175182481753,
+    "id_framework": 0.48613138686131385,
+    "other": 0.13138686131386862
+   },
+   "success": {
+    "id_locator": 0.5152671755725191,
+    "id_framework": 0.08708708708708708,
+    "other": 0.8888888888888888
+   },
+   "action_success_overall": 0.3562043795620438
+  },
+  "B2·classifieds·SoM": {
+   "backbone": "B2",
+   "site": "classifieds",
+   "mode": "SoM",
+   "n_actions": 642,
+   "share": {
+    "id_locator": 0.5451713395638629,
+    "id_framework": 0.3068535825545171,
+    "coord": 0.009345794392523364,
+    "other": 0.13862928348909656
+   },
+   "success": {
+    "id_locator": 0.48,
+    "id_framework": 0.17766497461928935,
+    "coord": 0.3333333333333333,
+    "other": 0.43820224719101125
+   },
+   "action_success_overall": 0.38006230529595014
+  },
+  "B2·classifieds·Vision": {
+   "backbone": "B2",
+   "site": "classifieds",
+   "mode": "Vision",
+   "n_actions": 480,
+   "share": {
+    "coord": 0.8,
+    "other": 0.2
+   },
+   "success": {
+    "coord": 0.203125,
+    "other": 0.4791666666666667
+   },
+   "action_success_overall": 0.25833333333333336
+  },
+  "B2·classifieds·P-text": {
+   "backbone": "B2",
+   "site": "classifieds",
+   "mode": "P-text",
+   "n_actions": 534,
+   "share": {
+    "id_locator": 0.35580524344569286,
+    "id_framework": 0.398876404494382,
+    "other": 0.24531835205992508
+   },
+   "success": {
+    "id_locator": 0.8736842105263158,
+    "id_framework": 0.107981220657277,
+    "other": 0.549618320610687
+   },
+   "action_success_overall": 0.4887640449438202
+  },
+  "B2·classifieds·P-prompt": {
+   "backbone": "B2",
+   "site": "classifieds",
+   "mode": "P-prompt",
+   "n_actions": 642,
+   "share": {
+    "id_locator": 0.35202492211838005,
+    "id_framework": 0.40186915887850466,
+    "coord": 0.03271028037383177,
+    "other": 0.21339563862928349
+   },
+   "success": {
+    "id_locator": 0.38495575221238937,
+    "id_framework": 0.046511627906976744,
+    "coord": 0.0,
+    "other": 0.9562043795620438
+   },
+   "action_success_overall": 0.3582554517133956
+  },
+  "B2·classifieds·P-SoM": {
+   "backbone": "B2",
+   "site": "classifieds",
+   "mode": "P-SoM",
+   "n_actions": 718,
+   "share": {
+    "id_locator": 0.3286908077994429,
+    "id_framework": 0.38997214484679665,
+    "coord": 0.057103064066852366,
+    "other": 0.22423398328690808
+   },
+   "success": {
+    "id_locator": 0.6822033898305084,
+    "id_framework": 0.02142857142857143,
+    "coord": 0.0,
+    "other": 0.8509316770186336
+   },
+   "action_success_overall": 0.4233983286908078
+  },
+  "B2·reddit·DOM": {
+   "backbone": "B2",
+   "site": "reddit",
+   "mode": "DOM",
+   "n_actions": 789,
+   "share": {
+    "id_locator": 0.3485424588086185,
+    "id_framework": 0.5373891001267427,
+    "other": 0.11406844106463879
+   },
+   "success": {
+    "id_locator": 0.9490909090909091,
+    "id_framework": 0.18632075471698112,
+    "other": 0.8333333333333334
+   },
+   "action_success_overall": 0.5259822560202788
+  },
+  "B2·reddit·SoM": {
+   "backbone": "B2",
+   "site": "reddit",
+   "mode": "SoM",
+   "n_actions": 804,
+   "share": {
+    "id_locator": 0.6256218905472637,
+    "id_framework": 0.24378109452736318,
+    "coord": 0.012437810945273632,
+    "other": 0.1181592039800995
+   },
+   "success": {
+    "id_locator": 0.9264413518886679,
+    "id_framework": 0.28061224489795916,
+    "coord": 0.3,
+    "other": 0.14736842105263157
+   },
+   "action_success_overall": 0.6691542288557214
+  },
+  "B2·reddit·Vision": {
+   "backbone": "B2",
+   "site": "reddit",
+   "mode": "Vision",
+   "n_actions": 563,
+   "share": {
+    "coord": 0.8063943161634103,
+    "other": 0.1936056838365897
+   },
+   "success": {
+    "coord": 0.32819383259911894,
+    "other": 0.3944954128440367
+   },
+   "action_success_overall": 0.3410301953818828
+  },
+  "B2·reddit·P-text": {
+   "backbone": "B2",
+   "site": "reddit",
+   "mode": "P-text",
+   "n_actions": 748,
+   "share": {
+    "id_locator": 0.606951871657754,
+    "id_framework": 0.20320855614973263,
+    "other": 0.18983957219251338
+   },
+   "success": {
+    "id_locator": 0.973568281938326,
+    "id_framework": 0.3355263157894737,
+    "other": 0.704225352112676
+   },
+   "action_success_overall": 0.7927807486631016
+  },
+  "B2·reddit·P-prompt": {
+   "backbone": "B2",
+   "site": "reddit",
+   "mode": "P-prompt",
+   "n_actions": 726,
+   "share": {
+    "id_locator": 0.31267217630853994,
+    "id_framework": 0.5275482093663911,
+    "coord": 0.03305785123966942,
+    "other": 0.12672176308539945
+   },
+   "success": {
+    "id_locator": 0.973568281938326,
+    "id_framework": 0.06788511749347259,
+    "coord": 0.08333333333333333,
+    "other": 0.717391304347826
+   },
+   "action_success_overall": 0.43388429752066116
+  },
+  "B2·reddit·P-SoM": {
+   "backbone": "B2",
+   "site": "reddit",
+   "mode": "P-SoM",
+   "n_actions": 647,
+   "share": {
+    "id_locator": 0.615146831530139,
+    "id_framework": 0.20865533230293662,
+    "coord": 0.027820710973724884,
+    "other": 0.14837712519319937
+   },
+   "success": {
+    "id_locator": 0.9974874371859297,
+    "id_framework": 0.2518518518518518,
+    "coord": 0.6666666666666666,
+    "other": 0.5208333333333334
+   },
+   "action_success_overall": 0.7619783616692427
+  }
+ }
+}

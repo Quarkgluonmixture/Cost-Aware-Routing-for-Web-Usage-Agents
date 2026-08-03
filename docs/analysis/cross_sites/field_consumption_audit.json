@@ -2,7 +2,7 @@
  "n_steps": 4304,
  "n_episodes": 216,
  "per_cell": 6,
- "n_scripts_indexed": 142,
+ "n_scripts_indexed": 146,
  "fields": [
   {
    "kind": "step",
@@ -12,9 +12,9 @@
    "consumers": [],
    "sample_values": [
     "B0_dom_classifieds_20260",
+    "B0_dom_reddit_20260625_1",
     "B0_phantom_prompt_classi",
-    "B0_phantom_som_classifie",
-    "B0_phantom_text_classifi"
+    "B0_phantom_prompt_reddit"
    ],
    "klass": "GENERIC"
   },
@@ -75,8 +75,8 @@
    "sample_values": [
     "7965.304374694824",
     "8159.353494644165",
-    "8281.960010528564",
-    "8478.969097137451"
+    "8227.195739746094",
+    "8281.960010528564"
    ],
    "klass": "GENERIC"
   },
@@ -89,8 +89,8 @@
    "sample_values": [
     "3314",
     "3574",
-    "3734",
-    "3825"
+    "3615",
+    "3734"
    ],
    "klass": "GENERIC"
   },
@@ -101,10 +101,10 @@
    "n_consumers": -1,
    "consumers": [],
    "sample_values": [
-    "111",
-    "113",
-    "83",
-    "86"
+    "104",
+    "105",
+    "109",
+    "110"
    ],
    "klass": "GENERIC"
   },
@@ -117,8 +117,8 @@
    "sample_values": [
     "3406",
     "3687",
-    "3820",
-    "3936"
+    "3710",
+    "3820"
    ],
    "klass": "GENERIC"
   },
@@ -131,8 +131,8 @@
    "sample_values": [
     "0.003314",
     "0.003574",
-    "0.003734",
-    "0.0038250000000000003"
+    "0.003615",
+    "0.003734"
    ],
    "klass": "GENERIC"
   },
@@ -146,7 +146,7 @@
     "0.000415",
     "0.00043",
     "0.00046",
-    "0.000485"
+    "0.000475"
    ],
    "klass": "GENERIC"
   },
@@ -158,9 +158,9 @@
    "consumers": [],
    "sample_values": [
     "0.003774",
+    "0.00409",
     "0.004139",
-    "0.004164",
-    "0.00438"
+    "0.004164"
    ],
    "klass": "GENERIC"
   },
@@ -172,9 +172,9 @@
    "consumers": [],
    "sample_values": [
     "0.003774005500793457",
+    "0.004090005073547363",
     "0.004139005620956421",
-    "0.0041640067558288574",
-    "0.0043800063819885255"
+    "0.0041640067558288574"
    ],
    "klass": "GENERIC"
   },
@@ -198,9 +198,9 @@
    "consumers": [],
    "sample_values": [
     "B0_dom_classifieds_20260",
+    "B0_dom_reddit_20260625_1",
     "B0_phantom_prompt_classi",
-    "B0_phantom_som_classifie",
-    "B0_phantom_text_classifi"
+    "B0_phantom_prompt_reddit"
    ],
    "klass": "GENERIC"
   },
@@ -301,9 +301,9 @@
    "consumers": [],
    "sample_values": [
     "Any other pics?",
-    "RV\n",
-    "RVs\n",
-    "Recreational Vehicle\n"
+    "Do you have a higher qua",
+    "Pittsburgh\n",
+    "RV\n"
    ],
    "klass": "GENERIC"
   },
@@ -315,9 +315,9 @@
    "consumers": [],
    "sample_values": [
     "Any other pics?",
-    "RV\n",
-    "RVs\n",
-    "Recreational Vehicle\n"
+    "Do you have a higher qua",
+    "Pittsburgh\n",
+    "RV\n"
    ],
    "klass": "GENERIC"
   },
@@ -352,10 +352,10 @@
    "n_consumers": -1,
    "consumers": [],
    "sample_values": [
+    "/art-and-crafts",
     "/art-crafts",
-    "/index.php?page=item&id=",
-    "/index.php?page=search&s",
-    "/search?q=Pittsburgh+pai"
+    "/index.php?page=category",
+    "/index.php?page=item&id="
    ],
    "klass": "GENERIC"
   },
@@ -366,10 +366,10 @@
    "n_consumers": -1,
    "consumers": [],
    "sample_values": [
+    "/art-and-crafts",
     "/art-crafts",
-    "/index.php?page=item&id=",
-    "/index.php?page=search&s",
-    "/search?q=Pittsburgh+pai"
+    "/index.php?page=category",
+    "/index.php?page=item&id="
    ],
    "klass": "GENERIC"
   },
@@ -407,7 +407,7 @@
     "0.010728836059570312",
     "0.01621246337890625",
     "0.0171661376953125",
-    "0.018358230590820312"
+    "0.017404556274414062"
    ],
    "klass": "ORPHAN"
   },
@@ -418,10 +418,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
-    "0.0011920928955078125",
-    "0.001430511474609375",
-    "0.0016689300537109375",
-    "0.0019073486328125"
+    "0.000476837158203125",
+    "0.0007152557373046875",
+    "0.00095367431640625",
+    "0.0011920928955078125"
    ],
    "klass": "ORPHAN"
   },
@@ -434,7 +434,7 @@
    "sample_values": [
     "0.0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -445,7 +445,7 @@
    "sample_values": [
     "0.0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -456,7 +456,7 @@
    "sample_values": [
     "0.0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -467,7 +467,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -478,7 +478,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -489,7 +489,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -500,35 +500,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
-  },
-  {
-   "kind": "step",
-   "field": "latency_ms.obs_prepare",
-   "populated_pct": 100.0,
-   "n_consumers": 0,
-   "consumers": [],
-   "sample_values": [
-    "0.08153915405273438",
-    "0.08440017700195312",
-    "0.08630752563476562",
-    "0.09298324584960938"
-   ],
-   "klass": "ORPHAN"
-  },
-  {
-   "kind": "step",
-   "field": "latency_ms.backend_infer",
-   "populated_pct": 100.0,
-   "n_consumers": 0,
-   "consumers": [],
-   "sample_values": [
-    "1579.5044898986816",
-    "1595.3419208526611",
-    "1818.3403015136719",
-    "1906.7678451538086"
-   ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -539,8 +511,8 @@
    "sample_values": [
     "1579.5044898986816",
     "1595.3419208526611",
-    "1818.3403015136719",
-    "1906.7678451538086"
+    "1794.104814529419",
+    "1818.3403015136719"
    ],
    "klass": "ORPHAN"
   },
@@ -554,7 +526,7 @@
     "0.010728836059570312",
     "0.01621246337890625",
     "0.0171661376953125",
-    "0.018358230590820312"
+    "0.017404556274414062"
    ],
    "klass": "ORPHAN"
   },
@@ -567,20 +539,8 @@
    "sample_values": [
     "7965.304374694824",
     "8159.353494644165",
-    "8281.960010528564",
-    "8478.969097137451"
-   ],
-   "klass": "ORPHAN"
-  },
-  {
-   "kind": "step",
-   "field": "latency_ms.runtime_sleep",
-   "populated_pct": 100.0,
-   "n_consumers": 0,
-   "consumers": [],
-   "sample_values": [
-    "0.0",
-    "500.0"
+    "8227.195739746094",
+    "8281.960010528564"
    ],
    "klass": "ORPHAN"
   },
@@ -605,7 +565,7 @@
    "sample_values": [
     "0.0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -615,23 +575,9 @@
    "consumers": [],
    "sample_values": [
     "1.0013580322265624e-09",
+    "1.0414123535156249e-09",
     "1.0547637939453125e-09",
-    "1.1749267578125e-09",
-    "1.2416839599609375e-09"
-   ],
-   "klass": "ORPHAN"
-  },
-  {
-   "kind": "step",
-   "field": "cost_usd.obs_prepare",
-   "populated_pct": 100.0,
-   "n_consumers": 0,
-   "consumers": [],
-   "sample_values": [
-    "4.566192626953125e-09",
-    "4.7264099121093745e-09",
-    "4.833221435546875e-09",
-    "5.207061767578125e-09"
+    "1.0814666748046875e-09"
    ],
    "klass": "ORPHAN"
   },
@@ -644,7 +590,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -655,7 +601,7 @@
    "sample_values": [
     "results/visualwebarena/p"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -664,10 +610,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
-    "blue kayak - Classifieds",
-    "blue kayak - page 2 - Cl",
-    "blue kayak - page 3 - Cl",
-    "blue kayak - page 4 - Cl"
+    "Arts + crafts - Classifi",
+    "Classifieds",
+    "Mini modified race cars ",
+    "Vogue David Bailey \"Plea"
    ],
    "klass": "ORPHAN"
   },
@@ -728,7 +674,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -739,7 +685,7 @@
    "sample_values": [
     "0.0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -762,7 +708,7 @@
    "sample_values": [
     "True"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -773,7 +719,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -782,10 +728,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "1.0427474975585935e-08",
+    "1.0641098022460939e-08",
     "1.8812179565429688e-08",
-    "3.3418655395507816e-08",
-    "3.48339080810547e-08",
-    "3.765106201171875e-08"
+    "2.4700164794921874e-09"
    ],
    "klass": "ORPHAN"
   },
@@ -796,10 +742,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
-    "0.09202957153320312",
-    "0.10085105895996094",
-    "0.33593177795410156",
-    "0.5967617034912109"
+    "0.04410743713378906",
+    "0.06270408630371094",
+    "0.06580352783203125",
+    "0.09202957153320312"
    ],
    "klass": "ORPHAN"
   },
@@ -812,7 +758,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -848,8 +794,8 @@
    "sample_values": [
     "0.06093102274462581",
     "0.06410700734704733",
-    "0.19618798978626728",
-    "0.6303279951680452"
+    "0.06596400635316968",
+    "0.06715900963172317"
    ],
    "klass": "ORPHAN"
   },
@@ -874,7 +820,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -885,7 +831,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -896,7 +842,7 @@
    "sample_values": [
     "0.0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -906,9 +852,9 @@
    "consumers": [],
    "sample_values": [
     "1",
+    "12",
     "14",
-    "18",
-    "3"
+    "18"
    ],
    "klass": "ORPHAN"
   },
@@ -934,9 +880,9 @@
    "consumers": [],
    "sample_values": [
     "0.0",
+    "2623179.0356636047",
     "2719111.3753318787",
-    "2924047.6038455963",
-    "2930654.1352272034"
+    "2723337.0821475983"
    ],
    "klass": "ORPHAN"
   },
@@ -948,9 +894,9 @@
    "consumers": [],
    "sample_values": [
     "0.0",
-    "0.023680036542892458",
-    "0.023853031108856202",
-    "0.11800419125938415"
+    "0.014836024633407593",
+    "0.020735242328643797",
+    "0.023680036542892458"
    ],
    "klass": "ORPHAN"
   },
@@ -962,9 +908,9 @@
    "consumers": [],
    "sample_values": [
     "0.0",
+    "0.00024247734535071586",
     "0.001014674979812569",
-    "0.0011695903077059322",
-    "0.0019420245630542437"
+    "0.001086647057020002"
    ],
    "klass": "ORPHAN"
   },
@@ -975,10 +921,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "0.020067",
     "0.023680000000000003",
     "0.023853",
-    "0.09150000000000001",
-    "0.11800400000000001"
+    "0.032308"
    ],
    "klass": "ORPHAN"
   },
@@ -989,10 +935,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "1.0427474975585935e-08",
+    "1.0641098022460939e-08",
     "1.8812179565429688e-08",
-    "3.3418655395507816e-08",
-    "3.48339080810547e-08",
-    "3.765106201171875e-08"
+    "2.4700164794921874e-09"
    ],
    "klass": "ORPHAN"
   },
@@ -1003,10 +949,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "1.1720294952392577e-05",
+    "1.3576812744140624e-05",
     "1.578407287597656e-07",
-    "1.6160583496093752e-07",
-    "1.61752700805664e-07",
-    "2.59552001953125e-08"
+    "1.6160583496093752e-07"
    ],
    "klass": "ORPHAN"
   },
@@ -1017,10 +963,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "0.017766999999999998",
     "0.020645",
     "0.021073",
-    "0.081525",
-    "0.10482399999999999"
+    "0.028823"
    ],
    "klass": "ORPHAN"
   },
@@ -1031,10 +977,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "0.0023000000000000004",
     "0.0027800000000000004",
-    "0.003035",
-    "0.009975",
-    "0.013180000000000002"
+    "0.00301",
+    "0.003035"
    ],
    "klass": "ORPHAN"
   },
@@ -1045,10 +991,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "1.1720294952392577e-05",
+    "1.3576812744140624e-05",
     "1.578407287597656e-07",
-    "1.6160583496093752e-07",
-    "1.61752700805664e-07",
-    "2.59552001953125e-08"
+    "1.6160583496093752e-07"
    ],
    "klass": "ORPHAN"
   },
@@ -1073,8 +1019,8 @@
    "sample_values": [
     "0",
     "1",
-    "30",
-    "4"
+    "11",
+    "13"
    ],
    "klass": "ORPHAN"
   },
@@ -1087,7 +1033,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1112,8 +1058,8 @@
    "sample_values": [
     "20a778ce5cee6adf",
     "297c729de2b36a15",
-    "483c9e2b52902df1",
-    "802f879071d42cca"
+    "30c48fe64e1dc560",
+    "3901dd11d8198a96"
    ],
    "klass": "ORPHAN"
   },
@@ -1126,7 +1072,7 @@
    "sample_values": [
     "post_B545_vwa_score_only"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1137,7 +1083,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1148,7 +1094,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1159,7 +1105,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1170,7 +1116,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1181,7 +1127,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1192,7 +1138,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1203,7 +1149,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1214,7 +1160,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1225,7 +1171,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1234,10 +1180,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "12",
+    "13",
     "14",
-    "19",
-    "30",
-    "4"
+    "15"
    ],
    "klass": "ORPHAN"
   },
@@ -1248,10 +1194,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "12",
+    "13",
     "14",
-    "19",
-    "30",
-    "4"
+    "15"
    ],
    "klass": "ORPHAN"
   },
@@ -1262,10 +1208,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "12",
+    "13",
     "14",
-    "19",
-    "30",
-    "4"
+    "15"
    ],
    "klass": "ORPHAN"
   },
@@ -1276,10 +1222,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "12",
+    "13",
     "14",
-    "20",
-    "30",
-    "4"
+    "15"
    ],
    "klass": "ORPHAN"
   },
@@ -1304,10 +1250,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "0.020067",
     "0.023680000000000003",
     "0.023853",
-    "0.09150000000000001",
-    "0.11800400000000001"
+    "0.032308"
    ],
    "klass": "ORPHAN"
   },
@@ -1321,7 +1267,7 @@
     "0.0",
     "0.0019745799999999897",
     "0.0022645300000000007",
-    "0.00666781000000001"
+    "0.0025945900000000077"
    ],
    "klass": "ORPHAN"
   },
@@ -1345,9 +1291,9 @@
    "consumers": [],
    "sample_values": [
     "12",
+    "14",
     "19",
-    "30",
-    "5"
+    "22"
    ],
    "klass": "ORPHAN"
   },
@@ -1360,7 +1306,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1405,7 +1351,7 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1416,7 +1362,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1425,10 +1371,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
-    "blue kayak - Classifieds",
-    "blue kayak - page 2 - Cl",
-    "blue kayak - page 3 - Cl",
-    "blue kayak - page 4 - Cl"
+    "Arts + crafts - Classifi",
+    "Classifieds",
+    "Mini modified race cars ",
+    "Vogue David Bailey \"Plea"
    ],
    "klass": "ORPHAN"
   },
@@ -1439,10 +1385,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "11",
     "12",
-    "2",
-    "22",
-    "25"
+    "13",
+    "2"
    ],
    "klass": "ORPHAN"
   },
@@ -1453,10 +1399,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
-    "18",
-    "20",
-    "3",
-    "4"
+    "11",
+    "12",
+    "16",
+    "18"
    ],
    "klass": "ORPHAN"
   },
@@ -1467,10 +1413,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "10",
     "11",
-    "16",
-    "2",
-    "20"
+    "12",
+    "16"
    ],
    "klass": "ORPHAN"
   },
@@ -1481,10 +1427,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
-    "16",
-    "17",
-    "2",
-    "3"
+    "1",
+    "11",
+    "15",
+    "16"
    ],
    "klass": "ORPHAN"
   },
@@ -1495,10 +1441,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "10",
     "11",
     "12",
-    "2",
-    "3"
+    "2"
    ],
    "klass": "ORPHAN"
   },
@@ -1511,7 +1457,7 @@
    "sample_values": [
     "cuda"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1520,10 +1466,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "1",
     "13",
-    "15",
-    "2",
-    "3"
+    "14",
+    "15"
    ],
    "klass": "ORPHAN"
   },
@@ -1534,10 +1480,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "10",
     "11",
     "12",
-    "21",
-    "24"
+    "16"
    ],
    "klass": "ORPHAN"
   },
@@ -1548,24 +1494,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "4764.017343521118",
+    "5188.052654266357",
     "5531.062364578247",
-    "5610.095024108887",
-    "5826.27272605896",
-    "5836.7860317230225"
-   ],
-   "klass": "ORPHAN"
-  },
-  {
-   "kind": "step",
-   "field": "energy.kwh",
-   "populated_pct": 68.9,
-   "n_consumers": 0,
-   "consumers": [],
-   "sample_values": [
-    "0.00021409024556477864",
-    "0.00022336140058106847",
-    "0.00023794107432166737",
-    "0.0002693786804212464"
+    "5610.095024108887"
    ],
    "klass": "ORPHAN"
   },
@@ -1576,24 +1508,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "4.3858024328947066e-05",
+    "4.5632037607828784e-05",
     "4.70998540242513e-05",
-    "4.913950812783506e-05",
-    "5.234703635076682e-05",
-    "5.92633096926742e-05"
-   ],
-   "klass": "ORPHAN"
-  },
-  {
-   "kind": "step",
-   "field": "energy.power_watts",
-   "populated_pct": 68.9,
-   "n_consumers": 0,
-   "consumers": [],
-   "sample_values": [
-    "63.25",
-    "64.0",
-    "64.25",
-    "64.75"
+    "4.913950812783506e-05"
    ],
    "klass": "ORPHAN"
   },
@@ -1606,7 +1524,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1617,7 +1535,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1628,7 +1546,7 @@
    "sample_values": [
     "x86_64"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1639,7 +1557,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1650,7 +1568,7 @@
    "sample_values": [
     "exact_id_match"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -1660,9 +1578,9 @@
    "consumers": [],
    "sample_values": [
     "0.0002232284955587652",
+    "0.00023906235254440045",
     "0.0002573098676953051",
-    "0.00039614406948553193",
-    "0.0004272454038719336"
+    "0.0003814667238616281"
    ],
    "klass": "ORPHAN"
   },
@@ -1673,10 +1591,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "10",
     "11",
-    "2",
-    "20",
-    "22"
+    "14",
+    "16"
    ],
    "klass": "ORPHAN"
   },
@@ -1713,7 +1631,7 @@
    "sample_values": [
     "True"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1724,7 +1642,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1735,7 +1653,7 @@
    "sample_values": [
     "True"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1746,7 +1664,7 @@
    "sample_values": [
     "tool_calls"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1757,7 +1675,7 @@
    "sample_values": [
     "True"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1768,7 +1686,7 @@
    "sample_values": [
     "True"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1801,10 +1719,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "141924",
     "142084",
-    "146220",
-    "155184",
-    "171632"
+    "145692",
+    "146220"
    ],
    "klass": "ORPHAN"
   },
@@ -1817,7 +1735,7 @@
    "sample_values": [
     "results/visualwebarena/p"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1842,7 +1760,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1852,9 +1770,9 @@
    "consumers": [],
    "sample_values": [
     "141924",
+    "145692",
     "146220",
-    "181060",
-    "184088"
+    "161064"
    ],
    "klass": "ORPHAN"
   },
@@ -1866,9 +1784,9 @@
    "consumers": [],
    "sample_values": [
     "141924",
+    "145692",
     "146220",
-    "181060",
-    "184088"
+    "161064"
    ],
    "klass": "ORPHAN"
   },
@@ -1881,7 +1799,7 @@
    "sample_values": [
     "85"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -1892,7 +1810,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "ORPHAN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -2294,8 +2212,8 @@
    "sample_values": [
     "1",
     "2",
-    "23",
-    "3"
+    "21",
+    "23"
    ],
    "klass": "DEAD"
   },
@@ -2306,10 +2224,10 @@
    "n_consumers": 0,
    "consumers": [],
    "sample_values": [
+    "250578.04131507874",
+    "250598.04368019104",
     "340746.8945980072",
-    "40127.18081474304",
-    "40138.05818557739",
-    "40141.33334159851"
+    "40127.18081474304"
    ],
    "klass": "DEAD"
   },
@@ -2346,24 +2264,54 @@
    "sample_values": [
     "0",
     "30",
-    "43",
-    "64"
+    "32",
+    "34"
    ],
    "klass": "THIN"
   },
   {
    "kind": "step",
-   "field": "latency_ms.env_step",
+   "field": "latency_ms.obs_prepare",
    "populated_pct": 100.0,
    "n_consumers": 1,
    "consumers": [
-    "offsite_navigation_audit.py"
+    "latency_decomposition.py"
    ],
    "sample_values": [
-    "6095.333576202393",
-    "6320.468425750732",
-    "6390.612602233887",
-    "6799.999237060547"
+    "0.07271766662597656",
+    "0.08153915405273438",
+    "0.08440017700195312",
+    "0.08463859558105469"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.runtime_sleep",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "latency_decomposition.py"
+   ],
+   "sample_values": [
+    "0.0",
+    "500.0"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "cost_usd.obs_prepare",
+   "populated_pct": 100.0,
+   "n_consumers": 1,
+   "consumers": [
+    "latency_decomposition.py"
+   ],
+   "sample_values": [
+    "4.072189331054687e-09",
+    "4.566192626953125e-09",
+    "4.7264099121093745e-09",
+    "4.739761352539062e-09"
    ],
    "klass": "THIN"
   },
@@ -2392,7 +2340,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -2418,9 +2366,9 @@
    ],
    "sample_values": [
     "0.0",
+    "0.03333333333333333",
     "0.07142857142857142",
-    "0.13333333333333333",
-    "0.16666666666666666"
+    "0.13333333333333333"
    ],
    "klass": "THIN"
   },
@@ -2435,7 +2383,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -2448,7 +2396,7 @@
    "sample_values": [
     "results/visualwebarena/p"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -2461,8 +2409,8 @@
    "sample_values": [
     "http://localhost:9980/",
     "http://localhost:9980/in",
-    "http://localhost:9999/co",
-    "http://localhost:9999/f/"
+    "http://localhost:9980/oc",
+    "http://localhost:9999/co"
    ],
    "klass": "THIN"
   },
@@ -2475,10 +2423,10 @@
     "per_mode_four_dimension_profile.py"
    ],
    "sample_values": [
+    "106457.12494850159",
+    "116449.48124885559",
     "173051.0380268097",
-    "177136.86895370483",
-    "218663.88845443726",
-    "264541.122674942"
+    "177136.86895370483"
    ],
    "klass": "THIN"
   },
@@ -2491,10 +2439,10 @@
     "cross_object_pareto.py"
    ],
    "sample_values": [
+    "106457.12494850159",
+    "116449.48124885559",
     "173051.0380268097",
-    "177136.86895370483",
-    "218663.88845443726",
-    "264541.122674942"
+    "177136.86895370483"
    ],
    "klass": "THIN"
   },
@@ -2509,7 +2457,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -2538,7 +2486,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -2551,39 +2499,7 @@
    "sample_values": [
     "0"
    ],
-   "klass": "THIN"
-  },
-  {
-   "kind": "step",
-   "field": "action_executed.dispatch_path",
-   "populated_pct": 70.4,
-   "n_consumers": 1,
-   "consumers": [
-    "aggregate_select_option_dispatch.py"
-   ],
-   "sample_values": [
-    "coord_keyboard_fallback",
-    "coord_locator_route",
-    "coord_mouse_click",
-    "element_id_framework"
-   ],
-   "klass": "THIN"
-  },
-  {
-   "kind": "step",
-   "field": "action_executed_primary.dispatch_path",
-   "populated_pct": 70.4,
-   "n_consumers": 1,
-   "consumers": [
-    "aggregate_select_option_dispatch.py"
-   ],
-   "sample_values": [
-    "coord_keyboard_fallback",
-    "coord_locator_route",
-    "coord_mouse_click",
-    "element_id_framework"
-   ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -2597,7 +2513,7 @@
     "2151",
     "2414",
     "2460",
-    "2662"
+    "2503"
    ],
    "klass": "THIN"
   },
@@ -2613,7 +2529,39 @@
     "0",
     "1248",
     "1344",
-    "576"
+    "1536"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.kwh",
+   "populated_pct": 68.9,
+   "n_consumers": 1,
+   "consumers": [
+    "energy_carbon_audit.py"
+   ],
+   "sample_values": [
+    "0.0001993546560406685",
+    "0.00020741835276285808",
+    "0.00021409024556477864",
+    "0.00022336140058106847"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "energy.power_watts",
+   "populated_pct": 68.9,
+   "n_consumers": 1,
+   "consumers": [
+    "energy_carbon_audit.py"
+   ],
+   "sample_values": [
+    "63.25",
+    "63.5",
+    "63.75",
+    "64.0"
    ],
    "klass": "THIN"
   },
@@ -2627,9 +2575,9 @@
    ],
    "sample_values": [
     "0.10834870706832286",
+    "0.1252932554392718",
     "0.1278768661460749",
-    "0.1338377264926358",
-    "0.16970699818630336"
+    "0.1338377264926358"
    ],
    "klass": "THIN"
   },
@@ -2643,9 +2591,9 @@
    ],
    "sample_values": [
     "1.0342432260513306",
+    "1.0401744842529297",
     "1.0934652090072632",
-    "1.1514195203781128",
-    "1.216951847076416"
+    "1.1514195203781128"
    ],
    "klass": "THIN"
   },
@@ -2717,9 +2665,9 @@
    ],
    "sample_values": [
     "1",
-    "13",
-    "25",
-    "4"
+    "10",
+    "11",
+    "13"
    ],
    "klass": "THIN"
   },
@@ -2732,7 +2680,7 @@
     "about_blank_frequency.py"
    ],
    "sample_values": [],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -2743,10 +2691,10 @@
     "aggregate_phantom_lift.py"
    ],
    "sample_values": [
+    "1",
+    "10",
     "12",
-    "2",
-    "3",
-    "4"
+    "14"
    ],
    "klass": "THIN"
   },
@@ -2761,8 +2709,8 @@
    "sample_values": [
     "1",
     "10",
-    "2",
-    "3"
+    "12",
+    "14"
    ],
    "klass": "THIN"
   },
@@ -2809,7 +2757,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -2822,7 +2770,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -2835,22 +2783,7 @@
    "sample_values": [
     "select_option"
    ],
-   "klass": "THIN"
-  },
-  {
-   "kind": "step",
-   "field": "select_option_meta.dispatch_path",
-   "populated_pct": 5.7,
-   "n_consumers": 1,
-   "consumers": [
-    "aggregate_select_option_dispatch.py"
-   ],
-   "sample_values": [
-    "coordinate",
-    "element_id",
-    "missing_obs"
-   ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -2863,22 +2796,7 @@
    "sample_values": [
     "select_option"
    ],
-   "klass": "THIN"
-  },
-  {
-   "kind": "step",
-   "field": "select_option_meta_primary.dispatch_path",
-   "populated_pct": 5.7,
-   "n_consumers": 1,
-   "consumers": [
-    "aggregate_select_option_dispatch.py"
-   ],
-   "sample_values": [
-    "coordinate",
-    "element_id",
-    "missing_obs"
-   ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3022,6 +2940,23 @@
    "sample_values": [
     "visualwebarena"
    ],
+   "klass": "CONSTANT"
+  },
+  {
+   "kind": "step",
+   "field": "latency_ms.env_step",
+   "populated_pct": 100.0,
+   "n_consumers": 2,
+   "consumers": [
+    "latency_decomposition.py",
+    "offsite_navigation_audit.py"
+   ],
+   "sample_values": [
+    "6095.333576202393",
+    "6320.468425750732",
+    "6356.5673828125",
+    "6390.612602233887"
+   ],
    "klass": "THIN"
   },
   {
@@ -3034,10 +2969,10 @@
     "page_change_corrected_metrics.py"
    ],
    "sample_values": [
+    "0.0831821715470329",
     "0.09056192034915439",
-    "0.14403990024937655",
-    "0.16040901102412525",
-    "0.21822066229207995"
+    "0.10059333637608397",
+    "0.12488209771741181"
    ],
    "klass": "THIN"
   },
@@ -3054,7 +2989,7 @@
     "0",
     "1440",
     "1815",
-    "1915"
+    "1855"
    ],
    "klass": "THIN"
   },
@@ -3071,7 +3006,7 @@
     "0",
     "1440",
     "1815",
-    "1915"
+    "1855"
    ],
    "klass": "THIN"
   },
@@ -3087,7 +3022,7 @@
    "sample_values": [
     "visualwebarena"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -3100,9 +3035,9 @@
    ],
    "sample_values": [
     "0.0",
+    "0.03333333333333333",
     "0.07142857142857142",
-    "0.13333333333333333",
-    "0.16666666666666666"
+    "0.13333333333333333"
    ],
    "klass": "THIN"
   },
@@ -3117,9 +3052,9 @@
    ],
    "sample_values": [
     "12533.310508727956",
-    "8513.628017902374",
-    "8567.894041538239",
-    "8632.74793624878"
+    "7678.423762321472",
+    "8284.670341014862",
+    "8471.251845359802"
    ],
    "klass": "THIN"
   },
@@ -3133,10 +3068,10 @@
     "generate_per_task_sr.py"
    ],
    "sample_values": [
+    "0.020067",
     "0.023680000000000003",
     "0.023853",
-    "0.09150000000000001",
-    "0.11800400000000001"
+    "0.032308"
    ],
    "klass": "THIN"
   },
@@ -3151,9 +3086,9 @@
    ],
    "sample_values": [
     "0.0",
+    "0.00024247734535071586",
     "0.001014674979812569",
-    "0.0011695903077059322",
-    "0.0018006548612978725"
+    "0.001086647057020002"
    ],
    "klass": "THIN"
   },
@@ -3174,6 +3109,23 @@
   },
   {
    "kind": "step",
+   "field": "action_executed.dispatch_path",
+   "populated_pct": 70.4,
+   "n_consumers": 2,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "dispatch_path_audit.py"
+   ],
+   "sample_values": [
+    "coord_keyboard_fallback",
+    "coord_locator_route",
+    "coord_mouse_click",
+    "coord_true_oob_noop"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
    "field": "action_executed.fallback",
    "populated_pct": 70.4,
    "n_consumers": 2,
@@ -3184,6 +3136,23 @@
    "sample_values": [
     "False",
     "True"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "action_executed_primary.dispatch_path",
+   "populated_pct": 70.4,
+   "n_consumers": 2,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "dispatch_path_audit.py"
+   ],
+   "sample_values": [
+    "coord_keyboard_fallback",
+    "coord_locator_route",
+    "coord_mouse_click",
+    "coord_true_oob_noop"
    ],
    "klass": "THIN"
   },
@@ -3212,10 +3181,10 @@
     "fig3_regional_carbon.py"
    ],
    "sample_values": [
+    "0.00024247734535071586",
     "0.001014674979812569",
-    "0.0011695903077059322",
-    "0.0018006548612978725",
-    "0.0019420245630542437"
+    "0.001086647057020002",
+    "0.0011695903077059322"
    ],
    "klass": "THIN"
   },
@@ -3229,7 +3198,7 @@
     "diag_pattern_match.py"
    ],
    "sample_values": [],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3258,7 +3227,7 @@
     "analyze_reason_diagnostics.py"
    ],
    "sample_values": [],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3272,7 +3241,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "THIN"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3285,6 +3254,38 @@
    ],
    "sample_values": [
     "False"
+   ],
+   "klass": "CONSTANT"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta.dispatch_path",
+   "populated_pct": 5.7,
+   "n_consumers": 2,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "dispatch_path_audit.py"
+   ],
+   "sample_values": [
+    "coordinate",
+    "element_id",
+    "missing_obs"
+   ],
+   "klass": "THIN"
+  },
+  {
+   "kind": "step",
+   "field": "select_option_meta_primary.dispatch_path",
+   "populated_pct": 5.7,
+   "n_consumers": 2,
+   "consumers": [
+    "aggregate_select_option_dispatch.py",
+    "dispatch_path_audit.py"
+   ],
+   "sample_values": [
+    "coordinate",
+    "element_id",
+    "missing_obs"
    ],
    "klass": "THIN"
   },
@@ -3345,7 +3346,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "OK"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3360,8 +3361,8 @@
    "sample_values": [
     "-0.0991024717308681",
     "-0.11845606240902436",
-    "-0.16477139818864184",
-    "-0.16539296312882673"
+    "-0.14373828708980818",
+    "-0.14948453151009403"
    ],
    "klass": "OK"
   },
@@ -3378,8 +3379,8 @@
    "sample_values": [
     "-1.2317516803741455",
     "-1.3885797262191772",
-    "-2.1606407165527344",
-    "-2.4640450477600098"
+    "-2.05047607421875",
+    "-2.1606407165527344"
    ],
    "klass": "OK"
   },
@@ -3395,9 +3396,9 @@
    ],
    "sample_values": [
     "100.18693690043618",
-    "112.97293813590049",
-    "120.51766299887755",
-    "126.4694767182332"
+    "100.45113635402436",
+    "101.09747707178389",
+    "104.91309521750563"
    ],
    "klass": "OK"
   },
@@ -3413,9 +3414,9 @@
    ],
    "sample_values": [
     "-0.8750000298023224",
-    "-1.7500000894069672",
-    "-2.375000022351742",
-    "-3.249999910593033"
+    "-1.5000000447034836",
+    "-1.7499999701976776",
+    "-1.7500000894069672"
    ],
    "klass": "OK"
   },
@@ -3464,7 +3465,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "OK"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3477,10 +3478,10 @@
     "tier_b_id_patching.py"
    ],
    "sample_values": [
-    "Arts + Crafts",
-    "Arts + crafts",
-    "Higher price first",
-    "Lower price first"
+    "3",
+    "All categories",
+    "Art + Crafts",
+    "Art + crafts"
    ],
    "klass": "OK"
   },
@@ -3495,10 +3496,10 @@
     "tier_b_id_patching.py"
    ],
    "sample_values": [
-    "Arts + Crafts",
-    "Arts + crafts",
-    "Higher price first",
-    "Lower price first"
+    "3",
+    "All categories",
+    "Art + Crafts",
+    "Art + crafts"
    ],
    "klass": "OK"
   },
@@ -3522,6 +3523,25 @@
    "klass": "OK"
   },
   {
+   "kind": "step",
+   "field": "latency_ms.backend_infer",
+   "populated_pct": 100.0,
+   "n_consumers": 4,
+   "consumers": [
+    "energy_carbon_audit.py",
+    "export_ablation_tables.py",
+    "latency_decomposition.py",
+    "local_cost_estimand_audit.py"
+   ],
+   "sample_values": [
+    "1579.5044898986816",
+    "1595.3419208526611",
+    "1794.104814529419",
+    "1818.3403015136719"
+   ],
+   "klass": "OK"
+  },
+  {
    "kind": "episode",
    "field": "total_latency_ms",
    "populated_pct": 100.0,
@@ -3533,10 +3553,10 @@
     "per_mode_four_dimension_profile.py"
    ],
    "sample_values": [
+    "106457.12494850159",
+    "116449.48124885559",
     "173051.0380268097",
-    "177136.86895370483",
-    "218663.88845443726",
-    "264541.122674942"
+    "177136.86895370483"
    ],
    "klass": "OK"
   },
@@ -3569,29 +3589,10 @@
     "router_prior_baselines.py"
    ],
    "sample_values": [
-    "0.6",
-    "0.7",
-    "0.75",
-    "0.8"
-   ],
-   "klass": "OK"
-  },
-  {
-   "kind": "step",
-   "field": "confidence.verbalized",
-   "populated_pct": 92.5,
-   "n_consumers": 4,
-   "consumers": [
-    "aggregate_confidence_cascade.py",
-    "analyze_confidence_calibration.py",
-    "l2_partial_trajectory_auroc.py",
-    "mechanism_per_task.py"
-   ],
-   "sample_values": [
-    "0.6",
-    "0.7",
-    "0.75",
-    "0.8"
+    "0.0",
+    "0.3",
+    "0.5",
+    "0.6"
    ],
    "klass": "OK"
   },
@@ -3607,10 +3608,10 @@
     "router_prior_baselines.py"
    ],
    "sample_values": [
-    "0.6",
-    "0.7",
-    "0.75",
-    "0.8"
+    "0.0",
+    "0.3",
+    "0.5",
+    "0.6"
    ],
    "klass": "OK"
   },
@@ -3663,8 +3664,8 @@
    "sample_values": [
     "http://localhost:9980/",
     "http://localhost:9980/in",
-    "http://localhost:9999/",
-    "http://localhost:9999/f/"
+    "http://localhost:9980/oc",
+    "http://localhost:9980/se"
    ],
    "klass": "OK"
   },
@@ -3702,7 +3703,7 @@
     "107460",
     "131003",
     "131958",
-    "21252"
+    "138263"
    ],
    "klass": "OK"
   },
@@ -3719,7 +3720,7 @@
     "diag_pattern_match.py"
    ],
    "sample_values": [],
-   "klass": "OK"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3734,7 +3735,7 @@
     "diag_pattern_match.py"
    ],
    "sample_values": [],
-   "klass": "OK"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -3752,8 +3753,8 @@
    "sample_values": [
     "2602",
     "2862",
-    "3397",
-    "3951"
+    "3320",
+    "3397"
    ],
    "klass": "OK"
   },
@@ -3771,10 +3772,10 @@
     "fig1c_strategy_gradient.py"
    ],
    "sample_values": [
-    "I am on the search resul",
-    "I need to find the cheap",
-    "I need to scroll down to",
-    "I need to search for a b"
+    "I am currently on page 2",
+    "I am on page 2 of the se",
+    "I am on page 3 of the se",
+    "I am on the search resul"
    ],
    "klass": "OK"
   },
@@ -3792,10 +3793,31 @@
     "fig1c_strategy_gradient.py"
    ],
    "sample_values": [
-    "I am on the search resul",
-    "I need to find the cheap",
-    "I need to scroll down to",
-    "I need to search for a b"
+    "I am currently on page 2",
+    "I am on page 2 of the se",
+    "I am on page 3 of the se",
+    "I am on the search resul"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "confidence.verbalized",
+   "populated_pct": 92.5,
+   "n_consumers": 6,
+   "consumers": [
+    "aggregate_confidence_cascade.py",
+    "analyze_confidence_calibration.py",
+    "energy_carbon_audit.py",
+    "l2_partial_trajectory_auroc.py",
+    "latency_decomposition.py",
+    "mechanism_per_task.py"
+   ],
+   "sample_values": [
+    "0.0",
+    "0.3",
+    "0.5",
+    "0.6"
    ],
    "klass": "OK"
   },
@@ -3894,10 +3916,10 @@
     "validate_run.py"
    ],
    "sample_values": [
+    "0.020070157455444337",
     "0.023680036542892458",
     "0.0238530311088562",
-    "0.09150011735916139",
-    "0.11800419125938418"
+    "0.032313503170013434"
    ],
    "klass": "OK"
   },
@@ -3936,10 +3958,10 @@
     "write_digests.py"
    ],
    "sample_values": [
+    "18000.00",
     "61",
-    "No blue kayaks were foun",
-    "The height of the most r",
-    "The most expensive paint"
+    "It has 3 $%@",
+    "No blue kayaks were foun"
    ],
    "klass": "DEAD"
   },
@@ -3958,10 +3980,10 @@
     "write_digests.py"
    ],
    "sample_values": [
+    "18000.00",
     "61",
-    "No blue kayaks were foun",
-    "The height of the most r",
-    "The most expensive paint"
+    "It has 3 $%@",
+    "No blue kayaks were foun"
    ],
    "klass": "DEAD"
   },
@@ -3983,29 +4005,8 @@
    "sample_values": [
     "0",
     "1",
-    "2",
-    "3"
-   ],
-   "klass": "OK"
-  },
-  {
-   "kind": "step",
-   "field": "action_success",
-   "populated_pct": 100.0,
-   "n_consumers": 8,
-   "consumers": [
-    "aggregate_conditional_failure_attribution.py",
-    "aggregate_confidence_cascade.py",
-    "analyze_reason_diagnostics.py",
-    "b0_vision_coordinate_errors.py",
-    "diag_pattern_match.py",
-    "page_change_corrected_metrics.py",
-    "per_mode_four_dimension_profile.py",
-    "router_prior_baselines.py"
-   ],
-   "sample_values": [
-    "False",
-    "True"
+    "10",
+    "11"
    ],
    "klass": "OK"
   },
@@ -4027,8 +4028,8 @@
    "sample_values": [
     "http://localhost:9980/",
     "http://localhost:9980/in",
-    "http://localhost:9999/",
-    "http://localhost:9999/f/"
+    "http://localhost:9980/oc",
+    "http://localhost:9980/se"
    ],
    "klass": "OK"
   },
@@ -4050,8 +4051,8 @@
    "sample_values": [
     "33",
     "36",
-    "45",
-    "67"
+    "44",
+    "45"
    ],
    "klass": "OK"
   },
@@ -4072,9 +4073,9 @@
    ],
    "sample_values": [
     "20.713329315185547",
-    "22.80426025390625",
-    "24.379730224609375",
-    "26.25441551208496"
+    "21.356821060180664",
+    "21.96955680847168",
+    "22.205352783203125"
    ],
    "klass": "OK"
   },
@@ -4099,6 +4100,28 @@
     "phase1_phantom_prompt_ro",
     "phase1_phantom_som_route",
     "phase1_phantom_text_rout"
+   ],
+   "klass": "OK"
+  },
+  {
+   "kind": "step",
+   "field": "action_success",
+   "populated_pct": 100.0,
+   "n_consumers": 9,
+   "consumers": [
+    "aggregate_conditional_failure_attribution.py",
+    "aggregate_confidence_cascade.py",
+    "analyze_reason_diagnostics.py",
+    "b0_vision_coordinate_errors.py",
+    "diag_pattern_match.py",
+    "dispatch_path_audit.py",
+    "page_change_corrected_metrics.py",
+    "per_mode_four_dimension_profile.py",
+    "router_prior_baselines.py"
+   ],
+   "sample_values": [
+    "False",
+    "True"
    ],
    "klass": "OK"
   },
@@ -4194,9 +4217,9 @@
    ],
    "sample_values": [
     "140",
-    "1651",
-    "3373",
-    "4554"
+    "148",
+    "149",
+    "1651"
    ],
    "klass": "OK"
   },
@@ -4220,9 +4243,9 @@
    ],
    "sample_values": [
     "140",
-    "1651",
-    "3373",
-    "4554"
+    "148",
+    "149",
+    "1651"
    ],
    "klass": "OK"
   },
@@ -4246,10 +4269,10 @@
     "validate_run.py"
    ],
    "sample_values": [
+    "12",
+    "13",
     "14",
-    "19",
-    "30",
-    "4"
+    "15"
    ],
    "klass": "OK"
   },
@@ -4275,7 +4298,7 @@
    "sample_values": [
     "False"
    ],
-   "klass": "OK"
+   "klass": "CONSTANT"
   },
   {
    "kind": "step",
@@ -4302,7 +4325,7 @@
    "sample_values": [
     "2.0"
    ],
-   "klass": "OK"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -4329,7 +4352,7 @@
    "sample_values": [
     "2.0"
    ],
-   "klass": "OK"
+   "klass": "CONSTANT"
   },
   {
    "kind": "episode",
@@ -4354,10 +4377,10 @@
     "router_triage_learnability.py"
    ],
    "sample_values": [
+    "0.020067",
     "0.023680000000000003",
     "0.023853",
-    "0.09150000000000001",
-    "0.11800400000000001"
+    "0.032308"
    ],
    "klass": "OK"
   },
@@ -4390,8 +4413,8 @@
    "sample_values": [
     "http://localhost:9980/",
     "http://localhost:9980/in",
-    "http://localhost:9999/",
-    "http://localhost:9999/f/"
+    "http://localhost:9980/oc",
+    "http://localhost:9980/se"
    ],
    "klass": "OK"
   },
@@ -4432,7 +4455,7 @@
     "back",
     "click",
     "finish",
-    "scroll"
+    "goto"
    ],
    "klass": "OK"
   },
@@ -4473,7 +4496,7 @@
     "back",
     "click",
     "finish",
-    "scroll"
+    "goto"
    ],
    "klass": "OK"
   },
@@ -4514,7 +4537,7 @@
     "back",
     "click",
     "finish",
-    "scroll"
+    "goto"
    ],
    "klass": "OK"
   },
@@ -4604,7 +4627,7 @@
    "kind": "step",
    "field": "artifact_paths.dom",
    "populated_pct": 100.0,
-   "n_consumers": 54,
+   "n_consumers": 55,
    "consumers": [
     "aggregate_conditional_failure_attribution.py",
     "aggregate_cross_mode_failure_signatures.py",
@@ -4632,6 +4655,7 @@
     "hero_claim_bootstrap.py",
     "intelligent_baseline_ladder.py",
     "l1_archive_simulation.py",
+    "latency_decomposition.py",
     "layered_status.py",
     "leakage_sensitivity.py",
     "mechanism_per_task.py",
@@ -4664,7 +4688,7 @@
    "sample_values": [
     "results/visualwebarena/p"
    ],
-   "klass": "OK"
+   "klass": "CONSTANT"
   }
  ]
 }
