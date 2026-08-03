@@ -87,7 +87,51 @@ updated: 2026-07-29
 
 
 
-> ## 🟩 2026-08-03 · 第 8 格落地 + 证据层接线 + 对账板 —— **最新，先读这块**
+> ## 🟪 2026-08-03 晚 · 旧稿归档 + realm 骨架 + 30 张表 + overleaf 已推 —— **最新**
+>
+> chronicle → **笔记 §421**（三类划分 / router 更根本的否定 / 归档 / 30 表 / overleaf 五个坑）。
+>
+> ### 下一个 session 的第一件事
+>
+> **零预设审证据层**，prompt 已写好：
+> `docs/checkpoints/codex_prompts/evidence_layer_audit_2026-08-04.md`
+> 五个问题：该进没进 / 进了少了 / 进了错了 / 不该进 / 没算但有用。
+> ⚠️ 那个 prompt **明写不要读笔记**（会预设），用 `known.py` 查台账代替。
+>
+> ### 论文状态
+>
+> ```
+> paper_drafts/realm/          新骨架，section 3/4/5 刻意空着
+>   section1_intro.md          Abstract 槽位 = 8 条 claim-free 测量【生成】
+>   section_evidence_guide.md  7 段导读，说每组表干什么 + 坑在哪【生成】
+>   section_evidence.md        30 张表【生成】
+>   limitations.md             不空 —— 5 条结构性限制
+> paper_drafts/latex/          基础设施 · paper.bib 保留
+> docs/archive/paper_drafts_pre_rewrite_2026-08-03/   paperA/paperB/aaai27/9 旧 section + README
+> ```
+>
+> 三个生成文件**必须同一次调用生成**（`--abstract --guide --evidence`），否则散文数字会跟表脱钩
+> —— 我手工拆过一次，那就是当天第 7 个同类失效。
+>
+> **Overleaf 已推**（13 页 / 未定义引用 0）：`main_realm.tex` 是当前目标；`main_paperA.tex` 已删；
+> **`paperB` 保留但冻结**在 07-28 —— 它的 md 源已归档，`convert.sh paperB` 跑不了，所以
+> `overleaf_sync.sh` 默认只同步 realm，显式传 paperB 会故意报错。
+>
+> ### ⚠️ 115 个文件未提交
+>
+> 含另一 session 的 `docs/analysis/wa_reddit/*` 和 `results/diag_scans/`，commit 时要分开。
+>
+> ### 在跑
+>
+> | 在哪 | 什么 | 状态 |
+> |---|---|---|
+> | A100 | SoM replicate `R30696` | **116/224**，约 19:00 收（A100 时间） |
+> | A100 | B3 = MiMo armed chain | 等待中，replicate 满 224 自动起 |
+> | DGX | mechanistic canonical | 只剩 `p4_som_pprompt_red` |
+>
+> ---
+>
+> ## 🟩 2026-08-03 · 第 8 格落地 + 证据层接线 + 对账板
 >
 > chronicle → **笔记 §414 / §415 / §416**（frame 三版皆判弱→转对账板 · 第 8 格落地 · WA 全量接线）。
 >
@@ -137,8 +181,46 @@ updated: 2026-07-29
 >    在 **6/6 格零 SR 损失省 9.5–30.6%**，learned triage 在 `cls_B1` 上 **out-of-fold +0.00pp/−4.5%**。
 >    which-mode 路由失败，triage 路由没有。
 >
-> 未做：`mechanism_per_task_report`（425 行，最大的未引用产物）**仍未整合** —— 它加什么是 framing
-> 判断不是接线活。WA 两格的 leakage **仍未 audit**（手查两个 episode 都是 earned，但那不是 audit）。
+> ### 🟢 证据层核查结论（08-03 下午，chronicle → 笔记 §420）
+>
+> | 维度 | 今早 | 现在 |
+> |---|---|---|
+> | 产物 ruleset 非 v11 | 2 | **0 / 36** |
+> | 第 8 格接线 | 7 个 8/8，`conditional_failure_attribution` 卡 7/8 | **8/8 全齐** |
+> | 汇总未引用产物 | **11** | **0** |
+>
+> **⚠️ 唯一的例外**：硬编码扫描**只覆盖 `n/6` 这一个形状**。修的 5 处里
+> `aggregate_confidence_cascade.py:430` 是**分母错且事实错**（称 Vision 6/6 格最便宜，`wa_B0`
+> 上是 DOM）⇒ **模式名 / 比值 / 方向三类硬编码从未扫过**，同类能错在事实层。
+>
+> **新增 claim 10**（`visual_intent_routing`）—— 目前最像 frame 的东西：0-token 正则事前指出
+> 哪些任务需要截图，标记集 **+22.54pp [+9.86, +33.80]** vs 补集 +0.65pp（跨零），classifieds
+> 上**样本外**（规则是为 reddit 写的）。三条限制：`cls_B2` 只 +1.41pp（要能力才兑现）· reddit
+> 上**反号** · n=71（23 成功 vs 7）。**它不是 router**（分区固定不学习）。
+>
+> **claim 7 修正**：v11 rescan 后 text-wins 侧出现 `P49` **3.61×**（首次清过 1.5×，已因果验证
+> WA som 610/614），但 **8 个 hit 全在 WA 两格，VWA 六格零贡献** ⇒ "WA 上有名字，VWA 上仍未解释"。
+>
+> **新增 §1b**（三条 diag 读法约束）：per-rule 表是**症状**不是死因 · **`vision` 列不可与
+> dom/som 并表**（P2/P4 是结构性零不是测量值）· P43 中性标签只在 reddit 成立。
+>
+> 未做：`mechanism_per_task_report`（425 行）**仍未整合** —— 它加什么是 framing 判断不是接线活。
+> WA 两格的 leakage **仍未 audit**（手查两个 episode 都是 earned，但那不是 audit）。
+>
+> ### 🟠 B3 = MiMo 已挂 armed chain（08-03，chronicle → 笔记 §419）
+>
+> replicate 满 224 → 自动起 `B3 som classifieds`（full 224 / 30 步 / `disable_thinking: true`）。
+> chain 用 **episode 计数 + runner 存活**双条件，**不用 wallclock**（上次就是 24h cap 到点而死）；
+> **replicate 若中途死则拒绝发射并报警**。查：`ssh condense-a100 'tail logs/b3_chain/chain.log'`
+>
+> - 权重在 **`/mnt/scratch/hf`**（321G 空闲那块盘）；根分区 92% 满是 **Docker 镜像 419G 且全 active**，
+>   绕开非解决
+> - `/no_think` 已实现（包装 `MiMoVLAgent` 自己的 processor，**不碰 `Qwen3VLAgent`**）；
+>   官方要求它在**整个 user content 最末尾**（图之后），`tests/test_mimo_no_think.py` 专钉这条
+> - ⚠️ **另外 4 个 queue 脚本仍硬写 `B0|B1|B2` 白名单** —— 只改了 `queue_baseline.sh`（跑 som 够用）。
+>   B3 证明不地板后再改其余 4 个（地板了就白改）
+> - 选型经 GPT 重扫 + 我逐条 WebFetch 核：**维持 MiMo**。Claude 撞"开源"硬约束；GUI-Owl 是
+>   Qwen3-VL 派生（跨族角色担不了）；GLM-4.1V 官方卡**没有** WA/VWA 数字且是一年前的模型
 >
 > ### 未提交
 >
