@@ -88,16 +88,21 @@ case "$PAPER" in
       section6_discussion.md
     )
     # Generated tables. This is an assertion: a dropped table would otherwise be silent.
-    # 30 → 31 → 32 on 2026-08-03: `class-1arm` (arm-matched restatement of the
-    # deployment-class table, whose no-image column is a max over four arms while the
-    # other two are single arms) and `latency-split` (the model is 22-67% of a measured step,
-    # and removing the container changes the fastest mode in 4 of 8 cells).
-    EXPECTED_TABLES=35
+    # COUNTED FROM THE SOURCE, not typed. It was hand-bumped 30 → 31 → 32 → 35 and then went
+    # stale at 40, failing the build for a reason that had nothing to do with the conversion.
+    # The invariant worth asserting is "conversion drops nothing" — source count equals
+    # converted count — which a literal cannot express once the table set is still growing.
+    EXPECTED_TABLES=$(grep -cE '^\*Table [0-9]+:' "$DRAFT_DIR/section_evidence.md")
+    if [[ "$EXPECTED_TABLES" -lt 1 ]]; then
+      printf 'ERROR: no tables found in %s/section_evidence.md — regenerate it first via\n' "$DRAFT_DIR" >&2
+      printf '       scripts/analysis/export_ablation_tables.py --evidence <that file>\n' >&2
+      exit 2
+    fi
     FIGURES=()
     # Every table single-column: widest is 11 columns, longest is 66 rows, and a table*
-    # float only reaches a page top — a queue of 35 of them in two-column mode does not
+    # float only reaches a page top — a queue of that many in two-column mode does not
     # place at all. This is a working document, so page count is not managed here.
-    SINGLE_COL_BODY="$(seq 1 35 | tr '\n' ' ')"
+    SINGLE_COL_BODY="$(seq 1 "$EXPECTED_TABLES" | tr '\n' ' ')"
     # Every table here is wide (up to 11 columns) and long (up to 66 rows). Two-column mode
     # cannot hold them, so this draft is built single-column and page count is not managed —
     # it is a working document for choosing a claim, not a submission.

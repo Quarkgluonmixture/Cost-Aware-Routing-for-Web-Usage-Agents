@@ -34,6 +34,44 @@ CELLS = ["cls_B0", "cls_B1", "cls_B2", "red_B0", "red_B1", "red_B2", "wa_B0", "w
 CELL_LABEL = {"cls_B0": "cls·B0", "cls_B1": "cls·B1", "cls_B2": "cls·B2",
               "red_B0": "red·B0", "red_B1": "red·B1", "red_B2": "red·B2",
               "wa_B0": "WA·B0", "wa_B1": "WA·B1"}
+CELL_ALIASES = {"wa_B0": ("wa_B0", "wa_red_B0"), "wa_B1": ("wa_B1", "wa_red_B1")}
+
+
+def cell_get(cells: dict, cell: str):
+    """A product's row for `cell`, tolerating the two WebArena key spellings.
+
+    `CELLS` spells the WA cells `wa_B0`/`wa_B1`; `fusion_premium`,
+    `confidence_cascade_with_wa` and `conditional_failure_attribution` spell them
+    `wa_red_B0`/`wa_red_B1`. A plain `.get()` returned None and the `continue` under it
+    dropped those rows without a word — the fusion and cascade tables rendered six rows
+    out of eight while their captions, and claim 3's "in 8/8 cells", spoke about eight.
+    Nothing in a six-row table says two rows are missing, which is why this survived.
+    """
+    for key in CELL_ALIASES.get(cell, (cell,)):
+        if key in cells:
+            return cells[key]
+    return None
+
+
+CANON_CELL = {alias: canon for canon, aliases in CELL_ALIASES.items() for alias in aliases}
+
+
+def cell_label(key: str) -> str:
+    """Display label for a product's cell key, whichever spelling that product uses.
+
+    `t_fusion` iterates the product's own keys rather than `CELLS`, so its WA rows were
+    present but printed raw (`wa_red_B1`) beside pretty ones (`cls·B0`) — the same table
+    labelling its cells in two conventions.
+    """
+    return CELL_LABEL.get(CANON_CELL.get(key, key), key)
+
+
+def unmatched_cells(cells: dict) -> list[str]:
+    """Product cell keys that no entry of `CELLS` resolves to — a rename tripwire."""
+    resolved = {k for c in CELLS for k in CELL_ALIASES.get(c, (c,)) if k in cells}
+    return sorted(set(cells) - resolved)
+
+
 MODES = ["dom", "som", "vision", "ptext", "pprompt", "psom"]
 PRETTY = {"dom": "DOM", "som": "SoM", "vision": "Vision",
           "ptext": "P-text", "pprompt": "P-prompt", "psom": "P-SoM"}
@@ -48,6 +86,23 @@ def load(name: str) -> dict:
     if not p.exists():
         raise MissingProduct(f"{p} missing — regenerate that product first")
     return json.loads(p.read_text())
+
+
+def load_cross_site_rows() -> list[dict]:
+    """The 36-row cross-site aggregation, whose cost columns no product re-exports.
+
+    `load()` only reaches `docs/analysis/cross_sites/*.json`. The additive cost breakdown
+    (`avg_total_billed_cost_usd` = `avg_canonical_action_cost_usd` + protocol waste) is
+    computed by `aggregate_cross_site.py` and lands only in this CSV, so a table that
+    wants it has to read the CSV directly.
+    """
+    import csv
+
+    p = REPO / "results/phantom_paper/cross_site/cross_site_aggregation.csv"
+    if not p.exists():
+        raise MissingProduct(f"{p} missing — rerun aggregate_cross_site.py first")
+    with p.open(newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
 
 
 def fmt(v, spec="+.2f", suffix="pp", none="—"):
@@ -221,7 +276,7 @@ def t_fusion() -> tuple[str, str]:
     for c in d["cells"]:
         r = d["cells"][c]
         v, dm = r["vision"], r["dom"]
-        rows.append(f"| {CELL_LABEL.get(c, c)} | {v['n']} | {v['est_pp']:+.2f} | "
+        rows.append(f"| {cell_label(c)} | {v['n']} | {v['est_pp']:+.2f} | "
                     f"[{v['ci'][0]:+.2f}, {v['ci'][1]:+.2f}] | {dm['est_pp']:+.2f} | "
                     f"[{dm['ci'][0]:+.2f}, {dm['ci'][1]:+.2f}] |")
     lo, hi = d.get("floor_mean_pp", [0.89, 2.23])
@@ -271,7 +326,7 @@ def t_exante() -> tuple[str, str]:
                 if arm not in rec:
                     continue
                 f_, r_ = rec[arm]["flagged"], rec[arm]["rest"]
-                rows.append(f"| {CELL_LABEL.get(c, c)} | {nf} | {arm} | {f_['est_pp']:+.2f} | "
+                rows.append(f"| {cell_label(c)} | {nf} | {arm} | {f_['est_pp']:+.2f} | "
                             f"[{f_['ci'][0]:+.2f}, {f_['ci'][1]:+.2f}] | {r_['est_pp']:+.2f} | "
                             f"[{r_['ci'][0]:+.2f}, {r_['ci'][1]:+.2f}] |")
     cap = ("Ex-ante partition. The predicate is a regex over the task intent plus 'carries no "
@@ -307,11 +362,23 @@ def t_floor() -> tuple[str, str]:
         rows.append(f"| {CELL_LABEL[c]} | {PRETTY.get(m['best_mode'].replace('sr_',''), m['best_mode'])} "
                     f" at {m['best_single_sr_pct']:.2f} | +{gain:.2f} ({PRETTY.get(arm, arm)}) | "
                     f"{txt} | {verdict} |")
-    cap = ("Is a new representation worth more than a rerun? Both middle columns are the same "
-           "functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are "
-           "directly comparable; only the *source* of the extra arm differs. **Only two cells "
-           "carry a measured floor**, and neither measures it on the arm being added, so the "
-           "other six rows have no comparator at all. Source: `noise_floor_inventory.json`.")
+    # Which arms were actually rerun, read from the product rather than asserted. The
+    # previous caption said the floor "measures neither on the arm being added" — true when
+    # only dom and vision had replicates, false since the SoM rerun landed 2026-08-03.
+    nf = load("noise_floor_inventory")
+    pairs = nf.get("clean_pairs") or []
+    reps = sorted({p["label"].rsplit(".", 1)[-1] for p in pairs if p.get("label")})
+    rep_pretty = ", ".join(PRETTY.get(a, a) for a in reps)
+    cap = (f"Is a new representation worth more than a rerun? Both middle columns are the same "
+           f"functional at the same arm count — `|{{added}} ∖ {{baseline}}| / n` — so they are "
+           f"directly comparable; only the *source* of the extra arm differs. **The band is "
+           f"{len(pairs)} rerun pairs on one cell** (`B0 × classifieds`, n=224), one each for "
+           f"**{rep_pretty}** — so the rows without a band have no comparator at all, and the "
+           f"band itself is {len(pairs)} draws rather than a bound. Since the SoM replicate "
+           f"landed 2026-08-03 the band is **no longer extrapolated onto an unreplicated arm**: "
+           f"both the fused mode this table's best-single column keeps selecting and the arm "
+           f"the comparison adds now carry their own measured floor, and adding the third pair "
+           f"left the band unmoved. Source: `noise_floor_inventory.json`.")
     return "\n".join(rows), cap
 
 
@@ -561,7 +628,7 @@ def t_cascade():
             "operating points that Pareto-beat always-rich | signals dropped |",
             "|---|---|---|---|---|---|---|---|"]
     for c in CELLS:
-        r = d["cells"].get(c)
+        r = cell_get(d["cells"], c)
         if not r:
             continue
         ar, orc = r.get("always_rich", {}), r.get("oracle", {})
@@ -582,12 +649,64 @@ def t_cascade():
         "win, which was a tie artefact. Source: `confidence_cascade_with_wa.json`.")
 
 
+def t_cascade_control():
+    """The cascade's control arm and its effect size — the other half of `t_cascade`.
+
+    `t_cascade` reports one verdict: does any operating point Pareto-beat always-rich (no).
+    That answers whether the cascade is *deployable*, not whether the confidence signal
+    carries information — a reader cannot tell a signal-free policy from a failed signal
+    without the same-budget random comparator, which the product computes and nothing read.
+    """
+    d = load("confidence_cascade_with_wa")
+    fracs = [0.1, 0.2, 0.3]
+    rows = ["| cell | signals | margin over same-size random escalation (10% / 20% / 30%) | "
+            "oracle headroom captured (10% / 20% / 30%) |",
+            "|---|---|---|---|"]
+    n_pos = n_tot = 0
+    for c in CELLS:
+        r = cell_get(d["cells"], c)
+        if not r:
+            continue
+        margins = []
+        for f in fracs:
+            best = None
+            for curve in r["curves"].values():
+                for p in curve:
+                    if abs(p["frac"] - f) < 1e-9 and (
+                            best is None or p["sr_gain_pp"] > best["sr_gain_pp"]):
+                        best = p
+            if best is None:
+                margins.append(float("nan"))
+                continue
+            margins.append(best["sr_gain_pp"] - best["random_gain_pp"])
+            n_tot += 1
+            n_pos += int(margins[-1] > 0)
+        hc = r.get("headroom_captured", {})
+        rows.append(
+            f"| {CELL_LABEL[c]} | {r['n_signals_used']} | "
+            + " / ".join(f"{m:+.2f}pp" for m in margins) + " | "
+            + " / ".join(f"{hc.get(f'{int(f * 100)}%', float('nan')):.0f}%" for f in fracs) + " |")
+    return "\n".join(rows), (
+        f"Is the cascade's signal doing anything? {T('cascade')} answers a deployment "
+        f"question — no operating point Pareto-beats always-rich — which on its own cannot "
+        f"distinguish a signal that carries nothing from one that carries something "
+        f"insufficient. This is the comparator that separates them: the same escalation "
+        f"budget spent at random. The margin is positive in **{n_pos} of {n_tot}** "
+        f"(cell × fraction) combinations, so the ranking is informative even where the "
+        f"policy loses; the right-hand column says how much of the gap to a per-task oracle "
+        f"that ranking recovers. ⚠️ **These are in-sample maxima**: the best signal is chosen "
+        f"per (cell, fraction) from the cell's menu against realised outcomes, so they bound "
+        f"what an out-of-fold selection could deliver rather than estimate it. The offline-"
+        f"splice caveat on {T('cascade')} applies unchanged. "
+        f"Source: `confidence_cascade_with_wa.json`.")
+
+
 def t_triage_learn():
     d = load("visual_difficulty_router")
     rows = ["| cell | n | solvable | AUROC without | AUROC with visual_difficulty | Δ | "
             "visual_difficulty alone |", "|---|---|---|---|---|---|---|"]
     for c in CELLS:
-        r = d["cells"].get(c)
+        r = cell_get(d["cells"], c)
         if not r:
             continue
         alone = r["per_scorer"].get("visual_difficulty_alone", {}).get("auroc_with")
@@ -667,6 +786,161 @@ def t_cond_image_wins():
                       "Only the IMAGE channel solved it: how the TEXT channel failed.")
 
 
+def t_cond_probes():
+    """The vocabulary-free half of the paired cut.
+
+    `_cond_side` reads only `d["pooled"][side]`, which is rule-hit frequencies — so the
+    reader-facing tables inherit the rule vocabulary and cannot answer the objection that
+    the vocabulary is what makes the text-wins side look empty. The product computes six
+    probes straight from raw step fields for exactly that objection; nothing exported them.
+    """
+    d = load("conditional_failure_attribution")
+    probes = d.get("text_wins_probes") or {}
+    rows = ["| candidate mechanism | on the disagreement set | that channel's baseline | "
+            "enrichment |", "|---|---|---|---|"]
+    ordered = sorted(probes.items(), key=lambda kv: -kv[1].get("enrichment", 0))
+    n_dis = n_base = None
+    for name, p in ordered:
+        n_dis = n_dis or p.get("n_disagreement_episodes")
+        n_base = n_base or p.get("n_baseline_episodes")
+        rows.append(f"| {name} | {p['on_disagreement']:.3f} | {p['baseline']:.3f} | "
+                    f"**{p['enrichment']:.2f}×** |")
+    top = max((p.get("enrichment", 0) for p in probes.values()), default=float("nan"))
+    below = sum(1 for p in probes.values() if p.get("enrichment", 1) < 1)
+    return "\n".join(rows), (
+        f"Is the text-wins residual real, or an artefact of the rule vocabulary? "
+        f"{TS('cond-text','cond-image')} count rule hits, and the ruleset was discovered on "
+        f"VisualWebArena — so an absent signature there could be a property of the vocabulary "
+        f"rather than of the world. Each probe here is computed from raw step fields and "
+        f"never from a rule hit, over {n_dis} disagreement episodes against {n_base} baseline "
+        f"failures. **The largest enrichment is {top:.2f}×** and {below} of {len(probes)} sit "
+        f"*below* 1: on the tasks the text channel uniquely solves, the image channel fails "
+        f"**more blandly** than it fails elsewhere — it did not arrive, rather than breaking "
+        f"somewhere nameable. ⚠️ Six candidates chosen by us, so this cannot show that no "
+        f"mechanism exists; what it closes is the specific objection that the residual is an "
+        f"artefact of a VWA-shaped vocabulary. "
+        f"Source: `conditional_failure_attribution.json`.")
+
+
+def t_cost_protocol():
+    """What a cost number contains — the cost-side counterpart of `t_latency_split`.
+
+    Every reader-facing cost figure is `cost/ep`, one number. The schema splits it
+    additively into the spend that bought a canonical action and the spend burned on
+    protocol repair, and `aggregate_cross_site.py` carries all three columns — nothing
+    displayed them. They are not the same size across backbones, which is the point.
+    """
+    rows_in = load_cross_site_rows()
+    agg: dict[str, list[float]] = {}
+    worst: dict[str, tuple[float, str]] = {}
+    for r in rows_in:
+        b = r["baseline"]
+        tot = float(r.get("avg_total_billed_cost_usd") or 0)
+        can = float(r.get("avg_canonical_action_cost_usd") or 0)
+        wst = float(r.get("avg_protocol_wasted_cost_usd") or 0)
+        wait = float(r.get("avg_parse_error_injected_wait_count") or 0)
+        a = agg.setdefault(b, [0.0, 0.0, 0.0, 0.0])
+        a[0] += tot
+        a[1] += can
+        a[2] += wst
+        a[3] += 1
+        if wait > worst.get(b, (-1.0, ""))[0]:
+            worst[b] = (wait, f"{r['site'][:3]}·{r['mode']}")
+    rows = ["| backbone | conditions | billed | canonical action | protocol repair | "
+            "share of billed | worst parse-error waits/ep |", "|---|---|---|---|---|---|---|"]
+    shares = {}
+    for b in sorted(agg):
+        tot, can, wst, n = agg[b]
+        shares[b] = 100 * wst / tot if tot else 0.0
+        w, where = worst.get(b, (0.0, "—"))
+        rows.append(f"| {b} | {int(n)} | ${tot:.4f} | ${can:.4f} | ${wst:.5f} | "
+                    f"**{shares[b]:.2f}%** | {w:.2f} ({where}) |")
+    lo_b = min(shares, key=shares.get)
+    hi_b = max(shares, key=shares.get)
+    ratio = shares[hi_b] / shares[lo_b] if shares[lo_b] else float("inf")
+    return "\n".join(rows), (
+        f"Every cost figure elsewhere is `cost/ep`, a single "
+        f"number; the schema splits it additively into what bought a canonical action and "
+        f"what was burned re-parsing the model's output. Summed over each backbone's "
+        f"conditions, protocol repair is {shares[lo_b]:.2f}% of {lo_b}'s bill and "
+        f"{shares[hi_b]:.2f}% of {hi_b}'s — a **{ratio:.1f}× spread across model families "
+        f"for the same task set**, and the worst per-episode parse-error wait counts all sit "
+        f"on {hi_b}. This is small in absolute terms and is **not** a correction to any "
+        f"reported cost. It bounds something else: a cross-family cost comparison is not "
+        f"quite comparing like with like, because one family pays a protocol tax the others "
+        f"do not. Source: `results/phantom_paper/cross_site/cross_site_aggregation.csv` "
+        f"(via `aggregate_cross_site.py`).")
+
+
+def t_mech_readability():
+    """Method 4.2: every mode pair is linearly separable, at sub-permille cosine gaps."""
+    d = load("mechanism_evidence")["readability"]
+    rows = ["| site | modes | examples | pairs | pairs at AUROC 1.000 | worst pair | "
+            "image gap | text-format gap | prompt-family gap |",
+            "|---|---|---|---|---|---|---|---|---|"]
+    for site, r in d.items():
+        g = r["axis_cosine_gap"]
+        rows.append(
+            f"| {site} | {r['n_modes']} | {r['n_examples']} | {r['n_pairs']} | "
+            f"**{r['n_pairs_at_auroc_1']}/{r['n_pairs']}** | "
+            f"{r['auroc_lototask_best_layer_min']:.3f} | "
+            + " | ".join(
+                f"{g[a]['peak_gap']:.4f} (L{g[a]['peak_layer']:02d})"
+                for a in ("image", "text_format", "prompt_family")) + " |")
+    sites = list(d.values())
+    img = max(s["axis_cosine_gap"]["image"]["peak_gap"] for s in sites)
+    txt = max(s["axis_cosine_gap"]["text_format"]["peak_gap"] for s in sites)
+    return "\n".join(rows), (
+        f"Are the six representations distinguishable inside the model? Leave-one-task-out "
+        f"AUROC over the residual stream separates **every** mode pair perfectly on both "
+        f"sites, at best layer. The gap columns are why that is worth stating rather than "
+        f"assuming: the image axis peaks at {img:.3f} cosine while the text-format axis "
+        f"peaks at {txt:.4f} — **a factor of ~{img / txt:.0f}** — so perfect separability "
+        f"coexists with geometric differences in the third decimal place. ⚠️ Scope: one "
+        f"backbone (B1), 144 examples per site, a single decode step; and AUROC 1.000 on 24 "
+        f"tasks × 6 modes is a **ceiling effect**, not a calibrated effect size. This licenses "
+        f"'the representation is present and readable', nothing about whether it is used. "
+        f"Source: `mechanism_evidence.json` ← `method42_metrics_v2.json`.")
+
+
+def t_mech_patching():
+    """Stage 3 prompt-family patching, reported against BOTH of its controls."""
+    d = load("mechanism_evidence")["patching"]
+    label = {"real": "**real**", "random_injection": "random injection",
+             "task_shuffled": "task-shuffled source"}
+    rows = ["| site | arm | n | displacement (peak) | convergence to source (peak) | peak at |",
+            "|---|---|---|---|---|---|"]
+    for site, arms in d.items():
+        for arm, a in arms.items():
+            rows.append(
+                f"| {site} | {label.get(arm, arm)} | {a['n_tasks']} | "
+                f"{a['peak_displacement']:.3f} | {a['peak_convergence']:.3f} | "
+                f"L{a['peak_convergence_layer']:02d} |")
+    cls_ = d.get("classifieds", {})
+    real_c = cls_.get("real", {}).get("peak_convergence")
+    rand_c = cls_.get("random_injection", {}).get("peak_convergence")
+    shuf_c = cls_.get("task_shuffled", {}).get("peak_convergence")
+    shuf_l = cls_.get("task_shuffled", {}).get("peak_convergence_layer")
+    real_l = cls_.get("real", {}).get("peak_convergence_layer")
+    return "\n".join(rows), (
+        f"Does the prompt-family signature *do* anything, or is it only visible? Source hidden "
+        f"states from `phantom_som` are patched into a `phantom_text` run, holding image and "
+        f"text-format constant. **Displacement is the wrong column to read**: random injection "
+        f"scores {cls_.get('random_injection', {}).get('peak_displacement', float('nan')):.3f} "
+        f"there, which is destruction, not steering — only *convergence to the source* speaks "
+        f"to direction. Against random injection the real arm wins clearly "
+        f"({real_c:.3f} vs {rand_c:.3f}). ⚠️ **Against the task-shuffled control it barely "
+        f"wins** ({real_c:.3f} vs {shuf_c:.3f}, +{100 * (real_c / shuf_c - 1):.0f}%): a source "
+        f"drawn from an *unrelated task* moves the output almost as far toward itself. What "
+        f"does separate them is **where**: the real arm's convergence peaks mid-stack "
+        f"(L{real_l:02d}) and the shuffled arm's collapses to the boundary layer "
+        f"(L{shuf_l:02d}). So the content-specific claim rests on the **layer profile**, not "
+        f"on the magnitude — which is weaker than the write-ups in "
+        f"`docs/checkpoints/mechanism/results/` read, and is the reason this table reports "
+        f"both controls rather than the headline. n = 24 tasks per arm, one backbone, one "
+        f"decode step. Source: `mechanism_evidence.json` ← `patching_continuation_results.json`.")
+
+
 def t_instability():
     d = load("label_instability")
     rows = ["| stratum | tasks | share of cell | flipped | flip rate | share of all flips | "
@@ -708,7 +982,7 @@ def t_leakage():
             b, a_ = rec[k]["before"], rec[k]["after"]
             bz = b["ci"][0] > 0 or b["ci"][1] < 0
             az = a_["ci"][0] > 0 or a_["ci"][1] < 0
-            rows.append(f"| {CELL_LABEL.get(c, c)} | SoM − {PRETTY[comp]} | "
+            rows.append(f"| {cell_label(c)} | SoM − {PRETTY[comp]} | "
                         f"{b['est_pp']:+.2f} | [{b['ci'][0]:+.2f}, {b['ci'][1]:+.2f}] | "
                         f"{a_['est_pp']:+.2f} | [{a_['ci'][0]:+.2f}, {a_['ci'][1]:+.2f}] | "
                         f"{'**flips**' if bz != az else 'unchanged'} |")
@@ -945,10 +1219,12 @@ TABLES = [
     ("floor", "New representation versus a rerun", t_floor),
     ("routing", "Routing policies on the 3-axis frontier", t_routing),
     ("cascade", "Confidence-triggered cascade", t_cascade),
+    ("cascade-control", "Cascade signal against a random-escalation control", t_cascade_control),
     ("triage", "Triage learnability and the visual-difficulty feature", t_triage_learn),
     ("feature", "The intuitive routing feature", t_feature_sign),
     ("cond-text", "Paired failure attribution: text wins", t_cond_text_wins),
     ("cond-image", "Paired failure attribution: image wins", t_cond_image_wins),
+    ("cond-probes", "Vocabulary-free probes on the text-wins residual", t_cond_probes),
     ("instability", "Per-task label instability", t_instability),
     ("leakage", "Leaked-success sensitivity", t_leakage),
     ("offsite", "Off-site navigation and container latency", t_offsite),
@@ -959,8 +1235,40 @@ TABLES = [
     ("pagechange", "page_changed false positives", t_page_change),
     ("evaluator", "Evaluator granularity", t_evaluator),
     ("costclass", "Two cost estimands", t_cost_class),
+    ("cost-protocol", "What a cost number contains", t_cost_protocol),
+    ("mech-read", "Linear readability against geometric magnitude", t_mech_readability),
+    ("mech-patch", "Causal patching against both of its controls", t_mech_patching),
     ("leakaudit", "Earned versus leaked successes", t_leak_audit),
 ]
+
+TABLE_NO = {slug: i + 1 for i, (slug, _, _) in enumerate(TABLES)}
+
+
+def T(slug: str) -> str:
+    """`Table N` resolved from the registry.
+
+    Never type a table number. Inserting a table renumbers everything after it, and the
+    reading guide is the only place those numbers are read by a human — it claimed to
+    describe 29 tables against a registry of 35, with its groups mis-mapped from Table 5
+    onward, because the numbers were literals while the surrounding figures were injected.
+    """
+    return f"Table {TABLE_NO[slug]}"
+
+
+def TS(*slugs: str) -> str:
+    """`Tables A, B–C` for a group; contiguous runs collapse to a dash."""
+    nums = sorted(TABLE_NO[s] for s in slugs)
+    runs: list[tuple[int, int]] = []
+    start = prev = nums[0]
+    for n in nums[1:]:
+        if n == prev + 1:
+            prev = n
+            continue
+        runs.append((start, prev))
+        start = prev = n
+    runs.append((start, prev))
+    body = ", ".join(str(a) if a == b else f"{a}–{b}" for a, b in runs)
+    return ("Table " if len(nums) == 1 else "Tables ") + body
 
 
 ABSTRACT_TMPL = """## Abstract
@@ -1119,9 +1427,11 @@ def build_inventory() -> tuple[str, str]:
 def build_guide() -> str:
     """A reading guide: what each group of tables is for, in plain sentences.
 
-    Sits between the eight-line inventory and the 29 tables. Without it the document goes
+    Sits between the eight-line inventory and the tables. Without it the document goes
     straight from a summary nobody can act on to a matrix nobody reads. Numbers here are
-    injected from the products, never typed.
+    injected from the products, never typed — and since 2026-08-03 so are the table
+    numbers, via `T()` / `TS()`. Every slug in `TABLES` must appear in exactly one group
+    below; `test_guide_covers_every_table` enforces it.
     """
     cls_ = load("representation_class_comparison")
     fus = load("fusion_premium")
@@ -1145,84 +1455,133 @@ def build_guide() -> str:
     A = G.append
     A("## Reading guide")
     A("")
-    A("<!-- Plain-sentence guide to the 29 tables. Not an argument — each paragraph says "
-      "what a group of tables is for and what the trap in it is. Delete before submission. -->")
+    A(f"<!-- Plain-sentence guide to the {len(TABLES)} tables. Not an argument — each "
+      "paragraph says what a group of tables is for and what the trap in it is. Delete "
+      "before submission. -->")
     A("")
 
-    A("**Tables 1–4 — what each mode achieves, and whether the six collapse into three.** "
-      "Table 1 is the raw success rate. Tables 2–3 group the six modes into the three shapes "
-      "web agents actually ship in, and Table 4 is the licence for that grouping: over 26 "
-      "metrics the four image-free modes are never the extreme in ≥7 of 8 cells, so they do "
-      "not behave differently enough to keep apart. "
+    A(f"**{TS('sr','class','class-1arm','class-ablate','nonsep')} — what each mode achieves, "
+      f"and whether the six collapse into three.** {T('sr')} is the raw success rate. "
+      f"{TS('class','class-1arm')} group the six modes into the three shapes web agents "
+      f"actually ship in, and {T('nonsep')} is the licence for that grouping: over 26 "
+      f"metrics the four image-free modes are never the extreme in ≥7 of 8 cells, so they do "
+      f"not behave differently enough to keep apart. "
       f"The grouping produces two facts: `vision-only` is never the sole best class "
       f"(hybrid {tally.get('hybrid',0)}, no-image {tally.get('no-image',0)}, one tie), and "
       f"which class wins reverses between benchmarks — on `WA·B0` no-image leads hybrid by "
       f"{wa0['no-image']-wa0['hybrid']:.2f}pp. "
-      "**The trap is in Table 3**: dropping the whole no-image class costs far more than "
-      "dropping the others, but it has four arms against one each. The arm-matched columns "
-      f"beside it show no systematic difference ({', '.join(f'{k} {v}x' for k,v in matched.items())}), "
-      "and those are the ones that compare like with like.")
+      f"**The trap is in {T('class-ablate')}**: dropping the whole no-image class costs far "
+      f"more than dropping the others, but it has four arms against one each. The arm-matched "
+      f"columns beside it show no systematic difference "
+      f"({', '.join(f'{k} {v}x' for k,v in matched.items())}), "
+      f"and those are the ones that compare like with like.")
     A("")
 
-    A("**Tables 5–8 — the full behavioural matrices.** Every metric, every cell, every mode, "
-      "unsummarised: Outcome, Macro (what the agent did), Micro (how often what it did "
-      "failed), Efficiency. These are the substrate the consistency counts in Table 4 are "
-      "computed from, included so a reader can check a claim rather than take the tally on "
-      "trust. Two columns are gates rather than measurements and are marked as such: "
-      "`loc-fallback` is near-zero for Vision because there are no element ids to fall back "
-      "from, not because it fails less.")
+    A(f"**{TS('prof-outcome','prof-macro','prof-micro','prof-eff')} — the full behavioural "
+      f"matrices.** Every metric, every cell, every mode, unsummarised: Outcome, Macro (what "
+      f"the agent did), Micro (how often what it did failed), Efficiency. These are the "
+      f"substrate the consistency counts in {T('nonsep')} are computed from, included so a "
+      f"reader can check a claim rather than take the tally on trust. Two columns are gates "
+      f"rather than measurements and are marked as such: `loc-fallback` is near-zero for "
+      f"Vision because there are no element ids to fall back from, not because it fails less.")
     A("")
 
-    A("**Tables 9–10, 28 — efficiency, and the denominator nobody declares.** Table 9 shows "
-      "the cost and latency orderings are not each other restated. Table 10 changes the "
-      "denominator from per-attempt to per-success and the cheapest mode changes in 4 of the "
-      "6 cells that carry enough successes to divide by. **Every pairwise interval overlaps**, "
-      "so this supports 'the denominator must be stated', not 'X is more efficient'. Table 28 "
-      "is the other denominator problem: B0 pays an API bill and B1/B2 pay electricity, and "
-      "those are not the same quantity.")
+    A(f"**{TS('pareto','latency-split','estimands','per-success','costclass','cost-protocol')} "
+      f"— efficiency, "
+      f"and the denominator nobody declares.** {T('pareto')} shows the cost and latency "
+      f"orderings are not each other restated. {T('per-success')} changes the denominator "
+      f"from per-attempt to per-success and the cheapest mode changes in 4 of the 6 cells "
+      f"that carry enough successes to divide by. **Every pairwise interval overlaps**, so "
+      f"this supports 'the denominator must be stated', not 'X is more efficient'. The other "
+      f"three say the same thing about three different quantities: {T('latency-split')} — a "
+      f"latency figure is mostly browser and container, not model, and stripping them changes "
+      f"which mode is fastest; {T('estimands')} — each efficiency quantity admits a defensible "
+      f"alternative definition that reorders the modes; {T('costclass')} — B0 pays an API bill "
+      f"and B1/B2 pay electricity, and those are not the same quantity. {T('cost-protocol')} "
+      f"splits the cost figure the way {T('latency-split')} splits the latency one, and finds "
+      f"the protocol-repair share differing several-fold between model families on the same "
+      f"tasks. **The pattern, not any one row, is the finding: efficiency here is "
+      f"estimand-dependent and the estimand is usually left implicit.**")
     A("")
 
-    A(f"**Tables 11, 13 — is a second representation worth buying?** Table 11 asks whether the "
-      f"fused mode beats the single channel that suits the workload: it does not, in any of "
-      f"{len(fus['cells'])} cells. The comparison is against a **measured rerun band**, not "
-      f"against zero, because the question a deployment asks is whether a new arm beats "
-      f"re-running the arm it already has — Table 13 puts those two side by side at the same "
-      f"arm count. Only two cells carry a measured floor, and neither measures it on the arm "
-      f"being added, which is the single largest gap in this evidence layer.")
+    A(f"**{TS('fusion','floor')} — is a second representation worth buying?** {T('fusion')} "
+      f"asks whether the fused mode beats the single channel that suits the workload: it does "
+      f"not, in any of {len(fus['cells'])} cells. The comparison is against a **measured rerun "
+      f"band**, not against zero, because the question a deployment asks is whether a new arm "
+      f"beats re-running the arm it already has — {T('floor')} puts those two side by side at "
+      f"the same arm count. **The trap is the band's width, not its coverage**: only two cells "
+      f"carry a measured floor at all, and one standard deviation of the null it is drawn from "
+      f"is of the same order as the band itself, so 'clears the band' is not 'clears the "
+      f"noise'. Since 2026-08-03 the fused arm is no longer extrapolated onto — the SoM "
+      f"replicate landed and its own floor falls inside the band.")
     A("")
 
-    A(f"**Tables 12, 14–17, 25 — five ways of routing, and what each one dies of.** Table 12 "
-      f"finds a signal that is as good as signals get: a regex over the task intent, costing "
-      f"nothing and needing no episode, that flags tasks where the screenshot is worth "
+    A(f"**{TS('exante','routing','cascade','cascade-control','triage','feature','instability','pooled')} "
+      f"— five ways of routing, and what each one dies of.** {T('exante')} finds a signal that "
+      f"is as good as signals get: a regex over the task intent, costing nothing and needing "
+      f"no episode, that flags tasks where the screenshot is worth "
       f"{cb0['flagged']['est_pp']:+.2f}pp against {cb0['rest']['est_pp']:+.2f}pp elsewhere. "
-      f"Table 14 turns it into a policy and it **still loses to always-Vision**, because the "
-      f"screenshot does not hurt on the unflagged tasks either. Table 15's cascade beats "
-      f"always-rich at no operating point. Table 16 adds the benchmark's own difficulty "
-      f"annotation for a mean ΔAUROC of {vdr['mean_delta_auroc']:+.4f}. Table 17 shows the "
-      f"feature a practitioner would reach for first does not separate what it appears to. "
-      f"**The pattern is not 'no signal'** — it is that the arm the router would route *to* "
-      f"is already the right arm to route everything to.")
+      f"{T('routing')} turns it into a policy and it **still loses to always-Vision**, because "
+      f"the screenshot does not hurt on the unflagged tasks either. {T('cascade')}'s cascade "
+      f"beats always-rich at no operating point — but {T('cascade-control')} is the table that "
+      f"says what that means: against the *same budget spent at random* the confidence ranking "
+      f"wins nearly everywhere, so the signal is informative and still not enough. "
+      f"{T('triage')} adds the benchmark's own difficulty annotation for a mean ΔAUROC of "
+      f"{vdr['mean_delta_auroc']:+.4f}. {T('feature')} shows the feature a practitioner would "
+      f"reach for first does not separate what it appears to. {T('pooled')} pools the "
+      f"backbones and routes by cost tier instead of by task. {T('instability')} is the "
+      f"supervision problem underneath all of them: the rows a router would learn from are "
+      f"the contested ones, and those are exactly the rows that flip between two runs of the "
+      f"same condition. **The pattern is not 'no signal'** — it is that the arm the router "
+      f"would route *to* is already the right arm to route everything to.")
     A("")
 
-    A("**Tables 18, 22–24, 26 — where the failures come from.** Table 18 is the paired cut: "
-      "on tasks only one channel solved, how did the other fail? Table 22 decomposes the "
-      "DOM→P-SoM transition into a text axis and a prompt axis. Table 24 counts hallucinated "
-      "element references — inapplicable to Vision by construction, marked. Table 26 corrects "
-      "a false-positive in the page-change detector. ⚠️ **A per-rule frequency is a "
-      "distribution of symptoms, not of causes.** The two largest rows in most cells are risk "
-      "markers that causal verification did not confirm as death causes.")
+    A(f"**{TS('cond-text','cond-image','cond-probes','axis','axis1','halluc','pagechange')} — "
+      f"where the failures come from.** {TS('cond-text','cond-image')} are the paired cut: on "
+      f"tasks only one channel solved, how did the other fail? Those count rule hits, so "
+      f"{T('cond-probes')} asks the same question without the rule vocabulary — six probes "
+      f"read straight off the step records — and finds the losing channel failing *more "
+      f"blandly* there than elsewhere, which is what closes the objection that the residual "
+      f"is an artefact of a VWA-shaped ruleset. {T('axis')} decomposes the DOM→P-SoM "
+      f"transition into a text axis and a prompt axis, and {T('axis1')} asks whether that text "
+      f"axis moves per-step decision quality more than it moves macro action frequencies. "
+      f"{T('halluc')} counts hallucinated element references — inapplicable to Vision by "
+      f"construction, marked. {T('pagechange')} corrects a false-positive in the page-change "
+      f"detector. ⚠️ **A per-rule frequency is a distribution of symptoms, not of causes.** "
+      f"The two largest rows in most cells are risk markers that causal verification did not "
+      f"confirm as death causes.")
     A("")
 
-    A(f"**Tables 19–21, 27, 29 — what would make all of the above wrong.** Table 27: the "
-      f"evaluator emits two values, so there is no graded target and every routing negative "
-      f"inherits that. Table 19: the entire replicate inventory of this project is one cell "
-      f"with two arms rerun once — every stability number is a lower bound from that. "
-      f"Tables 29 and 20: {lk['leaks_removed'].__len__()} successes were credited by "
-      f"accumulated site state, and zeroing them flips {n_flip} verdict"
-      f"{'s' if n_flip != 1 else ''}. Table 21: reddit episodes leave the benchmark for the "
-      f"public internet on {min(c['pct_steps'] for c in red):.2f}–{max(c['pct_steps'] for c in red):.2f}% "
-      f"of steps against {max(c['pct_steps'] for c in cls_off):.2f}% on classifieds, and "
-      f"reddit's container is slower than classifieds' before any agent behaviour enters.")
+    A(f"**{TS('dispatch','metric-noise','leakage','offsite','evaluator','leakaudit')} — what "
+      f"would make all of the above wrong.** {T('evaluator')}: the evaluator emits two values, "
+      f"so there is no graded target and every routing negative inherits that. "
+      f"{T('metric-noise')}: the replicate inventory behind every stability figure here is one "
+      f"cell, so those bands are what repetition happened to deliver, not bounds on what it "
+      f"could. {T('dispatch')}: an arm's measured ceiling is partly this harness — Vision is "
+      f"on the coordinate path by construction, and that path succeeds far less often than the "
+      f"element-id one. {TS('leakage','leakaudit')}: {lk['leaks_removed'].__len__()} successes "
+      f"were credited by accumulated site state, and zeroing them flips {n_flip} verdict"
+      f"{'s' if n_flip != 1 else ''}. {T('offsite')}: reddit episodes leave the benchmark for "
+      f"the public internet on {min(c['pct_steps'] for c in red):.2f}–"
+      f"{max(c['pct_steps'] for c in red):.2f}% of steps against "
+      f"{max(c['pct_steps'] for c in cls_off):.2f}% on classifieds, and reddit's container is "
+      f"slower than classifieds' before any agent behaviour enters.")
+    A("")
+
+    A(f"**{TS('mech-read','mech-patch')} — inside the model, and how far that gets us.** "
+      f"Everything above is behavioural. These two ask whether the representations differ "
+      f"*in the residual stream* and whether that difference is used. {T('mech-read')}: every "
+      f"mode pair is perfectly separable by a linear probe, at cosine gaps in the third "
+      f"decimal — present and readable. {T('mech-patch')}: patching the prompt-family "
+      f"signature from one mode into another moves the output, but the honest column is "
+      f"**convergence toward the source**, not displacement — random injection maximises "
+      f"displacement by destroying the continuation. **The trap is the second control**: a "
+      f"source drawn from an unrelated task converges almost as well, so the content-specific "
+      f"reading rests on the layer profile (mid-stack for the real arm, boundary layer for the "
+      f"shuffled one) rather than on the size of the effect. These are one backbone, 24 tasks, "
+      f"one decode step, and the mechanism programme was shelved 2026-05-14 — they are here "
+      f"because a shelved result and an absent one look identical on disk and are not the same "
+      f"thing to a reader.")
     A("")
     return "\n".join(G)
 

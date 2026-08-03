@@ -454,6 +454,18 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    task takes its outcome from a standalone rich run, whereas a real cascade would start the rich
    episode after the cheap one had already acted on a stateful site. That sequential outcome is
    unobserved in this project.
+   ⚠️ *Added 2026-08-03: **"fails" was reported without its control arm, which the product had
+   computed all along.*** "No operating point Pareto-beats always-rich" answers a deployment
+   question and cannot separate *a signal carrying nothing* from *a signal carrying something
+   insufficient*. The comparator that separates them is the **same escalation budget spent at
+   random**, and against it the confidence ranking wins in **24 of 24** (cell × fraction)
+   combinations across all eight cells — +0.10pp to +3.95pp — while recovering **0–57% of the
+   gap to a per-task oracle**. So the correct statement is *the signal is informative and still not
+   enough*, not *there is no signal*. ⚠️ Both figures are **in-sample maxima**: the best signal
+   is picked per (cell, fraction) from that cell's menu against realised outcomes, so they bound
+   what an out-of-fold selection could deliver rather than estimate it, and `red_B2` recovers 0%
+   at every fraction. → `confidence_cascade{,_with_wa}` §2 + §1c, exported as the
+   cascade-control table 2026-08-03 (previously computed, never displayed).
 5b. ⚠️ **"Routing fails" is too strong, and the counter-evidence was already in the repo.**
    → `router_objective_ordering` (138 lines, never cited in this document until 2026-08-03) +
    `router_triage_learnability` (cited by name only, its result absorbed into the negative)
@@ -760,6 +772,24 @@ but nothing should be lifted from it without these two corrections:
   ~3.8–4.2pp. See `noise_floor_inventory` §1b. Under that yardstick the headroom the sentence
   claims (~3×) is closer to ~1.2–1.8×, and one of its two cells falls inside the null.
 A frame resting on this pair needs the corrected numbers, or a different pair.
+
+**A fifth functional, and the only *ex-ante* one (added 2026-08-03).** The four the frame names
+— success rates, arm-matched marginal gains, per-arm rerun floors, paired effect sizes — are all
+computed *after* the episodes exist. A reviewer can therefore ask whether the reversal is being
+read off the outcomes it is meant to predict. `visual_intent_routing` answers that without new
+data: its predicate is a regex over the task intent plus "carries no reference image", both read
+from the **task config**, so it costs no tokens and needs no episode. On `cls·B0` the flagged
+tasks (71 of 224) are worth **+22.54pp [+9.86, +33.80]** to the screenshot against **+0.65pp
+[−5.88, +7.84]** on the rest; the same predicate on `red·B0` (63 of 203) gives **−3.17pp
+[−14.29, +7.94]** flagged and **−8.57pp [−14.29, −2.86]** on the rest. **The sign flips, and it
+flips on a quantity computable before a single episode is run.** That is a stronger form of the
+same claim than any of the four: the site-level choice is not merely visible in hindsight, it is
+visible in the task distribution itself. ⚠️ Two limits: WebArena is **excluded** — the predicate
+fires on 5 of 104 tasks there and none is solved by any mode, so those cells are degenerate
+rather than null, which means this functional covers two sites where the other four cover three
+cells' worth; and the predicate was written by us, so it is a *demonstration that an ex-ante
+signal exists*, not a claim that this is the best one. → `visual_intent_routing`, exported as the
+ex-ante table.
 
 Wording discipline, from the codex pass: say **"classifieds versus reddit"** or "coarse
 site-level selection in these benchmarks", **not** "workload law". Two sites cannot identify the
