@@ -127,8 +127,26 @@ episode 上 fire：dom 27/28、som 27、vision 30、phantom_text 31。
 > "Tell me the count of comments that have received more downvotes than upvotes for the
 > user who made the latest post on the `<X>` forum."
 
-`reference_answers = {"must_include": ["0"]}`，而 WA 的 `must_include` 是**子串匹配**
-（`external/visualwebarena/evaluation_harness/evaluators.py:168-176`，`clean_ref in clean_pred`）。
+`reference_answers = {"must_include": ["0"]}`。
+
+> ⚠️ **机制更正（2026-08-03，B0 轮）**：此处原写"`must_include` 是**子串匹配**
+> （`clean_ref in clean_pred`）"，**只覆盖了 else 分支**。实际是双分支
+> （`evaluation_harness/evaluators.py:166-176`）：
+>
+> ```python
+> if len(word_tokenize(clean_ref)) == 1:
+>     return float(clean_ref in word_tokenize(clean_pred))   # 精确 token 成员 ← 漏了这支
+> else:
+>     return float(clean_ref in clean_pred)                  # 子串
+> ```
+>
+> `"0"` 恰恰是单 token，走的是 **if 分支**。本节结论（该族送分）不受影响 —— agent 答
+> "There are 0 comments" 的 tokenize 结果含 `"0"`，仍然命中，只是**命中方式是精确 token
+> 而非子串**。
+>
+> 但这个误解有后果：它让本轮不会去查"为什么 `cheating` 不含 `cheat`"，因而**漏掉了
+> 6 个 task / 74 个 episode 的 tokenize 假阴性**（`long`/`relation`/`headphone`/`break`/
+> `product`/`cheat`）。详见 [[_benchmark_level_findings]] §B2。
 
 Tier-2 逐个查轨迹：**5/5 `hit_causal=true`**，无一走完推理链（找到目标 forum → 该 forum
 最新帖作者 → 该作者 `/user/<name>/comments` → 逐条比较票数）。5 个全是"逛到某个不相关帖子，

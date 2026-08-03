@@ -10066,3 +10066,153 @@ ptext 106/106 · psom 226/227 · pprompt 254/255), 覆盖 7–26 episode/mode。
 **Cross-link**: 笔记 §410.9; B-06 (原估计) · B-57/§51 (native select JS workaround) ·
 B-59 (选中态反馈) · B-64 (vision CSS 下拉) · §60 (`_inject_css_dropdown_options`);
 `docs/analysis/wa_reddit/_cell_cross_mode_findings.md` §5 F1
+
+---
+
+## B-1923 落地记录 (2026-08-03) — Postmill 发帖限流吃掉 WA reddit 近一半任务, 且各 mode 吃得不一样多
+
+### 症状
+
+WA reddit 104 个 task 里 **50 个是发帖类** (48%, 判据 = eval 用 `func:reddit_get_post_url`
+或 `/submit/`)。这 50 个的 SR 被站点侧限流系统性压低:
+
+```
+                发帖类 SR    被限流        非发帖 SR
+B0 dom            8.0%      19/50 (38%)    44.4%
+B0 phantom_prompt 8.0%      18/50 (36%)    42.6%
+B0 som           14.0%      16/50 (32%)    29.6%
+B0 phantom_som   10.0%      14/50 (28%)    38.9%
+B0 phantom_text  20.0%       8/50 (16%)    50.0%
+B0 vision         8.0%       3/50 ( 6%)    29.6%
+B1 六 mode      0.0-8.0%    0-10/50        18.5-27.8%
+```
+
+### 证据
+
+站点原文横幅 `"You cannot post more. Wait a while before trying again."`
+
+**必须按字段拆开数**, 否则数不准 (本轮踩过):
+
+| 口径 | 判据 | 计数 |
+|---|---|---|
+| 真限流 | observation 侧 (非 `action` 字段) 出现站点原文 | **93 ep** |
+| 幻觉限流 | 模型 thought/answer 自述限流, 页面从无原文 | **16 ep** (14/16 在 B0) |
+
+时序: 首次触发在第 4-8 个发帖任务, 之后各段 20-50% 波动**不单调上升** → 是**滑动窗口限流**
+(发几个→冷却→恢复→再触发), 不是配额一次性耗尽。
+
+per-condition reset **已验证生效** (`wa_reset_supported` 对 WA reddit 返回 0 → 路由
+`_reset_vwa_local_reddit` = docker rm+run; 反证 = B1 最后跑的 phantom_som 限流 0 次),
+所以这是 **run 内**累积, reset 挡不住。
+
+### 影响
+
+**危害不是压低 SR, 是压得不均。** dom 和 vision 的发帖类 SR 都是 8.0%, 但 dom 是"走到提交
+被拦" (38%), vision 是"根本走不到" (6%)。cross-mode 比较会把这个差异误读成表征能力差异。
+
+⚠️ 被限流数本身是**能力的代理变量** —— 越能干的 condition 越容易走到提交、越容易撞。
+所以不能简单"把被限流的判成功", 那会反向奖励弱 condition。
+
+### 是不是只有我们撞
+
+`require_reset=False` 是 **task config 自带** (114/114), 不是 P79 配的; 官方 README 的
+reset 时机是"跑完一批之后" (`After evaluating the examples`), 且 **WebArena 那一支的 reset
+命令只列 `shopping_admin` 和 `gitlab`, 不含 reddit/forum**。加上限流按时间窗口触发 →
+**更快的 agent 撞得更狠**。推断: 任何跑完整 WA reddit 子集的评测都会撞, 且多半不自知
+(要发现得去读 step log 里那句横幅)。⚠️ 未验证任何具体论文的设置, 也未查 Postmill 阈值参数 ——
+坐实需要受控实验 (同序列加/不加 cooldown 对比撞击率)。
+
+### 处置
+
+未修。**不建议重跑** —— 若所有人都被同样压制, 我们的数字与文献可比, 单方面修正反而不可比。
+建议: §8 disclose + 报告**非发帖子集 (54 task)** 作敏感性分析 (跨 mode 排序在两个子集上一致)。
+若要干净版, 做成**附加受控实验** (加 cooldown 重跑 50 个发帖任务), 一次拿两个结果。
+
+**Cross-link**: 笔记 §416; `docs/analysis/wa_reddit/_benchmark_level_findings.md` §B1;
+§402.5/§402.7 (同类 run 内污染, 已裁定归 bug paper) · B-1889/B-1892 (task 58/160 排除先例)
+
+---
+
+## B-1924 落地记录 (2026-08-03) — WA reddit task 646 因 reference_url 大小写结构性不可通过
+
+### 症状
+
+task 646 在 **12/12 condition 全灭**, 与 agent 表现无关。
+
+### 机制 (代码级)
+
+- `EvaluatorComb.__call__` 是 `score *= cur_score` (evaluators.py:618-621) = **AND 语义**
+- `URLExactEvaluator` 的 `GOLD in PRED` 是 `ref in pred` (evaluators.py:332-334) =
+  **大小写敏感子串**; `clean_url` 只做 `localhost→127.0.0.1` + 去尾斜杠, **没有 casefold**
+
+全量 config 审计 (104 task) 查出 2 个 forum 大小写不一致:
+
+| forum | 少数派 | 多数派 | 站点实测渲染 |
+|---|---|---|---|
+| `diy` | task **646** 用 `/f/diy` | task 636 用 `/f/DIY` | `DIY` **330 次**, 小写 **0 次** |
+| `machinelearning` | task 625 用 `/f/machinelearning` | 599/604/609 用 `/f/MachineLearning` | `MachineLearning` **668 次**, 小写 **0 次** |
+
+- **646 → 不可通过**: ref 只有 `/f/diy` 一个候选 → url_match 恒 0 → 乘积恒 0
+- **625 → 可通过**: ref 是 `/f/machinelearning |OR| /f/deeplearning`, 而 `deeplearning`
+  站点本来就是小写 (实测 485 次) → 第二分支可匹配
+
+### 教训
+
+**"0/N 全灭" 不能证明 "不可通过"** —— task 636 大小写完全正确却也是 0/12 (败于发帖难度)。
+证伪结构性断言必须走机制路径 (evaluator 源码 + 站点实测渲染), 不能靠战绩推断。
+
+上游 `a8a1648` 尤其说明问题: 它**已经意识到** URL 归一化影响 eval 一致性, 加了 host 映射,
+但没处理 path 大小写 —— 646 正好卡在这个半成品上。
+
+### 处置
+
+未修。建议与 B1 digest F3 的 task 66 (硬编码 `www.reddit.com`) 合并处理: **WA reddit 已知
+结构性不可通过任务 = 2 个 (66, 646)**, 一并从计分集剔除 + 给 `validate_run` 加静态 config lint。
+
+**Cross-link**: 笔记 §416; `_benchmark_level_findings.md` §B4;
+`_cell_cross_mode_findings.md` §5 F3 (task 66 同类) · §402.7 (benchmark 层缺陷 → bug paper)
+
+---
+
+## B-1925 落地记录 (2026-08-03) — `_format_history` 从不把 thought 写进历史, 跨页面收集类任务必丢发现
+
+### 症状
+
+需要跨多个页面收集信息再汇总的任务 (`intent_template_id=17`, "Among the top N post... show me..."),
+模型在中途明确写下"我记下 The Hobbit", finish 时该实体消失。两个独立 episode
+(WA reddit vision task 67 / 68) 完全相同的败因。
+
+### 根因 (代码已逐行核对)
+
+`p79/agents/proxy_api_agent.py:521-552` (B0 用) 与 `p79/agents/_shared_vl_utils.py:351-384`
+(B1+B2 共用) 拼装 step 历史时只输出:
+
+```
+  Step N: {action_type}{detail} -> {result} [{url}]
+```
+
+**从不读取 `action['thought']`** —— 两个版本一致。所以模型的推理文本对下一轮永久不可见,
+finish 时只能凭当前观测重拼答案。
+
+**不是 8 步窗口截断** —— 两例的丢失都发生在窗口内, 是历史格式化函数本身丢弃了推理文本。
+
+### 为什么之前没发现
+
+台账里 `format_history` 出现过两次, 但两次都只核了别的字段:
+- §140.2: 讲 Gemma **复用** Qwen 的 bound method (prompt 逐字节一致)
+- §387.7: 讲 "format_history() 确实把 **FAILED 反馈**进了下一轮 prompt"
+
+`result` 字段被核过, `thought` 字段没有。
+
+### 影响
+
+跨全部 baseline (B0 用 proxy 版, B1+B2 用 shared 版)。影响面 = 所有需要跨页面累积信息的
+任务族。**修复会改变 agent 行为 → 所有数据需重跑**, 属于**能力改进**而非污染修复,
+是否做取决于 paper scope。
+
+### 处置
+
+未修 (决策待定)。修法方向: 给 history 加 thought 摘要 (可截断), 或维护跨 step scratchpad。
+
+**Cross-link**: 笔记 §416; `_benchmark_level_findings.md` §B5;
+§140.2 (Gemma 复用 bound method) · §387.7 (FAILED 反馈已核) · B-146 (`_shared_vl_utils` 拆分来源)
