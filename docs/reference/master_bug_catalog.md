@@ -10089,17 +10089,42 @@ B1 六 mode      0.0-8.0%    0-10/50        18.5-27.8%
 
 ### 证据
 
-站点原文横幅 `"You cannot post more. Wait a while before trying again."`
+**① 站点侧机制 — Postmill 源码坐实 (硬证据, 2026-08-03 验证轮取得)**
 
-**必须按字段拆开数**, 否则数不准 (本轮踩过):
+A100 `vwa-reddit` 容器:
 
-| 口径 | 判据 | 计数 |
-|---|---|---|
-| 真限流 | observation 侧 (非 `action` 字段) 出现站点原文 | **93 ep** |
-| 幻觉限流 | 模型 thought/answer 自述限流, 页面从无原文 | **16 ep** (14/16 在 B0) |
+```php
+// /var/www/html/src/DataObject/SubmissionData.php:18-19
+@RateLimit(period="5 minutes", max=15, groups={"create"},                    entityClass=Submission::class)
+@RateLimit(period="1 hour",    max=3,  groups={"unwhitelisted_user_create"}, entityClass=Submission::class)
 
-时序: 首次触发在第 4-8 个发帖任务, 之后各段 20-50% 波动**不单调上升** → 是**滑动窗口限流**
-(发几个→冷却→恢复→再触发), 不是配额一次性耗尽。
+// var/cache/dev/translations/catalogue.*.php
+'ratelimit.error' => 'You cannot post more. Wait a while before trying again.'
+```
+
+实现在 `src/Validator/RateLimit{,Validator}.php`; `CommentData.php` 带同类注解。
+**「未白名单用户 1 小时 3 帖」**精确解释实测时序: 首次触发在第 4-8 个发帖任务
+(约 20 分钟内提交 3-4 次)、之后稳定 ~40%、各段 20-50% 波动**不单调上升** = 滑动窗口。
+
+**② episode 侧 — 109 个 episode 出现限流自述**
+
+逐字复现站点文案 (`cannot post more` / `wait a while before trying again`) **93 ep**;
+宽松措辞 (`posting limit` / `rate limit` / `posting restriction`) 另 **16 ep**。
+
+**③ 无法做的事 — 逐 episode 核验**
+
+`steps_v2.jsonl` 的 step record **不含任何页面文本字段** (只有 `obs_url` +
+`state_digest.{text_length,title,dom_complexity}`), 页面文本在 `artifacts/` 而该批已清空。
+`text_length` 间接检验**无区分度** (自述组中位数 Δ=922 vs 未自述组 1327, 量级 ~1000 chars
+远大于一句横幅约 60 chars)。故单个 episode 是否真撞限流**无法逐条判定**, 存在替代解释
+(必填字段缺失触发表单校验)。
+
+> ⚠️ **本条证据链经 2026-08-03 验证轮整体重建。** 初稿写"93/93 命中在 observation 侧、
+> 0 个幻觉", 是扫描 bug: 判据 `{k:v for k,v in record.items() if k!="action"}` **只排除了
+> `action`, 没排除 `raw_action`** (action 的原始副本, 同含 thought/answer)。修正后重扫得到
+> "observation 0 / 自述 93" —— 与初稿完全相反; 但因 step record 本就不存页面文本, **两个方向
+> 的结论都无效**, 换成读容器源码才解决。结论保住, 证据全换。详见
+> `docs/analysis/wa_reddit/_benchmark_level_findings.md` §B1-R。
 
 per-condition reset **已验证生效** (`wa_reset_supported` 对 WA reddit 返回 0 → 路由
 `_reset_vwa_local_reddit` = docker rm+run; 反证 = B1 最后跑的 phantom_som 限流 0 次),
@@ -10216,3 +10241,63 @@ finish 时只能凭当前观测重拼答案。
 
 **Cross-link**: 笔记 §416; `_benchmark_level_findings.md` §B5;
 §140.2 (Gemma 复用 bound method) · §387.7 (FAILED 反馈已核) · B-146 (`_shared_vl_utils` 拆分来源)
+
+---
+
+## B-1926 落地记录 (2026-08-03) — volatile DOM 片段把 `page_changed` 顶成恒 True, 模型 30 步收到「页面变了」的正反馈
+
+### 症状
+
+WA reddit task 651 (B0 phantom_text): 连续 30 步点击同一个 `element_id=28`（"87 comments" 链接,
+`target_tag='A'`, bbox 逐字节相同）, 零进展, 撞满 step 预算 (`agent_finished=false`)。
+
+### 根因
+
+```
+page_changed          : 30/30 步全 True
+page_change_reasons   : ('content_changed','form_value_changed') × 29 + 含 title_changed × 1
+url_after 唯一值      : 1        (全程不变)
+dom_complexity 唯一值 : [55]     (全程不变)
+text_length           : 2716/2791/2812/2843 之间小幅抖动
+text_similarity       : 0.42–0.75 (在 text_length 相同的步之间也振荡 → volatile DOM 片段)
+trigger_distribution  : {}       ← watchdog 一次都没触发
+```
+
+页面里有个**易变片段**（疑似 CSRF nonce / 时间戳）每次渲染都不同 → 顶起
+`content_changed` + `form_value_changed` → `page_changed=True`。两个下游后果:
+
+1. **模型收到错误的正反馈** —— `_format_history` 对 `page_changed=True` 渲染成
+   `"OK (page changed)"`（`_shared_vl_utils.py:370-377` / `proxy_api_agent.py:538-545`）。
+   模型连点 30 次同一元素, 每次历史都告诉它"页面变了", 与系统提示里的
+   `"Avoid repeating the same action. Change strategy if stuck."` 直接冲突。
+2. **watchdog 失效** —— `page_unchanged_streak` 永不累积, `trigger_distribution` 全空。
+   对照同批次 task 584 (streak=3 触发) / task 714 (streak=14 触发) 说明机制本身工作正常,
+   是这个页面骗过了判据。
+
+### 规模
+
+全量扫 12 个 WA reddit condition: **13 个 episode**（B0 7 + B1 6）符合
+"`page_changed` 恒 True 且 `url_after` 全程唯一"。
+
+### 与 B-1925 的关系
+
+**同一个函数的两个缺陷, 叠加效果远大于各自**:
+- B-1925: `_format_history` 不传 `thought` → 模型记不住自己已经发现了什么
+- B-1926: 把假的 `page_changed` 渲染成 "OK (page changed)" → 模型被告知有进展
+
+两者合起来 = 模型既没有记忆、又收到错误的进展信号, 是行为死循环的充分条件。
+
+### 规则层影响
+
+该 episode 精确落在 **P31 与 P45 的夹缝**: P31 (budget 耗尽) 因 `last_obs_url` 路径等于
+reference_url 而被豁免; P45 (连续相同失败动作) 因 `action_success=True` 全程为真而不触发。
+两条规则都看不见它。
+
+### 处置
+
+未修。修法方向: `page_changed` 判定应对 `content_changed`/`form_value_changed` 加权
+(或要求 `url_changed` / `dom_complexity` 变化 / `text_similarity` 低于阈值中至少一项),
+避免单一 volatile 片段顶起整个 page-change 信号。
+
+**Cross-link**: 笔记 §416.8; `_benchmark_level_findings.md` 验证轮节;
+B-1925 (同函数, 丢 thought) · P31/P45 夹缝 · 盲复检 C 发现 (2026-08-03 验证轮)

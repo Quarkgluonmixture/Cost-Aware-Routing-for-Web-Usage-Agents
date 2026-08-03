@@ -37,34 +37,44 @@ evaluator 的单词 token 精确匹配被判假**、**1 个任务结构性不可
 
 ## B1. Postmill 发帖限流 —— 93 episode，跨 mode 不均
 
-### 证据
+### 证据（⚠️ 本节证据链在 2026-08-03 验证轮被**整体推翻并重建**，见 §B1-R）
 
-站点原文横幅 `"You cannot post more. Wait a while before trying again."`
+**① 站点侧机制 —— 源码坐实（硬证据）**
 
-**必须区分横幅来源**（第一版粗扫把两者混为一谈，是本轮方法学教训）：
+A100 `vwa-reddit` 容器内 Postmill 源码：
+
+```php
+// /var/www/html/src/DataObject/SubmissionData.php:18-19
+@RateLimit(period="5 minutes", max=15, groups={"create"},                    entityClass=Submission::class)
+@RateLimit(period="1 hour",    max=3,  groups={"unwhitelisted_user_create"}, entityClass=Submission::class)
+
+// var/cache/dev/translations/catalogue.*.php
+'ratelimit.error' => 'You cannot post more. Wait a while before trying again.'
+```
+
+实现在 `src/Validator/RateLimit{,Validator}.php`；`CommentData.php` 带同类注解。
+**「未白名单用户 1 小时 3 帖」**精确解释了实测时序：首次触发在第 4-8 个发帖任务
+（约 20 分钟内提交 3-4 次）、之后稳定 ~40%、各段 20-50% 波动不单调上升。
+
+**② episode 侧观测 —— 109 个 episode 出现限流自述**
 
 | 口径 | 判据 | 计数 |
 |---|---|---|
-| **真限流** | observation 侧（非 `action` 字段）出现站点原文 | **93 ep** |
-| **幻觉限流** | 模型 thought/answer 自述限流，但页面**从未**出现站点原文 | **16 ep** |
+| 逐字复现站点文案 | thought/answer 含 `cannot post more` / `wait a while before trying again` | **93 ep** |
+| 宽松措辞 | 含 `posting limit` / `rate limit` / `posting restriction` 等 | **+16 ep** |
 
-```
-                 真限流   幻觉限流(task)
-B0 dom             19     4  [607, 612, 613, 641]
-B0 som             16     1  [634]
-B0 vision           3     0
-B0 phantom_text     8     1  [639]
-B0 phantom_prompt  18     5  [606, 607, 630, 632, 633]
-B0 phantom_som     14     3  [631, 633, 640]
-B1 dom              1     0
-B1 som             10     0
-B1 vision           1     2  [604, 716]
-B1 phantom_text     2     0
-B1 phantom_prompt   1     0
-B1 phantom_som      0     0
-```
+（分 mode 计数见下方表格的"被限流"列，口径 = 逐字复现那 93 个。）
 
-幻觉限流 **14/16 集中在 B0** —— 更强的模型更会为自己的失败编一个合理外因。
+**③ 无法做的事：逐 episode 核验**
+
+`steps_v2.jsonl` 的 step record **不含任何页面文本字段** —— 只有 `obs_url` 和
+`state_digest.{text_length, title, dom_complexity, ...}`。页面文本在 `artifacts/`，
+而这批 run 的 artifacts 已被清空。`text_length` 波动做间接检验**无区分度**
+（自述组中位数 Δ=922 vs 未自述组 1327，且量级 ~1000 chars 远大于一句横幅约 60 chars）。
+
+**综合判定**：站点机制存在 = 硬证据；93 个 episode 逐字复现 `ratelimit.error` 原文 = 强间接
+证据（Postmill 专用翻译键，模型凭空一字不差生成的可能性低）；但**单个 episode 是否真撞了限流
+无法逐条判定**，存在替代解释（必填字段缺失触发表单校验 —— 盲复检对 task 631/609 给出过该解释）。
 归因时这 16 个是 **agent-limit**（幻觉式放弃），不是 scaffold。
 
 ### 时序结构：滑动窗口，不是配额永久耗尽
@@ -112,6 +122,43 @@ reddit `require_reset=false`（项目既有 quirk，见 memory `reference_vwa_de
 
 - **若重跑**：只需重跑发帖类 50 个（另 54 个干净），前置条件 = 任务间 cooldown + 每 condition 前 reset
 - **若不重跑**：§8 disclose，并以**非发帖子集（54 task）**作为干净对照报告 —— 该子集 B0 29.6–50.0% / B1 18.5–27.8%，跨 mode 排序仍成立
+
+---
+
+## B1-R. 证伪与重建 —— 本条结论对了，但原来的证据链是错的
+
+**这是本轮最值得记住的一段。** 初稿给 B1 的核心证据是"93/93 的横幅命中都在 observation 侧，
+0 个只在 thought 里"，据此判定限流为真、并推翻了一个 sub-agent 的"幻觉"主张。
+
+**R1 — 那个 93/0 是扫描 bug 造出来的。** 判据写的是
+`{k: v for k, v in record.items() if k != "action"}`，**只排除了 `action`，没排除 `raw_action`**
+（后者是 action 的原始副本，同样含 `thought`/`answer`）。修正后重扫：
+
+```
+真 observation = 0  ·  仅模型自述 = 93        ← 与初稿完全相反
+```
+
+**R2 — 但"0 个 observation"同样不能证明页面上没有横幅。** 进一步查 step record 的字段结构后
+发现：**它根本不存页面文本**（见上方 §③）。在一个不含页面文本的记录里搜页面文本，两个方向的
+结论都无效 —— 初稿的 93 是假阳性，修正后的 0 是假阴性。**方法本身不适用于这个问题。**
+
+**R3 — 换证据源才解决。** 去 A100 容器读 Postmill 源码，拿到 `@RateLimit` 注解和
+`ratelimit.error` 翻译键（见 §①）。结论保住了，但**靠的是完全不同的一条证据链**。
+
+**R4 — 触发这次证伪的是一个"被污染"的 sub-agent。** 盲复检 B 读了 `master_bug_catalog`
+（我的 prompt 没禁止），本该作废；但恰恰因为它知道既有结论，才发现 task 631/609 与之矛盾并
+坚持报告"该措辞只出现在 thought，未见于 observation"。**独立性是为了避免锚定，但知情的
+反对意见有独立性换不来的价值** —— 两者都要，不能互相替代。
+
+### 教训（三条，写进流程）
+
+1. **排除模型输出字段时，必须枚举全部副本字段**（`action` / `raw_action` / 以及任何未来新增的
+   镜像字段），不能用"排除 action"这种单点否定。更稳的写法是**白名单**：只在明确属于环境侧的
+   字段上匹配，而不是"除了 X 之外都算环境"。
+2. **先确认数据里有没有你要找的东西，再设计判据。** 本轮在一个不含页面文本的记录上做了两轮
+   "页面文本在不在"的判定，两轮都无效。字段结构检查应该是**第一步**，不是出错后的补救。
+3. **"结论对"和"证据对"是两件事。** B1 的结论从头到尾成立，但支撑它的证据换了一整条。
+   如果没有这次复核，落进 paper 的会是一个正确结论 + 一条经不起追问的证据链。
 
 ---
 
@@ -363,6 +410,91 @@ VWA submodule 在 `p79-patches` 分支上确实带着一批 P79 修复跑（用�
 
 **教训**：审计覆盖率要按**文件/函数**核，不能按"我审过 eval 层"这种粒度自我确认。
 一个模块里最核心的评分函数，可能恰恰因为"看起来是上游的、稳定的、不该动的"而从未被读过。
+
+---
+
+## V. 验证轮（2026-08-03，补 /diag 主轮跳过的验证）
+
+主轮的 Tier-2 只覆盖 92/475 = 19.4% 的 failed，且 **383 个 `failed+hit` 一个都没做因果验证**
+（SKILL.md 要求"每主导规则抽 2-3"）。本节是补做的四项。
+
+### V1. 主导规则的因果验证 —— P36 / P31 双双是 risk-marker
+
+抽"仅单一规则命中"的 episode（归属最干净），各 3 个：
+
+| 规则 | failed 覆盖 | 判定 | 真死因（逐例） |
+|---|---:|---|---|
+| **P36** WALK_FAIL | 236 (51.0%) | **3/3 risk-marker，0/3 死因** | task 66 walk_fail 靠 fallback 自愈，真死因是 finish 阶段答案汇总缺陷；task 603 真死因是 agent 把任务要求的 typo `budge` "纠正"成 `budget`；task 610 真死因是发帖限流 |
+| **P31** budget 耗尽 | 231 (49.9%) | **3/3 risk-marker，0/3 死因** | task 717 是 30 步 URL 零变化的方向性错误；task 610/614(som) 是"误把 navbar 锚点当提交按钮"的自我强化循环 |
+
+**⚠️ digest §2 的 per-rule 分布表是症状分布，不是死因分布。** 引用时必须这样标注。
+
+### V2. P5 / P45 —— 任务依赖，不能统一裁定
+
+二者从不单独命中（solo=0），需判是独立死因还是伴随信号。结论**因任务而异**：
+
+- **task 721 (phantom_som)：death-cause。** step14 成功点赞第 1 项后，steps15-29 连续 15 次点同一
+  `element_id=47` 失败，吞掉 step14 后 **100% 的剩余预算**；剩 7 项 × 约 2 步 = 14 步，恰在 16 步
+  可用预算内 → 无此死锁大概率能完成。
+- **task 28 (dom)：risk-marker。** 两个 P5 窗口只吞 23% 预算且**都被打破恢复**（step22/26 成功换页）；
+  P31 的真正上游是任务本身要求枚举未知长度的分页列表。
+
+**结构性解释**：只要死锁吞掉"足够多"剩余预算，P31 必然作为下游终态标签共现——但"足够多"因任务而异，
+所以"P5/P45 从不单独命中"这个统计事实**不足以推出**它们是伴随信号。
+
+### V3. P48 的二次 gate —— `_finish_answer()` 从不读 `thought`
+
+`P48` 由 **B1** 那轮 Tier-2 提议并落码，却在 B1 上 **0 命中**、B0 上 15 命中。排查出两道 gate：
+
+1. `len(steps) > 4` 硬上限 —— B1 的同族样本跑 18–20 步，全被排除（docstring 已承认该局限）
+2. **`_finish_answer()`（`diag_pattern_match.py:373-378`）只读 `action.answer`/`action.text`，
+   从不 fallback 读 `action.thought`** —— B1 把"无结果"结论完整写在 `thought` 里而 `answer` 留空
+
+第 2 条是**过窄漏检而非保守取舍**：规则要检测的机制本就是"agent 在 thought 里认定无结果"。
+实测 B1 另有 **9 个 episode 已满足 ≤4 步门槛**，仅因 `answer` 为空被 gate 2 单独排除。
+
+⚠️ **影响面超出 P48**：`P22 / P24 / P27 / P29 / P46` 同样依赖 `_finish_answer()`。
+B0（proxy 235B）习惯把结论复述进 `answer`，B1（本地 4B）倾向只写 `thought` ——
+**这会让所有依赖该函数的规则产生跨模型的系统性偏差**。
+
+### V4. 盲复检 —— 独立一致率 5/8 = 62.5%
+
+前两次复检因 prompt 未禁止读结论文档而**污染作废**（agent 主动"交叉验证"了 digest 与 bug catalog）。
+第三次明确禁读 `docs/` 后：
+
+| task | 主轮判定 | 盲复检 | |
+|---|---|---|---|
+| 67 / 641 / 714 / 622 | agent-limit / scaffold / agent-limit / agent-limit | 同 | ✓ |
+| 584 | agent-limit（填错字段） | agent-limit（**点错 navbar Submit**） | ✓ 类别同、机制不同 |
+| **600** | benchmark-FP（开放式 intent 被压成单一 golden） | **agent-limit**（未找 consoles 即选 gaming） | ✗ |
+| **647** | agent-limit（绕开字面关键词） | **benchmark-FP**（同义词 `aid` vs 必需字面词 `help`） | ✗ |
+| **651** | scaffold-bug（INERT_CLICK_LOOP） | **unclear**（low confidence） | ✗ |
+
+**三处分歧的性质**：600 与 647 都是 **agent-limit ↔ benchmark-FP 的边界解读**（同一事实、两种归责），
+不是事实错误；651 是**主轮过度自信**——盲复检诚实标 unclear 并给出了主轮遗漏的 scaffold 线索
+（→ **B-1926**）。
+
+**结论：Tier-2 的类别判定有约 1/3 的分歧率，且分歧集中在 agent-limit ↔ benchmark-FP 边界。**
+digest 的三分类统计应按此打折引用。
+
+### V5. 新规则候选 P49（已做 success-safe 全量检验）
+
+**判据**：`/submit/` 页上 ≥2 次点击 `locator_route_meta.target_tag == 'A'` 的元素
+**且** episode 终态 `obs_url` 仍在 `/submit/`（从未跳到帖子永久链接）。
+
+| 档位 | failed 命中 | success 误伤 | 误伤率 |
+|---|---:|---:|---:|
+| ≥2 次（无终态条件） | 106 | 14 | 11.7% |
+| **≥2 次 + 终态卡 `/submit/`** | **71** | **0** | **0.0%** |
+| ≥3 次 + 终态卡 `/submit/` | 47 | 0 | 0.0% |
+
+与已有规则的关系：`P49 ∩ P47 = 2`（几乎互斥，P47 要求 finish 前无 click）、`P49 ∩ P31 = 55`。
+**价值不在扩大覆盖（相对 P47+P31 净新增仅 14），而在归因质量** —— 把 55 个原本只标
+"P31 预算耗尽"（V1 已判为零信息量的 risk-marker）的 episode，升级为具体死因机制。
+vision mode 天然 0 命中（坐标点击无 `target_tag`）→ 规则 mode-specific。
+
+**建议**：落码为 P49，bump `RULESET_VERSION` 到 `10-*`，全量重扫 36 VWA + 12 WA condition。
+（未落码，待裁定。）
 
 ---
 

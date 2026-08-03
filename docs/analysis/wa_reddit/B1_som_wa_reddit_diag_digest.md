@@ -23,7 +23,7 @@
 | **Benchmark / Site / Mode / Model** | WebArena / reddit / `som`（Set-of-Marks：标注图 + `[SOM_MARKS]` 文本） / B1 = Qwen3-VL-4B (local) |
 | **Episodes** | 104 collected = **104 scored**（`sr_excluded` 全 False，无 N/A 排除） |
 | **SR** | **13.46%**（14 success / 90 failed） |
-| **ruleset_version** | `8-reddit-p41p46-b1890fix`（config 注入重扫） |
+| **ruleset_version** | `9-wa-p47p48`（正文成稿于 `8-reddit-p41p46-b1890fix`，v9 数字块见 §2b）|
 | **Tier-1 三子集** | failed+hit 80 · **failed-NO-hit 10** · success+hit 1 |
 
 ## 2. Tier-1 规则分布（failed 侧）
@@ -45,6 +45,32 @@
 **failed-NO-hit episode（deterministic 盲区 → Tier-2 全覆盖）**：[29, 69, 581, 610, 651, 721, 724, 727, 730, 732]
 
 **success episode**：[27, 67, 399, 400, 402, 403, 597, 598, 599, 600, 605, 609, 650, 652]
+
+
+### 2b. v9 数字块（`9-wa-p47p48`，2026-08-03 补）
+
+> 本 digest 正文成稿于 `8-reddit-p41p46-b1890fix`。v9 落码了 `P47`/`P48` 两条新规则
+> （由本轮 Tier-2 的 R1/R3 提议而来），scan 已全量重扫，此处补齐数字使 **B0/B1 可并表**。
+> 正文的 Tier-2 定性结论不受影响（v9 是纯 additive，未改动任何既有规则的正则或阈值）。
+
+| 规则 | 含义 | step 级 | episode 级 | v8→v9 |
+|---|---|---|---|---|
+| `P31` | budget耗尽未完成 | 66 | 66 | — |
+| `P36` | WALK_FAIL_DEGENERATE | 353 | 46 | — |
+| `P5` | 感知缺失循环 | 60 | 45 | — |
+| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 53 | 42 | — |
+| `P12` | 从不翻页 | 27 | 27 | — |
+| `P14` | URL 自环 | 32 | 25 | — |
+| `P4` | 根节点误操作 | 26 | 6 | — |
+| `P33` | 导航至裸图片URL幻觉 | 3 | 3 | — |
+| `P47` | PREMATURE_FINISH_ON_FORM | 3 | 3 | **0 → 3** |
+| `P10` | 跨步数值记忆失败 | 1 | 1 | — |
+
+**三子集** v8 `failed+hit 80 · failed-NO-hit 10 · success+hit 1` → v9 `failed+hit 81 · failed-NO-hit 9 · success+hit 1`
+
+**唯一变化**：`P47` 新增命中。`P48` 在本 cell **0 命中**（它由 B1 数据提议却在 B1 上不 fire —— 实现比提议窄，排查见 [[_benchmark_level_findings]]）。
+
+**从 no-hit 转入 hit 的 episode**（v9 新规则接住的 deterministic 盲区）：[732]
 
 ## 3. Tier-2 深挖
 
