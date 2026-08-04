@@ -10,6 +10,8 @@
    "auroc_lototask_best_layer_min": 1.0,
    "auroc_lototask_best_layer_mean": 1.0,
    "n_pairs_at_auroc_1": 15,
+   "median_layers_at_auroc_1": 36,
+   "n_layers_total": 37,
    "axis_cosine_gap": {
     "image": {
      "peak_gap": 0.04161262512207031,
@@ -34,6 +36,8 @@
    "auroc_lototask_best_layer_min": 1.0,
    "auroc_lototask_best_layer_mean": 1.0,
    "n_pairs_at_auroc_1": 15,
+   "median_layers_at_auroc_1": 36,
+   "n_layers_total": 37,
    "axis_cosine_gap": {
     "image": {
      "peak_gap": 0.038576483726501465,

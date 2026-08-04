@@ -470,14 +470,19 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    computed all along.*** "No operating point Pareto-beats always-rich" answers a deployment
    question and cannot separate *a signal carrying nothing* from *a signal carrying something
    insufficient*. The comparator that separates them is the **same escalation budget spent at
-   random**, and against it the confidence ranking wins in **24 of 24** (cell × fraction)
-   combinations across all eight cells — +0.10pp to +3.95pp — while recovering **0–57% of the
-   gap to a per-task oracle**. So the correct statement is *the signal is informative and still not
-   enough*, not *there is no signal*. ⚠️ Both figures are **in-sample maxima**: the best signal
-   is picked per (cell, fraction) from that cell's menu against realised outcomes, so they bound
-   what an out-of-fold selection could deliver rather than estimate it, and `red_B2` recovers 0%
-   at every fraction. → `confidence_cascade{,_with_wa}` §2 + §1c, exported as the
-   cascade-control table 2026-08-03 (previously computed, never displayed).
+   random**. ⚠️ *Corrected 2026-08-04 — the first version of this sentence said "24 of 24" and
+   that number is partly arithmetic.* Each of those 24 is a **maximum over that cell's 8–10
+   candidate signals against a constant** (the random comparator does not depend on the signal),
+   so taking the max makes positivity likely before any information is involved. The unselected
+   statement, which is the one to quote: over all **222 (signal × cell × fraction) points,
+   64.4% are positive with a median of +0.327pp**. On `wa_red_B1` the median is **negative at
+   all three fractions** (−0.37 / −0.78 / −0.18) while the max is positive at all three — and
+   that is the single cell carrying the three apparent Pareto wins, so its win is entirely
+   selection. **The direction survives** (a majority of unselected signal-points are positive,
+   and the best signal recovers 0–57% of the gap to a per-task oracle), so *the signal is
+   informative and still not enough* still holds — but it rests on the 64.4%/+0.327pp figure,
+   not on a clean sweep. → `confidence_cascade{,_with_wa}` §2 + §1c, exported as the
+   cascade-control table 2026-08-03, median columns added 2026-08-04.
 5b. ⚠️ **"Routing fails" is too strong, and the counter-evidence was already in the repo.**
    → `router_objective_ordering` (138 lines, never cited in this document until 2026-08-03) +
    `router_triage_learnability` (cited by name only, its result absorbed into the negative)
@@ -552,8 +557,16 @@ Stated as claims with their carrying product, so a frame can be chosen against t
    each other by 0.5pp. **Recomputed on eight cells (2026-08-03):** of the **7** that survive
    Benjamini-Hochberg (FDR 0.05, jointly over **128** Wilcoxon tests) **6 are off-segment** and 1
    interpolates; the uncorrected effect-size-only count is **23** and **must not be quoted bare**;
-   **1** survives Holm (was 2 on six cells — the extra tests cost it). All 7 BH survivors sit in
-   VWA cells; **the two WA cells contribute none**, at n=104 against 203/224. Non-separability among the four image-free modes and separability of P-SoM
+   **1** survives Holm. All 7 BH survivors sit in VWA cells; **the two WA cells contribute none**,
+   at n=104 against 203/224.
+   ⚠️ ***Corrected 2026-08-04 — those counts control the wrong error rate.*** "Both contrasts are
+   non-null" is a **conjunction** hypothesis, and correcting the 128 individual legs and then
+   keeping combinations whose two legs each happened to survive is a **filter, not a test**: it
+   controls error over legs, not over the 64 conjunctions. The valid intersection-union p-value
+   is `max(p_compound, p_image)`, corrected across the 64. Recomputed
+   (`multiplicity_filtered_independence`, `*_conjunction_*` keys): **BH 7 → 4, Holm 1 → 2**, and
+   **all 4 conjunction survivors are off-segment** (against 6 of 7 before). The claim survives in
+   direction and shrinks in count — quote **4 off-segment under BH-on-conjunctions**, not 6. Non-separability among the four image-free modes and separability of P-SoM
    from DOM *and* SoM are different questions on different quantities (mode-vs-mode extremes
    versus paired contrasts).
    → `axis_effect_size_report` Tier 1 — **this replaces the "no cells" reading**, which was an

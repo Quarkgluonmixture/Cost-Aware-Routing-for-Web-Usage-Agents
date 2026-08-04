@@ -61,7 +61,7 @@ A floor is only interpretable against a gain of the **same functional at the sam
 | cell | best single mode | +1 best **distinct representation** | +1 **rerun** (measured floor) | verdict |
 |---|---|---|---|---|
 | B0 · VWA-cls (n=224) | som @ 27.23% | **7.14pp** (dom) | 4.91 – 7.59pp | **indistinguishable — inside the rerun band** |
-| B1 · WA-red (n=104; floor n=50) | dom @ 16.35% | **4.81pp** (ptext) | 2.00 – 4.00pp | above the band by 0.81pp |
+| B1 · WA-red (n=104; floor = 5 modes × 10 shared tasks) | dom @ 16.35% | **4.81pp** (ptext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **indistinguishable — inside the rerun band** |
 | B0 · WA-red (n=104; no pilot → no floor) | ptext @ 35.58% | **5.77pp** (dom) | — | no floor measured on this cell |
 | B1 · VWA-cls (n=224) | som @ 14.29% | **4.91pp** (vision) | — | no floor measured on this cell |
 | B2 · VWA-cls (n=224) | som @ 2.23% | **2.23pp** (vision) | — | no floor measured on this cell |
@@ -69,7 +69,7 @@ A floor is only interpretable against a gain of the **same functional at the sam
 | B1 · VWA-red (n=203) | som @ 7.39% | **1.97pp** (pprompt) | — | no floor measured on this cell |
 | B2 · VWA-red (n=203) | dom @ 3.94% | **1.97pp** (vision) | — | no floor measured on this cell |
 
-Two cells carry a floor, and they differ in model family, benchmark and serving path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. On `B1 · WA-red` it lands **just outside**, by 0.81pp — above the floor, but of the same order, and on a floor estimated from only n=50. Neither cell shows a representation arm worth appreciably more than a rerun arm; one shows it worth no more at all.
+Two cells carry a floor, and they differ in model family, benchmark and serving path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. On `B1 · WA-red` it lands **inside** the honest band. ⚠️ Corrected 2026-08-04: it read *just outside by 0.81pp* against a band pooled over 5 modes on one shared 10-task draw — 50 observations carrying 10 independent tasks. Against the unpooled per-mode floors the gain is comfortably inside. the same order, and on a floor estimated from only n=50. Neither cell shows a representation arm worth appreciably more than a rerun arm; one shows it worth no more at all.
 
 ⚠️ **`B0 · VWA-cls` now carries 3 replicated arms, not one** (dom, vision, som) — the band above is the min/max over all of them. The `som` pair landed 2026-08-03 and it is the one that matters most: **claim 3 is about the fused arm, and until that day its floor was borrowed from DOM and Vision.** The borrowed band turned out to be right — SoM's own set-difference floor 5.36–7.59pp sits inside it and its mean-difference draw is 2.23pp, matching DOM's, so no number downstream moves. That is a robustness result rather than a correction, and it is worth more than the numbers: the claim no longer rests on an extrapolation.
 
@@ -84,7 +84,7 @@ Two cells carry a floor, and they differ in model family, benchmark and serving 
 | cell | best single | 6-mode oracle | gain, **5 arms added** |
 |---|---|---|---|
 | B0 · VWA-cls (n=224) | 27.23% | 43.30% | 16.07pp |
-| B1 · WA-red (n=104; floor n=50) | 16.35% | 30.77% | 14.42pp |
+| B1 · WA-red (n=104; floor = 5 modes × 10 shared tasks) | 16.35% | 30.77% | 14.42pp |
 | B0 · WA-red (n=104; no pilot → no floor) | 35.58% | 51.92% | 16.35pp |
 | B1 · VWA-cls (n=224) | 14.29% | 24.55% | 10.27pp |
 | B2 · VWA-cls (n=224) | 2.23% | 7.14% | 4.91pp |
