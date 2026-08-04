@@ -23,6 +23,78 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟥 2026-08-05 REALM 截稿日 · **写散文阶段** — 增料已收口（**最新，先读这块**）
+>
+> chronicle → **笔记 §433**。**论文真源在 Overleaf，不在本仓库**：
+> `https://www.overleaf.com/project/6a59017b04233a73ed5ec570` → Menu → Main document →
+> **`main_restructured.tex`**（项目里有三个 `main_*.tex`，另两个是旧稿与冻结参照）。
+>
+> ### ⚠️ 协作事实（今天在这上面栽了两次）
+>
+> **学长 (`981526092`) 直接在 Overleaf 端写稿**，节奏比我们快。今天 11:20–12:24 他
+> 独立完成了 frame 落地（ACL 模板 / 40 表拆分 / 7 主表分流 / 25 张转 `table*` /
+> 3 张图 / section 骨架 + `README_restructure.md`），15:15–15:49 又做了 t42 提拔进正文
+> 与「12 表→7 表」瘦身。
+>
+> **动 Overleaf 前必须先 `git fetch` 看他动过没有**，不是做完再推时才发现。
+> **`sections/` 是他手写的散文，`tables/` 带着他的人工修复 —— 一律不要重新生成后覆盖。**
+> 表的更新按需手工做：新表**追加**编号（绝不插中间，会让 `\ref{tab:tNN}` 全体错位）、
+> 改名做文本替换。`overleaf_sync.sh` 的 `restructured` 分支已**整支移除**，别再加回来。
+>
+> ### 📍 当前阶段：增料收口 → **写散文**
+>
+> - **已完成**：43 张表全部就位（正文 7 + 附录 36）；证据层「已有产物没用上」的五处已补完
+>   （t14 的另一半 / pb02 补 WA 两行 / 可路由集大小 / t07+t08+t31 / 新表 t43 轨迹分歧）
+> - **编译状态**：39 页 / **正文 7 页（上限 8）** / 0 undefined ref
+> - **下一步 = 填 `\todo`**，不是加内容。正文只剩 1 页余量，所以是「填空 + 砍」
+>
+> ### 🔴 按杠杆排序的下一步
+>
+> 1. **Abstract + Intro**（`sections/0_abstract.tex`、`1_intro.tex`）—— 现在基本是空的，
+>    而这是审稿人最先读的。storyline 已定，照四拍写即可
+> 2. **§gap 的收尾段** —— 那是论文的 contribution（「留给社区的开放问题」），现在是 `\todo`
+> 3. **标题** —— `main_restructured.tex` 注释里有三个候选，未选
+> 4. **多重比较声明的 TBD** —— 「哪些表算确证」是 framing 决定，只有 2×2 那组被校正
+> 5. **Figure 1 重做** —— 它仍写着 **"phantom routing space"**（已废弃的 frame）和旧模式名，
+>    而图注用的是新名，**图与图注互相矛盾**。位图，必须重画
+>
+> ### 🟡 三个悬而未决的判断题（需要 user × 学长对齐）
+>
+> - **t41 进不进正文**：user 说要，学长瘦身时留在附录（正文只 `\ref`）
+> - **机制层用不用**：advisor 05-14 搁置、08-03 解冻，学长可能不知道已解冻 →
+>   `_status/tasks/task_mechanism_reaggregation.md`
+> - **泄漏裁定的最终措辞**：主分析保留、敏感性分析承载（t28），理由是检出判据是**下界**
+>
+> ### 📖 新 session 要读什么（按顺序，读完就能接着写）
+>
+> | # | 读什么 | 为什么 |
+> |---|---|---|
+> | 1 | `~/overleaf-aaai27/README_restructure.md` | **学长写的结构说明**，包含他标记的待决项与 cut 候选 |
+> | 2 | `~/overleaf-aaai27/sections/*.tex` | **论文当前全文**（真源，不在本仓库）。`\todo` 就是待办清单 |
+> | 3 | 笔记 **§433** | 今天的 chronicle：协作事故、编号陷阱、grep 假阴性、五处增料 |
+> | 4 | `docs/analysis/cross_sites/EVIDENCE_LAYER_SUMMARY.md` §4（三类 gap）+ §5（九条 claim） | 证据层能支持什么、不能支持什么 |
+> | 5 | `docs/checkpoints/paper_drafts/realm/section_evidence.md` | 43 张表的**生成源**（改表改这里，然后手工同步到 Overleaf） |
+> | 6 | `_status/tasks/task_mechanism_reaggregation.md` | 机制层三个发现（含 t39 的层剖面论证已不成立）|
+>
+> **不要读**：`deliverables/`（那套平行源已废）、`main_realm.tex` / `realm_*.tex`（旧稿）。
+>
+> ### 🛠 常用命令
+>
+> ```bash
+> # 改表：先改生成源，再手工同步到 Overleaf（不要整体重生成覆盖）
+> .venv/bin/python3 scripts/analysis/export_ablation_tables.py \
+>   --evidence docs/checkpoints/paper_drafts/realm/section_evidence.md \
+>   --guide    docs/checkpoints/paper_drafts/realm/section_evidence_guide.md
+>
+> # 动 Overleaf 前必查
+> cd ~/overleaf-aaai27 && git fetch -q origin && git log --oneline HEAD..origin/main
+>
+> # 编译 + 逐页看版式（编译成功不检查版式，今天四个问题都是这样抓到的）
+> cd ~/overleaf-aaai27 && latexmk -pdf -quiet -interaction=nonstopmode main_restructured.tex
+> pdftoppm -r 110 -png main_restructured.pdf /tmp/pg && ls /tmp/pg*.png
+> ```
+
+
 > ## 🟥 2026-08-04 凌晨 · 敌意审计: 证据层「覆盖完结, 推断刚补第一层」（**最新**）
 >
 > chronicle → **笔记 §428**（§427 是前一轮覆盖审计）。commits `70147d8` + `4213cac`。**GitHub 未推。**
