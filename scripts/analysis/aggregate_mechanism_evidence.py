@@ -155,6 +155,16 @@ def _arm_curve(path: Path) -> dict | None:
         "peak_displacement_layer": d_layer,
         "peak_convergence": c_peak,
         "peak_convergence_layer": c_layer,
+        # An argmax is only meaningful if the curve has a peak. On several arms it does
+        # not: `p2_psom_ptext_cls` reaches its maximum convergence at SIX layers exactly
+        # (L00, L24, L26, L27, L29, L30) over a total curve range of 0.014, so "the peak
+        # layer" is whichever tied index the implementation happens to return. The layer is
+        # what §5's content-specific reading is argued from, so these two fields ship
+        # beside it and any statement about a peak layer must be read against them.
+        "peak_convergence_n_tied": sum(1 for v in conv if abs(v - c_peak) < 1e-12) if conv else None,
+        "convergence_spread": (max(conv) - min(conv)) if conv else None,
+        "peak_displacement_n_tied": sum(1 for v in disp if abs(v - d_peak) < 1e-12) if disp else None,
+        "displacement_spread": (max(disp) - min(disp)) if disp else None,
         "convergence_at_L0": conv[0] if conv else None,
         # L23 is where Method 4.2's cosine gap peaks; the layer disjoint is the claim.
         "displacement_at_L23": disp[23] if len(disp) > 23 else None,
@@ -163,6 +173,7 @@ def _arm_curve(path: Path) -> dict | None:
 
 
 def patching() -> dict:
+    """The 2026-05 Myriad sweep. Kept unchanged: two tables cite these numbers."""
     out = {}
     for short, site in SITES.items():
         arms = {}
@@ -176,6 +187,97 @@ def patching() -> dict:
     return out
 
 
+# --- the 2026-08 DGX sweep -----------------------------------------------------------
+# 24 cells finished on DGX 2026-07-30 → 08-03 (`logs/mechanistic_canonical/`, marker
+# "24/24, 18 ran, 6 skipped"). Nothing read them: this product was regenerated at
+# 2026-08-04 01:25, *after* the sweep ended, and still pointed only at the May Myriad
+# directories. A finished run that no product reads is indistinguishable, on disk, from a
+# run that was never launched — the same failure mode this file was written to prevent,
+# one directory over.
+CANON = MECH / "canonical"
+
+# Which cells re-run a May arm under an identical config. Verified field-by-field before
+# pairing (model, n_layers, n_tasks, step, max_new_tokens, source/target mode, tier): these
+# are the SAME experiment executed twice, months apart, on different hardware — so their
+# disagreement is run-to-run variance of the mechanism layer, measured the same way this
+# paper measures it everywhere else.
+REPLICATE_OF = {
+    "p2_psom_ptext_cls": ("classifieds", "real"),
+    "p2_psom_ptext_red": ("reddit", "real"),
+    "p2_taskshuf_cls": ("classifieds", "task_shuffled"),
+    "p2_taskshuf_red": ("reddit", "task_shuffled"),
+    "p5_psom_ptext_rand_cls": ("classifieds", "random_injection"),
+    "p5_psom_ptext_rand_red": ("reddit", "random_injection"),
+}
+
+# Which axis each cell's (source → target) contrast probes. Named from the config rather
+# than from the directory name, so a renamed cell cannot silently change axis.
+def _axis_of(cfg: dict) -> str:
+    s, t = cfg.get("source_mode"), cfg.get("target_mode")
+    if cfg.get("random_inject"):
+        return "control:random_injection"
+    pair = frozenset({s, t})
+    if pair == frozenset({"som", "phantom_som"}):
+        return "image"                      # only the screenshot differs
+    if pair == frozenset({"som", "dom"}):
+        return "image+text-format+prompt"   # compound
+    if pair == frozenset({"phantom_som", "phantom_text"}):
+        return "prompt-style"
+    if pair == frozenset({"phantom_som", "phantom_prompt"}):
+        return "text-format"
+    if pair == frozenset({"som", "phantom_text"}) or pair == frozenset({"som", "phantom_prompt"}):
+        return "image+one-text-axis"
+    return f"{s}->{t}"
+
+
+def patching_canonical() -> dict:
+    """Every cell of the 2026-08 sweep, tagged by axis and by what it replicates."""
+    out = {}
+    if not CANON.is_dir():
+        return out
+    for d in sorted(CANON.iterdir()):
+        f = d / "patching_continuation_results.json"
+        if not f.is_file():
+            continue
+        got = _arm_curve(f)
+        if not got:
+            continue
+        cfg = json.loads(f.read_text())["config"]
+        got["axis"] = _axis_of(cfg)
+        got["reverse"] = bool(cfg.get("reverse"))
+        got["n_tasks"] = cfg.get("n_tasks")
+        got["replicates"] = REPLICATE_OF.get(d.name)
+        out[d.name] = got
+    return out
+
+
+def replication(old: dict, new: dict) -> list:
+    """Same config, two runs — what moved.
+
+    The peak LAYER is reported next to the peak VALUE because §5's content-specific claim
+    rests on the layer, not the magnitude: the caption of the patching table argues that the
+    real arm peaks mid-stack while the shuffled arm collapses to the boundary. If the layer
+    is not stable across a re-run, that argument cannot carry the claim on its own.
+    """
+    rows = []
+    for cell, (site, arm) in REPLICATE_OF.items():
+        a = (old.get(site) or {}).get(arm)
+        b = new.get(cell)
+        if not a or not b:
+            continue
+        rows.append({
+            "site": site, "arm": arm, "cell_2026_08": cell,
+            "peak_convergence": [a["peak_convergence"], b["peak_convergence"]],
+            "peak_convergence_layer": [a["peak_convergence_layer"], b["peak_convergence_layer"]],
+            "peak_displacement": [a["peak_displacement"], b["peak_displacement"]],
+            "peak_displacement_layer": [a["peak_displacement_layer"], b["peak_displacement_layer"]],
+            "conv_layer_moved": a["peak_convergence_layer"] != b["peak_convergence_layer"],
+            "n_tied": [a.get("peak_convergence_n_tied"), b.get("peak_convergence_n_tied")],
+            "spread": [a.get("convergence_spread"), b.get("convergence_spread")],
+        })
+    return rows
+
+
 def main() -> None:
     payload = {
         "schema": "2026-08-03-mechanism-evidence-v1",
@@ -187,7 +289,10 @@ def main() -> None:
         ),
         "readability": readability(),
         "patching": patching(),
+        "patching_canonical_2026_08": patching_canonical(),
     }
+    payload["replication_2026_05_vs_2026_08"] = replication(
+        payload["patching"], payload["patching_canonical_2026_08"])
     OUT_JSON.write_text(json.dumps(payload, indent=1))
 
     lines = ["# Mechanism evidence (frozen §5)", "", payload["note"], "",
@@ -219,6 +324,49 @@ def main() -> None:
                 f"L{a['peak_displacement_layer']:02d} | {a['peak_convergence']:.3f} | "
                 f"L{a['peak_convergence_layer']:02d} | "
                 + (f"{l23:.3f} |" if isinstance(l23, (int, float)) else "— |"))
+    # --- 2026-08 sweep, grouped by the axis each contrast probes
+    canon = payload["patching_canonical_2026_08"]
+    if canon:
+        lines += ["", "## The 2026-08 sweep (24 cells, DGX) — grouped by axis", "",
+                  "Finished 2026-08-03 and read by nothing until 2026-08-04. Random injection "
+                  "is the destruction control: it maximises displacement while converging on "
+                  "nothing, which is why displacement alone proves no steering.", "",
+                  "| axis | cell | src to tgt | n | peak disp | L | peak conv | L |",
+                  "|---|---|---|---|---|---|---|---|"]
+        for cell, a in sorted(canon.items(), key=lambda kv: (kv[1]["axis"], kv[0])):
+            c = a["config"]
+            arrow = f"{c['source_mode']} to {c['target_mode']}" + (" (rev)" if a["reverse"] else "")
+            lines.append(
+                f"| {a['axis']} | `{cell}` | {arrow} | {a['n_tasks']} | "
+                f"{a['peak_displacement']:.3f} | L{a['peak_displacement_layer']:02d} | "
+                f"{a['peak_convergence']:.3f} | L{a['peak_convergence_layer']:02d} |")
+
+    # --- same config, run twice
+    rep = payload.get("replication_2026_05_vs_2026_08") or []
+    if rep:
+        moved = sum(1 for r in rep if r["conv_layer_moved"])
+        lines += ["", "## Same configuration, run twice (2026-05 Myriad vs 2026-08 DGX)", "",
+                  f"Six arms re-ran under a field-identical config. **The convergence peak "
+                  f"layer moved in {moved} of {len(rep)}.** This matters more than the value "
+                  f"movement: the content-specific reading of the patching result is argued "
+                  f"from the peak LAYER (real mid-stack, shuffled at the boundary), so a peak "
+                  f"layer that is not reproducible cannot carry that argument by itself. The "
+                  f"same rerun discipline this paper applies to success rates applies here.",
+                  "",
+                  "| site | arm | peak conv 05 to 08 | conv layer 05 to 08 | moved? | tied layers 05/08 | curve range 05/08 |",
+                  "|---|---|---|---|---|---|---|"]
+        for r in rep:
+            c0, c1 = r["peak_convergence"]
+            l0, l1 = r["peak_convergence_layer"]
+            t0, t1 = r.get("n_tied", [None, None])
+            sp0, sp1 = r.get("spread", [None, None])
+            tie = (f"{t0}/{t1}" if t0 is not None else "—")
+            spr = (f"{sp0:.3f}/{sp1:.3f}" if isinstance(sp0, float) else "—")
+            lines.append(
+                f"| {r['site']} | {r['arm']} | {c0:.3f} to {c1:.3f} | "
+                f"L{l0:02d} to L{l1:02d} | {'**yes**' if r['conv_layer_moved'] else 'no'} | "
+                f"{tie} | {spr} |")
+
     OUT_MD.write_text("\n".join(lines) + "\n")
     print(f"[json] {OUT_JSON}")
     print(f"[md]   {OUT_MD}")
