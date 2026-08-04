@@ -23,7 +23,50 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟩 2026-08-03 深夜 · 证据层**覆盖**审计 + 机制解冻（**最新，先读这块**）
+> ## 🟩 2026-08-04 凌晨 · **VWA shopping B0 chain 已跑起来** + B-1955（**最新，先读这块**）
+>
+> chronicle → **笔记 §429**。commits `03d41da` `97af949` `e982baf` `6c75452` `03533e8`。**GitHub 未推**（需你确认）。
+>
+> ### 🟢 fire 状态（拉实时，别照抄这里）
+>
+> ```bash
+> ssh condense-a100 'cd ~/workspace/p79 && tail -3 logs/queue_phase1_shop.latest.log; \
+>   ps -eo etime,args | grep "[r]un_experiment\.py" | cut -c1-90'
+> ```
+>
+> 写这段时: `[1/7] B0 dom shopping` 运行中，`run_id=B0_dom_shopping_20260804_003607_264370398_3845634_R3561`，
+> 首个 episode 01:13 落地。**WA chain 会自动接续**（crontab `*/10` 的 `_cron_wa_shop_follow.sh`，
+> 已 arm 到 `pid=3845585`；VWA `rc=0` + storefront 200 两道 gate 都在）。
+>
+> ### 🔴 B-1955 — 三次调 timeout 全在补一个不存在的「慢」
+>
+> `magento indexer:status` 输出是**表格**（无冒号），旧判据 `awk -F:` 匹配 **0 行** → 完成条件永远为假 →
+> 每次 reset **空转完整 4200s**。这是 B-1931/1953/1954 三次加 timeout 的共同病根 ——
+> reindex 其实 40 分钟就完成了，脚本看不出来。
+> `34min(真实 reset) + 70min(空转) = 104min > 100min 外层` ⇒ **必然 SIGTERM**，不是「慢一点」。
+> 已修（主判据改查 `indexer_state` 表）并**实测生效**：`all Ready after 0s / 1 polls`。省 `14 × 70min ≈ 16.3h`。
+>
+> ⚠️ **教训（比 bug 值钱）**：用坏掉的仪器测量，测出的是**仪器的故障**，不是被测对象的属性。
+> 之所以这次暴露，是绕开脚本改查数据库这条**独立观测通道**。同一个数我低估了三次
+> （30min → 必然失败 → 完整 70min），每次都把「浪费」想成「正确行为之上多出的一段」，
+> 而实际是**正确行为一次都没发生过**。
+>
+> ### 🟡 醒来可立刻做
+>
+> 1. **五个 commit 未推** —— `git push` 需你确认
+> 2. **孤儿清理（两处，都不属当前 chain，我没动）**：watchdog `pid 3760673` 监控 `B3_som_classifieds` 已空转 6h+ 而 runner 数为 0；`.in_progress` marker 一个，属 `B1_phantom_som_wa_reddit_20260727` task 595
+> 3. **shopping reset 替代方案**：`docs/reference/shopping_reset_state_surface.md` 已给静态两端（评测可见 7 类 / 外键闭包 66 张，且**删除型 vs 恢复型**难度差一个量级）。穷举实证在采集中（crontab `*/10` → `logs/magento_table_probe.tsv`），分析用 `scripts/maintenance/analyze_magento_state_surface.py probe <tsv> --since <runner启动时刻>`
+> 4. **更该做的不是「只回滚表」而是「预热镜像」**：容器 `Mounts: []`，`docker commit` 一个 reindex 完成的容器即可跳过重算，**保留完整重建语义 ⇒ estimand 零风险**，代价 +8.35G。**只能在 fire 之间做**（commit 会 pause 容器）
+>
+> ### 💾 磁盘（已处理，但记住结构）
+>
+> **两块盘**：`vda1` 485G（系统 + containerd 镜像 **388G**）/ `sda`→`/mnt/scratch` 503G（**results 在这**，符号链接）。
+> fire 数据**不写 vda1**。已把 `Qwen3-VL-4B`+`gemma-3-4b-it` 迁到 scratch symlink 回来，vda1 **92% → 88%**，
+> 距 ES flood_stage(95%) 余量 15G → **34G**。`blip2-flan-t5-xl`(15G) **故意留着** —— VWA `page_image_query` eval 要用。
+>
+> ---
+>
+> ## 🟩 2026-08-03 深夜 · 证据层**覆盖**审计 + 机制解冻（上一轮）
 >
 > chronicle → **笔记 §427**。commits `6730148`(B-1945) + `27f07f2`(覆盖审计) + 收尾。**GitHub 未推**（需你确认）。
 > **Overleaf 已推** —— `overleaf_sync.sh realm`，19 页 / 0 undefined citation / 0 TODO。
