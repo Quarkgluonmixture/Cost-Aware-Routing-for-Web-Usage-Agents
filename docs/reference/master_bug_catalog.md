@@ -11003,9 +11003,27 @@ B-1954 那句「实测 3769s 仍未完成」的观测, 读的正是这个瞎了�
 > 都在给一个不存在的「慢」补时间。这次之所以暴露, 是因为绕开脚本、改用 `indexer_state` 表
 > 这条**独立观测通道** —— 单一通道的读数无法自证, 交叉通道才能。
 
-**影响**: 每个 condition 白等 `4200s − 实际reindex(~40min) ≈ 30 分钟`。VWA 7 + WA 7 =
-**约 7 小时纯空转**; 且假警报污染未来诊断 (会让人以为 reindex 真没完成)。
-**estimand 无影响** —— reindex 早已完成, 早退出与晚退出拿到的容器状态完全一致。
+**影响 (初判低估, 2026-08-04 00:28 修正)**: 起初判断是「白等 ~30 分钟 × 14 condition ≈ 7 小时
+空转, estimand 无影响」。**实际后果是 reset 必然被外层 timeout 杀死**, 因为
+`indexer:reindex` (280 行) 是**同步**的 —— `docker exec` 要等它跑完才返回, 所以轮询的
+`poll_deadline = now + 4200s` 是从 **reindex 结束**那一刻起算的, 不是从 reset 开始:
+
+```
+23:12:02  容器创建
+23:17:57  indexer:reindex 开始 (同步执行)
+23:57     reindex 完成 (11/11 valid) ← 轮询此刻才开始计时
+01:07     轮询内层 deadline = 23:57 + 4200s
+00:52     外层 timeout    = 23:12 + 6000s   ← **先到 15 分钟**
+```
+
+⇒ SIGTERM 打在 reset 头上, chain abort。**内层与外层不是独立的两个数**: 内层从
+reindex 之后起算, 外层从 reset 开头起算, 两者之间隔着一整个 reindex。B-1954 说
+「外层必须 ≥ 内层 + 其余步骤」时, 漏掉的正是这个偏移。判据修好后
+`重建1min + mysqld1min + base_url1min + flush1min + reindex40min + 轮询秒退 ≈ 45min`,
+**外层 6000s 无需再调** —— 病根从来不在那个数字上。
+
+假警报还会污染未来诊断 (让人以为 reindex 真没完成)。estimand 本身无影响 —— reindex
+早已完成, 早退出与晚退出拿到的容器状态完全一致。
 
 **修复** (`_wait_magento_reindex`):
 1. **主判据改 SQL**: `SELECT COUNT(*), SUM(status<>'valid') FROM indexer_state` ——
