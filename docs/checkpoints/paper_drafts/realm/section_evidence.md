@@ -11,7 +11,7 @@
 > No family-wise statement covers the set as a whole, and none is claimed.
 
 
-<!-- GENERATED 2026-08-04T12:45:54+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-08-04T13:28:32+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 
@@ -477,23 +477,6 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 <!-- END table:exante -->
 
-<!-- BEGIN table:ceiling -->
-
-| cell | n | best single mode | ceiling: any mode solves | headroom | same tasks, lower cost | +1 arm | rerun once |
-|---|---|---|---|---|---|---|---|
-| WA·B0 | 104 | DOM+somtext 35.58% | **51.92%** | +16.35pp | **-10.7%** | +5.77 | 2.00-4.00 |
-| cls·B0 | 224 | SoM 27.23% | **43.30%** | +16.07pp | **-12.8%** | +7.14 | 4.91-7.59 |
-| WA·B1 | 104 | DOM 16.35% | **30.77%** | +14.42pp | **-26.8%** | +4.81 | 2.00-4.00 |
-| red·B0 | 203 | SoM 14.78% | **26.11%** | +11.33pp | **-9.5%** | +4.93 | -- |
-| cls·B1 | 224 | SoM 14.29% | **24.55%** | +10.27pp | **-19.4%** | +4.91 | -- |
-| red·B1 | 203 | SoM 6.90% | **11.82%** | +4.93pp | **-30.6%** | +1.97 | -- |
-| cls·B2 | 224 | SoM 2.23% | **7.14%** | +4.91pp | **-21.3%** | +2.23 | -- |
-| red·B2 | 203 | DOM 2.46% | **5.91%** | +3.45pp | **-26.7%** | +1.97 | -- |
-
-*Table 18: What a perfect per-task choice could buy. **Two ceilings, and only one of them survives its own control.** *Ceiling: any mode solves it* is what a perfect per-task choice could reach; it runs 5.9-51.9% against a best single mode of 2.2-35.6%. **Caution:** **That column is a six-arm union against a one-arm baseline.** The arm-matched comparison is the last two columns: adding the single best distinct arm buys +1.97 to +7.14pp, and rerunning an arm already in hand buys a draw in the same range wherever a replicate exists -- so the headroom cannot be attributed to representation diversity rather than to resampling. The union of *five* reruns has never been measured, so the split at higher arm counts is unknown, not estimated. *Same tasks, lower cost* keeps the best mode everywhere and sends only the tasks no mode solves to the cheapest one: success is unchanged **by construction** and cost falls 9.5-30.6% in **8 of 8** cells. That ceiling is immune to the arm-count objection because it adds no arms. Why both are hard to reach: no mode solves 48.1-94.1% of tasks, and the set where a per-task choice even exists is 1.5-34.6% of the cell. **Leaked-success policy:** 6 scored successes credited without the episode ever visiting the forum the evaluator reads are set to 0 with the denominator unchanged; `leak_kept` figures are retained in the product for comparison. Source: `routing_ceiling.json`.*
-
-<!-- END table:ceiling -->
-
 <!-- BEGIN table:floor -->
 
 | cell | best single | +1 distinct arm | +1 rerun (measured floor) | verdict |
@@ -507,7 +490,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B0 | DOM+somtext  at 35.58 | +5.77 (DOM) | — | no floor on this cell |
 | WA·B1 | DOM  at 16.35 | +4.81 (DOM+somtext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **inside the rerun band** |
 
-*Table 19: New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are directly comparable; only the *source* of the extra arm differs. **The band is 3 rerun pairs on one cell** (`B0 × classifieds`, n=224), one each for **DOM, SoM, Vision** — so the rows without a band have no comparator at all, and the band itself is 3 draws rather than a bound. Since the SoM replicate landed 2026-08-03 the band is **no longer extrapolated onto an unreplicated arm**: both the fused mode this table's best-single column keeps selecting and the arm the comparison adds now carry their own measured floor, and adding the third pair left the band unmoved. Source: `noise_floor_inventory.json`.*
+*Table 18: New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are directly comparable; only the *source* of the extra arm differs. **The band is 3 rerun pairs on one cell** (`B0 × classifieds`, n=224), one each for **DOM, SoM, Vision** — so the rows without a band have no comparator at all, and the band itself is 3 draws rather than a bound. Since the SoM replicate landed 2026-08-03 the band is **no longer extrapolated onto an unreplicated arm**: both the fused mode this table's best-single column keeps selecting and the arm the comparison adds now carry their own measured floor, and adding the third pair left the band unmoved. Source: `noise_floor_inventory.json`.*
 
 <!-- END table:floor -->
 
@@ -552,7 +535,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | red·B2 | rule: flag→SoM else DOM+somtext | 1.48 | 0.09568 | 660.7s | no |
 | red·B2 | always-SoM | 0.99 | 0.11160 | 623.0s | no |
 
-*Table 20: Routing policies on the 3-axis frontier. Is routing worth it? `rule` policies send the ex-ante-flagged tasks to one arm and the rest to another; the partition is a regex over the task intent, so nothing is learned and there is no in-sample optimism. 'On frontier' means **nothing dominates it**, not that it is preferable — on `cls·B0` all three rule policies sit between always-SoM and always-Vision, worse on every axis than one or the other. Cost/latency are per-attempt cell means, **within-cell comparable only**. Source: `rule_routing_pareto.json`.*
+*Table 19: Routing policies on the 3-axis frontier. Is routing worth it? `rule` policies send the ex-ante-flagged tasks to one arm and the rest to another; the partition is a regex over the task intent, so nothing is learned and there is no in-sample optimism. 'On frontier' means **nothing dominates it**, not that it is preferable — on `cls·B0` all three rule policies sit between always-SoM and always-Vision, worse on every axis than one or the other. Cost/latency are per-attempt cell means, **within-cell comparable only**. Source: `rule_routing_pareto.json`.*
 
 <!-- END table:routing -->
 
@@ -569,7 +552,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B0 | 104 | 19.23 | 22.12 | 1.054× | 29.81 | yes | 0 / 0 | 0 |
 | WA·B1 | 104 | 9.62 | 13.46 | 1.778× | 16.35 | yes | 0 / 3 | 1 |
 
-*Table 21: Confidence-triggered cascade. Confidence-triggered cascade, vision → som. The escalation decision sees only the cheap run's own episode — no outcome, no rich-run information. **In 0 of the 6 comparable cells does any operating point beat always-rich on success rate**; the cells marked *rich is worse* are excluded because the cascade's premise fails there, and that exclusion rule (`cheap_sr >= rich_sr`) is **outcome-dependent**. **Caution:** **The two counts are split for a reason.** A point also 'wins' by matching always-rich's SR at lower cost, and every such point here is a **tie artefact**: on `WA·B1` all of them sit at exactly the rich arm's SR while 44-60 of 104 episodes are tied at the cutoff, so the ranking falls through to task id and the reachable SR spans 8.65-14.42. Counting the two together is what let this table print a WA win for months while the prose said the WA exception was withdrawn — the rows disagreed with the sentence and nobody could see it, because the WA rows were dropped before render until 2026-08-03. **Caution:** **Every number is an offline splice**: an escalated task takes its outcome from a standalone rich run, whereas a real cascade would start the rich episode after the cheap one had already acted on a stateful site. That sequential outcome is unobserved in this project. Source: `confidence_cascade_with_wa.json`.*
+*Table 20: Confidence-triggered cascade. Confidence-triggered cascade, vision → som. The escalation decision sees only the cheap run's own episode — no outcome, no rich-run information. **In 0 of the 6 comparable cells does any operating point beat always-rich on success rate**; the cells marked *rich is worse* are excluded because the cascade's premise fails there, and that exclusion rule (`cheap_sr >= rich_sr`) is **outcome-dependent**. **Caution:** **The two counts are split for a reason.** A point also 'wins' by matching always-rich's SR at lower cost, and every such point here is a **tie artefact**: on `WA·B1` all of them sit at exactly the rich arm's SR while 44-60 of 104 episodes are tied at the cutoff, so the ranking falls through to task id and the reachable SR spans 8.65-14.42. Counting the two together is what let this table print a WA win for months while the prose said the WA exception was withdrawn — the rows disagreed with the sentence and nobody could see it, because the WA rows were dropped before render until 2026-08-03. **Caution:** **Every number is an offline splice**: an escalated task takes its outcome from a standalone rich run, whereas a real cascade would start the rich episode after the cheap one had already acted on a stateful site. That sequential outcome is unobserved in this project. Source: `confidence_cascade_with_wa.json`.*
 
 <!-- END table:cascade -->
 
@@ -586,7 +569,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B0 | 10 | +3.57 / +3.26 / +3.95 | +1.16 / +1.82 / +1.54 | 24/30 | 36% / 36% / 45% |
 | WA·B1 | 9 | +2.51 / +2.11 / +2.70 | -0.37 / -0.78 / -0.18 | 12/27 | 43% / 43% / 57% |
 
-*Table 22: Cascade signal against a random-escalation control. Is the cascade's signal doing anything? Table 21 answers a deployment question — no operating point beats always-rich on success rate — which on its own cannot distinguish a signal that carries nothing from one that carries something insufficient. This is the comparator that separates them: the same escalation budget spent at random. **Caution:** **Read the median column, not the best column.** The best margin is positive in 24 of 24 (cell × fraction) combinations, but each of those is a **maximum over that cell's 8–10 candidate signals against a constant** — the random comparator does not depend on which signal is used — so positivity there is partly arithmetic. Over **all 222 (signal × cell × fraction) points, 64.4% are positive with a median of +0.327pp**: that is the unselected statement, and it is the one to quote. On cls·B2, red·B0, WA·B1 the median is negative at one or more fractions while the best is positive — there the apparent win is entirely selection. The right-hand column is how much of the gap to a per-task oracle the best signal recovers, and inherits the same caveat. The offline-splice caveat on Table 21 applies unchanged. Source: `confidence_cascade_with_wa.json`.*
+*Table 21: Cascade signal against a random-escalation control. Is the cascade's signal doing anything? Table 20 answers a deployment question — no operating point beats always-rich on success rate — which on its own cannot distinguish a signal that carries nothing from one that carries something insufficient. This is the comparator that separates them: the same escalation budget spent at random. **Caution:** **Read the median column, not the best column.** The best margin is positive in 24 of 24 (cell × fraction) combinations, but each of those is a **maximum over that cell's 8–10 candidate signals against a constant** — the random comparator does not depend on which signal is used — so positivity there is partly arithmetic. Over **all 222 (signal × cell × fraction) points, 64.4% are positive with a median of +0.327pp**: that is the unselected statement, and it is the one to quote. On cls·B2, red·B0, WA·B1 the median is negative at one or more fractions while the best is positive — there the apparent win is entirely selection. The right-hand column is how much of the gap to a per-task oracle the best signal recovers, and inherits the same caveat. The offline-splice caveat on Table 20 applies unchanged. Source: `confidence_cascade_with_wa.json`.*
 
 <!-- END table:cascade-control -->
 
@@ -601,7 +584,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | red·B1 | 203 | 24 | 0.864 | 0.863 | -0.002 | 0.620 |
 | red·B2 | 203 | 15 | 0.615 | 0.655 | +0.040 | 0.718 |
 
-*Table 23: Triage learnability and the visual-difficulty feature. Can the triage label be predicted, and does the benchmark's own visual-difficulty annotation help? Task-held-out 5-fold CV, L2 logistic regression, seed 42. Mean ΔAUROC = **+0.0024** over 6 cells, improving 1 — inside fold-split noise. `solvable` is the positive count: the label exists for every task, unlike the which-mode label. **Caution:** **Six cells, not eight, and the reason is the finding.** `visual_difficulty` is a VisualWebArena task-config annotation; WebArena's 106 reddit configs carry **none of** `visual_difficulty`, `reasoning_difficulty`, `overall_difficulty` or `image` — the field simply is not there, so the contrast cannot be computed rather than computing to zero. That absence is what makes WA the clean test elsewhere: where a router can read the benchmark's own difficulty annotation it looks learnable, and WA is the setting where it cannot. Source: `visual_difficulty_router.json`.*
+*Table 22: Triage learnability and the visual-difficulty feature. Can the triage label be predicted, and does the benchmark's own visual-difficulty annotation help? Task-held-out 5-fold CV, L2 logistic regression, seed 42. Mean ΔAUROC = **+0.0024** over 6 cells, improving 1 — inside fold-split noise. `solvable` is the positive count: the label exists for every task, unlike the which-mode label. **Caution:** **Six cells, not eight, and the reason is the finding.** `visual_difficulty` is a VisualWebArena task-config annotation; WebArena's 106 reddit configs carry **none of** `visual_difficulty`, `reasoning_difficulty`, `overall_difficulty` or `image` — the field simply is not there, so the contrast cannot be computed rather than computing to zero. That absence is what makes WA the clean test elsewhere: where a router can read the benchmark's own difficulty annotation it looks learnable, and WA is the setting where it cannot. Source: `visual_difficulty_router.json`.*
 
 <!-- END table:triage -->
 
@@ -616,30 +599,9 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | red·B1 | 79 | 124 | SoM | 13.92 | SoM | 3.23 |
 | red·B2 | 79 | 124 | DOM | 8.86 | Vision | 3.23 |
 
-*Table 24: The intuitive routing feature. The intuitive routing feature. A task shipping a reference image ought to route to a mode that can see images — the table shows which mode is actually best on each side of that split. **Caution:** Reference images are delivered in **every** mode, so this feature does not separate what it appears to. **WebArena cannot arbitrate**: its 106 reddit configs carry no `image` field at all — nor any of the three difficulty annotations — so both of this table's stratifiers are undefined there. Six cells is the whole population for this question, not a coverage gap. Source: `routing_feature_diagnostics.json`.*
+*Table 23: The intuitive routing feature. The intuitive routing feature. A task shipping a reference image ought to route to a mode that can see images — the table shows which mode is actually best on each side of that split. **Caution:** Reference images are delivered in **every** mode, so this feature does not separate what it appears to. **WebArena cannot arbitrate**: its 106 reddit configs carry no `image` field at all — nor any of the three difficulty annotations — so both of this table's stratifiers are undefined there. Six cells is the whole population for this question, not a coverage gap. Source: `routing_feature_diagnostics.json`.*
 
 <!-- END table:feature -->
-
-<!-- BEGIN table:failmode -->
-
-| | rule | how it failed | on disagreement | baseline | enrichment | hits |
-|---|---|---|---|---|---|---|
-| **A. IMAGE channel wins** | | *how the TEXT channel failed* | (101 tasks) | | | |
-| | `P27` | gives up when not found | 3.2% | 1.4% | **2.31x** | 13 |
-| | `P17` | click-back oscillation | 15.1% | 6.7% | **2.25x** | 61 |
-| | `P16` | visual-content task, DOM cannot  | 6.2% | 2.8% | **2.24x** | 25 |
-| | `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSH | 48.5% | 29.3% | **1.65x** | 196 |
-| | | *15 further rules* | | | all <= 1.55x | |
-| **B. TEXT channel wins** | | *how the IMAGE channel failed* | (109 tasks) | | | |
-| | `P49` | SUBMIT_PAGE_ANCHOR_MISCLICK | 3.7% | 1.0% | **3.61x** | 8 |
-| | `P17` | click-back oscillation | 4.6% | 3.9% | **1.17x** | 10 |
-| | `P12` | never paginates | 13.8% | 14.8% | **0.93x** | 30 |
-| | `P31` | budget exhausted, unfinished | 49.5% | 54.2% | **0.91x** | 108 |
-| | | *6 further rules* | | | all <= 0.87x | |
-
-*Table 25: Failure modes are asymmetric across channels. **The two channels do not fail the same way.** On tasks only one channel solved, how did the other fail? Pooled over 8 cells at ruleset v11. Enrichment = hit rate on the disagreement set over that channel's hit rate across all its failures, so about 1x means it failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted, and the largest omitted enrichment is stated per block rather than left to the reader. **Block A has named death causes** (top 2.31x, 404 losing-channel episodes against 5388 of that channel's failures overall). **Block B does not**: its top row rests on 8 hits, exactly the reporting floor, and all 8 of them fall in the 2 WebArena cells, none in the other 6; every other rule in that block sits at or below the everywhere-baseline. On the tasks the text channel uniquely solves, the image channel did not break somewhere nameable -- it did not arrive. **Caution:** TEXT is **four arms** and IMAGE is **two**, so the two blocks' task counts are not comparable to each other; read each block against its own baseline column, never across blocks. **Caution:** a per-rule frequency is a distribution of symptoms, not of causes -- the largest rows in most cells are risk markers, not death causes, and only rules whose docstrings record a causal check are verified as such. Source: `conditional_failure_attribution.json`.*
-
-<!-- END table:failmode -->
 
 <!-- BEGIN table:cond-text -->
 
@@ -654,7 +616,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | `P14` | URL self-loop | 25.7% | 32.5% | **0.79x** | 56 |
 | `P45` | IDENTICAL_FAILED_ACTION_STREAK | 13.3% | 17.1% | **0.78x** | 29 |
 
-*Table 26: Paired failure attribution: text wins. Only the TEXT channel solved it: how the IMAGE channel failed. Pooled over 8 cells at ruleset v11: 109 disagreement tasks, 218 losing-channel failure episodes against 2653 of that channel's failures overall. Enrichment = hit rate on the disagreement set over hit rate across all that channel's failures; approximately 1x means the loser failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted. **Caution:** TEXT is four arms against IMAGE's two, so the two panels' task counts are not comparable to each other. Source: `conditional_failure_attribution.json`.*
+*Table 24: Paired failure attribution: text wins. Only the TEXT channel solved it: how the IMAGE channel failed. Pooled over 8 cells at ruleset v11: 109 disagreement tasks, 218 losing-channel failure episodes against 2653 of that channel's failures overall. Enrichment = hit rate on the disagreement set over hit rate across all that channel's failures; approximately 1x means the loser failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted. **Caution:** TEXT is four arms against IMAGE's two, so the two panels' task counts are not comparable to each other. Source: `conditional_failure_attribution.json`.*
 
 <!-- END table:cond-text -->
 
@@ -671,7 +633,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | `P4` | root-node misfire | 8.7% | 8.6% | **1.01x** | 35 |
 | `P12` | never paginates | 14.4% | 14.6% | **0.99x** | 58 |
 
-*Table 27: Paired failure attribution: image wins. Only the IMAGE channel solved it: how the TEXT channel failed. Pooled over 8 cells at ruleset v11: 101 disagreement tasks, 404 losing-channel failure episodes against 5388 of that channel's failures overall. Enrichment = hit rate on the disagreement set over hit rate across all that channel's failures; approximately 1x means the loser failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted. **Caution:** TEXT is four arms against IMAGE's two, so the two panels' task counts are not comparable to each other. Source: `conditional_failure_attribution.json`.*
+*Table 25: Paired failure attribution: image wins. Only the IMAGE channel solved it: how the TEXT channel failed. Pooled over 8 cells at ruleset v11: 101 disagreement tasks, 404 losing-channel failure episodes against 5388 of that channel's failures overall. Enrichment = hit rate on the disagreement set over hit rate across all that channel's failures; approximately 1x means the loser failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted. **Caution:** TEXT is four arms against IMAGE's two, so the two panels' task counts are not comparable to each other. Source: `conditional_failure_attribution.json`.*
 
 <!-- END table:cond-image -->
 
@@ -686,7 +648,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | page unchanged on over half the steps | 0.331 | 0.431 | **0.77×** |
 | action failure on over half the steps | 0.310 | 0.416 | **0.74×** |
 
-*Table 28: Vocabulary-free probes on the text-wins residual. Is the text-wins residual real, or an artefact of the rule vocabulary? Tables 26–27 count rule hits, and the ruleset was discovered on VisualWebArena — so an absent signature there could be a property of the vocabulary rather than of the world. Each probe here is computed from raw step fields and never from a rule hit, over 142 disagreement episodes against 2304 baseline failures. **The largest enrichment is 1.15×** and 5 of 6 sit *below* 1: on the tasks the text channel uniquely solves, the image channel fails **more blandly** than it fails elsewhere — it did not arrive, rather than breaking somewhere nameable. **Caution:** Six candidates chosen by us, so this cannot show that no mechanism exists; what it closes is the specific objection that the residual is an artefact of a VWA-shaped vocabulary. Source: `conditional_failure_attribution.json`.*
+*Table 26: Vocabulary-free probes on the text-wins residual. Is the text-wins residual real, or an artefact of the rule vocabulary? Tables 24–25 count rule hits, and the ruleset was discovered on VisualWebArena — so an absent signature there could be a property of the vocabulary rather than of the world. Each probe here is computed from raw step fields and never from a rule hit, over 142 disagreement episodes against 2304 baseline failures. **The largest enrichment is 1.15×** and 5 of 6 sit *below* 1: on the tasks the text channel uniquely solves, the image channel fails **more blandly** than it fails elsewhere — it did not arrive, rather than breaking somewhere nameable. **Caution:** Six candidates chosen by us, so this cannot show that no mechanism exists; what it closes is the specific objection that the residual is an artefact of a VWA-shaped vocabulary. Source: `conditional_failure_attribution.json`.*
 
 <!-- END table:cond-probes -->
 
@@ -701,7 +663,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | COMPLEMENT: no mode solved, or all did | 136 | 60.7% | 4 | 2.94% | 8.2% | **1.00x** |
 | whole cell | 224 | 100.0% | 49 | 21.88% | 100.0% | **7.44x** |
 
-*Table 29: Per-task label instability. Per-task label instability on `cls_B0` (n=224): 49 tasks change outcome between two runs of the same condition. The rows a which-mode router could learn from are exactly the contested ones, and they carry almost all of the instability. **Caution:** this is the entire replicate inventory of the project — **one cell, two arms (B0.cls.dom, B0.cls.vision), rerun once** — so every stability figure elsewhere is a lower bound derived from it. The headline enrichment has two defensible definitions and **neither may be quoted alone**: 17.4x defined over all six arms is correct for the claim (a router chooses among six) but the flips are produced by rerunning two of them, so the same arms decide both membership and outcome; rebuilding the difficulty proxy from the other four breaks that circle and gives 3.95x. Source: `label_instability.json`.*
+*Table 27: Per-task label instability. Per-task label instability on `cls_B0` (n=224): 49 tasks change outcome between two runs of the same condition. The rows a which-mode router could learn from are exactly the contested ones, and they carry almost all of the instability. **Caution:** this is the entire replicate inventory of the project — **one cell, two arms (B0.cls.dom, B0.cls.vision), rerun once** — so every stability figure elsewhere is a lower bound derived from it. The headline enrichment has two defensible definitions and **neither may be quoted alone**: 17.4x defined over all six arms is correct for the claim (a router chooses among six) but the flips are produced by rerunning two of them, so the same arms decide both membership and outcome; rebuilding the difficulty proxy from the other four breaks that circle and gives 3.95x. Source: `label_instability.json`.*
 
 <!-- END table:instability -->
 
@@ -716,7 +678,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | red·B2 | SoM − Vision | -0.99 | [-3.45, +1.48] | -0.99 | [-3.45, +1.48] | unchanged |
 | red·B2 | SoM − DOM | -2.96 | [-5.91, -0.49] | -1.48 | [-3.45, +0.49] | **flips** |
 
-*Table 30: Leaked-success sensitivity. Sensitivity to environmentally-credited successes. `require_reset` is a no-op on reddit, so subscriptions accumulate across a run's episodes and a later task can be scored on state an earlier one created. 6 such successes are set to 0 here — the denominator is unchanged, because an attempted-and-unaccomplished task is a 0, not a missing row. 4 of the leaks are on DOM, so removing them **helps** the fused arm: the direction that disfavours this project's own caution. **Caution:** The WA cells are **unaudited** for the same defect. Source: `leakage_sensitivity.json`.*
+*Table 28: Leaked-success sensitivity. Sensitivity to environmentally-credited successes. `require_reset` is a no-op on reddit, so subscriptions accumulate across a run's episodes and a later task can be scored on state an earlier one created. 6 such successes are set to 0 here — the denominator is unchanged, because an attempted-and-unaccomplished task is a 0, not a missing row. 4 of the leaks are on DOM, so removing them **helps** the fused arm: the direction that disfavours this project's own caution. **Caution:** The WA cells are **unaudited** for the same defect. Source: `leakage_sensitivity.json`.*
 
 <!-- END table:leakage -->
 
@@ -733,7 +695,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | B1·WA-red | 278/14695 (1.89%) | 40/624 (6.4%) | 6,809 ms | 6,105 ms | 0.90× |
 | B0·WA-red | 123/11703 (1.05%) | 21/624 (3.4%) | 6,613 ms | 11,405 ms | 1.72× |
 
-*Table 31: Off-site navigation and container latency. Off-site navigation. Postmill is a link aggregator, so an agent opening a trending thread can walk onto the live public internet; classifieds is self-contained. **Caution:** Off-site steps are **faster**, not slower — commercial CDNs beat a Postmill container sharing a host with the agent — so the distortion runs opposite to the intuition. The larger asymmetry is in the last two columns of the on-site medians: reddit's container costs ~1.69× what classifieds' does before any agent behaviour enters, which is why no between-site latency number is quotable bare. Source: `offsite_navigation_audit.json`.*
+*Table 29: Off-site navigation and container latency. Off-site navigation. Postmill is a link aggregator, so an agent opening a trending thread can walk onto the live public internet; classifieds is self-contained. **Caution:** Off-site steps are **faster**, not slower — commercial CDNs beat a Postmill container sharing a host with the agent — so the distortion runs opposite to the intuition. The larger asymmetry is in the last two columns of the on-site medians: reddit's container costs ~1.69× what classifieds' does before any agent behaviour enters, which is why no between-site latency number is quotable bare. Source: `offsite_navigation_audit.json`.*
 
 <!-- END table:offsite -->
 
@@ -806,7 +768,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B1 | n_steps | +0.071 | +0.058 | +0.010 | +0.121 |
 | WA·B1 | action_repeat_frac | -0.034 | +0.218 | +0.029 | +0.168 |
 
-*Table 32: 2x2 axis decomposition. 2×2 axis decomposition. Effect sizes are Cohen's h (binary metrics) or d_z (paired continuous), signed right-minus-left. The compound DOM->SoM-image transition decomposes into a text-payload axis and a prompt-style axis; the image axis is SoM-image->SoM. **Caution:** On mean differences the two decomposition routes agreeing is an **algebraic identity**, so a zero residual is arithmetic and not evidence about an interaction. `B2 × wa_reddit` is absent because B2 never ran WebArena. Source: `axis_effect_size_with_wa.json`.*
+*Table 30: 2x2 axis decomposition. 2×2 axis decomposition. Effect sizes are Cohen's h (binary metrics) or d_z (paired continuous), signed right-minus-left. The compound DOM->SoM-image transition decomposes into a text-payload axis and a prompt-style axis; the image axis is SoM-image->SoM. **Caution:** On mean differences the two decomposition routes agreeing is an **algebraic identity**, so a zero residual is arithmetic and not evidence about an interaction. `B2 × wa_reddit` is absent because B2 never ran WebArena. Source: `axis_effect_size_with_wa.json`.*
 
 <!-- END table:axis -->
 
@@ -823,7 +785,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B0 | 0.2284 | 0.2351 | **0.97** | **no** |
 | WA·B1 | 0.2588 | 0.0869 | **2.98** | yes |
 
-*Table 33: Decision quality versus macro frequency. Does the text axis change per-step decisions more than it changes macro action frequencies? Ratio >1 means yes. Verdict: **generalizes** (site_ok = {'reddit': True, 'classifieds': True, 'wa_reddit': True}). **Caution:** `_site_ok` passes a site if **any** backbone clears 1.0, which is a loose bar — `WA·B0` is 0.97 and the WA site passes on B1's 2.98. Until 2026-08-03 the verdict function named only the two VWA sites literally and did not consult WA at all. Source: `axis1_microbehavior_with_wa.json`.*
+*Table 31: Decision quality versus macro frequency. Does the text axis change per-step decisions more than it changes macro action frequencies? Ratio >1 means yes. Verdict: **generalizes** (site_ok = {'reddit': True, 'classifieds': True, 'wa_reddit': True}). **Caution:** `_site_ok` passes a site if **any** backbone clears 1.0, which is a loose bar — `WA·B0` is 0.97 and the WA site passes on B1's 2.98. Until 2026-08-03 the verdict function named only the two VWA sites literally and did not consult WA at all. Source: `axis1_microbehavior_with_wa.json`.*
 
 <!-- END table:axis1 -->
 
@@ -868,7 +830,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | reddit·B2 | SoM | 203 | 201 | 59 | 29.4% |
 | reddit·B2 | Vision | 203 | 199 | 0 | 0.0% |
 
-*Table 34: Hallucinated element references. Hallucinated element references, ruleset `11-intent-text-fallback` over 36 conditions. An action naming an element id that is not in the observation. **Caution:** `vision` carries no element-id list at all, so this rule is **structurally inapplicable** there rather than measuring zero — the same gate-versus-measurement confusion flagged for P2/P4. Source: `cross_mode_failure_signatures.json`.*
+*Table 32: Hallucinated element references. Hallucinated element references, ruleset `11-intent-text-fallback` over 36 conditions. An action naming an element id that is not in the observation. **Caution:** `vision` carries no element-id list at all, so this rule is **structurally inapplicable** there rather than measuring zero — the same gate-versus-measurement confusion flagged for P2/P4. Source: `cross_mode_failure_signatures.json`.*
 
 <!-- END table:halluc -->
 
@@ -886,7 +848,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | reddit: universe / labelled | 203 / — |
 | wa_reddit: universe / labelled | 104 / — |
 
-*Table 35: Pooled tier router. Pooled same-family × cost-tier router. WebArena (added 2026-08-03) carries neither `reasoning_difficulty` nor a reference image, so those two of the twenty features are zero-filled on its cells and cannot contribute there. That is tolerable in THIS product an Source: `router_pooled_tier_learnability.json`.*
+*Table 33: Pooled tier router. Pooled same-family × cost-tier router. WebArena (added 2026-08-03) carries neither `reasoning_difficulty` nor a reference image, so those two of the twenty features are zero-filled on its cells and cannot contribute there. That is tolerable in THIS product an Source: `router_pooled_tier_learnability.json`.*
 
 <!-- END table:pooled -->
 
@@ -901,7 +863,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | SoM | 0.4071 | 0.4675 | 1870 | 30921 |
 | Vision | 0.5675 | 0.6134 | 1569 | 34151 |
 
-*Table 36: page_changed false positives. `page_changed` false positives. A step can register a page change that is purely cosmetic; correcting for it **raises** every mode's no-change rate. The Micro conclusion is unaffected — Vision remains highest in every cell either way — but a router firing on a 2-step no-change streak would trigger 5321 → 5910 times (+11.1%). Source: `page_change_corrected.json`.*
+*Table 34: page_changed false positives. `page_changed` false positives. A step can register a page change that is purely cosmetic; correcting for it **raises** every mode's no-change rate. The Micro conclusion is unaffected — Vision remains highest in every cell either way — but a router firing on a 2-step no-change streak would trigger 5321 → 5910 times (+11.1%). Source: `page_change_corrected.json`.*
 
 <!-- END table:pagechange -->
 
@@ -910,7 +872,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | quantity | value |
 |---|---|
 
-*Table 37: Evaluator granularity. Evaluator granularity over the paper-grade set. The evaluator emits **two** distinct values. There is no graded quality target to regress on — a property of the benchmark's design, not of this pipeline, and a precondition of every routing negative in this document. Source: `evaluator_score_granularity.json`.*
+*Table 35: Evaluator granularity. Evaluator granularity over the paper-grade set. The evaluator emits **two** distinct values. There is no graded quality target to regress on — a property of the benchmark's design, not of this pipeline, and a precondition of every routing negative in this document. Source: `evaluator_score_granularity.json`.*
 
 <!-- END table:evaluator -->
 
@@ -921,7 +883,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | reddit | 0.10376 | 0.0012670 | **81.9×** |
 | classifieds | 0.06943 | 0.0006480 | **107.1×** |
 
-*Table 38: Two cost estimands. Two cost estimands that are **not the same quantity**. B0 pays a per-token API bill; B1/B2 pay electricity. The ratio is reported to show the scale of the category error, not as a comparison — a paper that divides one by the other is comparing a price to a physical cost. Within a cell, mode-to-mode ratios are safe; across deployment classes only the ordering is. Source: `cost_per_mode.json`.*
+*Table 36: Two cost estimands. Two cost estimands that are **not the same quantity**. B0 pays a per-token API bill; B1/B2 pay electricity. The ratio is reported to show the scale of the category error, not as a comparison — a paper that divides one by the other is comparing a price to a physical cost. Within a cell, mode-to-mode ratios are safe; across deployment classes only the ordering is. Source: `cost_per_mode.json`.*
 
 <!-- END table:costclass -->
 
@@ -933,7 +895,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | B1 | 12 | $0.7690 | $0.7504 | $0.01856 | **2.41%** | 0.16 (red·Vision) |
 | B2 | 12 | $1.0373 | $0.9919 | $0.04541 | **4.38%** | 1.23 (cla·SoM) |
 
-*Table 39: What a cost number contains. Every cost figure elsewhere is `cost/ep`, a single number; the schema splits it additively into what bought a canonical action and what was burned re-parsing the model's output. Summed over each backbone's conditions, protocol repair is 0.53% of B0's bill and 4.38% of B2's — a **8.2× spread across model families for the same task set**, and the worst per-episode parse-error wait counts all sit on B2. This is small in absolute terms and is **not** a correction to any reported cost. It bounds something else: a cross-family cost comparison is not quite comparing like with like, because one family pays a protocol tax the others do not. Source: `results/phantom_paper/cross_site/cross_site_aggregation.csv` (via `aggregate_cross_site.py`).*
+*Table 37: What a cost number contains. Every cost figure elsewhere is `cost/ep`, a single number; the schema splits it additively into what bought a canonical action and what was burned re-parsing the model's output. Summed over each backbone's conditions, protocol repair is 0.53% of B0's bill and 4.38% of B2's — a **8.2× spread across model families for the same task set**, and the worst per-episode parse-error wait counts all sit on B2. This is small in absolute terms and is **not** a correction to any reported cost. It bounds something else: a cross-family cost comparison is not quite comparing like with like, because one family pays a protocol tax the others do not. Source: `results/phantom_paper/cross_site/cross_site_aggregation.csv` (via `aggregate_cross_site.py`).*
 
 <!-- END table:cost-protocol -->
 
@@ -944,7 +906,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | classifieds | 6 | 144 | 15 | **15/15** | 1.000 | 0.0416 (L36) | 0.0047 (L36) | 0.0088 (L36) |
 | reddit | 6 | 144 | 15 | **15/15** | 1.000 | 0.0386 (L04) | 0.0037 (L36) | 0.0069 (L36) |
 
-*Table 40: Linear readability against geometric magnitude. Are the six representations distinguishable inside the model? Leave-one-task-out AUROC over the residual stream separates **every** mode pair perfectly on both sites, at best layer. The gap columns are why that is worth stating rather than assuming: the image axis peaks at 0.042 cosine while the text-format axis peaks at 0.0047 — **a factor of ~9** — so perfect separability coexists with geometric differences in the third decimal place. **Caution:** Scope: one backbone (B1), 144 examples per site, a single decode step; and AUROC 1.000 on 24 tasks × 6 modes is a **ceiling effect**, not a calibrated effect size. This licenses 'the representation is present and readable', nothing about whether it is used. Source: `mechanism_evidence.json` ← `method42_metrics_v2.json`.*
+*Table 38: Linear readability against geometric magnitude. Are the six representations distinguishable inside the model? Leave-one-task-out AUROC over the residual stream separates **every** mode pair perfectly on both sites, at best layer. The gap columns are why that is worth stating rather than assuming: the image axis peaks at 0.042 cosine while the text-format axis peaks at 0.0047 — **a factor of ~9** — so perfect separability coexists with geometric differences in the third decimal place. **Caution:** Scope: one backbone (B1), 144 examples per site, a single decode step; and AUROC 1.000 on 24 tasks × 6 modes is a **ceiling effect**, not a calibrated effect size. This licenses 'the representation is present and readable', nothing about whether it is used. Source: `mechanism_evidence.json` ← `method42_metrics_v2.json`.*
 
 <!-- END table:mech-read -->
 
@@ -959,7 +921,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | reddit | random injection | 24 | 0.992 | 0.100 | L03 |
 | reddit | task-shuffled source | 24 | 0.312 | 0.159 | L20 |
 
-*Table 41: Causal patching against both of its controls. Does the prompt-family signature *do* anything, or is it only visible? Source hidden states from `phantom_som` are patched into a `phantom_text` run, holding image and text-format constant. **Displacement is the wrong column to read**: random injection scores 0.992 there, which is destruction, not steering — only *convergence to the source* speaks to direction. Against random injection the real arm wins clearly (0.188 vs 0.085). **Caution:** **Against the task-shuffled control it barely wins** (0.188 vs 0.157, +20%): a source drawn from an *unrelated task* moves the output almost as far toward itself. What does separate them is **where**: the real arm's convergence peaks mid-stack (L14) and the shuffled arm's collapses to the boundary layer (L00). So the content-specific claim rests on the **layer profile**, not on the magnitude — which is weaker than the write-ups in `docs/checkpoints/mechanism/results/` read, and is the reason this table reports both controls rather than the headline. n = 24 tasks per arm, one backbone, one decode step. Source: `mechanism_evidence.json` ← `patching_continuation_results.json`.*
+*Table 39: Causal patching against both of its controls. Does the prompt-family signature *do* anything, or is it only visible? Source hidden states from `phantom_som` are patched into a `phantom_text` run, holding image and text-format constant. **Displacement is the wrong column to read**: random injection scores 0.992 there, which is destruction, not steering — only *convergence to the source* speaks to direction. Against random injection the real arm wins clearly (0.188 vs 0.085). **Caution:** **Against the task-shuffled control it barely wins** (0.188 vs 0.157, +20%): a source drawn from an *unrelated task* moves the output almost as far toward itself. What does separate them is **where**: the real arm's convergence peaks mid-stack (L14) and the shuffled arm's collapses to the boundary layer (L00). So the content-specific claim rests on the **layer profile**, not on the magnitude — which is weaker than the write-ups in `docs/checkpoints/mechanism/results/` read, and is the reason this table reports both controls rather than the headline. n = 24 tasks per arm, one backbone, one decode step. Source: `mechanism_evidence.json` ← `patching_continuation_results.json`.*
 
 <!-- END table:mech-patch -->
 
@@ -991,6 +953,44 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA | B1 · SoM | 3 | 0 | 0.0% |
 | WA | B1 · Vision | 1 | 0 | 0.0% |
 
-*Table 42: Earned versus leaked successes. Which successes were earned. `#sidebar > section > ul` is read by 9 VWA reddit tasks; `require_reset` is a no-op on reddit so subscriptions accumulate. **LEAKED** = scored success by an episode that never visited the required forum. On VWA: 6 leaked, 68 earned; Table 30 recomputes every contrast with the leaked ones zeroed. **WebArena audited 2026-08-03** (first time): 50 scored episodes over its 5 sidebar tasks, **0 leaked**. **Caution:** That zero is a *lower bound*, not a clearance — the test asks whether the episode reached the forum, and an episode can arrive at a forum an earlier one subscribed to, read `Unsubscribe`, and finish without acting. One such case is hand-confirmed (`B1`/DOM task 597) and scores `earned` here; a text heuristic for the pattern was tried and rejected because model self-report cannot separate deliberating from acting. Source: `reddit_sidebar_leakage_audit_with_wa.json`.*
+*Table 40: Earned versus leaked successes. Which successes were earned. `#sidebar > section > ul` is read by 9 VWA reddit tasks; `require_reset` is a no-op on reddit so subscriptions accumulate. **LEAKED** = scored success by an episode that never visited the required forum. On VWA: 6 leaked, 68 earned; Table 28 recomputes every contrast with the leaked ones zeroed. **WebArena audited 2026-08-03** (first time): 50 scored episodes over its 5 sidebar tasks, **0 leaked**. **Caution:** That zero is a *lower bound*, not a clearance — the test asks whether the episode reached the forum, and an episode can arrive at a forum an earlier one subscribed to, read `Unsubscribe`, and finish without acting. One such case is hand-confirmed (`B1`/DOM task 597) and scores `earned` here; a text heuristic for the pattern was tried and rejected because model self-report cannot separate deliberating from acting. Source: `reddit_sidebar_leakage_audit_with_wa.json`.*
 
 <!-- END table:leakaudit -->
+
+<!-- BEGIN table:failmode -->
+
+| | rule | how it failed | on disagreement | baseline | enrichment | hits |
+|---|---|---|---|---|---|---|
+| **A. IMAGE channel wins** | | *how the TEXT channel failed* | (101 tasks) | | | |
+| | `P27` | gives up when not found | 3.2% | 1.4% | **2.31x** | 13 |
+| | `P17` | click-back oscillation | 15.1% | 6.7% | **2.25x** | 61 |
+| | `P16` | visual-content task, DOM cannot  | 6.2% | 2.8% | **2.24x** | 25 |
+| | `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSH | 48.5% | 29.3% | **1.65x** | 196 |
+| | | *15 further rules* | | | all <= 1.55x | |
+| **B. TEXT channel wins** | | *how the IMAGE channel failed* | (109 tasks) | | | |
+| | `P49` | SUBMIT_PAGE_ANCHOR_MISCLICK | 3.7% | 1.0% | **3.61x** | 8 |
+| | `P17` | click-back oscillation | 4.6% | 3.9% | **1.17x** | 10 |
+| | `P12` | never paginates | 13.8% | 14.8% | **0.93x** | 30 |
+| | `P31` | budget exhausted, unfinished | 49.5% | 54.2% | **0.91x** | 108 |
+| | | *6 further rules* | | | all <= 0.87x | |
+
+*Table 41: Failure modes are asymmetric across channels. **The two channels do not fail the same way.** On tasks only one channel solved, how did the other fail? Pooled over 8 cells at ruleset v11. Enrichment = hit rate on the disagreement set over that channel's hit rate across all its failures, so about 1x means it failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted, and the largest omitted enrichment is stated per block rather than left to the reader. **Block A has named death causes** (top 2.31x, 404 losing-channel episodes against 5388 of that channel's failures overall). **Block B does not**: its top row rests on 8 hits, exactly the reporting floor, and all 8 of them fall in the 2 WebArena cells, none in the other 6; every other rule in that block sits at or below the everywhere-baseline. On the tasks the text channel uniquely solves, the image channel did not break somewhere nameable -- it did not arrive. **Caution:** TEXT is **four arms** and IMAGE is **two**, so the two blocks' task counts are not comparable to each other; read each block against its own baseline column, never across blocks. **Caution:** a per-rule frequency is a distribution of symptoms, not of causes -- the largest rows in most cells are risk markers, not death causes, and only rules whose docstrings record a causal check are verified as such. Source: `conditional_failure_attribution.json`.*
+
+<!-- END table:failmode -->
+
+<!-- BEGIN table:ceiling -->
+
+| cell | n | best single mode | ceiling: any mode solves | headroom | same tasks, lower cost | +1 arm | rerun once |
+|---|---|---|---|---|---|---|---|
+| WA·B0 | 104 | DOM+somtext 35.58% | **51.92%** | +16.35pp | **-10.7%** | +5.77 | 2.00-4.00 |
+| cls·B0 | 224 | SoM 27.23% | **43.30%** | +16.07pp | **-12.8%** | +7.14 | 4.91-7.59 |
+| WA·B1 | 104 | DOM 16.35% | **30.77%** | +14.42pp | **-26.8%** | +4.81 | 2.00-4.00 |
+| red·B0 | 203 | SoM 14.78% | **26.11%** | +11.33pp | **-9.5%** | +4.93 | -- |
+| cls·B1 | 224 | SoM 14.29% | **24.55%** | +10.27pp | **-19.4%** | +4.91 | -- |
+| red·B1 | 203 | SoM 6.90% | **11.82%** | +4.93pp | **-30.6%** | +1.97 | -- |
+| cls·B2 | 224 | SoM 2.23% | **7.14%** | +4.91pp | **-21.3%** | +2.23 | -- |
+| red·B2 | 203 | DOM 2.46% | **5.91%** | +3.45pp | **-26.7%** | +1.97 | -- |
+
+*Table 42: What a perfect per-task choice could buy. **Two ceilings, and only one of them survives its own control.** *Ceiling: any mode solves it* is what a perfect per-task choice could reach; it runs 5.9-51.9% against a best single mode of 2.2-35.6%. **Caution:** **That column is a six-arm union against a one-arm baseline.** The arm-matched comparison is the last two columns: adding the single best distinct arm buys +1.97 to +7.14pp, and rerunning an arm already in hand buys a draw in the same range wherever a replicate exists -- so the headroom cannot be attributed to representation diversity rather than to resampling. The union of *five* reruns has never been measured, so the split at higher arm counts is unknown, not estimated. *Same tasks, lower cost* keeps the best mode everywhere and sends only the tasks no mode solves to the cheapest one: success is unchanged **by construction** and cost falls 9.5-30.6% in **8 of 8** cells. That ceiling is immune to the arm-count objection because it adds no arms. Why both are hard to reach: no mode solves 48.1-94.1% of tasks, and the set where a per-task choice even exists is 1.5-34.6% of the cell. **Leaked-success policy:** 6 scored successes credited without the episode ever visiting the forum the evaluator reads are set to 0 with the denominator unchanged; `leak_kept` figures are retained in the product for comparison. Source: `routing_ceiling.json`.*
+
+<!-- END table:ceiling -->

@@ -36,7 +36,7 @@ OL="${OVERLEAF_GIT_DIR:-$HOME/overleaf-aaai27}"
 
 PAPERS=()
 case "${1:-}" in
-  paperA|paperB|realm) PAPERS=("$1"); shift ;;
+  paperA|paperB|realm|restructured) PAPERS=("$1"); shift ;;
   # 2026-08-03: both old drafts were archived to
   # docs/archive/paper_drafts_pre_rewrite_2026-08-03/ and the rewrite happens in realm/.
   # paperA was removed from the Overleaf project; paperB's .tex files are left in place,
@@ -65,6 +65,57 @@ SUBMISSION_FLAG=()
 [[ "${SUBMISSION:-0}" == "1" ]] && SUBMISSION_FLAG=(--submission)
 
 for PAPER in "${PAPERS[@]}"; do
+  # The restructured draft does not go through convert.sh: `main_restructured.tex` owns its
+  # own \input list, so it is copied as-is together with the per-section .tex that
+  # deliverables/build.sh produces. Keeping the master unrewritten is the point — the
+  # storyline is edited there directly, and a sync that rewrote it would make the file in
+  # Overleaf and the file in the repo two different documents.
+  if [[ "$PAPER" == "restructured" ]]; then
+    echo "[1/3] deliverables/build.sh ..."
+    if ! bash "$REPO/deliverables/build.sh" > /tmp/overleaf_sync_restructured.log 2>&1; then
+      echo "✗ build.sh 失败, 见 /tmp/overleaf_sync_restructured.log" >&2
+      tail -8 /tmp/overleaf_sync_restructured.log >&2
+      exit 2
+    fi
+    grep -E "^(PDF|Tables|Content ends|Undefined cite|TODO):" \
+      /tmp/overleaf_sync_restructured.log || true
+
+    echo "[2/3] 拷贝 restructured 产物 → $OL"
+    mkdir -p "$OL/sections"
+
+    # DO NOT MIRROR. The first version of this branch did `rm -f sections/*.tex` before
+    # copying, on the assumption that the repo is the single source of truth. On 2026-08-04
+    # that assumption was false and the copy destroyed prose written directly in the Overleaf
+    # project (three commits of it), recovered only because git kept it. `git pull` had
+    # succeeded moments earlier — a fast-forward pull proves there is no CONFLICT, it does
+    # not prove our version should win. Refuse instead, and let a human decide.
+    for f in "$REPO/deliverables/sections/"*.tex; do
+      dest="$OL/sections/$(basename "$f")"
+      if [[ -f "$dest" ]] && ! cmp -s "$f" "$dest"; then
+        echo "✗ $(basename "$dest") 在 Overleaf 端与本地不同 —— 拒绝覆盖。" >&2
+        echo "  Overleaf 端可能有直接编辑的散文。先人工核对:" >&2
+        echo "    diff <(git -C $OL show HEAD:sections/$(basename "$f")) $f" >&2
+        echo "  确认本地该赢再加 OVERLEAF_FORCE_SECTIONS=1 重跑。" >&2
+        [[ "${OVERLEAF_FORCE_SECTIONS:-0}" == "1" ]] || exit 5
+      fi
+      cp "$f" "$dest"
+    done
+    cp "$REPO/deliverables/main_restructured.tex" "$OL/"
+    cp "$REPO/deliverables/acl.sty" "$REPO/deliverables/acl_natbib.bst" \
+       "$REPO/deliverables/paper.bib" "$OL/"
+
+    # Same guard the convert.sh path uses: every \input must exist in the project, or
+    # Overleaf fails to compile on a file nobody noticed was missing.
+    while read -r referenced; do
+      [[ "$referenced" == *.tex ]] || referenced="$referenced.tex"
+      if [[ ! -f "$OL/$referenced" ]]; then
+        echo "✗ main_restructured.tex references $referenced, not in the project" >&2
+        exit 4
+      fi
+    done < <(grep -oE '\\input\{[^}]+\}' "$OL/main_restructured.tex" | sed 's/.*{//; s/}//')
+    continue
+  fi
+
   BUILD="$LATEX_DIR/build/$PAPER"
   echo "[1/3] convert.sh $PAPER ..."
   if ! (cd "$LATEX_DIR" && bash convert.sh "$PAPER" "${SUBMISSION_FLAG[@]}") \

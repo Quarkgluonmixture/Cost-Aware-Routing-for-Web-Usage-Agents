@@ -1555,14 +1555,12 @@ TABLES = [
     ("per-success", "Per-attempt versus per-success", t_per_success),
     ("fusion", "Fusion premium against the rerun band", t_fusion),
     ("exante", "Ex-ante visual-intent partition", t_exante),
-    ("ceiling", "What a perfect per-task choice could buy", t_ceiling),
     ("floor", "New representation versus a rerun", t_floor),
     ("routing", "Routing policies on the 3-axis frontier", t_routing),
     ("cascade", "Confidence-triggered cascade", t_cascade),
     ("cascade-control", "Cascade signal against a random-escalation control", t_cascade_control),
     ("triage", "Triage learnability and the visual-difficulty feature", t_triage_learn),
     ("feature", "The intuitive routing feature", t_feature_sign),
-    ("failmode", "Failure modes are asymmetric across channels", t_failmode),
     ("cond-text", "Paired failure attribution: text wins", t_cond_text_wins),
     ("cond-image", "Paired failure attribution: image wins", t_cond_image_wins),
     ("cond-probes", "Vocabulary-free probes on the text-wins residual", t_cond_probes),
@@ -1580,6 +1578,12 @@ TABLES = [
     ("mech-read", "Linear readability against geometric magnitude", t_mech_readability),
     ("mech-patch", "Causal patching against both of its controls", t_mech_patching),
     ("leakaudit", "Earned versus leaked successes", t_leak_audit),
+    # Appended, not inserted. The Overleaf project bakes the source ordinal into
+    # tables/tabNN.tex and \label{tab:tNN}, and its prose already cites t01..t40. A
+    # mid-list insertion renumbers every table after it and silently redirects those
+    # references — no error, just wrong tables. New tables go on the end.
+    ("failmode", "Failure modes are asymmetric across channels", t_failmode),
+    ("ceiling", "What a perfect per-task choice could buy", t_ceiling),
 ]
 
 TABLE_NO = {slug: i + 1 for i, (slug, _, _) in enumerate(TABLES)}
