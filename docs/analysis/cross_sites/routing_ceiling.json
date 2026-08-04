@@ -1,0 +1,789 @@
+{
+ "generated": "2026-08-04T12:19:17+00:00",
+ "leak_policy": "primary = leaked successes set to 0, denominator unchanged (user decision 2026-08-04); leak_kept retained for comparison",
+ "n_leaked_in_universe": 6,
+ "cost_field": "total_billed_cost_usd",
+ "cells": [
+  {
+   "cell": "cls_B0",
+   "site": "classifieds",
+   "baseline": "B0",
+   "n_leaked_zeroed": 0,
+   "leak_kept": {
+    "n_tasks": 224,
+    "best_mode": "SoM",
+    "best_sr_pct": 27.232142857142858,
+    "best_mean_cost": 0.07235666964285714,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 43.30357142857143,
+    "headroom_pp": 16.071428571428573,
+    "oracle_mean_cost": 0.057770062500000004,
+    "oracle_cost_saving_pct": 20.159312493035795,
+    "triage_sr_pct": 27.232142857142858,
+    "triage_mean_cost": 0.06311516517857144,
+    "triage_cost_saving_pct": 12.772152878097536,
+    "n_multi_solver": 68,
+    "multi_solver_share_pct": 30.357142857142858,
+    "unsolvable_share_pct": 56.69642857142857,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 17.410714285714285,
+      "mean_cost": 0.06961906696428571
+     },
+     "SoM": {
+      "sr_pct": 27.232142857142858,
+      "mean_cost": 0.07235666964285714
+     },
+     "Vision": {
+      "sr_pct": 25.0,
+      "mean_cost": 0.06480720982142858
+     },
+     "P-text": {
+      "sr_pct": 15.625,
+      "mean_cost": 0.06918624107142858
+     },
+     "P-prompt": {
+      "sr_pct": 19.642857142857142,
+      "mean_cost": 0.0685255
+     },
+     "P-SoM": {
+      "sr_pct": 15.625,
+      "mean_cost": 0.07205735267857143
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 224,
+    "best_mode": "SoM",
+    "best_sr_pct": 27.232142857142858,
+    "best_mean_cost": 0.07235666964285714,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 43.30357142857143,
+    "headroom_pp": 16.071428571428573,
+    "oracle_mean_cost": 0.057770062500000004,
+    "oracle_cost_saving_pct": 20.159312493035795,
+    "triage_sr_pct": 27.232142857142858,
+    "triage_mean_cost": 0.06311516517857144,
+    "triage_cost_saving_pct": 12.772152878097536,
+    "n_multi_solver": 68,
+    "multi_solver_share_pct": 30.357142857142858,
+    "unsolvable_share_pct": 56.69642857142857,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 17.410714285714285,
+      "mean_cost": 0.06961906696428571
+     },
+     "SoM": {
+      "sr_pct": 27.232142857142858,
+      "mean_cost": 0.07235666964285714
+     },
+     "Vision": {
+      "sr_pct": 25.0,
+      "mean_cost": 0.06480720982142858
+     },
+     "P-text": {
+      "sr_pct": 15.625,
+      "mean_cost": 0.06918624107142858
+     },
+     "P-prompt": {
+      "sr_pct": 19.642857142857142,
+      "mean_cost": 0.0685255
+     },
+     "P-SoM": {
+      "sr_pct": 15.625,
+      "mean_cost": 0.07205735267857143
+     }
+    }
+   },
+   "arm_matched_gain_pp": 7.142857142857142,
+   "arm_matched_gain_mode": "sr_dom",
+   "all_arms_gain_pp": 16.071428571428577,
+   "rerun_draws_pp": [
+    4.910714285714286,
+    5.357142857142857,
+    6.696428571428571,
+    7.142857142857142,
+    7.5892857142857135,
+    7.5892857142857135
+   ]
+  },
+  {
+   "cell": "red_B0",
+   "site": "reddit",
+   "baseline": "B0",
+   "n_leaked_zeroed": 2,
+   "leak_kept": {
+    "n_tasks": 203,
+    "best_mode": "SoM",
+    "best_sr_pct": 14.77832512315271,
+    "best_mean_cost": 0.11045337931034484,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 26.108374384236452,
+    "headroom_pp": 11.330049261083742,
+    "oracle_mean_cost": 0.09533684236453202,
+    "oracle_cost_saving_pct": 13.685898104882186,
+    "triage_sr_pct": 14.77832512315271,
+    "triage_mean_cost": 0.09997756650246306,
+    "triage_cost_saving_pct": 9.48437510313515,
+    "n_multi_solver": 36,
+    "multi_solver_share_pct": 17.733990147783253,
+    "unsolvable_share_pct": 73.89162561576354,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 14.285714285714286,
+      "mean_cost": 0.10147060591133004
+     },
+     "SoM": {
+      "sr_pct": 14.77832512315271,
+      "mean_cost": 0.11045337931034484
+     },
+     "Vision": {
+      "sr_pct": 7.389162561576355,
+      "mean_cost": 0.09806919211822661
+     },
+     "P-text": {
+      "sr_pct": 13.300492610837438,
+      "mean_cost": 0.10576826108374383
+     },
+     "P-prompt": {
+      "sr_pct": 12.31527093596059,
+      "mean_cost": 0.10162965024630541
+     },
+     "P-SoM": {
+      "sr_pct": 10.83743842364532,
+      "mean_cost": 0.10813512807881773
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 203,
+    "best_mode": "SoM",
+    "best_sr_pct": 14.77832512315271,
+    "best_mean_cost": 0.11045337931034484,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 26.108374384236452,
+    "headroom_pp": 11.330049261083742,
+    "oracle_mean_cost": 0.09548562068965517,
+    "oracle_cost_saving_pct": 13.551200256747432,
+    "triage_sr_pct": 14.77832512315271,
+    "triage_mean_cost": 0.09997756650246306,
+    "triage_cost_saving_pct": 9.48437510313515,
+    "n_multi_solver": 35,
+    "multi_solver_share_pct": 17.24137931034483,
+    "unsolvable_share_pct": 73.89162561576354,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 13.793103448275861,
+      "mean_cost": 0.10147060591133004
+     },
+     "SoM": {
+      "sr_pct": 14.77832512315271,
+      "mean_cost": 0.11045337931034484
+     },
+     "Vision": {
+      "sr_pct": 6.896551724137931,
+      "mean_cost": 0.09806919211822661
+     },
+     "P-text": {
+      "sr_pct": 13.300492610837438,
+      "mean_cost": 0.10576826108374383
+     },
+     "P-prompt": {
+      "sr_pct": 12.31527093596059,
+      "mean_cost": 0.10162965024630541
+     },
+     "P-SoM": {
+      "sr_pct": 10.83743842364532,
+      "mean_cost": 0.10813512807881773
+     }
+    }
+   },
+   "arm_matched_gain_pp": 4.926108374384237,
+   "arm_matched_gain_mode": "sr_dom",
+   "all_arms_gain_pp": 11.330049261083744,
+   "rerun_draws_pp": null
+  },
+  {
+   "cell": "cls_B1",
+   "site": "classifieds",
+   "baseline": "B1",
+   "n_leaked_zeroed": 0,
+   "leak_kept": {
+    "n_tasks": 224,
+    "best_mode": "SoM",
+    "best_sr_pct": 14.285714285714286,
+    "best_mean_cost": 0.06027517504464286,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 24.553571428571427,
+    "headroom_pp": 10.26785714285714,
+    "oracle_mean_cost": 0.041705149642857146,
+    "oracle_cost_saving_pct": 30.80874570340411,
+    "triage_sr_pct": 14.285714285714286,
+    "triage_mean_cost": 0.04857646736607143,
+    "triage_cost_saving_pct": 19.40883235910435,
+    "n_multi_solver": 29,
+    "multi_solver_share_pct": 12.946428571428571,
+    "unsolvable_share_pct": 75.44642857142857,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 6.25,
+      "mean_cost": 0.05951416254464286
+     },
+     "SoM": {
+      "sr_pct": 14.285714285714286,
+      "mean_cost": 0.06027517504464286
+     },
+     "Vision": {
+      "sr_pct": 12.5,
+      "mean_cost": 0.043155593883928575
+     },
+     "P-text": {
+      "sr_pct": 7.589285714285714,
+      "mean_cost": 0.05879092379464286
+     },
+     "P-prompt": {
+      "sr_pct": 6.696428571428571,
+      "mean_cost": 0.06303546700892858
+     },
+     "P-SoM": {
+      "sr_pct": 6.696428571428571,
+      "mean_cost": 0.059696479732142864
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 224,
+    "best_mode": "SoM",
+    "best_sr_pct": 14.285714285714286,
+    "best_mean_cost": 0.06027517504464286,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 24.553571428571427,
+    "headroom_pp": 10.26785714285714,
+    "oracle_mean_cost": 0.041705149642857146,
+    "oracle_cost_saving_pct": 30.80874570340411,
+    "triage_sr_pct": 14.285714285714286,
+    "triage_mean_cost": 0.04857646736607143,
+    "triage_cost_saving_pct": 19.40883235910435,
+    "n_multi_solver": 29,
+    "multi_solver_share_pct": 12.946428571428571,
+    "unsolvable_share_pct": 75.44642857142857,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 6.25,
+      "mean_cost": 0.05951416254464286
+     },
+     "SoM": {
+      "sr_pct": 14.285714285714286,
+      "mean_cost": 0.06027517504464286
+     },
+     "Vision": {
+      "sr_pct": 12.5,
+      "mean_cost": 0.043155593883928575
+     },
+     "P-text": {
+      "sr_pct": 7.589285714285714,
+      "mean_cost": 0.05879092379464286
+     },
+     "P-prompt": {
+      "sr_pct": 6.696428571428571,
+      "mean_cost": 0.06303546700892858
+     },
+     "P-SoM": {
+      "sr_pct": 6.696428571428571,
+      "mean_cost": 0.059696479732142864
+     }
+    }
+   },
+   "arm_matched_gain_pp": 4.910714285714286,
+   "arm_matched_gain_mode": "sr_vision",
+   "all_arms_gain_pp": 10.267857142857142,
+   "rerun_draws_pp": null
+  },
+  {
+   "cell": "red_B1",
+   "site": "reddit",
+   "baseline": "B1",
+   "n_leaked_zeroed": 1,
+   "leak_kept": {
+    "n_tasks": 203,
+    "best_mode": "SoM",
+    "best_sr_pct": 7.389162561576355,
+    "best_mean_cost": 0.08000418059113301,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 11.822660098522167,
+    "headroom_pp": 4.433497536945812,
+    "oracle_mean_cost": 0.05178432507389163,
+    "oracle_cost_saving_pct": 35.27297612291155,
+    "triage_sr_pct": 7.389162561576355,
+    "triage_mean_cost": 0.05554082403940887,
+    "triage_cost_saving_pct": 30.57759778422811,
+    "n_multi_solver": 17,
+    "multi_solver_share_pct": 8.374384236453203,
+    "unsolvable_share_pct": 88.17733990147784,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 5.911330049261084,
+      "mean_cost": 0.07330131733990149
+     },
+     "SoM": {
+      "sr_pct": 7.389162561576355,
+      "mean_cost": 0.08000418059113301
+     },
+     "Vision": {
+      "sr_pct": 2.4630541871921183,
+      "mean_cost": 0.05240422403940887
+     },
+     "P-text": {
+      "sr_pct": 5.911330049261084,
+      "mean_cost": 0.06947853921182266
+     },
+     "P-prompt": {
+      "sr_pct": 5.41871921182266,
+      "mean_cost": 0.07656218467980296
+     },
+     "P-SoM": {
+      "sr_pct": 5.911330049261084,
+      "mean_cost": 0.07479701950738916
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 203,
+    "best_mode": "SoM",
+    "best_sr_pct": 6.896551724137931,
+    "best_mean_cost": 0.08000418059113301,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 11.822660098522167,
+    "headroom_pp": 4.926108374384237,
+    "oracle_mean_cost": 0.05201332532019704,
+    "oracle_cost_saving_pct": 34.98674077294186,
+    "triage_sr_pct": 6.896551724137931,
+    "triage_mean_cost": 0.05554082403940887,
+    "triage_cost_saving_pct": 30.57759778422811,
+    "n_multi_solver": 17,
+    "multi_solver_share_pct": 8.374384236453203,
+    "unsolvable_share_pct": 88.17733990147784,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 5.911330049261084,
+      "mean_cost": 0.07330131733990149
+     },
+     "SoM": {
+      "sr_pct": 6.896551724137931,
+      "mean_cost": 0.08000418059113301
+     },
+     "Vision": {
+      "sr_pct": 2.4630541871921183,
+      "mean_cost": 0.05240422403940887
+     },
+     "P-text": {
+      "sr_pct": 5.911330049261084,
+      "mean_cost": 0.06947853921182266
+     },
+     "P-prompt": {
+      "sr_pct": 5.41871921182266,
+      "mean_cost": 0.07656218467980296
+     },
+     "P-SoM": {
+      "sr_pct": 5.911330049261084,
+      "mean_cost": 0.07479701950738916
+     }
+    }
+   },
+   "arm_matched_gain_pp": 1.9704433497536946,
+   "arm_matched_gain_mode": "sr_pprompt",
+   "all_arms_gain_pp": 4.433497536945811,
+   "rerun_draws_pp": null
+  },
+  {
+   "cell": "cls_B2",
+   "site": "classifieds",
+   "baseline": "B2",
+   "n_leaked_zeroed": 0,
+   "leak_kept": {
+    "n_tasks": 224,
+    "best_mode": "SoM",
+    "best_sr_pct": 2.232142857142857,
+    "best_mean_cost": 0.0907508425,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 7.142857142857143,
+    "headroom_pp": 4.9107142857142865,
+    "oracle_mean_cost": 0.06952958120535714,
+    "oracle_cost_saving_pct": 23.384092874556902,
+    "triage_sr_pct": 2.232142857142857,
+    "triage_mean_cost": 0.07145360410714285,
+    "triage_cost_saving_pct": 21.263977128209188,
+    "n_multi_solver": 4,
+    "multi_solver_share_pct": 1.7857142857142858,
+    "unsolvable_share_pct": 92.85714285714286,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 1.3392857142857142,
+      "mean_cost": 0.07676412973214286
+     },
+     "SoM": {
+      "sr_pct": 2.232142857142857,
+      "mean_cost": 0.0907508425
+     },
+     "Vision": {
+      "sr_pct": 2.232142857142857,
+      "mean_cost": 0.07065426732142857
+     },
+     "P-text": {
+      "sr_pct": 0.44642857142857145,
+      "mean_cost": 0.07320177482142858
+     },
+     "P-prompt": {
+      "sr_pct": 1.7857142857142858,
+      "mean_cost": 0.08452656950892858
+     },
+     "P-SoM": {
+      "sr_pct": 0.8928571428571429,
+      "mean_cost": 0.08456373169642858
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 224,
+    "best_mode": "SoM",
+    "best_sr_pct": 2.232142857142857,
+    "best_mean_cost": 0.0907508425,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 7.142857142857143,
+    "headroom_pp": 4.9107142857142865,
+    "oracle_mean_cost": 0.06952958120535714,
+    "oracle_cost_saving_pct": 23.384092874556902,
+    "triage_sr_pct": 2.232142857142857,
+    "triage_mean_cost": 0.07145360410714285,
+    "triage_cost_saving_pct": 21.263977128209188,
+    "n_multi_solver": 4,
+    "multi_solver_share_pct": 1.7857142857142858,
+    "unsolvable_share_pct": 92.85714285714286,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 1.3392857142857142,
+      "mean_cost": 0.07676412973214286
+     },
+     "SoM": {
+      "sr_pct": 2.232142857142857,
+      "mean_cost": 0.0907508425
+     },
+     "Vision": {
+      "sr_pct": 2.232142857142857,
+      "mean_cost": 0.07065426732142857
+     },
+     "P-text": {
+      "sr_pct": 0.44642857142857145,
+      "mean_cost": 0.07320177482142858
+     },
+     "P-prompt": {
+      "sr_pct": 1.7857142857142858,
+      "mean_cost": 0.08452656950892858
+     },
+     "P-SoM": {
+      "sr_pct": 0.8928571428571429,
+      "mean_cost": 0.08456373169642858
+     }
+    }
+   },
+   "arm_matched_gain_pp": 2.232142857142857,
+   "arm_matched_gain_mode": "sr_vision",
+   "all_arms_gain_pp": 4.910714285714285,
+   "rerun_draws_pp": null
+  },
+  {
+   "cell": "red_B2",
+   "site": "reddit",
+   "baseline": "B2",
+   "n_leaked_zeroed": 3,
+   "leak_kept": {
+    "n_tasks": 203,
+    "best_mode": "DOM",
+    "best_sr_pct": 3.9408866995073892,
+    "best_mean_cost": 0.09479046182266011,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 7.389162561576355,
+    "headroom_pp": 3.4482758620689657,
+    "oracle_mean_cost": 0.06958361871921183,
+    "oracle_cost_saving_pct": 26.5921724810317,
+    "triage_sr_pct": 3.9408866995073892,
+    "triage_mean_cost": 0.06974266536945814,
+    "triage_cost_saving_pct": 26.424384871194054,
+    "n_multi_solver": 3,
+    "multi_solver_share_pct": 1.477832512315271,
+    "unsolvable_share_pct": 92.61083743842364,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 3.9408866995073892,
+      "mean_cost": 0.09479046182266011
+     },
+     "SoM": {
+      "sr_pct": 0.9852216748768473,
+      "mean_cost": 0.11160030108374384
+     },
+     "Vision": {
+      "sr_pct": 1.9704433497536946,
+      "mean_cost": 0.06833131192118228
+     },
+     "P-text": {
+      "sr_pct": 1.9704433497536946,
+      "mean_cost": 0.08851566783251232
+     },
+     "P-prompt": {
+      "sr_pct": 0.0,
+      "mean_cost": 0.09940042886699509
+     },
+     "P-SoM": {
+      "sr_pct": 0.49261083743842365,
+      "mean_cost": 0.09450881167487685
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 203,
+    "best_mode": "DOM",
+    "best_sr_pct": 2.4630541871921183,
+    "best_mean_cost": 0.09479046182266011,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 5.911330049261084,
+    "headroom_pp": 3.4482758620689653,
+    "oracle_mean_cost": 0.06933055157635469,
+    "oracle_cost_saving_pct": 26.859147805332363,
+    "triage_sr_pct": 2.4630541871921183,
+    "triage_mean_cost": 0.06948959822660099,
+    "triage_cost_saving_pct": 26.691360195494724,
+    "n_multi_solver": 3,
+    "multi_solver_share_pct": 1.477832512315271,
+    "unsolvable_share_pct": 94.08866995073892,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 2.4630541871921183,
+      "mean_cost": 0.09479046182266011
+     },
+     "SoM": {
+      "sr_pct": 0.9852216748768473,
+      "mean_cost": 0.11160030108374384
+     },
+     "Vision": {
+      "sr_pct": 1.9704433497536946,
+      "mean_cost": 0.06833131192118228
+     },
+     "P-text": {
+      "sr_pct": 1.9704433497536946,
+      "mean_cost": 0.08851566783251232
+     },
+     "P-prompt": {
+      "sr_pct": 0.0,
+      "mean_cost": 0.09940042886699509
+     },
+     "P-SoM": {
+      "sr_pct": 0.49261083743842365,
+      "mean_cost": 0.09450881167487685
+     }
+    }
+   },
+   "arm_matched_gain_pp": 1.9704433497536946,
+   "arm_matched_gain_mode": "sr_vision",
+   "all_arms_gain_pp": 3.448275862068966,
+   "rerun_draws_pp": null
+  },
+  {
+   "cell": "wa_red_B0",
+   "site": "wa_reddit",
+   "baseline": "B0",
+   "n_leaked_zeroed": 0,
+   "leak_kept": {
+    "n_tasks": 104,
+    "best_mode": "P-text",
+    "best_sr_pct": 35.57692307692308,
+    "best_mean_cost": 0.08478059615384616,
+    "cheapest_mode": "DOM",
+    "oracle_sr_pct": 51.92307692307692,
+    "headroom_pp": 16.34615384615384,
+    "oracle_mean_cost": 0.06200853846153846,
+    "oracle_cost_saving_pct": 26.859987692212776,
+    "triage_sr_pct": 35.57692307692308,
+    "triage_mean_cost": 0.07573122115384615,
+    "triage_cost_saving_pct": 10.673875167825743,
+    "n_multi_solver": 36,
+    "multi_solver_share_pct": 34.61538461538461,
+    "unsolvable_share_pct": 48.07692307692308,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 26.923076923076923,
+      "mean_cost": 0.07530692307692308
+     },
+     "SoM": {
+      "sr_pct": 22.115384615384617,
+      "mean_cost": 0.09110223076923077
+     },
+     "Vision": {
+      "sr_pct": 19.23076923076923,
+      "mean_cost": 0.08639858653846154
+     },
+     "P-text": {
+      "sr_pct": 35.57692307692308,
+      "mean_cost": 0.08478059615384616
+     },
+     "P-prompt": {
+      "sr_pct": 25.96153846153846,
+      "mean_cost": 0.07746976923076923
+     },
+     "P-SoM": {
+      "sr_pct": 25.0,
+      "mean_cost": 0.08498372115384616
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 104,
+    "best_mode": "P-text",
+    "best_sr_pct": 35.57692307692308,
+    "best_mean_cost": 0.08478059615384616,
+    "cheapest_mode": "DOM",
+    "oracle_sr_pct": 51.92307692307692,
+    "headroom_pp": 16.34615384615384,
+    "oracle_mean_cost": 0.06200853846153846,
+    "oracle_cost_saving_pct": 26.859987692212776,
+    "triage_sr_pct": 35.57692307692308,
+    "triage_mean_cost": 0.07573122115384615,
+    "triage_cost_saving_pct": 10.673875167825743,
+    "n_multi_solver": 36,
+    "multi_solver_share_pct": 34.61538461538461,
+    "unsolvable_share_pct": 48.07692307692308,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 26.923076923076923,
+      "mean_cost": 0.07530692307692308
+     },
+     "SoM": {
+      "sr_pct": 22.115384615384617,
+      "mean_cost": 0.09110223076923077
+     },
+     "Vision": {
+      "sr_pct": 19.23076923076923,
+      "mean_cost": 0.08639858653846154
+     },
+     "P-text": {
+      "sr_pct": 35.57692307692308,
+      "mean_cost": 0.08478059615384616
+     },
+     "P-prompt": {
+      "sr_pct": 25.96153846153846,
+      "mean_cost": 0.07746976923076923
+     },
+     "P-SoM": {
+      "sr_pct": 25.0,
+      "mean_cost": 0.08498372115384616
+     }
+    }
+   },
+   "arm_matched_gain_pp": 5.769230769230769,
+   "arm_matched_gain_mode": "dom",
+   "all_arms_gain_pp": 16.34615384615385,
+   "rerun_draws_pp": [
+    2.0,
+    4.0
+   ]
+  },
+  {
+   "cell": "wa_red_B1",
+   "site": "wa_reddit",
+   "baseline": "B1",
+   "n_leaked_zeroed": 0,
+   "leak_kept": {
+    "n_tasks": 104,
+    "best_mode": "DOM",
+    "best_sr_pct": 16.346153846153847,
+    "best_mean_cost": 0.06578607615384616,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 30.76923076923077,
+    "headroom_pp": 14.423076923076923,
+    "oracle_mean_cost": 0.04371789557692308,
+    "oracle_cost_saving_pct": 33.54536684224002,
+    "triage_sr_pct": 16.346153846153847,
+    "triage_mean_cost": 0.04814090163461539,
+    "triage_cost_saving_pct": 26.822050425938272,
+    "n_multi_solver": 18,
+    "multi_solver_share_pct": 17.307692307692307,
+    "unsolvable_share_pct": 69.23076923076923,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 16.346153846153847,
+      "mean_cost": 0.06578607615384616
+     },
+     "SoM": {
+      "sr_pct": 13.461538461538462,
+      "mean_cost": 0.0794411176923077
+     },
+     "Vision": {
+      "sr_pct": 9.615384615384615,
+      "mean_cost": 0.04468445634615385
+     },
+     "P-text": {
+      "sr_pct": 16.346153846153847,
+      "mean_cost": 0.06150959480769231
+     },
+     "P-prompt": {
+      "sr_pct": 16.346153846153847,
+      "mean_cost": 0.07386315615384616
+     },
+     "P-SoM": {
+      "sr_pct": 11.538461538461538,
+      "mean_cost": 0.06659091932692308
+     }
+    }
+   },
+   "leak_zeroed": {
+    "n_tasks": 104,
+    "best_mode": "DOM",
+    "best_sr_pct": 16.346153846153847,
+    "best_mean_cost": 0.06578607615384616,
+    "cheapest_mode": "Vision",
+    "oracle_sr_pct": 30.76923076923077,
+    "headroom_pp": 14.423076923076923,
+    "oracle_mean_cost": 0.04371789557692308,
+    "oracle_cost_saving_pct": 33.54536684224002,
+    "triage_sr_pct": 16.346153846153847,
+    "triage_mean_cost": 0.04814090163461539,
+    "triage_cost_saving_pct": 26.822050425938272,
+    "n_multi_solver": 18,
+    "multi_solver_share_pct": 17.307692307692307,
+    "unsolvable_share_pct": 69.23076923076923,
+    "per_mode": {
+     "DOM": {
+      "sr_pct": 16.346153846153847,
+      "mean_cost": 0.06578607615384616
+     },
+     "SoM": {
+      "sr_pct": 13.461538461538462,
+      "mean_cost": 0.0794411176923077
+     },
+     "Vision": {
+      "sr_pct": 9.615384615384615,
+      "mean_cost": 0.04468445634615385
+     },
+     "P-text": {
+      "sr_pct": 16.346153846153847,
+      "mean_cost": 0.06150959480769231
+     },
+     "P-prompt": {
+      "sr_pct": 16.346153846153847,
+      "mean_cost": 0.07386315615384616
+     },
+     "P-SoM": {
+      "sr_pct": 11.538461538461538,
+      "mean_cost": 0.06659091932692308
+     }
+    }
+   },
+   "arm_matched_gain_pp": 4.807692307692308,
+   "arm_matched_gain_mode": "ptext",
+   "all_arms_gain_pp": 14.423076923076925,
+   "rerun_draws_pp": [
+    2.0,
+    4.0
+   ]
+  }
+ ]
+}

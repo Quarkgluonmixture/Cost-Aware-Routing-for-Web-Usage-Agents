@@ -868,6 +868,173 @@ def _cond_side(side: str, label: str):
     return "\n".join(rows), cap
 
 
+def t_ceiling():
+    """What a perfect per-task choice could buy — and the arm-matched column beside it.
+
+    The ceiling is a SIX-arm union quoted against a ONE-arm baseline, which is the
+    "count the arms before you divide" defect in its most tempting form. The arm-matched
+    gain and the rerun draw are therefore in the same row, not in the caption: adding one
+    arm and rerunning the arm you already have land in the same range, so the headline
+    headroom cannot be read as representation diversity alone.
+    """
+    d = load("routing_ceiling")
+    cells = sorted(d["cells"], key=lambda r: -r["leak_zeroed"]["oracle_sr_pct"])
+    rows = ["| cell | n | best single mode | ceiling: any mode solves | headroom | "
+            "same tasks, lower cost | +1 arm | rerun once |",
+            "|---|---|---|---|---|---|---|---|"]
+    for r in cells:
+        z = r["leak_zeroed"]
+        rr = r["rerun_draws_pp"]
+        rr_s = "--" if not rr else (f"{rr[0]:.2f}" if len(rr) == 1
+                                    else f"{min(rr):.2f}-{max(rr):.2f}")
+        am = r["arm_matched_gain_pp"]
+        rows.append(
+            f"| {cell_label(r['cell'])} | {z['n_tasks']} | "
+            f"{PRETTY.get(z['best_mode'], z['best_mode'])} {z['best_sr_pct']:.2f}% | "
+            f"**{z['oracle_sr_pct']:.2f}%** | {z['headroom_pp']:+.2f}pp | "
+            f"**{-z['triage_cost_saving_pct']:+.1f}%** | "
+            f"{'--' if am is None else f'{am:+.2f}'} | {rr_s} |")
+    zs = [c["leak_zeroed"] for c in cells]
+    save = [-c["triage_cost_saving_pct"] for c in zs]
+    unsolv = [c["unsolvable_share_pct"] for c in zs]
+    multi = [c["multi_solver_share_pct"] for c in zs]
+    ams = [c["arm_matched_gain_pp"] for c in cells if c["arm_matched_gain_pp"] is not None]
+    n_leaked = sum(c["n_leaked_zeroed"] for c in cells)
+    return "\n".join(rows), (
+        f"**Two ceilings, and only one of them survives its own control.** *Ceiling: any "
+        f"mode solves it* is what a perfect per-task choice could reach; it runs "
+        f"{min(c['oracle_sr_pct'] for c in zs):.1f}-{max(c['oracle_sr_pct'] for c in zs):.1f}% "
+        f"against a best single mode of "
+        f"{min(c['best_sr_pct'] for c in zs):.1f}-{max(c['best_sr_pct'] for c in zs):.1f}%. "
+        f"⚠️ **That column is a six-arm union against a one-arm baseline.** The arm-matched "
+        f"comparison is the last two columns: adding the single best distinct arm buys "
+        f"{min(ams):+.2f} to {max(ams):+.2f}pp, and rerunning an arm already in hand buys a "
+        f"draw in the same range wherever a replicate exists -- so the headroom cannot be "
+        f"attributed to representation diversity rather than to resampling. The union of "
+        f"*five* reruns has never been measured, so the split at higher arm counts is "
+        f"unknown, not estimated. *Same tasks, lower cost* keeps the best mode everywhere "
+        f"and sends only the tasks no mode solves to the cheapest one: success is unchanged "
+        f"**by construction** and cost falls "
+        f"{abs(max(save)):.1f}-{abs(min(save)):.1f}% in **8 of 8** cells. That ceiling is "
+        f"immune to the arm-count objection because it adds no arms. Why both are hard to "
+        f"reach: no mode solves {min(unsolv):.1f}-{max(unsolv):.1f}% of tasks, and the set "
+        f"where a per-task choice even exists is {min(multi):.1f}-{max(multi):.1f}% of the "
+        f"cell. **Leaked-success policy:** {n_leaked} scored successes credited without the "
+        f"episode ever visiting the forum the evaluator reads are set to 0 with the "
+        f"denominator unchanged; `leak_kept` figures are retained in the product for "
+        f"comparison. Source: `routing_ceiling.json`.")
+
+
+def _rule_cell_spread(side: str, rule: str) -> tuple[dict, int]:
+    """Which cells carry a rule's conditional hits, derived rather than asserted.
+
+    The claim "all of block B's top-rule hits are in the WebArena cells" is load-bearing —
+    it is what makes that block's only above-baseline row a benchmark-local effect instead
+    of a general one. Hardcoding it in the caption would put a conclusion next to a table
+    deriving the same quantity, which is the defect class the 2026-08-03 sweep found five
+    instances of. So it is computed here and the caption reads whatever this returns.
+    """
+    d = load("conditional_failure_attribution")
+    hits = {c: int(((v.get(side) or {}).get("cond") or {}).get(rule, 0))
+            for c, v in d["cells"].items()}
+    return {c: n for c, n in hits.items() if n}, len(hits)
+
+
+def _cond_rows(side: str, top: int):
+    """Enrichment rows for one side, sorted, plus what the truncation hides.
+
+    Returns (rows, tail_max, n_tail, n_tasks, n_cond, n_base). `tail_max` is the largest
+    enrichment among the rules NOT shown — reporting a top-N without it is the same
+    selection-without-its-complement defect the 2026-08-04 audit found twelve instances of.
+    """
+    d = load("conditional_failure_attribution")
+    p_ = d["pooled"][side]
+    cond, base = p_["cond"], p_["base"]
+    nc, nb, names = p_["n_cond_eps"], p_["n_base_eps"], p_["names"]
+    enr = []
+    for rule, hits in cond.items():
+        if hits < 8:
+            continue
+        cr = hits / nc if nc else 0
+        br = base.get(rule, 0) / nb if nb else 0
+        enr.append((cr / br if br else float("inf"), rule, hits, cr, br))
+    enr.sort(reverse=True)
+    shown, tail = enr[:top], enr[top:]
+    tail_max = max((e for e, *_ in tail), default=None)
+    return shown, tail_max, len(tail), p_["n_tasks"], nc, nb
+
+
+def t_failmode():
+    """The paired failure cut, both sides in ONE tabular.
+
+    Kept to a single tabular deliberately: two tabulars under one caption break `floatify`,
+    which wraps the prose between them into the float and pdflatex dies with 'Not in outer
+    par mode'. The two sides are rendered as labelled blocks of the same table instead, so
+    the asymmetry the table exists to show is a property of its layout rather than something
+    the reader has to reconstruct by flipping between two floats.
+
+    The arm counts go in the block headers, not only in the caption: TEXT is four arms and
+    IMAGE is two, so a symmetric-looking table invites exactly the comparison it cannot
+    support.
+    """
+    TOP = 4
+    img, img_tail, img_n_tail, img_tasks, img_nc, img_nb = _cond_rows("image_only", TOP)
+    txt, txt_tail, txt_n_tail, txt_tasks, txt_nc, txt_nb = _cond_rows("text_only", TOP)
+    names = load("conditional_failure_attribution")["pooled"]["image_only"]["names"]
+    names_t = load("conditional_failure_attribution")["pooled"]["text_only"]["names"]
+
+    rows = ["| | rule | how it failed | on disagreement | baseline | enrichment | hits |",
+            "|---|---|---|---|---|---|---|"]
+
+    rows.append(f"| **A. IMAGE channel wins** | | *how the TEXT channel failed* | "
+                f"({img_tasks} tasks) | | | |")
+    for e, rule, hits, cr, br in img:
+        rows.append(f"| | `{rule}` | {ascii_rule_name(rule, names.get(rule, ''))[:32]} | "
+                    f"{100*cr:.1f}% | {100*br:.1f}% | **{e:.2f}x** | {hits} |")
+    if img_tail is not None:
+        rows.append(f"| | | *{img_n_tail} further rules* | | | all <= {img_tail:.2f}x | |")
+
+    rows.append(f"| **B. TEXT channel wins** | | *how the IMAGE channel failed* | "
+                f"({txt_tasks} tasks) | | | |")
+    for e, rule, hits, cr, br in txt:
+        rows.append(f"| | `{rule}` | {ascii_rule_name(rule, names_t.get(rule, ''))[:32]} | "
+                    f"{100*cr:.1f}% | {100*br:.1f}% | **{e:.2f}x** | {hits} |")
+    if txt_tail is not None:
+        rows.append(f"| | | *{txt_n_tail} further rules* | | | all <= {txt_tail:.2f}x | |")
+
+    top_img = img[0][0] if img else float("nan")
+    n_txt_hits = txt[0][2] if txt else 0
+    # Where block B's only above-baseline row actually lives. Derived, not asserted.
+    b_rule = txt[0][1] if txt else None
+    live, n_cells = _rule_cell_spread("text_only", b_rule) if b_rule else ({}, 0)
+    wa_live = [c for c in live if c.startswith("wa")]
+    if live and len(wa_live) == len(live):
+        where = (f"and all {sum(live.values())} of them fall in the "
+                 f"{len(wa_live)} WebArena cells, none in the other {n_cells - len(wa_live)}")
+    else:
+        where = (f"spread over {len(live)} of {n_cells} cells "
+                 f"({', '.join(f'{c}:{n}' for c, n in sorted(live.items()))})")
+    return "\n".join(rows), (
+        f"**The two channels do not fail the same way.** On tasks only one channel solved, "
+        f"how did the other fail? Pooled over 8 cells at ruleset v11. Enrichment = hit rate "
+        f"on the disagreement set over that channel's hit rate across all its failures, so "
+        f"about 1x means it failed there the way it fails everywhere. Rules with fewer than "
+        f"8 pooled conditional hits are omitted, and the largest omitted enrichment is stated "
+        f"per block rather than left to the reader. **Block A has named death causes** "
+        f"(top {top_img:.2f}x, {img_nc} losing-channel episodes against {img_nb} of that "
+        f"channel's failures overall). **Block B does not**: its top row rests on "
+        f"{n_txt_hits} hits, exactly the reporting floor, {where}; every other rule in that "
+        f"block sits at or below the everywhere-baseline. On the "
+        f"tasks the text channel uniquely solves, the image channel did not break somewhere "
+        f"nameable -- it did not arrive. **Caution:** TEXT is **four arms** and IMAGE is "
+        f"**two**, so the two blocks' task counts are not comparable to each other; read "
+        f"each block against its own baseline column, never across blocks. **Caution:** a "
+        f"per-rule frequency is a distribution of symptoms, not of causes -- the largest rows "
+        f"in most cells are risk markers, not death causes, and only rules whose docstrings "
+        f"record a causal check are verified as such. Source: "
+        f"`conditional_failure_attribution.json`.")
+
+
 def t_cond_text_wins():
     return _cond_side("text_only",
                       "Only the TEXT channel solved it: how the IMAGE channel failed.")
@@ -1335,12 +1502,14 @@ TABLES = [
     ("per-success", "Per-attempt versus per-success", t_per_success),
     ("fusion", "Fusion premium against the rerun band", t_fusion),
     ("exante", "Ex-ante visual-intent partition", t_exante),
+    ("ceiling", "What a perfect per-task choice could buy", t_ceiling),
     ("floor", "New representation versus a rerun", t_floor),
     ("routing", "Routing policies on the 3-axis frontier", t_routing),
     ("cascade", "Confidence-triggered cascade", t_cascade),
     ("cascade-control", "Cascade signal against a random-escalation control", t_cascade_control),
     ("triage", "Triage learnability and the visual-difficulty feature", t_triage_learn),
     ("feature", "The intuitive routing feature", t_feature_sign),
+    ("failmode", "Failure modes are asymmetric across channels", t_failmode),
     ("cond-text", "Paired failure attribution: text wins", t_cond_text_wins),
     ("cond-image", "Paired failure attribution: image wins", t_cond_image_wins),
     ("cond-probes", "Vocabulary-free probes on the text-wins residual", t_cond_probes),
@@ -1623,7 +1792,12 @@ def build_guide() -> str:
       f"estimand-dependent and the estimand is usually left implicit.**")
     A("")
 
-    A(f"**{TS('fusion','floor')} — is a second representation worth buying?** {T('fusion')} "
+    A(f"**{TS('fusion','floor','ceiling')} — is a second representation worth buying?** "
+      f"{T('ceiling')} is the upper bound on the whole question: what a perfect per-task "
+      f"choice could reach, and — in the same row, deliberately — what adding one arm or "
+      f"rerunning one arm buys instead, because the ceiling column is a six-arm union quoted "
+      f"against a one-arm baseline. Its second ceiling, *same tasks solved at lower cost*, is "
+      f"the one no arm-count objection reaches, since it adds no arms. {T('fusion')} "
       f"asks whether the fused mode beats the single channel that suits the workload: it does "
       f"not, in any of {len(fus['cells'])} cells. The comparison is against a **measured rerun "
       f"band**, not against zero, because the question a deployment asks is whether a new arm "
@@ -1655,8 +1829,11 @@ def build_guide() -> str:
       f"would route *to* is already the right arm to route everything to.")
     A("")
 
-    A(f"**{TS('cond-text','cond-image','cond-probes','axis','axis1','halluc','pagechange')} — "
-      f"where the failures come from.** {TS('cond-text','cond-image')} are the paired cut: on "
+    A(f"**{TS('failmode','cond-text','cond-image','cond-probes','axis','axis1','halluc','pagechange')} — "
+      f"where the failures come from.** {T('failmode')} is the headline cut with both sides in "
+      f"one table, so the asymmetry is visible without flipping between floats; "
+      f"{TS('cond-text','cond-image')} are the same data split per side at full depth. "
+      f"These are the paired cut: on "
       f"tasks only one channel solved, how did the other fail? Those count rule hits, so "
       f"{T('cond-probes')} asks the same question without the rule vocabulary — six probes "
       f"read straight off the step records — and finds the losing channel failing *more "
