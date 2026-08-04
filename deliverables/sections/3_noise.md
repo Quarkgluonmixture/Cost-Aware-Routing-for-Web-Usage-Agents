@@ -22,3 +22,5 @@ comparator for a six-arm oracle, has never been measured.
 \todo{State explicitly that this is not a claim that representations do not matter
 --- it is a claim about the size of the increment at the one-arm margin, which is
 the margin a deployment actually faces.}
+
+**Table.** New representation against a rerun, at matched arm count: Table~\ref{tab:floor}.

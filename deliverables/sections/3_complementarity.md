@@ -38,3 +38,5 @@ the reviewer's first alternative explanation and it is partly correct: three
 delivery paths have 88.9\% / 38.6\% / 16.1\% action success, and Vision is on the
 coordinate path by construction, so its arm measures our grounding code as well as
 the representation.}
+
+**Tables.** Non-separability of the image-free modes: Table~\ref{tab:nonsep}. The paired failure cut, both sides: Table~\ref{tab:failmode}.

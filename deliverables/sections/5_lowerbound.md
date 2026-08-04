@@ -28,3 +28,5 @@ points are positive with a median of +0.327pp, and the best signal recovers
 0--57\% of the gap to a per-task oracle. \todo{Keep the unselected statement, not
 the maximum: quoting the per-cell max makes positivity likely before any
 information is involved.}
+
+**Table.** Routing policies on the (success, cost, latency) frontier: Table~\ref{tab:routing}.

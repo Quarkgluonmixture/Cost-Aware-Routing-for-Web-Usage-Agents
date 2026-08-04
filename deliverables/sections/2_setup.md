@@ -38,3 +38,5 @@ Every effect in this paper is reported against that band rather than against zer
 Three arms carry a measured replicate; the band is two draws, not a bound, and the
 exchangeability null behind those draws puts one standard deviation at
 2.32--2.53pp.
+
+**Table.** Success rate per mode over all cells: Table~\ref{tab:sr}.

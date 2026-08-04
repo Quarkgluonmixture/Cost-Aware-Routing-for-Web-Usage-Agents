@@ -25,3 +25,5 @@ scored episodes, so there is nothing graded to regress on.
 **What would close it.** \todo{This is the paper's ask. Candidates: a graded
 target; supervision that does not require running every arm; a ceiling defined on
 cost rather than success, where the label is defined on every task.}
+
+**Table.** Per-task label instability on the contested rows: Table~\ref{tab:instability}.

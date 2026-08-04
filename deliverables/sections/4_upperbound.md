@@ -22,3 +22,5 @@ where a per-task choice even exists --- more than one mode solves it --- is
 control, it is the one with a label defined on every task, and it is the one a
 learned policy actually reached (next section) --- but the prize is cost, not
 capability, and the paper should say so in its own voice.}
+
+**Table.** Both ceilings, with the arm-matched columns beside them: Table~\ref{tab:ceiling}.

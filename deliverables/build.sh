@@ -35,15 +35,10 @@ BUILD="$HERE/build"
 #   ceiling     what a perfect per-task choice could buy                  -> 4_upperbound
 #   routing     five routing policies against the fixed ones              -> 5_lowerbound
 #   instability why the gap is not closable with available supervision    -> 6_gap
-declare -A BODY_TABLE_SECTION=(
-  [sr]=2_setup
-  [nonsep]=3_complementarity
-  [failmode]=3_complementarity
-  [floor]=3_noise
-  [ceiling]=4_upperbound
-  [routing]=5_lowerbound
-  [instability]=6_gap
-)
+# 2026-08-04: emptied on instruction — every table goes to the appendix and the body
+# refers to them by \ref{tab:<slug>}. Re-adding an entry moves that table back into the
+# body with no other edit; the appendix stays its exact complement either way.
+declare -A BODY_TABLE_SECTION=()
 
 for c in pandoc latexmk pdflatex bibtex perl awk; do
   command -v "$c" >/dev/null || { echo "ERROR: $c not found" >&2; exit 2; }
@@ -89,11 +84,17 @@ FLOATIFY
 
 # --- extract one table block (markers are written by export_ablation_tables.py)
 extract_table() {  # $1 = slug
+  # The \label goes INSIDE the caption emphasis (`*Table N: ... *`) because floatify lifts
+  # that span verbatim into \caption{}; a label emitted after the block would sit outside
+  # the float and \ref would resolve to whatever page the float was NOT placed on. Keyed by
+  # slug, not by table number, so moving a table between body and appendix cannot break a
+  # cross-reference — the number changes, the slug does not.
   awk -v s="$1" '
     $0 == "<!-- BEGIN table:" s " -->" { on = 1; next }
     $0 == "<!-- END table:" s " -->"   { on = 0 }
     on { print }
-  ' "$EVIDENCE"
+  ' "$EVIDENCE" \
+  | perl -pe "s/^(\\*Table \\d+:.*)\\*\\s*\$/\$1\\\\label{tab:$1}*/"
 }
 
 ALL_SLUGS=$(grep -oE '<!-- BEGIN table:[a-z0-9-]+ -->' "$EVIDENCE" \
@@ -102,7 +103,7 @@ N_ALL=$(printf '%s\n' "$ALL_SLUGS" | grep -c .)
 
 # Every body slug must exist in the source. A typo would otherwise produce an empty
 # table and a silently shorter paper.
-for slug in "${!BODY_TABLE_SECTION[@]}"; do
+for slug in ${!BODY_TABLE_SECTION[@]+"${!BODY_TABLE_SECTION[@]}"}; do
   printf '%s\n' "$ALL_SLUGS" | grep -qx "$slug" \
     || { echo "ERROR: body table '$slug' not in $EVIDENCE" >&2; exit 2; }
   [[ -n "$(extract_table "$slug")" ]] \
