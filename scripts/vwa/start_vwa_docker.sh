@@ -295,26 +295,50 @@ start_shopping() {
   local poll_i=0
   while (( $(date +%s) < poll_deadline )); do
     poll_i=$(( poll_i + 1 ))
-    local idx_status
-    idx_status=$(docker exec "${container_name}" /var/www/magento2/bin/magento indexer:status 2>/dev/null || echo "ERROR")
-    if [[ "${idx_status}" == "ERROR" ]]; then
-      echo "[START] ⚠️  Magento indexer:status query failed at poll ${poll_i}" >&2
-      sleep 10
-      continue
+    # B-1955 (2026-08-04): 主判据改走 `indexer_state` 表, 不再解析 CLI 输出。
+    # 本镜像的 `magento indexer:status` 输出是**表格**:
+    #     +------------------------+----------------+--------+
+    #     | ID                     | Title          | Status |
+    #     | catalogsearch_fulltext | Catalog Search | Ready  |
+    # 行内**没有冒号** → 下方旧判据 `awk -F: '/:/ && NF'` 匹配 0 行 → total_rows=0 →
+    # 完成条件 `total_rows>0 && non_ready==0` **永远为假** → 每个 condition 的 reset
+    # 都空转到 deadline, 并打印一句假的 "did NOT reach all-Ready"。
+    # 实测 2026-08-03 fire: reindex 23:17:57→23:57 (40min) 就 11/11 valid, 脚本却仍在轮询。
+    # 这也是 B-1953 (900→2400s) / B-1954 (2400→6000s) 两次加 timeout 的真实病根 ——
+    # 用坏掉的仪器测量, 测出的是仪器故障, 不是被测对象的属性。
+    # 表里 status ∈ {valid, invalid, working} ↔ CLI {Ready, Reindex required, Processing}。
+    local total_rows=0 non_ready=0 sql_out
+    sql_out=$(docker exec -e MYSQL_PWD=MyPassword "${container_name}" \
+      mysql -u magentouser magentodb -sN \
+      -e "SELECT COUNT(*), SUM(status<>'valid') FROM indexer_state;" 2>/dev/null | head -1)
+    if [[ "${sql_out}" =~ ^([0-9]+)[[:space:]]+([0-9]+)$ ]]; then
+      total_rows="${BASH_REMATCH[1]}"
+      non_ready="${BASH_REMATCH[2]}"
+    else
+      # Fallback: mysqld 不可达 / 表结构变更 → 退回 CLI。表格与冒号两种格式都试,
+      # 因为 B-748 记录过 `Name: Status` 形态 (可能来自别的 Magento 版本)。
+      local idx_status
+      idx_status=$(docker exec "${container_name}" /var/www/magento2/bin/magento indexer:status 2>/dev/null || echo "")
+      total_rows=$(echo "${idx_status}" | awk -F'|' '/^\|/ && NF>=4 && $4 !~ /^ *Status *$/ {n++} END {print n+0}')
+      non_ready=$(echo "${idx_status}" | awk -F'|' '/^\|/ && NF>=4 && $4 !~ /^ *Status *$/ && $4 !~ /Ready/ {n++} END {print n+0}')
+      if (( total_rows == 0 )); then
+        total_rows=$(echo "${idx_status}" | awk -F: '/:/ && NF {n++} END {print n+0}')
+        non_ready=$(echo "${idx_status}" | awk -F: '/:/ && NF && $2 !~ /Ready/ {n++} END {print n+0}')
+      fi
+      if (( total_rows == 0 )); then
+        echo "[START] ⚠️  Magento indexer status unreadable (SQL+CLI both) at poll ${poll_i}" >&2
+        sleep 10
+        continue
+      fi
     fi
-    # B-748 (/stress A1.17 cold-start P1-5+18 B* OOB, 2026-05-17): awk replaces
-    # pipefail-fragile pipeline. Pre-fix `grep -E ":" | grep -vE "Ready|^$" | wc -l`
-    # had TWO bugs: (a) under `set -euo pipefail`, all-Ready success path → `grep -vE`
-    # rc=1 → pipefail propagated → assignment failed → script EXITED on healthy
-    # success path (verified by codex shell reproduction); (b) idx_status empty
-    # (mysqld restart at instant of query) → `wc -l` = 0 → false "all Ready" → break
-    # early while indexer still building → first search-autocomplete tasks return
-    # empty results → silent SR contamination. awk single-process: NF guard rejects
-    # empty lines (handles bug b); no pipefail trap (handles bug a). Stable on both
-    # paths.
-    local total_rows non_ready
-    total_rows=$(echo "${idx_status}" | awk -F: '/:/ && NF {n++} END {print n+0}')
-    non_ready=$(echo "${idx_status}" | awk -F: '/:/ && NF && $2 !~ /Ready/ {n++} END {print n+0}')
+    # B-748 (/stress A1.17 cold-start P1-5+18 B* OOB, 2026-05-17) 的两条护栏在
+    # B-1955 改判据后**依然生效**, 不要删:
+    #   (a) 不用 `grep | grep -v | wc -l` 管线 —— 在 `set -euo pipefail` 下 all-Ready
+    #       成功路径会让 `grep -v` rc=1 传播出去, 脚本在健康路径上退出;
+    #   (b) `total_rows > 0` 必须保留 —— 读不到状态时 non_ready 天然为 0, 若无此条件
+    #       会被误判成 "all Ready" 提前 break, reindex 未完就放行 → 搜索/autocomplete
+    #       任务返回空结果 → 静默 SR 污染。SQL 判据下同理: 表为空时 SUM() 返回 NULL,
+    #       正则不匹配 → 落 fallback, 而非当作 0 个 non-ready。
     if (( total_rows > 0 && non_ready == 0 )); then
       echo "[START] Magento indexer all Ready after $(( $(date +%s) - (poll_deadline - ${MAGENTO_REINDEX_MAX_S:-4200}) ))s / ${poll_i} polls (${total_rows} indexers)"
       break

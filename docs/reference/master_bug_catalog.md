@@ -10973,3 +10973,53 @@ state」** —— 规定的是**结果**(每个 condition 从干净态开始), �
 
 **Cross-link**: B-1931 / B-1953 (同一数字的前两次) · B-1952 (同函数反方向) · B-1839 (cls 的
 docker restart) · `_reset_vwa_local_{classifieds,reddit,shopping}` 三个实现
+
+---
+
+### B-1955 — indexer 完成判据看不见表格输出; 每个 condition 的 reset 空转到 deadline
+
+**症状**: 2026-08-03 fire 的 condition [1/7], `catalogsearch_fulltext` 在 **23:57** 就已
+`indexer_state.status='valid'` (11/11), 站点 `200 / 0.157s`, 但 `start_vwa_docker.sh` 仍在
+`sleep 10` 轮询循环里, 到 00:10 已多转 13 分钟。
+
+**根因**: 判据解析的是 `magento indexer:status` 的 CLI 输出, 而本镜像上它是**表格**:
+
+```
++---------------------------+----------------------+--------+
+| ID                        | Title                | Status |
+| catalogsearch_fulltext    | Catalog Search       | Ready  |
+```
+
+行内**没有冒号**。旧判据 `awk -F: '/:/ && NF {n++}'` 因此匹配 **0 行** →
+`total_rows=0` → 完成条件 `total_rows>0 && non_ready==0` **永远为假** → 循环必然跑满
+`MAGENTO_REINDEX_MAX_S` (4200s), 然后打印一句**假的** `did NOT reach all-Ready within 4200s`。
+实测 (A100 live): `total_rows=0 non_ready=0`, 而同一时刻 11 个 indexer 全 `Ready`。
+
+**这推翻了 B-1953 / B-1954 的因果判断**。那两条把同一个 timeout 从 900→2400→6000, 理由都是
+「reindex 太慢」。真相是 reindex **40 分钟就完成了** (23:17:57→23:57), 脚本只是**看不出来**。
+B-1954 那句「实测 3769s 仍未完成」的观测, 读的正是这个瞎了的判据本身。
+
+> **教训**: **用坏掉的仪器测量, 测出的是仪器的故障, 不是被测对象的属性。** 三次调 timeout
+> 都在给一个不存在的「慢」补时间。这次之所以暴露, 是因为绕开脚本、改用 `indexer_state` 表
+> 这条**独立观测通道** —— 单一通道的读数无法自证, 交叉通道才能。
+
+**影响**: 每个 condition 白等 `4200s − 实际reindex(~40min) ≈ 30 分钟`。VWA 7 + WA 7 =
+**约 7 小时纯空转**; 且假警报污染未来诊断 (会让人以为 reindex 真没完成)。
+**estimand 无影响** —— reindex 早已完成, 早退出与晚退出拿到的容器状态完全一致。
+
+**修复** (`_wait_magento_reindex`):
+1. **主判据改 SQL**: `SELECT COUNT(*), SUM(status<>'valid') FROM indexer_state` ——
+   表结构稳定, 不受 CLI 渲染格式影响。`status ∈ {valid, invalid, working}` ↔
+   CLI `{Ready, Reindex required, Processing}`。
+2. **Fallback 双格式**: SQL 不可读时退回 CLI, 先按表格 (`-F'|'`, `$4` 为 Status 列, 排除表头行)
+   解析; 仍为 0 再按 `Name: Status` 冒号格式 (B-748 记录过的形态) 解析。
+3. **B-748 两条护栏保留**: 不用 `grep|grep -v|wc` 管线 (pipefail 会在健康路径上杀脚本);
+   `total_rows > 0` 必须留 —— 读不到状态时 `non_ready` 天然为 0, 无此条件会被误判成
+   "all Ready" 提前放行, reindex 未完就跑 → 搜索/autocomplete 任务返回空 → 静默 SR 污染。
+   SQL 路径同理: 表为空时 `SUM()` 返回 NULL → 正则不匹配 → 落 fallback, 而不是当作 0 个 non-ready。
+
+**离线验证**: 实测表格样本下 旧判据 `total=0`(永不退出) / 新判据 `total=3 non_ready=0`(正确退出);
+把一行改成 `Processing` 后 新判据 `total=3 non_ready=3`(正确检出未完成)。
+
+**Cross-link**: B-1931 / B-1953 / B-1954 (同一 timeout 的三次误诊) · B-748 (被保留的两条护栏) ·
+B-1952 (同函数, mysqld 就绪探测) · `docs/reference/shopping_reset_state_surface.md` (重建代价构成)
