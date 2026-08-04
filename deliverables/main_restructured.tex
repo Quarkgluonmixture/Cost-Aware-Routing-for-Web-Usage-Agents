@@ -1,0 +1,132 @@
+% REALM @ EMNLP 2026 submission — restructured skeleton (2026-08-04).
+% ACL 2026 style, double-blind [review]. 8 pages of content + unlimited
+% references/appendix per the REALM CFP.
+%
+% Layout: 7 evidence tables in the main body (per the 2026-08-03 four-role
+% review); the remaining 33 in the appendix, grouped; three flagged for
+% cutting at the merge alignment (see sections/appendix.tex).
+\documentclass[11pt]{article}
+\usepackage[review]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+
+\graphicspath{{figures/}}
+
+% Float placement: a table-dense paper defers floats and dumps them pages
+% later under LaTeX's defaults; these values let a page carry more float.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{dbltopnumber}{2}
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.75}
+
+% Visible but line-breakable TODO marker.
+\newcommand{\todo}[1]{%
+  \begingroup\color{red!75!black}\bfseries
+  \colorbox{yellow!45}{\strut TODO}\,#1\endgroup}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% pdfLaTeX mappings for the Unicode used by the table sources.
+\DeclareUnicodeCharacter{00A7}{\S}
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{00B2}{\ensuremath{{}^{2}}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+\DeclareUnicodeCharacter{03C1}{\ensuremath{\rho}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{03B4}{\ensuremath{\delta}}
+\DeclareUnicodeCharacter{03B8}{\ensuremath{\theta}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+\DeclareUnicodeCharacter{2013}{--}
+\DeclareUnicodeCharacter{2014}{---}
+\DeclareUnicodeCharacter{2026}{\ldots}
+\DeclareUnicodeCharacter{2190}{\ensuremath{\leftarrow}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{21D2}{\ensuremath{\Rightarrow}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2216}{\ensuremath{\setminus}}
+\DeclareUnicodeCharacter{221E}{\ensuremath{\infty}}
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2284}{\ensuremath{\not\subset}}
+\DeclareUnicodeCharacter{2070}{\ensuremath{{}^{0}}}
+\DeclareUnicodeCharacter{2074}{\ensuremath{{}^{4}}}
+\DeclareUnicodeCharacter{2075}{\ensuremath{{}^{5}}}
+\DeclareUnicodeCharacter{2076}{\ensuremath{{}^{6}}}
+\DeclareUnicodeCharacter{2077}{\ensuremath{{}^{7}}}
+\DeclareUnicodeCharacter{207B}{\ensuremath{{}^{-}}}
+
+\ifdefined\pdfinfo
+  \pdfinfo{/TemplateVersion (ACL 2026 official style files (review/double-blind))}
+\fi
+
+% Storyline (agreed 2026-08-04): different representations fail differently
+% -> routing has real value (upper bound, rerun-corrected) -> five routing
+% methods set the lower bound at the fixed policies -> the gap is the open
+% problem for the community. Title candidates:
+%  1. The Representation-Routing Gap for Web Agents: A Real Ceiling
+%     No Available Supervision Can Reach
+%  2. Routing Is Least Learnable Where It Is Most Valuable: Bounds on
+%     Representation Routing for Web Agents
+%  3. A High Ceiling and an Empty Toolbox: Upper and Lower Bounds on
+%     Representation Routing for Web Agents
+\title{The Representation-Routing Gap for Web Agents\\
+  \todo{working title --- pick from the three candidates in the source}}
+
+\makeatletter
+\@ifundefined{acl@anonymizetrue}{\author{Anonymous submission}}{}
+\makeatother
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/0_abstract}
+\end{abstract}
+
+\input{sections/1_intro}
+\input{sections/2_setup}
+\input{sections/3_complementarity}
+\input{sections/3_noise}
+\input{sections/4_upperbound}
+\input{sections/5_lowerbound}
+\input{sections/6_gap}
+\input{sections/7_threats}
+\input{sections/8_discussion}
+
+% Everything above this label counts against the 8-page content limit.
+\label{content-end}
+
+\section*{Limitations}
+\input{sections/limitations}
+
+\label{refs-start}
+\bibliography{paper}
+\makeatletter
+\@ifundefined{acl@finalcopytrue}{\bibliographystyle{acl_natbib}}{}
+\makeatother
+
+\clearpage
+\appendix
+\input{sections/appendix}
+
+\end{document}
