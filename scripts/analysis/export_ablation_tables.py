@@ -932,6 +932,100 @@ def _cond_side(side: str, label: str):
     return "\n".join(rows), cap
 
 
+def t_divergence():
+    """Where two representations part company, on the tasks whose outcome they disagree on.
+
+    This is the one measurement that separates "the representation changed the agent" from
+    "the runs drifted apart". Drift accumulates: two trajectories would share a prefix and
+    diverge once enough perturbation had built up. What the data shows is the opposite shape
+    — they part at the first or second step and essentially never late — so the
+    representation is changing the FIRST decision, not compounding an error.
+
+    Reported per site rather than pooled because the effect is much weaker on WebArena, and
+    pooling would hide that behind the two sites where it is strong.
+    """
+    d = load("mechanism_per_task")["E2_trajectory_boundary"]
+    rows = ["| site | contrast | tasks | median first divergent step | diverged by step 3 | "
+            "diverged at step 10+ |", "|---|---|---|---|---|---|"]
+    per_site = {}
+    for site in ("classifieds", "reddit", "wa_reddit"):
+        for name, c in sorted((d.get(site) or {}).items()):
+            lab = f"{mode_label(c['left_mode'])} vs {mode_label(c['right_mode'])}"
+            e, l = 100 * c["early_divergence_rate"], 100 * c["late_divergence_rate"]
+            per_site.setdefault(site, []).append((e, l))
+            rows.append(f"| {site} | {lab} | {c['n_symmetric_diff_tasks']} | "
+                        f"{c['median_first_divergent_step']:g} | {e:.1f}% | {l:.1f}% |")
+    vwa = [x for st in ("classifieds", "reddit") for x in per_site.get(st, [])]
+    wa = per_site.get("wa_reddit", [])
+    return "\n".join(rows), (
+        f"Where two representations part company. Restricted to the tasks whose outcome the "
+        f"two modes **disagree** on — exactly one of them succeeds — so these are the "
+        f"trajectories that produced the difference, not all trajectories. `first divergent "
+        f"step` is the first step at which the two URL signatures differ. **Drift would look "
+        f"different**: two runs that separate through accumulated perturbation share a prefix "
+        f"and part late, whereas on VisualWebArena "
+        f"{min(e for e, _ in vwa):.0f}--{max(e for e, _ in vwa):.0f}% of these tasks have "
+        f"already diverged by step 3 and at most {max(l for _, l in vwa):.1f}% diverge at "
+        f"step 10 or later. **Caution: this is markedly weaker on WebArena** "
+        f"({min(e for e, _ in wa):.0f}--{max(e for e, _ in wa):.0f}% early, up to "
+        f"{max(l for _, l in wa):.1f}% late), which is why the table is per site and not "
+        f"pooled. **Caution:** each row rests on {min(c['n_symmetric_diff_tasks'] for st in d.values() for c in st.values())}--"
+        f"{max(c['n_symmetric_diff_tasks'] for st in d.values() for c in st.values())} tasks, "
+        f"and element ids are deliberately not used as the anchor — they are neither "
+        f"step-invariant nor mode-invariant, so URL signatures are the only stable comparison. "
+        f"Source: `mechanism_per_task.json` E2.")
+
+
+def t_coupling():
+    """Whether the two obstructions the lower bound reports are one obstruction.
+
+    Section 5 kills the which-mode router on label supply and separately notes that the
+    set where a per-task choice even exists is small. Those read as two independent walls.
+    They are not: both sets are subsets of the solvable set, so both are governed by how
+    many tasks the agent can do at all. That matters for the framing of the gap — it makes
+    the negative result indexed to the current capability regime and therefore falsifiable
+    by rerunning the same measurement on a stronger agent.
+
+    Deliberately adds no estimand: every column already appears in the ceiling table. The
+    only new content is the association and the ratio.
+    """
+    d = load("supply_value_coupling")
+    rows = ["| cell | n | best single mode | best SR | routable set (>1 solver) | "
+            "solvable (any mode) | routable / solvable |", "|---|---|---|---|---|---|---|"]
+    for c in d["cells"]:
+        rows.append(
+            f"| `{c['cell']}` | {c['n_tasks']} | {mode_label(c['best_mode'])} | "
+            f"{c['best_sr_pct']:.2f}% | {c['routable_share_pct']:.1f}% ({c['n_routable']}) | "
+            f"{c['solvable_share_pct']:.1f}% | {c['routable_over_solvable']:.2f} |")
+    above = d["routable_over_solvable_above_floor"]
+    floor_cells = ", ".join(f"`{c}`" for c in d["cells_at_floor"])
+    n_floor = [c["n_routable"] for c in d["cells"] if c["n_routable"] < d["n_routable_floor_threshold"]]
+    return "\n".join(rows), (
+        f"**Label supply and routing value are the same set.** The rows a which-mode router "
+        f"can be trained on exist only where something succeeded; the rows where a per-task "
+        f"choice exists at all are those with more than one solver. Both are subsets of the "
+        f"solvable set, and across all {d['n_cells']} cells they track the best single mode's "
+        f"success rate with Spearman rho = **{d['spearman_rho']:.3f}** (exact permutation "
+        f"p = {d['permutation_p_two_sided']:.4f}), mean |best SR - routable share| = "
+        # No `~` and no single-asterisk emphasis in a caption: the caption is emitted
+        # inside \emph{...}, so *x* closes it early, and pandoc turns ~ into
+        # \textasciitilde rather than a LaTeX tie.
+        f"**{d['mean_abs_gap_pp']:.2f}pp**. So the two obstructions the lower bound "
+        f"reports are not "
+        f"independent walls but one wall, whose height is set by how much the agent can do. "
+        f"**Caution: part of this association is structural, not empirical** — both columns "
+        f"are functionals of one solve matrix. The non-structural content is the "
+        f"**near-linearity**: under mode independence the routable share would grow "
+        f"near-quadratically in the per-mode rate at these success levels, and it does not, "
+        f"which says task difficulty dominates mode-task matching. **Caution: the ratio is "
+        f"not constant** — {above and f'{min(above):.2f}-{max(above):.2f}'} in the "
+        f"{len(above)} cells above the floor, but half that ({floor_cells}) on "
+        f"{' and '.join(str(x) for x in sorted(n_floor))} routable tasks, where it is one "
+        f"task wide. **Caution: the cells are not independent** — they share three sites and "
+        f"three backbones, so the permutation null asks whether the pairing is arbitrary, not "
+        f"whether eight systems were sampled. Source: `supply_value_coupling.json`.")
+
+
 def t_ceiling():
     """What a perfect per-task choice could buy — and the arm-matched column beside it.
 
@@ -1289,18 +1383,32 @@ def t_instability():
                     + (f"**{e:.2f}x** |" if isinstance(e, (int, float)) else "— |"))
     if len(rows) == 2:
         raise MissingProduct("label_instability.json: `strata` empty or unrecognised")
+    # Both enrichment figures were hand-typed in this caption until 2026-08-04 — the same
+    # defect class the setup section describes. They are ratios of two rates already in
+    # the product, so compute them rather than quoting them.
+    circ = d["difficulty_null"]
+    lro = d["difficulty_null_leave_replicated_out"]
+    e_circ = circ["contested"]["observed_flip_rate"] / circ["complement"]["observed_flip_rate"]
+    e_lro = lro["contested"]["observed_flip_rate"] / lro["complement"]["observed_flip_rate"]
+    n_arms = len(circ["arms_in_proxy"])
+    n_rep = len(d["replicated_arms"])
+    n_out = len(lro["arms_in_proxy"])
     cap = (f"Per-task label instability on `{d['cell']}` (n={d['n']}): "
            f"{d['n_flipped']} tasks change outcome between two runs of the same condition. "
            f"The rows a which-mode router could learn from are exactly the contested ones, "
-           f"and they carry almost all of the instability. **Caution:** this is the entire "
-           f"replicate inventory of the project — **one cell, two arms "
-           f"({', '.join(d['replicated_arms'])}), rerun once** — so every stability figure "
-           f"elsewhere is a lower bound derived from it. The headline enrichment has two "
-           f"defensible definitions and **neither may be quoted alone**: 17.4x defined over "
-           f"all six arms is correct for the claim (a router chooses among six) but the flips "
-           f"are produced by rerunning two of them, so the same arms decide both membership "
-           f"and outcome; rebuilding the difficulty proxy from the other four breaks that "
-           f"circle and gives 3.95x. Source: `label_instability.json`.")
+           f"and they carry almost all of the instability. **Caution: this table is computed "
+           f"on {n_rep} replicated arms of one cell "
+           f"({', '.join(d['replicated_arms'])}), rerun once.** The project's whole replicate "
+           f"inventory is three arms of that cell — the SoM pair landed after this product "
+           f"was generated and is not folded in here — plus five modes of `wa_red_B1` on a "
+           f"registered ten-task draw; no VWA-reddit cell and no B2 cell carries one at all, "
+           f"so every stability figure elsewhere is imported rather than measured. The "
+           f"headline enrichment has two defensible definitions and **neither may be quoted "
+           f"alone**: {e_circ:.1f}x defined over all {n_arms} arms is correct for the claim "
+           f"(a router chooses among {n_arms}) but the flips are produced by rerunning "
+           f"{n_rep} of them, so the same arms decide both membership and outcome; rebuilding "
+           f"the difficulty proxy from the other {n_out} breaks that circle and gives "
+           f"{e_lro:.2f}x. Source: `label_instability.json`.")
     return "\n".join(rows), cap
 
 
@@ -1606,6 +1714,8 @@ TABLES = [
     # references — no error, just wrong tables. New tables go on the end.
     ("failmode", "Failure modes are asymmetric across channels", t_failmode),
     ("ceiling", "What a perfect per-task choice could buy", t_ceiling),
+    ("divergence", "Where two representations part company", t_divergence),
+    ("coupling", "Label supply and routing value are one quantity", t_coupling),
 ]
 
 TABLE_NO = {slug: i + 1 for i, (slug, _, _) in enumerate(TABLES)}
@@ -1908,8 +2018,9 @@ def build_guide() -> str:
       f"would route *to* is already the right arm to route everything to.")
     A("")
 
-    A(f"**{TS('failmode','cond-text','cond-image','cond-probes','axis','axis1','halluc','pagechange')} — "
-      f"where the failures come from.** {T('failmode')} is the headline cut with both sides in "
+    A(f"**{TS('failmode','divergence','cond-text','cond-image','cond-probes','axis','axis1','halluc','pagechange')} — "
+      f"where the failures come from.** {T('divergence')} locates *when* two modes part on the tasks they disagree about — at the first step, not late, which is the shape drift does not have. "
+      f"{T('failmode')} is the headline cut with both sides in "
       f"one table, so the asymmetry is visible without flipping between floats; "
       f"{TS('cond-text','cond-image')} are the same data split per side at full depth. "
       f"These are the paired cut: on "

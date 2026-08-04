@@ -1,0 +1,112 @@
+{
+  "generated_from": "docs/analysis/cross_sites/routing_ceiling.json",
+  "leak_policy": "leak_zeroed",
+  "n_cells": 8,
+  "cells": [
+    {
+      "cell": "wa_red_B0",
+      "n_tasks": 104,
+      "best_mode": "P-text",
+      "best_sr_pct": 35.57692307692308,
+      "routable_share_pct": 34.61538461538461,
+      "n_routable": 36,
+      "solvable_share_pct": 51.92307692307692,
+      "routable_over_solvable": 0.6666666666666666
+    },
+    {
+      "cell": "cls_B0",
+      "n_tasks": 224,
+      "best_mode": "SoM",
+      "best_sr_pct": 27.232142857142858,
+      "routable_share_pct": 30.357142857142858,
+      "n_routable": 68,
+      "solvable_share_pct": 43.30357142857143,
+      "routable_over_solvable": 0.7010309278350515
+    },
+    {
+      "cell": "wa_red_B1",
+      "n_tasks": 104,
+      "best_mode": "DOM",
+      "best_sr_pct": 16.346153846153847,
+      "routable_share_pct": 17.307692307692307,
+      "n_routable": 18,
+      "solvable_share_pct": 30.76923076923077,
+      "routable_over_solvable": 0.5625
+    },
+    {
+      "cell": "red_B0",
+      "n_tasks": 203,
+      "best_mode": "SoM",
+      "best_sr_pct": 14.77832512315271,
+      "routable_share_pct": 17.24137931034483,
+      "n_routable": 35,
+      "solvable_share_pct": 26.108374384236452,
+      "routable_over_solvable": 0.6603773584905661
+    },
+    {
+      "cell": "cls_B1",
+      "n_tasks": 224,
+      "best_mode": "SoM",
+      "best_sr_pct": 14.285714285714286,
+      "routable_share_pct": 12.946428571428571,
+      "n_routable": 29,
+      "solvable_share_pct": 24.553571428571427,
+      "routable_over_solvable": 0.5272727272727273
+    },
+    {
+      "cell": "red_B1",
+      "n_tasks": 203,
+      "best_mode": "SoM",
+      "best_sr_pct": 6.896551724137931,
+      "routable_share_pct": 8.374384236453203,
+      "n_routable": 17,
+      "solvable_share_pct": 11.822660098522167,
+      "routable_over_solvable": 0.7083333333333334
+    },
+    {
+      "cell": "red_B2",
+      "n_tasks": 203,
+      "best_mode": "DOM",
+      "best_sr_pct": 2.4630541871921183,
+      "routable_share_pct": 1.477832512315271,
+      "n_routable": 3,
+      "solvable_share_pct": 5.911330049261084,
+      "routable_over_solvable": 0.25
+    },
+    {
+      "cell": "cls_B2",
+      "n_tasks": 224,
+      "best_mode": "SoM",
+      "best_sr_pct": 2.232142857142857,
+      "routable_share_pct": 1.7857142857142858,
+      "n_routable": 4,
+      "solvable_share_pct": 7.142857142857143,
+      "routable_over_solvable": 0.25
+    }
+  ],
+  "spearman_rho": 0.9761904761904762,
+  "pearson_r": 0.9903820996551288,
+  "permutation_p_two_sided": 0.0003968253968253968,
+  "permutation_n": 40320,
+  "mean_abs_gap_pp": 1.4699874478969315,
+  "routable_over_solvable_min": 0.25,
+  "routable_over_solvable_max": 0.7083333333333334,
+  "n_routable_floor_threshold": 5,
+  "routable_over_solvable_above_floor": [
+    0.6666666666666666,
+    0.7010309278350515,
+    0.5625,
+    0.6603773584905661,
+    0.5272727272727273,
+    0.7083333333333334
+  ],
+  "cells_at_floor": [
+    "red_B2",
+    "cls_B2"
+  ],
+  "caveats": [
+    "The 8 cells are not independent: they share 3 sites and 3 backbones, so the permutation null tests whether the pairing is arbitrary, not whether 8 independent systems were sampled.",
+    "Both columns are functionals of the same per-task solve matrix, and both are subsets of the solvable set. Part of the association is therefore structural, not empirical. The non-structural content is the SIZE of the ratio routable/solvable, which is 0.53-0.71 above the floor and is NOT constant -- it halves in the two near-floor cells.",
+    "Under mode independence the routable share would be a convex (near-quadratic at low success) function of the per-mode rate, not the near-identity observed here; the observed near-linearity is a statement about how strongly task difficulty dominates mode-task matching."
+  ]
+}
