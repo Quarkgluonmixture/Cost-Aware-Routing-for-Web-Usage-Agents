@@ -86,12 +86,16 @@ MODES = ["dom", "som", "vision", "ptext", "pprompt", "psom"]
 # unreadable. The two layers are separated deliberately: a display name is a framing decision
 # and may change again; a data key changes once and costs a re-run.
 PRETTY = {"dom": "DOM", "som": "SoM", "vision": "Vision",
-          "ptext": "DOM+somtext", "pprompt": "DOM+somprompt", "psom": "SoM-image"}
+          "ptext": "DOM+stext", "pprompt": "DOM+sprompt", "psom": "SoM-image"}
 
 # Products key their rows by the OLD display names, so relabel at render time rather than
 # touching any product. Accepts either spelling and is idempotent, so it is safe to apply
 # at any point in a rendering path without tracking which convention got there first.
-_MODE_RELABEL = {"P-text": "DOM+somtext", "P-prompt": "DOM+somprompt", "P-SoM": "SoM-image"}
+# Accepts both the pre-2026-08-04 spelling and the first-pass one, because rendered
+# output already carries the latter in places. Longest key first at call time.
+_MODE_RELABEL = {"P-text": "DOM+stext", "P-prompt": "DOM+sprompt",
+                 "P-SoM": "SoM-image",
+                 "DOM+somtext": "DOM+stext", "DOM+somprompt": "DOM+sprompt"}
 
 
 def mode_label(key: str) -> str:
@@ -143,9 +147,16 @@ RULE_NAME_ASCII = {
     "感知缺失循环": "perception-gap loop",
     "URL 自环": "URL self-loop",
     "找不到即放弃": "gives up when not found",
-    "视觉图像内容DOM必败": "visual-content task, DOM cannot see it",
+    "视觉图像内容DOM必败": "visual task, DOM cannot see",
     "根节点误操作": "root-node misfire",
     "导航至裸图片URL幻觉": "navigates to a bare image URL",
+    # Rules whose registry name is already ASCII arrive in SCREAMING_SNAKE and were passing
+    # through untouched, so a 7-column table wrapped them over four lines each. Rendered
+    # width is part of whether a table can be read; these are the same names in prose form.
+    "PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT": "page visual, no screenshot",
+    "SUBMIT_PAGE_ANCHOR_MISCLICK": "submit-page anchor misclick",
+    "IDENTICAL_FAILED_ACTION_STREAK": "identical failed-action streak",
+    "WALK_FAIL_DEGENERATE": "degenerate walk failure",
 }
 
 
@@ -237,7 +248,7 @@ def t_class() -> tuple[str, str]:
                     f"({PRETTY[r['class_best_arm']['no-image']]}) | "
                     f"{b['vision-only']:.2f} | {b['hybrid']:.2f} | {w} |")
     cap = ("Best arm within each deployment class (%). Classes: **no-image** = "
-           "{DOM, DOM+somtext, DOM+somprompt, SoM-image}, **vision-only** = {Vision}, "
+           "{DOM, DOM+stext, DOM+sprompt, SoM-image}, **vision-only** = {Vision}, "
            "**hybrid** = {SoM}. "
            "Grouping the four is licensed by the non-separability result (Table 4): they "
            "clear the ≥83% consistency bar on none of 26 metrics. "
@@ -268,7 +279,7 @@ def t_class_1arm() -> tuple[str, str]:
            "ordering does not move** — hybrid 4, no-image 3, one tie, and vision-only is never "
            "a sole best in either version — which is the robustness statement Table 2 cannot "
            "make. **The gaps do move**: on `WA·B0` the no-image lead is +4.81pp here against "
-           "+13.46pp there, because Table 2's figure is carried by DOM+somtext. Quote this table for "
+           "+13.46pp there, because Table 2's figure is carried by DOM+stext. Quote this table for "
            "any class gap; Table 2 only for the ordering. "
            "Source: `representation_class_comparison.json`.")
     return "\n".join(rows), cap
@@ -325,7 +336,7 @@ def t_nonsep() -> tuple[str, str]:
            f"not the 83% it claimed, and the six-cell ≥5/6 it says it matches is "
            f"{100 * 5 / 6:.1f}% — a {100 * thr / n - 100 * 5 / 6:+.1f}pp shift, chosen after "
            f"the cell count changed. Carrying the literal numerator (≥5/8 = 62.5%) instead "
-           f"would let DOM+somtext clear two metrics and this negative would appear to break, so "
+           f"would let DOM+stext clear two metrics and this negative would appear to break, so "
            f"the choice is load-bearing and is disclosed rather than defended. "
            f"Source: `per_mode_four_dimension_profile_with_wa.json`.")
     return "\n".join(rows), cap
@@ -1050,18 +1061,18 @@ def t_failmode():
     rows = ["| | rule | how it failed | on disagreement | baseline | enrichment | hits |",
             "|---|---|---|---|---|---|---|"]
 
-    rows.append(f"| **A. IMAGE channel wins** | | *how the TEXT channel failed* | "
+    rows.append(f"| **A. image wins** | | *how the text channel failed* | "
                 f"({img_tasks} tasks) | | | |")
     for e, rule, hits, cr, br in img:
-        rows.append(f"| | `{rule}` | {ascii_rule_name(rule, names.get(rule, ''))[:32]} | "
+        rows.append(f"| | `{rule}` | {ascii_rule_name(rule, names.get(rule, ''))[:34]} | "
                     f"{100*cr:.1f}% | {100*br:.1f}% | **{e:.2f}x** | {hits} |")
     if img_tail is not None:
         rows.append(f"| | | *{img_n_tail} further rules* | | | all <= {img_tail:.2f}x | |")
 
-    rows.append(f"| **B. TEXT channel wins** | | *how the IMAGE channel failed* | "
+    rows.append(f"| **B. text wins** | | *how the image channel failed* | "
                 f"({txt_tasks} tasks) | | | |")
     for e, rule, hits, cr, br in txt:
-        rows.append(f"| | `{rule}` | {ascii_rule_name(rule, names_t.get(rule, ''))[:32]} | "
+        rows.append(f"| | `{rule}` | {ascii_rule_name(rule, names_t.get(rule, ''))[:34]} | "
                     f"{100*cr:.1f}% | {100*br:.1f}% | **{e:.2f}x** | {hits} |")
     if txt_tail is not None:
         rows.append(f"| | | *{txt_n_tail} further rules* | | | all <= {txt_tail:.2f}x | |")
@@ -1711,7 +1722,7 @@ def build_inventory() -> tuple[str, str]:
     A("### What was measured")
     A("")
     A(f"1. **Success rate per mode**, 6 modes × {n_cells} cells (Table 1). The best mode is "
-      f"SoM in 5 cells, DOM in 2, DOM+somtext in 1.")
+      f"SoM in 5 cells, DOM in 2, DOM+stext in 1.")
     A(f"2. **Best arm per deployment class** (Table 2). Sole best: "
       + ", ".join(f"{k} {v}/{n_cells}" for k, v in sorted(tally.items(), key=lambda kv: -kv[1]))
       + f"; {ties} tied cell. `vision-only` is never a sole best. On `WA·B0` the no-image "
@@ -1742,7 +1753,7 @@ def build_inventory() -> tuple[str, str]:
       f"built on the partition in (6) survives undominated in 5 of {len(rrp['cells'])} cells "
       f"— where *undominated* means nothing beats it on all three axes, not that it is "
       f"preferable. On `cls·B0` all three rule policies sit between always-SoM and "
-      f"always-Vision, and `always-DOM+somprompt` at 19.64% is equally undominated.")
+      f"always-Vision, and `always-DOM+sprompt` at 19.64% is equally undominated.")
     A("")
 
     A("### What is known to be wrong with it")

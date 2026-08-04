@@ -11,7 +11,7 @@
 > No family-wise statement covers the set as a whole, and none is claimed.
 
 
-<!-- GENERATED 2026-08-04T13:53:37+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-08-04T18:16:36+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 
@@ -19,7 +19,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 <!-- BEGIN table:sr -->
 
-| cell | DOM | SoM | Vision | DOM+somtext | DOM+somprompt | SoM-image | best |
+| cell | DOM | SoM | Vision | DOM+stext | DOM+sprompt | SoM-image | best |
 |---|---|---|---|---|---|---|---|
 | cls·B0 | 17.41 | **27.23** | 25.00 | 15.62 | 19.64 | 15.62 | SoM |
 | cls·B1 | 6.25 | **14.29** | 12.50 | 7.59 | 6.70 | 6.70 | SoM |
@@ -27,7 +27,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | red·B0 | 14.29 | **14.78** | 7.39 | 13.30 | 12.32 | 10.84 | SoM |
 | red·B1 | 5.91 | **7.39** | 2.46 | 5.91 | 5.42 | 5.91 | SoM |
 | red·B2 | **3.94** | 0.99 | 1.97 | 1.97 | 0.00 | 0.49 | DOM |
-| WA·B0 | 26.92 | 22.12 | 19.23 | **35.58** | 25.96 | 25.00 | DOM+somtext |
+| WA·B0 | 26.92 | 22.12 | 19.23 | **35.58** | 25.96 | 25.00 | DOM+stext |
 | WA·B1 | **16.35** | 13.46 | 9.62 | 16.35 | 16.35 | 11.54 | DOM |
 
 *Table 1: Success rate per mode. Success rate (%) per observation mode. Denominator is the canonical scored set (cls 224 / red 203) and, for WebArena, the six-mode task intersection (104). Bold = best mode in the cell. Source: `representation_class_comparison.json`.*
@@ -38,16 +38,16 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | cell | no-image (4 arms) | vision-only | hybrid | sole best |
 |---|---|---|---|---|
-| cls·B0 | 19.64 (DOM+somprompt) | 25.00 | 27.23 | hybrid |
-| cls·B1 | 7.59 (DOM+somtext) | 12.50 | 14.29 | hybrid |
-| cls·B2 | 1.79 (DOM+somprompt) | 2.23 | 2.23 | tie: hybrid+vision-only |
+| cls·B0 | 19.64 (DOM+sprompt) | 25.00 | 27.23 | hybrid |
+| cls·B1 | 7.59 (DOM+stext) | 12.50 | 14.29 | hybrid |
+| cls·B2 | 1.79 (DOM+sprompt) | 2.23 | 2.23 | tie: hybrid+vision-only |
 | red·B0 | 14.29 (DOM) | 7.39 | 14.78 | hybrid |
 | red·B1 | 5.91 (DOM) | 2.46 | 7.39 | hybrid |
 | red·B2 | 3.94 (DOM) | 1.97 | 0.99 | no-image |
-| WA·B0 | 35.58 (DOM+somtext) | 19.23 | 22.12 | no-image |
+| WA·B0 | 35.58 (DOM+stext) | 19.23 | 22.12 | no-image |
 | WA·B1 | 16.35 (DOM) | 9.62 | 13.46 | no-image |
 
-*Table 2: Best arm per deployment class. Best arm within each deployment class (%). Classes: **no-image** = {DOM, DOM+somtext, DOM+somprompt, SoM-image}, **vision-only** = {Vision}, **hybrid** = {SoM}. Grouping the four is licensed by the non-separability result (Table 4): they clear the ≥83% consistency bar on none of 26 metrics. Source: `representation_class_comparison.json`.*
+*Table 2: Best arm per deployment class. Best arm within each deployment class (%). Classes: **no-image** = {DOM, DOM+stext, DOM+sprompt, SoM-image}, **vision-only** = {Vision}, **hybrid** = {SoM}. Grouping the four is licensed by the non-separability result (Table 4): they clear the ≥83% consistency bar on none of 26 metrics. Source: `representation_class_comparison.json`.*
 
 <!-- END table:class -->
 
@@ -64,7 +64,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B0 | 26.92 | 19.23 | 22.12 | no-image | +4.81 | +13.46 |
 | WA·B1 | 16.35 | 9.62 | 13.46 | no-image | +2.88 | +2.88 |
 
-*Table 3: Deployment classes at one arm each. The same comparison at **one arm per class** (%). Table 2's no-image column is a maximum over four arms while the other two are single arms, so it is biased up; this panel uses the arm of each class that exists outside this study. **The ordering does not move** — hybrid 4, no-image 3, one tie, and vision-only is never a sole best in either version — which is the robustness statement Table 2 cannot make. **The gaps do move**: on `WA·B0` the no-image lead is +4.81pp here against +13.46pp there, because Table 2's figure is carried by DOM+somtext. Quote this table for any class gap; Table 2 only for the ordering. Source: `representation_class_comparison.json`.*
+*Table 3: Deployment classes at one arm each. The same comparison at **one arm per class** (%). Table 2's no-image column is a maximum over four arms while the other two are single arms, so it is biased up; this panel uses the arm of each class that exists outside this study. **The ordering does not move** — hybrid 4, no-image 3, one tie, and vision-only is never a sole best in either version — which is the robustness statement Table 2 cannot make. **The gaps do move**: on `WA·B0` the no-image lead is +4.81pp here against +13.46pp there, because Table 2's figure is carried by DOM+stext. Quote this table for any class gap; Table 2 only for the ordering. Source: `representation_class_comparison.json`.*
 
 <!-- END table:class-1arm -->
 
@@ -92,11 +92,11 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | Vision | 9 |
 | SoM | 5 |
 | DOM | 0 |
-| DOM+somtext | 0 |
-| DOM+somprompt | 0 |
+| DOM+stext | 0 |
+| DOM+sprompt | 0 |
 | SoM-image | 0 |
 
-*Table 5: Absence of repeated extrema among image-free modes. **Absence of repeated extrema** — read the name literally. A mode 'reaches the bar' on a metric when it is the extreme (highest or lowest) in ≥7 of 8 cells (87.5%). Over 26 metrics the four image-free modes reach it on **none**. **Caution:** **This is not a separability test.** `rank_consistency()` only counts which mode attains each metric's max/min; a mode that is consistently *second* — and strongly distinguishable — never reaches the bar. Establishing non-separability would need pairwise equivalence margins with task-clustered intervals, which this does not do. **Caution:** **The threshold got stricter when cells grew, and an earlier caption said otherwise**: ≥7/8 is 87.5%, not the 83% it claimed, and the six-cell ≥5/6 it says it matches is 83.3% — a +4.2pp shift, chosen after the cell count changed. Carrying the literal numerator (≥5/8 = 62.5%) instead would let DOM+somtext clear two metrics and this negative would appear to break, so the choice is load-bearing and is disclosed rather than defended. Source: `per_mode_four_dimension_profile_with_wa.json`.*
+*Table 5: Absence of repeated extrema among image-free modes. **Absence of repeated extrema** — read the name literally. A mode 'reaches the bar' on a metric when it is the extreme (highest or lowest) in ≥7 of 8 cells (87.5%). Over 26 metrics the four image-free modes reach it on **none**. **Caution:** **This is not a separability test.** `rank_consistency()` only counts which mode attains each metric's max/min; a mode that is consistently *second* — and strongly distinguishable — never reaches the bar. Establishing non-separability would need pairwise equivalence margins with task-clustered intervals, which this does not do. **Caution:** **The threshold got stricter when cells grew, and an earlier caption said otherwise**: ≥7/8 is 87.5%, not the 83% it claimed, and the six-cell ≥5/6 it says it matches is 83.3% — a +4.2pp shift, chosen after the cell count changed. Carrying the literal numerator (≥5/8 = 62.5%) instead would let DOM+stext clear two metrics and this negative would appear to break, so the choice is load-bearing and is disclosed rather than defended. Source: `per_mode_four_dimension_profile_with_wa.json`.*
 
 <!-- END table:nonsep -->
 
@@ -107,50 +107,50 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B0 | DOM | 17.41 | 39 | 4 |
 | cls·B0 | SoM | 27.23 | 61 | 6 |
 | cls·B0 | Vision | 25.00 | 56 | 9 |
-| cls·B0 | DOM+somtext | 15.62 | 35 | 2 |
-| cls·B0 | DOM+somprompt | 19.64 | 44 | 6 |
+| cls·B0 | DOM+stext | 15.62 | 35 | 2 |
+| cls·B0 | DOM+sprompt | 19.64 | 44 | 6 |
 | cls·B0 | SoM-image | 15.62 | 35 | 2 |
 | cls·B1 | DOM | 6.25 | 14 | 1 |
 | cls·B1 | SoM | 14.29 | 32 | 10 |
 | cls·B1 | Vision | 12.50 | 28 | 9 |
-| cls·B1 | DOM+somtext | 7.59 | 17 | 1 |
-| cls·B1 | DOM+somprompt | 6.70 | 15 | 2 |
+| cls·B1 | DOM+stext | 7.59 | 17 | 1 |
+| cls·B1 | DOM+sprompt | 6.70 | 15 | 2 |
 | cls·B1 | SoM-image | 6.70 | 15 | 3 |
 | cls·B2 | DOM | 1.34 | 3 | 1 |
 | cls·B2 | SoM | 2.23 | 5 | 5 |
 | cls·B2 | Vision | 2.23 | 5 | 5 |
-| cls·B2 | DOM+somtext | 0.45 | 1 | 0 |
-| cls·B2 | DOM+somprompt | 1.79 | 4 | 0 |
+| cls·B2 | DOM+stext | 0.45 | 1 | 0 |
+| cls·B2 | DOM+sprompt | 1.79 | 4 | 0 |
 | cls·B2 | SoM-image | 0.89 | 2 | 1 |
 | red·B0 | DOM | 14.29 | 29 | 3 |
 | red·B0 | SoM | 14.78 | 30 | 4 |
 | red·B0 | Vision | 7.39 | 15 | 4 |
-| red·B0 | DOM+somtext | 13.30 | 27 | 2 |
-| red·B0 | DOM+somprompt | 12.32 | 25 | 2 |
+| red·B0 | DOM+stext | 13.30 | 27 | 2 |
+| red·B0 | DOM+sprompt | 12.32 | 25 | 2 |
 | red·B0 | SoM-image | 10.84 | 22 | 2 |
 | red·B1 | DOM | 5.91 | 12 | 1 |
 | red·B1 | SoM | 7.39 | 15 | 1 |
 | red·B1 | Vision | 2.46 | 5 | 2 |
-| red·B1 | DOM+somtext | 5.91 | 12 | 1 |
-| red·B1 | DOM+somprompt | 5.42 | 11 | 2 |
+| red·B1 | DOM+stext | 5.91 | 12 | 1 |
+| red·B1 | DOM+sprompt | 5.42 | 11 | 2 |
 | red·B1 | SoM-image | 5.91 | 12 | 0 |
 | red·B2 | DOM | 3.94 | 8 | 6 |
 | red·B2 | SoM | 0.99 | 2 | 1 |
 | red·B2 | Vision | 1.97 | 4 | 3 |
-| red·B2 | DOM+somtext | 1.97 | 4 | 1 |
-| red·B2 | DOM+somprompt | 0.00 | 0 | 0 |
+| red·B2 | DOM+stext | 1.97 | 4 | 1 |
+| red·B2 | DOM+sprompt | 0.00 | 0 | 0 |
 | red·B2 | SoM-image | 0.49 | 1 | 1 |
 | WA·B0 | DOM | 26.92 | 28 | 2 |
 | WA·B0 | SoM | 22.12 | 23 | 2 |
 | WA·B0 | Vision | 19.23 | 20 | 4 |
-| WA·B0 | DOM+somtext | 35.58 | 37 | 7 |
-| WA·B0 | DOM+somprompt | 25.96 | 27 | 2 |
+| WA·B0 | DOM+stext | 35.58 | 37 | 7 |
+| WA·B0 | DOM+sprompt | 25.96 | 27 | 2 |
 | WA·B0 | SoM-image | 25.00 | 26 | 1 |
 | WA·B1 | DOM | 16.35 | 17 | 3 |
 | WA·B1 | SoM | 13.46 | 14 | 1 |
 | WA·B1 | Vision | 9.62 | 10 | 1 |
-| WA·B1 | DOM+somtext | 16.35 | 17 | 3 |
-| WA·B1 | DOM+somprompt | 16.35 | 17 | 5 |
+| WA·B1 | DOM+stext | 16.35 | 17 | 3 |
+| WA·B1 | DOM+sprompt | 16.35 | 17 | 5 |
 | WA·B1 | SoM-image | 11.54 | 12 | 1 |
 
 *Table 6: Full matrix — Outcome dimension. Outcome dimension, every cell × every mode. `unique` counts tasks **no other mode in that cell solved**. Denominators: cls 224 / red 203 / WA 104. Source: `per_mode_four_dimension_profile_with_wa.json`.*
@@ -164,50 +164,50 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B0 | DOM | 15.61 | 0.268 | 0.322 | 0.224 | 0.183 | 0.812 | 0.606 |
 | cls·B0 | SoM | 13.67 | 0.259 | 0.319 | 0.205 | 0.155 | 0.692 | 0.558 |
 | cls·B0 | Vision | 15.88 | 0.295 | 0.353 | 0.146 | 0.260 | 0.728 | 0.639 |
-| cls·B0 | DOM+somtext | 15.83 | 0.295 | 0.322 | 0.194 | 0.196 | 0.808 | 0.603 |
-| cls·B0 | DOM+somprompt | 14.96 | 0.290 | 0.328 | 0.208 | 0.174 | 0.759 | 0.583 |
+| cls·B0 | DOM+stext | 15.83 | 0.295 | 0.322 | 0.194 | 0.196 | 0.808 | 0.603 |
+| cls·B0 | DOM+sprompt | 14.96 | 0.290 | 0.328 | 0.208 | 0.174 | 0.759 | 0.583 |
 | cls·B0 | SoM-image | 16.23 | 0.321 | 0.312 | 0.201 | 0.208 | 0.790 | 0.600 |
 | cls·B1 | DOM | 21.38 | 0.585 | 0.246 | 0.345 | 0.171 | 0.777 | 0.698 |
 | cls·B1 | SoM | 18.01 | 0.491 | 0.368 | 0.211 | 0.137 | 0.643 | 0.655 |
 | cls·B1 | Vision | 20.17 | 0.598 | 0.330 | 0.071 | 0.360 | 0.603 | 0.745 |
-| cls·B1 | DOM+somtext | 22.46 | 0.625 | 0.281 | 0.367 | 0.148 | 0.804 | 0.716 |
-| cls·B1 | DOM+somprompt | 21.40 | 0.594 | 0.375 | 0.209 | 0.163 | 0.723 | 0.710 |
+| cls·B1 | DOM+stext | 22.46 | 0.625 | 0.281 | 0.367 | 0.148 | 0.804 | 0.716 |
+| cls·B1 | DOM+sprompt | 21.40 | 0.594 | 0.375 | 0.209 | 0.163 | 0.723 | 0.710 |
 | cls·B1 | SoM-image | 21.26 | 0.576 | 0.436 | 0.212 | 0.154 | 0.737 | 0.715 |
 | cls·B2 | DOM | 27.38 | 0.817 | 0.520 | 0.142 | 0.031 | 0.647 | 0.823 |
 | cls·B2 | SoM | 24.37 | 0.688 | 0.488 | 0.143 | 0.033 | 0.616 | 0.828 |
 | cls·B2 | Vision | 28.25 | 0.888 | 0.336 | 0.128 | 0.323 | 0.710 | 0.896 |
-| cls·B2 | DOM+somtext | 26.85 | 0.804 | 0.384 | 0.168 | 0.043 | 0.629 | 0.832 |
-| cls·B2 | DOM+somprompt | 27.84 | 0.830 | 0.514 | 0.078 | 0.048 | 0.629 | 0.857 |
+| cls·B2 | DOM+stext | 26.85 | 0.804 | 0.384 | 0.168 | 0.043 | 0.629 | 0.832 |
+| cls·B2 | DOM+sprompt | 27.84 | 0.830 | 0.514 | 0.078 | 0.048 | 0.629 | 0.857 |
 | cls·B2 | SoM-image | 28.38 | 0.853 | 0.523 | 0.082 | 0.033 | 0.683 | 0.858 |
 | red·B0 | DOM | 20.18 | 0.498 | 0.455 | 0.148 | 0.166 | 0.473 | 0.721 |
 | red·B0 | SoM | 20.08 | 0.512 | 0.474 | 0.123 | 0.099 | 0.363 | 0.731 |
 | red·B0 | Vision | 23.55 | 0.672 | 0.339 | 0.079 | 0.343 | 0.239 | 0.817 |
-| red·B0 | DOM+somtext | 23.22 | 0.647 | 0.442 | 0.153 | 0.117 | 0.388 | 0.775 |
-| red·B0 | DOM+somprompt | 19.87 | 0.463 | 0.475 | 0.142 | 0.126 | 0.428 | 0.704 |
+| red·B0 | DOM+stext | 23.22 | 0.647 | 0.442 | 0.153 | 0.117 | 0.388 | 0.775 |
+| red·B0 | DOM+sprompt | 19.87 | 0.463 | 0.475 | 0.142 | 0.126 | 0.428 | 0.704 |
 | red·B0 | SoM-image | 22.90 | 0.592 | 0.453 | 0.137 | 0.124 | 0.338 | 0.775 |
 | red·B1 | DOM | 23.44 | 0.680 | 0.471 | 0.238 | 0.066 | 0.596 | 0.754 |
 | red·B1 | SoM | 22.38 | 0.670 | 0.574 | 0.129 | 0.095 | 0.409 | 0.747 |
 | red·B1 | Vision | 23.24 | 0.685 | 0.434 | 0.029 | 0.270 | 0.148 | 0.812 |
-| red·B1 | DOM+somtext | 25.56 | 0.783 | 0.476 | 0.246 | 0.067 | 0.606 | 0.793 |
-| red·B1 | DOM+somprompt | 23.72 | 0.695 | 0.545 | 0.149 | 0.052 | 0.567 | 0.757 |
+| red·B1 | DOM+stext | 25.56 | 0.783 | 0.476 | 0.246 | 0.067 | 0.606 | 0.793 |
+| red·B1 | DOM+sprompt | 23.72 | 0.695 | 0.545 | 0.149 | 0.052 | 0.567 | 0.757 |
 | red·B1 | SoM-image | 25.17 | 0.773 | 0.580 | 0.166 | 0.056 | 0.557 | 0.778 |
 | red·B2 | DOM | 28.39 | 0.897 | 0.724 | 0.108 | 0.042 | 0.227 | 0.870 |
 | red·B2 | SoM | 26.34 | 0.783 | 0.702 | 0.103 | 0.043 | 0.148 | 0.857 |
 | red·B2 | Vision | 26.91 | 0.828 | 0.349 | 0.081 | 0.344 | 0.138 | 0.911 |
-| red·B2 | DOM+somtext | 27.27 | 0.818 | 0.660 | 0.099 | 0.038 | 0.266 | 0.885 |
-| red·B2 | DOM+somprompt | 27.68 | 0.842 | 0.703 | 0.081 | 0.052 | 0.271 | 0.873 |
+| red·B2 | DOM+stext | 27.27 | 0.818 | 0.660 | 0.099 | 0.038 | 0.266 | 0.885 |
+| red·B2 | DOM+sprompt | 27.68 | 0.842 | 0.703 | 0.081 | 0.052 | 0.271 | 0.873 |
 | red·B2 | SoM-image | 27.87 | 0.882 | 0.708 | 0.094 | 0.048 | 0.217 | 0.882 |
 | WA·B0 | DOM | 16.88 | 0.298 | 0.544 | 0.208 | 0.072 | 0.308 | 0.709 |
 | WA·B0 | SoM | 17.45 | 0.365 | 0.465 | 0.278 | 0.029 | 0.327 | 0.716 |
 | WA·B0 | Vision | 22.38 | 0.567 | 0.409 | 0.200 | 0.241 | 0.240 | 0.783 |
-| WA·B0 | DOM+somtext | 19.77 | 0.471 | 0.478 | 0.323 | 0.045 | 0.288 | 0.741 |
-| WA·B0 | DOM+somprompt | 17.08 | 0.317 | 0.538 | 0.198 | 0.068 | 0.260 | 0.714 |
+| WA·B0 | DOM+stext | 19.77 | 0.471 | 0.478 | 0.323 | 0.045 | 0.288 | 0.741 |
+| WA·B0 | DOM+sprompt | 17.08 | 0.317 | 0.538 | 0.198 | 0.068 | 0.260 | 0.714 |
 | WA·B0 | SoM-image | 18.97 | 0.385 | 0.502 | 0.284 | 0.056 | 0.221 | 0.729 |
 | WA·B1 | DOM | 22.64 | 0.625 | 0.459 | 0.319 | 0.023 | 0.644 | 0.746 |
 | WA·B1 | SoM | 23.91 | 0.702 | 0.499 | 0.218 | 0.035 | 0.452 | 0.793 |
 | WA·B1 | Vision | 23.12 | 0.606 | 0.450 | 0.097 | 0.249 | 0.260 | 0.807 |
-| WA·B1 | DOM+somtext | 23.33 | 0.615 | 0.495 | 0.316 | 0.028 | 0.683 | 0.733 |
-| WA·B1 | DOM+somprompt | 24.50 | 0.702 | 0.551 | 0.231 | 0.033 | 0.519 | 0.776 |
+| WA·B1 | DOM+stext | 23.33 | 0.615 | 0.495 | 0.316 | 0.028 | 0.683 | 0.733 |
+| WA·B1 | DOM+sprompt | 24.50 | 0.702 | 0.551 | 0.231 | 0.033 | 0.519 | 0.776 |
 | WA·B1 | SoM-image | 23.79 | 0.683 | 0.569 | 0.249 | 0.017 | 0.587 | 0.772 |
 
 *Table 7: Full matrix — Macro dimension. Macro dimension — what the agent did, per step, aggregated per episode. Fractions are over agent actions. `cap-hit` = share of episodes that exhausted the 30-step budget. Source: `per_mode_four_dimension_profile_with_wa.json`.*
@@ -221,50 +221,50 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B0 | DOM | 0.0007 | 0.133 | 0.163 | 0.035 | 0.241 | 0.096 | 0.108 | 0.046 | 0.078 | 0.324 | 0.737 |
 | cls·B0 | SoM | 0.0021 | 0.082 | 0.102 | 0.007 | 0.216 | 0.018 | 0.134 | 0.051 | 0.027 | 0.300 | 0.741 |
 | cls·B0 | Vision | 0.0000 | 0.150 | 0.153 | 0.005 | 0.263 | 0.072 | 0.113 | 0.058 | 0.002 | 0.396 | 0.705 |
-| cls·B0 | DOM+somtext | 0.0000 | 0.101 | 0.100 | 0.022 | 0.209 | 0.071 | 0.108 | 0.042 | 0.046 | 0.310 | 0.705 |
-| cls·B0 | DOM+somprompt | 0.0009 | 0.133 | 0.159 | 0.026 | 0.246 | 0.078 | 0.114 | 0.049 | 0.079 | 0.322 | 0.719 |
+| cls·B0 | DOM+stext | 0.0000 | 0.101 | 0.100 | 0.022 | 0.209 | 0.071 | 0.108 | 0.042 | 0.046 | 0.310 | 0.705 |
+| cls·B0 | DOM+sprompt | 0.0009 | 0.133 | 0.159 | 0.026 | 0.246 | 0.078 | 0.114 | 0.049 | 0.079 | 0.322 | 0.719 |
 | cls·B0 | SoM-image | 0.0005 | 0.112 | 0.130 | 0.016 | 0.221 | 0.078 | 0.109 | 0.042 | 0.037 | 0.332 | 0.688 |
 | cls·B1 | DOM | 0.0031 | 0.285 | 0.155 | 0.153 | 0.359 | 0.219 | 0.074 | 0.011 | 0.175 | 0.443 | 0.411 |
 | cls·B1 | SoM | 0.0016 | 0.249 | 0.203 | 0.068 | 0.353 | 0.149 | 0.104 | 0.013 | 0.118 | 0.390 | 0.509 |
 | cls·B1 | Vision | 0.0000 | 0.454 | 0.345 | 0.031 | 0.548 | 0.278 | 0.094 | 0.018 | 0.011 | 0.530 | 0.402 |
-| cls·B1 | DOM+somtext | 0.0004 | 0.259 | 0.182 | 0.140 | 0.317 | 0.159 | 0.058 | 0.010 | 0.202 | 0.461 | 0.384 |
-| cls·B1 | DOM+somprompt | 0.0044 | 0.309 | 0.272 | 0.081 | 0.380 | 0.178 | 0.070 | 0.012 | 0.174 | 0.409 | 0.406 |
+| cls·B1 | DOM+stext | 0.0004 | 0.259 | 0.182 | 0.140 | 0.317 | 0.159 | 0.058 | 0.010 | 0.202 | 0.461 | 0.384 |
+| cls·B1 | DOM+sprompt | 0.0044 | 0.309 | 0.272 | 0.081 | 0.380 | 0.178 | 0.070 | 0.012 | 0.174 | 0.409 | 0.406 |
 | cls·B1 | SoM-image | 0.0010 | 0.322 | 0.274 | 0.136 | 0.381 | 0.169 | 0.059 | 0.015 | 0.203 | 0.461 | 0.424 |
 | cls·B2 | DOM | 0.0259 | 0.509 | 0.555 | 0.207 | 0.526 | 0.099 | 0.018 | 0.030 | 0.339 | 0.630 | 0.125 |
 | cls·B2 | SoM | 0.0876 | 0.559 | 0.475 | 0.110 | 0.584 | 0.067 | 0.025 | 0.026 | 0.327 | 0.627 | 0.152 |
 | cls·B2 | Vision | 0.0067 | 0.670 | 0.773 | 0.355 | 0.685 | 0.443 | 0.015 | 0.017 | 0.124 | 0.518 | 0.103 |
-| cls·B2 | DOM+somtext | 0.0761 | 0.441 | 0.438 | 0.227 | 0.453 | 0.130 | 0.012 | 0.029 | 0.292 | 0.602 | 0.062 |
-| cls·B2 | DOM+somprompt | 0.0518 | 0.495 | 0.569 | 0.167 | 0.504 | 0.137 | 0.009 | 0.028 | 0.312 | 0.633 | 0.071 |
+| cls·B2 | DOM+stext | 0.0761 | 0.441 | 0.438 | 0.227 | 0.453 | 0.130 | 0.012 | 0.029 | 0.292 | 0.602 | 0.062 |
+| cls·B2 | DOM+sprompt | 0.0518 | 0.495 | 0.569 | 0.167 | 0.504 | 0.137 | 0.009 | 0.028 | 0.312 | 0.633 | 0.071 |
 | cls·B2 | SoM-image | 0.0522 | 0.425 | 0.507 | 0.109 | 0.433 | 0.099 | 0.008 | 0.027 | 0.273 | 0.649 | 0.054 |
 | red·B0 | DOM | 0.0002 | 0.222 | 0.194 | 0.051 | 0.294 | 0.161 | 0.072 | 0.075 | 0.119 | 0.428 | 0.507 |
 | red·B0 | SoM | 0.0008 | 0.252 | 0.127 | 0.022 | 0.328 | 0.085 | 0.077 | 0.092 | 0.068 | 0.491 | 0.488 |
 | red·B0 | Vision | 0.0000 | 0.382 | 0.193 | 0.018 | 0.430 | 0.268 | 0.049 | 0.064 | 0.006 | 0.556 | 0.328 |
-| red·B0 | DOM+somtext | 0.0005 | 0.292 | 0.126 | 0.062 | 0.339 | 0.146 | 0.047 | 0.087 | 0.064 | 0.518 | 0.358 |
-| red·B0 | DOM+somprompt | 0.0026 | 0.194 | 0.146 | 0.046 | 0.270 | 0.149 | 0.076 | 0.093 | 0.083 | 0.421 | 0.537 |
+| red·B0 | DOM+stext | 0.0005 | 0.292 | 0.126 | 0.062 | 0.339 | 0.146 | 0.047 | 0.087 | 0.064 | 0.518 | 0.358 |
+| red·B0 | DOM+sprompt | 0.0026 | 0.194 | 0.146 | 0.046 | 0.270 | 0.149 | 0.076 | 0.093 | 0.083 | 0.421 | 0.537 |
 | red·B0 | SoM-image | 0.0027 | 0.285 | 0.118 | 0.034 | 0.335 | 0.160 | 0.050 | 0.097 | 0.070 | 0.502 | 0.408 |
 | red·B1 | DOM | 0.0021 | 0.227 | 0.210 | 0.049 | 0.274 | 0.090 | 0.047 | 0.050 | 0.143 | 0.465 | 0.315 |
 | red·B1 | SoM | 0.0063 | 0.297 | 0.228 | 0.062 | 0.357 | 0.111 | 0.061 | 0.061 | 0.176 | 0.552 | 0.320 |
 | red·B1 | Vision | 0.0141 | 0.532 | 0.334 | 0.010 | 0.582 | 0.302 | 0.050 | 0.022 | 0.004 | 0.632 | 0.291 |
-| red·B1 | DOM+somtext | 0.0018 | 0.283 | 0.195 | 0.107 | 0.319 | 0.156 | 0.036 | 0.042 | 0.164 | 0.511 | 0.217 |
-| red·B1 | DOM+somprompt | 0.0010 | 0.295 | 0.278 | 0.056 | 0.340 | 0.114 | 0.045 | 0.055 | 0.201 | 0.494 | 0.305 |
+| red·B1 | DOM+stext | 0.0018 | 0.283 | 0.195 | 0.107 | 0.319 | 0.156 | 0.036 | 0.042 | 0.164 | 0.511 | 0.217 |
+| red·B1 | DOM+sprompt | 0.0010 | 0.295 | 0.278 | 0.056 | 0.340 | 0.114 | 0.045 | 0.055 | 0.201 | 0.494 | 0.305 |
 | red·B1 | SoM-image | 0.0019 | 0.332 | 0.297 | 0.077 | 0.368 | 0.146 | 0.036 | 0.059 | 0.208 | 0.544 | 0.222 |
 | red·B2 | DOM | 0.0224 | 0.492 | 0.502 | 0.111 | 0.501 | 0.156 | 0.009 | 0.044 | 0.443 | 0.770 | 0.074 |
 | red·B2 | SoM | 0.0431 | 0.384 | 0.344 | 0.090 | 0.403 | 0.053 | 0.019 | 0.052 | 0.305 | 0.760 | 0.163 |
 | red·B2 | Vision | 0.0163 | 0.640 | 0.613 | 0.276 | 0.669 | 0.547 | 0.029 | 0.005 | 0.078 | 0.597 | 0.153 |
-| red·B2 | DOM+somtext | 0.0786 | 0.285 | 0.263 | 0.081 | 0.292 | 0.094 | 0.007 | 0.041 | 0.202 | 0.728 | 0.059 |
-| red·B2 | DOM+somprompt | 0.0660 | 0.604 | 0.621 | 0.126 | 0.609 | 0.115 | 0.005 | 0.042 | 0.503 | 0.724 | 0.044 |
+| red·B2 | DOM+stext | 0.0786 | 0.285 | 0.263 | 0.081 | 0.292 | 0.094 | 0.007 | 0.041 | 0.202 | 0.728 | 0.059 |
+| red·B2 | DOM+sprompt | 0.0660 | 0.604 | 0.621 | 0.126 | 0.609 | 0.115 | 0.005 | 0.042 | 0.503 | 0.724 | 0.044 |
 | red·B2 | SoM-image | 0.0501 | 0.316 | 0.297 | 0.123 | 0.325 | 0.137 | 0.009 | 0.034 | 0.240 | 0.725 | 0.049 |
 | WA·B0 | DOM | 0.0008 | 0.277 | 0.286 | 0.083 | 0.363 | 0.046 | 0.085 | 0.226 | 0.165 | 0.455 | 0.702 |
 | WA·B0 | SoM | 0.0063 | 0.249 | 0.139 | 0.079 | 0.345 | 0.026 | 0.096 | 0.219 | 0.045 | 0.433 | 0.625 |
 | WA·B0 | Vision | 0.0000 | 0.245 | 0.178 | 0.042 | 0.295 | 0.165 | 0.050 | 0.152 | 0.007 | 0.478 | 0.433 |
-| WA·B0 | DOM+somtext | 0.0010 | 0.347 | 0.292 | 0.200 | 0.421 | 0.057 | 0.074 | 0.247 | 0.099 | 0.497 | 0.538 |
-| WA·B0 | DOM+somprompt | 0.0018 | 0.295 | 0.278 | 0.070 | 0.379 | 0.045 | 0.085 | 0.223 | 0.157 | 0.469 | 0.692 |
+| WA·B0 | DOM+stext | 0.0010 | 0.347 | 0.292 | 0.200 | 0.421 | 0.057 | 0.074 | 0.247 | 0.099 | 0.497 | 0.538 |
+| WA·B0 | DOM+sprompt | 0.0018 | 0.295 | 0.278 | 0.070 | 0.379 | 0.045 | 0.085 | 0.223 | 0.157 | 0.469 | 0.692 |
 | WA·B0 | SoM-image | 0.0033 | 0.302 | 0.268 | 0.170 | 0.377 | 0.040 | 0.075 | 0.268 | 0.092 | 0.500 | 0.625 |
 | WA·B1 | DOM | 0.0227 | 0.244 | 0.201 | 0.038 | 0.289 | 0.026 | 0.045 | 0.135 | 0.139 | 0.512 | 0.327 |
 | WA·B1 | SoM | 0.0052 | 0.363 | 0.214 | 0.084 | 0.415 | 0.024 | 0.052 | 0.166 | 0.149 | 0.573 | 0.279 |
 | WA·B1 | Vision | 0.0072 | 0.416 | 0.326 | 0.023 | 0.456 | 0.215 | 0.041 | 0.102 | 0.002 | 0.571 | 0.365 |
-| WA·B1 | DOM+somtext | 0.0102 | 0.206 | 0.197 | 0.076 | 0.247 | 0.045 | 0.041 | 0.113 | 0.105 | 0.503 | 0.385 |
-| WA·B1 | DOM+somprompt | 0.0068 | 0.343 | 0.302 | 0.070 | 0.379 | 0.066 | 0.036 | 0.098 | 0.197 | 0.522 | 0.298 |
+| WA·B1 | DOM+stext | 0.0102 | 0.206 | 0.197 | 0.076 | 0.247 | 0.045 | 0.041 | 0.113 | 0.105 | 0.503 | 0.385 |
+| WA·B1 | DOM+sprompt | 0.0068 | 0.343 | 0.302 | 0.070 | 0.379 | 0.066 | 0.036 | 0.098 | 0.197 | 0.522 | 0.298 |
 | WA·B1 | SoM-image | 0.0144 | 0.343 | 0.315 | 0.076 | 0.382 | 0.036 | 0.039 | 0.099 | 0.180 | 0.562 | 0.288 |
 
 *Table 8: Full matrix — Micro dimension. Micro dimension — per-step execution quality. `act-fail|click` and `act-fail|type` are conditional on the action type, so they are not comparable to the unconditional `act-fail` column. **Caution:** **They are also not pure conditionals.** An episode containing no click at all has no click-failure rate to report, and the producer stores `0.0` there — an undefined rate encoded as a perfect one — which is then averaged over every task. The zero-denominator share is large: **25–35% of episodes never type**, and a few percent never click. The product now carries `*_fail_rate_complete_case` (averaged only over episodes where the action occurred) and `*_fail_rate_denom_zero_frac` beside these columns; the complete-case values run **higher**, and any statement about which mode fails most on clicks or types should be read from those, not from this column. **Caution:** `loc-fallback` is near-zero for Vision **by construction** (no element ids to fall back from), not as a finding. Source: `per_mode_four_dimension_profile_with_wa.json`.*
@@ -278,50 +278,50 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B0 | DOM | 0.06962 | 1.000 | 115.0 | 114.1 | 63045 |
 | cls·B0 | SoM | 0.07236 | 1.039 | 106.7 | 106.0 | 67000 |
 | cls·B0 | Vision | 0.06481 | 0.931 | 126.3 | 125.2 | 58302 |
-| cls·B0 | DOM+somtext | 0.06919 | 0.994 | 123.8 | 120.4 | 62154 |
-| cls·B0 | DOM+somprompt | 0.06853 | 0.984 | 109.4 | 107.8 | 62555 |
+| cls·B0 | DOM+stext | 0.06919 | 0.994 | 123.8 | 120.4 | 62154 |
+| cls·B0 | DOM+sprompt | 0.06853 | 0.984 | 109.4 | 107.8 | 62555 |
 | cls·B0 | SoM-image | 0.07206 | 1.035 | 121.1 | 117.9 | 65334 |
 | cls·B1 | DOM | 0.05951 | 1.000 | 308.9 | 308.9 | 61904 |
 | cls·B1 | SoM | 0.06028 | 1.013 | 262.0 | 262.0 | 62953 |
 | cls·B1 | Vision | 0.04316 | 0.725 | 269.8 | 269.8 | 44524 |
-| cls·B1 | DOM+somtext | 0.05879 | 0.988 | 313.5 | 313.5 | 61074 |
-| cls·B1 | DOM+somprompt | 0.06304 | 1.059 | 301.4 | 301.4 | 65628 |
+| cls·B1 | DOM+stext | 0.05879 | 0.988 | 313.5 | 313.5 | 61074 |
+| cls·B1 | DOM+sprompt | 0.06304 | 1.059 | 301.4 | 301.4 | 65628 |
 | cls·B1 | SoM-image | 0.05970 | 1.003 | 311.7 | 311.7 | 61985 |
 | cls·B2 | DOM | 0.07676 | 1.000 | 402.3 | 402.3 | 79653 |
 | cls·B2 | SoM | 0.09075 | 1.182 | 374.3 | 374.3 | 95081 |
 | cls·B2 | Vision | 0.07065 | 0.920 | 417.8 | 417.8 | 73126 |
-| cls·B2 | DOM+somtext | 0.07320 | 0.954 | 399.4 | 399.4 | 75946 |
-| cls·B2 | DOM+somprompt | 0.08453 | 1.101 | 396.4 | 396.4 | 87948 |
+| cls·B2 | DOM+stext | 0.07320 | 0.954 | 399.4 | 399.4 | 75946 |
+| cls·B2 | DOM+sprompt | 0.08453 | 1.101 | 396.4 | 396.4 | 87948 |
 | cls·B2 | SoM-image | 0.08456 | 1.102 | 411.0 | 411.0 | 87931 |
 | red·B0 | DOM | 0.10147 | 1.000 | 572.0 | 552.5 | 93303 |
 | red·B0 | SoM | 0.11045 | 1.089 | 461.4 | 451.6 | 103031 |
 | red·B0 | Vision | 0.09807 | 0.966 | 449.8 | 418.5 | 88872 |
-| red·B0 | DOM+somtext | 0.10577 | 1.042 | 631.4 | 562.1 | 96214 |
-| red·B0 | DOM+somprompt | 0.10163 | 1.002 | 498.4 | 447.7 | 93817 |
+| red·B0 | DOM+stext | 0.10577 | 1.042 | 631.4 | 562.1 | 96214 |
+| red·B0 | DOM+sprompt | 0.10163 | 1.002 | 498.4 | 447.7 | 93817 |
 | red·B0 | SoM-image | 0.10814 | 1.066 | 562.0 | 532.0 | 99005 |
 | red·B1 | DOM | 0.07330 | 1.000 | 602.6 | 602.6 | 76462 |
 | red·B1 | SoM | 0.08000 | 1.091 | 609.1 | 609.1 | 83517 |
 | red·B1 | Vision | 0.05240 | 0.715 | 456.6 | 456.6 | 53994 |
-| red·B1 | DOM+somtext | 0.06948 | 0.948 | 598.6 | 598.6 | 72222 |
-| red·B1 | DOM+somprompt | 0.07656 | 1.044 | 614.0 | 614.0 | 79896 |
+| red·B1 | DOM+stext | 0.06948 | 0.948 | 598.6 | 598.6 | 72222 |
+| red·B1 | DOM+sprompt | 0.07656 | 1.044 | 614.0 | 614.0 | 79896 |
 | red·B1 | SoM-image | 0.07480 | 1.020 | 616.6 | 616.6 | 77722 |
 | red·B2 | DOM | 0.09479 | 1.000 | 669.9 | 669.9 | 99015 |
 | red·B2 | SoM | 0.11160 | 1.177 | 623.0 | 623.0 | 117379 |
 | red·B2 | Vision | 0.06833 | 0.721 | 550.0 | 550.0 | 70826 |
-| red·B2 | DOM+somtext | 0.08852 | 0.934 | 677.6 | 677.6 | 92346 |
-| red·B2 | DOM+somprompt | 0.09940 | 1.049 | 599.3 | 599.3 | 104021 |
+| red·B2 | DOM+stext | 0.08852 | 0.934 | 677.6 | 677.6 | 92346 |
+| red·B2 | DOM+sprompt | 0.09940 | 1.049 | 599.3 | 599.3 | 104021 |
 | red·B2 | SoM-image | 0.09451 | 0.997 | 640.0 | 640.0 | 98699 |
 | WA·B0 | DOM | 0.07531 | 1.000 | 284.1 | 282.7 | 68616 |
 | WA·B0 | SoM | 0.09110 | 1.210 | 272.1 | 271.7 | 84854 |
 | WA·B0 | Vision | 0.08640 | 1.147 | 337.9 | 337.5 | 77786 |
-| WA·B0 | DOM+somtext | 0.08478 | 1.126 | 330.3 | 328.4 | 76591 |
-| WA·B0 | DOM+somprompt | 0.07747 | 1.029 | 262.4 | 260.9 | 71176 |
+| WA·B0 | DOM+stext | 0.08478 | 1.126 | 330.3 | 328.4 | 76591 |
+| WA·B0 | DOM+sprompt | 0.07747 | 1.029 | 262.4 | 260.9 | 71176 |
 | WA·B0 | SoM-image | 0.08498 | 1.128 | 324.0 | 320.9 | 77689 |
 | WA·B1 | DOM | 0.06579 | 1.000 | 485.2 | 485.2 | 68491 |
 | WA·B1 | SoM | 0.07944 | 1.208 | 494.8 | 494.8 | 82940 |
 | WA·B1 | Vision | 0.04468 | 0.679 | 490.7 | 490.7 | 45878 |
-| WA·B1 | DOM+somtext | 0.06151 | 0.935 | 509.9 | 509.9 | 63727 |
-| WA·B1 | DOM+somprompt | 0.07386 | 1.123 | 506.3 | 506.3 | 76839 |
+| WA·B1 | DOM+stext | 0.06151 | 0.935 | 509.9 | 509.9 | 63727 |
+| WA·B1 | DOM+sprompt | 0.07386 | 1.123 | 506.3 | 506.3 | 76839 |
 | WA·B1 | SoM-image | 0.06659 | 1.012 | 510.6 | 510.6 | 68819 |
 
 *Table 9: Full matrix — Efficiency dimension. Efficiency dimension. **Cost is comparable within a cell only** — B0 bills a proxy API, B1/B2 are electricity-derived from a per-token constant calibrated for a different accelerator, so absolute dollars for B1/B2 are uncalibrated and only `cost rel DOM` is safe across backbones. `latency canon` removes retry, busy-wait and recovered-screenshot time; it differs from raw only on the API-served arm. Source: `per_mode_four_dimension_profile_with_wa.json`.*
@@ -335,11 +335,11 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B0 | 1.116× | 1.183× | Vision | SoM | **no** | -0.60 | SoM, Vision |
 | red·B0 | 1.126× | 1.404× | Vision | Vision | yes | +0.14 | DOM, SoM, Vision |
 | cls·B1 | 1.461× | 1.197× | Vision | SoM | **no** | -0.26 | SoM, Vision |
-| red·B1 | 1.527× | 1.350× | Vision | Vision | yes | +0.77 | SoM, Vision, DOM+somtext |
+| red·B1 | 1.527× | 1.350× | Vision | Vision | yes | +0.77 | SoM, Vision, DOM+stext |
 | cls·B2 | 1.285× | 1.116× | Vision | SoM | **no** | -0.60 | Vision |
 | red·B2 | 1.633× | 1.232× | Vision | Vision | yes | -0.03 | DOM, Vision |
-| WA·B1 | 1.778× | 1.052× | Vision | DOM | **no** | +0.20 | Vision, DOM+somtext |
-| WA·B0 | 1.210× | 1.288× | DOM | DOM+somprompt | **no** | +0.26 | DOM, DOM+somtext |
+| WA·B1 | 1.778× | 1.052× | Vision | DOM | **no** | +0.20 | Vision, DOM+stext |
+| WA·B0 | 1.210× | 1.288× | DOM | DOM+sprompt | **no** | +0.26 | DOM, DOM+stext |
 
 *Table 10: Multi-metric Pareto. Multi-metric Pareto. `span` = dearest/cheapest (or slowest/fastest) ratio within the cell. **Caution:** Per-cell exact permutation p-values on ρ are **not significant** — six modes give a Spearman test almost no power — so the cross-cell pattern carries this, not any single ρ. Source: `multimetric_pareto_with_wa.json`.*
 
@@ -349,13 +349,13 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | cell | mean step (ms) | model call (ms) | model share | fastest by total | fastest by model only | same? |
 |---|---|---|---|---|---|---|
-| B0·classifieds | 7,622 | 2,140 | **28.1%** | DOM+somprompt | DOM+somprompt | yes |
+| B0·classifieds | 7,622 | 2,140 | **28.1%** | DOM+sprompt | DOM+sprompt | yes |
 | B0·reddit | 24,601 | 5,603 | **22.8%** | Vision | SoM-image | **no** |
-| B0·wa_reddit | 16,112 | 3,551 | **22.0%** | Vision | DOM+somprompt | **no** |
+| B0·wa_reddit | 16,112 | 3,551 | **22.0%** | Vision | DOM+sprompt | **no** |
 | B1·classifieds | 14,180 | 8,213 | **57.9%** | Vision | Vision | yes |
-| B1·reddit | 24,376 | 7,916 | **32.5%** | Vision | DOM+somtext | **no** |
-| B1·wa_reddit | 21,221 | 7,747 | **36.5%** | DOM+somprompt | Vision | **no** |
-| B2·classifieds | 14,739 | 9,908 | **67.2%** | DOM+somprompt | DOM+somprompt | yes |
+| B1·reddit | 24,376 | 7,916 | **32.5%** | Vision | DOM+stext | **no** |
+| B1·wa_reddit | 21,221 | 7,747 | **36.5%** | DOM+sprompt | Vision | **no** |
+| B2·classifieds | 14,739 | 9,908 | **67.2%** | DOM+sprompt | DOM+sprompt | yes |
 | B2·reddit | 22,863 | 9,131 | **39.9%** | Vision | Vision | yes |
 
 *Table 11: What a latency number contains. What a latency number contains. Every latency figure elsewhere in this paper is the whole step; `backend_infer` isolates the model call and was read by no analysis script until 2026-08-03. **The model is 22–67% of the measured time**; the rest is the browser and the container, which `offsite_navigation_audit` measures at 1.69× between the two sites. Removing it **changes which mode is fastest in 4 of 8 cells**, and not at random: 4 of 5 reddit-family cells flip against 0 of 3 classifieds cells — the flips land where the container is slowest. A sentence naming the fastest mode is therefore partly a sentence about this deployment. What survives estimand choice is only that the two orderings disagree. Source: `latency_decomposition.json`.*
@@ -432,8 +432,8 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | red·B1 | yes | Vision | SoM | Vision | SoM | 15 |
 | cls·B2 | **no** | Vision | Vision | SoM | SoM | 5 |
 | red·B2 | **no** | Vision | DOM | Vision | DOM | 8 |
-| WA·B1 | yes | Vision | DOM+somtext | DOM | DOM | 17 |
-| WA·B0 | yes | DOM | DOM+somtext | DOM+somprompt | DOM+somtext | 37 |
+| WA·B1 | yes | Vision | DOM+stext | DOM | DOM | 17 |
+| WA·B0 | yes | DOM | DOM+stext | DOM+sprompt | DOM+stext | 37 |
 
 *Table 15: Per-attempt versus per-success. Per-attempt versus per-success denominators. `content? = no` marks cells whose best mode has fewer than 10 successes — their ratios are directions at best and both B2 cells are in that state. Among the 6 cells with content the cheapest mode changes under the success denominator in 4 and the fastest in 3. **Caution:** **Every pairwise CI overlaps**, so this supports the methodological point that the denominator must be declared, not any ranking. Source: `outcome_efficiency.json`.*
 
@@ -485,10 +485,10 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B1 | SoM  at 14.29 | +4.91 (Vision) | — | no floor on this cell |
 | cls·B2 | SoM  at 2.23 | +2.23 (Vision) | — | no floor on this cell |
 | red·B0 | SoM  at 14.78 | +4.93 (DOM) | — | no floor on this cell |
-| red·B1 | SoM  at 7.39 | +1.97 (DOM+somprompt) | — | no floor on this cell |
+| red·B1 | SoM  at 7.39 | +1.97 (DOM+sprompt) | — | no floor on this cell |
 | red·B2 | DOM  at 3.94 | +1.97 (Vision) | — | no floor on this cell |
-| WA·B0 | DOM+somtext  at 35.58 | +5.77 (DOM) | — | no floor on this cell |
-| WA·B1 | DOM  at 16.35 | +4.81 (DOM+somtext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **inside the rerun band** |
+| WA·B0 | DOM+stext  at 35.58 | +5.77 (DOM) | — | no floor on this cell |
+| WA·B1 | DOM  at 16.35 | +4.81 (DOM+stext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **inside the rerun band** |
 
 *Table 18: New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are directly comparable; only the *source* of the extra arm differs. **The band is 3 rerun pairs on one cell** (`B0 × classifieds`, n=224), one each for **DOM, SoM, Vision** — so the rows without a band have no comparator at all, and the band itself is 3 draws rather than a bound. Since the SoM replicate landed 2026-08-03 the band is **no longer extrapolated onto an unreplicated arm**: both the fused mode this table's best-single column keeps selecting and the arm the comparison adds now carry their own measured floor, and adding the third pair left the band unmoved. Source: `noise_floor_inventory.json`.*
 
@@ -501,13 +501,13 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B0 | always-SoM | 27.23 | 0.07236 | 106.0s | yes |
 | cls·B0 | always-Vision | 25.00 | 0.06481 | 125.2s | yes |
 | cls·B0 | rule: flag→Vision else DOM | 24.55 | 0.06809 | 117.6s | yes |
-| cls·B0 | rule: flag→SoM else DOM+somtext | 24.11 | 0.07019 | 115.8s | yes |
+| cls·B0 | rule: flag→SoM else DOM+stext | 24.11 | 0.07019 | 115.8s | yes |
 | cls·B0 | rule: flag→SoM else DOM | 23.66 | 0.07049 | 111.5s | yes |
 | cls·B0 | always-DOM | 17.41 | 0.06962 | 114.1s | no |
 | cls·B1 | always-SoM | 14.29 | 0.06028 | 262.0s | yes |
 | cls·B1 | always-Vision | 12.50 | 0.04316 | 269.8s | yes |
 | cls·B1 | rule: flag→Vision else DOM | 11.61 | 0.05433 | 296.5s | no |
-| cls·B1 | rule: flag→SoM else DOM+somtext | 11.16 | 0.05926 | 297.2s | no |
+| cls·B1 | rule: flag→SoM else DOM+stext | 11.16 | 0.05926 | 297.2s | no |
 | cls·B1 | rule: flag→SoM else DOM | 10.27 | 0.05976 | 294.0s | no |
 | cls·B1 | always-DOM | 6.25 | 0.05951 | 308.9s | no |
 | cls·B2 | always-SoM | 2.23 | 0.09075 | 374.3s | yes |
@@ -515,15 +515,15 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B2 | rule: flag→Vision else DOM | 1.79 | 0.07483 | 407.2s | yes |
 | cls·B2 | always-DOM | 1.34 | 0.07676 | 402.3s | yes |
 | cls·B2 | rule: flag→SoM else DOM | 1.34 | 0.08120 | 393.4s | no |
-| cls·B2 | rule: flag→SoM else DOM+somtext | 1.34 | 0.07876 | 391.5s | yes |
+| cls·B2 | rule: flag→SoM else DOM+stext | 1.34 | 0.07876 | 391.5s | yes |
 | red·B0 | always-SoM | 14.78 | 0.11045 | 451.6s | yes |
 | red·B0 | always-DOM | 14.29 | 0.10147 | 552.5s | yes |
 | red·B0 | rule: flag→SoM else DOM | 14.29 | 0.10426 | 521.2s | yes |
 | red·B0 | rule: flag→Vision else DOM | 13.30 | 0.10041 | 510.9s | yes |
-| red·B0 | rule: flag→SoM else DOM+somtext | 13.30 | 0.10722 | 527.8s | no |
+| red·B0 | rule: flag→SoM else DOM+stext | 13.30 | 0.10722 | 527.8s | no |
 | red·B0 | always-Vision | 7.39 | 0.09807 | 418.5s | yes |
 | red·B1 | always-SoM | 7.39 | 0.08000 | 609.1s | yes |
-| red·B1 | rule: flag→SoM else DOM+somtext | 6.90 | 0.07275 | 601.8s | yes |
+| red·B1 | rule: flag→SoM else DOM+stext | 6.90 | 0.07275 | 601.8s | yes |
 | red·B1 | rule: flag→SoM else DOM | 6.40 | 0.07538 | 604.6s | no |
 | red·B1 | always-DOM | 5.91 | 0.07330 | 602.6s | no |
 | red·B1 | rule: flag→Vision else DOM | 4.93 | 0.06682 | 557.3s | yes |
@@ -532,7 +532,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | red·B2 | always-DOM | 3.94 | 0.09479 | 669.9s | no |
 | red·B2 | rule: flag→SoM else DOM | 3.45 | 0.10001 | 655.4s | no |
 | red·B2 | always-Vision | 1.97 | 0.06833 | 550.0s | yes |
-| red·B2 | rule: flag→SoM else DOM+somtext | 1.48 | 0.09568 | 660.7s | no |
+| red·B2 | rule: flag→SoM else DOM+stext | 1.48 | 0.09568 | 660.7s | no |
 | red·B2 | always-SoM | 0.99 | 0.11160 | 623.0s | no |
 
 *Table 19: Routing policies on the 3-axis frontier. Is routing worth it? `rule` policies send the ex-ante-flagged tasks to one arm and the rest to another; the partition is a regex over the task intent, so nothing is learned and there is no in-sample optimism. 'On frontier' means **nothing dominates it**, not that it is preferable — on `cls·B0` all three rule policies sit between always-SoM and always-Vision, worse on every axis than one or the other. Cost/latency are per-attempt cell means, **within-cell comparable only**. Source: `rule_routing_pareto.json`.*
@@ -593,7 +593,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cell | tasks with ref image | without | best mode WITH image | SR | best mode WITHOUT | SR |
 |---|---|---|---|---|---|---|
 | cls·B0 | 65 | 159 | SoM | 40.00 | Vision | 22.64 |
-| cls·B1 | 65 | 159 | DOM+somtext | 16.92 | SoM | 13.84 |
+| cls·B1 | 65 | 159 | DOM+stext | 16.92 | SoM | 13.84 |
 | cls·B2 | 65 | 159 | SoM | 4.62 | DOM | 1.89 |
 | red·B0 | 79 | 124 | SoM | 26.58 | DOM | 7.26 |
 | red·B1 | 79 | 124 | SoM | 13.92 | SoM | 3.23 |
@@ -607,14 +607,14 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | rule | name | on disagreement | baseline | enrichment | hits |
 |---|---|---|---|---|---|
-| `P49` | SUBMIT_PAGE_ANCHOR_MISCLICK | 3.7% | 1.0% | **3.61x** | 8 |
+| `P49` | submit-page anchor misclick | 3.7% | 1.0% | **3.61x** | 8 |
 | `P17` | click-back oscillation | 4.6% | 3.9% | **1.17x** | 10 |
 | `P12` | never paginates | 13.8% | 14.8% | **0.93x** | 30 |
 | `P31` | budget exhausted, unfinished | 49.5% | 54.2% | **0.91x** | 108 |
-| `P36` | WALK_FAIL_DEGENERATE | 27.1% | 31.2% | **0.87x** | 59 |
+| `P36` | degenerate walk failure | 27.1% | 31.2% | **0.87x** | 59 |
 | `P5` | perception-gap loop | 40.8% | 51.5% | **0.79x** | 89 |
 | `P14` | URL self-loop | 25.7% | 32.5% | **0.79x** | 56 |
-| `P45` | IDENTICAL_FAILED_ACTION_STREAK | 13.3% | 17.1% | **0.78x** | 29 |
+| `P45` | identical failed-action streak | 13.3% | 17.1% | **0.78x** | 29 |
 
 *Table 24: Paired failure attribution: text wins. Only the TEXT channel solved it: how the IMAGE channel failed. Pooled over 8 cells at ruleset v11: 109 disagreement tasks, 218 losing-channel failure episodes against 2653 of that channel's failures overall. Enrichment = hit rate on the disagreement set over hit rate across all that channel's failures; approximately 1x means the loser failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted. **Caution:** TEXT is four arms against IMAGE's two, so the two panels' task counts are not comparable to each other. Source: `conditional_failure_attribution.json`.*
 
@@ -626,8 +626,8 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 |---|---|---|---|---|---|
 | `P27` | gives up when not found | 3.2% | 1.4% | **2.31x** | 13 |
 | `P17` | click-back oscillation | 15.1% | 6.7% | **2.25x** | 61 |
-| `P16` | visual-content task, DOM cannot se | 6.2% | 2.8% | **2.24x** | 25 |
-| `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSHOT | 48.5% | 29.3% | **1.65x** | 196 |
+| `P16` | visual task, DOM cannot see | 6.2% | 2.8% | **2.24x** | 25 |
+| `P43` | page visual, no screenshot | 48.5% | 29.3% | **1.65x** | 196 |
 | `P19` | P19 | 2.0% | 1.3% | **1.55x** | 8 |
 | `P30` | P30 | 2.0% | 1.4% | **1.39x** | 8 |
 | `P4` | root-node misfire | 8.7% | 8.6% | **1.01x** | 35 |
@@ -794,39 +794,39 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cell | mode | episodes | failed | with hallucinated ref | rate of failed |
 |---|---|---|---|---|---|
 | classifieds·B0 | DOM | 224 | 185 | 15 | 8.1% |
-| classifieds·B0 | DOM+somprompt | 224 | 180 | 11 | 6.1% |
+| classifieds·B0 | DOM+sprompt | 224 | 180 | 11 | 6.1% |
 | classifieds·B0 | SoM-image | 224 | 189 | 2 | 1.1% |
-| classifieds·B0 | DOM+somtext | 224 | 189 | 9 | 4.8% |
+| classifieds·B0 | DOM+stext | 224 | 189 | 9 | 4.8% |
 | classifieds·B0 | SoM | 187 | 129 | 2 | 1.6% |
 | classifieds·B0 | Vision | 224 | 168 | 0 | 0.0% |
 | reddit·B0 | DOM | 203 | 174 | 8 | 4.6% |
-| reddit·B0 | DOM+somprompt | 203 | 178 | 8 | 4.5% |
+| reddit·B0 | DOM+sprompt | 203 | 178 | 8 | 4.5% |
 | reddit·B0 | SoM-image | 203 | 181 | 1 | 0.6% |
-| reddit·B0 | DOM+somtext | 203 | 176 | 6 | 3.4% |
+| reddit·B0 | DOM+stext | 203 | 176 | 6 | 3.4% |
 | reddit·B0 | SoM | 203 | 173 | 2 | 1.2% |
 | reddit·B0 | Vision | 203 | 188 | 0 | 0.0% |
 | classifieds·B1 | DOM | 224 | 210 | 20 | 9.5% |
-| classifieds·B1 | DOM+somprompt | 224 | 209 | 33 | 15.8% |
+| classifieds·B1 | DOM+sprompt | 224 | 209 | 33 | 15.8% |
 | classifieds·B1 | SoM-image | 224 | 209 | 7 | 3.3% |
-| classifieds·B1 | DOM+somtext | 224 | 207 | 45 | 21.7% |
+| classifieds·B1 | DOM+stext | 224 | 207 | 45 | 21.7% |
 | classifieds·B1 | SoM | 224 | 192 | 0 | 0.0% |
 | classifieds·B1 | Vision | 224 | 196 | 0 | 0.0% |
 | reddit·B1 | DOM | 203 | 191 | 25 | 13.1% |
-| reddit·B1 | DOM+somprompt | 203 | 192 | 33 | 17.2% |
+| reddit·B1 | DOM+sprompt | 203 | 192 | 33 | 17.2% |
 | reddit·B1 | SoM-image | 203 | 191 | 3 | 1.6% |
-| reddit·B1 | DOM+somtext | 203 | 191 | 24 | 12.6% |
+| reddit·B1 | DOM+stext | 203 | 191 | 24 | 12.6% |
 | reddit·B1 | SoM | 203 | 188 | 5 | 2.7% |
 | reddit·B1 | Vision | 203 | 198 | 0 | 0.0% |
 | classifieds·B2 | DOM | 224 | 221 | 82 | 37.1% |
-| classifieds·B2 | DOM+somprompt | 224 | 220 | 114 | 51.8% |
+| classifieds·B2 | DOM+sprompt | 224 | 220 | 114 | 51.8% |
 | classifieds·B2 | SoM-image | 224 | 222 | 43 | 19.4% |
-| classifieds·B2 | DOM+somtext | 224 | 223 | 75 | 33.6% |
+| classifieds·B2 | DOM+stext | 224 | 223 | 75 | 33.6% |
 | classifieds·B2 | SoM | 224 | 219 | 39 | 17.8% |
 | classifieds·B2 | Vision | 224 | 219 | 0 | 0.0% |
 | reddit·B2 | DOM | 203 | 195 | 127 | 65.1% |
-| reddit·B2 | DOM+somprompt | 203 | 203 | 155 | 76.4% |
+| reddit·B2 | DOM+sprompt | 203 | 203 | 155 | 76.4% |
 | reddit·B2 | SoM-image | 203 | 202 | 62 | 30.7% |
-| reddit·B2 | DOM+somtext | 203 | 199 | 51 | 25.6% |
+| reddit·B2 | DOM+stext | 203 | 199 | 51 | 25.6% |
 | reddit·B2 | SoM | 203 | 201 | 59 | 29.4% |
 | reddit·B2 | Vision | 203 | 199 | 0 | 0.0% |
 
@@ -891,7 +891,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | backbone | conditions | billed | canonical action | protocol repair | share of billed | worst parse-error waits/ep |
 |---|---|---|---|---|---|---|
-| B0 | 12 | $1.0391 | $1.0336 | $0.00553 | **0.53%** | 0.08 (red·DOM+somprompt) |
+| B0 | 12 | $1.0391 | $1.0336 | $0.00553 | **0.53%** | 0.08 (red·DOM+sprompt) |
 | B1 | 12 | $0.7690 | $0.7504 | $0.01856 | **2.41%** | 0.16 (red·Vision) |
 | B2 | 12 | $1.0373 | $0.9919 | $0.04541 | **4.38%** | 1.23 (cla·SoM) |
 
@@ -931,25 +931,25 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 |---|---|---|---|---|
 | VWA | B0 · DOM | 5 | 1 | 20.0% |
 | VWA | B0 · SoM-image | 2 | 0 | 0.0% |
-| VWA | B0 · DOM+somprompt | 3 | 0 | 0.0% |
-| VWA | B0 · DOM+somtext | 3 | 0 | 0.0% |
+| VWA | B0 · DOM+sprompt | 3 | 0 | 0.0% |
+| VWA | B0 · DOM+stext | 3 | 0 | 0.0% |
 | VWA | B0 · SoM | 3 | 0 | 0.0% |
 | VWA | B0 · Vision | 2 | 1 | 50.0% |
 | VWA | B1 · DOM | 2 | 0 | 0.0% |
 | VWA | B1 · SoM-image | 4 | 0 | 0.0% |
-| VWA | B1 · DOM+somprompt | 2 | 0 | 0.0% |
-| VWA | B1 · DOM+somtext | 4 | 0 | 0.0% |
+| VWA | B1 · DOM+sprompt | 2 | 0 | 0.0% |
+| VWA | B1 · DOM+stext | 4 | 0 | 0.0% |
 | VWA | B1 · SoM | 3 | 1 | 33.3% |
 | VWA | B2 · DOM | 3 | 3 | 100.0% |
 | VWA | B2 · SoM | 1 | 0 | 0.0% |
 | WA | B0 · DOM | 3 | 0 | 0.0% |
 | WA | B0 · SoM-image | 5 | 0 | 0.0% |
-| WA | B0 · DOM+somtext | 5 | 0 | 0.0% |
+| WA | B0 · DOM+stext | 5 | 0 | 0.0% |
 | WA | B0 · SoM | 3 | 0 | 0.0% |
 | WA | B0 · Vision | 3 | 0 | 0.0% |
 | WA | B1 · DOM | 4 | 0 | 0.0% |
 | WA | B1 · SoM-image | 5 | 0 | 0.0% |
-| WA | B1 · DOM+somtext | 5 | 0 | 0.0% |
+| WA | B1 · DOM+stext | 5 | 0 | 0.0% |
 | WA | B1 · SoM | 3 | 0 | 0.0% |
 | WA | B1 · Vision | 1 | 0 | 0.0% |
 
@@ -961,14 +961,14 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | | rule | how it failed | on disagreement | baseline | enrichment | hits |
 |---|---|---|---|---|---|---|
-| **A. IMAGE channel wins** | | *how the TEXT channel failed* | (101 tasks) | | | |
+| **A. image wins** | | *how the text channel failed* | (101 tasks) | | | |
 | | `P27` | gives up when not found | 3.2% | 1.4% | **2.31x** | 13 |
 | | `P17` | click-back oscillation | 15.1% | 6.7% | **2.25x** | 61 |
-| | `P16` | visual-content task, DOM cannot  | 6.2% | 2.8% | **2.24x** | 25 |
-| | `P43` | PAGE_EMBEDDED_VISUAL_NO_SCREENSH | 48.5% | 29.3% | **1.65x** | 196 |
+| | `P16` | visual task, DOM cannot see | 6.2% | 2.8% | **2.24x** | 25 |
+| | `P43` | page visual, no screenshot | 48.5% | 29.3% | **1.65x** | 196 |
 | | | *15 further rules* | | | all <= 1.55x | |
-| **B. TEXT channel wins** | | *how the IMAGE channel failed* | (109 tasks) | | | |
-| | `P49` | SUBMIT_PAGE_ANCHOR_MISCLICK | 3.7% | 1.0% | **3.61x** | 8 |
+| **B. text wins** | | *how the image channel failed* | (109 tasks) | | | |
+| | `P49` | submit-page anchor misclick | 3.7% | 1.0% | **3.61x** | 8 |
 | | `P17` | click-back oscillation | 4.6% | 3.9% | **1.17x** | 10 |
 | | `P12` | never paginates | 13.8% | 14.8% | **0.93x** | 30 |
 | | `P31` | budget exhausted, unfinished | 49.5% | 54.2% | **0.91x** | 108 |
@@ -982,7 +982,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | cell | n | best single mode | ceiling: any mode solves | headroom | same tasks, lower cost | +1 arm | rerun once |
 |---|---|---|---|---|---|---|---|
-| WA·B0 | 104 | DOM+somtext 35.58% | **51.92%** | +16.35pp | **-10.7%** | +5.77 | 2.00-4.00 |
+| WA·B0 | 104 | DOM+stext 35.58% | **51.92%** | +16.35pp | **-10.7%** | +5.77 | 2.00-4.00 |
 | cls·B0 | 224 | SoM 27.23% | **43.30%** | +16.07pp | **-12.8%** | +7.14 | 4.91-7.59 |
 | WA·B1 | 104 | DOM 16.35% | **30.77%** | +14.42pp | **-26.8%** | +4.81 | 2.00-4.00 |
 | red·B0 | 203 | SoM 14.78% | **26.11%** | +11.33pp | **-9.5%** | +4.93 | -- |
