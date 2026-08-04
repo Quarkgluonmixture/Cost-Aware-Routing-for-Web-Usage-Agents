@@ -10999,7 +10999,7 @@ docker restart) · `_reset_vwa_local_{classifieds,reddit,shopping}` 三个实现
 「reindex 太慢」。真相是 reindex **40 分钟就完成了** (23:17:57→23:57), 脚本只是**看不出来**。
 B-1954 那句「实测 3769s 仍未完成」的观测, 读的正是这个瞎了的判据本身。
 
-> **教训**: **用坏掉的仪器测量, 测出的是仪器的故障, 不是被测对象的属性。** 三次调 timeout
+> **教训**: **用坏掉的仪器测量, 测出的是仪器的故障, 不是被测对象的属性。** 后两次调 timeout
 > 都在给一个不存在的「慢」补时间。这次之所以暴露, 是因为绕开脚本、改用 `indexer_state` 表
 > 这条**独立观测通道** —— 单一通道的读数无法自证, 交叉通道才能。
 
@@ -11058,3 +11058,75 @@ runner `pid=3851598` 正常启动, 首个 episode 3 分钟后落地
 
 **Cross-link**: B-1931 / B-1953 / B-1954 (同一 timeout 的三次误诊) · B-748 (被保留的两条护栏) ·
 B-1952 (同函数, mysqld 就绪探测) · `docs/reference/shopping_reset_state_surface.md` (重建代价构成)
+
+---
+
+### B-1956 — 为「session 关了也活」写的两处自动化, 各自引入了一个新的静默失败
+
+`/stress` milestone (Mode A, ML systems engineer persona) 审 2026-08-04 凌晨 infra 产出,
+7 findings。共同形状: **为了让东西无人值守而写的代码, 自己成了新的无人察觉的失效点。**
+
+#### P0-1 — WA 接续在 PID 回绕后永久静默失效 [OOB]
+
+`_cron_wa_shop_follow.sh:47` 用 `kill -0 "${ARM_PID}"` 判断 VWA chain 是否还活着。
+A100 实测 `pid_max=4194304`, 当前最大 pid **3930743**, up 62 天 ⇒ 约 **6.3 万 pid/天**;
+VWA chain 要跑 **11 天** ≈ 70 万, 而距回绕只剩 **26 万** —— **PID 必然回绕**。
+回绕后 `kill -0 3845585` 命中一个全新的无关进程 → cron 永远判定「chain 还活着」→
+**WA 的 7 个 condition 静默不启动**: 无告警、`.fired` 不写、日志无异常, 十一天后才会发现。
+
+> 讽刺的是这正是用 cron 替换 20 天长驻进程要解决的问题 ——
+> **把「进程会死得静默」换成了「进程检测会错得静默」。**
+
+**修复 (两层)**:
+1. **身份指纹**: `.armed` 增记 `/proc/<pid>/stat` 字段 22 (`starttime`), 判活要求 pid **和**
+   starttime 都匹配。注意 `comm` 在括号里且可能含空格 → 必须 `sed 's/^.*) //'` 剥到右括号
+   之后再取字段 (剥完 starttime = `$20`); 直接 `awk '{print $22}'` 在 comm 含空格时错位
+   (合成用例实测: 正确 `987654321` vs 错位 `1`)。
+2. **判据层级反转**: 原实现把 pid 检查挡在 sentinel 检查**之前** —— pid 一旦误判「活着」,
+   即使 chain 已正常结束并写好 sentinel 也永远走不到 fire。现在 **sentinel 是主判据**
+   (更新了就不看 pid), pid 只用于区分「还在跑」vs「被杀了」。即使指纹也失效,
+   sentinel 仍是一条独立触发路径。
+
+**验证**: 正常态静默 `exit 0`; 篡改 `starttime` 后正确输出「指纹不匹配/已消失 — 不 fire」;
+旧格式 `.armed` (无指纹) 被自动丢弃并重新 arm。
+
+#### P1-1 — 穷举方法论在分析的最后一步被自己的枚举过滤掉 [OOB]
+
+`analyze_magento_state_surface.py` 原用硬编码 `STARTUP_NOISE`(12 张表) 把「启动噪声」
+从结果里扣掉 —— 而 `shopping_reset_state_surface.md §5` 的核心主张恰恰是
+「替代方案的成立条件是没有遗漏, 所以只有扫全部 370 张表的证据够格」。
+**用一个 12 元素集合把 370 张表的穷举结论过滤回了枚举**, 且枚举在**分析层**所以更隐蔽。
+
+实测反例 (首轮数据): `core_config_data` 在容器实例 2 的 `UPDATE_TIME` = **01:38:46**,
+而 runner **01:10** 就启动了 —— 它在实验期也被写。旧代码会把它当噪声扣掉,
+而它恰是 storefront 可写的表。修复: 降级为交叉标注 `[启动期也见过]`, **绝不删除任何表**;
+区分启动写 vs 实验写**按时间切 (`--since`), 不按表名切**。
+
+#### P1-2 — 记录了容器实例指纹却没在分析里用
+
+采集器写入 `container_started` 正是为了识别容器重建, 但 `cmd_probe` 对全体样本取
+`max(UPDATE_TIME)`。而该字段是 InnoDB **内存态 table stats, 容器重建即归零**,
+每个 condition 的 reset 都 `docker rm -f` 重建 ⇒ 时间轴天然分段。全局 max 会把
+condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份实证要回答的
+「跨 condition 污染」问题**。修复: 按 `container_started` 分组, 每组独立汇总。
+
+#### P1-3 — 「fire 数据不写 vda1」是只验证一个 benchmark 的全称结论
+
+实测 `results/visualwebarena` 是符号链接 → `/mnt/scratch`, 但 **`results/webarena`
+是普通目录、就在 vda1**(已占 3.9G)。WA 的 7 个 condition 预计再写 **~5.9G**。
+量级上侥幸无害 (距 ES flood_stage 余量 34G), 但推理错误已写进 handoff。
+
+#### P2 三条
+
+- **P2-1 过度归因**: 「三次调 timeout 全在补一个不存在的慢」应为「**后两次**」——
+  B-1931 那次 shopping 用默认 **120s** 而 callee 成本下界 ≈820s, 是**真的时间不够**,
+  与判据无关。一个刚修正过三次数字的诊断, 自己又用了略微夸大的表述。
+- **P2-2 sentinel 缺口**: `probe_table_mutations.sh` 只对「容器不存在」写 sentinel;
+  「容器在但 mysqld 未 query-ready」(B-1952 那段中间态, 实测可达数十秒) 时静默不写,
+  时间轴留**无标记的洞** ——「没采到」与「测出为零」不可区分。已补 `(db-unavailable)`。
+- **P2-3 措辞过强**: 预热镜像的「estimand 零风险」降级为「风险面远小于只回滚表但不是零」:
+  (a) `docker commit` 不保证 ES translog/内存索引已 flush; (b) 固化 `core_config_data`
+  的 base_url, A100 地址变更后镜像**静默失效**(站点 302 到旧地址, §103 形状)。
+
+**Cross-link**: B-1955 (同一轮 fire) · B-1952 (P2-2 提到的 mysqld 中间态) ·
+`docs/reference/shopping_reset_state_surface.md` · 实验笔记 §429 / §431

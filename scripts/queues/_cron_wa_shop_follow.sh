@@ -7,8 +7,14 @@
 # cron 每 10 分钟重新求值一次状态, 天然扛住上述全部情况。
 #
 # 状态机 (两个 flag 文件, 都在 logs/):
-#   .wa_shop_follow.armed  首次见到活的 VWA chain 时写入 (记 pid + 当时的 sentinel mtime)
+#   .wa_shop_follow.armed  首次见到活的 VWA chain 时写入 (pid + starttime 指纹 + sentinel mtime)
 #   .wa_shop_follow.fired  已经启动过 WA chain, 之后所有调用直接退出 (幂等)
+#
+# 判据层级 (P0-1-A 修正 2026-08-04, /stress milestone):
+#   **sentinel 是主判据, pid 只是辅助**。原实现把 `kill -0 $pid` 挡在 sentinel 检查
+#   前面 —— pid 一旦误判「活着」, 即使 chain 已正常结束并写好 sentinel 也永远走不到 fire。
+#   现在先看 sentinel 有没有更新 (更新了就不管 pid 说什么), 没更新才用 pid 区分
+#   「还在跑」vs「被杀了」。这样即使 pid 指纹失效, sentinel 仍是一条独立触发路径。
 #
 # 安全失败方向: 任何不确定都**不 fire**。宁可十一天后人工敲一条命令,
 # 也不要在 substrate 异常时把 7 个 condition 追加上去。
@@ -22,6 +28,16 @@ FIRED=logs/.wa_shop_follow.fired
 NTFY="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 log() { echo "[wa-follow $(date '+%m-%d %H:%M:%S')] $*"; }
 
+# 进程身份指纹 = /proc/<pid>/stat 字段 22 (starttime, 进程创建时刻的 jiffies)。
+# **pid 本身不足以标识进程**: A100 实测 pid_max=4194304, 消耗约 6.3 万/天,
+# 而 VWA chain 要跑 11 天 (~70 万) —— PID 必然回绕。回绕后 `kill -0 <旧pid>`
+# 会命中一个全新的无关进程, 于是 cron 永远认为 chain 还活着, WA 静默不启动。
+# comm 字段在括号里且可能含空格 → 先剥到最后一个右括号之后再取字段;
+# 剥完后 state 变成 $1 (原 $3), 所以 starttime (原 $22) = $20。
+_proc_starttime() {
+  sed -e 's/^.*) //' "/proc/$1/stat" 2>/dev/null | awk '{print $20}'
+}
+
 [ -f "${FIRED}" ] && exit 0
 
 CH=$(tr -d '[:space:]' < "${PIDF}" 2>/dev/null)
@@ -32,26 +48,39 @@ if [ ! -f "${ARMED}" ]; then
   if [ -n "${CH}" ] && kill -0 "${CH}" 2>/dev/null; then
     {
       echo "pid=${CH}"
+      echo "starttime=$(_proc_starttime "${CH}")"
       echo "done_mtime=$(stat -c %Y "${DONE}" 2>/dev/null || echo 0)"
       echo "armed_at=$(date -Is)"
     } > "${ARMED}"
-    log "ARMED — following VWA shop chain pid=${CH}"
+    log "ARMED — following VWA shop chain pid=${CH} starttime=$(_proc_starttime "${CH}")"
   fi
   exit 0
 fi
 
 ARM_PID=$(grep '^pid=' "${ARMED}" | head -1 | cut -d= -f2)
+ARM_ST=$(grep '^starttime=' "${ARMED}" | head -1 | cut -d= -f2)
 ARM_MTIME=$(grep '^done_mtime=' "${ARMED}" | head -1 | cut -d= -f2)
 
-# VWA chain 还活着 → 继续等
-kill -0 "${ARM_PID}" 2>/dev/null && exit 0
+# 旧格式 .armed (无 starttime 指纹) → 无法可靠判活, 丢弃重新 arm。
+if [ -z "${ARM_ST}" ]; then
+  log "armed 文件为旧格式 (无 starttime 指纹) — 丢弃, 下个 tick 重新 arm"
+  rm -f "${ARMED}"
+  exit 0
+fi
 
-# ── chain 不在了: 必须看到**新的** done sentinel ───────────────────────────
-# 被 SIGKILL 的 chain 写不出 sentinel → mtime 不变 → 永远不 fire。这是**有意的**:
-# 非正常终止意味着 substrate 状态未知, 不该把下一条 chain 送进去。
+# ── 主判据: sentinel 是否更新 ──────────────────────────────────────────────
+# 放在 pid 检查**之前**: sentinel 更新 = chain 确实正常结束, 此时 pid 说什么都不重要
+# (它可能已被回绕复用)。
 NOW_MTIME=$(stat -c %Y "${DONE}" 2>/dev/null || echo 0)
 if [ "${NOW_MTIME:-0}" -le "${ARM_MTIME:-0}" ]; then
-  log "chain pid=${ARM_PID} 已消失但 sentinel 未更新 (可能被杀) — 不 fire, 等待人工裁定"
+  # sentinel 未更新 —— 用 pid 指纹区分「还在跑」vs「被杀了」
+  NOW_ST=$(_proc_starttime "${ARM_PID}")
+  if [ -n "${NOW_ST}" ] && [ "${NOW_ST}" = "${ARM_ST}" ]; then
+    exit 0                     # 同一个进程还活着 → 继续等
+  fi
+  # 进程没了 (或 pid 已被别的进程复用): 被 SIGKILL 的 chain 写不出 sentinel。
+  # **有意不 fire** —— 非正常终止意味着 substrate 状态未知。
+  log "chain pid=${ARM_PID} 指纹不匹配/已消失, 且 sentinel 未更新 (可能被杀) — 不 fire, 等待人工裁定"
   exit 0
 fi
 

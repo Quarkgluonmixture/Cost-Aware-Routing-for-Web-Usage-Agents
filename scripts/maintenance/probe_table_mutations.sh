@@ -23,10 +23,22 @@ if [ -z "$STARTED" ]; then
 fi
 
 TS="$(date -Is)"
-docker exec -e MYSQL_PWD=MyPassword "$CONTAINER" \
-  mysql -u magentouser magentodb -sN -e "
-    SELECT '${TS}', '${STARTED}', table_name, UPDATE_TIME, table_rows,
-           ROUND(data_length/1048576,2)
-    FROM information_schema.tables
-    WHERE table_schema='magentodb' AND UPDATE_TIME IS NOT NULL
-    ORDER BY UPDATE_TIME;" >> "$OUT" 2>/dev/null
+# P2-2-A (/stress 2026-08-04): 容器**存在但 mysqld 未 query-ready** 是 reset 期间的
+# 真实中间态 (正是 B-1952 处理的那段, 实测可达数十秒)。原实现在这种情况下
+# `2>/dev/null` 吞掉错误、一行不写 → 时间轴留下**无标记的洞**, 事后分析看到的是
+# 「这十分钟没有任何表变动」, 与「没采到」不可区分 —— 正是
+# memory `feedback_absence_of_evidence_vs_measured_zero` 说的那种错误。
+# 现在与 `(container-absent)` 并列写 `(db-unavailable)` sentinel。
+_tmp="$(mktemp)"
+if docker exec -e MYSQL_PWD=MyPassword "$CONTAINER" \
+     mysql -u magentouser magentodb -sN -e "
+       SELECT '${TS}', '${STARTED}', table_name, UPDATE_TIME, table_rows,
+              ROUND(data_length/1048576,2)
+       FROM information_schema.tables
+       WHERE table_schema='magentodb' AND UPDATE_TIME IS NOT NULL
+       ORDER BY UPDATE_TIME;" > "$_tmp" 2>/dev/null && [ -s "$_tmp" ]; then
+  cat "$_tmp" >> "$OUT"
+else
+  printf '%s\t%s\t(db-unavailable)\t-\t-\t-\n' "$TS" "$STARTED" >> "$OUT"
+fi
+rm -f "$_tmp"

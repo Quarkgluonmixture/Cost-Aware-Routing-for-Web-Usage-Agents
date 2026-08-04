@@ -66,10 +66,11 @@ updated: 2026-07-29
 > 首个 episode 01:13 落地。**WA chain 会自动接续**（crontab `*/10` 的 `_cron_wa_shop_follow.sh`，
 > 已 arm 到 `pid=3845585`；VWA `rc=0` + storefront 200 两道 gate 都在）。
 >
-> ### 🔴 B-1955 — 三次调 timeout 全在补一个不存在的「慢」
+> ### 🔴 B-1955 — 后两次调 timeout 都在补一个不存在的「慢」
 >
 > `magento indexer:status` 输出是**表格**（无冒号），旧判据 `awk -F:` 匹配 **0 行** → 完成条件永远为假 →
-> 每次 reset **空转完整 4200s**。这是 B-1931/1953/1954 三次加 timeout 的共同病根 ——
+> 每次 reset **空转完整 4200s**。这是 B-1953/1954 **后两次**加 timeout 的病根 (B-1931 是独立的
+> 真 timeout 不足: 120s vs 需要 ≈820s) ——
 > reindex 其实 40 分钟就完成了，脚本看不出来。
 > `34min(真实 reset) + 70min(空转) = 104min > 100min 外层` ⇒ **必然 SIGTERM**，不是「慢一点」。
 > 已修（主判据改查 `indexer_state` 表）并**实测生效**：`all Ready after 0s / 1 polls`。省 `14 × 70min ≈ 16.3h`。
@@ -84,12 +85,15 @@ updated: 2026-07-29
 > 1. **五个 commit 未推** —— `git push` 需你确认
 > 2. **孤儿清理（两处，都不属当前 chain，我没动）**：watchdog `pid 3760673` 监控 `B3_som_classifieds` 已空转 6h+ 而 runner 数为 0；`.in_progress` marker 一个，属 `B1_phantom_som_wa_reddit_20260727` task 595
 > 3. **shopping reset 替代方案**：`docs/reference/shopping_reset_state_surface.md` 已给静态两端（评测可见 7 类 / 外键闭包 66 张，且**删除型 vs 恢复型**难度差一个量级）。穷举实证在采集中（crontab `*/10` → `logs/magento_table_probe.tsv`），分析用 `scripts/maintenance/analyze_magento_state_surface.py probe <tsv> --since <runner启动时刻>`
-> 4. **更该做的不是「只回滚表」而是「预热镜像」**：容器 `Mounts: []`，`docker commit` 一个 reindex 完成的容器即可跳过重算，**保留完整重建语义 ⇒ estimand 零风险**，代价 +8.35G。**只能在 fire 之间做**（commit 会 pause 容器）
+> 4. **更该做的不是「只回滚表」而是「预热镜像」**：容器 `Mounts: []`，`docker commit` 一个 reindex 完成的容器即可跳过重算，保留完整重建语义 ⇒ **风险面远小于「只回滚表」，但不是零** —— 两个前提未验证：(a) `docker commit` 不保证 ES translog/内存索引已 flush；(b) 会固化 `core_config_data` 的 base_url，A100 地址变更后镜像静默失效（站点 302 到旧地址，正是 §103 的形状）。代价 +8.35G。**只能在 fire 之间做**（commit 会 pause 容器）
 >
 > ### 💾 磁盘（已处理，但记住结构）
 >
 > **两块盘**：`vda1` 485G（系统 + containerd 镜像 **388G**）/ `sda`→`/mnt/scratch` 503G（**results 在这**，符号链接）。
-> fire 数据**不写 vda1**。已把 `Qwen3-VL-4B`+`gemma-3-4b-it` 迁到 scratch symlink 回来，vda1 **92% → 88%**，
+> ⚠️ **只有 VWA 不写 vda1**（`results/visualwebarena` 是符号链接）；**`results/webarena` 是普通目录、就在 vda1**，
+> 已占 3.9G，WA 7 个 condition 预计再加 **~5.9G**（余量 34G，可接受但要盯）。P1-3-A 修正 2026-08-04 /stress ——
+> 原措辞「fire 数据不写 vda1」是**只验证了一个 benchmark 就下的全称结论**。
+> 已把 `Qwen3-VL-4B`+`gemma-3-4b-it` 迁到 scratch symlink 回来，vda1 **92% → 88%**，
 > 距 ES flood_stage(95%) 余量 15G → **34G**。`blip2-flan-t5-xl`(15G) **故意留着** —— VWA `page_image_query` eval 要用。
 >
 > ---

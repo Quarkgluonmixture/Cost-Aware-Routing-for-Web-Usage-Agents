@@ -21,20 +21,12 @@
 #   setsid nohup bash scripts/queues/supervise_mechanistic_canonical.sh \
 #     > logs/mechanistic_canonical/supervisor.log 2>&1 < /dev/null &
 # Env:
-#   DEADLINE        passed through to the sweep (default = sweep's own = none)
+#   DEADLINE        passed through to the sweep (default = sweep's own 2026-08-01)
 #   POLL_SECONDS    liveness poll interval (default 300)
-#   MAX_RESTARTS    give up after this many restarts (default 200)
+#   MAX_RESTARTS    give up after this many restarts (default 40)
 #   MIN_UPTIME_SEC  a run that dies faster than this counts as a hard failure
 #                   (default 600) — protects against restart-storming a run that
 #                   cannot start at all, e.g. GPU fully occupied
-#
-# RESTART BUDGET (raised 40 → 200, 2026-07-30): the sweep lost its deadline and
-# now runs 18 more cells at 10-26h each ≈ 9-15 days on a contended box, so 40
-# reaps is no longer a comfortable ceiling. The budget was never the real
-# anti-storm protection anyway — MIN_UPTIME_SEC / consecutive_fast_deaths is, and
-# it stops after 3 strikes regardless of how much budget is left. The budget is
-# only a backstop against a slow-burn failure that restarts forever without ever
-# tripping 3 in a row, so a high value costs nothing.
 set -u
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -45,7 +37,7 @@ LOGDIR="$REPO/logs/mechanistic_canonical"
 PIDFILE="$LOGDIR/.sweep.pid"
 NTFY_TOPIC="${NTFY_TOPIC:-p79-claude}"
 POLL_SECONDS="${POLL_SECONDS:-300}"
-MAX_RESTARTS="${MAX_RESTARTS:-200}"
+MAX_RESTARTS="${MAX_RESTARTS:-40}"
 MIN_UPTIME_SEC="${MIN_UPTIME_SEC:-600}"
 mkdir -p "$LOGDIR"
 
@@ -91,14 +83,7 @@ while true; do
   setsid nohup bash scripts/queues/queue_mechanistic_canonical.sh \
     > "$LOGDIR/sweep_supervised_${ts}.log" 2>&1 < /dev/null &
   echo $! > "$PIDFILE"
-  # Watch for MIN_UPTIME_SEC, not a hardcoded 30s. The old code checked liveness
-  # 30s in but logged the failure as "sub-${MIN_UPTIME_SEC}s", so a run that died
-  # at 60-599s — exactly the shape of "starts, then the GPU refuses it" — passed
-  # the 30s check, reset consecutive_fast_deaths to 0, and was booked as a normal
-  # restart. It could then repeat forever without ever tripping the 3-strike
-  # guard. That only burned budget while the budget was 40; now that it is 200,
-  # this guard IS the protection, so it has to measure what it claims to measure.
-  sleep "$MIN_UPTIME_SEC"
+  sleep 30
   # The launcher backgrounds nothing itself, so the recorded pid is the sweep.
   if ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     elapsed=$(( $(date +%s) - started ))

@@ -120,11 +120,27 @@ reddit 的手段之所以成立, 是因为它没有「需要重算一小时的�
 **漏掉的永远不会暴露**。替代 reset 方案的成立条件恰恰是「**没有遗漏**」, 所以只有
 扫全部 370 张表、按时间戳分段的证据够格。
 
-分析方法 (数据落地后):
+分析方法 (数据落地后) —— **用脚本, 不要手写 awk**:
 ```bash
-# runner 启动时刻之后被写的表 = 实验改动面
-awk -F'\t' '$4 > "<runner_start_ts>"' logs/magento_table_probe.tsv | cut -f3 | sort -u
+scripts/maintenance/analyze_magento_state_surface.py probe logs/magento_table_probe.tsv \
+  [--since '<runner 启动时刻>']
 ```
+
+> ⚠️ **两条曾经写错的分析纪律** (P1-1-A / P1-2-A, /stress 2026-08-04):
+>
+> 1. **必须按容器实例分段, 不能对全体样本取 max**。MariaDB 的 InnoDB `UPDATE_TIME` 是
+>    **内存态 table stats, 容器重建即归零**; 每个 condition 的 reset 都 `docker rm -f` 重建,
+>    所以时间轴天然分段。全局取 max 会把 condition A 的写入显示在 condition B 的结果里 ——
+>    正好模糊掉这份实证要回答的「跨 condition 污染」问题。脚本已按 `container_started` 分组。
+> 2. **不能按表名过滤「启动噪声」**。早先版本用一个 12 元素硬编码集合把 §2 那些表扣掉,
+>    等于用枚举把 370 张表的穷举结论过滤了回去。实测反例: `core_config_data` 在实例 2 的
+>    `UPDATE_TIME` 是 **01:38:46**, 而 runner 01:10 就启动了 —— 它在**实验期**也被写。
+>    要区分启动写 vs 实验写, **按时间切 (`--since`), 不要按表名切**。
+
+**待查 (2026-08-04 首轮数据, 勿当结论)**: storefront-only 的 condition 里出现了
+`admin_user`(02:25:40) / `admin_user_session`(05:00:02) / `authorization_rule` / `flag` /
+`queue_lock`。可能来自 watchdog 的 auth_refresh 或 Magento 后台 cron, **尚未查证** ——
+在确认来源前不可读作「实验污染了 admin 表」。
 
 **待确证** (不要读成「已测出为零」):
 - [ ] 实验期实际被写的表全集
