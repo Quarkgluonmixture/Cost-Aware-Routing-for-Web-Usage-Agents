@@ -73,8 +73,30 @@ def unmatched_cells(cells: dict) -> list[str]:
 
 
 MODES = ["dom", "som", "vision", "ptext", "pprompt", "psom"]
+
+# Outward-facing mode names, 2026-08-04. `phantom` was a name from a framing this evidence
+# no longer supports: the four image-free modes reach the consistency bar on **none** of 26
+# metrics across 8 cells, i.e. they are behaviourally indistinguishable from DOM — so calling
+# them a separate family made the naming argue against the tables. They are DOM variants and
+# are now named as such, with the compound one named for what it is (SoM minus the image).
+#
+# NOTHING INTERNAL CHANGES. The data layer keeps `phantom_text` / `phantom_prompt` /
+# `phantom_som` in directory names, condition ids, run ids and every product JSON key — 76
+# references under `p79/` alone, and renaming those would make 8,000 landed episodes
+# unreadable. The two layers are separated deliberately: a display name is a framing decision
+# and may change again; a data key changes once and costs a re-run.
 PRETTY = {"dom": "DOM", "som": "SoM", "vision": "Vision",
-          "ptext": "P-text", "pprompt": "P-prompt", "psom": "P-SoM"}
+          "ptext": "DOM+somtext", "pprompt": "DOM+somprompt", "psom": "SoM-image"}
+
+# Products key their rows by the OLD display names, so relabel at render time rather than
+# touching any product. Accepts either spelling and is idempotent, so it is safe to apply
+# at any point in a rendering path without tracking which convention got there first.
+_MODE_RELABEL = {"P-text": "DOM+somtext", "P-prompt": "DOM+somprompt", "P-SoM": "SoM-image"}
+
+
+def mode_label(key: str) -> str:
+    """Display name for a mode, given either an internal key or a product's own spelling."""
+    return _MODE_RELABEL.get(key, PRETTY.get(key, key))
 
 
 class MissingProduct(RuntimeError):
@@ -144,12 +166,41 @@ TEX_UNSAFE = {"\u26a0\ufe0f": "**Caution:**", "\u26a0": "**Caution:**",
               "\u2b50": "", "\u2705": "yes", "\u274c": "no"}
 
 
+def relabel_modes(s: str) -> str:
+    """Apply the outward-facing mode names to finished output.
+
+    Eight tables print a mode name straight out of a product row rather than through
+    `mode_label` — `halluc`, `leakaudit`, `routing`, `latency-split`, `pareto`,
+    `per-success`, `cost-protocol`, `ceiling` — and patching each render site invites the
+    exact failure this pass exists to prevent: one missed site leaves a document naming the
+    same mode two ways, which reads as two modes. Doing it once at the output boundary is
+    total by construction, and `assert_no_legacy_mode_names` makes a future render site that
+    reintroduces the old spelling fail loudly instead of shipping.
+
+    Longest key first so `P-SoM` is never matched as `P-S` + text by a shorter key.
+    """
+    for old in sorted(_MODE_RELABEL, key=len, reverse=True):
+        s = s.replace(old, _MODE_RELABEL[old])
+    return s
+
+
+def assert_no_legacy_mode_names(s: str, where: str) -> None:
+    """Fail loudly if any pre-2026-08-04 mode spelling survived into rendered output."""
+    stray = sorted({old for old in _MODE_RELABEL if old in s})
+    if stray:
+        raise MissingProduct(
+            f"{where}: legacy mode name(s) {stray} survived relabelling — a render site is "
+            f"emitting them in a form `relabel_modes` cannot see (split across a line?)")
+
+
 def tex_safe(s: str) -> str:
     for bad, good in TEX_UNSAFE.items():
         s = s.replace(bad, good)
     # pandoc --natbib reads `@token` as a citation key, so "SoM @27.23" silently becomes
     # \\citet{27.23} and surfaces only as an undefined-citation warning.
-    return AT_NUMBER.sub("at ", s)
+    out = AT_NUMBER.sub("at ", relabel_modes(s))
+    assert_no_legacy_mode_names(out, "tex_safe")
+    return out
 
 
 # --------------------------------------------------------------------------- tables
@@ -186,7 +237,8 @@ def t_class() -> tuple[str, str]:
                     f"({PRETTY[r['class_best_arm']['no-image']]}) | "
                     f"{b['vision-only']:.2f} | {b['hybrid']:.2f} | {w} |")
     cap = ("Best arm within each deployment class (%). Classes: **no-image** = "
-           "{DOM, P-text, P-prompt, P-SoM}, **vision-only** = {Vision}, **hybrid** = {SoM}. "
+           "{DOM, DOM+somtext, DOM+somprompt, SoM-image}, **vision-only** = {Vision}, "
+           "**hybrid** = {SoM}. "
            "Grouping the four is licensed by the non-separability result (Table 4): they "
            "clear the ≥83% consistency bar on none of 26 metrics. "
            "Source: `representation_class_comparison.json`.")
@@ -216,7 +268,7 @@ def t_class_1arm() -> tuple[str, str]:
            "ordering does not move** — hybrid 4, no-image 3, one tie, and vision-only is never "
            "a sole best in either version — which is the robustness statement Table 2 cannot "
            "make. **The gaps do move**: on `WA·B0` the no-image lead is +4.81pp here against "
-           "+13.46pp there, because Table 2's figure is carried by P-text. Quote this table for "
+           "+13.46pp there, because Table 2's figure is carried by DOM+somtext. Quote this table for "
            "any class gap; Table 2 only for the ordering. "
            "Source: `representation_class_comparison.json`.")
     return "\n".join(rows), cap
@@ -258,8 +310,9 @@ def t_nonsep() -> tuple[str, str]:
             if r[side] >= thr:
                 tally[r[mode]] = tally.get(r[mode], 0) + 1
     rows = ["| mode | metrics reaching the bar |", "|---|---|"]
+    # Iterate the PRODUCT's own spelling; relabel only on the way out.
     for m in ["Vision", "SoM", "DOM", "P-text", "P-prompt", "P-SoM"]:
-        rows.append(f"| {m} | {tally.get(m, 0)} |")
+        rows.append(f"| {mode_label(m)} | {tally.get(m, 0)} |")
     cap = (f"**Absence of repeated extrema** — read the name literally. A mode 'reaches the "
            f"bar' on a metric when it is the extreme (highest or lowest) in ≥{thr} of {n} "
            f"cells ({100 * thr / n:.1f}%). Over 26 metrics the four image-free modes reach it "
@@ -272,7 +325,7 @@ def t_nonsep() -> tuple[str, str]:
            f"not the 83% it claimed, and the six-cell ≥5/6 it says it matches is "
            f"{100 * 5 / 6:.1f}% — a {100 * thr / n - 100 * 5 / 6:+.1f}pp shift, chosen after "
            f"the cell count changed. Carrying the literal numerator (≥5/8 = 62.5%) instead "
-           f"would let P-text clear two metrics and this negative would appear to break, so "
+           f"would let DOM+somtext clear two metrics and this negative would appear to break, so "
            f"the choice is load-bearing and is disclosed rather than defended. "
            f"Source: `per_mode_four_dimension_profile_with_wa.json`.")
     return "\n".join(rows), cap
@@ -441,7 +494,7 @@ def _profile_table(dim: str):
             for key, _, spec in metrics:
                 v = blk.get(key)
                 vals.append(spec.format(v) if isinstance(v, (int, float)) else "—")
-            rows.append(f"| {cl} | {m} | " + " | ".join(vals) + " |")
+            rows.append(f"| {cl} | {mode_label(m)} | " + " | ".join(vals) + " |")
     return "\n".join(rows)
 
 
@@ -1281,7 +1334,7 @@ def t_axis_effects():
     d = load("axis_effect_size_with_wa")
     res = d["results"]
     axes = [("text", "text axis"), ("prompt", "prompt axis"), ("image", "image axis"),
-            ("compound_dom_to_psom", "DOM→P-SoM")]
+            ("compound_dom_to_psom", "DOM->SoM-image")]
     rows = ["| cell | metric | " + " | ".join(lbl for _, lbl in axes) + " |",
             "|---|---|" + "---|" * len(axes)]
     order = [("B0", "classifieds"), ("B1", "classifieds"), ("B2", "classifieds"),
@@ -1305,8 +1358,8 @@ def t_axis_effects():
                             f"| {metric} | " + " | ".join(vals) + " |")
     return "\n".join(rows), (
         "2×2 axis decomposition. Effect sizes are Cohen's h (binary metrics) or d_z (paired "
-        "continuous), signed right-minus-left. The compound DOM→P-SoM transition decomposes "
-        "into a text-payload axis and a prompt-style axis; the image axis is P-SoM→SoM. "
+        "continuous), signed right-minus-left. The compound DOM->SoM-image transition decomposes "
+        "into a text-payload axis and a prompt-style axis; the image axis is SoM-image->SoM. "
         "⚠️ On mean differences the two decomposition routes agreeing is an **algebraic "
         "identity**, so a zero residual is arithmetic and not evidence about an interaction. "
         "`B2 × wa_reddit` is absent because B2 never ran WebArena. "
@@ -1643,7 +1696,7 @@ def build_inventory() -> tuple[str, str]:
     A("### What was measured")
     A("")
     A(f"1. **Success rate per mode**, 6 modes × {n_cells} cells (Table 1). The best mode is "
-      f"SoM in 5 cells, DOM in 2, P-text in 1.")
+      f"SoM in 5 cells, DOM in 2, DOM+somtext in 1.")
     A(f"2. **Best arm per deployment class** (Table 2). Sole best: "
       + ", ".join(f"{k} {v}/{n_cells}" for k, v in sorted(tally.items(), key=lambda kv: -kv[1]))
       + f"; {ties} tied cell. `vision-only` is never a sole best. On `WA·B0` the no-image "
@@ -1674,7 +1727,7 @@ def build_inventory() -> tuple[str, str]:
       f"built on the partition in (6) survives undominated in 5 of {len(rrp['cells'])} cells "
       f"— where *undominated* means nothing beats it on all three axes, not that it is "
       f"preferable. On `cls·B0` all three rule policies sit between always-SoM and "
-      f"always-Vision, and `always-P-prompt` at 19.64% is equally undominated.")
+      f"always-Vision, and `always-DOM+somprompt` at 19.64% is equally undominated.")
     A("")
 
     A("### What is known to be wrong with it")
@@ -1838,7 +1891,7 @@ def build_guide() -> str:
       f"{T('cond-probes')} asks the same question without the rule vocabulary — six probes "
       f"read straight off the step records — and finds the losing channel failing *more "
       f"blandly* there than elsewhere, which is what closes the objection that the residual "
-      f"is an artefact of a VWA-shaped ruleset. {T('axis')} decomposes the DOM→P-SoM "
+      f"is an artefact of a VWA-shaped ruleset. {T('axis')} decomposes the DOM->SoM-image "
       f"transition into a text axis and a prompt axis, and {T('axis1')} asks whether that text "
       f"axis moves per-step decision quality more than it moves macro action frequencies. "
       f"{T('halluc')} counts hallucinated element references — inapplicable to Vision by "

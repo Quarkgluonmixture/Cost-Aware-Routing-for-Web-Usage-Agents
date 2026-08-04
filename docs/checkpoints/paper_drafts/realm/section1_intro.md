@@ -10,14 +10,14 @@
 `WA` is WebArena reddit \citep{zhou2024webarena}. `WA-B2` does not exist, so no
 statement holds cross-benchmark and cross-family simultaneously.
 
-1. **Success rate per mode**, 6 modes × 8 cells (Table 1). The best mode is SoM in 5 cells, DOM in 2, P-text in 1.
+1. **Success rate per mode**, 6 modes × 8 cells (Table 1). The best mode is SoM in 5 cells, DOM in 2, DOM+somtext in 1.
 2. **Best arm per deployment class** (Table 2). Sole best: hybrid 4/8, no-image 3/8; 1 tied cell. `vision-only` is never a sole best. On `WA·B0` the no-image class leads the hybrid class by 13.46pp (35.58 vs 22.12).
 3. **Class ablation** (Table 3). Unmatched, dropping the no-image class costs the most in every cell — **but it has four arms and the others one each**. Arm-matched, the largest single-arm gain lands on no-image 4×, vision-only 3×. The matched panel is the one that compares like with like.
 4. **Behavioural non-separability** (Table 4). Over 26 metrics × 8 cells, the four image-free modes are the extreme in ≥7 cells on **zero** metrics (Vision 9, SoM 5).
 5. **Fusion premium** (Table 5). The fused mode does not beat the workload-matched single channel in any of the 8 cells. The comparison is against a measured rerun band of **0.89–2.23pp**, not against zero; `cls_B0`'s +2.23pp equals the band's upper edge exactly (both are 5/224).
 6. **A 0-token ex-ante partition** (Table 6). A regex over the task intent flags 71/224 classifieds tasks; on them the screenshot is worth **+22.54pp** [+9.86, +33.80] against **+0.65pp** [-5.88, +7.84] on the other 153.
 7. **New representation versus a rerun** (Table 7). Adding one distinct arm and adding one rerun are the same functional at the same arm count. Only 2 of 8 cells carry a measured floor, and neither measures it on the arm being added.
-8. **Routing policies on the (success, cost, latency) frontier** (Table 8). A policy built on the partition in (6) survives undominated in 5 of 6 cells — where *undominated* means nothing beats it on all three axes, not that it is preferable. On `cls·B0` all three rule policies sit between always-SoM and always-Vision, and `always-P-prompt` at 19.64% is equally undominated.
+8. **Routing policies on the (success, cost, latency) frontier** (Table 8). A policy built on the partition in (6) survives undominated in 5 of 6 cells — where *undominated* means nothing beats it on all three axes, not that it is preferable. On `cls·B0` all three rule policies sit between always-SoM and always-Vision, and `always-DOM+somprompt` at 19.64% is equally undominated.
 
 ### What is known to be wrong with it
 
