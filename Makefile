@@ -103,6 +103,15 @@ status:
 status-set:
 	@$(PYTHON) scripts/maintenance/status_query.py set $(N) $(SET)
 
+# 实验笔记 § 号 lint —— 并发 session 取号不是原子操作, 撞号后 git 不报冲突
+# (两次 append 落在文件不同位置, 文本层无重叠), 只有专门去数才看得见。
+# `make chronicle-next` 在 append 前跑; `make chronicle-lint` 在 commit 前跑。
+chronicle-lint:
+	@$(PYTHON) scripts/maintenance/lint_chronicle_sections.py
+
+chronicle-next:
+	@$(PYTHON) scripts/maintenance/lint_chronicle_sections.py --next
+
 # ---- Tests ----
 test:
 	@# /stress A1.12 P1-4 fix (2026-05-16): `-x` (fail-fast) removed so full

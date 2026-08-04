@@ -137,10 +137,21 @@ scripts/maintenance/analyze_magento_state_surface.py probe logs/magento_table_pr
 >    `UPDATE_TIME` 是 **01:38:46**, 而 runner 01:10 就启动了 —— 它在**实验期**也被写。
 >    要区分启动写 vs 实验写, **按时间切 (`--since`), 不要按表名切**。
 
-**待查 (2026-08-04 首轮数据, 勿当结论)**: storefront-only 的 condition 里出现了
-`admin_user`(02:25:40) / `admin_user_session`(05:00:02) / `authorization_rule` / `flag` /
-`queue_lock`。可能来自 watchdog 的 auth_refresh 或 Magento 后台 cron, **尚未查证** ——
-在确认来源前不可读作「实验污染了 admin 表」。
+**首轮数据的闭包外表 (2026-08-04, 已部分查证)**: storefront-only 的 condition 里出现了
+`admin_user`(02:25:40) / `admin_user_session`(05:00:02) / `authorization_rule`(01:00:01) /
+`flag`(01:00:01) / `queue_lock`(02:00:02) / `cron_schedule`。
+
+已排除的来源:
+- **不是我们的代码** —— watchdog 日志在 02:2x 无任何记录, `auth_refresh` 出现次数 **0**,
+  runner 日志无 admin/7780 痕迹。
+- **不是周期性事件** —— `admin_user.UPDATE_TIME` 至 08:58 仍停在 `02:25:40`, 六个半小时未再变。
+- 表内容: `user_id=1 username=admin logdate=2026-08-04 02:25:40 lognum=3520`,
+  而 `admin_user_session` 表**为空**(session 已过期清理)。整点的那几张
+  (`01:00:01` / `02:00:02` / `05:00:02`) 与 `cron_schedule` 的 Magento 后台任务节奏一致。
+
+**来源仍未确定, 不编造解释。** 对 estimand 的影响: VWA shopping 只评测 storefront 状态
+(§3 的七类), admin 侧不进任何 eval ⇒ **不影响本轮 estimand**。若将来跑
+`shopping_admin`, 这条必须重新评估。
 
 **待确证** (不要读成「已测出为零」):
 - [ ] 实验期实际被写的表全集
