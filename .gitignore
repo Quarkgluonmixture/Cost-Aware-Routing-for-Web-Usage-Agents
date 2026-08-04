@@ -146,7 +146,3 @@ docs/reference/condenser/
 # private student-advisor documents, not for the public job-seeking repo. Kept on disk
 # (backed up via DGX→quark home rsync); referenced by next_steps/issue/memory pointers.
 docs/checkpoints/deliverables/
-
-# Restructured REALM build artefacts (deliverables/build.sh regenerates them)
-deliverables/build/
-deliverables/sections/*.tex

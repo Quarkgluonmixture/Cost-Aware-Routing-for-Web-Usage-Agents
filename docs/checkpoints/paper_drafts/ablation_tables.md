@@ -7,7 +7,7 @@ producer: scripts/analysis/export_ablation_tables.py
 
 ## Ablation tables
 
-<!-- GENERATED 2026-08-04T13:28:32+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-08-04T13:53:37+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 
@@ -983,10 +983,10 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B1 | 104 | DOM 16.35% | **30.77%** | +14.42pp | **-26.8%** | +4.81 | 2.00-4.00 |
 | red·B0 | 203 | SoM 14.78% | **26.11%** | +11.33pp | **-9.5%** | +4.93 | -- |
 | cls·B1 | 224 | SoM 14.29% | **24.55%** | +10.27pp | **-19.4%** | +4.91 | -- |
-| red·B1 | 203 | SoM 6.90% | **11.82%** | +4.93pp | **-30.6%** | +1.97 | -- |
+| red·B1 | 203 | SoM 7.39% | **11.82%** | +4.43pp | **-30.6%** | +1.97 | -- |
+| red·B2 | 203 | DOM 3.94% | **7.39%** | +3.45pp | **-26.4%** | +1.97 | -- |
 | cls·B2 | 224 | SoM 2.23% | **7.14%** | +4.91pp | **-21.3%** | +2.23 | -- |
-| red·B2 | 203 | DOM 2.46% | **5.91%** | +3.45pp | **-26.7%** | +1.97 | -- |
 
-*Table 42: What a perfect per-task choice could buy. **Two ceilings, and only one of them survives its own control.** *Ceiling: any mode solves it* is what a perfect per-task choice could reach; it runs 5.9-51.9% against a best single mode of 2.2-35.6%. **Caution:** **That column is a six-arm union against a one-arm baseline.** The arm-matched comparison is the last two columns: adding the single best distinct arm buys +1.97 to +7.14pp, and rerunning an arm already in hand buys a draw in the same range wherever a replicate exists -- so the headroom cannot be attributed to representation diversity rather than to resampling. The union of *five* reruns has never been measured, so the split at higher arm counts is unknown, not estimated. *Same tasks, lower cost* keeps the best mode everywhere and sends only the tasks no mode solves to the cheapest one: success is unchanged **by construction** and cost falls 9.5-30.6% in **8 of 8** cells. That ceiling is immune to the arm-count objection because it adds no arms. Why both are hard to reach: no mode solves 48.1-94.1% of tasks, and the set where a per-task choice even exists is 1.5-34.6% of the cell. **Leaked-success policy:** 6 scored successes credited without the episode ever visiting the forum the evaluator reads are set to 0 with the denominator unchanged; `leak_kept` figures are retained in the product for comparison. Source: `routing_ceiling.json`.*
+*Table 42: What a perfect per-task choice could buy. **Two ceilings, and only one of them survives its own control.** *Ceiling: any mode solves it* is what a perfect per-task choice could reach; it runs 7.1-51.9% against a best single mode of 2.2-35.6%. **Caution:** **That column is a six-arm union against a one-arm baseline.** The arm-matched comparison is the last two columns: adding the single best distinct arm buys +1.97 to +7.14pp, and rerunning an arm already in hand buys a draw in the same range wherever a replicate exists -- so the headroom cannot be attributed to representation diversity rather than to resampling. The union of *five* reruns has never been measured, so the split at higher arm counts is unknown, not estimated. *Same tasks, lower cost* keeps the best mode everywhere and sends only the tasks no mode solves to the cheapest one: success is unchanged **by construction** and cost falls 9.5-30.6% in **8 of 8** cells. That ceiling is immune to the arm-count objection because it adds no arms. Why both are hard to reach: no mode solves 48.1-92.9% of tasks, and the set where a per-task choice even exists is 1.5-34.6% of the cell. **Leaked successes are kept here**, as in every other table; 6 scored successes on reddit were credited without the episode ever visiting the forum the evaluator reads, and zeroing them (denominator unchanged) is reported as a sensitivity analysis rather than folded in — the detection criterion is a lower bound, so it cannot license a corrected point estimate. Both sets of figures are in the product. Source: `routing_ceiling.json`.*
 
 <!-- END table:ceiling -->

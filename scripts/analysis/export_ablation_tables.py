@@ -930,13 +930,23 @@ def t_ceiling():
     arm and rerunning the arm you already have land in the same range, so the headline
     headroom cannot be read as representation diversity alone.
     """
+    # Main-analysis estimand: leaked successes are KEPT, matching every other table in
+    # the paper. The zeroing decision is real but is reported as a sensitivity analysis
+    # (the leaked-success table), not folded into the main numbers — two reasons. The
+    # criterion is a LOWER bound: it detects episodes that never visited the forum the
+    # evaluator reads, and cannot see an episode that arrives at a forum an earlier one
+    # already subscribed to (that case is hand-confirmed to occur and is uncountable from
+    # the recorded state). Treating a lower bound as the main estimand would assert we
+    # know exactly which successes are spurious, when we know only that at least six are.
+    # And a table whose success rates disagree with the paper's own SR table, with no
+    # stated reason, is worse than either estimand alone.
     d = load("routing_ceiling")
-    cells = sorted(d["cells"], key=lambda r: -r["leak_zeroed"]["oracle_sr_pct"])
+    cells = sorted(d["cells"], key=lambda r: -r["leak_kept"]["oracle_sr_pct"])
     rows = ["| cell | n | best single mode | ceiling: any mode solves | headroom | "
             "same tasks, lower cost | +1 arm | rerun once |",
             "|---|---|---|---|---|---|---|---|"]
     for r in cells:
-        z = r["leak_zeroed"]
+        z = r["leak_kept"]
         rr = r["rerun_draws_pp"]
         rr_s = "--" if not rr else (f"{rr[0]:.2f}" if len(rr) == 1
                                     else f"{min(rr):.2f}-{max(rr):.2f}")
@@ -947,7 +957,7 @@ def t_ceiling():
             f"**{z['oracle_sr_pct']:.2f}%** | {z['headroom_pp']:+.2f}pp | "
             f"**{-z['triage_cost_saving_pct']:+.1f}%** | "
             f"{'--' if am is None else f'{am:+.2f}'} | {rr_s} |")
-    zs = [c["leak_zeroed"] for c in cells]
+    zs = [c["leak_kept"] for c in cells]
     save = [-c["triage_cost_saving_pct"] for c in zs]
     unsolv = [c["unsolvable_share_pct"] for c in zs]
     multi = [c["multi_solver_share_pct"] for c in zs]
@@ -972,10 +982,11 @@ def t_ceiling():
         f"immune to the arm-count objection because it adds no arms. Why both are hard to "
         f"reach: no mode solves {min(unsolv):.1f}-{max(unsolv):.1f}% of tasks, and the set "
         f"where a per-task choice even exists is {min(multi):.1f}-{max(multi):.1f}% of the "
-        f"cell. **Leaked-success policy:** {n_leaked} scored successes credited without the "
-        f"episode ever visiting the forum the evaluator reads are set to 0 with the "
-        f"denominator unchanged; `leak_kept` figures are retained in the product for "
-        f"comparison. Source: `routing_ceiling.json`.")
+        f"cell. **Leaked successes are kept here**, as in every other table; {n_leaked} scored "
+        f"successes on reddit were credited without the episode ever visiting the forum "
+        f"the evaluator reads, and zeroing them (denominator unchanged) is reported as a "
+        f"sensitivity analysis rather than folded in — the detection criterion is a lower bound, so it cannot license a corrected point estimate. Both sets of figures are in the "
+        f"product. Source: `routing_ceiling.json`.")
 
 
 def _rule_cell_spread(side: str, rule: str) -> tuple[dict, int]:
