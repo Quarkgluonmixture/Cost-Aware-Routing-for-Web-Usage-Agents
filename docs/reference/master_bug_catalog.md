@@ -11022,6 +11022,23 @@ reindex 之后起算, 外层从 reset 开头起算, 两者之间隔着一整个 
 `重建1min + mysqld1min + base_url1min + flush1min + reindex40min + 轮询秒退 ≈ 45min`,
 **外层 6000s 无需再调** —— 病根从来不在那个数字上。
 
+**空转量也低估了: 是完整的 4200s = 70 分钟, 不是 30 分钟。** 轮询开始的那一刻索引
+**已经全 valid** —— 旧判据不是「等到索引好为止再多等一会」, 而是**从第 1 秒起就该退出,
+却一秒不落地空转到第 4200 秒**。⇒ `34min(实际 reset) + 70min(空转) = 104min > 100min 外层`,
+这才是必然失败的精确算术。省下的是 `14 × 70min ≈ 16.3 小时`, 不是 7 小时。
+
+**修复实测生效 (2026-08-04 01:10, 重启后同一条真实路径)**:
+
+```
+[START] Magento indexer all Ready after 0s / 1 polls (11 indexers)
+```
+
+**0 秒 / 1 次轮询** —— 正因 `indexer:reindex` 同步, 它返回时索引已全 valid, 新判据第一次
+查询即通过。reset 全程 00:36:07→01:10 = **34 分钟**(旧路径同一位置会空转到 104 分钟)。
+runner `pid=3851598` 正常启动, 首个 episode 3 分钟后落地
+(`shopping_task_0_summary_v2.json` 4567B / 108 字段, `success=False` 且 `error=None`
+= 正常评测为失败而非崩溃)。
+
 假警报还会污染未来诊断 (让人以为 reindex 真没完成)。estimand 本身无影响 —— reindex
 早已完成, 早退出与晚退出拿到的容器状态完全一致。
 
