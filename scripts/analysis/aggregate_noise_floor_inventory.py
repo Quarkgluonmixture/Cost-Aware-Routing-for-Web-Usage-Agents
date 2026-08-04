@@ -164,6 +164,11 @@ def _pair_stats(a: dict[int, int], b: dict[int, int], restrict: list[int] | None
         "mean_diff_pp": (len(a_not_b) - len(b_not_a)) / n * 100,
         "abs_mean_diff_pp": abs(len(a_not_b) - len(b_not_a)) / n * 100,
         "null_sd_mean_diff_pp": null_sd_pp,
+        # |ΔSR| is a FOLDED quantity but null_sd is the SD of the unfolded D, so comparing
+        # them directly (as §1b did) reads a perfectly-null observation as "same order as one
+        # SD". Under D~N(0,σ) the folded mean is E|D| = σ·sqrt(2/π) ≈ 0.798σ — that is what an
+        # observed |ΔSR| should be judged against.
+        "null_expected_abs_pp": math.sqrt(2 / math.pi) * null_sd_pp,
         "null_one_sided_95_pp": 1.645 * null_sd_pp,
         "null_two_sided_95_pp": 1.960 * null_sd_pp,
         "flip_tasks_a_to_b": a_not_b,
@@ -225,6 +230,17 @@ def compute_wa_floor() -> dict:
         "self_drop_b_to_a_pp": pooled_ba / pooled_n * 100,
         "discordance_pct": (pooled_ab + pooled_ba) / pooled_n * 100,
         "per_mode": per_mode,
+        # ⚠️ pooled_n is 5 modes x the SAME 10 tasks, so the 50 observations contain 10
+        # independent tasks; treating them as 50 understates the spread by up to sqrt(5).
+        # The per-mode floors (each n=10) are the like-for-like comparison against the VWA
+        # per-arm floors at n=224, and the widest of them is the honest band edge.
+        "n_independent_tasks": len(WA_REGISTERED_PILOT_TASKS),
+        "pooling_note": ("pooled over 5 modes on one shared 10-task draw; per-mode floors "
+                         "below are the unpooled comparison"),
+        "per_mode_self_drop_max_pp": max(
+            max(v["self_drop_a_to_b_pp"], v["self_drop_b_to_a_pp"]) for v in per_mode.values()),
+        "per_mode_self_drop_min_pp": min(
+            min(v["self_drop_a_to_b_pp"], v["self_drop_b_to_a_pp"]) for v in per_mode.values()),
         "scope": "B1 x WA-reddit, registered 10-task pilot draw x 5 modes",
     }
     LOG.info("WA B1 floor (pooled, clean): self_drop %.2f / %.2f pp, discordance %.2f%% (n=%d)",
@@ -450,7 +466,10 @@ def render(data: dict) -> str:
     add("")
     add(f"Two cells carry a floor, and they differ in model family, benchmark and serving "
         f"path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. "
-        f"On `B1 · WA-red` it lands **just outside**, by 0.81pp — above the floor, but of "
+        f"On `B1 · WA-red` it lands **inside** the honest band. ⚠️ Corrected 2026-08-04: it "
+        f"read *just outside by 0.81pp* against a band pooled over 5 modes on one shared "
+        f"10-task draw — 50 observations carrying 10 independent tasks. Against the "
+        f"unpooled per-mode floors the gain is comfortably inside. "
         f"the same order, and on a floor estimated from only n=50. Neither cell shows a "
         f"representation arm worth appreciably more than a rerun arm; one shows it worth "
         f"no more at all.")
@@ -554,7 +573,16 @@ def main(argv: list[str] | None = None) -> int:
 
     head_to_head = [
         ("cls_B0", "B0 · VWA-cls (n=224)", f"{lo:.2f} – {hi:.2f}pp", lo, hi),
-        ("wa_red_B1", "B1 · WA-red (n=104; floor n=50)", f"{wlo:.2f} – {whi:.2f}pp", wlo, whi),
+        # ⚠️ The pooled band (wlo..whi over n=50) understates the spread: those 50 obs are
+        # 5 modes on ONE shared 10-task draw, so there are 10 independent tasks, not 50.
+        # The per-mode floors are the like-for-like comparison and they span far wider —
+        # judging an added-arm gain against the pooled band is judging it against a band
+        # narrowed by counting correlated observations as independent.
+        ("wa_red_B1",
+         f"B1 · WA-red (n=104; floor = 5 modes × {wa_floor["n_independent_tasks"]} shared tasks)",
+         f"{wa_floor["per_mode_self_drop_min_pp"]:.2f} – {wa_floor["per_mode_self_drop_max_pp"]:.2f}pp "
+         f"*(pooled would read {wlo:.2f}–{whi:.2f})*",
+         wa_floor["per_mode_self_drop_min_pp"], wa_floor["per_mode_self_drop_max_pp"]),
         ("wa_red_B0", "B0 · WA-red (n=104; no pilot → no floor)", "—", None, None),
         ("cls_B1", "B1 · VWA-cls (n=224)", "—", None, None),
         ("cls_B2", "B2 · VWA-cls (n=224)", "—", None, None),

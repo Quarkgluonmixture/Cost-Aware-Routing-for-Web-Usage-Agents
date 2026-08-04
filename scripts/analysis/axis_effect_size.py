@@ -619,10 +619,27 @@ def multiplicity_filtered_independence(out: dict, metrics_def: list) -> dict:
     both_bh = [k for k, a, b, ok in keyed if ok and a in kb and b in kb]
     both_holm = [k for k, a, b, ok in keyed if ok and a in kh and b in kh]
     off = [k for k in both_bh if offseg.get(k)]
+
+    # --- conjunction test (the defensible one) ------------------------------------------
+    # "both contrasts are non-null" is a CONJUNCTION hypothesis. Correcting the individual
+    # legs and then keeping the combinations whose two legs each happened to survive is a
+    # FILTER, not a test: it controls error over the legs, not over the conjunctions. The
+    # valid intersection-union p-value is max(p_compound, p_image), corrected across the
+    # combinations. Both are returned so the difference is visible rather than swapped in
+    # silently — the `*_conjunction_*` keys are the ones to quote.
+    conj_p = [max(legs[a], legs[b]) for _k, a, b, _ok in keyed]
+    kb_c, kh_c = bh(conj_p), holm(conj_p)
+    conj_bh = [k for i, (k, _a, _b, ok) in enumerate(keyed) if ok and i in kb_c]
+    conj_holm = [k for i, (k, _a, _b, ok) in enumerate(keyed) if ok and i in kh_c]
+    off_conj = [k for k in conj_bh if offseg.get(k)]
     return {
         "n_legs": len(legs), "n_combinations": len(keyed),
         "effect_only": len(eff),
         "effect_and_bh_fdr_0.05": len(both_bh), "cells_bh": both_bh,
+        "n_conjunctions": len(conj_p),
+        "effect_and_bh_conjunction_0.05": len(conj_bh), "cells_bh_conjunction": conj_bh,
+        "effect_and_holm_conjunction_0.05": len(conj_holm), "cells_holm_conjunction": conj_holm,
+        "off_segment_conjunction": len(off_conj), "cells_off_segment_conjunction": off_conj,
         "effect_and_holm_fwer_0.05": len(both_holm), "cells_holm": both_holm,
         # Differing from both endpoints is not the same as being an independent direction: a
         # mode that INTERPOLATES between DOM and SoM also differs from both. P-SoM is off the

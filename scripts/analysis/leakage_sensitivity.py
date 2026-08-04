@@ -40,7 +40,12 @@ COMPARATORS = ["vision", "dom"]
 N_BOOT = 10000
 SEED = 20260802  # same as aggregate_fusion_premium.py, so the CIs are comparable
 
-AUDIT_JSON = REPO / "docs/analysis/cross_sites/reddit_sidebar_leakage_audit.json"
+# Prefer the WA-inclusive audit. Deciding not to run the sensitivity on WA *because* the WA
+# leak count came back zero would be outcome-dependent — the analysis runs either way and
+# reports the zero.
+_AUDIT_WITH_WA = REPO / "docs/analysis/cross_sites/reddit_sidebar_leakage_audit_with_wa.json"
+_AUDIT_VWA = REPO / "docs/analysis/cross_sites/reddit_sidebar_leakage_audit.json"
+AUDIT_JSON = _AUDIT_WITH_WA if _AUDIT_WITH_WA.is_file() else _AUDIT_VWA
 OUT_MD = REPO / "docs/analysis/cross_sites/leakage_sensitivity.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/leakage_sensitivity.json"
 

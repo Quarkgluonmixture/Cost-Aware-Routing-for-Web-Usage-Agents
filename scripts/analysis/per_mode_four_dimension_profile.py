@@ -404,10 +404,17 @@ def steps_layer(baseline: str, site: str, mode: str, *, spec: dict | None = None
             "cap_hit_rate": cap_hit,
             "url_revisit_rate": revisit / n,
             "noop_inert_rate": inert / n,
+            # ⚠️ These are 0.0 when the episode contains no click/type at all, i.e. an
+            # UNDEFINED conditional is encoded as a perfect score and then averaged over
+            # every task. The `_*_denom` companions (leading underscore => skipped by the
+            # metric loop in profile_cell) carry the denominator so a complete-case
+            # estimand can be computed beside the structural-zero one.
             "click_fail_rate": (sum(by_type["click"]) / len(by_type["click"])
                                 if by_type.get("click") else 0.0),
             "type_fail_rate": (sum(by_type["type"]) / len(by_type["type"])
                                if by_type.get("type") else 0.0),
+            "_click_denom": float(len(by_type.get("click") or [])),
+            "_type_denom": float(len(by_type.get("type") or [])),
             "n_steps": float(n),
             "click_frac": acts.count("click") / n,
             "type_frac": acts.count("type") / n,
@@ -520,6 +527,17 @@ def profile_cell(spec: dict) -> dict[str, Any]:
                     continue
                 # task-macro: mean over episodes of a within-episode rate
                 metrics[k] = statistics.fmean([v[k] for v in st.values()])
+            # complete-case companions for the two conditionals whose denominator can be
+            # zero: average only over episodes where the action actually occurred, and
+            # record how large the excluded set is. Reporting the structural-zero version
+            # alone mislabels an undefined rate as a zero rate (audit 2026-08-04).
+            for _rate, _den in (("click_fail_rate", "_click_denom"),
+                                ("type_fail_rate", "_type_denom")):
+                _vals = [v[_rate] for v in st.values() if v.get(_den, 0) > 0]
+                metrics[f"{_rate}_complete_case"] = (
+                    statistics.fmean(_vals) if _vals else None)
+                metrics[f"{_rate}_denom_zero_frac"] = (
+                    (len(st) - len(_vals)) / len(st) if st else None)
             # pooled-step: sum(numerator) / sum(denominator) over all steps
             for k, (num, den) in POOLED_SPEC.items():
                 d = sum(v[den] for v in st.values())

@@ -201,6 +201,47 @@ def _detect_baseline_from_run_dir(run_dir: Path) -> str:
     return "unknown"
 
 
+def canonical_sr(cond: Dict[str, Any], site: str) -> Dict[str, Any]:
+    """Recompute SR over the CANONICAL scored universe rather than the condition's own count.
+
+    `condition_summary_v2.json` carries whatever the runner scored, which on reddit is 205
+    episodes — it includes the AMENDMENT_08 protocol-excluded tasks 58 and 160, while every
+    paper number is defined on the 203-task scored set (`expected_scored_ids`). Copying
+    `success_rate` straight out therefore violates the canonical-universe contract that
+    `lib/canonical_task_universe.py` exists to enforce. The original columns are kept so
+    nothing downstream breaks silently; the canonical ones are added beside them and any
+    disagreement is printed.
+    """
+    out = {"episodes_canonical": None, "raw_sr_canonical": None, "n_success_canonical": None}
+    src = cond.get("_source_file")
+    if not src:
+        return out
+    ep_dir = Path(src).parent / "episodes"
+    if not ep_dir.is_dir():
+        return out
+    try:
+        from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+        scored, _ = expected_scored_ids(site)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [WARN] canonical universe unavailable for site={site}: {exc}")
+        return out
+    n = succ = 0
+    for ep in ep_dir.glob("*_summary_v2.json"):
+        m = re.search(r"_task_(\d+)_", ep.name)
+        if not m or int(m.group(1)) not in scored:
+            continue
+        try:
+            d = _read_json(ep)
+        except Exception:  # noqa: BLE001
+            continue
+        n += 1
+        succ += 1 if d.get("success") is True else 0
+    if not n:
+        return out
+    out.update(episodes_canonical=n, n_success_canonical=succ, raw_sr_canonical=succ / n)
+    return out
+
+
 def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, Any]]:
     """Extract per-mode rows from a single run_dir."""
     summaries = load_condition_summaries(run_dir)
@@ -352,6 +393,7 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             "cost_coverage_partial": cond.get("cost_coverage_partial"),
             "parse_error_rate": cond.get("parse_error_rate"),
             "episodes": int(cond.get("episodes", 0)),
+            **canonical_sr(cond, site),
             "is_stub": is_stub,
         })
     return rows
@@ -539,6 +581,12 @@ def main() -> None:
             "cost_column_coverage_rate": r.get("cost_column_coverage_rate"),
             "cost_coverage_partial": r.get("cost_coverage_partial"),
             "episodes": r["episodes"],
+            # canonical-universe columns carried through the second row rebuild — the first
+            # version of this fix added them in aggregate_run_dir() only and they vanished
+            # here, which is exactly the silent-drop shape the audit was about.
+            "episodes_canonical": r.get("episodes_canonical"),
+            "n_success_canonical": r.get("n_success_canonical"),
+            "raw_sr_canonical": r.get("raw_sr_canonical"),
             "is_stub": r["is_stub"],
         })
     # P1-1 fail-loud (/stress accounting audit 2026-05-21, user Q1=A): a non-stub

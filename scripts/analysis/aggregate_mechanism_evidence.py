@@ -93,6 +93,13 @@ def readability() -> dict:
             "auroc_lototask_best_layer_min": min(vals) if vals else None,
             "auroc_lototask_best_layer_mean": mean(vals) if vals else None,
             "n_pairs_at_auroc_1": sum(1 for v in vals if v >= 0.9999),
+            # best-layer over 37 layers x 15 pairs = 555 chances; reporting only the peak makes
+            # "15/15 perfectly separable" read as 15 independent separations. This says how
+            # BROAD each separation is, which is the part a max hides.
+            "median_layers_at_auroc_1": (
+                sorted(sum(1 for x in v if isinstance(x, (int, float)) and x >= 0.9999)
+                       for v in loto.values())[len(loto) // 2] if loto else None),
+            "n_layers_total": d.get("n_layers"),
             "axis_cosine_gap": axis_gap,
             "source": str(p.relative_to(REPO)),
         }

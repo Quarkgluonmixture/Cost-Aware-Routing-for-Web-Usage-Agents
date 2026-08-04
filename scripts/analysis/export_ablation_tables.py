@@ -260,12 +260,21 @@ def t_nonsep() -> tuple[str, str]:
     rows = ["| mode | metrics reaching the bar |", "|---|---|"]
     for m in ["Vision", "SoM", "DOM", "P-text", "P-prompt", "P-SoM"]:
         rows.append(f"| {m} | {tally.get(m, 0)} |")
-    cap = (f"Behavioural non-separability. A mode 'reaches the bar' on a metric when it is "
-           f"the extreme (highest or lowest) in ≥{thr} of {n} cells — 83%, the same "
-           f"proportion the six-cell version meant by ≥5/6. Over 26 metrics, the four "
-           f"image-free modes reach it on **none**. ⚠️ Carrying the literal numerator "
-           f"(≥5/8 = 63%) instead would let P-text clear it on two metrics and this negative "
-           f"would appear to break. Source: `per_mode_four_dimension_profile_with_wa.json`.")
+    cap = (f"**Absence of repeated extrema** — read the name literally. A mode 'reaches the "
+           f"bar' on a metric when it is the extreme (highest or lowest) in ≥{thr} of {n} "
+           f"cells ({100 * thr / n:.1f}%). Over 26 metrics the four image-free modes reach it "
+           f"on **none**. ⚠️ **This is not a separability test.** `rank_consistency()` only "
+           f"counts which mode attains each metric's max/min; a mode that is consistently "
+           f"*second* — and strongly distinguishable — never reaches the bar. Establishing "
+           f"non-separability would need pairwise equivalence margins with task-clustered "
+           f"intervals, which this does not do. ⚠️ **The threshold got stricter when cells "
+           f"grew, and an earlier caption said otherwise**: ≥{thr}/{n} is {100 * thr / n:.1f}%, "
+           f"not the 83% it claimed, and the six-cell ≥5/6 it says it matches is "
+           f"{100 * 5 / 6:.1f}% — a {100 * thr / n - 100 * 5 / 6:+.1f}pp shift, chosen after "
+           f"the cell count changed. Carrying the literal numerator (≥5/8 = 62.5%) instead "
+           f"would let P-text clear two metrics and this negative would appear to break, so "
+           f"the choice is load-bearing and is disclosed rather than defended. "
+           f"Source: `per_mode_four_dimension_profile_with_wa.json`.")
     return "\n".join(rows), cap
 
 
@@ -454,8 +463,16 @@ def t_prof_micro():
     return _profile_table("Micro"), (
         "Micro dimension — per-step execution quality. `act-fail|click` and `act-fail|type` "
         "are conditional on the action type, so they are not comparable to the unconditional "
-        "`act-fail` column. ⚠️ `loc-fallback` is near-zero for Vision **by construction** "
-        "(no element ids to fall back from), not as a finding. "
+        "`act-fail` column. ⚠️ **They are also not pure conditionals.** An episode containing "
+        "no click at all has no click-failure rate to report, and the producer stores `0.0` "
+        "there — an undefined rate encoded as a perfect one — which is then averaged over "
+        "every task. The zero-denominator share is large: **25–35% of episodes never type**, "
+        "and a few percent never click. The product now carries "
+        "`*_fail_rate_complete_case` (averaged only over episodes where the action occurred) "
+        "and `*_fail_rate_denom_zero_frac` beside these columns; the complete-case values run "
+        "**higher**, and any statement about which mode fails most on clicks or types should "
+        "be read from those, not from this column. ⚠️ `loc-fallback` is near-zero for Vision "
+        "**by construction** (no element ids to fall back from), not as a finding. "
         "Source: `per_mode_four_dimension_profile_with_wa.json`.")
 
 
@@ -705,44 +722,64 @@ def t_cascade_control():
     """
     d = load("confidence_cascade_with_wa")
     fracs = [0.1, 0.2, 0.3]
-    rows = ["| cell | signals | margin over same-size random escalation (10% / 20% / 30%) | "
-            "oracle headroom captured (10% / 20% / 30%) |",
-            "|---|---|---|---|"]
+    rows = ["| cell | signals | **best** margin (10/20/30%) | **median over all signals** "
+            "(10/20/30%) | signals >0 | oracle headroom captured (10/20/30%) |",
+            "|---|---|---|---|---|---|"]
     n_pos = n_tot = 0
+    all_margins: list[float] = []
+    median_neg_cells: list[str] = []
     for c in CELLS:
         r = cell_get(d["cells"], c)
         if not r:
             continue
-        margins = []
+        best_m, med_m, npos_frac, ntot_frac = [], [], 0, 0
         for f in fracs:
-            best = None
-            for curve in r["curves"].values():
-                for p in curve:
-                    if abs(p["frac"] - f) < 1e-9 and (
-                            best is None or p["sr_gain_pp"] > best["sr_gain_pp"]):
-                        best = p
-            if best is None:
-                margins.append(float("nan"))
+            # every signal at this fraction, not just the argmax — the max alone is what made
+            # "24/24 positive" look like evidence when it is partly arithmetic (see caption).
+            at_f = [p for curve in r["curves"].values() for p in curve
+                    if abs(p["frac"] - f) < 1e-9]
+            if not at_f:
+                best_m.append(float("nan"))
+                med_m.append(float("nan"))
                 continue
-            margins.append(best["sr_gain_pp"] - best["random_gain_pp"])
+            ms = sorted(p["sr_gain_pp"] - p["random_gain_pp"] for p in at_f)
+            mid = ms[len(ms) // 2] if len(ms) % 2 else 0.5 * (ms[len(ms) // 2 - 1] + ms[len(ms) // 2])
+            best_m.append(ms[-1])
+            med_m.append(mid)
+            all_margins.extend(ms)
+            npos_frac += sum(1 for m in ms if m > 0)
+            ntot_frac += len(ms)
             n_tot += 1
-            n_pos += int(margins[-1] > 0)
+            n_pos += int(ms[-1] > 0)
+        if any(m <= 0 for m in med_m if m == m):
+            median_neg_cells.append(CELL_LABEL[c])
         hc = r.get("headroom_captured", {})
         rows.append(
             f"| {CELL_LABEL[c]} | {r['n_signals_used']} | "
-            + " / ".join(f"{m:+.2f}pp" for m in margins) + " | "
+            + " / ".join(f"{m:+.2f}" for m in best_m) + " | "
+            + " / ".join(f"{m:+.2f}" for m in med_m) + " | "
+            + f"{npos_frac}/{ntot_frac} | "
             + " / ".join(f"{hc.get(f'{int(f * 100)}%', float('nan')):.0f}%" for f in fracs) + " |")
+    n_all = len(all_margins)
+    n_all_pos = sum(1 for m in all_margins if m > 0)
+    srt = sorted(all_margins)
+    med_all = (srt[n_all // 2] if n_all % 2
+               else 0.5 * (srt[n_all // 2 - 1] + srt[n_all // 2])) if n_all else float("nan")
     return "\n".join(rows), (
         f"Is the cascade's signal doing anything? {T('cascade')} answers a deployment "
-        f"question — no operating point Pareto-beats always-rich — which on its own cannot "
-        f"distinguish a signal that carries nothing from one that carries something "
-        f"insufficient. This is the comparator that separates them: the same escalation "
-        f"budget spent at random. The margin is positive in **{n_pos} of {n_tot}** "
-        f"(cell × fraction) combinations, so the ranking is informative even where the "
-        f"policy loses; the right-hand column says how much of the gap to a per-task oracle "
-        f"that ranking recovers. ⚠️ **These are in-sample maxima**: the best signal is chosen "
-        f"per (cell, fraction) from the cell's menu against realised outcomes, so they bound "
-        f"what an out-of-fold selection could deliver rather than estimate it. The offline-"
+        f"question — no operating point beats always-rich on success rate — which on its own "
+        f"cannot distinguish a signal that carries nothing from one that carries something "
+        f"insufficient. This is the comparator that separates them: the same escalation budget "
+        f"spent at random. ⚠️ **Read the median column, not the best column.** The best margin "
+        f"is positive in {n_pos} of {n_tot} (cell × fraction) combinations, but each of those is "
+        f"a **maximum over that cell's 8–10 candidate signals against a constant** — the random "
+        f"comparator does not depend on which signal is used — so positivity there is partly "
+        f"arithmetic. Over **all {n_all} (signal × cell × fraction) points, {100 * n_all_pos / n_all:.1f}% "
+        f"are positive with a median of {med_all:+.3f}pp**: that is the unselected statement, and "
+        f"it is the one to quote. On {', '.join(median_neg_cells) if median_neg_cells else '—'} the "
+        f"median is negative at one or more fractions while the best is positive — there the "
+        f"apparent win is entirely selection. The right-hand column is how much of the gap to a "
+        f"per-task oracle the best signal recovers, and inherits the same caveat. The offline-"
         f"splice caveat on {T('cascade')} applies unchanged. "
         f"Source: `confidence_cascade_with_wa.json`.")
 
@@ -1285,7 +1322,7 @@ TABLES = [
     ("class", "Best arm per deployment class", t_class),
     ("class-1arm", "Deployment classes at one arm each", t_class_1arm),
     ("class-ablate", "Class ablation, unmatched and arm-matched", t_class_ablate),
-    ("nonsep", "Behavioural non-separability", t_nonsep),
+    ("nonsep", "Absence of repeated extrema among image-free modes", t_nonsep),
     ("prof-outcome", "Full matrix — Outcome dimension", t_prof_outcome),
     ("prof-macro", "Full matrix — Macro dimension", t_prof_macro),
     ("prof-micro", "Full matrix — Micro dimension", t_prof_micro),
@@ -1742,10 +1779,35 @@ def main() -> None:
         print(f"[md] {a.guide}  (reading guide)")
     if a.evidence:
         a.evidence.parent.mkdir(parents=True, exist_ok=True)
+        # Multiplicity status, stated once for the whole family. Before 2026-08-04 the
+        # document contained zero occurrences of multiplicity / BH / Holm / FDR / FWER /
+        # family-wise / post-hoc / exploratory across all tables, so a reader had no way to
+        # know how many comparisons produced them. Skeleton only — which tables are
+        # confirmatory is a framing decision and is marked TBD rather than guessed.
+        family_note = (
+            "> **Multiplicity status of this table set.** These "
+            f"{len(TABLES)} tables are **not one inferential family** and are not corrected "
+            "as one. Read them in three classes:\n"
+            ">\n"
+            "> * **Confirmatory** — hypotheses fixed before the data, corrected within their "
+            "own family. Currently: the 2×2 axis independence set (64 conjunction hypotheses, "
+            "BH/Holm on `max(p1, p2)`; see that table's caption). *Which further tables join "
+            "this class is a framing decision and is still TBD.*\n"
+            "> * **Descriptive** — quantities reported with intervals but no test, and no "
+            "correction claimed: the full behavioural matrices, the efficiency tables, the "
+            "failure-attribution counts.\n"
+            "> * **Selection-derived (exploratory)** — a maximum or argmax over layers, "
+            "signals, thresholds or comparators is part of the statistic. These bound what a "
+            "selection could deliver and **cannot be read as effect estimates**: the cascade "
+            "control (best of 8–10 signals), the linear-probe AUROC (best of 37 layers), the "
+            "reference-image and visual-difficulty diagnostics (selected comparators). Each "
+            "such table states it in its own caption.\n"
+            ">\n"
+            "> No family-wise statement covers the set as a whole, and none is claimed.\n")
         a.evidence.write_text(tex_safe(
             "## Evidence tables\n\n<!-- Generated by "
             "scripts/analysis/export_ablation_tables.py. Do not hand-edit between the "
-            "markers. -->\n" + tables_body))
+            "markers. -->\n\n" + family_note + "\n" + tables_body))
         print(f"[md] {a.evidence}  (evidence section)")
 
 
