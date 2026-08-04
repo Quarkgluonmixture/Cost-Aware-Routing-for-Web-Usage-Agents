@@ -2,7 +2,7 @@
 type: reference
 status: live
 created: 2026-05-07
-last_updated: 2026-05-14
+last_updated: 2026-08-04
 audience: self + advisor sync prep
 ---
 
@@ -10,7 +10,7 @@ audience: self + advisor sync prep
 
 > **Living document** — update when compute access changes (new accounts, network policy, deprecations).
 >
-> **Last major update**: 2026-05-14. **Condenser A100 now operational** — VM `a100-jiaming-test` @ `10.134.51.2` (replaces earlier `a100-jiaming-mech` @ `10.52.6.89`), Ubuntu 22.04.5, SSH user `ubuntu`, PyTorch smoke test passed (`torch 2.11.0+cu128`, cuda True, capability (8,0), driver 580.126.20 / CUDA 13.0). GPU confirmed **A100-PCIE-40GB** (NOT 80GB). Access: quark → UCL VPN → condenser bastion (`cloud-user`, key `id_condenser_private_fixed` + cert `id_condenser_new.signed`) → VM (`ssh condense-a100`). Earlier (2026-05-07): Myriad passwordless SSH working (VSCode Remote-SSH ❌ glibc 2.17), Myriad HPC account activated.
+> **Last major update**: 2026-08-04. Added the independent Holistic AI **Sparks Slurm cluster**: `spark-9017` (login+compute) + `spark-97a6` (compute), each 1×GB10 / 128GB unified memory, CUDA 13, shared `/clusterhome/jiaming`, researcher QoS = 2 GPUs / 72h. Access from this host is `ssh sparks` via Cloudflare Access + a dedicated SSH key. This cluster is separate from the standalone `spark-9ea3` and does not replace the Condenser A100 paper-grade target.
 
 ---
 
@@ -21,6 +21,7 @@ audience: self + advisor sync prep
 | **0** | UCL Condenser **A100 40GB dedicated** | ✅ **operational 2026-05-14** (VM `a100-jiaming-test` @ `10.134.51.2`, PyTorch verified; VWA docker self-hosted LIVE since 2026-05-14, fired Fire-3 2026-05-18) | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch (small variants only, 40GB constraint) + 42-cond / 6-cell Phase 1a (VWA self-hosted on VM) |
 | **1** | UCL **Myriad HPC** (V/U-type 4× A100 80GB / L-type 4× A100 40GB / E/F-type 2× V100) | ✅ account activated 5/6 / **passwordless SSH 5/7 evening** / ⚠️ VSCode Remote-SSH NOT viable (RHEL 7 glibc 2.17 < required 2.28) | Terminal-only batch + cross-arch (qsub on V/U-type) + future SAE training (4-GPU data-parallel). Workflow: dev on quark/A100 → git push → ssh myriad git pull → qsub. |
 | **2** | **DGX Spark** (`spark-9ea3`) shared lab | ✅ stable, no admin/sudo, lab Tailscale `981526092.github` | Archived data source / VWA Docker Tailscale bridge / curation done (笔记 §113) |
+| **S** | Holistic AI **Sparks Slurm** (`spark-9017` + `spark-97a6`) | ✅ operational 2026-08-04; `ssh sparks` key auth verified; Slurm `main`, 2× nodes each `gpu:1`; researcher max 2 GPU / 72h | Slurm-scheduled GB10 jobs and two-node distributed experiments; separate from `spark-9ea3`; VWA reach not yet verified |
 | **3** | Advisor 5090 (post AI Center 搬运) | ⏳ pending | Backup if Condense fails, advisor offered 5/5 sync |
 | ❌ | RunPod 4090 self-fund $200 | deprecated by Tier 0 | not needed |
 | ❌ | Myriad pre-5/6 | superseded by 5/6 reactivation | no longer "abandoned" — see §1.2 |
@@ -246,6 +247,39 @@ Host condense-a100
 - Reach Myriad / bastion (no UCL VPN, no admin to install)
 - Generate SSH Portal cert (cert needs UCL VPN, DGX has none)
 
+### §1.3a Holistic AI Sparks Slurm cluster — separate scheduled GB10 pool
+
+**Do not conflate with `spark-9ea3`.** This is a two-node Slurm cluster:
+
+- `spark-9017`: login node + compute node
+- `spark-97a6`: compute node; direct SSH is blocked unless adopted into a running Slurm allocation
+- Each node: aarch64 NVIDIA DGX Spark / GB10, 1 GPU, 128GB unified CPU+GPU memory, CUDA 13, Ubuntu 24.04
+- Shared home: `/clusterhome/jiaming` (NFS, visible from both nodes)
+- Slurm: cluster `sparks`, default partition `main`, each node advertises `gpu:1`
+- Account/QoS: user `jiaming`, account `research`, QoS `researcher`, maximum 2 GPUs per user, maximum walltime 72h
+
+**Access from `spark-9ea3`**:
+
+```bash
+ssh sparks
+ssh -o BatchMode=yes sparks 'hostname; sinfo'
+```
+
+The local alias uses Cloudflare Access in `~/.ssh/config.d/sparks` and a dedicated key `~/.ssh/id_ed25519_sparks`. The config file is mode 600 and contains a service token: **never copy its token/password into repository docs, logs, or chat output**.
+
+**Golden rules**:
+
+1. Never run training or heavy compute directly in the login shell. Even when a job lands on `spark-9017`, obtain it through Slurm.
+2. Interactive allocation:
+   ```bash
+   srun --gres=gpu:1 --cpus-per-task=8 --mem=40G --pty bash
+   ```
+3. Batch jobs use `sbatch`; inspect with `squeue -u jiaming` / `sinfo`; cancel with `scancel <jobid>`.
+4. Set `--mem` explicitly for GPU jobs and checkpoint before the walltime limit.
+5. CUDA is already on PATH; no module load. User dependencies belong in the shared home, e.g. `uv venv && source .venv/bin/activate && uv pip install ...`.
+6. Two-node distributed jobs request `--nodes=2 --ntasks-per-node=1 --gres=gpu:1` and launch via `srun torchrun`; cluster guide specifies `NCCL_SOCKET_IFNAME=enp1s0f1np1` and the source-built NCCL library under `/home/zekun/nccl/build/lib`.
+7. VWA site reach and paper-grade runtime invariants have not been verified on Sparks. Do not launch P79 live-site/paper-grade conditions there without a fresh connectivity + contamination preflight. Condenser A100 remains canonical.
+
 ### §1.4 Quark (Windows home) — gateway / dev workstation
 
 **Hardware**: User's home Windows machine.
@@ -466,6 +500,7 @@ DGX                  Quark                   A100/Myriad
 | SAE training (paper v2 deferred) | ❌ Tier 0 single 40GB infeasible | Tier 1 Myriad V-type 4× A100 80GB data-parallel | data-parallel scales SAE training |
 | CPU analysis batch (figures, aggregation) | DGX local | Tier 1 Myriad D-type | no GPU needed |
 | Smoke tests / curation (small) | DGX (if shared GPU available) | Tier 0 A100 | already done 5/6, 笔记 §113 |
+| Independent Slurm GPU / two-node GB10 experiment | Sparks Slurm (`ssh sparks` → `srun`/`sbatch`) | Myriad or standalone DGX depending model size | 2 nodes × 1 GB10, shared home, researcher 2-GPU/72h QoS; no live-site assumption |
 
 ---
 
