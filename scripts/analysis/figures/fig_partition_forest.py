@@ -78,10 +78,13 @@ def main() -> int:
     ax.set_axisbelow(True)
 
     # No counts in the legend: stratum sizes vary by site and belong to the caption.
+    # Placed outside the axes to match the sibling forest plot, where an in-axes
+    # legend sat on top of two error bars.
     handles = [plt.Line2D([], [], color=BLUE, lw=1.0, marker="o", ms=2.6, label="flagged"),
                plt.Line2D([], [], color=ORANGE, lw=1.0, marker="o", ms=2.6, label="the rest")]
-    ax.legend(handles=handles, fontsize=5.5, frameon=False, loc="lower right",
-              handlelength=1.4, borderaxespad=0.2, labelspacing=0.25)
+    ax.legend(handles=handles, fontsize=5.5, frameon=False, ncol=2,
+              loc="lower center", bbox_to_anchor=(0.5, 1.0),
+              handlelength=1.2, columnspacing=1.4, borderaxespad=0.15)
 
     fig.tight_layout(pad=0.25)
     args.out.mkdir(parents=True, exist_ok=True)

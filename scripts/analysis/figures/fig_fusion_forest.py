@@ -89,8 +89,11 @@ def main() -> int:
     handles = [plt.Line2D([], [], color=BLUE, lw=1.0, marker="o", ms=2.6, label="SoM − Vision"),
                plt.Line2D([], [], color=ORANGE, lw=1.0, marker="o", ms=2.6, label="SoM − DOM"),
                plt.Rectangle((0, 0), 1, 1, color=BAND, label="rerun threshold")]
-    ax.legend(handles=handles, fontsize=5.5, frameon=False, loc="lower left",
-              handlelength=1.4, borderaxespad=0.2, labelspacing=0.25)
+    # Outside the axes: the WA rows run to -12.5pp, so any in-axes corner sits on data.
+    # An inside legend here obscured two error bars in the version this replaces.
+    ax.legend(handles=handles, fontsize=5.5, frameon=False, ncol=3,
+              loc="lower center", bbox_to_anchor=(0.5, 1.0),
+              handlelength=1.2, columnspacing=1.1, borderaxespad=0.15)
 
     fig.tight_layout(pad=0.25)
     args.out.mkdir(parents=True, exist_ok=True)
