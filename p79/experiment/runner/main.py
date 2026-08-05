@@ -15,6 +15,7 @@ import random
 import re
 import shutil
 import signal
+import sys
 import time
 import urllib.request
 import urllib.error
@@ -2182,6 +2183,43 @@ class ExperimentRunner:
             and not self.diagnostic_replay
             and bool(summary.get("needs_reevaluation", False))
         ):
+            # B-1957 (2026-08-05): a standing `benchmark_permanent` adjudication
+            # downgrades this abort to an ordinary episode failure. Motivating
+            # case: VWA shopping task 345's start_url references a Wikipedia
+            # image absent from the deployed ZIM (probed 404 across every path
+            # variant while the article itself is 302 — upstream content drift,
+            # already adjudicated in §81 follow-up 2026-04-29). Such a task can
+            # NEVER produce the clean evidence episode `append_resolution`
+            # demands, so without this it aborts every condition forever: the
+            # 2026-08-04 fire burned 320 episodes + 20h of idle host before
+            # anyone looked.
+            #
+            # TWO independent conditions must hold, sourced from different
+            # places, so neither alone can wave an episode through:
+            #   1. the episode is benchmark-noise classified (runner's own
+            #      fields) — an evaluator/code_bug/substrate quarantine never
+            #      reaches the probe at all;
+            #   2. the registry carries a `benchmark_permanent` classification
+            #      for THAT exact error_class (operator adjudication).
+            # Anything else — probe error, missing registry, timeout, unknown
+            # classification — leaves the abort intact (fail-closed).
+            _bn_category = str(summary.get("benchmark_noise_category") or "")
+            if bool(summary.get("benchmark_noise", False)) and _bn_category:
+                _err_class = f"error({_bn_category})"
+                _allowed, _why = self._quarantine_downgrade_allowed(
+                    str(task.site), int(task.task_id), _err_class
+                )
+                if _allowed:
+                    logger.warning(
+                        "B-1957 quarantine DOWNGRADED to ordinary failure "
+                        "site=%s task=%s error_class=%s — %s. Episode keeps "
+                        "needs_reevaluation=True for forensics; scored-set "
+                        "treatment is an analysis-layer decision (see "
+                        "PROTOCOL_EXCLUSIONS), not a runner one.",
+                        task.site, task.task_id, _err_class, _why,
+                    )
+                    return summary
+
             from p79.experiment.environment import PaperGradeAbortError
             # B-1881: attach structured provenance so the transient-retry wrapper
             # gates on (class, steps) without re-parsing the truncated message.
@@ -2198,14 +2236,56 @@ class ExperimentRunner:
                 f"summary carries needs_reevaluation=True "
                 f"(error={str(summary.get('error', ''))[:200]!r}). "
                 f"Condition aborts to prevent burning compute on potentially-"
-                f"compromised substrate. Operator: investigate task, classify "
-                f"(agent-induced / benchmark / substrate / evaluator / transient), "
-                f"add to quarantine_registry.jsonl (Wave 2 M6 investigation gate, "
-                f"NOT auto skip-list), then manually re-fire after substrate fix.",
+                f"compromised substrate. Operator: reproduce the failure, then "
+                f"`python scripts/maintenance/quarantine_registry.py classify "
+                f"--site={task.site} --task-id={task.task_id} --as=<one of "
+                f"substrate|agent_induced|evaluator|transient_drift|"
+                f"unreproducible_in_isolation|benchmark_permanent> --rationale=...` "
+                f"(Wave 2 M6 investigation gate, NOT an auto skip-list), then "
+                f"re-fire. Only `benchmark_permanent` (+ its required "
+                f"--error-class) lets a future fire past this task without a "
+                f"substrate fix — reserve it for defects proven unrepairable.",
                 transient_class=_abort_tclass,
                 steps=_abort_steps,
             )
         return summary
+
+    def _quarantine_downgrade_allowed(
+        self, site: str, task_id: int, error_class: str
+    ) -> tuple:
+        """B-1957 — does a standing `benchmark_permanent` adjudication cover this?
+
+        Probes the registry through its CLI rather than importing it, keeping
+        `scripts/maintenance/` out of the fire's import path (the boundary the
+        watchdog already uses). Fail-closed by construction: a missing script,
+        a non-zero exit, a timeout, or any exception all return False, so the
+        quarantine abort survives every failure mode of this check.
+        """
+        import subprocess
+
+        registry = (
+            Path(__file__).resolve().parents[3]
+            / "scripts" / "maintenance" / "quarantine_registry.py"
+        )
+        if not registry.exists():
+            return False, f"registry CLI not found at {registry}"
+        try:
+            proc = subprocess.run(
+                [
+                    sys.executable, str(registry), "gate-check",
+                    "--site", site,
+                    "--task-id", str(task_id),
+                    "--error-class", error_class,
+                ],
+                capture_output=True, text=True, timeout=20,
+            )
+        except Exception as exc:  # noqa: BLE001 — fail-closed on ANY probe failure
+            return False, f"gate-check probe raised: {exc!r}"
+        if proc.returncode != 0:
+            return False, (
+                (proc.stdout or proc.stderr or "no standing adjudication").strip()[:300]
+            )
+        return True, (proc.stdout or "").strip()[:300]
 
     def _run_episode(
         self,

@@ -70,8 +70,29 @@ VALID_CLASSIFICATIONS = (
     # not replicate the mid-fire cumulative load condition (e.g., Wave 4 M7
     # playwright_mcp_reproduce from a different host, 30h+ post-event).
     "unreproducible_in_isolation",
+    # B-1957 (2026-08-05): deterministic, non-repairable defect in the BENCHMARK
+    # data itself — not substrate noise, not transient, and NOT resolvable via
+    # `append_resolution` (that path demands a clean evidence episode, which a
+    # permanently-broken task can never produce). The abort message the runner
+    # prints has always offered `benchmark` as a classification option while the
+    # enum had no such member; this closes that gap.
+    #
+    # UNIQUE POWER: this is the ONLY classification that downgrades the runner's
+    # fail-closed quarantine abort to an ordinary episode failure, so it carries
+    # two guards the others do not — it REQUIRES an `error_class` (the standing
+    # adjudication is per-error-class, never blanket per-task), and the runner
+    # re-checks the match at gate time. Reserve it for defects proven
+    # unrepairable by direct substrate probe; anything that might come back clean
+    # on a re-run is `transient_drift` and must go through resume-rerun instead.
+    "benchmark_permanent",
     "undecided",       # reviewer needs more data
 )
+
+# Classifications that may downgrade the runner's paper-grade quarantine abort.
+# Deliberately a one-member set: every other classification describes a failure
+# that could plausibly differ on a re-run, and silently waving those through
+# would gut the Fire-4 Wave 1 M1 fail-closed gate.
+GATE_DOWNGRADE_CLASSIFICATIONS = frozenset({"benchmark_permanent"})
 
 # Fire-6 RCA Stage C2 (/stress 2026-05-20): diagnostic-scoped Gate 8 override
 # task-count cap. A diagnostic replay is targeted (a handful of tasks under
@@ -187,11 +208,21 @@ def append_classification(
     classified_by: str,
     rationale: str,
     classified_via: Optional[str] = None,
+    error_class: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Append a classification event (CLI or M7 reproduce tool)."""
     if classification not in VALID_CLASSIFICATIONS:
         raise ValueError(
             f"invalid classification {classification!r}; must be one of {VALID_CLASSIFICATIONS}"
+        )
+    # B-1957: a gate-downgrading classification is scoped to ONE error_class.
+    # Without this, classifying task N's 404 as permanent would also wave through
+    # an unrelated OOM or auth failure on the same task — the exact silent-
+    # advancement failure the quarantine gate exists to prevent.
+    if classification in GATE_DOWNGRADE_CLASSIFICATIONS and not error_class:
+        raise ValueError(
+            f"classification {classification!r} REQUIRES --error-class "
+            "(the adjudication is per-error-class, never blanket per-task)"
         )
     event = {
         "event_type": "classification",
@@ -199,6 +230,7 @@ def append_classification(
         "site": site,
         "task_id": int(task_id),
         "classification": classification,
+        "error_class": error_class,
         "classified_by": classified_by,
         "classified_via": classified_via,
         "rationale": rationale,
@@ -231,9 +263,65 @@ def count_unclassified(site: str, task_id: int) -> int:
 
     Most-recent classification timestamp determines current state; older
     classifications are retained for audit trail.
+
+    B-1957 exception: a `benchmark_permanent` classification is a STANDING
+    adjudication for its error_class, so quarantine events of that class are
+    pre-answered and drop out of the accounting (together with the standing
+    classification itself, which would otherwise offset an unrelated event).
+    Without this, a permanently-broken task would re-arm the G8 halt once per
+    condition — 7 quarantines vs 1 classification ⇒ unclassified=6 ⇒ the very
+    next fire blocks on a question already answered. Every OTHER classification
+    keeps strict per-fire-per-event accounting: those failures could differ on a
+    re-run, so each occurrence still deserves its own look.
     """
     quar, classif = _task_events(site, task_id)
+    permanent_classes = {
+        (e.get("error_class") or "").lower()
+        for e in classif
+        if e.get("classification") in GATE_DOWNGRADE_CLASSIFICATIONS
+        and e.get("error_class")
+    }
+    if permanent_classes:
+        quar = [
+            q for q in quar
+            if (q.get("error_class") or "").lower() not in permanent_classes
+        ]
+        classif = [
+            c for c in classif
+            if c.get("classification") not in GATE_DOWNGRADE_CLASSIFICATIONS
+        ]
     return max(0, len(quar) - len(classif))
+
+
+def is_permanently_classified(
+    site: str, task_id: int, error_class: str
+) -> Tuple[bool, str]:
+    """Does a standing `benchmark_permanent` adjudication cover THIS error_class?
+
+    Returns (downgrade_allowed, reason). This is the ONLY predicate that may
+    relax the runner's paper-grade quarantine abort, so every branch is
+    fail-closed: a missing/blank error_class, a non-matching class, or a newer
+    non-permanent classification all return False. The most recent classification
+    wins, which makes the adjudication revocable by appending an `undecided`
+    event — no rewriting of the append-only log required.
+    """
+    if not error_class:
+        return False, "no error_class on the episode — cannot scope a downgrade"
+    _, classif = _task_events(site, task_id)
+    cands = [
+        e for e in classif
+        if (e.get("error_class") or "").lower() == error_class.lower()
+    ]
+    if not cands:
+        return False, f"no classification carrying error_class {error_class!r}"
+    latest = max(cands, key=lambda e: e.get("ts", ""))
+    got = latest.get("classification")
+    if got not in GATE_DOWNGRADE_CLASSIFICATIONS:
+        return False, f"latest classification for {error_class!r} is {got!r}, not permanent"
+    return True, (
+        f"standing {got!r} adjudication for {error_class!r} "
+        f"({str(latest.get('classified_via') or 'n/a')})"
+    )
 
 
 def latest_classification(site: str, task_id: int) -> Optional[Dict[str, Any]]:
@@ -685,9 +773,25 @@ def _cmd_classify(args: argparse.Namespace) -> int:
         classified_by=args.classified_by,
         rationale=args.rationale,
         classified_via=args.classified_via,
+        error_class=getattr(args, "error_class", None),
     )
     print(json.dumps(ev, ensure_ascii=False))
     return 0
+
+
+def _cmd_gate_check(args: argparse.Namespace) -> int:
+    """B-1957 runner gate probe — exit 0 allows the quarantine-abort downgrade."""
+    ok, reason = is_permanently_classified(
+        args.site, args.task_id, args.error_class
+    )
+    print(json.dumps({
+        "site": args.site,
+        "task_id": args.task_id,
+        "error_class": args.error_class,
+        "downgrade_allowed": ok,
+        "reason": reason,
+    }, ensure_ascii=False))
+    return 0 if ok else 1
 
 
 def _cmd_resolve(args: argparse.Namespace) -> int:
@@ -909,7 +1013,26 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_cls.add_argument("--rationale", required=True)
     p_cls.add_argument("--classified-via", default=None,
                        help="e.g., playwright_manual_reproduce / agent_replay / docker_inspection")
+    p_cls.add_argument("--error-class", default=None,
+                       help="exact quarantine error_class this classification "
+                            "addresses; REQUIRED for benchmark_permanent (B-1957)")
     p_cls.set_defaults(func=_cmd_classify)
+
+    # B-1957: runner-facing gate probe. Exit 0 = a standing benchmark_permanent
+    # adjudication covers this exact (site, task, error_class) ⇒ the runner may
+    # downgrade its quarantine abort to an ordinary episode failure. Exit 1 =
+    # no such adjudication ⇒ abort as before. Kept as a subprocess boundary (the
+    # same one the watchdog already uses) so nothing under scripts/maintenance/
+    # enters the fire's import path.
+    p_gate = sub.add_parser(
+        "gate-check",
+        help="B-1957 — exit 0 if a standing benchmark_permanent adjudication "
+             "covers this (site, task, error_class); exit 1 otherwise",
+    )
+    p_gate.add_argument("--site", required=True)
+    p_gate.add_argument("--task-id", type=int, required=True)
+    p_gate.add_argument("--error-class", required=True)
+    p_gate.set_defaults(func=_cmd_gate_check)
 
     # Fire-6 C3a: evidence-gated resolution (clears Gate 8 Rule 2 per error_class).
     p_res = sub.add_parser("resolve", help="Append evidence-gated resolution (Fire-6 C3a) — clears Rule 2 for one error_class")

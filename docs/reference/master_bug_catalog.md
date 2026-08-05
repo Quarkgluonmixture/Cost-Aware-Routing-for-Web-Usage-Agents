@@ -11130,3 +11130,69 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 
 **Cross-link**: B-1955 (同一轮 fire) · B-1952 (P2-2 提到的 mysqld 中间态) ·
 `docs/reference/shopping_reset_state_surface.md` · 实验笔记 §429 / §431
+
+## §436 B-1957 一个已裁定四个月的 benchmark 缺陷, 被新 gate 当成未知污染 (2026-08-05)
+
+### B-1957. quarantine gate 无法表达「确认修不好, 但已裁定可接受」 [P0 — fire blocker] 🛠️ FIXED
+
+- **现场**: `B0_dom_shopping_..._R3561` 在 **320/435 episode** 处 abort
+  (`abort_reason=quarantine`, `aborted_at_task=345`), 此后 A100 **零 runner 20 小时**,
+  7 个 condition 只动了第 1 个。已花 ≈$35.8 API + 26h wallclock。
+
+- **触发**: VWA shopping task345 是 `shopping |AND| wikipedia` 跨站, wikipedia 那条腿指向
+  图片资产 `I/Country_calling_codes_map.svg.png.webp`。**§81 的 ZIM 版本重写工作正常**
+  (2022-05 → 2025-08 已施加; kiwix-serve 实跑 `wikipedia_en_all_maxi_2025-08.zim`),
+  是该资产在 2025-08 语料里不存在: `.svg.png.webp` / `.svg.png` / `.svg` 三变体全 **404**,
+  而条目页 `A/List_of_country_calling_codes` = **302** ⇒ kiwix + ZIM 健康, 只有这个资产没了。
+
+- **为什么现在才炸**: 2026-04-29 (§81 follow-up) 同一 task 同一 404 被 watchdog auto-retry
+  当 benign 放行, run 跑满 466 (SR 16.52%)。**P1-10-B** (2026-05-19) 抑制了对
+  `needs_reevaluation=True` 的 auto-retry, **Wave 2 M6** 又把它升级为 fail-closed abort。
+  已裁定的结论只写在笔记 + paper footnote 里, `quarantine_registry.jsonl` 中 shopping 记录数 = **0**
+  ⇒ 新 gate 把同一件事重新"发现"了一遍。
+
+- **既有机制为何接不住**: `append_resolution` / `is_error_class_resolved` 要求提供一个**跑干净的
+  episode** 作为证据 (`_verify_resolution_episode`) —— 它表达「已修好」, 而 345 永远不会有干净
+  episode。registry 20 个 quarantine event 的 error_class 全是 auth/api_infra/timeout/screenshot/
+  evaluator/OOM, 24 条 classification 全落在 transient_drift / unreproducible_in_isolation /
+  evaluator / substrate ⇒ **345 是第一个确定性不可修复的 case**。附带: runner 的 abort message
+  一直让操作员从含 `benchmark` 的列表里选, 而 `VALID_CLASSIFICATIONS` 从来没有这一档。
+
+- **Fix**: 新增 classification `benchmark_permanent` —— **唯一**能把 fail-closed abort 降级成普通
+  fail 的分类, 因此上两把独立的锁:
+  1. `append_classification` 对该分类**强制要求 `--error-class`** (裁定按 error_class 粒度,
+     绝不 blanket per-task; 否则裁定 345 的 404 会顺手放行同一 task 上无关的 OOM/timeout);
+  2. runner 只对 `benchmark_noise=True` 的 episode 发起探询 —— 该条件来自 runner 自己的字段,
+     与 registry 是**两个独立数据源**, 必须同时成立。
+  探询走 subprocess CLI (`gate-check`) 而非 import, 保持 `scripts/maintenance/` 不进 fire 的
+  import 路径 (沿用 watchdog 既有边界); 脚本缺失 / 非零退出 / 超时 / 任何异常**一律返回 False**。
+  同时修 `count_unclassified`: permanent 裁定的 error_class 对应的 quarantine 退出计数, 否则
+  7 个 condition 各撞一次 ⇒ `#quarantine - #classification` = 6 ⇒ **G8 preflight 反过来卡死下一次
+  fire**; 其余分类保持严格 per-fire-per-event 计数。
+
+- **降级 ≠ 跳过**: episode 照常收集, `needs_reevaluation=True` 保留做 forensic。是否离开 SCORED set
+  是**分析层**的独立决定 (`PROTOCOL_EXCLUSIONS` / 未来 amendment), 刻意不在 runner 里做。
+
+- **规模已实证, 非 hand-pick**: 判据「start_url 引用的 substrate 资源 404、非 auth 造成、不可修复」
+  经 `_placeholder_mapping()` (与 runner 逐字同一条替换管线) 展开 6 个 benchmark×site 的
+  **1466 个 start_url 引用 / 431 个 unique URL** 全探, **恰好选中 1 个**。两组假阳性已证伪:
+  6 × `7780/catalog/product/edit/id/...` 是 **auth 假阳性** (admin 登录页本身就 404, id=1/2 也 404,
+  6 个 product 在 `catalog_product_entity` 里全部存在), 18 × `9980/...` 是 **6 并发压力假阳性**
+  (串行重探全部 200 @0.13-0.19s)。探测器入库为 `scripts/maintenance/probe_starturl_availability.py`
+  (默认串行 + 每 host control 探针, 把这两个坑固化成工具行为)。
+
+- **Files touched**: `scripts/maintenance/quarantine_registry.py` (+`benchmark_permanent`
+  +`GATE_DOWNGRADE_CLASSIFICATIONS` +`is_permanently_classified` +`gate-check` 子命令
+  +`count_unclassified` permanent 豁免 +`--error-class`) · `p79/experiment/runner/main.py`
+  (+`_quarantine_downgrade_allowed` + gate 前置探询 + abort message 改为真实 CLI 命令)
+  · `scripts/maintenance/probe_starturl_availability.py` (新增) ·
+  `docs/checkpoints/quarantine_registry.jsonl` (345 的 quarantine + benchmark_permanent 裁定)
+  · `tests/test_b1957_benchmark_permanent.py` (15 测试)
+
+- **验证**: 新增 15 测试全过 (承重: 不匹配 error_class 必拒 / transient_drift 永不降级 /
+  探询异常必 fail-closed / permanent 不再 re-arm G8); 既有 quarantine 套件 67 passed;
+  全量 1678 passed / 23 failed, 23 个全部是 paper prose / diag rules / lint 类既有失败,
+  无一涉及 runner 或 registry。
+
+- **Cross-link**: §81 + §81 follow-up (2026-04-29 原裁定) · P1-10-B · Fire-4 RCA Wave 1 M1 /
+  Wave 2 M6 · B-304 (resume 须 `RESET_BEFORE=0` 保轨迹连续) · 实验笔记 §436
