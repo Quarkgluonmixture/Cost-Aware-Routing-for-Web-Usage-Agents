@@ -61,10 +61,26 @@ updated: 2026-07-29
 > - 正文全扫零命中：`jiaming|wei |ucl |ucab352|zekun|quarkgluon|acknowledg|thank`
 > - 无 `github.com/*` / `osf.io/*` / `doi.org/*` 链接
 >
+> ### ✅ 表格越界 blocker 已由学长清除（`d0ee9ee`, 08-06 00:34）
+>
+> t08 超页 177pt / t30 超 28pt / t07 预防性修复。复扫**双基准全干净**：
+> 版心线 775.2 无越界 · 页码线 805.1 无越界 · 正文 8 页 · 35 页 · 0 error / 0 undefined。
+> ⚠️ 我曾撤回过 t30（p29）那条，**撤回是错的** —— 详见笔记 §435.11（把「视觉上没压页码」
+> 当成了合规判据，而 ACL 管的是「是否超出版心」）。
+>
 > ### 🔴 提交前真正剩下的
 >
-> 1. **确认提交门户** —— 本仓库记的是 OpenReview，但 workshop 官网未写明平台。**明早第一件事**
-> 2. **提交材料** —— 作者 / COI / abstract（abstract 可直接从 `sections/0_abstract.tex` 拷）
+> 1. ~~确认提交门户~~ —— **已确认 = OpenReview**（user 08-06 打开了表单）。
+>    截稿 **Aug 06 2026 11:59AM UTC-0**（表单页显示，与 AoE 推算一致）
+> 2. **表单字段**：
+>    - Archival → **Non-archival**（`issue_realm_archival_track_2026-08-01` 的决定，保主会选项）
+>    - Abstract → 直接拷 `sections/0_abstract.tex`（**260 词不用缩**，见上文）
+>    - **Serve As Reviewer**（必填）→ 需提名至少一位作者的 OpenReview profile ID
+>    - Authors → 是否加学长，**user 决定**
+>    - PDF → `~/overleaf-aaai27/main_restructured.pdf`（最新 = `d0ee9ee` 之后重编译的）
+> 3. **可选 tiny**：`sections/limitations.tex:4` 的内部路径
+>    `\texttt{results/visualwebarena/phase1/*shop*} is zero directories`
+>    → "No third workload was evaluated."
 >
 > ### 🟡 终审剩余 P1 的分流（**已裁决，不要重新纠结**）
 >
