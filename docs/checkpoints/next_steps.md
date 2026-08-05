@@ -36,11 +36,35 @@ updated: 2026-07-29
 > none-improves 加限定、AUROC 0.483、软化全称断言、union 归因收窄、intro 的
 > 「are the same set」。**每条都先查了产表**，不是照单全收。
 >
-> ### 🔴 提交前必做（只剩这两步）
+> ### ⏰ 截稿（已核 `realm-workshop.github.io` 2026-08-05）
 >
-> 1. **`[review]` → 成稿模式** —— `main_restructured.tex:9` 的 `\usepackage[review]{acl}`。
->    现在 aclpubcheck 报的 1091 个 MARGIN error **全是行号造成的假警报**（78–102 条/页 × 47 页），换模式后归零
-> 2. **匿名性逐项排查** —— `\author{Anonymous submission}` 在位，但正文/致谢/脚注未逐项查过
+> **2026-08-05 23:59 AoE (UTC-12)** = **UTC 08-06 11:59** = **英国 BST 08-06 12:59（明天中午）**。
+> notif 09-07 / camera 09-14。轨道 = **Non-archival long**（保主会选项）。
+>
+> ### 🚫 撤回一条旧「必做」——`[review]` 不要换成 final
+>
+> **旧 handoff 写的「提交前必做：`[review]` → 成稿模式」是错的，且方向危险。**
+> `acl.sty:18-19` 白纸黑字：
+> ```
+> \DeclareOption{final} {...\acl@anonymizefalse \acl@linenumbersfalse...}
+> \DeclareOption{review}{...\acl@anonymizetrue  \acl@linenumberstrue ...}
+> ```
+> 且第 10 行注释 *"When submitting your paper for review, add the 'review' option"*。
+> **`final` 会关掉匿名化 = 双盲投稿自曝作者。** 现在的 `\usepackage[review]{acl}` 就是
+> 投稿该用的模式；**1091 个 MARGIN error 是行号盒子伸出版心的预期渲染**，
+> aclpubcheck 是给 camera-ready 用的，不是 submission 门槛。**不要动这一行。**
+>
+> ### ✅ 匿名性已核（2026-08-05 23:5x，无需再查）
+>
+> - PDF 首页实际渲染 = **"Anonymous ACL submission"**（acl.sty 在 anonymize 模式下自己生成，
+>   不依赖 `main_restructured.tex:96` 那行 `\author{}`）
+> - 正文全扫零命中：`jiaming|wei |ucl |ucab352|zekun|quarkgluon|acknowledg|thank`
+> - 无 `github.com/*` / `osf.io/*` / `doi.org/*` 链接
+>
+> ### 🔴 提交前真正剩下的
+>
+> 1. **确认提交门户** —— 本仓库记的是 OpenReview，但 workshop 官网未写明平台。**明早第一件事**
+> 2. **提交材料** —— 作者 / COI / abstract（abstract 可直接从 `sections/0_abstract.tex` 拷）
 >
 > ### 🟡 终审剩余 P1 的分流（**已裁决，不要重新纠结**）
 >
