@@ -26,11 +26,13 @@ updated: 2026-07-29
 > ## 🟥 2026-08-05 深夜 · **终审已裁决并 push** · 剩余 = 提交前两步（**最新，先读这块**）
 >
 > chronicle → **笔记 §435**（裁决理由 / 表号陷阱 / `.aux` 静默坑）。
-> Overleaf `origin/main` = `c367cd4`，正文 **8 页** / 0 error / 0 undefined。
+> Overleaf `origin/main` = `a66116c`，正文 **8 页** / 0 error / 0 undefined。
+> （学长期间推了两个纯样式 commit `4ddb3a2`/`b6a56e8`：去 em-dash + 削 38 处 bold，
+> 以终审版本为基底，**无内容撞车**）
 >
-> ### ✅ 已落地（两个 commit，已 push）
+> ### ✅ 已落地（三个 commit，已 push）
 >
-> `2e836e9` 八条 + `c367cd4` P1.6/P1.10。删 `.*` blocker、44/48、22% 口径三处、
+> `2e836e9` 八条 + `c367cd4` P1.6/P1.10 + `a66116c` P1.17-3。删 `.*` blocker、44/48、22% 口径三处、
 > none-improves 加限定、AUROC 0.483、软化全称断言、union 归因收窄、intro 的
 > 「are the same set」。**每条都先查了产表**，不是照单全收。
 >
@@ -52,7 +54,7 @@ updated: 2026-07-29
 > | **不改** | P1.16 Avenir-Web novelty | non-archival workshop |
 > | 该改·tiny | P1.15 六路标签改名 | 实现是 fixed priority order 非 measured cheapest；改一从句，obstruction 本身（15–97 labels）不依赖它 |
 > | 该改·tiny | P1.18 integrity | `cla·SoM` typo / stale ref |
-> | **待核** | P1.17-3 | `7_threats` 写「both benchmarks have been re-audited」，但我们的 VWA 泄漏审计是**内部的**。真假取决于 `xue2025illusion` 审没审 VWA — **需 arXiv API 核** |
+> | ✅ 已改 | P1.17-3 | 核实成立（笔记 §435.8）：`xue2025illusion` 是提出 Online-Mind2Web，**不审 VWA 也不是 re-audit**；`elhattami` 只审 WebArena 812 tasks。VWA 的唯一审计是我们内部的。已改为「…but the VisualWebArena audit below is our own」（`a66116c`）|
 > | 维持原裁定 | P1.14 泄漏 | 不做全量重生成。已把 red·B2 例外标 descriptive/leakage-sensitive（P1.9 与 P1.14 是同一件事两面）。**关键事实两边都漏了**：t28 caption 自己写着 4 个泄漏在 DOM 上、zeroing 反而帮 fused arm — 我们不是靠泄漏得利 |
 >
 > ### ⚠️ 动手前必读
