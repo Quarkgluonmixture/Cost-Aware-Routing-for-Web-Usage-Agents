@@ -8942,6 +8942,28 @@
           "type_frac@B2/classifieds",
           "finish_rate@B2/classifieds"
         ],
+        "n_conjunctions": 48,
+        "effect_and_bh_conjunction_0.05": 5,
+        "cells_bh_conjunction": [
+          "selfcorr_count@B0/reddit",
+          "n_steps@B0/reddit",
+          "type_frac@B1/reddit",
+          "type_frac@B2/classifieds",
+          "finish_rate@B2/classifieds"
+        ],
+        "effect_and_holm_conjunction_0.05": 3,
+        "cells_holm_conjunction": [
+          "selfcorr_count@B0/reddit",
+          "n_steps@B0/reddit",
+          "type_frac@B2/classifieds"
+        ],
+        "off_segment_conjunction": 4,
+        "cells_off_segment_conjunction": [
+          "selfcorr_count@B0/reddit",
+          "n_steps@B0/reddit",
+          "type_frac@B2/classifieds",
+          "finish_rate@B2/classifieds"
+        ],
         "effect_and_holm_fwer_0.05": 2,
         "cells_holm": [
           "n_steps@B0/reddit",

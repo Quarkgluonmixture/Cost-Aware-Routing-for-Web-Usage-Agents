@@ -84,7 +84,12 @@ def main() -> int:
         raise MissingInput(f"{args.ceiling} missing; run aggregate_routing_ceiling.py first")
     doc = json.loads(args.ceiling.read_text())
 
-    policy = "leak_zeroed"  # the paper's primary; see routing_ceiling leak_policy
+    # MUST match whatever the ceiling table renders, or the same cell carries two
+    # success rates in one paper (red_B2 is 3.94% kept and 2.46% zeroed). The paper's
+    # main analysis keeps the leaked successes and puts the zeroing in a sensitivity
+    # table, because the detection criterion is a lower bound and a lower bound cannot
+    # license a corrected point estimate.
+    policy = "leak_kept"
     rows = []
     for cell in doc["cells"]:
         block = cell.get(policy)

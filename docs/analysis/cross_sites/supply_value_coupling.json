@@ -1,6 +1,6 @@
 {
   "generated_from": "docs/analysis/cross_sites/routing_ceiling.json",
-  "leak_policy": "leak_zeroed",
+  "leak_policy": "leak_kept",
   "n_cells": 8,
   "cells": [
     {
@@ -38,10 +38,10 @@
       "n_tasks": 203,
       "best_mode": "SoM",
       "best_sr_pct": 14.77832512315271,
-      "routable_share_pct": 17.24137931034483,
-      "n_routable": 35,
+      "routable_share_pct": 17.733990147783253,
+      "n_routable": 36,
       "solvable_share_pct": 26.108374384236452,
-      "routable_over_solvable": 0.6603773584905661
+      "routable_over_solvable": 0.679245283018868
     },
     {
       "cell": "cls_B1",
@@ -57,7 +57,7 @@
       "cell": "red_B1",
       "n_tasks": 203,
       "best_mode": "SoM",
-      "best_sr_pct": 6.896551724137931,
+      "best_sr_pct": 7.389162561576355,
       "routable_share_pct": 8.374384236453203,
       "n_routable": 17,
       "solvable_share_pct": 11.822660098522167,
@@ -67,11 +67,11 @@
       "cell": "red_B2",
       "n_tasks": 203,
       "best_mode": "DOM",
-      "best_sr_pct": 2.4630541871921183,
+      "best_sr_pct": 3.9408866995073892,
       "routable_share_pct": 1.477832512315271,
       "n_routable": 3,
-      "solvable_share_pct": 5.911330049261084,
-      "routable_over_solvable": 0.25
+      "solvable_share_pct": 7.389162561576355,
+      "routable_over_solvable": 0.19999999999999998
     },
     {
       "cell": "cls_B2",
@@ -84,19 +84,19 @@
       "routable_over_solvable": 0.25
     }
   ],
-  "spearman_rho": 0.9761904761904762,
-  "pearson_r": 0.9903820996551288,
-  "permutation_p_two_sided": 0.0003968253968253968,
+  "spearman_rho": 0.9523809523809523,
+  "pearson_r": 0.9872792538575121,
+  "permutation_p_two_sided": 0.001140873015873016,
   "permutation_n": 40320,
-  "mean_abs_gap_pp": 1.4699874478969315,
-  "routable_over_solvable_min": 0.25,
+  "mean_abs_gap_pp": 1.6547165119363403,
+  "routable_over_solvable_min": 0.19999999999999998,
   "routable_over_solvable_max": 0.7083333333333334,
   "n_routable_floor_threshold": 5,
   "routable_over_solvable_above_floor": [
     0.6666666666666666,
     0.7010309278350515,
     0.5625,
-    0.6603773584905661,
+    0.679245283018868,
     0.5272727272727273,
     0.7083333333333334
   ],

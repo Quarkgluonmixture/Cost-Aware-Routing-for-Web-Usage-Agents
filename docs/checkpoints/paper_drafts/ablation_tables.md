@@ -7,7 +7,7 @@ producer: scripts/analysis/export_ablation_tables.py
 
 ## Ablation tables
 
-<!-- GENERATED 2026-08-04T22:32:14+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-08-05T00:06:06+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 
@@ -832,19 +832,24 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 <!-- BEGIN table:pooled -->
 
-| quantity | value |
-|---|---|
-| headline | H-pool NOT supported — the same-family × cost-tier router dominates always-cheapest in 0/6 cells and is dominated by the fixed-mode menu in every cell. The most favourable corner (agreeing backbones, coarse label, highest ceiling) does not change the negative result. |
-| same_family_tier | {"nd": 1, "dom": 0, "ndall": 0, "total": 6} |
-| all_arms | {"nd": 7, "dom": 0, "ndall": 0, "total": 36} |
-| non_dominated_vs_cheapest_by_arm | {"classifieds|same_family|cost_tier": "0/2", "classifieds|same_family|which_mode": "0/2", "classifieds|all_three|cost_tier": "0/3", "classifieds|all_t |
-| dominates_cheapest_by_arm | {"classifieds|same_family|cost_tier": "0/2", "classifieds|same_family|which_mode": "0/2", "classifieds|all_three|cost_tier": "0/3", "classifieds|all_t |
-| non_dominated_vs_six_fixed_by_arm | {"classifieds|same_family|cost_tier": "0/2", "classifieds|same_family|which_mode": "0/2", "classifieds|all_three|cost_tier": "0/3", "classifieds|all_t |
-| classifieds: universe / labelled | 224 / — |
-| reddit: universe / labelled | 203 / — |
-| wa_reddit: universe / labelled | 104 / — |
+| pool | cell | router SR | cheapest SR | Δ SR | Δ cost | non-dom. |
+|---|---|---|---|---|---|---|
+| same-family | `cls·B0` | 25.00% | 25.00% | +0.00pp | +13.9% | 46.8% |
+| same-family | `cls·B1` | 12.05% | 12.50% | -0.45pp | +33.0% | 33.6% |
+| all-three | `cls·B0` | 24.11% | 25.00% | -0.89pp | +14.6% | 34.5% |
+| all-three | `cls·B1` | 11.16% | 12.50% | -1.34pp | +36.6% | 21.2% |
+| all-three | `cls·B2` | 1.79% | 2.23% | -0.45pp | +4.8% | 18.0% |
+| same-family | `red·B0` | 14.29% | 7.39% | +6.90pp | +10.2% | 99.2% |
+| same-family | `red·B1` | 4.43% | 2.46% | +1.97pp | +38.2% | 86.8% |
+| all-three | `red·B0` | 13.30% | 7.39% | +5.91pp | +2.7% | 98.2% |
+| all-three | `red·B1` | 4.43% | 2.46% | +1.97pp | +35.8% | 86.8% |
+| all-three | `red·B2` | 1.97% | 1.97% | +0.00pp | +7.4% | 42.5% |
+| same-family | `wa_red·B0` | 30.77% | 26.92% | +3.85pp | +6.3% | 83.3% |
+| same-family | `wa_red·B1` | 15.38% | 9.62% | +5.77pp | +55.7% | 94.1% |
+| all-three ‡ | `wa_red·B0` | 30.77% | 26.92% | +3.85pp | +6.3% | 83.3% |
+| all-three ‡ | `wa_red·B1` | 15.38% | 9.62% | +5.77pp | +55.7% | 94.1% |
 
-*Table 33: Pooled tier router. Pooled same-family × cost-tier router. WebArena (added 2026-08-03) carries neither `reasoning_difficulty` nor a reference image, so those two of the twenty features are zero-filled on its cells and cannot contribute there. That is tolerable in THIS product an Source: `router_pooled_tier_learnability.json`.*
+*Table 33: Pooled tier router. **Pooling backbones restores label supply and does not buy a router.** Labels are scarce per cell, so this arm pools backbones that share a task and routes by the coarsest label available — which of two cost tiers to spend — giving classifieds 152/reddit 77/wa_reddit 86 labelled rows against the 15--97 a single cell affords. H-pool NOT supported — the same-family × cost-tier router dominates always-cheapest in 0/6 cells and is dominated by the fixed-mode menu in every cell. The most favourable corner (agreeing backbones, coarse label, highest ceiling) does not change the negative result. **Δ SR is not the story: the cost column is.** Where the router does raise success it also raises cost by 2.7--55.7\%, so it is buying success at a price rather than routing to a better arm, and it strictly dominates always-cheapest in 0 of 14 arms. **Caution: non-dominance is not dominance.** The `non-dominated` column is an admissibility criterion — a policy buying success for more money passes it — and it must never be quoted as a win rate. **Caution: ‡ marks rows that are identical by construction, not by result** — WebArena has no cross-family backbone, so its all-three pool and its same-family pool are the same pool, reported twice to keep the layout parallel. **Caution:** the pooled task overlap is 50 tasks on classifieds and 20 on reddit, so every per-cell contrast is underpowered; costs are never compared across backbones (an API bill against an electricity estimate); and this probe is post-hoc and exploratory — it is not the preregistered gate and must not be cited as one. Source: `router_pooled_tier_learnability.json`.*
 
 <!-- END table:pooled -->
 
@@ -867,8 +872,15 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | quantity | value |
 |---|---|
+| conditions resolved | 36 |
+| conditions unresolved | 0 |
+| episodes scored | 7686 |
+| episodes with no score | 0 |
+| episodes with a non-numeric score | 0 |
+| distinct score values | [0.0, 1.0] |
+| count per value | {"0.0": 7041, "1.0": 645} |
 
-*Table 35: Evaluator granularity. Evaluator granularity over the paper-grade set. The evaluator emits **two** distinct values. There is no graded quality target to regress on — a property of the benchmark's design, not of this pipeline, and a precondition of every routing negative in this document. Source: `evaluator_score_granularity.json`.*
+*Table 35: Evaluator granularity. Evaluator granularity over the paper-grade set. Across **7,686 scored episodes in 36 conditions**, the evaluator emits **2 distinct values** (0.0, 1.0) — 645 of them positive — with 0 missing and 0 non-numeric. **There is no graded quality target to regress on.** That is a property of the benchmark's design rather than of this pipeline, and it is a precondition of every routing negative in this document: a router's training signal can only be as fine-grained as the evaluator, so a partially-completed task is indistinguishable from one the agent never started. Source: `evaluator_score_granularity.json`.*
 
 <!-- END table:evaluator -->
 
@@ -1025,12 +1037,12 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | `wa_red_B0` | 104 | DOM+stext | 35.58% | 34.6% (36) | 51.9% | 0.67 |
 | `cls_B0` | 224 | SoM | 27.23% | 30.4% (68) | 43.3% | 0.70 |
 | `wa_red_B1` | 104 | DOM | 16.35% | 17.3% (18) | 30.8% | 0.56 |
-| `red_B0` | 203 | SoM | 14.78% | 17.2% (35) | 26.1% | 0.66 |
+| `red_B0` | 203 | SoM | 14.78% | 17.7% (36) | 26.1% | 0.68 |
 | `cls_B1` | 224 | SoM | 14.29% | 12.9% (29) | 24.6% | 0.53 |
-| `red_B1` | 203 | SoM | 6.90% | 8.4% (17) | 11.8% | 0.71 |
-| `red_B2` | 203 | DOM | 2.46% | 1.5% (3) | 5.9% | 0.25 |
+| `red_B1` | 203 | SoM | 7.39% | 8.4% (17) | 11.8% | 0.71 |
+| `red_B2` | 203 | DOM | 3.94% | 1.5% (3) | 7.4% | 0.20 |
 | `cls_B2` | 224 | SoM | 2.23% | 1.8% (4) | 7.1% | 0.25 |
 
-*Table 44: Label supply and routing value are one quantity. **Label supply and routing value are the same set.** The rows a which-mode router can be trained on exist only where something succeeded; the rows where a per-task choice exists at all are those with more than one solver. Both are subsets of the solvable set, and across all 8 cells they track the best single mode's success rate with Spearman rho = **0.976** (exact permutation p = 0.0004), mean |best SR - routable share| = **1.47pp**. So the two obstructions the lower bound reports are not independent walls but one wall, whose height is set by how much the agent can do. **Caution: part of this association is structural, not empirical** — both columns are functionals of one solve matrix. The non-structural content is the **near-linearity**: under mode independence the routable share would grow near-quadratically in the per-mode rate at these success levels, and it does not, which says task difficulty dominates mode-task matching. **Caution: the ratio is not constant** — 0.53-0.71 in the 6 cells above the floor, but half that (`red_B2`, `cls_B2`) on 3 and 4 routable tasks, where it is one task wide. **Caution: the cells are not independent** — they share three sites and three backbones, so the permutation null asks whether the pairing is arbitrary, not whether eight systems were sampled. Source: `supply_value_coupling.json`.*
+*Table 44: Label supply and routing value are one quantity. **Label supply and routing value are the same set.** The rows a which-mode router can be trained on exist only where something succeeded; the rows where a per-task choice exists at all are those with more than one solver. Both are subsets of the solvable set, and across all 8 cells they track the best single mode's success rate with Spearman rho = **0.952** (exact permutation p = 0.0011), mean |best SR - routable share| = **1.65pp**. So the two obstructions the lower bound reports are not independent walls but one wall, whose height is set by how much the agent can do. **Caution: part of this association is structural, not empirical** — both columns are functionals of one solve matrix. The non-structural content is the **near-linearity**: under mode independence the routable share would grow near-quadratically in the per-mode rate at these success levels, and it does not, which says task difficulty dominates mode-task matching. **Caution: the ratio is not constant** — 0.53-0.71 in the 6 cells above the floor, but half that (`red_B2`, `cls_B2`) on 3 and 4 routable tasks, where it is one task wide. **Caution: the cells are not independent** — they share three sites and three backbones, so the permutation null asks whether the pairing is arbitrary, not whether eight systems were sampled. Source: `supply_value_coupling.json`.*
 
 <!-- END table:coupling -->

@@ -1548,20 +1548,64 @@ def t_hallucinated():
 
 
 def t_pooled_tier():
+    """Pooling backbones to restore label supply, routing by cost tier.
+
+    Rewritten 2026-08-05. The previous version emitted `json.dumps(value)[:150]` into
+    table cells and `limitations[0][:220]` into the caption — raw JSON blobs cut
+    mid-token, and a caption that ended on the word "an". Both were hard character
+    slices standing in for a design decision about what the table should show. It
+    shows per-cell outcomes now, and the caption is written rather than sliced.
+    """
     d = load("router_pooled_tier_learnability")
-    v = d["verdict"]
-    rows = ["| quantity | value |", "|---|---|",
-            f"| headline | {v.get('headline','—')} |"]
-    for k, val in v.items():
-        if k == "headline":
-            continue
-        rows.append(f"| {k} | {json.dumps(val)[:150] if not isinstance(val,(str,int,float)) else val} |")
-    for site, r in d["results"].items():
-        rows.append(f"| {site}: universe / labelled | {r.get('n_universe','—')} / "
-                    f"{r.get('n_labelled', r.get('n_labeled','—'))} |")
+    # 8 columns overflow \columnwidth even as a table*; the site is already carried by
+    # the cell name, so drop it and use the paper's cell convention.
+    site_tag = {"classifieds": "cls", "reddit": "red", "wa_reddit": "wa_red"}
+    rows = ["| pool | cell | router SR | cheapest SR | Δ SR | Δ cost | non-dom. |",
+            "|---|---|---|---|---|---|---|"]
+    n_dominating = n_arms = 0
+    for site, S in d["results"].items():
+        for arm_name, A in S["arms"].items():
+            pool, label = (arm_name.split("|") + ["", ""])[:2]
+            if label != "cost_tier" or pool == "per_cell":
+                continue
+            for cid, c in A["per_cell"].items():
+                n_arms += 1
+                n_dominating += bool(c["strict_dominance_vs_cheapest"]["passes"])
+                # WebArena has no cross-family backbone, so its all_three pool IS its
+                # same_family pool. Mark it rather than printing the same row twice
+                # as if it were a second result.
+                dup = " ‡" if site == "wa_reddit" and pool == "all_three" else ""
+                backbone = cid.split("_")[0]
+                rows.append(
+                    f"| {pool.replace('_', '-')}{dup} | "
+                    f"`{site_tag.get(site, site)}·{backbone}` | "
+                    f"{c['router']['sr_pct']:.2f}% | {c['always_cheapest']['sr_pct']:.2f}% | "
+                    f"{c['delta_sr_vs_cheapest_pp']:+.2f}pp | "
+                    f"{c['delta_cost_vs_cheapest_pct']:+.1f}% | "
+                    f"{100 * c['pareto_vs_always_cheapest']['fraction_non_dominated']:.1f}% |")
+    if len(rows) == 2:
+        raise MissingProduct("router_pooled_tier_learnability.json: no cost_tier arms found")
+    supply = {site: S["supply"]["same_family"]["n_labeled_rows"]
+              for site, S in d["results"].items() if "supply" in S}
     return "\n".join(rows), (
-        "Pooled same-family × cost-tier router. " + (d["limitations"][0][:220] if d.get("limitations") else "")
-        + " Source: `router_pooled_tier_learnability.json`.")
+        f"**Pooling backbones restores label supply and does not buy a router.** Labels are "
+        f"scarce per cell, so this arm pools backbones that share a task and routes by the "
+        f"coarsest label available — which of two cost tiers to spend — giving "
+        f"{'/'.join(f'{k} {v}' for k, v in supply.items())} labelled rows against the 15--97 a "
+        f"single cell affords. {d['verdict']['headline']} **Δ SR is not the story: the cost "
+        f"column is.** Where the router does raise success it also raises cost by 2.7--55.7\\%, "
+        f"so it is buying success at a price rather than routing to a better arm, and it "
+        f"strictly dominates always-cheapest in {n_dominating} of {n_arms} arms. "
+        f"**Caution: non-dominance is not dominance.** The `non-dominated` column is an "
+        f"admissibility criterion — a policy buying success for more money passes it — and it "
+        f"must never be quoted as a win rate. **Caution: ‡ marks rows that are identical by "
+        f"construction, not by result** — WebArena has no cross-family backbone, so its "
+        f"all-three pool and its same-family pool are the same pool, reported twice to keep the "
+        f"layout parallel. **Caution:** the pooled task overlap is 50 tasks on classifieds and "
+        f"20 on reddit, so every per-cell contrast is underpowered; costs are never compared "
+        f"across backbones (an API bill against an electricity estimate); and this probe is "
+        f"post-hoc and exploratory — it is not the preregistered gate and must not be cited as "
+        f"one. Source: `router_pooled_tier_learnability.json`.")
 
 
 def t_page_change():
@@ -1586,16 +1630,40 @@ def t_page_change():
 def t_evaluator():
     d = load("evaluator_score_granularity")
     pg = d["paper_grade"]
+    # This loop used to name five keys that the product does not have (`n_conditions`
+    # vs `n_conditions_resolved`, and so on) and skipped anything missing, so it emitted
+    # a header and no rows — a table that compiled, occupied a float, and said nothing.
+    # Ask for the real keys and fail loudly instead.
+    want = [("conditions resolved", "n_conditions_resolved"),
+            ("conditions unresolved", "n_conditions_unresolved"),
+            ("episodes scored", "n_episodes_scored"),
+            ("episodes with no score", "n_score_missing"),
+            ("episodes with a non-numeric score", "n_score_non_numeric"),
+            ("distinct score values", "distinct_values"),
+            ("count per value", "value_counts")]
+    missing = [k for _, k in want if k not in pg]
+    if missing:
+        raise MissingProduct(
+            f"evaluator_score_granularity.json `paper_grade` lost {missing} — the table "
+            f"would render empty rather than fail")
     rows = ["| quantity | value |", "|---|---|"]
-    for k in ("n_conditions", "n_episodes", "distinct_scores", "score_counts",
-              "protocol_excluded_episodes"):
-        if k in pg:
-            rows.append(f"| {k} | {json.dumps(pg[k]) if not isinstance(pg[k], (str,int,float)) else pg[k]} |")
+    for label, k in want:
+        v = pg[k]
+        rows.append(f"| {label} | {v if isinstance(v, (str, int, float)) else json.dumps(v)} |")
+    vals = pg["distinct_values"]
+    counts = pg["value_counts"]
+    n_pos = counts.get("1.0", counts.get(str(max(vals)), 0))
     return "\n".join(rows), (
-        "Evaluator granularity over the paper-grade set. The evaluator emits **two** distinct "
-        "values. There is no graded quality target to regress on — a property of the "
-        "benchmark's design, not of this pipeline, and a precondition of every routing "
-        "negative in this document. Source: `evaluator_score_granularity.json`.")
+        f"Evaluator granularity over the paper-grade set. Across "
+        f"**{pg['n_episodes_scored']:,} scored episodes in {pg['n_conditions_resolved']} "
+        f"conditions**, the evaluator emits **{len(vals)} distinct values** "
+        f"({', '.join(str(v) for v in vals)}) — {n_pos:,} of them positive — with "
+        f"{pg['n_score_missing']} missing and {pg['n_score_non_numeric']} non-numeric. "
+        f"**There is no graded quality target to regress on.** That is a property of the "
+        f"benchmark's design rather than of this pipeline, and it is a precondition of "
+        f"every routing negative in this document: a router's training signal can only be "
+        f"as fine-grained as the evaluator, so a partially-completed task is indistinguishable "
+        f"from one the agent never started. Source: `evaluator_score_granularity.json`.")
 
 
 def t_cost_class():

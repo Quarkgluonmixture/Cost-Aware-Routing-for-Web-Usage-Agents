@@ -17,15 +17,15 @@ Both quantities below are already in Table 42. This asks only whether they move 
 | `wa_red_B0` | 104 | P-text | 35.58% | 34.6% (36) | 51.9% | 0.67 |
 | `cls_B0` | 224 | SoM | 27.23% | 30.4% (68) | 43.3% | 0.70 |
 | `wa_red_B1` | 104 | DOM | 16.35% | 17.3% (18) | 30.8% | 0.56 |
-| `red_B0` | 203 | SoM | 14.78% | 17.2% (35) | 26.1% | 0.66 |
+| `red_B0` | 203 | SoM | 14.78% | 17.7% (36) | 26.1% | 0.68 |
 | `cls_B1` | 224 | SoM | 14.29% | 12.9% (29) | 24.6% | 0.53 |
-| `red_B1` | 203 | SoM | 6.90% | 8.4% (17) | 11.8% | 0.71 |
-| `red_B2` | 203 | DOM | 2.46% | 1.5% (3) | 5.9% | 0.25 |
+| `red_B1` | 203 | SoM | 7.39% | 8.4% (17) | 11.8% | 0.71 |
+| `red_B2` | 203 | DOM | 3.94% | 1.5% (3) | 7.4% | 0.20 |
 | `cls_B2` | 224 | SoM | 2.23% | 1.8% (4) | 7.1% | 0.25 |
 
-**Spearman rho = 0.976** (exact permutation p = 0.0004 over 40,320 pairings), Pearson r = 0.990, mean |best SR - routable share| = **1.47pp**.
+**Spearman rho = 0.952** (exact permutation p = 0.0011 over 40,320 pairings), Pearson r = 0.987, mean |best SR - routable share| = **1.65pp**.
 
-The routable set is **0.53-0.71** of the solvable set in the 6 cells carrying more than 4 routable tasks. The two near-floor cells (`red_B2`, `cls_B2`) sit at 0.25 on **3 and 4 tasks** -- a ratio one task wide, quoted separately rather than widening the range.
+The routable set is **0.53-0.71** of the solvable set in the 6 cells carrying more than 4 routable tasks. The two near-floor cells (`red_B2`, `cls_B2`) sit at 0.20 on **3 and 4 tasks** -- a ratio one task wide, quoted separately rather than widening the range.
 
 ## What this licenses, and what it does not
 
