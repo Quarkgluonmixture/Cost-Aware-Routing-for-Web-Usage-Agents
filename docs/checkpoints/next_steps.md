@@ -23,6 +23,84 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟥 2026-08-05 夜 · REALM 已投递就绪 · **等独立 GPT 终审裁决**（**最新，先读这块**）
+>
+> chronicle → **笔记 §434**。**论文真源在 Overleaf**：
+> `https://www.overleaf.com/project/6a59017b04233a73ed5ec570` → Main document =
+> **`main_restructured.tex`**（另两个 `main_*.tex` 是旧稿）。本地 clone `~/overleaf-aaai27`。
+>
+> ### 📌 这个 session 要做什么
+>
+> user 把论文交给**独立 GPT 做终审**。你的工作是**裁决它的意见**，不是重做论文。
+>
+> ⚠️ **最大的失败模式是无条件投降** —— 把下面这些**有意裁定过**的东西当成疏漏改掉。
+> 独立评审没有上下文，一定会重新提出它们。**每条都有理由，先读理由再回应。**
+>
+> ### 🔒 已裁定，不要因为评审提了就改
+>
+> | 评审可能说 | 我们的裁定与理由 |
+> |---|---|
+> | 「泄漏的 6 个成功应归零」 | **主分析保留 + t28 承载敏感性**。理由：检出判据是**下界**（能证明这 6 个是蹭的，不能证明其余干净），**下界不能授权一个修正后的点估计**。改它要动 4 个独立加载的产物 + 12 张表 |
+> | 「`not X` 是 AI 腔，删掉」 | `the point is not one a deployment could occupy` —— **那半句正是限定 claim 的部分**。deslop skill 明令：不得为迁就 linter 削弱或放宽 claim |
+> | 「Vale 还有 13 个 error」 | 全部刻意保留：**11 个在 tabular 单元格**（数据排版非散文）、**1 个在 LaTeX 注释**（注释被 invariant_check 哈希保护，改它反而让 gate 失败）、1 个同上 |
+> | 「重跑地带该用实测的 2.23pp」 | **取零假设阈值 3.8–4.2pp**。实测带是**一次抽样**，用它当门槛是拿掷骰子判断掷骰子。且明写**两者都不是显著性检验**，推断用配对区间（t16/t17）|
+> | 「摘要没提审计层」 | 提了，压成最后一句「an audited measurement protocol so that a stronger agent can falsify the result」。完整叙述在 §8 provenance |
+> | 「§6 下界没有图表」 | 为 8 页合规做的取舍。Figure 3 实测**移回正文会重新超页** |
+> | 「正文只有 1 表 3 图」 | 同上。42 张表在附录 |
+>
+> ### 🟡 真正未定，评审提了就认真接
+>
+> - **标题** —— 唯一的 `\todo`，三候选在 `main_restructured.tex` 注释里
+> - **多重比较**：「除 2×2 外还有哪些表算确证」是**有意留白的 framing 决定**。声明得多→校正更狠、主张更硬；少→主张弱但活得下来。当前建议：workshop 保持只有 2×2
+> - **`[review]` → 成稿模式**：现在 aclpubcheck 报 1091 个 MARGIN error，**全是行号造成的假警报**（每页 78–102 条 × 47 页）。换模式后归零。**提交前必做**
+> - **匿名性**：`\author{Anonymous submission}` 在，但正文/致谢/脚注未逐项查过
+>
+> ### 📍 当前编译状态（拉实时，别照抄）
+>
+> ```bash
+> cd ~/overleaf-aaai27 && git fetch -q origin && git log --oneline HEAD..origin/main   # 学长动过没有
+> latexmk -pdf -quiet -interaction=nonstopmode main_restructured.tex
+> grep -o 'content-end}{{[0-9]*}{[0-9]*}' main_restructured.aux    # 第二个数 = 正文末页, 须 ≤ 8
+> ```
+>
+> 写这段时：**37 页 / 正文 8 页合规 / 0 error / 0 undefined ref / 0 undefined citation / 引用 22 篇**。
+>
+> ### ⚠️ 协作纪律（昨天栽过一次，今天撞车三次）
+>
+> **学长 (`981526092`) 直接在 Overleaf 端写，节奏很快。**
+> - **动之前 `git fetch`**；**push 被拒时先看「他做了什么」**，不是想办法让自己的进去
+> - `sections/` 是他手写散文、`tables/` 带他的人工断行修复 —— **一律不要重新生成后覆盖**
+> - 新表**只能追加编号**（中插会让 `\ref{tab:tNN}` 全体静默指错）
+> - **他和我可能在同时修同一样东西**（今天两人各自重画了 Figure 1）。冲突时**存分支 + reset + 两版都渲染出来给 user 选**，不要自行合并
+>
+> ### 🛠 工具链
+>
+> ```bash
+> # 去 AI 味（改写后必须跑不变量校验）
+> cd /home/jiaming/workspace/paper-deslop
+> vale --config=.vale.ini ~/overleaf-aaai27/sections/*.tex
+> python3 scripts/invariant_check.py BASELINE FILE --terms terms.txt
+>
+> # 图（脚本已入库，默认输出到 Overleaf figures/）
+> .venv/bin/python3 scripts/analysis/figures/fig_partition_forest.py
+> .venv/bin/python3 scripts/analysis/figures/fig_fusion_forest.py
+>
+> # 核文献：必须 https，http 返回空
+> curl -s "https://export.arxiv.org/api/query?id_list=XXXX.XXXXX"
+> ```
+>
+> ### 📖 要读什么
+>
+> | # | 读什么 | 为什么 |
+> |---|---|---|
+> | 1 | `~/overleaf-aaai27/sections/*.tex` | **论文全文**（真源不在本仓库）|
+> | 2 | 笔记 **§434** | 今天的 chronicle：三次撞车、三张图各自的缺陷、去 slop、引用补完 |
+> | 3 | 笔记 **§433** | 昨天的覆盖事故 —— 协作纪律的由来 |
+> | 4 | `deliverables/paper_deslop_improvement_prompt.md` | deslop 工具的 8 条改进（含三个症状同一根因）|
+>
+> **不要读**：`deliverables/` 里的旧平行源、`main_realm.tex`/`realm_*.tex`（旧稿）。
+
+
 > ## 🟥 2026-08-05 REALM 截稿日 · **写散文阶段** — 增料已收口（**最新，先读这块**）
 >
 > chronicle → **笔记 §433**。**论文真源在 Overleaf，不在本仓库**：
