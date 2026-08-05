@@ -11196,3 +11196,52 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 
 - **Cross-link**: §81 + §81 follow-up (2026-04-29 原裁定) · P1-10-B · Fire-4 RCA Wave 1 M1 /
   Wave 2 M6 · B-304 (resume 须 `RESET_BEFORE=0` 保轨迹连续) · 实验笔记 §436
+
+### B-1958. WA follow cron 的主判据读错了对象 —— 它从落地起就不可能 fire [P0 — silent] 🛠️ FIXED
+
+- **Attack**: `_cron_wa_shop_follow.sh:52,74` 用 `stat -c %Y "${DONE}"` 读 sentinel, 而
+  `DONE=logs/queue_phase1_shop.latest.done` 是**符号链接**。GNU `stat` **默认不跟随符号链接**
+  (要 `-L`), 于是读到的是**链接自身**的 mtime —— 那个时间戳在 chain 启动时打上, 之后永不改变。
+  ⇒ `NOW_MTIME` 恒等于 `ARM_MTIME` ⇒ 「sentinel 是否更新」这条主判据**恒为假**。
+  A100 实测: 链接 1785803767 (08-04T00:36:07, 启动时刻) vs 目标 1785896675 (08-05T02:24:35, 真实结束)。
+
+- **Cascade**: P0-1-A 修正 (2026-08-04) 的全部意义就是把 sentinel 提为主判据、pid 降为辅助,
+  理由是「pid 一旦误判活着就永远走不到 fire」。**该修正落地即死**, 系统静默退回到它想修复的
+  那个状态: 只剩 pid 分支, 而 pid 分支的两个出口是「继续等」和「不 fire, 等待人工裁定」。
+  ⇒ **没有任何一种输入能让这个 cron 走到 launch**。它每 10 分钟忠实写一行日志, 20 小时的日志
+  整齐得像 fail-safe 在尽责 —— §429.6 那次改造的动机正是「长驻进程死得静默」, cron 版换了一种
+  更隐蔽的静默失效。
+
+- **Fix**: 抽 `_done_mtime() { stat -L -c %Y "${DONE}" ...; }`, arm 端与 check 端共用
+  (两侧必须比较同一个量, 否则换一种方式错)。回归测试断言: 代码里不得再出现对 `${DONE}` 的裸
+  `stat`; 并**实测平台前提** (构造 symlink 令两者 mtime 不同, 若某平台 stat 默认跟随则该断言
+  失败并提示重新核对诊断) —— 前提本身也要被测, 不能只测结论。
+
+- **部署注记**: 修好后**必须先 `rm logs/.wa_shop_follow.armed`**。`.armed` 里存的 done_mtime 是
+  用旧的裸 stat 记的 (链接 mtime), 修复后第一个 tick 会读到更大的目标 mtime ⇒ 进入 fire 分支 ⇒
+  读到上一轮的 `rc=1` ⇒ REFUSED + `touch .fired` **永久禁用 WA 接续**。一个纯粹的读取修复,
+  会因为状态文件里存着旧口径的数而产生破坏性后果。
+
+### B-1959. shop_b0 的重复臂与主臂共用 manifest key, RESUME_MISSING 会静默吃掉它 [P1 — latent] 📋 DOCUMENTED
+
+- **Attack**: `_condition_complete` 按 `f"{site}|{bl}|{mode}"` 查 `fire_manifest.json`, 而
+  `build_shop_b0_chain` 的**第 1 行与第 7 行逐字相同** (`queue_baseline.sh B0 dom shopping` ——
+  B-1950 有意加的 replicate arm, 给该站一个随机噪声地板)。一旦 dom 判为 complete,
+  `_resume_filter_done` 会把**两行同时 SKIP** ⇒ 重复臂静默消失。
+
+- **Cascade**: §242 (drop-one oracle 1.7-3.3pp 须证明越过随机地板) 与 §293 (若 H1 strict 只越过
+  1-2pp 而地板也是 1-2pp, hero 措辞须降级) 两条 ledger 正挂在这个地板上。丢了不会报错, 只会让
+  这两条永远无法裁定 —— 而且是在"resume 成功了"的表象下。
+
+- **为什么今天不触发**: `fire_manifest.json` 的 `conditions` 里 **shopping 条目为 0** (36 条全是
+  cls+red 的 Phase 1a), 查不到即判未完成 ⇒ RESUME_MISSING 对本站是空转的, 与 B-1938 注释里
+  WA 那句 "correct-but-inert" 同形。wa_shop_b0 有同样的结构, 同样暂时惰性。
+
+- **当前处置**: 不改 `_condition_complete` (它的 key 语义牵连 cls/red 18 条已绑定 manifest 的
+  condition), 改为**钉住前提**: 回归测试断言 (a) 第 1 行与第 7 行确实相同, (b) manifest 里
+  仍然没有 shopping 条目 —— 后者一旦失败, 就是在告诉下一个人「B-1959 从潜伏转为活跃, 依赖
+  resume 之前先修 key」。真修需要给 condition 一个序号或 arm 标识 (`shopping|B0|dom#2`),
+  连带动 manifest schema, 不在本轮 scope。
+
+- **Cross-link**: B-1950 (replicate arm 的来由) · B-1935 / B-1938 (同一函数的两次 key 修正,
+  都没注意到同 key 重复行) · §242 / §293 · 实验笔记 §436

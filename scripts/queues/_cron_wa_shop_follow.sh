@@ -28,6 +28,19 @@ FIRED=logs/.wa_shop_follow.fired
 NTFY="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 log() { echo "[wa-follow $(date '+%m-%d %H:%M:%S')] $*"; }
 
+# B-1958 (2026-08-05): `${DONE}` is a SYMLINK (queue_phase1_shop.latest.done →
+# queue_phase1_shop_<ts>_<pid>.done) and GNU `stat` does NOT follow symlinks
+# without -L. Reading it bare returns the LINK's own mtime — stamped when the
+# link was created at chain launch and never touched again — so `NOW_MTIME`
+# equalled `ARM_MTIME` on every tick and the sentinel branch (the P0-1-A
+# "sentinel is the primary criterion" fix) could never fire. The cron logged a
+# tidy "不 fire, 等待人工裁定" every 10 minutes for 20h while being structurally
+# incapable of launching anything: the P0-1-A fix landed dead, and the system
+# silently fell back to exactly the pid-only behaviour that fix existed to
+# replace. Measured on A100: link 1785803767 (08-04T00:36:07, launch) vs target
+# 1785896675 (08-05T02:24:35, actual finish).
+_done_mtime() { stat -L -c %Y "${DONE}" 2>/dev/null || echo 0; }
+
 # 进程身份指纹 = /proc/<pid>/stat 字段 22 (starttime, 进程创建时刻的 jiffies)。
 # **pid 本身不足以标识进程**: A100 实测 pid_max=4194304, 消耗约 6.3 万/天,
 # 而 VWA chain 要跑 11 天 (~70 万) —— PID 必然回绕。回绕后 `kill -0 <旧pid>`
@@ -49,7 +62,7 @@ if [ ! -f "${ARMED}" ]; then
     {
       echo "pid=${CH}"
       echo "starttime=$(_proc_starttime "${CH}")"
-      echo "done_mtime=$(stat -c %Y "${DONE}" 2>/dev/null || echo 0)"
+      echo "done_mtime=$(_done_mtime)"
       echo "armed_at=$(date -Is)"
     } > "${ARMED}"
     log "ARMED — following VWA shop chain pid=${CH} starttime=$(_proc_starttime "${CH}")"
@@ -71,7 +84,7 @@ fi
 # ── 主判据: sentinel 是否更新 ──────────────────────────────────────────────
 # 放在 pid 检查**之前**: sentinel 更新 = chain 确实正常结束, 此时 pid 说什么都不重要
 # (它可能已被回绕复用)。
-NOW_MTIME=$(stat -c %Y "${DONE}" 2>/dev/null || echo 0)
+NOW_MTIME=$(_done_mtime)
 if [ "${NOW_MTIME:-0}" -le "${ARM_MTIME:-0}" ]; then
   # sentinel 未更新 —— 用 pid 指纹区分「还在跑」vs「被杀了」
   NOW_ST=$(_proc_starttime "${ARM_PID}")

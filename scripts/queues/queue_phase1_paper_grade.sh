@@ -763,6 +763,25 @@ queue_baseline.sh B0 dom shopping
 EOF
 }
 
+build_shop_b0_tail_chain() {
+  # B-1957 follow-on (2026-08-05): cells 2-7 of build_shop_b0_chain — every mode
+  # EXCEPT the dom main arm, which is resumed by hand under RESET_BEFORE=0 to
+  # preserve B-304 trajectory continuity across the R3561 interrupt. These six
+  # are all fresh cells, so launch_chain's hardcoded FORCE_NEW=1 RESET_BEFORE=1
+  # is exactly right for them (and the replicate arm NEEDS FORCE_NEW=1 to get a
+  # run_id distinct from the main arm's).
+  #
+  # Derived from the full builder rather than copied: one list, one place to
+  # edit. A second literal copy is how a premise ends up with two versions that
+  # drift (§428.8).
+  #
+  # RESUME_MISSING is forced off for the derivation so `tail -n +2` always drops
+  # the dom main arm and not whatever line the filter happened to leave first.
+  # Losing resume here costs nothing today: `fire_manifest.json` carries zero
+  # shopping conditions, so RESUME_MISSING is inert for this site anyway.
+  ( RESUME_MISSING=0; build_shop_b0_chain ) | tail -n +2
+}
+
 build_wa_shop_b0_chain() {
   # B0-only WA shopping: 6 modes + 1 replicate arm = 7 conditions, 173 scored
   # tasks each. Same rationale as build_shop_b0_chain; this is the second
@@ -1178,6 +1197,14 @@ case "$MODE" in
         assert_no_other_site_chain_running "shop" "queue_phase1"
         launch_chain "shop" build_shop_b0_chain
         ;;
+      shop_b0_tail)
+        # B-1957 follow-on: the dom main arm is resumed separately (RESET_BEFORE=0,
+        # B-304). This launches only what remains, so the six fresh cells still get
+        # their per-condition reset while the interrupted arm keeps its trajectory.
+        log "=== VWA shopping B0 tail (6 conditions: 5 modes + 1 replicate; dom main arm resumed separately) ==="
+        assert_no_other_site_chain_running "shop" "queue_phase1"
+        launch_chain "shop" build_shop_b0_tail_chain
+        ;;
       wa_shop_b0)
         log "=== WA shopping B0-only (7 conditions: 6 modes + 1 replicate; ~4.5 天, ~5.2 GB) ==="
         assert_no_other_site_chain_running "shop" "queue_phase1"
@@ -1197,7 +1224,7 @@ case "$MODE" in
         assert_no_other_site_chain_running "shop" "queue_phase1"
         launch_chain "shop" build_wa_shop_admin_chain
         ;;
-      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b|shop_b0|wa_shop|wa_shop_b0|wa_shop_admin)" ;;
+      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b|shop_b0|shop_b0_tail|wa_shop|wa_shop_b0|wa_shop_admin)" ;;
     esac
     # B-705 (A1.14 Chunk d P2-2): summary message now reflects actual SITE_FILTER
     # mode. Pre-fix line always said "Phase 1a rerun (36 conditions...)" even when
