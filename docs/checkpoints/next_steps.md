@@ -23,7 +23,49 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟥 2026-08-05 夜 · REALM 已投递就绪 · **等独立 GPT 终审裁决**（**最新，先读这块**）
+> ## 🟥 2026-08-05 深夜 · **终审已裁决并 push** · 剩余 = 提交前两步（**最新，先读这块**）
+>
+> chronicle → **笔记 §435**（裁决理由 / 表号陷阱 / `.aux` 静默坑）。
+> Overleaf `origin/main` = `c367cd4`，正文 **8 页** / 0 error / 0 undefined。
+>
+> ### ✅ 已落地（两个 commit，已 push）
+>
+> `2e836e9` 八条 + `c367cd4` P1.6/P1.10。删 `.*` blocker、44/48、22% 口径三处、
+> none-improves 加限定、AUROC 0.483、软化全称断言、union 归因收窄、intro 的
+> 「are the same set」。**每条都先查了产表**，不是照单全收。
+>
+> ### 🔴 提交前必做（只剩这两步）
+>
+> 1. **`[review]` → 成稿模式** —— `main_restructured.tex:9` 的 `\usepackage[review]{acl}`。
+>    现在 aclpubcheck 报的 1091 个 MARGIN error **全是行号造成的假警报**（78–102 条/页 × 47 页），换模式后归零
+> 2. **匿名性逐项排查** —— `\author{Anonymous submission}` 在位，但正文/致谢/脚注未逐项查过
+>
+> ### 🟡 终审剩余 P1 的分流（**已裁决，不要重新纠结**）
+>
+> | 判 | 条目 | 理由 |
+> |---|---|---|
+> | **不改** | P1.7 cost ceiling 改名 | §4 已写 "unchanged **by construction**"，即已界定为 oracle；改名动 5–6 处且丢掉第二贡献的记忆点 |
+> | **不改** | P1.8 lower bound 改名 | 全文骨架（§5/§6 标题 + contribution iii）；最多在 §5 加半句「操作意义上的下界」 |
+> | **不改** | P1.1 estimand 全局改名 | §3 已披露 Vision 走 coordinate dispatch；标题就叫 Representation Routing。§2 加一句定义即可 |
+> | **不改** | P1.13 winner reversal | §3 已说「stated as a direction not effect sizes」，§6 已列 moderator 未识别 |
+> | **不改** | P1.2 六 mode 名统一 | 动所有表和图标签，引入新错风险 > 收益 |
+> | **不改** | P1.16 Avenir-Web novelty | non-archival workshop |
+> | 该改·tiny | P1.15 六路标签改名 | 实现是 fixed priority order 非 measured cheapest；改一从句，obstruction 本身（15–97 labels）不依赖它 |
+> | 该改·tiny | P1.18 integrity | `cla·SoM` typo / stale ref |
+> | **待核** | P1.17-3 | `7_threats` 写「both benchmarks have been re-audited」，但我们的 VWA 泄漏审计是**内部的**。真假取决于 `xue2025illusion` 审没审 VWA — **需 arXiv API 核** |
+> | 维持原裁定 | P1.14 泄漏 | 不做全量重生成。已把 red·B2 例外标 descriptive/leakage-sensitive（P1.9 与 P1.14 是同一件事两面）。**关键事实两边都漏了**：t28 caption 自己写着 4 个泄漏在 DOM 上、zeroing 反而帮 fused arm — 我们不是靠泄漏得利 |
+>
+> ### ⚠️ 动手前必读
+>
+> - **终审的「Table N」是 PDF 渲染号，与 `\label{tab:tNN}` 是重排非偏移**
+>   （其 Table 28 = `tab:t19`）。映射从 `main_restructured.aux` 的 `\newlabel` 生成。
+>   **且表号不稳定** —— 学长删一张表，`tab:t19` 就从 28 变 29。新引用一律 `\ref{}`
+> - **rebase 后若 latexmk exit≠0 但 log 里 0 个 `! `** → 查 `.aux` 有没有冲突标记
+>   （`content-end` 出现两次即是）。要 `latexmk -C` 清状态，`-g` 救不了；
+>   且 `-C` 会删旧稿 `main_paperB.*`/`main_realm.*` 产物，记得 checkout 回来
+
+
+> ## 🟥 2026-08-05 夜 · REALM 已投递就绪 · **等独立 GPT 终审裁决**（裁决结果见上方新块；本块的「已裁定不要改」表仍然有效）
 >
 > chronicle → **笔记 §434**。**论文真源在 Overleaf**：
 > `https://www.overleaf.com/project/6a59017b04233a73ed5ec570` → Main document =
