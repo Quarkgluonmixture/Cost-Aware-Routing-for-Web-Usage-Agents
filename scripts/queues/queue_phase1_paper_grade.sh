@@ -430,7 +430,16 @@ except Exception as e:
   case "${SITE_FILTER}" in
     all|cls|red)     builders_to_check="build_cls_chain build_red_chain" ;;
     phase1b)         builders_to_check="build_shop_chain" ;;
+    # B-1960 (2026-08-05): shop_b0 / wa_shop_b0 were never registered here, so
+    # they fell through to the `*)` fallback and this gate verified the cls+red
+    # configs instead — "all chain configs exist" was answered about a chain that
+    # was not being launched. The 2026-08-04 shop_b0 fire passed Gate 7 on cls/red
+    # configs. Note Gate 8 handles the same situation the opposite way (it refuses
+    # rather than inspect something irrelevant); this gate now names every label.
+    shop_b0)         builders_to_check="build_shop_b0_chain" ;;
+    shop_b0_tail)    builders_to_check="build_shop_b0_tail_chain" ;;    # B-1957
     wa_shop)         builders_to_check="build_wa_shop_chain" ;;         # B-1935
+    wa_shop_b0)      builders_to_check="build_wa_shop_b0_chain" ;;
     wa_shop_admin)   builders_to_check="build_wa_shop_admin_chain" ;;   # B-1935
     *)               builders_to_check="build_cls_chain build_red_chain" ;;
   esac
@@ -483,7 +492,7 @@ except Exception as e:
       all|"")        _g8_sites=("classifieds:0-233" "reddit:0-209") ;;
       cls)           _g8_sites=("classifieds:0-233") ;;
       red)           _g8_sites=("reddit:0-209") ;;
-      phase1b|shop_b0)  _g8_sites=("shopping:0-465") ;;
+      phase1b|shop_b0|shop_b0_tail)  _g8_sites=("shopping:0-465") ;;
       wa_shop|wa_shop_b0) _g8_sites=("wa_shopping:0-191") ;;
       wa_shop_admin) _g8_sites=("wa_shopping_admin:0-181") ;;
       *)
@@ -1238,6 +1247,7 @@ case "$MODE" in
       red)     log "Phase 1a Pass-1 red-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
       phase1b) log "Phase 1b shop chain launched (18 conditions, B0+B1+B2 × 6 modes; main-paper expansion). Monitor:" ;;
       shop_b0) log "VWA shopping B0-only launched (7 conditions = 6 modes + 1 replicate arm, 435 scored tasks each). Same Magento container as every shop chain — run wa_shop_b0 AFTER this finishes, not alongside. Monitor:" ;;
+      shop_b0_tail) log "VWA shopping B0 tail launched (6 conditions = 5 modes + 1 replicate arm; the dom main arm was resumed separately under RESET_BEFORE=0). Monitor:" ;;
       wa_shop_b0) log "WA shopping B0-only launched (7 conditions = 6 modes + 1 replicate arm, 173 scored tasks each). Monitor:" ;;
       wa_shop) log "WA shopping chain launched (18 conditions, B0+B1+B2 × 6 modes, 173 scored tasks each). Shares the Magento container with VWA shop — run those two sequentially. Monitor:" ;;
       wa_shop_admin) log "WA shopping_admin chain launched (18 conditions, B0+B1+B2 × 6 modes, 176 scored tasks each). Same Magento container as both shop chains. Monitor:" ;;

@@ -11245,3 +11245,29 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 
 - **Cross-link**: B-1950 (replicate arm 的来由) · B-1935 / B-1938 (同一函数的两次 key 修正,
   都没注意到同 key 重复行) · §242 / §293 · 实验笔记 §436
+
+### B-1960. Gate 7 的 fallback 让新 label 静默通过一次不相关的检查 [P1] 🛠️ FIXED
+
+- **Attack**: Gate 7 (「every chain config must exist」) 按 `SITE_FILTER` 选 builder, 但表里
+  只有 `all|cls|red` / `phase1b` / `wa_shop` / `wa_shop_admin`。**`shop_b0` 与 `wa_shop_b0`
+  从未注册** (B-1950 加 label 时只注册了 dispatcher 和 Gate 8), 于是落到
+  `*) builders_to_check="build_cls_chain build_red_chain"` —— 这个 gate 对着 cls+red 的 config
+  回答了「所有 chain config 都在」, 而实际要启动的是 shopping。2026-08-04 那条跑了 26 小时的
+  shop_b0 fire, 它的「配置齐全」就是这么验的。
+
+- **为什么比没有 gate 更糟**: 它**报告成功**。缺 gate 时人知道没查; fallback 到不相关对象时,
+  日志上是一行 `OK (all chain configs present)`。
+
+- **同一脚本内的自相矛盾**: B-1939 (2026-08-03) 刚刚修过 Gate 8 的同类问题, 注释写着
+  「A gate that always inspects the same thing is not a gate for anything else」, 并把未知
+  label 改成 **fail-closed**。隔壁的 Gate 7 有一模一样的毛病, 但那次没有回头看它 ——
+  于是两个 gate 对同一情形给出相反处理: Gate 8 拒绝, Gate 7 换个对象放行。
+  **修一处缺陷时, 应该 grep 它的形状而不只是它的位置** (与 §428.8 教训(1) 同源)。
+
+- **Fix**: Gate 7 显式列出 `shop_b0` / `shop_b0_tail` / `wa_shop_b0`。回归测试把注册关系
+  变成矩阵断言: label 清单**从 usage 字符串取** (面向操作员的契约), 逐个断言在 Gate 7 与
+  Gate 8 的 case 里都出现, 并额外断言 **Gate 7 检查的 builder 与 dispatcher 实际启动的
+  builder 是同一个** —— 只断言「有分支」不够, 分支指错对象正是本 bug。
+
+- **Cross-link**: B-1939 (Gate 8 的同类修复, 早两天) · B-1950 (漏注册的那次) · B-1957 /
+  B-1958 (同一轮) · 实验笔记 §436

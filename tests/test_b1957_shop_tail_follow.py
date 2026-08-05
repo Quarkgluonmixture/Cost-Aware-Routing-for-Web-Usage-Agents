@@ -219,3 +219,83 @@ class TestTailFollowGuards:
         fired_at = code.index('touch "${FIRED}"     # 先落 flag')
         launch_at = code.index("launch shop_b0_tail")
         assert fired_at < launch_at, "FIRED flag must be set before launching"
+
+
+class TestB1960EveryLabelRegisteredAtEveryGate:
+    """A launch label must be named by EVERY gate that branches on SITE_FILTER.
+
+    B-1960: `shop_b0` and `wa_shop_b0` were added to the launch dispatcher and to
+    Gate 8, but never to Gate 7 — so they hit Gate 7's `*)` fallback and the gate
+    verified the cls+red configs instead. "All chain configs exist" was answered
+    about a chain nobody was launching, and the 2026-08-04 shop_b0 fire passed it
+    that way. A fallback that silently inspects the wrong thing is worse than no
+    gate, because it reports success.
+
+    This test makes the registration matrix explicit: labels come from the usage
+    string (the operator-facing contract) and every one must appear in both
+    gates' case statements.
+    """
+
+    def _labels(self):
+        code = ORCH.read_text(encoding="utf-8")
+        usage = re.search(r"expected: ([a-z0-9_|]+)\)", code).group(1)
+        return [l for l in usage.split("|") if l]
+
+    def _case_patterns(self, marker):
+        """Collect every pattern named in the case block following `marker`."""
+        code = ORCH.read_text(encoding="utf-8")
+        start = code.index(marker)
+        case_start = code.index('case "$', start)
+        block = code[case_start:code.index("esac", case_start)]
+        pats = set()
+        # Patterns may be quoted (Gate 8 uses `all|"")` to also catch the empty
+        # filter), so allow quotes and strip them off each alternative.
+        for m in re.finditer(r'^\s*([a-z0-9_|*"]+)\)', block, re.M):
+            for p in m.group(1).split("|"):
+                pats.add(p.strip('"'))
+        return pats
+
+    @staticmethod
+    def _dispatcher_builder(code, label):
+        """Builder that the LAUNCH dispatcher runs for `label`.
+
+        The dispatcher's branch is `<label>)` alone on its line; Gate 7's branch
+        for the same label is `<label>)  builders_to_check=...` on one line. Match
+        only the former, or the search walks forward from Gate 7 and reports
+        whatever `launch_chain` comes next (which is how this test first failed).
+        """
+        m = re.search(rf"^\s*{label}\)\s*$", code, re.M)
+        assert m, f"no dispatcher branch for {label}"
+        tail = code[m.end():]
+        return re.search(r"launch_chain \"[a-z]+\" (\w+)", tail).group(1)
+
+    def test_usage_lists_the_tail_label(self):
+        assert "shop_b0_tail" in self._labels()
+
+    def test_gate7_names_every_label(self):
+        pats = self._case_patterns("Gate 7: All chain configs exist")
+        missing = [l for l in self._labels() if l not in pats]
+        assert not missing, (
+            f"Gate 7 does not name {missing} — they fall through to the `*)` "
+            "fallback and the gate verifies the WRONG chain's configs (B-1960)"
+        )
+
+    def test_gate8_names_every_label(self):
+        pats = self._case_patterns("Gate 8: cross-fire quarantine")
+        missing = [l for l in self._labels() if l not in pats]
+        assert not missing, f"Gate 8 has no quarantine policy for {missing}"
+
+    def test_gate7_checks_the_chain_being_launched(self):
+        """Each label's Gate 7 builder must be the one its dispatcher launches."""
+        code = ORCH.read_text(encoding="utf-8")
+        start = code.index("Gate 7: All chain configs exist")
+        g7 = code[start:code.index("esac", code.index('case "$', start))]
+        for label in ("shop_b0", "shop_b0_tail", "wa_shop_b0"):
+            m = re.search(rf"^\s*(?:[a-z0-9_|]*\|)?{label}(?:\|[a-z0-9_|]*)?\)\s*"
+                          rf"builders_to_check=\"([^\"]+)\"", g7, re.M)
+            assert m, f"Gate 7 has no explicit entry for {label}"
+            dispatch = self._dispatcher_builder(code, label)
+            assert dispatch in m.group(1), (
+                f"{label}: Gate 7 checks {m.group(1)!r} but the dispatcher "
+                f"launches {dispatch!r} — the gate is inspecting a different chain"
+            )
