@@ -179,11 +179,45 @@ mirror 只有 `artifacts/`，`episodes/` 在本地 `phase1/` 树。而
 
 行为层已测；**为什么模型对无信息 token 敏感**是空的。
 
-### 断言（可证伪）
+### ✅ 行为层前置已跑（2026-08-06，DGX，B1·classifieds，24 tasks × n=3 × 2 组）
 
-> element-id token 的表征在「选哪个元素」的决策中承载了不该有的因果权重。把 id-shuffled
-> 运行中某一层／某些位置的激活换成 id-fixed 运行的对应激活，能把决策拉回原选择，且恢复率
-> 显著高于随机位置对照。
+产物 `docs/checkpoints/probes/b0_paired_idperturb_20260806_162830_m1_behav_b1_cls.json`。
+
+```
+mean_consistency_A = 1.0      mean_consistency_B = 1.0
+frac_id_mode_flip  = 0.167    flip_task_ids = [22, 23, 60, 231]
+```
+
+- **靶子存在**：16.7% 的 task 在 step_000 被 id 扰动改变了决策。
+  ⚠️ **不要拿它去对撞论文的 20.0%** —— 论文那个是 *over all steps*，这里只测 `step_000`，
+  两者分母不同。量级同阶足以说明"效应在我们自己的数据上真实存在"，仅此而已。
+- **靶子是确定性的**：`consistency_B = 1.0` —— 3 次重放给出**同样的**错误答案。
+  不是随机噪声，是可 patch 的确定性偏移。`consistency_A = 1.0` 同时确认了 B1 本地贪心
+  解码无 serving 噪声（与论文 133/133 bit-identical 的说法一致）。
+
+**三种失败模式，而第三种推翻了初始设计假设：**
+
+| task | A (id 固定) | B (id 打乱) | 性质 |
+|---|---|---|---|
+| 22 | click link `2008 F250` | click **`<eid 15819 不在 obs>`** | **幻觉 id** |
+| 23 | click link `2006 ford escape` | click link `2014 Freightliner` | 同类动作、**指错元素** |
+| 60 | **`select_option`** `Video gaming` | **`click`** link `xbox series x` | **动作类型改变** |
+| 231 | **`click`** link `Sign up` | **`tab_focus`** | **动作类型改变** |
+
+论文把 id-churn 描述为 *"changes which element is chosen"* —— 一个**元素选择**问题。
+但实测里 **2/4 根本不是选错元素，而是动作类型整个变了**。这说明无信息的 id token 影响的
+不是决策末端的「指哪个」，而是**更早的一层：做什么**。task 22 的幻觉 id（编出一个 obs 里
+不存在的编号）又指向模型在某种程度上**记忆/复制 id token**，而非通过语义定位元素。
+
+### 断言（据行为层结果修正）
+
+> element-id token 的表征在决策中承载了不该有的因果权重，**且作用点早于「选哪个元素」**。
+> 把 id-shuffled 运行中某一层／某些位置的激活换成 id-fixed 运行的对应激活，能把决策拉回
+> 原选择，且恢复率显著高于随机位置对照。
+
+⚠️ **恢复率必须按动作类型分层报告**，不能只算「元素选对了吗」——
+否则会把「动作类型都变了」（2/4）和「点错了一个链接」（1/4）平均成同一件事。
+最小分层：`动作类型是否恢复` / `动作类型恢复且元素也恢复` / `是否仍输出幻觉 id`。
 
 ### 做法
 

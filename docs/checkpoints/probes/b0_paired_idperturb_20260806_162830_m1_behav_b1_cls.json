@@ -1,0 +1,552 @@
+{
+  "purpose": "路线A paired id-perturbation step-0 replay (serving vs id-churn 拆分)",
+  "baseline": "B1",
+  "ts_utc": "2026-08-06T15:28:30Z",
+  "run_dir": "results/mechanistic/_obs_mirror/visualwebarena/B1_dom_classifieds_20260603_103630_477435114_112846_R17188/phase1_dom_router_0",
+  "n_per_group": 3,
+  "wall_seconds": 4606,
+  "aggregate": {
+    "baseline": "B1",
+    "n_tasks": 24,
+    "mean_consistency_A": 1.0,
+    "mean_consistency_B": 1.0,
+    "frac_id_mode_flip": 0.167,
+    "mean_consistency_drop_B_minus_A": 0.0,
+    "flip_task_ids": [
+      22,
+      23,
+      60,
+      231
+    ]
+  },
+  "results": [
+    {
+      "task_id": 6,
+      "n": 3,
+      "intent": "Return the links of the 3 most recent motorcycles within $1000 to $2000 that are",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Motorcycles')"
+      ]
+    },
+    {
+      "task_id": 7,
+      "n": 3,
+      "intent": "Return the links of the 2 most recent items in the \"Cell phones\" category within",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cell phones')"
+      ]
+    },
+    {
+      "task_id": 8,
+      "n": 3,
+      "intent": "Help me make a post selling this item and navigate to it. Price it at $10 cheape",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('click', \"combobox '' hasPopup: menu expanded: False\", '')",
+      "mode_B": "('click', \"combobox '' hasPopup: menu expanded: False\", '')",
+      "dsigs_A": [
+        "('click', \"combobox '' hasPopup: menu expanded: False\", '')",
+        "('click', \"combobox '' hasPopup: menu expanded: False\", '')",
+        "('click', \"combobox '' hasPopup: menu expanded: False\", '')"
+      ],
+      "dsigs_B": [
+        "('click', \"combobox '' hasPopup: menu expanded: False\", '')",
+        "('click', \"combobox '' hasPopup: menu expanded: False\", '')",
+        "('click', \"combobox '' hasPopup: menu expanded: False\", '')"
+      ]
+    },
+    {
+      "task_id": 22,
+      "n": 3,
+      "intent": "How many miles does the red car in the second row have?",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": true,
+      "mode_A": "('click', \"link '2008 F250' url: http://localhost:9980/index.php?page=i\", '')",
+      "mode_B": "('click', '<eid 15819 不在 obs>', '')",
+      "dsigs_A": [
+        "('click', \"link '2008 F250' url: http://localhost:9980/index.php?page=i\", '')",
+        "('click', \"link '2008 F250' url: http://localhost:9980/index.php?page=i\", '')",
+        "('click', \"link '2008 F250' url: http://localhost:9980/index.php?page=i\", '')"
+      ],
+      "dsigs_B": [
+        "('click', '<eid 15819 不在 obs>', '')",
+        "('click', '<eid 15819 不在 obs>', '')",
+        "('click', '<eid 15819 不在 obs>', '')"
+      ]
+    },
+    {
+      "task_id": 23,
+      "n": 3,
+      "intent": "How many miles does the second car in the third row have?",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": true,
+      "mode_A": "('click', \"link '2006 ford escape limited' url: http://localhost:9980/i\", '')",
+      "mode_B": "('click', \"link '2014 Freightliner Cascadia 125 6x4 T/A Sleeper' url: h\", '')",
+      "dsigs_A": [
+        "('click', \"link '2006 ford escape limited' url: http://localhost:9980/i\", '')",
+        "('click', \"link '2006 ford escape limited' url: http://localhost:9980/i\", '')",
+        "('click', \"link '2006 ford escape limited' url: http://localhost:9980/i\", '')"
+      ],
+      "dsigs_B": [
+        "('click', \"link '2014 Freightliner Cascadia 125 6x4 T/A Sleeper' url: h\", '')",
+        "('click', \"link '2014 Freightliner Cascadia 125 6x4 T/A Sleeper' url: h\", '')",
+        "('click', \"link '2014 Freightliner Cascadia 125 6x4 T/A Sleeper' url: h\", '')"
+      ]
+    },
+    {
+      "task_id": 27,
+      "n": 3,
+      "intent": "How many of the listings in \"Rvs + campers\" posted on 16th November 2023 show th",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Rvs + campers')"
+      ]
+    },
+    {
+      "task_id": 29,
+      "n": 3,
+      "intent": "Add a comment on the most recently posted red car with the title \"Nice car\" and ",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('type', 'red car')",
+      "mode_B": "('type', 'red car')",
+      "dsigs_A": [
+        "('type', 'red car')",
+        "('type', 'red car')",
+        "('type', 'red car')"
+      ],
+      "dsigs_B": [
+        "('type', 'red car')",
+        "('type', 'red car')",
+        "('type', 'red car')"
+      ]
+    },
+    {
+      "task_id": 36,
+      "n": 3,
+      "intent": "Find all listings for this exact item on OSClass and compare its price to the ch",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('type', \"Luigi's Mansion 3\")",
+      "mode_B": "('type', \"Luigi's Mansion 3\")",
+      "dsigs_A": [
+        "('type', \"Luigi's Mansion 3\")",
+        "('type', \"Luigi's Mansion 3\")",
+        "('type', \"Luigi's Mansion 3\")"
+      ],
+      "dsigs_B": [
+        "('type', \"Luigi's Mansion 3\")",
+        "('type', \"Luigi's Mansion 3\")",
+        "('type', \"Luigi's Mansion 3\")"
+      ]
+    },
+    {
+      "task_id": 56,
+      "n": 3,
+      "intent": "Find the cheapest snowblower that is not red in color.",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('type', 'snowblower')",
+      "mode_B": "('type', 'snowblower')",
+      "dsigs_A": [
+        "('type', 'snowblower')",
+        "('type', 'snowblower')",
+        "('type', 'snowblower')"
+      ],
+      "dsigs_B": [
+        "('type', 'snowblower')",
+        "('type', 'snowblower')",
+        "('type', 'snowblower')"
+      ]
+    },
+    {
+      "task_id": 58,
+      "n": 3,
+      "intent": "Explore the \"Furniture\" category of Washington, D.C. and find me the most recent",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Furniture')"
+      ]
+    },
+    {
+      "task_id": 60,
+      "n": 3,
+      "intent": "Find the most expensive video game item where I can roleplay the situation in th",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": true,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Video gaming')",
+      "mode_B": "('click', \"link 'xbox series x / with extras' url: http://localhost:998\", '')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Video gaming')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Video gaming')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Video gaming')"
+      ],
+      "dsigs_B": [
+        "('click', \"link 'xbox series x / with extras' url: http://localhost:998\", '')",
+        "('click', \"link 'xbox series x / with extras' url: http://localhost:998\", '')",
+        "('click', \"link 'xbox series x / with extras' url: http://localhost:998\", '')"
+      ]
+    },
+    {
+      "task_id": 63,
+      "n": 3,
+      "intent": "Find the most expensive video game item with the character from the image on its",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('type', 'Iron Man')",
+      "mode_B": "('type', 'Iron Man')",
+      "dsigs_A": [
+        "('type', 'Iron Man')",
+        "('type', 'Iron Man')",
+        "('type', 'Iron Man')"
+      ],
+      "dsigs_B": [
+        "('type', 'Iron Man')",
+        "('type', 'Iron Man')",
+        "('type', 'Iron Man')"
+      ]
+    },
+    {
+      "task_id": 71,
+      "n": 3,
+      "intent": "Find the most expensive item posted from Delaware which is of the same item as i",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('type', 'saxophone')",
+      "mode_B": "('type', 'saxophone')",
+      "dsigs_A": [
+        "('type', 'saxophone')",
+        "('type', 'saxophone')",
+        "('type', 'saxophone')"
+      ],
+      "dsigs_B": [
+        "('type', 'saxophone')",
+        "('type', 'saxophone')",
+        "('type', 'saxophone')"
+      ]
+    },
+    {
+      "task_id": 109,
+      "n": 3,
+      "intent": "How many miles does the most expensive white sports car in the \"Cars + trucks\" c",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')"
+      ]
+    },
+    {
+      "task_id": 130,
+      "n": 3,
+      "intent": "Navigate to the item on this page whose image is taken during a sunset.",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('scroll', 'down')",
+      "mode_B": "('scroll', 'down')",
+      "dsigs_A": [
+        "('scroll', 'down')",
+        "('scroll', 'down')",
+        "('scroll', 'down')"
+      ],
+      "dsigs_B": [
+        "('scroll', 'down')",
+        "('scroll', 'down')",
+        "('scroll', 'down')"
+      ]
+    },
+    {
+      "task_id": 141,
+      "n": 3,
+      "intent": "I recall seeing this exact item on the site, help me find the most recent post o",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Farm + garden')"
+      ]
+    },
+    {
+      "task_id": 153,
+      "n": 3,
+      "intent": "Navigate to the item on this page that most similarly depicts the setting in the",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')",
+      "mode_B": "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')",
+      "dsigs_A": [
+        "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')",
+        "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')",
+        "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')"
+      ],
+      "dsigs_B": [
+        "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')",
+        "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')",
+        "('click', \"image 'matador painting on wooden plate' url: http://localho\", '')"
+      ]
+    },
+    {
+      "task_id": 156,
+      "n": 3,
+      "intent": "Explore the \"Bikes\" category, and find the oldest listed item whose image is tak",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Bikes')"
+      ]
+    },
+    {
+      "task_id": 166,
+      "n": 3,
+      "intent": "Navigate to the listing on this page whose image includes an instrument the same",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('type', 'blue instrument')",
+      "mode_B": "('type', 'blue instrument')",
+      "dsigs_A": [
+        "('type', 'blue instrument')",
+        "('type', 'blue instrument')",
+        "('type', 'blue instrument')"
+      ],
+      "dsigs_B": [
+        "('type', 'blue instrument')",
+        "('type', 'blue instrument')",
+        "('type', 'blue instrument')"
+      ]
+    },
+    {
+      "task_id": 177,
+      "n": 3,
+      "intent": "Navigate to the cheapest listing in the \"Cars + trucks\" category from Ohio or Ma",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Cars + trucks')"
+      ]
+    },
+    {
+      "task_id": 197,
+      "n": 3,
+      "intent": "Navigate to the cheapest boat in the \"Boats\" category from Pennsylvania that has",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')",
+      "mode_B": "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')",
+      "dsigs_A": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')"
+      ],
+      "dsigs_B": [
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')",
+        "('select_option', \"combobox '' hasPopup: menu expanded: False\", 'Boats')"
+      ]
+    },
+    {
+      "task_id": 198,
+      "n": 3,
+      "intent": "Navigate to the cheapest watch with hints of faded red and green that costs at l",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('type', 'watch with faded red and green')",
+      "mode_B": "('type', 'watch with faded red and green')",
+      "dsigs_A": [
+        "('type', 'watch with faded red and green')",
+        "('type', 'watch with faded red and green')",
+        "('type', 'watch with faded red and green')"
+      ],
+      "dsigs_B": [
+        "('type', 'watch with faded red and green')",
+        "('type', 'watch with faded red and green')",
+        "('type', 'watch with faded red and green')"
+      ]
+    },
+    {
+      "task_id": 230,
+      "n": 3,
+      "intent": "Find me the cheapest watch in the Jewelry category from the classifieds site tha",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": false,
+      "mode_A": "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')",
+      "mode_B": "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')",
+      "dsigs_A": [
+        "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')",
+        "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')",
+        "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')"
+      ],
+      "dsigs_B": [
+        "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')",
+        "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')",
+        "('click', \"menuitem '\\\\ue622 Clothing, Shoes & Jewelry' hasPopup: menu\", '')"
+      ]
+    },
+    {
+      "task_id": 231,
+      "n": 3,
+      "intent": "Show me the cheapest flower in the Farm + garden category under $10 from the cla",
+      "consistency_A_serving": 1.0,
+      "consistency_B_serving_plus_id": 1.0,
+      "unique_A_serving": 1,
+      "unique_B_serving_plus_id": 1,
+      "mode_flip_id_changed_decision": true,
+      "mode_A": "('click', \"link 'Sign up' url: http://localhost:9999/registration\", '')",
+      "mode_B": "('tab_focus',)",
+      "dsigs_A": [
+        "('click', \"link 'Sign up' url: http://localhost:9999/registration\", '')",
+        "('click', \"link 'Sign up' url: http://localhost:9999/registration\", '')",
+        "('click', \"link 'Sign up' url: http://localhost:9999/registration\", '')"
+      ],
+      "dsigs_B": [
+        "('tab_focus',)",
+        "('tab_focus',)",
+        "('tab_focus',)"
+      ]
+    }
+  ]
+}
