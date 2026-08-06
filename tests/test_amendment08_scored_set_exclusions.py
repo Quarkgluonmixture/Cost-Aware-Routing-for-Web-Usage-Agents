@@ -73,10 +73,31 @@ def test_amendment09_shopping_exclusions():
     predicate selects exactly these 2 of 466 VWA shopping tasks and 0 of the 192
     WA shopping / 182 WA shopping_admin tasks.
     """
-    assert protocol_excluded_task_ids("shopping") == frozenset({463, 465})
     assert protocol_excluded_task_ids("shopping", tiers=("A",)) == frozenset({463, 465})
     # tier B is empty for shopping — nothing here needed trajectories to warrant
     assert protocol_excluded_task_ids("shopping", tiers=("B",)) == frozenset()
+
+
+def test_amendment10_shopping_substrate_exclusion():
+    """AMENDMENT_10: task 345, tier E (substrate 404, environment-probe-confirmed).
+
+    A DIFFERENT rule from AMENDMENT_08/09 — not "the eval cannot discriminate"
+    but "the start_url resource does not exist". Rule was evaluated over 1466
+    start_url references / 431 unique URLs across all 6 benchmark-sites and
+    selects exactly this one; the two false-positive groups (session-less admin
+    probe, 6-way concurrency) are documented in the amendment §2.
+
+    Tier E is in the DEFAULT tiers. That is the load-bearing assertion here: if
+    it were dropped, the amendment doc would say 432 while the code returned
+    433 — a silent doc/code fork of exactly the kind that makes a scored-set
+    number untrustworthy.
+    """
+    assert protocol_excluded_task_ids("shopping", tiers=("E",)) == frozenset({345})
+    assert protocol_excluded_task_ids("shopping") == frozenset({345, 463, 465})
+    # tier E must not leak into the sites that never had a substrate defect
+    assert protocol_excluded_task_ids("reddit", tiers=("E",)) == frozenset()
+    assert protocol_excluded_task_ids("classifieds", tiers=("E",)) == frozenset()
+    assert protocol_excluded_task_ids("shopping", "webarena", tiers=("E",)) == frozenset()
 
 
 # --------------------------------------------------------------------------- #
@@ -96,6 +117,13 @@ def test_scoring_denominator_drops_only_the_excluded_tasks():
     assert paper_scored_task_count("classifieds", "visualwebarena") == 224
     assert paper_scored_task_count("reddit", "visualwebarena", tiers=()) == 205
     assert paper_scored_task_count("reddit", "visualwebarena", tiers=("A",)) == 204
+    # AMENDMENT_09 → 433, AMENDMENT_10 → 432. The collection denominator stays
+    # 435 (asserted separately below), which is what keeps the fire-completeness
+    # check and both sensitivity arms computable from any landed run.
+    assert paper_scored_task_count("shopping", "visualwebarena", tiers=()) == 435
+    assert paper_scored_task_count("shopping", "visualwebarena", tiers=("A",)) == 433
+    assert paper_scored_task_count("shopping", "visualwebarena") == 432
+    assert scored_task_count("shopping", "visualwebarena") == 435
 
 
 def test_scoring_denominator_cannot_double_subtract_an_na_task(monkeypatch):

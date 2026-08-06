@@ -1,0 +1,119 @@
+AMENDMENT_10 substrate exclusion (VWA shopping task 345) — witness note
+
+OSF project: https://osf.io/kv9sf/ (same amendment-witness project as AMENDMENT 01-08;
+  AMENDMENT 10 doc + this git_witness upload PENDING user)
+Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
+Git tag: prereg-amendment-10-substrate-exclusion-20260806  (created at the docs+code commit below)
+Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+Branch: fix/b1878-reddit-reference-image
+Amendment-doc + code commit SHA: this file's own commit, the one the git tag points at
+  (resolvable post-tag via `git rev-list -1 prereg-amendment-10-substrate-exclusion-20260806`).
+
+Witness primitive = the commit SHA (content-addressed, tamper-evident; the commit
+timestamp is hashed into the SHA). The git tag is an immovable named pointer to it.
+
+
+WHAT THIS WITNESS CLAIMS
+========================
+There are TWO commits in this witness chain and they do different jobs.
+
+  (1) CRITERION WITNESS — 61b60e6, commit timestamp 2026-08-05T22:52:11Z
+      The B-1957 landing. It carries the exclusion rule verbatim and the full
+      431-unique-URL scope evidence, inside the quarantine_registry.jsonl
+      classification event (classified_via=substrate_probe_431_starturls_2026-08-05).
+      This commit PRECEDES task 345's only scored episode in this fire
+      (2026-08-06 08:41Z, resumed runner, success=False).
+
+      TWO TIMESTAMPS, DO NOT CONFLATE: the registry event's own `ts` field reads
+      2026-08-05T22:42:21.640140+00:00 — that is when the content was WRITTEN. The
+      commit timestamp 22:52:11Z is when it became tamper-evident. Only the latter
+      is a witness; the former is content and could have been written by anyone at
+      any time. Both precede the scored episode, so the claim holds under either,
+      but the verification command below checks the commit.
+
+      => The SELECTION CRITERION is timestamped before the MEASUREMENT it is
+         applied to. That is the property this witness establishes.
+
+  (2) AMENDMENT WITNESS — this file's own commit, 2026-08-06
+      The amendment document, the preregistration amendment-log row, the
+      PROTOCOL_EXCLUSIONS tier-E entry, the default-tiers contract change, and
+      the tests.
+
+
+WHAT THIS WITNESS DOES *NOT* CLAIM
+==================================
+It does NOT claim pre-data status. AMENDMENT_09 could (no VWA shopping run existed
+on disk when it was written). This one cannot, for a specific and disclosable reason:
+
+  The 2026-04-29 fire ran shopping 466/466 at SR 16.52% (77/466) WITH task 345 among
+  the failures, and that fire is cited in the very §81 follow-up adjudication this
+  amendment builds on. The author therefore knew task 345 fails when the rule was
+  written.
+
+Because task 345 is a FAILURE, removing it RAISES SR. The effect direction favours
+the author. Measured on the landed B0_dom_shopping_..._R3561 episodes:
+
+    exclusion arm                denom   succ   SR
+    none                          435     51    11.7241%
+    A09 (463, 465)                433     49    11.3164%
+    A09 + A10 (463, 465, 345)     432     49    11.3426%     <-- primary
+                                                  Δ = +0.0262pp
+
++0.0262pp is 38x smaller than the H1 gate (δ = +1.0pp) and 38x smaller than the
+degenerate-cell SE floor (1.0pp). It cannot move a preregistered decision.
+
+Classification: CRITERION-PREREGISTERED, OUTCOME-KNOWN. Strictly weaker than
+AMENDMENT_09 (pre-data). Strictly stronger than AMENDMENT_08 (fully post-hoc, all
+36 Pass-1 conditions landed and analysed before the criteria were written).
+
+The defense does not rest on timing. It rests on:
+  - scope: the rule selects exactly 1 of 431 unique start_urls, and the first-pass
+    24-candidate result was refuted down to 1 (both false-positive groups documented);
+  - structure: the failure precedes observation construction, so no mode can solve
+    345 and the drop-one hero metric is unaffected by construction, not by measurement;
+  - a pre-committed falsifier: success=True under ANY mode withdraws the amendment.
+
+
+A GAP IN AMENDMENT_09'S WITNESS CHAIN, CLOSED HERE
+==================================================
+AMENDMENT_09's amendment-log row (2026-08-03) states its witness as "git tag on the
+commit landing this row". THAT TAG WAS NEVER CREATED. `git tag | grep amendment-09`
+returned empty on 2026-08-06 when AMENDMENT_10 was written, i.e. the row's own witness
+claim had been unsatisfied for three days.
+
+Closed by retro-tagging the commit that actually landed AMENDMENT_09's code:
+
+    prereg-amendment-09-scored-set-exclusions-20260803  ->  568b27f
+
+The tag message records that the tag was created 2026-08-06 and points at a
+2026-08-03 commit. The witness primitive is the COMMIT SHA, which is content-addressed
+and hashes its own timestamp; a late-created named pointer to an early commit still
+witnesses the early state, PROVIDED the lateness is disclosed — which is what this
+section is for.
+
+AMENDMENT_09's pre-data status is unaffected: 568b27f predates the first VWA shopping
+run (R3561 started 2026-08-04 00:36Z), which is the property that claim rests on.
+
+Process note: this is the second time a witness has been described in prose without
+being created (memory `feedback_pre_fire_protocol_witness` exists because of the
+first). Operational rule going forward: an amendment row is not complete until
+`git rev-list -1 <its own tag>` resolves.
+
+
+VERIFICATION COMMANDS
+=====================
+  # this amendment's witness
+  git rev-list -1 prereg-amendment-10-substrate-exclusion-20260806
+  git show --stat prereg-amendment-10-substrate-exclusion-20260806
+
+  # the criterion witness that predates the scored episode
+  git show --stat 61b60e6
+  git log -1 --format=%cI 61b60e6            # expect 2026-08-05T23:52:11+01:00 (= 22:52:11Z)
+
+  # the retro-tagged AMENDMENT_09
+  git rev-list -1 prereg-amendment-09-scored-set-exclusions-20260803   # expect 568b27f
+  git log -1 --format=%cI 568b27f                                     # expect 2026-08-03
+  git tag -n99 prereg-amendment-09-scored-set-exclusions-20260803      # discloses the retro-tag
+
+  # the code contract this amendment changes
+  .venv/bin/python3 -m pytest tests/test_amendment08_scored_set_exclusions.py -q

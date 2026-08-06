@@ -112,13 +112,18 @@ def paper_scored_task_count(
     benchmark: str = "visualwebarena",
     *,
     strict: bool = False,
-    tiers: tuple = ("A", "B"),
+    tiers: tuple = ("A", "B", "E"),
 ) -> int:
-    """Scoring denominator = collection denominator minus AMENDMENT_08 exclusions.
+    """Scoring denominator = collection denominator minus protocol exclusions.
 
     Post-AMENDMENT_08: cls=224 (unchanged, no exclusions), red=203 (was 205).
+    Post-AMENDMENT_09/10: shop=432 (435 → 433 → 432).
     `tiers` drives the sensitivity arms — `()` reproduces the pre-amendment
-    denominator, `("A",)` applies only the outcome-blind exclusion.
+    denominator, `("A",)` applies only the config-derivable exclusions.
+
+    AMENDMENT_10 (2026-08-06) added "E" to the default; see
+    `tasks.protocol_excluded_task_ids` for why the default had to change rather
+    than the exclusion being relabelled "A".
 
     Use this wherever a success RATE is formed. Use `scored_task_count` only to
     ask whether a run produced all the episodes it was supposed to.

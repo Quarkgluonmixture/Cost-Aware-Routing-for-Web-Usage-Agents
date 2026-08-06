@@ -37,7 +37,13 @@ class ProtocolExclusion:
     """
 
     task_id: int
-    tier: str       # "A" = config-derivable + outcome-blind; "B" = config-suggestive + trajectory-confirmed
+    # Tier records WHERE the warrant comes from, not how strong it is:
+    #   "A" = config-derivable + outcome-blind         (needs no data)
+    #   "B" = config-suggestive + trajectory-confirmed (needs trajectories → outcome-ADJACENT)
+    #   "E" = config-derivable target + environment-probe-confirmed, outcome-blind
+    #         (needs environment state, but no agent behaviour and no score — on the
+    #          HARKing axis this is STRONGER than B, which is why it is not "C")
+    tier: str
     rule: str       # the uniform criterion this task instantiates
     reason: str
     amendment: str
@@ -118,6 +124,13 @@ PROTOCOL_EXCLUSIONS: Dict[tuple, tuple] = {
     # exists on disk (the §103-era runs were cleared), so the exclusion cannot
     # have been selected for its effect on any number. Effect on the scored
     # denominator: shopping 435 → 433.
+    #
+    # AMENDMENT_10 (2026-08-06) adds task 345 under a DIFFERENT rule (substrate
+    # unreachable, tier E) → 433 → 432. It is NOT pre-data: the author knew from
+    # the 2026-04-29 fire that 345 fails, so removing it RAISES SR (+0.026pp).
+    # The warrant rests on scope evidence, not timing — the rule was evaluated
+    # over 431 unique start_urls and selects exactly one. See
+    # docs/prereg_amendments/AMENDMENT_10_SUBSTRATE_EXCLUSION_20260806.md §0/§4.
     ("visualwebarena", "shopping"): (
         ProtocolExclusion(
             task_id=463,
@@ -153,6 +166,31 @@ PROTOCOL_EXCLUSIONS: Dict[tuple, tuple] = {
             ),
             amendment="AMENDMENT_09",
         ),
+        ProtocolExclusion(
+            task_id=345,
+            tier="E",
+            rule=(
+                "start_url references a substrate resource returning 404, where the "
+                "404 is not auth-induced and not repairable within the P79 setup"
+            ),
+            reason=(
+                "'shopping |AND| wikipedia' cross-site task whose wikipedia leg points "
+                "at an IMAGE asset (I/Country_calling_codes_map.svg.png.webp) absent "
+                "from the 2025-08 ZIM dump. The §81 version rewrite works (kiwix-serve "
+                "confirmed on wikipedia_en_all_maxi_2025-08.zim); .svg.png.webp/.svg.png/"
+                ".svg all 404 while the ARTICLE pages return 302, so kiwix and the ZIM "
+                "are healthy and only this asset is gone. Rule evaluated over 1466 "
+                "start_url references / 431 unique URLs across all 6 benchmark-sites, "
+                "selecting exactly this task; two false-positive groups refuted (6 WA "
+                "admin URLs = session-less probe artefact, 18 classifieds URLs = 6-way "
+                "concurrency artefact). Failure precedes observation construction, so "
+                "it is mode-independent by structure — hence 0 drop-one credit under "
+                "either denominator. FALSIFIER: success=True under any mode withdraws "
+                "this exclusion (AMENDMENT_10 §5). First adjudicated 2026-04-29 (§81 "
+                "follow-up, 'paper footnote = 1/466 excluded, upstream ZIM data drift')."
+            ),
+            amendment="AMENDMENT_10",
+        ),
     ),
 }
 
@@ -161,12 +199,20 @@ def protocol_excluded_task_ids(
     site: str,
     benchmark: str = "visualwebarena",
     *,
-    tiers: tuple = ("A", "B"),
+    tiers: tuple = ("A", "B", "E"),
 ) -> frozenset:
-    """Task IDs removed from the SCORED set for (site, benchmark) — AMENDMENT_08.
+    """Task IDs removed from the SCORED set for (site, benchmark).
 
-    `tiers` selects which warrant strengths to apply, so the sensitivity arms
-    ("none" / "A only" / "A+B") are the same code path as the primary analysis.
+    `tiers` selects which warrant sources to apply, so the sensitivity arms
+    ("none" / "A only" / "A+B" / "A+B+E") are the same code path as the primary
+    analysis.
+
+    AMENDMENT_10 (2026-08-06) added "E" to the DEFAULT. This is a deliberate
+    contract change, not a widening for convenience: the amendment fixes the
+    primary shopping scoring denominator at 432, so the default must subtract
+    the tier-E entry or the code would silently report 433 while the amendment
+    document says 432. Tier order in this tuple carries no strength ordering —
+    see `ProtocolExclusion.tier`.
     """
     entries = PROTOCOL_EXCLUSIONS.get((benchmark.lower(), site.lower()), ())
     return frozenset(e.task_id for e in entries if e.tier in tiers)
