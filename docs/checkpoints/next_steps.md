@@ -23,6 +23,57 @@ updated: 2026-08-06
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟠 2026-08-06 傍晚 · **B-1966 [P0]：机制层测的不是它声称的对象**（最新，机制线）
+>
+> chronicle → **笔记 §440**（一天四次「长得像成功」+ B-1966 全过程）。
+>
+> ### 一句话
+>
+> patching 的 source 侧**无条件喂标注截图**，而 `som` 与 `phantom_som` 的文本 payload
+> 和 system prompt 本就逐字节相同（P-SoM ≡ SoM prompt **减去那张图**）——
+> 三项全同 ⇒ **`phantom_som` 被实现成了 `som`**。
+> 代价：**机制层现存 patching 结论，正面负面全部不可用**，包括那条从未报告的
+> 「图像轴位移最大 0.475/0.390」（三条轴 source 全带图，该解读不成立）。
+>
+> ### 状态
+>
+> | | |
+> |---|---|
+> | 代码修复 | ✅ `3c7d348` — 契约提为 `som.py::mode_receives_page_image`，两侧按 mode 判定 |
+> | 防复发 | ✅ 12 条测试 + **mutation 验证**（回退成硬编码 → 1 failed；混入收图集合 → 3 failed）|
+> | 真 pipeline 验收 | ✅ Sparks smoke `RESULT=DIFFERENT_FIX_WORKS`（修复前两者逐位相同）|
+> | **24 cell 重跑** | 🔄 **Sparks job 126 array 跑着**，`%2` 并发，预计 **~1.6 天** |
+> | t38/t39 caption | ⏸ **堵在重跑后** — 在此之前改 caption 是给不可用的数据润色 |
+>
+> ```bash
+> ssh sparks 'squeue -u jiaming; cd /clusterhome/jiaming/p79
+>   ls results/mechanistic/canonical_b1966fix/*/pilot_summary.md | wc -l   # 目标 24
+>   sacct -j 126 --format=JobID,State,Elapsed -n | grep -E "FAILED|TIMEOUT"'
+> ```
+>
+> **重跑完的验收断言**（脚本末尾 VERIFY 段有现成代码）：
+> `p2_psom_ptext_*` 与 `p4_som_ptext_*` 修复前逐位相同，**修复后必须不同**。
+>
+> ### Sparks 环境已建好（新算力，之前是空的）
+>
+> `/clusterhome/jiaming/p79`：代码 + `archive_subset` 70M + 模型 8.3G
+> (revision `ebb281ec…`，与 DGX 同)。依赖**逐个 pin 到 DGX 版本**
+> (torch 2.11.0+cu128 / tf 5.3.0 / sklearn 1.8.0 / matplotlib 3.10.8 / scipy 1.17.1)——
+> 为跨机可比。实测 **~3.2h/cell**（独占 GPU，比 DGX 的 5.22h 快）。
+>
+> ⚠️ 三个坑，都踩过一次：
+> - **`srun` 的 `/tmp` 是计算节点本地** —— 日志必须写 `/clusterhome/...`，否则登录节点看不到
+> - **前台 `srun` over ssh**：ssh 一断 job 还活着，会与重投的 job 抢同一个输出目录。**用 `sbatch`**
+> - 装依赖要用 `pip install -e ".[mechanistic]"`，手工列包会漏掉 sklearn
+>
+> ### M1（id-churn 机制解释）行为层前置 ✅
+>
+> `frac_id_mode_flip=0.167`（4/24），`consistency_A=B=1.0`（确定性，非噪声）。
+> **靶子存在**，但三种失败模式里 **2/4 是「动作类型整个变了」**（`select_option`→`click`、
+> `click`→`tab_focus`），不是论文说的「选错元素」。
+> ⇒ patching 的恢复率**必须按动作类型分层**，否则会把两类失败平均掉。详见 [[plan_v2]]。
+> ⚠️ 16.7% **不要**拿去对撞论文的 20.0% —— 那个是 over all steps，这里只测 step_000。
+
 > ## ✅ 2026-08-06 中午 · **REALM 已提交（Submission 192）· 论文线冻结**
 >
 > chronicle → **笔记 §438**（截稿日 36 小时全记录：终审裁决 / 三轮可读性 / 两张图 / 七次撞车）。
