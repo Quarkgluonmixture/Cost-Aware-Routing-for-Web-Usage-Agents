@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-07-29
+updated: 2026-08-06
 ---
 
 # Next Steps — Forward Action Ledger
@@ -55,13 +55,15 @@ updated: 2026-07-29
 >    标的就是「REALM 之后」
 > 3. camera-ready 前把上表四条 + 附录通读补上
 
-> ## 🔵 2026-08-06 上午 · **VWA shopping B0 fire 恢复中**（fire 线最新，与上面 REALM 线并行）
+> ## 🔵 2026-08-06 · **VWA shopping B0 fire：cell 1 已完成，等尾链自动接**（fire 线最新，与上面 REALM 线并行）
 >
-> chronicle → **笔记 §436 + §437**。fire 在 A100，**不在 DGX**。
+> chronicle → **笔记 §436 + §437 + §439**。fire 在 A100，**不在 DGX**。
 >
 > ### 现在是什么状态
 >
-> `B0_dom_shopping_..._R3561` 的 dom 主臂**正在 resume**（第二轮，08-06 08:38 起）。
+> dom 主臂（cell 1/7）**已于 08-06 11:21 UTC 正常收尾**：435/435、无 abort、
+> `condition_summary_v2.json` 已落盘（三个修复的验收 → 笔记 §439.1）。
+> 下一步由 `*/10` 的 tail-follow cron 自动起 cell 2-7，**判据是数据本身而非 sentinel**。
 > 拉实时，别照抄这里的数字：
 >
 > ```bash
@@ -69,7 +71,8 @@ updated: 2026-07-29
 >   R=B0_dom_shopping_20260804_003607_264370398_3845634_R3561
 >   ls results/visualwebarena/phase1/$R/phase1_dom_router_0/episodes/*_summary_v2.json | wc -l   # 目标 435
 >   ps -eo etime,args | grep "[r]un_experiment\.py"
->   ls results/visualwebarena/phase1/$R/phase1_dom_router_0/condition_summary_v2.json'          # 存在 = P0-1 真修好了
+>   ls results/visualwebarena/phase1/$R/phase1_dom_router_0/condition_summary_v2.json           # 存在 = P0-1 真修好了
+>   ls -l logs/.shop_b0_tail_follow.*'                                                          # .fired 出现 = cell 2-7 已起
 > ```
 >
 > ### 跑完之后会自己往下走（不用人管）
