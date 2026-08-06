@@ -299,3 +299,36 @@ class TestB1960EveryLabelRegisteredAtEveryGate:
                 f"{label}: Gate 7 checks {m.group(1)!r} but the dispatcher "
                 f"launches {dispatch!r} — the gate is inspecting a different chain"
             )
+
+
+class TestB1963ResetFloorAssignsWhatItPrints:
+    """The Magento reset floor must clamp UP to the number it announces.
+
+    codex Mode B P1-4: the branch printed "clamping to 6000s" and then assigned
+    2400. §429 measured reindex alone at ~40 min (2400s), so the effective floor
+    was shorter than a legitimate reset. Blast radius is shop_b0_tail: its first
+    cell dies during reset while the follower has already written FIRED.
+    """
+
+    def test_floor_assigns_6000(self):
+        lib = (REPO_ROOT / "scripts/queues/_lib_paper_grade_gates.sh").read_text(encoding="utf-8")
+        i = lib.index("below the Magento rebuild floor")
+        block = lib[i:i + 1200]
+        m = re.search(r"_reset_timeout=(\d+)", block)
+        assert m, "no assignment found after the clamp message"
+        assert m.group(1) == "6000", (
+            f"clamp announces 6000s but assigns {m.group(1)}s — the floor must not "
+            "silently clamp DOWN below a measured legitimate reset"
+        )
+
+    def test_announced_and_assigned_agree(self):
+        """Guard the general shape, not just this one number."""
+        lib = (REPO_ROOT / "scripts/queues/_lib_paper_grade_gates.sh").read_text(encoding="utf-8")
+        i = lib.index("below the Magento rebuild floor")
+        block = lib[i:i + 1200]
+        announced = re.search(r"clamping to (\d+)s", block)
+        assigned = re.search(r"_reset_timeout=(\d+)", block)
+        assert announced and assigned
+        assert announced.group(1) == assigned.group(1), (
+            f"message says {announced.group(1)}s, code assigns {assigned.group(1)}s"
+        )

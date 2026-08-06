@@ -11320,3 +11320,16 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 - **Cross-link**: B-1957 (被修正的那次) · B-304 (resume 须 RESET_BEFORE=0) · B-224 (auth
   hard-fail) · B-784 (聚合 quarantine 不变量) · B-323 (disk-vs-memory split-brain) ·
   实验笔记 §436
+
+### B-1963. Magento reset floor 打印 6000 却赋值 2400 [P1] 🛠️ FIXED
+
+- **Attack** (codex Mode B P1-4): `_lib_paper_grade_gates.sh` 的 shopping reset floor 分支
+  打印 `clamping to 6000s (B-1954)` 之后执行 `_reset_timeout=2400` —— 消息与赋值不一致,
+  且**向下** clamp 到一个同文件注释(§429 实测)称为不够的数: 单是 reindex 就跑了 40 分钟
+  (2400s), 加重建 + mysqld 等待 + base_url + cache flush 接近 45 分钟。任何继承来的
+  `VWA_RESET_TIMEOUT < 6000` 都会装上一个已知短于合法 reset 的 timeout。
+- **Blast**: `shop_b0_tail` 的第一个 cell 会在 reset 中途被 timeout 杀掉, 而 follower cron
+  早已写下 FIRED flag 不再重试 ⇒ 整条尾链静默停摆。
+- **Fix**: 赋 `6000`。测试断言 (a) 该赋值为 6000, (b) **打印的数与赋的数必须相等** ——
+  后者防的是同类形状复发, 而不只是这一个数字。
+- **Cross-link**: B-1954 (引入该 floor 的那次) · §429.4 (reindex 40 分钟实测) · B-1957 尾链

@@ -793,7 +793,16 @@ reset_and_auth_gate() {
   # shopping reset finishes under it; raising it via the env still works.
   if [[ "${site}" == "shopping" || "${site}" == "shopping_admin" ]] && (( _reset_timeout < 6000 )); then
     echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s below the Magento rebuild floor; clamping to 6000s (B-1954)" >&2
-    _reset_timeout=2400
+    # B-1963 (/stress Mode B P1-4, 2026-08-06): this assigned 2400, not 6000 —
+    # the message and the value disagreed, so the "floor" silently clamped DOWN
+    # to a number the same file's own comment (§429 measurement) says is too
+    # small: reindex alone ran 40 min (2400s), and the full rebuild + mysqld
+    # wait + base_url + cache flush lands near 45 min. Any inherited
+    # VWA_RESET_TIMEOUT below 6000 therefore armed a timeout known to be shorter
+    # than a legitimate reset. Blast radius is the shop_b0_tail chain: its first
+    # cell would die during reset while the follower cron had already written
+    # its FIRED flag and would never retry.
+    _reset_timeout=6000
   fi
   local _reset_rc
   # B-864 (/stress A1.23 P1-7 AB, 2026-05-17): process-group kill + SIGTERM trap.
