@@ -11455,7 +11455,21 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 - **防复发**: `tests/test_b1966_mode_image_contract.py` 12 条。**做过 mutation 验证**——
   把脚本回退成硬编码 → 1 failed; 把 `phantom_som` 混进收图集合 → 3 failed;
   还原 → 12 passed。承重那条是「som 与 phantom_som 的输入必须可区分」。
-- **数据状态**: canonical 24 cell **全部作废**, 需按修复后的代码重跑。
+- **污染面 = 8/24, 不是全部 (2026-08-06 逐 cell 核定, 修正早前"全部作废"的说法)**:
+  修复前 source 侧**无条件**带图、target 侧**无条件**不带图 ⇒
+  `source_mode ∈ {som, vision}` 的 cell **修复前就是对的**。实测:
+  - **受污染 8 个** — 全部 `source=phantom_som`: `p2_psom_ptext_{cls,red}` /
+    `p2_taskshuf_{cls,red}` / `p5_psom_ptext_rev_{cls,red}` / `p5_psom_ptext_rand_{cls,red}`。
+    ⚠️ 这 8 个恰好是 **t39 整张表** (real arm + task-shuffled 控制 + random-injection
+    控制 + 方向控制) ⇒ **主臂与其全部控制组一起中招, t39 结论整体不可用**。
+  - **未受污染 16 个** — `source=som`(argparse 默认), 含全部 p1/p3/p4/p5_rand。
+- **对"图像轴"那条的判定要拆成两半 (早前混为一谈)**: `p4` 系列 **数据未被污染**
+  (source=som, 带图正确)。但「**图像轴**」这个**命名**仍然错 —— p4 三条臂全部以
+  `som` 为 source, 比的是「同一个带图 SoM 表征 → 三个不同 target」, 不是「图像轴 vs
+  文本轴」。**命名/解读错误 ≠ 数据污染**, 前者要改写, 后者不存在。
+- **数据状态**: 8 个受污染 cell 必须重跑; 另 16 个一并重跑, 作用是**副作用检验** ——
+  它们**必须逐位相同**, 否则说明修复动了不该动的东西。双向验收脚本
+  `scripts/mechanistic/verify_b1966_rerun.py`。
   实测节奏 (log mtime 相邻间隔中位数 5.22 h/cell, queue 无并行):
   DGX 单卡串行 ≈ 5.2 天 / Sparks 2 节点 ≈ 2.6 天 / DGX+Sparks×2 ≈ 1.7 天。
 - **发现路径**: 2026-08-06 为 t38/t39 caption 止损核对 canonical 数字时, 先撞见两个 cell
