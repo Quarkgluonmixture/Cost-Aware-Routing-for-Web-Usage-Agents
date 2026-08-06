@@ -11397,3 +11397,34 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 
 `scripts/maintenance/crontab.txt` 补上两条 follow cron。此前它们只手工写进 A100 crontab,
 于是**这次恢复从 commit 状态复现不出来** —— 仓库里有脚本、没有调度。
+
+### B-1966. patching 的 source 侧无条件喂标注图 ⇒ `som` 与 `phantom_som` 不可区分 [P0] ⚠️ OPEN
+
+- **症状（先被发现的是它，不是根因）**: `results/mechanistic/canonical/` 24 个 cell 里
+  只有 **22 个不同的 per_task payload**。`p4_som_ptext_{cls,red}`(声明 `source=som`) 与
+  `p2_psom_ptext_{cls,red}`(声明 `source=phantom_som`) **逐位相同** —— 两个文件仅差 16 字节,
+  正好是 config 里 `phantom_som`→`som` 出现两次的字符差。
+- **根因（三项同时成立，缺一不可）**:
+  1. `run_stage2b_continuation_pilot.py:403` `source_screenshot_path = str(screenshot_annotated)`
+     —— **不看 `args.source_mode`, 无条件传标注图**;
+  2. 同文件 `source_text_payload_for` 把 `som` 与 `phantom_som` 同映射到 `source_som_marks`;
+  3. `build_mode_prompt_dispatch_table()` 里两者的 system prompt **逐字节相同**
+     (md5 `1dcacec32c53`, len 4956) —— 这是**设计如此**, 因为
+     `phantom_som` ≡ SoM prompt **+ 跳过标注图**, 二者唯一的区别就是那张图。
+  ⇒ 文本相同 + prompt 相同 + 图相同 ⇒ **source 侧两个 mode 完全不可区分**。
+- **为什么是 P0**: `phantom_som` 的全部定义就是「没有图」。source 侧喂了图, 等于
+  **把 phantom_som 实现成了 som**。后果:
+  - t39 的 "real arm" (`p2_psom_ptext`) 声称 source = `phantom_som`(无图), **实际带图** ——
+    论文表格的 mode 标注与实际计算不符;
+  - 任何以「有图 vs 无图」为分界的机制结论**全部无效**;
+  - 笔记/任务卡里那条未报告的正面结果「图像轴位移最大 (som→dom 0.475/0.390)」——
+    三条轴的 source **全都带图**, 差异不是「图像轴 vs 文本轴」而是「同一个带图 SoM 表征
+    → 三个不同 target」。**「图像轴」这个命名与解读不成立。**
+- **`p4_som_ptext` 的价值**: 它不是浪费的一次跑, 它是**这个 bug 的探针** ——
+  正因为它与 p2 只差 source_mode 一个参数, 逐位相同才把缺陷暴露出来。
+  其余 p4 cell (`som_dom` / `som_pprompt`) 因 target 不同而结果不同, **掩盖了同一缺陷**。
+- **修**: source 侧按 mode 决定是否传图 (`phantom_som`/`phantom_text`/`phantom_dom`/`dom` → None;
+  `som`/`vision` → 标注图), 与 production agent 的 `image_included` 契约对齐, 并补一条
+  「两个 mode 的 source 输入必须不同」的断言测试 —— 否则同类缺陷只能靠 24 选 2 的偶然碰撞发现。
+- **发现路径**: 2026-08-06 为 t38/t39 caption 止损核对 canonical 数字时, 先撞见两个 cell
+  数字八位全同, 顺藤查到 queue 参数 → 默认值 → prompt 表。**不是任何测试抓到的。**

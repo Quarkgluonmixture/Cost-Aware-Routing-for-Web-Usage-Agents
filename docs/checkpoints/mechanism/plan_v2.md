@@ -43,35 +43,81 @@ M3 工作量最小且最接得上论文既有文本。
 > 定位到第几层）。要报的是对 argmax 不敏感的量：**曲线极差、并列层数、效应的符号与量级、
 > 以及跨重跑的一致性**。任何新实验都必须预注册「曲线极差低于多少判为无定位」。
 
-同时有一条**从未报告的正面结果**，它对 argmax 不敏感，因此在新口径下依然存活：
+### ⛔ 第三条：那个「未报告的正面结果」也不能用了（B-1966，2026-08-06 当天发现）
 
-> **图像轴的位移最大**。非随机臂里 `som → dom` 位移 **0.475 (cls) / 0.390 (red)**，
-> 超过 prompt-style 轴（0.271 / 0.300）与 text-format 轴（0.333 / 0.293）。
-> 把 SoM 的隐状态贴进 DOM 的运行，位移比任何纯文本轴都大 —— 与行为层「能不能看见图
-> 这一刀最深」同向。这条从未被任何产物读过。
+首版这里写了一条「从未报告的正面结果」：*图像轴位移最大，`som → dom` 0.475 (cls) /
+0.390 (red)，超过 prompt-style 轴与 text-format 轴* —— 并说它对 argmax 不敏感所以在新
+口径下存活。**撤回。**
+
+核对 canonical 数字时先撞见一个症状：24 个 cell 只有 **22 个不同的 per_task payload**，
+`p4_som_ptext_*`（声明 `source=som`）与 `p2_psom_ptext_*`（声明 `source=phantom_som`）
+**逐位相同**。顺藤查到根因，三项同时成立：
+
+1. `run_stage2b_continuation_pilot.py:403` —— `source_screenshot_path = str(screenshot_annotated)`，
+   **不看 `args.source_mode`，无条件传标注图**；
+2. 同文件 `source_text_payload_for` 把 `som` 与 `phantom_som` 同映射到 `source_som_marks`；
+3. `build_mode_prompt_dispatch_table()` 里两者的 system prompt **逐字节相同**
+   （md5 `1dcacec32c53`）—— 这是**设计如此**，因为 `phantom_som` ≡ SoM prompt **+ 跳过标注图**。
+
+文本相同 + prompt 相同 + 图相同 ⇒ **`som` 与 `phantom_som` 在 source 侧完全不可区分**，
+即 **`phantom_som` 被实现成了 `som`**。
+
+**后果**：三条轴的 source **全都带图**，所以那个差异不是「图像轴 vs 文本轴」，而是
+「同一个带图的 SoM 表征 → 三个不同 target」。**「图像轴」这个命名和解读不成立。**
+更广地：任何以「有图 vs 无图」为分界的机制结论都无效，而 t39 的 "real arm"
+声称 source 是 `phantom_som`（无图）实则带图 —— **论文表格的 mode 标注与实际计算不符**。
+
+> **`p4_som_ptext` 不是浪费的一次跑，它是这个 bug 的探针。** 正因为它与 p2 只差
+> `source_mode` 一个参数，逐位相同才把缺陷暴露出来；其余 p4 cell 因 target 不同而结果
+> 不同，**掩盖了同一个缺陷**。这也是为什么修它的时候必须补一条「两个 mode 的 source
+> 输入必须不同」的断言测试 —— 否则同类缺陷只能靠 24 选 2 的偶然碰撞发现。
+
+⇒ **机制层现存的 patching 结论，正面的和负面的，现在都不可用。** 先修 B-1966 重跑，
+才谈得上读数。这不改变 M1/M2/M3 的设计（三者都不依赖历史 patching 产物），但取消了
+「有一条现成正面结果可以接」这个前提。
 
 ---
 
 ## §2 数据版图（决定什么能做、什么不能）
 
-实测于 2026-08-06，不是推断：
+> **⚠️ 本节 2026-08-06 首版写错并已重写。** 首版称「WA observation artifacts = 0，
+> 机制层无法覆盖第二基准」。那个 0 是在 **DGX 本地** `find` 出来的，而
+> `sync_a100_results.sh` 自 2026-07-21 起对 `phase1/` 施加 `--exclude artifacts/`
+> ＋ `--delete-excluded`，脚本注释原文：*"A100 is the source of truth and retains
+> them"*。**0 是同步策略的产物，不是世界的属性。** 更正见下表。
+>
+> 教训与 AMENDMENT_10 §2 那次（裸 curl 不带 `storage_state` 去探 `require_login` 页面，
+> 把 24 个 task 误判成「资源不存在」）**是同一个**，间隔不到一天。写下来的教训没有生效，
+> 因为缺的不是知识而是动作：**测到 0，必须先问一次「为什么是 0」再往下写。**
+
+实测于 2026-08-06（**A100 侧**，`condense-a100`）：
 
 | 资产 | 规模 | 能支持什么 |
 |---|---|---|
-| `results/mechanistic/_canonical_artifacts/` | **2 cells**（B1·cls 225 tasks + B1·red 206 tasks），**8586 step**，每 step **dom + som 观测全部成对**（0 缺失）+ SoM 标注图 | M2 / M3 的全部原料 |
-| `results/repro_replicates/` | 2 个 clean replicate（B0·dom·cls + B0·vision·cls），7082 dom 观测 | flip vs stable 的配对分析 |
-| `scripts/analysis/b0_paired_idperturb_replay.py` | 成熟、已用于论文。读 cached artifacts，**不连 live 站点**；B0(proxy) + B1(local GPU) 双层；已实现 `permute_ids` / id-agnostic 的 `resolve`+`dsig` / mode_flip / consistency | M1 直接复用 |
+| **VWA `phase1/` artifacts（A100）** | **437,681 文件**；20+ condition 覆盖 **B0/B1/B2 × cls/red/shop × 6 modes**，每 condition 4,800–7,900 个 `observation_dom.txt` | M1/M2/M3 全部，且 cell 数足以做跨 cell 统计 |
+| **WA `phase1/` artifacts（A100）** | **65,405 文件 / 28,159 个 `observation_dom.txt`**；**12 condition** = B0 + B1 × wa_reddit × 6 modes | **机制层可以覆盖第二基准** |
+| 文本观测总量（VWA+WA） | **251,549 文件 / 0.84 GB**（均 3.5 KB） | 全量拉到 DGX 完全可行 |
+| 截图等全量 artifacts | VWA 44 G + WA 3.9 G | 前期三个实验都不需要图，**不拉** |
+| `results/mechanistic/_canonical_artifacts/`（DGX 已有） | 2 cells（B1·cls 225 + B1·red 206），8,586 step，**dom+som 成对**（0 缺失）+ SoM 标注图 symlink | M3 的现成配对基底；M1 pilot 的最快起点 |
+| `results/repro_replicates/`（DGX 已有） | 2 个 clean replicate（B0·dom·cls + B0·vision·cls），7,082 dom 观测 | flip vs stable 的配对分析 |
+| `scripts/analysis/b0_paired_idperturb_replay.py` | 成熟、已用于论文。读 cached artifacts，**不连 live 站点**；B0(proxy)+B1(local GPU) 双层；已实现 `permute_ids` / id-agnostic 的 `resolve`+`dsig` / mode_flip / consistency | M1 直接复用 |
 | `p79/mechanistic/` | `activation_patching.py` / `extract_hidden_states.py` / `linear_probe.py` | M1 / M2 |
-| **WebArena** | **observation artifacts = 0** | ⚠️ **机制层无法覆盖第二基准** |
 
-### ⚠️ 两条硬约束，方案必须绕开而不是假装没有
+### 拉取策略：**必须落在 `phase1/` 之外**
 
-**(1) WA 没有任何 observation artifacts。** `find results/webarena -path '*artifacts*' -type f`
-返回 0；artifacts 目录存在但是空的。所以「机制层覆盖 VWA + WA 两个基准」目前**不可能**，
-除非重跑 WA 并开启 artifact 保存 —— 而 WA 需要 live site（在 A100 上，且 A100 正在跑
-shop_b0_tail 那条 ~10 天的链）。**这条要么接受单基准，要么排进 A100 的队列，没有第三条路。**
+文本观测已镜像到 **`results/mechanistic/_obs_mirror/{visualwebarena,webarena}/`**。
 
-**(2) 配对观测来自 som trajectory。** 两个 cell 都是 `B1_som_*` 的 run —— 同一次运行里
+⚠️ **不能拉进 `results/*/phase1/`**：那棵树受 `--exclude artifacts/ + --delete-excluded`
+管理，下一次 cron sync 会把拉下来的东西清干净。这正是 `repro_replicates/README.md`
+记录过的坑（它把自己放在 `phase1/` 外面就是为了这个）。`_obs_mirror` 在 `mechanistic/`
+下，cron 的 delete 策略够不到。
+
+### ⚠️ 剩下的真实约束
+
+**(1) A100 磁盘余量 60 G（已用 88%）**，而 fire 还要跑约 10 天。VWA `phase1/` 已占 44 G。
+这不影响机制层（我们只读、且只拉 0.84 G 文本），但**是 fire 侧的独立风险**，需要有人盯。
+
+**(2) 配对观测来自 som trajectory。** `_canonical_artifacts` 的两个 cell 都是 `B1_som_*` 的 run —— 同一次运行里
 同时记录了 dom 与 som 两种观测。所以 dom 观测是「当时若用 dom 会看到什么」的**反事实
 观测**，agent 实际走的是 som 轨迹。
 
@@ -155,10 +201,14 @@ set-difference gain would be arithmetic across estimands"）。
 ### ⚠️ 这条最容易过度宣称，两处必须写死
 
 1. **训练 probe 仍然需要标签。** 它攻击的是「标签必须来自**同一个** cell」，不是「不需要
-   标签」。断言里不能出现 "label-free"。
-2. **只有 2 个 cell 有配对数据**（B1·cls、B1·red）→ 跨 cell 迁移只有**一组方向对**。
-   n=2 不足以主张迁移性。**这是 pilot，不是结论**；要成为结论需要更多 cell 的 artifacts，
-   而那要么重跑要么从 fire 里开 artifact 保存。
+   标签」。断言里不能出现 "label-free"。这条是永久的，不随数据量改变。
+2. **cell 数取决于 normalize 多少，不是硬上限 2。** 首版这里写「只有 2 个 cell → 一组
+   方向对 → 只能算 pilot」，那是基于错的数据版图（见 §2 更正）。A100 上有 20+ 个 VWA
+   condition 与 12 个 WA condition 的观测，够覆盖论文那 8 个 cell。
+   **现存的硬限制换成了两条更小的**：(a) `_canonical_artifacts` 目前只 normalize 了
+   2 个 cell 的 **dom+som 成对**布局，扩到更多 cell 要跑
+   `normalize_canonical_artifacts.py`；(b) 每个 cell 的标签数仍然受该 cell 的 SR 限制 ——
+   这正是论文那堵墙，probe 绕不开它，只能试图跨 cell 搬运。
 
 ### 与论文 ρ=0.952 那条的关系
 
@@ -181,8 +231,16 @@ M2 若成立，等于说这条耦合可以被**跨 cell 的表征信号**部分�
 
 ### 断言
 
-> 不同 mode 的表征高度共享，且共享程度可预测它们成功集合的重叠度。跨 mode 表征相似度
-> 最低的轴是**图像轴**（som↔dom），与已有的位移结果（0.475 / 0.390 > 文本轴）同向。
+> 不同 mode 的表征高度共享，且共享程度可预测它们成功集合的重叠度。
+
+**关于「图像轴相似度最低」这个更强的版本**：首版把它写进了断言，理由是与位移结果
+（0.475 / 0.390 > 文本轴）同向 —— **该理由已随 B-1966 作废**（§1 第三条：那三条轴的
+source 全都带图，位移差异不是图像轴造成的）。
+
+它仍然是一个**合理的先验**（行为层「能不能看见图这一刀最深」是独立证据），但现在
+**M3 要独立检验它，不能引位移结果当支撑**。这反而让 M3 更有价值：它成了第一个
+不受 B-1966 污染的图像轴证据来源，因为它读的是 observation 与表征本身，不经过
+patching 那条坏掉的路径。
 
 ### 做法
 
@@ -191,9 +249,12 @@ M2 若成立，等于说这条耦合可以被**跨 cell 的表征信号**部分�
 - 逐层算跨 mode 表征相似度（CKA / 子空间主角）。
 - 关联表征相似度与成功集合的 Jaccard 重叠。
 
-### 工作量最小，但结论最弱
+### 工作量最小
 
-⚠️ 2 cells × 3 轴算不出统计显著性。**这条只能作为机制叙事支撑，不能作为独立 claim。**
+⚠️ 若只用现成的 2 个 normalize 好的 cell，3 条轴上算不出统计显著性，那样它**只能作为
+机制叙事支撑，不能作为独立 claim**。要成为独立 claim，得先把更多 cell 过一遍
+`normalize_canonical_artifacts.py`（§2 更正后这是可行的，不再是数据不存在）。
+
 它的价值在于把论文的一个 anomaly 从「我们观察到」变成「因为表征不独立」，并给出一个
 可操作的推论：**要让 routing 有价值，得在表征上最不相似的轴（图像轴）拉开 mode，
 而不是在 prompt-style 轴上** —— 这直接指导下一代 mode 设计。
@@ -206,7 +267,7 @@ M2 若成立，等于说这条耦合可以被**跨 cell 的表征信号**部分�
 |---|---|---|
 | **DGX Spark** (`spark-9ea3`) | 环境齐、数据在本地、GPU 共享有争抢 | M1 pilot（先跑通）、M2 probe 训练（轻）、全部分析与聚合 |
 | **Holistic AI Sparks** (`spark-9017` idle + `spark-97a6` mix) | `ssh sparks` 通；`main` 分区 wallclock **3 天**；⚠️ **`/clusterhome/jiaming` 是空的**（只有 Desktop/snap）—— 无 venv、无代码、无数据 | M1 全量 patching sweep（GPU 密集、按 task 天然可切片）、M3 hidden state 批量提取 |
-| A100 | 正在跑 shop_b0_tail（~10 天） | **不碰**。除非决定补 WA artifacts，那要排队 |
+| A100 | 正在跑 shop_b0_tail（~10 天）；**是 artifacts 的 source of truth**；磁盘只剩 60 G | **不跑计算**，只做只读 rsync（0.84 G 文本，已完成）。补 WA artifacts **不需要重跑、不需要排队** —— 数据一直都在 |
 
 ### 建议的顺序（不要先铺 Sparks）
 
@@ -224,9 +285,10 @@ sm_121 fallback。**先在 DGX 上把 M1 pilot 跑通、确认曲线极差不是
 | | 实验 | 先决条件 | 判为失败的标准 |
 |---|---|---|---|
 | 1 | **M1** id-churn 机制 | 无（工具已就绪） | 真实臂曲线极差 < 随机位置对照 → 无定位，按阴性写 |
-| 2 | **M3** 跨 mode 表征相似度 | 无（数据已就绪） | 图像轴相似度不低于文本轴 → 与位移结果矛盾，需先解释矛盾 |
+| 2 | **M3** 跨 mode 表征相似度 | 无（数据已就绪） | 表征相似度与成功集合重叠度无关联 → 「不独立」的机制解释不成立。（图像轴那条改为独立检验，**不得**引 B-1966 污染的位移结果当支撑） |
 | 3 | **M2** 跨 cell probe | M3 提供的表征口径 | 跨 cell AUROC ≈ 0.5 或 ≤ zero-cost text rule → 无迁移价值 |
-| 0 | **止损**：t38/t39 caption 改口径 | 无 | — （camera-ready 前必须做） |
+| 0 | **止损 a**：t38/t39 caption 改口径 | 无 | — （camera-ready 前必须做） |
+| 0 | **止损 b**：修 B-1966 后重跑 patching | 无 | — （在此之前**任何** patching 数字都不可引用，正负皆然） |
 
 **三条都预设了可以写成阴性。** 这是刻意的：这篇论文的说服力来自它敢报 negative result，
 机制层如果只准备了「成立」的叙事，会和论文的气质相冲。
