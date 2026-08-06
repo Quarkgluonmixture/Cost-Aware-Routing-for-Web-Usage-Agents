@@ -23,6 +23,38 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## ✅ 2026-08-06 中午 · **REALM 已提交（Submission 192）· 论文线冻结**
+>
+> chronicle → **笔记 §438**（截稿日 36 小时全记录：终审裁决 / 三轮可读性 / 两张图 / 七次撞车）。
+>
+> **OpenReview Submission #192** · `Non-archival long` ·
+> Cross Submission To: `Plan to submit to ACL ARR 2026 August`（**主会投稿权保住**）·
+> 作者四人 · notif **09-07** / camera **09-14**。
+> 最终稿 `d737f92`：正文 8 页 / 35 页 A4 / 0 error / 0 undefined / 首页 Anonymous。
+>
+> ### 论文侧不再改动
+>
+> Overleaf `~/overleaf-aaai27` 与 origin 同步。提交已完成，**任何后续改动只对
+> camera-ready（09-14）有意义**，不要再动投稿版。
+>
+> ### 未做的终审条目（全部不影响结论，留给 camera-ready）
+>
+> | 条 | 位置 | 成本 |
+> |---|---|---|
+> | `cla·SoM` typo | `tables/tab37.tex:35` → 应为 `cls·SoM` | 30 秒；⚠️ 该表由 producer 生成，**要回生成端改**否则重生成会复现 |
+> | P1.15 标签描述 | §lowerbound「the cheapest mode that solved」实为 fixed priority order 取第一个成功者 | 一个从句 |
+> | P1.16 Avenir-Web | `paper.bib` 已有条目，正文未引 | 一句 |
+> | P1.17 三条引用 | Mind2Web / SeeAct "the bottleneck" / Hajimiri "erases" 各一处过度概括 | 各半句 |
+>
+> 判定**不改**的 5 条及理由 → 见下方 08-05 夜块的分流表（P1.1/P1.2/P1.7/P1.8/P1.13）。
+>
+> ### 接下来（论文线）
+>
+> 1. **毕设 D9 全稿 08-10**（4 天后，`task_thesis_draft`）
+> 2. **机制层 reaggregation** —— advisor 05-14 搁置、08-03 解冻，`task_mechanism_reaggregation`
+>    标的就是「REALM 之后」
+> 3. camera-ready 前把上表四条 + 附录通读补上
+
 > ## 🔵 2026-08-06 上午 · **VWA shopping B0 fire 恢复中**（fire 线最新，与上面 REALM 线并行）
 >
 > chronicle → **笔记 §436 + §437**。fire 在 A100，**不在 DGX**。
