@@ -143,14 +143,20 @@ class TestTailBuilder:
         assert tail[-1] == full[0], "replicate arm must remain in the tail chain"
         assert "dom" in tail[-1]
 
-    def test_tail_ignores_resume_missing(self):
-        """With RESUME_MISSING=1 and a stub that calls everything complete, the
-        full builder empties out — the tail builder must NOT, or it would drop a
-        different line than the dom arm (and B-1959 would eat the replicate)."""
+    def test_tail_supports_resume_but_never_drops_the_replicate(self):
+        """B-1959 fix changed this deliberately: the DERIVATION still runs with
+        RESUME_MISSING off (so `tail -n +2` always drops the dom main arm, not
+        whatever the filter happened to leave first), but the derived cells then
+        DO go through the filter — a 9.7-day chain that cannot resume would
+        re-run everything after any interruption.
+
+        The replicate arm stays exempt: once the dom MAIN arm is bound its key is
+        indistinguishable from the replicate's, so any filter reads the replicate
+        as already done."""
         full, tail = self._run_builders(resume_missing="1")
         assert full == [], "stub says everything is done, so the full chain filters to empty"
-        assert len(tail) == 6, (
-            f"tail must force RESUME_MISSING off and still yield 6 cells, got {tail}"
+        assert tail == ["queue_baseline.sh B0 dom shopping"], (
+            f"with everything complete, only the exempt replicate arm may remain, got {tail}"
         )
 
 
@@ -212,13 +218,24 @@ class TestTailFollowGuards:
         assert not re.search(r'pgrep -f ["\']run_experiment', code), "bare pgrep self-matches"
 
     def test_is_idempotent_and_fails_closed(self):
+        """B-1964 UPDATED this test's contract on purpose.
+
+        It used to assert `FIRED flag must be set before launching`, i.e. it
+        pinned the very defect codex P1-1 flagged: writing the terminal flag
+        before knowing whether the launch survived the gates turned every
+        transient failure into a permanent self-lock. A test that encodes a bug's
+        behaviour actively defends that bug when someone tries to fix it.
+
+        The new contract: idempotent via FIRED, concurrency via flock, and FIRED
+        written only after a live chain pid is confirmed."""
         code = TAIL_FOLLOW.read_text(encoding="utf-8")
-        assert '[ -f "${FIRED}" ] && exit 0' in code, "must be idempotent"
-        # flag written BEFORE launch: prefer missing a launch over two chains
-        # fighting over one Magento container.
-        fired_at = code.index('touch "${FIRED}"     # 先落 flag')
-        launch_at = code.index("launch shop_b0_tail")
-        assert fired_at < launch_at, "FIRED flag must be set before launching"
+        assert '[ -f "${FIRED}" ] && exit 0' in code, "must stay idempotent"
+        assert "flock -n 9" in code, "concurrency must be guarded by flock, not flag ordering"
+        launch_at = code.index("launching shop_b0_tail")
+        after = code[launch_at:]
+        assert "kill -0" in after[:after.index("${FIRED}")], (
+            "FIRED must come AFTER confirming the chain is alive"
+        )
 
 
 class TestB1960EveryLabelRegisteredAtEveryGate:
@@ -332,3 +349,124 @@ class TestB1963ResetFloorAssignsWhatItPrints:
         assert announced.group(1) == assigned.group(1), (
             f"message says {announced.group(1)}s, code assigns {assigned.group(1)}s"
         )
+
+
+class TestB1959OneBindingRetiresOneLine:
+    """A single manifest binding may retire ONE chain line, not every line that
+    happens to parse to the same key.
+
+    shop_b0 lists `queue_baseline.sh B0 dom shopping` twice on purpose (cell 7 is
+    the replicate arm carrying the site's stochastic noise floor; §242/§293 hang
+    on it). `_condition_complete` keys on site|baseline|mode, so a completed dom
+    used to match BOTH lines and drop the replicate silently — under the
+    appearance of a successful resume. The watchdog auto-binds the moment dom
+    finishes (`_auto_bind_manifest`), so this was days away from firing, not
+    hypothetical.
+    """
+
+    def _filter(self, lines, complete_pred="return 1"):
+        harness = f"""
+        log() {{ :; }}
+        _condition_complete() {{ {complete_pred}; }}
+        eval "$(sed -n '/^_resume_filter_done() {{/,/^}}/p' {ORCH})"
+        printf '%s\\n' {' '.join(repr(l) for l in lines)} | RESUME_MISSING=1 _resume_filter_done
+        """
+        out = subprocess.run(["bash", "-c", harness], capture_output=True, text=True).stdout
+        return [l for l in out.strip().splitlines() if l.strip()]
+
+    DOM = "queue_baseline.sh B0 dom shopping"
+    SOM = "queue_baseline.sh B0 som shopping"
+
+    def test_duplicate_line_survives_a_single_binding(self):
+        """The load-bearing assertion: dom bound → first line goes, replicate stays."""
+        kept = self._filter([self.DOM, self.SOM, self.DOM],
+                            complete_pred='case "$1" in *"dom shopping"*) return 0;; *) return 1;; esac')
+        assert kept.count(self.DOM) == 1, f"replicate arm lost: {kept}"
+        assert self.SOM in kept, "unbound line must be kept"
+
+    def test_distinct_lines_behave_exactly_as_before(self):
+        """cls/red chains have 18 distinct lines — their behaviour must not change."""
+        kept = self._filter([self.DOM, self.SOM], complete_pred="return 0")
+        assert kept == [], "all-distinct + all-complete must filter to empty"
+
+    def test_no_filtering_when_resume_missing_is_off(self):
+        harness = f"""
+        log() {{ :; }}
+        _condition_complete() {{ return 0; }}
+        eval "$(sed -n '/^_resume_filter_done() {{/,/^}}/p' {ORCH})"
+        printf '%s\\n' '{self.DOM}' '{self.SOM}' | _resume_filter_done
+        """
+        out = subprocess.run(["bash", "-c", harness], capture_output=True, text=True).stdout
+        assert len([l for l in out.strip().splitlines() if l.strip()]) == 2
+
+
+class TestB1964ThreeStateFollower:
+    """"Should not fire right now" must not be written as "never fire again"."""
+
+    def _src(self):
+        return TAIL_FOLLOW.read_text(encoding="utf-8")
+
+    def test_held_is_separate_from_fired(self):
+        src = self._src()
+        assert "HELD=" in src, "HELD state missing"
+        # the not-complete branch must write HELD, never FIRED
+        i = src.index("dom runner 已消失但数据未完成")
+        branch = src[i - 600:i + 600]
+        assert 'touch "${FIRED}"' not in branch, (
+            "the data-incomplete branch must NOT write FIRED — that turns an "
+            "operator-initiated stop into a permanent self-lock (observed "
+            "2026-08-06 08:30)"
+        )
+        assert '"${HELD}"' in branch
+
+    def test_held_clears_once_data_completes(self):
+        src = self._src()
+        assert 'rm -f "${HELD}"' in src, "HELD must clear when the run completes"
+
+    def test_fired_written_only_after_chain_confirmed(self):
+        """FIRED must follow a live chain pid, not merely a spawn."""
+        src = self._src()
+        launch_at = src.index("launching shop_b0_tail")
+        after = src[launch_at:]
+        fired_at = after.index("${FIRED}")
+        assert "kill -0" in after[:fired_at], (
+            "must verify the chain pid is alive before writing FIRED"
+        )
+        assert "chain_pid=" in src
+
+    def test_failed_launch_stays_retryable(self):
+        src = self._src()
+        i = src.index("launch 未确认")
+        tail = src[i:i + 500]
+        assert 'touch "${FIRED}"' not in tail and '> "${FIRED}"' not in tail, (
+            "an unconfirmed launch must remain retryable"
+        )
+
+    def test_concurrency_guarded_by_flock_not_by_flag_ordering(self):
+        src = self._src()
+        assert "flock -n 9" in src, "must use flock for the launch critical section"
+
+    def test_running_chain_is_adopted(self):
+        """Else a 10-day chain finishes and the next tick launches a second one."""
+        src = self._src()
+        assert "补记 LAUNCHED" in src
+        assert "queue_chain\\.sh" in src or "queue_chain" in src
+
+
+class TestB1965LockDocumentation:
+    def test_no_rm_lock_advice(self):
+        src = (REPO_ROOT / "scripts/queues/queue_chain.sh").read_text(encoding="utf-8")
+        assert "to force-release" not in src, (
+            "removing a flock'd lock file cannot release it and lets a second "
+            "process lock a different inode — the exact collision it guards"
+        )
+        assert "lslocks" in src, "should point at the real diagnostic instead"
+
+
+class TestCronIsVersionControlled:
+    """The recovery must be reproducible from committed state (codex P2-2)."""
+
+    def test_both_follow_crons_are_declared(self):
+        ct = (REPO_ROOT / "scripts/maintenance/crontab.txt").read_text(encoding="utf-8")
+        assert "_cron_shop_b0_tail_follow.sh" in ct
+        assert "_cron_wa_shop_follow.sh" in ct

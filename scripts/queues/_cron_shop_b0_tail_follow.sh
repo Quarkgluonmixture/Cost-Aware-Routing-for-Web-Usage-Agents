@@ -24,7 +24,9 @@ set -uo pipefail
 cd /home/ubuntu/workspace/p79 2>/dev/null || cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 ARMED=logs/.shop_b0_tail_follow.armed
-FIRED=logs/.shop_b0_tail_follow.fired
+FIRED=logs/.shop_b0_tail_follow.fired      # LAUNCHED — chain 已确认起来 (终态, 幂等)
+HELD=logs/.shop_b0_tail_follow.held        # 已就「数据不全」告警过 (仅去重, NOT 终态)
+LOCK=logs/.shop_b0_tail_follow.lock        # 防两个 tick 同时 launch
 NTFY="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 COND_ID=phase1_dom_router_0
 EXPECTED_N=435          # scored_task_count[shopping]; 与 queue_chain.sh 的表一致
@@ -44,6 +46,20 @@ _live_dom_runner() {
 }
 
 [ -f "${FIRED}" ] && exit 0
+
+# B-1964: 如果 tail chain 其实已经在跑 (上一个 tick 启动了, 但确认轮询超时没能
+# 写下 FIRED), 补记终态并退出。否则等这条 10 天的 chain 跑完、runner 消失之后,
+# 下一个 tick 会把它当成「还没启动过」再启动一次。
+_running_chain_pid=$(tr -d "[:space:]" < logs/queue_phase1_shop.latest.pid 2>/dev/null || true)
+if [ -n "${_running_chain_pid}" ] && kill -0 "${_running_chain_pid}" 2>/dev/null \
+   && ps -o args= -p "${_running_chain_pid}" 2>/dev/null | grep -q "queue_chain\.sh"; then
+  {
+    echo "chain_pid=${_running_chain_pid}"
+    echo "launched_at=unknown (adopted by a later tick)"
+  } > "${FIRED}"
+  log "tail chain 已在跑 (pid=${_running_chain_pid}) — 补记 LAUNCHED"
+  exit 0
+fi
 
 # ── 尚未 arm: 只有见到活的 dom runner 才 arm ───────────────────────────────
 # 不能无条件 arm: 那样会把一个早已结束的旧 run 当成要等的对象, 并在下一个 tick
@@ -97,13 +113,23 @@ if [ "${STATE}" != "complete" ]; then
   if [ -n "${NOW_ST}" ] && [ "${NOW_ST}" = "${ARM_ST}" ]; then
     exit 0                      # 同一个 runner 还在跑 → 继续等 (安静, 不刷日志)
   fi
-  # runner 没了而数据不全: 又一次 abort, 或被杀。**有意不 fire**。
-  log "dom runner 已消失但数据未完成 (${VERDICT}) — 不 fire, 等待人工裁定"
-  curl -sf -d "shop tail follow HELD: dom ${VERDICT} (run ${ARM_RUN})" "ntfy.sh/${NTFY}" >/dev/null 2>&1 || true
-  touch "${FIRED}"              # 别每 10 分钟重复告警
+  # runner 没了而数据不全: 又一次 abort, 或被人工停下。**有意不 fire**。
+  #
+  # B-1964 (/stress 2026-08-06): 这里以前 `touch FIRED` —— 把「暂时不该 fire」写成了
+  # 「永远不要 fire」。实证 2026-08-06 08:30: 我为部署修复而**有意**停 runner, 下一个
+  # tick 就把这次人工操作当成故障并永久自锁, 得手工删 flag 才能恢复。
+  # 现在分两个状态: HELD 只用于告警去重 (可反复进入、随时可恢复), FIRED 只在 chain
+  # 确认起来后才写。安全方向不变 —— 依然不 fire。
+  if [ ! -f "${HELD}" ]; then
+    log "dom runner 已消失但数据未完成 (${VERDICT}) — 不 fire, 等待人工裁定 (HELD)"
+    curl -sf -d "shop tail follow HELD: dom ${VERDICT} (run ${ARM_RUN})" "ntfy.sh/${NTFY}" >/dev/null 2>&1 || true
+    echo "${VERDICT}" > "${HELD}"
+  fi
   exit 1
 fi
 
+# 数据齐了 ⇒ 之前的 HELD 不再成立 (例如: 人工停机 → 修复 → 重启 → 跑完)。
+rm -f "${HELD}"
 log "dom 主臂完成 (${VERDICT}, run=${ARM_RUN})"
 
 # storefront 必须真的在服务, 才轮得到我们再去 reset 它
@@ -121,10 +147,50 @@ if ps -eo args= 2>/dev/null | grep -q '[r]un_experiment\.py'; then
   exit 0
 fi
 
+# B-1964: 并发保护改用 flock (内核级, 进程死即释放), 不再靠「先写 flag」。
+# 先写 flag 的老做法把「启动失败」也变成了终态 —— orchestrator 有 8 道 gate,
+# 任何一道拒绝都会让 chain 当场退出, 而 flag 已落、ntfy 已报「launched」。
+exec 9>"${LOCK}"
+if ! flock -n 9; then
+  log "另一个 tick 正在启动 — 本轮跳过"
+  exit 0
+fi
+
 TS=$(date +%Y%m%d_%H%M%S)
-touch "${FIRED}"     # 先落 flag 再启动: 宁可漏启动也不要两条 chain 抢同一个 Magento
+LOGF="logs/orchestrator_shop_b0_tail_${TS}.log"
 log "launching shop_b0_tail (cell 2-7)"
 setsid nohup bash -c "source scripts/vwa_env_remote.sh 2>/dev/null; exec bash scripts/queues/queue_phase1_paper_grade.sh launch shop_b0_tail" \
-  > "logs/orchestrator_shop_b0_tail_${TS}.log" 2>&1 < /dev/null &
-curl -sf -d "shop_b0_tail chain launched (dom ${VERDICT}): logs/orchestrator_shop_b0_tail_${TS}.log" "ntfy.sh/${NTFY}" >/dev/null 2>&1 || true
-log "done → logs/orchestrator_shop_b0_tail_${TS}.log"
+  > "${LOGF}" 2>&1 < /dev/null &
+_spawn=$!
+
+# 确认它真的活过了 gate 才记 LAUNCHED。
+# 时长依据: 2026-08-04 那次 orchestrator 实测 00:33:56 拿锁 → 00:36:07 启动 chain,
+# 即 8 道 gate + 三站 warmup 约 2 分 11 秒。一次性 sleep 45 会在 gate 还没跑完时
+# 就判「未起来」。轮询到 6 分钟, 命中即停 (成功路径通常 ~2.5 分钟返回)。
+_chain_pid=""
+for _i in $(seq 1 12); do
+  sleep 30
+  _chain_pid=$(tr -d "[:space:]" < logs/queue_phase1_shop.latest.pid 2>/dev/null || true)
+  [ -n "${_chain_pid}" ] && kill -0 "${_chain_pid}" 2>/dev/null && break
+  # orchestrator 在 gate 失败时秒退且不留活进程; 若它的 log 已写出 FAIL 就不必再等
+  if grep -q "gate(s) failed; abort" "${LOGF}" 2>/dev/null; then
+    log "orchestrator gate 失败 — 提前结束确认轮询"
+    break
+  fi
+done
+if [ -n "${_chain_pid}" ] && kill -0 "${_chain_pid}" 2>/dev/null; then
+  {
+    echo "chain_pid=${_chain_pid}"
+    echo "launched_at=$(date -Is)"
+    echo "log=${LOGF}"
+  } > "${FIRED}"
+  curl -sf -d "shop_b0_tail chain launched (dom ${VERDICT}, chain pid=${_chain_pid}): ${LOGF}" "ntfy.sh/${NTFY}" >/dev/null 2>&1 || true
+  log "LAUNCHED chain pid=${_chain_pid} → ${LOGF}"
+else
+  # 没起来 —— **不写 FIRED**, 下个 tick 会再试 (gate 失败往往是暂时的:
+  # 站点未就绪 / 残留 runner / 锁被占)。
+  log "launch 未确认 (chain pid=${_chain_pid:-none} 不存活) — 不标记 LAUNCHED, 10 分钟后重试"
+  log "  排查: tail -30 ${LOGF}"
+  curl -sf -d "shop_b0_tail launch NOT confirmed — will retry. See ${LOGF}" "ntfy.sh/${NTFY}" >/dev/null 2>&1 || true
+  exit 1
+fi

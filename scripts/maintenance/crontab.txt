@@ -51,3 +51,19 @@ NTFY_TOPIC=p79-exp-dgx-spark
 # UnboundLocalError/deferred-save-failed flood) + manifest ghost/over-complete. ntfy
 # verdict ✅/🔴 each run; full output → logs/cron/paper_grade_check.log. (set 2026-05-22)
 30 8,20 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "paper-grade-check" -- bash scripts/maintenance/paper_grade_check.sh >> logs/cron/paper_grade_check.log 2>&1
+
+# ---------------------------------------------------------------------------
+# A100 fire-side follow-on chains (B-1957 / B-1964, 2026-08-06)
+#
+# ⚠️ 这两条只装在 **A100 paper-grade host**, 不装 DGX —— 它们检查 A100 上的
+# run 目录并会启动 chain。DGX 上装了也只是每 10 分钟空跑一次 (找不到 run 就
+# 退出), 但没有意义。
+#
+# 之所以入版本控制: 2026-08-06 之前这两条只手工写进 A100 crontab, 于是那次恢复
+# **从 commit 状态复现不出来** —— 仓库里有脚本、没有调度, 谁 clone 都不知道它
+# 该被 cron 起 (codex /stress P2-2)。
+#
+# shop_b0_tail: 等人工 resume 的 dom 主臂跑完 → 自动接 cell 2-7
+*/10 * * * * cd $REPO && bash scripts/queues/_cron_shop_b0_tail_follow.sh >> logs/shop_b0_tail_follow.log 2>&1
+# wa_shop: 等整条 VWA shop chain 收尾 (rc=0) → 自动接 WA shopping B0 chain
+*/10 * * * * cd $REPO && bash scripts/queues/_cron_wa_shop_follow.sh >> logs/wa_shop_follow.log 2>&1

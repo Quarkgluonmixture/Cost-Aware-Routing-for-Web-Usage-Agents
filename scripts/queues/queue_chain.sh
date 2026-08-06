@@ -266,8 +266,17 @@ for cmd in "$@"; do
   # shopping, shopping_admin, and both benchmarks' versions of each are all the
   # single `vwa-shopping` container. The old key therefore issued two exclusive
   # locks on one Magento instance and called that safe. See lib `site_lock_key`.
-  # Stale lock handling: rm `${LOCK_DIR}/p79_<key>.lock` to force-release (lock
-  # file is empty marker; presence + flock state matter).
+  # Stale lock handling — do NOT `rm` the lock file (B-1965, /stress 2026-08-06).
+  # `flock` locks the open INODE, not the pathname, so removing the file cannot
+  # release anything and actively breaks the guarantee: if the holder is alive,
+  # unlinking lets the next process create a DIFFERENT inode and lock that, so
+  # two chains hold "the lock" on one Magento at once — precisely the concurrent
+  # reset this lock exists to prevent. If the holder is dead the lock is already
+  # gone (the kernel drops it on process exit), so nothing needs removing either
+  # way. A leftover zero-byte file is normal and harmless.
+  # To investigate a suspected stale lock: `lslocks | grep p79_`, `fuser -v
+  # ${LOCK_DIR}/p79_<key>.lock`, or `cat /proc/locks`. Kill only a verified
+  # holder, then just re-run — acquisition is automatic.
   if [[ -n "${this_site}" && -n "${this_benchmark}" ]]; then
     LOCK_DIR="${REPO_DIR}/.locks"
     mkdir -p "${LOCK_DIR}" 2>/dev/null || true
@@ -278,7 +287,7 @@ for cmd in "$@"; do
       log "  [FATAL] another paper-grade chain holds lock ${THIS_LOCK_KEY} (requested site=${this_site} benchmark=${this_benchmark})"
       log "  the lock names a docker container — the holder may be a different site/benchmark on the SAME container (B-1934)"
       log "  lock file: ${LOCK_FILE}"
-      log "  if lock is stale (prior chain crashed), 'rm ${LOCK_FILE}' to force-release before retry"
+      log "  B-1965: do NOT 'rm ${LOCK_FILE}' — flock locks the inode, not the path, so removing it cannot release anything and lets a second process lock a DIFFERENT inode (two chains, one Magento). Diagnose: 'lslocks | grep p79_' / 'fuser -v ${LOCK_FILE}'; kill only a verified holder, then just retry"
       if command -v curl > /dev/null; then
         curl -L -d "queue_chain ABORT (${this_baseline} ${this_site} ${this_benchmark}): another chain holds container lock ${THIS_LOCK_KEY}; possible double-fire" \
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true

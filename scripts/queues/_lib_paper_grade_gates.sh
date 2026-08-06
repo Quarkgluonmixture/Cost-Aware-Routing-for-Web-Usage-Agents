@@ -236,7 +236,7 @@ acquire_site_lock() {
     echo "[${label}][FATAL] another paper-grade process holds lock ${_lock_key} (requested site=${site} benchmark=${benchmark})" >&2
     echo "[${label}][FATAL] the lock names a docker container, so the holder may be a different site on the SAME container (B-1934: shopping/shopping_admin and vwa/wa all share one)" >&2
     echo "[${label}][FATAL] lock file: ${lock_file}" >&2
-    echo "[${label}][FATAL] if stale (prior process crashed), 'rm ${lock_file}' to force-release" >&2
+    echo "[${label}][FATAL] B-1965: do NOT 'rm ${lock_file}' — flock locks the inode, not the path; removing it releases nothing and lets a second process lock a different inode. If the prior process really died the lock is already gone. Diagnose: lslocks | grep p79_ / fuser -v ${lock_file}" >&2
     exec 7>&-
     return 78  # rc=78 = lock contention (matches reset_wa_sites convention)
   fi
@@ -1191,7 +1191,7 @@ acquire_watchdog_lock() {
   if ! flock -n 8; then
     echo "[${label}][FATAL] another watchdog holds lock for run_id=${run_id} (B-907)" >&2
     echo "[${label}][FATAL] lock file: ${lock_file}" >&2
-    echo "[${label}][FATAL] if stale (prior watchdog crashed), 'rm ${lock_file}' to force-release" >&2
+    echo "[${label}][FATAL] B-1965: do NOT 'rm ${lock_file}' — flock locks the inode, not the path; removing it releases nothing and lets a second process lock a different inode. If the prior watchdog really died the lock is already gone. Diagnose: lslocks | grep p79_ / fuser -v ${lock_file}" >&2
     exec 8>&-
     return 78  # rc=78 = lock contention (matches acquire_site_lock convention)
   fi

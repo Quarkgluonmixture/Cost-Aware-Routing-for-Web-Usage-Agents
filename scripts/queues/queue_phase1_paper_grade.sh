@@ -645,9 +645,26 @@ PY
 _resume_filter_done() {
   if [[ "${RESUME_MISSING:-0}" != "1" ]]; then cat; return 0; fi
   local cmd
+  # B-1959 (/stress 2026-08-06): ONE manifest binding may retire only ONE chain
+  # line. `_condition_complete` keys on `site|baseline|mode`, but a chain may list
+  # the same command twice on purpose — shop_b0's cell 1 and cell 7 are
+  # byte-identical because cell 7 is the REPLICATE arm that gives the site its
+  # stochastic noise floor (§242 / §293 hang on it). Pre-fix, a completed dom
+  # matched both lines and dropped the replicate silently, under the appearance
+  # of a successful resume. Counting consumed skips keeps single-occurrence
+  # chains (cls / red, 18 lines each, all distinct) behaving exactly as before.
+  local -A _consumed=()
   while IFS= read -r cmd; do
     [[ -z "${cmd// }" ]] && continue
-    if _condition_complete "${cmd}"; then
+    if [[ "${_consumed[${cmd}]:-0}" -ge 1 ]]; then
+      # A duplicate line whose binding was already spent by an earlier
+      # occurrence. The manifest cannot tell the arms apart, so the honest move
+      # is to run it — a needlessly re-run arm is visible, a silently missing
+      # one is not.
+      log "  [resume] KEEP duplicate (binding already consumed by an earlier line): ${cmd}" >&2
+      echo "${cmd}"
+    elif _condition_complete "${cmd}"; then
+      _consumed["${cmd}"]=1
       # B-1826: skip log MUST go to stderr — build_*_chain stdout is the chain-command
       # data channel that launch_chain collects; a log line on stdout becomes a bogus
       # chain command (Gate 7 UNKNOWN_SCRIPT abort, 2026-05-21 first relaunch).
@@ -784,11 +801,26 @@ build_shop_b0_tail_chain() {
   # edit. A second literal copy is how a premise ends up with two versions that
   # drift (§428.8).
   #
-  # RESUME_MISSING is forced off for the derivation so `tail -n +2` always drops
+  # RESUME_MISSING is forced off for the DERIVATION so `tail -n +2` always drops
   # the dom main arm and not whatever line the filter happened to leave first.
-  # Losing resume here costs nothing today: `fire_manifest.json` carries zero
-  # shopping conditions, so RESUME_MISSING is inert for this site anyway.
-  ( RESUME_MISSING=0; build_shop_b0_chain ) | tail -n +2
+  # The filter is then applied to the derived cells, so this chain DOES support
+  # resume — it just decides what to drop from a stable base.
+  #
+  # The replicate arm (last line) is exempted from the filter on purpose. Once
+  # the dom MAIN arm is bound into fire_manifest.json — which the watchdog does
+  # automatically (`_auto_bind_manifest` → `validate_fire_manifest --populate
+  # --apply`) the moment it finishes — the replicate's `site|baseline|mode` key
+  # is indistinguishable from the main arm's, so any filter would read it as
+  # already done. B-1959's consumed-count fix handles the case where BOTH lines
+  # sit in one chain; here only one dom line is present, so the count starts at
+  # zero and would swallow it.
+  # Cost of the exemption: an interrupted tail chain re-runs the replicate.
+  # That is the safe direction — a needlessly re-run arm is visible in the logs,
+  # a silently missing noise floor is not, and §242/§293 both depend on it.
+  local _full
+  _full=$( RESUME_MISSING=0; build_shop_b0_chain )
+  printf '%s\n' "${_full}" | tail -n +2 | head -n -1 | _resume_filter_done
+  printf '%s\n' "${_full}" | tail -n 1
 }
 
 build_wa_shop_b0_chain() {

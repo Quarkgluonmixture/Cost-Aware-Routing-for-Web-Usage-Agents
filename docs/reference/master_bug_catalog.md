@@ -11333,3 +11333,67 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 - **Fix**: 赋 `6000`。测试断言 (a) 该赋值为 6000, (b) **打印的数与赋的数必须相等** ——
   后者防的是同类形状复发, 而不只是这一个数字。
 - **Cross-link**: B-1954 (引入该 floor 的那次) · §429.4 (reindex 40 分钟实测) · B-1957 尾链
+
+## §437 B-1959 转活跃 + B-1964 / B-1965 (2026-08-06)
+
+### B-1959. 一个 manifest binding 退役了两行 chain [P1 → 已修] 🛠️ FIXED
+
+- **原判「潜伏」为何要改**: 判定依据是「`fire_manifest.json` 里没有 shopping」。但
+  `experiment_watchdog.py:1154 _auto_bind_manifest()` 会在 condition 收尾时自动跑
+  `validate_fire_manifest.py --populate --apply` ⇒ **dom 一跑完 `shopping|B0|dom` 就进
+  manifest**, B-1959 当天转活跃, 而 tail chain 恰好要无人值守跑 ~9.7 天。
+- **Fix**: `_resume_filter_done` 改为**按出现次数**过滤 —— 一个 binding 只消费一次 SKIP,
+  同名的后续行照跑并记 `KEEP duplicate`。cls/red 每条 chain 18 行全不重复, 行为逐字不变。
+- **附带发现 (我自己修复里的 trade-off)**: `build_shop_b0_tail_chain` 当初强制
+  `RESUME_MISSING=0` 挡住了 B-1959, 但**代价是整条 tail chain 不支持 resume** ——
+  9.7 天的链一旦中断就全部重跑。当时以为只是「让派生确定」, 实际是在两者间做了一个
+  没意识到的选择。现在: 派生仍用 RESUME_MISSING=0 (保证丢的是第 1 行), 派生**之后**
+  再过滤 ⇒ 两全。
+- **replicate 豁免**: tail chain 里 dom 只出现一次 (就是 replicate), 计数从 0 起仍会吃掉它;
+  且主臂 bound 后二者 key 无法区分。故最后一行**无条件保留** —— 代价是中断后重跑 replicate,
+  方向正确 (多跑一臂可见, 少一个噪声地板不可见, 而 §242/§293 挂在它上面)。
+
+### B-1961 补遗. schema 注册点是**四**处, 不是三处
+
+- 加 `benchmark_permanent_adjudicated` 时只改了 dataclass / 字段名列表 / 类型 catalog,
+  漏了 `p79/experiment/schema_migrations/v2.py:EPISODE_SUMMARY_V2_DEFAULTS`。
+- **为何没在 A100 上炸**: runner 用 dataclass 构造 (字段自带默认值), 写入路径正常 ——
+  418 个 episode 干净落盘且都含该字段。缺的这处只影响**从 dict 重建**的路径:
+  `types.py:1361` 的 write-boundary 校验会 raise ⇒ `make rederive` / migration 失败。
+  **live fire 看着健康, 而离线重算是坏的。**
+- 项目早把这件事写进了测试名 —— `tests/test_schema_4place_sync.py` (4place)。我数了三处
+  就以为齐了, 没去找那个明摆着的第四处。
+
+### B-1964. 「暂时不该 fire」被写成了「永远不要 fire」 [P1] 🛠️ FIXED
+
+- **Attack** (codex Mode B P1-1 + Claude A-F5, 2-AI overlap): `_cron_shop_b0_tail_follow.sh`
+  在两处写终态 flag —— (a) 数据不全时 `touch FIRED`; (b) launch **之前** `touch FIRED`
+  且此后不检查子进程/退出码/sentinel。
+- **实证 (当天自证)**: 2026-08-06 08:30, 我为部署修复而**有意**停 runner, 下一个 tick 就把
+  这次人工操作判为故障并永久自锁, 需手工删 flag 才能恢复。我们在清单里讨论这个缺陷时,
+  它正在演示它。
+- **Fix — 三态**: `HELD` (仅告警去重, 可反复进入、数据齐了自动清) / `flock` (并发保护,
+  内核级、进程死即释放) / `FIRED` (仅在**确认 chain pid 存活**后写)。launch 后轮询至多
+  6 分钟 —— 依据 2026-08-04 实测 orchestrator 8 道 gate + 三站 warmup 约 **2 分 11 秒**,
+  原先一次性 `sleep 45` 会在 gate 还没跑完时就判「未起来」。另加「chain 已在跑则补记
+  LAUNCHED」, 否则 10 天的 chain 跑完后下一个 tick 会再启动一条。
+- **测试反转**: 旧测试 `test_is_idempotent_and_fails_closed` 断言
+  `FIRED flag must be set before launching` —— **它把缺陷的行为写成了契约**, 在有人修
+  bug 时反过来阻止。已改为断言新契约 (flock 保并发 + kill -0 确认后才写 FIRED)。
+  > **把 bug 的行为写进断言的测试, 比没有测试更危险 —— 它在积极保护那个缺陷。**
+
+### B-1965. `rm <lock>` 的排障指导会破坏 flock 本身 [P2] 🛠️ FIXED
+
+- **Attack** (codex Mode B P1-7): 三处文案教操作员删锁文件「force-release」
+  (`queue_chain.sh` ×2 + `_lib_paper_grade_gates.sh` ×2)。**flock 锁的是 inode 不是路径**:
+  持有者活着时删文件 → 第二个进程创建**另一个 inode** 并锁它 ⇒ 两条 chain 同时"持锁"操作
+  同一个 Magento, 正是该锁要防的并发 reset; 持有者死了则锁早已由内核释放, 也无需删。
+- **Fix**: 三处改为「不要删」+ 指向 `lslocks | grep p79_` / `fuser -v <lock>` / `/proc/locks`,
+  只 kill 已核实的持有者然后正常重试。测试断言仓库里不再出现 `to force-release`。
+- **附**: 该 grep 一开始只改了撞见的那一处, 是**测试**发现还有三处 —— sibling propagation
+  这次是被断言抓到的, 不是被记性抓到的。
+
+### 附: cron 入版本控制 (codex P2-2)
+
+`scripts/maintenance/crontab.txt` 补上两条 follow cron。此前它们只手工写进 A100 crontab,
+于是**这次恢复从 commit 状态复现不出来** —— 仓库里有脚本、没有调度。

@@ -122,6 +122,13 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # force re-runs instead of accepting summary. Legacy summaries default
     # False (assumed clean unless explicitly flagged).
     "needs_reevaluation": False,
+    # B-1961 (2026-08-06): set when a standing `benchmark_permanent`
+    # adjudication downgraded this episode's quarantine (B-1957). Registered
+    # in FOUR places — dataclass / field-name list / type catalog / here.
+    # Missing this one only breaks the dict-rebuild paths (rederive,
+    # migration), not the runner's dataclass write, so a live fire looks
+    # healthy while `make rederive` fails.
+    "benchmark_permanent_adjudicated": False,
     # B-485 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17): resume
     # fingerprint (sha256[:16] of cfg.model.revision + backend.revision +
     # max_new_tokens + temperature + paper_grade + observation_mode +
