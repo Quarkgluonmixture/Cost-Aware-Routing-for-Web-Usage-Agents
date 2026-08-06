@@ -103,14 +103,46 @@ M3 工作量最小且最接得上论文既有文本。
 | `scripts/analysis/b0_paired_idperturb_replay.py` | 成熟、已用于论文。读 cached artifacts，**不连 live 站点**；B0(proxy)+B1(local GPU) 双层；已实现 `permute_ids` / id-agnostic 的 `resolve`+`dsig` / mode_flip / consistency | M1 直接复用 |
 | `p79/mechanistic/` | `activation_patching.py` / `extract_hidden_states.py` / `linear_probe.py` | M1 / M2 |
 
-### 拉取策略：**必须落在 `phase1/` 之外**
+### 镜像已就位：62 condition / 9 cell
 
-文本观测已镜像到 **`results/mechanistic/_obs_mirror/{visualwebarena,webarena}/`**。
+`results/mechanistic/_obs_mirror/{visualwebarena,webarena}/`，251,553 个文本观测。
+接好 episodes 后的实际覆盖：
 
-⚠️ **不能拉进 `results/*/phase1/`**：那棵树受 `--exclude artifacts/ + --delete-excluded`
-管理，下一次 cron sync 会把拉下来的东西清干净。这正是 `repro_replicates/README.md`
-记录过的坑（它把自己放在 `phase1/` 外面就是为了这个）。`_obs_mirror` 在 `mechanistic/`
-下，cron 的 delete 策略够不到。
+| benchmark | model | site | modes | step_000 obs |
+|---|---|---|---|---|
+| VWA | B0 | classifieds / reddit / shopping | 6 / 6 / 2* | 1568 / 1384 / 462 |
+| VWA | B1 | classifieds / reddit | 7 / 6 | 1347 / 1231 |
+| VWA | B2 | classifieds / reddit | 6 / 6 | 1344 / 1231 |
+| WA | B0 / B1 | wa_reddit | 6 / 6 | 634 / 701 |
+
+\* shopping 只有 2 modes 是因为那条 chain 正在跑（cell 2/7）。
+
+**共 62 condition / 9 个 (benchmark, model, site) cell**，论文的 8 cell 全覆盖。
+`step0_obs ≈ eps` 说明每个 scored task 都有起点观测。→ **M2 的跨 cell 迁移可以做真统计，
+不再是「一组方向对」的 pilot。**
+
+### ⚠️ 两个 gotcha，都会静默失败
+
+**(1) 不能拉进 `results/*/phase1/`**：那棵树受 `--exclude artifacts/ + --delete-excluded`
+管理，下一次 cron sync 会把拉下来的东西清干净（`repro_replicates/README.md` 记录过同一个
+坑）。`_obs_mirror` 在 `mechanistic/` 下，cron 的 delete 策略够不到。
+
+**(2) 观测和 episodes 被同步策略切成了两半，缺一半会「成功」地跑 0 个 task。**
+mirror 只有 `artifacts/`，`episodes/` 在本地 `phase1/` 树。而
+`b0_paired_idperturb_replay.py` 从 `CURR/episodes/*_summary_v2.json` 取 task 池 ——
+池为空就跑 0 个 task、打印 `=== AGG === {}`、**退出码 0**。
+
+实证 2026-08-06：第一次 M1 pilot 正是这样「成功」的，只有日志里 `tasks=0` 一行透露真相。
+**修好了，但修的方式是把它变成一条命令**：
+
+```bash
+.venv/bin/python3 scripts/mechanistic/link_obs_mirror_episodes.py --check   # 先看
+.venv/bin/python3 scripts/mechanistic/link_obs_mirror_episodes.py           # 建相对符号链接
+```
+
+> 这与 §1 的 B-1966、§2 开头的 WA-artifacts 更正是**同一类失败的第三次**：
+> 一个数字是 0 / 两个数字相同 / 退出码是 0 —— 三次都长得像成功。
+> 三次的共同解药也一样：**先问「如果它其实失败了，我看到的会是什么」，再往下走。**
 
 ### ⚠️ 剩下的真实约束
 
