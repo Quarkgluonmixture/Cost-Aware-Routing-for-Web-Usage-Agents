@@ -11420,6 +11420,21 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
   - 笔记/任务卡里那条未报告的正面结果「图像轴位移最大 (som→dom 0.475/0.390)」——
     三条轴的 source **全都带图**, 差异不是「图像轴 vs 文本轴」而是「同一个带图 SoM 表征
     → 三个不同 target」。**「图像轴」这个命名与解读不成立。**
+- **两条独立证据（2026-08-06 user 反问「传图不是都会传吗」后补测）**:
+  1. **代码契约** — `p79/experiment/som.py:394-406` docstring + `:443-468` 实现:
+     只有 `som`(标注截图) 与 `vision`(原始截图) 传页面图, `dom` 与**四个 phantom mode**
+     一律 `marked_image=None,  # model receives no image`。
+  2. **落盘 token 数** — B1·cls 配对 224/224 个 task, `som` 的 step_0 prompt tokens
+     **全部**高于 `phantom_som`, 配对差中位数 **578 tokens**(如 task0 2867 vs 2289)。
+     两者文本 payload 相同 + system prompt 逐字节相同 ⇒ **那 578 token 就是那张截图**。
+  ⚠️ **要区分两种「图」**: 任务参考图 (`reference_images`, task config 的 `image` 字段)
+  走 `qwen3vl_agent.py:215-229` 的**独立路径**, 确实所有 mode 都传 —— 这不是本 bug 说的图。
+  本 bug 说的是**页面截图**。
+- **为什么它能活这么久**: 结果看起来完全正常 —— 曲线、峰值、两个控制组一应俱全,
+  只是测的不是它声称的那个对象。`som.py:396` 那行注释把严重性说得最准:
+  `phantom_som` = "image-mismatched — **prompt promises screenshot but agent gets none**"。
+  **这个 mismatch 就是 P-SoM 的全部研究价值**(论文 hook 的 "on the skip annotated image
+  boundary" 说的正是它)。source 侧补上那张图, 等于**把要研究的对象本身消掉了**, 再测剩下的。
 - **`p4_som_ptext` 的价值**: 它不是浪费的一次跑, 它是**这个 bug 的探针** ——
   正因为它与 p2 只差 source_mode 一个参数, 逐位相同才把缺陷暴露出来。
   其余 p4 cell (`som_dom` / `som_pprompt`) 因 target 不同而结果不同, **掩盖了同一缺陷**。
