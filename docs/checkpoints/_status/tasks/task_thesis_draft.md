@@ -1,14 +1,14 @@
 ---
 type: task
-status: queued
-priority: P1
-horizon: next
-order: 6
-blocker: "Pass-1+2 analysis (D6/D7)"
-eta: "2026-08-10 (D9 v1 → advisor)"
+status: active
+priority: P0
+horizon: now
+order: 1
+blocker: ""
+eta: "**2026-08-10 (D9 v1 → advisor) — 4 天后, REALM 提交后的 critical path**。REALM 稿 (Submission #192, 8 页正文) 可作为结果章的骨架复用; 数据与分析已全部落地"
 detail: paper_drafts
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-08-06
 ---
 
 # Thesis full draft v1 → advisor
