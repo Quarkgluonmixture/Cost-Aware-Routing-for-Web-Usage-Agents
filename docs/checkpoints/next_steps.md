@@ -23,6 +23,56 @@ updated: 2026-07-29
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🔵 2026-08-06 上午 · **VWA shopping B0 fire 恢复中**（fire 线最新，与上面 REALM 线并行）
+>
+> chronicle → **笔记 §436 + §437**。fire 在 A100，**不在 DGX**。
+>
+> ### 现在是什么状态
+>
+> `B0_dom_shopping_..._R3561` 的 dom 主臂**正在 resume**（第二轮，08-06 08:38 起）。
+> 拉实时，别照抄这里的数字：
+>
+> ```bash
+> ssh condense-a100 'cd ~/workspace/p79
+>   R=B0_dom_shopping_20260804_003607_264370398_3845634_R3561
+>   ls results/visualwebarena/phase1/$R/phase1_dom_router_0/episodes/*_summary_v2.json | wc -l   # 目标 435
+>   ps -eo etime,args | grep "[r]un_experiment\.py"
+>   ls results/visualwebarena/phase1/$R/phase1_dom_router_0/condition_summary_v2.json'          # 存在 = P0-1 真修好了
+> ```
+>
+> ### 跑完之后会自己往下走（不用人管）
+>
+> `dom 收尾 → _cron_shop_b0_tail_follow.sh（*/10）起 shop_b0_tail 六个 cell → 刷新
+> queue_phase1_shop.latest.* → 修好的 _cron_wa_shop_follow.sh 接 WA chain`
+>
+> ⚠️ 但**两个 flag 会自锁**：任何一次「runner 消失而数据不全」都会让 follow 写下
+> `.fired` 并永不重试（B-1957 那轮实测踩过一次）。人工停 runner 后必须
+> `rm logs/.shop_b0_tail_follow.{armed,fired}`，否则尾链静默停摆。
+>
+> ### 这轮修了什么（都已部署到 A100 并实证生效）
+>
+> | | |
+> |---|---|
+> | B-1957 | `benchmark_permanent` 分类；task 345 的 ZIM 缺图不再 abort 整个 condition |
+> | B-1961 | 降级须**清** `needs_reevaluation` + 打 `benchmark_permanent_adjudicated`，否则跑满 435 会在**终点**聚合崩溃 |
+> | B-1962 | `RESET_BEFORE=0` 的 resume 以前**完全不刷 auth** → 已污染 346/347/348（已作废重跑） |
+> | B-1958 | wa follow cron 的 `stat` 不跟随 symlink → 主判据恒假，**从来没能 fire 过** |
+> | B-1960 / B-1963 | Gate 7 检查了别的 chain 的 config；reset floor 打印 6000 却赋 2400 |
+>
+> ### 还欠的（**下一个 session 请接手**）
+>
+> - **AMENDMENT_10 未写** —— task 345 的 scored-set 排除（433→432）。草稿在笔记 §436，
+>   **必须带 git tag witness**（对照 AMENDMENT_09 的形态：prereg 行 + tag）。
+>   ⚠️ 该 episode 已落盘，**已非严格 pre-data**，amendment 里要照实写。
+> - **B-1959 潜伏** —— shop_b0 第 1/7 行同 manifest key，一旦 shopping 进 manifest，
+>   `RESUME_MISSING=1` 会静默吃掉 replicate arm（§242/§293 的噪声地板挂在它上面）。
+>   测试已钉住该前提，失败即提示。
+> - **未修的 /stress findings** —— codex P1-1（FIRED 三态机）/ P1-2（Gate 8 revocation
+>   与 runtime gate 不一致）/ P1-3（probe 把 401/403/5xx 当成资源缺失）/ P1-5（gate-check
+>   只看 exit code）/ P1-6（stale-code resume 保护读错路径）/ P1-7（`rm lock` 指导反而
+>   破坏 flock）。完整清单在 `docs/checkpoints/codex_outputs/b1957_shop_resume_FINAL_*.md`。
+>
+
 > ## 🟥 2026-08-05 深夜 · **终审已裁决并 push** · 剩余 = 提交前两步（**最新，先读这块**）
 >
 > chronicle → **笔记 §435**（裁决理由 / 表号陷阱 / `.aux` 静默坑）。
