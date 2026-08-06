@@ -63,6 +63,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from p79.mechanistic.activation_patching import ActivationPatcher, patching_grid_continuation
 from p79.mechanistic.extract_hidden_states import HiddenStateExtractor
+# B-1966: page-screenshot contract lives in som.py (the module the runner itself
+# uses), so mechanistic and production cannot disagree about which modes see an image.
+from p79.experiment.som import mode_receives_page_image
 
 logging.basicConfig(
     level=logging.INFO,
@@ -411,8 +414,32 @@ def main():
         source_text = source_text_payload_for(args.source_mode)
         target_text = text_payload_for(args.target_mode)
 
-        source_inputs_orig = build_inputs(extractor, source_intent, args.source_mode, source_text, source_screenshot_path)
-        target_inputs_orig = build_inputs(extractor, intent, args.target_mode, target_text, None)
+        # B-1966 (2026-08-06): gate BOTH sides' page screenshot on the mode's own
+        # contract instead of hard-coding "source always, target never".
+        #
+        # The branches above resolve WHICH screenshot (same-task, or the shuffled
+        # source task's own) — that semantics is unchanged. What changes is WHETHER
+        # it is used, which `p79.experiment.som` owns:
+        #   som / vision            → page image
+        #   dom / phantom_*         → none
+        #
+        # Pre-fix the source side always received `screenshot_annotated.png`. Since
+        # `som` and `phantom_som` share both the [SOM_MARKS] text payload and a
+        # byte-identical system prompt, that made the two modes indistinguishable —
+        # `p4_som_ptext_*` and `p2_psom_ptext_*` came out byte-identical, differing
+        # only in the `source_mode` string written into config. Worse than a wrong
+        # number: `phantom_som` is DEFINED as "prompt promises a screenshot, agent
+        # gets none", so supplying it deletes the object of study.
+        #
+        # The target side was hard-coded None, which is accidentally right for the
+        # phantom targets used so far and WRONG for `--target-mode vision` (whose
+        # text payload is "" — it would have been fed an empty input). Fixed here
+        # too rather than left as a latent trap for the next mode added.
+        source_image_arg = source_screenshot_path if mode_receives_page_image(args.source_mode) else None
+        target_image_arg = str(screenshot_annotated) if mode_receives_page_image(args.target_mode) else None
+
+        source_inputs_orig = build_inputs(extractor, source_intent, args.source_mode, source_text, source_image_arg)
+        target_inputs_orig = build_inputs(extractor, intent, args.target_mode, target_text, target_image_arg)
 
         # --reverse: swap roles. patch target's hidden into source run = "remove image content"
         if args.reverse:

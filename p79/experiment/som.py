@@ -59,6 +59,52 @@ KNOWN_OBSERVATION_MODES = frozenset({
 })
 
 
+# B-1966 (2026-08-06): single source of truth for "does this mode's model input
+# carry a PAGE screenshot".
+#
+# WHY this needs to exist rather than be re-derived at each callsite: the
+# mechanistic patching pilot (`scripts/mechanistic/run_stage2b_continuation_pilot.py`)
+# hard-coded "source side always gets `screenshot_annotated.png`". Because
+#   (a) `som` and `phantom_som` share the SAME [SOM_MARKS] text payload, and
+#   (b) their system prompts are byte-identical (`build_mode_prompt_dispatch_table`,
+#       md5 1dcacec32c53) — by design, since P-SoM *is* the SoM prompt minus the image,
+# that one hard-coded image made the two modes **indistinguishable**: two cells whose
+# only differing argument was `--source-mode` produced byte-identical results.
+# Empirically the image is worth a median **578 prompt tokens** (B1·cls, 224/224 tasks).
+#
+# The damage is not "a wrong number" but "measuring a different object": `som.py`
+# below documents `phantom_som` as *image-mismatched — prompt promises screenshot but
+# agent gets none*, and that mismatch **is** what P-SoM studies. Supplying the image
+# deletes the object of study and then measures the remainder.
+#
+# NOT the same thing as `reference_images` (the task's own product photo, from the
+# task config `image` field). Those go down a separate path in every agent
+# (`qwen3vl_agent.py:215-229`) and ARE sent for every mode. This constant is only
+# about the PAGE screenshot.
+#
+# Kept as a declarative constant + assertion test rather than folded into the
+# branch logic below: `som.py` sits on the fire import path, and a fire was live
+# when this was written. Additive only — `apply_som`'s behaviour is unchanged, and
+# `tests/test_b1966_mode_image_contract.py` asserts the constant against what the
+# branches actually return, so the two cannot drift.
+MODES_RECEIVING_PAGE_IMAGE = frozenset({"som", "vision"})
+
+
+def mode_receives_page_image(mode: str) -> bool:
+    """Whether `mode`'s model input includes a page screenshot (B-1966).
+
+    `som` gets the bbox-annotated screenshot, `vision` gets the raw one; `dom` and
+    all four phantom modes get none. Raises on an unknown mode rather than
+    defaulting — a typo silently answering "no image" is how B-1966 stayed alive.
+    """
+    if mode not in KNOWN_OBSERVATION_MODES:
+        raise ValueError(
+            f"mode_receives_page_image: unknown observation mode {mode!r}. "
+            f"Known: {sorted(KNOWN_OBSERVATION_MODES)}"
+        )
+    return mode in MODES_RECEIVING_PAGE_IMAGE
+
+
 # /stress A1.10 P1-2-AB* canonical anchored mark-id parser (2026-05-16).
 # Pre-fix: 7 callsites across som.py / state_change.py / action_utils.py /
 # vwa_wrapper.py each used unanchored `re.search(r"\[(\d+)\]", line)` which

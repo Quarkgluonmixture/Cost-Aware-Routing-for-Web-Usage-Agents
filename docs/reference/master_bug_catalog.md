@@ -11398,7 +11398,7 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 `scripts/maintenance/crontab.txt` 补上两条 follow cron。此前它们只手工写进 A100 crontab,
 于是**这次恢复从 commit 状态复现不出来** —— 仓库里有脚本、没有调度。
 
-### B-1966. patching 的 source 侧无条件喂标注图 ⇒ `som` 与 `phantom_som` 不可区分 [P0] ⚠️ OPEN
+### B-1966. patching 的 source 侧无条件喂标注图 ⇒ `som` 与 `phantom_som` 不可区分 [P0] 🛠️ CODE-FIXED / 数据待重跑
 
 - **症状（先被发现的是它，不是根因）**: `results/mechanistic/canonical/` 24 个 cell 里
   只有 **22 个不同的 per_task payload**。`p4_som_ptext_{cls,red}`(声明 `source=som`) 与
@@ -11441,5 +11441,22 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 - **修**: source 侧按 mode 决定是否传图 (`phantom_som`/`phantom_text`/`phantom_dom`/`dom` → None;
   `som`/`vision` → 标注图), 与 production agent 的 `image_included` 契约对齐, 并补一条
   「两个 mode 的 source 输入必须不同」的断言测试 —— 否则同类缺陷只能靠 24 选 2 的偶然碰撞发现。
+- **修复 (2026-08-06)**: 契约提为 `p79/experiment/som.py::mode_receives_page_image`
+  (+ `MODES_RECEIVING_PAGE_IMAGE = {som, vision}`), patching 脚本**两侧**都从它派生
+  —— target 侧原先写死 `None`, 对当前的 phantom target 恰好正确, 但对
+  `--target-mode vision` 是错的(其文本 payload 是 `""`, 会喂进空输入), 一并修掉。
+  som.py 只做**纯增量**(新常量+新函数, 不动任何现有分支): 它在 fire 的 import 路径上,
+  且写这段时 A100 有 fire 在跑。
+- **三重印证 578 token**: (a) production 落盘配对 224/224 个 task, som − phantom_som
+  中位数 **578**; (b) 修复后重新构造输入 som 4451 vs phantom_som **3873**, 差 **578**;
+  (c) 修复前 som 与 phantom_som **都是 4451**(逐 token 相同 = 缺陷本身)。
+  ⇒ 修复让 mechanistic 的输入与 production 对齐, 且对齐量可独立验证。
+  顺带看出影响面不止 phantom_som: `dom` / `phantom_text` 修复前也各多吃 578 image token。
+- **防复发**: `tests/test_b1966_mode_image_contract.py` 12 条。**做过 mutation 验证**——
+  把脚本回退成硬编码 → 1 failed; 把 `phantom_som` 混进收图集合 → 3 failed;
+  还原 → 12 passed。承重那条是「som 与 phantom_som 的输入必须可区分」。
+- **数据状态**: canonical 24 cell **全部作废**, 需按修复后的代码重跑。
+  实测节奏 (log mtime 相邻间隔中位数 5.22 h/cell, queue 无并行):
+  DGX 单卡串行 ≈ 5.2 天 / Sparks 2 节点 ≈ 2.6 天 / DGX+Sparks×2 ≈ 1.7 天。
 - **发现路径**: 2026-08-06 为 t38/t39 caption 止损核对 canonical 数字时, 先撞见两个 cell
   数字八位全同, 顺藤查到 queue 参数 → 默认值 → prompt 表。**不是任何测试抓到的。**
