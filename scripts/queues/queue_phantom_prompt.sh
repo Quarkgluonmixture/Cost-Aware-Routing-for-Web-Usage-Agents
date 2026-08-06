@@ -128,6 +128,18 @@ else
     echo "[phantom_prompt][error] RESET_BEFORE=1 but no reset implementation for benchmark=${BENCHMARK} site=${SITE}." >&2
     echo "[phantom_prompt][error] Supported: all VWA sites; WA reddit / shopping / shopping_admin (B-1930, shared containers)." >&2
     exit 1
+  else
+    # B-1962 (/stress Mode B P0-2, 2026-08-06): RESET_BEFORE=0 is the
+    # B-304-mandated way to resume a partial condition without splicing a
+    # fresh-reset trajectory into a dirty one — but pre-fix it also skipped
+    # the ONLY auth refresh on the launch path. A resume after an outage
+    # longer than the ~1440s PHP session then ran its first episodes on dead
+    # cookies (2026-08-05 shopping: tasks 346/347/348 fought the login page
+    # for 22 minutes until the 5-episode refresh cadence caught up).
+    # Auth-only = substrate restoration, no site-state mutation.
+    auth_only_gate --site "${SITE}" --repo "${REPO_DIR}" \
+      --python "${PYTHON_BIN}" --log-prefix "phantom_prompt" \
+      --benchmark "${BENCHMARK}" || exit 1
   fi
 
   RUNNER_LOG="${LOG_DIR}/${RUN_ID}_runner.log"

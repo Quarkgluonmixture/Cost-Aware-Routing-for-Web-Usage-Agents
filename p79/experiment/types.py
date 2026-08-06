@@ -525,6 +525,19 @@ class EpisodeSummaryV2:
     # inference (which conflates `action_success="stop"` with task-level
     # evaluator outcome; agent self-claim ≠ url_match / program_html / etc).
     needs_reevaluation: bool = False
+    # B-1961 (/stress Mode B P0-1, 2026-08-06): an episode whose quarantine was
+    # downgraded by a standing `benchmark_permanent` adjudication (B-1957).
+    # `needs_reevaluation` is CLEARED on such an episode — otherwise the
+    # condition runs to completion and then dies in
+    # `aggregate_condition_metrics` (metrics.py B-784 raise), which is
+    # unreachable-by-design under paper_grade and exists precisely to catch a
+    # bypassed M1 gate. B-1957's downgrade IS such a bypass, so it must also
+    # settle the flag rather than leave a landmine at the finish line.
+    # Forensics are NOT lost: `error` still carries the full message, the
+    # registry holds the adjudication event, and this field marks the episode
+    # so analysis can separate "adjudicated benchmark defect" from "clean
+    # agent failure" without re-parsing error strings.
+    benchmark_permanent_adjudicated: bool = False
     # B-485 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17):
     # resume fingerprint = sha256[:16] of (cfg.model.revision +
     # cfg.backends[backend_id].revision + max_new_tokens + temperature +
@@ -918,6 +931,8 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     "total_latency_canonical_ms",
     # B-486 quarantine flag (crash-before-evaluator distinguishing)
     "needs_reevaluation",
+    # B-1961: quarantine downgraded by a standing benchmark_permanent adjudication
+    "benchmark_permanent_adjudicated",
     # B-193 paper §3.5 transparency telemetry
     "trajectory_incomplete",
     # P0-1-ABC* + P1-11-B* Phase 2 telemetry (runner intervention rollup).
@@ -1017,6 +1032,7 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "wallclock_end": (str, type(None)),
     "resume_fingerprint": (str, type(None)),
     "needs_reevaluation": (bool,),
+    "benchmark_permanent_adjudicated": (bool,),
     "trajectory_incomplete": (bool,),
     # P0-1-ABC* + P1-11-B* Phase 2 telemetry (runner intervention rollup).
     "runner_intervention_count": (int,),

@@ -2210,14 +2210,50 @@ class ExperimentRunner:
                     str(task.site), int(task.task_id), _err_class
                 )
                 if _allowed:
+                    # B-1961 (/stress Mode B P0-1, 2026-08-06): the flag MUST be
+                    # settled here, not left set. Leaving `needs_reevaluation=True`
+                    # on a NON-aborted condition means the run reaches episode 435
+                    # and then dies inside `aggregate_condition_metrics`
+                    # (metrics.py B-784 raise), whose own comment says it is
+                    # "UNREACHABLE under paper_grade=True; if it fires here, M1
+                    # gate was bypassed" — and B-1957's downgrade is exactly such
+                    # a bypass. Pre-fix this converted "abort at task 345" into
+                    # "burn the remaining 115 episodes, THEN abort", and the
+                    # canonical loader (`analysis.py` reject_needs_reevaluation)
+                    # would silently drop the episode, moving the denominator to
+                    # 434 outside PROTOCOL_EXCLUSIONS' control — an estimand
+                    # change nobody declared.
+                    #
+                    # Forensics survive: `error` keeps the full message, the
+                    # registry holds the adjudication event, and the dedicated
+                    # field below marks the episode as adjudicated rather than
+                    # clean, so analysis can tell the two apart without parsing
+                    # error strings.
+                    summary["needs_reevaluation"] = False
+                    summary["benchmark_permanent_adjudicated"] = True
                     logger.warning(
                         "B-1957 quarantine DOWNGRADED to ordinary failure "
-                        "site=%s task=%s error_class=%s — %s. Episode keeps "
-                        "needs_reevaluation=True for forensics; scored-set "
-                        "treatment is an analysis-layer decision (see "
-                        "PROTOCOL_EXCLUSIONS), not a runner one.",
+                        "site=%s task=%s error_class=%s — %s. "
+                        "needs_reevaluation CLEARED + "
+                        "benchmark_permanent_adjudicated=True (B-1961) so the "
+                        "condition can finalize; scored-set treatment stays an "
+                        "analysis-layer decision (PROTOCOL_EXCLUSIONS), not a "
+                        "runner one.",
                         task.site, task.task_id, _err_class, _why,
                     )
+                    try:
+                        condition_logger.write_episode_summary(
+                            task.site, task.task_id, summary
+                        )
+                    except Exception as _rewrite_exc:  # noqa: BLE001
+                        raise RuntimeError(
+                            f"B-1961 failed to re-persist downgraded episode "
+                            f"site={task.site} task={task.task_id}: "
+                            f"{_rewrite_exc!r}. The in-memory summary and the "
+                            "on-disk one would disagree on needs_reevaluation, "
+                            "which is the exact disk-vs-memory split-brain B-323 "
+                            "fails loud on."
+                        ) from _rewrite_exc
                     return summary
 
             from p79.experiment.environment import PaperGradeAbortError

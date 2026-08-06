@@ -593,6 +593,77 @@ wa_reset_supported() {
 #   optional (default vwa) and only affects which DATASET the login subprocess
 #   runs under; the reset itself is benchmark-independent because WA and VWA
 #   share one container set on the paper-grade host (B-1930).
+# B-1962 (/stress Mode B P0-2, 2026-08-06) — auth WITHOUT reset, for explicit
+# resume (`RESET_BEFORE=0`).
+#
+# The bug this closes: `reset_and_auth_gate` is the ONLY caller of the auth gate,
+# and the leaf invokes it only under `RESET_BEFORE=1`. So a paper-grade resume
+# launched with `RESET_BEFORE=0` (the B-304-mandated way to preserve trajectory
+# continuity) starts a runner with **no auth refresh at all**. The fresh process
+# also starts its auth clock at zero (`runner/main.py` seconds_since=0 on the
+# first task) and only refreshes every 5 episodes, while the Magento PHP session
+# lifetime is ~1440s. After an interruption longer than that — the 2026-08-05
+# shopping resume paused 20 hours — the first several resumed episodes run on
+# dead cookies against `require_login: true` tasks.
+#
+# Measured on that run: episodes 346/347/348 all hit max_steps with the agent
+# landing on `/customer/account/login/` and reasoning about correcting its
+# password; the first successful `auth_refresh` came 22 minutes after launch, and
+# step-count variety returned immediately afterwards.
+#
+# This is substrate RESTORATION, not an estimand change: it re-establishes the
+# logged-in precondition every condition is specified to start from, and touches
+# no site state (no reset, no cart/listing/subscription mutation). Same B-224
+# hard-fail contract as the post-reset gate — a paper-grade launch must never
+# proceed NOT-LOGGED-IN.
+auth_only_gate() {
+  local site="" repo_dir="" python_bin="" log_prefix="auth-only" benchmark="vwa"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --site) site="$2"; shift 2 ;;
+      --repo|--repo-dir) repo_dir="$2"; shift 2 ;;
+      --python|--python-bin) python_bin="$2"; shift 2 ;;
+      --log-prefix) log_prefix="$2"; shift 2 ;;
+      --benchmark) benchmark="$2"; shift 2 ;;
+      *) echo "[auth_only_gate][error] unknown arg: $1" >&2; return 2 ;;
+    esac
+  done
+  if [[ -z "${site}" || -z "${repo_dir}" || -z "${python_bin}" ]]; then
+    echo "[auth_only_gate][error] --site/--repo/--python are required" >&2
+    return 2
+  fi
+  # Same vocabulary mapping as reset_and_auth_gate (B-1932): the queue scripts
+  # say vwa/wa, auth_refresh compares against visualwebarena/webarena.
+  local _auth_benchmark="visualwebarena"
+  [[ "${benchmark}" == "wa" ]] && _auth_benchmark="webarena"
+  echo "[${log_prefix}] RESET_BEFORE=0 resume — refreshing auth WITHOUT touching site state (B-1962)"
+  if timeout 60s "${python_bin}" -c "
+import sys
+sys.path.insert(0, '${repo_dir}')
+from pathlib import Path
+from p79.utils.auth_refresh import auth_required_gate, AuthRefreshFailure, AuthRefreshConfigError
+try:
+    auth_required_gate('${site}', Path('${repo_dir}/.auth'), benchmark='${_auth_benchmark}')
+    print('[${log_prefix}][gate] auth_required_gate PASS')
+    sys.exit(0)
+except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
+    print(f'[${log_prefix}][gate][FATAL] {exc}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1; then
+    echo "[${log_prefix}] auth gate PASS — resumed runner starts LOGGED IN"
+    return 0
+  fi
+  # B-224 contract: hard-fail. A resume that proceeds logged-out silently
+  # contaminates every require_login task until the 5-episode refresh cadence
+  # catches up.
+  echo "[${log_prefix}][FATAL] auth_only_gate FAILED for site=${site}. Paper-grade resume aborted rather than run NOT-LOGGED-IN (B-224 / B-1962). Set AUTH_GATE_BYPASS=1 only for explicit dev/dirty mode." >&2
+  if [[ "${AUTH_GATE_BYPASS:-0}" == "1" ]]; then
+    echo "[${log_prefix}][warn] AUTH_GATE_BYPASS=1 — proceeding anyway (NOT paper-grade)" >&2
+    return 0
+  fi
+  return 1
+}
+
 reset_and_auth_gate() {
   # B-645 (A1.13 P1-12 gemini G9, 2026-05-17): named args. Pre-fix 5 positional
   # args (site, repo, python, log_prefix, reset_label); caller swap-order bugs

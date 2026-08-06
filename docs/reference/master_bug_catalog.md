@@ -11271,3 +11271,52 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 
 - **Cross-link**: B-1939 (Gate 8 的同类修复, 早两天) · B-1950 (漏注册的那次) · B-1957 /
   B-1958 (同一轮) · 实验笔记 §436
+
+## §436.2 B-1961 / B-1962 — /stress Mode B 抓到的两个 P0 (2026-08-06)
+
+### B-1961. B-1957 的降级把「立刻 abort」换成了「跑完 435 再崩」 [P0 — 自伤] 🛠️ FIXED
+
+- **Attack** (codex Mode B P0-1): B-1957 降级后**保留** `needs_reevaluation=True`。而
+  `runner/main.py` 对**非 aborted** condition 调 `aggregate_condition_metrics(episode_summaries)`
+  **不传 `allow_quarantined`**, 该聚合器对此无条件 `raise` (metrics.py, B-784)。
+  ⇒ condition 会一路跑到第 435 集, 然后**在终点崩溃**, 写不出 condition_summary。
+- **讽刺之处**: `metrics.py` 那个 raise 自己的注释写着「UNREACHABLE under paper_grade=True;
+  if it fires here, **M1 gate was bypassed**」—— 而 B-1957 的降级**正是**那个 bypass。
+  我读过这段代码(为验证 P0-1 才读的), 但**修的时候没读**。
+- **二级后果**: 即便聚合放行, canonical loader (`analysis.py` `reject_needs_reevaluation=True`)
+  也会静默丢弃该 episode ⇒ 分母从 435 变 434, **且不受 `PROTOCOL_EXCLUSIONS` 控制** ——
+  一个没人声明过的 estimand 变化。
+- **测试为何没抓到**: 原 15 个测试全部在**隔离**调用 helper, 无一覆盖
+  降级 → condition 收尾 → canonical 载入 这条链。绿色套件掩护了一颗终点地雷。
+- **Fix**: 降级时**同时**做两件事 —— 清 `needs_reevaluation=False` + 打
+  `benchmark_permanent_adjudicated=True` (新 schema 字段, 三处注册), 并**重新落盘**该 episode
+  (否则内存与磁盘对该 flag 不一致, 正是 B-323 fail-loud 针对的 split-brain)。forensic 不丢:
+  `error` 全文仍在 + registry 有裁定事件 + 新字段让分析层能区分「已裁定的 benchmark 缺陷」
+  与「干净的 agent 失败」而无需解析错误字符串。
+- **新测试**: 严格聚合(不传 allow_quarantined)必须**接受**已裁定 episode; 且必须**仍然拒绝**
+  未裁定的 quarantine (B-784 不变量存活); schema 三处注册齐全; 清 flag 与打标记必须成对出现。
+
+### B-1962. `RESET_BEFORE=0` 的 resume 从不刷新 auth [P0 — 已污染数据] 🛠️ FIXED
+
+- **Attack** (codex Mode B P0-2): `reset_and_auth_gate` 是 auth gate 的**唯一**调用者, 而 leaf
+  只在 `RESET_BEFORE=1` 时调它。于是 B-304 规定的 resume 姿势 (`RESET_BEFORE=0`, 保轨迹连续)
+  **完全跳过了 auth**。新进程的 auth 计时器还从零起算 (首个 task `seconds_since=0`), 刷新周期
+  为 5 个 episode, 而 Magento PHP session 寿命 ~1440s。
+- **实证 (2026-08-05 shopping resume, 中断 20 小时)**: 首次成功 `auth_refresh` 迟至启动后
+  **22 分钟** (22:56 启动 → 23:18:36 刷新)。窗口内的 346/347/348 全部 `max_steps`,
+  runner log 显示 agent 落在 `/customer/account/login/` 并在推理「修正密码」; 349 之后
+  step 分布立刻恢复正常。三个 episode 已作废重跑。
+- **Sibling 传播**: 同一形状存在于 5 个 queue 入口 (`queue_baseline` / `queue_phantom_som` /
+  `queue_phantom_text` / `queue_phantom_prompt`, 其中 `queue_phantom_dom.sh` 是指向
+  `queue_phantom_text.sh` 的**符号链接**) —— 全部修复, 4 个物理文件各插入一次。
+- **Fix**: 新增 `auth_only_gate()` (lib) —— 走同一个 B-224 `auth_required_gate`, 但**不碰任何
+  站点状态** (无 reset / 无 cart / 无 listing 变更), 因此属**substrate 复原**而非 estimand 改动
+  (§428.7 GRL 判据第一行:「预注册声明了的 → 让它真正发生 = 修」)。失败 hard-fail, 不允许
+  paper-grade launch 在 NOT-LOGGED-IN 状态下继续。
+- **测试**: 4 个 queue 入口逐个断言含 `auth_only_gate` 且失败即 `exit 1`; 断言
+  `auth_only_gate` 函数体内**不出现** `docker rm` / `reset_vwa` / `page=reset` /
+  `indexer:reindex` (它一旦开始 reset 就不再是 auth-only)。
+
+- **Cross-link**: B-1957 (被修正的那次) · B-304 (resume 须 RESET_BEFORE=0) · B-224 (auth
+  hard-fail) · B-784 (聚合 quarantine 不变量) · B-323 (disk-vs-memory split-brain) ·
+  实验笔记 §436

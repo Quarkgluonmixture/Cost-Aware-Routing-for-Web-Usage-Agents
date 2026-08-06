@@ -18,9 +18,13 @@ The tests below pin the guards that keep this from becoming a blanket skip:
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from scripts.maintenance import quarantine_registry as qr
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 ERR = "error(start_url_content_error)"
 OTHER_ERR = "error(timeout)"
@@ -197,3 +201,150 @@ class TestRunnerProbeFailsClosed:
         ok, why = self._runner()._quarantine_downgrade_allowed("shopping", 345, ERR)
         assert ok is False
         assert "raised" in why
+
+
+class TestB1961ConditionCanActuallyFinalize:
+    """The downgrade must let the condition REACH THE END, not just past task 345.
+
+    codex Mode B P0-1 (2026-08-06): the original fix left `needs_reevaluation=True`
+    on the downgraded episode. `runner/main.py` calls
+    `aggregate_condition_metrics(episode_summaries)` WITHOUT `allow_quarantined`
+    for any non-aborted condition, and that aggregator raises unconditionally on
+    such an episode (`metrics.py`, B-784). Its own comment says the raise is
+    "UNREACHABLE under paper_grade=True; if it fires here, M1 gate was bypassed"
+    — and the B-1957 downgrade IS that bypass. Net effect pre-fix: the run would
+    burn the remaining 115 episodes and then die at the finish line, unable to
+    write a condition summary.
+
+    Nothing in the original 15 tests exercised downgrade → finalize → load, which
+    is exactly why the landmine survived a green suite.
+    """
+
+    @staticmethod
+    def _episode(**over):
+        """Build via the real dataclass so every canonical field is populated.
+
+        A hand-rolled dict trips the aggregator's separate "no episode populates
+        this field" guard, which would mask whether the B-784 quarantine check
+        (the thing under test) passed or not.
+        """
+        import inspect
+        from dataclasses import asdict
+        from p79.experiment.types import EpisodeSummaryV2
+
+        sig = inspect.signature(EpisodeSummaryV2)
+        filled = {}
+        for name, prm in sig.parameters.items():
+            if prm.default is not inspect.Parameter.empty:
+                continue                     # dataclass supplies it
+            ann = str(prm.annotation)
+            if "int" in ann and "float" not in ann:
+                filled[name] = 0
+            elif "float" in ann:
+                filled[name] = 0.0
+            elif "bool" in ann:
+                filled[name] = False
+            elif "Dict" in ann or "dict" in ann:
+                filled[name] = {}
+            elif "List" in ann or "list" in ann:
+                filled[name] = []
+            else:
+                filled[name] = ""
+        filled.update({k: v for k, v in over.items() if k in sig.parameters})
+        ep = asdict(EpisodeSummaryV2(**filled))
+        ep.update({k: v for k, v in over.items() if k not in sig.parameters})
+        return ep
+
+    def _downgraded_episode(self):
+        """An episode shaped like one B-1961 just downgraded."""
+        return self._episode(
+            task_id=345, success=False, steps=0,
+            error="start_url_content_error: tab title='Content not found'",
+            benchmark_noise=True,
+            benchmark_noise_category="start_url_content_error",
+            needs_reevaluation=False,             # ← cleared by B-1961
+            benchmark_permanent_adjudicated=True,
+            # canonical latency field: the aggregator refuses a cohort where NO
+            # episode populates it (unrelated to what this test asserts)
+            total_latency_minus_retry_ms=0.0,
+        )
+
+    def _clean_episode(self, task_id):
+        return self._episode(task_id=task_id, success=False, steps=12,
+                             needs_reevaluation=False,
+                             total_latency_minus_retry_ms=1000.0)
+
+    def test_strict_aggregator_accepts_the_downgraded_episode(self):
+        """The load-bearing one: strict aggregation (no allow_quarantined) must
+        not raise, or the condition cannot finalize."""
+        from p79.experiment.metrics import aggregate_condition_metrics
+        eps = [self._clean_episode(1), self._downgraded_episode(), self._clean_episode(2)]
+        agg = aggregate_condition_metrics(eps)      # strict, as the runner calls it
+        assert agg["episodes"] == 3, "the adjudicated episode must still be counted"
+
+    def test_strict_aggregator_still_rejects_an_unadjudicated_quarantine(self):
+        """The B-784 invariant must survive: only ADJUDICATED episodes get through."""
+        from p79.experiment.metrics import aggregate_condition_metrics
+        ep = self._downgraded_episode()
+        ep["needs_reevaluation"] = True            # un-adjudicated quarantine
+        ep["benchmark_permanent_adjudicated"] = False
+        with pytest.raises(ValueError, match="needs_reevaluation"):
+            aggregate_condition_metrics([self._clean_episode(1), ep])
+
+    def test_schema_registers_the_provenance_field(self):
+        """An unregistered field would be dropped/rejected on write."""
+        from p79.experiment import types as t
+        assert hasattr(t.EpisodeSummaryV2, "__dataclass_fields__")
+        assert "benchmark_permanent_adjudicated" in t.EpisodeSummaryV2.__dataclass_fields__
+        src = (REPO_ROOT / "p79/experiment/types.py").read_text(encoding="utf-8")
+        assert '"benchmark_permanent_adjudicated": (bool,),' in src, "type catalog entry missing"
+        assert '"benchmark_permanent_adjudicated",' in src, "field-name list entry missing"
+
+    def test_runner_clears_flag_and_stamps_provenance(self):
+        """Both mutations must happen together — clearing the flag without the
+        marker would make an adjudicated defect indistinguishable from a clean
+        agent failure in every downstream analysis."""
+        src = (REPO_ROOT / "p79/experiment/runner/main.py").read_text(encoding="utf-8")
+        i_clear = src.index('summary["needs_reevaluation"] = False')
+        i_stamp = src.index('summary["benchmark_permanent_adjudicated"] = True')
+        assert abs(i_stamp - i_clear) < 400, "the two mutations must sit together"
+        # and the episode must be re-persisted, else disk disagrees with memory
+        tail = src[i_stamp:i_stamp + 2000]
+        assert "write_episode_summary" in tail, "downgraded episode must be re-written to disk"
+
+
+class TestB1962ResumeRefreshesAuth:
+    """RESET_BEFORE=0 must still establish the logged-in precondition.
+
+    codex Mode B P0-2 (2026-08-06): `reset_and_auth_gate` was the only caller of
+    the auth gate and ran only under RESET_BEFORE=1, so a B-304-compliant resume
+    launched with no auth refresh at all. Empirically the 2026-08-05 shopping
+    resume spent its first 22 minutes on dead cookies (tasks 346/347/348 all hit
+    max_steps with the agent on /customer/account/login/).
+    """
+
+    QUEUES = ["queue_baseline.sh", "queue_phantom_som.sh",
+              "queue_phantom_text.sh", "queue_phantom_prompt.sh"]
+
+    def test_lib_exposes_auth_only_gate(self):
+        lib = (REPO_ROOT / "scripts/queues/_lib_paper_grade_gates.sh").read_text(encoding="utf-8")
+        assert "auth_only_gate() {" in lib
+        # must NOT reset anything — that is the whole point
+        body = lib[lib.index("auth_only_gate() {"):lib.index("reset_and_auth_gate() {")]
+        for forbidden in ("docker rm", "reset_vwa", "page=reset", "indexer:reindex"):
+            assert forbidden not in body, f"auth_only_gate must not touch site state ({forbidden})"
+        assert "auth_required_gate" in body, "must go through the B-224 gate"
+
+    @pytest.mark.parametrize("script", QUEUES)
+    def test_every_queue_refreshes_auth_on_resume(self, script):
+        """Sibling propagation: the defect lived in a shared shape, so the fix
+        must too. queue_phantom_dom.sh is a symlink to queue_phantom_text.sh."""
+        src = (REPO_ROOT / "scripts/queues" / script).read_text(encoding="utf-8")
+        assert "auth_only_gate" in src, f"{script} still launches a resume without auth"
+
+    @pytest.mark.parametrize("script", QUEUES)
+    def test_auth_failure_aborts_the_resume(self, script):
+        """B-224 contract: never proceed NOT-LOGGED-IN under paper-grade."""
+        src = (REPO_ROOT / "scripts/queues" / script).read_text(encoding="utf-8")
+        i = src.index("auth_only_gate")
+        assert "|| exit 1" in src[i:i + 400], f"{script}: auth_only_gate failure must abort"
