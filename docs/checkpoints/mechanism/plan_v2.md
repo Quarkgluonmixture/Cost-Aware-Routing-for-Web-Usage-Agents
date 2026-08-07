@@ -159,8 +159,29 @@ mirror 只有 `artifacts/`，`episodes/` 在本地 `phase1/` 树。而
 
 ### ⚠️ 剩下的真实约束
 
-**(1) A100 磁盘余量 60 G（已用 88%）**，而 fire 还要跑约 10 天。VWA `phase1/` 已占 44 G。
-这不影响机制层（我们只读、且只拉 0.84 G 文本），但**是 fire 侧的独立风险**，需要有人盯。
+**(1) ~~A100 磁盘余量 60 G 是 fire 侧风险~~ —— 撤回，这条是误判**（2026-08-07 更正）。
+
+A100 有**两块盘**，而 `df -h /` 只看得到一块：
+
+| | |
+|---|---|
+| `vda1` → `/` | 485 G，用 426 G。**主体是 containerd 镜像 388 G**，P79 只占 ~5.5 G |
+| `sda` → `/mnt/scratch` | 503 G，**284 G 可用**。`results/visualwebarena` 是 **symlink 指到这里** |
+
+正在跑的 shopping fire 写 `results/visualwebarena/...` ⇒ **写 scratch，不碰 `/`**。
+剩 6 个 condition × ~2 G，scratch 有 284 G，**没有风险**。
+
+⚠️ 但 **`results/webarena` 是普通目录、就在 vda1** —— WA chain 才是要盯 `/` 的那条。
+next_steps §0 的「💾 磁盘」块早就写了这个区分，并标注它是 /stress P1-3-A 修正过的
+（原措辞「fire 数据不写 vda1」是**只验了一个 benchmark 就下的全称结论**）。
+
+> 我看到 `df -h /` 报 88% 就发警报，没问「这 88% 里有多少是我关心的东西」（答案：1.3%），
+> 也没问「fire 到底写哪块盘」。**一个真实、准确、但与问题无关的仪表** —— 比读数错误更难
+> 察觉，因为数字本身毫无可疑之处。与「测到 0 要先问为什么是 0」同构。
+>
+> 另注：整个 `results/` 做 symlink 会让 **Gate 3 fail-closed**，因为 **git 不 follow
+> symlink 做 tree traversal**，整棵子树会被当成 deleted。所以只能 **partial symlink**
+> （只迁 `results/visualwebarena`）。这条踩过一次，见笔记 §「Phase 2 results migrate」。
 
 **(2) 配对观测来自 som trajectory。** `_canonical_artifacts` 的两个 cell 都是 `B1_som_*` 的 run —— 同一次运行里
 同时记录了 dom 与 som 两种观测。所以 dom 观测是「当时若用 dom 会看到什么」的**反事实
@@ -346,7 +367,7 @@ patching 那条坏掉的路径。
 |---|---|---|
 | **DGX Spark** (`spark-9ea3`) | 环境齐、数据在本地、GPU 共享有争抢 | M1 pilot（先跑通）、M2 probe 训练（轻）、全部分析与聚合 |
 | **Holistic AI Sparks** (`spark-9017` idle + `spark-97a6` mix) | `ssh sparks` 通；`main` 分区 wallclock **3 天**；⚠️ **`/clusterhome/jiaming` 是空的**（只有 Desktop/snap）—— 无 venv、无代码、无数据 | M1 全量 patching sweep（GPU 密集、按 task 天然可切片）、M3 hidden state 批量提取 |
-| A100 | 正在跑 shop_b0_tail（~10 天）；**是 artifacts 的 source of truth**；磁盘只剩 60 G | **不跑计算**，只做只读 rsync（0.84 G 文本，已完成）。补 WA artifacts **不需要重跑、不需要排队** —— 数据一直都在 |
+| A100 | 正在跑 shop_b0_tail（~10 天）；**是 artifacts 的 source of truth**；fire 数据在 `/mnt/scratch`（284 G 可用），非 `/` | **不跑计算**，只做只读 rsync（0.84 G 文本，已完成）。补 WA artifacts **不需要重跑、不需要排队** —— 数据一直都在 |
 
 ### 建议的顺序（不要先铺 Sparks）
 

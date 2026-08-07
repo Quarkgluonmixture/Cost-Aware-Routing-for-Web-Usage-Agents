@@ -472,8 +472,9 @@ updated: 2026-08-06
 > ⚠️ **只有 VWA 不写 vda1**（`results/visualwebarena` 是符号链接）；**`results/webarena` 是普通目录、就在 vda1**，
 > 已占 3.9G，WA 7 个 condition 预计再加 **~5.9G**（余量 34G，可接受但要盯）。P1-3-A 修正 2026-08-04 /stress ——
 > 原措辞「fire 数据不写 vda1」是**只验证了一个 benchmark 就下的全称结论**。
-> 已把 `Qwen3-VL-4B`+`gemma-3-4b-it` 迁到 scratch symlink 回来，vda1 **92% → 88%**，
-> 距 ES flood_stage(95%) 余量 15G → **34G**。`blip2-flan-t5-xl`(15G) **故意留着** —— VWA `page_image_query` eval 要用。
+> 已把 `Qwen3-VL-4B`+`gemma-3-4b-it` 迁到 scratch symlink 回来，vda1 **92% → 88%**。
+> 余量别照抄这里（会 stale，2026-08-07 实测已回到 60G）——拉实时：
+> `ssh condense-a100 'df -h / /mnt/scratch; readlink -f ~/workspace/p79/results/visualwebarena'``blip2-flan-t5-xl`(15G) **故意留着** —— VWA `page_image_query` eval 要用。
 >
 > ---
 >
