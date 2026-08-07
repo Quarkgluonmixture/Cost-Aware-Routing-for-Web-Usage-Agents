@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=p79-b1966
-#SBATCH --array=0-23%2
+#SBATCH --array=0-23%1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=40G
@@ -30,10 +30,18 @@
 #
 # 为什么是 array 而不是一个长 job
 # ================================
-# researcher QoS: 最多 2 GPU、单 job 最长 72h。24 cell × 5.22h(实测中位数) ≈ 125h
-# 串行, 塞进一个 job 必然撞墙; 分成 12 轮 × 2 并发也要 ~63h, 仍然贴着 72h 上限,
-# 一次抖动就全盘皆输。改成 24 个独立 job (`%2` 让 Slurm 只跑 2 个并发, 正好吃满
-# GPU 配额): 单 job 只需 ~5-6h, 任何一个失败只损失那一个 cell, 重投即可。
+# researcher QoS: 最多 2 GPU、单 job 最长 72h。24 cell × ~3.2h(Sparks 实测) 串行
+# 塞进一个 job 必然撞 72h 墙。改成 24 个独立 job: 单 job 只需 ~3-4h, 任何一个失败
+# 只损失那一个 cell, 重投即可。
+#
+# 为什么并发是 %1 而不是 %2 (2026-08-07)
+# =====================================
+# 集群只有 spark-9017 + spark-97a6 两个节点。**留一个给别人** —— 组里其他人
+# (Swati) 也要用, 而 `%2` 会把两个节点全吃掉。这是共享集群的社交约定, 不是技术
+# 限制: QoS 允许 2 GPU, 但允许不等于应该。
+# 代价: 总时长翻倍 (~3.2 天 vs ~1.6 天)。这批是补跑不是赶 deadline, 值得让。
+# 若确认无人使用且时间紧, 可临时 `scontrol update jobid=<id> arraytaskthrottle=2`,
+# 但**默认必须是 1** —— 默认值决定了没人盯着时的行为。
 #
 # 用法
 # ====
