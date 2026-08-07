@@ -11474,3 +11474,28 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
   DGX 单卡串行 ≈ 5.2 天 / Sparks 2 节点 ≈ 2.6 天 / DGX+Sparks×2 ≈ 1.7 天。
 - **发现路径**: 2026-08-06 为 t38/t39 caption 止损核对 canonical 数字时, 先撞见两个 cell
   数字八位全同, 顺藤查到 queue 参数 → 默认值 → prompt 表。**不是任何测试抓到的。**
+
+### B-1968. health probe 把「超时」记成「延迟」, 告警说站点慢而实际是站点没回答 [P2] 🛠️ FIXED
+
+- **现象**: ntfy 24h 内 4 条 `P79 health alert ...: cls latency=10001ms >= 5000ms`。
+  `10001` = `10000 + 1`, 一眼可疑 —— 那正是 `curl -m 10` 的 timeout 上限。
+- **根因**: `curl -m 10 -w '%{time_total}'` **超时时仍会打印** ≈10.001, 且它是在
+  非零退出**之前**写的, 所以 `|| echo ""` 那条兜底从未触发。于是超时被当成一个
+  合法的延迟值进了中位数, `curl_cls_status` 还照样置 `ok`。
+  ⇒ 一个**完全不回答**的站点, 在日志和告警里长得像一个**很慢但活着**的站点。
+- **为什么这不是小事**: 两者的处置完全不同 —— 「慢」等一等或降并发, 「不回答」
+  要立刻查容器/重启。旧措辞把后者渲染成前者, 而且 `status=ok` 让任何按
+  status 过滤的下游分析直接漏掉这段。
+- **实测 (2026-08-07 A100, 串行 3 次)**: `200/0.20s` → `000/12.0s` → `000/12.0s`,
+  同时 `classifieds` 容器 **CPU 0.00% / 内存 60MB**, 容器自己的日志显示同一秒
+  在正常返回 200; host load 1.50, 内存可用 43G。**不是资源竞争** ——
+  是 PHP built-in server (单进程单线程) 的 head-of-line blocking 特征。
+  注: 与 §436.5 那次「18 个 cls URL 报 000」不同, 那次是 6 并发假阳性、串行重探
+  全 200; 这次**串行就挂**, 是真的间歇不可用。
+- **Fix**: 用 `%{http_code}` 判定 —— `000` = 无 HTTP 响应, 计入 `curl_cls_fail_n`
+  且**不进中位数**; status 三态 `ok` / `degraded`(部分失败) / `unreachable`(全失败);
+  告警文案分三种写, 不再统一成 "latency=Nms"。JSONL schema 加 `curl_cls_fail_n`。
+- **影响面**: 该脚本是 log-only side-channel (`never abort fire`), 所以历史 fire
+  的数据未受污染; 受影响的只有健康日志的可读性与任何基于它的事后诊断。
+- **cls 间歇不可用本身**: 对当前 fire (shopping) 无影响, cls 的 Phase 1a 也已跑完。
+  未修, 记录在此 —— 将来若要重跑 cls, 先查这个。
