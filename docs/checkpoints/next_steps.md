@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-08-06
+updated: 2026-08-07
 ---
 
 # Next Steps — Forward Action Ledger
@@ -23,7 +23,39 @@ updated: 2026-08-06
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟠 2026-08-06 傍晚 · **B-1966 [P0]：机制层测的不是它声称的对象**（最新，机制线）
+> ## 🔶 2026-08-07 · **B-1966 已修+已验，但 /stress 留了 2 个 P0 未修**（最新，机制线）
+>
+> chronicle → **笔记 §441**。**均未修 —— fix scope 待你确认**（/stress v7.3 硬约束）。
+>
+> | | |
+> |---|---|
+> | **P0-1** ⏰**时间敏感** | `run_stage2b_continuation_pilot.py:586` summary 硬编码 `(with image — clean)`。实测修复后的 `p2_psom_ptext_cls/pilot_summary.md` 仍写 `Source: phantom_som (with image)` —— **修复产出的文档在说反话**。DGX sweep 每跑完一个 cell 就多产一份错的。修法 15 min：从 `mode_receives_page_image` 派生措辞 + 加第 13 条测试 |
+> | **P0-2** | `verify_b1966_rerun.py` 的「未污染必须逐位相同」跨了两种对比：**0-15 在 Sparks 跑（跨机+修复两个变量）/ 16-23 在 DGX 跑（仅修复）**。跨机 bit-identical 从未独立验证，若跨机组出现 diff 无法归因。修法 30 min：从 `pilot_summary.md` 解析 `node=`，分组报告 |
+>
+> P1 五条：t39 撤回没落到生成端且 **`export_ablation_tables.py` 有两处**（`:1365` + `:2134`）/
+> 431-URL scope 只覆盖 `start_url` / 「structurally zero drop-one」只有 dom 数据（**som cell 已跑完，现在能实证**）/
+> 所有 amendment 的 `witness = git tag` 把指针说成原语 / `plan_v2 §3` M1 降噪可能让上界**缩水**，只写了一个方向。
+>
+> ### 重跑状态
+>
+> **8 个受污染 cell 全部已重跑完**（t39 的 real arm + 全部控制组）⇒ **t39 现在就能改，不必等**。
+> 早期双向验收 **8/8 符合预期**（该变的变了、不该变的一位没动）。
+>
+> ```bash
+> # 剩余 9 个未污染 cell（副作用检验）在 DGX 跑：
+> tail -3 logs/sweep_b1966_dgx.log
+> .venv/bin/python3 scripts/mechanistic/verify_b1966_rerun.py    # 双向验收
+> # Sparks 已完全释放（学长要求留空节点）：
+> ssh sparks 'squeue -u jiaming; sinfo -N -o "%N %.6t"'
+> ```
+>
+> ⚠️ **Sparks 规矩**：array 并发**默认 `%1`**，留一个节点给组里其他人（学长 2026-08-07）。
+> 已占两个时用 `scontrol update jobid=<id> arraytaskthrottle=1` + `scontrol requeue <task>` 在线降，不必重投。
+>
+> ⚠️ **A100 磁盘别再误报**：两块盘，`df -h /` 的 88% 与 VWA fire 无关（fire 写 `/mnt/scratch`，284G 可用）。
+> 要盯 `/` 的是 **WA**（`results/webarena` 是普通目录）。详见 memory `reference-condenser-a100-infra`。
+
+> ## 🟠 2026-08-06 傍晚 · **B-1966 [P0]：机制层测的不是它声称的对象**（上一轮）
 >
 > chronicle → **笔记 §440**（一天四次「长得像成功」+ B-1966 全过程）。
 >
