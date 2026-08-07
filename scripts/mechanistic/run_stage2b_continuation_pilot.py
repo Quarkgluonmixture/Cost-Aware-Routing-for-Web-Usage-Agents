@@ -132,6 +132,26 @@ def build_som_marks(obs_text: str, max_marks=None) -> str:
     return build_som_text_from_obs_text(obs_text, max_marks=max_marks)
 
 
+def _page_image_tag(mode: str) -> str:
+    """summary 里「这个 mode 到底喂没喂页面截图」的措辞 —— 从契约派生，不写死。
+
+    B-1966 后续 (2026-08-07 /stress P0-1): 原措辞是硬编码的
+    `Source: {mode} (with image — clean) / Target: {mode} (no image — mirage)`，
+    修复前碰巧对（source 无条件带图），修复后就开始说反话 —— 实测修复后跑出的
+    `p2_psom_ptext_cls/pilot_summary.md` 仍写 `Source: phantom_som (with image — clean)`，
+    而 `phantom_som` 的定义就是**不带图**。
+
+    这是 B-1966「声明 ≠ 实际」在文档层的复发，而且发生在修复自己的产出里：
+    当时数出契约写了两遍（source 侧 + target 侧）并都改了，**其实写了三遍**，
+    这行 summary 是第三遍。`pilot_summary.md` 同时是完成标记和人读入口，
+    错的描述会让读这批数据的人得出与实际计算相反的结论。
+
+    另外丢掉了原来的 `clean` / `mirage` 二分：那是「source=som 有图 / target=phantom 无图」
+    时代的标签，source 也可能是 phantom mode 之后它不再普遍成立。只陈述事实。
+    """
+    return "with page image" if mode_receives_page_image(mode) else "no page image"
+
+
 def build_inputs(extractor: HiddenStateExtractor, intent: str, mode: str, obs_text: str, image_path):
     user_text = extractor._build_user_text(intent, mode, obs_text)
     content = []
@@ -583,7 +603,7 @@ def main():
 - Model: {args.model_path}
 - Model revision: {args.model_revision}
 - Site: {args.site}, N task: {len(per_task_results)} × step_{args.step:03d}
-- Source: `{args.source_mode}` (with image — clean) / Target: `{args.target_mode}` (no image — mirage)
+- Source: `{args.source_mode}` ({_page_image_tag(args.source_mode)}) / Target: `{args.target_mode}` ({_page_image_tag(args.target_mode)})
 - Direction: {"reverse (target→source)" if args.reverse else "forward (source→target)"}
 - Tier: {args.tier or ("reverse" if args.reverse else "strong")}
 - max_new_tokens: {args.max_new_tokens} (greedy continuation, deterministic)

@@ -162,3 +162,47 @@ def test_page_image_is_not_task_reference_image():
     assert "mode_receives_page_image" not in window, (
         "任务参考图的注入被页面截图契约门控了 —— 两条路径被混在一起"
     )
+
+
+# --------------------------------------------------------------------------- #
+# 4. summary 的自我描述必须与契约一致（/stress P0-1, 2026-08-07）
+# --------------------------------------------------------------------------- #
+
+def test_pilot_summary_setup_line_derives_from_contract():
+    """`pilot_summary.md` 的 Setup 行不许再写死「有没有图」。
+
+    B-1966 修好之后，这行硬编码的
+        `Source: {mode} (with image — clean) / Target: {mode} (no image — mirage)`
+    立刻开始说反话：实测修复后跑出的 `p2_psom_ptext_cls/pilot_summary.md` 写着
+    `Source: phantom_som (with image — clean)`，而 `phantom_som` 的定义就是不带图。
+
+    数据是对的，**描述是反的** —— 而 `pilot_summary.md` 同时是完成标记和人读入口。
+    这是 B-1966「声明 ≠ 实际」在文档层的复发，发生在修复自己的产出里：当时数出契约
+    写了两遍（source 侧 + target 侧）并都改了，其实**写了三遍**。
+
+    所以这条断言守的不是措辞好看，而是「这个契约到底写在几个地方」。
+    """
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[1]
+    src = (repo / "scripts" / "mechanistic" /
+           "run_stage2b_continuation_pilot.py").read_text(encoding="utf-8")
+
+    # 旧的硬编码措辞必须从**模板**里消失。
+    #
+    # ⚠️ 认的是 f-string 模板独有的形态 `` `{args.source_mode}` (with image ``，
+    # 不是裸措辞 `(with image — clean)` —— 因为 `_page_image_tag` 的 docstring 里
+    # 正当地引用了旧措辞来解释这个 bug，用裸串会让断言撞上自己的注释而恒失败
+    # （2026-08-07 写这条测试时实测踩到）。docstring 写的是 `{mode}`，模板写的是
+    # `{args.source_mode}`，两者可区分。
+    assert "`{args.source_mode}` (with image" not in src, (
+        "summary 模板又把「有没有图」写死了 —— 它对 source=phantom_som 是错的"
+        "（B-1966 后 source 按 mode 决定是否带图）"
+    )
+    # 且必须从契约派生
+    assert "_page_image_tag(args.source_mode)" in src and "_page_image_tag(args.target_mode)" in src, (
+        "summary 的 Setup 行必须两侧都用 _page_image_tag() 派生"
+    )
+    assert "mode_receives_page_image(mode)" in src, (
+        "_page_image_tag 必须调用 som.py 的契约函数，而不是自己判断"
+    )

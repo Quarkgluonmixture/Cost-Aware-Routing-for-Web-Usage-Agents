@@ -11472,6 +11472,26 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
   `scripts/mechanistic/verify_b1966_rerun.py`。
   实测节奏 (log mtime 相邻间隔中位数 5.22 h/cell, queue 无并行):
   DGX 单卡串行 ≈ 5.2 天 / Sparks 2 节点 ≈ 2.6 天 / DGX+Sparks×2 ≈ 1.7 天。
+- **后续 P0-1 (2026-08-07 /stress Mode A)**: **修了计算, 没修它的自我描述。**
+  `run_stage2b_continuation_pilot.py:586` 的 summary 模板把「有没有图」**写死**:
+  `Source: {mode} (with image — clean) / Target: {mode} (no image — mirage)`。
+  修复前 source 无条件带图, 这行**碰巧**对; 修复后就开始说反话 —— 实测修复后跑出的
+  `p2_psom_ptext_cls/pilot_summary.md` 写 `Source: phantom_som (with image — clean)`,
+  而 `phantom_som` 的定义就是**不带图**。
+  ⇒ **这是 B-1966「声明≠实际」在文档层的复发, 发生在修复自己的产出里。**
+  当时数出契约写了两遍 (source 侧 + target 侧) 并都改了, **其实写了三遍**, summary 是第三遍。
+  `pilot_summary.md` 同时是完成标记和人读入口, 错的描述会让读这批数据的人得出相反结论。
+  - **Fix**: 新增 `_page_image_tag(mode)` 从 `mode_receives_page_image` 派生措辞;
+    丢掉 `clean`/`mirage` 二分 (那是 source=som 时代的标签, source 也可能是 phantom 后不再成立)。
+  - **已生成的 summary**: `rerender_pilot_summary_setup_line.py` 只重写那一行, **不重算**
+    (Result / curves / qualitative 三段本来就是对的; 重新生成整份要从 per_task 重算 agg =
+    把聚合逻辑再抄一遍 = 本 bug 病根的第四次复发)。**只扫 `canonical_b1966fix/`** ——
+    旧 `canonical/` 里那行对当时的行为是**准确的**, 它是 B-1966 的证据, 改它=销毁证据。
+    幂等; 实改 DGX 9 份 + Sparks 16 份。
+  - **测试第 13 条** + mutation 验证。⚠️ 该断言认 f-string 模板独有的形态
+    `` `{args.source_mode}` (with image ``, 不是裸措辞 —— 因为 `_page_image_tag` 的
+    docstring 正当地引用了旧措辞来解释 bug, 用裸串会让断言撞上自己的注释而恒失败 (实测踩到)。
+    **grep-based 测试的固有脆弱性: 注释里引用旧代码, 会让「旧代码已消失」的断言失效。**
 - **发现路径**: 2026-08-06 为 t38/t39 caption 止损核对 canonical 数字时, 先撞见两个 cell
   数字八位全同, 顺藤查到 queue 参数 → 默认值 → prompt 表。**不是任何测试抓到的。**
 
