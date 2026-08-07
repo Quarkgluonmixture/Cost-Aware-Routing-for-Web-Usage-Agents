@@ -45,12 +45,24 @@ def cells() -> list[tuple[str, str, str]]:
     return res
 
 
-def payload_hash(root: Path, name: str) -> str | None:
+def payload_hash(root: Path, name: str) -> tuple[str, int] | None:
+    """(per_task 的 md5, task 数)；未完成的 cell 返回 None。
+
+    完成判据必须是 `pilot_summary.md`，不是 results json 的存在性 ——
+    后者是**增量写入**的，跑完第 1 个 task 就已经在磁盘上了。
+
+    2026-08-06 实证：拿 json 存在性当完成标记，把一个正在跑的 `p5_rand_cls`
+    （当时 per_task 只有 1 条）判成「预期相同实际不同」的副作用告警。
+    那 1 条与旧结果逐位相同，根本没有副作用。判据要落在它想证明的那个事实上：
+    「文件存在」证明的是这个 cell **开始**跑了，不是**跑完**了。
+    """
+    if not (root / name / "pilot_summary.md").exists():
+        return None
     f = root / name / "patching_continuation_results.json"
     if not f.exists():
         return None
-    return hashlib.md5(
-        json.dumps(json.load(open(f))["per_task"], sort_keys=True).encode()).hexdigest()
+    per_task = json.load(open(f))["per_task"]
+    return hashlib.md5(json.dumps(per_task, sort_keys=True).encode()).hexdigest(), len(per_task)
 
 
 def main() -> int:
@@ -61,11 +73,14 @@ def main() -> int:
         expect = "same" if was_correct else "diff"
         o, n = payload_hash(OLD, name), payload_hash(NEW, name)
         if o is None or n is None:
-            verdict, ok = f"缺产物(old={'有' if o else '无'} new={'有' if n else '无'})", None
+            verdict, ok = f"未完成(old={'✓' if o else '—'} new={'✓' if n else '—'})", None
+        elif o[1] != n[1]:
+            # task 数不同 = 不是同一个比较对象，不能判 same/diff
+            verdict, ok = f"⚠ task 数不同 old={o[1]} new={n[1]}", False
         else:
-            actual = "same" if o == n else "diff"
+            actual = "same" if o[0] == n[0] else "diff"
             ok = (actual == expect)
-            verdict = ("✓" if ok else "❌") + f" 预期{expect} 实际{actual}"
+            verdict = ("✓" if ok else "❌") + f" 预期{expect} 实际{actual} (n={n[1]})"
         if ok is False:
             bad += 1
         rows.append((name, sm, expect, verdict))
@@ -80,9 +95,9 @@ def main() -> int:
     if bad:
         print(f"❌ {bad} 个 cell 与预期不符 —— 修复要么没生效, 要么有副作用")
         return 1
-    missing = sum(1 for r in rows if "缺产物" in r[3])
+    missing = sum(1 for r in rows if "未完成" in r[3])
     if missing:
-        print(f"⏳ {missing} 个 cell 尚无产物 (重跑未完成)")
+        print(f"⏳ {missing} 个 cell 尚未完成 (无 pilot_summary.md)")
         return 2
     print("✅ 全部符合预期: 该变的变了, 不该变的一位没动")
     return 0
