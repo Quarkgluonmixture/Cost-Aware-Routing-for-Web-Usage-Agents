@@ -29,7 +29,7 @@ updated: 2026-08-08
 > |---|---|
 > | ✅ **REALM** | Submission #192 已提交 08-06，**审查中**。notif **09-07** / camera-ready **09-14**。非归档轨 + Cross Submission 已保住主会投稿权 |
 > | 🔴 **毕设** | **硬截止 2026-09-01**（user 08-08）。落点 **`final_dissertation/`**（`prior/` 是学长给的往届优秀作品，参照用，不必逐字读）。当前除 `prior/` 外**为空** |
-> | 🎯 **NAACL 2027 main** | 学长 08-08 定的下一站，**毕设之后**启动。⚠️ ARR cycle / deadline **未核** —— 启动前查官方日历，别按记忆规划 |
+> | 🎯 **NAACL 2027 main** | **ARR submission `2026-10-12`**（已核官网；会议 2027-06-01~05 SF）。⚠️ 毕设交付后到 ARR **只有 41 天**，REALM 意见 09-07 才到（剩 35 天）⇒ **补实验要与毕设写作并行**（人力 vs GPU 不抢资源）。要跨的是**证据强度**，七个攻击面见 `task_naacl2027_main.md` |
 >
 > **毕设是纯写作路径，不需要任何新实验** —— cls+red Phase 1a 42 conditions / WA pilot /
 > mechanism archive 全部已落地。REALM 稿（8 页正文）是结果章骨架来源，但**毕设不是它的扩写**：
