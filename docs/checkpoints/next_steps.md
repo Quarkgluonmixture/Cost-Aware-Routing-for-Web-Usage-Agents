@@ -38,10 +38,19 @@ updated: 2026-08-08
 > ssh condense-a100 'docker top classifieds | grep -c "php -S"'
 > ```
 >
-> ⚠️ **未查证，别当结论**：cls Phase 1a 是在带此缺陷的站点上跑完的，
-> 而 `reset_vwa_sites.sh` Gate-3 注释提到的「Fire-5/6 eval-timeout aborts」与本缺陷表现一致 ——
-> **但两者是否同源没查过**。要判就得把 cls episode 的 timeout 时刻与容器日志的内部 POST 时刻对齐。
-> 已按 `CLAIM_UNVERIFIED` 记入 known 台账（`known.py B-1969`）。
+> ✅ **污染面已查证（笔记 §442.7 → §442.8 修正）**：**77/4032 canonical episodes (1.91%)**
+> 记录了一次与 B-1969 一致的 reset-time timeout，全部一次重试后完成；
+> 按 (model,mode) 分层 **O=4 vs E=6.31，plus-one p=0.24 —— 未识别出因果效应**。
+> 1.91% 是**探测下界非发生率**（counter 只在 reset 记账）；真值不可分离，且时间对齐
+> 永久不可得（cls 容器日志随 Gate-3 逐 condition restart 滚掉）。
+> 复算：`python3 scripts/analysis/scan_b1969_contamination.py`（canonical 白名单，seed 20260808）。
+>
+> ⚠️ **§442.7 那版「确有污染 p=0.024 / drop-one ≤0.45pp」已作废** —— 三家 /stress 查出
+> Simpson's paradox + 三个事实错误（详见 §442.8 与 commit `d5e4993`）。
+> 若在别处看到 5.13% vs 12.65% 或「156 次超时」，那是作废数字。
+>
+> ✅ 与 Fire-3/4/5/6 的 eval-timeout **无关**（§253：eval 挂死同刻 curl 仅 0.17s，
+> 真根因是客户端 BrowserContext 退化，B-1803 已修）。
 >
 > 另：ntfy 里 task 345 的 `start_url_content_error` **不需要处理** —— 2026-04-29 已裁定为
 > upstream Wikipedia ZIM 图片 404，论文 footnote 排除 1/466，换 mode 重跑必然重现。
