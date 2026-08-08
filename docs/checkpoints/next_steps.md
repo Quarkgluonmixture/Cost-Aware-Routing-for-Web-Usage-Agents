@@ -23,7 +23,33 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🔴 2026-08-08 · **现在的 critical path = 毕设论文，硬截止 09-01**（最新，全局）
+> ## 🔴 2026-08-09 · **AWS proxy 预算池见底 —— 所有 B0/B4 线卡在这**（最新，时间敏感）
+>
+> chronicle → **笔记 §444**。
+>
+> | | |
+> |---|---|
+> | 现状 | `budget_limit` **$1000 已用 99.79%**，实测燃烧 **$0.888/h**（$0.06/episode）|
+> | 影响面 | **DGX 与 A100 同一个池**。B0 全线 + B4 全线卡死；B1/B2/B3 走本地 GPU **不受影响** |
+> | 处置 | user 去续额度，**chain 不停**（`resume: true`，撞墙后原地续跑不丢数据）|
+> | 监控 | watcher 10min 轮询，<$0.50 / 耗尽 / **额度到账** 三个时点推 ntfy `p79-claude` |
+>
+> ```bash
+> # 当前余额（这一发本身 ~$0.00002）：
+> .venv/bin/python3 scripts/maintenance/probe_proxy_model_registry.py --invoke | tail -3
+> # 只看注册表不花钱：去掉 --invoke
+> ```
+>
+> **额度到账后按这个顺序花**（合计 ~$315，建议申请 $500 留余量）：
+> ① shop 补完 3.3 cond ~$86 → ② WA shopping + shopping_admin × B0 12 cond ~$75
+> → ③ **B4 = `eu.anthropic.claude-sonnet-4-6`** cls+red 12 cond ~$154
+>
+> ✅ **B4 可行性已探明**：改一行 config（`model.api_name`），不需要新 backend —— 详见 §444.2。
+> ⚠️ 选 **sonnet-4-6**（0.001/0.005，**与 B0 同价**），不是 sonnet-4-5（3x）。
+> ⚠️ **注册表列出 ≠ 能调用**：sonnet-5 / opus-5 / opus-4-7 / opus-4-8 / fable-5 五个全 400，
+> 而它们标的都是 0.001/0.005 占位价 —— 价格推不出可用性，加新模型前**逐个打一发**。
+
+> ## 🔴 2026-08-08 · **现在的 critical path = 毕设论文，硬截止 09-01**（次新，全局）
 >
 > | | |
 > |---|---|

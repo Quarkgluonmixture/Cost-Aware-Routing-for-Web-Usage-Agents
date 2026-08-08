@@ -36,7 +36,11 @@ updated: 2026-08-08
 - [ ] 7. 🔲 **Zekun Wu 原文** — 拉共同作者论文 → bib + 文献图谱 (arXiv API 核验, 非 WebSearch)
 - [ ] 8. 🔲 **文献图谱** — 可视 literature map (簇: routing/观测/confidence/mechanism)
 - [ ] 9. **visualization** — 系统化配图 (dashboard style: 少黑话少字多图)
-- [ ] 10. 🔲 **benchmark EDA** — task 分布/难度/站点差异/长度分布 (纯离线可现做)
+- [x] 10. ✅ **benchmark EDA** — **2026-08-09 done**: `scripts/analysis/benchmark_eda.py` →
+       `docs/analysis/benchmark_eda/corpus_eda.{md,json}` (六语料 × 分布/难度/eval/长度/模板)。
+       三个副产品进了笔记 §445: **run set vs scored set 双口径**(解释 205↔203 / 435↔432 并存)、
+       benchmark 自带 2 个错别字、**WA 零 ref image = OOD 的结构性理由**。
+       ⚠️ 图还没配 (dashboard style)，正文引用待写
 - [ ] 11. 🔲 **每章有开头+结尾** — 导语 + 小结/过渡 (逐章补, 机械必做)
 - [ ] 12. 🔲 **公式** — obs 构造/drop-one/estimand/router 规则形式化
 - [ ] 13. **每个 setting justify** — 4B/三站/step_002/24 task/50 tokens 逐个给理由 (素材在笔记)

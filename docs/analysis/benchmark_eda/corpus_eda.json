@@ -1,0 +1,439 @@
+[
+ {
+  "benchmark": "VWA",
+  "site": "classifieds",
+  "n_tasks": 234,
+  "n_na_excluded": 10,
+  "na_task_ids": [
+   24,
+   135,
+   164,
+   167,
+   189,
+   191,
+   194,
+   195,
+   196,
+   220
+  ],
+  "n_protocol_excluded": 0,
+  "protocol_exclusions": [],
+  "n_scored": 224,
+  "corpus_defects": [
+   {
+    "task_id": 161,
+    "field": "visual_difficulty",
+    "value": "mediun"
+   }
+  ],
+  "n_distinct_templates": 75,
+  "tasks_per_template_median": 3,
+  "tasks_per_template_max": 7,
+  "require_login": 234,
+  "require_reset": 22,
+  "with_reference_image": 68,
+  "reference_images_total": 68,
+  "multi_image_tasks": 0,
+  "eval_type_counts": {
+   "url_match": 131,
+   "string_match": 78,
+   "program_html": 31,
+   "page_image_query": 2
+  },
+  "eval_combos": {
+   "url_match": 125,
+   "string_match": 72,
+   "program_html": 29,
+   "string_match + url_match": 6,
+   "page_image_query + program_html": 2
+  },
+  "intent_words": {
+   "median": 18.0,
+   "mean": 19.7,
+   "p10": 12,
+   "p90": 28,
+   "max": 56
+  },
+  "intent_chars": {
+   "median": 100.0,
+   "mean": 105.6,
+   "max": 300
+  },
+  "reasoning_difficulty": {
+   "hard": 90,
+   "medium": 76,
+   "easy": 68
+  },
+  "visual_difficulty": {
+   "hard": 86,
+   "medium": 78,
+   "easy": 69,
+   "mediun": 1
+  },
+  "overall_difficulty": {
+   "hard": 104,
+   "medium": 88,
+   "easy": 42
+  }
+ },
+ {
+  "benchmark": "VWA",
+  "site": "reddit",
+  "n_tasks": 210,
+  "n_na_excluded": 5,
+  "na_task_ids": [
+   7,
+   26,
+   31,
+   39,
+   182
+  ],
+  "n_protocol_excluded": 2,
+  "protocol_exclusions": [
+   {
+    "task_id": 160,
+    "tier": "A",
+    "amendment": "AMENDMENT_08"
+   },
+   {
+    "task_id": 58,
+    "tier": "B",
+    "amendment": "AMENDMENT_08"
+   }
+  ],
+  "n_scored": 203,
+  "corpus_defects": [],
+  "n_distinct_templates": 87,
+  "tasks_per_template_median": 2,
+  "tasks_per_template_max": 14,
+  "require_login": 81,
+  "require_reset": 21,
+  "with_reference_image": 84,
+  "reference_images_total": 89,
+  "multi_image_tasks": 4,
+  "eval_type_counts": {
+   "program_html": 85,
+   "string_match": 70,
+   "url_match": 51,
+   "page_image_query": 28
+  },
+  "eval_combos": {
+   "program_html": 70,
+   "string_match": 64,
+   "url_match": 41,
+   "page_image_query": 13,
+   "page_image_query + program_html": 12,
+   "string_match + url_match": 6,
+   "page_image_query + program_html + url_match": 2,
+   "page_image_query + url_match": 1,
+   "program_html + url_match": 1
+  },
+  "intent_words": {
+   "median": 21.0,
+   "mean": 23.4,
+   "p10": 14,
+   "p90": 35,
+   "max": 74
+  },
+  "intent_chars": {
+   "median": 107.0,
+   "mean": 126.3,
+   "max": 413
+  },
+  "reasoning_difficulty": {
+   "medium": 79,
+   "hard": 73,
+   "easy": 58
+  },
+  "visual_difficulty": {
+   "easy": 95,
+   "medium": 74,
+   "hard": 41
+  },
+  "overall_difficulty": {
+   "medium": 79,
+   "hard": 76,
+   "easy": 55
+  }
+ },
+ {
+  "benchmark": "VWA",
+  "site": "shopping",
+  "n_tasks": 466,
+  "n_na_excluded": 31,
+  "na_task_ids": [
+   71,
+   90,
+   91,
+   92,
+   125,
+   126,
+   128,
+   129,
+   147,
+   148,
+   167,
+   188,
+   204,
+   209,
+   279,
+   280,
+   311,
+   316,
+   317,
+   322,
+   323,
+   333,
+   334,
+   337,
+   340,
+   364,
+   378,
+   379,
+   380,
+   401,
+   402
+  ],
+  "n_protocol_excluded": 3,
+  "protocol_exclusions": [
+   {
+    "task_id": 463,
+    "tier": "A",
+    "amendment": "AMENDMENT_09"
+   },
+   {
+    "task_id": 465,
+    "tier": "A",
+    "amendment": "AMENDMENT_09"
+   },
+   {
+    "task_id": 345,
+    "tier": "E",
+    "amendment": "AMENDMENT_10"
+   }
+  ],
+  "n_scored": 432,
+  "corpus_defects": [
+   {
+    "task_id": 179,
+    "field": "reasoning_difficulty",
+    "value": "hrad"
+   }
+  ],
+  "n_distinct_templates": 152,
+  "tasks_per_template_median": 3.0,
+  "tasks_per_template_max": 12,
+  "require_login": 346,
+  "require_reset": 19,
+  "with_reference_image": 169,
+  "reference_images_total": 189,
+  "multi_image_tasks": 18,
+  "eval_type_counts": {
+   "program_html": 293,
+   "string_match": 132,
+   "url_match": 42,
+   "page_image_query": 12
+  },
+  "eval_combos": {
+   "program_html": 280,
+   "string_match": 129,
+   "url_match": 38,
+   "page_image_query": 6,
+   "page_image_query + program_html": 6,
+   "program_html + url_match": 4,
+   "program_html + string_match": 3
+  },
+  "intent_words": {
+   "median": 17.0,
+   "mean": 18.4,
+   "p10": 11,
+   "p90": 27,
+   "max": 54
+  },
+  "intent_chars": {
+   "median": 85.5,
+   "mean": 93.3,
+   "max": 273
+  },
+  "reasoning_difficulty": {
+   "easy": 172,
+   "medium": 162,
+   "hard": 131,
+   "hrad": 1
+  },
+  "visual_difficulty": {
+   "medium": 175,
+   "easy": 168,
+   "hard": 123
+  },
+  "overall_difficulty": {
+   "medium": 211,
+   "hard": 147,
+   "easy": 108
+  }
+ },
+ {
+  "benchmark": "WA",
+  "site": "reddit",
+  "n_tasks": 106,
+  "n_na_excluded": 2,
+  "na_task_ids": [
+   723,
+   726
+  ],
+  "n_protocol_excluded": 0,
+  "protocol_exclusions": [],
+  "n_scored": 104,
+  "corpus_defects": [],
+  "n_distinct_templates": 21,
+  "tasks_per_template_median": 5,
+  "tasks_per_template_max": 6,
+  "require_login": 106,
+  "require_reset": 0,
+  "with_reference_image": 0,
+  "reference_images_total": 0,
+  "multi_image_tasks": 0,
+  "eval_type_counts": {
+   "program_html": 95,
+   "url_match": 58,
+   "string_match": 11
+  },
+  "eval_combos": {
+   "program_html + url_match": 58,
+   "program_html": 37,
+   "string_match": 11
+  },
+  "intent_words": {
+   "median": 16.0,
+   "mean": 16.2,
+   "p10": 9,
+   "p90": 25,
+   "max": 28
+  },
+  "intent_chars": {
+   "median": 91.0,
+   "mean": 93.8,
+   "max": 186
+  },
+  "reasoning_difficulty": null,
+  "visual_difficulty": null,
+  "overall_difficulty": null
+ },
+ {
+  "benchmark": "WA",
+  "site": "shopping",
+  "n_tasks": 192,
+  "n_na_excluded": 19,
+  "na_task_ids": [
+   22,
+   24,
+   166,
+   191,
+   225,
+   234,
+   235,
+   301,
+   302,
+   313,
+   368,
+   376,
+   792,
+   793,
+   794,
+   795,
+   796,
+   797,
+   798
+  ],
+  "n_protocol_excluded": 0,
+  "protocol_exclusions": [],
+  "n_scored": 173,
+  "corpus_defects": [],
+  "n_distinct_templates": 49,
+  "tasks_per_template_median": 5,
+  "tasks_per_template_max": 6,
+  "require_login": 192,
+  "require_reset": 0,
+  "with_reference_image": 0,
+  "reference_images_total": 0,
+  "multi_image_tasks": 0,
+  "eval_type_counts": {
+   "string_match": 88,
+   "program_html": 62,
+   "url_match": 57
+  },
+  "eval_combos": {
+   "string_match": 88,
+   "program_html": 47,
+   "url_match": 42,
+   "program_html + url_match": 15
+  },
+  "intent_words": {
+   "median": 13.0,
+   "mean": 16.1,
+   "p10": 8,
+   "p90": 24,
+   "max": 46
+  },
+  "intent_chars": {
+   "median": 77.5,
+   "mean": 88.8,
+   "max": 256
+  },
+  "reasoning_difficulty": null,
+  "visual_difficulty": null,
+  "overall_difficulty": null
+ },
+ {
+  "benchmark": "WA",
+  "site": "shopping_admin",
+  "n_tasks": 182,
+  "n_na_excluded": 6,
+  "na_task_ids": [
+   115,
+   183,
+   201,
+   247,
+   491,
+   790
+  ],
+  "n_protocol_excluded": 0,
+  "protocol_exclusions": [],
+  "n_scored": 176,
+  "corpus_defects": [],
+  "n_distinct_templates": 41,
+  "tasks_per_template_median": 5,
+  "tasks_per_template_max": 7,
+  "require_login": 182,
+  "require_reset": 0,
+  "with_reference_image": 0,
+  "reference_images_total": 0,
+  "multi_image_tasks": 0,
+  "eval_type_counts": {
+   "program_html": 91,
+   "string_match": 88,
+   "url_match": 28
+  },
+  "eval_combos": {
+   "string_match": 88,
+   "program_html": 66,
+   "program_html + url_match": 25,
+   "url_match": 3
+  },
+  "intent_words": {
+   "median": 12.0,
+   "mean": 12.3,
+   "p10": 8,
+   "p90": 19,
+   "max": 24
+  },
+  "intent_chars": {
+   "median": 64.0,
+   "mean": 68.8,
+   "max": 139
+  },
+  "reasoning_difficulty": null,
+  "visual_difficulty": null,
+  "overall_difficulty": null
+ }
+]
