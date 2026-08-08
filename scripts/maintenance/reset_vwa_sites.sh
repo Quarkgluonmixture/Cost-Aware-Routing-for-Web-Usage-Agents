@@ -53,7 +53,16 @@ _reset_vwa_local_classifieds() {
     # PHP-FPM worker memory + MySQL connection-pool/buffer state → (a) substrate
     # decay (the ~7-10min latency-degradation windows behind Fire-5/6 eval-timeout
     # aborts), (b) cross-condition latency confound (a condition on a warm 6-day
-    # container is not comparable to one on a fresh container). Restarting both
+    # container is not comparable to one on a fresh container).
+    # ⚠ B-1969 correction (2026-08-08): "PHP-FPM worker memory" is wrong for cls —
+    # the image runs `php -S` (built-in server), there is no FPM here. The real
+    # source of cls's latency-degradation windows was OSClass auto-cron
+    # (index.php:335) self-requesting into that single worker and blocking the whole
+    # site for 12s+; fixed via PHP_CLI_SERVER_WORKERS=4 in the cls compose. Whether
+    # the Fire-5/6 eval-timeout aborts cited above share that root cause is NOT yet
+    # established — see B-1969 "待评估". Gate 3 stays regardless: (b) the
+    # cross-condition freshness symmetry argument is independent of the mechanism.
+    # Restarting both
     # containers per condition makes cls symmetric with reddit's rm+run. The
     # B-1836 retry safety-net stays in place but should now rarely fire. Flag-gated
     # so dev runs (flag unset) skip the ~30-60s cost.

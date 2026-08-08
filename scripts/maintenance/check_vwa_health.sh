@@ -11,6 +11,16 @@
 # pressure / PHP-FPM saturation / Postgres lock contention. This script
 # captures the metrics needed to test that hypothesis post-Fire-5.
 #
+# B-1969 correction (2026-08-08): that hypothesis named the wrong mechanism for cls.
+# cls has NO PHP-FPM and no Postgres — the image runs `php -S` (single-worker
+# built-in server) against MySQL. The real cause of the recurring `cls DEGRADED`
+# alerts was OSClass auto-cron (index.php:335) firing an HTTP request back at the
+# same single-worker server on every page request; whenever that cron had work to
+# do it held the only worker and the site stopped answering for 12s+. Fixed by
+# PHP_CLI_SERVER_WORKERS=4 in the cls compose. Keep probing — this script is what
+# surfaced it — but read `cls DEGRADED` as "some request is monopolising a worker",
+# not as "FPM/Postgres pressure".
+#
 # Outputs a single JSON object on stdout + appends one JSONL line to
 # logs/health/<run_id>_health.jsonl if RUN_ID env is set. NEVER exits non-zero
 # from threshold breaches — this is observability, NOT enforcement. Exit codes:

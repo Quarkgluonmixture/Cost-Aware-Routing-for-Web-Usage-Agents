@@ -11519,3 +11519,54 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
   的数据未受污染; 受影响的只有健康日志的可读性与任何基于它的事后诊断。
 - **cls 间歇不可用本身**: 对当前 fire (shopping) 无影响, cls 的 Phase 1a 也已跑完。
   未修, 记录在此 —— 将来若要重跑 cls, 先查这个。
+  - **↑ 已于 2026-08-08 查清并修复 → 见 B-1969**。本条把它归到「PHP built-in server 的
+    head-of-line blocking」, 方向对但没答出**是谁占着那唯一的线程**: 是 OSClass auto-cron
+    的自请求 (`index.php:335`), 不是外部流量排队。修法 = `PHP_CLI_SERVER_WORKERS=4`。
+
+### B-1969. cls 站点周期性 12s+ 完全不可用 —— OSClass auto-cron 自请求撞上 `php -S` 单 worker [P1] 🛠️ FIXED
+
+- **现象**: ntfy 每天数条 `cls DEGRADED 2/3 probes no-response`。串行探测可复现:
+  `200/0.22s → 000/12.0s → 000/12.0s → 000/12.0s → 200/3.09s → 200/0.42s`。
+  容器 CPU 0.00%, MySQL processlist 全空, 站点平时 24h 只有 261 行日志 —— **不是负载**。
+- **根因 (两个条件缺一不可)**:
+  1. 镜像 `jykoh/classifieds` 的启动命令是 `php -S 0.0.0.0:9980` —— PHP **内置开发服务器**,
+     默认**单 worker**, 一次只处理一个请求。
+  2. OSClass `index.php:335` 的 auto-cron:
+     `if(osc_auto_cron()) { osc_doRequest(osc_base_url(), array('page'=>'cron')); }`
+     —— **每个普通页面请求**在收尾时都会朝**同一个 server** 再发一个 HTTP 请求。
+  发起方正占着那唯一的 worker, 自请求就进不了 accept 队列; 平时 cron 无事可做时秒回、
+  只多 ~0.17s, 但**每当 cron 真有活干**, 单 worker 被它独占, 站点对外**完全不回答**,
+  所有并发/后续请求一起 12s 超时。即: **单个请求靠自己就能把整站锁死**, 与外部负载无关。
+- **证据链 (2026-08-08 A100)**:
+  - 容器内进程 (`docker top` + `/proc`) 只有 **1 个** `php -S`, 5 天累计 CPU 仅 2 分钟 → 每个请求都极轻。
+  - 自请求来自 `127.0.0.1`(容器 loopback) 而非 `172.18.0.1`(docker bridge) → 是 PHP 自己发的。
+  - 对照实验: 5 次 `GET /` → 产生 **5** 个内部 POST; 5 次 `GET /?page=cron`
+    (被 `index.php:37` 排除, 不触发 auto-cron) → 产生 **0** 个, 且延迟 0.06s vs 0.23s。
+  - 24h 日志里内部 POST 的时刻 (`09:39 / 11:29 / 14:04`) 与 ntfy 的 DEGRADED 告警时刻
+    **逐一吻合**, 且每次恰好 3 个 = health probe 的 3 次 curl。
+- **对 B-1968 归因的修正**: B-1968 判定为「PHP built-in server 的 head-of-line blocking」——
+  方向对, 但**没答出是谁占着那唯一的线程**, 因而记成「未修, 记录备查」。真凶是应用层的
+  auto-cron 自请求, 不是外部流量排队。另注: `check_vwa_health.sh` 开头假设与
+  `reset_vwa_sites.sh` Gate-3 注释均写作「PHP-FPM saturation / PHP-FPM worker memory」,
+  **cls 根本没有 PHP-FPM** (那是 shopping 的 Magento 栈), 已一并订正。
+- **Fix**: cls compose `web.environment` 加 `PHP_CLI_SERVER_WORKERS=4` (PHP ≥7.4; 实测镜像
+  为 8.1.27)。自请求落到另一个 worker, 死锁消失。
+- **为什么不选「关掉 auto-cron」**: 那个开关在 DB 的 `t_preference` 里, 而 cls reset 的
+  `page=reset` 会 DROP/seed 重灌 DB —— 改了也会被下一次 reset 冲掉。env 则能活过
+  Gate-3 的 `docker restart`(restart 保留容器配置)。env 方案还顺带覆盖**任何**
+  「单个慢请求阻塞全站」的情形, 不止 cron 这一个源头。
+- **验证 (修后即时)**: 串行 10 次探测 **0 失败** (全 0.21s); 并发 8 请求总耗时 **0.48s**
+  (单 worker 必然串行 ≈2s); 日志时序上 `[8] GET /` 与 `[10] POST Accepted` **同秒重叠**
+  (worker 编号是启用多 worker 后才出现的前缀) —— 死锁成因被消除。3h soak 另行记录。
+- **落点**: `scripts/vwa/start_vwa_docker.sh` 的 `start_classifieds()` —— 在 cp-then-sed
+  模板渲染**之后**注入这行 env (幂等, 可用 `CLS_PHP_WORKERS` 覆写)。
+  **不是**落在 `classifieds_docker_compose/docker-compose.yml`: 那个目录被 VWA submodule 的
+  `.gitignore:153` 整体忽略(文件里有明文 `RESET_TOKEN`), 从未被 track —— 改它只是**单机本地
+  状态**, 任何别的 host 都继承不到。这一点最初写错过: 先改了 compose 就以为"已固化进版本
+  控制", 直到 `git status` 显示 submodule 干净才发现该文件根本没被 track。
+  注入点选在渲染之后, 同时也免疫 B-751 的 pristine-template 覆盖。
+  A100 上的 compose 已直接改并 recreate 容器(即时生效), 脚本注入保证将来任何 host 一致。
+- **待评估 (未下结论)**: cls 的 Phase 1a 数据是在**带此缺陷**的站点上跑的。
+  `reset_vwa_sites.sh` Gate-3 注释提到的「~7-10min latency-degradation windows behind
+  Fire-5/6 eval-timeout aborts」与本缺陷的表现一致, 但两者是否同源**尚未查证**;
+  需要按 cls episode 的 timeout/异常时刻与容器日志里的内部 POST 时刻做一次对齐再判。

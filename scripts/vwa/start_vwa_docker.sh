@@ -445,6 +445,24 @@ start_classifieds() {
   cp -f "${compose_template}" "${compose_yml}"
   sed -i "s|<your-server-hostname>|${HOSTNAME_VALUE}|g" "${compose_yml}"
   sed -i -E "s|CLASSIFIEDS=http://[^:]+:9980/|CLASSIFIEDS=http://${HOSTNAME_VALUE}:9980/|g" "${compose_yml}"
+  # B-1969 (2026-08-08): the cls image runs `php -S` (PHP built-in server), which is
+  # SINGLE-WORKER by default, while OSClass's auto-cron (index.php:335 —
+  # `osc_doRequest(osc_base_url(), array('page'=>'cron'))`) makes every normal page
+  # request fire an HTTP request back at this same server. The originator holds the
+  # only worker, so that self-request cannot be accepted until it finishes; whenever
+  # the cron actually has work to do the site stops answering entirely for 12s+ and
+  # every concurrent request times out. Measured pre-fix: 3 of 6 serial probes
+  # returned 000 after 12.0s while container CPU sat at 0.00%.
+  #
+  # Injected HERE rather than in docker-compose.yml because that file is gitignored
+  # by the VWA submodule (.gitignore:153 — it carries a plaintext RESET_TOKEN), so an
+  # edit there is per-machine local state that no other host would ever inherit.
+  # Doing it after the cp-then-sed template render also makes it immune to B-751's
+  # pristine-template overwrite. Idempotent: only appends when absent.
+  if ! grep -q "PHP_CLI_SERVER_WORKERS" "${compose_yml}"; then
+    sed -i -E "/RESET_TOKEN=/a\\      - PHP_CLI_SERVER_WORKERS=${CLS_PHP_WORKERS:-4}" "${compose_yml}"
+    echo "[START] cls: injected PHP_CLI_SERVER_WORKERS=${CLS_PHP_WORKERS:-4} (B-1969 auto-cron self-request deadlock)"
+  fi
   (cd "${compose_dir}" && docker compose up --build -d)
   if (( classifieds_running == 0 )); then
     sleep 15
