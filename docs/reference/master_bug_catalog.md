@@ -11566,7 +11566,28 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
   控制", 直到 `git status` 显示 submodule 干净才发现该文件根本没被 track。
   注入点选在渲染之后, 同时也免疫 B-751 的 pristine-template 覆盖。
   A100 上的 compose 已直接改并 recreate 容器(即时生效), 脚本注入保证将来任何 host 一致。
-- **待评估 (未下结论)**: cls 的 Phase 1a 数据是在**带此缺陷**的站点上跑的。
-  `reset_vwa_sites.sh` Gate-3 注释提到的「~7-10min latency-degradation windows behind
-  Fire-5/6 eval-timeout aborts」与本缺陷的表现一致, 但两者是否同源**尚未查证**;
-  需要按 cls episode 的 timeout/异常时刻与容器日志里的内部 POST 时刻做一次对齐再判。
+- **污染面 (2026-08-08 已查证 → 笔记 §442.7; 全扫 18 run / 4257 episode / 88203 step)**:
+  - **确有污染, 但被基建吸收且有界**: 78 个 episode (**1.83%**) 触发 `reset_goto_timeout`,
+    156 次超时尝试**全部 ≥12s** (min 15.0s / p50 31.0s), 原因清一色 `Page.goto: Timeout 30000ms`
+    —— 与本缺陷的窗口吻合。但 **`recovered=True` × 78, `error=None` × 78,
+    `benchmark_noise=False` × 78**: B-1831/B-1833 的「fresh-browser 重建 + backoff 重试」
+    把它们全部接住了, 无一 fail-closed。按 `vwa_wrapper.py:400` 的契约, reset 重试属
+    infra recovery, episode SR 由**随后那次成功 reset 之后**的 agent 表现决定。
+  - **但这些 episode 确实被拖累了**: 其 SR **5.13%** vs **同一批 64 个 task id 在未触发
+    timeout 的 episode 上的 12.65%** (n=1138) —— 配对比较排除了「这些 task 本来就难」的
+    选择偏倚 (12.65% 还略高于全体 11.21%), 单侧二项 p=**0.024**。
+    机制验证: 这些 episode 的 step 长尾率 (`env_step`≥12s) 在**每一个 step_idx 位置**都是
+    对照组的 2-3× (step0 5.13% vs 1.60%; ≥6 7.05% vs 3.33%) ⇒ 不是只有 reset 那一下,
+    **整个 episode 都处在站点不健康的时段**。
+  - **对 paper 的影响 (校准蒙特卡洛 1000 次, 受影响 episode 按 12.65% 基线重抽)**:
+    drop-one oracle 期望偏移中位 **B0 0.00pp / B1 0.45pp / B2 0.45pp**, p95 上界 ~1.3pp。
+    0.45pp = 1/224 = **恰好一个 task 的粒度**。per-cell SR 偏差 ≤±0.56pp 且方向有正有负。
+    ⚠️ 极端上界 (假设 78 个全部本应 success) 是 B2 2.68pp, 但那**严重夸大** —— 干净基线只有
+    12.65%, 期望翻转约 5.9 个而非 74 个。
+  - ⚠️ **分布不均**: B0 0.45% / B1 2.23% / B2 3.05%; mode 间 vision 3.12% 最高其余 1.45-1.93%。
+    做 **model 间**比较时要留意; mode 间 (= drop-one 的比较轴) 相对均匀。
+  - **与 Fire-3/4/5/6 的 eval-timeout abort 无关**: Gate-3 注释把两者写成一件事是当时的假设。
+    §253 实测 —— eval 挂死的同一时刻 `curl` 该 item 仅 **0.17s**, 全新 context 加载同页约
+    **170ms**; 若是站点不回答 curl 同样会挂。那条线的真根因是 agent 的 BrowserContext 退化
+    (客户端侧), 已由 B-1803 修复、re-fire R9755 零 `EvaluatorUnavailableError` 证实。
+    本轮全扫也显示 `eval_goto_timeout` 仅 11 个 episode, 与那 78 个基本不重叠。
