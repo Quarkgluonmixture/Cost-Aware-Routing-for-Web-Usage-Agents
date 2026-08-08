@@ -5,16 +5,23 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "**2026-08-10 (D9 v1 → advisor) — 4 天后, REALM 提交后的 critical path**。REALM 稿 (Submission #192, 8 页正文) 可作为结果章的骨架复用; 数据与分析已全部落地"
-detail: paper_drafts
+eta: "**2026-09-01 硬截止 (user 2026-08-08)** — 全稿交付。剩 ~24 天。REALM 稿 (Submission #192, 8 页正文, 审查中) 可作为结果章骨架复用; 数据与分析已全部落地, 这是纯写作 critical path"
+detail: final_dissertation/
 created: 2026-06-10
-updated: 2026-08-06
+updated: 2026-08-08
 ---
 
-# Thesis full draft v1 → advisor
+# Thesis full draft → 2026-09-01 硬截止
 
-链: results + discussion 章 07-24 (D8) → 全稿 v1 **08-10 (D9)** → 修订完 08-24 (D10)
-→ official submission early-Sep (D11, 精确日期 TBC)。
+**落点 = `final_dissertation/`** (2026-08-08 user 指定; `final_dissertation/prior/` 放学长给的
+往届优秀作品作参照, 不必逐字读)。REALM 稿是结果章骨架来源, 但**毕设不是 REALM 稿的扩写** ——
+毕设要 problem-first + concept-first + 文献图谱 + benchmark EDA, 这些 8 页会议稿里没有。
+
+**当前**: `final_dissertation/` 除 `prior/` 外为空, 全稿待写。数据与分析已全部落地
+(cls+red Phase 1a 42 conditions / WA pilot / mechanism archive), **不再需要任何新实验**。
+
+原链 (已被 09-01 硬截止取代): results+discussion 07-24 (D8) → 全稿 v1 08-10 (D9)
+→ 修订完 08-24 (D10) → submission early-Sep (D11)。
 
 ## 学长毕设写作 rubric 13 条 (2026-07-24, 详 issue_advisor_sync_2026-07-24)
 

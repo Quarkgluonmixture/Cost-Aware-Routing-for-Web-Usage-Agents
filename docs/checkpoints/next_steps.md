@@ -23,7 +23,27 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟢 2026-08-08 · **cls 的周期性不可用已修 (B-1969) — cls chain 的这个前置障碍已清**（最新，基建线）
+> ## 🔴 2026-08-08 · **现在的 critical path = 毕设论文，硬截止 09-01**（最新，全局）
+>
+> | | |
+> |---|---|
+> | ✅ **REALM** | Submission #192 已提交 08-06，**审查中**。notif **09-07** / camera-ready **09-14**。非归档轨 + Cross Submission 已保住主会投稿权 |
+> | 🔴 **毕设** | **硬截止 2026-09-01**（user 08-08）。落点 **`final_dissertation/`**（`prior/` 是学长给的往届优秀作品，参照用，不必逐字读）。当前除 `prior/` 外**为空** |
+> | 🎯 **NAACL 2027 main** | 学长 08-08 定的下一站，**毕设之后**启动。⚠️ ARR cycle / deadline **未核** —— 启动前查官方日历，别按记忆规划 |
+>
+> **毕设是纯写作路径，不需要任何新实验** —— cls+red Phase 1a 42 conditions / WA pilot /
+> mechanism archive 全部已落地。REALM 稿（8 页正文）是结果章骨架来源，但**毕设不是它的扩写**：
+> problem-first、concept-first、文献图谱、benchmark EDA 这些 8 页会议稿里没有。
+>
+> 起手先读 → `_status/tasks/task_thesis_draft.md`（含学长 **rubric 13 条**，写/审每章逐条对照；
+> 其中 2/8/10/12 = 纯离线可做：系统结构图 / 文献图谱 / benchmark EDA / 形式化公式）。
+>
+> ```bash
+> make status V='tasks#Now'        # roadmap 现况
+> ls final_dissertation/           # 写作落点
+> ```
+
+> ## 🟢 2026-08-08 · **cls 的周期性不可用已修 (B-1969)**（基建线，已收口）
 >
 > chronicle → **笔记 §442**。起因是看 ntfy 的 `cls DEGRADED`，追到 OSClass auto-cron
 > 朝单-worker 的 `php -S` 自请求 → cron 一有活干整站 12s+ 不回答。B-1968 昨天记为「未修，备查」，现已修。
