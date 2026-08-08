@@ -11566,28 +11566,41 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
   控制", 直到 `git status` 显示 submodule 干净才发现该文件根本没被 track。
   注入点选在渲染之后, 同时也免疫 B-751 的 pristine-template 覆盖。
   A100 上的 compose 已直接改并 recreate 容器(即时生效), 脚本注入保证将来任何 host 一致。
-- **污染面 (2026-08-08 已查证 → 笔记 §442.7; 全扫 18 run / 4257 episode / 88203 step)**:
-  - **确有污染, 但被基建吸收且有界**: 78 个 episode (**1.83%**) 触发 `reset_goto_timeout`,
-    156 次超时尝试**全部 ≥12s** (min 15.0s / p50 31.0s), 原因清一色 `Page.goto: Timeout 30000ms`
-    —— 与本缺陷的窗口吻合。但 **`recovered=True` × 78, `error=None` × 78,
-    `benchmark_noise=False` × 78**: B-1831/B-1833 的「fresh-browser 重建 + backoff 重试」
-    把它们全部接住了, 无一 fail-closed。按 `vwa_wrapper.py:400` 的契约, reset 重试属
-    infra recovery, episode SR 由**随后那次成功 reset 之后**的 agent 表现决定。
-  - **但这些 episode 确实被拖累了**: 其 SR **5.13%** vs **同一批 64 个 task id 在未触发
-    timeout 的 episode 上的 12.65%** (n=1138) —— 配对比较排除了「这些 task 本来就难」的
-    选择偏倚 (12.65% 还略高于全体 11.21%), 单侧二项 p=**0.024**。
-    机制验证: 这些 episode 的 step 长尾率 (`env_step`≥12s) 在**每一个 step_idx 位置**都是
-    对照组的 2-3× (step0 5.13% vs 1.60%; ≥6 7.05% vs 3.33%) ⇒ 不是只有 reset 那一下,
-    **整个 episode 都处在站点不健康的时段**。
-  - **对 paper 的影响 (校准蒙特卡洛 1000 次, 受影响 episode 按 12.65% 基线重抽)**:
-    drop-one oracle 期望偏移中位 **B0 0.00pp / B1 0.45pp / B2 0.45pp**, p95 上界 ~1.3pp。
-    0.45pp = 1/224 = **恰好一个 task 的粒度**。per-cell SR 偏差 ≤±0.56pp 且方向有正有负。
-    ⚠️ 极端上界 (假设 78 个全部本应 success) 是 B2 2.68pp, 但那**严重夸大** —— 干净基线只有
-    12.65%, 期望翻转约 5.9 个而非 74 个。
-  - ⚠️ **分布不均**: B0 0.45% / B1 2.23% / B2 3.05%; mode 间 vision 3.12% 最高其余 1.45-1.93%。
-    做 **model 间**比较时要留意; mode 间 (= drop-one 的比较轴) 相对均匀。
-  - **与 Fire-3/4/5/6 的 eval-timeout abort 无关**: Gate-3 注释把两者写成一件事是当时的假设。
-    §253 实测 —— eval 挂死的同一时刻 `curl` 该 item 仅 **0.17s**, 全新 context 加载同页约
-    **170ms**; 若是站点不回答 curl 同样会挂。那条线的真根因是 agent 的 BrowserContext 退化
-    (客户端侧), 已由 B-1803 修复、re-fire R9755 零 `EvaluatorUnavailableError` 证实。
-    本轮全扫也显示 `eval_goto_timeout` 仅 11 个 episode, 与那 78 个基本不重叠。
+- **污染面 (v2, 2026-08-08 — 三家 /stress 推翻 v1 后重算 → 笔记 §442.7/§442.8)**:
+  ⚠️ **本节 v1 的结论「确有污染但有界, p=0.024」已作废**, 四处错误见下方「v1 的四个错误」。
+  可复现: `scripts/analysis/scan_b1969_contamination.py`(v2, seed 20260808)。
+  - **发生率 = 探测下界, 不是发生率**: canonical (18 run × 224 = **4032**, 经
+    `pass1_run_manifest.json` 白名单) 中 **77 个 episode (1.91%)** 记录了一次与 B-1969 一致的
+    reset-time `Page.goto` timeout; `timeout_events=77 / retry_events=77 / latency 条目=154`,
+    即**每个 episode 恰好「1 次超时 + 1 次成功重试」**; 首次尝试 median **30.99s**,
+    成功重试 median **19.11s**; `recovered=True` 全数。
+    `reset_goto_timeout_count` 只在 env.reset 阶段记账 (`vwa_wrapper.py:404`), **episode 中段
+    撞上窗口它看不到** ⇒ 1.91% 是探测下界。全库有 **644/4032 (15.97%)** 的 episode 含至少一个
+    `env_step ≥12s`, 但长延迟不特异于本缺陷 (页面重也会长), 故 644 只是上界, 真值不可分离。
+  - **未识别出因果效应**: 按 (model, mode) cell 分层, 实测成功 **O=4** vs 分层期望 **E=6.31**,
+    20000 次分层 permutation **plus-one p=0.2397**。
+    ⚠️ 混合口径的 5.13% vs 12.65% (p=0.024) 是 **Simpson's paradox**: flagged 里 53% 来自 B2
+    (cell SR <2%), 而 pooled 基线均匀铺在 18 cell、被 B0 (15-29%) 拉高。**勿引用该对比**。
+  - **「整个 episode 都在降级时段」是生态学谬误**: 77 个 flagged 里只有 **19 个**有任何
+    post-reset `env_step ≥12s`, **58 个一个都没有**; 聚合率被少数 episode 驱动, 且 step_idx=4
+    处的比值是 **0.89×**(低于 1)。v1 那句「每一个 step_idx 位置都 2-3×」为误述。
+  - **drop-one oracle 敏感性 (cell-specific 反事实, 10000 次, 报 p50/p95/p99)**:
+    最大 p95 偏移 **B0 0.45pp / B1 1.34pp (vision) / B2 0.45pp**, 对照 hero 1.7-3.3pp。
+    ⚠️ 报 p95, **不要把 p50 写成 bound** —— v1 犯过这个错。
+  - **时间对齐已永久不可得**: 唯一能直接定因的证据 (episode 请求时刻 ↔ 容器内部 POST 时刻)
+    需要 Phase 1a 期间的 cls 容器日志, 而那些日志随 Gate-3 逐 condition `docker restart` 滚掉了。
+    脚本里的聚集分析标注 **NON-IDENTIFYING**: `wallclock_start` 在 reset **之前**打点
+    (`runner/main.py:1861`), 而 flagged episode 的 reset 耗时 median **~50s** / max **~205s**,
+    该偏移**大于**聚集分析测到的效应本身。
+  - **v1 的四个错误 (留档, 都是方法层而非笔误)**:
+    1. denominator 用 `glob` 而非 canonical 白名单 → 混入 B0_som replicate(20260803) /
+       stale `B1_3mode` / `B3_som`, 得 4257-4259 而非 4032。讽刺的是
+       `pass1_run_manifest.json` 的 `_why` 字段 (B-1896 / §367) 写的正是「防 glob 混入 stale run」。
+    2. 把 `reset_goto_latency_ms_per_attempt` 的**条目数**(154/156) 当成**超时次数**。
+    3. 反事实基线跨 cell 混合 → Simpson's paradox → p=0.024 伪显著。
+    4. 100 次 permutation 报 `p=0.000` (有效 Monte Carlo p 下限是 plus-one 1/(N+1));
+       且 drop-one 蒙特卡洛从未落盘, 数字不可复现。
+  - **与 Fire-3/4/5/6 的 eval-timeout abort 无关** (此条 v1 结论仍成立): §253 实测 —— eval
+    挂死的同一时刻 `curl` 该 item 仅 **0.17s**, 全新 context 加载同页约 **170ms**; 若是站点
+    不回答 curl 同样会挂。真根因是 agent 的 BrowserContext 退化 (客户端侧), 已由 B-1803 修复、
+    re-fire R9755 零 `EvaluatorUnavailableError` 证实。
