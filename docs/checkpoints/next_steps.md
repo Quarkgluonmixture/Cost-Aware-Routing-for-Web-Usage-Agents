@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-08-07
+updated: 2026-08-08
 ---
 
 # Next Steps — Forward Action Ledger
@@ -23,7 +23,30 @@ updated: 2026-08-07
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🔶 2026-08-07 · **B-1966 已修+已验，但 /stress 留了 2 个 P0 未修**（最新，机制线）
+> ## 🟢 2026-08-08 · **cls 的周期性不可用已修 (B-1969) — cls chain 的这个前置障碍已清**（最新，基建线）
+>
+> chronicle → **笔记 §442**。起因是看 ntfy 的 `cls DEGRADED`，追到 OSClass auto-cron
+> 朝单-worker 的 `php -S` 自请求 → cron 一有活干整站 12s+ 不回答。B-1968 昨天记为「未修，备查」，现已修。
+>
+> 修法 = `PHP_CLI_SERVER_WORKERS=4`，注入点在 `start_vwa_docker.sh::start_classifieds()`
+> （**不在** compose — 那文件被 submodule `.gitignore` 忽略，改了换台机器就没了）。A100 已生效并 recreate 容器。
+>
+> ```bash
+> # 3h soak 是否撞上真实 cron 窗口（这是「修好了」的最终判据，即时测试只证明当下不死锁）：
+> ssh condense-a100 'tail -3 ~/cls_cron_verify.log; grep -c FAIL ~/cls_cron_verify.log'
+> # 起 cls chain 前确认 worker 数 = 5 (1 master + 4)：
+> ssh condense-a100 'docker top classifieds | grep -c "php -S"'
+> ```
+>
+> ⚠️ **未查证，别当结论**：cls Phase 1a 是在带此缺陷的站点上跑完的，
+> 而 `reset_vwa_sites.sh` Gate-3 注释提到的「Fire-5/6 eval-timeout aborts」与本缺陷表现一致 ——
+> **但两者是否同源没查过**。要判就得把 cls episode 的 timeout 时刻与容器日志的内部 POST 时刻对齐。
+> 已按 `CLAIM_UNVERIFIED` 记入 known 台账（`known.py B-1969`）。
+>
+> 另：ntfy 里 task 345 的 `start_url_content_error` **不需要处理** —— 2026-04-29 已裁定为
+> upstream Wikipedia ZIM 图片 404，论文 footnote 排除 1/466，换 mode 重跑必然重现。
+
+> ## 🔶 2026-08-07 · **B-1966 已修+已验，但 /stress 留了 2 个 P0 未修**（上一轮，机制线）
 >
 > chronicle → **笔记 §441**。**均未修 —— fix scope 待你确认**（/stress v7.3 硬约束）。
 >
