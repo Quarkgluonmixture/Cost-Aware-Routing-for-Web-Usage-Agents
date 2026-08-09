@@ -23,22 +23,28 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🔴 2026-08-09 · **AWS proxy 预算池见底 —— 所有 B0/B4 线卡在这**（最新，时间敏感）
+> ## 🔴 2026-08-09 · **proxy 预算已耗尽，B0 shop run 停在 374/466**（最新，等你续额度）
 >
-> chronicle → **笔记 §444**。
+> chronicle → **笔记 §444（预算+B4）· §446（run 停止告警修复）**。
 >
 > | | |
 > |---|---|
-> | 现状 | `budget_limit` **$1000 已用 99.79%**，实测燃烧 **$0.888/h**（$0.06/episode）|
+> | 现状 | 池子 **$1000 全部用完**，`quota:403` 自 02:33 起持续。实测燃烧 $0.888/h = **$0.06/episode** |
+> | 已损失 | `B0_vision_shopping` **01:19 停在 374/466**（fail-fast 正确，374 个 episode 完好）；后续 3 个 phantom condition 未启动，**没有留下空目录** |
 > | 影响面 | **DGX 与 A100 同一个池**。B0 全线 + B4 全线卡死；B1/B2/B3 走本地 GPU **不受影响** |
-> | 处置 | user 去续额度，**chain 不停**（`resume: true`，撞墙后原地续跑不丢数据）|
-> | 监控 | watcher 10min 轮询，<$0.50 / 耗尽 / **额度到账** 三个时点推 ntfy `p79-claude` |
+> | 恢复 | 续额度后**重跑同一条 queue 命令**即可，`resume: true` 会跳过已完成 episode，不重跑 374 个 |
+> | 监控 | watcher 已跑（10min 轮询），**额度到账会主动推 ntfy** `p79-claude` |
 >
 > ```bash
-> # 当前余额（这一发本身 ~$0.00002）：
-> .venv/bin/python3 scripts/maintenance/probe_proxy_model_registry.py --invoke | tail -3
-> # 只看注册表不花钱：去掉 --invoke
+> # 当前余额 / 是否恢复（探针用生产同款 max_tokens，实付 ~$0.00002）：
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once
+> # ⭐ 余额跌到 <$1 但还没空时跑这个，能证实/推翻 max_tokens 预留假说（§446.3）：
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --verify-reservation
 > ```
+>
+> ✅ **已修（commit `1d3765b`，DGX + A100 双边 24 passed）**：runner 三个 fail-fast 分支
+> （quota / fatal_env / evaluator）现在都推 **urgent** ntfy —— 这次是 run 01:19 死、
+> 人 08:40 才知道，六小时空转在一台按时计费的机器上。
 >
 > **额度到账后按这个顺序花**（合计 ~$315，建议申请 $500 留余量）：
 > ① shop 补完 3.3 cond ~$86 → ② WA shopping + shopping_admin × B0 12 cond ~$75
