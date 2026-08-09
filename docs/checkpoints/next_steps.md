@@ -23,6 +23,35 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟢 2026-08-09 收尾 · **A100 在跑 B1 shop 435×3；proxy 等续额度**（session handoff）
+>
+> chronicle → **笔记 §444（预算+B4）· §445（EDA）· §446（run-abort，含 §446.7 时区自我更正）· §447（抽样）· §448（3-AI /stress）**
+>
+> | | |
+> |---|---|
+> | **A100** | `queue_chain` 跑 **B1 shop 435 全集 × 3 mode（dom → som → P-SoM）**，15:33 UTC 起。ETA **~9.3 天（约 08-18/19）**。monitor 50h 兜底 |
+> | **DGX** | mechanistic sweep 第 20/23 格 |
+> | **proxy** | **$1000 全部用完**（`403 Budget exceeded`）。watcher 在跑，**额度到账会主动推 ntfy** |
+> | **B0 shop** | 停在 374/466，`resume:true`，额度回来后**先停 B1**（同 site 只能一个 baseline）再续 |
+>
+> ```bash
+> # 余额 / 是否恢复（探针用生产同款 max_tokens）：
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once
+> # 额度到账后想验证 max_tokens 预留假说（余额 <$1 但未空时才有意义）：
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --verify-reservation
+> ```
+>
+> **额度到账后的花钱顺序**（合计 ~$315，建议申请 $500）：
+> ① shop B0 补完 ~$86 → ② WA shopping + shopping_admin × B0 ~$75
+> → ③ **B4 = `eu.anthropic.claude-sonnet-4-6`**（与 B0 **同价**）cls+red ~$154
+>
+> ### ⚠️ 两条 backlog，别忘
+> - **子集 run 会被 gate 判 FATAL**：`queue_chain.sh:476` 写死各 site 的 `expected_n`，
+>   `paper_scored_task_count` 恒用全量。435 方案绕过了，**但任何未来的 task_ids 子集 run 都会撞**（笔记 §448.2）
+> - **两条无数据反驳的攻击**（`CLAIM_EVIDENCE_MATRIX.md` 已知攻击表）：
+>   A1 C4 的"结构性"可能只是欠采样（直击 headline）· A2 drop-one 可能只是 pass@K
+>   （**可用现有 archive 算，2-3h，不需新 fire**）
+
 > ## 🔴 2026-08-09 · **proxy 预算已耗尽，B0 shop run 停在 374/466**（最新，等你续额度）
 >
 > chronicle → **笔记 §444（预算+B4）· §446（run 停止告警修复）**。
