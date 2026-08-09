@@ -145,10 +145,14 @@ def test_low_threshold_is_well_above_one_real_step():
 # --- probe shape ------------------------------------------------------------
 
 def test_probe_uses_production_max_tokens():
-    """A probe that does not have production's shape only proves the probe runs.
+    """A health check should have the shape of the workload it certifies.
 
-    Empirically 2026-08-09: a max_tokens=1 probe reported healthy for 74 minutes
-    after the real run had already been rejected.
+    Note the *reason* deliberately does NOT cite the "74-minute blind window"
+    this file was originally written around: that number came from comparing
+    A100 (UTC) and DGX (BST) timestamps without converting, and the real gap is
+    ~14 minutes against a 10-minute poll interval — i.e. explainable by the poll
+    cadence alone (笔记 §446.7). The max_tokens=4096 choice stands on the cheap
+    argument instead: same shape as production, ~$0.00002 actual spend.
     """
     assert pbw.PROD_MAX_TOKENS == 4096
     import inspect

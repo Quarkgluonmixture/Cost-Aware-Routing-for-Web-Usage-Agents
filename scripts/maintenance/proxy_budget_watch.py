@@ -11,25 +11,28 @@ Gateway -> Bedrock emits isolated 503s and sustained ~8-10min 503 clusters) and
 says nothing about money. Outcomes are now separated, and only a quota-shaped
 rejection — confirmed twice in a row — counts as exhaustion.
 
-**Failure 2 — a health check that measured itself.** v2 probed with
-`max_tokens=1`. The real shop run hit `403` and stopped at 01:19; this probe
-kept reporting `ok` with $0.222 remaining until 02:33. Seventy-four minutes of
-"healthy" while the thing being watched was dead.
+**Failure 2 — a probe shaped unlike the thing it watches.** v2 probed with
+`max_tokens=1` while production asks for 4096.
 
-  The working hypothesis is that the proxy RESERVES against `max_tokens`: a real
-  VWA step asks for 4096 and must reserve ~$0.02; a 1-token probe reserves
-  essentially nothing, so it slips through on a balance no real request can use.
+  ⚠️ HISTORY, because the first version of this docstring got it wrong: the
+  original claim here was a "74-minute" window in which the probe reported
+  healthy after the real run had already been rejected. That number came from
+  putting A100 timestamps (UTC) next to DGX timestamps (BST) without converting.
+  Corrected: probe `ok` 01:03:26 UTC → runner `403` 01:19:45 → probe `403`
+  01:33:28, i.e. a **~14-minute** gap against a **10-minute** poll interval.
+  That is 1.4 sampling periods and is fully explained by the poll cadence plus
+  the balance draining in between. See 笔记 §446.7.
 
-  So the probe now sends the SAME `max_tokens` as production (4096) with a
-  two-token prompt. Reservation matches the real workload; actual spend stays at
-  ~$0.00002 because the model stops immediately. A probe that does not have the
-  real request's shape only ever proves that the probe can run.
+  So the standing hypothesis — that the proxy RESERVES against `max_tokens`,
+  letting a 1-token probe slip through on a balance no real request can use —
+  currently has NO supporting evidence. It is a guess, not a finding.
 
-  ⚠️ The reservation mechanism is INFERRED from the 74-minute gap, not confirmed
-  by the provider. `--verify-reservation` re-tests it the next time the pool is
-  near-empty: it sends both probe shapes back to back and reports whether the
-  small one survives the large one's rejection. Until that runs, treat the
-  4096 choice as a defensive default, not an established fact.
+  The 4096 probe is kept anyway, on the cheaper argument: a health check should
+  have the shape of the workload it certifies, and here that costs nothing
+  (~$0.00002 actual spend — the model stops immediately regardless of the cap).
+  `--verify-reservation` can settle the question the next time the pool is
+  near-empty-but-not-empty; run at a fully drained pool it correctly reports
+  inconclusive, which is what happened on 2026-08-09.
 
 Alerts (each fires once):
   LOW        — remaining < threshold (default $1.00; well above one real step)
