@@ -1,7 +1,15 @@
-# B1 P-text ablation (§103) — VWA shopping
-# DOM prompt + SoM marks 文本 + 无图，与 B1 phantom_shopping 唯一差: system prompt
-# 待 Myriad 独占 GPU 跑 final
-
+# B1 P-text — VWA shopping (Phase 1b)
+#
+# Created 2026-08-09. B0 and B2 have had their full shopping phantom triple since
+# 2026-05-14/15; B1's was never written because Phase 1b was scoped B0-only at the
+# time. Nothing about B1 made shopping special — it was simply not on the chain.
+#
+# Why it matters now: preregistration §216.1 records that "Phase 1b shop is the
+# only true OOD" for the H10 router split — every Phase 1a cell shares one task
+# pool, so LOCO across those cells is not an out-of-distribution test. This
+# condition is part of the only data that can answer whether routing generalises.
+#
+# Mirrors exp_v2_B1_phantom_text_classifieds.yaml exactly; only include_sites differs.
 
 defaults:
   - configs/exp_v2_base.yaml
@@ -25,4 +33,4 @@ backends:
   default_backend: "local_4b"
   local_4b:
     max_new_tokens: 4096
-
+    temperature: 0.0  # B-271: explicit pin for paper-grade audit parity with B0
