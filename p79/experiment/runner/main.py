@@ -88,6 +88,7 @@ from p79.experiment.runner.helpers import (
     _no_early_finish_control,
     _notify_retry_pass,
     _notify_transient_retry,
+    push_run_abort_ntfy,
 )
 
 logger = logging.getLogger(__name__)
@@ -1909,12 +1910,21 @@ class ExperimentRunner:
             # 2026-05-18 13:28:06 fire: cls runner burned 4 tasks on missing
             # NLTK punkt; with this guard, runner would abort at task 0.
             from p79.experiment.environment import EvaluatorUnavailableError
+            # All three branches below STOP the run rather than quarantine the
+            # episode, because every subsequent task would fail identically.
+            # Each also pushes an urgent ntfy: the stop is by design, but the
+            # silence was not — 2026-08-09 the shop B0 vision run stopped on
+            # quota at task 405 and sat dead six hours on a booked machine
+            # before anyone noticed. push_run_abort_ntfy never raises.
             if isinstance(exc, EvaluatorUnavailableError):
                 logger.error(
                     "Evaluator infrastructure unavailable at site=%s task=%s — "
                     "ABORTING condition (do NOT write needs_reevaluation summary; "
                     "operator must fix env + re-fire from clean state): %s",
                     task.site, task.task_id, exc,
+                )
+                push_run_abort_ntfy(
+                    effective_cid, task.site, task.task_id, "evaluator_unavailable", exc,
                 )
                 raise
             if self._FATAL_ENV_REGEX.search(exc_str):
@@ -1923,6 +1933,9 @@ class ExperimentRunner:
                     "stopping run to allow clean restart: %s",
                     task.site, task.task_id, exc,
                 )
+                push_run_abort_ntfy(
+                    effective_cid, task.site, task.task_id, "fatal_env", exc,
+                )
                 raise
             # Proxy API quota exhaustion — stop run (all subsequent tasks will fail)
             if "403" in exc_str and any(m in exc_str for m in ("model-api", "execute-api")):
@@ -1930,6 +1943,9 @@ class ExperimentRunner:
                     "Proxy API quota exhausted at site=%s task=%s — "
                     "stopping run: %s",
                     task.site, task.task_id, exc,
+                )
+                push_run_abort_ntfy(
+                    effective_cid, task.site, task.task_id, "proxy_quota", exc,
                 )
                 raise
             logger.warning(

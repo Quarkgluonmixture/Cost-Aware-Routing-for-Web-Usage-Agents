@@ -383,3 +383,67 @@ def _notify_transient_retry(
         logger.info("Transient-retry ntfy sent to %s", topic)
     except Exception as exc:
         logger.warning("Transient-retry ntfy failed: %s", exc)
+
+
+# Recovery hints per abort class. Keyed by the `abort_class` passed to
+# push_run_abort_ntfy; an unknown class still notifies, just without a hint.
+_ABORT_RECOVERY_HINTS = {
+    "proxy_quota": (
+        "预算池耗尽。续额度后重跑同一条 queue 命令即可 —— resume:true 会从已完成的 "
+        "episode 之后继续，不重跑已有数据。"
+    ),
+    "fatal_env": (
+        "环境级错误，需要人工修复后从干净状态重发。不要直接重跑 —— 先按 log 里的 "
+        "具体错误修 env。"
+    ),
+    "evaluator_unavailable": (
+        "评测基建不可用（NLTK / OpenAI key / VWA submodule）。修好 env 再从干净状态"
+        "重发；本次不写 needs_reevaluation summary。"
+    ),
+}
+
+
+def push_run_abort_ntfy(
+    condition_id: str,
+    site: str,
+    task_id: Any,
+    abort_class: str,
+    exc: Any,
+) -> None:
+    """Push ntfy when a run STOPS (not retries) on an unrecoverable condition.
+
+    Why this exists: the three fail-fast branches in `_run_and_record_episode`
+    (evaluator-unavailable / fatal-env / proxy-quota) all `raise` to stop the
+    run — which is correct, since every subsequent task would fail the same way
+    — but none of them told anyone. Empirically 2026-08-09: the shop B0 vision
+    run hit proxy quota exhaustion at task 405 (374 episodes in) at 01:19 and
+    sat dead for six hours before a human looked. The stop was by design; the
+    silence was not.
+
+    Priority is `urgent` on purpose. This is the one runner event where the
+    difference between "operator finds out now" and "operator finds out at
+    breakfast" is measured in wasted wall-clock on a booked machine.
+
+    Best-effort — never raises, so it can be called on the way to a `raise`."""
+    topic = os.environ.get("NTFY_TOPIC", "").strip()
+    if not topic:
+        return
+    title = f"🛑 P79 run STOPPED [{condition_id}] — {abort_class}"
+    hint = _ABORT_RECOVERY_HINTS.get(abort_class, "")
+    body = (
+        f"**{abort_class}** at site={site} task={task_id} — run 已停止"
+        f"（后续 task 会以同样方式失败）。\n\n"
+        f"错误: {str(exc)[:300]}\n\n"
+        f"{hint}"
+    )
+    url = f"https://ntfy.sh/{topic}"
+    req = urllib.request.Request(
+        url, data=body.encode("utf-8"), method="POST",
+        headers={"Title": title, "Priority": "urgent", "Markdown": "yes"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15):
+            pass
+        logger.info("Run-abort ntfy sent to %s (%s)", topic, abort_class)
+    except Exception as push_exc:
+        logger.warning("Run-abort ntfy failed: %s", push_exc)
