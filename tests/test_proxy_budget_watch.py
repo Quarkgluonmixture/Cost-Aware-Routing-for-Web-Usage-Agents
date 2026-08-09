@@ -94,9 +94,35 @@ def test_topped_up_fires_when_watcher_starts_on_empty_pool():
 
 
 def test_topped_up_fires_on_first_read_after_rejection():
-    """Even a single rejection then success counts — no need to reach EXHAUSTED."""
+    """A rejection then a successful read on a pool we had never measured.
+
+    `lowest is None` means the watcher has no baseline, so the money is
+    necessarily new — this is the drained-pool-restart case.
+    """
     _, fired = run([(None, "quota:403"), (250.0, "ok")])
     assert fired == ["TOPPED_UP"]
+
+
+def test_topped_up_does_NOT_fire_on_transient_rejection_at_same_balance():
+    """THE Mode B P1-8 regression. A blip must not announce credit.
+
+    `ok($100) → quota → ok($100)` used to fire TOPPED_UP with the balance
+    unchanged, because the rule keyed on "was rejected at some point" alone.
+    Acting on that alert means restarting a chain against an empty pool.
+    """
+    _, fired = run([(100.0, "ok"), (None, "quota:403"), (100.0, "ok")])
+    assert "TOPPED_UP" not in fired, "unchanged balance must never read as a top-up"
+
+
+def test_topped_up_fires_when_balance_really_rose_after_rejection():
+    _, fired = run([(0.5, "ok"), (None, "quota:403"), (500.0, "ok")])
+    assert "TOPPED_UP" in fired
+
+
+def test_auth_or_rate_never_triggers_exhausted():
+    """Two consecutive credential failures are not a budget signal."""
+    _, fired = run([(None, "auth_or_rate:403"), (None, "auth_or_rate:403")])
+    assert fired == []
 
 
 def test_topped_up_also_fires_on_large_jump_without_rejection():
@@ -144,18 +170,85 @@ def test_low_threshold_is_well_above_one_real_step():
 
 # --- probe shape ------------------------------------------------------------
 
-def test_probe_uses_production_max_tokens():
-    """A health check should have the shape of the workload it certifies.
+def test_probe_actually_sends_production_max_tokens(monkeypatch):
+    """Assert the WIRE payload, not the constant.
 
-    Note the *reason* deliberately does NOT cite the "74-minute blind window"
-    this file was originally written around: that number came from comparing
-    A100 (UTC) and DGX (BST) timestamps without converting, and the real gap is
-    ~14 minutes against a 10-minute poll interval — i.e. explainable by the poll
-    cadence alone (笔记 §446.7). The max_tokens=4096 choice stands on the cheap
-    argument instead: same shape as production, ~$0.00002 actual spend.
+    The previous version checked `PROD_MAX_TOKENS == 4096` and the signature
+    default — both of which stay true if someone hardcodes `"max_tokens": 1`
+    into the request body, which is exactly the regression the test exists to
+    prevent (/stress 2026-08-09 Mode B P2-1).
+
+    Note the *reason* for 4096 deliberately does NOT cite the "74-minute blind
+    window" this file was originally written around: that number came from
+    comparing A100 (UTC) and DGX (BST) timestamps without converting, and the
+    real gap is ~14 minutes against a 10-minute poll interval (笔记 §446.7).
+    The choice stands on the cheap argument: same shape as production.
     """
-    assert pbw.PROD_MAX_TOKENS == 4096
-    import inspect
+    seen = {}
 
-    sig = inspect.signature(pbw.probe)
-    assert sig.parameters["max_tokens"].default == pbw.PROD_MAX_TOKENS
+    class _Resp:
+        status_code = 200
+        text = ""
+
+        def json(self):
+            return {"metadata": {"remaining_quota": {"remaining_budget": 42.0}}}
+
+    def _capture(url, headers=None, json=None, timeout=None):
+        seen.update(json or {})
+        return _Resp()
+
+    monkeypatch.setattr(pbw.requests, "post", _capture)
+    rem, outcome = pbw.probe("fake-key")
+    assert outcome == "ok" and rem == 42.0
+    assert seen["max_tokens"] == pbw.PROD_MAX_TOKENS == 4096, (
+        f"probe sent max_tokens={seen.get('max_tokens')} — the wire payload must "
+        "match production, not just the module constant"
+    )
+
+
+# --- probe outcome classification (Mode B P1-9) -----------------------------
+
+class _R:
+    def __init__(self, code, text=""):
+        self.status_code, self.text = code, text
+
+    def json(self):
+        import json as _j
+
+        return _j.loads(self.text)
+
+
+@pytest.mark.parametrize(
+    "code,body,expected",
+    [
+        # The REAL exhaustion body, measured 2026-08-09 on a drained pool.
+        (403, '{"error":"Budget exceeded","usedUsd":999.99,"budgetUsd":1000}', "quota:403"),
+        # Same status code, entirely different cause — must NOT read as budget.
+        (403, '{"error":"invalid api key"}', "auth_or_rate:403"),
+        (429, '{"error":"rate limit: retry later"}', "auth_or_rate:429"),
+        # B-1880 proxy outage stays its own thing.
+        (503, "Service Unavailable", "proxy_outage:503"),
+        (500, "oops", "proxy_outage:500"),
+    ],
+)
+def test_probe_classifies_by_body_not_status_code(monkeypatch, code, body, expected):
+    """An expired credential must never be reported as 'out of money'.
+
+    Pre-fix, `status_code in (402,403,429)` alone meant quota — so a rotated
+    API key would have fired the urgent budget-exhausted alert.
+    """
+    monkeypatch.setattr(
+        pbw.requests, "post", lambda *a, **k: _R(code, body)
+    )
+    rem, outcome = pbw.probe("fake-key")
+    assert rem is None
+    assert outcome == expected
+
+
+def test_exhausted_body_still_yields_a_balance():
+    """The 403 body carries usedUsd/budgetUsd — readable when 200 is not."""
+    got = pbw.parse_exhausted_balance(
+        '{"error":"Budget exceeded","usedUsd":999.5,"budgetUsd":1000}'
+    )
+    assert got is not None and abs(got - 0.5) < 1e-6
+    assert pbw.parse_exhausted_balance("not json") is None

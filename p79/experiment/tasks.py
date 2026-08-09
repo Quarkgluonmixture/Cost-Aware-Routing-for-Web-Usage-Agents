@@ -335,7 +335,23 @@ def load_tasks(cfg: Dict[str, Any], output_dir: Path) -> List[TaskSpec]:
             continue
 
         tasks = _load_json_tasks(site_path)
-        selected_ids = set(task_ids_map.get(site, []))
+        # An EXPLICIT empty list is a config error, not "select nothing".
+        # `if selected_ids and ...` below treats a falsy set as "no filter", so
+        # `task_ids: {shopping: []}` silently loads the FULL corpus while the
+        # config reads as if it pinned a subset — and a six-condition parity
+        # check on the task_ids hash passes, because every cell's empty list
+        # hashes identically. Absent key = no filter (intended, e.g. the
+        # `{__delete__: true}` sentinel in the WA full-set bases); present-but-
+        # empty = fail loud. (/stress 2026-08-09 Mode B P1-5.)
+        _raw_task_ids = task_ids_map.get(site, None)
+        if _raw_task_ids is not None and len(_raw_task_ids) == 0:
+            raise ValueError(
+                f"task.task_ids[{site!r}] is an explicit empty list. This does NOT "
+                f"select zero tasks — the filter is skipped and the full corpus "
+                f"loads. Remove the key entirely to run the full set, or list the "
+                f"task ids you mean."
+            )
+        selected_ids = set(_raw_task_ids or [])
 
         selected: List[Dict[str, Any]] = []
         n_na_excluded = 0

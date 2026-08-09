@@ -1437,6 +1437,22 @@ class ExperimentRunner:
                 # evidence (aborted episode summary + condition summary with
                 # aborted_at_task) preserved on disk for operator triage.
                 if _condition_aborted:
+                    # /stress 2026-08-09 Mode B P1-7: this is the paper-grade
+                    # quarantine exit — condition_summary is on disk and the
+                    # process is about to die non-zero, halting the chain. It
+                    # had no notification, so a mid-chain abort was as silent
+                    # as the quota stop that motivated push_run_abort_ntfy.
+                    # Placed here rather than at the inner `except
+                    # PaperGradeAbortError` because this is the single point
+                    # every quarantine path funnels through, and only here are
+                    # the task / reason fields settled.
+                    push_run_abort_ntfy(
+                        effective_cid,
+                        str(getattr(self, "_last_site", "") or "?"),
+                        _aborted_at_task,
+                        "paper_grade_quarantine",
+                        _abort_message or _abort_reason or "condition aborted",
+                    )
                     raise PaperGradeAbortError(
                         _abort_message or
                         f"condition aborted at task={_aborted_at_task} "

@@ -17,7 +17,7 @@
 | ID | Research question | Claim | 主证据 | 三角验证 | Limitation | 章节 | Appendix |
 |---|---|---|---|---|---|---|---|
 | **C1** | 表征之间真的有值得路由的差异吗？ | **上限真实存在**：oracle 相对最强单模 SR **+3.45~16.35pp**，成本低 **13.7–35.3%** | `router_objective_ordering.md`（`oracle_sr_cost` 行）· `phase1_full_prereg_decision.json` · `sr_per_mode.json` | **8 cells 一致方向，跨两个 benchmark**（6 VWA + 2 WA）；FE inverse-variance pooled | oracle 是**事后**上界，非可达策略；FE 估计量只说这些格 | Ch4 | A |
-| **C1b** | 上限里有没有**不需要昂贵标签**的那一半？ | **有，而且是白送的**：`triage_only`（该放弃的任务用最便宜的模式）在 **8/8 cell** 零 SR 损失、省 **9.5–30.6%** 成本；它只需要二元 solvable 标签，而那个标签**每个任务都有** | `router_objective_ordering.md` §Across cells | 8/8 一致，含 WA 两格 | 仍是 oracle（事后知道哪些解不开）；C4 说明这个二元标签的**学习版**同样赢不过固定策略 | Ch4 / Ch6 | A |
+| **C1b** | 上限里有没有**不受标签供给约束**的那一半？ | `triage_only`（该放弃的任务用最便宜的模式）在 **8/8 cell** 零 SR 损失、省 **9.5–30.6%** 成本。它的标签是二元 solvable，**训练侧供给不受限**（与 C5 的 which-mode 半形成对照）—— 但**它同样不可达**，见 C4 | `router_objective_ordering.md` §Across cells | 8/8 一致，含 WA 两格 | ⚠️ **纯 oracle**：零 SR 损失是 by construction（报告原文 "zero SR change by construction"），不是发现。⚠️ 且该标签**本身带噪**——C3 测得同模式重跑 discordance 14.3%，所以"零损失"部分是事后运气 | Ch4 → 立即交棒 Ch6 | A |
 | **C2** | 这个上限有结构基础，还是只是随机涨落？ | 三个 phantom arm **各自独解**一批任务（drop-one oracle **1.7–3.3pp**），且 format / prompt-style 双轴独立 | `meta_phantom_lift.csv` · drop-one oracle 表 | 22/24 arm 观测 drop-one 为正 | ⚠️ **H3 过门是弱证据**（§397.8）：门测 ≠0，但同策略跑两次本来就 ≠0 | Ch4 | A |
 | **C3** | 这个结构比"什么都不做重跑一次"更大吗？ | **不**——结构量级落在同模式重跑的噪声地板内 | `compare_cross_run_same_condition.py`：discordance **14.3%**（32/224），Cohen κ **0.614** | self-oracle drop-one A→B 6.7pp / B→A 7.6pp | ⚠️ self-oracle drop 只能当 **instability diagnostic**，**不是 bias estimate**（§293）；净差 +0.9pp 不是噪声地板本身 | Ch4 末 / Ch6 | B |
 | **C4** | 那能不能学一个便宜的预测器？ | **不能**：真嵌套 CV 下 **0/6 cell** 的 learned triage 能 Pareto 胜过平凡的 always-cheapest | `router_triage_learnability.md`（§392.2 真嵌套版） | label-shuffle 置换零分布（B=200）+ always-cheapest 固定策略，**两道控制缺一不可** | 权衡点而非压制点：cls·B0 SR +1.79pp 但 cost +11%；red·B2 +1.97pp 但 cost +2.4%。⚠️ **仅 VWA 6 格**——见下方缺口表 | Ch6 | C |
@@ -57,6 +57,17 @@ C4 无 C5 ⇒ 只是"我们没做出来"；C5 无 C4 ⇒ 只是理论担忧。
 | **rubric #2 系统结构图未画** | 全篇可读性 | 未开工 | Guide §14.3 点名要这张图，且"应该比任何 architecture 细节更早出现" |
 
 ---
+
+### ⚔️ 已知攻击（3-AI /stress 2026-08-09）— 写作时必须正面处理，不能绕
+
+这三条来自 Gemini（Mode C）冷读，**当前没有反驳它们的数据**。写进来是因为
+指南 §1.6 说得对：不利证据写全是加分项，被 reviewer 发现才是扣分项。
+
+| # | 攻击 | 为什么它有杀伤力 | Defuse 需要什么 | 现状 |
+|---|---|---|---|---|
+| **A1** | **C4 的"结构性"可能只是欠采样** —— C5 自己说 4/6 cell 只有 15–97 个可训练标签。用 15 个正例在嵌套 CV 里学不出 Pareto 最优，是欠采样的平凡后果，不是"体制的结构性质" | **直击 headline**。它把一个负结果降级成"你数据太少" —— 而这恰好是最便宜的驳回理由 | 标签最多那格的**学习曲线**；或证明**无正则化模型过拟合训练集仍分不开**（训练误差也差 ⇒ 特征无信号；只有 CV 差 ⇒ 只证明数据少）| 未做，09-01 后 |
+| **A2** | **drop-one 1.7–3.3pp 可能只是 pass@K** —— C3 的噪声地板 discordance **14.3%** 比它大一个量级。跑同一个最强 arm 两次也会翻掉一些失败 | 若成立，C2 的"双轴独立"直接崩。台账查证：**`pass@` 0 match，项目从没做过这个对照** | 与 `pass@2` 基线对比：若 `Best_Mode × 2 > Best_Mode + Phantom_Arm`，双轴 claim 不成立。**可用现有 archive 的同 condition 重跑数据算，不需新 fire** | 未做，2–3h |
+| **A3** | **OOD 论证混淆 visual matching 与 visual grounding** —— 没有 reference image 不等于不需要视觉 grounding；SoM 服务的是当前屏幕的元素定位 | 我原来的措辞（"驱动 SoM 的需求根本不存在"）站不住 | 实证 DOM-only 在 WA 上追平 SoM 而在 VWA 上追不平 | ✅ **措辞已改**（`corpus_eda.md` §2 + 本表 C1b），claim 降级为"任务规格的差异，不必然是模态需求的差异" |
 
 ### 专条：把 WA 接进 learnability，代价比它看起来大
 

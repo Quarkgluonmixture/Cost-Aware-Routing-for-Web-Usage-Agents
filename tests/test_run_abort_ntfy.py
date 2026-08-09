@@ -90,6 +90,25 @@ def test_push_failure_never_raises(monkeypatch):
     push_run_abort_ntfy("c", "shopping", 405, "proxy_quota", RuntimeError("403"))
 
 
+def test_never_raises_even_when_exc_str_explodes(captured):
+    """Mode B P2-2: `str(exc)` runs arbitrary user code.
+
+    Pre-fix the body was built OUTSIDE the try, so an exception whose __str__
+    raises propagated a RuntimeError from the notifier — replacing the precise
+    "quota exhausted" traceback the caller was about to raise with a
+    misleading one. Only `urlopen` failure was covered before.
+    """
+
+    class Evil(Exception):
+        def __str__(self):
+            raise RuntimeError("__str__ exploded")
+
+    push_run_abort_ntfy("c", "shopping", 405, "proxy_quota", Evil())
+    # It must still have sent something — losing the alert is also a failure.
+    assert len(captured.requests) == 1
+    assert "__str__ raised" in captured.requests[0].data.decode("utf-8")
+
+
 def test_unknown_abort_class_still_notifies(captured):
     """Unknown class loses the hint but must not lose the alert."""
     push_run_abort_ntfy("c", "shopping", 1, "brand_new_failure", RuntimeError("x"))
@@ -103,18 +122,38 @@ def test_long_exception_is_truncated(captured):
     assert len(body) < 1200, "ntfy body must stay readable on a phone lock screen"
 
 
-def test_all_three_runner_branches_call_the_notifier():
-    """Source-level guard: the fix is three call sites, not one.
+def test_every_run_stopping_branch_calls_the_notifier():
+    """Structural guard over the run-stopping paths.
 
-    A future refactor that keeps `raise` but drops a `push_run_abort_ntfy`
-    call would silently restore the exact failure mode this fixes, and no
-    behavioural test would catch it without standing up a whole runner.
+    ⚠️ Known limit (Mode B P2-3): this counts call sites in source, so it does
+    NOT prove control flow — a refactor could keep the count while duplicating
+    one call and dropping another. It is here because standing up a full runner
+    to make each branch fire is disproportionate; the AST check below at least
+    ties each abort_class to an actual call argument rather than to any
+    occurrence in the file (a comment mentioning the class no longer counts).
+
+    Coverage is deliberately partial and documented: `main.py:1066` (backend
+    construction) and `:2157` (summary write failure) still terminate without
+    notifying — logged as backlog rather than silently implied to be covered.
     """
+    import ast
     from pathlib import Path
 
     src = Path(__file__).resolve().parents[1] / "p79/experiment/runner/main.py"
-    text = src.read_text()
-    # 1 import + 3 call sites
-    assert text.count("push_run_abort_ntfy(") == 3
-    for cls in ABORT_CLASSES:
-        assert f'"{cls}"' in text, f"{cls} branch lost its notifier argument"
+    tree = ast.parse(src.read_text())
+    classes_passed = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "push_run_abort_ntfy"
+        ):
+            # abort_class is the 4th positional arg
+            if len(node.args) >= 4 and isinstance(node.args[3], ast.Constant):
+                classes_passed.append(node.args[3].value)
+
+    expected = set(ABORT_CLASSES) | {"paper_grade_quarantine"}
+    assert set(classes_passed) == expected, (
+        f"abort classes wired: {sorted(set(classes_passed))}, expected {sorted(expected)}"
+    )
+    assert len(classes_passed) == len(expected), "duplicate call for one abort class"

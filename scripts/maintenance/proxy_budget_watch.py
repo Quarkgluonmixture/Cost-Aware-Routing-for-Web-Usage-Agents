@@ -65,6 +65,9 @@ MODEL = "qwen.qwen3-vl-235b-a22b"
 # `max_tokens`. If that default ever changes, change this with it.
 PROD_MAX_TOKENS = 4096
 
+# A balance rise below this is consumption noise / rounding, not a top-up.
+MIN_TOPUP_USD = 10.0
+
 
 def load_key() -> str:
     env = os.environ.get("PROXY_API_KEY", "")
@@ -115,12 +118,37 @@ def probe(key: str, max_tokens: int = PROD_MAX_TOKENS) -> tuple[float | None, st
     # with its own ~11min retry; the watcher must not cry wolf on them.
     if r.status_code in (500, 502, 503, 504):
         return None, f"proxy_outage:{r.status_code}"
-    body = (r.text or "")[:300].lower()
-    if r.status_code in (402, 403, 429) or any(
-        w in body for w in ("quota", "budget", "exceeded", "limit reached", "insufficient")
-    ):
+
+    # BODY decides, not the status code. Measured 2026-08-09 on a genuinely
+    # drained pool, the real exhaustion response is
+    #   403 {"error":"Budget exceeded","usedUsd":999.9999863,"budgetUsd":1000}
+    # — so the keywords catch it. Classifying on the status code alone (the
+    # previous behaviour) meant `403 invalid api key` and `429 rate limit`
+    # both reported as "budget exhausted": an expired credential would have
+    # sent an urgent "you are out of money" alert. (/stress Mode B P1-9.)
+    body = (r.text or "")[:300]
+    low = body.lower()
+    if any(w in low for w in ("quota", "budget", "exceeded", "limit reached", "insufficient")):
         return None, f"quota:{r.status_code}"
+    if r.status_code in (401, 402, 403, 429):
+        # Status code SUGGESTS auth/rate/billing but the body does not say
+        # budget. Distinct outcome so it never trips EXHAUSTED.
+        return None, f"auth_or_rate:{r.status_code}"
     return None, f"other:{r.status_code}"
+
+
+def parse_exhausted_balance(text: str) -> float | None:
+    """Remaining USD parsed out of an exhaustion body, if it carries the figures.
+
+    The 403 body includes `usedUsd` / `budgetUsd`, which means the balance is
+    still readable when the pool is empty — the 200-only `remaining_quota` path
+    goes dark exactly when the number matters most.
+    """
+    try:
+        d = json.loads(text)
+        return float(d["budgetUsd"]) - float(d["usedUsd"])
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def decide_alerts(state: dict, rem: float | None, outcome: str,
@@ -147,8 +175,17 @@ def decide_alerts(state: dict, rem: float | None, outcome: str,
     if rem is not None:
         # Evaluate BEFORE folding rem into `lowest` — otherwise the first read
         # after a restart becomes its own baseline and TOPPED_UP never fires.
-        recovered = seen_quota
-        jumped = lowest is not None and rem > lowest + 10
+        #
+        # `recovered` requires BOTH a prior quota rejection AND the balance
+        # actually being higher than the low-water mark. Keying on the
+        # rejection alone made `ok($100) → quota → ok($100)` fire TOPPED_UP
+        # with the balance unchanged — a transient 403 would have announced
+        # "credit has landed" and invited a chain restart against an empty
+        # pool. `lowest is None` still counts as recovered: that is the
+        # watcher-started-on-a-drained-pool case, where any successful read is
+        # necessarily new money. (/stress Mode B P1-8.)
+        recovered = seen_quota and (lowest is None or rem > lowest + MIN_TOPUP_USD)
+        jumped = lowest is not None and rem > lowest + MIN_TOPUP_USD
         lowest = rem if lowest is None else min(lowest, rem)
         if rem < low_threshold and "LOW" not in fired:
             fired.add("LOW")

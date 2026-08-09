@@ -388,6 +388,11 @@ def _notify_transient_retry(
 # Recovery hints per abort class. Keyed by the `abort_class` passed to
 # push_run_abort_ntfy; an unknown class still notifies, just without a hint.
 _ABORT_RECOVERY_HINTS = {
+    "paper_grade_quarantine": (
+        "paper-grade 隔离：condition_summary 已带 abort 字段落盘，进程非零退出会让 "
+        "chain 整体停住。先看 condition_summary.json 的 aborted_at_task / reason "
+        "再决定是修 env 重发还是清该 task 重跑。"
+    ),
     "proxy_quota": (
         "预算池耗尽。续额度后重跑同一条 queue 命令即可 —— resume:true 会从已完成的 "
         "episode 之后继续，不重跑已有数据。"
@@ -425,25 +430,35 @@ def push_run_abort_ntfy(
     breakfast" is measured in wasted wall-clock on a booked machine.
 
     Best-effort — never raises, so it can be called on the way to a `raise`."""
-    topic = os.environ.get("NTFY_TOPIC", "").strip()
-    if not topic:
-        return
-    title = f"🛑 P79 run STOPPED [{condition_id}] — {abort_class}"
-    hint = _ABORT_RECOVERY_HINTS.get(abort_class, "")
-    body = (
-        f"**{abort_class}** at site={site} task={task_id} — run 已停止"
-        f"（后续 task 会以同样方式失败）。\n\n"
-        f"错误: {str(exc)[:300]}\n\n"
-        f"{hint}"
-    )
-    url = f"https://ntfy.sh/{topic}"
-    req = urllib.request.Request(
-        url, data=body.encode("utf-8"), method="POST",
-        headers={"Title": title, "Priority": "urgent", "Markdown": "yes"},
-    )
+    # EVERYTHING is inside the try, including body construction. `str(exc)` runs
+    # arbitrary user code (`Exception.__str__`), and the whole point of this
+    # helper is that it sits one line before a `raise` — an exception escaping
+    # from here would replace the precise "quota exhausted" traceback with a
+    # misleading one from the notifier. Verified 2026-08-09: an exception whose
+    # __str__ raises made the pre-fix version propagate a RuntimeError.
+    # (/stress Mode B P2-2.)
     try:
+        topic = os.environ.get("NTFY_TOPIC", "").strip()
+        if not topic:
+            return
+        title = f"🛑 P79 run STOPPED [{condition_id}] — {abort_class}"
+        hint = _ABORT_RECOVERY_HINTS.get(abort_class, "")
+        try:
+            exc_text = str(exc)[:300]
+        except Exception:  # noqa: BLE001
+            exc_text = f"<{type(exc).__name__}.__str__ raised>"
+        body = (
+            f"**{abort_class}** at site={site} task={task_id} — run 已停止"
+            f"（后续 task 会以同样方式失败）。\n\n"
+            f"错误: {exc_text}\n\n"
+            f"{hint}"
+        )
+        req = urllib.request.Request(
+            f"https://ntfy.sh/{topic}", data=body.encode("utf-8"), method="POST",
+            headers={"Title": title, "Priority": "urgent", "Markdown": "yes"},
+        )
         with urllib.request.urlopen(req, timeout=15):
             pass
         logger.info("Run-abort ntfy sent to %s (%s)", topic, abort_class)
-    except Exception as push_exc:
+    except Exception as push_exc:  # noqa: BLE001
         logger.warning("Run-abort ntfy failed: %s", push_exc)

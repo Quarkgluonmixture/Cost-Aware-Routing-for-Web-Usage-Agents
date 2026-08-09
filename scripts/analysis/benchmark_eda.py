@@ -207,6 +207,10 @@ def render(profiles: list[dict]) -> str:
             f"**{run_set}** | {prot} | **{p['n_scored']}** |"
         )
     L.append(
+        "\n<sub>A protocol count of 0 is the CURRENT state (no amendment has "
+        "excluded a task on that corpus yet), not a property of the corpus.</sub>\n"
+    )
+    L.append(
         "\n- **run set** = episodes a completed run actually contains. Verified "
         "against real runs: `B1_dom_classifieds` → 224 episodes, `B1_dom_reddit` → "
         "**205**, WA `B1_dom_wa_reddit` → **104**.\n"
@@ -214,9 +218,15 @@ def render(profiles: list[dict]) -> str:
         "**203**, VWA shopping **432**.\n\n"
         "This is the source of a long-standing double set of numbers in the project "
         "notes — reddit appears as both 205 and 203, shopping as both 435 and 432. "
-        "Neither is wrong; they are the run set and the scored set. An episode count "
-        "that matches the *scored* number would actually indicate a problem, because "
-        "protocol-excluded episodes are supposed to be collected.\n"
+        "Neither is wrong; they are the run set and the scored set.\n\n"
+        "> **How to use this as a check.** On a corpus that HAS protocol exclusions "
+        "(currently VWA reddit and VWA shopping) a complete run's episode count "
+        "should be **greater than** the scored number, because protocol-excluded "
+        "episodes are collected on purpose. Where the exclusion count is 0 — VWA "
+        "classifieds and all three WA sites today — the two are **equal by "
+        "construction**, and equality says nothing either way. An earlier version of "
+        "this note stated the check unconditionally; the table above is its own "
+        "counterexample (cls 224 == 224).\n"
     )
 
     defect_rows = [(p, d) for p in profiles for d in p["corpus_defects"]]
@@ -269,10 +279,18 @@ def render(profiles: list[dict]) -> str:
             f"{p['reference_images_total']} | {p['multi_image_tasks']} |"
         )
     L.append(
-        "\nWA carries no reference images at all. This is the structural reason WA "
-        "is a genuine out-of-distribution test for representation routing rather "
-        "than a third VWA site: the visual-grounding demand that motivates SoM is "
-        "simply absent.\n"
+        "\nWA carries no reference images at all — a clean, measurable difference "
+        "in what the task *specifies*, and the reason WA is worth treating as a "
+        "distribution shift rather than a third VWA site.\n\n"
+        "> ⚠️ **Do not overstate what this removes.** An earlier version of this "
+        "note claimed the absence of reference images means \"the visual-grounding "
+        "demand that motivates SoM is simply absent\". That conflates two things: "
+        "**visual matching** (compare the page against a supplied target image — "
+        "genuinely gone on WA) and **visual grounding** (locate and act on elements "
+        "of the *current* screen — still required, and what SoM marks actually "
+        "serve). What shifts is the task specification, not necessarily the "
+        "modality requirement. Establishing the stronger claim would need evidence "
+        "that DOM-only closes the gap to SoM on WA but not on VWA.\n"
     )
 
     L.append("\n## 3. Evaluation machinery\n")

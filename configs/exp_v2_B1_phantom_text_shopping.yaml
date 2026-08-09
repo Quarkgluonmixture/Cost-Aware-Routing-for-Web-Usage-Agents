@@ -12,12 +12,14 @@
 # Mirrors exp_v2_B1_phantom_text_classifieds.yaml exactly; only include_sites differs.
 
 defaults:
-  - configs/exp_v2_B1_shop_strat200_base.yaml   # stratified 200-task subset (2026-08-09)
+  - configs/exp_v2_base.yaml
 
 experiment:
   phase: "phase1"
   name: "B1_phantom_text_shopping"
 
+task:
+  include_sites: ["shopping"]
 
 runtime:
   max_steps: 30
