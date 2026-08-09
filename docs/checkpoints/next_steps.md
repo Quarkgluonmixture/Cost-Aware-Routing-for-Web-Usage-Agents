@@ -23,27 +23,50 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟢 2026-08-09 收尾 · **A100 在跑 B1 shop 435×3；proxy 等续额度**（session handoff）
+> ## 🟢 2026-08-09 晚 · **额度 $180 到账；chain 已重排为 B0 vision 补尾 → B1 shop 三格**（最新 handoff）
 >
-> chronicle → **笔记 §444（预算+B4）· §445（EDA）· §446（run-abort，含 §446.7 时区自我更正）· §447（抽样）· §448（3-AI /stress）**
+> chronicle → **笔记 §449**（预算低估一倍 · 断裂点判据 · 跨时区二次踩 · 台账化规则）
 >
 > | | |
 > |---|---|
-> | **A100** | `queue_chain` 跑 **B1 shop 435 全集 × 3 mode（dom → som → P-SoM）**，15:33 UTC 起。ETA **~9.3 天（约 08-18/19）**。monitor 50h 兜底 |
-> | **DGX** | mechanistic sweep 第 20/23 格 |
-> | **proxy** | **$1000 全部用完**（`403 Budget exceeded`）。watcher 在跑，**额度到账会主动推 ntfy** |
-> | **B0 shop** | 停在 374/466，`resume:true`，额度回来后**先停 B1**（同 site 只能一个 baseline）再续 |
+> | **proxy** | **$179.99 到账**（申请额低于建议的 $500） |
+> | **A100 在跑** | `queue_chain` 4 段：`B0 vision shopping`(resume 374→435) → `B1 dom shopping`(resume 91→435) → `B1 som` → `B1 P-SoM`。log `logs/queue_chain_b0vis_b1shop_20260809.log` |
+> | **ETA** | vision 补尾 ~4.8h → B1 三格 ~5.6 天（**非** 旧文写的 9.3 天）→ 约 **08-15** |
+> | **B0 WA chain** | **未起**，等 B1 跑完再发（共享容器必须单跑，命令见下） |
+>
+> ### 💰 预算数字已全部重算 —— 旧的低估一倍，别再用
+>
+> §444 的 `$0.06/episode` **作废**：它来自 $0.888/h 燃烧率的五分钟窗口，而那窗口
+> 恰好落在 **vision**（六个 mode 里最便宜的）上。实测 shop：dom **$0.1198** /
+> som **$0.0979** / vision **$0.0722**。
+>
+> | 项 | 旧估 | **实测重算** |
+> |---|---:|---:|
+> | VWA shop 补完（vision 61 + 3×phantom） | $86 | **$150** |
+> | WA shopping + shopping_admin × B0（12 cond） | $75 | **$175** |
+> | B4 sonnet-4-6 cls+red（12 cond） | $154 | **$221** |
+> | 合计 | $315 | **$546** |
+>
+> ⇒ **下次按 $500 申请**。这次的 $180 只够其中一项。
+> （另：「B0 shop 停在 374/**466**」也是错的，run set 是 **435**，剩 **61** 个不是 92 个。）
+>
+> ### B1 跑完后接着发（按性价比顺序，13 段）
 >
 > ```bash
-> # 余额 / 是否恢复（探针用生产同款 max_tokens）：
-> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once
-> # 额度到账后想验证 max_tokens 预留假说（余额 <$1 但未空时才有意义）：
-> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --verify-reservation
+> ssh condense-a100 'cd /home/ubuntu/workspace/p79 && setsid nohup bash scripts/queues/queue_chain.sh \
+>   "queue_baseline.sh B0 dom shopping wa" "queue_baseline.sh B0 som shopping wa" \
+>   "queue_baseline.sh B0 vision shopping wa" "queue_phantom_text.sh B0 shopping wa" \
+>   "queue_phantom_prompt.sh B0 shopping wa" "queue_phantom_som.sh B0 shopping wa" \
+>   "queue_baseline.sh B0 dom shopping_admin wa" "queue_baseline.sh B0 som shopping_admin wa" \
+>   "queue_baseline.sh B0 vision shopping_admin wa" "queue_phantom_text.sh B0 shopping_admin wa" \
+>   "queue_phantom_prompt.sh B0 shopping_admin wa" "queue_phantom_som.sh B0 shopping_admin wa" \
+>   > logs/queue_chain_b0_wa_20260815.log 2>&1 < /dev/null &'
 > ```
+> WA shopping 六格 $87（3.9 天）→ shopping_admin 六格 $95（4.0 天）。$180 会在
+> shopping_admin 中途耗尽 → fail-fast + `resume` + urgent ntfy（`1d3765b` 已修）。
 >
-> **额度到账后的花钱顺序**（合计 ~$315，建议申请 $500）：
-> ① shop B0 补完 ~$86 → ② WA shopping + shopping_admin × B0 ~$75
-> → ③ **B4 = `eu.anthropic.claude-sonnet-4-6`**（与 B0 **同价**）cls+red ~$154
+> ⚠️ **跨机看时间先对表**：A100 是 **UTC**，DGX 是 **BST(+0100)**。A100 log 时刻减 DGX
+> 当前时间会凭空多出 1 小时（§449.6 当天第二次踩这个坑）。
 >
 > ### ⚠️ 两条 backlog，别忘
 > - **子集 run 会被 gate 判 FATAL**：`queue_chain.sh:476` 写死各 site 的 `expected_n`，
@@ -51,38 +74,14 @@ updated: 2026-08-08
 > - **两条无数据反驳的攻击**（`CLAIM_EVIDENCE_MATRIX.md` 已知攻击表）：
 >   A1 C4 的"结构性"可能只是欠采样（直击 headline）· A2 drop-one 可能只是 pass@K
 >   （**可用现有 archive 算，2-3h，不需新 fire**）
-
-> ## 🔴 2026-08-09 · **proxy 预算已耗尽，B0 shop run 停在 374/466**（最新，等你续额度）
->
-> chronicle → **笔记 §444（预算+B4）· §446（run 停止告警修复）**。
->
-> | | |
-> |---|---|
-> | 现状 | 池子 **$1000 全部用完**，`quota:403` 自 02:33 起持续。实测燃烧 $0.888/h = **$0.06/episode** |
-> | 已损失 | `B0_vision_shopping` **01:19 停在 374/466**（fail-fast 正确，374 个 episode 完好）；后续 3 个 phantom condition 未启动，**没有留下空目录** |
-> | 影响面 | **DGX 与 A100 同一个池**。B0 全线 + B4 全线卡死；B1/B2/B3 走本地 GPU **不受影响** |
-> | 恢复 | 续额度后**重跑同一条 queue 命令**即可，`resume: true` 会跳过已完成 episode，不重跑 374 个 |
-> | 监控 | watcher 已跑（10min 轮询），**额度到账会主动推 ntfy** `p79-claude` |
 >
 > ```bash
-> # 当前余额 / 是否恢复（探针用生产同款 max_tokens，实付 ~$0.00002）：
-> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once
-> # ⭐ 余额跌到 <$1 但还没空时跑这个，能证实/推翻 max_tokens 预留假说（§446.3）：
-> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --verify-reservation
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once   # 余额
 > ```
 >
-> ✅ **已修（commit `1d3765b`，DGX + A100 双边 24 passed）**：runner 三个 fail-fast 分支
-> （quota / fatal_env / evaluator）现在都推 **urgent** ntfy —— 这次是 run 01:19 死、
-> 人 08:40 才知道，六小时空转在一台按时计费的机器上。
->
-> **额度到账后按这个顺序花**（合计 ~$315，建议申请 $500 留余量）：
-> ① shop 补完 3.3 cond ~$86 → ② WA shopping + shopping_admin × B0 12 cond ~$75
-> → ③ **B4 = `eu.anthropic.claude-sonnet-4-6`** cls+red 12 cond ~$154
->
-> ✅ **B4 可行性已探明**：改一行 config（`model.api_name`），不需要新 backend —— 详见 §444.2。
-> ⚠️ 选 **sonnet-4-6**（0.001/0.005，**与 B0 同价**），不是 sonnet-4-5（3x）。
-> ⚠️ **注册表列出 ≠ 能调用**：sonnet-5 / opus-5 / opus-4-7 / opus-4-8 / fable-5 五个全 400，
-> 而它们标的都是 0.001/0.005 占位价 —— 价格推不出可用性，加新模型前**逐个打一发**。
+> ✅ **B4 仍然可行**（改一行 `model.api_name`，§444.2）。选 **sonnet-4-6**（与 B0 同价），
+> 不是 sonnet-4-5（3x）。⚠️ **注册表列出 ≠ 能调用**：sonnet-5 / opus-5 / opus-4-7 /
+> opus-4-8 / fable-5 五个全 400，且都标 0.001/0.005 占位价 —— **价格推不出可用性**。
 
 > ## 🔴 2026-08-08 · **现在的 critical path = 毕设论文，硬截止 09-01**（次新，全局）
 >
