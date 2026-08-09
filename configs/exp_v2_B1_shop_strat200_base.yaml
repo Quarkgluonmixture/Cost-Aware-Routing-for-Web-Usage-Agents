@@ -1,0 +1,37 @@
+# B1 shopping — stratified 200-task subset (2026-08-09)
+#
+# WHY A SUBSET AT ALL
+# B1 measures ~10.5 min/episode (four reddit runs: 9.3 / 10.4 / 10.7 / 10.8),
+# so the full 435-episode shopping set is ~76h per condition and ~19 days for
+# the six-mode chain — past the 09-01 thesis deadline, and the proxy top-up will
+# interrupt it anyway (same site can only host one baseline, so B0's 374/466
+# resume takes precedence the moment credit returns).
+#
+# WHY STRATIFIED AND NOT max_tasks_per_site: 200
+# `max_tasks_per_site` truncates in file order, and shopping task_ids are NOT
+# arranged randomly. Measured on the 435-task run set:
+#
+#                     templates covered   easy /  hard / medium
+#   full 435            151/151           23%  /  32%  /  45%
+#   first 200            69/151 (46%)     34%  /  26%  /  39%   <- biased
+#   stratified 200      151/151 (100%)    21%  /  33%  /  46%   <- matches
+#
+# Taking the first 200 would drop 82 of 151 templates entirely and skew toward
+# easy tasks — i.e. it would inflate SR for reasons that have nothing to do with
+# the model. The list below is a round-robin over intent_template_id preserving
+# file order within each template, which recovers full template coverage and a
+# difficulty mix within ~2pp of the full set on every level.
+#
+# ⚠️ This subset is an OOD EXTENSION, not part of the preregistered 6 cells.
+# Report it as a 200-task stratified subsample; never pool it with a 435-task
+# run as if the denominators matched.
+#
+# Regenerate: see 笔记 §446 / the round-robin snippet used to produce this list.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+task:
+  include_sites: ["shopping"]
+  task_ids:
+    shopping: [0, 1, 3, 4, 6, 7, 9, 10, 13, 14, 18, 19, 21, 22, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 43, 44, 46, 47, 51, 52, 55, 59, 60, 61, 66, 67, 72, 73, 82, 83, 86, 87, 88, 89, 93, 94, 95, 96, 97, 99, 100, 101, 104, 105, 107, 108, 109, 110, 111, 116, 117, 121, 122, 127, 130, 135, 136, 137, 138, 139, 140, 141, 143, 144, 145, 146, 150, 151, 153, 154, 155, 156, 158, 159, 161, 164, 166, 168, 169, 170, 171, 172, 174, 175, 176, 180, 181, 182, 183, 184, 186, 187, 189, 191, 192, 193, 196, 199, 202, 203, 207, 210, 212, 216, 219, 221, 223, 224, 225, 230, 233, 236, 238, 241, 242, 246, 248, 250, 253, 258, 260, 262, 265, 267, 271, 275, 281, 284, 285, 287, 289, 292, 295, 298, 301, 306, 309, 313, 314, 318, 324, 325, 328, 330, 331, 335, 338, 345, 348, 353, 354, 355, 356, 357, 358, 359, 362, 363, 368, 369, 371, 374, 381, 382, 385, 390, 408, 410, 411, 421, 424, 430, 433, 436, 438, 439, 441, 442, 444, 447, 450, 451, 453, 455, 456, 463]

@@ -2,14 +2,12 @@
 # Created 2026-05-14 (codex /stress v6 C9) — completes Phase 1b shop chain configs.
 
 defaults:
-  - configs/exp_v2_base.yaml
+  - configs/exp_v2_B1_shop_strat200_base.yaml   # stratified 200-task subset (2026-08-09)
 
 experiment:
   phase: "phase1"
   name: "B1_vision_shopping"
 
-task:
-  include_sites: ["shopping"]
 
 runtime:
   max_steps: 30
