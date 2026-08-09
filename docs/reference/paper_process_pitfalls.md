@@ -207,7 +207,8 @@ scope: analysis + writing process, NOT code defects (those are master_bug_catalo
 | 内容 | 去处 |
 |---|---|
 | 代码缺陷 | `master_bug_catalog.md`（B-number 单调追加）|
-| **过程失败模式** | **本文档** |
+| **过程失败模式**（分析 / 写作）| **本文档** |
+| **操作层的坑**（工具 / 跨机 / 监控 / 部署）| `GOTCHAS.md` — 命令退出码 0 但做的不是你以为的那件事 |
 | 「这个量测过吗 / 这条裁定过吗」 | `known.py` 台账 |
 | 过去发生了什么 + 为什么 | `实验笔记.md`（append-only）|
 | 现在在跑什么 / 下一步 | `next_steps.md §0` + `_status/` |
