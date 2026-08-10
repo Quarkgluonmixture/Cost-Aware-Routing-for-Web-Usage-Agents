@@ -240,7 +240,24 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
   **这是全文唯一还站着的正面主张，这条限定省掉就是过度主张。**
 - **四检查**：④ 删掉 ⇒ **C1 塌，全文无题**
 
-#### F9 — Complementarity（Venn + drop-one forest）【♻️】
+#### F9 — drop-one vs 噪声门槛 【✅ **已完成 2026-08-10** · 角色已降级】
+
+> **产物**：`final_dissertation/figures/fig_f9_drop_one_vs_floor.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f9_drop_one_vs_floor.py`
+> **数据源换了**：用 **`fig0c_drop_one_bootstrap_ci.csv`（08-10，6 cells × 6 modes + bootstrap CI）**，
+> ⚠️ **不再用 `meta_phantom_lift.csv`**（05-17 且 **k_cells=3**，自身标 `appendix-only`）。
+> ⚠️ 源行自带 `grade=NON_PAPER_GRADE`，**在图注里点名，不静默丢弃**。
+>
+> 🔴 **重算后数字比旧的更弱**：phantom arm **14/18 为正，0.00–2.68pp**
+> （旧写 22/24 / 1.7–3.3pp）；**P-prompt 只有 4/6 为正**。
+> ⭐ **门槛带画进图里**：36 个值中**只有 3 个**达到 3.82pp，且**全部是 baseline mode，无一 phantom**
+> ⇒ "方向一致、幅度在噪声内"成为**视觉事实**，不需要在正文里辩解。
+>
+> ⭐ **2026-08-10 user framing：按三侧分组**（文字侧 DOM/P-text/P-prompt/P-SoM ·
+> 结合侧 SoM · 视觉侧 Vision，见 TERMS §1.1）。这一改让图**多回答一个问题**：
+> 文字侧四臂 drop-one 全部小，是因为它们**同处一侧、彼此高度重叠**；
+> 大的独有贡献来自**跨侧**——只有 SoM 与 Vision 触到门槛带。
+> 分组依据是**实测**：四个文字侧 mode 的 `image_payload_bytes` 全为 0。
 
 - **Question**：这个上限有结构，还是随机涨落？
 - 🔴 **Takeaway 已降级（2026-08-10，`noise_floor_inventory.md` §3 ②）**：可以说
@@ -618,7 +635,7 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 | F6 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F7 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F8 | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
-| F9 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F9 | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
 | F10 | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主(半栏) |
 | F10b | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
 | F11 | ✅ | ✅ | ☐ 待 Ch5 prose | ✅ | 主 |

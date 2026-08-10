@@ -29,7 +29,7 @@ Web agent 每一步都默认喂进最贵的那种上下文（标注截图 + 完�
 | 分句 | 确切含义 | 主证据 |
 |---|---|---|
 | 上限真实存在 | oracle 相对最强单模 **+3.45 ~ +16.07pp** SR，成本低 **13.7–35.3%**（⚠️ **VWA 6 格口径**，上界 +16.07pp = `cls·B0`；含 WA 两格的 **8 格口径上界是 +16.35pp** = `wa_reddit·B0`，见 CLAIM_EVIDENCE_MATRIX C1。两个数都对，指代的 cell 集不同——**引用时必须带 cell 集**）<br>🔴 **且必须紧跟重跑基线**：一次同 arm 重跑就买到 **2.0–7.6pp**（`noise_floor_inventory.md` §3 ①）。这是全文唯一还站着的正面主张，限定不能省 | `phase1_full_prereg_decision.json` · `router_objective_ordering.md:21-24, 146-154` · `noise_floor_inventory.md` |
-| 预测不出来 | 真嵌套 CV 下 **0/6 cell** 能 Pareto 胜过平凡的 always-cheapest 固定策略 | `router_triage_learnability.md` |
+| 预测不出来 | 真嵌套 CV 下 **0/8 cell** 能 Pareto 胜过平凡的 always-cheapest 固定策略（**跨两个 benchmark**；2026-08-10 更正，原写 0/6 是 VWA-only 旧口径）<br>⚠️ 且**连事后 oracle 也只有 1/8 进胜区**——always-cheapest 是成本下界，所以正确表述是「**这个权衡不划算**」而非「学习器不行」（见 CLAIM_EVIDENCE_MATRIX C4） | `router_triage_learnability_with_wa.md:124` |
 | 原因是结构性的 | 瓶颈是标签的**产生率**：标签只在任务被解开时诞生，而 base SR 只有 2–27% | `router_label_supply_diagnosis.md` |
 
 ---
@@ -62,7 +62,7 @@ RL climate thesis 直接写 *"the answer … is on average: no"* 并因此加分
       本文只标定了**在观察到的 base SR 2–27% 体制内**它为什么学不到
 - ❌ 不把 token / 美元成本代理偷换成能耗或碳排（Guide T14 / §22.7）
 - ❌ **不主张三个 phantom arm 的互补结构"幅度超过重复采样地板"**（2026-08-10 加）——
-      方向一致（22/24 arm drop-one 为正）可以说，但 pooled 双轴效应 **1.35 / 2.09pp**
+      方向一致（**14/18** phantom arm-cell drop-one 为正；2026-08-10 重算，原写 22/24 是旧口径）可以说，但 pooled 双轴效应 **1.35 / 2.09pp**
       低于最宽松的已测重跑地板 **2.0pp**，且"过带 ≠ 过噪声"（要 **3.82–4.15pp** 才不太可能
       由单次重跑产生）。原文判词：*"does not survive as a positive claim"*
       （`noise_floor_inventory.md` §3 ②）。正确措辞见 CLAIM_EVIDENCE_MATRIX C2

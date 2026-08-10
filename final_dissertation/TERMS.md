@@ -31,6 +31,33 @@ The operational definitions below follow the current P79 experimental framing an
 | **fixed policy** | A non-routed condition that uses the same observation mode for every step. | baseline, static model — unless qualified |
 | **routed policy** | A condition in which the observation mode may change across steps according to a routing rule or learned router. | adaptive agent — too broad |
 
+### 1.1 The three sides — how the six modes group  (locked 2026-08-10)
+
+The six observation modes are best introduced by **what is actually sent to the
+model**, not by their historical names. This grouping is verified from the step
+records, not asserted: the four text-side modes all record
+`image_payload_bytes == 0`.
+
+| Canonical term | Members | What is sent |
+|---|---|---|
+| **text side** | DOM · P-text · P-prompt · P-SoM | structured text only — **no image at all** |
+| **combined side** | SoM | the same page as text **and** as an annotated screenshot |
+| **visual side** | Vision | the screenshot only — **no structured text** |
+
+The text side is itself a 2×2 of **text format** (AXTree vs `[SOM_MARKS]`) ×
+**prompt style** (DOM-style vs SoM-style); the `mark_count` field encodes the
+first axis directly (30 = `[SOM_MARKS]`, 0 = AXTree). So "the three sides" and
+"the 2×2" are the same structure at two zoom levels, not competing framings.
+
+**Why this ordering matters for the argument.** Grouping this way makes one
+result legible that is otherwise puzzling: the three phantom arms have small
+drop-one contributions (0.00–2.68pp) because they all live **inside one side**
+and overlap heavily, while the larger unique contributions come from **crossing
+sides**. See F9.
+
+**Do not** call the text side "phantom" — *phantom* names the three text-side
+arms **other than DOM** (P-text, P-prompt, P-SoM), and DOM is text-side too.
+
 ### First-use sentence pattern
 
 Use this style in the thesis:
