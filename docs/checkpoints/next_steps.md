@@ -23,6 +23,39 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟣 2026-08-10 · **毕设图 13 张落地 + 五处口径漂移修正**（最新 handoff）
+>
+> chronicle → **笔记 §450**（.1–.18，本 session 全部）
+>
+> | | |
+> |---|---|
+> | **交付** | `final_dissertation/` 起手文件 **5/5 齐**（新增 `FIGURE_PLAN.md`）+ **主文 13 张图**（`figures/` + `scripts/analysis/figures/thesis/`）+ `GPT_SEARCH_PROMPTS.md` + `search_results/`（含 `VERIFICATION.md`） |
+> | **A100** | 仍在跑 B1 shop chain（08-09 起，ETA ~08-15）。**毕设主线不依赖它** |
+> | **git** | **17 commits 未 push**，分支 `fix/b1878-reddit-reference-image` |
+>
+> ### ⚠️ 本 session 修掉的口径漂移（写作时用新值）
+>
+> | 项 | 旧（勿用） | 新 |
+> |---|---|---|
+> | C4 Pareto | 0/6 | **0/8**（跨两 benchmark） |
+> | C4 置换控制 | B=200 | **B=10000** bundle-permutation |
+> | C2 drop-one | 1.7–3.3pp / 22/24 | **0.00–2.68pp / 14/18**（phantom arm-cell） |
+> | oracle 上界 | 16.07 或 16.35 混用 | **必带 cell 集**：16.07=VWA 6 格 / 16.35=8 格 |
+> | C4 权衡举例 | cls·B0 +1.79pp/+11% | **串行**，见 CLAIM_EVIDENCE_MATRIX C4 |
+>
+> ### 🔴 三处 claim 层实质变化
+>
+> 1. **C2 降级**：不再作正面结构主张（幅度未超重复采样地板）
+> 2. **C1 加限定**：headline 必须紧跟"一次重跑买到 2.0–7.6pp"
+> 3. **C4 校准**：连事后 oracle 也只有 1/8 进胜区 ⇒ 是"权衡不划算"不是"学习器不行"
+>
+> ### 下一步（按优先级）
+>
+> - 剩 **F5**（设计矩阵，简单）· **F6/F7**（SR heatmap / cost-SR frontier，♻️ 改注）+ A1–A9 附录图
+> - **Stage B 页数预算**仍等 AskUCL（P1 已确认公开资料查不到，别再搜）
+> - **prose 是 critical path**：09-01 硬截止，图已不是瓶颈
+> - `known.py` 查过再动手 —— 本 session **六次**撞上"缺口/引用比产物旧"
+
 > ## 🟢 2026-08-09 晚 · **额度 $180 到账；chain 已重排为 B0 vision 补尾 → B1 shop 三格**（最新 handoff）
 >
 > chronicle → **笔记 §449**（预算低估一倍 · 断裂点判据 · 跨时区二次踩 · 台账化规则）

@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "**2026-09-01 硬截止 (user 2026-08-08)** — 全稿交付。剩 ~24 天。REALM 稿 (Submission #192, 8 页正文, 审查中) 可作为结果章骨架复用; 数据与分析已全部落地, 这是纯写作 critical path"
+eta: "**2026-09-01 硬截止** — 全稿交付。剩 ~22 天。**图已不是瓶颈: 主文 13 张 2026-08-10 落地 (六张不可割全齐), prose 是唯一 critical path**。REALM 稿 (Submission #192, 8 页正文, 审查中) 可作为结果章骨架复用; 数据与分析已全部落地, 这是纯写作 critical path"
 detail: final_dissertation/
 created: 2026-06-10
 updated: 2026-08-08
@@ -35,14 +35,14 @@ updated: 2026-08-08
 > 与一个未修 bug（`router_triage_learnability.py` 散文段硬编码 6 格，m 未随 8 格更新）→ 笔记 §450。
 
 - [ ] 1. ⭐ **problem-first** — 开局讲 problem 不讲背景铺垫 (intro 重排)
-- [ ] 2. 🔲 **system structure 图** — 端到端架构图。**规格已定 = FIGURE_PLAN F3**：不是装饰性架构图，
+- [x] 2. ✅ **system structure 图** = **F3 已画** (2026-08-10) — 端到端架构图。**规格已定 = FIGURE_PLAN F3**：不是装饰性架构图，
        画 *causal comparison boundary*（`CHAPTER_CHAIN.md:237` 原文链条）。零数据依赖，可立即开工
 - [ ] 3. ✅ **public-access 声明** — VWA/Qwen/Gemma/MiMo 均 public + OSF; ⚠️ B0=proxy 需诚实标"非公开可复现"
 - [ ] 4. ⭐ **concept-first intro** — 从 concept 建立, 不堆 statement, 不太具体
 - [ ] 5. ⭐ **disc+concl 合并** (limitation 内嵌) — **今日 D8 章结构直接受此影响**
 - [ ] 6. **appendix 非 orphan** — 每个 appendix 正文有 "见 Appendix X" 指针 (S1-S6 待补入口)
 - [ ] 7. 🔲 **Zekun Wu 原文** — 拉共同作者论文 → bib + 文献图谱 (arXiv API 核验, 非 WebSearch)
-- [ ] 8. 🔲 **文献图谱** — 可视 literature map。**规格已定 = FIGURE_PLAN F2**（四簇: 观测表征 /
+- [x] 8. ✅ **文献图谱** = **F2 已画** (2026-08-10, 27 篇全核) — 可视 literature map。**规格已定 = FIGURE_PLAN F2**（四簇: 观测表征 /
        模型-模态 routing 与 cascade / confidence deferral / cost-aware inference）。**素材依赖 GPT P2**，
        每篇必须带"它优化的是什么"这一维，否则图谱显不出缺口
 - [x] 9. ✅ **visualization** — **2026-08-10 规划完成**: `FIGURE_PLAN.md` 17 主文 + 9 appendix，
