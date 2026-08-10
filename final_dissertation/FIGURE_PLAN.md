@@ -181,12 +181,23 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - **数据源**：`results/phantom_paper/phase1_full_prereg_decision.json`（08-10 ✅）· `docs/analysis/cross_sites/router_objective_ordering.md`（08-03）· 脚本 `fig_ceilings.py`（**png 当前不存在，需重跑**）
 - ⚠️ **scope 必须进图注**：+16.35pp 来自 `wa_reddit·B0`，VWA-only 口径的上界是 **+16.07pp**（`cls·B0`）。见第 7 节雷区 #1。
 - ⚠️ **oracle 是事后上界，不是可达策略**——图注必须自带这句，否则读者会当成结果。
+- 🔴 **必须把重跑基线画进这张图**（`noise_floor_inventory.md` §3 ①，2026-08-10）：
+  原文要求 *"the headline needs the rerun baseline printed next to it"* —— **一次重跑就买到 2.0–7.6pp**。
+  也就是 16.07pp 的天花板里，有 2–7.6pp 是"把同一个 mode 再跑一遍"也能拿到的。
+  **形式**：在 oracle 柱旁加一条 rerun-band 参考带（阴影区间）。
+  **这是全文唯一还站着的正面主张，这条限定省掉就是过度主张。**
 - **四检查**：④ 删掉 ⇒ **C1 塌，全文无题**
 
 #### F9 — Complementarity（Venn + drop-one forest）【♻️】
 
 - **Question**：这个上限有结构，还是随机涨落？
-- **Takeaway**：三个 phantom arm **各自独解**一批任务，drop-one oracle **1.7–3.3pp**，22/24 arm 观测为正。
+- 🔴 **Takeaway 已降级（2026-08-10，`noise_floor_inventory.md` §3 ②）**：可以说
+  "三个 phantom arm 各自独解一批任务，drop-one oracle **1.7–3.3pp**，22/24 arm 为正"，
+  但**不能把它当作正面的结构性证据**——pooled 双轴效应 **1.35 / 2.09pp** 低于
+  **最宽松的已测重跑地板 2.0pp**。原文判词：***"does not survive as a positive claim"***。
+  正确措辞：**"观察到方向一致的互补结构，但其幅度未超过重复采样地板"**。
+- ⚠️ 因此本图的角色从"证明结构存在"改为**"展示结构的方向性 + 明确它未过噪声门槛"**，
+  必须与 F10 同页或紧邻，否则单看这张图会读成正面结论。
 - **数据源**：`results/phantom_paper/meta_phantom_lift.csv`（**mtime 05-17，比其余产物老近三个月 → 定稿前必须核它是否还对应当前 42-condition 口径**）· 脚本 `fig_phantom_structure_venn.py` + `fig_forest_drop_one.py`
 - ⚠️ **H3 过门是弱证据**（§397.8）：门测 ≠0，但同策略跑两次本来就 ≠0。图注**不得**把过门当作结构存在的证明——它的对照在 F10。
 
@@ -199,13 +210,35 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - ⚠️ self-oracle drop（A→B 6.7pp / B→A 7.6pp）只能当 **instability diagnostic，不是 bias estimate**（§293）。
 - **四检查**：④ 删掉 ⇒ **C3 焊接枢纽消失**：C2 的正面读法无人关掉，C4 的失败也就说不清是不是估计器的锅
 
-#### F10b — pass@2 对照 【⛔ 数据待产 · 2–3h · user 2026-08-10 决定现在做】
+#### F10b — 表征 arm vs 重跑 arm（one-arm margin）【✅ 分析已存在，2026-08-04；只需画图】
+
+> **2026-08-10 更正**：本图原标"⛔ 数据待产 · 2–3h"。实际上
+> `docs/analysis/cross_sites/noise_floor_inventory.md`（08-04）**已经做完了这个对照**，
+> 只是没用 "pass@k" 这个词（所以台账 `pass@` 0 match 是**假阴性**）。
+> **不需要新分析，只需要把它画出来。**
 
 - **Question**：drop-one 的增益会不会只是"多跑一次"？
-- **Takeaway（待测，两个方向都要能写）**：
-  - 若 `Best_Mode×2` **<** `Best_Mode + Phantom_Arm` ⇒ 增益不能被重复采样解释，双轴独立 claim 站住；
-  - 若 **≥** ⇒ C2 降级为"与噪声同量级"，Ch4 的 claim 措辞回炉。
-- **数据源**：现有 archive 的同 condition 重跑数据（**不需新 fire**）
+- 🔴 **Takeaway（实测，结论对我们不利）**：在 `B0·VWA-cls` 上，
+  **+1 个最佳异表征 arm = 7.14pp**，**+1 次同 arm 重跑 = 4.91–7.59pp**
+  ⇒ ***"indistinguishable — inside the rerun band"***。
+  两个有地板的 cell 都是这个结论：*"Neither cell shows a representation arm worth
+  appreciably more than a rerun arm; one shows it worth no more at all."*
+  ⚠️ 而 7.14pp 已是 **best** 异表征，phantom arm 的贡献只会更小。
+- ⭐ **更硬的一条（§1b）**：measured floor 的上边缘 2.23pp 与其自身标准差 2.32–2.53pp 同量级
+  ⇒ ***"clears the band is not clears the noise"***：一个效应要达到 **3.82–4.15pp**
+  才不太可能由单次重跑产生。**drop-one 的 1.7–3.3pp 落在这条线以下。**
+- **形式**：one-arm-margin 对照条形/区间图——每个有地板的 cell 一组，
+  异表征 arm 增益 vs 重跑 arm 增益带，叠上 3.82–4.15pp 的"超噪声门槛"线。
+- **数据源**：`docs/analysis/cross_sites/noise_floor_inventory.{md,json}`（08-04）·
+  脚本 `scripts/analysis/aggregate_noise_floor_inventory.py`
+- ⚠️ **口径纪律**：这是 **1-arm baseline +1 arm**。C2 的 drop-one 是 **6-arm oracle −1 arm**。
+  inventory 明确拒绝跨口径比较（*"the 6-mode ceiling gain is NOT comparable to a
+  one-rerun floor"*）。6-arm 口径的对照**做不了**——只有 1 个重跑 arm，凑不出六臂。
+  图注必须写明这一条，否则等于替读者做了它自己拒绝的那个比较。
+- ⚠️ **WA 行不能照读**（inventory 明确警告）：其 rerun 数字把 5 个 mode 的
+  pilot-vs-full 池化到 **10 个 registered pilot task** 上（pooled_n=50 但只有 10 个独立 task），
+  而旁边的异表征列是 **104** 个 task 上从 `dom` 起算的；且 `dom` 自己的 pilot-vs-full 是
+  **0 flips**。⇒ 只能读作"该 cell 的*某些* arm 在重复下移动 2–4pp"，**不是 `dom` 的地板**。
 - ⚠️ 台账查证：`pass@` **0 match**，项目从没做过这个对照（攻击 A2）。C3 的地板 14.3% 比 drop-one 大一个量级，**examiner 自己会问**。
 - ✅ **方法学锚已到位（P3 搜索 2026-08-10，已核）**：pass@k 的**原始来源是 Kulal et al.
   *SPoC: Search-based Pseudocode to Code*（`arXiv:1906.04908`）**，Chen et al. Codex
@@ -384,11 +417,12 @@ advisor 2026-05-14 搁置 §5，且 **B-1966 使正负面结论全部不可用�
 | **有数据、需新脚本** | F4 F12 F13 F14 F15 | 产物已在 | 各 1–2h |
 | **已有图，改注/重跑** | F6 F7 F8 F9 F10 F11 + A1–A5 A8 A9 | 产物已在 | 各 15–40min |
 | **需外部素材** | F1（真 artifact + screenshot）· F2（GPT P2 文献） | artifact 已有 / P2 待搜 | F1 2h · F2 2h |
-| **需先算数据** | F10b | archive 重跑数据 | 2–3h |
+| ~~需先算数据~~ **数据已存在，只需画图** | F10b | `noise_floor_inventory.{md,json}`（08-04） | ~~2–3h~~ **~40min** |
 
-**优先级**：F0 → F3 → F14 → F13 → F10b → F1 → 其余。
+**优先级**：F0 → F3 → F14 → F13 → F10b/F8 → F1 → 其余。
 理由：F0/F3 决定读者能不能进门（且零数据依赖，不会被实验进度卡）；F14/F13 是两个 headline
-的唯一载体；F10b 是唯一有 deadline 风险的分析活。
+的唯一载体。~~F10b 是唯一有 deadline 风险的分析活~~ —— **已解除**（2026-08-10 发现分析
+08-04 就做完了），但它反过来把 **F8 变成了必改项**（oracle 柱必须叠 rerun band）。
 
 ---
 
