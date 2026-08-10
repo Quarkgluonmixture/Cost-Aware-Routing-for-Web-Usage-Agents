@@ -5,13 +5,19 @@
 need very different labels:
 
     triage   send tasks NO mode will solve to the cheapest mode.
-             -38% to -45% cost at ZERO SR change, 6/6 cells.
+             ZERO SR change by construction; -9.5% to -30.6% cost, 8/8 cells.
              Label = binary "is this solvable by anything", defined for EVERY
-             task in the cell (203 / 224 labels).
+             task in the cell (104 / 203 / 224 labels).
     route    choose among the modes that do solve it.
-             +3.45 to +16.07pp SR, but only -0.2% to -11.4% cost.
-             Label = which-mode, defined only on solved tasks (16-97 per cell),
+             +3.45 to +16.07pp SR on the six VWA cells (+16.35pp once the two
+             wa_reddit cells are included — always state which cell set), but
+             only -0.2% to -11.4% cost.
+             Label = which-mode, defined only on solved tasks (15-97 per cell),
              and 笔记 §383.4 established it is not learnable at that supply.
+
+Cell count is a RUNTIME property (`--with-wa` makes it eight). Nothing in the
+prose below may hardcode it — see B-1974, where "m=6" was rendered onto an
+eight-cell run for months while the Holm arithmetic itself was already correct.
 
 The unlearnable half is the one carrying the SR gain. The half carrying almost
 all the cost gain has 2-13x the label supply and has never been tested. This
@@ -190,12 +196,14 @@ def build_wa_cell(cell: dict) -> dict | None:
 # (k+1)/(B+1) floors at 1/(B+1), so B=200 could not report anything below 0.004975
 # — and red·B2, the one cell that survives Holm, sat exactly there with k=0. Its
 # p was therefore not a measurement of how extreme the saving is, it was "zero of
-# 200". Worse, whether that cell could clear its Holm threshold (0.05/6 = 0.008333)
-# was decided by B rather than by the data: at B=100 the floor is 0.009901 and no
-# amount of signal could have passed. B=10000 floors at 9.999e-5, two orders below
-# the threshold, so the verdict is data-determined across any plausible B.
+# 200". Worse, whether that cell could clear its Holm threshold (0.05/6 = 0.008333
+# on the six-cell family of that era; 0.05/8 = 6.25e-3 with --with-wa) was decided
+# by B rather than by the data: at B=100 the floor is 0.009901 and no amount of
+# signal could have passed. B=10000 floors at 9.999e-5, two orders below the
+# threshold, so the verdict is data-determined across any plausible B.
 #
-# Cost: ~40 s at B=200, ~30 min at B=10000 (6 cells, 5-fold LR refit per draw).
+# Cost: ~40 s at B=200, ~30 min at B=10000 per six cells, 5-fold LR refit per draw
+# (scales with the cell count). Use --from-json to re-render prose without paying it.
 N_SHUFFLE = 10000
 
 
@@ -516,7 +524,9 @@ def evaluate(cell_spec: dict) -> dict | None:
     # The direction of the error is NOT uniform, which is why it mattered:
     # measured cls/B1 0.4776 -> 0.5025 (was anti-conservative) but
     # red/B2 0.0398 -> 0.0050 (was CONSERVATIVE by 8x). Under the corrected null
-    # red/B2 crosses Holm at m=6, reversing an earlier "nothing survives" claim.
+    # red/B2 crosses Holm at m=6 (and still does at the m=8 family of --with-wa,
+    # where its threshold is 0.05/8 = 6.25e-3), reversing an earlier "nothing
+    # survives" claim.
     #
     # Also switched to the plus-one Monte Carlo p-value (k+1)/(B+1): k/B can
     # report 0 for an event that simply was not sampled in B draws, and is
@@ -594,6 +604,12 @@ def main() -> int:
                          "features on every cell, so all eight are fitted on the same 18. "
                          "Write to *_with_wa.* — this is not a superset of the six-cell "
                          "result, the feature set differs.")
+    ap.add_argument("--from-json", type=Path,
+                    help="re-render the prose from a previous --json-out instead of recomputing. "
+                         "The permutation null costs ~40 min at B=10000, which is why the prose "
+                         "carried hardcoded '6 cells' for months after --with-wa made it eight "
+                         "(B-1974): a wording fix was never worth a rerun. Numbers are reused "
+                         "verbatim; only the prose is regenerated.")
     args = ap.parse_args()
     N_SHUFFLE = args.n_shuffle
 
@@ -604,7 +620,18 @@ def main() -> int:
         ACTIVE_NAMES = [f for f in ALL_FEATURES if f not in VWA_ONLY_FEATURES]
         ACTIVE_IDX = [ALL_FEATURES.index(f) for f in ACTIVE_NAMES]
 
-    res = [r for r in (evaluate(c) for c in cells) if r]
+    if args.from_json:
+        _cached = json.loads(args.from_json.read_text(encoding="utf-8"))
+        res = _cached["cells"]
+        _proto = _cached.get("protocol", {})
+        N_SHUFFLE = _proto.get("n_shuffle", N_SHUFFLE)
+        if _proto.get("features"):
+            ACTIVE_NAMES = list(_proto["features"])
+            ACTIVE_IDX = [ALL_FEATURES.index(f) for f in ACTIVE_NAMES]
+        print(f"re-rendering from {args.from_json}: {len(res)} cells, B={N_SHUFFLE}, "
+              f"{len(ACTIVE_NAMES)} features — numbers reused, prose regenerated")
+    else:
+        res = [r for r in (evaluate(c) for c in cells) if r]
     n_feat = len(ACTIVE_NAMES)
     L = ["# Is the triage half of routing learnable?\n",
          f"`post_hoc_exploratory=True`, `h10_eligible=False`. Task-held-out {N_FOLDS}-fold CV "
@@ -715,10 +742,11 @@ def main() -> int:
                  f"{r['null_shuffle_saving_median_pct']:.1f}% | "
                  f"{_fmt_p(r['null_shuffle_p'])} |")
     _b = res[0]["n_shuffles"]
+    _m = len(res)
     L.append(f"\nSmallest reportable p at B={_b} is 1/(B+1) = {1.0 / (_b + 1):.2e}; "
-             "Holm's tightest threshold over six cells is 0.05/6 = 8.33e-3. B is therefore "
-             "not what decides any cell's verdict (it was at B=200, where the floor 4.98e-3 "
-             "sat inside the threshold and the surviving cell reported exactly it).\n")
+             f"Holm's tightest threshold over {_m} cells is 0.05/{_m} = {0.05 / _m:.2e}. B is "
+             "therefore not what decides any cell's verdict (it was at B=200, where the floor "
+             "4.98e-3 sat inside the threshold and the surviving cell reported exactly it).\n")
     L.append(f"\n{res[0]['n_shuffles']} permutations per cell. The permutation unit is the whole "
              "task bundle (y, succ, cost) against X — permuting only `y` leaves the label "
              "disconnected from the outcomes that define it, and its error is not "
@@ -739,8 +767,8 @@ def main() -> int:
             break
     n_rej = sum(1 for _n, _p, _t, _ok in holm if _ok)
     _surv = [h for h in holm if h[3]]
-    L.append(f"Holm at α=0.05 over the m=6 cells tested (the sweep was run once per cell, "
-             f"so the family is the six cells) — **{n_rej} of 6 reject**:\n")
+    L.append(f"Holm at α=0.05 over the m={m} cells tested (the sweep was run once per cell, "
+             f"so the family is those {m} cells) — **{n_rej} of {m} reject**:\n")
     for name, pv, thresh, ok in holm:
         # The step-down stops at the first non-rejection; saying "no cell survives"
         # there is wrong whenever an earlier step already rejected.
@@ -754,42 +782,93 @@ def main() -> int:
              f"fixed policy: **{len(beat_cheap)} of {len(res)}**"
              + (f" ({', '.join(f'{r[chr(39)+chr(39)] if False else r['site']}·{r['baseline_model']}' for r in beat_cheap)})" if beat_cheap else "")
              + ".\n")
+    # Every count in this paragraph is derived from `res`, not written down. It used to say
+    # "five of six cells", "AUROC 0.651-0.717" and "m=6" while --with-wa rendered eight cells
+    # onto the same prose (B-1974) — and the AUROC range matched neither feature set by then.
+    _aurocs = sorted(r["auroc_lr"] for r in res)
+    # "no saving" and "the null reproduces it" are the §3 table read back, NOT p-value bands:
+    # the old prose said "two cells yield no SR-lossless saving at all" while every one of its
+    # six rows showed a non-zero saving. The real distinction is observed-vs-shuffled-median.
+    _no_saving = [r for r in res
+                  if r.get("learned_lossless") is None
+                  or r["observed_lossless_saving_pct"] <= 0.05]
+    _null_reproduced = [r for r in res
+                        if r not in _no_saving
+                        and r["null_shuffle_saving_median_pct"]
+                        >= 0.8 * r["observed_lossless_saving_pct"]]
     L.append("Read together — and note this is a **narrower** negative than an earlier "
-             "draft of this file claimed. In five of six cells the label is predictable "
-             "(AUROC 0.651-0.717, and unlike the which-mode task it clears the best single "
-             "covariate in 4/6). Two cells yield no SR-lossless saving at all; two more "
-             "yield savings a signal-free pipeline reproduces (p ~= 0.50). "
+             f"draft of this file claimed. Across the {m} cells the label's AUROC spans "
+             f"{_aurocs[0]:.3f}-{_aurocs[-1]:.3f}, and unlike the which-mode task the LR clears "
+             f"the best single covariate in {len(_clears)} of {m}. "
+             f"{len(_no_saving)} {'cell yields' if len(_no_saving) == 1 else 'cells yield'} "
+             f"no SR-lossless saving at all; in {len(_null_reproduced)} "
+             f"{'cell' if len(_null_reproduced) == 1 else 'cells'} a signal-free pipeline "
+             "reproduces at least 80% of the saving under shuffled labels. "
              # Generated, not hardcoded: this sentence carried `p=0.005` from the
              # B=200 era for one commit after B rose to 10000 (codex finding 7).
              + (f"**{'One cell' if len(_surv) == 1 else str(len(_surv)) + ' cells'}, "
                 + ", ".join(f"{n} (p={_fmt_p(p)} vs {t:.4f})" for n, p, t, _o in _surv)
                 + f", {'has' if len(_surv) == 1 else 'have'} a saving that survives Holm "
-                "at m=6** — "
-                if _surv else "**No cell's saving survives Holm at m=6** — ")
+                f"at m={m}** — "
+                if _surv else f"**No cell's saving survives Holm at m={m}** — ")
              + "under the corrected bundle-permutation null; the earlier y-only null reported "
              "0.040 for reddit/B2 and supported a blanket 'nothing survives' claim, which "
              "was wrong.\n")
-    L.append("⚠️ **The sixth cell is the significant one, and its AUROC is 0.483** — below "
-             "chance, and below its own best single covariate (0.711). That is not a "
-             "contradiction: the two quantities measure different things, and on this data "
-             "they come apart. AUROC scores the GLOBAL ranking; the saving comes from the "
-             "TAIL. reddit/B2 sends 192 of 203 tasks (95%) to the cheap mode with no SR "
-             "loss — in a cell where only 7.4% of tasks are solvable at all, almost nothing "
-             "in that 95% was ever going to succeed. It differs from the free "
-             "always-cheapest policy by five percent of the task allocation, and those 11 "
-             "retained tasks happen to hold 4 successes (8 vs 4). The permutation null is "
-             "detecting that tail enrichment, not a globally ordered score.\n"
-             "So the honest phrasing is NOT 'the label is predictable, yet triage fails'. "
-             "It is: **at 2-27% base SR, a high AUROC is neither necessary nor sufficient — "
-             "what decides whether triage saves anything is whether a handful of tail tasks "
-             "land on the right side, and at n=203 that handful is 4 successes.**\n")
-    L.append("What still holds, and is the load-bearing statement: **no cell's learned "
-             "triage Pareto-beats the trivial always-cheapest fixed policy** (0 of 6). In "
-             "reddit/B2 specifically the learned policy keeps 1.97pp more SR than "
-             "always-cheapest but pays ~2.4% more cost — a genuine trade-off point, not a "
-             "dominating one, and not something a deployment would prefer without a stated "
-             "SR price. So: a detectable signal in one of six cells, worth less than the "
-             "policy you get for free.\n")
+    # Was hardcoded to the six-cell run's reddit/B2 row: "AUROC is 0.483 ... (0.711)",
+    # numbers that match NEITHER feature set once --with-wa refitted every cell (B-1974).
+    # Now rendered from whichever cell actually survives Holm, or skipped if none does.
+    # "base SR" is the best-SR fixed policy's own SR (2.23-27.23% on the six VWA cells),
+    # NOT solvable_rate_pct (7.14-43.30%) — those are different quantities and an earlier
+    # revision of this fix conflated them.
+    _basesr = sorted(r["baseline_policy"]["sr_pct"] for r in res)
+    if _surv:
+        _sname = _surv[0][0]
+        _sc = next((r for r in res
+                    if f"{r['site']}·{r['baseline_model']}" == _sname), None)
+        _ll = (_sc or {}).get("learned_lossless")
+        _ac = (_sc or {}).get("always_cheapest")
+    else:
+        _sc = _ll = _ac = None
+    if _sc and _ll and _ac:
+        _retained = _sc["n"] - _ll["n_sent_cheap"]
+        _hits_learned = round(_ll["sr_pct"] * _sc["n"] / 100.0)
+        _hits_cheap = round(_ac["sr_pct"] * _sc["n"] / 100.0)
+        _cheap_frac = 100.0 * _ll["n_sent_cheap"] / _sc["n"]
+        _below = ("below chance, and " if _sc["auroc_lr"] < 0.5 else "")
+        _cmp = ("below" if _sc["auroc_lr"] < _sc["auroc_best_single_feature"] else "above")
+        L.append(f"⚠️ **The cell that survives is {_sname}, and its AUROC is "
+                 f"{_sc['auroc_lr']:.3f}** — {_below}{_cmp} its own best single covariate "
+                 f"({_sc['auroc_best_single_feature']:.3f}). That is not a contradiction: the "
+                 "two quantities measure different things, and on this data they come apart. "
+                 "AUROC scores the GLOBAL ranking; the saving comes from the TAIL. "
+                 f"{_sname} sends {_ll['n_sent_cheap']} of {_sc['n']} tasks "
+                 f"({_cheap_frac:.0f}%) to the cheap mode with no SR loss — in a cell where "
+                 f"only {_sc['solvable_rate_pct']:.1f}% of tasks are solvable at all, almost "
+                 f"nothing in that {_cheap_frac:.0f}% was ever going to succeed. It differs "
+                 "from the free always-cheapest policy by "
+                 f"{100.0 - _cheap_frac:.0f}% of the task allocation, and those {_retained} "
+                 f"retained tasks happen to hold {_hits_learned - _hits_cheap} of the "
+                 f"successes ({_hits_learned} vs {_hits_cheap}). The permutation null is "
+                 "detecting that tail enrichment, not a globally ordered score.\n"
+                 "So the honest phrasing is NOT 'the label is predictable, yet triage "
+                 f"fails'. It is: **at {_basesr[0]:.0f}-{_basesr[-1]:.0f}% base SR, a high AUROC "
+                 "is neither necessary nor sufficient — what decides whether triage saves "
+                 "anything is whether a handful of tail tasks land on the right side, and at "
+                 f"n={_sc['n']} that handful is {_hits_cheap} successes.**\n")
+    _lb = (f"**no cell's learned triage Pareto-beats the trivial always-cheapest fixed "
+           f"policy** ({len(beat_cheap)} of {m})" if not beat_cheap else
+           f"**{len(beat_cheap)} of {m} cells' learned triage Pareto-beats the trivial "
+           f"always-cheapest fixed policy**")
+    L.append(f"What still holds, and is the load-bearing statement: {_lb}. "
+             + (f"In {_sname} specifically the learned policy keeps "
+                f"{_ll['sr_pct'] - _ac['sr_pct']:+.2f}pp SR against always-cheapest while "
+                f"paying {100.0 * (_ll['mean_cost'] / _ac['mean_cost'] - 1):+.1f}% cost — a "
+                "genuine trade-off point, not a dominating one, and not something a "
+                "deployment would prefer without a stated SR price. So: a detectable signal "
+                f"in {len(_surv)} of {m} cells, worth less than the policy you get for free.\n"
+                if _sc and _ll and _ac else
+                "No cell's saving survived the null, so there is no trade-off point to "
+                "characterise.\n"))
     L.append("⚠️ What is and is not out-of-sample. The **nested** row is now FULLY nested "
              "(B-1903, 2026-07-27): per outer fold the modes are re-selected from training-row "
              "SR/cost, the threshold is chosen against inner-CV out-of-fold scores over the "
@@ -807,11 +886,13 @@ def main() -> int:
              "select DOM, DOM, SoM, SoM, DOM. A pipeline that picks one best mode from all "
              "realized outcomes is therefore not merely optimistic about the threshold — it "
              "is reporting a mode choice that its own resampling does not reproduce.\n")
-    L.append("Contrast with the which-mode half: that one fails on label SUPPLY (16-97 "
-             "labels per cell, 笔记 §383.4). Triage has the labels and the AUROC and still "
-             "does not beat a fixed policy — a different failure mode, at 2-27% base SR "
-             "where almost every task is hopeless and 'always take the cheap one' is already "
-             "close to optimal.\n")
+    L.append("Contrast with the which-mode half: that one fails on label SUPPLY (15-97 "
+             "labels per cell on the six VWA cells, 笔记 §383.4 — that count comes from "
+             "`router_objective_ordering`, not from this file, so it is not re-derived per "
+             "cell set here). Triage has the labels and the AUROC and still does not beat a "
+             f"fixed policy — a different failure mode, at {_basesr[0]:.0f}-{_basesr[-1]:.0f}% "
+             "base SR where almost every task is hopeless and 'always take the cheap one' is "
+             "already close to optimal.\n")
 
     text = "\n".join(L) + "\n"
     if args.out:
@@ -826,8 +907,11 @@ def main() -> int:
             {"post_hoc_exploratory": True, "h10_eligible": False,
              "protocol": {"folds": N_FOLDS, "seed": SEED, "n_shuffle": N_SHUFFLE,
                           "min_reportable_p": 1.0 / (N_SHUFFLE + 1),
-                          "holm_tightest_threshold_m6": 0.05 / 6,
+                          # `holm_tightest_threshold_m6` (a hardcoded 0.05/6) was dropped
+                          # 2026-08-10: on the eight-cell run it sat next to the correct
+                          # 0.05/8 = 6.25e-3 as a trap, and nothing consumed it (B-1974).
                           "holm_tightest_threshold": 0.05 / max(len(res), 1),
+                          "n_cells": len(res),
                           "features": ACTIVE_NAMES, "n_features": len(ACTIVE_NAMES),
                           "features_dropped_for_match": (
                               VWA_ONLY_FEATURES if len(ACTIVE_NAMES) < len(ALL_FEATURES)
