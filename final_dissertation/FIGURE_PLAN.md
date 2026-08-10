@@ -109,7 +109,19 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
   下方绿框=router 决策点（*the decision this thesis is about*）；底部结论带=三步论证链。
 - **四检查**：① 全文 ② 需写明"这不是系统性能图，是论证地图" ③ Ch1 结尾整段导览 ④ 删掉不丢 claim，但**丢掉 second marker**（T13）
 
-#### F1 — Motivating example 【🆕】
+#### F1 — Motivating example 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f1_motivating_example.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f1_motivating_example.py`
+> **三列 = 三个 mode 真正送进模型的东西**：DOM 的 AXTree 文本（+"no image is sent"）·
+> SoM 的**真实带编号标注截图** + `[SOM_MARKS]` 文本 · Vision 的原始截图。
+>
+> ⭐ **量化点比图像本身更重要**：`SoM 文本 = DOM 文本 × 1.008`（**只差 0.8%**）
+> ⇒ **多花的钱几乎全在那张图上**。这正是 phantom 系列的构造缝，所以 F1 同时铺垫了 Ch3。
+> ⚠️ **素材来源三处，图注全标**：标注/原始截图对来自 `周报/weekly-dashboard` assets（1280×660）·
+> 文本来自 `mechanistic/_obs_mirror` · bytes+tokens 来自 phase1 step record。
+> ⚠️ **同页面是验证过的**：step-000 是 task start URL，dom-run 与 vision-run 的该步截图
+> **md5 逐字节相同**（脚本内置校验，不同就拒绝出图）。
 
 - **Question**：昂贵的上下文具体贵在哪、又具体多给了什么？
 - **Takeaway**：同一个页面，DOM / SoM / Vision 三路输入的**内容与单价并排**——差价是真实的，而额外信息**不是每步都用得上**。
@@ -565,7 +577,7 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 | 图 | ①Question | ②Caption | ③Text pointer | ④Claim test | 主/附 |
 |---|:-:|:-:|:-:|:-:|:-:|
 | F0 | ✅ | ✅ | ☐ 待 Ch1 prose | ✅ | 主 |
-| F1 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F1 | ✅ | ✅ | ☐ 待 Ch1 prose | ✅ | 主 |
 | F2 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F3 | ✅ | ✅ | ☐ 待 Ch3 prose | ✅ | 主 |
 | F4 | ☐ | ☐ | ☐ | ☐ | 主 |
