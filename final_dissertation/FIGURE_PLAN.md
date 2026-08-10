@@ -105,8 +105,8 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - **Question**：这篇论文在做什么？（读者只看这一张图就要能答）
 - **Takeaway**：同一个任务可以用便宜或昂贵的方式喂给同一个 agent；本文测量这个选择的**上限**、**可预测性**、**可实现性**，答案依次是 **有 / 没有 / 不适用**。
 - **必须让读者看出四件事**（Guide §7.1 F0）：输入是什么 · 流程有哪些阶段 · 新东西在哪 · 评估从哪出来。
-- **形式**：手绘（draw.io / TikZ）。左：一个网页任务；中：6 个 mode 构成的表征空间 + router 决策点；右：SR / cost 两个出口；底部一条**结论带**标出 Ch4 有上限 → Ch5 学不到 → Ch7 为什么。
-- **实现**：无数据依赖，今天可做。
+- **实现形式**（已落地）：左=网页任务；中=6 mode 表征空间；右=agent loop → measured；
+  下方绿框=router 决策点（*the decision this thesis is about*）；底部结论带=三步论证链。
 - **四检查**：① 全文 ② 需写明"这不是系统性能图，是论证地图" ③ Ch1 结尾整段导览 ④ 删掉不丢 claim，但**丢掉 second marker**（T13）
 
 #### F1 — Motivating example 【🆕】
@@ -148,8 +148,8 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 
 - **Question**：凭什么后面测到的差异可以归因到表征，而不是别的东西？
 - **Takeaway**：**同一任务 + 同一 agent + 同一动作循环**，只有观测构造这一段被替换；成本与结果在同一边界内计量。
-- **形式**：`CHAPTER_CHAIN.md:237` 已给出精确链条，照做：
-  `same task + same agent` → router/selected mode → mode-specific observation construction → same action loop → benchmark outcome + measured cost
+- **实现形式**（已落地，照 `CHAPTER_CHAIN.md:237` 的链条）：
+  `same task + same agent` → mode-specific observation construction → same action loop → benchmark outcome + measured cost
 - ⚠️ **不是装饰性架构图**。CHAPTER_CHAIN 原文：*"Not a decorative architecture diagram."*
   也**不要**画成 `p79/` 的模块依赖图——那回答的是"代码怎么组织"，不是"为什么可比"。
 - **Guide §14.3 说它"应该比任何 architecture 细节更早出现"**。
