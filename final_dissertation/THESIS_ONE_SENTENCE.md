@@ -28,7 +28,7 @@ Web agent 每一步都默认喂进最贵的那种上下文（标注截图 + 完�
 
 | 分句 | 确切含义 | 主证据 |
 |---|---|---|
-| 上限真实存在 | oracle 相对最强单模 **+3.45 ~ +16.07pp** SR，成本低 **13.7–35.3%** | `phase1_full_prereg_decision.json` |
+| 上限真实存在 | oracle 相对最强单模 **+3.45 ~ +16.07pp** SR，成本低 **13.7–35.3%**（⚠️ **VWA 6 格口径**，上界 +16.07pp = `cls·B0`；含 WA 两格的 **8 格口径上界是 +16.35pp** = `wa_reddit·B0`，见 CLAIM_EVIDENCE_MATRIX C1。两个数都对，指代的 cell 集不同——**引用时必须带 cell 集**） | `phase1_full_prereg_decision.json` · `router_objective_ordering.md:21-24, 146-154` |
 | 预测不出来 | 真嵌套 CV 下 **0/6 cell** 能 Pareto 胜过平凡的 always-cheapest 固定策略 | `router_triage_learnability.md` |
 | 原因是结构性的 | 瓶颈是标签的**产生率**：标签只在任务被解开时诞生，而 base SR 只有 2–27% | `router_label_supply_diagnosis.md` |
 

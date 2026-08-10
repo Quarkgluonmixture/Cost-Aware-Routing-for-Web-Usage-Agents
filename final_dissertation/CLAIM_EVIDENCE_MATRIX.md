@@ -20,7 +20,7 @@
 | **C1b** | 上限里有没有**不受标签供给约束**的那一半？ | `triage_only`（该放弃的任务用最便宜的模式）在 **8/8 cell** 零 SR 损失、省 **9.5–30.6%** 成本。它的标签是二元 solvable，**训练侧供给不受限**（与 C5 的 which-mode 半形成对照）—— 但**它同样不可达**，见 C4 | `router_objective_ordering.md` §Across cells | 8/8 一致，含 WA 两格 | ⚠️ **纯 oracle**：零 SR 损失是 by construction（报告原文 "zero SR change by construction"），不是发现。⚠️ 且该标签**本身带噪**——C3 测得同模式重跑 discordance 14.3%，所以"零损失"部分是事后运气 | Ch4 → 立即交棒 Ch6 | A |
 | **C2** | 这个上限有结构基础，还是只是随机涨落？ | 三个 phantom arm **各自独解**一批任务（drop-one oracle **1.7–3.3pp**），且 format / prompt-style 双轴独立 | `meta_phantom_lift.csv` · drop-one oracle 表 | 22/24 arm 观测 drop-one 为正 | ⚠️ **H3 过门是弱证据**（§397.8）：门测 ≠0，但同策略跑两次本来就 ≠0 | Ch4 | A |
 | **C3** | 这个结构比"什么都不做重跑一次"更大吗？ | **不**——结构量级落在同模式重跑的噪声地板内 | `compare_cross_run_same_condition.py`：discordance **14.3%**（32/224），Cohen κ **0.614** | self-oracle drop-one A→B 6.7pp / B→A 7.6pp | ⚠️ self-oracle drop 只能当 **instability diagnostic**，**不是 bias estimate**（§293）；净差 +0.9pp 不是噪声地板本身 | Ch4 末 / Ch6 | B |
-| **C4** | 那能不能学一个便宜的预测器？ | **不能**：真嵌套 CV 下 **0/6 cell** 的 learned triage 能 Pareto 胜过平凡的 always-cheapest | `router_triage_learnability.md`（§392.2 真嵌套版） | label-shuffle 置换零分布（B=200）+ always-cheapest 固定策略，**两道控制缺一不可** | 权衡点而非压制点：cls·B0 SR +1.79pp 但 cost +11%；red·B2 +1.97pp 但 cost +2.4%。⚠️ **仅 VWA 6 格**——见下方缺口表 | Ch6 | C |
+| **C4** | 那能不能学一个便宜的预测器？ | **不能**：真嵌套 CV 下 **0/8 cell** 的 learned triage 能 Pareto 胜过平凡的 always-cheapest（**跨两个 benchmark**，2026-08-10 更正，原写 0/6） | `router_triage_learnability_with_wa.md:124`（8 格匹配 18 特征集）· `router_triage_learnability.md`（§392.2 真嵌套版, VWA 20 特征） | bundle-permutation 零分布（**B=10000**，2026-08-10 更正，原写 B=200）+ always-cheapest 固定策略，**两道控制缺一不可** | 权衡点而非压制点（**8 格口径，2026-08-10 逐格重算**）：最贵的 `wa_reddit·B1` **+6.73pp 换 +41.7% cost**、`cls·B1` **+1.79pp 换 +36.1%**；最便宜的 `red·B2` **+2.46pp 换 +1.7%**。⚠️ 原写"cls·B0 +1.79pp 但 cost +11%"是**串行**——+1.79pp 属 cls·B1，+11% 接近 red·B0 的 +11.6%，而 cls·B1 真实 cost 是 +36.1%（6 格版 +36.5%）。修正后**更支持**"不是压制点" | Ch6 | C |
 | **C5** | 为什么学不到——假设类、标签定义、还是别的？ | 瓶颈是标签的**产生率**：标签只在任务被解开时诞生，base SR 2–27% 时无法靠重新切分制造事件 | `router_label_supply_diagnosis.md`：**4/6 cell 无可训练分类器**（可训练标签 15–97 个） | 三条独立路径全堵：连续标签（VWA score 纯二值）／池化（矛盾率 cls 57.4% / red 56.0%）／重标注（cost-tier 是唯一有收益的，但不制造新 solve 事件） | 结论限定在观察到的 SR 体制内，不外推到强模型 | Ch6 / Ch7 | C |
 
 **链条完整性检查**：C1 不成立 ⇒ 全文无题；C2 不成立 ⇒ C1 可能是噪声；
@@ -52,7 +52,8 @@ C4 无 C5 ⇒ 只是"我们没做出来"；C5 无 C4 ⇒ 只是理论担忧。
 |---|---|---|---|
 | **同模式重跑的噪声地板只有 vision 一格** | C3 | §302 只做了 B0·cls·vision | 要么把 C3 措辞限定到"在已测的那一格"，要么补跑（A100 排队 + 预算见底 ⇒ 大概率**限定措辞**） |
 | **机制层未重新聚合** | 不影响 C1–C5 | 24 cell 已重跑完，聚合脚本已扩展 | 机制层**不进毕设主线**（advisor 2026-05-14 搁置）；若进 appendix 必须先重聚合 |
-| ⭐ **WA 只进了 oracle 层，没进 learnability 层** | C4 / C5 的外部效度 | `router_objective_ordering.md` 已含 `wa_reddit·B0/B1`（**8 cells 跨两个 benchmark**）；但 `router_triage_learnability` **stays VWA-only**——它依赖 `extract_50_features.py`，其中 `PHASE1_ROOT`(:55) / `VWA_CONFIG`(:56) / `CELLS`(:65-67) 全是 VWA 常量 | 不花钱不占 GPU，但**不是「改两行路径」**——见下方专条。若打通，C4 从「6 格 VWA」变「8 格跨 benchmark」，直接回答 Guide §14.2 Ch6 第 5 问 + NAACL 攻击面 #2 |
+| ✅ ~~WA 只进了 oracle 层，没进 learnability 层~~ **已解决（2026-08-10 核出，本条原写于 08-09 但产物 08-03 就在）** | C4 / C5 的外部效度 | `router_triage_learnability_with_wa.md`（08-03）**已是 8 格跨两个 benchmark**，且走的正是下方专条倾向的**方案 (a) 交集特征集**：`has_ref_image` + `reasoning_difficulty` 在**所有格**上 drop，VWA 六格全部重拟合 ⇒ 18 特征匹配集 | 无需再做。C4 已从「6 格 VWA」变「8 格跨 benchmark」，Guide §14.2 Ch6 第 5 问 + NAACL 攻击面 #2 **已被回答** |
+| ✅ ~~**8 格产物的显著性段是 6 格时代的硬编码**~~ **已修（2026-08-10 当日）** | C4 的显著性层 | `router_triage_learnability_with_wa.md` 内部矛盾：第 1 节表格是 **8 格**（AUROC 0.526–0.758，"clears best single feature in **5 of 8**"），但 §3/§4 散文写 `Holm's tightest threshold over **six** cells is 0.05/6` / `Holm at α=0.05 over the **m=6** cells` / `**1 of 6** reject` / `In **five of six** cells... clears the best single covariate in **4/6**`。源头 `scripts/analysis/router_triage_learnability.py` 散文段硬编码 6 | ⭐ **关键更正：Holm 的算术从来是对的** —— 阈值由 `m = len(ps)` 动态算（`:733/:736`），产物里 `p=0.0004 vs 0.0063` 的 0.0063 就是 `0.05/8`。错的只有**标签**。所以**不需要重算统计**，也不需要在 8 格与 6 格之间二选一。✅ **已修（当日）**：散文全部参数化 + 新增 `--from-json` 入口（免 40min 置换即可重渲染，这正是该缺陷长期不修的根因）；重渲染后**所有表格行逐字一致**，两个口径各自自洽（6 格版仍写 m=6，8 格版写 m=8）。同批修掉 4 个连带过时数字（见下） |
 | **B4 / shop / 其余 WA 站未落地** | 会进一步加强 C1/C4 外部效度 | proxy 预算见底，等续额度 | 毕设不依赖它们；若 09-01 前落地则进 Ch6 external validation |
 | **rubric #2 系统结构图未画** | 全篇可读性 | 未开工 | Guide §14.3 点名要这张图，且"应该比任何 architecture 细节更早出现" |
 
@@ -69,7 +70,35 @@ C4 无 C5 ⇒ 只是"我们没做出来"；C5 无 C4 ⇒ 只是理论担忧。
 | **A2** | **drop-one 1.7–3.3pp 可能只是 pass@K** —— C3 的噪声地板 discordance **14.3%** 比它大一个量级。跑同一个最强 arm 两次也会翻掉一些失败 | 若成立，C2 的"双轴独立"直接崩。台账查证：**`pass@` 0 match，项目从没做过这个对照** | 与 `pass@2` 基线对比：若 `Best_Mode × 2 > Best_Mode + Phantom_Arm`，双轴 claim 不成立。**可用现有 archive 的同 condition 重跑数据算，不需新 fire** | 未做，2–3h |
 | **A3** | **OOD 论证混淆 visual matching 与 visual grounding** —— 没有 reference image 不等于不需要视觉 grounding；SoM 服务的是当前屏幕的元素定位 | 我原来的措辞（"驱动 SoM 的需求根本不存在"）站不住 | 实证 DOM-only 在 WA 上追平 SoM 而在 VWA 上追不平 | ✅ **措辞已改**（`corpus_eda.md` §2 + 本表 C1b），claim 降级为"任务规格的差异，不必然是模态需求的差异" |
 
-### 专条：把 WA 接进 learnability，代价比它看起来大
+### 专条：把 WA 接进 learnability —— ✅ **已执行，走的是 (a)，结果比预期更有用**（2026-08-10 核）
+
+`router_triage_learnability_with_wa.md`（08-03）就是方案 (a) 的产物。**(a) 下 VWA 确实全面变弱**，
+6 格里 5 格 AUROC 下降，正如下方预判所写：
+
+| cell | 20 特征（VWA-only） | 18 特征（匹配集） | Δ |
+|---|---:|---:|---:|
+| cls·B0 | 0.726 | 0.683 | −0.043 |
+| red·B0 | 0.780 | 0.700 | −0.080 |
+| cls·B1 | 0.732 | 0.705 | −0.027 |
+| red·B1 | **0.864** | 0.723 | **−0.141** |
+| cls·B2 | 0.642 | 0.646 | +0.004 |
+| red·B2 | 0.615 | 0.526 | −0.089 |
+
+⭐ **为什么它变弱这件事本身就是证据**：20 特征版里，**5/6 格的最强单特征是 `reasoning_difficulty`**
+—— VisualWebArena **task config 自带的人工难度标注**，任何真实部署都拿不到。产物文件原文：
+*"it is reading the benchmark's own statement of how hard the task is, which no deployment has."*
+匹配集把它（和 `has_ref_image`）drop 掉，判别力随即掉下来。
+
+⇒ 这是 **C5「结构性」的一条独立证据**，也是**攻击 A1（"只是欠采样"）最便宜的反击**：
+不是样本少导致学不到，而是**唯一稳定携带信号的那一列，部署侧不存在**。
+写作时应把它提到 Ch5 的显要位置，而不是埋在 feature ablation 里。
+
+⚠️ 顺带作废：with_wa 文件散文段写的 "AUROC 0.651-0.717" **两个口径都不是**
+（20 特征是 0.615–0.864，18 特征是 0.526–0.723）——那是更早某版的残留，见上方缺口表 🚨 条。
+
+---
+
+### 原专条（保留作方法学记录）：把 WA 接进 learnability，代价比它看起来大
 
 初读 `router_objective_ordering.md` 的 caveat 会以为这是路径参数化的活。实际读
 `extract_50_features.py`（879 行）后，是三层，只有第一层是机械的：
@@ -89,6 +118,9 @@ C4 无 C5 ⇒ 只是"我们没做出来"；C5 无 C4 ⇒ 只是理论担忧。
 
 **倾向 (a)**：C4 是负结果，用**更弱**的特征集重跑只会让「学不到」更稳；
 而若 (a) 下 VWA 反而变好，那本身就是必须报告的发现。
+
+> ✅ **2026-08-10 回看：预判正确，且 (a) 已在 08-03 执行完毕**（当时未回填本表）。
+> VWA 6 格里 5 格变弱，没有出现"反而变好"的情况。上方专条有逐格数字。
 
 ## 与 Guide 硬规则的对照
 
