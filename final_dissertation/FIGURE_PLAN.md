@@ -320,7 +320,13 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 
 ### Ch5 — 学不到（先证明"不是估计器的锅"）
 
-#### F11 — 标签可预测性：**两个特征集并排** 【♻️→🆕 设计已升级 2026-08-10】
+#### F11 — 两个特征集并排 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f11_feature_set_ablation.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f11_feature_set_ablation.py`（双 md 解析）
+> 哑铃图：每格从 20 特征 → 18 特征匹配集，箭头示降幅。**5/6 格下降**，最大 `red·B1` **−0.141**
+> ——而它的最强单特征恰是被 drop 的 `has_reference_image`，内部自洽。
+> `reasoning_difficulty` 在 **5/6** 格是最强单特征。WA 两格只有 18 特征点（**无 20 特征对应，不伪造**）。
 
 - **Question**：serving-time 特征能不能预测该不该升级表征？
 - **Takeaway（升级后，比原设计强得多）**：能预测的那部分**主要来自一列部署拿不到的特征**。
@@ -338,7 +344,16 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - ⚠️ 两块**不可比但必须并排**：18 特征集不是 20 特征表的子集，每格都重拟合过。图注必须写明，否则等于把不可比的列并排放而不声明。
 - **四检查**：④ 删掉 ⇒ C5 少掉最便宜的那条机制证据，A1 也没了正面应答
 
-#### F12 — 双控制（permutation null + always-cheapest）【🆕】
+#### F12 — 置换零分布控制 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f12_permutation_control.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f12_permutation_control.py`
+> **Holm 在脚本里按实际 cell 数独立重算**（step-down, m=8）——结果与产物 §4 一致，
+> 反过来验证了当日修的散文参数化。**1/8 存活**，**2/8 的 saving 被零假设大体复现**。
+> ⭐ `cls·B1` 的 null median (10.1%) **超过** observed (2.6%)：灰点在蓝点右侧，
+> 标签毁掉后反而"找到"更多——这是"无信号"最直白的一处证据。
+> ⚠️ **分工**：always-cheapest 那道控制在 **F13**（本图不重复），图内副标题已写明
+> "过零假设是必要不是充分"。
 
 - **Question**：把"学到了"这件事按最严格的方式检验，还剩什么？
 - **Takeaway**：两道控制**缺一不可**——bundle-permutation 零分布（**B=10000**）说明信号不是巧合；而 **always-cheapest 固定策略**说明即便有信号也不值钱。
@@ -606,8 +621,8 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 | F9 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F10 | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主(半栏) |
 | F10b | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
-| F11 | ☐ | ☐ | ☐ | ☐ | 主 |
-| F12 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F11 | ✅ | ✅ | ☐ 待 Ch5 prose | ✅ | 主 |
+| F12 | ✅ | ✅ | ☐ 待 Ch5 prose | ✅ | 主 |
 | F13 | ✅ | ✅ | ☐ 待 Ch6 prose | ✅ | 主 |
 | F14 | ✅ | ✅ | ☐ 待 Ch7 prose | ✅ | 主 |
 | F15 | ☐ | ☐ | ☐ | ☐ | 主 |
