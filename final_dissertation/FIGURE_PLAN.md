@@ -223,7 +223,19 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - **数据源**：`results/phantom_paper/meta_phantom_lift.csv`（**mtime 05-17，比其余产物老近三个月 → 定稿前必须核它是否还对应当前 42-condition 口径**）· 脚本 `fig_phantom_structure_venn.py` + `fig_forest_drop_one.py`
 - ⚠️ **H3 过门是弱证据**（§397.8）：门测 ≠0，但同策略跑两次本来就 ≠0。图注**不得**把过门当作结构存在的证明——它的对照在 F10。
 
-#### F10 — Noise floor 【♻️ 措辞受限】
+#### F10 — 重跑 discordance 【✅ **已完成 2026-08-10** · **半栏小图**（user 决策）】
+
+> **产物**：`final_dissertation/figures/fig_f10_rerun_discordance.{png,pdf}`（5.6×2.9 in）
+> **脚本**：`scripts/analysis/figures/thesis/fig_f10_rerun_discordance.py`
+> （从 `noise_floor_inventory.md` §1 + `phase0b_noise_floor.md` §2 双源解析）
+>
+> **定位已改**：F10b 承担论证，F10 只回答读者紧接着会问的一句"**这个地板是怎么测的**"
+> ⇒ 缩成半栏注脚，不与 F10b 并列。
+> **内容**：同一 cell（B0×VWA-cls, n=224）三个独立复现 arm 的 task 级翻面率
+> —— Vision **14.29%**（κ 0.614）· SoM **12.95%** · DOM **12.05%**（κ 0.559）。
+> ⚠️ κ **只有两对算过**，缺的那对就空着，**绝不跨 arm 借用**。
+> ⚠️ WA 那个复现 pooled 5 modes × 10 tasks，**不是自身 baseline arm 的地板** ⇒ 只在脚注提名，不并排画。
+> ⚠️ 术语锁：mode 名走 `MODE_LABEL` 映射，`capitalize()` 会得到错的 "Som"。
 
 - **Question**：这个结构比"什么都不做、重跑一次"更大吗？
 - **Takeaway**：**不**——结构量级落在同模式重跑的噪声地板内：discordance **14.3%**（32/224）、Cohen κ **0.614**。
@@ -562,7 +574,7 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 | F7 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F8 | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
 | F9 | ☐ | ☐ | ☐ | ☐ | 主 |
-| F10 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F10 | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主(半栏) |
 | F10b | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
 | F11 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F12 | ☐ | ☐ | ☐ | ☐ | 主 |
