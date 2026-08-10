@@ -132,7 +132,15 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 
 ### Ch2 — 文献图谱
 
-#### F2 — Literature map 【🆕 ✅ 素材已到位，可开工】
+#### F2 — Literature map 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f2_literature_map.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f2_literature_map.py`（从 P2 搜索结果解析簇与标题）
+> **按决策变量分簇，不按年份**（Guide §8.1 明确反对时间线）：
+> 每簇标"它选的是什么"，中心标"没有一个选这个"——**缺口是推导出来的，不是断言的**。
+> ① 观测表征 (8)：选**哪些元素**进 prompt，表征是固定配置 · ② 模型/模态 routing (6)：选**哪个模型**，输入表征不动
+> · ③ confidence deferral (6)：选**答不答**，信号通常要先付全额推理 · ④ cost-aware inference (7)：选**花多少算力**，是深度/宽度不是看什么
+> ⚠️ 簇下那句概括是**作者综述，不是引文**，脚注已声明。
 
 > **P2 搜索已回并核验完**：`search_results/web_agent_representation_routing_related_work.md`
 > 四簇共 **27 个 arXiv ID，逐个过 arXiv API，0 problem**（标题全部相符）。
@@ -167,7 +175,17 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - **Guide §14.3 说它"应该比任何 architecture 细节更早出现"**。
 - **四检查**：④ 删掉 ⇒ **C1–C5 全部**失去内部效度的可视论证
 
-#### F4 — Corpus EDA 【🆕 数据已有】
+#### F4 — Corpus EDA 【✅ **已完成 2026-08-10** · rubric #10 收尾】
+
+> **产物**：`final_dissertation/figures/fig_f4_corpus_eda.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f4_corpus_eda.py`（从 `corpus_eda.json` 解析）
+> 四 panel = 四个读者本来得盲信的问题：**A** run set vs scored set 双口径（解释 205↔203 / 435↔432 并存）·
+> **B** 语料自带哪些标注 · **C** 什么算成功 · **D** 指令多长。
+> ⭐ **panel B 是下游最重要的一块**：WA 三站 **ref-image 全 0 且无 difficulty 标注**，
+> 而 F11 显示 difficulty 标注恰恰承担了 VWA 上大部分判别力 ⇒ 两图互相印证。
+> ⚠️ **措辞已按攻击 A3 降级并写进 panel 标题**：ref image 缺失 = **任务规格的差异**，
+> 不自动等于"这些任务不需要视觉 grounding"。
+> ⚠️ 两个 corpus 错别字（`mediun` / `hrad`）在脚注点名，**保持不修**并排除出难度统计。
 
 - **Question**：这些结论建立在什么样的语料上，它们之间可比吗？
 - **Takeaway**：六语料在难度分布、评测类型、指令长度、**是否自带 reference image** 上系统性不同——WA 零 ref image 是 OOD 的**结构性理由**，不是偶然。
@@ -578,9 +596,9 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 |---|:-:|:-:|:-:|:-:|:-:|
 | F0 | ✅ | ✅ | ☐ 待 Ch1 prose | ✅ | 主 |
 | F1 | ✅ | ✅ | ☐ 待 Ch1 prose | ✅ | 主 |
-| F2 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F2 | ✅ | ✅ | ☐ 待 Ch2 prose | ✅ | 主 |
 | F3 | ✅ | ✅ | ☐ 待 Ch3 prose | ✅ | 主 |
-| F4 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F4 | ✅ | ✅ | ☐ 待 Ch3 prose | ✅ | 主 |
 | F5 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F6 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F7 | ☐ | ☐ | ☐ | ☐ | 主 |
