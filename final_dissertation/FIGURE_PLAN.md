@@ -302,7 +302,18 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 
 ### Ch6 — 端到端：主结果
 
-#### F13 — Triage ladder，0/8 【🆕 主结果图】
+#### F13 — Dominance plane，0/8 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f13_dominance_plane.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f13_dominance_plane.py`
+> （**数字从 `router_triage_learnability_with_wa.json` 读取，不硬编码**）
+> 脚本独立算出的 win-region 计数 = **0/8**，与产物文件 `:124` 的 "0 of 8" 吻合 → 交叉验证通过。
+>
+> 🔴 **画图时发现的自我限定，已写进图内副标题**：把每格归一到 always-cheapest 后，
+> **连事后 `oracle_triage` 也只有 1/8 落进胜区**。因为 always-cheapest 是**成本下界**，
+> 任何保住 SR 的策略必然更贵。⇒ C4 的正确表述是"**这个权衡不划算**"，
+> 而**不是**"学习器不行"。0/8 仍成立，但性质从"learner 失败"校准为
+> "**在该成本口径下不存在划算的可部署点**"。不主动说，examiner 必问。
 
 - **Question**：学到的 router 打得过"永远用最便宜那个"吗？
 - **Takeaway**：**0/8 格**的 learned triage 能 Pareto 胜过平凡的 always-cheapest 固定策略。唯一显著的那格（red·B2）多保住 **+2.46pp** SR 但多付 **+1.7%** 成本——**是权衡点，不是压制点**。更极端的权衡在别的格：`wa_reddit·B1` **+6.73pp 换 +41.7% cost**、`cls·B1` **+1.79pp 换 +36.1%**（8 格口径，2026-08-10 逐格重算；旧稿的 "+1.97pp / ~2.4%" 是 6 格值，"cls·B0 +1.79pp/+11%" 是串行错配）。
@@ -332,7 +343,17 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 
 ### Ch7 — 为什么学不到（这才是贡献）
 
-#### F14 — 断裂点：标签产生率 【🆕 与 F13 并列最重要】
+#### F14 — 标签供给衰减 + 可训练门槛 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f14_label_supply_attrition.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f14_label_supply_attrition.py`
+> （**从 `router_label_supply_diagnosis.md` 解析，不硬编码；解析不全直接报错拒绝出图**）
+>
+> **对 P4 模板做了一处诚实偏离**：P4 建议四级（All → Solved → Labels → Trainable），
+> 但本项目 **第 2、3 级是同一个集合**——which-mode 标签恰好在任务被解开时存在。
+> 这个恒等式**就是机制本身**，所以画成一级并标注，而不是硬凑成两级。
+> **门槛也不在标签总数上**：判据是 `N_MIN_CLASS_TRAIN=10` 且需 **≥2 个类别各自够 10 个**，
+> 所以 panel B 把阈值放在真正咬住的地方——**可用类别数**。结论：**4/6 格 0 个或 1 个类别过线**。
 
 - **Question**：为什么学不到——假设类不对、标签定义不对，还是别的？
 - **Takeaway**：瓶颈是标签的**产生率**。which-mode 标签**只在任务被解开时诞生**，而 base SR 只有 2–27% ⇒ **4/6 格没有可训练的分类器**（可训练标签 15–97 个）。这不是切分方式的问题，重新切分**制造不出事件**。
@@ -530,8 +551,8 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 | F10b | ☐ | ☐ | ☐ | ☐ | 主 |
 | F11 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F12 | ☐ | ☐ | ☐ | ☐ | 主 |
-| F13 | ☐ | ☐ | ☐ | ☐ | 主 |
-| F14 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F13 | ✅ | ✅ | ☐ 待 Ch6 prose | ✅ | 主 |
+| F14 | ✅ | ✅ | ☐ 待 Ch7 prose | ✅ | 主 |
 | F15 | ☐ | ☐ | ☐ | ☐ | 主 |
 | A1–A9 | ☐ | ☐ | ☐ | ☐ | 附 |
 
