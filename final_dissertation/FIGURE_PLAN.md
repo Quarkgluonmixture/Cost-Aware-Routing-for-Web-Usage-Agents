@@ -94,7 +94,13 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 
 ### Ch1 — 让读者在看任何技术细节前先看见问题
 
-#### F0 — One-figure thesis overview 【🆕 最高优先】
+#### F0 — One-figure thesis overview 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f0_thesis_overview.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f0_thesis_overview.py`（无数据依赖）
+> **底部结论带 = 论证链本身**，所以图和 chapter chain 不会漂移。
+> 已按 C2 降级同步：第 ① 条自带"一次重跑就买到 2.0–7.6pp"的限定。
+> ⚠️ scope 措辞已两次校正：WA **只有 reddit 且只有两个 backbone**，不能写成"两个 benchmark × 三 backbone"。
 
 - **Question**：这篇论文在做什么？（读者只看这一张图就要能答）
 - **Takeaway**：同一个任务可以用便宜或昂贵的方式喂给同一个 agent；本文测量这个选择的**上限**、**可预测性**、**可实现性**，答案依次是 **有 / 没有 / 不适用**。
@@ -131,7 +137,14 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 
 ### Ch3 — 实验合同
 
-#### F3 — Causal comparison boundary 【🆕 rubric #2 · 规格已被写死】
+#### F3 — Causal comparison boundary 【✅ **已完成 2026-08-10** · rubric #2】
+
+> **产物**：`final_dissertation/figures/fig_f3_comparison_boundary.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f3_comparison_boundary.py`（无数据依赖）
+> 五段 pipeline 全部灰色标 "same …"，**只有 observation construction 一段是橙色 + ★ the only
+> varied stage**；虚线边界框标 "everything inside is held identical"。
+> ⚠️ 输出箭头从**边界底边**出发而非从 mode 框——mode 框是 varied stage 的取值注解，
+> 不是流程节点；从它出发会读成"mode 产生了 outcome"。
 
 - **Question**：凭什么后面测到的差异可以归因到表征，而不是别的东西？
 - **Takeaway**：**同一任务 + 同一 agent + 同一动作循环**，只有观测构造这一段被替换；成本与结果在同一边界内计量。
@@ -503,10 +516,10 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 
 | 图 | ①Question | ②Caption | ③Text pointer | ④Claim test | 主/附 |
 |---|:-:|:-:|:-:|:-:|:-:|
-| F0 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F0 | ✅ | ✅ | ☐ 待 Ch1 prose | ✅ | 主 |
 | F1 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F2 | ☐ | ☐ | ☐ | ☐ | 主 |
-| F3 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F3 | ✅ | ✅ | ☐ 待 Ch3 prose | ✅ | 主 |
 | F4 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F5 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F6 | ☐ | ☐ | ☐ | ☐ | 主 |
