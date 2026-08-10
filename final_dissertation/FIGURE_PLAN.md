@@ -187,7 +187,16 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - **数据源**：`cost_per_mode.json` · 脚本 `fig3d_cost_sr_frontier.py`
 - ⚠️ 成本口径锁 `total_billed` primary（memory `project_cost_latency_canonical_estimand`），图注写明**计量边界**。
 
-#### F8 — Oracle ceiling 【♻️ 产物需重跑】
+#### F8 — Oracle ceiling + rerun band 【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f8_oracle_ceiling.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f8_oracle_ceiling.py`（从 md 解析）
+> 独立解析出的 rerun band = **2.00–7.59pp**，与 `noise_floor_inventory.md` §3 的
+> "2.0–7.6pp" 吻合 → 交叉验证通过。
+> ⚠️ **band 没有从柱上减掉**，两者都标了 arm count——inventory 明确写
+> *"the 6-mode ceiling gain (five arms added) is NOT comparable to a one-rerun floor"*，
+> 做那个减法正是它禁止的。like-for-like 的一臂对照在 F10b。
+> 视觉结论：三个 cell 的 **5-arm** 增益就落在 **1-arm** 重跑带内外缘（4.91 / 4.43 / 3.45pp）。
 
 - **Question**：如果**事后**知道该用哪个 mode，能拿到多少？
 - **Takeaway**：oracle 相对最强单模 SR **+3.45~16.35pp**、成本低 **13.7–35.3%**（8 格跨两个 benchmark）。
@@ -223,7 +232,13 @@ FIGURE_PLAN 不因此停工——Stage A 与全部图的实现都不依赖它，
 - ⚠️ self-oracle drop（A→B 6.7pp / B→A 7.6pp）只能当 **instability diagnostic，不是 bias estimate**（§293）。
 - **四检查**：④ 删掉 ⇒ **C3 焊接枢纽消失**：C2 的正面读法无人关掉，C4 的失败也就说不清是不是估计器的锅
 
-#### F10b — 表征 arm vs 重跑 arm（one-arm margin）【✅ 分析已存在，2026-08-04；只需画图】
+#### F10b — 表征 arm vs 重跑 arm（one-arm margin）【✅ **已完成 2026-08-10**】
+
+> **产物**：`final_dissertation/figures/fig_f10b_one_arm_margin.{png,pdf}`
+> **脚本**：`scripts/analysis/figures/thesis/fig_f10b_one_arm_margin.py`（从 md 解析）
+> 独立算出 **2/2 有地板的 cell 落在带内** + 门槛 **3.82–4.15pp**，与 inventory 吻合。
+> ⚠️ 六个无地板的 cell 在**轴标签**里标 "(no rerun floor measured)"，**绝不借用他格的带**。
+> ⚠️ 门槛线标注了 "(one cell)"——它只从 `B0·VWA-cls` 的三个复现 arm 导出。
 
 > **2026-08-10 更正**：本图原标"⛔ 数据待产 · 2–3h"。实际上
 > `docs/analysis/cross_sites/noise_floor_inventory.md`（08-04）**已经做完了这个对照**，
@@ -545,10 +560,10 @@ Holm 阈值由 `m = len(ps)` **动态**计算（`router_triage_learnability.py:7
 | F5 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F6 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F7 | ☐ | ☐ | ☐ | ☐ | 主 |
-| F8 | ☐ | ☐ | ☐ | ☐ | 主 |
+| F8 | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
 | F9 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F10 | ☐ | ☐ | ☐ | ☐ | 主 |
-| F10b | ☐ | ☐ | ☐ | ☐ | 主 |
+| F10b | ✅ | ✅ | ☐ 待 Ch4 prose | ✅ | 主 |
 | F11 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F12 | ☐ | ☐ | ☐ | ☐ | 主 |
 | F13 | ✅ | ✅ | ☐ 待 Ch6 prose | ✅ | 主 |
