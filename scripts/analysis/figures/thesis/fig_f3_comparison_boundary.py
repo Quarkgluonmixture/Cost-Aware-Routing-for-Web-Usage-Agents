@@ -43,7 +43,10 @@ STAGES = [
     ("Backbone", "same model\nsame decoding"),
 ]
 
-MODES = "DOM   ·   P-text   ·   P-prompt   ·   P-SoM   ·   SoM   ·   Vision"
+# Grouped by what is sent (TERMS §1.1); the text-side four all send no image.
+SIDES = [("DOM · P-text · P-prompt · P-SoM", "text side — no image", "#0072B2"),
+         ("SoM", "combined — text + image", "#009E73"),
+         ("Vision", "visual — image only", "#D55E00")]
 
 
 def _box(ax, x, y, w, h, label, sub=None, ec="#000000", fc="none", lw=1.4,
@@ -97,14 +100,20 @@ def build(ax):
 
     # ---- what the varied stage ranges over ------------------------------
     vx = x0 + 2 * (w + gap)
-    _arrow(ax, vx + w / 2, 24.3, vx + w / 2, 17.6, color=C_VAR, lw=1.8)
-    ax.add_patch(FancyBboxPatch((vx - 14.5, 12.4), w + 29, 5.0,
+    _arrow(ax, vx + w / 2, 24.3, vx + w / 2, 20.6, color=C_VAR, lw=1.8)
+    ax.add_patch(FancyBboxPatch((vx - 15.0, 8.6), w + 30, 11.6,
                                 boxstyle="round,pad=0.02,rounding_size=0.02",
                                 ec=C_VAR, fc="#FFF4EC", lw=1.6, zorder=3))
-    ax.text(vx + w / 2, 14.9, MODES, ha="center", va="center", fontsize=9.6,
-            fontweight="bold", color=C_VAR, zorder=4)
-    ax.text(vx + w / 2, 10.6, "six observation modes — the same page, encoded six ways",
-            ha="center", va="center", fontsize=8.2, color="#555555")
+    # one row per side: the text-side list is too wide to sit beside the others
+    for i, (names, side, col) in enumerate(SIDES):
+        yy = 17.6 - i * 3.3
+        ax.text(vx + w / 2 - 1.5, yy, names, ha="right", va="center",
+                fontsize=8.6, fontweight="bold", color=col, zorder=4)
+        ax.text(vx + w / 2 + 1.5, yy, side, ha="left", va="center",
+                fontsize=7.4, color=col, zorder=4)
+    ax.text(vx + w / 2, 6.2, "six observation modes — the same page, encoded "
+            "six ways, grouped by what is actually sent",
+            ha="center", va="center", fontsize=8.0, color="#555555")
 
     # ---- outputs ---------------------------------------------------------
     # The arrows leave the BOUNDARY, not the mode box: the pipeline produces the

@@ -42,10 +42,10 @@ C_POS = "#0072B2"
 C_NEG = "#D55E00"
 C_MECH = "#000000"
 
-MODES = [
-    ("DOM", C_CHEAP), ("P-text", C_CHEAP), ("P-prompt", C_CHEAP),
-    ("P-SoM", C_CHEAP), ("SoM", C_EXPENSIVE), ("Vision", C_EXPENSIVE),
-]
+# Grouped by what is actually sent (TERMS §1.1). Verified, not asserted: the
+# four text-side modes all record image_payload_bytes == 0.
+TEXT_SIDE = ["DOM", "P-text", "P-prompt", "P-SoM"]
+C_COMBINED = "#009E73"
 
 
 def _box(ax, x, y, w, h, label, sub=None, ec="#000000", fc="none", lw=1.4,
@@ -86,13 +86,21 @@ def build(ax):
                                 ec="#888888", fc="#F7F7F7", lw=1.2, zorder=1))
     ax.text(37.5, 55.9, "Representation space  (6 modes)", ha="center",
             fontsize=10, fontweight="bold")
-    for i, (name, col) in enumerate(MODES):
-        r, c = divmod(i, 3)
-        bx, by = 22.2 + c * 10.4, 47.0 - r * 7.6
-        _box(ax, bx, by, 9.2, 5.6, name, ec=col, fc="white", lw=1.3, fs=9.5)
-    ax.text(37.5, 37.2, "cheap: text only          expensive: + screenshot",
-            ha="center", fontsize=8.2, color="#555555")
-
+    # text side: a 2x2 block, because it IS a 2x2 (text format x prompt style)
+    for i, name in enumerate(TEXT_SIDE):
+        r, c = divmod(i, 2)
+        bx, by = 22.2 + c * 9.6, 49.5 - r * 6.0
+        _box(ax, bx, by, 8.6, 5.0, name, ec=C_CHEAP, fc="white", lw=1.3, fs=9.0)
+    ax.text(26.5, 41.3, "TEXT SIDE  ·  no image", ha="center", fontsize=7.4,
+            color=C_CHEAP, fontweight="bold")
+    _box(ax, 43.0, 49.5, 9.6, 5.0, "SoM", ec=C_COMBINED, fc="white", lw=1.4,
+         fs=9.0)
+    ax.text(47.8, 47.3, "COMBINED · text + image", ha="center", fontsize=6.8,
+            color=C_COMBINED, fontweight="bold")
+    _box(ax, 43.0, 41.5, 9.6, 5.0, "Vision", ec=C_EXPENSIVE, fc="white", lw=1.4,
+         fs=9.0)
+    ax.text(47.8, 39.3, "VISUAL · image only", ha="center", fontsize=6.8,
+            color=C_EXPENSIVE, fontweight="bold")
     _arrow(ax, 54.5, 47.2, 57.7, 47.2)
     _box(ax, 58, 40, 19, 14.5, "Same agent loop",
          "observe → decide → act\nidentical everywhere", ec=C_TASK, subfs=8.2)
