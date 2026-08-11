@@ -200,9 +200,23 @@ The oracle decomposes into the two halves defined in
 Section~\ref{sec:router-formulation}, and they behave very differently.
 
 \emph{Triage} --- keep the best-SR mode, but spend the cheapest on tasks that
-nothing will solve --- delivers 9.5--30.6\% cost reduction at exactly zero
-success change in all 8 cells. The zero is by construction, not a discovery: the
-policy only redirects tasks that no mode solves, so no success can be lost.
+nothing will solve --- reduces cost by up to 30.6\% at exactly zero success
+change. The zero is by construction, not a discovery: the policy only redirects
+tasks that no mode solves, so no success can be lost.
+
+\begin{scopebox}
+\textbf{The same tie-break correction applies here, and it costs one cell.}
+Measured against the list-order ``best single mode'', triage saves 9.5--30.6\%
+in 8 of 8 cells. Against the \emph{cost-aware} tied best single
+(Section~\ref{sec:ceiling}) the range is $-30.6$\% to $+1.1$\%, cheaper in
+\textbf{7 of 8}. The cell that flips is \cell{cls$\cdot$B2}, where \mVis{}
+matches \mSoM{}'s 2.23\% success for 22.1\% less money: against that comparator
+triage is 1.1\% \emph{more} expensive, so its apparent saving there was an
+artefact of comparing to a needlessly expensive fixed policy. We quote the
+corrected figures. The direction survives in 7 of 8 and the upper end is
+unchanged --- but ``in every cell'' does not survive, and it was the strongest
+word in the sentence.
+\end{scopebox}
 Its interest lies elsewhere: its label is binary, defined on every task, and
 therefore \emph{never supply-constrained}. Chapter~\ref{ch:pred} tests exactly
 this half, which is the most favourable version of the problem we can pose.
