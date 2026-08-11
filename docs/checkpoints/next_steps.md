@@ -64,9 +64,16 @@ updated: 2026-08-08
 > | | |
 > |---|---|
 > | **proxy** | **$179.99 到账**（申请额低于建议的 $500） |
-> | **A100 在跑** | `queue_chain` 4 段。✅ [1/4] `B0 vision shopping` **435/435 闭合**（补尾实付 $5.59，比估的 $4.4 高 27%——尾部 task 系统性更难，§449.7）。现在 [2/4] `B1 dom` **251/435** |
+> | **A100 在跑** | `queue_chain` 4 段（pid 738522）。✅ [1/4] `B0 vision shopping` **435/435 闭合**（补尾实付 $5.59，比估的 $4.4 高 27%——尾部 task 系统性更难，§449.7）。现在 [2/4] `B1 dom` **252/435** |
 > | **ETA** | ⚠️ 吞吐掉到 **6.8 ep/h**（早先 8.6）：dom 剩 ~27h + som ~62h + P-SoM ~62h = **~6.3 天 → 约 08-17**（08-15 那版按 8.6 ep/h 估，已过时） |
-> | **B0 WA chain** | ✅ **自动发车已武装**（见下），B1 一完就接，无需人工 |
+> | **B0 WA chain** | ✅ **自动发车已武装**（watcher pid **940746**），B1 一完就接，无需人工 |
+>
+> ### ✅ reset / FORCE_NEW 疑虑已查清（§451.5 警报已 RETRACT，见 §451.6）
+>
+> - **`RESET_BEFORE`：13 条历史 chain log 全部 =1，项目里从无 =0 的 chain**。当前跑法与全部历史一致，**没有问题**。
+> - **`FORCE_NEW` 取决于启动路径**：B0 shop 走 **orchestrator**（`_cron_shop_b0_tail_follow.sh:10` 写死 `FORCE_NEW=1` → run_id 带 `_R<数字>`）；B1 shop 走**手工 `queue_chain.sh`**（默认 `FORCE_NEW:-0` → `B1_dom_shopping_20260809` 无 R 号）。**B1 dom 从起始就是 0，非本次引入 → 不需要重跑**。
+> - **唯一残留 deviation**：`B0_vision_shopping_..._R23934` 的 435 个混了两代容器（`b36ed7a7cccb→e338cc270773`）。Phase 1b deferred + 不进 main claim + 属 §0 既定计划 ⇒ **登记 caveat，不重跑**（重跑要 $31.4+34h）。
+> - ⚠️ 未来手工起 shop chain 若要 canonical，需**显式 `export FORCE_NEW=1`**（B-1916 同形坑，§391.1 已 RETRACT 过注释与代码不符那次）。
 >
 > ### 💰 预算数字已全部重算 —— 旧的低估一倍，别再用
 >
