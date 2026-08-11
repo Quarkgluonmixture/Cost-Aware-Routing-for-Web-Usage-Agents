@@ -382,6 +382,70 @@ a cell can discriminate well and buy nothing, and a cell can barely discriminate
 and buy something. Chapter~\ref{ch:e2e} therefore evaluates policies, not
 scores.
 
+\section{Is this just too few rows?}
+\label{sec:undersampling}
+
+Every claim so far invites one reply, and it is the cheapest available way to
+dismiss a negative result: \emph{you did not measure a mechanism, you measured a
+small sample}. A cell with $n=203$ and 7\% solvable yields 15 positive
+which-mode labels; of course nothing fits. On that reading the whole result is
+an artefact of a compute budget rather than a property of the regime.
+
+The objection deserves measurements, not prose, so we ran three --- each
+isolating a different thing it could mean (Figure~\ref{fig:f16}). Two of the
+three come back \emph{partly against} this dissertation, and we report them that
+way.
+
+\paragraph{Does more of the same data help? Yes, with decelerating returns.}
+Thinning the training rows stratified while leaving each test fold intact gives a
+learning curve that isolates training size. Out-of-fold AUROC rises by $+0.032$
+to $+0.083$ between a quarter of the data and all of it. It is not flat: more
+rows would help. But the increments shrink --- in 9 of 12 curves the sweep from
+55\% to 100\% buys less than the sweep from 25\% to 55\%, despite covering the
+wider span of the two. Extrapolating the observed deceleration, doubling the
+benchmark again would be worth a few hundredths of AUROC, not a few tenths.
+
+\paragraph{Is there signal at all? Yes.} A near-unregularised model
+($C=10^{6}$) fitted to all rows and scored on those same rows separates them
+better than the same model fitted to \emph{permuted} labels does: an excess of
+$+0.075$ to $+0.116$ AUROC over the memorisation floor, $p \leq 0.01$ in five of
+six cells. The features are not noise. \textbf{So we cannot dispose of the
+objection by claiming there is nothing to learn} --- there is something, and a
+larger sample would learn more of it.
+
+\paragraph{And yet it does not reach the result, for a reason that has nothing
+to do with sample size.} More data moves the learned predictor upward from
+AUROC $0.73$; the limit of that movement is a perfect predictor, AUROC $=1.00$.
+A perfect predictor of the triage label \emph{is} the oracle triage policy --- and
+Chapter~\ref{ch:e2e} measures what that policy achieves. It Pareto-beats
+always-cheapest in \textbf{1 of 8 cells}. The learned router manages 0 of 8, and
+the entire distance between them is at most one cell.
+
+\begin{scopebox}
+\textbf{The precise scope of the objection.} Undersampling explains the gap
+between AUROC $0.73$ and AUROC $1.00$. It cannot explain a boundary that the
+policy at AUROC $1.00$ also fails to cross. Since the load-bearing claim of this
+dissertation is the Pareto result and not the AUROC value, \textbf{the objection
+is correct about the predictor and irrelevant to the conclusion}. Conversely,
+any future work that reports a better router on this problem should be asked
+which of the two it improved.
+\end{scopebox}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f16_undersampling_control.pdf}
+  \caption[Undersampling control: learning curve, separability, and the oracle bound]{%
+  \textbf{Answering ``you just had too little data'' with three measurements.}
+  (A) Learning curves with training rows thinned and test folds intact: still
+  rising, and decelerating in 9 of 12. (B) Near-unregularised in-sample AUROC
+  against the same model fitted to permuted labels: every cell clears its
+  memorisation floor, so the features carry signal. (A) and (B) both favour the
+  objection. (C) is why that does not rescue the router: more data moves the
+  predictor toward the oracle, and the oracle was already measured
+  (Chapter~\ref{ch:e2e}) to Pareto-beat always-cheapest in only 1 of 8 cells.}
+  \label{fig:f16}
+\end{figure}
+
 \section{What this chapter establishes}
 \label{sec:ch5-summary}
 

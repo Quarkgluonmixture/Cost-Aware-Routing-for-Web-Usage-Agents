@@ -41,6 +41,30 @@ independent routes out of the constraint are available in principle; we
 attempted all three, and each is blocked for a structurally different reason
 (Figure~\ref{fig:f15}).
 
+\begin{scopebox}
+\textbf{But ``structural'' should not be heard as ``insurmountable'', and our own
+arithmetic sets the scale.} Labels are minted at the solvable rate, so the
+benchmark size needed to put two classes above the admissibility threshold is
+computable. It is $0.5\times$ the current corpus for \cell{cls$\cdot$B0},
+$0.9\times$ for \cell{cls$\cdot$B1}, and $2.1$--$4.2\times$ for the four cells
+that currently fail --- at most 846 reddit tasks against the 203 we score
+(Section~\ref{sec:undersampling}). That is a benchmark somebody could build, not
+an impossibility. \textbf{The honest claim is therefore that the which-mode half
+is untrainable \emph{at the scale of the benchmarks that exist}, and that the
+scale-up required is a small multiple rather than an order of magnitude.} This is
+weaker than an impossibility result and more useful than one: it is a
+specification.
+
+The arithmetic carries one assumption worth naming, because it is the assumption
+a sceptic should attack first. It holds the \emph{class proportions} fixed while
+scaling $n$ --- new tasks are assumed to distribute their winning modes as the
+current ones do. A larger corpus drawn from a different template mix would not,
+and the 75 templates behind VisualWebArena classifieds
+(Section~\ref{sec:benchmarks}) are a reminder that task diversity grows more
+slowly than task count. The multiples above are therefore a lower bound on the
+corpus needed, not a promise.
+\end{scopebox}
+
 \subsection{Route 1 --- make the label continuous}
 
 If success were graded rather than binary, every task would carry signal, and
@@ -248,19 +272,20 @@ problem, since a step carries no outcome of its own.
 These are boundaries on the conclusions, ordered by how much they would change
 them.
 
-\paragraph{Undersampling is not fully excluded as an alternative explanation.}
-Our mechanism claim is that label supply is structurally constrained. A critic
-can reply that 15--97 labels simply is not enough data, and that this is the
-ordinary consequence of a small sample rather than a property of the regime. Two
-pieces of evidence favour our reading --- three independent escape routes fail
-for three different reasons (Section~\ref{sec:mechanism}), and the single
-feature carrying most discriminative power is a benchmark annotation absent from
-any deployment (Section~\ref{sec:matched-features}) --- but neither is decisive.
-The decisive experiment is a learning curve on the most label-rich cell, plus a
-demonstration that an unregularised model cannot separate the classes even in
-sample. If training error is also high, the features carry no signal; if only
-cross-validated error is high, the objection stands. \textbf{We did not run it,
-and we state the objection as live.}
+\paragraph{The undersampling objection is answered for the result and conceded
+for the predictor.} Section~\ref{sec:undersampling} runs the experiment this
+paragraph previously said was outstanding, and it does not come back entirely in
+our favour. The learning curves are still rising; a near-unregularised model
+clears its permutation floor in every cell; so more data would produce a better
+predictor, and we say so. What the objection cannot reach is the Pareto result,
+because the limit of a better predictor is the oracle and the oracle enters the
+winning region in only 1 of 8 cells. \textbf{The residual limitation is
+narrower than the original objection but real}: we have shown that a
+\emph{better classifier} would not change the conclusion, not that a
+\emph{larger benchmark} would leave everything else fixed. A benchmark four
+times the size would also change base success rates, hopeless-task share, and the
+cost position of always-cheapest --- and those, not the row count, are what
+Section~\ref{sec:regime-boundary} identifies as the regime.
 
 \paragraph{Replay, not live routing.} Chapter~\ref{ch:e2e}'s policies are
 evaluated by crediting already-executed outcomes. This omits online overhead and
@@ -306,9 +331,12 @@ shrinks, always-cheapest stops being near-optimal, and the winning region opens.
 If routing still fails there, the mechanism claim is wrong; if it succeeds, the
 regime boundary is located.
 
-\paragraph{Settle the undersampling objection.} The learning-curve plus
-in-sample-separability experiment described in Section~\ref{sec:limitations}
-requires no new agent runs, only re-analysis of landed data.
+\paragraph{Build the benchmark the supply arithmetic specifies.} The scale
+needed to make the which-mode half trainable in the four failing cells is
+$2.1$--$4.2\times$ the current corpus --- at most 846 reddit tasks
+(Section~\ref{sec:undersampling}). That is a concrete, buildable target rather
+than a gesture at ``more data'', and it is the experiment that would separate
+our regime claim from the undersampling reading once and for all.
 
 \paragraph{Route on cost tiers, not modes.} Section~\ref{sec:mechanism} shows
 that coarsening the target to a cost tier raises attainable agreement to
@@ -358,12 +386,15 @@ retrospective oracle in 7 of 8, because always-cheapest is a cost lower bound.
 The negative result is therefore about the economics of the boundary, not the
 capacity of the estimator.
 
-\textbf{The reason is a supply constraint.} Routing labels are minted only by
-solve events; at 2--27\% base success, 4 of 6 cells contain no trainable
-which-mode classifier, and three independent routes out of the constraint fail
-for three different reasons. What discriminative power the easier triage half
-does show rests substantially on a feature no deployment has: the benchmark's
-own difficulty annotation.
+\textbf{The reason is a supply constraint, and we can now price it.} Routing
+labels are minted only by solve events; at 2--27\% base success, 4 of 6 cells
+fail the admissibility rule for a which-mode classifier, and three independent
+routes out of the constraint fail for three different reasons. What
+discriminative power the easier triage half does show rests substantially on a
+feature no deployment has: the benchmark's own difficulty annotation. A direct
+undersampling control confirms the objection's force and bounds it --- more data
+would buy a better predictor, at decelerating returns, and the limit of that
+purchase is an oracle that itself wins in only 1 of 8 cells.
 
 The evidence is triangulated across three backbones spanning two model families,
 two benchmarks differing measurably in what their tasks specify, two deployment
