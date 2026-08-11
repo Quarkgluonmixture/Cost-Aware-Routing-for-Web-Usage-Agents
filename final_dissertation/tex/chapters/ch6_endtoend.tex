@@ -247,6 +247,17 @@ The two WebArena cells behave the same way despite a different corpus, a
 different site, and a mode ordering in which an image-free mode is the strongest
 single policy. That is the external-validation result: the failure transfers.
 
+\begin{scopebox}
+\textbf{``8 of 8'' is not eight independent trials, and we do not use it as
+such.} The three backbones run the \emph{same} task sets, so within a benchmark
+the cells are correlated through their shared tasks --- and if base success rate
+is the mechanism, as Chapter~\ref{ch:disc} argues, then B1 and B2 are weaker
+draws from the same regime rather than independent replications of it. The count
+is a statement of consistency, not a sample size, and the effective number of
+independent settings is closer to the two benchmarks than to eight cells. It is
+reported because a result that reversed on some cells would be visible in it.
+\end{scopebox}
+
 \section{Robustness}
 \label{sec:robustness}
 
@@ -259,6 +270,17 @@ Table~\ref{tab:supply} was recomputed under an alternative label
 (cheapest-successful by \emph{measured} episode cost rather than by prior cost
 ordering). Under it, 5 of 6 cells are untrainable rather than 4 of 6 --- the
 conclusion does not turn on the definition, and the alternative is worse.
+
+\paragraph{Cost metric.} The comparison is repeated under a cost estimand whose
+\emph{meaning} differs across backbones: B0's per-1k schedule is a vendor price,
+B1/B2's is a device-amortisation rate (Section~\ref{sec:metrics}). A vendor
+price can weight images arbitrarily relative to text, so a cheapest-mode ranking
+is not guaranteed to be stable across the two. On our data it is: \mVis{} is the
+cheapest mode in seven of eight cells under the token schedule, and the one
+exception (\cell{wa\_red$\cdot$B0}, where \mDOM{} is cheapest) is a WebArena
+cell, not an API/local boundary effect. The 0-of-8 verdict holds separately
+within the API cells (3 of 3) and within the local cells (5 of 5), so it does not
+depend on comparing across the boundary.
 
 \paragraph{Permutation budget.} $B$ was raised from 200 to 10{,}000 during this
 work. At $B=200$ the reportable floor sat inside Holm's threshold, so the budget

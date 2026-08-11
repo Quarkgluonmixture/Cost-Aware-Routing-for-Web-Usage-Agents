@@ -125,8 +125,18 @@ Cell & 20 features (VWA-only) & 18 features (matched) & $\Delta$ \\
 \end{table}
 
 \begin{scopebox}
-\textbf{The drop is not an inconvenience; it is one of this chapter's main
-results.} In the 20-feature configuration the strongest single feature in 5 of 6
+\textbf{First, the order of events, because it matters for whether this is
+leakage.} The two features were dropped because WebArena \emph{does not have
+them} --- a property of the corpus, established by the EDA in
+Chapter~\ref{ch:system} before any model was fitted, and visible in
+Figure~\ref{fig:f4}(B). They were not dropped because they performed too well.
+Had we inspected out-of-fold importances and removed whatever looked suspicious,
+that would have been whole-dataset feature selection dressed as nesting, and the
+nesting claim in Section~\ref{sec:protocol} would be void. The admissibility
+rule is availability at serving time, applied to the feature set as a whole.
+
+\textbf{What we then found is one of this chapter's main results.} In the
+20-feature configuration the strongest single feature in 5 of 6
 cells is \texttt{reasoning\_difficulty} --- \emph{VisualWebArena's own
 human-authored annotation of how hard the task is}. A router reading it is
 reading the benchmark's statement of the answer's difficulty, which no
@@ -328,6 +338,13 @@ its own best single covariate at 0.790. That is not a contradiction; the two
 quantities measure different things and this data pulls them apart.
 
 AUROC scores the \emph{global} ranking. The saving comes from the \emph{tail}.
+The two come apart hardest exactly where the class balance is worst: in a cell
+that is 93\% negative, a model can order the sea of true negatives well enough to
+score 0.70 without ever confidently identifying a positive, which is the only
+thing triage needs. A precision--recall curve would separate these two situations
+where AUROC does not, and we report AUROC only because it is the quantity the
+routing literature reports; the policy tables in Chapter~\ref{ch:e2e}, not this
+column, are what the conclusion rests on.
 \cell{red$\cdot$B2} routes 192 of 203 tasks (95\%) to the cheap mode with no
 success loss --- in a cell where only 7.4\% of tasks are solvable by anything at
 all, so almost nothing in that 95\% was ever going to succeed. It differs from

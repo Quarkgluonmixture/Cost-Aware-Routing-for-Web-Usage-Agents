@@ -1,0 +1,71 @@
+{
+  "cell": "classifieds\u00b7B0",
+  "n": 224,
+  "K": 6,
+  "best_single_sr_pct": 27.23,
+  "oracle_6mode_sr_pct": 43.3,
+  "arms": [
+    {
+      "arm": "B0.cls.dom",
+      "mode": "DOM",
+      "n": 224,
+      "sr_single_pct": 17.41,
+      "discordant": 27,
+      "flippable_est": 54,
+      "determ_solve_est": 12,
+      "union_pct": {
+        "1": 17.41,
+        "2": 23.44,
+        "3": 26.45,
+        "4": 27.96,
+        "5": 28.71,
+        "6": 29.09
+      },
+      "union2_observed_pct": 22.32,
+      "union2_model_error_pp": 1.12
+    },
+    {
+      "arm": "B0.cls.vision",
+      "mode": "Vision",
+      "n": 224,
+      "sr_single_pct": 25.0,
+      "discordant": 32,
+      "flippable_est": 64,
+      "determ_solve_est": 24,
+      "union_pct": {
+        "1": 25.0,
+        "2": 32.14,
+        "3": 35.71,
+        "4": 37.5,
+        "5": 38.39,
+        "6": 38.84
+      },
+      "union2_observed_pct": 31.7,
+      "union2_model_error_pp": 0.45
+    },
+    {
+      "arm": "B0.cls.som",
+      "mode": "SoM",
+      "n": 224,
+      "sr_single_pct": 27.23,
+      "discordant": 29,
+      "flippable_est": 58,
+      "determ_solve_est": 32,
+      "union_pct": {
+        "1": 27.23,
+        "2": 33.71,
+        "3": 36.94,
+        "4": 38.56,
+        "5": 39.37,
+        "6": 39.77
+      },
+      "union2_observed_pct": 34.82,
+      "union2_model_error_pp": -1.12
+    }
+  ],
+  "u6_min_pct": 29.09,
+  "u6_max_pct": 39.77,
+  "oracle_minus_u6_max_pp": 3.53,
+  "model": "s0 + m(1-2^-k), m=2*discordant, s0=|A|-discordant",
+  "direction_of_bias": "overstates repetition (every discordant task treated as a fair coin)"
+}

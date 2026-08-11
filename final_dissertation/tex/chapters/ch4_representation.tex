@@ -168,8 +168,17 @@ less, in \textbf{8 of 8} cells spanning two benchmarks. The upper bound
 $+16.35\pp$ is \cell{wa\_red$\cdot$B0}; restricted to the six VisualWebArena
 cells the upper bound is $+16.07\pp$ (\cell{cls$\cdot$B0}). Both figures are
 correct and they index different cell sets, so neither may be quoted without
-saying which. \textbf{And it must be read next to Section~\ref{sec:noise-floor}:
-a single rerun of one unchanged mode already buys 2.0--7.6\pp{} of this.}
+saying which.
+
+\textbf{Two qualifications travel with this number for the rest of the
+dissertation, and they are not cosmetic.} Adding a single \emph{rerun} arm of an
+unchanged mode buys 2.0--7.6\pp{} by itself
+(Section~\ref{sec:noise-floor}). And at matched arm count, six reruns of the
+strongest single mode would reach within 3.53\pp{} of the six-mode oracle ---
+below our own noise threshold (Section~\ref{sec:six-vs-six}). What survives is
+not that representation selection reaches a \emph{higher} ceiling than
+repetition, but that it reaches a comparable one at roughly a sixth of the
+serving cost.
 \end{scopebox}
 
 \subsection{Where the ceiling comes from}
@@ -424,15 +433,89 @@ $4.91$--$7.59\pp$. The representation arm is \emph{inside} the rerun band.
 \end{figure}
 
 \begin{scopebox}
-\textbf{What this licenses, and what it does not.} \emph{Licensed} on
+\textbf{What the one-arm result licenses.} \emph{Licensed} on
 \cell{cls$\cdot$B0}: at the one-arm margin, a distinct representation is worth
-no more than a rerun of the same representation. \emph{Not licensed}: ``the
-whole six-mode ceiling is noise''. The ceiling adds \emph{five} arms; we hold
-\emph{one} rerun arm, and reruns have their own diminishing returns. We report
-the five-arm gain with its arm count attached and never set it against a
-one-rerun floor. Constructing the six-arm comparison would require six replicate
-runs of one mode, which we do not have.
+no more than a rerun of the same representation. \emph{Not licensed} from this
+comparison alone: ``the whole six-mode ceiling is noise''. The ceiling adds
+\emph{five} arms; we hold \emph{one} rerun arm, and reruns have their own
+diminishing returns, so the subtraction is not available. The next section asks
+the six-arm question directly instead of declining it.
 \end{scopebox}
+
+\section{Six reruns versus six modes}
+\label{sec:six-vs-six}
+
+Refusing an invalid subtraction is not the same as answering the question behind
+it. If one extra arm of repetition buys up to 7.6\pp, what would \emph{five}
+buy --- and is the six-mode ceiling distinguishable from six repetitions of the
+strongest single mode? We cannot measure this directly, since that would need six
+replicate runs of one condition. We can bound it.
+
+Adopt the same exchangeability null already used in
+Section~\ref{sec:floor-spread}, and nothing further. Partition the scored set,
+for a given mode, into $s_0$ tasks it solves deterministically, $m$ tasks it
+solves with probability $\tfrac12$, and the rest it never solves. Two runs then
+disagree on each flippable task with probability $\tfrac12$, so the observed
+discordant count $d$ estimates $m/2$, giving $\hat m = 2d$ and
+$\hat s_0 = |A| - d$. The union over $k$ independent runs --- which is
+$\mathrm{pass}@k$ for that one arm --- is
+\begin{equation}
+  U(k) = s_0 + m\left(1 - 2^{-k}\right).
+  \label{eq:union}
+\end{equation}
+
+$U(1)$ reproduces the single-run success rate by construction, so it is not
+evidence. $U(2)$ is not: it can be checked against the \emph{observed} two-run
+union, and Table~\ref{tab:six-vs-six} reports both.
+
+\begin{table}[t]
+\centering\small
+\caption[Six reruns of one mode against six distinct modes]{\textbf{What
+repetition alone would have reached, at the same arm count.} $U(2)$ model versus
+observed is an out-of-sample check on Equation~\ref{eq:union}; it errs by at
+most $1.12$\pp{} in either direction. $U(6)$ is an \emph{upper} bound on
+repetition: treating every discordant task as a fair coin maximises how fast the
+union grows, and flippable tasks with $p\neq\tfrac12$ saturate sooner.
+\cell{cls$\cdot$B0} is the only cell carrying replicated arms.}
+\label{tab:six-vs-six}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Replicated arm & single run & discordant & $U(2)$ model & $U(2)$ observed & $\mathbf{U(6)}$ \\
+\midrule
+\mDOM{}   & 17.41\% & 27 & 23.44\% & 22.32\% & \textbf{29.09\%} \\
+\mVis{}   & 25.00\% & 32 & 32.14\% & 31.70\% & \textbf{38.84\%} \\
+\mSoM{}   & 27.23\% & 29 & 33.71\% & 34.82\% & \textbf{39.77\%} \\
+\midrule
+\multicolumn{5}{@{}l}{six-\emph{mode} oracle on the same cell}
+  & \textbf{43.30\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Six reruns of \mSoM{} would reach 39.77\%; six distinct modes reach 43.30\%.
+The residual is \textbf{3.53\pp}.
+
+\begin{scopebox}
+\textbf{This is the strongest attack on our headline, and it substantially
+lands.} $3.53$\pp{} sits \emph{below} the $3.82$--$4.15$\pp{} threshold this
+dissertation derived in Section~\ref{sec:floor-spread} and applies to everyone
+else's effects. Applying our own standard to our own headline: \textbf{at
+matched arm count, six distinct representations are not distinguishable from six
+repetitions of the strongest one.} Most of the ceiling is repetition.
+
+\textbf{What survives is a different claim, on a different axis.} The two are not
+interchangeable at deployment. The mode oracle spends \emph{one} episode per
+task --- it selects a representation, it does not retry. The six-rerun union
+spends \emph{six}. So representation selection reaches a comparable ceiling at
+roughly one-sixth of the serving cost. The defensible headline is therefore
+about the \emph{cost-efficiency} of the ceiling, not its height.
+\end{scopebox}
+
+Two limits on this analysis, both of which cut against reading it too strongly in
+either direction. It rests on one cell, because \cell{cls$\cdot$B0} is the only
+cell with replicated arms; and Equation~\ref{eq:union} is a two-parameter
+caricature of a heterogeneous failure distribution, whose only defence is that it
+is checked at $k=2$ and is biased towards the conclusion we did not want.
 
 \section{What the WebArena cells add, and what they do not}
 \label{sec:wa-scope}
@@ -465,10 +548,13 @@ $+3.45$ to $+16.35\pp$ at 13.7--35.3\% lower cost, in 8 of 8 cells across two
 benchmarks, three backbones and two model families. The direction is not in
 doubt.
 
-\textbf{Qualified.} A single rerun of one unchanged mode buys 2.0--7.6\pp{} of
-that gain, and at the one-arm margin on the cell where we can test it, a
-distinct representation is worth no more than a rerun. The ceiling is real and
-smaller than it first appears.
+\textbf{Qualified, and the qualification is severe.} At the one-arm margin a
+distinct representation is worth no more than a rerun of the same one; at six
+arms, repetition of the strongest mode closes to within 3.53\pp{} of the
+six-mode oracle, which is below the threshold this chapter derived. The height of
+the ceiling is largely a repeated-sampling effect. Its \emph{cost} is not: the
+mode oracle reaches that height for one episode per task where repetition needs
+six. The surviving claim is about the price of the ceiling, not its height.
 
 \textbf{Downgraded.} The three phantom modes contribute in a consistent
 direction (14 of 18 arm--cell values positive) but at a magnitude below the

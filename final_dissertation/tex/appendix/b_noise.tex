@@ -68,11 +68,48 @@ band is generated entirely by \mVis{} and \mPP{}, and the five panels are
 correlated through the same ten tasks. It should be read as \emph{some arms of
 this cell move by 2--4\pp{} under repetition}.
 
-\paragraph{The five-arm gain is never set against a one-rerun floor.} We hold one
-rerun arm, not five, and repetition has its own diminishing returns. The ceiling
-is reported with its arm count attached (Table~\ref{tab:oracle},
-Figure~\ref{fig:f8}); the like-for-like one-arm comparison is
-Figure~\ref{fig:f10b}.
+\paragraph{The five-arm gain is never set against a one-rerun floor by
+subtraction.} We hold one rerun arm, not five, and repetition has its own
+diminishing returns. The ceiling is reported with its arm count attached
+(Table~\ref{tab:oracle}, Figure~\ref{fig:f8}); the like-for-like one-arm
+comparison is Figure~\ref{fig:f10b}; and the six-arm question is answered by
+bound rather than by subtraction in Section~\ref{sec:six-vs-six}, derived below.
+
+\section{The six-rerun bound}
+\label{sec:app-union}
+
+Equation~\ref{eq:union} follows from the same null. If the mode solves $s_0$
+tasks deterministically and $m$ tasks with probability $\tfrac12$, then over $k$
+independent runs each flippable task is solved at least once with probability
+$1-2^{-k}$, so
+$\mathbb{E}\left[U(k)\right] = s_0 + m\left(1-2^{-k}\right)$.
+The two parameters are identified from a single replicate pair: two runs disagree
+on a flippable task with probability $\tfrac12$, so $\mathbb{E}[d] = m/2$, giving
+$\hat m = 2d$ and $\hat s_0 = |A| - d$.
+
+Three properties make this usable as a bound rather than an estimate.
+
+\emph{It is checked, not assumed.} $U(1)$ is fitted by construction, but $U(2)$
+is not, and it can be compared against the observed two-run union. The error is
+$+1.12$, $+0.44$ and $-1.11$\pp{} on the three replicated arms --- the model is
+not systematically optimistic, and on \mSoM{} it \emph{under}-credits repetition,
+which is the arm that drives the headline comparison.
+
+\emph{Its bias direction is known.} Treating every discordant task as a fair coin
+maximises how fast the union grows; a flippable task with $p \neq \tfrac12$
+saturates sooner. $U(6)$ therefore overstates what six reruns would deliver, and
+overstating repetition is the direction that makes the conclusion in
+Section~\ref{sec:six-vs-six} safe to draw.
+
+\emph{It rests on one cell.} \cell{cls$\cdot$B0} is the only cell with
+replicated arms, so the 3.53\pp{} residual is a statement about that cell. We do
+not extrapolate it, and Section~\ref{sec:limitations} lists the replicates that
+would be needed to.
+
+Regenerate with the script\\
+\hspace*{1em}\texttt{scripts/analysis/rerun\_union\_extrapolation.py}\\
+whose artefact is\\
+\hspace*{1em}\texttt{docs/analysis/cross\_sites/rerun\_union\_extrapolation.\{md,json\}}.
 
 \section{The determinism claim we retracted}
 
