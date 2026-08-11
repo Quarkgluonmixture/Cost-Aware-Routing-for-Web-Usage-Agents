@@ -16,7 +16,7 @@ of Representation Routing in Web Agents\par}
 {\large Jiaming Wei\par}
 \vspace{0.4cm}
 {\normalsize MSc Artificial Intelligence for Sustainable Development\par}
-{\normalsize COMP0191 --- MSc Project\par}
+{\normalsize COMP0191: MSc Project\par}
 \vfill
 {\normalsize September 2026\par}
 \vspace{0.8cm}
@@ -35,43 +35,54 @@ is explicitly acknowledged.\par}
 
 A web agent must be given some encoding of the current page before it can act.
 That encoding can be cheap structured text, an expensive annotated screenshot,
-or a combination, and the choice is normally made once and applied everywhere.
-Because a task takes tens of steps, the choice is paid for tens of times. This
+or both together, and the choice is normally made once and applied everywhere.
+Since a task runs for tens of steps, it is also paid for tens of times. This
 dissertation asks whether the expensive choice is necessary at every step, and
 whether the steps where it \emph{is} necessary can be identified cheaply enough
 for the identification to be worth making.
 
-We build a controlled representation space in which six observation modes vary
-the page text payload, the prompt framing, and the presence of an annotated
-image while the task, the agent, the action space, and the accounting boundary
-are held fixed. Across 8 (site, model) cells spanning two benchmarks
-(VisualWebArena and WebArena) and three backbones, we measure three quantities
-in sequence: how much a retrospective oracle could gain by choosing per task,
-whether that need is predictable from serving-time features under a fully
-nested cross-validation protocol, and whether acting on those predictions beats
-a trivial fixed policy once cost is counted.
+We build a controlled representation space over a fixed agent. Six observation
+modes vary the page text payload, the prompt framing, and whether an annotated
+image is sent; everything else stays put, including the task, the action space,
+the step budget and the accounting boundary. The sweep covers 8 (site, model)
+cells on two benchmarks, VisualWebArena and WebArena, across three backbones. On
+it we measure three quantities in sequence: what a retrospective oracle would
+gain by choosing per task, whether that choice is predictable from serving-time
+features under a fully nested cross-validation protocol, and whether acting on
+the predictions beats a trivial fixed policy once cost is counted.
 
 The answers are, in order, \emph{yes}, \emph{no}, and \emph{the question is
-mis-posed}. A retrospective oracle over the six modes gains
-$+3.45$ to $+16.35$ percentage points of task success over the best single mode
-while spending 1.6--35.3\% less, in every cell and on both benchmarks --- the same
-protocol also shows that adding a single \emph{rerun} of one unchanged mode, as
-one extra arm, buys 2.0--7.6 points on its own, so the ceiling must always be
-quoted beside its own repetition baseline rather than net of it. Under a fully
-nested protocol the learned triage router Pareto-beats the trivial
-always-cheapest fixed policy in \textbf{0 of 8} cells; so, we show, does the
-retrospective oracle in 7 of 8, which recasts the negative result from ``the
+mis-posed}. A retrospective oracle over the six modes gains $+3.45$ to $+16.35$
+percentage points of task success over the best single mode while spending
+1.6--35.3\% less, in every cell and on both benchmarks. Applying our own noise
+standard to that headline deflates it. Adding one \emph{rerun} arm of an
+unchanged mode buys 2.0--7.6 points by itself, and at matched arm count six
+reruns of the strongest single mode come within 3.53 points of the six-mode
+oracle, which is below the threshold we derive for what a single repetition can
+produce on its own. What survives is the ceiling's price rather than its height,
+since selection reaches that level for one episode per task where repetition
+needs six. Under the nested protocol, the learned triage router Pareto-beats the
+trivial always-cheapest fixed policy in \textbf{0 of 8} cells. So does the
+retrospective oracle, in 7 of 8, which recasts the negative result from ``the
 learner failed'' to ``no profitable operating point exists under this cost
-boundary''. The mechanism is a supply constraint rather than a capacity one:
-routing labels are minted only when a task is solved, base success is 2--27\%,
-and 4 of 6 cells therefore contain no trainable which-mode classifier at all. We
-further show that the single feature carrying most of the apparent
-discriminative power on VisualWebArena is the benchmark's own human difficulty
-annotation, which no deployment possesses.
+boundary''.
+
+We locate the obstruction in label supply rather than model capacity. Routing
+labels are minted only when a task is solved, so at 2--27\% base success 4 of 6
+cells fail the admissibility rule for a which-mode classifier, and the single
+feature carrying most of the apparent discriminative power on VisualWebArena
+turns out to be the benchmark's own human difficulty annotation, which no
+deployment has. A direct undersampling control confirms the competing
+explanation and then bounds it: learning curves are still rising, so more data
+would buy a better predictor, but the limit of a better predictor is the oracle,
+and the oracle wins in 1 of 8 cells. Pricing the constraint puts the benchmark
+that would relieve it at 2.1 to 4.2 times the size of the ones that exist, which
+is a specification rather than an impossibility.
 
 The contribution is not a router. It is a measured boundary: the conditions
-under which representation routing cannot be learned, established with the
-opportunity first proven to exist and the failure located in a named mechanism.
+under which representation routing cannot be learned, with the opportunity
+proven to exist before it is declared unreachable, and the failure traced to a
+mechanism we can price.
 
 % ---------- acknowledgements -------------------------------------------------
 \chapter*{Acknowledgements}
@@ -103,9 +114,10 @@ served through a metered API proxy rather than self-hosted. Its outputs,
 per-step logs and billing records are archived and released, but a third party
 cannot re-run those conditions without equivalent proxy access. Results that
 depend on that backbone alone are therefore \emph{replicable from our logs} but
-not \emph{independently reproducible end to end}, and are marked as such where
-they carry a claim. Chapters~\ref{ch:repr}--\ref{ch:e2e} are constructed so that
-no load-bearing claim rests on a single backbone.
+not \emph{independently reproducible end to end}. Every claim that rests on
+that backbone is marked where it is made, and
+Chapters~\ref{ch:repr}--\ref{ch:e2e} are built so that none of the conclusions
+depends on a single backbone.
 
 \clearpage
 \tableofcontents

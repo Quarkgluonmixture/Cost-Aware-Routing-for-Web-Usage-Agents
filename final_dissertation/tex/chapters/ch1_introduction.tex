@@ -18,14 +18,11 @@ web task takes tens of browser steps, and the representation decision is
 re-paid at each one: the screenshot is re-encoded, the marks are re-drawn, the
 tokens are re-billed. If the extra information changed the outcome at every
 step, this would simply be the price of the capability. But it is not obvious
-that it does, and --- as far as we can establish --- nobody has measured whether
-it does.
+that it does, and, as far as we can establish, nobody has measured whether it does.
 
 The obvious response is to decide per step instead of once. That intuition is
 what makes this an interesting problem rather than an engineering preference,
-because it is only correct if three separate conditions hold at the same time.
-The cheap and expensive encodings must genuinely succeed on \emph{different}
-tasks, or there is nothing to select between. The need for the expensive one
+because it is only correct if three separate conditions hold together. The cheap and expensive encodings must succeed on \emph{different} tasks, or there is nothing to select between. The need for the expensive one
 must be \emph{predictable} from something observable before it is paid for, or
 the selection cannot be made in time. And the value recovered must exceed what
 the selection machinery itself costs, or the whole apparatus loses money. Each
@@ -38,8 +35,7 @@ and reports where the chain breaks.
   \caption[Thesis overview: the three questions and their answers]{%
   \textbf{The argument of this dissertation in one figure.} The same web task
   can be handed to the same agent through six different page encodings (centre),
-  which differ in cost by construction. Three questions follow, and are answered
-  in that order: \emph{is there a ceiling worth chasing} (yes, but see
+  which differ in cost by construction. The questions that follow are answered in that order: \emph{is there a ceiling worth chasing} (yes, but see
   Chapter~\ref{ch:repr} for how much of it a rerun already buys), \emph{is the
   per-task choice predictable at serving time} (no), and \emph{does acting on
   the prediction pay} (the trade-off does not exist under this cost boundary).
@@ -51,8 +47,7 @@ and reports where the chain breaks.
 \section{Why the cost is worth arguing about}
 \label{sec:stakes}
 
-Three properties of the setting turn a per-step configuration choice into a
-system-level quantity.
+What turns a per-step configuration choice into a system-level quantity is a combination of three properties of the setting.
 
 \paragraph{The cost is multiplicative in the episode length.} Our agent
 averages 13.7--28.4 steps per task depending on site, model and mode
@@ -61,9 +56,7 @@ a fraction of a cent per step is a decision made hundreds of thousands of times
 across a benchmark sweep, and millions of times in any deployment worth the
 name.
 
-\paragraph{The expensive part is concentrated, not diffuse.} It is tempting to
-assume the annotated-screenshot condition is expensive because it sends more of
-everything. It does not. Measured on matched pages, the text payload of
+\paragraph{The expensive part is concentrated, not diffuse.} The annotated-screenshot condition looks expensive because it appears to send more of everything, and that reading is wrong. Measured on matched pages, the text payload of
 the full Set-of-Marks mode is a median $1.008\times$ that of the structured-text
 mode on classifieds and $1.004\times$ on reddit (Section~\ref{sec:obs-space};
 $n=429$ paired tasks). The cost difference between them is therefore almost
@@ -74,8 +67,7 @@ builds.
 
 \paragraph{Computational cost is not the same thing as environmental cost, and
 this dissertation does not conflate them.} We report token counts, billed
-dollars, wall-clock latency, and --- for the locally served backbones only ---
-device-level energy drawn from GPU telemetry. We do not convert tokens into
+dollars, wall-clock latency and (for the locally served backbones only) device-level energy drawn from GPU telemetry. We do not convert tokens into
 kilowatt-hours; no hardware-independent conversion exists
 \citep{fernandez2025energy}, and treating one as a proxy for the other is a
 known failure mode in this literature \citep{lannelongue2021green,
@@ -85,8 +77,7 @@ our measurement boundary includes and what it therefore cannot support.
 \section{Concepts before machinery}
 \label{sec:concepts}
 
-Three ideas carry the whole argument, and each can be stated before any
-implementation detail.
+The whole argument rests on three ideas, and none of them needs an implementation detail to state.
 
 \paragraph{A page representation is a choice, not a given.} An \emph{observation
 mode} is a complete, executable specification of what the agent is shown at a
@@ -109,17 +100,14 @@ here. The first is \emph{predictability}: can the right mode be inferred from
 signals available before the expensive mode is paid for? The second is
 \emph{economics}: even a good predictor loses if escalation is rare, mistakes
 are asymmetric, or the router costs more than it saves. The core methodological
-commitment of this dissertation is that these three quantities --- ceiling,
-predictability, realised value --- are measured separately and never allowed to
+commitment of this dissertation is that these three quantities (ceiling, predictability, realised value) are measured separately and never allowed to
 stand in for one another.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_f1_motivating_example.pdf}
   \caption[What each observation mode actually sends]{%
-  \textbf{One page, three ways of paying for it.} All three columns show the
-  same browser step of the same task --- verified byte-identical at the source
-  screenshot --- as it is actually transmitted to the model. Left: the
+  \textbf{One page, three ways of paying for it.} All three columns show the same browser step of the same task, verified byte-identical at the source screenshot, as it is actually transmitted to the model. Left: the
   accessibility-tree text of the \mDOM{} mode, with no image sent at all.
   Centre: the \mSoM{} mode, which sends the numbered-overlay screenshot
   \emph{and} the \sommarks{} text. Right: the \mVis{} mode, the raw screenshot with
@@ -137,14 +125,10 @@ stand in for one another.
 We construct a controlled representation space over a fixed agent and measure
 along the chain just described.
 
-Six observation modes are defined by crossing three binary factors --- the text
-payload (accessibility-tree text vs.\ flattened \sommarks{} text), the prompt
+Six observation modes are defined by crossing three binary factors: the text payload (accessibility-tree text vs.\ flattened \sommarks{} text), the prompt
 framing (structured-text style vs.\ Set-of-Marks style), and the presence of the
 annotated image. Four of the six send no image at all, one sends text and image
-together, and one sends only the image. Everything else in the stack --- the
-task, the model, the decoding parameters, the action space, the step budget, the
-benchmark evaluator, the cost-accounting boundary --- is held identical across
-modes. Chapter~\ref{ch:system} makes that claim auditable.
+together, and one sends only the image. Everything else in the stack is held identical across modes: the task, the model, the decoding parameters, the action space, the step budget, the benchmark evaluator and the cost-accounting boundary. Chapter~\ref{ch:system} makes that claim auditable.
 
 The sweep covers 8 (site, model) cells: three backbones spanning two model
 families on two VisualWebArena sites \citep{koh2024visualwebarena}, plus two
@@ -177,8 +161,7 @@ resulting policy against fixed alternatives with cost counted.
       across all 8 cells and both benchmarks. We pair this with a measured
       rerun floor from replicated identical conditions, and then push it to the
       matched arm count: one \emph{rerun} arm buys 2.0--7.6\pp{} by itself, and
-      six reruns of the strongest single mode close to within 3.53\pp{} of the
-      six-mode oracle --- below the threshold we ourselves derive. Applying that
+      six reruns of the strongest single mode close to within 3.53\pp{} of the six-mode oracle, which is below the threshold we ourselves derive. Applying that
       standard to our own headline moves the surviving claim from the ceiling's
       height to its price. To our knowledge, no comparable web-agent
       representation study reports its effect sizes against a measured
@@ -186,9 +169,7 @@ resulting policy against fixed alternatives with cost counted.
       (Chapter~\ref{ch:repr}).
 
 \item \textbf{A negative predictability result with the estimator explicitly
-      exonerated.} Under a fully nested cross-validation protocol --- in which
-      mode selection, threshold selection and feature standardisation all occur
-      inside the training folds --- the learned triage router Pareto-beats the
+      exonerated.} Under a fully nested cross-validation protocol, in which mode selection, threshold selection and feature standardisation all occur inside the training folds, the learned triage router Pareto-beats the
       trivial always-cheapest fixed policy in \textbf{0 of 8} cells. Two
       independent controls (a bundle-permutation null at $B=10{,}000$, and the
       always-cheapest comparator itself) rule out the two cheapest alternative
@@ -200,8 +181,7 @@ resulting policy against fixed alternatives with cost counted.
       classifier at all, and three independent attempts to manufacture more
       supervision each fail for a structurally different reason. We additionally
       show that the strongest single predictor on VisualWebArena is the
-      benchmark's own human difficulty annotation --- a feature no deployment
-      possesses --- and we test the competing ``too few rows'' explanation
+      benchmark's own human difficulty annotation, which no deployment possesses. We also test the competing ``too few rows'' explanation
       directly rather than arguing about it, finding that it explains the
       predictor's weakness but not the result, since the limit of a better
       predictor is an oracle that also fails
@@ -218,15 +198,14 @@ resulting policy against fixed alternatives with cost counted.
 \section{This dissertation contains a ``no'', and that is deliberate}
 \label{sec:the-no}
 
-The second half of the research question --- can the need be predicted cheaply
-enough to be worth predicting? --- is answered in the negative. Two consequences
+The second half of the research question (can the need be predicted cheaply enough to be worth predicting?) is answered in the negative. Two consequences
 follow, and both are structural rather than cosmetic.
 
 First, Chapter~\ref{ch:e2e} is not organised around how much the router won. It
 is organised around \emph{where the chain breaks and why that break is a
 property of the regime rather than of our implementation}. Second, the
 scientific contribution lives in Chapter~\ref{ch:disc}: what this work delivers
-is not a router but a boundary --- a characterisation of the conditions under
+is not a router but a boundary: a characterisation of the conditions under
 which representation routing cannot be learned.
 
 A negative result can carry a dissertation only if two things are established
@@ -241,8 +220,7 @@ either obligation, we say so in place rather than in a closing list of caveats.
 \section{What this dissertation does not claim}
 \label{sec:not-claimed}
 
-Four statements are consistent with our data but stronger than it, and we
-therefore do not make them anywhere in this document.
+The statements below are consistent with our data but stronger than it, so we do not make them anywhere in this document.
 
 \begin{itemize}[leftmargin=1.5em]
 \item That the image-off modes \emph{replace} the full Set-of-Marks mode. Their

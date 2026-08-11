@@ -28,3 +28,27 @@
 (?i)Pareto
 (?i)fixed-effect
 (?i)inverse-variance
+(?i)always-cheapest
+(?i)best single mode
+(?i)triage
+(?i)which-mode
+(?i)escalation
+(?i)scored set
+(?i)run set
+(?i)complete-case
+(?i)oracle ceiling
+(?i)drop-one
+(?i)rerun
+(?i)discordance
+(?i)exchangeability
+(?i)flippable
+(?i)serving-time
+(?i)admissibility
+(?i)minted
+(?i)bundle-permutation
+(?i)WebArena
+(?i)Set-of-Marks
+(?i)backbone
+(?i)episode
+(?i)step budget
+(?i)task success rate

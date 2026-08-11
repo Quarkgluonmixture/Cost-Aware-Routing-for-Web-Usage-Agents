@@ -22,9 +22,7 @@ $X\sim\mathrm{Binom}(d,\tfrac12)$ counting the flips in one direction,
 giving Equation~\ref{eq:floor-sd}, $\mathrm{SD}(D)=\sqrt{d}/n$. The one-sided
 95\% point is $1.645\,\mathrm{SD}(D)$.
 
-Two properties of this null are worth stating explicitly. It assumes
-\emph{only} exchangeability --- no model of the agent, the site, or the failure
-distribution enters. And it does \emph{not} model environment drift, which is
+Two properties of this null are worth stating explicitly. It assumes \emph{only} exchangeability, with no model of the agent, the site, or the failure distribution enters. And it does \emph{not} model environment drift, which is
 one-directional and which we separately observe: a restarted partial run of one
 mode shows 3 flips in one direction and 0 in the other on its 26 shared tasks.
 Where drift is present the true spread exceeds $\sqrt{d}/n$, so the thresholds
@@ -39,13 +37,11 @@ analysis made.
 \begin{description}
 \item[Set-difference floor.]
   $\mathrm{self\_drop}(a\!\to\!b)=|\{a\}\setminus\{b\}|/n$. This matches
-  Equation~\ref{eq:dropone} in form, so it is the floor for \emph{ceiling}
-  claims --- what adding one more arm buys. Measured range across our three
+  Equation~\ref{eq:dropone} in form, so it is the floor for \emph{ceiling} claims, that is, what adding one more arm buys. Measured range across our three
   replicated arms: 4.91--7.59\pp.
 \item[Mean-difference floor.] $|\mathrm{SR}(a)-\mathrm{SR}(b)|$ on the same
   pairs. This is the floor for claims comparing \emph{mean success rates}
-  between modes. Measured range: 0.89--2.23\pp{} --- but each value is
-  \emph{one draw} of a quantity whose standard deviation is 2.32--2.53\pp, which
+  between modes. Measured range: 0.89--2.23\pp, but each value is \emph{one draw} of a quantity whose standard deviation is 2.32--2.53\pp, which
   is why the interpretable threshold is 3.82--4.15\pp{} rather than 2.23\pp.
 \end{description}
 
@@ -54,8 +50,7 @@ to a draw. The main text uses the threshold, not the band.
 
 \section{Scope restrictions}
 
-\paragraph{Do not do arithmetic across rows.} Each floor carries its own scope
---- backbone, site, mode, $n$, and serving path. The only comparisons drawn
+\paragraph{Do not do arithmetic across rows.} Each floor carries its own scope: backbone, site, mode, $n$, and serving path. The only comparisons drawn
 anywhere in this dissertation are within one (model, site) cell at equal arm
 count.
 
@@ -91,8 +86,7 @@ Three properties make this usable as a bound rather than an estimate.
 
 \emph{It is checked, not assumed.} $U(1)$ is fitted by construction, but $U(2)$
 is not, and it can be compared against the observed two-run union. The error is
-$+1.12$, $+0.44$ and $-1.11$\pp{} on the three replicated arms --- the model is
-not systematically optimistic, and on \mSoM{} it \emph{under}-credits repetition,
+$+1.12$, $+0.44$ and $-1.11$\pp{} on the three replicated arms, so the model is not systematically optimistic, and on \mSoM{} it \emph{under}-credits repetition,
 which is the arm that drives the headline comparison.
 
 \emph{Its bias direction is known.} Treating every discordant task as a fair coin
@@ -117,8 +111,7 @@ Our project record previously held that the locally served backbones were
 deterministic across reruns, on the grounds that decoding is greedy
 (\texttt{do\_sample}$=$false) and step-level outputs had been verified identical
 in a controlled check. That verification was correct and the inference from it
-was not. An episode carries site state, wall-clock and session lifetime in
-addition to model output; the WebArena pilot-versus-full overlap shows flips on
+was not. An episode also depends on site state, wall-clock and session lifetime, not only on model output; the WebArena pilot-versus-full overlap shows flips on
 \mVis{} and \mPP{} despite greedy decoding. Step-level determinism and
 episode-level determinism are different properties, and only the first was ever
 evidenced.

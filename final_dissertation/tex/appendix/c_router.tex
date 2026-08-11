@@ -44,8 +44,7 @@ Feature & type & definition \\
 \end{table}
 
 Every feature is computable from the task instruction and the cheap structured
-observation. None requires running a model, constructing an image, or observing
-an outcome --- which is the admissibility condition of
+observation. None requires running a model, constructing an image, or observing an outcome, which is the admissibility condition of
 Section~\ref{sec:features}.
 
 \section{Order of operations inside one outer fold}
@@ -87,8 +86,7 @@ Permuting $y$ alone is incorrect here and we record why, since it is the obvious
 implementation. The triage label is \emph{defined} by the per-mode outcomes; if
 $y$ is shuffled while success and cost stay attached to their original tasks,
 the null world contains a label disconnected from the quantities it summarises.
-The resulting error is not one-directional --- measured at $B=200$, moving from
-the $y$-only null to the bundle null shifted \cell{cls$\cdot$B1} from $0.478$ to
+The resulting error is not one-directional: measured at $B=200$, moving from the $y$-only null to the bundle null shifted \cell{cls$\cdot$B1} from $0.478$ to
 $0.503$ and \cell{red$\cdot$B2} from $0.040$ to $0.005$, in opposite directions.
 
 The threshold sweep remains post hoc by construction. That is precisely why the
@@ -100,15 +98,14 @@ a signal-free pipeline with the same post hoc freedom reproduces.
 Two definitions were evaluated (Section~\ref{sec:robustness}).
 
 \begin{description}
-\item[Canonical] --- first success in the fixed order \texttt{[dom},
+\item[Canonical] First success in the fixed order \texttt{[dom},
   \texttt{phantom\_som}, \texttt{phantom\_text}, \texttt{phantom\_prompt},
   \texttt{som}, \texttt{vision]}, documented as ascending prior cost.
-\item[Measured-cost] --- the cheapest successful mode by measured episode cost.
+\item[Measured-cost] The cheapest successful mode by measured episode cost.
 \end{description}
 
 Supply is identical under both by construction, so only trainability can move:
 4 of 6 cells are untrainable under the canonical label and 5 of 6 under the
 measured-cost one. The measured-cost variant was examined and rejected as
-canonical because the resulting order is unstable across cells and because cost
-is endogenous to the outcome --- a mode that fails spends the full step budget
+canonical because the resulting order is unstable across cells and because cost is endogenous to the outcome: a mode that fails spends the full step budget
 and therefore looks expensive partly \emph{because} it failed.

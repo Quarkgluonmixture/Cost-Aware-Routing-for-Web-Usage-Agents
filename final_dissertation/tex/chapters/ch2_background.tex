@@ -2,10 +2,7 @@
 \label{ch:bg}
 
 \chapterhandoff{Chapter~\ref{ch:intro} argued that per-step representation
-selection is worth studying if three conditions hold. This chapter establishes
-what is already known --- about how web agents see pages, about how selective
-computation is done elsewhere, and about how efficiency is accounted for --- and
-locates the specific decision variable that no existing programme optimises.}
+selection is worth studying if three conditions hold. This chapter establishes what is already known about how web agents see pages, how selective computation is done elsewhere, and how efficiency is accounted for, then locates the specific decision variable that no existing programme optimises.}
 
 \section{How a web agent acts}
 \label{sec:agent-loop}
@@ -17,18 +14,16 @@ the next observation. The loop terminates when the agent emits a completion
 action, exhausts a step budget, or errors out. A benchmark \emph{evaluator} then
 inspects the final environment state and returns a binary \emph{task success}.
 
-Two properties of this loop shape everything that follows. First, the
+The loop has two properties that shape everything which follows. First, the
 observation is \emph{constructed}: something has to decide which parts of the
 browser's internal state become text, which become pixels, and how they are
-framed for the model. Second, the loop is \emph{long} --- tens of steps for a
-typical task --- so any per-step decision is amortised over a sequence, and any
+framed for the model. Second, the loop is \emph{long} (tens of steps for a typical task), so any per-step decision is amortised over a sequence, and any
 per-step cost is multiplied by one.
 
 \section{Ways to represent a web page}
 \label{sec:representations}
 
-Three families of encoding appear in the literature, and our six modes are built
-from their components.
+Our six modes are built from the components of the encodings that appear in the literature.
 
 \paragraph{Structured text.} The browser's accessibility tree (AXTree) exposes
 elements, roles, names, states and identifiers. It is a compact, textual, and
@@ -39,8 +34,7 @@ to include, which is itself an active research question
 
 \paragraph{Screenshots.} A rendered image preserves everything the tree
 discards, at the cost of requiring the model to localise elements visually. The
-difficulty of turning a visual intention into a valid browser action ---
-\emph{grounding} --- is well documented; \citet{zheng2024gpt4v} show that a
+difficulty of turning a visual intention into a valid browser action (\emph{grounding}) is well documented; \citet{zheng2024gpt4v} show that a
 capable multimodal model becomes a competent web agent largely when the
 grounding problem is solved for it.
 
@@ -55,9 +49,7 @@ factorisation possible.
 
 \subsection{Why the choice changes both capability and cost}
 
-The two axes move independently. Adding an image can supply information no
-textual encoding carries --- visual attributes, spatial relationships, rendered
-content absent from the tree --- and can equally supply nothing at all if the
+The two axes move independently. Adding an image can supply information no textual encoding carries, such as visual attributes, spatial relationships, or rendered content absent from the tree, and can equally supply nothing at all if the
 task's discriminating information was already in the text. Meanwhile the cost
 is paid regardless: image tokens are billed, image encoding takes wall-clock
 time, and a larger context slows generation. A representation is therefore worth
@@ -68,8 +60,7 @@ the interaction state rather than of the representation.
 \label{sec:selective}
 
 Selective computation is a mature idea with several literatures. Organising them
-by \emph{what each one chooses} --- rather than chronologically --- makes the
-gap this dissertation addresses visible as a structural property rather than as
+by \emph{what each one chooses} rather than chronologically makes the gap this dissertation addresses visible as a structural property rather than as
 an assertion (Figure~\ref{fig:f2}).
 
 \begin{figure}[t]
@@ -91,7 +82,7 @@ an assertion (Figure~\ref{fig:f2}).
   \label{fig:f2}
 \end{figure}
 
-\paragraph{Cluster 1 --- which elements enter the observation.}
+\paragraph{Cluster 1: which elements enter the observation.}
 \citet{deng2023mind2web} rank and prune HTML elements before action prediction;
 \citet{lu2024weblinx} learn a retrieval-style ranker over page elements. Both
 reduce cost inside one representation. The alternative they never consider is a
@@ -100,7 +91,7 @@ koh2024visualwebarena} and end-to-end agents \citep{he2024webvoyager,
 zheng2024gpt4v} fix the representation as a configuration and optimise the
 policy that consumes it.
 
-\paragraph{Cluster 2 --- which model answers.} FrugalGPT \citep{chen2024frugalgpt},
+\paragraph{Cluster 2: which model answers.} FrugalGPT \citep{chen2024frugalgpt},
 AutoMix \citep{aggarwal2024automix}, Hybrid LLM \citep{ding2024hybridllm},
 RouteLLM \citep{ong2025routellm}, RouterDC \citep{chen2024routerdc} and
 TensorOpera Router \citep{stripelis2024tensoropera} select among models or
@@ -112,21 +103,19 @@ signal produced by \emph{running} the cheap model first
 \citep{chen2024frugalgpt, aggarwal2024automix}, which our setting forbids by
 construction.
 
-\paragraph{Cluster 3 --- whether to answer at all.} Selective classification
+\paragraph{Cluster 3: whether to answer at all.} Selective classification
 \citep{geifman2017selective, geifman2019selectivenet, liu2019deepgamblers},
 post-hoc confidence repair \citep{cattelan2024confidence} and learning-to-defer
 \citep{mozannar2020defer} choose between predicting and abstaining or deferring.
 The escalation endpoint is abstention or an external expert, not a richer view
-of the same input, and the gating signal is normally derived from a completed
-forward pass --- again, downstream of the cost we are trying to avoid.
+of the same input, and the gating signal is normally derived from a completed forward pass, again downstream of the cost we are trying to avoid.
 
-\paragraph{Cluster 4 --- how much computation to spend.} Adaptive computation
+\paragraph{Cluster 4: how much computation to spend.} Adaptive computation
 time \citep{graves2016act}, early exit \citep{bolukbasi2017adaptive,
 xin2020deebert, schuster2022calm}, token sparsification \citep{rao2021dynamicvit},
 resolution cascades \citep{wang2021notallimages} and reasoning-budget prediction
 \citep{han2025tokenbudget} allocate internal computation per input. The nearest
-of these to our question is \citet{wang2021notallimages}, which escalates image
-resolution until confident --- but the escalation signal is the classifier's own
+of these to our question is \citet{wang2021notallimages}, which escalates image resolution until confident. But the escalation signal is the classifier's own
 confidence after running the coarse pass, and the task is single-shot
 classification rather than a sequential browser episode.
 \citet{han2025tokenbudget} is the nearest on the other axis: it predicts a
@@ -136,16 +125,13 @@ output-side reasoning length rather than input-side perception.
 \subsection{Two neighbours that must be addressed directly}
 \label{sec:neighbours}
 
-Two recent works sit close enough that a general novelty claim would be
-overstated, and we state the distinction rather than the distance.
+Some recent work sits close enough that a general novelty claim would be overstated, and we state the distinction rather than the distance.
 
 \citet{enomoto2026readmore} vary observation representation and thinking budget
 together, and report how the best observation configuration shifts with model
 capability and reasoning budget. This forbids the claim that prior web-agent
 work has not studied adaptive observations. The difference is the granularity of
-the decision: their result is a \emph{configuration-level} regularity ---
-\emph{given this model and this budget, prefer this observation} --- whereas the
-object here is a per-task, per-state decision for a \emph{fixed} agent, gated on
+the decision: their result is a \emph{configuration-level} regularity (\emph{given this model and this budget, prefer this observation}), whereas the object here is a per-task, per-state decision for a \emph{fixed} agent, gated on
 signals available before the richer observation is constructed. Their finding is
 in fact a precondition of ours being interesting: if the best representation
 never varied, there would be nothing to route.
@@ -156,8 +142,7 @@ acquisition cost inside the composite action. That is, formally, the closest
 statement of our decision problem that we are aware of. It is a one-shot
 supervised formulation: it does not model sequential browser state, does not fix
 the agent while varying the acquisition, and does not restrict the gate to
-signals obtainable before acquisition. Our contribution relative to it is
-empirical rather than formal --- we instantiate that decision in a real
+signals obtainable before acquisition. Our contribution relative to it is empirical rather than formal: we instantiate that decision in a real
 sequential environment and measure what the terms are actually worth.
 
 \section{Efficiency accounting}
@@ -166,8 +151,7 @@ sequential environment and measure what the terms are actually worth.
 Cost claims in this area are frequently under-specified, and the correction is
 well established. \citet{fernandez2025energy} show that inference energy
 estimated from FLOPs or theoretical utilisation can diverge substantially from
-measured energy, and that the divergence depends on workload, software stack and
-accelerator --- so there is no hardware-independent token-to-energy conversion
+measured energy, and that the divergence depends on workload, software stack and accelerator, so there is no hardware-independent token-to-energy conversion
 to appeal to. \citet{lannelongue2021green} make the same point for GPU-hours,
 which quantify activity rather than energy. \citet{strubell2019energy} is the
 field's founding precedent for reporting these quantities at all, and
@@ -194,8 +178,7 @@ computation can be allocated per input, using either a cheap ex-ante predictor
 or a confidence signal computed downstream.
 
 Neither line answers the question in the middle. For a \emph{fixed} agent at a
-\emph{given} interaction state, can the marginal task value of a richer page
-representation --- over a cheaper one --- be predicted from signals that are
+\emph{given} interaction state, can the marginal task value of a richer page representation, over a cheaper one, be predicted from signals that are
 available \emph{before} the richer representation is paid for? The four clusters
 supply, respectively, evidence that representations differ, machinery for
 choosing between models, machinery for choosing whether to act, and machinery

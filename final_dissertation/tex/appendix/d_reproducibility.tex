@@ -24,7 +24,7 @@ B0 conditions & \textbf{replayable only} & metered API proxy; step logs and
   billing archived, but re-execution needs equivalent access \\
 Analysis pipeline & \textbf{re-executable} & reads committed artefacts; no
   network or model access required \\
-Figures & \textbf{re-executable} & each script reads a named artefact and
+Figures & \textbf{re-executable} & each script reads one artefact by path and
   refuses to plot partial data \\
 \bottomrule
 \end{tabular}
@@ -53,8 +53,7 @@ each converts a silent failure into a loud one.
 
 \paragraph{Task-set SHA matching.} Every condition's sorted scored task-identifier
 list is hashed; aggregators refuse a condition whose hash does not match the
-cell's expected set. A partial run therefore fails loudly instead of producing a
-smaller denominator.
+cell's expected set. A partial run therefore raises an error instead of producing a smaller denominator.
 
 \paragraph{Deduplicating record reader.} All JSONL reads pass through one loader
 that removes restart duplicates and tolerates truncated trailing lines, so a

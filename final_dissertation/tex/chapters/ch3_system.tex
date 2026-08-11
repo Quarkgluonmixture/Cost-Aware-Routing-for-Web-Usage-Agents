@@ -15,8 +15,7 @@ commitment, and it is worth stating before any implementation detail. Across all
 conditions we hold constant: the task and its initial environment state, the
 agent's backbone model and decoding parameters, the action space, the step
 budget, the browser and its viewport, the benchmark evaluator, and the
-cost-accounting boundary. We vary exactly one stage --- the construction of the
-observation handed to the model at each step.
+cost-accounting boundary. We vary exactly one stage: the construction of the observation handed to the model at each step.
 
 \begin{figure}[t]
   \centering
@@ -25,9 +24,7 @@ observation handed to the model at each step.
   \textbf{What is varied and what is held identical.} Five pipeline stages carry
   the episode from task to scored outcome. Four are grey and marked
   \emph{same}; only observation construction differs across conditions. The
-  dashed boundary marks what is held identical, and cost is measured at the same
-  boundary as outcome --- so a mode that spends more to reach the same result is
-  visible as such rather than being absorbed. This is what licenses attributing
+  dashed boundary marks what is held identical, and cost is measured at the same boundary as outcome, so a mode that spends more to reach the same result shows up as more expensive rather than being absorbed. This is what licenses attributing
   later differences to representation; it is not an architecture diagram of the
   codebase.}
   \label{fig:f3}
@@ -75,10 +72,7 @@ independently.
 which lists elements with roles, names, states and identifiers; or the
 \sommarks{} listing, a flattened enumeration of interactable elements indexed in
 the Set-of-Marks convention. These are two encodings of overlapping information,
-and the difference is one of format rather than of quantity. Measured across
-every task at step~0 --- the only step at which two runs are guaranteed to be
-looking at the same page, since trajectories diverge as soon as the modes choose
-different actions --- the \sommarks{} payload is a median $1.008\times$ the
+and the difference is one of format rather than of quantity. Only step~0 is comparable: there the two runs are guaranteed to be looking at the same page, and trajectories diverge as soon as the modes choose different actions. Measured across every task at that step, the \sommarks{} payload is a median $1.008\times$ the
 AXTree payload on classifieds ($n=224$ tasks, 97.3\% of pairs within $\pm5$\%)
 and $1.004\times$ on reddit ($n=205$, 71.2\% within $\pm5$\%).
 
@@ -109,27 +103,24 @@ total (Table~\ref{tab:modes}).
 \centering\small
 \caption[The six observation modes]{\textbf{The six observation modes.} The four
 image-free modes are a $2\times2$ of text payload $\times$ prompt framing; the
-grouping in the last column is verified from the step records rather than
-asserted --- all four text-side modes log
+grouping in the last column is verified from the step records rather than asserted: all four text-side modes log
 \texttt{image\_payload\_bytes}~$=0$.}
 \label{tab:modes}
 \begin{tabular}{@{}llllc@{}}
 \toprule
 Mode & Text payload & Prompt framing & Image & Side \\
 \midrule
-\mDOM{}   & AXTree   & structured-text & ---             & text \\
-\mPP{}    & AXTree   & Set-of-Marks    & ---             & text \\
-\mPT{}    & \sommarks{} & structured-text & ---             & text \\
-\mPS{}    & \sommarks{} & Set-of-Marks    & ---             & text \\
+\mDOM{}   & AXTree   & structured-text & none             & text \\
+\mPP{}    & AXTree   & Set-of-Marks    & none             & text \\
+\mPT{}    & \sommarks{} & structured-text & none             & text \\
+\mPS{}    & \sommarks{} & Set-of-Marks    & none             & text \\
 \mSoM{}   & \sommarks{} & Set-of-Marks    & annotated       & combined \\
-\mVis{}   & ---      & vision-oriented & raw             & visual \\
+\mVis{}   & none     & vision-oriented & raw             & visual \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Why this factorisation exists.} The three-mode comparison that this
-study began with --- structured text, Set-of-Marks, raw vision --- cannot
-separate three changes that it makes simultaneously. Moving from \mDOM{} to
+\paragraph{Why this factorisation exists.} The three-mode comparison that this study began with (structured text, Set-of-Marks, raw vision) cannot separate three changes that it makes simultaneously. Moving from \mDOM{} to
 \mSoM{} changes the text encoding, the prompt, \emph{and} the image at once, so
 any difference is uninterpretable as evidence about any one of them. The four
 image-free modes exist to break that confound: \mPS{} is \mSoM{} with the image
@@ -137,8 +128,7 @@ removed and nothing else changed, \mPT{} isolates the text encoding, and \mPP{}
 isolates the prompt. This is experimental refinement in response to an
 identified ambiguity, not a proposal for a new agent design.
 
-\paragraph{Naming.} We use \emph{phantom} for the three image-free modes other
-than \mDOM{} --- that is, \mPT{}, \mPP{} and \mPS{}. \mDOM{} is image-free too,
+\paragraph{Naming.} We use \emph{phantom} for the three image-free modes other than \mDOM{}: \mPT{}, \mPP{} and \mPS{}. \mDOM{} is image-free too,
 so ``text side'' and ``phantom'' are not synonyms, and we do not use them
 interchangeably. \mPS{} is one configuration; the \emph{phantom routing space}
 is the region of the configuration space it inhabits.
@@ -172,16 +162,15 @@ $c_i^{(m)}$ its measured cost. The retrospective oracle is
 \end{equation}
 which is an upper bound: it uses $s_i^{(m)}$ for modes it did not run. Its
 \emph{ceiling gain} is $\mathrm{SR}_{\text{oracle}} - \max_m \mathrm{SR}^{(m)}$,
-always reported against a named comparator.
+always reported against a stated comparator.
 
 The oracle decomposes into two halves that differ sharply in how much
-supervision they require, and keeping them apart is load-bearing for
-Chapter~\ref{ch:pred}:
+supervision they require, and Chapter~\ref{ch:pred} depends on keeping them apart:
 \begin{itemize}[leftmargin=1.5em]
-\item \textbf{Triage} --- for each task, decide whether \emph{any} mode will
+\item \textbf{Triage.} For each task, decide whether \emph{any} mode will
       solve it; if not, spend the cheapest. The label is binary and is defined
       on every task, so its supply is never scarce.
-\item \textbf{Which-mode} --- among tasks that some mode solves, decide which.
+\item \textbf{Which-mode.} Among tasks that some mode solves, decide which.
       The label exists only where a success occurred, so its supply is bounded
       by the success rate itself.
 \end{itemize}
@@ -197,12 +186,11 @@ costs:
 \end{equation}
 $\Delta_m>0$ means $m$ solves at least one task nothing else solves.
 Equation~\ref{eq:dropone} is also, in form, the quantity that a \emph{rerun} of
-an existing mode would produce as an extra arm --- which is exactly why
-Chapter~\ref{ch:repr} can judge one against the other at matched arm count.
+an existing mode would produce as an extra arm, which is exactly why Chapter~\ref{ch:repr} can judge one against the other at matched arm count.
 
 \subsection{Net saving}
 
-For a named cost variable $C$,
+For a cost variable $C$ stated at the point of use,
 \begin{equation}
   \mathrm{NetSaving} = C_{\text{fixed comparator}} -
     \bigl(C_{\text{routed execution}} + C_{\text{router overhead}}\bigr),
@@ -225,8 +213,7 @@ environment does not drift under us in the way a live website would.
 \paragraph{External validation.} WebArena \citep{zhou2024webarena} reddit is
 used as a distribution-shift setting for two backbones. Its value here is
 specific and measurable rather than rhetorical: WebArena task
-configurations \emph{omit the reference-image field entirely} --- all 480 of
-them across its three sites --- whereas 29--40\% of VisualWebArena tasks supply
+configurations \emph{omit the reference-image field entirely}, all 480 of them across its three sites, whereas 29--40\% of VisualWebArena tasks supply
 one (Figure~\ref{fig:f4}, panel B). The distinction between an absent field and
 an explicit zero is worth keeping: what we observe is a schema difference, from
 which no reference image follows, and not an annotation asserting that none is
@@ -234,11 +221,7 @@ needed.
 
 \begin{scopebox}
 \textbf{A caveat we impose on ourselves.} It is tempting to read ``no reference
-images'' as ``the visual demand that motivates Set-of-Marks is absent''. That
-conflates \emph{visual matching} --- comparing the page against a supplied
-target image, which is genuinely gone on WebArena --- with \emph{visual
-grounding} --- locating and acting on elements of the current screen, which is
-what the marks actually serve and which is still required. We therefore claim
+images'' as ``the visual demand that motivates Set-of-Marks is absent''. That conflates \emph{visual matching} (comparing the page against a supplied target image, which is genuinely gone on WebArena) with \emph{visual grounding} (locating and acting on elements of the current screen, which is what the marks actually serve and which is still required). We therefore claim
 only a difference in task specification, not a difference in modality
 requirement. Establishing the stronger claim would need evidence that a
 text-only mode closes the gap to \mSoM{} on WebArena but not on VisualWebArena,
@@ -254,8 +237,7 @@ costs the external-validity argument.
 \subsection{From corpus to scored set}
 \label{sec:scored-set}
 
-Two exclusion layers apply at different times, and the distinction is
-operational rather than cosmetic.
+Exclusions apply in two layers at different times, and the distinction is operational rather than cosmetic.
 
 \emph{N/A tasks} are removed at task-load time: these are string-match tasks
 whose reference answer is the literal ``N/A''. Our agent prompt provides no
@@ -285,11 +267,7 @@ WA reddit       & 106 &  2 & 104 & 0 & \textbf{104} \\
 \end{tabular}
 \end{table}
 
-Every success rate in this dissertation uses a scored-set denominator, and every
-condition within a cell is evaluated on the byte-identical task-identifier set,
-verified by SHA-256 of the sorted identifier list. Conditions that do not match
-the expected set are refused by the analysis pipeline rather than silently
-truncated.
+The denominator of every success rate in this dissertation is the scored set, and within a cell all conditions are evaluated on the byte-identical task-identifier set, verified by SHA-256 of the sorted identifier list. The analysis pipeline refuses any condition whose set fails that check, rather than silently truncating it.
 
 \subsection{What the corpora actually contain}
 
@@ -298,10 +276,9 @@ truncated.
   \includegraphics[width=\textwidth]{fig_f4_corpus_eda.pdf}
   \caption[Corpus characterisation across the six task sets]{%
   \textbf{The corpora these conclusions rest on.} (A) The run-set/scored-set
-  distinction of Table~\ref{tab:scored-set}. (B) What each corpus annotates ---
-  WebArena carries neither reference images nor difficulty labels, which
+  distinction of Table~\ref{tab:scored-set}. (B) What each corpus annotates: WebArena carries neither reference images nor difficulty labels, which
   Chapter~\ref{ch:pred} shows is not incidental. (C) Evaluator types.
-  (D) Instruction length. Two shipped annotation typos
+  (D) Instruction length. Two typos in the distributed annotations
   (\texttt{mediun}, \texttt{hrad}) are reported rather than silently repaired,
   because folding a typo into the nearest label would make a
   difficulty-stratified analysis run on a different partition than the one it
@@ -342,11 +319,9 @@ B2 & \texttt{google/gemma-3-4b-it} & local, bf16     & cross-family control at m
 
 \paragraph{Decoding.} All three run greedy (\texttt{temperature}~$=0$,
 \texttt{do\_sample}~$=$~false) with \texttt{max\_new\_tokens}~$=4096$, seed 42.
-Greedy decoding is chosen so that observed run-to-run variation is attributable
-to the environment rather than to sampling --- a property we exploit in
+Greedy decoding is chosen so that observed run-to-run variation is attributable to the environment rather than to sampling, a property we exploit in
 Section~\ref{sec:noise-floor} and, importantly, one we \emph{test} rather than
-assume: step-level determinism does not imply episode-level determinism, because
-an episode also carries site state and session lifetime.
+assume: step-level determinism does not imply episode-level determinism, because an episode also depends on site state and session lifetime.
 
 \paragraph{Why B2 is a control and not a third result.} An earlier framing of
 this study treated the interaction between backbone capability and
@@ -354,13 +329,11 @@ representation as a third contribution in its own right, on the strength of a
 large B0-versus-B1 gap. That gap turned out to be a capability difference that
 appears under \emph{every} representation rather than an interaction with
 representation, so the framing was dropped and the small backbones were
-re-scoped as controls. B2 earns its place by differing from B1 in family while
-matching it in scale; it is not a third point on a capability curve.
+re-scoped as controls. B2 is included because it differs from B1 in family while matching it in scale; it is not a third point on a capability curve.
 
 \paragraph{Why a 4B model at all.} B1 and B2 succeed on 0.45--14.29\% of tasks
 depending on site and mode. A reader may reasonably ask what a routing study
-learns from backbones this weak. The answer is that the base success rate is not
-a nuisance parameter here --- it is the independent variable that
+learns from backbones this weak. The answer is that the base success rate is not a nuisance parameter here. It is the independent variable that
 Chapter~\ref{ch:pred} identifies as the binding constraint. Having cells that
 span 0.45\% to 35.58\% single-mode success is what allows the label-supply
 mechanism to be observed as a gradient rather than asserted at one operating
@@ -392,7 +365,7 @@ single estimand is used in every policy comparison in
 Chapters~\ref{ch:repr}--\ref{ch:e2e}.
 
 \begin{scopebox}
-\textbf{Two rules govern every cost number in this dissertation.} \emph{(i)}
+\textbf{Every cost number in this dissertation is governed by two rules.} \emph{(i)}
 Comparisons are made \emph{within} a cell only. Across the API/local boundary
 the schedules are different objects, and the ratio between them (82--107$\times$
 against measured electricity) is a statement about deployment mode, not model
@@ -406,7 +379,7 @@ section uses the latter.
 \centering\small
 \caption[Cost per mode, canonical estimand]{\textbf{Mean per-episode cost
 (\texttt{total\_billed\_cost\_usd}) by mode and cell.} Cheapest mode per column
-in bold. Two properties matter downstream: the cheapest mode is not the same
+in bold. What matters downstream is this: the cheapest mode is not the same
 everywhere (\mDOM{} on \cell{wa\_red$\cdot$B0}, \mVis{} elsewhere), and the
 spread between cheapest and dearest ranges from 11.6\% to 77.8\%, so ``the
 expensive mode'' means something different in each cell.}
@@ -443,8 +416,7 @@ separate here.
 \paragraph{Measured energy, kept separate.} For B1 and B2 we additionally
 measure device energy directly, which yields a quantity the token schedule
 cannot: on classifieds, 0.00482--0.00777\,kWh per episode, and on reddit
-0.00830--0.01236\,kWh. Notably the energy ordering does not always match the
-token-priced ordering --- on \cell{cls$\cdot$B2}, \mVis{} is the cheapest mode by
+0.00830--0.01236\,kWh. Notably the energy ordering does not always match the token-priced ordering: on \cell{cls$\cdot$B2}, \mVis{} is the cheapest mode by
 tokens and the \emph{most} energy-intensive by measurement, because a weaker
 backbone spends more wall-clock steps in it. That divergence is exactly why the
 two are not treated as proxies for one another.
@@ -460,8 +432,7 @@ emissions estimate}.
 
 It does not yield a carbon footprint. Excluded are: host CPU and memory, cooling
 and facility overhead (no PUE is applied), network, the browser environment's own
-compute, embodied emissions of the hardware, and --- for B0 entirely --- the
-remote data-centre's consumption, which we cannot observe. Following
+compute, embodied emissions of the hardware, and (for B0 entirely) the remote data-centre's consumption, which we cannot observe. Following
 \citet{gupta2022chasing} and \citet{luccioni2022bloom}, the boundary chosen
 materially determines the number, so we name ours and decline the broader label.
 For the same reason, no token-count reduction anywhere in this dissertation is
@@ -520,13 +491,10 @@ a restarted run cannot double-count. The runner and the analysis pipeline are
 separate processes with no shared state, and the figure scripts read only
 committed analysis artefacts.
 
-Two habits in the pipeline exist because their absence caused errors, and are
-worth naming since they affect what a reader can check. Conditions are refused
+The pipeline has two habits that exist because their absence caused errors, and they are worth naming since they affect what a reader can check. Conditions are refused
 by the aggregators unless their task-identifier SHA matches the cell's expected
-set, which converts a silent partial run into a loud failure. And every analysis
-artefact carries a provenance header recording the producing script, the
-capture timestamp, and whether the artefact is gate-eligible or exploratory ---
-so a number lifted into prose can be traced to the run that produced it.
+set, which converts a silent partial run into a loud failure. And every analysis artefact records a provenance header naming the producing script, the
+capture timestamp, and whether the artefact is gate-eligible or exploratory, so a number lifted into prose can be traced to the run that produced it.
 Appendix~\ref{app:repro} lists the configuration manifest, model revision pins
 and artefact inventory.
 
@@ -537,17 +505,13 @@ A negative result is worth exactly as much as the discipline that produced it. A
 reader who cannot see how we guarded against fooling ourselves has no reason to
 prefer our ``routing does not pay here'' to the more ordinary explanation that
 we measured badly. This section states the four rules that did that work, and it
-is deliberately explicit about which of them we fixed in advance and which we
-adopted only after something went wrong --- because that split is itself part of
-the answer.
+is deliberately explicit about which of them we fixed in advance and which we adopted only after something went wrong, because that split is itself part of the answer.
 
 \paragraph{Fixed in advance, and externally witnessed.} The hypotheses, the
 primary gate, the analysis plan and the exclusion policy were written before the
 paper-grade data existed, and locked on 2026-05-18 by a repository tag and an
 OSF registration DOI minted while the data-collection status still read
-\emph{pending}. The protocol did not survive contact with the experiment
-unchanged --- it was revised ten times --- but each revision is a separate dated
-tag rather than a silent edit, so the difference between what we planned and
+\emph{pending}. The protocol did not survive contact with the experiment unchanged: it was revised ten times. Each revision is a separate dated tag rather than a silent edit, so the difference between what we planned and
 what we did is a matter of public record instead of memory. That is the property
 that matters; an unamended preregistration on a four-month project would be less
 credible, not more.
@@ -555,8 +519,7 @@ credible, not more.
 \paragraph{Fixed in advance: refuse rather than truncate.} Aggregators compare
 the SHA-256 of a condition's sorted scored task-identifier list against the
 cell's expected set and refuse anything that does not match, rather than
-computing a rate over whatever episodes happen to be present. A partial run
-therefore fails loudly instead of quietly shrinking a denominator.
+computing a rate over whatever episodes happen to be present. A partial run therefore stops with an error instead of quietly shrinking a denominator.
 
 \paragraph{Adopted mid-project, after it caught us out: judge every effect
 against a measured repetition floor.} Nothing in the original plan required
@@ -572,12 +535,9 @@ costs (Section~\ref{sec:six-vs-six}).
 \paragraph{Adopted mid-project: adversarial audit by readers with no stake.}
 Before each milestone the draft and the code behind it were read cold by three
 independent model lineages, each writing its own claim-by-claim attack without
-access to the others' output. Their disagreements were the useful part --- the
-overlap was mostly things we already knew. Every finding was then checked against
+access to the others' output. Their disagreements were the useful part, since the overlap was mostly things we already knew. Every finding was then checked against
 the artefacts by hand before being accepted, which was not ceremony: of the
-attacks that reached a fix, one had its own arithmetic wrong --- it reported a
-significance threshold of 4.91\pp{} where the exact calculation gives 4.02\pp{}
---- and two were factually wrong about our pipeline, one of them claiming we had
+attacks that reached a fix, one had its own arithmetic wrong (it reported a significance threshold of 4.91\pp{} where the exact calculation gives 4.02\pp), and two were factually wrong about our pipeline, one of them claiming we had
 dropped a feature after noticing it performed too well when in fact the benchmark
 it had to transfer to does not carry that feature at all.
 
@@ -595,14 +555,12 @@ the one it replaced.
 
 None of this makes the result true. A discipline that catches errors is evidence
 about the process, not about the world, and the errors it did not catch are by
-construction invisible to it. What it does establish is that the claims which
-survived were not the ones we wanted --- which is the only form of assurance a
+construction invisible to it. What it does establish is that the claims which survived were not the ones we wanted, which is the only form of assurance a
 negative result can offer.
 
 \chapterhandoff{This chapter fixes the comparison boundary: task, agent, action
 space and accounting are held identical while the observation construction is
-varied. That boundary makes representation differences interpretable, but it
-does not make them \emph{interesting} --- if one mode dominated everywhere,
+varied. That boundary makes representation differences interpretable, but it does not make them \emph{interesting}. If one mode dominated everywhere,
 selection would have nothing to select. Chapter~\ref{ch:repr} therefore asks the
 prerequisite empirical question: do these modes succeed and fail on different
 tasks, and if so, how much is that worth?}

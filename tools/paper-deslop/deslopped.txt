@@ -31,15 +31,42 @@
 #     (was 553 before the retiering).
 #   - section7_discussion.md is down to 1 alert (an em dash inside its
 #     draft-status note); deleting that note makes it ratchet-ready.
-docs/checkpoints/paper_drafts/paperB/section1_intro.md
-docs/checkpoints/paper_drafts/paperB/section2_setup.md
-docs/checkpoints/paper_drafts/paperB/section3_ceiling.md
-docs/checkpoints/paper_drafts/paperB/section4_supply.md
-docs/checkpoints/paper_drafts/paperB/section5_triage.md
-docs/checkpoints/paper_drafts/paperB/section6_relabelling.md
-docs/checkpoints/paper_drafts/paperB/section7_discussion.md
-docs/checkpoints/paper_drafts/paperA/section1_intro.md
-docs/checkpoints/paper_drafts/paperA/section2_setup.md
-docs/checkpoints/paper_drafts/paperA/section3_findings.md
-docs/checkpoints/paper_drafts/paperA/section4_behaviour.md
-docs/checkpoints/paper_drafts/paperA/section5_discussion.md
+# STALE docs/checkpoints/paper_drafts/paperB/section1_intro.md
+# STALE docs/checkpoints/paper_drafts/paperB/section2_setup.md
+# STALE docs/checkpoints/paper_drafts/paperB/section3_ceiling.md
+# STALE docs/checkpoints/paper_drafts/paperB/section4_supply.md
+# STALE docs/checkpoints/paper_drafts/paperB/section5_triage.md
+# STALE docs/checkpoints/paper_drafts/paperB/section6_relabelling.md
+# STALE docs/checkpoints/paper_drafts/paperB/section7_discussion.md
+# STALE docs/checkpoints/paper_drafts/paperA/section1_intro.md
+# STALE docs/checkpoints/paper_drafts/paperA/section2_setup.md
+# STALE docs/checkpoints/paper_drafts/paperA/section3_findings.md
+# STALE docs/checkpoints/paper_drafts/paperA/section4_behaviour.md
+# STALE docs/checkpoints/paper_drafts/paperA/section5_discussion.md
+
+# --- MSc dissertation (final_dissertation/tex), deslopped 2026-08-11 ---------
+# Whole-thesis pass: 195 error-level alerts -> 0. 222 em dashes removed with
+# restructuring rather than bare substitution. Every file passed
+# invariant_check.py against its pre-edit baseline; frontmatter.tex is the one
+# exception and its diff is additions only (three edits lost to a partially
+# applied batch were restored in the same pass).
+final_dissertation/tex/frontmatter.tex
+final_dissertation/tex/chapters/ch1_introduction.tex
+final_dissertation/tex/chapters/ch2_background.tex
+final_dissertation/tex/chapters/ch3_system.tex
+final_dissertation/tex/chapters/ch4_representation.tex
+final_dissertation/tex/chapters/ch5_predictability.tex
+final_dissertation/tex/chapters/ch6_endtoend.tex
+final_dissertation/tex/chapters/ch7_discussion.tex
+final_dissertation/tex/appendix/a_ceiling.tex
+final_dissertation/tex/appendix/b_noise.tex
+final_dissertation/tex/appendix/c_router.tex
+final_dissertation/tex/appendix/d_reproducibility.tex
+
+# --- 2026-08-11: the paperA/ and paperB/ entries above are commented out ------
+# Those drafts were consolidated into docs/checkpoints/paper_drafts/realm/
+# during the REALM restructure, so the ratchet had been failing on 12 missing
+# paths and was therefore protecting nothing (see this file's own header on why
+# an ignored gate is worse than none). The paths are preserved rather than
+# deleted so the history is legible. To restore coverage, check each
+# realm/section*.md is error-clean and add it under its new path.

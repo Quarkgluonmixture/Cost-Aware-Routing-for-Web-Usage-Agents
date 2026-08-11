@@ -5,7 +5,7 @@
 showed how much of it repetition already buys. The ceiling is computed with
 hindsight. This chapter asks whether the same decision can be made
 \emph{beforehand}, from signals a deployment would actually have, and is
-designed so that the answer --- whichever way it falls --- cannot be attributed
+designed so that the answer, whichever way it falls, cannot be attributed
 to the protocol.}
 
 \section{Which half of the problem to attack}
@@ -28,9 +28,8 @@ stated minimum of 10 training rows per class ($n\times\tfrac45 \geq 10$), not a
 mathematical impossibility. A logistic regression will happily fit two classes
 with three examples each and return a number; the rule exists to stop us
 believing it. The defensible statement is therefore \emph{4 of 6 cells fail the
-$\mathrm{min\_class\_n}=10$ rule}, and what it supports is a claim about how much
-supervision the benchmark produced --- not about what an estimator can be made to
-output. Two further caveats on the same table: the rule is evaluated against the
+$\mathrm{min\_class\_n}=10$ rule}, and what it supports is a claim about how much supervision the benchmark produced, not about what an estimator can be made to
+output. The same table carries two further caveats: the rule is evaluated against the
 \emph{expected} fold size $n\times\tfrac45$ rather than realised fold membership,
 so a cell can pass it and still lack a complete five-fold classifier; and the
 counts are \emph{minted} labels, of which about 54\% pooled fall in classes that
@@ -63,21 +62,17 @@ Cell & scored $n$ & minted labels & solvable \% & classes surviving & admissible
 The triage label is better posed. It is binary, defined on \emph{every}
 task, and available in all 8 cells including the WebArena ones, and it is the
 half that Chapter~\ref{ch:repr} showed to be worth up to 30.6\% cost at zero
-success loss under an oracle, in 7 of 8 cells. \textbf{We therefore run the predictive study on
-triage} --- deliberately the most favourable framing available: two classes
+success loss under an oracle, in 7 of 8 cells. \textbf{We therefore run the predictive study on triage}, deliberately the most favourable framing available: two classes
 instead of six, a policy whose oracle version cannot lose success, and a
 comparator that is trivially implementable. A negative result here is stronger
 than a negative result on the harder half.
 
 \begin{scopebox}
-\textbf{But note what triage does \emph{not} escape.} Its positive class is the
-solvable set --- precisely the tasks that mint which-mode labels. The counts in
+\textbf{But note what triage does \emph{not} escape.} Its positive class is the solvable set, precisely the tasks that mint which-mode labels. The counts in
 the ``minted labels'' column of Table~\ref{tab:supply} are simultaneously the
 which-mode label supply \emph{and} the triage minority-class size: 97, 53, 55,
 24, 16, 15. Both halves are rationed by the same scarce resource; triage merely
-divides it two ways instead of six. So triage is the easier problem, not a
-problem with more evidence behind it --- and on \cell{cls$\cdot$B2} the
-classifier is being asked to learn from 16 positives in 224 rows, roughly three
+divides it two ways instead of six. So triage is the easier problem, not a problem with more evidence behind it. On \cell{cls$\cdot$B2} the classifier is being asked to learn from 16 positives in 224 rows, roughly three
 per fold.
 \end{scopebox}
 
@@ -107,7 +102,7 @@ per-feature definitions, together with the exact order of operations inside a
 cross-validation fold, so that the leakage controls described below can be
 checked rather than taken on trust.
 
-\subsection{Two features do not exist on WebArena, and this matters twice}
+\subsection{The features that do not exist on WebArena matter twice}
 \label{sec:matched-features}
 
 WebArena carries no reference images and no difficulty annotation
@@ -116,8 +111,7 @@ WebArena carries no reference images and no difficulty annotation
 ones. We therefore drop \texttt{has\_reference\_image} and
 \texttt{reasoning\_difficulty} on \emph{every} cell and refit all eight, giving
 a matched 18-feature set. The 20-feature VisualWebArena results are reported
-separately and are not a subset of the matched table --- every number was
-recomputed.
+separately and are not a subset of the matched table: every number was recomputed.
 
 \begin{table}[t]
 \centering\small
@@ -142,8 +136,7 @@ Cell & 20 features (VWA-only) & 18 features (matched) & $\Delta$ \\
 
 \begin{scopebox}
 \textbf{First, the order of events, because it matters for whether this is
-leakage.} The two features were dropped because WebArena \emph{does not have
-them} --- a property of the corpus, established by the EDA in
+leakage.} The two features were dropped because WebArena \emph{does not have them}, a property of the corpus established by the EDA in
 Chapter~\ref{ch:system} before any model was fitted, and visible in
 Figure~\ref{fig:f4}(B). They were not dropped because they performed too well.
 Had we inspected out-of-fold importances and removed whatever looked suspicious,
@@ -152,17 +145,14 @@ nesting claim in Section~\ref{sec:protocol} would be void. The admissibility
 rule is availability at serving time, applied to the feature set as a whole.
 
 \textbf{What we then found is one of this chapter's main results.} In the
-20-feature configuration the strongest single feature in 5 of 6
-cells is \texttt{reasoning\_difficulty} --- \emph{VisualWebArena's own
-human-authored annotation of how hard the task is}. A router reading it is
+20-feature configuration the strongest single feature in 5 of 6 cells is \texttt{reasoning\_difficulty}, \emph{VisualWebArena's own human-authored annotation of how hard the task is}. A router reading it is
 reading the benchmark's statement of the answer's difficulty, which no
 deployment possesses. Removing it, and the equally unavailable reference-image
 flag, is what causes the fall in Table~\ref{tab:feature-ablation}. This is
 independent evidence for the mechanism argued in Chapter~\ref{ch:disc}, and it
 is also the cheapest available rebuttal to the objection that our negative
 result is merely undersampling: the issue is not that there are too few rows,
-but that the one column reliably carrying signal does not exist outside the
-benchmark.
+but that the one column with reliable signal in it does not exist outside the benchmark.
 \end{scopebox}
 
 \begin{figure}[t]
@@ -225,18 +215,15 @@ chosen against inner-CV out-of-fold scores over training rows only; and the
 outer-test rows are scored by a model fitted on training rows alone. Nothing
 that touches an outer test fold has seen it.
 
-This matters because we previously got it wrong. An earlier revision of this
-analysis reported a ``nested'' operating point while reusing globally computed
-out-of-fold scores --- whose folds include the outer test rows --- together with
-a whole-cell choice of best and cheapest mode. The numbers below supersede it.
+We previously got this wrong, which is why it is spelled out. An earlier revision of this
+analysis reported a ``nested'' operating point while reusing globally computed out-of-fold scores, whose folds include the outer test rows, together with a whole-cell choice of best and cheapest mode. The numbers below supersede it.
 We record the correction because it changes the interpretation of a headline
 number, not to narrate debugging.
 
 \paragraph{One thing nesting exposed.} The best mode is \emph{not stable across
 folds}. On \cell{red$\cdot$B0} the five outer folds select \mDOM{}, \mDOM{},
 \mSoM{}, \mSoM{}, \mDOM{}. A pipeline that picks one best mode from all realised
-outcomes is not merely optimistic about its threshold --- it reports a mode
-choice its own resampling does not reproduce.
+outcomes is not merely optimistic about its threshold: it reports a mode choice its own resampling does not reproduce.
 
 \paragraph{Two controls, neither optional.} \emph{(i)} A bundle-permutation
 null at $B=10{,}000$: the permutation unit is the whole task bundle
@@ -277,16 +264,14 @@ Cell & $n$ & solvable \% & AUROC (LR) & best single feature & that feature \\
 
 The answer is a qualified yes, and the qualification is the interesting part.
 AUROC spans 0.526--0.758. In five cells the fitted model beats its own best
-single covariate; in three it does not, and in \cell{red$\cdot$B2} it is beaten
-by 0.264 --- the single feature \texttt{intent\_token\_count} scores 0.790 while
+single covariate; in three it does not, and in \cell{red$\cdot$B2} it is beaten by 0.264: the single feature \texttt{intent\_token\_count} scores 0.790 while
 the model scores 0.526, barely above chance.
 
 \begin{scopebox}
 \textbf{A retraction of our own earlier reading.} An earlier version of this
 analysis summarised these results as ``AUROC 0.65--0.72 in five of six cells'',
 which implies adequate discriminative power throughout. The sixth cell,
-\cell{red$\cdot$B2}, scores 0.483--0.526 depending on feature set --- at or below
-chance --- and it is precisely the cell whose saving survives significance
+\cell{red$\cdot$B2}, scores 0.483--0.526 depending on feature set, at or below chance, and it is precisely the cell whose saving survives significance
 testing in Section~\ref{sec:permutation}. Global discrimination and tail
 usefulness come apart on this data. The corrected statement is
 Section~\ref{sec:auroc-not-answer}.
@@ -329,8 +314,7 @@ $p=0.0004$ against threshold $0.0063$. The next cell, \cell{red$\cdot$B1} at
 $p=0.033$ against $0.0071$, does not reject, and the procedure stops.
 
 Two cells (\cell{cls$\cdot$B2}, \cell{cls$\cdot$B1}) have a signal-free pipeline
-reproducing at least 80\% of the observed saving --- in \cell{cls$\cdot$B1} the
-shuffled median actually exceeds the observed value. One cell
+reproducing at least 80\% of the observed saving; in \cell{cls$\cdot$B1} the shuffled median actually exceeds the observed value. One cell
 (\cell{red$\cdot$B0}) yields no saving at all.
 
 \begin{figure}[t]
@@ -349,8 +333,7 @@ shuffled median actually exceeds the observed value. One cell
 \section{Why AUROC is not the answer here}
 \label{sec:auroc-not-answer}
 
-The one cell that survives, \cell{red$\cdot$B2}, has an AUROC of 0.526 --- below
-its own best single covariate at 0.790. That is not a contradiction; the two
+The one cell that survives, \cell{red$\cdot$B2}, has an AUROC of 0.526, below its own best single covariate at 0.790. That is not a contradiction; the two
 quantities measure different things and this data pulls them apart.
 
 AUROC scores the \emph{global} ranking. The saving comes from the \emph{tail}.
@@ -361,8 +344,7 @@ thing triage needs. A precision--recall curve would separate these two situation
 where AUROC does not, and we report AUROC only because it is the quantity the
 routing literature reports; the policy tables in Chapter~\ref{ch:e2e}, not this
 column, are what the conclusion rests on.
-\cell{red$\cdot$B2} routes 192 of 203 tasks (95\%) to the cheap mode with no
-success loss --- in a cell where only 7.4\% of tasks are solvable by anything at
+\cell{red$\cdot$B2} routes 192 of 203 tasks (95\%) to the cheap mode with no success loss, in a cell where only 7.4\% of tasks are solvable by anything at
 all, so almost nothing in that 95\% was ever going to succeed. It differs from
 the free always-cheapest policy on 5\% of the allocation, and those 11 retained
 tasks happen to hold 5 of the cell's successes against always-cheapest's 4. The
@@ -371,9 +353,7 @@ permutation null is detecting that tail enrichment, not an ordered score.
 \begin{scopebox}
 \textbf{The honest phrasing.} It is \emph{not} ``the label is predictable, yet
 triage fails''. It is: \textbf{at 2--36\% base success, a high AUROC is neither
-necessary nor sufficient. What decides whether triage saves anything is whether
-a handful of tail tasks land on the right side --- and at $n=203$ that handful
-is four successes.}
+necessary nor sufficient. What decides whether triage saves anything is whether a handful of tail tasks fall on the right side, and at $n=203$ that handful is four successes.}
 \end{scopebox}
 
 This has a consequence for how the next chapter must be read. A classifier
@@ -387,12 +367,10 @@ scores.
 
 Every claim so far invites one reply, and it is the cheapest available way to
 dismiss a negative result: \emph{you did not measure a mechanism, you measured a
-small sample}. A cell with $n=203$ and 7\% solvable yields 15 positive
-which-mode labels; of course nothing fits. On that reading the whole result is
+small sample}. A cell with $n=203$ and 7\% solvable yields 15 positive which-mode labels, and nothing fits. On that reading the whole result is
 an artefact of a compute budget rather than a property of the regime.
 
-The objection deserves measurements, not prose, so we ran three --- each
-isolating a different thing it could mean (Figure~\ref{fig:f16}). Two of the
+The objection deserves measurements, not prose, so we ran three, each isolating a different thing it could mean (Figure~\ref{fig:f16}). Two of the
 three come back \emph{partly against} this dissertation, and we report them that
 way.
 
@@ -400,7 +378,7 @@ way.
 Thinning the training rows stratified while leaving each test fold intact gives a
 learning curve that isolates training size. Out-of-fold AUROC rises by $+0.032$
 to $+0.083$ between a quarter of the data and all of it. It is not flat: more
-rows would help. But the increments shrink --- in 9 of 12 curves the sweep from
+rows would help. But the increments shrink: in 9 of 12 curves the sweep from
 55\% to 100\% buys less than the sweep from 25\% to 55\%, despite covering the
 wider span of the two. Extrapolating the observed deceleration, doubling the
 benchmark again would be worth a few hundredths of AUROC, not a few tenths.
@@ -410,22 +388,19 @@ benchmark again would be worth a few hundredths of AUROC, not a few tenths.
 better than the same model fitted to \emph{permuted} labels does: an excess of
 $+0.075$ to $+0.116$ AUROC over the memorisation floor, $p \leq 0.01$ in five of
 six cells. The features are not noise. \textbf{So we cannot dispose of the
-objection by claiming there is nothing to learn} --- there is something, and a
-larger sample would learn more of it.
+objection by claiming there is nothing to learn}: there is something, and a larger sample would learn more of it.
 
 \paragraph{And yet it does not reach the result, for a reason that has nothing
 to do with sample size.} More data moves the learned predictor upward from
 AUROC $0.73$; the limit of that movement is a perfect predictor, AUROC $=1.00$.
-A perfect predictor of the triage label \emph{is} the oracle triage policy --- and
-Chapter~\ref{ch:e2e} measures what that policy achieves. It Pareto-beats
+A perfect predictor of the triage label \emph{is} the oracle triage policy, and Chapter~\ref{ch:e2e} measures what that policy achieves. It Pareto-beats
 always-cheapest in \textbf{1 of 8 cells}. The learned router manages 0 of 8, and
 the entire distance between them is at most one cell.
 
 \begin{scopebox}
 \textbf{The precise scope of the objection.} Undersampling explains the gap
 between AUROC $0.73$ and AUROC $1.00$. It cannot explain a boundary that the
-policy at AUROC $1.00$ also fails to cross. Since the load-bearing claim of this
-dissertation is the Pareto result and not the AUROC value, \textbf{the objection
+policy at AUROC $1.00$ also fails to cross. Since this dissertation rests on the Pareto result and not on the AUROC value, \textbf{the objection
 is correct about the predictor and irrelevant to the conclusion}. Conversely,
 any future work that reports a better router on this problem should be asked
 which of the two it improved.
@@ -453,7 +428,7 @@ The which-mode half of routing cannot be attempted: 4 of 6 cells have no
 trainable classifier, and the constraint is label supply
 (Chapter~\ref{ch:disc}).
 
-The triage half --- the easier half by construction --- is weakly predictable,
+The triage half, the easier half by construction, is weakly predictable,
 at AUROC 0.526--0.758, clearing its best single covariate in 5 of 8 cells. But
 most of the apparent predictability on VisualWebArena rests on two features no
 deployment possesses, and after removing them five of six cells fall. Under a
@@ -465,7 +440,6 @@ discrimination.
 predictable under a deployment-faithful information boundary, and that most of
 what looked like predictability was a benchmark annotation. Predictive
 performance is nonetheless the wrong terminal quantity: a router can rank well
-and still lose once false escalations, missed escalations and its own cost are
-priced in --- and, as \cell{red$\cdot$B2} shows, the converse also occurs.
+and still lose once false escalations, missed escalations and its own cost are priced in, and, as \cell{red$\cdot$B2} shows, the converse also occurs.
 Chapter~\ref{ch:e2e} therefore runs the policy end to end and asks whether it
 beats the fixed alternative a deployment already has for free.}

@@ -73,3 +73,46 @@ AUROC
 Pareto
 fixed-effect
 inverse-variance
+
+# --- Thesis (final_dissertation/tex) additions, curated 2026-08-11 -----------
+# Verified present with --term-audit before adding. These are the terms whose
+# synonym-substitution would silently change what the thesis measured: the
+# comparator name, the denominator name, and the two halves of the oracle.
+
+# The comparator and the policy ladder. "always-cheapest" is a named fixed
+# policy, not a description; "best single mode" is the other comparator and
+# the two are not interchangeable.
+always-cheapest
+best single mode
+triage
+which-mode
+escalation
+
+# Denominators. "scored set" and "run set" differ by the protocol exclusions
+# and the thesis uses both on purpose (Table 3.2); collapsing them would make
+# 205 and 203 look like an inconsistency.
+scored set
+run set
+complete-case
+
+# Ceiling and noise vocabulary.
+oracle ceiling
+drop-one
+rerun
+discordance
+exchangeability
+flippable
+
+# Router admissibility and supervision supply.
+serving-time
+admissibility
+minted
+bundle-permutation
+
+# Benchmarks and units. WebArena is a different benchmark from VisualWebArena.
+WebArena
+Set-of-Marks
+backbone
+episode
+step budget
+task success rate
