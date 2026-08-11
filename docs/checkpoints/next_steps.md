@@ -23,6 +23,39 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟣 2026-08-11 · **毕设全稿 v1 落地 (79 页) + Overleaf 接通 + 三家 AI 审完**（最新 handoff）
+>
+> chronicle → **笔记 §452** · 台账 9 条已录
+>
+> | | |
+> |---|---|
+> | **交付** | `final_dissertation/tex/` — 7 章 + 4 附录 + **17 图** + 33 条核验 bib, **79 页**, 编译 0 undefined / 0 overfull |
+> | **Overleaf** | 项目 `6a7a7331d2e6523a360245d4` 已接通并推送。**单向**: 真源在 repo, 改内容改 tex 再跑 `bash scripts/maintenance/overleaf_thesis_sync.sh` (先本地编译, 编不过拒绝推) |
+> | **审计** | Claude 7 / gemini 10 / codex 11 = 18 条, **全部修完**。Phase 4b 全量事实核验已做 |
+> | **git** | 分支 `fix/b1878-reddit-reference-image`, 未 push (需 user 确认) |
+>
+> ### 🔴 两条改了 headline 的结论 —— 写作/引用时用新值
+>
+> | 项 | 旧（勿用） | 新 |
+> |---|---|---|
+> | C1 成本口径 | 13.7–35.3% | **1.6–35.3%**（SR 平局按 MODES 列表序破平会选中更贵的对照; cls·B2 报 −23.4% 实为 −1.6%） |
+> | 噪声门槛 | 3.82–4.15pp (正态近似) | **4.02 / 4.02 / 4.46pp**（精确 Binom）⇒ 36 个 drop-one 过阈数 **3 → 1** |
+> | C1 的性质 | "天花板真实存在" | **"天花板的价格"** —— 六次重跑同一 mode 到 39.77%, 六个 mode oracle 43.30%, 残差 **3.53pp 低于自己的门槛**; 存活的是 oracle 每任务只花 1 个 episode 而重跑要 6 个 |
+> | C5 措辞 | "nothing to fit" | **"未通过 min_class_n=10 准入规则"**（去掉 filter 后 30/30 fold 都能拟合）· trainable → **minted** |
+>
+> ### 下一步（按优先级）
+>
+> 1. **supervisor 反馈** — 稿子已在 Overleaf, 可直接发
+> 2. **页数预算** 仍等 AskUCL（公开资料查不到, 别再搜）
+> 3. rubric **#7**（Zekun Wu 原文进 bib + 文献图谱）· **#13**（逐个 setting 补 justify）
+> 4. 一条真 gap 仍未关: **欠采样竞争解释未排除**（学习曲线 + 无正则化模型的 in-sample 可分性, 纯离线可做, 不需新实验）
+>
+> ```bash
+> cd final_dissertation/tex && latexmk -pdf main.tex      # 79 页
+> bash scripts/maintenance/overleaf_thesis_sync.sh        # 推给导师
+> ```
+
+
 > ## 🟣 2026-08-10 · **毕设图 13 张落地 + 五处口径漂移修正**（最新 handoff）
 >
 > chronicle → **笔记 §450**（.1–.18，本 session 全部）

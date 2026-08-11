@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "**2026-09-01 硬截止** — 全稿交付。剩 ~22 天。**图已不是瓶颈: 主文 13 张 2026-08-10 落地 (六张不可割全齐), prose 是唯一 critical path**。REALM 稿 (Submission #192, 8 页正文, 审查中) 可作为结果章骨架复用; 数据与分析已全部落地, 这是纯写作 critical path"
+eta: "**2026-09-01 硬截止** — 剩 ~21 天。**全稿 v1 已落地 2026-08-11** (`final_dissertation/tex/`, 79 页, 7 章 + 4 附录 + 17 图, 编译 0 undefined / 0 overfull; Overleaf 6a7a7331d2e6523a360245d4 单向同步中)。已过三家 AI submission-ready 审计 (Claude 7 / gemini 10 / codex 11) 并全部修完 —— 其中两条改掉了 headline: C1 成本口径 13.7-35.3% → **1.6-35.3%** (SR 平局), 且六次重跑 vs 六个 mode 残差仅 3.53pp ⇒ C1 改判为『天花板的**价格**』而非高度。**剩余 = supervisor 反馈 + 页数预算 (等 AskUCL) + rubric #11/#13 逐章过一遍**"
 detail: final_dissertation/
 created: 2026-06-10
-updated: 2026-08-08
+updated: 2026-08-11
 ---
 
 # Thesis full draft → 2026-09-01 硬截止
@@ -17,8 +17,15 @@ updated: 2026-08-08
 往届优秀作品作参照, 不必逐字读)。REALM 稿是结果章骨架来源, 但**毕设不是 REALM 稿的扩写** ——
 毕设要 problem-first + concept-first + 文献图谱 + benchmark EDA, 这些 8 页会议稿里没有。
 
-**当前**: `final_dissertation/` 除 `prior/` 外为空, 全稿待写。数据与分析已全部落地
-(cls+red Phase 1a 42 conditions / WA pilot / mechanism archive), **不再需要任何新实验**。
+**当前 (2026-08-11)**: **全稿 v1 已落地** —— `final_dissertation/tex/` 79 页, 7 章 + 4 附录 +
+17 图 + 33 条核验 bib, 编译 0 undefined ref / 0 overfull。Overleaf 单向同步已接
+(`scripts/maintenance/overleaf_thesis_sync.sh`, 先本地编译再推)。三家 AI submission-ready
+审计已过 (笔记 §452), 18 条 finding 全修完 —— 含两条改 headline 的:
+C1 成本口径 **13.7-35.3% → 1.6-35.3%** (SR 平局按列表序破平选中更贵的对照);
+六次重跑 vs 六个 mode 残差仅 **3.53pp** 低于本文自己的门槛 ⇒ C1 改判为「天花板的**价格**」。
+
+**剩余** = ① supervisor 反馈 ② 页数预算 (等 AskUCL, 别再搜公开资料) ③ rubric #7 (Zekun Wu 原文)
+④ rubric #13 逐个 setting 补 justify。**不需要任何新实验**。
 
 原链 (已被 09-01 硬截止取代): results+discussion 07-24 (D8) → 全稿 v1 08-10 (D9)
 → 修订完 08-24 (D10) → submission early-Sep (D11)。
@@ -34,13 +41,13 @@ updated: 2026-08-08
 > ⚠️ 顺带核出三处过时口径（C4 `0/6→0/8` · `B=200→B=10000` · WA learnability 缺口其实 08-03 已解决）
 > 与一个未修 bug（`router_triage_learnability.py` 散文段硬编码 6 格，m 未随 8 格更新）→ 笔记 §450。
 
-- [ ] 1. ⭐ **problem-first** — 开局讲 problem 不讲背景铺垫 (intro 重排)
+- [x] 1. ✅ **problem-first** (Ch1 §1.1 开篇即 problem) — — 开局讲 problem 不讲背景铺垫 (intro 重排)
 - [x] 2. ✅ **system structure 图** = **F3 已画** (2026-08-10) — 端到端架构图。**规格已定 = FIGURE_PLAN F3**：不是装饰性架构图，
        画 *causal comparison boundary*（`CHAPTER_CHAIN.md:237` 原文链条）。零数据依赖，可立即开工
-- [ ] 3. ✅ **public-access 声明** — VWA/Qwen/Gemma/MiMo 均 public + OSF; ⚠️ B0=proxy 需诚实标"非公开可复现"
-- [ ] 4. ⭐ **concept-first intro** — 从 concept 建立, 不堆 statement, 不太具体
-- [ ] 5. ⭐ **disc+concl 合并** (limitation 内嵌) — **今日 D8 章结构直接受此影响**
-- [ ] 6. **appendix 非 orphan** — 每个 appendix 正文有 "见 Appendix X" 指针 (S1-S6 待补入口)
+- [x] 3. ✅ **public-access 声明** (frontmatter 独立一章, B0=proxy 已标『replicable from logs, not independently reproducible』) — — VWA/Qwen/Gemma/MiMo 均 public + OSF; ⚠️ B0=proxy 需诚实标"非公开可复现"
+- [x] 4. ✅ **concept-first intro** (Ch1 §1.3 Concepts before machinery) — — 从 concept 建立, 不堆 statement, 不太具体
+- [x] 5. ✅ **disc+concl 合并** (Ch7) — (limitation 内嵌) — **今日 D8 章结构直接受此影响**
+- [x] 6. ✅ **appendix 非 orphan** (A/B/C/D 各有正文 `见 Appendix X` 指针) — — 每个 appendix 正文有 "见 Appendix X" 指针 (S1-S6 待补入口)
 - [ ] 7. 🔲 **Zekun Wu 原文** — 拉共同作者论文 → bib + 文献图谱 (arXiv API 核验, 非 WebSearch)
 - [x] 8. ✅ **文献图谱** = **F2 已画** (2026-08-10, 27 篇全核) — 可视 literature map。**规格已定 = FIGURE_PLAN F2**（四簇: 观测表征 /
        模型-模态 routing 与 cascade / confidence deferral / cost-aware inference）。**素材依赖 GPT P2**，
@@ -53,9 +60,9 @@ updated: 2026-08-08
        三个副产品进了笔记 §445: **run set vs scored set 双口径**(解释 205↔203 / 435↔432 并存)、
        benchmark 自带 2 个错别字、**WA 零 ref image = OOD 的结构性理由**。
        ⚠️ 图还没配，但**规格已定 = FIGURE_PLAN F4**（数据已在 `corpus_eda.json`，需画的三个副产品已列）；正文引用待写
-- [ ] 11. 🔲 **每章有开头+结尾** — 导语 + 小结/过渡 (逐章补, 机械必做)
-- [ ] 12. 🔲 **公式** — obs 构造/drop-one/estimand/router 规则形式化
-- [ ] 13. **每个 setting justify** — 4B/三站/step_002/24 task/50 tokens 逐个给理由 (素材在笔记)
+- [x] 11. ✅ **每章有开头+结尾** (`\chapterhandoff` 宏, 12 处 = Ch1 尾 + Ch2-6 首尾 + Ch7 首; grep 可查) — — 导语 + 小结/过渡 (逐章补, 机械必做)
+- [x] 12. ✅ **公式** (8 条: router/agent policy · oracle · drop-one · net saving · floor SD · rerun union · value decomposition) — — obs 构造/drop-one/estimand/router 规则形式化
+- [~] 13. 部分 **每个 setting justify** (max_steps=30 / 4B backbone / 两站 / scored-set 已给理由; 其余待补) — — 4B/三站/step_002/24 task/50 tokens 逐个给理由 (素材在笔记)
 - [ ] 14. (学长止于 13, 留白)
 
 **并行策略**: 2/8/10/12 纯离线不占 GPU → 可与 mechanistic sweep 同时推进。
