@@ -222,11 +222,16 @@ advantage comes from the tie-break rule alone.
 It is not a policy. It selects using $s_i^{(m)}$ for modes that were never run
 on task $i$, which no deployment can observe.
 
-It is also not free of its own label noise. Section~\ref{sec:noise-floor}
-measures 12.05--14.29\% task-level discordance between two runs of an
-\emph{identical} condition. The oracle's ``this mode solves this task'' labels
-inherit that instability, so part of even the retrospective gain is hindsight
-about a coin that would land differently next time.
+It is also not free of its own label noise, and the amount is measurable rather
+than rhetorical. Section~\ref{sec:noise-floor} measures 12.05--14.29\%
+task-level discordance between two runs of an \emph{identical} condition, from
+which Section~\ref{sec:six-vs-six} estimates that roughly 24\% of
+\cell{cls$\cdot$B0}'s tasks are flippable for a single mode. The oracle's
+``this mode solves this task'' labels inherit that instability, so a live rerun
+would not reproduce its choices task for task. Its \emph{triage} result is where
+this bites hardest: the ``zero success loss'' is zero on \emph{this} log,
+because the tasks it down-routes are the ones that failed in this run --- not the
+ones that fail in expectation.
 
 \begin{figure}[t]
   \centering
