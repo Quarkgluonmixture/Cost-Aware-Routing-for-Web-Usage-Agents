@@ -348,6 +348,15 @@ Section~\ref{sec:noise-floor} and, importantly, one we \emph{test} rather than
 assume: step-level determinism does not imply episode-level determinism, because
 an episode also carries site state and session lifetime.
 
+\paragraph{Why B2 is a control and not a third result.} An earlier framing of
+this study treated the interaction between backbone capability and
+representation as a third contribution in its own right, on the strength of a
+large B0-versus-B1 gap. That gap turned out to be a capability difference that
+appears under \emph{every} representation rather than an interaction with
+representation, so the framing was dropped and the small backbones were
+re-scoped as controls. B2 earns its place by differing from B1 in family while
+matching it in scale; it is not a third point on a capability curve.
+
 \paragraph{Why a 4B model at all.} B1 and B2 succeed on 0.45--14.29\% of tasks
 depending on site and mode. A reader may reasonably ask what a routing study
 learns from backbones this weak. The answer is that the base success rate is not
@@ -520,6 +529,75 @@ capture timestamp, and whether the artefact is gate-eligible or exploratory ---
 so a number lifted into prose can be traced to the run that produced it.
 Appendix~\ref{app:repro} lists the configuration manifest, model revision pins
 and artefact inventory.
+
+\section{Keeping the study honest}
+\label{sec:honesty}
+
+A negative result is worth exactly as much as the discipline that produced it. A
+reader who cannot see how we guarded against fooling ourselves has no reason to
+prefer our ``routing does not pay here'' to the more ordinary explanation that
+we measured badly. This section states the four rules that did that work, and it
+is deliberately explicit about which of them we fixed in advance and which we
+adopted only after something went wrong --- because that split is itself part of
+the answer.
+
+\paragraph{Fixed in advance, and externally witnessed.} The hypotheses, the
+primary gate, the analysis plan and the exclusion policy were written before the
+paper-grade data existed, and locked on 2026-05-18 by a repository tag and an
+OSF registration DOI minted while the data-collection status still read
+\emph{pending}. The protocol did not survive contact with the experiment
+unchanged --- it was revised ten times --- but each revision is a separate dated
+tag rather than a silent edit, so the difference between what we planned and
+what we did is a matter of public record instead of memory. That is the property
+that matters; an unamended preregistration on a four-month project would be less
+credible, not more.
+
+\paragraph{Fixed in advance: refuse rather than truncate.} Aggregators compare
+the SHA-256 of a condition's sorted scored task-identifier list against the
+cell's expected set and refuse anything that does not match, rather than
+computing a rate over whatever episodes happen to be present. A partial run
+therefore fails loudly instead of quietly shrinking a denominator.
+
+\paragraph{Adopted mid-project, after it caught us out: judge every effect
+against a measured repetition floor.} Nothing in the original plan required
+comparing an effect size to what rerunning an unchanged condition would produce.
+We introduced the requirement after replicating conditions revealed 12--14\%
+task-level disagreement between identical runs (Section~\ref{sec:noise-floor}),
+and it immediately cost us a result: the complementarity structure that an
+earlier version of this work advanced as a positive finding does not clear it
+(Section~\ref{sec:dropone}). The rule has since taken the ceiling claim down
+with it, from a statement about how high the ceiling is to one about what it
+costs (Section~\ref{sec:six-vs-six}).
+
+\paragraph{Adopted mid-project: adversarial audit by readers with no stake.}
+Before each milestone the draft and the code behind it were read cold by three
+independent model lineages, each writing its own claim-by-claim attack without
+access to the others' output. Their disagreements were the useful part --- the
+overlap was mostly things we already knew. Every finding was then checked against
+the artefacts by hand before being accepted, which was not ceremony: of the
+attacks that reached a fix, one had its own arithmetic wrong --- it reported a
+significance threshold of 4.91\pp{} where the exact calculation gives 4.02\pp{}
+--- and two were factually wrong about our pipeline, one of them claiming we had
+dropped a feature after noticing it performed too well when in fact the benchmark
+it had to transfer to does not carry that feature at all.
+
+\paragraph{What this bought, and what it does not guarantee.} The corrections
+these rules produced are not confined to a footnote; they are distributed through
+the chapters that follow, and are marked where they occur. They include the cost
+range in Section~\ref{sec:ceiling}, the significance threshold in
+Section~\ref{sec:floor-spread}, the complementarity claim in
+Section~\ref{sec:dropone}, the determinism assumption in
+Section~\ref{sec:noise-floor}, the cross-validation protocol in
+Section~\ref{sec:protocol}, the ``untrainable'' phrasing in
+Section~\ref{sec:which-half}, and the labelling rule in
+Section~\ref{sec:mechanism}. In every case the corrected version is weaker than
+the one it replaced.
+
+None of this makes the result true. A discipline that catches errors is evidence
+about the process, not about the world, and the errors it did not catch are by
+construction invisible to it. What it does establish is that the claims which
+survived were not the ones we wanted --- which is the only form of assurance a
+negative result can offer.
 
 \chapterhandoff{This chapter fixes the comparison boundary: task, agent, action
 space and accounting are held identical while the observation construction is
