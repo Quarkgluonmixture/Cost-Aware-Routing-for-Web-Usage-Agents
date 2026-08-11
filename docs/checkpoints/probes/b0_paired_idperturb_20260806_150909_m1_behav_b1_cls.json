@@ -1,0 +1,10 @@
+{
+  "purpose": "路线A paired id-perturbation step-0 replay (serving vs id-churn 拆分)",
+  "baseline": "B1",
+  "ts_utc": "2026-08-06T14:09:09Z",
+  "run_dir": "results/mechanistic/_obs_mirror/visualwebarena/B1_dom_classifieds_20260603_103630_477435114_112846_R17188/phase1_dom_router_0",
+  "n_per_group": 3,
+  "wall_seconds": 0,
+  "aggregate": {},
+  "results": []
+}

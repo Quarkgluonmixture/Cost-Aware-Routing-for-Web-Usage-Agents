@@ -29,7 +29,7 @@ updated: 2026-08-08
 >
 > | | |
 > |---|---|
-> | **交付** | `final_dissertation/tex/` — 7 章 + 4 附录 + **17 图** + 33 条核验 bib, **79 页**, 编译 0 undefined / 0 overfull |
+> | **交付** | `final_dissertation/tex/` — 7 章 + 4 附录 + **18 图** + 33 条核验 bib, **82 页**, 编译 0 undefined / 0 overfull |
 > | **Overleaf** | 项目 `6a7a7331d2e6523a360245d4` 已接通并推送。**单向**: 真源在 repo, 改内容改 tex 再跑 `bash scripts/maintenance/overleaf_thesis_sync.sh` (先本地编译, 编不过拒绝推) |
 > | **审计** | Claude 7 / gemini 10 / codex 11 = 18 条, **全部修完**。Phase 4b 全量事实核验已做 |
 > | **git** | 分支 `fix/b1878-reddit-reference-image`, 未 push (需 user 确认) |
@@ -48,7 +48,11 @@ updated: 2026-08-08
 > 1. **supervisor 反馈** — 稿子已在 Overleaf, 可直接发
 > 2. **页数预算** 仍等 AskUCL（公开资料查不到, 别再搜）
 > 3. rubric **#7**（Zekun Wu 原文进 bib + 文献图谱）· **#13**（逐个 setting 补 justify）
-> 4. 一条真 gap 仍未关: **欠采样竞争解释未排除**（学习曲线 + 无正则化模型的 in-sample 可分性, 纯离线可做, 不需新实验）
+> 4. ✅ **欠采样那条 gap 已关**（2026-08-11, 笔记 §453 + F16）——
+>    **`CLAIM_EVIDENCE_MATRIX` 已知攻击表现在是空的**。结论: 攻击**对预测器成立**
+>    (曲线仍在涨 +0.032~0.083, in-sample 确有信号 +0.075~0.116)，**对结论不成立**
+>    (更多数据的极限是 oracle, 而 oracle 只有 1/8 格进胜区)。
+>    顺带把 supply 约束定价 **2.1–4.2×** 语料 ⇒ "structural" 已降级为 "specification"。
 >
 > ```bash
 > cd final_dissertation/tex && latexmk -pdf main.tex      # 79 页
