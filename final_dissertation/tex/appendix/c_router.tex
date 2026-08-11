@@ -1,0 +1,114 @@
+\chapter{Router Feature Dictionary and Protocol Details}
+\label{app:router}
+
+\emph{Referenced from Sections~\ref{sec:features} and~\ref{sec:protocol}.} The
+main text names the feature families and states the nesting rules. This appendix
+gives the complete dictionary and the exact order of operations inside a fold,
+so that the leakage controls can be checked rather than taken on trust.
+
+\section{Complete feature dictionary}
+
+\begin{table}[h]
+\centering\small
+\caption{The 20 raw serving-time features. The matched 18-feature set used for
+all cross-benchmark comparisons drops the two marked $\dagger$, because
+WebArena supplies neither.}
+\label{tab:app-features}
+\begin{tabular}{@{}llp{7.2cm}@{}}
+\toprule
+Feature & type & definition \\
+\midrule
+\texttt{dom\_complexity}    & numeric & element count of the cheap structured observation \\
+\texttt{text\_length}       & numeric & character length of the structured text payload \\
+\texttt{tokens\_input\_text}& numeric & tokenised length of the text payload \\
+\texttt{intent\_token\_count}& numeric & tokenised length of the task instruction \\
+\texttt{reasoning\_difficulty}$^\dagger$ & numeric & benchmark-supplied human difficulty label \\
+\midrule
+\texttt{has\_reference\_image}$^\dagger$ & binary & task config supplies $\geq1$ reference image \\
+\texttt{intent\_search}     & binary & instruction matches a search predicate \\
+\texttt{intent\_compare}    & binary & comparison predicate \\
+\texttt{intent\_visual\_attribute} & binary & references a visual attribute \\
+\texttt{intent\_color}      & binary & references a colour \\
+\texttt{intent\_form\_fill} & binary & form-entry predicate \\
+\texttt{intent\_sort}       & binary & sorting predicate \\
+\texttt{intent\_filter}     & binary & filtering predicate \\
+\texttt{intent\_nav}        & binary & navigation predicate \\
+\texttt{intent\_temporal}   & binary & time or date reference \\
+\texttt{intent\_aggregate}  & binary & counting or aggregation predicate \\
+\texttt{intent\_compose}    & binary & content-creation predicate \\
+\texttt{intent\_question}   & binary & interrogative form \\
+\texttt{intent\_action\_word}& binary & imperative action verb \\
+\texttt{intent\_account\_action} & binary & account-management predicate \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Every feature is computable from the task instruction and the cheap structured
+observation. None requires running a model, constructing an image, or observing
+an outcome --- which is the admissibility condition of
+Section~\ref{sec:features}.
+
+\section{Order of operations inside one outer fold}
+
+For outer fold $k$ of 5, with training rows $T_k$ and test rows $V_k$
+(disjoint by task identifier):
+
+\begin{enumerate}
+\item Compute feature means and standard deviations on $T_k$ only; apply to both.
+\item Select the best-SR mode and the cheapest mode from success and cost
+      \emph{on $T_k$ only}.
+\item Run an inner 5-fold CV within $T_k$; fit the logistic regression on each
+      inner training split and score the inner held-out split.
+\item Choose the operating threshold $\tau$ against those inner out-of-fold
+      scores.
+\item Fit the final logistic regression on all of $T_k$.
+\item Score $V_k$, apply $\tau$, and credit each test task the outcome and cost
+      of the selected mode.
+\end{enumerate}
+
+Nothing computed at any step touches $V_k$ before step 6. The regression is
+$L_2$-regularised with the library default penalty; no hyperparameter is tuned
+against test rows, and the model is deliberately simple so that a negative
+result cannot be attributed to over-parameterisation.
+
+\paragraph{Mode instability across folds.} Step 2 re-selects the modes per fold,
+which exposes something a whole-cell pipeline hides: the selection is not
+stable. On \cell{red$\cdot$B0} the five outer folds choose \mDOM{}, \mDOM{},
+\mSoM{}, \mSoM{}, \mDOM{}. A pipeline that picks one best mode from all realised
+outcomes therefore reports a mode choice its own resampling does not reproduce.
+
+\section{The permutation null}
+
+The unit of permutation is the whole task bundle $(y,\ \mathrm{success},\
+\mathrm{cost})$ against the feature matrix $X$, at $B=10{,}000$ per cell, with
+$p$ computed by the plus-one Monte Carlo estimator $(k+1)/(B+1)$.
+
+Permuting $y$ alone is incorrect here and we record why, since it is the obvious
+implementation. The triage label is \emph{defined} by the per-mode outcomes; if
+$y$ is shuffled while success and cost stay attached to their original tasks,
+the null world contains a label disconnected from the quantities it summarises.
+The resulting error is not one-directional --- measured at $B=200$, moving from
+the $y$-only null to the bundle null shifted \cell{cls$\cdot$B1} from $0.478$ to
+$0.503$ and \cell{red$\cdot$B2} from $0.040$ to $0.005$, in opposite directions.
+
+The threshold sweep remains post hoc by construction. That is precisely why the
+null shares the same selection step: it measures how much of the observed saving
+a signal-free pipeline with the same post hoc freedom reproduces.
+
+\section{Which-mode label definitions}
+
+Two definitions were evaluated (Section~\ref{sec:robustness}).
+
+\begin{description}
+\item[Canonical] --- first success in the fixed order \texttt{[dom},
+  \texttt{phantom\_som}, \texttt{phantom\_text}, \texttt{phantom\_prompt},
+  \texttt{som}, \texttt{vision]}, documented as ascending prior cost.
+\item[Measured-cost] --- the cheapest successful mode by measured episode cost.
+\end{description}
+
+Supply is identical under both by construction, so only trainability can move:
+4 of 6 cells are untrainable under the canonical label and 5 of 6 under the
+measured-cost one. The measured-cost variant was examined and rejected as
+canonical because the resulting order is unstable across cells and because cost
+is endogenous to the outcome --- a mode that fails spends the full step budget
+and therefore looks expensive partly \emph{because} it failed.

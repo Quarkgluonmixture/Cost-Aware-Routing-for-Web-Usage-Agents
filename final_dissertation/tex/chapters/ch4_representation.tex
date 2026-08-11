@@ -1,0 +1,485 @@
+\chapter{Representation Value: How Much Is There to Route?}
+\label{ch:repr}
+
+\chapterhandoff{Chapter~\ref{ch:system} fixed a boundary in which representation
+is the only thing that varies. This chapter asks whether that variation is worth
+anything: do the modes succeed on different tasks, how much would perfect
+retrospective selection be worth, and --- the question that turns out to govern
+the answer --- how much of that is worth more than simply running one mode
+twice?}
+
+\section{No mode dominates}
+\label{sec:sr-per-mode}
+
+Table~\ref{tab:sr-per-mode} gives task success for all six modes across the six
+VisualWebArena cells. Read as a grid, its most useful property is a negative
+one: the column that wins is not the same column everywhere.
+
+\begin{table}[t]
+\centering\small
+\caption[Task success rate per mode and cell]{\textbf{Task success rate (\%) by
+mode, with successes/scored-set in parentheses.} The best mode per row is in
+bold. \mSoM{} wins four of six rows, but \mVis{} ties it on \cell{cls$\cdot$B2}
+and \mDOM{} wins \cell{red$\cdot$B2} outright --- and on the WebArena cells
+(Table~\ref{tab:oracle}) the winner is \mPT{} and \mDOM{}. Ordering is
+cell-specific, which is the precondition for routing to be worth anything.}
+\label{tab:sr-per-mode}
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Cell & $n$ & \mDOM{} & \mPP{} & \mPT{} & \mPS{} & \mSoM{} & \mVis{} \\
+\midrule
+\cell{cls$\cdot$B0} & 224 & 17.41 & 19.64 & 15.62 & 15.62 & \textbf{27.23} & 25.00 \\
+\cell{red$\cdot$B0} & 203 & 14.29 & 12.32 & 13.30 & 10.84 & \textbf{14.78} & 7.39 \\
+\cell{cls$\cdot$B1} & 224 & 6.25 & 6.70 & 7.59 & 6.70 & \textbf{14.29} & 12.50 \\
+\cell{red$\cdot$B1} & 203 & 5.91 & 5.42 & 5.91 & 5.91 & \textbf{7.39} & 2.46 \\
+\cell{cls$\cdot$B2} & 224 & 1.34 & 1.79 & 0.45 & 0.89 & \textbf{2.23} & \textbf{2.23} \\
+\cell{red$\cdot$B2} & 203 & \textbf{3.94} & 0.00 & 1.97 & 0.49 & 0.99 & 1.97 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations follow directly, and each constrains what can be claimed
+later.
+
+\paragraph{Base success is low, and this is the regime the dissertation is
+about.} Single-mode success spans 0.45\% to 27.23\% on VisualWebArena and
+reaches 35.58\% on WebArena. Every subsequent conclusion is scoped to that
+range; Section~\ref{sec:regime-boundary} states what would change outside it.
+
+\paragraph{The image-free modes do not replace the image-bearing one.} On four
+of six VisualWebArena cells \mSoM{} is the strongest single mode, and on
+\cell{cls$\cdot$B1} it beats the best image-free mode by 6.70\pp. Any reading of
+the phantom modes as ``\mSoM{} without the cost'' is contradicted by this table,
+and we do not advance one.
+
+\paragraph{The \cell{red$\cdot$B2} row is anomalous and we do not smooth it.}
+\mPP{} scores exactly zero and \mDOM{} outperforms \mSoM{} by 2.96\pp. At $n=203$
+with 8 total successes, the row is dominated by counting noise, and its
+appearance in later analyses --- including as the one cell whose learned router
+passes a permutation test in Chapter~\ref{ch:pred} --- should be read with that
+in mind.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f6_sr_heatmap.pdf}
+  \caption[Success rate across modes and cells]{%
+  \textbf{Success rate by mode and cell.} The same data as
+  Table~\ref{tab:sr-per-mode}, arranged so the absence of a dominant column is
+  visible at a glance. Each row is normalised within itself, because absolute
+  success varies by a factor of thirty across cells and an unnormalised map
+  would show only which backbone is stronger.}
+  \label{fig:f6}
+\end{figure}
+
+\section{Cost does not track success}
+\label{sec:cost-frontier}
+
+If the expensive modes bought success in proportion to their price there would
+be nothing to optimise --- one would simply pay for the best affordable mode.
+Figure~\ref{fig:f7} shows they do not. Within \cell{cls$\cdot$B0}, \mVis{} is
+the cheapest mode at \$0.0648/episode and reaches 25.00\%, while \mPS{} costs
+11.2\% more and reaches 15.62\%. Several modes are strictly dominated: they cost
+more than an alternative and succeed less.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f7_cost_sr_frontier.pdf}
+  \caption[Cost--success frontier per cell]{%
+  \textbf{Cost against success, one panel per cell.} Non-dominated modes are
+  connected; dominated modes are shown rather than hidden. Cost is
+  \texttt{total\_billed\_cost\_usd} per episode for B0 and the electricity
+  \texttt{total\_billed\_cost\_usd} per episode, and panels are never compared
+  across the API/local boundary (Section~\ref{sec:metrics}). Seven of eight
+  cells carry two or three non-dominated modes, which is the premise routing
+  depends on. The exception is instructive and is discussed below.}
+  \label{fig:f7}
+\end{figure}
+
+\paragraph{One cell has a single non-dominated mode, and it is the cell that
+matters most later.} On \cell{cls$\cdot$B2}, \mVis{} ties \mSoM{} on success
+(2.23\%) while costing 22.1\% less, and beats every other mode on both axes. The
+frontier collapses to one point. That is what a regime looks like when
+always-cheapest is not merely competitive but dominant, and
+Chapter~\ref{ch:e2e} shows it is the general shape of the problem rather than a
+quirk of one cell.
+
+\paragraph{The price ordering is not stable across cells either.} \mVis{} is
+cheapest in seven of eight cells but not on \cell{wa\_red$\cdot$B0}, where
+\mDOM{} is cheapest and \mVis{} is the fourth most expensive of six. And the
+spread between cheapest and dearest ranges from 11.6\% (\cell{cls$\cdot$B0}) to
+77.8\% (\cell{wa\_red$\cdot$B1}), so ``the cheap mode'' and ``the expensive
+mode'' name different amounts of money in different cells. Cost is an outcome of
+the interaction, not a property of the representation --- which is why every
+cost figure here is measured per episode rather than assumed from a
+context-length calculation.
+
+\section{The modes solve different tasks}
+\label{sec:complementarity}
+
+Success rates are marginals; routing needs the joint. Across
+\cell{cls$\cdot$B0}, 97 of 224 tasks are solved by at least one mode, and 68 of
+those by more than one --- so 29 tasks are solved by exactly one mode and lost
+entirely if that mode is not in the portfolio. The equivalent counts for the
+other cells appear in Table~\ref{tab:oracle}; the share of tasks with more than
+one solver ranges from 1.5\% (\cell{red$\cdot$B2}) to 34.6\%
+(\cell{wa\_red$\cdot$B0}).
+
+The proportion of tasks that \emph{nothing} solves is the more consequential
+number, and it is large: 48.1\% on the most capable cell and 92.9\% on the
+weakest. Most of the benchmark is out of reach of every mode, and any policy's
+room for manoeuvre is confined to the remainder.
+
+\section{The retrospective ceiling}
+\label{sec:ceiling}
+
+Selecting per task with hindsight (Equation~\ref{eq:oracle}) gives the most that
+perfect selection could ever be worth.
+
+\begin{table}[t]
+\centering\small
+\caption[Oracle ceiling across all eight cells]{\textbf{The ceiling, in every
+cell, on both benchmarks.} $\Delta$SR is the retrospective oracle against the
+best single mode; $\Delta$cost is the cost of the cost-tie-broken oracle against
+the same comparator. The direction is consistent across three backbones, two
+model families, two benchmarks and two deployment classes.}
+\label{tab:oracle}
+\begin{tabular}{@{}lrlrrrr@{}}
+\toprule
+Cell & $n$ & best single & $\Delta$SR & $\Delta$cost & $>1$ solver & no solver \\
+\midrule
+\cell{cls$\cdot$B0}     & 224 & \mSoM{} 27.23\% & $+16.07$\pp & $-20.2$\% & 30.4\% & 56.7\% \\
+\cell{red$\cdot$B0}     & 203 & \mSoM{} 14.78\% & $+11.33$\pp & $-13.7$\% & 17.7\% & 73.9\% \\
+\cell{cls$\cdot$B1}     & 224 & \mSoM{} 14.29\% & $+10.27$\pp & $-30.8$\% & 12.9\% & 75.4\% \\
+\cell{red$\cdot$B1}     & 203 & \mSoM{} \phantom{0}7.39\% & $+4.43$\pp & $-35.3$\% & \phantom{0}8.4\% & 88.2\% \\
+\cell{cls$\cdot$B2}     & 224 & \mSoM{} \phantom{0}2.23\% & $+4.91$\pp & $-23.4$\% & \phantom{0}1.8\% & 92.9\% \\
+\cell{red$\cdot$B2}     & 203 & \mDOM{} \phantom{0}3.94\% & $+3.45$\pp & $-26.6$\% & \phantom{0}1.5\% & 92.6\% \\
+\midrule
+\cell{wa\_red$\cdot$B0} & 104 & \mPT{} 35.58\% & $+16.35$\pp & $-26.9$\% & 34.6\% & 48.1\% \\
+\cell{wa\_red$\cdot$B1} & 104 & \mDOM{} 16.35\% & $+14.42$\pp & $-33.5$\% & 17.3\% & 69.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{scopebox}
+\textbf{Headline, with its comparator and its cell set attached.} A
+retrospective oracle over six observation modes improves task success by
+$+3.45$ to $+16.35\pp$ over the best single mode while spending 13.7--35.3\%
+less, in \textbf{8 of 8} cells spanning two benchmarks. The upper bound
+$+16.35\pp$ is \cell{wa\_red$\cdot$B0}; restricted to the six VisualWebArena
+cells the upper bound is $+16.07\pp$ (\cell{cls$\cdot$B0}). Both figures are
+correct and they index different cell sets, so neither may be quoted without
+saying which. \textbf{And it must be read next to Section~\ref{sec:noise-floor}:
+a single rerun of one unchanged mode already buys 2.0--7.6\pp{} of this.}
+\end{scopebox}
+
+\subsection{Where the ceiling comes from}
+
+The oracle decomposes into the two halves defined in
+Section~\ref{sec:router-formulation}, and they behave very differently.
+
+\emph{Triage} --- keep the best-SR mode, but spend the cheapest on tasks that
+nothing will solve --- delivers 9.5--30.6\% cost reduction at exactly zero
+success change in all 8 cells. The zero is by construction, not a discovery: the
+policy only redirects tasks that no mode solves, so no success can be lost.
+Its interest lies elsewhere: its label is binary, defined on every task, and
+therefore \emph{never supply-constrained}. Chapter~\ref{ch:pred} tests exactly
+this half, which is the most favourable version of the problem we can pose.
+
+\emph{Which-mode} --- choose among the modes that do solve a task --- supplies
+the entire success gain. Its label exists only on solved tasks: 97 of 224 on
+\cell{cls$\cdot$B0}, and 15 on \cell{red$\cdot$B2}. That asymmetry is the seed
+of Chapter~\ref{ch:disc}'s mechanism.
+
+The full policy ladder per cell --- every fixed mode, both oracle halves, the
+cost-tie-broken oracle and the cascade --- is given in
+Appendix~\ref{app:ceiling}, which also isolates how much of the oracle's cost
+advantage comes from the tie-break rule alone.
+
+\subsection{Two things the ceiling is not}
+
+It is not a policy. It selects using $s_i^{(m)}$ for modes that were never run
+on task $i$, which no deployment can observe.
+
+It is also not free of its own label noise. Section~\ref{sec:noise-floor}
+measures 12.05--14.29\% task-level discordance between two runs of an
+\emph{identical} condition. The oracle's ``this mode solves this task'' labels
+inherit that instability, so part of even the retrospective gain is hindsight
+about a coin that would land differently next time.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f8_oracle_ceiling.pdf}
+  \caption[The ceiling with its repetition baseline]{%
+  \textbf{Oracle gain per cell, with the measured rerun band drawn alongside.}
+  Bars are the six-mode oracle gain over the best single mode --- that is,
+  \emph{five arms added}. The shaded band is what \emph{one} rerun arm of an
+  unchanged mode buys, measured on replicated conditions
+  (Section~\ref{sec:noise-floor}). The band is drawn beside the bars and not
+  subtracted from them: the two quantities differ in arm count, and the
+  subtraction would be exactly the arithmetic our own noise inventory forbids.
+  The like-for-like one-arm comparison is Figure~\ref{fig:f10b}.}
+  \label{fig:f8}
+\end{figure}
+
+\section{Each mode's irreplaceable contribution}
+\label{sec:dropone}
+
+Drop-one (Equation~\ref{eq:dropone}) asks what removing a mode from the
+portfolio costs. Table~\ref{tab:dropone} gives all 36 values with bootstrap
+intervals.
+
+\begin{table}[t]
+\centering\small
+\caption[Drop-one contribution per mode and cell]{\textbf{Drop-one loss
+(\pp) with bootstrap 95\% intervals.} Positive means the mode solves something
+no other mode solves. Direction is consistent --- 32 of 36 values are positive,
+and 14 of 18 among the phantom modes --- but magnitude is small: only three
+values reach the 3.82\pp{} threshold derived in Section~\ref{sec:noise-floor},
+and all three are baseline modes. \emph{These rows are produced from a
+complete-case aggregation flagged} \texttt{NON\_PAPER\_GRADE} \emph{in the
+artefact header; we surface that rather than dropping it.}}
+\label{tab:dropone}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Cell & \mDOM{} & \mPP{} & \mPT{} & \mPS{} & \mSoM{} & \mVis{} \\
+\midrule
+\cell{cls$\cdot$B0} & 1.79 & 2.68 & 0.89 & 0.89 & 2.68 & \textbf{4.02} \\
+                    & \tiny[0.00,\,3.57] & \tiny[0.89,\,4.91] & \tiny[0.00,\,2.23] & \tiny[0.00,\,2.23] & \tiny[0.89,\,4.91] & \tiny[1.79,\,6.70] \\
+\cell{red$\cdot$B0} & 1.48 & 0.99 & 0.99 & 0.99 & 1.97 & 1.97 \\
+                    & \tiny[0.00,\,2.96] & \tiny[0.00,\,2.46] & \tiny[0.00,\,2.46] & \tiny[0.00,\,2.46] & \tiny[0.49,\,3.95] & \tiny[0.49,\,3.94] \\
+\cell{cls$\cdot$B1} & 0.45 & 0.89 & 0.45 & 1.34 & \textbf{4.46} & \textbf{4.02} \\
+                    & \tiny[0.00,\,1.34] & \tiny[0.00,\,2.23] & \tiny[0.00,\,1.34] & \tiny[0.00,\,3.13] & \tiny[1.79,\,7.14] & \tiny[1.77,\,7.14] \\
+\cell{red$\cdot$B1} & 0.49 & 0.99 & 0.49 & 0.00 & 0.49 & 0.99 \\
+                    & \tiny[0.00,\,1.48] & \tiny[0.00,\,2.46] & \tiny[0.00,\,1.48] & \tiny[0.00,\,0.00] & \tiny[0.00,\,1.48] & \tiny[0.00,\,2.46] \\
+\cell{cls$\cdot$B2} & 0.45 & 0.00 & 0.00 & 0.45 & 2.23 & 2.23 \\
+                    & \tiny[0.00,\,1.34] & \tiny[0.00,\,0.00] & \tiny[0.00,\,0.00] & \tiny[0.00,\,1.34] & \tiny[0.45,\,4.46] & \tiny[0.45,\,4.03] \\
+\cell{red$\cdot$B2} & 2.96 & 0.00 & 0.49 & 0.49 & 0.49 & 1.48 \\
+                    & \tiny[0.99,\,5.42] & \tiny[0.00,\,0.00] & \tiny[0.00,\,1.48] & \tiny[0.00,\,1.48] & \tiny[0.00,\,1.48] & \tiny[0.00,\,3.45] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{scopebox}
+\textbf{This is a downgraded claim, and the downgrade is ours.} An earlier
+reading of these data --- reported in our own project record --- described the
+phantom modes as forming a structurally independent routing region, on the basis
+that their drop-one contributions were consistently positive. Consistency of
+\emph{direction} survives: 14 of 18 phantom arm--cell values are positive. But
+the pooled two-axis effects are $1.35\pm0.32$\pp{} and $2.09\pm0.43$\pp{}
+(fixed-effect pool over the six cells). Those sit four to five standard errors
+from zero --- so the structure is not a null result --- and still below the most
+permissive repetition floor we measure (2.0\pp). Only 3 of 36 drop-one values
+reach the 3.82\pp{} threshold at which a single rerun would be unlikely to
+produce the effect on its own. Precision is not the problem; magnitude is. \textbf{The correct statement is therefore: we
+observe a directionally consistent complementarity structure whose magnitude
+does not exceed the repeated-sampling floor.} It is not advanced as a positive
+structural claim.
+\end{scopebox}
+
+Figure~\ref{fig:f9} makes the reason legible. The four text-side modes overlap
+heavily with each other because they differ only in text format and prompt
+style; the larger unique contributions come from \emph{crossing sides} ---
+\mSoM{} and \mVis{}, which are the only modes that send an image. Grouping the
+modes by what is actually transmitted turns an otherwise puzzling pattern into
+an expected one.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f9_drop_one_vs_floor.pdf}
+  \caption[Drop-one contribution against the noise threshold]{%
+  \textbf{Every drop-one value against the threshold it must clear.} Modes are
+  grouped by what is sent: four text-side modes (no image), one combined, one
+  visual. The vertical band is the 3.82--4.15\pp{} one-sided threshold derived
+  in Section~\ref{sec:noise-floor}. Almost every value sits left of it, and
+  every value that clears it is a baseline mode. The figure is built so that
+  consistent direction and insufficient magnitude cannot be mistaken for one
+  another.}
+  \label{fig:f9}
+\end{figure}
+
+\section{The floor: what does running the same thing twice buy?}
+\label{sec:noise-floor}
+
+The measurements above are differences between modes. To interpret them we need
+to know how large a difference appears between two runs of the \emph{same}
+mode. We therefore replicated identical conditions and compared their solve
+sets.
+
+\subsection{Measured discordance}
+
+Three arms of \cell{cls$\cdot$B0} have been run twice under an unchanged
+configuration, plus one WebArena pilot/full overlap
+(Table~\ref{tab:noise-floor}).
+
+\begin{table}[t]
+\centering\small
+\caption[Same-condition run-to-run floors]{\textbf{Two runs of one unchanged
+condition.} $\mathrm{self\_drop}(a\!\to\!b) = |\{a \text{ solves}\} \setminus
+\{b \text{ solves}\}| / n$ --- the same functional as
+Equation~\ref{eq:dropone}, so these are directly comparable to a one-arm
+addition. Discordance is the fraction of tasks on which the two runs disagree in
+either direction.}
+\label{tab:noise-floor}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Pair & scope & $n$ & $a\!\to\!b$ & $b\!\to\!a$ & discordance \\
+\midrule
+\cell{B0.cls.dom}    & B0 $\times$ classifieds & 224 & 7.14\pp & 4.91\pp & 12.05\% \\
+\cell{B0.cls.vision} & B0 $\times$ classifieds & 224 & 7.59\pp & 6.70\pp & 14.29\% \\
+\cell{B0.cls.som}    & B0 $\times$ classifieds & 224 & 5.36\pp & 7.59\pp & 12.95\% \\
+\cell{B1.wa-red}     & 5 modes $\times$ 10 shared tasks & 50 & 2.00\pp & 4.00\pp & \phantom{0}6.00\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two runs of an identical condition disagree on 12--14\% of tasks. The agent's
+decoding is greedy, so this is not sampling stochasticity; it is environment
+drift, session state and timing. We had previously recorded the belief that
+greedy decoding made local backbones bit-identical across reruns. Step-level
+determinism is real and was verified; \emph{episode}-level determinism does not
+follow, because an episode also carries site state, wall-clock and session
+lifetime. Table~\ref{tab:noise-floor} refutes the stronger belief, and it was
+our own.
+
+\subsection{One draw is not a bound}
+\label{sec:floor-spread}
+
+The measured $|\Delta\mathrm{SR}|$ between two runs of one condition spans
+0.89--2.23\pp. It is tempting to call that the noise floor and declare anything
+larger to be signal. That reasoning compares a draw to a draw.
+
+Under the exchangeability null --- the two runs are the same condition, so each
+discordant task flips either way with probability $\tfrac12$ --- the difference
+is $D=(2X-d)/n$ with $X\sim\mathrm{Binom}(d,\tfrac12)$, giving
+\begin{equation}
+  \mathrm{SD}(D)=\frac{\sqrt{d}}{n},
+  \label{eq:floor-sd}
+\end{equation}
+where $d$ is the discordant count. Table~\ref{tab:floor-spread} evaluates it.
+
+\begin{table}[t]
+\centering\small
+\caption[The spread of the repetition difference]{\textbf{What repetition
+\emph{could} deliver, not only what it did.} The observed $|\Delta$SR$|$ column
+is one draw of a random quantity whose own standard deviation is the next
+column. The one-sided 95\% point is the threshold an effect must reach before a
+single rerun would be unlikely to produce it alone.}
+\label{tab:floor-spread}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Pair & $n$ & discordant $d$ & obs.\ $|\Delta$SR$|$ & SD under null & one-sided 95\% \\
+\midrule
+\cell{B0.cls.dom}    & 224 & 27 & 2.23\pp & 2.32\pp & 3.82\pp \\
+\cell{B0.cls.vision} & 224 & 32 & 0.89\pp & 2.53\pp & 4.15\pp \\
+\cell{B0.cls.som}    & 224 & 29 & 2.23\pp & 2.40\pp & 3.95\pp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The upper edge of the observed band (2.23\pp) is the same order as one standard
+deviation (2.32--2.53\pp). \textbf{Clearing the band is therefore not clearing
+the noise}: an effect must reach roughly 3.82--4.15\pp{} first. This threshold
+is itself a lower bound, since Equation~\ref{eq:floor-sd} assumes only
+exchangeability and does not model the one-directional environment drift we also
+observe. Appendix~\ref{app:noise} gives the derivation, separates the two
+distinct floor quantities this literature tends to conflate, and states which
+comparisons each one licenses.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.72\textwidth]{fig_f10_rerun_discordance.pdf}
+  \caption[Run-to-run discordance on identical conditions]{%
+  \textbf{Two runs of the same condition disagree on 12--14\% of tasks.}
+  Per-pair discordance for the three replicated \cell{cls$\cdot$B0} arms.
+  Decoding is greedy; this is environment and session variation, not sampling.}
+  \label{fig:f10}
+\end{figure}
+
+\subsection{The like-for-like comparison}
+\label{sec:one-arm-margin}
+
+The honest test is arm-count matched. Starting from one mode, what does adding
+\emph{one} more arm buy --- if that arm is a different representation, versus if
+it is a rerun of the same representation? Both are
+$|\{\text{added}\}\setminus\{\text{baseline}\}|/n$, the same functional at the
+same arm count on the same tasks.
+
+On \cell{cls$\cdot$B0}, starting from \mSoM{} at 27.23\%: adding the best
+distinct representation (\mDOM{}) buys $7.14\pp$; adding a rerun buys
+$4.91$--$7.59\pp$. The representation arm is \emph{inside} the rerun band.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f10b_one_arm_margin.pdf}
+  \caption[Representation arm versus rerun arm at matched arm count]{%
+  \textbf{One extra arm: a different representation, or the same one again?}
+  Both bars are $|\{\text{added}\}\setminus\{\text{baseline}\}|/n$ on the same
+  cell, same $n$, same functional, same arm count --- the only comparison the
+  data licenses. On \cell{cls$\cdot$B0} the distinct representation lands inside
+  the rerun band. The formal relationship to \mbox{pass@$k$}
+  \citep{kulal2019spoc, chen2021codex} is direct: adding a rerun arm is
+  \mbox{pass@2} of one mode, and the question is whether a second
+  \emph{representation} outperforms a second \emph{attempt}.}
+  \label{fig:f10b}
+\end{figure}
+
+\begin{scopebox}
+\textbf{What this licenses, and what it does not.} \emph{Licensed} on
+\cell{cls$\cdot$B0}: at the one-arm margin, a distinct representation is worth
+no more than a rerun of the same representation. \emph{Not licensed}: ``the
+whole six-mode ceiling is noise''. The ceiling adds \emph{five} arms; we hold
+\emph{one} rerun arm, and reruns have their own diminishing returns. We report
+the five-arm gain with its arm count attached and never set it against a
+one-rerun floor. Constructing the six-arm comparison would require six replicate
+runs of one mode, which we do not have.
+\end{scopebox}
+
+\section{What the WebArena cells add, and what they do not}
+\label{sec:wa-scope}
+
+The two WebArena cells extend the ceiling result to a second benchmark and, in
+\cell{wa\_red$\cdot$B0}, produce its largest value ($+16.35\pp$). They also
+show the mode ordering rearranging: the best single mode there is \mPT{}
+(35.58\%), an image-free mode, with \mSoM{} fourth. That is consistent with the
+corpus difference in Figure~\ref{fig:f4}(B) --- but consistency is not
+attribution, and we make the weaker claim
+(Section~\ref{sec:benchmarks}).
+
+The WebArena rerun figure in Table~\ref{tab:noise-floor} must be read with more
+care than the others, and we flag it rather than averaging it in. It pools five
+mode-specific pilot-versus-full comparisons over the same 10 registered pilot
+tasks, giving 50 panels over ten distinct tasks, while the distinct-arm figure
+beside it is computed on 104 tasks starting from \mDOM{} --- whose own
+pilot-versus-full comparison shows zero flips in either direction. The 2--4\pp{}
+band is generated entirely by \mVis{} and \mPP{}. It should be read as
+\emph{some arms of this cell move by 2--4\pp{} under repetition}, not as a floor
+for \mDOM{}.
+
+\section{What this chapter establishes}
+\label{sec:ch4-summary}
+
+Three findings, in descending order of strength.
+
+\textbf{Strong.} A retrospective oracle over the six modes gains
+$+3.45$ to $+16.35\pp$ at 13.7--35.3\% lower cost, in 8 of 8 cells across two
+benchmarks, three backbones and two model families. The direction is not in
+doubt.
+
+\textbf{Qualified.} A single rerun of one unchanged mode buys 2.0--7.6\pp{} of
+that gain, and at the one-arm margin on the cell where we can test it, a
+distinct representation is worth no more than a rerun. The ceiling is real and
+smaller than it first appears.
+
+\textbf{Downgraded.} The three phantom modes contribute in a consistent
+direction (14 of 18 arm--cell values positive) but at a magnitude below the
+repetition floor. We report the structure and decline the structural claim.
+
+\chapterhandoff{The fixed-mode study establishes that retrospective selection
+has non-trivial headroom, and that a meaningful share of that headroom is
+purchasable by repetition rather than by representation. But an oracle chooses
+with knowledge of outcomes no deployed system can observe. The operational
+question is whether the need for a different representation leaves a detectable
+signature \emph{before} the expensive choice is made. Chapter~\ref{ch:pred}
+formulates that prediction problem and tests it under a protocol designed so
+that a negative answer cannot be blamed on leakage, and a positive answer
+cannot be manufactured by the threshold sweep.}

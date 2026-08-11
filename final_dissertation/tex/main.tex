@@ -1,0 +1,41 @@
+% =============================================================================
+%  MSc dissertation — Cost-Aware Routing for Web Usage Agents
+%  UCL MSc Artificial Intelligence for Sustainable Development (COMP0191)
+%
+%  Single source of truth: final_dissertation/tex/ in the P79 repository.
+%  Overleaf is a rendering / supervision layer, synced by
+%  scripts/maintenance/overleaf_thesis_sync.sh — do not edit on Overleaf while
+%  the content is unfrozen, or the two sources will drift.
+% =============================================================================
+\documentclass[11pt,a4paper,oneside]{report}
+
+\input{preamble}
+
+\title{When Is Expensive Perception Worth Paying For?\\
+       Measuring the Ceiling, the Predictability, and the Economics of\\
+       Representation Routing in Web Agents}
+\author{Jiaming Wei}
+\date{September 2026}
+
+\begin{document}
+
+\input{frontmatter}
+
+\input{chapters/ch1_introduction}
+\input{chapters/ch2_background}
+\input{chapters/ch3_system}
+\input{chapters/ch4_representation}
+\input{chapters/ch5_predictability}
+\input{chapters/ch6_endtoend}
+\input{chapters/ch7_discussion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{appendix/a_ceiling}
+\input{appendix/b_noise}
+\input{appendix/c_router}
+\input{appendix/d_reproducibility}
+
+\end{document}

@@ -1,0 +1,525 @@
+\chapter{Problem Formulation and Experimental System}
+\label{ch:system}
+
+\chapterhandoff{Chapter~\ref{ch:bg} showed that no existing programme selects
+page representation for a fixed agent using pre-acquisition signals. This
+chapter defines the system in which that selection can be measured. Its purpose
+is to make one thing auditable: which differences observed later are
+attributable to representation, and which are not.}
+
+\section{The comparison boundary}
+\label{sec:boundary}
+
+Every empirical claim in this dissertation rests on a single structural
+commitment, and it is worth stating before any implementation detail. Across all
+conditions we hold constant: the task and its initial environment state, the
+agent's backbone model and decoding parameters, the action space, the step
+budget, the browser and its viewport, the benchmark evaluator, and the
+cost-accounting boundary. We vary exactly one stage --- the construction of the
+observation handed to the model at each step.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f3_comparison_boundary.pdf}
+  \caption[The causal comparison boundary]{%
+  \textbf{What is varied and what is held identical.} Five pipeline stages carry
+  the episode from task to scored outcome. Four are grey and marked
+  \emph{same}; only observation construction differs across conditions. The
+  dashed boundary marks what is held identical, and cost is measured at the same
+  boundary as outcome --- so a mode that spends more to reach the same result is
+  visible as such rather than being absorbed. This is what licenses attributing
+  later differences to representation; it is not an architecture diagram of the
+  codebase.}
+  \label{fig:f3}
+\end{figure}
+
+That is the whole design. Everything in the rest of this chapter is a matter of
+making the commitment concrete and checkable.
+
+\section{Task, episode, step}
+\label{sec:task-def}
+
+A \emph{task} is a benchmark-defined user objective on a specific website, with
+a natural-language intent, a starting URL, an optional reference image, and a
+programmatic evaluator. An \emph{episode} is one attempted execution of one task
+from its initial state until success, an explicit stop action, an unrecoverable
+error, or exhaustion of the step budget. A \emph{step} is one
+observe--decide--act iteration.
+
+At step $t$ the agent receives observation $o_t$, its interaction history $h_t$,
+and emits an action $a_t$ from a fixed space: \texttt{click}, \texttt{type},
+\texttt{select}, \texttt{hover}, \texttt{scroll}, \texttt{go\_back},
+\texttt{go\_forward}, \texttt{goto}, \texttt{new\_tab}, \texttt{close\_tab},
+\texttt{stop}. The action space does not vary with the observation mode. This
+matters more than it may appear: if the image-carrying modes could emit
+coordinate clicks while the text modes could not, mode differences would
+partially be action-space differences, and no representation attribution would
+survive. All modes ground actions through element identifiers.
+
+\paragraph{Why a step budget of 30.} The budget must be large enough that
+capable modes are not truncated and small enough that hopeless episodes do not
+dominate the cost accounting. Thirty steps sits above the observed length
+distribution of successful episodes on both VisualWebArena sites; measured mean
+episode length across all conditions ranges from 13.7 to 28.4 steps
+(Table~\ref{tab:cost-per-mode}), so the budget binds for the failing tail rather
+than for the working modes. It is set identically for every condition, which is
+the property the comparison actually needs.
+
+\section{The controlled observation space}
+\label{sec:obs-space}
+
+An observation is assembled from three components, each of which we control
+independently.
+
+\paragraph{Text payload.} Either the accessibility-tree serialisation (AXTree),
+which lists elements with roles, names, states and identifiers; or the
+\sommarks{} listing, a flattened enumeration of interactable elements indexed in
+the Set-of-Marks convention. These are two encodings of overlapping information,
+and the difference is one of format rather than of quantity. Measured across
+every task at step~0 --- the only step at which two runs are guaranteed to be
+looking at the same page, since trajectories diverge as soon as the modes choose
+different actions --- the \sommarks{} payload is a median $1.008\times$ the
+AXTree payload on classifieds ($n=224$ tasks, 97.3\% of pairs within $\pm5$\%)
+and $1.004\times$ on reddit ($n=205$, 71.2\% within $\pm5$\%).
+
+\begin{scopebox}
+\textbf{Why only step~0.} Pooling the same ratio over all 2{,}506 mirrored
+(task, step) pairs gives a median of 0.980 and a 5th--95th percentile range of
+0.38--1.86. That dispersion is not payload variation: past step~0 the two runs
+have taken different actions and are describing \emph{different pages}, so the
+pooled figure compares things that are not comparable. The step-0 restriction is
+what makes the ratio a measurement rather than an average over a confound.
+\end{scopebox}
+
+\paragraph{Prompt framing.} Either the structured-text instruction set, which
+tells the model it is reading an accessibility tree and how to refer to elements;
+or the Set-of-Marks instruction set, which tells the model that elements carry
+visible numbered marks and how to refer to those.
+
+\paragraph{Image.} Either no image, an annotated screenshot with numbered
+overlays on candidate elements, or a raw un-annotated screenshot.
+
+\subsection{The six observation modes}
+
+Crossing text payload with prompt framing yields four image-free
+configurations; adding the two image-bearing conditions gives six modes in
+total (Table~\ref{tab:modes}).
+
+\begin{table}[t]
+\centering\small
+\caption[The six observation modes]{\textbf{The six observation modes.} The four
+image-free modes are a $2\times2$ of text payload $\times$ prompt framing; the
+grouping in the last column is verified from the step records rather than
+asserted --- all four text-side modes log
+\texttt{image\_payload\_bytes}~$=0$.}
+\label{tab:modes}
+\begin{tabular}{@{}llllc@{}}
+\toprule
+Mode & Text payload & Prompt framing & Image & Side \\
+\midrule
+\mDOM{}   & AXTree   & structured-text & ---             & text \\
+\mPP{}    & AXTree   & Set-of-Marks    & ---             & text \\
+\mPT{}    & \sommarks{} & structured-text & ---             & text \\
+\mPS{}    & \sommarks{} & Set-of-Marks    & ---             & text \\
+\mSoM{}   & \sommarks{} & Set-of-Marks    & annotated       & combined \\
+\mVis{}   & ---      & vision-oriented & raw             & visual \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Why this factorisation exists.} The three-mode comparison that this
+study began with --- structured text, Set-of-Marks, raw vision --- cannot
+separate three changes that it makes simultaneously. Moving from \mDOM{} to
+\mSoM{} changes the text encoding, the prompt, \emph{and} the image at once, so
+any difference is uninterpretable as evidence about any one of them. The four
+image-free modes exist to break that confound: \mPS{} is \mSoM{} with the image
+removed and nothing else changed, \mPT{} isolates the text encoding, and \mPP{}
+isolates the prompt. This is experimental refinement in response to an
+identified ambiguity, not a proposal for a new agent design.
+
+\paragraph{Naming.} We use \emph{phantom} for the three image-free modes other
+than \mDOM{} --- that is, \mPT{}, \mPP{} and \mPS{}. \mDOM{} is image-free too,
+so ``text side'' and ``phantom'' are not synonyms, and we do not use them
+interchangeably. \mPS{} is one configuration; the \emph{phantom routing space}
+is the region of the configuration space it inhabits.
+
+\section{Routing formulation}
+\label{sec:router-formulation}
+
+Let $\mathcal{M}$ denote the set of observation modes. At step $t$ the router
+observes a feature vector $z_t$ drawn only from information available
+\emph{before} any mode-specific observation is constructed, and selects a mode:
+\begin{equation}
+  m_t = \pi_r(z_t), \qquad m_t \in \mathcal{M},
+  \label{eq:router}
+\end{equation}
+after which the agent policy acts on the observation that mode produces:
+\begin{equation}
+  a_t = \pi_a\!\left(o_t^{(m_t)},\, h_t\right).
+  \label{eq:agent}
+\end{equation}
+The agent policy $\pi_a$ is identical in every condition; only $\pi_r$ changes.
+A \emph{fixed policy} is the degenerate case $\pi_r(z_t) \equiv m$ for some
+constant $m$.
+
+\subsection{The oracle and its decomposition}
+
+Let $s_i^{(m)} \in \{0,1\}$ be the success of task $i$ under mode $m$, and
+$c_i^{(m)}$ its measured cost. The retrospective oracle is
+\begin{equation}
+  \mathrm{SR}_{\text{oracle}} = \frac{1}{n}\sum_{i=1}^{n} \max_{m\in\mathcal{M}} s_i^{(m)},
+  \label{eq:oracle}
+\end{equation}
+which is an upper bound: it uses $s_i^{(m)}$ for modes it did not run. Its
+\emph{ceiling gain} is $\mathrm{SR}_{\text{oracle}} - \max_m \mathrm{SR}^{(m)}$,
+always reported against a named comparator.
+
+The oracle decomposes into two halves that differ sharply in how much
+supervision they require, and keeping them apart is load-bearing for
+Chapter~\ref{ch:pred}:
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{Triage} --- for each task, decide whether \emph{any} mode will
+      solve it; if not, spend the cheapest. The label is binary and is defined
+      on every task, so its supply is never scarce.
+\item \textbf{Which-mode} --- among tasks that some mode solves, decide which.
+      The label exists only where a success occurred, so its supply is bounded
+      by the success rate itself.
+\end{itemize}
+
+\subsection{Drop-one contribution}
+
+The unique contribution of mode $m$ to the oracle portfolio is what removing it
+costs:
+\begin{equation}
+  \Delta_m = \frac{1}{n}\sum_{i=1}^{n}
+    \left[\max_{m'\in\mathcal{M}} s_i^{(m')} - \max_{m'\in\mathcal{M}\setminus\{m\}} s_i^{(m')}\right].
+  \label{eq:dropone}
+\end{equation}
+$\Delta_m>0$ means $m$ solves at least one task nothing else solves.
+Equation~\ref{eq:dropone} is also, in form, the quantity that a \emph{rerun} of
+an existing mode would produce as an extra arm --- which is exactly why
+Chapter~\ref{ch:repr} can judge one against the other at matched arm count.
+
+\subsection{Net saving}
+
+For a named cost variable $C$,
+\begin{equation}
+  \mathrm{NetSaving} = C_{\text{fixed comparator}} -
+    \bigl(C_{\text{routed execution}} + C_{\text{router overhead}}\bigr),
+  \label{eq:netsaving}
+\end{equation}
+where the overhead term covers feature extraction, the routing model's own
+inference, any additional observation construction, and retries attributable to
+routing. Reporting the first two terms without the third is not an evaluation of
+a policy.
+
+\section{Benchmarks, sites and scope}
+\label{sec:benchmarks}
+
+\paragraph{Primary setting.} VisualWebArena \citep{koh2024visualwebarena}
+provides self-hosted, deterministic-evaluator web environments with
+visually-grounded tasks. We use two sites, \emph{classifieds} and
+\emph{reddit}. Both are self-hosted from the published images, so the
+environment does not drift under us in the way a live website would.
+
+\paragraph{External validation.} WebArena \citep{zhou2024webarena} reddit is
+used as a distribution-shift setting for two backbones. Its value here is
+specific and measurable rather than rhetorical: WebArena carries \emph{no
+reference images at all} (Figure~\ref{fig:f4}, panel B), whereas 29--40\% of
+VisualWebArena tasks supply one. That is a clean, countable difference in what
+the task \emph{specifies}.
+
+\begin{scopebox}
+\textbf{A caveat we impose on ourselves.} It is tempting to read ``no reference
+images'' as ``the visual demand that motivates Set-of-Marks is absent''. That
+conflates \emph{visual matching} --- comparing the page against a supplied
+target image, which is genuinely gone on WebArena --- with \emph{visual
+grounding} --- locating and acting on elements of the current screen, which is
+what the marks actually serve and which is still required. We therefore claim
+only a difference in task specification, not a difference in modality
+requirement. Establishing the stronger claim would need evidence that a
+text-only mode closes the gap to \mSoM{} on WebArena but not on VisualWebArena,
+which we do not have.
+\end{scopebox}
+
+\paragraph{Excluded sites.} VisualWebArena \emph{shopping} was run in an early
+phase but is not part of the primary analysis; its conditions predate several
+pipeline corrections and mixing them with post-correction data would compare
+different measurement regimes. Chapter~\ref{ch:disc} states what its absence
+costs the external-validity argument.
+
+\subsection{From corpus to scored set}
+\label{sec:scored-set}
+
+Two exclusion layers apply at different times, and the distinction is
+operational rather than cosmetic.
+
+\emph{N/A tasks} are removed at task-load time: these are string-match tasks
+whose reference answer is the literal ``N/A''. Our agent prompt provides no
+``this is impossible'' exit, so they are unpassable by construction, and the
+evaluator cannot distinguish a reasoned N/A judgement from an early exit. They
+are removed before the runner ever sees them.
+
+\emph{Protocol exclusions} are removed at analysis time only. The runner keeps
+collecting them deliberately, so the exclusion stays auditable and reversible.
+
+\begin{table}[t]
+\centering\small
+\caption[Corpus, run set and scored set]{\textbf{Two counts are both correct,
+and this dissertation uses both.} The \emph{run set} is what a completed run
+contains; the \emph{scored set} is the denominator of every reported success
+rate. This is the source of the twin numbers that appear in our logs (reddit as
+both 205 and 203).}
+\label{tab:scored-set}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Corpus & size & $-$N/A & run set & $-$protocol & \textbf{scored set} \\
+\midrule
+VWA classifieds & 234 & 10 & 224 & 0 & \textbf{224} \\
+VWA reddit      & 210 &  5 & 205 & 2 & \textbf{203} \\
+WA reddit       & 106 &  2 & 104 & 0 & \textbf{104} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Every success rate in this dissertation uses a scored-set denominator, and every
+condition within a cell is evaluated on the byte-identical task-identifier set,
+verified by SHA-256 of the sorted identifier list. Conditions that do not match
+the expected set are refused by the analysis pipeline rather than silently
+truncated.
+
+\subsection{What the corpora actually contain}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f4_corpus_eda.pdf}
+  \caption[Corpus characterisation across the six task sets]{%
+  \textbf{The corpora these conclusions rest on.} (A) The run-set/scored-set
+  distinction of Table~\ref{tab:scored-set}. (B) What each corpus annotates ---
+  WebArena carries neither reference images nor difficulty labels, which
+  Chapter~\ref{ch:pred} shows is not incidental. (C) Evaluator types.
+  (D) Instruction length. Two shipped annotation typos
+  (\texttt{mediun}, \texttt{hrad}) are reported rather than silently repaired,
+  because folding a typo into the nearest label would make a
+  difficulty-stratified analysis run on a different partition than the one it
+  documents.}
+  \label{fig:f4}
+\end{figure}
+
+Two properties of the corpora bear on later interpretation. First, task
+diversity is well below task count: VisualWebArena classifieds' 234 tasks are
+generated from 75 distinct templates, and WebArena reddit's 106 from 21. The
+template count is the honest denominator for ``how many different things are we
+asking''. Second, the annotation asymmetry in Figure~\ref{fig:f4}(B) reappears
+in Chapter~\ref{ch:pred} as the single most consequential fact about the
+feature set.
+
+\section{Models and inference configuration}
+\label{sec:models}
+
+Three backbones span two model families and two deployment classes
+(Table~\ref{tab:backbones}).
+
+\begin{table}[t]
+\centering\small
+\caption[Backbone models]{\textbf{Three backbones, two families, two deployment
+classes.} B1 and B2 are matched in scale and differ in family, which is what
+makes B2 a cross-family control rather than a third data point.}
+\label{tab:backbones}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Label & Model & Serving & Role \\
+\midrule
+B0 & \texttt{Qwen3-VL-235B-A22B} & metered API proxy & capability upper end \\
+B1 & \texttt{Qwen3-VL-4B}        & local, bf16       & small-model reference \\
+B2 & \texttt{google/gemma-3-4b-it} & local, bf16     & cross-family control at matched scale \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Decoding.} All three run greedy (\texttt{temperature}~$=0$,
+\texttt{do\_sample}~$=$~false) with \texttt{max\_new\_tokens}~$=4096$, seed 42.
+Greedy decoding is chosen so that observed run-to-run variation is attributable
+to the environment rather than to sampling --- a property we exploit in
+Section~\ref{sec:noise-floor} and, importantly, one we \emph{test} rather than
+assume: step-level determinism does not imply episode-level determinism, because
+an episode also carries site state and session lifetime.
+
+\paragraph{Why a 4B model at all.} B1 and B2 succeed on 0.45--14.29\% of tasks
+depending on site and mode. A reader may reasonably ask what a routing study
+learns from backbones this weak. The answer is that the base success rate is not
+a nuisance parameter here --- it is the independent variable that
+Chapter~\ref{ch:pred} identifies as the binding constraint. Having cells that
+span 0.45\% to 35.58\% single-mode success is what allows the label-supply
+mechanism to be observed as a gradient rather than asserted at one operating
+point.
+
+\paragraph{The proxy caveat, stated where it applies.} B0 is served through a
+metered API proxy whose protocol is a hybrid: an Anthropic-style endpoint and
+header with an OpenAI-style tool schema and top-level tool-call and log-prob
+fields. This is an implementation fact with two consequences we carry forward.
+First, B0 conditions are replicable from our archived logs but not
+independently reproducible without equivalent proxy access. Second, the proxy
+truncates log-probabilities to the top two tokens, so B0's confidence features
+populate four of six fields and entropy is undefined; the feature set used in
+Chapter~\ref{ch:pred} does not depend on the missing fields.
+
+\section{Metrics and the accounting boundary}
+\label{sec:metrics}
+
+\paragraph{Primary outcome.} Task success as returned by the benchmark
+evaluator, aggregated as task success rate (TSR) over the scored set. The
+evaluator is unchanged from the benchmark distribution.
+
+\paragraph{Primary cost.} \texttt{total\_billed\_cost\_usd}: the per-episode sum
+over steps of input and output tokens, priced at that backbone's per-1k
+schedule. For B0 the schedule is the proxy's actual billing rate, so the figure
+is money charged. For B1 and B2 the schedule is a device-amortisation rate, so
+the figure is a \emph{token-priced cost estimate} rather than an invoice. This
+single estimand is used in every policy comparison in
+Chapters~\ref{ch:repr}--\ref{ch:e2e}.
+
+\begin{scopebox}
+\textbf{Two rules govern every cost number in this dissertation.} \emph{(i)}
+Comparisons are made \emph{within} a cell only. Across the API/local boundary
+the schedules are different objects, and the ratio between them (82--107$\times$
+against measured electricity) is a statement about deployment mode, not model
+efficiency. \emph{(ii)} Token-priced cost and measured device energy are
+\emph{different quantities} and are never substituted for one another. The
+policy tables use the former; Section~\ref{sec:sustainability} and only that
+section uses the latter.
+\end{scopebox}
+
+\begin{table}[t]
+\centering\small
+\caption[Cost per mode, canonical estimand]{\textbf{Mean per-episode cost
+(\texttt{total\_billed\_cost\_usd}) by mode and cell.} Cheapest mode per column
+in bold. Two properties matter downstream: the cheapest mode is not the same
+everywhere (\mDOM{} on \cell{wa\_red$\cdot$B0}, \mVis{} elsewhere), and the
+spread between cheapest and dearest ranges from 11.6\% to 77.8\%, so ``the
+expensive mode'' means something different in each cell.}
+\label{tab:cost-per-mode}
+\footnotesize\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+Mode & \cell{cls$\cdot$B0} & \cell{red$\cdot$B0} & \cell{cls$\cdot$B1}
+     & \cell{red$\cdot$B1} & \cell{cls$\cdot$B2} & \cell{red$\cdot$B2}
+     & \cell{wa\_red$\cdot$B0} & \cell{wa\_red$\cdot$B1} \\
+\midrule
+\mDOM{}  & 0.0696 & 0.1015 & 0.0595 & 0.0733 & 0.0768 & 0.0948 & \textbf{0.0753} & 0.0658 \\
+\mPP{}   & 0.0685 & 0.1016 & 0.0630 & 0.0766 & 0.0845 & 0.0994 & 0.0775 & 0.0739 \\
+\mPT{}   & 0.0692 & 0.1058 & 0.0588 & 0.0695 & 0.0732 & 0.0885 & 0.0848 & 0.0615 \\
+\mPS{}   & 0.0721 & 0.1081 & 0.0597 & 0.0748 & 0.0846 & 0.0945 & 0.0850 & 0.0666 \\
+\mSoM{}  & 0.0724 & 0.1105 & 0.0603 & 0.0800 & 0.0908 & 0.1116 & 0.0911 & 0.0794 \\
+\mVis{}  & \textbf{0.0648} & \textbf{0.0981} & \textbf{0.0432} & \textbf{0.0524}
+         & \textbf{0.0707} & \textbf{0.0683} & 0.0864 & \textbf{0.0447} \\
+\midrule
+spread & $+11.6$\% & $+12.6$\% & $+46.1$\% & $+52.7$\%
+  & $+28.5$\% & $+63.3$\% & $+21.0$\% & $+77.8$\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Secondary measures.} Step count (mean 13.7--28.4 across all
+conditions); wall-clock latency, decomposed into model inference and environment
+interaction; device energy from NVML sampling at 0.5\,s for the locally served
+backbones; and a page-change diagnostic. We note explicitly that
+\texttt{page\_changed}~$=$~false means \emph{no detected page change} under our
+detector, not \emph{action failed}; the two are routinely conflated and are kept
+separate here.
+
+\paragraph{Measured energy, kept separate.} For B1 and B2 we additionally
+measure device energy directly, which yields a quantity the token schedule
+cannot: on classifieds, 0.00482--0.00777\,kWh per episode, and on reddit
+0.00830--0.01236\,kWh. Notably the energy ordering does not always match the
+token-priced ordering --- on \cell{cls$\cdot$B2}, \mVis{} is the cheapest mode by
+tokens and the \emph{most} energy-intensive by measurement, because a weaker
+backbone spends more wall-clock steps in it. That divergence is exactly why the
+two are not treated as proxies for one another.
+
+\subsection{What our energy measurement is and is not}
+\label{sec:sustainability}
+
+We measure GPU device power via NVML at 0.5\,s intervals during locally-served
+inference and integrate it over the episode. That yields \emph{GPU-device
+operational energy}. Multiplying by a stated grid carbon intensity (220\,g
+CO\textsubscript{2}e/kWh, UK average) yields a \emph{GPU-device operational
+emissions estimate}.
+
+It does not yield a carbon footprint. Excluded are: host CPU and memory, cooling
+and facility overhead (no PUE is applied), network, the browser environment's own
+compute, embodied emissions of the hardware, and --- for B0 entirely --- the
+remote data-centre's consumption, which we cannot observe. Following
+\citet{gupta2022chasing} and \citet{luccioni2022bloom}, the boundary chosen
+materially determines the number, so we name ours and decline the broader label.
+For the same reason, no token-count reduction anywhere in this dissertation is
+converted into an energy or emissions reduction: no hardware-independent
+conversion exists \citep{fernandez2025energy}.
+
+\section{Statistical design}
+\label{sec:stats}
+
+\paragraph{Pairing.} Every mode within a cell runs the same task identifiers, so
+all within-cell comparisons are paired at the task level, and all oracle and
+drop-one quantities are computed on the complete-case intersection.
+
+\paragraph{Stratification.} The unit of stratification is the \emph{cell} =
+(site, model). The unit of operational launch is the \emph{condition} = (site,
+model, mode). Six modes $\times$ 6 VisualWebArena cells $=36$ primary
+conditions, plus 12 WebArena conditions across 2 cells
+(Figure~\ref{fig:f5}). These two words are not interchangeable and we do not mix
+them.
+
+\paragraph{Uncertainty.} Drop-one contributions carry bootstrap 95\%
+intervals over tasks. Pairwise mode differences use McNemar's test on the paired
+binary outcomes. Where a family of tests is reported over cells, we apply Holm's
+step-down correction \citep{holm1979} with the family size stated explicitly at
+the point of use.
+
+\paragraph{The floor that governs everything.} No effect size in this
+dissertation is interpreted without reference to a measured same-condition
+noise floor, obtained by rerunning identical conditions and comparing the
+resulting solve sets. Section~\ref{sec:noise-floor} derives it. This is the
+single methodological decision that most changes the conclusions, and it changes
+them in the direction of weakening our own positive claims.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f5_design_matrix.pdf}
+  \caption[The experimental design matrix]{%
+  \textbf{What was run.} Rows are observation modes, columns are (site, model)
+  cells. Filled entries are completed conditions on the full scored set; the
+  two rightmost columns are the WebArena external-validation cells. Cell counts
+  are the statistical stratification units; each filled square is one
+  operational condition.}
+  \label{fig:f5}
+\end{figure}
+
+\section{Reproducibility}
+\label{sec:repro}
+
+Each step writes a structured JSONL record carrying the observation
+configuration, token counts, latencies, action, execution result and
+page-change diagnostic; each episode writes a summary with the evaluator's
+verdict. Analysis reads these records through a single deduplicating loader, so
+a restarted run cannot double-count. The runner and the analysis pipeline are
+separate processes with no shared state, and the figure scripts read only
+committed analysis artefacts.
+
+Two habits in the pipeline exist because their absence caused errors, and are
+worth naming since they affect what a reader can check. Conditions are refused
+by the aggregators unless their task-identifier SHA matches the cell's expected
+set, which converts a silent partial run into a loud failure. And every analysis
+artefact carries a provenance header recording the producing script, the
+capture timestamp, and whether the artefact is gate-eligible or exploratory ---
+so a number lifted into prose can be traced to the run that produced it.
+Appendix~\ref{app:repro} lists the configuration manifest, model revision pins
+and artefact inventory.
+
+\chapterhandoff{This chapter fixes the comparison boundary: task, agent, action
+space and accounting are held identical while the observation construction is
+varied. That boundary makes representation differences interpretable, but it
+does not make them \emph{interesting} --- if one mode dominated everywhere,
+selection would have nothing to select. Chapter~\ref{ch:repr} therefore asks the
+prerequisite empirical question: do these modes succeed and fail on different
+tasks, and if so, how much is that worth?}

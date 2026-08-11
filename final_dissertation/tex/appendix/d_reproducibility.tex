@@ -1,0 +1,100 @@
+\chapter{Reproducibility Manifest}
+\label{app:repro}
+
+\emph{Referenced from Sections~\ref{sec:models} and~\ref{sec:repro}.} This
+appendix lists what a reader needs to re-derive the numbers in this
+dissertation, and states honestly which parts they can re-execute and which they
+can only replay.
+
+\section{What can be reproduced, and at what level}
+
+\begin{table}[h]
+\centering\small
+\caption{Reproduction level per component.}
+\label{tab:app-repro-level}
+\begin{tabular}{@{}llp{6.6cm}@{}}
+\toprule
+Component & level & note \\
+\midrule
+Benchmarks & \textbf{re-executable} & VisualWebArena and WebArena self-hosted
+  from published images; task configs use placeholder hosts \\
+B1, B2 conditions & \textbf{re-executable} & open weights, revision-pinned,
+  greedy decoding, seed 42 \\
+B0 conditions & \textbf{replayable only} & metered API proxy; step logs and
+  billing archived, but re-execution needs equivalent access \\
+Analysis pipeline & \textbf{re-executable} & reads committed artefacts; no
+  network or model access required \\
+Figures & \textbf{re-executable} & each script reads a named artefact and
+  refuses to plot partial data \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Configuration pins}
+
+\begin{itemize}
+\item Step budget \texttt{max\_steps}~$=30$ for every condition; the base config
+  default is aligned to the same value so that a config omitting the override
+  cannot silently inflate cost by a third.
+\item Decoding: \texttt{temperature}~$=0.0$, \texttt{do\_sample}~$=$~false,
+  \texttt{max\_new\_tokens}~$=4096$, \texttt{seed}~$=42$.
+\item Viewport $1280\times720$; post-action settle 0.5\,s so that the
+  accessibility tree and screenshot describe the same stable page state.
+\item Local model weights pinned by Hugging Face revision SHA recorded in the
+  merged run configuration, so each run's metadata proves which weights loaded.
+\item Energy: NVML sampling at 0.5\,s; carbon intensity 220\,g/kWh (UK grid
+  average); electricity tariff \$0.12/kWh.
+\end{itemize}
+
+\section{Data integrity controls}
+
+Three controls exist because their absence produced errors during this work, and
+each converts a silent failure into a loud one.
+
+\paragraph{Task-set SHA matching.} Every condition's sorted scored task-identifier
+list is hashed; aggregators refuse a condition whose hash does not match the
+cell's expected set. A partial run therefore fails loudly instead of producing a
+smaller denominator.
+
+\paragraph{Deduplicating record reader.} All JSONL reads pass through one loader
+that removes restart duplicates and tolerates truncated trailing lines, so a
+resumed run cannot double-count steps.
+
+\paragraph{Provenance headers.} Every analysis artefact records its producing
+script, capture timestamp, and whether it is gate-eligible or exploratory. The
+drop-one artefact used in Table~\ref{tab:dropone} carries a
+\texttt{NON\_PAPER\_GRADE} flag, which is surfaced in the main text rather than
+dropped.
+
+\section{Artefact inventory}
+
+\begin{table}[h]
+\centering\small
+\caption{Where each reported quantity comes from.}
+\label{tab:app-artefacts}
+\begin{tabular}{@{}lp{9.2cm}@{}}
+\toprule
+Reported in & artefact \\
+\midrule
+Table~\ref{tab:sr-per-mode} & \texttt{cross\_sites/sr\_per\_mode.json} \\
+Table~\ref{tab:cost-per-mode} & \texttt{cross\_sites/cost\_per\_mode.json} \\
+Table~\ref{tab:oracle}, App.~\ref{app:ceiling} & \texttt{cross\_sites/router\_objective\_ordering.md} \\
+Table~\ref{tab:dropone} & \texttt{phantom\_paper/fig0c\_drop\_one\_bootstrap\_ci.csv} \\
+Tables~\ref{tab:noise-floor}, \ref{tab:floor-spread} & \texttt{cross\_sites/noise\_floor\_inventory.md} \\
+Tables~\ref{tab:auroc}, \ref{tab:permutation}, \ref{tab:e2e} & \texttt{cross\_sites/router\_triage\_learnability\_with\_wa.md} \\
+Table~\ref{tab:feature-ablation} & \emph{ibid.}\ and \texttt{cross\_sites/router\_triage\_learnability.md} \\
+Tables~\ref{tab:supply}, \ref{tab:scored-set} & \texttt{cross\_sites/router\_label\_supply\_diagnosis.md}, \texttt{benchmark\_eda/corpus\_eda.json} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Known limitations of the released artefacts}
+
+The mechanistic-interpretability results collected during an earlier phase of
+this project are \emph{not} released as evidence and are not cited anywhere in
+this dissertation. An implementation defect invalidated both the positive and
+negative conclusions in that layer; the affected cells were re-run but not
+re-aggregated, and quoting any figure from them before re-aggregation would be
+unsound. VisualWebArena shopping conditions are likewise archived but excluded
+from analysis, because they predate several pipeline corrections and mixing them
+with post-correction data would compare different measurement regimes.

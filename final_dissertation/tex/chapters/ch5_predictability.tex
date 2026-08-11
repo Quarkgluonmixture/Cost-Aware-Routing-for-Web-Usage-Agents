@@ -1,0 +1,374 @@
+\chapter{Predicting Representation Need}
+\label{ch:pred}
+
+\chapterhandoff{Chapter~\ref{ch:repr} established a retrospective ceiling and
+showed how much of it repetition already buys. The ceiling is computed with
+hindsight. This chapter asks whether the same decision can be made
+\emph{beforehand}, from signals a deployment would actually have, and is
+designed so that the answer --- whichever way it falls --- cannot be attributed
+to the protocol.}
+
+\section{Which half of the problem to attack}
+\label{sec:which-half}
+
+Section~\ref{sec:router-formulation} split the oracle into triage (does any mode
+solve this task?) and which-mode (given that one does, which?). They differ in
+one respect that determines what is even testable.
+
+The which-mode label is minted only by a solve event. Table~\ref{tab:supply}
+shows the consequence: across the six VisualWebArena cells the number of
+trainable which-mode labels ranges from 15 to 97, pooled total 260, and after
+requiring at least two classes with enough members to survive a five-fold split,
+\textbf{4 of 6 cells contain no trainable classifier at all}. There is nothing
+to fit, and no amount of estimator choice changes that.
+
+\begin{table}[t]
+\centering\small
+\caption[Which-mode label supply]{\textbf{The which-mode half fails before
+modelling begins.} A label exists only where some mode succeeded. A cell needs
+at least two classes each retaining $\geq10$ members under a five-fold split;
+four cells do not have them. Chapter~\ref{ch:disc} shows this is a supply
+constraint rather than a labelling artefact.}
+\label{tab:supply}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Cell & scored $n$ & trainable labels & solvable \% & classes surviving & trainable? \\
+\midrule
+\cell{cls$\cdot$B0} & 224 & 97 & 43.30 & 3 (\mDOM{}, \mPP{}, \mSoM{}) & yes \\
+\cell{red$\cdot$B0} & 203 & 53 & 26.11 & 1 (\mDOM{})                  & \textbf{no} \\
+\cell{cls$\cdot$B1} & 224 & 55 & 24.55 & 2 (\mDOM{}, \mSoM{})         & yes \\
+\cell{red$\cdot$B1} & 203 & 24 & 11.82 & 0                             & \textbf{no} \\
+\cell{cls$\cdot$B2} & 224 & 16 & \phantom{0}7.14 & 0                   & \textbf{no} \\
+\cell{red$\cdot$B2} & 203 & 15 & \phantom{0}7.39 & 0                   & \textbf{no} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The triage label is better posed. It is binary, defined on \emph{every}
+task, and available in all 8 cells including the WebArena ones, and it is the
+half that Chapter~\ref{ch:repr} showed to be worth 9.5--30.6\% cost at zero
+success loss under an oracle. \textbf{We therefore run the predictive study on
+triage} --- deliberately the most favourable framing available: two classes
+instead of six, a policy whose oracle version cannot lose success, and a
+comparator that is trivially implementable. A negative result here is stronger
+than a negative result on the harder half.
+
+\begin{scopebox}
+\textbf{But note what triage does \emph{not} escape.} Its positive class is the
+solvable set --- precisely the tasks that mint which-mode labels. The counts in
+the ``trainable labels'' column of Table~\ref{tab:supply} are simultaneously the
+which-mode label supply \emph{and} the triage minority-class size: 97, 53, 55,
+24, 16, 15. Both halves are rationed by the same scarce resource; triage merely
+divides it two ways instead of six. So triage is the easier problem, not a
+problem with more evidence behind it --- and on \cell{cls$\cdot$B2} the
+classifier is being asked to learn from 16 positives in 224 rows, roughly three
+per fold.
+\end{scopebox}
+
+\section{The serving-time feature contract}
+\label{sec:features}
+
+A router feature is admissible only if a deployment would possess it at decision
+time, before the expensive observation is constructed. Twenty raw features meet
+that bar on VisualWebArena:
+
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{Five numeric}: \texttt{dom\_complexity}, \texttt{text\_length},
+      \texttt{tokens\_input\_text}, \texttt{intent\_token\_count},
+      \texttt{reasoning\_difficulty}.
+\item \textbf{Fifteen binary}: \texttt{has\_reference\_image} plus fourteen
+      lexical intent predicates matched against the task instruction, namely
+      \texttt{intent\_}$\langle$\emph{search, compare, visual\_attribute,
+      form\_fill, sort, filter, nav, temporal, color, aggregate, compose,
+      question, action\_word, account\_action}$\rangle$. Their definitions are
+      in Appendix~\ref{app:router}.
+\end{itemize}
+
+All are computable from the task instruction and the cheap structured
+observation. None requires running a model, constructing an image, or observing
+an outcome. Appendix~\ref{app:router} gives the complete dictionary with
+per-feature definitions, together with the exact order of operations inside a
+cross-validation fold, so that the leakage controls described below can be
+checked rather than taken on trust.
+
+\subsection{Two features do not exist on WebArena, and this matters twice}
+\label{sec:matched-features}
+
+WebArena carries no reference images and no difficulty annotation
+(Figure~\ref{fig:f4}(B)). Zero-filling them there and comparing against the
+20-feature VisualWebArena numbers would place an unmatched column beside matched
+ones. We therefore drop \texttt{has\_reference\_image} and
+\texttt{reasoning\_difficulty} on \emph{every} cell and refit all eight, giving
+a matched 18-feature set. The 20-feature VisualWebArena results are reported
+separately and are not a subset of the matched table --- every number was
+recomputed.
+
+\begin{table}[t]
+\centering\small
+\caption[Effect of the matched feature set]{\textbf{Dropping two features that
+no deployment has costs most of the discriminative power.} AUROC for the triage
+label, out-of-fold, per cell. Five of six VisualWebArena cells fall, one by
+0.141.}
+\label{tab:feature-ablation}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Cell & 20 features (VWA-only) & 18 features (matched) & $\Delta$ \\
+\midrule
+\cell{cls$\cdot$B0} & 0.726 & 0.683 & $-0.043$ \\
+\cell{red$\cdot$B0} & 0.780 & 0.700 & $-0.080$ \\
+\cell{cls$\cdot$B1} & 0.732 & 0.705 & $-0.027$ \\
+\cell{red$\cdot$B1} & \textbf{0.864} & 0.723 & $\mathbf{-0.141}$ \\
+\cell{cls$\cdot$B2} & 0.642 & 0.646 & $+0.004$ \\
+\cell{red$\cdot$B2} & 0.615 & 0.526 & $-0.089$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{scopebox}
+\textbf{The drop is not an inconvenience; it is one of this chapter's main
+results.} In the 20-feature configuration the strongest single feature in 5 of 6
+cells is \texttt{reasoning\_difficulty} --- \emph{VisualWebArena's own
+human-authored annotation of how hard the task is}. A router reading it is
+reading the benchmark's statement of the answer's difficulty, which no
+deployment possesses. Removing it, and the equally unavailable reference-image
+flag, is what causes the fall in Table~\ref{tab:feature-ablation}. This is
+independent evidence for the mechanism argued in Chapter~\ref{ch:disc}, and it
+is also the cheapest available rebuttal to the objection that our negative
+result is merely undersampling: the issue is not that there are too few rows,
+but that the one column reliably carrying signal does not exist outside the
+benchmark.
+\end{scopebox}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f11_feature_set_ablation.pdf}
+  \caption[Two feature sets side by side]{%
+  \textbf{What the router loses when it is restricted to features a deployment
+  has.} Per-cell AUROC under the 20-feature VisualWebArena set and the matched
+  18-feature set. The two dropped features are the benchmark's own difficulty
+  annotation and its reference-image flag. Read together with
+  Figure~\ref{fig:f4}(B), which shows why they had to be dropped: WebArena has
+  neither.}
+  \label{fig:f11}
+\end{figure}
+
+\subsection{A matched set is not a matched support}
+
+Matching the feature \emph{set} does not match the feature \emph{support}. Five
+of the fourteen intent regexes have zero variance on the WebArena cells: they
+were written against VisualWebArena phrasing, and WebArena words its intents
+differently. So the WebArena cells are effectively fitted on 13 live features
+against the VisualWebArena cells' 15--17 (Table~\ref{tab:live-features}). We
+state the comparison as matched on set, not on support.
+
+\begin{table}[t]
+\centering\small
+\caption[Live features per cell]{\textbf{A column with no variance carries no
+information.} The header figure of 18 is a ceiling, not a count of usable
+features.}
+\label{tab:live-features}
+\begin{tabular}{@{}llp{7.4cm}@{}}
+\toprule
+Cell & live & dead (zero-variance) \\
+\midrule
+\cell{cls$\cdot$B0}, \cell{cls$\cdot$B1}, \cell{cls$\cdot$B2} & 15/18 &
+  \texttt{intent\_account\_action}, \texttt{intent\_action\_word},
+  \texttt{intent\_filter} \\
+\cell{red$\cdot$B0}, \cell{red$\cdot$B1}, \cell{red$\cdot$B2} & 17/18 &
+  \texttt{intent\_action\_word} \\
+\cell{wa\_red$\cdot$B0}, \cell{wa\_red$\cdot$B1} & 13/18 &
+  \texttt{intent\_action\_word}, \texttt{intent\_color},
+  \texttt{intent\_compare}, \texttt{intent\_filter},
+  \texttt{intent\_form\_fill} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Protocol: what a negative result has to survive}
+\label{sec:protocol}
+
+The router is an $L_2$-regularised logistic regression on the 18 raw features,
+evaluated by task-held-out five-fold cross-validation per cell, seed 42. The
+model is deliberately simple; the interesting design decisions are all in what
+is held out.
+
+\paragraph{Full nesting.} Within each outer fold: feature standardisation is fit
+on training rows only; the best-SR mode and the cheapest mode are re-selected
+from \emph{training-row} success and cost; the operating threshold $\tau$ is
+chosen against inner-CV out-of-fold scores over training rows only; and the
+outer-test rows are scored by a model fitted on training rows alone. Nothing
+that touches an outer test fold has seen it.
+
+This matters because we previously got it wrong. An earlier revision of this
+analysis reported a ``nested'' operating point while reusing globally computed
+out-of-fold scores --- whose folds include the outer test rows --- together with
+a whole-cell choice of best and cheapest mode. The numbers below supersede it.
+We record the correction because it changes the interpretation of a headline
+number, not to narrate debugging.
+
+\paragraph{One thing nesting exposed.} The best mode is \emph{not stable across
+folds}. On \cell{red$\cdot$B0} the five outer folds select \mDOM{}, \mDOM{},
+\mSoM{}, \mSoM{}, \mDOM{}. A pipeline that picks one best mode from all realised
+outcomes is not merely optimistic about its threshold --- it reports a mode
+choice its own resampling does not reproduce.
+
+\paragraph{Two controls, neither optional.} \emph{(i)} A bundle-permutation
+null at $B=10{,}000$: the permutation unit is the whole task bundle
+$(y,\,\mathrm{success},\,\mathrm{cost})$ against $X$. Permuting $y$ alone would
+disconnect the label from the outcomes that define it, and its error is not
+one-directional. \emph{(ii)} The always-cheapest fixed policy as the comparator,
+because it is the policy a deployment gets for free.
+
+\paragraph{Baseline sanity check.} We report each cell's best \emph{single}
+covariate alongside the fitted model. If the model does not clear it, ``learnable''
+means ``learnable by one covariate'', which is not a router.
+
+\section{Is the triage label predictable at all?}
+\label{sec:auroc}
+
+\begin{table}[t]
+\centering\small
+\caption[Triage predictability on the matched feature set]{\textbf{Out-of-fold
+AUROC for the triage label, all eight cells, 18 matched features.} A
+prior-only predictor scores 0.500 by construction. The model clears its own best
+single covariate in 5 of 8 cells, by $+0.014$ to $+0.075$.}
+\label{tab:auroc}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Cell & $n$ & solvable \% & AUROC (LR) & best single feature & that feature \\
+\midrule
+\cell{cls$\cdot$B0}     & 224 & 43.3 & \textbf{0.683} & 0.607 & \texttt{dom\_complexity} \\
+\cell{red$\cdot$B0}     & 203 & 26.1 & \textbf{0.700} & 0.685 & \texttt{intent\_token\_count} \\
+\cell{cls$\cdot$B1}     & 224 & 24.6 & \textbf{0.705} & 0.631 & \texttt{intent\_token\_count} \\
+\cell{red$\cdot$B1}     & 203 & 11.8 & \textbf{0.723} & 0.664 & \texttt{intent\_token\_count} \\
+\cell{cls$\cdot$B2}     & 224 & \phantom{0}7.1 & 0.646 & 0.655 & \texttt{intent\_compare} \\
+\cell{red$\cdot$B2}     & 203 & \phantom{0}7.4 & 0.526 & \textbf{0.790} & \texttt{intent\_token\_count} \\
+\cell{wa\_red$\cdot$B0} & 104 & 51.9 & 0.554 & 0.607 & \texttt{dom\_complexity} \\
+\cell{wa\_red$\cdot$B1} & 104 & 30.8 & \textbf{0.758} & 0.710 & \texttt{dom\_complexity} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The answer is a qualified yes, and the qualification is the interesting part.
+AUROC spans 0.526--0.758. In five cells the fitted model beats its own best
+single covariate; in three it does not, and in \cell{red$\cdot$B2} it is beaten
+by 0.264 --- the single feature \texttt{intent\_token\_count} scores 0.790 while
+the model scores 0.526, barely above chance.
+
+\begin{scopebox}
+\textbf{A retraction of our own earlier reading.} An earlier version of this
+analysis summarised these results as ``AUROC 0.65--0.72 in five of six cells'',
+which implies adequate discriminative power throughout. The sixth cell,
+\cell{red$\cdot$B2}, scores 0.483--0.526 depending on feature set --- at or below
+chance --- and it is precisely the cell whose saving survives significance
+testing in Section~\ref{sec:permutation}. Global discrimination and tail
+usefulness come apart on this data. The corrected statement is
+Section~\ref{sec:auroc-not-answer}.
+\end{scopebox}
+
+\section{Is the saving real, or manufactured by the sweep?}
+\label{sec:permutation}
+
+The operating threshold is chosen post hoc by a sweep, so some apparent saving
+is guaranteed even from a signal-free pipeline. The bundle-permutation null
+measures how much.
+
+\begin{table}[t]
+\centering\small
+\caption[Permutation control]{\textbf{How much of each cell's saving a
+signal-free pipeline reproduces.} $B=10{,}000$ bundle permutations per cell;
+$p$ is the plus-one Monte Carlo estimator $(k+1)/(B+1)$, smallest reportable
+$1.00\times10^{-4}$. Holm's tightest threshold over $m=8$ cells is
+$0.05/8 = 6.25\times10^{-3}$.}
+\label{tab:permutation}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Cell & observed saving & median under shuffled labels & $p$ \\
+\midrule
+\cell{cls$\cdot$B0}     & \phantom{0}7.0\% & \phantom{0}3.3\% & 0.242 \\
+\cell{red$\cdot$B0}     & \phantom{0}0.0\% & \phantom{0}0.0\% & 1.000 \\
+\cell{cls$\cdot$B1}     & \phantom{0}2.6\% & 10.1\% & 0.741 \\
+\cell{red$\cdot$B1}     & 11.8\% & \phantom{0}1.0\% & 0.033 \\
+\cell{cls$\cdot$B2}     & 20.4\% & 20.8\% & 0.682 \\
+\cell{red$\cdot$B2}     & 26.7\% & \phantom{0}5.5\% & \textbf{0.0004} \\
+\cell{wa\_red$\cdot$B0} & \phantom{0}4.4\% & \phantom{0}0.6\% & 0.186 \\
+\cell{wa\_red$\cdot$B1} & \phantom{0}3.8\% & \phantom{0}2.9\% & 0.443 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under Holm's step-down procedure \citep{holm1979} at $\alpha=0.05$ over the
+$m=8$ cells tested, \textbf{1 of 8 rejects}: \cell{red$\cdot$B2} at
+$p=0.0004$ against threshold $0.0063$. The next cell, \cell{red$\cdot$B1} at
+$p=0.033$ against $0.0071$, does not reject, and the procedure stops.
+
+Two cells (\cell{cls$\cdot$B2}, \cell{cls$\cdot$B1}) have a signal-free pipeline
+reproducing at least 80\% of the observed saving --- in \cell{cls$\cdot$B1} the
+shuffled median actually exceeds the observed value. One cell
+(\cell{red$\cdot$B0}) yields no saving at all.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f12_permutation_control.pdf}
+  \caption[Observed saving against the bundle-permutation null]{%
+  \textbf{Observed saving against what a signal-free pipeline reproduces.} Per
+  cell, the observed SR-lossless cost saving and the null distribution from
+  $B=10{,}000$ bundle permutations. The permutation unit is the whole task
+  bundle, not the label alone: permuting $y$ by itself disconnects the label
+  from the outcomes that define it, and at $B=200$ that error moved two cells in
+  opposite directions.}
+  \label{fig:f12}
+\end{figure}
+
+\section{Why AUROC is not the answer here}
+\label{sec:auroc-not-answer}
+
+The one cell that survives, \cell{red$\cdot$B2}, has an AUROC of 0.526 --- below
+its own best single covariate at 0.790. That is not a contradiction; the two
+quantities measure different things and this data pulls them apart.
+
+AUROC scores the \emph{global} ranking. The saving comes from the \emph{tail}.
+\cell{red$\cdot$B2} routes 192 of 203 tasks (95\%) to the cheap mode with no
+success loss --- in a cell where only 7.4\% of tasks are solvable by anything at
+all, so almost nothing in that 95\% was ever going to succeed. It differs from
+the free always-cheapest policy on 5\% of the allocation, and those 11 retained
+tasks happen to hold 5 of the cell's successes against always-cheapest's 4. The
+permutation null is detecting that tail enrichment, not an ordered score.
+
+\begin{scopebox}
+\textbf{The honest phrasing.} It is \emph{not} ``the label is predictable, yet
+triage fails''. It is: \textbf{at 2--36\% base success, a high AUROC is neither
+necessary nor sufficient. What decides whether triage saves anything is whether
+a handful of tail tasks land on the right side --- and at $n=203$ that handful
+is four successes.}
+\end{scopebox}
+
+This has a consequence for how the next chapter must be read. A classifier
+metric cannot stand in for a system result in this regime, in either direction:
+a cell can discriminate well and buy nothing, and a cell can barely discriminate
+and buy something. Chapter~\ref{ch:e2e} therefore evaluates policies, not
+scores.
+
+\section{What this chapter establishes}
+\label{sec:ch5-summary}
+
+The which-mode half of routing cannot be attempted: 4 of 6 cells have no
+trainable classifier, and the constraint is label supply
+(Chapter~\ref{ch:disc}).
+
+The triage half --- the easier half by construction --- is weakly predictable,
+at AUROC 0.526--0.758, clearing its best single covariate in 5 of 8 cells. But
+most of the apparent predictability on VisualWebArena rests on two features no
+deployment possesses, and after removing them five of six cells fall. Under a
+$B=10{,}000$ bundle-permutation null with Holm correction across the eight
+cells, one cell's saving survives, and it is the cell with near-chance global
+discrimination.
+
+\chapterhandoff{Chapter~\ref{ch:pred} shows the routing target is at best weakly
+predictable under a deployment-faithful information boundary, and that most of
+what looked like predictability was a benchmark annotation. Predictive
+performance is nonetheless the wrong terminal quantity: a router can rank well
+and still lose once false escalations, missed escalations and its own cost are
+priced in --- and, as \cell{red$\cdot$B2} shows, the converse also occurs.
+Chapter~\ref{ch:e2e} therefore runs the policy end to end and asks whether it
+beats the fixed alternative a deployment already has for free.}

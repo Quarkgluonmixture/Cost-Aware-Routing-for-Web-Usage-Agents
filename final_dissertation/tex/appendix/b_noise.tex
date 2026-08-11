@@ -1,0 +1,87 @@
+\chapter{Noise-Floor Derivation and Scope}
+\label{app:noise}
+
+\emph{Referenced from Section~\ref{sec:noise-floor}.} The main text states the
+repetition thresholds and applies them. This appendix derives them and records
+the scope restrictions that govern which comparisons the floors license, because
+the most common way to misuse a noise floor is to do arithmetic across rows that
+do not share a scope.
+
+\section{Derivation of the null spread}
+
+Two runs of one condition are exchangeable under the null that nothing changed
+between them. Let $d$ be the number of tasks on which they disagree and $n$ the
+scored-set size. Each discordant task contributes $+1/n$ or $-1/n$ to the
+success-rate difference with probability $\tfrac12$ each, so with
+$X\sim\mathrm{Binom}(d,\tfrac12)$ counting the flips in one direction,
+\[
+  D = \frac{2X-d}{n},\qquad
+  \mathbb{E}[D]=0,\qquad
+  \mathrm{Var}(D)=\frac{4\,\mathrm{Var}(X)}{n^{2}}=\frac{d}{n^{2}},
+\]
+giving Equation~\ref{eq:floor-sd}, $\mathrm{SD}(D)=\sqrt{d}/n$. The one-sided
+95\% point is $1.645\,\mathrm{SD}(D)$.
+
+Two properties of this null are worth stating explicitly. It assumes
+\emph{only} exchangeability --- no model of the agent, the site, or the failure
+distribution enters. And it does \emph{not} model environment drift, which is
+one-directional and which we separately observe: a restarted partial run of one
+mode shows 3 flips in one direction and 0 in the other on its 26 shared tasks.
+Where drift is present the true spread exceeds $\sqrt{d}/n$, so the thresholds
+in Table~\ref{tab:floor-spread} are themselves lower bounds.
+
+\section{Two floors, two questions}
+
+The inventory carries two distinct floor quantities and they answer different
+questions. Conflating them was the error that an earlier draft of our own
+analysis made.
+
+\begin{description}
+\item[Set-difference floor.]
+  $\mathrm{self\_drop}(a\!\to\!b)=|\{a\}\setminus\{b\}|/n$. This matches
+  Equation~\ref{eq:dropone} in form, so it is the floor for \emph{ceiling}
+  claims --- what adding one more arm buys. Measured range across our three
+  replicated arms: 4.91--7.59\pp.
+\item[Mean-difference floor.] $|\mathrm{SR}(a)-\mathrm{SR}(b)|$ on the same
+  pairs. This is the floor for claims comparing \emph{mean success rates}
+  between modes. Measured range: 0.89--2.23\pp{} --- but each value is
+  \emph{one draw} of a quantity whose standard deviation is 2.32--2.53\pp, which
+  is why the interpretable threshold is 3.82--4.15\pp{} rather than 2.23\pp.
+\end{description}
+
+Reading a 2.2\pp{} effect against a 2.23\pp{} ``measured floor'' compares a draw
+to a draw. The main text uses the threshold, not the band.
+
+\section{Scope restrictions}
+
+\paragraph{Do not do arithmetic across rows.} Each floor carries its own scope
+--- backbone, site, mode, $n$, and serving path. The only comparisons drawn
+anywhere in this dissertation are within one (model, site) cell at equal arm
+count.
+
+\paragraph{The WebArena row is not a floor for its own baseline.} It pools five
+mode-specific pilot-versus-full comparisons over the same 10 registered pilot
+tasks ($\text{pooled }n=50$ over ten distinct tasks), while the distinct-arm
+figure beside it uses 104 tasks starting from \mDOM{}. \mDOM{}'s own
+pilot-versus-full comparison shows zero flips in either direction; the 2--4\pp{}
+band is generated entirely by \mVis{} and \mPP{}, and the five panels are
+correlated through the same ten tasks. It should be read as \emph{some arms of
+this cell move by 2--4\pp{} under repetition}.
+
+\paragraph{The five-arm gain is never set against a one-rerun floor.} We hold one
+rerun arm, not five, and repetition has its own diminishing returns. The ceiling
+is reported with its arm count attached (Table~\ref{tab:oracle},
+Figure~\ref{fig:f8}); the like-for-like one-arm comparison is
+Figure~\ref{fig:f10b}.
+
+\section{The determinism claim we retracted}
+
+Our project record previously held that the locally served backbones were
+deterministic across reruns, on the grounds that decoding is greedy
+(\texttt{do\_sample}$=$false) and step-level outputs had been verified identical
+in a controlled check. That verification was correct and the inference from it
+was not. An episode carries site state, wall-clock and session lifetime in
+addition to model output; the WebArena pilot-versus-full overlap shows flips on
+\mVis{} and \mPP{} despite greedy decoding. Step-level determinism and
+episode-level determinism are different properties, and only the first was ever
+evidenced.

@@ -1,0 +1,299 @@
+\chapter{End-to-End Evaluation: Does Routing Pay?}
+\label{ch:e2e}
+
+\chapterhandoff{Chapter~\ref{ch:pred} showed the routing target is weakly
+predictable and that most of the apparent predictability came from a benchmark
+annotation. A classifier score is not a system result. This chapter prices the
+policy against the alternatives a deployment actually has, and finds that the
+choice of comparator explains more of the answer than the choice of learner
+does.}
+
+\section{The comparator ladder}
+\label{sec:comparators}
+
+A routed policy has to beat something, and which something is chosen determines
+what the result means. We evaluate against four references, ordered by how hard
+they are to beat.
+
+\begin{enumerate}[leftmargin=1.5em]
+\item \textbf{Best single mode.} The strongest fixed policy, selected with
+      hindsight over the cell. Highest success, and among the most expensive.
+\item \textbf{Always-cheapest.} Send every task to the cheapest mode. This
+      requires no model, no features and no training --- a deployment has it for
+      free. It is also, by construction, a \emph{cost lower bound} over fixed
+      policies.
+\item \textbf{Oracle triage.} Retrospectively route hopeless tasks to the
+      cheapest mode and everything else to the best mode. Not deployable;
+      included as the ceiling of the half of the problem we can actually attempt.
+\item \textbf{Learned triage.} The nested-CV router of
+      Section~\ref{sec:protocol}, at the threshold its own inner folds selected.
+\end{enumerate}
+
+\begin{scopebox}
+\textbf{What ``end to end'' means here, precisely.} The routed policies are
+evaluated by \emph{replay}: for each task, the router's decision selects which
+already-executed condition's outcome and cost are credited. We do not re-execute
+the agent under a live router. This is a real limitation, and its direction is
+worth stating --- replay omits any online routing overhead and any interaction
+between routing and episode dynamics, so it is \emph{favourable} to the router.
+A negative result under replay is therefore stronger than the same result under
+live execution would be. Section~\ref{sec:overhead} bounds the omitted term.
+\end{scopebox}
+
+\section{The primary result}
+\label{sec:primary-result}
+
+\begin{table}[t]
+\centering\small
+\caption[End-to-end policy comparison, all eight cells]{\textbf{Every policy in
+every cell, against the free fixed alternative.} $\Delta$ columns are against
+always-cheapest. ``Learned (nested)'' is the deployment-faithful row. ``Learned
+(swept)'' is the most favourable learned operating point available: its
+threshold is chosen post hoc \emph{and} its best/cheapest modes are selected
+from whole-cell outcomes, so it is optimistic on two axes at once. It is shown
+so the conclusion cannot be blamed on either selection step. A cell
+is a Pareto win only if $\Delta$SR $>0$ \emph{and} $\Delta$cost $<0$.}
+\label{tab:e2e}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Cell & policy & SR \% & cost & $\Delta$SR & $\Delta$cost \\
+\midrule
+\multirow{4}{*}{\cell{cls$\cdot$B0}}
+ & always-cheapest (\mVis{})   & 25.00 & 0.06481 & --- & --- \\
+ & oracle triage               & 27.23 & 0.06312 & $+2.23$\pp & $-2.6$\% \\
+ & learned (nested)            & 26.79 & 0.07129 & $+1.79$\pp & $+10.0$\% \\
+ & learned (swept)  & 27.23 & 0.06730 & $+2.23$\pp & $+3.8$\% \\
+\midrule
+\multirow{4}{*}{\cell{red$\cdot$B0}}
+ & always-cheapest (\mVis{})   & \phantom{0}7.39 & 0.09807 & --- & --- \\
+ & oracle triage               & 14.78 & 0.09998 & $+7.39$\pp & $+1.9$\% \\
+ & learned (nested)            & 12.81 & 0.09928 & $+5.42$\pp & $+1.2$\% \\
+ & learned (swept)  & 14.78 & 0.11045 & $+7.39$\pp & $+12.6$\% \\
+\midrule
+\multirow{4}{*}{\cell{cls$\cdot$B1}}
+ & always-cheapest (\mVis{})   & 12.50 & 0.04316 & --- & --- \\
+ & oracle triage               & 14.29 & 0.04858 & $+1.79$\pp & $+12.6$\% \\
+ & learned (nested)            & 14.29 & 0.05867 & $+1.79$\pp & $+35.9$\% \\
+ & learned (swept)  & 14.29 & 0.05874 & $+1.79$\pp & $+36.1$\% \\
+\midrule
+\multirow{4}{*}{\cell{red$\cdot$B1}}
+ & always-cheapest (\mVis{})   & \phantom{0}2.46 & 0.05240 & --- & --- \\
+ & oracle triage               & \phantom{0}7.39 & 0.05554 & $+4.93$\pp & $+6.0$\% \\
+ & learned (nested)            & \phantom{0}6.40 & 0.07021 & $+3.94$\pp & $+34.0$\% \\
+ & learned (swept)  & \phantom{0}7.39 & 0.07057 & $+4.93$\pp & $+34.7$\% \\
+\midrule
+\multirow{4}{*}{\cell{cls$\cdot$B2}}
+ & always-cheapest (\mVis{})   & \phantom{0}2.23 & 0.07065 & --- & --- \\
+ & oracle triage               & \phantom{0}2.23 & 0.07145 & $+0.00$\pp & $+1.1$\% \\
+ & learned (nested)            & \phantom{0}1.34 & 0.07385 & $-0.89$\pp & $+4.5$\% \\
+ & learned (swept)  & \phantom{0}2.23 & 0.07220 & $+0.00$\pp & $+2.2$\% \\
+\midrule
+\multirow{4}{*}{\cell{red$\cdot$B2}}
+ & always-cheapest (\mVis{})   & \phantom{0}1.97 & 0.06833 & --- & --- \\
+ & oracle triage               & \phantom{0}3.94 & 0.06974 & $+1.97$\pp & $+2.1$\% \\
+ & learned (nested)            & \phantom{0}4.43 & 0.06910 & $+2.46$\pp & $+1.1$\% \\
+ & learned (swept)  & \phantom{0}4.43 & 0.06950 & $+2.46$\pp & $+1.7$\% \\
+\midrule
+\multirow{4}{*}{\cell{wa\_red$\cdot$B0}}
+ & always-cheapest (\mDOM{})   & 26.92 & 0.07531 & --- & --- \\
+ & oracle triage               & 35.58 & 0.07573 & $+8.66$\pp & $+0.6$\% \\
+ & learned (nested)            & 32.69 & 0.08649 & $+5.77$\pp & $+14.8$\% \\
+ & learned (swept)  & 35.58 & 0.08103 & $+8.66$\pp & $+7.6$\% \\
+\midrule
+\multirow{4}{*}{\cell{wa\_red$\cdot$B1}}
+ & always-cheapest (\mVis{})   & \phantom{0}9.62 & 0.04468 & --- & --- \\
+ & oracle triage               & 16.35 & 0.04814 & $+6.73$\pp & $+7.7$\% \\
+ & learned (nested)            & 13.46 & 0.06428 & $+3.84$\pp & $+43.9$\% \\
+ & learned (swept)  & 16.35 & 0.06331 & $+6.73$\pp & $+41.7$\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{scopebox}
+\textbf{Primary result.} The learned triage router Pareto-beats the trivial
+always-cheapest fixed policy in \textbf{0 of 8 cells}, across two benchmarks,
+three backbones and two model families. This holds at the nested threshold and
+at the most favourable in-sample threshold alike, so it is not an artefact of
+operating-point selection.
+\end{scopebox}
+
+Every learned row in Table~\ref{tab:e2e} buys success with cost. The exchange
+rate varies by more than an order of magnitude: \cell{red$\cdot$B2} pays 1.7\%
+more for $+2.46\pp$, while \cell{wa\_red$\cdot$B1} pays 41.7\% more for
+$+6.73\pp$ and \cell{cls$\cdot$B1} pays 36.1\% more for $+1.79\pp$. These are
+trade-off points. Some of them a deployment might reasonably choose --- but only
+after stating a price for a success, which our accounting does not do and which
+the routing literature generally leaves implicit.
+
+\section{The comparator explains more than the learner does}
+\label{sec:comparator-effect}
+
+The natural reading of ``0 of 8'' is that the learner was inadequate. That
+reading is wrong, and the evidence against it is in the same table.
+
+Normalise each cell to its always-cheapest policy and plot success against cost
+(Figure~\ref{fig:f13}). The Pareto winning region is the upper-left quadrant:
+more success \emph{and} less cost. \textbf{The retrospective oracle triage policy
+enters that quadrant in only 1 of 8 cells} (\cell{cls$\cdot$B0}: $+2.23\pp$ at
+$-2.6\%$). In the other seven the oracle --- which knows the answer --- also
+pays more than always-cheapest.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f13_dominance_plane.pdf}
+  \caption[The dominance plane, normalised to always-cheapest]{%
+  \textbf{Why ``0 of 8'' is a statement about the trade-off, not about the
+  learner.} Each cell is normalised to its own always-cheapest policy at the
+  origin; the shaded upper-left quadrant is the Pareto winning region. Learned
+  policies sit right of the vertical axis --- they cost more. So does the
+  retrospective oracle in seven of eight cells. Always-cheapest is a cost lower
+  bound over fixed policies, so \emph{any} policy that preserves success must be
+  more expensive than it. The negative result is about the economics of this
+  boundary, not the capacity of the estimator.}
+  \label{fig:f13}
+\end{figure}
+
+The explanation is structural, and it is worth stating precisely because the
+obvious version of it is wrong. Always-cheapest minimises cost among fixed
+policies, but only \emph{in expectation over the cell} --- it is the mode with
+the lowest \emph{mean} episode cost, not the cheapest mode on every individual
+task. A per-task router therefore \emph{can} undercut it, by sending a task to a
+mode that is both more successful and, on that particular task, cheaper. This is
+not hypothetical: on \cell{cls$\cdot$B0} the oracle does exactly that, gaining
+$+2.23$\pp{} at $-2.6$\% cost.
+
+So the winning region is narrow, not empty by construction. Entering it requires
+the cheap mode to be \emph{wasteful} on a substantial subset of tasks --- burning
+step budget on failures that a better mode would have resolved or abandoned
+sooner. That happens, but on our data it happens often enough to pay in only one
+cell of eight, and only for a policy that already knows the answers.
+
+\begin{scopebox}
+\textbf{Calibrated statement of the negative result.} Under this cost boundary,
+on these benchmarks, at 2--36\% base success, \textbf{no profitable deployable
+operating point exists} --- not because the router cannot be learned, but
+because the region in which a router could win is nearly empty even for a policy
+that knows the answers. This is a weaker claim than ``routing does not work''
+and a more useful one: it identifies the condition (a cost-minimising fixed
+comparator, in a regime where most tasks are hopeless) under which the enterprise
+cannot pay.
+\end{scopebox}
+
+\section{Router overhead}
+\label{sec:overhead}
+
+Equation~\ref{eq:netsaving} requires the router's own cost. Our routed policies
+are evaluated by replay, so this term is not in Table~\ref{tab:e2e}; we bound it
+here to show it does not change the conclusion.
+
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{Feature extraction.} All 18 features are computed from the task
+      instruction and the cheap structured observation by string operations and
+      regular expressions. Both are already constructed for the cheap mode, so
+      the marginal cost is a small constant per decision.
+\item \textbf{Router inference.} A logistic regression over 18 standardised
+      features: a dot product. At the amortised device rate used in our
+      configuration ($5.6\times10^{-8}$\,\$/ms), this is several orders of
+      magnitude below the $10^{-3}$\,\$ scale of a single agent step.
+\item \textbf{Additional observation construction.} Zero for triage: the
+      decision selects \emph{which} mode to construct, and exactly one is
+      constructed either way. This is the property that makes triage the cheap
+      half; a cascade that tries a mode and then escalates would not have it,
+      and we measure that separately below.
+\item \textbf{Error cost.} This is the term that dominates, and it is already
+      inside Table~\ref{tab:e2e}. A false negative (a solvable task sent to the
+      cheap mode) costs a success; a false positive (a hopeless task sent to the
+      expensive mode) costs the price difference for a whole episode.
+\end{itemize}
+
+The three explicit overhead terms together are bounded by roughly $10^{-6}$\,\$
+per decision against per-episode costs of $10^{-3}$ to $10^{-1}$\,\$. Adding
+them moves no cell across the Pareto boundary --- every learned row is already
+1.1--43.9\% \emph{above} always-cheapest, and the overhead is four to five
+orders of magnitude smaller than those gaps. The negative result does not depend
+on the overhead accounting; it survives even the maximally generous version in
+which routing is free.
+
+\subsection{The cascade is the expensive alternative, and we priced it}
+
+One obvious alternative to prediction is not to predict: run the cheapest mode,
+detect failure, escalate. We evaluated a cost-ordered cascade with a perfect
+success detector --- a strictly optimistic assumption, since real failure
+detection on these tasks is itself unsolved.
+
+It reaches the full oracle success in every cell, and costs $+315.9\%$ to
+$+462.9\%$ against the best single mode. The reason is visible in the attempt
+histograms: on \cell{cls$\cdot$B0}, 133 of 224 tasks reach all six attempts,
+because no mode solves them and the cascade discovers this only after paying for
+all six. In a regime where 48--93\% of tasks are hopeless, try-then-escalate
+spends most of its budget confirming hopelessness.
+
+This is worth stating positively as well as negatively: \textbf{the value of
+prediction in this setting is exactly the value of not paying for the cascade},
+and the cascade's price ($4$--$5\times$) is the size of the prize that
+Chapter~\ref{ch:pred} could not claim.
+
+\section{Site and backbone heterogeneity}
+\label{sec:heterogeneity}
+
+The aggregate is not driven by one cell. The 0-of-8 result holds on both
+benchmarks, on both VisualWebArena sites, and on all three backbones, and the
+1-of-8 oracle result is likewise not concentrated in a single family --- the one
+cell where the oracle wins (\cell{cls$\cdot$B0}) is the cell with the highest
+solvable rate on VisualWebArena and the most trainable labels, which is where
+one would expect routing to work if it worked anywhere.
+
+The two WebArena cells behave the same way despite a different corpus, a
+different site, and a mode ordering in which an image-free mode is the strongest
+single policy. That is the external-validation result: the failure transfers.
+
+\section{Robustness}
+\label{sec:robustness}
+
+\paragraph{Threshold.} Reported at both the nested threshold and the most
+favourable in-sample threshold; the verdict is identical
+(Table~\ref{tab:e2e}).
+
+\paragraph{Label definition.} The which-mode supply result of
+Table~\ref{tab:supply} was recomputed under an alternative label
+(cheapest-successful by \emph{measured} episode cost rather than by prior cost
+ordering). Under it, 5 of 6 cells are untrainable rather than 4 of 6 --- the
+conclusion does not turn on the definition, and the alternative is worse.
+
+\paragraph{Permutation budget.} $B$ was raised from 200 to 10{,}000 during this
+work. At $B=200$ the reportable floor sat inside Holm's threshold, so the budget
+could in principle have decided a verdict. At $B=10{,}000$ the smallest
+reportable $p$ is $1.0\times10^{-4}$ against a tightest threshold of
+$6.25\times10^{-3}$, so it cannot.
+
+\paragraph{Noise.} The measured 12--14\% run-to-run discordance of
+Section~\ref{sec:noise-floor} is a threat to positive claims, not to this one.
+Noise degrades whatever signal exists; a negative result obtained despite it is
+if anything understated.
+
+\paragraph{What would overturn this.} A cell in which always-cheapest is
+\emph{not} close to cost-optimal --- that is, where the cheap mode wastes steps
+on a substantial fraction of tasks --- would open the winning region. Our
+\cell{cls$\cdot$B0} is the one cell where this happens, and it is the one cell
+where the oracle wins. That is the mechanism, and it is testable.
+
+\section{What this chapter establishes}
+\label{sec:ch6-summary}
+
+The learned triage router does not Pareto-beat the free fixed alternative in any
+of eight cells, at any threshold, under a replay evaluation that omits its own
+overhead in its favour. Adding the overhead does not change this, and neither
+does the alternative label definition.
+
+More importantly, neither does replacing the learner with an oracle. In seven of
+eight cells a policy that knows every outcome still cannot beat always-cheapest
+on both axes. The negative result is therefore about the economics of the
+boundary --- a cost-minimising comparator in a regime where most tasks are
+unsolvable --- and not about predictive capacity.
+
+\chapterhandoff{The end-to-end evaluation shows that the opportunity identified
+in Chapter~\ref{ch:repr} does not convert into deployable benefit, and locates
+the reason in the comparator rather than the learner. What remains is to explain
+why the predictive half failed on its own terms, to say how far these
+conclusions travel, and to state precisely which regime they describe.
+Chapter~\ref{ch:disc} takes up all three, and closes the dissertation.}

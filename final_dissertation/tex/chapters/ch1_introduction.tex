@@ -1,0 +1,288 @@
+\chapter{Introduction}
+\label{ch:intro}
+
+\section{The problem}
+\label{sec:problem}
+
+A web agent cannot act on a page it has not been shown. Before every click it
+must be handed some encoding of the current screen, and there is more than one
+way to produce that encoding. The page can be flattened into structured text
+drawn from the browser's accessibility tree; it can be rendered as a screenshot
+with candidate elements numbered and boxed; it can be sent as both. These are
+not equivalent inputs. They differ in what they make visible, and they differ in
+what they cost.
+
+The choice is normally made once, at configuration time, and applied to every
+step of every task. That is the problem this dissertation is about. A multi-step
+web task takes tens of browser steps, and the representation decision is
+re-paid at each one: the screenshot is re-encoded, the marks are re-drawn, the
+tokens are re-billed. If the extra information changed the outcome at every
+step, this would simply be the price of the capability. But it is not obvious
+that it does, and --- as far as we can establish --- nobody has measured whether
+it does.
+
+The obvious response is to decide per step instead of once. That intuition is
+what makes this an interesting problem rather than an engineering preference,
+because it is only correct if three separate conditions hold at the same time.
+The cheap and expensive encodings must genuinely succeed on \emph{different}
+tasks, or there is nothing to select between. The need for the expensive one
+must be \emph{predictable} from something observable before it is paid for, or
+the selection cannot be made in time. And the value recovered must exceed what
+the selection machinery itself costs, or the whole apparatus loses money. Each
+condition is measurable. This dissertation measures all three, in that order,
+and reports where the chain breaks.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f0_thesis_overview.pdf}
+  \caption[Thesis overview: the three questions and their answers]{%
+  \textbf{The argument of this dissertation in one figure.} The same web task
+  can be handed to the same agent through six different page encodings (centre),
+  which differ in cost by construction. Three questions follow, and are answered
+  in that order: \emph{is there a ceiling worth chasing} (yes, but see
+  Chapter~\ref{ch:repr} for how much of it a rerun already buys), \emph{is the
+  per-task choice predictable at serving time} (no), and \emph{does acting on
+  the prediction pay} (the trade-off does not exist under this cost boundary).
+  This is a map of the argument, not a performance result; every number in it is
+  established in the chapter named beneath it.}
+  \label{fig:f0}
+\end{figure}
+
+\section{Why the cost is worth arguing about}
+\label{sec:stakes}
+
+Three properties of the setting turn a per-step configuration choice into a
+system-level quantity.
+
+\paragraph{The cost is multiplicative in the episode length.} Our agent
+averages 13.7--28.4 steps per task depending on site, model and mode
+(Chapter~\ref{ch:system}, Table~\ref{tab:cost-per-mode}). A decision that costs
+a fraction of a cent per step is a decision made hundreds of thousands of times
+across a benchmark sweep, and millions of times in any deployment worth the
+name.
+
+\paragraph{The expensive part is concentrated, not diffuse.} It is tempting to
+assume the annotated-screenshot condition is expensive because it sends more of
+everything. It does not. Measured on matched pages, the text payload of
+the full Set-of-Marks mode is a median $1.008\times$ that of the structured-text
+mode on classifieds and $1.004\times$ on reddit (Section~\ref{sec:obs-space};
+$n=429$ paired tasks). The cost difference between them is therefore almost
+entirely the image. That is a useful fact rather than a curiosity: it means
+the expensive component can be removed \emph{surgically}, holding the text and
+the prompt fixed, which is exactly the manipulation Chapter~\ref{ch:system}
+builds.
+
+\paragraph{Computational cost is not the same thing as environmental cost, and
+this dissertation does not conflate them.} We report token counts, billed
+dollars, wall-clock latency, and --- for the locally served backbones only ---
+device-level energy drawn from GPU telemetry. We do not convert tokens into
+kilowatt-hours; no hardware-independent conversion exists
+\citep{fernandez2025energy}, and treating one as a proxy for the other is a
+known failure mode in this literature \citep{lannelongue2021green,
+henderson2020systematic}. Section~\ref{sec:sustainability} states exactly what
+our measurement boundary includes and what it therefore cannot support.
+
+\section{Concepts before machinery}
+\label{sec:concepts}
+
+Three ideas carry the whole argument, and each can be stated before any
+implementation detail.
+
+\paragraph{A page representation is a choice, not a given.} An \emph{observation
+mode} is a complete, executable specification of what the agent is shown at a
+step: which textual encoding of the page, framed by which prompt, accompanied by
+which image, if any. Two modes can expose the same page and still lead the same
+model to different actions. Once representation is a choice, it has a cost
+curve, and once it has a cost curve it can be optimised.
+
+\paragraph{Selection has an upper bound that nobody can reach.} If we look at
+outcomes \emph{after} the fact and pick, per task, whichever mode happened to
+succeed, we obtain a number that no deployable system can achieve. It is still
+worth computing, because it bounds the entire enterprise: it is the most that
+perfect selection could ever be worth. We call this the \emph{oracle ceiling},
+and we are careful throughout to treat it as a bound on opportunity rather than
+as a result.
+
+\paragraph{An upper bound is not a plan.} Between the ceiling and a deployable
+system sit two gaps that are usually collapsed in discussion and are kept apart
+here. The first is \emph{predictability}: can the right mode be inferred from
+signals available before the expensive mode is paid for? The second is
+\emph{economics}: even a good predictor loses if escalation is rare, mistakes
+are asymmetric, or the router costs more than it saves. The core methodological
+commitment of this dissertation is that these three quantities --- ceiling,
+predictability, realised value --- are measured separately and never allowed to
+stand in for one another.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_f1_motivating_example.pdf}
+  \caption[What each observation mode actually sends]{%
+  \textbf{One page, three ways of paying for it.} All three columns show the
+  same browser step of the same task --- verified byte-identical at the source
+  screenshot --- as it is actually transmitted to the model. Left: the
+  accessibility-tree text of the \mDOM{} mode, with no image sent at all.
+  Centre: the \mSoM{} mode, which sends the numbered-overlay screenshot
+  \emph{and} the \sommarks{} text. Right: the \mVis{} mode, the raw screenshot with
+  no structured text. The quantitative point matters more than the pictures: on this
+  step the \mSoM{} text payload is $1.008\times$ the \mDOM{} text payload
+  (median over all 224 classifieds tasks at step~0: also $1.008\times$), while
+  the billed input tokens are $4{,}335$ against $3{,}314$. The extra 31\% is the
+  image.}
+  \label{fig:f1}
+\end{figure}
+
+\section{Approach}
+\label{sec:approach}
+
+We construct a controlled representation space over a fixed agent and measure
+along the chain just described.
+
+Six observation modes are defined by crossing three binary factors --- the text
+payload (accessibility-tree text vs.\ flattened \sommarks{} text), the prompt
+framing (structured-text style vs.\ Set-of-Marks style), and the presence of the
+annotated image. Four of the six send no image at all, one sends text and image
+together, and one sends only the image. Everything else in the stack --- the
+task, the model, the decoding parameters, the action space, the step budget, the
+benchmark evaluator, the cost-accounting boundary --- is held identical across
+modes. Chapter~\ref{ch:system} makes that claim auditable.
+
+The sweep covers 8 (site, model) cells: three backbones spanning two model
+families on two VisualWebArena sites \citep{koh2024visualwebarena}, plus two
+backbones on a WebArena site \citep{zhou2024webarena} used as an external
+validation setting. Every cell runs all six modes over the same fixed task set,
+so all comparisons are paired at the task level.
+
+On that base we then compute, in order: the retrospective oracle ceiling and
+each mode's irreplaceable contribution to it; a measured noise floor, obtained
+by rerunning \emph{unchanged} conditions, against which every effect size is
+judged; a leakage-controlled predictive study of whether the routing target is
+learnable from serving-time features; and an end-to-end comparison of the
+resulting policy against fixed alternatives with cost counted.
+
+\section{Contributions}
+\label{sec:contributions}
+
+\begin{enumerate}[leftmargin=1.5em]
+\item \textbf{A controlled factorisation of the page-input space, and the
+      measurement that it is dominated by one factor.} Six executable modes
+      separate text payload, prompt framing and image presence over an otherwise
+      fixed agent. The factorisation shows that the cost difference between the
+      cheap and expensive conditions is almost entirely attributable to the
+      image, which is what makes the image-off region worth studying at all
+      (Chapter~\ref{ch:system}).
+
+\item \textbf{A ceiling measurement reported next to its own repetition
+      baseline.} A retrospective oracle gains $+3.45$ to $+16.35\pp$ of task
+      success over the best single mode at 13.7--35.3\% lower cost, consistently
+      across all 8 cells and both benchmarks. We pair this with a measured
+      rerun floor from replicated identical conditions: adding one \emph{rerun}
+      arm, rather than one new representation arm, buys 2.0--7.6\pp{} by itself.
+      The two are reported side by side and never subtracted, because the
+      ceiling adds five arms and the floor adds one. To our
+      knowledge, no comparable web-agent representation study reports its
+      effect sizes against a measured same-condition floor
+      (Chapter~\ref{ch:repr}).
+
+\item \textbf{A negative predictability result with the estimator explicitly
+      exonerated.} Under a fully nested cross-validation protocol --- in which
+      mode selection, threshold selection and feature standardisation all occur
+      inside the training folds --- the learned triage router Pareto-beats the
+      trivial always-cheapest fixed policy in \textbf{0 of 8} cells. Two
+      independent controls (a bundle-permutation null at $B=10{,}000$, and the
+      always-cheapest comparator itself) rule out the two cheapest alternative
+      explanations (Chapters~\ref{ch:pred}--\ref{ch:e2e}).
+
+\item \textbf{A mechanism for the failure, located in label supply rather than
+      model capacity.} Routing labels exist only where some mode succeeded;
+      at 2--27\% base success, 4 of 6 cells contain no trainable which-mode
+      classifier at all, and three independent attempts to manufacture more
+      supervision each fail for a structurally different reason. We additionally
+      show that the strongest single predictor on VisualWebArena is the
+      benchmark's own human difficulty annotation --- a feature no deployment
+      possesses (Chapter~\ref{ch:pred}, Chapter~\ref{ch:disc}).
+
+\item \textbf{A calibrated statement of what the negative result is a negative
+      result \emph{about}.} We show that even the retrospective oracle fails to
+      enter the winning region against always-cheapest in 7 of 8 cells, because
+      always-cheapest is a cost lower bound. The correct conclusion is therefore
+      that no profitable operating point exists under this cost boundary, not
+      that the learner was inadequate (Chapter~\ref{ch:e2e}).
+\end{enumerate}
+
+\section{This dissertation contains a ``no'', and that is deliberate}
+\label{sec:the-no}
+
+The second half of the research question --- can the need be predicted cheaply
+enough to be worth predicting? --- is answered in the negative. Two consequences
+follow, and both are structural rather than cosmetic.
+
+First, Chapter~\ref{ch:e2e} is not organised around how much the router won. It
+is organised around \emph{where the chain breaks and why that break is a
+property of the regime rather than of our implementation}. Second, the
+scientific contribution lives in Chapter~\ref{ch:disc}: what this work delivers
+is not a router but a boundary --- a characterisation of the conditions under
+which representation routing cannot be learned.
+
+A negative result can carry a dissertation only if two things are established
+first, and we take both as obligations rather than as options. The opportunity
+must be shown to exist, or ``we could not learn it'' collapses into ``there was
+nothing there''; this is what the ceiling measurement in Chapter~\ref{ch:repr}
+is for. And the failure must be traced to a named mechanism, or ``we could not
+learn it'' collapses into ``your method was bad''; this is what the label-supply
+diagnosis in Chapter~\ref{ch:pred} is for. Where our evidence stops short of
+either obligation, we say so in place rather than in a closing list of caveats.
+
+\section{What this dissertation does not claim}
+\label{sec:not-claimed}
+
+Four statements are consistent with our data but stronger than it, and we
+therefore do not make them anywhere in this document.
+
+\begin{itemize}[leftmargin=1.5em]
+\item That the image-off modes \emph{replace} the full Set-of-Marks mode. Their
+      interest is complementarity, and Chapter~\ref{ch:repr} shows even that is
+      weaker than an earlier reading of our own data suggested.
+\item That dropping the image costs little performance, or that the image-off
+      configuration constitutes a cheaper Set-of-Marks. On four of six
+      VisualWebArena cells the full mode is the strongest single mode.
+\item That representation routing is unlearnable in general. We characterise why
+      it is unlearnable \emph{in the observed 2--27\% base-success regime}, and
+      Section~\ref{sec:regime-boundary} states what would have to change for the
+      conclusion to change.
+\item That reduced token or dollar cost constitutes a reduced environmental
+      footprint. Section~\ref{sec:sustainability} names the exact measurement
+      boundary and what it excludes.
+\end{itemize}
+
+\section{Map of the dissertation}
+\label{sec:map}
+
+Each chapter answers one question and hands the next chapter the question it
+could not answer.
+
+\begin{description}[leftmargin=0em,itemsep=3pt]
+\item[Chapter~\ref{ch:bg}] asks what prior work already settles, and shows that
+  four active research programmes each optimise a different decision variable
+  than the one studied here.
+\item[Chapter~\ref{ch:system}] asks how representation choice can be compared
+  fairly enough for later differences to be interpretable, and fixes the
+  comparison boundary that the rest of the document depends on.
+\item[Chapter~\ref{ch:repr}] asks whether the modes differ enough for selection
+  to be worth anything, establishes the ceiling, and then measures how much of
+  it survives contact with a rerun.
+\item[Chapter~\ref{ch:pred}] asks whether the need can be predicted from
+  serving-time signals, and separates ``predictable'' from ``useful''.
+\item[Chapter~\ref{ch:e2e}] asks whether acting on those predictions beats a
+  fixed policy once cost is counted, and finds that the comparator itself
+  explains most of the answer.
+\item[Chapter~\ref{ch:disc}] reconciles the three results, states the regime in
+  which they hold, and closes on what the work enables.
+\end{description}
+
+\chapterhandoff{This chapter has argued that per-step representation selection
+is an efficiency problem with a measurable structure, and has set out the three
+conditions under which it would be worth solving. It has not shown that the
+question is open. Chapter~\ref{ch:bg} therefore examines what the existing
+literature on web-agent observations, model routing, selective prediction and
+adaptive computation already establishes, and identifies precisely which
+decision variable none of them optimises.}

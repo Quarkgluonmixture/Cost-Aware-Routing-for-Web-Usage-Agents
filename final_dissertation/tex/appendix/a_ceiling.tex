@@ -1,0 +1,80 @@
+\chapter{Full Policy Tables and Oracle Decomposition}
+\label{app:ceiling}
+
+\emph{Referenced from Section~\ref{sec:ceiling}.} The main text reports the
+ceiling as two summary columns. This appendix gives the full policy ladder per
+cell, because the summary hides two quantities a reader may want to check
+independently: how far each individual fixed mode sits from the best one, and
+how the oracle splits between its triage and which-mode halves.
+
+\section{Per-cell policy ladder}
+
+Table~\ref{tab:app-ladder} lists every policy evaluated on the two
+VisualWebArena B0 cells; the remaining six cells follow the same structure and
+are included in the released artefact
+\texttt{docs/analysis/cross\_sites/router\_objective\_ordering.md}.
+
+\begin{table}[h]
+\centering\small
+\caption{Full policy ladder, \cell{cls$\cdot$B0} ($n=224$) and
+\cell{red$\cdot$B0} ($n=203$). $\Delta$ columns are against the best single
+mode. \texttt{route\_only} and \texttt{triage\_only} are the two oracle halves;
+\texttt{oracle\_sr\_cost} additionally breaks ties by measured cost.}
+\label{tab:app-ladder}
+\footnotesize\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+& & \multicolumn{2}{c}{\cell{cls$\cdot$B0}} & \multicolumn{2}{c}{\cell{red$\cdot$B0}} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Policy & kind & SR \% & cost & SR \% & cost \\
+\midrule
+\texttt{single:DOM}      & fixed & 17.41 & 0.06962 & 14.29 & 0.10147 \\
+\texttt{single:SoM}      & fixed & 27.23 & 0.07236 & 14.78 & 0.11045 \\
+\texttt{single:Vision}   & fixed & 25.00 & 0.06481 & \phantom{0}7.39 & 0.09807 \\
+\texttt{single:P-text}   & fixed & 15.62 & 0.06919 & 13.30 & 0.10577 \\
+\texttt{single:P-prompt} & fixed & 19.64 & 0.06853 & 12.32 & 0.10163 \\
+\texttt{single:P-SoM}    & fixed & 15.62 & 0.07206 & 10.84 & 0.10814 \\
+\midrule
+\texttt{cheapest}        & fixed & 25.00 & 0.06481 & \phantom{0}7.39 & 0.09807 \\
+\texttt{best\_sr}        & fixed & 27.23 & 0.07236 & 14.78 & 0.11045 \\
+\midrule
+\texttt{triage\_only}    & oracle-half & 27.23 & 0.06312 & 14.78 & 0.09998 \\
+\texttt{route\_only}     & oracle-half & 43.30 & 0.06701 & 26.11 & 0.10581 \\
+\texttt{oracle\_sr}      & oracle & 43.30 & 0.06259 & 26.11 & 0.09794 \\
+\texttt{oracle\_sr\_cost}& oracle & 43.30 & 0.05777 & 26.11 & 0.09534 \\
+\midrule
+\texttt{cascade\_cost\_first} & oracle (perfect det.) & 43.30 & 0.31896 & 26.11 & 0.54588 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The cost tie-break, isolated}
+
+\texttt{oracle\_sr} and \texttt{oracle\_sr\_cost} have identical success and
+identical treatment of unsolvable tasks, so the entire gap between them is the
+tie-break rule applied to tasks with more than one solver. On
+\cell{cls$\cdot$B0} that is 68 of 224 tasks, and switching the tie-break from
+list order to measured cost saves \$0.01589 on each, reducing mean cost from
+\$0.06259 to \$0.05777 ($-7.7\%$). The corresponding figures are 36 of 203 tasks
+and $-2.7\%$ on \cell{red$\cdot$B0}.
+
+This is worth isolating because it quantifies a defect discussed in
+Section~\ref{sec:mechanism}: the mode ordering used to break ties is documented
+as ascending in cost and is not, so a labelling pipeline that trusts it is
+systematically choosing a more expensive successful mode than necessary.
+
+\section{Cascade attempt histograms}
+
+The cost-first cascade of Section~\ref{sec:overhead} escalates through modes in
+ascending measured cost until a success is detected. Its attempt histograms show
+where the cost goes:
+
+\begin{itemize}
+\item \cell{cls$\cdot$B0}: $\{1{:}56,\ 2{:}25,\ 3{:}3,\ 4{:}5,\ 5{:}2,\ 6{:}133\}$
+\item \cell{red$\cdot$B0}: $\{1{:}15,\ 2{:}23,\ 3{:}5,\ 4{:}4,\ 5{:}2,\ 6{:}154\}$
+\item \cell{wa\_red$\cdot$B0}: $\{1{:}28,\ 2{:}9,\ 3{:}10,\ 4{:}1,\ 5{:}4,\ 6{:}52\}$
+\end{itemize}
+
+The 6-attempt bucket is tasks no mode solves: the cascade pays for all six
+before learning this. It is 59.4\%, 75.9\% and 50.0\% of tasks respectively,
+which is the entire explanation of the $+316$ to $+463\%$ cost.

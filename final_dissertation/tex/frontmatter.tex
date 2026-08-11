@@ -1,0 +1,115 @@
+\pagenumbering{roman}
+
+% ---------- title page -------------------------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{1.2cm}
+{\Large University College London\par}
+\vspace{0.3cm}
+{\large Department of Computer Science\par}
+\vfill
+{\LARGE\bfseries When Is Expensive Perception Worth Paying For?\par}
+\vspace{0.5cm}
+{\large Measuring the Ceiling, the Predictability, and the Economics\\
+of Representation Routing in Web Agents\par}
+\vfill
+{\large Jiaming Wei\par}
+\vspace{0.4cm}
+{\normalsize MSc Artificial Intelligence for Sustainable Development\par}
+{\normalsize COMP0191 --- MSc Project\par}
+\vfill
+{\normalsize September 2026\par}
+\vspace{0.8cm}
+{\footnotesize
+This report is submitted as part requirement for the MSc degree in Artificial
+Intelligence for Sustainable Development at University College London. It is
+substantially the result of my own work except where explicitly indicated in
+the text. The report may be freely copied and distributed provided the source
+is explicitly acknowledged.\par}
+\end{titlepage}
+
+% ---------- abstract ---------------------------------------------------------
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\markboth{Abstract}{Abstract}
+
+A web agent must be given some encoding of the current page before it can act.
+That encoding can be cheap structured text, an expensive annotated screenshot,
+or a combination, and the choice is normally made once and applied everywhere.
+Because a task takes tens of steps, the choice is paid for tens of times. This
+dissertation asks whether the expensive choice is necessary at every step, and
+whether the steps where it \emph{is} necessary can be identified cheaply enough
+for the identification to be worth making.
+
+We build a controlled representation space in which six observation modes vary
+the page text payload, the prompt framing, and the presence of an annotated
+image while the task, the agent, the action space, and the accounting boundary
+are held fixed. Across 8 (site, model) cells spanning two benchmarks
+(VisualWebArena and WebArena) and three backbones, we measure three quantities
+in sequence: how much a retrospective oracle could gain by choosing per task,
+whether that need is predictable from serving-time features under a fully
+nested cross-validation protocol, and whether acting on those predictions beats
+a trivial fixed policy once cost is counted.
+
+The answers are, in order, \emph{yes}, \emph{no}, and \emph{the question is
+mis-posed}. A retrospective oracle over the six modes gains
+$+3.45$ to $+16.35$ percentage points of task success over the best single mode
+while spending 13.7--35.3\% less, in every cell and on both benchmarks --- the same
+protocol also shows that adding a single \emph{rerun} of one unchanged mode, as
+one extra arm, buys 2.0--7.6 points on its own, so the ceiling must always be
+quoted beside its own repetition baseline rather than net of it. Under a fully
+nested protocol the learned triage router Pareto-beats the trivial
+always-cheapest fixed policy in \textbf{0 of 8} cells; so, we show, does the
+retrospective oracle in 7 of 8, which recasts the negative result from ``the
+learner failed'' to ``no profitable operating point exists under this cost
+boundary''. The mechanism is a supply constraint rather than a capacity one:
+routing labels are minted only when a task is solved, base success is 2--27\%,
+and 4 of 6 cells therefore contain no trainable which-mode classifier at all. We
+further show that the single feature carrying most of the apparent
+discriminative power on VisualWebArena is the benchmark's own human difficulty
+annotation, which no deployment possesses.
+
+The contribution is not a router. It is a measured boundary: the conditions
+under which representation routing cannot be learned, established with the
+opportunity first proven to exist and the failure located in a named mechanism.
+
+% ---------- acknowledgements -------------------------------------------------
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+\markboth{Acknowledgements}{Acknowledgements}
+
+I thank my supervisor for consistently redirecting attention from what the
+system could be made to do towards what the evidence could actually support,
+and Zekun Wu for the structural writing guidance that shaped how this document
+separates what was measured from what was inferred. Compute for the local
+backbones was provided by the Holistic AI GB10 nodes and by a dedicated A100
+instance; neither was shared during the paper-grade runs, which matters for the
+latency and energy figures reported in Chapter~\ref{ch:system}.
+
+% ---------- public access ----------------------------------------------------
+\chapter*{Data, Code and Public Access}
+\addcontentsline{toc}{chapter}{Data, Code and Public Access}
+\markboth{Data, Code and Public Access}{Data, Code and Public Access}
+
+Every component of this study is publicly obtainable with one stated exception.
+The benchmarks (VisualWebArena, WebArena) are open-source and self-hosted from
+their published Docker images; two of the three backbones
+(\texttt{Qwen3-VL-4B}, \texttt{google/gemma-3-4b-it}) are openly available model
+weights run locally; the experiment harness, analysis pipeline and figure
+scripts are released with the submission.
+
+\textbf{The exception is the large backbone.} \texttt{Qwen3-VL-235B-A22B} was
+served through a metered API proxy rather than self-hosted. Its outputs,
+per-step logs and billing records are archived and released, but a third party
+cannot re-run those conditions without equivalent proxy access. Results that
+depend on that backbone alone are therefore \emph{replicable from our logs} but
+not \emph{independently reproducible end to end}, and are marked as such where
+they carry a claim. Chapters~\ref{ch:repr}--\ref{ch:e2e} are constructed so that
+no load-bearing claim rests on a single backbone.
+
+\clearpage
+\tableofcontents
+\listoffigures
+\listoftables
+\clearpage
+\pagenumbering{arabic}
