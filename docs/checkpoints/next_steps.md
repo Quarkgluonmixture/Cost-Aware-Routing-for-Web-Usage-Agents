@@ -56,16 +56,17 @@ updated: 2026-08-08
 > - **prose 是 critical path**：09-01 硬截止，图已不是瓶颈
 > - `known.py` 查过再动手 —— 本 session **六次**撞上"缺口/引用比产物旧"
 
-> ## 🟢 2026-08-09 晚 · **额度 $180 到账；chain 已重排为 B0 vision 补尾 → B1 shop 三格**（最新 handoff）
+> ## 🟢 2026-08-09→11 · **额度 $180 到账；A100 fire 线：B0 vision 已闭合 → B1 shop 三格 → WA 自动接**（fire 线，与上面毕设线并行）
 >
 > chronicle → **笔记 §449**（预算低估一倍 · 断裂点判据 · 跨时区二次踩 · 台账化规则）
+> **+ §451**（flock -n 不排队 → watcher 接力 · 吞吐修正 6.8 ep/h）
 >
 > | | |
 > |---|---|
 > | **proxy** | **$179.99 到账**（申请额低于建议的 $500） |
-> | **A100 在跑** | `queue_chain` 4 段：`B0 vision shopping`(resume 374→435) → `B1 dom shopping`(resume 91→435) → `B1 som` → `B1 P-SoM`。log `logs/queue_chain_b0vis_b1shop_20260809.log` |
-> | **ETA** | vision 补尾 ~4.8h → B1 三格 ~5.6 天（**非** 旧文写的 9.3 天）→ 约 **08-15** |
-> | **B0 WA chain** | **未起**，等 B1 跑完再发（共享容器必须单跑，命令见下） |
+> | **A100 在跑** | `queue_chain` 4 段。✅ [1/4] `B0 vision shopping` **435/435 闭合**（补尾实付 $5.59，比估的 $4.4 高 27%——尾部 task 系统性更难，§449.7）。现在 [2/4] `B1 dom` **251/435** |
+> | **ETA** | ⚠️ 吞吐掉到 **6.8 ep/h**（早先 8.6）：dom 剩 ~27h + som ~62h + P-SoM ~62h = **~6.3 天 → 约 08-17**（08-15 那版按 8.6 ep/h 估，已过时） |
+> | **B0 WA chain** | ✅ **自动发车已武装**（见下），B1 一完就接，无需人工 |
 >
 > ### 💰 预算数字已全部重算 —— 旧的低估一倍，别再用
 >
@@ -83,8 +84,22 @@ updated: 2026-08-08
 > ⇒ **下次按 $500 申请**。这次的 $180 只够其中一项。
 > （另：「B0 shop 停在 374/**466**」也是错的，run set 是 **435**，剩 **61** 个不是 92 个。）
 >
-> ### B1 跑完后接着发（按性价比顺序，13 段）
+> ### ✅ WA chain 已改为**自动发车**，不需要人工接（2026-08-11）
 >
+> A100 上 detached 跑着 `scripts/maintenance/wa_chain_autolaunch.sh 738522`
+> （pid 940746，log `logs/wa_chain_autolaunch.log`）。B1 三格跑完后**自动**发
+> B0 WA 12 段并推 ntfy。WA shopping 六格 $87（3.9 天）→ shopping_admin 六格 $95
+> （4.0 天）；$174 会在 admin 中途耗尽 → fail-fast + `resume` + urgent ntfy（`1d3765b`）。
+>
+> **双判据防误启**：主 = `B1_phantom_som_shopping` 目录满 435（Tier 1 文件标记）·
+> 副 = 前一条 chain PID 退出（确保 `flock` 已释放）。**只满足其一不发车** —— chain
+> 若崩溃导致进程消失，不会在 B1 没跑完时抢跑。200h 兜底超时会推 urgent ntfy。
+>
+> ⚠️ **为什么不能简单地再起一条 chain 排队**：`_lib_paper_grade_gates.sh:235` 用
+> **`flock -n`**（non-blocking），抢不到锁**当场 FATAL rc=78**，不排队；且
+> `queue_chain.sh` 的段列表**启动时固定**，无法往运行中的 chain 追加。
+>
+> 手工发车命令（仅当 watcher 死掉时用；先确认无其他 chain 在跑）:
 > ```bash
 > ssh condense-a100 'cd /home/ubuntu/workspace/p79 && setsid nohup bash scripts/queues/queue_chain.sh \
 >   "queue_baseline.sh B0 dom shopping wa" "queue_baseline.sh B0 som shopping wa" \
@@ -93,10 +108,8 @@ updated: 2026-08-08
 >   "queue_baseline.sh B0 dom shopping_admin wa" "queue_baseline.sh B0 som shopping_admin wa" \
 >   "queue_baseline.sh B0 vision shopping_admin wa" "queue_phantom_text.sh B0 shopping_admin wa" \
 >   "queue_phantom_prompt.sh B0 shopping_admin wa" "queue_phantom_som.sh B0 shopping_admin wa" \
->   > logs/queue_chain_b0_wa_20260815.log 2>&1 < /dev/null &'
+>   > logs/queue_chain_b0_wa_manual.log 2>&1 < /dev/null &'
 > ```
-> WA shopping 六格 $87（3.9 天）→ shopping_admin 六格 $95（4.0 天）。$180 会在
-> shopping_admin 中途耗尽 → fail-fast + `resume` + urgent ntfy（`1d3765b` 已修）。
 >
 > ⚠️ **跨机看时间先对表**：A100 是 **UTC**，DGX 是 **BST(+0100)**。A100 log 时刻减 DGX
 > 当前时间会凭空多出 1 小时（§449.6 当天第二次踩这个坑）。
