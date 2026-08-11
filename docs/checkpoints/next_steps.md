@@ -23,6 +23,49 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟣 2026-08-11 · **毕设全稿完成并 push (84 页) · 三家 AI 审完 · 全篇 deslop · 已知攻击表清空**
+>
+> chronicle → **笔记 §452 / §453 / §454** · 台账 17 条 · **30 commits 已 push**
+>
+> | | |
+> |---|---|
+> | **交付** | `final_dissertation/tex/` — 7 章 + 4 附录 + **18 图** + 33 条核验 bib, **84 页**, 0 undefined / 0 overfull / **vale 0 error** |
+> | **Overleaf** | `6a7a7331d2e6523a360245d4` 已同步。**单向**: 改 tex 后跑 `bash scripts/maintenance/overleaf_thesis_sync.sh` (先本地编译, 编不过拒绝推) |
+> | **git** | 分支 `fix/b1878-reddit-reference-image` **已 push**, 与 origin 同步 |
+>
+> ### 🔴 写作/引用时用这些值 (旧值全部作废)
+>
+> | 项 | 旧（勿用） | 新 |
+> |---|---|---|
+> | C1 成本口径 | 13.7–35.3% | **1.6–35.3%**（SR 平局按列表序破平会选中更贵的对照） |
+> | triage 省钱 | 9.5–30.6%, 8/8 | **≤30.6%, 7/8**（同一个平局缺陷, 漏传了一轮才发现） |
+> | 噪声门槛 | 3.82–4.15pp (正态) | **4.02 / 4.02 / 4.46pp** (精确 Binom) ⇒ 过阈 3→1 |
+> | C1 的性质 | "天花板真实存在" | **"天花板的价格"** — 六次重跑到 39.77%, 六 mode oracle 43.30%, 残差 **3.53pp 低于自己的门槛** |
+> | C5 措辞 | "nothing to fit" | **"未通过 min_class_n=10 准入规则"** · trainable → **minted** |
+> | supply 约束 | "structural" | **"specification"** — 四个失败格只需 **2.1–4.2×** 语料 (reddit ≤846 题) |
+>
+> ### ✅ 已知攻击表**为空**
+> A1 欠采样 (§453 关掉: 对预测器成立、对结论不成立) · A2 pass@K (§452) · A3 OOD 措辞 (已降级)。
+>
+> ### 下一步
+> 1. **supervisor 反馈** — 稿子在 Overleaf, 可直接发
+> 2. **页数预算**仍等 AskUCL（公开资料查不到, 别再搜）
+> 3. rubric **#7**（Zekun Wu 原文进 bib + 文献图谱）· **#13**（逐个 setting 补 justify）
+> 4. ⚠️ **REALM #192 (审稿中) 摘要/intro/contribution(ii) 带同一个平局缺陷** —
+>    `9.5–30.6% in 8 of 8` 应为 `≤30.6%, 7/8`。camera-ready **09-14** 是修改窗口, user 已知, 待决
+>
+> ### ⚠️ 本 session 的方法学教训 (笔记 §454.1, 已录台账)
+> **多文件编辑批次一律绝对路径 + 逐文件验终态, 不以批内 print 为准。**
+> 实证丢了 3 处编辑且当时无察觉 (heredoc 中途 assert 失败 + 会话 cwd 被重置),
+> 后果是**摘要与章节漂移**。属于「编译通过、log 干净、内容却不是你以为的那份」一类。
+>
+> ```bash
+> cd final_dissertation/tex && latexmk -pdf main.tex          # 84 页
+> bash scripts/maintenance/overleaf_thesis_sync.sh            # 推给导师
+> bash tools/paper-deslop/scripts/ratchet_lint.sh             # 毕设 12 文件 error-clean 门
+> ```
+
+
 > ## 🟣 2026-08-11 · **毕设全稿 v1 落地 (79 页) + Overleaf 接通 + 三家 AI 审完**（最新 handoff）
 >
 > chronicle → **笔记 §452** · 台账 9 条已录
