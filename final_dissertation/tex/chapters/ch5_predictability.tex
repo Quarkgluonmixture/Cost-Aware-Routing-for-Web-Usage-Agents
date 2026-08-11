@@ -17,22 +17,38 @@ one respect that determines what is even testable.
 
 The which-mode label is minted only by a solve event. Table~\ref{tab:supply}
 shows the consequence: across the six VisualWebArena cells the number of
-trainable which-mode labels ranges from 15 to 97, pooled total 260, and after
-requiring at least two classes with enough members to survive a five-fold split,
-\textbf{4 of 6 cells contain no trainable classifier at all}. There is nothing
-to fit, and no amount of estimator choice changes that.
+\emph{minted} which-mode labels ranges from 15 to 97, pooled total 260, and after
+requiring at least two classes each retaining enough members to survive a
+five-fold split, \textbf{4 of 6 cells fail that admissibility rule entirely}.
+
+\begin{scopebox}
+\textbf{Say exactly what that rule is, because the stronger phrasing would be
+false.} ``No trainable classifier'' is an \emph{admissibility} verdict under a
+stated minimum of 10 training rows per class ($n\times\tfrac45 \geq 10$), not a
+mathematical impossibility. A logistic regression will happily fit two classes
+with three examples each and return a number; the rule exists to stop us
+believing it. The defensible statement is therefore \emph{4 of 6 cells fail the
+$\mathrm{min\_class\_n}=10$ rule}, and what it supports is a claim about how much
+supervision the benchmark produced --- not about what an estimator can be made to
+output. Two further caveats on the same table: the rule is evaluated against the
+\emph{expected} fold size $n\times\tfrac45$ rather than realised fold membership,
+so a cell can pass it and still lack a complete five-fold classifier; and the
+counts are \emph{minted} labels, of which about 54\% pooled fall in classes that
+survive the filter.
+\end{scopebox}
 
 \begin{table}[t]
 \centering\small
-\caption[Which-mode label supply]{\textbf{The which-mode half fails before
-modelling begins.} A label exists only where some mode succeeded. A cell needs
-at least two classes each retaining $\geq10$ members under a five-fold split;
-four cells do not have them. Chapter~\ref{ch:disc} shows this is a supply
-constraint rather than a labelling artefact.}
+\caption[Which-mode label supply]{\textbf{The which-mode half fails its
+admissibility rule before modelling begins.} A label is \emph{minted} only where
+some mode succeeded. The rule requires two classes each retaining $\geq10$
+expected training rows under a five-fold split; four cells do not have them. This
+is an admissibility verdict, not an impossibility proof (see the box above), and
+Chapter~\ref{ch:disc} argues that the underlying constraint is supply.}
 \label{tab:supply}
 \begin{tabular}{@{}lrrrrl@{}}
 \toprule
-Cell & scored $n$ & trainable labels & solvable \% & classes surviving & trainable? \\
+Cell & scored $n$ & minted labels & solvable \% & classes surviving & admissible? \\
 \midrule
 \cell{cls$\cdot$B0} & 224 & 97 & 43.30 & 3 (\mDOM{}, \mPP{}, \mSoM{}) & yes \\
 \cell{red$\cdot$B0} & 203 & 53 & 26.11 & 1 (\mDOM{})                  & \textbf{no} \\
@@ -56,7 +72,7 @@ than a negative result on the harder half.
 \begin{scopebox}
 \textbf{But note what triage does \emph{not} escape.} Its positive class is the
 solvable set --- precisely the tasks that mint which-mode labels. The counts in
-the ``trainable labels'' column of Table~\ref{tab:supply} are simultaneously the
+the ``minted labels'' column of Table~\ref{tab:supply} are simultaneously the
 which-mode label supply \emph{and} the triage minority-class size: 97, 53, 55,
 24, 16, 15. Both halves are rationed by the same scarce resource; triage merely
 divides it two ways instead of six. So triage is the easier problem, not a

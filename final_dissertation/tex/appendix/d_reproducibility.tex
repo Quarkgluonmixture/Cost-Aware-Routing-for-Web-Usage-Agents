@@ -61,10 +61,14 @@ that removes restart duplicates and tolerates truncated trailing lines, so a
 resumed run cannot double-count steps.
 
 \paragraph{Provenance headers.} Every analysis artefact records its producing
-script, capture timestamp, and whether it is gate-eligible or exploratory. The
-drop-one artefact used in Table~\ref{tab:dropone} carries a
-\texttt{NON\_PAPER\_GRADE} flag, which is surfaced in the main text rather than
-dropped.
+script, capture timestamp, and whether it is gate-eligible or exploratory. One
+of these needs reading carefully rather than at face value: the drop-one artefact
+used in Table~\ref{tab:dropone} stamps every row \texttt{NON\_PAPER\_GRADE},
+but that stamp is set by the producer's \texttt{--allow-partial} invocation flag,
+not derived from the rows. All 36 rows are in fact \texttt{complete\_exact} and
+non-partial, and re-running the same producer without the flag reproduces the
+identical numbers under a \texttt{PAPER\_GRADE} stamp. We report the flag as it
+stands and say what it means, rather than either hiding it or leaning on it.
 
 \section{Artefact inventory}
 

@@ -8,10 +8,12 @@ mislead.
    non-dominated set makes every mode look reasonable; the interesting fact is
    that several modes cost more AND succeed less than an alternative.
 
-2. Panels are never compared across the API/local boundary. B0's cost axis is
-   billed API dollars; B1/B2's is an electricity equivalent from device
-   telemetry. Each panel therefore carries its own x-axis and its own unit
-   label, and no shared axis invites the ratio.
+2. Panels are never compared across the API/local boundary. Both axes are
+   `total_billed_cost_usd`, but the SCHEDULE differs in kind: B0's is a vendor
+   price, B1/B2's a device-amortisation rate. Each panel therefore carries its
+   own x-axis and its own unit label, and no shared axis invites the ratio.
+   Neither axis is measured electricity — that is a separate quantity, reported
+   only in the sustainability discussion.
 
 Output: final_dissertation/figures/fig_f7_cost_sr_frontier.{png,pdf}
 """
@@ -82,8 +84,14 @@ def main() -> int:
     fig, axes = plt.subplots(2, 4, figsize=(14.6, 7.2))
     fronts = []
     for ax, cell in zip(axes.ravel(), cells):
+        # ⚠️ Both are `total_billed_cost_usd` — a TOKEN-priced quantity. B0's
+        # per-1k schedule is the vendor's actual billing rate; B1/B2's is a
+        # device-amortisation rate. Neither is measured electricity: for B1 DOM
+        # the plotted 0.0595 sits ~88x above the 0.000677 that energy x tariff
+        # gives. Naming the axis "electricity" would be naming a different
+        # quantity than the one drawn.
         unit = ("billed API \\$ / episode" if "B0" in cell
-                else "electricity-equivalent \\$ / episode")
+                else "token-priced \\$ / episode (device-amortised)")
         fronts.append(panel(ax, cell, n_of[cell], sr, cost, unit))
     for ax in axes.ravel()[len(cells):]:
         ax.axis("off")
@@ -102,17 +110,20 @@ def main() -> int:
     fig.text(0.008, 0.965,
              f"Filled outlines are non-dominated ({min(fronts)}-{max(fronts)} "
              "per cell); faded points cost more AND succeed less than some "
-             "alternative, and are shown rather than hidden. Cost is measured "
-             "per episode, not\nassumed from a token schedule — which is why a "
-             "weaker mode can be the more expensive one (it spends the step "
-             "budget failing). Panels use separate axes on purpose: B0 is "
-             "billed API dollars,\nB1/B2 an electricity equivalent from device "
-             "telemetry, and the two are never divided by one another.",
+             "alternative, and are shown rather than hidden. Cost is summed over "
+             "the episode's ACTUAL steps,\nnot inferred from a per-step context "
+             "length — which is why a weaker mode can be the more expensive one "
+             "(it spends the step budget failing). Panels use separate axes on "
+             "purpose:\nboth are total_billed_cost_usd, but B0's per-1k schedule "
+             "is a vendor price and B1/B2's a device-amortisation rate, and the "
+             "two are never divided by one another.",
              fontsize=8.4, color="#444444", linespacing=1.5, va="top")
     fig.text(0.008, -0.030,
              "Source: docs/analysis/cross_sites/router_objective_ordering.md "
-             "(cost = total_billed_cost_usd, the canonical estimand), "
-             "cross-checked against sr_per_mode.json.",
+             "(cost = total_billed_cost_usd, the canonical estimand — token-priced "
+             "throughout, NOT measured energy), cross-checked against "
+             "sr_per_mode.json for the six VWA cells; the two WA cells are "
+             "single-source.",
              fontsize=7.0, color="#888888")
     fig.tight_layout(rect=(0, 0.03, 1, 0.90))
 

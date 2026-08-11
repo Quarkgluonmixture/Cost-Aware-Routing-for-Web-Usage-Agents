@@ -224,10 +224,13 @@ environment does not drift under us in the way a live website would.
 
 \paragraph{External validation.} WebArena \citep{zhou2024webarena} reddit is
 used as a distribution-shift setting for two backbones. Its value here is
-specific and measurable rather than rhetorical: WebArena carries \emph{no
-reference images at all} (Figure~\ref{fig:f4}, panel B), whereas 29--40\% of
-VisualWebArena tasks supply one. That is a clean, countable difference in what
-the task \emph{specifies}.
+specific and measurable rather than rhetorical: WebArena task
+configurations \emph{omit the reference-image field entirely} --- all 480 of
+them across its three sites --- whereas 29--40\% of VisualWebArena tasks supply
+one (Figure~\ref{fig:f4}, panel B). The distinction between an absent field and
+an explicit zero is worth keeping: what we observe is a schema difference, from
+which no reference image follows, and not an annotation asserting that none is
+needed.
 
 \begin{scopebox}
 \textbf{A caveat we impose on ourselves.} It is tempting to read ``no reference
@@ -488,10 +491,12 @@ them in the direction of weakening our own positive claims.
   \includegraphics[width=\textwidth]{fig_f5_design_matrix.pdf}
   \caption[The experimental design matrix]{%
   \textbf{What was run.} Rows are observation modes, columns are (site, model)
-  cells. Filled entries are completed conditions on the full scored set; the
-  two rightmost columns are the WebArena external-validation cells. Cell counts
-  are the statistical stratification units; each filled square is one
-  operational condition.}
+  cells; the two rightmost columns are the WebArena external-validation cells.
+  Each filled square is one operational condition; each column is one
+  statistical stratification unit. The grid has no holes, which is what makes
+  every within-cell comparison paired. Completeness against the expected task-ID
+  set is enforced upstream by the aggregators
+  (Section~\ref{sec:repro}), not re-verified by the figure script.}
   \label{fig:f5}
 \end{figure}
 

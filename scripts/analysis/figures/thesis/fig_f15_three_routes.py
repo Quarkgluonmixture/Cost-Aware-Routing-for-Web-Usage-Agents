@@ -91,10 +91,16 @@ def panel_b(ax, ident):
     ax.set_ylim(0, max(shared) * 1.34)
     ax.set_title("B · pool across backbones", fontsize=9.8, loc="left",
                  fontweight="bold", pad=6)
+    # ⚠️ These bars group by TASK ID (`n_tasks_conflicting`), so what they show
+    # is label disagreement for the same task across backbones. That is not
+    # identical to "the target is not a function of the features": the same task
+    # can carry different feature vectors across cells, since three features are
+    # observation-derived. Annotate what is plotted; the feature-space version is
+    # a separate diagnostic and is named as such.
     ax.text(0.5, 0.55,
-            "blocked by identifiability\n\nthe same task gets a different\n"
-            "label under a different backbone,\nso the pooled target is not a\n"
-            "function of the pooled features",
+            "blocked by identifiability\n\nthe same task carries a different\n"
+            "label under a different backbone\n(grouped by task id; the\n"
+            "feature-space variant is reported\nseparately in the source)",
             transform=ax.transAxes, ha="center", va="center", fontsize=8.2,
             color=C_BLOCK, linespacing=1.6)
     ax.legend(frameon=False, fontsize=7.8, loc="upper left")

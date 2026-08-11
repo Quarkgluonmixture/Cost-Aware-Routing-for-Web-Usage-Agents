@@ -85,9 +85,10 @@ def main() -> int:
             linespacing=1.5, va="bottom")
     fig.text(0.012, 0.005,
              "Source: docs/analysis/cross_sites/router_objective_ordering.md, "
-             "cross-checked against sr_per_mode.json. Denominator is the scored "
-             "set (Table 3.2); all six modes within a cell run the identical "
-             "task-ID set, verified by SHA-256.",
+             "cross-checked against sr_per_mode.json for the six VWA cells; the "
+             "two WA cells are single-source. Denominator is the scored set "
+             "(Table 3.2). Task-set identity within a cell is enforced by "
+             "SHA-256 in the upstream aggregators, not re-verified here.",
              fontsize=7.0, color="#888888")
 
     a.out.parent.mkdir(parents=True, exist_ok=True)

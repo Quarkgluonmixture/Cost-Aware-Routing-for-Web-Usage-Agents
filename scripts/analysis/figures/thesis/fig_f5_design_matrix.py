@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """Thesis F5 — what was actually run: modes x cells, coverage at a glance.
 
+⚠️ SCOPE OF WHAT THIS FIGURE VERIFIES. It reads success rates out of one
+markdown table and cross-checks the VWA subset against the canonical SR JSON. It
+does NOT read completeness flags, episode counts, artifact grades or task-set
+SHAs, so it can only claim "this condition has a row", not "this condition ran
+to completion on the full scored set". Completeness is enforced upstream by the
+aggregators, which refuse a condition whose task-set hash does not match. Do not
+let the caption promise more than the parser checks.
+
 Guide §7.1 F4: worth a figure when the experiment count is large enough that a
 reader cannot otherwise judge coverage. 48 conditions over 8 cells qualifies.
 
@@ -80,24 +88,26 @@ def main() -> int:
 
     fig, ax = plt.subplots(figsize=(10.4, 4.9))
     build(ax, cells, n_of, sr)
-    ax.set_title("Every mode was run in every cell — the grid is complete, "
-                 "so every comparison is paired",
+    ax.set_title("Every mode was run in every cell — the grid has no holes, "
+                 "so every within-cell comparison is paired",
                  fontsize=11.4, fontweight="bold", loc="left", pad=40)
     ax.text(0.0, 1.015,
             f"{n_cond} conditions over {len(cells)} cells. A **condition** is "
             "one (site, model, mode) launch unit — one square. A **cell** is "
             "one (site, model) stratification unit — one column.\nSquares carry "
             "task success rate (%); colour marks what is actually sent to the "
-            "model. Within a column all six modes run the identical scored "
-            "task-ID set.",
+            "model. Every square is a row present in the source table — this "
+            "figure asserts coverage, not completeness.",
             transform=ax.transAxes, fontsize=8.4, color="#444444",
             linespacing=1.5, va="bottom")
     fig.text(0.012, 0.005,
              "Source: docs/analysis/cross_sites/router_objective_ordering.md, "
-             "cross-checked against sr_per_mode.json (script refuses to plot on "
-             "disagreement). VWA shopping conditions exist but are excluded "
-             "from analysis (they predate pipeline corrections) and are not "
-             "shown.",
+             "cross-checked against sr_per_mode.json for the 36 VWA values "
+             "(script refuses to plot on disagreement); the 12 WA values are "
+             "single-source. ⚠️ The parser reads success rates only — it does NOT "
+             "verify per-condition completeness flags or task-set hashes, which "
+             "are checked upstream by the aggregators. VWA shopping conditions "
+             "exist but predate pipeline corrections and are excluded.",
              fontsize=7.0, color="#888888")
 
     a.out.parent.mkdir(parents=True, exist_ok=True)

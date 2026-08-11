@@ -82,8 +82,11 @@ route is open but leads somewhere smaller than where we were going.
   \caption[Three routes out of the supply constraint, and why each is blocked]{%
   \textbf{Each escape from label scarcity fails differently.} Continuous labels
   are blocked by the evaluator, which emits a conjunctive binary verdict.
-  Pooling is blocked by identifiability: 56--57\% of shared tasks carry
-  conflicting labels across backbones. Coarser relabelling is open but converts
+  Pooling is blocked by identifiability: 56--57\% of tasks shared by two or more
+  cells carry conflicting labels across backbones. (The bars group by task
+  identity; because three features are observation-derived, the same task can
+  also carry different feature vectors across cells, and that stricter
+  feature-space version is a separate diagnostic in the source artefact.) Coarser relabelling is open but converts
   the problem into a smaller one rather than supplying more evidence. Three
   distinct failure modes is itself the argument that the constraint is
   structural.}
@@ -286,9 +289,12 @@ distribution. We also cannot construct the six-arm repetition comparison the
 ceiling would strictly require, because that needs six replicate runs of one
 mode.
 
-\paragraph{Drop-one values are complete-case and carry a
-\texttt{NON\_PAPER\_GRADE} provenance flag.} They are reported with that flag
-visible (Table~\ref{tab:dropone}) and support only the downgraded claim.
+\paragraph{The drop-one artefact's grade stamp is an invocation artefact.} All
+36 rows are \texttt{complete\_exact} and non-partial, but every row is stamped
+\texttt{NON\_PAPER\_GRADE} because the producer was invoked with
+\texttt{--allow-partial}. We report the stamp rather than removing it
+(Appendix~\ref{app:repro}); the values support only the downgraded claim in
+either case.
 
 \section{Future work the evidence actually implies}
 \label{sec:future}
@@ -337,7 +343,7 @@ fixed, and measured across eight (site, model) cells spanning two benchmarks and
 three backbones.
 
 \textbf{The opportunity is real.} A retrospective oracle gains $+3.45$ to
-$+16.35\pp$ of task success over the best single mode at 13.7--35.3\% lower
+$+16.35\pp$ of task success over the best single mode at 1.6--35.3\% lower
 cost, in every cell and on both benchmarks. \textbf{Most of its height, however, is
 repetition}: one rerun arm buys 2.0--7.6\pp{} by itself, and six reruns of the
 strongest single mode close to within 3.53\pp{} of the six-mode oracle --- below
