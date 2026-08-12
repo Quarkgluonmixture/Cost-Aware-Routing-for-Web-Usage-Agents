@@ -48,8 +48,18 @@ updated: 2026-08-08
 > ### 下一步 run 的排序（chain 未起，等你拍）
 > 1. **WA-shop × B0 × dom**（$17 / 0.7d）当 gate —— config **六个 mode 全已存在**，reset 已支持（B-1930）。SR <5% 止损
 > 2. WA-shop × B0 × som+vision（$35 / 1.3d）—— 与 VWA-shop 配成 2 应用 × 2 task set 的 2×2，是**唯一**能识别 winner-reversal moderator 的路（cls 在 WA 里不存在）
-> 3. **B4 = `eu.anthropic.claude-sonnet-4-6`**（改一行 `model.api_name`，§444.2）—— 先 **1-task smoke 验图像通道**（§444.4 明标未验），过了再 cls×6mode（$110 / ~4d）。它同时检验两个反向预测：which-mode label 随 SR 涨、retry label 随 SR 跌
-> 4. 砍：VWA-shop 三个 phantom（$150，§5 的 cost ceiling "adds no arm"，且每加一臂欠一笔 rerun）· B3 MiMo（2.5 週买不到 claim scope）
+> 3. **B4 = `eu.anthropic.claude-sonnet-5`** ✅ **图像通道 gate 已过（08-12，笔记 §456）** —— 落地仍是改一行 `model.api_name`。**先跑 cls 6 cond**（`$136–272`，区间取决于步数是否如 §72 减半），第一个 condition 落地就验掉步数假设，再决定 red（cls+red 合计 `$332–663`，上限会吃光 $674 余额，别盲投）。它同时检验两个反向预测：which-mode label 随 SR 涨、retry label 随 SR 跌
+> 4. 砍：VWA-shop 三个 phantom（$150，§5 的 cost ceiling "adds no arm"，且每加一臂欠一笔 rerun）· B3 MiMo（2.5 週买不到 claim scope，且 `gemma-3-27b-it` 更便宜更快地买到同一件事——见下）
+>
+> ### 🔴 §444 的两条结论已作废（排预算前必读）
+> - ~~"5 个 Anthropic 条目是死的"~~ → 九个候选**文本全部 200**，sonnet-5 / opus-5 的图像通道也通。**占位价→真实价 = 上线信号**
+> - ~~"sonnet-4-6 与 B0 完全同价 0.001/0.005"~~ → 那是**占位价**。真实 **0.003/0.015 = B0 的 3 倍**（实测计费逐位吻合）。**真正与 B0 严格同价的是 `haiku-4-5`**
+> - ⇒ 纪律：registry **三天内 3 增 4 减 10 重定价**。排预算前重跑 `probe_proxy_vision_channel.py`（不带 `--vision` 免费），别吃记忆或旧快照
+>
+> ### 两个意外候选（本 session 探出）
+> - **`haiku-4-5`** — 与 B0 **严格同价**且图像通道通 ⇒ 免费的「同价/异族/异能力档」受控对照
+> - **`gemma-3-27b-it`** — 0.3× B0 价、通道通、是 B2(`gemma-3-4b-it`) **同族 6.75× 参数**版 ⇒ 直接检验 "B2 cells are near the floor" 是**尺寸**还是**族**的问题。⚠️ 它 proxy-served 而 B2 本地 bf16，相减会混入 serving 差异（§302）
+> - ⚠️ `gemma-4-{31b,26b-a4b}` 虽便宜 0.14× 但**图收到了却读不出**（+578 tok 答 "White"）⇒ 不可作 VL baseline
 >
 > ⚠️ 起 chain 必须最外层 `export FORCE_NEW=1` —— `queue_chain.sh:394` 是 `FORCE_NEW="${FORCE_NEW:-0}"`，它上面 :372 的注释会误导（B-1916 已踩过）。rerun 若 resume 到原 run = 既没拿到第二次观测又污染了第一次。
 >

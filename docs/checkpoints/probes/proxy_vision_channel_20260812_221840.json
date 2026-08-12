@@ -1,0 +1,360 @@
+{
+  "probe": "proxy vision channel + billed-cost, closing §444.4's unverified image channel",
+  "generated": "20260812_221840",
+  "vision_pass_ran": true,
+  "image_spec": {
+    "size": "224x224 PNG",
+    "left": [
+      255,
+      0,
+      255
+    ],
+    "right": [
+      0,
+      128,
+      0
+    ],
+    "prompt": "This image is split into a left half and a right half, each a solid colour. What colour is the LEFT half? Answer with one word."
+  },
+  "verdict_legend": {
+    "SAW_IT": "named the left colour -- image channel works",
+    "SAW_IT_HALVES_SWAPPED": "named the right colour -- channel works, spatial answer wrong",
+    "IMAGE_BILLED_BUT_MISREAD": "input tokens jumped, so the image arrived and was billed -- the MODEL could not read it. Disqualifies the model, not the endpoint",
+    "SILENT_DROP_SUSPECT": "200, no colour named, AND no image-sized token jump: the image likely never reached the model. This is the dangerous case -- it looks like a working call",
+    "EMPTY_REPLY": "200 with empty content"
+  },
+  "results": [
+    {
+      "model": "qwen.qwen3-vl-235b-a22b",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hello! 😊  \nHow can I",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 9,
+        "outputTokens": 8,
+        "cost": 4.9000000000000005e-05
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.70082759,
+        "total_cost": 1005.70082759,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29917241,
+        "budget_usage_percent": 59.86314449940476
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "Magenta",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 104,
+        "outputTokens": 3,
+        "cost": 0.000119
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.7009465900001,
+        "total_cost": 1005.7009465900001,
+        "budget_limit": 1680,
+        "remaining_budget": 674.2990534099999,
+        "budget_usage_percent": 59.8631515827381
+      },
+      "image_input_token_delta": 95,
+      "billed_usd_both_calls": 0.00016800000000000002,
+      "verdict": "SAW_IT"
+    },
+    {
+      "model": "eu.anthropic.claude-sonnet-5",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "I'm doing well, th",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 0.00014399999999999998
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.70109059,
+        "total_cost": 1005.70109059,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29890941,
+        "budget_usage_percent": 59.86316015416667
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "Magenta",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 111,
+        "outputTokens": 6,
+        "cost": 0.00042300000000000004
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.70151359,
+        "total_cost": 1005.70151359,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29848641,
+        "budget_usage_percent": 59.86318533273809
+      },
+      "image_input_token_delta": 103,
+      "billed_usd_both_calls": 0.000567,
+      "verdict": "SAW_IT"
+    },
+    {
+      "model": "eu.anthropic.claude-sonnet-4-6",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "Hi there! How are you doing?",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 0.00014399999999999998
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.70165759,
+        "total_cost": 1005.70165759,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29834241,
+        "budget_usage_percent": 59.863193904166664
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "**Magenta**",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 105,
+        "outputTokens": 8,
+        "cost": 0.000435
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.70209259,
+        "total_cost": 1005.70209259,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29790741,
+        "budget_usage_percent": 59.86321979702382
+      },
+      "image_input_token_delta": 97,
+      "billed_usd_both_calls": 0.000579,
+      "verdict": "SAW_IT"
+    },
+    {
+      "model": "eu.anthropic.claude-opus-5",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "Hi! How's it going",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 0.0007199999999999999
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.70281259,
+        "total_cost": 1005.70281259,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29718741,
+        "budget_usage_percent": 59.86326265416667
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "**Magenta**",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 111,
+        "outputTokens": 18,
+        "cost": 0.003015
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.70582759,
+        "total_cost": 1005.70582759,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29417241,
+        "budget_usage_percent": 59.86344211845238
+      },
+      "image_input_token_delta": 103,
+      "billed_usd_both_calls": 0.0037349999999999996,
+      "verdict": "SAW_IT"
+    },
+    {
+      "model": "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "# Hello! 👋\n\nHow",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 4.8e-05
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.70587559,
+        "total_cost": 1005.70587559,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29412441,
+        "budget_usage_percent": 59.863444975595236
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "Magenta",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 105,
+        "outputTokens": 6,
+        "cost": 0.000135
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.70601059,
+        "total_cost": 1005.70601059,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29398941,
+        "budget_usage_percent": 59.86345301130952
+      },
+      "image_input_token_delta": 97,
+      "billed_usd_both_calls": 0.000183,
+      "verdict": "SAW_IT"
+    },
+    {
+      "model": "google.gemma-4-31b",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hello! How can I help you today?",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 44,
+        "outputTokens": 9,
+        "cost": 9.76e-06
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.70602035,
+        "total_cost": 1005.70602035,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29397965,
+        "budget_usage_percent": 59.863453592261905
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "Grey",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 622,
+        "outputTokens": 2,
+        "cost": 8.787999999999999e-05
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.70610823,
+        "total_cost": 1005.70610823,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29389177,
+        "budget_usage_percent": 59.86345882321429
+      },
+      "image_input_token_delta": 578,
+      "billed_usd_both_calls": 9.764e-05,
+      "verdict": "IMAGE_BILLED_BUT_MISREAD"
+    },
+    {
+      "model": "google.gemma-4-26b-a4b",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hello! How can I help you today?",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 44,
+        "outputTokens": 9,
+        "cost": 8.87e-06
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.7061171,
+        "total_cost": 1005.7061171,
+        "budget_limit": 1680,
+        "remaining_budget": 674.2938829,
+        "budget_usage_percent": 59.86345935119047
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "White",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 622,
+        "outputTokens": 2,
+        "cost": 8.156e-05
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.70619866,
+        "total_cost": 1005.70619866,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29380134,
+        "budget_usage_percent": 59.86346420595239
+      },
+      "image_input_token_delta": 578,
+      "billed_usd_both_calls": 9.043e-05,
+      "verdict": "IMAGE_BILLED_BUT_MISREAD"
+    },
+    {
+      "model": "google.gemma-3-27b-it",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hi there! 👋 \n\nHow can",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 10,
+        "outputTokens": 8,
+        "cost": 7.8e-06
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.7062064600001,
+        "total_cost": 1005.7062064600001,
+        "budget_limit": 1680,
+        "remaining_budget": 674.2937935399999,
+        "budget_usage_percent": 59.863464670238095
+      },
+      "implied_unit_price": null,
+      "vision_status": 200,
+      "vision_reply": "Pink",
+      "vision_error": null,
+      "vision_usage": {
+        "inputTokens": 298,
+        "outputTokens": 2,
+        "cost": 9.06e-05
+      },
+      "quota_after_vision": {
+        "llm_cost": 1005.70629706,
+        "total_cost": 1005.70629706,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29370294,
+        "budget_usage_percent": 59.863470063095235
+      },
+      "image_input_token_delta": 288,
+      "billed_usd_both_calls": 9.84e-05,
+      "verdict": "SAW_IT"
+    },
+    {
+      "model": "zai.glm-5",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hi there! I'm the GLM",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 6,
+        "outputTokens": 8,
+        "cost": 1.4999999999999999e-05
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.70631206,
+        "total_cost": 1005.70631206,
+        "budget_limit": 1680,
+        "remaining_budget": 674.29368794,
+        "budget_usage_percent": 59.86347095595238
+      },
+      "implied_unit_price": null,
+      "vision_status": 400,
+      "vision_reply": "",
+      "vision_error": "Invalid request parameters.",
+      "vision_usage": null,
+      "quota_after_vision": null,
+      "image_input_token_delta": null,
+      "billed_usd_both_calls": 1.4999999999999999e-05,
+      "verdict": "HTTP_400"
+    }
+  ]
+}
