@@ -1,0 +1,589 @@
+{
+  "undiagnosed_buckets": [
+    "max-steps-other",
+    "error/noise"
+  ],
+  "diagnosability": [
+    {
+      "cell": "B0/classifieds/DOM",
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "failed": 185,
+      "named_mechanism": 171,
+      "undiagnosed": 14,
+      "diagnosable_pct": 92.43243243243244,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/classifieds/P-SoM",
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "failed": 189,
+      "named_mechanism": 165,
+      "undiagnosed": 24,
+      "diagnosable_pct": 87.3015873015873,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/classifieds/P-prompt",
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "failed": 180,
+      "named_mechanism": 167,
+      "undiagnosed": 13,
+      "diagnosable_pct": 92.77777777777777,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/classifieds/P-text",
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-text",
+      "failed": 189,
+      "named_mechanism": 175,
+      "undiagnosed": 14,
+      "diagnosable_pct": 92.5925925925926,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/classifieds/SoM",
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "SoM",
+      "failed": 163,
+      "named_mechanism": 145,
+      "undiagnosed": 18,
+      "diagnosable_pct": 88.95705521472392,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/classifieds/Vision",
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "Vision",
+      "failed": 168,
+      "named_mechanism": 129,
+      "undiagnosed": 39,
+      "diagnosable_pct": 76.78571428571429,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/reddit/DOM",
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "DOM",
+      "failed": 175,
+      "named_mechanism": 133,
+      "undiagnosed": 42,
+      "diagnosable_pct": 76.0,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/reddit/P-prompt",
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "failed": 179,
+      "named_mechanism": 145,
+      "undiagnosed": 34,
+      "diagnosable_pct": 81.00558659217877,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/reddit/P-text",
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-text",
+      "failed": 177,
+      "named_mechanism": 115,
+      "undiagnosed": 62,
+      "diagnosable_pct": 64.97175141242938,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B0/reddit/SoM",
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "SoM",
+      "failed": 175,
+      "named_mechanism": 113,
+      "undiagnosed": 62,
+      "diagnosable_pct": 64.57142857142857,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B0/reddit/Vision",
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "Vision",
+      "failed": 189,
+      "named_mechanism": 88,
+      "undiagnosed": 101,
+      "diagnosable_pct": 46.560846560846564,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B1/classifieds/DOM",
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "DOM",
+      "failed": 210,
+      "named_mechanism": 187,
+      "undiagnosed": 23,
+      "diagnosable_pct": 89.04761904761905,
+      "top_bucket": "search-loop"
+    },
+    {
+      "cell": "B1/classifieds/P-SoM",
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "failed": 209,
+      "named_mechanism": 170,
+      "undiagnosed": 39,
+      "diagnosable_pct": 81.33971291866028,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B1/classifieds/P-prompt",
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "failed": 209,
+      "named_mechanism": 169,
+      "undiagnosed": 40,
+      "diagnosable_pct": 80.86124401913875,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B1/classifieds/P-text",
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-text",
+      "failed": 207,
+      "named_mechanism": 183,
+      "undiagnosed": 24,
+      "diagnosable_pct": 88.40579710144928,
+      "top_bucket": "search-loop"
+    },
+    {
+      "cell": "B1/classifieds/SoM",
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "SoM",
+      "failed": 192,
+      "named_mechanism": 165,
+      "undiagnosed": 27,
+      "diagnosable_pct": 85.9375,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B1/classifieds/Vision",
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "Vision",
+      "failed": 196,
+      "named_mechanism": 87,
+      "undiagnosed": 109,
+      "diagnosable_pct": 44.38775510204081,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B1/reddit/DOM",
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "DOM",
+      "failed": 191,
+      "named_mechanism": 148,
+      "undiagnosed": 43,
+      "diagnosable_pct": 77.4869109947644,
+      "top_bucket": "search-loop"
+    },
+    {
+      "cell": "B1/reddit/P-SoM",
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "failed": 191,
+      "named_mechanism": 127,
+      "undiagnosed": 64,
+      "diagnosable_pct": 66.49214659685863,
+      "top_bucket": "search-loop"
+    },
+    {
+      "cell": "B1/reddit/P-prompt",
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "failed": 192,
+      "named_mechanism": 135,
+      "undiagnosed": 57,
+      "diagnosable_pct": 70.3125,
+      "top_bucket": "early-finish/wrong-commit"
+    },
+    {
+      "cell": "B1/reddit/P-text",
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "P-text",
+      "failed": 191,
+      "named_mechanism": 131,
+      "undiagnosed": 60,
+      "diagnosable_pct": 68.58638743455498,
+      "top_bucket": "search-loop"
+    },
+    {
+      "cell": "B1/reddit/SoM",
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "SoM",
+      "failed": 188,
+      "named_mechanism": 113,
+      "undiagnosed": 75,
+      "diagnosable_pct": 60.1063829787234,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B1/reddit/Vision",
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "Vision",
+      "failed": 199,
+      "named_mechanism": 75,
+      "undiagnosed": 124,
+      "diagnosable_pct": 37.688442211055275,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/classifieds/DOM",
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "DOM",
+      "failed": 221,
+      "named_mechanism": 120,
+      "undiagnosed": 101,
+      "diagnosable_pct": 54.29864253393665,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/classifieds/P-SoM",
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "failed": 222,
+      "named_mechanism": 89,
+      "undiagnosed": 133,
+      "diagnosable_pct": 40.090090090090094,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/classifieds/P-prompt",
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "failed": 220,
+      "named_mechanism": 80,
+      "undiagnosed": 140,
+      "diagnosable_pct": 36.36363636363637,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/classifieds/P-text",
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "P-text",
+      "failed": 223,
+      "named_mechanism": 136,
+      "undiagnosed": 87,
+      "diagnosable_pct": 60.98654708520179,
+      "top_bucket": "search-loop"
+    },
+    {
+      "cell": "B2/classifieds/SoM",
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "SoM",
+      "failed": 219,
+      "named_mechanism": 127,
+      "undiagnosed": 92,
+      "diagnosable_pct": 57.990867579908674,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/classifieds/Vision",
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "Vision",
+      "failed": 219,
+      "named_mechanism": 103,
+      "undiagnosed": 116,
+      "diagnosable_pct": 47.03196347031963,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/reddit/DOM",
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "DOM",
+      "failed": 197,
+      "named_mechanism": 56,
+      "undiagnosed": 141,
+      "diagnosable_pct": 28.426395939086294,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/reddit/P-SoM",
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "failed": 202,
+      "named_mechanism": 72,
+      "undiagnosed": 130,
+      "diagnosable_pct": 35.64356435643565,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/reddit/P-prompt",
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "failed": 204,
+      "named_mechanism": 70,
+      "undiagnosed": 134,
+      "diagnosable_pct": 34.31372549019608,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/reddit/P-text",
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "P-text",
+      "failed": 200,
+      "named_mechanism": 64,
+      "undiagnosed": 136,
+      "diagnosable_pct": 32.0,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/reddit/SoM",
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "SoM",
+      "failed": 202,
+      "named_mechanism": 76,
+      "undiagnosed": 126,
+      "diagnosable_pct": 37.62376237623762,
+      "top_bucket": "max-steps-other"
+    },
+    {
+      "cell": "B2/reddit/Vision",
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "Vision",
+      "failed": 200,
+      "named_mechanism": 65,
+      "undiagnosed": 135,
+      "diagnosable_pct": 32.5,
+      "top_bucket": "max-steps-other"
+    }
+  ],
+  "token_tail": [
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "n_steps_with_tokens": 3496,
+      "n_steps_missing_tokens": 0,
+      "p50": 3769,
+      "p95": 4949,
+      "p99": 6495,
+      "max": 17940,
+      "mean": 3934.2,
+      "tail_ratio_p99_over_p50": 1.72,
+      "runs": [
+        "B0_dom_classifieds_20260525_194618_553890342_530647_R21557"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "SoM",
+      "n_steps_with_tokens": 6099,
+      "n_steps_missing_tokens": 0,
+      "p50": 4741,
+      "p95": 5689,
+      "p99": 6287,
+      "max": 18914,
+      "mean": 4823.0,
+      "tail_ratio_p99_over_p50": 1.33,
+      "runs": [
+        "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+        "B0_som_classifieds_20260803_084743_413015398_3677519_R30696"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "Vision",
+      "n_steps_with_tokens": 3557,
+      "n_steps_missing_tokens": 0,
+      "p50": 3495,
+      "p95": 4176,
+      "p99": 4265,
+      "max": 4335,
+      "mean": 3569.1,
+      "tail_ratio_p99_over_p50": 1.22,
+      "runs": [
+        "B0_vision_classifieds_20260526_141916_610351680_689390_R32024"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-text",
+      "n_steps_with_tokens": 3546,
+      "n_steps_missing_tokens": 0,
+      "p50": 3663,
+      "p95": 4674,
+      "p99": 5861,
+      "max": 17752,
+      "mean": 3815.2,
+      "tail_ratio_p99_over_p50": 1.6,
+      "runs": [
+        "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "n_steps_with_tokens": 3350,
+      "n_steps_missing_tokens": 0,
+      "p50": 3883,
+      "p95": 5096,
+      "p99": 6794,
+      "max": 18058,
+      "mean": 4083.0,
+      "tail_ratio_p99_over_p50": 1.75,
+      "runs": [
+        "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "n_steps_with_tokens": 3636,
+      "n_steps_missing_tokens": 0,
+      "p50": 3796,
+      "p95": 4788,
+      "p99": 5472,
+      "max": 17916,
+      "mean": 3921.4,
+      "tail_ratio_p99_over_p50": 1.44,
+      "runs": [
+        "B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "DOM",
+      "n_steps_with_tokens": 6882,
+      "n_steps_missing_tokens": 0,
+      "p50": 4537,
+      "p95": 6130,
+      "p99": 6913,
+      "max": 10216,
+      "mean": 4529.4,
+      "tail_ratio_p99_over_p50": 1.52,
+      "runs": [
+        "B0_dom_reddit_20260621_192103_660613311_2421036_R819",
+        "B0_dom_reddit_20260625_154833_928747130_2827521_R11344"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "SoM",
+      "n_steps_with_tokens": 4103,
+      "n_steps_missing_tokens": 0,
+      "p50": 4754,
+      "p95": 6777,
+      "p99": 7129,
+      "max": 8029,
+      "mean": 5032.3,
+      "tail_ratio_p99_over_p50": 1.5,
+      "runs": [
+        "B0_som_reddit_20260627_035453_162107997_3024022_R20936"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "Vision",
+      "n_steps_with_tokens": 4759,
+      "n_steps_missing_tokens": 0,
+      "p50": 3518,
+      "p95": 4542,
+      "p99": 5253,
+      "max": 5548,
+      "mean": 3706.2,
+      "tail_ratio_p99_over_p50": 1.49,
+      "runs": [
+        "B0_vision_reddit_20260628_094255_184327569_3222015_R17559"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-text",
+      "n_steps_with_tokens": 4713,
+      "n_steps_missing_tokens": 0,
+      "p50": 3812,
+      "p95": 5598,
+      "p99": 6020,
+      "max": 6799,
+      "mean": 4049.3,
+      "tail_ratio_p99_over_p50": 1.58,
+      "runs": [
+        "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "n_steps_with_tokens": 4049,
+      "n_steps_missing_tokens": 0,
+      "p50": 4649,
+      "p95": 6185,
+      "p99": 7008,
+      "max": 10679,
+      "mean": 4625.3,
+      "tail_ratio_p99_over_p50": 1.51,
+      "runs": [
+        "B0_phantom_prompt_reddit_20260709"
+      ]
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "n_steps_with_tokens": 4669,
+      "n_steps_missing_tokens": 0,
+      "p50": 4018,
+      "p95": 5769,
+      "p99": 6136,
+      "max": 7177,
+      "mean": 4239.6,
+      "tail_ratio_p99_over_p50": 1.53,
+      "runs": [
+        "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173"
+      ]
+    }
+  ]
+}
