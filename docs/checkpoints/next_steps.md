@@ -23,6 +23,39 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟣 2026-08-12 · **workshop→NAACL 的 run 排序定了 · 一条现有 licensed claim 要改**（最新 handoff）
+>
+> chronicle → **笔记 §455** · 台账 8 条 · 产物 `docs/analysis/cross_sites/retry_vs_switch_label_supply.{md,json,csv}`
+>
+> ### 先跑命令拿 live 状态, 别读下面的数字快照
+> ```bash
+> ssh condense-a100 'cd /home/ubuntu/workspace/p79 && pgrep -af run_experiment; tail -3 logs/queue_chain_b0vis_b1shop_20260809.log'
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once      # B0 余额
+> .venv/bin/python3 scripts/analysis/retry_vs_switch_label_supply.py --write-md   # 本 session 产物重算
+> ```
+> ⚠️ A100 是 **UTC**, DGX 是 **BST** —— 读 A100 的 log 时刻前先换算（台账 §446.7 的老坑, 本 session 又踩了一次）。
+>
+> ### A100 现状
+> 08-09 起那条 4 段 chain 在第 **3/4** 段（B1 som shopping），第 4 段 `queue_phantom_som.sh B1 shopping` 会自动接，**约 08-16 收，全程不用碰**。收完队列为空。
+>
+> ### 🔴 本 session 的科学结论（写作时用这些）
+> | 项 | 结论 |
+> |---|---|
+> | 「retry 还是 switch」当 router 的假说 | **被自己的数据否掉** —— decision set 大（70–85% of cell）但 `neither`=124 恒定，contested 对 which-mode 只 **1.04×**。绕不过的天花板是 agent 能解几道题，不是 label 怎么定义 ⇒ 反而**加强** §7 |
+> | ⭐ one-arm licensed claim | `noise_floor_inventory §2` 漏了第五个 same —— **same base**。从 dom（15–17%）出发换表征值 **2.1–3.5×** 于重跑；从 som（最强）出发只 0.58–0.94×。**重跑收益随 base 无趋势，换表征收益强依赖 base** |
+> | 六臂预算两种花法 | 6 表征×1 代 **43.30%**（= 已发表 oracle，读取路径自检通过）vs 3 表征×2 代 **44.64%** ⇒ 差 3 题、低于 12–14% discordance ⇒ 只能报**不可区分** |
+>
+> ### 下一步 run 的排序（chain 未起，等你拍）
+> 1. **WA-shop × B0 × dom**（$17 / 0.7d）当 gate —— config **六个 mode 全已存在**，reset 已支持（B-1930）。SR <5% 止损
+> 2. WA-shop × B0 × som+vision（$35 / 1.3d）—— 与 VWA-shop 配成 2 应用 × 2 task set 的 2×2，是**唯一**能识别 winner-reversal moderator 的路（cls 在 WA 里不存在）
+> 3. **B4 = `eu.anthropic.claude-sonnet-4-6`**（改一行 `model.api_name`，§444.2）—— 先 **1-task smoke 验图像通道**（§444.4 明标未验），过了再 cls×6mode（$110 / ~4d）。它同时检验两个反向预测：which-mode label 随 SR 涨、retry label 随 SR 跌
+> 4. 砍：VWA-shop 三个 phantom（$150，§5 的 cost ceiling "adds no arm"，且每加一臂欠一笔 rerun）· B3 MiMo（2.5 週买不到 claim scope）
+>
+> ⚠️ 起 chain 必须最外层 `export FORCE_NEW=1` —— `queue_chain.sh:394` 是 `FORCE_NEW="${FORCE_NEW:-0}"`，它上面 :372 的注释会误导（B-1916 已踩过）。rerun 若 resume 到原 run = 既没拿到第二次观测又污染了第一次。
+>
+> ### 算力
+> **加机器没用，站点才是瓶颈**：只有 A100 自托管 VWA docker；Sparks 连通性未验证（CLAUDE.md 明禁当 paper-grade target），Myriad CGNAT 连不上。Sparks/Myriad 只能接不需要站点的计算。
+
 > ## 🟣 2026-08-11 · **毕设全稿完成并 push (84 页) · 三家 AI 审完 · 全篇 deslop · 已知攻击表清空**
 >
 > chronicle → **笔记 §452 / §453 / §454** · 台账 17 条 · **30 commits 已 push**
