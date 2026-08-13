@@ -1,0 +1,60 @@
+# B4 P-SoM (SoM prompt + [SOM_MARKS] text, no image) — VWA classifieds. B4 = Claude Sonnet 5 via the same AWS proxy as B0.
+#
+# Why B4 exists (笔记 §456.4 + NAACL 攻击面 #3): every existing backbone is open-weight
+# (B0 Qwen3-VL-235B / B1 Qwen3-VL-4B / B2 Gemma-3-4B / B3 MiMo-VL-7B), so "is the baseline
+# strong enough" has no answer on this data. It also tests two OPPOSING predictions at once
+# (§457/§459): which-mode labels should grow with success rate, abort labels should shrink.
+#
+# ⚠️ TWO fields differ from B0, not one. 台账 §444.2 said "改一行 config" and that is wrong:
+#   - `api_name`            → the Anthropic modelId
+#   - `metrics.cost_api`    → **0.003/0.015, three times B0's 0.001/0.005**
+# The 0.001/0.005 that 台账 §444.2 quoted as "同价" was a PLACEHOLDER price for an unwired
+# registry entry; ten entries moved off it between the 08-09 and 08-12 snapshots (笔记
+# §456.2). Leaving the B0 cost block here would under-record every cost by 3x, silently.
+#
+# Image channel verified 2026-08-12 (笔记 §456.1): SAW_IT, +103 image tokens.
+# ⚠️ That was a 224x224 synthetic colour block. It proves the CHANNEL, not that the model
+# reads a 1280x720 SoM-annotated screenshot — run the 1-task smoke before the fire.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B4_phantom_som_classifieds"
+
+task:
+  include_sites: ["classifieds"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_som"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "eu.anthropic.claude-sonnet-5"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.0
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: false  # B-396: paper-grade hard-off. GLM rescue physically removed (§210).
+    glm_config: ".auth/glm"
+
+metrics:
+  cost_api:
+    # Sonnet 5 real listed price, verified against billed usage.cost 2026-08-12
+    # (8 in / 8 out = $0.000144 = 8x.003 + 8x.015 per 1k). NOT B0's 0.001/0.005.
+    input_cost_per_1k: 0.003
+    output_cost_per_1k: 0.015
+  energy:
+    enabled: false

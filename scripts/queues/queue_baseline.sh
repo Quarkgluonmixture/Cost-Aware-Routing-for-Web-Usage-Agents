@@ -40,7 +40,7 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
 if [[ $# -lt 3 ]]; then
-  echo "Usage: $0 <baseline:B0|B1|B2|B3> <mode:dom|som|vision> <site> [benchmark:vwa|wa]" >&2
+  echo "Usage: $0 <baseline:B0|B1|B2|B3|B4> <mode:dom|som|vision> <site> [benchmark:vwa|wa]" >&2
   echo "  e.g. bash $0 B0 dom shopping" >&2
   echo "       bash $0 B0 vision shopping wa" >&2
   exit 2
@@ -50,8 +50,8 @@ BASELINE="$1"; MODE="$2"; SITE="$3"
 BENCHMARK="${4:-vwa}"
 
 # Validation
-if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" && "${BASELINE}" != "B2" && "${BASELINE}" != "B3" ]]; then
-  echo "Invalid baseline: ${BASELINE} (expected B0, B1, B2 or B3)" >&2; exit 2
+if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" && "${BASELINE}" != "B2" && "${BASELINE}" != "B3" && "${BASELINE}" != "B4" ]]; then
+  echo "Invalid baseline: ${BASELINE} (expected B0, B1, B2, B3 or B4)" >&2; exit 2
 fi
 if [[ "${MODE}" != "dom" && "${MODE}" != "som" && "${MODE}" != "vision" ]]; then
   echo "Invalid mode: ${MODE} (expected dom/som/vision)" >&2; exit 2
@@ -148,7 +148,10 @@ if [[ "$(hostname)" == *condense* ]] || [[ -d /home/ubuntu/workspace/p79 ]]; the
 fi
 
 # ---------- B0 PROXY API key 加载 ----------
-if [[ "${BASELINE}" == "B0" ]]; then
+# B4 (Claude Sonnet 5, 2026-08-13) shares B0's AWS proxy endpoint, so it needs the
+# same key load. Gating on the baseline NAME rather than on the config's backend type
+# is why adding a proxy-served baseline touches this line at all -- see 笔记 §461.
+if [[ "${BASELINE}" == "B0" || "${BASELINE}" == "B4" ]]; then
   load_proxy_api_key "${REPO_DIR}" "baseline"
 fi
 

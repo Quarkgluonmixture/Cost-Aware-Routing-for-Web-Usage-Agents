@@ -1,0 +1,54 @@
+# B4 som classifieds — NON-CANONICAL smoke. Identical to exp_v2_B4_som_classifieds.yaml EXCEPT task.max_tasks_per_site: 1.
+# Verifies: a real 1280x720 SoM-ANNOTATED screenshot, not a synthetic colour block.
+# WHY BOTH SMOKES ARE NEEDED: 笔记 §456.1 verified the image CHANNEL with a
+# 224x224 synthetic block; it did NOT verify (a) tool_choice=required on an
+# Anthropic modelId through this hybrid proxy -- 台账 §243 records that object
+# tool_choice is silently swallowed and Anthropic-native {type:tool}/{any}
+# returns HTTP 400 -- nor (b) reading a dense annotated UI screenshot.
+# Run: SMOKE_CONFIG=configs/exp_v2_B4_som_classifieds_smoke.yaml \
+#      FORCE_NEW=1 RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B4 som classifieds
+# Check after: emit rate of tool calls, parse_error_rate, step count, cost.
+#
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B4_som_classifieds_smoke"
+
+task:
+  include_sites: ["classifieds"]
+  max_tasks_per_site: 1
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["som"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "eu.anthropic.claude-sonnet-5"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.0
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: false  # B-396: paper-grade hard-off. GLM rescue physically removed (§210).
+    glm_config: ".auth/glm"
+
+metrics:
+  cost_api:
+    # Sonnet 5 real listed price, verified against billed usage.cost 2026-08-12
+    # (8 in / 8 out = $0.000144 = 8x.003 + 8x.015 per 1k). NOT B0's 0.001/0.005.
+    input_cost_per_1k: 0.003
+    output_cost_per_1k: 0.015
+  energy:
+    enabled: false
