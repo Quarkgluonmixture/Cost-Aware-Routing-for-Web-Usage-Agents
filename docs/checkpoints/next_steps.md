@@ -23,7 +23,37 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟣 2026-08-12 · **workshop→NAACL 的 run 排序定了 · 一条现有 licensed claim 要改**（最新 handoff）
+> ## 🟣 2026-08-13 · **四 lineage 重定 frame · 两个数字被自己的审计推翻 · chain 第 3 段换掉**（最新 handoff）
+>
+> chronicle → **笔记 §455–§465**（11 节）· 台账 **+54 条**（2298 → 2352）· **12 commits 未 push**
+>
+> ### 🔴 写作时必须用新值（旧值全部作废）
+>
+> | 项 | 旧（勿用） | 新 |
+> |---|---|---|
+> | `label_instability` contested flip 率 | 51.1% vs 补集 2.9%，enrichment 17.4× | **67.0% vs 5.9%，11.4×**（三臂重算；旧值只用了 dom+vision 两臂，som 臂 08-03 就落地了）⚠️ **REALM 稿 §4 引的是旧值** |
+> | abstention 省钱 | 「≤5% 损失省 11.2–47.2%，held-out」 | **14.4–24.6%（四个 B0/B1 cell，嵌套阈值）**；旧值的阈值是用测试折标签挑的 ⇒ oracle-selected |
+> | abstention 「零损失」 | 0%-loss 列全是 −0 solvable | **嵌套后同列出现 −1/−1/−1/−4** —— 零损失不再是承诺 |
+> | B4 落地成本 | 「与 B0 同价 0.001/0.005」 | **0.003/0.015 = B0 的 3 倍**（占位价误读，§456.2） |
+>
+> ### frame：三家零预设独立收敛（笔记 §463）
+> `noise_floor_inventory` 是**方法论中心** · `layered_evidence_status` **只作索引永不作被引证据** · `energy_carbon` 不承重 · **稿子 contribution (ii)「most of the apparent oracle headroom comes from rerun variance」被它自己的产物否掉**（"Not licensed"）· 六臂 gain 必须带 arm count
+>
+> ### A100 chain（不用管，自动接）
+> 08-09 chain 第 3/4 段 → watcher `_b4_wa_watcher.sh 738522` 双条件 armed → 收后自动跑：**B4 dom smoke → B4 som smoke → B1 som classifieds replicate**（第 3 段 **2026-08-13 从 WA-shop 换成 replicate**，理由见 §464.3：三家 framing 无一保留 winner-reversal 作主线，而 floor 覆盖是三家共同的方法论中心；B1 本地 ⇒ $0）
+>
+> ### 还没做（都不需要新 run）
+> 1. **0/36 与 0/8 在 primary leak 政策下重算** —— `per_task_sr.csv` 是 leak-kept 且 n=205，canonical 是 leak-corrected 且 n=203（§462.1）
+> 2. abstention 的 **leave-one-site-out** transfer（现仅 within-cell 5-fold）
+>
+> ```bash
+> .venv/bin/python3 scripts/analysis/abstention_learnability.py        # 嵌套阈值版
+> .venv/bin/python3 scripts/analysis/aggregate_label_instability.py    # 三臂版
+> .venv/bin/python3 scripts/maintenance/crossai_frame_direct.py        # 四 lineage 交叉
+> ```
+> ⚠️ **opencode CLI 不能用于长 prompt 审计**（7.7KB 就挂死，server socket fd=0）；用上面那个直连脚本。kimi-k3 只接受 `temperature=1`；deepseek-v4-pro 的 reasoning 与答案共用 token 预算。
+
+> ## 🟣 2026-08-12 · **workshop→NAACL 的 run 排序定了 · 一条现有 licensed claim 要改**
 >
 > chronicle → **笔记 §455** · 台账 8 条 · 产物 `docs/analysis/cross_sites/retry_vs_switch_label_supply.{md,json,csv}`
 >
