@@ -44,18 +44,20 @@ Four of six cells carry a gap of +0.254 or more; the two `B2` cells do not (+0.0
 
 The denominator is the money §5's surviving bound still pays: that bound routes never-solved tasks to the cheapest arm, so the cost still incurred is the cheapest arm's, `min(cost_dom, cost_psom)` per task. Abstention does not pay it at all.
 
-| cell | total | oracle (abstain every universal-fail) | held-out, 0 loss | ≤2% of solvable | ≤5% | ≤10% |
+| cell | total | oracle (abstain every universal-fail) | **nested** 0 loss | ≤2% budget | ≤5% | ≤10% |
 |---|---:|---:|---:|---:|---:|---:|
-| `B0_classifieds` | $12.71 | **63.8%** | 4.2% (−0) | 6.2% (−1) | 11.2% (−4) | 22.1% (−9) |
-| `B0_reddit` | $17.33 | **78.5%** | 4.4% (−0) | 15.2% (−1) | 16.7% (−2) | 38.8% (−5) |
-| `B1_classifieds` | $10.78 | **79.3%** | 8.5% (−0) | 14.7% (−1) | 19.1% (−2) | 34.9% (−5) |
-| `B1_reddit` | $12.52 | **90.3%** | 24.7% (−0) | 24.7% (−0) | 47.2% (−1) | 47.9% (−2) |
-| `B2_classifieds` | $15.74 | **93.6%** | 4.7% (−0) | 4.7% (−0) | 4.7% (−0) | 23.8% (−1) |
-| `B2_reddit` | $16.54 | **92.3%** | 0.8% (−0) | 0.8% (−0) | 0.8% (−0) | 5.4% (−1) |
+| `B0_classifieds` | $12.71 | **63.8%** | 2.3% (−0) | 11.8% (−3) | 15.1% (−3) | 26.5% (−9) |
+| `B0_reddit` | $17.33 | **78.5%** | 6.2% (−1) | 6.2% (−1) | 22.8% (−1) | 36.8% (−5) |
+| `B1_classifieds` | $10.78 | **79.3%** | 9.6% (−1) | 9.6% (−1) | 14.4% (−2) | 28.7% (−5) |
+| `B1_reddit` | $12.52 | **90.3%** | 19.8% (−0) | 19.8% (−0) | 24.6% (−0) | 30.1% (−1) |
+| `B2_classifieds` | $15.74 | **93.6%** | 6.0% (−1) | 6.0% (−1) | 6.0% (−1) | 12.1% (−1) |
+| `B2_reddit` | $16.54 | **92.3%** | 14.5% (−4) | 14.5% (−4) | 14.5% (−4) | 22.5% (−4) |
 
 Two readings matter and they differ by an order of magnitude.
 
 **The oracle is huge and irrelevant.** Abstaining from every universal-fail task would cut 63.8-93.6% of the bill at zero success cost -- but that needs the outcome in advance, exactly the objection §5 raises against its own success-rate ceiling.
+
+⚠️ **The columns above are NESTED**: the abstention threshold is chosen by an inner 5-fold on each outer training split and then applied unseen to the test split. An earlier version of this artifact swept the threshold over the out-of-fold predictions themselves and kept the best one, which selects the operating point with the test labels — held-out *prediction* is not a held-out *policy*. Those optimistic numbers survive in the JSON under `frontier_by_loss_allowance_ORACLE_SELECTED` for contrast only.
 
 **The held-out policy is modest at zero loss and useful just past it.** Insisting on losing no solvable task confines the policy to its most confident handful (0.8-24.7%). Allowing a single solvable task to be dropped moves four cells to 6.2-24.7%, and a 5% allowance reaches 11.2-47.2% -- i.e. **into and past the 9.5-30.6% band §5 quotes as an oracle**, while being a held-out policy rather than an oracle.
 

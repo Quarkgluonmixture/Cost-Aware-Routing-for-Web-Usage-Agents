@@ -187,9 +187,68 @@ def evaluate_cell(cell: dict, fold_map: dict[int, int], costs, rng) -> dict:
     total_cost = float(np.nansum(cell_costs))
     n_solvable = int((y == 0).sum())
 
+    # ---- NESTED threshold selection (the fix for §462.2) ---------------------------
+    # The earlier version swept the threshold over the OUT-OF-FOLD predictions and kept
+    # the one that lost no solvable task *there*, using the test-fold labels to pick it.
+    # That makes the operating point oracle-selected: held-out PREDICTION is not the same
+    # thing as a held-out POLICY, and only the second is deployable. codex flagged it on
+    # 2026-08-13 and the code confirmed it.
+    #
+    # Now: for each outer fold, an inner 5-fold on the TRAINING rows only produces inner
+    # out-of-fold scores; the threshold is chosen on those, then applied unseen to the
+    # outer test fold. Nothing about the test fold participates in choosing it.
+    nested = {}
+    for tol_pct in (0.0, 1.0, 2.0, 5.0, 10.0):
+        abstain = np.zeros(len(tids), bool)
+        for f in range(N_FOLDS):
+            te = np.array([i for i, t in enumerate(tids) if fold_map.get(t) == f])
+            tr = np.array([i for i, t in enumerate(tids) if fold_map.get(t) != f])
+            if te.size == 0 or tr.size == 0:
+                continue
+            inner = np.full(len(tr), np.nan)
+            inner_map = {t: j % N_FOLDS for j, t in enumerate(sorted(tids[i] for i in tr))}
+            for g in range(N_FOLDS):
+                i_te = np.array([j for j, i in enumerate(tr) if inner_map[tids[i]] == g])
+                i_tr = np.array([j for j, i in enumerate(tr) if inner_map[tids[i]] != g])
+                if i_te.size == 0 or i_tr.size == 0:
+                    continue
+                fit = _fit_predict(X[tr][i_tr], y[tr][i_tr], X[tr][i_te])
+                if fit is not None:
+                    cls, pr = fit
+                    if 1 in cls:
+                        inner[i_te] = pr[:, list(cls).index(1)]
+            ok_in = ~np.isnan(inner)
+            if not ok_in.any():
+                continue
+            # Largest inner saving that respects the loss budget, measured on INNER folds.
+            y_tr, c_tr = y[tr], cell_costs[tr]
+            n_solv_tr = int((y_tr == 0).sum())
+            budget_tr = int(np.floor(tol_pct / 100 * n_solv_tr))
+            best_thr, best_saved = None, -1.0
+            for thr in np.unique(np.round(inner[ok_in], 4)):
+                ab = ok_in & (inner >= thr)
+                if int(((y_tr == 0) & ab).sum()) > budget_tr:
+                    continue
+                sv = float(np.nansum(c_tr[ab]))
+                if sv > best_saved:
+                    best_thr, best_saved = float(thr), sv
+            if best_thr is None:
+                continue
+            abstain[te] = ok[te] & (proba[te] >= best_thr)
+        lost = int(((y == 0) & abstain).sum())
+        saved = float(np.nansum(cell_costs[abstain & have_cost]))
+        nested[f"loss_budget_{tol_pct:g}pct"] = {
+            "n_abstained": int(abstain.sum()),
+            "solvable_lost": lost,
+            "solvable_lost_pct": (100 * lost / n_solvable) if n_solvable else None,
+            "saved_usd": saved,
+            "saved_pct": (100 * saved / total_cost) if total_cost else None,
+        }
+
     # The operating point that matches §5's口径 ("at unchanged success"): abstain only
     # where the model is confident, sweeping the threshold and keeping the largest saving
-    # that loses NO solvable task on held-out predictions. Reported alongside the oracle.
+    # that loses NO solvable task on held-out predictions. ⚠️ ORACLE-SELECTED — kept only
+    # as an optimistic upper bound; the deployable numbers are in `nested_*` above.
     sweep = []
     for thr in np.unique(np.round(proba[ok], 4)):
         ab = ok & (proba >= thr)
@@ -233,7 +292,8 @@ def evaluate_cell(cell: dict, fold_map: dict[int, int], costs, rng) -> dict:
         "oracle_abstain_saved_usd": oracle_saved,
         "oracle_abstain_saved_pct": (100 * oracle_saved / total_cost) if total_cost else None,
         "best_lossless_operating_point": best_lossless,
-        "frontier_by_loss_allowance": frontier,
+        "frontier_by_loss_allowance_ORACLE_SELECTED": frontier,
+        "nested_threshold_frontier": nested,
         "n_cost_missing": int((~have_cost).sum()),
     }
 
@@ -305,22 +365,29 @@ def render_md(d: dict) -> str:
           "never-solved tasks to the cheapest arm, so the cost still incurred is the "
           "cheapest arm's, `min(cost_dom, cost_psom)` per task. Abstention does not pay it "
           "at all.", "",
-          "| cell | total | oracle (abstain every universal-fail) | held-out, 0 loss | ≤2% of solvable | ≤5% | ≤10% |",
+          "| cell | total | oracle (abstain every universal-fail) | **nested** 0 loss | ≤2% budget | ≤5% | ≤10% |",
           "|---|---:|---:|---:|---:|---:|---:|"]
     for r in rows:
-        fr = r["frontier_by_loss_allowance"]
+        fr = r["nested_threshold_frontier"]
         def g(k):
             v = fr.get(k)
             return "-" if not v else f"{v['saved_pct']:.1f}% (−{v['solvable_lost']})"
         L.append(f"| `{r['cell_id']}` | ${r['cost_total_usd']:.2f} | "
-                 f"**{r['oracle_abstain_saved_pct']:.1f}%** | {g('loss_le_0pct_of_solvable')} "
-                 f"| {g('loss_le_2pct_of_solvable')} | {g('loss_le_5pct_of_solvable')} "
-                 f"| {g('loss_le_10pct_of_solvable')} |")
+                 f"**{r['oracle_abstain_saved_pct']:.1f}%** | {g('loss_budget_0pct')} "
+                 f"| {g('loss_budget_2pct')} | {g('loss_budget_5pct')} "
+                 f"| {g('loss_budget_10pct')} |")
     L += ["", "Two readings matter and they differ by an order of magnitude.", "",
           "**The oracle is huge and irrelevant.** Abstaining from every universal-fail task "
           "would cut 63.8-93.6% of the bill at zero success cost -- but that needs the "
           "outcome in advance, exactly the objection §5 raises against its own "
           "success-rate ceiling.", "",
+          "⚠️ **The columns above are NESTED**: the abstention threshold is chosen by an inner "
+          "5-fold on each outer training split and then applied unseen to the test split. An "
+          "earlier version of this artifact swept the threshold over the out-of-fold "
+          "predictions themselves and kept the best one, which selects the operating point "
+          "with the test labels — held-out *prediction* is not a held-out *policy*. Those "
+          "optimistic numbers survive in the JSON under "
+          "`frontier_by_loss_allowance_ORACLE_SELECTED` for contrast only.", "",
           "**The held-out policy is modest at zero loss and useful just past it.** Insisting "
           "on losing no solvable task confines the policy to its most confident handful "
           "(0.8-24.7%). Allowing a single solvable task to be dropped moves four cells to "
@@ -387,19 +454,33 @@ def main() -> int:
               f"{r['oracle_abstain_saved_usd']:>13.2f} "
               f"{r['oracle_abstain_saved_pct']:>8.1f}%  {bl_s}")
 
-    print("\n=== the frontier: allow a little success loss, save a lot more ===")
-    print(f"{'cell':<14} " + "".join(f"{t:>22}" for t in
-          ("0% loss", "<=1% of solvable", "<=2%", "<=5%", "<=10%")))
+    print("\n=== DEPLOYABLE frontier: threshold chosen by NESTED inner CV, never on test ===")
+    print(f"{'cell':<14} " + "".join(f"{t:>20}" for t in
+          ("budget 0%", "<=1%", "<=2%", "<=5%", "<=10%")))
     for r in rows:
-        fr = r["frontier_by_loss_allowance"]
-        cells_txt = ""
+        fr = r["nested_threshold_frontier"]
+        txt = ""
+        for k in ("loss_budget_0pct", "loss_budget_1pct", "loss_budget_2pct",
+                  "loss_budget_5pct", "loss_budget_10pct"):
+            v = fr.get(k)
+            txt += (f"{'-':>20}" if not v else
+                    f"{v['saved_pct']:>8.1f}% (-{v['solvable_lost']:>2}sol)".rjust(20))
+        print(f"{r['cell_id']:<14} {txt}")
+
+    print("\n=== the SAME sweep with the threshold picked on the test fold (ORACLE, "
+          "optimistic — kept only for contrast) ===")
+    print(f"{'cell':<14} " + "".join(f"{t:>20}" for t in
+          ("0% loss", "<=1%", "<=2%", "<=5%", "<=10%")))
+    for r in rows:
+        fr = r["frontier_by_loss_allowance_ORACLE_SELECTED"]
+        txt = ""
         for key in ("loss_le_0pct_of_solvable", "loss_le_1pct_of_solvable",
                     "loss_le_2pct_of_solvable", "loss_le_5pct_of_solvable",
                     "loss_le_10pct_of_solvable"):
             v = fr.get(key)
-            cells_txt += (f"{'-':>22}" if not v else
-                          f"{v['saved_pct']:>9.1f}% (-{v['solvable_lost']:>2}sol)".rjust(22))
-        print(f"{r['cell_id']:<14} {cells_txt}")
+            txt += (f"{'-':>20}" if not v else
+                    f"{v['saved_pct']:>8.1f}% (-{v['solvable_lost']:>2}sol)".rjust(20))
+        print(f"{r['cell_id']:<14} {txt}")
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
