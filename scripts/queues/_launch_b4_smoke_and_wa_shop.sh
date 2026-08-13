@@ -10,9 +10,18 @@
 #   2. B4 som  smoke (1 task) — can it read a real 1280x720 SoM-ANNOTATED screenshot?
 #                               §456.1 only proved the channel with a 224x224 colour block,
 #                               and 台账 §100/§101 show SoM marks are destructive to OCR.
-#   3. WA-shop B0 dom (full)  — the gate for the 2x2 that makes the winner-reversal
-#                               moderator identifiable (§7 leverage item 3). Abort the rest
-#                               of WA-shop if its SR lands under ~5%.
+#   3. B1 x VWA-classifieds SoM replicate — a same-condition rerun of an already-run
+#                               condition, to widen the rerun-floor coverage.
+#
+# STEP 3 WAS CHANGED on 2026-08-13 (笔记 §464). It used to be "WA-shop B0 dom", bought to
+# make the winner-reversal moderator identifiable. Three independent zero-preset framings
+# (codex gpt-5.6-sol / DeepSeek V4 Pro / Kimi K3, 笔记 §463) all reframed the paper around
+# the rerun floor as the instrument, and NONE of the three kept winner-reversal as a main
+# line -- so that $17 was buying an artifact of the old frame. Meanwhile all three name
+# floor coverage as the methodological centre, and DeepSeek's single strongest objection is
+# that the floor exists in ONE full cell ("a two-cell anecdote"). B1 is a local model, so
+# the replicate costs $0. B1 x cls is picked over the B2 cells because B2 sits near the
+# floor (1-8 successes per arm), where too few flips occur for a band to be measurable.
 #
 # WHY THIS FILE EXISTS instead of just editing the queue scripts in place: the chain was
 # still running when the B4 work landed, and bash reads a long script incrementally --
@@ -97,10 +106,14 @@ done
 say "smoke summary: ${summary}"
 push "B4 smoke done" "${summary} — check tool-call emit rate + parse_error_rate before the 6-condition fire"
 
-# ---------- 3. WA-shop B0 dom gate -------------------------------------------------
-say "=== WA-shop B0 dom (gate, 173 scored tasks) ==="
+# ---------- 3. B1 x VWA-cls SoM replicate (widens the rerun floor) ------------------
+# FORCE_NEW=1 is exported at the top of this script and is LOAD-BEARING here: without it
+# mint_run_id resume-globs the existing canonical run and this produces no second
+# observation at all, while looking like it ran (B-1916).
+say "=== B1 som classifieds — same-condition replicate (224 scored tasks, local, \$0) ==="
 setsid nohup bash scripts/queues/queue_chain.sh \
-  "queue_baseline.sh B0 dom shopping wa" \
-  > "logs/queue_chain_wa_shop_b0_dom_${LOG_TS}.log" 2>&1 < /dev/null &
-say "WA-shop gate chain launched (pid $!)"
-push "WA-shop gate launched" "B0 dom shopping wa — abort the rest of WA-shop if SR < 5%"
+  "queue_baseline.sh B1 som classifieds" \
+  > "logs/queue_chain_b1_cls_som_replicate_${LOG_TS}.log" 2>&1 < /dev/null &
+say "B1 cls som replicate chain launched (pid $!)"
+push "B1 cls som replicate launched" \
+  "widens rerun-floor coverage beyond the single fully-floored cell (DeepSeek: two-cell anecdote). Local model, no API spend."

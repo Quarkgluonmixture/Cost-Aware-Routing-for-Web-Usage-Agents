@@ -195,7 +195,11 @@ def render(d: dict) -> str:
          "purpose: is run-to-run instability spread over the benchmark, or concentrated on the "
          "tasks a router learns from",
          "post_hoc_exploratory: true",
-         f"scope_warning: one cell ({d['cell']}), two of six arms replicated once each. Every "
+         # Arm count read from the data, never hardcoded: this line said "two of six" for a
+         # day after the som replicate landed (2026-08-03), while the numbers below had
+         # already moved. A stale scope note on fresh numbers is worse than no note.
+         f"scope_warning: one cell ({d['cell']}), {len(d['replicated_arms'])} of "
+         f"{len(MODES)} arms replicated once each. Every "
          "figure is a LOWER bound on the flip rate; replicating more arms can only add flips.",
          "producer: scripts/analysis/aggregate_label_instability.py", "---", "",
          "# Where the instability sits", "",
