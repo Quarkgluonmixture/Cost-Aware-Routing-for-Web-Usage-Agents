@@ -1,0 +1,523 @@
+{
+  "generated": "2026-08-16T16:20:49+00:00",
+  "seed": 42,
+  "n_folds_inner": 5,
+  "within_cell_auroc": {
+    "B0_classifieds": 0.7261953080607192,
+    "B0_reddit": 0.780062893081761,
+    "B1_classifieds": 0.7323292092522862,
+    "B1_reddit": 0.8642923649906891,
+    "B2_classifieds": 0.6424278846153846,
+    "B2_reddit": 0.6152482269503546
+  },
+  "matched": [
+    {
+      "n_train": 224,
+      "n_test": 203,
+      "train_base_rate": 0.5669642857142857,
+      "test_base_rate": 0.7389162561576355,
+      "auroc": 0.7169811320754716,
+      "auroc_shuffle": 0.4538364779874214,
+      "train_cell": "B0_classifieds",
+      "test_cell": "B0_reddit"
+    },
+    {
+      "n_train": 203,
+      "n_test": 224,
+      "train_base_rate": 0.7389162561576355,
+      "test_base_rate": 0.5669642857142857,
+      "auroc": 0.6772465297507915,
+      "auroc_shuffle": 0.48697134507671075,
+      "train_cell": "B0_reddit",
+      "test_cell": "B0_classifieds"
+    },
+    {
+      "n_train": 224,
+      "n_test": 203,
+      "train_base_rate": 0.7544642857142857,
+      "test_base_rate": 0.8817733990147784,
+      "auroc": 0.7177607076350093,
+      "auroc_shuffle": 0.35370111731843573,
+      "train_cell": "B1_classifieds",
+      "test_cell": "B1_reddit"
+    },
+    {
+      "n_train": 203,
+      "n_test": 224,
+      "train_base_rate": 0.8817733990147784,
+      "test_base_rate": 0.7544642857142857,
+      "auroc": 0.7380849919311457,
+      "auroc_shuffle": 0.4844002151694459,
+      "train_cell": "B1_reddit",
+      "test_cell": "B1_classifieds"
+    },
+    {
+      "n_train": 224,
+      "n_test": 203,
+      "train_base_rate": 0.9285714285714286,
+      "test_base_rate": 0.9261083743842364,
+      "auroc": 0.7322695035460993,
+      "auroc_shuffle": 0.7489361702127659,
+      "train_cell": "B2_classifieds",
+      "test_cell": "B2_reddit"
+    },
+    {
+      "n_train": 203,
+      "n_test": 224,
+      "train_base_rate": 0.9261083743842364,
+      "test_base_rate": 0.9285714285714286,
+      "auroc": 0.6265024038461539,
+      "auroc_shuffle": 0.5294471153846154,
+      "train_cell": "B2_reddit",
+      "test_cell": "B2_classifieds"
+    }
+  ],
+  "pooled": [
+    {
+      "n_train": 672,
+      "n_test": 203,
+      "train_base_rate": 0.75,
+      "test_base_rate": 0.7389162561576355,
+      "auroc": 0.769811320754717,
+      "auroc_shuffle": 0.4944654088050314,
+      "train_site": "classifieds",
+      "test_cell": "B0_reddit"
+    },
+    {
+      "n_train": 672,
+      "n_test": 203,
+      "train_base_rate": 0.75,
+      "test_base_rate": 0.8817733990147784,
+      "auroc": 0.7233472998137802,
+      "auroc_shuffle": 0.43912942271880817,
+      "train_site": "classifieds",
+      "test_cell": "B1_reddit"
+    },
+    {
+      "n_train": 672,
+      "n_test": 203,
+      "train_base_rate": 0.75,
+      "test_base_rate": 0.9261083743842364,
+      "auroc": 0.7453900709219858,
+      "auroc_shuffle": 0.43333333333333335,
+      "train_site": "classifieds",
+      "test_cell": "B2_reddit"
+    },
+    {
+      "n_train": 609,
+      "n_test": 224,
+      "train_base_rate": 0.8489326765188834,
+      "test_base_rate": 0.5669642857142857,
+      "auroc": 0.711340206185567,
+      "auroc_shuffle": 0.5080769542982385,
+      "train_site": "reddit",
+      "test_cell": "B0_classifieds"
+    },
+    {
+      "n_train": 609,
+      "n_test": 224,
+      "train_base_rate": 0.8489326765188834,
+      "test_base_rate": 0.7544642857142857,
+      "auroc": 0.7107584722969338,
+      "auroc_shuffle": 0.5138784292630446,
+      "train_site": "reddit",
+      "test_cell": "B1_classifieds"
+    },
+    {
+      "n_train": 609,
+      "n_test": 224,
+      "train_base_rate": 0.8489326765188834,
+      "test_base_rate": 0.9285714285714286,
+      "auroc": 0.6376201923076923,
+      "auroc_shuffle": 0.6535456730769231,
+      "train_site": "reddit",
+      "test_cell": "B2_classifieds"
+    }
+  ],
+  "operating_points": [
+    {
+      "train_cell": "B0_classifieds",
+      "test_cell": "B0_reddit",
+      "budget": 0.0,
+      "op": {
+        "threshold": 0.9712943532005872,
+        "abstain_rate": 0.03940886699507389,
+        "solvable_lost": 0,
+        "solvable_total": 53,
+        "loss_rate": 0.0,
+        "cost_total_usd": 17.334934776828767,
+        "cost_saved_usd": 0.9983384434013365,
+        "cost_saved_pct": 5.759112775756122,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B0_classifieds",
+      "test_cell": "B0_reddit",
+      "budget": 0.02,
+      "op": {
+        "threshold": 0.9165574434867502,
+        "abstain_rate": 0.15270935960591134,
+        "solvable_lost": 1,
+        "solvable_total": 53,
+        "loss_rate": 0.018867924528301886,
+        "cost_total_usd": 17.334934776828767,
+        "cost_saved_usd": 3.307158923677444,
+        "cost_saved_pct": 19.07800038623769,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B0_classifieds",
+      "test_cell": "B0_reddit",
+      "budget": 0.05,
+      "op": {
+        "threshold": 0.8883429456653827,
+        "abstain_rate": 0.20689655172413793,
+        "solvable_lost": 2,
+        "solvable_total": 53,
+        "loss_rate": 0.03773584905660377,
+        "cost_total_usd": 17.334934776828767,
+        "cost_saved_usd": 4.366151385286331,
+        "cost_saved_pct": 25.18700786300316,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B0_classifieds",
+      "test_cell": "B0_reddit",
+      "budget": 0.1,
+      "op": {
+        "threshold": 0.8300602079552861,
+        "abstain_rate": 0.30049261083743845,
+        "solvable_lost": 6,
+        "solvable_total": 53,
+        "loss_rate": 0.11320754716981132,
+        "cost_total_usd": 17.334934776828767,
+        "cost_saved_usd": 6.47525738348198,
+        "cost_saved_pct": 37.35380298134907,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B0_reddit",
+      "test_cell": "B0_classifieds",
+      "budget": 0.0,
+      "op": {
+        "threshold": 0.9891863528740827,
+        "abstain_rate": 0.03125,
+        "solvable_lost": 0,
+        "solvable_total": 97,
+        "loss_rate": 0.0,
+        "cost_total_usd": 12.705695814380647,
+        "cost_saved_usd": 0.42240947765350345,
+        "cost_saved_pct": 3.324567845984547,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B0_reddit",
+      "test_cell": "B0_classifieds",
+      "budget": 0.02,
+      "op": {
+        "threshold": 0.9765288251997432,
+        "abstain_rate": 0.05803571428571429,
+        "solvable_lost": 0,
+        "solvable_total": 97,
+        "loss_rate": 0.0,
+        "cost_total_usd": 12.705695814380647,
+        "cost_saved_usd": 0.8363673332729338,
+        "cost_saved_pct": 6.582617319756,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B0_reddit",
+      "test_cell": "B0_classifieds",
+      "budget": 0.05,
+      "op": {
+        "threshold": 0.9688014766805058,
+        "abstain_rate": 0.07589285714285714,
+        "solvable_lost": 3,
+        "solvable_total": 97,
+        "loss_rate": 0.030927835051546393,
+        "cost_total_usd": 12.705695814380647,
+        "cost_saved_usd": 1.1098878540019987,
+        "cost_saved_pct": 8.735356726750831,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B0_reddit",
+      "test_cell": "B0_classifieds",
+      "budget": 0.1,
+      "op": {
+        "threshold": 0.9237053094035922,
+        "abstain_rate": 0.12946428571428573,
+        "solvable_lost": 7,
+        "solvable_total": 97,
+        "loss_rate": 0.07216494845360824,
+        "cost_total_usd": 12.705695814380647,
+        "cost_saved_usd": 1.9805626141147614,
+        "cost_saved_pct": 15.587990166371743,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_classifieds",
+      "test_cell": "B1_reddit",
+      "budget": 0.0,
+      "op": {
+        "threshold": 0.9793637589042623,
+        "abstain_rate": 0.11330049261083744,
+        "solvable_lost": 0,
+        "solvable_total": 24,
+        "loss_rate": 0.0,
+        "cost_total_usd": 12.524333695724106,
+        "cost_saved_usd": 1.378201125429764,
+        "cost_saved_pct": 11.004187199996846,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_classifieds",
+      "test_cell": "B1_reddit",
+      "budget": 0.02,
+      "op": {
+        "threshold": 0.9573558304478471,
+        "abstain_rate": 0.1724137931034483,
+        "solvable_lost": 0,
+        "solvable_total": 24,
+        "loss_rate": 0.0,
+        "cost_total_usd": 12.524333695724106,
+        "cost_saved_usd": 2.1006676566271976,
+        "cost_saved_pct": 16.77268993035837,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_classifieds",
+      "test_cell": "B1_reddit",
+      "budget": 0.05,
+      "op": {
+        "threshold": 0.9473024710579757,
+        "abstain_rate": 0.22660098522167488,
+        "solvable_lost": 0,
+        "solvable_total": 24,
+        "loss_rate": 0.0,
+        "cost_total_usd": 12.524333695724106,
+        "cost_saved_usd": 2.494857469829407,
+        "cost_saved_pct": 19.92008142262425,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_classifieds",
+      "test_cell": "B1_reddit",
+      "budget": 0.1,
+      "op": {
+        "threshold": 0.9173648287283699,
+        "abstain_rate": 0.3448275862068966,
+        "solvable_lost": 2,
+        "solvable_total": 24,
+        "loss_rate": 0.08333333333333333,
+        "cost_total_usd": 12.524333695724106,
+        "cost_saved_usd": 4.236476868554917,
+        "cost_saved_pct": 33.82596608713227,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_reddit",
+      "test_cell": "B1_classifieds",
+      "budget": 0.0,
+      "op": {
+        "threshold": 0.9897297144830906,
+        "abstain_rate": 0.5892857142857143,
+        "solvable_lost": 20,
+        "solvable_total": 55,
+        "loss_rate": 0.36363636363636365,
+        "cost_total_usd": 10.783451360287934,
+        "cost_saved_usd": 7.069571201093674,
+        "cost_saved_pct": 65.55944812927599,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_reddit",
+      "test_cell": "B1_classifieds",
+      "budget": 0.02,
+      "op": {
+        "threshold": 0.9897297144830906,
+        "abstain_rate": 0.5892857142857143,
+        "solvable_lost": 20,
+        "solvable_total": 55,
+        "loss_rate": 0.36363636363636365,
+        "cost_total_usd": 10.783451360287934,
+        "cost_saved_usd": 7.069571201093674,
+        "cost_saved_pct": 65.55944812927599,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_reddit",
+      "test_cell": "B1_classifieds",
+      "budget": 0.05,
+      "op": {
+        "threshold": 0.9673331696777469,
+        "abstain_rate": 0.7053571428571429,
+        "solvable_lost": 24,
+        "solvable_total": 55,
+        "loss_rate": 0.43636363636363634,
+        "cost_total_usd": 10.783451360287934,
+        "cost_saved_usd": 8.360392047698365,
+        "cost_saved_pct": 77.52983500706522,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B1_reddit",
+      "test_cell": "B1_classifieds",
+      "budget": 0.1,
+      "op": {
+        "threshold": 0.96678270939016,
+        "abstain_rate": 0.7053571428571429,
+        "solvable_lost": 24,
+        "solvable_total": 55,
+        "loss_rate": 0.43636363636363634,
+        "cost_total_usd": 10.783451360287934,
+        "cost_saved_usd": 8.360392047698365,
+        "cost_saved_pct": 77.52983500706522,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_classifieds",
+      "test_cell": "B2_reddit",
+      "budget": 0.0,
+      "op": {
+        "threshold": 0.9957931296146009,
+        "abstain_rate": 0.14285714285714285,
+        "solvable_lost": 1,
+        "solvable_total": 15,
+        "loss_rate": 0.06666666666666667,
+        "cost_total_usd": 16.541633616538775,
+        "cost_saved_usd": 1.876582495489731,
+        "cost_saved_pct": 11.344601984253071,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_classifieds",
+      "test_cell": "B2_reddit",
+      "budget": 0.02,
+      "op": {
+        "threshold": 0.9957931296146009,
+        "abstain_rate": 0.14285714285714285,
+        "solvable_lost": 1,
+        "solvable_total": 15,
+        "loss_rate": 0.06666666666666667,
+        "cost_total_usd": 16.541633616538775,
+        "cost_saved_usd": 1.876582495489731,
+        "cost_saved_pct": 11.344601984253071,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_classifieds",
+      "test_cell": "B2_reddit",
+      "budget": 0.05,
+      "op": {
+        "threshold": 0.9957931296146009,
+        "abstain_rate": 0.14285714285714285,
+        "solvable_lost": 1,
+        "solvable_total": 15,
+        "loss_rate": 0.06666666666666667,
+        "cost_total_usd": 16.541633616538775,
+        "cost_saved_usd": 1.876582495489731,
+        "cost_saved_pct": 11.344601984253071,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_classifieds",
+      "test_cell": "B2_reddit",
+      "budget": 0.1,
+      "op": {
+        "threshold": 0.9907161848873206,
+        "abstain_rate": 0.21182266009852216,
+        "solvable_lost": 1,
+        "solvable_total": 15,
+        "loss_rate": 0.06666666666666667,
+        "cost_total_usd": 16.541633616538775,
+        "cost_saved_usd": 2.927475999332123,
+        "cost_saved_pct": 17.697623265003,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_reddit",
+      "test_cell": "B2_classifieds",
+      "budget": 0.0,
+      "op": {
+        "threshold": 0.9999653704944146,
+        "abstain_rate": 0.013392857142857142,
+        "solvable_lost": 0,
+        "solvable_total": 16,
+        "loss_rate": 0.0,
+        "cost_total_usd": 15.736111395576096,
+        "cost_saved_usd": 0.2637800037589264,
+        "cost_saved_pct": 1.6762718382451403,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_reddit",
+      "test_cell": "B2_classifieds",
+      "budget": 0.02,
+      "op": {
+        "threshold": 0.9999653704944146,
+        "abstain_rate": 0.013392857142857142,
+        "solvable_lost": 0,
+        "solvable_total": 16,
+        "loss_rate": 0.0,
+        "cost_total_usd": 15.736111395576096,
+        "cost_saved_usd": 0.2637800037589264,
+        "cost_saved_pct": 1.6762718382451403,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_reddit",
+      "test_cell": "B2_classifieds",
+      "budget": 0.05,
+      "op": {
+        "threshold": 0.9999653704944146,
+        "abstain_rate": 0.013392857142857142,
+        "solvable_lost": 0,
+        "solvable_total": 16,
+        "loss_rate": 0.0,
+        "cost_total_usd": 15.736111395576096,
+        "cost_saved_usd": 0.2637800037589264,
+        "cost_saved_pct": 1.6762718382451403,
+        "cost_coverage": 1.0
+      }
+    },
+    {
+      "train_cell": "B2_reddit",
+      "test_cell": "B2_classifieds",
+      "budget": 0.1,
+      "op": {
+        "threshold": 0.998664190338261,
+        "abstain_rate": 0.16071428571428573,
+        "solvable_lost": 2,
+        "solvable_total": 16,
+        "loss_rate": 0.125,
+        "cost_total_usd": 15.736111395576096,
+        "cost_saved_usd": 2.7879628911470795,
+        "cost_saved_pct": 17.716974804403467,
+        "cost_coverage": 1.0
+      }
+    }
+  ]
+}
