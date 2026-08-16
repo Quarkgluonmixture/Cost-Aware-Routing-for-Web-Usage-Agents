@@ -884,6 +884,53 @@ class ProxyApiAgent:
             raw_content = resp_json.get("content", "")
             reasoning_text_openai = None
 
+        # B-1970 (AWS proxy content-shape drift, 2026-08-16): the proxy now
+        # returns `body["content"]` as an Anthropic-style BLOCK LIST
+        # (`[{"type":"text","text":...}]`) instead of a bare string, and
+        # supplies the string form in a NEW sibling top-level `body["text"]`.
+        # Probe 2026-08-16 (scratchpad probe_drift, qwen.qwen3-vl-235b-a22b,
+        # 4 payload variants incl. the exact production one): every variant
+        # returns list-shaped content; `body["text"]` is byte-identical to the
+        # concatenated text blocks (verified "HELLO_WORLD" == block[0].text);
+        # top-level `tool_calls` still present and parses (n=1). So the drift
+        # is REPRESENTATION-ONLY — no information is lost.
+        #
+        # Empirically this killed the 2026-08-16 14:53Z WA-shop B0 dom fire at
+        # task 143 step 0: the B-1110 contract assertion (below, now superseded)
+        # fired AFTER `tool_calls` had already parsed a valid `click`, so a
+        # fully-recoverable step became a PaperGradeAbortError and dropped the
+        # whole 12-cell chain. B0 was last exercised 2026-08-10, so the drift
+        # landed in the 08-10..08-16 window.
+        #
+        # Normalize HERE (before the thought-backfill at L~941 and the Path-2
+        # text fallback at L~1025) so every downstream `isinstance(raw_content,
+        # str)` branch behaves exactly as it did pre-drift. Keep the B-1110
+        # tripwire alive for the case it was actually built for: an embedded
+        # `tool_use` block with NO top-level `tool_calls`, where falling
+        # through to text-parse WOULD lose the structured action.
+        if isinstance(raw_content, list):
+            _blocks = [b for b in raw_content if isinstance(b, dict)]
+            _block_types = [b.get("type") for b in _blocks]
+            if any(t == "tool_use" for t in _block_types) and not resp_json.get("tool_calls"):
+                raise RuntimeError(
+                    "proxy returned list-shaped content carrying tool_use block(s) "
+                    "with NO top-level tool_calls — the structured action would be "
+                    f"lost by text-parse fallback (block_types={_block_types}). "
+                    "Re-introduce the Anthropic content-block tool_use parser "
+                    "(B-1110 tripwire, retained through the B-1970 drift fix)."
+                )
+            _flat = "".join(
+                b.get("text") or "" for b in _blocks if b.get("type") == "text"
+            )
+            if not _flat:
+                # Blocks carried no text (normal under tool_choice="required",
+                # where the model's whole output goes to tool_calls). Fall back
+                # to the sibling string the proxy now supplies; keep "" rather
+                # than str(list) so the Path-2 parser sees empty, not garbage.
+                _sibling = resp_json.get("text")
+                _flat = _sibling if isinstance(_sibling, str) else ""
+            raw_content = _flat
+
         output_text = ""
         action = None
         valid = False
@@ -982,10 +1029,17 @@ class ProxyApiAgent:
         # — signal to re-introduce the parser, NOT silently fall through
         # to Path-2 text parse that would lose the structured tool_use
         # input.
-        assert not isinstance(raw_content, list), (
-            "proxy returned list-shaped content; AWS proxy contract expects "
-            "string (B-991 + B-1110). Re-introduce Anthropic content-block "
-            "parser if a non-AWS proxy provider is being used."
+        #
+        # B-1970 (2026-08-16): that drift ARRIVED, and the blanket assertion
+        # was too coarse — it tripped on benign `type:"text"` blocks while
+        # `tool_calls` was intact. The tripwire now lives at the normalization
+        # site above and fires only on the information-losing shape (tool_use
+        # block with no top-level tool_calls). By this line `raw_content` is
+        # guaranteed a str, so the invariant the rest of this function assumes
+        # still holds — asserted here as a cheap regression guard.
+        assert isinstance(raw_content, str), (
+            f"raw_content must be normalized to str by B-1970 before parsing; "
+            f"got {type(raw_content).__name__}"
         )
 
         # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): paper-grade B0 must

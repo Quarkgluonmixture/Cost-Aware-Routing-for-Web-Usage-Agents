@@ -11604,3 +11604,49 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
     挂死的同一时刻 `curl` 该 item 仅 **0.17s**, 全新 context 加载同页约 **170ms**; 若是站点
     不回答 curl 同样会挂。真根因是 agent 的 BrowserContext 退化 (客户端侧), 已由 B-1803 修复、
     re-fire R9755 零 `EvaluatorUnavailableError` 证实。
+
+## §466 B-1970 — AWS proxy 换了响应形状, 一个 2026-05-18 埋的地雷按设计炸了 (2026-08-16)
+
+### B-1970. proxy 的 `body["content"]` 从字符串变成 Anthropic block list —— B-1110 的 assert 炸掉整条 WA-shop chain [P0] 🛠️ FIXED
+
+- **现象**: 2026-08-16 14:53Z 自动开火的 WA-shop B0 12-cell chain 在 **第 1 个 cell 的
+  第 0 步**死。`B0_dom_wa_shopping_20260816` task 143:
+  ```
+  15:26:01,812 INFO  Proxy tool_calls parsed: click      ← 动作已经解析成功了
+  15:26:01,813 WARN  proxy returned list-shaped content; AWS proxy contract expects string
+  → PaperGradeAbortError → chain abort (12 cell 全丢)
+  ```
+- **根因**: AWS proxy 侧漂移, **不是本仓库的回归**。实测 (`probe_drift`, 4 种 payload 变体,
+  含与生产逐字段一致的那种):
+  | | 漂移前 (契约, B-1110 probe v2 2026-05-18) | 漂移后 (2026-08-16 实测) |
+  |---|---|---|
+  | `body["content"]` | `str` | `[{"type":"text","text":...}]` |
+  | `body["text"]` | 不存在 | **新增**, 与 block 文本逐字节相同 (`"HELLO_WORLD"` 核对) |
+  | `body["tool_calls"]` | 顶层 list | **不变**, 仍解析 (n=1) |
+  ⇒ **纯表征变化, 零信息损失**。`tool_choice="required"` 下 text block 是空串 (输出全进
+  tool_calls), 所以 `content` 看起来是 `[{"type":"text","text":""}]`。
+- **为什么是设计内行为**: `proxy_api_agent.py` 里那句 assert 是 B-1110 (/stress A2.3b P1-5-A,
+  2026-05-18) **故意埋的 tripwire** —— 当时删掉了 50 行没触发过的 Anthropic content-block
+  解析器, 并写明「若将来 provider 漂移回 list-shaped content, 下面的契约断言会 fail-loud，
+  这是重新引入解析器的信号, 而不是静默 fall through 到 Path-2 text parse 丢掉结构化
+  tool_use」。今天它精确地按这个剧本响了。**问题不在于它响, 在于它太粗**: 它对良性的
+  `type:"text"` block 也响, 而此时 `tool_calls` 完好无损。
+- **修复**: 在 `raw_content` 取出处 (L884 之后, 早于 L941 thought-backfill 和 L1025 Path-2
+  文本回退) 归一化 list → str, 让下游所有 `isinstance(raw_content, str)` 分支恢复漂移前行为;
+  tripwire **保留但收窄**到它真正为之而建的那一种形状 —— **block 里有 `tool_use` 且顶层
+  `tool_calls` 缺失** (这时 fall through 才真的丢动作)。原处 assert 改成
+  `isinstance(raw_content, str)` 的廉价回归护栏。
+- **顺带修掉的潜伏缺陷**: L1032 原有 `if not output_text: output_text = str(raw_content)` ——
+  在本次漂移下 text block 是空串, 它会把 `"[{'type': 'text', 'text': ''}]"` 这串字面量喂给
+  parser。归一化后空串保持空串。
+- **验证 (live, 非 mock)**: replay 型探针 (`probe_b0_production_path.py`) **看不见这个漂移**,
+  因为它回放的是漂移前的 fixture。改用真 `ProxyApiAgent.step()` 打真 proxy
+  (`paper_grade=True, use_tool_calling=True`):
+  step() 不再抛 · action 可派发 (`select_option` on element 36) ·
+  `tool_call_emitted=True` 且 `tool_call_parse_path="tool_calls"` (**证明没有退到文本回退**) ·
+  confidence 4/4 (`mean/min_logprob`, `mean/min_margin`), `confidence_error=null` ⇒
+  B-1103 的 logprob 契约未受影响。`pytest -k "proxy or agent"` 92 passed。
+- **⚠️ 溯源影响 (写作时必须记住)**: B0 上一次真正跑是 **2026-08-10** (`B0_vision_shopping`),
+  漂移落在 **08-10 ~ 08-16** 窗口内。**归档 B0 数据与此后任何新 B0 数据不在同一个 provider
+  快照上**。本次漂移本身是表征层的、不改 token 或采样, 但它证明了 proxy 会在无通知的情况下
+  变形 —— 任何新旧 B0 相减的分析都要先说明这一点。
