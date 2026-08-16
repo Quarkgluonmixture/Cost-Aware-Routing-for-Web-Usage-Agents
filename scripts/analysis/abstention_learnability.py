@@ -317,6 +317,55 @@ def roc_auc(y: np.ndarray, s: np.ndarray) -> float:
     return float((ranks[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0))
 
 
+def _nested_prose(rows: list[dict]) -> str:
+    """The paragraph under the §3 table, derived from the nested frontier.
+
+    B-1971 (2026-08-16): this paragraph used to read "a 5% allowance reaches 11.2-47.2%".
+    Three things were wrong with it at once, and they had been wrong since the §465
+    nested-threshold fix, which replaced the TABLE and left the sentence under it alone:
+
+      1. `11.2` and `47.2` are `frontier_by_loss_allowance_ORACLE_SELECTED` values —
+         the oracle-selected column this file's own preceding paragraph says is kept
+         "for contrast only" because it picks the threshold with the test labels.
+      2. Even inside that superseded column, `11.2-47.2` is a SUBRANGE with the two
+         smallest cells silently dropped (B2 cls 4.7%, B2 red 0.8%) — the same defect
+         `fusion_premium` §1 already had to retract once.
+      3. The enclosing docstring promises "no number is hardcoded in prose (§450.8)",
+         so the line was also a standing violation of the contract it sat inside.
+
+    Everything below is read off `nested_threshold_frontier`. The budget-overrun count is
+    reported because a nested threshold is chosen to meet the budget on the INNER folds and
+    is not guaranteed to meet it on the outer test split — the honest version has to say
+    how often that happened rather than let the column header imply it never does.
+    """
+    def sv(r, k):
+        return ((r.get("nested_threshold_frontier") or {}).get(k) or {}).get("saved_pct")
+
+    def lost(r, k):
+        return ((r.get("nested_threshold_frontier") or {}).get(k) or {}).get("solvable_lost_pct")
+
+    z = [v for r in rows if (v := sv(r, "loss_budget_0pct")) is not None]
+    f = [v for r in rows if (v := sv(r, "loss_budget_5pct")) is not None]
+    over = [r["cell_id"] for r in rows
+            if (lv := lost(r, "loss_budget_5pct")) is not None and lv > 5.0]
+    parts = [
+        "**The held-out policy is modest at zero loss and useful just past it.** Insisting on "
+        f"losing no solvable task confines the policy to its most confident handful "
+        f"({min(z):.1f}-{max(z):.1f}% of the bill). A 5% loss allowance reaches "
+        f"{min(f):.1f}-{max(f):.1f}%, which overlaps but does not clear the "
+        "**≤30.6% (7 of 8 cells)** band §5 quotes as an *oracle* — so the honest reading is "
+        "that a held-out policy buys a comparable order of saving, not that it beats the oracle.",
+    ]
+    if over:
+        parts.append(
+            "⚠️ A nested threshold meets its budget on the inner folds, not necessarily on the "
+            f"outer test split: {len(over)} of {len(rows)} cells overrun the 5% budget "
+            f"({', '.join(f'`{c}`' for c in over)}). The realised loss is in the table's "
+            "parenthesised counts; the column header is the budget bought, not the loss paid."
+        )
+    return "\n\n".join(parts)
+
+
 def render_md(d: dict) -> str:
     """Report rendered from the product JSON; no number is hardcoded in prose (§450.8)."""
     rows = d["cells"]
@@ -388,12 +437,7 @@ def render_md(d: dict) -> str:
           "with the test labels — held-out *prediction* is not a held-out *policy*. Those "
           "optimistic numbers survive in the JSON under "
           "`frontier_by_loss_allowance_ORACLE_SELECTED` for contrast only.", "",
-          "**The held-out policy is modest at zero loss and useful just past it.** Insisting "
-          "on losing no solvable task confines the policy to its most confident handful "
-          "(0.8-24.7%). Allowing a single solvable task to be dropped moves four cells to "
-          "6.2-24.7%, and a 5% allowance reaches 11.2-47.2% -- i.e. **into and past the "
-          "9.5-30.6% band §5 quotes as an oracle**, while being a held-out policy rather "
-          "than an oracle.", "",
+          _nested_prose(rows), "",
           "⚠️ **This is pre-flight but not free.** The features are step-0 observation "
           "statistics plus task-config text, so a decision needs the first page loaded and "
           "its accessibility tree built -- but **no model call**. What is saved is the API "

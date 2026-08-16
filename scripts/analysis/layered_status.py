@@ -729,7 +729,10 @@ def render_claim_matrix(lines: list[str]) -> None:
         "| (ii) Most apparent oracle headroom is rerun variance; the bound that survives"
         " the rerun control is the cost ceiling at unchanged success | 0c, 3a |"
         " `noise_floor_inventory.md` |"
-        " ✅ but read §1b there: the observed band is a draw, not a bound |",
+        " ⚠️ **two gaps, both load-bearing** — (1) read §1b there: the observed band is a"
+        " draw, not a bound; (2) the measured floors cover DOM/SoM/Vision in a single cell,"
+        " so **no phantom arm has a clean same-condition floor**, and the phantom arms are"
+        " the ones the drop-one hero runs on. Replicates in flight (`_b1_floor_watcher.sh`) |",
         "| (iii) The benchmarks cannot produce routing supervision: labels arrive at the"
         " success rate, so the tested routing constructions land at or below trivial fixed"
         " policies | 0b, 0b-extra, 0g |"
@@ -737,8 +740,11 @@ def render_claim_matrix(lines: list[str]) -> None:
         " ✅ five constructions + two controls |",
         "| (iv) **NEW** Which routing question is answerable is decided by label supply AND"
         " signal, and those fail separately | 0b-extra, 0g |"
-        " `abstention_learnability.md`, `early_abort_B0_classifieds.md`,"
-        " `retry_vs_switch_label_supply.md` | ✅ four questions, one works — see next table |",
+        " `abstention_learnability.md`, `abstention_site_transfer.md`,"
+        " `early_abort_B0_classifieds.md`,"
+        " `retry_vs_switch_label_supply.md` | ✅ four questions, one works — see next table."
+        " The one that works has now been tested across sites, and it **splits**: ranking"
+        " transfers, the operating point does not |",
         "| (v) **NEW** A representation carries deployment properties orthogonal to success"
         " rate | 2g*, 3e*, 3f*, 3g* |"
         " `representation_deployment_profile.md`, `latency_decomposition.md`,"
@@ -766,8 +772,16 @@ def render_claim_matrix(lines: list[str]) -> None:
         " at its own shuffle null | fails, and loses to truncate-at-k |"
         " `early_abort_B0_classifieds.md` |",
         "| **Abstain before running** | **every task has one** | **present** |"
-        " **works — the only held-out cost saving in the paper** |"
-        " `abstention_learnability.md` |",
+        " **works within a cell — the only held-out cost saving in the paper.** Across"
+        " sites it **splits**: the ranking survives the site change, the threshold does"
+        " not, and the direction that ranks best is the one that fails worst as a policy |"
+        " `abstention_learnability.md`, `abstention_site_transfer.md` |",
+        "",
+        "⚠️ The last row is the only place in this file where a *generalisation* claim is"
+        " licensed at all, and it is licensed in one half only. Two sites is two points:"
+        " what `abstention_site_transfer` shows is that ranking survived the one site change"
+        " available and calibration did not — not that either behaviour would recur on a"
+        " third site.",
         "",
         "⚠️ The 0b-extra row above reports whole-episode confidence AUROC, which for any"
         " prefix decision is looking at the future. The prefix-only recomputation is in"
@@ -780,7 +794,7 @@ def render_claim_matrix(lines: list[str]) -> None:
         "| # | Finding | Dimension | Artifact |",
         "|---|---|---|---|",
         "| D1 | Fusion does not earn its premium against a rerun of one arm | 0a, 0c |"
-        " `fusion_premium.md` |",
+        " `fusion_premium.md`, `leakage_sensitivity.md` |",
         "| D2 | Unstable element ids move which element is chosen; position-keyed payloads"
         " are unaffected | 2a, 2b | draft §4 (`latency`/`churn` audit) |",
         "| D3 | The feature a practitioner reaches for first (does the task supply a"
@@ -799,6 +813,20 @@ def render_claim_matrix(lines: list[str]) -> None:
         " `representation_deployment_profile.md` §2 |",
         "| D9 | Carbon is not an independent axis on this instrument — it tracks elapsed"
         " time | 3f* | `energy_carbon_audit.md` |",
+        "| D10 | A pre-flight abstention policy's **ranking** survives a site change while"
+        " its **threshold** does not; AUROC cannot warn you, because the failure is"
+        " base-rate drift and AUROC is rank-based | 0g, 3a |"
+        " `abstention_site_transfer.md` §4 |",
+        "| D11 | The one interval that showed fusion significantly beaten anywhere rested on"
+        " accumulated site state, not on behaviour; under the canonical leak policy every"
+        " cell's interval includes zero | 0a, 0c | `leakage_sensitivity.md` §3 |",
+        "",
+        "⚠️ **Provenance boundary on every B0 figure in this file (B-1970, 2026-08-16).**"
+        " The AWS proxy changed its response shape between the last archived B0 run and"
+        " 2026-08-16. The drift was representation-only and lost no information, but it"
+        " establishes that the provider mutates without notice: **archived B0 data and any"
+        " future B0 data are not on the same provider snapshot**, and any analysis that"
+        " subtracts one from the other has to say so. → `master_bug_catalog` B-1970.",
         "",
         "## ⚠️ SUPERSEDED — pre-REALM claim matrix and 3-axis mechanism chain",
         "",

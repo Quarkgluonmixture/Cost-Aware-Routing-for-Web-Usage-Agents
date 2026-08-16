@@ -59,7 +59,9 @@ Two readings matter and they differ by an order of magnitude.
 
 ⚠️ **The columns above are NESTED**: the abstention threshold is chosen by an inner 5-fold on each outer training split and then applied unseen to the test split. An earlier version of this artifact swept the threshold over the out-of-fold predictions themselves and kept the best one, which selects the operating point with the test labels — held-out *prediction* is not a held-out *policy*. Those optimistic numbers survive in the JSON under `frontier_by_loss_allowance_ORACLE_SELECTED` for contrast only.
 
-**The held-out policy is modest at zero loss and useful just past it.** Insisting on losing no solvable task confines the policy to its most confident handful (0.8-24.7%). Allowing a single solvable task to be dropped moves four cells to 6.2-24.7%, and a 5% allowance reaches 11.2-47.2% -- i.e. **into and past the 9.5-30.6% band §5 quotes as an oracle**, while being a held-out policy rather than an oracle.
+**The held-out policy is modest at zero loss and useful just past it.** Insisting on losing no solvable task confines the policy to its most confident handful (2.3-19.8% of the bill). A 5% loss allowance reaches 6.0-24.6%, which overlaps but does not clear the **≤30.6% (7 of 8 cells)** band §5 quotes as an *oracle* — so the honest reading is that a held-out policy buys a comparable order of saving, not that it beats the oracle.
+
+⚠️ A nested threshold meets its budget on the inner folds, not necessarily on the outer test split: 2 of 6 cells overrun the 5% budget (`B2_classifieds`, `B2_reddit`). The realised loss is in the table's parenthesised counts; the column header is the budget bought, not the loss paid.
 
 ⚠️ **This is pre-flight but not free.** The features are step-0 observation statistics plus task-config text, so a decision needs the first page loaded and its accessibility tree built -- but **no model call**. What is saved is the API spend; what is paid is one page load. That asymmetry is why the numbers above are worth quoting, and it must be stated whenever they are.
 
