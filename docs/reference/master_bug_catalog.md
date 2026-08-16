@@ -11650,3 +11650,32 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
   漂移落在 **08-10 ~ 08-16** 窗口内。**归档 B0 数据与此后任何新 B0 数据不在同一个 provider
   快照上**。本次漂移本身是表征层的、不改 token 或采样, 但它证明了 proxy 会在无通知的情况下
   变形 —— 任何新旧 B0 相减的分析都要先说明这一点。
+
+### B-1971. `abstention_learnability` 的正文引着自己刚宣布作废的那列数, 且是丢掉两格的子区间 [P1] 🛠️ FIXED
+
+- **现象**: `docs/analysis/cross_sites/abstention_learnability.md` §3 的表下面写着
+  「a 5% allowance reaches **11.2-47.2%** — i.e. **into and past the 9.5-30.6% band §5
+  quotes as an oracle**, while being a held-out policy rather than an oracle」。
+  它的**上一段**是这样写的:
+  > ⚠️ The columns above are NESTED... Those optimistic numbers survive in the JSON under
+  > `frontier_by_loss_allowance_ORACLE_SELECTED` **for contrast only**.
+- **三处同时错**:
+  1. `11.2` / `47.2` 正是 `frontier_by_loss_allowance_ORACLE_SELECTED` 的值 —— 即上一段
+     刚宣布"只作对照"的那列。表是嵌套阈值 (6.0-24.6%), 正文是 oracle-selected。
+  2. 即便在 oracle-selected 那列内部, `11.2-47.2` 也是**丢掉最小两格**的子区间:
+     B2_cls **4.7%** / B2_red **0.8%** 被静默略去 (全列真实范围 0.8-47.2%)。与
+     `fusion_premium` §1 已经撤回过一次的缺陷**同型** ——「a range starting at +4.93 is a
+     subrange with the sign change removed」。
+  3. 承载这段话的 `render_md` docstring 明写 **"no number is hardcoded in prose (§450.8)"**
+     ⇒ 它还是对自己所在契约的违反。
+- **为什么活下来**: §465 的嵌套阈值修复换掉了**表**, 没有回头看表下面那**句**。这与
+  §464「产物比数据旧一天」是同一个失效模式, 只是发生在**同一个文件内部**, 因此不会被
+  跨文件一致性检查捕获, 也不会被编译/lint 捕获 —— 表和正文都是合法 markdown。
+- **修复**: 抽出 `_nested_prose(rows)`, 全部从 `nested_threshold_frontier` 现算:
+  零损失 **2.3-19.8%**, ≤5% **6.0-24.6%**。
+  措辞由「into and past the 9.5-30.6% band」改为「overlaps but does not clear **≤30.6%
+  (7 of 8 cells)**」—— 后者是 2026-08-11 已更正的口径, 且这一改**撤回了"held-out policy
+  打赢 oracle"这个读法**。
+- **顺带自曝的一件事**: 嵌套阈值只保证在**内折**上满足预算, 对**外折**没有保证。实算
+  **2/6 格在 ≤5% 预算下超标** (`B2_classifieds` / `B2_reddit`)。旧正文让列头读起来像是
+  保证。新正文把它写出来: 列头是**买到的预算**, 不是**付出的损失**。

@@ -54,13 +54,28 @@ updated: 2026-08-08
 > ⚠️ (c) 不只是工作量: 摊平 = **B4 语法约束强度与 B0 不同**, §3.5 现有的「B0 constrained vs B1/B2 free」二分会变三档, 需自己的披露。**别再按 `$136–272` 排预算。**
 > 08-12 的 gate 只探了图像通道 + 纯文本, **tool 路径压根没测**。
 >
-> ### 待你拍板（都不急, B1 replicate 自己跑着）
-> 1. **WA-shop B0 chain 要不要重发**（B0 已修好; 12 段全量 vs 先 1 段 dom 当 gate）— 必须等 B1 replicate 收, 否则又是两条 chain
-> 2. **B4 要不要做**（现在是真改动 + 一处方法学披露, 不是一行）
+> ### ✅ Tier 1 免费 chain 已排（watcher armed, 不用管）
+> `_b1_floor_watcher.sh` (A100 pid 1844360) 双条件等 R28065 收尾 → 自动发 **11 格 B1 same-condition replicate**（cls 5 + red 6, **$0**, 约 13 天, 09-07 前收）。
+> **为什么是这 11 格**: rerun floor 是新 frame 的尺子, 而它只有 4 个 pair, 且**三个全是 dom/som/vision —— 没有一条 phantom 臂有干净地板**, 而 drop-one hero 恰恰跑在 phantom 臂上。B1 本地 ⇒ 免费。B2 不排（每臂 1–8 个成功, 翻转太少测不出带）。
+>
+> ### ✅ Tier 0 两条已做完, 都改了活着的结论（笔记 §467, 台账 +7）
+> | | 结论 |
+> |---|---|
+> | **abstention 跨站迁移**（新产物 `abstention_site_transfer.md`） | **排序迁移得动, 阈值不动, 而 AUROC 不会警告你**。最坏 `B1_red→B1_cls` 在 ≤5% 预算下毁掉 **43.6%** 可解题, 而它 AUROC **0.738 是最高的**、还高于自己格内天花板 ⇒ **看排序最好的方向作为策略失败最惨**。机制 = base-rate 漂移, AUROC 是 rank-based 看不见 |
+> | **leak 重算** | 🔴 **八格表里唯一那条『融合显著劣』的区间靠 leak**（该臂 8 个成功里 3 个是 leaked）⇒ 现在 **8/8 全含零** |
+> | **B-1971**（顺带抓到） | `abstention_learnability.md` 正文引着自己**上一段刚宣布作废**的那列数, 还是丢掉最小两格的子区间 ⇒ **撤回「held-out policy 打赢 oracle」** |
+>
+> 都已进证据层（D10 / D11 / claim (ii) 的 phantom-臂缺口 / B-1970 溯源边界）。
+>
+> ### 待你拍板（都不急）
+> 1. **WA-shop B0 chain 要不要重发**（B0 已修好）— 必须等免费 chain 收, 否则又是两条
+> 2. **B4 要不要做**（真改动 + §3.5 第三档披露, 不是一行）
+> 3. **REALM #192 camera-ready (09-14)**: 除已知的平局缺陷, 现在又多两条 —— fusion 那句「唯一显著负」要改, abstention 的省钱区间要改
 >
 > ```bash
-> .venv/bin/python3 scripts/maintenance/known.py --section 466   # 本次 6 条
-> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once
+> .venv/bin/python3 scripts/maintenance/known.py --section 466   # proxy drift + B4
+> .venv/bin/python3 scripts/maintenance/known.py --section 467   # 地板 / 迁移 / leak
+> ssh condense-a100 'pgrep -af "_b1_floor_watcher|run_experiment"'
 > ```
 
 > ## 🟣 2026-08-13 · **四 lineage 重定 frame · 两个数字被自己的审计推翻 · chain 第 3 段换掉**
