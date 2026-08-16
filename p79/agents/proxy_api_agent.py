@@ -908,6 +908,19 @@ class ProxyApiAgent:
         # tripwire alive for the case it was actually built for: an embedded
         # `tool_use` block with NO top-level `tool_calls`, where falling
         # through to text-parse WOULD lose the structured action.
+        # B-1979 (/stress codex Mode B F6, 2026-08-16): the v1 fix put the sibling
+        # `body["text"]` fallback INSIDE the list branch, so it only ever fired for
+        # list-shaped content whose text blocks were empty. codex probed two shapes it
+        # therefore missed, both HTTP 200:
+        #   `content=""` + `text=<valid JSON>`      -> returned `wait`, sibling ignored
+        #   block="BLOCK" + sibling="SIBLING-LONGER" -> thought backfilled from the
+        #                                              SHORTER one, no warning
+        # The four probes behind B-1970 found the two byte-identical; that is an
+        # observation about one day's provider behaviour, not an invariant. Normalize
+        # ALL shapes through one path, and fail loud under paper_grade when the two
+        # disagree rather than silently preferring whichever the code happened to read.
+        _sibling = resp_json.get("text") if isinstance(resp_json, dict) else None
+        _sibling = _sibling if isinstance(_sibling, str) else None
         if isinstance(raw_content, list):
             _blocks = [b for b in raw_content if isinstance(b, dict)]
             _block_types = [b.get("type") for b in _blocks]
@@ -922,14 +935,28 @@ class ProxyApiAgent:
             _flat = "".join(
                 b.get("text") or "" for b in _blocks if b.get("type") == "text"
             )
-            if not _flat:
-                # Blocks carried no text (normal under tool_choice="required",
-                # where the model's whole output goes to tool_calls). Fall back
-                # to the sibling string the proxy now supplies; keep "" rather
-                # than str(list) so the Path-2 parser sees empty, not garbage.
-                _sibling = resp_json.get("text")
-                _flat = _sibling if isinstance(_sibling, str) else ""
-            raw_content = _flat
+        elif isinstance(raw_content, str):
+            _flat = raw_content
+        elif raw_content is None:
+            _flat = ""
+        else:
+            _flat = str(raw_content)
+
+        if _flat and _sibling and _flat != _sibling:
+            _msg = (
+                "proxy content and sibling body['text'] disagree — picking one silently "
+                "would change which text reaches the thought field and the Path-2 parser "
+                f"(content={_flat[:120]!r}, text={_sibling[:120]!r}). B-1979."
+            )
+            if self._paper_grade:
+                raise RuntimeError(_msg)
+            logger.warning("%s (dev mode: using content)", _msg)
+        elif not _flat and _sibling:
+            # Content carried no text — normal under tool_choice="required", where the
+            # whole output goes to tool_calls, but also the shape codex found where the
+            # action sits in the sibling. Prefer the sibling over "" in both cases.
+            _flat = _sibling
+        raw_content = _flat
 
         output_text = ""
         action = None
@@ -972,7 +999,28 @@ class ProxyApiAgent:
             and isinstance(proxy_tool_calls, list)
             and proxy_tool_calls
         ):
-            first_call = proxy_tool_calls[0] or {}
+            # B-1980 (/stress codex Mode B F5, 2026-08-16): scan for `web_action`
+            # instead of reading index 0 only. codex probed a HTTP 200 whose top-level
+            # list was [wrong_tool, valid web_action]: the old code saw `wrong_tool` at
+            # [0], fell through, and returned `wait` with valid=False — while the
+            # B-1970 guard stayed quiet because its criterion was "top-level tool_calls
+            # is non-empty", not "a parseable action was recovered". An emitted action
+            # was lost with no fail-loud anywhere. Contract, stated positively: exactly
+            # one `web_action` call must be recoverable.
+            _wa_calls = [
+                c for c in proxy_tool_calls
+                if isinstance(c, dict)
+                and isinstance(c.get("function"), dict)
+                and c["function"].get("name") == "web_action"
+            ]
+            if self._paper_grade and len(_wa_calls) > 1:
+                raise RuntimeError(
+                    f"proxy emitted {len(_wa_calls)} `web_action` tool_calls in one "
+                    "response; paper-grade needs exactly one so the recorded action is "
+                    "unambiguous. Names: "
+                    f"{[ (c.get('function') or {}).get('name') for c in proxy_tool_calls ]}. B-1980."
+                )
+            first_call = (_wa_calls[0] if _wa_calls else (proxy_tool_calls[0] or {}))
             fn_block = first_call.get("function") if isinstance(first_call, dict) else None
             if isinstance(fn_block, dict) and fn_block.get("name") == "web_action":
                 args_str = fn_block.get("arguments") or ""
