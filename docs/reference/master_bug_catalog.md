@@ -11679,3 +11679,73 @@ condition A 的写入显示在 condition B 的结果里, **正好模糊掉这份
 - **顺带自曝的一件事**: 嵌套阈值只保证在**内折**上满足预算, 对**外折**没有保证。实算
   **2/6 格在 ≤5% 预算下超标** (`B2_classifieds` / `B2_reddit`)。旧正文让列头读起来像是
   保证。新正文把它写出来: 列头是**买到的预算**, 不是**付出的损失**。
+
+## §468 B-1972 ~ B-1980 — /stress 三家把当天刚写的东西打穿 (2026-08-16)
+
+同日写、同日被否。三条 lineage 的盲区几乎零重叠: Claude 只看 analysis 层、codex 只看
+fire-path、gemini 只看 prose/design。以下按"它防的是哪次失败"排。
+
+### B-1972. 地板 chain 选错了要买的东西 —— "免费"被当成了"有用" [P0] 🛠️ FIXED
+- **现象**: v1 watcher 排了 11 格 B1 replicate 去填"phantom 臂没有干净地板"的缺口。
+- **根因**: 地板的可测性由 discordance `d` 决定, `d ≈ n × SR × 0.59` (三个已测 B0 pair
+  反推: 0.46/0.58/0.74)。逐格代入 → B1 cls phantom 臂 **d≈8.3-10.1**, B1 red 全部六臂
+  **d≈3.0-8.9**, 而 B0 cls phantom 臂 **d≈20.7-26.1** (与已测三 pair 27/32/29 同级)。
+  ⇒ 11 格里 9 格产出的数按本次审计自己的门槛 (d<10 拒绝出 CI) 就不该报。
+- **讽刺处**: 识别缺口是对的, **紧接着选的填法是错的** —— B1 的 phantom 臂恰恰是它 SR
+  最低的几个, 补上去的正是最没 power 的。
+- **修复**: 换成 B0 cls 三个 phantom 臂 ($16.14/格实测 = $48) 先跑 + B1 cls 五格 (免费)。
+  B0 red (d≈13.0-15.9, $66) 与 B1 red 移出, 等 cls 结果落地再决定。
+- **裁定**: §455.4「先问现有数据能不能回答」之后要接一句 —— **再问「跑完之后这个数字
+  撑得住吗」**。
+
+### B-1973. watcher 把"chain 内部串行"当成满足同 host 单 chain 硬规则 [P0] 🛠️ FIXED
+`queue_chain` 只取 container/site lock 且每格后释放, **从不调用**
+`assert_no_other_site_chain_running` (`_lib_paper_grade_gates.sh:1071`; 调用者只有两个
+`queue_phase1_*`)。该 lib 的 **line 127 自己写着 "each got the same thing wrong"** ——
+有案底的重复错误。修复: 发车前调用它 + 写自己的 pidfile (trap 清理), 两个方向都堵。
+
+### B-1974. 完成判据是"有字节"而不是"跑完了" [P0] 🛠️ FIXED
+v1 只做 `[ -s file ]`。**实证反例**: 同日 15:26 abort 的 `B0_dom_wa_shopping` 写出了
+**3191 字节、`episodes: 0`** 的 `condition_summary_v2.json`。codex 扫 A100 上 52 个非空
+summary, 至少 **6 个**会被 `-s` 放行却不满足 exact-N (含一个真实 `147/205` aborted
+reddit condition)。修复: 复刻 `queue_chain.sh:522-560` 的 C3 判据 (JSON + condition_id
++ exact-N)。
+
+### B-1975. `kill -0` 没有 PID identity [P1] 🛠️ FIXED
+A100 实测 `pid_max=4,194,304`, churn **9.04 PID/s 均值 / 22.97 峰值** ⇒ 绕回一圈
+50.7-128.9h。修复: 存 `/proc/<pid>/stat` 字段 22 (starttime) + cmdline, 每轮双核对。
+
+### B-1976. "已发车"没有任何 child acknowledgement [P1] 🛠️ FIXED
+v1 读了 `$!` 就推 ntfy 说发车然后 `exit 0`。child 若因 lock/config/reset/auth 秒死,
+通知照发, 之后整条长链没有任何 done-monitor。修复: 60s settle 检查 +
+`.started/.done/.failed` receipt + 守到链结束当 done-monitor。
+
+### B-1977. 3 天上限的最后 300 秒盲区 [P2] 🛠️ FIXED
+864 次循环的最后一次检查后仍 `sleep 300` 才退出, 那 300 秒内完成会被误报 timeout。
+修复: 判据抽成函数, 循环出口再查一次。
+
+### B-1978. `export RESET_BEFORE=1` 是无效声明 [P2] 🛠️ FIXED
+`queue_chain.sh:65` 自设 `RESET_FLAG=1` 并在 `:394` 用 `RESET_BEFORE="${RESET_FLAG}"`
+**覆盖**叶子 env。删除前自己复核过 (不只信 codex): 删掉安全, reset 照常发生。
+⚠️ `FORCE_NEW` 相反 —— `:394` 读 `FORCE_NEW="${FORCE_NEW:-0}"`, **确实需要父层 export**。
+
+### B-1979. sibling `body["text"]` 只在 list 分支内生效 [P1] 🛠️ FIXED
+B-1970 的修复把 sibling fallback 放进了 `isinstance(raw_content, list)` 里。codex 用真
+proxy 探到两种 HTTP 200 因此被漏掉:
+| 响应 | 旧行为 |
+|---|---|
+| `content=""` + `text=<有效JSON>` | 返回 `wait`, 有效 sibling 被忽略 |
+| block=`"BLOCK"` + sibling=`"SIBLING-LONGER"` | thought 回填成**较短**那个, 无告警 |
+B-1970 那四次 probe 测到两者逐字节相同 —— **那是对某一天 provider 行为的观测, 不是
+不变量**, 而这个 provider 那一周已经漂移过一次。修复: None/str/list 统一归一化;
+两份非空文本不一致时 paper-grade **raise**, dev warning。
+
+### B-1980. tool_calls 只读 `[0]`, guard 判的是"顶层非空"而非"动作救回来了" [P1] 🛠️ FIXED
+codex 探到 `[wrong_tool, valid web_action]`: 旧代码在 `[0]` 看到 wrong_tool 就 fall
+through 返回 `wait`/`valid=False`, 而 B-1970 的 guard 因为"顶层 `tool_calls` 非空"
+**保持沉默** —— 一个真实存在的动作被丢掉且无 fail-loud。
+修复: 扫描找 `web_action` 而非取 `[0]`; paper-grade 下要求**恰好一个** (并行调用会让
+记录的动作有歧义)。
+- **测试盲区**: codex 指出现有 proxy test 里 list-shaped `content` fixture = **0 个**,
+  所以上述所有形状都在盲区。新增 `tests/test_b1970_proxy_content_shapes.py` 7 条,
+  **stash 实测修复前 4/7 是红的**。

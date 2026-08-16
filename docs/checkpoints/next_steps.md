@@ -23,7 +23,38 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟣 2026-08-16 · **chain 自动开了三段, 两段废了 · proxy 换了响应形状 (已修) · B4「改一行」作废**（最新 handoff）
+> ## 🟣 2026-08-16 下午 · **/stress 三家把当天刚写的东西打穿 · 地板 chain 重排 · B4 推到审稿后**（最新 handoff）
+>
+> chronicle → **笔记 §468**（9 小节）· 台账 **+9 条**（2367 → 2376）· B-1972~B-1980 · commits `a9dc260` `11c5ce2` `85818c1`
+>
+> ### ✅ A100 已 arm, 不用管
+> `_b1_floor_watcher.sh` **v2**（pid 1855437）等 R28065 收尾（约 08-17 12:00 UTC）→ 自动发 **8 格 cls chain**：
+> **B0 × {P-text, P-prompt, P-SoM}**（$48，d≈21-26 **有 power**）→ **B1 × {vision, dom, P-som, P-text, P-prompt}**（免费）。约 7 天。
+> ⚠️ **收后有两个手工步骤**（watcher 推不了，A100 到 DGX 不可达）：`bash scripts/maintenance/sync_a100_results.sh` + 把新 run 注册进 `aggregate_noise_floor_inventory.py` 的 `CLEAN_PAIRS`（那是硬编码列表，不会自动发现）。
+>
+> ### 🔴 §467 有三条结论被本轮推翻，写作时用新的
+> | 项 | 旧（勿用） | 新 |
+> |---|---|---|
+> | 迁移失败的机制 | 「base-rate 漂移，one-directional」 | **撤回** —— 降幅最大的 −17.2pp 守住预算 3.1%，几乎没降的 −0.2pp 反而超。真机制是 **预算量子化**（24 个 nominal 档里 5 个重复） |
+> | B2 两个 transfer 的判决 | 单次 permutation 判的 | **200 次后两个方向全判反**（0.749→p=0.050 clears；0.529→p=0.313 判不了） |
+> | leak 那条 | 「leak 修正掉了效应，8/8 含零」 | **underpowered, not corrected**（d=8→5）；范围改成「所有**被审**的 6 格」 |
+> | pooled 协议 | 「5/6 过零分布，训外站更好」 | **撤回** —— cls 25.0% 是 same-x-different-y，测的不是那个量 |
+>
+> ### 🔴 地板这把尺子只在 B0 上有 power（新增，写 limitation 用）
+> `d ≈ n × SR × 0.59` ⇒ B0 cls phantom 臂 d≈21-26 ✓ · B1 cls d≈8-10 · **B1 red 全部六臂 d≈3-9** · B2 更低。
+> **B1/B2 六格量不了自己的地板**，这是仪器限制不是补 run 能解决的。
+>
+> ### B4 推到 REALM 审稿意见（09-07）之后
+> AWS-only 生产形状全扫（笔记 §468.9）：零改动可用的非 Qwen 只有 **`kimi-k2.5`（2×）** 和 **`nemotron-nano-12b-v2`（0.15×）**。
+> **GPT-5.6 三个变体与 B0 严格同价，403 是 `aws-marketplace:Subscribe` 未授权 —— 可以去要**，订阅一开就是理想 B4。
+> Anthropic 全族 + Nova 全族是格式墙；gpt-oss / gemma 是真读不了图；**Kimi K3 在 AWS 上不存在**。
+>
+> ```bash
+> ssh condense-a100 'pgrep -af "_b1_floor_watcher|run_experiment"; cat /home/ubuntu/workspace/p79/logs/.b1_floor_*.started 2>/dev/null'
+> .venv/bin/python3 scripts/maintenance/known.py --section 468
+> ```
+
+> ## 🟣 2026-08-16 上午 · **chain 自动开了三段, 两段废了 · proxy 换了响应形状 (已修) · B4「改一行」作废**
 >
 > chronicle → **笔记 §466**（4 小节）· 台账 **+6 条**（2354 → 2360）· 1 commit（`0a14187`）
 >

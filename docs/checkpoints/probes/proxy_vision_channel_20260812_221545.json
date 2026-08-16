@@ -1,0 +1,207 @@
+{
+  "probe": "proxy vision channel + billed-cost, closing §444.4's unverified image channel",
+  "generated": "20260812_221545",
+  "vision_pass_ran": false,
+  "image_spec": {
+    "size": "224x224 PNG",
+    "left": [
+      255,
+      0,
+      255
+    ],
+    "right": [
+      0,
+      128,
+      0
+    ],
+    "prompt": "This image is split into a left half and a right half, each a solid colour. What colour is the LEFT half? Answer with one word."
+  },
+  "verdict_legend": {
+    "SAW_IT": "named the left colour -- image channel works",
+    "SAW_IT_HALVES_SWAPPED": "named the right colour -- channel works, spatial answer wrong",
+    "NO_IMAGE_OR_WRONG": "HTTP 200 but no colour named: silent image drop is the prime suspect, and it is the dangerous case",
+    "EMPTY_REPLY": "200 with empty content"
+  },
+  "results": [
+    {
+      "model": "qwen.qwen3-vl-235b-a22b",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hello! 😊  \nHow can I",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 9,
+        "outputTokens": 8,
+        "cost": 4.9000000000000005e-05
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.69407869,
+        "total_cost": 1005.69407869,
+        "budget_limit": 1680,
+        "remaining_budget": 674.30592131,
+        "budget_usage_percent": 59.862742779166666
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "eu.anthropic.claude-sonnet-5",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 0.00014399999999999998
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.69422269,
+        "total_cost": 1005.69422269,
+        "budget_limit": 1680,
+        "remaining_budget": 674.30577731,
+        "budget_usage_percent": 59.86275135059523
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "eu.anthropic.claude-sonnet-4-6",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "Hi there! How are you doing?",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 0.00014399999999999998
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.69436669,
+        "total_cost": 1005.69436669,
+        "budget_limit": 1680,
+        "remaining_budget": 674.30563331,
+        "budget_usage_percent": 59.86275992202381
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "eu.anthropic.claude-opus-5",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "Hey! What's on your",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 0.0007199999999999999
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.69508669,
+        "total_cost": 1005.69508669,
+        "budget_limit": 1680,
+        "remaining_budget": 674.30491331,
+        "budget_usage_percent": 59.86280277916667
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "image_format": "anthropic",
+      "text_status": 200,
+      "text_reply": "# Hey there! 👋",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 8,
+        "outputTokens": 8,
+        "cost": 4.8e-05
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.69513469,
+        "total_cost": 1005.69513469,
+        "budget_limit": 1680,
+        "remaining_budget": 674.30486531,
+        "budget_usage_percent": 59.862805636309524
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "google.gemma-4-31b",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hello! How can I help you today?",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 44,
+        "outputTokens": 9,
+        "cost": 9.76e-06
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.69514445,
+        "total_cost": 1005.69514445,
+        "budget_limit": 1680,
+        "remaining_budget": 674.30485555,
+        "budget_usage_percent": 59.86280621726191
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "google.gemma-4-26b-a4b",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hello! How can I help you today?",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 44,
+        "outputTokens": 9,
+        "cost": 8.87e-06
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.69515332,
+        "total_cost": 1005.69515332,
+        "budget_limit": 1680,
+        "remaining_budget": 674.30484668,
+        "budget_usage_percent": 59.862806745238096
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "google.gemma-3-27b-it",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hi there! 👋 \n\nHow can",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 10,
+        "outputTokens": 8,
+        "cost": 7.8e-06
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.6951611200001,
+        "total_cost": 1005.6951611200001,
+        "budget_limit": 1680,
+        "remaining_budget": 674.3048388799999,
+        "budget_usage_percent": 59.862807209523815
+      },
+      "verdict": "text-only"
+    },
+    {
+      "model": "zai.glm-5",
+      "image_format": "openai",
+      "text_status": 200,
+      "text_reply": "Hi there! I'm the GLM",
+      "text_error": null,
+      "text_usage": {
+        "inputTokens": 6,
+        "outputTokens": 8,
+        "cost": 1.4999999999999999e-05
+      },
+      "quota_after_text": {
+        "llm_cost": 1005.6951761199999,
+        "total_cost": 1005.6951761199999,
+        "budget_limit": 1680,
+        "remaining_budget": 674.3048238800001,
+        "budget_usage_percent": 59.862808102380946
+      },
+      "verdict": "text-only"
+    }
+  ]
+}
