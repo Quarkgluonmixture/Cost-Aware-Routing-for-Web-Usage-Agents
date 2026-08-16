@@ -27,10 +27,34 @@ updated: 2026-08-08
 >
 > chronicle → **笔记 §468**（9 小节）· 台账 **+9 条**（2367 → 2376）· B-1972~B-1980 · commits `a9dc260` `11c5ce2` `85818c1`
 >
-> ### ✅ A100 已 arm, 不用管
-> `_b1_floor_watcher.sh` **v2**（pid 1855437）等 R28065 收尾（约 08-17 12:00 UTC）→ 自动发 **8 格 cls chain**：
-> **B0 × {P-text, P-prompt, P-SoM}**（$48，d≈21-26 **有 power**）→ **B1 × {vision, dom, P-som, P-text, P-prompt}**（免费）。约 7 天。
-> ⚠️ **收后有两个手工步骤**（watcher 推不了，A100 到 DGX 不可达）：`bash scripts/maintenance/sync_a100_results.sh` + 把新 run 注册进 `aggregate_noise_floor_inventory.py` 的 `CLEAN_PAIRS`（那是硬编码列表，不会自动发现）。
+> ### 🔴 REALM 出结论是 **2026-08-21**（user 08-16 更正；全库旧记的 09-07 已作废）
+> 意见落在**毕设交付之前 11 天**，不是之后 6 天 ⇒ 到 ARR 从 35 天变 **52 天**，补实验可比原计划**早 17 天**启动。已同步 `task_naacl2027_main.md` / `task_realm_paper_b_router_negative.md` / memory。
+>
+> ### ✅ A100 已 arm，不用管 —— 时间表（UTC，全部按实测吞吐算）
+> `_b1_floor_watcher.sh` **v2**（pid 1855437）等 R28065 收尾 → 自动发 **8 格 cls chain**。
+>
+> | # | 条件 | 成本 | 收 | d | |
+> |---|---|---|---|---|---|
+> | — | R28065 B1 som cls | $0 | **08-17 09:38** | — | 在跑 |
+> | 1-3 | **B0 × cls × {P-text, P-prompt, P-SoM}** | **$48** | **08-18 12:47** | **20.7 / 26.1 / 20.7** 🟢 | ⭐ phantom 臂第一次有干净地板 |
+> | 4 | B1 × cls × vision | $0 | 08-19 09:01 | 16.6 🟢 | 第一个有 power 的 B1 地板 |
+> | 5 | B1 × cls × dom | $0 | 08-20 05:15 | 8.3 🟡 | 描述性，不报 CI |
+> | 6-8 | B1 × cls × {P-som, P-text, P-prompt} | $0 | 08-21 01:28 → 08-22 17:56 | 8.9/10.1/8.9 🟡 | **08-21 后可随时砍** |
+>
+> **付费段 08-18 中午就落地，比 REALM 早 2.5 天。总花 $48 = 预算 7%。**
+>
+> ⚠️ **收后两个手工步骤**（watcher 推不了，A100 到 DGX 不可达）：`bash scripts/maintenance/sync_a100_results.sh` + 把新 run 注册进 `aggregate_noise_floor_inventory.py` 的 `CLEAN_PAIRS`（**硬编码列表，不会自动发现**）。
+>
+> ### 08-21 之后再定（都不预支）
+> | 候选 | 代价 | 备注 |
+> |---|---|---|
+> | shop / **WA-shop** | $17 gate / ~$174 全量 | 攻击面 #2/#6；08-13 重定 frame 后它原本的理由已不是主线 |
+> | **B0 × red × 3 phantom** | $66 / **5.5 天** | d≈13-16。⚠️ 想拿它填空档但**实测 B0 red 只有 4.6 ep/h**，冲过 08-21 |
+> | **B4** | Kimi $29-32/格 | **若 GPT-5.6 订阅批下来就用它**（与 B0 严格同价、OpenAI 格式零改动、前沿）；批不下来才退回 `kimi-k2.5` |
+>
+> ### 🔴 排期用的实测吞吐（别再凭估）
+> **B0 × cls 25.9 ep/h（8.6h/格）· B1 × cls 11.3 ep/h（19.8h/格）· B0 × red 仅 4.6 ep/h（44h/格）**。
+> B0 在 reddit 上比 classifieds **慢 5.6 倍**，历史上两个 phantom 条件跑了 **154h / 184h**（单格 6-7 天）。⇒ reddit 排期按 **40h+/格**，不能拿 cls 的 8.6h 外推。reddit 是双重贵：token $22 vs $16 **且** wall-clock 5.6×。
 >
 > ### 🔴 §467 有三条结论被本轮推翻，写作时用新的
 > | 项 | 旧（勿用） | 新 |

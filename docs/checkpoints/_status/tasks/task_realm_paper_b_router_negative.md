@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "✅ **已提交 2026-08-06** — OpenReview **Submission #192**, REALM @ EMNLP 2026, `Non-archival long`, Cross Submission To: `Plan to submit to ACL ARR 2026 August` (主会投稿权保住), 作者四人。最终稿 `d737f92`: 正文 8 页 / 35 页 A4 / 0 error / 0 undefined / 首页 Anonymous。**notif 09-07 / camera-ready 09-14**。留给 camera-ready 的 4 条终审项见 next_steps §0"
+eta: "✅ **已提交 2026-08-06** — OpenReview **Submission #192**, REALM @ EMNLP 2026, `Non-archival long`, Cross Submission To: `Plan to submit to ACL ARR 2026 August` (主会投稿权保住), 作者四人。最终稿 `d737f92`: 正文 8 页 / 35 页 A4 / 0 error / 0 undefined / 首页 Anonymous。**notif 2026-08-21** (user 08-16 更正, 旧记 09-07 作废) **/ camera-ready 09-14**。留给 camera-ready 的 4 条终审项见 next_steps §0"
 detail: 笔记 §398.8(合并拍板) + §406(噪声审计) + **§407(三分转向 + 非归档轨)**. 新四步 = ①上限一半是假币 / ②默认答案最贵而没挣到 / ③该买哪条随模态翻号 / ④压不到 per-request(+51.1% 训练行重跑就翻). 新章节 §1问题陈述 / §2setup+2x2 / §3上限与假币 / §4该买什么 / §5为什么压不到per-request / §6discussion
 created: 2026-07-22
 updated: 2026-08-06
