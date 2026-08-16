@@ -23,7 +23,47 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟣 2026-08-13 · **四 lineage 重定 frame · 两个数字被自己的审计推翻 · chain 第 3 段换掉**（最新 handoff）
+> ## 🟣 2026-08-16 · **chain 自动开了三段, 两段废了 · proxy 换了响应形状 (已修) · B4「改一行」作废**（最新 handoff）
+>
+> chronicle → **笔记 §466**（4 小节）· 台账 **+6 条**（2354 → 2360）· 1 commit（`0a14187`）
+>
+> ### 先跑命令拿 live 状态, 别读下面的快照
+> ```bash
+> ssh condense-a100 'cd /home/ubuntu/workspace/p79 && pgrep -af run_experiment; \
+>   ls results/visualwebarena/phase1/B1_som_classifieds_20260816_*/*/episodes/*_summary_v2.json | wc -l'
+> ```
+> ⚠️ A100 是 **UTC**, DGX 是 **BST**。
+>
+> ### 08-16 14:52Z watcher 开火的结果
+> | 段 | 结果 |
+> |---|---|
+> | B4 dom smoke | 🔴 **HTTP 400, 0 步** |
+> | B4 som smoke | 🔴 **HTTP 400, 0 步**（没走到图） |
+> | B1 som cls replicate | ✅ **正常跑着**（本地 B1, $0, 约 21h 收） |
+>
+> 另有 `wa_chain_autolaunch.sh` 同时开了 WA-shop 12 段 → 15:26 因下面的缺陷自杀。
+> **两条 site chain 一度并存**（违反同 host 单 chain）。**再发火风险已核实为零** —— 那个 watcher 一发限定已退出, 两个 10 分钟 cron 都被 `.fired` 永久解除。
+>
+> ### ✅ B-1970 已修并双侧验证（DGX + A100 md5 一致, live step() 双侧 PASS）
+> AWS proxy 把 `body["content"]` 从 `str` 换成了 Anthropic block list, 另加了个逐字节相同的 `body["text"]`; `tool_calls` / `logprobs` 不变 ⇒ **纯表征变化零损失**。B-1110 在 2026-05-18 埋的 tripwire 按设计炸了, 但它断言的是**形状**而非**损失**, 把一个可恢复的步骤升级成 abort 并带走整条 12-cell chain。已收窄到「block 里有 `tool_use` 且顶层 `tool_calls` 缺失」。
+>
+> 🔴 **溯源**: B0 上次真跑是 **08-10**, 漂移落在 08-10~08-16。**归档 B0 与此后新 B0 不在同一 provider 快照上** —— 新旧 B0 相减前必须声明。
+>
+> ### 🔴 08-12 第 3 条「B4 落地 = 改一行 api_name」**作废**
+> `eu.anthropic.claude-sonnet-5` 是 Anthropic-native 条目, 与 B0 的 OpenAI 形状互斥。连 Anthropic 原生 schema 也 400 —— 因为 `_WEB_ACTION_TOOL.parameters` 顶层带 **`allOf`**, 该 proxy 的 Anthropic 校验器直接拒。落地需 **(a) 协议分支 (b) tool_choice 枚举 (c) 摊平 schema**。
+> ⚠️ (c) 不只是工作量: 摊平 = **B4 语法约束强度与 B0 不同**, §3.5 现有的「B0 constrained vs B1/B2 free」二分会变三档, 需自己的披露。**别再按 `$136–272` 排预算。**
+> 08-12 的 gate 只探了图像通道 + 纯文本, **tool 路径压根没测**。
+>
+> ### 待你拍板（都不急, B1 replicate 自己跑着）
+> 1. **WA-shop B0 chain 要不要重发**（B0 已修好; 12 段全量 vs 先 1 段 dom 当 gate）— 必须等 B1 replicate 收, 否则又是两条 chain
+> 2. **B4 要不要做**（现在是真改动 + 一处方法学披露, 不是一行）
+>
+> ```bash
+> .venv/bin/python3 scripts/maintenance/known.py --section 466   # 本次 6 条
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once
+> ```
+
+> ## 🟣 2026-08-13 · **四 lineage 重定 frame · 两个数字被自己的审计推翻 · chain 第 3 段换掉**
 >
 > chronicle → **笔记 §455–§465**（11 节）· 台账 **+54 条**（2298 → 2352）· **12 commits 未 push**
 >
