@@ -166,8 +166,17 @@ def main() -> None:
          f"Paired bootstrap, {N_BOOT:,} resamples, seed {SEED} — identical to `fusion_premium`.", "",
          "Removed: " + ", ".join(f"`{c}`·{PRETTY[m]}·task {t}" for c, m, t in leaks) + ".", "",
          "## 1. Fusion contrasts, before and after", "",
-         "| cell | contrast | before | 95% CI | after | 95% CI | shift | verdict |",
-         "|---|---|---|---|---|---|---|---|"]
+         "⚠️ **`d` is the number of DISCORDANT tasks** — the pairs the paired bootstrap actually "
+         "resamples. A percentage-point CI quoted to two decimals says nothing about precision if "
+         "`d` is single-digit: resampling 6 disagreements 10,000 times does not manufacture "
+         "information. Contrasts with **`d` < 10 are marked `⚠︎ underpowered`**, and no conclusion "
+         "in this document may rest on them alone (/stress gemini G2, 2026-08-16).", "",
+         "| cell | contrast | **d** | before | 95% CI | after | 95% CI | shift | verdict |",
+         "|---|---|---:|---|---|---|---|---|---|"]
+
+    def _discordance(cellmat: dict, a: str, b_: str) -> int:
+        """Off-diagonal count for the paired contrast — the bootstrap's real sample size."""
+        return sum(1 for v in cellmat.values() if bool(v.get(a)) != bool(v.get(b_)))
 
     for cell in sorted(base):
         if not cell.startswith("red"):
@@ -176,7 +185,11 @@ def main() -> None:
         for comp in COMPARATORS:
             b = paired_effect(base[cell], "som", comp)
             aft = paired_effect(adj[cell], "som", comp)
-            rec[f"som_minus_{comp}"] = {"before": b, "after": aft}
+            d_before = _discordance(base[cell], "som", comp)
+            d_after = _discordance(adj[cell], "som", comp)
+            rec[f"som_minus_{comp}"] = {"before": b, "after": aft,
+                                        "discordance_before": d_before,
+                                        "discordance_after": d_after}
             bz, az = excl_zero(b["ci"]), excl_zero(aft["ci"])
             if bz != az:
                 verdict = "**flips** — excludes 0 → includes 0" if bz else \
@@ -184,8 +197,11 @@ def main() -> None:
                 flips.append(f"`{cell}` SoM − {PRETTY[comp]}")
             else:
                 verdict = "unchanged"
+            if min(d_before, d_after) < 10:
+                verdict += " · ⚠︎ underpowered"
             L.append(
-                f"| `{cell}` | SoM − {PRETTY[comp]} | {b['est_pp']:+.2f}pp | "
+                f"| `{cell}` | SoM − {PRETTY[comp]} | {d_before}→{d_after} | "
+                f"{b['est_pp']:+.2f}pp | "
                 f"[{b['ci'][0]:+.2f}, {b['ci'][1]:+.2f}] | **{aft['est_pp']:+.2f}pp** | "
                 f"[{aft['ci'][0]:+.2f}, {aft['ci'][1]:+.2f}] | "
                 f"{aft['est_pp'] - b['est_pp']:+.2f}pp | {verdict} |")
@@ -227,7 +243,19 @@ def main() -> None:
               "*significantly worse* than a single channel anywhere. Three of the eight successes "
               "behind `red_B2`·DOM are leaked (37.5% of that arm's successes, the highest share of "
               "any arm), and with them removed the interval crosses zero. **The claim that fusion "
-              "is significantly beaten in some cell rests on accumulated site state.**", ""]
+              "is significantly beaten in some cell rests on accumulated site state.**", "",
+              "⚠️ **Two things this does NOT license** (both added 2026-08-16 after /stress):", "",
+              "1. *«under the canonical leak policy every cell's interval includes zero»* — "
+              "**overstated**. This audit covers the **three VWA reddit cells**. The three "
+              "classifieds cells cannot carry this defect (the mechanism is Postmill-specific), but "
+              "`wa_red_B0` and `wa_red_B1` are Postmill and **have never been audited**, so 2 of "
+              "the 8 were never put under the policy at all. The supportable statement is *«all "
+              "audited cells include zero»*.",
+              "2. *«the leak correction removed the effect»* — read the `d` column first. The "
+              "flipping contrast is one whose discordant count is single-digit; an interval that "
+              "moves when three tasks change value was never carrying an effect to begin with. The "
+              "honest reading is **underpowered**, not **corrected** — and those are different "
+              "claims with different implications for whether more data would help.", ""]
     else:
         L += ["No verdict changes.", ""]
     L += ["What does **not** move: the modality reversal. `red_B0` and `red_B1` SoM − Vision both "

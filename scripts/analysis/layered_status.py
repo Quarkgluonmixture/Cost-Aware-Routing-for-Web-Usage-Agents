@@ -729,10 +729,13 @@ def render_claim_matrix(lines: list[str]) -> None:
         "| (ii) Most apparent oracle headroom is rerun variance; the bound that survives"
         " the rerun control is the cost ceiling at unchanged success | 0c, 3a |"
         " `noise_floor_inventory.md` |"
-        " ⚠️ **two gaps, both load-bearing** — (1) read §1b there: the observed band is a"
-        " draw, not a bound; (2) the measured floors cover DOM/SoM/Vision in a single cell,"
-        " so **no phantom arm has a clean same-condition floor**, and the phantom arms are"
-        " the ones the drop-one hero runs on. Replicates in flight (`_b1_floor_watcher.sh`) |",
+        " ⚠️ **three gaps, all load-bearing** — (1) read §1b there: the observed band is a"
+        " draw, not a bound, and the threshold it derives is scoped to SAME-arm reruns;"
+        " (2) the measured floors cover DOM/SoM/Vision in a single cell, so **no phantom arm"
+        " has a clean same-condition floor**, and the phantom arms are the ones the drop-one"
+        " hero runs on; (3) the instrument itself is **only well-powered on B0** — discordance"
+        " scales with success rate, so the B1 and B2 cells cannot measure their own floor."
+        " B0 phantom-arm replicates in flight (`_b1_floor_watcher.sh`) |",
         "| (iii) The benchmarks cannot produce routing supervision: labels arrive at the"
         " success rate, so the tested routing constructions land at or below trivial fixed"
         " policies | 0b, 0b-extra, 0g |"
@@ -773,8 +776,9 @@ def render_claim_matrix(lines: list[str]) -> None:
         " `early_abort_B0_classifieds.md` |",
         "| **Abstain before running** | **every task has one** | **present** |"
         " **works within a cell — the only held-out cost saving in the paper.** Across"
-        " sites it **splits**: the ranking survives the site change, the threshold does"
-        " not, and the direction that ranks best is the one that fails worst as a policy |"
+        " sites it **splits**: the ranking survives (5 of 6 matched transfers clear a"
+        " 200-permutation null; the 6th is indeterminate, not negative), the operating"
+        " point does not |"
         " `abstention_learnability.md`, `abstention_site_transfer.md` |",
         "",
         "⚠️ The last row is the only place in this file where a *generalisation* claim is"
@@ -813,13 +817,16 @@ def render_claim_matrix(lines: list[str]) -> None:
         " `representation_deployment_profile.md` §2 |",
         "| D9 | Carbon is not an independent axis on this instrument — it tracks elapsed"
         " time | 3f* | `energy_carbon_audit.md` |",
-        "| D10 | A pre-flight abstention policy's **ranking** survives a site change while"
-        " its **threshold** does not; AUROC cannot warn you, because the failure is"
-        " base-rate drift and AUROC is rank-based | 0g, 3a |"
+        "| D10 | A pre-flight abstention policy's **ranking** survives a site change on the"
+        " cells that carry enough events to test it; its **operating point** does not, and"
+        " the nominal budget axis is **quantised** — several percentage budgets resolve to"
+        " the same integer task allowance and are therefore the same policy | 0g, 3a |"
         " `abstention_site_transfer.md` §4 |",
-        "| D11 | The one interval that showed fusion significantly beaten anywhere rested on"
-        " accumulated site state, not on behaviour; under the canonical leak policy every"
-        " cell's interval includes zero | 0a, 0c | `leakage_sensitivity.md` §3 |",
+        "| D11 | The one interval that showed fusion significantly beaten anywhere depended on"
+        " accumulated site state — but its discordant count is single-digit, so the honest"
+        " reading is **underpowered, not corrected**. All **audited** cells now include zero;"
+        " 2 of the 8 (`wa_red_*`) have never been audited for this defect | 0a, 0c |"
+        " `leakage_sensitivity.md` §1 (the `d` column) + §3 |",
         "",
         "⚠️ **Provenance boundary on every B0 figure in this file (B-1970, 2026-08-16).**"
         " The AWS proxy changed its response shape between the last archived B0 run and"

@@ -4,7 +4,7 @@ status: complete
 purpose: does an abstention policy fitted on one site work on a site it has never seen
 scope_warning: 6 VWA cells, 2 sites. The abstention label is N=1 per mode. AUROC is rank-based and blind to calibration drift; the operating-point table is not, and they disagree by construction. Read both.
 producer: scripts/analysis/abstention_site_transfer.py
-generated: 2026-08-16T16:20:49+00:00
+generated: 2026-08-16T17:46:40+00:00
 ---
 
 # Abstention across sites: does the policy transfer?
@@ -15,56 +15,58 @@ Regenerate: `.venv/bin/python3 scripts/analysis/abstention_site_transfer.py`
 
 ## 1. Matched-model transfer (model fixed, site swapped)
 
-| train | test | n train | n test | base rate train | base rate test | **transfer AUROC** | shuffle null | within-cell AUROC (ceiling) |
+The null column is the 95th percentile of **200 label permutations**, not a single draw, and the permutation p is plus-one corrected. A one-draw null cannot support a verdict: the AUROC null's own SD on the sparsest cells here is ~0.08, which is larger than several of the gaps being judged.
+
+| train | test | n test | base rate train → test | **transfer AUROC** | null p95 | null SD (emp / analytic) | perm p | within-cell (ceiling) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| `B0_classifieds` | `B0_reddit` | 224 | 203 | 56.7% | 73.9% | **0.717** | 0.454 | 0.780 |
-| `B0_reddit` | `B0_classifieds` | 203 | 224 | 73.9% | 56.7% | **0.677** | 0.487 | 0.726 |
-| `B1_classifieds` | `B1_reddit` | 224 | 203 | 75.4% | 88.2% | **0.718** | 0.354 | 0.864 |
-| `B1_reddit` | `B1_classifieds` | 203 | 224 | 88.2% | 75.4% | **0.738** | 0.484 | 0.732 |
-| `B2_classifieds` | `B2_reddit` | 224 | 203 | 92.9% | 92.6% | **0.732** | 0.749 | 0.615 |
-| `B2_reddit` | `B2_classifieds` | 203 | 224 | 92.6% | 92.9% | **0.627** | 0.529 | 0.642 |
+| `B0_classifieds` | `B0_reddit` | 203 | 56.7% → 73.9% | **0.717** | 0.637 | 0.082 / 0.046 | 0.005 | 0.780 |
+| `B0_reddit` | `B0_classifieds` | 224 | 73.9% → 56.7% | **0.677** | 0.647 | 0.089 / 0.039 | 0.010 | 0.726 |
+| `B1_classifieds` | `B1_reddit` | 203 | 75.4% → 88.2% | **0.718** | 0.679 | 0.103 / 0.063 | 0.035 | 0.864 |
+| `B1_reddit` | `B1_classifieds` | 224 | 88.2% → 75.4% | **0.738** | 0.701 | 0.102 / 0.045 | 0.005 | 0.732 |
+| `B2_classifieds` | `B2_reddit` | 203 | 92.9% → 92.6% | **0.732** | 0.725 | 0.124 / 0.078 | 0.050 | 0.615 |
+| `B2_reddit` | `B2_classifieds` | 224 | 92.6% → 92.9% | **0.627** | 0.731 | 0.122 / 0.075 | 0.313 | 0.642 |
 
-## 2. Pooled transfer (all three models of one site → each cell of the other)
+## 2. ⚠️ The pooled protocol is WITHDRAWN
 
-| train site | test | n train | n test | **transfer AUROC** | shuffle null | within-cell AUROC (ceiling) |
-|---|---|---:|---:|---:|---:|---:|
-| classifieds (3 cells) | `B0_reddit` | 672 | 203 | **0.770** | 0.494 | 0.780 |
-| classifieds (3 cells) | `B1_reddit` | 672 | 203 | **0.723** | 0.439 | 0.864 |
-| classifieds (3 cells) | `B2_reddit` | 672 | 203 | **0.745** | 0.433 | 0.615 |
-| reddit (3 cells) | `B0_classifieds` | 609 | 224 | **0.711** | 0.508 | 0.726 |
-| reddit (3 cells) | `B1_classifieds` | 609 | 224 | **0.711** | 0.514 | 0.732 |
-| reddit (3 cells) | `B2_classifieds` | 609 | 224 | **0.638** | 0.654 | 0.642 |
+An earlier version of this artifact also pooled all three models of one site (≈672 rows) and tested on each cell of the other, reporting that pooling cleared the null in 5 of 6 and even beat one cell's own within-cell ceiling. **That comparison is withdrawn**, because the pooled design does not estimate the quantity it is tested against:
+
+- **classifieds**, 3 cells, 224 shared tasks: the feature vector is **byte-identical across all models on 131 tasks (58.5%)**, the label conflicts across models on 94 (42.0%), and **56 tasks (25.0%) are both at once**.
+- **reddit**, 3 cells, 203 shared tasks: the feature vector is **byte-identical across all models on 12 tasks (5.9%)**, the label conflicts across models on 51 (25.1%), and **3 tasks (1.5%) are both at once**.
+
+The abstention label is per-(task, model) — *did this model's six modes solve it* — while the features are step-0 observation statistics and task config, which are largely model-invariant. Pooling therefore trains on same-x-different-y triples and can only recover *average-LLM solvability*; scoring it against a single model's cell is a target mismatch, not a transfer result. The numbers remain in the JSON under `pooled` for the record; nothing in this document rests on them.
 
 ## 3. Transferred operating point — threshold never sees the test site
 
 The threshold is chosen by an inner 5-fold **inside the training site** at the stated solvable-loss budget, then applied unseen to the other site. This is the cross-site analogue of the nested column in `abstention_learnability` §3, and it is a held-out *policy*, not merely a held-out prediction (§465).
 
-| train | test | budget | abstain rate | solvable lost | realised loss | saved |
-|---|---|---:|---:|---:|---:|---:|
-| `B0_classifieds` | `B0_reddit` | ≤0% | 3.9% | 0/53 | 0.0% | 5.8% |
-| `B0_classifieds` | `B0_reddit` | ≤2% | 15.3% | 1/53 | 1.9% | 19.1% |
-| `B0_classifieds` | `B0_reddit` | ≤5% | 20.7% | 2/53 | 3.8% | 25.2% |
-| `B0_classifieds` | `B0_reddit` | ≤10% | 30.0% | 6/53 | 11.3% | 37.4% |
-| `B0_reddit` | `B0_classifieds` | ≤0% | 3.1% | 0/97 | 0.0% | 3.3% |
-| `B0_reddit` | `B0_classifieds` | ≤2% | 5.8% | 0/97 | 0.0% | 6.6% |
-| `B0_reddit` | `B0_classifieds` | ≤5% | 7.6% | 3/97 | 3.1% | 8.7% |
-| `B0_reddit` | `B0_classifieds` | ≤10% | 12.9% | 7/97 | 7.2% | 15.6% |
-| `B1_classifieds` | `B1_reddit` | ≤0% | 11.3% | 0/24 | 0.0% | 11.0% |
-| `B1_classifieds` | `B1_reddit` | ≤2% | 17.2% | 0/24 | 0.0% | 16.8% |
-| `B1_classifieds` | `B1_reddit` | ≤5% | 22.7% | 0/24 | 0.0% | 19.9% |
-| `B1_classifieds` | `B1_reddit` | ≤10% | 34.5% | 2/24 | 8.3% | 33.8% |
-| `B1_reddit` | `B1_classifieds` | ≤0% | 58.9% | 20/55 | 36.4% | 65.6% |
-| `B1_reddit` | `B1_classifieds` | ≤2% | 58.9% | 20/55 | 36.4% | 65.6% |
-| `B1_reddit` | `B1_classifieds` | ≤5% | 70.5% | 24/55 | 43.6% | 77.5% |
-| `B1_reddit` | `B1_classifieds` | ≤10% | 70.5% | 24/55 | 43.6% | 77.5% |
-| `B2_classifieds` | `B2_reddit` | ≤0% | 14.3% | 1/15 | 6.7% | 11.3% |
-| `B2_classifieds` | `B2_reddit` | ≤2% | 14.3% | 1/15 | 6.7% | 11.3% |
-| `B2_classifieds` | `B2_reddit` | ≤5% | 14.3% | 1/15 | 6.7% | 11.3% |
-| `B2_classifieds` | `B2_reddit` | ≤10% | 21.2% | 1/15 | 6.7% | 17.7% |
-| `B2_reddit` | `B2_classifieds` | ≤0% | 1.3% | 0/16 | 0.0% | 1.7% |
-| `B2_reddit` | `B2_classifieds` | ≤2% | 1.3% | 0/16 | 0.0% | 1.7% |
-| `B2_reddit` | `B2_classifieds` | ≤5% | 1.3% | 0/16 | 0.0% | 1.7% |
-| `B2_reddit` | `B2_classifieds` | ≤10% | 16.1% | 2/16 | 12.5% | 17.7% |
+⚠️ **The percentage budget is quantised.** What the inner CV actually enforces is an integer: `floor(budget × solvable_train)`. On a small solvable set several percentage rows collapse onto the SAME integer and are therefore the same policy — the `budget→tasks` column below makes that visible instead of implying a sweep that does not exist.
+
+| train | test | budget | **budget→tasks** | abstain rate | solvable lost | realised loss | saved |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `B0_classifieds` | `B0_reddit` | ≤0% | **0 / 97** | 3.9% | 0/53 | 0.0% | 5.8% |
+| `B0_classifieds` | `B0_reddit` | ≤2% | **1 / 97** | 14.8% | 1/53 | 1.9% | 19.0% |
+| `B0_classifieds` | `B0_reddit` | ≤5% | **4 / 97** | 22.2% | 3/53 | 5.7% | 26.2% |
+| `B0_classifieds` | `B0_reddit` | ≤10% | **9 / 97** | 31.5% | 7/53 | 13.2% | 38.5% |
+| `B0_reddit` | `B0_classifieds` | ≤0% | **0 / 53** | 2.2% | 0/97 | 0.0% | 3.0% |
+| `B0_reddit` | `B0_classifieds` | ≤2% | **1 / 53** | 3.1% | 0/97 | 0.0% | 3.3% |
+| `B0_reddit` | `B0_classifieds` | ≤5% | **2 / 53** | 5.8% | 0/97 | 0.0% | 6.6% |
+| `B0_reddit` | `B0_classifieds` | ≤10% | **5 / 53** | 12.5% | 7/97 | 7.2% | 15.0% |
+| `B1_classifieds` | `B1_reddit` | ≤0% | **0 / 55** | 9.9% | 0/24 | 0.0% | 9.1% |
+| `B1_classifieds` | `B1_reddit` | ≤2% | **1 / 55** | 11.3% | 0/24 | 0.0% | 11.0% |
+| `B1_classifieds` | `B1_reddit` | ≤5% | **2 / 55** | 17.7% | 0/24 | 0.0% | 16.8% |
+| `B1_classifieds` | `B1_reddit` | ≤10% | **5 / 55** | 30.0% | 1/24 | 4.2% | 28.7% |
+| `B1_reddit` | `B1_classifieds` | ≤0% | **0 / 24** | 62.1% | 20/55 | 36.4% | 67.9% |
+| `B1_reddit` | `B1_classifieds` | ≤2% | **0 / 24** | 62.1% | 20/55 | 36.4% | 67.9% |
+| `B1_reddit` | `B1_classifieds` | ≤5% | **1 / 24** | 66.1% | 21/55 | 38.2% | 73.0% |
+| `B1_reddit` | `B1_classifieds` | ≤10% | **2 / 24** | 70.5% | 24/55 | 43.6% | 77.5% |
+| `B2_classifieds` | `B2_reddit` | ≤0% | **0 / 16** | 12.8% | 1/15 | 6.7% | 9.9% |
+| `B2_classifieds` | `B2_reddit` | ≤2% | **0 / 16** | 12.8% | 1/15 | 6.7% | 9.9% |
+| `B2_classifieds` | `B2_reddit` | ≤5% | **0 / 16** | 12.8% | 1/15 | 6.7% | 9.9% |
+| `B2_classifieds` | `B2_reddit` | ≤10% | **1 / 16** | 14.3% | 1/15 | 6.7% | 11.3% |
+| `B2_reddit` | `B2_classifieds` | ≤0% | **0 / 15** | 3.1% | 0/16 | 0.0% | 3.6% |
+| `B2_reddit` | `B2_classifieds` | ≤2% | **0 / 15** | 3.1% | 0/16 | 0.0% | 3.6% |
+| `B2_reddit` | `B2_classifieds` | ≤5% | **0 / 15** | 3.1% | 0/16 | 0.0% | 3.6% |
+| `B2_reddit` | `B2_classifieds` | ≤10% | **1 / 15** | 6.2% | 0/16 | 0.0% | 6.7% |
 
 ⚠️ **A budget met at home is not a budget met abroad.** The budget column is what the threshold bought on the training site; the realised-loss column is what it actually cost on the test site. Where the two diverge, the cause is base-rate drift (56.7%–92.9% across these cells), and it is exactly the failure mode within-cell CV cannot show.
 
@@ -72,12 +74,12 @@ The threshold is chosen by an inner 5-fold **inside the training site** at the s
 
 ## 4. What transfers, and what does not
 
-**Ranking transfers.** 5 of 6 pooled transfers clear their own label-shuffle null. Against the ceiling — the same cell's *within-cell* held-out AUROC — the pooled transfer lands between -0.141 (`B1_reddit`) and +0.130 (`B2_reddit`). It is **positive** in 1 of 6 cells, i.e. training on the other site beat training on the cell's own tasks there.
+**Ranking transfers, on the cells that have the events to show it.** 5 of 6 matched transfers clear their permutation null at p≤0.05. The 1 that do not — `B2_reddit`→`B2_classifieds` (p=0.313) — are **indeterminate, not negative**: their test cells carry so few solvable tasks that the null's own spread (SD 0.075) is of the same order as any effect one could hope to see there.
 
-**Where it does not transfer:** `B2_classifieds` — the shuffle null matches or beats the fitted score, so nothing was learned that survives the site change there. These are the cells the within-cell product already flags as sitting near the floor.
+**The operating point does not transfer, and the ranking does not warn you.** 15 of 24 transferred thresholds kept the realised loss inside the budget they were bought at. The worst is `B1_reddit` → `B1_classifieds` at ≤10%: it abstains on 70.5% of the test site and loses 24/55 (43.6%) of its solvable tasks.
 
-**The operating point does not, and the AUROC does not warn you.** 15 of 24 transferred thresholds kept the realised loss inside the budget they were bought at. The worst is `B1_reddit` → `B1_classifieds` at a ≤5% budget: it abstains on 70.5% of the test site and destroys 24/55 (43.6%) of its solvable tasks. That same direction has AUROC **0.738**, the highest of the 6 matched transfers and above its own within-cell ceiling of 0.732 — i.e. **the direction that looks best by ranking is the one that fails worst as a policy**.
+⚠️ **What this is NOT.** An earlier version attributed the failure to *base-rate drift* and paired it with the observation that the highest-AUROC direction fails worst. Both were withdrawn against this table. Base-rate drift does not order the failures: the largest drop (-17.2pp) stays inside budget while a near-zero drop overruns it; and pairing the max-AUROC direction with the max-loss direction over 6 transfers is a 1-in-6 coincidence under the null, not a mechanism.
 
-The mechanism is base-rate drift, and it is one-directional: universal-fail runs 56.7%–92.9% across these cells, so a threshold calibrated where almost everything fails abstains on far too much where less does. AUROC is rank-based and cannot see it. This is the cross-site form of the distinction §465 drew within a cell: **a held-out prediction is not a held-out policy**, and transfer is where the gap between them is widest.
+**What the table does support** is quantisation. Of the 4×6 nominal budget rows, **5 are duplicates of another row in the same direction** — the integer `floor(budget × solvable_train)` repeats when the solvable set is small. The budget axis is coarser than it looks, and a policy bought at one nominal budget can be the identical policy sold at another. That is the cross-site form of the distinction §465 drew within a cell: **a held-out prediction is not a held-out policy** — and here the policy is not even a continuum.
 
-⚠️ Two sites is two points. Nothing here licenses a claim about transfer to a *third* site; what it licenses is that ranking survived the one site change available and calibration did not.
+⚠️ Two sites is two points. Nothing here licenses a claim about transfer to a *third* site; what it licenses is that ranking survived the one site change available on the cells that had the events to test it, and calibration did not.

@@ -1,6 +1,6 @@
 # 4-dimension Evidence Status (live snapshot)
 
-Generated: 2026-08-16 16:24 UTC
+Generated: 2026-08-16 17:49 UTC
 Source: `make analyze-layered` (CLI alias preserved)
 
 > Four orthogonal dimensions: Outcome / Macro / Micro / Efficiency. Sub-codes (0a / 1c / 2a / 3d) remain as figure-internal anchors.
@@ -173,7 +173,7 @@ Computed via `aggregate_cost_electricity.py`: B0 = API token dollars; B1 = `avg_
 | Claim (as submitted) | Dimensions | Owning artifact | Verdict |
 |---|---|---|---|
 | (i) The six representations are genuinely complementary: each solves tasks the others do not, their failures differ structurally, and which one wins is a property of the deployment | 0a, 0c, 0d, 0e, 0f, 1a-1d, 2a-2f | `sr_per_mode.md`, `cross_mode_failure_signatures.md`, `phantom_lift.csv` | ✅ live artifacts present |
-| (ii) Most apparent oracle headroom is rerun variance; the bound that survives the rerun control is the cost ceiling at unchanged success | 0c, 3a | `noise_floor_inventory.md` | ⚠️ **two gaps, both load-bearing** — (1) read §1b there: the observed band is a draw, not a bound; (2) the measured floors cover DOM/SoM/Vision in a single cell, so **no phantom arm has a clean same-condition floor**, and the phantom arms are the ones the drop-one hero runs on. Replicates in flight (`_b1_floor_watcher.sh`) |
+| (ii) Most apparent oracle headroom is rerun variance; the bound that survives the rerun control is the cost ceiling at unchanged success | 0c, 3a | `noise_floor_inventory.md` | ⚠️ **three gaps, all load-bearing** — (1) read §1b there: the observed band is a draw, not a bound, and the threshold it derives is scoped to SAME-arm reruns; (2) the measured floors cover DOM/SoM/Vision in a single cell, so **no phantom arm has a clean same-condition floor**, and the phantom arms are the ones the drop-one hero runs on; (3) the instrument itself is **only well-powered on B0** — discordance scales with success rate, so the B1 and B2 cells cannot measure their own floor. B0 phantom-arm replicates in flight (`_b1_floor_watcher.sh`) |
 | (iii) The benchmarks cannot produce routing supervision: labels arrive at the success rate, so the tested routing constructions land at or below trivial fixed policies | 0b, 0b-extra, 0g | `router_pooled_tier_learnability`, `confidence_cascade.md` | ✅ five constructions + two controls |
 | (iv) **NEW** Which routing question is answerable is decided by label supply AND signal, and those fail separately | 0b-extra, 0g | `abstention_learnability.md`, `abstention_site_transfer.md`, `early_abort_B0_classifieds.md`, `retry_vs_switch_label_supply.md` | ✅ four questions, one works — see next table. The one that works has now been tested across sites, and it **splits**: ranking transfers, the operating point does not |
 | (v) **NEW** A representation carries deployment properties orthogonal to success rate | 2g*, 3e*, 3f*, 3g* | `representation_deployment_profile.md`, `latency_decomposition.md`, `energy_carbon_audit.md`, `fusion_premium.md` | ✅ see deployment table below |
@@ -189,7 +189,7 @@ Computed via `aggregate_cost_electricity.py`: B0 = API token dollars; B1 = `avg_
 | Which mode per task | **starved** — most cells admit no classifier under the min-class rule | — | fails | `router_pooled_tier_learnability` |
 | Retry the same arm or switch | adequate, but most of the decision set is preference-free (both actions fail together) | — | no gain over fixed | `retry_vs_switch_label_supply.md` |
 | Abort at step k | **every episode has one** | **absent** — prefix-only AUROC sits at its own shuffle null | fails, and loses to truncate-at-k | `early_abort_B0_classifieds.md` |
-| **Abstain before running** | **every task has one** | **present** | **works within a cell — the only held-out cost saving in the paper.** Across sites it **splits**: the ranking survives the site change, the threshold does not, and the direction that ranks best is the one that fails worst as a policy | `abstention_learnability.md`, `abstention_site_transfer.md` |
+| **Abstain before running** | **every task has one** | **present** | **works within a cell — the only held-out cost saving in the paper.** Across sites it **splits**: the ranking survives (5 of 6 matched transfers clear a 200-permutation null; the 6th is indeterminate, not negative), the operating point does not | `abstention_learnability.md`, `abstention_site_transfer.md` |
 
 ⚠️ The last row is the only place in this file where a *generalisation* claim is licensed at all, and it is licensed in one half only. Two sites is two points: what `abstention_site_transfer` shows is that ranking survived the one site change available and calibration did not — not that either behaviour would recur on a third site.
 
@@ -208,8 +208,8 @@ Computed via `aggregate_cost_electricity.py`: B0 = API token dollars; B1 = `avg_
 | D7 | Failure diagnosability differs sharply by representation — vision's failures are the least attributable | 2g* | `representation_deployment_profile.md` §1 |
 | D8 | The per-step token tail differs by representation far more than the median does; screenshot-bearing payloads are the flat ones | 3e* | `representation_deployment_profile.md` §2 |
 | D9 | Carbon is not an independent axis on this instrument — it tracks elapsed time | 3f* | `energy_carbon_audit.md` |
-| D10 | A pre-flight abstention policy's **ranking** survives a site change while its **threshold** does not; AUROC cannot warn you, because the failure is base-rate drift and AUROC is rank-based | 0g, 3a | `abstention_site_transfer.md` §4 |
-| D11 | The one interval that showed fusion significantly beaten anywhere rested on accumulated site state, not on behaviour; under the canonical leak policy every cell's interval includes zero | 0a, 0c | `leakage_sensitivity.md` §3 |
+| D10 | A pre-flight abstention policy's **ranking** survives a site change on the cells that carry enough events to test it; its **operating point** does not, and the nominal budget axis is **quantised** — several percentage budgets resolve to the same integer task allowance and are therefore the same policy | 0g, 3a | `abstention_site_transfer.md` §4 |
+| D11 | The one interval that showed fusion significantly beaten anywhere depended on accumulated site state — but its discordant count is single-digit, so the honest reading is **underpowered, not corrected**. All **audited** cells now include zero; 2 of the 8 (`wa_red_*`) have never been audited for this defect | 0a, 0c | `leakage_sensitivity.md` §1 (the `d` column) + §3 |
 
 ⚠️ **Provenance boundary on every B0 figure in this file (B-1970, 2026-08-16).** The AWS proxy changed its response shape between the last archived B0 run and 2026-08-16. The drift was representation-only and lost no information, but it establishes that the provider mutates without notice: **archived B0 data and any future B0 data are not on the same provider snapshot**, and any analysis that subtracts one from the other has to say so. → `master_bug_catalog` B-1970.
 

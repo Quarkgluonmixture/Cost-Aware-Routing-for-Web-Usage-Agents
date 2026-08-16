@@ -397,9 +397,17 @@ def render(data: dict) -> str:
         f"**{band['one_sided_95_min_pp']:.2f}–{band['one_sided_95_max_pp']:.2f}pp** before a "
         "single rerun would be unlikely to produce it by itself. Both readings are reported "
         "because they answer different questions — *what did repetition actually deliver* "
-        "(the two draws) versus *what could repetition deliver* (the null spread) — and the "
-        "second is the one an effect size has to be judged against. Reading a 2.2pp effect "
-        "against a 2.23pp \"measured floor\" is comparing a draw to a draw.")
+        "(the two draws) versus *what could repetition deliver* (the null spread). Reading a "
+        "2.2pp effect against a 2.23pp \"measured floor\" is comparing a draw to a draw.")
+    add("")
+    add("🚫 **Scope of that threshold — it is NOT a general significance bar** (/stress gemini "
+        "G1, 2026-08-16). `SD(ΔSR) = √d / n` is derived from **this pair's own discordance** "
+        "`d`, i.e. from re-running ONE arm. A cross-mode contrast (say SoM − DOM) has its own, "
+        "larger `d`, hence its own wider null; judging it against a rerun-derived bar borrows "
+        "`Var(A − A′)` to adjudicate `A − B` and is a category error. The number above answers "
+        "exactly one question — *could a single rerun of the same arm have manufactured this?* "
+        "— which is the arm-count-matched comparison §2 makes. For any other contrast, compute "
+        "that contrast's own off-diagonal counts (McNemar / its own permutation test).")
     add("")
     add("⚠️ This null assumes only exchangeability of the two runs; it does **not** model "
         "environment drift, which is one-directional and is what the P-SoM restart pair "

@@ -76,6 +76,15 @@ SITES = ["classifieds", "reddit"]
 MODELS = ["B0", "B1", "B2"]
 LOSS_BUDGETS = [0.0, 0.02, 0.05, 0.10]
 
+# P0-2 (/stress A F1, 2026-08-16): the null is a DISTRIBUTION, not a draw.
+# v1 took ONE permutation and used the comparison as a binary verdict ("nothing
+# was learned that survives the site change"). The AUROC null's own spread is
+# `sqrt((n1+n0+1)/(12*n1*n0))` (Hanley-McNeil), which on the B2 cells is
+# 0.075-0.078 — while the observed gaps there were -0.016/-0.017, i.e. 0.2 SD.
+# A single draw cannot separate those. 200 permutations, and the reported
+# reference is the 95th percentile of the null, not one sample.
+N_PERM = 200
+
 OUT_MD = REPO / "docs/analysis/cross_sites/abstention_site_transfer.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/abstention_site_transfer.json"
 WITHIN = REPO / "docs/analysis/cross_sites/abstention_learnability.json"
@@ -116,57 +125,85 @@ def transfer(train_recs: list[dict], test_rec: dict, rng: np.random.Generator) -
     if p is None:
         return {"error": "single-class training set"}
 
-    # Same features, same split, permuted training labels.
-    p_null = _positive_proba(_fit_predict(Xtr, rng.permutation(ytr), Xte), Xte)
+    # Same features, same split, permuted training labels — N_PERM times.
+    null = []
+    for _ in range(N_PERM):
+        pn = _positive_proba(_fit_predict(Xtr, rng.permutation(ytr), Xte), Xte)
+        if pn is not None:
+            a = roc_auc(yte, pn)
+            if not np.isnan(a):
+                null.append(a)
+    null_arr = np.asarray(null, float)
+    auroc = roc_auc(yte, p)
+    n1 = float(yte.sum())
+    n0 = float(len(yte) - n1)
+    # Hanley-McNeil analytic null SD, reported alongside the empirical one so a
+    # reader can see the two agree (or not) rather than trusting the resample alone.
+    sd_analytic = float(np.sqrt((n1 + n0 + 1) / (12.0 * n1 * n0))) if n1 and n0 else float("nan")
 
     return {
         "n_train": int(len(ytr)),
         "n_test": int(len(yte)),
         "train_base_rate": float(ytr.mean()),
         "test_base_rate": float(yte.mean()),
-        "auroc": roc_auc(yte, p),
-        "auroc_shuffle": roc_auc(yte, p_null) if p_null is not None else float("nan"),
+        "auroc": auroc,
+        "null_n": int(len(null_arr)),
+        "null_mean": float(null_arr.mean()) if len(null_arr) else float("nan"),
+        "null_sd_empirical": float(null_arr.std(ddof=1)) if len(null_arr) > 1 else float("nan"),
+        "null_sd_analytic": sd_analytic,
+        "null_p95": float(np.percentile(null_arr, 95)) if len(null_arr) else float("nan"),
+        # one-sided permutation p, plus-one corrected (a Monte-Carlo p can never be 0)
+        "perm_p": (float((null_arr >= auroc).sum() + 1) / (len(null_arr) + 1)
+                   if len(null_arr) else float("nan")),
         "_p": p,
         "_y": yte,
         "_tids": tids,
     }
 
 
-def pick_threshold_on_train(train_recs: list[dict], budget: float) -> float:
-    """Largest abstain-rate threshold whose solvable-loss stays inside `budget`.
+def pick_threshold_on_train(train_rec: dict, budget: float) -> tuple[float, dict]:
+    """Threshold meeting `budget` on an inner CV **inside the training cell**.
 
-    Chosen by an inner 5-fold **inside the training site**. The test site is not consulted
-    — not its labels, not its score distribution. Returns +inf when no threshold in the
-    training site meets the budget (i.e. abstain on nothing).
+    Takes ONE cell, not a list. P1-15 (/stress A F5): the previous signature accepted
+    `list[dict]` and split by ROW index, while the project's canonical `outer_fold_map`
+    is keyed by TASK id precisely so "a task's B0 row and its B1 row can never land on
+    opposite sides of the split" — load-bearing for any POOLED design. With a list of
+    pooled cells this leaked the threshold selection; it was only safe because every
+    call site passed a single cell. Narrowing the signature makes that structural rather
+    than accidental, and the split below is now task-keyed like the canonical helper
+    (`abstention_learnability.evaluate_cell` uses `j % N_FOLDS` over sorted task ids).
+
+    Also returns the QUANTIZATION record. P0-1 (/stress A F2 + gemini G5): a percentage
+    budget on a small solvable set collapses to a handful of integers — B1_reddit has 24
+    solvable tasks, so ≤0% and ≤2% both permit floor(0.02*24)=0 losses and are therefore
+    the SAME policy. Reporting them as separate frontier points implies a sweep that does
+    not exist. The integer is now carried and printed.
     """
-    Xtr, ytr = stack(train_recs)
-    n = len(ytr)
+    X, y, tids = cell_xy(train_rec)
+    n = len(y)
+    fold_of = {t: j % N_FOLDS for j, t in enumerate(sorted(tids))}
     oof = np.full(n, np.nan)
-    idx = np.arange(n)
-    inner_rng = np.random.default_rng(SEED)
-    perm = inner_rng.permutation(idx)
-    folds = np.array_split(perm, N_FOLDS)
     for f in range(N_FOLDS):
-        te = folds[f]
-        tr = np.setdiff1d(idx, te)
-        p = _positive_proba(_fit_predict(Xtr[tr], ytr[tr], Xtr[te]), Xtr[te])
-        if p is None:
+        te = np.array([i for i, t in enumerate(tids) if fold_of[t] == f])
+        tr = np.array([i for i, t in enumerate(tids) if fold_of[t] != f])
+        if te.size == 0 or tr.size == 0:
             continue
-        oof[te] = p
+        p = _positive_proba(_fit_predict(X[tr], y[tr], X[te]), X[te])
+        if p is not None:
+            oof[te] = p
     ok = ~np.isnan(oof)
-    if not ok.any():
-        return float("inf")
-    o, yy = oof[ok], ytr[ok]
-    solvable = int((yy == 0).sum())
-    if solvable == 0:
-        return float("inf")
+    solvable = int((y[ok] == 0).sum())
+    quant = {"solvable_train": solvable,
+             "budget_tasks": int(np.floor(budget * solvable)) if solvable else 0}
+    if not ok.any() or solvable == 0:
+        return float("inf"), quant
+    o, yy = oof[ok], y[ok]
+    allowed = quant["budget_tasks"]
     best = float("inf")
     for thr in np.unique(o):
-        abstain = o >= thr
-        lost = int((abstain & (yy == 0)).sum())
-        if lost / solvable <= budget + 1e-12:
+        if int(((o >= thr) & (yy == 0)).sum()) <= allowed:
             best = min(best, float(thr))
-    return best
+    return best, quant
 
 
 def operating_point(res: dict, thr: float, costs, test_cell_id: str) -> dict:
@@ -201,6 +238,40 @@ def operating_point(res: dict, thr: float, costs, test_cell_id: str) -> dict:
     }
 
 
+def duplication_audit(by_cell: dict, site: str) -> dict:
+    """Why the pooled protocol is withdrawn, measured rather than asserted.
+
+    P0-3 (/stress gemini G3): pooling B0+B1+B2 rows of one site stacks three rows per
+    task. The abstention LABEL is per-(task, model) — "did THIS model's six modes solve
+    it" — but the FEATURES are step-0 observation statistics plus task config, which are
+    largely model-invariant for a fixed task. So the pooled design feeds the classifier
+    near-duplicate x with conflicting y, and it can only learn average-LLM solvability;
+    testing it on one model's cell is a target mismatch.
+
+    This counts the duplication instead of arguing about it.
+    """
+    cells = [by_cell[f"{m}_{site}"] for m in MODELS if f"{m}_{site}" in by_cell]
+    if len(cells) < 2:
+        return {"error": "need >=2 cells"}
+    xs, ys, tid = [], [], []
+    for c in cells:
+        X, y, t = cell_xy(c)
+        xs.append({tt: X[i] for i, tt in enumerate(t)})
+        ys.append({tt: int(y[i]) for i, tt in enumerate(t)})
+        tid.append(set(t))
+    common = sorted(set.intersection(*tid))
+    ident = sum(1 for t in common
+                if all(np.allclose(xs[0][t], xs[k][t]) for k in range(1, len(xs))))
+    conflict = sum(1 for t in common if len({yy[t] for yy in ys}) > 1)
+    both = sum(1 for t in common
+               if all(np.allclose(xs[0][t], xs[k][t]) for k in range(1, len(xs)))
+               and len({yy[t] for yy in ys}) > 1)
+    return {"site": site, "n_cells": len(cells), "n_common_tasks": len(common),
+            "identical_features": ident, "conflicting_labels": conflict,
+            "identical_and_conflicting": both,
+            "pct_identical_and_conflicting": 100.0 * both / len(common) if common else float("nan")}
+
+
 def render_md(d: dict) -> str:
     L = []
     L.append("---")
@@ -226,29 +297,50 @@ def render_md(d: dict) -> str:
 
     L.append("## 1. Matched-model transfer (model fixed, site swapped)")
     L.append("")
-    L.append("| train | test | n train | n test | base rate train | base rate test | "
-             "**transfer AUROC** | shuffle null | within-cell AUROC (ceiling) |")
+    L.append(f"The null column is the 95th percentile of **{d['n_perm']} label permutations**, "
+             "not a single draw, and the permutation p is plus-one corrected. A one-draw null "
+             "cannot support a verdict: the AUROC null's own SD on the sparsest cells here is "
+             "~0.08, which is larger than several of the gaps being judged.")
+    L.append("")
+    L.append("| train | test | n test | base rate train → test | **transfer AUROC** | "
+             "null p95 | null SD (emp / analytic) | perm p | within-cell (ceiling) |")
     L.append("|---|---|---:|---:|---:|---:|---:|---:|---:|")
     for r in d["matched"]:
         w = d["within_cell_auroc"].get(r["test_cell"])
         L.append(
-            f"| `{r['train_cell']}` | `{r['test_cell']}` | {r['n_train']} | {r['n_test']} | "
-            f"{100*r['train_base_rate']:.1f}% | {100*r['test_base_rate']:.1f}% | "
-            f"**{r['auroc']:.3f}** | {r['auroc_shuffle']:.3f} | "
-            f"{'—' if w is None else f'{w:.3f}'} |")
+            f"| `{r['train_cell']}` | `{r['test_cell']}` | {r['n_test']} | "
+            f"{100*r['train_base_rate']:.1f}% → {100*r['test_base_rate']:.1f}% | "
+            f"**{r['auroc']:.3f}** | {r['null_p95']:.3f} | "
+            f"{r['null_sd_empirical']:.3f} / {r['null_sd_analytic']:.3f} | "
+            f"{r['perm_p']:.3f} | {'—' if w is None else f'{w:.3f}'} |")
     L.append("")
 
-    L.append("## 2. Pooled transfer (all three models of one site → each cell of the other)")
+    L.append("## 2. ⚠️ The pooled protocol is WITHDRAWN")
     L.append("")
-    L.append("| train site | test | n train | n test | **transfer AUROC** | shuffle null | "
-             "within-cell AUROC (ceiling) |")
-    L.append("|---|---|---:|---:|---:|---:|---:|")
-    for r in d["pooled"]:
-        w = d["within_cell_auroc"].get(r["test_cell"])
-        L.append(
-            f"| {r['train_site']} (3 cells) | `{r['test_cell']}` | {r['n_train']} | {r['n_test']} | "
-            f"**{r['auroc']:.3f}** | {r['auroc_shuffle']:.3f} | "
-            f"{'—' if w is None else f'{w:.3f}'} |")
+    L.append("An earlier version of this artifact also pooled all three models of one site "
+             "(≈672 rows) and tested on each cell of the other, reporting that pooling "
+             "cleared the null in 5 of 6 and even beat one cell's own within-cell ceiling. "
+             "**That comparison is withdrawn**, because the pooled design does not estimate "
+             "the quantity it is tested against:")
+    L.append("")
+    for a in d.get("duplication", []):
+        if a.get("error"):
+            continue
+        L.append(f"- **{a['site']}**, {a['n_cells']} cells, {a['n_common_tasks']} shared tasks: "
+                 f"the feature vector is **byte-identical across all models on "
+                 f"{a['identical_features']} tasks "
+                 f"({100*a['identical_features']/a['n_common_tasks']:.1f}%)**, the label "
+                 f"conflicts across models on {a['conflicting_labels']} "
+                 f"({100*a['conflicting_labels']/a['n_common_tasks']:.1f}%), and "
+                 f"**{a['identical_and_conflicting']} tasks "
+                 f"({a['pct_identical_and_conflicting']:.1f}%) are both at once**.")
+    L.append("")
+    L.append("The abstention label is per-(task, model) — *did this model's six modes solve it* "
+             "— while the features are step-0 observation statistics and task config, which are "
+             "largely model-invariant. Pooling therefore trains on same-x-different-y triples and "
+             "can only recover *average-LLM solvability*; scoring it against a single model's "
+             "cell is a target mismatch, not a transfer result. The numbers remain in the JSON "
+             "under `pooled` for the record; nothing in this document rests on them.")
     L.append("")
 
     L.append("## 3. Transferred operating point — threshold never sees the test site")
@@ -258,15 +350,24 @@ def render_md(d: dict) -> str:
              "analogue of the nested column in `abstention_learnability` §3, and it is a held-out "
              "*policy*, not merely a held-out prediction (§465).")
     L.append("")
-    L.append("| train | test | budget | abstain rate | solvable lost | realised loss | saved |")
-    L.append("|---|---|---:|---:|---:|---:|---:|")
+    L.append("⚠️ **The percentage budget is quantised.** What the inner CV actually enforces is "
+             "an integer: `floor(budget × solvable_train)`. On a small solvable set several "
+             "percentage rows collapse onto the SAME integer and are therefore the same policy — "
+             "the `budget→tasks` column below makes that visible instead of implying a sweep "
+             "that does not exist.")
+    L.append("")
+    L.append("| train | test | budget | **budget→tasks** | abstain rate | solvable lost | "
+             "realised loss | saved |")
+    L.append("|---|---|---:|---:|---:|---:|---:|---:|")
     for r in d["operating_points"]:
         op = r["op"]
+        q = r.get("quant") or {}
         lost = f"{op['solvable_lost']}/{op['solvable_total']}"
         loss = "—" if np.isnan(op["loss_rate"]) else f"{100*op['loss_rate']:.1f}%"
         saved = "—" if np.isnan(op["cost_saved_pct"]) else f"{op['cost_saved_pct']:.1f}%"
+        bt = f"{q.get('budget_tasks','?')} / {q.get('solvable_train','?')}"
         L.append(f"| `{r['train_cell']}` | `{r['test_cell']}` | ≤{100*r['budget']:.0f}% | "
-                 f"{100*op['abstain_rate']:.1f}% | {lost} | {loss} | {saved} |")
+                 f"**{bt}** | {100*op['abstain_rate']:.1f}% | {lost} | {loss} | {saved} |")
     L.append("")
     L.append("⚠️ **A budget met at home is not a budget met abroad.** The budget column is what the "
              "threshold bought on the training site; the realised-loss column is what it actually cost "
@@ -285,62 +386,63 @@ def render_md(d: dict) -> str:
     L.append("## 4. What transfers, and what does not")
     L.append("")
 
-    beat_null = [r for r in d["pooled"] if r["auroc"] > r["auroc_shuffle"]]
-    fail_null = [r for r in d["pooled"] if r["auroc"] <= r["auroc_shuffle"]]
-    gaps = [(r, d["within_cell_auroc"].get(r["test_cell"])) for r in d["pooled"]]
-    gaps = [(r, w) for r, w in gaps if w is not None]
-    deltas = sorted((r["auroc"] - w, r["test_cell"]) for r, w in gaps)
+    sig = [r for r in d["matched"] if r["perm_p"] <= 0.05]
+    ind = [r for r in d["matched"] if r["perm_p"] > 0.05]
     L.append(
-        f"**Ranking transfers.** {len(beat_null)} of {len(d['pooled'])} pooled transfers clear their "
-        f"own label-shuffle null. Against the ceiling — the same cell's *within-cell* held-out AUROC — "
-        f"the pooled transfer lands between {deltas[0][0]:+.3f} (`{deltas[0][1]}`) and "
-        f"{deltas[-1][0]:+.3f} (`{deltas[-1][1]}`). "
-        + (f"It is **positive** in {sum(1 for x, _ in deltas if x > 0)} of {len(deltas)} cells, i.e. "
-           f"training on the other site beat training on the cell's own tasks there."
-           if any(x > 0 for x, _ in deltas) else ""))
+        f"**Ranking transfers, on the cells that have the events to show it.** "
+        f"{len(sig)} of {len(d['matched'])} matched transfers clear their permutation null at "
+        f"p≤0.05. "
+        + (f"The {len(ind)} that {'does' if len(ind) == 1 else 'do'} not — "
+           + ", ".join(f"`{r['train_cell']}`→`{r['test_cell']}` (p={r['perm_p']:.3f})" for r in ind)
+           + f" — {'is' if len(ind) == 1 else 'are'} **indeterminate, not negative**: "
+             "the test cell carries so few solvable tasks "
+             "that the null's own spread (SD "
+           + "/".join(f"{r['null_sd_analytic']:.3f}" for r in ind)
+           + ") is of the same order as any effect one could hope to see there." if ind else ""))
     L.append("")
-    if fail_null:
-        names = ", ".join(f"`{r['test_cell']}`" for r in fail_null)
-        L.append(f"**Where it does not transfer:** {names} — the shuffle null matches or beats the "
-                 f"fitted score, so nothing was learned that survives the site change there. These are "
-                 f"the cells the within-cell product already flags as sitting near the floor.")
-        L.append("")
 
-    worst = max(d["operating_points"], key=lambda o: (o["op"]["loss_rate"]
-                                                      if not np.isnan(o["op"]["loss_rate"]) else -1))
-    wa = next((r for r in d["matched"]
-               if r["train_cell"] == worst["train_cell"] and r["test_cell"] == worst["test_cell"]), None)
-    within_w = d["within_cell_auroc"].get(worst["test_cell"])
     honoured = [o for o in d["operating_points"]
                 if not np.isnan(o["op"]["loss_rate"]) and o["op"]["loss_rate"] <= o["budget"] + 1e-9]
+    worst = max(d["operating_points"], key=lambda o: (o["op"]["loss_rate"]
+                                                      if not np.isnan(o["op"]["loss_rate"]) else -1))
+    # How many of the nominal budget rows are actually distinct policies?
+    bykey: dict[tuple[str, str], set] = {}
+    for o in d["operating_points"]:
+        bykey.setdefault((o["train_cell"], o["test_cell"]), set()).add(
+            (o.get("quant") or {}).get("budget_tasks"))
+    collapsed = sum(len(LOSS_BUDGETS) - len(v) for v in bykey.values())
     L.append(
-        f"**The operating point does not, and the AUROC does not warn you.** "
+        f"**The operating point does not transfer, and the ranking does not warn you.** "
         f"{len(honoured)} of {len(d['operating_points'])} transferred thresholds kept the realised "
         f"loss inside the budget they were bought at. The worst is "
-        f"`{worst['train_cell']}` → `{worst['test_cell']}` at a ≤{100*worst['budget']:.0f}% budget: it "
-        f"abstains on {100*worst['op']['abstain_rate']:.1f}% of the test site and destroys "
+        f"`{worst['train_cell']}` → `{worst['test_cell']}` at ≤{100*worst['budget']:.0f}%: it "
+        f"abstains on {100*worst['op']['abstain_rate']:.1f}% of the test site and loses "
         f"{worst['op']['solvable_lost']}/{worst['op']['solvable_total']} "
-        f"({100*worst['op']['loss_rate']:.1f}%) of its solvable tasks. "
-        + (f"That same direction has AUROC **{wa['auroc']:.3f}**"
-           + (f", the highest of the {len(d['matched'])} matched transfers"
-              if wa["auroc"] == max(r["auroc"] for r in d["matched"]) else "")
-           + (f" and above its own within-cell ceiling of {within_w:.3f}"
-              if within_w is not None and wa["auroc"] > within_w else "")
-           + " — i.e. **the direction that looks best by ranking is the one that fails worst as a "
-             "policy**." if wa else ""))
+        f"({100*worst['op']['loss_rate']:.1f}%) of its solvable tasks.")
     L.append("")
     L.append(
-        "The mechanism is base-rate drift, and it is one-directional: universal-fail runs "
-        f"{100*min(r['train_base_rate'] for r in d['matched']):.1f}%–"
-        f"{100*max(r['train_base_rate'] for r in d['matched']):.1f}% across these cells, so a "
-        "threshold calibrated where almost everything fails abstains on far too much where less does. "
-        "AUROC is rank-based and cannot see it. This is the cross-site form of the distinction §465 "
-        "drew within a cell: **a held-out prediction is not a held-out policy**, and transfer is where "
-        "the gap between them is widest.")
+        "⚠️ **What this is NOT.** An earlier version attributed the failure to *base-rate drift* "
+        "and paired it with the observation that the highest-AUROC direction fails worst. Both were "
+        "withdrawn against this table. Base-rate drift does not order the failures: the largest "
+        "drop (" + ", ".join(
+            f"{100*(r['test_base_rate']-r['train_base_rate']):+.1f}pp"
+            for r in sorted(d["matched"], key=lambda r: r["test_base_rate"] - r["train_base_rate"])[:1])
+        + ") stays inside budget while a near-zero drop overruns it; and pairing the max-AUROC "
+          f"direction with the max-loss direction over {len(d['matched'])} transfers is a "
+          f"1-in-{len(d['matched'])} coincidence under the null, not a mechanism.")
+    L.append("")
+    L.append(
+        f"**What the table does support** is quantisation. Of the "
+        f"{len(LOSS_BUDGETS)}×{len(bykey)} nominal budget rows, **{collapsed} are duplicates of "
+        f"another row in the same direction** — the integer `floor(budget × solvable_train)` "
+        "repeats when the solvable set is small. The budget axis is coarser than it looks, and a "
+        "policy bought at one nominal budget can be the identical policy sold at another. That is "
+        "the cross-site form of the distinction §465 drew within a cell: **a held-out prediction is "
+        "not a held-out policy** — and here the policy is not even a continuum.")
     L.append("")
     L.append("⚠️ Two sites is two points. Nothing here licenses a claim about transfer to a *third* "
-             "site; what it licenses is that ranking survived the one site change available and "
-             "calibration did not.")
+             "site; what it licenses is that ranking survived the one site change available on the "
+             "cells that had the events to test it, and calibration did not.")
     return "\n".join(L) + "\n"
 
 
@@ -383,8 +485,9 @@ def main() -> int:
                 LOG.warning("skip matched %s -> %s: %s", tr_id, te_id, r["error"])
                 continue
             for b in LOSS_BUDGETS:
-                thr = pick_threshold_on_train([by_cell[tr_id]], b)
+                thr, quant = pick_threshold_on_train(by_cell[tr_id], b)
                 ops.append({"train_cell": tr_id, "test_cell": te_id, "budget": b,
+                            "quant": quant,
                             "op": operating_point(r, thr, costs, te_id)})
             matched.append({**{k: v for k, v in r.items() if not k.startswith("_")},
                             "train_cell": tr_id, "test_cell": te_id})
@@ -405,6 +508,8 @@ def main() -> int:
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "seed": SEED,
         "n_folds_inner": N_FOLDS,
+        "n_perm": N_PERM,
+        "duplication": [duplication_audit(by_cell, s) for s in SITES],
         "within_cell_auroc": within,
         "matched": matched,
         "pooled": pooled,
@@ -428,18 +533,24 @@ def main() -> int:
     print(f"[md]   {a.out_md}")
     print(f"[json] {a.out_json}")
 
-    print("\n=== matched-model site transfer (AUROC / shuffle / within-cell ceiling) ===")
+    print(f"\n=== matched-model site transfer (AUROC / null p95 / perm p / ceiling), "
+          f"{N_PERM} permutations ===")
     for r in matched:
         w = within.get(r["test_cell"])
+        verdict = "clears" if r["perm_p"] <= 0.05 else "INDETERMINATE"
         print(f"  {r['train_cell']:>17} -> {r['test_cell']:<17} "
-              f"{r['auroc']:.3f} / {r['auroc_shuffle']:.3f} / "
-              f"{'--' if w is None else f'{w:.3f}'}")
-    print("\n=== pooled site transfer ===")
-    for r in pooled:
-        w = within.get(r["test_cell"])
-        print(f"  {r['train_site']:>12} (3) -> {r['test_cell']:<17} "
-              f"{r['auroc']:.3f} / {r['auroc_shuffle']:.3f} / "
-              f"{'--' if w is None else f'{w:.3f}'}")
+              f"{r['auroc']:.3f} / {r['null_p95']:.3f} / p={r['perm_p']:.3f} / "
+              f"{'--' if w is None else f'{w:.3f}'}   {verdict}")
+    print("\n=== pooled: WITHDRAWN (target mismatch) — duplication audit ===")
+    for a in out["duplication"]:
+        if a.get("error"):
+            continue
+        print(f"  {a['site']:<12} 共有 task {a['n_common_tasks']:>4} | "
+              f"特征三模型相同 {a['identical_features']:>4} "
+              f"({100*a['identical_features']/a['n_common_tasks']:.1f}%) | "
+              f"标签冲突 {a['conflicting_labels']:>4} | "
+              f"**两者同时 {a['identical_and_conflicting']:>4} "
+              f"({a['pct_identical_and_conflicting']:.1f}%)**")
     return 0
 
 

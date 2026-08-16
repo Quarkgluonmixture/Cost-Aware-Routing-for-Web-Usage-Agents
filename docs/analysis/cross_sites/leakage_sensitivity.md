@@ -17,14 +17,16 @@ Removed: `red_B0`·DOM·task 171, `red_B0`·Vision·task 189, `red_B1`·SoM·tas
 
 ## 1. Fusion contrasts, before and after
 
-| cell | contrast | before | 95% CI | after | 95% CI | shift | verdict |
-|---|---|---|---|---|---|---|---|
-| `red_B0` | SoM − Vision | +7.39pp | [+2.46, +12.32] | **+7.88pp** | [+2.96, +12.81] | +0.49pp | unchanged |
-| `red_B0` | SoM − DOM | +0.49pp | [-3.94, +4.93] | **+0.99pp** | [-3.45, +5.42] | +0.49pp | unchanged |
-| `red_B1` | SoM − Vision | +4.93pp | [+1.48, +8.87] | **+4.43pp** | [+0.99, +7.88] | -0.49pp | unchanged |
-| `red_B1` | SoM − DOM | +1.48pp | [-1.48, +4.43] | **+0.99pp** | [-1.48, +3.94] | -0.49pp | unchanged |
-| `red_B2` | SoM − Vision | -0.99pp | [-3.45, +1.48] | **-0.99pp** | [-3.45, +1.48] | +0.00pp | unchanged |
-| `red_B2` | SoM − DOM | -2.96pp | [-5.91, -0.49] | **-1.48pp** | [-3.45, +0.49] | +1.48pp | **flips** — excludes 0 → includes 0 |
+⚠️ **`d` is the number of DISCORDANT tasks** — the pairs the paired bootstrap actually resamples. A percentage-point CI quoted to two decimals says nothing about precision if `d` is single-digit: resampling 6 disagreements 10,000 times does not manufacture information. Contrasts with **`d` < 10 are marked `⚠︎ underpowered`**, and no conclusion in this document may rest on them alone (/stress gemini G2, 2026-08-16).
+
+| cell | contrast | **d** | before | 95% CI | after | 95% CI | shift | verdict |
+|---|---|---:|---|---|---|---|---|---|
+| `red_B0` | SoM − Vision | 29→28 | +7.39pp | [+2.46, +12.32] | **+7.88pp** | [+2.96, +12.81] | +0.49pp | unchanged |
+| `red_B0` | SoM − DOM | 21→22 | +0.49pp | [-3.94, +4.93] | **+0.99pp** | [-3.45, +5.42] | +0.49pp | unchanged |
+| `red_B1` | SoM − Vision | 14→13 | +4.93pp | [+1.48, +8.87] | **+4.43pp** | [+0.99, +7.88] | -0.49pp | unchanged |
+| `red_B1` | SoM − DOM | 9→8 | +1.48pp | [-1.48, +4.43] | **+0.99pp** | [-1.48, +3.94] | -0.49pp | unchanged · ⚠︎ underpowered |
+| `red_B2` | SoM − Vision | 6→6 | -0.99pp | [-3.45, +1.48] | **-0.99pp** | [-3.45, +1.48] | +0.00pp | unchanged · ⚠︎ underpowered |
+| `red_B2` | SoM − DOM | 8→5 | -2.96pp | [-5.91, -0.49] | **-1.48pp** | [-3.45, +0.49] | +1.48pp | **flips** — excludes 0 → includes 0 · ⚠︎ underpowered |
 
 ## 2. Per-mode SR and the best single mode
 
@@ -42,6 +44,11 @@ Modes not listed are untouched. The best single mode is **unchanged in every cel
 **1 verdict(s) depend on the leaked episodes**: `red_B2` SoM − DOM.
 
 `red_B2` SoM − DOM was the **only** interval in the eight-cell fusion table lying entirely on the negative side — the single piece of evidence that the fused mode is *significantly worse* than a single channel anywhere. Three of the eight successes behind `red_B2`·DOM are leaked (37.5% of that arm's successes, the highest share of any arm), and with them removed the interval crosses zero. **The claim that fusion is significantly beaten in some cell rests on accumulated site state.**
+
+⚠️ **Two things this does NOT license** (both added 2026-08-16 after /stress):
+
+1. *«under the canonical leak policy every cell's interval includes zero»* — **overstated**. This audit covers the **three VWA reddit cells**. The three classifieds cells cannot carry this defect (the mechanism is Postmill-specific), but `wa_red_B0` and `wa_red_B1` are Postmill and **have never been audited**, so 2 of the 8 were never put under the policy at all. The supportable statement is *«all audited cells include zero»*.
+2. *«the leak correction removed the effect»* — read the `d` column first. The flipping contrast is one whose discordant count is single-digit; an interval that moves when three tasks change value was never carrying an effect to begin with. The honest reading is **underpowered**, not **corrected** — and those are different claims with different implications for whether more data would help.
 
 What does **not** move: the modality reversal. `red_B0` and `red_B1` SoM − Vision both still exclude zero, and `red_B0` moves *further* from zero. The leak count is also asymmetric in a way that works against the fusion arm rather than for it — 4 of the 6 leaks are on DOM, 1 on Vision, 1 on SoM — so removing them can only help the fused channel's comparisons, which is the direction that disfavours the paper's own caution.
 
