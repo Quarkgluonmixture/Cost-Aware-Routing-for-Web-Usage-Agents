@@ -603,9 +603,18 @@ def main(argv: list[str] | None = None) -> int:
         # The per-mode floors are the like-for-like comparison and they span far wider —
         # judging an added-arm gain against the pooled band is judging it against a band
         # narrowed by counting correlated observations as independent.
+        # NOTE: single-quoted keys inside these f-strings on purpose. Same-quote nesting
+        # (PEP 701) parses only on Python 3.12+, and this file is READ BY AST on the fire
+        # host, which runs 3.10 — `validate_fire_manifest.registered_replicate_run_ids()`
+        # catches SyntaxError and fails CLOSED, so a 3.12-only line here silently empties
+        # the replicate registry and every deliberate replicate is reported as a ghost.
+        # Empirical 2026-08-17: that is exactly what happened after this file was rsynced
+        # to the A100 — B0.cls.som went from "registered replicate" to GHOST with no edit
+        # to its own entry. Keep this module parseable on 3.10.
         ("wa_red_B1",
-         f"B1 · WA-red (n=104; floor = 5 modes × {wa_floor["n_independent_tasks"]} shared tasks)",
-         f"{wa_floor["per_mode_self_drop_min_pp"]:.2f} – {wa_floor["per_mode_self_drop_max_pp"]:.2f}pp "
+         f"B1 · WA-red (n=104; floor = 5 modes × {wa_floor['n_independent_tasks']} shared tasks)",
+         f"{wa_floor['per_mode_self_drop_min_pp']:.2f} – "
+         f"{wa_floor['per_mode_self_drop_max_pp']:.2f}pp "
          f"*(pooled would read {wlo:.2f}–{whi:.2f})*",
          wa_floor["per_mode_self_drop_min_pp"], wa_floor["per_mode_self_drop_max_pp"]),
         ("wa_red_B0", "B0 · WA-red (n=104; no pilot → no floor)", "—", None, None),
