@@ -59,8 +59,11 @@ OUT_JSON = REPO / "docs/analysis/cross_sites/noise_floor_inventory.json"
 
 MODE_KEYS = ["sr_dom", "sr_som", "sr_vision", "sr_ptext", "sr_pprompt", "sr_psom"]
 
-# --- clean same-condition replicate pairs (both B0 x classifieds, n=224) -------------
+# --- clean same-condition replicate pairs (classifieds, n=224) -----------------------
 # (label, run_a, run_b). Direction matters: self_drop(a->b) = |a solves \ b solves| / n.
+# Registration here is load-bearing twice over: `validate_fire_manifest.py` reads this
+# list via ast.literal_eval and exempts each arm_b from ghost detection, so an UNregistered
+# deliberate replicate is reported as contamination and halts aggregation (B-1951).
 CLEAN_PAIRS = [
     ("B0.cls.dom",
      "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557/phase1_dom_router_0",
@@ -73,6 +76,20 @@ CLEAN_PAIRS = [
     ("B0.cls.som",
      "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/phase1_som_router_0",
      "results/visualwebarena/phase1/B0_som_classifieds_20260803_084743_413015398_3677519_R30696/phase1_som_router_0"),
+    # B1 arm, registered 2026-08-17. The replicate (R28065) ran to a full 224 episodes on
+    # 2026-08-16 as the first cell of the floor chain, but was never registered here, so
+    # `validate_fire_manifest.py` classified it a COMPLETE ghost against canonical R31705
+    # and raised the fail-closed halt marker seen at 08:04Z. It is a deliberate
+    # same-condition replicate, not contamination — registering is the correct resolution
+    # (the alternative, deleting a finished 224-episode run, discards real data).
+    #
+    # ⚠️ POWER: read this row as descriptive only. The floor's measurability scales as
+    # d ≈ n × SR × 0.59; at B1's classifieds SoM success rate this lands near d≈8-10,
+    # below the d<10 bar this project set for reporting a CI (§468 / B-1972). It is
+    # inventory, not an interval. The B0 rows (d≈27-32) are what carry claims.
+    ("B1.cls.som",
+     "results/visualwebarena/phase1/B1_som_classifieds_20260604_072456_562166453_226675_R31705/phase1_som_router_0",
+     "results/visualwebarena/phase1/B1_som_classifieds_20260816_150005_118867835_1831739_R28065/phase1_som_router_0"),
 ]
 
 # A replicate that is still running has a task set that merely LOOKS like a scored universe:
