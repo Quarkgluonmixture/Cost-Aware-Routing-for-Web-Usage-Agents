@@ -23,7 +23,39 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟣 2026-08-16 下午 · **/stress 三家把当天刚写的东西打穿 · 地板 chain 重排 · B4 推到审稿后**（最新 handoff）
+> ## 🟣 2026-08-17 上午 · **地板 chain 早上死在 task 0 → 修完重发, 已越过原炸点**（最新 handoff）
+>
+> chronicle → **笔记 §469**（7 小节）· 台账 **+8 条**（2379 → 2387）· commits `4204b19` `3deb896` `527d846`
+>
+> ### 先跑命令拿 live 状态, 别读下面的快照（A100 是 UTC, DGX 是 BST）
+> ```bash
+> ssh condense-a100 'cd /home/ubuntu/workspace/p79 && pgrep -af run_experiment; \
+>   ls -t logs/queue_chain_b1_floor_*.log | head -1 | xargs tail -5'
+> .venv/bin/python3 scripts/maintenance/known.py --section 469
+> ```
+>
+> ### 发生了什么
+> 08:07Z watcher 发的 8 格 chain, **08:14Z 死在第 1 格 task 0 第 23 步** —— 昨晚 `85818c1`
+> 加的 `len(web_action) > 1 → raise`。0/8。判据是**形状**不是**损失**, 与 §468 刚记的
+> B-1110 教训同构。已修 (take-first + 落盘计数与被丢 payload) 并重发。
+>
+> ### 重发后的状态（09:22Z 起跑, run `R20043`）
+> 同一个 task 0 同样跑到 **23 步**, 这次 `needs_reevaluation=False` / `error=None` ⇒
+> **原炸点已越过**。`parallel_web_action_dropped` 字段确认落盘。
+>
+> ### 🔴 三件事下个 session 必须知道
+> | | |
+> |---|---|
+> | **发车前必核 fire 机代码** | codex 抓到修复只在 DGX、A100 上那句 raise 原封不动 —— 差一步就白发一次。现已 md5 双侧 + 远端 17/17 |
+> | **DGX 3.12 / A100 3.10** | rsync 源码会带过去 3.12-only 语法; 一次 PEP 701 f-string 就让 `validate_fire_manifest` fail-closed 清空 replicate 注册表, **所有** replicate 变 ghost。守护测试已加 |
+> | **G8 cross-fire-recurrence 无出口** | `error(code_bug)` 在 `_error_class_evidence_profile` 判 unknown ⇒ 没有 resolution 路径; 且 `queue_chain.sh` 根本不查 G8/marker（两套 paper-grade 定义）。本次带记录发车, **分歧未修** |
+>
+> ### 收后仍是两个手工步骤（watcher 推不了）
+> `bash scripts/maintenance/sync_a100_results.sh` + 把新 run 注册进
+> `aggregate_noise_floor_inventory.py` 的 `CLEAN_PAIRS`。**8 格意图已发车前落盘**
+> (`pre_run/floor_chain_launch_intent_20260817.md`) —— 照单全收注册, 不注册须写明理由。
+
+> ## 🟣 2026-08-16 下午 · **/stress 三家把当天刚写的东西打穿 · 地板 chain 重排 · B4 推到审稿后**
 >
 > chronicle → **笔记 §468**（9 小节）· 台账 **+9 条**（2367 → 2376）· B-1972~B-1980 · commits `a9dc260` `11c5ce2` `85818c1`
 >
