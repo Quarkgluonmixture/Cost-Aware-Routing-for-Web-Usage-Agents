@@ -148,11 +148,60 @@ def test_web_action_after_a_foreign_tool_is_still_recovered():
     assert meta["tool_call_parse_path"] == "tool_calls"
 
 
-def test_two_web_action_calls_fail_loud_under_paper_grade():
-    """Parallel calls make the recorded action ambiguous; paper-grade must not guess."""
-    with pytest.raises(RuntimeError, match="web_action"):
-        _step(_agent(paper_grade=True), {
-            "content": [{"type": "text", "text": ""}],
-            "tool_calls": [_tool_call(), _tool_call()],
-            "logprobs": _logprobs(),
-        })
+def test_a_single_web_action_records_a_zero_drop_not_none():
+    """0 vs None is what makes the parallel-emission RATE computable from disk.
+
+    None would be indistinguishable from "this baseline has no tool-call channel",
+    so §3.5.1 could only assert the shape never occurred rather than measure it.
+    """
+    _, meta = _step(_agent(), {
+        "content": [{"type": "text", "text": ""}],
+        "tool_calls": [_tool_call()],
+        "logprobs": _logprobs(),
+    })
+    assert meta["parallel_web_action_dropped"] == 0
+    assert meta["parallel_web_action_dropped_args"] is None, \
+        "nothing was dropped, so there must be no payload implying otherwise"
+
+
+def test_two_web_action_calls_take_the_first_and_record_the_drop():
+    """The v1 B-1980 fix raised here and killed the 8-cell floor chain at task 0.
+
+    It aborted on len(web_action) > 1, but B-1980's own stated failure is "an emitted
+    action was LOST" — with two calls nothing is lost, there are two candidates. The
+    runner is a one-action-per-step loop, so call 2+ is conditioned on state the agent
+    has not observed; executing the first and re-observing is what the pre-2026-08-16
+    code did, i.e. what every archived B0 episode already assumes. Raising was the
+    behavioural change, not the drop.
+    """
+    second = _tool_call(args=json.dumps({"thought": "t", "confidence": 0.9,
+                                         "action_type": "click", "element_id": 9}))
+    action, meta = _step(_agent(paper_grade=True), {
+        "content": [{"type": "text", "text": ""}],
+        "tool_calls": [_tool_call(), second],
+        "logprobs": _logprobs(),
+    })
+    assert action["element_id"] == 7, "must execute the FIRST call, not the last"
+    assert meta["parallel_web_action_dropped"] == 1
+    assert meta["tool_call_parse_path"] == "tool_calls", \
+        "a dropped call must not demote the step to a text-parse fallback"
+    # gemini F3: the count alone leaves "the drop was harmless" unfalsifiable — the
+    # discarded payload has to survive to disk for a reviewer to check it.
+    dropped = meta["parallel_web_action_dropped_args"]
+    assert isinstance(dropped, list) and len(dropped) == 1
+    assert json.loads(dropped[0])["element_id"] == 9, \
+        "must retain the DISCARDED call's args, not the executed one's"
+
+
+def test_foreign_tool_alongside_one_web_action_is_not_counted_as_a_drop():
+    """`[wrong_tool, web_action]` discards a non-action, so the drop count stays 0.
+
+    Conflating the two would inflate the disclosed parallel-emission rate with
+    ordinary foreign-tool noise.
+    """
+    _, meta = _step(_agent(), {
+        "content": [{"type": "text", "text": ""}],
+        "tool_calls": [_tool_call(name="some_other_tool", args="{}"), _tool_call()],
+        "logprobs": _logprobs(),
+    })
+    assert meta["parallel_web_action_dropped"] == 0

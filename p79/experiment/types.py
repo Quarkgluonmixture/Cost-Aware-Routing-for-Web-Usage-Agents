@@ -305,6 +305,17 @@ class StepRecordV2:
     tool_call_emitted: Optional[bool] = None
     tool_call_parse_path: Optional[str] = None
     tool_call_fallback_reason: Optional[str] = None
+    # B-1980-followup (2026-08-17): speculative parallel `web_action` calls the
+    # proxy emitted in one response and we discarded (first executed; the loop
+    # re-observes, so call 2+ is conditioned on unobserved state). None for B1/B2
+    # and for B0 steps where the tool_calls branch never ran; 0 on the normal
+    # single-call step. Replaces the v1 B-1980 abort, whose criterion was shape
+    # ("exactly one") rather than loss and which killed an 8-cell chain at task 0.
+    parallel_web_action_dropped: Optional[int] = None
+    # gemini F3 (/stress 2026-08-17): raw `arguments` of each discarded call. A count
+    # alone erases what was dropped (duplicate? macro-action second half? hallucination?),
+    # leaving "the drop was harmless" unfalsifiable. None unless ≥1 call was dropped.
+    parallel_web_action_dropped_args: Optional[list] = None
     # B-1797 (P1-7/P1-8, /stress 2026-05-21 codex Mode B): B1/B2 text-JSON
     # analogue of tool_call_parse_path. parse_action_text overloads its 3rd
     # return — for VALID actions it can be a repair-path tag ("repaired_fenced" /
@@ -773,6 +784,11 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "tool_call_emitted",
     "tool_call_parse_path",
     "tool_call_fallback_reason",
+    # B-1980-followup (2026-08-17): KEY-presence enforced so the parallel-emission
+    # rate is grep-able from disk on every paper-grade row (None ≡ no tool-call
+    # channel this step, 0 ≡ single call, ≥1 ≡ speculative calls dropped).
+    "parallel_web_action_dropped",
+    "parallel_web_action_dropped_args",
     # B-1797 (P1-7/P1-8, /stress 2026-05-21): B1/B2 text-JSON repair-path
     # provenance — KEY-presence enforced so paper §3.5 parse-health is grep-able
     # (None ≡ B0 tool-call backend OR clean Path-1 JSON, populated on repaired
@@ -886,6 +902,8 @@ _STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "tool_call_emitted": (bool, type(None)),
     "tool_call_parse_path": (str, type(None)),
     "tool_call_fallback_reason": (str, type(None)),
+    "parallel_web_action_dropped": (int, type(None)),  # B-1980-followup
+    "parallel_web_action_dropped_args": (list, type(None)),  # B-1980-followup (gemini F3)
     "text_parse_path": (str, type(None)),  # B-1797 B1/B2 repair-path provenance
     # P0-1-ABC* Phase 2 telemetry (about:blank intervention attribution).
     "intervention_type": (str, type(None)),

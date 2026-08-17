@@ -3866,6 +3866,17 @@ class ExperimentRunner:
             step_record["tool_call_emitted"] = meta.get("tool_call_emitted")
             step_record["tool_call_parse_path"] = meta.get("tool_call_parse_path")
             step_record["tool_call_fallback_reason"] = meta.get("tool_call_fallback_reason")
+            # B-1980-followup (2026-08-17): parallel-emission accounting. The v1
+            # B-1980 fix aborted the condition when the proxy emitted >1
+            # `web_action` in one response; that criterion was shape rather than
+            # loss and killed the 8-cell floor chain at task 0. We now execute the
+            # first call (the loop re-observes before the next step, so call 2+ is
+            # speculative) and persist how many were dropped, so §3.5.1 discloses
+            # a measured rate instead of asserting the shape never occurs.
+            step_record["parallel_web_action_dropped"] = meta.get("parallel_web_action_dropped")
+            step_record["parallel_web_action_dropped_args"] = meta.get(
+                "parallel_web_action_dropped_args"
+            )
             # B-1797 (P1-7/P1-8, /stress 2026-05-21 codex Mode B): B1/B2 text-JSON
             # repair-path provenance (analogue of tool_call_parse_path). None for
             # B0 (tool-call backend) + clean Path-1 JSON; "repaired_fenced" /

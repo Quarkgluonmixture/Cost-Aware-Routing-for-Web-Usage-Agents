@@ -983,6 +983,14 @@ class ProxyApiAgent:
         # meta so paper §3.5.1 cross-baseline action-channel disclosure is
         # reproducible from disk (B0 native tool_calls vs B1/B2 text JSON).
         _text_fallback_used: bool = False
+        # B-1980-followup (2026-08-17): count of speculative parallel `web_action`
+        # calls discarded this step. None ≡ the top-level tool_calls branch never
+        # ran (B1/B2, or B0 with no emission); 0 ≡ emitted exactly one, the normal
+        # case. Persisted so §3.5.1 can report the rate rather than assert absence.
+        _parallel_wa_dropped: Optional[int] = None
+        # gemini F3 (/stress 2026-08-17): the raw `arguments` of each discarded call,
+        # so "the dropped call was harmless" is checkable from disk rather than trusted.
+        _parallel_wa_dropped_args: Optional[List[str]] = None
 
         # B-991 (2026-05-17): AWS proxy hybrid shape — top-level `tool_calls`
         # field (NOT inside `content[]` Anthropic block, NOT inside
@@ -1013,12 +1021,53 @@ class ProxyApiAgent:
                 and isinstance(c.get("function"), dict)
                 and c["function"].get("name") == "web_action"
             ]
-            if self._paper_grade and len(_wa_calls) > 1:
-                raise RuntimeError(
-                    f"proxy emitted {len(_wa_calls)} `web_action` tool_calls in one "
-                    "response; paper-grade needs exactly one so the recorded action is "
-                    "unambiguous. Names: "
-                    f"{[ (c.get('function') or {}).get('name') for c in proxy_tool_calls ]}. B-1980."
+            # B-1980-followup (2026-08-17): the v1 fix RAISED under paper_grade when
+            # len(_wa_calls) > 1. That criterion is SHAPE, not LOSS — and B-1980's own
+            # stated failure is "an emitted action was lost with no fail-loud". With two
+            # `web_action` calls nothing is lost; there are two candidates. The raise
+            # killed the 8-cell floor chain at cell 1 / task 0 / step 23 (08:14Z), the
+            # same escalation B-1110 made and that §468 had written up that same day.
+            #
+            # What taking the first actually is — stated without flattering it (codex F11
+            # + gemini F6/F7 both attacked an earlier draft of this comment that called
+            # call 2+ "speculative, conditioned on state the agent has NOT observed").
+            # That was false: BOTH calls are generated from the same current observation.
+            # Call 2 is the second half of an attempted macro-action ("type query" then
+            # "press Go"), planned before seeing call 1's result. The runner is a
+            # one-action-per-step loop (main.py `_run_episode`), which cannot honour a
+            # macro-action, so we execute the first and re-observe.
+            #
+            # Therefore: this is a DETERMINISTIC WRAPPER POLICY, not faithful execution of
+            # the model's plan, and it may penalise multi-step planning. It is recorded,
+            # not asserted away. What it is NOT is a novel behaviour: `proxy_tool_calls[0]`
+            # is byte-for-byte what the pre-2026-08-16 code did, so every ARCHIVED B0
+            # episode was produced under this same policy. The v1 B-1980 `raise` was the
+            # change, and it killed the 8-cell floor chain at cell 1 / task 0 / step 23.
+            #
+            # The upstream alternative is CLOSED, not deferred: probe 2026-08-17
+            # (docs/checkpoints/probes/parallel_tool_calls_20260817.md) sent the same
+            # request with `parallel_tool_calls` false / true / absent — all three returned
+            # HTTP 200 with 2 `web_action` calls. The proxy accepts the key and discards
+            # it. Client-side handling is the only lever available.
+            _parallel_wa_dropped = max(0, len(_wa_calls) - 1)
+            if _parallel_wa_dropped:
+                # gemini F3: a bare count erases WHAT was dropped, so no reviewer can
+                # check the "harmless" claim — duplicate? sequential macro-action?
+                # hallucinated? Persist the raw `arguments` of every discarded call
+                # (truncated per-call; these are small JSON objects) so the claim is
+                # auditable from disk instead of taken on trust.
+                _parallel_wa_dropped_args = [
+                    str(((c.get("function") or {}).get("arguments") or ""))[:2000]
+                    for c in _wa_calls[1:]
+                ]
+                logger.warning(
+                    "proxy emitted %d `web_action` tool_calls in one response; executing "
+                    "the first and re-observing (dropped %d). Names: %s. Dropped args: %s. "
+                    "B-1980-followup.",
+                    len(_wa_calls),
+                    _parallel_wa_dropped,
+                    [(c.get("function") or {}).get("name") for c in proxy_tool_calls],
+                    _parallel_wa_dropped_args,
                 )
             first_call = (_wa_calls[0] if _wa_calls else (proxy_tool_calls[0] or {}))
             fn_block = first_call.get("function") if isinstance(first_call, dict) else None
@@ -1310,6 +1359,11 @@ class ProxyApiAgent:
             "action_source": _action_source,
             "tool_call_valid": _tool_call_valid,
             "text_fallback_used": _text_fallback_used,
+            # B-1980-followup (2026-08-17): speculative parallel `web_action` calls
+            # discarded this step (first executed, rest dropped — one-action-per-step
+            # loop re-observes). None ≡ tool_calls branch never ran; 0 ≡ single call.
+            "parallel_web_action_dropped": _parallel_wa_dropped,
+            "parallel_web_action_dropped_args": _parallel_wa_dropped_args,
             # B-1103 (/stress A2.3b P0-4-B*, 2026-05-18): non-paper-grade
             # dev-run signal for missing proxy logprobs. Paper-grade raises
             # at extraction point; dev runs persist this for downstream

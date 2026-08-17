@@ -334,6 +334,11 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "tool_call_emitted": None,
     "tool_call_parse_path": None,
     "tool_call_fallback_reason": None,
+    # B-1980-followup (2026-08-17): speculative parallel `web_action` calls dropped
+    # this step (first executed, loop re-observes). None ≡ no tool-call channel.
+    "parallel_web_action_dropped": None,
+    # gemini F3: raw args of the discarded calls, so the drop is auditable not trusted.
+    "parallel_web_action_dropped_args": None,
     "text_parse_path": None,  # B-1797 (P1-7/P1-8): B1/B2 repair-path provenance
     # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI overlap
     # OOB): about:blank recovery intervention attribution. None on normal
