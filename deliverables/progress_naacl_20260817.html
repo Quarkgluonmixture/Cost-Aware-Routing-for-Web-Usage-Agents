@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Status report: experiment chain, REALM review, dissertation, and the NAACL 2027 target.">
+<meta name="description" content="Status report: which experiment cells exist, what the running chain adds, and the dates for the thesis, the REALM review and NAACL 2027.">
 <title>Progress to NAACL</title>
 <style>
   :root {
     --ground:      #FAFAFC;
     --surface:     #FFFFFF;
-    --surface-2:   #F3F4F8;
+    --surface-2:   #F2F4F8;
     --ink:         #191D28;
     --ink-soft:    #444B5C;
     --muted:       #666E82;
@@ -22,6 +22,7 @@
     --live-soft:   #FBF0DF;
     --queued:      #98A0B0;
     --queued-soft: #EDEFF3;
+    --absent:      #D6DAE3;
 
     --serif: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
     --sans:  system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -45,6 +46,7 @@
       --live-soft:   #2A2113;
       --queued:      #767E90;
       --queued-soft: #21262F;
+      --absent:      #333A47;
     }
   }
 
@@ -64,6 +66,7 @@
     --live-soft:   #2A2113;
     --queued:      #767E90;
     --queued-soft: #21262F;
+    --absent:      #333A47;
   }
 
   * { box-sizing: border-box; }
@@ -79,16 +82,15 @@
   }
 
   .wrap {
-    max-width: 1060px;
+    max-width: 1080px;
     margin: 0 auto;
-    padding: 56px 28px 80px;
+    padding: 54px 26px 76px;
     display: flex;
     flex-direction: column;
-    gap: 44px;
+    gap: 42px;
   }
 
-  /* ---------- header ---------- */
-  header { display: flex; flex-direction: column; gap: 14px; }
+  header { display: flex; flex-direction: column; gap: 13px; }
 
   .eyebrow {
     font-family: var(--mono);
@@ -101,207 +103,154 @@
   h1 {
     font-family: var(--serif);
     font-weight: 600;
-    font-size: clamp(30px, 4.4vw, 42px);
-    line-height: 1.12;
+    font-size: clamp(28px, 4.2vw, 39px);
+    line-height: 1.14;
     letter-spacing: -0.015em;
     margin: 0;
     text-wrap: balance;
   }
 
-  .standfirst {
-    font-size: 17px;
-    color: var(--ink-soft);
-    max-width: 62ch;
-    margin: 0;
-  }
+  .standfirst { font-size: 16.5px; color: var(--ink-soft); max-width: 64ch; margin: 0; }
 
-  /* ---------- KPI row ---------- */
-  .kpis {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
-    gap: 14px;
-  }
+  /* KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 13px; }
 
   .kpi {
     background: var(--surface);
     border: 1px solid var(--rule);
     border-radius: 4px;
-    padding: 18px 18px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    padding: 17px 17px 15px;
+    display: flex; flex-direction: column; gap: 5px;
   }
+  .kpi .label { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .kpi .value { font-family: var(--mono); font-size: 25px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .kpi .value .of { color: var(--muted); font-size: 16px; }
+  .kpi .note { font-size: 12.5px; color: var(--muted); }
 
-  .kpi .label {
+  section { display: flex; flex-direction: column; gap: 17px; }
+  h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .sec-head { display: flex; flex-direction: column; gap: 4px; }
+  .sec-head p { margin: 0; font-size: 14.5px; color: var(--muted); max-width: 68ch; }
+
+  /* ---- coverage matrix ---- */
+  .matrix-scroll { overflow-x: auto; }
+
+  table.matrix { border-collapse: collapse; min-width: 660px; width: 100%; font-size: 13.5px; }
+
+  table.matrix th, table.matrix td { padding: 0; text-align: left; }
+
+  table.matrix thead th {
     font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: 10px;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--muted);
+    font-weight: 400;
+    padding: 0 0 9px;
+    text-align: center;
+    white-space: nowrap;
   }
+  table.matrix thead th.corner { text-align: left; }
 
-  .kpi .value {
+  .grp td {
+    padding: 20px 0 7px;
     font-family: var(--mono);
-    font-size: 26px;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    color: var(--ink);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
   }
+  .grp:first-child td { padding-top: 4px; }
+  .grp .n { color: var(--muted); letter-spacing: 0.04em; text-transform: none; }
 
-  .kpi .value .of { color: var(--muted); font-size: 17px; }
-  .kpi .note { font-size: 13px; color: var(--muted); }
+  tbody tr.data td { padding: 7px 0; border-bottom: 1px solid var(--rule); }
+  tbody tr.data td.model { font-family: var(--mono); font-size: 12.5px; color: var(--ink); white-space: nowrap; padding-right: 14px; }
+  tbody tr.data td.model span { color: var(--muted); font-size: 11.5px; }
+  tbody tr.data td.c { text-align: center; }
 
-  /* ---------- section scaffolding ---------- */
-  section { display: flex; flex-direction: column; gap: 18px; }
-
-  h2 {
-    font-family: var(--serif);
-    font-size: 21px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-
-  .sec-head { display: flex; flex-direction: column; gap: 4px; }
-  .sec-head p { margin: 0; font-size: 14.5px; color: var(--muted); max-width: 64ch; }
-
-  /* ---------- milestone rail ---------- */
-  .rail-scroll { overflow-x: auto; padding-bottom: 4px; }
-
-  .rail {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(150px, 1fr));
+  .sq {
+    display: inline-block;
+    width: 17px; height: 17px;
+    border-radius: 3px;
+    vertical-align: middle;
     position: relative;
-    min-width: 720px;
-    padding-top: 30px;
   }
-
-  .rail::before {
+  .sq.absent  { background: transparent; border: 1.5px dashed var(--absent); }
+  .sq.have    { background: var(--accent); }
+  .sq.floor   { background: var(--done); }
+  .sq.running { background: var(--live); }
+  .sq.queued  { background: var(--accent); }
+  /* a queued/running floor sits on top of an existing measurement: mark with a ring */
+  .sq.queued::after, .sq.running::after, .sq.floor::after {
     content: "";
-    position: absolute;
-    top: 38px;
-    left: 10%;
-    right: 10%;
-    height: 2px;
-    background: var(--rule);
-  }
-
-  .stop { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 0 8px; }
-
-  .dot {
-    width: 15px; height: 15px;
+    position: absolute; inset: 4px;
     border-radius: 50%;
-    background: var(--surface);
-    border: 2.5px solid var(--queued);
-    position: relative;
-    z-index: 1;
+    border: 2px solid var(--surface);
   }
-  .stop.is-live .dot { border-color: var(--live); background: var(--live); box-shadow: 0 0 0 5px var(--live-soft); }
-  .stop.is-key  .dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+  .sq.queued::after { border-style: dotted; }
 
-  .stop .date {
-    font-family: var(--mono);
-    font-size: 14px;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-    letter-spacing: -0.01em;
-  }
-  .stop .what { font-size: 13.5px; color: var(--ink-soft); line-height: 1.4; text-wrap: balance; }
-  .stop .who  { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12.5px; color: var(--muted); }
+  .legend div { display: flex; align-items: center; gap: 7px; }
 
-  /* ---------- chain table ---------- */
+  /* ---- chain rows ---- */
   .chain { display: flex; flex-direction: column; gap: 2px; }
-
   .row {
     display: grid;
-    grid-template-columns: 190px 1fr 96px 92px;
-    gap: 16px;
-    align-items: center;
-    padding: 11px 14px;
+    grid-template-columns: 210px 1fr 92px 82px;
+    gap: 14px; align-items: center;
+    padding: 10px 13px;
     background: var(--surface);
     border: 1px solid var(--rule);
     border-radius: 3px;
   }
-
-  .row.head {
-    background: transparent;
-    border: none;
-    padding-bottom: 2px;
-    font-family: var(--mono);
-    font-size: 10.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
+  .row.head { background: transparent; border: none; padding-bottom: 2px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
   .cell-name { display: flex; flex-direction: column; gap: 1px; }
-  .cell-name b { font-weight: 600; font-size: 14.5px; letter-spacing: -0.005em; }
-  .cell-name span { font-size: 12.5px; color: var(--muted); }
-
+  .cell-name b { font-weight: 600; font-size: 14px; }
+  .cell-name span { font-size: 12px; color: var(--muted); }
   .bar { height: 7px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
   .bar > i { display: block; height: 100%; border-radius: 99px; }
   .bar > i.done { background: var(--done); }
   .bar > i.live { background: var(--live); }
-
-  .pill {
-    justify-self: start;
-    font-family: var(--mono);
-    font-size: 10.5px;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    padding: 3px 9px;
-    border-radius: 99px;
-  }
-  .pill.done   { background: var(--done-soft);   color: var(--done); }
-  .pill.live   { background: var(--live-soft);   color: var(--live); }
+  .pill { justify-self: start; font-family: var(--mono); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; }
+  .pill.done { background: var(--done-soft); color: var(--done); }
+  .pill.live { background: var(--live-soft); color: var(--live); }
   .pill.queued { background: var(--queued-soft); color: var(--queued); }
+  .eta { font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink-soft); text-align: right; }
 
-  .eta { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-soft); text-align: right; }
+  /* ---- milestone rail ---- */
+  .rail-scroll { overflow-x: auto; padding-bottom: 4px; }
+  .rail { display: grid; grid-template-columns: repeat(5, minmax(148px, 1fr)); position: relative; min-width: 700px; padding-top: 28px; }
+  .rail::before { content: ""; position: absolute; top: 36px; left: 10%; right: 10%; height: 2px; background: var(--rule); }
+  .stop { display: flex; flex-direction: column; align-items: center; gap: 9px; text-align: center; padding: 0 8px; }
+  .dot { width: 15px; height: 15px; border-radius: 50%; background: var(--surface); border: 2.5px solid var(--queued); position: relative; z-index: 1; }
+  .stop.is-live .dot { border-color: var(--live); background: var(--live); box-shadow: 0 0 0 5px var(--live-soft); }
+  .stop.is-key .dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+  .stop .date { font-family: var(--mono); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .stop .what { font-size: 13px; color: var(--ink-soft); line-height: 1.4; text-wrap: balance; }
+  .stop .who { font-family: var(--mono); font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
 
-  /* ---------- tracks ---------- */
-  .tracks { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-
-  .track {
-    background: var(--surface);
-    border: 1px solid var(--rule);
-    border-top: 3px solid var(--accent);
-    border-radius: 4px;
-    padding: 20px 20px 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  /* ---- tracks ---- */
+  .tracks { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: 15px; }
+  .track { background: var(--surface); border: 1px solid var(--rule); border-top: 3px solid var(--accent); border-radius: 4px; padding: 19px 19px 21px; display: flex; flex-direction: column; gap: 11px; }
   .track.is-live { border-top-color: var(--live); }
-  .track.is-done { border-top-color: var(--done); }
-
-  .track h3 { font-family: var(--serif); font-size: 18px; font-weight: 600; margin: 0; }
-  .track .meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-  .track p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
-
-  .facts { display: flex; flex-direction: column; gap: 7px; margin: 0; padding: 0; list-style: none; }
-  .facts li { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; padding-bottom: 7px; border-bottom: 1px solid var(--rule); }
+  .track h3 { font-family: var(--serif); font-size: 17.5px; font-weight: 600; margin: 0; }
+  .track .meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .track p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .facts { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .facts li { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
   .facts li:last-child { border-bottom: none; padding-bottom: 0; }
   .facts .k { color: var(--muted); }
-  .facts .v { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
+  .facts .v { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
 
-  footer {
-    border-top: 1px solid var(--rule);
-    padding-top: 18px;
-    font-size: 13px;
-    color: var(--muted);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 20px;
-  }
+  footer { border-top: 1px solid var(--rule); padding-top: 17px; font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 20px; }
   footer .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-  @media (max-width: 720px) {
-    .row { grid-template-columns: 1fr 88px; grid-template-areas: "name status" "bar eta"; row-gap: 10px; }
+  @media (max-width: 700px) {
+    .row { grid-template-columns: 1fr 84px; grid-template-areas: "name status" "bar eta"; row-gap: 9px; }
     .row.head { display: none; }
-    .cell-name { grid-area: name; }
-    .bar { grid-area: bar; }
-    .pill { grid-area: status; justify-self: end; }
-    .eta { grid-area: eta; }
+    .cell-name { grid-area: name; } .bar { grid-area: bar; }
+    .pill { grid-area: status; justify-self: end; } .eta { grid-area: eta; }
   }
 </style>
 </head>
@@ -311,29 +260,30 @@
 
   <header>
     <div class="eyebrow">Status report · 17 August 2026 · Jiaming Wei</div>
-    <h1>Experiments are running to schedule; every paper deadline is downstream of them.</h1>
+    <h1>The core measurement grid is complete. What is running now is the error bar on it.</h1>
     <p class="standfirst">
-      The final measurement chain is live on the A100. The paid half lands tomorrow,
-      the whole thing by 22 August — comfortably before the thesis deadline and the
-      REALM decision. No new experiments are needed for the thesis.
+      Every condition on the two main VisualWebArena sites has been measured — three models,
+      six input representations, both sites. The chain running today re-runs those conditions
+      a second time, which is how we tell a real effect from run-to-run noise. It finishes
+      22 August, before the thesis is due and before REALM reports back.
     </p>
   </header>
 
   <div class="kpis">
     <div class="kpi">
-      <div class="label">Chain progress</div>
-      <div class="value">133<span class="of"> / 1,792</span></div>
-      <div class="note">episodes · cell 1 of 8 running</div>
+      <div class="label">Main grid</div>
+      <div class="value">36<span class="of"> / 36</span></div>
+      <div class="note">VWA classifieds + reddit, all measured</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Error-bar chain</div>
+      <div class="value">4<span class="of"> / 12</span></div>
+      <div class="note">repeat runs done · 1 running · 7 queued</div>
     </div>
     <div class="kpi">
       <div class="label">Compute budget</div>
       <div class="value">$9<span class="of"> / $48</span></div>
-      <div class="note">7% of the allocation; 5 of 8 cells are free</div>
-    </div>
-    <div class="kpi">
-      <div class="label">Paid data lands</div>
-      <div class="value">18 Aug</div>
-      <div class="note">the three cells that carry the claims</div>
+      <div class="note">5 of the 8 queued cells cost nothing</div>
     </div>
     <div class="kpi">
       <div class="label">Thesis due</div>
@@ -344,125 +294,212 @@
 
   <section>
     <div class="sec-head">
-      <h2>What happens when</h2>
-      <p>Five dates between now and the ARR submission. Nothing on this line depends on an experiment that has not started.</p>
+      <h2>What has been measured</h2>
+      <p>Two benchmarks, four site–benchmark combinations, three models, six input representations. One square is one condition — a full run over every scored task on that site.</p>
     </div>
-    <div class="rail-scroll">
-      <div class="rail">
-        <div class="stop is-live">
-          <div class="dot"></div>
-          <div class="date">18 Aug</div>
-          <div class="what">Paid cells land — the measurement the argument rests on</div>
-          <div class="who">Experiments</div>
-        </div>
-        <div class="stop">
-          <div class="dot"></div>
-          <div class="date">22 Aug</div>
-          <div class="what">All 8 cells complete; A100 free again</div>
-          <div class="who">Experiments</div>
-        </div>
-        <div class="stop is-key">
-          <div class="dot"></div>
-          <div class="date">1 Sep</div>
-          <div class="what">Dissertation submitted</div>
-          <div class="who">Thesis</div>
-        </div>
-        <div class="stop">
-          <div class="dot"></div>
-          <div class="date">by 5 Sep</div>
-          <div class="what">REALM decision and reviewer comments arrive</div>
-          <div class="who">Review</div>
-        </div>
-        <div class="stop is-key">
-          <div class="dot"></div>
-          <div class="date">12 Oct</div>
-          <div class="what">ACL ARR submission, committing to NAACL 2027</div>
-          <div class="who">Next venue</div>
-        </div>
-      </div>
+
+    <div class="matrix-scroll">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th class="corner">Model</th>
+            <th>DOM</th><th>SoM</th><th>Vision</th>
+            <th>P-text</th><th>P-prompt</th><th>P-SoM</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr class="grp"><td colspan="7">VisualWebArena · classifieds <span class="n">— 224 tasks · main grid</span></td></tr>
+          <tr class="data">
+            <td class="model">B0 <span>235B</span></td>
+            <td class="c"><span class="sq floor"></span></td>
+            <td class="c"><span class="sq floor"></span></td>
+            <td class="c"><span class="sq floor"></span></td>
+            <td class="c"><span class="sq running"></span></td>
+            <td class="c"><span class="sq queued"></span></td>
+            <td class="c"><span class="sq queued"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B1 <span>4B</span></td>
+            <td class="c"><span class="sq queued"></span></td>
+            <td class="c"><span class="sq floor"></span></td>
+            <td class="c"><span class="sq queued"></span></td>
+            <td class="c"><span class="sq queued"></span></td>
+            <td class="c"><span class="sq queued"></span></td>
+            <td class="c"><span class="sq queued"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B2 <span>Gemma 4B</span></td>
+            <td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td>
+          </tr>
+
+          <tr class="grp"><td colspan="7">VisualWebArena · reddit <span class="n">— 205 tasks · main grid</span></td></tr>
+          <tr class="data">
+            <td class="model">B0 <span>235B</span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B1 <span>4B</span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B2 <span>Gemma 4B</span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+          </tr>
+
+          <tr class="grp"><td colspan="7">WebArena · reddit <span class="n">— 104 tasks · second benchmark, transfer check</span></td></tr>
+          <tr class="data">
+            <td class="model">B0 <span>235B</span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B1 <span>4B</span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B2 <span>Gemma 4B</span></td>
+            <td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td>
+            <td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td>
+          </tr>
+
+          <tr class="grp"><td colspan="7">VisualWebArena · shopping <span class="n">— 435 tasks · partial, not part of the main claim</span></td></tr>
+          <tr class="data">
+            <td class="model">B0 <span>235B</span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td>
+            <td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B1 <span>4B</span></td>
+            <td class="c"><span class="sq have"></span></td><td class="c"><span class="sq have"></span></td><td class="c"><span class="sq absent"></span></td>
+            <td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq have"></span></td>
+          </tr>
+          <tr class="data">
+            <td class="model">B2 <span>Gemma 4B</span></td>
+            <td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td>
+            <td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td><td class="c"><span class="sq absent"></span></td>
+          </tr>
+
+        </tbody>
+      </table>
     </div>
+
+    <div class="legend">
+      <div><span class="sq have"></span> measured once</div>
+      <div><span class="sq floor"></span> measured twice — error bar known</div>
+      <div><span class="sq running"></span> repeat running now</div>
+      <div><span class="sq queued"></span> repeat queued</div>
+      <div><span class="sq absent"></span> not run</div>
+    </div>
+
+    <p style="margin:0;font-size:13.5px;color:var(--muted);max-width:72ch;">
+      WebArena shopping was started once and abandoned; it is not counted above. Two
+      further models were tried as a fourth baseline and rejected at the smoke test —
+      both are deferred until after the REALM decision.
+    </p>
   </section>
 
   <section>
     <div class="sec-head">
-      <h2>The measurement chain</h2>
-      <p>Eight conditions on the classifieds site, run one after another so they never contend for the browser stack. Each one re-runs a condition we have already measured once, which is how we establish how much of an effect is just run-to-run noise.</p>
+      <h2>What is running right now</h2>
+      <p>Eight repeat runs on VisualWebArena classifieds, one after another so they never compete for the browser stack. These add no new conditions — each one repeats a condition already in the grid above, so we can say how much of a difference is real and how much is noise.</p>
     </div>
 
     <div class="chain">
-      <div class="row head">
-        <div>Condition</div><div>Progress</div><div>Status</div><div>Expected</div>
-      </div>
+      <div class="row head"><div>Repeat of</div><div>Progress</div><div>Status</div><div>Expected</div></div>
 
       <div class="row">
         <div class="cell-name"><b>B1 · SoM</b><span>landed ahead of the chain</span></div>
         <div class="bar"><i class="done" style="width:100%"></i></div>
-        <span class="pill done">Done</span>
-        <div class="eta">16 Aug</div>
+        <span class="pill done">Done</span><div class="eta">16 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B0 · phantom-text</b><span>first clean floor for a phantom arm</span></div>
+        <div class="cell-name"><b>B0 · P-text</b><span>paid · first error bar on a phantom arm</span></div>
         <div class="bar"><i class="live" style="width:59%"></i></div>
-        <span class="pill live">Running</span>
-        <div class="eta">17 Aug</div>
+        <span class="pill live">Running</span><div class="eta">17 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B0 · phantom-prompt</b><span>paid · carries the claims</span></div>
+        <div class="cell-name"><b>B0 · P-prompt</b><span>paid · carries the claims</span></div>
         <div class="bar"><i class="live" style="width:0%"></i></div>
-        <span class="pill queued">Queued</span>
-        <div class="eta">18 Aug</div>
+        <span class="pill queued">Queued</span><div class="eta">18 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B0 · phantom-SoM</b><span>paid · carries the claims</span></div>
+        <div class="cell-name"><b>B0 · P-SoM</b><span>paid · carries the claims</span></div>
         <div class="bar"><i class="live" style="width:0%"></i></div>
-        <span class="pill queued">Queued</span>
-        <div class="eta">18 Aug</div>
+        <span class="pill queued">Queued</span><div class="eta">18 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B1 · vision</b><span>free · first B1 floor with real power</span></div>
+        <div class="cell-name"><b>B1 · Vision</b><span>free · first B1 error bar with real power</span></div>
         <div class="bar"><i class="live" style="width:0%"></i></div>
-        <span class="pill queued">Queued</span>
-        <div class="eta">19 Aug</div>
+        <span class="pill queued">Queued</span><div class="eta">19 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B1 · DOM</b><span>free · descriptive</span></div>
+        <div class="cell-name"><b>B1 · DOM</b><span>free · context only</span></div>
         <div class="bar"><i class="live" style="width:0%"></i></div>
-        <span class="pill queued">Queued</span>
-        <div class="eta">20 Aug</div>
+        <span class="pill queued">Queued</span><div class="eta">20 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B1 · phantom-SoM</b><span>free · descriptive</span></div>
+        <div class="cell-name"><b>B1 · P-SoM</b><span>free · context only</span></div>
         <div class="bar"><i class="live" style="width:0%"></i></div>
-        <span class="pill queued">Queued</span>
-        <div class="eta">21 Aug</div>
+        <span class="pill queued">Queued</span><div class="eta">21 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B1 · phantom-text</b><span>free · descriptive</span></div>
+        <div class="cell-name"><b>B1 · P-text</b><span>free · context only</span></div>
         <div class="bar"><i class="live" style="width:0%"></i></div>
-        <span class="pill queued">Queued</span>
-        <div class="eta">21 Aug</div>
+        <span class="pill queued">Queued</span><div class="eta">21 Aug</div>
       </div>
-
       <div class="row">
-        <div class="cell-name"><b>B1 · phantom-prompt</b><span>free · descriptive</span></div>
+        <div class="cell-name"><b>B1 · P-prompt</b><span>free · context only</span></div>
         <div class="bar"><i class="live" style="width:0%"></i></div>
-        <span class="pill queued">Queued</span>
-        <div class="eta">22 Aug</div>
+        <span class="pill queued">Queued</span><div class="eta">22 Aug</div>
       </div>
     </div>
 
-    <p style="margin:0;font-size:13.5px;color:var(--muted);max-width:70ch;">
-      Only the three paid cells are powered enough to report an interval; the five free ones
-      are recorded as context. That split was written down before the runs started, so the
-      reading of each cell cannot be chosen after seeing its number.
+    <p style="margin:0;font-size:13.5px;color:var(--muted);max-width:72ch;">
+      Only the three paid B0 cells are powered enough to report an interval; the five free
+      B1 cells are recorded as context. That split was written down before the runs started,
+      so how each cell is read cannot be chosen after seeing its number.
     </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>What happens when</h2>
+      <p>Five dates between now and the ARR submission. Nothing on this line waits on an experiment that has not started.</p>
+    </div>
+    <div class="rail-scroll">
+      <div class="rail">
+        <div class="stop is-live">
+          <div class="dot"></div><div class="date">18 Aug</div>
+          <div class="what">Paid repeats land — the error bar the argument rests on</div><div class="who">Experiments</div>
+        </div>
+        <div class="stop">
+          <div class="dot"></div><div class="date">22 Aug</div>
+          <div class="what">All repeats complete; the machine is free again</div><div class="who">Experiments</div>
+        </div>
+        <div class="stop is-key">
+          <div class="dot"></div><div class="date">1 Sep</div>
+          <div class="what">Dissertation submitted</div><div class="who">Thesis</div>
+        </div>
+        <div class="stop">
+          <div class="dot"></div><div class="date">by 5 Sep</div>
+          <div class="what">REALM decision and reviewer comments arrive</div><div class="who">Review</div>
+        </div>
+        <div class="stop is-key">
+          <div class="dot"></div><div class="date">12 Oct</div>
+          <div class="what">ACL ARR submission, committing to NAACL 2027</div><div class="who">Next venue</div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section>
@@ -472,7 +509,6 @@
     </div>
 
     <div class="tracks">
-
       <div class="track is-live">
         <div class="meta">Under review</div>
         <h3>REALM @ EMNLP 2026</h3>
@@ -505,16 +541,16 @@
           <li><span class="k">Location</span><span class="v">San Francisco</span></li>
         </ul>
       </div>
-
     </div>
   </section>
 
   <footer>
-    <span>Cost-aware routing for web agents · VisualWebArena</span>
-    <span class="mono">A100 · classifieds · 224 tasks per cell</span>
+    <span>Cost-aware routing for web agents</span>
+    <span class="mono">VisualWebArena + WebArena · 3 models · 6 representations</span>
     <span class="mono">Updated 17 Aug 2026, 15:00 UTC</span>
   </footer>
 
 </div>
+
 </body>
 </html>
