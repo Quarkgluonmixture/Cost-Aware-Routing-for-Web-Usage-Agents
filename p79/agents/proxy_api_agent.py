@@ -348,6 +348,38 @@ class ProxyApiAgent:
 
         self.timeout = model_cfg.get("timeout", _DEFAULT_TIMEOUT)
         self._use_tool_calling = model_cfg.get("use_tool_calling", False)
+        # B-1990 (2026-08-19, 笔记 §471.5): HOW the structured action is obtained.
+        # Not every model on this proxy can be asked with function tools —
+        # `global.openai.gpt-5.6-*` reject them outright (400: "Function tools with
+        # reasoning_effort are not supported ... in /v1/chat/completions"), and the
+        # fix the error names (`reasoning_effort:"none"`) never reaches the upstream
+        # because the proxy white-lists top-level fields — proved by sending
+        # `reasoning_effort:"ZZZ_INVALID"` and `totally_bogus_param_xyz:123` and
+        # getting 200 for both. But structured output has more than one road:
+        # `response_format:{json_schema}` clears the same production payload
+        # (image + AXTree + the very same schema) and returns an action that the
+        # production `validate_action` accepts.
+        #
+        # Deliberately NOT keyed off `_api_format`. That flag switches BOTH the
+        # auth header and the response envelope (`choices[0].message`), and this
+        # proxy is a hybrid — Anthropic URL + X-Api-Key + OpenAI tools + top-level
+        # tool_calls. Toggling it to "openai" to get one OpenAI behaviour would
+        # silently change two others (see memory reference-aws-proxy-hybrid-shim).
+        self._structured_output = model_cfg.get("structured_output", "tool_calls")
+        if self._structured_output not in ("tool_calls", "response_format"):
+            raise ValueError(
+                f"structured_output must be 'tool_calls' or 'response_format', "
+                f"got {self._structured_output!r}"
+            )
+        # `response_format` models on this proxy have no logprobs at all
+        # (`unsupported_parameter: 'logprobs' is not supported with this model`),
+        # so the paper-grade logprob guard below would fire on every step. Rather
+        # than weaken the guard for everyone, the absence must be DECLARED in the
+        # config: an undeclared miss still fails loud. This keeps "this baseline
+        # has no logprob-derived confidence" an auditable statement in the config
+        # and in every step record, instead of an empty column someone discovers
+        # at analysis time.
+        self._logprobs_unavailable = bool(model_cfg.get("logprobs_unavailable", False))
         # B-1102 (/stress A2.3b P1-4-A, 2026-05-18): read top-level
         # `paper_grade` flag so init-time + step-time invariant guards can
         # fail-loud on paper-grade contract violations (vs silently
@@ -386,12 +418,33 @@ class ProxyApiAgent:
                 "the paper_grade flag for dev runs."
             )
 
+        # B-1990: a declared-absent logprob channel is a disclosure; an undeclared
+        # one is a bug. Require the declaration up front so it cannot be discovered
+        # mid-fire (same reasoning as the use_tool_calling guard above).
+        if (
+            self._paper_grade
+            and self._structured_output == "response_format"
+            and not self._logprobs_unavailable
+        ):
+            raise RuntimeError(
+                "paper-grade run with structured_output='response_format' must also "
+                "set logprobs_unavailable: true — models reached this way on the AWS "
+                "proxy reject the `logprobs` parameter outright, so the confidence "
+                "schema will be verbalized-only. Declare it in the config so paper "
+                "§3.5 can disclose it, or use structured_output='tool_calls'."
+            )
+
         self._system_prompts = self._get_system_prompts()
 
         # When tool calling is enabled, replace the "output JSON" instruction
         # with a tool-use instruction.  This is a format-only change — the
         # rules, action schema, and all task-relevant guidance are unchanged.
-        if self._use_tool_calling:
+        #
+        # B-1990: response_format mode must NOT get this swap. There the model is
+        # asked for JSON directly and the schema is enforced by the API, so the
+        # original "Output ONLY valid JSON" line is exactly the right instruction —
+        # telling it to "use the web_action tool" would name a tool it was never given.
+        if self._use_tool_calling and self._structured_output == "tool_calls":
             _old = "Output ONLY valid JSON. No markdown blocks, no explanations."
             _new = "Use the web_action tool for every action. Put reasoning in the thought parameter."
             for mode in self._system_prompts:
@@ -727,7 +780,31 @@ class ProxyApiAgent:
         if _seed_from_cfg is not None:
             payload["seed"] = int(_seed_from_cfg)
 
-        if self._use_tool_calling:
+        if self._use_tool_calling and self._structured_output == "response_format":
+            # B-1990 (2026-08-19): the non-tools road to a structured action.
+            # `strict: True` is deliberately NOT set — probed 2026-08-19 against
+            # gpt-5.6-luna with the full production payload, strict returns HTTP 200
+            # with an EMPTY body, which would read downstream as a parse failure
+            # rather than a protocol mismatch. Non-strict returned an action the
+            # production `validate_action` accepted, with the colour and mark id
+            # read correctly off the image.
+            #
+            # The schema is the production tool's own parameter block, not a copy:
+            # a second copy would drift from `_WEB_ACTION_TOOL` the first time the
+            # action schema changes, and nothing would fail until a run produced
+            # actions of the wrong shape.
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "web_action",
+                    "schema": _WEB_ACTION_TOOL["function"]["parameters"],
+                },
+            }
+            # No `tools`/`tool_choice` (rejected), no `logprobs` (rejected). The
+            # response carries the action as text, which the parser below already
+            # handles: `_tool_call_parse_path` defaults to "text_json" and the
+            # top-level tool_calls branch is skipped when the field is absent.
+        elif self._use_tool_calling:
             payload["tools"] = [_WEB_ACTION_TOOL]
             # tool_choice="required" (NOT "auto"). B-991 (2026-05-17) chose
             # "auto" to preserve logprob symmetry, but Fire-6 RCA (2026-05-20)
@@ -1251,7 +1328,12 @@ class ProxyApiAgent:
         # Non-paper-grade dev runs: persist `confidence_error` for audit
         # but proceed (preserves existing F3 behavior).
         _confidence_error: Optional[str] = None
-        if self._use_tool_calling and not _proxy_logprobs_content:
+        if self._use_tool_calling and not _proxy_logprobs_content and self._logprobs_unavailable:
+            # B-1990: declared absence (checked at init under paper_grade). Record it
+            # on every step so the empty confidence columns have a stated cause in the
+            # data itself, not only in the config that produced it.
+            _confidence_error = "logprobs_unsupported_by_model"
+        elif self._use_tool_calling and not _proxy_logprobs_content:
             if self._paper_grade:
                 raise RuntimeError(
                     "B0 paper-grade run requires body.logprobs.content "
@@ -1339,6 +1421,11 @@ class ProxyApiAgent:
             "reasoning_content": reasoning_text,
             "enable_thinking": False,
             "tool_calling": self._use_tool_calling,
+            # B-1990: which road the structured action came by. `tool_calling` alone
+            # no longer determines it — response_format runs have tool_calling=True
+            # and never emit a tool_call, so without this field their steps are
+            # indistinguishable from a tools run whose emission failed.
+            "structured_output": self._structured_output,
             # B-1588 (/stress A1.24 post-fire P1-8-B codex Mode B F6 OOB, 2026-05-18):
             # per-step tool-call emission audit fields. `tool_calling` (bool config)
             # alone cannot prove the proxy emitted native tool_calls — text-parse
