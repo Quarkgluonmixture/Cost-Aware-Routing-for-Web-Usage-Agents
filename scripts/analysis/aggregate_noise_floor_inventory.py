@@ -99,6 +99,20 @@ CLEAN_PAIRS = [
     ("B0.cls.psom",
      "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031/phase1_phantom_som_router_0",
      "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260818_040525_430521618_2113605_R13257/phase1_phantom_som_router_0"),
+    # Cell 4 of the floor chain, registered 2026-08-19 as declared. This was the cell the
+    # intent file called "first B1 floor with any power" (d≈16.6, the highest of the five
+    # B1 cells). It came back at EXACTLY 0.00% discordance with zero step-count differences
+    # across all 224 episodes — a byte-level reproduction, not merely the same outcomes.
+    #
+    # Registered anyway, per the declared policy: a floor of zero is a result, and the
+    # whole point of declaring the list up front is that inconvenient cells get registered
+    # too. Read together with B1.cls.som (also 0.00%), the pair says the ~12% seen on every
+    # B0 arm is a property of B0's serving stack, not of the benchmark, the agent, or VWA.
+    # Consequence worth stating: a B1 floor cannot bound an effect measured on B0 — see
+    # 实验笔记 §470.5 / §471.
+    ("B1.cls.vision",
+     "results/visualwebarena/phase1/B1_vision_classifieds_20260605_012235_349047872_327631_R28622/phase1_vision_router_0",
+     "results/visualwebarena/phase1/B1_vision_classifieds_20260818_132213_338416266_2187432_R26207/phase1_vision_router_0"),
     # B1 arm, registered 2026-08-17. The replicate (R28065) ran to a full 224 episodes on
     # 2026-08-16 as the first cell of the floor chain, but was never registered here, so
     # `validate_fire_manifest.py` classified it a COMPLETE ghost against canonical R31705
