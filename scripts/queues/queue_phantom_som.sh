@@ -13,7 +13,7 @@
 #
 # Usage:
 #   bash scripts/queues/queue_phantom_som.sh <baseline> <site> [benchmark]
-#   - baseline:  B0 | B1 | B2
+#   - baseline:  B0 | B1 | B2 | B3 | B4 | B5
 #   - site:      classifieds | reddit | shopping (vwa) | shopping_admin (wa-only)
 #   - benchmark: vwa (默认) | wa
 #
@@ -40,8 +40,8 @@ BASELINE="$1"; SITE="$2"
 BENCHMARK="${3:-vwa}"
 
 # Validation
-if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" && "${BASELINE}" != "B2" && "${BASELINE}" != "B4" ]]; then
-  echo "Invalid baseline: ${BASELINE} (expected B0, B1, B2 or B4)" >&2; exit 2
+if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" && "${BASELINE}" != "B2" && "${BASELINE}" != "B4" && "${BASELINE}" != "B5" ]]; then
+  echo "Invalid baseline: ${BASELINE} (expected B0, B1, B2, B4 or B5)" >&2; exit 2
 fi
 if [[ "${BENCHMARK}" != "vwa" && "${BENCHMARK}" != "wa" ]]; then
   echo "Invalid benchmark: ${BENCHMARK} (expected vwa or wa)" >&2; exit 2
@@ -91,7 +91,7 @@ trap "release_site_lock" EXIT INT TERM
 # B4 (Claude Sonnet 5, 2026-08-13) shares B0's AWS proxy endpoint, so it needs the
 # same key load. Gating on the baseline NAME rather than on the config's backend type
 # is why adding a proxy-served baseline touches this line at all -- see 笔记 §461.
-if [[ "${BASELINE}" == "B0" || "${BASELINE}" == "B4" ]]; then
+if [[ "${BASELINE}" == "B0" || "${BASELINE}" == "B4" || "${BASELINE}" == "B5" ]]; then
   load_proxy_api_key "${REPO_DIR}" "phantom_som"
 fi
 
