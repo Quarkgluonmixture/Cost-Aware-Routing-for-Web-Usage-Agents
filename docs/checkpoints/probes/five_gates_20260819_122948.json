@@ -1,0 +1,77 @@
+{
+ "generated": "20260819_122948",
+ "gates": [
+  {
+   "model": "global.openai.gpt-5.6-sol",
+   "expected_mark": 298,
+   "price": {
+    "in": 0.005,
+    "out": 0.03
+   },
+   "g1_http200": false,
+   "g2_tool_call": false,
+   "g3_schema_valid": false,
+   "g4_logprobs": false,
+   "g5_saw_image": false,
+   "status": 400,
+   "error": "{\"error\": \"Invalid request parameters.\", \"message\": \"{\\\"error\\\":{\\\"code\\\":\\\"validation_error\\\",\\\"message\\\":\\\"Function tools with reasoning_effort are not supported for global.openai.gpt-5.6-sol in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\\\",\\\"p"
+  },
+  {
+   "model": "global.openai.gpt-5.6-terra",
+   "expected_mark": 622,
+   "price": {
+    "in": 0.002,
+    "out": 0.012
+   },
+   "g1_http200": false,
+   "g2_tool_call": false,
+   "g3_schema_valid": false,
+   "g4_logprobs": false,
+   "g5_saw_image": false,
+   "status": 400,
+   "error": "{\"error\": \"Invalid request parameters.\", \"message\": \"{\\\"error\\\":{\\\"code\\\":\\\"validation_error\\\",\\\"message\\\":\\\"Function tools with reasoning_effort are not supported for global.openai.gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\\\",\\"
+  },
+  {
+   "model": "global.openai.gpt-5.6-luna",
+   "expected_mark": 909,
+   "price": {
+    "in": 0.0002,
+    "out": 0.0012
+   },
+   "g1_http200": false,
+   "g2_tool_call": false,
+   "g3_schema_valid": false,
+   "g4_logprobs": false,
+   "g5_saw_image": false,
+   "status": 400,
+   "error": "{\"error\": \"Invalid request parameters.\", \"message\": \"{\\\"error\\\":{\\\"code\\\":\\\"validation_error\\\",\\\"message\\\":\\\"Function tools with reasoning_effort are not supported for global.openai.gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\\\",\\\""
+  },
+  {
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "expected_mark": 326,
+   "price": {
+    "in": 0.001,
+    "out": 0.005
+   },
+   "g1_http200": true,
+   "g2_tool_call": true,
+   "g3_schema_valid": true,
+   "g4_logprobs": true,
+   "g5_saw_image": false,
+   "status": 200,
+   "action": {
+    "action_type": "click",
+    "element_id": 195,
+    "thought": "The screen displays a logo with the text '[360]' centered on a teal background. Since the instruction specifies to click the only interactive element with a visible mark ID, and the only element with a visible ID is the logo, I will click on it to proceed. This is likely a placeholder or loading screen, and clicking it may lead to the main interface or trigger the next step in the application."
+   },
+   "cost_usd": null,
+   "remaining_quota": {
+    "llm_cost": 1056.61482107,
+    "total_cost": 1056.61482107,
+    "budget_limit": 1680,
+    "remaining_budget": 623.3851789299998,
+    "budget_usage_percent": 62.89373934940477
+   }
+  }
+ ]
+}

@@ -1,0 +1,480 @@
+{
+ "probe": "proxy_model_registry_and_b4_feasibility",
+ "generated": "20260819_122805",
+ "registry_status": 200,
+ "n_models": 58,
+ "models": [
+  {
+   "modelId": "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+   "name": "EU Anthropic Claude Haiku 4.5",
+   "provider": "Anthropic",
+   "category": "Fast & Cheap",
+   "inputPrice": 0.001,
+   "outputPrice": 0.005
+  },
+  {
+   "modelId": "eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+   "name": "EU Anthropic Claude Sonnet 4.5",
+   "provider": "Anthropic",
+   "category": "Balanced",
+   "inputPrice": 0.003,
+   "outputPrice": 0.015
+  },
+  {
+   "modelId": "global.amazon.nova-2-lite-v1:0",
+   "name": "GLOBAL Amazon Nova 2 Lite",
+   "provider": "Amazon",
+   "category": "Fast & Cheap",
+   "inputPrice": 4e-05,
+   "outputPrice": 0.00016
+  },
+  {
+   "modelId": "eu.anthropic.claude-opus-4-5-20251101-v1:0",
+   "name": "EU Anthropic Claude Opus 4.5",
+   "provider": "Anthropic",
+   "category": "Most Capable",
+   "inputPrice": 0.015,
+   "outputPrice": 0.075
+  },
+  {
+   "modelId": "eu.anthropic.claude-opus-4-6-v1",
+   "name": "EU Anthropic Claude Opus 4.6",
+   "provider": "Anthropic",
+   "category": "Most Capable",
+   "inputPrice": 0.015,
+   "outputPrice": 0.075
+  },
+  {
+   "modelId": "eu.anthropic.claude-sonnet-4-6",
+   "name": "EU Anthropic Claude Sonnet 4.6",
+   "provider": "Anthropic",
+   "category": "Balanced",
+   "inputPrice": 0.003,
+   "outputPrice": 0.015
+  },
+  {
+   "modelId": "eu.anthropic.claude-opus-4-7",
+   "name": "EU Anthropic Claude Opus 4.7",
+   "provider": "Anthropic",
+   "category": "Most Capable",
+   "inputPrice": 0.015,
+   "outputPrice": 0.075
+  },
+  {
+   "modelId": "eu.anthropic.claude-opus-4-8",
+   "name": "EU Anthropic Claude Opus 4.8",
+   "provider": "Anthropic",
+   "category": "Most Capable",
+   "inputPrice": 0.015,
+   "outputPrice": 0.075
+  },
+  {
+   "modelId": "global.anthropic.claude-fable-5",
+   "name": "Global Anthropic Claude Fable 5",
+   "provider": "Anthropic",
+   "category": "Most Capable",
+   "inputPrice": 0.01,
+   "outputPrice": 0.05
+  },
+  {
+   "modelId": "eu.anthropic.claude-sonnet-5",
+   "name": "EU Anthropic Claude Sonnet 5",
+   "provider": "Anthropic",
+   "category": "Balanced",
+   "inputPrice": 0.003,
+   "outputPrice": 0.015
+  },
+  {
+   "modelId": "eu.anthropic.claude-opus-5",
+   "name": "EU Anthropic Claude Opus 5",
+   "provider": "Anthropic",
+   "category": "Most Capable",
+   "inputPrice": 0.015,
+   "outputPrice": 0.075
+  },
+  {
+   "modelId": "global.openai.gpt-5.6-sol",
+   "name": "Global OpenAI GPT-5.6 Sol",
+   "provider": "OpenAI",
+   "category": "Most Capable",
+   "inputPrice": 0.005,
+   "outputPrice": 0.03
+  },
+  {
+   "modelId": "global.openai.gpt-5.6-terra",
+   "name": "Global OpenAI GPT-5.6 Terra",
+   "provider": "OpenAI",
+   "category": "Balanced",
+   "inputPrice": 0.002,
+   "outputPrice": 0.012
+  },
+  {
+   "modelId": "global.openai.gpt-5.6-luna",
+   "name": "Global OpenAI GPT-5.6 Luna",
+   "provider": "OpenAI",
+   "category": "Fast & Cheap",
+   "inputPrice": 0.0002,
+   "outputPrice": 0.0012
+  },
+  {
+   "modelId": "nvidia.nemotron-nano-12b-v2",
+   "name": "NVIDIA Nemotron Nano 12B v2 VL BF16",
+   "provider": "NVIDIA",
+   "category": "Open Source",
+   "inputPrice": 0.00015,
+   "outputPrice": 0.00025
+  },
+  {
+   "modelId": "qwen.qwen3-coder-next",
+   "name": "Qwen3 Coder Next",
+   "provider": "Qwen",
+   "category": "Open Source",
+   "inputPrice": 0.0004,
+   "outputPrice": 0.002
+  },
+  {
+   "modelId": "qwen.qwen3-235b-a22b-2507-v1:0",
+   "name": "Qwen3 235B A22B 2507",
+   "provider": "Qwen",
+   "category": "Open Source",
+   "inputPrice": 0.0008,
+   "outputPrice": 0.004
+  },
+  {
+   "modelId": "moonshotai.kimi-k2.5",
+   "name": "Kimi K2.5",
+   "provider": "Moonshot AI",
+   "category": "Balanced",
+   "inputPrice": 0.002,
+   "outputPrice": 0.008
+  },
+  {
+   "modelId": "openai.gpt-oss-120b-1:0",
+   "name": "gpt-oss-120b",
+   "provider": "OpenAI",
+   "category": "Open Source",
+   "inputPrice": 0.00015,
+   "outputPrice": 0.0006
+  },
+  {
+   "modelId": "qwen.qwen3-next-80b-a3b",
+   "name": "Qwen3 Next 80B A3B",
+   "provider": "Qwen",
+   "category": "Open Source",
+   "inputPrice": 0.0004,
+   "outputPrice": 0.002
+  },
+  {
+   "modelId": "deepseek.v3.2",
+   "name": "DeepSeek V3.2",
+   "provider": "DeepSeek",
+   "category": "Reasoning",
+   "inputPrice": 0.00027,
+   "outputPrice": 0.0011
+  },
+  {
+   "modelId": "nvidia.nemotron-nano-3-30b",
+   "name": "Nemotron Nano 3 30B",
+   "provider": "NVIDIA",
+   "category": "Open Source",
+   "inputPrice": 0.0003,
+   "outputPrice": 0.0005
+  },
+  {
+   "modelId": "minimax.minimax-m2",
+   "name": "MiniMax M2",
+   "provider": "MiniMax",
+   "category": "Balanced",
+   "inputPrice": 0.0011,
+   "outputPrice": 0.0045
+  },
+  {
+   "modelId": "zai.glm-4.7-flash",
+   "name": "GLM 4.7 Flash",
+   "provider": "Z.AI",
+   "category": "Fast & Cheap",
+   "inputPrice": 4e-05,
+   "outputPrice": 0.0001
+  },
+  {
+   "modelId": "mistral.voxtral-mini-3b-2507",
+   "name": "Voxtral Mini 3B 2507",
+   "provider": "Mistral AI",
+   "category": "Multimodal",
+   "inputPrice": 7e-05,
+   "outputPrice": 0.0002
+  },
+  {
+   "modelId": "amazon.nova-pro-v1:0",
+   "name": "Nova Pro",
+   "provider": "Amazon",
+   "category": "Balanced",
+   "inputPrice": 0.0008,
+   "outputPrice": 0.0032
+  },
+  {
+   "modelId": "minimax.minimax-m2.5",
+   "name": "MiniMax M2.5",
+   "provider": "MiniMax",
+   "category": "Balanced",
+   "inputPrice": 0.0011,
+   "outputPrice": 0.0045
+  },
+  {
+   "modelId": "google.gemma-3-12b-it",
+   "name": "Gemma 3 12B IT",
+   "provider": "Google",
+   "category": "Open Source",
+   "inputPrice": 0.00015,
+   "outputPrice": 0.0003
+  },
+  {
+   "modelId": "mistral.devstral-2-123b",
+   "name": "Devstral 2 123B",
+   "provider": "Mistral AI",
+   "category": "Open Source",
+   "inputPrice": 0.002,
+   "outputPrice": 0.006
+  },
+  {
+   "modelId": "minimax.minimax-m2.1",
+   "name": "MiniMax M2.1",
+   "provider": "MiniMax",
+   "category": "Balanced",
+   "inputPrice": 0.0011,
+   "outputPrice": 0.0045
+  },
+  {
+   "modelId": "qwen.qwen3-32b-v1:0",
+   "name": "Qwen3 32B (dense)",
+   "provider": "Qwen",
+   "category": "Open Source",
+   "inputPrice": 0.00015,
+   "outputPrice": 0.0006
+  },
+  {
+   "modelId": "mistral.ministral-3-14b-instruct",
+   "name": "Ministral 14B 3.0",
+   "provider": "Mistral AI",
+   "category": "Open Source",
+   "inputPrice": 9e-05,
+   "outputPrice": 0.0003
+  },
+  {
+   "modelId": "nvidia.nemotron-nano-9b-v2",
+   "name": "NVIDIA Nemotron Nano 9B v2",
+   "provider": "NVIDIA",
+   "category": "Open Source",
+   "inputPrice": 0.00012,
+   "outputPrice": 0.00018
+  },
+  {
+   "modelId": "mistral.ministral-3-8b-instruct",
+   "name": "Ministral 3 8B",
+   "provider": "Mistral AI",
+   "category": "Open Source",
+   "inputPrice": 4e-05,
+   "outputPrice": 0.0001
+  },
+  {
+   "modelId": "mistral.voxtral-small-24b-2507",
+   "name": "Voxtral Small 24B 2507",
+   "provider": "Mistral AI",
+   "category": "Multimodal",
+   "inputPrice": 0.0004,
+   "outputPrice": 0.001
+  },
+  {
+   "modelId": "zai.glm-5",
+   "name": "GLM 5",
+   "provider": "Z.AI",
+   "category": "Balanced",
+   "inputPrice": 0.0005,
+   "outputPrice": 0.0015
+  },
+  {
+   "modelId": "openai.gpt-oss-20b-1:0",
+   "name": "gpt-oss-20b",
+   "provider": "OpenAI",
+   "category": "Open Source",
+   "inputPrice": 7e-05,
+   "outputPrice": 0.0003
+  },
+  {
+   "modelId": "google.gemma-3-4b-it",
+   "name": "Gemma 3 4B IT",
+   "provider": "Google",
+   "category": "Open Source",
+   "inputPrice": 4e-05,
+   "outputPrice": 0.0001
+  },
+  {
+   "modelId": "google.gemma-3-27b-it",
+   "name": "Gemma 3 27B PT",
+   "provider": "Google",
+   "category": "Open Source",
+   "inputPrice": 0.0003,
+   "outputPrice": 0.0006
+  },
+  {
+   "modelId": "qwen.qwen3-vl-235b-a22b",
+   "name": "Qwen3 VL 235B A22B",
+   "provider": "Qwen",
+   "category": "Open Source",
+   "inputPrice": 0.001,
+   "outputPrice": 0.005
+  },
+  {
+   "modelId": "zai.glm-4.7",
+   "name": "GLM 4.7",
+   "provider": "Z.AI",
+   "category": "Balanced",
+   "inputPrice": 0.0004,
+   "outputPrice": 0.001
+  },
+  {
+   "modelId": "qwen.qwen3-coder-480b-a35b-v1:0",
+   "name": "Qwen3 Coder 480B A35B Instruct",
+   "provider": "Qwen",
+   "category": "Open Source",
+   "inputPrice": 0.002,
+   "outputPrice": 0.008
+  },
+  {
+   "modelId": "mistral.magistral-small-2509",
+   "name": "Magistral Small 2509",
+   "provider": "Mistral AI",
+   "category": "Balanced",
+   "inputPrice": 0.001,
+   "outputPrice": 0.003
+  },
+  {
+   "modelId": "deepseek.v3-v1:0",
+   "name": "DeepSeek-V3.1",
+   "provider": "DeepSeek",
+   "category": "Reasoning",
+   "inputPrice": 0.00027,
+   "outputPrice": 0.0011
+  },
+  {
+   "modelId": "mistral.ministral-3-3b-instruct",
+   "name": "Ministral 3B",
+   "provider": "Mistral AI",
+   "category": "Open Source",
+   "inputPrice": 4e-05,
+   "outputPrice": 0.0001
+  },
+  {
+   "modelId": "qwen.qwen3-coder-30b-a3b-v1:0",
+   "name": "Qwen3-Coder-30B-A3B-Instruct",
+   "provider": "Qwen",
+   "category": "Open Source",
+   "inputPrice": 0.00015,
+   "outputPrice": 0.0006
+  },
+  {
+   "modelId": "amazon.nova-lite-v1:0",
+   "name": "Nova Lite",
+   "provider": "Amazon",
+   "category": "Fast & Cheap",
+   "inputPrice": 6e-05,
+   "outputPrice": 0.00024
+  },
+  {
+   "modelId": "amazon.nova-micro-v1:0",
+   "name": "Nova Micro",
+   "provider": "Amazon",
+   "category": "Fast & Cheap",
+   "inputPrice": 3.5e-05,
+   "outputPrice": 0.00014
+  },
+  {
+   "modelId": "anthropic.claude-3-sonnet-20240229-v1:0",
+   "name": "Claude 3 Sonnet",
+   "provider": "Anthropic",
+   "category": "Balanced",
+   "inputPrice": 0.003,
+   "outputPrice": 0.015
+  },
+  {
+   "modelId": "anthropic.claude-3-7-sonnet-20250219-v1:0",
+   "name": "Claude 3.7 Sonnet",
+   "provider": "Anthropic",
+   "category": "Balanced",
+   "inputPrice": 0.003,
+   "outputPrice": 0.015
+  },
+  {
+   "modelId": "meta.llama3-8b-instruct-v1:0",
+   "name": "Llama 3 8B Instruct",
+   "provider": "Meta",
+   "category": "Open Source",
+   "inputPrice": 0.0003,
+   "outputPrice": 0.0006
+  },
+  {
+   "modelId": "meta.llama3-70b-instruct-v1:0",
+   "name": "Llama 3 70B Instruct",
+   "provider": "Meta",
+   "category": "Open Source",
+   "inputPrice": 0.00265,
+   "outputPrice": 0.0035
+  },
+  {
+   "modelId": "mistral.mistral-7b-instruct-v0:2",
+   "name": "Mistral 7B Instruct",
+   "provider": "Mistral AI",
+   "category": "Open Source",
+   "inputPrice": 0.00015,
+   "outputPrice": 0.0002
+  },
+  {
+   "modelId": "mistral.mixtral-8x7b-instruct-v0:1",
+   "name": "Mixtral 8x7B Instruct",
+   "provider": "Mistral AI",
+   "category": "Open Source",
+   "inputPrice": 0.00045,
+   "outputPrice": 0.0007
+  },
+  {
+   "modelId": "mistral.mistral-large-2402-v1:0",
+   "name": "Mistral Large (24.02)",
+   "provider": "Mistral AI",
+   "category": "Balanced",
+   "inputPrice": 0.004,
+   "outputPrice": 0.012
+  },
+  {
+   "modelId": "google.gemma-4-31b",
+   "name": "google.gemma-4-31b",
+   "provider": "Google",
+   "category": "Open Source",
+   "inputPrice": 0.00014,
+   "outputPrice": 0.0004
+  },
+  {
+   "modelId": "google.gemma-4-26b-a4b",
+   "name": "google.gemma-4-26b-a4b",
+   "provider": "Google",
+   "category": "Open Source",
+   "inputPrice": 0.00013,
+   "outputPrice": 0.00035
+  },
+  {
+   "modelId": "google.gemma-4-e2b",
+   "name": "google.gemma-4-e2b",
+   "provider": "Google",
+   "category": "Open Source",
+   "inputPrice": 4e-05,
+   "outputPrice": 8e-05
+  }
+ ],
+ "invocations": [],
+ "remaining_quota": null,
+ "notes": {
+  "b0_model": "qwen.qwen3-vl-235b-a22b",
+  "b0_price": "in 0.001 / out 0.005",
+  "b4_change_surface": "configs: model.api_name -> an Anthropic modelId; no new backend",
+  "pricing_trap": "do not read B0's price off qwen.qwen3-235b-a22b-2507 (0.0008/0.004)"
+ }
+}

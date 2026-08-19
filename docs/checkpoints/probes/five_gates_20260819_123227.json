@@ -1,0 +1,97 @@
+{
+ "generated": "20260819_123227",
+ "gates": [
+  {
+   "model": "moonshotai.kimi-k2.5",
+   "expected_mark": 970,
+   "expected_colour": "olive",
+   "price": {
+    "in": 0.002,
+    "out": 0.008
+   },
+   "g1_http200": true,
+   "g2_tool_call": true,
+   "g3_schema_valid": true,
+   "g4_logprobs": true,
+   "g5_saw_image": true,
+   "status": 200,
+   "action": {
+    "action_type": "click",
+    "element_id": 970,
+    "thought": "The panel is olive in colour and displays mark id 970.",
+    "confidence": 0.99
+   },
+   "g5_colour_hit": true,
+   "g5_mark_hit": true,
+   "cost_usd": null,
+   "remaining_quota": {
+    "llm_cost": 1056.61998127,
+    "total_cost": 1056.61998127,
+    "budget_limit": 1680,
+    "remaining_budget": 623.3800187300001,
+    "budget_usage_percent": 62.89404650416667
+   }
+  },
+  {
+   "model": "nvidia.nemotron-nano-12b-v2",
+   "expected_mark": 337,
+   "expected_colour": "teal",
+   "price": {
+    "in": 0.00015,
+    "out": 0.00025
+   },
+   "g1_http200": true,
+   "g2_tool_call": true,
+   "g3_schema_valid": true,
+   "g4_logprobs": true,
+   "g5_saw_image": true,
+   "status": 200,
+   "action": {
+    "action_type": "click",
+    "thought": "Blue [337]",
+    "confidence": 1.0,
+    "element_id": 1
+   },
+   "g5_colour_hit": false,
+   "g5_mark_hit": true,
+   "cost_usd": null,
+   "remaining_quota": {
+    "llm_cost": 1056.62031102,
+    "total_cost": 1056.62031102,
+    "budget_limit": 1680,
+    "remaining_budget": 623.3796889800001,
+    "budget_usage_percent": 62.894066132142854
+   }
+  },
+  {
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "expected_mark": 142,
+   "expected_colour": "teal",
+   "price": {
+    "in": 0.001,
+    "out": 0.005
+   },
+   "g1_http200": true,
+   "g2_tool_call": true,
+   "g3_schema_valid": true,
+   "g4_logprobs": true,
+   "g5_saw_image": true,
+   "status": 200,
+   "action": {
+    "action_type": "click",
+    "element_id": 142,
+    "thought": "teal [142]"
+   },
+   "g5_colour_hit": true,
+   "g5_mark_hit": true,
+   "cost_usd": null,
+   "remaining_quota": {
+    "llm_cost": 1056.62194602,
+    "total_cost": 1056.62194602,
+    "budget_limit": 1680,
+    "remaining_budget": 623.3780539800001,
+    "budget_usage_percent": 62.89416345357143
+   }
+  }
+ ]
+}

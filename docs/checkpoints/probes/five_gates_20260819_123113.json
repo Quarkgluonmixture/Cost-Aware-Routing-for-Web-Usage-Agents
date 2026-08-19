@@ -1,0 +1,83 @@
+{
+ "generated": "20260819_123113",
+ "gates": [
+  {
+   "model": "global.openai.gpt-5.6-sol",
+   "expected_mark": 778,
+   "expected_colour": "navy",
+   "price": {
+    "in": 0.005,
+    "out": 0.03
+   },
+   "g1_http200": false,
+   "g2_tool_call": false,
+   "g3_schema_valid": false,
+   "g4_logprobs": false,
+   "g5_saw_image": false,
+   "status": 400,
+   "error": "{\"error\": \"Invalid request parameters.\", \"message\": \"{\\\"error\\\":{\\\"code\\\":\\\"validation_error\\\",\\\"message\\\":\\\"Function tools with reasoning_effort are not supported for global.openai.gpt-5.6-sol in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\\\",\\\"p"
+  },
+  {
+   "model": "global.openai.gpt-5.6-terra",
+   "expected_mark": 567,
+   "expected_colour": "lime",
+   "price": {
+    "in": 0.002,
+    "out": 0.012
+   },
+   "g1_http200": false,
+   "g2_tool_call": false,
+   "g3_schema_valid": false,
+   "g4_logprobs": false,
+   "g5_saw_image": false,
+   "status": 400,
+   "error": "{\"error\": \"Invalid request parameters.\", \"message\": \"{\\\"error\\\":{\\\"code\\\":\\\"validation_error\\\",\\\"message\\\":\\\"Function tools with reasoning_effort are not supported for global.openai.gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\\\",\\"
+  },
+  {
+   "model": "global.openai.gpt-5.6-luna",
+   "expected_mark": 401,
+   "expected_colour": "magenta",
+   "price": {
+    "in": 0.0002,
+    "out": 0.0012
+   },
+   "g1_http200": false,
+   "g2_tool_call": false,
+   "g3_schema_valid": false,
+   "g4_logprobs": false,
+   "g5_saw_image": false,
+   "status": 400,
+   "error": "{\"error\": \"Invalid request parameters.\", \"message\": \"{\\\"error\\\":{\\\"code\\\":\\\"validation_error\\\",\\\"message\\\":\\\"Function tools with reasoning_effort are not supported for global.openai.gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\\\",\\\""
+  },
+  {
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "expected_mark": 126,
+   "expected_colour": "teal",
+   "price": {
+    "in": 0.001,
+    "out": 0.005
+   },
+   "g1_http200": true,
+   "g2_tool_call": true,
+   "g3_schema_valid": true,
+   "g4_logprobs": true,
+   "g5_saw_image": true,
+   "status": 200,
+   "action": {
+    "action_type": "click",
+    "thought": "teal [126]",
+    "element_id": 126
+   },
+   "g5_colour_hit": true,
+   "g5_mark_hit": true,
+   "cost_usd": null,
+   "remaining_quota": {
+    "llm_cost": 1056.6164560700001,
+    "total_cost": 1056.6164560700001,
+    "budget_limit": 1680,
+    "remaining_budget": 623.38354393,
+    "budget_usage_percent": 62.89383667083334
+   }
+  }
+ ]
+}
