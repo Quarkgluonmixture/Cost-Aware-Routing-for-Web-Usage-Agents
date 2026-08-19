@@ -80,3 +80,24 @@ Cell **C** serves the third thing: every backbone in the study is open-weight, s
   pricing surprise like the one §471.2 found, where a recorded price was wrong by 6x)
 - wall-clock passes **2026-09-06** → halt regardless of progress
 - another site chain is found running → refuse to launch (host-global lease)
+
+---
+
+## Prediction, recorded before the fact (user, 2026-08-19, pre-smoke)
+
+> "b5 我估计会很强"
+
+Recorded because a prediction is only worth something if it is written before the
+number arrives. Concretely, "strong" resolves against the B0 comparators on the same
+cell — `cls·dom` SR **17.41%** (B0), 6.25% (B1), 1.34% (B2).
+
+| Outcome | What it means for this chain |
+|---|---|
+| B5 SR **> ~17%** | Prediction holds. Attack surface #3 is answered directly and `sol` is unnecessary. A2's d ≈ 23+, so the pair carries an interval. |
+| B5 SR **8-17%** | Prediction partly holds. d ≥ 10, pair still reportable, but "is the baseline strong enough" gets a hedged answer and `sol` becomes worth considering. |
+| B5 SR **< 8%** | Prediction fails. d < 10 ⇒ **A2 is descriptive only** (declared in the power section above). A weak frontier closed model on this benchmark would itself be a finding, but it is not the one this chain was built to buy. |
+
+Note the asymmetry that makes this worth writing down: a **high** B5 SR helps two
+claims at once (attack #3 *and* A2's power), while a low one costs the second without
+refuting the first. So the prediction being right is not neutral — it changes what the
+chain returns, and saying so now prevents a post-hoc reading either way.
