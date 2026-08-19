@@ -14,8 +14,15 @@
 #      on its own if the edit would break `literal_eval` — see §469.5)
 #   3. commit the registration
 #
-# It does NOT push. Committing autonomously is fine; pushing is not (standing rule).
-# Every registration therefore lands as a local commit and the ntfy says so.
+# IT PUSHES — but only these commits. The standing rule is that pushing needs explicit
+# confirmation; user granted it for this loop specifically (2026-08-19, in answer to
+# "要不要我把 push 也纳入自动化"). The grant is scoped by what this script can even
+# produce: a commit touching CLEAN_PAIRS and the two regenerated inventory artefacts,
+# for a pair that was declared before the fire. It is not a general licence, and
+# nothing else in the repo should read it as one.
+#
+# A failed push is reported, never swallowed: an unpushed registration looks identical
+# to a registration that never happened when the next session looks at the remote.
 #
 # The pairs it watches are the ones DECLARED in
 # docs/checkpoints/pre_run/reframe_chain_launch_intent_20260819.md. Nothing is
@@ -101,13 +108,29 @@ register_replicate_pair.py 已验证 literal_eval 仍可用且 validator 认得
 未 push (push 需显式确认)。
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>" >>"$LOG" 2>&1
-      say "  ${label}: registered + committed (NOT pushed)"
-      push "reframe: ${label} 已注册" "两臂完整, 已写入 CLEAN_PAIRS 并本地 commit。push 待确认。"
+      # push only the branch we are on, and only if the commit above actually made one
+      if git push -q 2>>"$LOG"; then
+        say "  ${label}: registered + committed + pushed"
+        push "reframe: ${label} 已注册" "两臂完整, 已写入 CLEAN_PAIRS, commit + push 完成。"
+      else
+        say "  ${label}: registered + committed but PUSH FAILED — see ${LOG}"
+        push "reframe: ${label} 注册了但 push 失败" \
+             "本地 commit 在, 远端没有。下次 pass 会重试; 若持续失败请手动 push。"
+      fi
     else
       say "  ${label}: registration REFUSED or rolled back — see ${LOG}"
       push "reframe 注册失败" "${label} 注册被拒或已回滚, 查 ${LOG}"
     fi
   done <<< "$DECLARED_PAIRS"
+
+  # Retry a push that failed on an earlier pass. Without this, one transient network
+  # failure would leave the registration local forever while the ntfy that reported it
+  # scrolls away.
+  if [ -n "$(git log --oneline "origin/$(git rev-parse --abbrev-ref HEAD)..HEAD" 2>/dev/null)" ]; then
+    if git push -q 2>>"$LOG"; then
+      say "pushed commits that an earlier pass could not"
+    fi
+  fi
 
   sleep "$INTERVAL"
 done
