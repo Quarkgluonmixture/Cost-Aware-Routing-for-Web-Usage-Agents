@@ -53,3 +53,62 @@ A per-cell run ID cannot be reserved in advance here — run IDs are minted at l
 timestamp and nonce. This file pins the *intent* (which conditions, what they replicate, how
 they may be read); it does not pin the identifiers. codex's stronger proposal — reserve IDs
 before spawning and record a launch nonce — remains open, and is the durable fix.
+
+---
+
+## AMENDMENT 2026-08-19 — cells 6-8 cancelled, with reason
+
+**Cancelled**: cell 6 (B1 × cls × phantom_som), cell 7 (B1 × cls × phantom_text),
+cell 8 (B1 × cls × phantom_prompt). Cells 1-5 stand: 1-3 landed and are registered
+in `CLEAN_PAIRS`, 4 landed and is registered, 5 is mid-flight (55/224 at 11:47Z) and
+is being allowed to finish.
+
+This file's own rule is "every cell below gets registered, whatever its number says",
+and that rule is about **not hiding a number after seeing it**. Cancelling cells 6-8
+is a different act — the numbers were never seen, and the reason is stated here before
+they could be. Written so the omission is auditable rather than silent.
+
+**Reason 1 — the measurement is already made, and it is a constant.** Cells 4 and 8's
+sibling arms have both landed, and both read **0.00%**:
+
+| pair | n | SR A→B | discordance | step-count differences |
+|---|---|---|---|---|
+| `B1.cls.som` | 224 | 14.29% → 14.29% | **0.00%** | 4 |
+| `B1.cls.vision` | 224 | 12.50% → 12.50% | **0.00%** | **0** |
+
+`B1.cls.vision` is the cell this file itself called "first B1 floor with any power"
+(d≈16.6, the highest of the five) — so a zero here is not a power artefact. Its 224
+episodes reproduce to the step. That matches the mechanism already established in
+§298.2 (B1 is dense and runs locally at temperature 0; 133/133 determinism under
+controlled replay), which predicts the remaining B1 cells return 0.00% as well.
+Cells 6-8 carry d≈8.9/10.1/8.9 — below this project's own d≥10 bar for quoting an
+interval — so they were inventory rather than measurement even before this.
+
+**Reason 2 — a B1 floor cannot bound a B0 effect anyway.** The eight registered pairs
+now split cleanly: B0's six arms sit at 10.27-14.29%, B1's two at 0.00%. That is the
+useful result — it locates the ~12% in B0's serving stack rather than in the benchmark,
+the agent, or VWA. But it also means the B1 floor constrains nothing about the effect
+sizes measured on B0. Adding four more zeros does not change what any claim may say.
+
+**Reason 3 — what the wall-clock buys instead.** Cells 6-8 run to ~08-22. The
+constraint that originally shaped this chain ("08-21 must be free to respond to the
+REALM verdict") turned out to rest on a wrong date: the verdict is **09-07**, and the
+thesis moved to **09-05** (笔记 §470.9 — the date has now flipped twice; 08-21 is the
+stale value). So the window is 19 days, not 2, and the argument for cancelling is no
+longer "keep the machine free" but "this is the least valuable thing the machine could
+be doing". Higher-value and direction-independent candidates: the reddit phantom
+floors (B0 × red × 3 phantom — the cls-side floors are what let §470.3 put a noise
+envelope on the unique-solve counts, and reddit currently has none), and validating
+the newly wired B5/GPT-5.6 path end-to-end on a real site.
+
+**What is NOT claimed**: that the remaining B1 cells would be 0.00%. They are unrun.
+The prediction is stated so it can be checked cheaply later — B1 costs no API budget,
+so any of cells 6-8 can be run at any time if a reviewer asks for the fourth, fifth
+and sixth zero.
+
+**Mechanics**: the chain orchestrator (`queue_chain.sh`, PID 1962767) is killed by PID.
+The cell-5 runner (2294686) and its watchdog (2294723) have PPID=1 and their own process
+groups — they are already daemonised and are unaffected. The orchestrator's per-cell
+work after a runner exits is *validation* (episode count, condition_id match), not
+production, so nothing is lost by its absence; that check is performed by hand when
+cell 5 lands, together with the sync and registration steps that were already manual.
