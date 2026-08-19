@@ -20,6 +20,10 @@ Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_noise_floor_inventory.
 | `B0.cls.dom` | B0 x classifieds, canonical n=224 | 224 | **7.14pp** | **4.91pp** | 12.05% |
 | `B0.cls.vision` | B0 x classifieds, canonical n=224 | 224 | **7.59pp** | **6.70pp** | 14.29% |
 | `B0.cls.som` | B0 x classifieds, canonical n=224 | 224 | **5.36pp** | **7.59pp** | 12.95% |
+| `B0.cls.ptext` | B0 x classifieds, canonical n=224 | 224 | **5.80pp** | **4.46pp** | 10.27% |
+| `B0.cls.pprompt` | B0 x classifieds, canonical n=224 | 224 | **7.59pp** | **4.91pp** | 12.50% |
+| `B0.cls.psom` | B0 x classifieds, canonical n=224 | 224 | **6.70pp** | **5.36pp** | 12.05% |
+| `B1.cls.som` | B0 x classifieds, canonical n=224 | 224 | **0.00pp** | **0.00pp** | 0.00% |
 | `B1.wa-red` (**new**) | B1 x WA-reddit, registered 10-task pilot draw x 5 modes | 50 | **2.00pp** | **4.00pp** | 6.00% |
 
 ### 1b. The mean-difference floor is two draws, not a bound
@@ -31,8 +35,12 @@ The set-difference functional above is the one claim 1 needs. Claims 3 and 4 com
 | `B0.cls.dom` | 224 | 27 | 2.23pp | **2.32pp** | 3.82pp | ±4.55pp |
 | `B0.cls.vision` | 224 | 32 | 0.89pp | **2.53pp** | 4.15pp | ±4.95pp |
 | `B0.cls.som` | 224 | 29 | 2.23pp | **2.40pp** | 3.95pp | ±4.71pp |
+| `B0.cls.ptext` | 224 | 23 | 1.34pp | **2.14pp** | 3.52pp | ±4.20pp |
+| `B0.cls.pprompt` | 224 | 28 | 2.68pp | **2.36pp** | 3.89pp | ±4.63pp |
+| `B0.cls.psom` | 224 | 27 | 1.34pp | **2.32pp** | 3.82pp | ±4.55pp |
+| `B1.cls.som` | 224 | 0 | 0.00pp | **0.00pp** | 0.00pp | ±0.00pp |
 
-⚠️ **The band's upper edge (2.23pp) is of the same order as one standard deviation (2.32–2.53pp).** So "clears the band" is not "clears the noise": an effect has to reach roughly **3.82–4.15pp** before a single rerun would be unlikely to produce it by itself. Both readings are reported because they answer different questions — *what did repetition actually deliver* (the two draws) versus *what could repetition deliver* (the null spread). Reading a 2.2pp effect against a 2.23pp "measured floor" is comparing a draw to a draw.
+⚠️ **The band's upper edge (2.68pp) is of the same order as one standard deviation (0.00–2.53pp).** So "clears the band" is not "clears the noise": an effect has to reach roughly **0.00–4.15pp** before a single rerun would be unlikely to produce it by itself. Both readings are reported because they answer different questions — *what did repetition actually deliver* (the two draws) versus *what could repetition deliver* (the null spread). Reading a 2.2pp effect against a 2.23pp "measured floor" is comparing a draw to a draw.
 
 🚫 **Scope of that threshold — it is NOT a general significance bar** (/stress gemini G1, 2026-08-16). `SD(ΔSR) = √d / n` is derived from **this pair's own discordance** `d`, i.e. from re-running ONE arm. A cross-mode contrast (say SoM − DOM) has its own, larger `d`, hence its own wider null; judging it against a rerun-derived bar borrows `Var(A − A′)` to adjudicate `A − B` and is a category error. The number above answers exactly one question — *could a single rerun of the same arm have manufactured this?* — which is the arm-count-matched comparison §2 makes. For any other contrast, compute that contrast's own off-diagonal counts (McNemar / its own permutation test).
 
@@ -62,7 +70,7 @@ A floor is only interpretable against a gain of the **same functional at the sam
 
 | cell | best single mode | +1 best **distinct representation** | +1 **rerun** (measured floor) | verdict |
 |---|---|---|---|---|
-| B0 · VWA-cls (n=224) | som @ 27.23% | **7.14pp** (dom) | 4.91 – 7.59pp | **indistinguishable — inside the rerun band** |
+| B0 · VWA-cls (n=224) | som @ 27.23% | **7.14pp** (dom) | 4.46 – 7.59pp | **indistinguishable — inside the rerun band** |
 | B1 · WA-red (n=104; floor = 5 modes × 10 shared tasks) | dom @ 16.35% | **4.81pp** (ptext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **indistinguishable — inside the rerun band** |
 | B0 · WA-red (n=104; no pilot → no floor) | ptext @ 35.58% | **5.77pp** (dom) | — | no floor measured on this cell |
 | B1 · VWA-cls (n=224) | som @ 14.29% | **4.91pp** (vision) | — | no floor measured on this cell |
@@ -73,7 +81,7 @@ A floor is only interpretable against a gain of the **same functional at the sam
 
 Two cells carry a floor, and they differ in model family, benchmark and serving path. On `B0 · VWA-cls` the extra representation lands **inside** the rerun band. On `B1 · WA-red` it lands **inside** the honest band. ⚠️ Corrected 2026-08-04: it read *just outside by 0.81pp* against a band pooled over 5 modes on one shared 10-task draw — 50 observations carrying 10 independent tasks. Against the unpooled per-mode floors the gain is comfortably inside. the same order, and on a floor estimated from only n=50. Neither cell shows a representation arm worth appreciably more than a rerun arm; one shows it worth no more at all.
 
-⚠️ **`B0 · VWA-cls` now carries 3 replicated arms, not one** (dom, vision, som) — the band above is the min/max over all of them. The `som` pair landed 2026-08-03 and it is the one that matters most: **claim 3 is about the fused arm, and until that day its floor was borrowed from DOM and Vision.** The borrowed band turned out to be right — SoM's own set-difference floor 5.36–7.59pp sits inside it and its mean-difference draw is 2.23pp, matching DOM's, so no number downstream moves. That is a robustness result rather than a correction, and it is worth more than the numbers: the claim no longer rests on an extrapolation.
+⚠️ **`B0 · VWA-cls` now carries 6 replicated arms, not one** (dom, vision, som, ptext, pprompt, psom) — the band above is the min/max over all of them. The `som` pair landed 2026-08-03 and it is the one that matters most: **claim 3 is about the fused arm, and until that day its floor was borrowed from DOM and Vision.** The borrowed band turned out to be right — SoM's own set-difference floor 5.36–7.59pp sits inside it and its mean-difference draw is 2.23pp, matching DOM's, so no number downstream moves. That is a robustness result rather than a correction, and it is worth more than the numbers: the claim no longer rests on an extrapolation.
 
 ### What this licenses, and what it does not
 

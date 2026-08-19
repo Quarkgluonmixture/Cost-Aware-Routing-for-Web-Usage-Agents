@@ -76,6 +76,29 @@ CLEAN_PAIRS = [
     ("B0.cls.som",
      "results/visualwebarena/phase1/B0_som_classifieds_20260526_041601_863239369_602235_R5313/phase1_som_router_0",
      "results/visualwebarena/phase1/B0_som_classifieds_20260803_084743_413015398_3677519_R30696/phase1_som_router_0"),
+    # --- The three phantom arms, registered 2026-08-19 --------------------------------
+    # Landed 2026-08-17/18 as cells 1-3 of the floor chain, the paid segment ($48). These
+    # are the arms the phantom-space claims are ABOUT, and until now the band they were
+    # read against was measured on DOM/Vision and borrowed. Launch intent was declared
+    # before the chain went out (pre_run/floor_chain_launch_intent_20260817.md), so per
+    # §469.7 these are registered as declared — not selected after seeing the numbers.
+    #
+    # POWER: d ≈ n × SR × 0.59 → P-text 20.7 / P-prompt 26.1 / P-SoM 20.7, all above the
+    # d≥10 bar (§468 / B-1972), so these rows carry intervals rather than inventory.
+    #
+    # First use of all six arms together: 实验笔记 §470.3 computes the 2^6 assignment
+    # envelope for unique-solve, the one metric replicate_metric_noise.json had exempted
+    # as "cross-mode by construction" — an exemption that only held while some arm lacked
+    # a replicate. See scripts/analysis/unique_solve_noise_envelope.py.
+    ("B0.cls.ptext",
+     "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183/phase1_phantom_text_router_0",
+     "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260817_092244_763693821_1962797_R20043/phase1_phantom_text_router_0"),
+    ("B0.cls.pprompt",
+     "results/visualwebarena/phase1/B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655/phase1_phantom_prompt_router_0",
+     "results/visualwebarena/phase1/B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207/phase1_phantom_prompt_router_0"),
+    ("B0.cls.psom",
+     "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031/phase1_phantom_som_router_0",
+     "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260818_040525_430521618_2113605_R13257/phase1_phantom_som_router_0"),
     # B1 arm, registered 2026-08-17. The replicate (R28065) ran to a full 224 episodes on
     # 2026-08-16 as the first cell of the floor chain, but was never registered here, so
     # `validate_fire_manifest.py` classified it a COMPLETE ghost against canonical R31705

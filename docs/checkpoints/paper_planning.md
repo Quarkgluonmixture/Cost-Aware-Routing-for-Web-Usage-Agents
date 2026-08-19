@@ -2739,3 +2739,71 @@ grep `docs/` 实测 2026-06-05 命中 (✅=已在 repo / ❌=absent, fresh ancho
 ⚠️ 经典文献 (Jensen-Meckling / Hardy / Thaler-Sunstein / PSD2 / DMA / Google Shopping 案) 真实存在但 **exact cite 仍须 verify** 再进 `docs/checkpoints/paper_drafts/paper.bib` (755 行); arXiv 类走 arXiv API curl 验. **本节列候选 anchor, 不是已锁 cite.**
 
 ---
+
+## §24 Per-step routing signal (U_t ⫨ F_t) + Computer-Use interface stack — 方向存档 (2026-08-19) [framing][future-work][design] #design
+
+> **来源**: user 2026-08-19 带来的两段与 GPT 的思想链 —— (a) 把「模型有多不确定」与「这一步在哪一层坏掉」**彻底分开**建模; (b) 2026 年 Computer Use 已经从「看截图报坐标」变成多层 interface stack, 因而存在**三个** router 而不是一个。
+>
+> **One-line decision**: **方向存档, 不是 paper-1 contribution, 也不是当前 reframe**。user 明确「reframe 可以等 cell 跑出来再说」。本节目的有二: ① 防丢(这条链信息量大, 散在对话里下个 session 必丢); ② **提前标死哪些能被现有数据支撑、哪些不能** —— 免得日后当成"现成的"去写。
+>
+> ⚠️ 记录时的 evidence 状态: §470 刚把 phantom 臂的 unique 打到噪声内, 所以**任何"我们已经有一个 routing 空间"的前提都要重新验**, 不能拿本节当它的替代叙事。
+
+### §24.1 两个变量必须分开 (user 的核心主张)
+
+- **U_t = 模型主观不确定度** = f(logit-probe, verbal-conf, thinking)
+- **F_t = 诊断变量, 回答「这一步坏在哪一层」**, 取值 `{Mechanical, F1..F5}`:
+
+| 层 | 名称 | 典型现象 | 该换表征吗 |
+|---|---|---|---|
+| M | Mechanical | timeout / tool error / selector 语法 / 协议错 | **否** → retry/recover |
+| F1 | Perception | 当前表征根本没暴露所需信息 | **强是** |
+| F2 | Grounding | 知道目标是什么, 但对不上具体元素 | **强是** |
+| F3 | Actionability | 看到也定位到了, 但表征不足以形成可靠 action (几何/拖拽) | 通常是 |
+| F4 | Transition | action 执行了但页面变化与预期不符 | **条件性** — 需 macro stagnation 佐证 |
+| F5 | Planning | 信息已足够, 但选错子目标/顺序 | **否** → replan |
+
+关键价值 = **F5 与 Mechanical 是安全阀**, 防止 router 退化成「一失败就上 Vision」。最终形式 `π(r_{t+1} | r_t, U_t, F_t, G_t, C_t)`, 其中 G_t = macro stagnation, C_t = 累计成本。
+
+### §24.2 P79 现有 schema 能支撑到哪 (2026-08-19 实证核过, 不是推测)
+
+| 需要的量 | 项目已有 | 位置 |
+|---|---|---|
+| U_t 的 L_t (logit) | ✅ `step_record["confidence"]` **但 B0 只填 4/6** — entropy 恒 None(proxy 只给 top-2, full-vocab entropy 不可恢复) | `proxy_api_agent.py:411-426` |
+| U_t 的 V_t (verbal) | ✅ `confidence["verbalized"]`, 从 `action.get("confidence")` clamp 到 [0,1] | `runner/main.py:4132-4142` |
+| U_t 的 T_t (thinking) | ⚠️ **`StepRecordV2` 无 typed 字段** — thought 只活在 `action` dict 与 artifact 里 | — |
+| F4 nochange | ✅ **`agent_visible_changed`**(5 个 AGENT_VISIBLE_REASONS) vs `page_changed`(12 reasons) | `state_change.py:175-190` |
+| F4 repeat | ✅ **三档** signature: strict / soft / **fuzzy**(同 role 不同 element_id 的语义环) | `runner/main.py:2851-2857` |
+| F4 revisit | ✅ `url_stuck_streak` + `state_change_reason_distribution` | `runner/main.py:2859-2860` |
+| F4 意图达成 | ✅ `prev_action_intent_fulfilled` (B-1891) | `runner/main.py:2842` |
+| Mechanical | ✅ `error_category` / `parse_failure_reason` / walk_fail `no_actionable_within_walk` | `types.py:78,87` |
+
+⭐ **B-09 那个拆分是硬前提**: probe 实测 **6/8 违例是 `page_changed=True` 但 agent 根本感知不到 delta**。用裸 `page_changed` 算 F4, 六成信号是假的。
+
+### §24.3 三个已知障碍 (写进任何 F_t 提案前必须先解决)
+
+1. **F2 在现有数据上跨 mode 不可测。** F2 最自然的 proxy = 幻觉引用率(locator error), 但 §397.9/§397.10 已判死跨 mode 比较: id 键空间分三套(native sparse 中位数 18729 / compact 1..K 中位数 17 / vision 无 id), **跨 namespace 比 = 比两个灵敏度不同的探测器**。而 router 恰恰只在跨 mode 时才需要 F2 信号。⇒ 需要一个 namespace-invariant 的 grounding-failure 判据, 这是设计工作不是标注工作。
+2. **taxonomy 默认 escalation 收益非负, 但项目有硬反例。** §299.1 四类机制: 类 A viewport-bound SoM marks 让 Save 按钮从不出现在任何 mark 里(同 task **DOM 反而 success**) · 类 B scroll 后 SoM 重渲染丢 price anchor · 类 C DOM 文本写 "Red/Black" 而 agent **看图**判成 orange · 类 D 标注图无 row/col 语义。汇总 **SoM failed_NO_HIT 59 vs DOM 22 (2.7×)**。⇒ F_t 该决定的是「**往哪个方向换**」而非「要不要升级」, 且需要一格容纳"更丰富通道自带 corruption"(类 C) —— GPT 的五层里没有。
+3. **`F_t = g(·)` 怎么算, 会撞上 presence-vs-causation 墙。** §299.6: per-rule 命中读作 **presence detector 非 causation**(dom 3/3 not causal, som 4/5 not causal)。pattern match 算 F_t 继承同一失效; LLM 判则在 routing 因果链上放了个 unvalidated judge。⇒ 需要 few-hundred-step 的人工 gold set 校准任何 `g(·)`。**这是纸面到可用之间唯一真正的工程距离。**
+
+### §24.4 Computer Use 的多层 interface stack (2026 现状)
+
+`API/MCP/CLI → DOM/CDP → AX/UIA → OCR/Vision → 坐标/真实输入`。至少**三个** router 同时在跑:
+
+- **Router 1 Interface** — 「这件事有没有必要动 GUI」。Anthropic 文档公开的优先级 `MCP → Bash → Chrome → Computer Use`(CU 最通用但最慢, 放最后)。
+- **Router 2 Representation** — 「为了理解这个界面我需要看到什么」。Cua Driver 做成显式 `capture_mode ∈ {ax, vision, som}`; Tactile 做 AX+OCR+Vision 融合成带 role/text/geometry/action 的 target object。**这一层与 P79 直接重合。**
+- **Router 3 Execution** — 「知道点谁之后, 怎样最便宜/最可靠/最不打扰用户地让它发生」。macOS: AX Action → PID-targeted event → 坐标; Windows: UIA Invoke → PostMessage → SendInput(**抢焦点**)。
+- ⭐ 由此「**抢不抢用户焦点**」本身成为 routing cost 的一个维度(`cost_focus` 0/0/1)。
+
+⚠️ **证据边界(记录时必须带)**: 官方 Codex Mac 的 CU MCP **未开源**; trycua/cua 与 open-codex-computer-use 是**复现/逆向证据不是官方实现**。另: Qwen-CUA(pure pixels, OSWorld-Verified 86.2) 与 Tactile/UFO²(结构语义层) 同时很强 ⇒ 当前证据支持「**不同 workload 有不同最优 interface**」, **不支持**任何一种表征赢麻了。**引用这些数字前须走 arXiv API 核实**(见 [[feedback-arxiv-api-for-verification]]) —— 本节数字全部来自对话转述, **未核**。
+
+### §24.5 P79 在这个 stack 里的真实位置
+
+`observation_type: "accessibility_tree"` ⇒ **五个 mode 的文本侧全在 AX/UIA 那一格**, Vision + SoM 图侧在 pixels 格。**DOM/CDP 格与 API/MCP 格都是空的**(§470.1)。所以 P79 = **一个 tier 的内部结构 × 一条 tier 边界**。
+
+两个可用的观察:
+- P79 的 `dom` 与 macOS `AXUIElement` / Windows UIA / Cua `capture_mode=ax` 是**同一个抽象层**(都是 OS/browser 从底层结构算出的 accessibility tree, 只是 provider 不同) ⇒ 发现天然可外推到 desktop CUA, 不是 web-only artifact。
+- **P79 其实已经踩到 Execution Router 了, 只是没当 contribution 写**: §295 落的 seq-keyed dispatch map 内嵌 `native_element_id` + `_dispatch_id_namespace` flag + fail-closed `_resolve_native_id` + locator-fallback/hover/type-escape 走 native id —— 这就是 web 版的 execution routing。codex R1/R2 抓的正是这条(「element_id 只是 bbox key」是错的, 它同时是 dispatch key)。
+
+### §24.6 剂量 (同 §23 的纪律)
+
+**paper-1 = 零**。毕设 09-01 不动; NAACL 稿是否用, **等 REALM 意见(08-21) + cell 数据**再定。若要用, 最小可辩护的形态是 §24.2 那张表 + §24.3 三个障碍的诚实披露, **不是**把 F1-F5 当成已验证的 taxonomy 端上去。
