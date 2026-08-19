@@ -5,13 +5,13 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "**2026-09-01 硬截止** — 剩 ~21 天。**全稿 v1 已落地 2026-08-11** (`final_dissertation/tex/`, 84 页, 7 章 + 4 附录 + 18 图, 编译 0 undefined / 0 overfull; Overleaf 6a7a7331d2e6523a360245d4 单向同步中)。已过三家 AI submission-ready 审计 (Claude 7 / gemini 10 / codex 11) 并全部修完 —— 其中两条改掉了 headline: C1 成本口径 13.7-35.3% → **1.6-35.3%** (SR 平局), 且六次重跑 vs 六个 mode 残差仅 3.53pp ⇒ C1 改判为『天花板的**价格**』而非高度。**已知攻击表已清空** (A1 欠采样 2026-08-11 关掉, 笔记 §453)。全篇 deslop 完成 (vale error 195→0, §454), **30 commits 已 push**。**剩余 = supervisor 反馈 + 页数预算 (等 AskUCL) + rubric #7/#13**"
+eta: "**2026-09-05 硬截止**（user 2026-08-19 从 09-01 延长）— 剩 ~17 天。**全稿 v1 已落地 2026-08-11** (`final_dissertation/tex/`, 84 页, 7 章 + 4 附录 + 18 图, 编译 0 undefined / 0 overfull; Overleaf 6a7a7331d2e6523a360245d4 单向同步中)。已过三家 AI submission-ready 审计 (Claude 7 / gemini 10 / codex 11) 并全部修完 —— 其中两条改掉了 headline: C1 成本口径 13.7-35.3% → **1.6-35.3%** (SR 平局), 且六次重跑 vs 六个 mode 残差仅 3.53pp ⇒ C1 改判为『天花板的**价格**』而非高度。**已知攻击表已清空** (A1 欠采样 2026-08-11 关掉, 笔记 §453)。全篇 deslop 完成 (vale error 195→0, §454), **30 commits 已 push**。**剩余 = supervisor 反馈 + 页数预算 (等 AskUCL) + rubric #7/#13**"
 detail: final_dissertation/
 created: 2026-06-10
-updated: 2026-08-11
+updated: 2026-08-19
 ---
 
-# Thesis full draft → 2026-09-01 硬截止
+# Thesis full draft → 2026-09-05 硬截止
 
 **落点 = `final_dissertation/`** (2026-08-08 user 指定; `final_dissertation/prior/` 放学长给的
 往届优秀作品作参照, 不必逐字读)。REALM 稿是结果章骨架来源, 但**毕设不是 REALM 稿的扩写** ——
@@ -27,7 +27,7 @@ C1 成本口径 **13.7-35.3% → 1.6-35.3%** (SR 平局按列表序破平选中�
 **剩余** = ① supervisor 反馈 ② 页数预算 (等 AskUCL, 别再搜公开资料) ③ rubric #7 (Zekun Wu 原文)
 ④ rubric #13 逐个 setting 补 justify。**不需要任何新实验**。
 
-原链 (已被 09-01 硬截止取代): results+discussion 07-24 (D8) → 全稿 v1 08-10 (D9)
+原链 (已被 09-05 硬截止取代): results+discussion 07-24 (D8) → 全稿 v1 08-10 (D9)
 → 修订完 08-24 (D10) → submission early-Sep (D11)。
 
 ## 学长毕设写作 rubric 13 条 (2026-07-24, 详 issue_advisor_sync_2026-07-24)

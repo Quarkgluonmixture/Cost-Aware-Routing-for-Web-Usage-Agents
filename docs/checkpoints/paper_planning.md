@@ -28,6 +28,11 @@
 
 ---
 
+
+> 🔴 **2026-08-19 日期更正（第二次翻转）**: REALM notif = **09-07**（不是 08-21）, 毕设 = **09-05**（从 09-01 延长）。
+> 本文件下方凡出现 "08-21 意见" / "09-01 毕设" 的推算**均按旧日期写成, 已 stale**（含"08-21 后可随时砍"
+> 这类排期语）。canonical = `_status/tasks/task_naacl2027_main.md` frontmatter。**别再把 09-07 翻成 08-21。**
+
 ## §1 Paper Hook + Tagline
 
 > **2026-05-03 reframe note** (updated 2026-05-18 /stress A2.6b B-1289 R3 phantom-space-construct-preservation + B-1284 cross-family claim-tier gate): Paper hook framing is **data-conditional** per pre-registered framing decision rule (R1-R5; see `docs/checkpoints/pre_run/preregistration.md` §2). The "core finding" below corresponds to **rule R1 (STRONGEST)** — applies if H1+H2+H3(i)+(ii) all hold post-rerun + Qwen 2-cell + B2 cross-family direction all pass. **If H3 axis-1 or H3 axis-2 fails (but the other axis passes), hook falls back to R3 ("Hero pass; Structural single-axis-evidence-only on phantom space — phantom routing space construct preserved as deployment arm of 2-axis structure with partial axis evidence; NOT a return to the single-construct '4th routing arm' framing"). The phantom space construct survives R3 because the deployment hero (P-SoM) + at least one axis of structural decomposition remain validated.** R5 triggers only when Qwen 2-cell H1 fails — R5 falsifies the P-SoM deployment-arm superiority claim over the 6-cell design, NOT the existence of the phantom concept space. **Cross-family claim-tier gate** (B-1284 /stress A2.6b P0-3-AC*, user Q1 hybrid decision 2026-05-18): B2 (Gemma3-VL) outcome additionally gates the cross-family claim tier — B2 fail → R-tier one-step downgrade + paper cannot claim cross-family / cross-capability robustness, but phantom space construct + Qwen-validated deployment claim survive (NOT R5 trigger). The Hero (P-SoM deployment) + Structural ablation (P-text/P-prompt non-overlap) + Framing-rule structure replaces the older "3-arm a-priori commit" framing — see `docs/reference/EVIDENCE_LAYER_AUDIT.md` §2 for epistemic rationale + §5 R1-R5 table for the data-conditional probability tree.
