@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# reframe_finalize_poller.sh — DGX-side unattended finalisation for the reframe chain.
+#
+# Runs on the DGX, not the A100, for one reason: the A100 has no git credentials
+# (`user.name` and `credential.helper` both unset, read-only remote access), so it
+# cannot register anything. Registration edits a tracked file and must be committed.
+# Data also only moves DGX-ward: the A100 cannot reach the DGX, so the sync has to be
+# pulled from this side.
+#
+# Each pass does three things, all idempotent:
+#   1. `sync_a100_results.sh` — pull whatever has landed
+#   2. for each declared pair whose BOTH arms are now complete: register it into
+#      CLEAN_PAIRS via register_replicate_pair.py (which verifies and rolls back
+#      on its own if the edit would break `literal_eval` — see §469.5)
+#   3. commit the registration
+#
+# It does NOT push. Committing autonomously is fine; pushing is not (standing rule).
+# Every registration therefore lands as a local commit and the ntfy says so.
+#
+# The pairs it watches are the ones DECLARED in
+# docs/checkpoints/pre_run/reframe_chain_launch_intent_20260819.md. Nothing is
+# discovered dynamically: a pair that was not declared before the fire does not get
+# registered by a background job (§469.7 — the whole point is that registration is
+# not a choice made after seeing the number).
+set -uo pipefail
+REPO="${P79_REPO:-/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents}"
+cd "$REPO" || exit 1
+NTFY="${NTFY_TOPIC:-p79-exp-dgx-spark}"
+PY="${REPO}/.venv/bin/python3"
+TS="$(date -u +%Y%m%d_%H%M%S)"
+LOG="${REPO}/logs/reframe_finalize_${TS}.log"
+DEADLINE_UTC="${DEADLINE_UTC:-2026-09-08}"
+INTERVAL="${INTERVAL:-1800}"
+
+say()  { echo "[finalize $(date -u '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
+push() { curl -s -m 20 -H "Title: $1" -d "$2" "https://ntfy.sh/${NTFY}" >/dev/null 2>&1 || true; }
+
+# label | canonical glob | replicate glob | cond id | expected n
+# A1 is whichever B5 dom run is OLDER, A2 the newer — assigned by fire order, not by
+# which number is nicer. Resolved at match time so the declaration needs no run ids.
+DECLARED_PAIRS="B5.cls.dom|B5_dom_classifieds_2*|phase1_dom_router_0|224"
+
+_complete() {  # <cond dir, repo-relative>
+  local f="${REPO}/$1/condition_summary_v2.json"
+  [ -s "$f" ] || return 1
+  SUMMARY_PATH="$f" EXPECT_N="$2" "$PY" -c "
+import json, os, sys
+d = json.load(open(os.environ['SUMMARY_PATH']))
+ep = d.get('episodes', d.get('total_tasks', d.get('num_tasks', d.get('scored_task_count', 0))))
+sys.exit(0 if isinstance(ep, int) and ep == int(os.environ['EXPECT_N']) else 1)
+" 2>/dev/null
+}
+
+say "poller armed — interval ${INTERVAL}s, deadline ${DEADLINE_UTC}, repo ${REPO}"
+
+while [[ "$(date -u +%F)" < "$DEADLINE_UTC" ]]; do
+  # ---- 1. pull whatever landed -------------------------------------------
+  # SKIP_SYNC exists so the registration half can be exercised on its own — both for
+  # testing and for the case where sync is broken but data is already local.
+  if [ "${SKIP_SYNC:-0}" = "1" ]; then
+    say "sync skipped (SKIP_SYNC=1)"
+  elif bash scripts/maintenance/sync_a100_results.sh >>"$LOG" 2>&1; then
+    say "sync ok"
+  else
+    say "sync returned nonzero (continuing; next pass retries)"
+  fi
+
+  # ---- 2. register any declared pair that is now complete on both arms ----
+  while IFS='|' read -r label glob cond expn; do
+    [ -z "$label" ] && continue
+    "$PY" scripts/analysis/register_replicate_pair.py --label "$label" \
+        --canonical x --replicate y --expected-n "$expn" 2>/dev/null \
+        | grep -q "already registered" && continue
+
+    # two runs matching the glob = the pair; oldest is arm A by fire order
+    mapfile -t runs < <(ls -dtr "${REPO}"/results/visualwebarena/phase1/${glob} 2>/dev/null)
+    if [ "${#runs[@]}" -lt 2 ]; then
+      say "  ${label}: ${#runs[@]}/2 runs present — waiting"
+      continue
+    fi
+    A="results/visualwebarena/phase1/$(basename "${runs[0]}")/${cond}"
+    B="results/visualwebarena/phase1/$(basename "${runs[-1]}")/${cond}"
+    if ! _complete "$A" "$expn" || ! _complete "$B" "$expn"; then
+      say "  ${label}: both runs present but not both complete — waiting"
+      continue
+    fi
+    say "  ${label}: both arms complete → registering"
+    if "$PY" scripts/analysis/register_replicate_pair.py \
+         --label "$label" --canonical "$A" --replicate "$B" --expected-n "$expn" \
+         --note "reframe chain, intent reframe_chain_launch_intent_20260819.md" >>"$LOG" 2>&1; then
+      git add scripts/analysis/aggregate_noise_floor_inventory.py \
+              docs/analysis/cross_sites/noise_floor_inventory.md \
+              docs/analysis/cross_sites/noise_floor_inventory.json 2>/dev/null
+      git commit -q -m "注册 ${label} 进 CLEAN_PAIRS (reframe chain 自动收尾)
+
+发车前意图已在 reframe_chain_launch_intent_20260819.md 声明该 pair,
+本次为 '落地后照单全收' 的执行 (§469.7)。两臂各 ${expn} episode 完整,
+register_replicate_pair.py 已验证 literal_eval 仍可用且 validator 认得
+新条目 — 那条链断了会把所有 replicate 判成 ghost (§469.5)。
+
+未 push (push 需显式确认)。
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>" >>"$LOG" 2>&1
+      say "  ${label}: registered + committed (NOT pushed)"
+      push "reframe: ${label} 已注册" "两臂完整, 已写入 CLEAN_PAIRS 并本地 commit。push 待确认。"
+    else
+      say "  ${label}: registration REFUSED or rolled back — see ${LOG}"
+      push "reframe 注册失败" "${label} 注册被拒或已回滚, 查 ${LOG}"
+    fi
+  done <<< "$DECLARED_PAIRS"
+
+  sleep "$INTERVAL"
+done
+
+say "poller reached deadline ${DEADLINE_UTC} — exiting"
+push "reframe poller 退出" "到达 deadline ${DEADLINE_UTC}"
