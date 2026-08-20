@@ -262,6 +262,48 @@
    "episodes": 205,
    "bound_date": "2026-07-25",
    "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "shopping|B0|dom": {
+   "run_id": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "condition_id": "phase1_dom_router_0",
+   "episodes": 435,
+   "bound_date": "2026-08-20",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "shopping|B0|som": {
+   "run_id": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "condition_id": "phase1_som_router_0",
+   "episodes": 435,
+   "bound_date": "2026-08-20",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "shopping|B0|vision": {
+   "run_id": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "condition_id": "phase1_vision_router_0",
+   "episodes": 435,
+   "bound_date": "2026-08-20",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "shopping|B1|dom": {
+   "run_id": "B1_dom_shopping_20260809",
+   "condition_id": "phase1_dom_router_0",
+   "episodes": 435,
+   "bound_date": "2026-08-20",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "shopping|B1|som": {
+   "run_id": "B1_som_shopping_20260812",
+   "condition_id": "phase1_som_router_0",
+   "episodes": 435,
+   "bound_date": "2026-08-20",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
+  },
+  "shopping|B1|phantom_som": {
+   "run_id": "B1_phantom_som_shopping_20260814",
+   "condition_id": "phase1_phantom_som_router_0",
+   "episodes": 435,
+   "bound_date": "2026-08-20",
+   "bound_by": "validate_fire_manifest --apply (in-pipeline auto-bind)"
   }
  }
 }
