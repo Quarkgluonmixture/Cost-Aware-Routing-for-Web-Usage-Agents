@@ -21,6 +21,15 @@
 # for a pair that was declared before the fire. It is not a general licence, and
 # nothing else in the repo should read it as one.
 #
+# ⚠️ B-1982 (2026-08-20) — THE ABOVE PARAGRAPH WAS FALSE AS WRITTEN, AND HAD TO BE MADE
+# TRUE. `git push` pushes the BRANCH, not the commit the script just made. So the grant's
+# premise ("scoped by what this script can even produce") did not hold: any commit any
+# human left on the branch went out with it. Observed 2026-08-20 09:23Z — the retry block
+# at the bottom of the loop pushed three unrelated commits made 11 minutes earlier in an
+# interactive session, none of them a registration, without anyone confirming. Both push
+# sites now go through `_scoped_push`, which refuses unless EVERY commit ahead of origin
+# is one this script authored (subject line + touched-paths allowlist).
+#
 # A failed push is reported, never swallowed: an unpushed registration looks identical
 # to a registration that never happened when the next session looks at the remote.
 #
@@ -41,6 +50,45 @@ INTERVAL="${INTERVAL:-1800}"
 
 say()  { echo "[finalize $(date -u '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 push() { curl -s -m 20 -H "Title: $1" -d "$2" "https://ntfy.sh/${NTFY}" >/dev/null 2>&1 || true; }
+
+# B-1982. Push only if every commit ahead of origin is one this script produced.
+# Two independent conditions, because either alone is forgeable by accident: the
+# subject line this script writes, AND the three paths it is allowed to touch.
+_POLLER_SUBJECT_RE='^注册 .* 进 CLEAN_PAIRS \(reframe chain 自动收尾\)$'
+_poller_authored_only() {
+  local br ahead sha files f
+  br="$(git rev-parse --abbrev-ref HEAD)" || return 1
+  ahead="$(git log --format=%H "origin/${br}..HEAD" 2>/dev/null)" || return 1
+  [ -n "$ahead" ] || return 1                      # nothing to push
+  while read -r sha; do
+    [ -z "$sha" ] && continue
+    git log -1 --format=%s "$sha" | grep -qE "$_POLLER_SUBJECT_RE" || return 1
+    files="$(git show --name-only --format= "$sha")"
+    while read -r f; do
+      [ -z "$f" ] && continue
+      case "$f" in
+        scripts/analysis/aggregate_noise_floor_inventory.py) ;;
+        docs/analysis/cross_sites/noise_floor_inventory.md)  ;;
+        docs/analysis/cross_sites/noise_floor_inventory.json) ;;
+        *) return 1 ;;
+      esac
+    done <<< "$files"
+  done <<< "$ahead"
+  return 0
+}
+_scoped_push() {  # returns 0 on a successful push, 1 otherwise; never pushes foreign commits
+  local br
+  br="$(git rev-parse --abbrev-ref HEAD)"
+  if ! _poller_authored_only; then
+    if [ -n "$(git log --oneline "origin/${br}..HEAD" 2>/dev/null)" ]; then
+      say "REFUSING to push: commits ahead of origin/${br} were not authored by this script (B-1982)"
+      git log --oneline "origin/${br}..HEAD" | while read -r l; do say "    $l"; done
+      push "reframe poller 拒绝 push" "分支上有非本脚本的 commit, 按 B-1982 不代推。需要人工 push。"
+    fi
+    return 1
+  fi
+  git push -q 2>>"$LOG"
+}
 
 # label | canonical glob | replicate glob | cond id | expected n
 # A1 is whichever B5 dom run is OLDER, A2 the newer — assigned by fire order, not by
@@ -109,7 +157,7 @@ register_replicate_pair.py 已验证 literal_eval 仍可用且 validator 认得
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>" >>"$LOG" 2>&1
       # push only the branch we are on, and only if the commit above actually made one
-      if git push -q 2>>"$LOG"; then
+      if _scoped_push; then
         say "  ${label}: registered + committed + pushed"
         push "reframe: ${label} 已注册" "两臂完整, 已写入 CLEAN_PAIRS, commit + push 完成。"
       else
@@ -127,7 +175,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>" >>"$LOG" 2>&
   # failure would leave the registration local forever while the ntfy that reported it
   # scrolls away.
   if [ -n "$(git log --oneline "origin/$(git rev-parse --abbrev-ref HEAD)..HEAD" 2>/dev/null)" ]; then
-    if git push -q 2>>"$LOG"; then
+    if _scoped_push; then
       say "pushed commits that an earlier pass could not"
     fi
   fi

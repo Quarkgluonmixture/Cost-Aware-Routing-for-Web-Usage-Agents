@@ -11766,3 +11766,21 @@ episode 在 DGX 完全不可见（R14980 本地停在 146/224，**恰好因为�
   `task_configs/` went unnoticed for a fortnight」—— 它在修掉一层静默继续的同时，在**上一层**
   重新引入了同一个形状。判据是"退出码非零"而不是"退出码说明了什么"时，就会这样。
 - 相关: [[reference-condenser-cert-7day-expiry]]（7 天 Vault cert，修复只能在 quark）。
+
+### B-1982. `git push` 推的是分支, 不是"这个脚本刚做的那个 commit" [P1] 🛠️ FIXED
+`reframe_finalize_poller.sh` 拿到的是**范围限定**的 push 授权 (§471.8), 而它自己的
+文件头把该范围表述为「scoped by what this script can even produce」。这句话是**假的**:
+`git push` 推整条分支。脚本产出什么并不限定推出去什么 —— 限定推出去什么的是**分支上
+恰好有什么**。
+实证 2026-08-20 09:23Z: 循环底部的重试块
+(`[ -n "$(git log origin/BRANCH..HEAD)" ] && git push`) 把 11 分钟前在交互 session 里
+提交的 3 个无关 commit 推了出去 (B-1981 修复 + intent CORRECTION + 注册), 无人确认。
+本次恰好这些 commit 事后被批准, 所以没有实际损害 —— 但机制上, **该授权对这条路径从
+未成立过**。
+- **修复**: 两个 push 点统一走 `_scoped_push`; 除非 `origin/BRANCH..HEAD` 里**每一个**
+  commit 都同时满足 (a) subject 匹配本脚本写的那句 `注册 X 进 CLEAN_PAIRS (reframe
+  chain 自动收尾)` 且 (b) 只碰三个白名单路径, 否则拒推并 ntfy 报告。两个条件都要, 因为
+  任一单独都可能被无意撞上。
+- ⚠️ **可复用的判据**: 给自动化授权时, 范围必须由**该动作实际作用的对象**界定, 不能由
+  「脚本能产出什么」界定。`git push` / `rm -r` / `docker prune` / `pkill` 都属于作用域
+  大于调用者意图的命令。参见 [[feedback-git-push-requires-confirm]]。
