@@ -1105,6 +1105,16 @@ assert_no_other_site_chain_running() {
   # one's own key is necessarily a PREVIOUS chain, never oneself. The
   # runner-pgrep check keeps the skip — a same-site runner may legitimately be
   # the one this launch is resuming, and matching it would also risk self-match.
+  # B-1987 (2026-08-20): `local`. Without it this loop leaks `site` into the
+  # CALLER's scope — bash functions are dynamically scoped, and this file is
+  # sourced, so a caller with its own `local site` gets it overwritten with the
+  # loop's last value ("shop"). `_reframe_chain.sh:run_phase` is exactly that
+  # caller: it passed "classifieds", and every line after the lease check —
+  # including the ntfy that tells a human which site the host is busy with —
+  # then said "shop". Nothing ran on the wrong site (the cells come from the
+  # spec, not from `$site`), but under the one-site-chain-per-host rule a
+  # message naming the wrong site is how a second chain gets started.
+  local site
   for site in cls red shop; do
     # Pidfile check first (closes 30-90s chain bash prep race window)
     local pidfile="${pidfile_dir}/queue_phase1_${site}.latest.pid"

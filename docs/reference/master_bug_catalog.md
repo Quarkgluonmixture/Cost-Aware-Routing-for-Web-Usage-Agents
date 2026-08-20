@@ -11852,3 +11852,20 @@ message, 例如 `Function tools with reasoning_effort are not supported`)**只�
   与既有的 tool-use 替换一并 disclose (二者是同一类 format-only change)。
 - ⚠️ 锚句找不到时**raise 而不是静默 no-op** —— 静默 no-op 会把 B5 打回 0 valid action 且日志
   里没有任何线索, 正是 B-1985 的失效形状。
+
+### B-1987. sourced 函数的循环变量没 `local`, 漏进调用方作用域 [P2] 🛠️ FIXED
+`_lib_paper_grade_gates.sh` 的 `assert_no_other_site_chain_running` 里 `for site in cls red
+shop` **没有 `local site`**。bash 函数是**动态作用域**且该文件是被 source 的 ⇒ 调用方自己的
+`local site` 被循环的最后一个值 **`shop`** 覆盖。
+实证 2026-08-20 生产日志: `_reframe_chain.sh:run_phase` 传的是 `classifieds`, lease 检查之后
+每一行都写着 shop —— 包括那条**告诉人类这台机在忙哪个站点的 ntfy**:
+`phase A: host lease OK (site=shop)` / `launching 1 cell(s) on shop`, 而实际跑的是
+`B5_dom_classifieds_*`。
+- **没有跑错东西**: cells 来自 `$spec` 而不是 `$site`; 其余调用方 (`_b1_floor_watcher.sh` /
+  `queue_phase1_router_paper_grade.sh`) 传字面量且调用后不复用 `$site`。
+- ⚠️ **但它是操作层的真危险**: 在「同物理 host 同时只能跑一条 site chain」这条硬规则下,
+  一条写着 shop 而实际在跑 classifieds 的通知, 正好是让人再起一条 cls chain 的信号。
+- **修复**: 加 `local site`。红/绿两态实测 (抽掉 → caller 得 `shop`; 加回 → `classifieds`),
+  与生产日志的表现一致。
+- ⚠️ 可复用判据: **被 source 的 shell 库里, 每一个循环变量和临时变量都必须 `local`** —— 它们
+  不在自己的作用域里跑, 而在调用方的作用域里跑。
