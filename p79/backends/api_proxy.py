@@ -139,6 +139,24 @@ class ApiProxyBackend:
                     "api_key_env": _api_key_env_validated,
                     # Plan A/B: tool_use + GLM fallback (§67)
                     "use_tool_calling": config.get("use_tool_calling", False),
+                    # B-1985 (2026-08-20). These three were read by the agent and
+                    # NEVER forwarded here, so a yaml that set them was obeyed by
+                    # nobody. `agent_cfg["model"]` is an explicit allowlist, and an
+                    # allowlist silently drops what it does not name — the same shape
+                    # B-340 fixed for `paper_grade` ("agent_cfg was a strict subset
+                    # that dropped top-level config keys ... B-340 raise inert"), back
+                    # again for three more keys. What it cost: B5's
+                    # `structured_output: "response_format"` never reached the agent,
+                    # which defaulted to "tool_calls", attached `tools` to a model that
+                    # rejects them, and every B5 episode died at step 0 with HTTP 400.
+                    # The B-1990 guard written to catch exactly that misconfiguration
+                    # was disarmed by the same dropped key: it fires only when
+                    # `_structured_output == "response_format"`, which could never be
+                    # true. tests/test_b1985_model_cfg_forwarding.py now derives both
+                    # sides from source so the next omission fails a test, not a fire.
+                    "structured_output": config.get("structured_output", "tool_calls"),
+                    "logprobs_unavailable": config.get("logprobs_unavailable", False),
+                    "image_format": config.get("image_format", "auto"),
                     "use_glm_fallback": config.get("use_glm_fallback", False),
                     "glm_config": config.get("glm_config", ".auth/glm"),
                     # B-568 (/stress A1.22 P1-10-A Claude, 2026-05-17): forward

@@ -11814,3 +11814,21 @@ message, 例如 `Function tools with reasoning_effort are not supported`)**只�
   单条 4xx 撑爆, 且 artifacts 里已有原始 observation。
 - ⚠️ 可复用判据: **凡是"远端告诉你为什么"的通道, 不要在错误路径上把它扔掉**。`raise_for_status`
   / `check=True` / `|| exit 1` 都属于这一类 —— 它们把"失败了"保留下来, 把"为什么"丢掉。
+
+### B-1985. backend→agent 的 `model` cfg 是白名单, 三个键从来没被转发过 [P0] 🛠️ FIXED
+`ApiProxyBackend.__init__` 用**显式白名单**拼 `agent_cfg["model"]`。白名单会**静默丢弃**它没
+点名的键 —— 一个没人转发的 yaml 键就是**没人遵守**的键, 而且什么都不报错, run 表现得就像
+操作者从没写过那一行。源码对拍三个键被丢: **`structured_output`** · **`logprobs_unavailable`**
+· `image_format`。
+- **代价**: B5 的 `structured_output: "response_format"` 从未到达 agent ⇒ agent 取默认值
+  `"tool_calls"` ⇒ 给一个**明确拒绝 tools 的模型**挂上 `tools` ⇒ 每个 B5 episode 在第 0 步
+  400 死亡 (`Function tools with reasoning_effort are not supported`)。
+- ⚠️ **写来抓这件事的守卫被同一个动作解除了武装**: B-1990 那道「paper-grade + response_format
+  必须同时声明 `logprobs_unavailable`」的 raise, 前提是 `_structured_output == "response_format"`
+  —— 而这永远不可能为真。**守卫和它要守的东西依赖同一个坏掉的通道时, 守卫不会响。**
+- ⚠️ **形状是复发**: B-340 已经为 `paper_grade` 修过同一个洞, 当时的注释就写着「agent_cfg was a
+  strict subset that dropped top-level config keys → B-340 raise inert」。**修一个键不改变形状**,
+  白名单还会再漏下一个。
+- **修复**: 转发三个键 + 新增 `tests/test_b1985_model_cfg_forwarding.py` —— 它**从源码两侧各自
+  推导集合** (agent 的 `model_cfg.get("x")` vs backend 转发块的键) 并断言差集为空。以后在 agent
+  里新读一个键而忘了转发, 挂的是测试不是 fire。红/绿两态均已实测。
