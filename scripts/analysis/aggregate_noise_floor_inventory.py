@@ -127,6 +127,10 @@ CLEAN_PAIRS = [
     ("B1.cls.som",
      "results/visualwebarena/phase1/B1_som_classifieds_20260604_072456_562166453_226675_R31705/phase1_som_router_0",
      "results/visualwebarena/phase1/B1_som_classifieds_20260816_150005_118867835_1831739_R28065/phase1_som_router_0"),
+    # Registered floor chain cell 5, intent 20260817 + AMENDMENT 20260819; descriptive only (d≈8.3 < 10).
+    ("B1.cls.dom",
+     "results/visualwebarena/phase1/B1_dom_classifieds_20260603_103630_477435114_112846_R17188/phase1_dom_router_0",
+     "results/visualwebarena/phase1/B1_dom_classifieds_20260819_071630_802155540_2293406_R14980/phase1_dom_router_0"),
 ]
 
 # A replicate that is still running has a task set that merely LOOKS like a scored universe:
@@ -254,9 +258,14 @@ def compute_clean_pairs(allow_partial: bool = False) -> list[dict]:
                                          "--allow-partial-replicate to inspect it anyway.")
             LOG.warning("PARTIAL %s", msg)
         st = _pair_stats(sa, sb, restrict=sorted(scored))
+        # The baseline was hardcoded "B0" here until 2026-08-20. CLEAN_PAIRS has held
+        # B1 pairs since B1.cls.som was registered, so every B1 row in the published
+        # table read "B0 x classifieds" — a table whose whole point is that B0 and B1
+        # floors differ by an order of magnitude. Derive it from the label instead.
+        _baseline = label.split(".")[0]
         st.update(label=label,
-                  scope=("B0 x classifieds, canonical n=224" if not missing
-                         else f"B0 x classifieds, PARTIAL n={st['n']} of {len(scored)}"),
+                  scope=(f"{_baseline} x classifieds, canonical n=224" if not missing
+                         else f"{_baseline} x classifieds, PARTIAL n={st['n']} of {len(scored)}"),
                   partial=bool(missing), n_missing=len(missing),
                   arm_a=str(pa.relative_to(REPO)), arm_b=str(pb.relative_to(REPO)))
         rows.append(st)
