@@ -85,8 +85,23 @@ git fetch origin "$BRANCH" >>"$LOG" 2>&1 || die "git fetch failed"
 git checkout -B "$BRANCH" "origin/${BRANCH}" >>"$LOG" 2>&1 || die "git checkout failed"
 NOW_SHA="$(git rev-parse --short HEAD)"
 say "now at ${NOW_SHA} on ${BRANCH}"
-if [ -n "$TARGET_SHA" ] && [ "$NOW_SHA" != "$TARGET_SHA" ]; then
-  die "expected ${TARGET_SHA}, got ${NOW_SHA} — someone pushed in between"
+# B-1983 (2026-08-20). This used to be a STRING comparison of two `--short` SHAs, and
+# `--short` has no fixed length: git picks the shortest unambiguous prefix, which depends
+# on how many objects the repo holds. The DGX abbreviates to 7, this host to 8 — so a pin
+# handed over from the dev machine could NEVER match here, whatever the commit was. The
+# 2026-08-19 03:32Z abort reported "expected a449abb, got defc809b — someone pushed in
+# between"; a push had indeed happened, which made the message look like a complete
+# diagnosis and hid the fact that the check was unconditionally broken underneath it.
+# Resolve both sides to full object names instead; that is length-agnostic and also
+# accepts a full SHA, a tag, or any other rev the operator passes.
+if [ -n "$TARGET_SHA" ]; then
+  WANT_SHA="$(git rev-parse --verify --quiet "${TARGET_SHA}^{commit}" || true)"
+  HAVE_SHA="$(git rev-parse --verify HEAD)"
+  [ -n "$WANT_SHA" ] || die "TARGET_SHA '${TARGET_SHA}' does not resolve to a commit here"
+  if [ "$WANT_SHA" != "$HAVE_SHA" ]; then
+    die "expected ${TARGET_SHA} (${WANT_SHA}), got ${NOW_SHA} (${HAVE_SHA}) — someone pushed in between"
+  fi
+  say "  SHA pin OK (${WANT_SHA})"
 fi
 
 # ---- 3. verify ON THIS HOST (§469.4 / §469.5) ------------------------------
