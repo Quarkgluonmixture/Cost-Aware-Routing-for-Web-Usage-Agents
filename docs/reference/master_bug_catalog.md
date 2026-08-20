@@ -11869,3 +11869,21 @@ shop` **没有 `local site`**。bash 函数是**动态作用域**且该文件是
   与生产日志的表现一致。
 - ⚠️ 可复用判据: **被 source 的 shell 库里, 每一个循环变量和临时变量都必须 `local`** —— 它们
   不在自己的作用域里跑, 而在调用方的作用域里跑。
+
+### B-1988. 部署前的 `git stash push -u` 静默吞掉本机产生的 tracked 数据 [P0] 🛠️ FIXED
+`_reframe_bootstrap.sh` 部署前 `git stash push -u`, 注释写的是「verified redundant」。**对大多数
+文件是, 对两个不是**: `fire_manifest.json` (watchdog auto-bind 写) 与
+`quarantine_registry.jsonl` (paper-grade abort 追加) 是**在 fire 机上产生**的, 而 fire 机**没有
+git 凭据** (§471.8) ⇒ 它们只活在工作树里, 直到有人手工拉回 DGX。stash 把它们扫进一个**没有任何
+东西会去看**的地方。
+- **实测损失 (2026-08-20 盘点)**: **9 条** quarantine/classification 事件, 跨 08-16 → 08-20, 其中
+  **3 条是带完整论证的人工裁定** (B4 的 Anthropic-native vs OpenAI-shape 协议墙 ×2 + B-1980 v1
+  守卫「判形状不判损失」)。`fire_manifest` 的 6 条 shopping 绑定挨了同一刀, **只因为 watchdog
+  恰好在一分钟后重绑了一遍才没丢** —— 那次是运气不是设计。
+- ⚠️ **失效形态是"通知与状态互相矛盾, 两边都不报错"**: ntfy 说
+  `QUARANTINE task 0 — manual review`, 操作者照着跑 `quarantine_registry.py query` 得到
+  `quarantine_count: 0`, 因为事件在 `stash@{N}` 里。
+- **修复**: 部署前把这两个文件**复制到 repo 之外** (`/home/ubuntu/_a100_pending/<ts>/`) 并 ntfy
+  点名, 再 stash。选复制而不是 halt: halt 会挡住每一次跟在 auto-bind 之后的部署, 也就是绝大多数。
+- ⚠️ 根因**没有**被这个修复消除: A100 能产生 tracked 改动却推不出去, 这个不对称是结构性的
+  (§471.8)。任何新的 A100 侧自动化只要写 tracked 文件, 就要进 `_HOST_AUTHORED` 名单。

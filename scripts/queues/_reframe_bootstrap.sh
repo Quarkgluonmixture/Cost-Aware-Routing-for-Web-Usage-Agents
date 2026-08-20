@@ -79,6 +79,40 @@ fi
 pgrep -f "run_experiment.py" >/dev/null 2>&1 && die "a runner is still active; refusing to change fire code"
 
 # ---- 2. deploy -------------------------------------------------------------
+# B-1988 (2026-08-20). The stash below is NOT redundant for every file. Some tracked
+# files are WRITTEN ON THIS HOST by the watchdog and the runner — the manifest the
+# auto-bind fills in, and the quarantine registry the paper-grade abort appends to —
+# and this host has no git credentials (§471.8), so those writes live only in the
+# working tree until a human pulls them to the DGX. `git stash push -u` sweeps them
+# into a stash where nothing looks for them: `quarantine_registry.py query` reports
+# zero events while the events sit in stash@{N}, so the ntfy that says "manual review"
+# points at an empty queue.
+# Measured the day this was written: 9 events lost that way, 2026-08-16 → 08-20,
+# including three human classifications with written rationale (the B4 protocol-wall
+# smokes and the B-1980 shape-vs-loss guard). The fire_manifest's 6 shopping bindings
+# survived the same sweep only because the watchdog happened to rebind them a minute
+# later. So: copy them out of the repo FIRST, where a later sync can still find them,
+# and say so loudly. Copy rather than halt — halting would block every deploy that
+# follows an auto-bind, which is most of them.
+_HOST_AUTHORED=(
+  "docs/checkpoints/pre_run/fire_manifest.json"
+  "docs/checkpoints/quarantine_registry.jsonl"
+)
+_PENDING_DIR="/home/ubuntu/_a100_pending/${TS}"
+_preserved=()
+for _f in "${_HOST_AUTHORED[@]}"; do
+  if [ -n "$(git status --porcelain -- "$_f" 2>/dev/null)" ]; then
+    mkdir -p "${_PENDING_DIR}/$(dirname "$_f")"
+    cp -a "$_f" "${_PENDING_DIR}/$_f" 2>/dev/null && _preserved+=("$_f")
+  fi
+done
+if [ ${#_preserved[@]} -gt 0 ]; then
+  say "PRESERVING ${#_preserved[@]} host-authored file(s) to ${_PENDING_DIR} before stashing:"
+  for _f in "${_preserved[@]}"; do say "    ${_f}"; done
+  push "P79 A100 有未同步的本机产物" \
+    "部署前已复制 ${#_preserved[@]} 个文件到 ${_PENDING_DIR} (A100 推不了 git, stash 会把它们埋掉)。请 sync 到 DGX 并提交。"
+fi
+
 say "stashing local working tree (verified redundant, kept as a way back)"
 git stash push -u -m "pre-reframe-bootstrap ${TS}" >>"$LOG" 2>&1 || say "  (nothing to stash)"
 git fetch origin "$BRANCH" >>"$LOG" 2>&1 || die "git fetch failed"
