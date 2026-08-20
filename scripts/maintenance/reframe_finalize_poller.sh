@@ -80,14 +80,35 @@ _scoped_push() {  # returns 0 on a successful push, 1 otherwise; never pushes fo
   local br
   br="$(git rev-parse --abbrev-ref HEAD)"
   if ! _poller_authored_only; then
-    if [ -n "$(git log --oneline "origin/${br}..HEAD" 2>/dev/null)" ]; then
+    local blocked; blocked="$(git log --oneline "origin/${br}..HEAD" 2>/dev/null)"
+    if [ -n "$blocked" ]; then
       say "REFUSING to push: commits ahead of origin/${br} were not authored by this script (B-1982)"
-      git log --oneline "origin/${br}..HEAD" | while read -r l; do say "    $l"; done
-      push "reframe poller 拒绝 push" "分支上有非本脚本的 commit, 按 B-1982 不代推。需要人工 push。"
+      echo "$blocked" | while read -r l; do say "    $l"; done
+      # B-1989 (2026-08-20): notify on CHANGE, not on every pass. The first version
+      # pushed one ntfy per 30-minute pass for as long as the branch stayed ahead —
+      # 5 identical messages in 2 hours, on track for ~48/day, none carrying anything
+      # the previous one had not. A notification that repeats without new information
+      # is how a channel stops being read, and this channel is also where the fire's
+      # real alarms land. Fingerprint what is blocked; speak only when it changes.
+      local fp seen_fp="" fpfile="${REPO}/logs/.poller_push_block.fp"
+      fp="$(printf '%s' "$blocked" | cksum | awk '{print $1}')"
+      [ -f "$fpfile" ] && seen_fp="$(cat "$fpfile" 2>/dev/null)"
+      if [ "$fp" != "$seen_fp" ]; then
+        printf '%s' "$fp" > "$fpfile"
+        local n top
+        n="$(printf '%s\n' "$blocked" | grep -c .)"
+        top="$(printf '%s\n' "$blocked" | head -1)"
+        push "reframe poller 拒绝 push (${n} 个 commit)" \
+          "分支上有 ${n} 个非本脚本的 commit, 按 B-1982 不代推, 需要人工 push。最新: ${top}"
+      fi
     fi
     return 1
   fi
-  git push -q 2>>"$LOG"
+  if git push -q 2>>"$LOG"; then
+    rm -f "${REPO}/logs/.poller_push_block.fp"   # next distinct block should speak again
+    return 0
+  fi
+  return 1
 }
 
 # label | canonical glob | replicate glob | cond id | expected n
