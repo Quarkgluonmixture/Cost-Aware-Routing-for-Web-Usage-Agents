@@ -942,6 +942,43 @@ class ProxyApiAgent:
         finally:
             _proxy_lock_ctx.__exit__(None, None, None)
         assert resp is not None, "API request failed: resp is None after all retries"
+        # B-1984 (2026-08-20). `raise_for_status()` raises with the URL and the status
+        # and throws the BODY away — and on this proxy the body is the only thing that
+        # says WHY. A 2026-08-20 B5 smoke died on a bare
+        # "400 Client Error: Bad Request for url: ..." and cost an afternoon of payload
+        # bisection that reproduced nothing, because every hand-built variant returned
+        # 200; the discriminating detail was in the discarded body the whole time.
+        # Log the body plus the payload's SHAPE (keys and sizes, never the observation
+        # or the image data) before re-raising, so the next 4xx is diagnosable from the
+        # run log alone.
+        if resp.status_code >= 400:
+            try:
+                _err_body = (resp.text or "")[:1500]
+            except Exception:
+                _err_body = "<body unreadable>"
+            try:
+                _msgs = payload.get("messages") or []
+                _blocks = []
+                for _m in _msgs:
+                    _c = _m.get("content")
+                    if isinstance(_c, list):
+                        _blocks.append("+".join(str(b.get("type", "?")) for b in _c))
+                    else:
+                        _blocks.append(f"str[{len(str(_c))}]")
+                _shape = (
+                    f"model={payload.get('model')!r} keys={sorted(payload.keys())} "
+                    f"n_messages={len(_msgs)} content_blocks={_blocks} "
+                    f"max_tokens={payload.get('max_tokens')} seed={payload.get('seed')} "
+                    f"has_tools={'tools' in payload} "
+                    f"has_response_format={'response_format' in payload} "
+                    f"has_logprobs={'logprobs' in payload}"
+                )
+            except Exception as _shape_exc:
+                _shape = f"<payload shape unavailable: {_shape_exc}>"
+            logger.error(
+                "API %d from proxy. RESPONSE BODY: %s | PAYLOAD SHAPE: %s",
+                resp.status_code, _err_body, _shape,
+            )
         resp.raise_for_status()
         try:
             resp_json = resp.json()

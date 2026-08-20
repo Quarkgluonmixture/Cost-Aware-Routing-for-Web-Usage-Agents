@@ -11798,3 +11798,19 @@ DGX 缩到 **7** 位, A100 缩到 **8** 位, 于是从 dev 机传过去的 pin *
 - **修复**: 两边都 `git rev-parse --verify "<rev>^{commit}"` 归一到 40 位全名再比。长度无关,
   并且顺带接受全 SHA / tag / 任意 rev。实测 7 位 / 8 位 / 40 位三种输入均匹配。
 - 相关: 该 pin 本身仍是必要的 (§296 禁止 fire 中途换代码), 坏的是比较方式不是设计。
+
+### B-1984. 4xx 的响应体被 `raise_for_status()` 丢掉, 而这个 proxy 的原因只写在响应体里 [P1] 🛠️ FIXED
+`proxy_api_agent.step()` 在重试循环后直接 `resp.raise_for_status()`。它抛出的异常只带
+**URL 和状态码**, body 被丢弃 —— 而这个 AWS proxy 的拒绝理由(`validation_error` 的具体
+message, 例如 `Function tools with reasoning_effort are not supported`)**只在 body 里**。
+2026-08-20 B5 smoke 死在一句光秃秃的
+`400 Client Error: Bad Request for url: ...`, 随后一下午的 payload 二分**什么都没复现出来**
+(字符串/列表 content · seed · max_tokens 4096 · 8K observation · terra vs luna 全部 200),
+因为有判别力的那句话从头到尾都在被丢掉的 body 里。
+- **修复**: `status_code >= 400` 时先 `logger.error` 打 body(截 1500 字符) + payload 的
+  **形状**(keys / n_messages / content block types / max_tokens / seed / has_tools /
+  has_response_format / has_logprobs), 再 `raise_for_status()`。
+- ⚠️ 打的是**形状不是内容**: 不落 observation 文本, 不落图片 data URL —— 否则 run log 会被
+  单条 4xx 撑爆, 且 artifacts 里已有原始 observation。
+- ⚠️ 可复用判据: **凡是"远端告诉你为什么"的通道, 不要在错误路径上把它扔掉**。`raise_for_status`
+  / `check=True` / `|| exit 1` 都属于这一类 —— 它们把"失败了"保留下来, 把"为什么"丢掉。
