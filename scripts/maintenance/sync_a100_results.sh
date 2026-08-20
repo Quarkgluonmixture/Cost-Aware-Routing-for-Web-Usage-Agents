@@ -214,8 +214,31 @@ for entry in "${BENCH_SUBTREES[@]}"; do
   policy="${entry##*:}"
   src="${A100_RESULTS_BASE}/${sub}/"
   dst="${DGX_RESULTS_BASE}/${sub}/"
-  if ! ssh -o ConnectTimeout=10 "${A100_HOST}" "test -d ${src}" 2>/dev/null; then
-    log "  - skipping ${sub} (not present on A100)"
+  # B-1981 (2026-08-20): this probe used to be `if ! ssh ... test -d`, which folds
+  # TWO different answers into one. `test -d` returning 1 means "the subtree is not
+  # there"; ssh returning 255 means "I never got to ask". B-1919 made the first case
+  # non-fatal, and the second case inherited that for free — so when the condenser
+  # bastion cert expired on 2026-08-19T21:01Z, every subtree probe came back 255,
+  # every subtree was logged "not present on A100", and the script exited 0 with the
+  # word "ok". The DGX-side finalize poller then reported "sync ok / waiting" every
+  # 30 minutes for 8.5 hours while transferring nothing, and the 78 episodes that
+  # completed on the A100 in that window were invisible here. A missing subtree and
+  # an unreachable host must not print the same sentence.
+  ssh -o ConnectTimeout=10 "${A100_HOST}" "test -d ${src}" >/dev/null 2>&1
+  probe_rc=$?
+  if [[ "${probe_rc}" -eq 255 ]]; then
+    log "✗ SSH to ${A100_HOST} failed (rc=255) probing ${sub} — link down, NOT an absent subtree."
+    log "  Most likely the condenser bastion cert expired (7-day Vault cert; quark-only fix)."
+    log "  Check on quark: ssh-keygen -L -f .ssh/id_condenser_new.signed | grep Valid"
+    curl -s --max-time 5 \
+      -H "Title: P79 sync-a100 LINK DOWN" \
+      -H "Priority: high" \
+      -d "[$(ts)] ssh rc=255 probing ${sub}. NOT an absent subtree — the SSH chain is down (most likely condenser bastion cert expiry; quark-only fix). Sync transferred nothing." \
+      "https://ntfy.sh/p79-claude" >/dev/null 2>&1 || true
+    exit 1
+  fi
+  if [[ "${probe_rc}" -ne 0 ]]; then
+    log "  - skipping ${sub} (not present on A100; probe rc=${probe_rc})"
     continue
   fi
   opts=("${RSYNC_OPTS[@]}")

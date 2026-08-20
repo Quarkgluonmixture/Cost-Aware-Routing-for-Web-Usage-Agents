@@ -11749,3 +11749,20 @@ through 返回 `wait`/`valid=False`, 而 B-1970 的 guard 因为"顶层 `tool_ca
 - **测试盲区**: codex 指出现有 proxy test 里 list-shaped `content` fixture = **0 个**,
   所以上述所有形状都在盲区。新增 `tests/test_b1970_proxy_content_shapes.py` 7 条,
   **stash 实测修复前 4/7 是红的**。
+
+### B-1981. `ssh host "test -d X"` 把"连不上"和"目录不存在"折成同一个答案 [P1] 🛠️ FIXED
+`sync_a100_results.sh` 的 per-subtree 探针写作 `if ! ssh -o ConnectTimeout=10 ... "test -d
+${src}"; then log "skipping (not present on A100)"; continue; fi`。`test -d` 返回 1 =
+"子树不在"；ssh 返回 **255** = "我根本没问到"。B-1919 让前者非致命，后者**顺带白拿了**这个
+豁免。
+2026-08-19T21:01Z condenser bastion cert 到期后：每个子树探针都回 255 → 每个子树都被记成
+"not present on A100" → 脚本 **exit 0 并打印 "sync ok"**。DGX 侧 finalize poller 因此每 30
+分钟报一次 "sync ok / waiting"，连续 **8.5 小时传输 0 字节**；同一窗口内 A100 上跑完的 78 个
+episode 在 DGX 完全不可见（R14980 本地停在 146/224，**恰好因为不完整而没被判成 ghost**，
+本地 `validate_fire_manifest` 返回 0 —— 巧合掩盖，不是没问题）。
+- **修复**: 捕获 `probe_rc`；255 → fail-loud + exit 1 + ntfy（附 cert 到期这一最可能根因和
+  quark 侧核验命令）；其余非 0 → 保持 B-1919 的 skip 行为，但把 rc 打进日志。
+- ⚠️ **形状本身是复发**: B-1919 的注释原文写着「silently continuing is exactly how the empty
+  `task_configs/` went unnoticed for a fortnight」—— 它在修掉一层静默继续的同时，在**上一层**
+  重新引入了同一个形状。判据是"退出码非零"而不是"退出码说明了什么"时，就会这样。
+- 相关: [[reference-condenser-cert-7day-expiry]]（7 天 Vault cert，修复只能在 quark）。
