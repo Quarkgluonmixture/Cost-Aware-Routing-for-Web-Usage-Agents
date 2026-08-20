@@ -23,6 +23,47 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟢 2026-08-20 深夜 · **reframe chain 已全自动在跑, 不需要任何部署就能跑完**（最新 handoff）
+>
+> chronicle → **笔记 §472**（14 小节）· 台账 **+19**（2419 → 2438）· bug **B-1981 → B-1989**
+>
+> ### 先跑命令拿 live 状态, 别读下面的快照（A100 是 UTC, DGX 是 BST）
+> ```bash
+> ssh condense-a100 'cd /home/ubuntu/workspace/p79 && \
+>   ps -eo pid,etime,cmd | grep "[r]eframe_chain\|[r]un_experiment"; \
+>   tail -5 $(ls -t logs/reframe_chain_driver_*.log | head -1)'
+> make ntfy SINCE=12h ALERTS=1
+> .venv/bin/python3 scripts/maintenance/known.py --section 472
+> ```
+>
+> ### 在跑什么
+> reframe chain（intent = `pre_run/reframe_chain_launch_intent_20260819.md`）:
+> **A1 → A2 → B(reddit phantom ×3) → C(B5 ×5 modes)**, 计划 ~$291, 预计 9–11 天。
+> smoke 闸已过（B5 走完一条完整轨迹到 `finish`）。
+>
+> ### 🔴 三件下个 session 必须知道
+> | | |
+> |---|---|
+> | **不要部署到 A100** | A100 整条 chain 停在 `5add57d` 是**有意的**：全部 cell 在同一 commit 下跑完 = 内部一致。B-1987/1988 等 chain 全部结束再上。**尤其不要在 A1/A2 之间换代码** —— 它们是一对 replicate, 换了就等于量「噪声 + 代码漂移」（正是 B1.cls.dom 那条 caveat） |
+> | **ntfy 的站点名会说谎** | B-1987 未部署 ⇒ `reframe X started ... on shop` 对 A2/B/C 全部错。**阶段 B 跑的是 reddit 却会写 shop**。看 run_id 不看这个字段 |
+> | **QUARANTINE 通知可能对不上 registry** | B-1988 未部署 ⇒ 事件可能在 `stash@{N}` 里而 `quarantine_registry.py query` 返回 0。捞法见笔记 §472.13 |
+>
+> ### halt = 终止, 不重试
+> `halt()` 是 `exit 1`。任一格没跑到预期 episode 数 → 整条链停下 + 一条 ntfy, 后面的
+> phase **不会自己接上**。四条 halt 条件: $400 上限 / 2026-09-06 deadline / episode 数不符 /
+> 有别的 site chain。
+>
+> ### 收尾是自动的（DGX 侧 poller）
+> `reframe_finalize_poller.sh` 每 30min: sync A100→DGX; A1+A2 两臂都完整时自动把
+> `B5.cls.dom` 注册进 `CLEAN_PAIRS` + commit + **push**（范围受 B-1982 限定, 只推它自己
+> 产出的那一类 commit, 其余拒推并 ntfy 一次）。
+>
+> ### 今天翻掉的一个结论
+> **`B1.cls.dom` discordance = 3.12%（7/224）, 不是 0.00%** ⇒ §470.9 AMENDMENT 砍格 6-8 的
+> Reason 1（「B1 地板是个常数」）不成立。定性的「B0 10.27–14.29% ≫ B1」仍在。user 2026-08-20
+> 裁定**维持取消格 6-8**。详见 intent 文件 CORRECTION + 笔记 §472.3。
+
+
 > 🔴 **2026-08-19 日期更正（第二次翻转）**: REALM notif = **09-07**（不是 08-21）, 毕设 = **09-05**（从 09-01 延长）。
 > 本文件下方凡出现 "08-21 意见" / "09-01 毕设" 的推算**均按旧日期写成, 已 stale**（含"08-21 后可随时砍"
 > 这类排期语）。canonical = `_status/tasks/task_naacl2027_main.md` frontmatter。**别再把 09-07 翻成 08-21。**
