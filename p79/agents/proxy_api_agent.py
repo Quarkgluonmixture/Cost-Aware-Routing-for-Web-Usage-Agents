@@ -444,11 +444,54 @@ class ProxyApiAgent:
         # asked for JSON directly and the schema is enforced by the API, so the
         # original "Output ONLY valid JSON" line is exactly the right instruction —
         # telling it to "use the web_action tool" would name a tool it was never given.
+        _JSON_ONLY_LINE = "Output ONLY valid JSON. No markdown blocks, no explanations."
         if self._use_tool_calling and self._structured_output == "tool_calls":
-            _old = "Output ONLY valid JSON. No markdown blocks, no explanations."
             _new = "Use the web_action tool for every action. Put reasoning in the thought parameter."
             for mode in self._system_prompts:
-                self._system_prompts[mode] = self._system_prompts[mode].replace(_old, _new)
+                self._system_prompts[mode] = self._system_prompts[mode].replace(_JSON_ONLY_LINE, _new)
+        elif self._structured_output == "response_format":
+            # B-1986 (2026-08-20, user-adjudicated). `response_format: json_schema`
+            # non-strict does NOT bound how many objects the model emits: GPT-5.6-terra
+            # returned 6 / 3 / 5 top-level objects on three identical production-shape
+            # calls. The first is the action for the observation it was shown; the rest
+            # are turns it imagined without ever seeing their observations. The parser
+            # is right to refuse them — `multiple_actions` (B-409 / P1-3-B*) exists so
+            # nobody silently picks one of several different valid actions — so every
+            # B5 step scored 0 valid actions while the model was in fact behaving well.
+            #
+            # WHY THE INSTRUCTION RATHER THAN TAKE-FIRST. Take-first would make B5's
+            # action "the first of N, chosen after the fact", while B0's is grammar-
+            # constrained to exactly one. Those are different action-selection
+            # processes, and B5 exists precisely to be compared against B0. Asking the
+            # model for one object keeps the selection inside the model. Measured
+            # 3/3 exactly one object with this line, 0/3 without.
+            #
+            # WHY NOT strict:True, THE OBVIOUS FIX. Probed on terra in production
+            # shape: HTTP 200 with an EMPTY body (same as luna, §471.5) — downstream
+            # that reads as a parse failure, which is worse than the problem.
+            #
+            # PROMPT SYMMETRY. This breaks the B-451 byte-identical prompt contract
+            # for B5 only, and must be disclosed in paper §3.5 alongside the existing
+            # tool-use swap above — which is the same class of format-only change.
+            _one = (
+                _JSON_ONLY_LINE
+                + " Emit exactly ONE JSON object for the single next action —"
+                + " do not plan ahead or emit further objects."
+            )
+            for mode in self._system_prompts:
+                _before = self._system_prompts[mode]
+                _after = _before.replace(_JSON_ONLY_LINE, _one)
+                if _after == _before:
+                    # A silent no-op here would put B5 back to 0 valid actions with
+                    # nothing in the log saying why — the exact failure mode B-1985
+                    # was. Fail at init instead.
+                    raise RuntimeError(
+                        f"structured_output='response_format' could not install the "
+                        f"single-object instruction into the {mode!r} system prompt: "
+                        f"anchor sentence {_JSON_ONLY_LINE!r} not found. The prompt "
+                        f"changed; update the anchor (B-1986)."
+                    )
+                self._system_prompts[mode] = _after
 
     # ---- GLM fallback fully retired 2026-05-17 (B-991 migration); methods
     # `_load_glm_config` + `_call_glm_extract` deleted. Step record schema

@@ -11832,3 +11832,23 @@ message, 例如 `Function tools with reasoning_effort are not supported`)**只�
 - **修复**: 转发三个键 + 新增 `tests/test_b1985_model_cfg_forwarding.py` —— 它**从源码两侧各自
   推导集合** (agent 的 `model_cfg.get("x")` vs backend 转发块的键) 并断言差集为空。以后在 agent
   里新读一个键而忘了转发, 挂的是测试不是 fire。红/绿两态均已实测。
+
+### B-1986. `response_format` 约束的是每个对象的形状, 不是对象的**个数** [P0] 🛠️ FIXED
+`response_format: json_schema` 非 strict 下, GPT-5.6-terra 在**三次同形状生产调用**里分别
+返回 **6 / 3 / 5** 个顶层 JSON 对象。第 1 个是针对它真正看到的 observation 的动作; 其余是它
+**没见过对应 observation 就自行推演的未来回合**。
+解析器随后按 `multiple_actions` (B-409 / P1-3-B*) 全部作废 —— **这条策略是对的**, 它存在正是
+为了不在几个不同的合法动作里静默挑一个。后果: B5 每步 0 valid action, 而 `raw_action` 显示
+模型**表现很好**(搜 kayak → 按价格升序 → 点开 $50 那条)。$0.033 全记为 protocol_wasted。
+- **修复 (user 裁定 2026-08-20)**: 在 response_format 路的 system prompt 锚句后追加
+  「Emit exactly ONE JSON object for the single next action — do not plan ahead or emit
+  further objects.」实测 **加指令 3/3 恰好 1 个; 不加 0/3**。
+- **为什么不用 take-first**: take-first 会让 B5 的动作变成「事后从 N 个里取第一个」, 而 B0 是
+  **grammar 约束成恰好一个**。两者不是同一个动作选择过程, 而 B5 存在的意义正是与 B0 比。
+  把选择留在模型内部才可比。
+- **为什么不用 `strict: True`** (最显然的修法): terra 生产形状实测 **200 但空体**(与 luna
+  §471.5 一致) —— 下游会读成 parse failure, 比原问题更糟。
+- ⚠️ **prompt 对称性**: 这为 B5 单独打破了 B-451 逐字节相同的 prompt 契约, 须在 paper §3.5
+  与既有的 tool-use 替换一并 disclose (二者是同一类 format-only change)。
+- ⚠️ 锚句找不到时**raise 而不是静默 no-op** —— 静默 no-op 会把 B5 打回 0 valid action 且日志
+  里没有任何线索, 正是 B-1985 的失效形状。
