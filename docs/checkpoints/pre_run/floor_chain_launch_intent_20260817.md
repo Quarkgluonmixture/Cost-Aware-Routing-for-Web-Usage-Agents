@@ -112,3 +112,37 @@ groups — they are already daemonised and are unaffected. The orchestrator's pe
 work after a runner exits is *validation* (episode count, condition_id match), not
 production, so nothing is lost by its absence; that check is performed by hand when
 cell 5 lands, together with the sync and registration steps that were already manual.
+
+---
+
+## CORRECTION 2026-08-20 — 格 5 落地, AMENDMENT 的 Reason 1 前提不成立
+
+格 5 (B1 × cls × dom, `R14980`) 于 2026-08-20 03:32Z 跑满 224 episode，已按本文件规则
+注册进 `CLEAN_PAIRS`（commit `37e473d`）。数字是：
+
+| pair | n | SR A→B | discordance | 判据 |
+|---|---|---|---|---|
+| `B1.cls.som` | 224 | 14.29% → 14.29% | 0.00% | AMENDMENT 引用 |
+| `B1.cls.vision` | 224 | 12.50% → 12.50% | 0.00% | AMENDMENT 引用 |
+| **`B1.cls.dom`** | 224 | **6.25% → 6.70%** | **3.12% (7/224)** | **本次** |
+
+**AMENDMENT 的 Reason 1 说**「the measurement is already made, and it is a constant」，并
+据 §298.2 预测「the remaining B1 cells return 0.00% as well」。格 5 是这条预测的第一次
+检验——写 AMENDMENT 时它正在跑（55/224）——**预测不成立**。
+
+**因此需要改述的**：
+- ❌「B1 的地板是 0.00%」/「B1 是个常数」——不能再这么写。
+- ✅ 仍成立：B0 六臂 10.27–14.29% **≫** B1 三臂 0.00 / 0.00 / 3.12%。数量级差异是稳的，
+  Reason 2（B1 地板约束不了 B0 上量到的效应量）**不受影响**，反而更强——B1 自己有地板。
+- ⚠️ 新出现的问题，本数据答不了：3.12% 是 **dom 特有**，还是 B1 在 som/vision 上的两个
+  0.00% 才是特例。两个 0.00% 是逐 episode 完全复现（vision 连 step count 都零差异），
+  而 dom 翻了 7 个 task——这不是"稍微有点噪声"，是**同一模型同一温度下两种截然不同的
+  行为**。格 6-8（B1 × cls × 三个 phantom 臂）现在测的正是这个，而 AMENDMENT 砍掉它们
+  的理由恰恰是"已经是常数了"。
+
+**AMENDMENT 的 Reason 2 与 Reason 3 不依赖 Reason 1**，所以取消本身未被推翻；被推翻的是
+它给出的三条理由里的第一条。格 6-8 是否重排另行决定并记在本文件下方。
+
+**⚠️ 这个 pair 不是同代码复现**：arm A 跑于 2026-06-03，arm B 跑于 2026-08-19，中间隔了
+2.5 个月的代码漂移。som / vision 两对同样跨这段漂移却给出 0.00%，所以漂移不能直接解释
+dom 的 7 个翻转——但它也没被排除，本文件不主张已排除。
