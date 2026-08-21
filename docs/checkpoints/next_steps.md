@@ -23,6 +23,47 @@ updated: 2026-08-21
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🔵 2026-08-21 深夜 · 匿名 submission repo 骨架落地 + **ARR 政策核实推翻了我之前的判断**（commit `7cd894d`）
+>
+> chronicle → **笔记 §475**（8 小节）· 台账 **+14** · 工具 `scripts/maintenance/export_anonymous_repo.py`
+>
+> ### ⚠️ 最重要的一条：ARR **没有** anonymity period
+> 自 2024-01 起取消。原文 `aclrollingreview.org/anonymity`: "authors are free to post and
+> discuss non-anonymous preprints **at any time**"；NAACL 2027 CFP 独立确认。
+> ⇒ **主 repo 不必转 private，论文文本随时可 push，没有任何时间窗口。**
+> §475.2 里那条"09-12 起不要 push"是我从记忆断言的，**已 RETRACTED，不要再引**。
+>
+> 硬约束移到**提交件本身**（违反 = "**will** be desk rejected"，是 will 不是 may）：
+>
+> | 投 ARR 时必须做 | 依据 |
+> |---|---|
+> | 提交件里的 code 链接必须匿名 | checklist "There are no links to non-anonymous repositories" |
+> | 不得出现署名 OSF DOI（会 disclose identity） | checklist "otherwise disclose their identity" |
+> | 不得写"我们之前的论文/毕设" | checklist "no explicit references to the authors' prior work" |
+> | **Existing Preprints 字段大概率要申报现有 public repo** | submission form；ARR 的 preprint 定义是功能性（"possibility of deanonymization, rather than any specific publication channel"）—— 但 GitHub 未被点名，属 inference，保守申报 |
+>
+> 顺带：NAACL commitment deadline 两处官方源冲突（ARR 表 12-20 vs NAACL CFP 12-23），取 **12-23**。
+>
+> ### 匿名 repo：骨架已跑通，但**不是 reproduction 级**，别现在上线
+> dry-run 导出 1201 文件 / 119M，单个 Anonymous commit，403 个 `.py` 全过 `py_compile`，
+> 身份探针 + 二进制路径探针双清。**但收尾 /stress 实跑入口发现它跑不出任何论文数字**：
+>
+> | | 实测症状 | 修法 | 工时 |
+> |---|---|---|---|
+> | P0-1 | 我用 `import p79.*` 冒充"包可用"——对缺数据类缺陷检出率结构性为 0 | 导出器加 `--smoke`：在导出物内实跑 README 承诺的每条命令，非零退出即 FAIL | 1h |
+> | P0-2 | `canonical_task_universe.py:46` FileNotFoundError——评分集定义随 submodule 排除，`PATCHES.md` 的 `BASE_SHA` 还是占位符 | 纳入去标识 task config + 填实 BASE_SHA/patch bundle | 2.5h |
+> | P0-3 | `queue_baseline.sh:316` 调用被排除的 `experiment_watchdog.py`；Makefile 21 处同类 | 用 grep 自动生成 maintenance 白名单回补 | 1h |
+> | P1-1 | `aggregate_noise_floor_inventory.py:246` CLEAN_PAIRS 20+ arm 全 MissingInput | 纳入噪声地板**产物 JSON** + 加 `--from-cache` | 1.5h |
+> | P2-1 | `scripts/queues/_deprecated/` 5 文件混入 | EXCLUDE 改 substring `"_deprecated/"` | 5min |
+>
+> **计划不变**：09-05 毕设交稿后按最终稿实际引用的脚本/表重跑一次，连同上面 5 条一起修，
+> 再上线。兑现点 = ARR 10-12。**最高杠杆是 P0-1 的 `--smoke`** —— 它不修任何具体缺陷，
+> 但它是唯一能保证重跑时其余缺陷不再静默通过的东西（P0-2/3、P1-1 都是它本该拦住的）。
+>
+> ### 主线不受影响
+> 毕设 09-05 仍是唯一硬截止，**不需要新实验**。匿名 repo 是 ARR 线的准备工作，不抢写作时间。
+
+
 > ## ✅ 2026-08-21 深夜 · 毕设 de-jargon 全稿完成 + 三家 AI 审计修完 3 个 P0（commit `7229ed7`）
 >
 > chronicle → **笔记 §474**（9 小节）· 台账 **+27** · 稿子 `final_dissertation/tex/`（84 → **89 页**）
