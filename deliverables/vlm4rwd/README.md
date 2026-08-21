@@ -112,20 +112,84 @@ about visual grounding.}`。**不含任何新数字。**
 
 ## 当前状态
 
-- 正文 **8 页**（`\label{content-end}` 落在 p8）, 全文 39 页
+- 正文 **8 页**（`\label{content-end}` 落在 p8）, 全文 **46 页**（含 7 页 checklist）; 正文 2 图 + 附录 3 图 + 49 表
 - 编译 **0 error / 0 undefined reference / 0 undefined citation**
 - overfull hbox 3 处, 最大 1.04pt（肉眼不可见）
 - **61 个 caption 全部完整**（逐个比对 PDF 文本, 见上文验证手段）
 - 49 张表全部自带缩放, 单栏下无溢出
-- 匿名: 全文无作者名/机构/致谢/仓库链接（`pdftotext | grep -icE` 命中 0）
+- 匿名: 见下方「匿名性审计」——**`pdftotext | grep` 不够**
+
+## ⚠️ 第二条教训：`pdftotext | grep` 查不出匿名性泄漏
+
+第一版通过了「`pdftotext main.pdf | grep -icE 'jiaming|ucl|...'` 命中 0」的匿名检查, 但
+**PDF 二进制内部**藏着:
+
+```
+/PTEX.FileName (/tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/<uuid>/scratchpad/m3.pdf)
+```
+
+`\includegraphics` 嵌入一个 PDF 时, pdfTeX 会把**源文件绝对路径**写进 XObject 字典的
+`/PTEX.FileName`。它不是页面文本, `pdftotext` 看不见; `strings` 才看得见。泄漏内容含真名
+与项目名（项目名可直接搜到 GitHub 仓库）⇒ 对双盲评审是 identifying information。
+
+来源 = `figures/fig_overview.pdf`（它自己是更早某个 session 用 pdfTeX 生成的, 内嵌了一个
+scratchpad 里的 `m3.pdf`）。**其余六张图干净。**
+
+**修法**（`mutool clean -ggg` 无效 —— PTEX 是字典 key, 垃圾回收不删它）:
+```bash
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress \
+   -dEmbedAllFonts=true -sOutputFile=clean.pdf figures/fig_overview.pdf
+```
+验证换图无损: 像素级差异 1.79% 的像素有任何差异, 但平均绝对差 **0.027/255**, 差值>8 的仅
+277 像素（0.016%）且散布全图 ⇒ 抗锯齿量级, 非内容变化。9 个字体全部仍嵌入（两个丢了
+ToUnicode map, 只影响文字可提取性不影响显示）。
+
+**四渠道匿名性审计**（缺一不可）:
+```bash
+strings main.pdf | grep -inE 'jiaming|ucab|quarkgluon|/home/|/tmp/|workspace|scratchpad|claude'   # 必须 0
+pdfinfo main.pdf | grep -E 'Author|Title|Subject|Keywords|Creator|Producer'                        # 前四项须空
+pdfinfo -meta main.pdf                                                                              # XMP 须空
+pdfdetach -list main.pdf                                                                            # 0 embedded files
+```
+当前: 全部通过（`Custom Metadata: yes` 只剩 `/PTEX.FileName (.)` 相对路径 + pdfTeX 版本横幅, 无害）。
+
+🔴 **REALM #192 那份在审的提交件带着同一处泄漏**（`deliverables/main_restructured.pdf` 命中 1
+条, Overleaf clone 里的源图也是）。审稿阶段已无法更换, **camera-ready 09-14 是修复窗口** ——
+把 Overleaf 的 `figures/fig_overview.pdf` 换成上面 gs 清理版即可。
+
+## NeurIPS Paper Checklist（已加）
+
+VLM4RWD 的 CFP **没有**点名 checklist, 只说 "should follow the NeurIPS 2026 conference format"。
+但官方 kit 的 `checklist.tex` 指令块自己写着:
+
+> Do not remove the checklist: **The papers not including the checklist will be desk rejected.**
+> … The checklist should follow the references and follow the (optional) supplemental material.
+> The checklist does NOT count towards the page limit.
+
+且 `neurips_2026.tex:131` 把 checklist 与 references / appendix 并列为不计正文页数。
+⇒ "follow the NeurIPS 2026 conference format" 字面上包含它。**加了几乎无成本（不占页数）,
+不加是赌**, 故加。
+
+16 项全部填写, 分布 **8 Yes / 6 NA / 2 No**。指令块按官方要求删除, section heading、题目与
+guidelines 保留, 答案只用官方宏。两处答 **No** 是诚实口径（官方明写 "answering No or NA is not
+grounds for rejection", 编造 Yes 才危险）:
+
+| 项 | 答 | 理由 |
+|---|---|---|
+| Open access to data and code | **No** | 代码与 per-episode 日志未随投稿提供; 两个 benchmark 公开且未改动, 协议在 §2 + 附录完整描述 |
+| Experiments compute resources | **No** | 报了 per-attempt 成本与延迟, 但没报 compute worker 规格 / 内存 / 总执行时间; 且能耗与本地 per-token 成本常数本身在 Appendix B 里已标为未校准 |
+
+Broader impacts 答 **NA**（measurement study, 不引入新模型/能力/数据集, 且其负面结论是
+反对部署某个组件而非主张部署）。Declaration of LLM usage 答 **Yes**（VLM 是研究对象不是写作
+工具, §2 列明每个 backbone 与调用协议）。
 
 ## 未做
 
-1. **NeurIPS paper checklist**。官方 kit 带 `checklist.tex`, 主会强制、**本 workshop CFP 未要求**,
-   故未加。官方原文已备在 `checklist.tex.unused`, 要加就改名并在附录末尾 `\input`。
-2. **REALM 在审版本的同源 bug 未修**（tab02 引错表 / paper-B 残留 / Multiplicity 归属）。
-   那是另一个提交, 动它需要单独决定。
-3. **提交动作本身**。OpenReview 投递需本人操作。
+1. 🔴 **REALM 在审版本有四处同源问题未修** —— tab02 引错表 / paper-B 残留 / Multiplicity 归属
+   / **`fig_overview.pdf` 的路径泄漏**。前三处是 prose bug, 第四处是**匿名性问题**。
+   审稿阶段无法更换提交件, **camera-ready 09-14 是窗口**。
+2. **Overleaf 源图未清理** —— `~/overleaf-aaai27/figures/fig_overview.pdf` 仍带 `/PTEX.FileName`。
+   不清理的话 REALM camera-ready 会再次带上同一处泄漏。
 
 ## 构建与自查
 
@@ -136,7 +200,15 @@ cd deliverables/vlm4rwd && latexmk -pdf main.tex
 grep -oE 'newlabel\{content-end\}\{\{[^}]*\}\{[0-9]+\}' main.aux
 
 # caption 完整性 —— 编译干净不代表没丢字, 见上文
-pdftotext main.pdf - | grep -F "Most of the apparent headroom"   # 必须命中
+pdftotext main.pdf - | tr '\n' ' ' | grep -F "Most of the apparent headroom"   # 必须命中
+# 务必先 tr 去换行: pdftotext 会在句中断行, 直接 grep 会假报缺失
+
+# 匿名性 —— pdftotext 看不见 PDF 二进制内部, 必须用 strings
+strings main.pdf | grep -icE 'jiaming|ucab|quarkgluon|/home/|/tmp/|workspace|scratchpad|claude'   # 必须 0
+
+# checklist 在位且无残留 TODO
+pdftotext main.pdf - | grep -c 'NeurIPS Paper Checklist'   # 须为 1
+pdftotext main.pdf - | grep -c 'TODO'                      # 须为 0
 ```
 
 ## 审阅存档

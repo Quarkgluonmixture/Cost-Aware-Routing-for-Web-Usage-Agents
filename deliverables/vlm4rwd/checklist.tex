@@ -1,38 +1,11 @@
 \section*{NeurIPS Paper Checklist}
 
-%%% BEGIN INSTRUCTIONS %%%
-The checklist is designed to encourage best practices for responsible machine learning research, addressing issues of reproducibility, transparency, research ethics, and societal impact. Do not remove the checklist: {\bf The papers not including the checklist will be desk rejected.} The checklist should follow the references and follow the (optional) supplemental material.  The checklist does NOT count towards the page
-limit. 
-
-Please read the checklist guidelines carefully for information on how to answer these questions. For each question in the checklist:
-\begin{itemize}
-    \item You should answer \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item \answerNA{} means either that the question is Not Applicable for that particular paper or the relevant information is Not Available.
-    \item Please provide a short (1--2 sentence) justification right after your answer (even for \answerNA). 
-   % \item {\bf The papers not including the checklist will be desk rejected.}
-\end{itemize}
-
-{\bf The checklist answers are an integral part of your paper submission.} They are visible to the reviewers, area chairs, senior area chairs, and ethics reviewers. You will also be asked to include it (after eventual revisions) with the final version of your paper, and its final version will be published with the paper.
-
-The reviewers of your paper will be asked to use the checklist as one of the factors in their evaluation. While \answerYes{} is generally preferable to \answerNo{}, it is perfectly acceptable to answer \answerNo{} provided a proper justification is given (e.g., error bars are not reported because it would be too computationally expensive'' or ``we were unable to find the license for the dataset we used''). In general, answering \answerNo{} or \answerNA{} is not grounds for rejection. While the questions are phrased in a binary way, we acknowledge that the true answer is often more nuanced, so please just use your best judgment and write a justification to elaborate. All supporting evidence can appear either in the main paper or the supplemental material, provided in appendix. If you answer \answerYes{} to a question, in the justification please point to the section(s) where related material for the question can be found.
-
-IMPORTANT, please:
-\begin{itemize}
-    \item {\bf Delete this instruction block, but keep the section heading ``NeurIPS Paper Checklist"},
-    \item  {\bf Keep the checklist subsection headings, questions/answers and guidelines below.}
-    \item {\bf Do not modify the questions and only use the provided macros for your answers}.
-\end{itemize} 
- 
-
-%%% END INSTRUCTIONS %%%
-
-
 \begin{enumerate}
 
 \item {\bf Claims}
     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: The abstract and Section~1 state the complementarity result, the rerun-corrected ceiling, the cost bound and the five-policy negative result, each with the qualifier that limits it (the rerun band's cell coverage, the reddit null, the single fragile exception).
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the abstract and introduction do not include the claims made in the paper.
@@ -43,8 +16,8 @@ IMPORTANT, please:
 
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: Appendix~B lists ten limitations, including the absence of a third workload, the rerun band being measured in two cells and imported into six, and two cells too sparse to carry a comparison. Appendix~A separately reports threats introduced by the benchmark, the harness and our own analysis code.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper. 
@@ -59,8 +32,8 @@ IMPORTANT, please:
 
 \item {\bf Theory assumptions and proofs}
     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNA{}
+    \item[] Justification: The paper proves no theorems; every claim is empirical.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include theoretical results. 
@@ -73,8 +46,8 @@ IMPORTANT, please:
 
     \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: Section~2 and the appendix specify the scaffold, the one-call-per-step protocol, the prompt budget, the action space, the six mode configurations with their text payload and prompt family, the element-id regime each mode inherits, the scored-task count per cell, and the definition of every routing policy. What is not disclosed is the code itself and the per-episode logs; the replicate structure behind the rerun band is stated explicitly in Appendix~B, including which cells lack one.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -93,8 +66,8 @@ IMPORTANT, please:
 
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNo{}
+    \item[] Justification: Neither the code nor the per-episode logs accompany this submission. Both benchmarks (VisualWebArena, WebArena) are public and unmodified, and Section~2 with the appendix specifies the scaffold, prompt budget, action space, mode grid and scored-task counts needed to reimplement the protocol.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that paper does not include experiments requiring code.
@@ -110,8 +83,8 @@ IMPORTANT, please:
 
 \item {\bf Experimental setting/details}
     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: Section~2 fixes the scaffold, prompt budget, action space and the six observation modes; the appendix gives the full mode grid with per-mode payload and prompt family, the per-cell task counts, and the exact policy definitions.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -121,8 +94,8 @@ IMPORTANT, please:
 
 \item {\bf Experiment statistical significance}
     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: Every comparison is read against a measured same-condition rerun band rather than against zero (Section~4), intervals are task-clustered, the routing results are tested against a label-shuffle null, and Appendix~C states which tables are confirmatory, descriptive or selection-derived and how each family is corrected.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -138,8 +111,8 @@ IMPORTANT, please:
 
 \item {\bf Experiments compute resources}
     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNo{}
+    \item[] Justification: The paper reports per-attempt monetary cost and latency for every arm, but not the compute-worker specification, memory or total execution time; the local-inference cost constant and the energy figure are themselves flagged as uncalibrated in Appendix~B.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -150,8 +123,8 @@ IMPORTANT, please:
     
 \item {\bf Code of ethics}
     \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: The work runs public, self-hosted benchmark replicas with no human subjects and no personal data.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the authors have not reviewed the NeurIPS Code of Ethics.
@@ -162,8 +135,8 @@ IMPORTANT, please:
 
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNA{}
+    \item[] Justification: This is a measurement study over existing public benchmarks; it introduces no new model, capability or dataset, and its negative result argues against deploying a component rather than for deploying one.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that there is no societal impact of the work performed.
@@ -176,8 +149,8 @@ IMPORTANT, please:
     
 \item {\bf Safeguards}
     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pre-trained language models, image generators, or scraped datasets)?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNA{}
+    \item[] Justification: No model, dataset or scraped corpus is released.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper poses no such risks.
@@ -188,8 +161,8 @@ IMPORTANT, please:
 
 \item {\bf Licenses for existing assets}
     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: The two benchmarks and every backbone are cited to their original publications and used unmodified under their public terms; no asset is redistributed.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not use existing assets.
@@ -204,8 +177,8 @@ IMPORTANT, please:
 
 \item {\bf New assets}
     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNA{}
+    \item[] Justification: The paper releases no new asset.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not release new assets.
@@ -216,8 +189,8 @@ IMPORTANT, please:
 
 \item {\bf Crowdsourcing and research with human subjects}
     \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? 
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNA{}
+    \item[] Justification: No human subjects or crowdsourcing were involved; all episodes are automated agent rollouts.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
@@ -227,8 +200,8 @@ IMPORTANT, please:
 
 \item {\bf Institutional review board (IRB) approvals or equivalent for research with human subjects}
     \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerNA{}
+    \item[] Justification: No research with human subjects was conducted.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
@@ -240,8 +213,8 @@ IMPORTANT, please:
 \item {\bf Declaration of LLM usage}
     \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does \emph{not} impact the core methodology, scientific rigor, or originality of the research, declaration is not required.
     %this research? 
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
+    \item[] Answer: \answerYes{}
+    \item[] Justification: Vision-language models are the object of study, not a writing aid: each observation mode is one prompt-and-payload configuration handed to a backbone under a fixed scaffold. Section~2 names every backbone and specifies the call protocol.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.
