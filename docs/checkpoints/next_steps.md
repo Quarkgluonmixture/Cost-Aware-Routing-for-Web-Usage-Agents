@@ -23,27 +23,28 @@ updated: 2026-08-08
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## ✅ 2026-08-21 · VLM4RWD workshop 已投出（支线, 不影响下方主线）
+> ## ✅ 2026-08-21 · VLM4RWD workshop 已投出 + 投后修两处（支线, 不影响下方主线）
 >
-> chronicle → **笔记 §473**（7 小节）· 台账 **+15**（2438 → 2453）· 卡 → [[task_vlm4rwd_workshop]]
+> chronicle → **笔记 §473**（8 小节）· 台账 **+21**（2438 → 2459）· 卡 → [[task_vlm4rwd_workshop]]
 >
 > REALM 稿换 NeurIPS 模板投 [vlm4rwd.github.io](https://vlm4rwd.github.io/) 非归档 track,
-> **已提交**。notif **2026-09-29**, 此前无动作。非归档 ⇒ 不占 NAACL ARR 投稿权, 与 REALM #192 不冲突。
-> 产物 `deliverables/vlm4rwd/`（未 push, 两个 commit 在本地）。
+> **已提交**（deadline 08-31 05:00, 以 OpenReview 表单为准）。notif **2026-09-29**, 此前无动作。
+> 非归档 ⇒ 不占 NAACL ARR 投稿权, 与 REALM #192 不冲突。产物 `deliverables/vlm4rwd/`（已 push）。
 >
 > **下面那条 reframe chain 才是主线, 本条不影响它。A100 一个字没动。**
 >
-> ### 两条会再咬人的教训（细节见笔记 §473.1 / §473.7）
+> ### 四条会再咬人的教训 —— 全是同一形状「检查全绿而东西是坏的」
 > | | |
 > |---|---|
-> | **`wrapfigure` 会静默裁 caption** | 超出预留行数的部分直接丢弃、不报 warning。丢掉的三段（含论文核心主张）在整个 PDF 里零命中, 而 `latexmk` exit 0 / 0 error / 0 undefined / **页数达标** 全过 —— 页数达标恰恰是字被吃掉的结果。paper 目录此后禁用 wrapfigure; caption 完整性须逐条比对 `pdftotext`（先归一化 en-dash / 右单引号 / ligature, 否则 40+ 假阳性） |
-> | **投稿有两个表面, 只审了一个** | OpenReview 的 abstract / keywords / TL;DR 是手工粘的, **不随 PDF 重编译更新**, 而 keywords 决定 reviewer 匹配 ⇒ 比 prose 更早生效。三家 AI 审的全是 PDF, 这一面零覆盖。下次投稿把表单字段纳入 `/stress` scope |
+> | **`wrapfigure` 静默裁 caption**（§473.1） | 超出预留行数的部分直接丢弃、不报 warning。丢掉的三段（含论文核心主张）在整个 PDF 里零命中, 而 `latexmk` exit 0 / 0 error / 0 undefined / **页数达标** 全过 —— 页数达标恰恰是字被吃掉的结果。**paper 目录此后禁用 wrapfigure** |
+> | **`pdftotext \| grep` 查不出匿名性泄漏**（§473.8） | `\includegraphics` 嵌入 PDF 时 pdfTeX 把**源文件绝对路径**写进 XObject 字典的 `/PTEX.FileName` —— 不是页面文本, 只有 `strings` 看得见。**四渠道审计**: strings / pdfinfo 元数据 / XMP / 附件。清理用 `gs -sDEVICE=pdfwrite`（`mutool clean -ggg` 无效, PTEX 是字典 key） |
+> | **投稿有两个表面, 只审了一个**（§473.7） | OpenReview 的 abstract / keywords / TL;DR 手工粘贴, **不随 PDF 重编译更新**, 而 keywords 决定 reviewer 匹配 ⇒ 比 prose 更早生效。三家 AI 审的全是 PDF |
+> | **NeurIPS 系 workshop 一律附 checklist**（§473.8） | 即使 CFP 没点名。官方 `checklist.tex` 自己写着「papers not including the checklist will be **desk rejected**」, 且不计页数 ⇒ 加了几乎无成本, 不加是赌 |
 >
-> ### REALM 那边还留着三处同源 bug（**未决定修不修**, camera-ready 09-14 是窗口）
-> `tab02` 引 `tab:t04` 论证 non-separability 而 `tab05` 明写「This is not a separability test」
-> 且阈值是 87.5% 非 83%（**`tab05` 的 caption 一直在纠正 `tab02`, 但 `tab02` 从没改**）·
-> `paper-B` 源项目残留 · Multiplicity 段落被 LaTeX 归进 Limitations。VLM4RWD 副本已修。
-
+> ### REALM #192 的状态（camera-ready **09-14** 是唯一窗口）
+> - ✅ **Overleaf 源图已清理并 push**（`6480bc0`）⇒ camera-ready 重新编译即干净
+> - 🔴 **在审的那份提交件仍带 `/PTEX.FileName` 泄漏** —— 审稿阶段换不了, 只能等 camera-ready
+> - 🟡 **三处 prose bug 未修**: `tab02` 引 `tab:t04` 论证 non-separability 而 `tab05` 明写「This is not a separability test」且阈值是 87.5% 非 83%（**`tab05` 一直在纠正 `tab02`, 但 `tab02` 从没改**）· `paper-B` 源项目残留 · Multiplicity 段落被归进 Limitations。VLM4RWD 副本三处都已修, 可直接照搬
 
 > ## 🟢 2026-08-20 深夜 · **reframe chain 已全自动在跑, 不需要任何部署就能跑完**（最新 handoff）
 >
