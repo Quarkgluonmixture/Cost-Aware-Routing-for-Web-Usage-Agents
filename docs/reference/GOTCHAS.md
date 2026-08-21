@@ -56,6 +56,9 @@ scope: 操作 / 基建 / 工具调用层。分析与写作层在 paper_process_p
   必须用 stdout sentinel（`__QSTAT_OK__`）+ double-probe guard。
 - **§448.4 测试只验形状**：断言 `PROD_MAX_TOKENS == 4096` 与签名默认值，
   而把 HTTP payload 硬编码回 1 照样全绿——**那正是它声称防的回归**。
+- **§473.8 替换成功 ≠ 替换成对的东西**：python 里 `'\\\\answer'+ans` 落盘是
+  `\\answerYes{}`（两个反斜杠 = LaTeX 换行符 + 纯文本），而 `re.subn` 返回 k=1，
+  读起来像 16 项全填好了。**改完必须独立反扫落盘内容**，不能拿替换计数当成功判据。
 - **§473.1 编译全绿而内容被删**：`wrapfigure` 的垂直空间按预留行数算，
   **caption 超出部分直接裁掉且不报 warning**。丢掉的三段（含论文核心主张）在整个 PDF 里
   零命中，而 `latexmk` exit 0 / 0 error / 0 undefined ref / **页数达标** 全部通过——
@@ -185,7 +188,18 @@ scope: 操作 / 基建 / 工具调用层。分析与写作层在 paper_process_p
 - [ ] **官网 CFP 与提交系统不一致时以系统为准**（§473.7：deadline 差一天）
 - [ ] **排版工具的「成功」只保证排出一页纸**（§473.1）：`wrapfigure` 静默裁 caption，
       而 `latexmk` exit 0 / 0 error / 0 undefined / 页数达标全过。逐条比对 `pdftotext`，
-      先归一化 en-dash / 右单引号 / ligature，否则一堆假阳性淹掉真的那条
+      先归一化 en-dash / 右单引号 / ligature，否则一堆假阳性淹掉真的那条；比对前
+      `tr '\n' ' '` 去换行，`pdftotext` 会在句中断行
+- [ ] **匿名性要查四个渠道，`pdftotext | grep` 只覆盖其中一个**（§473.8）：
+      `\includegraphics` 嵌入 PDF 时，pdfTeX 把**源文件绝对路径**写进 XObject 字典的
+      `/PTEX.FileName`——不是页面文本，`pdftotext` 结构上看不见。四渠道：
+      `strings <pdf> | grep -icE '<真名|机构|/home/|/tmp/|scratchpad>'` 须 0 ·
+      `pdfinfo` 的 Author/Title/Subject/Keywords 须空 · `pdfinfo -meta`（XMP）须空 ·
+      `pdfdetach -list` 须 0 附件。清理用 `gs -sDEVICE=pdfwrite`（`mutool clean -ggg`
+      **无效**——PTEX 是字典 key，垃圾回收不删它），换图后重跑 caption 与页数回归
+- [ ] **投 NeurIPS 系 workshop 一律附 Paper Checklist**（§473.8）：即使 workshop 的 CFP
+      没点名它。官方 `checklist.tex` 自己写着「papers not including the checklist will be
+      **desk rejected**」，且它不计入正文页数——加了几乎无成本，不加是赌
 
 ---
 
