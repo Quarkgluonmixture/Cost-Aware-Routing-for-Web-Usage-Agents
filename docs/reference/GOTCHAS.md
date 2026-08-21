@@ -56,6 +56,11 @@ scope: 操作 / 基建 / 工具调用层。分析与写作层在 paper_process_p
   必须用 stdout sentinel（`__QSTAT_OK__`）+ double-probe guard。
 - **§448.4 测试只验形状**：断言 `PROD_MAX_TOKENS == 4096` 与签名默认值，
   而把 HTTP payload 硬编码回 1 照样全绿——**那正是它声称防的回归**。
+- **§473.1 编译全绿而内容被删**：`wrapfigure` 的垂直空间按预留行数算，
+  **caption 超出部分直接裁掉且不报 warning**。丢掉的三段（含论文核心主张）在整个 PDF 里
+  零命中，而 `latexmk` exit 0 / 0 error / 0 undefined ref / **页数达标** 全部通过——
+  页数达标恰恰是字被吃掉的结果。排版工具链的「成功」只保证能排出一页纸，
+  不保证纸上是你写的东西。
 
 > **判据：健康检查必须与它所认证的负载同形状。**
 > **判据：断言行为，不断言形状**——测线上 payload，不测模块常量；
@@ -155,6 +160,11 @@ scope: 操作 / 基建 / 工具调用层。分析与写作层在 paper_process_p
 - [ ] **fixer-bias**：修 fixer 的工作必须由独立 reviewer 验，
       不接受「自己抓 flaw → 自己改 → 自己 self-confirm」（§133.3）
 - [ ] **hallucination 降级之前用更宽的 grep 复验**（§205.1）
+- [ ] **「快而空」先怀疑调用约定，不是模型**（§473.5）：写进 env/source 文件的
+      `codex PID=123` 会让每次 `source` **真的去执行 `codex`**（无参数、需终端）→
+      `stdin is not a terminal` → `&&` 链断裂 → 两条 cross-AI 线都 exit 0 而输出文件不存在。
+      表象与模型失败完全一致，实际连模型都没调到。**env 文件只放合法赋值**；
+      判活先跑 `agy -p "Reply READY"` / `codex exec` smoke，再动 prompt 或换模型
 
 ## 7. 修完一处之后
 
