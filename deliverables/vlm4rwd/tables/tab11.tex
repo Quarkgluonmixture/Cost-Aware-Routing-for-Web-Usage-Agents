@@ -1,0 +1,43 @@
+% Table source-order #11: What a latency number contains. What a latency number contains. Every 
+\begin{table}[tp]
+\centering
+\caption{What a latency number contains. What a latency number contains. Every latency figure elsewhere in this paper is the whole step; \texttt{backend\_infer} isolates the model call and was read by no analysis script until 2026-08-03. The model is 22--67\% of the measured time; the rest is the browser and the container, which \texttt{offsite\_navigation\_audit} measures at 1.69× between the two sites. Removing it changes which mode is fastest in 4 of 8 cells, and not at random: 4 of 5 reddit-family cells flip against 0 of 3 classifieds cells: the flips land where the container is slowest. A sentence naming the fastest mode is therefore partly a sentence about this deployment. What survives estimand choice is only that the two orderings disagree. Source: \texttt{latency\_decomposition.json}.}
+\label{tab:t11}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+mean step (ms)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+model call (ms)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+model share
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+fastest by total
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+fastest by model only
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+same?
+\end{minipage} \\
+\midrule
+B0·classifieds & 7,622 & 2,140 & \textbf{28.1\%} & DOM+\allowbreak{}sprompt & DOM+\allowbreak{}sprompt & yes \\
+B0·reddit & 24,601 & 5,603 & \textbf{22.8\%} & Vision & SoM-image & \textbf{no} \\
+B0·wa\_\allowbreak{}reddit & 16,112 & 3,551 & \textbf{22.0\%} & Vision & DOM+\allowbreak{}sprompt & \textbf{no} \\
+B1·classifieds & 14,180 & 8,213 & \textbf{57.9\%} & Vision & Vision & yes \\
+B1·reddit & 24,376 & 7,916 & \textbf{32.5\%} & Vision & DOM+\allowbreak{}stext & \textbf{no} \\
+B1·wa\_\allowbreak{}reddit & 21,221 & 7,747 & \textbf{36.5\%} & DOM+\allowbreak{}sprompt & Vision & \textbf{no} \\
+B2·classifieds & 14,739 & 9,908 & \textbf{67.2\%} & DOM+\allowbreak{}sprompt & DOM+\allowbreak{}sprompt & yes \\
+B2·reddit & 22,863 & 9,131 & \textbf{39.9\%} & Vision & Vision & yes \\
+\bottomrule
+\end{tabular}
+\end{table}

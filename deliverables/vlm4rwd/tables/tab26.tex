@@ -1,0 +1,32 @@
+% Table source-order #26: Vocabulary-free probes on the text-wins residual. Is the text-wins res
+\begin{table}[tp]
+\centering
+\caption{Vocabulary-free probes on the text-wins residual. Is the text-wins residual real, or an artefact of the rule vocabulary? Tables 24--25 count rule hits, and the ruleset was discovered on VisualWebArena: so an absent signature there could be a property of the vocabulary rather than of the world. Each probe here is computed from raw step fields and never from a rule hit, over 142 disagreement episodes against 2304 baseline failures. The largest enrichment is 1.15× and 5 of 6 sit \emph{below} 1: on the tasks the text channel uniquely solves, the image channel fails more blandly than it fails elsewhere: it did not arrive, rather than breaking somewhere nameable. \textbf{Caution:} Six candidates chosen by us, so this cannot show that no mechanism exists; what it closes is the specific objection that the residual is an artefact of a VWA-shaped vocabulary. Source: \texttt{conditional\_failure\_attribution.json}}
+\label{tab:t26}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+candidate mechanism
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+on the disagreement set
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+that channel's baseline
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+enrichment
+\end{minipage} \\
+\midrule
+finished in five steps or fewer & 0.162 & 0.141 & \textbf{1.15×} \\
+any parse failure & 0.092 & 0.109 & \textbf{0.84×} \\
+never searched & 0.387 & 0.468 & \textbf{0.83×} \\
+ran out of budget (\textgreater=30 steps) & 0.535 & 0.658 & \textbf{0.81×} \\
+page unchanged on over half the steps & 0.331 & 0.431 & \textbf{0.77×} \\
+action failure on over half the steps & 0.310 & 0.416 & \textbf{0.74×} \\
+\bottomrule
+\end{tabular}
+\end{table}

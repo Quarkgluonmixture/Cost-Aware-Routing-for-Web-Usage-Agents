@@ -1,0 +1,83 @@
+% Table source-order #09: Full matrix --- Efficiency dimension. Efficiency dimension. \textbf{Co
+\begin{table}[tp]
+\centering
+\caption{Full matrix (Efficiency dimension. Efficiency dimension. Cost is comparable within a cell only) B0 bills a proxy API, B1/B2 are electricity-derived from a per-token constant calibrated for a different accelerator, so absolute dollars for B1/B2 are uncalibrated and only \texttt{cost\ rel\ DOM} is safe across backbones. \texttt{latency\ canon} removes retry, busy-wait and recovered-screenshot time; it differs from raw only on the API-served arm. Source: \texttt{per\_mode\_four\_dimension\_profile\_with\_wa.json}.}
+\label{tab:t09}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+mode
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cost/ep
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cost rel DOM
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+latency s
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+latency canon s
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+tokens/ep
+\end{minipage} \\
+\midrule
+cls·B0 & DOM & 0.06962 & 1.000 & 115.0 & 114.1 & 63045 \\
+cls·B0 & SoM & 0.07236 & 1.039 & 106.7 & 106.0 & 67000 \\
+cls·B0 & Vision & 0.06481 & 0.931 & 126.3 & 125.2 & 58302 \\
+cls·B0 & DOM+\allowbreak{}stext & 0.06919 & 0.994 & 123.8 & 120.4 & 62154 \\
+cls·B0 & DOM+\allowbreak{}sprompt & 0.06853 & 0.984 & 109.4 & 107.8 & 62555 \\
+cls·B0 & SoM-image & 0.07206 & 1.035 & 121.1 & 117.9 & 65334 \\
+cls·B1 & DOM & 0.05951 & 1.000 & 308.9 & 308.9 & 61904 \\
+cls·B1 & SoM & 0.06028 & 1.013 & 262.0 & 262.0 & 62953 \\
+cls·B1 & Vision & 0.04316 & 0.725 & 269.8 & 269.8 & 44524 \\
+cls·B1 & DOM+\allowbreak{}stext & 0.05879 & 0.988 & 313.5 & 313.5 & 61074 \\
+cls·B1 & DOM+\allowbreak{}sprompt & 0.06304 & 1.059 & 301.4 & 301.4 & 65628 \\
+cls·B1 & SoM-image & 0.05970 & 1.003 & 311.7 & 311.7 & 61985 \\
+cls·B2 & DOM & 0.07676 & 1.000 & 402.3 & 402.3 & 79653 \\
+cls·B2 & SoM & 0.09075 & 1.182 & 374.3 & 374.3 & 95081 \\
+cls·B2 & Vision & 0.07065 & 0.920 & 417.8 & 417.8 & 73126 \\
+cls·B2 & DOM+\allowbreak{}stext & 0.07320 & 0.954 & 399.4 & 399.4 & 75946 \\
+cls·B2 & DOM+\allowbreak{}sprompt & 0.08453 & 1.101 & 396.4 & 396.4 & 87948 \\
+cls·B2 & SoM-image & 0.08456 & 1.102 & 411.0 & 411.0 & 87931 \\
+red·B0 & DOM & 0.10147 & 1.000 & 572.0 & 552.5 & 93303 \\
+red·B0 & SoM & 0.11045 & 1.089 & 461.4 & 451.6 & 103031 \\
+red·B0 & Vision & 0.09807 & 0.966 & 449.8 & 418.5 & 88872 \\
+red·B0 & DOM+\allowbreak{}stext & 0.10577 & 1.042 & 631.4 & 562.1 & 96214 \\
+red·B0 & DOM+\allowbreak{}sprompt & 0.10163 & 1.002 & 498.4 & 447.7 & 93817 \\
+red·B0 & SoM-image & 0.10814 & 1.066 & 562.0 & 532.0 & 99005 \\
+red·B1 & DOM & 0.07330 & 1.000 & 602.6 & 602.6 & 76462 \\
+red·B1 & SoM & 0.08000 & 1.091 & 609.1 & 609.1 & 83517 \\
+red·B1 & Vision & 0.05240 & 0.715 & 456.6 & 456.6 & 53994 \\
+red·B1 & DOM+\allowbreak{}stext & 0.06948 & 0.948 & 598.6 & 598.6 & 72222 \\
+red·B1 & DOM+\allowbreak{}sprompt & 0.07656 & 1.044 & 614.0 & 614.0 & 79896 \\
+red·B1 & SoM-image & 0.07480 & 1.020 & 616.6 & 616.6 & 77722 \\
+red·B2 & DOM & 0.09479 & 1.000 & 669.9 & 669.9 & 99015 \\
+red·B2 & SoM & 0.11160 & 1.177 & 623.0 & 623.0 & 117379 \\
+red·B2 & Vision & 0.06833 & 0.721 & 550.0 & 550.0 & 70826 \\
+red·B2 & DOM+\allowbreak{}stext & 0.08852 & 0.934 & 677.6 & 677.6 & 92346 \\
+red·B2 & DOM+\allowbreak{}sprompt & 0.09940 & 1.049 & 599.3 & 599.3 & 104021 \\
+red·B2 & SoM-image & 0.09451 & 0.997 & 640.0 & 640.0 & 98699 \\
+WA·B0 & DOM & 0.07531 & 1.000 & 284.1 & 282.7 & 68616 \\
+WA·B0 & SoM & 0.09110 & 1.210 & 272.1 & 271.7 & 84854 \\
+WA·B0 & Vision & 0.08640 & 1.147 & 337.9 & 337.5 & 77786 \\
+WA·B0 & DOM+\allowbreak{}stext & 0.08478 & 1.126 & 330.3 & 328.4 & 76591 \\
+WA·B0 & DOM+\allowbreak{}sprompt & 0.07747 & 1.029 & 262.4 & 260.9 & 71176 \\
+WA·B0 & SoM-image & 0.08498 & 1.128 & 324.0 & 320.9 & 77689 \\
+WA·B1 & DOM & 0.06579 & 1.000 & 485.2 & 485.2 & 68491 \\
+WA·B1 & SoM & 0.07944 & 1.208 & 494.8 & 494.8 & 82940 \\
+WA·B1 & Vision & 0.04468 & 0.679 & 490.7 & 490.7 & 45878 \\
+WA·B1 & DOM+\allowbreak{}stext & 0.06151 & 0.935 & 509.9 & 509.9 & 63727 \\
+WA·B1 & DOM+\allowbreak{}sprompt & 0.07386 & 1.123 & 506.3 & 506.3 & 76839 \\
+WA·B1 & SoM-image & 0.06659 & 1.012 & 510.6 & 510.6 & 68819 \\
+\bottomrule
+\end{tabular}
+\end{table}

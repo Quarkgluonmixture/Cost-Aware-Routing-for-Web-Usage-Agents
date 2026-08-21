@@ -1,0 +1,23 @@
+\begin{itemize}
+\tightlist
+\item
+  \textbf{No third workload.} The planned shopping workload never launched, so every claim in this paper rests on classifieds and reddit task sets alone.
+\item
+  \textbf{No cross-family control on WebArena.} Both WA cells are Qwen; the cross-family control exists only on VWA. This data cannot hold ``across benchmarks'' and ``across families'' simultaneously.
+\item
+  \textbf{The two benchmarks share one application.} WA reddit \emph{is} the \texttt{vwa-reddit} container: same image, same port, same account. On the reddit axis ``two benchmarks'' means one application with two task sets.
+\item
+  \textbf{The cascade outcome is an offline splice.} No run observes what a real cascade does after the cheap arm has already acted on a stateful site.
+\item
+  \textbf{Energy is uncalibrated} (psutil at \textasciitilde66W on a device rated several times that) and the local per-token cost constant was derived for a different accelerator.
+\item
+  \textbf{The rerun band is measured in two cells and imported into six.} Three arms of \texttt{cls$\cdot$B0} and five modes of \texttt{wa\_red$\cdot$B1} carry a replicate; no VWA-reddit cell and no B2 cell carries one. Every ``clears the noise floor'' statement about those six assumes the floor transfers, and it is not known to be mode- or cell-invariant.
+\item
+  \textbf{The WebArena leakage zero is a lower bound, not a clean bill.} No leaked success was found in 37 audited episodes; that bounds the rate rather than establishing absence.
+\item
+  \textbf{Two workloads cannot identify what moderates the reversal.} Modality, task set and benchmark all change together at the VWA/WA boundary; with two levels no design separates them.
+\item
+  \textbf{The B2 cells are near the floor.} They carry 1--8 successes per arm and 3--4 routable tasks, so a ratio computed on them is one or two tasks wide. They are reported for coverage and should not carry a comparison.
+\item
+  \textbf{The lower bound covers five simple constructions.} Logistic triage, a regex rule, a confidence cascade, pooled tiers and which-mode selection; no LLM-based router, reinforcement learning, contextual bandit or online policy was tested. The supply obstruction is estimator-independent, but the value of richer hypothesis classes on this data is unmeasured.
+\end{itemize}

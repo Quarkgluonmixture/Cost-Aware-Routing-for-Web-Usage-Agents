@@ -1,0 +1,38 @@
+% Paper B table #05: \caption{Predictability of the triage label. AUROC is cross-validated; the compa
+\begin{table}[tp]
+\centering
+\caption{Predictability of the triage label. AUROC is cross-validated; the comparison column is the best single covariate used alone, so the margin isolates what the multivariate model adds. The reddit · B2 row is below chance and is the subject of \S\ref{sec:lowerbound}.}
+\label{tab:pb05}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+tasks
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+solvable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+AUROC (logistic)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+best single covariate
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+margin
+\end{minipage} \\
+\midrule
+classifieds · B0 & 224 & 43.3\% & 0.676 & 0.607 & +0.069 \\
+reddit · B0 & 203 & 26.1\% & 0.666 & 0.612 & +0.054 \\
+classifieds · B1 & 224 & 24.6\% & 0.717 & 0.627 & +0.090 \\
+reddit · B1 & 203 & 11.8\% & 0.685 & 0.637 & +0.048 \\
+classifieds · B2 & 224 & 7.1\% & 0.651 & 0.655 & −0.005 \\
+reddit · B2 & 203 & 7.4\% & 0.483 & 0.711 & −0.228 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,22 @@
+% Table source-order #01: Success rate per mode. Success rate (\%) per observation mode. Denomin
+\begin{table}[tp]
+\centering
+\caption{Success rate per mode. Success rate (\%) per observation mode. Denominator is the canonical scored set (cls 224 / red 203) and, for WebArena, the six-mode task intersection (104). Bold = best mode in the cell. Source: \texttt{representation\_class\_comparison.json}.}
+\label{tab:t01}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llllllll@{}}
+\toprule
+cell & DOM & SoM & Vision & DOM+\allowbreak{}stext & DOM+\allowbreak{}sprompt & SoM-image & best \\
+\midrule
+cls·B0 & 17.41 & \textbf{27.23} & 25.00 & 15.62 & 19.64 & 15.62 & SoM \\
+cls·B1 & 6.25 & \textbf{14.29} & 12.50 & 7.59 & 6.70 & 6.70 & SoM \\
+cls·B2 & 1.34 & \textbf{2.23} & 2.23 & 0.45 & 1.79 & 0.89 & SoM \\
+red·B0 & 14.29 & \textbf{14.78} & 7.39 & 13.30 & 12.32 & 10.84 & SoM \\
+red·B1 & 5.91 & \textbf{7.39} & 2.46 & 5.91 & 5.42 & 5.91 & SoM \\
+red·B2 & \textbf{3.94} & 0.99 & 1.97 & 1.97 & 0.00 & 0.49 & DOM \\
+WA·B0 & 26.92 & 22.12 & 19.23 & \textbf{35.58} & 25.96 & 25.00 & DOM+\allowbreak{}stext \\
+WA·B1 & \textbf{16.35} & 13.46 & 9.62 & 16.35 & 16.35 & 11.54 & DOM \\
+\bottomrule
+\end{tabular}
+\end{table}

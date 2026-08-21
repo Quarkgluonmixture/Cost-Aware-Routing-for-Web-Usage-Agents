@@ -1,0 +1,19 @@
+\section{The gap, and what would close it}\label{sec:gap}
+
+\looseness=-1 Between the rerun-corrected upper bound of \S\ref{sec:upperbound} and the lower bound of \S\ref{sec:lowerbound} sits a gap no method in this paper crosses, and the closed routes fail for three separate reasons, supply, estimand and value, rather than one obstruction a better router might get around (Appendix Table~\ref{tab:pb07}; the route-by-route derivations are Appendix~\ref{derivations-for-the-four-relabelling-routes}). The sharpest statement of the bind: routing supervision is produced at the success rate, so routing is least learnable exactly where it would be most valuable; and the rows a router must learn from are the contested ones, which are the rows that flip between identical reruns (Appendix Table~\ref{tab:t27}).
+
+What would change the answer, in order of leverage:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Graded evaluators.} The benchmark emits two values (Appendix Table~\ref{tab:t35}); a graded per-task score would make every episode a training signal regardless of success, attacking the supply obstruction directly.
+\item
+  \textbf{Replicates as a reporting norm.} Single-run reporting remains the norm in this literature; at the flip rates we measure, a mode-to-mode difference below roughly 4pp is not resolvable by one run against another (\S\ref{sec:noise}). Rerun floors should be reported next to mode deltas.
+\item
+  \textbf{A third workload, and cross-family coverage on the second benchmark}, so the moderator of the winner-reversal (\S\ref{sec:complementarity}) becomes identifiable.
+\item
+  \textbf{Online cascade infrastructure.} Every escalation number here is an offline splice; what a real cascade does after the cheap arm has acted on a stateful site is unobserved in this project.
+\end{itemize}
+
+\looseness=-1 \paragraph{The supply--value coupling is falsifiable.} It would be easy to read the obstructions above as separate walls: too few labels, and too few tasks where a choice even exists. They are one wall. The rows a which-mode router can be trained on exist only where something succeeded, and the rows where a per-task choice exists at all are those with more than one solver. Both are subsets of the tasks the agent can do, and across our eight cells they track the best single mode's success rate at $\rho = 0.952$, mean gap 1.65pp (Appendix Table~\ref{tab:t44}). Part of that coupling is structural, both being functionals of one solve matrix. What is not structural is that the routable share grows roughly \emph{linearly} in the per-mode rate, where mutually independent modes would make it grow near-quadratically at these success levels, since two of them would then both solve a task at roughly the square of the per-mode rate. The negative result here is therefore a statement about routing at 2--36\% success rather than about routing, and it predicts its own reversal: run this measurement on an agent that solves most of these tasks and the label supply and the contested set grow together. We would rather be refuted that way than cited as evidence that representation routing does not work. Until then the number worth aiming at is the cost ceiling of \S\ref{sec:upperbound}: 9.5--30.6\% in every cell, reachable with one bit per task rather than a mode identity, and reached by none of the five policies here.

@@ -1,0 +1,18 @@
+\section{The lower bound: five routing constructions, five obstructions}\label{sec:lowerbound}
+
+Five constructions, five different obstructions, one outcome: none beats simply fixing the best or cheapest arm (per-policy tables in Appendix~\ref{app:routing}). That the obstructions differ is what makes the bound informative rather than an artefact of one weak router. A single exception is descriptive rather than confirmatory: on \texttt{red$\cdot$B2}, our sparsest cell, the zero-token rule exceeds always-DOM on success, cost and latency at once (Appendix Table~\ref{tab:t19}), but zeroing six successes credited from accumulated site state removes that exception (Appendix~\ref{sec:threats}), and its triage signal is below chance.
+
+\textbf{Choosing which mode dies of label supply.} The natural label, the cheapest mode that solved the task, exists only where something succeeded, so it is produced at the success rate: 15--97 labels per cell over six classes (Appendix Table~\ref{tab:pb03}), and under a minimum-of-ten-rows-per-class filter four of six cells admit no classifier at all (Appendix Table~\ref{tab:pb04}).
+
+The scarcity is worse than a label count suggests, because the \emph{question} is scarce too: the tasks where more than one mode succeeds, the only rows on which a per-task choice even exists, are 1.5--34.6\% of a cell, and on two cells they number 3 and 4 (Appendix Table~\ref{tab:t42}).
+
+
+\textbf{Choosing whether to spend has the labels and still buys nothing.} The triage label is defined everywhere and predictable in five of the six cells (AUROC 0.651--0.717; the sixth, \texttt{red$\cdot$B2}, is below chance at 0.483; Appendix Table~\ref{tab:pb05}), yet under fully nested cross-validation no cell's learned triage Pareto-dominates always taking the cheapest mode (Appendix Table~\ref{tab:pb06}).
+
+\textbf{A free signal read straight off the task text exists, and routing on it still loses.} A regex over the task intent flags tasks where the screenshot is worth +22.54pp against +0.65pp elsewhere --- a split that is large and significant only on the capable classifieds backbones, and null on reddit (Appendix Figure~\ref{fig:partition}; per-cell intervals in Appendix Table~\ref{tab:t17}). The policy built on it still loses to always-Vision, because the screenshot does not hurt on the unflagged tasks either (Appendix Table~\ref{tab:t19}).
+
+\textbf{The cascade has a usable ranking and still buys nothing.} Running the cheap mode first and escalating when the model's self-reported confidence is low, in the manner of \citet{gupta2024cascades} on the signal of \citet{kadavath2022know}, beats always-rich at no operating point in any comparable cell --- although against a random-escalation control that ranking is informative (Appendix Tables~\ref{tab:t20}--\ref{tab:t21}).
+
+\textbf{Pooling backbones restores supply but makes labels ambiguous}, because different backbones disagree about the same task (Table~\ref{tab:t33}; the one surviving cell is taken apart in Appendix~\ref{the-reddit-b2-saving-in-detail}). Two further features fail before they start: the benchmark's own difficulty annotation adds $\Delta$AUROC +0.0024 (Table~\ref{tab:t22}), and whether the task supplies a reference image, the feature a practitioner would reach for first, looks like it should help and does not (Table~\ref{tab:t23}).
+
+\looseness=-1 The pattern is not `no signal'. It is that the arm the router would route to is already the right arm to route everything to.

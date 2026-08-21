@@ -1,0 +1,43 @@
+% Table source-order #15: Per-attempt versus per-success. Per-attempt versus per-success denomin
+\begin{table}[tp]
+\centering
+\caption{Per-attempt versus per-success. Per-attempt versus per-success denominators. \texttt{content?\ =\ no} marks cells whose best mode has fewer than 10 successes: their ratios are directions at best and both B2 cells are in that state. Among the 6 cells with content the cheapest mode changes under the success denominator in 4 and the fastest in 3. \textbf{Caution:} Every pairwise CI overlaps, so this supports the methodological point that the denominator must be declared, not any ranking. Source: \texttt{outcome\_efficiency.json}.}
+\label{tab:t15}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+content?
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cheapest/attempt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cheapest/success
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+fastest/attempt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+fastest/success
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+max solves
+\end{minipage} \\
+\midrule
+cls·B0 & yes & Vision & Vision & SoM & SoM & 61 \\
+red·B0 & yes & Vision & DOM & Vision & SoM & 30 \\
+cls·B1 & yes & Vision & Vision & SoM & SoM & 32 \\
+red·B1 & yes & Vision & SoM & Vision & SoM & 15 \\
+cls·B2 & \textbf{no} & Vision & Vision & SoM & SoM & 5 \\
+red·B2 & \textbf{no} & Vision & DOM & Vision & DOM & 8 \\
+WA·B1 & yes & Vision & DOM+\allowbreak{}stext & DOM & DOM & 17 \\
+WA·B0 & yes & DOM & DOM+\allowbreak{}stext & DOM+\allowbreak{}sprompt & DOM+\allowbreak{}stext & 37 \\
+\bottomrule
+\end{tabular}
+\end{table}

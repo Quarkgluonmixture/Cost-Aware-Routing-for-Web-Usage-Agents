@@ -1,0 +1,40 @@
+% Table source-order #29: Off-site navigation and container latency. Off-site navigation. Postmi
+\begin{table}[tp]
+\centering
+\caption{Off-site navigation and container latency. Off-site navigation. Postmill is a link aggregator, so an agent opening a trending thread can walk onto the live public internet; classifieds is self-contained. \textbf{Caution:} Off-site steps are faster, not slower (commercial CDNs beat a Postmill container sharing a host with the agent) so the distortion runs opposite to the intuition. The larger asymmetry is in the last two columns of the on-site medians: reddit's container costs \textasciitilde1.69× what classifieds' does before any agent behaviour enters, which is why no between-site latency number is quotable bare. Source: \texttt{offsite\_navigation\_audit.json}.}
+\label{tab:t29}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+off-site steps
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+off-site episodes
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+median env\_\allowbreak{}step on-site
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+off-site
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ratio
+\end{minipage} \\
+\midrule
+B0·VWA-cla & 0/20646 (0.00\%) & 0/1344 (0.0\%) & 4,493 ms & --- & --- \\
+B0·VWA-red & 478/26425 (1.81\%) & 36/1230 (2.9\%) & 11,349 ms & 10,007 ms & 0.88× \\
+B1·VWA-cla & 0/27927 (0.00\%) & 0/1344 (0.0\%) & 5,750 ms & --- & --- \\
+B1·VWA-red & 501/29309 (1.71\%) & 54/1230 (4.4\%) & 7,848 ms & 6,349 ms & 0.81× \\
+B2·VWA-cla & 58/36529 (0.16\%) & 4/1344 (0.3\%) & 4,656 ms & 14,884 ms & 3.20× \\
+B2·VWA-red & 719/33749 (2.13\%) & 49/1230 (4.0\%) & 9,324 ms & 4,850 ms & 0.52× \\
+B1·WA-red & 278/14695 (1.89\%) & 40/624 (6.4\%) & 6,809 ms & 6,105 ms & 0.90× \\
+B0·WA-red & 123/11703 (1.05\%) & 21/624 (3.4\%) & 6,613 ms & 11,405 ms & 1.72× \\
+\bottomrule
+\end{tabular}
+\end{table}

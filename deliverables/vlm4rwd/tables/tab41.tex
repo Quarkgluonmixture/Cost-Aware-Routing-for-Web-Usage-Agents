@@ -1,0 +1,47 @@
+% Table source-order #41: Failure modes are asymmetric across channels.
+\begin{table}[tbp]
+\centering
+\caption{Failure modes are asymmetric across channels. The two channels do not fail the same way. On tasks only one channel solved, how did the other fail? Pooled over 8 cells at ruleset v11. Enrichment = hit rate on the disagreement set over that channel's hit rate across all its failures, so about 1x means it failed there the way it fails everywhere. Rules with fewer than 8 pooled conditional hits are omitted, and the largest omitted enrichment is stated per block rather than left to the reader. Block A has named death causes (top 2.31x, 404 losing-channel episodes against 5388 of that channel's failures overall). Block B does not: its top row rests on 8 hits, exactly the reporting floor, and all 8 of them fall in the 2 WebArena cells, none in the other 6; every other rule in that block sits at or below the everywhere-baseline. On the tasks the text channel uniquely solves, the image channel did not break somewhere nameable -- it did not arrive. \textbf{Caution:} TEXT is four arms and IMAGE is two, so the two blocks' task counts are not comparable to each other; read each block against its own baseline column, never across blocks. \textbf{Caution:} a per-rule frequency is a distribution of symptoms, not of causes -- the largest rows in most cells are risk markers, not death causes, and only rules whose docstrings record a causal check are verified as such. Source: \texttt{conditional\_failure\_attribution.json}.}
+\label{tab:t41}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+rule
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+how it failed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+on disagreement
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+baseline
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+enrichment
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+hits
+\end{minipage} \\
+\midrule
+\textbf{A. image wins} & & \emph{how the text channel failed} & (101 tasks) & & & \\
+& \texttt{P27} & gives up when not found & 3.2\% & 1.4\% & \textbf{2.31x} & 13 \\
+& \texttt{P17} & click-back oscillation & 15.1\% & 6.7\% & \textbf{2.25x} & 61 \\
+& \texttt{P16} & visual task, DOM cannot see & 6.2\% & 2.8\% & \textbf{2.24x} & 25 \\
+& \texttt{P43} & page visual, no screenshot & 48.5\% & 29.3\% & \textbf{1.65x} & 196 \\
+& & \emph{15 further rules} & & & all \textless= 1.55x & \\
+\textbf{B. text wins} & & \emph{how the image channel failed} & (109 tasks) & & & \\
+& \texttt{P49} & submit-page anchor misclick & 3.7\% & 1.0\% & \textbf{3.61x} & 8 \\
+& \texttt{P17} & click-back oscillation & 4.6\% & 3.9\% & \textbf{1.17x} & 10 \\
+& \texttt{P12} & never paginates & 13.8\% & 14.8\% & \textbf{0.93x} & 30 \\
+& \texttt{P31} & budget exhausted, unfinished & 49.5\% & 54.2\% & \textbf{0.91x} & 108 \\
+& & \emph{6 further rules} & & & all \textless= 0.87x & \\
+\bottomrule
+\end{tabular}
+\end{table}
+

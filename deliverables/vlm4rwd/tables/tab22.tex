@@ -1,0 +1,41 @@
+% Table source-order #22: Triage learnability and the visual-difficulty feature. Can the triage 
+\begin{table}[tp]
+\centering
+\caption{Triage learnability and the visual-difficulty feature. Can the triage label be predicted, and does the benchmark's own visual-difficulty annotation help? Task-held-out 5-fold CV, L2 logistic regression, seed 42. Mean ΔAUROC = +0.0024 over 6 cells, improving 1: inside fold-split noise. \texttt{solvable} is the positive count: the label exists for every task, unlike the which-mode label. \textbf{Caution:} Six cells, not eight, and the reason is the finding. \texttt{visual\_difficulty} is a VisualWebArena task-config annotation; WebArena's 106 reddit configs carry none of \texttt{visual\_difficulty}, \texttt{reasoning\_difficulty}, \texttt{overall\_difficulty} or \texttt{image}: the field simply is not there, so the contrast cannot be computed rather than computing to zero. That absence is what makes WA the clean test elsewhere: where a router can read the benchmark's own difficulty annotation it looks learnable, and WA is the setting where it cannot. Source: \texttt{visual\_difficulty\_router.json}.}
+\label{tab:t22}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+n
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+solvable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+AUROC without
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+AUROC with visual\_\allowbreak{}difficulty
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Δ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+visual\_\allowbreak{}difficulty alone
+\end{minipage} \\
+\midrule
+cls·B0 & 224 & 97 & 0.726 & 0.726 & -0.000 & 0.534 \\
+cls·B1 & 224 & 55 & 0.732 & 0.726 & -0.006 & 0.553 \\
+cls·B2 & 224 & 16 & 0.642 & 0.630 & -0.013 & 0.570 \\
+red·B0 & 203 & 53 & 0.780 & 0.776 & -0.005 & 0.630 \\
+red·B1 & 203 & 24 & 0.864 & 0.863 & -0.002 & 0.620 \\
+red·B2 & 203 & 15 & 0.615 & 0.655 & +0.040 & 0.718 \\
+\bottomrule
+\end{tabular}
+\end{table}

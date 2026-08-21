@@ -1,0 +1,47 @@
+% Table source-order #17: Ex-ante visual-intent partition. Ex-ante partition. The predicate is a
+\begin{table}[tp]
+\centering
+\caption{Ex-ante visual-intent partition. Ex-ante partition. The predicate is a regex over the task intent plus `carries no reference image': both read the task config, so it costs no tokens and needs no episode. On classifieds the screenshot is worth an order of magnitude more on the flagged tasks than on the rest, and the flagged/rest split is significant/not respectively on the two capable backbones. \textbf{Caution:} WebArena is omitted: the predicate fires on only 5 of 104 tasks there and none is solved by any mode, so the cells are degenerate rather than null. Source: \texttt{visual\_intent\_routing.json}.}
+\label{tab:t17}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+flagged
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+arm
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Δ vs DOM on flagged
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+95\% CI
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Δ on the rest
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+95\% CI
+\end{minipage} \\
+\midrule
+cls·B0 & 71 & vision & +22.54 & {[}+9.86, +33.80{]} & +0.65 & {[}-5.88, +7.84{]} \\
+cls·B0 & 71 & som & +19.72 & {[}+7.04, +32.39{]} & +5.23 & {[}-1.31, +12.42{]} \\
+cls·B1 & 71 & vision & +16.90 & {[}+8.45, +25.35{]} & +1.31 & {[}-3.92, +6.54{]} \\
+cls·B1 & 71 & som & +12.68 & {[}+5.63, +21.13{]} & +5.88 & {[}+0.00, +11.76{]} \\
+cls·B2 & 71 & vision & +1.41 & {[}-4.23, +7.04{]} & +0.65 & {[}-1.31, +3.27{]} \\
+cls·B2 & 71 & som & +0.00 & {[}-5.63, +5.63{]} & +1.31 & {[}-1.31, +3.92{]} \\
+red·B0 & 63 & vision & -3.17 & {[}-14.29, +7.94{]} & -8.57 & {[}-14.29, -2.86{]} \\
+red·B0 & 63 & som & +0.00 & {[}-9.52, +9.52{]} & +0.71 & {[}-4.29, +5.71{]} \\
+red·B1 & 63 & vision & -3.17 & {[}-9.52, +3.17{]} & -3.57 & {[}-7.86, +0.71{]} \\
+red·B1 & 63 & som & +1.59 & {[}-3.17, +7.94{]} & +1.43 & {[}-2.14, +5.00{]} \\
+red·B2 & 63 & vision & +4.76 & {[}-1.59, +12.70{]} & -5.00 & {[}-8.57, -1.43{]} \\
+red·B2 & 63 & som & -1.59 & {[}-4.76, +0.00{]} & -3.57 & {[}-7.14, +0.00{]} \\
+\bottomrule
+\end{tabular}
+\end{table}

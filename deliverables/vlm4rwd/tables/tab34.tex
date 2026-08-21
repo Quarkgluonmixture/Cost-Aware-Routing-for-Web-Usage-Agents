@@ -1,0 +1,35 @@
+% Table source-order #34: page\_changed false positives. \texttt{page\_changed} false positives.
+\begin{table}[tp]
+\centering
+\caption{page\_changed false positives. \texttt{page\_changed} false positives. A step can register a page change that is purely cosmetic; correcting for it raises every mode's no-change rate. The Micro conclusion is unaffected (Vision remains highest in every cell either way) but a router firing on a 2-step no-change streak would trigger 5321 → 5910 times (+11.1\%). Source: \texttt{page\_change\_corrected.json}.}
+\label{tab:t34}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+mode
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+no-change rate observed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+corrected
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cosmetic FP steps
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+steps
+\end{minipage} \\
+\midrule
+DOM & 0.3846 & 0.4332 & 1618 & 33277 \\
+phantom\_\allowbreak{}prompt & 0.4222 & 0.4681 & 1528 & 33283 \\
+phantom\_\allowbreak{}som & 0.3683 & 0.4169 & 1688 & 34741 \\
+phantom\_\allowbreak{}text & 0.3331 & 0.3770 & 1518 & 34610 \\
+SoM & 0.4071 & 0.4675 & 1870 & 30921 \\
+Vision & 0.5675 & 0.6134 & 1569 & 34151 \\
+\bottomrule
+\end{tabular}
+\end{table}

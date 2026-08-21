@@ -1,0 +1,43 @@
+% Table source-order #38: Linear readability against geometric magnitude. Are the six representa
+\begin{table}[tp]
+\centering
+\caption{Linear readability against geometric magnitude. Are the six representations distinguishable inside the model? Leave-one-task-out AUROC over the residual stream separates every mode pair perfectly on both sites, at best layer. The gap columns are why that is worth stating rather than assuming: the image axis peaks at 0.042 cosine while the text-format axis peaks at 0.0047 (a factor of \textasciitilde9) so perfect separability coexists with geometric differences in the third decimal place. \textbf{Caution:} Scope: one backbone (B1), 144 examples per site, a single decode step; and AUROC 1.000 on 24 tasks × 6 modes is a ceiling effect, not a calibrated effect size. This licenses `the representation is present and readable', nothing about whether it is used. Source: \texttt{mechanism\_evidence.json} ← \texttt{method42\_metrics\_v2.json}.}
+\label{tab:t38}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+site
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+modes
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+examples
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+pairs
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+pairs at AUROC 1.000
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+worst pair
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+image gap
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+text-format gap
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+prompt-family gap
+\end{minipage} \\
+\midrule
+classifieds & 6 & 144 & 15 & \textbf{15/15} & 1.000 & 0.0416 (L36) & 0.0047 (L36) & 0.0088 (L36) \\
+reddit & 6 & 144 & 15 & \textbf{15/15} & 1.000 & 0.0386 (L04) & 0.0037 (L36) & 0.0069 (L36) \\
+\bottomrule
+\end{tabular}
+\end{table}

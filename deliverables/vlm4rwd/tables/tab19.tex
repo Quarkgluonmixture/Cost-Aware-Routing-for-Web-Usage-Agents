@@ -1,0 +1,50 @@
+% Table source-order #19: Routing policies on the 3-axis frontier. Is routing worth it? \texttt{
+\begin{table}[tp]
+\centering
+\caption{Routing policies on the 3-axis frontier. Is routing worth it? \texttt{rule} policies send the ex-ante-flagged tasks to one arm and the rest to another; the partition is a regex over the task intent, so nothing is learned and there is no in-sample optimism. `On frontier' means nothing dominates it, not that it is preferable: on \texttt{cls·B0} all three rule policies sit between always-SoM and always-Vision, worse on every axis than one or the other. Cost/latency are per-attempt cell means, within-cell comparable only. Source: \texttt{rule\_routing\_pareto.json}.}
+\label{tab:t19}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llllll@{}}
+\toprule
+cell & policy & SR & cost & latency & on frontier \\
+\midrule
+cls·B0 & always-SoM & 27.23 & 0.07236 & 106.0s & yes \\
+cls·B0 & always-Vision & 25.00 & 0.06481 & 125.2s & yes \\
+cls·B0 & rule: flag→Vision else DOM & 24.55 & 0.06809 & 117.6s & yes \\
+cls·B0 & rule: flag→SoM else DOM+\allowbreak{}stext & 24.11 & 0.07019 & 115.8s & yes \\
+cls·B0 & rule: flag→SoM else DOM & 23.66 & 0.07049 & 111.5s & yes \\
+cls·B0 & always-DOM & 17.41 & 0.06962 & 114.1s & no \\
+cls·B1 & always-SoM & 14.29 & 0.06028 & 262.0s & yes \\
+cls·B1 & always-Vision & 12.50 & 0.04316 & 269.8s & yes \\
+cls·B1 & rule: flag→Vision else DOM & 11.61 & 0.05433 & 296.5s & no \\
+cls·B1 & rule: flag→SoM else DOM+\allowbreak{}stext & 11.16 & 0.05926 & 297.2s & no \\
+cls·B1 & rule: flag→SoM else DOM & 10.27 & 0.05976 & 294.0s & no \\
+cls·B1 & always-DOM & 6.25 & 0.05951 & 308.9s & no \\
+cls·B2 & always-SoM & 2.23 & 0.09075 & 374.3s & yes \\
+cls·B2 & always-Vision & 2.23 & 0.07065 & 417.8s & yes \\
+cls·B2 & rule: flag→Vision else DOM & 1.79 & 0.07483 & 407.2s & yes \\
+cls·B2 & always-DOM & 1.34 & 0.07676 & 402.3s & yes \\
+cls·B2 & rule: flag→SoM else DOM & 1.34 & 0.08120 & 393.4s & no \\
+cls·B2 & rule: flag→SoM else DOM+\allowbreak{}stext & 1.34 & 0.07876 & 391.5s & yes \\
+red·B0 & always-SoM & 14.78 & 0.11045 & 451.6s & yes \\
+red·B0 & always-DOM & 14.29 & 0.10147 & 552.5s & yes \\
+red·B0 & rule: flag→SoM else DOM & 14.29 & 0.10426 & 521.2s & yes \\
+red·B0 & rule: flag→Vision else DOM & 13.30 & 0.10041 & 510.9s & yes \\
+red·B0 & rule: flag→SoM else DOM+\allowbreak{}stext & 13.30 & 0.10722 & 527.8s & no \\
+red·B0 & always-Vision & 7.39 & 0.09807 & 418.5s & yes \\
+red·B1 & always-SoM & 7.39 & 0.08000 & 609.1s & yes \\
+red·B1 & rule: flag→SoM else DOM+\allowbreak{}stext & 6.90 & 0.07275 & 601.8s & yes \\
+red·B1 & rule: flag→SoM else DOM & 6.40 & 0.07538 & 604.6s & no \\
+red·B1 & always-DOM & 5.91 & 0.07330 & 602.6s & no \\
+red·B1 & rule: flag→Vision else DOM & 4.93 & 0.06682 & 557.3s & yes \\
+red·B1 & always-Vision & 2.46 & 0.05240 & 456.6s & yes \\
+red·B2 & rule: flag→Vision else DOM & 5.42 & 0.08658 & 632.7s & yes \\
+red·B2 & always-DOM & 3.94 & 0.09479 & 669.9s & no \\
+red·B2 & rule: flag→SoM else DOM & 3.45 & 0.10001 & 655.4s & no \\
+red·B2 & always-Vision & 1.97 & 0.06833 & 550.0s & yes \\
+red·B2 & rule: flag→SoM else DOM+\allowbreak{}stext & 1.48 & 0.09568 & 660.7s & no \\
+red·B2 & always-SoM & 0.99 & 0.11160 & 623.0s & no \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,140 @@
+% VLM4RWD @ NeurIPS 2026 submission (non-archival workshop).
+%
+% Source: the REALM @ EMNLP 2026 submission (Overleaf project
+% 6a59017b04233a73ed5ec570, commit a456bff). Prose and numbers are carried over
+% unchanged; only the venue template differs. The two venues want opposite
+% things from the layout -- ACL is two-column 11pt A4, NeurIPS is one-column
+% 10pt US Letter -- so the conversion is: table*/figure* collapse to
+% table/figure, \columnwidth becomes \linewidth, and acl_natbib gives way to
+% the plainnat that neurips_2026.sty loads.
+%
+% dblblindworkshop = the option the official kit ships for a double-blind
+% workshop. It anonymises the author block and defines \@trackname from
+% \workshoptitle. NOTE: neurips_2026.sty prints \@trackname only under [final];
+% in review mode line 400 hardcodes the main-conference notice, so the submitted
+% PDF's footer says "Submitted to ... NeurIPS 2026" whichever track is chosen.
+% That is the official kit's behaviour, not a misconfiguration -- the workshop
+% name appears once [final] is added for camera-ready.
+\documentclass{article}
+
+\usepackage[dblblindworkshop]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{amsmath,amssymb}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{wrapfig}
+
+\graphicspath{{figures/}}
+
+% Float placement. A table-dense paper defers floats under LaTeX's defaults and
+% dumps them several pages after the text that discusses them; measured on the
+% ACL build 2026-07-27, tables 1-4 all landed on page 5 while their text sat on
+% pages 2-4. These values let a page carry more float and less text before
+% deferring.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+
+% A visible but line-breakable marker. Only the yellow tag is boxed so a long
+% verdict description cannot create an unbreakable overfull hbox.
+\newcommand{\todo}[1]{%
+  \begingroup\color{red!75!black}\bfseries
+  \colorbox{yellow!45}{\strut TODO}\,#1\endgroup}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% pdfLaTeX mappings for the Unicode used by the Markdown masters these sections
+% were generated from. Keeping them here makes an unsupported source glyph fail
+% the build instead of dropping silently.
+\DeclareUnicodeCharacter{00A7}{\S}
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{00B2}{\ensuremath{{}^{2}}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+\DeclareUnicodeCharacter{03C1}{\ensuremath{\rho}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{03B4}{\ensuremath{\delta}}
+\DeclareUnicodeCharacter{03B8}{\ensuremath{\theta}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+\DeclareUnicodeCharacter{2013}{--}
+\DeclareUnicodeCharacter{2014}{---}
+\DeclareUnicodeCharacter{2026}{\ldots}
+\DeclareUnicodeCharacter{2190}{\ensuremath{\leftarrow}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{21D2}{\ensuremath{\Rightarrow}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2216}{\ensuremath{\setminus}}
+\DeclareUnicodeCharacter{221E}{\ensuremath{\infty}}
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2284}{\ensuremath{\not\subset}}
+\DeclareUnicodeCharacter{2070}{\ensuremath{{}^{0}}}
+\DeclareUnicodeCharacter{2074}{\ensuremath{{}^{4}}}
+\DeclareUnicodeCharacter{2075}{\ensuremath{{}^{5}}}
+\DeclareUnicodeCharacter{2076}{\ensuremath{{}^{6}}}
+\DeclareUnicodeCharacter{2077}{\ensuremath{{}^{7}}}
+\DeclareUnicodeCharacter{207B}{\ensuremath{{}^{-}}}
+
+\title{Routing Is Least Learnable Where It Is Most Valuable:\\
+  Bounds on Representation Routing for Web Agents}
+
+\workshoptitle{Grounded and Faithful Vision-Language Models for Real-World Deployment}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/0_abstract}
+\end{abstract}
+
+\input{sections/1_intro}
+\input{sections/2_setup}
+\input{sections/3_complementarity}
+\input{sections/3_noise}
+\input{sections/4_upperbound}
+\input{sections/5_lowerbound}
+\input{sections/6_gap}
+\input{sections/8_discussion}
+
+% Everything above this label counts against the workshop's 8-page content
+% limit; the CFP excludes references and appendices from it.
+\label{content-end}
+
+\label{refs-start}
+\bibliographystyle{plainnat}
+\bibliography{paper}
+
+\clearpage
+\appendix
+
+% Threats and Limitations sit in the appendix, not the body: the CFP excludes
+% references and appendices from the 8-page limit and says nothing about either
+% section, and the body cannot hold them. Both are carried over complete -- but
+% moving a qualifier while leaving the claim it qualifies in the body is not a
+% neutral edit, so the three body statements that lean on them (the rerun band's
+% cell coverage, the reddit-null split, the leakage correction) now state their
+% qualifier inline. See README.md.
+\input{sections/7_threats}
+
+\section{Limitations}\label{app:limitations}
+\input{sections/limitations}
+
+\input{sections/appendix}
+
+\end{document}

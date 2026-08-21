@@ -1,0 +1,58 @@
+% Table source-order #14: Behavioural metrics against run-to-run noise. Behavioural metrics agai
+\begin{table}[tp]
+\centering
+\caption{Behavioural metrics against run-to-run noise. Behavioural metrics against run-to-run movement, \texttt{B0\ x\ classifieds}, three replicated arms (dom, vision, som). \texttt{rerun\ band} is the largest \textbar metric(run A) - metric(run B)\textbar{} over those arms; \texttt{cross-mode\ spread} is max-min over the six modes. 22 of 25 metrics exceed the band, several by 5-22x. The exceptions are \texttt{mean\_latency\_canonical\_s} (0.84x), \texttt{mean\_latency\_s} (0.87x), \texttt{parse\_fail\_rate} (1.00x): i.e.~both latency metrics, which \texttt{latency\_decomposition} reaches independently by decomposing the step into model and container. Every other efficiency and behavioural claim in this paper is judged against a rerun band; these 26 metrics were not, until this table. One cell, one rerun per arm: a point estimate, not a threshold. Source: \texttt{replicate\_metric\_noise.json}.}
+\label{tab:t14}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+dimension
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+metric
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cross-mode spread
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+rerun band
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ratio
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textgreater{} a rerun?
+\end{minipage} \\
+\midrule
+Outcome & \texttt{sr\_\allowbreak{}pct} & 11.607 & 2.232 & 5.20x & \textbf{yes} \\
+Outcome & \texttt{n\_\allowbreak{}success} & 26.000 & 5.000 & 5.20x & \textbf{yes} \\
+Outcome & \texttt{n\_\allowbreak{}unique\_\allowbreak{}solves} & --- & --- & --- & \emph{cross-mode by construction} \\
+Macro & \texttt{n\_\allowbreak{}steps} & 2.567 & 0.469 & 5.48x & \textbf{yes} \\
+Macro & \texttt{cap\_\allowbreak{}hit\_\allowbreak{}rate} & 0.062 & 0.045 & 1.40x & \textbf{yes} \\
+Macro & \texttt{click\_\allowbreak{}frac} & 0.041 & 0.014 & 2.87x & \textbf{yes} \\
+Macro & \texttt{type\_\allowbreak{}frac} & 0.078 & 0.019 & 4.21x & \textbf{yes} \\
+Macro & \texttt{scroll\_\allowbreak{}frac} & 0.106 & 0.006 & 16.85x & \textbf{yes} \\
+Macro & \texttt{search\_\allowbreak{}loop\_\allowbreak{}rate} & 0.121 & 0.018 & 6.75x & \textbf{yes} \\
+Macro & \texttt{url\_\allowbreak{}revisit\_\allowbreak{}rate} & 0.081 & 0.022 & 3.66x & \textbf{yes} \\
+Micro & \texttt{parse\_\allowbreak{}fail\_\allowbreak{}rate} & 0.002 & 0.002 & 1.00x & no \\
+Micro & \texttt{action\_\allowbreak{}fail\_\allowbreak{}rate} & 0.068 & 0.014 & 4.87x & \textbf{yes} \\
+Micro & \texttt{click\_\allowbreak{}fail\_\allowbreak{}rate} & 0.063 & 0.025 & 2.48x & \textbf{yes} \\
+Micro & \texttt{type\_\allowbreak{}fail\_\allowbreak{}rate} & 0.030 & 0.006 & 5.28x & \textbf{yes} \\
+Micro & \texttt{no\_\allowbreak{}change\_\allowbreak{}rate} & 0.053 & 0.009 & 5.82x & \textbf{yes} \\
+Micro & \texttt{scroll\_\allowbreak{}inert\_\allowbreak{}rate} & 0.078 & 0.017 & 4.68x & \textbf{yes} \\
+Micro & \texttt{noop\_\allowbreak{}inert\_\allowbreak{}rate} & 0.026 & 0.007 & 3.92x & \textbf{yes} \\
+Micro & \texttt{visibility\_\allowbreak{}gap\_\allowbreak{}rate} & 0.016 & 0.011 & 1.56x & \textbf{yes} \\
+Micro & \texttt{locator\_\allowbreak{}fallback\_\allowbreak{}rate} & 0.076 & 0.006 & 11.81x & \textbf{yes} \\
+Micro & \texttt{action\_\allowbreak{}repeat\_\allowbreak{}frac} & 0.096 & 0.004 & 21.88x & \textbf{yes} \\
+Micro & \texttt{finish\_\allowbreak{}rate} & 0.054 & 0.036 & 1.50x & \textbf{yes} \\
+Efficiency & \texttt{mean\_\allowbreak{}cost\_\allowbreak{}usd} & 0.008 & 0.002 & 3.24x & \textbf{yes} \\
+Efficiency & \texttt{cost\_\allowbreak{}rel\_\allowbreak{}dom} & 0.108 & 0.026 & 4.22x & \textbf{yes} \\
+Efficiency & \texttt{mean\_\allowbreak{}latency\_\allowbreak{}s} & 19.562 & 22.488 & 0.87x & no \\
+Efficiency & \texttt{mean\_\allowbreak{}latency\_\allowbreak{}canonical\_\allowbreak{}s} & 19.204 & 22.846 & 0.84x & no \\
+Efficiency & \texttt{mean\_\allowbreak{}tokens} & 8697.978 & 2186.054 & 3.98x & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\end{table}

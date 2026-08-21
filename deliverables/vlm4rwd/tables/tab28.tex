@@ -1,0 +1,41 @@
+% Table source-order #28: Leaked-success sensitivity. Sensitivity to environmentally-credited su
+\begin{table}[tp]
+\centering
+\caption{Leaked-success sensitivity. Sensitivity to environmentally-credited successes. \texttt{require\_reset} is a no-op on reddit, so subscriptions accumulate across a run's episodes and a later task can be scored on state an earlier one created. 6 such successes are set to 0 here: the denominator is unchanged, because an attempted-and-unaccomplished task is a 0, not a missing row. 4 of the leaks are on DOM, so removing them helps the fused arm: the direction that disfavours this project's own caution. \textbf{Caution:} The WA cells are unaudited for the same defect. Source: \texttt{leakage\_sensitivity.json}.}
+\label{tab:t28}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+contrast
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+before
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+95\% CI
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+after
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+95\% CI
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+verdict
+\end{minipage} \\
+\midrule
+red·B0 & SoM − Vision & +7.39 & {[}+2.46, +12.32{]} & +7.88 & {[}+2.96, +12.81{]} & unchanged \\
+red·B0 & SoM − DOM & +0.49 & {[}-3.94, +4.93{]} & +0.99 & {[}-3.45, +5.42{]} & unchanged \\
+red·B1 & SoM − Vision & +4.93 & {[}+1.48, +8.87{]} & +4.43 & {[}+0.99, +7.88{]} & unchanged \\
+red·B1 & SoM − DOM & +1.48 & {[}-1.48, +4.43{]} & +0.99 & {[}-1.48, +3.94{]} & unchanged \\
+red·B2 & SoM − Vision & -0.99 & {[}-3.45, +1.48{]} & -0.99 & {[}-3.45, +1.48{]} & unchanged \\
+red·B2 & SoM − DOM & -2.96 & {[}-5.91, -0.49{]} & -1.48 & {[}-3.45, +0.49{]} & \textbf{flips} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,51 @@
+% Table source-order #43: Where two representations part company (E2 trajectory divergence).
+\begin{table}[tbp]
+\centering
+\caption{Where two representations part company. Where two representations part company. Restricted to the tasks whose outcome the two modes disagree on (exactly one of them succeeds) so these are the trajectories that produced the difference, not all trajectories. \texttt{first\ divergent\ step} is the first step at which the two URL signatures differ. Drift would look different: two runs that separate through accumulated perturbation share a prefix and part late, whereas on VisualWebArena 72--100\% of these tasks have already diverged by step 3 and at most 3.0\% diverge at step 10 or later. \textbf{Caution: this is markedly weaker on WebArena} (50--89\% early, up to 22.2\% late), which is why the table is per site and not pooled. \textbf{Caution:} each row rests on 13--46 tasks, and element ids are deliberately not used as the anchor: they are neither step-invariant nor mode-invariant, so URL signatures are the only stable comparison. Source: \texttt{mechanism\_per\_task.json} E2.}
+\label{tab:t43}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+site
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+contrast
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+tasks
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+median first divergent step
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+diverged by step 3
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+diverged at step 10+
+\end{minipage} \\
+\midrule
+classifieds & DOM vs SoM-image & 22 & 1 & 95.5\% & 0.0\% \\
+classifieds & DOM vs DOM+\allowbreak{}sprompt & 33 & 1 & 84.8\% & 3.0\% \\
+classifieds & DOM vs DOM+\allowbreak{}stext & 22 & 1 & 95.5\% & 0.0\% \\
+classifieds & SoM-image vs SoM & 46 & 1 & 93.5\% & 0.0\% \\
+classifieds & DOM+\allowbreak{}sprompt vs SoM-image & 23 & 1 & 91.3\% & 0.0\% \\
+classifieds & DOM+\allowbreak{}stext vs SoM-image & 18 & 2 & 72.2\% & 0.0\% \\
+reddit & DOM vs SoM-image & 19 & 0 & 100.0\% & 0.0\% \\
+reddit & DOM vs DOM+\allowbreak{}sprompt & 18 & 1 & 88.9\% & 0.0\% \\
+reddit & DOM vs DOM+\allowbreak{}stext & 16 & 0 & 93.8\% & 0.0\% \\
+reddit & SoM-image vs SoM & 20 & 0 & 94.7\% & 0.0\% \\
+reddit & DOM+\allowbreak{}sprompt vs SoM-image & 17 & 0 & 100.0\% & 0.0\% \\
+reddit & DOM+\allowbreak{}stext vs SoM-image & 19 & 0 & 100.0\% & 0.0\% \\
+wa\_reddit & DOM vs SoM-image & 16 & 1 & 75.0\% & 6.2\% \\
+wa\_reddit & DOM vs DOM+\allowbreak{}sprompt & 19 & 1 & 89.5\% & 5.3\% \\
+wa\_reddit & DOM vs DOM+\allowbreak{}stext & 21 & 1 & 66.7\% & 9.5\% \\
+wa\_reddit & SoM-image vs SoM & 19 & 1 & 73.7\% & 0.0\% \\
+wa\_reddit & DOM+\allowbreak{}sprompt vs SoM-image & 13 & 0.5 & 83.3\% & 8.3\% \\
+wa\_reddit & DOM+\allowbreak{}stext vs SoM-image & 19 & 4 & 50.0\% & 22.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+

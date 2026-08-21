@@ -1,0 +1,20 @@
+% Paper B table #04: \caption{Classes surviving a minimum of ten training rows per class in a five-fo
+\begin{table}[tp]
+\centering
+\caption{Classes surviving a minimum of ten training rows per class in a five-fold split. Fewer than two surviving classes leaves nothing to discriminate between, which is the state of four of the six cells.}
+\label{tab:pb04}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+cell & labels & classes & classes surviving the filter & trainable \\
+\midrule
+classifieds · B0 & 97 & 6 & 3 (DOM, DOM+\allowbreak{}sprompt, SoM) & yes \\
+reddit · B0 & 53 & 6 & 1 (DOM) & no \\
+classifieds · B1 & 55 & 6 & 2 (DOM, SoM) & yes \\
+reddit · B1 & 24 & 6 & 0 & no \\
+classifieds · B2 & 16 & 5 & 0 & no \\
+reddit · B2 & 15 & 5 & 0 & no \\
+\bottomrule
+\end{tabular}
+\end{table}

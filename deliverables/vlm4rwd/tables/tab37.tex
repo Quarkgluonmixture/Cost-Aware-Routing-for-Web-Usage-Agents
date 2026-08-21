@@ -1,0 +1,38 @@
+% Table source-order #37: What a cost number contains. Every cost figure elsewhere is \texttt{co
+\begin{table}[tp]
+\centering
+\caption{What a cost number contains. Every cost figure elsewhere is \texttt{cost/ep}, a single number; the schema splits it additively into what bought a canonical action and what was burned re-parsing the model's output. Summed over each backbone's conditions, protocol repair is 0.53\% of B0's bill and 4.38\% of B2's: a 8.2× spread across model families for the same task set, and the worst per-episode parse-error wait counts all sit on B2. This is small in absolute terms and is not a correction to any reported cost. It bounds something else: a cross-family cost comparison is not quite comparing like with like, because one family pays a protocol tax the others do not. Source: \texttt{results/phantom\_paper/cross\_site/cross\_site\_aggregation.csv} (via \texttt{aggregate\_cross\_site.py}).}
+\label{tab:t37}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+backbone
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+conditions
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+billed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+canonical action
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+protocol repair
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+share of billed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+worst parse-error waits/ep
+\end{minipage} \\
+\midrule
+B0 & 12 & \$1.0391 & \$1.0336 & \$0.00553 & \textbf{0.53\%} & 0.08 (red·DOM+\allowbreak{}sprompt) \\
+B1 & 12 & \$0.7690 & \$0.7504 & \$0.01856 & \textbf{2.41\%} & 0.16 (red·Vision) \\
+B2 & 12 & \$1.0373 & \$0.9919 & \$0.04541 & \textbf{4.38\%} & 1.23 (cla·SoM) \\
+\bottomrule
+\end{tabular}
+\end{table}

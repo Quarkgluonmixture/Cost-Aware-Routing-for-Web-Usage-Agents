@@ -1,0 +1,46 @@
+% Table source-order #04: Class ablation, unmatched and arm-matched. Class ablation. Columns 2--
+\begin{table}[tp]
+\centering
+\caption{Class ablation, unmatched and arm-matched. Class ablation. Columns 2--4: oracle coverage lost when a whole class is unavailable: not arm-matched, the no-image class has four arms and the others one each, so most of the gap is arm count. Columns 5--7: the matched comparison: gain from adding ONE arm of that class to the cell's best single arm (: = that class already supplies the starting arm). The matched panel shows no systematic difference between classes. Source: \texttt{representation\_class\_comparison.json}.}
+\label{tab:t04}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+all six
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+−no-image
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+−vision-only
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+−hybrid
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
++1 no-image
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
++1 vision-only
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
++1 hybrid
+\end{minipage} \\
+\midrule
+cls·B0 & 43.30 & −9.38 & −4.02 & −2.68 & +7.14pp & +6.70pp & --- \\
+cls·B1 & 24.55 & −5.36 & −4.02 & −4.46 & +3.57pp & +4.91pp & --- \\
+cls·B2 & 7.14 & −2.68 & −2.23 & −2.23 & +1.79pp & +2.23pp & --- \\
+red·B0 & 26.11 & −7.88 & −1.97 & −1.97 & +4.93pp & +3.45pp & --- \\
+red·B1 & 11.82 & −3.45 & −0.99 & −0.49 & +1.97pp & +0.99pp & --- \\
+red·B2 & 7.39 & −4.43 & −1.48 & −0.49 & +0.99pp & +1.97pp & +0.49pp \\
+WA·B0 & 51.92 & −22.12 & −3.85 & −1.92 & +5.77pp & +5.77pp & +4.81pp \\
+WA·B1 & 30.77 & −14.42 & −0.96 & −0.96 & +4.81pp & +3.85pp & +3.85pp \\
+\bottomrule
+\end{tabular}
+\end{table}

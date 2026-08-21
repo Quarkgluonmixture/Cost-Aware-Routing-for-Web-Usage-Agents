@@ -1,0 +1,37 @@
+% Table source-order #18: New representation versus a rerun. Is a new representation worth more 
+\begin{table}[tp]
+\centering
+\caption{New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count (\texttt{\textbar{}\{added\}\ ∖\ \{baseline\}\textbar{}\ /\ n}) so they are directly comparable; only the \emph{source} of the extra arm differs. The band is 3 rerun pairs on one cell (\texttt{B0\ ×\ classifieds}, n=224), one each for DOM, SoM, Vision: so the rows without a band have no comparator at all, and the band itself is 3 draws rather than a bound. Since the SoM replicate landed 2026-08-03 the band is no longer extrapolated onto an unreplicated arm: both the fused mode this table's best-single column keeps selecting and the arm the comparison adds now carry their own measured floor, and adding the third pair left the band unmoved. Source: \texttt{noise\_floor\_inventory.json}}
+\label{tab:t18}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+best single
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
++1 distinct arm
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
++1 rerun (measured floor)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+verdict
+\end{minipage} \\
+\midrule
+cls·B0 & SoM at 27.23 & +7.14 (DOM) & 4.91 -- 7.59pp & \textbf{inside the rerun band} \\
+cls·B1 & SoM at 14.29 & +4.91 (Vision) & --- & no floor on this cell \\
+cls·B2 & SoM at 2.23 & +2.23 (Vision) & --- & no floor on this cell \\
+red·B0 & SoM at 14.78 & +4.93 (DOM) & --- & no floor on this cell \\
+red·B1 & SoM at 7.39 & +1.97 (DOM+\allowbreak{}sprompt) & --- & no floor on this cell \\
+red·B2 & DOM at 3.94 & +1.97 (Vision) & --- & no floor on this cell \\
+WA·B0 & DOM+\allowbreak{}stext at 35.58 & +5.77 (DOM) & --- & no floor on this cell \\
+WA·B1 & DOM at 16.35 & +4.81 (DOM+\allowbreak{}stext) & 0.00 -- 10.00pp \emph{(pooled would read 2.00--4.00)} & \textbf{inside the rerun band} \\
+\bottomrule
+\end{tabular}
+\end{table}

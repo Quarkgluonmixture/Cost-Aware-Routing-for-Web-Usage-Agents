@@ -1,0 +1,46 @@
+% Table source-order #10: Multi-metric Pareto. Multi-metric Pareto. \texttt{span} = dearest/chea
+\begin{table}[tp]
+\centering
+\caption{Multi-metric Pareto. Multi-metric Pareto. \texttt{span} = dearest/cheapest (or slowest/fastest) ratio within the cell. \textbf{Caution:} Per-cell exact permutation p-values on ρ are not significant (six modes give a Spearman test almost no power) so the cross-cell pattern carries this, not any single ρ. Source: \texttt{multimetric\_pareto\_with\_wa.json}.}
+\label{tab:t10}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1250}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cost span
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+latency span
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cheapest
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+fastest
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+same?
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ρ(cost,lat)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+frontier (success × cost)
+\end{minipage} \\
+\midrule
+cls·B0 & 1.116× & 1.183× & Vision & SoM & \textbf{no} & -0.60 & SoM, Vision \\
+red·B0 & 1.126× & 1.404× & Vision & Vision & yes & +0.14 & DOM, SoM, Vision \\
+cls·B1 & 1.461× & 1.197× & Vision & SoM & \textbf{no} & -0.26 & SoM, Vision \\
+red·B1 & 1.527× & 1.350× & Vision & Vision & yes & +0.77 & SoM, Vision, DOM+\allowbreak{}stext \\
+cls·B2 & 1.285× & 1.116× & Vision & SoM & \textbf{no} & -0.60 & Vision \\
+red·B2 & 1.633× & 1.232× & Vision & Vision & yes & -0.03 & DOM, Vision \\
+WA·B1 & 1.778× & 1.052× & Vision & DOM & \textbf{no} & +0.20 & Vision, DOM+\allowbreak{}stext \\
+WA·B0 & 1.210× & 1.288× & DOM & DOM+\allowbreak{}sprompt & \textbf{no} & +0.26 & DOM, DOM+\allowbreak{}stext \\
+\bottomrule
+\end{tabular}
+\end{table}

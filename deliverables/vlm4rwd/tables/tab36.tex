@@ -1,0 +1,16 @@
+% Table source-order #36: Two cost estimands. Two cost estimands that are \textbf{not the same q
+\begin{table}[tp]
+\centering
+\caption{Two cost estimands. Two cost estimands that are not the same quantity. B0 pays a per-token API bill; B1/B2 pay electricity. The ratio is reported to show the scale of the category error, not as a comparison: a paper that divides one by the other is comparing a price to a physical cost. Within a cell, mode-to-mode ratios are safe; across deployment classes only the ordering is. Source: \texttt{cost\_per\_mode.json}.}
+\label{tab:t36}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llll@{}}
+\toprule
+site & B0 API dollars/ep & B1 electricity dollars/ep & ratio \\
+\midrule
+reddit & 0.10376 & 0.0012670 & \textbf{81.9×} \\
+classifieds & 0.06943 & 0.0006480 & \textbf{107.1×} \\
+\bottomrule
+\end{tabular}
+\end{table}

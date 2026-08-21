@@ -1,0 +1,31 @@
+% Paper B table #07: \caption{The five supervision targets against the two requirements a trainable r
+\begin{table}[tp]
+\centering
+\caption{The five supervision targets against the two requirements a trainable router needs. Each closed route is closed for a different reason, which is what makes the negative result closed rather than provisional. Supply and identifiability are judged on that target's own denominator, which differs between the last two rows.}
+\label{tab:pb07}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+route
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+supply
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+identifiability
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+outcome
+\end{minipage} \\
+\midrule
+which-mode, per cell & fails (15--97 labels, 4/6 cells untrainable) & fine & closed by \S\ref{sec:lowerbound} \\
+continuous target & would fix & fine & closed: benchmark score is binary \\
+pooled which-mode & fixed (260) & fails (56--57\% conflict; in-sample modal agreement 79--84\%) & wrong estimand \\
+triage (binary) & fine (203--224, every task) & fine & learnable, and beaten by a fixed policy (\S\ref{sec:lowerbound}) \\
+screenshot tier & fine, but only on solved tasks & fine (68--88\% cross-backbone agreement, over solved tasks) & agreement measured; no tier classifier trained \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,121 @@
+% ===================== APPENDIX =====================
+% Unlimited pages per REALM CFP. Tables keep their source-order labels tab:tNN.
+
+\section{Multiplicity and inferential scope}\label{app:multiplicity}
+
+\paragraph{Multiplicity status.} The tables in this paper and its appendix are not one inferential family and are not corrected as one. They divide into three classes: confirmatory (hypotheses fixed before the data and corrected within their own family, currently the 2$\times$2 axis-independence set of 64 conjunction hypotheses under BH/Holm \citep{holm1979sequentially} on $\max(p_1, p_2)$); descriptive (intervals, no test, no correction claimed: the full behavioural matrices, the efficiency tables, the failure-attribution counts); and selection-derived (a maximum over layers, signals, thresholds or comparators is part of the statistic, so these bound what a selection could deliver and cannot be read as effect estimates \citep{cawley2010overfitting}; each such table says so in its caption). No family-wise statement covers the set as a whole, and none is claimed.
+
+\section{Deployment classes and ablation}\label{app:classes}
+
+Table~\ref{tab:t02} is the unmatched class comparison (a maximum over four no-image arms, so quote its ordering and never its gaps); Table~\ref{tab:t04} is the class ablation, unmatched and arm-matched; Table~\ref{tab:t05} is the behavioural non-separability tally. It cannot license pooling the four text modes. The tally counts how many metrics separate a mode from the rest in at least seven of eight cells, and under a pure-noise null that bar returns a zero with probability $\approx$76\%, so a mode scoring zero is the expected outcome of no effect and not evidence of sameness. What the table does establish is the positive half: Vision (9 metrics) and SoM (5) are strongly separable from the rest, and that is how the deployment-class grouping of \S\ref{sec:setup} is used: as a convention that survives this evidence rather than one derived from it.
+
+\input{tables/tab01}
+\input{tables/tab02}
+\input{tables/tab03}
+\input{tables/tab04}
+\input{tables/tab05}
+
+\section{Full behavioural matrices}\label{app:matrices}
+
+The four dimensions unsummarised, for every metric in every cell and mode: Outcome, Macro (what the agent did), Micro (how often what it did failed), and Efficiency. These are the substrate the consistency counts in Table~\ref{tab:t05} are computed from, included so a reader can check a claim rather than take the tally on trust. Two columns are gates rather than measurements, and the tables mark them: \texttt{loc-fallback} is near-zero for Vision because there are no element ids to fall back from, not because it fails less.
+
+\input{tables/tab06}
+\input{tables/tab07}
+\input{tables/tab08}
+\input{tables/tab09}
+
+\section{Replicates and run-to-run noise}\label{app:noise}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.66\linewidth]{fig_ceilings}
+\caption{The two ceilings, per cell (full table: Appendix Table~\ref{tab:t42}). Left: the six-run union ceiling against the best single mode; the tick is what one genuinely different arm adds, and the dark segment is what one rerun of an arm already in hand adds, where measured. Most of the apparent headroom is not attributable to representation diversity. Right: the cost ceiling at matched success, the bound that survives, because it adds no arm.}
+\label{fig:ceilings}
+\end{figure}
+
+
+\input{tables/tab27}
+\input{tables/tab14}
+
+\section{Efficiency and its estimands}\label{app:efficiency}
+
+Two tables carry the efficiency point. Table~\ref{tab:t11} decomposes a latency figure: the model call is 22--67\% of a step, the rest is browser and container, and stripping the environment share changes which mode is fastest in 4 of 8 cells. Table~\ref{tab:t15} switches the denominator from per-attempt to per-success and the cheapest mode changes in 4 of the 6 cells with enough successes to divide by, with every pairwise interval overlapping. Both support the same statement: an efficiency claim without its estimand is ambiguous, and the estimand is usually left implicit.
+
+\input{tables/tab11}
+\input{tables/tab15}
+
+\section{Routing, triage, and cascade}\label{app:routing}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.62\linewidth]{fig_partition_forest}
+\caption{The zero-token partition (Appendix Table~\ref{tab:t17}): the screenshot's worth (Vision $-$ DOM) on regex-flagged tasks versus the rest. It is large and significant only on the capable classifieds backbones, and null on reddit. The predicate flags 71 of 224 classifieds tasks and 63 of 203 reddit tasks.}
+\label{fig:partition}
+\end{figure}
+
+
+Table~\ref{tab:pb05} is the triage-label predictability that \S\ref{sec:lowerbound} builds on. Table~\ref{tab:t44} asks whether the two obstructions that section reports, too few labels and too few contested tasks, are two walls or one: both sets are subsets of the tasks something solves, and across the eight cells they track the best single mode's success rate at $\rho = 0.952$. Part of that association is structural rather than empirical, and the caption separates the two; what it licenses is the framing of \S\ref{sec:gap}, not a new effect.
+
+\input{tables/pbt05}
+\input{tables/tab44}
+
+% Trailing sections of this appendix live in sections/appendix_pb.tex.
+
+Table~\ref{tab:t19} turns the ex-ante partition (Table~\ref{tab:t17}) into a policy. Table~\ref{tab:t20}'s cascade beats always-rich at no operating point in any comparable cell, and Table~\ref{tab:t21} is the table that says what that means: against the \emph{same budget spent at random} the confidence ranking wins nearly everywhere, so the signal is informative and still not enough. Table~\ref{tab:t22} adds the benchmark's own difficulty annotation for a mean $\Delta$AUROC of +0.0024. Table~\ref{tab:t23} shows the feature a practitioner would reach for first looks like it should help and does not. Table~\ref{tab:t33} pools the backbones and routes by cost tier instead of by task.
+
+% Resolved 2026-08-05: the two papers merged, so the former companion-overlap
+% cut-candidates (t20-t22, t33) are retained as part of the five-route lower
+% bound; t33's truncated caption and damaged cells were rewritten 4a605ab.
+
+The bound the rest of this section does not reach is Table~\ref{tab:t42} in \S\ref{sec:upperbound}. The oracle stated against the best single mode, and its triage/route decomposition, are below, followed by the rerun comparator (Table~\ref{tab:t18}), the per-cell fusion-premium intervals behind Figure~\ref{fig:fusion} (Table~\ref{tab:t16}), the which-mode label supply (Table~\ref{tab:pb03}), and the per-cell partition intervals behind Figure~\ref{fig:partition} (Table~\ref{tab:t17}).
+
+\input{tables/tab42}
+\input{tables/pbt01}
+\input{tables/pbt02}
+\input{tables/tab18}
+\begin{figure}[tp]
+\centering
+\includegraphics[width=\linewidth]{fig_fusion_forest}
+\caption{Fusion premium per cell (Appendix Table~\ref{tab:t16}), paired bootstrap 95\% CIs. The shaded region is the rerun threshold of \S\ref{sec:noise}: 3.8--4.2pp, the level a mean difference must reach before a single repetition of one arm would be unlikely to produce it. Against the workload-matched channel no cell clears it (the largest such premium is +2.23pp); SoM's decisive wins are all against the channel mismatched to that workload.}
+\label{fig:fusion}
+\end{figure}
+\input{tables/tab16}
+\input{tables/pbt03}
+\input{tables/pbt04}
+\input{tables/tab17}
+
+\input{tables/tab19}
+\input{tables/tab20}
+\input{tables/tab21}
+\input{tables/tab22}
+\input{tables/tab23}
+\input{tables/tab33}
+\input{tables/pbt06}
+\input{tables/pbt07}
+
+\section{Failure attribution and mechanisms}\label{app:failures}
+
+Table~\ref{tab:t43} locates \emph{when} two modes part on the tasks whose outcome they disagree about: at the first or second step, essentially never late, which is not the shape accumulated drift has. It is markedly weaker on WebArena, so it is reported per site rather than pooled. Table~\ref{tab:t41} is the paired cut: on tasks only one channel solved, how did the other fail? It counts rule hits, so Table~\ref{tab:t26} asks the same question without the rule vocabulary, using six probes read straight off the step records, and finds the losing channel failing \emph{more blandly} there than elsewhere, which is what closes the objection that the residual is an artefact of a VWA-shaped ruleset. Table~\ref{tab:t30} decomposes the DOM$\rightarrow$SoM-image transition into a text axis and a prompt axis, and Table~\ref{tab:t31} asks whether that text axis moves per-step decision quality more than it moves macro action frequencies. Table~\ref{tab:t32} counts hallucinated element references, which are inapplicable to Vision by construction, and the table marks them. \textbf{Caution:} a per-rule frequency is a distribution of symptoms, not of causes. The two largest rows in most cells are risk markers that causal verification did not confirm as death causes.
+
+
+Each block of Table~\ref{tab:t41} states the largest enrichment among the rules it does \emph{not} list. Read each block against its own baseline column, never across blocks: the text channel is four arms and the image channel two, so the two blocks' task counts are not comparable to each other.
+
+\input{tables/tab26}
+\input{tables/tab41}
+\input{tables/tab43}
+\input{tables/tab30}
+\input{tables/tab31}
+\input{tables/tab32}
+
+\section{Audits and provenance}\label{app:audits}
+
+The dispatch-path audit (Table~\ref{tab:t13}), the off-site navigation and container-latency audit (Table~\ref{tab:t29}), the page-change detector correction (Table~\ref{tab:t34}), the evaluator granularity check (Table~\ref{tab:t35}), and the full earned-versus-leaked audit including the first WebArena pass (Table~\ref{tab:t40}).
+
+\input{tables/tab13}
+\input{tables/tab29}
+\input{tables/tab34}
+\input{tables/tab35}
+\input{tables/tab28}
+\input{tables/tab40}
+
+\input{sections/appendix_pb}

@@ -1,0 +1,38 @@
+% Table source-order #39: Causal patching against both of its controls. Does the prompt-family s
+\begin{table}[tp]
+\centering
+\caption{Causal patching against both of its controls. Does the prompt-family signature \emph{do} anything, or is it only visible? Source hidden states from \texttt{phantom\_som} are patched into a \texttt{phantom\_text} run, holding image and text-format constant. Displacement is the wrong column to read: random injection scores 0.992 there, which is destruction, not steering: only \emph{convergence to the source} speaks to direction. Against random injection the real arm wins clearly (0.188 vs 0.085). \textbf{Caution:} Against the task-shuffled control it barely wins (0.188 vs 0.157, +20\%): a source drawn from an \emph{unrelated task} moves the output almost as far toward itself. What does separate them is where: the real arm's convergence peaks mid-stack (L14) and the shuffled arm's collapses to the boundary layer (L00). So the content-specific claim rests on the layer profile, not on the magnitude: which is weaker than the write-ups in \texttt{docs/checkpoints/mechanism/results/} read, and is the reason this table reports both controls rather than the headline. n = 24 tasks per arm, one backbone, one decode step. Source: \texttt{mechanism\_evidence.json} ← \texttt{patching\_continuation\_results.json}}
+\label{tab:t39}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+site
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+arm
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+n
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+displacement (peak)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+convergence to source (peak)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+peak at
+\end{minipage} \\
+\midrule
+classifieds & \textbf{real} & 24 & 0.230 & 0.188 & L14 \\
+classifieds & random injection & 24 & 0.992 & 0.085 & L02 \\
+classifieds & task-shuffled source & 24 & 0.296 & 0.157 & L00 \\
+reddit & \textbf{real} & 24 & 0.338 & 0.188 & L09 \\
+reddit & random injection & 24 & 0.992 & 0.100 & L03 \\
+reddit & task-shuffled source & 24 & 0.312 & 0.159 & L20 \\
+\bottomrule
+\end{tabular}
+\end{table}

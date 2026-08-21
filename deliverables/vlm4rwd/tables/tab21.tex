@@ -1,0 +1,40 @@
+% Table source-order #21: Cascade signal against a random-escalation control. Is the cascade's s
+\begin{table}[tp]
+\centering
+\caption{Cascade signal against a random-escalation control. Is the cascade's signal doing anything? Table~\ref{tab:t20} answers a deployment question: no operating point beats always-rich on success rate: which on its own cannot distinguish a signal that carries nothing from one that carries something insufficient. This is the comparator that separates them: the same escalation budget spent at random. \textbf{Caution:} Read the median column, not the best column. The best margin is positive in 24 of 24 (cell × fraction) combinations, but each of those is a maximum over that cell's 8--10 candidate signals against a constant (the random comparator does not depend on which signal is used) so positivity there is partly arithmetic. Over all 222 (signal × cell × fraction) points, 64.4\% are positive with a median of +0.327pp: that is the unselected statement, and it is the one to quote. On cls·B2, red·B0, WA·B1 the median is negative at one or more fractions while the best is positive: there the apparent win is entirely selection. The right-hand column is how much of the gap to a per-task oracle the best signal recovers, and inherits the same caveat. The offline-splice caveat on Table~\ref{tab:t20} applies unchanged. Source: \texttt{confidence\_cascade\_with\_wa.json}.}
+\label{tab:t21}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+signals
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{best} margin (10/20/30\%)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{median over all signals} (10/20/30\%)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+signals \textgreater0
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+oracle headroom captured (10/20/30\%)
+\end{minipage} \\
+\midrule
+cls·B0 & 8 & +1.12 / +1.78 / +2.01 & +1.12 / +1.11 / +0.67 & 19/24 & 15\% / 25\% / 30\% \\
+cls·B1 & 10 & +1.16 / +1.43 / +2.14 & +0.27 / +0.53 / +0.81 & 19/30 & 20\% / 27\% / 40\% \\
+cls·B2 & 10 & +0.45 / +0.89 / +0.45 & +0.00 / +0.00 / +0.00 & 11/30 & 20\% / 40\% / 20\% \\
+red·B0 & 10 & +1.74 / +1.46 / +0.74 & +0.01 / +0.48 / -0.25 & 15/30 & 23\% / 27\% / 27\% \\
+red·B1 & 8 & +1.49 / +1.96 / +1.48 & +0.50 / +1.22 / +1.23 & 23/24 & 33\% / 50\% / 50\% \\
+red·B2 & 9 & +0.10 / +0.20 / +0.30 & +0.10 / +0.20 / +0.30 & 20/27 & 0\% / 0\% / 0\% \\
+WA·B0 & 10 & +3.57 / +3.26 / +3.95 & +1.16 / +1.82 / +1.54 & 24/30 & 36\% / 36\% / 45\% \\
+WA·B1 & 9 & +2.51 / +2.11 / +2.70 & -0.37 / -0.78 / -0.18 & 12/27 & 43\% / 43\% / 57\% \\
+\bottomrule
+\end{tabular}
+\end{table}

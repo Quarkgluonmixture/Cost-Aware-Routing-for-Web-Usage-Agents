@@ -1,0 +1,18 @@
+% Table source-order #13: What actually delivered the click. How each action reached the browser
+\begin{table}[tp]
+\centering
+\caption{What actually delivered the click. How each action reached the browser. \texttt{Vision} is on the coordinate path by construction (it emits no element ids) so its action success is capped by this harness's coordinate implementation (39\%) rather than by the 89\% the element-id path achieves. That is not a confound to remove (it is what screenshot-only \emph{is}), but the Vision arm measures our grounding code as much as the representation. Separately the element-id fallback share rises with backbone weakness: B0 12\% · B1 35\% · B2 37\% on the text arms: \emph{how often} a run falls back is a model property, the fallback's own 16\% success is ours. No success rate elsewhere is adjusted by this; it bounds external validity. Source: \texttt{dispatch\_path\_audit.json}}
+\label{tab:t13}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lll@{}}
+\toprule
+delivery path & actions & action success \\
+\midrule
+id locator & 8,857 & \textbf{88.9\%} \\
+other & 1,530 & \textbf{65.9\%} \\
+coord & 2,138 & \textbf{38.6\%} \\
+id framework & 4,564 & \textbf{16.1\%} \\
+\bottomrule
+\end{tabular}
+\end{table}

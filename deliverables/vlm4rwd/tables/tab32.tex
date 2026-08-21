@@ -1,0 +1,68 @@
+% Table source-order #32: Hallucinated element references. Hallucinated element references, rule
+\begin{table}[tp]
+\centering
+\caption{Hallucinated element references. Hallucinated element references, ruleset \texttt{11-intent-text-fallback} over 36 conditions. An action naming an element id that is not in the observation. \textbf{Caution:} \texttt{vision} carries no element-id list at all, so this rule is structurally inapplicable there rather than measuring zero: the same gate-versus-measurement confusion flagged for P2/P4. Source: \texttt{cross\_mode\_failure\_signatures.json}.}
+\label{tab:t32}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+mode
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+episodes
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+failed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+with hallucinated ref
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+rate of failed
+\end{minipage} \\
+\midrule
+classifieds·B0 & DOM & 224 & 185 & 15 & 8.1\% \\
+classifieds·B0 & DOM+\allowbreak{}sprompt & 224 & 180 & 11 & 6.1\% \\
+classifieds·B0 & SoM-image & 224 & 189 & 2 & 1.1\% \\
+classifieds·B0 & DOM+\allowbreak{}stext & 224 & 189 & 9 & 4.8\% \\
+classifieds·B0 & SoM & 187 & 129 & 2 & 1.6\% \\
+classifieds·B0 & Vision & 224 & 168 & 0 & 0.0\% \\
+reddit·B0 & DOM & 203 & 174 & 8 & 4.6\% \\
+reddit·B0 & DOM+\allowbreak{}sprompt & 203 & 178 & 8 & 4.5\% \\
+reddit·B0 & SoM-image & 203 & 181 & 1 & 0.6\% \\
+reddit·B0 & DOM+\allowbreak{}stext & 203 & 176 & 6 & 3.4\% \\
+reddit·B0 & SoM & 203 & 173 & 2 & 1.2\% \\
+reddit·B0 & Vision & 203 & 188 & 0 & 0.0\% \\
+classifieds·B1 & DOM & 224 & 210 & 20 & 9.5\% \\
+classifieds·B1 & DOM+\allowbreak{}sprompt & 224 & 209 & 33 & 15.8\% \\
+classifieds·B1 & SoM-image & 224 & 209 & 7 & 3.3\% \\
+classifieds·B1 & DOM+\allowbreak{}stext & 224 & 207 & 45 & 21.7\% \\
+classifieds·B1 & SoM & 224 & 192 & 0 & 0.0\% \\
+classifieds·B1 & Vision & 224 & 196 & 0 & 0.0\% \\
+reddit·B1 & DOM & 203 & 191 & 25 & 13.1\% \\
+reddit·B1 & DOM+\allowbreak{}sprompt & 203 & 192 & 33 & 17.2\% \\
+reddit·B1 & SoM-image & 203 & 191 & 3 & 1.6\% \\
+reddit·B1 & DOM+\allowbreak{}stext & 203 & 191 & 24 & 12.6\% \\
+reddit·B1 & SoM & 203 & 188 & 5 & 2.7\% \\
+reddit·B1 & Vision & 203 & 198 & 0 & 0.0\% \\
+classifieds·B2 & DOM & 224 & 221 & 82 & 37.1\% \\
+classifieds·B2 & DOM+\allowbreak{}sprompt & 224 & 220 & 114 & 51.8\% \\
+classifieds·B2 & SoM-image & 224 & 222 & 43 & 19.4\% \\
+classifieds·B2 & DOM+\allowbreak{}stext & 224 & 223 & 75 & 33.6\% \\
+classifieds·B2 & SoM & 224 & 219 & 39 & 17.8\% \\
+classifieds·B2 & Vision & 224 & 219 & 0 & 0.0\% \\
+reddit·B2 & DOM & 203 & 195 & 127 & 65.1\% \\
+reddit·B2 & DOM+\allowbreak{}sprompt & 203 & 203 & 155 & 76.4\% \\
+reddit·B2 & SoM-image & 203 & 202 & 62 & 30.7\% \\
+reddit·B2 & DOM+\allowbreak{}stext & 203 & 199 & 51 & 25.6\% \\
+reddit·B2 & SoM & 203 & 201 & 59 & 29.4\% \\
+reddit·B2 & Vision & 203 & 199 & 0 & 0.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}

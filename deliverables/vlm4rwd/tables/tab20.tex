@@ -1,0 +1,49 @@
+% Table source-order #20: Confidence-triggered cascade. Confidence-triggered cascade, vision → s
+\begin{table}[tp]
+\centering
+\caption{Confidence-triggered cascade. Confidence-triggered cascade, vision → som. The escalation decision sees only the cheap run's own episode: no outcome, no rich-run information. In 0 of the 6 comparable cells does any operating point beat always-rich on success rate; the cells marked \emph{rich is worse} are excluded because the cascade's premise fails there, and that exclusion rule (\texttt{cheap\_sr\ \textgreater{}=\ rich\_sr}) is outcome-dependent. \textbf{Caution:} The two counts are split for a reason. A point also `wins' by matching always-rich's SR at lower cost, and every such point here is a tie artefact: on \texttt{WA·B1} all of them sit at exactly the rich arm's SR while 44-60 of 104 episodes are tied at the cutoff, so the ranking falls through to task id and the reachable SR spans 8.65-14.42. Counting the two together is what let this table print a WA win for months while the prose said the WA exception was withdrawn: the rows disagreed with the sentence and nobody could see it, because the WA rows were dropped before render until 2026-08-03. \textbf{Caution:} Every number is an offline splice: an escalated task takes its outcome from a standalone rich run, whereas a real cascade would start the rich episode after the cheap one had already acted on a stateful site. That sequential outcome is unobserved in this project. Source: \texttt{confidence\_cascade\_with\_wa.json}}
+\label{tab:t20}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+n
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+cheap SR
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+rich SR
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+always-rich cost
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+oracle SR
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+comparable?
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+beats always-rich --- strictly / SR-tied
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+signals dropped
+\end{minipage} \\
+\midrule
+cls·B0 & 224 & 25.00 & 27.23 & 1.116× & 33.93 & yes & 0 / 0 & 2 \\
+cls·B1 & 224 & 12.50 & 14.29 & 1.397× & 19.20 & yes & 0 / 0 & 0 \\
+cls·B2 & 224 & 2.23 & 2.23 & 1.284× & 4.46 & --- \emph{(rich is worse)} & \textbf{11} / 22 & 0 \\
+red·B0 & 203 & 7.39 & 14.78 & 1.126× & 18.23 & yes & 0 / 0 & 0 \\
+red·B1 & 203 & 2.46 & 7.39 & 1.527× & 8.37 & yes & 0 / 0 & 2 \\
+red·B2 & 203 & 1.97 & 0.99 & 1.633× & 2.96 & --- \emph{(rich is worse)} & \textbf{41} / 5 & 1 \\
+WA·B0 & 104 & 19.23 & 22.12 & 1.054× & 29.81 & yes & 0 / 0 & 0 \\
+WA·B1 & 104 & 9.62 & 13.46 & 1.778× & 16.35 & yes & 0 / 3 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}

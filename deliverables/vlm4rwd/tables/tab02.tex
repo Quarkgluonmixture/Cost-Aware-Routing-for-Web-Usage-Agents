@@ -1,0 +1,22 @@
+% Table source-order #02: Best arm per deployment class. Best arm within each deployment class (
+\begin{table}[tp]
+\centering
+\caption{Best arm per deployment class. Best arm within each deployment class (\%). Classes: no-image = \{DOM, DOM+stext, DOM+sprompt, SoM-image\}, vision-only = \{Vision\}, hybrid = \{SoM\}. Grouping the four is a deployment convention, not an equivalence claim: over 26 metrics none of them is the repeated extreme (Table~\ref{tab:t05}), which is a counting diagnostic rather than a separability test. Source: \texttt{representation\_class\_comparison.json}.}
+\label{tab:t02}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+cell & no-image (4 arms) & vision-only & hybrid & sole best \\
+\midrule
+cls·B0 & 19.64 (DOM+\allowbreak{}sprompt) & 25.00 & 27.23 & hybrid \\
+cls·B1 & 7.59 (DOM+\allowbreak{}stext) & 12.50 & 14.29 & hybrid \\
+cls·B2 & 1.79 (DOM+\allowbreak{}sprompt) & 2.23 & 2.23 & tie: hybrid+vision-only \\
+red·B0 & 14.29 (DOM) & 7.39 & 14.78 & hybrid \\
+red·B1 & 5.91 (DOM) & 2.46 & 7.39 & hybrid \\
+red·B2 & 3.94 (DOM) & 1.97 & 0.99 & no-image \\
+WA·B0 & 35.58 (DOM+\allowbreak{}stext) & 19.23 & 22.12 & no-image \\
+WA·B1 & 16.35 (DOM) & 9.62 & 13.46 & no-image \\
+\bottomrule
+\end{tabular}
+\end{table}

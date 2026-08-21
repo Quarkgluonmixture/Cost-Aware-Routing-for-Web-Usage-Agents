@@ -1,0 +1,62 @@
+% Table source-order #08: Full matrix --- Micro dimension. Micro dimension --- per-step executio
+\begin{table}[tp]
+\centering
+\caption{Full matrix (Micro dimension. Micro dimension) per-step execution quality. \texttt{act-fail\textbar{}click} and \texttt{act-fail\textbar{}type} are conditional on the action type, so they are not comparable to the unconditional \texttt{act-fail} column. \textbf{Caution:} They are also not pure conditionals. An episode containing no click at all has no click-failure rate to report, and the producer stores \texttt{0.0} there (an undefined rate encoded as a perfect one) which is then averaged over every task. The zero-denominator share is large: 25--35\% of episodes never type, and a few percent never click. The product now carries \texttt{*\_fail\_rate\_complete\_case} (averaged only over episodes where the action occurred) and \texttt{*\_fail\_rate\_denom\_zero\_frac} beside these columns; the complete-case values run higher, and any statement about which mode fails most on clicks or types should be read from those, not from this column. \textbf{Caution:} \texttt{loc-fallback} is near-zero for Vision by construction (no element ids to fall back from), not as a finding. Source: \texttt{per\_mode\_four\_dimension\_profile\_with\_wa.json}.}
+\label{tab:t08}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lllllllllllll@{}}
+\toprule
+cell & mode & parse-fail & act-fail & act-fail & click & act-fail & type & no-op & scroll-inert & no-op & success & vis-gap \\
+\midrule
+cls·B0 & DOM & 0.0007 & 0.133 & 0.163 & 0.035 & 0.241 & 0.096 & 0.108 & 0.046 & 0.078 & 0.324 & 0.737 \\
+cls·B0 & SoM & 0.0021 & 0.082 & 0.102 & 0.007 & 0.216 & 0.018 & 0.134 & 0.051 & 0.027 & 0.300 & 0.741 \\
+cls·B0 & Vision & 0.0000 & 0.150 & 0.153 & 0.005 & 0.263 & 0.072 & 0.113 & 0.058 & 0.002 & 0.396 & 0.705 \\
+cls·B0 & DOM+stext & 0.0000 & 0.101 & 0.100 & 0.022 & 0.209 & 0.071 & 0.108 & 0.042 & 0.046 & 0.310 & 0.705 \\
+cls·B0 & DOM+sprompt & 0.0009 & 0.133 & 0.159 & 0.026 & 0.246 & 0.078 & 0.114 & 0.049 & 0.079 & 0.322 & 0.719 \\
+cls·B0 & SoM-image & 0.0005 & 0.112 & 0.130 & 0.016 & 0.221 & 0.078 & 0.109 & 0.042 & 0.037 & 0.332 & 0.688 \\
+cls·B1 & DOM & 0.0031 & 0.285 & 0.155 & 0.153 & 0.359 & 0.219 & 0.074 & 0.011 & 0.175 & 0.443 & 0.411 \\
+cls·B1 & SoM & 0.0016 & 0.249 & 0.203 & 0.068 & 0.353 & 0.149 & 0.104 & 0.013 & 0.118 & 0.390 & 0.509 \\
+cls·B1 & Vision & 0.0000 & 0.454 & 0.345 & 0.031 & 0.548 & 0.278 & 0.094 & 0.018 & 0.011 & 0.530 & 0.402 \\
+cls·B1 & DOM+stext & 0.0004 & 0.259 & 0.182 & 0.140 & 0.317 & 0.159 & 0.058 & 0.010 & 0.202 & 0.461 & 0.384 \\
+cls·B1 & DOM+sprompt & 0.0044 & 0.309 & 0.272 & 0.081 & 0.380 & 0.178 & 0.070 & 0.012 & 0.174 & 0.409 & 0.406 \\
+cls·B1 & SoM-image & 0.0010 & 0.322 & 0.274 & 0.136 & 0.381 & 0.169 & 0.059 & 0.015 & 0.203 & 0.461 & 0.424 \\
+cls·B2 & DOM & 0.0259 & 0.509 & 0.555 & 0.207 & 0.526 & 0.099 & 0.018 & 0.030 & 0.339 & 0.630 & 0.125 \\
+cls·B2 & SoM & 0.0876 & 0.559 & 0.475 & 0.110 & 0.584 & 0.067 & 0.025 & 0.026 & 0.327 & 0.627 & 0.152 \\
+cls·B2 & Vision & 0.0067 & 0.670 & 0.773 & 0.355 & 0.685 & 0.443 & 0.015 & 0.017 & 0.124 & 0.518 & 0.103 \\
+cls·B2 & DOM+stext & 0.0761 & 0.441 & 0.438 & 0.227 & 0.453 & 0.130 & 0.012 & 0.029 & 0.292 & 0.602 & 0.062 \\
+cls·B2 & DOM+sprompt & 0.0518 & 0.495 & 0.569 & 0.167 & 0.504 & 0.137 & 0.009 & 0.028 & 0.312 & 0.633 & 0.071 \\
+cls·B2 & SoM-image & 0.0522 & 0.425 & 0.507 & 0.109 & 0.433 & 0.099 & 0.008 & 0.027 & 0.273 & 0.649 & 0.054 \\
+red·B0 & DOM & 0.0002 & 0.222 & 0.194 & 0.051 & 0.294 & 0.161 & 0.072 & 0.075 & 0.119 & 0.428 & 0.507 \\
+red·B0 & SoM & 0.0008 & 0.252 & 0.127 & 0.022 & 0.328 & 0.085 & 0.077 & 0.092 & 0.068 & 0.491 & 0.488 \\
+red·B0 & Vision & 0.0000 & 0.382 & 0.193 & 0.018 & 0.430 & 0.268 & 0.049 & 0.064 & 0.006 & 0.556 & 0.328 \\
+red·B0 & DOM+stext & 0.0005 & 0.292 & 0.126 & 0.062 & 0.339 & 0.146 & 0.047 & 0.087 & 0.064 & 0.518 & 0.358 \\
+red·B0 & DOM+sprompt & 0.0026 & 0.194 & 0.146 & 0.046 & 0.270 & 0.149 & 0.076 & 0.093 & 0.083 & 0.421 & 0.537 \\
+red·B0 & SoM-image & 0.0027 & 0.285 & 0.118 & 0.034 & 0.335 & 0.160 & 0.050 & 0.097 & 0.070 & 0.502 & 0.408 \\
+red·B1 & DOM & 0.0021 & 0.227 & 0.210 & 0.049 & 0.274 & 0.090 & 0.047 & 0.050 & 0.143 & 0.465 & 0.315 \\
+red·B1 & SoM & 0.0063 & 0.297 & 0.228 & 0.062 & 0.357 & 0.111 & 0.061 & 0.061 & 0.176 & 0.552 & 0.320 \\
+red·B1 & Vision & 0.0141 & 0.532 & 0.334 & 0.010 & 0.582 & 0.302 & 0.050 & 0.022 & 0.004 & 0.632 & 0.291 \\
+red·B1 & DOM+stext & 0.0018 & 0.283 & 0.195 & 0.107 & 0.319 & 0.156 & 0.036 & 0.042 & 0.164 & 0.511 & 0.217 \\
+red·B1 & DOM+sprompt & 0.0010 & 0.295 & 0.278 & 0.056 & 0.340 & 0.114 & 0.045 & 0.055 & 0.201 & 0.494 & 0.305 \\
+red·B1 & SoM-image & 0.0019 & 0.332 & 0.297 & 0.077 & 0.368 & 0.146 & 0.036 & 0.059 & 0.208 & 0.544 & 0.222 \\
+red·B2 & DOM & 0.0224 & 0.492 & 0.502 & 0.111 & 0.501 & 0.156 & 0.009 & 0.044 & 0.443 & 0.770 & 0.074 \\
+red·B2 & SoM & 0.0431 & 0.384 & 0.344 & 0.090 & 0.403 & 0.053 & 0.019 & 0.052 & 0.305 & 0.760 & 0.163 \\
+red·B2 & Vision & 0.0163 & 0.640 & 0.613 & 0.276 & 0.669 & 0.547 & 0.029 & 0.005 & 0.078 & 0.597 & 0.153 \\
+red·B2 & DOM+stext & 0.0786 & 0.285 & 0.263 & 0.081 & 0.292 & 0.094 & 0.007 & 0.041 & 0.202 & 0.728 & 0.059 \\
+red·B2 & DOM+sprompt & 0.0660 & 0.604 & 0.621 & 0.126 & 0.609 & 0.115 & 0.005 & 0.042 & 0.503 & 0.724 & 0.044 \\
+red·B2 & SoM-image & 0.0501 & 0.316 & 0.297 & 0.123 & 0.325 & 0.137 & 0.009 & 0.034 & 0.240 & 0.725 & 0.049 \\
+WA·B0 & DOM & 0.0008 & 0.277 & 0.286 & 0.083 & 0.363 & 0.046 & 0.085 & 0.226 & 0.165 & 0.455 & 0.702 \\
+WA·B0 & SoM & 0.0063 & 0.249 & 0.139 & 0.079 & 0.345 & 0.026 & 0.096 & 0.219 & 0.045 & 0.433 & 0.625 \\
+WA·B0 & Vision & 0.0000 & 0.245 & 0.178 & 0.042 & 0.295 & 0.165 & 0.050 & 0.152 & 0.007 & 0.478 & 0.433 \\
+WA·B0 & DOM+stext & 0.0010 & 0.347 & 0.292 & 0.200 & 0.421 & 0.057 & 0.074 & 0.247 & 0.099 & 0.497 & 0.538 \\
+WA·B0 & DOM+sprompt & 0.0018 & 0.295 & 0.278 & 0.070 & 0.379 & 0.045 & 0.085 & 0.223 & 0.157 & 0.469 & 0.692 \\
+WA·B0 & SoM-image & 0.0033 & 0.302 & 0.268 & 0.170 & 0.377 & 0.040 & 0.075 & 0.268 & 0.092 & 0.500 & 0.625 \\
+WA·B1 & DOM & 0.0227 & 0.244 & 0.201 & 0.038 & 0.289 & 0.026 & 0.045 & 0.135 & 0.139 & 0.512 & 0.327 \\
+WA·B1 & SoM & 0.0052 & 0.363 & 0.214 & 0.084 & 0.415 & 0.024 & 0.052 & 0.166 & 0.149 & 0.573 & 0.279 \\
+WA·B1 & Vision & 0.0072 & 0.416 & 0.326 & 0.023 & 0.456 & 0.215 & 0.041 & 0.102 & 0.002 & 0.571 & 0.365 \\
+WA·B1 & DOM+stext & 0.0102 & 0.206 & 0.197 & 0.076 & 0.247 & 0.045 & 0.041 & 0.113 & 0.105 & 0.503 & 0.385 \\
+WA·B1 & DOM+sprompt & 0.0068 & 0.343 & 0.302 & 0.070 & 0.379 & 0.066 & 0.036 & 0.098 & 0.197 & 0.522 & 0.298 \\
+WA·B1 & SoM-image & 0.0144 & 0.343 & 0.315 & 0.076 & 0.382 & 0.036 & 0.039 & 0.099 & 0.180 & 0.562 & 0.288 \\
+\bottomrule
+\end{tabular}
+\end{table}
