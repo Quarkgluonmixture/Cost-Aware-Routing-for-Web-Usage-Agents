@@ -176,6 +176,19 @@ scope: 操作 / 基建 / 工具调用层。分析与写作层在 paper_process_p
       三条同形 bug 的修法都是加测试/加断言，不是改注释
 - [ ] **做 mutation 验证**：把修回退，确认测试真的会红。没红的测试等于没有
 
+## 7b. 投一篇稿之前
+
+- [ ] **一份 submission 有两个表面**（§473.7）：PDF，和投稿系统的表单。OpenReview 的
+      abstract / keywords / TL;DR 是**手工粘的，不随 PDF 重编译更新**——改完稿必须回头同步。
+      **keywords 决定 reviewer 匹配**，比 prose 里的任何 framing 都更早生效；一个 venue topic
+      词都不沾，等于自愿被分给不对口的审稿人。三家 AI 审的全是 PDF，这一面零覆盖
+- [ ] **官网 CFP 与提交系统不一致时以系统为准**（§473.7：deadline 差一天）
+- [ ] **排版工具的「成功」只保证排出一页纸**（§473.1）：`wrapfigure` 静默裁 caption，
+      而 `latexmk` exit 0 / 0 error / 0 undefined / 页数达标全过。逐条比对 `pdftotext`，
+      先归一化 en-dash / 右单引号 / ligature，否则一堆假阳性淹掉真的那条
+
+---
+
 ## 8. 宣布「完成」之前
 
 - [ ] **测试基线要对照**：本次 23 failed 全部预先存在（`git stash` 逐个复跑核对）。
