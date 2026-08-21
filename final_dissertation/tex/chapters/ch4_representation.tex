@@ -186,7 +186,9 @@ produce.} The success side is unaffected, since tied modes have equal success by
 \textbf{This number travels with two qualifications for the rest of the dissertation, and they are not cosmetic.} Adding a single \emph{rerun} arm of an
 unchanged mode buys 2.0--7.6\pp{} by itself
 (Section~\ref{sec:noise-floor}). And at matched arm count, six reruns of the
-strongest single mode would reach within 3.53\pp{} of the six-mode oracle, below our own noise threshold (Section~\ref{sec:six-vs-six}). What survives is
+strongest single mode take more than half the distance to the six-mode oracle
+however often tasks flip, and all but 3.53\pp{} of it --- below our own noise
+threshold --- if they flip like fair coins (Section~\ref{sec:six-vs-six}). What survives is
 not that representation selection reaches a \emph{higher} ceiling than
 repetition, but that it reaches a comparable one at roughly a sixth of the
 serving cost.
@@ -493,52 +495,74 @@ replicate runs of one condition. We can bound it.
 
 Adopt the same exchangeability null already used in
 Section~\ref{sec:floor-spread}, and nothing further. Partition the scored set, for one mode, into $s_0$ tasks it solves deterministically, $m$ tasks it
-solves with probability $\tfrac12$, and the rest it never solves. Two runs then
-disagree on each flippable task with probability $\tfrac12$, so the observed
-discordant count $d$ estimates $m/2$, giving $\hat m = 2d$ and
-$\hat s_0 = |A| - d$. The union over $k$ independent runs, which is $\mathrm{pass}@k$ for that one arm, is
+solves with probability $p$, and the rest it never solves. The union over $k$
+independent runs, which is $\mathrm{pass}@k$ for that one arm, is
 \begin{equation}
-  U(k) = s_0 + m\left(1 - 2^{-k}\right).
+  U(k) = s_0 + m\left(1 - (1-p)^{k}\right).
   \label{eq:union}
 \end{equation}
 
-$U(1)$ reproduces the single-run success rate by construction, so it is not
-evidence. $U(2)$ is not: it can be checked against the \emph{observed} two-run
-union, and Table~\ref{tab:six-vs-six} reports both.
+Two runs constrain this through the single-run count $|A| = s_0 + mp$ and the
+expected discordant count $\mathbb{E}[d] = 2mp(1-p)$. Those two observables do
+not identify $p$; they identify a one-parameter family along which $U(k)$
+moves. Writing $q = 1-p$, the family collapses to
+$U(k) = |A| + \tfrac{d}{2}\left(1 + q + \dots + q^{k-2}\right)$, which is
+\emph{decreasing} in $p$ and, at $k=2$, independent of it altogether.
+Appendix~\ref{sec:app-union} derives both. Two consequences matter here. Fixing
+$p=\tfrac12$ --- which is what $\hat m = 2d$, $\hat s_0 = |A|-d$ amounts to ---
+does not yield an upper bound; it picks one point low in the range. And the
+$k=2$ comparison cannot test that choice, because every $p$ predicts the same
+$U(2)$. We therefore report the whole interval the feasibility constraints
+$s_0 \ge 0$ and $s_0 + m \le n$ admit, and draw only the conclusion that holds
+across it.
 
 \begin{table}[t]
 \centering\small
 \caption[Six reruns of one mode against six distinct modes]{\textbf{What
 repetition alone would have reached, at the same arm count.} $U(2)$ model versus
-observed is an out-of-sample check on Equation~\ref{eq:union}; it errs by at
-most $1.12$\pp{} in either direction. $U(6)$ is an \emph{upper} bound on
-repetition: treating every discordant task as a fair coin maximises how fast the
-union grows, and flippable tasks with $p\neq\tfrac12$ saturate sooner.
-The classified-ads site with the 235B model (\cell{cls$\cdot$B0}) is the only
-cell for which a mode was run twice.}
+observed agrees to within $1.12$\pp{}, which checks the union arithmetic and the
+run-to-run stability of the marginal --- but not the choice of $p$, since $U(2)$
+is the same for every $p$. The bold $U(6)$ column is the $p=\tfrac12$ value; the
+last column is the range admitted by $s_0 \ge 0$ and $s_0 + m \le n$. The
+$p=\tfrac12$ value is \emph{not} an upper bound --- it sits between the 12th and
+22nd percentile of each arm's range. The classified-ads site with the 235B model
+(\cell{cls$\cdot$B0}) is the only cell for which any mode was run twice; all six
+of its arms now carry a replicate.}
 \label{tab:six-vs-six}
-\begin{tabular}{@{}lrrrrr@{}}
+\begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Replicated arm & single run & discordant & $U(2)$ model & $U(2)$ observed & $\mathbf{U(6)}$ \\
+Replicated arm & single run & $d$ & $U(2)$ model & $U(2)$ obs. & $\mathbf{U(6)}$ at $p=\tfrac12$ & $U(6)$ over feasible $p$ \\
 \midrule
-\mDOM{}   & 17.41\% & 27 & 23.44\% & 22.32\% & \textbf{29.09\%} \\
-\mVis{}   & 25.00\% & 32 & 32.14\% & 31.70\% & \textbf{38.84\%} \\
-\mSoM{}   & 27.23\% & 29 & 33.71\% & 34.82\% & \textbf{39.77\%} \\
+\mSoM{}    & 27.23\% & 29 & 33.71\% & 34.82\% & \textbf{39.77\%} & 35.72--54.33\% \\
+\mVis{}    & 25.00\% & 32 & 32.14\% & 31.70\% & \textbf{38.84\%} & 34.98--54.53\% \\
+\mPP{}     & 19.64\% & 28 & 25.89\% & 24.55\% & \textbf{31.75\%} & 28.78--46.40\% \\
+\mDOM{}    & 17.41\% & 27 & 23.44\% & 22.32\% & \textbf{29.09\%} & 26.58--43.46\% \\
+\mPT{}     & 15.62\% & 23 & 20.76\% & 20.09\% & \textbf{25.57\%} & 23.24--38.36\% \\
+\mPS{}     & 15.62\% & 27 & 21.65\% & 20.98\% & \textbf{27.30\%} & 25.35--41.75\% \\
 \midrule
 \multicolumn{5}{@{}l}{six-\emph{mode} oracle on the same cell}
-  & \textbf{43.30\%} \\
+  & \textbf{43.30\%} & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Six reruns of \mSoM{} would reach 39.77\%; six distinct modes reach 43.30\%.
-The residual is \textbf{3.53\pp}.
+Six reruns of \mSoM{} would reach 39.77\% if every flippable task were a fair
+coin, and somewhere in $[35.72\%, 54.33\%]$ over the range of $p$ the two runs
+admit; six distinct modes reach 43.30\%. At the fair-coin point the residual is
+\textbf{3.53\pp}, but the interval straddles the oracle, so the comparison
+cannot be settled at a point. What the interval does settle is the \emph{share}:
+across its entire width, six reruns recover between \textbf{52.8\%} and
+\textbf{168.6\%} of the 16.07\pp{} of headroom between \mSoM{} and the
+six-mode oracle. More than half of the ceiling is repetition at every $p$ the
+data admit --- which is the version of the claim that survives not knowing $p$.
 
 \begin{scopebox}
 \textbf{This is the strongest attack on our headline, and it substantially
-lands.} $3.53$\pp{} sits \emph{below} the threshold this dissertation derives in
+lands.} At the fair-coin point, $3.53$\pp{} sits \emph{below} the threshold this dissertation derives in
 Section~\ref{sec:floor-spread} and applies to everyone else's effects: below it under the normal approximation ($3.82$--$4.15$\pp), and further below it
-under the exact binomial null ($4.02$--$4.46$\pp) that we adopt. Applying our own standard to our own headline: \textbf{at
+under the exact binomial null ($4.02$--$4.46$\pp) that we adopt. The
+interval version needs no such comparison: whatever $p$ is, repetition takes
+more than half the headroom. Applying our own standard to our own headline: \textbf{at
 matched arm count, six distinct representations are not distinguishable from six
 repetitions of the strongest one.} Most of the ceiling is repetition.
 
@@ -550,10 +574,12 @@ about the \emph{cost-efficiency} of the ceiling, not its height.
 \end{scopebox}
 
 The analysis has two limits, both of which cut against reading it too strongly in either direction. It rests on one cell, because \cell{cls$\cdot$B0} is the only
-cell with replicated arms; and Equation~\ref{eq:union} compresses a whole
-distribution of task-level failure probabilities into just two estimated
-numbers. Its only defence is that we check it at $k=2$ against what actually
-happened, and that it errs towards the conclusion we did not want.
+cell with replicated arms --- though all six of its arms now have one; and
+Equation~\ref{eq:union} compresses a whole distribution of task-level success
+probabilities into a two-parameter family that two runs constrain but cannot pin
+down. That is why the result is reported as an interval, and why the claim drawn
+from it is the one that holds across the interval's whole width. Letting each
+task carry its own $p_i$ would widen the interval further, not narrow it.
 
 \section{What the WebArena cells add, and what they do not}
 \label{sec:wa-scope}

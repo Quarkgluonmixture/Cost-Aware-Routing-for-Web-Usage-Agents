@@ -22,7 +22,12 @@
         "6": 29.09
       },
       "union2_observed_pct": 22.32,
-      "union2_model_error_pp": 1.12
+      "union2_model_error_pp": 1.12,
+      "p_feasible_lo": 0.073,
+      "p_feasible_hi": 0.6538,
+      "u6_ident_lo_pct": 26.58,
+      "u6_ident_hi_pct": 43.46,
+      "u6_at_p_half_percentile_of_range": 15
     },
     {
       "arm": "B0.cls.vision",
@@ -41,7 +46,12 @@
         "6": 38.84
       },
       "union2_observed_pct": 31.7,
-      "union2_model_error_pp": 0.45
+      "union2_model_error_pp": 0.45,
+      "p_feasible_lo": 0.0952,
+      "p_feasible_hi": 0.7143,
+      "u6_ident_lo_pct": 34.98,
+      "u6_ident_hi_pct": 54.53,
+      "u6_at_p_half_percentile_of_range": 20
     },
     {
       "arm": "B0.cls.som",
@@ -60,12 +70,99 @@
         "6": 39.77
       },
       "union2_observed_pct": 34.82,
-      "union2_model_error_pp": -1.12
+      "union2_model_error_pp": -1.12,
+      "p_feasible_lo": 0.089,
+      "p_feasible_hi": 0.7623,
+      "u6_ident_lo_pct": 35.72,
+      "u6_ident_hi_pct": 54.33,
+      "u6_at_p_half_percentile_of_range": 22
+    },
+    {
+      "arm": "B0.cls.ptext",
+      "mode": "P-text",
+      "n": 224,
+      "sr_single_pct": 15.62,
+      "discordant": 23,
+      "flippable_est": 46,
+      "determ_solve_est": 12,
+      "union_pct": {
+        "1": 15.62,
+        "2": 20.76,
+        "3": 23.33,
+        "4": 24.61,
+        "5": 25.25,
+        "6": 25.57
+      },
+      "union2_observed_pct": 20.09,
+      "union2_model_error_pp": 0.67,
+      "p_feasible_lo": 0.0608,
+      "p_feasible_hi": 0.6714,
+      "u6_ident_lo_pct": 23.24,
+      "u6_ident_hi_pct": 38.36,
+      "u6_at_p_half_percentile_of_range": 15
+    },
+    {
+      "arm": "B0.cls.pprompt",
+      "mode": "P-prompt",
+      "n": 224,
+      "sr_single_pct": 19.64,
+      "discordant": 28,
+      "flippable_est": 56,
+      "determ_solve_est": 16,
+      "union_pct": {
+        "1": 19.64,
+        "2": 25.89,
+        "3": 29.02,
+        "4": 30.58,
+        "5": 31.36,
+        "6": 31.75
+      },
+      "union2_observed_pct": 24.55,
+      "union2_model_error_pp": 1.34,
+      "p_feasible_lo": 0.0778,
+      "p_feasible_hi": 0.6818,
+      "u6_ident_lo_pct": 28.78,
+      "u6_ident_hi_pct": 46.4,
+      "u6_at_p_half_percentile_of_range": 17
+    },
+    {
+      "arm": "B0.cls.psom",
+      "mode": "P-SoM",
+      "n": 224,
+      "sr_single_pct": 15.62,
+      "discordant": 27,
+      "flippable_est": 54,
+      "determ_solve_est": 8,
+      "union_pct": {
+        "1": 15.62,
+        "2": 21.65,
+        "3": 24.67,
+        "4": 26.17,
+        "5": 26.93,
+        "6": 27.3
+      },
+      "union2_observed_pct": 20.98,
+      "union2_model_error_pp": 0.67,
+      "p_feasible_lo": 0.0714,
+      "p_feasible_hi": 0.6143,
+      "u6_ident_lo_pct": 25.35,
+      "u6_ident_hi_pct": 41.75,
+      "u6_at_p_half_percentile_of_range": 12
     }
   ],
-  "u6_min_pct": 29.09,
+  "u6_min_pct": 25.57,
   "u6_max_pct": 39.77,
   "oracle_minus_u6_max_pp": 3.53,
   "model": "s0 + m(1-2^-k), m=2*discordant, s0=|A|-discordant",
-  "direction_of_bias": "overstates repetition (every discordant task treated as a fair coin)"
+  "p_half_is_a_bound": false,
+  "identification": "d constrains 2mp(1-p) only; p is not identified by two replicates. U(6) is decreasing in p and p=1/2 sits near the low end of the feasible range. U(2) is p-invariant and cannot test the pin.",
+  "headroom_share": {
+    "arm": "B0.cls.som",
+    "single_sr_pct": 27.23,
+    "oracle_6mode_sr_pct": 43.3,
+    "headroom_pp": 16.07,
+    "share_at_u6_ident_lo_pct": 52.8,
+    "share_at_p_half_pct": 78.0,
+    "share_at_u6_ident_hi_pct": 168.6
+  }
 }

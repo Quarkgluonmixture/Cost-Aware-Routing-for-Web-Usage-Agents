@@ -145,10 +145,12 @@ $-2.6\%$). In the other seven the oracle, which knows the answer, also pays more
   origin; the shaded upper-left quadrant is the Pareto winning region. Learned
   policies sit right of the vertical axis: they cost more. So does the
   retrospective oracle, in seven of eight cells. Always-cheapest is the
-  cheapest fixed policy available, so any chooser that raises success
-  necessarily also spends more; whether that exchange is worth making requires
-  a rate this dissertation does not assume, which is why the test is the joint
-  one. The negative result is about the economics of this boundary,
+  cheapest fixed policy on average, not a per-episode cost floor: a chooser can
+  undercut it on a task where the mode it picks succeeds early instead of
+  exhausting the step budget, which is what the one remaining oracle cell does.
+  The winning region is therefore narrow rather than closed; whether entering it
+  is worth the exchange requires a rate this dissertation does not assume, which
+  is why the test is the joint one. The negative result is about the economics of this boundary,
   not about how good the router is at predicting.}
   \label{fig:f13}
 \end{figure}
@@ -168,7 +170,8 @@ cell of eight, and only for a policy that already knows the answers.
 
 \begin{scopebox}
 \textbf{Calibrated statement of the negative result.} Under this cost boundary,
-on these benchmarks, at 2--36\% base success, \textbf{no profitable deployable operating point exists}, not because the router cannot be learned, but
+on these benchmarks, at 2--36\% base success, \textbf{no Pareto-improving deployable operating point exists against
+always-cheapest}, not because the router cannot be learned, but
 because the region in which a router could win is nearly empty even for a policy
 that knows the answers. This is a weaker claim than ``routing does not work''
 and a more useful one: it identifies the condition (a cost-minimising fixed

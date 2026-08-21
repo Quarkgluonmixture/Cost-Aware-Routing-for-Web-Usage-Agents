@@ -72,38 +72,55 @@ diminishing returns. The ceiling is reported with its arm count attached
 comparison is Figure~\ref{fig:f10b}; and the six-arm question is answered by
 bound rather than by subtraction in Section~\ref{sec:six-vs-six}, derived below.
 
-\section{The six-rerun bound}
+\section{The six-rerun projection}
 \label{sec:app-union}
 
 Equation~\ref{eq:union} follows from the same null. Write $U(k)$ for the
 number of distinct tasks solved at least once across $k$ runs of one mode:
 $U(1)$ is what a single run solves, $U(2)$ what two runs solve between them,
 and so on. Suppose the mode solves $s_0$ tasks every time, and a further $m$
-tasks --- call these \emph{flippable} --- with probability $\tfrac12$ each.
+tasks --- call these \emph{flippable} --- with probability $p$ each.
 Over $k$ independent runs a flippable task is solved at least once with
-probability $1-2^{-k}$, so
-$\mathbb{E}\left[U(k)\right] = s_0 + m\left(1-2^{-k}\right)$.
-The two parameters are identified from a single replicate pair: two runs disagree
-on a flippable task with probability $\tfrac12$, so $\mathbb{E}[d] = m/2$, giving
-$\hat m = 2d$ and $\hat s_0 = |A| - d$.
+probability $1-(1-p)^{k}$, so
+$\mathbb{E}\left[U(k)\right] = s_0 + m\left(1-(1-p)^{k}\right)$.
 
-Three properties make this usable as a bound rather than an estimate.
+\emph{Two runs do not identify $p$.} A replicate pair supplies two numbers:
+$|A| = s_0 + mp$ and $\mathbb{E}[d] = 2mp(1-p)$. Three unknowns, two equations.
+Solving the pair for $s_0$ and $m$ at a given $p$ and substituting, with
+$q = 1-p$ and $1-q^{k} = (1-q)(1+q+\dots+q^{k-1})$, the $m$-dependence cancels:
+\begin{equation}
+  \mathbb{E}\left[U(k)\right] \;=\; |A| \;+\; \frac{d}{2}\left(1 + q + q^{2} + \dots + q^{k-2}\right).
+  \label{eq:union-identified}
+\end{equation}
+Feasibility bounds $p$ from both sides: $s_0 \ge 0$ forces
+$p \le 1 - d/(2|A|)$, and $s_0 + m \le n$ forces $p \ge d/(2(n-|A|))$.
 
-\emph{It is checked, not assumed.} $U(1)$ is fitted by construction, but $U(2)$
-is not, and it can be compared against the observed two-run union. The error
-is $+1.12$, $+0.44$ and $-1.11$\pp{} on the three modes that were run twice, so the model is not systematically optimistic, and on \mSoM{} it \emph{under}-credits repetition,
-which is the arm that drives the headline comparison.
+Three properties follow, and the first two correct what an earlier version of
+this appendix asserted.
 
-\emph{Its bias direction is known.} Treating every discordant task as a fair coin
-maximises how fast the union grows; a flippable task with $p \neq \tfrac12$
-saturates sooner. $U(6)$ therefore overstates what six reruns would deliver, and
-overstating repetition is the direction that makes the conclusion in
-Section~\ref{sec:six-vs-six} safe to draw.
+\emph{The fair-coin value is not an upper bound.} Equation~\ref{eq:union-identified}
+is increasing in $q$, hence decreasing in $p$. Setting $p=\tfrac12$ --- which is
+what $\hat m = 2d$, $\hat s_0 = |A|-d$ amounts to --- therefore selects a point
+low in the feasible range, not above it: between the 12th and 22nd percentile of
+the range, arm by arm. Table~\ref{tab:six-vs-six} reports the range alongside
+the point, and Section~\ref{sec:six-vs-six} draws only the conclusion that holds
+across all of it.
+
+\emph{The $k=2$ comparison cannot test $p$.} At $k=2$
+Equation~\ref{eq:union-identified} reads $U(2) = |A| + d/2$, with no $q$ in it:
+every $p$ predicts the same two-run union. The residual against the observed
+union is algebraically $(|A|-|B|)/2$, half the difference between the two runs'
+success counts. It is worth reporting --- it comes to $+1.12$, $-0.45$, $-1.34$,
+$-1.12$, $-0.67$ and $-0.67$\pp{} across the six replicated arms, so the union
+arithmetic and the marginal are both stable --- but it is not evidence for the
+flip model's shape.
 
 \emph{It rests on one cell.} \cell{cls$\cdot$B0} is the only cell with
-replicated arms, so the 3.53\pp{} residual is a statement about that cell. We do
-not extrapolate it, and Section~\ref{sec:limitations} lists the replicates that
-would be needed to.
+replicated arms, so the residual and the interval are statements about that
+cell. All six of its arms now carry a replicate. We do not extrapolate, and
+Section~\ref{sec:limitations} lists the replicates that would be needed to.
+Letting every task carry its own $p_i$ rather than sharing one $p$ would widen
+the interval further; the homogeneous version is the narrower claim.
 
 Regenerate with the script\\
 \hspace*{1em}\texttt{scripts/analysis/rerun\_union\_extrapolation.py}\\
