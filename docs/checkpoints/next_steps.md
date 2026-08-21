@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-08-08
+updated: 2026-08-21
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,38 @@ updated: 2026-08-08
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> ## ✅ 2026-08-21 深夜 · 毕设 de-jargon 全稿完成 + 三家 AI 审计修完 3 个 P0（commit `7229ed7`）
+>
+> chronicle → **笔记 §474**（9 小节）· 台账 **+27** · 稿子 `final_dissertation/tex/`（84 → **89 页**）
+>
+> 导师反馈"打分的是 outsider"⇒ 本轮只改**怎么说**, 不改**说了什么**。三轮 codex 零预设冷读
+> （abstract+ch1+ch7 / ch2-ch6 / **四篇附录**——此前从未被任何审计读过）产出 511 条卡点,
+> 全稿加权 jargon **8.05 → 7.34 /100 词**。新增前置 **Reader's Guide**（六模式 + 站点/模型代号
+> + 18 条术语）。
+>
+> ### ⚠️ 下个 session 接手前必须知道的一件事
+> **改写本身的缺陷引入率高到需要每轮都审。** 收尾 /stress（Claude + codex + gemini）提 20 条,
+> **20/20 全是当天改写引入的, 没有一条是原稿固有缺陷**。其中 3 个 P0:
+>
+> | | |
+> |---|---|
+> | **把联合谓词拆成并列 = 改变逻辑强度** | 我把 `Pareto-beats` 拆成 `neither on success nor on cost`, 而 `tab:e2e` 的 ΔSR 列显示 learned router **七格赢六格**（输的是成本）⇒ 拆出的半句被自己的表证伪。**de-jargon 最危险的失效模式** |
+> | **新增"权威定义页"是高危动作** | 速查页是唯一新增内容, 却吃掉 20 条 findings 里的 9 条含 2 个 P0。triage 定义反了（正文是"是否有**任何**模式能解出"）直接抽掉 ch5 核心论证地基。**此后新增 glossary 必须逐条对 term-lock + 正文形式定义** |
+> | **单位不是黑话** | 一度把 `CO₂e` 整个展开成英文散文, 靠数字集合比对才发现 |
+>
+> ### 留给作者的两个缺口（我不能编, 需要你查数据或确认）
+> - **附录 C 第 4 步选阈值 τ 的目标函数没写** —— 附录只说 `against those inner out-of-fold scores`, ch5 只说 `chosen post hoc by a sweep`, 扫描时最大化什么量全稿没有
+> - **`1.35 / 2.09 pp` 哪个属于哪个轴没写** —— 追到 `axis_effect_size_report_with_wa.md` 是 Tier-2 mechanism 的分解（已 advisor 暂搁）, 与 drop-one 的 FE pool 不是同一个量
+>
+> ### 下一步（毕设 09-05 硬截止, 剩 15 天）
+> 1. **supervisor 反馈** —— 稿子现在是 submission-ready 状态, 可以送审
+> 2. **页数预算** —— 89 页, 若有上限需要裁（速查页 2 页 + 摘要变长 是本轮增量）
+> 3. **rubric #7（Zekun 原文）/ #13（每个 setting justify）** —— 仍未做, 见 `issue_advisor_sync_2026-07-24`
+> 4. 不需要任何新实验
+>
+> 审计产物（gitignored, 本地可读）: `docs/checkpoints/{codex,gemini}_outputs/thesis_outsider_readability_*.md` + `dejargon_audit_{B,C}_*.md`
+
 
 > ## ✅ 2026-08-21 · VLM4RWD workshop 已投出 + 投后修两处（支线, 不影响下方主线）
 >
