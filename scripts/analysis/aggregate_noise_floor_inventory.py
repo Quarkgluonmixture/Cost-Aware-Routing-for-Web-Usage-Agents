@@ -131,6 +131,10 @@ CLEAN_PAIRS = [
     ("B1.cls.dom",
      "results/visualwebarena/phase1/B1_dom_classifieds_20260603_103630_477435114_112846_R17188/phase1_dom_router_0",
      "results/visualwebarena/phase1/B1_dom_classifieds_20260819_071630_802155540_2293406_R14980/phase1_dom_router_0"),
+    # Registered reframe chain, intent reframe_chain_launch_intent_20260819.md.
+    ("B5.cls.dom",
+     "results/visualwebarena/phase1/B5_dom_classifieds_20260820_202158_076182888_2491046_R29736/phase1_dom_router_0",
+     "results/visualwebarena/phase1/B5_dom_classifieds_20260821_065801_251938920_2585213_R15476/phase1_dom_router_0"),
 ]
 
 # A replicate that is still running has a task set that merely LOOKS like a scored universe:
