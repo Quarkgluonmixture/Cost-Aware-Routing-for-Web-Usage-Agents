@@ -15,19 +15,23 @@ Section~\ref{sec:router-formulation} split the oracle into triage (does any mode
 solve this task?) and which-mode (given that one does, which?). They differ in
 one respect that determines what is even testable.
 
-The which-mode label is minted only by a solve event. Table~\ref{tab:supply}
-shows the consequence: across the six VisualWebArena cells the number of
-\emph{minted} which-mode labels ranges from 15 to 97, pooled total 260, and after
+A task can only say which mode is the right one if some mode actually solved
+it; we say such a task \emph{mints} a which-mode label. Every unsolved task
+teaches this half of the problem nothing. Table~\ref{tab:supply} shows the
+consequence: across the six VisualWebArena cells the number of minted
+which-mode labels ranges from 15 to 97, pooled total 260, and after
 requiring at least two classes each retaining enough members to survive a
 five-fold split, \textbf{4 of 6 cells fail that admissibility rule entirely}.
 
 \begin{scopebox}
 \textbf{Say exactly what that rule is, because the stronger phrasing would be
-false.} ``No trainable classifier'' is an \emph{admissibility} verdict under a
-stated minimum of 10 training rows per class ($n\times\tfrac45 \geq 10$), not a
-mathematical impossibility. A logistic regression will happily fit two classes
-with three examples each and return a number; the rule exists to stop us
-believing it. The defensible statement is therefore \emph{4 of 6 cells fail the
+false.} Saying ``no classifier can be trained here'' would be false. What we
+actually apply is a minimum we set ourselves before looking: at least 10
+training examples in each of at least two classes, once four fifths of the
+cell's data are used for training ($n\times\tfrac45 \geq 10$). Falling below
+that minimum is not a mathematical impossibility. A logistic regression will
+happily fit two classes with three examples each and return a number; the rule
+exists to stop us believing that number. The defensible statement is therefore \emph{4 of 6 cells fail the
 $\mathrm{min\_class\_n}=10$ rule}, and what it supports is a claim about how much supervision the benchmark produced, not about what an estimator can be made to
 output. The same table carries two further caveats: the rule is evaluated against the
 \emph{expected} fold size $n\times\tfrac45$ rather than realised fold membership,
@@ -49,12 +53,12 @@ Chapter~\ref{ch:disc} argues that the underlying constraint is supply.}
 \toprule
 Cell & scored $n$ & minted labels & solvable \% & classes surviving & admissible? \\
 \midrule
-\cell{cls$\cdot$B0} & 224 & 97 & 43.30 & 3 (\mDOM{}, \mPP{}, \mSoM{}) & yes \\
-\cell{red$\cdot$B0} & 203 & 53 & 26.11 & 1 (\mDOM{})                  & \textbf{no} \\
-\cell{cls$\cdot$B1} & 224 & 55 & 24.55 & 2 (\mDOM{}, \mSoM{})         & yes \\
-\cell{red$\cdot$B1} & 203 & 24 & 11.82 & 0                             & \textbf{no} \\
-\cell{cls$\cdot$B2} & 224 & 16 & \phantom{0}7.14 & 0                   & \textbf{no} \\
-\cell{red$\cdot$B2} & 203 & 15 & \phantom{0}7.39 & 0                   & \textbf{no} \\
+\cell{Classifieds$\cdot$235B} & 224 & 97 & 43.30 & 3 (\mDOM{}, \mPP{}, \mSoM{}) & yes \\
+\cell{Reddit$\cdot$235B} & 203 & 53 & 26.11 & 1 (\mDOM{})                  & \textbf{no} \\
+\cell{Classifieds$\cdot$Qwen-4B} & 224 & 55 & 24.55 & 2 (\mDOM{}, \mSoM{})         & yes \\
+\cell{Reddit$\cdot$Qwen-4B} & 203 & 24 & 11.82 & 0                             & \textbf{no} \\
+\cell{Classifieds$\cdot$Gemma-4B} & 224 & 16 & \phantom{0}7.14 & 0                   & \textbf{no} \\
+\cell{Reddit$\cdot$Gemma-4B} & 203 & 15 & \phantom{0}7.39 & 0                   & \textbf{no} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,10 +72,11 @@ comparator that is trivially implementable. A negative result here is stronger
 than a negative result on the harder half.
 
 \begin{scopebox}
-\textbf{But note what triage does \emph{not} escape.} Its positive class is the solvable set, precisely the tasks that mint which-mode labels. The counts in
-the ``minted labels'' column of Table~\ref{tab:supply} are simultaneously the
-which-mode label supply \emph{and} the triage minority-class size: 97, 53, 55,
-24, 16, 15. Both halves are rationed by the same scarce resource; triage merely
+\textbf{But note what triage does \emph{not} escape.} Its positive class is the solvable set, precisely the tasks that mint which-mode labels. The
+same solved tasks do double duty. In the which-mode question they are the
+entire supply of examples; in the triage question they are the smaller of the
+two classes to be told apart. Either way the counts are those in the ``minted
+labels'' column of Table~\ref{tab:supply}: 97, 53, 55, 24, 16, 15. Both halves are rationed by the same scarce resource; triage merely
 divides it two ways instead of six. So triage is the easier problem, not a problem with more evidence behind it. On \cell{cls$\cdot$B2} the classifier is being asked to learn from 16 positives in 224 rows, roughly three
 per fold.
 \end{scopebox}
@@ -124,12 +129,12 @@ label, out-of-fold, per cell. Five of six VisualWebArena cells fall, one by
 \toprule
 Cell & 20 features (VWA-only) & 18 features (matched) & $\Delta$ \\
 \midrule
-\cell{cls$\cdot$B0} & 0.726 & 0.683 & $-0.043$ \\
-\cell{red$\cdot$B0} & 0.780 & 0.700 & $-0.080$ \\
-\cell{cls$\cdot$B1} & 0.732 & 0.705 & $-0.027$ \\
-\cell{red$\cdot$B1} & \textbf{0.864} & 0.723 & $\mathbf{-0.141}$ \\
-\cell{cls$\cdot$B2} & 0.642 & 0.646 & $+0.004$ \\
-\cell{red$\cdot$B2} & 0.615 & 0.526 & $-0.089$ \\
+\cell{Classifieds$\cdot$235B} & 0.726 & 0.683 & $-0.043$ \\
+\cell{Reddit$\cdot$235B} & 0.780 & 0.700 & $-0.080$ \\
+\cell{Classifieds$\cdot$Qwen-4B} & 0.732 & 0.705 & $-0.027$ \\
+\cell{Reddit$\cdot$Qwen-4B} & \textbf{0.864} & 0.723 & $\mathbf{-0.141}$ \\
+\cell{Classifieds$\cdot$Gemma-4B} & 0.642 & 0.646 & $+0.004$ \\
+\cell{Reddit$\cdot$Gemma-4B} & 0.615 & 0.526 & $-0.089$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -139,9 +144,10 @@ Cell & 20 features (VWA-only) & 18 features (matched) & $\Delta$ \\
 leakage.} The two features were dropped because WebArena \emph{does not have them}, a property of the corpus established by the EDA in
 Chapter~\ref{ch:system} before any model was fitted, and visible in
 Figure~\ref{fig:f4}(B). They were not dropped because they performed too well.
-Had we inspected out-of-fold importances and removed whatever looked suspicious,
-that would have been whole-dataset feature selection dressed as nesting, and the
-nesting claim in Section~\ref{sec:protocol} would be void. The admissibility
+Had we looked at which inputs mattered across the whole dataset and then
+removed whatever looked suspicious, we would have been choosing inputs using
+the very rows we later score on --- while still calling the procedure nested.
+The claim in Section~\ref{sec:protocol} would then be void. The admissibility
 rule is availability at serving time, applied to the feature set as a whole.
 
 \textbf{What we then found is one of this chapter's main results.} In the
@@ -171,8 +177,9 @@ but that the one column with reliable signal in it does not exist outside the be
 \subsection{A matched set is not a matched support}
 
 Matching the feature \emph{set} does not match the feature \emph{support}. Five
-of the fourteen intent regexes have zero variance on the WebArena cells: they
-were written against VisualWebArena phrasing, and WebArena words its intents
+of the fourteen inputs that look for particular wording in the task
+instruction never match anything on the WebArena cells: they were written
+against VisualWebArena's phrasing, and WebArena words its instructions
 differently. So the WebArena cells are effectively fitted on 13 live features
 against the VisualWebArena cells' 15--17 (Table~\ref{tab:live-features}). We
 state the comparison as matched on set, not on support.
@@ -187,12 +194,12 @@ features.}
 \toprule
 Cell & live & dead (zero-variance) \\
 \midrule
-\cell{cls$\cdot$B0}, \cell{cls$\cdot$B1}, \cell{cls$\cdot$B2} & 15/18 &
+\cell{Classifieds$\cdot$235B}, \cell{Classifieds$\cdot$Qwen-4B}, \cell{Classifieds$\cdot$Gemma-4B} & 15/18 &
   \texttt{intent\_account\_action}, \texttt{intent\_action\_word},
   \texttt{intent\_filter} \\
-\cell{red$\cdot$B0}, \cell{red$\cdot$B1}, \cell{red$\cdot$B2} & 17/18 &
+\cell{Reddit$\cdot$235B}, \cell{Reddit$\cdot$Qwen-4B}, \cell{Reddit$\cdot$Gemma-4B} & 17/18 &
   \texttt{intent\_action\_word} \\
-\cell{wa\_red$\cdot$B0}, \cell{wa\_red$\cdot$B1} & 13/18 &
+\cell{Reddit (WA)$\cdot$235B}, \cell{Reddit (WA)$\cdot$Qwen-4B} & 13/18 &
   \texttt{intent\_action\_word}, \texttt{intent\_color},
   \texttt{intent\_compare}, \texttt{intent\_filter},
   \texttt{intent\_form\_fill} \\
@@ -208,15 +215,21 @@ evaluated by task-held-out five-fold cross-validation per cell, seed 42. The
 model is deliberately simple; the interesting design decisions are all in what
 is held out.
 
-\paragraph{Full nesting.} Within each outer fold: feature standardisation is fit
-on training rows only; the best-SR mode and the cheapest mode are re-selected
-from \emph{training-row} success and cost; the operating threshold $\tau$ is
-chosen against inner-CV out-of-fold scores over training rows only; and the
-outer-test rows are scored by a model fitted on training rows alone. Nothing
-that touches an outer test fold has seen it.
+\paragraph{Full nesting.} The tasks in each cell are split five ways. One
+fifth is set aside as test data and not consulted again until the end.
+Everything else happens on the remaining four fifths: the inputs are rescaled
+using only those rows; the best-performing mode and the cheapest mode are
+re-identified from only those rows' success and cost; and the decision
+threshold $\tau$ is chosen by splitting those rows again and scoring the part
+held back within them. Only then is the model, fitted on training rows alone,
+applied to the fifth that was set aside. Nothing that touches a test fold has
+seen it.
 
-We previously got this wrong, which is why it is spelled out. An earlier revision of this
-analysis reported a ``nested'' operating point while reusing globally computed out-of-fold scores, whose folds include the outer test rows, together with a whole-cell choice of best and cheapest mode. The numbers below supersede it.
+We previously got this wrong, which is why it is spelled out. An earlier
+revision of this analysis called its threshold ``nested'' while in fact
+reusing scores computed across the whole cell --- scores whose own splits
+included the rows being tested --- and while choosing the best and cheapest
+mode from the whole cell too. The numbers below supersede it.
 We record the correction because it changes the interpretation of a headline
 number, not to narrate debugging.
 
@@ -250,14 +263,14 @@ single covariate in 5 of 8 cells, by $+0.014$ to $+0.075$.}
 \toprule
 Cell & $n$ & solvable \% & AUROC (LR) & best single feature & that feature \\
 \midrule
-\cell{cls$\cdot$B0}     & 224 & 43.3 & \textbf{0.683} & 0.607 & \texttt{dom\_complexity} \\
-\cell{red$\cdot$B0}     & 203 & 26.1 & \textbf{0.700} & 0.685 & \texttt{intent\_token\_count} \\
-\cell{cls$\cdot$B1}     & 224 & 24.6 & \textbf{0.705} & 0.631 & \texttt{intent\_token\_count} \\
-\cell{red$\cdot$B1}     & 203 & 11.8 & \textbf{0.723} & 0.664 & \texttt{intent\_token\_count} \\
-\cell{cls$\cdot$B2}     & 224 & \phantom{0}7.1 & 0.646 & 0.655 & \texttt{intent\_compare} \\
-\cell{red$\cdot$B2}     & 203 & \phantom{0}7.4 & 0.526 & \textbf{0.790} & \texttt{intent\_token\_count} \\
-\cell{wa\_red$\cdot$B0} & 104 & 51.9 & 0.554 & 0.607 & \texttt{dom\_complexity} \\
-\cell{wa\_red$\cdot$B1} & 104 & 30.8 & \textbf{0.758} & 0.710 & \texttt{dom\_complexity} \\
+\cell{Classifieds$\cdot$235B}     & 224 & 43.3 & \textbf{0.683} & 0.607 & \texttt{dom\_complexity} \\
+\cell{Reddit$\cdot$235B}     & 203 & 26.1 & \textbf{0.700} & 0.685 & \texttt{intent\_token\_count} \\
+\cell{Classifieds$\cdot$Qwen-4B}     & 224 & 24.6 & \textbf{0.705} & 0.631 & \texttt{intent\_token\_count} \\
+\cell{Reddit$\cdot$Qwen-4B}     & 203 & 11.8 & \textbf{0.723} & 0.664 & \texttt{intent\_token\_count} \\
+\cell{Classifieds$\cdot$Gemma-4B}     & 224 & \phantom{0}7.1 & 0.646 & 0.655 & \texttt{intent\_compare} \\
+\cell{Reddit$\cdot$Gemma-4B}     & 203 & \phantom{0}7.4 & 0.526 & \textbf{0.790} & \texttt{intent\_token\_count} \\
+\cell{Reddit (WA)$\cdot$235B} & 104 & 51.9 & 0.554 & 0.607 & \texttt{dom\_complexity} \\
+\cell{Reddit (WA)$\cdot$Qwen-4B} & 104 & 30.8 & \textbf{0.758} & 0.710 & \texttt{dom\_complexity} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -288,22 +301,24 @@ measures how much.
 \centering\small
 \caption[Permutation control]{\textbf{How much of each cell's saving a
 signal-free pipeline reproduces.} $B=10{,}000$ bundle permutations per cell;
-$p$ is the plus-one Monte Carlo estimator $(k+1)/(B+1)$, smallest reportable
-$1.00\times10^{-4}$. Holm's tightest threshold over $m=8$ cells is
-$0.05/8 = 6.25\times10^{-3}$.}
+$k$ counts how many of the 10,000 shuffles produced a saving at least as large
+as the real one; $p=(k+1)/(B+1)$, so the smallest value reportable is
+$1.00\times10^{-4}$. Because $m=8$ cells are tested at once, a result must
+clear a proportionally stricter threshold to count as significant; the
+strictest of those is $0.05/8 = 6.25\times10^{-3}$.}
 \label{tab:permutation}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
 Cell & observed saving & median under shuffled labels & $p$ \\
 \midrule
-\cell{cls$\cdot$B0}     & \phantom{0}7.0\% & \phantom{0}3.3\% & 0.242 \\
-\cell{red$\cdot$B0}     & \phantom{0}0.0\% & \phantom{0}0.0\% & 1.000 \\
-\cell{cls$\cdot$B1}     & \phantom{0}2.6\% & 10.1\% & 0.741 \\
-\cell{red$\cdot$B1}     & 11.8\% & \phantom{0}1.0\% & 0.033 \\
-\cell{cls$\cdot$B2}     & 20.4\% & 20.8\% & 0.682 \\
-\cell{red$\cdot$B2}     & 26.7\% & \phantom{0}5.5\% & \textbf{0.0004} \\
-\cell{wa\_red$\cdot$B0} & \phantom{0}4.4\% & \phantom{0}0.6\% & 0.186 \\
-\cell{wa\_red$\cdot$B1} & \phantom{0}3.8\% & \phantom{0}2.9\% & 0.443 \\
+\cell{Classifieds$\cdot$235B}     & \phantom{0}7.0\% & \phantom{0}3.3\% & 0.242 \\
+\cell{Reddit$\cdot$235B}     & \phantom{0}0.0\% & \phantom{0}0.0\% & 1.000 \\
+\cell{Classifieds$\cdot$Qwen-4B}     & \phantom{0}2.6\% & 10.1\% & 0.741 \\
+\cell{Reddit$\cdot$Qwen-4B}     & 11.8\% & \phantom{0}1.0\% & 0.033 \\
+\cell{Classifieds$\cdot$Gemma-4B}     & 20.4\% & 20.8\% & 0.682 \\
+\cell{Reddit$\cdot$Gemma-4B}     & 26.7\% & \phantom{0}5.5\% & \textbf{0.0004} \\
+\cell{Reddit (WA)$\cdot$235B} & \phantom{0}4.4\% & \phantom{0}0.6\% & 0.186 \\
+\cell{Reddit (WA)$\cdot$Qwen-4B} & \phantom{0}3.8\% & \phantom{0}2.9\% & 0.443 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -333,22 +348,25 @@ reproducing at least 80\% of the observed saving; in \cell{cls$\cdot$B1} the shu
 \section{Why AUROC is not the answer here}
 \label{sec:auroc-not-answer}
 
-The one cell that survives, \cell{red$\cdot$B2}, has an AUROC of 0.526, below its own best single covariate at 0.790. That is not a contradiction; the two
+The one cell that survives, the forum site with the Gemma model
+(\cell{red$\cdot$B2}), has an AUROC of 0.526 --- worse than simply using its
+single most informative input, which reaches 0.790. That is not a contradiction; the two
 quantities measure different things and this data pulls them apart.
 
 AUROC scores the \emph{global} ranking. The saving comes from the \emph{tail}.
-The two come apart hardest exactly where the class balance is worst: in a cell
-that is 93\% negative, a model can order the sea of true negatives well enough to
-score 0.70 without ever confidently identifying a positive, which is the only
-thing triage needs. A precision--recall curve would separate these two situations
+The two come apart hardest exactly where the classes are most lopsided. In a
+cell where 93\% of tasks are unsolvable, a model can rank that great mass
+sensibly enough to score 0.70 without ever confidently picking out a solvable
+one. Picking out the solvable ones is the only thing triage actually needs. A precision--recall curve would separate these two situations
 where AUROC does not, and we report AUROC only because it is the quantity the
 routing literature reports; the policy tables in Chapter~\ref{ch:e2e}, not this
 column, are what the conclusion rests on.
 \cell{red$\cdot$B2} routes 192 of 203 tasks (95\%) to the cheap mode with no success loss, in a cell where only 7.4\% of tasks are solvable by anything at
 all, so almost nothing in that 95\% was ever going to succeed. It differs from
 the free always-cheapest policy on 5\% of the allocation, and those 11 retained
-tasks happen to hold 5 of the cell's successes against always-cheapest's 4. The
-permutation null is detecting that tail enrichment, not an ordered score.
+tasks happen to hold 5 of the cell's successes against always-cheapest's 4. What
+the shuffling test detects is that this small group is unusually rich in
+solvable tasks --- not that the model has ranked all the tasks well.
 
 \begin{scopebox}
 \textbf{The honest phrasing.} It is \emph{not} ``the label is predictable, yet
@@ -375,8 +393,9 @@ three come back \emph{partly against} this dissertation, and we report them that
 way.
 
 \paragraph{Does more of the same data help? Yes, with decelerating returns.}
-Thinning the training rows stratified while leaving each test fold intact gives a
-learning curve that isolates training size. Out-of-fold AUROC rises by $+0.032$
+We train on progressively smaller samples of the training rows, keeping the
+mix of classes the same and leaving each test fold untouched. The resulting
+curve isolates the effect of training size alone. Out-of-fold AUROC rises by $+0.032$
 to $+0.083$ between a quarter of the data and all of it. It is not flat: more
 rows would help. But the increments shrink: in 9 of 12 curves the sweep from
 55\% to 100\% buys less than the sweep from 25\% to 55\%, despite covering the
@@ -393,8 +412,9 @@ objection by claiming there is nothing to learn}: there is something, and a larg
 \paragraph{And yet it does not reach the result, for a reason that has nothing
 to do with sample size.} More data moves the learned predictor upward from
 AUROC $0.73$; the limit of that movement is a perfect predictor, AUROC $=1.00$.
-A perfect predictor of the triage label \emph{is} the oracle triage policy, and Chapter~\ref{ch:e2e} measures what that policy achieves. It Pareto-beats
-always-cheapest in \textbf{1 of 8 cells}. The learned router manages 0 of 8, and
+A perfect predictor of the triage label \emph{is} the oracle triage policy, and Chapter~\ref{ch:e2e} measures what that policy achieves. It
+is both more successful and cheaper than always-cheapest in \textbf{1 of 8
+cells}. The learned router manages 0 of 8, and
 the entire distance between them is at most one cell.
 
 \begin{scopebox}
@@ -424,22 +444,28 @@ which of the two it improved.
 \section{What this chapter establishes}
 \label{sec:ch5-summary}
 
-The which-mode half of routing cannot be attempted: 4 of 6 cells have no
-trainable classifier, and the constraint is label supply
+The which-mode half of routing cannot be attempted under our own minimum-data
+rule: 4 of 6 cells do not reach the required number of solved tasks per mode,
+and what constrains them is the supply of solved tasks
 (Chapter~\ref{ch:disc}).
 
 The triage half, the easier half by construction, is weakly predictable,
-at AUROC 0.526--0.758, clearing its best single covariate in 5 of 8 cells. But
+at AUROC 0.526--0.758, beating its single most informative input in 5 of 8
+cells. But
 most of the apparent predictability on VisualWebArena rests on two features no
 deployment possesses, and after removing them five of six cells fall. Under a
 $B=10{,}000$ bundle-permutation null with Holm correction across the eight
 cells, one cell's saving survives, and it is the cell with near-chance global
 discrimination.
 
-\chapterhandoff{Chapter~\ref{ch:pred} shows the routing target is at best weakly
-predictable under a deployment-faithful information boundary, and that most of
-what looked like predictability was a benchmark annotation. Predictive
-performance is nonetheless the wrong terminal quantity: a router can rank well
-and still lose once false escalations, missed escalations and its own cost are priced in, and, as \cell{red$\cdot$B2} shows, the converse also occurs.
+\chapterhandoff{Chapter~\ref{ch:pred} shows that what the router would have to
+predict is at best weakly predictable, once it is restricted to what a
+deployment could actually see, and that most of what looked like
+predictability came from an annotation the benchmark supplies and a deployment
+does not. Prediction quality is nonetheless the wrong place to stop. A router
+can rank tasks well and still lose money once three things are counted:
+sending a task to the expensive mode when it did not need it, failing to send
+one that did, and the cost of running the router itself. The reverse also
+happens, as the forum site with the Gemma model (\cell{red$\cdot$B2}) shows.
 Chapter~\ref{ch:e2e} therefore runs the policy end to end and asks whether it
 beats the fixed alternative a deployment already has for free.}

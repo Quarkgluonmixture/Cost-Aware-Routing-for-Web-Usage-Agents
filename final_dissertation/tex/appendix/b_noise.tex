@@ -1,11 +1,13 @@
 \chapter{Noise-Floor Derivation and Scope}
 \label{app:noise}
 
-\emph{Referenced from Section~\ref{sec:noise-floor}.} The main text states the
-repetition thresholds and applies them. This appendix derives them and records
-the scope restrictions that govern which comparisons the floors license, because
-the most common way to misuse a noise floor is to do arithmetic across rows that
-do not share a scope.
+\emph{Referenced from Section~\ref{sec:noise-floor}.} A \emph{noise floor}
+here is how much a success rate moves when the identical setup is simply run
+again, with nothing changed. The main text states those thresholds and applies
+them; this appendix derives them, and records which comparisons each one is
+and is not allowed to police. That restriction matters because the commonest
+way to misuse a noise floor is to do arithmetic across two rows that were
+measured under different conditions.
 
 \section{Derivation of the null spread}
 
@@ -73,10 +75,13 @@ bound rather than by subtraction in Section~\ref{sec:six-vs-six}, derived below.
 \section{The six-rerun bound}
 \label{sec:app-union}
 
-Equation~\ref{eq:union} follows from the same null. If the mode solves $s_0$
-tasks deterministically and $m$ tasks with probability $\tfrac12$, then over $k$
-independent runs each flippable task is solved at least once with probability
-$1-2^{-k}$, so
+Equation~\ref{eq:union} follows from the same null. Write $U(k)$ for the
+number of distinct tasks solved at least once across $k$ runs of one mode:
+$U(1)$ is what a single run solves, $U(2)$ what two runs solve between them,
+and so on. Suppose the mode solves $s_0$ tasks every time, and a further $m$
+tasks --- call these \emph{flippable} --- with probability $\tfrac12$ each.
+Over $k$ independent runs a flippable task is solved at least once with
+probability $1-2^{-k}$, so
 $\mathbb{E}\left[U(k)\right] = s_0 + m\left(1-2^{-k}\right)$.
 The two parameters are identified from a single replicate pair: two runs disagree
 on a flippable task with probability $\tfrac12$, so $\mathbb{E}[d] = m/2$, giving
@@ -85,8 +90,8 @@ $\hat m = 2d$ and $\hat s_0 = |A| - d$.
 Three properties make this usable as a bound rather than an estimate.
 
 \emph{It is checked, not assumed.} $U(1)$ is fitted by construction, but $U(2)$
-is not, and it can be compared against the observed two-run union. The error is
-$+1.12$, $+0.44$ and $-1.11$\pp{} on the three replicated arms, so the model is not systematically optimistic, and on \mSoM{} it \emph{under}-credits repetition,
+is not, and it can be compared against the observed two-run union. The error
+is $+1.12$, $+0.44$ and $-1.11$\pp{} on the three modes that were run twice, so the model is not systematically optimistic, and on \mSoM{} it \emph{under}-credits repetition,
 which is the arm that drives the headline comparison.
 
 \emph{Its bias direction is known.} Treating every discordant task as a fair coin

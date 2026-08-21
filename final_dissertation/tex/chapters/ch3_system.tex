@@ -1,9 +1,10 @@
 \chapter{Problem Formulation and Experimental System}
 \label{ch:system}
 
-\chapterhandoff{Chapter~\ref{ch:bg} showed that no existing programme selects
-page representation for a fixed agent using pre-acquisition signals. This
-chapter defines the system in which that selection can be measured. Its purpose
+\chapterhandoff{Chapter~\ref{ch:bg} showed that no existing line of work
+chooses the page representation for an otherwise unchanged agent, using only
+what can be known before the expensive option is paid for. This chapter
+defines the system in which such a choice can be measured. Its purpose
 is to make one thing auditable: which differences observed later are
 attributable to representation, and which are not.}
 
@@ -11,11 +12,12 @@ attributable to representation, and which are not.}
 \label{sec:boundary}
 
 Every empirical claim in this dissertation rests on a single structural
-commitment, and it is worth stating before any implementation detail. Across all
-conditions we hold constant: the task and its initial environment state, the
-agent's backbone model and decoding parameters, the action space, the step
-budget, the browser and its viewport, the benchmark evaluator, and the
-cost-accounting boundary. We vary exactly one stage: the construction of the observation handed to the model at each step.
+commitment, and it is worth stating before any implementation detail. Across
+all conditions we hold constant: the task and the state of the website it
+starts from, the underlying model and the settings that govern how it produces
+text, the set of browser actions available, the limit on how many steps are
+allowed, the browser and the size of its window, the benchmark's automatic
+scoring, and the rules for what counts as a cost. We vary exactly one stage: the construction of the observation handed to the model at each step.
 
 \begin{figure}[t]
   \centering
@@ -37,8 +39,8 @@ making the commitment concrete and checkable.
 \label{sec:task-def}
 
 A \emph{task} is a benchmark-defined user objective on a specific website, with
-a natural-language intent, a starting URL, an optional reference image, and a
-programmatic evaluator. An \emph{episode} is one attempted execution of one task
+an instruction written in ordinary language, a starting web address, sometimes
+a reference image, and a scoring procedure that runs automatically. An \emph{episode} is one attempted execution of one task
 from its initial state until success, an explicit stop action, an unrecoverable
 error, or exhaustion of the step budget. A \emph{step} is one
 observe--decide--act iteration.
@@ -94,6 +96,7 @@ visible numbered marks and how to refer to those.
 overlays on candidate elements, or a raw un-annotated screenshot.
 
 \subsection{The six observation modes}
+\label{sec:modes}
 
 Crossing text payload with prompt framing yields four image-free
 configurations; adding the two image-bearing conditions gives six modes in
@@ -130,8 +133,9 @@ identified ambiguity, not a proposal for a new agent design.
 
 \paragraph{Naming.} We use \emph{phantom} for the three image-free modes other than \mDOM{}: \mPT{}, \mPP{} and \mPS{}. \mDOM{} is image-free too,
 so ``text side'' and ``phantom'' are not synonyms, and we do not use them
-interchangeably. \mPS{} is one configuration; the \emph{phantom routing space}
-is the region of the configuration space it inhabits.
+interchangeably. \mPS{} is one such configuration; when we speak of the
+\emph{phantom routing space} we mean the whole set of image-free
+configurations that \mPT{}, \mPP{} and \mPS{} are drawn from.
 
 \section{Routing formulation}
 \label{sec:router-formulation}
@@ -148,9 +152,16 @@ after which the agent policy acts on the observation that mode produces:
   a_t = \pi_a\!\left(o_t^{(m_t)},\, h_t\right).
   \label{eq:agent}
 \end{equation}
-The agent policy $\pi_a$ is identical in every condition; only $\pi_r$ changes.
-A \emph{fixed policy} is the degenerate case $\pi_r(z_t) \equiv m$ for some
-constant $m$.
+In words: the router picks how the page will be shown, and the agent then
+picks what to do with what it sees. The formulation is written per step
+because that is the general case, but every result in this dissertation uses
+the task-level special case, in which the router chooses once and that mode is
+used for the whole episode. The reason is supply, not principle: the benchmark
+scores whole tasks, so only whole tasks carry an outcome a router could be
+trained or judged on (Section~\ref{sec:regime-boundary}). The agent's decision rule $\pi_a$ is
+identical in every condition; only the router $\pi_r$ changes. A \emph{fixed
+policy} is the special case where the router always returns the same mode,
+$\pi_r(z_t) \equiv m$.
 
 \subsection{The oracle and its decomposition}
 
@@ -160,12 +171,14 @@ $c_i^{(m)}$ its measured cost. The retrospective oracle is
   \mathrm{SR}_{\text{oracle}} = \frac{1}{n}\sum_{i=1}^{n} \max_{m\in\mathcal{M}} s_i^{(m)},
   \label{eq:oracle}
 \end{equation}
-which is an upper bound: it uses $s_i^{(m)}$ for modes it did not run. Its
-\emph{ceiling gain} is $\mathrm{SR}_{\text{oracle}} - \max_m \mathrm{SR}^{(m)}$,
-always reported against a stated comparator.
+which is an upper bound rather than an achievable result: for each task it
+takes the best outcome across all six modes, including modes a real system
+would not have run. Throughout this dissertation the \emph{ceiling} means this
+quantity's gain over the best single mode, $\mathrm{SR}_{\text{oracle}} -
+\max_m \mathrm{SR}^{(m)}$, always reported against a stated comparator.
 
-The oracle decomposes into two halves that differ sharply in how much
-supervision they require, and Chapter~\ref{ch:pred} depends on keeping them apart:
+The oracle splits into two halves that differ sharply in how many labelled
+examples they require to learn, and Chapter~\ref{ch:pred} depends on keeping them apart:
 \begin{itemize}[leftmargin=1.5em]
 \item \textbf{Triage.} For each task, decide whether \emph{any} mode will
       solve it; if not, spend the cheapest. The label is binary and is defined
@@ -185,8 +198,10 @@ costs:
   \label{eq:dropone}
 \end{equation}
 $\Delta_m>0$ means $m$ solves at least one task nothing else solves.
-Equation~\ref{eq:dropone} is also, in form, the quantity that a \emph{rerun} of
-an existing mode would produce as an extra arm, which is exactly why Chapter~\ref{ch:repr} can judge one against the other at matched arm count.
+Equation~\ref{eq:dropone} also describes, in the same form, what one extra
+\emph{repeat} of a mode already in the set would contribute. That is exactly why Chapter~\ref{ch:repr}
+can weigh a new representation against a repeat of an old one while giving
+both sides the same number of runs.
 
 \subsection{Net saving}
 
@@ -211,7 +226,8 @@ visually-grounded tasks. We use two sites, \emph{classifieds} and
 environment does not drift under us in the way a live website would.
 
 \paragraph{External validation.} WebArena \citep{zhou2024webarena} reddit is
-used as a distribution-shift setting for two backbones. Its value here is
+used to test whether the findings survive on a benchmark whose tasks are
+specified differently, for two of the models. Its value here is
 specific and measurable rather than rhetorical: WebArena task
 configurations \emph{omit the reference-image field entirely}, all 480 of them across its three sites, whereas 29--40\% of VisualWebArena tasks supply
 one (Figure~\ref{fig:f4}, panel B). The distinction between an absent field and
@@ -344,10 +360,11 @@ metered API proxy whose protocol is a hybrid: an Anthropic-style endpoint and
 header with an OpenAI-style tool schema and top-level tool-call and log-prob
 fields. This is an implementation fact with two consequences we carry forward.
 First, B0 conditions are replicable from our archived logs but not
-independently reproducible without equivalent proxy access. Second, the proxy
-truncates log-probabilities to the top two tokens, so B0's confidence features
-populate four of six fields and entropy is undefined; the feature set used in
-Chapter~\ref{ch:pred} does not depend on the missing fields.
+independently reproducible without equivalent proxy access. Second, the
+service reports how confident the model was only for the two most likely next
+words rather than for all of them. Four of our six confidence measures can
+therefore be computed for B0 and two cannot. The inputs used in
+Chapter~\ref{ch:pred} do not depend on the two that are missing.
 
 \section{Metrics and the accounting boundary}
 \label{sec:metrics}
@@ -360,9 +377,11 @@ evaluator is unchanged from the benchmark distribution.
 over steps of input and output tokens, priced at that backbone's per-1k
 schedule. For B0 the schedule is the proxy's actual billing rate, so the figure
 is money charged. For B1 and B2 the schedule is a device-amortisation rate, so
-the figure is a \emph{token-priced cost estimate} rather than an invoice. This
-single estimand is used in every policy comparison in
-Chapters~\ref{ch:repr}--\ref{ch:e2e}.
+the figure is a \emph{token-priced cost estimate} rather than an invoice.
+These are two different \emph{deployment classes} --- money actually charged,
+and an estimate of what the hardware time was worth --- and we compare costs
+only within one of them, never across. This single quantity is used in every
+policy comparison in Chapters~\ref{ch:repr}--\ref{ch:e2e}.
 
 \begin{scopebox}
 \textbf{Every cost number in this dissertation is governed by two rules.} \emph{(i)}
@@ -380,9 +399,13 @@ section uses the latter.
 \caption[Cost per mode, canonical estimand]{\textbf{Mean per-episode cost
 (\texttt{total\_billed\_cost\_usd}) by mode and cell.} Cheapest mode per column
 in bold. What matters downstream is this: the cheapest mode is not the same
-everywhere (\mDOM{} on \cell{wa\_red$\cdot$B0}, \mVis{} elsewhere), and the
-spread between cheapest and dearest ranges from 11.6\% to 77.8\%, so ``the
-expensive mode'' means something different in each cell.}
+everywhere (\mDOM{} on the WebArena forum with the 235B model, \mVis{}
+elsewhere), and the spread between cheapest and dearest ranges from 11.6\% to
+77.8\%, so ``the expensive mode'' means something different in each cell. Cell
+codes name a site and a model: \cell{cls} and \cell{red} are the
+classified-ads and forum sites of VisualWebArena, \cell{wa\_red} the WebArena
+forum; \cell{B0} is the 235B model, \cell{B1} and \cell{B2} the two 4B models,
+one from each design family.}
 \label{tab:cost-per-mode}
 \footnotesize\setlength{\tabcolsep}{4.2pt}
 \begin{tabular}{@{}lrrrrrrrr@{}}
@@ -454,8 +477,9 @@ conditions, plus 12 WebArena conditions across 2 cells
 them.
 
 \paragraph{Uncertainty.} Drop-one contributions carry bootstrap 95\%
-intervals over tasks. Pairwise mode differences use McNemar's test on the paired
-binary outcomes. Where a family of tests is reported over cells, we apply Holm's
+intervals over tasks. Because every mode attempts the same tasks, differences
+between two modes are tested by counting the tasks on which exactly one of
+them succeeded (McNemar's test). Where a family of tests is reported over cells, we apply Holm's
 step-down correction \citep{holm1979} with the family size stated explicitly at
 the point of use.
 
@@ -494,7 +518,9 @@ committed analysis artefacts.
 The pipeline has two habits that exist because their absence caused errors, and they are worth naming since they affect what a reader can check. Conditions are refused
 by the aggregators unless their task-identifier SHA matches the cell's expected
 set, which converts a silent partial run into a loud failure. And every analysis artefact records a provenance header naming the producing script, the
-capture timestamp, and whether the artefact is gate-eligible or exploratory, so a number lifted into prose can be traced to the run that produced it.
+capture timestamp, and whether the file was approved for use in the main
+analysis or produced only for exploration, so a number lifted into prose can
+be traced back to the run that produced it.
 Appendix~\ref{app:repro} lists the configuration manifest, model revision pins
 and artefact inventory.
 
@@ -510,7 +536,7 @@ is deliberately explicit about which of them we fixed in advance and which we ad
 \paragraph{Fixed in advance, and externally witnessed.} The hypotheses, the
 primary gate, the analysis plan and the exclusion policy were written before the
 paper-grade data existed, and locked on 2026-05-18 by a repository tag and an
-OSF registration DOI minted while the data-collection status still read
+OSF registration DOI issued while the data-collection status still read
 \emph{pending}. The protocol did not survive contact with the experiment unchanged: it was revised ten times. Each revision is a separate dated tag rather than a silent edit, so the difference between what we planned and
 what we did is a matter of public record instead of memory. That is the property
 that matters; an unamended preregistration on a four-month project would be less
@@ -534,12 +560,15 @@ costs (Section~\ref{sec:six-vs-six}).
 
 \paragraph{Adopted mid-project: adversarial audit by readers with no stake.}
 Before each milestone the draft and the code behind it were read cold by three
-independent model lineages, each writing its own claim-by-claim attack without
-access to the others' output. Their disagreements were the useful part, since the overlap was mostly things we already knew. Every finding was then checked against
-the artefacts by hand before being accepted, which was not ceremony: of the
-attacks that reached a fix, one had its own arithmetic wrong (it reported a significance threshold of 4.91\pp{} where the exact calculation gives 4.02\pp), and two were factually wrong about our pipeline, one of them claiming we had
-dropped a feature after noticing it performed too well when in fact the benchmark
-it had to transfer to does not carry that feature at all.
+AI systems built by three different developers, each writing its own
+claim-by-claim attack without seeing the others' output. Their disagreements were the useful part, since the overlap was mostly things we already knew. Every
+finding was then checked against the artefacts by hand before being accepted.
+That was not ceremony. Of the attacks that reached a fix, one had its own
+arithmetic wrong --- it reported a significance threshold of 4.91\pp{} where
+the exact calculation gives 4.02\pp{} --- and two were factually wrong about
+our pipeline. One of those claimed we had dropped a feature after noticing it
+performed too well, when in fact the benchmark it had to transfer to does not
+carry that feature at all.
 
 \paragraph{What this bought, and what it does not guarantee.} The corrections
 these rules produced are not confined to a footnote; they are distributed through
@@ -558,9 +587,9 @@ about the process, not about the world, and the errors it did not catch are by
 construction invisible to it. What it does establish is that the claims which survived were not the ones we wanted, which is the only form of assurance a
 negative result can offer.
 
-\chapterhandoff{This chapter fixes the comparison boundary: task, agent, action
-space and accounting are held identical while the observation construction is
-varied. That boundary makes representation differences interpretable, but it does not make them \emph{interesting}. If one mode dominated everywhere,
+\chapterhandoff{This chapter fixes the terms of the comparison: the task, the
+agent, the actions it may take and the way costs are counted are held
+identical, and only the way the page is presented changes. That boundary makes representation differences interpretable, but it does not make them \emph{interesting}. If one mode dominated everywhere,
 selection would have nothing to select. Chapter~\ref{ch:repr} therefore asks the
 prerequisite empirical question: do these modes succeed and fail on different
 tasks, and if so, how much is that worth?}

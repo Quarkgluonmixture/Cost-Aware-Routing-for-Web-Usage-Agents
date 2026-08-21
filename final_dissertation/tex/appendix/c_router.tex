@@ -2,9 +2,12 @@
 \label{app:router}
 
 \emph{Referenced from Sections~\ref{sec:features} and~\ref{sec:protocol}.} The
-main text names the feature families and states the nesting rules. This appendix
-gives the complete dictionary and the exact order of operations inside a fold,
-so that the leakage controls can be checked rather than taken on trust.
+\emph{router} is the rule that decides which observation mode a task should
+get. This appendix lets a reader check two things the main text only asserts:
+exactly which measurements that rule is allowed to see, and the exact order in
+which the training steps happen. The order matters because the whole negative
+result would be worthless if information from the tasks used for testing had
+reached the training in any way.
 
 \section{Complete feature dictionary}
 
@@ -58,8 +61,9 @@ For outer fold $k$ of 5, with training rows $T_k$ and test rows $V_k$
       \emph{on $T_k$ only}.
 \item Run an inner 5-fold CV within $T_k$; fit the logistic regression on each
       inner training split and score the inner held-out split.
-\item Choose the operating threshold $\tau$ against those inner out-of-fold
-      scores.
+\item Choose the operating threshold $\tau$ by sweeping candidate values and
+scoring each against those inner held-back predictions. No row from $V_k$ is
+consulted at this step.
 \item Fit the final logistic regression on all of $T_k$.
 \item Score $V_k$, apply $\tau$, and credit each test task the outcome and cost
       of the selected mode.
@@ -85,11 +89,14 @@ $p$ computed by the plus-one Monte Carlo estimator $(k+1)/(B+1)$.
 Permuting $y$ alone is incorrect here and we record why, since it is the obvious
 implementation. The triage label is \emph{defined} by the per-mode outcomes; if
 $y$ is shuffled while success and cost stay attached to their original tasks,
-the null world contains a label disconnected from the quantities it summarises.
+the shuffled world contains a label that no longer matches the successes and
+costs it was derived from --- which is not a world the null hypothesis
+describes.
 The resulting error is not one-directional: measured at $B=200$, moving from the $y$-only null to the bundle null shifted \cell{cls$\cdot$B1} from $0.478$ to
 $0.503$ and \cell{red$\cdot$B2} from $0.040$ to $0.005$, in opposite directions.
 
-The threshold sweep remains post hoc by construction. That is precisely why the
+The threshold is still chosen by trying candidate values and keeping the best,
+which is a post-hoc choice by construction. That is precisely why the
 null shares the same selection step: it measures how much of the observed saving
 a signal-free pipeline with the same post hoc freedom reproduces.
 
@@ -104,8 +111,10 @@ Two definitions were evaluated (Section~\ref{sec:robustness}).
 \item[Measured-cost] The cheapest successful mode by measured episode cost.
 \end{description}
 
-Supply is identical under both by construction, so only trainability can move:
-4 of 6 cells are untrainable under the canonical label and 5 of 6 under the
+Both definitions assign a mode to exactly the same tasks. The only thing that
+can change is whether enough examples land in each class to meet our minimum.
+4 of 6 cells fall below it under the label used in the main analysis, and 5 of
+6 under the
 measured-cost one. The measured-cost variant was examined and rejected as
 canonical because the resulting order is unstable across cells and because cost is endogenous to the outcome: a mode that fails spends the full step budget
 and therefore looks expensive partly \emph{because} it failed.

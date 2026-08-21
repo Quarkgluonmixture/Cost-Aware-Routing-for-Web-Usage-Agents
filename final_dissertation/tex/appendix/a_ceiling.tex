@@ -1,11 +1,12 @@
 \chapter{Full Policy Tables and Oracle Decomposition}
 \label{app:ceiling}
 
-\emph{Referenced from Section~\ref{sec:ceiling}.} The main text reports the
-ceiling as two summary columns. This appendix gives the full policy ladder per
-cell, because the summary hides two quantities a reader may want to check
-independently: how far each individual fixed mode sits from the best one, and
-how the oracle splits between its triage and which-mode halves.
+\emph{Referenced from Section~\ref{sec:ceiling}.} The main text compresses the
+ceiling into two summary columns. This appendix lets a reader check what that
+compression hides. First, how far each individual fixed mode sits from the
+best one. Second, how the idealised chooser's advantage splits between its two
+separate decisions: whether \emph{any} mode will solve the task at all, and,
+among tasks that some mode does solve, which mode to pick.
 
 \section{Per-cell policy ladder}
 
@@ -16,15 +17,16 @@ are included in the released artefact
 
 \begin{table}[h]
 \centering\small
-\caption{Full policy ladder, \cell{cls$\cdot$B0} ($n=224$) and
-\cell{red$\cdot$B0} ($n=203$). $\Delta$ columns are against the best single
+\caption{Full policy ladder for the two 235B cells: the classified-ads site
+($n=224$) and the forum ($n=203$). $\Delta$ columns are against the best single
 mode. \texttt{route\_only} and \texttt{triage\_only} are the two oracle halves;
 \texttt{oracle\_sr\_cost} additionally breaks ties by measured cost.}
 \label{tab:app-ladder}
 \footnotesize\setlength{\tabcolsep}{4.5pt}
 \begin{tabular}{@{}llrrrr@{}}
 \toprule
-& & \multicolumn{2}{c}{\cell{cls$\cdot$B0}} & \multicolumn{2}{c}{\cell{red$\cdot$B0}} \\
+& & \multicolumn{2}{c}{\cell{Classifieds$\cdot$235B}} &
+\multicolumn{2}{c}{\cell{Reddit$\cdot$235B}} \\
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
 Policy & kind & SR \% & cost & SR \% & cost \\
 \midrule

@@ -14,10 +14,14 @@ feature set, or the label definition. On this data none of them is the binding
 constraint. The binding constraint is that \textbf{routing labels are produced
 only by solve events, and solve events are scarce}.
 
-Consider the attrition (Figure~\ref{fig:f14}). On \cell{cls$\cdot$B0}, the most
-favourable cell in the study, 224 scored tasks yield 97 tasks that some mode solves, and therefore 97 which-mode labels. Of the six possible classes, only
-three retain enough members to survive a five-fold split. On
-\cell{red$\cdot$B2}, 203 tasks yield 15 labels and no class survives at all.
+Consider how the examples dwindle (Figure~\ref{fig:f14}). Take the
+classified-ads site with the 235B model (\cell{cls$\cdot$B0}), the most
+favourable cell in the study. Of its 224 scored tasks, some mode solves 97.
+Only those 97 can say anything about which mode to prefer, so there are 97
+labels. Spread across six possible answers, only three of the six retain
+enough examples to be split five ways for training and testing. On the forum
+site with the Gemma model (\cell{red$\cdot$B2}), 203 tasks produce 15 labels,
+and no answer retains enough at all.
 Pooled over the six VisualWebArena cells there are 260 which-mode labels in
 total.
 
@@ -33,8 +37,9 @@ total.
   \label{fig:f14}
 \end{figure}
 
-This is a \emph{rate} problem, not a \emph{slicing} problem. No re-partition of
-the supervision creates a solve event that the benchmark did not produce. Three
+The shortage is in how often tasks are solved, not in how the resulting
+examples are divided up. Dividing the examples we have differently cannot
+create a solved task that never happened. Three
 independent routes out of the constraint are available in principle; we
 attempted all three, and each is blocked for a structurally different reason
 (Figure~\ref{fig:f15}).
@@ -46,9 +51,10 @@ benchmark size needed to put two classes above the admissibility threshold is
 computable. It is $0.5\times$ the current corpus for \cell{cls$\cdot$B0},
 $0.9\times$ for \cell{cls$\cdot$B1}, and $2.1$--$4.2\times$ for the four cells that currently fail, at most 846 reddit tasks against the 203 we score
 (Section~\ref{sec:undersampling}). That is a benchmark somebody could build, not
-an impossibility. \textbf{The honest claim is therefore that the which-mode half
-is untrainable \emph{at the scale of the benchmarks that exist}, and that the
-scale-up required is a small multiple rather than an order of magnitude.} This is
+an impossibility. \textbf{The honest claim is therefore that the which-mode
+half cannot be fitted on the number of solved tasks \emph{the benchmarks that
+exist supply}, and that the increase required is a small multiple rather than
+an order of magnitude.} This is
 weaker than an impossibility result and more useful than one: it is a
 specification.
 
@@ -64,34 +70,41 @@ corpus needed, not a promise.
 \subsection{Route 1: make the label continuous}
 
 If success were graded rather than binary, every task would be informative, and scarcity would disappear. VisualWebArena's evaluator returns a binary verdict.
-Its component evaluators (URL match, program-state HTML checks, string match,
-image query) each emit a pass or fail that is combined conjunctively; there is
-no partial-credit channel to expose. The route is closed by the benchmark's
+Its component checks --- matching the web address, inspecting the resulting
+page, matching text, and querying the image --- each return a pass or a fail,
+and the task passes only if every one of them passes. There is no partial
+credit to expose. The route is closed by the benchmark's
 measurement instrument, not by our analysis.
 
 \subsection{Route 2: pool across cells}
 
-Pooling tasks across backbones multiplies the label count. It also destroys
-identifiability, because the same task acquires different labels under different
-backbones. On classifieds, 54 tasks are covered by two or more cells and
+Pooling tasks across backbones multiplies the label count. It also makes the
+target ambiguous, because the same task acquires a different correct answer
+under a different model. On classifieds, 54 tasks are covered by two or more cells and
 \textbf{31 of them (57.4\%) carry conflicting labels}; on reddit the conflict
 rate is 56.0\% of 25 shared tasks. A pooled classifier is being asked to predict
 a quantity that is not a function of its inputs.
 
 We report the associated agreement ceilings with an explicit caveat that they
-are \emph{not} what they may look like. Grouping by task and predicting the
-modal label attains 79.2\% (classifieds) and 83.7\% (reddit); grouping by exact
-feature vector attains more. Both are \emph{resubstitution} estimates: each scores the same rows it took its modal label from, so any singleton group is
-correct by construction, and singletons are 29.8\% and 37.0\% of rows
-respectively. They are in-sample modal agreement, not Bayes ceilings, and we do
-not use them as bounds.
+are \emph{not} what they may look like. Grouping by task and predicting each
+group's most common answer attains 79.2\% (classifieds) and 83.7\% (reddit);
+grouping instead by identical input measurements attains more. Neither figure
+is a bound on anything. Each is scored on the very rows it read the most
+common answer off, so a group containing a single row is counted correct
+automatically --- and such groups are 29.8\% and 37.0\% of rows respectively.
+They measure agreement within the data already seen, not accuracy on tasks not
+yet attempted, and we do not use them as bounds.
 
 \subsection{Route 3: relabel to a coarser target}
 
-Re-slicing the same features from ``which of six modes'' to ``which cost tier''
-raises the attainable agreement (89.9\% on classifieds, 96.7\% on reddit)
-without inventing a single new solve event. It is the only relabelling that buys
-anything, and what it buys is a coarser decision, not more supervision. The
+A coarser question is easier to answer. Instead of asking which of six modes
+to use, we can ask only which price band the right mode falls in. Re-slicing
+the same inputs that way lifts the agreement figure to 89.9\% on classifieds
+and 96.7\% on reddit, without inventing a single new solved task. Both numbers
+are the same kind of in-sample figure as the pair above, and carry the same
+caveat: they are agreement within data already seen, not accuracy on new
+tasks. It is the only relabelling that buys anything, and what it buys is a
+coarser decision, not more examples. The
 route is open but leads somewhere smaller than where we were going.
 
 \begin{figure}[t]
@@ -149,75 +162,100 @@ each of which we can now attach a measurement to:
   \label{eq:decomposition}
 \end{equation}
 
+Read the equation as a sentence: what routing actually delivers is the
+opportunity that exists, scaled down by how well the choice can be predicted,
+minus what the choosing costs and what the wrong choices cost.
 Equation~\ref{eq:decomposition} is a conceptual decomposition; we do not
 estimate every term jointly. But the ordering of magnitudes is measured, and it
 locates the loss unambiguously. The overhead term is negligible
-(Section~\ref{sec:overhead}). The opportunity term is the one quantity here that is not in doubt. The loss is split between decision quality, weak and mostly borrowed from a benchmark annotation, and error cost, which in a regime where 48--93\% of tasks are
-hopeless is dominated by false escalations on tasks that were never going to
-succeed.
+(Section~\ref{sec:overhead}). The opportunity term is the one quantity here that is not in doubt. The
+loss is split between two terms. The first is how well the choice can be
+predicted at all: weak, and mostly borrowed from a benchmark annotation a
+deployment would not have. The second is what the wrong choices cost, and this
+dominates --- because 48--93\% of tasks are solved by no mode at all, so the
+error term is made up mostly of tasks sent to the expensive mode that were
+never going to succeed whatever they were shown.
 
 There is also a fifth term, absent from the usual formulation, that this study
 was forced to add: \textbf{the opportunity itself is largely repetition}. Adding
 one \emph{rerun} arm buys 2.0--7.6\pp{} on its own
-(Section~\ref{sec:noise-floor}); at the one-arm margin a distinct representation
-is worth no more than a rerun (Figure~\ref{fig:f10b}); and at the matched arm
-count of six, repetition of the strongest single mode closes to within 3.53\pp{}
-of the six-mode oracle (Section~\ref{sec:six-vs-six}). An accounting that treats
+(Section~\ref{sec:noise-floor}); if only one extra run is allowed, a different
+representation is worth no more than a repeat of the same one
+(Figure~\ref{fig:f10b}); and when both sides are given six runs, repeating the
+strongest single mode comes within 3.53\pp{} of what six different modes
+achieve (Section~\ref{sec:six-vs-six}). An accounting that treats
 the full ceiling as representation-attributable is therefore claiming something
-our own data contradicts. The term that survives is not selection opportunity in
-success but selection opportunity \emph{per episode spent}, which is the axis on which routing was always supposed to pay, and which makes the negative result
+our own data contradicts. What survives is not an advantage in success but an
+advantage in \emph{how many attempts it takes}: selection reaches that level
+with one attempt per task where repetition needs six. That was always the axis
+on which routing was supposed to pay, and which makes the negative result
 of Chapter~\ref{ch:e2e} sharper rather than softer.
 
 \section{What the phantom-space result does and does not mean}
 \label{sec:phantom-meaning}
 
-The four image-free modes are a clean experimental factorisation: text payload
-and prompt framing vary independently with the image held absent, and the
-$1.008\times$ text ratio between \mDOM{} and \mSoM{} means the manipulation is
-surgical. As an instrument, it works.
+The four image-free modes are a clean experimental instrument. Two things vary
+independently across them --- which page text is supplied, and how the
+instructions around it are worded --- while the image is absent throughout.
+And because \mSoM{}'s text is only $1.008\times$ the length of \mDOM{}'s,
+removing the image removes almost nothing but the image. As an instrument, it
+works.
 
-As a finding, it is weaker than we initially read it. The three phantom modes
-contribute in a consistent direction, with 14 of 18 arm--cell drop-one values positive, but at pooled two-axis magnitudes of 1.35 and 2.09\pp, below even
-the most permissive measured repetition floor. We therefore report a
-directionally consistent complementarity structure and decline the structural
-claim (Section~\ref{sec:dropone}).
+As a finding, it is weaker than we initially read it. The three image-free
+modes other than \mDOM{} --- \mPT{}, \mPP{} and \mPS{}, which we call the
+\emph{phantom} modes --- do point the same way: in 14 of 18 mode-by-cell
+comparisons, deleting one of them lowers the ceiling. But the pooled sizes
+along the two axes, 1.35 and 2.09\pp, sit below even the most permissive floor
+we measure for what a plain rerun produces. So we report that the phantom
+modes consistently add \emph{some} tasks the others miss, and decline the
+stronger claim that they occupy their own region of the space
+(Section~\ref{sec:dropone}).
 
 It is fair to ask why a declined claim still gets a section, a table and a
 figure. Two reasons, and neither is attachment to the result. The 36 drop-one
-values are the evidence \emph{for} the decline, since deleting them would leave the reader with an assertion where there is now a measurement, and a later reader
-with no way to check whether the effect was small or absent. And Chapter~\ref{ch:system} depends on the factorisation that produced them, regardless of what it found: it is what licenses
+values are the evidence \emph{for} the decline. Deleting them would leave the
+reader an assertion where there is now a measurement, and leave a later reader
+no way to check whether the effect was small or simply absent. And Chapter~\ref{ch:system} depends on the factorisation that produced them, regardless of what it found: it is what licenses
 attributing anything at all to the image rather than to the text or the prompt.
 What we do not do is let the structure carry weight elsewhere, and
 Chapter~\ref{ch:e2e}'s result depends on none of it.
 
 We also decline two adjacent readings that the data does not support. The
 image-free modes are not a cheaper Set-of-Marks: \mSoM{} is the strongest single
-mode in four of six VisualWebArena cells. And the modes are not evidence of
-different internal reasoning mechanisms; they are evidence of different
-input configurations producing different outcome sets. A mechanistic reading
+mode in four of six VisualWebArena cells. And the modes are not evidence that
+the model reasons differently inside; they are evidence that different inputs
+lead it to succeed on different tasks. A mechanistic reading
 would require separate evidence, which we did not collect.
 
 \section{Sustainability: what was measured, and what follows}
 \label{sec:sustainability-disc}
 
-We measured GPU-device operational energy by NVML sampling for the two locally
-served backbones, and billed token cost for the proxy-served one. Under a stated
-UK grid intensity of 220\,g CO\textsubscript{2}e/kWh, a classifieds episode on
-B1 corresponds to roughly 1.1--1.3\,g CO\textsubscript{2}e; the range across
-modes within a cell is under 20\%.
+For the two models we run on our own hardware, we measured the energy the
+graphics card itself reports drawing while it works. For the third, reached
+through a paid remote service, we can see the tokens billed but not the
+electricity used, so no energy figure exists for it. Taking the UK grid at
+220\,g of carbon-dioxide-equivalent emissions per kilowatt-hour (written
+CO\textsubscript{2}e), one classifieds task on the 4B Qwen model (B1)
+corresponds to roughly 1.1--1.3\,g CO\textsubscript{2}e, and the spread across
+the six modes within a cell is under 20\%.
 
 Three things follow, and one prominently does not.
 
 The routing result is \emph{not} an efficiency result. Since no learned policy
-Pareto-beats always-cheapest, this dissertation produces no compute saving to
-convert into an environmental claim, and we make none.
+is both more successful and cheaper than always using the cheapest mode, this
+dissertation produces no compute saving to convert into an environmental
+claim, and we make none.
 
-The oracle triage result is a measured compute reduction, up to 30.6\% of cost at zero success loss, in 7 of 8 cells against a cost-aware comparator
-(Section~\ref{sec:ceiling}), but it is not deployable, so it describes an opportunity rather than a saving.
+The one measured compute reduction belongs to the after-the-fact chooser
+deciding only whether \emph{any} mode will solve the task. It saves up to 30.6\%
+of cost at no loss of success, in 7 of 8 cells, measured against a comparator
+that already takes cost into account (Section~\ref{sec:ceiling}). But it
+cannot be deployed, so it describes an opportunity rather than a saving.
 
-The measurement boundary excludes host CPU, cooling and facility overhead, the
-browser environment's own compute, embodied emissions, and the entire remote
-data centre for B0. Following \citet{gupta2022chasing} and
+The measurement boundary excludes the host processor, cooling and building
+overhead, the compute used by the browser environment itself, the emissions
+embodied in manufacturing the hardware, and the entire remote data centre
+behind B0. Following \citet{gupta2022chasing} and
 \citet{luccioni2022bloom}, the boundary materially determines the number, so
 what we report is GPU-device operational energy and a corresponding emissions estimate, not a footprint. And no token reduction anywhere in this document is
 converted into an energy reduction, because no hardware-independent conversion
@@ -228,16 +266,20 @@ exists \citep{fernandez2025energy}.
 
 Our conclusions are indexed to a regime with three properties, and the value of a negative result depends entirely on stating them.
 
-\paragraph{Base success 2--36\%.} At these rates most tasks are hopeless, so
-always-cheapest is close to optimal and label supply is thin. Both of the
-mechanisms we identify are consequences of this number. A backbone succeeding at
-60--70\% would have more labels, a smaller hopeless fraction, and a comparator
-that is no longer nearly cost-optimal. \textbf{We do not claim the result
+\paragraph{Base success 2--36\%.} At these rates most tasks go unsolved
+whatever mode is used. Two things follow, and both mechanisms we identify are
+consequences of this one number: always using the cheapest mode is close to
+the best one can do, and there are very few solved tasks to learn from. A
+model succeeding on 60--70\% of tasks would have more examples to learn from,
+a smaller share of unsolvable tasks, and a comparator that is no longer nearly
+cost-optimal. \textbf{We do not claim the result
 transfers there, and we would expect it not to.}
 
 \paragraph{A cost-minimising fixed comparator.} We compare against the cheapest
-fixed policy because a deployment has it for free. A study comparing against the
-best fixed policy instead would report large routing wins from the same data, since the oracle beats best-single on both axes in all eight cells. The comparator
+fixed policy because a deployment has it for free. A study comparing against
+the best-performing fixed policy instead would report large routing wins from
+the same data, since the after-the-fact chooser is both more successful and
+cheaper than the best single mode in all eight cells. The comparator
 choice is doing real work, and we consider ours the honest one; a reader who
 disagrees can read the same result off Table~\ref{tab:oracle}.
 
@@ -256,20 +298,25 @@ them.
 \paragraph{The undersampling objection is answered for the result and conceded
 for the predictor.} Section~\ref{sec:undersampling} runs the experiment this
 paragraph previously said was outstanding, and it does not come back entirely in
-our favour. The learning curves are still rising; a near-unregularised model
-clears its permutation floor in every cell; so more data would produce a better
-predictor, and we say so. What the objection cannot reach is the Pareto result,
-because the limit of a better predictor is the oracle and the oracle enters the
-winning region in only 1 of 8 cells. \textbf{The residual limitation is
+our favour. The learning curves are still rising, and a barely-constrained
+model does better than the same model trained on randomly shuffled outcomes in
+every cell. So more data would produce a better predictor, and we say so. What
+the objection cannot reach is the success-and-cost result, because the best
+any predictor could become is the after-the-fact chooser, and that chooser is
+both more successful and cheaper than always-cheapest in only 1 of 8 cells. \textbf{The residual limitation is
 narrower than the original objection but real}: we have shown that a
 \emph{better classifier} would not change the conclusion, not that a
 \emph{larger benchmark} would leave everything else fixed. A benchmark four
-times the size would also change base success rates, hopeless-task share, and the cost position of always-cheapest, and those, not the row count, are what
-Section~\ref{sec:regime-boundary} identifies as the regime.
+times the size would also change the base success rate, the share of tasks
+nothing solves, and how hard always-cheapest is to beat on cost --- and those,
+not the number of training rows, are what Section~\ref{sec:regime-boundary}
+identifies as the regime.
 
 \paragraph{Replay, not live routing.} Chapter~\ref{ch:e2e}'s policies are
-evaluated by crediting already-executed outcomes. This omits online overhead and
-any interaction between routing and episode dynamics. The direction of the bias
+scored on runs that had already been completed: for each task we credit the
+policy with the outcome that mode actually produced. This leaves out what the
+routing would cost while running, and any chance that an earlier choice of
+mode changes which pages the agent then encounters. The direction of the bias
 favours the router, so the negative result is conservative, but a live routed run remains the stronger evidence, and we do not have it.
 
 \paragraph{One benchmark family, two sites, three backbones.} Both benchmarks
@@ -279,22 +326,26 @@ evidence. VisualWebArena shopping was run but excluded
 (Section~\ref{sec:benchmarks}), which costs the external-validity argument a
 third site it could otherwise have had.
 
-\paragraph{B0 is not independently reproducible.} Its conditions are replicable
-from archived logs but require equivalent proxy access to re-execute. None of the conclusions rests on B0 alone; the 0-of-8 and 8-of-8 results both hold
-across backbones.
+\paragraph{The large model cannot be independently re-run.} B0's conditions
+can be replayed from our archived logs, but re-executing them requires the
+same paid remote access we had. None of the conclusions rests on that model
+alone: the router's 0-of-8 result and the chooser's 8-of-8 improvement over
+the best single mode both hold across the other two models as well.
 
 \paragraph{The noise floor is measured on one cell.} Three replicated arms exist
 on \cell{cls$\cdot$B0} and one pooled comparison on \cell{wa\_red$\cdot$B1}. The
 thresholds in Table~\ref{tab:floor-spread} are computed there and applied
-elsewhere. The third replicate fell inside the band the first two had established, which is reassuring but is one confirmation rather than a
+elsewhere. When a third repeat was run, its result landed inside the range the
+first two had marked out --- reassuring, but one confirmation rather than a
 distribution. We also cannot construct the six-arm repetition comparison the
 ceiling would strictly require, because that needs six replicate runs of one
 mode.
 
-\paragraph{The drop-one artefact's grade stamp is an invocation artefact.} All
-36 rows are \texttt{complete\_exact} and non-partial, but every row is stamped
-\texttt{NON\_PAPER\_GRADE} because the producer was invoked with
-\texttt{--allow-partial}. We report the stamp rather than removing it
+\paragraph{One data file carries a misleading quality stamp.} All 36 rows in
+the drop-one file are complete and exact, yet every row is stamped
+\texttt{NON\_PAPER\_GRADE} --- not because anything is missing, but because
+the script that wrote it was launched with a flag (\texttt{--allow-partial})
+that permits incomplete input. We report the stamp rather than removing it
 (Appendix~\ref{app:repro}); the values support only the downgraded claim in
 either case.
 
@@ -303,19 +354,23 @@ either case.
 
 \paragraph{Test the regime boundary directly.} The single most informative
 follow-up is to re-run the identical protocol on a backbone with 50--70\% base
-success. Our mechanism predicts that label supply relaxes, the hopeless fraction
-shrinks, always-cheapest stops being near-optimal, and the winning region opens.
+success. Our mechanism predicts what should then happen: more solved tasks to
+learn from, a smaller share of tasks nothing can solve, always-cheapest no
+longer close to optimal, and room for a chooser to be both more successful and
+cheaper.
 If routing still fails there, the mechanism claim is wrong; if it succeeds, the
 regime boundary is located.
 
 \paragraph{Build the benchmark the supply arithmetic specifies.} The scale
-needed to make the which-mode half trainable in the four failing cells is $2.1$--$4.2\times$ the current corpus, at most 846 reddit tasks (Section~\ref{sec:undersampling}). That is a concrete, buildable target rather
+needed to bring the which-mode half above that minimum in the four failing
+cells is $2.1$--$4.2\times$ the current corpus, at most 846 reddit tasks (Section~\ref{sec:undersampling}). That is a concrete, buildable target rather
 than a gesture at ``more data'', and it is the experiment that would separate
 our regime claim from the undersampling reading once and for all.
 
 \paragraph{Route on cost tiers, not modes.} Section~\ref{sec:mechanism} shows
-that coarsening the target to a cost tier raises attainable agreement to
-89.9--96.7\% using the same features. That is a smaller decision and a
+that asking only which price band the right mode falls in lifts in-sample
+agreement to 89.9--96.7\% using the same inputs (with the caveat recorded
+there). That is a smaller decision and a
 better-posed one.
 
 \paragraph{Report effect sizes against measured repetition floors.} The most
@@ -325,10 +380,13 @@ running the same one twice. Any web-agent study reporting single-digit
 percentage-point differences without a same-condition replicate is reporting a
 number it cannot interpret. The replicate costs one extra run.
 
-\paragraph{Make failure detection cheap.} The cost-first cascade attains full
-oracle success at $+316$ to $+463\%$ cost, almost all of it spent confirming that
-hopeless tasks are hopeless. A cheap, reliable ``this attempt has failed''
-detector would convert that overspend into the prize prediction could not claim, and unlike the which-mode label, its supervision exists on every task.
+\paragraph{Make failure detection cheap.} A policy that starts with the
+cheapest mode and escalates only after failure reaches the full ceiling in
+success, but at $+316$ to $+463\%$ of the cost of the best single mode ---
+almost all of it spent confirming that unsolvable tasks are unsolvable. A
+cheap, reliable ``this attempt has failed'' detector would turn that overspend
+into the prize prediction could not claim. And unlike the question of which
+mode to use, this one has an answer on every task, solved or not.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -338,37 +396,49 @@ much to pay is normally made once and applied everywhere. This dissertation
 asked whether that choice should instead be made per task, and whether it can
 be.
 
-We built a controlled representation space in which six observation modes vary
-the page text, the prompt framing and the presence of an annotated image while
-the task, the agent, the action space and the accounting boundary are held
-fixed, and measured across eight (site, model) cells spanning two benchmarks and
-three backbones.
+We built a controlled space of page representations. Six observation modes
+vary the page text, the wording of the instructions, and whether an annotated
+image is sent; the task, the agent, the actions available and the rules for
+counting cost stay fixed. We measured across eight combinations of website and
+model, spanning two benchmarks and three models.
 
 \textbf{The opportunity exists and is measurable.} A retrospective oracle gains $+3.45$ to
 $+16.35\pp$ of task success over the best single mode at 1.6--35.3\% lower
-cost, in every cell and on both benchmarks. \textbf{Most of its height, however, is
-repetition}: one rerun arm buys 2.0--7.6\pp{} by itself, and six reruns of the
-strongest single mode close to within 3.53\pp{} of the six-mode oracle, below the threshold we derive and apply to everyone else's effects. What survives is
-the ceiling's price rather than its height: selection reaches that level for one
-episode per task where repetition needs six.
+cost, in every cell and on both benchmarks. \textbf{Most of its height,
+however, is repetition}: one plain repeat of an unchanged mode buys
+2.0--7.6\pp{} by itself, and six repeats of the strongest single mode come
+within 3.53\pp{} of what six different modes achieve --- below the threshold
+we derive and apply to everyone else's effects. What survives is the ceiling's
+price rather than its height: selection reaches that level with one attempt
+per task where repetition needs six.
 
-\textbf{The opportunity is not reachable.} Under a fully nested protocol with a
-bundle-permutation null at $B=10{,}000$, the learned triage router Pareto-beats
-the trivial always-cheapest fixed policy in 0 of 8 cells, and so does the retrospective oracle in 7 of 8, because always-cheapest is a cost lower bound.
-The negative result is therefore about the economics of the boundary, not the
-capacity of the estimator.
+\textbf{The opportunity is not reachable.} Under a protocol in which every
+modelling choice is made on training tasks alone, checked against 10,000
+shuffles of the outcomes, the learned router is both more successful and
+cheaper than the trivial always-cheapest policy in 0 of 8 cells. The
+after-the-fact chooser fails the same test in 7 of 8. Always-cheapest is the
+cheapest fixed policy available, so anything else has to buy enough extra
+success to cover what it additionally spends --- and measured here, nothing
+does. The negative result is therefore about the economics of this boundary,
+not about how good the router is at predicting.
 
-\textbf{The reason is a supply constraint, and we can now price it.} Routing
-labels are minted only by solve events; at 2--27\% base success, 4 of 6 cells
-fail the admissibility rule for a which-mode classifier, and three independent
-routes out of the constraint fail for three different reasons. What
-discriminative power the easier triage half does show rests substantially on a
-feature no deployment has: the benchmark's own difficulty annotation. A direct
-undersampling control confirms the objection's force and bounds it: more data would buy a better predictor, at decelerating returns, and the limit of that
-purchase is an oracle that itself wins in only 1 of 8 cells.
+\textbf{The reason is a supply constraint, and we can now price it.} A task
+can only teach a router which mode to use if some mode solved it. At 2--27\%
+base success, 4 of 6 cells do not reach the minimum number of solved tasks per
+mode that we require before fitting a classifier, and three separate ways out
+of that shortage fail for three different reasons. Even the easier question
+--- will any mode solve this task at all --- is answered largely by an input
+no deployment has: the benchmark's own human-written difficulty rating. Training
+deliberately on less data confirms the objection's force and bounds it: more
+data would buy a better predictor, with returns that flatten as it grows, and
+the best any predictor could become is the after-the-fact chooser, which
+itself wins in only 1 of 8 cells.
 
-The evidence is triangulated across three backbones spanning two model families,
-two benchmarks differing measurably in what their tasks specify, two deployment classes, and, for the effect sizes the argument rests on, a measured same-condition repetition floor. It is scoped to self-hosted benchmark
+The evidence is triangulated across three models spanning two design families;
+across two benchmarks whose tasks differ in how much they depend on what is
+visible on the page; across both ways we account for cost, money actually
+charged and hardware time estimated; and, for the effect sizes the argument
+rests on, against a floor measured by rerunning unchanged setups. It is scoped to self-hosted benchmark
 environments at 2--36\% base success with task-level routing decisions and a
 cost-minimising comparator.
 

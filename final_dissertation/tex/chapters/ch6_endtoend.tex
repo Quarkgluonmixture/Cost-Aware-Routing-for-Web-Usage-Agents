@@ -56,49 +56,49 @@ is a Pareto win only if $\Delta$SR $>0$ \emph{and} $\Delta$cost $<0$.}
 \toprule
 Cell & policy & SR \% & cost & $\Delta$SR & $\Delta$cost \\
 \midrule
-\multirow{4}{*}{\cell{cls$\cdot$B0}}
+\multirow{4}{*}{\cell{Classifieds$\cdot$235B}}
  & always-cheapest (\mVis{})   & 25.00 & 0.06481 & ref. & ref. \\
  & oracle triage               & 27.23 & 0.06312 & $+2.23$\pp & $-2.6$\% \\
  & learned (nested)            & 26.79 & 0.07129 & $+1.79$\pp & $+10.0$\% \\
  & learned (swept)  & 27.23 & 0.06730 & $+2.23$\pp & $+3.8$\% \\
 \midrule
-\multirow{4}{*}{\cell{red$\cdot$B0}}
+\multirow{4}{*}{\cell{Reddit$\cdot$235B}}
  & always-cheapest (\mVis{})   & \phantom{0}7.39 & 0.09807 & ref. & ref. \\
  & oracle triage               & 14.78 & 0.09998 & $+7.39$\pp & $+1.9$\% \\
  & learned (nested)            & 12.81 & 0.09928 & $+5.42$\pp & $+1.2$\% \\
  & learned (swept)  & 14.78 & 0.11045 & $+7.39$\pp & $+12.6$\% \\
 \midrule
-\multirow{4}{*}{\cell{cls$\cdot$B1}}
+\multirow{4}{*}{\cell{Classifieds$\cdot$Qwen-4B}}
  & always-cheapest (\mVis{})   & 12.50 & 0.04316 & ref. & ref. \\
  & oracle triage               & 14.29 & 0.04858 & $+1.79$\pp & $+12.6$\% \\
  & learned (nested)            & 14.29 & 0.05867 & $+1.79$\pp & $+35.9$\% \\
  & learned (swept)  & 14.29 & 0.05874 & $+1.79$\pp & $+36.1$\% \\
 \midrule
-\multirow{4}{*}{\cell{red$\cdot$B1}}
+\multirow{4}{*}{\cell{Reddit$\cdot$Qwen-4B}}
  & always-cheapest (\mVis{})   & \phantom{0}2.46 & 0.05240 & ref. & ref. \\
  & oracle triage               & \phantom{0}7.39 & 0.05554 & $+4.93$\pp & $+6.0$\% \\
  & learned (nested)            & \phantom{0}6.40 & 0.07021 & $+3.94$\pp & $+34.0$\% \\
  & learned (swept)  & \phantom{0}7.39 & 0.07057 & $+4.93$\pp & $+34.7$\% \\
 \midrule
-\multirow{4}{*}{\cell{cls$\cdot$B2}}
+\multirow{4}{*}{\cell{Classifieds$\cdot$Gemma-4B}}
  & always-cheapest (\mVis{})   & \phantom{0}2.23 & 0.07065 & ref. & ref. \\
  & oracle triage               & \phantom{0}2.23 & 0.07145 & $+0.00$\pp & $+1.1$\% \\
  & learned (nested)            & \phantom{0}1.34 & 0.07385 & $-0.89$\pp & $+4.5$\% \\
  & learned (swept)  & \phantom{0}2.23 & 0.07220 & $+0.00$\pp & $+2.2$\% \\
 \midrule
-\multirow{4}{*}{\cell{red$\cdot$B2}}
+\multirow{4}{*}{\cell{Reddit$\cdot$Gemma-4B}}
  & always-cheapest (\mVis{})   & \phantom{0}1.97 & 0.06833 & ref. & ref. \\
  & oracle triage               & \phantom{0}3.94 & 0.06974 & $+1.97$\pp & $+2.1$\% \\
  & learned (nested)            & \phantom{0}4.43 & 0.06910 & $+2.46$\pp & $+1.1$\% \\
  & learned (swept)  & \phantom{0}4.43 & 0.06950 & $+2.46$\pp & $+1.7$\% \\
 \midrule
-\multirow{4}{*}{\cell{wa\_red$\cdot$B0}}
+\multirow{4}{*}{\cell{Reddit (WA)$\cdot$235B}}
  & always-cheapest (\mDOM{})   & 26.92 & 0.07531 & ref. & ref. \\
  & oracle triage               & 35.58 & 0.07573 & $+8.66$\pp & $+0.6$\% \\
  & learned (nested)            & 32.69 & 0.08649 & $+5.77$\pp & $+14.8$\% \\
  & learned (swept)  & 35.58 & 0.08103 & $+8.66$\pp & $+7.6$\% \\
 \midrule
-\multirow{4}{*}{\cell{wa\_red$\cdot$B1}}
+\multirow{4}{*}{\cell{Reddit (WA)$\cdot$Qwen-4B}}
  & always-cheapest (\mVis{})   & \phantom{0}9.62 & 0.04468 & ref. & ref. \\
  & oracle triage               & 16.35 & 0.04814 & $+6.73$\pp & $+7.7$\% \\
  & learned (nested)            & 13.46 & 0.06428 & $+3.84$\pp & $+43.9$\% \\
@@ -108,9 +108,11 @@ Cell & policy & SR \% & cost & $\Delta$SR & $\Delta$cost \\
 \end{table}
 
 \begin{scopebox}
-\textbf{Primary result.} The learned triage router Pareto-beats the trivial
-always-cheapest fixed policy in \textbf{0 of 8 cells}, across two benchmarks,
-three backbones and two model families. This holds at the nested threshold and
+\textbf{Primary result.} In \textbf{0 of 8 cells} does the learned triage
+router achieve both higher task success \emph{and} lower cost than the trivial
+always-cheapest fixed policy. That joint condition --- better on both counts,
+worse on neither --- is what we mean by a Pareto win throughout. The result
+holds across two benchmarks, three models and two model families. This holds at the nested threshold and
 at the most favourable in-sample threshold alike, so it is not an artefact of
 operating-point selection.
 \end{scopebox}
@@ -142,10 +144,12 @@ $-2.6\%$). In the other seven the oracle, which knows the answer, also pays more
   learner.} Each cell is normalised to its own always-cheapest policy at the
   origin; the shaded upper-left quadrant is the Pareto winning region. Learned
   policies sit right of the vertical axis: they cost more. So does the
-  retrospective oracle in seven of eight cells. Always-cheapest is a cost lower
-  bound over fixed policies, so \emph{any} policy that preserves success must be
-  more expensive than it. The negative result is about the economics of this
-  boundary, not the capacity of the estimator.}
+  retrospective oracle, in seven of eight cells. Always-cheapest is the
+  cheapest fixed policy available, so any chooser that raises success
+  necessarily also spends more; whether that exchange is worth making requires
+  a rate this dissertation does not assume, which is why the test is the joint
+  one. The negative result is about the economics of this boundary,
+  not about how good the router is at predicting.}
   \label{fig:f13}
 \end{figure}
 
@@ -257,7 +261,7 @@ favourable in-sample threshold; the verdict is identical
 \paragraph{Label definition.} The which-mode supply result of
 Table~\ref{tab:supply} was recomputed under an alternative label
 (cheapest-successful by \emph{measured} episode cost rather than by prior cost
-ordering). Under it, 5 of 6 cells are untrainable rather than 4 of 6. The conclusion does not turn on the definition, and the alternative is worse.
+ordering). Under it, 5 of 6 cells fall below that minimum rather than 4 of 6. The conclusion does not turn on the definition, and the alternative is worse.
 
 \paragraph{Cost metric.} The comparison is repeated under a cost estimand whose
 \emph{meaning} differs across backbones: B0's per-1k schedule is a vendor price,
