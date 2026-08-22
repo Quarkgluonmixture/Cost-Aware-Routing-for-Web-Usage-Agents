@@ -23,6 +23,45 @@ updated: 2026-08-21
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟠 2026-08-22 凌晨 · 毕设修 24 处 + Overleaf 已追平（commit `3be7c3b` · Overleaf `e08913a` · **90 页**）
+>
+> chronicle → **笔记 §476 + §477**（13 小节）· 台账 **+23** · 三家审计产物在 `codex_outputs/` + `gemini_outputs/`
+>
+> ### ⚠️ 唯一未决项：`2.0--7.6pp` 已陈旧，正确值 `0.0--7.6pp`
+> `B1.cls.{vision,som}` 的 **d=0** —— 本地 Qwen3-VL-4B 重跑真的一致，**是真数据不是污染**。
+> 该数出现在 **摘要 + ch1 + ch4 + ch7**。没改是因为它是 framing 决定：把 B1 确定性臂并进
+> 「一次重跑买多少」，会把论证从"重跑能买很多"削弱成"有时什么都买不到"。
+> **`fig_f8` 因此保持 08-11 版本** —— 这两者要么一起改要么一起不改，单改一边图↔文不一致。
+>
+> ### 本轮最重要的教训（§477.2）
+> 我报警说"§4.7 的比较基准塌了"，user 一句**"这个是真的吗？不应该啊"**拉住。重算发现：数字全对、
+> 计算无误、"3.53 > 3.52"也成立，**但我没问那个比较对象是不是对的**。噪声阈值是**逐臂量**，
+> 而跨臂取 min 会让"给一条毫不相干的臂补 replicate，SoM 的结论就变弱"。
+> ⇒ **已定规矩：阈值一律按对口臂比较**（`ch4:433` 原文本来就这么做，只有 §4.7 没跟上）。
+>
+> ### 已修（24 处，全部验证）
+> | | |
+> |---|---|
+> | 阈值重构 | normal `3.52--4.15` / exact `3.12--4.46`（六臂实况）· §4.7 改用 SoM 对口 `3.95`/`4.02` · 删 "further below under exact"（六臂下不成立） |
+> | 三张表 3→6 行 | `tab:six-vs-six` · `tab:floor-spread` · `tab:noise-floor` |
+> | 连带更新 | observed `0.89--2.68` · SD `2.14--2.53` · set-diff floor `4.46--7.59` · discordance `10--14%` |
+> | 降级 | "at every p" → plug-in 非置信界，bootstrap 只有 **~59%** 高于半数 |
+> | 反号 | 六个 U(2) 残差全取反已改回；表注 max 残差 `1.12`→`1.34` |
+> | 下游 | 5 个 consumer 修复（`MODE_OF`/`REPLICATES`/`ARMS` = 第二个 CLEAN_PAIRS）+ 重画 3 张图 |
+>
+> 编译 **90 页 / 0 undefined / 0 overfull**；11 个旧表述回归扫描全清；六臂 × 8 字段 + 4 条 band
+> 逐个可在 PDF 中追溯到 JSON。
+>
+> ### 结构性缺口（未修，记着）
+> **`final_dissertation/tex/figures/` 是 `figures/` 的手工副本，无同步脚本**，18 张图冻在 08-11。
+> 本次逐张 md5 确认只有重画的 3 张不同，但这个洞下次还会张开。建议给 `overleaf_thesis_sync.sh`
+> 或 commit hook 加一道"图是否落后于生成脚本"的检查。
+>
+> ### 主线不变
+> 毕设 **09-05** 硬截止，剩余 = supervisor 反馈（已同步 Overleaf，**尚未发消息告知**）+ rubric #7/#13。
+> 页数 **90/100**。匿名 repo 5 项待修留到交稿后（见下一块）。
+
+
 > ## 🔵 2026-08-21 深夜 · 匿名 submission repo 骨架落地 + **ARR 政策核实推翻了我之前的判断**（commit `7cd894d`）
 >
 > chronicle → **笔记 §475**（8 小节）· 台账 **+14** · 工具 `scripts/maintenance/export_anonymous_repo.py`
