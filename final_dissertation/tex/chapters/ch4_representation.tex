@@ -334,9 +334,11 @@ an expected one.
   \textbf{Every drop-one value against the threshold it must clear.} Modes are
   grouped by what is sent: four text-side modes (no image), one combined, one
   visual. The vertical band is the one-sided 95\% threshold of
-  Section~\ref{sec:floor-spread}: 3.82--4.15\pp{} under the normal
-  approximation the figure draws, and 4.02--4.46\pp{} under the exact binomial
-  null the text adopts, which is stricter still. Almost every value sits left of
+  Section~\ref{sec:floor-spread}: 3.52--4.15\pp{} under the normal
+  approximation the figure draws, and 3.12--4.46\pp{} under the exact binomial
+  null the text adopts. The band is drawn at the lowest arm's threshold, so a
+  value left of it is below every arm's; the strict test in the text is against
+  each value's own arm. Almost every value sits left of
   it, and every value that clears it is a baseline mode. The figure is built so that
   consistent direction and insufficient magnitude cannot be mistaken for one
   another.}
@@ -353,7 +355,7 @@ sets.
 
 \subsection{Measured discordance}
 
-Three arms of \cell{cls$\cdot$B0} have been run twice under an unchanged
+Six arms of \cell{cls$\cdot$B0} have been run twice under an unchanged
 configuration, plus one WebArena pilot/full overlap
 (Table~\ref{tab:noise-floor}).
 
@@ -369,15 +371,18 @@ either direction.}
 \toprule
 Pair & scope & $n$ & $a\!\to\!b$ & $b\!\to\!a$ & discordance \\
 \midrule
-\cell{B0.cls.dom}    & B0 $\times$ classifieds & 224 & 7.14\pp & 4.91\pp & 12.05\% \\
-\cell{B0.cls.vision} & B0 $\times$ classifieds & 224 & 7.59\pp & 6.70\pp & 14.29\% \\
-\cell{B0.cls.som}    & B0 $\times$ classifieds & 224 & 5.36\pp & 7.59\pp & 12.95\% \\
-\cell{B1.wa-red}     & 5 modes $\times$ 10 shared tasks & 50 & 2.00\pp & 4.00\pp & \phantom{0}6.00\% \\
+\cell{B0.cls.dom}     & B0 $\times$ classifieds & 224 & 7.14\pp & 4.91\pp & 12.05\% \\
+\cell{B0.cls.vision}  & B0 $\times$ classifieds & 224 & 7.59\pp & 6.70\pp & 14.29\% \\
+\cell{B0.cls.som}     & B0 $\times$ classifieds & 224 & 5.36\pp & 7.59\pp & 12.95\% \\
+\cell{B0.cls.ptext}   & B0 $\times$ classifieds & 224 & 5.80\pp & 4.46\pp & 10.27\% \\
+\cell{B0.cls.pprompt} & B0 $\times$ classifieds & 224 & 7.59\pp & 4.91\pp & 12.50\% \\
+\cell{B0.cls.psom}    & B0 $\times$ classifieds & 224 & 6.70\pp & 5.36\pp & 12.05\% \\
+\cell{B1.wa-red}      & 5 modes $\times$ 10 shared tasks & 50 & 2.00\pp & 4.00\pp & \phantom{0}6.00\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Two runs of an identical condition disagree on 12--14\% of tasks. The agent's
+Two runs of an identical condition disagree on 10--14\% of tasks. The agent's
 decoding is greedy, so this is not sampling stochasticity; it is environment
 drift, session state and timing. We had previously recorded the belief that
 greedy decoding made local backbones bit-identical across reruns. Step-level
@@ -389,7 +394,7 @@ our own.
 \label{sec:floor-spread}
 
 The measured $|\Delta\mathrm{SR}|$ between two runs of one condition spans
-0.89--2.23\pp. It is tempting to call that the noise floor and declare anything
+0.89--2.68\pp. It is tempting to call that the noise floor and declare anything
 larger to be signal. That reasoning compares a draw to a draw.
 
 Under the exchangeability null, where the two runs are the same condition and each discordant task flips either way with probability $\tfrac12$, the difference is $D=(2X-d)/n$ with $X\sim\mathrm{Binom}(d,\tfrac12)$, giving
@@ -405,32 +410,43 @@ where $d$ is the discordant count. Table~\ref{tab:floor-spread} evaluates it.
 \emph{could} deliver, not only what it did.} The observed $|\Delta$SR$|$ column
 is one draw of a random quantity whose own standard deviation is the next
 column. The one-sided 95\% point is the threshold an effect must reach before a
-single rerun would be unlikely to produce it alone.}
+single rerun would be unlikely to produce it alone. \textbf{Each threshold
+belongs to its own arm.} It scales with that arm's $d$, so the range across arms
+is a summary, not a single number any particular effect should be measured
+against; an effect concerning one arm is compared with that arm's row. The
+exact column is not uniformly stricter than the normal one: $D$ lands on a
+discrete grid, and at $d=23$ and $d=28$ the 95th percentile falls on a lower
+grid point than $1.645\,\mathrm{SD}$ does.}
 \label{tab:floor-spread}
 \begin{tabular}{@{}lrrrrrr@{}}
 \toprule
 Pair & $n$ & discordant $d$ & obs.\ $|\Delta$SR$|$ & SD under null
   & 95\% (normal) & \textbf{95\% (exact)} \\
 \midrule
-\cell{B0.cls.dom}    & 224 & 27 & 2.23\pp & 2.32\pp & 3.82\pp & \textbf{4.02\pp} \\
-\cell{B0.cls.vision} & 224 & 32 & 0.89\pp & 2.53\pp & 4.15\pp & \textbf{4.46\pp} \\
-\cell{B0.cls.som}    & 224 & 29 & 2.23\pp & 2.40\pp & 3.95\pp & \textbf{4.02\pp} \\
+\cell{B0.cls.dom}      & 224 & 27 & 2.23\pp & 2.32\pp & 3.82\pp & \textbf{4.02\pp} \\
+\cell{B0.cls.vision}   & 224 & 32 & 0.89\pp & 2.53\pp & 4.15\pp & \textbf{4.46\pp} \\
+\cell{B0.cls.som}      & 224 & 29 & 2.23\pp & 2.40\pp & 3.95\pp & \textbf{4.02\pp} \\
+\cell{B0.cls.ptext}    & 224 & 23 & 1.34\pp & 2.14\pp & 3.52\pp & \textbf{3.12\pp} \\
+\cell{B0.cls.pprompt}  & 224 & 28 & 2.68\pp & 2.36\pp & 3.89\pp & \textbf{3.57\pp} \\
+\cell{B0.cls.psom}     & 224 & 27 & 1.34\pp & 2.32\pp & 3.82\pp & \textbf{4.02\pp} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The upper edge of the observed band (2.23\pp) is the same order as one standard
-deviation (2.32--2.53\pp). \textbf{Clearing the band is therefore not clearing
+The upper edge of the observed band (2.68\pp) is the same order as one standard
+deviation (2.14--2.53\pp). \textbf{Clearing the band is therefore not clearing
 the noise.}
 
 How much further an effect must reach depends on whether the null is evaluated
 exactly or approximated, and the difference is not cosmetic. Multiplying
-$\mathrm{SD}(D)$ by 1.645 gives 3.82--4.15\pp, but $D$ can only take a
+$\mathrm{SD}(D)$ by 1.645 gives 3.52--4.15\pp, but $D$ can only take a
 discrete set of values, fixed by how many tasks the two runs disagree on,
-rather than varying continuously; at these values of $d$ the normal
-approximation is optimistic. Evaluating $X\sim\mathrm{Binom}(d,\tfrac12)$
-exactly gives one-sided 95\% cutoffs of \textbf{4.02, 4.02 and 4.46\pp} for
-$d=27,29,32$. We use the exact values. Of the 36 drop-one values in
+rather than varying continuously. Evaluating $X\sim\mathrm{Binom}(d,\tfrac12)$
+exactly gives one-sided 95\% cutoffs of \textbf{3.12, 3.57, 4.02, 4.02, 4.02
+and 4.46\pp} for $d=23,28,27,27,29,32$. We use the exact values. Which of the
+two is stricter depends on where the discrete grid falls: for the four arms
+with $d\ge27$ the exact cutoff is the higher one, and for $d=23$ and $d=28$ it
+is the lower. Of the 36 drop-one values in
 Table~\ref{tab:dropone}, three clear the normal approximation and only
 \textbf{one} clears the exact cutoff for its own arm.
 
@@ -444,8 +460,8 @@ which comparisons each one licenses.
   \centering
   \includegraphics[width=0.72\textwidth]{fig_f10_rerun_discordance.pdf}
   \caption[Run-to-run discordance on identical conditions]{%
-  \textbf{Two runs of the same condition disagree on 12--14\% of tasks.}
-  Per-pair discordance for the three replicated \cell{cls$\cdot$B0} arms.
+  \textbf{Two runs of the same condition disagree on 10--14\% of tasks.}
+  Per-pair discordance for the six replicated \cell{cls$\cdot$B0} arms.
   Decoding is greedy; this is environment and session variation, not sampling.}
   \label{fig:f10}
 \end{figure}
@@ -459,7 +475,7 @@ same arm count on the same tasks.
 
 On \cell{cls$\cdot$B0}, starting from \mSoM{} at 27.23\%: adding the best
 distinct representation (\mDOM{}) buys $7.14\pp$; adding a rerun buys
-$4.91$--$7.59\pp$. The representation arm is \emph{inside} the rerun band.
+$4.46$--$7.59\pp$. The representation arm is \emph{inside} the rerun band.
 
 \begin{figure}[t]
   \centering
@@ -491,7 +507,8 @@ the six-arm question directly instead of declining it.
 Refusing an invalid subtraction is not the same as answering the question behind
 it. If one extra arm of repetition buys up to 7.6\pp, what would \emph{five} buy, and is the six-mode ceiling distinguishable from six repetitions of the
 strongest single mode? We cannot measure this directly, since that would need six
-replicate runs of one condition. We can bound it.
+replicate runs of one condition. We can project it, within limits the two runs
+we do have are able to set.
 
 Adopt the same exchangeability null already used in
 Section~\ref{sec:floor-spread}, and nothing further. Partition the scored set, for one mode, into $s_0$ tasks it solves deterministically, $m$ tasks it
@@ -520,12 +537,13 @@ across it.
 \centering\small
 \caption[Six reruns of one mode against six distinct modes]{\textbf{What
 repetition alone would have reached, at the same arm count.} $U(2)$ model versus
-observed agrees to within $1.12$\pp{}, which checks the union arithmetic and the
+observed agrees to within $1.34$\pp{}, which checks the union arithmetic and the
 run-to-run stability of the marginal --- but not the choice of $p$, since $U(2)$
 is the same for every $p$. The bold $U(6)$ column is the $p=\tfrac12$ value; the
 last column is the range admitted by $s_0 \ge 0$ and $s_0 + m \le n$. The
-$p=\tfrac12$ value is \emph{not} an upper bound --- it sits between the 12th and
-22nd percentile of each arm's range. The classified-ads site with the 235B model
+$p=\tfrac12$ value is \emph{not} an upper bound --- it sits 12--22\% of the way
+up each arm's $U(6)$ range, measured from the lower endpoint. (There is no
+distribution over $p$ here, so this is a position, not a quantile.) The classified-ads site with the 235B model
 (\cell{cls$\cdot$B0}) is the only cell for which any mode was run twice; all six
 of its arms now carry a replicate.}
 \label{tab:six-vs-six}
@@ -553,16 +571,24 @@ admit; six distinct modes reach 43.30\%. At the fair-coin point the residual is
 cannot be settled at a point. What the interval does settle is the \emph{share}:
 across its entire width, six reruns recover between \textbf{52.8\%} and
 \textbf{168.6\%} of the 16.07\pp{} of headroom between \mSoM{} and the
-six-mode oracle. More than half of the ceiling is repetition at every $p$ the
-data admit --- which is the version of the claim that survives not knowing $p$.
+six-mode oracle. Both endpoints are plug-in quantities computed at the observed
+moments, not confidence bounds: a paired-task bootstrap over the 224 tasks
+leaves the lower one above one half in only about \textbf{59\%} of resamples.
+``Repetition takes most of the ceiling'' is therefore a model-based sensitivity,
+not something two runs of one arm establish.
 
 \begin{scopebox}
 \textbf{This is the strongest attack on our headline, and it substantially
-lands.} At the fair-coin point, $3.53$\pp{} sits \emph{below} the threshold this dissertation derives in
-Section~\ref{sec:floor-spread} and applies to everyone else's effects: below it under the normal approximation ($3.82$--$4.15$\pp), and further below it
-under the exact binomial null ($4.02$--$4.46$\pp) that we adopt. The
-interval version needs no such comparison: whatever $p$ is, repetition takes
-more than half the headroom. Applying our own standard to our own headline: \textbf{at
+lands.} At the fair-coin point, $3.53$\pp{} sits \emph{below} the threshold this
+dissertation derives in Section~\ref{sec:floor-spread} and applies to everyone
+else's effects. The comparison is against \mSoM{}'s own row, since \mSoM{} is
+the arm the projection is about: $3.95$\pp{} under the normal approximation and
+$4.02$\pp{} under the exact binomial null we adopt. Judging it against the
+lowest threshold in the table instead would let the verdict depend on which
+\emph{other} modes happened to be replicated, which is not a property any
+conclusion should have --- and it is the same arm-matched rule
+Section~\ref{sec:floor-spread} already applies to the drop-one values.
+Applying our own standard to our own headline: \textbf{at
 matched arm count, six distinct representations are not distinguishable from six
 repetitions of the strongest one.} Most of the ceiling is repetition.
 
@@ -579,7 +605,10 @@ Equation~\ref{eq:union} compresses a whole distribution of task-level success
 probabilities into a two-parameter family that two runs constrain but cannot pin
 down. That is why the result is reported as an interval, and why the claim drawn
 from it is the one that holds across the interval's whole width. Letting each
-task carry its own $p_i$ would widen the interval further, not narrow it.
+task carry its own $p_i$ does not widen it: optimising $U(6)$ over arbitrary
+$\{p_i\}$ under the same two moment constraints reaches the same endpoints,
+because the feasibility constraints, not the homogeneity assumption, are what
+bind.
 
 \section{What the WebArena cells add, and what they do not}
 \label{sec:wa-scope}
@@ -612,7 +641,8 @@ doubt.
 
 \textbf{Qualified, and the qualification is severe.} If only one extra run is
 allowed, a different representation is worth no more than a repeat of the same
-one. At the matched arm count of six, repeating the strongest mode comes
+one. At the matched arm count of six, and under a fair-coin model of which
+tasks flip, repeating the strongest mode comes
 within 3.53\pp{} of what six different modes achieve, which is below the
 threshold this chapter derived. The two sides are matched in arms, not in what
 they cost to run: the mode oracle reaches its level with one episode per task,

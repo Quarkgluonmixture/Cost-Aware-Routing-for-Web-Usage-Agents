@@ -6,7 +6,7 @@ worth no more than a rerun arm); this figure only answers the question a reader
 asks immediately afterwards — "how was that floor measured?" — by showing the
 task-level disagreement between two runs of ONE (cell, mode).
 
-Scope is one cell, B0 x VWA-classifieds, with three independently replicated
+Scope is one cell, B0 x VWA-classifieds, with six independently replicated
 arms. Until 2026-08-03 only dom and vision existed and the fused arm's floor was
 BORROWED from them; the som pair then landed inside the borrowed band, which is
 why C3 no longer rests on an extrapolation. WebArena also has a replicate, but it
@@ -107,7 +107,7 @@ def main() -> int:
                  f"{max(r['disc'] for r in rows):.0f}% of tasks",
                  fontsize=10, fontweight="bold", loc="left", pad=20)
     ax.text(0.0, 1.012,
-            f"B0 × VWA-classifieds (n={n}), three independently replicated arms",
+            f"B0 × VWA-classifieds (n={n}), six independently replicated arms",
             transform=ax.transAxes, fontsize=8.0, color="#666666", va="bottom")
     fig.text(0.012, -0.20,
              "κ where computed; "

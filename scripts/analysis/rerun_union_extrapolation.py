@@ -147,7 +147,7 @@ def main() -> int:
                      "p_feasible_lo": round(p_lo, 4), "p_feasible_hi": round(p_hi, 4),
                      "u6_ident_lo_pct": round(u6_lo, 2),
                      "u6_ident_hi_pct": round(u6_hi, 2),
-                     "u6_at_p_half_percentile_of_range":
+                     "u6_at_p_half_fraction_through_range":
                          round(100 * (u[K] - u6_lo) / (u6_hi - u6_lo))})
 
     if not rows:
@@ -175,7 +175,9 @@ def main() -> int:
                "arms": rows,
                "u6_min_pct": min(u6), "u6_max_pct": max(u6),
                "oracle_minus_u6_max_pp": round(oracle_sr - max(u6), 2),
-               "model": "s0 + m(1-2^-k), m=2*discordant, s0=|A|-discordant",
+               "model": "s0 + m(1-(1-p)^k); p NOT identified by two runs",
+               "model_at_p_half": "s0 + m(1-2^-k), m=2*discordant, s0=|A|-discordant "
+                                  "-- a sensitivity point, not a bound",
                "p_half_is_a_bound": False,
                "identification": "d constrains 2mp(1-p) only; p is not "
                                  "identified by two replicates. U(6) is "
@@ -190,8 +192,9 @@ def main() -> int:
          "",
          "Answers the one question the noise-floor inventory declines to answer by",
          "arithmetic: the ceiling adds five arms, the measured floor adds one, so what",
-         "would five *rerun* arms have bought? Model and its bias direction are",
-         "documented in the script header. Reported as an upper bound on repetition.",
+         "would five *rerun* arms have bought? The model and the reason p=1/2 is",
+         "NOT a bound are documented in the script header. Reported as an",
+         "identified interval plus a p=1/2 sensitivity point.",
          "",
          f"Cell `classifieds·B0`, n={n_cell}. Best single mode {best_single:.2f}%; "
          f"six-mode oracle **{oracle_sr:.2f}%**.", "",
@@ -206,20 +209,28 @@ def main() -> int:
     L += ["",
           f"**U(2) model vs observed** differs by "
           f"{min(r['union2_model_error_pp'] for r in rows):+.2f} to "
-          f"{max(r['union2_model_error_pp'] for r in rows):+.2f}pp — the model is "
-          "checked out of sample rather than assumed, and it errs on the side of "
-          "crediting repetition too much.", "",
-          f"**The comparison at matched arm count.** Six reruns of one mode reach "
-          f"{min(u6):.2f}–{max(u6):.2f}%. Six distinct modes reach "
-          f"**{oracle_sr:.2f}%** — a residual of only "
-          f"**{oracle_sr - max(u6):.2f}pp** over the best six-rerun account.", "",
+          f"{max(r['union2_model_error_pp'] for r in rows):+.2f}pp (model minus "
+          "observed). This checks the union arithmetic and the run-to-run stability "
+          "of the marginal. It does NOT check p: U(2) = |A| + d/2 for every p, so "
+          "the residual is algebraically (|A|-|B|)/2 and carries no information "
+          "about the flip model's shape.", "",
+          f"**The comparison at matched arm count.** At p=1/2, six reruns of one mode "
+          f"reach {min(u6):.2f}–{max(u6):.2f}%, leaving a residual of "
+          f"{oracle_sr - max(u6):.2f}pp under the six-mode oracle "
+          f"(**{oracle_sr:.2f}%**). But p is not identified: over the feasible range "
+          f"the best arm's U(6) spans "
+          f"{best_arm['u6_ident_lo_pct']:.2f}–{best_arm['u6_ident_hi_pct']:.2f}%, "
+          "which straddles the oracle. The point comparison is a sensitivity, not a "
+          "settled result.", "",
           "⇒ Two readings, and both belong in the write-up.", "",
-          f"**At matched ARM COUNT the residual does not clear our own threshold.** "
-          f"{oracle_sr - max(u6):.2f}pp sits below the 3.82–4.15pp one-sided band "
-          "derived in §1b, so six distinct representations are not distinguishable "
-          "from six repetitions of the strongest one. Repetition explains most of the "
-          "ceiling. This is the strongest available attack on the ceiling claim and "
-          "it substantially lands.", "",
+          f"**At matched ARM COUNT, what survives is a share, not a residual.** "
+          f"Across the identified interval six reruns of the best arm recover "
+          f"{headroom['share_at_u6_ident_lo_pct']:.1f}–"
+          f"{headroom['share_at_u6_ident_hi_pct']:.1f}% of the "
+          f"{headroom['headroom_pp']:.2f}pp headroom. ⚠️ The lower end is a plug-in "
+          "quantity at the observed moments, NOT a confidence bound: a paired-task "
+          "bootstrap puts it above one half in only ~59% of resamples. Report it as "
+          "a model-based sensitivity.", "",
           "**At matched SERVING COST the two are not interchangeable.** The mode "
           "oracle spends ONE episode per task; the six-rerun union spends SIX. So the "
           "residual buys little, but it buys it at a sixth of the deployment cost — "

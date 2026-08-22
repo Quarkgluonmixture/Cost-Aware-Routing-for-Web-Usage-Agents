@@ -27,7 +27,7 @@
       "p_feasible_hi": 0.6538,
       "u6_ident_lo_pct": 26.58,
       "u6_ident_hi_pct": 43.46,
-      "u6_at_p_half_percentile_of_range": 15
+      "u6_at_p_half_fraction_through_range": 15
     },
     {
       "arm": "B0.cls.vision",
@@ -51,7 +51,7 @@
       "p_feasible_hi": 0.7143,
       "u6_ident_lo_pct": 34.98,
       "u6_ident_hi_pct": 54.53,
-      "u6_at_p_half_percentile_of_range": 20
+      "u6_at_p_half_fraction_through_range": 20
     },
     {
       "arm": "B0.cls.som",
@@ -75,7 +75,7 @@
       "p_feasible_hi": 0.7623,
       "u6_ident_lo_pct": 35.72,
       "u6_ident_hi_pct": 54.33,
-      "u6_at_p_half_percentile_of_range": 22
+      "u6_at_p_half_fraction_through_range": 22
     },
     {
       "arm": "B0.cls.ptext",
@@ -99,7 +99,7 @@
       "p_feasible_hi": 0.6714,
       "u6_ident_lo_pct": 23.24,
       "u6_ident_hi_pct": 38.36,
-      "u6_at_p_half_percentile_of_range": 15
+      "u6_at_p_half_fraction_through_range": 15
     },
     {
       "arm": "B0.cls.pprompt",
@@ -123,7 +123,7 @@
       "p_feasible_hi": 0.6818,
       "u6_ident_lo_pct": 28.78,
       "u6_ident_hi_pct": 46.4,
-      "u6_at_p_half_percentile_of_range": 17
+      "u6_at_p_half_fraction_through_range": 17
     },
     {
       "arm": "B0.cls.psom",
@@ -147,13 +147,14 @@
       "p_feasible_hi": 0.6143,
       "u6_ident_lo_pct": 25.35,
       "u6_ident_hi_pct": 41.75,
-      "u6_at_p_half_percentile_of_range": 12
+      "u6_at_p_half_fraction_through_range": 12
     }
   ],
   "u6_min_pct": 25.57,
   "u6_max_pct": 39.77,
   "oracle_minus_u6_max_pp": 3.53,
-  "model": "s0 + m(1-2^-k), m=2*discordant, s0=|A|-discordant",
+  "model": "s0 + m(1-(1-p)^k); p NOT identified by two runs",
+  "model_at_p_half": "s0 + m(1-2^-k), m=2*discordant, s0=|A|-discordant -- a sensitivity point, not a bound",
   "p_half_is_a_bound": false,
   "identification": "d constrains 2mp(1-p) only; p is not identified by two replicates. U(6) is decreasing in p and p=1/2 sits near the low end of the feasible range. U(2) is p-invariant and cannot test the pin.",
   "headroom_share": {

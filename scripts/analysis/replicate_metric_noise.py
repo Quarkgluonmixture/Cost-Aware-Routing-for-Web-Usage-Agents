@@ -45,12 +45,17 @@ from scripts.analysis.per_mode_four_dimension_profile import (  # noqa: E402
 OUT_MD = REPO / "docs/analysis/cross_sites/replicate_metric_noise.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/replicate_metric_noise.json"
 
-# (display mode, replicate episodes dir) — the three arms replicated on B0 x classifieds.
+# (display mode, replicate episodes dir) — all six arms replicated on B0 x classifieds.
+# Listed three until 2026-08-22; the three phantom replicates had landed in
+# CLEAN_PAIRS but never reached this dict, so the published band ignored them.
 P1 = "results/visualwebarena/phase1"
 REPLICATES = {
     "DOM": f"{P1}/../../repro_replicates/B0_dom_classifieds_R31194_clean_replicate/phase1_dom_router_0/episodes",
     "Vision": f"{P1}/../../repro_replicates/B0_vision_classifieds_R24792_clean_replicate/phase1_vision_router_0/episodes",
     "SoM": f"{P1}/B0_som_classifieds_20260803_084743_413015398_3677519_R30696/phase1_som_router_0/episodes",
+    "P-text": f"{P1}/B0_phantom_text_classifieds_20260817_092244_763693821_1962797_R20043/phase1_phantom_text_router_0/episodes",
+    "P-prompt": f"{P1}/B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207/phase1_phantom_prompt_router_0/episodes",
+    "P-SoM": f"{P1}/B0_phantom_som_classifieds_20260818_040525_430521618_2113605_R13257/phase1_phantom_som_router_0/episodes",
 }
 # Cross-mode by construction: it asks what no OTHER mode solved, so swapping one arm moves
 # it for a reason that is not run-to-run noise.

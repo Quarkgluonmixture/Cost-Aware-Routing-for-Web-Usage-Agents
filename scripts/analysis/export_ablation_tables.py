@@ -439,7 +439,9 @@ def t_floor() -> tuple[str, str]:
     # previous caption said the floor "measures neither on the arm being added" — true when
     # only dom and vision had replicates, false since the SoM rerun landed 2026-08-03.
     nf = load("noise_floor_inventory")
-    pairs = nf.get("clean_pairs") or []
+    # Scope to the cell the sentence names; the registry also holds other cells.
+    pairs = [p for p in (nf.get("clean_pairs") or [])
+             if str(p.get("label", "")).startswith("B0.cls")]
     reps = sorted({p["label"].rsplit(".", 1)[-1] for p in pairs if p.get("label")})
     rep_pretty = ", ".join(PRETTY.get(a, a) for a in reps)
     cap = (f"Is a new representation worth more than a rerun? Both middle columns are the same "

@@ -62,8 +62,10 @@ success over the best single mode while spending 1.6--35.3\% less, in every
 combination and on both benchmarks. Our own noise standard deflates that
 headline: running one unchanged mode a second time buys 2.0--7.6 points by
 itself, and when both sides are allowed six runs, six repetitions of the
-strongest single mode come within 3.53 points of the six-mode oracle --- below
-the threshold we derive for what a single repetition can produce on its own.
+strongest single mode come within 3.53 points of the six-mode oracle under a
+fair-coin model of which tasks flip --- below the threshold we derive for what a
+single repetition of that arm can produce on its own. Two runs do not pin down
+that flip rate, so the projection is a sensitivity rather than a settled figure.
 What survives is the ceiling's price rather than its height, since selection
 reaches that level with one attempt per task where repetition needs six. A
 policy wins here only if it is \emph{both} more successful and cheaper than the
@@ -73,8 +75,9 @@ back --- the learned router --- which only has to predict whether \emph{any}
 mode will solve the task, not which of the six to use --- clears that bar
 against always-cheapest in \textbf{0 of 8} combinations. The oracle, told the answers in
 advance, fails to clear it in 7 of 8. That recasts the negative result from
-``the learner failed'' to ``no Pareto-improving operating point exists against
-always-cheapest under this cost boundary''.
+``the learner failed'' to ``no Pareto-improving \emph{deployable} operating
+point exists against always-cheapest under this cost boundary'' --- the
+retrospective oracle, which is not deployable, does find one in 1 of 8.
 
 What blocks the prediction is the supply of training examples, not the capacity
 of the model. A task can teach the router something only if some mode solved it,
@@ -240,8 +243,10 @@ floor & How much a result moves when an unchanged setup is simply run again.
 Two versions are needed and they must not be mixed: one for claims about the
 ceiling (what one more run buys), one for claims comparing two modes' success
 rates. A single observed rerun difference is one draw rather than a threshold,
-so the usable thresholds are larger than the raw differences: 4.91--7.59\pp{}
-for ceiling claims and 3.82--4.15\pp{} for mode-to-mode comparisons.
+so the usable thresholds are larger than the raw differences: 4.46--7.59\pp{}
+for ceiling claims and 3.52--4.15\pp{} for mode-to-mode comparisons. Both are
+ranges across the six replicated arms; a given effect is judged against its own
+arm's value, not against the range.
 Appendix~\ref{app:noise} derives both and states which comparisons each one
 licenses. \\
 routing     & Choosing which mode to use, rather than fixing one in advance.

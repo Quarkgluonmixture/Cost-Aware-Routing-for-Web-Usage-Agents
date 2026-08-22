@@ -53,8 +53,10 @@ SIDE_OF = {m: i for i, (_s, ms) in enumerate(SIDES) for m in ms}
 C_SIDE = ["#0072B2", "#009E73", "#D55E00"]
 C_TH = "#333333"
 
+# Scoped to B0.cls: the inventory also carries B1 pairs whose discordance is 0,
+# and an unscoped match dragged their 0.00pp thresholds into this figure's band.
 RE_SPREAD = re.compile(
-    r"\|\s*`B\d[.\w-]+`\s*\|\s*\d+\s*\|\s*\d+\s*\|\s*[\d.]+pp\s*\|\s*"
+    r"\|\s*`B0\.cls[.\w-]+`\s*\|\s*\d+\s*\|\s*\d+\s*\|\s*[\d.]+pp\s*\|\s*"
     r"\*\*[\d.]+pp\*\*\s*\|\s*([\d.]+)pp\s*\|")
 
 
@@ -148,8 +150,8 @@ def main() -> int:
              f"Source: results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv "
              f"({len(cells)} cells × 6 modes, complete-case, "
              f"grade={'/'.join(sorted(grades))}); threshold band from "
-             "noise_floor_inventory.md §1b (derived from one cell's three "
-             "replicated arms).",
+             "noise_floor_inventory.md §1b (derived from one cell's six "
+             "replicated arms; band drawn at the lowest arm's threshold).",
              fontsize=7.0, color="#888888")
 
     a.out.parent.mkdir(parents=True, exist_ok=True)

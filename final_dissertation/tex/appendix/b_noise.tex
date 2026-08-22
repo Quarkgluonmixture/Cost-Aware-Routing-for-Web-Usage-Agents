@@ -39,12 +39,14 @@ analysis made.
 \begin{description}
 \item[Set-difference floor.]
   $\mathrm{self\_drop}(a\!\to\!b)=|\{a\}\setminus\{b\}|/n$. This matches
-  Equation~\ref{eq:dropone} in form, so it is the floor for \emph{ceiling} claims, that is, what adding one more arm buys. Measured range across our three
-  replicated arms: 4.91--7.59\pp.
+  Equation~\ref{eq:dropone} in form, so it is the floor for \emph{ceiling} claims, that is, what adding one more arm buys. Measured range across the six
+  replicated \cell{cls$\cdot$B0} arms: 4.46--7.59\pp.
 \item[Mean-difference floor.] $|\mathrm{SR}(a)-\mathrm{SR}(b)|$ on the same
   pairs. This is the floor for claims comparing \emph{mean success rates}
-  between modes. Measured range: 0.89--2.23\pp, but each value is \emph{one draw} of a quantity whose standard deviation is 2.32--2.53\pp, which
-  is why the interpretable threshold is 3.82--4.15\pp{} rather than 2.23\pp.
+  between modes. Measured range: 0.89--2.68\pp, but each value is \emph{one draw} of a quantity whose standard deviation is 2.14--2.53\pp, which
+  is why the interpretable threshold is 3.52--4.15\pp{} rather than 2.68\pp ---
+  and why the arm-specific value, not the range, is what an effect on that arm
+  is compared with.
 \end{description}
 
 Reading a 2.2\pp{} effect against a 2.23\pp{} ``measured floor'' compares a draw
@@ -95,14 +97,14 @@ $q = 1-p$ and $1-q^{k} = (1-q)(1+q+\dots+q^{k-1})$, the $m$-dependence cancels:
 Feasibility bounds $p$ from both sides: $s_0 \ge 0$ forces
 $p \le 1 - d/(2|A|)$, and $s_0 + m \le n$ forces $p \ge d/(2(n-|A|))$.
 
-Three properties follow, and the first two correct what an earlier version of
-this appendix asserted.
+Three properties follow.
 
 \emph{The fair-coin value is not an upper bound.} Equation~\ref{eq:union-identified}
 is increasing in $q$, hence decreasing in $p$. Setting $p=\tfrac12$ --- which is
 what $\hat m = 2d$, $\hat s_0 = |A|-d$ amounts to --- therefore selects a point
-low in the feasible range, not above it: between the 12th and 22nd percentile of
-the range, arm by arm. Table~\ref{tab:six-vs-six} reports the range alongside
+low in the feasible range, not above it: 12--22\% of the way up each arm's
+$U(6)$ range from its lower endpoint. No distribution over $p$ is assumed, so
+this is a position within an interval rather than a quantile. Table~\ref{tab:six-vs-six} reports the range alongside
 the point, and Section~\ref{sec:six-vs-six} draws only the conclusion that holds
 across all of it.
 
@@ -110,8 +112,9 @@ across all of it.
 Equation~\ref{eq:union-identified} reads $U(2) = |A| + d/2$, with no $q$ in it:
 every $p$ predicts the same two-run union. The residual against the observed
 union is algebraically $(|A|-|B|)/2$, half the difference between the two runs'
-success counts. It is worth reporting --- it comes to $+1.12$, $-0.45$, $-1.34$,
-$-1.12$, $-0.67$ and $-0.67$\pp{} across the six replicated arms, so the union
+success counts. It is worth reporting --- model minus observed comes to
+$-1.12$, $+0.45$, $+1.34$, $+1.12$, $+0.67$ and $+0.67$\pp{} across the six
+replicated arms in the order of Table~\ref{tab:six-vs-six}, so the union
 arithmetic and the marginal are both stable --- but it is not evidence for the
 flip model's shape.
 
@@ -119,8 +122,11 @@ flip model's shape.
 replicated arms, so the residual and the interval are statements about that
 cell. All six of its arms now carry a replicate. We do not extrapolate, and
 Section~\ref{sec:limitations} lists the replicates that would be needed to.
-Letting every task carry its own $p_i$ rather than sharing one $p$ would widen
-the interval further; the homogeneous version is the narrower claim.
+Letting every task carry its own $p_i$ rather than sharing one $p$ does not
+widen the interval. Minimising and maximising $U(6)$ over arbitrary $\{p_i\}$
+subject to the same two moment constraints returns the same endpoints, since
+$s_0 \ge 0$ and $s_0 + m \le n$ are what bind at each end; the homogeneous
+model is not a restriction here.
 
 Regenerate with the script\\
 \hspace*{1em}\texttt{scripts/analysis/rerun\_union\_extrapolation.py}\\

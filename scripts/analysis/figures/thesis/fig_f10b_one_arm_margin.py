@@ -50,8 +50,10 @@ RE_ARM = re.compile(
     r"\|\s*(B\d)\s*·\s*([\w-]+)\s*\(n=(\d+)[^)]*\)\s*\|\s*(\w+)\s*@\s*([\d.]+)%"
     r"\s*\|\s*\*\*([\d.]+)pp\*\*\s*\((\w+)\)\s*\|\s*([^|]*)\|")
 # §1b spread table -> one-sided 95% column
+# Scoped to B0.cls. Unscoped, this also matched the B1 pairs whose discordance is
+# zero, dragging a 0.00pp threshold into the band (same defect as fig_f9).
 RE_SPREAD = re.compile(
-    r"\|\s*`(B\d[.\w-]+)`\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*([\d.]+)pp\s*\|\s*"
+    r"\|\s*`(B0\.cls[.\w-]+)`\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*([\d.]+)pp\s*\|\s*"
     r"\*\*([\d.]+)pp\*\*\s*\|\s*([\d.]+)pp\s*\|")
 RE_BAND = re.compile(r"([\d.]+)\s*[–-]\s*([\d.]+)pp")
 

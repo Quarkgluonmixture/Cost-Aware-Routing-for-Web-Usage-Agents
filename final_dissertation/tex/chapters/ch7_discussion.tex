@@ -333,7 +333,7 @@ same paid remote access we had. None of the conclusions rests on that model
 alone: the router's 0-of-8 result and the chooser's 8-of-8 improvement over
 the best single mode both hold across the other two models as well.
 
-\paragraph{The noise floor is measured on one cell.} Three replicated arms exist
+\paragraph{The noise floor is measured on one cell.} Six replicated arms exist
 on \cell{cls$\cdot$B0} and one pooled comparison on \cell{wa\_red$\cdot$B1}. The
 thresholds in Table~\ref{tab:floor-spread} are computed there and applied
 elsewhere. When a third repeat was run, its result landed inside the range the
@@ -419,9 +419,10 @@ modelling choice is made on training tasks alone, checked against 10,000
 shuffles of the outcomes, the learned router is both more successful and
 cheaper than the trivial always-cheapest policy in 0 of 8 cells. The
 after-the-fact chooser fails the same test in 7 of 8. Always-cheapest is the
-cheapest fixed policy available, so anything else has to buy enough extra
-success to cover what it additionally spends --- and measured here, nothing
-does. The negative result is therefore about the economics of this boundary,
+cheapest fixed policy on average --- not a per-episode cost floor, which is how
+the one remaining oracle cell beats it --- so anything else has almost always to
+buy enough extra success to cover what it additionally spends, and none of the
+deployable policies measured here does. The negative result is therefore about the economics of this boundary,
 not about how good the router is at predicting.
 
 \textbf{The reason is a supply constraint, and we can now price it.} A task

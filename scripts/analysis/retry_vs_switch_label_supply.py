@@ -63,7 +63,9 @@ LOG = logging.getLogger("retry_vs_switch")
 # CLEAN_PAIRS labels are "B0.cls.<mode>"; direction a/b is the pair's own ordering and
 # carries no time semantics (the dom pair's "b" arm is in fact two days EARLIER than
 # its "a" arm). Both directions are reported everywhere for that reason.
-ARMS = ("dom", "som", "vision")
+# All six cls·B0 arms carry a replicate as of 2026-08-20. This tuple used to
+# list three, which made the script fail closed once the phantom pairs landed.
+ARMS = ("dom", "som", "vision", "ptext", "pprompt", "psom")
 
 
 def load_arms() -> dict[str, dict[str, dict[int, int]]]:
@@ -505,10 +507,17 @@ def main() -> int:
     print("\n=== PART 4 — does 'a rerun is worth as much as a switch' hold from every base? ===")
     print(f"{'base':<12} {'base SR':>8} {'retry':>8} {'switch':>16} {'switch/retry':>14}"
           f"  {'r_only':>6} {'s_only':>6}")
+    def _rng(lo, hi, w, prec, unit):
+        # switch/retry is undefined when a base's retry gain is zero -- which the
+        # six-arm registry made reachable, and which used to crash this print.
+        if lo is None or hi is None:
+            return f"{'n/a':>{w}}"
+        return f"{lo:>{w}.{prec}f}-{hi:<{w - 1}.{prec}f}{unit}"
+
     for r in p4:
         print(f"{r['base']:<12} {r['base_sr_pp']:>7.2f}% {r['retry_gain_pp']:>7.2f}pp "
-              f"{r['switch_gain_min_pp']:>6.2f}-{r['switch_gain_max_pp']:<5.2f}pp "
-              f"{r['switch_over_retry_min']:>6.2f}-{r['switch_over_retry_max']:<5.2f}x "
+              f"{_rng(r['switch_gain_min_pp'], r['switch_gain_max_pp'], 6, 2, 'pp')} "
+              f"{_rng(r['switch_over_retry_min'], r['switch_over_retry_max'], 6, 2, 'x')} "
               f"{r['retry_only']:>6} {r['switch_only']:>6}")
     print("\n  noise_floor_inventory §2 licenses one sentence on this cell -- 'a distinct")
     print("  representation is worth no more than a rerun' -- computed from the cell's")
