@@ -36,8 +36,8 @@ is explicitly acknowledged.\par}
 A web agent looks at a web page, decides what to click or type, acts, and
 repeats until a user's task is done. Before it can act it must be handed some
 encoding of the page: cheap text listing the page's elements and their labels,
-an expensive screenshot with the interactable elements numbered and boxed on
-it, or both together. The choice is normally made once, when the system is configured,
+an expensive screenshot on its own, or both together, with the screenshot's
+elements numbered and boxed and those same numbers repeated in the text. The choice is normally made once, when the system is configured,
 and applied everywhere. Since a task runs for tens of steps, it is also paid for
 tens of times. This dissertation asks whether the expensive choice is necessary
 at every step, and whether the steps where it \emph{is} necessary can be
@@ -103,13 +103,19 @@ traced to a mechanism we can price.
 \addcontentsline{toc}{chapter}{Acknowledgements}
 \markboth{Acknowledgements}{Acknowledgements}
 
-I thank my supervisor for consistently redirecting attention from what the
-system could be made to do towards what the evidence could actually support,
-and Zekun Wu for the structural writing guidance that shaped how this document
-separates what was measured from what was inferred. Compute for the local
-backbones was provided by the Holistic AI GB10 nodes and by a dedicated A100
-instance; neither was shared during the paper-grade runs, which matters for the
-latency and energy figures reported in Chapter~\ref{ch:system}.
+I thank my supervisor, Mar\'ia P\'erez-Ortiz, for consistently redirecting
+attention from what the system could be made to do towards what the evidence
+could actually support, and my co-supervisor, Zekun Wu, for the structural
+writing guidance that shaped how this document separates what was measured from
+what was inferred.
+
+I thank my parents, whose support made this degree possible, and You Wu, my
+girlfriend, who lived alongside every deadline in it.
+
+Compute for the local backbones was provided by the Holistic AI GB10 nodes and
+by a dedicated A100 instance on UCL's ARC Condenser service; neither was shared
+during the paper-grade runs, which matters for the latency and energy figures
+reported in Chapter~\ref{ch:system}.
 
 % ---------- public access ----------------------------------------------------
 \chapter*{Data, Code and Public Access}
@@ -124,7 +130,7 @@ weights run locally; the experiment harness, analysis pipeline and figure
 scripts are released with the submission.
 
 \textbf{The exception is the large backbone.} \texttt{Qwen3-VL-235B-A22B} was
-served through a metered API proxy rather than self-hosted. Its outputs,
+served through a metered API proxy hosted on AWS rather than self-hosted. Its outputs,
 per-step logs and billing records are archived and released, but a third party
 cannot re-run those conditions without equivalent proxy access. Results that
 depend on that backbone alone are therefore \emph{replicable from our logs} but
@@ -170,8 +176,8 @@ Code & What the program is shown \\
            the structure flattened away. No image. \\
 \mPS{}   & Those same numbered lines, with instructions written as though a
            numbered screenshot were coming. No image. \\
-\mSoM{}  & Those same numbered lines \emph{and} a screenshot with the
-interactable elements numbered and boxed on it. \\
+\mSoM{}  & Those same numbered lines \emph{and} a screenshot with the same
+elements numbered and boxed on it. \\
 \mVis{}  & The plain screenshot only. No page text at all. \\
 \bottomrule
 \end{tabularx}

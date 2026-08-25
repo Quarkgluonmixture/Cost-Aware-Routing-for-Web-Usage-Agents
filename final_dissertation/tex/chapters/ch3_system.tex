@@ -72,9 +72,12 @@ independently.
 
 \paragraph{Text payload.} Either the accessibility-tree serialisation (AXTree),
 which lists elements with roles, names, states and identifiers; or the
-\sommarks{} listing, a flattened enumeration of interactable elements indexed in
-the Set-of-Marks convention. These are two encodings of overlapping information,
-and the difference is one of format rather than of quantity. Only step~0 is comparable: there the two runs are guaranteed to be looking at the same page, and trajectories diverge as soon as the modes choose different actions. Measured across every task at that step, the \sommarks{} payload is a median $1.008\times$ the
+\sommarks{} listing, which flattens that same tree and indexes it in the
+Set-of-Marks convention. The listing is not a filtered subset: every AXTree node
+carrying an identifier is retained, non-interactive ones (\texttt{StaticText},
+\texttt{heading}, \texttt{image}) included, and what is discarded is the
+hierarchy rather than any element. These are therefore two encodings of the same
+information, and the difference is one of format rather than of quantity. Only step~0 is comparable: there the two runs are guaranteed to be looking at the same page, and trajectories diverge as soon as the modes choose different actions. Measured across every task at that step, the \sommarks{} payload is a median $1.008\times$ the
 AXTree payload on classifieds ($n=224$ tasks, 97.3\% of pairs within $\pm5$\%)
 and $1.004\times$ on reddit ($n=205$, 71.2\% within $\pm5$\%).
 
@@ -92,8 +95,9 @@ tells the model it is reading an accessibility tree and how to refer to elements
 or the Set-of-Marks instruction set, which tells the model that elements carry
 visible numbered marks and how to refer to those.
 
-\paragraph{Image.} Either no image, an annotated screenshot with numbered
-overlays on candidate elements, or a raw un-annotated screenshot.
+\paragraph{Image.} Either no image, an annotated screenshot whose numbered
+overlays are drawn on the same elements the \sommarks{} listing enumerates, or a
+raw un-annotated screenshot.
 
 \subsection{The six observation modes}
 \label{sec:modes}
@@ -326,7 +330,7 @@ makes B2 a cross-family control rather than a third data point.}
 \toprule
 Label & Model & Serving & Role \\
 \midrule
-B0 & \texttt{Qwen3-VL-235B-A22B} & metered API proxy & capability upper end \\
+B0 & \texttt{Qwen3-VL-235B-A22B} & metered AWS API proxy & capability upper end \\
 B1 & \texttt{Qwen3-VL-4B}        & local, bf16       & small-model reference \\
 B2 & \texttt{google/gemma-3-4b-it} & local, bf16     & cross-family control at matched scale \\
 \bottomrule
@@ -356,9 +360,9 @@ mechanism to be observed as a gradient rather than asserted at one operating
 point.
 
 \paragraph{The proxy caveat, stated where it applies.} B0 is served through a
-metered API proxy whose protocol is a hybrid: an Anthropic-style endpoint and
-header with an OpenAI-style tool schema and top-level tool-call and log-prob
-fields. This is an implementation fact with two consequences we carry forward.
+metered API gateway hosted on AWS, whose protocol is a hybrid: an
+Anthropic-style endpoint and header with an OpenAI-style tool schema and
+top-level tool-call and log-prob fields. This is an implementation fact with two consequences we carry forward.
 First, B0 conditions are replicable from our archived logs but not
 independently reproducible without equivalent proxy access. Second, the
 service reports how confident the model was only for the two most likely next

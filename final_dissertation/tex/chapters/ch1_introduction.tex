@@ -8,9 +8,10 @@ A web agent cannot act on a page it has not been shown. Before every click it
 must be handed some encoding of the current screen, and there is more than one
 way to produce that encoding. The page can be flattened into structured text
 drawn from the browser's accessibility tree, the same description of elements,
-labels and roles that a screen reader uses. It can instead be rendered as a
-screenshot with the candidate elements numbered and boxed on it. Or it can be
-sent as both. These are
+labels and roles that a screen reader uses. It can instead be sent as a plain
+screenshot, leaving the model to find the elements in the pixels itself. Or it
+can be sent as both at once: a screenshot with numbered marks drawn on the
+elements, accompanied by a text listing of those same numbers. These are
 not equivalent inputs. They differ in what they make visible, and they differ in
 what they cost.
 
@@ -65,8 +66,8 @@ a fraction of a cent per step is a decision made hundreds of thousands of times
 across a benchmark sweep, and millions of times in a large deployment.
 
 \paragraph{The expensive part is concentrated, not diffuse.} The annotated-screenshot condition looks expensive because it appears to send more of everything, and that reading is wrong. The
-full Set-of-Marks mode is the one that sends a screenshot with the
-interactable elements numbered and boxed on it. Measured on matched pages, its text payload
+full Set-of-Marks mode is the one that sends a screenshot with the page's
+elements numbered and boxed on it. Measured on matched pages, its text payload
 is a median $1.008\times$ that of the structured-text mode on classifieds and $1.004\times$ on reddit (Section~\ref{sec:obs-space};
 $n=429$ paired tasks). The cost difference between them is therefore almost
 entirely the image. That is a useful fact rather than a curiosity: it means
@@ -122,7 +123,7 @@ stand in for one another.
   \textbf{One page, three ways of paying for it.} All three columns show the same browser step of the same task, verified byte-identical at the source screenshot, as it is actually transmitted to the model. Left:
   the structured page text of the \mDOM{} mode, listing the elements with
   their labels and roles, and no image at all. Centre: the \mSoM{} mode, which
-  sends the screenshot with the interactable elements numbered and boxed on it
+  sends the screenshot with the page's elements numbered and boxed on it
   \emph{and} the numbered lines of that same text (\sommarks{}). Right: the
   \mVis{} mode, the plain screenshot with no page text. The quantitative point matters more than the pictures: on this
   step the \mSoM{} text payload is $1.008\times$ the \mDOM{} text payload

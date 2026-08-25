@@ -37,8 +37,9 @@ systems use to describe a page to a model.
 
 \paragraph{Structured text.} The browser's accessibility tree (AXTree) exposes
 elements, roles, names, states and identifiers. It is a compact, textual, and
-inherently \emph{selective} view: it names what is interactable and discards
-layout, colour and imagery. Systems that consume it must decide how much of it
+inherently \emph{selective} view: it names elements, their roles and their
+text -- static text and headings as well as controls -- while discarding layout,
+colour and imagery. Systems that consume it must decide how much of it
 to include, which is itself an active research question
 \citep{deng2023mind2web, lu2024weblinx}.
 
@@ -49,11 +50,15 @@ show that a capable model able to read both text and images becomes a
 competent web agent largely once that grounding problem is solved for it.
 
 \paragraph{Set-of-Marks.} \citet{yang2023som} overlay numbered marks on
-candidate elements so the model can refer to a region by index rather than by
+candidate regions so the model can refer to a region by index rather than by
 coordinate. In web-agent systems this image is typically accompanied by a text
 listing of the same numbered elements, so a ``Set-of-Marks observation'' is in
 practice three things at once: an annotated image, a listing of the marks, and
-a prompt explaining how the numbering works. Chapter~\ref{ch:system} takes that bundle apart. That
+a prompt explaining how the numbering works. Where the original method segments
+an image to decide what to mark, the web setting supplies the candidate set
+directly: our implementation marks every accessibility-tree node that carries an
+identifier (Section~\ref{sec:obs-space}), so the marks index the tree rather
+than a segmentation of the pixels. Chapter~\ref{ch:system} takes that bundle apart. That
 it is a bundle of three separable things, rather than one setting, is what
 makes the comparison in this dissertation possible at all.
 
