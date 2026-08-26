@@ -11928,3 +11928,41 @@ B-1982 的 `_scoped_push` 在拒绝代推时**每一轮 (30 min) 都推一条 nt
   `_b5_reddit_chain.sh` 初稿照抄了 203, 一并修正 —— **同一个错抄进新脚本, 说明它不是笔误
   而是「reddit = 203」这个记忆本身有缺陷**。全仓复查: 其余 203 均在 analysis 层作 scoring
   用途, 正确。
+
+### B-1994. 按 mode 单独 key, 注册表长出第二个 cell 后就开始串格 [P0] 🛠️ FIXED
+`CLEAN_PAIRS` 诞生时只有 `B0.cls.*` 行, 于是两个消费者都用 `label.rsplit(".")[-1]`
+(即**只取 mode**) 当 key。注册表此后长出 B1 行 (2026-08-17/19)、B5 行 (08-21) 和
+reddit 行 (08-26), 每一个都在这个 key 上与既有行碰撞。
+- **`retry_vs_switch_label_supply.py`**: `out[mode] = arms` 依次被覆盖 —— B0.cls.dom
+  → B1.cls.dom → B5.cls.dom。末尾 `if set(out) != set(ARMS)` 只比 **key 集合**,
+  dom/som/vision 全在, **检查通过**。⚠️ **形状检查检不出内容被换掉。**
+- **`aggregate_label_instability.py`**: 更隐蔽 —— 它 union 全部 pair 的 flip task id,
+  而 **reddit 的 task 编号与 classifieds 数值重叠、语义不同**, reddit 的 task 145 会被
+  当成 classifieds 的 task 145 计入 flip。**没有任何形状检查能抓到这一类。**
+- ⚠️ **两个产物的 mtime (08-12 / 08-13) 都早于第一次碰撞** ⇒ 已发布的数字没错,
+  **第一个受害者会是下一次重跑**。这也是它潜伏至今的原因: 没人重跑过。
+- ⚠️ 触发它暴露的恰恰是**加 reddit 行**: cls 的 224 个 task id 不在 reddit 数据里 ⇒
+  `raise MissingInput` ⇒ retry_vs_switch 直接崩。**fail-closed 把一个静默 bug 变成了
+  响亮的 bug**, 这正是 fail-closed 的价值。
+- **修复**: 两处都按完整 cell 前缀 (`B0.cls.`) 过滤, 不按 mode。实测修后
+  `dom SR a=17.41%` = B0 真值, 而非被 B5 的 23.66% 顶替。
+
+### B-1995. 反循环控制被"replicate 补齐"这件好事摧毁 [P1] 🛠️ FIXED(机制) / ⚠️ OPEN(方法)
+`aggregate_label_instability.difficulty_null` 的 `arms_for_proxy` 控制: 用**未被
+replicate 的臂**重建难度代理, 断开"同一批臂既决定 task 是否 contested、又决定它是否
+flipped"的循环 (§H stress P0-3, 2026-08-02)。当时只有 dom+vision 有 replicate, 剩四臂
+可用。地板链 08-03/08-17/08-18 依次补上 som/ptext/pprompt/psom 后 **六臂全有 replicate
+⇒ 无臂可留** ⇒ `K=0` ⇒ ZeroDivisionError。
+- ⚠️ **这不是 bug 引入的, 是数据补全引入的。** 一个方法学控制的前提是"覆盖不完整",
+  而项目一直在努力让覆盖完整 —— 两者结构性冲突。
+- ⚠️ **不能降级为六臂数字了事**: `difficulty_null` 自己的 docstring 写着两个定义差
+  约 4x 且「**neither may be quoted alone**」。控制消失后, 幸存的那个数**失去了许可
+  它的东西**, 不能顺势升格为 headline。
+- **已修 (机制)**: 无臂可留时返回 `None` + `leave_replicated_out_unavailable`
+  结构 (reason / consequence / candidate_fix), 两个 render 与 `export_ablation_tables`
+  都改为显式说明而非崩溃。
+- **未决 (方法)**: 正解是换一个不依赖"未 replicate 臂"的控制 —— **leave-one-out**
+  (每条臂用其余五臂建代理) 结构上永远可用。但它**改变 estimand**, 是决定不是补丁,
+  故意未做。
+- 连带: 新 run 并入后 flip 集合 67 → 86, 六臂 enrichment **11.4x → 7.95x**。
+  毕设不引用 (已 grep); REALM #192 引用的是 08-06 提交时快照, 不动。
