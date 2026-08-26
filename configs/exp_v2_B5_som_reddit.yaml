@@ -1,0 +1,93 @@
+# B5 SoM (marks listing + annotated screenshot) — VWA reddit.
+# B5 = OpenAI GPT-5.6 (terra tier) via the same AWS proxy as B0.
+#
+# WHY B5 AND NOT B4. B4 was Claude Sonnet 5 and is DEAD on this proxy: the whole
+# Anthropic family is rejected at the protocol layer (`allOf` unsupported, §468),
+# which is why both B4 smokes returned 400 with 0 steps and $0. That is not a bug
+# to fix — it is a property of the proxy. A new number rather than reusing B4 so
+# the two 08-16 B4 runs stay legible as what they were.
+#
+# WHY B5 EXISTS (NAACL attack surface #3 + 笔记 §471.5). Every other backbone is
+# open-weight (B0 Qwen3-VL-235B / B1 Qwen3-VL-4B / B2 Gemma-3-4B / B3 MiMo-VL-7B),
+# so "is the baseline strong enough" has no answer on this data. B5 is also the
+# second API-served model in the study, which matters for a separate reason: the
+# ~12% run-to-run flip measured on B0 (§470) cannot currently be attributed —
+# B0 is MoE *and* proxy-served, B1 is dense *and* local, so the two candidate
+# causes are perfectly confounded. A second API model breaks that.
+#
+# ⚠️ THIS MODEL CANNOT USE FUNCTION TOOLS ON THIS PROXY (笔记 §471.5).
+#   `tools` → 400 "Function tools with reasoning_effort are not supported ...
+#   in /v1/chat/completions. To use function tools, use /v1/responses or set
+#   reasoning_effort to 'none'." The named fix does not work through this proxy:
+#   it white-lists top-level fields and drops unknown ones (proved by sending
+#   `reasoning_effort:"ZZZ_INVALID"` and `totally_bogus_param_xyz:123` — both 200).
+#   So the structured action comes via `response_format: json_schema` instead;
+#   `structured_output: "response_format"` below selects that road. Probed
+#   2026-08-19 on the full production payload (image + 140-line AXTree + the
+#   production schema): HTTP 200, action accepted by production `validate_action`,
+#   colour and mark id both read correctly off the image, verbalized confidence 0.99.
+#
+# ⚠️ NO LOGPROBS, BY THE MODEL'S OWN LIMIT, NOT BY CONFIGURATION.
+#   `logprobs` → 400 `unsupported_parameter: 'logprobs' is not supported with this
+#   model` — on BOTH roads, so this is not a side effect of avoiding tools. The
+#   confidence schema is therefore VERBALIZED-ONLY for B5: `mean/min logprob` and
+#   `mean/min margin` are null where B0 has them. `logprobs_unavailable: true`
+#   below is what makes that a declaration rather than a silent empty column;
+#   without it a paper-grade run fails loud at init. **Any cross-baseline
+#   confidence comparison must exclude B5, or restrict itself to `verbalized`.**
+#
+# ⚠️ PRICE — READ FROM THE REGISTRY, NOT FROM A DOCUMENT (笔记 §471.2).
+#   台账 §468 recorded GPT-5.6 as "strictly B0-priced 0.001/0.005". That is wrong:
+#   the three tiers span 25x (sol 0.005/0.03 · terra 0.002/0.012 · luna 0.0002/
+#   0.0012, read 2026-08-19). Prices drift the same way display names do. The
+#   values below are terra's as of 2026-08-19 — re-read before quoting a cost.
+#
+#   Tier choice: `terra` (2x/2.4x B0). `sol` is 5x/6x; `luna` at 0.2x is the
+#   cheap one and is the right tier for the noise-attribution pair where only
+#   success/steps are needed, but a baseline-strength claim should not rest on
+#   the smallest tier. Swap `api_name` to run a different tier.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B5_som_reddit"
+
+task:
+  include_sites: ["reddit"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["som"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "global.openai.gpt-5.6-terra"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.0
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: false  # B-396: paper-grade hard-off. GLM rescue physically removed (§210).
+    glm_config: ".auth/glm"
+    use_tool_calling: true          # = "the action must be structured", not "use function tools"
+    structured_output: "response_format"   # B-1990 — see the tools note above
+    logprobs_unavailable: true      # B-1990 — declared, not discovered
+
+metrics:
+  cost_api:
+    # gpt-5.6-terra, read from the proxy registry 2026-08-19. Re-read before quoting.
+    input_cost_per_1k: 0.002
+    output_cost_per_1k: 0.012
+  energy:
+    enabled: false

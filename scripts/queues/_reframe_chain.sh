@@ -51,7 +51,14 @@ COST_CEILING="${COST_CEILING_USD:-400}"
 DEADLINE_UTC="${DEADLINE_UTC:-2026-09-06}"
 START_AT="${START_AT:-smoke}"
 CLS_N=224
-RED_N=203
+RED_N=205   # COLLECTION denominator, not the scored one. AMENDMENT_08 dropped the
+            # reddit *scoring* denominator 205 -> 203 and said in the same breath
+            # that the *collection* denominator stays 205 "so the B-1834 exact
+            # episode-count check ... [is] unaffected". Writing 203 here put the
+            # scoring number into the collection check: on 2026-08-26 03:10 UTC it
+            # halted the reframe chain on `episodes=205 != expected=203` AFTER all
+            # three Phase B cells had completed correctly, costing Phase C its
+            # launch and the host 5.5 idle hours. The data was never at fault.
 
 say()  { echo "[reframe $(date -u '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 push() { curl -s -m 20 -H "Title: $1" -d "$2" "https://ntfy.sh/${NTFY}" >/dev/null 2>&1 || true; }
