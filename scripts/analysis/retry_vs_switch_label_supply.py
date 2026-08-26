@@ -60,12 +60,26 @@ from scripts.analysis.aggregate_noise_floor_inventory import (  # noqa: E402
 
 LOG = logging.getLogger("retry_vs_switch")
 
-# CLEAN_PAIRS labels are "B0.cls.<mode>"; direction a/b is the pair's own ordering and
-# carries no time semantics (the dom pair's "b" arm is in fact two days EARLIER than
-# its "a" arm). Both directions are reported everywhere for that reason.
+# Direction a/b is the pair's own ordering and carries no time semantics (the dom
+# pair's "b" arm is in fact two days EARLIER than its "a" arm). Both directions are
+# reported everywhere for that reason.
 # All six cls·B0 arms carry a replicate as of 2026-08-20. This tuple used to
 # list three, which made the script fail closed once the phantom pairs landed.
 ARMS = ("dom", "som", "vision", "ptext", "pprompt", "psom")
+
+# B-1994 (2026-08-26). This module is about ONE cell — B0 x classifieds — but it
+# used to walk all of CLEAN_PAIRS and key the result by `label.rsplit(".")[-1]`,
+# i.e. by MODE ALONE. That was correct only while every registered pair was a
+# B0.cls one, which is what the old comment here asserted ("labels are
+# B0.cls.<mode>"). CLEAN_PAIRS has since grown B1 pairs (2026-08-17/19), a B5
+# pair (08-21) and reddit pairs (08-26), and every one of them collides on that
+# key: B1.cls.dom overwrote B0.cls.dom, then B5.cls.dom overwrote that. The
+# arity check at the end compares only the SET OF KEYS, so dom/som/vision were
+# all present and it passed — the module would have silently analysed B5's and
+# B1's arms as if they were B0's. The published artefact predates the first
+# collision, so nothing shipped wrong; a rerun would have been the first victim.
+# Filter by the full cell prefix, not by mode.
+CELL_PREFIX = "B0.cls."
 
 
 def load_arms() -> dict[str, dict[str, dict[int, int]]]:
@@ -78,7 +92,9 @@ def load_arms() -> dict[str, dict[str, dict[int, int]]]:
 
     out: dict[str, dict[str, dict[int, int]]] = {}
     for label, ra, rb in CLEAN_PAIRS:
-        mode = label.rsplit(".", 1)[-1]
+        if not label.startswith(CELL_PREFIX):
+            continue  # B-1994: other cells collide on the mode-only key
+        mode = label[len(CELL_PREFIX):]
         arms = {}
         for key, rel in (("a", ra), ("b", rb)):
             p = REPO / rel

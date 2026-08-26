@@ -4,7 +4,7 @@ status: complete
 created: 2026-08-02
 purpose: turn §4.2's fusion-premium claim from a count over cells into a paired test against a priori comparators
 post_hoc_exploratory: true
-scope_warning: not the pre-registered H1; not gated. The rerun band it is read against (0.89-2.23pp, mean-difference scale) is measured on two conditions and extrapolated to the rest.
+scope_warning: not the pre-registered H1; not gated. The rerun band it is read against (0.0-3.45pp, mean-difference scale) is measured on two conditions and extrapolated to the rest.
 producer: scripts/analysis/aggregate_fusion_premium.py
 ---
 
@@ -34,9 +34,9 @@ Effects are `SR(SoM) - SR(comparator)` in points, against **a priori fixed** com
 | SoM − vision | 8 | **+1.48pp** | [+0.06, +2.93] | **yes** | no | no |
 | SoM − dom | 8 | **+0.70pp** | [-0.62, +2.04] | no | no | no |
 
-The band is the measured run-to-run mean-difference floor, 0.89 to 2.23pp. Reading the pooled estimate against it rather than against zero is the point: a premium has to beat what repetition delivers for the same money, not merely beat nothing.
+The band is the measured run-to-run mean-difference floor, 0.0 to 3.45pp. Reading the pooled estimate against it rather than against zero is the point: a premium has to beat what repetition delivers for the same money, not merely beat nothing.
 
-⚠️ **Two bands, and the last column is the one that answers the question.** `0.89–2.23pp` is what 3 reruns *happened to* deliver — two draws from a random quantity, not a bound on it. That quantity's own spread is computable from the same pairs' discordant counts: `SD(ΔSR) = √d/n` gives **2.32–2.53pp**, i.e. the band's upper edge is about one standard deviation. An effect only becomes unlikely for a single rerun to manufacture at roughly **3.82–4.15pp** (one-sided 95%). Both are reported; nothing here should be read as clearing noise on the strength of the observed band alone. → `noise_floor_inventory` §1b.
+⚠️ **Two bands, and the last column is the one that answers the question.** `0.0–3.45pp` is what 13 reruns *happened to* deliver — two draws from a random quantity, not a bound on it. That quantity's own spread is computable from the same pairs' discordant counts: `SD(ΔSR) = √d/n` gives **0.0–2.53pp**, i.e. the band's upper edge is about one standard deviation. An effect only becomes unlikely for a single rerun to manufacture at roughly **0.0–4.15pp** (one-sided 95%). Both are reported; nothing here should be read as clearing noise on the strength of the observed band alone. → `noise_floor_inventory` §1b.
 
 **The interval above is the task-clustered one, and that choice changes an answer.** Within a site the three backbones are scored on the same task universe, so their effects share sampling noise; the textbook `sqrt(1/Σw)` treats them as independent and understates the pooled SE. Resampling tasks once per site and evaluating every backbone in that site on the same draw gives:
 
@@ -45,7 +45,7 @@ The band is the measured run-to-run mean-difference floor, 0.89 to 2.23pp. Readi
 | SoM − vision | [+0.14, +2.82] | **[+0.06, +2.93]** | 0.683 → 0.733 |
 | SoM − dom | [-0.61, +2.00] | **[-0.62, +2.04]** | 0.665 → 0.678 |
 
-Clustering widens every interval without changing a verdict: `SoM − vision` still excludes zero (lower bound +0.06pp). ⚠️ Read that against the band, not against zero: a lower bound of +0.06pp sits below the rerun band's floor of 0.89pp, so excluding zero here is **not** a premium claim — the `clears the rerun band?` column above is the one that answers the question.
+Clustering widens every interval without changing a verdict: `SoM − vision` still excludes zero (lower bound +0.06pp). ⚠️ Read that against the band, not against zero: a lower bound of +0.06pp sits below the rerun band's floor of 0.0pp, so excluding zero here is **not** a premium claim — the `clears the rerun band?` column above is the one that answers the question.
 (codex Mode B, §H stress 2026-08-02; its predicted clustered SE of 0.741 matched.)
 
 ⚠️ **And a fixed-effect pool is the wrong estimand here regardless.** Cochran's Q rejects a common effect for both comparators:

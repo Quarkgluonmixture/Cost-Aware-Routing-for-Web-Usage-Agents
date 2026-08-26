@@ -135,6 +135,38 @@ CLEAN_PAIRS = [
     ("B5.cls.dom",
      "results/visualwebarena/phase1/B5_dom_classifieds_20260820_202158_076182888_2491046_R29736/phase1_dom_router_0",
      "results/visualwebarena/phase1/B5_dom_classifieds_20260821_065801_251938920_2585213_R15476/phase1_dom_router_0"),
+    # --- The first non-classifieds rows, registered 2026-08-26 ----------------
+    # Phase B of the reframe chain, declared before the fire in
+    # pre_run/reframe_chain_launch_intent_20260819.md ("B1-B3 | B0 x red x
+    # {P-text, P-prompt, P-SoM}"), so these are registered as declared — not
+    # selected after seeing the numbers (§469.7).
+    #
+    # WHY THEY MATTER: every floor above is classifieds. §470.3 could bound the
+    # unique-solve counts only on that one cell, and claim A of the reframe
+    # ("within the text side, format and prompt change WHICH tasks succeed, not
+    # HOW MANY, and the change sits inside the noise") was read against a band
+    # measured on a single site. These three give the text side a second site.
+    #
+    # POWER: d ~ n x SR x 0.59 at the archived reddit phantom SRs = 13.0-15.9,
+    # above the d>=10 bar (§468 / B-1972), so these rows carry intervals.
+    #
+    # SITE DRIFT RULED OUT before registering, not assumed: the archive arms are
+    # from 2026-06/07 and the replicates from 2026-08, two months apart, and the
+    # self_drop asymmetry (12 vs 4 on P-text) had the shape of a one-way drift.
+    # `compare_cross_run_same_condition.py` on all three pairs returns
+    # start_url_mismatch = 0 with all 205 step-0 landings identical, and every
+    # flip classified model_nondeterm. The asymmetry also does not point one way
+    # across arms (P-text and P-prompt favour the archive, P-SoM the replicate),
+    # which a site ageing one direction could not produce.
+    ("B0.red.ptext",
+     "results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/phase1_phantom_text_router_0",
+     "results/visualwebarena/phase1/B0_phantom_text_reddit_20260821_165404_673791669_2663733_R2359/phase1_phantom_text_router_0"),
+    ("B0.red.pprompt",
+     "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260709/phase1_phantom_prompt_router_0",
+     "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260823_075453_423269667_2958720_R11669/phase1_phantom_prompt_router_0"),
+    ("B0.red.psom",
+     "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/phase1_phantom_som_router_0",
+     "results/visualwebarena/phase1/B0_phantom_som_reddit_20260824_152956_638287802_3173740_R26550/phase1_phantom_som_router_0"),
 ]
 
 # A replicate that is still running has a task set that merely LOOKS like a scored universe:
@@ -238,12 +270,34 @@ def _pair_stats(a: dict[int, int], b: dict[int, int], restrict: list[int] | None
     }
 
 
+# Second field of a CLEAN_PAIRS label -> the site whose scored universe the pair
+# must be restricted to. Added 2026-08-26 with the first non-classifieds rows.
+# Before that the universe was `expected_scored_ids("classifieds")`, hardcoded,
+# which is fail-CLOSED for a reddit pair rather than wrong: reddit task ids are
+# not a subset of the classifieds universe, so `missing` would be all 224 and
+# REQUIRE_FULL_UNIVERSE would raise. Registering a reddit pair therefore had to
+# start here. The scope string was hardcoded the same way — the twin of the
+# 2026-08-20 baseline fix, which caught "B0 x classifieds" being printed on
+# every B1 row.
+_SITE_OF_LABEL = {"cls": "classifieds", "red": "reddit", "shop": "shopping"}
+
+
 def compute_clean_pairs(allow_partial: bool = False) -> list[dict]:
     from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
-    scored, _sha = expected_scored_ids("classifieds")
-    scored = set(scored)
+    _universe: dict[str, set] = {}
     rows = []
     for label, ra, rb in CLEAN_PAIRS:
+        _baseline, _site_key = label.split(".")[0], label.split(".")[1]
+        try:
+            _site = _SITE_OF_LABEL[_site_key]
+        except KeyError:
+            raise MissingInput(
+                f"{label}: unknown site key {_site_key!r}; extend _SITE_OF_LABEL "
+                f"(known: {sorted(_SITE_OF_LABEL)})") from None
+        if _site not in _universe:
+            _ids, _sha = expected_scored_ids(_site)
+            _universe[_site] = set(_ids)
+        scored = _universe[_site]
         pa, pb = REPO / ra, REPO / rb
         for p in (pa, pb):
             if not p.is_dir():
@@ -266,10 +320,9 @@ def compute_clean_pairs(allow_partial: bool = False) -> list[dict]:
         # B1 pairs since B1.cls.som was registered, so every B1 row in the published
         # table read "B0 x classifieds" — a table whose whole point is that B0 and B1
         # floors differ by an order of magnitude. Derive it from the label instead.
-        _baseline = label.split(".")[0]
-        st.update(label=label,
-                  scope=(f"{_baseline} x classifieds, canonical n=224" if not missing
-                         else f"{_baseline} x classifieds, PARTIAL n={st['n']} of {len(scored)}"),
+        st.update(label=label, site=_site,
+                  scope=(f"{_baseline} x {_site}, canonical n={len(scored)}" if not missing
+                         else f"{_baseline} x {_site}, PARTIAL n={st['n']} of {len(scored)}"),
                   partial=bool(missing), n_missing=len(missing),
                   arm_a=str(pa.relative_to(REPO)), arm_b=str(pb.relative_to(REPO)))
         rows.append(st)
@@ -714,8 +767,38 @@ def main(argv: list[str] | None = None) -> int:
             som_hi=max(_s0["self_drop_a_to_b_pp"], _s0["self_drop_b_to_a_pp"]),
             som_absdiff=_s0["abs_mean_diff_pp"])
 
+    # Per-site companion to cls_band, added 2026-08-26 with the first reddit pairs.
+    # WHY A SEPARATE BAND AND NOT A WIDER SHARED ONE: §477.2 settled that a
+    # threshold is a PER-ARM quantity — taking a min/max across arms lets adding a
+    # replicate on an unrelated arm weaken a conclusion about a different one. The
+    # same argument applies across sites, only more so. floor_band stays the
+    # all-pairs summary (its one_sided_95_* is unchanged by these rows, checked),
+    # but a reddit effect must be read against reddit's own band, not against a
+    # band whose min/max is set by classifieds.
+    # NOTE: no same-quote f-string nesting below — this module is AST-parsed on the
+    # A100 under Python 3.10 (see the PEP 701 note above); a 3.12-only line here
+    # silently empties the replicate registry.
+    red_pairs = [r for r in clean if r["label"].startswith("B0.red.")]
+    red_band = {"n_arms": len(red_pairs)}
+    if red_pairs:
+        _rdrops = [v for r in red_pairs
+                   for v in (r["self_drop_a_to_b_pp"], r["self_drop_b_to_a_pp"])]
+        _rabs = [r["abs_mean_diff_pp"] for r in red_pairs]
+        _r95 = [r["null_one_sided_95_pp"] for r in red_pairs]
+        _rarm_names = ", ".join(r["label"].rsplit(".", 1)[-1] for r in red_pairs)
+        red_band.update(
+            arm_names=_rarm_names,
+            band_lo_pp=min(_rdrops), band_hi_pp=max(_rdrops),
+            observed_min_pp=min(_rabs), observed_max_pp=max(_rabs),
+            one_sided_95_min_pp=min(_r95), one_sided_95_max_pp=max(_r95),
+            n=red_pairs[0]["n"],
+            reading=("text-side arms only (the three phantom modes); reddit has no "
+                     "replicated dom/som/vision arm, so this band must not be read "
+                     "as a floor for the image-bearing side of this site"))
+
     data = {"generated_for_date": args.date, "clean_pairs": clean, "wa_floor": wa_floor,
             "margins": margins, "head_to_head": head_to_head, "floor_band": floor_band,
+            "red_band": red_band,
             "cls_band": cls_band}
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)

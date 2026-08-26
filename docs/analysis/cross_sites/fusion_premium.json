@@ -4,8 +4,8 @@
   "n_boot": 10000,
   "seed": 20260802,
   "floor_mean_pp": [
-    0.89,
-    2.23
+    0.0,
+    3.45
   ],
   "floor_band": {
     "functional": "mean difference |SR(a) - SR(b)| on same-condition replicate pairs",
@@ -39,14 +39,114 @@
         "null_sd_mean_diff_pp": 2.4040914317564748,
         "null_one_sided_95_pp": 3.9547304052394012,
         "null_two_sided_95_pp": 4.71201920624269
+      },
+      {
+        "label": "B0.cls.ptext",
+        "scope": "B0 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 23,
+        "abs_mean_diff_pp": 1.3392857142857142,
+        "null_sd_mean_diff_pp": 2.1409962157646065,
+        "null_one_sided_95_pp": 3.521938774932778,
+        "null_two_sided_95_pp": 4.196352582898629
+      },
+      {
+        "label": "B0.cls.pprompt",
+        "scope": "B0 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 28,
+        "abs_mean_diff_pp": 2.6785714285714284,
+        "null_sd_mean_diff_pp": 2.36227795630767,
+        "null_one_sided_95_pp": 3.8859472381261173,
+        "null_two_sided_95_pp": 4.630064794363033
+      },
+      {
+        "label": "B0.cls.psom",
+        "scope": "B0 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 27,
+        "abs_mean_diff_pp": 1.3392857142857142,
+        "null_sd_mean_diff_pp": 2.319710902994032,
+        "null_one_sided_95_pp": 3.815924435425183,
+        "null_two_sided_95_pp": 4.546633369868303
+      },
+      {
+        "label": "B1.cls.vision",
+        "scope": "B1 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 0,
+        "abs_mean_diff_pp": 0.0,
+        "null_sd_mean_diff_pp": 0.0,
+        "null_one_sided_95_pp": 0.0,
+        "null_two_sided_95_pp": 0.0
+      },
+      {
+        "label": "B1.cls.som",
+        "scope": "B1 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 0,
+        "abs_mean_diff_pp": 0.0,
+        "null_sd_mean_diff_pp": 0.0,
+        "null_one_sided_95_pp": 0.0,
+        "null_two_sided_95_pp": 0.0
+      },
+      {
+        "label": "B1.cls.dom",
+        "scope": "B1 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 7,
+        "abs_mean_diff_pp": 0.4464285714285714,
+        "null_sd_mean_diff_pp": 1.181138978153835,
+        "null_one_sided_95_pp": 1.9429736190630587,
+        "null_two_sided_95_pp": 2.3150323971815165
+      },
+      {
+        "label": "B5.cls.dom",
+        "scope": "B5 x classifieds, canonical n=224",
+        "n": 224,
+        "discordant_count": 29,
+        "abs_mean_diff_pp": 1.3392857142857142,
+        "null_sd_mean_diff_pp": 2.4040914317564748,
+        "null_one_sided_95_pp": 3.9547304052394012,
+        "null_two_sided_95_pp": 4.71201920624269
+      },
+      {
+        "label": "B0.red.ptext",
+        "scope": "B0 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 15,
+        "abs_mean_diff_pp": 3.4482758620689653,
+        "null_sd_mean_diff_pp": 1.907873569560304,
+        "null_one_sided_95_pp": 3.1384520219267,
+        "null_two_sided_95_pp": 3.739432196338196
+      },
+      {
+        "label": "B0.red.pprompt",
+        "scope": "B0 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 23,
+        "abs_mean_diff_pp": 2.4630541871921183,
+        "null_sd_mean_diff_pp": 2.3624785829126695,
+        "null_one_sided_95_pp": 3.8862772688913414,
+        "null_two_sided_95_pp": 4.630458022508832
+      },
+      {
+        "label": "B0.red.psom",
+        "scope": "B0 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 21,
+        "abs_mean_diff_pp": 3.4482758620689653,
+        "null_sd_mean_diff_pp": 2.2574264507171624,
+        "null_one_sided_95_pp": 3.7134665114297323,
+        "null_two_sided_95_pp": 4.4245558434056385
       }
     ],
-    "observed_min_pp": 0.89,
-    "observed_max_pp": 2.23,
-    "n_draws": 3,
-    "null_sd_min_pp": 2.32,
+    "observed_min_pp": 0.0,
+    "observed_max_pp": 3.45,
+    "n_draws": 13,
+    "null_sd_min_pp": 0.0,
     "null_sd_max_pp": 2.53,
-    "one_sided_95_min_pp": 3.82,
+    "one_sided_95_min_pp": 0.0,
     "one_sided_95_max_pp": 4.15,
     "reading": "observed_* is a range of 2 draws and must never be quoted as a threshold on its own; one_sided_95_* is the level an effect must reach before a single rerun would be unlikely to produce it"
   },

@@ -55,9 +55,24 @@ def load() -> tuple[set[int], dict[int, set[str]], list[str]]:
     inv = json.loads(INV.read_text())
     flips: set[int] = set()
     arms = []
+    # B-1994 (2026-08-26): this module is scoped to ONE cell (`CELL`), but it used
+    # to union the flip ids of EVERY registered pair. That was safe only while
+    # CLEAN_PAIRS held nothing but B0.cls rows. It now also holds B1 and B5 rows
+    # (same site, wrong baseline) and reddit rows — and reddit task ids occupy the
+    # same integer range as classifieds ones while meaning different tasks, so a
+    # reddit flip on task 145 would have been counted as a classifieds flip on
+    # task 145. Unlike the sibling defect in retry_vs_switch_label_supply.py this
+    # one fails SILENTLY: no shape check would catch it. The shipped artefact
+    # predates the first foreign row, so nothing published is affected.
+    _prefix = CELL.split("_")[1] + "." + CELL.split("_")[0] + "."   # cls_B0 -> B0.cls.
     for cp in inv["clean_pairs"]:
+        if not cp["label"].startswith(_prefix):
+            continue
         flips |= set(cp["flip_tasks_a_to_b"]) | set(cp["flip_tasks_b_to_a"])
         arms.append(cp["label"])
+    if not arms:
+        raise MissingInput(
+            f"no clean pairs match cell {CELL} (prefix {_prefix!r}) in {INV}")
     if not flips:
         raise MissingInput("no flip task ids in the inventory")
     scored, _ = expected_scored_ids(SITE)
@@ -118,8 +133,43 @@ def build() -> dict:
     # Same computation with the replicated arms removed from the difficulty proxy — see the
     # docstring of difficulty_null for why the shipped version is circular.
     repl = {a.rsplit(".", 1)[-1] for a in arms}
-    out["difficulty_null_leave_replicated_out"] = difficulty_null(
-        flips, solve, arms_for_proxy=[m for m in MODES if m not in repl])
+    _proxy = [m for m in MODES if m not in repl]
+    if _proxy:
+        out["difficulty_null_leave_replicated_out"] = difficulty_null(
+            flips, solve, arms_for_proxy=_proxy)
+        out["leave_replicated_out_available"] = True
+    else:
+        # B-1995 (2026-08-26). The anti-circularity control has been DESTROYED BY
+        # SUCCESS, not by a bug. It works by rebuilding the difficulty proxy from
+        # the arms that were NOT replicated, so that an arm's solve status cannot
+        # decide both "is this task contested" and "did it flip". When it was
+        # written (2026-08-02) only dom and vision carried replicates and four
+        # arms were free. The floor chain gave ptext/pprompt/psom replicates on
+        # 2026-08-17/18 and som on 08-03, so all six are now replicated and the
+        # control has no arms left to stand on. Previously this divided by zero.
+        #
+        # Reporting None is the honest outcome, NOT a degradation to the six-arm
+        # figure: difficulty_null's own docstring says the two figures differ by
+        # ~4x and that "neither may be quoted alone". With one of them structurally
+        # unavailable, the surviving one may not be promoted to the headline — it
+        # has lost the control that licensed it.
+        #
+        # The fix is not code. It is a different control: leave-ONE-out (rebuild
+        # the proxy from the other five arms, per arm) does not require any arm to
+        # be un-replicated. That changes the estimand, so it is a decision, not a
+        # patch, and is deliberately not made here.
+        out["difficulty_null_leave_replicated_out"] = None
+        out["leave_replicated_out_available"] = False
+        out["leave_replicated_out_unavailable"] = {
+            "reason": "every mode in MODES now carries a replicate; no un-replicated "
+                      "arm remains to build an independent difficulty proxy from",
+            "replicated_modes": sorted(repl),
+            "modes": list(MODES),
+            "consequence": "the six-arm enrichment figure has lost its anti-circularity "
+                           "control and must not be quoted as a headline on its own",
+            "candidate_fix": "leave-one-out proxy (five other arms per arm) — changes the "
+                             "estimand, needs an explicit decision",
+        }
     out["replicated_arms_short"] = sorted(repl)
     return out
 
@@ -273,6 +323,16 @@ def render(d: dict) -> str:
 
     # The circularity, and what the number becomes without it.
     lo = d["difficulty_null_leave_replicated_out"]
+    if lo is None:
+        u = d["leave_replicated_out_unavailable"]
+        L += ["### …and is the proxy circular?", "",
+              "**Yes, and the control that used to answer this is no longer available.** "
+              f"{u['reason']}. Replicated: `{'`, `'.join(u['replicated_modes'])}`.", "",
+              f"⚠️ {u['consequence']}. Candidate fix: {u['candidate_fix']}.", "",
+              "This is a consequence of the replicate inventory becoming *complete*, not of "
+              "a defect — the control was only ever possible while some arm lacked a "
+              "replicate. It is recorded here rather than silently dropped.", ""]
+        return "\n".join(L)
     lc, lm = lo["contested"], lo["complement"]
     enr6 = co["observed_flip_rate"] / cm["observed_flip_rate"]
     enr4 = lc["observed_flip_rate"] / lm["observed_flip_rate"]

@@ -3556,7 +3556,17 @@
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "complete but excluded by design"
       },
+      "B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207": {
+        "episodes": 224,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "complete but excluded by design"
+      },
       "B0_phantom_prompt_reddit_20260709": {
+        "episodes": 205,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "complete but excluded by design"
+      },
+      "B0_phantom_prompt_reddit_20260823_075453_423269667_2958720_R11669": {
         "episodes": 205,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "complete but excluded by design"

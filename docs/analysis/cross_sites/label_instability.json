@@ -3,60 +3,63 @@
   "post_hoc_exploratory": true,
   "cell": "cls_B0",
   "n": 224,
-  "n_flipped": 67,
+  "n_flipped": 86,
   "replicated_arms": [
     "B0.cls.dom",
     "B0.cls.vision",
-    "B0.cls.som"
+    "B0.cls.som",
+    "B0.cls.ptext",
+    "B0.cls.pprompt",
+    "B0.cls.psom"
   ],
   "strata": {
     "which-mode label rows (any mode solved)": {
       "n_tasks": 97,
       "share_of_cell": 43.30357142857143,
-      "n_flipped": 61,
-      "flip_rate_pct": 62.88659793814433,
-      "share_of_all_flips": 91.04477611940298,
-      "enrichment_vs_complement": 10.690721649484535
+      "n_flipped": 75,
+      "flip_rate_pct": 77.31958762886599,
+      "share_of_all_flips": 87.20930232558139,
+      "enrichment_vs_complement": 7.511045655375553
     },
     "\u2026of those, the arms DISAGREE (the choice matters)": {
       "n_tasks": 88,
       "share_of_cell": 39.285714285714285,
-      "n_flipped": 59,
-      "flip_rate_pct": 67.04545454545455,
-      "share_of_all_flips": 88.05970149253731,
-      "enrichment_vs_complement": 11.397727272727272
+      "n_flipped": 72,
+      "flip_rate_pct": 81.81818181818183,
+      "share_of_all_flips": 83.72093023255815,
+      "enrichment_vs_complement": 7.9480519480519485
     },
     "three-way channel decision is contested": {
       "n_tasks": 74,
       "share_of_cell": 33.035714285714285,
-      "n_flipped": 49,
-      "flip_rate_pct": 66.21621621621621,
-      "share_of_all_flips": 73.13432835820896,
-      "enrichment_vs_complement": 11.256756756756758
+      "n_flipped": 60,
+      "flip_rate_pct": 81.08108108108108,
+      "share_of_all_flips": 69.76744186046511,
+      "enrichment_vs_complement": 7.876447876447878
     },
     "exactly one mode solved it (label unambiguous)": {
       "n_tasks": 29,
       "share_of_cell": 12.946428571428571,
-      "n_flipped": 23,
-      "flip_rate_pct": 79.3103448275862,
-      "share_of_all_flips": 34.32835820895522,
-      "enrichment_vs_complement": 13.482758620689657
+      "n_flipped": 26,
+      "flip_rate_pct": 89.65517241379311,
+      "share_of_all_flips": 30.232558139534884,
+      "enrichment_vs_complement": 8.709359605911331
     },
     "COMPLEMENT: no mode solved, or all did": {
       "n_tasks": 136,
       "share_of_cell": 60.714285714285715,
-      "n_flipped": 8,
-      "flip_rate_pct": 5.88235294117647,
-      "share_of_all_flips": 11.940298507462687,
+      "n_flipped": 14,
+      "flip_rate_pct": 10.294117647058822,
+      "share_of_all_flips": 16.27906976744186,
       "enrichment_vs_complement": 1.0
     },
     "whole cell": {
       "n_tasks": 224,
       "share_of_cell": 100.0,
-      "n_flipped": 67,
-      "flip_rate_pct": 29.910714285714285,
+      "n_flipped": 86,
+      "flip_rate_pct": 38.392857142857146,
       "share_of_all_flips": 100.0,
-      "enrichment_vs_complement": 5.084821428571429
+      "enrichment_vs_complement": 3.729591836734694
     }
   },
   "difficulty_null": {
@@ -72,13 +75,13 @@
     "circular": true,
     "contested": {
       "n": 88,
-      "observed_flip_rate": 0.6704545454545454,
+      "observed_flip_rate": 0.8181818181818182,
       "binomial_floor": 0.37247474747474746,
-      "observed_over_floor": 1.8
+      "observed_over_floor": 2.196610169491526
     },
     "complement": {
       "n": 136,
-      "observed_flip_rate": 0.058823529411764705,
+      "observed_flip_rate": 0.10294117647058823,
       "binomial_floor": 0.0
     },
     "arithmetic_enrichment": "infinite (complement floor is exactly 0)",
@@ -86,29 +89,29 @@
       {
         "k": 0,
         "n": 127,
-        "n_flipped": 6,
-        "observed": 0.047244094488188976,
+        "n_flipped": 11,
+        "observed": 0.08661417322834646,
         "binomial_floor": 0.0
       },
       {
         "k": 1,
         "n": 29,
-        "n_flipped": 23,
-        "observed": 0.7931034482758621,
+        "n_flipped": 26,
+        "observed": 0.896551724137931,
         "binomial_floor": 0.2777777777777778
       },
       {
         "k": 2,
         "n": 25,
-        "n_flipped": 10,
-        "observed": 0.4,
+        "n_flipped": 15,
+        "observed": 0.6,
         "binomial_floor": 0.4444444444444445
       },
       {
         "k": 3,
         "n": 12,
-        "n_flipped": 10,
-        "observed": 0.8333333333333334,
+        "n_flipped": 11,
+        "observed": 0.9166666666666666,
         "binomial_floor": 0.5
       },
       {
@@ -121,72 +124,47 @@
       {
         "k": 5,
         "n": 13,
-        "n_flipped": 9,
-        "observed": 0.6923076923076923,
+        "n_flipped": 13,
+        "observed": 1.0,
         "binomial_floor": 0.27777777777777773
       },
       {
         "k": 6,
         "n": 9,
-        "n_flipped": 2,
-        "observed": 0.2222222222222222,
+        "n_flipped": 3,
+        "observed": 0.3333333333333333,
         "binomial_floor": 0.0
       }
     ]
   },
-  "difficulty_null_leave_replicated_out": {
-    "proxy": "k/3 where k = how many of ['ptext', 'pprompt', 'psom'] solved the task",
-    "arms_in_proxy": [
+  "difficulty_null_leave_replicated_out": null,
+  "leave_replicated_out_available": false,
+  "leave_replicated_out_unavailable": {
+    "reason": "every mode in MODES now carries a replicate; no un-replicated arm remains to build an independent difficulty proxy from",
+    "replicated_modes": [
+      "dom",
+      "pprompt",
+      "psom",
+      "ptext",
+      "som",
+      "vision"
+    ],
+    "modes": [
+      "dom",
+      "som",
+      "vision",
       "ptext",
       "pprompt",
       "psom"
     ],
-    "circular": false,
-    "contested": {
-      "n": 34,
-      "observed_flip_rate": 0.6764705882352942,
-      "binomial_floor": 0.4444444444444445,
-      "observed_over_floor": 1.5220588235294117
-    },
-    "complement": {
-      "n": 190,
-      "observed_flip_rate": 0.23157894736842105,
-      "binomial_floor": 0.0
-    },
-    "arithmetic_enrichment": "infinite (complement floor is exactly 0)",
-    "per_k": [
-      {
-        "k": 0,
-        "n": 167,
-        "n_flipped": 32,
-        "observed": 0.19161676646706588,
-        "binomial_floor": 0.0
-      },
-      {
-        "k": 1,
-        "n": 23,
-        "n_flipped": 14,
-        "observed": 0.6086956521739131,
-        "binomial_floor": 0.4444444444444445
-      },
-      {
-        "k": 2,
-        "n": 11,
-        "n_flipped": 9,
-        "observed": 0.8181818181818182,
-        "binomial_floor": 0.4444444444444445
-      },
-      {
-        "k": 3,
-        "n": 23,
-        "n_flipped": 12,
-        "observed": 0.5217391304347826,
-        "binomial_floor": 0.0
-      }
-    ]
+    "consequence": "the six-arm enrichment figure has lost its anti-circularity control and must not be quoted as a headline on its own",
+    "candidate_fix": "leave-one-out proxy (five other arms per arm) \u2014 changes the estimand, needs an explicit decision"
   },
   "replicated_arms_short": [
     "dom",
+    "pprompt",
+    "psom",
+    "ptext",
     "som",
     "vision"
   ]

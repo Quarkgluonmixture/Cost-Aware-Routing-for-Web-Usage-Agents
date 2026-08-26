@@ -1391,26 +1391,52 @@ def t_instability():
     circ = d["difficulty_null"]
     lro = d["difficulty_null_leave_replicated_out"]
     e_circ = circ["contested"]["observed_flip_rate"] / circ["complement"]["observed_flip_rate"]
-    e_lro = lro["contested"]["observed_flip_rate"] / lro["complement"]["observed_flip_rate"]
     n_arms = len(circ["arms_in_proxy"])
     n_rep = len(d["replicated_arms"])
-    n_out = len(lro["arms_in_proxy"])
+
+    # B-1995 (2026-08-26): the replicate inventory used to be described by a
+    # hardcoded sentence ("three arms of that cell ... no VWA-reddit cell and no
+    # B2 cell carries one at all"). Every clause of it is now false: the cell has
+    # six replicated arms and reddit has three. That is the same defect class this
+    # file's own setup section warns about — a fact frozen in a producer while its
+    # source keeps moving. Read it from the inventory instead.
+    _inv_p = REPO / "docs/analysis/cross_sites/noise_floor_inventory.json"
+    if not _inv_p.exists():
+        raise MissingProduct(f"{_inv_p} absent — run aggregate_noise_floor_inventory.py first")
+    _cells: dict[str, int] = {}
+    for _cp in json.loads(_inv_p.read_text())["clean_pairs"]:
+        _k = ".".join(_cp["label"].split(".")[:2])
+        _cells[_k] = _cells.get(_k, 0) + 1
+    _inv_txt = ", ".join(f"{k} x{v}" for k, v in sorted(_cells.items()))
+
     cap = (f"Per-task label instability on `{d['cell']}` (n={d['n']}): "
            f"{d['n_flipped']} tasks change outcome between two runs of the same condition. "
            f"The rows a which-mode router could learn from are exactly the contested ones, "
            f"and they carry almost all of the instability. **Caution: this table is computed "
            f"on {n_rep} replicated arms of one cell "
-           f"({', '.join(d['replicated_arms'])}), rerun once.** The project's whole replicate "
-           f"inventory is three arms of that cell — the SoM pair landed after this product "
-           f"was generated and is not folded in here — plus five modes of `wa_red_B1` on a "
-           f"registered ten-task draw; no VWA-reddit cell and no B2 cell carries one at all, "
-           f"so every stability figure elsewhere is imported rather than measured. The "
-           f"headline enrichment has two defensible definitions and **neither may be quoted "
-           f"alone**: {e_circ:.1f}x defined over all {n_arms} arms is correct for the claim "
-           f"(a router chooses among {n_arms}) but the flips are produced by rerunning "
-           f"{n_rep} of them, so the same arms decide both membership and outcome; rebuilding "
-           f"the difficulty proxy from the other {n_out} breaks that circle and gives "
-           f"{e_lro:.2f}x. Source: `label_instability.json`.")
+           f"({', '.join(d['replicated_arms'])}), rerun once.** The project's replicate "
+           f"inventory at generation time is {_inv_txt}, plus five modes of `wa_red_B1` on a "
+           f"registered ten-task draw; cells absent from that list carry no replicate, so "
+           f"their stability figures are imported rather than measured. ")
+    if lro is None:
+        u = d["leave_replicated_out_unavailable"]
+        cap += (f"⚠️ **The anti-circularity control is no longer available.** {u['reason']}. "
+                f"The enrichment over all {n_arms} arms is {e_circ:.1f}x, but the flips are "
+                f"produced by rerunning {n_rep} of those same {n_arms} arms, so membership and "
+                f"outcome are decided by the same data and there is no longer an un-replicated "
+                f"arm to rebuild an independent difficulty proxy from. **{e_circ:.1f}x must "
+                f"therefore not be quoted as a headline on its own** — it has lost the control "
+                f"that previously licensed it ({u['candidate_fix']}). "
+                f"Source: `label_instability.json`.")
+    else:
+        e_lro = lro["contested"]["observed_flip_rate"] / lro["complement"]["observed_flip_rate"]
+        n_out = len(lro["arms_in_proxy"])
+        cap += (f"The headline enrichment has two defensible definitions and **neither may be "
+                f"quoted alone**: {e_circ:.1f}x defined over all {n_arms} arms is correct for "
+                f"the claim (a router chooses among {n_arms}) but the flips are produced by "
+                f"rerunning {n_rep} of them, so the same arms decide both membership and "
+                f"outcome; rebuilding the difficulty proxy from the other {n_out} breaks that "
+                f"circle and gives {e_lro:.2f}x. Source: `label_instability.json`.")
     return "\n".join(rows), cap
 
 
