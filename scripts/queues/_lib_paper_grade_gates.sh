@@ -750,7 +750,7 @@ reset_and_auth_gate() {
   local _reset_timeout
   case "${site}" in
     reddit) _reset_timeout=240 ;;
-    # B-1993 (2026-08-26): 240 -> 480 on the docker-restart path. Measured: a cls
+    # B-1991 (2026-08-26): 240 -> 480 on the docker-restart path. Measured: a cls
     # Gate3 reset took 262s and was SIGKILLed at 240s+10s — AFTER it had already
     # logged "containers fresh + warm (db query OK, http 200)". The reset had
     # succeeded; only the timeout disagreed. Cost: Phase C's first cell aborted
@@ -790,7 +790,7 @@ reset_and_auth_gate() {
   # headroom the docker-restart path needs (db wait ≤60 + http wait ≤60 + reset ≤73)
   # → false `timeout 124` chain abort. Floor to 240 only under the cls restart path.
   if [[ "${VWA_RESTART_DOCKER:-0}" == "1" && "${site}" == "classifieds" && "${_reset_timeout}" -lt 480 ]]; then
-    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s too low for cls docker-restart path; clamping to 480s (B-1839 / B-1993)" >&2
+    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s too low for cls docker-restart path; clamping to 480s (B-1839 / B-1991)" >&2
     _reset_timeout=480
   fi
   # B-1931 (cont): same clamp for shopping. Without it the B-1839 failure mode

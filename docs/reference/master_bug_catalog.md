@@ -11898,3 +11898,33 @@ B-1982 的 `_scoped_push` 在拒绝代推时**每一轮 (30 min) 都推一条 nt
 - **修复**: 对被挡的 commit 列表取 `cksum` 指纹存 `logs/.poller_push_block.fp`, **只在指纹变化
   时**推送; push 成功后删除指纹, 使下一批不同的阻塞仍会发声。消息改为带**条数 + 最新一条的
   subject**。四轮实测: 第 1 轮喊 / 第 2·3 轮静默 / 指纹变化后再喊。
+
+### B-1991. 一次**成功**的 reset 被 timeout 杀掉, 于是 chain 判它失败 [P0] 🛠️ FIXED
+`_lib_paper_grade_gates.sh` 给 classifieds 的 docker-restart 路径定的 `_reset_timeout=240`。
+2026-08-26 08:38 Phase C 第一格 (`B5_som_classifieds` R30408) 的 reset 跑了 **262s**,
+在 240s+10s 处吃到 SIGKILL, queue 脚本 `rc=137`, 随后 `no valid condition_summary_v2.json`
+→ queue_chain ABORT → 整条 reframe chain halt。
+- ⚠️ **reset 本身是成功的**。被杀前它已经打印
+  `classifieds containers fresh + warm (db query OK, http 200)`, 事后 `docker ps` 也显示
+  `classifieds` / `classifieds_db` 均 `Up`。**失败的是判据, 不是被判的东西。**
+- ⚠️ **阈值是按热主机量的**。240s 的 headroom (B-1839) 在容器刚跑过的情况下够用; 这次 reset
+  之前主机空转 5.5h, docker 冷启动。**一个只在热态验证过的超时, 会在冷态变成随机杀手。**
+- ⚠️ **代价不是这一格**: chain 是 fail-closed 的, 一格 abort 就整条停, 后面 4 格 (~$154) 全部
+  没跑, 主机继续空转。单点误判被放大成整条链的停摆。
+- **修复**: docker-restart 路径 240 → **480s**, B-1839 的 clamp 分支同步。重启后同一格 reset
+  只用 78s (容器已热) 并正常起 runner —— 也印证了冷/热差异就是根因。
+
+### B-1992. scoring 分母被写进了 collection 检查, 三格跑完才炸 [P0] 🛠️ FIXED
+`_reframe_chain.sh` 的 `RED_N=203`。2026-08-26 03:10:30 UTC, Phase B 三格 reddit **全部正常
+跑完** (各 205 episode) 之后, 完成校验报 `episodes=205 != expected=203` → HALT。
+- ⚠️ **两个分母, AMENDMENT_08 原文就分开写了**: 「the reddit *scoring* denominator drops
+  205 → 203; the *collection* denominator **stays 205** (... so the B-1834 exact
+  episode-count check and both sensitivity arms are unaffected)」。脚本取了 scoring 的那个
+  数去做 collection 的检查。**预案写清楚了, 落地时只取了一半。**
+- ⚠️ **校验在 phase 末尾**, 所以 bug 潜伏到三格 (~$66 / 4.5 天) 全部跑完才触发, 且此后
+  Phase C ($192) 一格未启, 主机空转 5.5h 无人知 —— 唯一的观察者是人。
+- ⚠️ **数据从未有问题**, 三格 205 episode 完整可用; 报废的只有调度。
+- **修复**: `RED_N=205` + 注释写明它是 collection 分母。同期新写的
+  `_b5_reddit_chain.sh` 初稿照抄了 203, 一并修正 —— **同一个错抄进新脚本, 说明它不是笔误
+  而是「reddit = 203」这个记忆本身有缺陷**。全仓复查: 其余 203 均在 analysis 层作 scoring
+  用途, 正确。
