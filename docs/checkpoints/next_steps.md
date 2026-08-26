@@ -23,6 +23,58 @@ updated: 2026-08-21
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟢 2026-08-26 · 两条 chain 在跑 + 证据层扩出一条独立于 routing 的主张
+>
+> chronicle → **笔记 §478 / §479 / §480**（三节）· 台账 **+35**（2519 → 2554）
+> · commits `e486e8e` `6f7c881` `1ed6a23` `3ca345d` `fbb26c9` `9c51263` `87d6a65`
+>
+> ### 先跑这三条命令，别照抄下面的数字
+> ```bash
+> make active                                                   # DGX 侧（fire 在 A100）
+> ssh condense-a100 "cd /home/ubuntu/workspace/p79 && tail -3 \$(ls -t logs/.reframe_chain_*.state | head -1)"
+> ssh condense-a100 "cd /home/ubuntu/workspace/p79 && tail -3 \$(ls -t logs/b5_reddit_chain_*.log | head -1)"
+> .venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once     # 余额
+> ```
+>
+> ### GPU 侧不需要干预，两条 chain 自跑
+> | | 内容 | 何时完 |
+> |---|---|---|
+> | **Phase C** | B5 × cls × {som, vision, P-text, P-prompt, P-SoM} | 约 **08-29** |
+> | **B5 × reddit** | dom → som → vision（armed，等 Phase C） | 约 **09-02** |
+>
+> chain 自带 halt：live quota 探针（floor $60）/ episode 数 / deadline 09-04 / host lease。
+> B5 系列 config **故意按旧价记账**，成本列低估真实 25%（见 intent 文件）。
+>
+> ### ⚠️ 两个要你做的决定
+>
+> **① 08-29 前后**：Phase C 落地 → B5 六模式齐 → 攻击面 #6（跨家族是否复现）有答案。
+>
+> **② 09-01 之前**（GPU 09-02 空闲）：`B1 × reddit` 跑不跑。
+> 功效实测 **全部低于门槛**（最高 som `d=9.9` vs 门槛 10）⇒ 它买的**不是精度，是可证伪性**：
+> 若 local-reddit 也落在 0–3%，C1 的分组跨两站点成立；若落在 7%+，**C1 塌**。
+> 这是能推翻 C1 的最便宜实验（1.5 天/mode，本地权重零 proxy 花费）。
+>
+> ### 本 session 的实质产出：C1
+> `docs/analysis/cross_sites/serving_mode_floor.{json,md}` — 地板按 **serving path** 分组：
+> API 10 臂（Qwen+OpenAI，2 站点）**7.39–14.29%** vs local 3 臂 **0.00–3.12%**，
+> 不重叠，`p=0.0035`；只看 `d≥10` 的臂 gap 反而扩大到 7.39pp。
+> **未拆 scale**（点名而非执行该实验）· **不做机制归因**（§302.5）· local 侧有 §298.2 独立佐证。
+>
+> ⭐ **C1 是唯一独立于 routing 线的一条** — 意见打 routing 它作为方法贡献存活，
+> 意见打测量它就是那个测量。**选下一篇主打哪条线之前该知道这个不对称。**
+>
+> framing 原材料（不是 frame，选择等 09-07）→ `paper_drafts/naacl_evidence_delta.md`
+>
+> ### 未决项，两个都还在
+> - **`2.0--7.6pp` vs `0.0--7.6pp`** — 08-22 就搁置的 framing 决定。本 session 重画毕设图时
+>   **fig_f8 自己冒出来了**（数据早变了，图没重画）。5 张图已回滚维持冻结，正文四处仍写 `2.0`。
+>   **现在它有了会自己触发的机制**，下次重画还会出现。
+> - **B-1995** — label_instability 的反循环控制被"六臂补齐"结构性摧毁。已改为显式记录不可用；
+>   正解是换 leave-one-out 控制，**改 estimand，是决定不是补丁**。
+>
+> ### 主线不变
+> 毕设 **09-05** 硬截止（纯写作，不与 GPU 抢）· REALM notif **09-07** · ARR **10-12**。
+
 > ## 🟠 2026-08-22 凌晨 · 毕设修 24 处 + Overleaf 已追平（commit `3be7c3b` · Overleaf `e08913a` · **90 页**）
 >
 > chronicle → **笔记 §476 + §477**（13 小节）· 台账 **+23** · 三家审计产物在 `codex_outputs/` + `gemini_outputs/`
