@@ -7,7 +7,7 @@ producer: scripts/analysis/export_ablation_tables.py
 
 ## Ablation tables
 
-<!-- GENERATED 2026-08-26T09:59:31+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-08-26T10:18:51+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 
@@ -448,7 +448,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B1 | 104 | +3.85 | [-1.92, +9.62] | -2.88 | [-9.62, +2.88] |
 | WA·B0 | 104 | +2.88 | [-5.77, +11.54] | -4.81 | [-12.50, +2.88] |
 
-*Table 16: Fusion premium against the rerun band. Fusion premium (pp). Comparators are fixed a priori, not per-cell maxima. Paired bootstrap over tasks, 10,000 resamples. Read against the measured rerun band **0.89–2.23pp**, not against zero: a premium must beat what repetition delivers for the same money. No cell clears the band; `cls_B0`'s +2.23 *equals* its upper edge (both are 5/224). Source: `fusion_premium.json`.*
+*Table 16: Fusion premium against the rerun band. Fusion premium (pp). Comparators are fixed a priori, not per-cell maxima. Paired bootstrap over tasks, 10,000 resamples. Read against the measured rerun band **0.0–3.45pp**, not against zero: a premium must beat what repetition delivers for the same money. No cell clears the band; `cls_B0`'s +2.23 *equals* its upper edge (both are 5/224). Source: `fusion_premium.json`.*
 
 <!-- END table:fusion -->
 
@@ -480,13 +480,13 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | cls·B0 | SoM  at 27.23 | +7.14 (DOM) | 4.46 – 7.59pp | **inside the rerun band** |
 | cls·B1 | SoM  at 14.29 | +4.91 (Vision) | — | no floor on this cell |
 | cls·B2 | SoM  at 2.23 | +2.23 (Vision) | — | no floor on this cell |
-| red·B0 | SoM  at 14.78 | +4.93 (DOM) | — | no floor on this cell |
+| red·B0 | SoM  at 14.78 | +4.93 (DOM) | 1.97 – 6.90pp (text side) | **inside the rerun band** |
 | red·B1 | SoM  at 7.39 | +1.97 (DOM+sprompt) | — | no floor on this cell |
 | red·B2 | DOM  at 3.94 | +1.97 (Vision) | — | no floor on this cell |
 | WA·B0 | DOM+stext  at 35.58 | +5.77 (DOM) | — | no floor on this cell |
 | WA·B1 | DOM  at 16.35 | +4.81 (DOM+stext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **inside the rerun band** |
 
-*Table 18: New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are directly comparable; only the *source* of the extra arm differs. **The band is 6 rerun pairs on one cell** (`B0 × classifieds`, n=224), one each for **DOM, DOM+sprompt, SoM-image, DOM+stext, SoM, Vision** — so the rows without a band have no comparator at all, and the band itself is 6 draws rather than a bound. Since the SoM replicate landed 2026-08-03 the band is **no longer extrapolated onto an unreplicated arm**: both the fused mode this table's best-single column keeps selecting and the arm the comparison adds now carry their own measured floor, and adding the third pair left the band unmoved. Source: `noise_floor_inventory.json`.*
+*Table 18: New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are directly comparable; only the *source* of the extra arm differs. Replicate coverage behind the bands: `B0.cls` x6; `B0.red` x3; `B1.cls` x3; `B5.cls` x1. On `B0 × classifieds` **all 6 arms** are replicated (DOM, DOM+sprompt, SoM-image, DOM+stext, SoM, Vision), so whichever arm the comparison adds carries its own measured floor — the band is no longer extrapolated onto an unreplicated arm. On `B0 × reddit` only the 3 text-side arms are (DOM+sprompt, SoM-image, DOM+stext), so that band is gated to text-side additions and the verdict column says so when it is not applicable. Rows without a band have no comparator at all, and each band remains a range over draws rather than a bound. Source: `noise_floor_inventory.json`.*
 
 <!-- END table:floor -->
 

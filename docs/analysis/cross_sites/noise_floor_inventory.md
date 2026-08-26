@@ -83,11 +83,11 @@ A floor is only interpretable against a gain of the **same functional at the sam
 | cell | best single mode | +1 best **distinct representation** | +1 **rerun** (measured floor) | verdict |
 |---|---|---|---|---|
 | B0 · VWA-cls (n=224) | som @ 27.23% | **7.14pp** (dom) | 4.46 – 7.59pp | **indistinguishable — inside the rerun band** |
+| B0 · VWA-red (n=203, text side only) | som @ 14.78% | **4.93pp** (dom) | 1.97 – 6.90pp | **indistinguishable — inside the rerun band** |
 | B1 · WA-red (n=104; floor = 5 modes × 10 shared tasks) | dom @ 16.35% | **4.81pp** (ptext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **indistinguishable — inside the rerun band** |
 | B0 · WA-red (n=104; no pilot → no floor) | ptext @ 35.58% | **5.77pp** (dom) | — | no floor measured on this cell |
 | B1 · VWA-cls (n=224) | som @ 14.29% | **4.91pp** (vision) | — | no floor measured on this cell |
 | B2 · VWA-cls (n=224) | som @ 2.23% | **2.23pp** (vision) | — | no floor measured on this cell |
-| B0 · VWA-red (n=203) | som @ 14.78% | **4.93pp** (dom) | — | no floor measured on this cell |
 | B1 · VWA-red (n=203) | som @ 7.39% | **1.97pp** (pprompt) | — | no floor measured on this cell |
 | B2 · VWA-red (n=203) | dom @ 3.94% | **1.97pp** (vision) | — | no floor measured on this cell |
 
@@ -106,11 +106,11 @@ Two cells carry a floor, and they differ in model family, benchmark and serving 
 | cell | best single | 6-mode oracle | gain, **5 arms added** |
 |---|---|---|---|
 | B0 · VWA-cls (n=224) | 27.23% | 43.30% | 16.07pp |
+| B0 · VWA-red (n=203, text side only) | 14.78% | 26.11% | 11.33pp |
 | B1 · WA-red (n=104; floor = 5 modes × 10 shared tasks) | 16.35% | 30.77% | 14.42pp |
 | B0 · WA-red (n=104; no pilot → no floor) | 35.58% | 51.92% | 16.35pp |
 | B1 · VWA-cls (n=224) | 14.29% | 24.55% | 10.27pp |
 | B2 · VWA-cls (n=224) | 2.23% | 7.14% | 4.91pp |
-| B0 · VWA-red (n=203) | 14.78% | 26.11% | 11.33pp |
 | B1 · VWA-red (n=203) | 7.39% | 11.82% | 4.43pp |
 | B2 · VWA-red (n=203) | 3.94% | 7.39% | 3.45pp |
 

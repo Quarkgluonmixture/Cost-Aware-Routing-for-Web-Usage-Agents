@@ -691,6 +691,10 @@ def main(argv: list[str] | None = None) -> int:
     # it, still described two arms — a table and the prose above it disagreeing, which is
     # the defect class §4d of the summary is about. Adding a fourth pair now needs no edit.
     cls_pairs = [r for r in clean if r["label"].startswith("B0.cls.")]
+    # Defined here, next to its sibling, because head_to_head below needs it. It
+    # used to be defined 100 lines further down beside red_band, which made the
+    # first attempt at a red_B0 head_to_head row raise UnboundLocalError.
+    red_pairs = [r for r in clean if r["label"].startswith("B0.red.")]
     _drops = [v for r in cls_pairs
               for v in (r["self_drop_a_to_b_pp"], r["self_drop_b_to_a_pp"])]
     lo, hi = min(_drops), max(_drops)
@@ -699,8 +703,21 @@ def main(argv: list[str] | None = None) -> int:
     wlo = min(wa_floor["self_drop_a_to_b_pp"], wa_floor["self_drop_b_to_a_pp"])
     whi = max(wa_floor["self_drop_a_to_b_pp"], wa_floor["self_drop_b_to_a_pp"])
 
+    # red_B0 joined 2026-08-26, the first non-classifieds row here. Its band covers
+    # the TEXT SIDE only (three phantom arms); consumers must gate on
+    # red_band["replicated_side"] before reading it against an image-bearing arm.
+    _red_row = []
+    if red_pairs:
+        _rlo = min(v for r in red_pairs
+                   for v in (r["self_drop_a_to_b_pp"], r["self_drop_b_to_a_pp"]))
+        _rhi = max(v for r in red_pairs
+                   for v in (r["self_drop_a_to_b_pp"], r["self_drop_b_to_a_pp"]))
+        _red_row = [("red_B0", "B0 · VWA-red (n=%d, text side only)" % red_pairs[0]["n"],
+                     "%.2f – %.2fpp" % (_rlo, _rhi), _rlo, _rhi)]
+
     head_to_head = [
         ("cls_B0", "B0 · VWA-cls (n=224)", f"{lo:.2f} – {hi:.2f}pp", lo, hi),
+        *_red_row,
         # ⚠️ The pooled band (wlo..whi over n=50) understates the spread: those 50 obs are
         # 5 modes on ONE shared 10-task draw, so there are 10 independent tasks, not 50.
         # The per-mode floors are the like-for-like comparison and they span far wider —
@@ -723,7 +740,6 @@ def main(argv: list[str] | None = None) -> int:
         ("wa_red_B0", "B0 · WA-red (n=104; no pilot → no floor)", "—", None, None),
         ("cls_B1", "B1 · VWA-cls (n=224)", "—", None, None),
         ("cls_B2", "B2 · VWA-cls (n=224)", "—", None, None),
-        ("red_B0", "B0 · VWA-red (n=203)", "—", None, None),
         ("red_B1", "B1 · VWA-red (n=203)", "—", None, None),
         ("red_B2", "B2 · VWA-red (n=203)", "—", None, None),
     ]
@@ -778,7 +794,6 @@ def main(argv: list[str] | None = None) -> int:
     # NOTE: no same-quote f-string nesting below — this module is AST-parsed on the
     # A100 under Python 3.10 (see the PEP 701 note above); a 3.12-only line here
     # silently empties the replicate registry.
-    red_pairs = [r for r in clean if r["label"].startswith("B0.red.")]
     red_band = {"n_arms": len(red_pairs)}
     if red_pairs:
         _rdrops = [v for r in red_pairs
@@ -792,6 +807,14 @@ def main(argv: list[str] | None = None) -> int:
             observed_min_pp=min(_rabs), observed_max_pp=max(_rabs),
             one_sided_95_min_pp=min(_r95), one_sided_95_max_pp=max(_r95),
             n=red_pairs[0]["n"],
+            # Which SIDE the replicated arms sit on (TERMS.md §1.1: text | combined |
+            # visual). Downstream must check an effect's arm against this before
+            # reading the band — §477.2 fixed thresholds as a per-arm quantity, and
+            # a text-side floor is not a comparator for an image-bearing arm.
+            replicated_arms=[r["label"].rsplit(".", 1)[-1] for r in red_pairs],
+            replicated_side="text",
+            side_of_arm=dict(dom="text", ptext="text", pprompt="text", psom="text",
+                             som="combined", vision="visual"),
             reading=("text-side arms only (the three phantom modes); reddit has no "
                      "replicated dom/som/vision arm, so this band must not be read "
                      "as a floor for the image-bearing side of this site"))

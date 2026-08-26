@@ -426,12 +426,28 @@ def t_floor() -> tuple[str, str]:
         txt, lo, hi = band.get(key, ("—", None, None))
         gain = m["gain_1_best_distinct_arm_pp"]
         arm = m["gain_1_best_distinct_arm_mode"].replace("sr_", "")
+        # SIDE GATING (2026-08-26). §477.2 fixed a threshold as a PER-ARM quantity.
+        # cls_B0's band covers all six arms so any added arm is like-for-like, but
+        # red_B0's covers the three phantom arms only — the text side. Reading a
+        # text-side floor against an image-bearing arm is the cross-side version of
+        # the mistake §477.2 banned, so gate on it rather than trust the cell key.
+        _rb = d.get("red_band") or {}
+        _covered = _rb.get("replicated_side")
+        _arm_side = (_rb.get("side_of_arm") or {}).get(arm)
+        _side_ok = True
+        if key == "red_B0" and _covered and _arm_side and _arm_side != _covered:
+            _side_ok = False
         if lo is None:
             verdict = "no floor on this cell"
+        elif not _side_ok:
+            verdict = f"floor is {_covered}-side only; added arm is {_arm_side}"
+            txt = f"{txt} ({_covered} side)"
         elif lo <= gain <= hi:
             verdict = "**inside the rerun band**"
         else:
             verdict = f"outside by {gain - hi:+.2f}pp"
+        if key == "red_B0" and _side_ok:
+            txt = f"{txt} ({_covered} side)"
         rows.append(f"| {CELL_LABEL[c]} | {PRETTY.get(m['best_mode'].replace('sr_',''), m['best_mode'])} "
                     f" at {m['best_single_sr_pct']:.2f} | +{gain:.2f} ({PRETTY.get(arm, arm)}) | "
                     f"{txt} | {verdict} |")
@@ -439,21 +455,31 @@ def t_floor() -> tuple[str, str]:
     # previous caption said the floor "measures neither on the arm being added" — true when
     # only dom and vision had replicates, false since the SoM rerun landed 2026-08-03.
     nf = load("noise_floor_inventory")
-    # Scope to the cell the sentence names; the registry also holds other cells.
-    pairs = [p for p in (nf.get("clean_pairs") or [])
-             if str(p.get("label", "")).startswith("B0.cls")]
-    reps = sorted({p["label"].rsplit(".", 1)[-1] for p in pairs if p.get("label")})
-    rep_pretty = ", ".join(PRETTY.get(a, a) for a in reps)
+    # Per-cell replicate coverage, read from the registry rather than asserted. The
+    # sentence used to hardcode "one cell"; reddit's three phantom pairs landed
+    # 2026-08-26 and made that false.
+    _by_cell: dict[str, list[str]] = {}
+    for _p in (nf.get("clean_pairs") or []):
+        _lab = str(_p.get("label", ""))
+        if not _lab:
+            continue
+        _cell = ".".join(_lab.split(".")[:2])
+        _by_cell.setdefault(_cell, []).append(_lab.rsplit(".", 1)[-1])
+    _cls = sorted(_by_cell.get("B0.cls", []))
+    _red = sorted(_by_cell.get("B0.red", []))
+    _cov = "; ".join(f"`{k}` x{len(v)}" for k, v in sorted(_by_cell.items()))
     cap = (f"Is a new representation worth more than a rerun? Both middle columns are the same "
            f"functional at the same arm count — `|{{added}} ∖ {{baseline}}| / n` — so they are "
-           f"directly comparable; only the *source* of the extra arm differs. **The band is "
-           f"{len(pairs)} rerun pairs on one cell** (`B0 × classifieds`, n=224), one each for "
-           f"**{rep_pretty}** — so the rows without a band have no comparator at all, and the "
-           f"band itself is {len(pairs)} draws rather than a bound. Since the SoM replicate "
-           f"landed 2026-08-03 the band is **no longer extrapolated onto an unreplicated arm**: "
-           f"both the fused mode this table's best-single column keeps selecting and the arm "
-           f"the comparison adds now carry their own measured floor, and adding the third pair "
-           f"left the band unmoved. Source: `noise_floor_inventory.json`.")
+           f"directly comparable; only the *source* of the extra arm differs. Replicate "
+           f"coverage behind the bands: {_cov}. On `B0 × classifieds` **all "
+           f"{len(_cls)} arms** are replicated ({', '.join(PRETTY.get(a, a) for a in _cls)}), "
+           f"so whichever arm the comparison adds carries its own measured floor — the band is "
+           f"no longer extrapolated onto an unreplicated arm. On `B0 × reddit` only the "
+           f"{len(_red)} text-side arms are ({', '.join(PRETTY.get(a, a) for a in _red)}), so "
+           f"that band is gated to text-side additions and the verdict column says so when it "
+           f"is not applicable. Rows without a band have no comparator at all, and each band "
+           f"remains a range over draws rather than a bound. Source: "
+           f"`noise_floor_inventory.json`.")
     return "\n".join(rows), cap
 
 
