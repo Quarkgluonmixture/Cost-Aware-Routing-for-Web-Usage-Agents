@@ -134,7 +134,22 @@ run_cell() {  # <mode> <cond_id>
 
   RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B5 "$mode" reddit >> "$LOG" 2>&1
 
-  sleep 60
+  # WAIT FOR THE RUNNER TO APPEAR FIRST — do not go straight to waiting for it
+  # to exit. A site reset + auth gate + model cold start takes minutes, not
+  # seconds (Phase C on 2026-08-26 held the container lock for well over 7 min
+  # before its first runner). A bare `while pgrep` after a 60s sleep evaluates
+  # false during that window, falls through to the completeness check, finds no
+  # episodes, and halts a cell that was launching perfectly well.
+  local appear=0
+  until pgrep -f "run_experiment.*B5_${mode}_reddit" > /dev/null 2>&1; do
+    sleep 30; appear=$((appear+30))
+    if [ "$appear" -gt 2400 ]; then
+      halt "${label}: no runner 40 min after launch — reset or auth gate is stuck, see ${LOG}"
+    fi
+    _deadline_ok || halt "past deadline while ${label} was starting"
+  done
+  say "  ${label}: runner up after ${appear}s (reset + cold start)"
+
   local spun=0
   while pgrep -f "run_experiment.*B5_${mode}_reddit" > /dev/null 2>&1; do
     sleep 300; spun=$((spun+300))
@@ -168,11 +183,56 @@ fi
 say "b5-reddit chain armed — floor \$${QUOTA_FLOOR} deadline ${DEADLINE_UTC}"
 mark "ARMED"
 
-# ---- wait for Phase C to finish before touching the host -------------------
+# ---- upstream liveness: never wait silently on something that already died --
+#
+# Learned the hard way on 2026-08-26: the reframe chain HALTed at 03:10 UTC on a
+# wrong episode-count gate, and nothing noticed for 5.5 hours because the only
+# thing watching it was a human. A downstream chain that waits on an upstream
+# it cannot see is a chain that waits until its own deadline. Two independent
+# detectors, because each misses what the other catches:
+#
+#   1. HALT marker in the upstream state file — a clean, deliberate stop.
+#      File-marker based (CLAUDE.md Tier 1), so no pgrep self-match hazard.
+#   2. Stall — no Phase C episode has landed in STALL_HOURS. Catches the deaths
+#      that leave no marker at all (kill -9, host reboot, OOM).
+#
+STALL_HOURS="${STALL_HOURS:-3}"
+
+_upstream_halted() {
+  local st; st="$(ls -t "${REPO}"/logs/.reframe_chain_*.state 2>/dev/null | head -1)"
+  [ -n "$st" ] && grep -q " HALT " "$st"
+}
+
+# Newest Phase C episode mtime, as epoch seconds. Empty if none yet.
+_phase_c_progress() {
+  find "${REPO}"/results/visualwebarena/phase1/B5_*_classifieds_2*/*/episodes \
+       -name '*_summary_v2.json' -newermt "-${STALL_HOURS} hours" 2>/dev/null | head -1
+}
+
 if [ "${SKIP_WAIT:-0}" != "1" ]; then
   say "waiting for Phase C last cell (${WAIT_GLOB}/${WAIT_COND} @ ${WAIT_N})"
+  say "  upstream watch: HALT marker + ${STALL_HOURS}h stall detector"
+  _grace=0
   until _cell_complete "$WAIT_GLOB" "$WAIT_COND" "$WAIT_N"; do
     _deadline_ok || halt "past deadline while waiting for Phase C"
+
+    if _upstream_halted; then
+      halt "upstream reframe chain has HALTED — this chain would wait forever. \
+Fix the upstream halt, then restart this chain (it is idempotent: completed cells are skipped)."
+    fi
+
+    if [ -z "$(_phase_c_progress)" ]; then
+      # Grace period: reset + auth + cold start legitimately produce no episode
+      # for a while at each cell boundary. Only a sustained gap is a stall.
+      _grace=$((_grace+1))
+      if [ "$_grace" -ge 2 ]; then
+        halt "no Phase C episode in ${STALL_HOURS}h across two consecutive checks — upstream is stalled, not slow. \
+Check the A100 before restarting."
+      fi
+      say "  no Phase C episode in ${STALL_HOURS}h (grace ${_grace}/2)"
+    else
+      _grace=0
+    fi
     sleep 600
   done
   say "Phase C complete — proceeding"

@@ -750,7 +750,15 @@ reset_and_auth_gate() {
   local _reset_timeout
   case "${site}" in
     reddit) _reset_timeout=240 ;;
-    classifieds) _reset_timeout=$([[ "${VWA_RESTART_DOCKER:-0}" == "1" ]] && echo 240 || echo 120) ;;  # Gate3: +docker restart wait (db+http ≤120s) needs headroom over 120s
+    # B-1993 (2026-08-26): 240 -> 480 on the docker-restart path. Measured: a cls
+    # Gate3 reset took 262s and was SIGKILLed at 240s+10s — AFTER it had already
+    # logged "containers fresh + warm (db query OK, http 200)". The reset had
+    # succeeded; only the timeout disagreed. Cost: Phase C's first cell aborted
+    # on `no valid condition_summary_v2.json` (rc=137), the chain halted, and the
+    # host idled. The 240s headroom was sized against a warm host; this reset
+    # followed 5.5h of idle, so docker came up cold. 480s keeps a stuck reset
+    # bounded while surviving a cold container start.
+    classifieds) _reset_timeout=$([[ "${VWA_RESTART_DOCKER:-0}" == "1" ]] && echo 480 || echo 120) ;;
     # B-1954 (2026-08-03, MEASURED not estimated — third attempt at this number):
     #   21:56:31 reset start → 22:59:20 SIGKILL at 2400s outer = 3769s elapsed,
     #   with the indexer having already warned it missed its own 1800s ceiling;
@@ -781,9 +789,9 @@ reset_and_auth_gate() {
   # A residual VWA_RESET_TIMEOUT (e.g. 120 from Fire-6 debug) would erase the 240s
   # headroom the docker-restart path needs (db wait ≤60 + http wait ≤60 + reset ≤73)
   # → false `timeout 124` chain abort. Floor to 240 only under the cls restart path.
-  if [[ "${VWA_RESTART_DOCKER:-0}" == "1" && "${site}" == "classifieds" && "${_reset_timeout}" -lt 240 ]]; then
-    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s too low for cls docker-restart path; clamping to 240s (B-1839)" >&2
-    _reset_timeout=240
+  if [[ "${VWA_RESTART_DOCKER:-0}" == "1" && "${site}" == "classifieds" && "${_reset_timeout}" -lt 480 ]]; then
+    echo "[${log_prefix}] VWA_RESET_TIMEOUT=${_reset_timeout}s too low for cls docker-restart path; clamping to 480s (B-1839 / B-1993)" >&2
+    _reset_timeout=480
   fi
   # B-1931 (cont): same clamp for shopping. Without it the B-1839 failure mode
   # reappears on a different site — a residual `VWA_RESET_TIMEOUT` exported in an
