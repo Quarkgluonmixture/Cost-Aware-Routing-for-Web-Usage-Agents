@@ -23,6 +23,69 @@ updated: 2026-08-27
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🔴 2026-08-27 晚 · cls 被两个 bug 锁死一天 → 已修并重新发车；额度待补
+>
+> chronicle → **笔记 §487 / §488 / §489** · 台账 **+20** · A100 commit `38742bf3`
+>
+> ### ⚠️ 接手先看，会踩人
+> ```bash
+> # ① fire 在 A100, 不在 DGX。DGX 的 results/ 是 rsync 副本, 看进度要 ssh 过去
+> ssh condense-a100 'cd /home/ubuntu/workspace/p79
+>   ls results/visualwebarena/phase1/B5_vision_classifieds_*R24364/*/episodes/*_summary_v2.json | wc -l
+>   ls -t logs/.reframe_chain_*.state | head -1 | xargs tail -5'    # CELL OK / ALL COMPLETE / HALT
+>
+> # ② 重启 halted phase 只声明欠数据的 cell (新增 PHASE_C_CELLS 覆盖点)
+> #    留着已完成的 cell 不只是多花钱: FORCE_NEW=1 给每格 mint 新 run_id,
+> #    verify 用 ls -dt|head -1 读新 run 而忽略跑好的那个
+>
+> # ③ 发新 B-number 前 DGX + A100 两边都要查 —— catalog 已分叉, 单机 grep 会重号
+> ```
+>
+> ### 在跑什么
+> `_reframe_chain.sh` Phase C，**4 格**（vision + P-text + P-prompt + P-SoM；som 已满 224 未重跑）。
+> 当前 `B5_vision_classifieds_..._R24364`。速率约 4.9 min/ep ⇒ 每格 ~18h，**预计 08-30 完成**。
+> 完成后 `_b5_reddit_chain.sh` 需**手动重启**（它 08-27 因上游 halt 自己停了，idempotent）。
+>
+> ### 💰 额度（user 08-27 去申请，按已批准处理）
+> 全量还需 **$544**（Phase C 剩余 $240 + b5-reddit 3 格 $244 + chain floor $60），
+> 当时 quota **$283.80** ⇒ 缺口 $260，**申请额 $300**。
+> ⚠️ b5-reddit 起跑后**第一件事是用实测重算** —— $0.318/ep 是拿 B0 的站点比值跨模型外推的，
+> B5 从没在 reddit 上跑过（标定见笔记 §489.5）。
+>
+> ### 🔧 已修但**未 commit 到 DGX** 的
+> 两条 chain 的 `DEADLINE_UTC` 默认值：b5-reddit `09-04 → 10-05`，reframe `09-06 → 09-20`。
+> 已 rsync 到 A100 并 grep 验证。**正在跑的 Phase C 仍用启动时固化的 09-06**（08-30 完成，不受影响）；
+> 修的效果落在**下次启动 b5-reddit 时**——原 09-04 会在第 1.6 格处砍掉它。
+>
+> ### 🐛 /stress 查出、**等跑完再修**的（fire 在跑，未碰 A100 runner/reset 代码）
+> | | 什么 | 修法 |
+> |---|---|---|
+> | P0-1 | `type_text_sanitized` 字段无人读，从未落盘（log 行还在，可 grep 回捞） | `main.py:4064` 后接一行落 step_record |
+> | P0-2 | reset 的 DELETE 放在 sentinel **之前** ⇒ 断言退化成自我回声 | 改「先读→再删→再断言」 |
+> | P1-7 | `CHAIN_EPOCH` 每次启动重取 ⇒ `$400` ceiling 每次 restart 归零（注释写反了） | 持久化到 `logs/.reframe_chain_cost.json` |
+> | P1-8 | `_sanitize_keyboard_text` 的 fail-open 把「崩溃」固化成测试断言 | 改 fail-loud 或退保守字符集 |
+>
+> ### ❓ 两条等 user 裁定（estimand-adjacent，我没动）
+> **① Gemini 的攻击**：剔除表外字符 = 基建替模型 auto-correct，应改为记该 episode
+> execution error（reward=0）。**会改 SR 定义**，且现在改会让新旧格不可比。当前触发 **0 次**
+> ⇒ 对已落地数据无影响，跑完 grep runner log 统计触发数即可判定要不要追溯。
+> **② session-lost 的 watchdog 阈值 3→1**：`auth_refresh` interval=5 决定了受害窗口大小。
+> 改了能把受害 episode 从 3 个压到 0-1 个，但可能算 protocol 变更（§330 / PROTOCOL_NOTE_01 邻接面）。
+>
+> ### 📋 还欠着的两件（与本次 bug 无关，先前就在）
+> - **3 个未登记的 replicate**：`validate_fire_manifest` 报的 reddit GHOST 全是 Phase B
+>   08-21/23/24 的产出，chain 结尾自己写了 `Next: register in CLEAN_PAIRS` 但没人做。
+>   不阻塞 fire，但 watchdog 每格完成会推一条 urgent。**登记会动噪声地板 canonical，留给 user。**
+> - **DGX ↔ A100 git 分叉**：DGX 有毕设 commits + catalog 到 B-1995，A100 有 fire 修复 +
+>   catalog 到 B-1990，互不包含且两边都在发新号。
+>
+> ### 本 session 最值得记的一条
+> `/stress` 自审 7 条里 **5 条是当天自己写的**。而同一个形状一天出现四次：字段设了没人读 /
+> 断言了没人清 / smoke test 过了没查配额 / deadline 写着没人问是否真实。
+> ⇒ **加任何断言、字段、阈值前先答：谁负责让它为真，谁负责读它。**（笔记 §489.6）
+
+---
+
 > ## 🟣 2026-08-27 · 毕设排版层大改 —— 图重做 + 迁 UCL 模板（GPU 侧无关，两条 chain 照跑）
 >
 > chronicle → **笔记 §481 / §482 / §483** · 台账 **+18** · commits `fc5f764` `a0a632b`

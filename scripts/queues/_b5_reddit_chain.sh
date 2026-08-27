@@ -41,7 +41,11 @@ RED_N=205   # COLLECTION denominator, not the scored one. AMENDMENT_08 dropped t
             # three Phase B cells had completed correctly, costing Phase C its
             # launch and the host 5.5 idle hours. The data was never at fault.
 QUOTA_FLOOR="${QUOTA_FLOOR_USD:-60}"
-DEADLINE_UTC="${DEADLINE_UTC:-2026-09-04}"
+# 2026-08-27: 原值 2026-09-04 是一个从未被核对过的默认值 —— 这条链要跑 3 格 x 205 ep,
+# 而 reddit 实测比 cls 慢 4.4x (B0 两条臂: 10.10 / 10.94 min/ep vs 2.26 / 2.49), 全程约
+# 8.3 天。09-04 会在第 1.6 格处 halt: 钱花掉一半, 换回单臂跨站数据 —— 支撑不了任何跨模式
+# 的跨站主张。真实约束是 NAACL ARR **2026-10-12**; 毕设 09-05 是人力(写作)约束, 不占 API。
+DEADLINE_UTC="${DEADLINE_UTC:-2026-10-05}"
 
 # Phase C's last cell — what this chain waits on before touching the host.
 WAIT_GLOB="${WAIT_GLOB:-B5_phantom_som_classifieds_2*}"
