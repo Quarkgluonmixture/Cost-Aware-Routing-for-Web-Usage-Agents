@@ -36,11 +36,23 @@ At step $t$ the agent receives observation $o_t$, its interaction history $h_t$,
 and emits an action $a_t$ from a fixed space: \texttt{click}, \texttt{type},
 \texttt{select}, \texttt{hover}, \texttt{scroll}, \texttt{go\_back},
 \texttt{go\_forward}, \texttt{goto}, \texttt{new\_tab}, \texttt{close\_tab},
-\texttt{stop}. The action space does not vary with the observation mode. This
-matters more than it may appear: if the image-carrying modes could emit
-coordinate clicks while the text modes could not, mode differences would
-partially be action-space differences, and no representation attribution would
-survive. All modes ground actions through element identifiers.
+\texttt{stop}. The set of action \emph{types} does not vary with the observation
+mode. How an action names its target does. Five of the six modes address an
+element by identifier, taken from the accessibility tree or from the numbered
+marks. \mVis{} has no identifiers to address, because it is sent no structured
+text, and it addresses targets by pixel coordinate instead; measured on
+\cell{cls$\cdot$B0}, all 491 of its grounded actions in the first 60 episodes
+carry a coordinate and none an identifier, against 511 of 511 identifiers for
+\mDOM{} and 436 of 438 for \mSoM{}.
+
+This is a real limit on the attribution and we state it here rather than in a
+limitations section. Comparisons among the five identifier-grounded modes vary
+representation alone. Any comparison involving \mVis{}, which includes the
+oracle and the drop-one contributions of Chapter~\ref{ch:repr} because \mVis{}
+is one of the six arms, varies representation \emph{and} grounding channel
+together, and cannot separate them. Where such a comparison carries a claim we
+say ``representation and its grounding channel'' rather than
+``representation''.
 
 \paragraph{Why a step budget of 30.} The budget must be large enough that
 capable modes are not truncated and small enough that hopeless episodes do not

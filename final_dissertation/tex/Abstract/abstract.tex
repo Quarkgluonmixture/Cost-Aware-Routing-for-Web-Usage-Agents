@@ -51,11 +51,14 @@ router only has to predict whether \emph{any} mode will solve the task, not
 which of the six to use. Under a fully nested cross-validation protocol, in
 which every modelling choice is made on training tasks alone and then tested on
 tasks held back, it clears that bar against always-cheapest in \textbf{0 of 8}
-combinations. The oracle, told the answers in
-advance, fails to clear it in 7 of 8. That recasts the negative result from
-``the learner failed'' to ``no Pareto-improving \emph{deployable} operating
-point exists against always-cheapest under this cost boundary''. The
-retrospective oracle, which is not deployable, does find one in 1 of 8.
+combinations. The idealised version of the \emph{same} policy, told in advance
+whether any mode will solve the task, fails to clear it in 7 of 8. That recasts
+the negative result from ``the learner failed'' to ``no Pareto-improving
+\emph{deployable} operating point of this kind exists against always-cheapest
+under this cost boundary''. A chooser told \emph{which} modes solved each task
+is a different and stronger policy, and it does clear the bar in 7 of 8; it is
+also not implementable, because it needs the answer the next section shows the
+benchmarks cannot teach.
 
 What blocks the prediction is the supply of training examples, not the capacity
 of the model. A task can teach the router something only if some mode solved it,
@@ -65,8 +68,8 @@ predictive power on VisualWebArena turns out to be the benchmark's own
 human-written difficulty annotation, which no deployment has. Training on
 deliberately reduced data confirms that scarcity is part of the story and then
 bounds it: the learning curves are still rising, so more data would buy a better
-predictor, but the best any predictor can become is the oracle, and the oracle
-wins in 1 of 8 combinations. Pricing this constraint puts the benchmark that
+predictor, but the best a \emph{triage} predictor can become is the triage
+oracle, which wins in 1 of 8 combinations. Pricing this constraint puts the benchmark that
 would relieve it at 2.1 to 4.2 times the size of the ones that exist, which is a
 specification rather than an impossibility.
 

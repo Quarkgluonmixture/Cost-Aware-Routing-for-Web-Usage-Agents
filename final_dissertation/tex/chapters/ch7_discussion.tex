@@ -411,8 +411,11 @@ of that shortage fail for three different reasons. Even the easier question
 no deployment has: the benchmark's own human-written difficulty rating. Training
 deliberately on less data confirms the objection's force and bounds it: more
 data would buy a better predictor, with returns that flatten as it grows, and
-the best any predictor could become is the after-the-fact chooser, which
-itself wins in only 1 of 8 cells.
+the best a triage predictor could become is the after-the-fact triage chooser,
+which itself wins in only 1 of 8 cells. Reaching the stronger after-the-fact
+chooser, the one that wins in 7 of 8, would require learning the which-mode
+answer as well, and that is precisely the half this section has shown to be
+starved of examples.
 
 The evidence is triangulated across three models spanning two design families;
 across two benchmarks with different task specifications and annotation

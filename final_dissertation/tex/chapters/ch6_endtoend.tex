@@ -39,6 +39,7 @@ live execution would be. Section~\ref{sec:overhead} bounds the omitted term.
 \end{scopebox}
 
 \section{The primary result}
+\label{sec:primary}
 \label{sec:primary-result}
 
 \begin{table}[t]
@@ -136,7 +137,22 @@ Normalise each cell to its always-cheapest policy and plot success against cost
 (Figure~\ref{fig:f13}). The Pareto winning region is the upper-left quadrant:
 more success \emph{and} less cost. \textbf{The retrospective oracle triage policy
 enters that quadrant in only 1 of 8 cells} (\cell{cls$\cdot$B0}: $+2.23\pp$ at
-$-2.6\%$). In the other seven the oracle, which knows the answer, also pays more than always-cheapest.
+$-2.6\%$). In the other seven the oracle triage policy, which knows the answer
+to the question it is asked, also pays more than always-cheapest.
+
+\begin{scopebox}
+\textbf{This is a statement about triage, not about routing.} The policy plotted
+here is told only whether \emph{some} mode will solve the task. The full
+cost-aware chooser of Chapter~\ref{ch:repr}, told \emph{which} modes solved it
+and picking the cheapest of those, enters the winning quadrant in \textbf{7 of
+8} cells; the exception is \cell{red$\cdot$B2}, where it buys $+5.42$\pp{} of
+success at $1.8\%$ more cost. Both ladders are in
+Appendix~\ref{app:ceiling}. The economic room is therefore not absent, and this
+chapter should not be read as showing that it is. What is absent is a way to
+reach it: the full chooser needs the which-mode answer as well as the triage
+answer, and Chapter~\ref{ch:disc} shows that the which-mode half is the half the
+benchmarks cannot supply enough solved tasks to teach.
+\end{scopebox}
 
 \begin{figure}[t]
   \centering
@@ -151,7 +167,9 @@ $-2.6\%$). In the other seven the oracle, which knows the answer, also pays more
   matched set (Appendix~\ref{app:router} gives the seed and the fold
   protocol). Learned
   policies sit right of the vertical axis: they cost more. So does the
-  retrospective oracle, in seven of eight cells. Always-cheapest is the
+  retrospective oracle triage policy, in seven of eight cells. The full
+  cost-aware chooser is a different policy and behaves differently; see the box
+  in Section~\ref{sec:primary}. Always-cheapest is the
   cheapest fixed policy on average, not a per-episode cost floor: the
   retrospective oracle can undercut it on a task where the mode it picks
   succeeds early instead of
@@ -168,20 +186,23 @@ obvious version of it is wrong. Always-cheapest minimises cost among fixed
 policies, but only \emph{in expectation over the cell}: it is the mode with the lowest \emph{mean} episode cost, not the cheapest mode on every individual
 task. A per-task router therefore \emph{can} undercut it, by sending a task to a
 mode that is both more successful and, on that task, cheaper. This is
-not hypothetical: on \cell{cls$\cdot$B0} the oracle does exactly that, gaining
+not hypothetical: on \cell{cls$\cdot$B0} the oracle triage policy does exactly that, gaining
 $+2.23$\pp{} at $-2.6$\% cost.
 
 So the winning region is narrow, not empty by construction. Entering it requires
 the cheap mode to be \emph{wasteful} on a substantial subset of tasks, burning step budget on failures that a better mode would have resolved or abandoned
 sooner. That happens, but on our data it happens often enough to pay in only one
-cell of eight, and only for a policy that already knows the answers.
+cell of eight, and only for a policy already told whether the task is solvable
+at all.
 
 \begin{scopebox}
 \textbf{Calibrated statement of the negative result.} Under this cost boundary,
 on these benchmarks, at 2--36\% base success, \textbf{no Pareto-improving deployable operating point exists against
 always-cheapest}, not because the router cannot be learned, but
 because the region in which a router could win is nearly empty even for a policy
-that knows the answers. This is a weaker claim than ``routing does not work''
+told the triage answer in advance. A policy told the fuller answer, which mode
+solved the task, does find room in 7 of 8 cells; what it must know is what
+Chapter~\ref{ch:disc} shows cannot be learned here. This is a weaker claim than ``routing does not work''
 and a more useful one: it identifies the condition (a cost-minimising fixed
 comparator, in a regime where most tasks are hopeless) under which the enterprise
 cannot pay.
@@ -244,7 +265,7 @@ Chapter~\ref{ch:pred} could not claim.
 \label{sec:heterogeneity}
 
 The aggregate is not driven by one cell. The 0-of-8 result reproduces on both benchmarks, on both VisualWebArena sites, and on all three backbones, and the
-1-of-8 oracle result is likewise not concentrated in a single family: the one cell where the oracle wins (\cell{cls$\cdot$B0}) is the cell with the highest
+1-of-8 oracle-triage result is likewise not concentrated in a single family: the one cell where oracle triage wins (\cell{cls$\cdot$B0}) is the cell with the highest
 solvable rate on VisualWebArena and the most minted labels, which is where
 one would expect routing to work if it worked anywhere.
 
@@ -298,7 +319,7 @@ if anything understated.
 
 \paragraph{What would overturn this.} A cell in which always-cheapest is \emph{not} close to cost-optimal, that is, where the cheap mode wastes steps on a substantial fraction of tasks, would open the winning region. Our
 \cell{cls$\cdot$B0} is the one cell where this happens, and it is the one cell
-where the oracle wins. That is the mechanism, and it is testable.
+where oracle triage wins. That is the mechanism, and it is testable.
 
 \section{What this chapter establishes}
 \label{sec:ch6-summary}
