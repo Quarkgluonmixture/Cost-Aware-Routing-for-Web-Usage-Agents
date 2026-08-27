@@ -39,8 +39,8 @@ C1 成本口径 **13.7-35.3% → 1.6-35.3%** (SR 平局按列表序破平选中�
   串在 `make thesis-figures` 里。⚠️ **单独跑图脚本不安全** (只写 `figures/`,
   `tex/figures/` 仍旧图), 必须走 make。
 - **页数 89 → 114**: 模板 12pt + 40mm 装订边所致, 非内容增加。⚠️ **≤100 页那条要重新问**。
-- 横排页 1 处 (`fig_overview`, 2.67:1)。⚠️ 「UCL 明文允许横排」**无依据** ——
-  COMP0191 handbook 仍未拿到, 现有依据只有模板自带 `pdflscape` + 通行做法。
+- **横排 0 处** (08-27 晚更正, 笔记 §485)。`fig_overview` 在会议稿里本就是竖排
+  (`0.90\textwidth = 12.57cm`) 发表的, 毕设放 `\textwidth`=13.0cm 比原尺寸还宽 3%。
 
 原链 (已被 09-05 硬截止取代): results+discussion 07-24 (D8) → 全稿 v1 08-10 (D9)
 → 修订完 08-24 (D10) → submission early-Sep (D11)。
