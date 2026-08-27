@@ -48,7 +48,9 @@ CHAIN_EPOCH="$(date +%s)"
 LOG="logs/reframe_chain_${TS}.log"
 STATE="logs/.reframe_chain_${TS}.state"
 COST_CEILING="${COST_CEILING_USD:-400}"
-DEADLINE_UTC="${DEADLINE_UTC:-2026-09-06}"
+# 2026-08-27: 09-06 对 Phase C (预计 08-30 完成) 只留 6 天余量, 而 08-27 一天就被
+# B-1996 + B-1997 吃掉。真实约束是 NAACL ARR 2026-10-12, 放宽到 09-20 仍远早于它。
+DEADLINE_UTC="${DEADLINE_UTC:-2026-09-20}"
 START_AT="${START_AT:-smoke}"
 CLS_N=224
 RED_N=205   # COLLECTION denominator, not the scored one. AMENDMENT_08 dropped the
