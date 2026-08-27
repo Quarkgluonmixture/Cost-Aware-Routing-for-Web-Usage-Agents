@@ -21,6 +21,9 @@ than one being asserted in prose.
 caption rather than quietly dropped.
 
 Output: final_dissertation/figures/fig_f9_drop_one_vs_floor.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

@@ -37,7 +37,8 @@ must be \emph{predictable} from something observable before it is paid for, or
 the selection cannot be made in time. And the value recovered must exceed what
 the selection machinery itself costs, or the whole apparatus loses money. Each
 condition is measurable. This dissertation measures all three, in that order,
-and reports where the chain breaks.
+and reports where the chain breaks. Figure~\ref{fig:overview}
+names the pieces those three conditions are about.
 
 \begin{landscape}
 \begin{figure}[p]
@@ -79,7 +80,8 @@ across a benchmark sweep, and millions of times in a large deployment.
 full Set-of-Marks mode is the one that sends a screenshot with the page's
 elements numbered and boxed on it. Measured on matched pages, its text payload
 is a median $1.008\times$ that of the structured-text mode on classifieds and $1.004\times$ on reddit (Section~\ref{sec:obs-space};
-$n=429$ paired tasks). The cost difference between them is therefore almost
+$n=429$ paired tasks). Figure~\ref{fig:f1} shows one such step with the three
+payloads side by side. The cost difference between them is therefore almost
 entirely the image. That is a useful fact rather than a curiosity: it means
 the expensive component can be removed \emph{surgically}, holding the text and
 the prompt fixed, which is exactly the manipulation Chapter~\ref{ch:system}
@@ -126,29 +128,25 @@ choosing costs more than the choice saves. The core methodological
 commitment of this dissertation is that these three quantities (ceiling, predictability, realised value) are measured separately and never allowed to
 stand in for one another.
 
-% Three screenshot columns side by side: inherently wide, and shrunk to the
-% 13cm text block the page text inside the screenshots stops being legible.
-\begin{landscape}
-\begin{figure}[p]
+\begin{figure}[tp]
   \centering
-  \includegraphics[width=\linewidth]{fig_f1_motivating_example.pdf}
+  \includegraphics[width=\textwidth]{fig_f1_motivating_example.pdf}
   \caption[What each observation mode actually sends]{%
-  \textbf{One page, three ways of paying for it.} All three columns show step
-  000 of task 0 on the VisualWebArena classifieds site, as it is actually
+  \textbf{One page, three ways of paying for it.} All three rows show step 000
+  of task 0 on the VisualWebArena classifieds site, exactly as it is
   transmitted to the model; the source screenshot is byte-identical across the
-  three runs, which is what makes them the same page. Left: the structured page
-  text of the \mDOM{} mode, listing elements with their labels and roles, and no
-  image. Centre: the \mSoM{} mode, which sends the screenshot with the page's
-  elements numbered and boxed on it \emph{and} the numbered lines of that same
-  text (\sommarks{}). Right: the \mVis{} mode, the plain screenshot with no page
-  text. The row beneath each column gives the payload actually billed. The
+  three runs, which is what makes them the same page. Each row names a mode and
+  gives the payload actually billed for it, next to the payload itself. Top:
+  \mDOM{}, the structured page text listing elements with their labels and
+  roles, and no image. Middle: \mSoM{}, the screenshot with the page's elements
+  numbered and boxed on it \emph{and} the numbered lines of that same text
+  (\sommarks{}). Bottom: \mVis{}, the plain screenshot with no page text. The
   quantitative point matters more than the pictures: on this step the \mSoM{}
   text payload is $1.008\times$ the \mDOM{} text payload (median over all 224
   classifieds tasks at step~0: also $1.008\times$), while the billed input
   tokens are $4{,}335$ against $3{,}314$. The extra 31\% is the image.}
   \label{fig:f1}
 \end{figure}
-\end{landscape}
 
 \section{Approach}
 \label{sec:approach}

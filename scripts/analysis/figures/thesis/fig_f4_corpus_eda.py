@@ -21,6 +21,9 @@ forced that downgrade and the panel label keeps it.
 Numbers parsed from docs/analysis/benchmark_eda/corpus_eda.json.
 
 Output: final_dissertation/figures/fig_f4_corpus_eda.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

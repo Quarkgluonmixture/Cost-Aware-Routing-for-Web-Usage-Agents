@@ -22,6 +22,9 @@ backbones within a site by moving one row and compares sites by moving one
 block.
 
 Output: final_dissertation/figures/fig_f6_sr_by_class.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

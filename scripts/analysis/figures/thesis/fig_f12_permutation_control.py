@@ -21,6 +21,9 @@ the defect that made the prose in this file's source drift (B-1974): m is a runt
 property, never a constant.
 
 Output: final_dissertation/figures/fig_f12_permutation_control.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

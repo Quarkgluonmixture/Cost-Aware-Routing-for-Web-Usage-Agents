@@ -45,7 +45,8 @@ Cell & $n$ & \mDOM{} & \mPP{} & \mPT{} & \mPS{} & \mSoM{} & \mVis{} \\
 \end{adjustbox}
 \end{table}
 
-Three things follow directly from it, and each constrains what can be claimed later.
+Three things follow directly from it, and each constrains what can be claimed later. Figure~\ref{fig:srclass} shows the same
+ordering with the two WebArena cells added.
 
 \paragraph{Base success is low, and this is the regime the dissertation is
 about.} Single-mode success spans 0.45\% to 27.23\% on VisualWebArena and
@@ -314,9 +315,9 @@ Drop-one (Equation~\ref{eq:dropone}) asks what removing a mode from the
 portfolio costs. Table~\ref{tab:dropone} gives all 36 values with bootstrap
 intervals.
 
-\begin{landscape}
-\begin{table}[p]
+\begin{table}[t]
 \centering\small
+\setlength{\tabcolsep}{3pt}
 \caption[Drop-one contribution per mode and cell]{\textbf{Drop-one loss
 (\pp) with bootstrap 95\% intervals.} Positive means the mode solves something
 no other mode solves. Direction is consistent, with 32 of 36 values positive and 14 of 18 among the phantom modes, but magnitude is small: only \emph{one}
@@ -337,21 +338,20 @@ limits are exact two-sided binomial bounds instead: 1.63\pp{} at} $n=224$
 Cell & \mDOM{} & \mPP{} & \mPT{} & \mPS{} & \mSoM{} & \mVis{} \\
 \midrule
 \cell{Classifieds$\cdot$235B} & 1.79 & 2.68 & 0.89 & 0.89 & 2.68 & \textbf{4.02} \\
-                    & \tiny[0.00,\,3.57] & \tiny[0.89,\,4.91] & \tiny[0.00,\,2.23] & \tiny[0.00,\,2.23] & \tiny[0.89,\,4.91] & \tiny[1.79,\,6.70] \\
+                    & \tiny 0.00--3.57 & \tiny 0.89--4.91 & \tiny 0.00--2.23 & \tiny 0.00--2.23 & \tiny 0.89--4.91 & \tiny 1.79--6.70 \\
 \cell{Reddit$\cdot$235B} & 1.48 & 0.99 & 0.99 & 0.99 & 1.97 & 1.97 \\
-                    & \tiny[0.00,\,2.96] & \tiny[0.00,\,2.46] & \tiny[0.00,\,2.46] & \tiny[0.00,\,2.46] & \tiny[0.49,\,3.95] & \tiny[0.49,\,3.94] \\
+                    & \tiny 0.00--2.96 & \tiny 0.00--2.46 & \tiny 0.00--2.46 & \tiny 0.00--2.46 & \tiny 0.49--3.95 & \tiny 0.49--3.94 \\
 \cell{Classifieds$\cdot$Qwen-4B} & 0.45 & 0.89 & 0.45 & 1.34 & \textbf{4.46} & \textbf{4.02} \\
-                    & \tiny[0.00,\,1.34] & \tiny[0.00,\,2.23] & \tiny[0.00,\,1.34] & \tiny[0.00,\,3.13] & \tiny[1.79,\,7.14] & \tiny[1.77,\,7.14] \\
+                    & \tiny 0.00--1.34 & \tiny 0.00--2.23 & \tiny 0.00--1.34 & \tiny 0.00--3.13 & \tiny 1.79--7.14 & \tiny 1.77--7.14 \\
 \cell{Reddit$\cdot$Qwen-4B} & 0.49 & 0.99 & 0.49 & 0.00 & 0.49 & 0.99 \\
-                    & \tiny[0.00,\,1.48] & \tiny[0.00,\,2.46] & \tiny[0.00,\,1.48] & \tiny[0.00,\,1.80]$^\dagger$ & \tiny[0.00,\,1.48] & \tiny[0.00,\,2.46] \\
+                    & \tiny 0.00--1.48 & \tiny 0.00--2.46 & \tiny 0.00--1.48 & \tiny 0.00--1.80$^\dagger$ & \tiny 0.00--1.48 & \tiny 0.00--2.46 \\
 \cell{Classifieds$\cdot$Gemma-4B} & 0.45 & 0.00 & 0.00 & 0.45 & 2.23 & 2.23 \\
-                    & \tiny[0.00,\,1.34] & \tiny[0.00,\,1.63]$^\dagger$ & \tiny[0.00,\,1.63]$^\dagger$ & \tiny[0.00,\,1.34] & \tiny[0.45,\,4.46] & \tiny[0.45,\,4.03] \\
+                    & \tiny 0.00--1.34 & \tiny 0.00--1.63$^\dagger$ & \tiny 0.00--1.63$^\dagger$ & \tiny 0.00--1.34 & \tiny 0.45--4.46 & \tiny 0.45--4.03 \\
 \cell{Reddit$\cdot$Gemma-4B} & 2.96 & 0.00 & 0.49 & 0.49 & 0.49 & 1.48 \\
-                    & \tiny[0.99,\,5.42] & \tiny[0.00,\,1.80]$^\dagger$ & \tiny[0.00,\,1.48] & \tiny[0.00,\,1.48] & \tiny[0.00,\,1.48] & \tiny[0.00,\,3.45] \\
+                    & \tiny 0.99--5.42 & \tiny 0.00--1.80$^\dagger$ & \tiny 0.00--1.48 & \tiny 0.00--1.48 & \tiny 0.00--1.48 & \tiny 0.00--3.45 \\
 \bottomrule
 \end{tabular}
 \end{table}
-\end{landscape}
 
 \begin{scopebox}
 \textbf{This is a downgraded claim, and the downgrade is ours.} An earlier reading of these data, reported in our own project record, described the phantom modes as forming a structurally independent routing region, on the basis
@@ -410,7 +410,8 @@ sets.
 
 Six arms of \cell{cls$\cdot$B0} have been run twice under an unchanged
 configuration, plus one WebArena pilot/full overlap
-(Table~\ref{tab:noise-floor}).
+(Table~\ref{tab:noise-floor}). Figure~\ref{fig:f10} plots the six
+per-pair discordances on their own.
 
 \begin{table}[t]
 \centering\small

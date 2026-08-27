@@ -26,6 +26,9 @@ task's start URL and so identical across modes. Verified, not assumed: the dom-r
 and vision-run screenshots for that step are byte-identical (md5 checked below).
 
 Output: final_dissertation/figures/fig_f1_motivating_example.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 
@@ -119,63 +122,66 @@ def _snippet(lines, n=9, width=46):
 
 
 def build(fig, d):
-    gs = fig.add_gridspec(2, 3, height_ratios=[2.25, 1.0], hspace=0.02,
-                          wspace=0.07, left=0.015, right=0.985, top=0.955,
-                          bottom=0.10)
+    """One row per mode: name and payload on the left, what is sent on the right.
 
-    cols = [
+    The first version put the three modes side by side, which made the figure
+    2.5:1 and forced it onto a landscape page. Stacking them turns the same
+    comparison upright, and as a bonus each screenshot ends up wider than it was
+    in the three-column version rather than narrower.
+    """
+    gs = fig.add_gridspec(3, 2, width_ratios=[1.0, 2.45], hspace=0.16,
+                          wspace=0.03, left=0.015, right=0.985, top=0.985,
+                          bottom=0.015)
+
+    rows = [
         ("DOM", "AXTree text", None, _snippet(d["_dom_lines"]), d["dom"]),
         ("SoM", "marked screenshot + text", SHOT_SOM, None, d["som"]),
         ("Vision", "raw screenshot", SHOT_RAW, None, d["vision"]),
     ]
 
-    for i, (name, sub, shot, snip, m) in enumerate(cols):
-        ax = fig.add_subplot(gs[0, i])
-        if shot is not None:
-            ax.imshow(mpimg.imread(shot))
-            ax.set_xticks([]); ax.set_yticks([])
-            for s in ax.spines.values():
-                s.set_edgecolor("#BBBBBB")
-        else:
-            # Same canvas geometry as the screenshots (1280x660) so the three
-            # columns line up; an axis("off") panel would float at its own height.
-            ax.set_xlim(0, 1280); ax.set_ylim(660, 0)
-            ax.set_aspect("equal")
-            ax.set_facecolor("#FAFAFA")
-            ax.set_xticks([]); ax.set_yticks([])
-            for sp in ax.spines.values():
-                sp.set_edgecolor("#BBBBBB")
-            ax.text(44, 34, snip, fontsize=S.FS_VALUE, family="monospace",
-                    color="#333333", va="top", linespacing=1.5)
-            ax.text(640, 600, "no image", ha="center", fontsize=S.FS_LABEL,
-                    color=C_MUTE)
-        ax.set_title(f"{name}", fontsize=S.FS_PANEL, fontweight="bold", loc="left",
-                     pad=15)
-        ax.text(0.0, 1.012, sub, transform=ax.transAxes, fontsize=S.FS_VALUE,
-                color=C_MUTE, va="bottom")
-
-        axb = fig.add_subplot(gs[1, i])
-        axb.axis("off")
-        axb.set_xlim(0, 1); axb.set_ylim(0, 1)
-        y = 0.80
+    for i, (name, sub, shot, snip, m) in enumerate(rows):
+        # Left cell: the mode's name and exactly what it costs to send.
+        axl = fig.add_subplot(gs[i, 0])
+        axl.axis("off")
+        axl.set_xlim(0, 1); axl.set_ylim(0, 1)
+        axl.text(0.0, 0.92, name, fontsize=S.FS_PANEL, fontweight="bold",
+                 va="top", color=S.C_INK)
+        axl.text(0.0, 0.74, sub, fontsize=S.FS_VALUE, va="top", color=C_MUTE)
+        y = 0.50
         if m["chars"]:
-            axb.text(0.02, y, f"{m['chars']:,} chars of text", fontsize=S.FS_LABEL,
-                     color=C_TEXT, fontweight="bold")
+            axl.text(0.0, y, f"{m['chars']:,} chars of text", fontsize=S.FS_VALUE,
+                     color=C_TEXT, fontweight="bold", va="top")
         else:
-            axb.text(0.02, y, "no text", fontsize=S.FS_LABEL, color=C_MUTE,
-                     fontweight="bold")
-        y -= 0.30
+            axl.text(0.0, y, "no text", fontsize=S.FS_VALUE, color=C_MUTE,
+                     fontweight="bold", va="top")
+        y -= 0.15
         if m["img"]:
             lbl = f"{m['img'] / 1024:.0f} KB image"
             if m["marks"]:
-                lbl += f"  ·  {m['marks']} marks"
-            axb.text(0.02, y, lbl, fontsize=S.FS_LABEL, color=C_IMG, fontweight="bold")
+                lbl += f", {m['marks']} marks"
+            axl.text(0.0, y, lbl, fontsize=S.FS_VALUE, color=C_IMG,
+                     fontweight="bold", va="top")
         else:
-            axb.text(0.02, y, "no image", fontsize=S.FS_LABEL, color=C_MUTE,
-                     fontweight="bold")
-        y -= 0.32
-        axb.text(0.02, y, f"{m['tokens']:,} input tokens", fontsize=S.FS_PANEL,
-                 color="#000000", fontweight="bold")
+            axl.text(0.0, y, "no image", fontsize=S.FS_VALUE, color=C_MUTE,
+                     fontweight="bold", va="top")
+        y -= 0.18
+        axl.text(0.0, y, f"{m['tokens']:,} input tokens", fontsize=S.FS_LABEL,
+                 color="#000000", fontweight="bold", va="top")
+
+        # Right cell: the payload itself, at the same canvas geometry in all
+        # three rows so the rows stay aligned.
+        axr = fig.add_subplot(gs[i, 1])
+        if shot is not None:
+            axr.imshow(mpimg.imread(shot))
+        else:
+            axr.set_xlim(0, 1280); axr.set_ylim(660, 0)
+            axr.set_aspect("auto")
+            axr.set_facecolor("#FAFAFA")
+            axr.text(30, 26, snip, fontsize=S.FS_VALUE - 1.2, family="monospace",
+                     color="#333333", va="top", linespacing=1.45)
+        axr.set_xticks([]); axr.set_yticks([])
+        for sp in axr.spines.values():
+            sp.set_edgecolor("#BBBBBB")
 
 
 def main() -> int:
@@ -186,7 +192,7 @@ def main() -> int:
     ratio = d["som"]["chars"] / d["dom"]["chars"]
 
     S.apply()
-    fig = plt.figure(figsize=(S.LANDSCAPE_W_IN, 4.1))
+    fig = plt.figure(figsize=(S.PRINT_W_IN, 6.3))
     build(fig, d)
     # The page identity, the SoM-to-DOM text ratio and the artefact provenance
     # were all printed across the top and bottom of this figure. They are facts

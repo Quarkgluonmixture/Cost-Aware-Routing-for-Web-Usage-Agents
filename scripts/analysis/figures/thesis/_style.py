@@ -162,25 +162,20 @@ def reference_line(ax, value: float, *, axis: str = "x", label: str = "") -> Non
                 fontsize=FS_VALUE, color=C_MUTED)
 
 
-# Both trees are written on every save: ``final_dissertation/figures`` is the
-# working copy the plotting scripts own, ``final_dissertation/tex/figures`` is
-# what LaTeX resolves through \graphicspath. Keeping them in step here removes
-# the stale-figure failure mode where a script is rerun and the PDF the document
-# actually embeds is the previous one.
-_REPO = Path(__file__).resolve().parents[4]
-_TREES = (_REPO / "final_dissertation/figures",
-          _REPO / "final_dissertation/tex/figures")
-
-
-def save(fig, stem: str, *, png: bool = True) -> list[Path]:
-    """Write ``stem.pdf`` (and ``stem.png``) into both figure trees."""
-    written: list[Path] = []
-    exts = ("pdf", "png") if png else ("pdf",)
-    for tree in _TREES:
-        tree.mkdir(parents=True, exist_ok=True)
-        for ext in exts:
-            p = tree / f"{stem}.{ext}"
-            fig.savefig(p, dpi=220, bbox_inches="tight", facecolor="white")
-            written.append(p)
-    plt.close(fig)
-    return written
+# Where the figures land, and why this module does not write them.
+#
+# Each figure script writes only ``final_dissertation/figures/``. The copy LaTeX
+# actually embeds lives in ``final_dissertation/tex/figures/`` and is refreshed
+# by ``make thesis-figures``, which regenerates, copies, and then runs
+# ``check_no_prose.py``.
+#
+# That means running a figure script on its own leaves the embedded copy stale,
+# and the next build silently ships the previous version of that figure. An
+# earlier draft of this module carried a ``save()`` helper that wrote both trees
+# and claimed in its docstring to have closed that hole; nothing ever called it,
+# so the hole stayed open behind a comment saying it was shut. The helper is
+# gone rather than wired up, because one path that is always correct beats two
+# paths of which one is usually skipped.
+#
+#     ALWAYS:  make thesis-figures
+#     NEVER:   python scripts/analysis/figures/thesis/fig_fN_*.py   (alone)

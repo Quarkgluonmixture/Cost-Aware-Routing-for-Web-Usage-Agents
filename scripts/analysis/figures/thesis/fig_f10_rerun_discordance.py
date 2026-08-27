@@ -19,6 +19,9 @@ is shown where available and simply absent otherwise, never carried across arms.
 Numbers are parsed from the two source documents, never hardcoded.
 
 Output: final_dissertation/figures/fig_f10_rerun_discordance.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

@@ -18,6 +18,9 @@ real, so the objection has force against the AUROC claim. It has no purchase on
 the Pareto claim, because that boundary is above the oracle.
 
 Output: final_dissertation/figures/fig_f16_undersampling_control.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

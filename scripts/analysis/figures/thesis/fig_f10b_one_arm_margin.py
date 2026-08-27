@@ -24,6 +24,9 @@ Two honesty constraints are drawn rather than written:
 Numbers are parsed from the source markdown, never hardcoded.
 
 Output: final_dissertation/figures/fig_f10b_one_arm_margin.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

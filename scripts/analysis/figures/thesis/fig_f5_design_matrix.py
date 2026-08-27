@@ -19,6 +19,9 @@ is a condition; a column is a cell. Mixing the two is the single most common
 error in this project's own prose, so the figure names both explicitly.
 
 Output: final_dissertation/figures/fig_f5_design_matrix.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

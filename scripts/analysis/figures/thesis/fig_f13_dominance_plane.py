@@ -22,6 +22,9 @@ reminder that the oracle is retrospective, not deployable.
 Numbers are read from the analysis JSON, never hardcoded.
 
 Output: final_dissertation/figures/fig_f13_dominance_plane.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 

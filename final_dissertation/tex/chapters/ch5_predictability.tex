@@ -165,6 +165,9 @@ result is merely undersampling: the issue is not that there are too few rows,
 but that the one column with reliable signal in it does not exist outside the benchmark.
 \end{scopebox}
 
+Figure~\ref{fig:f11} puts the two feature sets side by side and names the
+strongest covariate in each cell's fit.
+
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_f11_feature_set_ablation.pdf}
@@ -345,7 +348,8 @@ $p=0.033$ against $0.0071$, does not reject, and the procedure stops.
 
 Two cells (\cell{cls$\cdot$B2}, \cell{cls$\cdot$B1}) have a signal-free pipeline
 reproducing at least 80\% of the observed saving; in \cell{cls$\cdot$B1} the shuffled median actually exceeds the observed value. One cell
-(\cell{red$\cdot$B0}) yields no saving at all.
+(\cell{red$\cdot$B0}) yields no saving at all. Figure~\ref{fig:f12} shows the
+observed saving and its shuffled counterpart on one axis per cell.
 
 \begin{figure}[t]
   \centering

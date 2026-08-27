@@ -22,6 +22,9 @@ exist at serving time — and, per F4, does not exist in WebArena at all.
 Numbers parsed from both analysis markdowns, never hardcoded.
 
 Output: final_dissertation/figures/fig_f11_feature_set_ablation.{png,pdf}
+
+Run via ``make thesis-figures``, not on its own: this script writes only the
+working tree, and the copy LaTeX embeds is refreshed by that target.
 """
 from __future__ import annotations
 
