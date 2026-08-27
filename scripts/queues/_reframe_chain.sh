@@ -219,6 +219,14 @@ queue_phantom_text.sh B5 classifieds|B5_phantom_text_classifieds_2*|phase1_phant
 queue_phantom_prompt.sh B5 classifieds|B5_phantom_prompt_classifieds_2*|phase1_phantom_prompt_router_0|${CLS_N}
 queue_phantom_som.sh B5 classifieds|B5_phantom_som_classifieds_2*|phase1_phantom_som_router_0|${CLS_N}"
 
+# B-1993 restart (2026-08-27). A halted phase is resumed by re-declaring ONLY the
+# cells that still owe data. Leaving a finished cell in the spec is not merely
+# paying for it twice: `export FORCE_NEW=1` mints a fresh run_id for every cell,
+# and the verify step below then reads that new run via `ls -dt | head -1` while
+# ignoring the good one — so a re-run that lands worse turns a passing phase into
+# a halt. Default stays the full phase; override only to resume.
+PHASE_C="${PHASE_C_CELLS:-$PHASE_C}"
+
 if [ "${DRY_RUN:-0}" = "1" ]; then
   echo "PLAN (dry run)"
   echo "  wait  : ${WAIT_RUN:-<none>} / ${WAIT_COND:-} / ${WAIT_N:-}"
