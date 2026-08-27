@@ -62,6 +62,66 @@ def _log_coord_normalization(tags: Dict[str, Any], context: str, raw_coord: Any)
         )
 
 
+def _sanitize_keyboard_text(text: Any) -> Tuple[Any, Optional[Dict[str, Any]]]:
+    """Drop characters VWA's key table cannot express, before building a TYPE action.
+
+    B-1996 (fire 2026-08-27): ``browser_env.actions._keys2ids`` maps an unknown
+    key to the *string* ``" "`` while declaring ``-> list[int]``, so one
+    out-of-table character makes beartype raise inside the action constructor.
+    Under ``paper_grade`` that surfaces as ``PaperGradeAbortError`` and takes the
+    whole condition down: cls task 137 killed the B5 vision cell at 135/224 and
+    left the three phantom cells of Phase C unlaunched.
+
+    The table is ``SPECIAL_KEYS + chr(32..127) + chr(129..129999) + "\n"``, so
+    control characters, ``chr(128)`` and ``chr(>=130000)`` are all outside it.
+
+    Dropping is the honest degradation, not a workaround: the benchmark has no
+    way to type these characters at all, so the alternative to dropping is not
+    "type them" but "kill the run". The returned telemetry dict (``None`` when
+    nothing was dropped) lands in ``info["type_text_sanitized"]`` so a failed
+    episode can always be told apart from a silently truncated one.
+    """
+    try:
+        from browser_env.actions import _key2id
+    except Exception:  # pragma: no cover - table unavailable, keep legacy behaviour
+        return text, None
+
+    def _out_of_table(key: Any) -> bool:
+        # Mirror the lookup _keys2ids itself does: str(key) first, then key.
+        if not isinstance(key, str):
+            return False
+        return str(key) not in _key2id and key not in _key2id
+
+    if isinstance(text, str):
+        dropped = [c for c in text if _out_of_table(c)]
+        cleaned: Any = "".join(c for c in text if not _out_of_table(c))
+    elif isinstance(text, list):
+        dropped = [k for k in text if _out_of_table(k)]
+        cleaned = [k for k in text if not _out_of_table(k)]
+    else:
+        return text, None
+
+    if not dropped:
+        return text, None
+
+    meta = {
+        "dropped_count": len(dropped),
+        "dropped_codepoints": sorted(
+            {hex(ord(c)) for c in dropped if isinstance(c, str) and len(c) == 1}
+        ),
+        "original_len": len(text),
+        "kept_len": len(cleaned),
+    }
+    logger.warning(
+        "TYPE text carried %d character(s) outside the VWA key table %s — dropped "
+        "(B-1996; typing them is impossible, crashing the condition is the only "
+        "alternative)",
+        len(dropped),
+        meta["dropped_codepoints"],
+    )
+    return cleaned, meta
+
+
 @dataclass
 class P79Observation:
     text: str
@@ -599,6 +659,9 @@ class VWAWrapper:
         # {click, type, scroll} (e.g. back / forward / tab) — those have
         # no wrapper-level normalization layer.
         _action_executed: Optional[Dict[str, Any]] = None
+        # B-1996: set when a TYPE payload carried characters the VWA key
+        # table cannot express; None means nothing was dropped.
+        _type_text_sanitized: Optional[Dict[str, Any]] = None
 
         if action_type == "click" and "element_id" in action_json:
             # Prefer element_id click (id-based action via AXTree node)
@@ -830,7 +893,9 @@ class VWAWrapper:
                 # these upstream; defensive fallback to a coord-less keyboard
                 # type into the current focus (preserves the behavior of the
                 # pre-V-F1 `else` branch that this if-branch replaced).
-                action = create_keyboard_type_action(action_json["text"])
+                _type_text, _san = _sanitize_keyboard_text(action_json["text"])
+                _type_text_sanitized = _san or _type_text_sanitized
+                action = create_keyboard_type_action(_type_text)
             elif _coord_tags["true_oob"]:
                 # V-F1 (B-1860 codex verify P1, 2026-05-24): true_oob grounding
                 # miss → fail-closed no-op. Pre-fix the else-branch clamped to
@@ -911,7 +976,9 @@ class VWAWrapper:
                     if is_editable:
                         self._env.page.keyboard.press("Control+a")
                         self._env.page.keyboard.press("Backspace")
-                    action = create_keyboard_type_action(action_json["text"])
+                    _type_text, _san = _sanitize_keyboard_text(action_json["text"])
+                    _type_text_sanitized = _san or _type_text_sanitized
+                    action = create_keyboard_type_action(_type_text)
         elif action_type == "type" and "text" in action_json and "element_id" in action_json:
             # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*, 2026-05-17): defense-
             # in-depth removal of the legacy `<=0` → keyboard fallback path.
@@ -1613,6 +1680,7 @@ class VWAWrapper:
         # Set in scroll/click/type branches above; None for back/forward/tab/
         # finish/stop (no wrapper-level normalization layer).
         info["action_executed"] = _action_executed
+        info["type_text_sanitized"] = _type_text_sanitized  # B-1996
         p79_obs = self._to_p79_obs(obs, info)
         self._install_native_obs_nodes_info(p79_obs.obs_nodes_info)
         return p79_obs, float(reward), bool(terminated), bool(truncated), info

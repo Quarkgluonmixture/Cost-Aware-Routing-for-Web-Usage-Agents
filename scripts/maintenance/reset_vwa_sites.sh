@@ -147,6 +147,31 @@ _reset_vwa_local_classifieds() {
         echo "[${label}][reset_vwa][local] classifieds HTTP FAIL (http=${code}) after 4 attempts" >&2
         return 1
     fi
+    # B-1997 (2026-08-27): clear the two tables the upstream reset does not own.
+    # `reset.php` restores items/comments/users; it never touches `oc_t_alerts`
+    # (search subscriptions) or `oc_t_latest_searches` (search history). The
+    # Gate-3 docker restart above does not reseed them either — /var/lib/mysql is
+    # a named volume, and the seed SQL under /docker-entrypoint-initdb.d runs only
+    # at container CREATE. So nothing in the pipeline was clearing them.
+    #
+    # B-746 named this gap when it widened the sentinel 3→5 tables ("Full
+    # DROP+seed restore deferred to A1.17b") and shipped the assertion without the
+    # clean-up. That is safe exactly as long as the tables happen to stay empty.
+    # On 2026-08-27 one episode subscribed to a search (blake.sullivan, sPattern
+    # "purple"); the row outlived every reset, and cls went from "asserted clean"
+    # to permanently unlaunchable — each following reset failed the sentinel, so
+    # no cell on this site could start at all until the row was removed by hand.
+    #
+    # Seed state for both tables is empty — that is precisely what the sentinel
+    # asserts — so an unconditional DELETE restores seed state rather than
+    # departing from it. Fail-closed is preserved: a DELETE that does not take is
+    # caught by the sentinel immediately below.
+    local _t
+    for _t in oc_t_alerts oc_t_latest_searches; do
+        docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN \
+                -e "DELETE FROM ${_t};" >/dev/null 2>&1 \
+            || echo "[${label}][reset_vwa][local] warn: DELETE FROM ${_t} failed (sentinel below reports it)" >&2
+    done
     # B-746 (/stress A1.17 cold-start P0-3 C* OOB, 2026-05-17, Q2=D'):
     # gemini "sentinel theater" attack — pre-fix only checked 3 tables; OSClass
     # has dozens. Two-layer defense:
