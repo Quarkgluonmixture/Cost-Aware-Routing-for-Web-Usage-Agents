@@ -19,19 +19,6 @@ text, the set of browser actions available, the limit on how many steps are
 allowed, the browser and the size of its window, the benchmark's automatic
 scoring, and the rules for what counts as a cost. We vary exactly one stage: the construction of the observation handed to the model at each step.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\textwidth]{fig_f3_comparison_boundary.pdf}
-  \caption[The causal comparison boundary]{%
-  \textbf{What is varied and what is held identical.} Five pipeline stages carry
-  the episode from task to scored outcome. Four are grey and marked
-  \emph{same}; only observation construction differs across conditions. The
-  dashed boundary marks what is held identical, and cost is measured at the same boundary as outcome, so a mode that spends more to reach the same result shows up as more expensive rather than being absorbed. This is what licenses attributing
-  later differences to representation; it is not an architecture diagram of the
-  codebase.}
-  \label{fig:f3}
-\end{figure}
-
 That is the whole design. Everything in the rest of this chapter is a matter of
 making the commitment concrete and checkable.
 
@@ -102,6 +89,25 @@ raw un-annotated screenshot.
 \subsection{The six observation modes}
 \label{sec:modes}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.86\textwidth]{fig_f1_diamond_schematic.pdf}
+  \caption[The representation space and its screenshot-free boundary]{%
+  \textbf{The six modes, and the two axes that generate them.} Moving right
+  flattens the text payload from the full accessibility tree to the
+  \sommarks{} lines drawn from it; moving up swaps the prompt family from the
+  \mDOM{} style to the \mSoM{} style. The four nodes on the left of the dashed
+  boundary receive no per-step page screenshot, so they cost what text costs;
+  reference images supplied by the task itself are preserved identically in
+  every mode, including these four. Adding the marked screenshot to \mPS{}
+  gives \mSoM{}, the bundle that the benchmark ships as its visual condition.
+  \mVis{} sits outside both axes: it is the screenshot with no accessibility
+  tree at all. The four left-hand nodes are what this dissertation calls the
+  phantom routing space, and their existence is the reason the cost of a
+  representation and the information in it can be varied separately.}
+  \label{fig:space}
+\end{figure}
+
 Crossing text payload with prompt framing yields four image-free
 configurations; adding the two image-bearing conditions gives six modes in
 total (Table~\ref{tab:modes}).
@@ -113,6 +119,7 @@ image-free modes are a $2\times2$ of text payload $\times$ prompt framing; the
 grouping in the last column is verified from the step records rather than asserted: all four text-side modes log
 \texttt{image\_payload\_bytes}~$=0$.}
 \label{tab:modes}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llllc@{}}
 \toprule
 Mode & Text payload & Prompt framing & Image & Side \\
@@ -125,6 +132,7 @@ Mode & Text payload & Prompt framing & Image & Side \\
 \mVis{}   & none     & vision-oriented & raw             & visual \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \paragraph{Why this factorisation exists.} The three-mode comparison that this study began with (structured text, Set-of-Marks, raw vision) cannot separate three changes that it makes simultaneously. Moving from \mDOM{} to
@@ -276,6 +284,7 @@ contains; the \emph{scored set} is the denominator of every reported success
 rate. This is the source of the twin numbers that appear in our logs (reddit as
 both 205 and 203).}
 \label{tab:scored-set}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
 Corpus & size & $-$N/A & run set & $-$protocol & \textbf{scored set} \\
@@ -285,6 +294,7 @@ VWA reddit      & 210 &  5 & 205 & 2 & \textbf{203} \\
 WA reddit       & 106 &  2 & 104 & 0 & \textbf{104} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 The denominator of every success rate in this dissertation is the scored set, and within a cell all conditions are evaluated on the byte-identical task-identifier set, verified by SHA-256 of the sorted identifier list. The analysis pipeline refuses any condition whose set fails that check, rather than silently truncating it.
@@ -295,10 +305,16 @@ The denominator of every success rate in this dissertation is the scored set, an
   \centering
   \includegraphics[width=\textwidth]{fig_f4_corpus_eda.pdf}
   \caption[Corpus characterisation across the six task sets]{%
-  \textbf{The corpora these conclusions rest on.} (A) The run-set/scored-set
-  distinction of Table~\ref{tab:scored-set}. (B) What each corpus annotates: WebArena carries neither reference images nor difficulty labels, which
-  Chapter~\ref{ch:pred} shows is not incidental. (C) Evaluator types.
-  (D) Instruction length. Two typos in the distributed annotations
+  \textbf{The corpora these conclusions rest on, read top to bottom.} The six
+  corpora occupy the same rows in all four strips. (A) The run-set and
+  scored-set distinction of Table~\ref{tab:scored-set}; the grey remainder is
+  what protocol exclusions and N/A verdicts remove. (B) What each corpus
+  annotates. The three WebArena corpora ship no reference image and no
+  difficulty label, which Chapter~\ref{ch:pred} shows is not incidental. That
+  is a difference in how the tasks were \emph{specified} and does not by itself
+  mean those tasks need less visual grounding. (C) Evaluator types, as a share
+  of each corpus. (D) Instruction length in words: the dot is the median and
+  the bar spans the 10th to 90th percentile. Two typos in the distributed annotations
   (\texttt{mediun}, \texttt{hrad}) are reported rather than silently repaired,
   because folding a typo into the nearest label would make a
   difficulty-stratified analysis run on a different partition than the one it
@@ -326,6 +342,7 @@ Three backbones span two model families and two deployment classes
 classes.} B1 and B2 are matched in scale and differ in family, which is what
 makes B2 a cross-family control rather than a third data point.}
 \label{tab:backbones}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llll@{}}
 \toprule
 Label & Model & Serving & Role \\
@@ -335,6 +352,7 @@ B1 & \texttt{Qwen3-VL-4B}        & local, bf16       & small-model reference \\
 B2 & \texttt{google/gemma-3-4b-it} & local, bf16     & cross-family control at matched scale \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \paragraph{Decoding.} All three run greedy (\texttt{temperature}~$=0$,
@@ -382,8 +400,8 @@ over steps of input and output tokens, priced at that backbone's per-1k
 schedule. For B0 the schedule is the proxy's actual billing rate, so the figure
 is money charged. For B1 and B2 the schedule is a device-amortisation rate, so
 the figure is a \emph{token-priced cost estimate} rather than an invoice.
-These are two different \emph{deployment classes} --- money actually charged,
-and an estimate of what the hardware time was worth --- and we compare costs
+These are two different \emph{deployment classes}, money actually charged
+against an estimate of what the hardware time was worth, and we compare costs
 only within one of them, never across. This single quantity is used in every
 policy comparison in Chapters~\ref{ch:repr}--\ref{ch:e2e}.
 
@@ -412,6 +430,7 @@ forum; \cell{B0} is the 235B model, \cell{B1} and \cell{B2} the two 4B models,
 one from each design family.}
 \label{tab:cost-per-mode}
 \footnotesize\setlength{\tabcolsep}{4.2pt}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
 Mode & \cell{cls$\cdot$B0} & \cell{red$\cdot$B0} & \cell{cls$\cdot$B1}
@@ -430,6 +449,7 @@ spread & $+11.6$\% & $+12.6$\% & $+46.1$\% & $+52.7$\%
   & $+28.5$\% & $+63.3$\% & $+21.0$\% & $+77.8$\% \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \paragraph{Secondary measures.} Step count (mean 13.7--28.4 across all
@@ -498,10 +518,13 @@ them in the direction of weakening our own positive claims.
   \centering
   \includegraphics[width=\textwidth]{fig_f5_design_matrix.pdf}
   \caption[The experimental design matrix]{%
-  \textbf{What was run.} Rows are observation modes, columns are (site, model)
-  cells; the two rightmost columns are the WebArena external-validation cells.
-  Each filled square is one operational condition; each column is one
-  statistical stratification unit. The grid has no holes, which is what makes
+  \textbf{What was run: 48 conditions over 8 cells.} Rows are observation
+  modes, columns are (site, model) cells; the six columns left of the rule are
+  the primary VisualWebArena sweep and the two on the right are the WebArena
+  external validation. Each square is one \emph{condition}, meaning one
+  (site, model, mode) launch unit, and carries that condition's task success
+  rate; its colour marks what is actually transmitted. Each column is one
+  \emph{cell}, meaning one (site, model) unit of statistical stratification. The grid has no holes, which is what makes
   every within-cell comparison paired. Completeness against the expected task-ID
   set is enforced upstream by the aggregators
   (Section~\ref{sec:repro}), not re-verified by the figure script.}
@@ -568,8 +591,8 @@ AI systems built by three different developers, each writing its own
 claim-by-claim attack without seeing the others' output. Their disagreements were the useful part, since the overlap was mostly things we already knew. Every
 finding was then checked against the artefacts by hand before being accepted.
 That was not ceremony. Of the attacks that reached a fix, one had its own
-arithmetic wrong --- it reported a significance threshold of 4.91\pp{} where
-the exact calculation gives 4.02\pp{} --- and two were factually wrong about
+arithmetic wrong, reporting a significance threshold of 4.91\pp{} where
+the exact calculation gives 4.02\pp, and two were factually wrong about
 our pipeline. One of those claimed we had dropped a feature after noticing it
 performed too well, when in fact the benchmark it had to transfer to does not
 carry that feature at all.

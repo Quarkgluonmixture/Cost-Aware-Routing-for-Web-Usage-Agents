@@ -34,6 +34,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
 from matplotlib.patches import FancyArrowPatch, Patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -77,33 +80,29 @@ def build(ax, a20, a18, order):
                 mutation_scale=11, lw=1.3, zorder=3, shrinkA=6, shrinkB=6,
                 color=C_DROP if drop < 0 else "#009E73"))
             ax.text(min(r20["auroc"], r18["auroc"]) - 0.012, yi,
-                    f"{drop:+.3f}", va="center", ha="right", fontsize=7.8,
+                    f"{drop:+.3f}", va="center", ha="right", fontsize=S.FS_VALUE,
                     color=C_DROP if drop < 0 else "#009E73", fontweight="bold")
         ax.scatter([r18["auroc"]], [yi], s=78, color=C18, zorder=5)
-        note = f"strongest single covariate: {r20['feat']}" if r20 else \
-               f"18-feature only  ·  {r18['feat']}"
-        ax.text(0.885, yi, note, va="center", fontsize=7.2,
+        # The name of the strongest covariate, direct-labelled. Whether it is
+        # a serving-time feature is the caption's business, not the label's.
+        note = (r20 or r18)["feat"]
+        ax.text(0.885, yi, note, va="center", fontsize=S.FS_VALUE,
                 color=C_MUTE if r20 else "#AAAAAA")
 
     ax.axvline(0.5, color="#BBBBBB", lw=1.0, ls=":")
-    ax.text(0.502, len(order) - 0.45, "chance", fontsize=7.4, color="#999999")
-    ax.set_yticks(y, order, fontsize=9.0)
+    ax.text(0.502, len(order) - 0.45, "chance", fontsize=S.FS_VALUE, color="#999999")
+    ax.set_yticks(y, order, fontsize=S.FS_LABEL)
     ax.set_xlim(0.44, 1.10)
     ax.set_ylim(-0.75, len(order) - 0.25)
     ax.set_xticks([0.5, 0.6, 0.7, 0.8, 0.9])
-    ax.set_xlabel("AUROC of the triage label (task-held-out CV)", fontsize=9)
+    ax.set_xlabel("AUROC, task-held-out CV")
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
     ax.tick_params(axis="y", length=0)
-    ax.grid(axis="x", color="#F1F1F1", lw=0.8)
-    ax.set_axisbelow(True)
-    ax.legend(handles=[
-        Patch(color=C20, label="20 features — includes the corpus's own "
-                               "difficulty label and reference-image flag"),
-        Patch(color=C18, label="18 features — those two dropped on every cell "
-                               "(what a deployment could actually use)")],
-        loc="lower left", bbox_to_anchor=(0.0, -0.30), frameon=False,
-        fontsize=8.0, handletextpad=0.6)
+    ax.legend(handles=[Patch(color=C20, label="20 features"),
+                       Patch(color=C18, label="18 features")],
+              loc="lower left", bbox_to_anchor=(0.0, -0.22), frameon=False,
+              ncol=2, handletextpad=0.6)
 
 
 def main() -> int:
@@ -121,24 +120,12 @@ def main() -> int:
                 key=lambda f: sum(1 for c in a20 if a20[c]["feat"] == f))
     n_modal = sum(1 for c in a20 if a20[c]["feat"] == modal)
 
-    fig, ax = plt.subplots(figsize=(11.2, 5.4))
+    S.apply()
+    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 3.4))
     build(ax, a20, a18, order)
-    ax.set_title("Drop the two columns the corpus provides, and the signal "
-                 f"falls in {n_down} of {len(drops)} cells",
-                 fontsize=11.4, fontweight="bold", loc="left", pad=40)
-    ax.text(0.0, 1.012,
-            f"`{modal}` is the strongest single covariate in {n_modal} of "
-            f"{len(a20)} of the 20-feature fits — it is an annotation shipped "
-            "with the task config, not something a router\ncould read at serving "
-            "time. WebArena carries neither column at all (see F4), which is why "
-            "the matched set exists.",
-            transform=ax.transAxes, fontsize=8.4, color="#444444",
-            linespacing=1.5, va="bottom")
-    fig.text(0.012, 0.005,
-             "Sources: router_triage_learnability.md (20-feature, VWA) and "
-             "router_triage_learnability_with_wa.md (18-feature, matched). "
-             "The 18-feature fits are NOT a subset — every cell was refitted.",
-             fontsize=7.0, color="#888888")
+    # Which two columns were dropped, why they are not available at serving
+    # time, and the fact that the 18-feature fits are refits rather than a
+    # subset, are all stated in the caption.
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):

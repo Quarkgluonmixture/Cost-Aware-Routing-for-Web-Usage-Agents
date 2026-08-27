@@ -33,6 +33,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -77,26 +80,21 @@ def build(ax, rows):
         ax.scatter([r["null"]], [yi], s=62, color=C_NULL, zorder=4)
         ax.scatter([r["obs"]], [yi], s=88,
                    color=C_WIN if r["reject"] else C_OBS, zorder=5)
-        tag = (f"p={r['p']:.4g} < {r['thresh']:.4f}  ✓ survives Holm"
-               if r["reject"] else f"p={r['p']:.3f}")
+        tag = f"p={r['p']:.4g}" if r["reject"] else f"p={r['p']:.3f}"
         ax.text(max(r["obs"], r["null"]) + 0.7, yi, tag, va="center",
-                fontsize=7.6, color=C_WIN if r["reject"] else C_MUTE,
+                fontsize=S.FS_VALUE, color=C_WIN if r["reject"] else C_MUTE,
                 fontweight="bold" if r["reject"] else "normal")
-    ax.set_yticks(y, [r["name"] for r in rows], fontsize=9.0)
+    ax.set_yticks(y, [r["name"] for r in rows], fontsize=S.FS_LABEL)
     ax.set_xlim(-1.0, max(r["obs"] for r in rows) + 12)
     ax.set_ylim(-0.75, len(rows) - 0.25)
-    ax.set_xlabel("SR-lossless cost saving  [%]", fontsize=9)
+    ax.set_xlabel("SR-lossless cost saving  [%]")
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
     ax.tick_params(axis="y", length=0)
-    ax.grid(axis="x", color="#F1F1F1", lw=0.8)
-    ax.set_axisbelow(True)
-    ax.legend(handles=[
-        Patch(color=C_OBS, label="observed saving (threshold sweep on real labels)"),
-        Patch(color=C_NULL, label="median saving with labels destroyed "
-                                  "(bundle permutation)"),
-        Patch(color=C_WIN, label="survives Holm correction")],
-        loc="lower right", frameon=False, fontsize=8.0, handletextpad=0.6)
+    ax.legend(handles=[Patch(color=C_OBS, label="real labels"),
+                       Patch(color=C_NULL, label="labels destroyed"),
+                       Patch(color=C_WIN, label="survives Holm")],
+              loc="lower right", frameon=False, handletextpad=0.6)
 
 
 def main() -> int:
@@ -108,23 +106,11 @@ def main() -> int:
     reproduced = [r for r in rows
                   if r["obs"] > 0.05 and r["null"] >= 0.8 * r["obs"]]
 
-    fig, ax = plt.subplots(figsize=(11.0, 5.2))
+    S.apply()
+    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 3.3))
     build(ax, rows)
-    ax.set_title(f"With the labels destroyed, the sweep still finds most of the "
-                 f"saving in {len(reproduced)} of {m} cells",
-                 fontsize=11.4, fontweight="bold", loc="left", pad=40)
-    ax.text(0.0, 1.012,
-            f"Grey = what a signal-free pipeline reproduces. {n_rej} of {m} "
-            f"cells survive Holm at α=0.05. Surviving the null is necessary, not "
-            "sufficient: it says the saving\nis not an artefact of the sweep, not "
-            "that the policy is worth deploying — for that comparison see F13.",
-            transform=ax.transAxes, fontsize=8.4, color="#444444",
-            linespacing=1.5, va="bottom")
-    fig.text(0.012, 0.005,
-             f"B={b:,} permutations per cell; unit is the whole task bundle "
-             "(y, succ, cost) against X, not y alone. p is the plus-one estimator "
-             f"(k+1)/(B+1). Holm computed over the m={m} cells present.",
-             fontsize=7.0, color="#888888")
+    # Permutation count, the permuted unit, the p estimator and the reading
+    # that surviving the null is necessary but not sufficient are caption text.
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):

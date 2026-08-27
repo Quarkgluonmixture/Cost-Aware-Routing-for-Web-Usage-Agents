@@ -23,6 +23,7 @@ mode. \texttt{route\_only} and \texttt{triage\_only} are the two oracle halves;
 \texttt{oracle\_sr\_cost} additionally breaks ties by measured cost.}
 \label{tab:app-ladder}
 \footnotesize\setlength{\tabcolsep}{4.5pt}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llrrrr@{}}
 \toprule
 & & \multicolumn{2}{c}{\cell{Classifieds$\cdot$235B}} &
@@ -48,6 +49,7 @@ Policy & kind & SR \% & cost & SR \% & cost \\
 \texttt{cascade\_cost\_first} & oracle (perfect det.) & 43.30 & 0.31896 & 26.11 & 0.54588 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \section{The cost tie-break, isolated}

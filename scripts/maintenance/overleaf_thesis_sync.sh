@@ -3,7 +3,10 @@
 #
 # 工作流 (2026-08-11):
 #   - 真源 = 本仓库 final_dissertation/tex/。改内容一律改这里, 然后跑本脚本。
-#   - Overleaf 项目 6a7a7331d2e6523a360245d4 = 渲染 / 导师评审层。
+#   - Overleaf 项目 6a8f68ace4443ea9751d6201 = 渲染 / 导师评审层。
+#     2026-08-27 换项目: 稿件迁到 UCL PhD Thesis Template, 新项目就是从该模板
+#     开的那一个。旧项目 6a7a7331d2e6523a360245d4 (自建 report 版式) 停用,
+#     不要再往那边推 —— 两边版式不同, 推错会让导师看到旧排版。
 #   - ⚠️ 单向。Overleaf 网页端的直接编辑**不会**回流; 内容冻结前一律由我们改
 #     tex 再 sync (防双源漂移 —— 这正是 overleaf_sync.sh 对 REALM 稿定下的规矩)。
 #     冻稿后若要切换成 Overleaf 为终稿层, 先把那边 pull 回来再改规矩。
@@ -19,11 +22,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SRC="$REPO_ROOT/final_dissertation/tex"
-DEST="${OVERLEAF_THESIS_DIR:-$HOME/overleaf-thesis}"
+DEST="${OVERLEAF_THESIS_DIR:-$HOME/overleaf-thesis-ucl}"
 
 [ -d "$SRC" ]        || { echo "✗ 源目录不存在: $SRC"; exit 1; }
 [ -d "$DEST/.git" ]  || { echo "✗ Overleaf clone 不存在: $DEST
-  先跑: git clone https://git.overleaf.com/6a7a7331d2e6523a360245d4 $DEST"; exit 1; }
+  先跑: git clone https://git.overleaf.com/6a8f68ace4443ea9751d6201 $DEST"; exit 1; }
 
 # 本地先编译一次 —— 不让编不过的稿子进 Overleaf。Overleaf 那边编译失败时
 # 导师看到的是错误页而不是论文, 比晚同步几分钟糟得多。

@@ -25,11 +25,15 @@ SRC_SR = ROOT / "docs/analysis/cross_sites/sr_per_mode.json"
 MODES = ["DOM", "P-prompt", "P-text", "P-SoM", "SoM", "Vision"]
 
 # Grouped by what is actually transmitted (TERMS.md §1.1); the four text-side
-# modes all log image_payload_bytes == 0.
-SIDES = [("text side  ·  no image", ["DOM", "P-prompt", "P-text", "P-SoM"]),
-         ("combined  ·  text + image", ["SoM"]),
-         ("visual  ·  image only", ["Vision"])]
-C_SIDE = ["#0072B2", "#009E73", "#D55E00"]
+# modes all log image_payload_bytes == 0. Labels are kept to two or three words
+# so that a reader who glances at a legend entry has finished reading it: the
+# longer forms ("text side  ·  no image") were costing a second look for no
+# added meaning. Colours come from the shared house palette so that a mode is
+# the same colour here as in every other figure and in the conference artwork.
+SIDES = [("no image", ["DOM", "P-prompt", "P-text", "P-SoM"]),
+         ("text + image", ["SoM"]),
+         ("image only", ["Vision"])]
+C_SIDE = ["#E8720C", "#14855F", "#1F5FD6"]
 SIDE_OF = {m: i for i, (_s, ms) in enumerate(SIDES) for m in ms}
 
 # Display order: VWA cells first (primary), WA last (external validation).

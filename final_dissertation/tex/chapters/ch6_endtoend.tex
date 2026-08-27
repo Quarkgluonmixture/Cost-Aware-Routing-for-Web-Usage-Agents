@@ -52,6 +52,7 @@ from whole-cell outcomes, so it is optimistic on two axes at once. It is shown
 so the conclusion cannot be blamed on either selection step. A cell
 is a Pareto win only if $\Delta$SR $>0$ \emph{and} $\Delta$cost $<0$.}
 \label{tab:e2e}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llrrrr@{}}
 \toprule
 Cell & policy & SR \% & cost & $\Delta$SR & $\Delta$cost \\
@@ -105,13 +106,14 @@ Cell & policy & SR \% & cost & $\Delta$SR & $\Delta$cost \\
  & learned (swept)  & 16.35 & 0.06331 & $+6.73$\pp & $+41.7$\% \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \begin{scopebox}
 \textbf{Primary result.} In \textbf{0 of 8 cells} does the learned triage
 router achieve both higher task success \emph{and} lower cost than the trivial
-always-cheapest fixed policy. That joint condition --- better on both counts,
-worse on neither --- is what we mean by a Pareto win throughout. The result
+always-cheapest fixed policy. That joint condition, better on both counts and
+worse on neither, is what we mean by a Pareto win throughout. The result
 holds across two benchmarks, three models and two model families. This holds at the nested threshold and
 at the most favourable in-sample threshold alike, so it is not an artefact of
 operating-point selection.
@@ -142,7 +144,12 @@ $-2.6\%$). In the other seven the oracle, which knows the answer, also pays more
   \caption[The dominance plane, normalised to always-cheapest]{%
   \textbf{Why ``0 of 8'' is a statement about the trade-off, not about the
   learner.} Each cell is normalised to its own always-cheapest policy at the
-  origin; the shaded upper-left quadrant is the Pareto winning region. Learned
+  origin. The horizontal axis is $\log_2$ of the cost ratio, so $0$ is the same
+  cost and $+1$ is twice as expensive; the vertical axis is success rate in
+  percentage points above always-cheapest. The shaded upper-left quadrant is
+  the Pareto winning region. Fits are nested five-fold on the 18-feature
+  matched set (Appendix~\ref{app:router} gives the seed and the fold
+  protocol). Learned
   policies sit right of the vertical axis: they cost more. So does the
   retrospective oracle, in seven of eight cells. Always-cheapest is the
   cheapest fixed policy on average, not a per-episode cost floor: the

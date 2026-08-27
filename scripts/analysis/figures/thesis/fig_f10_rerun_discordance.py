@@ -31,6 +31,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import _style as S  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[4]
 SRC_INV = ROOT / "docs/analysis/cross_sites/noise_floor_inventory.md"
@@ -75,22 +76,19 @@ def build(ax, rows):
     for yi, r in zip(y, rows):
         ax.barh(yi, r["disc"], height=0.46, color=C_BAR, zorder=3)
         ax.text(r["disc"] + 0.35, yi, f"{r['disc']:.2f}%", va="center",
-                fontsize=8.8, color=C_BAR, fontweight="bold")
+                fontsize=S.FS_LABEL, color=C_BAR, fontweight="bold")
         if r["k"] is not None:
             ax.text(r["disc"] + 3.4, yi, f"κ = {r['k']:.3f}", va="center",
-                    fontsize=8.0, color=C_K)
+                    fontsize=S.FS_VALUE, color=C_K)
 
     ax.set_yticks(y, [MODE_LABEL.get(r["mode"], r["mode"])
-                      for r in rows], fontsize=9.4)
+                      for r in rows], fontsize=S.FS_PANEL)
     ax.set_xlim(0, max(r["disc"] for r in rows) + 7.0)
     ax.set_ylim(-0.7, len(rows) - 0.3)
-    ax.set_xlabel("tasks whose outcome flips between two runs of the SAME mode  [%]",
-                  fontsize=8.6)
+    ax.set_xlabel("tasks whose outcome flips between two runs of one mode  [%]")
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
     ax.tick_params(axis="y", length=0)
-    ax.grid(axis="x", color="#F0F0F0", lw=0.8)
-    ax.set_axisbelow(True)
 
 
 def main() -> int:
@@ -101,21 +99,11 @@ def main() -> int:
     n = rows[0]["n"]
     no_k = [r["mode"] for r in rows if r["k"] is None]
 
-    fig, ax = plt.subplots(figsize=(5.6, 2.9))
+    S.apply()
+    fig, ax = plt.subplots(figsize=(0.72 * S.PRINT_W_IN, 2.1))
     build(ax, rows)
-    ax.set_title(f"One rerun already flips {min(r['disc'] for r in rows):.0f}–"
-                 f"{max(r['disc'] for r in rows):.0f}% of tasks",
-                 fontsize=10, fontweight="bold", loc="left", pad=20)
-    ax.text(0.0, 1.012,
-            f"B0 × VWA-classifieds (n={n}), six independently replicated arms",
-            transform=ax.transAxes, fontsize=8.0, color="#666666", va="bottom")
-    fig.text(0.012, -0.20,
-             "κ where computed; "
-             + (f"not computed for {', '.join(MODE_LABEL.get(m, m) for m in no_k)}. " if no_k else "")
-             + "WebArena also has a replicate but it pools five modes over ten "
-               "shared tasks,\nso it is not a floor for its own baseline arm and is "
-               "not plotted here.",
-             fontsize=6.8, color="#888888", linespacing=1.5)
+    # Cell, sample size, which arms lack a kappa, and why the WebArena
+    # replicate is excluded are all caption material now.
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):

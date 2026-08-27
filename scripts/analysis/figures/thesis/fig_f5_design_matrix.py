@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import Rectangle  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
 from _ordering_parse import (  # noqa: E402
     C_SIDE, MODES, SIDE_OF, SIDES, VWA_CELLS, WA_CELLS, load)
 
@@ -52,21 +53,28 @@ def build(ax, cells, n_of, sr):
                                    lw=0.8, alpha=0.85 if filled else 1.0))
             if filled:
                 ax.text(j, y, f"{sr[(cell, mode)]:.1f}", ha="center",
-                        va="center", fontsize=8.0, color="white",
+                        va="center", fontsize=S.FS_VALUE, color="white",
                         fontweight="bold")
 
-    # Separate the primary sweep from the external-validation cells.
+    # Separate the primary sweep from the external-validation cells. The two
+    # tags name the benchmark and nothing else; which of them is the primary
+    # sweep and which the external validation is stated in the caption.
     if WA_CELLS and all(c in cells for c in WA_CELLS):
         cut = len(VWA_CELLS) - 0.5
-        ax.axvline(cut, color="#333333", lw=1.4)
-        ax.text(cut - 0.08, nrow - 0.30, "primary sweep  ·  VisualWebArena",
-                ha="right", fontsize=8.6, color="#333333", fontweight="bold")
-        ax.text(cut + 0.08, nrow - 0.30, "external validation  ·  WebArena",
-                ha="left", fontsize=8.6, color="#333333", fontweight="bold")
+        ax.axvline(cut, color=S.C_INK, lw=1.2)
+        ax.text(cut - 0.10, nrow - 0.28, "VisualWebArena", ha="right",
+                fontsize=S.FS_LABEL, color=S.C_INK, fontweight="bold")
+        ax.text(cut + 0.10, nrow - 0.28, "WebArena", ha="left",
+                fontsize=S.FS_LABEL, color=S.C_INK, fontweight="bold")
 
-    ax.set_xticks(range(ncol),
-                  [f"{c}\n$n$={n_of[c]}" for c in cells], fontsize=9.0)
-    ax.set_yticks(range(nrow), MODES[::-1], fontsize=9.4)
+    # Eight cell codes will not sit side by side on a 13cm text block: at this
+    # width they ran into each other ("red-B2wa_red-B0"). Rotating them costs a
+    # head-tilt but keeps every code readable, which is the cheaper of the two.
+    ax.set_xticks(range(ncol), [f"{c}  $n$={n_of[c]}" for c in cells])
+    ax.tick_params(axis="x", labelrotation=45)
+    for lbl in ax.get_xticklabels():
+        lbl.set_horizontalalignment("right")
+    ax.set_yticks(range(nrow), MODES[::-1], fontsize=S.FS_LABEL)
     ax.set_xlim(-0.6, ncol - 0.4)
     ax.set_ylim(-0.6, nrow - 0.15)
     for s in ("top", "right", "left", "bottom"):
@@ -75,8 +83,8 @@ def build(ax, cells, n_of, sr):
     ax.legend(handles=[plt.Line2D([], [], marker="s", ls="", ms=9,
                                   color=C_SIDE[i], label=lab)
                        for i, (lab, _m) in enumerate(SIDES)],
-              loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=3,
-              frameon=False, fontsize=8.6)
+              loc="upper center", bbox_to_anchor=(0.5, -0.42), ncol=3,
+              frameon=False)
 
 
 def main() -> int:
@@ -86,29 +94,13 @@ def main() -> int:
     cells, n_of, sr, _cost = load()
     n_cond = len(sr)
 
-    fig, ax = plt.subplots(figsize=(10.4, 4.9))
+    S.apply()
+    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 3.0))
     build(ax, cells, n_of, sr)
-    ax.set_title("Every mode was run in every cell — the grid has no holes, "
-                 "so every within-cell comparison is paired",
-                 fontsize=11.4, fontweight="bold", loc="left", pad=40)
-    ax.text(0.0, 1.015,
-            f"{n_cond} conditions over {len(cells)} cells. A **condition** is "
-            "one (site, model, mode) launch unit — one square. A **cell** is "
-            "one (site, model) stratification unit — one column.\nSquares carry "
-            "task success rate (%); colour marks what is actually sent to the "
-            "model. Every square is a row present in the source table — this "
-            "figure asserts coverage, not completeness.",
-            transform=ax.transAxes, fontsize=8.4, color="#444444",
-            linespacing=1.5, va="bottom")
-    fig.text(0.012, 0.005,
-             "Source: docs/analysis/cross_sites/router_objective_ordering.md, "
-             "cross-checked against sr_per_mode.json for the 36 VWA values "
-             "(script refuses to plot on disagreement); the 12 WA values are "
-             "single-source. ⚠️ The parser reads success rates only — it does NOT "
-             "verify per-condition completeness flags or task-set hashes, which "
-             "are checked upstream by the aggregators. VWA shopping conditions "
-             "exist but predate pipeline corrections and are excluded.",
-             fontsize=7.0, color="#888888")
+    # Nothing is written above the axes. The claim this grid supports (every
+    # mode ran in every cell, so within-cell comparisons are paired), the
+    # condition-versus-cell definition, and the provenance note all now live in
+    # the LaTeX caption, where they are body text rather than 8pt grey pixels.
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):

@@ -77,26 +77,9 @@ the interaction state rather than of the representation.
 
 Selective computation is a mature idea with several literatures. Organising them
 by \emph{what each one chooses} rather than chronologically makes the gap this dissertation addresses visible as a structural property rather than as
-an assertion (Figure~\ref{fig:f2}).
+an assertion. Four programmes follow, and the variable each one selects is named
+at the head of its paragraph.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\textwidth]{fig_f2_literature_map.pdf}
-  \caption[Literature map, organised by decision variable]{%
-  \textbf{Twenty-seven works, clustered by the variable each one selects.} Not a
-  timeline: the organising axis is \emph{what the method chooses}, because that
-  is the axis on which this dissertation differs from all four clusters.
-  Observation-representation work (left) selects which elements enter a fixed
-  encoding; model routing (top) selects which model, leaving the input encoding
-  untouched; confidence-based deferral (right) selects whether to answer, using
-  a signal that typically requires paying for inference first; adaptive
-  inference (bottom) selects how much computation to spend, which is depth or
-  width rather than what is looked at. The centre is empty: for a
-  \emph{fixed} agent, choosing \emph{which page encoding} to buy at a step,
-  using signals available \emph{before} paying for it. Cluster summaries are our
-  synthesis, not quotations.}
-  \label{fig:f2}
-\end{figure}
 
 \paragraph{Cluster 1: which elements enter the observation.}
 \citet{deng2023mind2web} rank and prune HTML elements before action prediction;
@@ -126,7 +109,7 @@ post-hoc confidence repair \citep{cattelan2024confidence} and learning-to-defer
 \citep{mozannar2020defer} choose between predicting and abstaining or deferring.
 The escalation endpoint is abstention or an external expert, not a richer view
 of the same input, and the signal used to decide is normally read off a model
-run that has already happened --- which is again downstream of the cost we are
+run that has already happened, which is again downstream of the cost we are
 trying to avoid paying.
 
 \paragraph{Cluster 4: how much computation to spend.} Adaptive computation
@@ -178,8 +161,8 @@ field's founding precedent for reporting these quantities at all, and
 \citet{henderson2020systematic} the standard argument that they should be
 reported systematically rather than anecdotally. \citet{luccioni2022bloom} and
 \citet{gupta2022chasing} show that the reported number moves substantially
-depending on which stages of energy use are counted --- manufacturing,
-cooling, the data centre around the chip --- which is why
+depending on which stages of energy use are counted (manufacturing,
+cooling, the data centre around the chip), which is why
 Section~\ref{sec:sustainability} names exactly what ours includes and declines
 to call it a footprint.
 

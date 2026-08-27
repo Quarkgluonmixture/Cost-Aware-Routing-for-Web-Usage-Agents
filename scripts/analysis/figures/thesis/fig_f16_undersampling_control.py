@@ -30,6 +30,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
 import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -62,28 +65,21 @@ def panel_a(ax, d):
             if tag == "f18_deployment":
                 ax.scatter(n[-1:], a[-1:], s=22, color=col, zorder=4)
                 ax.annotate(cell, (n[-1], a[-1]), textcoords="offset points",
-                            xytext=(5, -2), fontsize=7.0, color=C_DEP)
+                            xytext=(5, -2), fontsize=S.FS_VALUE, color=C_DEP)
     ax.axhline(0.5, color=C_TH, lw=1.0, ls=":", zorder=1)
-    ax.text(ax.get_xlim()[0], 0.505, " chance", fontsize=7.2, color=C_TH, va="bottom")
-    ax.set_xlabel("training rows (test folds never thinned)", fontsize=8.6)
-    ax.set_ylabel("out-of-fold AUROC", fontsize=8.6)
-    ax.set_title("A · does more of the same data help?", fontsize=9.8,
-                 loc="left", fontweight="bold", pad=6)
+    ax.text(ax.get_xlim()[0], 0.505, " chance", fontsize=S.FS_VALUE, color=C_TH, va="bottom")
+    ax.set_xlabel("training rows")
+    ax.set_ylabel("out-of-fold AUROC")
+    S.panel_label(ax, "A  Learning curves")
     sat = sum(1 for e in d["cells"].values()
               for t in ("f20_annotated", "f18_deployment")
               if _sat(e[t]["curve"]))
     tot = 2 * len(d["cells"])
-    ax.text(0.97, 0.05,
-            f"yes — but with decelerating returns:\n{sat} of {tot} curves buy less over "
-            "0.55→1.00\nthan over 0.25→0.55, despite the later span\nbeing the wider "
-            "one of the two",
-            transform=ax.transAxes, ha="right", va="bottom", fontsize=7.8,
-            color=C_TH, linespacing=1.55)
     ax.legend(handles=[plt.Line2D([], [], color=C_DEP, lw=1.7,
                                   label="18 features (deployment)"),
                        plt.Line2D([], [], color=C_ANN, lw=1.0, ls="--",
-                                  label="20 (adds the benchmark's own\ndifficulty annotation)")],
-              loc="upper left", frameon=False, fontsize=7.6)
+                                  label="20 features (annotated)")],
+              loc="upper left", frameon=False)
 
 
 SPLIT = 0.55   # must match router_undersampling_control.py's saturation table
@@ -113,24 +109,17 @@ def panel_b(ax, d):
                    zorder=3, edgecolor="white", lw=0.8)
         ax.scatter([i["train_auroc_real"]], [yi], s=46, color=C_DEP, zorder=4)
         ax.text(i["train_auroc_real"] + 0.008, yi,
-                f"+{i['excess_over_perm']:.3f}", va="center", fontsize=7.4,
+                f"+{i['excess_over_perm']:.3f}", va="center", fontsize=S.FS_VALUE,
                 color=C_DEP, fontweight="bold")
-    ax.set_yticks(y, cells, fontsize=8.4)
-    ax.set_xlabel("in-sample AUROC, near-unregularised fit", fontsize=8.6)
-    ax.set_title("B · is there signal to find at all?", fontsize=9.8,
-                 loc="left", fontweight="bold", pad=6)
+    ax.set_yticks(y, cells, fontsize=S.FS_LABEL)
+    ax.set_xlabel("in-sample AUROC, near-unregularised fit")
+    S.panel_label(ax, "B  Real labels against permuted")
     ax.tick_params(axis="y", length=0)
-    ax.text(0.03, 0.06,
-            "yes. Every cell separates its own rows further than the\n"
-            "same model fitted to PERMUTED labels does (grey).\n"
-            "So the features are not noise — which means the\n"
-            "objection cannot be dismissed on a no-signal finding.",
-            transform=ax.transAxes, fontsize=7.8, color=C_TH, linespacing=1.55)
     ax.legend(handles=[plt.Line2D([], [], marker="o", ls="", ms=7, color=C_ANN,
-                                  label="permuted labels (memorisation floor)"),
+                                  label="permuted"),
                        plt.Line2D([], [], marker="o", ls="", ms=7, color=C_DEP,
-                                  label="real labels")],
-              loc="upper right", frameon=False, fontsize=7.6)
+                                  label="real")],
+              loc="upper right", frameon=False)
 
 
 def panel_c(ax, d):
@@ -143,11 +132,11 @@ def panel_c(ax, d):
     ax.add_patch(plt.Rectangle((0.02, 0.62), 0.96, 0.28, transform=ax.transAxes,
                                facecolor="#F2F2F2", edgecolor="#CCCCCC", lw=0.8))
     ax.text(0.5, 0.845, "what more data can buy, and what it cannot",
-            transform=ax.transAxes, ha="center", fontsize=9.2, fontweight="bold")
+            transform=ax.transAxes, ha="center", fontsize=S.FS_PANEL, fontweight="bold")
     ax.text(0.5, 0.70,
             f"more rows move the learned predictor\nfrom AUROC {best:.2f} upward — at "
             "best toward\na perfect predictor, AUROC = 1.00",
-            transform=ax.transAxes, ha="center", va="center", fontsize=8.0,
+            transform=ax.transAxes, ha="center", va="center", fontsize=S.FS_VALUE,
             linespacing=1.6)
     ax.annotate("", xy=(0.5, 0.57), xytext=(0.5, 0.62),
                 xycoords="axes fraction", textcoords="axes fraction",
@@ -155,14 +144,14 @@ def panel_c(ax, d):
     ax.add_patch(plt.Rectangle((0.02, 0.06), 0.96, 0.50, transform=ax.transAxes,
                                facecolor="#FDF0E6", edgecolor=C_HOT, lw=1.3))
     ax.text(0.5, 0.470, "a perfect predictor IS the oracle —\nand we measured it",
-            transform=ax.transAxes, ha="center", va="center", fontsize=8.8,
+            transform=ax.transAxes, ha="center", va="center", fontsize=S.FS_LABEL,
             fontweight="bold", color=C_HOT, linespacing=1.5)
     ax.text(0.5, 0.255,
             "the retrospective oracle Pareto-beats\nalways-cheapest in 1 of 8 cells "
             "(Ch 6).\nThe learned router does so in 0 of 8.\n\n"
             f"Undersampling explains the gap from {best:.2f} to 1.00.\n"
             "It cannot explain a boundary the oracle\nalso fails to cross.",
-            transform=ax.transAxes, ha="center", va="center", fontsize=8.0,
+            transform=ax.transAxes, ha="center", va="center", fontsize=S.FS_VALUE,
             linespacing=1.6)
 
 
@@ -172,35 +161,15 @@ def main() -> int:
     a = ap.parse_args()
     d = load()
 
-    fig, axes = plt.subplots(1, 3, figsize=(15.0, 4.9))
+    # Panel C was a rectangle of prose arguing that a perfect predictor is the
+    # oracle and the oracle was already measured. That argument is the chapter's
+    # to make in sentences; it was never data, so it is no longer drawn.
+    S.apply()
+    fig, axes = plt.subplots(2, 1, figsize=(S.PRINT_W_IN, 6.0))
     panel_a(axes[0], d)
     panel_b(axes[1], d)
-    panel_c(axes[2], d)
-    for ax in axes[:2]:
-        ax.grid(color="#F2F2F2", lw=0.8)
-        ax.set_axisbelow(True)
-        for s in ("top", "right"):
-            ax.spines[s].set_visible(False)
     axes[1].spines["left"].set_visible(False)
-
-    fig.suptitle("The undersampling objection has force against the predictor, "
-                 "and none against the result",
-                 fontsize=12.0, fontweight="bold", x=0.006, ha="left", y=1.045)
-    fig.text(0.006, 1.000,
-             "\"You did not measure a mechanism, you measured a small sample\" is "
-             "the cheapest way to dismiss a negative result, so it is answered "
-             "here with measurements rather than prose. Two of the three panels "
-             "come back\nPARTLY AGAINST this dissertation: the curves are still "
-             "rising and the signal is real. The third is why that does not "
-             "rescue the router.",
-             fontsize=8.4, color="#444444", linespacing=1.5, va="top")
-    fig.text(0.006, -0.045,
-             f"Source: docs/analysis/cross_sites/router_undersampling_control.json "
-             f"({d['n_splits']}-fold × {d['n_repeat']} repeats, seed {d['seed']}; "
-             "triage label; training rows thinned stratified, test folds intact). "
-             "Oracle comparison from router_triage_learnability_with_wa.md.",
-             fontsize=7.0, color="#888888")
-    fig.tight_layout(rect=(0, 0, 1, 0.97))
+    fig.tight_layout()
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):

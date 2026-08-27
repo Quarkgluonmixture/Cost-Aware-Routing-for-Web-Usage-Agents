@@ -49,6 +49,7 @@ expected training rows under a five-fold split; four cells do not have them. Thi
 is an admissibility verdict, not an impossibility proof (see the box above), and
 Chapter~\ref{ch:disc} argues that the underlying constraint is supply.}
 \label{tab:supply}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrl@{}}
 \toprule
 Cell & scored $n$ & minted labels & solvable \% & classes surviving & admissible? \\
@@ -61,6 +62,7 @@ Cell & scored $n$ & minted labels & solvable \% & classes surviving & admissible
 \cell{Reddit$\cdot$Gemma-4B} & 203 & 15 & \phantom{0}7.39 & 0                   & \textbf{no} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 The triage label is better posed. It is binary, defined on \emph{every}
@@ -125,6 +127,7 @@ no deployment has costs most of the discriminative power.} AUROC for the triage
 label, out-of-fold, per cell. Five of six VisualWebArena cells fall, one by
 0.141.}
 \label{tab:feature-ablation}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
 Cell & 20 features (VWA-only) & 18 features (matched) & $\Delta$ \\
@@ -137,6 +140,7 @@ Cell & 20 features (VWA-only) & 18 features (matched) & $\Delta$ \\
 \cell{Reddit$\cdot$Gemma-4B} & 0.615 & 0.526 & $-0.089$ \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \begin{scopebox}
@@ -146,7 +150,7 @@ Chapter~\ref{ch:system} before any model was fitted, and visible in
 Figure~\ref{fig:f4}(B). They were not dropped because they performed too well.
 Had we looked at which inputs mattered across the whole dataset and then
 removed whatever looked suspicious, we would have been choosing inputs using
-the very rows we later score on --- while still calling the procedure nested.
+the very rows we later score on, while still calling the procedure nested.
 The claim in Section~\ref{sec:protocol} would then be void. The admissibility
 rule is availability at serving time, applied to the feature set as a whole.
 
@@ -167,10 +171,15 @@ but that the one column with reliable signal in it does not exist outside the be
   \caption[Two feature sets side by side]{%
   \textbf{What the router loses when it is restricted to features a deployment
   has.} Per-cell AUROC under the 20-feature VisualWebArena set and the matched
-  18-feature set. The two dropped features are the benchmark's own difficulty
-  annotation and its reference-image flag. Read together with
-  Figure~\ref{fig:f4}(B), which shows why they had to be dropped: WebArena has
-  neither.}
+  18-feature set, with the signed change printed between them. The two dropped
+  features are the benchmark's own difficulty annotation and its
+  reference-image flag; the name beside each row is the strongest single
+  covariate in that cell's fit, and on five of six cells it is
+  \texttt{reasoning\_difficulty}, an annotation shipped with the task
+  configuration rather than anything a router could read at serving time. The
+  18-feature results are refits, not a subset of the 20-feature ones. Read
+  together with Figure~\ref{fig:f4}(B), which shows why the two had to be
+  dropped: WebArena ships neither.}
   \label{fig:f11}
 \end{figure}
 
@@ -190,6 +199,7 @@ state the comparison as matched on set, not on support.
 information.} The header figure of 18 is a ceiling, not a count of usable
 features.}
 \label{tab:live-features}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llp{7.4cm}@{}}
 \toprule
 Cell & live & dead (zero-variance) \\
@@ -205,6 +215,7 @@ Cell & live & dead (zero-variance) \\
   \texttt{intent\_form\_fill} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \section{Protocol: what a negative result has to survive}
@@ -227,8 +238,8 @@ seen it.
 
 We previously got this wrong, which is why it is spelled out. An earlier
 revision of this analysis called its threshold ``nested'' while in fact
-reusing scores computed across the whole cell --- scores whose own splits
-included the rows being tested --- and while choosing the best and cheapest
+reusing scores computed across the whole cell, scores whose own splits
+included the rows being tested, and while choosing the best and cheapest
 mode from the whole cell too. The numbers below supersede it.
 We record the correction because it changes the interpretation of a headline
 number, not to narrate debugging.
@@ -259,6 +270,7 @@ AUROC for the triage label, all eight cells, 18 matched features.} A
 prior-only predictor scores 0.500 by construction. The model clears its own best
 single covariate in 5 of 8 cells, by $+0.014$ to $+0.075$.}
 \label{tab:auroc}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrl@{}}
 \toprule
 Cell & $n$ & solvable \% & AUROC (LR) & best single feature & that feature \\
@@ -273,6 +285,7 @@ Cell & $n$ & solvable \% & AUROC (LR) & best single feature & that feature \\
 \cell{Reddit (WA)$\cdot$Qwen-4B} & 104 & 30.8 & \textbf{0.758} & 0.710 & \texttt{dom\_complexity} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 The answer is a qualified yes, and the qualification is the interesting part.
@@ -307,6 +320,7 @@ $1.00\times10^{-4}$. Because $m=8$ cells are tested at once, a result must
 clear a proportionally stricter threshold to count as significant; the
 strictest of those is $0.05/8 = 6.25\times10^{-3}$.}
 \label{tab:permutation}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
 Cell & observed saving & median under shuffled labels & $p$ \\
@@ -321,6 +335,7 @@ Cell & observed saving & median under shuffled labels & $p$ \\
 \cell{Reddit (WA)$\cdot$Qwen-4B} & \phantom{0}3.8\% & \phantom{0}2.9\% & 0.443 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 Under Holm's step-down procedure \citep{holm1979} at $\alpha=0.05$ over the
@@ -341,7 +356,12 @@ reproducing at least 80\% of the observed saving; in \cell{cls$\cdot$B1} the shu
   $B=10{,}000$ bundle permutations. The permutation unit is the whole task
   bundle, not the label alone: permuting $y$ by itself disconnects the label
   from the outcomes that define it, and at $B=200$ that error moved two cells in
-  opposite directions.}
+  opposite directions. $p$ is the plus-one estimator $(k+1)/(B+1)$ and Holm is
+  computed over the eight cells present; the $p$ value printed beside each row
+  is bold where the cell survives the correction. Surviving the null is
+  necessary and not sufficient: it says the saving is not an artefact of the
+  threshold sweep, not that the policy is worth deploying, which is the
+  comparison Chapter~\ref{ch:e2e} makes.}
   \label{fig:f12}
 \end{figure}
 
@@ -349,7 +369,7 @@ reproducing at least 80\% of the observed saving; in \cell{cls$\cdot$B1} the shu
 \label{sec:auroc-not-answer}
 
 The one cell that survives, the forum site with the Gemma model
-(\cell{red$\cdot$B2}), has an AUROC of 0.526 --- worse than simply using its
+(\cell{red$\cdot$B2}), has an AUROC of 0.526, worse than simply using its
 single most informative input, which reaches 0.790. That is not a contradiction; the two
 quantities measure different things and this data pulls them apart.
 
@@ -366,7 +386,7 @@ all, so almost nothing in that 95\% was ever going to succeed. It differs from
 the free always-cheapest policy on 5\% of the allocation, and those 11 retained
 tasks happen to hold 5 of the cell's successes against always-cheapest's 4. What
 the shuffling test detects is that this small group is unusually rich in
-solvable tasks --- not that the model has ranked all the tasks well.
+solvable tasks, not that the model has ranked all the tasks well.
 
 \begin{scopebox}
 \textbf{The honest phrasing.} It is \emph{not} ``the label is predictable, yet
@@ -388,9 +408,10 @@ dismiss a negative result: \emph{you did not measure a mechanism, you measured a
 small sample}. A cell with $n=203$ and 7\% solvable yields 15 positive which-mode labels, and nothing fits. On that reading the whole result is
 an artefact of a compute budget rather than a property of the regime.
 
-The objection deserves measurements, not prose, so we ran three, each isolating a different thing it could mean (Figure~\ref{fig:f16}). Two of the
-three come back \emph{partly against} this dissertation, and we report them that
-way.
+The objection deserves measurements, not prose, so we ran three, each isolating
+a different thing it could mean. Two of the three come back \emph{partly
+against} this dissertation, and those two are Figure~\ref{fig:f16}; we report
+them that way.
 
 \paragraph{Does more of the same data help? Yes, with decelerating returns.}
 We train on progressively smaller samples of the training rows, keeping the
@@ -429,15 +450,21 @@ which of the two it improved.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_f16_undersampling_control.pdf}
-  \caption[Undersampling control: learning curve, separability, and the oracle bound]{%
-  \textbf{Answering ``you just had too little data'' with three measurements.}
-  (A) Learning curves with training rows thinned and test folds intact: still
-  rising, and decelerating in 9 of 12. (B) Near-unregularised in-sample AUROC
-  against the same model fitted to permuted labels: every cell clears its
-  memorisation floor, so the features carry signal. (A) and (B) both favour the
-  objection. (C) is why that does not rescue the router: more data moves the
-  predictor toward the oracle, and the oracle was already measured
-  (Chapter~\ref{ch:e2e}) to Pareto-beat always-cheapest in only 1 of 8 cells.}
+  \caption[Undersampling control: learning curves and separability]{%
+  \textbf{The two measurements that come back against this dissertation.}
+  (A) Out-of-fold AUROC as training rows are thinned with the class mix held
+  fixed and the test folds left intact, so the curve isolates training size
+  alone. The solid lines are the 18-feature deployment set, the dashed lines
+  the 20-feature annotated set; the dotted horizontal is chance. The curves are
+  still rising, and in 9 of 12 the second half of the sweep buys less than the
+  first even though it spans more of the data. (B) In-sample AUROC of a
+  near-unregularised fit on real labels against the same fit on permuted
+  labels, with the excess printed beside each cell. Every cell clears its own
+  memorisation floor, so the features carry signal and the objection cannot be
+  dismissed by claiming there is nothing to find. Why neither panel rescues the
+  router is argued in the text rather than drawn here: more data moves the
+  predictor toward a perfect one, and a perfect predictor is the oracle, which
+  Chapter~\ref{ch:e2e} already measured.}
   \label{fig:f16}
 \end{figure}
 

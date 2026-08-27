@@ -14,7 +14,7 @@ feature set, or the label definition. On this data none of them is the binding
 constraint. The binding constraint is that \textbf{routing labels are produced
 only by solve events, and solve events are scarce}.
 
-Consider how the examples dwindle (Figure~\ref{fig:f14}). Take the
+Consider how the examples dwindle. Take the
 classified-ads site with the 235B model (\cell{cls$\cdot$B0}), the most
 favourable cell in the study. Of its 224 scored tasks, some mode solves 97.
 Only those 97 can say anything about which mode to prefer, so there are 97
@@ -25,24 +25,12 @@ and no answer retains enough at all.
 Pooled over the six VisualWebArena cells there are 260 which-mode labels in
 total.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\textwidth]{fig_f14_label_supply_attrition.pdf}
-  \caption[Label-supply attrition per cell]{%
-  \textbf{From scored tasks to trainable classes.} Each cell's funnel: scored
-  tasks $\to$ tasks any mode solves $\to$ which-mode labels $\to$ classes
-  retaining enough members to survive a five-fold split. The horizontal line is
-  the two-class minimum below which nothing can be discriminated. Four of six
-  cells finish below it. The bottleneck is the second arrow, and its width is the base success rate, not a modelling choice.}
-  \label{fig:f14}
-\end{figure}
 
 The shortage is in how often tasks are solved, not in how the resulting
 examples are divided up. Dividing the examples we have differently cannot
 create a solved task that never happened. Three
 independent routes out of the constraint are available in principle; we
-attempted all three, and each is blocked for a structurally different reason
-(Figure~\ref{fig:f15}).
+attempted all three, and each is blocked for a structurally different reason.
 
 \begin{scopebox}
 \textbf{But ``structural'' should not be heard as ``insurmountable'', and our own
@@ -70,8 +58,8 @@ corpus needed, not a promise.
 \subsection{Route 1: make the label continuous}
 
 If success were graded rather than binary, every task would be informative, and scarcity would disappear. VisualWebArena's evaluator returns a binary verdict.
-Its component checks --- matching the web address, inspecting the resulting
-page, matching text, and querying the image --- each return a pass or a fail,
+Its component checks (matching the web address, inspecting the resulting
+page, matching text, and querying the image) each return a pass or a fail,
 and the task passes only if every one of them passes. There is no partial
 credit to expose. The route is closed by the benchmark's
 measurement instrument, not by our analysis.
@@ -91,7 +79,7 @@ group's most common answer attains 79.2\% (classifieds) and 83.7\% (reddit);
 grouping instead by identical input measurements attains more. Neither figure
 is a bound on anything. Each is scored on the very rows it read the most
 common answer off, so a group containing a single row is counted correct
-automatically --- and such groups are 29.8\% and 37.0\% of rows respectively.
+automatically, and such groups are 29.8\% and 37.0\% of rows respectively.
 They measure agreement within the data already seen, not accuracy on tasks not
 yet attempted, and we do not use them as bounds.
 
@@ -107,22 +95,6 @@ tasks. It is the only relabelling that buys anything, and what it buys is a
 coarser decision, not more examples. The
 route is open but leads somewhere smaller than where we were going.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\textwidth]{fig_f15_three_routes.pdf}
-  \caption[Three routes out of the supply constraint, and why each is blocked]{%
-  \textbf{Each escape from label scarcity fails differently.} Continuous labels
-  are blocked by the evaluator, which emits a conjunctive binary verdict.
-  Pooling is blocked by identifiability: 56--57\% of tasks shared by two or more
-  cells carry conflicting labels across backbones. (The bars group by task
-  identity; because three features are observation-derived, the same task can
-  also carry different feature vectors across cells, and that stricter
-  feature-space version is a separate diagnostic in the source artefact.) Coarser relabelling is open but converts
-  the problem into a smaller one rather than supplying more evidence. Three
-  distinct failure modes is itself the argument that the constraint is
-  structural.}
-  \label{fig:f15}
-\end{figure}
 
 \subsection{A defect we found in our own supervision}
 
@@ -149,16 +121,21 @@ supply conclusion is unchanged.
 Chapter~\ref{ch:repr} measured a ceiling of $+3.45$ to $+16.35\pp$;
 Chapter~\ref{ch:e2e} realised none of it. The gap decomposes into four terms,
 each of which we can now attach a measurement to:
+% Broken after the product term: on a 13cm text block the four braced factors do
+% not fit on one line, and \resizebox would shrink the annotations below the
+% figure-label size used everywhere else.
 \begin{equation}
+\begin{split}
   \underbrace{\text{realised value}}_{\approx 0}
   \;\approx\;
-  \underbrace{\text{selection opportunity}}_{+3.45\ \text{to}\ +16.35\pp}
-  \times
-  \underbrace{\text{decision quality}}_{\text{AUROC } 0.53\text{--}0.76}
-  \;-\;
+  &\underbrace{\text{selection opportunity}}_{+3.45\ \text{to}\ +16.35\pp}
+  \;\times\;
+  \underbrace{\text{decision quality}}_{\text{AUROC } 0.53\text{--}0.76} \\[4pt]
+  &\;-\;
   \underbrace{\text{routing overhead}}_{\sim10^{-6}\,\$}
   \;-\;
   \underbrace{\text{error cost}}_{\text{dominant}} .
+\end{split}
   \label{eq:decomposition}
 \end{equation}
 
@@ -172,7 +149,7 @@ locates the loss unambiguously. The overhead term is negligible
 loss is split between two terms. The first is how well the choice can be
 predicted at all: weak, and mostly borrowed from a benchmark annotation a
 deployment would not have. The second is what the wrong choices cost, and this
-dominates --- because 48--93\% of tasks are solved by no mode at all, so the
+dominates, because 48--93\% of tasks are solved by no mode at all, so the
 error term is made up mostly of tasks sent to the expensive mode that were
 never going to succeed whatever they were shown.
 
@@ -183,7 +160,7 @@ one \emph{rerun} arm buys 2.0--7.6\pp{} on its own
 representation is worth no more than a repeat of the same one
 (Figure~\ref{fig:f10b}); and when both sides are given six runs, repeating the
 strongest single mode takes more than half of what six different modes add over
-it --- and, under a fair-coin model of which tasks flip, comes within
+it, and, under a fair-coin model of which tasks flip, comes within
 3.53\pp{} of matching them (Section~\ref{sec:six-vs-six}). An accounting that treats
 the full ceiling as representation-attributable is therefore claiming something
 our own data contradicts. What survives is not an advantage in success but an
@@ -196,15 +173,15 @@ of Chapter~\ref{ch:e2e} sharper rather than softer.
 \label{sec:phantom-meaning}
 
 The four image-free modes are a clean experimental instrument. Two things vary
-independently across them --- which page text is supplied, and how the
-instructions around it are worded --- while the image is absent throughout.
+independently across them, which page text is supplied and how the
+instructions around it are worded, while the image is absent throughout.
 And because \mSoM{}'s text is only $1.008\times$ the length of \mDOM{}'s,
 removing the image removes almost nothing but the image. As an instrument, it
 works.
 
 As a finding, it is weaker than we initially read it. The three image-free
-modes other than \mDOM{} --- \mPT{}, \mPP{} and \mPS{}, which we call the
-\emph{phantom} modes --- do point the same way: in 14 of 18 mode-by-cell
+modes other than \mDOM{}, namely \mPT{}, \mPP{} and \mPS{}, which we call the
+\emph{phantom} modes, do point the same way: in 14 of 18 mode-by-cell
 comparisons, deleting one of them lowers the ceiling. But the pooled sizes
 along the two axes, 1.35 and 2.09\pp, sit below even the most permissive floor
 we measure for what a plain rerun produces. So we report that the phantom
@@ -309,7 +286,7 @@ narrower than the original objection but real}: we have shown that a
 \emph{better classifier} would not change the conclusion, not that a
 \emph{larger benchmark} would leave everything else fixed. A benchmark four
 times the size would also change the base success rate, the share of tasks
-nothing solves, and how hard always-cheapest is to beat on cost --- and those,
+nothing solves, and how hard always-cheapest is to beat on cost, and those,
 not the number of training rows, are what Section~\ref{sec:regime-boundary}
 identifies as the regime.
 
@@ -337,14 +314,14 @@ the best single mode both hold across the other two models as well.
 on \cell{cls$\cdot$B0} and one pooled comparison on \cell{wa\_red$\cdot$B1}. The
 thresholds in Table~\ref{tab:floor-spread} are computed there and applied
 elsewhere. When a third repeat was run, its result landed inside the range the
-first two had marked out --- reassuring, but one confirmation rather than a
+first two had marked out, which is reassuring but is one confirmation rather than a
 distribution. We also cannot construct the six-arm repetition comparison the
 ceiling would strictly require, because that needs six replicate runs of one
 mode.
 
 \paragraph{One data file carries a misleading quality stamp.} All 36 rows in
 the drop-one file are complete and exact, yet every row is stamped
-\texttt{NON\_PAPER\_GRADE} --- not because anything is missing, but because
+\texttt{NON\_PAPER\_GRADE}, not because anything is missing, but because
 the script that wrote it was launched with a flag (\texttt{--allow-partial})
 that permits incomplete input. We report the stamp rather than removing it
 (Appendix~\ref{app:repro}); the values support only the downgraded claim in
@@ -383,7 +360,7 @@ number it cannot interpret. The replicate costs one extra run.
 
 \paragraph{Make failure detection cheap.} A policy that starts with the
 cheapest mode and escalates only after failure reaches the full ceiling in
-success, but at $+316$ to $+463\%$ of the cost of the best single mode ---
+success, but at $+316$ to $+463\%$ of the cost of the best single mode,
 almost all of it spent confirming that unsolvable tasks are unsolvable. A
 cheap, reliable ``this attempt has failed'' detector would turn that overspend
 into the prize prediction could not claim. And unlike the question of which
@@ -408,7 +385,7 @@ $+16.35\pp$ of task success over the best single mode at 1.6--35.3\% lower
 cost, in every cell and on both benchmarks. \textbf{Most of its height,
 however, is repetition}: one plain repeat of an unchanged mode buys
 2.0--7.6\pp{} by itself, and six repeats of the strongest single mode take
-more than half of what six different modes add over it --- and, if tasks flip
+more than half of what six different modes add over it, and, if tasks flip
 like fair coins, come within 3.53\pp{} of matching them, below the threshold
 we derive and apply to everyone else's effects. What survives is the ceiling's
 price rather than its height: selection reaches that level with one attempt
@@ -419,8 +396,8 @@ modelling choice is made on training tasks alone, checked against 10,000
 shuffles of the outcomes, the learned router is both more successful and
 cheaper than the trivial always-cheapest policy in 0 of 8 cells. The
 after-the-fact chooser fails the same test in 7 of 8. Always-cheapest is the
-cheapest fixed policy on average --- not a per-episode cost floor, which is how
-the one remaining oracle cell beats it --- so anything else has almost always to
+cheapest fixed policy on average, though not a per-episode cost floor, which is
+how the one remaining oracle cell beats it, so anything else has almost always to
 buy enough extra success to cover what it additionally spends, and none of the
 deployable policies measured here does. The negative result is therefore about the economics of this boundary,
 not about how good the router is at predicting.
@@ -430,7 +407,7 @@ can only teach a router which mode to use if some mode solved it. At 2--27\%
 base success, 4 of 6 cells do not reach the minimum number of solved tasks per
 mode that we require before fitting a classifier, and three separate ways out
 of that shortage fail for three different reasons. Even the easier question
---- will any mode solve this task at all --- is answered largely by an input
+(will any mode solve this task at all) is answered largely by an input
 no deployment has: the benchmark's own human-written difficulty rating. Training
 deliberately on less data confirms the objection's force and bounds it: more
 data would buy a better predictor, with returns that flatten as it grows, and

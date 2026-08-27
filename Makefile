@@ -633,6 +633,25 @@ compare-baselines-all:
 figures: _figures
 	@echo "Figures regenerated → results/phantom_paper/figures/"
 
+# ---- Dissertation figures ---------------------------------------------------
+# Regenerate every dissertation figure this repo owns, refresh the copy LaTeX
+# actually embeds, and then enforce the house rule that a figure carries labels
+# and not claims. The check reads the rendered PDFs, so it also catches prose
+# that arrives through a data file or a runtime f-string.
+#
+# Six figures are carried over verbatim from the conference submissions and are
+# listed as exempt inside check_no_prose.py rather than skipped by a pattern.
+.PHONY: thesis-figures thesis-figures-check
+thesis-figures:
+	@for f in scripts/analysis/figures/thesis/fig_f*.py; do \
+	  echo "  $$f"; $(PYTHON) $$f || exit 1; \
+	done
+	@cp final_dissertation/figures/*.pdf final_dissertation/tex/figures/
+	@$(MAKE) --no-print-directory thesis-figures-check
+
+thesis-figures-check:
+	@$(PYTHON) scripts/analysis/figures/thesis/check_no_prose.py
+
 # ---- Background tasks ----
 # (B-394 / A1.15 C3 T6=(a), 2026-05-16): `watch-reddit` retired — see header.
 

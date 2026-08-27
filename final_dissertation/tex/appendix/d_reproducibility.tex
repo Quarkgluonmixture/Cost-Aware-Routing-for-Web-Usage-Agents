@@ -13,6 +13,7 @@ logs.
 \centering\small
 \caption{Reproduction level per component.}
 \label{tab:app-repro-level}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llp{6.6cm}@{}}
 \toprule
 Component & level & note \\
@@ -29,6 +30,7 @@ Figures & \textbf{re-executable} & each script reads one artefact by path and
   refuses to plot partial data \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \section{Configuration pins}
@@ -76,7 +78,8 @@ stands and say what it means, rather than either hiding it or leaning on it.
 \centering\small
 \caption{Where each reported quantity comes from.}
 \label{tab:app-artefacts}
-\begin{tabular}{@{}lp{9.2cm}@{}}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lp{8.0cm}@{}}
 \toprule
 Reported in & artefact \\
 \midrule
@@ -92,6 +95,7 @@ Table~\ref{tab:feature-ablation} & \emph{ibid.}\ and \texttt{cross\_sites/router
 Tables~\ref{tab:supply}, \ref{tab:scored-set} & \texttt{cross\_sites/router\_label\_supply\_diagnosis.md}, \texttt{benchmark\_eda/corpus\_eda.json} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \section{Known limitations of the released artefacts}

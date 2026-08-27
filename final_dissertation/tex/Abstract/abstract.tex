@@ -1,0 +1,132 @@
+% Front-matter prose, in the slots the UCL template defines.
+% The template's Dedication slot is not used; this dissertation has none. Its
+% Impact Statement slot is a PhD requirement, and for a taught Masters the
+% department asks instead for a statement of what the work makes available, so
+% that slot carries the data-and-code statement under its own heading.
+
+\clearpage
+{
+    \pagestyle{abstract}
+    \chapter*{Abstract}
+    \addcontentsline{toc}{chapter}{Abstract}
+
+A web agent looks at a web page, decides what to click or type, acts, and
+repeats until a user's task is done. Before it can act it must be handed some
+encoding of the page: cheap text listing the page's elements and their labels,
+an expensive screenshot on its own, or both together, with the screenshot's
+elements numbered and boxed and those same numbers repeated in the text. The choice is normally made once, when the system is configured,
+and applied everywhere. Since a task runs for tens of steps, it is also paid for
+tens of times. This dissertation asks whether the expensive choice is necessary
+at every step, and whether the steps where it \emph{is} necessary can be
+identified cheaply enough for the identification to be worth making.
+
+We hold the agent fixed and vary only what it is shown. Six \emph{observation
+modes} differ in the page text supplied, the wording of the instructions around
+it, and whether an annotated image is sent at all; the task, the available
+actions, the step limit and the rules for what counts as a cost are identical
+across all six. We run all six on 8 website-and-model combinations, drawn from
+two public benchmarks of website tasks, VisualWebArena and WebArena, and
+three underlying models. On that base we measure three quantities in sequence:
+what an ideal after-the-fact selector would gain by choosing per task, where
+that selector is an \emph{oracle} allowed to pick, for each task, a mode already
+known to have solved it; whether the same choice can be made in advance from information a deployed
+system would have; and whether acting on those predictions beats always using
+the cheapest mode, once cost is counted.
+
+The answers are, in order, \emph{yes}, \emph{no}, and \emph{the question is
+mis-posed}. The oracle gains $+3.45$ to $+16.35$ percentage points of task
+success over the best single mode while spending 1.6--35.3\% less, in every
+combination and on both benchmarks. Our own noise standard deflates that
+headline: running one unchanged mode a second time buys 2.0--7.6 points by
+itself, and when both sides are allowed six runs, six repetitions of the
+strongest single mode come within 3.53 points of the six-mode oracle under a
+fair-coin model of which tasks flip, which is below the threshold we derive for
+what a single repetition of that arm can produce on its own. Two runs do not pin down
+that flip rate, so the projection is a sensitivity rather than a settled figure.
+What survives is the ceiling's price rather than its height, since selection
+reaches that level with one attempt per task where repetition needs six. A
+policy wins here only if it is \emph{both} more successful and cheaper than the
+one it is measured against, which is a \emph{Pareto} improvement. The learned
+router only has to predict whether \emph{any} mode will solve the task, not
+which of the six to use. Under a fully nested cross-validation protocol, in
+which every modelling choice is made on training tasks alone and then tested on
+tasks held back, it clears that bar against always-cheapest in \textbf{0 of 8}
+combinations. The oracle, told the answers in
+advance, fails to clear it in 7 of 8. That recasts the negative result from
+``the learner failed'' to ``no Pareto-improving \emph{deployable} operating
+point exists against always-cheapest under this cost boundary''. The
+retrospective oracle, which is not deployable, does find one in 1 of 8.
+
+What blocks the prediction is the supply of training examples, not the capacity
+of the model. A task can teach the router something only if some mode solved it,
+so at 2--27\% base success 4 of 6 combinations lack enough solved tasks per mode
+to train and test a classifier at all. The input carrying most of the apparent
+predictive power on VisualWebArena turns out to be the benchmark's own
+human-written difficulty annotation, which no deployment has. Training on
+deliberately reduced data confirms that scarcity is part of the story and then
+bounds it: the learning curves are still rising, so more data would buy a better
+predictor, but the best any predictor can become is the oracle, and the oracle
+wins in 1 of 8 combinations. Pricing this constraint puts the benchmark that
+would relieve it at 2.1 to 4.2 times the size of the ones that exist, which is a
+specification rather than an impossibility.
+
+The contribution is not a router. It is a measured boundary: the conditions
+under which \emph{representation routing}, meaning the choice of page encoding
+per task, cannot be learned, with the
+opportunity proven to exist before it is declared unreachable, and the failure
+traced to a mechanism we can price.
+
+    \thispagestyle{abstract}
+}
+\newpage
+
+\clearpage
+{
+    \pagestyle{acknowledgements}
+    \chapter*{Acknowledgements}
+    \addcontentsline{toc}{chapter}{Acknowledgements}
+
+I thank my supervisor, Mar\'ia P\'erez-Ortiz, for consistently redirecting
+attention from what the system could be made to do towards what the evidence
+could actually support, and my co-supervisor, Zekun Wu, for the structural
+writing guidance that shaped how this document separates what was measured from
+what was inferred.
+
+I thank my parents, whose support made this degree possible, and You Wu, my
+girlfriend, who lived alongside every deadline in it.
+
+Compute for the local backbones was provided by the Holistic AI GB10 nodes and
+by a dedicated A100 instance on UCL's ARC Condenser service; neither was shared
+during the paper-grade runs, which matters for the latency and energy figures
+reported in Chapter~\ref{ch:system}.
+
+    \thispagestyle{acknowledgements}
+}
+\newpage
+
+\clearpage
+{
+    \pagestyle{access}
+    \chapter*{Data, Code and Public Access}
+    \addcontentsline{toc}{chapter}{Data, Code and Public Access}
+
+Every component of this study is publicly obtainable with one stated exception.
+The benchmarks (VisualWebArena, WebArena) are open-source and self-hosted from
+their published Docker images; two of the three backbones
+(\texttt{Qwen3-VL-4B}, \texttt{google/gemma-3-4b-it}) are openly available model
+weights run locally; the experiment harness, analysis pipeline and figure
+scripts are released with the submission.
+
+\textbf{The exception is the large backbone.} \texttt{Qwen3-VL-235B-A22B} was
+served through a metered API proxy hosted on AWS rather than self-hosted. Its outputs,
+per-step logs and billing records are archived and released, but a third party
+cannot re-run those conditions without equivalent proxy access. Results that
+depend on that backbone alone are therefore \emph{replicable from our logs} but
+not \emph{independently reproducible end to end}. Every claim that rests on
+that backbone is marked where it is made, and
+Chapters~\ref{ch:repr}--\ref{ch:e2e} are built so that none of the conclusions
+depends on a single backbone.
+
+    \thispagestyle{access}
+}
+\newpage

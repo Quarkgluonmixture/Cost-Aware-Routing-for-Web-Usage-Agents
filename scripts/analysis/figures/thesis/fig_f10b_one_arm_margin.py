@@ -37,6 +37,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[4]
 SRC = ROOT / "docs/analysis/cross_sites/noise_floor_inventory.md"
 OUT = ROOT / "final_dissertation/figures/fig_f10b_one_arm_margin"
@@ -93,39 +96,34 @@ def build(ax, rows, thresh):
                     zorder=3)
             ax.plot([hi, hi], [yi - 0.19, yi + 0.19], color=C_RERUN, lw=2,
                     zorder=3)
-            ax.text(hi + 0.25, yi - 0.30, f"rerun {lo:.2f}–{hi:.2f}pp",
-                    va="center", fontsize=7.4, color=C_RERUN)
+            ax.text(hi + 0.25, yi - 0.30, f"{lo:.2f}–{hi:.2f}",
+                    va="center", fontsize=S.FS_VALUE, color=C_RERUN)
         ax.scatter([r["gain"]], [yi], s=92, color=C_REP, zorder=5)
-        ax.text(r["gain"] + 0.22, yi + 0.28, f"{r['gain']:.2f}pp "
-                f"(+{r['gain_mode']})", va="center", fontsize=8.2, color=C_REP,
-                fontweight="bold")
+        ax.text(r["gain"] + 0.22, yi + 0.28,
+                f"{r['gain']:.2f}  +{r['gain_mode']}", va="center",
+                fontsize=S.FS_VALUE, color=C_REP, fontweight="bold")
 
     # "no floor" belongs in the tick label, not the plotting area — at small
     # gains the marker sits exactly where such a note would go.
-    ax.set_yticks(y, [f"{r['cell']}\nbest: {r['best_mode']} @ {r['best_sr']:.1f}%"
-                      + ("" if r["floor"] else "\n(no rerun floor measured)")
-                      for r in rows], fontsize=8.4)
+    ax.set_yticks(y, [f"{r['cell']}\n{r['best_mode']} {r['best_sr']:.1f}%"
+                      + ("" if r["floor"] else "\nno floor")
+                      for r in rows], fontsize=S.FS_LABEL)
     ax.set_xlim(-0.3, max(max(r["gain"] for r in rows),
                           max((r["floor"][1] for r in rows if r["floor"]),
                               default=0)) + 3.4)
     ax.set_ylim(-0.8, len(rows) - 0.15)
-    ax.set_xlabel("ceiling gain from adding ONE arm to the best single mode  [pp]",
-                  fontsize=9)
+    ax.set_xlabel("ceiling gain from adding one arm to the best single mode  [pp]")
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
     ax.tick_params(axis="y", length=0)
-    ax.grid(axis="x", color="#F1F1F1", lw=0.8)
-    ax.set_axisbelow(True)
 
-    ax.scatter([], [], s=92, color=C_REP,
-               label="+1 arm = a DIFFERENT representation")
-    ax.plot([], [], color=C_RERUN, lw=9, alpha=0.30,
-            label="+1 arm = a RERUN of the same representation (measured)")
-    ax.plot([], [], color=C_THRESH, lw=1.0, ls=":",
-            label=f"{tlo:.2f}–{thi:.2f}pp: above this a single rerun is unlikely "
-                  "to produce it (one cell)")
-    ax.legend(loc="lower right", frameon=False, fontsize=8.2,
-              handletextpad=0.6, borderpad=0.2)
+    # Three short legend entries. What "a different arm" and "a rerun" mean,
+    # and how the band was measured, are defined in the caption and the text.
+    ax.scatter([], [], s=92, color=C_REP, label="a different arm")
+    ax.plot([], [], color=C_RERUN, lw=9, alpha=0.30, label="a rerun")
+    ax.plot([], [], color=C_THRESH, lw=1.0, ls=":", label="rerun band")
+    ax.legend(loc="lower right", frameon=False, handletextpad=0.6,
+              borderpad=0.2)
 
 
 def main() -> int:
@@ -138,24 +136,11 @@ def main() -> int:
     inside = [r for r in with_floor
               if r["floor"][0] <= r["gain"] <= r["floor"][1]]
 
-    fig, ax = plt.subplots(figsize=(10.8, 5.6))
+    S.apply()
+    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 3.7))
     build(ax, rows, thresh)
-    ax.set_title("At equal arm count, a different representation is worth no more "
-                 "than a rerun",
-                 fontsize=11, fontweight="bold", loc="left", pad=42)
-    ax.text(0.0, 1.015,
-            f"In {len(inside)} of the {len(with_floor)} cells that carry a "
-            "measured floor, the representation arm lands INSIDE the rerun band. "
-            "The other six cells have no floor, so\nnothing is claimed for them — "
-            "a band is never borrowed across cells. This is the like-for-like "
-            "comparison; the five-arm ceiling is in F8.",
-            transform=ax.transAxes, fontsize=8.4, color="#444444",
-            linespacing=1.5, va="bottom")
-    fig.text(0.012, 0.005,
-             "Source: noise_floor_inventory.md §2 (one-arm margin) + §1b "
-             "(null spread). ⚠️ The WA row pools five modes over ten shared "
-             "tasks and is not a floor for its own baseline arm — see the source.",
-             fontsize=7.4, color="#666666")
+    # The like-for-like reading, the count of cells landing inside the band,
+    # and the WebArena caveat are stated in the caption.
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):

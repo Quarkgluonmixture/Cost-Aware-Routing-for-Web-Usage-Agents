@@ -2,40 +2,214 @@
 %  MSc dissertation — Cost-Aware Routing for Web Usage Agents
 %  UCL MSc Artificial Intelligence for Sustainable Development (COMP0191)
 %
+%  Built on the UCL PhD Thesis Template
+%  (https://www.overleaf.com/latex/templates/ucl-phd-thesis-template/tcdxmjdxbfhh).
+%  The preamble below is the template's, kept in its original order and with its
+%  original comments, so that a later template update can be diffed against it.
+%  Everything this project adds is either marked "P79" or lives in preamble.tex.
+%
 %  Single source of truth: final_dissertation/tex/ in the P79 repository.
 %  Overleaf is a rendering / supervision layer, synced by
 %  scripts/maintenance/overleaf_thesis_sync.sh — do not edit on Overleaf while
 %  the content is unfrozen, or the two sources will drift.
 % =============================================================================
-\documentclass[11pt,a4paper,oneside]{report}
 
+%%% Document packages
+\RequirePackage{fix-cm}                                                                 % Defines a specific font class to use. Fixes bf sc T1 class issue.
+\documentclass[a4paper, 12pt, twoside]{report}                                          % Defines the type of document to compile.
+\usepackage[top=2cm,bottom=2cm,left=4cm,right=4cm]{geometry}                            % Controls the geometry of the page layout.
+
+%%% Fancy page setup
+\usepackage{lastpage}                                                                   % Has a macro that defines the total number of pages.
+\usepackage{fancyhdr}                                                                   % Controls the setup of the page.
+\setlength{\headheight}{15pt}                                                           % Sets the header height to contain the header text.
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}                           % Sets \leftmark to "<Chapter Number>. <Chapter Title>".
+\renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}                            % Sets \rightmark to "<Section Number>. <Section Title>".
+
+% P79 FIX, two defects in the template's header block.
+%
+% (1) The template writes the section mark and the chapter mark to the left and
+%     right of the SAME header line. With titles as long as this dissertation's
+%     the two overprint each other, giving a 104pt overfull box and two
+%     unreadable titles stacked on top of one another on most pages. The
+%     standard two-sided arrangement is used instead: chapter on the verso,
+%     section on the recto, one mark per page. The page number is in the footer
+%     either way, so no information is lost.
+%
+% (2) The template's derived styles are written as \fancypagestyle{plain}{...},
+%     which under fancyhdr v4 inherits from the empty prototype and then leaks
+%     its \fancyhead[R] assignment into the live style. After the first chapter
+%     opening, every page in the document carried the chapter title on the right
+%     as well, for the rest of the run. Naming the main layout and inheriting
+%     from it with the [base] argument re-establishes all four corners each time
+%     a style is selected, so nothing leaks.
+\fancypagestyle{main}{%
+  \fancyhf{}%
+  \fancyhead[LE]{\nouppercase{\leftmark}}%                                               Chapter title on even (left-hand) pages.
+  \fancyhead[RO]{\nouppercase{\rightmark}}%                                              Section title on odd (right-hand) pages.
+  \fancyfoot[LE,RO]{\thepage\ of\ \pageref{LastPage}}%                                   Page number counter.
+  \renewcommand{\headrulewidth}{0.4pt}%                                                  Header underline thickness.
+  \renewcommand{\footrulewidth}{0.4pt}%                                                  Footer overline thickness.
+}
+\pagestyle{main}                                                                        % Defines the usual page setup.
+
+% Front-matter and chapter-opening styles. Each names its own page, keeps the
+% footer, and drops the running marks, which is what those pages want.
+\fancypagestyle{plain}[main]{\fancyhead{}}                                              % Chapter openings and any page the class sets to plain.
+\fancypagestyle{declaration}[main]{\fancyhead{}\fancyhead[RO,LE]{Declaration}}          % Define adjustments for the declaration page(s).
+\fancypagestyle{abstract}[main]{\fancyhead{}\fancyhead[RO,LE]{Abstract}}                % Define adjustments for the abstract page(s).
+\fancypagestyle{is}[main]{\fancyhead{}\fancyhead[RO,LE]{Impact Statement}}              % Define adjustments for the impact statement page(s).
+\fancypagestyle{dedication}[main]{\fancyhead{}\fancyhead[RO,LE]{Dedication}}            % Define adjustments for the dedication page(s).
+\fancypagestyle{acknowledgements}[main]{\fancyhead{}\fancyhead[RO,LE]{Acknowledgements}}% Define adjustments for the acknowledgements page(s).
+\fancypagestyle{glossary}[main]{\fancyhead{}\fancyhead[RO,LE]{Table of Acronyms}}       % Define adjustments for the glossary page(s).
+\fancypagestyle{toc}[main]{\fancyhead{}\fancyhead[RO,LE]{Contents}}                     % Define adjustments for the table of contents page(s).
+\fancypagestyle{lof}[main]{\fancyhead{}\fancyhead[RO,LE]{List of Figures}}              % Define adjustments for the list of figures page(s).
+\fancypagestyle{lot}[main]{\fancyhead{}\fancyhead[RO,LE]{List of Tables}}               % Define adjustments for the list of tables page(s).
+\fancypagestyle{access}[main]{\fancyhead{}\fancyhead[RO,LE]{Data, Code and Public Access}}% P79: added for the public-access statement, which the template has no slot for.
+\fancypagestyle{guide}[main]{\fancyhead{}\fancyhead[RO,LE]{Reader's Guide}}             % P79: added for the reader's guide.
+
+%%% Text packages
+\usepackage[british]{babel}                                                             % Selects the language rules. P79: british rather than english, to match the spelling used throughout.
+\usepackage[utf8]{inputenc}                                                             % Translates input encodings into LaTeX script.
+\usepackage[T1]{fontenc}                                                                % Selects font encoding.
+\usepackage{textcomp}                                                                   % Supports companion fonts.
+\usepackage{pdflscape}                                                                  % Arranges PDF landscapely.
+\usepackage{afterpage}                                                                  % Deals with pdflscape package issues.
+\usepackage{siunitx}                                                                    % Deals with unit formatting.
+\usepackage{lmodern}                                                                    % Fixes the bf sc T1 class issue.
+\DeclareFontFamily{T1}{lmr}{}                                                           % P79 FIX: the two \DeclareFontShape lines below fail with "Font family `T1+lmr' unknown" unless the family is declared first, because T1/lmr is only loaded on first use. Without this the build reports two errors and silently drops the bold small-caps substitution.
+\DeclareFontShape{T1}{lmr}{b}{sc}{<->ssub*cmr/bx/sc}{}                                  % Fixes the bf sc T1 class issue.
+\DeclareFontShape{T1}{lmr}{bx}{sc}{<->ssub*cmr/bx/sc}{}                                 % Fixes the bf sc T1 class issue.
+\usepackage{setspace}                                                                   % Customizes line spacing.
+\onehalfspacing{}                                                                       % P79: UCL guidance asks for 1.5 or 2.0 line spacing; 1.5 is used here.
+
+%% Note to the user (template)
+% The UCL guidelines enforce that margins at the binding edge must not be less than 40 mm and other margins not less than 20 mm. Both left and right margins are set to 40mm here, and top and bottom to 20mm.
+% The UCL guidelines recommend a minimum font size of 12, set in the \documentclass options.
+
+%%% Bibliography packages
+\usepackage[style=numeric,sorting=none,url=true,arxiv=abs,nohashothers=false,
+            backend=biber,natbib=true]{biblatex}                                        % Controls the bibliography style and sorting. P79: natbib=true keeps the \citep/\citet calls used throughout the chapters working under biblatex.
+\addbibresource{refs.bib}                                                               % Imports the bibliography.
+\usepackage[hidelinks]{hyperref}                                                        % Hyperlinks in citation URLs, and hides their colour in the pdf.
+
+%%% Custom referencing commands
+\newcommand{\secref}[1]{Sec.\ \ref{#1}}                                                 % Creates a reference to a section as Sec. [].
+\newcommand{\equatref}[1]{Eq.\ \eqref{#1}}                                              % Creates a reference to an equation as Eq. [].
+\newcommand{\tabref}[1]{Table\ \ref{#1}}                                                % Creates a reference to a table as Table [].
+
+%%% Math packages
+\usepackage{amsmath, amssymb}                                                           % Defines tools required for math mode.
+\usepackage{amsfonts}                                                                   % Defines extended font set for math mode.
+\usepackage{eucal}                                                                      % Allows for mathcal typesetting.
+\numberwithin{equation}{section}
+
+%%% Image packages
+\usepackage{graphicx}                                                                   % Enhanced graphics support.
+\usepackage{float}                                                                      % Improves figure and table positioning.
+\usepackage{caption}                                                                    % Custom captions (orientations mainly).
+\usepackage{csquotes}                                                                   % Advanced inline and display quotations.
+\usepackage{subcaption}                                                                 % Applies for subfigures.
+\usepackage{rotating}                                                                   % Allows figures to be rotated.
+\usepackage[export]{adjustbox}
+
+%%% Image listing directory
+\graphicspath{{figures/}{Figures/}{Title/}}                                             % Sets the directory of the images so document structure is tidier. P79: this project's figures live in figures/.
+
+%%% Text packages
+\usepackage{multicol}                                                                   % Allows multiple columns to be used.
+\usepackage{gensymb}                                                                    % Provides generic commands for both text and math modes.
+\usepackage{listings}                                                                   % Provides source code in LaTeX, which is not processed.
+
+%%% Table packages
+\usepackage{ltablex}                                                                    % Combines longtable into tabularx environments.
+\usepackage{makecell}                                                                   % Allows splitting a single cell over many rows using \makecell.
+\usepackage{multirow}                                                                   % Allows multiple rows to be combined in a table.
+\usepackage{tabularx}                                                                   % Creates tables that can use the alignment as is needed.
+\usepackage{booktabs}                                                                   % Creates better quality tables.
+
+%%% Acronym package
+\usepackage[nonumberlist, postdot, nogroupskip, toc]{glossaries-extra}                  % Allows for glossaries and acronyms.
+\usepackage{glossary-longbooktabs}                                                      % Allows for the chosen style of glossary.
+\makenoidxglossaries{}                                                                  % Creates a glossary.
+\loadglsentries{acronym.tex}                                                            % Imports glossary entries from an external file.
+\setglossarystyle{long-booktabs}                                                        % Sets a style of glossary.
+
+% P79 note on two template packages that are deliberately not loaded here.
+% `tikz-feynman` draws Feynman diagrams and is specific to the template author's
+% field; `algorithm2e` exists to feed \listofalgorithms, and this dissertation
+% presents no algorithm floats, so both the package and that list are omitted
+% rather than shipping an empty page. `todonotes` is omitted because the
+% document is past the stage where draft annotations belong in it.
+
+%%% Replacement fields
+% Note - use the space command `\ ` between each word here. newcommand treats spaces in the definitions as terminations.
+\newcommand{\authorName}{Jiaming\ Wei}
+\newcommand{\primarySupervisor}{Mar\'ia\ P\'erez-Ortiz}
+\newcommand{\secondarySupervisor}{Zekun\ Wu}
+\newcommand{\submissionDate}{September\ 2026}
+\newcommand{\thesisTitle}{When\ Is\ Expensive\ Perception\ Worth\ Paying\ For?}
+\newcommand{\thesisSubtitle}{Measuring\ the\ Ceiling,\ the\ Predictability\ and\ the\ Economics\ of\ Representation\ Routing\ in\ Web\ Agents}
+\newcommand{\department}{Department\ of\ Computer\ Science}
+\newcommand{\programme}{MSc\ Artificial\ Intelligence\ for\ Sustainable\ Development}
+\newcommand{\moduleCode}{COMP0191:\ MSc\ Project}
+
+% P79 project macros: term lock, scope boxes, chapter hand-offs.
 \input{preamble}
 
-\title{When Is Expensive Perception Worth Paying For?\\
-       Measuring the Ceiling, the Predictability, and the Economics of\\
-       Representation Routing in Web Agents}
-\author{Jiaming Wei}
-\date{September 2026}
-
 \begin{document}
+\pagenumbering{arabic}
+\include{./Title/title.tex}
 
-\input{frontmatter}
+\include{./Abstract/abstract.tex}
 
-\input{chapters/ch1_introduction}
-\input{chapters/ch2_background}
-\input{chapters/ch3_system}
-\input{chapters/ch4_representation}
-\input{chapters/ch5_predictability}
-\input{chapters/ch6_endtoend}
-\input{chapters/ch7_discussion}
+\clearpage
+{
+  \pagestyle{toc}
+  \tableofcontents{}
+  \thispagestyle{toc}
+}
+\newpage{}
+\clearpage
+{
+  \pagestyle{glossary}
+  \printunsrtglossary[type=main, title={Table of Acronyms}]{}
+  \thispagestyle{glossary}
+}
+\newpage{}
+\clearpage
+{
+  \pagestyle{lof}
+  \addcontentsline{toc}{chapter}{List of Figures}
+  \listoffigures{}
+  \thispagestyle{lof}
+}
+\newpage{}
+\clearpage
+{
+  \pagestyle{lot}
+  \addcontentsline{toc}{chapter}{List of Tables}
+  \listoftables{}
+  \thispagestyle{lot}
+}
+\newpage{}
 
-\bibliographystyle{plainnat}
-\bibliography{refs}
+\include{./readers_guide.tex}
+
+\include{chapters/ch1_introduction}
+\include{chapters/ch2_background}
+\include{chapters/ch3_system}
+\include{chapters/ch4_representation}
+\include{chapters/ch5_predictability}
+\include{chapters/ch6_endtoend}
+\include{chapters/ch7_discussion}
+
+\printbibliography[heading=bibintoc]{}
 
 \appendix
-\input{appendix/a_ceiling}
-\input{appendix/b_noise}
-\input{appendix/c_router}
-\input{appendix/d_reproducibility}
+\include{appendix/a_ceiling}
+\include{appendix/b_noise}
+\include{appendix/c_router}
+\include{appendix/d_reproducibility}
 
 \end{document}

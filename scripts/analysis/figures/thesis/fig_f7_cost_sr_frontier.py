@@ -29,6 +29,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
 from _ordering_parse import (  # noqa: E402
     C_SIDE, MODES, SIDE_OF, SIDES, load)
 
@@ -57,14 +58,15 @@ def panel(ax, cell, n, sr, cost, unit):
         ax.scatter([c], [s], s=74 if on else 46, color=C_SIDE[SIDE_OF[m]],
                    edgecolor="#333333" if on else "none",
                    lw=1.1, zorder=3, alpha=1.0 if on else 0.55)
-        ax.annotate(m, (c, s), textcoords="offset points", xytext=(0, 8),
-                    ha="center", fontsize=7.4,
+        # Six labels in a 2.5in panel collide if they all sit above their point.
+        # Alternating above and below by index halves the density without moving
+        # any label away from the mark it names.
+        dy = 7 if i % 2 == 0 else -12
+        ax.annotate(m, (c, s), textcoords="offset points", xytext=(0, dy),
+                    ha="center", fontsize=S.FS_VALUE,
                     color="#222222" if on else "#888888")
-    ax.set_title(f"{cell}   ($n$={n}, {len(front)} non-dominated)",
-                 fontsize=9.4, loc="left", pad=6)
-    ax.set_xlabel(unit, fontsize=8.0)
-    ax.grid(color="#F2F2F2", lw=0.8)
-    ax.set_axisbelow(True)
+    ax.set_title(f"{cell}   $n$={n}", fontsize=S.FS_PANEL, loc="left", pad=6)
+    ax.set_xlabel(unit, fontsize=S.FS_VALUE)
     for s_ in ("top", "right"):
         ax.spines[s_].set_visible(False)
     lo = min(p[0] for p in pts)
@@ -81,7 +83,8 @@ def main() -> int:
     a = ap.parse_args()
     cells, n_of, sr, cost = load()
 
-    fig, axes = plt.subplots(2, 4, figsize=(14.6, 7.2))
+    S.apply()
+    fig, axes = plt.subplots(4, 2, figsize=(S.PRINT_W_IN, 7.4))
     fronts = []
     for ax, cell in zip(axes.ravel(), cells):
         # ⚠️ Both are `total_billed_cost_usd` — a TOKEN-priced quantity. B0's
@@ -90,42 +93,27 @@ def main() -> int:
         # the plotted 0.0595 sits ~88x above the 0.000677 that energy x tariff
         # gives. Naming the axis "electricity" would be naming a different
         # quantity than the one drawn.
-        unit = ("billed API \\$ / episode" if "B0" in cell
-                else "token-priced \\$ / episode (device-amortised)")
+        unit = ("billed \\$ / episode" if "B0" in cell
+                else "amortised \\$ / episode")
         fronts.append(panel(ax, cell, n_of[cell], sr, cost, unit))
     for ax in axes.ravel()[len(cells):]:
         ax.axis("off")
     for ax in axes[:, 0]:
-        ax.set_ylabel("task success rate (%)", fontsize=8.6)
+        ax.set_ylabel("task success rate (%)", fontsize=S.FS_LABEL)
 
-    fig.legend(handles=[plt.Line2D([], [], marker="o", ls="", ms=8,
+    fig.legend(handles=[plt.Line2D([], [], marker="o", ls="", ms=6,
                                    color=C_SIDE[i], label=lab)
                         for i, (lab, _m) in enumerate(SIDES)],
-               loc="lower center", ncol=3, frameon=False, fontsize=8.8,
-               bbox_to_anchor=(0.5, -0.005))
+               loc="lower center", ncol=3, frameon=False,
+               bbox_to_anchor=(0.5, 0.0))
 
-    fig.suptitle("Cost and success do not move together: every cell has "
-                 "several non-dominated modes, and several dominated ones",
-                 fontsize=12.0, fontweight="bold", x=0.008, ha="left", y=1.010)
-    fig.text(0.008, 0.965,
-             f"Filled outlines are non-dominated ({min(fronts)}-{max(fronts)} "
-             "per cell); faded points cost more AND succeed less than some "
-             "alternative, and are shown rather than hidden. Cost is summed over "
-             "the episode's ACTUAL steps,\nnot inferred from a per-step context "
-             "length — which is why a weaker mode can be the more expensive one "
-             "(it spends the step budget failing). Panels use separate axes on "
-             "purpose:\nboth are total_billed_cost_usd, but B0's per-1k schedule "
-             "is a vendor price and B1/B2's a device-amortisation rate, and the "
-             "two are never divided by one another.",
-             fontsize=8.4, color="#444444", linespacing=1.5, va="top")
-    fig.text(0.008, -0.030,
-             "Source: docs/analysis/cross_sites/router_objective_ordering.md "
-             "(cost = total_billed_cost_usd, the canonical estimand — token-priced "
-             "throughout, NOT measured energy), cross-checked against "
-             "sr_per_mode.json for the six VWA cells; the two WA cells are "
-             "single-source.",
-             fontsize=7.0, color="#888888")
-    fig.tight_layout(rect=(0, 0.03, 1, 0.90))
+    # No banner, no explanatory block, no provenance footnote. Which points are
+    # non-dominated, why the panels do not share an x axis, and where the cost
+    # estimand comes from are all caption material; drawing them here forced the
+    # reader through three paragraphs before reaching the first data point.
+    # Reserve a strip at the foot for the shared key so it never lands on the
+    # bottom row's axis label.
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):

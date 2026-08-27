@@ -19,7 +19,7 @@ The choice is normally made once, at configuration time, and applied to every
 step of every task. That is the problem this dissertation is about. A
 multi-step web task takes tens of browser steps, and the representation
 decision is re-paid at each one. The screenshot is re-encoded, the marks are
-re-drawn, and the input is billed again by the token --- the unit in which
+re-drawn, and the input is billed again by the token, the unit in which
 models charge for what they are shown. If the extra information changed the outcome at every
 step, this would simply be the price of the capability. But it is not obvious
 that it does, and, as far as we can establish, nobody has measured whether it does.
@@ -28,7 +28,7 @@ The obvious response is to decide per step instead of once. What this
 dissertation tests is the weaker, task-level version of that idea: the choice
 is made once per task rather than once per step. The reason is that the
 benchmark scores whole tasks, so what a different mode would have achieved at
-an individual step is never observed --- and that per-step comparison is
+an individual step is never observed, and that per-step comparison is
 exactly what a step-level selector would have to learn from
 (Section~\ref{sec:regime-boundary}). That intuition is
 what makes this an interesting problem rather than an engineering preference,
@@ -39,20 +39,30 @@ the selection machinery itself costs, or the whole apparatus loses money. Each
 condition is measurable. This dissertation measures all three, in that order,
 and reports where the chain breaks.
 
-\begin{figure}[t]
+\begin{landscape}
+\begin{figure}[p]
   \centering
-  \includegraphics[width=\textwidth]{fig_f0_thesis_overview.pdf}
-  \caption[Thesis overview: the three questions and their answers]{%
-  \textbf{The argument of this dissertation in one figure.} The same web task
-  can be handed to the same agent through six different page encodings (centre),
-  which differ in cost by construction. The questions that follow are answered in that order: \emph{is there a ceiling worth chasing} (yes, but see
-  Chapter~\ref{ch:repr} for how much of it a rerun already buys), \emph{is the
-  per-task choice predictable at serving time} (no), and \emph{does acting on
-  the prediction pay} (the trade-off does not exist under this cost boundary).
-  This is a map of the argument, not a performance result; every number in it is
-  established in the chapter named beneath it.}
-  \label{fig:f0}
+  \includegraphics[width=\linewidth]{fig_overview.pdf}
+  \caption[The setting: agent, representation, routing]{%
+  \textbf{The setting this dissertation works in.} Panel 1: one agent step. The
+  agent receives the task and an observation of the page, emits a thought, a
+  grounding decision and an action drawn from a small fixed action space, and
+  the resulting page becomes the next observation. Panel 2: the three
+  representation families that observation can take. \mDOM{} sends
+  accessibility-tree text and grounds actions on element identifiers, and the
+  panel shows a fragment of that text to indicate its shape rather than to be
+  read; \mSoM{}
+  sends a screenshot with elements numbered and boxed on it together with the
+  numbered lines of that same text; \mVis{} sends the raw screenshot and grounds
+  on pixel coordinates. The three text-only variants that complete the space are
+  introduced in Chapter~\ref{ch:system}. Panel 3: the policies that could choose
+  among them, from a fixed single mode through a confidence cascade and a
+  learned triage rule up to the retrospective oracle, and the two outcomes those
+  policies are judged on. Nothing in this figure is a result; it names the
+  objects the rest of the dissertation measures.}
+  \label{fig:overview}
 \end{figure}
+\end{landscape}
 
 \section{Why the cost is worth arguing about}
 \label{sec:stakes}
@@ -76,8 +86,8 @@ the prompt fixed, which is exactly the manipulation Chapter~\ref{ch:system}
 builds.
 
 \paragraph{Computational cost is not the same thing as environmental cost, and
-this dissertation does not conflate them.} We report token counts, billed dollars, elapsed time, and --- for the two
-models we run on our own hardware --- the energy the graphics card itself
+this dissertation does not conflate them.} We report token counts, billed dollars, elapsed time, and, for the two
+models we run on our own hardware, the energy the graphics card itself
 reports drawing. We do not convert tokens into
 kilowatt-hours; no hardware-independent conversion exists
 \citep{fernandez2025energy}, and treating one as a proxy for the other is a
@@ -116,22 +126,29 @@ choosing costs more than the choice saves. The core methodological
 commitment of this dissertation is that these three quantities (ceiling, predictability, realised value) are measured separately and never allowed to
 stand in for one another.
 
-\begin{figure}[t]
+% Three screenshot columns side by side: inherently wide, and shrunk to the
+% 13cm text block the page text inside the screenshots stops being legible.
+\begin{landscape}
+\begin{figure}[p]
   \centering
-  \includegraphics[width=\textwidth]{fig_f1_motivating_example.pdf}
+  \includegraphics[width=\linewidth]{fig_f1_motivating_example.pdf}
   \caption[What each observation mode actually sends]{%
-  \textbf{One page, three ways of paying for it.} All three columns show the same browser step of the same task, verified byte-identical at the source screenshot, as it is actually transmitted to the model. Left:
-  the structured page text of the \mDOM{} mode, listing the elements with
-  their labels and roles, and no image at all. Centre: the \mSoM{} mode, which
-  sends the screenshot with the page's elements numbered and boxed on it
-  \emph{and} the numbered lines of that same text (\sommarks{}). Right: the
-  \mVis{} mode, the plain screenshot with no page text. The quantitative point matters more than the pictures: on this
-  step the \mSoM{} text payload is $1.008\times$ the \mDOM{} text payload
-  (median over all 224 classifieds tasks at step~0: also $1.008\times$), while
-  the billed input tokens are $4{,}335$ against $3{,}314$. The extra 31\% is the
-  image.}
+  \textbf{One page, three ways of paying for it.} All three columns show step
+  000 of task 0 on the VisualWebArena classifieds site, as it is actually
+  transmitted to the model; the source screenshot is byte-identical across the
+  three runs, which is what makes them the same page. Left: the structured page
+  text of the \mDOM{} mode, listing elements with their labels and roles, and no
+  image. Centre: the \mSoM{} mode, which sends the screenshot with the page's
+  elements numbered and boxed on it \emph{and} the numbered lines of that same
+  text (\sommarks{}). Right: the \mVis{} mode, the plain screenshot with no page
+  text. The row beneath each column gives the payload actually billed. The
+  quantitative point matters more than the pictures: on this step the \mSoM{}
+  text payload is $1.008\times$ the \mDOM{} text payload (median over all 224
+  classifieds tasks at step~0: also $1.008\times$), while the billed input
+  tokens are $4{,}335$ against $3{,}314$. The extra 31\% is the image.}
   \label{fig:f1}
 \end{figure}
+\end{landscape}
 
 \section{Approach}
 \label{sec:approach}
@@ -151,7 +168,7 @@ steps it gets, the benchmark's automatic scoring, and the rules for what
 counts as a cost. Chapter~\ref{ch:system} makes that claim auditable.
 
 We run this on 8 combinations of website and model, which we call
-\emph{cells}. Three models --- two of one design family, one of another ---
+\emph{cells}. Three models, two of one design family and one of another,
 are run on two VisualWebArena sites \citep{koh2024visualwebarena}. Two of
 those models are then run on a WebArena site \citep{zhou2024webarena}, to
 check whether the findings survive in a second benchmark. Every cell runs all six
@@ -190,7 +207,7 @@ the image, over an otherwise unchanged agent. The factorisation shows that the c
       fair on count. Adding one plain repeat of an unchanged mode buys
       2.0--7.6\pp{} by itself. Six repeats of the strongest single mode recover
       more than half of everything six different modes add over it, whatever
-      the per-task flip rate --- and, if that rate is one half, come within
+      the per-task flip rate, and, if that rate is one half, they come within
       3.53\pp{} of matching them outright, a gap smaller than the threshold we
       ourselves derive for what one repeat can produce. Applying that
       standard to our own headline moves the surviving claim from the ceiling's
@@ -231,9 +248,9 @@ shortfall is not an artefact of a weak comparison (Chapters~\ref{ch:pred}--\ref{
 \item \textbf{A calibrated statement of what the negative result is a negative
       result \emph{about}.} We show that even the idealised chooser fails to
       be both more successful and cheaper than always-cheapest in 7 of 8
-      cells. Always-cheapest has the lowest average cost of any fixed policy
-      --- though not a per-episode floor, which is why one oracle cell does
-      undercut it --- so a chooser that raises success almost always spends
+      cells. Always-cheapest has the lowest average cost of any fixed policy,
+      though not a per-episode floor, which is why one oracle cell does
+      undercut it. A chooser that raises success therefore almost always spends
       more, and the two cannot be traded off without an exchange rate this
       dissertation deliberately does not assume. The correct conclusion is
       therefore that none of the deployable policies we evaluate is better on
@@ -309,8 +326,8 @@ could not answer.
   which they hold, and closes on what the work enables.
 \end{description}
 
-\chapterhandoff{This chapter has argued that choosing how to show the page ---
-rather than fixing that choice once --- is an efficiency problem with
+\chapterhandoff{This chapter has argued that choosing how to show the page,
+rather than fixing that choice once, is an efficiency problem with
 measurable structure, and has set out the three conditions under which it
 would be worth solving. It has not shown that the question is still open.
 Chapter~\ref{ch:bg} therefore examines four neighbouring lines of work: what a

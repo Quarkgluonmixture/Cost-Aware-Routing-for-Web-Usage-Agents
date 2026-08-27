@@ -44,7 +44,7 @@ analysis made.
 \item[Mean-difference floor.] $|\mathrm{SR}(a)-\mathrm{SR}(b)|$ on the same
   pairs. This is the floor for claims comparing \emph{mean success rates}
   between modes. Measured range: 0.89--2.68\pp, but each value is \emph{one draw} of a quantity whose standard deviation is 2.14--2.53\pp, which
-  is why the interpretable threshold is 3.52--4.15\pp{} rather than 2.68\pp ---
+  is why the interpretable threshold is 3.52--4.15\pp{} rather than 2.68\pp,
   and why the arm-specific value, not the range, is what an effect on that arm
   is compared with.
 \end{description}
@@ -70,7 +70,7 @@ this cell move by 2--4\pp{} under repetition}.
 \paragraph{The five-arm gain is never set against a one-rerun floor by
 subtraction.} We hold one rerun arm, not five, and repetition has its own
 diminishing returns. The ceiling is reported with its arm count attached
-(Table~\ref{tab:oracle}, Figure~\ref{fig:f8}); the like-for-like one-arm
+(Table~\ref{tab:oracle}, Figure~\ref{fig:ceilings}); the like-for-like one-arm
 comparison is Figure~\ref{fig:f10b}; and the six-arm question is answered by
 bound rather than by subtraction in Section~\ref{sec:six-vs-six}, derived below.
 
@@ -81,7 +81,7 @@ Equation~\ref{eq:union} follows from the same null. Write $U(k)$ for the
 number of distinct tasks solved at least once across $k$ runs of one mode:
 $U(1)$ is what a single run solves, $U(2)$ what two runs solve between them,
 and so on. Suppose the mode solves $s_0$ tasks every time, and a further $m$
-tasks --- call these \emph{flippable} --- with probability $p$ each.
+tasks, call these \emph{flippable}, with probability $p$ each.
 Over $k$ independent runs a flippable task is solved at least once with
 probability $1-(1-p)^{k}$, so
 $\mathbb{E}\left[U(k)\right] = s_0 + m\left(1-(1-p)^{k}\right)$.
@@ -100,8 +100,8 @@ $p \le 1 - d/(2|A|)$, and $s_0 + m \le n$ forces $p \ge d/(2(n-|A|))$.
 Three properties follow.
 
 \emph{The fair-coin value is not an upper bound.} Equation~\ref{eq:union-identified}
-is increasing in $q$, hence decreasing in $p$. Setting $p=\tfrac12$ --- which is
-what $\hat m = 2d$, $\hat s_0 = |A|-d$ amounts to --- therefore selects a point
+is increasing in $q$, hence decreasing in $p$. Setting $p=\tfrac12$, which is
+what $\hat m = 2d$, $\hat s_0 = |A|-d$ amounts to, therefore selects a point
 low in the feasible range, not above it: 12--22\% of the way up each arm's
 $U(6)$ range from its lower endpoint. No distribution over $p$ is assumed, so
 this is a position within an interval rather than a quantile. Table~\ref{tab:six-vs-six} reports the range alongside
@@ -112,10 +112,10 @@ across all of it.
 Equation~\ref{eq:union-identified} reads $U(2) = |A| + d/2$, with no $q$ in it:
 every $p$ predicts the same two-run union. The residual against the observed
 union is algebraically $(|A|-|B|)/2$, half the difference between the two runs'
-success counts. It is worth reporting --- model minus observed comes to
+success counts. It is worth reporting: model minus observed comes to
 $-1.12$, $+0.45$, $+1.34$, $+1.12$, $+0.67$ and $+0.67$\pp{} across the six
 replicated arms in the order of Table~\ref{tab:six-vs-six}, so the union
-arithmetic and the marginal are both stable --- but it is not evidence for the
+arithmetic and the marginal are both stable. It is not, however, evidence for the
 flip model's shape.
 
 \emph{It rests on one cell.} \cell{cls$\cdot$B0} is the only cell with
@@ -128,10 +128,9 @@ subject to the same two moment constraints returns the same endpoints, since
 $s_0 \ge 0$ and $s_0 + m \le n$ are what bind at each end; the homogeneous
 model is not a restriction here.
 
-Regenerate with the script\\
-\hspace*{1em}\texttt{scripts/analysis/rerun\_union\_extrapolation.py}\\
-whose artefact is\\
-\hspace*{1em}\texttt{docs/analysis/cross\_sites/rerun\_union\_extrapolation.\{md,json\}}.
+Regenerate with the script
+\path{scripts/analysis/rerun_union_extrapolation.py}, whose artefact is
+\path{docs/analysis/cross_sites/rerun_union_extrapolation.{md,json}}.
 
 \section{The determinism claim we retracted}
 

@@ -35,6 +35,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
 from matplotlib.patches import Rectangle  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -83,7 +86,7 @@ def build(ax, rows):
                            zorder=0, lw=0))
     ax.text(xlo + (-xlo) / 2, yhi * 0.94,
             "Pareto-dominates\nthe free fixed policy\n(cheaper AND no worse)",
-            ha="center", va="top", fontsize=8.6, color=C_WIN,
+            ha="center", va="top", fontsize=S.FS_LABEL, color=C_WIN,
             fontweight="bold", linespacing=1.5, zorder=2)
 
     ax.axhline(0, color="#999999", lw=1.0, zorder=1)
@@ -91,7 +94,7 @@ def build(ax, rows):
     ax.scatter([0], [0], s=110, marker="*", color="#000000", zorder=6)
     ax.annotate("always-cheapest\n(costs nothing to implement)", (0, 0),
                 textcoords="offset points", xytext=(-6, -34), ha="right",
-                fontsize=8.4, color="#333333", linespacing=1.4)
+                fontsize=S.FS_LABEL, color="#333333", linespacing=1.4)
 
     for r in rows:
         if "oracle_triage" in r["pts"]:
@@ -105,27 +108,22 @@ def build(ax, rows):
             x, y = r["pts"]["learned_nested_honest"]
             ax.scatter([x], [y], s=72, color=C_NESTED, zorder=5)
             ax.annotate(r["name"], (x, y), textcoords="offset points",
-                        xytext=(7, 4), fontsize=8.2, color=C_NESTED)
+                        xytext=(7, 4), fontsize=S.FS_LABEL, color=C_NESTED)
 
     ax.set_xlim(xlo, xhi)
     ax.set_ylim(ylo, yhi)
-    ax.set_xlabel("cost relative to always-cheapest   —   "
-                  "$\\log_2(\\mathrm{cost}/\\mathrm{cost}_{\\mathrm{cheap}})$; "
-                  "0 = same, +1 = twice as expensive", fontsize=9)
-    ax.set_ylabel("success rate  −  always-cheapest   [pp]", fontsize=9)
+    ax.set_xlabel("$\\log_2(\\mathrm{cost}/\\mathrm{cost}_{\\mathrm{cheapest}})$")
+    ax.set_ylabel("success rate over always-cheapest  [pp]")
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
-    ax.grid(color="#EFEFEF", lw=0.8)
-    ax.set_axisbelow(True)
 
-    ax.scatter([], [], s=72, color=C_NESTED,
-               label="learned triage, fully nested  (what a deployment gets)")
+    ax.scatter([], [], s=72, color=C_NESTED, label="learned, nested")
     ax.scatter([], [], s=34, marker="^", color=C_LOSSLESS,
-               label="learned triage, in-sample threshold  (optimistic)")
+               label="learned, in-sample")
     ax.scatter([], [], s=58, marker="s", facecolor="none", edgecolor=C_ORACLE,
-               lw=1.5, label="oracle triage  (retrospective, not deployable)")
-    ax.legend(loc="lower right", frameon=False, fontsize=8.4,
-              handletextpad=0.4, borderpad=0.2)
+               lw=1.5, label="oracle")
+    ax.legend(loc="lower right", frameon=False, handletextpad=0.4,
+              borderpad=0.2)
 
 
 def main() -> int:
@@ -141,26 +139,12 @@ def main() -> int:
     # result is partly a property of the comparator and must be said out loud.
     n_or = sum(1 for r in rows
                if (p := r["pts"].get("oracle_triage")) and p[0] <= 0 and p[1] >= 0)
-    fig, ax = plt.subplots(figsize=(9.8, 6.6))
+    S.apply()
+    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 4.2))
     build(ax, rows)
-    ax.set_title(
-        f"{n_win} of {len(rows)} cells: no learned triage policy is both cheaper "
-        "and no worse than always-cheapest",
-        fontsize=10.6, fontweight="bold", loc="left", pad=48)
-    ax.text(0.0, 1.012,
-            f"Read with care: only {n_or} of {len(rows)} RETROSPECTIVE oracle "
-            "points reach the region either. Always-cheapest is the cost floor, "
-            "so any policy that\npreserves success must cost more — the negative "
-            "result is about the trade-off being unfavourable, not about the "
-            "learner alone.",
-            transform=ax.transAxes, fontsize=8.4, color="#444444",
-            linespacing=1.5, va="bottom")
-    fig.text(0.012, 0.005,
-             f"Every cell normalised to its own always-cheapest policy. "
-             f"{len(rows)} cells across two benchmarks; "
-             f"n_features={proto.get('n_features', '?')}, "
-             f"nested 5-fold, seed {proto.get('seed', '?')}.",
-             fontsize=7.6, color="#666666")
+    # How many cells reach the win region, how many oracle points do, and the
+    # protocol constants are reported in the caption and in the text; the plot
+    # itself only has to make the emptiness of the win region visible.
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):
         fig.savefig(f"{a.out}.{ext}", dpi=220, bbox_inches="tight",

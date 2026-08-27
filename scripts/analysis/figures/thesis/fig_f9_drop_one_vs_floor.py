@@ -36,6 +36,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[4]
 SRC = ROOT / "results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv"
 SRC_FLOOR = ROOT / "docs/analysis/cross_sites/noise_floor_inventory.md"
@@ -45,12 +48,17 @@ OUT = ROOT / "final_dissertation/figures/fig_f9_drop_one_vs_floor"
 # modes all have image_payload_bytes == 0; SoM sends both; Vision sends only the
 # image. The text side is itself the 2x2 of text format x prompt style, which the
 # `mark_count` field encodes directly (30 = [SOM_MARKS] text, 0 = AXTree).
-SIDES = [("Text side  ·  no image sent", ["DOM", "P-text", "P-prompt", "P-SoM"]),
-         ("Combined  ·  text + image", ["SoM"]),
-         ("Visual  ·  image only", ["Vision"])]
-ORDER = [m for _s, ms in SIDES for m in ms]
+# Side grouping and colours come from the shared parser so that a mode is the
+# same colour in every figure of the dissertation. F9 previously carried its
+# own palette in which the text side was blue and Vision orange, the exact
+# reverse of F5 and F7, which made a reader re-learn the key per figure.
+from _ordering_parse import C_SIDE, SIDES  # noqa: E402
+
+# F9 orders the text side DOM, P-text, P-prompt, P-SoM (format varying fastest),
+# which differs from the parser's declaration order, so the row order is kept
+# local while the grouping and the colours are shared.
+ORDER = ["DOM", "P-text", "P-prompt", "P-SoM", "SoM", "Vision"]
 SIDE_OF = {m: i for i, (_s, ms) in enumerate(SIDES) for m in ms}
-C_SIDE = ["#0072B2", "#009E73", "#D55E00"]
 C_TH = "#333333"
 
 # Scoped to B0.cls: the inventory also carries B1 pairs whose discordance is 0,
@@ -93,25 +101,20 @@ def build(ax, rows, band):
             ax.scatter([v], [yi + off], s=34, color=col, zorder=4)
         pos = sum(1 for r in sel if float(r["drop_one_loss_pp"]) > 0)
         ax.text(-0.28, yi, f"{pos}/{len(sel)} > 0", va="center", ha="right",
-                fontsize=7.8, color=col, fontweight="bold")
+                fontsize=S.FS_VALUE, color=col, fontweight="bold")
 
-    ax.set_yticks(y, ORDER, fontsize=9.4)
+    ax.set_yticks(y, ORDER, fontsize=S.FS_PANEL)
     ax.set_xlim(-1.35, max(float(r["ci95_high_pp"]) for r in rows) + 0.6)
     ax.set_ylim(-0.75, len(ORDER) - 0.25)
-    ax.set_xlabel("oracle success lost if this arm is removed  [pp]  "
-                  "(point = drop-one, line = bootstrap 95% CI)", fontsize=8.8)
+    ax.set_xlabel("oracle success lost if this arm is removed  [pp]")
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
     ax.tick_params(axis="y", length=0)
-    ax.grid(axis="x", color="#F2F2F2", lw=0.8)
-    ax.set_axisbelow(True)
-    ax.text(hi + 0.12, len(ORDER) - 0.55,
-            f"above {lo:.2f}–{hi:.2f}pp a single rerun\nof the same arm is "
-            "unlikely to produce it",
-            fontsize=7.8, color=C_TH, va="center", linespacing=1.5)
+    ax.text(hi + 0.12, len(ORDER) - 0.55, "rerun band",
+            fontsize=S.FS_VALUE, color=C_TH, va="center")
     ax.legend(handles=[Patch(color=C_SIDE[i], label=lab)
                        for i, (lab, _m) in enumerate(SIDES)],
-              loc="lower right", frameon=False, fontsize=8.0)
+              loc="lower right", frameon=False, fontsize=S.FS_VALUE)
     # side separators
     for i in range(len(SIDES) - 1):
         cut = sum(len(ms) for _s, ms in SIDES[:i + 1])
@@ -132,28 +135,12 @@ def main() -> int:
     ph_pos = sum(1 for x in ph_v if x > 0)
     above = [r for r in rows if float(r["drop_one_loss_pp"]) >= band[0]]
 
-    fig, ax = plt.subplots(figsize=(10.8, 5.4))
+    S.apply()
+    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 3.7))
     build(ax, rows, band)
-    ax.set_title("Every arm is uniquely useful somewhere — and almost none of it "
-                 "clears the rerun noise",
-                 fontsize=11.4, fontweight="bold", loc="left", pad=42)
-    ax.text(0.0, 1.012,
-            f"The four text-side arms differ only in text format and prompt "
-            f"style, so they overlap heavily: {ph_pos} of {len(ph)} phantom "
-            f"values are positive but span only {ph_v[0]:.2f}–{ph_v[-1]:.2f}pp. "
-            f"The larger\nunique contributions come from crossing sides. Even so, "
-            f"only {len(above)} of {len(rows)} values reach the band where one "
-            "rerun would be an unlikely explanation.",
-            transform=ax.transAxes, fontsize=8.4, color="#444444",
-            linespacing=1.5, va="bottom")
-    fig.text(0.012, 0.005,
-             f"Source: results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv "
-             f"({len(cells)} cells × 6 modes, complete-case, "
-             f"grade={'/'.join(sorted(grades))}); threshold band from "
-             "noise_floor_inventory.md §1b (derived from one cell's six "
-             "replicated arms; band drawn at the lowest arm's threshold).",
-             fontsize=7.0, color="#888888")
-
+    # The banner, the phantom-overlap paragraph and the provenance footnote are
+    # gone from the image. The numbers they carried are still computed above and
+    # printed to stdout, which is where the caption's values are taken from.
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):
         fig.savefig(f"{a.out}.{ext}", dpi=220, bbox_inches="tight",

@@ -41,6 +41,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.image as mpimg  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _style as S  # noqa: E402
 from matplotlib.patches import FancyBboxPatch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -57,8 +60,8 @@ SHOT_VIS = (ROOT / "results/repro_replicates/B0_vision_classifieds_R24792_clean_
             / "phase1_vision_router_0/artifacts/classifieds_task_0/step_000/screenshot.png")
 
 TASK, STEP = "classifieds_task_0", "step_000"
-C_TEXT = "#0072B2"
-C_IMG = "#D55E00"
+C_TEXT = S.C_TEXT     # text payload: same orange as the text-side modes
+C_IMG = S.C_IMAGE     # image payload: same blue as Vision
 C_MUTE = "#777777"
 
 
@@ -117,13 +120,13 @@ def _snippet(lines, n=9, width=46):
 
 def build(fig, d):
     gs = fig.add_gridspec(2, 3, height_ratios=[2.25, 1.0], hspace=0.02,
-                          wspace=0.07, left=0.015, right=0.985, top=0.885,
+                          wspace=0.07, left=0.015, right=0.985, top=0.955,
                           bottom=0.10)
 
     cols = [
-        ("DOM", "AXTree text · no image", None, _snippet(d["_dom_lines"]), d["dom"]),
-        ("SoM", f"[SOM_MARKS] text + annotated screenshot", SHOT_SOM, None, d["som"]),
-        ("Vision", "raw screenshot · no structured text", SHOT_RAW, None, d["vision"]),
+        ("DOM", "AXTree text", None, _snippet(d["_dom_lines"]), d["dom"]),
+        ("SoM", "marked screenshot + text", SHOT_SOM, None, d["som"]),
+        ("Vision", "raw screenshot", SHOT_RAW, None, d["vision"]),
     ]
 
     for i, (name, sub, shot, snip, m) in enumerate(cols):
@@ -142,13 +145,13 @@ def build(fig, d):
             ax.set_xticks([]); ax.set_yticks([])
             for sp in ax.spines.values():
                 sp.set_edgecolor("#BBBBBB")
-            ax.text(44, 34, snip, fontsize=5.6, family="monospace",
+            ax.text(44, 34, snip, fontsize=S.FS_VALUE, family="monospace",
                     color="#333333", va="top", linespacing=1.5)
-            ax.text(640, 600, "no image is sent", ha="center", fontsize=8.6,
-                    color=C_MUTE, style="italic")
-        ax.set_title(f"{name}", fontsize=11.5, fontweight="bold", loc="left",
+            ax.text(640, 600, "no image", ha="center", fontsize=S.FS_LABEL,
+                    color=C_MUTE)
+        ax.set_title(f"{name}", fontsize=S.FS_PANEL, fontweight="bold", loc="left",
                      pad=15)
-        ax.text(0.0, 1.012, sub, transform=ax.transAxes, fontsize=7.8,
+        ax.text(0.0, 1.012, sub, transform=ax.transAxes, fontsize=S.FS_VALUE,
                 color=C_MUTE, va="bottom")
 
         axb = fig.add_subplot(gs[1, i])
@@ -156,22 +159,22 @@ def build(fig, d):
         axb.set_xlim(0, 1); axb.set_ylim(0, 1)
         y = 0.80
         if m["chars"]:
-            axb.text(0.02, y, f"{m['chars']:,} chars of text", fontsize=8.6,
+            axb.text(0.02, y, f"{m['chars']:,} chars of text", fontsize=S.FS_LABEL,
                      color=C_TEXT, fontweight="bold")
         else:
-            axb.text(0.02, y, "no structured text", fontsize=8.6, color=C_MUTE,
+            axb.text(0.02, y, "no text", fontsize=S.FS_LABEL, color=C_MUTE,
                      fontweight="bold")
         y -= 0.30
         if m["img"]:
             lbl = f"{m['img'] / 1024:.0f} KB image"
             if m["marks"]:
                 lbl += f"  ·  {m['marks']} marks"
-            axb.text(0.02, y, lbl, fontsize=8.6, color=C_IMG, fontweight="bold")
+            axb.text(0.02, y, lbl, fontsize=S.FS_LABEL, color=C_IMG, fontweight="bold")
         else:
-            axb.text(0.02, y, "no image", fontsize=8.6, color=C_MUTE,
+            axb.text(0.02, y, "no image", fontsize=S.FS_LABEL, color=C_MUTE,
                      fontweight="bold")
         y -= 0.32
-        axb.text(0.02, y, f"{m['tokens']:,} input tokens", fontsize=10.2,
+        axb.text(0.02, y, f"{m['tokens']:,} input tokens", fontsize=S.FS_PANEL,
                  color="#000000", fontweight="bold")
 
 
@@ -182,25 +185,13 @@ def main() -> int:
     d = gather()
     ratio = d["som"]["chars"] / d["dom"]["chars"]
 
-    fig = plt.figure(figsize=(13.0, 5.0))
+    S.apply()
+    fig = plt.figure(figsize=(S.LANDSCAPE_W_IN, 4.1))
     build(fig, d)
-    fig.suptitle("The same page, one step, three ways to pay for it   —   "
-                 "VisualWebArena classifieds · task 0 · step 000",
-                 fontsize=11.6, fontweight="bold", x=0.015, ha="left", y=0.975)
-    fig.text(0.015, 0.925,
-             f"SoM's text payload is {ratio:.3f}× DOM's — within "
-             f"{abs(ratio - 1) * 100:.1f}%. Nearly the entire extra cost is the "
-             "image, not the text.",
-             fontsize=9.4, color="#B34700", fontweight="bold")
-    fig.text(0.015, 0.012,
-             "Screenshots: raw/annotated pair rendered from this page "
-             "(1280×660). Text: mechanistic/_obs_mirror per-mode observation. "
-             "Bytes and tokens: results/visualwebarena/phase1 step record.\n"
-             "The step-000 page is the task start URL; the dom-run and vision-run "
-             "artifacts for it are byte-identical (md5 verified), which is what "
-             "makes the three columns the same page.",
-             fontsize=6.8, color="#888888", linespacing=1.55)
-
+    # The page identity, the SoM-to-DOM text ratio and the artefact provenance
+    # were all printed across the top and bottom of this figure. They are facts
+    # about the figure rather than marks in it, so they are now caption text; the
+    # ratio is still computed here and printed to stdout for the caption to quote.
     a.out.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):
         fig.savefig(f"{a.out}.{ext}", dpi=200, bbox_inches="tight",
