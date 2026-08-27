@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-08-21
+updated: 2026-08-27
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,43 @@ updated: 2026-08-21
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> ## 🟣 2026-08-27 · 毕设排版层大改 —— 图重做 + 迁 UCL 模板（GPU 侧无关，两条 chain 照跑）
+>
+> chronicle → **笔记 §481 / §482 / §483** · 台账 **+18** · commits `fc5f764` `a0a632b`
+>
+> ### ⚠️ 接手先看这两条，会踩人
+> ```bash
+> # ① Overleaf 换项目了。旧的 6a7a7331… 已停用, 推错导师会看到旧排版
+> grep -n 6a8f68 scripts/maintenance/overleaf_thesis_sync.sh      # 应指向 6a8f68ace4443ea9751d6201
+> ls ~/overleaf-thesis-ucl                                        # 新 clone 在这
+>
+> # ② 改图只能走 make。单独跑脚本只写 figures/, tex/figures/ 会留旧图, LaTeX 嵌旧的
+> make thesis-figures            # 重生成 → 同步 → 跑 check_no_prose 门禁
+> ```
+>
+> ### 状态
+> `final_dissertation/tex/` 已在 UCL PhD Thesis Template 上：**114 页 / 15 图 / 20 表 / 36 bib**，
+> 0 error / 0 undefined / 9 overfull（最大 10pt 在参考文献，其余 <2pt）。
+> 图内散文 **105 → 0**（由 `check_no_prose.py` 读渲染后 PDF 强制），正文 em dash **88 → 0**。
+>
+> ### 三个悬着的
+> **① 页数上限要重新问**：89 → 114 页是模板 12pt + 40mm 装订边造成的，**不是内容增加**。
+> user 此前报的「≤100 页」是旧版式下的数，需向导师/系里重新确认。
+>
+> **② 横排合法性无依据**：全书剩 1 处横排（`fig_overview`，2.67:1）。模板自带 `pdflscape`
+> 且是通行做法，但 **COMP0191 handbook 至今没拿到**，「UCL 明文允许」这句我们说不出口。
+> 已记 `CLAIM_UNVERIFIED`。
+>
+> **③ `fig_partition_forest` 未采用**：regex-flagged 的零成本 serving-time 信号照样路由失败，
+> 很合 Ch5「可预测性」那条线，但毕设正文从未定义「flagged」⇒ **放进去等于新增一个无支撑主张**。
+> 要用需在 Ch5 补一小节，是内容改动不是排版改动，等 user 发话。
+>
+> ### 本 session 最值得记的一条
+> /stress 自审抓到：把散文赶出图之后，**图自己变得读不了** —— `_style.py` 那句「缩到
+> \textwidth 后约 8pt」是按旧版式（16cm 版心）写的，模板 13cm 版心下实测图内标签 **4.99pt**。
+> 同一个失败换了扇门又进来。修法是改作图前提（`PRINT_W_IN=5.12`，按印刷宽度出图），
+> 不是调字号。详见 §482.1。
 
 > ## 🟢 2026-08-26 · 两条 chain 在跑 + 证据层扩出一条独立于 routing 的主张
 >

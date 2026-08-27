@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "**2026-09-05 硬截止**（user 2026-08-19 从 09-01 延长）— 剩 ~17 天。**全稿 v1 已落地 2026-08-11** (`final_dissertation/tex/`, 84 页, 7 章 + 4 附录 + 18 图, 编译 0 undefined / 0 overfull; Overleaf 6a7a7331d2e6523a360245d4 单向同步中)。已过三家 AI submission-ready 审计 (Claude 7 / gemini 10 / codex 11) 并全部修完 —— 其中两条改掉了 headline: C1 成本口径 13.7-35.3% → **1.6-35.3%** (SR 平局), 且六次重跑 vs 六个 mode 残差仅 3.53pp ⇒ C1 改判为『天花板的**价格**』而非高度。**已知攻击表已清空** (A1 欠采样 2026-08-11 关掉, 笔记 §453)。全篇 deslop 完成 (vale error 195→0, §454), **30 commits 已 push**。**剩余 = ① supervisor 反馈(⚠️ Overleaf 评审层停在 08-11, 落后 de-jargon 全稿) + ② rubric #7/#13**。页数预算 **已解 2026-08-22**: user 报 ≤100 页, 现 89 页 ⇒ ~11 页余量, 不再是约束"
+eta: "**2026-09-05 硬截止**（user 2026-08-19 从 09-01 延长）— 剩 ~9 天。**2026-08-27 大改已落地**: 稿件迁至 **UCL PhD Thesis Template**，Overleaf 评审层换新项目 **6a8f68ace4443ea9751d6201**（旧 6a7a7331d2e6523a360245d4 **已停用，别再往那推**，两边版式不同）。现 **114 页 / 15 图 / 20 表 / 36 bib**，编译 0 error / 0 undefined / 9 overfull（最大 10pt 在参考文献，其余 <2pt）。图全部重做（图内散文 105→0，由 `make thesis-figures` 的 `check_no_prose.py` 门禁强制）；正文 em dash 88→0。页数预算 ≤100 页那条 **已失效需重问** —— 模板 12pt + 40mm 装订边把 89 页推到 114 页，这是版式造成的不是内容增加。**剩余 = ① supervisor 反馈（Overleaf 已是最新 08-27）② rubric #7/#13 ③ 页数上限重新确认**。不需要任何新实验"
 detail: final_dissertation/
 created: 2026-06-10
-updated: 2026-08-19
+updated: 2026-08-27
 ---
 
 # Thesis full draft → 2026-09-05 硬截止
@@ -26,6 +26,21 @@ C1 成本口径 **13.7-35.3% → 1.6-35.3%** (SR 平局按列表序破平选中�
 
 **剩余** = ① supervisor 反馈 (⚠️ 见下: Overleaf 评审层落后 10 天) ② ~~页数预算~~ **已解 2026-08-22 (≤100, 现 89)** ③ rubric #7 (Zekun Wu 原文) + #13 (每个 setting justify)
 ④ rubric #13 逐个 setting 补 justify。**不需要任何新实验**。
+
+**2026-08-27 更新 — 排版层大改 (笔记 §481/§482/§483, commits `fc5f764` `a0a632b`)**:
+
+- **模板**: 迁 UCL PhD Thesis Template。引用切 biblatex+biber (`natbib=true` 保住全部
+  `\citep/\citet`)。修了模板自带两个缺陷 —— 字族未声明先用导致粗体小型大写被静默丢弃;
+  `\fancypagestyle` 的 `\fancyhead[R]` 漏进 live style 使全书右上角永久挂章标题。
+- **Overleaf 换项目**: **6a8f68ace4443ea9751d6201**。`overleaf_thesis_sync.sh` 已改指向,
+  本地 clone 在 `~/overleaf-thesis-ucl`。⚠️ 旧项目停用, 推错导师会看到旧排版。
+- **图 18 → 15 张**: 图内散文 105 → 0 (论断全部下沉 caption)。REALM 稿三张直接复用
+  (overview / diamond / ceilings)。规则由 `check_no_prose.py` 读**渲染后的 PDF** 强制,
+  串在 `make thesis-figures` 里。⚠️ **单独跑图脚本不安全** (只写 `figures/`,
+  `tex/figures/` 仍旧图), 必须走 make。
+- **页数 89 → 114**: 模板 12pt + 40mm 装订边所致, 非内容增加。⚠️ **≤100 页那条要重新问**。
+- 横排页 1 处 (`fig_overview`, 2.67:1)。⚠️ 「UCL 明文允许横排」**无依据** ——
+  COMP0191 handbook 仍未拿到, 现有依据只有模板自带 `pdflscape` + 通行做法。
 
 原链 (已被 09-05 硬截止取代): results+discussion 07-24 (D8) → 全稿 v1 08-10 (D9)
 → 修订完 08-24 (D10) → submission early-Sep (D11)。
