@@ -9,7 +9,7 @@ logs.
 
 \section{What can be reproduced, and at what level}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering\small
 \caption{Reproduction level per component.}
 \label{tab:app-repro-level}
@@ -33,6 +33,7 @@ Figures & \textbf{re-executable} & each script reads one artefact by path and
 \end{adjustbox}
 \end{table}
 
+\FloatBarrier
 \section{Configuration pins}
 
 \begin{itemize}
@@ -49,6 +50,7 @@ Figures & \textbf{re-executable} & each script reads one artefact by path and
   average); electricity tariff \$0.12/kWh.
 \end{itemize}
 
+\FloatBarrier
 \section{Data integrity controls}
 
 Three controls exist because their absence produced errors during this work, and
@@ -72,9 +74,10 @@ non-partial, and re-running the same producer without the flag reproduces the
 identical numbers under a \texttt{PAPER\_GRADE} stamp. We report the flag as it
 stands and say what it means, rather than either hiding it or leaning on it.
 
+\FloatBarrier
 \section{Artefact inventory}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering\small
 \caption{Where each reported quantity comes from.}
 \label{tab:app-artefacts}
@@ -83,21 +86,22 @@ stands and say what it means, rather than either hiding it or leaning on it.
 \toprule
 Reported in & artefact \\
 \midrule
-Table~\ref{tab:sr-per-mode} & \texttt{cross\_sites/sr\_per\_mode.json} \\
-Table~\ref{tab:cost-per-mode} & \texttt{cross\_sites/cost\_per\_mode.json} \\
-Table~\ref{tab:oracle}, App.~\ref{app:ceiling} & \texttt{cross\_sites/router\_objective\_ordering.md} \\
-Table~\ref{tab:dropone} & \texttt{phantom\_paper/fig0c\_drop\_one\_bootstrap\_ci.csv} \\
-Tables~\ref{tab:noise-floor}, \ref{tab:floor-spread} & \texttt{cross\_sites/noise\_floor\_inventory.md} \\
-Table~\ref{tab:six-vs-six} & \texttt{cross\_sites/rerun\_union\_extrapolation.json} \\
-Figure~\ref{fig:f16} & \texttt{cross\_sites/router\_undersampling\_control.json} \\
-Tables~\ref{tab:auroc}, \ref{tab:permutation}, \ref{tab:e2e} & \texttt{cross\_sites/router\_triage\_learnability\_with\_wa.md} \\
-Table~\ref{tab:feature-ablation} & \emph{ibid.}\ and \texttt{cross\_sites/router\_triage\_learnability.md} \\
-Tables~\ref{tab:supply}, \ref{tab:scored-set} & \texttt{cross\_sites/router\_label\_supply\_diagnosis.md}, \texttt{benchmark\_eda/corpus\_eda.json} \\
+Table~\ref{tab:sr-per-mode} & \artefact{cross\_sites/sr\_per\_mode.json} \\
+Table~\ref{tab:cost-per-mode} & \artefact{cross\_sites/cost\_per\_mode.json} \\
+Table~\ref{tab:oracle}, App.~\ref{app:ceiling} & \artefact{cross\_sites/router\_objective\_ordering.md} \\
+Table~\ref{tab:dropone} & \artefact{phantom\_paper/fig0c\_drop\_one\_bootstrap\_ci.csv} \\
+Tables~\ref{tab:noise-floor}, \ref{tab:floor-spread} & \artefact{cross\_sites/noise\_floor\_inventory.md} \\
+Table~\ref{tab:six-vs-six} & \artefact{cross\_sites/rerun\_union\_extrapolation.json} \\
+Figure~\ref{fig:f16} & \artefact{cross\_sites/router\_undersampling\_control.json} \\
+Tables~\ref{tab:auroc}, \ref{tab:permutation}, \ref{tab:e2e} & \artefact{cross\_sites/router\_triage\_learnability\_with\_wa.md} \\
+Table~\ref{tab:feature-ablation} & \emph{ibid.}\ and \artefact{cross\_sites/router\_triage\_learnability.md} \\
+Tables~\ref{tab:supply}, \ref{tab:scored-set} & \artefact{cross\_sites/router\_label\_supply\_diagnosis.md}, \artefact{benchmark\_eda/corpus\_eda.json} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
 \end{table}
 
+\FloatBarrier
 \section{Known limitations of the released artefacts}
 
 The mechanistic-interpretability results collected during an earlier phase of

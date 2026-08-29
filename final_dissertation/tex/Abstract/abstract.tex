@@ -11,67 +11,50 @@
     \addcontentsline{toc}{chapter}{Abstract}
 
 A web agent looks at a web page, decides what to click or type, acts, and
-repeats until a user's task is done. Before it can act it must be handed some
-encoding of the page: cheap text listing the page's elements and their labels,
-an expensive screenshot on its own, or both together, with the screenshot's
-elements numbered and boxed and those same numbers repeated in the text. The choice is normally made once, when the system is configured,
-and applied everywhere. Since a task runs for tens of steps, it is also paid for
-tens of times. This dissertation asks whether the expensive choice is necessary
-at every step, and whether the steps where it \emph{is} necessary can be
-identified cheaply enough for the identification to be worth making.
+repeats until a task is done. Before it can act it must be handed some
+encoding of the page: cheap text listing elements and labels, an expensive
+annotated screenshot, or both together. This choice is normally fixed once and
+paid for at every step. This dissertation asks whether the expensive choice is
+necessary at every step, and whether the steps that need it can be identified
+cheaply enough to be worth identifying.
 
 We hold the agent fixed and vary only what it is shown. Six \emph{observation
-modes} differ in the page text supplied, the wording of the instructions around
-it, and whether an annotated image is sent at all; the task, the available
-actions, the step limit and the rules for what counts as a cost are identical
-across all six. We run all six on 8 website-and-model combinations, drawn from
-two public benchmarks of website tasks, VisualWebArena and WebArena, and
-three underlying models. On that base we measure three quantities in sequence:
-what an ideal after-the-fact selector would gain by choosing per task, where
-that selector is an \emph{oracle} allowed to pick, for each task, a mode already
-known to have solved it; whether the same choice can be made in advance from information a deployed
-system would have; and whether acting on those predictions beats always using
-the cheapest mode, once cost is counted.
+modes} differ in the page text supplied, the instruction wording, and whether
+an annotated image is sent at all; task, actions, step limit and cost
+accounting are identical across all six. We run all six on 8
+website-and-model combinations, drawn from two public benchmarks
+(VisualWebArena, WebArena) and three backbone models, and measure three
+quantities in sequence: an \emph{oracle}'s per-task gain over the best single
+fixed mode; whether that choice is predictable in advance from information a
+deployed system would have; and whether acting on the prediction beats always
+using the cheapest mode, once cost is counted.
 
 The answers are, in order, \emph{yes}, \emph{no}, and \emph{the question is
-mis-posed}. The oracle gains $+3.45$ to $+16.35$ percentage points of task
-success over the best single mode while spending 1.6--35.3\% less, in every
-combination and on both benchmarks. Our own noise standard deflates that
-headline: running one unchanged mode a second time buys 2.0--7.6 points by
-itself, and when both sides are allowed six runs, six repetitions of the
-strongest single mode come within 3.53 points of the six-mode oracle under a
-fair-coin model of which tasks flip, which is below the threshold we derive for
-what a single repetition of that arm can produce on its own. Two runs do not pin down
-that flip rate, so the projection is a sensitivity rather than a settled figure.
-What survives is the ceiling's price rather than its height, since selection
-reaches that level with one attempt per task where repetition needs six. A
-policy wins here only if it is \emph{both} more successful and cheaper than the
-one it is measured against, which is a \emph{Pareto} improvement. The learned
-router only has to predict whether \emph{any} mode will solve the task, not
-which of the six to use. Under a fully nested cross-validation protocol, in
-which every modelling choice is made on training tasks alone and then tested on
-tasks held back, it clears that bar against always-cheapest in \textbf{0 of 8}
-combinations. The idealised version of the \emph{same} policy, told in advance
-whether any mode will solve the task, fails to clear it in 7 of 8. That recasts
+mis-posed}. The oracle gains $+3.45$ to $+16.35$ percentage points of success
+while spending 1.6--35.3\% less, in every combination on both benchmarks ---
+though our own noise floor deflates this: rerunning one unchanged mode already
+buys 2.0--7.6 points by itself, and two runs cannot pin down how much of that
+ceiling repetition alone would reach, so the headroom's \emph{price} is the
+safer claim, not its exact height. A policy counts as a win only if it is
+\emph{both} more successful and cheaper than the free alternative --- a
+\emph{Pareto} improvement. A learned router asked only whether \emph{any} mode
+will solve a task, under a fully nested cross-validation protocol, clears that
+bar in \textbf{0 of 8} combinations. Told the answer in advance instead of
+predicting it, the same policy still clears the bar in only 1 of 8, recasting
 the negative result from ``the learner failed'' to ``no Pareto-improving
-\emph{deployable} operating point of this kind exists against always-cheapest
-under this cost boundary''. A chooser told \emph{which} modes solved each task
-is a different and stronger policy, and it does clear the bar in 7 of 8; it is
-also not implementable, because it needs the answer the next section shows the
-benchmarks cannot teach.
+\emph{deployable} operating point of this kind exists''. A stronger policy,
+told \emph{which} mode solved each task rather than merely whether one did,
+clears the bar in 7 of 8 --- but it needs an answer the benchmarks cannot
+supply.
 
-What blocks the prediction is the supply of training examples, not the capacity
-of the model. A task can teach the router something only if some mode solved it,
-so at 2--27\% base success 4 of 6 combinations lack enough solved tasks per mode
-to train and test a classifier at all. The input carrying most of the apparent
-predictive power on VisualWebArena turns out to be the benchmark's own
-human-written difficulty annotation, which no deployment has. Training on
-deliberately reduced data confirms that scarcity is part of the story and then
-bounds it: the learning curves are still rising, so more data would buy a better
-predictor, but the best a \emph{triage} predictor can become is the triage
-oracle, which wins in 1 of 8 combinations. Pricing this constraint puts the benchmark that
-would relieve it at 2.1 to 4.2 times the size of the ones that exist, which is a
-specification rather than an impossibility.
+What blocks the prediction is training-example supply, not model capacity: at
+2--27\% base success, 4 of 6 combinations lack enough solved tasks per mode to
+train a classifier at all, and the strongest apparent signal on
+VisualWebArena is the benchmark's own human-written difficulty annotation,
+which no deployment has. Deliberately reduced training data confirms scarcity
+is the mechanism and prices it: the benchmark that would relieve it needs to
+be 2.1--4.2 times the size of the ones that exist --- a specification, not an
+impossibility.
 
 The contribution is not a router. It is a measured boundary: the conditions
 under which \emph{representation routing}, meaning the choice of page encoding
@@ -118,7 +101,8 @@ The benchmarks (VisualWebArena, WebArena) are open-source and self-hosted from
 their published Docker images; two of the three backbones
 (\texttt{Qwen3-VL-4B}, \texttt{google/gemma-3-4b-it}) are openly available model
 weights run locally; the experiment harness, analysis pipeline and figure
-scripts are released with the submission.
+scripts are released with the submission at
+\url{https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents}.
 
 \textbf{The exception is the large backbone.} \texttt{Qwen3-VL-235B-A22B} was
 served through a metered API proxy hosted on AWS rather than self-hosted. Its outputs,

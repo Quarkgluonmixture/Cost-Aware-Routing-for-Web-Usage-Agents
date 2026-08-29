@@ -15,9 +15,10 @@ VisualWebArena B0 cells; the remaining six cells follow the same structure and
 are included in the released artefact
 \texttt{docs/analysis/cross\_sites/router\_objective\_ordering.md}.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering\small
-\caption{Full policy ladder for the two 235B cells: the classified-ads site
+\caption[Full policy ladder for the two 235B cells]{Full policy ladder for the
+two 235B cells: the classified-ads site
 ($n=224$) and the forum ($n=203$). $\Delta$ columns are against the best single
 mode. \texttt{route\_only} and \texttt{triage\_only} are the two oracle halves;
 \texttt{oracle\_sr\_cost} additionally breaks ties by measured cost.}
@@ -52,6 +53,7 @@ Policy & kind & SR \% & cost & SR \% & cost \\
 \end{adjustbox}
 \end{table}
 
+\FloatBarrier
 \section{The cost tie-break, isolated}
 
 \texttt{oracle\_sr} and \texttt{oracle\_sr\_cost} have identical success and
@@ -67,6 +69,7 @@ Section~\ref{sec:mechanism}: the mode ordering used to break ties is documented
 as ascending in cost and is not, so a labelling pipeline that trusts it is
 systematically choosing a more expensive successful mode than necessary.
 
+\FloatBarrier
 \section{Cascade attempt histograms}
 
 The cost-first cascade of Section~\ref{sec:overhead} escalates through modes in

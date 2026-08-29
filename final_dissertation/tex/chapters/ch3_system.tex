@@ -22,6 +22,7 @@ scoring, and the rules for what counts as a cost. We vary exactly one stage: the
 That is the whole design. Everything in the rest of this chapter is a matter of
 making the commitment concrete and checkable.
 
+\FloatBarrier
 \section{Task, episode, step}
 \label{sec:task-def}
 
@@ -63,6 +64,7 @@ episode length across all conditions ranges from 13.7 to 28.4 steps
 than for the working modes. It is set identically for every condition, which is
 the property the comparison actually needs.
 
+\FloatBarrier
 \section{The controlled observation space}
 \label{sec:obs-space}
 
@@ -162,6 +164,7 @@ interchangeably. \mPS{} is one such configuration; when we speak of the
 \emph{phantom routing space} we mean the whole set of image-free
 configurations that \mPT{}, \mPP{} and \mPS{} are drawn from.
 
+\FloatBarrier
 \section{Routing formulation}
 \label{sec:router-formulation}
 
@@ -241,6 +244,7 @@ inference, any additional observation construction, and retries attributable to
 routing. Reporting the first two terms without the third is not an evaluation of
 a policy.
 
+\FloatBarrier
 \section{Benchmarks, sites and scope}
 \label{sec:benchmarks}
 
@@ -343,6 +347,7 @@ asking''. Second, the annotation asymmetry in Figure~\ref{fig:f4}(B) reappears
 in Chapter~\ref{ch:pred} as the single most consequential fact about the
 feature set.
 
+\FloatBarrier
 \section{Models and inference configuration}
 \label{sec:models}
 
@@ -401,11 +406,12 @@ words rather than for all of them. Four of our six confidence measures can
 therefore be computed for B0 and two cannot. The inputs used in
 Chapter~\ref{ch:pred} do not depend on the two that are missing.
 
+\FloatBarrier
 \section{Metrics and the accounting boundary}
 \label{sec:metrics}
 
 \paragraph{Primary outcome.} Task success as returned by the benchmark
-evaluator, aggregated as task success rate (TSR) over the scored set. The
+evaluator, aggregated as task success rate (SR) over the scored set. The
 evaluator is unchanged from the benchmark distribution.
 
 \paragraph{Primary cost.} \texttt{total\_billed\_cost\_usd}: the per-episode sum
@@ -499,6 +505,7 @@ For the same reason, no token-count reduction anywhere in this dissertation is
 converted into an energy or emissions reduction: no hardware-independent
 conversion exists \citep{fernandez2025energy}.
 
+\FloatBarrier
 \section{Statistical design}
 \label{sec:stats}
 
@@ -544,6 +551,7 @@ them in the direction of weakening our own positive claims.
   \label{fig:f5}
 \end{figure}
 
+\FloatBarrier
 \section{Reproducibility}
 \label{sec:repro}
 
@@ -564,6 +572,7 @@ be traced back to the run that produced it.
 Appendix~\ref{app:repro} lists the configuration manifest, model revision pins
 and artefact inventory.
 
+\FloatBarrier
 \section{Keeping the study honest}
 \label{sec:honesty}
 

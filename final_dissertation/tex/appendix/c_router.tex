@@ -11,7 +11,7 @@ reached the training in any way.
 
 \section{Complete feature dictionary}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering\small
 \caption{The 20 raw serving-time features. The matched 18-feature set used for
 all cross-benchmark comparisons drops the two marked $\dagger$, because
@@ -52,6 +52,7 @@ Every feature is computable from the task instruction and the cheap structured
 observation. None requires running a model, constructing an image, or observing an outcome, which is the admissibility condition of
 Section~\ref{sec:features}.
 
+\FloatBarrier
 \section{Order of operations inside one outer fold}
 
 For outer fold $k$ of 5, with training rows $T_k$ and test rows $V_k$
@@ -82,6 +83,7 @@ stable. On \cell{red$\cdot$B0} the five outer folds choose \mDOM{}, \mDOM{},
 \mSoM{}, \mSoM{}, \mDOM{}. A pipeline that picks one best mode from all realised
 outcomes therefore reports a mode choice its own resampling does not reproduce.
 
+\FloatBarrier
 \section{The permutation null}
 
 The unit of permutation is the whole task bundle $(y,\ \mathrm{success},\
@@ -102,6 +104,7 @@ which is a post-hoc choice by construction. That is precisely why the
 null shares the same selection step: it measures how much of the observed saving
 a signal-free pipeline with the same post hoc freedom reproduces.
 
+\FloatBarrier
 \section{Which-mode label definitions}
 
 Two definitions were evaluated (Section~\ref{sec:robustness}).

@@ -77,70 +77,43 @@ available on each.
 \toprule
 Term & Meaning in this dissertation \\
 \midrule
-step        & One look-decide-act cycle: the program is shown the page, picks one
-              action, and the browser performs it. \\
-episode     & One attempt at one task, from the starting page until it succeeds,
-              gives up, errors, or runs out of steps. \\
 task success & Whether the benchmark's own automatic checker judged the task
-              complete. Success rates here are percentages of tasks. \\
-backbone    & The underlying model doing the deciding (\cell{B0}, \cell{B1} or
-              \cell{B2}). \\
-token       & The unit in which model input is counted and billed; longer page
-              text and larger images mean more tokens. \\
+              complete; reported as a percentage of tasks. \\
 pp          & Percentage points. A move from 14\% to 17\% is $+3$ pp. \\
-oracle & An idealised chooser that is told, after the fact, which modes solved
-a task, and is allowed to pick one of them, the cheapest where more than
-one worked. It cannot be built; it measures how much opportunity exists. \\
-ceiling & How much better that oracle does than the best single mode. It is an
-upper bound on what any chooser could \emph{gain}, not a result any system
-attains. \\
+oracle & An idealised chooser told, after the fact, which modes solved a task,
+allowed to pick one of them (cheapest where more than one worked). It cannot
+be built; it measures how much opportunity exists. \\
+ceiling & How much better that oracle does than the best single mode. An upper
+bound on what any chooser could \emph{gain}, not a result any system attains. \\
 drop-one contribution & How far the ceiling falls if one mode is deleted from
-the oracle's menu. Running one mode a second time produces a number of the
-same shape, so a positive value alone does not establish that the mode was
-irreplaceable. Chapter~\ref{ch:repr} downgrades an earlier claim on exactly
-this point. \\
-arm & One run of one mode over the whole task set. Six different modes run
-once is six arms; one mode run six times is also six arms. Comparing a six-arm
-result against a one-arm result would flatter whichever side had more
-attempts, so this dissertation matches the count before comparing. \\ noise
-floor & How much a result moves when an unchanged setup is simply run again.
-Two versions are needed and they must not be mixed: one for claims about the
-ceiling (what one more run buys), one for claims comparing two modes' success
-rates. A single observed rerun difference is one draw rather than a threshold,
-so the usable thresholds are larger than the raw differences: 4.46--7.59\pp{}
-for ceiling claims and 3.52--4.15\pp{} for mode-to-mode comparisons. Both are
-ranges across the six replicated arms; a given effect is judged against its own
-arm's value, not against the range.
-Appendix~\ref{app:noise} derives both and states which comparisons each one
-licenses. \\
-routing     & Choosing which mode to use, rather than fixing one in advance.
-              The router picks the mode; the program still picks the click. \\
+the oracle's menu. Running one mode a second time produces a number of the same
+shape, so a positive value alone does not show irreplaceability
+(Chapter~\ref{ch:repr}). \\
+arm & One run of one mode over the whole task set. Six modes run once is six
+arms; one mode run six times is also six arms — this dissertation matches the
+count before comparing an arm's worth. \\
+noise floor & How much a result moves when an unchanged setup is run again.
+Two versions exist and must not be mixed: one for ceiling claims (what one more
+run buys, 4.46--7.59\pp{}), one for mode-to-mode comparisons
+(3.52--4.15\pp{}). Appendix~\ref{app:noise} derives both. \\
+routing     & Choosing which mode to use per task, rather than fixing one in
+              advance; \emph{always-cheapest} is the free fixed policy a router
+              has to beat. \\
 triage & The easier half of routing: predicting whether \emph{any} mode will
-solve this task at all. If none will, the cheapest is used, since nothing is
-gained by paying more. Its positive class is therefore the set of tasks that
-some mode solves, which is also the only set that can say \emph{which} mode
-to prefer. \\
-fixed policy & Using the same mode for everything. \emph{Always-cheapest} is
-the fixed policy that always uses the cheapest mode for that cell; which
-mode that is differs from cell to cell. \\
-Pareto win  & Beating a comparison policy on \emph{both} counts at once: higher
-              task success \emph{and} lower cost. Being better on one and worse
-              on the other does not count. \\
-serving-time information & What a deployed system would know before it has paid
-              for anything: the task wording and the cheap page text. Excludes
-              anything only knowable after the task is attempted, and anything
+solve a task at all, sending it to the cheapest mode if not. \\
+Pareto win  & Beating a comparison policy on \emph{both} axes at once: higher
+              task success \emph{and} lower cost. \\
+serving-time information & What a deployed system knows before it has paid for
+              anything: task wording and cheap page text. Excludes anything
               the benchmark supplies that a deployment would not have, such as
               its own human-written difficulty rating. \\
-nested cross-validation & A testing procedure in which the data is split
-              repeatedly, and every choice (which mode, which threshold, how
-              to scale the inputs) is made using only the training part, then
-              judged on the part held back. It exists to stop a method from
-              being tuned on the data it is then scored on. \\
-AUROC & A single number between 0 and 1 summarising how well a predictor
-\emph{ranks} one class above the other. 0.5 is chance; 1.0 is perfect. It says
-nothing about whether acting on that ranking pays, once the two kinds of
-mistake carry different costs. Chapters~\ref{ch:pred} and~\ref{ch:e2e} turn
-on exactly that gap. \\
+nested cross-validation & A testing procedure in which every modelling choice
+              is made on training tasks alone and judged on tasks held back,
+              so a method cannot be tuned on the data it is scored on. \\
+AUROC & How well a predictor \emph{ranks} one class above the other (0.5 =
+chance, 1.0 = perfect). Says nothing about whether acting on that ranking
+pays once the two kinds of mistake cost differently
+(Chapters~\ref{ch:pred},~\ref{ch:e2e}). \\
 \bottomrule
 \end{tabularx}
 \end{center}

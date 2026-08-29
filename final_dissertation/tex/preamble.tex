@@ -19,12 +19,54 @@
 \usepackage{microtype}
 \usepackage{url}
 
+% ---------- float placement ---------------------------------------------------
+% Every figure/table in the chapters is `[t]`-only. That is fine for an
+% isolated float, but a chapter carrying several of them (ch4 has twelve) lets
+% LaTeX's float queue back up across many pages with nothing to force a
+% discharge, so a float can drift past the prose that discusses it and even
+% past the chapter's own closing summary. `placeins` adds `\FloatBarrier`,
+% inserted at each section boundary in the chapters that carry floats, which
+% forces the queue to clear there rather than several sections later.
+\usepackage{placeins}
+% `float` supplies [H], used by the appendix tables. Those tables are not
+% illustrations that may drift to a convenient page: each one belongs to the
+% section that introduces it, and when LaTeX deferred them the reader met
+% Table A.1 under heading A.2, Table C.1 splitting a six-step protocol between
+% steps 3 and 4, and Table D.2 under D.5. [H] pins them where they are written.
+\usepackage{float}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{4}
+\setcounter{totalnumber}{6}
+
 % The template's 40mm binding margins leave a 13cm text block, which is narrow
 % for a document whose prose is full of underscored identifiers such as
 % \texttt{has\_reference\_image}. Without these two lines such a word cannot be
 % broken and pushes a line into the margin.
 \usepackage[htt]{hyphenat}
 \emergencystretch=1.5em
+
+% File paths and artefact names. The [htt] option above lets LaTeX hyphenate
+% inside \texttt, which is what keeps identifiers like has\_reference\_image
+% out of the margin --- but applied to a PATH it inserts a line-end hyphen that
+% reads as part of the filename. In a reproducibility manifest that is worse
+% than an overfull line: `router\_objective\_-ordering.md` is not a file anyone
+% can open. This macro keeps the typewriter face, forbids the hyphen outright
+% (\hyphenchar = -1), and instead offers a break opportunity after each
+% underscore, so long paths still wrap.
+\newcommand{\artefact}[1]{{%
+  \ttfamily\hyphenchar\font=-1\relax
+  \renewcommand{\_}{\textunderscore\allowbreak}%
+  #1}}
+
+% Every one of this document's 121 \texttt uses is a code identifier, a config
+% key or a file path, so the rule above is the right rule for all of them, not
+% just for the artefact manifest: `NON\_PAPER\_-GRADE`, `phantom\_-text` and
+% `max\_new\_-tokens` were all being rendered with a hyphen that is not in the
+% identifier. Redefining \texttt applies the fix in one place instead of at 73
+% call sites, and cannot drift away from \artefact.
+\let\origtexttt\texttt
+\renewcommand{\texttt}[1]{\artefact{#1}}
 
 % Let biblatex break long URLs and arXiv identifiers rather than run them into
 % the margin. Without these the bibliography contributes the widest overfull box
@@ -54,5 +96,17 @@
           innerleftmargin=8pt,innerrightmargin=8pt,
           skipabove=8pt,skipbelow=8pt,roundcorner=2pt]{scopebox}
 
+% The chapter hand-off uses its own non-breakable frame. When it shared the
+% breakable `scopebox`, a hand-off that started near the foot of a page split
+% across the break and left a single orphaned line -- "describe. Chapter 7
+% takes up all three, and closes the dissertation." was alone on its own page.
+% These boxes are never more than a few lines, so moving one whole is always
+% cheaper than splitting it.
+\newmdenv[linewidth=0.6pt,linecolor=black!35,backgroundcolor=black!3,
+          innertopmargin=5pt,innerbottommargin=5pt,
+          innerleftmargin=8pt,innerrightmargin=8pt,
+          skipabove=8pt,skipbelow=8pt,roundcorner=2pt,
+          nobreak=true]{handoffbox}
+
 \newcommand{\chapterhandoff}[1]{%
-  \bigskip\noindent\begin{scopebox}\textit{#1}\end{scopebox}}
+  \bigskip\noindent\begin{handoffbox}\textit{#1}\end{handoffbox}}

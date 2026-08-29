@@ -92,6 +92,12 @@
             backend=biber,natbib=true]{biblatex}                                        % Controls the bibliography style and sorting. P79: natbib=true keeps the \citep/\citet calls used throughout the chapters working under biblatex.
 \addbibresource{refs.bib}                                                               % Imports the bibliography.
 \usepackage[hidelinks]{hyperref}                                                        % Hyperlinks in citation URLs, and hides their colour in the pdf.
+\hypersetup{
+  pdftitle={When Is Expensive Perception Worth Paying For?},
+  pdfauthor={Jiaming Wei},
+  pdfsubject={MSc Dissertation, COMP0191},
+  pdfkeywords={web agents, representation routing, multimodal agents, cost-aware routing, efficiency}
+}                                                                                        % P79: PDF document properties were empty; an examiner's PDF viewer title bar and file metadata now match the title page.
 
 %%% Custom referencing commands
 \newcommand{\secref}[1]{Sec.\ \ref{#1}}                                                 % Creates a reference to a section as Sec. [].
