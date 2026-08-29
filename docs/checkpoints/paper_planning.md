@@ -2812,3 +2812,50 @@ grep `docs/` 实测 2026-06-05 命中 (✅=已在 repo / ❌=absent, fresh ancho
 ### §24.6 剂量 (同 §23 的纪律)
 
 **paper-1 = 零**。毕设 09-01 不动; NAACL 稿是否用, **等 REALM 意见(08-21) + cell 数据**再定。若要用, 最小可辩护的形态是 §24.2 那张表 + §24.3 三个障碍的诚实披露, **不是**把 F1-F5 当成已验证的 taxonomy 端上去。
+
+---
+
+## §25 two-arm action oracle — NAACL 写作纪律 (2026-08-30) [framing][discussion] #design
+
+来源: 笔记 §490 的三家审计 (Claude Mode A + codex Mode B + agy Mode C)。§490 本身是
+chronicle, 这里只留**写 NAACL 稿时必须遵守的表述纪律**, 数字现查产物。
+
+### §25.1 三条不能再说的话 (每条都被独立证伪过)
+
+1. **「oracle_two_arm 构造上必然 Pareto 压制 oracle_triage」** — 只有 **SR** 那一半是
+   构造保证的。cost 那一半是这批 log 的经验性质 (失败 episode 通常烧满 step 预算 ⇒
+   救回一次成功往往顺带更便宜), **不是定理**。反例已写进
+   `two_arm_action_learnability.py::evaluate` 的注释里, 三行数据就能推翻。
+   ⇒ 写法: 「SR 有构造保证; cost 上的 8/8 是实测」。
+2. **「8/8 天花板稳」当 headline** — 8 格里只有一部分 ΔSR 超出 rerun band (2.23pp),
+   其余落在带内。方向在 8/8 都安全 (因为有构造保证), **量级只有超出带的那几格可辩护**。
+   ⇒ 写法: 拆成两句, 别把"必然 ≥"和"实测有意义差距"缝进同一个分子。
+3. **「这是两臂动作空间的 ceiling」** — `pick_arms` 是两个轴各自取极值, 不是联合最优;
+   `enumerate_pairs()` 实测有 cell 存在另一对 mode 两轴都支配它。
+   ⇒ 写法: **conditional oracle over the triage-selected pair**, 永远不写 ceiling。
+
+### §25.2 归因纪律: 别把「特征不够」写成「样本不够」
+
+AUROC 是排序统计量, **对类别不平衡在期望上不敏感** —— 正类薄只放大估计的**方差**,
+不压低它的期望。所以 AUROC(z) 偏低不能归因于"正类只有 5-22 个"。真正的读法是: 这批
+特征分不开 z 编码的那条更细的边界 (*这个任务需要贵臂, 便宜臂顶不上*), 比 y 的
+*有东西能解* 细一档。**稀缺 与 特征不足 是两个诊断, 现有表分不开, 两个都要如实标 open。**
+
+### §25.3 归纳纪律: 两次失败不能堵死第三条路
+
+y 与 z 都没学出来, **不足以**支持「换任何标签定义都没用」。没测过的至少还有: 分别估
+`P(success|x,m)` 再按 expected value 决策 / 学 pairwise Δ 回归。
+⇒ 写法上限: 「在这个特征集下, 从 y 切到 z 没有解除瓶颈」, 不外推到 routing 的普遍性质。
+
+### §25.4 叙事纪律 (Mode C 的提醒, 值得听)
+
+不要把「发现基线算错 → 修好 → 仍然打不过 always-cheapest」这条心路历程写进稿子。
+读者视角那读起来像 post-hoc rationalization。**正式稿直接把修正后的 oracle 当成不言自明
+的上限呈现**, 故事回到最朴素的经验发现: always-cheapest 是一条极难被击败的强基线,
+现有 serving-time 特征提供不了为贵臂付溢价所需的置信度。修正过程留在 chronicle 与
+附录, 不进 narrative。
+
+### §25.5 剂量
+
+同 §23/§24: **毕设 (09-05) 不动**。这批只影响 NAACL 稿。P0-1 修复前产出的数字**全部作废**,
+引用前现查 `docs/analysis/cross_sites/two_arm_action_learnability.md`。
