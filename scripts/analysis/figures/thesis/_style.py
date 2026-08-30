@@ -63,15 +63,21 @@ C_FILL = "#D9D9D9"      # neutral fill for bars that carry no categorical meanin
 # SoM, P-text and P-prompt. This table lived in fig_f10_rerun_discordance.py and
 # its sibling f10b did not import it, which is exactly how the two figures came
 # to spell the same six modes two different ways.
-# One display spelling per cell, for the same reason. Three figures spelled the
-# same eight cells three ways --- `VWA-cls · B0` (F10b), `classifieds·B0` (F16)
-# and `cls·B0` (F7) --- because each parsed its own artefact. The VWA-/WA- prefix
-# is not decoration: both benchmarks have a site called reddit, and `red·B0`
-# alone does not say which one. Unrecognised cells pass through unchanged.
+# One display spelling per cell. Three figures spelled the same eight cells three
+# ways --- `VWA-cls · B0` (F10b), `classifieds·B0` (F16) and `cls·B0` (F7) ---
+# because each parsed its own artefact. Unrecognised cells pass through unchanged.
+# Target spelling = whatever the BODY TEXT uses, which is `cls` / `red` /
+# `wa_red` (\cell{cls$\cdot$B0} appears 29 times in the chapters). A first pass
+# here normalised to `VWA-cls` / `WA-red`, which is more informative --- both
+# benchmarks have a site called reddit --- but it put a FOURTH spelling into a
+# document whose prose already carries three, and the examiner reading
+# "cls-B0" in the text then met "VWA-cls-B0" on the figure above it. Figure and
+# prose agreeing beats figure alone being precise; promoting the VWA-/WA-
+# prefix everywhere is a TERMS.md job, not a figure job.
 _CELL_SITE = {
-    "classifieds": "VWA-cls", "cls": "VWA-cls", "vwa-cls": "VWA-cls",
-    "reddit": "VWA-red", "red": "VWA-red", "vwa-red": "VWA-red",
-    "wa_reddit": "WA-red", "wa_red": "WA-red", "wa-red": "WA-red",
+    "classifieds": "cls", "cls": "cls", "vwa-cls": "cls",
+    "reddit": "red", "red": "red", "vwa-red": "red",
+    "wa_reddit": "wa_red", "wa_red": "wa_red", "wa-red": "wa_red",
 }
 _CELL_RE = _re.compile(r"^\s*(.+?)\s*[\u00b7]\s*(B\d+)\s*$")
 

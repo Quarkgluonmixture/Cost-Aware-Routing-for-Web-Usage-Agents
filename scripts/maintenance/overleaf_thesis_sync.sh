@@ -20,6 +20,17 @@
 #   NO_PUSH=1 bash scripts/maintenance/overleaf_thesis_sync.sh    # 传+commit, 不 push
 set -euo pipefail
 
+# Dry run is DRY_RUN=1 in the environment; this script takes no positional
+# arguments. Before this guard an unrecognised argument was silently ignored,
+# so `--dry-run` (the shape every other tool uses) ran a REAL sync to Overleaf
+# while the caller believed nothing had moved. Exit-code 0, wrong action.
+if [ "$#" -gt 0 ]; then
+  echo "ERROR: this script takes no arguments (got: $*)." >&2
+  echo "       Dry run is:  DRY_RUN=1 bash $0" >&2
+  exit 2
+fi
+
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SRC="$REPO_ROOT/final_dissertation/tex"
 DEST="${OVERLEAF_THESIS_DIR:-$HOME/overleaf-thesis-ucl}"

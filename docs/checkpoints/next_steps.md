@@ -43,6 +43,15 @@ updated: 2026-08-30
 > `pre_run/b1_reddit_chain_launch_intent_20260826.md`。
 > ⚠️ 两格**都被预先声明功效不足**（d=9.9 / 8.2，门槛 10）——能挪动一个点，不能收紧区间。
 >
+> ### ⚠️ som 落地当晚会报一条 urgent，那是预期的
+> `validate_fire_manifest.py:227` 只放过**已登记进 CLEAN_PAIRS** 的第二个完整 run，
+> 而 run 不存在时无法登记 ⇒ som 跑完 205 集的那一刻必被判 **COMPLETE ghost** →
+> watchdog FAIL-CLOSED → 写 halt marker → 挡住 RESUME_MISSING。**不要去查它**：
+> 诊断文本还会被 `experiment_watchdog.py:1185` 的 400 字符截断吃掉（§492.3），
+> 什么也查不出来。同一序列在 08-21/23/24 已发生过一次（台账 §487.7）。
+> 处置 = 两格都验到 205 后，把这对登记进 `aggregate_noise_floor_inventory.py`
+> 的 `CLEAN_PAIRS`（那里已留占位注释）。**登记会动噪声地板 canonical，留给 user。**
+>
 > ### b5-reddit：**不是没跑，是跑不动**
 > 实测 quota **$106.43**，3 格需 $156，chain floor $60 ⇒ 第 1 格跑完就 halt，**只够 1/3**。
 > 08-27 申请的 $300 未到账。且即便钱现在到，120h 从 08-30 起算正好压在它自己的 halt 上（零余量）。

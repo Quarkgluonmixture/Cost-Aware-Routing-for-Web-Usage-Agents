@@ -110,7 +110,7 @@ def build(ax, rows, thresh):
     # gains the marker sits exactly where such a note would go. It rides on the
     # SECOND line rather than a third: at eight rows a three-line tick label
     # overran its neighbour, and the note was struck through by the row below.
-    ax.set_yticks(y, [f"{r['cell']}\n{S.mode_label(r['best_mode'])} "
+    ax.set_yticks(y, [f"{S.cell_label(r['cell'])}\n{S.mode_label(r['best_mode'])} "
                       f"{r['best_sr']:.1f}%"
                       + ("" if r["floor"] else "  ·  no floor")
                       for r in rows], fontsize=S.FS_LABEL)

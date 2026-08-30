@@ -62,13 +62,51 @@ def pareto(points):
 MODE_MARKER = {"DOM": "o", "SoM": "s", "Vision": "D",
                "P-text": "^", "P-prompt": "v", "P-SoM": "P"}
 
+# Modes the surrounding prose names by hand even though they are dominated, so
+# a reader following the sentence to the panel can still find them. ch4 §4.2
+# contrasts Vision against P-SoM on cls-B0 and against SoM on cls-B2, and says
+# Vision is "the fourth most expensive of six" on wa_red-B0. Without these three
+# the text points at a mark that carries no name.
+PROSE_NAMED = {"cls\u00b7B0": {"P-SoM"}, "cls\u00b7B2": {"SoM"},
+               "wa_red\u00b7B0": {"Vision"}}
+
+
+# Offsets tried in order. Every one keeps the label touching its own mark.
+_CAND = [(0, 7, "center", "bottom"), (0, -8, "center", "top"),
+         (8, 0, "left", "center"), (-8, 0, "right", "center"),
+         (8, 7, "left", "bottom"), (-8, -8, "right", "top"),
+         (0, 17, "center", "bottom"), (0, -18, "center", "top")]
+
 
 def _front_labels(ax, labels):
-    """Text only for the non-dominated marks: at most three, so no collisions."""
-    for m, c, sr_, dy in labels:
-        ax.annotate(m, (c, sr_), textcoords="offset points", xytext=(0, dy),
-                    ha="center", va="bottom" if dy > 0 else "top",
-                    fontsize=S.FS_VALUE, color="#222222")
+    """Name at most four marks per panel without printing one over another.
+
+    Alternating above/below --- by list order OR by cost order --- is blind to
+    the OTHER axis: on wa_red-B0 the P-text mark sits at 35% success and Vision
+    at 19%, so "below P-text" and "above Vision" met in the middle and printed
+    as "P-teVision". Four labels in a 180x124pt panel do fit; they just have to
+    be placed against measured boxes rather than by a parity rule. Called after
+    set_xlim/set_ylim --- an offset in points means nothing until the scale is
+    final.
+    """
+    bb = ax.get_window_extent()
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    sx, sy = bb.width / (x1 - x0), bb.height / (y1 - y0)
+    ch_w, ln_h = S.FS_VALUE * 0.58, S.FS_VALUE * 1.25
+    placed = []
+    for m, c, sr_ in sorted(labels, key=lambda t: -t[2]):
+        px, py = (c - x0) * sx, (sr_ - y0) * sy
+        w = len(m) * ch_w
+        for dx, dy, ha, va in _CAND:
+            cx = px + dx + (w / 2 if ha == "left" else -w / 2 if ha == "right" else 0)
+            cy = py + dy + (ln_h / 2 if va == "bottom" else -ln_h / 2 if va == "top" else 0)
+            if all(abs(cx - ox) >= (w + ow) / 2 or abs(cy - oy) >= (ln_h + oh) / 2
+                   for ox, oy, ow, oh in placed):
+                break
+        placed.append((cx, cy, w, ln_h))
+        ax.annotate(m, (c, sr_), textcoords="offset points", xytext=(dx, dy),
+                    ha=ha, va=va, fontsize=S.FS_VALUE, color="#222222")
 
 
 def panel(ax, cell, n, sr, cost, unit):
@@ -84,7 +122,7 @@ def panel(ax, cell, n, sr, cost, unit):
                    marker=MODE_MARKER.get(m, "o"),
                    edgecolor="#333333" if on else "none",
                    lw=1.1, zorder=3, alpha=1.0 if on else 0.55)
-        if on:
+        if on or m in PROSE_NAMED.get(S.cell_label(cell), ()):
             labels.append((m, c, s))
     ax.set_title(f"{S.cell_label(cell)}   $n$={n}", fontsize=S.FS_PANEL,
                  loc="left", pad=6)
@@ -98,9 +136,7 @@ def panel(ax, cell, n, sr, cost, unit):
     ax.set_ylim(-ymax * 0.18, ymax * 1.32)
     # After the limits are set, never before: an offset in points is only
     # meaningful once the axes scale is final.
-    # Alternate above/below so two front marks at a similar cost cannot touch.
-    _front_labels(ax, [(m, c, sr_, 8 if k % 2 == 0 else -9)
-                       for k, (m, c, sr_) in enumerate(labels)])
+    _front_labels(ax, labels)
     return len(front)
 
 

@@ -64,6 +64,21 @@ MODE_KEYS = ["sr_dom", "sr_som", "sr_vision", "sr_ptext", "sr_pprompt", "sr_psom
 # Registration here is load-bearing twice over: `validate_fire_manifest.py` reads this
 # list via ast.literal_eval and exempts each arm_b from ghost detection, so an UNregistered
 # deliberate replicate is reported as contamination and halts aggregation (B-1951).
+# ⏳ IN FLIGHT 2026-08-30 — B1 x reddit x {som, dom}, run ids
+# B1_som_reddit_20260830_093638_..._R4567 and the dom cell that follows it.
+# Declared before the fire in pre_run/b1_reddit_chain_launch_intent_20260826.md;
+# they are the replicate arm for the two cells already bound to the July runs.
+#
+# ⚠️ WHEN THEY LAND, validate_fire_manifest WILL REPORT THEM AS COMPLETE GHOSTS,
+# and the watchdog will fail-closed with a halt marker. That is EXPECTED, not a
+# fault: ghost detection excuses a second complete run only if it is registered
+# here (validate_fire_manifest.py:227 reads this list via registered_replicate_
+# run_ids), and a run cannot be registered before it exists. The same sequence
+# produced the 2026-08-21/23/24 reddit "ghosts" recorded in ledger §487.7.
+# Do not spend a session diagnosing that alert --- the diagnostic text is also
+# truncated away by experiment_watchdog.py:1185 (§492.3), so it will say nothing.
+# Register the pair here once both cells are verified at 205 episodes.
+
 CLEAN_PAIRS = [
     ("B0.cls.dom",
      "results/visualwebarena/phase1/B0_dom_classifieds_20260525_194618_553890342_530647_R21557/phase1_dom_router_0",
