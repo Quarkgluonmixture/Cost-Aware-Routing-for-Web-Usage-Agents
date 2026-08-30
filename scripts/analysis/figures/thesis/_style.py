@@ -37,6 +37,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import re as _re
 import matplotlib
 
 matplotlib.use("Agg")
@@ -55,6 +56,43 @@ C_INK = "#222222"       # primary ink for marks and labels
 C_MUTED = "#8A8A8A"     # axis furniture, reference lines, de-emphasised marks
 C_ACCENT = "#C2352B"    # reserved for the single element the figure is about
 C_FILL = "#D9D9D9"      # neutral fill for bars that carry no categorical meaning
+
+# One display spelling per mode, for every figure. The source artefacts carry
+# the pipeline slugs (`som`, `ptext`, `pprompt`), and a figure that prints them
+# raw contradicts the Reader's Guide, which tells the examiner these are called
+# SoM, P-text and P-prompt. This table lived in fig_f10_rerun_discordance.py and
+# its sibling f10b did not import it, which is exactly how the two figures came
+# to spell the same six modes two different ways.
+# One display spelling per cell, for the same reason. Three figures spelled the
+# same eight cells three ways --- `VWA-cls · B0` (F10b), `classifieds·B0` (F16)
+# and `cls·B0` (F7) --- because each parsed its own artefact. The VWA-/WA- prefix
+# is not decoration: both benchmarks have a site called reddit, and `red·B0`
+# alone does not say which one. Unrecognised cells pass through unchanged.
+_CELL_SITE = {
+    "classifieds": "VWA-cls", "cls": "VWA-cls", "vwa-cls": "VWA-cls",
+    "reddit": "VWA-red", "red": "VWA-red", "vwa-red": "VWA-red",
+    "wa_reddit": "WA-red", "wa_red": "WA-red", "wa-red": "WA-red",
+}
+_CELL_RE = _re.compile(r"^\s*(.+?)\s*[\u00b7]\s*(B\d+)\s*$")
+
+
+def cell_label(cell) -> str:
+    """Display spelling for a (site, baseline) cell; unknown forms pass through."""
+    m = _CELL_RE.match(str(cell))
+    if not m:
+        return cell
+    site, baseline = m.group(1), m.group(2)
+    return f"{_CELL_SITE.get(site.strip().lower(), site)}\u00b7{baseline}"
+
+
+MODE_LABEL = {"dom": "DOM", "vision": "Vision", "som": "SoM",
+              "ptext": "P-text", "pprompt": "P-prompt", "psom": "P-SoM"}
+
+
+def mode_label(slug: str) -> str:
+    """Display spelling for a mode slug; unknown slugs pass through unchanged."""
+    return MODE_LABEL.get(str(slug).strip().lower(), slug)
+
 
 MODE_COLOUR = {
     "DOM": C_TEXT,

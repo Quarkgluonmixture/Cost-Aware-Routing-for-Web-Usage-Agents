@@ -15,7 +15,7 @@ Table~\ref{tab:sr-per-mode} gives task success for all six modes across the six
 VisualWebArena cells. Read as a grid, its most useful property is a negative
 one: the column that wins is not the same column everywhere.
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \caption[Task success rate per mode and cell]{\textbf{Task success rate (\%) by
 mode, with successes/scored-set in parentheses.} The best mode per row is in
@@ -64,7 +64,7 @@ and we do not advance one.
 with 8 total successes, the row is dominated by counting noise, and its appearance in later analyses, including as the one cell whose learned router passes a permutation test in Chapter~\ref{ch:pred}, should be read with that
 in mind.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=0.94\textwidth]{fig_f6_sr_by_class.pdf}
   \caption[Success rate by mode class and cell]{%
@@ -94,14 +94,16 @@ the cheapest mode at \$0.0648/episode and reaches 25.00\%, while \mPS{} costs
 11.2\% more and reaches 15.62\%. Several modes are strictly dominated: they cost
 more than an alternative and succeed less.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{fig_f7_cost_sr_frontier.pdf}
   \caption[Cost--success frontier per cell]{%
   \textbf{Cost against success, one panel per cell.} Non-dominated modes are
   drawn solid and joined by a line; dominated modes, which cost more
   \emph{and} succeed less than some alternative, are drawn faded rather than
-  hidden. Cost is \texttt{total\_billed\_cost\_usd} per episode throughout, but
+  hidden. Marker shape identifies the mode and colour its side of the
+  text/combined/visual partition; only the non-dominated marks are named on the
+  panel, because six names do not fit beside six marks this close together. Cost is \texttt{total\_billed\_cost\_usd} per episode throughout, but
   the schedule behind it differs in kind: a vendor billing rate for B0 and a
   device-amortisation rate for B1 and B2. Neither is measured electricity, and
   no panel shares an x axis with another, so the ratio across that boundary is
@@ -175,7 +177,7 @@ and not tested.
 Selecting per task with hindsight (Equation~\ref{eq:oracle}) gives the most that
 perfect selection could ever be worth.
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \caption[Oracle ceiling across all eight cells]{\textbf{The ceiling, in every
 cell, on both benchmarks.} Both $\Delta$ columns compare the same thing, an
@@ -291,7 +293,7 @@ this bites hardest: the ``zero success loss'' is zero on \emph{this} log only,
 because the tasks it sends to the cheap mode are the ones that happened to
 fail in this run, not the ones that would fail on average.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=0.92\textwidth]{fig_ceilings.pdf}
   \caption[The ceiling with its repetition baseline]{%
@@ -319,7 +321,7 @@ Drop-one (Equation~\ref{eq:dropone}) asks what removing a mode from the
 portfolio costs. Table~\ref{tab:dropone} gives all 36 values with bootstrap
 intervals.
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \setlength{\tabcolsep}{3pt}
 \caption[Drop-one contribution per mode and cell]{\textbf{Drop-one loss
@@ -377,7 +379,7 @@ style; the larger unique contributions come from \emph{crossing sides}: \mSoM{} 
 modes by what is actually transmitted turns an otherwise puzzling pattern into
 an expected one.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{fig_f9_drop_one_vs_floor.pdf}
   \caption[Drop-one contribution against the noise threshold]{%
@@ -418,7 +420,7 @@ configuration, plus one WebArena pilot/full overlap
 (Table~\ref{tab:noise-floor}). Figure~\ref{fig:f10} plots the six
 per-pair discordances on their own.
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \caption[Same-condition run-to-run floors]{\textbf{Two runs of one unchanged
 condition.} $\mathrm{self\_drop}(a\!\to\!b) = |\{a \text{ solves}\} \setminus
@@ -465,7 +467,7 @@ Under the exchangeability null, where the two runs are the same condition and ea
 \end{equation}
 where $d$ is the discordant count. Table~\ref{tab:floor-spread} evaluates it.
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \caption[The spread of the repetition difference]{\textbf{What repetition
 \emph{could} deliver, not only what it did.} The observed $|\Delta$SR$|$ column
@@ -519,7 +521,7 @@ drift we also observe. Appendix~\ref{app:noise} gives the derivation, separates
 the two distinct floor quantities this literature tends to conflate, and states
 which comparisons each one licenses.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=0.72\textwidth]{fig_f10_rerun_discordance.pdf}
   \caption[Run-to-run discordance on identical conditions]{%
@@ -544,7 +546,7 @@ On \cell{cls$\cdot$B0}, starting from \mSoM{} at 27.23\%: adding the best
 distinct representation (\mDOM{}) buys $7.14\pp$; adding a rerun buys
 $4.46$--$7.59\pp$. The representation arm is \emph{inside} the rerun band.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{fig_f10b_one_arm_margin.pdf}
   \caption[Representation arm versus rerun arm at matched arm count]{%
@@ -606,7 +608,7 @@ $U(2)$. We therefore report the whole interval the feasibility constraints
 $s_0 \ge 0$ and $s_0 + m \le n$ admit, and draw only the conclusion that holds
 across it.
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \caption[Six reruns of one mode against six distinct modes]{\textbf{What
 repetition alone would have reached, at the same arm count.} $U(2)$ model versus

@@ -17,6 +17,16 @@
 \usepackage{enumitem}
 \setlist{itemsep=2pt,topsep=3pt,parsep=0pt}
 \usepackage{microtype}
+
+% Command-line flags must survive the typesetter. lmodern's T1 typewriter face
+% carries the `--' ligature that the original Computer Modern tt face does not,
+% so \texttt{--allow-partial} was reaching the PDF as an EN DASH: the reader who
+% copies it out of a reproducibility appendix gets a flag no shell accepts.
+% Verified before the fix by extracting the PDF text and reading the bytes:
+% `e2 80 93' (U+2013) where a double hyphen was written. microtype can switch
+% the ligature off for one family, which is narrower than swapping the font and
+% cannot leak into body text.
+\DisableLigatures{encoding = T1, family = tt*}
 \usepackage{url}
 
 % ---------- float placement ---------------------------------------------------
@@ -74,6 +84,19 @@
 \setcounter{biburllcpenalty}{7000}
 \setcounter{biburlucpenalty}{8000}
 \setcounter{biburlnumpenalty}{7000}
+
+% The Table of Acronyms is printed with the `long-booktabs' glossary style,
+% whose first column header comes from \entryname --- and the glossaries default
+% for that is "Notation". A page titled "Table of Acronyms" whose column then
+% says "Notation" is naming the same thing two ways on one line.
+% \AtBeginDocument, not here directly: the glossaries language module assigns
+% \entryname at \begin{document}, so a plain \renewcommand in the preamble is
+% overwritten before the glossary is ever printed --- which is exactly what the
+% first attempt at this did, silently and with a clean compile.
+\AtBeginDocument{%
+  \renewcommand{\entryname}{Acronym}%
+  \renewcommand{\descriptionname}{Description}%
+}
 
 % ---------- semantic macros --------------------------------------------------
 % Term lock (final_dissertation/TERMS.md): one concept, one name, one spelling.

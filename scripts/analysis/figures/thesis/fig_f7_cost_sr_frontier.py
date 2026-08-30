@@ -50,25 +50,44 @@ def pareto(points):
     return keep
 
 
+# Shape carries the mode; colour keeps carrying the side. This was forced by a
+# measurement, not a preference: the panel is 180pt wide and the six mode names
+# laid side by side need 183pt, so on a panel whose points cluster --- and they
+# all do, the figure existing precisely because six modes cost nearly the same
+# --- NO arrangement of six text labels fits. Four attempts at cleverer offsets
+# each produced a different overlap ("P-SoMprompt" in one, labels escaping into
+# the panel title in another). Only the labels the prose actually argues about,
+# the non-dominated ones, are still written out; there are at most three per
+# panel, so those always fit.
+MODE_MARKER = {"DOM": "o", "SoM": "s", "Vision": "D",
+               "P-text": "^", "P-prompt": "v", "P-SoM": "P"}
+
+
+def _front_labels(ax, labels):
+    """Text only for the non-dominated marks: at most three, so no collisions."""
+    for m, c, sr_, dy in labels:
+        ax.annotate(m, (c, sr_), textcoords="offset points", xytext=(0, dy),
+                    ha="center", va="bottom" if dy > 0 else "top",
+                    fontsize=S.FS_VALUE, color="#222222")
+
+
 def panel(ax, cell, n, sr, cost, unit):
     pts = [(cost[(cell, m)], sr[(cell, m)]) for m in MODES]
     front = sorted(pareto(pts), key=lambda i: pts[i][0])
     ax.plot([pts[i][0] for i in front], [pts[i][1] for i in front],
             color="#666666", lw=1.1, ls="-", zorder=1, alpha=0.7)
+    labels = []
     for i, m in enumerate(MODES):
         c, s = pts[i]
         on = i in front
         ax.scatter([c], [s], s=74 if on else 46, color=C_SIDE[SIDE_OF[m]],
+                   marker=MODE_MARKER.get(m, "o"),
                    edgecolor="#333333" if on else "none",
                    lw=1.1, zorder=3, alpha=1.0 if on else 0.55)
-        # Six labels in a 2.5in panel collide if they all sit above their point.
-        # Alternating above and below by index halves the density without moving
-        # any label away from the mark it names.
-        dy = 7 if i % 2 == 0 else -12
-        ax.annotate(m, (c, s), textcoords="offset points", xytext=(0, dy),
-                    ha="center", fontsize=S.FS_VALUE,
-                    color="#222222" if on else "#888888")
-    ax.set_title(f"{cell}   $n$={n}", fontsize=S.FS_PANEL, loc="left", pad=6)
+        if on:
+            labels.append((m, c, s))
+    ax.set_title(f"{S.cell_label(cell)}   $n$={n}", fontsize=S.FS_PANEL,
+                 loc="left", pad=6)
     ax.set_xlabel(unit, fontsize=S.FS_VALUE)
     for s_ in ("top", "right"):
         ax.spines[s_].set_visible(False)
@@ -76,7 +95,12 @@ def panel(ax, cell, n, sr, cost, unit):
     hi = max(p[0] for p in pts)
     ax.set_xlim(lo - (hi - lo) * 0.18, hi + (hi - lo) * 0.18)
     ymax = max(p[1] for p in pts)
-    ax.set_ylim(-ymax * 0.14, ymax * 1.30)
+    ax.set_ylim(-ymax * 0.18, ymax * 1.32)
+    # After the limits are set, never before: an offset in points is only
+    # meaningful once the axes scale is final.
+    # Alternate above/below so two front marks at a similar cost cannot touch.
+    _front_labels(ax, [(m, c, sr_, 8 if k % 2 == 0 else -9)
+                       for k, (m, c, sr_) in enumerate(labels)])
     return len(front)
 
 
@@ -104,11 +128,17 @@ def main() -> int:
     for ax in axes[:, 0]:
         ax.set_ylabel("task success rate (%)", fontsize=S.FS_LABEL)
 
-    fig.legend(handles=[plt.Line2D([], [], marker="o", ls="", ms=6,
-                                   color=C_SIDE[i], label=lab)
-                        for i, (lab, _m) in enumerate(SIDES)],
-               loc="lower center", ncol=3, frameon=False,
-               bbox_to_anchor=(0.5, 0.0))
+    side_h = [plt.Line2D([], [], marker="o", ls="", ms=6,
+                         color=C_SIDE[i], label=lab)
+              for i, (lab, _m) in enumerate(SIDES)]
+    mode_h = [plt.Line2D([], [], marker=MODE_MARKER[m], ls="", ms=5.5,
+                         color="#555555", label=m) for m in MODES]
+    leg = fig.legend(handles=side_h, loc="lower center", ncol=3, frameon=False,
+                     bbox_to_anchor=(0.5, -0.012))
+    fig.add_artist(leg)
+    fig.legend(handles=mode_h, loc="lower center", ncol=6, frameon=False,
+               bbox_to_anchor=(0.5, -0.055), handletextpad=0.35,
+               columnspacing=1.1, fontsize=S.FS_VALUE)
 
     # No banner, no explanatory block, no provenance footnote. Which points are
     # non-dominated, why the panels do not share an x axis, and where the cost

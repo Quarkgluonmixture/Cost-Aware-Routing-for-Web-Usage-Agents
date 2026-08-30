@@ -40,7 +40,7 @@ counts are \emph{minted} labels, of which about 54\% pooled fall in classes that
 survive the filter.
 \end{scopebox}
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \caption[Which-mode label supply]{\textbf{The which-mode half fails its
 admissibility rule before modelling begins.} A label is \emph{minted} only where
@@ -121,7 +121,7 @@ ones. We therefore drop \texttt{has\_reference\_image} and
 a matched 18-feature set. The 20-feature VisualWebArena results are reported
 separately and are not a subset of the matched table: every number was recomputed.
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering\small
 \caption[Effect of the matched feature set]{\textbf{Dropping two features that
 no deployment has costs most of the discriminative power.} AUROC for the triage
@@ -169,7 +169,7 @@ but that the one column with reliable signal in it does not exist outside the be
 Figure~\ref{fig:f11} puts the two feature sets side by side and names the
 strongest covariate in each cell's fit.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{fig_f11_feature_set_ablation.pdf}
   \caption[Two feature sets side by side]{%
@@ -197,7 +197,7 @@ differently. So the WebArena cells are effectively fitted on 13 live features
 against the VisualWebArena cells' 15--17 (Table~\ref{tab:live-features}). We
 state the comparison as matched on set, not on support.
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering\small
 \caption[Live features per cell]{\textbf{A column with no variance carries no
 information.} The header figure of 18 is a ceiling, not a count of usable
@@ -269,7 +269,7 @@ means ``learnable by one covariate'', which is not a router.
 \section{Is the triage label predictable at all?}
 \label{sec:auroc}
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering\small
 \caption[Triage predictability on the matched feature set]{\textbf{Out-of-fold
 AUROC for the triage label, all eight cells, 18 matched features.} A
@@ -317,7 +317,7 @@ The operating threshold is chosen post hoc by a sweep, so some apparent saving
 is guaranteed even from a signal-free pipeline. The bundle-permutation null
 measures how much.
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering\small
 \caption[Permutation control]{\textbf{How much of each cell's saving a
 signal-free pipeline reproduces.} $B=10{,}000$ bundle permutations per cell;
@@ -355,7 +355,7 @@ reproducing at least 80\% of the observed saving; in \cell{cls$\cdot$B1} the shu
 (\cell{red$\cdot$B0}) yields no saving at all. Figure~\ref{fig:f12} shows the
 observed saving and its shuffled counterpart on one axis per cell.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{fig_f12_permutation_control.pdf}
   \caption[Observed saving against the bundle-permutation null]{%
@@ -457,7 +457,7 @@ any future work that reports a better router on this problem should be asked
 which of the two it improved.
 \end{scopebox}
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{fig_f16_undersampling_control.pdf}
   \caption[Undersampling control: learning curves and separability]{%
@@ -473,7 +473,7 @@ which of the two it improved.
   memorisation floor, so the features carry signal and the objection cannot be
   dismissed by claiming there is nothing to find. Why neither panel rescues the
   router is argued in the text rather than drawn here: more data moves the
-  predictor toward a perfect one, and a perfect \emph{triage} predictor is the
+  predictor towards a perfect one, and a perfect \emph{triage} predictor is the
   triage oracle, which Chapter~\ref{ch:e2e} already measured.}
   \label{fig:f16}
 \end{figure}

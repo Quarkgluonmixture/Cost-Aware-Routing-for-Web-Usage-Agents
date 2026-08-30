@@ -56,7 +56,47 @@ def load():
     return d
 
 
+def _endpoint_labels(ax, ends):
+    """Stack the right-edge cell labels so they cannot print on top of each other.
+
+    The six deployment curves converge into an AUROC band about 0.06 wide, so a
+    fixed (5, -2) point offset put three of them --- classifieds/B1, reddit/B2
+    and classifieds/B0 --- in the same few points of vertical space, and the
+    middle label was struck through by its neighbours. Labels are pushed apart
+    to a minimum gap and joined back to their own endpoint by a leader line, so
+    de-overlapping never costs the reader the label-to-curve correspondence.
+    """
+    if not ends:
+        return
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    xmax = max(x for _, x, _ in ends)
+    # A gutter on the right; without it the labels sit outside the axes and are
+    # clipped by the figure's bounding box rather than by anything visible.
+    ax.set_xlim(x0, max(x1, xmax + 0.34 * (x1 - x0)))
+    lab_x = xmax + 0.05 * (x1 - x0)
+
+    # 0.050 was the label height itself, leaving no leading; 0.070 gives ~1.4x.
+    gap = 0.070 * (y1 - y0)
+    ends = sorted(ends, key=lambda t: -t[2])
+    ys = []
+    for _, _, y in ends:
+        ys.append(min(y, ys[-1] - gap) if ys else y)
+    # If the stack has been pushed below the axes, lift the whole column.
+    if ys and ys[-1] < y0 + 0.02 * (y1 - y0):
+        shift = (y0 + 0.02 * (y1 - y0)) - ys[-1]
+        ys = [v + shift for v in ys]
+
+    for (cell, x, y_end), y_lab in zip(ends, ys):
+        if abs(y_lab - y_end) > 1e-9:
+            ax.plot([x, lab_x], [y_end, y_lab], color=C_DEP, lw=0.5,
+                    alpha=0.5, zorder=3)
+        ax.text(lab_x + 0.008 * (x1 - x0), y_lab, S.cell_label(cell),
+                va="center", fontsize=S.FS_VALUE, color=C_DEP)
+
+
 def panel_a(ax, d):
+    ends = []
     for cell, e in d["cells"].items():
         for tag, col, ls, lw in (("f20_annotated", C_ANN, "--", 1.0),
                                  ("f18_deployment", C_DEP, "-", 1.7)):
@@ -67,8 +107,8 @@ def panel_a(ax, d):
             ax.plot(n, a, ls, color=col, lw=lw, alpha=0.85, zorder=3 if lw > 1 else 2)
             if tag == "f18_deployment":
                 ax.scatter(n[-1:], a[-1:], s=22, color=col, zorder=4)
-                ax.annotate(cell, (n[-1], a[-1]), textcoords="offset points",
-                            xytext=(5, -2), fontsize=S.FS_VALUE, color=C_DEP)
+                ends.append((cell, n[-1], a[-1]))
+    _endpoint_labels(ax, ends)
     ax.axhline(0.5, color=C_TH, lw=1.0, ls=":", zorder=1)
     ax.text(ax.get_xlim()[0], 0.505, " chance", fontsize=S.FS_VALUE, color=C_TH, va="bottom")
     ax.set_xlabel("training rows")
@@ -114,7 +154,7 @@ def panel_b(ax, d):
         ax.text(i["train_auroc_real"] + 0.008, yi,
                 f"+{i['excess_over_perm']:.3f}", va="center", fontsize=S.FS_VALUE,
                 color=C_DEP, fontweight="bold")
-    ax.set_yticks(y, cells, fontsize=S.FS_LABEL)
+    ax.set_yticks(y, [S.cell_label(c) for c in cells], fontsize=S.FS_LABEL)
     ax.set_xlabel("in-sample AUROC, near-unregularised fit")
     S.panel_label(ax, "B  Real labels against permuted")
     ax.tick_params(axis="y", length=0)

@@ -103,13 +103,16 @@ def build(ax, rows, thresh):
                     va="center", fontsize=S.FS_VALUE, color=C_RERUN)
         ax.scatter([r["gain"]], [yi], s=92, color=C_REP, zorder=5)
         ax.text(r["gain"] + 0.22, yi + 0.28,
-                f"{r['gain']:.2f}  +{r['gain_mode']}", va="center",
+                f"{r['gain']:.2f}  +{S.mode_label(r['gain_mode'])}", va="center",
                 fontsize=S.FS_VALUE, color=C_REP, fontweight="bold")
 
     # "no floor" belongs in the tick label, not the plotting area — at small
-    # gains the marker sits exactly where such a note would go.
-    ax.set_yticks(y, [f"{r['cell']}\n{r['best_mode']} {r['best_sr']:.1f}%"
-                      + ("" if r["floor"] else "\nno floor")
+    # gains the marker sits exactly where such a note would go. It rides on the
+    # SECOND line rather than a third: at eight rows a three-line tick label
+    # overran its neighbour, and the note was struck through by the row below.
+    ax.set_yticks(y, [f"{r['cell']}\n{S.mode_label(r['best_mode'])} "
+                      f"{r['best_sr']:.1f}%"
+                      + ("" if r["floor"] else "  ·  no floor")
                       for r in rows], fontsize=S.FS_LABEL)
     ax.set_xlim(-0.3, max(max(r["gain"] for r in rows),
                           max((r["floor"][1] for r in rows if r["floor"]),
@@ -140,7 +143,9 @@ def main() -> int:
               if r["floor"][0] <= r["gain"] <= r["floor"][1]]
 
     S.apply()
-    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 3.7))
+    # 3.7in over eight rows left ~33pt per row, which is what a two-line tick
+    # label already occupies — so neighbouring labels touched. 5.2in gives ~47pt.
+    fig, ax = plt.subplots(figsize=(S.PRINT_W_IN, 5.2))
     build(ax, rows, thresh)
     # The like-for-like reading, the count of cells landing inside the band,
     # and the WebArena caveat are stated in the caption.
