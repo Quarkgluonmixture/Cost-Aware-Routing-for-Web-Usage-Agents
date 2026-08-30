@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-08-27
+updated: 2026-08-30
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,49 @@ updated: 2026-08-27
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> ## 🟢 2026-08-30 · reframe chain 收官 → **B1 × reddit 已发车**（$0，A100）
+>
+> chronicle → **笔记 §492**（6 子节）· 台账 **+8** · DGX commit `34f363e`
+>
+> ### 在跑什么（别照抄下面的数字，用命令拉）
+> ```bash
+> ssh condense-a100 'cd /home/ubuntu/workspace/p79
+>   tail -4 logs/queue_chain_b1_reddit_20260830.log          # CELL OK / HALT
+>   ls results/visualwebarena/phase1/B1_som_reddit_2026083*/*/episodes/*summary*.json | wc -l'
+> ```
+> `queue_chain.sh` 两格 **B1 × reddit × {som → dom}**，各 n=**205**（collection 分母；scored 是 203，
+> B-1992 就是这个混淆）。09-36-38Z 发车，som 先跑（意图书里顺序是 load-bearing：被截断时活下来的
+> 是功效更高的那格）。~70h ⇒ 预计 **09-02**，自身 halt 09-06。
+>
+> **它买的是什么**：C1 (`serving_mode_floor.md`) 的本地组**只有 classifieds 一个站点**，而 C1 已被
+> 当作可独立发表的发现。落 0-3% ⇒ C1 变对称主张；落 **≥7.39% ⇒ C1 必须撤回**；落 3-7.39% ⇒ 只剩
+> 「在 classifieds 上分离」。三种落点在开火前已写死于
+> `pre_run/b1_reddit_chain_launch_intent_20260826.md`。
+> ⚠️ 两格**都被预先声明功效不足**（d=9.9 / 8.2，门槛 10）——能挪动一个点，不能收紧区间。
+>
+> ### b5-reddit：**不是没跑，是跑不动**
+> 实测 quota **$106.43**，3 格需 $156，chain floor $60 ⇒ 第 1 格跑完就 halt，**只够 1/3**。
+> 08-27 申请的 $300 未到账。且即便钱现在到，120h 从 08-30 起算正好压在它自己的 halt 上（零余量）。
+> ⇒ 本次 B1 占用 A100 **不构成取舍**：b5-reddit 在此之前本来也开不了火。钱到账后现查
+> `proxy_budget_watch.py --once` 再决定规模。
+>
+> ### 三道告警的真相（笔记 §492.3-6，都还没修）
+> | 告警 | 真相 |
+> |---|---|
+> | `MANIFEST-BIND FAIL-CLOSED` | 已消解未阻断（无 marker，重跑 exit 0，md5 未变）但**肇因查不出**——`experiment_watchdog.py:1185` 取尾 400 字符，实测 stdout 1948B ⇒ stderr 全被挤掉。**§469.5 早诊断对了，代码没改** |
+> | `BASELINES=(B0,B1,B2)` | `validate_fire_manifest.py:40` ⇒ **B5 的 8 个 run 整个在 ghost gate 外**，不受双跑保护。B5 数字进 NAACL 前须补 |
+> | chain 自报 `$0.00` | 实花 **$342.50 = $400 天花板的 86%**。缺陷 §478.5 已裁定，新的是暴露量 |
+> | `ISSUES=24` | `paper_grade_check.py:227` 是 `issues[:10]` ⇒ **14 条从未可见**；可见的 10 条全是长期存量 |
+>
+> ### 已经不欠了的（08-27 块里那条已 stale）
+> 「3 个未登记的 reddit replicate」**已登记**——commit `fbb26c9`(08-26)，validator 现在打
+> `registered replicate ... (not a ghost)`。08-27 块里那条勿再照做。
+>
+> ### 本次最值得记的一条
+> 三道告警**都响了，也都把自己的内容截掉了**（拼接取尾 400 / 循环跳过整个 backbone / 只打前 10 条）。
+> 响铃等于没响，每次都要人工从头查。⇒ **诊断过 ≠ 修过**（§469.5 病因写对了 13 天，同一告警又哑一次）。
+
 
 > ## 🔴 2026-08-27 晚 · cls 被两个 bug 锁死一天 → 已修并重新发车；额度待补
 >
