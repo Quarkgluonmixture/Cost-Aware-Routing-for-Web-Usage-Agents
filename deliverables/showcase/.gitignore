@@ -1,0 +1,8 @@
+# Regenerated from the PDF in one command; no reason to version 1.7MB of them:
+#   pdftoppm -png -r 100 poster_jiaming_wei.pdf preview_full
+#   pdftoppm -png -r 55  poster_jiaming_wei.pdf preview
+#   pdftoppm -png -r 14  poster_jiaming_wei.pdf far      # 3m-distance check
+preview*.png
+far-*.png
+mid-*.png
+zoom-*.png

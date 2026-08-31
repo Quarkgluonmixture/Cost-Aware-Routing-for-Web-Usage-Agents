@@ -23,6 +23,32 @@ updated: 2026-08-30
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟠 2026-08-31 · Showcase 海报定稿 → **待发邮件（硬截止 09-02）**
+>
+> chronicle → **笔记 §495 + §495.1** · 台账 **+8** · 产物 `deliverables/showcase/`
+>
+> ### 唯一待办：发一封邮件
+> `zekun.wu@holisticai.com`，附 `deliverables/showcase/poster_jiaming_wei.pdf`，
+> 正文用 **`SHOWCASE_PREP.md §1`**（可直接复制）。同一封信里一并申请 oral slot。
+> 免费丝绸印刷 + oral slot 都是 **09-02 周三**截止，organiser 明说不收文件、必须直接发 Zekun。
+>
+> ⚠️ **09-02 撞车**：B1×reddit 那两格的预计完成日也是 09-02（见下方 08-30 块）。海报邮件是
+> 人力、fire 是 GPU，不抢资源，但同一天两件事别漏掉其中一件。
+>
+> ### 海报已冻结，不要再改
+> 三轮外部冷读 + 逐条台账核查后 frozen。设计决策与"为何不再动"→ `EXHIBITION_PASS.md`；
+> 每个数字的 scope → `poster_content.md`；现场讲解/Q&A/数字速查/不能说的话 → `SHOWCASE_PREP.md`。
+>
+> ### 本轮最值得带走的教训（已进台账，会被 known.py 查到）
+> **「核过数字」≠「核过论断」** —— 海报 v1 交付时逐个数字追了台账并明确宣称过，但
+> `always-cheapest is a cost floor` 是**不带数字的因果断言**，从未进入查证动作，直接印进 v2。
+> 根因更深：**§450.12 那条台账记录自己的 `caveats` 字段里就留着这句已被 §474.3/§476.4 推翻的话**
+> —— 推翻发生在别处，被推翻的文字留在原地。⇒ RETRACT 时要 grep 的**包括其它台账条目的
+> caveats/reasoning 字段**，台账自身也是引用者，它同样会 stale。
+>
+> **09-16 当天**：投票 **14:35 截止**，早于 14:45 的 oral ⇒ **13:15–14:35 站板前**才是拿票时段。
+
+
 > ## 🟢 2026-08-30 · reframe chain 收官 → **B1 × reddit 已发车**（$0，A100）
 >
 > chronicle → **笔记 §492**（6 子节）· 台账 **+8** · DGX commit `34f363e`
