@@ -89,7 +89,7 @@ def dominance_plane() -> None:
 
     rows, _proto = f.load(f.SRC)
     S.apply()
-    fig, ax = plt.subplots(figsize=(COL_W_IN, 9.4))
+    fig, ax = plt.subplots(figsize=(COL_W_IN, 8.0))
     f.build(ax, rows)
 
     x0, _ = ax.get_xlim()
@@ -110,7 +110,7 @@ def dominance_plane() -> None:
     handles, _ = ax.get_legend_handles_labels()
     ax.legend(handles,
               ["learned choice", "learned, scored on its own training tasks",
-               "best choice in hindsight"],
+               "perfect hindsight"],
               loc="lower right", frameon=False, handletextpad=0.4,
               borderpad=0.2, fontsize=19)
     ax.set_xlabel("cost relative to always-cheapest   "
@@ -191,8 +191,53 @@ def eyes() -> None:
     print(f"  wrote figures/eye_look.png, eye_both.png, eye_read.txt ({len(keep)} lines from {dom.name})")
 
 
+LABEL_SUPPLY_MD = REPO / "docs" / "analysis" / "cross_sites" / "router_label_supply_diagnosis.md"
+LEARN_JSON = REPO / "docs" / "analysis" / "cross_sites" / "router_triage_learnability_with_wa.json"
+LEFT_W_IN = 173 / 25.4   # inner width of the left column's figure box
+
+
+def label_supply() -> None:
+    """Fig 3: usable "which view" training examples against the best single
+    view's success rate, one point per VisualWebArena setting. Both numbers are
+    parsed from the analysis artefacts (the first table of the label-supply
+    diagnosis, and baseline_policy.sr_pct of the 8-cell learnability run)."""
+    import re
+    rows = {}
+    trainable = {}
+    text = LABEL_SUPPLY_MD.read_text(encoding="utf-8")
+    for m in re.finditer(r"^\| (B\d)_(classifieds|reddit) \| (\d+) \| \*\*(\d+)\*\* \| ([\d.]+)% \| (\d)/6 \|", text, re.M):
+        rows[(m.group(2), m.group(1))] = int(m.group(4))
+    for m in re.finditer(r"^\| (B\d)_(classifieds|reddit) \| (\d+) \| \d \| [^|]+ \| (\*\*no\*\*|yes) \|", text, re.M):
+        trainable[(m.group(2), m.group(1))] = (m.group(4) == "yes")
+    assert len(rows) == 6 and len(trainable) == 6, (rows, trainable)
+    cells = json.loads(LEARN_JSON.read_text())["cells"]
+    sr = {(c["site"], c["baseline_model"]): c["baseline_policy"]["sr_pct"] for c in cells}
+    S.apply()
+    fig, ax = plt.subplots(figsize=(LEFT_W_IN, 4.4))
+    for key, n in rows.items():
+        x = sr[key]
+        filled = trainable[key]
+        ax.scatter([x], [n], s=260, marker="o",
+                   facecolors=S.C_INK if filled else "white", edgecolors=S.C_INK,
+                   linewidths=2.2, zorder=3)
+    ax.set_xlim(0, 32)
+    ax.set_ylim(0, 110)
+    ax.set_xlabel("tasks the best single view solves  (%)", fontsize=16)
+    ax.set_ylabel("usable training examples\nfor “which view”", fontsize=16)
+    ax.tick_params(labelsize=14)
+    from matplotlib.lines import Line2D
+    ax.legend([Line2D([], [], marker="o", ls="", ms=13, mfc=S.C_INK, mec=S.C_INK),
+               Line2D([], [], marker="o", ls="", ms=13, mfc="white", mec=S.C_INK, mew=2)],
+              ["enough to train a classifier", "not enough"], loc="upper left",
+              frameon=False, fontsize=15, handletextpad=0.3)
+    save(fig, "poster_label_supply")
+    print("    " + "  ".join(f"{k[0][:3]}·{k[1]}: sr={sr[k]:.1f}% n={n} {'✓' if trainable[k] else '✗'}"
+                             for k, n in rows.items()))
+
+
 if __name__ == "__main__":
     print("rendering poster-scale figures")
     dominance_plane()
     demo_strip()
     eyes()
+    label_supply()

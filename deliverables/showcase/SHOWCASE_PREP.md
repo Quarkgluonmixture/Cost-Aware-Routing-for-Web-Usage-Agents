@@ -65,40 +65,40 @@ receive files.
 
 # 2. Board walk — 90 seconds
 
-The laptop is the hook; the poster is the answer. Start at the screen if it is
-free, otherwise at the strip (left column), which is the same three tasks.
+The sheet now reads result → why → evidence → how, so the walk does too.
 
-**① Screen / strip — "Look, read, or both?"**
-> Same task, three ways of seeing the page. Sunset picture: *look* finds it in
-> two steps for under a cent, *read* burns twenty-one steps and fails. Change the
-> price on my listing: *read* does it, both screenshot modes fail. Red handlebars
-> in a price range: only *both* solves it. So which eyes are right depends on the
-> task — that's the routing opportunity.
+**① Title + standfirst**
+> A web agent can look at a page, read it, or both. Choosing right would help a
+> lot — in perfect hindsight, up to 16 more tasks in a hundred over the best
+> single view. But nothing we trained beat simply always using the cheapest
+> view on both success and cost.
 
-**② Fig 1 — the dashed box**
-> Everything else is fixed: same model, same prompt, same step budget. The only
-> thing we vary is what the agent is shown, and the only thing we study is the
-> box that decides — a fixed choice, the best choice in hindsight, or a choice
-> a router has to learn.
+**② The number strip and the three definitions under it**
+> Three comparisons, and they are different: the best single view, the cheapest
+> single view, and perfect hindsight. Hindsight is a bound, not a method — and
+> an optimistic one: rerunning the same view flips ten to fourteen percent of
+> outcomes by itself.
 
-**③ Metric strip**
-> In hindsight, choosing per task solves up to 16 more tasks in a hundred than
-> the best single fixed mode. But learned — zero of eight settings gave a router
-> that was both more successful *and* cheaper than just always using the
-> cheapest mode.
+**③ THE CATCH (left)**
+> Here's why learning fails. A training example only exists when a task gets
+> solved, and these agents solve two to thirty-six percent of tasks. The agents
+> that would gain most from choosing produce the fewest examples to learn from.
 
-**④ Fig 2**
-> And it isn't just a bad classifier: even choosing *with hindsight* clears
-> the same bar in only one of eight. The shaded region is where a win would sit.
+**④ Fig 3**
+> Six settings: the more the agent solves, the more examples there are, and only
+> two settings had enough to train a classifier at all.
 
-**⑤ WHY IT CANNOT BE LEARNED**
-> A routing label only exists when a task gets solved, and the best single mode
-> solves 2 to 36 percent of them. The agents that would gain most from routing
-> are exactly the ones producing the fewest labels to learn it.
+**⑤ Fig 2 (right)**
+> Every way of choosing, against always-cheapest. The shaded region is a win —
+> cheaper and no worse. Zero learned choices land there; even perfect hindsight
+> lands there in one of eight.
 
-**⑥ TAKEAWAY**
-> So the order matters: improve the agent, get reliable supervision, *then* learn
-> when to look.
+**⑥ The laptop**
+> Watch it: same task, three views, different behaviour and bills. Three
+> illustrative tasks, one per winner — not how often each wins.
+
+**⑦ The loop at the foot, if they want the method**
+> Only the page view changes; the dashed box is what we measure.
 
 **If they only have 20 seconds**, use ① ③ ⑤ and stop.
 
@@ -162,6 +162,21 @@ shows a real benchmark page instead). Cheapest is red, answer is blue.
 > anyway: the four failing settings need 2.1 to 4.2 times more tasks. That's a
 > specification, not an impossibility.
 
+**"What does always-cheapest actually mean — per task or fixed?"**
+> Fixed: the single view that costs least on average in that setting, used for
+> every task. Not a per-task pick. The key under the number strip says so.
+
+**"Is +16.35 something a real system reached?"**
+> No — it's perfect hindsight, an upper bound. The poster calls it that, and it
+> prints the rerun band next to it. What a real learned choice reached is the
+> plot: none in the win region.
+
+**"Why does the view matter so much for a given task?"**
+> We measured it, we didn't explain it — the mechanism work is out of scope
+> here. What the demo shows is the pattern: text-only views fail on intents
+> that live in the picture, image-only views wander on intents that live in the
+> text, and BOTH pays for both.
+
 **"Isn't always-cheapest too weak a baseline?"**
 > The opposite — it's hard to beat, because it's the cheapest fixed policy on
 > average. Note *on average*, not a per-episode floor: on an individual task,
@@ -218,6 +233,7 @@ visitor can find it. The one exception is flagged in the table.
 | `2.1–4.2×` | corpus the failing cells would need | on the poster with **at least** (lower bound; undersampling control, F16). reddit needs the most, 846 tasks |
 | strip: 130 · 76 · 17 | the three demo tasks' ✓/✗, steps, $ | **one recorded run** (B0 · classifieds, canonical); ✓/✗ identical on the replicate, steps and $ are not. Never say a task "is visual" — say "in this run" |
 | `24 of 224` | tasks whose three-way outcome differs and is rerun-stable | selection pool for the demo; **not on the poster** |
+| Fig 3: 97 · 53 · 55 · 24 · 16 · 15 | usable "which view" examples per VisualWebArena setting, vs best-single-view SR 27.2 / 14.8 / 14.3 / 7.4 / 2.2 / 3.9 % | six settings, **not eight**; filled = enough to train (cls·B0, cls·B1) |
 | `8,934` | episodes | 6 modes × (224×3 + 203×3 + 104×2) |
 
 ---
