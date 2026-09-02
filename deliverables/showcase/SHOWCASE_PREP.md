@@ -35,16 +35,17 @@ receive files.
 > PDF (fonts embedded, figures at 300dpi). Built from the template without
 > resizing the slide.
 >
-> **Can a web agent learn when a screenshot is worth the cost?**
+> **Look, read, or both? Web agents can't yet learn how to see a page**
 >
 > I'd also like to put my name in for one of the oral slots. In 12 minutes I'd
 > cover three things in order:
 >
-> Screenshots help web agents but cost more, and nobody checks whether each step
-> needs one. Using a real VisualWebArena task — *"find me the cheapest blue
-> kayak"*, where "blue" can be visual and "cheapest" is textual — I ran six
-> observation modes, four of them screenshot-free, across 8 benchmark–model
-> settings and ~8,900 episodes.
+> A web agent can *look* at a page (screenshot), *read* it (accessibility-tree
+> text) or do both — and they cost different amounts. I ran the same tasks
+> through six such modes, four of them screenshot-free, across 8 benchmark–model
+> settings and ~8,900 episodes. Beside the poster a laptop replays three real
+> tasks the three ways: one only *look* solves, one only *read* solves, one only
+> *both* solves.
 >
 > (1) In hindsight there is real opportunity: up to +16.35pp over the best single
 > fixed mode. (2) But learned, zero of eight routers were both more successful
@@ -64,48 +65,42 @@ receive files.
 
 # 2. Board walk — 90 seconds
 
-The poster's layout **is** the script. Your hand moves top → diagram → left →
-right → lower-left → bottom-right, never backwards.
+The laptop is the hook; the poster is the answer. Start at the screen if it is
+free, otherwise at the strip (left column), which is the same three tasks.
 
-**① Point at the title, then the standfirst**
-> Screenshots help web agents, but they cost money at every single step. So I
-> asked whether the agent can learn when looking is actually worth paying for.
-> Short answer: in hindsight there's a real gain, but nothing we trained could
-> take it.
+**① Screen / strip — "Look, read, or both?"**
+> Same task, three ways of seeing the page. Sunset picture: *look* finds it in
+> two steps for under a cent, *read* burns twenty-one steps and fails. Change the
+> price on my listing: *read* does it, both screenshot modes fail. Red handlebars
+> in a price range: only *both* solves it. So which eyes are right depends on the
+> task — that's the routing opportunity.
 
-**② Sweep Fig 1 left to right (the diagram)**
-> Here's the setup. The agent is fixed. The only thing that changes is what it's
-> shown: cheap text, the annotated screenshot, or the raw screenshot — six modes
-> in all, four of them with no image. And we compare three ways of choosing: a
-> fixed mode, a hindsight oracle, and a router that has to decide before the
-> task runs.
+**② Fig 1 — the dashed box**
+> Everything else is fixed: same model, same prompt, same step budget. The only
+> thing we vary is what the agent is shown, and the only thing we study is the
+> box that decides — a fixed choice, the best choice in hindsight, or a choice
+> a router has to learn.
 
-**③ Point at the priced table (left column)**
-> Same page, three ways. The screenshot version costs a third more tokens, and
-> almost all of that extra is the image — the text is within one percent.
+**③ Metric strip**
+> In hindsight, choosing per task solves up to 16 more tasks in a hundred than
+> the best single fixed mode. But learned — zero of eight settings gave a router
+> that was both more successful *and* cheaper than just always using the
+> cheapest mode.
 
-**④ Point at the metric strip (top of the right block)**
-> If you knew afterwards which mode would solve each task, you'd solve up to 16
-> more tasks in a hundred than the best single fixed choice. But learned —
-> zero of eight settings produced a router that was both more successful *and*
-> cheaper than just always using the cheapest mode.
-
-**⑤ Point at the plot (Fig 2)**
-> And it isn't just a bad classifier. Only one of eight *hindsight oracles*
+**④ Fig 2**
+> And it isn't just a bad classifier: only one of eight *hindsight oracles*
 > clears the same bar. The shaded region is where a win would sit.
 
-**⑥ Point at WHY IT CANNOT BE LEARNED (lower left)**
-> Here's why. The best single mode solves between 2 and 36 percent of tasks,
-> and a routing label only comes into existence when a task gets solved. The
-> agents that would gain most from routing are exactly the ones producing the
-> fewest labels to learn it.
+**⑤ WHY IT CANNOT BE LEARNED**
+> A routing label only exists when a task gets solved, and the best single mode
+> solves 2 to 36 percent of them. The agents that would gain most from routing
+> are exactly the ones producing the fewest labels to learn it.
 
-**⑦ Point at TAKEAWAY (bottom right)**
+**⑥ TAKEAWAY**
 > So the order matters: improve the agent, get reliable supervision, *then* learn
-> selective perception. Routing isn't only a model-selection problem — its
-> learnability depends on how good the agent underneath already is.
+> when to look.
 
-**If they only have 20 seconds**, use ①②④⑥ and stop.
+**If they only have 20 seconds**, use ① ③ ⑤ and stop.
 
 ---
 
@@ -221,6 +216,8 @@ visitor can find it. The one exception is flagged in the table.
 | `9.5–30.6%` | triage cost saving, 8 of 8 | **vs the best-success fixed mode**; hindsight bound; in most pairs always-cheapest saves more |
 | `15–97` | trainable labels | 4 of 6 VWA cells (the poster drops the denominator; you can give it if asked) |
 | `2.1–4.2×` | corpus the failing cells would need | on the poster with **at least** (lower bound; undersampling control, F16). reddit needs the most, 846 tasks |
+| strip: 130 · 76 · 17 | the three demo tasks' ✓/✗, steps, $ | **one recorded run** (B0 · classifieds, canonical); ✓/✗ identical on the replicate, steps and $ are not. Never say a task "is visual" — say "in this run" |
+| `24 of 224` | tasks whose three-way outcome differs and is rerun-stable | selection pool for the demo; **not on the poster** |
 | `8,934` | episodes | 6 modes × (224×3 + 203×3 + 104×2) |
 
 ---
@@ -269,3 +266,35 @@ running the 90-second walk repeatedly.
 
 Prize note: 1st place includes mentorship to write the work up as a workshop
 paper, and the cover of the showcase proceedings.
+
+---
+
+# 7. The laptop demo — plan (for 16 Sep, not for the print deadline)
+
+**What it shows.** "Look, read, or both?": the same task replayed in three
+synchronised columns (LOOK / READ / BOTH), stepping through the agent's
+screenshots with the click drawn (LOOK: click coordinates; READ: the element's
+bbox; BOTH: the numbered mark), the agent's one-line *thought* under each
+frame, and a running **$** counter per column. Three tasks, one per winner:
+130 (look), 76 (read), 17 (both); optionally the kayak (task 0) as "all three
+fail" — honest, and it walks the visitor to the poster's WHY.
+
+**Rules.** Replay, never live (site on the A100, venue network unknown). Only
+tasks whose three-way outcome is identical on the replicate run (24 of 224
+qualify; `poster_figures.py` asserts it). Label every column "one recorded run".
+Re-recording a run to obtain artifacts is fine and is labelled as a run;
+hand-made trajectories are not.
+
+**Data.** LOOK and READ: per-step `screenshot.png` + `observation_dom.txt` and
+step records (`element_bbox`, `coordinate`, `thought`) exist for all 224 tasks
+in `results/repro_replicates/B0_{vision,dom}_classifieds_*_clean_replicate`.
+BOTH: both SoM runs had their artifacts cleaned → **re-record tasks 130/76/17
+in SoM once, artifacts kept**, on a site nobody else is using. The B0·reddit
+replicate chain owns the A100 until ~7 Sep (one site chain per host); quark's
+docker was down on 2 Sep. Window: 7–15 Sep.
+
+**Build.** A static HTML page (no server): `demo/index.html` reading a JSON
+per task with frames + actions; keyboard → next step, auto-play loop for when
+nobody is at the board. Reuse the poster's three colours. Extra sites
+(reddit / shopping) only if a stable three-way task exists there with
+artifacts — do not re-record for the sake of variety.

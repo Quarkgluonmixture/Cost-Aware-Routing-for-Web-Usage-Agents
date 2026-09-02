@@ -1,8 +1,9 @@
 > **Superseded 2026-09-02.** This pass produced v2 (the exhibition design: hero
 > zero, kayak scene, dark takeaway band). A Holistic AI reviewer asked for the
 > opposite — one system diagram, compact, one type scale, the template's own
-> skeleton — and v4 replaced it. Kept as the record of what was tried and why;
-> the live rationale is `poster_content.md` (v4 header + audit trail).
+> skeleton — and v4 replaced it; v5 (same evening) then moved the phenomenon to a
+> laptop demo and re-themed the sheet "Look, read, or both?". Kept as the record
+> of what was tried and why; the live rationale is `poster_content.md`.
 
 # Exhibition pass — research poster → exhibition object
 

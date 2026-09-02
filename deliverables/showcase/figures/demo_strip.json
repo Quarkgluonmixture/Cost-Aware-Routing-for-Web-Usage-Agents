@@ -1,0 +1,77 @@
+{
+  "130": {
+    "intent": "Navigate to the item on this page whose image is taken during a sunset.",
+    "modes": {
+      "look": {
+        "success": true,
+        "steps": 2,
+        "cost_usd": 0.007483,
+        "steps_rerun": 2
+      },
+      "read": {
+        "success": false,
+        "steps": 21,
+        "cost_usd": 0.09557,
+        "steps_rerun": 9
+      },
+      "both": {
+        "success": true,
+        "steps": 3,
+        "cost_usd": 0.014217,
+        "steps_rerun": 3
+      }
+    },
+    "thumb": "thumb_130.png",
+    "thumb_from": "look replicate, step_001"
+  },
+  "76": {
+    "intent": "Navigate to my listing of the blue bike and change the price to $85.50 (including in the description).",
+    "modes": {
+      "look": {
+        "success": false,
+        "steps": 30,
+        "cost_usd": 0.11648700000000001,
+        "steps_rerun": 26
+      },
+      "read": {
+        "success": true,
+        "steps": 9,
+        "cost_usd": 0.078696,
+        "steps_rerun": 11
+      },
+      "both": {
+        "success": false,
+        "steps": 6,
+        "cost_usd": 0.029339,
+        "steps_rerun": 7
+      }
+    },
+    "thumb": "thumb_76.png",
+    "thumb_from": "read replicate, step_011"
+  },
+  "17": {
+    "intent": "Show me the cheapest bike with red handlebars between $900-950.",
+    "modes": {
+      "look": {
+        "success": false,
+        "steps": 19,
+        "cost_usd": 0.07532699999999999,
+        "steps_rerun": 9
+      },
+      "read": {
+        "success": false,
+        "steps": 6,
+        "cost_usd": 0.02507,
+        "steps_rerun": 8
+      },
+      "both": {
+        "success": true,
+        "steps": 7,
+        "cost_usd": 0.036841,
+        "steps_rerun": 6
+      }
+    },
+    "thumb": "thumb_17.png",
+    "thumb_from": "read replicate, step_007"
+  }
+}
