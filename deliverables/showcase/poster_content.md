@@ -5,6 +5,34 @@ any edit must be mirrored in both. Every number carries its scope, because the
 poster is printed on silk and cannot be corrected. Deadline for the print PDF:
 **4 Sep 2026** (organiser confirmed a replacement is accepted until then).
 
+> **v6 (2026-09-02, late) — no jargon, a loop that loops, a scoreboard.** Three
+> author notes on v5: *jargon like "oracle" off* · *if the demo has it, does the
+> poster need it too?* · *the agent loop is not quite there*. So: (1) every
+> technical term is replaced by plain words — see the vocabulary table below;
+> (2) the three big demo frames become a **scoreboard** (small frame · task ·
+> ✓/✗ steps $ per way of seeing): the poster carries the demo's *results*, the
+> laptop carries its *process*; (3) Fig 1 is now a real loop — the action
+> arrow returns to the page, each way of seeing shows **what it really sends**
+> (raw screenshot / element list / marked screenshot, the thesis F1 assets),
+> and the agent card says what is held fixed.
+>
+> | jargon | on the poster |
+> |---|---|
+> | observation mode / representation | way of seeing (LOOK / READ / BOTH) |
+> | hindsight oracle | best choice in hindsight |
+> | learned router / triage | a learned choice |
+> | fixed mode | one fixed choice |
+> | always-cheapest | always using the cheapest way (kept — it is plain) |
+> | pp | more tasks in 100 |
+> | accessibility tree / AXTree / DOM | the page as text: its elements and labels |
+> | SoM / marked screenshot | the screenshot with numbered boxes, plus the text |
+> | episode | task attempt |
+> | routing label / supervision | training example |
+> | selective perception | learning when to look |
+> | nested cross-validation / permutations | "scored only on tasks they never saw" (the rest is in SHOWCASE_PREP §4) |
+> | in-sample | scored on its own training tasks |
+> | log₂ ratio | log₂ ratio: 0 = same, 1 = double |
+
 > **v5 (2026-09-02, evening) — "Look, read, or both?"** The poster now stands
 > beside a laptop that replays the same task through three ways of seeing the
 > page. That split decides what goes on silk: **the demo shows the phenomenon**
@@ -40,38 +68,45 @@ cheapest mode, F7). The expensive thing is *both*, not the screenshot.
 ## Standfirst (template band, 28pt, two lines)
 
 > Seen the right way, a page would let the agent solve up to 16 more tasks in
-> 100 than the best fixed mode — yet none of 8 learned routers beat always using
-> the cheapest mode on both success and cost.
+> 100 than the best fixed choice — yet nothing we trained beat always using the
+> cheapest way on both success and cost.
 
 Both baselines named; no pronoun. `up to 16` = largest of 8 cells
 (`wa_reddit·B0`, +16.35pp); the metric strip says so.
 
-## Fig 1 — the system diagram (full width, native shapes)
+## Fig 1 — the agent loop (full width, native shapes)
 
-Header: `WHERE THE DECISION SITS IN THE AGENT LOOP`. Five stages, left to right:
+Header: `THE AGENT LOOP, AND WHERE THE DECISION SITS`. Five cards left to right,
+block arrows between them, and a return arrow along the bottom from the agent
+back to the page:
 
-| stage | prints |
+| card | prints |
 |---|---|
-| TASK + LIVE PAGE | “Show me the cheapest bike with red handlebars between $900–950.” · *Part of the intent is in the pictures, part in the text — and which part matters changes task by task.* |
-| WHO DECIDES HOW TO SEE? (dashed, accent) | **Fixed mode** — the same choice for every task · **Hindsight oracle** — the best choice, known afterwards · **Learned router** — a choice made before the task runs |
-| LOOK / READ / BOTH | screenshot only · 3,123 tokens on one real page / accessibility-tree text only · 3,314 tokens · plus three text-only variants / marked screenshot + text · 4,335 tokens |
-| AGENT, ONE STEP AT A TIME | **think → act** · click · type · scroll · go back · finish · repeats until it finishes or hits 30 steps · *Same model, same prompt, same step budget and same cost accounting in every mode — only what it is shown changes.* |
-| MEASURED | **✓ / ✗ per task** · **$ billed per episode** · 8 website–model settings · two benchmarks · 6 modes · 8,934 episodes |
+| THE TASK + THE LIVE PAGE | “Show me the cheapest bike with red handlebars between $900–950.” · *Part of the intent is in the pictures, part in the text.* · the start page (raw screenshot) |
+| WHO DECIDES HOW TO SEE IT? (dashed, accent) | **One fixed choice** — the same way of seeing for every task · **Best choice in hindsight** — knowing afterwards which way solved it · **A learned choice** — made before the task runs, from what the page looks like · `this box is what we measure` |
+| LOOK / READ / BOTH | the screenshot only · 3,123 tokens on this page · *raw screenshot* / the page as text: its elements and labels · 3,314 tokens · three text-only variants share this · *the first six lines of the element list* / the screenshot with numbered boxes, plus the text · 4,335 tokens · *the marked screenshot* |
+| THE AGENT, ONE STEP AT A TIME | **think → act** · click · type · scroll · go back · finish · *Same model, same prompt, same step budget and same cost accounting whichever way it sees — only what it is shown changes.* |
+| WHEN IT STOPS | **✓ solved / ✗ not** · **$ for the whole attempt** · 8 website × model combinations · two public benchmarks · 6 ways of seeing · 8,934 task attempts |
+| return arrow | the action changes the page → next step · up to 30 steps per task · the bill grows with every step |
 
-> **Fig 1.** Everything is held fixed except how the page is shown. The dashed
-> box is what this work measures: a fixed choice, the best choice in hindsight,
-> and a choice a router has to learn — each judged on **both** success and cost.
-> The laptop beside this poster replays the three eyes on the three tasks below.
+> **Fig 1.** Everything is held fixed except how the page is shown to the agent.
+> The dashed box is what this work measures — one fixed way of seeing, the best
+> way in hindsight, or a way a model had to learn to choose — each judged on
+> **both** success and cost. The laptop beside this poster replays the loop on
+> the three tasks below.
 
-The task in the first card is classifieds #17 — the strip's BOTH-wins task, so
-the diagram's example and the demo's example are the same task. Token counts
-are the F1 pipeline's (B0 · classifieds task 0 · first step; re-read
-2026-09-02). Episodes = 6 × (224×3 + 203×3 + 104×2).
+The three "what it sends" thumbnails and the element-list lines are the thesis
+F1 assets (`fig_f1_motivating_example.py`: same page, dom/vision step-000
+screenshots md5-identical), copied by `poster_figures.py`; the element lines
+are shortened for display only (url tails and indentation dropped). Token
+counts are F1's, re-read 2026-09-02. The example task is classifieds #17, the
+scoreboard's BOTH-wins task. Episodes = 6 × (224×3 + 203×3 + 104×2).
 
-## Column 1 · ON THE SCREEN BESIDE YOU (the demo strip)
+## Column 1 · WHAT THE SCREEN BESIDE YOU SHOWS (the scoreboard)
 
-Three tasks, one printed frame each, and every mode's real outcome. **Nothing
-here is typed by hand**: `poster_figures.py` parses `figures/demo_strip.json`
+Three tasks, a small frame each, and every way of seeing's real outcome as
+`✓/✗ · steps · $` under LOOK / READ / BOTH column heads. **Nothing here is typed
+by hand**: `poster_figures.py` parses `figures/demo_strip.json`
 from the episode summaries and **asserts** that each mode's ✓/✗ is identical on
 the independent replicate run — a task that flips on rerun cannot reach the
 sheet. Numbers shown are the canonical run's (`A`); costs are
@@ -91,57 +126,65 @@ material, not demo material. BOTH's artifacts were cleaned in both SoM runs, so
 task 17's frame comes from the READ run; its caption says so implicitly (the
 bike shown is the *wrong* one).
 
-> One recorded run per mode, B0 · classifieds. Every ✓ / ✗ above came out the
-> same on an independent rerun; steps and cost differ run to run — across all
-> tasks a rerun flips 10–14% of outcomes.
+> One recorded attempt per way of seeing, B0 · classifieds. Every ✓ / ✗ came out
+> the same on an independent rerun; steps and bill differ run to run — across
+> all tasks a rerun flips 10–14% of outcomes.
 
-## Columns 2–3 · RESULTS ACROSS 8,934 EPISODES
+## Columns 2–3 · RESULTS ACROSS 8,934 TASK ATTEMPTS
 
 Metric strip (template component; each label names its baseline):
 
 | number | label |
 |---|---|
-| `+16.35 pp` | CEILING, LARGEST OF 8 · VS BEST FIXED MODE |
-| `0 of 8` | LEARNED ROUTERS BEAT ALWAYS-CHEAPEST |
-| `1 of 8` | HINDSIGHT ORACLES BEAT ALWAYS-CHEAPEST |
+| `+16.35 in 100` | IN HINDSIGHT, BEST OF 8 · VS ONE FIXED CHOICE |
+| `0 of 8` | LEARNED CHOICES THAT BEAT ALWAYS-CHEAPEST |
+| `1 of 8` | HINDSIGHT CHOICES THAT BEAT ALWAYS-CHEAPEST |
 
 Fig 2 — thesis F13 at the 362mm inner width of the figure box:
 
-> **Fig 2.** Every policy in every setting against one fixed baseline, **always
-> use the cheapest mode** (★). A win lands in the shaded region: cheaper *and* no
-> worse. Always-cheapest is cheapest on average, not per episode, which is why a
-> few points sit left of it. Nested cross-validation; 10,000 bundle permutations.
+> **Fig 2.** Every way of choosing, in every setting, compared with one fixed
+> rule: **always use the cheapest way of seeing** (★). A win lands in the shaded
+> region — cheaper *and* no worse. Always-cheapest is cheapest on average, not on
+> every task, which is why a few points sit left of it. Learned choices are
+> scored only on tasks they never saw.
+
+Axes: *more tasks solved than always-cheapest, per 100* / *cost relative to
+always-cheapest (log₂ ratio: 0 = same, 1 = double)*. Legend: learned choice ·
+learned, scored on its own training tasks · best choice in hindsight.
 
 Three verdicts (body size, bold lead):
 
-> **The ceiling is real.** In hindsight, choosing the eyes per task solves
-> **+3.45 to +16.35 pp** more than the best single fixed mode, at 1.6–35.3%
-> lower cost, in 8 of 8 settings.
+> **Choosing well would pay.** Picking the right way of seeing for each task
+> after the fact would solve **3.45 to 16.35 more tasks in every 100** than the
+> best single fixed choice, and spend 1.6–35.3% less — in all 8 settings.
 >
-> **Nothing we trained wins.** **0 of 8** learned routers beat always-cheapest on
-> both success and cost — and even the hindsight oracle does so in only
-> **1 of 8**.
+> **Nothing we trained could do it.** In **0 of 8** settings did a learned choice
+> beat simply always using the cheapest way on both success and cost — and even
+> choosing with hindsight manages that in only **1 of 8**.
 >
-> **What survives is a bound, not a router.** Sending the tasks nobody solves to
-> the cheapest mode saves 9.5–30.6% at identical success in 8 of 8 — against the
-> best-success fixed mode, and plain always-cheapest usually saves more.
+> **What survives is a bound, not a method.** Sending the tasks nobody solves to
+> the cheapest way saves 9.5–30.6% at the same success in 8 of 8 — but that too
+> needs hindsight, and plain always-cheapest usually saves more.
 
 `1.6–35.3%` is the cost-aware tie-break figure (§452.2 *replaced_by*; the older
 `13.7–35.3%` is RETRACTED). The 1-of-8 line is mandatory (§450.12). The third
 verdict keeps §387.16.3's caveat.
 
-## Columns 2–3 · WHY IT CANNOT BE LEARNED
+## Column 1 · WHY IT CANNOT BE LEARNED
 
-> A routing label exists only when the agent solves a task. Here the best single
-> mode solves just **2–36%** of tasks, leaving typically **15–97** usable labels
-> per setting — **the agents that would gain most from routing produce the least
-> supervision to learn it.** Deliberately shrinking the training data confirms
-> scarcity is the mechanism and prices it: the failing settings would need at
-> least **2.1–4.2×** more tasks than the benchmarks contain.
+> A training example for “which way of seeing” exists only when the agent
+> solves a task. Here the best single way solves just **2–36%** of tasks,
+> leaving typically **15–97** usable examples per setting — **the agents that
+> would gain most from choosing produce the fewest examples to learn from.**
 >
-> Rerunning **one unchanged mode** flips **10–14%** of outcomes and by itself
-> buys **2.0–7.6 pp** (B0 · classifieds, six replicated modes, n=224); every gain
-> on this sheet is read against that band, not against zero.
+> Shrinking the training data on purpose confirms scarcity is the mechanism,
+> and prices it: the failing settings would need at least **2.1–4.2×** more
+> tasks than the benchmarks contain.
+>
+> Rerunning **one unchanged way of seeing** flips **10–14%** of outcomes and by
+> itself buys **2.0–7.6** more solved tasks in 100 (B0 · classifieds, six
+> repeated ways, n=224); every gain on this sheet is read against that band, not
+> against zero.
 
 `2–36%` = `baseline_policy.sr_pct`, 8-cell matched set (§450.8; the 6-cell
 figure 2–27 must not sit next to "8 settings"). `15–97` = C5, 4 of 6 VWA cells
@@ -149,14 +192,19 @@ figure 2–27 must not sit next to "8 settings"). `15–97` = C5, 4 of 6 VWA cel
 §453.2 wording, `at least` because it is a lower bound. `10–14%` = six-arm
 (§477.2); `2.0–7.6 pp` = §450.10.
 
-## Columns 2–3 · TAKEAWAY
+## Column 1 · TAKEAWAY
 
-> **Routing is not only a model-selection problem: its learnability depends on
-> the competence of the agent producing the labels.** So, in this order: improve
-> the agent, then generate reliable supervision, then learn selective perception.
+> **Learning how to see is not only a modelling problem: whether it can be
+> learned depends on how good the agent producing the examples already is.** So,
+> in this order: improve the agent, then collect reliable examples, then learn
+> when to look.
 >
-> Measured inside the 2–36% success regime we observed. This conclusion need not
-> hold for stronger agents.
+> Measured in the 2–36% success regime we observed. This need not hold for
+> stronger agents.
+
+The thesis sentence is *"Routing is not only a model-selection problem: its
+learnability depends on the competence of the agent producing the labels."*
+Same claim, same scope; only the words changed.
 
 ---
 

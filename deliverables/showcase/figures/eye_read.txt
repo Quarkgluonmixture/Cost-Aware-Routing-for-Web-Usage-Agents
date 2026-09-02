@@ -1,0 +1,7 @@
+[2] RootWebArea 'Classifieds' focused: True url: http://localhost:9980/
+	[89] link 'Classifieds' url: http://localhost:9980/
+		[90] image 'Classifieds' url: http://localhost:9980/oc-content/uploads/sigma_logo.png
+	[115] link 'My account' url: http://localhost:9980/index.php?page=user&action=dashboard
+	[5] link 'Logout' url: http://localhost:9980/index.php?page=main&action=logout
+	[118] link 'Publish Ad' url: http://localhost:9980/index.php?page=item&action=item_add
+	[131] heading 'What are you looking for today?'

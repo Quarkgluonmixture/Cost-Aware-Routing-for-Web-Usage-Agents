@@ -89,7 +89,7 @@ def dominance_plane() -> None:
 
     rows, _proto = f.load(f.SRC)
     S.apply()
-    fig, ax = plt.subplots(figsize=(COL_W_IN, 7.5))
+    fig, ax = plt.subplots(figsize=(COL_W_IN, 9.4))
     f.build(ax, rows)
 
     x0, _ = ax.get_xlim()
@@ -109,12 +109,14 @@ def dominance_plane() -> None:
 
     handles, _ = ax.get_legend_handles_labels()
     ax.legend(handles,
-              ["learned router", "learned (in-sample)", "hindsight oracle"],
+              ["learned choice", "learned, scored on its own training tasks",
+               "best choice in hindsight"],
               loc="lower right", frameon=False, handletextpad=0.4,
-              borderpad=0.2, fontsize=S.FS_LABEL)
-    ax.set_xlabel("cost, relative to always using the cheapest mode   "
-                  "[$\\log_2$ ratio]", fontsize=S.FS_LABEL)
-    ax.set_ylabel("success over always-cheapest  [pp]", fontsize=S.FS_LABEL)
+              borderpad=0.2, fontsize=19)
+    ax.set_xlabel("cost relative to always-cheapest   "
+                  "(log$_2$ ratio: 0 = same, 1 = double)", fontsize=S.FS_LABEL)
+    ax.set_ylabel("more tasks solved than\nalways-cheapest, per 100",
+                  fontsize=S.FS_LABEL)
     save(fig, "poster_dominance_plane")
 
 
@@ -165,7 +167,32 @@ def demo_strip() -> None:
     print(f"  wrote {(OUTDIR / 'demo_strip.json').relative_to(REPO)}")
 
 
+def eyes() -> None:
+    """What each way of seeing actually sends, on one real page — the same assets
+    thesis F1 uses (same page, same listings, dom/vision step-000 screenshots
+    md5-identical). LOOK = raw screenshot, BOTH = the marked screenshot, READ =
+    the first lines of the element list the agent is given."""
+    import fig_f1_motivating_example as f1
+    for src, name in ((f1.SHOT_RAW, "eye_look"), (f1.SHOT_SOM, "eye_both")):
+        assert src.exists(), f"missing F1 asset {src}"
+        with Image.open(src) as im:
+            w, h = im.size
+            im.crop((0, 0, w, int(w * 0.56))).save(OUTDIR / f"{name}.png")
+    dom = None
+    for d in sorted(f1.MIRROR.glob("B0_dom_classifieds_*")):
+        hit = next(d.glob("phase1_*_router_0/artifacts/classifieds_task_0/step_000/observation_dom.txt"), None)
+        if hit:
+            dom = hit
+            break
+    assert dom is not None, "no mirrored DOM observation for classifieds task 0"
+    lines = [ln.rstrip() for ln in dom.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    keep = [ln for ln in lines if ln.lstrip().startswith("[")][:7]
+    (OUTDIR / "eye_read.txt").write_text("\n".join(keep) + "\n", encoding="utf-8")
+    print(f"  wrote figures/eye_look.png, eye_both.png, eye_read.txt ({len(keep)} lines from {dom.name})")
+
+
 if __name__ == "__main__":
     print("rendering poster-scale figures")
     dominance_plane()
     demo_strip()
+    eyes()

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build the Holistic AI x UCL CDI showcase poster from the supplied A1 template.
 
-v5 — "Look, read, or both?" (2026-09-02)
------------------------------------------
+v6 — "Look, read, or both?", no jargon, a loop that loops (2026-09-02, late)
+-------------------------------------------------------------------------------
 The poster now stands next to a laptop that replays the same task through three
 ways of seeing the page. That split decides what goes on silk:
 
@@ -110,7 +110,7 @@ SPAN_23_X, SPAN_23_W = Mm(209.3), Mm(368.2)
 FULL_X, FULL_W = Mm(20.2), Mm(557.3)
 
 SYS_Y = Mm(140)
-ROW_Y = Mm(300)
+ROW_Y = Mm(352)
 ROW_BOTTOM = Mm(782)
 
 MODES = (("look", "LOOK", C_IMAGE), ("read", "READ", C_TEXT), ("both", "BOTH", C_BOTH))
@@ -327,138 +327,216 @@ def label(slide, x, y, w, text, color=MUTED):
     return y + Mm(6.5)
 
 
-def build_system(slide):
-    """Fig 1: where the decision sits in the agent loop, and what is measured.
+def _pic(slide, png: Path, x, y, w, *, frame=True):
+    with Image.open(png) as im:
+        h = int(w * im.height / im.width)
+    if frame:
+        rect(slide, x - Mm(0.4), y - Mm(0.4), w + Mm(0.8), h + Mm(0.8), fill=None, line=GREY)
+    slide.shapes.add_picture(str(png), x, y, width=w)
+    return h
 
-    Drawn in native shapes so it uses the template's type and colours; nothing
-    here is a screenshot of a figure. The five stages read left to right and
-    the arrows carry no data — they are the loop's order."""
-    y = panel_header(slide, FULL_X, SYS_Y, "WHERE THE DECISION SITS IN THE AGENT LOOP", FULL_W)
-    top, H = y, Mm(118)
+
+def _read_lines() -> list[str]:
+    """The element list the READ agent is given, shortened for display only:
+    drop the url tails and the tree indentation, keep the ids and labels."""
+    out = []
+    for ln in (FIGDIR / "eye_read.txt").read_text(encoding="utf-8").splitlines():
+        ln = ln.strip().split(" url:")[0].split(" focused:")[0]
+        out.append(ln[:40])
+    return out[:6]
+
+
+def build_system(slide):
+    """Fig 1: the agent loop, with the decision this work measures drawn as a box
+    on the loop's observe edge, and each way of seeing shown with what it
+    actually sends. Native shapes, template type and colours."""
+    y = panel_header(slide, FULL_X, SYS_Y, "THE AGENT LOOP, AND WHERE THE DECISION SITS", FULL_W)
+    top, H = y, Mm(148)
     x0 = FULL_X
     pad = Mm(5)
-    # column geometry, mm from x0
-    cols = {"task": (0, 86), "decide": (100, 120), "eyes": (234, 118), "agent": (366, 92),
-            "measure": (472, 85.3)}
-    arrows = [(88, 10), (222, 10), (354, 10), (460, 10)]
-    for ax, aw in arrows:
-        arrow_right(slide, x0 + Mm(ax), top + H / 2 - Mm(7), Mm(aw), Mm(14))
+    cols = {"page": (0, 84), "decide": (98, 108), "eyes": (220, 150), "agent": (384, 88),
+            "stop": (486, 71.3)}
+    for ax in (86, 208, 372, 474):
+        arrow_right(slide, x0 + Mm(ax), top + H / 2 - Mm(7), Mm(10), Mm(14))
 
-    # -- task + page
-    cx, cw = (x0 + Mm(cols["task"][0]), Mm(cols["task"][1]))
+    # -- the task and the live page
+    cx, cw = x0 + Mm(cols["page"][0]), Mm(cols["page"][1])
     card(slide, cx, top, cw, H)
-    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "TASK + LIVE PAGE")
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "THE TASK + THE LIVE PAGE")
     yy = body(slide, cx + pad, yy, cw - 2 * pad,
               ["“Show me the cheapest bike with red handlebars between $900–950.”"],
-              after=Mm(3))
-    caption(slide, cx + pad, yy, cw - 2 * pad,
-            ["Part of the intent is in the pictures, part in the text — and which part "
-             "matters changes task by task."])
+              after=Mm(2.5))
+    yy = caption(slide, cx + pad, yy, cw - 2 * pad,
+                 ["Part of the intent is in the pictures, part in the text."], after=Mm(3))
+    _pic(slide, FIGDIR / "eye_look.png", cx + pad, yy, cw - 2 * pad)
 
-    # -- who decides how to see
-    cx, cw = (x0 + Mm(cols["decide"][0]), Mm(cols["decide"][1]))
+    # -- who decides how to see it
+    cx, cw = x0 + Mm(cols["decide"][0]), Mm(cols["decide"][1])
     card(slide, cx, top, cw, H, bar=None, dash=True, line=ACCENT)
-    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "WHO DECIDES HOW TO SEE?", color=ACCENT)
-    pills = [("Fixed mode", "the same choice for every task"),
-             ("Hindsight oracle", "the best choice, known afterwards"),
-             ("Learned router", "a choice made before the task runs")]
-    ph = Mm(29)
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "WHO DECIDES HOW TO SEE IT?", color=ACCENT)
+    pills = [("One fixed choice", "the same way of seeing for every task"),
+             ("Best choice in hindsight", "knowing afterwards which way solved it"),
+             ("A learned choice", "made before the task runs, from what the page looks like")]
+    ph = Mm(34)
     for i, (name, note) in enumerate(pills):
         py = yy + Emu(i * int(ph + Mm(3)))
         rect(slide, cx + pad, py, cw - 2 * pad, ph, fill=PAPER, line=HAIRLINE, radius=0.12)
         textbox(slide, cx + pad + Mm(4), py + Mm(3.5), cw - 2 * pad - Mm(8), Mm(8),
                 [name], bold=True, color=INK_STRONG, space_after=Pt(0))
-        textbox(slide, cx + pad + Mm(4), py + Mm(13), cw - 2 * pad - Mm(8), Mm(13),
+        textbox(slide, cx + pad + Mm(4), py + Mm(13), cw - 2 * pad - Mm(8), Mm(16),
                 [note], size=SZ_CAPTION, color=MUTED, line_spacing=CAPTION_SPACING,
                 space_after=Pt(0))
+    textbox(slide, cx + pad, top + H - Mm(10), cw - 2 * pad, Mm(6),
+            ["this box is what we measure"], font=MONO, size=Pt(10.59), color=ACCENT,
+            space_after=Pt(0))
 
-    # -- the three eyes
-    cx, cw = (x0 + Mm(cols["eyes"][0]), Mm(cols["eyes"][1]))
-    eyes = [("LOOK", C_IMAGE, "screenshot only", "3,123 tokens on one real page"),
-            ("READ", C_TEXT, "accessibility-tree text only",
-             "3,314 tokens · plus three text-only variants"),
-            ("BOTH", C_BOTH, "marked screenshot + text", "4,335 tokens")]
-    eh = Mm(36)
-    for i, (name, colour, what, price) in enumerate(eyes):
-        ey = top + Emu(i * int(eh + Mm(5)))
+    # -- the three ways of seeing, each with what it really sends
+    cx, cw = x0 + Mm(cols["eyes"][0]), Mm(cols["eyes"][1])
+    eyes = [("LOOK", C_IMAGE, "the screenshot only", "3,123 tokens on this page", "eye_look.png"),
+            ("READ", C_TEXT, "the page as text: its elements and labels",
+             "3,314 tokens · three text-only variants share this", None),
+            ("BOTH", C_BOTH, "the screenshot with numbered boxes, plus the text",
+             "4,335 tokens", "eye_both.png")]
+    eh = Mm(46)
+    thumb_w = Mm(66)
+    for i, (name, colour, what, price, png) in enumerate(eyes):
+        ey = top + Emu(i * int(eh + Mm(4)))
         card(slide, cx, ey, cw, eh, bar=colour)
-        textbox(slide, cx + pad, ey + Mm(4.5), Mm(40), Mm(8), [name], font=MONO,
+        tx, tw = cx + pad, cw - 2 * pad - thumb_w - Mm(4)
+        textbox(slide, tx, ey + Mm(4.5), Mm(40), Mm(8), [name], font=MONO,
                 size=SZ_BODY, bold=True, color=colour, space_after=Pt(0))
-        textbox(slide, cx + pad, ey + Mm(14), cw - 2 * pad, Mm(8), [what], bold=True,
-                color=INK_STRONG, space_after=Pt(0))
-        textbox(slide, cx + pad, ey + Mm(23), cw - 2 * pad, Mm(11), [price],
-                size=SZ_CAPTION, color=MUTED, line_spacing=CAPTION_SPACING, space_after=Pt(0))
+        textbox(slide, tx, ey + Mm(14), tw, Mm(14), [what], size=SZ_CAPTION, bold=True,
+                color=INK_STRONG, line_spacing=CAPTION_SPACING, space_after=Pt(0))
+        textbox(slide, tx, ey + Mm(29), tw, Mm(12), [price], size=SZ_CAPTION, color=MUTED,
+                line_spacing=CAPTION_SPACING, space_after=Pt(0))
+        px, py = cx + cw - pad - thumb_w, ey + Mm(4)
+        if png:
+            _pic(slide, FIGDIR / png, px, py, thumb_w)
+        else:
+            rect(slide, px, py, thumb_w, Mm(36.9), fill=PAPER, line=GREY)
+            textbox(slide, px + Mm(2), py + Mm(2), thumb_w - Mm(4), Mm(31), _read_lines(),
+                    font=MONO, size=Pt(7.5), color=INK, line_spacing=1.15, space_after=Pt(0))
 
     # -- the agent
-    cx, cw = (x0 + Mm(cols["agent"][0]), Mm(cols["agent"][1]))
+    cx, cw = x0 + Mm(cols["agent"][0]), Mm(cols["agent"][1])
     card(slide, cx, top, cw, H)
-    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "AGENT, ONE STEP AT A TIME")
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "THE AGENT, ONE STEP AT A TIME")
     yy = body(slide, cx + pad, yy, cw - 2 * pad, ["**think → act**"], after=Mm(2))
     yy = caption(slide, cx + pad, yy, cw - 2 * pad,
-                 ["click · type · scroll · go back · finish",
-                  "repeats until it finishes or hits 30 steps"], after=Mm(3))
+                 ["click · type · scroll · go back · finish"], after=Mm(4))
     caption(slide, cx + pad, yy, cw - 2 * pad,
-            ["Same model, same prompt, same step budget and same cost accounting in "
-             "every mode — only what it is shown changes."], color=INK)
+            ["Same model, same prompt, same step budget and same cost accounting "
+             "whichever way it sees — only what it is shown changes."], color=INK)
 
-    # -- measured
-    cx, cw = (x0 + Mm(cols["measure"][0]), Mm(cols["measure"][1]))
+    # -- when it stops
+    cx, cw = x0 + Mm(cols["stop"][0]), Mm(cols["stop"][1])
     card(slide, cx, top, cw, H)
-    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "MEASURED")
-    yy = body(slide, cx + pad, yy, cw - 2 * pad, ["**✓ / ✗ per task**", "**$ billed per episode**"],
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "WHEN IT STOPS")
+    yy = body(slide, cx + pad, yy, cw - 2 * pad, ["**✓ solved / ✗ not**", "**$ for the whole attempt**"],
               after=Mm(3))
     caption(slide, cx + pad, yy, cw - 2 * pad,
-            ["8 website–model settings · two benchmarks · 6 modes · 8,934 episodes"])
+            ["8 website × model combinations · two public benchmarks · 6 ways of "
+             "seeing · 8,934 task attempts"])
 
-    y = top + H + Mm(3)
-    return caption(slide, FULL_X, y, FULL_W, [
-        "**Fig 1.** Everything is held fixed except how the page is shown. The dashed "
-        "box is what this work measures: a fixed choice, the best choice in hindsight, "
-        "and a choice a router has to learn — each judged on **both** success and cost. "
-        "The laptop beside this poster replays the three eyes on the three tasks below."],
-        after=Mm(0))
+    # -- the loop back: the action changes the page, and the next step begins
+    agent_cx = x0 + Mm(cols["agent"][0] + cols["agent"][1] / 2)
+    page_cx = x0 + Mm(cols["page"][0] + cols["page"][1] / 2)
+    ly = top + H + Mm(12)
+    rect(slide, agent_cx - Mm(0.6), top + H, Mm(1.2), ly - (top + H), fill=GREY)
+    rect(slide, page_cx, ly - Mm(0.6), agent_cx - page_cx, Mm(1.2), fill=GREY)
+    rect(slide, page_cx - Mm(0.6), top + H + Mm(4), Mm(1.2), ly - (top + H) - Mm(4), fill=GREY)
+    head = slide.shapes.add_shape(MSO_SHAPE.ISOSCELES_TRIANGLE, page_cx - Mm(3), top + H,
+                                  Mm(6), Mm(4.5))
+    head.fill.solid(); head.fill.fore_color.rgb = GREY; head.line.fill.background()
+    head.shadow.inherit = False
+    textbox(slide, page_cx + Mm(10), ly + Mm(2), agent_cx - page_cx - Mm(20), Mm(7),
+            ["the action changes the page → next step · up to 30 steps per task · "
+             "the bill grows with every step"], size=SZ_CAPTION, color=MUTED,
+            align=PP_ALIGN.CENTER, space_after=Pt(0))
+
+    return caption(slide, FULL_X, ly + Mm(11), FULL_W, [
+        "**Fig 1.** Everything is held fixed except how the page is shown to the agent. "
+        "The dashed box is what this work measures — one fixed way of seeing, the best "
+        "way in hindsight, or a way a model had to learn to choose — each judged on "
+        "**both** success and cost. The laptop beside this poster replays the loop on "
+        "the three tasks below."], after=Mm(0))
 
 
-# ------------------------------------------------------------------- demo strip
-def build_strip(slide):
+# ------------------------------------------------------------------- scoreboard
+def build_scoreboard(slide):
+    """What the demo shows, as its results only: three tasks, three ways of
+    seeing, solved or not, steps and bill. Numbers parsed and rerun-checked by
+    poster_figures.py."""
     x, w = COL_X[0], COL_W
-    y = panel_header(slide, x, ROW_Y, "ON THE SCREEN BESIDE YOU", w)
+    y = panel_header(slide, x, ROW_Y, "WHAT THE SCREEN BESIDE YOU SHOWS", w)
     strip = json.loads((FIGDIR / "demo_strip.json").read_text())
-    tile_w = int((w - 2 * Mm(3)) / 3)
-    tile_h = Mm(24)
+    thumb_w = Mm(56)
+    gx = x + thumb_w + Mm(5)
+    gw = w - thumb_w - Mm(5)
+    cell_w = int(gw / 3)
+    for i, (key, name, colour) in enumerate(MODES):
+        textbox(slide, gx + Emu(i * cell_w), y, Emu(cell_w), Mm(6), [name], font=MONO,
+                size=Pt(10.59), bold=True, color=colour, space_after=Pt(0))
+    y += Mm(7)
+    rect(slide, x, y, w, Mm(0.3), fill=HAIRLINE)
+    y += Mm(3)
     for task, d in strip.items():
-        y = body(slide, x, y, w, [f"**“{d['intent']}”**"], after=Mm(2.5))
-        png = FIGDIR / d["thumb"]
-        with Image.open(png) as im:
-            ph = int(w * im.height / im.width)
-        rect(slide, x, y, w, ph, fill=None, line=HAIRLINE)
-        slide.shapes.add_picture(str(png), x, y, width=w)
-        y += ph + Mm(2.5)
+        ph = _pic(slide, FIGDIR / d["thumb"], x, y, thumb_w, frame=True)
+        intent_h = text_height([f"**“{d['intent']}”**"], SANS, SZ_CAPTION, gw,
+                               spacing=CAPTION_SPACING, gap=0)
+        textbox(slide, gx, y, gw, intent_h, [f"**“{d['intent']}”**"], size=SZ_CAPTION,
+                color=INK, line_spacing=CAPTION_SPACING, space_after=Pt(0))
+        ry = y + intent_h + Mm(2)
         for i, (key, name, colour) in enumerate(MODES):
             m = d["modes"][key]
-            tx = x + Emu(i * (tile_w + int(Mm(3))))
-            rect(slide, tx, y, Emu(tile_w), tile_h, fill=FIG_FILL, line=HAIRLINE)
-            rect(slide, tx, y, Emu(tile_w), Mm(1.2), fill=colour)
-            textbox(slide, tx + Mm(3), y + Mm(3), Mm(30), Mm(6), [name], font=MONO,
-                    size=Pt(10.59), bold=True, color=colour, space_after=Pt(0))
             mark, mc = ("✓", C_BOTH) if m["success"] else ("✗", C_FAIL)
-            textbox(slide, tx + Mm(3), y + Mm(7.5), Mm(16), Mm(15), [mark], font=MONO,
-                    size=SZ_MARK, bold=True, color=mc, line_spacing=1.0, space_after=Pt(0))
-            textbox(slide, tx + Mm(20), y + Mm(9), Emu(tile_w) - Mm(22), Mm(14),
-                    [f"{m['steps']} steps", f"${m['cost_usd']:.3f}"], size=SZ_CAPTION,
-                    color=INK, line_spacing=CAPTION_SPACING, space_after=Pt(0))
-        y += tile_h + Mm(8)
-    return caption(slide, x, y - Mm(2), w, [
-        "One recorded run per mode, B0 · classifieds. Every ✓ / ✗ above came out the "
-        "same on an independent rerun; steps and cost differ run to run — across all "
-        "tasks a rerun flips 10–14% of outcomes."], after=Mm(0))
+            box = slide.shapes.add_textbox(gx + Emu(i * cell_w), ry, Emu(cell_w), Mm(14))
+            fr = box.text_frame; fr.word_wrap = True
+            fr.margin_left = fr.margin_right = fr.margin_top = fr.margin_bottom = 0
+            para = fr.paragraphs[0]
+            para.line_spacing = 1.15
+            _run(para, mark + " ", MONO, Pt(15), mc, True)
+            _run(para, f"{m['steps']} steps", SANS, SZ_CAPTION, INK, False)
+            para2 = fr.add_paragraph()
+            para2.line_spacing = 1.15
+            _run(para2, f"${m['cost_usd']:.3f}", SANS, SZ_CAPTION, INK, True)
+        row_h = max(ph, int(intent_h + Mm(2) + Mm(14)))
+        y += row_h + Mm(4)
+        rect(slide, x, y - Mm(2), w, Mm(0.3), fill=HAIRLINE)
+    return caption(slide, x, y + Mm(1), w, [
+        "One recorded attempt per way of seeing, B0 · classifieds. Every ✓ / ✗ came out "
+        "the same on an independent rerun; steps and bill differ run to run — across "
+        "all tasks a rerun flips 10–14% of outcomes."], after=Mm(0))
+
+
+def build_why(slide, y):
+    x, w = COL_X[0], COL_W
+    y = panel_header(slide, x, y, "WHY IT CANNOT BE LEARNED", w)
+    y = body(slide, x, y, w, [
+        "A training example for “which way of seeing” exists only when the agent "
+        "solves a task. Here the best single way solves just **2–36%** of tasks, "
+        "leaving typically **15–97** usable examples per setting — **the agents that "
+        "would gain most from choosing produce the fewest examples to learn from.**",
+        "Shrinking the training data on purpose confirms scarcity is the mechanism, "
+        "and prices it: the failing settings would need at least **2.1–4.2×** more "
+        "tasks than the benchmarks contain.",
+        "Rerunning **one unchanged way of seeing** flips **10–14%** of outcomes and "
+        "by itself buys **2.0–7.6** more solved tasks in 100 (B0 · classifieds, six "
+        "repeated ways, n=224); every gain on this sheet is read against that band, "
+        "not against zero."], after=Mm(7))
+    y = panel_header(slide, x, y, "TAKEAWAY", w)
+    y = body(slide, x, y, w, [
+        "**Learning how to see is not only a modelling problem: whether it can be "
+        "learned depends on how good the agent producing the examples already is.** "
+        "So, in this order: improve the agent, then collect reliable examples, then "
+        "learn when to look."], after=Mm(1.5))
+    return caption(slide, x, y, w, [
+        "Measured in the 2–36% success regime we observed. This need not hold for "
+        "stronger agents."], after=Mm(0))
 
 
 # ---------------------------------------------------------------------- results
 def metric_strip(slide, x, y, w, tiles):
-    """The template's metric strip (Rectangle 52 + three number/label pairs).
-    Each label names its own baseline: the strip is exactly the place where two
-    different baselines would otherwise be read as one comparison."""
     h = Mm(32.5)
     rect(slide, x, y, w, h, fill=RGBColor(0xEC, 0xEF, 0xFA))
     pad = Mm(7)
@@ -475,60 +553,38 @@ def metric_strip(slide, x, y, w, tiles):
 
 def build_results(slide):
     x, w = SPAN_23_X, SPAN_23_W
-    y = panel_header(slide, x, ROW_Y, "RESULTS ACROSS 8,934 EPISODES", w)
+    y = panel_header(slide, x, ROW_Y, "RESULTS ACROSS 8,934 TASK ATTEMPTS", w)
     y = metric_strip(slide, x, y, w, [
-        ("+16.35 pp", "CEILING, LARGEST OF 8 · VS BEST FIXED MODE"),
-        ("0 of 8", "LEARNED ROUTERS BEAT ALWAYS-CHEAPEST"),
-        ("1 of 8", "HINDSIGHT ORACLES BEAT ALWAYS-CHEAPEST"),
+        ("+16.35 in 100", "IN HINDSIGHT, BEST OF 8 · VS ONE FIXED CHOICE"),
+        ("0 of 8", "LEARNED CHOICES THAT BEAT ALWAYS-CHEAPEST"),
+        ("1 of 8", "HINDSIGHT CHOICES THAT BEAT ALWAYS-CHEAPEST"),
     ])
     y = fig_box(
         slide, x, y, w, FIGDIR / "poster_dominance_plane.png",
-        "**Fig 2.** Every policy in every setting against one fixed baseline, **always "
-        "use the cheapest mode** (★). A win lands in the shaded region: cheaper *and* no "
-        "worse. Always-cheapest is cheapest on average, not per episode, which is why a "
-        "few points sit left of it. Nested cross-validation; 10,000 bundle permutations.")
-    y = body(slide, x, y, w, [
-        "**The ceiling is real.** In hindsight, choosing the eyes per task solves "
-        "**+3.45 to +16.35 pp** more than the best single fixed mode, at 1.6–35.3% "
-        "lower cost, in 8 of 8 settings.",
-        "**Nothing we trained wins.** **0 of 8** learned routers beat always-cheapest "
-        "on both success and cost — and even the hindsight oracle does so in only "
-        "**1 of 8**.",
-        "**What survives is a bound, not a router.** Sending the tasks nobody solves to "
-        "the cheapest mode saves 9.5–30.6% at identical success in 8 of 8 — against the "
-        "best-success fixed mode, and plain always-cheapest usually saves more."],
-        after=Mm(6))
-
-    y = panel_header(slide, x, y, "WHY IT CANNOT BE LEARNED", w)
-    y = body(slide, x, y, w, [
-        "A routing label exists only when the agent solves a task. Here the best single "
-        "mode solves just **2–36%** of tasks, leaving typically **15–97** usable labels "
-        "per setting — **the agents that would gain most from routing produce the least "
-        "supervision to learn it.** Deliberately shrinking the training data confirms "
-        "scarcity is the mechanism and prices it: the failing settings would need at "
-        "least **2.1–4.2×** more tasks than the benchmarks contain.",
-        "Rerunning **one unchanged mode** flips **10–14%** of outcomes and by itself "
-        "buys **2.0–7.6 pp** (B0 · classifieds, six replicated modes, n=224); every "
-        "gain on this sheet is read against that band, not against zero."],
-        after=Mm(6))
-
-    y = panel_header(slide, x, y, "TAKEAWAY", w)
-    y = body(slide, x, y, w, [
-        "**Routing is not only a model-selection problem: its learnability depends on "
-        "the competence of the agent producing the labels.** So, in this order: improve "
-        "the agent, then generate reliable supervision, then learn selective perception."],
-        after=Mm(1.5))
-    return caption(slide, x, y, w, [
-        "Measured inside the 2–36% success regime we observed. This conclusion need not "
-        "hold for stronger agents."], after=Mm(0))
+        "**Fig 2.** Every way of choosing, in every setting, compared with one fixed "
+        "rule: **always use the cheapest way of seeing** (★). A win lands in the shaded "
+        "region — cheaper *and* no worse. Always-cheapest is cheapest on average, not "
+        "on every task, which is why a few points sit left of it. Learned choices are "
+        "scored only on tasks they never saw.")
+    return body(slide, x, y, w, [
+        "**Choosing well would pay.** Picking the right way of seeing for each task "
+        "after the fact would solve **3.45 to 16.35 more tasks in every 100** than the "
+        "best single fixed choice, and spend 1.6–35.3% less — in all 8 settings.",
+        "**Nothing we trained could do it.** In **0 of 8** settings did a learned choice "
+        "beat simply always using the cheapest way on both success and cost — and even "
+        "choosing with hindsight manages that in only **1 of 8**.",
+        "**What survives is a bound, not a method.** Sending the tasks nobody solves to "
+        "the cheapest way saves 9.5–30.6% at the same success in 8 of 8 — but that too "
+        "needs hindsight, and plain always-cheapest usually saves more."],
+        after=Mm(0))
 
 
 # --------------------------------------------------------------------------- run
 TITLE = ["Look, read, or both?", "Web agents can't yet learn how to see a page"]
 STANDFIRST = (
     "Seen the right way, a page would let the agent solve up to 16 more tasks in 100 "
-    "than the best fixed mode — yet none of 8 learned routers beat always using the "
-    "cheapest mode on both success and cost."
+    "than the best fixed choice — yet nothing we trained beat always using the "
+    "cheapest way on both success and cost."
 )
 
 
@@ -563,7 +619,8 @@ def main():
 
     fig_end = build_system(slide)
     assert fig_end <= ROW_Y, f"Fig 1 ends at {fig_end / 36000:.1f}mm, past the row start {ROW_Y / 36000:.0f}mm"
-    ends = {"column 1": (build_strip(slide), ROW_BOTTOM),
+    left_mid = build_scoreboard(slide)
+    ends = {"column 1": (build_why(slide, left_mid + Mm(8)), ROW_BOTTOM),
             "columns 2-3": (build_results(slide), ROW_BOTTOM)}
 
     drop(slide, *HEADER_PARTS)

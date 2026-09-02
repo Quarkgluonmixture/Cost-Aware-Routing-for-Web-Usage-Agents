@@ -88,8 +88,8 @@ free, otherwise at the strip (left column), which is the same three tasks.
 > cheapest mode.
 
 **④ Fig 2**
-> And it isn't just a bad classifier: only one of eight *hindsight oracles*
-> clears the same bar. The shaded region is where a win would sit.
+> And it isn't just a bad classifier: even choosing *with hindsight* clears
+> the same bar in only one of eight. The shaded region is where a win would sit.
 
 **⑤ WHY IT CANNOT BE LEARNED**
 > A routing label only exists when a task gets solved, and the best single mode
@@ -205,10 +205,10 @@ visitor can find it. The one exception is flagged in the table.
 
 | Number | What it is | Must say |
 |---|---|---|
-| `+3.45 to +16.35 pp` | hindsight picker's success gain | **vs the best single fixed mode**; percentage *points*; retrospective |
+| `+3.45 to +16.35 pp` | hindsight picker's success gain (poster: "3.45 to 16.35 more tasks in every 100") | **vs the best single fixed choice**; percentage *points*; retrospective |
 | `1.6–35.3%` | that picker's cost saving | same baseline as above; **cost-aware tie-break** — `13.7–35.3%` is RETRACTED (§452.2), never say it |
 | `0 of 8` | learned routers that win | **vs always-cheapest**, and **on both** success and cost |
-| `1 of 8` | hindsight oracles that win | same bar — this line is mandatory, never quote 0/8 alone |
+| `1 of 8` | hindsight choices that win (the poster says "choosing with hindsight", not "oracle") | same bar — this line is mandatory, never quote 0/8 alone |
 | `2–36%` | base success rate | 8-cell matched set. **The 6-cell VWA figure is 2–27 — never say that next to "8 settings"** |
 | `10–14%` | rerun discordance | B0 · classifieds, n=224, **six** replicated modes (§477.2; v2 said 12–14 / three) |
 | `2.0–7.6 pp` | what one rerun buys by itself | same cell; printed beside 10–14% — the companion of every ceiling number |
