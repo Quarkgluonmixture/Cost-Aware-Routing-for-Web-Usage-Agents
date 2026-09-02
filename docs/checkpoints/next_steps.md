@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-08-30
+updated: 2026-09-03
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,36 @@ updated: 2026-08-30
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> ## 🟠 2026-09-03 · Showcase 海报 v8.1 定稿 → **09-04 发 Zekun（Slack）**；demo 09-07 后补录
+>
+> chronicle → **笔记 §498 + §499.1–.6** · 台账 **+13** · commits `6e15eb5`…`290f636`+ · 产物 `deliverables/showcase/`
+>
+> ### 现在该做的（人力，不抢 GPU）
+> 1. **09-04 内**：Slack DM Zekun，附 `deliverables/showcase/poster_jiaming_wei.pdf`（v8.1；页脚邮箱已改为
+>    `jiaming.wei.25@ucl.ac.uk`，v2–v8 印的 .22 是错的），正文用 `SHOWCASE_PREP.md §1`（含 oral slot pitch
+>    + 请求板旁一张桌子/电源给 demo）。organiser 经 user 确认：替换 PDF 截止 09-04，之后自印 A1。
+> 2. **09-05**：毕设硬截止，海报的事全部让路。
+> 3. **09-07 后（A100 reddit replicate chain 跑完）→ 09-15**：demo（`SHOWCASE_PREP.md §8`）——
+>    用 SoM 补录 cls 130/76/17 三题留 artifacts；搭三栏同步 replay 页；LOOK/READ 两栏数据已在
+>    `results/repro_replicates/B0_{vision,dom}_classifieds_*_clean_replicate`。规则：replay 不 live、只用
+>    两次运行一致的题、补录可以、手拼轨迹不行。
+> 4. **09-16**：13:15–14:35 站板前（投票 14:35 截止，早于 oral）；板前讲稿 `SHOWCASE_PREP.md §2`，Q&A §4，
+>    数字速查 §5，不能说的话 §6。
+>
+> ### 海报定稿的形状（改前先读 `poster_content.md` 的 v8/v7 头）
+> 模板三栏骨架 · 顶部 loop 大图（真实截图）· 数字条 + 三条比较定义 · 左 THE CATCH / 为什么 / Fig 3 /
+> takeaway · 右 Fig 2 / 判词 / 电脑桥接表。全部白话（对照表在 poster_content.md）。每个数字由脚本解析
+> （`poster_figures.py`），demo 三题 assert 两次运行 ✓✗ 一致。
+>
+> ### 本轮教训（已进台账）
+> 「核过海报」≠「核过旁边那份」（讲稿里留着作废的 13.7 / 12–14，§498.3）· 白话化会拉长标签，换词后要
+> 重看图例/轴碰撞（§499.4）· 零预设审读优化的是它被问的那一维，视觉主角是作者的判断（§499.6）·
+> **邮箱这种"常识字段"也要 user 确认，不要从旧文件继承**。
+>
+> ⚠️ 笔记 §498–§499.6 与台账条目在工作树里**未提交**：另一 session 在同一文件里有未提交的 §496/§497；
+> 两边一起 commit 即可。
+
 
 > ## 🟠 2026-08-31 · Showcase 海报定稿 → **待发邮件（硬截止 09-02）**
 >

@@ -643,7 +643,7 @@ def main():
     drop(slide, *HEADER_PARTS)
 
     set_text(find(slide, "TextBox 71"),
-             ["jiaming.wei.22@ucl.ac.uk",
+             ["jiaming.wei.25@ucl.ac.uk",
               "Paper, code & full results: github.com/Quarkgluonmixture/"
               "Cost-Aware-Routing-for-Web-Usage-Agents"])
     qr_png = FIGDIR / "qr_repo.png"
