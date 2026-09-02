@@ -89,7 +89,7 @@ def dominance_plane() -> None:
 
     rows, _proto = f.load(f.SRC)
     S.apply()
-    fig, ax = plt.subplots(figsize=(COL_W_IN, 8.0))
+    fig, ax = plt.subplots(figsize=(COL_W_IN, 6.8))
     f.build(ax, rows)
 
     x0, _ = ax.get_xlim()
@@ -213,7 +213,7 @@ def label_supply() -> None:
     cells = json.loads(LEARN_JSON.read_text())["cells"]
     sr = {(c["site"], c["baseline_model"]): c["baseline_policy"]["sr_pct"] for c in cells}
     S.apply()
-    fig, ax = plt.subplots(figsize=(LEFT_W_IN, 4.4))
+    fig, ax = plt.subplots(figsize=(LEFT_W_IN, 3.7))
     for key, n in rows.items():
         x = sr[key]
         filled = trainable[key]

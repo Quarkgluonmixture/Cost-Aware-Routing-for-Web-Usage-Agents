@@ -65,7 +65,8 @@ receive files.
 
 # 2. Board walk — 90 seconds
 
-The sheet now reads result → why → evidence → how, so the walk does too.
+Sheet order: loop diagram → number strip → catch / why / Fig 3 (left) · Fig 2 /
+laptop (right). The walk skips the loop unless they ask for the method.
 
 **① Title + standfirst**
 > A web agent can look at a page, read it, or both. Choosing right would help a
@@ -97,7 +98,7 @@ The sheet now reads result → why → evidence → how, so the walk does too.
 > Watch it: same task, three views, different behaviour and bills. Three
 > illustrative tasks, one per winner — not how often each wins.
 
-**⑦ The loop at the foot, if they want the method**
+**⑦ The loop at the top, if they want the method**
 > Only the page view changes; the dashed box is what we measure.
 
 **If they only have 20 seconds**, use ① ③ ⑤ and stop.

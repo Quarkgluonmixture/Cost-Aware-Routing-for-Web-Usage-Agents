@@ -5,6 +5,18 @@ any edit must be mirrored in both. Every number carries its scope, because the
 poster is printed on silk and cannot be corrected. Deadline for the print PDF:
 **4 Sep 2026** (organiser confirmed a replacement is accepted until then).
 
+> **v8 (2026-09-03) — v6's look, v7's words.** v7 moved the loop diagram to the
+> foot and put the numbers and prose first; the author's eye: *the previous one
+> looked better*. It did — the top half had become text, and the one picture-
+> rich element (the loop, with real screenshots) had been demoted, which also
+> cut against the reviewer brief's *one main system diagram*. v8 keeps every
+> v7 wording fix and puts the sheet back in v6's order: loop on top at v6
+> size → number strip + the three comparison definitions → THE CATCH / why /
+> Fig 3 / takeaway (left) · Fig 2 / verdicts / laptop bridge (right). Fig 2 is
+> 6.8in tall and Fig 3 3.7in to make room. Lesson: a zero-preset reader
+> optimises what it was asked to optimise (reading order, claims); the visual
+> hierarchy is the author's call, and the eye was right.
+
 > **v7 (2026-09-03) — result first, then why, then how.** A zero-preset GPT
 > review of v6 (prompted only with the event, the template constraint and the
 > laptop demo; no design rationale, no intended claim) found three things worth
@@ -105,7 +117,7 @@ agent solve…") read as an attainable treatment effect; the review caught it.
 
 ## Fig 1 — the agent loop (full width, native shapes)
 
-Header: `HOW WE MEASURED IT — THE AGENT LOOP` (at the foot of the sheet since v7). Five cards left to right,
+Header: `THE AGENT LOOP, AND WHERE THE DECISION SITS` — the first thing under the band (v8; v7 briefly had it at the foot). Five cards left to right,
 block arrows between them, and a return arrow along the bottom from the agent
 back to the page:
 
@@ -129,7 +141,7 @@ are shortened for display only (url tails and indentation dropped). Token
 counts are F1's, re-read 2026-09-02. The example task is classifieds #17, the
 scoreboard's BOTH-wins task. Episodes = 6 × (224×3 + 203×3 + 104×2).
 
-## Row A · RESULTS ACROSS 8,934 TASK ATTEMPTS (full width, first thing under the band)
+## Under the loop · RESULTS ACROSS 8,934 TASK ATTEMPTS (full width)
 
 Metric strip (template component; each label names its comparison):
 
@@ -152,7 +164,7 @@ Under the strip, the three comparisons in one line each (three columns):
 The rerun band moved here from the WHY prose so it sits beside the number it
 qualifies (§450.10: the ceiling must print its rerun baseline next to it).
 
-## Row B left · THE CATCH → WHY LEARNING THE CHOICE FAILS HERE → Fig 3 → TAKEAWAY
+## Left column · THE CATCH → WHY LEARNING THE CHOICE FAILS HERE → Fig 3 → TAKEAWAY
 
 Callout (template tinted box, accent bar, label `THE CATCH`):
 
@@ -192,7 +204,7 @@ purpose: the sheet cannot show that the alternatives were excluded.
 > Measured in the 2–36% success regime we observed. This need not hold for
 > stronger agents.
 
-## Row B right · Fig 2 → three verdicts → WATCH THE LAPTOP BESIDE THIS POSTER
+## Right column · Fig 2 → three verdicts → WATCH THE LAPTOP BESIDE THIS POSTER
 
 Fig 2 — thesis F13 at the 362mm inner width of the figure box, plain-English
 axes and legend (*learned choice · learned, scored on its own training tasks ·
@@ -240,11 +252,6 @@ each ✓/✗ is identical on the replicate run. Selection: 24 of 224 classifieds
 tasks have three-way-different, rerun-stable outcomes; one per winner was
 chosen. The kayak (task 0) fails in all three views in both runs — spoken
 material only.
-
-## Row C · HOW WE MEASURED IT — THE AGENT LOOP (full width, at the foot)
-
-The Fig 1 section above, compacted to 96mm cards; strings there are the v7
-strings.
 
 ## Deliberately NOT on the poster
 

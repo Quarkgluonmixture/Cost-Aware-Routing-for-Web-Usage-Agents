@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Build the Holistic AI x UCL CDI showcase poster from the supplied A1 template.
 
-v7 — result first, then why, then how (2026-09-03)
----------------------------------------------------
+v8 — v6's look, v7's words (2026-09-03)
+----------------------------------------
+v7 moved the loop diagram to the foot and put text first; the author: "the
+previous one looked better". It did — the top half had become prose. v8 puts
+the loop back on top at v6 size, the number strip and the three comparison
+definitions under it, and keeps every v7 wording fix.
 The poster now stands next to a laptop that replays the same task through three
 ways of seeing the page. That split decides what goes on silk:
 
@@ -109,9 +113,8 @@ COL_W = Mm(179.2)
 SPAN_23_X, SPAN_23_W = Mm(209.3), Mm(368.2)
 FULL_X, FULL_W = Mm(20.2), Mm(557.3)
 
-RES_Y = Mm(140)          # results strip + baseline key, full width
-LOOP_Y = Mm(640)         # the agent loop, full width, at the foot
-ROW_BOTTOM = LOOP_Y - Mm(8)
+LOOP_Y = Mm(140)         # the agent loop, full width, on top (the hero)
+ROW_BOTTOM = Mm(782)
 
 MODES = (("look", "LOOK", C_IMAGE), ("read", "READ", C_TEXT), ("both", "BOTH", C_BOTH))
 
@@ -360,12 +363,12 @@ def metric_strip(slide, x, y, w, tiles):
 
 
 # ------------------------------------------------------------ row A: the result
-def build_result_strip(slide):
-    """The three numbers a visitor should meet before any pipeline, and the
-    three comparisons they are made against, defined in one line each. The
-    hindsight line carries its own health warning (the rerun band)."""
+def build_result_strip(slide, y):
+    """The three numbers, and the three comparisons they are made against,
+    defined in one line each. The hindsight line carries its own health
+    warning (the rerun band)."""
     x, w = FULL_X, FULL_W
-    y = panel_header(slide, x, RES_Y, "RESULTS ACROSS 8,934 TASK ATTEMPTS", w)
+    y = panel_header(slide, x, y, "RESULTS ACROSS 8,934 TASK ATTEMPTS", w)
     y = metric_strip(slide, x, y, w, [
         ("+16.35 in 100", "PERFECT HINDSIGHT, BEST OF 8 · VS ONE FIXED VIEW"),
         ("0 of 8", "LEARNED CHOICES THAT BEAT ALWAYS-CHEAPEST"),
@@ -448,7 +451,7 @@ def build_evidence(slide, y):
         "**What survives is a bound, not a method.** Sending the tasks nobody solves to "
         "the cheapest view saves 9.5–30.6% at the same success in 8 of 8 — but that "
         "too needs hindsight, and plain always-cheapest usually saves more."],
-        after=Mm(7))
+        after=Mm(5))
 
     # the bridge to the laptop: results only, no frames — the screen has those
     y = panel_header(slide, x, y, "WATCH THE LAPTOP BESIDE THIS POSTER", w)
@@ -490,10 +493,10 @@ def build_evidence(slide, y):
 # --------------------------------------------------- row C: the agent loop
 def build_loop(slide):
     """Fig 1, at the foot: how the measurement was made, as a loop that loops."""
-    y = panel_header(slide, FULL_X, LOOP_Y, "HOW WE MEASURED IT — THE AGENT LOOP", FULL_W)
-    top, H = y, Mm(96)
+    y = panel_header(slide, FULL_X, LOOP_Y, "THE AGENT LOOP, AND WHERE THE DECISION SITS", FULL_W)
+    top, H = y, Mm(140)
     x0 = FULL_X
-    pad = Mm(4.5)
+    pad = Mm(5)
     cols = {"page": (0, 84), "decide": (98, 108), "eyes": (220, 150), "agent": (384, 88),
             "stop": (486, 71.3)}
     for ax in (86, 208, 372, 474):
@@ -501,29 +504,30 @@ def build_loop(slide):
 
     cx, cw = x0 + Mm(cols["page"][0]), Mm(cols["page"][1])
     card(slide, cx, top, cw, H)
-    yy = label(slide, cx + pad, top + Mm(3.5), cw - 2 * pad, "THE TASK + THE LIVE PAGE")
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "THE TASK + THE LIVE PAGE")
     yy = body(slide, cx + pad, yy, cw - 2 * pad,
               ["“Show me the cheapest bike with red handlebars between $900–950.”"],
-              after=Mm(2))
-    caption(slide, cx + pad, yy, cw - 2 * pad,
-            ["Part of the intent is in the pictures, part in the text."])
+              after=Mm(2.5))
+    yy = caption(slide, cx + pad, yy, cw - 2 * pad,
+                 ["Part of the intent is in the pictures, part in the text."], after=Mm(3))
+    _pic(slide, FIGDIR / "eye_look.png", cx + pad, yy, cw - 2 * pad)
 
     cx, cw = x0 + Mm(cols["decide"][0]), Mm(cols["decide"][1])
     card(slide, cx, top, cw, H, bar=None, dash=True, line=ACCENT)
-    yy = label(slide, cx + pad, top + Mm(3.5), cw - 2 * pad, "WHO DECIDES HOW TO SEE IT?", color=ACCENT)
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "WHO DECIDES HOW TO SEE IT?", color=ACCENT)
     pills = [("One fixed view", "the same view for every task"),
              ("Perfect hindsight", "knowing afterwards which view solved it"),
-             ("A learned choice", "made before the task runs, from the page")]
-    ph = Mm(23)
+             ("A learned choice", "made before the task runs, from what the page looks like")]
+    ph = Mm(34)
     for i, (name, note) in enumerate(pills):
-        py = yy + Emu(i * int(ph + Mm(2.5)))
+        py = yy + Emu(i * int(ph + Mm(3)))
         rect(slide, cx + pad, py, cw - 2 * pad, ph, fill=PAPER, line=HAIRLINE, radius=0.12)
-        textbox(slide, cx + pad + Mm(3.5), py + Mm(2.5), cw - 2 * pad - Mm(7), Mm(8),
+        textbox(slide, cx + pad + Mm(4), py + Mm(3.5), cw - 2 * pad - Mm(8), Mm(8),
                 [name], bold=True, color=INK_STRONG, space_after=Pt(0))
-        textbox(slide, cx + pad + Mm(3.5), py + Mm(12), cw - 2 * pad - Mm(7), Mm(8),
+        textbox(slide, cx + pad + Mm(4), py + Mm(13), cw - 2 * pad - Mm(8), Mm(16),
                 [note], size=SZ_CAPTION, color=MUTED, line_spacing=CAPTION_SPACING,
                 space_after=Pt(0))
-    textbox(slide, cx + pad, top + H - Mm(8.5), cw - 2 * pad, Mm(6),
+    textbox(slide, cx + pad, top + H - Mm(10), cw - 2 * pad, Mm(6),
             ["this box is what we measure"], font=MONO, size=Pt(10.59), color=ACCENT,
             space_after=Pt(0))
 
@@ -533,38 +537,38 @@ def build_loop(slide):
              "3,314 tokens · +3 text-only variants", None),
             ("BOTH", C_BOTH, "the screenshot with numbered boxes, plus the text",
              "4,335 tokens", "eye_both.png")]
-    eh, thumb_w = Mm(29), Mm(46)
+    eh, thumb_w = Mm(44), Mm(66)
     for i, (name, colour, what, price, png) in enumerate(eyes):
-        ey = top + Emu(i * int(eh + Mm(4.5)))
-        card(slide, ey and cx, ey, cw, eh, bar=colour)
-        tx, tw = cx + pad, cw - 2 * pad - thumb_w - Mm(3)
-        textbox(slide, tx, ey + Mm(2.6), Mm(30), Mm(7), [name], font=MONO,
+        ey = top + Emu(i * int(eh + Mm(4)))
+        card(slide, cx, ey, cw, eh, bar=colour)
+        tx, tw = cx + pad, cw - 2 * pad - thumb_w - Mm(4)
+        textbox(slide, tx, ey + Mm(4.5), Mm(40), Mm(8), [name], font=MONO,
                 size=SZ_BODY, bold=True, color=colour, space_after=Pt(0))
-        textbox(slide, tx + Mm(24), ey + Mm(3.2), tw - Mm(24), Mm(12), [what], size=SZ_CAPTION,
-                bold=True, color=INK_STRONG, line_spacing=CAPTION_SPACING, space_after=Pt(0))
-        textbox(slide, tx, ey + Mm(19.5), tw, Mm(8), [price], size=SZ_CAPTION, color=MUTED,
+        textbox(slide, tx, ey + Mm(14), tw, Mm(14), [what], size=SZ_CAPTION, bold=True,
+                color=INK_STRONG, line_spacing=CAPTION_SPACING, space_after=Pt(0))
+        textbox(slide, tx, ey + Mm(29), tw, Mm(12), [price], size=SZ_CAPTION, color=MUTED,
                 line_spacing=CAPTION_SPACING, space_after=Pt(0))
-        px, py = cx + cw - pad - thumb_w, ey + Mm(1.9)
+        px, py = cx + cw - pad - thumb_w, ey + Mm(4)
         if png:
             _pic(slide, FIGDIR / png, px, py, thumb_w)
         else:
-            rect(slide, px, py, thumb_w, Mm(25.7), fill=PAPER, line=GREY)
-            textbox(slide, px + Mm(1.5), py + Mm(1.5), thumb_w - Mm(3), Mm(23), _read_lines(),
-                    font=MONO, size=Pt(6.5), color=INK, line_spacing=1.12, space_after=Pt(0))
+            rect(slide, px, py, thumb_w, Mm(36.9), fill=PAPER, line=GREY)
+            textbox(slide, px + Mm(2), py + Mm(2), thumb_w - Mm(4), Mm(33), _read_lines(),
+                    font=MONO, size=Pt(7.5), color=INK, line_spacing=1.15, space_after=Pt(0))
 
     cx, cw = x0 + Mm(cols["agent"][0]), Mm(cols["agent"][1])
     card(slide, cx, top, cw, H)
-    yy = label(slide, cx + pad, top + Mm(3.5), cw - 2 * pad, "THE AGENT, ONE STEP AT A TIME")
-    yy = body(slide, cx + pad, yy, cw - 2 * pad, ["**think → act**"], after=Mm(1.5))
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "THE AGENT, ONE STEP AT A TIME")
+    yy = body(slide, cx + pad, yy, cw - 2 * pad, ["**think → act**"], after=Mm(2))
     yy = caption(slide, cx + pad, yy, cw - 2 * pad,
-                 ["click · type · scroll · go back · finish"], after=Mm(3))
+                 ["click · type · scroll · go back · finish"], after=Mm(4))
     caption(slide, cx + pad, yy, cw - 2 * pad,
             ["Only the page view changes; model, prompt, step budget and cost "
              "accounting stay fixed."], color=INK)
 
     cx, cw = x0 + Mm(cols["stop"][0]), Mm(cols["stop"][1])
     card(slide, cx, top, cw, H)
-    yy = label(slide, cx + pad, top + Mm(3.5), cw - 2 * pad, "WHEN IT STOPS")
+    yy = label(slide, cx + pad, top + Mm(4), cw - 2 * pad, "WHEN IT STOPS")
     yy = body(slide, cx + pad, yy, cw - 2 * pad, ["**✓ solved / ✗ not**", "**$ for the attempt**"],
               after=Mm(2))
     caption(slide, cx + pad, yy, cw - 2 * pad,
@@ -573,7 +577,7 @@ def build_loop(slide):
 
     agent_cx = x0 + Mm(cols["agent"][0] + cols["agent"][1] / 2)
     page_cx = x0 + Mm(cols["page"][0] + cols["page"][1] / 2)
-    ly = top + H + Mm(9)
+    ly = top + H + Mm(12)
     rect(slide, agent_cx - Mm(0.6), top + H, Mm(1.2), ly - (top + H), fill=GREY)
     rect(slide, page_cx, ly - Mm(0.6), agent_cx - page_cx, Mm(1.2), fill=GREY)
     rect(slide, page_cx - Mm(0.6), top + H + Mm(4), Mm(1.2), ly - (top + H) - Mm(4), fill=GREY)
@@ -581,14 +585,15 @@ def build_loop(slide):
                                   Mm(6), Mm(4.5))
     head.fill.solid(); head.fill.fore_color.rgb = GREY; head.line.fill.background()
     head.shadow.inherit = False
-    textbox(slide, page_cx + Mm(10), ly + Mm(1.5), agent_cx - page_cx - Mm(20), Mm(7),
+    textbox(slide, page_cx + Mm(10), ly + Mm(2), agent_cx - page_cx - Mm(20), Mm(7),
             ["the action changes the page → next step · up to 30 steps per task · "
              "the bill grows with every step"], size=SZ_CAPTION, color=MUTED,
             align=PP_ALIGN.CENTER, space_after=Pt(0))
-    return caption(slide, FULL_X, ly + Mm(9), FULL_W, [
+    return caption(slide, FULL_X, ly + Mm(10), FULL_W, [
         "**Fig 1.** Everything is held fixed except how the page is shown. The dashed box "
         "is what this work measures — one fixed view, perfect hindsight, or a choice a "
-        "model had to learn — each judged on **both** success and cost."], after=Mm(0))
+        "model had to learn — each judged on **both** success and cost. The laptop "
+        "beside this poster replays the loop on three tasks."], after=Mm(0))
 
 
 # --------------------------------------------------------------------------- run
@@ -629,10 +634,10 @@ def main():
          "Rectangle 52", "TextBox 53", "TextBox 54", "TextBox 55", "TextBox 56",
          "TextBox 57", "TextBox 58")
 
-    row_y = build_result_strip(slide) + Mm(9)
+    loop_end = build_loop(slide)
+    row_y = build_result_strip(slide, loop_end + Mm(9)) + Mm(9)
     ends = {"why (left)": (build_why(slide, row_y), ROW_BOTTOM),
-            "evidence (right)": (build_evidence(slide, row_y), ROW_BOTTOM),
-            "loop (foot)": (build_loop(slide), Mm(782))}
+            "evidence (right)": (build_evidence(slide, row_y), ROW_BOTTOM)}
 
     drop(slide, *HEADER_PARTS)
 
@@ -657,7 +662,7 @@ def verify(prs, ends, row_y):
     w, h = mm(prs.slide_width), mm(prs.slide_height)
     assert abs(w - 594) < 0.5 and abs(h - 841) < 0.5, "slide was resized!"
     print(f"wrote {OUT.relative_to(REPO)}   ({w:.0f}x{h:.0f}mm, A1, not resized)")
-    print(f"  {'row B starts':16s} {mm(row_y):6.1f}mm")
+    print(f"  {'row B starts':16s} {mm(row_y):6.1f}mm   (loop on top)")
     bad = False
     for name, (end, limit) in ends.items():
         slack = mm(limit - end)
