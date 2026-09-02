@@ -370,15 +370,16 @@ def build_result_strip(slide, y):
     x, w = FULL_X, FULL_W
     y = panel_header(slide, x, y, "RESULTS ACROSS 8,934 TASK ATTEMPTS", w)
     y = metric_strip(slide, x, y, w, [
-        ("+16.35 in 100", "PERFECT HINDSIGHT, BEST OF 8 · VS ONE FIXED VIEW"),
-        ("0 of 8", "LEARNED CHOICES THAT BEAT ALWAYS-CHEAPEST"),
-        ("1 of 8", "HINDSIGHT CHOICES THAT BEAT ALWAYS-CHEAPEST"),
+        ("+16.35 in 100", "PERFECT HINDSIGHT, SUCCESS ONLY, BEST OF 8 · VS ONE FIXED VIEW"),
+        ("0 of 8", "SETTINGS WHERE A LEARNED CHOICE WON ON BOTH SUCCESS AND COST"),
+        ("1 of 8", "SETTINGS WHERE PERFECT HINDSIGHT WON ON BOTH SUCCESS AND COST"),
     ])
     keys = [
         "**ONE FIXED VIEW** — the single view that solves most tasks in a setting, "
         "used for every task.",
         "**ALWAYS-CHEAPEST** — the single view that costs least on average in a "
-        "setting, used for every task.",
+        "setting, used for every task. **“Won” above = beat this rule on both "
+        "success and cost.**",
         "**PERFECT HINDSIGHT** — for each task, the view that solved it, picked after "
         "the fact. An optimistic bound: rerunning one unchanged view flips 10–14% of "
         "outcomes and by itself gains 2.0–7.6 tasks in 100.",

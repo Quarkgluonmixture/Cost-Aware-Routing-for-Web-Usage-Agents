@@ -147,16 +147,23 @@ Metric strip (template component; each label names its comparison):
 
 | number | label |
 |---|---|
-| `+16.35 in 100` | PERFECT HINDSIGHT, BEST OF 8 · VS ONE FIXED VIEW |
-| `0 of 8` | LEARNED CHOICES THAT BEAT ALWAYS-CHEAPEST |
-| `1 of 8` | HINDSIGHT CHOICES THAT BEAT ALWAYS-CHEAPEST |
+| `+16.35 in 100` | PERFECT HINDSIGHT, SUCCESS ONLY, BEST OF 8 · VS ONE FIXED VIEW |
+| `0 of 8` | SETTINGS WHERE A LEARNED CHOICE WON ON BOTH SUCCESS AND COST |
+| `1 of 8` | SETTINGS WHERE PERFECT HINDSIGHT WON ON BOTH SUCCESS AND COST |
+
+Labels rewritten after a second GPT pass on v8: *+16* is success only, *1 of 8*
+is success **and** cost, and a visitor should not have to infer that. The
+comparison rule stays attached one line below (ALWAYS-CHEAPEST … *“Won” above =
+beat this rule on both success and cost*), so §450.12's "name the baseline"
+rule still holds without the label requiring it.
 
 Under the strip, the three comparisons in one line each (three columns):
 
 > **ONE FIXED VIEW** — the single view that solves most tasks in a setting, used
 > for every task.
 > **ALWAYS-CHEAPEST** — the single view that costs least on average in a
-> setting, used for every task.
+> setting, used for every task. **“Won” above = beat this rule on both success
+> and cost.**
 > **PERFECT HINDSIGHT** — for each task, the view that solved it, picked after
 > the fact. An optimistic bound: rerunning one unchanged view flips 10–14% of
 > outcomes and by itself gains 2.0–7.6 tasks in 100.
