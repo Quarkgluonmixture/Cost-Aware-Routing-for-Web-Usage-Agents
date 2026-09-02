@@ -1,3 +1,9 @@
+> **Superseded 2026-09-02.** This pass produced v2 (the exhibition design: hero
+> zero, kayak scene, dark takeaway band). A Holistic AI reviewer asked for the
+> opposite — one system diagram, compact, one type scale, the template's own
+> skeleton — and v4 replaced it. Kept as the record of what was tried and why;
+> the live rationale is `poster_content.md` (v4 header + audit trail).
+
 # Exhibition pass — research poster → exhibition object
 
 Scientific content frozen. Nothing here changed a number, a baseline, a scope or

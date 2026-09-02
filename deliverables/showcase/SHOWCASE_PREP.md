@@ -23,7 +23,7 @@ receive files.
 
 ---
 
-# 1. Email to Zekun — copy as is
+# 1. Message to Zekun (Slack DM or email) — copy as is
 
 **To:** `zekun.wu@holisticai.com`
 **Attach:** `poster_jiaming_wei.pdf`
@@ -64,38 +64,43 @@ receive files.
 
 # 2. Board walk — 90 seconds
 
-The poster's layout **is** the script. Your hand moves top → left → right →
-lower-left → bottom, never backwards.
+The poster's layout **is** the script. Your hand moves top → diagram → left →
+right → lower-left → bottom-right, never backwards.
 
-**① Point at the title**
+**① Point at the title, then the standfirst**
 > Screenshots help web agents, but they cost money at every single step. So I
 > asked whether the agent can learn when looking is actually worth paying for.
+> Short answer: in hindsight there's a real gain, but nothing we trained could
+> take it.
 
-**② Point at the kayak listing (left)**
-> Here's the problem in one task. Find the cheapest *blue* kayak. The cheapest
-> one is red. So you need to look, and you need to read — and which half matters
-> changes task by task.
+**② Sweep Fig 1 left to right (the diagram)**
+> Here's the setup. The agent is fixed. The only thing that changes is what it's
+> shown: cheap text, the annotated screenshot, or the raw screenshot — six modes
+> in all, four of them with no image. And we compare three ways of choosing: a
+> fixed mode, a hindsight oracle, and a router that has to decide before the
+> task runs.
 
-**③ Point at `+16.35 pp` (top left)**
-> If you knew afterwards which of six ways of seeing the page would solve each
-> task, you'd solve up to 16 more tasks in a hundred than the best single fixed
-> choice. So there is genuinely something worth routing to.
+**③ Point at the priced table (left column)**
+> Same page, three ways. The screenshot version costs a third more tokens, and
+> almost all of that extra is the image — the text is within one percent.
 
-**④ Point at the big orange `0` (top right)**
-> But learned — nothing. Zero of eight settings produced a router that was both
-> more successful *and* cheaper than just always using the cheapest mode.
+**④ Point at the metric strip (top of the right block)**
+> If you knew afterwards which mode would solve each task, you'd solve up to 16
+> more tasks in a hundred than the best single fixed choice. But learned —
+> zero of eight settings produced a router that was both more successful *and*
+> cheaper than just always using the cheapest mode.
 
-**⑤ Point at the plot (right)**
+**⑤ Point at the plot (Fig 2)**
 > And it isn't just a bad classifier. Only one of eight *hindsight oracles*
-> clears the same bar. The shaded region is where a win would sit. It's empty.
+> clears the same bar. The shaded region is where a win would sit.
 
-**⑥ Point at the paradox (lower left)**
-> Here's why. These agents solve between 2 and 36 percent of tasks, and a
-> routing label only comes into existence when a task gets solved. The agents
-> that would gain most from routing are exactly the ones producing the fewest
-> labels to learn it.
+**⑥ Point at WHY IT CANNOT BE LEARNED (lower left)**
+> Here's why. The best single mode solves between 2 and 36 percent of tasks,
+> and a routing label only comes into existence when a task gets solved. The
+> agents that would gain most from routing are exactly the ones producing the
+> fewest labels to learn it.
 
-**⑦ Point at the bottom band**
+**⑦ Point at TAKEAWAY (bottom right)**
 > So the order matters: improve the agent, get reliable supervision, *then* learn
 > selective perception. Routing isn't only a model-selection problem — its
 > learnability depends on how good the agent underneath already is.
@@ -110,7 +115,8 @@ Same spine as the board walk, four blocks of roughly three minutes. Do not add
 new results; add *why each step was necessary*.
 
 ### Block 1 — The problem (3 min)
-Open with the kayak task on screen. Cheapest is red, answer is blue.
+Open with the kayak task on a slide (it is spoken material — the v4 poster
+shows a real benchmark page instead). Cheapest is red, answer is blue.
 - Six observation modes; four send no image at all, one sends text + screenshot,
   one sends the screenshot only.
 - 8 benchmark–model settings across VisualWebArena and WebArena, ~8,900 episodes.
@@ -119,9 +125,12 @@ Open with the kayak task on screen. Cheapest is red, answer is blue.
 
 ### Block 2 — The ceiling, and the ruler (3 min)
 - Hindsight picker: +3.45 to +16.35pp over the best single fixed mode, at
-  13.7–35.3% lower cost, same direction in all 8.
+  1.6–35.3% lower cost, same direction in all 8. (Say 1.6, not the old 13.7:
+  §452.2 retracted it — on two cells the "best single mode" was an SR tie and the
+  list-order tie-break picked the dearer one.)
 - **Then immediately the correction** — this is the part that makes it honest:
-  rerunning one mode on the same tasks flips 12–14% of outcomes. Adding a
+  rerunning one mode on the same tasks flips 10–14% of outcomes (six
+  replicated modes on cls·B0). Adding a
   different representation buys 7.14pp; rerunning the one you have buys
   4.46–7.59pp. Not distinguishable.
 - Takeaway of the block: the ceiling is real but smaller than it first looks, and
@@ -164,7 +173,7 @@ Open with the kayak task on screen. Cheapest is red, answer is blue.
 > switching mode can finish sooner and cost less than exhausting the step budget
 > cheaply. That's exactly where the points left of zero on the plot come from.
 
-**"With 12–14% rerun variance, are your results just noise?"**
+**"With 10–14% rerun variance, are your results just noise?"**
 > That's precisely why we measured it first and then used it as a ruler. Adding a
 > new representation buys 7.14pp; a plain rerun of the same one buys 4.46–7.59pp.
 > They overlap. So we don't use that ceiling as a positive claim — what survives
@@ -202,15 +211,16 @@ visitor can find it. The one exception is flagged in the table.
 | Number | What it is | Must say |
 |---|---|---|
 | `+3.45 to +16.35 pp` | hindsight picker's success gain | **vs the best single fixed mode**; percentage *points*; retrospective |
-| `13.7–35.3%` | that picker's cost saving | same baseline as above |
+| `1.6–35.3%` | that picker's cost saving | same baseline as above; **cost-aware tie-break** — `13.7–35.3%` is RETRACTED (§452.2), never say it |
 | `0 of 8` | learned routers that win | **vs always-cheapest**, and **on both** success and cost |
 | `1 of 8` | hindsight oracles that win | same bar — this line is mandatory, never quote 0/8 alone |
 | `2–36%` | base success rate | 8-cell matched set. **The 6-cell VWA figure is 2–27 — never say that next to "8 settings"** |
-| `12–14%` | rerun discordance | B0 · classifieds, n=224, three replicated modes |
-| `7.14 pp` vs `4.46–7.59 pp` | new mode vs a rerun | same cell; the point lands *inside* the band |
+| `10–14%` | rerun discordance | B0 · classifieds, n=224, **six** replicated modes (§477.2; v2 said 12–14 / three) |
+| `2.0–7.6 pp` | what one rerun buys by itself | same cell; printed beside 10–14% — the companion of every ceiling number |
+| `7.14 pp` vs `4.46–7.59 pp` | new mode vs a rerun | same cell; the point lands *inside* the band. **Not on the v4 poster** — spoken answer only |
 | `9.5–30.6%` | triage cost saving, 8 of 8 | **vs the best-success fixed mode**; hindsight bound; in most pairs always-cheapest saves more |
 | `15–97` | trainable labels | 4 of 6 VWA cells (the poster drops the denominator; you can give it if asked) |
-| `2.1–4.2×` | corpus the failing cells would need | **not on the poster** — spoken answer only (undersampling control, F16). reddit needs the most, 846 tasks |
+| `2.1–4.2×` | corpus the failing cells would need | on the poster with **at least** (lower bound; undersampling control, F16). reddit needs the most, 846 tasks |
 | `8,934` | episodes | 6 modes × (224×3 + 203×3 + 104×2) |
 
 ---

@@ -6,3 +6,7 @@ preview*.png
 far-*.png
 mid-*.png
 zoom-*.png
+# 300dpi raster of the thesis system diagram; poster_figures.py regenerates it
+figures/poster_overview.png
+# a colleague's example poster, shown for reference — not ours to version
+95529.png
