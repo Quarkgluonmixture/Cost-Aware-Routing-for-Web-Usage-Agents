@@ -63,17 +63,22 @@ SVG = REPO / "deliverables" / "representation_routing_merged_three_sections.svg"
 # Alternating two visibly different pages fixes both: the movement is visible,
 # and so is the fact that it goes nowhere.
 #
-# THREE frames, not four. Four made LOOK two pairs (1=18, 3=20), which the reader
-# has to match up twice; three makes it form -> listings -> form, where the first
-# and last frames are the same page and the loop reads at a glance. It also buys
-# 34% more width per frame, and frame width is what this strip kept losing to.
-# READ drops its home page: "12 steps" already says it travelled.
+# Three frames, laid out as a controlled comparison:
+#
+#   frame 1  the SAME page for both lanes  — the two runs are pixel-identical
+#            through step 2 (mean abs diff 0.00) and only diverge at step 3
+#   frame 2  each lane after it has diverged
+#   frame 3  READ finishes; LOOK is back on frame 1's page (diff 0.00 again)
+#
+# Frame 2 is chosen by measured difference, not by step number: LOOK's step 3
+# differs from READ's step 5 by 0.16 — the same form, and it would read as a
+# duplicate. Step 13 differs by 12.96.
 #
 # Timing, verified against the URLs: `obs_url` is recorded BEFORE the action and
 # the screenshot AFTER it, so a frame is the page that step ENDED on.
 LANES = {
     "read": [(DOM, 76, 2), (DOM, 76, 5), (DOM, 76, 11)],
-    "look": [(VIS, 76, 3), (VIS, 76, 18), (VIS, 76, 20)],
+    "look": [(VIS, 76, 2), (VIS, 76, 13), (VIS, 76, 19)],
 }
 # (name, run, task, step) — label checked against the step's obs_url, see module docstring
 PAGES = [

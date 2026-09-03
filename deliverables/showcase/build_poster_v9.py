@@ -217,10 +217,10 @@ INTENT = ("“Go to my listing of the blue bike and change the price to $85.50 �
           "and say so in the description.”")
 LANES = (
     ("read", "READ", "page text only", C_TEXT, [2, 5, 11], True),
-    ("look", "LOOK", "screenshot only", C_IMAGE, [3, 18, 20], False),
+    ("look", "LOOK", "screenshot only", C_IMAGE, [2, 13, 19], False),
 )
 # said instead of the action type, where the action type is not the point
-NOTE = {("look", 20): "the first frame again"}
+NOTE = {("look", 19): "back on frame 1"}
 
 
 def build_strip(slide, y):
@@ -270,9 +270,9 @@ def build_strip(slide, y):
                     size=Pt(14), color=C_FAIL if note else MUTED, space_after=Pt(0))
         y += fh + Mm(16)
     return caption(slide, x, y - Mm(2), w,
-                   "**LOOK goes round in a circle** — it ends on the page it started on, "
-                   "seventeen steps later. One recorded run per view; both outcomes repeat "
-                   "on an independent rerun.", color=INK, after=Mm(0))
+                   "**Frame 1 is the same page for both** — the runs are identical until "
+                   "step 3. Then READ finishes; **LOOK ends up back on frame 1**. One run "
+                   "per view; both outcomes repeat on a rerun.", color=INK, after=Mm(0))
 
 
 # ------------------------------------------------------------------ row 3
