@@ -216,11 +216,13 @@ TASK = 76
 INTENT = ("“Go to my listing of the blue bike and change the price to $85.50 — "
           "and say so in the description.”")
 LANES = (
-    ("read", "READ", "page text only", C_TEXT, [5, 9, 11], True),
-    ("look", "LOOK", "screenshot only", C_IMAGE, [3, 18, 20], False),
+    # step numbers are the step whose action PRODUCED the frame — see the timing
+    # note in poster_figures_v9.py
+    ("read", "READ", "page text only", C_TEXT, [4, 8, 10], True),
+    ("look", "LOOK", "screenshot only", C_IMAGE, [2, 17, 19], False),
 )
 # said instead of the action type, where the action type is not the point
-NOTE = {("look", 20): "back on frame 1"}
+NOTE = {("look", 19): "back on frame 1"}
 
 
 def build_strip(slide, y):
@@ -263,7 +265,7 @@ def build_strip(slide, y):
             rect(slide, px, y, cell - Mm(1), fh, fill=None, line=GREY)
             note = NOTE.get((key, step))
             textbox(slide, px, y + fh + Mm(1.5), cell, Mm(7),
-                    [f"step {step} · {act}"], size=SZ_CAPTION, bold=True,
+                    [f"step {step} · {act} →"], size=SZ_CAPTION, bold=True,
                     color=INK_STRONG, space_after=Pt(0))
             second = f"${cost:.3f} · **{note}**" if note else f"${cost:.3f} spent"  # noqa: E501
             textbox(slide, px, y + fh + Mm(8), cell, Mm(7), [second],

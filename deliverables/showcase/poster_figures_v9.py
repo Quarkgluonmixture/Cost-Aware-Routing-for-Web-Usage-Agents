@@ -72,11 +72,17 @@ SVG = REPO / "deliverables" / "representation_routing_merged_three_sections.svg"
 #   frame 3  READ finishes; LOOK is back on its own frame 1
 #                                                  LOOK 20 vs LOOK 3: 0.00
 #
-# Timing, verified against the URLs: `obs_url` is recorded BEFORE the action and
-# the screenshot AFTER it, so a frame is the page that step ENDED on.
+# Timing, verified on READ step 0, whose screenshot is the site's front page
+# while its `obs_url` is already `user&action=items`. The only self-consistent
+# reading: **the screenshot is the page BEFORE the action, the `obs_url` is the
+# URL AFTER it**. So `step_N/screenshot.png` shows what step N-1 produced.
+#
+# The step numbers below are therefore the step whose action CAUSED the frame;
+# `shot()` reads N+1's screenshot. The sheet then says "step 4 · type" over the
+# page that typing produced, instead of over the page it was typed on.
 LANES = {
-    "read": [(DOM, 76, 5), (DOM, 76, 9), (DOM, 76, 11)],
-    "look": [(VIS, 76, 3), (VIS, 76, 18), (VIS, 76, 20)],
+    "read": [(DOM, 76, 4), (DOM, 76, 8), (DOM, 76, 10)],
+    "look": [(VIS, 76, 2), (VIS, 76, 17), (VIS, 76, 19)],
 }
 # (name, run, task, step) — label checked against the step's obs_url, see module docstring
 PAGES = [
@@ -102,7 +108,12 @@ def trim(im: Image.Image) -> Image.Image:
     return im.crop(box) if box else im
 
 
-def shot(run: Path, task: int, step: int, *, crop: float | None = None) -> Image.Image:
+def shot(run: Path, task: int, step: int, *, crop: float | None = None,
+         after: bool = False) -> Image.Image:
+    """``after`` reads the screenshot that this step's action produced, which
+    the runner files under the NEXT step (see the timing note above LANES)."""
+    if after:
+        step += 1
     p = run / "artifacts" / f"classifieds_task_{task}" / f"step_{step:03d}" / "screenshot.png"
     if not p.exists():
         raise SystemExit(f"missing screenshot: {p}")
@@ -124,7 +135,7 @@ def main() -> None:
 
     for lane, frames in LANES.items():
         for i, (run, task, step) in enumerate(frames):
-            im = shot(run, task, step, crop=CROP_FRAC)
+            im = shot(run, task, step, crop=CROP_FRAC, after=True)
             im.save(OUT / f"lane_{lane}_{i}.png")
         print(f"  lane_{lane}_*.png   {len(frames)} frames  {im.size}")
 
