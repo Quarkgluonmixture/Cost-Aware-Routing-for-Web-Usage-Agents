@@ -5,6 +5,35 @@ any edit must be mirrored in both. Every number carries its scope, because the
 poster is printed on silk and cannot be corrected. Deadline for the print PDF:
 **4 Sep 2026** (organiser confirmed a replacement is accepted until then).
 
+> **v8.3 (2026-09-03) — the type pass, carried through.** Same supervisor
+> note, answered properly. Every reading size goes up again: body 20.5→23pt,
+> captions 15→17pt, diagram labels 13.5→15.5pt, metric labels 12.5→15pt,
+> section headers 15.5→17.5pt, headline numbers 36→42pt, and the byline and
+> affiliation off the template's own size (24 / 18pt). The five loop cards —
+> which held nearly all the sheet's blank space, the agent and stop cards
+> being half empty — get their own larger scale, up to 29pt. The room comes
+> from the two figures (Fig 2 6.8→5.45in, Fig 3 4.25→3.85in), a loop that
+> starts 8mm higher and tighter gaps; no claim, number or scope moves. Four
+> strings shortened to fit their boxes at the new size, all mirrored above.
+> Measured slack: 1.7mm left / 0.1mm right.
+>
+> Two measurement bugs surfaced and are fixed, because they had been quietly
+> deciding the layout: `line_count` measured PIL's metric-compatible face,
+> which sets a few percent narrower than LibreOffice (`WIDTH_CAL = 0.97`), and
+> it never broke a line after an en dash. Together they made v8.2's task card
+> print its note *on top of* its intent, and made `verify` report ~15mm of
+> slack the sheet did not have. ✓ and ✗ have no glyph in that face at all, so
+> a lead containing them still measures narrow — check those in the render.
+
+> **v8.2 (2026-09-03) — board-distance type pass, first half.** Supervisor feedback was
+> direct: the text was too small; keep the sheet compact and use its blank
+> space to enlarge type. The structure and every claim stay unchanged. Body
+> text rises from 17.65pt to 20.5pt, captions from 12.71pt to 15pt, small
+> diagram labels to 13.5pt, section headers to 15.5pt and headline numbers to
+> 36pt. Tighter leading, shorter sentences and a taller Fig 3 recover the
+> space. Fig 2 remained 6.8in tall; Fig 3 went to 4.25in from 3.7in. The
+> slack it reported (19.9mm left / 9.0mm right) was wrong — see v8.3.
+
 > **v8 (2026-09-03) — v6's look, v7's words.** v7 moved the loop diagram to the
 > foot and put the numbers and prose first; the author's eye: *the previous one
 > looked better*. It did — the top half had become text, and the one picture-
@@ -13,7 +42,7 @@ poster is printed on silk and cannot be corrected. Deadline for the print PDF:
 > v7 wording fix and puts the sheet back in v6's order: loop on top at v6
 > size → number strip + the three comparison definitions → THE CATCH / why /
 > Fig 3 / takeaway (left) · Fig 2 / verdicts / laptop bridge (right). Fig 2 is
-> 6.8in tall and Fig 3 3.7in to make room. Lesson: a zero-preset reader
+> 6.8in tall and Fig 3 was 3.7in in v8. Lesson: a zero-preset reader
 > optimises what it was asked to optimise (reading order, claims); the visual
 > hierarchy is the author's call, and the eye was right.
 
@@ -123,16 +152,16 @@ back to the page:
 
 | card | prints |
 |---|---|
-| THE TASK + THE LIVE PAGE | “Show me the cheapest bike with red handlebars between $900–950.” · *Part of the intent is in the pictures, part in the text.* |
-| WHO DECIDES HOW TO SEE IT? (dashed, accent) | **One fixed view** — the same view for every task · **Perfect hindsight** — knowing afterwards which view solved it · **A learned choice** — made before the task runs, from the page · `this box is what we measure` |
-| LOOK / READ / BOTH | the screenshot only · 3,123 tokens on this page · *raw screenshot* / the page as text: its elements and labels · 3,314 tokens · +3 text-only variants · *the first six lines of the element list* / the screenshot with numbered boxes, plus the text · 4,335 tokens · *the marked screenshot* |
-| THE AGENT, ONE STEP AT A TIME | **think → act** · click · type · scroll · go back · finish · *Only the page view changes; model, prompt, step budget and cost accounting stay fixed.* |
+| THE TASK + THE PAGE | “Show me the cheapest bike with red handlebars between $900–950.” · *Part of the intent is in the pictures, part in the text.* |
+| WHO DECIDES HOW TO SEE IT? (dashed, accent) | **One fixed view** — the same view on every task · **Perfect hindsight** — afterwards: which view solved it · **A learned choice** — beforehand: predicted from the page · `this box is what we measure` |
+| LOOK / READ / BOTH | 3,123 tokens · screenshot only · *raw screenshot* / 3,314 tokens · page elements and labels as text, plus 3 more text-only views · *the first six lines of the element list* / 4,335 tokens · numbered screenshot + page text · *the marked screenshot* |
+| THE AGENT · EACH STEP | **think → act** · click · type · scroll · go back · finish · *Only the page view changes; model, prompt, step budget and cost accounting stay fixed.* |
 | WHEN IT STOPS | **✓ solved / ✗ not** · **$ for the attempt** · 8 website × model combinations · two public benchmarks · 6 views · 8,934 attempts |
 | return arrow | the action changes the page → next step · up to 30 steps per task · the bill grows with every step |
 
-> **Fig 1.** Everything is held fixed except how the page is shown. The dashed
-> box is what this work measures — one fixed view, perfect hindsight, or a
-> choice a model had to learn — each judged on **both** success and cost.
+> **Fig 1.** Only the page view changes. The dashed box is what we measure: one
+> fixed view, perfect hindsight, or a learned choice, each judged on **both**
+> success and cost.
 
 The three "what it sends" thumbnails and the element-list lines are the thesis
 F1 assets (`fig_f1_motivating_example.py`: same page, dom/vision step-000
@@ -147,9 +176,9 @@ Metric strip (template component; each label names its comparison):
 
 | number | label |
 |---|---|
-| `+16.35 in 100` | PERFECT HINDSIGHT, SUCCESS ONLY, BEST OF 8 · VS ONE FIXED VIEW |
-| `0 of 8` | SETTINGS WHERE A LEARNED CHOICE WON ON BOTH SUCCESS AND COST |
-| `1 of 8` | SETTINGS WHERE PERFECT HINDSIGHT WON ON BOTH SUCCESS AND COST |
+| `+16.35 in 100` | PERFECT HINDSIGHT · SUCCESS ONLY · VS ONE FIXED VIEW |
+| `0 of 8` | LEARNED CHOICES THAT WON ON SUCCESS AND COST |
+| `1 of 8` | HINDSIGHT CHOICES THAT WON ON SUCCESS AND COST |
 
 Labels rewritten after a second GPT pass on v8: *+16* is success only, *1 of 8*
 is success **and** cost, and a visitor should not have to infer that. The
@@ -159,14 +188,12 @@ rule still holds without the label requiring it.
 
 Under the strip, the three comparisons in one line each (three columns):
 
-> **ONE FIXED VIEW** — the single view that solves most tasks in a setting, used
-> for every task.
-> **ALWAYS-CHEAPEST** — the single view that costs least on average in a
-> setting, used for every task. **“Won” above = beat this rule on both success
-> and cost.**
-> **PERFECT HINDSIGHT** — for each task, the view that solved it, picked after
-> the fact. An optimistic bound: rerunning one unchanged view flips 10–14% of
-> outcomes and by itself gains 2.0–7.6 tasks in 100.
+> **ONE FIXED VIEW** — the highest-success view in a setting, used for every task.
+> **ALWAYS-CHEAPEST** — the lowest-average-cost view in a setting, used for
+> every task. **“Won” = beat it on both success and cost.**
+> **PERFECT HINDSIGHT** — after each task, select a view that solved it.
+> Optimistic: rerunning one unchanged view flips 10–14% of outcomes and gains
+> 2.0–7.6 tasks in 100 by itself.
 
 The rerun band moved here from the WHY prose so it sits beside the number it
 qualifies (§450.10: the ceiling must print its rerun baseline next to it).
@@ -175,21 +202,18 @@ qualifies (§450.10: the ceiling must print its rerun baseline next to it).
 
 Callout (template tinted box, accent bar, label `THE CATCH`):
 
-> **The agents that would gain most from choosing a view solve the fewest tasks
-> — so they produce the fewest examples to learn the choice from.**
+> **The agents that gain most from choosing a view solve the fewest tasks — so
+> they produce the fewest examples to learn from.**
 
-> A training example for “which view” exists only when the agent solves a task.
-> Here the best single view solves just **2–36%** of tasks, leaving typically
-> **15–97** usable examples per setting — enough to train a classifier in only
-> 2 of the 6 VisualWebArena settings.
+> A “which view?” label exists only after a solved task. The best fixed view
+> solves just **2–36%**, leaving **15–97** usable labels per setting. Only 2 of
+> 6 VisualWebArena settings have enough to train a classifier.
 >
-> **Fig 3.** Usable “which view” examples against the best single view's success
-> rate, one point per VisualWebArena setting. Examples exist only where tasks
-> get solved.
+> **Fig 3.** Usable “which view?” labels against best-fixed-view success, one
+> point per VisualWebArena setting.
 >
-> Shrinking the training data on purpose points to scarcity as the main
-> bottleneck, and prices it: the failing settings would need at least
-> **2.1–4.2×** more tasks than the benchmarks contain.
+> Deliberately shrinking the training data points to scarcity: failing settings
+> need at least **2.1–4.2×** more tasks than the benchmarks contain.
 
 Fig 3 data (parsed, not typed): trainable "which view" labels from the first
 table of `router_label_supply_diagnosis.md` — cls·B0 97 · red·B0 53 · cls·B1 55
@@ -203,10 +227,9 @@ purpose: the sheet cannot show that the alternatives were excluded.
 `2–36%` = `baseline_policy.sr_pct`, 8-cell matched set (§450.8). `15–97` = C5.
 `2.1–4.2×` = §453.2 wording, `at least` because it is a lower bound.
 
-> **Learning how to see is not only a modelling problem: whether it can be
-> learned depends on how good the agent producing the examples already is.** So,
-> in this order: improve the agent, then collect reliable examples, then learn
-> when to look.
+> **Learning how to see is not only a modelling problem. It depends on how good
+> the agent producing the examples already is.** Improve the agent, collect
+> reliable examples, then learn when to look.
 >
 > Measured in the 2–36% success regime we observed. This need not hold for
 > stronger agents.
@@ -217,23 +240,21 @@ Fig 2 — thesis F13 at the 362mm inner width of the figure box, plain-English
 axes and legend (*learned choice · learned, scored on its own training tasks ·
 perfect hindsight*):
 
-> **Fig 2.** Every way of choosing a view, in every setting, compared with one
-> fixed rule: **always use the cheapest view** (★). A win lands in the shaded
-> region — cheaper *and* no worse. Always-cheapest is cheapest on average, not on
-> every task, which is why a few points sit left of it. Learned choices are
-> scored only on tasks they never saw.
+> **Fig 2.** Every choice is compared with **always use the cheapest view** (★).
+> A win lands in the shaded region: cheaper and no worse. Cheapest means lowest
+> average cost, so some points sit left of ★. Learned choices use held-out tasks.
 
-> **Perfect hindsight would pay.** Picking the winning view for each task after
-> the fact would solve **3.45 to 16.35 more tasks in every 100** than the best
-> single view, and spend 1.6–35.3% less — in all 8 settings.
+> **Perfect hindsight would pay.** After-the-fact selection solves **3.45–16.35
+> more tasks in 100** than the best fixed view and spends 1.6–35.3% less, in all
+> 8 settings.
 >
 > **Nothing we trained could do it.** In **0 of 8** settings did a learned choice
-> beat always using the cheapest view on both success and cost — and even
-> perfect hindsight manages that in only **1 of 8**.
+> beat always-cheapest on both success and cost. Hindsight does so in only
+> **1 of 8**.
 >
-> **What survives is a bound, not a method.** Sending the tasks nobody solves to
-> the cheapest view saves 9.5–30.6% at the same success in 8 of 8 — but that too
-> needs hindsight, and plain always-cheapest usually saves more.
+> **What survives is a bound, not a method.** Sending never-solved tasks to the
+> cheapest view saves 9.5–30.6% at equal success in 8 of 8, but needs hindsight;
+> plain always-cheapest usually saves more.
 
 `1.6–35.3%` is the cost-aware tie-break figure (§452.2; `13.7–35.3%` is
 RETRACTED). The 1-of-8 line is mandatory (§450.12). The third verdict keeps
@@ -241,9 +262,8 @@ RETRACTED). The 1-of-8 line is mandatory (§450.12). The third verdict keeps
 
 The laptop bridge — results only, no frames (the screen has those):
 
-> Same task, three views, different behaviour and different bills — step by
-> step. Three illustrative tasks, chosen so each view wins once; **not** how
-> often each wins.
+> Same task, three views, different behaviour and bills — step by step. Each
+> view wins one illustrative task; this is **not** how often each wins.
 
 | task | LOOK | READ | BOTH |
 |---|---|---|---|
@@ -251,8 +271,8 @@ The laptop bridge — results only, no frames (the screen has those):
 | Navigate to my listing of the blue bike and change the price to $85.50 (including in the description). | ✗ 30 steps · $0.116 | ✓ 9 steps · $0.079 | ✗ 6 steps · $0.029 |
 | Show me the cheapest bike with red handlebars between $900-950. | ✗ 19 steps · $0.075 | ✗ 6 steps · $0.025 | ✓ 7 steps · $0.037 |
 
-> One recorded attempt per view, B0 · classifieds. Every ✓ / ✗ came out the same
-> on an independent rerun; steps and bill differ run to run.
+> One recorded attempt per view, B0 · classifieds. ✓ / ✗ repeated independently;
+> steps and bill vary between runs.
 
 Parsed by `poster_figures.py` (`figures/demo_strip.json`), which **asserts**
 each ✓/✗ is identical on the replicate run. Selection: 24 of 224 classifieds
@@ -302,4 +322,7 @@ soffice --headless --convert-to pdf --outdir deliverables/showcase deliverables/
 
 Text is measured with Arimo/Noto Serif at the renderer's line advance
 (LibreOffice: **1.20×** per unit of line spacing, not the face file's 1.118 —
-§498.2).
+§498.2) and at **0.97×** its width (`WIDTH_CAL`, v8.3), because the same face
+sets a few percent wider in LibreOffice than PIL measures it. Lines also break
+after an en dash, as LibreOffice does. ✓ / ✗ have no glyph in that face and
+measure as zero width: any lead containing them must be checked in the render.

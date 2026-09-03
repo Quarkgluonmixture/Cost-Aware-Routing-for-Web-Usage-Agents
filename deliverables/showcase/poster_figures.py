@@ -89,7 +89,7 @@ def dominance_plane() -> None:
 
     rows, _proto = f.load(f.SRC)
     S.apply()
-    fig, ax = plt.subplots(figsize=(COL_W_IN, 6.8))
+    fig, ax = plt.subplots(figsize=(COL_W_IN, 5.45))
     f.build(ax, rows)
 
     x0, _ = ax.get_xlim()
@@ -107,6 +107,10 @@ def dominance_plane() -> None:
         elif text.startswith("WA-red·B1"):
             artist.set_position((9, -26))
 
+    # v8.3 flattened the panel to buy reading size in the column; drop the
+    # y-floor so the legend keeps its own air instead of landing on the points.
+    y0, y1 = ax.get_ylim()
+    ax.set_ylim(y0 - 1.9, y1)
     handles, _ = ax.get_legend_handles_labels()
     ax.legend(handles,
               ["learned choice", "learned, scored on its own training tasks",
@@ -213,7 +217,9 @@ def label_supply() -> None:
     cells = json.loads(LEARN_JSON.read_text())["cells"]
     sr = {(c["site"], c["baseline_model"]): c["baseline_policy"]["sr_pct"] for c in cells}
     S.apply()
-    fig, ax = plt.subplots(figsize=(LEFT_W_IN, 3.7))
+    # v8.2 uses the spare depth in the left poster column: a taller plot and
+    # larger labels are easier to read at board distance without adding copy.
+    fig, ax = plt.subplots(figsize=(LEFT_W_IN, 3.85))
     for key, n in rows.items():
         x = sr[key]
         filled = trainable[key]
@@ -222,14 +228,14 @@ def label_supply() -> None:
                    linewidths=2.2, zorder=3)
     ax.set_xlim(0, 32)
     ax.set_ylim(0, 110)
-    ax.set_xlabel("tasks the best single view solves  (%)", fontsize=16)
-    ax.set_ylabel("usable training examples\nfor “which view”", fontsize=16)
-    ax.tick_params(labelsize=14)
+    ax.set_xlabel("tasks the best single view solves  (%)", fontsize=18)
+    ax.set_ylabel("usable training\nexamples for\n“which view”", fontsize=17)
+    ax.tick_params(labelsize=16)
     from matplotlib.lines import Line2D
     ax.legend([Line2D([], [], marker="o", ls="", ms=13, mfc=S.C_INK, mec=S.C_INK),
                Line2D([], [], marker="o", ls="", ms=13, mfc="white", mec=S.C_INK, mew=2)],
               ["enough to train a classifier", "not enough"], loc="upper left",
-              frameon=False, fontsize=15, handletextpad=0.3)
+              frameon=False, fontsize=17, handletextpad=0.3)
     save(fig, "poster_label_supply")
     print("    " + "  ".join(f"{k[0][:3]}·{k[1]}: sr={sr[k]:.1f}% n={n} {'✓' if trainable[k] else '✗'}"
                              for k, n in rows.items()))

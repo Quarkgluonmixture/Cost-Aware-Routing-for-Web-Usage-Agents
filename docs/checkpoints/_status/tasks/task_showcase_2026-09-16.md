@@ -13,11 +13,17 @@ updated: 2026-09-03
 
 # Holistic AI × UCL CDI showcase (16 Sep 2026) — poster + laptop demo
 
-**Poster**: `deliverables/showcase/poster_jiaming_wei.pdf` = **v8.1** (2026-09-03).
+**Poster**: `deliverables/showcase/poster_jiaming_wei.pdf` = **v8.3** (2026-09-03).
 Template three-column skeleton · loop diagram on top with real screenshots ·
 number strip + three comparison definitions · THE CATCH / why / Fig 3 / takeaway
 (left) · Fig 2 / verdicts / laptop bridge (right). No jargon. Every number parsed
-and scoped — `poster_content.md` is the source of truth (read its v8/v7 headers).
+and scoped — `poster_content.md` is the source of truth (read its v8.3/v8.2/v8 headers).
+Board-distance pass (v8.3): 23pt body, 17pt captions, 15.5pt diagram labels,
+17.5pt section headers, 42pt headline numbers, 24/18pt byline and affiliation;
+the five loop cards set their own 19–29pt against the air each one had. Room
+came from Fig 2 (5.45in) and Fig 3 (3.85in), not from any claim. Verified slack:
+1.7mm left / 0.1mm right — on a `line_count` whose width metric is now
+calibrated to LibreOffice (`WIDTH_CAL`), so earlier slack figures read high.
 
 **Send**: Slack DM Zekun by **09-04** with the PDF + `SHOWCASE_PREP.md §1`
 (oral-slot pitch + table/power request for the demo). Footer email is
@@ -28,4 +34,4 @@ synchronised columns, thought + running bill per step. BOTH needs a SoM re-recor
 of those three tasks once the A100 reddit replicate chain finishes (~09-07).
 Replay only; rerun-stable tasks only; re-recording fine, hand-made trajectories not.
 
-**Chronicle**: 笔记 §495 (v2) · §498 (v4) · §499.1–.6 (v5→v8). Ledger under those §.
+**Chronicle**: 笔记 §495 (v2) · §498 (v4) · §499.1–.8 (v5→v8.3). Ledger under those §.
