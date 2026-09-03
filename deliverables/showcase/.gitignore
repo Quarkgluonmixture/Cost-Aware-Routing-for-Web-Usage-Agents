@@ -10,3 +10,7 @@ zoom-*.png
 figures/poster_overview.png
 # a colleague's example poster, shown for reference — not ours to version
 95529.png
+# v9 raster assets: `poster_figures_v9.py` regenerates all of them in one command
+figures/v9/
+# example posters shown for reference — a colleague's and the supervisor's, not ours to version
+117982.png
