@@ -413,3 +413,48 @@ not a runnable policy.**
 
 > **图放大之后，原本看不见的反例会变得可数。**压缩过的图能藏住的东西，放大后藏不住——
 > 每次放大一张图，都要重读一遍它的 caption 还成不成立。
+
+---
+
+## 13. v9.8 — 把下面那个 3×2 修成一个网格（2026-09-04）
+
+user 的诊断：*不是「下面留白太多」本身，而是 3×2 grid 的行高被不同尺寸的图搞坏了*。
+指令是 **fix it geometrically, not semantically**。
+
+### 根因：plate 高度由宽高比决定，缩放救不了
+
+一张图在固定栏宽（167mm）里能达到的最大高度 = `167 / 宽高比`。改 scale 只会更矮。
+量出来才看清第一行为什么救不了：
+
+| panel | 原宽高比 | 栏宽下的高度上限 |
+|---|---|---|
+| 1 heatmap | 1.26 | **133mm** |
+| 2 venn | 2.91 | **57mm** |
+| 3 behaviour | 2.64 | 63mm |
+
+**venn 和 behaviour 已经占满栏宽了，再放大也长不高**——上一轮我把 heatmap 放大 36% 只是让
+差距更大。唯一的杠杆是**宽高比本身**。
+
+### 三张图改了宽高比（不是改 scale）
+
+| 图 | 做法 | 宽高比 | 栏宽下高度 |
+|---|---|---|---|
+| **venn** | 左右两个 panel 各自 tight-crop 后**重拼**，中间只留 26px 缝 —— 原图近三分之一的宽是 matplotlib 留的白 gutter；顺带把 `VENN_KEEP` 从 0.34 加到 0.375，补回被切掉半截的圈注 | 2.91 → **1.71** | 57 → **98mm** |
+| **behaviour** | 画布加高（figsize 2.55→3.3），点/线/字号同步放大 | 2.64 → **2.03** | 63 → **82mm** |
+| **failure / label** | 画布各加高到 2.95 | 2.56 / 2.40 → **2.26 / 2.24** | 65 / 70 → **74mm** |
+
+### 然后 scale 是算出来的，不是挑出来的
+
+每一行定一个 plate 高度，scale = `目标高度 × 宽高比 ÷ 栏宽`：
+
+- **行 1 = 82mm**（behaviour 在栏宽下的上限，全行的天花板）：heatmap 0.617 · venn 0.840 · behaviour 1.0
+- **行 2 = 74mm**：failure 1.0 · routing 0.974 · label 1.0
+
+六个 plate 顶底对齐，caption 同 baseline。第二行不再被第一行的最高图顶下去。
+
+> **一行里的图高不齐，先量宽高比，别调 scale。**scale 能改的只有"多小"，改不了"最高能多高"。
+
+### 同轮的小修
+
+Panel 5 的 `WIN REGION / cheaper, no worse` 收进绿区左上角（字号降到 11.5，绿区只有轴宽的 22%）·
+Panel 5 caption 压成一行（user 给的 `No learned policy enters the win region; the lone square is hindsight.`）

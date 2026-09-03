@@ -101,7 +101,8 @@ SHOT_W = 1400          # frames are downscaled here, not in pptx: LibreOffice's
 CROP_FRAC = 0.58       # scaler is poorer than PIL's, and the crop keeps the
                        # part of the page where anything actually happens
 VENN = REPO / "results" / "phantom_paper" / "figures" / "fig_phantom_structure_venn.png"
-VENN_KEEP = 0.34       # the two B0 panels, measured off the rendered figure
+VENN_KEEP = 0.375      # the two B0 panels INCLUDING their per-circle labels,
+                       # which sit just below the panel row itself
 CARBON = REPO / "results" / "phantom_paper" / "figures" / "fig3_regional_carbon.png"
 
 
@@ -151,8 +152,22 @@ def main() -> None:
         # width and only adds noise, down through the two B0 panels
         v = im.convert("RGB").crop((0, int(im.height * 0.052), im.width,
                                     int(im.height * VENN_KEEP)))
-    v.save(OUT / "venn_b0.png")
-    print(f"  venn_b0.png      {v.size}  ({v.width / v.height:.2f}:1)")
+    # Trim each panel to its own ink and rejoin with a thin gutter. A 2.9:1
+    # figure cannot grow taller inside a fixed column width however it is
+    # scaled — the only lever is its aspect ratio, and most of this one's width
+    # was the white gutter matplotlib left between the two panels.
+    half = v.width // 2
+    panels = [trim(v.crop((0, 0, half, v.height))),
+              trim(v.crop((half, 0, v.width, v.height)))]
+    gut = 26
+    h = max(pn.height for pn in panels)
+    joined = Image.new("RGB", (sum(pn.width for pn in panels) + gut, h), "white")
+    x = 0
+    for pn in panels:
+        joined.paste(pn, (x, (h - pn.height) // 2))
+        x += pn.width + gut
+    joined.save(OUT / "venn_b0.png")
+    print(f"  venn_b0.png      {joined.size}  ({joined.width / joined.height:.2f}:1)")
 
     # The carbon figure is two side-by-side panels; at column width its region
     # labels are unreadable. One panel makes the same point at twice the type size.
@@ -198,7 +213,7 @@ def behaviour() -> None:
         return {m: [c["per_mode"][m][metric] for c in cells if m in c["per_mode"]]
                 for m in MODE_ORDER}
 
-    fig, axes = plt.subplots(1, 2, figsize=(POSTER_COL_IN, 2.55), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(POSTER_COL_IN, 3.3), sharey=True)
     for ax, (metric, title) in zip(axes, [("scroll_frac", "scrolling"),
                                           ("type_frac", "typing")]):
         data = series(metric)
@@ -206,13 +221,13 @@ def behaviour() -> None:
         for y, m in zip(ys, MODE_ORDER):
             v = data[m]
             lo, hi, mid = min(v), max(v), st.median(v)
-            ax.plot([lo * 100, hi * 100], [y, y], lw=2.2, solid_capstyle="round",
+            ax.plot([lo * 100, hi * 100], [y, y], lw=2.8, solid_capstyle="round",
                     color=MODE_COLOUR[m], alpha=0.35, zorder=2)
-            ax.plot([mid * 100], [y], "o", ms=9, color=MODE_COLOUR[m], zorder=3)
+            ax.plot([mid * 100], [y], "o", ms=11, color=MODE_COLOUR[m], zorder=3)
         ax.set_yticks(list(ys))
-        ax.set_yticklabels(MODE_ORDER, fontsize=13)
-        ax.set_xlabel(f"% of steps {title}", fontsize=13)
-        ax.tick_params(labelsize=12)
+        ax.set_yticklabels(MODE_ORDER, fontsize=16)
+        ax.set_xlabel(f"% of steps {title}", fontsize=16)
+        ax.tick_params(labelsize=14)
         ax.invert_yaxis()
         for side in ("top", "right", "left"):
             ax.spines[side].set_visible(False)
@@ -265,7 +280,7 @@ def failure() -> None:
             y += 1.0
         y += 0.5
 
-    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 2.6))
+    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 2.95))
     for kind, payload, col, yy in slots:
         if kind == "head":
             ax.text(0.0, yy - 0.1, payload, ha="left", va="center", fontsize=15,
@@ -324,8 +339,10 @@ def routing() -> None:
     for t in list(ax.texts):
         if "Pareto-dominates" in t.get_text():
             t.set_text("WIN REGION\ncheaper, no worse")
-            t.set_fontsize(14)
-            t.set_linespacing(1.2)
+            t.set_fontsize(11.5)
+            t.set_linespacing(1.1)
+            t.set_ha("left")
+            t.set_position((ax.get_xlim()[0] + 0.012, ax.get_ylim()[1] * 0.995))
         else:
             t.remove()      # per-cell point names, and the star's own gloss —
                             # the x axis already says what the origin is
@@ -364,7 +381,7 @@ def label_supply() -> None:
           for c in json.loads(P8.LEARN_JSON.read_text())["cells"]}
 
     S.apply()
-    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 2.75))
+    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 2.95))
     for key, n in rows.items():
         ax.scatter([sr[key]], [n], s=300, marker="o",
                    facecolors=S.C_INK if trainable[key] else "white",

@@ -299,19 +299,19 @@ def build_strip(slide, y):
 # method to be read is not a poster panel.
 PANELS = [
     ("1 · SIX VIEWS, EIGHT SETTINGS", lambda: THESIS / "fig_f5_design_matrix.png",
-     None, 0.76),
+     None, 0.617),      # -> 82mm, row 1's plate height
     ("2 · THEY SOLVE DIFFERENT TASKS", lambda: V9 / "venn_b0.png",
-     "**The sets overlap — but do not coincide.**", 1.0),
+     "**The sets overlap — but do not coincide.**", 0.840),   # -> 82mm
     ("3 · THEY BEHAVE DIFFERENTLY", lambda: V9 / "behaviour.png",
-     "**Vision scrolls ~4× more.**", 1.0),
+     "**Vision scrolls ~4× more.**", 1.0),                    # -> 82mm
     ("4 · AND THEY FAIL DIFFERENTLY", lambda: V9 / "failure.png",
      "**Text-only skews toward early give-up; image-only toward stalled progress.**",
-     1.0),
+     1.0),                                                   # -> 74mm, row 2
     ("5 · SO CHOOSE PER TASK? NOT SO FAST.", lambda: V9 / "routing.png",
-     "**Nothing learned lands in the shaded region** — the one square inside "
-     "is hindsight, not a runnable policy.", 0.95),
+     "**No learned policy enters the win region; the lone square is hindsight.**",
+     0.974),                                                 # -> 74mm
     ("6 · AND THIS IS WHY", lambda: V9 / "label_supply.png",
-     "**More routing upside, less usable training signal.**", 1.0),
+     "**More routing upside, less usable training signal.**", 1.0),  # -> 74mm
 ]
 
 
