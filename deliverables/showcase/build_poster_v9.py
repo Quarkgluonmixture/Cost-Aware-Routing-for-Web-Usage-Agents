@@ -168,9 +168,11 @@ def build_system(slide, y):
     """The one figure a passer-by is meant to read: agent, three ways of seeing
     a page, and what the choice is judged on. Real screenshots inside it."""
     y = panel(slide, FULL_X, y, "WHAT AN AGENT SEES, AND WHO CHOOSES", FULL_W)
+    w = int(FULL_W * 0.93)
+    x = FULL_X + (FULL_W - w) // 2
     with Image.open(V9 / "system.png") as im:
-        h = int(FULL_W * im.height / im.width)
-    slide.shapes.add_picture(str(V9 / "system.png"), FULL_X, y, width=FULL_W)
+        h = int(w * im.height / im.width)
+    slide.shapes.add_picture(str(V9 / "system.png"), x, y, width=w)
     return y + h + Mm(3)
 
 
@@ -267,7 +269,10 @@ def build_strip(slide, y):
             px = fx + Emu(i * (cell + int(gap)))
             slide.shapes.add_picture(str(V9 / f"lane_{key}_{i}.png"), px, y,
                                      width=cell - Mm(1))
-            rect(slide, px, y, cell - Mm(1), fh, fill=None, line=GREY)
+            last = i == len(rows) - 1
+            rect(slide, px, y, cell - Mm(1), fh, fill=None,
+                 line=(C_BOTH if won else C_FAIL) if last else GREY,
+                 lw=Pt(2.2) if last else Pt(0.7))
             note = NOTE.get((key, step))
             textbox(slide, px, y + fh + Mm(1.5), cell, Mm(7),
                     [f"step {step} · {act} →"], size=SZ_CAPTION, bold=True,
@@ -294,16 +299,18 @@ def build_strip(slide, y):
 # method to be read is not a poster panel.
 PANELS = [
     ("1 · SIX VIEWS, EIGHT SETTINGS", lambda: THESIS / "fig_f5_design_matrix.png",
-     None, 0.56),
+     None, 0.76),
     ("2 · THEY SOLVE DIFFERENT TASKS", lambda: V9 / "venn_b0.png",
-     "**The sets overlap — but do not coincide.**", 0.86),
+     "**The sets overlap — but do not coincide.**", 1.0),
     ("3 · THEY BEHAVE DIFFERENTLY", lambda: V9 / "behaviour.png",
      "**Vision scrolls ~4× more.**", 1.0),
     ("4 · AND THEY FAIL DIFFERENTLY", lambda: V9 / "failure.png",
-     "**One side dies of something you can name; the other never arrives.**", 1.0),
-    ("5 · SO CHOOSE PER TASK? NOT SO FAST.", lambda: THESIS / "fig_f13_dominance_plane.png",
-     "**A win lands in the shaded region. None does.**", 0.78),
-    ("6 · AND THIS IS WHY", lambda: HERE / "figures" / "poster_label_supply.png",
+     "**Text-only skews toward early give-up; image-only toward stalled progress.**",
+     1.0),
+    ("5 · SO CHOOSE PER TASK? NOT SO FAST.", lambda: V9 / "routing.png",
+     "**Nothing learned lands in the shaded region** — the one square inside "
+     "is hindsight, not a runnable policy.", 0.95),
+    ("6 · AND THIS IS WHY", lambda: V9 / "label_supply.png",
      "**More routing upside, less usable training signal.**", 1.0),
 ]
 

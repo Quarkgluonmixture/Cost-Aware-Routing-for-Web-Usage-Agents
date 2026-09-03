@@ -374,3 +374,42 @@ LOOK 全程只按过两次 `back`（step 6 和 8），两次都是从新建页�
 `2.78` 正是 `item_add`/`item_edit` 同模板那个坑。所以保留原帧，**loop 改由红字承担**：
 帧2 `left the form` · 帧3 `back on frame 1`。动作类型保持诚实（都是 click），
 红字描述的是位置变化。
+
+---
+
+## 12. v9.7 — 去噪 + 重新分配面积（2026-09-04）
+
+user 定的本轮目标：**不加信息，只做去噪和面积重分配**。
+
+### 面积
+
+顶部三卡整体压 **7%**（A0 图缩到 93% 栏宽居中）· READ/LOOK 不动 · 省出的高度全给六图区。
+六图区从 240mm 到 **255mm**，且**全部吃进 plot**，没有变成留白：
+Panel 1 热力图 +36%（0.56→0.76）· Panel 2 Venn +16%（0.86→1.0）· Panel 5/6 换成海报尺度重绘版。
+
+25% 缩略图下的面积占比：setup ≈22% · case ≈18% · **结果区 ≈42%**。
+
+### 四张图重绘
+
+| 图 | 改了什么 |
+|---|---|
+| **Panel 2** Venn | 裁掉图内那行微小标题（`Phantom space 2-axis empirical structure…`），只留两个 B0 panel |
+| **Panel 4** failure | 组标题 → `TEXT-ONLY` / `IMAGE-ONLY`；行标签全部换成行为短语（`early give-up` / `action loop` / `target unseen` / `visual state unseen` / `no page advance` / `budget exhausted`）——倍率成为视觉主体 |
+| **Panel 5** routing | 绿区注释 `Pareto-dominates the free fixed policy (cheaper AND no worse)` → **`WIN REGION` + `cheaper, no worse`**；删掉全部 per-cell 点标签和星号旁的长注释；图例加白底压紧 |
+| **Panel 6** label supply | x 轴加 **`← more routing upside`**，让轴与 caption 同向（caption 说 *more routing upside, less usable signal*，轴必须说清哪边是 more） |
+
+### READ / LOOK
+
+面积不动，只给**最后一帧描边**：READ 绿、LOOK 红。远看就能读出"成功终点 vs 回到原处"。
+
+### ⚠️ 一处事实修正（不是版面问题）
+
+放大 Panel 5 后看清：**绿色赢区里有一个点**——一个 oracle 方块。这与 REALM 证据一致
+（learned **0/8** 进赢区，hindsight **1/8** 进）。user 给的 caption
+`A win lands in the shaded region. None does.` 字面上与图矛盾，读者会数出那个点。
+
+改为：**`Nothing learned lands in the shaded region` — the one square inside is hindsight,
+not a runnable policy.**
+
+> **图放大之后，原本看不见的反例会变得可数。**压缩过的图能藏住的东西，放大后藏不住——
+> 每次放大一张图，都要重读一遍它的 caption 还成不成立。

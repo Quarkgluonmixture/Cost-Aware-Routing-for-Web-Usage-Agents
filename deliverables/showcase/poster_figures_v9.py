@@ -36,12 +36,15 @@ Usage::
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import cairosvg
 from PIL import Image, ImageChops
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "scripts" / "analysis" / "figures" / "thesis"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 OUT = Path(__file__).resolve().parent / "figures" / "v9"
 REPL = REPO / "results" / "repro_replicates"
 DOM = REPL / "B0_dom_classifieds_R31194_clean_replicate" / "phase1_dom_router_0"
@@ -144,7 +147,10 @@ def main() -> None:
     print(f"  page_*.png       {len(PAGES)} pages")
 
     with Image.open(VENN) as im:
-        v = im.convert("RGB").crop((0, 0, im.width, int(im.height * VENN_KEEP)))
+        # from just under the figure's own title, which is unreadable at column
+        # width and only adds noise, down through the two B0 panels
+        v = im.convert("RGB").crop((0, int(im.height * 0.052), im.width,
+                                    int(im.height * VENN_KEEP)))
     v.save(OUT / "venn_b0.png")
     print(f"  venn_b0.png      {v.size}  ({v.width / v.height:.2f}:1)")
 
@@ -224,16 +230,16 @@ def behaviour() -> None:
 # against two image arms), which is why each is drawn against the same 1.0x
 # reference rather than against the other block.
 FAILURE = [
-    ("When the picture won,\nthe text-only agent…", "#E8720C", [
-        ("gave up once it could not find it", 2.31),
-        ("clicked and went back, over and over", 2.25),
-        ("could not see what the task asked about", 2.24),
-        ("was on a visual page with no screenshot", 1.65),
+    ("TEXT-ONLY", "#E8720C", [
+        ("early give-up", 2.31),
+        ("action loop", 2.25),
+        ("target unseen", 2.24),
+        ("visual state unseen", 1.65),
     ]),
-    ("When the text won,\nthe picture-only agent…", "#1F5FD6", [
-        ("clicked and went back, over and over", 1.17),
-        ("never turned the page", 0.93),
-        ("ran out of budget, unfinished", 0.91),
+    ("IMAGE-ONLY", "#1F5FD6", [
+        ("action loop", 1.17),
+        ("no page advance", 0.93),
+        ("budget exhausted", 0.91),
     ]),
 ]
 
@@ -253,23 +259,23 @@ def failure() -> None:
     slots, y = [], 0.0
     for head, col, items in FAILURE:
         slots.append(("head", head, col, y))
-        y += 1.55                      # the headings run to two lines
+        y += 1.15                      # one-line headings
         for lab, v in items:
             slots.append(("bar", (lab, v), col, y))
             y += 1.0
         y += 0.5
 
-    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 3.15))
+    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 2.6))
     for kind, payload, col, yy in slots:
         if kind == "head":
-            ax.text(0.0, yy - 0.1, payload, ha="left", va="center", fontsize=13,
-                    fontweight="bold", color=col, linespacing=1.3)
+            ax.text(0.0, yy - 0.1, payload, ha="left", va="center", fontsize=15,
+                    fontweight="bold", color=col)
             continue
         lab, v = payload
         ax.barh(yy, v, height=0.66, color=col, alpha=0.9, zorder=3)
-        ax.text(v + 0.05, yy, f"{v:.1f}×", va="center", fontsize=13.5,
+        ax.text(v + 0.05, yy, f"{v:.1f}×", va="center", fontsize=16,
                 fontweight="bold", color=col, zorder=4)
-        ax.text(-0.05, yy, lab, ha="right", va="center", fontsize=12.5,
+        ax.text(-0.05, yy, lab, ha="right", va="center", fontsize=15,
                 color="#222222")
     ax.axvline(1.0, color="#555555", lw=1.6, zorder=5)
     ax.text(1.0, y - 0.3, "as often as it fails anywhere", ha="center",
@@ -287,8 +293,105 @@ def failure() -> None:
     print(f"  failure.png      {out.stat().st_size // 1024}KB")
 
 
+
+
+# ------------------------------------------------------------- v9.7 de-noising
+# Two thesis figures carry annotations written for a page a reader holds at
+# 40cm. On a board they are noise: the reader has three seconds, and a
+# three-line gloss inside the plot spends all of it. These redraw the same
+# figures with the explanation moved out to the caption, where the poster
+# already says it.
+
+def routing() -> None:
+    """Panel 5 at poster scale: the win region named, and nothing else labelled.
+
+    Everything removed here (the Pareto gloss, the per-cell point names, the
+    'costs nothing to implement' note) is still true and still in the thesis —
+    it is simply not what this panel is for. The panel has one job: show that
+    the shaded region is empty."""
+    import matplotlib.pyplot as plt
+    import _style as S
+    import fig_f13_dominance_plane as f
+
+    rows, _ = f.load(f.SRC)
+    S.FS_TICK, S.FS_LABEL, S.FS_VALUE, S.FS_PANEL = 17.0, 20.0, 18.0, 22.0
+    S.apply()
+    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 3.05))
+    f.build(ax, rows)
+
+    # the shaded band is only about a fifth of the axis wide, so its label has
+    # to be sized to the band, not to the panel
+    for t in list(ax.texts):
+        if "Pareto-dominates" in t.get_text():
+            t.set_text("WIN REGION\ncheaper, no worse")
+            t.set_fontsize(14)
+            t.set_linespacing(1.2)
+        else:
+            t.remove()      # per-cell point names, and the star's own gloss —
+                            # the x axis already says what the origin is
+    ax.set_xlabel("cost, relative to always-cheapest", fontsize=18)
+    ax.set_ylabel("success gain (pp)", fontsize=18)
+    ax.tick_params(labelsize=15)
+    ax.legend(loc="lower right", frameon=False, handletextpad=0.3,
+              borderpad=0.1, labelspacing=0.2, fontsize=13.5, markerscale=0.85)
+    fig.tight_layout(pad=0.3)
+    out = OUT / "routing.png"
+    fig.savefig(out, dpi=340, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"  routing.png      {out.stat().st_size // 1024}KB")
+
+
+def label_supply() -> None:
+    """Panel 6 at poster scale, with the x axis reading in the caption's
+    direction: the caption says *more routing upside, less usable signal*, so
+    the axis has to say which way "more upside" is. Left, because a weaker
+    agent has more to gain — that is the whole point and it is not obvious."""
+    import json
+    import re
+    import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+    import _style as S
+    import poster_figures as P8
+
+    rows, trainable = {}, {}
+    text = P8.LABEL_SUPPLY_MD.read_text(encoding="utf-8")
+    for m in re.finditer(r"^\| (B\d)_(classifieds|reddit) \| (\d+) \| \*\*(\d+)\*\* \| ([\d.]+)% \| (\d)/6 \|", text, re.M):
+        rows[(m.group(2), m.group(1))] = int(m.group(4))
+    for m in re.finditer(r"^\| (B\d)_(classifieds|reddit) \| (\d+) \| \d \| [^|]+ \| (\*\*no\*\*|yes) \|", text, re.M):
+        trainable[(m.group(2), m.group(1))] = (m.group(4) == "yes")
+    assert len(rows) == 6 and len(trainable) == 6, (rows, trainable)
+    sr = {(c["site"], c["baseline_model"]): c["baseline_policy"]["sr_pct"]
+          for c in json.loads(P8.LEARN_JSON.read_text())["cells"]}
+
+    S.apply()
+    fig, ax = plt.subplots(figsize=(POSTER_COL_IN, 2.75))
+    for key, n in rows.items():
+        ax.scatter([sr[key]], [n], s=300, marker="o",
+                   facecolors=S.C_INK if trainable[key] else "white",
+                   edgecolors=S.C_INK, linewidths=2.4, zorder=3)
+    ax.set_xlim(0, 32)
+    ax.set_ylim(0, 112)
+    # the direction the caption depends on, said on the axis itself rather than
+    # floated next to it, where it lands on the label
+    ax.set_xlabel("tasks the best single view solves  (%)\n← more routing upside",
+                  fontsize=18, linespacing=1.5)
+    ax.set_ylabel("usable labels\nfor “which view”", fontsize=18)
+    ax.tick_params(labelsize=16)
+    ax.legend([Line2D([], [], marker="o", ls="", ms=15, mfc=S.C_INK, mec=S.C_INK),
+               Line2D([], [], marker="o", ls="", ms=15, mfc="white", mec=S.C_INK, mew=2.4)],
+              ["enough to train a classifier", "not enough"], loc="upper left",
+              frameon=False, fontsize=18, handletextpad=0.3, labelspacing=0.3)
+    fig.tight_layout(pad=0.3)
+    out = OUT / "label_supply.png"
+    fig.savefig(out, dpi=340, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"  label_supply.png {out.stat().st_size // 1024}KB")
+
+
 if __name__ == "__main__":
     print("preparing v9 assets")
     main()
     behaviour()
     failure()
+    routing()
+    label_supply()
