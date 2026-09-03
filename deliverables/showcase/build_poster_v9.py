@@ -216,12 +216,11 @@ TASK = 76
 INTENT = ("“Go to my listing of the blue bike and change the price to $85.50 — "
           "and say so in the description.”")
 LANES = (
-    ("read", "READ", "page text only", C_TEXT, [0, 2, 5, 11], True),
-    ("look", "LOOK", "screenshot only", C_IMAGE, [1, 3, 18, 20], False),
+    ("read", "READ", "page text only", C_TEXT, [2, 5, 11], True),
+    ("look", "LOOK", "screenshot only", C_IMAGE, [3, 18, 20], False),
 )
 # said instead of the action type, where the action type is not the point
-NOTE = {("look", 18): "step 1's page again",
-        ("look", 20): "step 3's page again"}
+NOTE = {("look", 20): "the first frame again"}
 
 
 def build_strip(slide, y):
@@ -234,7 +233,8 @@ def build_strip(slide, y):
 
     lane_w = Mm(46)
     gap = Mm(3)
-    cell = int((w - lane_w - 3 * gap) / 4)
+    n = len(LANES[0][4])
+    cell = int((w - lane_w - (n - 1) * gap) / n)
     with Image.open(V9 / "lane_read_0.png") as im:
         fh = int((cell - Mm(1)) * im.height / im.width)
 
@@ -268,11 +268,11 @@ def build_strip(slide, y):
             second = f"${cost:.3f} · **{note}**" if note else f"${cost:.3f} spent"  # noqa: E501
             textbox(slide, px, y + fh + Mm(8), cell, Mm(7), [second],
                     size=Pt(14), color=C_FAIL if note else MUTED, space_after=Pt(0))
-        y += fh + Mm(18)
+        y += fh + Mm(16)
     return caption(slide, x, y - Mm(2), w,
-                   "**LOOK goes round in a circle** — its final frames return to pages it "
-                   "has already seen. One recorded run per view; both outcomes repeat on "
-                   "an independent rerun.", color=INK, after=Mm(0))
+                   "**LOOK goes round in a circle** — it ends on the page it started on, "
+                   "seventeen steps later. One recorded run per view; both outcomes repeat "
+                   "on an independent rerun.", color=INK, after=Mm(0))
 
 
 # ------------------------------------------------------------------ row 3
@@ -286,15 +286,15 @@ def build_strip(slide, y):
 # method to be read is not a poster panel.
 PANELS = [
     ("1 · SIX VIEWS, EIGHT SETTINGS", lambda: THESIS / "fig_f5_design_matrix.png",
-     None, 0.60),
+     None, 0.56),
     ("2 · THEY SOLVE DIFFERENT TASKS", lambda: V9 / "venn_b0.png",
-     "**The sets overlap — but do not coincide.**", 1.0),
+     "**The sets overlap — but do not coincide.**", 0.86),
     ("3 · THEY BEHAVE DIFFERENTLY", lambda: V9 / "behaviour.png",
      "**Vision scrolls ~4× more.**", 1.0),
     ("4 · AND THEY FAIL DIFFERENTLY", lambda: V9 / "failure.png",
      "**One side dies of something you can name; the other never arrives.**", 1.0),
     ("5 · SO CHOOSE PER TASK? NOT SO FAST.", lambda: THESIS / "fig_f13_dominance_plane.png",
-     "**A win lands in the shaded region. None does.**", 0.86),
+     "**A win lands in the shaded region. None does.**", 0.78),
     ("6 · AND THIS IS WHY", lambda: HERE / "figures" / "poster_label_supply.png",
      "**More routing upside, less usable training signal.**", 1.0),
 ]

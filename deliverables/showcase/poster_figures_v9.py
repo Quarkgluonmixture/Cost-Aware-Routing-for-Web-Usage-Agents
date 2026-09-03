@@ -63,11 +63,17 @@ SVG = REPO / "deliverables" / "representation_routing_merged_three_sections.svg"
 # Alternating two visibly different pages fixes both: the movement is visible,
 # and so is the fact that it goes nowhere.
 #
+# THREE frames, not four. Four made LOOK two pairs (1=18, 3=20), which the reader
+# has to match up twice; three makes it form -> listings -> form, where the first
+# and last frames are the same page and the loop reads at a glance. It also buys
+# 34% more width per frame, and frame width is what this strip kept losing to.
+# READ drops its home page: "12 steps" already says it travelled.
+#
 # Timing, verified against the URLs: `obs_url` is recorded BEFORE the action and
 # the screenshot AFTER it, so a frame is the page that step ENDED on.
 LANES = {
-    "read": [(DOM, 76, 0), (DOM, 76, 2), (DOM, 76, 5), (DOM, 76, 11)],
-    "look": [(VIS, 76, 1), (VIS, 76, 3), (VIS, 76, 18), (VIS, 76, 20)],
+    "read": [(DOM, 76, 2), (DOM, 76, 5), (DOM, 76, 11)],
+    "look": [(VIS, 76, 3), (VIS, 76, 18), (VIS, 76, 20)],
 }
 # (name, run, task, step) — label checked against the step's obs_url, see module docstring
 PAGES = [
@@ -80,7 +86,7 @@ PAGES = [
 ]
 
 SHOT_W = 1400          # frames are downscaled here, not in pptx: LibreOffice's
-CROP_FRAC = 0.62       # scaler is poorer than PIL's, and the crop keeps the
+CROP_FRAC = 0.58       # scaler is poorer than PIL's, and the crop keeps the
                        # part of the page where anything actually happens
 VENN = REPO / "results" / "phantom_paper" / "figures" / "fig_phantom_structure_venn.png"
 VENN_KEEP = 0.34       # the two B0 panels, measured off the rendered figure
