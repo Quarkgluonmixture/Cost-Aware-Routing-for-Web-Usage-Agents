@@ -255,3 +255,78 @@ REALM `Table 5` 的 caption 自曝：「≥7/8 设置」这个门槛是 cell 数
 
 - F13 左上角 "Pareto-dominates…" 与绿区数据点轻微重叠（毕设原图带来的，缩到栏宽后更明显）
 - 两张表 15–19pt，比正文小 —— 它们是「走近两米看」的内容；抓眼靠顶部系统图和截图带
+
+### ④ 截图的时序语义 + 动作标签 = 第三种读法（user 2026-09-03 抓到）
+
+`step 9 · scroll` 配一张页面顶部的截图，被读成**「滚了但页面没动」**。查数据：这一步的
+scroll `action_success=True`、`page_changed=True`，而且 **LOOK 比 READ 滚得更多**
+（10/26 步 vs 3/12 步）——「Vision 不会 scroll」不成立。
+
+误读的来源是**两个不同时刻被并排放在一起**：截图是该步**开始时**的页面，动作标签是它
+**接下来**要做的事。两者都对，拼在一起就多出一种字面读法。
+
+修法不是解释，是**换掉要讲的那件事**：动作类型在这里根本不是重点，重点是
+**它三次回到同一个已填好的编辑页**。所以重复帧的第二行改成红色的
+`back on the step 3 page`，图注补一句 *"Each frame is the page that step **starts** on."*
+
+⇒ 规则：**一张图旁边并排两个不同时刻的量，必然产生第三种读法**；要么统一时刻，
+要么把标注换成不依赖时刻的事实。
+
+---
+
+## 11. v9.6 — 按修改单执行的一轮（2026-09-03）
+
+user 给了一份逐条修改单（P0/P1/P2 + 施工顺序 + 验收标准）。全部执行，无自由发挥。
+
+### P0 · 结构
+
+**六图从列优先改行优先**。原来三栏各两个，读者眼里会自动renumber 成 1-3-5 / 2-4-6；
+改成两行各三个后编号与阅读顺序一致：
+
+| 行 | | | |
+|---|---|---|---|
+| 1 | ① 六视图八设置 | ② 解不同的题 | ③ 行为不同 |
+| 2 | ④ 失败方式不同 | ⑤ 那按任务选？没这么简单 | ⑥ 为什么 |
+
+**⑤ 的标题从 `IT DOES NOT WORK` 改为 `NOT SO FAST.`** —— 前者会被读成「按任务选这件事本身无效」，
+而 oracle 说的不是这个。这是这轮唯一的**科学语义修正**，其余都是版面。
+
+### P1 · caption 大砍
+
+每个 panel 的 caption 压到一行，方法学信息（dot 是什么、baseline 是什么、颜色是什么意思）
+一律移出：要么在图内，要么留给看板时的对话。
+
+- ① 全删（`SIX VIEWS, EIGHT SETTINGS` + 图内 legend 已经说完）
+- ② `The sets overlap — but do not coincide.`
+- ③ `Vision scrolls ~4× more.`
+- ④ `One side dies of something you can name; the other never arrives.`（第二句删）
+- ⑤ `A win lands in the shaded region. None does.`
+- ⑥ `More routing upside, less usable training signal.`
+
+省出的空间**定向给 ⑤ 和 ⑥**（各放大约 20% 和 39%），①的热力图反过来压 12%。
+
+### P1 · READ / LOOK 区
+
+面积不动，只做三件事：`solved` / `gave up` 独占一行、字号 15.5→20pt；红字的
+`step 1's page again` / `step 3's page again` 保留；图注压成一句。
+
+⚠️ 改这里踩了一次：`8 different pages` 在 40mm 标签栏里换行，把下面的 verdict 顶重叠了。
+标签栏的每一行都必须**在 40mm 内单行**，改成 `8 pages seen` 并加了 line_count 断言式验证。
+
+### P2 · subtitle
+
+`Measuring the ceiling, the predictability and the economics of representation routing in web agents`
+→ `Testing when richer web-agent representations help — and whether their value can be predicted cheaply`
+
+三个学术词各自换成路人能读的说法（ceiling→help · predictability→can be predicted · economics→cheaply），
+科学含义不变。
+
+### 验收（user 指定的三条）
+
+- **1m**：六个 panel 的图形语义都成立——⑤ 的绿区空着、⑥ 的实心/空心点、④ 的橙蓝条长短、
+  ③ 的 Vision 蓝点分离、① 的颜色分布、② 的圆交叠。caption 勉强可读。
+- **3m**：结构与配色可辨，文字糊——海报的正常表现。
+- **空白**：① 无 caption 但图更高，底边与 ②③ 的 caption 基本齐平，没有留下缺口。
+
+> user 的收尾判断记在这里：**这轮之后停止「设计」**，接下来只做真实 A1 尺寸的可读性校验，
+> 否则会从优化滑进过度打磨。

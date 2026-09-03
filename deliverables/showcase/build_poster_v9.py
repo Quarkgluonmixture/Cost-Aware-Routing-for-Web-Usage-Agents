@@ -81,8 +81,8 @@ SYS_Y = Mm(133)
 ROW_BOTTOM = Mm(782)
 
 TITLE = "When Is Expensive Perception Worth Paying For?"
-SUBTITLE = ("Measuring the ceiling, the predictability and the economics of "
-            "representation routing in web agents")
+SUBTITLE = ("Testing when richer web-agent representations help — and whether "
+            "their value can be predicted cheaply")
 
 
 def body(slide, x, y, w, paragraphs, *, size=SZ_BODY, color=INK, after=Mm(3)):
@@ -123,7 +123,10 @@ def figure(slide, png: Path, x, y, w, cap: str, *, pad=Mm(3), scale=1.0):
     rect(slide, px, y, plate, box_h, fill=FIG_FILL, line=HAIRLINE)
     rect(slide, px, y, plate, Mm(1.4), fill=ACCENT)
     slide.shapes.add_picture(str(png), px + pad, y + Mm(1.4) + pad, width=inner)
-    return caption(slide, x, y + box_h + Mm(2), w, cap, after=Mm(5))
+    if cap is None:
+        return y + box_h + Mm(2)
+    return caption(slide, x, y + box_h + Mm(2), w, cap, size=Pt(17), color=INK,
+                   after=Mm(4))
 
 
 def panel(slide, x, y, label, width):
@@ -214,8 +217,11 @@ INTENT = ("“Go to my listing of the blue bike and change the price to $85.50 �
           "and say so in the description.”")
 LANES = (
     ("read", "READ", "page text only", C_TEXT, [0, 2, 5, 11], True),
-    ("look", "LOOK", "screenshot only", C_IMAGE, [0, 3, 9, 20], False),
+    ("look", "LOOK", "screenshot only", C_IMAGE, [1, 3, 18, 20], False),
 )
+# said instead of the action type, where the action type is not the point
+NOTE = {("look", 18): "step 1's page again",
+        ("look", 20): "step 3's page again"}
 
 
 def build_strip(slide, y):
@@ -238,107 +244,83 @@ def build_strip(slide, y):
         rect(slide, x, y, Mm(2.4), fh + Mm(15), fill=colour)
         textbox(slide, x + Mm(5), y + Mm(1), lane_w - Mm(6), Mm(10), [name],
                 font=MONO, size=SZ_LANE, bold=True, color=colour, space_after=Pt(0))
-        textbox(slide, x + Mm(5), y + Mm(12), lane_w - Mm(6), Mm(16), [note],
+        textbox(slide, x + Mm(5), y + Mm(12), lane_w - Mm(6), Mm(14), [note],
                 size=SZ_CAPTION, color=MUTED, line_spacing=1.08, space_after=Pt(0))
-        verdict = "solved" if won else "gave up"
-        textbox(slide, x + Mm(5), y + Mm(29), lane_w - Mm(6), Mm(28),
-                [f"**{n_steps} steps**", f"**{pages} different pages**",
-                 f"**${total:.2f}** · {verdict}"],
+        # each of these has to fit the 40mm label column on ONE line, or the
+        # block below it lands on top of the verdict
+        textbox(slide, x + Mm(5), y + Mm(28), lane_w - Mm(6), Mm(18),
+                [f"**{n_steps} steps**", f"**{pages} pages seen**", f"**${total:.2f}**"],
                 size=SZ_CAPTION, color=C_BOTH if won else C_FAIL,
                 line_spacing=1.1, space_after=Pt(0))
+        textbox(slide, x + Mm(5), y + Mm(47), lane_w - Mm(6), Mm(10),
+                ["solved" if won else "gave up"], size=Pt(20), bold=True,
+                color=C_BOTH if won else C_FAIL, space_after=Pt(0))
         fx = x + lane_w
         for i, (step, act, cost) in enumerate(rows):
             px = fx + Emu(i * (cell + int(gap)))
             slide.shapes.add_picture(str(V9 / f"lane_{key}_{i}.png"), px, y,
                                      width=cell - Mm(1))
             rect(slide, px, y, cell - Mm(1), fh, fill=None, line=GREY)
+            note = NOTE.get((key, step))
             textbox(slide, px, y + fh + Mm(1.5), cell, Mm(7),
                     [f"step {step} · {act}"], size=SZ_CAPTION, bold=True,
                     color=INK_STRONG, space_after=Pt(0))
-            textbox(slide, px, y + fh + Mm(8), cell, Mm(7), [f"${cost:.3f} spent"],
-                    size=Pt(14), color=MUTED, space_after=Pt(0))
+            second = f"${cost:.3f} · **{note}**" if note else f"${cost:.3f} spent"  # noqa: E501
+            textbox(slide, px, y + fh + Mm(8), cell, Mm(7), [second],
+                    size=Pt(14), color=C_FAIL if note else MUTED, space_after=Pt(0))
         y += fh + Mm(18)
     return caption(slide, x, y - Mm(2), w,
-                   "**LOOK's last three frames are the same page**, pixel for pixel, "
-                   "seventeen steps apart — it saw only 9 distinct pages in 26 steps. "
-                   "One recorded run per view; both outcomes repeat on an independent rerun.",
-                   color=INK, after=Mm(0))
+                   "**LOOK goes round in a circle** — its final frames return to pages it "
+                   "has already seen. One recorded run per view; both outcomes repeat on "
+                   "an independent rerun.", color=INK, after=Mm(0))
 
 
 # ------------------------------------------------------------------ row 3
-def build_col1(slide, y):
-    """Why choosing could pay: the views solve overlapping but different sets,
-    and the split that shows up in *behaviour* is image against no image."""
-    x, w = COL_X[0], COL_W
-    y = panel(slide, x, y, "DIFFERENT VIEWS, DIFFERENT TASKS", w)
-    y = figure(slide, V9 / "venn_b0.png", x, y, w,
-               "Tasks solved by each text-only view. The sets overlap; they do not coincide.")
-    y = panel(slide, x, y, "THEY ALSO BEHAVE DIFFERENTLY", w)
-    y = body(slide, x, y, w, [
-        "Across **26 behavioural measures**, how often a view is the extreme one "
-        "in at least 7 of the 8 settings:"], size=Pt(21), after=Mm(4))
-    # Table 5 of the evidence inventory. The sheet reports the counts and stops
-    # there: the source caption discloses that its ≥7/8 bar was set after the
-    # cell count changed, so "the extremes sit with the two views that see the
-    # page" is the claim, and "the text-only views are inseparable" is not.
-    y = table(slide, x, y, w, [
-        ("Vision — screenshot only", "9"),
-        ("SoM — screenshot + text", "5"),
-        ("DOM — page text only", "0"),
-        ("the 3 other text-only views", "0"),
-    ], head=("view", "measures"), size=Pt(19), line_h=Mm(9.6))
-    y = caption(slide, x, y, w,
-                "The extremes sit with the two views that see the page. How the agent "
-                "moves is set by whether it gets a picture, not by which text it gets.",
-                size=Pt(17), after=Mm(4))
-    return y
+# The six findings, in reading order. Laid out 1-2-3 / 4-5-6 across two rows,
+# not down three columns: a reader scans a poster in rows, and a column-major
+# grid silently renumbers itself to 1-3-5 / 2-4-6 in their eyes.
+#
+# Captions are one line. Everything a caption used to explain — what a dot is,
+# what the baseline is, what the colours mean — either sits inside the figure or
+# belongs to the conversation at the board. A panel that needs three lines of
+# method to be read is not a poster panel.
+PANELS = [
+    ("1 · SIX VIEWS, EIGHT SETTINGS", lambda: THESIS / "fig_f5_design_matrix.png",
+     None, 0.60),
+    ("2 · THEY SOLVE DIFFERENT TASKS", lambda: V9 / "venn_b0.png",
+     "**The sets overlap — but do not coincide.**", 1.0),
+    ("3 · THEY BEHAVE DIFFERENTLY", lambda: V9 / "behaviour.png",
+     "**Vision scrolls ~4× more.**", 1.0),
+    ("4 · AND THEY FAIL DIFFERENTLY", lambda: V9 / "failure.png",
+     "**One side dies of something you can name; the other never arrives.**", 1.0),
+    ("5 · SO CHOOSE PER TASK? NOT SO FAST.", lambda: THESIS / "fig_f13_dominance_plane.png",
+     "**A win lands in the shaded region. None does.**", 0.86),
+    ("6 · AND THIS IS WHY", lambda: HERE / "figures" / "poster_label_supply.png",
+     "**More routing upside, less usable training signal.**", 1.0),
+]
 
 
-def build_col2(slide, y):
-    """What was run, and how the two channels fail when they lose."""
-    x, w = COL_X[1], COL_W
-    y = panel(slide, x, y, "SIX VIEWS, EIGHT SETTINGS", w)
-    y = figure(slide, THESIS / "fig_f5_design_matrix.png", x, y, w,
-               "Success rate (%). Colour is what reaches the model: text, text + image, image.",
-               scale=0.74)
-    y = panel(slide, x, y, "AND THEY FAIL DIFFERENTLY", w)
-    y = body(slide, x, y, w, [
-        "On tasks only one side solved, how did the loser fail? "
-        "**× = versus its own everyday failure rate.**"], after=Mm(1))
-    # Table 41. Both blocks are read against their own baseline, never across
-    # blocks: the text side is four arms and the image side two.
-    y = table(slide, x, y, w, [
-        ("When the picture won, the text-only agent", None),
-        ("gave up once it could not find it", "2.3×"),
-        ("could not see what the task asked about", "2.2×"),
-        ("When the text won, the picture-only agent", None),
-        ("never turned the page", "0.9×"),
-        ("ran out of budget, unfinished", "0.9×"),
-    ], col=0.78, size=Pt(15), line_h=Mm(6.8))
-    y = caption(slide, x, y, w,
-                "**One side dies of something you can name. The other simply never "
-                "arrives.**", color=INK, after=Mm(3))
-    return y
-
-
-def build_col3(slide, y):
-    """Why choosing well turns out to be hard: nothing learned beats the free
-    policy, and the measurement floor is close to the effect being chased."""
-    x, w = COL_X[2], COL_W
-    y = panel(slide, x, y, "CHOOSING WELL IS HARDER THAN IT LOOKS", w)
-    y = figure(slide, THESIS / "fig_f13_dominance_plane.png", x, y, w,
-               "Each policy against always using the cheapest view. A win lands in the "
-               "shaded region — none does.", scale=0.96)
-    y = body(slide, x, y, w, [
-        "And the target is small: running **one unchanged view twice** already "
-        "flips **10–14%** of tasks."], after=Mm(6))
-    y = panel(slide, x, y, "SO WHAT", w)
-    y = body(slide, x, y, w, [
-        "The views are worth choosing between — they solve different tasks, move "
-        "differently and fail differently.",
-        "**Choosing well, in advance, is the part that does not work yet.**"],
-        after=Mm(3))
-    return y
+def build_findings(slide, y):
+    """Two rows of three. Panels in a row share a top edge, not a bottom one:
+    the figures have different aspect ratios and stretching them to match would
+    cost more than the ragged edge does."""
+    row_gap = Mm(7)
+    ends, split = {}, None
+    for row in (0, 1):
+        bottom = y
+        for col in range(3):
+            i = row * 3 + col
+            head, path, cap, scale = PANELS[i]
+            x = COL_X[col]
+            yy = panel(slide, x, y, head, COL_W)
+            yy = figure(slide, path(), x, yy, COL_W, cap, scale=scale, pad=Mm(2))
+            if row:
+                ends[head.split(" · ")[0]] = yy
+            bottom = max(bottom, yy)
+        if row == 0:
+            split = bottom
+        y = bottom + row_gap
+    return ends, split
 
 
 # ------------------------------------------------------------------ run
@@ -366,9 +348,8 @@ def main():
 
     y = build_system(slide, SYS_Y)
     y = build_strip(slide, y + Mm(5)) + Mm(6)
-    ends = {"views (left)": build_col1(slide, y),
-            "setup (middle)": build_col2(slide, y),
-            "routing (right)": build_col3(slide, y)}
+    ends, split = build_findings(slide, y)
+    _ = split
 
     drop(slide, *V8.HEADER_PARTS)
 
@@ -393,7 +374,7 @@ def verify(prs, ends, row_y):
     w, h = mm(prs.slide_width), mm(prs.slide_height)
     assert abs(w - 594) < 0.5 and abs(h - 841) < 0.5, "slide was resized!"
     print(f"wrote {OUT.relative_to(REPO)}   ({w:.0f}x{h:.0f}mm, A1 portrait, not resized)")
-    print(f"  {'columns start':16s} {mm(row_y):6.1f}mm")
+    print(f"  {'row 1 starts':16s} {mm(row_y):6.1f}mm")
     bad = False
     for name, end in ends.items():
         slack = mm(ROW_BOTTOM - end)
