@@ -63,22 +63,20 @@ SVG = REPO / "deliverables" / "representation_routing_merged_three_sections.svg"
 # Alternating two visibly different pages fixes both: the movement is visible,
 # and so is the fact that it goes nowhere.
 #
-# Three frames, laid out as a controlled comparison:
+# Three frames, laid out as a controlled comparison. Every pairing below was
+# picked by measured frame difference (mean abs diff on 160x90 greyscale), not
+# by step number — neighbouring steps in these runs are often the same page.
 #
-#   frame 1  the SAME page for both lanes  — the two runs are pixel-identical
-#            through step 2 (mean abs diff 0.00) and only diverge at step 3
-#   frame 2  each lane after it has diverged
-#   frame 3  READ finishes; LOOK is back on frame 1's page (diff 0.00 again)
-#
-# Frame 2 is chosen by measured difference, not by step number: LOOK's step 3
-# differs from READ's step 5 by 0.16 — the same form, and it would read as a
-# duplicate. Step 13 differs by 12.96.
+#   frame 1  both lanes filling in the same form   READ 5 vs LOOK 3 : 0.16
+#   frame 2  each lane after it has diverged       READ 9 vs LOOK 18: 19.87
+#   frame 3  READ finishes; LOOK is back on its own frame 1
+#                                                  LOOK 20 vs LOOK 3: 0.00
 #
 # Timing, verified against the URLs: `obs_url` is recorded BEFORE the action and
 # the screenshot AFTER it, so a frame is the page that step ENDED on.
 LANES = {
-    "read": [(DOM, 76, 2), (DOM, 76, 5), (DOM, 76, 11)],
-    "look": [(VIS, 76, 2), (VIS, 76, 13), (VIS, 76, 19)],
+    "read": [(DOM, 76, 5), (DOM, 76, 9), (DOM, 76, 11)],
+    "look": [(VIS, 76, 3), (VIS, 76, 18), (VIS, 76, 20)],
 }
 # (name, run, task, step) — label checked against the step's obs_url, see module docstring
 PAGES = [
