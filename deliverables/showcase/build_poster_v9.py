@@ -221,8 +221,13 @@ LANES = (
     ("read", "READ", "page text only", C_TEXT, [4, 8, 10], True),
     ("look", "LOOK", "screenshot only", C_IMAGE, [2, 17, 19], False),
 )
-# said instead of the action type, where the action type is not the point
-NOTE = {("look", 19): "back on frame 1"}
+# The loop is carried by these notes, not by the action type. LOOK presses
+# `back` only twice in the whole run (steps 6 and 8) and both times it goes from
+# the new-listing page to the edit form — there is no "back to the listings"
+# event in the data to label. The frames that DO show it leaving and returning
+# are reached by clicks, so the notes say what happened instead.
+NOTE = {("look", 17): "left the form",
+        ("look", 19): "back on frame 1"}
 
 
 def build_strip(slide, y):
