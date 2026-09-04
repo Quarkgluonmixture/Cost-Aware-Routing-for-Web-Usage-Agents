@@ -296,7 +296,7 @@ def build_strip(slide, y):
 # belongs to the conversation at the board. A panel that needs three lines of
 # method to be read is not a poster panel.
 PANELS = [
-    ("1 · SIX VIEWS, EIGHT SETTINGS", lambda: THESIS / "fig_f5_design_matrix.png",
+    ("1 · NO VIEW WINS EVERYWHERE", lambda: THESIS / "fig_f5_design_matrix.png",
      None, 0.617),      # -> 82mm, row 1's plate height
     ("2 · THEY SOLVE DIFFERENT TASKS", lambda: V9 / "venn_b0.png",
      "**The sets overlap — but do not coincide.**", 0.899),   # -> 82mm
@@ -306,7 +306,8 @@ PANELS = [
      "**Text-only skews toward early give-up; image-only toward stalled progress.**",
      1.0),                                                   # -> 74mm, row 2
     ("5 · SO BUILD A ROUTER? NOT SO FAST.", lambda: V9 / "routing.png",
-     "**Only the hindsight oracle enters the win region.**",
+     "**Learned routers buy success only by spending more; only the hindsight "
+     "oracle reaches the win region.**",
      0.974),                                                 # -> 74mm
     ("6 · AND THIS IS WHY", lambda: V9 / "label_supply.png",
      "**More routing upside, less usable training signal.**", 1.0),  # -> 74mm

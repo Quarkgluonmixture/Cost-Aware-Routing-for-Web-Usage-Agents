@@ -486,3 +486,44 @@ Panel 6 的 y 轴 `usable routing labels` 竖排后几乎和 axes 一样长被�
 
 heatmap 尺寸 · Venn 内部 metadata · 整体面积分配 · 六图数量 · 任何研究结论。
 user 的判断：**再大改，收益已经小于把东西改坏的风险。**
+
+---
+
+## 15. v9.10 — 让 Panel 5 自己解释自己（2026-09-04）
+
+user 的判据一针见血：**「第五张图你本人都需要重新问它是什么意思，那路过观众更不可能 3 秒读懂」**。
+
+### Panel 5：四个方向全部标出来
+
+之前读者要先重建三件事才能理解任何一个点：基准线在哪、x 轴正负代表什么、绿区凭什么是赢。现在图自己说：
+
+- x 轴 **`change in cost vs always-cheapest`** + `← cheaper` / `more expensive →`
+- y 轴 **`success change (pp)`** + `↑ more successful`
+- 绿区 **`WIN REGION` / cheaper, no worse`**
+- caption **`Learned routers buy success only by spending more; only the hindsight oracle reaches the win region.`**
+
+⚠️ caption 这一改是有实质的：旧句只解释了**绿区为什么空**，没解释**那一堆橙点在说什么**。
+现在两件事都说了——学到的路由器不是没提升，是**提升全靠多花钱**。
+
+### Panel 1：唯一一个描述方法的标题
+
+`SIX VIEWS, EIGHT SETTINGS` → **`NO VIEW WINS EVERYWHERE`**。其余五个标题全在讲发现，
+只有它在讲做了什么，读起来脱节。改完六个标题连成一条线：
+
+> 没有一种处处最优 → 它们解不同的题 → 行为不同 → 失败方式不同 → 那造个路由器？没这么简单 → 为什么
+
+### 两处**没有**改，以及原因
+
+**Panel 6 的 y 轴不能加 `(%)`**。user 建议 `usable routing labels (%)`，但这一轴是
+**绝对计数**（每格 15–97 行，共 260 行），不是比例。加百分号会把一个计数说成占比，
+是实质性错误，保持 `usable routing labels`。
+
+**Panel 2 Venn 的内部 metadata 没删**。那些 `N solved=35` 之类是画在 matplotlib 图里的文字，
+后期图像处理删不掉，要删得改上游 `fig_phantom_structure_venn.py` 并重跑它的数据管线。
+按 user 自己的口径「麻烦就算了」，不值得为它重画。
+
+### 一条通用的坑
+
+旋转过的 y 轴标签，其可用长度受 **axes 高度**约束，不是 figure 高度。
+`change in success (pp)` 在 2.95in 的画布上被裁，是因为 xlabel 占了两行、axes 只剩约 150pt。
+这一轮为此裁了两次（Panel 5 和 Panel 6）——**竖排标签每次改文案都要重看渲染**。

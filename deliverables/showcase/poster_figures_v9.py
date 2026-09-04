@@ -347,8 +347,13 @@ def routing() -> None:
         else:
             t.remove()      # per-cell point names, and the star's own gloss —
                             # the x axis already says what the origin is
-    ax.set_xlabel("cost, relative to always-cheapest", fontsize=18)
-    ax.set_ylabel("success gain (pp)", fontsize=18)
+    ax.set_xlabel("change in cost vs always-cheapest\n"
+                  "← cheaper                    more expensive →",
+                  fontsize=17, linespacing=1.6)
+    # a rotated label is bounded by the AXES height, not the figure height, so
+    # this one has to be short enough to fit ~150pt of plotting area
+    ax.set_ylabel("success change (pp)\n↑ more successful", fontsize=14,
+                  linespacing=1.6)
     ax.tick_params(labelsize=15)
     ax.legend(loc="lower right", frameon=False, handletextpad=0.3,
               borderpad=0.1, labelspacing=0.2, fontsize=13.5, markerscale=0.85)
