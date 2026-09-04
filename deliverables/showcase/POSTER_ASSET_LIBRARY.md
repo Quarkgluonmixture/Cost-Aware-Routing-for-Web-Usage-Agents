@@ -527,3 +527,18 @@ user 的判据一针见血：**「第五张图你本人都需要重新问它是�
 旋转过的 y 轴标签，其可用长度受 **axes 高度**约束，不是 figure 高度。
 `change in success (pp)` 在 2.95in 的画布上被裁，是因为 xlabel 占了两行、axes 只剩约 150pt。
 这一轮为此裁了两次（Panel 5 和 Panel 6）——**竖排标签每次改文案都要重看渲染**。
+
+### 打印测试页（`print_test_tiles.py`）
+
+至此所有检查都是**截图**——整张 A1 缩到屏幕上。那能回答「版面平不平衡」，回答不了
+**「一米外读不读得清」**，因为纸从来没到过真实尺寸。
+
+`print_test_tiles.py` 把六图区（557×270mm，全张字最小的一块）按 **1:1** 切成 **2×2 张
+A4 横版**。打印时必须选 **100% / 实际大小**——选「适合页面」会静默重新缩放，整个测试就废了。
+
+```bash
+.venv/bin/python3 deliverables/showcase/print_test_tiles.py          # 默认切六图区
+.venv/bin/python3 deliverables/showcase/print_test_tiles.py --top 132 --bottom 420   # 换成顶部三卡
+```
+
+判据（user 的原话）：**不读小字，只看标题 + 图形 + 一句 caption，能不能说出每个 panel 的结论。**
