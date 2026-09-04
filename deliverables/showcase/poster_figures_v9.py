@@ -101,8 +101,9 @@ SHOT_W = 1400          # frames are downscaled here, not in pptx: LibreOffice's
 CROP_FRAC = 0.58       # scaler is poorer than PIL's, and the crop keeps the
                        # part of the page where anything actually happens
 VENN = REPO / "results" / "phantom_paper" / "figures" / "fig_phantom_structure_venn.png"
-VENN_KEEP = 0.375      # the two B0 panels INCLUDING their per-circle labels,
-                       # which sit just below the panel row itself
+VENN_KEEP = 0.363      # the two B0 panels INCLUDING their per-circle labels,
+                       # which sit just below the panel row — 0.34 cut those
+                       # labels in half, 0.375 reached the B1 row's titles
 CARBON = REPO / "results" / "phantom_paper" / "figures" / "fig3_regional_carbon.png"
 
 
@@ -249,7 +250,7 @@ FAILURE = [
         ("early give-up", 2.31),
         ("action loop", 2.25),
         ("target unseen", 2.24),
-        ("visual state unseen", 1.65),
+        ("missing visual state", 1.65),
     ]),
     ("IMAGE-ONLY", "#1F5FD6", [
         ("action loop", 1.17),
@@ -293,8 +294,8 @@ def failure() -> None:
         ax.text(-0.05, yy, lab, ha="right", va="center", fontsize=15,
                 color="#222222")
     ax.axvline(1.0, color="#555555", lw=1.6, zorder=5)
-    ax.text(1.0, y - 0.3, "as often as it fails anywhere", ha="center",
-            va="center", fontsize=11.5, color="#555555")
+    ax.text(1.0, y - 0.3, "1× overall failure rate", ha="center",
+            va="center", fontsize=13, color="#555555")
     ax.set_xlim(0, 2.8)
     ax.set_ylim(y, -0.7)
     ax.set_xticks([])
@@ -390,9 +391,9 @@ def label_supply() -> None:
     ax.set_ylim(0, 112)
     # the direction the caption depends on, said on the axis itself rather than
     # floated next to it, where it lands on the label
-    ax.set_xlabel("tasks the best single view solves  (%)\n← more routing upside",
+    ax.set_xlabel("best single-view coverage (%)\n← more routing upside",
                   fontsize=18, linespacing=1.5)
-    ax.set_ylabel("usable labels\nfor “which view”", fontsize=18)
+    ax.set_ylabel("usable routing labels", fontsize=15.5)
     ax.tick_params(labelsize=16)
     ax.legend([Line2D([], [], marker="o", ls="", ms=15, mfc=S.C_INK, mec=S.C_INK),
                Line2D([], [], marker="o", ls="", ms=15, mfc="white", mec=S.C_INK, mew=2.4)],

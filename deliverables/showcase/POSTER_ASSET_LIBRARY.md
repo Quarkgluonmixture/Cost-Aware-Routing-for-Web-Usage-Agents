@@ -458,3 +458,31 @@ user 的诊断：*不是「下面留白太多」本身，而是 3×2 grid 的行
 
 Panel 5 的 `WIN REGION / cheaper, no worse` 收进绿区左上角（字号降到 11.5，绿区只有轴宽的 22%）·
 Panel 5 caption 压成一行（user 给的 `No learned policy enters the win region; the lone square is hindsight.`）
+
+---
+
+## 14. v9.9 — final pass（2026-09-04）
+
+user 判定已进入收尾，只剩「几处残留的 paper figure / 解释性文字味道」。四刀 + 一个标题：
+
+| 位置 | 改成 |
+|---|---|
+| **Panel 5 标题** | `SO CHOOSE PER TASK? NOT SO FAST.` → **`SO BUILD A ROUTER? NOT SO FAST.`** —— 这一格回答的是「能不能造出路由器」，「要不要按任务选」已经由 1–4 回答完了 |
+| **Panel 5 caption** | `…the lone square is hindsight` → **`Only the hindsight oracle enters the win region.`** —— 前者会让读者去图里找「哪个 square」，而图里方块很多 |
+| **Panel 4 基准线** | `as often as it fails anywhere` → **`1× overall failure rate`**（字号 11.5→13） |
+| **READ/LOOK 总结** | 压成 **`Same start. READ finishes; LOOK loops back.`** + 复现声明 —— `loops back` 接上 Panel 4 已经建立的 `action loop` 词汇 |
+| **Panel 6 轴** | x `tasks the best single view solves (%)` → **`best single-view coverage (%)`**；y `usable labels for “which view”` → **`usable routing labels`** |
+| **Panel 4 标签** | `visual state unseen` → **`missing visual state`** |
+
+### 顺带修的两个裁切
+
+`VENN_KEEP` 定在 **0.363**：0.34 会把 B0 那行的圈注切掉半截，0.375 又会带进下一行（B1）的
+标题。**同一个参数两边都是错的，中间那段才对**——这种参数只能靠看渲染找，算不出来。
+Venn 比例随之变成 1.83:1，scale 相应重算为 0.899（仍是 82mm）。
+
+Panel 6 的 y 轴 `usable routing labels` 竖排后几乎和 axes 一样长被裁，字号降到 15.5。
+
+### 明确不再动
+
+heatmap 尺寸 · Venn 内部 metadata · 整体面积分配 · 六图数量 · 任何研究结论。
+user 的判断：**再大改，收益已经小于把东西改坏的风险。**

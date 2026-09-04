@@ -282,10 +282,8 @@ def build_strip(slide, y):
                     size=Pt(14), color=C_FAIL if note else MUTED, space_after=Pt(0))
         y += fh + Mm(16)
     return caption(slide, x, y - Mm(2), w,
-                   "**Both start on the same form.** Then READ finishes it, while "
-                   "**LOOK ends up back on the page it started from**. One recorded run "
-                   "per view; both outcomes repeat on an independent rerun.",
-                   color=INK, after=Mm(0))
+                   "**Same start. READ finishes; LOOK loops back.** Both outcomes "
+                   "repeat on an independent rerun.", color=INK, after=Mm(0))
 
 
 # ------------------------------------------------------------------ row 3
@@ -301,14 +299,14 @@ PANELS = [
     ("1 · SIX VIEWS, EIGHT SETTINGS", lambda: THESIS / "fig_f5_design_matrix.png",
      None, 0.617),      # -> 82mm, row 1's plate height
     ("2 · THEY SOLVE DIFFERENT TASKS", lambda: V9 / "venn_b0.png",
-     "**The sets overlap — but do not coincide.**", 0.840),   # -> 82mm
+     "**The sets overlap — but do not coincide.**", 0.899),   # -> 82mm
     ("3 · THEY BEHAVE DIFFERENTLY", lambda: V9 / "behaviour.png",
      "**Vision scrolls ~4× more.**", 1.0),                    # -> 82mm
     ("4 · AND THEY FAIL DIFFERENTLY", lambda: V9 / "failure.png",
      "**Text-only skews toward early give-up; image-only toward stalled progress.**",
      1.0),                                                   # -> 74mm, row 2
-    ("5 · SO CHOOSE PER TASK? NOT SO FAST.", lambda: V9 / "routing.png",
-     "**No learned policy enters the win region; the lone square is hindsight.**",
+    ("5 · SO BUILD A ROUTER? NOT SO FAST.", lambda: V9 / "routing.png",
+     "**Only the hindsight oracle enters the win region.**",
      0.974),                                                 # -> 74mm
     ("6 · AND THIS IS WHY", lambda: V9 / "label_supply.png",
      "**More routing upside, less usable training signal.**", 1.0),  # -> 74mm
