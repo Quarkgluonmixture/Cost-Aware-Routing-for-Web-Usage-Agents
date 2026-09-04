@@ -13,7 +13,7 @@ updated: 2026-09-03
 
 # Holistic AI × UCL CDI showcase (16 Sep 2026) — poster + laptop demo
 
-**Poster**: `deliverables/showcase/poster_jiaming_wei.pdf` = **v9.6** (2026-09-03), file `poster_v9_jiaming_wei.pdf`.
+**Poster**: `deliverables/showcase/poster_jiaming_wei.pdf` = **v9.10** (2026-09-04), file `poster_v9_jiaming_wei.pdf`.
 Template three-column skeleton · loop diagram on top with real screenshots ·
 number strip + three comparison definitions · THE CATCH / why / Fig 3 / takeaway
 (left) · Fig 2 / verdicts / laptop bridge (right). No jargon. Every number parsed
@@ -34,4 +34,5 @@ synchronised columns, thought + running bill per step. BOTH needs a SoM re-recor
 of those three tasks once the A100 reddit replicate chain finishes (~09-07).
 Replay only; rerun-stable tasks only; re-recording fine, hand-made trajectories not.
 
-**Chronicle**: 笔记 §495 (v2) · §498 (v4) · §499.1–.10 (v5→v9.6). Ledger under those §.
+**Chronicle**: 笔记 §495 (v2) · §498 (v4) · §499.1–.12 (v5→v9.10). Ledger under those §.
+**真实尺寸校验**: `print_test_tiles.py` 把任意区域按 1:1 切成 A4, 打印须选「实际大小」。

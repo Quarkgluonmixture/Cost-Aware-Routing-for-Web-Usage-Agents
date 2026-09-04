@@ -2,7 +2,7 @@
 
 **Holistic AI × UCL CDI MSc Research Showcase · Wed 16 Sep 2026 · UCL Centre for AI**
 
-Poster: `poster_jiaming_wei.pdf` — **v9.6, 2026-09-03** (`poster_v9_jiaming_wei.pdf`; v8.3 kept as `poster_jiaming_wei.pdf`) (A1 594×841mm, 1 page, fonts
+Poster: `poster_jiaming_wei.pdf` — **v9.10, 2026-09-04** (`poster_v9_jiaming_wei.pdf`; v8.3 kept as `poster_jiaming_wei.pdf`) (A1 594×841mm, 1 page, fonts
 embedded, figures 300–350dpi). Numbers, their scope and the version history:
 `poster_content.md` (read its v9/v8.3 headers first; the v9 rebuild and its asset library are in `POSTER_ASSET_LIBRARY.md`). `EXHIBITION_PASS.md` is the
 superseded v2 rationale, kept for the record.
@@ -18,7 +18,7 @@ router, labels, pp) are for researchers who use them first.
 
 | When | What | Status |
 |---|---|---|
-| **Thu 4 Sep** | Send Zekun (Slack DM) the v9.6 PDF + the oral-slot pitch (§1). Organiser confirmed a replacement PDF is accepted until today; after this it is self-print A1 | ☐ |
+| **Thu 4 Sep** | Send Zekun (Slack DM) the v9.10 PDF + the oral-slot pitch (§1). Organiser confirmed a replacement PDF is accepted until today; after this it is self-print A1 | ☐ |
 | Fri 5 Sep | Dissertation hard deadline — nothing on this page competes with it | — |
 | 7–15 Sep | Laptop demo (§8): re-record tasks 130/76/17 in BOTH once the A100 reddit chain finishes (~7 Sep), build the replay page | ☐ |
 | Before 16 Sep | Rehearse the 90-second board walk (§2) until it needs no notes | ☐ |
