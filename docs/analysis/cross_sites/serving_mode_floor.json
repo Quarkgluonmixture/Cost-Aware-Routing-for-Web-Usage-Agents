@@ -7,11 +7,11 @@
   "d_formula": "d ~ n x SR x 0.59",
   "groups": {
     "API": {
-      "n_arms": 10,
-      "floor_min_pct": 7.389162561576355,
+      "n_arms": 13,
+      "floor_min_pct": 4.926108374384237,
       "floor_max_pct": 14.285714285714285,
-      "floor_mean_pct": 11.611761083743842,
-      "n_arms_powered": 10,
+      "floor_mean_pct": 10.713101553618795,
+      "n_arms_powered": 12,
       "floor_min_powered_pct": 7.389162561576355,
       "floor_max_powered_pct": 14.285714285714285,
       "families": [
@@ -22,6 +22,10 @@
         "VWA-classifieds",
         "VWA-reddit"
       ],
+      "sites_powered": [
+        "VWA-classifieds",
+        "VWA-reddit"
+      ],
       "cells": [
         "B0.cls",
         "B0.red",
@@ -29,10 +33,10 @@
       ]
     },
     "local": {
-      "n_arms": 3,
+      "n_arms": 5,
       "floor_min_pct": 0.0,
-      "floor_max_pct": 3.125,
-      "floor_mean_pct": 1.0416666666666667,
+      "floor_max_pct": 3.4482758620689653,
+      "floor_mean_pct": 1.708743842364532,
       "n_arms_powered": 2,
       "floor_min_powered_pct": 0.0,
       "floor_max_powered_pct": 0.0,
@@ -40,24 +44,29 @@
         "Qwen"
       ],
       "sites": [
+        "VWA-classifieds",
+        "VWA-reddit"
+      ],
+      "sites_powered": [
         "VWA-classifieds"
       ],
       "cells": [
-        "B1.cls"
+        "B1.cls",
+        "B1.red"
       ]
     }
   },
   "separation": {
-    "p_one_sided_exact": 0.0034965034965034965,
-    "n_assignments": 286,
+    "p_one_sided_exact": 0.00011671335200746966,
+    "n_assignments": 8568,
     "n_at_least_as_extreme": 1,
     "separated": true,
-    "gap_pp": 4.264162561576355,
+    "gap_pp": 1.4778325123152714,
     "caveat": "arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test"
   },
   "separation_powered_only": {
-    "p_one_sided_exact": 0.015151515151515152,
-    "n_assignments": 66,
+    "p_one_sided_exact": 0.01098901098901099,
+    "n_assignments": 91,
     "n_at_least_as_extreme": 1,
     "separated": true,
     "gap_pp": 7.389162561576355,
@@ -263,6 +272,50 @@
       "weights": "open"
     },
     {
+      "label": "B0.red.dom",
+      "base": "B0",
+      "site": "red",
+      "arm": "dom",
+      "site_name": "VWA-reddit",
+      "floor_pct": 9.852216748768473,
+      "n": 203,
+      "sr_mean_pct": 12.807881773399016,
+      "sr_a": 0.14285714285714285,
+      "sr_b": 0.11330049261083744,
+      "d": 15.340000000000002,
+      "powered": true,
+      "self_drop_lo": 3.4482758620689653,
+      "self_drop_hi": 6.403940886699508,
+      "serving": "API",
+      "provider": "AWS proxy",
+      "family": "Qwen",
+      "arch": "MoE 235B-A22B",
+      "name": "Qwen3-VL-235B-A22B",
+      "weights": "open"
+    },
+    {
+      "label": "B0.red.som",
+      "base": "B0",
+      "site": "red",
+      "arm": "som",
+      "site_name": "VWA-reddit",
+      "floor_pct": 8.374384236453201,
+      "n": 203,
+      "sr_mean_pct": 13.546798029556651,
+      "sr_a": 0.1477832512315271,
+      "sr_b": 0.12315270935960591,
+      "d": 16.224999999999998,
+      "powered": true,
+      "self_drop_lo": 2.955665024630542,
+      "self_drop_hi": 5.41871921182266,
+      "serving": "API",
+      "provider": "AWS proxy",
+      "family": "Qwen",
+      "arch": "MoE 235B-A22B",
+      "name": "Qwen3-VL-235B-A22B",
+      "weights": "open"
+    },
+    {
       "label": "B0.red.ptext",
       "base": "B0",
       "site": "red",
@@ -285,6 +338,50 @@
       "weights": "open"
     },
     {
+      "label": "B0.red.vision",
+      "base": "B0",
+      "site": "red",
+      "arm": "vision",
+      "site_name": "VWA-reddit",
+      "floor_pct": 4.926108374384237,
+      "n": 203,
+      "sr_mean_pct": 7.389162561576355,
+      "sr_a": 0.07389162561576355,
+      "sr_b": 0.07389162561576355,
+      "d": 8.850000000000001,
+      "powered": false,
+      "self_drop_lo": 2.4630541871921183,
+      "self_drop_hi": 2.4630541871921183,
+      "serving": "API",
+      "provider": "AWS proxy",
+      "family": "Qwen",
+      "arch": "MoE 235B-A22B",
+      "name": "Qwen3-VL-235B-A22B",
+      "weights": "open"
+    },
+    {
+      "label": "B1.red.dom",
+      "base": "B1",
+      "site": "red",
+      "arm": "dom",
+      "site_name": "VWA-reddit",
+      "floor_pct": 3.4482758620689653,
+      "n": 203,
+      "sr_mean_pct": 5.665024630541872,
+      "sr_a": 0.059113300492610835,
+      "sr_b": 0.054187192118226604,
+      "d": 6.784999999999999,
+      "powered": false,
+      "self_drop_lo": 1.477832512315271,
+      "self_drop_hi": 1.9704433497536946,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
       "label": "B1.cls.dom",
       "base": "B1",
       "site": "cls",
@@ -299,6 +396,28 @@
       "powered": false,
       "self_drop_lo": 1.3392857142857142,
       "self_drop_hi": 1.7857142857142856,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
+      "label": "B1.red.som",
+      "base": "B1",
+      "site": "red",
+      "arm": "som",
+      "site_name": "VWA-reddit",
+      "floor_pct": 1.9704433497536946,
+      "n": 203,
+      "sr_mean_pct": 6.896551724137931,
+      "sr_a": 0.07389162561576355,
+      "sr_b": 0.06403940886699508,
+      "d": 8.26,
+      "powered": false,
+      "self_drop_lo": 0.49261083743842365,
+      "self_drop_hi": 1.477832512315271,
       "serving": "local",
       "provider": "self-hosted bf16",
       "family": "Qwen",
@@ -357,7 +476,7 @@
   "independent_corroboration_local": "实验笔记 §298.2: a controlled step-level probe on B1 (dense, local, temp=0) returned determinism 133/133 OK. The local group's near-zero floor is therefore not only a replicate-pair inference.",
   "coverage_gaps": [
     "B2 (local, Gemma) carries no replicate: at its SR (0.45-2.23%) d~1.8, far below the bar — the local group cannot be given a second family by measuring B2, which is a power limit, not a scheduling one",
-    "B1 has no reddit replicate: the local group is one site",
-    "B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)"
+    "B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)",
+    "the local group spans 2 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 1 — VWA-classifieds. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone"
   ]
 }

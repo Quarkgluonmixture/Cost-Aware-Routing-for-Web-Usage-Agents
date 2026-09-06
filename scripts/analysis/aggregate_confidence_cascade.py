@@ -138,8 +138,48 @@ class Episode:
     signals: dict[str, float]
 
 
+def _replicate_dirnames() -> set[str]:
+    """Run-dir names registered as the SECOND run of a same-condition pair.
+
+    `RUNS` addresses canonical runs by glob (`*B1_vision_classifieds_2026*`). That was
+    unambiguous until a cell got a replicate: from 2026-08-18 the B1.cls.vision glob
+    matched two directories and this script raised MissingInput on every invocation —
+    correctly, but the effect was that `confidence_cascade.md` silently stopped being
+    regenerated and sat at its 2026-08-03 content for five weeks. Nothing was wrong
+    with the file to look at; it simply stopped moving.
+
+    The registry of what is a replicate already exists — CLEAN_PAIRS, second element —
+    so read it rather than re-encoding the answer here. Failure to import is not
+    swallowed: without the registry a glob could silently pick a replicate as if it
+    were canonical, which is the error this function exists to prevent.
+    """
+    from scripts.analysis.aggregate_noise_floor_inventory import CLEAN_PAIRS
+    out = set()
+    for _label, _run_a, run_b in CLEAN_PAIRS:
+        # entries point at the condition subdir; the run dir is its parent
+        out.add(Path(run_b).parent.name)
+    return out
+
+
+_REPLICATE_DIRS: set[str] | None = None
+
+
 def _resolve(pattern: str) -> Path:
+    global _REPLICATE_DIRS
+    if _REPLICATE_DIRS is None:
+        _REPLICATE_DIRS = _replicate_dirnames()
     hits = [Path(p) for p in glob.glob(str(SEARCH_ROOT / pattern)) if os.path.isdir(p)]
+    if len(hits) > 1:
+        canon = [h for h in hits if h.name not in _REPLICATE_DIRS]
+        if len(canon) == 1:
+            hits = canon
+        else:
+            raise MissingInput(
+                f"expected exactly 1 run dir for {pattern!r}, got {len(hits)}: "
+                f"{[h.name for h in hits]}; after excluding registered replicates "
+                f"{len(canon)} remain: {[h.name for h in canon]}. Either the glob is "
+                f"too loose, or a same-condition replicate landed without being "
+                f"registered in aggregate_noise_floor_inventory.CLEAN_PAIRS")
     if len(hits) != 1:
         raise MissingInput(f"expected exactly 1 run dir for {pattern!r}, got {len(hits)}: "
                            f"{[h.name for h in hits]}")

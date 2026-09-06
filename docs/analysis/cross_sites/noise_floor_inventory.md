@@ -30,6 +30,11 @@ Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_noise_floor_inventory.
 | `B0.red.ptext` | B0 x reddit, canonical n=203 | 203 | **5.42pp** | **1.97pp** | 7.39% |
 | `B0.red.pprompt` | B0 x reddit, canonical n=203 | 203 | **6.90pp** | **4.43pp** | 11.33% |
 | `B0.red.psom` | B0 x reddit, canonical n=203 | 203 | **3.45pp** | **6.90pp** | 10.34% |
+| `B1.red.som` | B1 x reddit, canonical n=203 | 203 | **1.48pp** | **0.49pp** | 1.97% |
+| `B1.red.dom` | B1 x reddit, canonical n=203 | 203 | **1.97pp** | **1.48pp** | 3.45% |
+| `B0.red.som` | B0 x reddit, canonical n=203 | 203 | **5.42pp** | **2.96pp** | 8.37% |
+| `B0.red.dom` | B0 x reddit, canonical n=203 | 203 | **6.40pp** | **3.45pp** | 9.85% |
+| `B0.red.vision` | B0 x reddit, canonical n=203 | 203 | **2.46pp** | **2.46pp** | 4.93% |
 | `B1.wa-red` (**new**) | B1 x WA-reddit, registered 10-task pilot draw x 5 modes | 50 | **2.00pp** | **4.00pp** | 6.00% |
 
 ### 1b. The mean-difference floor is two draws, not a bound
@@ -51,6 +56,11 @@ The set-difference functional above is the one claim 1 needs. Claims 3 and 4 com
 | `B0.red.ptext` | 203 | 15 | 3.45pp | **1.91pp** | 3.14pp | ±3.74pp |
 | `B0.red.pprompt` | 203 | 23 | 2.46pp | **2.36pp** | 3.89pp | ±4.63pp |
 | `B0.red.psom` | 203 | 21 | 3.45pp | **2.26pp** | 3.71pp | ±4.42pp |
+| `B1.red.som` | 203 | 4 | 0.99pp | **0.99pp** | 1.62pp | ±1.93pp |
+| `B1.red.dom` | 203 | 7 | 0.49pp | **1.30pp** | 2.14pp | ±2.55pp |
+| `B0.red.som` | 203 | 17 | 2.46pp | **2.03pp** | 3.34pp | ±3.98pp |
+| `B0.red.dom` | 203 | 20 | 2.96pp | **2.20pp** | 3.62pp | ±4.32pp |
+| `B0.red.vision` | 203 | 10 | 0.00pp | **1.56pp** | 2.56pp | ±3.05pp |
 
 ⚠️ **The band's upper edge (3.45pp) is of the same order as one standard deviation (0.00–2.53pp).** So "clears the band" is not "clears the noise": an effect has to reach roughly **0.00–4.15pp** before a single rerun would be unlikely to produce it by itself. Both readings are reported because they answer different questions — *what did repetition actually deliver* (the two draws) versus *what could repetition deliver* (the null spread). Reading a 2.2pp effect against a 2.23pp "measured floor" is comparing a draw to a draw.
 

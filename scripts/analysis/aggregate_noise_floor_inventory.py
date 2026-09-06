@@ -182,6 +182,71 @@ CLEAN_PAIRS = [
     ("B0.red.psom",
      "results/visualwebarena/phase1/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173/phase1_phantom_som_router_0",
      "results/visualwebarena/phase1/B0_phantom_som_reddit_20260824_152956_638287802_3173740_R26550/phase1_phantom_som_router_0"),
+    # --- The first LOCAL non-classifieds rows, registered 2026-09-06 ------------
+    # Declared before the fire in pre_run/b1_reddit_chain_launch_intent_20260826.md
+    # (cells R1/R2), so these are registered as declared (§469.7).
+    #
+    # WHY THEY MATTER: C1 (serving_mode_floor) grouped the floor by serving path, but
+    # its LOCAL group was single-site — every local measurement in this project was
+    # classifieds. The intent file called that "the weakest part of C1" and ran these
+    # two to make the grouping falsifiable across sites rather than to refine it.
+    #
+    # POWER: declared underpowered BEFORE the fire — d ~ n x SR x 0.59 projected
+    # som 9.9 / dom 8.2, both under the d>=10 bar (§468 / B-1972). Observed discordance
+    # came in far below even that: som 4, dom 7. These rows are INVENTORY, not
+    # intervals, and are not licensed to carry a CI anywhere downstream.
+    #
+    # OUTCOME vs the pre-declared landing points (som 2.0% / dom 3.4%):
+    #   - "0-3% => grouping holds across two sites"     : som lands here
+    #   - "3-7.39% => cross-site version not available" : dom lands here, at the very
+    #     bottom of that band (0.4pp above 3%, 2.5pp below the API group's lower bound)
+    #   - ">=7.39% => C1 dead as stated"                : NOT triggered
+    # The intent file named the middle band "easiest to spin and hardest to report",
+    # which is exactly where dom landed. Reported as such rather than rounded into the
+    # comfortable band: the honest reading is that the two groups remain separated but
+    # the local group is no longer uniformly under 3%.
+    ("B1.red.som",
+     "results/visualwebarena/phase1/B1_som_reddit_20260706/phase1_som_router_0",
+     "results/visualwebarena/phase1/B1_som_reddit_20260830_093638_766738893_4123936_R4567/phase1_som_router_0"),
+    ("B1.red.dom",
+     "results/visualwebarena/phase1/B1_dom_reddit_20260703/phase1_dom_router_0",
+     "results/visualwebarena/phase1/B1_dom_reddit_20260901_022017_161214272_197095_R1798/phase1_dom_router_0"),
+    # --- B0 x reddit x {SoM, DOM, Vision}, registered 2026-09-06 ----------------
+    # Declared before the fire in pre_run/b0_reddit_replicate_chain_launch_intent_20260902.md
+    # (cells A1/A2/A3), landed 2026-09-02/04/06. Registered as declared (§469.7).
+    #
+    # WHY THEY MATTER: they complete the SIX-ARM set for B0 x reddit, which is what the
+    # 2^6 unique-solve envelope needs (the envelope is not defined on five arms). Before
+    # these, §470.3's cross-side asymmetry — the surviving hero's only quantitative
+    # backing — rested on cls-B0 alone. See scripts/analysis/unique_solve_noise_envelope.py
+    # --cell red_b0.
+    #
+    # POWER, as declared: som d=17.5 and dom d=17.5 carry intervals; vision d=9.3 was
+    # declared INVENTORY-ONLY before it ran, 0.7 short of the bar, and is "not licensed
+    # to carry a CI in any downstream table".
+    # ⚠️ Its OBSERVED discordance is 12, i.e. above the d>=10 bar its PROJECTION missed.
+    # Do not silently promote it on that basis: the bar was set on the projection, and
+    # re-reading power from the realised count is exactly the post-hoc move the
+    # declared-power discipline exists to prevent. It stays inventory until that rule is
+    # changed deliberately and in writing.
+    #
+    # SITE DRIFT RULED OUT, not assumed (this was Reading 2 of the intent file). The
+    # open CLAIM_UNVERIFIED at 台账 §478.4 suspected B0.red.ptext's 7.39% of being a
+    # June<->August site drift rather than a floor, on the shape of its 3:1 flip
+    # asymmetry. The intent declared: if the three new arms also come back >=2:1 and
+    # same-signed, 7.39% is unusable. They came back 11/6, 13/7, 6/6 — all under 2:1 —
+    # so the 3:1 is that arm's own property and 7.39% stands as a floor.
+    # `compare_cross_run_same_condition.py` returns start_url_mismatch = 0 on all three,
+    # with every flip classified model_nondeterm.
+    ("B0.red.som",
+     "results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936/phase1_som_router_0",
+     "results/visualwebarena/phase1/B0_som_reddit_20260902_194848_784669986_474818_R11761/phase1_som_router_0"),
+    ("B0.red.dom",
+     "results/visualwebarena/phase1/B0_dom_reddit_20260625_154833_928747130_2827521_R11344/phase1_dom_router_0",
+     "results/visualwebarena/phase1/B0_dom_reddit_20260904_010441_409707415_681024_R9525/phase1_dom_router_0"),
+    ("B0.red.vision",
+     "results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/phase1_vision_router_0",
+     "results/visualwebarena/phase1/B0_vision_reddit_20260905_081817_462107405_893625_R17511/phase1_vision_router_0"),
 ]
 
 # A replicate that is still running has a task set that merely LOOKS like a scored universe:

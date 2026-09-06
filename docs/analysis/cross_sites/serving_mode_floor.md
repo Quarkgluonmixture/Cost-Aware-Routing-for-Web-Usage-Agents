@@ -16,14 +16,14 @@ Until a second API-served backbone landed (2026-08-21) this question could not b
 
 | serving | arms | families | sites | floor range | powered arms (d≥10) |
 |---|---|---|---|---|---|
-| **API** | 10 | OpenAI, Qwen | 2 | **7.39–14.29%** | 10 (7.39–14.29%) |
-| **local** | 3 | Qwen | 1 | **0.00–3.12%** | 2 (0.00–0.00%) |
+| **API** | 13 | OpenAI, Qwen | 2 | **4.93–14.29%** | 12 (7.39–14.29%) |
+| **local** | 5 | Qwen | 2 | **0.00–3.45%** | 2 (0.00–0.00%) |
 
-The groups **do not overlap**: the lowest API floor (7.39%) is 4.26pp above the highest local one (3.12%).
+The groups **do not overlap**: the lowest API floor (4.93%) is 1.48pp above the highest local one (3.45%).
 
-Exact one-sided rank test on a perfect split: **p = 0.0035** (1/286 assignments at least this extreme). ⚠️ arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test.
+Exact one-sided rank test on a perfect split: **p = 0.0001** (1/8568 assignments at least this extreme). ⚠️ arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test.
 
-Restricted to arms carrying an interval (d≥10): separated=**True**, p = 0.0152, gap 7.39pp.
+Restricted to arms carrying an interval (d≥10): separated=**True**, p = 0.0110, gap 7.39pp.
 
 ## 2. Every arm, with its power
 
@@ -38,8 +38,13 @@ Restricted to arms carrying an interval (d≥10): separated=**True**, p = 0.0152
 | API | `Qwen3-VL-235B-A22B` | MoE 235B-A22B | VWA-reddit | `pprompt` | 203 | 11.08% | **11.33%** | 13.3 | yes |
 | API | `Qwen3-VL-235B-A22B` | MoE 235B-A22B | VWA-reddit | `psom` | 203 | 12.56% | **10.34%** | 15.0 | yes |
 | API | `Qwen3-VL-235B-A22B` | MoE 235B-A22B | VWA-classifieds | `ptext` | 224 | 14.96% | **10.27%** | 19.8 | yes |
+| API | `Qwen3-VL-235B-A22B` | MoE 235B-A22B | VWA-reddit | `dom` | 203 | 12.81% | **9.85%** | 15.3 | yes |
+| API | `Qwen3-VL-235B-A22B` | MoE 235B-A22B | VWA-reddit | `som` | 203 | 13.55% | **8.37%** | 16.2 | yes |
 | API | `Qwen3-VL-235B-A22B` | MoE 235B-A22B | VWA-reddit | `ptext` | 203 | 11.58% | **7.39%** | 13.9 | yes |
+| API | `Qwen3-VL-235B-A22B` | MoE 235B-A22B | VWA-reddit | `vision` | 203 | 7.39% | **4.93%** | 8.9 | **no — inventory only** |
+| local | `Qwen3-VL-4B` | dense 4B | VWA-reddit | `dom` | 203 | 5.67% | **3.45%** | 6.8 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-classifieds | `dom` | 224 | 6.47% | **3.12%** | 8.6 | **no — inventory only** |
+| local | `Qwen3-VL-4B` | dense 4B | VWA-reddit | `som` | 203 | 6.90% | **1.97%** | 8.3 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-classifieds | `vision` | 224 | 12.50% | **0.00%** | 16.5 | yes |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-classifieds | `som` | 224 | 14.29% | **0.00%** | 18.9 | yes |
 
@@ -55,8 +60,8 @@ Restricted to arms carrying an interval (d≥10): separated=**True**, p = 0.0152
 
 **Coverage gaps.**
 - B2 (local, Gemma) carries no replicate: at its SR (0.45-2.23%) d~1.8, far below the bar — the local group cannot be given a second family by measuring B2, which is a power limit, not a scheduling one
-- B1 has no reddit replicate: the local group is one site
 - B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)
+- the local group spans 2 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 1 — VWA-classifieds. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone
 
 ## 4. Why it matters beyond this project
 

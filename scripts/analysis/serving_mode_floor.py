@@ -161,6 +161,12 @@ def build() -> dict:
             floor_max_powered_pct=max((r["floor_pct"] for r in pw), default=None),
             families=sorted({r["family"] for r in rs}),
             sites=sorted({r["site_name"] for r in rs}),
+            # Site coverage RESTRICTED to arms carrying an interval. Kept separate
+            # because a group can span two sites at inventory grade while its
+            # powered subset still sits on one — which is exactly what happened to
+            # the local group on 2026-09-06, and the distinction a reviewer will
+            # press on. See the data-driven coverage gap below.
+            sites_powered=sorted({r["site_name"] for r in pw}),
             cells=sorted({f"{r['base']}.{r['site']}" for r in rs}),
         )
 
@@ -201,14 +207,37 @@ def build() -> dict:
             "实验笔记 §298.2: a controlled step-level probe on B1 (dense, local, temp=0) "
             "returned determinism 133/133 OK. The local group's near-zero floor is "
             "therefore not only a replicate-pair inference."),
-        "coverage_gaps": [
-            "B2 (local, Gemma) carries no replicate: at its SR (0.45-2.23%) d~1.8, far "
-            "below the bar — the local group cannot be given a second family by measuring "
-            "B2, which is a power limit, not a scheduling one",
-            "B1 has no reddit replicate: the local group is one site",
-            "B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)",
-        ],
+        "coverage_gaps": _coverage_gaps(g_api, g_loc),
     }
+
+
+def _coverage_gaps(g_api: dict, g_loc: dict) -> list[str]:
+    """Coverage gaps, derived from the arms actually registered.
+
+    This list used to be hand-written, and carried "B1 has no reddit replicate: the
+    local group is one site" for eleven days after B1.red.som/dom landed
+    (2026-08-30 / 09-01) and made it two. The table above had already updated itself;
+    only the prose was stale. Anything stated here that the data can state is
+    therefore computed, and only genuinely external facts (a cell that does not exist
+    at all) stay as text.
+    """
+    gaps = [
+        "B2 (local, Gemma) carries no replicate: at its SR (0.45-2.23%) d~1.8, far "
+        "below the bar — the local group cannot be given a second family by measuring "
+        "B2, which is a power limit, not a scheduling one",
+        "B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)",
+    ]
+    for label, g in (("API", g_api), ("local", g_loc)):
+        lost = [s for s in g["sites"] if s not in g["sites_powered"]]
+        if lost:
+            gaps.append(
+                f"the {label} group spans {len(g['sites'])} site(s) only at INVENTORY "
+                f"grade: restricted to arms carrying an interval (d>={D_BAR}) it covers "
+                f"{len(g['sites_powered'])} — {', '.join(g['sites_powered']) or 'none'}. "
+                f"Dropped at the bar: {', '.join(lost)}. A cross-site claim about this "
+                f"group therefore rests on arms that were declared underpowered before "
+                f"they ran, and cannot be upgraded by pointing at the site count alone")
+    return gaps
 
 
 def render(d: dict) -> str:
