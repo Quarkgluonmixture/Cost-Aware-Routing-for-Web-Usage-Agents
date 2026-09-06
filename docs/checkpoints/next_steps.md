@@ -23,12 +23,45 @@ updated: 2026-09-03
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
-> ## 🟠 2026-09-03 · Showcase 海报 v8.1 定稿 → **09-04 发 Zekun（Slack）**；demo 09-07 后补录
+> ## 🟢 2026-09-06 · reddit 六臂结算完 + B1×shopping chain 在跑 + demo 可上板
 >
-> chronicle → **笔记 §498 + §499.1–.6** · 台账 **+13** · commits `6e15eb5`…`290f636`+ · 产物 `deliverables/showcase/`
+> chronicle → **笔记 §500 + §501** · 台账 **+19** · commits `f971260`…`33ca221`
+>
+> ### GPU 侧（不用管，跑着）
+> **B1 × VWA-shopping × {vision, P-text, P-prompt}** 09-06 11:08 UTC 发车（A100，
+> 持 `p79_magento.lock`）。三格 × ~57h ≈ **09-13 落**，$0（本地权重）。意图书
+> `pre_run/b1_shopping_chain_launch_intent_20260906.md` 已写死落点，**落地时对着它读，
+> 不要另起解释**。⚠️ 它买不到 envelope（shopping 无 replicate），全是 single-run 读数。
+> 进度现查：`ssh condense-a100 'ls .../B1_vision_shopping_20260906/*/episodes/*summary*|wc -l'`
+>
+> ### 已结算，可直接引用
+> - **hero 要收缩**：跨 side 覆盖差异在 reddit 上「接触」(+0) 而非分离（cls +5）。
+>   站得住的是 **SoM 单臂**（两站 6/4），不是「视觉侧整体」。产物
+>   `docs/analysis/cross_sites/unique_solve_envelope_cross_cell.md`
+> - **C1 存活但变窄**：API 下界 7.39→**4.93%**、local 首次跨两站、gap 4.26→**1.48pp**。
+>   ⚠️ 「local 跨两站」**只在 inventory 级**成立，d≥10 子集仍只有 classifieds
+> - CLEAN_PAIRS 13→18 行，全部 as-declared 注册
+>
+> ### 人力侧待办
+> 1. **09-16 showcase**：demo 已 board-ready → `deliverables/showcase/demo_portable.html`
+>    （单文件 11.7 MB，双击即开）。§8 里「SoM artifacts 被清了、需要重录」**已证伪**，
+>    不要再去占 A100 重录
+> 2. **NAACL ARR 10-12**：hero 措辞需按上面第一条改写；`section1_intro.md` 与
+>    `TERMS.md` 尚未同步
+>
+> ### 本轮教训（已进台账）
+> 在一侧看到 0 就断定「不存在」→ 会去重新生产它，而重新生产要占 paper-grade 主机 ·
+> 「在我的服务器上没问题」对交付给别人用特定工具打开的页面不构成验证 ·
+> `background:currentColor` 与「文字用 color」不可共存（症状是查 DOM 全绿、屏幕上看不见）·
+> 用来互相比较的面板必须共享基线 · 度量方式错会伪装成被测对象坏（像素 diff 两次假阳性）
+
+
+> ## 🟠 2026-09-03 · Showcase 海报 v8.2 定稿 → **09-04 发 Zekun（Slack）**；demo 09-07 后补录
+>
+> chronicle → **笔记 §498 + §499.1–.7** · 台账 **+14** · commits `6e15eb5`…`290f636`+ · 产物 `deliverables/showcase/`
 >
 > ### 现在该做的（人力，不抢 GPU）
-> 1. **09-04 内**：Slack DM Zekun，附 `deliverables/showcase/poster_jiaming_wei.pdf`（v8.1；页脚邮箱已改为
+> 1. **09-04 内**：Slack DM Zekun，附 `deliverables/showcase/poster_jiaming_wei.pdf`（v8.2；页脚邮箱已改为
 >    `jiaming.wei.25@ucl.ac.uk`，v2–v8 印的 .22 是错的），正文用 `SHOWCASE_PREP.md §1`（含 oral slot pitch
 >    + 请求板旁一张桌子/电源给 demo）。organiser 经 user 确认：替换 PDF 截止 09-04，之后自印 A1。
 > 2. **09-05**：毕设硬截止，海报的事全部让路。
@@ -39,17 +72,19 @@ updated: 2026-09-03
 > 4. **09-16**：13:15–14:35 站板前（投票 14:35 截止，早于 oral）；板前讲稿 `SHOWCASE_PREP.md §2`，Q&A §4，
 >    数字速查 §5，不能说的话 §6。
 >
-> ### 海报定稿的形状（改前先读 `poster_content.md` 的 v8/v7 头）
+> ### 海报定稿的形状（改前先读 `poster_content.md` 的 v8.2/v8 头）
 > 模板三栏骨架 · 顶部 loop 大图（真实截图）· 数字条 + 三条比较定义 · 左 THE CATCH / 为什么 / Fig 3 /
 > takeaway · 右 Fig 2 / 判词 / 电脑桥接表。全部白话（对照表在 poster_content.md）。每个数字由脚本解析
 > （`poster_figures.py`），demo 三题 assert 两次运行 ✓✗ 一致。
+> v8.2 按学长“字太小 / 紧凑 / 空白处放大”反馈做 board-distance pass：正文 20.5pt、图注 15pt、
+> 小标签 13.5pt、栏头 15.5pt、数字 36pt；Fig 3 加高填左栏。最终左右余量 19.9/9.0mm，无越界。
 >
 > ### 本轮教训（已进台账）
 > 「核过海报」≠「核过旁边那份」（讲稿里留着作废的 13.7 / 12–14，§498.3）· 白话化会拉长标签，换词后要
 > 重看图例/轴碰撞（§499.4）· 零预设审读优化的是它被问的那一维，视觉主角是作者的判断（§499.6）·
 > **邮箱这种"常识字段"也要 user 确认，不要从旧文件继承**。
 >
-> ⚠️ 笔记 §498–§499.6 与台账条目在工作树里**未提交**：另一 session 在同一文件里有未提交的 §496/§497；
+> ⚠️ 笔记 §498–§499.7 与台账条目在工作树里**未提交**：另一 session 在同一文件里有未提交的 §496/§497；
 > 两边一起 commit 即可。
 
 
