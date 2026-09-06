@@ -48,11 +48,69 @@ h1{margin:0;font:700 25px/1.2 Georgia,serif;letter-spacing:.1px}
 .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
            opacity:0;transition:opacity .26s ease}
 .stage img.on{opacity:1}
+.lane.LOOK .cur,.lane.LOOK .fx,.lane.LOOK .fx2,.lane.LOOK .fx3,.lane.LOOK .tag{color:var(--look)}
+.lane.READ .cur,.lane.READ .fx,.lane.READ .fx2,.lane.READ .fx3,.lane.READ .tag{color:var(--read)}
+.lane.BOTH .cur,.lane.BOTH .fx,.lane.BOTH .fx2,.lane.BOTH .fx3,.lane.BOTH .tag{color:var(--both)}
 /* Overlay geometry is a percentage of the 1280x720 viewport the agent saw, so it
    stays correct at any column width. */
 .mk{position:absolute;pointer-events:none;opacity:0;
-    transition:opacity .22s ease,left .26s ease,top .26s ease,width .26s ease,height .26s ease}
+    transition:opacity .3s ease,left .9s var(--ease),top .9s var(--ease),
+               width .9s var(--ease),height .9s var(--ease)}
 .mk.on{opacity:1}
+
+/* ---- the pointer -------------------------------------------------------------
+   A step is not a slideshow cut: the agent moved somewhere and acted. The pointer
+   travels to the target over ~0.9s on an ease-in-out curve (fast in the middle,
+   settling at the end — roughly how a hand moves), the click fires, and only THEN
+   does the frame change. Showing the frame first would put the effect before the
+   cause, which is exactly what made the earlier version read as a flicker. */
+:root{--ease:cubic-bezier(.33,.02,.2,1)}
+.cur{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-2px 0 0 -2px;
+     pointer-events:none;z-index:6;opacity:0;
+     transition:opacity .35s ease,left .9s var(--ease),top .9s var(--ease),
+                transform .12s ease}
+.cur.on{opacity:1}
+.cur.press{transform:scale(.74) rotate(-4deg)}
+.cur svg{display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
+
+/* click / type / select land as an expanding ring; scroll gets its own glyph */
+/* Two rings, the second delayed, so the click reads as a beat rather than a blink —
+   at board distance a single fast ring is easy to miss between glances. */
+.fx{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+    pointer-events:none;z-index:5;opacity:0;border:4px solid currentColor;
+    box-shadow:0 0 0 1.5px rgba(255,255,255,.9),inset 0 0 0 1.5px rgba(255,255,255,.9)}
+.fx.go{animation:ring .82s cubic-bezier(.15,.6,.3,1)}
+@keyframes ring{
+  0%{opacity:1;transform:scale(.3)}
+  55%{opacity:.75}
+  100%{opacity:0;transform:scale(6.2)}}
+.fx2{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+     pointer-events:none;z-index:5;opacity:0;border:3px solid currentColor}
+.fx2.go{animation:ring2 .82s cubic-bezier(.15,.6,.3,1) .14s}
+@keyframes ring2{
+  0%{opacity:.85;transform:scale(.3)}
+  100%{opacity:0;transform:scale(4.4)}}
+/* A solid flash marks the instant of contact, but it must not hide WHAT was clicked —
+   an opaque disc over the target defeats the point of drawing the target at all. Kept
+   translucent, small and short: visible as a pulse, transparent to the element under it. */
+.fx3{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+     pointer-events:none;z-index:5;opacity:0;background:currentColor}
+.fx3.go{animation:flash .3s ease-out}
+@keyframes flash{0%{opacity:.5;transform:scale(.15)}100%{opacity:0;transform:scale(1.9)}}
+
+/* the action word flashes where it happened, so a visitor reads WHAT was done
+   without looking away from the frame */
+.tag{position:absolute;z-index:7;padding:4px 11px;border-radius:7px;color:#fff;
+     background:currentColor;font:700 15px Arial;letter-spacing:.3px;white-space:nowrap;
+     box-shadow:0 0 0 2px rgba(255,255,255,.92),0 3px 9px rgba(0,0,0,.35);
+     transform:translate(-50%,-190%);opacity:0;pointer-events:none}
+.tag.go{animation:tagpop 1.15s ease-out}
+@keyframes tagpop{
+  0%{opacity:0;transform:translate(-50%,-150%) scale(.85)}
+  18%{opacity:1;transform:translate(-50%,-200%) scale(1)}
+  75%{opacity:1;transform:translate(-50%,-205%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-240%) scale(1)}}
+.tag span{color:#fff;opacity:.82;font-weight:400}
 .mk.box{border:3px solid #fff;border-radius:3px;
         box-shadow:0 0 0 2.5px currentColor,0 0 13px rgba(0,0,0,.55)}
 .lane.BOTH .mk.box{border-width:4px;animation:pulse 1.5s ease-out infinite}
@@ -172,6 +230,10 @@ function mount(){
         ${L.frames.map((f,i) => `<img src="${f.img}" alt="${k} step ${f.step}" data-i="${i}">`).join("")}
         <div class="mk box"><span class="eid"></span></div>
         <div class="mk point"></div>
+        <div class="fx"></div><div class="fx2"></div><div class="fx3"></div><div class="tag"></div>
+        <div class="cur"><svg width="26" height="26" viewBox="0 0 26 26">
+          <path d="M3 2 L3 20 L8 15.5 L11.3 22.6 L14.6 21 L11.4 14.2 L18 14 Z"
+                fill="#fff" stroke="#141E41" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
       </div>
       <div class="think"></div>
       <div class="foot"><span class="act">—</span><span class="pos"></span><span class="usd"></span></div>
@@ -179,6 +241,9 @@ function mount(){
     box.appendChild(el);
     EL[k] = {imgs:[...el.querySelectorAll(".stage img")], box:el.querySelector(".mk.box"),
              eid:el.querySelector(".eid"), point:el.querySelector(".mk.point"),
+             cur:el.querySelector(".cur"), fx:el.querySelector(".fx"),
+             fx2:el.querySelector(".fx2"), fx3:el.querySelector(".fx3"),
+             tag:el.querySelector(".tag"),
              think:el.querySelector(".think"), act:el.querySelector(".act"),
              pos:el.querySelector(".pos"), usd:el.querySelector(".usd"),
              bar:el.querySelector(".bar i"), lane:el};
@@ -186,16 +251,43 @@ function mount(){
   $("#prov").innerHTML = ORDER.map(k => `${k}: <code>${d.lanes[k].run}</code>`).join("<br>");
 }
 
-function paint(){
+// A step plays in three beats so that cause precedes effect:
+//   1. MOVE   the pointer travels to this step's target (~0.9s, ease-in-out)
+//   2. ACT    the click ring fires and the action word flashes at that spot
+//   3. RESULT the frame cross-fades to the page the action produced
+// Beat 3 is why the frame index shown is `i` while the pointer aims at frame `i`'s
+// target and then advances: the screenshot stored with a step is the page BEFORE the
+// action, so revealing the next one on the click is the honest ordering, not a flourish.
+const T_MOVE = 950, T_ACT = 520, T_HOLD = 1250;
+const STEP_MS = T_MOVE + T_ACT + T_HOLD;
+let beats = [];
+
+const clearBeats = () => { beats.forEach(clearTimeout); beats = []; };
+const at = (ms, fn) => beats.push(setTimeout(fn, ms));
+const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+
+// Where the pointer should sit for a frame: the centre of a box, the point itself,
+// or — for a step with no target, e.g. scroll — wherever it already is.
+function aim(m){
+  if (!m) return null;
+  return m.kind === "box" ? {x:(m.x + m.w/2)/12.8, y:(m.y + m.h/2)/7.2}
+                          : {x:m.x/12.8, y:m.y/7.2};
+}
+
+function paint(opts){
+  const anim = !(opts && opts.instant);
+  clearBeats();
   const d = window.DEMO[task];
   ORDER.forEach(k => {
     const L = d.lanes[k], e = EL[k];
     const i = Math.min(cursor, L.frames.length - 1);
-    const f = L.frames[i];
-    e.imgs.forEach((im, j) => im.classList.toggle("on", j === i));
+    const f = L.frames[i], done = cursor > L.frames.length - 1;
 
-    // marks: reposition the SAME nodes so they glide instead of popping
-    const m = f.mark;
+    // beat 0 — the frame this action is about, plus its text
+    e.imgs.forEach((im, j) => im.classList.toggle("on", j === i));
+    setText(e, L, f, i);
+
+    const m = f.mark, a = aim(m);
     const showId = k === "BOTH" && m && m.id != null;
     if (m && m.kind === "box"){
       Object.assign(e.box.style, {left:(m.x/12.8)+"%", top:(m.y/7.2)+"%",
@@ -206,22 +298,61 @@ function paint(){
     } else if (m && m.kind === "point"){
       Object.assign(e.point.style, {left:(m.x/12.8)+"%", top:(m.y/7.2)+"%"});
       e.point.classList.add("on"); e.box.classList.remove("on");
-    } else {
-      e.box.classList.remove("on"); e.point.classList.remove("on");
-    }
+    } else { e.box.classList.remove("on"); e.point.classList.remove("on"); }
 
-    const html = f.thought ? esc(f.thought) : noReason({...f, lane:k});
-    if (e.think.dataset.h !== html){
-      e.think.dataset.h = html;
-      e.think.classList.add("swap");
-      setTimeout(() => { e.think.innerHTML = html; e.think.classList.remove("swap"); }, 110);
+    if (done){ e.cur.classList.remove("on"); return; }
+
+    // beat 1 — travel. Without `anim` the pointer is teleported (manual stepping
+    // backwards, or a task switch), so it never crawls across a stale frame.
+    if (a){
+      e.cur.classList.add("on");
+      if (!anim) e.cur.style.transition = "none";
+      e.cur.style.left = a.x + "%"; e.cur.style.top = a.y + "%";
+      if (!anim) { void e.cur.offsetWidth; e.cur.style.transition = ""; }
     }
-    e.act.textContent = f.action || "—";
-    e.pos.textContent = `step ${f.step + 1}/${L.frames.length}`;
-    e.usd.textContent = "$" + f.cost_cum.toFixed(3);
-    e.bar.style.width = (100 * (i + 1) / L.frames.length) + "%";
-    e.lane.dataset.done = cursor >= L.frames.length - 1 ? "1" : "0";
+    if (!anim) return;
+
+    // beat 2 — the act, at the place the pointer just reached
+    at(T_MOVE, () => {
+      if (a){
+        ["fx","fx2","fx3","tag"].forEach(n => {
+          e[n].style.left = a.x + "%"; e[n].style.top = a.y + "%";
+        });
+        e.tag.innerHTML = verb(f.action) + (showId ? ` <span>[${m.id}]</span>` : "");
+        replay(e.fx, "go"); replay(e.fx2, "go"); replay(e.fx3, "go"); replay(e.tag, "go");
+        e.cur.classList.add("press");
+        at(T_MOVE + 130, () => e.cur.classList.remove("press"));
+      } else {
+        // no target (scroll / finish): say so where the pointer stands
+        e.tag.style.left = e.cur.style.left || "50%";
+        e.tag.style.top = e.cur.style.top || "50%";
+        e.tag.innerHTML = verb(f.action);
+        replay(e.tag, "go");
+      }
+    });
+
+    // beat 3 — the page the action produced
+    if (i + 1 < L.frames.length)
+      at(T_MOVE + T_ACT, () => e.imgs.forEach((im, j) => im.classList.toggle("on", j === i + 1)));
   });
+}
+
+const VERB = {click:"click", type:"type", scroll:"scroll", select_option:"select",
+              goto:"go to", hover:"hover", key_press:"key", finish:"finish", stop:"finish"};
+const verb = a => VERB[a] || a || "act";
+
+function setText(e, L, f, i){
+  const html = f.thought ? esc(f.thought) : noReason({...f, lane:e.lane.classList[1]});
+  if (e.think.dataset.h !== html){
+    e.think.dataset.h = html;
+    e.think.classList.add("swap");
+    at(110, () => { e.think.innerHTML = html; e.think.classList.remove("swap"); });
+  }
+  e.act.textContent = f.action || "—";
+  e.pos.textContent = `step ${f.step + 1}/${L.frames.length}`;
+  e.usd.textContent = "$" + f.cost_cum.toFixed(3);
+  e.bar.style.width = (100 * (i + 1) / L.frames.length) + "%";
+  e.lane.dataset.done = cursor >= L.frames.length - 1 ? "1" : "0";
 }
 
 // Some steps carry a tool call with no reasoning text. That is the recording, not a
@@ -237,6 +368,7 @@ function noReason(f){
 function go(t){ task = t; cursor = 0; tabs(); mount(); paint(); }
 
 function step(n){
+  const back = n < 0;
   cursor += n;
   if (cursor >= maxLen(task) + 2){            // hold the finished state, then loop on
     const i = window.DEMO_TASKS.indexOf(task);
@@ -244,9 +376,9 @@ function step(n){
     return;
   }
   if (cursor < 0) cursor = 0;
-  paint();
+  paint(back ? {instant:true} : undefined);
 }
-function loop(){ clearInterval(timer); if (playing) timer = setInterval(() => step(1), 2100); }
+function loop(){ clearInterval(timer); if (playing) timer = setInterval(() => step(1), STEP_MS); }
 const manual = n => { playing = false; $("#play").textContent = "Play"; loop(); step(n); };
 
 $("#next").onclick = () => manual(1);
