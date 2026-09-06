@@ -230,6 +230,11 @@ kbd{border:1px solid var(--hair);border-bottom-width:2.5px;border-radius:5px;pad
 
 <script src="data.js"></script>
 <script>
+// Frame source. build_portable.py inlines every frame as a data URI under
+// window.FRAMES; without it the relative paths under frames/ are used as-is, so the
+// served copy and the single-file copy run identical code.
+const SRC = p => (window.FRAMES && window.FRAMES[p]) || p;
+
 const WHAT = {LOOK:"screenshot only", READ:"text tree only", BOTH:"marked screenshot"};
 const ORDER = ["LOOK","READ","BOTH"];
 const $ = s => document.querySelector(s);
@@ -244,7 +249,7 @@ const maxLen = t => Math.max(...ORDER.map(k => window.DEMO[t].lanes[k].frames.le
 (function preload(){
   for (const t of window.DEMO_TASKS)
     for (const k of ORDER)
-      for (const f of window.DEMO[t].lanes[k].frames) new Image().src = f.img;
+      for (const f of window.DEMO[t].lanes[k].frames) new Image().src = SRC(f.img);
 })();
 
 function tabs(){
@@ -277,7 +282,7 @@ function mount(){
       <div class="lh"><b>${k}</b><span class="what">${WHAT[k]}</span>
         <span class="verdict ${L.success ? "ok" : "no"}">${L.success ? "✓ solved" : "✗ failed"} · ${L.steps} steps</span></div>
       <div class="stage"><div class="frame">
-        ${L.frames.map((f,i) => `<img src="${f.img}" alt="${k} step ${f.step}" data-i="${i}">`).join("")}
+        ${L.frames.map((f,i) => `<img src="${SRC(f.img)}" alt="${k} step ${f.step}" data-i="${i}">`).join("")}
         <div class="mk box"><span class="eid"></span></div>
         <div class="mk point"></div>
         <div class="fx"></div><div class="fx2"></div><div class="fx3"></div><div class="tag"></div>

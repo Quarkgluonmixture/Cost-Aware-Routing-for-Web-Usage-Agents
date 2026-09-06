@@ -1,6 +1,13 @@
 # Look, read, or both? — the board demo (16 Sep)
 
-Open **`index.html`**. Double-click is enough — no server, no network, no site.
+Two builds, same page:
+
+| | what it is | when to use it |
+|---|---|---|
+| **`demo_portable.html`** | one file, 11.7 MB, everything inlined | **the venue.** Copy it anywhere — USB stick, a borrowed laptop, email to yourself. Nothing else needs to travel with it. |
+| `demo/index.html` | page + `data.js` + `frames/` | editing and rebuilding |
+
+Either one: double-click to open. No server, no network, no site.
 
 ```
 ←  →     step            space   play / pause          1 2 3   task
@@ -54,8 +61,29 @@ READ spends $0.041 and fails.
 ## Rebuilding
 
 ```bash
-.venv/bin/python3 deliverables/showcase/demo/build_demo_data.py
+.venv/bin/python3 deliverables/showcase/demo/build_demo_data.py   # data/ + data.js + frames/
+.venv/bin/python3 deliverables/showcase/demo/build_portable.py    # -> ../demo_portable.html
 ```
+
+### The portable build does not trade away quality
+
+Frames are re-encoded to **lossless WebP** — not to a lossy format, and not resized.
+Three checks stand behind that word:
+
+1. the encoder output is decoded again and compared to the source PNG **per frame**,
+   and the build aborts if a single pixel differs;
+2. measured result: 15.0 MB of PNG becomes 8.7 MB of WebP (58%) with identical pixels,
+   which is what keeps the inlined file at 11.7 MB rather than ~20 MB;
+3. both builds are then rendered side by side and their frames diffed on screen —
+   LOOK, READ and BOTH all come back `pixel identical` at 1280x720.
+
+The data URIs live in one JS object rather than in 82 `<img src="data:...">`
+attributes: same bytes, but the HTML parser sees a single string literal instead of
+~12 MB of attribute text. Cold open of the single file measures ~3 s to fully decoded.
+
+`index.html` is shared by both builds — it reads `window.FRAMES` when the portable
+build defines it and falls back to the relative paths otherwise, so there is no second
+copy of the page to keep in sync.
 
 Regenerates `data/`, `data.js` and `frames/`. `frames/` is committed on purpose: its
 inputs live under `results/`, which is gitignored and is not present on a laptop taken
