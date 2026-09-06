@@ -1,0 +1,29 @@
+[
+ {
+  "task": 130,
+  "caption": "The answer is in the picture. The text tree never says \u201csunset\u201d.",
+  "outcome": {
+   "LOOK": true,
+   "READ": false,
+   "BOTH": true
+  }
+ },
+ {
+  "task": 76,
+  "caption": "The answer is in the form. LOOK wanders 26 steps and never edits it.",
+  "outcome": {
+   "LOOK": false,
+   "READ": true,
+   "BOTH": false
+  }
+ },
+ {
+  "task": 17,
+  "caption": "Red handlebars must be seen; $900\u2013950 must be filtered. Neither alone is enough.",
+  "outcome": {
+   "LOOK": false,
+   "READ": false,
+   "BOTH": true
+  }
+ }
+]
