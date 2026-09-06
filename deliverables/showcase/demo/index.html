@@ -52,7 +52,7 @@ h1{margin:0;font:700 25px/1.2 Georgia,serif;letter-spacing:.1px}
 .lh b{font:700 16.5px Arial;letter-spacing:.4px}
 .lh .what{font-size:12.5px;opacity:.93}
 .lh .verdict{margin-left:auto;font:700 14px Arial}
-.stage{position:relative;background:#0d1220;aspect-ratio:1280/720}
+.stage{position:relative;background:#0d1220;aspect-ratio:1280/720;overflow:hidden}
 /* Every frame of the task is mounted at once and cross-faded by opacity. Swapping a
    single <img>'s src re-fetches and re-decodes it, which blanks the element for a
    frame or two — that flicker is what a visitor reads as "broken", and it is worst on
@@ -112,7 +112,12 @@ h1{margin:0;font:700 25px/1.2 Georgia,serif;letter-spacing:.1px}
 
 /* the action word flashes where it happened, so a visitor reads WHAT was done
    without looking away from the frame */
-.tag{position:absolute;z-index:7;padding:4px 11px;border-radius:7px;color:#fff;
+/* The lane tints this element via `color`, and the background reads that same
+   currentColor — so the label's own text CANNOT use `color`, or it comes out the
+   same shade as the plate behind it and vanishes (it did: textContent said "click"
+   while the screen showed a blank orange bar). The text therefore lives in child
+   elements that set their own colour. */
+.tag{position:absolute;z-index:7;padding:4px 11px;border-radius:7px;
      background:currentColor;font:700 15px Arial;letter-spacing:.3px;white-space:nowrap;
      box-shadow:0 0 0 2px rgba(255,255,255,.92),0 3px 9px rgba(0,0,0,.35);
      transform:translate(-50%,-190%);opacity:0;pointer-events:none}
@@ -122,7 +127,15 @@ h1{margin:0;font:700 25px/1.2 Georgia,serif;letter-spacing:.1px}
   18%{opacity:1;transform:translate(-50%,-200%) scale(1)}
   75%{opacity:1;transform:translate(-50%,-205%) scale(1)}
   100%{opacity:0;transform:translate(-50%,-240%) scale(1)}}
-.tag span{color:#fff;opacity:.82;font-weight:400}
+/* target near the top edge: the label drops below it rather than off the stage */
+.tag.below.go{animation:tagpopdown 1.15s ease-out}
+@keyframes tagpopdown{
+  0%{opacity:0;transform:translate(-50%,60%) scale(.85)}
+  18%{opacity:1;transform:translate(-50%,110%) scale(1)}
+  75%{opacity:1;transform:translate(-50%,115%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,150%) scale(1)}}
+.tag b{color:#fff;font-weight:700}
+.tag i{color:#fff;opacity:.85;font-weight:400;font-style:normal}
 .mk.box{border:3px solid #fff;border-radius:3px;
         box-shadow:0 0 0 2.5px currentColor,0 0 13px rgba(0,0,0,.55)}
 .lane.BOTH .mk.box{border-width:4px;animation:pulse 1.5s ease-out infinite}
@@ -329,10 +342,18 @@ function paint(opts){
     // beat 2 — the act, at the place the pointer just reached
     at(T_MOVE, () => {
       if (a){
-        ["fx","fx2","fx3","tag"].forEach(n => {
+        ["fx","fx2","fx3"].forEach(n => {
           e[n].style.left = a.x + "%"; e[n].style.top = a.y + "%";
         });
-        e.tag.innerHTML = verb(f.action) + (showId ? ` <span>[${m.id}]</span>` : "");
+        // Anchor the label to the box's own top/bottom edge, and flip it below when
+        // that edge is too close to the top of the stage to fit the label above it.
+        const topPct = m.kind === "box" ? m.y/7.2 : a.y;
+        const botPct = m.kind === "box" ? (m.y + m.h)/7.2 : a.y;
+        const below = topPct < 11;
+        e.tag.classList.toggle("below", below);
+        e.tag.style.left = a.x + "%";
+        e.tag.style.top = (below ? Math.min(botPct, 96) : Math.max(topPct, 4)) + "%";
+        e.tag.innerHTML = `<b>${verb(f.action)}</b>` + (showId ? ` <i>[${m.id}]</i>` : "");
         replay(e.fx, "go"); replay(e.fx2, "go"); replay(e.fx3, "go"); replay(e.tag, "go");
         e.cur.classList.add("press");
         at(T_MOVE + 130, () => e.cur.classList.remove("press"));
@@ -340,7 +361,7 @@ function paint(opts){
         // no target (scroll / finish): say so where the pointer stands
         e.tag.style.left = e.cur.style.left || "50%";
         e.tag.style.top = e.cur.style.top || "50%";
-        e.tag.innerHTML = verb(f.action);
+        e.tag.innerHTML = `<b>${verb(f.action)}</b>`;
         replay(e.tag, "go");
       }
     });
