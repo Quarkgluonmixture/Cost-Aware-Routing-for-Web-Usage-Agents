@@ -28,38 +28,55 @@
   --hair:#DDE3F2; --fill:#F7F9FD;
 }
 *{box-sizing:border-box}
-body{margin:0;background:#fff;color:var(--ink);
+/* The page is looked at full-screen on a board laptop, so it claims the whole
+   viewport and gives every spare pixel to the frames rather than leaving a band of
+   white under the lanes. Everything except .lanes is fixed height; .lanes takes the
+   remainder and each stage grows into it. */
+html,body{height:100%}
+body{margin:0;background:#fff;color:var(--ink);display:flex;flex-direction:column;
+     overflow:hidden;
      font:16px/1.45 Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
-header{padding:18px 26px 12px;border-bottom:1px solid var(--hair)}
-h1{margin:0;font:700 25px/1.2 Georgia,serif;letter-spacing:.1px}
-.sub{margin-top:5px;color:var(--muted);font-size:14.5px}
+header{padding:14px 26px 10px;border-bottom:1px solid var(--hair);flex:none}
+h1{margin:0;font:700 28px/1.2 Georgia,serif;letter-spacing:.1px}
+.sub{margin-top:5px;color:var(--muted);font-size:15.5px}
 .tabs{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
 .tab{padding:7px 15px;border:1.5px solid var(--hair);border-radius:999px;
      background:#fff;cursor:pointer;font:600 14px Arial;color:var(--muted)}
 .tab[aria-selected="true"]{border-color:var(--ink);color:var(--ink);background:var(--fill)}
-.taskbar{padding:14px 26px 0}
-.intent{font:600 20px/1.32 Georgia,serif;color:var(--ink)}
+.taskbar{padding:11px 26px 0;flex:none}
+.intent{font:600 23px/1.3 Georgia,serif;color:var(--ink)}
 .intent .q{color:var(--muted);font-weight:400}
-.caption{margin-top:6px;font:14.5px Arial;color:var(--muted)}
+.caption{margin-top:6px;font:16px Arial;color:var(--muted)}
 .caption b{color:var(--ink);font-weight:700}
-.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:13px 26px 0}
+/* Frames are as wide as three columns allow (at 2560px the column is 825px and the
+   frame 823px), so extra height cannot make them bigger. Rather than pour the surplus
+   into one over-tall reasoning box — which just moves the empty space inside the lane —
+   the row is centred and the slack is split evenly above and below. */
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:13px 26px 0;
+       flex:1;min-height:0;align-items:center}
 .lane{border:1.5px solid var(--hair);border-radius:11px;overflow:hidden;
-      display:flex;flex-direction:column;background:#fff}
+      display:flex;flex-direction:column;background:#fff;min-height:0}
 .lane[data-done="1"]{opacity:.97}
 .lh{display:flex;align-items:baseline;gap:9px;padding:9px 13px;color:#fff}
 .lane.LOOK .lh{background:var(--look)} .lane.READ .lh{background:var(--read)}
 .lane.BOTH .lh{background:var(--both)}
-.lh b{font:700 16.5px Arial;letter-spacing:.4px}
-.lh .what{font-size:12.5px;opacity:.93}
-.lh .verdict{margin-left:auto;font:700 14px Arial}
-.stage{position:relative;background:#0d1220;aspect-ratio:1280/720;overflow:hidden}
+.lh b{font:700 18px Arial;letter-spacing:.4px}
+.lh .what{font-size:13.5px;opacity:.93}
+.lh .verdict{margin-left:auto;font:700 15px Arial}
+/* Three 16:9 frames side by side occupy a 48:9 strip, so on a 16:9 screen the
+   height is never the binding constraint — the leftover would become letterbox black
+   above and below each frame, which is what read as "the bottom is empty". The stage
+   therefore takes only the height its frame needs, and the surplus goes to the
+   reasoning text, which is content worth enlarging at board distance. */
+.stage{flex:none;background:#0d1220;overflow:hidden}
+.frame{position:relative;aspect-ratio:1280/720;width:100%;overflow:hidden}
 /* Every frame of the task is mounted at once and cross-faded by opacity. Swapping a
    single <img>'s src re-fetches and re-decodes it, which blanks the element for a
    frame or two — that flicker is what a visitor reads as "broken", and it is worst on
    exactly the step transitions this demo is made of. */
-.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+.frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
            opacity:0;transition:opacity .26s ease}
-.stage img.on{opacity:1}
+.frame img.on{opacity:1}
 .lane.LOOK .cur,.lane.LOOK .fx,.lane.LOOK .fx2,.lane.LOOK .fx3,.lane.LOOK .tag{color:var(--look)}
 .lane.READ .cur,.lane.READ .fx,.lane.READ .fx2,.lane.READ .fx3,.lane.READ .tag{color:var(--read)}
 .lane.BOTH .cur,.lane.BOTH .fx,.lane.BOTH .fx2,.lane.BOTH .fx3,.lane.BOTH .tag{color:var(--both)}
@@ -159,22 +176,28 @@ h1{margin:0;font:700 25px/1.2 Georgia,serif;letter-spacing:.1px}
 .lane.BOTH .mk{color:var(--both)}
 .pending{position:absolute;inset:0;display:grid;place-items:center;
          background:rgba(17,17,17,.72);color:#fff;font:600 15px Arial;letter-spacing:.3px}
-.think{padding:11px 13px;min-height:88px;font-size:13.6px;color:#2b3555;
-       border-top:1px solid var(--hair);background:var(--fill);
+/* ONE fixed height for all three lanes. With min/max the box sized itself to its own
+   text — READ's five-line reason next to LOOK's two — so the lanes came out different
+   heights and, being centre-aligned, sat at different vertical offsets. Three panels
+   meant to be compared must share a baseline, so the box is a fixed height that scales
+   with the viewport and scrolls if a reason overruns it. */
+.think{padding:14px 16px;flex:none;height:clamp(118px,15.5vh,205px);overflow:auto;
+       font-size:16.5px;line-height:1.5;
+       color:#2b3555;border-top:1px solid var(--hair);background:var(--fill);
        transition:opacity .18s ease}
 .think.swap{opacity:.25}
 .think .none{color:var(--muted);font-style:italic}
-.think .did{display:block;margin-top:5px;color:var(--ink);font:600 13px Arial}
-.foot{display:flex;align-items:center;gap:11px;padding:9px 13px;border-top:1px solid var(--hair);
-      font:13px Arial;color:var(--muted)}
+.think .did{display:block;margin-top:7px;color:var(--ink);font:600 15.5px Arial}
+.foot{display:flex;align-items:center;gap:11px;padding:10px 15px;border-top:1px solid var(--hair);
+      font:14px Arial;color:var(--muted);flex:none}
 .foot .act{font:600 12.5px "Consolas",monospace;padding:2px 7px;border-radius:5px;
            background:var(--fill);border:1px solid var(--hair);color:var(--ink)}
-.foot .usd{margin-left:auto;font:700 15px Arial;color:var(--ink);font-variant-numeric:tabular-nums}
+.foot .usd{margin-left:auto;font:700 17px Arial;color:var(--ink);font-variant-numeric:tabular-nums}
 .bar{height:4px;background:var(--hair)} .bar i{display:block;height:100%;background:currentColor;transition:width .26s ease}
 .lane.LOOK .bar{color:var(--look)} .lane.READ .bar{color:var(--read)}
 .lane.BOTH .bar{color:var(--both)}
 .ok{color:#eafff5} .no{color:#ffe6e3}
-footer{display:flex;align-items:center;gap:15px;padding:13px 26px 20px;color:var(--muted);font-size:13px}
+footer{display:flex;align-items:center;gap:15px;padding:10px 26px 12px;color:var(--muted);font-size:13px;flex:none}
 button{padding:7px 14px;border:1.5px solid var(--hair);border-radius:8px;background:#fff;
        cursor:pointer;font:600 13.5px Arial;color:var(--ink)}
 button:hover{border-color:var(--ink)}
@@ -253,7 +276,7 @@ function mount(){
     el.innerHTML = `
       <div class="lh"><b>${k}</b><span class="what">${WHAT[k]}</span>
         <span class="verdict ${L.success ? "ok" : "no"}">${L.success ? "✓ solved" : "✗ failed"} · ${L.steps} steps</span></div>
-      <div class="stage">
+      <div class="stage"><div class="frame">
         ${L.frames.map((f,i) => `<img src="${f.img}" alt="${k} step ${f.step}" data-i="${i}">`).join("")}
         <div class="mk box"><span class="eid"></span></div>
         <div class="mk point"></div>
@@ -261,12 +284,12 @@ function mount(){
         <div class="cur"><svg width="26" height="26" viewBox="0 0 26 26">
           <path d="M3 2 L3 20 L8 15.5 L11.3 22.6 L14.6 21 L11.4 14.2 L18 14 Z"
                 fill="#fff" stroke="#141E41" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
-      </div>
+      </div></div>
       <div class="think"></div>
       <div class="foot"><span class="act">—</span><span class="pos"></span><span class="usd"></span></div>
       <div class="bar"><i></i></div>`;
     box.appendChild(el);
-    EL[k] = {imgs:[...el.querySelectorAll(".stage img")], box:el.querySelector(".mk.box"),
+    EL[k] = {imgs:[...el.querySelectorAll(".frame img")], box:el.querySelector(".mk.box"),
              eid:el.querySelector(".eid"), point:el.querySelector(".mk.point"),
              cur:el.querySelector(".cur"), fx:el.querySelector(".fx"),
              fx2:el.querySelector(".fx2"), fx3:el.querySelector(".fx3"),
