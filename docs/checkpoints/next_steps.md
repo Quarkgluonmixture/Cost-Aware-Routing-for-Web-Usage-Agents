@@ -23,6 +23,52 @@ updated: 2026-09-03
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🟢 2026-09-08 · 毕设已交 · REALM 接受 · 焦点全部转 NAACL
+>
+> chronicle → **笔记 §502 + §503** · 台账 **+13** · commits `63f8176` `2bbf468` `0814a79`
+> `6f344f9` · Overleaf thesis `2881ef3` / realm `a89901e`
+>
+> ### 两件已离手
+> - **毕设 2026-09-08 16:00 已交**（119 页）。当天补入 **UCL Research Paper Declaration
+>   Form** —— UCL PhD Thesis Template **不自带**这一页，学长 ddl 当天问起才发现缺。
+>   **页数无上限**（user 确认，「≤100 页」那条就此闭环）。
+> - **REALM @ EMNLP 2026 接受**（forum `EAplLx6gCD`，3.5/3.5/2.5，soundness 4/3.5/2.5
+>   —— **无人质疑数字**，攻击全在框架与覆盖度）。
+>
+> ### 🔴 唯一待办的硬 deadline：REALM camera-ready 09-14 AoE
+> **PDF 已就绪**（Overleaf `6a59017b...` = `~/overleaf-aaai27`，`a89901e`）：`[final]` +
+> 四位作者去匿名 + 表 13 修正。**剩下的只是点几下鼠标**：forum → Edit →
+> Camera-ready revision → 传 PDF。
+> ⚠️ **09-08 傍晚查时 Edit 按钮尚未出现**（invitation 未开，意见 15:05 才公开）——
+> 隔天再看。⚠️ **归档选项必须保持 `Non-archival`**（改成 archival 会占掉 NAACL ARR
+> 投稿权，不可逆）。
+>
+> ### GPU 侧（不用管）
+> `B1_vision_shopping_20260906` 在跑（09-08 时 399/466），后两格排队，**~09-13 落**。
+> 进度现查：`ssh condense-a100 'ls .../B1_*shopping_2026090*/*/episodes/*summary*|wc -l'`
+>
+> ### NAACL（ARR 10-12，唯一 live 目标）—— user 已定「要 reframe」
+> 三份意见的**交集**（三人全提）= ① rerun control 是全文最强且价值超出 routing
+> ② rerun band 覆盖不足（2 cell 测、6 cell 假设）③ 泛化性（cell 太少、reddit 两格
+> 共享同一应用）。
+> **反驳弹药已挖出，全部无需新实验**（详 §503.2 + 台账）：
+> - **SoM ⊉ DOM∪Vision** —— 6 cell 合计 81 个漏解；2³ 包络下界 cls_B0 **18** /
+>   red_B0 **10**；`cls_B2` 交集为 **0**。这是**信息单调性的直接反例**，用来打
+>   sVJH「结论可从第一性原理预料」。⚠️ WA 两格尚未算。
+> - **失败结构差异发生在同一侧内部** —— P4 根节点误操作 DOM 0.4% vs P-SoM **19.4%**
+>   （48×），两者都是纯文本臂。
+> - **grounding 是混淆项但不沿表征轴分布** —— 动作成功率按 **identifier contract**
+>   分层（native nodeId fallback 35-40% vs compact 1..K 22-28%），文本臂内部差
+>   17.3pp ≈ Vision↔DOM 的 19.1pp。**这条是 reframe 的候选机制线。**
+>
+> ### 本轮教训（已进台账）
+> 引一条子路径当整条路径 ⇒ 错的不是一边而是**差距**（88.9% 事件，双向失真且已实际
+> 误导审稿人）· `latexmk` 0-undefined 抓不到「引用有效但指错对象」· `||` fallback
+> 只保护它所在那一行，后续同参数命令会报出**看起来合理的假警报** · 页数硬约束下
+> 限定写 caption 不写正文（浮动体不争正文分页）· deadline 过去 ≠ 事情做完
+> （09-06 那条 memory 把计划写成完成，本 session 开场据此答错）
+
+
 > ## 🟢 2026-09-06 · reddit 六臂结算完 + B1×shopping chain 在跑 + demo 可上板
 >
 > chronicle → **笔记 §500 + §501** · 台账 **+19** · commits `f971260`…`33ca221`
