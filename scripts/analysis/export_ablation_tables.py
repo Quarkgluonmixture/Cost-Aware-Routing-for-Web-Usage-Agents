@@ -635,11 +635,43 @@ def t_dispatch():
     for k, v in order:
         rows.append(f"| {k.replace('_', ' ')} | {v['n']:,} | **{100*v['success']:.1f}%** |")
     fb = d["fallback_share_by_backbone"]
+
+    # The element-id route is TWO paths, not one: `id_locator` and the `id_framework`
+    # fallback. An earlier caption quoted the locator figure alone as "the element-id
+    # path", which a REALM reviewer read — correctly, given that wording — as the number
+    # the text arms enjoy. It is not: pooled over both paths the route delivers far less,
+    # and the per-mode column below is what the Vision-vs-text comparison actually rests
+    # on. Quoting the locator alone overstates that gap by about a factor of two.
+    id_n = fam["id_locator"]["n"] + fam["id_framework"]["n"]
+    id_s = (fam["id_locator"]["n"] * fam["id_locator"]["success"]
+            + fam["id_framework"]["n"] * fam["id_framework"]["success"]) / id_n
+
+    # Per-mode overall action success, weighted by each cell's action count.
+    by_mode: dict[str, list[float]] = {}
+    for cell in d["cells"].values():
+        by_mode.setdefault(cell["mode"], []).append(
+            (cell["action_success_overall"], cell["n_actions"]))
+    mode_ov = {m: sum(a * n for a, n in v) / sum(n for _, n in v)
+               for m, v in by_mode.items()}
+    hi = max(mode_ov.items(), key=lambda kv: kv[1])
+    vis = mode_ov.get("Vision")
+    txt_lo = min((v for m, v in mode_ov.items() if m != "Vision"), default=None)
+
     cap = (
         "How each action reached the browser. **`Vision` is on the coordinate path by "
         "construction** — it emits no element ids — so its action success is capped by this "
-        f"harness's coordinate implementation ({100*fam['coord']['success']:.0f}%) rather "
-        f"than by the {100*fam['id_locator']['success']:.0f}% the element-id path achieves. "
+        f"harness's coordinate implementation ({100*fam['coord']['success']:.0f}%). "
+        "**The element-id route is two paths, not one**: the locator succeeds "
+        f"{100*fam['id_locator']['success']:.1f}% of the time and the framework fallback "
+        f"{100*fam['id_framework']['success']:.1f}%, so pooled over both it delivers "
+        f"{100*id_s:.1f}% — quoting the locator alone would overstate what the text arms "
+        "enjoy. Per mode the overall action success is "
+        + ", ".join(f"{m} {100*v:.1f}%" for m, v in
+                    sorted(mode_ov.items(), key=lambda kv: -kv[1]))
+        + f", so the gap between `Vision` and the weakest text arm is "
+        f"{100*(txt_lo-vis):.1f}pp rather than the "
+        f"{100*(fam['id_locator']['success']-fam['coord']['success']):.1f}pp a "
+        "locator-only comparison suggests. "
         "That is not a confound to remove (it is what screenshot-only *is*), but the Vision "
         "arm measures our grounding code as much as the representation. Separately the "
         "element-id fallback share rises with backbone weakness — "

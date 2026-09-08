@@ -11,7 +11,7 @@
 > No family-wise statement covers the set as a whole, and none is claimed.
 
 
-<!-- GENERATED 2026-08-05T00:06:06+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
+<!-- GENERATED 2026-09-08T15:40:18+00:00 — do not hand-edit between the table markers; rerun the producer instead. -->
 
 Every number below is read from a product JSON at render time. None is typed by hand: six hand-copied numbers were found decoupled from their products on 2026-08-03, one of them wrong on the fact rather than only on the denominator.
 
@@ -383,7 +383,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | coord | 2,138 | **38.6%** |
 | id framework | 4,564 | **16.1%** |
 
-*Table 13: What actually delivered the click. How each action reached the browser. **`Vision` is on the coordinate path by construction** — it emits no element ids — so its action success is capped by this harness's coordinate implementation (39%) rather than by the 89% the element-id path achieves. That is not a confound to remove (it is what screenshot-only *is*), but the Vision arm measures our grounding code as much as the representation. Separately the element-id fallback share rises with backbone weakness — B0 12% · B1 35% · B2 37% on the text arms: *how often* a run falls back is a model property, the fallback's own 16% success is ours. No success rate elsewhere is adjusted by this; it bounds external validity. Source: `dispatch_path_audit.json`.*
+*Table 13: What actually delivered the click. How each action reached the browser. **`Vision` is on the coordinate path by construction** — it emits no element ids — so its action success is capped by this harness's coordinate implementation (39%). **The element-id route is two paths, not one**: the locator succeeds 88.9% of the time and the framework fallback 16.1%, so pooled over both it delivers 64.2% — quoting the locator alone would overstate what the text arms enjoy. Per mode the overall action success is DOM+stext 75.0%, SoM-image 66.5%, SoM 61.8%, DOM 59.9%, DOM+sprompt 57.7%, Vision 40.8%, so the gap between `Vision` and the weakest text arm is 17.0pp rather than the 50.3pp a locator-only comparison suggests. That is not a confound to remove (it is what screenshot-only *is*), but the Vision arm measures our grounding code as much as the representation. Separately the element-id fallback share rises with backbone weakness — B0 12% · B1 35% · B2 37% on the text arms: *how often* a run falls back is a model property, the fallback's own 16% success is ours. No success rate elsewhere is adjusted by this; it bounds external validity. Source: `dispatch_path_audit.json`.*
 
 <!-- END table:dispatch -->
 
@@ -391,34 +391,34 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | dimension | metric | cross-mode spread | rerun band | ratio | > a rerun? |
 |---|---|---|---|---|---|
-| Outcome | `sr_pct` | 11.607 | 2.232 | 5.20x | **yes** |
-| Outcome | `n_success` | 26.000 | 5.000 | 5.20x | **yes** |
+| Outcome | `sr_pct` | 11.607 | 2.679 | 4.33x | **yes** |
+| Outcome | `n_success` | 26.000 | 6.000 | 4.33x | **yes** |
 | Outcome | `n_unique_solves` | — | — | — | *cross-mode by construction* |
-| Macro | `n_steps` | 2.567 | 0.469 | 5.48x | **yes** |
+| Macro | `n_steps` | 2.567 | 1.692 | 1.52x | **yes** |
 | Macro | `cap_hit_rate` | 0.062 | 0.045 | 1.40x | **yes** |
 | Macro | `click_frac` | 0.041 | 0.014 | 2.87x | **yes** |
-| Macro | `type_frac` | 0.078 | 0.019 | 4.21x | **yes** |
-| Macro | `scroll_frac` | 0.106 | 0.006 | 16.85x | **yes** |
-| Macro | `search_loop_rate` | 0.121 | 0.018 | 6.75x | **yes** |
-| Macro | `url_revisit_rate` | 0.081 | 0.022 | 3.66x | **yes** |
+| Macro | `type_frac` | 0.078 | 0.023 | 3.47x | **yes** |
+| Macro | `scroll_frac` | 0.106 | 0.020 | 5.16x | **yes** |
+| Macro | `search_loop_rate` | 0.121 | 0.045 | 2.70x | **yes** |
+| Macro | `url_revisit_rate` | 0.081 | 0.041 | 1.98x | **yes** |
 | Micro | `parse_fail_rate` | 0.002 | 0.002 | 1.00x | no |
-| Micro | `action_fail_rate` | 0.068 | 0.014 | 4.87x | **yes** |
+| Micro | `action_fail_rate` | 0.068 | 0.015 | 4.41x | **yes** |
 | Micro | `click_fail_rate` | 0.063 | 0.025 | 2.48x | **yes** |
 | Micro | `type_fail_rate` | 0.030 | 0.006 | 5.28x | **yes** |
-| Micro | `no_change_rate` | 0.053 | 0.009 | 5.82x | **yes** |
-| Micro | `scroll_inert_rate` | 0.078 | 0.017 | 4.68x | **yes** |
-| Micro | `noop_inert_rate` | 0.026 | 0.007 | 3.92x | **yes** |
+| Micro | `no_change_rate` | 0.053 | 0.014 | 3.75x | **yes** |
+| Micro | `scroll_inert_rate` | 0.078 | 0.035 | 2.23x | **yes** |
+| Micro | `noop_inert_rate` | 0.026 | 0.014 | 1.87x | **yes** |
 | Micro | `visibility_gap_rate` | 0.016 | 0.011 | 1.56x | **yes** |
-| Micro | `locator_fallback_rate` | 0.076 | 0.006 | 11.81x | **yes** |
-| Micro | `action_repeat_frac` | 0.096 | 0.004 | 21.88x | **yes** |
+| Micro | `locator_fallback_rate` | 0.076 | 0.009 | 8.06x | **yes** |
+| Micro | `action_repeat_frac` | 0.096 | 0.024 | 4.01x | **yes** |
 | Micro | `finish_rate` | 0.054 | 0.036 | 1.50x | **yes** |
-| Efficiency | `mean_cost_usd` | 0.008 | 0.002 | 3.24x | **yes** |
-| Efficiency | `cost_rel_dom` | 0.108 | 0.026 | 4.22x | **yes** |
+| Efficiency | `mean_cost_usd` | 0.008 | 0.008 | 0.90x | no |
+| Efficiency | `cost_rel_dom` | 0.108 | 0.120 | 0.90x | no |
 | Efficiency | `mean_latency_s` | 19.562 | 22.488 | 0.87x | no |
 | Efficiency | `mean_latency_canonical_s` | 19.204 | 22.846 | 0.84x | no |
-| Efficiency | `mean_tokens` | 8697.978 | 2186.054 | 3.98x | **yes** |
+| Efficiency | `mean_tokens` | 8697.978 | 7745.326 | 1.12x | **yes** |
 
-*Table 14: Behavioural metrics against run-to-run noise. Behavioural metrics against run-to-run movement, `B0 x classifieds`, three replicated arms (dom, vision, som). `rerun band` is the largest |metric(run A) - metric(run B)| over those arms; `cross-mode spread` is max-min over the six modes. **22 of 25 metrics exceed the band**, several by 5-22x. The exceptions are `mean_latency_canonical_s` (0.84x), `mean_latency_s` (0.87x), `parse_fail_rate` (1.00x) — i.e. **both latency metrics**, which `latency_decomposition` reaches independently by decomposing the step into model and container. Every other efficiency and behavioural claim in this paper is judged against a rerun band; these 26 metrics were not, until this table. One cell, one rerun per arm: a point estimate, not a threshold. Source: `replicate_metric_noise.json`.*
+*Table 14: Behavioural metrics against run-to-run noise. Behavioural metrics against run-to-run movement, `B0 x classifieds`, three replicated arms (dom, vision, som). `rerun band` is the largest |metric(run A) - metric(run B)| over those arms; `cross-mode spread` is max-min over the six modes. **20 of 25 metrics exceed the band**, several by 5-22x. The exceptions are `mean_latency_canonical_s` (0.84x), `mean_latency_s` (0.87x), `mean_cost_usd` (0.90x), `cost_rel_dom` (0.90x), `parse_fail_rate` (1.00x) — i.e. **both latency metrics**, which `latency_decomposition` reaches independently by decomposing the step into model and container. Every other efficiency and behavioural claim in this paper is judged against a rerun band; these 26 metrics were not, until this table. One cell, one rerun per arm: a point estimate, not a threshold. Source: `replicate_metric_noise.json`.*
 
 <!-- END table:metric-noise -->
 
@@ -452,7 +452,7 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 | WA·B1 | 104 | +3.85 | [-1.92, +9.62] | -2.88 | [-9.62, +2.88] |
 | WA·B0 | 104 | +2.88 | [-5.77, +11.54] | -4.81 | [-12.50, +2.88] |
 
-*Table 16: Fusion premium against the rerun band. Fusion premium (pp). Comparators are fixed a priori, not per-cell maxima. Paired bootstrap over tasks, 10,000 resamples. Read against the measured rerun band **0.89–2.23pp**, not against zero: a premium must beat what repetition delivers for the same money. No cell clears the band; `cls_B0`'s +2.23 *equals* its upper edge (both are 5/224). Source: `fusion_premium.json`.*
+*Table 16: Fusion premium against the rerun band. Fusion premium (pp). Comparators are fixed a priori, not per-cell maxima. Paired bootstrap over tasks, 10,000 resamples. Read against the measured rerun band **0.0–3.45pp**, not against zero: a premium must beat what repetition delivers for the same money. No cell clears the band; `cls_B0`'s +2.23 *equals* its upper edge (both are 5/224). Source: `fusion_premium.json`.*
 
 <!-- END table:fusion -->
 
@@ -481,16 +481,16 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | cell | best single | +1 distinct arm | +1 rerun (measured floor) | verdict |
 |---|---|---|---|---|
-| cls·B0 | SoM  at 27.23 | +7.14 (DOM) | 4.91 – 7.59pp | **inside the rerun band** |
+| cls·B0 | SoM  at 27.23 | +7.14 (DOM) | 4.46 – 7.59pp | **inside the rerun band** |
 | cls·B1 | SoM  at 14.29 | +4.91 (Vision) | — | no floor on this cell |
 | cls·B2 | SoM  at 2.23 | +2.23 (Vision) | — | no floor on this cell |
-| red·B0 | SoM  at 14.78 | +4.93 (DOM) | — | no floor on this cell |
+| red·B0 | SoM  at 14.78 | +4.93 (DOM) | 1.97 – 6.90pp (text side) | **inside the rerun band** |
 | red·B1 | SoM  at 7.39 | +1.97 (DOM+sprompt) | — | no floor on this cell |
 | red·B2 | DOM  at 3.94 | +1.97 (Vision) | — | no floor on this cell |
 | WA·B0 | DOM+stext  at 35.58 | +5.77 (DOM) | — | no floor on this cell |
 | WA·B1 | DOM  at 16.35 | +4.81 (DOM+stext) | 0.00 – 10.00pp *(pooled would read 2.00–4.00)* | **inside the rerun band** |
 
-*Table 18: New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are directly comparable; only the *source* of the extra arm differs. **The band is 3 rerun pairs on one cell** (`B0 × classifieds`, n=224), one each for **DOM, SoM, Vision** — so the rows without a band have no comparator at all, and the band itself is 3 draws rather than a bound. Since the SoM replicate landed 2026-08-03 the band is **no longer extrapolated onto an unreplicated arm**: both the fused mode this table's best-single column keeps selecting and the arm the comparison adds now carry their own measured floor, and adding the third pair left the band unmoved. Source: `noise_floor_inventory.json`.*
+*Table 18: New representation versus a rerun. Is a new representation worth more than a rerun? Both middle columns are the same functional at the same arm count — `|{added} ∖ {baseline}| / n` — so they are directly comparable; only the *source* of the extra arm differs. Replicate coverage behind the bands: `B0.cls` x6; `B0.red` x6; `B1.cls` x3; `B1.red` x2; `B5.cls` x1. On `B0 × classifieds` **all 6 arms** are replicated (DOM, DOM+sprompt, SoM-image, DOM+stext, SoM, Vision), so whichever arm the comparison adds carries its own measured floor — the band is no longer extrapolated onto an unreplicated arm. On `B0 × reddit` only the 6 text-side arms are (DOM, DOM+sprompt, SoM-image, DOM+stext, SoM, Vision), so that band is gated to text-side additions and the verdict column says so when it is not applicable. Rows without a band have no comparator at all, and each band remains a range over draws rather than a bound. Source: `noise_floor_inventory.json`.*
 
 <!-- END table:floor -->
 
@@ -656,14 +656,14 @@ Cells are (site × backbone). `cls`/`red` are VisualWebArena classifieds/reddit;
 
 | stratum | tasks | share of cell | flipped | flip rate | share of all flips | enrichment vs complement |
 |---|---|---|---|---|---|---|
-| which-mode label rows (any mode solved) | 97 | 43.3% | 47 | 48.45% | 95.9% | **16.47x** |
-| …of those, the arms DISAGREE (the choice matters) | 88 | 39.3% | 45 | 51.14% | 91.8% | **17.39x** |
-| three-way channel decision is contested | 74 | 33.0% | 36 | 48.65% | 73.5% | **16.54x** |
-| exactly one mode solved it (label unambiguous) | 29 | 12.9% | 15 | 51.72% | 30.6% | **17.59x** |
-| COMPLEMENT: no mode solved, or all did | 136 | 60.7% | 4 | 2.94% | 8.2% | **1.00x** |
-| whole cell | 224 | 100.0% | 49 | 21.88% | 100.0% | **7.44x** |
+| which-mode label rows (any mode solved) | 97 | 43.3% | 75 | 77.32% | 87.2% | **7.51x** |
+| …of those, the arms DISAGREE (the choice matters) | 88 | 39.3% | 72 | 81.82% | 83.7% | **7.95x** |
+| three-way channel decision is contested | 74 | 33.0% | 60 | 81.08% | 69.8% | **7.88x** |
+| exactly one mode solved it (label unambiguous) | 29 | 12.9% | 26 | 89.66% | 30.2% | **8.71x** |
+| COMPLEMENT: no mode solved, or all did | 136 | 60.7% | 14 | 10.29% | 16.3% | **1.00x** |
+| whole cell | 224 | 100.0% | 86 | 38.39% | 100.0% | **3.73x** |
 
-*Table 27: Per-task label instability. Per-task label instability on `cls_B0` (n=224): 49 tasks change outcome between two runs of the same condition. The rows a which-mode router could learn from are exactly the contested ones, and they carry almost all of the instability. **Caution: this table is computed on 2 replicated arms of one cell (B0.cls.dom, B0.cls.vision), rerun once.** The project's whole replicate inventory is three arms of that cell — the SoM pair landed after this product was generated and is not folded in here — plus five modes of `wa_red_B1` on a registered ten-task draw; no VWA-reddit cell and no B2 cell carries one at all, so every stability figure elsewhere is imported rather than measured. The headline enrichment has two defensible definitions and **neither may be quoted alone**: 17.4x defined over all 6 arms is correct for the claim (a router chooses among 6) but the flips are produced by rerunning 2 of them, so the same arms decide both membership and outcome; rebuilding the difficulty proxy from the other 4 breaks that circle and gives 3.95x. Source: `label_instability.json`.*
+*Table 27: Per-task label instability. Per-task label instability on `cls_B0` (n=224): 86 tasks change outcome between two runs of the same condition. The rows a which-mode router could learn from are exactly the contested ones, and they carry almost all of the instability. **Caution: this table is computed on 6 replicated arms of one cell (B0.cls.dom, B0.cls.vision, B0.cls.som, B0.cls.ptext, B0.cls.pprompt, B0.cls.psom), rerun once.** The project's replicate inventory at generation time is B0.cls x6, B0.red x6, B1.cls x3, B1.red x2, B5.cls x1, plus five modes of `wa_red_B1` on a registered ten-task draw; cells absent from that list carry no replicate, so their stability figures are imported rather than measured. **Caution:** **The anti-circularity control is no longer available.** every mode in MODES now carries a replicate; no un-replicated arm remains to build an independent difficulty proxy from. The enrichment over all 6 arms is 7.9x, but the flips are produced by rerunning 6 of those same 6 arms, so membership and outcome are decided by the same data and there is no longer an un-replicated arm to rebuild an independent difficulty proxy from. **7.9x must therefore not be quoted as a headline on its own** — it has lost the control that previously licensed it (leave-one-out proxy (five other arms per arm) — changes the estimand, needs an explicit decision). Source: `label_instability.json`.*
 
 <!-- END table:instability -->
 
