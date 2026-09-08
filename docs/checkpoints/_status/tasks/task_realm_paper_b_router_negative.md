@@ -1,14 +1,14 @@
 ---
 type: task
-status: done
+status: active
 priority: P0
 horizon: now
 order: 1
 blocker: ""
-eta: "✅ **已提交 2026-08-06** — OpenReview **Submission #192**, REALM @ EMNLP 2026, `Non-archival long`, Cross Submission To: `Plan to submit to ACL ARR 2026 August` (主会投稿权保住), 作者四人。最终稿 `d737f92`: 正文 8 页 / 35 页 A4 / 0 error / 0 undefined / 首页 Anonymous。**notif 2026-09-07** (user 08-16 更正, 旧记 09-07 作废) **/ camera-ready 09-14**。留给 camera-ready 的 4 条终审项见 next_steps §0"
+eta: "🎉 **2026-09-08 已接受** — REALM @ EMNLP 2026, forum `EAplLx6gCD` (提交 08-06, #192). 🔴 **camera-ready 2026-09-14 (AoE) 未做 = 当前唯一硬 deadline**。要求: 严格 ARR latex 模板**不得改版式** · 完全去匿名 `\usepackage[final]{acl}` · 无论选哪个归档选项都必须交 camera-ready。⚠️ **归档选项此刻可改且不可逆** — 选归档 ⇒ 正式发表 ⇒ 占掉 NAACL ARR 投稿权; 保持非归档才留住主会资格。**未裁定, 09-14 前必须定**。另: 在审那份的 `/PTEX.FileName` 匿名泄漏 (§473.8) 在去匿名后不再是泄漏, 但重编译后仍须按 GOTCHAS §7b 四渠道复验路径信息。审稿意见在 forum 页, 尚未读 —— 是 NAACL 稿的免费输入。"
 detail: 笔记 §398.8(合并拍板) + §406(噪声审计) + **§407(三分转向 + 非归档轨)**. 新四步 = ①上限一半是假币 / ②默认答案最贵而没挣到 / ③该买哪条随模态翻号 / ④压不到 per-request(+51.1% 训练行重跑就翻). 新章节 §1问题陈述 / §2setup+2x2 / §3上限与假币 / §4该买什么 / §5为什么压不到per-request / §6discussion
 created: 2026-07-22
-updated: 2026-08-06
+updated: 2026-09-08
 ---
 
 # REALM 稿 (合并 A+B) — 表征路由的上限真实存在, 但既不稳定也不可达

@@ -1,14 +1,14 @@
 ---
 type: task
-status: active
+status: done
 priority: P0
-horizon: now
+horizon: done
 order: 1
 blocker: ""
-eta: "**2026-09-05 硬截止**（user 2026-08-19 从 09-01 延长）— 剩 ~9 天。**2026-08-27 大改已落地**: 稿件迁至 **UCL PhD Thesis Template**，Overleaf 评审层换新项目 **6a8f68ace4443ea9751d6201**（旧 6a7a7331d2e6523a360245d4 **已停用，别再往那推**，两边版式不同）。现 **114 页 / 15 图 / 20 表 / 36 bib**，编译 0 error / 0 undefined / 9 overfull（最大 10pt 在参考文献，其余 <2pt）。图全部重做（图内散文 105→0，由 `make thesis-figures` 的 `check_no_prose.py` 门禁强制）；正文 em dash 88→0。页数预算 ≤100 页那条 **已失效需重问** —— 模板 12pt + 40mm 装订边把 89 页推到 114 页，这是版式造成的不是内容增加。**剩余 = ① supervisor 反馈（Overleaf 已是最新 08-27）② rubric #7/#13 ③ 页数上限重新确认**。不需要任何新实验"
+eta: "✅ **2026-09-08 16:00 已提交**（截止当天；此前记的 09-05 是更早一版 eta）。最终 **119 页**, 0 error / 0 undefined ref / overfull 9。**页数无上限**（user 09-08 确认 —— 此前「≤100 页需重新确认」就此闭环）。提交前当天补入 **UCL Research Paper Declaration Form** (`Title/research_paper_declaration.tex`, commits `63f8176`/`2bbf468`/最终 REALM 接受版) —— UCL PhD Thesis Template **不自带**这一页, 学长 ddl 当天问起才发现缺。Overleaf `6a8f68a...` 已同步。"
 detail: final_dissertation/
 created: 2026-06-10
-updated: 2026-08-27
+updated: 2026-09-08
 ---
 
 # Thesis full draft → 2026-09-05 硬截止
