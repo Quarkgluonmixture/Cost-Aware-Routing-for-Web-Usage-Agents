@@ -57,6 +57,7 @@
 % footer, and drops the running marks, which is what those pages want.
 \fancypagestyle{plain}[main]{\fancyhead{}}                                              % Chapter openings and any page the class sets to plain.
 \fancypagestyle{declaration}[main]{\fancyhead{}\fancyhead[RO,LE]{Declaration}}          % Define adjustments for the declaration page(s).
+\fancypagestyle{rpdf}[main]{\fancyhead{}\fancyhead[RO,LE]{Research Paper Declaration}}% P79: UCL Research Paper Declaration Form; the template has no slot for it.
 \fancypagestyle{abstract}[main]{\fancyhead{}\fancyhead[RO,LE]{Abstract}}                % Define adjustments for the abstract page(s).
 \fancypagestyle{is}[main]{\fancyhead{}\fancyhead[RO,LE]{Impact Statement}}              % Define adjustments for the impact statement page(s).
 \fancypagestyle{dedication}[main]{\fancyhead{}\fancyhead[RO,LE]{Dedication}}            % Define adjustments for the dedication page(s).
@@ -166,6 +167,8 @@
 \begin{document}
 \pagenumbering{arabic}
 \include{./Title/title.tex}
+
+\include{./Title/research_paper_declaration.tex}
 
 \include{./Abstract/abstract.tex}
 
