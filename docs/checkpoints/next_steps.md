@@ -23,6 +23,53 @@ updated: 2026-09-03
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
 
+> ## 🔴 2026-09-09 · camera-ready 窗口开了 · 提交稿不是 `main_realm.tex` · 审稿人最强批评已被数据推翻
+>
+> chronicle → **笔记 §504** · 台账 **+7** · 意见归档 `_status/issues/issue_realm_reviews_2026-09-09.md`
+>
+> ### ⚠️ 动稿前先认这件事
+> **提交稿 = `~/overleaf-aaai27/main_restructured.tex` + `sections/*.tex`。**
+> **不是** `main_realm.tex` + `realm_*.tex` —— 那是 8-05 重构后的废稿，还留着旧 title
+> (「evidence before frame」) 和 8 条 inventory 式 abstract，**自洽且能编译**，单读看不出问题。
+> 判据只有两个：编译产物 mtime（realm **Aug 5** vs restructured **Sep 8 16:48**）+
+> 拿 OpenReview 表单的 title/abstract 回搜源码。⛔ **不要按文件名前缀猜。**
+>
+> ### 🔴 唯一硬 deadline：camera-ready 09-14 AoE（Edit 入口 09-09 已开）
+> ⚠️ **`Archival` 必须保持 `Non-archival`**（改则不可逆占掉 NAACL ARR 投稿权）。
+> Abstract 余额 3,395 字符。
+>
+> **必修（事实错误，不是润色）**
+> 1. `3_noise.tex:5`「**no VWA-reddit cell** and no B2 cell carries a replicate」——
+>    已失效。现为 **18 对 / 5 格**（`B0·cls` 6/6 臂 · `B0·red` **6/6 臂** · `B1·cls` 3 ·
+>    `B1·red` 2 · `B5·cls` 1 · WA pilot）。仍成立的只剩「no B2 cell」。
+>    ⇒ **sVJH 与 6vKx 各自最重的一条批评，指向的是 08-17→09-06 已填完的坑。**
+> 2. `3_noise.tex:3` flip 数字：句子自称三臂、引的是 dom+vision **两臂**产物。
+>    三臂重算 = **67/224 (29.9%)** · contested **67.0%** vs **5.9%** · enrichment **11.4×**
+>    （§464.2 早就标了「camera-ready 是窗口」）。
+> 3. **36 vs 48 标 scope**（4s7L 点名 reconcile）：36 = VWA 六格×6 mode；48 = 含 WA 的 6×8。
+>    `2_setup.tex:19` 的 **7,686 = 224×18 + 203×18** 是谜底。**修法是标 scope，不是改数字。**
+>
+> **审稿人明确要求且低成本**
+> 4. abstract 人话重写 —— 三方独立同源（4s7L / sVJH / supervisor Maria 09-09 邮件）。
+>    把 `5_lowerbound.tex:17`（4s7L 定位的 page-7 那句）提到前三句。**用 `agy` 做重写。**
+> 5. 加 **Related Work** 章节（4s7L 直接要）。
+> 6. 一句话答「shopping 为什么没跑」（6vKx 发问）——现在正在跑，~09-13 落。
+>
+> ### 转 ARR（10-12，Zekun 09-09 确认 October ARR）
+> 删稀疏 cell 的 positive routing result（4s7L：删了「cleaner, not weaker」）· headline 限定 cell ·
+> §3 与 §5 合并 · **noise floor 是否 mode-dependent 现在可测**（cls 六臂 10.27–14.29% /
+> red 六臂 4.93–11.33%，§504.4）· router-vs-label-count 曲线（把负面结果变预测）。
+> 全清单见 issue 文件 §4。
+>
+> ### GPU 侧（不用管）
+> `B1_*_shopping_20260906` 三格在跑，~09-13 落。**别为它推迟 camera-ready**——
+> 离 09-14 只剩一天，来不及重跑分析管线还不出错。
+>
+> ### 本轮教训（已进台账）
+> 废稿比引错数字更隐蔽：它自洽、能编译、文件名还更像目标 venue ·
+> 「审稿人说覆盖不足」要先查是不是**稿子落后于数据**，而不是直接认领缺陷
+
+
 > ## 🟢 2026-09-08 · 毕设已交 · REALM 接受 · 焦点全部转 NAACL
 >
 > chronicle → **笔记 §502 + §503** · 台账 **+13** · commits `63f8176` `2bbf468` `0814a79`
