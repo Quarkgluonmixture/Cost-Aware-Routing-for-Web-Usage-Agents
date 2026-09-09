@@ -22,6 +22,35 @@ updated: 2026-09-03
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-09-09 晚 · router 重想收口：mode 那条轴封顶，预算那条轴有杠杆 · B1 shop 落地后要跑什么
+>
+> chronicle → **笔记 §505**（27 个子节）· 台账 **+42** · digest `docs/analysis/cross_sites/one_step_lookahead_2026-09-09.md`（§1–§25）
+> · 原始产物 `results/router_llm_pilot_20260909/lookahead/`（gitignored）· 两份 CU 综述存 `docs/literature/raw/2026-09-09-cu-landscape-survey-{1,2}-*.md`
+>
+> ### 一句话
+> 六臂双 replicate 分解：task×mode 交互只有噪声的 **0.12–0.34**，单 run 的 which-mode 标签 70–80% 是硬币；四种时机的 router、
+> 三种 enrich 标签、手写/挖出的规则、跨 backbone 合并、B5 更强 —— 全部收敛在 **+1–2pp over random**。
+> 有信号的是 task 难度（可迁移，AUROC 0.6–0.86），它支撑的杠杆是**预算**：失败 episode 占花费 92%，
+> 事前分档 cap 省 **41%** 且 SR 损失 1.2–1.8pp 优于固定 cap，**6/6 mode · 11/11 cell · 14/18 replicate 过重跑**。
+>
+> ### B1 shopping 落地（~09-13）之后的 fire 清单（顺序 = 优先级；一次一条 site chain；成本按 B0 cls $0.07/ep 等实测单价）
+> | # | 跑什么 | 买什么 | 约成本 / 时长 |
+> |---|---|---|---|
+> | 0 | ✅ **done 2026-09-09 22:41** — 冻结在 `pre_run/budget_router_prospective_shop_B1_20260909.{json,md}` + `scripts/analysis/budget_router_prospective_eval.py`，tag `budget-router-prospective-20260909`；P-text 落完 / P-prompt 落完后各跑一次 `... eval --run <dir>` | 预算路由唯一的 **prospective** 检验 | $0 · 已做 |
+> | 1 | **shop_B0 三臂 replicate**（dom/som/vision × 435） | 第三个 workload 的 rerun band；§6 点名「a third workload」；shop 上所有「band 内」判断现在读不了 | ~$135 · ~15 h |
+> | 2 | **WA red_B0 六臂 replicate**（×104） | 跨 benchmark 的 band；4s7L 的 noise-floor 覆盖 | ~$50 · ~8 h |
+> | 3 | **B5 cls som (+vision) replicate** | 最强 backbone 的 route-away 稳定性只有 dom 一臂证据（7/13）；「更强不反转」目前单格单臂 | ~$50 · ~6 h |
+> | 4 | **variant D 点火**：`router.py` reactive rule router，B0·cls·dom + B0·red·dom router-on | 唯一没测过的构造；把 §505.13 的离线投影（输 always-som）变成测量；sVJH「online after partial interaction」的 live 数 | ~$36 · ~6 h |
+> | 5 | B5 red dom + som | 「能力涨的是主效应不是交互」的第二格 | ~$80 · ~8 h |
+> | – | B2 任何 replicate / WA·B2 | 不跑：近地板，4s7L 建议删最稀疏格 | — |
+> 合计 P0–P1 ≈ **$350 / ~45 h 串行**，在 $546 预算与 10-12 前的窗口内。离线待办（不点火）：grounding 路径 router；
+> **early-stop / step-budget 文献核**（写作前必做，别把「预算是可学的那一半」写成「我们发明了 early stop」）。
+>
+> ### NAACL 故事骨架（详见 task 卡 `_status/tasks/task_naacl2027_main.md` 2026-09-09 段）
+> 1 领域默认杠杆是表征路由（综述：semantic-first，无人有 learned per-step router）→ 2 设置 → 3 **分解**（任务/模式/交互/噪声 + 标签复现 20/66 + step-0 不可见 + B5 嵌套）
+> → 4 **十一种构造一个天花板**（REALM 五条 + LLM/bandit/lookahead/cascade/retry/规则/挖规则/enrich/合并）→ 5 **可学的那一半**：难度 → 弃权 → 预算分档（前沿、6 mode、过重跑、选臂 pilot 样本量）
+> → 6 verifier（一致性，8/8 正号，温和）→ 7 威胁（6/11 无 band、steady-state、单 family 跨 benchmark、全离线）→ 8 建议：measure your cell · cap your failures · route the budget。
+
 
 > ## 🔴 2026-09-09 · camera-ready 窗口开了 · 提交稿不是 `main_realm.tex` · 审稿人最强批评已被数据推翻
 >

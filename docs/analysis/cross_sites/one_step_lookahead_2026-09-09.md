@@ -211,3 +211,98 @@ Deployed as a whole-cell pre-flight policy (score for "send to cheap" = P(nobody
 Where our runs' wall-clock goes (median step-0 backend inference / total step): API arms 15–28% (B0·cls: 1.8–2.1 s of 8.2–8.6 s), local 4B arms 36–65%. In cls_B0 every mode costs 7.0–7.4 s per step; som is the fastest arm (62 s) only because it takes the fewest steps (8 vs 10–14), and dom spends 3,857 tokens per step against vision's 3,504. So "turns, not tokens" holds here, while "planning is 75–94% of latency" (OSWorld-Human, frontier reasoning models) does not: on a self-hosted VWA stack the browser is the bottleneck.
 
 The one arm of the landscape's canonical experiment this project has never run is the reactive heuristic router (AX first, escalate to vision on an observable failure): `p79/experiment/router.py` implements it (unchanged-page / no-progress / action-failure streak triggers), and no router-on condition exists in `results/`. It cannot be evaluated by splicing (the rich arm would start from a site the cheap arm has already acted on). Offline, the triggers' selectivity is poor: on cls_B0 dom failures, grounding/stuck signals reach AUROC 0.41–0.56 for som's success; the streak trigger fires in 57% of failed and 33% of successful dom episodes, at a median step 7 of 19 (45% of the episode's cost already spent). An indicative (not splice-legal) projection puts it at 26.3% / $0.0869 against always-som's 27.2% / $0.0724: 24 rescued, 81 switched in vain, 13 successes disrupted. That is a prediction for a live run, not a measurement.
+
+## 15. Is long chain-of-thought the real cost of vision? — not testable here, and in the no-thinking regime vision decodes no more than AX
+
+Full-trajectory token accounting (7,230 episodes; cls_B0/B1/B2/B5, red_B0, red_B0_WA): output tokens per step are 92–107 for B0/B1/B2 and 147–163 for B5 in every mode, `tokens.thinking` is 0 in every run (B5 reaches us through a proxy that does not pass reasoning tokens, §471.5), and output is 8–25% of per-step cost; input dominates, and the AX text (3.4–4.7k tokens per step) is the same order as a screenshot. Vision decodes as much as dom (cls_B0: 102 vs 103 tokens per step; cls_B5: 151 vs 163). Within a mode, successful episodes decode no more than failed ones (B0) or less (B5: 124–137 vs 154–170 per step). What this project can say is therefore: with thinking off, vision does not cost more reasoning than AX and reasoning volume does not track success. Whether frontier-scale thinking is where vision's cost lives cannot be measured on these runs.
+
+## 16. Ex-ante, online, post-hoc: the information boundary of each, and a deployable post-hoc retry
+
+Decision timing splits routers into ex-ante (task + first page, before any action), online (per-step, conditioned on the realised prefix) and post-hoc (after the episode ends). Ex-ante information is task-level and real (§457 abstention, AUROC 0.6–0.86, stable). Online information is what the prefix says about the suffix, and here that is nothing beyond the prior (§459 for k ≥ 3, §1 above for k = 1). Post-hoc self-assessment does detect failure in part (episode-aggregated confidence, AUROC 0.39–0.74 for "this run failed"). A rerun is post-hoc and, in the benchmark, oracle-conditioned; the deployable version reruns only the episodes the model itself judges failed. On the 15 replicate pairs with at least two flips (rerun outcome = the replicate, which starts from reset as a rerun would): rerunning the least-confident 25% / 50% beats rerunning a random 25% / 50% by +0.79 / +0.99pp (positive in 87% / 93% of pairs; best-of-six signal chosen in-sample, so an upper bound), against a rerun-everything ceiling of +1.8 to +7.6pp at 2× cost. The detector finds the failures; whether a rerun fixes one is the 4–10% coin the detector cannot see, which caps the gain near 1pp. Four decision timings, one ceiling: +1–2pp over random.
+
+## 17. Where production systems put the decision (second survey, unverified, saved under docs/literature/raw/)
+
+As supplied: Claude's Computer Use is screenshot-native and its AX/ref path lives in a separate Browser Use toolset, with Anthropic's own ordering API → Browser Use → Computer Use; OpenAI's API CUA is pixel-native; only Codex Desktop's runtime mixes AX/UIA and pixels inside one Computer Use, fetching both by default and letting the frontier model choose under skill instructions; neither vendor publishes a cost-aware per-step router. Read against this project: the one explicit route in production is a task-level interface choice, which is the only level at which our data finds signal (§457, §12 above); "let the frontier model choose" is the LLM-router pilot, inside the band on all 11 cells; "fetch AX and pixels together" is our SoM arm, +24–37% input per step for a premium that clears the rerun band in 0/8 cells; "AX first, screenshot when insufficient" is the reactive rule router that has never been fired here (§14). The survey reads the missing router as an opportunity; the eleven cells read it as expected at 2–37% success.
+
+## 18. Hand-written rules forward, mined rules backward — both land at ±1pp
+
+Forward: the industry rules as fixed hypotheses (no fitting; default arm = the cell's best), gain over always-best across 11 cells: visual predicate → vision −2.5pp mean (cls_B5 −17.4, its vision arm is 12.1%); visual predicate → som 0.0 (som already best); reference image → som −0.2; count → dom −0.3; large AX → vision −1.4 (red_B0_WA −7.7); url_match → dom −2.1; action task → dom −1.1. Positive in 0–3 of 11 cells, never beyond a band; best single value +1.8 (cls_B0, large AX → vision).
+
+Backward: mine the best (predicate → arm) rules on run A from ~250 pre-flight predicates × 5 arms (1,235–1,265 candidates, |P| ≥ 10), test the same rule on run B. cls_B0 top-20: +2.4pp on A → −0.6pp on B (5/20 positive, 0/20 beyond the band); red_B0: +1.5 → +0.1 (8/20, 0/20). Mining on B and testing on A: +1.0 → +0.5 / +0.9. Rules and classifiers read the same matrix; the rule's one extra property is that each can be checked against a replicate, and 0/20 survive the check beyond the band.
+
+## 19. Can cells be merged? Difficulty pools across backbones; mode fit does not; nothing above flips
+
+Same-site, cross-backbone correlation of the success matrix's two components (single draws), against the same-backbone rerun ceiling:
+
+| | r(task difficulty) | r(task × mode interaction) |
+|---|---:|---:|
+| cls B0–B1 / B0–B5 / B1–B5 | 0.62 / 0.68 / 0.46 | 0.22 / 0.21 / 0.18 |
+| cls, any pair with B2 (Gemma, near floor) | 0.13 to 0.27 | 0.02 to 0.09 |
+| red B0–B1 · WA B0–B1 · shop B0–B1 | 0.66 · 0.72 · 0.54 | 0.13 · 0.08 · 0.24 |
+| same backbone, two runs (cls_B0 / red_B0) | 0.88 / 0.93 | **0.28 / 0.09** |
+
+Leave-one-backbone-out with backbone-independent pre-flight features: the abstention label (any mode solves) transfers at AUROC 0.69–0.87, ≥ the held-out cell's own within-cell CV in 11/11 cells; the nested-half label (cheap arm suffices given the best arm solves) transfers at 0.40–0.47 in 3 of 4 testable cells, below chance. Difficulty is a task property and pools across backbones (and across sites, per `abstention_site_transfer`); mode fit is a backbone property (B5's vision solves 12.1%, B0's 25.0%) and does not. Pooling therefore strengthens §457 and adds nothing to which-mode routing; the per-cell negatives stand. One nuance: on cls the cross-backbone interaction correlation (~0.2) is close to the rerun ceiling (0.28), so pooling four cls backbones would estimate the *shared* interaction more reliably (Spearman–Brown ≈ 0.5), but the shared component is bounded by that low ceiling: pooling estimates a small quantity better, it does not make it larger. Cross-family (B2) shares nothing measurable with anyone.
+
+## 20. Three routers on other axes, probed quickly
+
+- **Model-tier cascade** (cls, mode fixed at som, B0 → B5): the two backbones are not nested (both 41, B0-only 20, B5-only 42), so their union is 46.0% against B5's 37.1%; "B0 succeeds" is predictable pre-flight at AUROC 0.710 (difficulty transfers), yet a pre-flight split beats a random split by −0.4 to +2.0pp and a post-hoc cascade on B0's confidence beats random escalation by +0.1 to +1.1pp while costing more than always-B5 once 70% escalate. The union is bought by running both, not by a detector. B1 → B5 is ≤ 0 throughout.
+- **Context growth** is not a lever in this harness: input per step rises only 9–14% from step 0 to the episode mean (dom 3,370 → 3,857), even in ≥20-step episodes.
+- **Cross-arm answer agreement as a verifier** (not a router): on cls_B0 string-match tasks where two arms both answer, agreement lifts dom's precision from a 14–16% base to 25–43% (dom+ptext 31%, n=13; dom+som 43%, n=7), disagreement drops it to 10–13%; ptext+pprompt agreement carries nothing. Pilot-sized n; the one new direction tonight with a positive sign, and it trades 2× cost for verification rather than choosing an arm.
+
+Untested but offline-evaluable: a per-task step-budget router (success steps are known, so truncation is exact); a grounding-path router (dense per-action labels, §7); the VWA-reddit → WA-reddit difficulty prior (same application; answers the "two reddit cells" objection); hedged parallel execution (latency, not cost); "hopeless → fastest arm" under a latency objective.
+
+## 21. Switching the decision variable from "what to observe" to "how long to run": the money is in the failures, and a pre-flight budget survives the rerun
+
+Failed episodes carry 92% of spend (median over 60 conditions); successes finish at a median of 4–10 steps, failures run to the 30-step cap. Cost and latency are both proportional to steps. Truncation is evaluated exactly (success steps are known).
+
+Fixed cap frontier (median over 60 conditions): cap 25 −1.8pp / −14% cost; 20 −2.4 / −28%; **15 −3.1 / −43%**; 12 −4.4 / −53%; 10 −4.9 / −60%.
+
+Pre-flight budget router (no model call): rank tasks by P(this mode succeeds), give the least likely half a 5-step cap, run the rest in full. Steady-state 5-fold, pooled per mode:
+
+| mode | learned SR loss / cost saved | random same share | fixed cap at same cost |
+|---|---:|---:|---:|
+| dom | +2.5pp / 41% | +4.5 | +3.7 |
+| vision | +1.6 / 42% | +3.1 | +2.4 |
+| som | +3.0 / 41% | +4.7 | +4.5 |
+| ptext / pprompt / psom | +3.4 / +3.3 / +2.3 | +5.4 / +5.7 / +4.6 | +4.3 / +4.5 / +3.8 |
+
+Direction identical in 6/6 modes. Under GroupKFold (cold start) the learned assignment collapses to the fixed cap (dom +3.6 vs +3.7), so the ~1pp learned advantage is template memory; the 40% saving is the cap itself. Across the 18 replicate pairs, a classifier trained on run A and applied to run B loses +2.15pp against random +4.06 and fixed-at-same-cost +3.58 while saving 41%, beating the fixed cap in 14/18 pairs by +1.43pp on average. It survives the rerun where the mode-routing rules did not (§18), because it reads task difficulty (stable, transferable, §19) and acts on the same arm: no interaction term is needed. Per the paper's own discipline the SR losses are unresolved rather than zero (inside the band on the B0 cells, resolvable on the low-SR B1 cells where fixed caps hurt slow successes most); the cost and step savings are accounting identities.
+
+## 22. Budget router: full cap sweep, latency axis, five policy families
+
+Per-step cumulative cost and latency re-extracted for 13,537 canonical episodes, so truncation is exact on both axes (55 conditions with ≥5 successes). Minimum median SR loss (pp) to reach at least X% saving:
+
+| saving ≥ | fixed cap | random two-tier | learned two-tier | three-tier (abstain / cap 8 / full) | planner (predicted steps × m) |
+|---:|---:|---:|---:|---:|---:|
+| 20% | +2.23 (cap 22) | +1.84 | **+0.89** | +1.34 | +2.68 |
+| 40% | +3.12 (cap 15) | +3.30 | **+1.95** | +1.95 | +3.69 |
+| 60% | +4.91 (cap 10) | +5.48 | +3.90 | **+3.12** | +4.02 |
+| 70% | +6.73 (cap 7) | +7.68 | **+4.61** | +5.36 | +5.07 |
+
+The latency axis reproduces the table within ±0.1pp (fixed caps slightly worse at 50–60%: +4.39 / +5.77). At 40% saving the learned two-tier beats the fixed cap in 6/6 modes (dom 1.63 vs 3.74, vision 0.49 vs 1.95, som 2.18 vs 3.51, ptext 1.95 vs 3.90, pprompt 4.02 vs 4.91, psom 1.31 vs 2.59). Three readings: the learned frontier sits 1.2–1.8pp below the fixed one across 20–60%, matching the out-of-run +1.43 of §21; an abstention tier is what wins at ≥60%; and a planner-style per-task cap (predicted steps-to-success × multiplier) is worse than a fixed cap at every level: pre-flight features predict *whether* a task will succeed, not *how long* it takes, so budgets can be tiers, not continuous values. Frontier points are saved in `results/router_llm_pilot_20260909/lookahead/budget_frontier.json`.
+
+## 23. How much "measure your own cell" costs, and when it cannot succeed
+
+Draw n tasks, run every arm on them, pick the arm with the best pilot SR. Judged on the full cell: at n = 50 / 100 the pick lands within 2pp of the best arm in 63 / 80% of draws on cls_B0 (gap to second 2.2pp), 96 / 100% on cls_B5 (12.9pp) and red_B0_WA (8.7pp), and 88–100% on cells whose arms are within 0.5pp of each other (any pick qualifies). Judged on the replicate run instead (pick on run A, score on run B): cls_B0 reaches 79% at n = 100 and 100% at n = 224, while **red_B0 reaches 0% even at the full 205 tasks**: run A's best arm (dom, 14.6%) is 11.7% in run B, whose best is psom; the six arms sit within 7pp of each other and reorder between reruns. Practical reading: where the arm gap exceeds the rerun band, 50–100 tasks × all arms (~600 episodes, ~$45 on B0) identifies the arm; where it does not, no pilot can, and the right recommendation is any text-side arm chosen by cost.
+
+## 24. Budget frontier per cell
+
+Minimum SR loss (pp; median over the cell's modes) for ≥30 / 40 / 50% cost saving, as fixed cap / learned two-tier / three-tier, with the mode a fixed cap hurts most at 40% and what the learned assignment does there:
+
+| cell | band | 30% | 40% | 50% | worst mode under fixed cap → learned |
+|---|---|---|---|---|---|
+| cls_B0 | 4.5–7.6 | 2.7 / 0.9 / 1.6 | 4.2 / 1.8 / 1.8 | 5.8 / 4.0 / 3.1 | pprompt +4.9 → +4.0 |
+| cls_B1 | 0.0–1.8 | 2.0 / 0.2 / 0.4 | 2.2 / 0.4 / 0.7 | 2.7 / 0.4 / 0.9 | som +6.7 → +2.7 |
+| cls_B5 | 5.8–7.1 | 3.6 / 2.2 / 2.9 | 4.7 / 3.6 / 4.2 | 6.5 / 5.8 / 5.8 | pprompt +4.9 → +3.6 |
+| red_B0 | 2.0–6.9 | 4.1 / 2.2 / 2.4 | 5.1 / 3.7 / 2.9 | 6.1 / 4.6 / 4.4 | ptext +5.9 → +5.4 |
+| red_B0_WA | — | 5.3 / 2.9 / 4.8 | 6.2 / 4.3 / 5.8 | 9.6 / 6.7 / 6.7 | ptext +11.5 → +8.7 |
+| red_B1 | 0.5–2.0 | 3.4 / 1.2 / 1.5 | 3.7 / 1.5 / 2.0 | 3.9 / 1.5 / 2.0 | som +5.9 → +2.4 |
+| red_B1_WA | — | 2.4 / 1.0 / 1.0 | 3.8 / 1.0 / 1.0 | 5.8 / 1.4 / 1.9 | pprompt +5.8 → +4.8 |
+| shop_B0 | — | 2.3 / 0.9 / 1.4 | 3.0 / 2.1 / 2.3 | 3.7 / 3.2 / 3.2 | som +3.0 → +2.1 |
+| shop_B1 · red_B2 · cls_B2 | — | fixed 1.1–2.4 → learned 0.0–0.5 | | | |
+
+The learned assignment beats the fixed cap in 11/11 cells at all three levels. What the pooled table hid: a fixed cap is most harmful on arms whose successes are slow (B1's som, +6.7pp against a 0–1.8 band; WA_B0's ptext, +11.5pp), and the learned assignment cuts those to 2.4–8.7; on near-floor cells the learned loss is ≈0 because almost every capped episode was a failure anyway. Replicate-judged pilot sizing on the remaining replicated cells: cls_B1 (three arms) 98% at n = 50; red_B1 (two arms) 100% from n = 10.
+
+## 25. Cross-arm agreement as a verifier, all cells
+
+79 arm pairs across 8 cells (non-url tasks where both arms answered). Pooled: P(correct | answers agree) = 294/834 = 35% against P(correct | disagree) = 434/2333 = 19%. Cell-mean lift of agreement over base: cls_B0 +25pp, shop_B0 +15, cls_B5 +13, red_B0 +10, red_B1 +9, red_B0_WA +6, cls_B1 +5, shop_B1 +4 — positive in 8/8 cells, with individual pairs reversing where n is a handful or the base is already high (WA, 46–61%). A real but modest verifier: precision roughly doubles, coverage is low (10–70% of double-answered tasks agree), cost is 2×, and it decides whether to trust an answer, not which arm to run. Three canonical arms could not be diagnosed (red_B0 psom and shop_B0 dom fail the strict-identity JSONL check on one task each; B1 vision shopping is a partial local copy of a run still in progress).

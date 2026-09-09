@@ -80,3 +80,13 @@ updated: 2026-08-19
 ## 为什么这不是瞎抬目标
 
 不是"没有论文然后幻想冲 NAACL", 而是已有 8 页主文 + 大量 appendix + 完整实验 pipeline。接下来两个月针对上面七条补实验 + 重新 framing, **NAACL 是合理的 stretch target**。若成 (MSc 一作、从 dissertation 长出), CV 信号与"硕士有篇 workshop"不是一个量级。
+
+## 2026-09-09 晚 · router 重想之后的稿件形态（笔记 §505）
+
+七个攻击面在今晚之后的状态：1 泛化 → §505.19（难度跨 backbone/site 迁，mode 契合度不迁）；2 跨 site/benchmark → 11 格全用，但 6/11 无 band（fire 清单 #1/#2）；3 baseline 强度 → B5 (GPT-5.6) 在册，§505.10「更强不反转」；4 router vs heuristic → §505.18 正反向规则 + §387.16.4；5 cost-accuracy 稳定性 → §505.22 前沿两轴一致；6 更一般化结论 → 预算路由 6/6 mode；7 AUROC artifact → §505.3 增量 AUROC ≈ 0 与 §457 的区别写清。
+
+**主张改写**（候选题）：*Route the budget, not the representation: what a web-agent router can learn.*
+- 可学的是 task 难度（稳定、可迁），不可学的是 task×mode 契合（交互/噪声 0.12–0.34，标签 70–80% 是硬币，step 0 不可见，更强 backbone 不反转）。
+- 十一种 router 构造收敛在 +1–2pp over random；难度支撑的杠杆是预算：省 41% 且过重跑（14/18）。
+- 实用附带：选臂 pilot 样本量（臂差在 band 内的格跑满也选不出）；跨臂一致性 verifier（温和）。
+**风险**：early-stop/预算的先例文献未核（写作前必做）；6/11 格无 band；learned 对 fixed 的 1.4pp 是 steady-state；全离线（variant D 点火可部分补）。
