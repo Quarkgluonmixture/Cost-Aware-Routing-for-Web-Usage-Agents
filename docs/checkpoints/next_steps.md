@@ -22,6 +22,32 @@ updated: 2026-09-03
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-09-10 · showcase demo 第二版 + live「try your own」可用 · 等 10 分钟演讲的 slide 模板
+>
+> chronicle → **笔记 §506.1–506.9** · 运行手册 `deliverables/showcase/demo/README.md` → *Live* · 当天清单 `SHOWCASE_PREP.md §0`
+>
+> ### 两种打开方式 (现场二选一)
+> | | 怎么开 | 前提 |
+> |---|---|---|
+> | **联网 (含 live 页)** | quark 上 `ssh -N -L 8799:localhost:8799 spark` → 浏览器开 **http://localhost:8799/** | DGX 上站点 `docker compose -f deliverables/showcase/demo/live/site-compose.yml up -d` + server `.venv/bin/python3 deliverables/showcase/demo/live/server.py` |
+> | **离线 (只有录像三题)** | 本机双击一份 `deliverables/showcase/demo_portable.html` | 无 |
+>
+> ⛔ 都**不要经 VS Code Live Server 打开** (工作区一有文件变化就整页刷新, §506.7)。隧道报
+> `bind [127.0.0.1]:8799: Permission denied` 不是故障: VS Code 已自动转发占了 IPv4, ssh 绑了 `::1`, 两条都通。
+>
+> ### 现在开着什么 (现查, 别信这里)
+> `docker ps | grep p79live` (站点) · `curl -s localhost:8799/health` (server) · 关: `fuser -k 8799/tcp` / `docker compose -f … down` (= 重置站点)
+>
+> ### 下一步
+> 1. user 发 slide 模板 → 把 demo 穿插进 10 分钟演讲; 可选: `?task=130` 深链 + 演讲模式 (不自动播放、方向键逐步)
+> 2. **/stress 收尾审查的修改 (user 已定: 1A 2A 3B, 笔记 §506.10) —— 下个 session 和 slide 一起改**:
+>    - P1 红绿框和其他栏对比着上色: 只有它对 → 绿「right — the only view that was」; 它对别的也对 → 灰「right — but so was X (for less): the choice didn't matter」;
+>      它错别的对 → 红「wrong — X got it」; 全错 → 灰。录像三题的说明行同一规则 (76 题要写出「唯一解出」)。文件 `demo/index.html` 的 `pickLine()` / `renderPick()`
+>    - P1 碳排悬停文字去掉 "published": output 实测 / input 由其他模型推算
+>    - P2 措辞: README「Check」改「接线核对 (4/5 折见过)」· 删「4 of its 5 models agreed」· 「trained on the recorded tasks」→「trained on recorded runs of this site's tasks」· README 补「看图的能耗未单独建模」
+>    - 改完重建 `demo_portable.html`、截图查像素、提交; codex 那一份不补 (user: 暂无 credit)
+> 3. B-1996 (CLI `--max_steps` 只改一半) 留在 bug 目录, 正式实验不受影响, 下次改 CLI 时一并修 (需 witness)
+
 > ## 🟢 2026-09-09 晚 · router 重想收口：mode 那条轴封顶，预算那条轴有杠杆 · B1 shop 落地后要跑什么
 >
 > chronicle → **笔记 §505**（27 个子节）· 台账 **+42** · digest `docs/analysis/cross_sites/one_step_lookahead_2026-09-09.md`（§1–§25）

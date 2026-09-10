@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "PDF to Zekun by 2026-09-04 · demo build 09-07→09-15 · event 09-16 (votes 13:15–14:35)"
+eta: "demo v2 + live tab done 09-10 · 10-min talk slides (template pending) · event 09-16 (votes 13:15–14:35)"
 detail: deliverables/showcase
 created: 2026-09-02
-updated: 2026-09-03
+updated: 2026-09-10
 ---
 
 # Holistic AI × UCL CDI showcase (16 Sep 2026) — poster + laptop demo
@@ -29,10 +29,15 @@ calibrated to LibreOffice (`WIDTH_CAL`), so earlier slack figures read high.
 (oral-slot pitch + table/power request for the demo). Footer email is
 `jiaming.wei.25@ucl.ac.uk` (v2–v8 carried a wrong `.22`).
 
-**Demo** (`SHOWCASE_PREP.md §8`): three tasks (130 look · 76 read · 17 both), three
-synchronised columns, thought + running bill per step. BOTH needs a SoM re-record
-of those three tasks once the A100 reddit replicate chain finishes (~09-07).
-Replay only; rerun-stable tasks only; re-recording fine, hand-made trajectories not.
+**Demo** (v2, 2026-09-10, 笔记 §506): three recorded tasks (130 look · 76 read · 17 both)
+with cost / time / CO₂e≈ meters under each lane and the learned choice's fold-held-out
+pick (arrow + ring); tab 4 "✎ try your own" runs a typed task live in all three views
+(DGX site + server, unscored, visitor judges ✓/✗). **Two ways to open**: live =
+`http://localhost:8799/` through `ssh -N -L 8799:localhost:8799 spark` on quark; offline =
+double-click `demo_portable.html`. Never through VS Code Live Server. Runbook:
+`demo/README.md` → *Live*.
+**Talk**: 10-minute slot confirmed (user 09-10), slides on a template still to come,
+demo woven in.
 
 **Chronicle**: 笔记 §495 (v2) · §498 (v4) · §499.1–.12 (v5→v9.10). Ledger under those §.
 **真实尺寸校验**: `print_test_tiles.py` 把任意区域按 1:1 切成 A4, 打印须选「实际大小」。
