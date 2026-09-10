@@ -65,7 +65,29 @@ SESSION: dict | None = None   # the one running session
 START_LOCK = asyncio.Lock()   # two visitors pressing Run at once must not both launch
 
 
+_LOGIN_LOCK = asyncio.Lock()
+
+
 async def _ensure_login() -> bool:
+    async with _LOGIN_LOCK:               # keepalive and a Run press must not log in at once
+        return await _ensure_login_locked()
+
+
+async def _keep_logged_in(app: web.Application) -> None:
+    """Log in at start-up and re-check every 10 min, so a visitor's Run never waits for
+    the ~5 s login (measured 2026-09-10: login was the one avoidable part of the ~30 s
+    before the first live step; the rest is process start, page load and step 0)."""
+    async def loop():
+        while True:
+            try:
+                await _ensure_login()
+            except Exception:
+                pass                          # a failed login is retried at the next Run anyway
+            await asyncio.sleep(600)
+    app["keepalive"] = asyncio.create_task(loop())
+
+
+async def _ensure_login_locked() -> bool:
     if AUTH_STATE.exists() and time.time() - AUTH_STATE.stat().st_mtime < LOGIN_TTL_S:
         return True
     with open(RUNS / "login.log", "ab") as log:
@@ -114,7 +136,11 @@ def _cfg_yaml(mode: str, run_id: str, task_path: Path, out_root: Path) -> str:
         "task": {"include_sites": ["classifieds"],
                  "site_configs": {"classifieds": str(task_path)},
                  "task_ids": {"classifieds": [TASK_ID]}},
-        "runtime": {"resume": False},
+        # The cap goes in the config, both keys. The runner's loop is bounded by
+        # `max_agent_actions`, which config loading defaults from `max_steps` (30 in the
+        # B0 yaml) BEFORE the CLI's `--max_steps` is applied — so `--max_steps 12` alone
+        # left the real cap at 30 (a LOOK lane ran 24 steps, 2026-09-10).
+        "runtime": {"resume": False, "max_steps": CAP, "max_agent_actions": CAP},
     }, indent=1)
 
 
@@ -282,6 +308,22 @@ async def frame(request: web.Request) -> web.FileResponse:
                                         "Cache-Control": "no-store"})
 
 
+async def pick(request: web.Request) -> web.Response:
+    """The learned router's pick for this session's typed task (see router_pick.py)."""
+    s = SESSION
+    if not s or s["id"] != request.match_info["sid"]:
+        raise web.HTTPNotFound()
+    if "pick" not in s:
+        steps = _cond_dir(s, "READ") / "episodes" / f"classifieds_task_{TASK_ID}_steps_v2.jsonl"
+        recs = read_jsonl_dedup(str(steps)) if steps.exists() else []
+        if not recs:
+            return web.json_response({"error": "the READ lane has no first page"}, status=409)
+        from router_pick import live_pick
+        s["pick"] = await asyncio.get_running_loop().run_in_executor(
+            None, live_pick, s["intent"], recs[0])
+    return web.json_response(s["pick"])
+
+
 async def stop(request: web.Request) -> web.Response:
     if SESSION:
         await _kill(SESSION)
@@ -338,8 +380,9 @@ async def cors(request: web.Request, handler):
 def main() -> None:
     RUNS.mkdir(exist_ok=True)
     app = web.Application(middlewares=[cors])
+    app.on_startup.append(_keep_logged_in)
     app.add_routes([web.get("/", page), web.get("/{rel:(data\\.js|frames/.+)}", page_asset),
-                    web.get("/idle/{lane}.png", idle),
+                    web.get("/idle/{lane}.png", idle), web.get("/pick/{sid}", pick),
                     web.get("/health", health), web.post("/run", start),
                     web.options("/run", health), web.get("/events/{sid}", events),
                     web.get("/frame/{sid}/{lane}/{i}", frame), web.post("/stop", stop),

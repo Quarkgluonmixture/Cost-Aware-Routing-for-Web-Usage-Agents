@@ -182,17 +182,32 @@ killed after 8 minutes.
 - **Before a task**, each lane shows the site's start page as that view first sees it
   (`live/idle/*.png`, copied from step 0 of a real live session; BOTH's copy carries the
   numbered marks), not a black stage. Offline, it falls back to black.
-- **The three lanes start together.** The agents boot and load the page at different
-  speeds, so their first steps arrive seconds apart; nothing is shown until every lane
-  has its first step (or has ended), then all three appear in the same instant. After
-  that each lane advances as its steps arrive, at most one step per 1.5 s so a burst
-  still reads step by step. This is display only — no agent is held back, and the time
-  meter is each run's real elapsed time. Tested with a mock that starts the lanes 2 / 7 /
-  12 s apart: first steps shown 0 ms apart, bursts paced at 1.5 s.
-- **Returning to the recorded tasks**: after 5 minutes with no mouse, keyboard, scroll or
-  touch activity (never while a run is showing). `?idle=0` turns it off, `?idle=<seconds>`
-  changes it. In the live tab, space does nothing; `1` `2` `3`, the task tabs and the
-  *Replay* button go back on purpose.
+- **Each lane runs at its own pace.** A lane shows its steps as they arrive (at most one
+  per 0.8 s, so a burst still reads step by step), and between steps its corner says what
+  it is doing, with a running count of seconds — "opening the site · 12 s", "working on
+  step 3 · 6 s" — so a slow model call does not look like a freeze. (A version that held
+  all three lanes until the slowest had its first step was dropped: the screen sat still
+  for 20–30 s while three agents cold-started, which read as stuck.)
+- **Expect ~25 s before the first step.** Measured on 2026-09-10: three runner processes
+  start (~7 s, Python + torch imports), each opens a browser and the start page
+  (~5–8 s), then step 0 — look, one model call, act (5–10 s); a step appears only after
+  its action, because its screenshot is written after the step's timing window. The one
+  avoidable part, the ~5 s site login, is now done by the server in the background (at
+  start-up and every 10 min), so a Run never waits for it. Say so when you press Run.
+- **After a run, the learned choice.** Each lane gets ✓ / ✗ buttons and the visitor
+  judges each answer. The line under the task names the view the project's learned
+  router picks for the typed task; that lane wears a neutral ring until its answer is
+  judged, then green or red. The colour is the visitor's verdict on the router's pick —
+  a typed task has no answer key. How the pick is made (`live/router_pick.py`): all five
+  fold models vote (a typed task belongs to no fold), each with its own threshold; the
+  features are the typed intent plus the READ lane's first page; the one feature with no
+  live value, the task's annotated difficulty, is set to the classifieds median (medium),
+  and the page says so. Check: on recorded tasks 130 / 76 / 17 the vote gives READ /
+  READ / P-prompt — the same picks as the fold-held-out replay on those tabs.
+- **No drifting back.** The live tab stays until someone leaves it; `?idle=<seconds>`
+  turns an automatic return to the recorded tasks back on (any input restarts the count).
+  In the live tab, space does nothing; `1` `2` `3`, the task tabs and the *Replay* button
+  go back on purpose.
 
 **Limits to know before you open it to visitors:**
 

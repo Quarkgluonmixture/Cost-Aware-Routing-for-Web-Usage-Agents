@@ -258,6 +258,14 @@ button:disabled{opacity:.45;cursor:default}
 .idlecap{position:absolute;left:10px;bottom:10px;z-index:8;padding:5px 11px;border-radius:7px;
          background:rgba(20,30,65,.85);color:#fff;font:600 13.5px Arial;pointer-events:none}
 .idlecap[hidden]{display:none}
+/* live: the picked lane waits in a neutral ring until the visitor judges its answer */
+.lane.chosen{border-color:var(--ink);box-shadow:0 0 0 3px var(--ink)}
+.judge{display:inline-flex;gap:5px;margin-left:9px}
+.judge button{padding:1px 10px;border-radius:6px;border:1.5px solid rgba(255,255,255,.75);
+              background:rgba(255,255,255,.14);color:#fff;font:700 14px Arial}
+.judge button.sel{background:#fff;color:var(--ink);border-color:#fff}
+.livepick{flex-basis:100%;display:flex;gap:9px;align-items:baseline;flex-wrap:wrap}
+.livepick:empty{display:none}
 @media(max-width:1000px){.lanes{grid-template-columns:1fr}}
 </style>
 
@@ -2336,12 +2344,12 @@ const SUGGEST = [
   "What is the most expensive item in the Electronics category?",
   "Find a blue car for sale under $5,000.",
 ];
-// An unattended board drifts back to the replay — but only after IDLE_MS with no
-// activity of ANY kind. The first version counted only typing, so a presenter who was
-// reading a result aloud (mouse moving, nothing typed) was thrown back to task 130 after
-// two minutes. `?idle=0` turns the drift off entirely.
-const IDLE_MS = (+new URLSearchParams(location.search).get("idle") || 300) * 1000;
-const IDLE_OFF = new URLSearchParams(location.search).get("idle") === "0";
+// The live tab stays put. Drifting back to the replay is OFF unless the URL asks for it
+// with `?idle=<seconds>` (then any mouse / key / scroll / touch restarts the count).
+// It was on by default at first and threw a presenter who was reading a result aloud
+// back to task 130 — the user asked for it gone.
+const IDLE_SEC = +(new URLSearchParams(location.search).get("idle") || 0);
+const IDLE_OFF = !(IDLE_SEC > 0), IDLE_MS = IDLE_SEC * 1000;
 let mode = "replay", liveId = null, liveCap = 12, es = null, LEL = {}, LVAL = {}, idleT = null;
 ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"].forEach(t =>
   addEventListener(t, () => { if (mode === "live" && idleT) armIdle(); }, {passive: true}));
@@ -2383,7 +2391,8 @@ function liveTab(){
     </form>`;
   $("#caption").innerHTML = '<div class="chips">' +
     SUGGEST.map(s => `<button type="button" class="chip">${esc(s)}</button>`).join("") + "</div>";
-  $("#pickline").innerHTML = '<span class="livestat" id="livestat">checking the live server…</span>';
+  $("#pickline").innerHTML = '<span class="livestat" id="livestat">checking the live server…</span>' +
+                             '<span class="livepick" id="livepick"></span>';
   $("#liveform").onsubmit = ev => { ev.preventDefault(); liveRun($("#liveq").value); };
   $("#livestop").onclick = () => fetch(LIVE + "/stop", {method: "POST"}).catch(() => {});
   document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
@@ -2428,43 +2437,42 @@ function liveMount(){
   });
 }
 
-// Start together, then keep pace. The three agents boot and load the page at different
-// speeds, so their first steps arrive seconds apart. Nothing is shown until every lane
-// has its first step (or has ended), and then all three appear in the same instant.
-// After that each lane shows its steps as they come, at most one per MIN_GAP, so a lane
-// that arrives in a burst (a fast agent, or a reconnect replaying from step 0) still
-// reads step by step. Display only: no agent is ever held back, and the time meter
-// shows each run's real elapsed time.
-const MIN_GAP = 1500, START_WAIT = 60000;
-let LQ = {}, LSHOWN = {}, released = false, ended = false, pumpT = null, relT = null;
+// Each lane shows its own steps as they arrive, without waiting for the others. (A start
+// barrier was tried and dropped: holding the first frames until the slowest of three
+// cold-starting agents was ready left the screen still for 20–30 s, which read as
+// "stuck".) A lane shows at most one step per MIN_GAP, so a burst — a reconnect
+// replaying from step 0 — still reads step by step. Between steps the lane's corner says
+// what it is doing, with a running count of seconds, so a slow model call never looks
+// like a freeze.
+const MIN_GAP = 800;
+let LQ = {}, LSHOWN = {}, LT = {}, LSTEP = {}, LDONE = {}, ended = false, pumpT = null, relT = null;
 function resetQueues(){
-  LQ = {}; LSHOWN = {};
-  ORDER.forEach(k => { LQ[k] = []; LSHOWN[k] = 0; });
-  released = false; ended = false;
-  clearTimeout(relT); clearInterval(pumpT);
+  const now = Date.now();
+  LQ = {}; LSHOWN = {}; LT = {}; LSTEP = {}; LDONE = {};
+  ORDER.forEach(k => { LQ[k] = []; LSHOWN[k] = 0; LT[k] = now; LSTEP[k] = -1; LDONE[k] = false; });
+  ended = false; clearInterval(pumpT);
   pumpT = setInterval(pump, 250);
 }
-function enqueue(k, ev){
-  LQ[k].push(ev);
-  if (!released && ORDER.every(x => LQ[x].length)) release();
-}
-function release(){
-  if (released) return;
-  released = true; clearTimeout(relT);
-  ORDER.forEach(k => LEL[k].idlecap.hidden = true);
-  pump();
-}
+function enqueue(k, ev){ LQ[k].push(ev); pump(); }
 function pump(){
-  if (!released) return;
   const now = Date.now();
   ORDER.forEach(k => {
-    if (!LQ[k].length || now - LSHOWN[k] < MIN_GAP) return;
-    const ev = LQ[k].shift(); LSHOWN[k] = now;
-    if (ev.type === "step") liveStep(k, ev); else liveDone(k, ev);
+    if (LQ[k].length && now - LSHOWN[k] >= MIN_GAP){
+      const ev = LQ[k].shift(); LSHOWN[k] = now; LT[k] = now;
+      if (ev.type === "step"){ LSTEP[k] = ev.step; liveStep(k, ev); }
+      else { LDONE[k] = true; liveDone(k, ev); }
+    }
+    const cap = LEL[k] && LEL[k].idlecap;
+    if (!cap) return;
+    cap.hidden = LDONE[k];
+    if (!LDONE[k])
+      cap.textContent = (LSTEP[k] < 0 ? "opening the site · " : `working on step ${LSTEP[k] + 2} · `) +
+                        Math.floor((now - LT[k]) / 1000) + " s";
   });
   if (ended && ORDER.every(k => !LQ[k].length)){
     clearInterval(pumpT); pumpT = null; running(false);
-    setStat("done · type another task, or pick one below"); armIdle();
+    setStat("done · mark each answer ✓ or ✗, then type another task"); armIdle();
+    showPick();
   }
 }
 
@@ -2485,6 +2493,8 @@ async function liveRun(q){
 function subscribe(id){
   if (es) es.close();
   liveMount(); resetQueues();
+  LPICK = null; JUDGE = {};
+  const lp = $("#livepick"); if (lp) lp.innerHTML = "";
   es = new EventSource(`${LIVE}/events/${id}`);
   es.onmessage = m => {
     const ev = JSON.parse(m.data);
@@ -2492,8 +2502,6 @@ function subscribe(id){
       liveCap = ev.cap; running(true);
       const q = $("#liveq"); if (q) q.value = ev.intent;
       setStat(`running · each view gets up to ${ev.cap} steps · the answer is not scored — you judge it`);
-      ORDER.forEach(k => LEL[k].idlecap.textContent = "starting the agent…");
-      relT = setTimeout(release, START_WAIT);   // never wait forever on a lane that is silent
     } else if (ev.type === "step" || ev.type === "done") enqueue(ev.lane, ev);
     else if (ev.type === "end"){
       es.close(); es = null; ended = true; pump();
@@ -2559,6 +2567,62 @@ function liveDone(k, ev){
   if (ev.answer)
     e.think.innerHTML = `<span class="did">answer: ${esc(ev.answer)}</span>` +
                         '<span class="none">not scored — does it answer the task?</span>';
+}
+
+// After a live run: which view a learned choice picks for this typed task, and ✓ / ✗
+// buttons on every lane so the visitor judges each answer. A typed task has no answer
+// key, so the picked lane's ring stays neutral until the visitor marks that lane — then
+// it turns green or red. The colour is the visitor's verdict on the router's pick,
+// never ours.
+let LPICK = null, JUDGE = {};
+function showPick(){
+  ORDER.forEach(k => {
+    const lh = LEL[k].lane.querySelector(".lh");
+    if (lh.querySelector(".judge")) return;
+    const j = document.createElement("span");
+    j.className = "judge";
+    j.innerHTML = '<button data-v="1" title="the answer is right">✓</button>' +
+                  '<button data-v="0" title="the answer is wrong">✗</button>';
+    j.querySelectorAll("button").forEach(b => b.onclick = () => judge(k, b.dataset.v === "1"));
+    lh.appendChild(j);
+  });
+  fetch(`${LIVE}/pick/${liveId}`).then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(p => { LPICK = p; renderPick(); })
+    .catch(() => { LPICK = null; renderPick(); });
+}
+function judge(k, ok){
+  JUDGE[k] = ok;
+  LEL[k].lane.querySelectorAll(".judge button")
+    .forEach(b => b.classList.toggle("sel", (b.dataset.v === "1") === ok));
+  renderPick();
+}
+function renderPick(){
+  const el = $("#livepick");
+  if (!el) return;
+  ORDER.forEach(k => {
+    LEL[k].lane.classList.remove("chosen", "won", "lost");
+    const t = LEL[k].lane.querySelector(".lh .pickt"); if (t) t.remove();
+  });
+  const p = LPICK;
+  if (!p){ el.innerHTML = ""; return; }
+  let html = '<span class="arr">➜</span><span><b>A learned choice</b> <span class="fine">(trained on ' +
+             `the recorded tasks, never saw this one · ${p.agree} of its ${p.folds} models agreed · ` +
+             'difficulty set to the typical value)</span> picked ';
+  if (p.lane){
+    const e = LEL[p.lane], v = JUDGE[p.lane];
+    e.lane.classList.add("chosen");
+    if (v !== undefined) e.lane.classList.add(v ? "won" : "lost");
+    const badge = document.createElement("span");
+    badge.className = "pickt"; badge.textContent = "➜ learned choice";
+    e.lane.querySelector(".lh .what").after(badge);
+    html += `<b style="color:var(--${p.lane.toLowerCase()})">${p.lane}</b></span>` +
+      (v === undefined ? '<span class="res mixed">mark its answer ✓ or ✗</span>'
+                       : `<span class="res ${v ? "ok" : "no"}">${v ? "✓ you judged it right" : "✗ you judged it wrong"}</span>`);
+  } else {
+    html += (p.fallback ? "its default view, as none of its models was confident — " : "a fourth view, not run here — ") +
+            `<b>${esc(p.name)}</b></span>`;
+  }
+  el.innerHTML = html;
 }
 
 tabs(); mount(); paint(); loop();

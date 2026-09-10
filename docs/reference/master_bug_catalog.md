@@ -11966,3 +11966,19 @@ flipped"的循环 (§H stress P0-3, 2026-08-02)。当时只有 dom+vision 有 re
   故意未做。
 - 连带: 新 run 并入后 flip 集合 67 → 86, 六臂 enrichment **11.4x → 7.95x**。
   毕设不引用 (已 grep); REALM #192 引用的是 08-06 提交时快照, 不动。
+
+### B-1996. 命令行 `--max_steps` 只改了一半: 真正截断步数的 `max_agent_actions` 仍是 yaml 的 30 [P2] ⚠️ OPEN (已绕开)
+- **现象** (2026-09-10, showcase live 页): runner 以 `--max_steps 12` 启动, `run_meta.json` 记
+  `max_steps: 12`, 但 LOOK 一栏跑了 24 步才 finish (step_idx 0–23 连续, 无重试)。
+- **原因**: runner 的循环按 `runtime.max_agent_actions` 截断 (`runner/main.py:250`)。这个值在
+  `load_experiment_config` 里用 `setdefault` 从 `max_steps` 取 (`config.py:430`, 此时是 yaml 的 30);
+  `p79/cli/run_experiment.py:86-87` 在配置加载**之后**才把 CLI 值写进 `max_steps` ⇒ 上限仍是 30,
+  而 run_meta 记的是 12 —— 记录与实际不一致。
+- **影响范围**: `scripts/queues/` 与 Makefile 都不传 `--max_steps`, configs 里没有单独设
+  `max_agent_actions` ⇒ **所有正式实验一直按 30 跑, 与记录一致, 不受影响**。只影响手动加
+  `--max_steps` 的运行。
+- **绕开**: showcase live 页在生成的配置里同时写 `max_steps` 与 `max_agent_actions` (=12), 已用
+  `load_experiment_config` 核实两值都是 12 (笔记 §506.9)。
+- **未修的原因**: CLI 在正式实验的调用路径上, 改动需按 fire 前协议留证据。修法建议: CLI 覆盖
+  `max_steps` 时, 若 `max_agent_actions` 是从旧 `max_steps` 继承来的就一并覆盖, 并让 run_meta
+  同时记录两个值。
