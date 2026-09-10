@@ -303,6 +303,16 @@ async def page(request: web.Request) -> web.FileResponse:
     return web.FileResponse(DEMO / "index.html", headers={"Cache-Control": "no-store"})
 
 
+# What each lane shows before a task starts: the live site's start page as that view
+# first sees it (step 0 of a real live session, copied into live/idle/). BOTH's copy
+# carries the numbered marks — that is what the BOTH agent is actually shown.
+async def idle(request: web.Request) -> web.FileResponse:
+    lane = request.match_info["lane"]
+    if lane not in LANE_MODE:
+        raise web.HTTPNotFound()
+    return web.FileResponse(HERE / "idle" / f"{lane}.png")
+
+
 async def page_asset(request: web.Request) -> web.FileResponse:
     rel = request.match_info["rel"]
     p = (DEMO / rel).resolve()
@@ -329,6 +339,7 @@ def main() -> None:
     RUNS.mkdir(exist_ok=True)
     app = web.Application(middlewares=[cors])
     app.add_routes([web.get("/", page), web.get("/{rel:(data\\.js|frames/.+)}", page_asset),
+                    web.get("/idle/{lane}.png", idle),
                     web.get("/health", health), web.post("/run", start),
                     web.options("/run", health), web.get("/events/{sid}", events),
                     web.get("/frame/{sid}/{lane}/{i}", frame), web.post("/stop", stop),

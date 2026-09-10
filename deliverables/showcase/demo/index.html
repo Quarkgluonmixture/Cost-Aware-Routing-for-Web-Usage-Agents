@@ -255,6 +255,9 @@ button:disabled{opacity:.45;cursor:default}
 .chip{padding:5px 12px;border-radius:999px;background:var(--fill);font:13.5px Arial}
 .livestat{color:var(--muted);font-size:14.5px}
 .pending[hidden]{display:none}
+.idlecap{position:absolute;left:10px;bottom:10px;z-index:8;padding:5px 11px;border-radius:7px;
+         background:rgba(20,30,65,.85);color:#fff;font:600 13.5px Arial;pointer-events:none}
+.idlecap[hidden]{display:none}
 @media(max-width:1000px){.lanes{grid-template-columns:1fr}}
 </style>
 
@@ -596,6 +599,9 @@ $("#play").onclick = () => {
 addEventListener("keydown", e => {
   if (e.target.closest && e.target.closest("input, textarea")) return;   // typing a task
   if (e.key === "4") return liveTab();
+  // space is the replay's play/pause; in the live tab a stray press must not throw the
+  // visitor out of their run
+  if (mode === "live" && e.key === " "){ e.preventDefault(); return; }
   if (e.key === "ArrowRight") manual(1);
   else if (e.key === "ArrowLeft") manual(-1);
   else if (e.key === " ") { e.preventDefault(); $("#play").click(); }
@@ -616,8 +622,15 @@ const SUGGEST = [
   "What is the most expensive item in the Electronics category?",
   "Find a blue car for sale under $5,000.",
 ];
-const IDLE_MS = 120000;      // an unattended board drifts back to the replay
+// An unattended board drifts back to the replay — but only after IDLE_MS with no
+// activity of ANY kind. The first version counted only typing, so a presenter who was
+// reading a result aloud (mouse moving, nothing typed) was thrown back to task 130 after
+// two minutes. `?idle=0` turns the drift off entirely.
+const IDLE_MS = (+new URLSearchParams(location.search).get("idle") || 300) * 1000;
+const IDLE_OFF = new URLSearchParams(location.search).get("idle") === "0";
 let mode = "replay", liveId = null, liveCap = 12, es = null, LEL = {}, LVAL = {}, idleT = null;
+["pointermove", "pointerdown", "keydown", "wheel", "touchstart"].forEach(t =>
+  addEventListener(t, () => { if (mode === "live" && idleT) armIdle(); }, {passive: true}));
 
 const setStat = h => { const s = $("#livestat"); if (s) s.innerHTML = h; };
 function running(on){
@@ -627,12 +640,14 @@ function running(on){
   document.querySelectorAll(".chip").forEach(c => c.disabled = on);
 }
 function armIdle(){
-  clearTimeout(idleT);
-  idleT = setTimeout(() => { if (mode === "live" && !es) backToReplay(); }, IDLE_MS);
+  clearTimeout(idleT); idleT = null;
+  if (IDLE_OFF) return;
+  // never while a run is still showing (es open, or steps still queued for display)
+  idleT = setTimeout(() => { if (mode === "live" && !es && !pumpT) backToReplay(); }, IDLE_MS);
 }
 function leaveLive(){
   if (es){ es.close(); es = null; }       // the run itself carries on server-side
-  clearTimeout(idleT); mode = "replay";
+  clearTimeout(idleT); clearTimeout(relT); clearInterval(pumpT); mode = "replay";
   $("#play").textContent = playing ? "Pause" : "Play";
 }
 function backToReplay(){
@@ -683,12 +698,60 @@ function liveMount(){
       <div class="lh"><b>${k}</b><span class="what">${WHAT[k]}</span><span class="verdict"></span></div>
       <div class="stage"><div class="frame">
         <img alt=""><img alt="">${OVERLAY}
-        <div class="pending">waiting for a task</div>
+        <div class="idlecap">the site's start page · waiting for a task</div>
+        <div class="pending" hidden>waiting for a task</div>
       </div></div>${BELOW}`;
     box.appendChild(el);
-    LEL[k] = Object.assign(refs(el), {front: 0, pending: el.querySelector(".pending"),
-                                      verdict: el.querySelector(".verdict")});
+    const e = LEL[k] = Object.assign(refs(el), {front: 0, pending: el.querySelector(".pending"),
+                                                verdict: el.querySelector(".verdict"),
+                                                idlecap: el.querySelector(".idlecap")});
+    // Before a task, each lane shows the site's start page as that view first sees it
+    // (served by the live server), not a black stage. Offline, it falls back to black.
+    const im = e.imgs[0];
+    im.onload = () => im.classList.add("on");
+    im.onerror = () => { e.pending.hidden = false; e.idlecap.hidden = true; };
+    im.src = `${LIVE}/idle/${k}.png`;
   });
+}
+
+// Start together, then keep pace. The three agents boot and load the page at different
+// speeds, so their first steps arrive seconds apart. Nothing is shown until every lane
+// has its first step (or has ended), and then all three appear in the same instant.
+// After that each lane shows its steps as they come, at most one per MIN_GAP, so a lane
+// that arrives in a burst (a fast agent, or a reconnect replaying from step 0) still
+// reads step by step. Display only: no agent is ever held back, and the time meter
+// shows each run's real elapsed time.
+const MIN_GAP = 1500, START_WAIT = 60000;
+let LQ = {}, LSHOWN = {}, released = false, ended = false, pumpT = null, relT = null;
+function resetQueues(){
+  LQ = {}; LSHOWN = {};
+  ORDER.forEach(k => { LQ[k] = []; LSHOWN[k] = 0; });
+  released = false; ended = false;
+  clearTimeout(relT); clearInterval(pumpT);
+  pumpT = setInterval(pump, 250);
+}
+function enqueue(k, ev){
+  LQ[k].push(ev);
+  if (!released && ORDER.every(x => LQ[x].length)) release();
+}
+function release(){
+  if (released) return;
+  released = true; clearTimeout(relT);
+  ORDER.forEach(k => LEL[k].idlecap.hidden = true);
+  pump();
+}
+function pump(){
+  if (!released) return;
+  const now = Date.now();
+  ORDER.forEach(k => {
+    if (!LQ[k].length || now - LSHOWN[k] < MIN_GAP) return;
+    const ev = LQ[k].shift(); LSHOWN[k] = now;
+    if (ev.type === "step") liveStep(k, ev); else liveDone(k, ev);
+  });
+  if (ended && ORDER.every(k => !LQ[k].length)){
+    clearInterval(pumpT); pumpT = null; running(false);
+    setStat("done · type another task, or pick one below"); armIdle();
+  }
 }
 
 async function liveRun(q){
@@ -707,7 +770,7 @@ async function liveRun(q){
 
 function subscribe(id){
   if (es) es.close();
-  liveMount();
+  liveMount(); resetQueues();
   es = new EventSource(`${LIVE}/events/${id}`);
   es.onmessage = m => {
     const ev = JSON.parse(m.data);
@@ -715,12 +778,11 @@ function subscribe(id){
       liveCap = ev.cap; running(true);
       const q = $("#liveq"); if (q) q.value = ev.intent;
       setStat(`running · each view gets up to ${ev.cap} steps · the answer is not scored — you judge it`);
-      ORDER.forEach(k => LEL[k].pending.textContent = "opening the site…");
-    } else if (ev.type === "step") liveStep(ev.lane, ev);
-    else if (ev.type === "done") liveDone(ev.lane, ev);
+      ORDER.forEach(k => LEL[k].idlecap.textContent = "starting the agent…");
+      relT = setTimeout(release, START_WAIT);   // never wait forever on a lane that is silent
+    } else if (ev.type === "step" || ev.type === "done") enqueue(ev.lane, ev);
     else if (ev.type === "end"){
-      es.close(); es = null; running(false);
-      setStat("done · type another task, or pick one below"); armIdle();
+      es.close(); es = null; ended = true; pump();
     }
   };
   es.onerror = () => {
@@ -739,6 +801,7 @@ function liveStep(k, ev){
   LVAL[k] = ev;
   e.pending.hidden = true;
   const back = e.imgs[1 - e.front];
+  back.onerror = null;                     // the idle image's offline fallback no longer applies
   back.onload = () => {
     back.classList.add("on"); e.imgs[e.front].classList.remove("on"); e.front = 1 - e.front;
     const m = ev.mark, a = aim(m), showId = k === "BOTH" && m && m.id != null;

@@ -177,6 +177,23 @@ is already the collision the paper-grade launch rules forbid; a second visitor g
 the running session instead of a new one. Each lane stops at 12 steps; a session is
 killed after 8 minutes.
 
+**What the live tab does on screen:**
+
+- **Before a task**, each lane shows the site's start page as that view first sees it
+  (`live/idle/*.png`, copied from step 0 of a real live session; BOTH's copy carries the
+  numbered marks), not a black stage. Offline, it falls back to black.
+- **The three lanes start together.** The agents boot and load the page at different
+  speeds, so their first steps arrive seconds apart; nothing is shown until every lane
+  has its first step (or has ended), then all three appear in the same instant. After
+  that each lane advances as its steps arrive, at most one step per 1.5 s so a burst
+  still reads step by step. This is display only — no agent is held back, and the time
+  meter is each run's real elapsed time. Tested with a mock that starts the lanes 2 / 7 /
+  12 s apart: first steps shown 0 ms apart, bursts paced at 1.5 s.
+- **Returning to the recorded tasks**: after 5 minutes with no mouse, keyboard, scroll or
+  touch activity (never while a run is showing). `?idle=0` turns it off, `?idle=<seconds>`
+  changes it. In the live tab, space does nothing; `1` `2` `3`, the task tabs and the
+  *Replay* button go back on purpose.
+
 **Limits to know before you open it to visitors:**
 
 - **Writes are real.** A task like "post an ad" or "change my listing" changes the
