@@ -151,6 +151,12 @@ other. quark's docker (official image, port 9980) stays the backup:
 2. **DGX:** `.venv/bin/python3 deliverables/showcase/demo/live/server.py`
    (env: `LIVE_PORT` 8799, `LIVE_MAX_STEPS` 12).
 3. **quark:** `ssh -N -L 8799:localhost:8799 spark` and leave it open.
+   If it prints `bind [127.0.0.1]:8799: Permission denied`, that is **not** a failure:
+   VS Code's Remote-SSH session to DGX has already auto-forwarded port 8799 to quark's
+   `127.0.0.1`, and ssh has bound `::1` instead — both reach the server. Check with
+   `curl.exe -s http://localhost:8799/health` (PowerShell: no `&` between commands).
+   Don't rely on the VS Code forward alone on the day: it disappears when VS Code
+   disconnects, while the ssh tunnel then binds both addresses by itself.
 4. **quark:** open `demo_portable.html`, press `4`, run one suggestion as a test.
    The status line says *ready* when the server answers and *offline* when it does
    not — in which case the replay tabs are unaffected.
