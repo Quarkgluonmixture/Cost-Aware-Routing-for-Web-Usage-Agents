@@ -199,11 +199,62 @@ h1{margin:0;font:700 28px/1.2 Georgia,serif;letter-spacing:.1px}
 .ok{color:#eafff5} .no{color:#ffe6e3}
 footer{display:flex;align-items:center;gap:15px;padding:10px 26px 12px;color:var(--muted);font-size:13px;flex:none}
 button{padding:7px 14px;border:1.5px solid var(--hair);border-radius:8px;background:#fff;
-       cursor:pointer;font:600 13.5px Arial;color:var(--ink)}
+       cursor:pointer;font:600 13.5px Arial;color:var(--ink);white-space:nowrap}
 button:hover{border-color:var(--ink)}
 kbd{border:1px solid var(--hair);border-bottom-width:2.5px;border-radius:5px;padding:1px 6px;
     font:12px Consolas,monospace;background:var(--fill)}
-.prov{margin-left:auto;text-align:right;line-height:1.4}
+/* the provenance block takes the leftover width and wraps inside it, so the
+   control buttons never get squeezed onto two lines */
+.prov{margin-left:auto;text-align:right;line-height:1.4;flex:1 1 420px;min-width:0;font-size:12px}
+
+/* ---- the three meters ---------------------------------------------------------
+   Each row is scaled to the largest FINAL value among this task's three lanes, so the
+   longest lane fills its row and the other two are read against it: a lane that burns
+   $0.10 on a failure has to look four times longer than one that solves it for $0.025.
+   The CO2e row is drawn as a range — solid up to the low end, pale up to the high end —
+   because it is an estimate; cost and time are recorded values and get one bar. */
+.meters{display:grid;gap:5px;padding:8px 15px 10px;border-top:1px solid var(--hair);flex:none}
+.m{display:grid;grid-template-columns:4.4em 1fr 8.4em;align-items:center;gap:10px;
+   font:700 13px Arial;color:var(--muted);letter-spacing:.2px}
+.m .mb{position:relative;height:11px;border-radius:6px;background:var(--fill);
+       border:1px solid var(--hair);overflow:hidden}
+.m .mb i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;transition:width .26s ease}
+.lane.LOOK .mb i{background:var(--look)} .lane.READ .mb i{background:var(--read)}
+.lane.BOTH .mb i{background:var(--both)}
+.m .mb i.hi{opacity:.3}
+.m .mv{font:700 15.5px Arial;color:var(--ink);text-align:right;
+       font-variant-numeric:tabular-nums;white-space:nowrap}
+.m.co2 .mv{font-size:14.5px}
+
+/* ---- the learned choice -------------------------------------------------------
+   One line under the caption says which view a learned choice picked, and the picked
+   lane wears a ring: green if that lane solved the task in this run, red if it did
+   not. The outcome is shown from the first frame, like each lane's own verdict — a
+   visitor glancing at the board for three seconds should get the whole sentence. */
+.pickline{margin-top:6px;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+          font:16px Arial;color:var(--ink)}
+.pickline .arr{font:700 18px Arial}
+.pickline .fine{color:var(--muted);font-size:13.5px}
+.pickline .res{font-weight:700;padding:2px 10px;border-radius:999px}
+.pickline .res.ok{background:#E2F3EB;color:var(--both)}
+.pickline .res.no{background:#FBE5E3;color:var(--fail)}
+.pickline .res.mixed{background:var(--fill);color:var(--ink);border:1px solid var(--hair)}
+.lane.chosen.won{border-color:var(--both);box-shadow:0 0 0 3px var(--both)}
+.lane.chosen.lost{border-color:var(--fail);box-shadow:0 0 0 3px var(--fail)}
+.lh .pickt{font:700 12.5px Arial;background:#fff;color:var(--ink);padding:2px 9px;
+           border-radius:999px;white-space:nowrap}
+/* ---- live tab ---- */
+.tab.live{border-style:dashed;color:var(--ink)}
+.liveform{display:flex;gap:10px;align-items:center}
+.liveform input{flex:1;min-width:0;padding:9px 14px;border:1.5px solid var(--ink);border-radius:10px;
+                font:600 20px Georgia,serif;color:var(--ink)}
+.liveform button{padding:10px 16px;font-size:15px}
+.liveform #liverun{background:var(--ink);border-color:var(--ink);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:5px 12px;border-radius:999px;background:var(--fill);font:13.5px Arial}
+.livestat{color:var(--muted);font-size:14.5px}
+.pending[hidden]{display:none}
 @media(max-width:1000px){.lanes{grid-template-columns:1fr}}
 </style>
 
@@ -211,26 +262,47 @@ kbd{border:1px solid var(--hair);border-bottom-width:2.5px;border-radius:5px;pad
 <body>
 <header>
   <h1>Look, read, or both?</h1>
-  <div class="sub">The same task, replayed in three representations. Each lane is
+  <div class="sub" id="sub">The same task, replayed in three representations. Each lane is
     <b>one recorded run</b> — screenshots and clicks are the agent's own; nothing is live.</div>
   <div class="tabs" id="tabs" role="tablist"></div>
 </header>
 <div class="taskbar">
   <div class="intent" id="intent"></div>
   <div class="caption" id="caption"></div>
+  <div class="pickline" id="pickline"></div>
 </div>
 <div class="lanes" id="lanes"></div>
 <footer>
   <button id="play">Pause</button>
   <button id="prev">◀ Step</button>
   <button id="next">Step ▶</button>
-  <span><kbd>←</kbd><kbd>→</kbd> step · <kbd>space</kbd> play/pause · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> task</span>
+  <span><kbd>←</kbd><kbd>→</kbd> step · <kbd>space</kbd> play/pause · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> task · <kbd>4</kbd> try your own</span>
   <span class="prov" id="prov"></span>
 </footer>
 
 <script>
 // generated by build_demo_data.py — do not edit
 window.DEMO_TASKS = ["130", "76", "17"];
+window.CARBON = {
+ "j_per_input_token": [
+  0.05,
+  0.4
+ ],
+ "j_per_output_token": [
+  1.0,
+  8.0
+ ],
+ "facility_factor": [
+  1.23,
+  1.97
+ ],
+ "grid_g_per_kwh": [
+  131.0,
+  144.0
+ ],
+ "region": "AWS eu-west-2 (London)",
+ "boundary": "operational only (no embodied emissions); location-based grid factor"
+};
 window.DEMO = {
  "130": {
   "task": 130,
@@ -241,6 +313,12 @@ window.DEMO = {
     "success": true,
     "steps": 2,
     "cost": 0.0073,
+    "seconds": 10.1,
+    "tokens": 6501,
+    "co2": [
+     0.0229,
+     0.3229
+    ],
     "run": "B0_vision_classifieds_R24792_clean_replicate",
     "frames": [
      {
@@ -254,7 +332,13 @@ window.DEMO = {
        "x": 764.16,
        "y": 612.0
       },
-      "cost_cum": 0.0037
+      "cost_cum": 0.0037,
+      "sec_cum": 5.7,
+      "tok_cum": 3240,
+      "co2_cum": [
+       0.012,
+       0.1686
+      ]
      },
      {
       "step": 1,
@@ -263,7 +347,13 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0073
+      "cost_cum": 0.0073,
+      "sec_cum": 10.1,
+      "tok_cum": 6501,
+      "co2_cum": [
+       0.0229,
+       0.3229
+      ]
      }
     ]
    },
@@ -271,6 +361,12 @@ window.DEMO = {
     "success": false,
     "steps": 9,
     "cost": 0.0412,
+    "seconds": 57.5,
+    "tokens": 37914,
+    "co2": [
+     0.1198,
+     1.6867
+    ],
     "run": "B0_dom_classifieds_R31194_clean_replicate",
     "frames": [
      {
@@ -280,7 +376,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0042
+      "cost_cum": 0.0042,
+      "sec_cum": 6.7,
+      "tok_cum": 3808,
+      "co2_cum": [
+       0.0126,
+       0.1775
+      ]
      },
      {
       "step": 1,
@@ -296,7 +398,13 @@ window.DEMO = {
        "h": 18.0,
        "id": 629
       },
-      "cost_cum": 0.0097
+      "cost_cum": 0.0097,
+      "sec_cum": 13.0,
+      "tok_cum": 8846,
+      "co2_cum": [
+       0.029,
+       0.4088
+      ]
      },
      {
       "step": 2,
@@ -305,7 +413,13 @@ window.DEMO = {
       "action": "back",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0134
+      "cost_cum": 0.0134,
+      "sec_cum": 20.2,
+      "tok_cum": 12117,
+      "co2_cum": [
+       0.0406,
+       0.5724
+      ]
      },
      {
       "step": 3,
@@ -314,7 +428,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0189
+      "cost_cum": 0.0189,
+      "sec_cum": 26.9,
+      "tok_cum": 17264,
+      "co2_cum": [
+       0.056,
+       0.7891
+      ]
      },
      {
       "step": 4,
@@ -323,7 +443,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": false,
       "mark": null,
-      "cost_cum": 0.0236
+      "cost_cum": 0.0236,
+      "sec_cum": 33.5,
+      "tok_cum": 21567,
+      "co2_cum": [
+       0.0698,
+       0.9834
+      ]
      },
      {
       "step": 5,
@@ -332,7 +458,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": false,
       "mark": null,
-      "cost_cum": 0.0283
+      "cost_cum": 0.0283,
+      "sec_cum": 40.1,
+      "tok_cum": 25912,
+      "co2_cum": [
+       0.0837,
+       1.1791
+      ]
      },
      {
       "step": 6,
@@ -348,7 +480,13 @@ window.DEMO = {
        "h": 40.0,
        "id": 2729
       },
-      "cost_cum": 0.0328
+      "cost_cum": 0.0328,
+      "sec_cum": 47.5,
+      "tok_cum": 30243,
+      "co2_cum": [
+       0.0951,
+       1.3401
+      ]
      },
      {
       "step": 7,
@@ -364,7 +502,13 @@ window.DEMO = {
        "h": 190.40625,
        "id": 3314
       },
-      "cost_cum": 0.0374
+      "cost_cum": 0.0374,
+      "sec_cum": 53.2,
+      "tok_cum": 34416,
+      "co2_cum": [
+       0.1085,
+       1.528
+      ]
      },
      {
       "step": 8,
@@ -373,7 +517,13 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0412
+      "cost_cum": 0.0412,
+      "sec_cum": 57.5,
+      "tok_cum": 37914,
+      "co2_cum": [
+       0.1198,
+       1.6867
+      ]
      }
     ]
    },
@@ -381,6 +531,12 @@ window.DEMO = {
     "success": true,
     "steps": 3,
     "cost": 0.014,
+    "seconds": 31.5,
+    "tokens": 13241,
+    "co2": [
+     0.0377,
+     0.5305
+    ],
     "run": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696",
     "frames": [
      {
@@ -397,7 +553,13 @@ window.DEMO = {
        "h": 189.40625,
        "id": 53
       },
-      "cost_cum": 0.005
+      "cost_cum": 0.005,
+      "sec_cum": 6.5,
+      "tok_cum": 4799,
+      "co2_cum": [
+       0.0124,
+       0.1746
+      ]
      },
      {
       "step": 1,
@@ -413,7 +575,13 @@ window.DEMO = {
        "h": 412.5,
        "id": 17
       },
-      "cost_cum": 0.0093
+      "cost_cum": 0.0093,
+      "sec_cum": 18.6,
+      "tok_cum": 9011,
+      "co2_cum": [
+       0.0235,
+       0.3307
+      ]
      },
      {
       "step": 2,
@@ -422,10 +590,22 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.014
+      "cost_cum": 0.014,
+      "sec_cum": 31.5,
+      "tok_cum": 13241,
+      "co2_cum": [
+       0.0377,
+       0.5305
+      ]
      }
     ]
    }
+  },
+  "pick": {
+   "mode": "dom",
+   "source": "results/phantom_paper/l1_router_offline_20260715/router_offline_replay.json",
+   "lane": "READ",
+   "success": false
   }
  },
  "76": {
@@ -437,6 +617,12 @@ window.DEMO = {
     "success": false,
     "steps": 26,
     "cost": 0.1026,
+    "seconds": 614.3,
+    "tokens": 91909,
+    "co2": [
+     0.3193,
+     4.4966
+    ],
     "run": "B0_vision_classifieds_R24792_clean_replicate",
     "frames": [
      {
@@ -450,7 +636,13 @@ window.DEMO = {
        "x": 880.64,
        "y": 42.48
       },
-      "cost_cum": 0.0036
+      "cost_cum": 0.0036,
+      "sec_cum": 7.9,
+      "tok_cum": 3228,
+      "co2_cum": [
+       0.0111,
+       0.1556
+      ]
      },
      {
       "step": 1,
@@ -459,7 +651,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0072
+      "cost_cum": 0.0072,
+      "sec_cum": 15.8,
+      "tok_cum": 6484,
+      "co2_cum": [
+       0.0216,
+       0.3044
+      ]
      },
      {
       "step": 2,
@@ -472,7 +670,13 @@ window.DEMO = {
        "x": 545.28,
        "y": 349.92
       },
-      "cost_cum": 0.0109
+      "cost_cum": 0.0109,
+      "sec_cum": 48.7,
+      "tok_cum": 9802,
+      "co2_cum": [
+       0.0336,
+       0.4731
+      ]
      },
      {
       "step": 3,
@@ -485,7 +689,13 @@ window.DEMO = {
        "x": 640.0,
        "y": 504.0
       },
-      "cost_cum": 0.0147
+      "cost_cum": 0.0147,
+      "sec_cum": 81.3,
+      "tok_cum": 13172,
+      "co2_cum": [
+       0.046,
+       0.6475
+      ]
      },
      {
       "step": 4,
@@ -498,7 +708,13 @@ window.DEMO = {
        "x": 638.72,
        "y": 504.0
       },
-      "cost_cum": 0.0188
+      "cost_cum": 0.0188,
+      "sec_cum": 115.4,
+      "tok_cum": 16628,
+      "co2_cum": [
+       0.0604,
+       0.8511
+      ]
      },
      {
       "step": 5,
@@ -511,7 +727,13 @@ window.DEMO = {
        "x": 1071.36,
        "y": 42.48
       },
-      "cost_cum": 0.0227
+      "cost_cum": 0.0227,
+      "sec_cum": 120.7,
+      "tok_cum": 20160,
+      "co2_cum": [
+       0.0722,
+       1.0175
+      ]
      },
      {
       "step": 6,
@@ -520,7 +742,13 @@ window.DEMO = {
       "action": "back",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0266
+      "cost_cum": 0.0266,
+      "sec_cum": 153.3,
+      "tok_cum": 23725,
+      "co2_cum": [
+       0.0839,
+       1.182
+      ]
      },
      {
       "step": 7,
@@ -533,7 +761,13 @@ window.DEMO = {
        "x": 1071.36,
        "y": 42.48
       },
-      "cost_cum": 0.0307
+      "cost_cum": 0.0307,
+      "sec_cum": 159.4,
+      "tok_cum": 27355,
+      "co2_cum": [
+       0.097,
+       1.3659
+      ]
      },
      {
       "step": 8,
@@ -542,7 +776,13 @@ window.DEMO = {
       "action": "back",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0347
+      "cost_cum": 0.0347,
+      "sec_cum": 191.8,
+      "tok_cum": 30997,
+      "co2_cum": [
+       0.1089,
+       1.534
+      ]
      },
      {
       "step": 9,
@@ -551,7 +791,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0389
+      "cost_cum": 0.0389,
+      "sec_cum": 224.5,
+      "tok_cum": 34664,
+      "co2_cum": [
+       0.1221,
+       1.7196
+      ]
      },
      {
       "step": 10,
@@ -564,7 +810,13 @@ window.DEMO = {
        "x": 537.6,
        "y": 45.36
       },
-      "cost_cum": 0.043
+      "cost_cum": 0.043,
+      "sec_cum": 257.9,
+      "tok_cum": 38335,
+      "co2_cum": [
+       0.1352,
+       1.9036
+      ]
      },
      {
       "step": 11,
@@ -573,7 +825,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0471
+      "cost_cum": 0.0471,
+      "sec_cum": 290.0,
+      "tok_cum": 41994,
+      "co2_cum": [
+       0.1478,
+       2.0812
+      ]
      },
      {
       "step": 12,
@@ -582,7 +840,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0512
+      "cost_cum": 0.0512,
+      "sec_cum": 322.7,
+      "tok_cum": 45671,
+      "co2_cum": [
+       0.1613,
+       2.2714
+      ]
      },
      {
       "step": 13,
@@ -591,7 +855,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0552
+      "cost_cum": 0.0552,
+      "sec_cum": 355.2,
+      "tok_cum": 49223,
+      "co2_cum": [
+       0.1736,
+       2.445
+      ]
      },
      {
       "step": 14,
@@ -600,7 +870,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0591
+      "cost_cum": 0.0591,
+      "sec_cum": 387.9,
+      "tok_cum": 52766,
+      "co2_cum": [
+       0.1855,
+       2.6124
+      ]
      },
      {
       "step": 15,
@@ -609,7 +885,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0632
+      "cost_cum": 0.0632,
+      "sec_cum": 420.0,
+      "tok_cum": 56338,
+      "co2_cum": [
+       0.1985,
+       2.7963
+      ]
      },
      {
       "step": 16,
@@ -622,7 +904,13 @@ window.DEMO = {
        "x": 1072.64,
        "y": 41.76
       },
-      "cost_cum": 0.0671
+      "cost_cum": 0.0671,
+      "sec_cum": 425.5,
+      "tok_cum": 59892,
+      "co2_cum": [
+       0.2107,
+       2.9682
+      ]
      },
      {
       "step": 17,
@@ -635,7 +923,13 @@ window.DEMO = {
        "x": 880.64,
        "y": 41.76
       },
-      "cost_cum": 0.0712
+      "cost_cum": 0.0712,
+      "sec_cum": 433.6,
+      "tok_cum": 63473,
+      "co2_cum": [
+       0.224,
+       3.1547
+      ]
      },
      {
       "step": 18,
@@ -644,7 +938,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0751
+      "cost_cum": 0.0751,
+      "sec_cum": 441.4,
+      "tok_cum": 67015,
+      "co2_cum": [
+       0.2355,
+       3.3167
+      ]
      },
      {
       "step": 19,
@@ -657,7 +957,13 @@ window.DEMO = {
        "x": 540.16,
        "y": 345.6
       },
-      "cost_cum": 0.079
+      "cost_cum": 0.079,
+      "sec_cum": 474.3,
+      "tok_cum": 70558,
+      "co2_cum": [
+       0.2475,
+       3.4858
+      ]
      },
      {
       "step": 20,
@@ -666,7 +972,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0828
+      "cost_cum": 0.0828,
+      "sec_cum": 506.6,
+      "tok_cum": 74090,
+      "co2_cum": [
+       0.2587,
+       3.6439
+      ]
      },
      {
       "step": 21,
@@ -679,7 +991,13 @@ window.DEMO = {
        "x": 540.16,
        "y": 43.92
       },
-      "cost_cum": 0.0866
+      "cost_cum": 0.0866,
+      "sec_cum": 538.3,
+      "tok_cum": 77602,
+      "co2_cum": [
+       0.269,
+       3.7893
+      ]
      },
      {
       "step": 22,
@@ -688,7 +1006,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0905
+      "cost_cum": 0.0905,
+      "sec_cum": 570.3,
+      "tok_cum": 81150,
+      "co2_cum": [
+       0.2808,
+       3.9544
+      ]
      },
      {
       "step": 23,
@@ -701,7 +1025,13 @@ window.DEMO = {
        "x": 540.16,
        "y": 390.96
       },
-      "cost_cum": 0.0943
+      "cost_cum": 0.0943,
+      "sec_cum": 603.3,
+      "tok_cum": 84681,
+      "co2_cum": [
+       0.2917,
+       4.1089
+      ]
      },
      {
       "step": 24,
@@ -714,7 +1044,13 @@ window.DEMO = {
        "x": 426.24,
        "y": 495.36
       },
-      "cost_cum": 0.0983
+      "cost_cum": 0.0983,
+      "sec_cum": 608.9,
+      "tok_cum": 88258,
+      "co2_cum": [
+       0.3039,
+       4.2809
+      ]
      },
      {
       "step": 25,
@@ -723,7 +1059,13 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.1026
+      "cost_cum": 0.1026,
+      "sec_cum": 614.3,
+      "tok_cum": 91909,
+      "co2_cum": [
+       0.3193,
+       4.4966
+      ]
      }
     ]
    },
@@ -731,6 +1073,12 @@ window.DEMO = {
     "success": true,
     "steps": 12,
     "cost": 0.0901,
+    "seconds": 280.5,
+    "tokens": 84228,
+    "co2": [
+     0.2506,
+     3.5292
+    ],
     "run": "B0_dom_classifieds_R31194_clean_replicate",
     "frames": [
      {
@@ -747,7 +1095,13 @@ window.DEMO = {
        "h": 35.0,
        "id": 115
       },
-      "cost_cum": 0.0037
+      "cost_cum": 0.0037,
+      "sec_cum": 9.4,
+      "tok_cum": 3343,
+      "co2_cum": [
+       0.011,
+       0.1551
+      ]
      },
      {
       "step": 1,
@@ -756,7 +1110,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0077
+      "cost_cum": 0.0077,
+      "sec_cum": 18.1,
+      "tok_cum": 7014,
+      "co2_cum": [
+       0.0226,
+       0.3187
+      ]
      },
      {
       "step": 2,
@@ -772,7 +1132,13 @@ window.DEMO = {
        "h": 22.0,
        "id": 1580
       },
-      "cost_cum": 0.0118
+      "cost_cum": 0.0118,
+      "sec_cum": 24.2,
+      "tok_cum": 10738,
+      "co2_cum": [
+       0.0353,
+       0.4966
+      ]
      },
      {
       "step": 3,
@@ -788,7 +1154,13 @@ window.DEMO = {
        "h": 20.0,
        "id": 2322
       },
-      "cost_cum": 0.0155
+      "cost_cum": 0.0155,
+      "sec_cum": 60.3,
+      "tok_cum": 14015,
+      "co2_cum": [
+       0.0471,
+       0.6627
+      ]
      },
      {
       "step": 4,
@@ -804,7 +1176,13 @@ window.DEMO = {
        "h": 50.0,
        "id": 2969
       },
-      "cost_cum": 0.0196
+      "cost_cum": 0.0196,
+      "sec_cum": 97.3,
+      "tok_cum": 17282,
+      "co2_cum": [
+       0.0629,
+       0.8861
+      ]
      },
      {
       "step": 5,
@@ -820,7 +1198,13 @@ window.DEMO = {
        "h": 300.0,
        "id": 2980
       },
-      "cost_cum": 0.0242
+      "cost_cum": 0.0242,
+      "sec_cum": 132.8,
+      "tok_cum": 20704,
+      "co2_cum": [
+       0.0839,
+       1.1814
+      ]
      },
      {
       "step": 6,
@@ -829,7 +1213,13 @@ window.DEMO = {
       "action": "wait",
       "ok": false,
       "mark": null,
-      "cost_cum": 0.0285
+      "cost_cum": 0.0285,
+      "sec_cum": 167.9,
+      "tok_cum": 24151,
+      "co2_cum": [
+       0.0998,
+       1.4062
+      ]
      },
      {
       "step": 7,
@@ -838,7 +1228,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0322
+      "cost_cum": 0.0322,
+      "sec_cum": 204.7,
+      "tok_cum": 27532,
+      "co2_cum": [
+       0.1114,
+       1.5697
+      ]
      },
      {
       "step": 8,
@@ -854,7 +1250,13 @@ window.DEMO = {
        "h": 50.0,
        "id": 2992
       },
-      "cost_cum": 0.0502
+      "cost_cum": 0.0502,
+      "sec_cum": 237.3,
+      "tok_cum": 45300,
+      "co2_cum": [
+       0.1534,
+       2.1609
+      ]
      },
      {
       "step": 9,
@@ -863,7 +1265,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0686
+      "cost_cum": 0.0686,
+      "sec_cum": 270.6,
+      "tok_cum": 63151,
+      "co2_cum": [
+       0.1987,
+       2.799
+      ]
      },
      {
       "step": 10,
@@ -879,7 +1287,13 @@ window.DEMO = {
        "h": 50.0,
        "id": 8264
       },
-      "cost_cum": 0.0863
+      "cost_cum": 0.0863,
+      "sec_cum": 276.5,
+      "tok_cum": 80691,
+      "co2_cum": [
+       0.24,
+       3.3806
+      ]
      },
      {
       "step": 11,
@@ -888,7 +1302,13 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0901
+      "cost_cum": 0.0901,
+      "sec_cum": 280.5,
+      "tok_cum": 84228,
+      "co2_cum": [
+       0.2506,
+       3.5292
+      ]
      }
     ]
    },
@@ -896,6 +1316,12 @@ window.DEMO = {
     "success": false,
     "steps": 7,
     "cost": 0.0628,
+    "seconds": 189.3,
+    "tokens": 59992,
+    "co2": [
+     0.1643,
+     2.3138
+    ],
     "run": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696",
     "frames": [
      {
@@ -912,7 +1338,13 @@ window.DEMO = {
        "h": 35.0,
        "id": 4
       },
-      "cost_cum": 0.0048
+      "cost_cum": 0.0048,
+      "sec_cum": 9.3,
+      "tok_cum": 4441,
+      "co2_cum": [
+       0.0139,
+       0.1951
+      ]
      },
      {
       "step": 1,
@@ -921,7 +1353,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0098
+      "cost_cum": 0.0098,
+      "sec_cum": 19.3,
+      "tok_cum": 9119,
+      "co2_cum": [
+       0.0278,
+       0.3916
+      ]
      },
      {
       "step": 2,
@@ -937,7 +1375,13 @@ window.DEMO = {
        "h": 26.0,
        "id": 23
       },
-      "cost_cum": 0.015
+      "cost_cum": 0.015,
+      "sec_cum": 53.8,
+      "tok_cum": 13850,
+      "co2_cum": [
+       0.0431,
+       0.6066
+      ]
      },
      {
       "step": 3,
@@ -953,7 +1397,13 @@ window.DEMO = {
        "h": 300.0,
        "id": 20
       },
-      "cost_cum": 0.0198
+      "cost_cum": 0.0198,
+      "sec_cum": 88.3,
+      "tok_cum": 18087,
+      "co2_cum": [
+       0.0589,
+       0.8294
+      ]
      },
      {
       "step": 4,
@@ -962,7 +1412,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0245
+      "cost_cum": 0.0245,
+      "sec_cum": 121.2,
+      "tok_cum": 22406,
+      "co2_cum": [
+       0.0721,
+       1.0159
+      ]
      },
      {
       "step": 5,
@@ -978,7 +1434,13 @@ window.DEMO = {
        "h": 50.0,
        "id": 3
       },
-      "cost_cum": 0.0438
+      "cost_cum": 0.0438,
+      "sec_cum": 157.2,
+      "tok_cum": 41205,
+      "co2_cum": [
+       0.1194,
+       1.6821
+      ]
      },
      {
       "step": 6,
@@ -987,10 +1449,22 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0628
+      "cost_cum": 0.0628,
+      "sec_cum": 189.3,
+      "tok_cum": 59992,
+      "co2_cum": [
+       0.1643,
+       2.3138
+      ]
      }
     ]
    }
+  },
+  "pick": {
+   "mode": "dom",
+   "source": "results/phantom_paper/l1_router_offline_20260715/router_offline_replay.json",
+   "lane": "READ",
+   "success": true
   }
  },
  "17": {
@@ -1002,6 +1476,12 @@ window.DEMO = {
     "success": false,
     "steps": 9,
     "cost": 0.0335,
+    "seconds": 72.1,
+    "tokens": 30436,
+    "co2": [
+     0.1009,
+     1.4205
+    ],
     "run": "B0_vision_classifieds_R24792_clean_replicate",
     "frames": [
      {
@@ -1015,7 +1495,13 @@ window.DEMO = {
        "x": 384.0,
        "y": 300.24
       },
-      "cost_cum": 0.0034
+      "cost_cum": 0.0034,
+      "sec_cum": 7.8,
+      "tok_cum": 3183,
+      "co2_cum": [
+       0.0093,
+       0.1309
+      ]
      },
      {
       "step": 1,
@@ -1028,7 +1514,13 @@ window.DEMO = {
        "x": 1024.0,
        "y": 299.52
       },
-      "cost_cum": 0.0071
+      "cost_cum": 0.0071,
+      "sec_cum": 16.9,
+      "tok_cum": 6451,
+      "co2_cum": [
+       0.0212,
+       0.298
+      ]
      },
      {
       "step": 2,
@@ -1041,7 +1533,13 @@ window.DEMO = {
        "x": 197.12,
        "y": 432.0
       },
-      "cost_cum": 0.0105
+      "cost_cum": 0.0105,
+      "sec_cum": 26.1,
+      "tok_cum": 9705,
+      "co2_cum": [
+       0.0307,
+       0.4323
+      ]
      },
      {
       "step": 3,
@@ -1054,7 +1552,13 @@ window.DEMO = {
        "x": 305.92,
        "y": 434.16
       },
-      "cost_cum": 0.0143
+      "cost_cum": 0.0143,
+      "sec_cum": 35.6,
+      "tok_cum": 13045,
+      "co2_cum": [
+       0.0425,
+       0.5992
+      ]
      },
      {
       "step": 4,
@@ -1067,7 +1571,13 @@ window.DEMO = {
        "x": 202.24,
        "y": 491.04
       },
-      "cost_cum": 0.0181
+      "cost_cum": 0.0181,
+      "sec_cum": 44.5,
+      "tok_cum": 16426,
+      "co2_cum": [
+       0.0541,
+       0.7621
+      ]
      },
      {
       "step": 5,
@@ -1080,7 +1590,13 @@ window.DEMO = {
        "x": 990.72,
        "y": 160.56
       },
-      "cost_cum": 0.0217
+      "cost_cum": 0.0217,
+      "sec_cum": 53.0,
+      "tok_cum": 19829,
+      "co2_cum": [
+       0.0643,
+       0.9059
+      ]
      },
      {
       "step": 6,
@@ -1089,7 +1605,13 @@ window.DEMO = {
       "action": "scroll",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0255
+      "cost_cum": 0.0255,
+      "sec_cum": 61.8,
+      "tok_cum": 23301,
+      "co2_cum": [
+       0.0756,
+       1.065
+      ]
      },
      {
       "step": 7,
@@ -1102,7 +1624,13 @@ window.DEMO = {
        "x": 581.12,
        "y": 409.68
       },
-      "cost_cum": 0.0295
+      "cost_cum": 0.0295,
+      "sec_cum": 67.4,
+      "tok_cum": 26855,
+      "co2_cum": [
+       0.0885,
+       1.2471
+      ]
      },
      {
       "step": 8,
@@ -1111,7 +1639,13 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0335
+      "cost_cum": 0.0335,
+      "sec_cum": 72.1,
+      "tok_cum": 30436,
+      "co2_cum": [
+       0.1009,
+       1.4205
+      ]
      }
     ]
    },
@@ -1119,6 +1653,12 @@ window.DEMO = {
     "success": false,
     "steps": 8,
     "cost": 0.0341,
+    "seconds": 53.5,
+    "tokens": 30379,
+    "co2": [
+     0.1072,
+     1.5097
+    ],
     "run": "B0_dom_classifieds_R31194_clean_replicate",
     "frames": [
      {
@@ -1135,7 +1675,13 @@ window.DEMO = {
        "h": 50.0,
        "id": 148
       },
-      "cost_cum": 0.0038
+      "cost_cum": 0.0038,
+      "sec_cum": 8.3,
+      "tok_cum": 3362,
+      "co2_cum": [
+       0.0121,
+       0.1701
+      ]
      },
      {
       "step": 1,
@@ -1151,7 +1697,13 @@ window.DEMO = {
        "h": 50.0,
        "id": 140
       },
-      "cost_cum": 0.0076
+      "cost_cum": 0.0076,
+      "sec_cum": 17.2,
+      "tok_cum": 6761,
+      "co2_cum": [
+       0.0244,
+       0.3443
+      ]
      },
      {
       "step": 2,
@@ -1167,7 +1719,13 @@ window.DEMO = {
        "h": 40.0,
        "id": 1425
       },
-      "cost_cum": 0.0118
+      "cost_cum": 0.0118,
+      "sec_cum": 25.4,
+      "tok_cum": 10600,
+      "co2_cum": [
+       0.0366,
+       0.5162
+      ]
      },
      {
       "step": 3,
@@ -1183,7 +1741,13 @@ window.DEMO = {
        "h": 40.0,
        "id": 1433
       },
-      "cost_cum": 0.0162
+      "cost_cum": 0.0162,
+      "sec_cum": 31.7,
+      "tok_cum": 14529,
+      "co2_cum": [
+       0.0503,
+       0.7089
+      ]
      },
      {
       "step": 4,
@@ -1199,7 +1763,13 @@ window.DEMO = {
        "h": 19.0,
        "id": 2506
       },
-      "cost_cum": 0.0207
+      "cost_cum": 0.0207,
+      "sec_cum": 37.2,
+      "tok_cum": 18582,
+      "co2_cum": [
+       0.0638,
+       0.8983
+      ]
      },
      {
       "step": 5,
@@ -1215,7 +1785,13 @@ window.DEMO = {
        "h": 139.0,
        "id": 3068
       },
-      "cost_cum": 0.0252
+      "cost_cum": 0.0252,
+      "sec_cum": 42.2,
+      "tok_cum": 22683,
+      "co2_cum": [
+       0.0778,
+       1.0953
+      ]
      },
      {
       "step": 6,
@@ -1231,7 +1807,13 @@ window.DEMO = {
        "h": 22.0,
        "id": 3072
       },
-      "cost_cum": 0.0299
+      "cost_cum": 0.0299,
+      "sec_cum": 48.3,
+      "tok_cum": 26838,
+      "co2_cum": [
+       0.0921,
+       1.2969
+      ]
      },
      {
       "step": 7,
@@ -1240,7 +1822,13 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0341
+      "cost_cum": 0.0341,
+      "sec_cum": 53.5,
+      "tok_cum": 30379,
+      "co2_cum": [
+       0.1072,
+       1.5097
+      ]
      }
     ]
    },
@@ -1248,6 +1836,12 @@ window.DEMO = {
     "success": true,
     "steps": 6,
     "cost": 0.0314,
+    "seconds": 74.3,
+    "tokens": 29177,
+    "co2": [
+     0.089,
+     1.2538
+    ],
     "run": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696",
     "frames": [
      {
@@ -1264,7 +1858,13 @@ window.DEMO = {
        "h": 50.0,
        "id": 9
       },
-      "cost_cum": 0.0046
+      "cost_cum": 0.0046,
+      "sec_cum": 18.2,
+      "tok_cum": 4392,
+      "co2_cum": [
+       0.0119,
+       0.1678
+      ]
      },
      {
       "step": 1,
@@ -1280,7 +1880,13 @@ window.DEMO = {
        "h": 40.0,
        "id": 24
       },
-      "cost_cum": 0.0098
+      "cost_cum": 0.0098,
+      "sec_cum": 34.1,
+      "tok_cum": 9221,
+      "co2_cum": [
+       0.0273,
+       0.3841
+      ]
      },
      {
       "step": 2,
@@ -1296,7 +1902,13 @@ window.DEMO = {
        "h": 40.0,
        "id": 27
       },
-      "cost_cum": 0.0153
+      "cost_cum": 0.0153,
+      "sec_cum": 45.0,
+      "tok_cum": 14309,
+      "co2_cum": [
+       0.0431,
+       0.6067
+      ]
      },
      {
       "step": 3,
@@ -1312,7 +1924,13 @@ window.DEMO = {
        "h": 19.0,
        "id": 36
       },
-      "cost_cum": 0.021
+      "cost_cum": 0.021,
+      "sec_cum": 63.4,
+      "tok_cum": 19505,
+      "co2_cum": [
+       0.0593,
+       0.8352
+      ]
      },
      {
       "step": 4,
@@ -1328,7 +1946,13 @@ window.DEMO = {
        "h": 79.15625,
        "id": 40
       },
-      "cost_cum": 0.0263
+      "cost_cum": 0.0263,
+      "sec_cum": 69.0,
+      "tok_cum": 24675,
+      "co2_cum": [
+       0.0725,
+       1.0215
+      ]
      },
      {
       "step": 5,
@@ -1337,10 +1961,34 @@ window.DEMO = {
       "action": "finish",
       "ok": true,
       "mark": null,
-      "cost_cum": 0.0314
+      "cost_cum": 0.0314,
+      "sec_cum": 74.3,
+      "tok_cum": 29177,
+      "co2_cum": [
+       0.089,
+       1.2538
+      ]
      }
     ]
    }
+  },
+  "pick": {
+   "mode": "phantom_prompt",
+   "source": "results/phantom_paper/l1_router_offline_20260715/router_offline_replay.json",
+   "lane": null,
+   "name": "text tree, read with the marked-screenshot instructions",
+   "runs": [
+    {
+     "run": "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+     "success": true,
+     "steps": 9
+    },
+    {
+     "run": "B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207",
+     "success": false,
+     "steps": 7
+    }
+   ]
   }
  }
 };
@@ -1357,6 +2005,7 @@ const WHAT = {LOOK:"screenshot only", READ:"text tree only", BOTH:"marked screen
 const ORDER = ["LOOK","READ","BOTH"];
 const $ = s => document.querySelector(s);
 const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const SUB_REPLAY = $("#sub").innerHTML;       // restored when leaving the live tab
 let task = window.DEMO_TASKS[0], cursor = 0, playing = true, timer = null;
 let EL = {};                                  // lane -> live element refs, built once per task
 
@@ -1375,13 +2024,75 @@ function tabs(){
   window.DEMO_TASKS.forEach(t => {
     const b = document.createElement("button");
     b.className = "tab"; b.setAttribute("role","tab");
-    b.setAttribute("aria-selected", String(t === task));
+    b.setAttribute("aria-selected", String(mode === "replay" && t === task));
     const o = window.DEMO[t].lanes;
     b.innerHTML = `task ${t} &nbsp;` + ORDER
       .map(k => `<span style="color:var(--${k.toLowerCase()})">${o[k].success ? "✓" : "✗"}</span>`).join("");
     b.onclick = () => go(t);
     $("#tabs").appendChild(b);
   });
+  // the fourth tab: a task typed at the board, run live in all three views
+  const lv = document.createElement("button");
+  lv.className = "tab live"; lv.setAttribute("role", "tab");
+  lv.setAttribute("aria-selected", String(mode === "live"));
+  lv.textContent = "✎ try your own";
+  lv.onclick = liveTab;
+  $("#tabs").appendChild(lv);
+}
+
+// The pick is read from a fold-held-out replay: the router that made it never saw
+// this task. The line states the outcome in THIS run, and names the lanes that did
+// solve it, so a wrong pick reads as what it is rather than as a near miss.
+function pickLine(d){
+  const p = d.pick;
+  let html = '<span class="arr">➜</span><span><b>A learned choice</b> ' +
+             '<span class="fine">(trained without this task)</span> picked ';
+  if (p.lane){
+    const L = d.lanes[p.lane], solvers = ORDER.filter(k => d.lanes[k].success);
+    html += `<b style="color:var(--${p.lane.toLowerCase()})">${p.lane}</b></span>` +
+      `<span class="res ${L.success ? "ok" : "no"}">` +
+      (L.success ? "✓ solved it here" :
+        "✗ failed here" + (solvers.length ? ` — ${solvers.join(" and ")} solved it` : "")) +
+      "</span>";
+  } else {
+    // A view that is not one of the three lanes: report its own recorded runs, all
+    // of them, because one run of a view is exactly what a rerun can flip.
+    const ok = p.runs.filter(r => r.success).length, n = p.runs.length;
+    const rec = n === 2 ? (ok === 2 ? "✓ in both of its recorded runs" : ok === 0
+                  ? "✗ in both of its recorded runs" : "✓ in one recorded run, ✗ in the other")
+                        : `✓ in ${ok} of ${n} recorded runs`;
+    html += `a fourth view, not shown here — <b>${esc(p.name)}</b></span>` +
+            `<span class="res mixed">${rec}</span>`;
+  }
+  $("#pickline").innerHTML = html;
+}
+
+let SCALE = {usd:1, sec:1, co2:1};
+
+// Lane furniture shared by the replay and the live tab, so the two cannot drift
+// apart: everything drawn over the frame, and everything below it.
+const OVERLAY = `
+        <div class="mk box"><span class="eid"></span></div>
+        <div class="mk point"></div>
+        <div class="fx"></div><div class="fx2"></div><div class="fx3"></div><div class="tag"></div>
+        <div class="cur"><svg width="26" height="26" viewBox="0 0 26 26">
+          <path d="M3 2 L3 20 L8 15.5 L11.3 22.6 L14.6 21 L11.4 14.2 L18 14 Z"
+                fill="#fff" stroke="#141E41" stroke-width="1.8" stroke-linejoin="round"/></svg></div>`;
+const BELOW = `
+      <div class="think"></div>
+      <div class="foot"><span class="act">—</span><span class="pos"></span></div>
+      <div class="meters">
+        <div class="m usd"><span>cost</span><span class="mb"><i></i></span><span class="mv"></span></div>
+        <div class="m sec"><span>time</span><span class="mb"><i></i></span><span class="mv"></span></div>
+        <div class="m co2" title="Estimated, not measured: the model runs in a remote datacentre. Tokens × published energy per token × datacentre overhead × UK grid."><span>CO₂e ≈</span><span class="mb"><i class="hi"></i><i class="lo"></i></span><span class="mv"></span></div>
+      </div>
+      <div class="bar"><i></i></div>`;
+function refs(el){
+  const q = s => el.querySelector(s);
+  return {imgs:[...el.querySelectorAll(".frame img")], box:q(".mk.box"), eid:q(".eid"),
+          point:q(".mk.point"), cur:q(".cur"), fx:q(".fx"), fx2:q(".fx2"), fx3:q(".fx3"),
+          tag:q(".tag"), think:q(".think"), act:q(".act"), pos:q(".pos"),
+          mUsd:q(".m.usd"), mSec:q(".m.sec"), mCo2:q(".m.co2"), bar:q(".bar i"), lane:el};
 }
 
 // Build the three lanes for a task ONCE, mounting every frame stacked. After this the
@@ -1389,40 +2100,45 @@ function tabs(){
 // destroyed, so nothing can blank out mid-transition.
 function mount(){
   const d = window.DEMO[task];
+  $("#sub").innerHTML = SUB_REPLAY;
   $("#intent").innerHTML = '<span class="q">Task:</span> ' + esc(d.intent);
   $("#caption").innerHTML = esc(d.caption);
+  pickLine(d);
+  // each meter row is scaled to the largest final value among this task's lanes
+  const top = f => Math.max(...ORDER.map(k => f(d.lanes[k]))) || 1;
+  SCALE = {usd: top(L => L.cost), sec: top(L => L.seconds), co2: top(L => L.co2[1])};
   const box = $("#lanes"); box.innerHTML = ""; EL = {};
   ORDER.forEach(k => {
     const L = d.lanes[k];
+    const chosen = d.pick.lane === k;
     const el = document.createElement("div");
-    el.className = "lane " + k;
+    el.className = "lane " + k + (chosen ? " chosen " + (L.success ? "won" : "lost") : "");
     el.innerHTML = `
       <div class="lh"><b>${k}</b><span class="what">${WHAT[k]}</span>
+        ${chosen ? '<span class="pickt">➜ learned choice</span>' : ""}
         <span class="verdict ${L.success ? "ok" : "no"}">${L.success ? "✓ solved" : "✗ failed"} · ${L.steps} steps</span></div>
       <div class="stage"><div class="frame">
-        ${L.frames.map((f,i) => `<img src="${SRC(f.img)}" alt="${k} step ${f.step}" data-i="${i}">`).join("")}
-        <div class="mk box"><span class="eid"></span></div>
-        <div class="mk point"></div>
-        <div class="fx"></div><div class="fx2"></div><div class="fx3"></div><div class="tag"></div>
-        <div class="cur"><svg width="26" height="26" viewBox="0 0 26 26">
-          <path d="M3 2 L3 20 L8 15.5 L11.3 22.6 L14.6 21 L11.4 14.2 L18 14 Z"
-                fill="#fff" stroke="#141E41" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
-      </div></div>
-      <div class="think"></div>
-      <div class="foot"><span class="act">—</span><span class="pos"></span><span class="usd"></span></div>
-      <div class="bar"><i></i></div>`;
+        ${L.frames.map((f,i) => `<img src="${SRC(f.img)}" alt="${k} step ${f.step}" data-i="${i}">`).join("")}${OVERLAY}
+      </div></div>${BELOW}`;
     box.appendChild(el);
-    EL[k] = {imgs:[...el.querySelectorAll(".frame img")], box:el.querySelector(".mk.box"),
-             eid:el.querySelector(".eid"), point:el.querySelector(".mk.point"),
-             cur:el.querySelector(".cur"), fx:el.querySelector(".fx"),
-             fx2:el.querySelector(".fx2"), fx3:el.querySelector(".fx3"),
-             tag:el.querySelector(".tag"),
-             think:el.querySelector(".think"), act:el.querySelector(".act"),
-             pos:el.querySelector(".pos"), usd:el.querySelector(".usd"),
-             bar:el.querySelector(".bar i"), lane:el};
+    EL[k] = refs(el);
   });
-  $("#prov").innerHTML = ORDER.map(k => `${k}: <code>${d.lanes[k].run}</code>`).join("<br>");
+  $("#prov").innerHTML = ORDER.map(k => `${k}: <code>${d.lanes[k].run}</code>`).join(" · ") +
+    "<br>time = each run's recorded wall-clock · CO₂e ≈ estimated from tokens, not measured" +
+    "<br>learned choice: fold-held-out replay of the project's learned router";
 }
+
+const pct = v => (100 * Math.max(0, Math.min(1, v))) + "%";
+function meter(el, frac, text, loFrac){
+  if (loFrac == null) el.querySelector(".mb i").style.width = pct(frac);
+  else { el.querySelector(".mb i.hi").style.width = pct(frac);
+         el.querySelector(".mb i.lo").style.width = pct(loFrac); }
+  el.querySelector(".mv").textContent = text;
+}
+const fmtSec = s => s < 59.5 ? `${Math.round(s)} s`
+  : `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, "0")} s`;
+const sig = v => v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toPrecision(2);
+const fmtG = ([lo, hi]) => `${sig(lo)}–${sig(hi)} g`;
 
 // A step plays in three beats so that cause precedes effect:
 //   1. MOVE   the pointer travels to this step's target (~0.9s, ease-in-out)
@@ -1462,16 +2178,7 @@ function paint(opts){
 
     const m = f.mark, a = aim(m);
     const showId = k === "BOTH" && m && m.id != null;
-    if (m && m.kind === "box"){
-      Object.assign(e.box.style, {left:(m.x/12.8)+"%", top:(m.y/7.2)+"%",
-                                 width:(m.w/12.8)+"%", height:(m.h/7.2)+"%"});
-      e.eid.textContent = showId ? m.id : "";
-      e.eid.style.display = showId ? "" : "none";
-      e.box.classList.add("on"); e.point.classList.remove("on");
-    } else if (m && m.kind === "point"){
-      Object.assign(e.point.style, {left:(m.x/12.8)+"%", top:(m.y/7.2)+"%"});
-      e.point.classList.add("on"); e.box.classList.remove("on");
-    } else { e.box.classList.remove("on"); e.point.classList.remove("on"); }
+    placeMark(e, m, showId);
 
     if (done){ e.cur.classList.remove("on"); return; }
 
@@ -1486,36 +2193,55 @@ function paint(opts){
     if (!anim) return;
 
     // beat 2 — the act, at the place the pointer just reached
-    at(T_MOVE, () => {
-      if (a){
-        ["fx","fx2","fx3"].forEach(n => {
-          e[n].style.left = a.x + "%"; e[n].style.top = a.y + "%";
-        });
-        // Anchor the label to the box's own top/bottom edge, and flip it below when
-        // that edge is too close to the top of the stage to fit the label above it.
-        const topPct = m.kind === "box" ? m.y/7.2 : a.y;
-        const botPct = m.kind === "box" ? (m.y + m.h)/7.2 : a.y;
-        const below = topPct < 11;
-        e.tag.classList.toggle("below", below);
-        e.tag.style.left = a.x + "%";
-        e.tag.style.top = (below ? Math.min(botPct, 96) : Math.max(topPct, 4)) + "%";
-        e.tag.innerHTML = `<b>${verb(f.action)}</b>` + (showId ? ` <i>[${m.id}]</i>` : "");
-        replay(e.fx, "go"); replay(e.fx2, "go"); replay(e.fx3, "go"); replay(e.tag, "go");
-        e.cur.classList.add("press");
-        at(T_MOVE + 130, () => e.cur.classList.remove("press"));
-      } else {
-        // no target (scroll / finish): say so where the pointer stands
-        e.tag.style.left = e.cur.style.left || "50%";
-        e.tag.style.top = e.cur.style.top || "50%";
-        e.tag.innerHTML = `<b>${verb(f.action)}</b>`;
-        replay(e.tag, "go");
-      }
-    });
+    at(T_MOVE, () => strike(e, m, a, f.action, showId));
 
     // beat 3 — the page the action produced
     if (i + 1 < L.frames.length)
       at(T_MOVE + T_ACT, () => e.imgs.forEach((im, j) => im.classList.toggle("on", j === i + 1)));
   });
+}
+
+// Draw a step's target: a box (READ and BOTH, BOTH with its element number) or a
+// point (LOOK's click), or nothing for a step without one. Shared with the live tab.
+function placeMark(e, m, showId){
+  if (m && m.kind === "box"){
+    Object.assign(e.box.style, {left:(m.x/12.8)+"%", top:(m.y/7.2)+"%",
+                               width:(m.w/12.8)+"%", height:(m.h/7.2)+"%"});
+    e.eid.textContent = showId ? m.id : "";
+    e.eid.style.display = showId ? "" : "none";
+    e.box.classList.add("on"); e.point.classList.remove("on");
+  } else if (m && m.kind === "point"){
+    Object.assign(e.point.style, {left:(m.x/12.8)+"%", top:(m.y/7.2)+"%"});
+    e.point.classList.add("on"); e.box.classList.remove("on");
+  } else { e.box.classList.remove("on"); e.point.classList.remove("on"); }
+}
+
+// The act itself, where the pointer has just arrived: the rings, the action word and
+// a press of the pointer. A step with no target (scroll / finish) only says what it did.
+function strike(e, m, a, action, showId){
+  if (a){
+    ["fx","fx2","fx3"].forEach(n => {
+      e[n].style.left = a.x + "%"; e[n].style.top = a.y + "%";
+    });
+    // Anchor the label to the box's own top/bottom edge, and flip it below when
+    // that edge is too close to the top of the stage to fit the label above it.
+    const topPct = m.kind === "box" ? m.y/7.2 : a.y;
+    const botPct = m.kind === "box" ? (m.y + m.h)/7.2 : a.y;
+    const below = topPct < 11;
+    e.tag.classList.toggle("below", below);
+    e.tag.style.left = a.x + "%";
+    e.tag.style.top = (below ? Math.min(botPct, 96) : Math.max(topPct, 4)) + "%";
+    e.tag.innerHTML = `<b>${verb(action)}</b>` + (showId ? ` <i>[${m.id}]</i>` : "");
+    replay(e.fx, "go"); replay(e.fx2, "go"); replay(e.fx3, "go"); replay(e.tag, "go");
+    e.cur.classList.add("press");
+    at(T_MOVE + 130, () => e.cur.classList.remove("press"));
+  } else {
+    // no target (scroll / finish): say so where the pointer stands
+    e.tag.style.left = e.cur.style.left || "50%";
+    e.tag.style.top = e.cur.style.top || "50%";
+    e.tag.innerHTML = `<b>${verb(action)}</b>`;
+    replay(e.tag, "go");
+  }
 }
 
 const VERB = {click:"click", type:"type", scroll:"scroll", select_option:"select",
@@ -1524,14 +2250,22 @@ const verb = a => VERB[a] || a || "act";
 
 function setText(e, L, f, i){
   const html = f.thought ? esc(f.thought) : noReason({...f, lane:e.lane.classList[1]});
+  // The fade-in is a plain timer, NOT one of the step's beats: paint() cancels
+  // pending beats on every step, and when it cancelled this one the text stayed at
+  // 25% opacity for good — which is what fast manual stepping at the board produced.
   if (e.think.dataset.h !== html){
     e.think.dataset.h = html;
     e.think.classList.add("swap");
-    at(110, () => { e.think.innerHTML = html; e.think.classList.remove("swap"); });
+    setTimeout(() => {
+      if (e.think.dataset.h !== html) return;       // a newer step already replaced it
+      e.think.innerHTML = html; e.think.classList.remove("swap");
+    }, 110);
   }
   e.act.textContent = f.action || "—";
   e.pos.textContent = `step ${f.step + 1}/${L.frames.length}`;
-  e.usd.textContent = "$" + f.cost_cum.toFixed(3);
+  meter(e.mUsd, f.cost_cum / SCALE.usd, "$" + f.cost_cum.toFixed(3));
+  meter(e.mSec, f.sec_cum / SCALE.sec, fmtSec(f.sec_cum));
+  meter(e.mCo2, f.co2_cum[1] / SCALE.co2, fmtG(f.co2_cum), f.co2_cum[0] / SCALE.co2);
   e.bar.style.width = (100 * (i + 1) / L.frames.length) + "%";
   e.lane.dataset.done = cursor >= L.frames.length - 1 ? "1" : "0";
 }
@@ -1546,7 +2280,10 @@ function noReason(f){
          `<span class="did">it did: ${esc(what)}</span>`;
 }
 
-function go(t){ task = t; cursor = 0; tabs(); mount(); paint(); }
+function go(t){
+  if (mode === "live") leaveLive();
+  task = t; cursor = 0; tabs(); mount(); paint();
+}
 
 function step(n){
   const back = n < 0;
@@ -1560,17 +2297,206 @@ function step(n){
   paint(back ? {instant:true} : undefined);
 }
 function loop(){ clearInterval(timer); if (playing) timer = setInterval(() => step(1), STEP_MS); }
-const manual = n => { playing = false; $("#play").textContent = "Play"; loop(); step(n); };
+// stepping belongs to the replay; in the live tab the steps arrive on their own
+const manual = n => { if (mode === "live") return;
+                      playing = false; $("#play").textContent = "Play"; loop(); step(n); };
 
 $("#next").onclick = () => manual(1);
 $("#prev").onclick = () => manual(-1);
-$("#play").onclick = () => { playing = !playing; $("#play").textContent = playing ? "Pause" : "Play"; loop(); };
+$("#play").onclick = () => {
+  if (mode === "live") return backToReplay();
+  playing = !playing; $("#play").textContent = playing ? "Pause" : "Play"; loop();
+};
 addEventListener("keydown", e => {
+  if (e.target.closest && e.target.closest("input, textarea")) return;   // typing a task
+  if (e.key === "4") return liveTab();
   if (e.key === "ArrowRight") manual(1);
   else if (e.key === "ArrowLeft") manual(-1);
   else if (e.key === " ") { e.preventDefault(); $("#play").click(); }
   else if ("123".includes(e.key)) go(window.DEMO_TASKS[+e.key - 1]);
 });
+
+// ---- live: "try your own" ---------------------------------------------------------
+// A visitor types a task; live/server.py (on DGX) runs the ordinary agent in all three
+// views against the classifieds site and streams each step here. Same lanes, same click
+// drawing, same meters as the replay — but NOT scored: a free-text task has no answer
+// key, so the page shows what the agent said when it finished and leaves the verdict to
+// the visitor. If the server can't be reached the tab says so and the recorded tasks
+// keep playing; nothing else on the page depends on it.
+const LIVE = (new URLSearchParams(location.search).get("live") || "http://localhost:8799").replace(/\/+$/, "");
+const SUGGEST = [
+  "Find the cheapest red bicycle listed on this site.",
+  "Show me a boat listing whose photo was taken at sunset.",
+  "What is the most expensive item in the Electronics category?",
+  "Find a blue car for sale under $5,000.",
+];
+const IDLE_MS = 120000;      // an unattended board drifts back to the replay
+let mode = "replay", liveId = null, liveCap = 12, es = null, LEL = {}, LVAL = {}, idleT = null;
+
+const setStat = h => { const s = $("#livestat"); if (s) s.innerHTML = h; };
+function running(on){
+  const q = $("#liveq");
+  if (!q) return;
+  q.disabled = on; $("#liverun").disabled = on; $("#livestop").hidden = !on;
+  document.querySelectorAll(".chip").forEach(c => c.disabled = on);
+}
+function armIdle(){
+  clearTimeout(idleT);
+  idleT = setTimeout(() => { if (mode === "live" && !es) backToReplay(); }, IDLE_MS);
+}
+function leaveLive(){
+  if (es){ es.close(); es = null; }       // the run itself carries on server-side
+  clearTimeout(idleT); mode = "replay";
+  $("#play").textContent = playing ? "Pause" : "Play";
+}
+function backToReplay(){
+  playing = true; go(window.DEMO_TASKS[0]);
+  $("#play").textContent = "Pause"; loop();
+}
+
+function liveTab(){
+  mode = "live"; playing = false; clearInterval(timer); clearBeats();
+  $("#play").textContent = "Replay";
+  tabs();
+  $("#sub").innerHTML = "Type a task: the same agent runs it <b>now</b>, in all three views at once. " +
+                        "Not scored — you judge the answer.";
+  $("#intent").innerHTML = `
+    <form class="liveform" id="liveform" autocomplete="off">
+      <input id="liveq" maxlength="300" placeholder="Type a task for the agent on this classifieds site…">
+      <button type="submit" id="liverun">Run all three</button>
+      <button type="button" id="livestop" hidden>Stop</button>
+    </form>`;
+  $("#caption").innerHTML = '<div class="chips">' +
+    SUGGEST.map(s => `<button type="button" class="chip">${esc(s)}</button>`).join("") + "</div>";
+  $("#pickline").innerHTML = '<span class="livestat" id="livestat">checking the live server…</span>';
+  $("#liveform").onsubmit = ev => { ev.preventDefault(); liveRun($("#liveq").value); };
+  $("#livestop").onclick = () => fetch(LIVE + "/stop", {method: "POST"}).catch(() => {});
+  document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+    $("#liveq").value = c.textContent; $("#liveq").focus(); armIdle(); });
+  $("#liveq").oninput = armIdle;
+  $("#prov").innerHTML = "live: the same agent, run now in each view against the classifieds site · " +
+    "not scored<br>time = real elapsed agent time · CO₂e ≈ estimated from tokens, not measured";
+  liveMount(); armIdle();
+  const t = window.AbortSignal && AbortSignal.timeout ? {signal: AbortSignal.timeout(3000)} : {};
+  fetch(LIVE + "/health", t).then(r => r.json()).then(h => {
+    liveCap = h.cap;
+    if (h.busy && liveId){ setStat("a run is in progress — showing it"); subscribe(liveId); }
+    else setStat(`ready · each view gets up to ${h.cap} steps · the answer is not scored — you judge it`);
+  }).catch(() => {
+    setStat("live server offline — the three recorded tasks still play");
+    $("#liverun").disabled = true;
+  });
+}
+
+function liveMount(){
+  const box = $("#lanes"); box.innerHTML = ""; LEL = {}; LVAL = {};
+  ORDER.forEach(k => {
+    const el = document.createElement("div");
+    el.className = "lane " + k;
+    el.innerHTML = `
+      <div class="lh"><b>${k}</b><span class="what">${WHAT[k]}</span><span class="verdict"></span></div>
+      <div class="stage"><div class="frame">
+        <img alt=""><img alt="">${OVERLAY}
+        <div class="pending">waiting for a task</div>
+      </div></div>${BELOW}`;
+    box.appendChild(el);
+    LEL[k] = Object.assign(refs(el), {front: 0, pending: el.querySelector(".pending"),
+                                      verdict: el.querySelector(".verdict")});
+  });
+}
+
+async function liveRun(q){
+  q = (q || "").trim();
+  if (q.length < 8){ setStat("type a task first — one sentence is enough"); return; }
+  clearTimeout(idleT); running(true); setStat("starting three agents…");
+  try {
+    const r = await fetch(LIVE + "/run", {method: "POST", headers: {"Content-Type": "application/json"},
+                                          body: JSON.stringify({intent: q})});
+    const j = await r.json();
+    if (r.status === 409){ liveId = j.id; setStat("another run is still going — showing it"); subscribe(j.id); return; }
+    if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+    liveId = j.id; liveCap = j.cap; subscribe(j.id);
+  } catch (err){ running(false); setStat("could not start: " + esc(String(err.message || err))); }
+}
+
+function subscribe(id){
+  if (es) es.close();
+  liveMount();
+  es = new EventSource(`${LIVE}/events/${id}`);
+  es.onmessage = m => {
+    const ev = JSON.parse(m.data);
+    if (ev.type === "hello"){
+      liveCap = ev.cap; running(true);
+      const q = $("#liveq"); if (q) q.value = ev.intent;
+      setStat(`running · each view gets up to ${ev.cap} steps · the answer is not scored — you judge it`);
+      ORDER.forEach(k => LEL[k].pending.textContent = "opening the site…");
+    } else if (ev.type === "step") liveStep(ev.lane, ev);
+    else if (ev.type === "done") liveDone(ev.lane, ev);
+    else if (ev.type === "end"){
+      es.close(); es = null; running(false);
+      setStat("done · type another task, or pick one below"); armIdle();
+    }
+  };
+  es.onerror = () => {
+    if (!es) return;                       // closed on purpose after "end"
+    es.close(); es = null; running(false);
+    setStat("lost the live server — the run may still be going; reopen this tab to reconnect");
+  };
+}
+
+// A live step arrives with the screenshot the agent saw BEFORE acting (same ordering as
+// the replay): show it, then move the pointer and act. The next step brings the page
+// that action produced. The frame swaps only once the new image has decoded, so the lane
+// never blanks between steps.
+function liveStep(k, ev){
+  const e = LEL[k];
+  LVAL[k] = ev;
+  e.pending.hidden = true;
+  const back = e.imgs[1 - e.front];
+  back.onload = () => {
+    back.classList.add("on"); e.imgs[e.front].classList.remove("on"); e.front = 1 - e.front;
+    const m = ev.mark, a = aim(m), showId = k === "BOTH" && m && m.id != null;
+    placeMark(e, m, showId);
+    if (a){ e.cur.classList.add("on"); e.cur.style.left = a.x + "%"; e.cur.style.top = a.y + "%"; }
+    at(T_MOVE, () => strike(e, m, a, ev.action, showId));
+  };
+  back.src = LIVE + ev.img;
+  e.think.innerHTML = ev.thought ? esc(ev.thought) : noReason({...ev, lane: k});
+  e.act.textContent = ev.action || "—";
+  e.pos.textContent = `step ${ev.step + 1} · budget ${liveCap}`;
+  e.bar.style.width = pct((ev.step + 1) / liveCap);
+  liveMeters();
+}
+
+// Live meters are scaled to the largest value SO FAR among the three lanes, so the
+// comparison holds while the runs are still going.
+function liveMeters(){
+  const v = ORDER.map(k => LVAL[k]).filter(Boolean);
+  const top = g => Math.max(...v.map(g)) || 1;
+  const S = {usd: top(x => x.cost_cum), sec: top(x => x.sec_cum), co2: top(x => x.co2_cum[1])};
+  ORDER.forEach(k => {
+    const x = LVAL[k], e = LEL[k];
+    if (!x) return;
+    meter(e.mUsd, x.cost_cum / S.usd, "$" + x.cost_cum.toFixed(3));
+    meter(e.mSec, x.sec_cum / S.sec, fmtSec(x.sec_cum));
+    meter(e.mCo2, x.co2_cum[1] / S.co2, fmtG(x.co2_cum), x.co2_cum[0] / S.co2);
+  });
+}
+
+function liveDone(k, ev){
+  const e = LEL[k];
+  const why = {finished: "finished", budget: "stopped at the step budget",
+               error: "stopped — the run broke"}[ev.why] || ev.why;
+  e.verdict.textContent = `${why} · ${ev.steps} steps`;
+  e.cur.classList.remove("on");
+  if (!ev.steps){
+    e.pending.hidden = false;
+    e.pending.textContent = "no page reached — the run broke before its first step";
+  }
+  if (ev.answer)
+    e.think.innerHTML = `<span class="did">answer: ${esc(ev.answer)}</span>` +
+                        '<span class="none">not scored — does it answer the task?</span>';
+}
 
 tabs(); mount(); paint(); loop();
 </script>

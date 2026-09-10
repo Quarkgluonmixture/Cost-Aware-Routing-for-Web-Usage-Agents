@@ -25,6 +25,7 @@ router, labels, pp) are for researchers who use them first.
 | Before 16 Sep | Only if a slot is confirmed: expand §3 to 12 minutes | ☐ |
 | Before 16 Sep | Read §5 and §6 twice — the numbers and the things not to say | ☐ |
 | 16 Sep 09:00 | Poster set-up; laptop on a table beside the board, power, auto-play on | ☐ |
+| 16 Sep 09:00 | Live tab (optional): DGX server up · quark Docker + classifieds up · `ssh -N -L 8799:localhost:8799 spark` on quark · one test task (runbook: `demo/README.md` → *Live*) | ☐ |
 
 Both deliverables go **to Zekun directly** — the organiser stated they cannot
 receive files.
@@ -255,6 +256,9 @@ visitor can find it. The one exception is flagged in the table.
 | `24 of 224` | tasks whose three-way outcome differs and is rerun-stable | selection pool for the demo; **not on the poster** |
 | Fig 3: 97 · 53 · 55 · 24 · 16 · 15 | usable "which view" examples per VisualWebArena setting, vs best-single-view SR 27.2 / 14.8 / 14.3 / 7.4 / 2.2 / 3.9 % | six settings, **not eight**; filled = enough to train (cls·B0, cls·B1) |
 | `8,934` | task attempts (the poster's word for episodes) | 6 views × (224×3 + 203×3 + 104×2) |
+| demo meters: cost · time · CO₂e ≈ | under each lane: billed $, the run's recorded wall-clock, an estimated CO₂e **range** | **one recorded run** each. CO₂e is **estimated from tokens**, never measured (the model runs in an AWS London datacentre; no local draw exists). Say "roughly", give the range, never one number |
+| demo arrow: 130 → READ ✗ · 76 → READ ✓ · 17 → a fourth view | the view a learned choice picked, **trained without that task** | three tasks are an illustration, not a score — **the score is the poster's 0 of 8**. On 17 the picked view's own two runs split ✓ once, ✗ once |
+| live tab | a visitor's own task, run now in all three views, each capped at 12 steps | **not scored**, and not part of any number on the poster |
 
 ---
 
@@ -277,7 +281,12 @@ pressure they are easy to say by accident.
 | "it cannot be learned" / "scarcity is **the** mechanism" | "learning the choice **fails here**" / "scarcity is the **main bottleneck**" — the sheet cannot show the alternatives were excluded |
 | "the oracle", "the router", "modes", "pp" (to a non-researcher) | "perfect hindsight", "a learned choice", "views", "more tasks in 100" — the poster's words |
 
-Also avoid: quoting token or dollar cost as energy or carbon; describing `dom`
+| "the router picks the right view" | "a learned choice picked READ on two of these; it was right once — and across 8 settings it never beat always-cheapest" |
+| "this live run shows it works" | "live runs are an unscored demo; every number on the poster comes from recorded runs" |
+| "LOOK emitted 0.3 grams on task 130" | "roughly 0.02 to 0.3 grams — estimated from tokens, not measured" |
+
+Also avoid: quoting token or dollar cost as *measured* energy or carbon — the demo's
+CO₂e row is an estimate built from tokens, and says so with "≈"; describing `dom`
 mode as raw HTML (it is an accessibility tree).
 
 ---
@@ -317,6 +326,11 @@ bbox; BOTH: the numbered mark), the agent's one-line *thought* under each
 frame, and a running **$** counter per column. Three tasks, one per winner:
 130 (look), 76 (read), 17 (both); optionally the kayak (task 0) as "all three
 fail" — honest, and it walks the visitor to the poster's WHY.
+
+**Update 2026-09-10:** a fourth tab, *try your own*, now runs a visitor's task live
+on top of the replay (user decision). Its site is quark's own docker, never the A100;
+the agent runs on DGX; it is unscored and one session at a time. The replay remains
+the default and still needs no network — see `demo/README.md` → *Live*.
 
 **Rules.** Replay, never live (site on the A100, venue network unknown). Only
 tasks whose three-way outcome is identical on the replicate run (24 of 224

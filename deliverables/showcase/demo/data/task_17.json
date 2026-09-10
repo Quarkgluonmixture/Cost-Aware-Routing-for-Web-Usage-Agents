@@ -7,6 +7,12 @@
    "success": false,
    "steps": 9,
    "cost": 0.0335,
+   "seconds": 72.1,
+   "tokens": 30436,
+   "co2": [
+    0.1009,
+    1.4205
+   ],
    "run": "B0_vision_classifieds_R24792_clean_replicate",
    "frames": [
     {
@@ -20,7 +26,13 @@
       "x": 384.0,
       "y": 300.24
      },
-     "cost_cum": 0.0034
+     "cost_cum": 0.0034,
+     "sec_cum": 7.8,
+     "tok_cum": 3183,
+     "co2_cum": [
+      0.0093,
+      0.1309
+     ]
     },
     {
      "step": 1,
@@ -33,7 +45,13 @@
       "x": 1024.0,
       "y": 299.52
      },
-     "cost_cum": 0.0071
+     "cost_cum": 0.0071,
+     "sec_cum": 16.9,
+     "tok_cum": 6451,
+     "co2_cum": [
+      0.0212,
+      0.298
+     ]
     },
     {
      "step": 2,
@@ -46,7 +64,13 @@
       "x": 197.12,
       "y": 432.0
      },
-     "cost_cum": 0.0105
+     "cost_cum": 0.0105,
+     "sec_cum": 26.1,
+     "tok_cum": 9705,
+     "co2_cum": [
+      0.0307,
+      0.4323
+     ]
     },
     {
      "step": 3,
@@ -59,7 +83,13 @@
       "x": 305.92,
       "y": 434.16
      },
-     "cost_cum": 0.0143
+     "cost_cum": 0.0143,
+     "sec_cum": 35.6,
+     "tok_cum": 13045,
+     "co2_cum": [
+      0.0425,
+      0.5992
+     ]
     },
     {
      "step": 4,
@@ -72,7 +102,13 @@
       "x": 202.24,
       "y": 491.04
      },
-     "cost_cum": 0.0181
+     "cost_cum": 0.0181,
+     "sec_cum": 44.5,
+     "tok_cum": 16426,
+     "co2_cum": [
+      0.0541,
+      0.7621
+     ]
     },
     {
      "step": 5,
@@ -85,7 +121,13 @@
       "x": 990.72,
       "y": 160.56
      },
-     "cost_cum": 0.0217
+     "cost_cum": 0.0217,
+     "sec_cum": 53.0,
+     "tok_cum": 19829,
+     "co2_cum": [
+      0.0643,
+      0.9059
+     ]
     },
     {
      "step": 6,
@@ -94,7 +136,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0255
+     "cost_cum": 0.0255,
+     "sec_cum": 61.8,
+     "tok_cum": 23301,
+     "co2_cum": [
+      0.0756,
+      1.065
+     ]
     },
     {
      "step": 7,
@@ -107,7 +155,13 @@
       "x": 581.12,
       "y": 409.68
      },
-     "cost_cum": 0.0295
+     "cost_cum": 0.0295,
+     "sec_cum": 67.4,
+     "tok_cum": 26855,
+     "co2_cum": [
+      0.0885,
+      1.2471
+     ]
     },
     {
      "step": 8,
@@ -116,7 +170,13 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0335
+     "cost_cum": 0.0335,
+     "sec_cum": 72.1,
+     "tok_cum": 30436,
+     "co2_cum": [
+      0.1009,
+      1.4205
+     ]
     }
    ]
   },
@@ -124,6 +184,12 @@
    "success": false,
    "steps": 8,
    "cost": 0.0341,
+   "seconds": 53.5,
+   "tokens": 30379,
+   "co2": [
+    0.1072,
+    1.5097
+   ],
    "run": "B0_dom_classifieds_R31194_clean_replicate",
    "frames": [
     {
@@ -140,7 +206,13 @@
       "h": 50.0,
       "id": 148
      },
-     "cost_cum": 0.0038
+     "cost_cum": 0.0038,
+     "sec_cum": 8.3,
+     "tok_cum": 3362,
+     "co2_cum": [
+      0.0121,
+      0.1701
+     ]
     },
     {
      "step": 1,
@@ -156,7 +228,13 @@
       "h": 50.0,
       "id": 140
      },
-     "cost_cum": 0.0076
+     "cost_cum": 0.0076,
+     "sec_cum": 17.2,
+     "tok_cum": 6761,
+     "co2_cum": [
+      0.0244,
+      0.3443
+     ]
     },
     {
      "step": 2,
@@ -172,7 +250,13 @@
       "h": 40.0,
       "id": 1425
      },
-     "cost_cum": 0.0118
+     "cost_cum": 0.0118,
+     "sec_cum": 25.4,
+     "tok_cum": 10600,
+     "co2_cum": [
+      0.0366,
+      0.5162
+     ]
     },
     {
      "step": 3,
@@ -188,7 +272,13 @@
       "h": 40.0,
       "id": 1433
      },
-     "cost_cum": 0.0162
+     "cost_cum": 0.0162,
+     "sec_cum": 31.7,
+     "tok_cum": 14529,
+     "co2_cum": [
+      0.0503,
+      0.7089
+     ]
     },
     {
      "step": 4,
@@ -204,7 +294,13 @@
       "h": 19.0,
       "id": 2506
      },
-     "cost_cum": 0.0207
+     "cost_cum": 0.0207,
+     "sec_cum": 37.2,
+     "tok_cum": 18582,
+     "co2_cum": [
+      0.0638,
+      0.8983
+     ]
     },
     {
      "step": 5,
@@ -220,7 +316,13 @@
       "h": 139.0,
       "id": 3068
      },
-     "cost_cum": 0.0252
+     "cost_cum": 0.0252,
+     "sec_cum": 42.2,
+     "tok_cum": 22683,
+     "co2_cum": [
+      0.0778,
+      1.0953
+     ]
     },
     {
      "step": 6,
@@ -236,7 +338,13 @@
       "h": 22.0,
       "id": 3072
      },
-     "cost_cum": 0.0299
+     "cost_cum": 0.0299,
+     "sec_cum": 48.3,
+     "tok_cum": 26838,
+     "co2_cum": [
+      0.0921,
+      1.2969
+     ]
     },
     {
      "step": 7,
@@ -245,7 +353,13 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0341
+     "cost_cum": 0.0341,
+     "sec_cum": 53.5,
+     "tok_cum": 30379,
+     "co2_cum": [
+      0.1072,
+      1.5097
+     ]
     }
    ]
   },
@@ -253,6 +367,12 @@
    "success": true,
    "steps": 6,
    "cost": 0.0314,
+   "seconds": 74.3,
+   "tokens": 29177,
+   "co2": [
+    0.089,
+    1.2538
+   ],
    "run": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696",
    "frames": [
     {
@@ -269,7 +389,13 @@
       "h": 50.0,
       "id": 9
      },
-     "cost_cum": 0.0046
+     "cost_cum": 0.0046,
+     "sec_cum": 18.2,
+     "tok_cum": 4392,
+     "co2_cum": [
+      0.0119,
+      0.1678
+     ]
     },
     {
      "step": 1,
@@ -285,7 +411,13 @@
       "h": 40.0,
       "id": 24
      },
-     "cost_cum": 0.0098
+     "cost_cum": 0.0098,
+     "sec_cum": 34.1,
+     "tok_cum": 9221,
+     "co2_cum": [
+      0.0273,
+      0.3841
+     ]
     },
     {
      "step": 2,
@@ -301,7 +433,13 @@
       "h": 40.0,
       "id": 27
      },
-     "cost_cum": 0.0153
+     "cost_cum": 0.0153,
+     "sec_cum": 45.0,
+     "tok_cum": 14309,
+     "co2_cum": [
+      0.0431,
+      0.6067
+     ]
     },
     {
      "step": 3,
@@ -317,7 +455,13 @@
       "h": 19.0,
       "id": 36
      },
-     "cost_cum": 0.021
+     "cost_cum": 0.021,
+     "sec_cum": 63.4,
+     "tok_cum": 19505,
+     "co2_cum": [
+      0.0593,
+      0.8352
+     ]
     },
     {
      "step": 4,
@@ -333,7 +477,13 @@
       "h": 79.15625,
       "id": 40
      },
-     "cost_cum": 0.0263
+     "cost_cum": 0.0263,
+     "sec_cum": 69.0,
+     "tok_cum": 24675,
+     "co2_cum": [
+      0.0725,
+      1.0215
+     ]
     },
     {
      "step": 5,
@@ -342,9 +492,33 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0314
+     "cost_cum": 0.0314,
+     "sec_cum": 74.3,
+     "tok_cum": 29177,
+     "co2_cum": [
+      0.089,
+      1.2538
+     ]
     }
    ]
   }
+ },
+ "pick": {
+  "mode": "phantom_prompt",
+  "source": "results/phantom_paper/l1_router_offline_20260715/router_offline_replay.json",
+  "lane": null,
+  "name": "text tree, read with the marked-screenshot instructions",
+  "runs": [
+   {
+    "run": "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+    "success": true,
+    "steps": 9
+   },
+   {
+    "run": "B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207",
+    "success": false,
+    "steps": 7
+   }
+  ]
  }
 }

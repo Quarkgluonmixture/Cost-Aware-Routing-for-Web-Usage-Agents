@@ -7,6 +7,12 @@
    "success": true,
    "steps": 2,
    "cost": 0.0073,
+   "seconds": 10.1,
+   "tokens": 6501,
+   "co2": [
+    0.0229,
+    0.3229
+   ],
    "run": "B0_vision_classifieds_R24792_clean_replicate",
    "frames": [
     {
@@ -20,7 +26,13 @@
       "x": 764.16,
       "y": 612.0
      },
-     "cost_cum": 0.0037
+     "cost_cum": 0.0037,
+     "sec_cum": 5.7,
+     "tok_cum": 3240,
+     "co2_cum": [
+      0.012,
+      0.1686
+     ]
     },
     {
      "step": 1,
@@ -29,7 +41,13 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0073
+     "cost_cum": 0.0073,
+     "sec_cum": 10.1,
+     "tok_cum": 6501,
+     "co2_cum": [
+      0.0229,
+      0.3229
+     ]
     }
    ]
   },
@@ -37,6 +55,12 @@
    "success": false,
    "steps": 9,
    "cost": 0.0412,
+   "seconds": 57.5,
+   "tokens": 37914,
+   "co2": [
+    0.1198,
+    1.6867
+   ],
    "run": "B0_dom_classifieds_R31194_clean_replicate",
    "frames": [
     {
@@ -46,7 +70,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0042
+     "cost_cum": 0.0042,
+     "sec_cum": 6.7,
+     "tok_cum": 3808,
+     "co2_cum": [
+      0.0126,
+      0.1775
+     ]
     },
     {
      "step": 1,
@@ -62,7 +92,13 @@
       "h": 18.0,
       "id": 629
      },
-     "cost_cum": 0.0097
+     "cost_cum": 0.0097,
+     "sec_cum": 13.0,
+     "tok_cum": 8846,
+     "co2_cum": [
+      0.029,
+      0.4088
+     ]
     },
     {
      "step": 2,
@@ -71,7 +107,13 @@
      "action": "back",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0134
+     "cost_cum": 0.0134,
+     "sec_cum": 20.2,
+     "tok_cum": 12117,
+     "co2_cum": [
+      0.0406,
+      0.5724
+     ]
     },
     {
      "step": 3,
@@ -80,7 +122,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0189
+     "cost_cum": 0.0189,
+     "sec_cum": 26.9,
+     "tok_cum": 17264,
+     "co2_cum": [
+      0.056,
+      0.7891
+     ]
     },
     {
      "step": 4,
@@ -89,7 +137,13 @@
      "action": "scroll",
      "ok": false,
      "mark": null,
-     "cost_cum": 0.0236
+     "cost_cum": 0.0236,
+     "sec_cum": 33.5,
+     "tok_cum": 21567,
+     "co2_cum": [
+      0.0698,
+      0.9834
+     ]
     },
     {
      "step": 5,
@@ -98,7 +152,13 @@
      "action": "scroll",
      "ok": false,
      "mark": null,
-     "cost_cum": 0.0283
+     "cost_cum": 0.0283,
+     "sec_cum": 40.1,
+     "tok_cum": 25912,
+     "co2_cum": [
+      0.0837,
+      1.1791
+     ]
     },
     {
      "step": 6,
@@ -114,7 +174,13 @@
       "h": 40.0,
       "id": 2729
      },
-     "cost_cum": 0.0328
+     "cost_cum": 0.0328,
+     "sec_cum": 47.5,
+     "tok_cum": 30243,
+     "co2_cum": [
+      0.0951,
+      1.3401
+     ]
     },
     {
      "step": 7,
@@ -130,7 +196,13 @@
       "h": 190.40625,
       "id": 3314
      },
-     "cost_cum": 0.0374
+     "cost_cum": 0.0374,
+     "sec_cum": 53.2,
+     "tok_cum": 34416,
+     "co2_cum": [
+      0.1085,
+      1.528
+     ]
     },
     {
      "step": 8,
@@ -139,7 +211,13 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0412
+     "cost_cum": 0.0412,
+     "sec_cum": 57.5,
+     "tok_cum": 37914,
+     "co2_cum": [
+      0.1198,
+      1.6867
+     ]
     }
    ]
   },
@@ -147,6 +225,12 @@
    "success": true,
    "steps": 3,
    "cost": 0.014,
+   "seconds": 31.5,
+   "tokens": 13241,
+   "co2": [
+    0.0377,
+    0.5305
+   ],
    "run": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696",
    "frames": [
     {
@@ -163,7 +247,13 @@
       "h": 189.40625,
       "id": 53
      },
-     "cost_cum": 0.005
+     "cost_cum": 0.005,
+     "sec_cum": 6.5,
+     "tok_cum": 4799,
+     "co2_cum": [
+      0.0124,
+      0.1746
+     ]
     },
     {
      "step": 1,
@@ -179,7 +269,13 @@
       "h": 412.5,
       "id": 17
      },
-     "cost_cum": 0.0093
+     "cost_cum": 0.0093,
+     "sec_cum": 18.6,
+     "tok_cum": 9011,
+     "co2_cum": [
+      0.0235,
+      0.3307
+     ]
     },
     {
      "step": 2,
@@ -188,9 +284,21 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.014
+     "cost_cum": 0.014,
+     "sec_cum": 31.5,
+     "tok_cum": 13241,
+     "co2_cum": [
+      0.0377,
+      0.5305
+     ]
     }
    ]
   }
+ },
+ "pick": {
+  "mode": "dom",
+  "source": "results/phantom_paper/l1_router_offline_20260715/router_offline_replay.json",
+  "lane": "READ",
+  "success": false
  }
 }

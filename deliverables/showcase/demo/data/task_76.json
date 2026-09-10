@@ -7,6 +7,12 @@
    "success": false,
    "steps": 26,
    "cost": 0.1026,
+   "seconds": 614.3,
+   "tokens": 91909,
+   "co2": [
+    0.3193,
+    4.4966
+   ],
    "run": "B0_vision_classifieds_R24792_clean_replicate",
    "frames": [
     {
@@ -20,7 +26,13 @@
       "x": 880.64,
       "y": 42.48
      },
-     "cost_cum": 0.0036
+     "cost_cum": 0.0036,
+     "sec_cum": 7.9,
+     "tok_cum": 3228,
+     "co2_cum": [
+      0.0111,
+      0.1556
+     ]
     },
     {
      "step": 1,
@@ -29,7 +41,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0072
+     "cost_cum": 0.0072,
+     "sec_cum": 15.8,
+     "tok_cum": 6484,
+     "co2_cum": [
+      0.0216,
+      0.3044
+     ]
     },
     {
      "step": 2,
@@ -42,7 +60,13 @@
       "x": 545.28,
       "y": 349.92
      },
-     "cost_cum": 0.0109
+     "cost_cum": 0.0109,
+     "sec_cum": 48.7,
+     "tok_cum": 9802,
+     "co2_cum": [
+      0.0336,
+      0.4731
+     ]
     },
     {
      "step": 3,
@@ -55,7 +79,13 @@
       "x": 640.0,
       "y": 504.0
      },
-     "cost_cum": 0.0147
+     "cost_cum": 0.0147,
+     "sec_cum": 81.3,
+     "tok_cum": 13172,
+     "co2_cum": [
+      0.046,
+      0.6475
+     ]
     },
     {
      "step": 4,
@@ -68,7 +98,13 @@
       "x": 638.72,
       "y": 504.0
      },
-     "cost_cum": 0.0188
+     "cost_cum": 0.0188,
+     "sec_cum": 115.4,
+     "tok_cum": 16628,
+     "co2_cum": [
+      0.0604,
+      0.8511
+     ]
     },
     {
      "step": 5,
@@ -81,7 +117,13 @@
       "x": 1071.36,
       "y": 42.48
      },
-     "cost_cum": 0.0227
+     "cost_cum": 0.0227,
+     "sec_cum": 120.7,
+     "tok_cum": 20160,
+     "co2_cum": [
+      0.0722,
+      1.0175
+     ]
     },
     {
      "step": 6,
@@ -90,7 +132,13 @@
      "action": "back",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0266
+     "cost_cum": 0.0266,
+     "sec_cum": 153.3,
+     "tok_cum": 23725,
+     "co2_cum": [
+      0.0839,
+      1.182
+     ]
     },
     {
      "step": 7,
@@ -103,7 +151,13 @@
       "x": 1071.36,
       "y": 42.48
      },
-     "cost_cum": 0.0307
+     "cost_cum": 0.0307,
+     "sec_cum": 159.4,
+     "tok_cum": 27355,
+     "co2_cum": [
+      0.097,
+      1.3659
+     ]
     },
     {
      "step": 8,
@@ -112,7 +166,13 @@
      "action": "back",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0347
+     "cost_cum": 0.0347,
+     "sec_cum": 191.8,
+     "tok_cum": 30997,
+     "co2_cum": [
+      0.1089,
+      1.534
+     ]
     },
     {
      "step": 9,
@@ -121,7 +181,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0389
+     "cost_cum": 0.0389,
+     "sec_cum": 224.5,
+     "tok_cum": 34664,
+     "co2_cum": [
+      0.1221,
+      1.7196
+     ]
     },
     {
      "step": 10,
@@ -134,7 +200,13 @@
       "x": 537.6,
       "y": 45.36
      },
-     "cost_cum": 0.043
+     "cost_cum": 0.043,
+     "sec_cum": 257.9,
+     "tok_cum": 38335,
+     "co2_cum": [
+      0.1352,
+      1.9036
+     ]
     },
     {
      "step": 11,
@@ -143,7 +215,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0471
+     "cost_cum": 0.0471,
+     "sec_cum": 290.0,
+     "tok_cum": 41994,
+     "co2_cum": [
+      0.1478,
+      2.0812
+     ]
     },
     {
      "step": 12,
@@ -152,7 +230,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0512
+     "cost_cum": 0.0512,
+     "sec_cum": 322.7,
+     "tok_cum": 45671,
+     "co2_cum": [
+      0.1613,
+      2.2714
+     ]
     },
     {
      "step": 13,
@@ -161,7 +245,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0552
+     "cost_cum": 0.0552,
+     "sec_cum": 355.2,
+     "tok_cum": 49223,
+     "co2_cum": [
+      0.1736,
+      2.445
+     ]
     },
     {
      "step": 14,
@@ -170,7 +260,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0591
+     "cost_cum": 0.0591,
+     "sec_cum": 387.9,
+     "tok_cum": 52766,
+     "co2_cum": [
+      0.1855,
+      2.6124
+     ]
     },
     {
      "step": 15,
@@ -179,7 +275,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0632
+     "cost_cum": 0.0632,
+     "sec_cum": 420.0,
+     "tok_cum": 56338,
+     "co2_cum": [
+      0.1985,
+      2.7963
+     ]
     },
     {
      "step": 16,
@@ -192,7 +294,13 @@
       "x": 1072.64,
       "y": 41.76
      },
-     "cost_cum": 0.0671
+     "cost_cum": 0.0671,
+     "sec_cum": 425.5,
+     "tok_cum": 59892,
+     "co2_cum": [
+      0.2107,
+      2.9682
+     ]
     },
     {
      "step": 17,
@@ -205,7 +313,13 @@
       "x": 880.64,
       "y": 41.76
      },
-     "cost_cum": 0.0712
+     "cost_cum": 0.0712,
+     "sec_cum": 433.6,
+     "tok_cum": 63473,
+     "co2_cum": [
+      0.224,
+      3.1547
+     ]
     },
     {
      "step": 18,
@@ -214,7 +328,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0751
+     "cost_cum": 0.0751,
+     "sec_cum": 441.4,
+     "tok_cum": 67015,
+     "co2_cum": [
+      0.2355,
+      3.3167
+     ]
     },
     {
      "step": 19,
@@ -227,7 +347,13 @@
       "x": 540.16,
       "y": 345.6
      },
-     "cost_cum": 0.079
+     "cost_cum": 0.079,
+     "sec_cum": 474.3,
+     "tok_cum": 70558,
+     "co2_cum": [
+      0.2475,
+      3.4858
+     ]
     },
     {
      "step": 20,
@@ -236,7 +362,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0828
+     "cost_cum": 0.0828,
+     "sec_cum": 506.6,
+     "tok_cum": 74090,
+     "co2_cum": [
+      0.2587,
+      3.6439
+     ]
     },
     {
      "step": 21,
@@ -249,7 +381,13 @@
       "x": 540.16,
       "y": 43.92
      },
-     "cost_cum": 0.0866
+     "cost_cum": 0.0866,
+     "sec_cum": 538.3,
+     "tok_cum": 77602,
+     "co2_cum": [
+      0.269,
+      3.7893
+     ]
     },
     {
      "step": 22,
@@ -258,7 +396,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0905
+     "cost_cum": 0.0905,
+     "sec_cum": 570.3,
+     "tok_cum": 81150,
+     "co2_cum": [
+      0.2808,
+      3.9544
+     ]
     },
     {
      "step": 23,
@@ -271,7 +415,13 @@
       "x": 540.16,
       "y": 390.96
      },
-     "cost_cum": 0.0943
+     "cost_cum": 0.0943,
+     "sec_cum": 603.3,
+     "tok_cum": 84681,
+     "co2_cum": [
+      0.2917,
+      4.1089
+     ]
     },
     {
      "step": 24,
@@ -284,7 +434,13 @@
       "x": 426.24,
       "y": 495.36
      },
-     "cost_cum": 0.0983
+     "cost_cum": 0.0983,
+     "sec_cum": 608.9,
+     "tok_cum": 88258,
+     "co2_cum": [
+      0.3039,
+      4.2809
+     ]
     },
     {
      "step": 25,
@@ -293,7 +449,13 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.1026
+     "cost_cum": 0.1026,
+     "sec_cum": 614.3,
+     "tok_cum": 91909,
+     "co2_cum": [
+      0.3193,
+      4.4966
+     ]
     }
    ]
   },
@@ -301,6 +463,12 @@
    "success": true,
    "steps": 12,
    "cost": 0.0901,
+   "seconds": 280.5,
+   "tokens": 84228,
+   "co2": [
+    0.2506,
+    3.5292
+   ],
    "run": "B0_dom_classifieds_R31194_clean_replicate",
    "frames": [
     {
@@ -317,7 +485,13 @@
       "h": 35.0,
       "id": 115
      },
-     "cost_cum": 0.0037
+     "cost_cum": 0.0037,
+     "sec_cum": 9.4,
+     "tok_cum": 3343,
+     "co2_cum": [
+      0.011,
+      0.1551
+     ]
     },
     {
      "step": 1,
@@ -326,7 +500,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0077
+     "cost_cum": 0.0077,
+     "sec_cum": 18.1,
+     "tok_cum": 7014,
+     "co2_cum": [
+      0.0226,
+      0.3187
+     ]
     },
     {
      "step": 2,
@@ -342,7 +522,13 @@
       "h": 22.0,
       "id": 1580
      },
-     "cost_cum": 0.0118
+     "cost_cum": 0.0118,
+     "sec_cum": 24.2,
+     "tok_cum": 10738,
+     "co2_cum": [
+      0.0353,
+      0.4966
+     ]
     },
     {
      "step": 3,
@@ -358,7 +544,13 @@
       "h": 20.0,
       "id": 2322
      },
-     "cost_cum": 0.0155
+     "cost_cum": 0.0155,
+     "sec_cum": 60.3,
+     "tok_cum": 14015,
+     "co2_cum": [
+      0.0471,
+      0.6627
+     ]
     },
     {
      "step": 4,
@@ -374,7 +566,13 @@
       "h": 50.0,
       "id": 2969
      },
-     "cost_cum": 0.0196
+     "cost_cum": 0.0196,
+     "sec_cum": 97.3,
+     "tok_cum": 17282,
+     "co2_cum": [
+      0.0629,
+      0.8861
+     ]
     },
     {
      "step": 5,
@@ -390,7 +588,13 @@
       "h": 300.0,
       "id": 2980
      },
-     "cost_cum": 0.0242
+     "cost_cum": 0.0242,
+     "sec_cum": 132.8,
+     "tok_cum": 20704,
+     "co2_cum": [
+      0.0839,
+      1.1814
+     ]
     },
     {
      "step": 6,
@@ -399,7 +603,13 @@
      "action": "wait",
      "ok": false,
      "mark": null,
-     "cost_cum": 0.0285
+     "cost_cum": 0.0285,
+     "sec_cum": 167.9,
+     "tok_cum": 24151,
+     "co2_cum": [
+      0.0998,
+      1.4062
+     ]
     },
     {
      "step": 7,
@@ -408,7 +618,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0322
+     "cost_cum": 0.0322,
+     "sec_cum": 204.7,
+     "tok_cum": 27532,
+     "co2_cum": [
+      0.1114,
+      1.5697
+     ]
     },
     {
      "step": 8,
@@ -424,7 +640,13 @@
       "h": 50.0,
       "id": 2992
      },
-     "cost_cum": 0.0502
+     "cost_cum": 0.0502,
+     "sec_cum": 237.3,
+     "tok_cum": 45300,
+     "co2_cum": [
+      0.1534,
+      2.1609
+     ]
     },
     {
      "step": 9,
@@ -433,7 +655,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0686
+     "cost_cum": 0.0686,
+     "sec_cum": 270.6,
+     "tok_cum": 63151,
+     "co2_cum": [
+      0.1987,
+      2.799
+     ]
     },
     {
      "step": 10,
@@ -449,7 +677,13 @@
       "h": 50.0,
       "id": 8264
      },
-     "cost_cum": 0.0863
+     "cost_cum": 0.0863,
+     "sec_cum": 276.5,
+     "tok_cum": 80691,
+     "co2_cum": [
+      0.24,
+      3.3806
+     ]
     },
     {
      "step": 11,
@@ -458,7 +692,13 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0901
+     "cost_cum": 0.0901,
+     "sec_cum": 280.5,
+     "tok_cum": 84228,
+     "co2_cum": [
+      0.2506,
+      3.5292
+     ]
     }
    ]
   },
@@ -466,6 +706,12 @@
    "success": false,
    "steps": 7,
    "cost": 0.0628,
+   "seconds": 189.3,
+   "tokens": 59992,
+   "co2": [
+    0.1643,
+    2.3138
+   ],
    "run": "B0_som_classifieds_20260803_084743_413015398_3677519_R30696",
    "frames": [
     {
@@ -482,7 +728,13 @@
       "h": 35.0,
       "id": 4
      },
-     "cost_cum": 0.0048
+     "cost_cum": 0.0048,
+     "sec_cum": 9.3,
+     "tok_cum": 4441,
+     "co2_cum": [
+      0.0139,
+      0.1951
+     ]
     },
     {
      "step": 1,
@@ -491,7 +743,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0098
+     "cost_cum": 0.0098,
+     "sec_cum": 19.3,
+     "tok_cum": 9119,
+     "co2_cum": [
+      0.0278,
+      0.3916
+     ]
     },
     {
      "step": 2,
@@ -507,7 +765,13 @@
       "h": 26.0,
       "id": 23
      },
-     "cost_cum": 0.015
+     "cost_cum": 0.015,
+     "sec_cum": 53.8,
+     "tok_cum": 13850,
+     "co2_cum": [
+      0.0431,
+      0.6066
+     ]
     },
     {
      "step": 3,
@@ -523,7 +787,13 @@
       "h": 300.0,
       "id": 20
      },
-     "cost_cum": 0.0198
+     "cost_cum": 0.0198,
+     "sec_cum": 88.3,
+     "tok_cum": 18087,
+     "co2_cum": [
+      0.0589,
+      0.8294
+     ]
     },
     {
      "step": 4,
@@ -532,7 +802,13 @@
      "action": "scroll",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0245
+     "cost_cum": 0.0245,
+     "sec_cum": 121.2,
+     "tok_cum": 22406,
+     "co2_cum": [
+      0.0721,
+      1.0159
+     ]
     },
     {
      "step": 5,
@@ -548,7 +824,13 @@
       "h": 50.0,
       "id": 3
      },
-     "cost_cum": 0.0438
+     "cost_cum": 0.0438,
+     "sec_cum": 157.2,
+     "tok_cum": 41205,
+     "co2_cum": [
+      0.1194,
+      1.6821
+     ]
     },
     {
      "step": 6,
@@ -557,9 +839,21 @@
      "action": "finish",
      "ok": true,
      "mark": null,
-     "cost_cum": 0.0628
+     "cost_cum": 0.0628,
+     "sec_cum": 189.3,
+     "tok_cum": 59992,
+     "co2_cum": [
+      0.1643,
+      2.3138
+     ]
     }
    ]
   }
+ },
+ "pick": {
+  "mode": "dom",
+  "source": "results/phantom_paper/l1_router_offline_20260715/router_offline_replay.json",
+  "lane": "READ",
+  "success": true
  }
 }

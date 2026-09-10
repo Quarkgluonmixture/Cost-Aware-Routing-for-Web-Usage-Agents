@@ -6,7 +6,8 @@
    "LOOK": true,
    "READ": false,
    "BOTH": true
-  }
+  },
+  "pick": "dom"
  },
  {
   "task": 76,
@@ -15,7 +16,8 @@
    "LOOK": false,
    "READ": true,
    "BOTH": false
-  }
+  },
+  "pick": "dom"
  },
  {
   "task": 17,
@@ -24,6 +26,7 @@
    "LOOK": false,
    "READ": false,
    "BOTH": true
-  }
+  },
+  "pick": "phantom_prompt"
  }
 ]

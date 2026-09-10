@@ -18,3 +18,5 @@ figures/poster_overview.png
 # figures/v9/ itself. 3.0MB is the price of the poster staying reproducible.
 # example posters shown for reference — a colleague's and the supervisor's, not ours to version
 117982.png
+# live demo sessions: visitor-typed tasks + their screenshots, written by demo/live/server.py
+demo/live/runs/
