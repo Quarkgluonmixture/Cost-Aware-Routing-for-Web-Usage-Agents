@@ -118,29 +118,45 @@ confirmed through the arXiv API on 2026-09-10.
 ## Live — *try your own*
 
 ```
-visitor ── quark (venue laptop) ──────────────── DGX (spark-9ea3) ────────────── AWS eu-west-2
-           browser: demo page        ssh tunnel   live/server.py                   the model
-           Docker: classifieds  ◄──── Tailscale ─ 3 × p79 runner (LOOK/READ/BOTH)
+visitor ── quark (venue laptop) ───────── DGX (spark-9ea3) ─────────────────────── AWS eu-west-2
+           browser: demo page  ssh tunnel  live/server.py                            the model
+                                           3 × p79 runner (LOOK / READ / BOTH)
+                                           classifieds site: live/site-compose.yml
+                                             (own web + db, 127.0.0.1:9981)
 ```
 
-The agent runs on DGX (which has the repo, the venv, the model key and Playwright);
-the site is quark's own classifieds container; the page talks to the server through
-an SSH tunnel, because quark cannot reach DGX's Tailscale address directly (DGX sits
-in another tailnet) but can reach it with `ssh spark`.
+Everything live runs on DGX: the repo, the venv, the model key, Playwright, and the
+site itself. quark only shows the page and holds one SSH tunnel — quark cannot reach
+DGX's Tailscale address (DGX sits in another tailnet) but can reach it with `ssh spark`.
+
+**Why the site is on DGX, and which site it is.** DGX is aarch64 with no x86
+emulation, so the official `jykoh/classifieds` (amd64-only) cannot run there; the
+community arm64 rebuild `ghcr.io/bgrins/vwa_classifieds_{web,db}` can, and was
+already on the machine. It is not the image the recorded runs used, so it was checked
+against them on 2026-09-10: item `19604` is "Indestructible Triumph 22' center console
+with Honda Motor" at 23750.00 (task 130), and task 17's two reference items are the
+Cannondale Six13 and the salsa mukluk 3 — the same listings the recorded lanes show.
+One visible difference: its page header reads "Classifieds" in text where the recorded
+frames show the OsClass logo — a visitor comparing tabs closely may notice.
+DGX is shared: another project runs its own copy of this site (`classifieds_db` +
+a web container on host port 9980). This stack has its own project name, container
+names, network and database and binds only `127.0.0.1:9981`, so neither can touch the
+other. quark's docker (official image, port 9980) stays the backup:
+`LIVE_CLASSIFIEDS=http://100.95.81.103:9980` before starting the server.
 
 **Runbook (16 Sep, ~10 min):**
 
-1. **quark:** start Docker Desktop, then the VWA classifieds container; check
-   `http://localhost:9980` loads.
+1. **DGX:** `docker compose -f deliverables/showcase/demo/live/site-compose.yml up -d`;
+   check `curl -s -o /dev/null -w '%{http_code}' http://localhost:9981/` prints 200.
 2. **DGX:** `.venv/bin/python3 deliverables/showcase/demo/live/server.py`
-   (env: `LIVE_PORT` 8799, `LIVE_MAX_STEPS` 12, `VWA_REMOTE_HOST` 100.95.81.103).
+   (env: `LIVE_PORT` 8799, `LIVE_MAX_STEPS` 12).
 3. **quark:** `ssh -N -L 8799:localhost:8799 spark` and leave it open.
 4. **quark:** open `demo_portable.html`, press `4`, run one suggestion as a test.
    The status line says *ready* when the server answers and *offline* when it does
    not — in which case the replay tabs are unaffected.
 
-What the server does per session: logs in to quark's site once (reused for 15 min;
-the site's sessions expire at ~24), writes a one-task config, and starts the ordinary
+What the server does per session: logs in to the site once (reused for 15 min; the
+site's sessions expire at ~24), writes a one-task config, and starts the ordinary
 runner three times with `output_root = demo/live/runs/` and `P79_PAPER_GRADE=0`
 (`live/run_lane.sh`). One session at a time — three lanes on one site and one account
 is already the collision the paper-grade launch rules forbid; a second visitor gets
@@ -149,12 +165,12 @@ killed after 8 minutes.
 
 **Limits to know before you open it to visitors:**
 
-- **Writes are real.** A task like "post an ad" or "change my listing" changes quark's
-  site, and the three lanes can trip over each other's changes. The suggestions are
-  read-only on purpose; reset quark's classifieds container after any day it was used.
-- **quark's site is not the A100's site.** It is the same VWA image, but its state is
-  whatever quark's container has accumulated. Live answers say nothing about the
-  paper's numbers, which all come from recorded A100 runs.
+- **Writes are real.** A task like "post an ad" or "change my listing" changes the
+  live site, and the three lanes can trip over each other's changes. The suggestions
+  are read-only on purpose. Reset = `docker compose -f … down` then `up -d` (state
+  lives only in the db container).
+- **Live answers say nothing about the paper's numbers**, which all come from recorded
+  A100 runs on the official image.
 - **Cost:** about $0.004 per step, so a full three-lane session is ~$0.15.
 
 ## Rebuilding

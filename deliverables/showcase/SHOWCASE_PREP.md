@@ -25,7 +25,7 @@ router, labels, pp) are for researchers who use them first.
 | Before 16 Sep | Only if a slot is confirmed: expand §3 to 12 minutes | ☐ |
 | Before 16 Sep | Read §5 and §6 twice — the numbers and the things not to say | ☐ |
 | 16 Sep 09:00 | Poster set-up; laptop on a table beside the board, power, auto-play on | ☐ |
-| 16 Sep 09:00 | Live tab (optional): DGX server up · quark Docker + classifieds up · `ssh -N -L 8799:localhost:8799 spark` on quark · one test task (runbook: `demo/README.md` → *Live*) | ☐ |
+| 16 Sep 09:00 | Live tab (optional): DGX site stack + server up · `ssh -N -L 8799:localhost:8799 spark` on quark · one test task (runbook: `demo/README.md` → *Live*) | ☐ |
 
 Both deliverables go **to Zekun directly** — the organiser stated they cannot
 receive files.
@@ -328,8 +328,9 @@ frame, and a running **$** counter per column. Three tasks, one per winner:
 fail" — honest, and it walks the visitor to the poster's WHY.
 
 **Update 2026-09-10:** a fourth tab, *try your own*, now runs a visitor's task live
-on top of the replay (user decision). Its site is quark's own docker, never the A100;
-the agent runs on DGX; it is unscored and one session at a time. The replay remains
+on top of the replay (user decision). Agent and site both run on DGX (an arm64
+rebuild of the classifieds site, its own stack on 127.0.0.1:9981 — never the A100);
+it is unscored and one session at a time. The replay remains
 the default and still needs no network — see `demo/README.md` → *Live*.
 
 **Rules.** Replay, never live (site on the A100, venue network unknown). Only

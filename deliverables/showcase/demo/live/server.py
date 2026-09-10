@@ -164,7 +164,7 @@ async def start(request: web.Request) -> web.Response:
             return web.json_response({"error": "busy", "id": SESSION["id"]}, status=409)
         if not await _ensure_login():
             return web.json_response(
-                {"error": "could not log in to the classifieds site — is quark's Docker up?"},
+                {"error": "could not log in to the classifieds site — is the site up? (see live/runs/login.log)"},
                 status=502)
         return await _launch(intent)
 

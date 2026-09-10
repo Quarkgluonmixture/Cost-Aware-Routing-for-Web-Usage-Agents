@@ -30,10 +30,30 @@ if [[ -f scripts/vwa_env_remote.sh ]]; then
   # shellcheck disable=SC1091
   source scripts/vwa_env_remote.sh
 fi
-# The site lives on quark for the demo, whatever the endpoint file says.
-export CLASSIFIEDS="${LIVE_CLASSIFIEDS:-http://${VWA_REMOTE_HOST}:9980}"
+# The demo's site is its own stack on this machine (live/site-compose.yml, 127.0.0.1:9981),
+# whatever the endpoint file says. Backup: LIVE_CLASSIFIEDS=http://100.95.81.103:9980
+# points the lanes at quark's docker instead.
+export CLASSIFIEDS="${LIVE_CLASSIFIEDS:-http://localhost:9981}"
 export P79_PAPER_GRADE=0
 export PYTORCH_NVML_BASED_CUDA_CHECK=1 CUDA_MPS_PIPE_DIRECTORY="" CUDA_MPS_LOG_DIRECTORY=""
+
+# Site account. DGX's endpoint file carries no site credentials (the A100's copy does).
+# The demo's site is a local copy of the benchmark's own database, so the account is the
+# benchmark's public test account, defined in the VWA submodule. It is read with `ast`
+# (the module asserts on env at import, so it is not imported) and never printed.
+# p79 itself keeps B-211's fail-loud rule; this fallback exists only in the demo wrapper.
+if [[ -z "${VWA_CLASSIFIEDS_USER:-}" || -z "${VWA_CLASSIFIEDS_PASS:-}" ]]; then
+  eval "$(.venv/bin/python3 - <<'PY'
+import ast, shlex
+src = open("external/visualwebarena/browser_env/env_config.py").read()
+acc = next(ast.literal_eval(n.value) for n in ast.walk(ast.parse(src))
+           if isinstance(n, ast.Assign) and any(getattr(t, "id", "") == "ACCOUNTS" for t in n.targets))
+a = acc["classifieds"]
+user = a.get("username") or a.get("email")
+print(f"export VWA_CLASSIFIEDS_USER={shlex.quote(user)} VWA_CLASSIFIEDS_PASS={shlex.quote(a['password'])}")
+PY
+)"
+fi
 
 if [[ "${1:-}" == "login" ]]; then
   AUTH_DIR="$2"

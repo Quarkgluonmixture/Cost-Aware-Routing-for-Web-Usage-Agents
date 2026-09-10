@@ -1,0 +1,37 @@
+# The live tab's own classifieds site, on DGX.
+#
+#   docker compose -f deliverables/showcase/demo/live/site-compose.yml up -d      # start
+#   docker compose -f deliverables/showcase/demo/live/site-compose.yml down       # stop + discard state
+#
+# WHY THESE IMAGES: the official jykoh/classifieds is amd64-only and DGX is aarch64 with
+# no x86 emulation. ghcr.io/bgrins/vwa_classifieds_{web,db} is a community arm64 rebuild
+# (PHP 8.1 built-in server + MySQL 8.1) of the same site. It is NOT the image the
+# recorded runs used — fine for an unscored live demo, and checked against listings the
+# recorded runs saw (README "Live"), but never a substitute for paper-grade runs.
+#
+# SHARED MACHINE: another project on DGX runs its own copy of this site
+# (agentic-vla-security-benchmark: classifieds_db + a web container on host port 9980).
+# This stack uses its own project name, container names, network and database, and
+# binds only 127.0.0.1:9981 — nothing here can touch, or be reached by, theirs.
+#
+# State lives in the db container; `down` + `up -d` is the reset. The live tab's tasks
+# can write (post, edit), so reset after any day it was used.
+name: p79-live-cls
+
+services:
+  db:
+    image: ghcr.io/bgrins/vwa_classifieds_db:latest
+    container_name: p79live_cls_db
+    restart: "no"
+
+  web:
+    image: ghcr.io/bgrins/vwa_classifieds_web:latest
+    container_name: p79live_cls_web
+    depends_on: [db]
+    environment:
+      # the URL the agent's browser uses; OSClass builds every link from it
+      CLASSIFIEDS: "http://localhost:9981/"
+      DB_HOST: db
+    ports:
+      - "127.0.0.1:9981:9980"
+    restart: "no"
