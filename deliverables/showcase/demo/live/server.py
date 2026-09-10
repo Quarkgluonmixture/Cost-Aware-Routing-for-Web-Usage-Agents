@@ -294,6 +294,24 @@ async def health(request: web.Request) -> web.Response:
                               "carbon": B.CARBON is not None})
 
 
+# The page itself, served from here so the board opens ONE url through the tunnel
+# (http://localhost:8799/) and the page and its live API share an origin. This also keeps
+# it away from VS Code's Live Server, which reloads the whole page whenever any file in
+# the workspace changes — and a live session writes files every step, so under Live
+# Server the page reloaded itself every few seconds ("一直闪", 2026-09-10).
+async def page(request: web.Request) -> web.FileResponse:
+    return web.FileResponse(DEMO / "index.html", headers={"Cache-Control": "no-store"})
+
+
+async def page_asset(request: web.Request) -> web.FileResponse:
+    rel = request.match_info["rel"]
+    p = (DEMO / rel).resolve()
+    ok = rel == "data.js" or (p.is_relative_to(DEMO / "frames") and p.suffix == ".png")
+    if not ok or not p.is_file():
+        raise web.HTTPNotFound()
+    return web.FileResponse(p)
+
+
 @web.middleware
 async def cors(request: web.Request, handler):
     # The page is opened from file:// (origin "null"), so every response needs CORS.
@@ -310,7 +328,8 @@ async def cors(request: web.Request, handler):
 def main() -> None:
     RUNS.mkdir(exist_ok=True)
     app = web.Application(middlewares=[cors])
-    app.add_routes([web.get("/health", health), web.post("/run", start),
+    app.add_routes([web.get("/", page), web.get("/{rel:(data\\.js|frames/.+)}", page_asset),
+                    web.get("/health", health), web.post("/run", start),
                     web.options("/run", health), web.get("/events/{sid}", events),
                     web.get("/frame/{sid}/{lane}/{i}", frame), web.post("/stop", stop),
                     web.options("/stop", health)])

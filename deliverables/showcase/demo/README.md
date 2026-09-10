@@ -157,9 +157,17 @@ other. quark's docker (official image, port 9980) stays the backup:
    `curl.exe -s http://localhost:8799/health` (PowerShell: no `&` between commands).
    Don't rely on the VS Code forward alone on the day: it disappears when VS Code
    disconnects, while the ssh tunnel then binds both addresses by itself.
-4. **quark:** open `demo_portable.html`, press `4`, run one suggestion as a test.
-   The status line says *ready* when the server answers and *offline* when it does
-   not — in which case the replay tabs are unaffected.
+4. **quark:** open **`http://localhost:8799/`** in the browser — the live server
+   serves the page itself — press `4`, run one suggestion as a test. The status line
+   says *ready* when the server answers and *offline* when it does not.
+   **Offline fallback:** if the tunnel or DGX is down, double-click a local copy of
+   `demo_portable.html` instead; the three recorded tasks play with no network.
+
+> ⚠️ **Never open the page through VS Code's Live Server** (`localhost:5500–5502`).
+> Live Server reloads the whole page whenever any file in the workspace changes, and a
+> live session writes files every step (DGX's cron jobs also write logs every few
+> minutes) — so the page reloads itself over and over, the replay restarts, and the
+> live tab loses its session. This is what "一直闪" was on 2026-09-10.
 
 What the server does per session: logs in to the site once (reused for 15 min; the
 site's sessions expire at ~24), writes a one-task config, and starts the ordinary
