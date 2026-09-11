@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "demo v2 + live tab done 09-10 · 10-min talk slides (template pending) · event 09-16 (votes 13:15–14:35)"
+eta: "roadmap 09-11 · demo fixes 09-12 · talk script 09-13 · slides ≤09-14 · rehearsed 09-15 · event 09-16 (votes 13:15–14:35, talk 14:45)"
 detail: deliverables/showcase
 created: 2026-09-02
-updated: 2026-09-10
+updated: 2026-09-11
 ---
 
 # Holistic AI × UCL CDI showcase (16 Sep 2026) — poster + laptop demo
@@ -41,3 +41,8 @@ demo woven in.
 
 **Chronicle**: 笔记 §495 (v2) · §498 (v4) · §499.1–.12 (v5→v9.10). Ledger under those §.
 **真实尺寸校验**: `print_test_tiles.py` 把任意区域按 1:1 切成 A4, 打印须选「实际大小」。
+
+**Roadmap (2026-09-11)**: `deliverables/showcase/ROADMAP.md` — six phases with done-conditions,
+decisions D1–D10 (talk demo = replay of task 130 only; pptx by default; live tab only at the
+board), the 7-slide skeleton mapped to the six printed panels, and the day-of fallback ladder.
+⚠️ `SHOWCASE_PREP.md §2/§3/§5` are v8-based and stale for the printed v9.10 — rewritten in Phase 2.

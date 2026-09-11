@@ -22,6 +22,21 @@ updated: 2026-09-03
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-09-11 · showcase 路线图落地 · 下一步 = Phase 1 demo 收尾 → Phase 2 讲稿
+>
+> **路线图** `deliverables/showcase/ROADMAP.md`（六个 phase 各有判据；D1–D10 决策；7 页演讲骨架按印出来的 v9.10 六面板走）
+> · chronicle → 笔记 §507 · 任务卡 `_status/tasks/task_showcase_2026-09-16.md`
+>
+> ### 这次查出来的错位
+> `SHOWCASE_PREP.md §2/§3/§5` 是按 v8 海报写的（大数字条 / THE CATCH / Fig 2 / Fig 3），印出来的是 **v9.10 六面板**，
+> 已在三节头上加了 stale 警告；Phase 2 按六面板顺序重写。
+>
+> ### 接下来按顺序做
+> 1. **Phase 0（今天）**：Slack 问 Zekun 四件事（模板何时到 / 自带电脑还是统一电脑 / 10 分钟含不含问答 / 接口与顺序）；user 确认 D1（演讲只放录像 130）、D3（默认 pptx）
+> 2. **Phase 1（09-11 晚–09-12）**：§506.10 的 1A/2A/3B（`index.html` `pickLine()`/`renderPick()`、碳排悬停、README 四条措辞）+ `?task=130&autoplay=0` 演讲模式 + 重建 portable + 录 `talk_130.mp4` + 提交
+> 3. **Phase 2（09-12–09-13）**：`talk_content.md` 7 页口播原文 + §2 走读 / §5 数字表按 v9.10 重审 + /stress spot-check（A + C）
+> 4. Phase 3–6 见 ROADMAP §3。B-1996 仍留 bug 目录。
+
 > ## 🟢 2026-09-10 · showcase demo 第二版 + live「try your own」可用 · 等 10 分钟演讲的 slide 模板
 >
 > chronicle → **笔记 §506.1–506.9** · 运行手册 `deliverables/showcase/demo/README.md` → *Live* · 当天清单 `SHOWCASE_PREP.md §0`

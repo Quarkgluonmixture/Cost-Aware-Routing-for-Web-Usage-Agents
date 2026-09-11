@@ -14,18 +14,25 @@ router, labels, pp) are for researchers who use them first.
 
 ---
 
-# 0. Checklist
+# 0. Checklist → see `ROADMAP.md` (2026-09-11)
 
-| When | What | Status |
+The day-by-day plan, the decisions (D1–D10) and every phase's done-condition now
+live in **`ROADMAP.md`**. Phase gates, for a glance:
+
+| Phase | When | Closes when |
 |---|---|---|
-| **Thu 4 Sep** | Send Zekun (Slack DM) the v9.10 PDF + the oral-slot pitch (§1). Organiser confirmed a replacement PDF is accepted until today; after this it is self-print A1 | ☐ |
-| Fri 5 Sep | Dissertation hard deadline — nothing on this page competes with it | — |
-| 7–15 Sep | Laptop demo (§8): re-record tasks 130/76/17 in BOTH once the A100 reddit chain finishes (~7 Sep), build the replay page | ☐ |
-| Before 16 Sep | Rehearse the 90-second board walk (§2) until it needs no notes | ☐ |
-| Before 16 Sep | Only if a slot is confirmed: expand §3 to 12 minutes | ☐ |
-| Before 16 Sep | Read §5 and §6 twice — the numbers and the things not to say | ☐ |
-| 16 Sep 09:00 | Poster set-up; laptop on a table beside the board, power, auto-play on | ☐ |
-| 16 Sep 09:00 | Live tab (optional): DGX site stack + server up · `ssh -N -L 8799:localhost:8799 spark` on quark · one test task (runbook: `demo/README.md` → *Live*) | ☐ |
+| 0 | Fri 11 Sep | four logistics questions sent to Zekun (`ROADMAP.md §6`); D1 / D3 confirmed by the author |
+| 1 · demo | 11–12 Sep | §506.10 fixes (1A 2A 3B) + `?task=130&autoplay=0` talk mode + portable rebuilt + `talk_130.mp4`; committed |
+| 2 · script | 12–13 Sep | `talk_content.md` (7 slides, 1,150–1,300 words) + §2 / §3 / §5 below rewritten to the **v9.10** panel order; /stress spot-check clean |
+| 3 · slides | template day, latest Mon 14 Sep | pptx + PDF open on quark without substitution / overflow; sent to Zekun by Tue noon if slides are collected |
+| 4 · rehearsal | 14–15 Sep | two consecutive timed runs ≤ 9:30 with the browser switch |
+| 5 · packing | Tue 15 Sep evening | folder + USB + adapters + one end-to-end live run through the tunnel |
+| 6 · the day | Wed 16 Sep | timeline and fallback ladder in `ROADMAP.md §3` |
+
+⚠️ **§2, §3 and §5 below were written against poster v8 and are stale for the
+printed v9.10** (six panels; no number strip, no "THE CATCH", no Fig 2 / Fig 3).
+They are rewritten in Phase 2. Until then, use them only for the *numbers and
+their scopes* (§5) and the *answers* (§4, §6), not for the walking order.
 
 Both deliverables go **to Zekun directly** — the organiser stated they cannot
 receive files.
@@ -76,6 +83,8 @@ receive files.
 
 # 2. Board walk — 90 seconds
 
+> ⚠️ **Stale for v9.10 (2026-09-11)** — written for the v8 sheet. Rewrite in `ROADMAP.md` Phase 2 to the six-panel order; the printed poster is described in `ROADMAP.md §0`.
+
 Sheet order: loop diagram → number strip → catch / why / Fig 3 (left) · Fig 2 /
 laptop (right). The walk skips the loop unless they ask for the method.
 
@@ -117,6 +126,8 @@ laptop (right). The walk skips the loop unless they ask for the method.
 ---
 
 # 3. Oral slot — 12 minutes (only if confirmed)
+
+> ⚠️ **Stale for v9.10 (2026-09-11)** — written for the v8 sheet. Rewrite in `ROADMAP.md` Phase 2 to the six-panel order; the printed poster is described in `ROADMAP.md §0`.
 
 Same spine as the board walk, four blocks of roughly three minutes. Do not add
 new results; add *why each step was necessary*.
@@ -232,6 +243,8 @@ is red, answer is blue.
 ---
 
 # 5. Number crib — every figure with its baseline
+
+> ⚠️ **Stale for v9.10 (2026-09-11)** — written for the v8 sheet. Rewrite in `ROADMAP.md` Phase 2 to the six-panel order; the printed poster is described in `ROADMAP.md §0`.
 
 **Never quote a number without the phrase in the "must say" column.** Two
 different baselines are in play and they are not interchangeable.
