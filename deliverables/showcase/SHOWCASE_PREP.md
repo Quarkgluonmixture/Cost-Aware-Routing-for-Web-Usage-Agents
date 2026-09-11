@@ -22,7 +22,7 @@ live in **`ROADMAP.md`**. Phase gates, for a glance:
 | Phase | When | Closes when |
 |---|---|---|
 | 0 | Fri 11 Sep | four logistics questions sent to Zekun (`ROADMAP.md §6`); D1 / D3 confirmed by the author |
-| 1 · demo | 11–12 Sep | §506.10 fixes (1A 2A 3B) + `?task=130&autoplay=0` talk mode + portable rebuilt + `talk_130.mp4`; committed |
+| 1 · demo | 11–12 Sep | ✅ 11 Sep — §506.10 fixes (1A 2A 3B) + `?task=130&autoplay=0` talk mode + portable rebuilt + `talk_130.webm`; committed. Left: double-click check on quark |
 | 2 · script | 12–13 Sep | `talk_content.md` (7 slides, 1,150–1,300 words) + §2 / §3 / §5 below rewritten to the **v9.10** panel order; /stress spot-check clean |
 | 3 · slides | template day, latest Mon 14 Sep | pptx + PDF open on quark without substitution / overflow; sent to Zekun by Tue noon if slides are collected |
 | 4 · rehearsal | 14–15 Sep | two consecutive timed runs ≤ 9:30 with the browser switch |

@@ -4,7 +4,8 @@ The replay tabs show the router's fold-held-out pick for recorded tasks. A typed
 belongs to no fold, so all five fold models vote (each with its own threshold, exactly
 as in `p79.policies.learned_router.predict_mode_fold_aware`: argmax if its top
 probability clears the fold's τ, else the safe fallback view) and the majority is
-reported together with how many of the five agreed.
+reported. How many of the five agreed goes into the JSON for the log only; the page
+does not show it, because "4 of 5 agreed" reads as confidence, which a fold-vote is not.
 
 Features are the router's own six (`extract_raw_features`), taken from the live run:
 the typed intent, and the READ lane's first page (`state_digest` dom_complexity /

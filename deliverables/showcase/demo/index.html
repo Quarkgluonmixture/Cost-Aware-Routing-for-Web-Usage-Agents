@@ -260,6 +260,7 @@ button:disabled{opacity:.45;cursor:default}
 .idlecap[hidden]{display:none}
 /* live: the picked lane waits in a neutral ring until the visitor judges its answer */
 .lane.chosen{border-color:var(--ink);box-shadow:0 0 0 3px var(--ink)}
+.lane.chosen.even{border-color:var(--muted);box-shadow:0 0 0 3px var(--muted)}
 .judge{display:inline-flex;gap:5px;margin-left:9px}
 .judge button{padding:1px 10px;border-radius:6px;border:1.5px solid rgba(255,255,255,.75);
               background:rgba(255,255,255,.14);color:#fff;font:700 14px Arial}
@@ -303,7 +304,15 @@ const ORDER = ["LOOK","READ","BOTH"];
 const $ = s => document.querySelector(s);
 const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const SUB_REPLAY = $("#sub").innerHTML;       // restored when leaving the live tab
-let task = window.DEMO_TASKS[0], cursor = 0, playing = true, timer = null;
+// Two uses of one page (ROADMAP.md D2). The board copy opens bare: it autoplays and
+// loops through the three tasks. The talk copy opens as `?task=130&autoplay=0`: it
+// lands on that task's first step, plays nothing by itself and holds the finished
+// state instead of rolling over, so the arrow keys are the only thing that moves it.
+const Q = new URLSearchParams(location.search);
+const TALK = Q.get("autoplay") === "0";
+// task ids are compared as strings: DEMO_TASKS may hold "130" or 130 depending on the build
+const TASK0 = window.DEMO_TASKS.find(t => String(t) === Q.get("task")) ?? window.DEMO_TASKS[0];
+let task = TASK0, cursor = 0, playing = !TALK, timer = null;
 let EL = {};                                  // lane -> live element refs, built once per task
 
 const maxLen = t => Math.max(...ORDER.map(k => window.DEMO[t].lanes[k].frames.length));
@@ -338,19 +347,37 @@ function tabs(){
 }
 
 // The pick is read from a fold-held-out replay: the router that made it never saw
-// this task. The line states the outcome in THIS run, and names the lanes that did
-// solve it, so a wrong pick reads as what it is rather than as a near miss.
+// this task. Its colour is RELATIVE to the other lanes (笔记 §506.10, decision 1A): a
+// pick is green only when the picked view was the ONLY one that solved the task. When
+// another view solved it too, the choice did not matter — grey, and the line names the
+// cheaper view. When the pick failed and another view solved it — red, and the line says
+// who got it. All failed — grey. Colouring the picked lane by its own outcome alone read
+// as "the router was right" whenever every view was right, which is exactly the reading
+// the poster's always-cheapest comparison exists to prevent.
+function verdict(picked, solved, cost){
+  const others = ORDER.filter(k => k !== picked), ok = others.filter(k => solved[k]);
+  if (solved[picked]){
+    if (!ok.length) return {cls:"won", res:"ok", text:"✓ right — the only view that was"};
+    const cheaper = ok.filter(k => cost[k] < cost[picked]);
+    const name = (cheaper.length ? cheaper : ok).join(" and ");
+    return {cls:"even", res:"mixed", text: cheaper.length
+              ? `right — but so was ${name}, for less: the choice didn't matter`
+              : `right — but so was ${name}: the choice didn't matter`};
+  }
+  if (ok.length) return {cls:"lost", res:"no", text:`✗ wrong — ${ok.join(" and ")} got it`};
+  return {cls:"even", res:"mixed", text:"wrong — but so was every view"};
+}
+const replayVerdict = d => d.pick.lane ? verdict(d.pick.lane,
+    Object.fromEntries(ORDER.map(k => [k, d.lanes[k].success])),
+    Object.fromEntries(ORDER.map(k => [k, d.lanes[k].cost]))) : null;
 function pickLine(d){
   const p = d.pick;
   let html = '<span class="arr">➜</span><span><b>A learned choice</b> ' +
              '<span class="fine">(trained without this task)</span> picked ';
   if (p.lane){
-    const L = d.lanes[p.lane], solvers = ORDER.filter(k => d.lanes[k].success);
+    const v = replayVerdict(d);
     html += `<b style="color:var(--${p.lane.toLowerCase()})">${p.lane}</b></span>` +
-      `<span class="res ${L.success ? "ok" : "no"}">` +
-      (L.success ? "✓ solved it here" :
-        "✗ failed here" + (solvers.length ? ` — ${solvers.join(" and ")} solved it` : "")) +
-      "</span>";
+            `<span class="res ${v.res}">${v.text}</span>`;
   } else {
     // A view that is not one of the three lanes: report its own recorded runs, all
     // of them, because one run of a view is exactly what a rerun can flip.
@@ -381,7 +408,7 @@ const BELOW = `
       <div class="meters">
         <div class="m usd"><span>cost</span><span class="mb"><i></i></span><span class="mv"></span></div>
         <div class="m sec"><span>time</span><span class="mb"><i></i></span><span class="mv"></span></div>
-        <div class="m co2" title="Estimated, not measured: the model runs in a remote datacentre. Tokens × published energy per token × datacentre overhead × UK grid."><span>CO₂e ≈</span><span class="mb"><i class="hi"></i><i class="lo"></i></span><span class="mv"></span></div>
+        <div class="m co2" title="Estimated, not measured: the model runs in a remote datacentre. Output tokens × a per-token energy measured on this model, input tokens × an inferred one (no measurement exists), × datacentre overhead × UK grid. Image input is not modelled separately."><span>CO₂e ≈</span><span class="mb"><i class="hi"></i><i class="lo"></i></span><span class="mv"></span></div>
       </div>
       <div class="bar"><i></i></div>`;
 function refs(el){
@@ -405,11 +432,12 @@ function mount(){
   const top = f => Math.max(...ORDER.map(k => f(d.lanes[k]))) || 1;
   SCALE = {usd: top(L => L.cost), sec: top(L => L.seconds), co2: top(L => L.co2[1])};
   const box = $("#lanes"); box.innerHTML = ""; EL = {};
+  const V = replayVerdict(d);
   ORDER.forEach(k => {
     const L = d.lanes[k];
     const chosen = d.pick.lane === k;
     const el = document.createElement("div");
-    el.className = "lane " + k + (chosen ? " chosen " + (L.success ? "won" : "lost") : "");
+    el.className = "lane " + k + (chosen ? " chosen " + V.cls : "");
     el.innerHTML = `
       <div class="lh"><b>${k}</b><span class="what">${WHAT[k]}</span>
         ${chosen ? '<span class="pickt">➜ learned choice</span>' : ""}
@@ -422,7 +450,7 @@ function mount(){
   });
   $("#prov").innerHTML = ORDER.map(k => `${k}: <code>${d.lanes[k].run}</code>`).join(" · ") +
     "<br>time = each run's recorded wall-clock · CO₂e ≈ estimated from tokens, not measured" +
-    "<br>learned choice: fold-held-out replay of the project's learned router";
+    "<br>learned choice: fold-held-out replay of the project's learned router · its ring is coloured against the other two views, not on its own";
 }
 
 const pct = v => (100 * Math.max(0, Math.min(1, v))) + "%";
@@ -586,6 +614,7 @@ function step(n){
   const back = n < 0;
   cursor += n;
   if (cursor >= maxLen(task) + 2){            // hold the finished state, then loop on
+    if (TALK){ cursor = maxLen(task) + 1; return; }   // talk copy: hold, never roll over
     const i = window.DEMO_TASKS.indexOf(task);
     go(window.DEMO_TASKS[(i + 1) % window.DEMO_TASKS.length]);
     return;
@@ -659,8 +688,8 @@ function leaveLive(){
   $("#play").textContent = playing ? "Pause" : "Play";
 }
 function backToReplay(){
-  playing = true; go(window.DEMO_TASKS[0]);
-  $("#play").textContent = "Pause"; loop();
+  playing = !TALK; go(window.DEMO_TASKS[0]);
+  $("#play").textContent = playing ? "Pause" : "Play"; loop();
 }
 
 function liveTab(){
@@ -886,24 +915,37 @@ function renderPick(){
   const el = $("#livepick");
   if (!el) return;
   ORDER.forEach(k => {
-    LEL[k].lane.classList.remove("chosen", "won", "lost");
+    LEL[k].lane.classList.remove("chosen", "won", "lost", "even");
     const t = LEL[k].lane.querySelector(".lh .pickt"); if (t) t.remove();
   });
   const p = LPICK;
   if (!p){ el.innerHTML = ""; return; }
+  // No vote count on the page: "4 of its 5 models agreed" reads as confidence, and a
+  // fold-vote is not one (§506.10 P2). The count stays in the server's JSON for the log.
   let html = '<span class="arr">➜</span><span><b>A learned choice</b> <span class="fine">(trained on ' +
-             `the recorded tasks, never saw this one · ${p.agree} of its ${p.folds} models agreed · ` +
+             "recorded runs of this site's tasks, never saw this one · " +
              'difficulty set to the typical value)</span> picked ';
   if (p.lane){
-    const e = LEL[p.lane], v = JUDGE[p.lane];
+    const e = LEL[p.lane];
     e.lane.classList.add("chosen");
-    if (v !== undefined) e.lane.classList.add(v ? "won" : "lost");
     const badge = document.createElement("span");
     badge.className = "pickt"; badge.textContent = "➜ learned choice";
     e.lane.querySelector(".lh .what").after(badge);
-    html += `<b style="color:var(--${p.lane.toLowerCase()})">${p.lane}</b></span>` +
-      (v === undefined ? '<span class="res mixed">mark its answer ✓ or ✗</span>'
-                       : `<span class="res ${v ? "ok" : "no"}">${v ? "✓ you judged it right" : "✗ you judged it wrong"}</span>`);
+    html += `<b style="color:var(--${p.lane.toLowerCase()})">${p.lane}</b></span>`;
+    // Same relative rule as the replay, on the visitor's three verdicts: "right" alone
+    // is not a win if a cheaper view was right too. Until all three lanes are marked
+    // the ring stays neutral and the line says what is still missing.
+    const left = ORDER.filter(k => JUDGE[k] === undefined);
+    if (left.length){
+      html += `<span class="res mixed">${JUDGE[p.lane] === undefined
+                 ? "mark its answer ✓ or ✗"
+                 : `mark ${left.join(" and ")} too — did the choice matter?`}</span>`;
+    } else {
+      const v = verdict(p.lane, JUDGE,
+                        Object.fromEntries(ORDER.map(k => [k, LVAL[k] ? LVAL[k].cost_cum : 0])));
+      e.lane.classList.add(v.cls);
+      html += `<span class="res ${v.res}">${v.text} <span class="fine">(by your verdicts)</span></span>`;
+    }
   } else {
     html += (p.fallback ? "its default view, as none of its models was confident — " : "a fourth view, not run here — ") +
             `<b>${esc(p.name)}</b></span>`;
@@ -912,6 +954,7 @@ function renderPick(){
 }
 
 tabs(); mount(); paint(); loop();
+$("#play").textContent = playing ? "Pause" : "Play";
 </script>
 </body>
 </html>

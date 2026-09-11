@@ -45,7 +45,7 @@ event: 2026-09-16
 | demo 录像三题 | v2 已提交（commit `83c857b`），`demo_portable.html` 11.7 MB | §506.10 定下的三处修改还没做（红绿框对照上色 / 碳排悬停去 "published" / 四条措辞）；没有演讲模式（一打开就自动播放并轮换三题） |
 | live 页 | DGX 上站点容器已跑 20 h，server 在**裸前台进程**里（不是 tmux） | 周三要重启；需要一个不会随终端断掉的运行方式 |
 | slide | 模板未到（走 Slack，Gmail 里没有 showcase 邮件） | 内容一个字都没有 |
-| 演讲 slot | 10 分钟已确认（user 09-10）；节目单 14:45–15:30「Student presentations」共 45 分钟 | 不知道：含不含问答、自带电脑还是统一电脑、接口 |
+| 演讲 slot | 10 分钟已确认（user 09-10）；节目单 14:45–15:30「Student presentations」共 45 分钟；**从 quark 投大屏，slide 与 demo 同一台电脑**（user 09-11） | 不知道：含不含问答、接口、主办方收不收 slide 文件 |
 | 网络 | quark 在 UCL 校园网上 `ssh spark`（cloudflared）已验证可用（2026-05-28；Tailscale 被黑洞，cloudflared 通）。会场 = UCL Centre for AI，大概率同一网络 | 当天 09:00 仍要实测一次 |
 | 投票 | 10:00 开始，**14:35 截止**，演讲 14:45 才开始 | 演讲不决定奖；13:15–14:35 站在板前决定 |
 | GPU 侧 | B1 shopping 三格 ~09-13 落地（A100） | 只发下一条 chain，不开新分析，人力都在演讲上 |
@@ -57,8 +57,9 @@ event: 2026-09-16
 - **D1 演讲里的 demo 只放录像回放 task 130，不跑 live。** 130 是「找日落照片的那条 listing」：LOOK 2 步解出（$0.007）、READ 9 步失败（$0.041，文本树里根本没有 sunset 这个词）、BOTH 3 步解出（$0.014）。三秒能懂，最长一栏 9 步，手动步进约 45 秒。live 页首步要 ~20 秒、一栏最多 12 步、时长不可控，只在展板上给深聊的访客。
   为什么不用 76：76 已经印在海报中部（READ 解出 / LOOK 转圈），演讲讲 130 正好和它成一对 —— 130 是「贵的看法值」、76 是「便宜的看法值」，合起来就是题目那句问句；讲完 130 一句话把 76 指回海报。
   130 还有一个顺手的点：learned choice 选的是 READ，恰好是唯一失败的那栏 —— 直接引出「那能不能学会选」。
-- **D2 demo 进演讲走三级故障梯。** ① quark 浏览器开 `demo_portable.html?task=130&autoplay=0`（演讲模式，Phase 1 实现：停在 130 第 0 步、不自动播、不轮换）→ ② 投影只认主办方电脑：U 盘上的同一个文件，任何电脑双击即开 → ③ 浏览器出问题：slide 里嵌 40 秒 MP4 录屏，再兜底一张三帧静态图。
-- **D3 slide 默认走 pptx**（模板大概率是 pptx，主办方可能收文件）。做法照海报：`talk_content.md` 单一来源 → `build_talk.py`（python-pptx）→ pptx + PDF；模板到了只换 layout 不改内容。HTML deck（demo 直接 iframe 嵌进去、零切换）只在 Zekun 确认「自带电脑」且 user 想要时才做。
+- **D2 两处用法、一个页面（user 09-11 定）。** 展出时：海报旁边放 quark，跑现在这个 demo（三题自动播放 + `4` 进 live 页）。演讲时：从 quark 投大屏，demo 是**单独的一份演讲版**，同一个 `index.html` 加参数 `?task=130&autoplay=0`（停在 130 第 0 步、不自动播、不轮换，只认 ← →）。先展出再演讲，两处不打架。
+- **D3 slide 用 HTML deck，demo 直接嵌在第 3 页里（推荐）；pptx 只作备用。** 既然从自己电脑投屏，HTML deck 能把演讲版 demo 用 iframe 嵌进去，一个浏览器窗口全屏，← → 既翻页也步进，不用 Alt+Tab；组会 deck 已经是这个形态。做法仍是 `talk_content.md` 单一来源 → `build_talk.py` 生成 `talk/index.html`，模板到了把它的标题条 / 页脚 / 配色搬进 CSS。同时导出一份 PDF（Playwright print）给主办方收 slide 用。**只有 Zekun 明确说「必须交 pptx 在统一电脑上放」**才走 python-pptx 铺模板那条路，那时 demo 回到 Alt+Tab 切浏览器。
+  故障梯照旧三级：deck 里的 iframe 出问题 → 同一台电脑另开标签页 `demo_portable.html?task=130&autoplay=0` → deck 里第 3 页后面藏一页 39 秒 webm（`demo/talk_130.webm`）。
 - **D4 演讲词汇 = 海报词汇，三套名字一次对齐。** 海报系统图写 DOM / SoM / Vision，海报截图带和 demo 写 READ / LOOK / BOTH。第 2 页说一次：LOOK = screenshot only（海报的 Vision）· READ = page text only, no image（海报的 DOM，是 accessibility tree 不是 HTML）· BOTH = screenshot with numbered marks（海报的 SoM）。之后全程 LOOK / READ / BOTH。
 - **D5 演讲 7 页，顺序照海报六面板走**（§4 有逐页骨架），约 8 分 40 秒 + 80 秒缓冲。面板 3、4（行为不同 / 失败不同）各一句带过，不单独成页。
 - **D6 不引未发表结果。** §505 的预算路由不上台，不写进 slide；问答被问「生产系统今天该怎么办」时用 §4 现成答案（always-cheapest 难打、先把 agent 做好再学选择），最多加一句「ongoing work, unpublished」。
@@ -75,21 +76,21 @@ event: 2026-09-16
 
 - [x] D1–D10 入档（本文件）
 - [ ] Slack DM Zekun 四个问题（§6 有现成文字）：模板何时到 · 自带电脑还是统一电脑 · 10 分钟含不含问答 · 接口（HDMI / USB-C）和演讲顺序
-- [ ] user 确认 D1（演讲只放录像 130）和 D3（默认 pptx）
+- [x] user 09-11：先展出再演讲；演讲从自己电脑投屏，demo 单独一份或嵌进 slide → D2/D3 按此改写（HTML deck 嵌 demo）
 
-**判据**：消息已发；D1 / D3 有 user 的一句「可以」。
+**判据**：消息已发。
 
 ### Phase 1 · 09-11 晚 → 09-12 · demo 收尾
 
-- [ ] 1A 红绿框对照上色：录像页 `pickLine()` 与 live 页 `renderPick()` 同一规则 —— 只有被选中栏**唯一**答对才绿（"right — the only view that was"）；它对别栏也对为灰并点名更便宜的那栏（"right — but so was X, for less: the choice didn't matter"）；它错别栏对为红（"wrong — X got it"）；全错为灰。76 题要写出「唯一解出」
-- [ ] 2A 碳排悬停文字去掉 "published"：输出 token 能耗是实测、输入 token 是推算
-- [ ] 3B 四条措辞：README「Check」→「接线核对（4/5 折见过）」· 删「4 of its 5 models agreed」· 「trained on the recorded tasks」→「trained on recorded runs of this site's tasks」· README 补「看图的能耗未单独建模」
-- [ ] 演讲模式：URL 参数 `?task=<id>` 直接落到该题第 0 步、`?autoplay=0` 不自动播不轮换（键盘 ← → 仍可用；`4` 仍进 live 页）
-- [ ] 重建 `demo_portable.html` + 逐像素比对 + 在 quark 上双击验证三题
-- [ ] 录 MP4：Playwright 录屏 task 130 三栏步进 40 秒（Playwright 自带 ffmpeg 转 mp4），存 `deliverables/showcase/demo/talk_130.mp4`
-- [ ] 提交；笔记 §507 + 台账
+- [x] 1A 红绿框对照上色：录像页 `pickLine()` 与 live 页 `renderPick()` 同一规则 —— 只有被选中栏**唯一**答对才绿（"right — the only view that was"）；它对别栏也对为灰并点名更便宜的那栏（"right — but so was X, for less: the choice didn't matter"）；它错别栏对为红（"wrong — X got it"）；全错为灰。76 题要写出「唯一解出」
+- [x] 2A 碳排悬停文字去掉 "published"：输出 token 能耗是实测、输入 token 是推算
+- [x] 3B 四条措辞：README「Check」→「接线核对（4/5 折见过）」· 删「4 of its 5 models agreed」· 「trained on the recorded tasks」→「trained on recorded runs of this site's tasks」· README 补「看图的能耗未单独建模」
+- [x] 演讲模式：URL 参数 `?task=<id>` 直接落到该题第 0 步、`?autoplay=0` 不自动播不轮换（键盘 ← → 仍可用；`4` 仍进 live 页）
+- [x] 重建 `demo_portable.html` + 逐像素比对（headless 两版同参数截图：内容帧相同，唯一差异是点击光环的淡出相位）· [ ] 在 quark 上双击验证三题（user）
+- [x] 录屏：Playwright 录 task 130 三栏步进 39 秒，存 `deliverables/showcase/demo/talk_130.webm`（Playwright 自带的 ffmpeg 只有 VP8，出不了 mp4；HTML deck 里 `<video>` 放 webm 没问题，若以后要 mp4 装 `imageio-ffmpeg` 转一次）
+- [x] 提交；笔记 §507.4 + 台账
 
-**判据**：quark 上双击 portable 三题正常；`?task=130&autoplay=0` 打开后停在 130 第 0 步不动；mp4 能在 quark 上播放；有 commit hash。
+**判据**：quark 上双击 portable 三题正常；`?task=130&autoplay=0` 打开后停在 130 第 0 步不动；webm 能在 quark 上播放；有 commit hash。**DGX 侧已验（headless Chromium 断言 + 截图）；quark 侧两条等 user 双击。**
 
 ### Phase 2 · 09-12 → 09-13 · 讲稿与走读重写（不等模板）
 
@@ -103,11 +104,12 @@ event: 2026-09-16
 
 ### Phase 3 · 模板到达当天，最迟 09-14 · 出 slide
 
-- [ ] `build_talk.py` 把 `talk_content.md` 铺进模板 layout → pptx + PDF；断言：每页字数上限、图不越框、无未配对 `*`
-- [ ] 模板 **09-14 18:00 还没到** → 用海报配色的中性 16:9 出稿，不再等
-- [ ] 主办方若收 slide：09-15 12:00 前发 Zekun
+- [ ] `build_talk.py` 把 `talk_content.md` 铺成 `talk/index.html`（HTML deck，第 3 页 iframe 嵌 `../demo/index.html?task=130&autoplay=0`，第 3 页之后藏一页 webm）；断言：每页字数上限、图不越框、无未配对 `*`
+- [ ] 模板到了：把它的标题条 / 页脚 / 配色 / 字体搬进 deck 的 CSS；**09-14 18:00 还没到** → 用海报配色出稿，不再等
+- [ ] Playwright 导出 PDF；主办方若收 slide，09-15 12:00 前发 Zekun
+- [ ] 只有 Zekun 说「必须交 pptx 在统一电脑放」才加 `--pptx` 出口（python-pptx 铺模板），demo 改 Alt+Tab
 
-**判据**：pptx 和 PDF 在 quark 上打开无字体替换、无溢出；每页在投影 3 米外能读（字号 ≥ 20pt 正文）。
+**判据**：deck 在 quark 的浏览器里全屏打开，← → 翻到第 3 页时 demo 停在 130 第 0 步，再按 → 是 demo 步进而不是翻页；PDF 每页在 3 米外能读（正文 ≥ 28px 等效 ≥ 20pt）。
 
 ### Phase 4 · 09-14 → 09-15 · 排练
 
@@ -119,7 +121,7 @@ event: 2026-09-16
 
 ### Phase 5 · 09-15 晚 · 打包
 
-- [ ] quark 桌面一个文件夹：`demo_portable.html` · slide pptx + PDF · `talk_130.mp4`；U 盘同一套
+- [ ] quark 桌面一个文件夹：`demo_portable.html` · deck（`talk/index.html` 或 PDF）· `talk_130.webm`；U 盘同一套
 - [ ] 电源适配器 · HDMI 与 USB-C 转接 · 海报筒 · 手机热点已试
 - [ ] quark 电源计划「从不睡眠」；浏览器书签 `http://localhost:8799/` 与本地 portable 两条
 - [ ] DGX：tmux `showcase` 里 `docker compose up -d` + `server.py`；`curl -s localhost:8799/health` 返回 ok
@@ -137,7 +139,7 @@ event: 2026-09-16
 | 10:00–13:15 | 桌上自动播放；有人问就走读 | — |
 | **13:15–14:35** | 板前循环 90 秒走读；深聊的访客给 live 页（按 Run 前说 D10 那句） | live 卡住 → `Stop`，回录像页，别当场排错 |
 | 14:40 | 演讲前 5 分钟：浏览器开到 `?task=130&autoplay=0`，slide 开到第 1 页 | — |
-| 14:45–15:30 | 演讲（自己的 10 分钟） | 浏览器崩 → 切 mp4 那页 |
+| 14:45–15:30 | 演讲（自己的 10 分钟） | 浏览器崩 → 切 webm 那页 |
 | 17:15 | 撤展；DGX 上 `fuser -k 8799/tcp`、`docker compose down` | — |
 
 ## 4. 十分钟演讲骨架（7 页）
@@ -157,10 +159,10 @@ event: 2026-09-16
 
 ## 5. demo 进演讲的操作细节
 
-- 演讲前把浏览器开到 `demo_portable.html?task=130&autoplay=0`，全屏（F11），放在 slide 后面一个窗口；切换用 Alt+Tab（排练 2 遍）。
-- 步进节奏：按 → 一下一步，READ 栏 9 步最长；边按边说。不按 space（会开自动播放）。
+- deck 第 3 页就是 demo（iframe，`?task=130&autoplay=0`）。翻到这页时焦点交给 iframe：按 → 一下一步，READ 栏 9 步最长，边按边说；播完最后一步再按 → 才翻到第 4 页（deck 只在 demo 到底后接管方向键）。不按 space（会开自动播放）。
 - 讲完 130 **不要**切到 76 或 17；一句话指回海报中部就够。
-- 三级故障梯见 D2。slide 里 mp4 那页放在第 3 页之后、默认跳过（PowerPoint 里设为隐藏页）。
+- 备用：同一台电脑另开标签页 `demo_portable.html?task=130&autoplay=0`；再备用：第 3 页后面藏的 webm 页。
+- 演讲前 5 分钟：deck 全屏开到第 1 页；板前的那份 demo 留在桌上继续自动播放（是另一个窗口 / 另一台设备也行）。
 
 ## 6. 给 Zekun 的四个问题（Slack DM，今天发）
 

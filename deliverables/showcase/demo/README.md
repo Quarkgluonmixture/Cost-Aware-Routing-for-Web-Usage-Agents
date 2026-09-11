@@ -15,8 +15,14 @@ and no site. The fourth tab (*try your own*) is live and does need them — see 
 ```
 
 It auto-plays and loops through the three tasks on its own, so it can be left
-running while nobody is at the board. The live tab drifts back to the replay after
-two idle minutes for the same reason.
+running while nobody is at the board. (The live tab does not drift back unless
+`?idle=<seconds>` asks for it — see *Live*.)
+
+**Talk copy — same page, two URL parameters.** `index.html?task=130&autoplay=0` (or
+`demo_portable.html?task=130&autoplay=0`) opens on task 130's first step, plays nothing
+by itself and holds the finished state instead of rolling over to the next task; `←` `→`
+step it, `1` `2` `3` still switch tasks, `4` still opens the live tab. It is the version
+embedded in the 10-minute talk (`ROADMAP.md` D2); the board copy stays bare.
 
 ## What a visitor is looking at
 
@@ -52,12 +58,17 @@ seconds, tokens), so a lane can't show numbers from a different run than it name
 ### The arrow: which view a learned choice picked
 
 A line under the task says which view the project's learned router picked for it, and
-that lane wears a ring — **green** if it solved the task in the run shown, **red** if not.
+that lane wears a ring whose colour is **relative to the other two views**, not the
+picked view's own outcome: **green** only if the picked view was the *only* one that
+solved the task; **grey** if another view solved it too — the choice didn't matter, and
+the line names the cheaper one; **red** if the pick failed and another view solved it;
+grey again if every view failed. (Colouring the pick by its own outcome made "all three
+right" look like "the router was right" — 笔记 §506.10.)
 
 | task | learned choice | outcome |
 |---|---|---|
-| 130 | READ | ✗ — LOOK and BOTH solved it |
-| 76 | READ | ✓ |
+| 130 | READ | red: wrong — LOOK and BOTH got it |
+| 76 | READ | green: right — the only view that was |
 | 17 | a fourth view (text tree read with the marked-screenshot instructions), not one of the lanes | its own two recorded runs split: ✓ once, ✗ once |
 
 The pick is read from the **fold-held-out** replay
@@ -91,6 +102,11 @@ location-based carbon accounting (can be near zero). Token count is a workload
 indicator, not an energy measurement (Fernandez et al., ACL 2025, arXiv 2504.17674) —
 which is why the page never shows one number here. All four arXiv ids above were
 confirmed through the arXiv API on 2026-09-10.
+
+**Image input is not modelled separately.** A screenshot enters the model as input
+tokens and is costed at the input-token constants above, so the vision encoder's share
+in LOOK and BOTH is folded into that range rather than measured; the row cannot say
+how much of a lane's estimate the picture accounts for.
 
 ## Honesty rules this demo keeps
 
@@ -196,14 +212,19 @@ killed after 8 minutes.
   start-up and every 10 min), so a Run never waits for it. Say so when you press Run.
 - **After a run, the learned choice.** Each lane gets ✓ / ✗ buttons and the visitor
   judges each answer. The line under the task names the view the project's learned
-  router picks for the typed task; that lane wears a neutral ring until its answer is
-  judged, then green or red. The colour is the visitor's verdict on the router's pick —
-  a typed task has no answer key. How the pick is made (`live/router_pick.py`): all five
-  fold models vote (a typed task belongs to no fold), each with its own threshold; the
-  features are the typed intent plus the READ lane's first page; the one feature with no
-  live value, the task's annotated difficulty, is set to the classifieds median (medium),
-  and the page says so. Check: on recorded tasks 130 / 76 / 17 the vote gives READ /
-  READ / P-prompt — the same picks as the fold-held-out replay on those tabs.
+  router picks for the typed task; that lane wears a neutral ring until **all three**
+  answers are judged, then the same relative rule as the replay: green only if the
+  picked view was the only one judged right, grey if another view was right too (the
+  line names the cheaper one), red if the pick was wrong and another view was right.
+  The colour is built from the visitor's verdicts — a typed task has no answer key. How
+  the pick is made (`live/router_pick.py`): all five fold models vote (a typed task
+  belongs to no fold), each with its own threshold; the features are the typed intent
+  plus the READ lane's first page; the one feature with no live value, the task's
+  annotated difficulty, is set to the classifieds median (medium), and the page says so.
+  The page does not print the vote count — "4 of 5 agreed" reads as confidence, which a
+  fold-vote is not. Wiring check, not a validation (4 of the 5 fold models saw each of
+  these tasks in training): on recorded tasks 130 / 76 / 17 the vote gives READ / READ /
+  P-prompt, the same picks as the fold-held-out replay on those tabs.
 - **No drifting back.** The live tab stays until someone leaves it; `?idle=<seconds>`
   turns an automatic return to the recorded tasks back on (any input restarts the count).
   In the live tab, space does nothing; `1` `2` `3`, the task tabs and the *Replay* button
