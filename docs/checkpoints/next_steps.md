@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-09-03
+updated: 2026-09-11
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,13 @@ updated: 2026-09-03
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟡 2026-09-11 晚 · B5 vision 是 harness 坐标制错配 (B-1997) · user 已定: 补登记开新 session, 修契约 + 重跑放后续 todo
+>
+> **诊断已定案** (笔记 §508.1, 三层证据: click 变化率 / A100 截图单例 / 分页像素位群体检验): GPT-5.6 不守 0–1000 契约, `normalize_coordinate_pair` 按值判档把像素 x 当千分制, click 85% 落空。B5 vision 7.4 / 12.1% **不是 backbone 属性**, §505.10 / §505.18 / §505.19 引它的地方标 pending。
+> **任务卡** `_status/tasks/task_b5_vision_coordinate_contract.md` (horizon next): ① 补 B5 六 condition 进 `_status/cells/` + 失败桶 + diag (零 GPU, 新 session 先干) → ② `coordinate_contract` 改 (B5 = 像素制, B0/B1/B2 不动, fire 路径 ⇒ 先 witness tag) → ③ B5 vision cls 重跑 (~$50) → ④ 复核 §505.10 / §505.18 / §505.19。收尾 /stress 按 user 指示跳过。
+> **同日顺带落地的行为阶梯** (§508.2–508.5, 零 GPU, 未进稿): 空转率 B2→B5 降 10× 而步数在 B0 后不降 · 失败从「跑不完」迁到「答错」· thought 逐字重复 11%→0 · harness history 8 步不含 thought (记忆消融候选, B1 免费 / B0 ~$16, 需 witness)。reframe 七条见 §508.5。
+> ⚠️ 本 session **没改代码没跑实验**; 上面三步都未启动。
+
 > ## 🟢 2026-09-11 · showcase 路线图落地 · 下一步 = Phase 1 demo 收尾 → Phase 2 讲稿
 >
 > **路线图** `deliverables/showcase/ROADMAP.md`（六个 phase 各有判据；D1–D10 决策；7 页演讲骨架按印出来的 v9.10 六面板走）

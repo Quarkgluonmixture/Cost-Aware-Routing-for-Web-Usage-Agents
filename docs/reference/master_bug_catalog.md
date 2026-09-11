@@ -11982,3 +11982,16 @@ flipped"的循环 (§H stress P0-3, 2026-08-02)。当时只有 dom+vision 有 re
 - **未修的原因**: CLI 在正式实验的调用路径上, 改动需按 fire 前协议留证据。修法建议: CLI 覆盖
   `max_steps` 时, 若 `max_agent_actions` 是从旧 `max_steps` 继承来的就一并覆盖, 并让 run_meta
   同时记录两个值。
+
+### B-1997. B5 vision 臂: GPT-5.6 不守 0–1000 坐标契约, B-1860 按数值判档把像素 x 当千分制 → click 85% 落空 [P0] ⚠️ OPEN (待 witness + 重跑)
+- **现象** (2026-09-11, 笔记 §508.1): B5 vision cls 两个 run SR 7.4 / 12.1%, 空转率 57–60%, 平均 27 步跑到上限, 比 B1 vision 还差。
+  click 之后页面变化率 B5 13–15% vs B0 72% (B2 15%)。task 0 第 7–14 步连点 8 次「第 2 页」按钮全空, history 每次写 OK (page unchanged)。
+- **原因**: schema 说坐标用 0–1000 制 (`proxy_api_agent.py` `_WEB_ACTION_TOOL` coordinate description), B5 经 `response_format` 复用同一 schema。
+  GPT-5.6 步间换制: 步 7 [720,501] 纯像素 (按钮在像素 (720,490)); 步 8 [720,679] x 像素 · y 千分; 步 14 [563,651] 纯千分。
+  `normalize_coordinate_pair` (B-1860, `action_utils.py:259+`) 对 ≤1000 的值一律 ÷1000 ⇒ 像素 x 被再缩 1.28×, 落到目标右侧。
+  群体检验: 分页按钮像素位 720/766 ±4 命中 B5 174 次 vs 千分位 562/598 30 次; B0 相反 (1 vs 88)。B-1860 注释自己预言了这条:
+  「B0/B1/B2 探针没有模糊带的值, 标出来是为了将来换模型时能浮现」—— 像素制 1280×720 与千分制重叠, 按值判失效。
+- **影响范围**: 只有 B5 vision (B5 som 仅 13 次坐标 click)。B0/B1/B2 守契约, 不受影响。下游引用 B5 vision 数字的三处 (§505.10 union / §505.18 R1 / §505.19 机制句) 标 pending (台账 RETRACTED §508.1)。
+- **修法建议**: 按 backend 声明 `coordinate_contract` (默认 `qwen_0_1000_by_value` = 现状, B0/B1/B2 不动; B5 = `pixel`: prompt 报实际图像尺寸并要求像素坐标, 归一化 ÷W/÷H, 保留 true-OOB 不 clamp 的原则)。
+  然后 B5 vision cls 重跑 (224 题 × $0.22 ≈ $50)。改动在 fire import 路径上, 按 [[feedback_pre_fire_protocol_witness]] 先留 witness tag。
+- **未修的原因**: user 09-11 只说「可以先去看」, 修与重跑待其裁定。
