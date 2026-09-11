@@ -25,6 +25,8 @@ updated: 2026-09-11
    顺带登记 B-1998 (`multiple_actions` 判无效却执行, fire 路径, 建议并进本卡第 ② 步的同一次 witness) · B-1999 / B-2000 (diag 规则, 需 v12)。
 2. **修契约 (fire 路径, 需 witness)**: 按 backend 声明 `coordinate_contract` —— 默认 `qwen_0_1000_by_value` (现状, B0/B1/B2 一行不动);
    B5 = `pixel`: prompt 报实际图像尺寸并要求像素坐标, 归一化 ÷W / ÷H, 保留 true-OOB 不 clamp 原则。改前 `git tag` witness (feedback_pre_fire_protocol_witness)。
+   **同一次 witness 里一并修 B-1998** (user 09-11 定放后续 todo): `multiple_actions` 被判无效却已执行 —— 选 (a) 派发前按 `parse_valid` 把关、真正注入 wait,
+   或 (b) 承认执行并记为有效动作 (耗预算)。(a) 与 B0「语法只允许一个动作」更对称。B0/B1 为 0 步, 不影响预注册 cell; 修后 B5 vision 重跑自然用上。
 3. **重跑**: `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B5 vision classifieds` (224 题, ≈$50)。跑完先做分页像素位检验 (§508.1 的群体检验) 再看 SR。
 4. **复核下游**: §505.10 (B5 union / route-away 含 vision 臂) · §505.18 (R1 视觉谓词→vision 在 cls_B5 −17.4) · §505.19 (「mode 契合度是 backbone 属性」机制句)。
 

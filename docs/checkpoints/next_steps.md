@@ -29,10 +29,10 @@ updated: 2026-09-11
 > - `_status/cells/cell_b5_cls_{dom,som,ptext,pprompt,psom}.md`；**vision 不建** (cron 会把坏掉的 R24364 填成 done)
 > - 5 份 digest + 汇总：no-hit 179 个全部深挖 → agent-limit 174 · scaffold 1 · task 41 布局病题 4
 >
-> **待 user 定** (都不急)：
-> 1. **v12 规则批** = B-1999 (P31 豁免只比 path, cls 上漏标约一半的跑满预算失败) + B-2000 (P10 千分位) + P33 在 som 上降为中性 —— 会动 53 份 digest 和两个依赖 `diag_scans` 的下游
-> 2. **B-1998** (`multiple_actions` 被判无效却已执行, B5 每格 50–90 步不计预算) 修法 (a) 派发前把关 / (b) 记为有效动作 —— 建议并进下方任务卡第 ② 步的同一次 witness
-> 3. task 41 要不要剔除 —— 先要一张 A100 截图看 gallery 每行几个
+> **user 09-11 已定：先收尾，不跑 /stress，修复全部放后续 todo**（笔记 §509.8）：
+> 1. **v12 规则批** (B-1999 P31 + B-2000 P10 千分位 + P33 som 收窄) + **task 41 截图核实** → 任务卡 `_status/tasks/task_diag_v12_rule_batch.md` (backlog)
+> 2. **B-1998** (`multiple_actions` 被判无效却已执行) → 并进 `task_b5_vision_coordinate_contract.md` 第 ② 步，同一次 witness
+> 3. 任务卡 B5 vision 的第 ① 步已完成，②③④ 不变
 >
 > ⚠️ 遗留、本次未处理：`tests/test_universe_consumption_lint.py` 2 个失败早于本次 (9 个脚本读 episode 却没过 scored universe 且未登记豁免；2 个已修脚本没从待办名单删)
 >
