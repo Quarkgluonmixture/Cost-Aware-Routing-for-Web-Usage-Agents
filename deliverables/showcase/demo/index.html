@@ -48,12 +48,15 @@ h1{margin:0;font:700 28px/1.2 Georgia,serif;letter-spacing:.1px}
 .intent .q{color:var(--muted);font-weight:400}
 .caption{margin-top:6px;font:16px Arial;color:var(--muted)}
 .caption b{color:var(--ink);font-weight:700}
-/* Frames are as wide as three columns allow (at 2560px the column is 825px and the
-   frame 823px), so extra height cannot make them bigger. Rather than pour the surplus
-   into one over-tall reasoning box — which just moves the empty space inside the lane —
-   the row is centred and the slack is split evenly above and below. */
+/* Frames are as wide as three columns allow, so extra height cannot make them bigger;
+   the surplus goes to the reasoning box (.think grows). The reverse case matters too:
+   inside the talk deck's iframe, or on a 16:10 laptop with browser chrome, the viewport
+   is ~800px and the lane no longer fits — then the STAGE shrinks first (flex-shrink)
+   and the frame follows via max-height + aspect-ratio, narrower and centred, instead
+   of the whole lane overflowing the row and covering the pick line above it
+   (笔记 §507.5, seen 2026-09-11 in the deck at 1600×900). */
 .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:13px 26px 0;
-       flex:1;min-height:0;align-items:center}
+       flex:1;min-height:0;align-items:stretch}
 .lane{border:1.5px solid var(--hair);border-radius:11px;overflow:hidden;
       display:flex;flex-direction:column;background:#fff;min-height:0}
 .lane[data-done="1"]{opacity:.97}
@@ -68,8 +71,8 @@ h1{margin:0;font:700 28px/1.2 Georgia,serif;letter-spacing:.1px}
    above and below each frame, which is what read as "the bottom is empty". The stage
    therefore takes only the height its frame needs, and the surplus goes to the
    reasoning text, which is content worth enlarging at board distance. */
-.stage{flex:none;background:#0d1220;overflow:hidden}
-.frame{position:relative;aspect-ratio:1280/720;width:100%;overflow:hidden}
+.stage{flex:0 1 auto;min-height:0;background:#0d1220;overflow:hidden;display:flex;justify-content:center}
+.frame{position:relative;aspect-ratio:1280/720;width:100%;max-height:100%;overflow:hidden}
 /* Every frame of the task is mounted at once and cross-faded by opacity. Swapping a
    single <img>'s src re-fetches and re-decodes it, which blanks the element for a
    frame or two — that flicker is what a visitor reads as "broken", and it is worst on
@@ -181,7 +184,7 @@ h1{margin:0;font:700 28px/1.2 Georgia,serif;letter-spacing:.1px}
    heights and, being centre-aligned, sat at different vertical offsets. Three panels
    meant to be compared must share a baseline, so the box is a fixed height that scales
    with the viewport and scrolls if a reason overruns it. */
-.think{padding:14px 16px;flex:none;height:clamp(118px,15.5vh,205px);overflow:auto;
+.think{padding:14px 16px;flex:1 0 clamp(118px,13.5vh,205px);min-height:0;overflow:auto;
        font-size:16.5px;line-height:1.5;
        color:#2b3555;border-top:1px solid var(--hair);background:var(--fill);
        transition:opacity .18s ease}
@@ -610,16 +613,21 @@ function go(t){
   task = t; cursor = 0; tabs(); mount(); paint();
 }
 
+// In the talk copy the page may sit inside the deck's iframe. When the presenter
+// steps past the held end state (or back past the first step) the demo tells the
+// parent, and the deck turns the page — so one pair of arrow keys drives both, and
+// the deck never steals a keypress while the demo still has steps to show.
+const tellDeck = type => { if (window.parent !== window) window.parent.postMessage({type}, "*"); };
 function step(n){
-  const back = n < 0;
+  const back = n < 0, was = cursor;
   cursor += n;
   if (cursor >= maxLen(task) + 2){            // hold the finished state, then loop on
-    if (TALK){ cursor = maxLen(task) + 1; return; }   // talk copy: hold, never roll over
+    if (TALK){ cursor = maxLen(task) + 1; tellDeck("demo-next"); return; }   // talk copy: hold, hand over
     const i = window.DEMO_TASKS.indexOf(task);
     go(window.DEMO_TASKS[(i + 1) % window.DEMO_TASKS.length]);
     return;
   }
-  if (cursor < 0) cursor = 0;
+  if (cursor < 0){ cursor = 0; if (TALK && was === 0) tellDeck("demo-prev"); }
   paint(back ? {instant:true} : undefined);
 }
 function loop(){ clearInterval(timer); if (playing) timer = setInterval(() => step(1), STEP_MS); }

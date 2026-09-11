@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "roadmap 09-11 · demo fixes 09-12 · talk script 09-13 · slides ≤09-14 · rehearsed 09-15 · event 09-16 (votes 13:15–14:35, talk 14:45)"
+eta: "talk v0 (deck+script+runbook+fallback) done 09-11 · author rewrites script + §2/§5 rewrite 09-12–13 · template skin ≤09-14 · rehearsal 09-14–15 · event 09-16 (votes 13:15–14:35, talk 14:45)"
 detail: deliverables/showcase
 created: 2026-09-02
 updated: 2026-09-11
@@ -46,3 +46,7 @@ demo woven in.
 decisions D1–D10 (talk demo = replay of task 130 only; pptx by default; live tab only at the
 board), the 7-slide skeleton mapped to the six printed panels, and the day-of fallback ladder.
 ⚠️ `SHOWCASE_PREP.md §2/§3/§5` are v8-based and stale for the printed v9.10 — rewritten in Phase 2.
+
+**Talk v0 (2026-09-11, 笔记 §507.5)**: five artefacts per `presentation-playbook.md` in `deliverables/showcase/talk/` —
+`index.html` (8 slides, slide 2 = demo iframe, `check_talk.py` PASS) · `rehearsal-script.md` (735 words, six locked sentences) ·
+`RUNBOOK.md` · `fallback.html` (6 shots) · `talk_130.webm` · `talk.pdf`. Left: author rewrites the script aloud; template skin; rehearsal §6.

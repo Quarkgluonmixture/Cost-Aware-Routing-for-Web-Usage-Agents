@@ -16,16 +16,16 @@ router, labels, pp) are for researchers who use them first.
 
 # 0. Checklist → see `ROADMAP.md` (2026-09-11)
 
-The day-by-day plan, the decisions (D1–D10) and every phase's done-condition now
-live in **`ROADMAP.md`**. Phase gates, for a glance:
+The day-by-day plan, the decisions (D1–D14) and every phase's done-condition now
+live in **`ROADMAP.md`**; the talk materials follow `presentation-playbook.md` (five artefacts). Phase gates, for a glance:
 
 | Phase | When | Closes when |
 |---|---|---|
 | 0 | Fri 11 Sep | four logistics questions sent to Zekun (`ROADMAP.md §6`); D1 / D3 confirmed by the author |
 | 1 · demo | 11–12 Sep | ✅ 11 Sep — §506.10 fixes (1A 2A 3B) + `?task=130&autoplay=0` talk mode + portable rebuilt + `talk_130.webm`; committed. Left: double-click check on quark |
-| 2 · script | 12–13 Sep | `talk_content.md` (7 slides, 1,150–1,300 words) + §2 / §3 / §5 below rewritten to the **v9.10** panel order; /stress spot-check clean |
-| 3 · slides | template day, latest Mon 14 Sep | pptx + PDF open on quark without substitution / overflow; sent to Zekun by Tue noon if slides are collected |
-| 4 · rehearsal | 14–15 Sep | two consecutive timed runs ≤ 9:30 with the browser switch |
+| 2 · script | 12–13 Sep | `talk/rehearsal-script.md` v0 done 11 Sep (中文引导 · 英文台词, 735 words ≤ 1,000, six locked sentences, jargon grep clean). Left: §2 / §3 / §5 below rewritten to the **v9.10** panel order; /stress spot-check; **author rewrites the script aloud** |
+| 3 · slides | 13–14 Sep | ✅ 11 Sep v0 — `talk/index.html` (7 + backup, ≤ 50 words, slide 2 = demo iframe) + `fallback.html` + `RUNBOOK.md` + `talk.pdf`; `check_talk.py` PASS. Left: template skin when it arrives; send to Zekun by Tue noon if slides are collected |
+| 4 · rehearsal | 14–15 Sep | playbook §6 in full (aloud · timed · recorded · transitions-only run · click-only run · 60 s phone playback); two consecutive runs ≤ 9:30 |
 | 5 · packing | Tue 15 Sep evening | folder + USB + adapters + one end-to-end live run through the tunnel |
 | 6 · the day | Wed 16 Sep | timeline and fallback ladder in `ROADMAP.md §3` |
 

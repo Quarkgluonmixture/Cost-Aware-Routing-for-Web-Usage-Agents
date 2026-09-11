@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>When is expensive perception worth paying for? — 16 Sep 2026</title>
+<!--
+  Deck for the 10-minute showcase talk. Built from presentation-playbook.md Appendix A:
+  <style>, .pager, .hint and the paging <script> are the template's, verbatim; only the
+  <section>s are new, plus the small `.demo` / `.figs` / `.foot` additions marked below.
+  Slide 2 embeds the talk copy of the demo (demo_portable.html?task=130&autoplay=0). The
+  arrow keys belong to the demo while it has steps left; it posts `demo-next` / `demo-prev`
+  when stepped past either end, and the deck turns the page then. check_talk.py enforces
+  the word budget (≤ 50 per slide, opening ≤ 15), traceable numbers and the jargon list.
+-->
+<style>
+  :root{
+    --paper:#fbfaf8; --ink:#16150f; --muted:#6f6b62; --rule:#e0dbd1;
+    --green:#2f6f4f; --red:#b3261e; --amber:#a4690f; --blue:#2a5b8c;
+    --serif:"Charter","Bitstream Charter","Sitka Text",Cambria,Georgia,"Songti SC",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--serif);
+    -webkit-font-smoothing:antialiased;overflow:hidden;
+  }
+  .slide{
+    position:absolute;inset:0;display:none;
+    flex-direction:column;justify-content:center;
+    padding:clamp(2rem,5vw,6rem) clamp(2rem,7vw,9rem);
+  }
+  .slide.on{display:flex}
+  .kicker{
+    font-family:var(--sans);font-size:clamp(.65rem,.95vw,.85rem);
+    letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    margin-bottom:clamp(1.5rem,3vh,2.5rem);
+  }
+  h1{font-size:clamp(2.2rem,5.4vw,4.6rem);line-height:1.06;font-weight:600;letter-spacing:-.02em}
+  h2{font-size:clamp(1.5rem,3vw,2.5rem);line-height:1.14;font-weight:600;letter-spacing:-.015em}
+  .lede{font-size:clamp(1.05rem,1.7vw,1.5rem);line-height:1.5;color:var(--muted);max-width:46ch}
+  .mono{font-family:var(--mono)}
+  .num{font-variant-numeric:tabular-nums}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.5rem,4vw,4rem);margin-top:clamp(1.2rem,3vh,2rem)}
+  .col h3{
+    font-family:var(--sans);font-size:clamp(.72rem,1.05vw,.92rem);letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);padding-bottom:.5em;margin-bottom:.7em;border-bottom:1px solid var(--rule);
+  }
+  .col ul{list-style:none}
+  .col li{
+    display:flex;gap:.6em;align-items:baseline;
+    font-family:var(--mono);font-size:clamp(.95rem,1.75vw,1.5rem);padding:.3em 0;
+  }
+  .col li span.m{font-family:var(--sans);font-weight:700;width:1.1em;flex:none}
+  .ok span.m{color:var(--green)} .no span.m{color:var(--red)}
+  .no li{color:var(--muted)}
+  .foot{font-family:var(--sans);font-size:clamp(.7rem,1vw,.88rem);color:var(--muted);margin-top:1.1em;line-height:1.5}
+
+  .hl{background:linear-gradient(transparent 62%,#ffe9b0 62%);padding:0 .06em}
+
+  .star h1{font-size:clamp(2.2rem,5.1vw,4.5rem);line-height:1.07;max-width:19ch;letter-spacing:-.022em}
+  .clauses{margin-top:clamp(1.8rem,4.5vh,3rem);display:flex;flex-direction:column;gap:clamp(.35rem,1vh,.7rem)}
+  .clauses div{
+    font-family:var(--serif);font-weight:600;letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.9rem);line-height:1.15;
+  }
+  .clauses div span{font-family:var(--sans);font-weight:400;font-size:.42em;color:var(--muted);letter-spacing:.02em;margin-left:.9em}
+  .clauses div:nth-child(2){color:var(--amber)}
+  .closeline{margin-top:clamp(1.6rem,4vh,2.6rem);font-size:clamp(1rem,1.75vw,1.45rem);line-height:1.5;max-width:52ch}
+  .closeline b{font-weight:600}
+
+  /* ── additions for this deck (not in the template) ── */
+  .slide.demo{padding:clamp(1rem,2.2vh,1.6rem) clamp(1.2rem,2.5vw,2.4rem)}
+  .slide.demo .kicker{margin-bottom:.5rem}
+  .slide.demo h2{font-size:clamp(1.1rem,2vw,1.6rem);margin-bottom:.7rem}
+  .slide.demo iframe{flex:1;width:100%;border:1px solid var(--rule);background:#fff;border-radius:6px}
+  .figs{display:grid;gap:clamp(1rem,2.5vw,2.4rem);margin-top:clamp(1rem,2.5vh,1.8rem);align-items:center;min-height:0}
+  .figs.two{grid-template-columns:1fr 1.1fr}
+  .figs img{width:100%;max-height:52vh;object-fit:contain;display:block}
+  .figs.one img{max-height:56vh}
+  .foot .num{color:var(--ink);font-weight:600}
+  .byline{font-family:var(--sans);font-size:clamp(.85rem,1.2vw,1.05rem);color:var(--muted);display:inline-block;margin-top:.6em}
+  .qr{display:flex;align-items:center;gap:clamp(1rem,2.5vw,2.4rem);margin-top:clamp(1.4rem,3.5vh,2.4rem)}
+  .qr img{width:clamp(96px,11vw,150px);height:auto}
+  video{width:100%;max-height:78vh;background:#000;border-radius:6px}
+
+  /* chrome */
+  .pager{
+    position:fixed;right:clamp(1rem,2.5vw,2.2rem);bottom:clamp(1rem,2.5vh,2rem);
+    font-family:var(--mono);font-size:.8rem;color:var(--muted);letter-spacing:.08em;
+  }
+  .hint{
+    position:fixed;left:clamp(1rem,2.5vw,2.2rem);bottom:clamp(1rem,2.5vh,2rem);
+    font-family:var(--sans);font-size:.72rem;color:var(--rule);letter-spacing:.06em;
+  }
+  @media print{
+    body{overflow:visible}
+    .slide{display:flex!important;position:relative;inset:auto;height:100vh;page-break-after:always;break-after:page}
+    .pager,.hint{display:none}
+    .slide.demo iframe,.slide.backup video{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ 1 ══ opening: the poster's title, nothing else on screen -->
+<section class="slide on star">
+  <div class="kicker">MSc thesis · REALM workshop, EMNLP 2026</div>
+  <h1>When is <span class="hl">expensive perception</span> worth paying for?</h1>
+</section>
+
+<!-- ══ 2 ══ the demo itself: talk copy, arrow keys step it -->
+<section class="slide demo">
+  <div class="kicker">One recorded run per view · nothing on this screen is live</div>
+  <h2>Same task, three ways of seeing it, three different bills.</h2>
+  <iframe src="../demo_portable.html?task=130&autoplay=0" title="demo: task 130 in LOOK, READ and BOTH" loading="eager"></iframe>
+</section>
+
+<!-- ══ 3 ══ the ceiling, and the ruler -->
+<section class="slide">
+  <div class="kicker">6 views · 8 website × model settings · 8,934 task attempts</div>
+  <h2>Hindsight says choosing pays; a rerun says how much of that is noise.</h2>
+  <div class="figs two">
+    <img src="fig/design_matrix.png" alt="success rate of six views in eight settings">
+    <img src="fig/venn_b0.png" alt="tasks solved by different views overlap but do not coincide">
+  </div>
+  <p class="foot">Hindsight: <span class="num">+3.45 to +16.35</span> in 100 vs the best single view · a rerun flips <span class="num">10–14%</span>, buys <span class="num">2.0–7.6</span></p>
+</section>
+
+<!-- ══ 4 ══ so build a router? not so fast -->
+<section class="slide">
+  <div class="kicker">Five learned choices · nested cross-validation · 10,000 permutations · vs always-cheapest</div>
+  <h2>Learned routers buy success only by spending more.</h2>
+  <div class="figs one">
+    <img src="fig/routing.png" alt="every routing policy against always-cheapest; the win region is cheaper and no worse">
+  </div>
+  <p class="foot">Win region = cheaper and no worse. Learned: <span class="num">0 of 8</span>. Perfect hindsight: <span class="num">1 of 8</span>.</p>
+</section>
+
+<!-- ══ 5 ══ and this is why -->
+<section class="slide">
+  <div class="kicker">A “which view” example exists only when the task is solved</div>
+  <h2>More routing upside, less usable training signal.</h2>
+  <div class="figs one">
+    <img src="fig/label_supply.png" alt="usable routing labels against best single-view coverage, six settings">
+  </div>
+  <p class="foot">Base success <span class="num">2–36%</span> · <span class="num">15–97</span> usable examples per setting · enough to train in <span class="num">2 of the 6</span> · failing settings need at least <span class="num">2.1–4.2×</span> more tasks</p>
+</section>
+
+<!-- ══ 6 ══ what is not claimed, and three asks -->
+<section class="slide">
+  <div class="kicker">Not claimed · asked</div>
+  <h2>Improve the agent first, collect reliable examples, then learn when to look.</h2>
+  <div class="split">
+    <div class="col no">
+      <h3>Not claimed</h3>
+      <ul>
+        <li><span class="m">✗</span>routing is unlearnable</li>
+        <li><span class="m">✗</span>always-cheapest is a floor</li>
+        <li><span class="m">✗</span>live runs are scored</li>
+      </ul>
+    </div>
+    <div class="col ok">
+      <h3>Three asks</h3>
+      <ul>
+        <li><span class="m">✓</span>type a task at the board</li>
+        <li><span class="m">✓</span>which view do you use, and why?</li>
+        <li><span class="m">✓</span>lend us a stronger agent</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 7 ══ close: the title comes back -->
+<section class="slide star">
+  <div class="clauses">
+    <div>Look, read, or both?</div>
+    <div>Hindsight says: choose.</div>
+    <div>Nothing trained knows in advance.</div>
+  </div>
+  <div class="qr">
+    <img src="fig/qr_repo.png" alt="QR code: paper, code and full results">
+    <p class="closeline"><b>The board is by the window</b> — try your own task, live in all three views.<br>
+      <span class="byline">Jiaming Wei · jiaming.wei.25@ucl.ac.uk</span></p>
+  </div>
+</section>
+
+<!-- ══ 8 · backup: only if the live page fails — class "backup" exempts it from the word budget ══ -->
+<section class="slide backup">
+  <div class="kicker">Backup — task 130, recorded stepping, 39 s</div>
+  <video src="talk_130.webm" controls preload="metadata"></video>
+</section>
+
+<div class="pager"><span id="cur">1</span> / <span id="tot">5</span></div>
+<div class="hint">← →  ·  space  ·  click</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];let i=0;
+  const cur=document.getElementById('cur');document.getElementById('tot').textContent=slides.length;
+
+  // Remember the current slide across reloads (a file-watcher refresh, an
+  // accidental ⌘R, or reopening the tab) — otherwise you snap back to slide 1
+  // mid-talk. Stored in the URL hash so it also survives a fresh window, with
+  // sessionStorage as a fallback when the hash is stripped.
+  function save(n){
+    try{ history.replaceState(null,'','#'+n); }catch(e){ location.hash=String(n); }
+    try{ sessionStorage.setItem('showcase-slide',String(n)); }catch(e){}
+  }
+  function restore(){
+    const inRange=v=>Number.isInteger(v)&&v>=1&&v<=slides.length;
+    const h=parseInt(location.hash.slice(1),10);
+    if(inRange(h)) return h-1;
+    let v=NaN; try{ v=parseInt(sessionStorage.getItem('showcase-slide'),10); }catch(e){}
+    return inRange(v)?v-1:0;
+  }
+
+  function go(n){i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('on',k===i));cur.textContent=i+1;save(i+1);
+    // the demo slide owns the arrow keys: hand focus to its iframe, take it back elsewhere
+    const f=slides[i].querySelector('iframe');
+    if(f) f.focus(); else if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur();
+  }
+  addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown','n'].includes(e.key)){e.preventDefault();go(i+1)}
+    if(['ArrowLeft','ArrowUp','PageUp','p'].includes(e.key)){e.preventDefault();go(i-1)}
+    if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1);
+  });
+  // a hand-edited hash (or a same-document jump to #N) should turn the page too;
+  // the template only reads the hash on load
+  addEventListener('hashchange',()=>go(restore()));
+  // the demo, stepped past its last (or first) step, asks for the page to turn
+  addEventListener('message',e=>{
+    if(!e.data||typeof e.data.type!=='string')return;
+    if(e.data.type==='demo-next')go(i+1);
+    if(e.data.type==='demo-prev')go(i-1);
+  });
+  addEventListener('click',e=>{ if(e.target.tagName!=='IFRAME') go(e.clientX<innerWidth*0.2?i-1:i+1) });
+  go(restore());
+</script>
+</body>
+</html>

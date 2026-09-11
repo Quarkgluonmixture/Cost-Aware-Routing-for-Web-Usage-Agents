@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fallback — captured demo, task 130 / 76</title>
+<!-- presentation-playbook.md Appendix B, verbatim chrome; only the <img> paths and CAPS are ours.
+     Black, full screen, ← → to flip; one line under each shot: which run · what to say.
+     Used only if the demo page (slide 2's iframe, or the standalone tab) will not step. -->
+<style>
+  :root{--paper:#111;--ink:#eee;--muted:#888;--amber:#e0a33a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--paper);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,sans-serif}
+  .stage{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:0}
+  .stage.on{display:flex}
+  img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+  .bar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:1.2rem;align-items:baseline;
+    padding:.5rem 1rem;background:rgba(0,0,0,.72);color:var(--ink);font-size:.8rem;letter-spacing:.02em}
+  .bar .n{color:var(--muted);font-variant-numeric:tabular-nums}
+  .bar .hot{color:var(--amber);font-weight:600}
+  .bar .hint{margin-left:auto;color:#555;font-size:.72rem}
+</style></head><body>
+
+<div class="stage on"><img src="shots/01-task130-step1-three-views.png"></div>
+<div class="stage"><img src="shots/02-task130-LOOK-solved-2-steps.png"></div>
+<div class="stage"><img src="shots/03-task130-READ-scrolling-step5.png"></div>
+<div class="stage"><img src="shots/04-task130-all-done-READ-failed-9.png"></div>
+<div class="stage"><img src="shots/05-task76-step1-poster-mirror-case.png"></div>
+<div class="stage"><img src="shots/06-task76-READ-solved-12-LOOK-still-going.png"></div>
+
+<div class="bar">
+  <span class="n"><span id="cur">1</span>/6</span>
+  <span id="cap"></span>
+  <span class="hint">← →</span>
+</div>
+
+<script>
+  const CAPS = [
+    ['Task 130 · one recorded run per view · step 1', 'LOOK gets the screenshot; READ gets the page as text, no image; BOTH gets the screenshot with numbered marks'],
+    ['Task 130 · LOOK done', 'two steps — it saw the sunset and clicked it. Solved'],
+    ['Task 130 · READ still scrolling', 'the text never says “sunset” — the word is in the picture, not on the page'],
+    ['Task 130 · all three finished', 'READ gave up after nine steps · BOTH solved it in three, at twice LOOK’s bill · a learned choice picked READ — the one view that failed'],
+    ['Task 76 · the poster’s mirror case · step 1', 'a price edit: the answer is in the form, not in the picture'],
+    ['Task 76 · READ solved in 12 steps', 'LOOK is still wandering — it loops for 26 and never edits the form. So the view matters, per task'],
+  ];
+  const st=[...document.querySelectorAll('.stage')];let i=0;
+  const cur=document.getElementById('cur'), cap=document.getElementById('cap');
+  function go(n){i=Math.max(0,Math.min(st.length-1,n));
+    st.forEach((s,k)=>s.classList.toggle('on',k===i));
+    cur.textContent=i+1;
+    cap.innerHTML='<span class="hot">'+CAPS[i][0]+'</span> &nbsp;·&nbsp; '+CAPS[i][1];}
+  addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();go(i+1)}
+    if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(i-1)}});
+  addEventListener('click',e=>go(e.clientX<innerWidth*0.2?i-1:i+1));
+  go(0);
+</script></body></html>

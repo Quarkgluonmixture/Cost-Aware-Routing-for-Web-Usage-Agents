@@ -34,8 +34,8 @@ updated: 2026-09-03
 > ### 接下来按顺序做
 > 1. **Phase 0（今天）**：Slack 问 Zekun 四件事（模板何时到 / 含不含问答 / 接口与顺序 / 收不收 slide 文件）。user 09-11 已定：先展出再演讲，演讲从 quark 投屏 ⇒ **slide = HTML deck 嵌演讲版 demo**（D3，pptx 仅备用）
 > 2. ✅ **Phase 1 done 09-11**（commit `4b7883b`，笔记 §507.4）：红绿框对照上色 · `?task=130&autoplay=0` 演讲模式 · 碳排/措辞 · portable 重建 · `demo/talk_130.webm`。只剩 user 在 quark 上双击验一次三题
-> 3. **Phase 2（09-12–09-13）**：`talk_content.md` 7 页口播原文 + §2 走读 / §5 数字表按 v9.10 重审 + /stress spot-check（A + C）
-> 4. **Phase 3**：`build_talk.py` → `talk/index.html`（第 3 页 iframe 嵌 demo；模板到了搬皮；导 PDF）。Phase 4–6 见 ROADMAP §3。B-1996 仍留 bug 目录。
+> 3. ✅ **Phase 2/3 v0 done 09-11**（笔记 §507.5）：按 user 的演讲 SOP `deliverables/showcase/presentation-playbook.md`（自包含 v2，附录 A–E 模板）做齐五件产物 → `deliverables/showcase/talk/`：`index.html`（8 张，第 2 张 iframe 嵌 `demo_portable.html?task=130&autoplay=0`，demo 到底再按 → 自动翻页）· `rehearsal-script.md`（735 词）· `RUNBOOK.md` · `fallback.html` · `talk_130.webm` · `talk.pdf`；`check_talk.py` **PASS**
+> 4. **剩下的（按顺序）**：user 出声念一遍**自己重写台本**（SOP §11.10）→ `SHOWCASE_PREP.md §2/§5` 按 v9.10 六面板重写 → /stress spot-check（A + C）→ 模板到了把标题条/页脚/配色搬进 deck CSS（09-14 18:00 没到就不等）→ Phase 4 彩排（SOP §6 照做）→ Phase 5 打包。B-1996 仍留 bug 目录。
 
 > ## 🟢 2026-09-10 · showcase demo 第二版 + live「try your own」可用 · 等 10 分钟演讲的 slide 模板
 >
