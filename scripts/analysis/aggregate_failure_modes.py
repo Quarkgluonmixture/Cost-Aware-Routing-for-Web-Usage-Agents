@@ -100,7 +100,10 @@ def fine_to_paper(fine: str) -> str:
 # B-297 fix (2026-05-16, A1.8): regex `B[01]` previously skipped B2 (Gemma3-VL,
 # added 2026-05-14 per advisor) → B2 failure data structurally vanished from
 # cross-site evidence. `B[0-2]` includes all 3 baselines.
-RUN_RE = re.compile(r"^(B[0-2])_(?:3mode_|phantom_[a-z]+_|[a-z]+_)?(classifieds|reddit|shopping)")
+# 2026-09-11: `B\d` so extension backbones (B5 = GPT-5.6, run_manifest `extension:`) parse
+# too. Which runs are read is still decided by the registry, not by this regex; cells whose
+# baseline is outside the preregistered set go to `extension_cells`, never to `cells`.
+RUN_RE = re.compile(r"^(B\d)_(?:3mode_|phantom_[a-z]+_|[a-z]+_)?(classifieds|reddit|shopping)")
 
 
 def parse_run(run_id: str):
@@ -148,7 +151,8 @@ def main():
     # multi-rerun additive counting. If same (baseline, site, mode) has >1 paper-grade
     # run dir on disk (B-184 rerun cycles), pre-fix double-counted episodes →
     # failure_count silently inflated. Now skip already-counted run + stderr warn.
-    seen_runs_per_cell: dict[tuple[str, str, str], set[str]] = defaultdict(set)
+    # Insertion-ordered: element 0 is the run that supplies the cell (first-wins).
+    seen_runs_per_cell: dict[tuple[str, str, str], list[str]] = defaultdict(list)
     import sys as _sys
 
     if not PHASE1_DIR.exists():
@@ -171,7 +175,10 @@ def main():
         sys_path_backup = list(_sys.path)
         _sys.path.insert(0, str(ROOT))
         from scripts.analysis.lib.run_registry import get_all_cells as _get_all_cells
-        _registry_cells = _get_all_cells(grade_filter=["paper-grade"])
+        # include_extension: extension backbones (B5) are read here but written to the
+        # separate `extension_cells` key below — `cells` keeps its prereg-only scope for
+        # fig_failure_modes_per_cell + representation_deployment_profile.
+        _registry_cells = _get_all_cells(grade_filter=["paper-grade"], include_extension=True)
         # Collect unique run dirs that have a condition_reason_summary.csv
         _registry_run_dirs: dict[str, tuple[str, str]] = {}  # run_dir.name → (baseline, site)
         for _cs in _registry_cells:
@@ -230,10 +237,14 @@ def main():
                 if count <= 0:
                     continue
                 cell_key = (baseline, site, mode)
-                # P1-8-A dedup: per-cell unique run_dir gate.
-                if run_dir.name in seen_runs_per_cell[cell_key]:
-                    # Already counted this cell's episodes from a prior row in same run
-                    # OR (the bug case) from a sibling run that produced identical cell.
+                # P1-8-A dedup: a cell is counted from the FIRST run that supplies it.
+                # Fixed 2026-09-11: the old gate tested only the current run's own name, so a
+                # second run of the same cell was SUMMED in, not skipped — moot while the
+                # registry holds one run per cell, but the warning below claims first-wins.
+                runs = seen_runs_per_cell[cell_key]
+                if run_dir.name not in runs:
+                    runs.append(run_dir.name)
+                if runs[0] != run_dir.name:
                     continue
                 cell_totals[cell_key] += count
                 if bucket_fine == "success":
@@ -244,13 +255,10 @@ def main():
                     unmapped_fine[bucket_fine] += count
                 cells[cell_key][paper_bucket] += count
                 sources[cell_key].append(run_dir.name)
-        # Mark this run as counted for all cells it contributed to during this file pass.
-        # (Run-level mark applied after row loop so all (baseline, site, mode) keys
-        # within this run_dir's csv are recorded.)
-        for cell_key in list(cell_totals.keys()):
-            if cell_key[0] == baseline and cell_key[1] == site:
-                if run_dir.name not in seen_runs_per_cell[cell_key]:
-                    seen_runs_per_cell[cell_key].add(run_dir.name)
+        # (A post-loop pass used to mark this run on EVERY (baseline, site) cell seen so
+        # far, so each sibling-mode run dir of a backbone looked like a second run of every
+        # earlier mode → spurious P1-8-A warnings, e.g. B2/reddit/SoM "has" B2_vision_reddit.
+        # Marking now happens per row, only on the cell the row belongs to.)
     # Surface multi-rerun warning so user can audit:
     multi_run_cells = {
         ck: runs for ck, runs in seen_runs_per_cell.items() if len(runs) > 1
@@ -271,7 +279,17 @@ def main():
         "paper_taxonomy": {k: sorted(v) for k, v in PAPER_TAXONOMY.items()},
         "unmapped_fine_buckets": dict(sorted(unmapped_fine.items())),
         "cells": {},
+        "extension_cells": {},
+        "extension_note": (
+            "Backbones outside the preregistered cell set (run_manifest `extension:`, e.g. "
+            "B5 = GPT-5.6). Same taxonomy, kept out of `cells` so consumers scoped to the "
+            "preregistered set (figures, deployment profile) are unchanged."
+        ),
     }
+    try:
+        from scripts.analysis.lib.run_registry import BASELINES as _PREREG_BASELINES
+    except Exception:
+        _PREREG_BASELINES = ["B0", "B1", "B2"]
     for ck, buckets in sorted(cells.items()):
         total = cell_totals[ck]
         failed = total - buckets.get("success", 0)
@@ -281,7 +299,8 @@ def main():
                 continue
             bucket_pct[b] = {"count": c, "pct_of_failed": (c / failed * 100) if failed else 0.0,
                              "pct_of_total": (c / total * 100) if total else 0.0}
-        result["cells"][f"{ck[0]}/{ck[1]}/{ck[2]}"] = {
+        target = result["cells"] if ck[0] in _PREREG_BASELINES else result["extension_cells"]
+        target[f"{ck[0]}/{ck[1]}/{ck[2]}"] = {
             "baseline": ck[0], "site": ck[1], "mode": ck[2],
             "total_episodes": total,
             "success_count": buckets.get("success", 0),
@@ -326,7 +345,7 @@ def main():
         "## Per-cell breakdown",
         "",
     ]
-    for ck, info in sorted(result["cells"].items()):
+    def _cell_md(ck, info):
         md_lines.append(f"### {ck} (N={info['total_episodes']}, failed={info['failed_count']})")
         md_lines.append("")
         md_lines.append("| Paper bucket | Count | % of failed | % of total |")
@@ -335,6 +354,14 @@ def main():
             bv = info["buckets"][b]
             md_lines.append(f"| {b} | {bv['count']} | {bv['pct_of_failed']:.1f}% | {bv['pct_of_total']:.1f}% |")
         md_lines.append("")
+
+    for ck, info in sorted(result["cells"].items()):
+        _cell_md(ck, info)
+    if result["extension_cells"]:
+        md_lines += ["## Extension cells (outside the preregistered cell set)", "",
+                     result["extension_note"], ""]
+        for ck, info in sorted(result["extension_cells"].items()):
+            _cell_md(ck, info)
     if unmapped_fine:
         md_lines.append("## Unmapped fine-grained buckets (catch-all)")
         md_lines.append("")

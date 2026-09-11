@@ -1346,5 +1346,178 @@
         "B2_vision_reddit_20260719"
       ]
     }
-  }
+  },
+  "extension_cells": {
+    "B5/classifieds/DOM": {
+      "baseline": "B5",
+      "site": "classifieds",
+      "mode": "DOM",
+      "total_episodes": 224,
+      "success_count": 53,
+      "failed_count": 171,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 105,
+          "pct_of_failed": 61.40350877192983,
+          "pct_of_total": 46.875
+        },
+        "max-steps-other": {
+          "count": 29,
+          "pct_of_failed": 16.95906432748538,
+          "pct_of_total": 12.946428571428573
+        },
+        "search-loop": {
+          "count": 20,
+          "pct_of_failed": 11.695906432748536,
+          "pct_of_total": 8.928571428571429
+        },
+        "visual-hijack/click-loop": {
+          "count": 15,
+          "pct_of_failed": 8.771929824561402,
+          "pct_of_total": 6.696428571428571
+        },
+        "error/noise": {
+          "count": 2,
+          "pct_of_failed": 1.1695906432748537,
+          "pct_of_total": 0.8928571428571428
+        }
+      },
+      "source_runs": [
+        "B5_dom_classifieds_20260820_202158_076182888_2491046_R29736"
+      ]
+    },
+    "B5/classifieds/P-SoM": {
+      "baseline": "B5",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "total_episodes": 224,
+      "success_count": 51,
+      "failed_count": 173,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 94,
+          "pct_of_failed": 54.33526011560693,
+          "pct_of_total": 41.964285714285715
+        },
+        "visual-hijack/click-loop": {
+          "count": 34,
+          "pct_of_failed": 19.653179190751445,
+          "pct_of_total": 15.178571428571427
+        },
+        "search-loop": {
+          "count": 24,
+          "pct_of_failed": 13.872832369942195,
+          "pct_of_total": 10.714285714285714
+        },
+        "max-steps-other": {
+          "count": 21,
+          "pct_of_failed": 12.138728323699421,
+          "pct_of_total": 9.375
+        }
+      },
+      "source_runs": [
+        "B5_phantom_som_classifieds_20260829_201900_676822651_4026859_R18439"
+      ]
+    },
+    "B5/classifieds/P-prompt": {
+      "baseline": "B5",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "total_episodes": 224,
+      "success_count": 49,
+      "failed_count": 175,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 99,
+          "pct_of_failed": 56.57142857142857,
+          "pct_of_total": 44.19642857142857
+        },
+        "visual-hijack/click-loop": {
+          "count": 31,
+          "pct_of_failed": 17.71428571428571,
+          "pct_of_total": 13.839285714285715
+        },
+        "max-steps-other": {
+          "count": 23,
+          "pct_of_failed": 13.142857142857142,
+          "pct_of_total": 10.267857142857142
+        },
+        "search-loop": {
+          "count": 22,
+          "pct_of_failed": 12.571428571428573,
+          "pct_of_total": 9.821428571428571
+        }
+      },
+      "source_runs": [
+        "B5_phantom_prompt_classifieds_20260829_015238_489893385_3902862_R10294"
+      ]
+    },
+    "B5/classifieds/P-text": {
+      "baseline": "B5",
+      "site": "classifieds",
+      "mode": "P-text",
+      "total_episodes": 224,
+      "success_count": 54,
+      "failed_count": 170,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 91,
+          "pct_of_failed": 53.529411764705884,
+          "pct_of_total": 40.625
+        },
+        "visual-hijack/click-loop": {
+          "count": 31,
+          "pct_of_failed": 18.235294117647058,
+          "pct_of_total": 13.839285714285715
+        },
+        "search-loop": {
+          "count": 27,
+          "pct_of_failed": 15.88235294117647,
+          "pct_of_total": 12.053571428571429
+        },
+        "max-steps-other": {
+          "count": 21,
+          "pct_of_failed": 12.352941176470589,
+          "pct_of_total": 9.375
+        }
+      },
+      "source_runs": [
+        "B5_phantom_text_classifieds_20260828_131337_301148671_3809444_R4968"
+      ]
+    },
+    "B5/classifieds/SoM": {
+      "baseline": "B5",
+      "site": "classifieds",
+      "mode": "SoM",
+      "total_episodes": 224,
+      "success_count": 83,
+      "failed_count": 141,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 74,
+          "pct_of_failed": 52.4822695035461,
+          "pct_of_total": 33.035714285714285
+        },
+        "search-loop": {
+          "count": 31,
+          "pct_of_failed": 21.98581560283688,
+          "pct_of_total": 13.839285714285715
+        },
+        "max-steps-other": {
+          "count": 23,
+          "pct_of_failed": 16.312056737588655,
+          "pct_of_total": 10.267857142857142
+        },
+        "visual-hijack/click-loop": {
+          "count": 13,
+          "pct_of_failed": 9.219858156028367,
+          "pct_of_total": 5.803571428571429
+        }
+      },
+      "source_runs": [
+        "B5_som_classifieds_20260826_084506_787426966_3444289_R31483"
+      ]
+    }
+  },
+  "extension_note": "Backbones outside the preregistered cell set (run_manifest `extension:`, e.g. B5 = GPT-5.6). Same taxonomy, kept out of `cells` so consumers scoped to the preregistered set (figures, deployment profile) are unchanged."
 }

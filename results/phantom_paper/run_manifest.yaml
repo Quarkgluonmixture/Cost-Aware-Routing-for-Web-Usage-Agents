@@ -563,3 +563,58 @@ archived:
     expected_n: 234
     grade: archived
     notes: "Protocol Reset #2 non-canonical (R19740); B-991->tool_choice-fix window; RCA/archive only."
+
+# ─────────────────────────────────────────────────────────────────────
+# 2026-09-11 EXTENSION section (笔记 §509):
+#   Cells whose data are paper-grade (A100 self-hosted fire, full scored set) but which
+#   sit OUTSIDE the preregistered cell set (prereg = B0/B1/B2, Appendix A).
+#   run_registry reads this section ONLY for callers passing include_extension=True, so
+#   adding a backbone here cannot move any pooled estimand / K-of-N / forest row / paper
+#   figure. Opted in today: aggregate_failure_modes.py (separate `extension_cells` key)
+#   and diag_rescan_all.py (pins the run, B-1927). validate_run_manifest checks
+#   section↔grade (paper-grade only) + disk / episode count, NOT the (a) all-6-modes /
+#   (g) planned-cells gates.
+#
+#   B5 = GPT-5.6 (gpt-5.6-terra via AWS proxy, structured_output=response_format).
+#   ⚠️ Not covered by validate_fire_manifest's ghost gate (BASELINES=(B0,B1,B2), §492.4 / §497.6).
+#   Vision deliberately absent: B-1997 coordinate-contract mismatch (§508.1) — add it
+#   after the fixed rerun, not before.
+#   DOM has two full runs: R29736 (reframe chain cell A, listed here) and R15476
+#   (cell A2 replicate; CLEAN_PAIRS `B5.cls.dom`).
+# ─────────────────────────────────────────────────────────────────────
+extension:
+  - baseline: B5
+    site: classifieds
+    mode: DOM
+    run_dir: B5_dom_classifieds_20260820_202158_076182888_2491046_R29736
+    condition_subdir: phase1_dom_router_0
+    grade: paper-grade
+    notes: "reframe chain cell A, SR 23.66% (53/224); replicate R15476 = 25.00%"
+  - baseline: B5
+    site: classifieds
+    mode: SoM
+    run_dir: B5_som_classifieds_20260826_084506_787426966_3444289_R31483
+    condition_subdir: phase1_som_router_0
+    grade: paper-grade
+    notes: "reframe chain Phase C, SR 37.05% (83/224)"
+  - baseline: B5
+    site: classifieds
+    mode: P-text
+    run_dir: B5_phantom_text_classifieds_20260828_131337_301148671_3809444_R4968
+    condition_subdir: phase1_phantom_text_router_0
+    grade: paper-grade
+    notes: "reframe chain Phase C, SR 24.11% (54/224)"
+  - baseline: B5
+    site: classifieds
+    mode: P-prompt
+    run_dir: B5_phantom_prompt_classifieds_20260829_015238_489893385_3902862_R10294
+    condition_subdir: phase1_phantom_prompt_router_0
+    grade: paper-grade
+    notes: "reframe chain Phase C, SR 21.88% (49/224)"
+  - baseline: B5
+    site: classifieds
+    mode: P-SoM
+    run_dir: B5_phantom_som_classifieds_20260829_201900_676822651_4026859_R18439
+    condition_subdir: phase1_phantom_som_router_0
+    grade: paper-grade
+    notes: "reframe chain Phase C, SR 22.77% (51/224)"

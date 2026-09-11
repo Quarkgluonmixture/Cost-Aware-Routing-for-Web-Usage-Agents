@@ -106,7 +106,21 @@ def _discover_cls(baseline_dir=None) -> dict:
                 out[key] = cands[0].name
                 if key in pinned:
                     print(f"  ⚠ {key}: baseline run {pinned[key]} 不存在, 回退到最新 {cands[0].name}")
+    # Extension backbones (run_manifest `extension:`, e.g. B5 = GPT-5.6) are pinned to the
+    # manifest run and never globbed: B5·cls·dom has a same-name 224-ep replicate (R15476)
+    # that newest-by-mtime would pick — the B-1927 hijack again.
+    for cell in _extension_cls_cells():
+        m = re.match(r"phase1_(.+)_router_\d+$", cell.condition_subdir)
+        if m:
+            out[f"{cell.baseline}_{m.group(1)}_classifieds"] = cell.run_dir.name
     return out
+
+
+def _extension_cls_cells() -> list:
+    sys.path.insert(0, str(REPO))
+    from scripts.analysis.lib.run_registry import BASELINES, get_all_cells
+    return [c for c in get_all_cells(include_extension=True)
+            if c.site == "classifieds" and c.baseline not in BASELINES]
 
 
 def scan(key: str, run: str, out_dir: Path) -> dict | None:

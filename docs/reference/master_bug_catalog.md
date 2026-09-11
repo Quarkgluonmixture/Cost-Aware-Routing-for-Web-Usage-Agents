@@ -11995,3 +11995,40 @@ flipped"的循环 (§H stress P0-3, 2026-08-02)。当时只有 dom+vision 有 re
 - **修法建议**: 按 backend 声明 `coordinate_contract` (默认 `qwen_0_1000_by_value` = 现状, B0/B1/B2 不动; B5 = `pixel`: prompt 报实际图像尺寸并要求像素坐标, 归一化 ÷W/÷H, 保留 true-OOB 不 clamp 的原则)。
   然后 B5 vision cls 重跑 (224 题 × $0.22 ≈ $50)。改动在 fire import 路径上, 按 [[feedback_pre_fire_protocol_witness]] 先留 witness tag。
 - **未修的原因**: user 09-11 只说「可以先去看」, 修与重跑待其裁定。
+
+### B-1998. `multiple_actions` 被判无效, 动作却照样执行: 记账是「注入 wait、不耗预算」, 浏览器里是真点击 [P1] ⚠️ OPEN (fire 路径, 待 witness)
+- **现象** (2026-09-11, 笔记 §509.3, B5 补登记时 Tier-2 抓到): B5 dom task 210 只跑 3 步就结束 —— 三步都是 `parse_valid=False, parse_failure_reason=multiple_actions`,
+  撞 `max_consecutive_parse_errors=3`; 但三步的 `page_changed` 全为 True, step 1 的 `action_executed` 有完整 dispatch 记录, URL 按 thought 推进 (选类目 → 搜 lamb → 按价格排序)。
+- **群体量化** (cls canonical run, 全步): `multiple_actions` 步数 B0 **0** · B1 **0** (12 个 condition) · B2 2–24 · **B5 49–89** (占全步 1.2–2.4%);
+  其中页面变了 B5 80–95%, `action_executed` 有记录 65–75%, B2 几乎全部。B0 走 tool_call、B1 很少多吐, 所以这条只在 B5 / B2 上出现。
+- **原因**: `action_utils.parse_action_text` 遇到 ≥2 个不同的有效动作时返回 `(first_action, False, "multiple_actions")`,
+  注释写的是「pick first valid for downstream (**won't be executed if runner gates on parse_valid**)」(`action_utils.py:229-231`)。
+  但 runner 在 `env.step()` **之后**才算 `parse_valid` (`main.py:3484-3491`), 派发前没有按它把关 ⇒ first_action 被执行;
+  随后 `classify_step_accounting` 因 `parse_valid=False` 把这一步记成 `is_injected_wait_sink` (不耗 agent 预算、计入 parse-error 安全帽)。
+  设计假设 (作废 = 不执行) 与实现 (作废 = 执行但不记账) 脱节。B-1986 (08-20) 给 B5 prompt 加「只输出一个对象」把比例从 100% 压到 1–2%, 剩下的就落进这个缝。
+- **影响**: ① B5 每个 condition 有 50–90 个「白送」的真实动作不计入 30 步预算 (有 episode 跑到 31–32 步); ② 连续 3 次触发 abort
+  (B5 1 例, task 210); ③ 记账口径的 `parse_error_rate` 把真实执行过的动作算成格式失败。对 SR 的方向: 多给了步数, 偏乐观, 量级小 (≤2.4% 步)。
+  B0/B1 不受影响, 所以**不改变任何预注册 cell 的数字**; B5 / B2 的步数与空转类指标 (§508.2) 需要带着这个 caveat 读。
+- **修法建议** (二选一, 需 user 裁定 + pre-fire witness): (a) runner 在派发前按 `parse_valid` 把关, 无效 → 真正注入 wait (与注释和 B-409 本意一致);
+  (b) 承认「执行第一个」并把它记成有效动作 (耗预算), 同时保留 `multiple_actions` 作 disclosure 计数。(a) 与 B0 的「语法只允许一个动作」更对称。
+- **未修的原因**: fire import 路径, 且 B5 vision 重跑 (B-1997) 会碰同一批代码, 合并在一次 witness 里做。
+
+### B-1999. diag `P31` 的「终态已到参考页」豁免只比 URL path, 在 classifieds 上恒成立 → cls 上约一半的跑满预算失败没被标出 [P1] ⚠️ OPEN (analysis 层, 需 ruleset bump)
+- **现象** (2026-09-11, 笔记 §509.4): B5 cls 的 Tier-2 no-hit 子集里 31 个 episode 跑满 30 步 (`trajectory_incomplete=True`) 却没有 P31。
+- **原因**: `check_p31` (`diag_pattern_match.py:1428`) 对 url_match 任务的豁免是 `urlparse(last_obs_url).path == urlparse(ref_url).path`。
+  Osclass 的每一页都是 `/index.php`, 区别只在 query (`page=item&id=…`), 所以 cls 上**只要是 url_match 任务就被豁免**。
+  reddit 的 path 各不相同 (`/f/<forum>/<id>/…`), 所以 reddit 不受影响。全文件只有这一处 path-only 比较 (P20 按 `id=` 比, 没问题)。
+- **量化** (v11, 失败且 incomplete 却无 P31): cls B0 **203** · B1 **436** · B2 **453** · B5 **147** (每 condition 26–94, 约占 incomplete 的 40–60%);
+  reddit 18 个 condition **全部 0**。⇒ 任何「P31 在 cls vs reddit」或「P31 跨 backbone」的比较都被站点的 URL 形状污染。
+- **影响面**: diag digest 的 P31 计数、`results/diag_scans/v11_*` 下游 (`aggregate_conditional_failure_attribution` / `page_change_corrected_metrics`)。
+  **不影响** SR、失败桶 (`failure_modes_per_cell` 走 reason_bucket, 另一套)。
+- **修法建议**: 豁免改为比「规范化的完整 URL」(path + query, 与 evaluator 的 url_match EXACT 同口径), 或 cls 上比 `page` + `id`。
+  改 `ALL_RULES` 的判据 ⇒ 按 discover-then-freeze 纪律 bump `RULESET_VERSION` → v12 + `diag_rescan_all.py` 全量重扫 + 53 份 digest 补 v12 数字块 + 重跑两个下游。
+- **未修的原因**: 本次任务是 B5 补登记; 改规则会动全部 48 个既有 condition 的 digest 数字, 待 user 裁定是否现在做。
+
+### B-2000. diag `_extract_numbers` 不认千分位逗号: `$6,400.00` → [6, 400], P10 因此多报 [P2] ⚠️ OPEN (analysis 层, 与 B-1999 同批 v12)
+- **现象** (2026-09-11, 笔记 §509.4): B5 hit 审计里 P10 的 4 个 success-hit 全是误报, 其中一例是 thought 写 `6,400.00`、答案写 `6400`。
+- **原因**: `diag_pattern_match._extract_numbers` 的正则 `\b\d+(?:\.\d+)?\b` 把逗号当分隔符; P10 拿 thought 数与输出数做 ±10 比对, 写法一边带逗号一边不带就「对不上」。
+- **量化** (修正提取函数后重跑 `check_p10`, cls 23 个 condition): 失败侧 B0 56→50 · B1 39→29 · B2 16→14 · B5 61→50; **成功侧 B0 20→20 · B5 31→30 基本不变**。
+  ⇒ 逗号只解释一小部分; P10 在强模型上的成功侧误报主要来自语义混比 (日期分量 / 型号数字 vs 价格), 修逗号不够, 另需把「价格 vs 非价格」分开。
+- **修法建议**: 数字正则先吃 `\d{1,3}(?:,\d{3})+(?:\.\d+)?` 再去逗号; 与 B-1999 一起 bump v12。

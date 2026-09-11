@@ -103,3 +103,47 @@ def test_legacy_mode_alias_resolves_on_local():
     )
     assert p_text
     assert all(cell.mode == "P-text" for cell in p_text)
+
+
+# ─── `extension:` section (2026-09-11, B5 = GPT-5.6) ────────────────────────
+# Paper-grade data outside the preregistered cell set. The contract that matters: a
+# default reader never sees it, so adding a backbone cannot move a pooled estimand.
+def _ext_manifest(tmp_path, ext_grade="paper-grade"):
+    for name in ("B0_dom_classifieds_x", "B5_dom_classifieds_x"):
+        ep = tmp_path / name / "phase1_dom_router_0" / "episodes"
+        ep.mkdir(parents=True)
+        (ep / "classifieds_task_0_summary_v2.json").write_text("{}", encoding="utf-8")
+    p = tmp_path / "run_manifest.yaml"
+    p.write_text(
+        "cells:\n"
+        "  - {baseline: B0, site: classifieds, mode: DOM, run_dir: " + str(tmp_path / "B0_dom_classifieds_x")
+        + ", condition_subdir: phase1_dom_router_0, grade: paper-grade}\n"
+        "extension:\n"
+        "  - {baseline: B5, site: classifieds, mode: DOM, run_dir: " + str(tmp_path / "B5_dom_classifieds_x")
+        + ", condition_subdir: phase1_dom_router_0, grade: " + ext_grade + "}\n",
+        encoding="utf-8",
+    )
+    return p
+
+
+def test_extension_section_invisible_by_default(tmp_path):
+    p = _ext_manifest(tmp_path)
+    assert [c.baseline for c in get_all_cells(manifest_path=p)] == ["B0"]
+    assert [c.baseline for c in get_cells(site="classifieds", manifest_path=p)] == ["B0"]
+
+
+def test_extension_section_opt_in(tmp_path):
+    p = _ext_manifest(tmp_path)
+    cells = get_all_cells(manifest_path=p, include_extension=True)
+    assert [c.baseline for c in cells] == ["B0", "B5"]
+
+
+def test_validator_extension_rules(tmp_path):
+    from scripts.analysis.validate_run_manifest import validate_manifest
+    errs = validate_manifest(_ext_manifest(tmp_path), check_disk=False)
+    # B5 has one mode only: the all-6-modes gate (a) must not apply to extension cells
+    assert not any("B5" in e and "missing-modes" in e for e in errs)
+    assert not any("extension" in e for e in errs)
+    bad = validate_manifest(_ext_manifest(tmp_path / "bad", ext_grade="paper-grade-pre-bug"),
+                            check_disk=False)
+    assert any("`extension:`" in e for e in bad)

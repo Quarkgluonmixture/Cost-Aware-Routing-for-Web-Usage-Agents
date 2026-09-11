@@ -19,7 +19,9 @@ Checks (all must pass for `--strict` mode):
   (c) `run_dir/condition_subdir` exists on disk
   (d) Episode summary count ≥ MIN_EP_FOR_CELL (= 50, per aggregate_phantom_lift)
   (e) yaml section ↔ grade alignment (`cells:` only paper-grade*; `in_flight:` only
-      in-flight; `archived:` only archived) — P2-1 / codex catch
+      in-flight; `archived:` only archived; `extension:` only paper-grade) — P2-1 / codex catch.
+      `extension:` entries (backbones outside the preregistered set) get (b)(c)(d)(f) but
+      not (a)/(g), which describe the preregistered set.
   (f) No duplicate (baseline, site, mode, grade) within manifest
   (g) Phase 1a planned cells (6 stratification units) all present in paper-grade tier
 
@@ -43,6 +45,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from scripts.analysis.lib.run_registry import (  # noqa: E402
+    EXTENSION_SECTION,
     PAPER_MODES,
     GRADES,
     EXPECTED_N,
@@ -69,7 +72,7 @@ def validate_manifest(
 
     # Build entries with section attribution for (e) check
     section_entries: dict[str, list[dict]] = {}
-    for section in ("cells", "in_flight", "archived"):
+    for section in ("cells", "in_flight", "archived", EXTENSION_SECTION):
         section_entries[section] = manifest.get(section) or []
 
     # (e) section ↔ grade alignment
@@ -97,8 +100,18 @@ def validate_manifest(
                         f"[section] entry under `archived:` has grade={grade!r} "
                         f"(should be archived): {entry.get('baseline')}/{entry.get('site')}/{entry.get('mode')}"
                     )
+            elif section == EXTENSION_SECTION:
+                if grade != "paper-grade":
+                    errors.append(
+                        f"[section] entry under `extension:` has grade={grade!r} "
+                        f"(should be paper-grade): {entry.get('baseline')}/{entry.get('site')}/{entry.get('mode')}"
+                    )
 
-    all_entries = _iter_manifest_entries(manifest)
+    # Extension entries get (b)(c)(d)(f) like any paper-grade entry but stay out of
+    # paper_grade_by_cell: (a) all-6-modes and (g) planned-cells describe the
+    # preregistered set, which an extension backbone is by definition not part of.
+    all_entries = _iter_manifest_entries(manifest, include_extension=True)
+    extension_ids = {id(e) for e in section_entries[EXTENSION_SECTION] if isinstance(e, dict)}
 
     # Build paper-grade cell map for (a), (g), (b), (c), (d)
     paper_grade_by_cell: dict[tuple[str, str], dict[str, dict]] = {}
@@ -120,7 +133,8 @@ def validate_manifest(
         seen_keys.add(key)
 
         if grade in ("paper-grade", "paper-grade-pre-bug"):
-            paper_grade_by_cell.setdefault((baseline, site), {})[mode] = entry
+            if id(entry) not in extension_ids:
+                paper_grade_by_cell.setdefault((baseline, site), {})[mode] = entry
 
             # (b) expected_n canonical check — C2 fix 2026-05-24: unconditional.
             # Pre-fix: only checked when expected_n was present in yaml (opt-in bypass).

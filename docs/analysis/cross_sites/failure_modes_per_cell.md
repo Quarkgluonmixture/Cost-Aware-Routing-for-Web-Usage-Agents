@@ -349,3 +349,53 @@
 | max-steps-other | 120 | 60.0% | 58.5% |
 | missing-context | 3 | 1.5% | 1.5% |
 | search-loop | 32 | 16.0% | 15.6% |
+
+## Extension cells (outside the preregistered cell set)
+
+Backbones outside the preregistered cell set (run_manifest `extension:`, e.g. B5 = GPT-5.6). Same taxonomy, kept out of `cells` so consumers scoped to the preregistered set (figures, deployment profile) are unchanged.
+
+### B5/classifieds/DOM (N=224, failed=171)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 105 | 61.4% | 46.9% |
+| error/noise | 2 | 1.2% | 0.9% |
+| max-steps-other | 29 | 17.0% | 12.9% |
+| search-loop | 20 | 11.7% | 8.9% |
+| visual-hijack/click-loop | 15 | 8.8% | 6.7% |
+
+### B5/classifieds/P-SoM (N=224, failed=173)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 94 | 54.3% | 42.0% |
+| max-steps-other | 21 | 12.1% | 9.4% |
+| search-loop | 24 | 13.9% | 10.7% |
+| visual-hijack/click-loop | 34 | 19.7% | 15.2% |
+
+### B5/classifieds/P-prompt (N=224, failed=175)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 99 | 56.6% | 44.2% |
+| max-steps-other | 23 | 13.1% | 10.3% |
+| search-loop | 22 | 12.6% | 9.8% |
+| visual-hijack/click-loop | 31 | 17.7% | 13.8% |
+
+### B5/classifieds/P-text (N=224, failed=170)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 91 | 53.5% | 40.6% |
+| max-steps-other | 21 | 12.4% | 9.4% |
+| search-loop | 27 | 15.9% | 12.1% |
+| visual-hijack/click-loop | 31 | 18.2% | 13.8% |
+
+### B5/classifieds/SoM (N=224, failed=141)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 74 | 52.5% | 33.0% |
+| max-steps-other | 23 | 16.3% | 10.3% |
+| search-loop | 31 | 22.0% | 13.8% |
+| visual-hijack/click-loop | 13 | 9.2% | 5.8% |

@@ -139,9 +139,19 @@ def load_manifest(path: Path | None = None) -> dict:
     return _load_manifest_cached(str(_manifest_path(path).resolve()))
 
 
-def _iter_manifest_entries(manifest: dict) -> list[dict]:
+# Sections a default reader sees. `extension:` (2026-09-11) holds cells whose data are
+# paper-grade but that sit OUTSIDE the preregistered cell set (prereg = B0/B1/B2; B5 =
+# GPT-5.6 joined 2026-08-20 as a later backbone). Default readers never see it, so adding
+# a backbone cannot move a pooled estimand, K-of-N count, forest row or paper figure.
+# A script opts in with include_extension=True and must keep those rows apart in its output.
+DEFAULT_SECTIONS = ("cells", "in_flight", "archived")
+EXTENSION_SECTION = "extension"
+
+
+def _iter_manifest_entries(manifest: dict, *, include_extension: bool = False) -> list[dict]:
     entries: list[dict] = []
-    for section in ("cells", "in_flight", "archived"):
+    sections = DEFAULT_SECTIONS + ((EXTENSION_SECTION,) if include_extension else ())
+    for section in sections:
         section_entries = manifest.get(section) or []
         if not isinstance(section_entries, list):
             raise ValueError(f"Manifest section {section!r} must be a list")
@@ -235,10 +245,11 @@ def _sort_key(cell: CellSpec) -> tuple:
 
 
 def _all_cells_unfiltered(path: Path | None = None, *,
-                            strict_paper_grade: bool = False) -> list[CellSpec]:
+                            strict_paper_grade: bool = False,
+                            include_extension: bool = False) -> list[CellSpec]:
     manifest = load_manifest(path)
     cells = [_entry_to_cell(entry, strict_paper_grade=strict_paper_grade)
-             for entry in _iter_manifest_entries(manifest)]
+             for entry in _iter_manifest_entries(manifest, include_extension=include_extension)]
     seen: set[tuple[str, str, str, Grade]] = set()
     # /stress A1.19 P1-6-A (2026-05-17): also track (baseline, site, mode) -> set[grade]
     # to detect LEGACY_MODE_ALIAS silent-merge across grade tiers within the SAME canonical
@@ -289,7 +300,8 @@ def _as_list(value):
 
 def get_all_cells(grade_filter: list[Grade] | None = None, *,
                     manifest_path: Path | None = None,
-                    strict_paper_grade: bool = False) -> list[CellSpec]:
+                    strict_paper_grade: bool = False,
+                    include_extension: bool = False) -> list[CellSpec]:
     """All cells in manifest.
 
     grade_filter defaults to ['paper-grade'] only (post-F01 audit
@@ -304,7 +316,8 @@ def get_all_cells(grade_filter: list[Grade] | None = None, *,
     paper-grade cells (validator enforcement entry point).
     """
     grades = DEFAULT_GRADE_FILTER if grade_filter is None else grade_filter
-    return [cell for cell in _all_cells_unfiltered(manifest_path, strict_paper_grade=strict_paper_grade)
+    return [cell for cell in _all_cells_unfiltered(manifest_path, strict_paper_grade=strict_paper_grade,
+                                                   include_extension=include_extension)
             if cell.grade in grades]
 
 

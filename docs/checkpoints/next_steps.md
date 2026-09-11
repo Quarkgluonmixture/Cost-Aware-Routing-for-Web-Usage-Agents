@@ -22,6 +22,20 @@ updated: 2026-09-11
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-09-11 夜 · B5 五个 condition 补登记完成 (cells / 失败桶 / diag), 顺带挖出 3 个 bug, 等 user 定修不修
+>
+> chronicle → **笔记 §509** · 汇总 `docs/analysis/vwa_classifieds/B5_classifieds_cross_mode_diag_summary.md` · bug **B-1998 / B-1999 / B-2000**
+> - B5 进 `run_manifest.yaml` 新节 **`extension:`**：默认聚合器看不到 (预注册 cell 集合一行不动)；失败桶写到 `failure_modes_per_cell.json` 的 `extension_cells` (`cells` 与 HEAD 逐字节相同)；`diag_rescan_all` 按 manifest 固定 run (B5 dom = R29736, 不被 replicate 劫持)
+> - `_status/cells/cell_b5_cls_{dom,som,ptext,pprompt,psom}.md`；**vision 不建** (cron 会把坏掉的 R24364 填成 done)
+> - 5 份 digest + 汇总：no-hit 179 个全部深挖 → agent-limit 174 · scaffold 1 · task 41 布局病题 4
+>
+> **待 user 定** (都不急)：
+> 1. **v12 规则批** = B-1999 (P31 豁免只比 path, cls 上漏标约一半的跑满预算失败) + B-2000 (P10 千分位) + P33 在 som 上降为中性 —— 会动 53 份 digest 和两个依赖 `diag_scans` 的下游
+> 2. **B-1998** (`multiple_actions` 被判无效却已执行, B5 每格 50–90 步不计预算) 修法 (a) 派发前把关 / (b) 记为有效动作 —— 建议并进下方任务卡第 ② 步的同一次 witness
+> 3. task 41 要不要剔除 —— 先要一张 A100 截图看 gallery 每行几个
+>
+> ⚠️ 遗留、本次未处理：`tests/test_universe_consumption_lint.py` 2 个失败早于本次 (9 个脚本读 episode 却没过 scored universe 且未登记豁免；2 个已修脚本没从待办名单删)
+>
 > ## 🟡 2026-09-11 晚 · B5 vision 是 harness 坐标制错配 (B-1997) · user 已定: 补登记开新 session, 修契约 + 重跑放后续 todo
 >
 > **诊断已定案** (笔记 §508.1, 三层证据: click 变化率 / A100 截图单例 / 分页像素位群体检验): GPT-5.6 不守 0–1000 契约, `normalize_coordinate_pair` 按值判档把像素 x 当千分制, click 85% 落空。B5 vision 7.4 / 12.1% **不是 backbone 属性**, §505.10 / §505.18 / §505.19 引它的地方标 pending。

@@ -19,8 +19,10 @@ updated: 2026-09-11
 
 ## 顺序 (user 2026-09-11: 补的开新 session, 重跑放后续 todo)
 
-1. **补登记 (零 GPU)**: B5 六个 condition → `_status/cells/cell_*.md` frontmatter + `failure_modes_per_cell.md` + `/diag` Tier-1 digest。
-   B5 vision 两个 run 要标 `B-1997 contaminated`, 不进任何跨 backbone 比较。
+1. ✅ **补登记 (零 GPU) — done 2026-09-11** (笔记 §509): 五个非 vision condition → `_status/cells/cell_b5_cls_*.md` +
+   `run_manifest.yaml` 新节 `extension:` + `failure_modes_per_cell` 的 `extension_cells` + 5 份 diag digest (Tier-1 + Tier-2 全覆盖) + 跨 mode 汇总。
+   vision 两个 run 不进 manifest、不建 cell 笔记 ⇒ 不进任何跨 backbone 比较; 重跑后按同样方式补。
+   顺带登记 B-1998 (`multiple_actions` 判无效却执行, fire 路径, 建议并进本卡第 ② 步的同一次 witness) · B-1999 / B-2000 (diag 规则, 需 v12)。
 2. **修契约 (fire 路径, 需 witness)**: 按 backend 声明 `coordinate_contract` —— 默认 `qwen_0_1000_by_value` (现状, B0/B1/B2 一行不动);
    B5 = `pixel`: prompt 报实际图像尺寸并要求像素坐标, 归一化 ÷W / ÷H, 保留 true-OOB 不 clamp 原则。改前 `git tag` witness (feedback_pre_fire_protocol_witness)。
 3. **重跑**: `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B5 vision classifieds` (224 题, ≈$50)。跑完先做分页像素位检验 (§508.1 的群体检验) 再看 SR。
