@@ -32,10 +32,10 @@ updated: 2026-09-03
 > 已在三节头上加了 stale 警告；Phase 2 按六面板顺序重写。
 >
 > ### 接下来按顺序做
-> 1. **Phase 0（今天）**：Slack 问 Zekun 四件事（模板何时到 / 自带电脑还是统一电脑 / 10 分钟含不含问答 / 接口与顺序）；user 确认 D1（演讲只放录像 130）、D3（默认 pptx）
-> 2. **Phase 1（09-11 晚–09-12）**：§506.10 的 1A/2A/3B（`index.html` `pickLine()`/`renderPick()`、碳排悬停、README 四条措辞）+ `?task=130&autoplay=0` 演讲模式 + 重建 portable + 录 `talk_130.mp4` + 提交
+> 1. **Phase 0（今天）**：Slack 问 Zekun 四件事（模板何时到 / 含不含问答 / 接口与顺序 / 收不收 slide 文件）。user 09-11 已定：先展出再演讲，演讲从 quark 投屏 ⇒ **slide = HTML deck 嵌演讲版 demo**（D3，pptx 仅备用）
+> 2. ✅ **Phase 1 done 09-11**（commit `4b7883b`，笔记 §507.4）：红绿框对照上色 · `?task=130&autoplay=0` 演讲模式 · 碳排/措辞 · portable 重建 · `demo/talk_130.webm`。只剩 user 在 quark 上双击验一次三题
 > 3. **Phase 2（09-12–09-13）**：`talk_content.md` 7 页口播原文 + §2 走读 / §5 数字表按 v9.10 重审 + /stress spot-check（A + C）
-> 4. Phase 3–6 见 ROADMAP §3。B-1996 仍留 bug 目录。
+> 4. **Phase 3**：`build_talk.py` → `talk/index.html`（第 3 页 iframe 嵌 demo；模板到了搬皮；导 PDF）。Phase 4–6 见 ROADMAP §3。B-1996 仍留 bug 目录。
 
 > ## 🟢 2026-09-10 · showcase demo 第二版 + live「try your own」可用 · 等 10 分钟演讲的 slide 模板
 >
