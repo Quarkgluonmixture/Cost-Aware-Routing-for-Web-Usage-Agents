@@ -61,7 +61,7 @@ event: 2026-09-16
 - **D3 slide 用 HTML deck，demo 直接嵌在第 3 页里（推荐）；pptx 只作备用。** 既然从自己电脑投屏，HTML deck 能把演讲版 demo 用 iframe 嵌进去，一个浏览器窗口全屏，← → 既翻页也步进，不用 Alt+Tab；组会 deck 已经是这个形态。做法仍是 `talk_content.md` 单一来源 → `build_talk.py` 生成 `talk/index.html`，模板到了把它的标题条 / 页脚 / 配色搬进 CSS。同时导出一份 PDF（Playwright print）给主办方收 slide 用。**只有 Zekun 明确说「必须交 pptx 在统一电脑上放」**才走 python-pptx 铺模板那条路，那时 demo 回到 Alt+Tab 切浏览器。
   故障梯照旧三级：deck 里的 iframe 出问题 → 同一台电脑另开标签页 `demo_portable.html?task=130&autoplay=0` → deck 里第 3 页后面藏一页 39 秒 webm（`talk/talk_130.webm`）。
 - **D4 演讲词汇 = 海报词汇，三套名字一次对齐。** 海报系统图写 DOM / SoM / Vision，海报截图带和 demo 写 READ / LOOK / BOTH。第 2 页说一次：LOOK = screenshot only（海报的 Vision）· READ = page text only, no image（海报的 DOM，是 accessibility tree 不是 HTML）· BOTH = screenshot with numbered marks（海报的 SoM）。之后全程 LOOK / READ / BOTH。
-- **D5 演讲 7 页，顺序照海报六面板走**（§4 有逐页骨架），约 8 分 40 秒 + 80 秒缓冲。面板 3、4（行为不同 / 失败不同）各一句带过，不单独成页。
+- ~~**D5 演讲 7 页，顺序照海报六面板走**~~（09-13 作废，见 D15）（§4 有逐页骨架），约 8 分 40 秒 + 80 秒缓冲。面板 3、4（行为不同 / 失败不同）各一句带过，不单独成页。
 - **D6 不引未发表结果。** §505 的预算路由不上台，不写进 slide；问答被问「生产系统今天该怎么办」时用 §4 现成答案（always-cheapest 难打、先把 agent 做好再学选择），最多加一句「ongoing work, unpublished」。
 - **D7 数字纪律不变**：只用 §5 数字表里的数字，每个数字带它的 baseline 短语；`13.7` 和 `12–14%` 永远不说（都已作废）。但 §5「海报上有 / 没有」那一列要按 v9.10 重审（Phase 2）。
 - **D8 live 页周三的运行方式**：DGX 上 tmux 会话 `showcase` 两个窗格（站点 `docker compose up -d` + `server.py`）；quark 上单独一个 PowerShell 窗口只跑 `ssh -N -L 8799:localhost:8799 spark`；笔记本电源计划改「从不睡眠」；手机热点当备用网络。
@@ -71,6 +71,7 @@ event: 2026-09-16
 - **D12 字数按 SOP 实测规律定，不按感觉。** 上限 **1,000 英文词**（÷140 ≈ 7.1 分，÷120 ≈ 8.3 分，再加三分之一的点击与停顿就顶到 10 分钟）。台本 v0 用 `check_talk.py` 实数 **735 词**：5.2–6.1 分 + 三分之一 ≈ 7–8 分，再加 demo 步进约 1 分 ⇒ 8–9 分，留出问答。此前写的 1,150–1,300 词作废：SOP 08-28 实测 1,240 词讲成了 11–12 分钟。**真正的判据是 Phase 4 掐表 ≤ 9:30，字数只是事前估。**片子每张 **≤ 50 词**，开场那张 ≤ 15 词，收尾让它再出现一次。
 - **D13 demo 在前，解释在后。** 第 2 页就是 demo（iframe），三栏的说明由 demo 页自己的栏头承担（screenshot only / text tree only / marked screenshot），LOOK=Vision、READ=DOM、BOTH=SoM 的映射口头说；「六种看法、八个设置」的方法页挪到 demo 之后当「我们怎么量的」。片子里不放 demo 截图（demo 活着时放它的照片等于自己跟自己抢），截图只进兜底页。
 - **D14 演讲要有 ask，放在收尾句前，三件当场能给的小事**：① 会后到展板输一道自己的任务；② 在跑 web agent 的人告诉我你们用哪种看法、为什么；③ 谁有成功率更高的 agent，借我们测一次 label supply 的结论是否翻转。没有 ask 的汇报结局是礼貌点头散会。
+- **D15 故事线按 user 09-13 改：先给观众带走什么，再 行为不同 → 失败不同 → 那就按任务选？→ 学不会 → 将来要什么。** 标题页、demo 页不动；第 3 张用模板的 THE CLAIM 深色框放三条收获；新增行为（海报面板 3）、失败（面板 4 = REALM Table 41）两张；原「不主张」换成「要满足什么条件」。共 10 张 + 备用。台本 v1 按十幕重排（仍待 user 出声重写）。失败那张按源 JSON 重算后加了限定：规律来自 VWA 六格（WA 两格只占 10 / 38 题），脚注不拿只有 13 次命中的 2.3× 当主数（笔记 §512）。
 
 ## 3. 六个 phase
 
@@ -179,25 +180,27 @@ event: 2026-09-16
 
 ## 4. 十分钟演讲骨架 —— 一句话主张、七幕、六句锁死句
 
-**一句话主张**：Choosing how a web agent sees a page would pay; nothing we trained learns the choice, because the examples to learn from only exist when the agent already succeeds.
+**一句话主张**（09-13 改）：How an agent sees the page changes what it does and how it fails; choosing per task would pay in hindsight, but nothing learns that choice yet — the examples only appear when the agent succeeds.
 
-台本在 `talk/rehearsal-script.md`（中文引导 · 英文台词）。这里只定每幕**目的、画面、锁死句、秒数**。锁死句 = 片子那张的标题，
-一字不改；其余允许即兴。数字全部对着 `SHOWCASE_PREP.md §5`。demo 在第 2 幕，解释在它之后（D13）。
+台本在 `talk/rehearsal-script.md`（v1 十幕，中文引导 · 英文台词）。这里只定每幕**目的、画面、锁死句、秒数**。数字全部对着 `SHOWCASE_PREP.md §5`。demo 仍在第 2 幕（D13）。
 
-| 幕 | 秒 | 画面（一张一个图形） | 目的句 | 锁死句（= 片子标题） | 对应海报 |
+| 幕 | 秒 | 画面 | 目的句 | 锁死句 | 对应海报 |
 |---|---|---|---|---|---|
-| I 开场定位 | 0:00–0:35 | 第 1 张：标题（≤ 15 词）+ 姓名/导师 + 角标 *REALM workshop, EMNLP 2026* | 让房间知道这是量出来的东西，不是提案 | *When is expensive perception worth paying for?* | 标题条 |
-| II Demo | 0:35–2:45 | 第 2 张：demo iframe（`?task=130&autoplay=0`），三栏栏头自带说明，手动 → 步进 | 让观众亲眼看到同一任务三种看法三种账单，以及 learned choice 选错 | *Same task, three ways of seeing it, three different bills.* | 中部 76（一句话指回） |
-| III 尺子 | 2:45–4:15 | 第 3 张：面板 1 + 面板 2（矩阵 + 韦恩）；kicker 写规模「6 views · 8 settings · ~8,900 attempts」 | 上界是真的但要拿重跑当尺子读 | *Hindsight says choosing pays; a rerun says how much of that is noise.* | 面板 1 · 2（3 · 4 各一句） |
-| IV 没那么快 | 4:15–5:45 | 第 4 张：面板 5 赢区图 | 0 of 8，且 hindsight 也只有 1 of 8 → 问题不在学习器 | *Learned routers buy success only by spending more.*（海报原句）**停 3 秒** | 面板 5 |
-| V 为什么 | 5:45–7:00 | 第 5 张：面板 6 label supply | 例子只在成功时才存在 | *More routing upside, less usable training signal.*（海报原句） | 面板 6 |
-| VI 不主张什么 + ask | 7:00–8:15 | 第 6 张：左「we do not claim」三行 · 右「three asks」三行（≤ 50 词） | 可信度动作 + 把「听汇报」变成「一起做」 | *Improve the agent first, collect reliable examples, then learn when to look.* | — |
-| VII 收尾 | 8:15–8:40 | 第 7 张：第 1 张再出现 + QR + 「the board is by the window」 | 隔 8 分钟回到题目那句问句 | （同 I） | 页脚 QR |
-| — | 8:40–10:00 | 缓冲 / 问答 | 答案在 `SHOWCASE_PREP.md §4`，禁语在 §6 | | |
+| I 开场 | 0:00–0:25 | 第 1 张：标题 + 姓名 + 出处 | 这是量出来的，不是提案 | *When is expensive perception worth paying for?* | 标题条 |
+| II Demo | 0:25–2:15 | 第 2 张：demo iframe（`?task=130&autoplay=0`） | 同一任务三种看法三种账单，learned choice 选错 | *Same task, three ways of seeing it, three different bills.* | 中部 76（一句指回） |
+| III 带走什么 | 2:15–2:40 | 第 3 张：深色框三条 | 先交出收获，后面逐条兑现 | —（照意思说） | — |
+| IV 行为不同 | 2:40–3:25 | 第 4 张：面板 3 | 看法一换，做的事就换 | *With only a screenshot, the agent scrolls far more and types far less.* | 面板 3 |
+| V 失败不同 | 3:25–4:20 | 第 5 张：面板 4 | 输的方式也不同（VWA 六格） | *Text-only fails in ways you can name; image-only just never gets there.* | 面板 4 |
+| VI 按任务选？ | 4:20–5:20 | 第 6 张：面板 1 + 2 | 事后选有收益，拿重跑当尺子 | —（标题照意思说） | 面板 1 · 2 |
+| VII 学不会 | 5:20–6:25 | 第 7 张：面板 5 | 0 of 8，hindsight 也只有 1 of 8 | *Learned routers buy success only by spending more.* **停 3 秒** | 面板 5 |
+| VIII 为什么 | 6:25–7:10 | 第 8 张：面板 6 | 例子只在做对时才有 | —（海报原句，照意思说） | 面板 6 |
+| IX 将来 + ask | 7:10–8:05 | 第 9 张：要满足什么 · 三个请求 | 不是学不会，是还不行；把听众变成一起做的人 | *Improve the agent first, collect reliable examples, then learn when to look.* | — |
+| X 收尾 | 8:05–8:25 | 第 10 张：标题再现 + QR | 回到题目那句问句 | （同 I） | 页脚 QR |
+| — | 8:25–10:00 | 缓冲 / 问答 | 答案在 §4，禁语在 §6 | | |
 
-**裁剪顺序**（时间不够时）：先砍 VI 的「不主张」三行只留 ask → 再砍 III 里面板 3/4 那一句 → 再砍 I 的自陈。**II（demo）与 IV→V 的转场永不砍。**
+**裁剪顺序**：先把 VIII 压成一句 → 再删 VI 的重跑两句 → 再让 III 只念三行 → 再删 I 的自陈。**II（demo）永不砍；VII 的 0 of 8 与 1 of 8 必须连着说。**
 
-**沉默三处**：IV 锁死句后停 3 秒不翻页；II 最后「the one view that failed」后停 2 秒；VI 「then learn when to look」后停 2 秒再翻到收尾。
+**沉默三处**：II「the one view that failed」后 2 秒；VII「only one of eight」后 3 秒不翻页；IX「that's where this should be tested」后 2 秒。
 
 **去黑话词表**（片子与台本英文行 grep，零命中才算过；海报自己用过的词除外）：`oracle`（只许 *hindsight oracle* 这一个海报原词）· `router`（说 *a learned choice*；海报标题 *SO BUILD A ROUTER?* 除外）· `mode`（说 *view*）· `pp`（说 *more tasks in 100* / *points*）· `AXTree` · `DOM`（说 *page text / text tree*；海报系统图除外）· `cell` · `condition` · `replicate`（说 *rerun*）· `episode`（说 *task attempt*）· `SR` · `P-text` / `P-SoM` / `P-prompt`（说 *text-only views*）· `canonical` · `phantom` · `baseline`（说 *always-cheapest* / *best single view*）。
 
