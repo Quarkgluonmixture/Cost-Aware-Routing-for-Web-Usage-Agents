@@ -18,13 +18,13 @@ can be driven to 0 means the arm has no assignment-robust unique contribution.
 
 ## Per-arm lower bound (min over 64 assignments)
 
-| arm | side | cls_b0 (n=224) | red_b0 (n=205) |
+| arm | side | cls_b0 (n=224) | red_b0 (n=203) |
 |---|---|---|---|
 | `SoM` | visual | **6**–12 | **4**–8 |
-| `Vision` | visual | **6**–11 | **2**–6 |
+| `Vision` | visual | **6**–11 | **2**–5 |
 | `P-text` | text | **0**–3 | **0**–6 |
 | `P-SoM` | text | **0**–4 | **0**–8 |
-| `P-prompt` | text | **1**–6 | **2**–5 |
+| `P-prompt` | text | **1**–6 | **2**–4 |
 | `DOM` | text (AXTree, not in either side group) | **0**–6 | **0**–5 |
 
 ## The comparison the hero rests on

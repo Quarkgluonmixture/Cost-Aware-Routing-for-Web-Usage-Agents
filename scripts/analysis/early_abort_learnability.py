@@ -55,6 +55,7 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
+from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
 from scripts.analysis.router_pooled_tier_learnability import (  # noqa: E402
     N_FOLDS,
     SEED,
@@ -82,6 +83,11 @@ def load_episodes(baseline: str, site: str, mode_dir: str) -> list[dict]:
     # Only the first (canonical) run: pooling an episode with its own replicate would put
     # two rows for one task on opposite sides of a fold split.
     run = runs[0]
+    # B-1906 / AMENDMENT_08: `sr_excluded` is an episode-level flag and does not carry the
+    # protocol exclusions.  `--site` is a CLI argument, so a run on reddit (205 collected /
+    # 203 scored) or shopping (435 / 433) would silently widen every denominator below;
+    # classifieds happens to exclude nothing, which is exactly why this was invisible.
+    scored, _ = expected_scored_ids(site)
     out = []
     for sf in sorted(run.glob("*/episodes/*_summary_v2.json")):
         try:
@@ -91,7 +97,7 @@ def load_episodes(baseline: str, site: str, mode_dir: str) -> list[dict]:
         if summ.get("sr_excluded"):
             continue
         tid = summ.get("task_id")
-        if tid is None:
+        if tid is None or int(tid) not in scored:
             continue
         jf = sf.with_name(sf.name.replace("_summary_v2.json", "_steps_v2.jsonl"))
         if not jf.is_file():

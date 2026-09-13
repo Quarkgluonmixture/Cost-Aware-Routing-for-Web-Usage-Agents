@@ -26,6 +26,16 @@ from pathlib import Path
 import numpy as np
 REPO = Path(__file__).resolve().parents[2]; sys.path.insert(0, str(REPO))
 from p79.experiment.io_utils import read_jsonl_dedup  # noqa: E402
+from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+
+SITE = "shopping"   # every run this file consumes is VWA shopping
+
+# B-1906 / AMENDMENT_08.  VWA shopping collects 435 tasks and scores 433; the two
+# protocol-excluded ids are 463 and 465.  The 2026-09-09 freeze predates this guard and
+# scored 434 tasks (435 minus task 345, which has no step-0 observation), so BOTH excluded
+# ids carry a frozen tier of 30.  The freeze file is a pre-registration record and is NOT
+# rewritten — instead every evaluation set is intersected with the canonical scored
+# universe here, which moves the PRIMARY prospective set from 218 to 216 tasks.
 
 FREEZE = REPO / "docs/checkpoints/pre_run/budget_router_prospective_shop_B1_20260909.json"
 TRAIN = {  # condition -> run dir (largest landed run at freeze time)
@@ -84,7 +94,10 @@ def freeze():
     from sklearn.preprocessing import StandardScaler
     from sklearn.pipeline import make_pipeline
     meta = _tasks(); s0 = _step0(FEATURE_RUN)
-    tids = sorted(t for t in meta if t in s0)
+    scored, _ = expected_scored_ids(SITE)
+    # The 2026-09-09 freeze on disk predates this line and carries 434 ids (463/465 included);
+    # it is a pre-registration record and stays as written.  Any FUTURE freeze is scored-only.
+    tids = sorted(t for t in meta if t in s0 and t in scored)
     conds = {c: _episodes(REPO / r) for c, r in TRAIN.items()}
     X, y = [], []
     cond_names = list(TRAIN)
@@ -130,18 +143,22 @@ def _trunc(eps, caps):
 
 def evaluate(run_dirs):
     fz = json.loads(FREEZE.read_text()); seen = set(fz["seen_ptext_ids"])
+    scored, universe_sha = expected_scored_ids(SITE)
     for run in run_dirs:
-        eps = []
+        eps = []; n_excluded = 0
         for sp in glob.glob(os.path.join(run, "*", "episodes", "*_steps_v2.jsonl")):
             tid = int(os.path.basename(sp).split("_task_")[1].split("_steps")[0]); summ = sp.replace("_steps_v2.jsonl", "_summary_v2.json")
             if not os.path.exists(summ): continue
+            if tid not in scored:            # AMENDMENT_08 protocol exclusion
+                n_excluded += 1; continue
             try: recs = read_jsonl_dedup(sp); sj = json.load(open(summ))
             except Exception: continue
             eps.append({"task": tid, "success": bool(sj.get("success")), "cost": [(r.get("cost_usd") or {}).get("total") or 0 for r in recs], "lat": [(r.get("latency_ms") or {}).get("total") or 0 for r in recs]})
         is_ptext = "phantom_text" in run
         sets = {"PRIMARY (prospective)": [e for e in eps if not (is_ptext and e["task"] in seen)]}
         if is_ptext: sets["non-prospective (seen at freeze)"] = [e for e in eps if e["task"] in seen]
-        print(f"\n=== {os.path.basename(run)}: {len(eps)} episodes")
+        print(f"\n=== {os.path.basename(run)}: {len(eps)} episodes on the scored universe "
+              f"(n_scored={len(scored)}, sha={universe_sha[:12]}…; {n_excluded} protocol-excluded episode(s) dropped)")
         for sname, S_ in sets.items():
             if len(S_) < 20: print(f"  {sname}: n={len(S_)} too few"); continue
             F = _trunc(S_, [10**6] * len(S_)); print(f"  {sname}: n={len(S_)}  full SR {F[0]:.1f}%  cost ${F[1]:.4f}  latency {F[2]/1000:.0f}s")

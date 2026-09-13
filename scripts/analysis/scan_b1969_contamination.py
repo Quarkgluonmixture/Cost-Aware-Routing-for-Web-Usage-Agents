@@ -52,6 +52,9 @@ import sys
 from datetime import datetime, timedelta
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, REPO)
+from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+
 MANIFEST = os.path.join(REPO, "results/phantom_paper/l1_router/pass1_run_manifest.json")
 PHASE1 = os.path.join(REPO, "results/visualwebarena/phase1")
 TAIL_MS = 12000.0          # B-1969 实测的「站点不回答」窗口下界
@@ -75,7 +78,13 @@ def load_canonical():
 
 
 def load_episodes(runs):
-    """→ list[dict]: run/model/mode/task/success/flagged/reset_latencies/env_steps"""
+    """→ list[dict]: run/model/mode/task/success/flagged/reset_latencies/env_steps
+
+    Restricted to the canonical SCORED universe (B-1906).  On classifieds that set equals
+    the collected one (224 = 224), so this filter changes nothing today — it is here so a
+    later AMENDMENT that touches classifieds cannot silently widen these denominators, the
+    way one already does on reddit (205 → 203) and shopping (435 → 433)."""
+    scored, _ = expected_scored_ids("classifieds")
     out = []
     for run in runs:
         m = re.match(r"(B\d)_(.+?)_classifieds_", run)
@@ -86,6 +95,8 @@ def load_episodes(runs):
             except Exception:
                 continue
             task = int(re.search(r"task_(\d+)_", os.path.basename(sf)).group(1))
+            if task not in scored:
+                continue
             envs, base = [], None
             stf = sf.replace("_summary_v2.json", "_steps_v2.jsonl")
             if os.path.exists(stf):

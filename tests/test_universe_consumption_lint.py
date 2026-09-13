@@ -58,6 +58,13 @@ EPISODE_READER_EXEMPT: dict[str, str] = {
     "episodes; produces no paper-facing rate",
     "compare_cross_run_same_condition.py": "cross-replicate identity check; "
     "compares two collections against each other, not against the scored set",
+    "audit_field_consumption.py": "field-population matrix: counts how many "
+    "episodes WRITE each recorded field. A protocol-excluded episode writes its "
+    "fields like any other, so the collection is the right denominator; no rate "
+    "over tasks is produced",
+    "register_replicate_pair.py": "CLEAN_PAIRS registration tool. Its only "
+    "summary read is condition_summary_v2.json (the lint matches on the shared "
+    "suffix), checked against the COLLECTION contract, which is its whole job",
 }
 
 # (2) Paper-facing producers whose universe is still the COLLECTED set.
@@ -65,19 +72,20 @@ EPISODE_READER_EXEMPT: dict[str, str] = {
 # fails if a new offender appears, so the族 cannot grow while it is being
 # drained.  Remove an entry only when the script actually restricts.
 UNIVERSE_TRIAGE_PENDING: dict[str, str] = {
+    # aggregate_cross_site.py and mechanism_per_task.py were drained 2026-09-13 (both
+    # already call expected_scored_ids; the ratchet caught that they were still listed).
+    # Five more producers were fixed rather than listed on the same day — see 笔记 §510.
     # B-1905 (aggregate_phantom_lift.py) was drained 2026-07-27: it now
     # intersects every per-comparison universe with the scored IDs. Removing it
     # from this list is REQUIRED by the ratchet, and is what keeps a later
     # regression from hiding behind a stale entry.
     "aggregate_cost_electricity.py": "cost aggregates over collected episodes",
-    "aggregate_cross_site.py": "cross-site pooling over collected episodes",
     "aggregate_trajectory_covariates.py": "covariate table over collected set",
     "axis1_microbehavior.py": "scored count as denominator, rows unfiltered",
     # axis_effect_size.py cleared 2026-08-02 (§408.3): it read 205 reddit step files against a
     # 203-task scored set, so the two AMENDMENT_08 exclusions were inside every effect size —
     # and on the P-SoM arm two identity-dropped episodes cancelled them, making the count read
     # as correct over the wrong tasks. per_task_metrics() now filters on expected_scored_ids().
-    "mechanism_per_task.py": "scored count as denominator, rows unfiltered",
     "hero_claim_bootstrap.py": "bootstraps a hero claim over the collected set",
     "generate_per_task_sr.py": "per-task SR table over the collected set",
     "collect_analysis_summary.py": "summary roll-up inherits collected rows",

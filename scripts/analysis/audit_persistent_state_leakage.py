@@ -41,6 +41,8 @@ from urllib.parse import urlparse
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
+from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+
 OUT_MD = REPO / "docs/analysis/cross_sites/persistent_state_leakage_audit.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/persistent_state_leakage_audit.json"
 
@@ -130,7 +132,15 @@ def _reached(target: str, urls: set[str]) -> bool:
     return any(u == target or u.startswith(target.rstrip("/") + "/") for u in urls)
 
 
-def _audit(cell_id: str, cfg_for: dict, mode_dirs: dict[str, Path], prefix: str) -> dict:
+def _audit(cell_id: str, cfg_for: dict, mode_dirs: dict[str, Path], prefix: str,
+           benchmark: str = "visualwebarena") -> dict:
+    """Leak audit over the canonical SCORED universe of (reddit, `benchmark`).
+
+    B-1906 / AMENDMENT_08: `sr_excluded` is an episode-level flag that does not carry the
+    protocol exclusions, so without this the VWA control cells would audit 205 tasks while
+    the paper's reddit denominator is 203.  WebArena reddit excludes nothing (104 = 104),
+    which is why the WA half is unaffected either way."""
+    scored, _ = expected_scored_ids("reddit", benchmark)
     per_mode: dict[str, dict] = {}
     for mode, ep in mode_dirs.items():
         earned = leaked = n_succ = 0
@@ -143,6 +153,8 @@ def _audit(cell_id: str, cfg_for: dict, mode_dirs: dict[str, Path], prefix: str)
             if s.get("sr_excluded") or s.get("success") is not True:
                 continue
             tid = int(s["task_id"])
+            if tid not in scored:
+                continue
             cfg = cfg_for.get(tid)
             if cfg is None:
                 continue
@@ -192,7 +204,7 @@ def main() -> int:
                         continue
                     cfg_for[int(c["task_id"])] = c
         if len(dirs) == len(WA_STEM) and cfg_for:
-            cells.append(_audit(f"wa_{bl}", cfg_for, dirs, "reddit"))
+            cells.append(_audit(f"wa_{bl}", cfg_for, dirs, "reddit", benchmark="webarena"))
 
     # --- VisualWebArena reddit, all three backbones (the control) ----------------------
     if VWA_CFG.is_dir():
@@ -207,7 +219,7 @@ def main() -> int:
         for bl in ("B0", "B1", "B2"):
             dirs = {c.mode: Path(c.episodes_dir) for c in get_cells(baseline=bl, site="reddit")}
             if len(dirs) == 6 and cfg_for:
-                cells.append(_audit(f"red_{bl}", cfg_for, dirs, "reddit"))
+                cells.append(_audit(f"red_{bl}", cfg_for, dirs, "reddit", benchmark="visualwebarena"))
     if not cells:
         raise MissingInput("no auditable cell found")
 

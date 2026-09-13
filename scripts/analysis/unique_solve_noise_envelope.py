@@ -35,6 +35,24 @@ from collections import defaultdict
 ROOT = "results/visualwebarena/phase1"
 REP  = "results/repro_replicates"
 
+# B-1906 / AMENDMENT_08: `sr_excluded` is an EPISODE-level flag and does NOT carry the
+# protocol exclusions.  Measured 2026-09-13 on `red_b0`: the collected set is 205 and the
+# scored set 203, and the two extra tasks are not inert — task 58 is solved by three arms
+# and task 160 is a UNIQUE solve for `P-prompt` under the all-B assignment, i.e. a
+# protocol-excluded task was raising an arm's envelope bound in the table this file's
+# "comparison the hero rests on" section is built from.  Every loader below therefore
+# intersects with the canonical scored universe for the cell's own site.
+import sys as _sys
+from functools import lru_cache as _lru_cache
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+
+
+@_lru_cache(maxsize=8)
+def _scored_for(site):
+    ids, sha = expected_scored_ids(site)
+    return ids, sha
+
 # --- cell registry -------------------------------------------------------------
 # Each entry needs ALL SIX arms replicated; the 2^6 envelope is not defined on five.
 # `clean` = the subset whose replicate is adjacent in time to its canonical run, i.e.
@@ -98,16 +116,19 @@ CELLS = {
  },
 }
 
-def _load_ext(run_dir):
-    """task_id -> bool success, excluding sr_excluded. Same as load(); defined early
-    because --compare runs before the module-level cls pipeline below."""
+def _load_ext(run_dir, site):
+    """task_id -> bool success over the CANONICAL SCORED universe of `site`.
+
+    Same as load(); defined early because --compare runs before the module-level
+    pipeline below.  `sr_excluded` alone is not enough — see the header note."""
+    scored, _ = _scored_for(site)
     out = {}
     for f in glob.glob(os.path.join(run_dir, "*", "episodes", "*_summary_v2.json")):
         try: d = json.load(open(f))
         except Exception: continue
         if d.get("sr_excluded"): continue
         tid = d.get("task_id")
-        if tid is None: continue
+        if tid is None or int(tid) not in scored: continue
         out[int(tid)] = bool(d.get("success"))
     return out
 
@@ -137,7 +158,7 @@ if _args.compare:
     for _name, _cfg in CELLS.items():
         _S = {m: {"A": None, "B": None} for m in _cfg["runs"]}
         for m, (a, b) in _cfg["runs"].items():
-            _S[m]["A"], _S[m]["B"] = _load_ext(a), _load_ext(b)
+            _S[m]["A"], _S[m]["B"] = _load_ext(a, _cfg["site"]), _load_ext(b, _cfg["site"])
         _modes = list(_cfg["runs"])
         _common = None
         for m in _modes:
@@ -225,16 +246,8 @@ MODES = list(RUNS)
 print(f"### cell = {_args.cell}  (site={CELL['site']}, backbone=B0)\n")
 
 def load(run_dir):
-    """task_id -> bool success, excluding sr_excluded."""
-    out = {}
-    for f in glob.glob(os.path.join(run_dir, "*", "episodes", "*_summary_v2.json")):
-        try: d = json.load(open(f))
-        except Exception: continue
-        if d.get("sr_excluded"): continue
-        tid = d.get("task_id")
-        if tid is None: continue
-        out[int(tid)] = bool(d.get("success"))
-    return out
+    """task_id -> bool success over the cell site's CANONICAL SCORED universe."""
+    return _load_ext(run_dir, CELL["site"])
 
 S = {m: {"A": load(a), "B": load(b)} for m, (a, b) in RUNS.items()}
 
