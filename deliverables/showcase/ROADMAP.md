@@ -2,7 +2,7 @@
 type: showcase-planning
 status: live
 created: 2026-09-11
-updated: 2026-09-11
+updated: 2026-09-13
 event: 2026-09-16
 ---
 
@@ -44,10 +44,10 @@ event: 2026-09-16
 | 海报 | v9.10 已印，A1 竖版 | 无。**不改** |
 | demo 录像三题 | v2 已提交（commit `83c857b`），`demo_portable.html` 11.7 MB | §506.10 定下的三处修改还没做（红绿框对照上色 / 碳排悬停去 "published" / 四条措辞）；没有演讲模式（一打开就自动播放并轮换三题） |
 | live 页 | DGX 上站点容器已跑 20 h，server 在**裸前台进程**里（不是 tmux） | 周三要重启；需要一个不会随终端断掉的运行方式 |
-| slide | 模板未到（走 Slack，Gmail 里没有 showcase 邮件） | 内容一个字都没有 |
+| slide | v0 已做（09-11）。**09-13 核到：活动页 For presenters 已公布 *Speaker slide template (.pptx)*、A1 / A0 海报模板** —— 不是「模板未到」，是还没下载进仓库 | 把 pptx 下下来放进 `deliverables/showcase/`，按 Phase 3 搬配色/标题条进 deck CSS |
 | 演讲 slot | 10 分钟已确认（user 09-10）；节目单 14:45–15:30「Student presentations」共 45 分钟；**从 quark 投大屏，slide 与 demo 同一台电脑**（user 09-11） | 不知道：含不含问答、接口、主办方收不收 slide 文件 |
 | 网络 | quark 在 UCL 校园网上 `ssh spark`（cloudflared）已验证可用（2026-05-28；Tailscale 被黑洞，cloudflared 通）。会场 = UCL Centre for AI，大概率同一网络 | 当天 09:00 仍要实测一次 |
-| 投票 | 10:00 开始，**14:35 截止**，演讲 14:45 才开始 | 演讲不决定奖；13:15–14:35 站在板前决定 |
+| 投票 | 10:00 开始，**14:35 截止**，演讲 14:45 才开始。**09-13 核到**：观众在活动网站**填全名**投票，每人 3 票可集中可分散；奖金 £300 / £200 / £100，一等奖进 proceedings 封面 + 写 workshop paper 的 mentorship | 演讲不决定奖；板前决定。投票页按**海报标题**列出（活动页：「final poster titles and abstracts will be published once confirmed」）⇒ 登记的标题必须和印出来的一致，见 Phase 0 |
 | GPU 侧 | B1 shopping 三格 ~09-13 落地（A100） | 只发下一条 chain，不开新分析，人力都在演讲上 |
 
 ## 2. 定下来的细节
@@ -81,6 +81,8 @@ event: 2026-09-16
 - [x] D1–D10 入档（本文件）
 - [ ] Slack DM Zekun 四个问题（§6 有现成文字）：模板何时到 · 自带电脑还是统一电脑 · 10 分钟含不含问答 · 接口（HDMI / USB-C）和演讲顺序
 - [x] user 09-11：先展出再演讲；演讲从自己电脑投屏，demo 单独一份或嵌进 slide → D2/D3 按此改写（HTML deck 嵌 demo）
+- [ ] **09-13 新增**：确认主办方登记的海报标题 = 印出来的 v9.10 标题 *When Is Expensive Perception Worth Paying For?*。`SHOWCASE_PREP.md §1` 给 Zekun 的 DM 用的是 v8 旧标题 *Look, read, or both? …*；若登记的是旧标题，观众在投票页对不上号
+- [ ] **09-13 新增**：确认只带一台电脑（quark 既跑展板 demo 又投演讲）还是两台 —— 决定 14:35→14:45 那 10 分钟怎么走（Phase 6）
 
 **判据**：消息已发。
 
@@ -118,8 +120,10 @@ event: 2026-09-16
 - [x] 备用张（第 8 张，`class="backup"`，End 键直达）= `<video src="talk_130.webm">`
 - [x] `talk/check_talk.py`：附录 E 第 3 步那条正则数词（≤ 50，开场 ≤ 15）· 片子里每个数字都在 `SHOWCASE_PREP.md` · 黑话词表 grep（片子 + 台本英文行）· 听众名/元层 grep → **CHECK PASS**（首版开场 22 词因署名行超线，署名移到收尾页）
 - [x] `talk/fallback.html`（附录 B 原样）：6 张截图 —— 130 第 1 步 · LOOK 2/2 · READ 第 5 步 · 三栏结束 · 76 第 1 步 · 76 READ 12/12，每张一行「哪个 run · 该说什么」
-- [x] 09-11 `talk/RUNBOOK.md`：开讲前 5 分钟固定动作（标签页从左到右 ① 片子 ② demo 演讲版 ③ 兜底；缩放 125–150%；收书签栏；DND；全屏；带 `#1` 刷新一次确认不跳页；电源；转接头）· 别碰清单（不切编辑器、不 sign in、不进 live 页、不按 space）· 出事了怎么办（不调试、切兜底、一句带过、⛔ 永不说 "it worked this morning"）
-- [ ] 模板到了：搬它的标题条 / 页脚 / 配色 / 字体进 CSS；**09-14 18:00 还没到** → 海报配色出稿，不再等
+- [x] 09-11 `talk/RUNBOOK.md`：开讲前 5 分钟固定动作（标签页从左到右 ① 片子 ② demo 演讲版 ③ 兜底；缩放 ~~125–150%~~（09-13 作废，改 100%）；收书签栏；DND；全屏；带 `#1` 刷新一次确认不跳页；电源；转接头）· 别碰清单（不切编辑器、不 sign in、不进 live 页、不按 space）· 出事了怎么办（不调试、切兜底、一句带过、⛔ 永不说 "it worked this morning"）
+- [x] 09-13 模板 `talk/Showcase-Speaker-Deck.pptx` 套进 deck：顶部渐变条 · 页脚一行 · 深色标题页 / 收尾页（立方体背景 + 两个 logo）· 浅色内容页（紫方块 + 双色横线 + 白底图框，配图是白底）· Georgia / Arial / Consolas。页脚与 logo 全用 CSS 画，`check_talk.py` 不会把页脚的 9 个词和「16」算进去。第 1 张按模板加姓名，15 / 15 词
+- [x] 第 7 张改成不带位置的「Come to the board」（RUNBOOK 规定演讲前一天之后不改片子，所以不留到当天改）· [ ] 台本收尾句「The board is by the window.」还是旧的 —— user 重写台本时一起改
+- [x] 09-13 查出并修掉：demo 里只有截图会伸缩，iframe 一矮截图就被挤没。改之前 1080p 下浏览器 125% 截图 149px、150% **0px**，16:10 1280×800 56px；套模板后标题区更高，又少了 ~90px。改为 demo 固定按 1880×960 排版、整体缩放进片子区域 → 1080p 100% 299px · 150% 200px（物理像素与 100% 相同）· 1280×800 215px；点缩放后留出的边不翻页。RUNBOOK「缩放 125–150%」**作废**，改 100% + F11
 - [x] Playwright 导 `talk/talk.pdf`（print 媒体，每张一页，iframe/视频不进 PDF）· [ ] 主办方若收 slide，09-15 12:00 前发 Zekun
 - [ ] 只有 Zekun 说「必须交 pptx 在统一电脑放」才加 pptx 出口（python-pptx 铺模板），demo 改 Alt+Tab
 
@@ -144,6 +148,7 @@ event: 2026-09-16
 - [ ] quark 桌面一个文件夹：`demo_portable.html` · `talk/`（index + fallback + webm，相对路径保持）· PDF；U 盘同一套
 - [ ] 电源适配器 · HDMI 与 USB-C 转接 · 海报筒 · 手机热点已试
 - [ ] quark 电源计划「从不睡眠」；浏览器书签三条：`http://localhost:8799/` · 本地 portable · 本地 `talk/index.html`
+- [ ] quark 上看展板 demo 的截图够不够大：Windows 显示缩放 ≥ 125% 或浏览器放大时截图被挤小，150% 时消失 → 浏览器 100% + F11，仍小就 Ctrl+− 缩到 80–90%（`demo/README.md` → Live 第 5 步）
 - [ ] DGX：tmux `showcase` 里 `docker compose up -d` + `server.py`；`curl -s localhost:8799/health` 返回 ok
 - [ ] 从 quark 走隧道跑一次 live 全流程（一个 suggestion 任务，三栏出结果，三栏都判完后红绿灰框正确）
 - [ ] 会前一句管理预期发 Zekun（「10 分钟：一段现场 demo 加六张片子，不是一份 deck」）
@@ -152,16 +157,23 @@ event: 2026-09-16
 
 ### Phase 6 · 09-16 当天
 
-| 时间 | 做什么 | 出问题怎么办 |
-|---|---|---|
-| 09:00 | 挂海报 | — |
-| 09:10 | 笔记本：**先**双击离线 portable 让桌面有东西在动；再开隧道、`curl health`、跑一个测试任务 | 隧道不通 → 只用离线 portable，把「try your own」一句「not available on this network today」说清 |
-| 09:45 | AV check：quark 接投影，试 slide → 浏览器 → slide 一遍 | 投影只认主办方电脑 → U 盘 portable；再不行 → mp4 |
-| 10:00–13:15 | 桌上自动播放；有人问就走读 | — |
-| **13:15–14:35** | 板前循环 90 秒走读；深聊的访客给 live 页（按 Run 前说 D10 那句） | live 卡住 → `Stop`，回录像页，别当场排错 |
-| 14:40 | 演讲前 5 分钟：浏览器开到 `?task=130&autoplay=0`，slide 开到第 1 页 | — |
-| 14:45–15:30 | 演讲（自己的 10 分钟） | 浏览器崩 → 切 webm 那页 |
-| 17:15 | 撤展；DGX 上 `fuser -k 8799/tcp`、`docker compose down` | — |
+官方节目单（活动页，09-13 核到）× 你在做什么。台上有节目时观众多半在听，板前人少；**真正的投票窗口是 11:20 茶歇和 12:35 起的两小时午饭**。
+
+| 时间（官方） | 节目单 | 你做什么 | 出问题怎么办 |
+|---|---|---|---|
+| 09:00–09:30 | Poster set-up | 挂海报；笔记本**先**双击离线 portable 让桌面有东西在动；再开隧道、`curl health`、跑一个测试任务；截图太小 → Ctrl+− 缩到 80–90% | 隧道不通 → 只用离线 portable，把「try your own」一句「not available on this network today」说清 |
+| 09:30 | Registration & refreshments | — | — |
+| 09:45–10:15 | **AV check & speaker briefing** | quark 接投影，片子 → 第 2 张 iframe 步进几下 → 兜底页各一遍；当面问清演讲顺序、含不含问答、自带电脑还是统一电脑 | 投影只认主办方电脑 → U 盘 `talk/` + portable；再不行 → webm |
+| 10:00 | Exhibition + voting opens | 回板前，demo 自动播放 | — |
+| 10:30–11:20 | 两段 opening + collaboration talk | 板前自动播放即可 | — |
+| 11:20–11:35 | Break | 站板前，20 秒版走读（标题 + 面板 5 + 面板 6） | — |
+| 11:35–12:35 | Alumni spotlight + PhD route | 板前自动播放即可 | — |
+| **12:35–14:35** | Lunch · 13:15–14:35 authors at boards | **12:35 起就站板前**（午饭那 40 分钟人已经在逛板）；循环 90 秒走读；深聊的访客给 live 页（按 Run 前说 D10 那句） | live 卡住 → `Stop`，回录像页，别当场排错 |
+| **14:35** | 投票截止 · 10 分钟茶歇 | **立刻**收板前电脑走去讲台（一台电脑的话要拔线、搬、接投影）；到了做 RUNBOOK「开讲前 5 分钟」 | 不是第一个讲 → 有余量；第一个讲 → 14:30 就开始收 |
+| 14:45–15:30 | Student presentations | 自己的 10 分钟 | 浏览器崩 → 切 webm 那页 |
+| 15:30–16:30 | Keynote | — | — |
+| 16:30–17:00 | Closing & networking | 回板前，live 页给感兴趣的人 | — |
+| 17:00–17:30 | Poster take-down | 撤展；DGX 上 `fuser -k 8799/tcp`、`docker compose down` | — |
 
 ## 4. 十分钟演讲骨架 —— 一句话主张、七幕、六句锁死句
 

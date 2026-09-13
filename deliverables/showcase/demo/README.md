@@ -178,6 +178,13 @@ other. quark's docker (official image, port 9980) stays the backup:
    says *ready* when the server answers and *offline* when it does not.
    **Offline fallback:** if the tunnel or DGX is down, double-click a local copy of
    `demo_portable.html` instead; the three recorded tasks play with no network.
+5. **quark: check the screenshots are big enough.** The page's text blocks are
+   fixed-height and only the screenshots flex, so a short viewport squeezes them first.
+   Measured on the talk copy of this page (2026-09-13): a 1080p screen gives ~330 px
+   screenshots at 100 % zoom, ~150 px at 125 % and **0 px at 150 %**. Windows display
+   scaling counts the same as browser zoom. Keep the browser at 100 % and press F11;
+   if they still look small, zoom *out* (Ctrl+−, 90 % or 80 %) — that gives the page
+   more room. (The talk deck scales its embedded copy as a whole and is not affected.)
 
 > ⚠️ **Never open the page through VS Code's Live Server** (`localhost:5500–5502`).
 > Live Server reloads the whole page whenever any file in the workspace changes, and a

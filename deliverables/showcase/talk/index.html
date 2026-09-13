@@ -12,6 +12,9 @@
   arrow keys belong to the demo while it has steps left; it posts `demo-next` / `demo-prev`
   when stepped past either end, and the deck turns the page then. check_talk.py enforces
   the word budget (≤ 50 per slide, opening ≤ 15), traceable numbers and the jargon list.
+  The last <style> block re-skins all of it to the organiser's Showcase-Speaker-Deck.pptx
+  (2026-09-13). Its chrome — gradient bar, footer line, logos — is CSS only, so the checker
+  never counts the footer's words or its "16".
 -->
 <style>
   :root{
@@ -76,7 +79,12 @@
   .slide.demo{padding:clamp(1rem,2.2vh,1.6rem) clamp(1.2rem,2.5vw,2.4rem)}
   .slide.demo .kicker{margin-bottom:.5rem}
   .slide.demo h2{font-size:clamp(1.1rem,2vw,1.6rem);margin-bottom:.7rem}
-  .slide.demo iframe{flex:1;width:100%;border:1px solid var(--rule);background:#fff;border-radius:6px}
+  /* The demo's text is fixed-height and only its screenshots flex, so a shorter iframe (16:10, browser
+     zoom) squeezes the screenshots to 0 px (measured 2026-09-13). It therefore lays out at one fixed
+     size and is scaled as a whole to its box by fitDemo() below. */
+  .slide.demo .demo-fit{flex:1;min-height:0;position:relative;overflow:hidden}
+  .slide.demo iframe{position:absolute;left:50%;top:50%;width:1880px;height:960px;transform-origin:50% 50%;
+    transform:translate(-50%,-50%) scale(var(--fit,1));border:1px solid var(--rule);background:#fff;border-radius:6px}
   .figs{display:grid;gap:clamp(1rem,2.5vw,2.4rem);margin-top:clamp(1rem,2.5vh,1.8rem);align-items:center;min-height:0}
   .figs.two{grid-template-columns:1fr 1.1fr}
   .figs img{width:100%;max-height:52vh;object-fit:contain;display:block}
@@ -102,21 +110,111 @@
     .pager,.hint{display:none}
     .slide.demo iframe,.slide.backup video{display:none}
   }
+  /* ══ Organiser template skin — Showcase-Speaker-Deck.pptx (16:9, 13.33 × 7.5 in) ══
+     Values read off the template's XML: 1 in = 7.5vw = 13.33vh; pt → vh = pt / 5.4.
+     Dark slides (title, close): #050614 + cube background + both logos, Georgia white,
+     Arial name, Consolas lavender labels. Light slides: white, purple square + two-tone
+     rule under a Georgia title, Arial body, Consolas labels. Every slide: gradient bar
+     on top, Consolas footer line at the bottom. */
+  :root{
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:Arial,"Helvetica Neue",Helvetica,sans-serif;
+    --mono:Consolas,"SF Mono",Menlo,ui-monospace,monospace;
+    --paper:#ffffff; --ink:#12162E; --muted:#5D6787; --rule:#CFD5E8;
+    --navy:#141E41; --violet:#5049F9; --purple:#AB5FCE; --cyan:#36B1FE; --lav:#C9C6FF; --night:#050614;
+    --grad:linear-gradient(90deg,#5049F9 0%,#AB5FCE 54%,#36B1FE 100%);
+  }
+  body{background:var(--paper);color:var(--ink)}
+  .slide{justify-content:flex-start;padding:8vh 6.5vw 9vh}
+  .slide::before{content:"";position:absolute;left:0;right:0;top:0;height:1.33vh;background:var(--grad)}
+  .slide::after{
+    content:"Holistic AI × UCL CDI Research Showcase · 16 September 2026";
+    position:absolute;left:0;right:0;bottom:2.2vh;text-align:center;white-space:nowrap;
+    font-family:var(--mono);font-size:max(10px,min(1.67vh,.94vw));letter-spacing:.16em;color:var(--muted);
+  }
+  .kicker{font-family:var(--mono);font-size:max(10px,min(1.9vh,1.07vw));letter-spacing:.16em;color:var(--muted);margin-bottom:1.8vh}
+
+  /* light slides: purple square + Georgia title + navy segment over a pale full-width rule */
+  .slide:not(.dark) h2{
+    position:relative;padding-left:1.1em;padding-bottom:1.9vh;margin-bottom:3vh;
+    font-family:var(--serif);font-weight:400;letter-spacing:0;color:var(--ink);
+    font-size:max(1.3rem,min(4.8vh,2.7vw));line-height:1.2;
+    background:
+      linear-gradient(var(--navy),var(--navy)) left bottom/10.05vw .53vh no-repeat,
+      linear-gradient(var(--rule),var(--rule)) left bottom .13vh/100% .27vh no-repeat;
+  }
+  .slide:not(.dark) h2::before{content:"";position:absolute;left:0;top:.22em;width:.55em;height:.55em;background:var(--purple)}
+
+  /* figure box: white (the charts are white-backed), pale border, gradient strip, soft shadow */
+  .figs{position:relative;margin-top:0;padding:2.6vh 1.8vw;background:#fff;border:1px solid var(--rule);box-shadow:0 .5vh 1.4vh rgba(18,22,46,.12)}
+  .figs::before{content:"";position:absolute;left:0;right:0;top:0;height:.67vh;background:var(--grad)}
+  .figs img{max-height:50vh}
+  .figs.one img{max-height:52vh}
+  .foot{font-family:var(--sans);color:var(--muted);font-size:max(.8rem,min(2.4vh,1.35vw));margin-top:2.2vh}
+  .foot .num{color:var(--ink)}
+
+  /* two cards (slide 6) */
+  .split{margin-top:0}
+  .col{background:#F7F9FD;border:1px solid var(--rule);box-shadow:0 .5vh 1.4vh rgba(18,22,46,.10);padding:3.2vh 2.3vw 3.4vh}
+  .col h3{font-family:var(--mono);font-weight:700;color:var(--purple);letter-spacing:.16em;border-bottom:0;padding-bottom:0;margin-bottom:1.4vh;font-size:max(.75rem,min(2vh,1.13vw))}
+  .col li{font-family:var(--sans);font-size:max(1rem,min(3.4vh,1.9vw));color:var(--ink)}
+  .no li{color:var(--muted)}
+  .slide .split{min-height:50vh}
+  .slide .col li{font-size:max(1rem,min(3.9vh,2.2vw));padding:.45em 0}
+
+  /* demo slide keeps its width; title row compact */
+  .slide.demo{padding:4.6vh 2.5vw 5.6vh}
+  .slide.demo .kicker{margin-bottom:.8vh}
+  .slide.demo h2{font-size:max(1.05rem,min(3.4vh,1.9vw));padding-bottom:1.2vh;margin-bottom:1.6vh}
+  .slide.demo iframe{border:1px solid var(--rule);border-radius:0;box-shadow:0 .5vh 1.4vh rgba(18,22,46,.10)}
+
+  /* dark slides: title and close */
+  .slide.dark{
+    color:#fff;
+    background:
+      url(fig/tpl_logo_hai.png) left 6.5vw bottom 7.6vh/auto 5.7vh no-repeat,
+      url(fig/tpl_logo_ucl_cdi.png) right 6.5vw bottom 7.1vh/auto 6.8vh no-repeat,
+      url(fig/tpl_bg.jpg) center/cover no-repeat var(--night);
+  }
+  .slide.dark::after{color:var(--lav)}
+  .slide.dark .kicker{color:var(--lav)}
+  .slide.star{justify-content:center;align-items:center;text-align:center;padding:8vh 6.5vw 17vh}
+  .star h1{font-family:var(--serif);font-weight:400;letter-spacing:0;color:#fff;font-size:max(2rem,min(8.1vh,4.6vw));line-height:1.12;max-width:24ch}
+  .hl{background:var(--grad) left bottom/100% .07em no-repeat;padding:0 0 .05em}
+  .speaker{font-family:var(--sans);color:#fff;font-size:max(1rem,min(3.5vh,2vw));margin-top:4.2vh}
+  .affil{font-family:var(--sans);color:var(--lav);font-size:max(.85rem,min(2.6vh,1.5vw));margin-top:1.2vh}
+  .clauses{align-items:center;margin-top:0}
+  .clauses div{font-family:var(--serif);font-weight:400;letter-spacing:0;color:#fff;font-size:max(1.5rem,min(6.2vh,3.5vw))}
+  .clauses div:nth-child(2){color:var(--cyan)}
+  .qr{justify-content:center;text-align:left;margin-top:5vh}
+  .qr img{width:auto;height:13vh;background:#fff;padding:.7vh;outline:1.5px solid var(--violet);outline-offset:.9vh}
+  .closeline{color:#fff;font-family:var(--sans);font-size:max(1rem,min(3vh,1.7vw))}
+  .byline{font-family:var(--mono);color:var(--lav)}
+
+  /* chrome moves up, clear of the logos and the footer line */
+  .pager{top:2.6vh;bottom:auto;right:2vw;color:var(--muted)}
+  .hint{top:2.6vh;bottom:auto;left:2vw;color:var(--rule)}
+  body:has(.slide.dark.on) .pager{color:var(--lav)}
+  body:has(.slide.dark.on) .hint{color:rgba(201,198,255,.35)}
+  @media print{
+    html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
 </style>
 </head>
 <body>
 
-<!-- ══ 1 ══ opening: the poster's title, nothing else on screen -->
-<section class="slide on star">
-  <div class="kicker">MSc thesis · REALM workshop, EMNLP 2026</div>
+<!-- ══ 1 ══ opening: the template's title slide — the poster's title, the speaker, one line of provenance -->
+<section class="slide on star dark">
   <h1>When is <span class="hl">expensive perception</span> worth paying for?</h1>
+  <p class="speaker">Jiaming Wei</p>
+  <p class="affil">MSc thesis · REALM workshop, EMNLP 2026</p>
 </section>
 
 <!-- ══ 2 ══ the demo itself: talk copy, arrow keys step it -->
 <section class="slide demo">
   <div class="kicker">One recorded run per view · nothing on this screen is live</div>
   <h2>Same task, three ways of seeing it, three different bills.</h2>
-  <iframe src="../demo_portable.html?task=130&autoplay=0" title="demo: task 130 in LOOK, READ and BOTH" loading="eager"></iframe>
+  <div class="demo-fit"><iframe src="../demo_portable.html?task=130&autoplay=0" title="demo: task 130 in LOOK, READ and BOTH" loading="eager"></iframe></div>
 </section>
 
 <!-- ══ 3 ══ the ceiling, and the ruler -->
@@ -175,7 +273,7 @@
 </section>
 
 <!-- ══ 7 ══ close: the title comes back -->
-<section class="slide star">
+<section class="slide star dark">
   <div class="clauses">
     <div>Look, read, or both?</div>
     <div>Hindsight says: choose.</div>
@@ -183,7 +281,7 @@
   </div>
   <div class="qr">
     <img src="fig/qr_repo.png" alt="QR code: paper, code and full results">
-    <p class="closeline"><b>The board is by the window</b> — try your own task, live in all three views.<br>
+    <p class="closeline"><b>Come to the board</b> — try your own task, live in all three views.<br>
       <span class="byline">Jiaming Wei · jiaming.wei.25@ucl.ac.uk</span></p>
   </div>
 </section>
@@ -217,8 +315,17 @@
     return inRange(v)?v-1:0;
   }
 
+  // scale the fixed-size demo iframe to whatever box the slide leaves it (see .demo-fit)
+  function fitDemo(){
+    document.querySelectorAll('.slide.on .demo-fit').forEach(box=>{
+      const f=box.querySelector('iframe');
+      f.style.setProperty('--fit',Math.min(box.clientWidth/f.offsetWidth,box.clientHeight/f.offsetHeight));
+    });
+  }
+  addEventListener('resize',fitDemo);
+
   function go(n){i=Math.max(0,Math.min(slides.length-1,n));
-    slides.forEach((s,k)=>s.classList.toggle('on',k===i));cur.textContent=i+1;save(i+1);
+    slides.forEach((s,k)=>s.classList.toggle('on',k===i));cur.textContent=i+1;save(i+1);fitDemo();
     // the demo slide owns the arrow keys: hand focus to its iframe, take it back elsewhere
     const f=slides[i].querySelector('iframe');
     if(f) f.focus(); else if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur();
@@ -237,7 +344,8 @@
     if(e.data.type==='demo-next')go(i+1);
     if(e.data.type==='demo-prev')go(i-1);
   });
-  addEventListener('click',e=>{ if(e.target.tagName!=='IFRAME') go(e.clientX<innerWidth*0.2?i-1:i+1) });
+  // clicks on the demo (or the margin its scaled frame leaves) never turn the page
+  addEventListener('click',e=>{ if(e.target.tagName!=='IFRAME' && !e.target.closest('.demo-fit')) go(e.clientX<innerWidth*0.2?i-1:i+1) });
   go(restore());
 </script>
 </body>
