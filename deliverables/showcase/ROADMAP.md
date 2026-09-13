@@ -79,10 +79,10 @@ event: 2026-09-16
 ### Phase 0 · 今天 09-11 · 定方向、问清楼下条件（≤ 1 小时）
 
 - [x] D1–D10 入档（本文件）
-- [ ] Slack DM Zekun 四个问题（§6 有现成文字）：模板何时到 · 自带电脑还是统一电脑 · 10 分钟含不含问答 · 接口（HDMI / USB-C）和演讲顺序
+- [ ] Slack DM Zekun 五个问题（§6 有现成文字，09-13 改）：自带电脑还是统一电脑 · 10 分钟含不含问答 · 接口和演讲顺序 · 要不要提前交片子 · 板旁桌子 / 电源 / Wi-Fi（「模板何时到」已删，活动页有）
 - [x] user 09-11：先展出再演讲；演讲从自己电脑投屏，demo 单独一份或嵌进 slide → D2/D3 按此改写（HTML deck 嵌 demo）
-- [ ] **09-13 新增**：确认主办方登记的海报标题 = 印出来的 v9.10 标题 *When Is Expensive Perception Worth Paying For?*。`SHOWCASE_PREP.md §1` 给 Zekun 的 DM 用的是 v8 旧标题 *Look, read, or both? …*；若登记的是旧标题，观众在投票页对不上号
-- [ ] **09-13 新增**：确认只带一台电脑（quark 既跑展板 demo 又投演讲）还是两台 —— 决定 14:35→14:45 那 10 分钟怎么走（Phase 6）
+- [x] **09-13**：登记的海报标题 = 印出来的 v9.10（user 确认提交的是 v9），投票页对得上
+- [ ] **09-13 新增**：一台还是两台电脑 —— 先等 Zekun 第 1 问。统一电脑 → 一台 quark 放展板 + U 盘；自带电脑且有第二台 → 两台（quark 放展板跑 live，第二台只放片子，不需要网络 / 隧道 / DGX）；只有 quark → 一台，彩排时把 14:35 换场练一遍。两台的好处不是展板不停（投票已截止），而是省掉 10 分钟换场 + 互为备份
 
 **判据**：消息已发。
 
@@ -204,14 +204,18 @@ event: 2026-09-16
 演讲开讲前 5 分钟的固定动作、标签页顺序、别碰清单、出事怎么办，全在 runbook 里，这里不复述。两条硬规则先记住：
 demo 这张只用 → 步进、不按 space；浏览器出问题不调试，切兜底页，一句带过，⛔ 永不说 "it worked this morning"。
 
-## 6. 给 Zekun 的四个问题（Slack DM，今天发）
+## 6. 给 Zekun 的五个问题（Slack DM，09-13 改）
 
-> Hi Zekun — four quick logistics questions for the 16th so I can finish the slides this weekend:
-> 1. Is there a slide template we should use, and roughly when will it be shared?
-> 2. Do speakers present from their own laptop, or from one shared machine? (My 10 minutes include a short browser demo — I can bring it on a USB stick as a single HTML file if it has to be the shared machine.)
-> 3. Is the 10-minute slot inclusive of Q&A?
-> 4. Projector input — HDMI or USB-C? And do you know the speaking order yet?
+> Hi Zekun, a few quick logistics questions for Wednesday so I can finish rehearsing:
+> 1. For the student presentations, do speakers use their own laptop or one shared machine? My slides are a single HTML page with a short recorded demo inside. It runs offline in any browser, so a USB stick works if it has to be the shared machine.
+> 2. Does the 10-minute slot include Q&A?
+> 3. Is the projector input HDMI or USB-C, and do you know the speaking order yet?
+> 4. Do you need the slides in advance? If so, by when, and is a PDF fine?
+> 5. For the laptop demo next to my poster: will there be a small table and a power socket by the board, and is there Wi-Fi for presenters (eduroam is fine)?
+>
 > Thanks!
+
+原四问删了「模板何时到」（活动页已公布）；加第 4 问（收不收片子）、第 5 问（09-04 DM 提过桌子和电源，仓库里没有回复记录；Wi-Fi 是展板 live 页必需）。
 
 ## 7. 不做的事
 
