@@ -206,18 +206,18 @@ event: 2026-09-16
 演讲开讲前 5 分钟的固定动作、标签页顺序、别碰清单、出事怎么办，全在 runbook 里，这里不复述。两条硬规则先记住：
 demo 这张只用 → 步进、不按 space；浏览器出问题不调试，切兜底页，一句带过，⛔ 永不说 "it worked this morning"。
 
-## 6. 给 Zekun 的五个问题（Slack DM，09-13 改）
+## 6. 给 Zekun 的五个问题（Slack DM，09-13 按 MacBook 改）
 
-> Hi Zekun, a few quick logistics questions for Wednesday so I can finish rehearsing:
-> 1. For the student presentations, do speakers use their own laptop or one shared machine? My slides are a single HTML page with a short recorded demo inside. It runs offline in any browser, so a USB stick works if it has to be the shared machine.
+> Hi Zekun, a few quick logistics questions for Wednesday:
+> 1. For the student presentations, can I present from my own laptop (a MacBook; I'll bring a USB-C to HDMI adapter, so is HDMI right for the projector?), or do all speakers use one shared machine? My slides are a single HTML page with a short recorded demo inside. It runs offline in Chrome or Edge, so I can also bring it on a USB stick.
 > 2. Does the 10-minute slot include Q&A?
-> 3. Is the projector input HDMI or USB-C, and do you know the speaking order yet?
+> 3. Do you know the speaking order yet?
 > 4. Do you need the slides in advance? If so, by when, and is a PDF fine?
-> 5. For the laptop demo next to my poster: will there be a small table and a power socket by the board, and is there Wi-Fi for presenters (eduroam is fine)?
+> 5. For the laptop demo next to my poster: will there be a small table and a power socket by the board, and Wi-Fi for presenters (eduroam is fine)?
 >
 > Thanks!
 
-原四问删了「模板何时到」（活动页已公布）；加第 4 问（收不收片子）、第 5 问（09-04 DM 提过桌子和电源，仓库里没有回复记录；Wi-Fi 是展板 live 页必需）。
+每问的答案会改什么：① 统一电脑 → U 盘，且那台要有 Chrome / Edge，只能放 PowerPoint 就放不了 demo · ② 含问答 → 台本压到 7–8 分钟 · ③ 第一个讲 → 14:35 立刻走 · ④ 要交 → `talk.pdf`，提醒第 2 张 demo 不在 PDF 里 · ⑤ 无 Wi-Fi → 手机热点，不行就只放离线录像；无电源 → 自带插线板。
 
 ## 7. 不做的事
 
