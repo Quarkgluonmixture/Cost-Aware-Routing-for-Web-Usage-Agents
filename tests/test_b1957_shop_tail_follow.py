@@ -161,7 +161,13 @@ class TestTailBuilder:
 
 
 class TestB1959ReplicateKeyCollision:
-    """Document the latent collision rather than let it be discovered in a fire."""
+    """The collision is REAL, not latent — keep the premise and the fix pinned.
+
+    2026-08-06 (§437): `experiment_watchdog._auto_bind_manifest()` binds a condition the
+    moment it completes, so `shopping|B0|dom` entered the fire manifest on its own and
+    B-1959 went from latent to active. The fix lives in `_resume_filter_done`
+    (queue_phase1_paper_grade.sh): one manifest binding may retire only ONE chain line.
+    """
 
     def test_first_and_last_cell_share_a_manifest_key(self):
         code = ORCH.read_text(encoding="utf-8")
@@ -170,16 +176,41 @@ class TestB1959ReplicateKeyCollision:
                  if l.strip().startswith(("queue_baseline.sh", "queue_phantom"))]
         assert cells[0] == cells[-1], "replicate arm premise changed"
 
-    def test_manifest_has_no_shopping_conditions_yet(self):
-        """Why B-1959 is latent, not active. If this ever fails, the tail chain's
-        assumptions need re-checking BEFORE the next shop resume."""
-        mf = REPO_ROOT / "docs/checkpoints/pre_run/fire_manifest.json"
-        conds = json.loads(mf.read_text(encoding="utf-8")).get("conditions", {})
-        shopping = [k for k in conds if k.startswith("shopping|")]
-        assert not shopping, (
-            f"shopping entered the fire manifest ({shopping}) — RESUME_MISSING=1 "
-            "would now mark BOTH dom cells done and silently drop the replicate arm "
-            "(B-1959). Fix _condition_complete before relying on resume here."
+    def test_resume_filter_keeps_a_duplicate_whose_binding_is_spent(self):
+        """B-1959's fix, exercised on the REAL function (2026-09-13).
+
+        This replaces `test_manifest_has_no_shopping_conditions_yet`, a tripwire for
+        "B-1959 is still latent" that had been red since 2026-08-06 — because the thing
+        it watched for HAPPENED (`_auto_bind_manifest` bound `shopping|B0|dom` when that
+        condition finished) and was then fixed in §437. A tripwire left red after its
+        event is worse than no tripwire: it keeps telling every later reader to
+        "re-check the tail chain's assumptions" long after the re-check was done.
+
+        What replaces it has to be the FIX, and it has to touch the real code:
+        `_run_builders` above stubs `_resume_filter_done` with a counter-less version,
+        so `test_tail_supports_resume_but_never_drops_the_replicate` exercises the tail
+        DERIVATION rather than the filter's counting. This sources the actual function
+        and feeds it a chain carrying a deliberate duplicate.
+        """
+        qpg = REPO_ROOT / "scripts/queues/queue_phase1_paper_grade.sh"
+        harness = f"""
+        log() {{ :; }}
+        _condition_complete() {{ return 0; }}   # every binding reads as complete
+        eval "$(sed -n '/^_resume_filter_done() {{/,/^}}/p' {qpg})"
+        RESUME_MISSING=1 _resume_filter_done <<'CHAIN'
+queue_baseline.sh B0 dom shopping
+queue_baseline.sh B0 som shopping
+queue_baseline.sh B0 dom shopping
+CHAIN
+        """
+        out = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+        kept = [l for l in out.stdout.strip().splitlines() if l.strip()]
+        assert kept == ["queue_baseline.sh B0 dom shopping"], (
+            "B-1959 regression: with everything manifest-complete, the SECOND occurrence "
+            "of an identical chain line must survive — one binding may retire only one "
+            "line. That duplicate is shop_b0's replicate arm, which §242/§293 hang on, "
+            f"and dropping it looks exactly like a successful resume. got {kept}\n"
+            f"stderr: {out.stderr[-400:]}"
         )
 
 

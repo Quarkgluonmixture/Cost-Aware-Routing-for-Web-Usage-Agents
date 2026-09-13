@@ -22,6 +22,40 @@ updated: 2026-09-11
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-09-13 · §509.8 遗留的 universe lint 两条失败清掉了 —— 底下压着真泄漏
+>
+> chronicle → **笔记 §510** · 台账 **+8** · commit `b9c86f7`
+>
+> 上一节把它记成「9 个脚本未登记豁免」, 像台账维护; 实际七个未登记的里有五个在算 paper-facing 的数,
+> 两个真把 AMENDMENT_08 协议排除的任务算进分母。最硬的: `unique_solve_noise_envelope` 的 red_b0 分母 205,
+> 多出的 **task 160 在全-B assignment 下是 P-prompt 的 unique solve**。修后 `Vision` 上界 6→5、`P-prompt` 5→4,
+> **下界与 separation (+0) 不变 ⇒ §500 的「reddit 两 side 接触」结论不受影响**。
+> 根因: 六个脚本都过滤了 `sr_excluded` (runner 写的 episode 级标记), 而协议排除只在 `expected_scored_ids()` 里,
+> 数据里没痕迹; 加上 **cls 排除集恰好为空**, 缺陷在最常走的路径上不显形。
+> 处置 = 真修 5 个 / 豁免 2 个 (写了 why) / ratchet 删 2 条陈旧。测试 **24 failed → 22 failed**,
+> `git stash` 前后对照确认无新增失败 (剩 22 条是 paper prose + diag 规则版本的预存失败, 与本次无关)。
+>
+> ### 顺手还清了 next_steps 欠的一笔: P-text 臂的 prospective 评估
+> `budget_router_prospective_eval` 此前**从没跑过 eval**, 所以 universe 修正赶在首次使用前, 无产物需重算。
+> freeze 文件**不重写**(改它就毁掉 prospective 性质), 只在 `evaluate()` 取 freeze ∩ scored ⇒ PRIMARY set 218→216。
+> ```
+> B1_phantom_text_shopping_20260908 · PRIMARY (prospective) n=216 · full SR 4.2%
+>   two_tier   learned +1.39pp | 同成本固定 cap 13 +1.85pp | 随机 +2.11pp  -> PASS
+>   three_tier learned +1.85pp | 同成本固定 cap 12 +1.85pp | 随机 +2.36pp  -> FAIL
+> ```
+> ⇒ **预注册的 PRIMARY policy (two_tier) 方向判据通过。** three_tier 的 FAIL 不是事后挑的 —— 冻结时就写明 PRIMARY=two_tier。
+>
+> ### 留给下一手的三件 (都不急, 无一需要 GPU 立刻动)
+> 1. **B1 P-prompt shopping 落完后再跑一次** `budget_router_prospective_eval eval --run <dir>` ——
+>    09-13 14:50 时还在跑 (**405/437**)。这是预算路由唯一的 prospective 检验的第二个臂。
+> 2. **§505 那条链在 collected 口径上**: `results/router_llm_pilot_20260909/` 的 23 个 pilot 脚本无一引用
+>    canonical universe (住在 gitignored 的 `results/` 里, lint 扫不到)。数据源污染实测
+>    **82/21,291 = 0.39%**(46 个 success), 对 pp 级聚合结论方向不构成威胁 ⇒ **未重跑**(~25 min 链, 产物已冻成 digest)。
+>    digest `one_step_lookahead_2026-09-09.md:286` 的「full **205** tasks」即出自此, 写 NAACL 时要么重跑要么标口径。
+>    ⚠️ 裁定**不扩 lint 扫描到 `results/`**(CI 里不存在, 会让测试随机器变绿变红), 改用流程规则:
+>    pilot 脚本一旦产出要进稿的数字, 先搬进 `scripts/analysis/`。
+> 3. 仍未动: **v12 规则批**(backlog, user 09-11 定不急) · **B5 vision 第 ②③④ 步**(需 witness tag + ~$50 GPU, 不自主启动)。
+
 > ## 🟢 2026-09-11 夜 · B5 五个 condition 补登记完成 (cells / 失败桶 / diag), 顺带挖出 3 个 bug, 等 user 定修不修
 >
 > chronicle → **笔记 §509** · 汇总 `docs/analysis/vwa_classifieds/B5_classifieds_cross_mode_diag_summary.md` · bug **B-1998 / B-1999 / B-2000**
