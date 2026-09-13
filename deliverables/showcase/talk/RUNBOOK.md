@@ -9,25 +9,25 @@ _演讲只用 **MacBook + Chrome**。quark 全天留在展板（live 页的 ssh 
 | # | 做 | 确认 |
 |---|---|---|
 | 1 | MacBook 接投影（机身没有 HDMI 口就用 USB-C→HDMI 转接头）；⌘F1，或 控制中心 → 屏幕镜像 → 选「镜像」；看一眼是 16:9 还是 16:10 | 片子第 1 张四边不裁 |
-| 2 | **Chrome**（不用 Safari，只测过 Chromium）**只留三个标签页**，从左到右：① `talk/index.html#1` ② `demo_portable.html?task=130&autoplay=0` ③ `talk/fallback.html` | 其余标签页全关；书签栏收起 |
+| 2 | **Chrome**（不用 Safari，只测过 Chromium）**只留三个标签页**，从左到右：① `talk/index.html#opening` ② `demo_portable.html?task=130&autoplay=0` ③ `talk/fallback.html` | 其余标签页全关；书签栏收起 |
 | 3 | 浏览器缩放保持 **100%**（⌘0）；全屏 ⌃⌘F，并在菜单「显示」里取消「全屏模式下始终显示工具栏」。⛔ **不要放大**：demo 里只有截图会伸缩，1080p 上放大到 125% 截图只剩一半高，150% 时截图整个消失（09-13 实测）。片子第 2 张的 demo 已经按区域整体缩放，放大浏览器也不会让它变大 | 第 2 张三栏里的网页截图清楚可见 |
-| 4 | ① 带 `#1` 刷新一次（⌘R） | 停在第 1 张，不跳 |
+| 4 | ① 带 `#opening` 刷新一次（⌘R） | 停在 `opening`，不跳 |
 | 5 | ② 确认停在 **task 130 · step 1/…**，Play 按钮显示 *Play* 不是 *Pause* | 三栏第 0 帧都在 |
 | 6 | 控制中心 → 专注模式 → 勿扰；电源接上；静音；终端里跑 `caffeinate -d`（不熄屏，讲完 ⌃C） | 无弹窗 |
 | 7 | 手机计时器 9:30 | 放讲台上 |
 
-展板旁的 quark 继续自动播放，**不要动它**。Mac 按键对照：切标签页 ⌃Tab · 第 8 张备用录屏 Fn+→（= End）· 退出全屏 ⌃⌘F。
+展板旁的 quark 继续自动播放，**不要动它**。Mac 按键对照：切标签页 ⌃Tab · 参考页（备用录屏）按 R · 收尾页 Fn+→（= End）· 退出全屏 ⌃⌘F。
 
-## 台上的动线（对着台本的幕，v1 十幕）
+## 台上的动线（页面按 id，对着台本的段落）
 
-| 幕 | 手 |
+| 段落 | 手 |
 |---|---|
-| I | ① 第 1 张。说完最后一句 → 按 → 到第 2 张（demo iframe） |
-| II | 点一下 iframe 里的空白处让它拿到焦点；只按 **→**，共 10 下（READ 9 步 + 1 下看结束态）。⛔ 不按 space，⛔ 不按 1/2/3/4 |
-| III–IX | 每幕按一次 →（第 3 张收获 → 4 行为 → 5 失败 → 6 事后选 → 7 赢区 → 8 label supply → 9 将来 + ask）；第 7 张「only one of eight」后**不翻页 3 秒** |
-| X | 按 → 到第 10 张，收 |
+| opening | ① 停在 `opening`。说完最后一句 → 按 → 到 `demo` |
+| demo | 点一下 iframe 里的空白处让它拿到焦点；只按 **→**，共 10 下（READ 9 步 + 1 下看结束态），再按一次 → 自动翻到 `question`。⛔ 不按 space，⛔ 不按 1/2/3/4 |
+| question → not-yet | 每段按一次 →：`question` → `behaviour` → `failure` → `hindsight` → `learned` → `why` → `not-yet`；`learned`「only one of eight」后**不翻页，停一下** |
+| close | 按 → 到 `close`，收 |
 
-demo 到底之后再按一次 → 才会翻到第 3 张（deck 只在 demo 结束态后接管方向键）。备用录屏在第 11 张（Mac 上 Fn+→ 直达）。
+参考页 `reference`（39 秒录屏）不在主讲流程里：按 **R** 打开，再按 → 回到 `close`。End（Mac 上 Fn+→）直达 `close`。
 
 ## 别碰清单
 

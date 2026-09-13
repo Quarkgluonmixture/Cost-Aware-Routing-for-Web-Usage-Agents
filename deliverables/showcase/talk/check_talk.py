@@ -7,7 +7,7 @@ Four things, red = do not project:
   3. jargon grep — internal words never reach the screen or the spoken lines
      (ROADMAP.md §4 word list); poster sentences are whitelisted verbatim.
   4. meta grep — no listener names, no "how to talk to them" layer on the slides.
-Also prints the script's English word count (÷140 / ÷120, then +1/3 for clicks).
+Also prints the script's English word count — a reminder only; the timing that counts is a timed read-aloud (playbook v3 §4).
 
 Usage:  .venv/bin/python3 deliverables/showcase/talk/check_talk.py
 """
@@ -104,9 +104,7 @@ def main() -> int:
     print(f"  {'✓' if not hits else '✗'} deck: {', '.join(hits) if hits else 'clean'}")
 
     n_words = sum(len(WORD.findall(l)) for l in lines)
-    print(f"── script: {n_words} English words in the acts → {n_words/140:.1f} min at 140 wpm, "
-          f"{n_words/120:.1f} at 120; plus a third for clicks and pauses ≈ {n_words/140*4/3:.1f}–{n_words/120*4/3:.1f} min "
-          f"(demo stepping not included)")
+    print(f"── script: {n_words} English words in the acts (an estimate only; time it aloud — playbook v3 §4)")
 
     print("CHECK PASS" if not fail else "CHECK FAIL")
     return 1 if fail else 0

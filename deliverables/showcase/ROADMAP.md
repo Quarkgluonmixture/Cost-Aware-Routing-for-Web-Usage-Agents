@@ -72,6 +72,7 @@ event: 2026-09-16
 - **D13 demo 在前，解释在后。** 第 2 页就是 demo（iframe），三栏的说明由 demo 页自己的栏头承担（screenshot only / text tree only / marked screenshot），LOOK=Vision、READ=DOM、BOTH=SoM 的映射口头说；「六种看法、八个设置」的方法页挪到 demo 之后当「我们怎么量的」。片子里不放 demo 截图（demo 活着时放它的照片等于自己跟自己抢），截图只进兜底页。
 - **D14 演讲要有 ask，放在收尾句前，三件当场能给的小事**：① 会后到展板输一道自己的任务；② 在跑 web agent 的人告诉我你们用哪种看法、为什么；③ 谁有成功率更高的 agent，借我们测一次 label supply 的结论是否翻转。没有 ask 的汇报结局是礼貌点头散会。
 - **D15 故事线按 user 09-13 改：先给观众带走什么，再 行为不同 → 失败不同 → 那就按任务选？→ 学不会 → 将来要什么。** 标题页、demo 页不动；第 3 张用模板的 THE CLAIM 深色框放三条收获；新增行为（海报面板 3）、失败（面板 4 = REALM Table 41）两张；原「不主张」换成「要满足什么条件」。共 10 张 + 备用。台本 v1 按十幕重排（仍待 user 出声重写）。失败那张按源 JSON 重算后加了限定：规律来自 VWA 六格（WA 两格只占 10 / 38 题），脚注不拿只有 13 次命中的 2.3× 当主数（笔记 §512）。
+- **D16 按 `talk/presentation-playbook 3.md`（user 09-13 给的 v3）对齐。** ① 第 3 页的三条结论作废（user：「一甩上去一头雾水」），改成**一个问题 + 四个路标**，`close` 回答它。② 图全部为演讲重画（`talk/talk_figures.py`，同一批源数据）：叫法统一成 demo 的 LOOK / READ / BOTH，三种纯文本变体按内容命名，去掉 oracle / pp / cell 代号；失败图的截图侧改叫 LOOK and BOTH（海报 `IMAGE-ONLY` 不对，BOTH 带文字）。③ `hindsight` 页删掉热力矩阵和三臂韦恩（韦恩那三臂的独有解题数下界可归零，§470.3），换成「单一最佳 → 事后最优」逐设置箭头图；脚注只放同臂数比较（加一种看法 +7.14 vs 重跑一次 +4.46–7.59，仅 cls·B0），不再把五臂收益和一次重跑并排（`noise_floor_inventory.md` §2 不许）。④ 片子每页有稳定 id，hash 用 id，参考页移出主讲流程（R 进入）。⑤ 台本 v2 按附录 C：段落按页面 id，精确措辞只锁核心主张 / 边界 / 请求，删掉「背六句」和「字数 ÷140 ÷120 加三分之一」（v3 §4：以出声计时为准）。D12 的字数公式随之作废。
 
 ## 3. 六个 phase
 
@@ -184,20 +185,19 @@ event: 2026-09-16
 
 台本在 `talk/rehearsal-script.md`（v1 十幕，中文引导 · 英文台词）。这里只定每幕**目的、画面、锁死句、秒数**。数字全部对着 `SHOWCASE_PREP.md §5`。demo 仍在第 2 幕（D13）。
 
-| 幕 | 秒 | 画面 | 目的句 | 锁死句 | 对应海报 |
-|---|---|---|---|---|---|
-| I 开场 | 0:00–0:25 | 第 1 张：标题 + 姓名 + 出处 | 这是量出来的，不是提案 | *When is expensive perception worth paying for?* | 标题条 |
-| II Demo | 0:25–2:15 | 第 2 张：demo iframe（`?task=130&autoplay=0`） | 同一任务三种看法三种账单，learned choice 选错 | *Same task, three ways of seeing it, three different bills.* | 中部 76（一句指回） |
-| III 带走什么 | 2:15–2:40 | 第 3 张：深色框三条 | 先交出收获，后面逐条兑现 | —（照意思说） | — |
-| IV 行为不同 | 2:40–3:25 | 第 4 张：面板 3 | 看法一换，做的事就换 | *With only a screenshot, the agent scrolls far more and types far less.* | 面板 3 |
-| V 失败不同 | 3:25–4:20 | 第 5 张：面板 4 | 输的方式也不同（VWA 六格） | *Text-only fails in ways you can name; image-only just never gets there.* | 面板 4 |
-| VI 按任务选？ | 4:20–5:20 | 第 6 张：面板 1 + 2 | 事后选有收益，拿重跑当尺子 | —（标题照意思说） | 面板 1 · 2 |
-| VII 学不会 | 5:20–6:25 | 第 7 张：面板 5 | 0 of 8，hindsight 也只有 1 of 8 | *Learned routers buy success only by spending more.* **停 3 秒** | 面板 5 |
-| VIII 为什么 | 6:25–7:10 | 第 8 张：面板 6 | 例子只在做对时才有 | —（海报原句，照意思说） | 面板 6 |
-| IX 将来 + ask | 7:10–8:05 | 第 9 张：要满足什么 · 三个请求 | 不是学不会，是还不行；把听众变成一起做的人 | *Improve the agent first, collect reliable examples, then learn when to look.* | — |
-| X 收尾 | 8:05–8:25 | 第 10 张：标题再现 + QR | 回到题目那句问句 | （同 I） | 页脚 QR |
-| — | 8:25–10:00 | 缓冲 / 问答 | 答案在 §4，禁语在 §6 | | |
-
+| 页面 id | 这页的作用（一页一事） | 画面 | 精确措辞 |
+|---|---|---|---|
+| `opening` | 为什么值得听 | 标题 + 姓名 + 出处 | — |
+| `demo` | 亲眼看到三种看法三种账单，learned choice 选错 | demo iframe（`?task=130&autoplay=0`） | *Same task, three ways of seeing it, three different bills.* |
+| `question` | 提出本场问题，预告四步 | 深色：一个问题 + 四个路标 | *Should it look, read, or both — and can it learn to choose?* |
+| `behaviour` | ① 看法改变行为 | `talk_behaviour.png` | — |
+| `failure` | ② 看法改变失败方式（VWA 六格） | `talk_failure.png` | 边界：*from the six VisualWebArena settings* |
+| `hindsight` | ③ 事后选对有收益，对着重跑读 | `talk_hindsight.png` | 边界：同臂数比较那句 |
+| `learned` | ④ 学不会：0 of 8，事后最优也只有 1 of 8 | `talk_routing.png` | *Zero of eight… only one of eight.* |
+| `why` | 例子只在做对时才有 | `talk_label_supply.png` | — |
+| `not-yet` | 边界 + 三个请求 | 两张卡 | 边界句 + 三个请求 |
+| `close` | 回答 `question` | 标题再现 + QR | *It depends on the task — and nothing we trained knows it yet.* |
+| `reference` | 备用录屏（不在主讲流程） | webm | — |
 **裁剪顺序**：先把 VIII 压成一句 → 再删 VI 的重跑两句 → 再让 III 只念三行 → 再删 I 的自陈。**II（demo）永不砍；VII 的 0 of 8 与 1 of 8 必须连着说。**
 
 **沉默三处**：II「the one view that failed」后 2 秒；VII「only one of eight」后 3 秒不翻页；IX「that's where this should be tested」后 2 秒。

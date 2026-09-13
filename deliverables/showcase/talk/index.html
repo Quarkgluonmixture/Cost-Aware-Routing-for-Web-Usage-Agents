@@ -149,7 +149,10 @@
   .figs{position:relative;margin-top:0;padding:2.6vh 1.8vw;background:#fff;border:1px solid var(--rule);box-shadow:0 .5vh 1.4vh rgba(18,22,46,.12)}
   .figs::before{content:"";position:absolute;left:0;right:0;top:0;height:.67vh;background:var(--grad)}
   .figs img{max-height:50vh}
-  .figs.one img{max-height:52vh}
+  /* one-figure slides: the box takes the height the title leaves and the chart is fitted inside it —
+     a fixed vh cap let the chart overflow the box whenever the title wrapped to two lines */
+  .figs.one{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center}
+  .figs.one img{width:auto;height:auto;max-width:100%;max-height:100%}
   .foot{font-family:var(--sans);color:var(--muted);font-size:max(.8rem,min(2.4vh,1.35vw));margin-top:2.2vh}
   .foot .num{color:var(--ink)}
 
@@ -191,15 +194,17 @@
   .closeline{color:#fff;font-family:var(--sans);font-size:max(1rem,min(3vh,1.7vw))}
   .byline{font-family:var(--mono);color:var(--lav)}
 
-  /* claim slide (template slide 3): cube ground without logos, gradient box with a gradient bar on its left */
+  /* question slide: the template's dark ground without logos; one question, four signposts */
   .slide.dark.plain{background:url(fig/tpl_bg.jpg) center/cover no-repeat var(--night)}
-  .slide.claimslide{justify-content:center;padding:8vh 6.5vw 12vh}
-  .claimbox{position:relative;background:linear-gradient(90deg,#141E41,#3F3AC4);padding:5vh 4.5vw 5.6vh 6vw}
-  .claimbox::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1.5vw;background:linear-gradient(180deg,#5049F9,#AB5FCE 54%,#36B1FE)}
-  .claimlabel{font-family:var(--mono);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--lav);font-size:max(.8rem,min(2vh,1.13vw));margin-bottom:3.2vh}
-  ol.takeaway{list-style:none;counter-reset:t;display:flex;flex-direction:column;gap:2.4vh}
-  ol.takeaway li{counter-increment:t;display:grid;grid-template-columns:1.6em 1fr;align-items:baseline;font-family:var(--serif);color:#fff;font-size:max(1.2rem,min(4.4vh,2.5vw));line-height:1.25}
-  ol.takeaway li::before{content:counter(t);font-family:var(--mono);font-weight:700;color:var(--cyan);font-size:.75em}
+  .slide.questionslide{justify-content:center;padding:8vh 6.5vw 14vh}
+  .questionslide .kicker{color:var(--lav)}
+  .questionslide h2{font-family:var(--serif);font-weight:400;letter-spacing:0;color:#fff;
+    font-size:max(1.8rem,min(7.2vh,4.1vw));line-height:1.15;max-width:none;margin-bottom:6vh}
+  ol.signposts{list-style:none;counter-reset:q;display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw}
+  ol.signposts li{counter-increment:q;padding:2.2vh 1.3vw 2.6vh;border-top:.6vh solid;border-image:var(--grad) 1;
+    background:rgba(20,30,65,.6);color:#fff;font-family:var(--sans);font-size:max(1rem,min(3.1vh,1.75vw));line-height:1.3}
+  ol.signposts li::before{content:counter(q);display:block;font-family:var(--mono);font-weight:700;color:var(--cyan);
+    font-size:.85em;margin-bottom:1.2vh}
   .next span.m{color:var(--purple)}
   .num{white-space:nowrap}
 
@@ -216,84 +221,83 @@
 <body>
 
 <!-- ══ 1 ══ opening: the template's title slide — the poster's title, the speaker, one line of provenance -->
-<section class="slide on star dark">
+<section class="slide on star dark" id="opening">
   <h1>When is <span class="hl">expensive perception</span> worth paying for?</h1>
   <p class="speaker">Jiaming Wei</p>
   <p class="affil">MSc thesis · REALM workshop, EMNLP 2026</p>
 </section>
 
 <!-- ══ 2 ══ the demo itself: talk copy, arrow keys step it -->
-<section class="slide demo">
+<section class="slide demo" id="demo">
   <div class="kicker">One recorded run per view · nothing on this screen is live</div>
   <h2>Same task, three ways of seeing it, three different bills.</h2>
   <div class="demo-fit"><iframe src="../demo_portable.html?task=130&autoplay=0" title="demo: task 130 in LOOK, READ and BOTH" loading="eager"></iframe></div>
 </section>
 
-<!-- ══ 3 ══ what you take away — the template's claim slide -->
-<section class="slide dark plain claimslide">
-  <div class="claimbox">
-    <div class="claimlabel">If you build web agents, take away</div>
-    <ol class="takeaway">
-      <li>How an agent sees the page changes what it does, and how it fails.</li>
-      <li>Choosing the view per task would pay, in hindsight.</li>
-      <li>No learned choice gets there yet; a stronger agent is the test.</li>
-    </ol>
-  </div>
+<!-- ══ question ══ the one question the rest of the talk answers; the close answers it -->
+<section class="slide dark plain questionslide" id="question">
+  <div class="kicker">If you build a web agent</div>
+  <h2>Should it look, read, or both&nbsp;—<br>and can it learn to choose?</h2>
+  <ol class="signposts">
+    <li>How do the views behave?</li>
+    <li>How do they fail?</li>
+    <li>Does choosing pay?</li>
+    <li>Can it be learned?</li>
+  </ol>
 </section>
 
-<!-- ══ 4 ══ they behave differently (poster panel 3) -->
-<section class="slide">
-  <div class="kicker">6 views · 8 website × model settings · 8,934 task attempts</div>
-  <h2>With only a screenshot, the agent scrolls far more and types far less.</h2>
+<!-- ══ behaviour ══ poster panel 3, relabelled (talk_figures.py) -->
+<section class="slide" id="behaviour">
+  <div class="kicker">① How do the views behave · 6 views · 8 settings · 8,934 task attempts</div>
+  <h2>With only the screenshot, the agent scrolls far more and types far less.</h2>
   <div class="figs one">
-    <img src="fig/behaviour.png" alt="share of steps spent scrolling and typing per view, median and range over eight settings">
+    <img src="fig/talk_behaviour.png" alt="share of steps spent scrolling and typing for each of the six views, median and range over eight settings">
   </div>
-  <p class="foot">Medians over 8 settings: image-only scrolls in <span class="num">about 30%</span> of steps, the rest <span class="num">about 6%</span>; it types about half as often</p>
+  <p class="foot">Medians over 8 settings: LOOK scrolls in <span class="num">about 30%</span> of its steps, every other view <span class="num">about 6%</span>; it types about half as often</p>
 </section>
 
-<!-- ══ 5 ══ and they fail differently (poster panel 4 = REALM Table 41) -->
-<section class="slide">
-  <div class="kicker">Tasks only one side solved · how the other side failed</div>
-  <h2>Text-only fails in ways you can name; image-only just never gets there.</h2>
+<!-- ══ failure ══ poster panel 4 = REALM Table 41; the screenshot side is LOOK + BOTH -->
+<section class="slide" id="failure">
+  <div class="kicker">② How do they fail · tasks only one side solved</div>
+  <h2>Text-only views fail in ways you can name; views with the screenshot just never get there.</h2>
   <div class="figs one">
-    <img src="fig/failure.png" alt="how often each failure shows up on tasks the other side solved, against how often it shows up everywhere">
+    <img src="fig/talk_failure.png" alt="how often each failure shows up on tasks the other side solved, against how often that side fails that way everywhere">
   </div>
-  <p class="foot">Each side against its own failures elsewhere · text-only: several named failures over <span class="num">2×</span> · image-only: none stands out · pattern from the six VisualWebArena settings</p>
+  <p class="foot">Each side vs its own failures elsewhere · text-only: several over <span class="num">2×</span> · LOOK and BOTH: none stands out · six VisualWebArena settings</p>
 </section>
 
-<!-- ══ 6 ══ so choose per task? in hindsight it pays; the rerun is the ruler -->
-<section class="slide">
-  <div class="kicker">So choose the view per task? · no view wins everywhere · they solve different tasks</div>
+<!-- ══ hindsight ══ five-view gain in the figure; the rerun comparison is arm-count matched (noise_floor_inventory §2) -->
+<section class="slide" id="hindsight">
+  <div class="kicker">③ Does choosing pay</div>
   <h2>Hindsight says choosing pays; a rerun says how much of that is noise.</h2>
-  <div class="figs two">
-    <img src="fig/design_matrix.png" alt="success rate of six views in eight settings">
-    <img src="fig/venn_b0.png" alt="tasks solved by different views overlap but do not coincide">
+  <div class="figs one">
+    <img src="fig/talk_hindsight.png" alt="for each of eight settings, the best single view's success rate and perfect per-task hindsight over all six views">
   </div>
-  <p class="foot">Hindsight: <span class="num">+3.45 to +16.35</span> in 100 vs the best single view · a rerun flips <span class="num">10–14%</span>, buys <span class="num">2.0–7.6</span></p>
+  <p class="foot">Perfect hindsight: <span class="num">+3.45 to +16.35</span> in 100 · in the one setting rerun for every view, one more view bought <span class="num">+7.14</span>, one rerun <span class="num">+4.46 to +7.59</span></p>
 </section>
 
-<!-- ══ 7 ══ but it can't be learned yet -->
-<section class="slide">
-  <div class="kicker">Can it be learned? · five learned choices · nested cross-validation · vs always-cheapest</div>
+<!-- ══ learned ══ poster panel 5, relabelled -->
+<section class="slide" id="learned">
+  <div class="kicker">④ Can it be learned · five learned choices · nested cross-validation · vs always-cheapest</div>
   <h2>Learned routers buy success only by spending more.</h2>
   <div class="figs one">
-    <img src="fig/routing.png" alt="every routing policy against always-cheapest; the win region is cheaper and no worse">
+    <img src="fig/talk_routing.png" alt="every learned choice against always using the cheapest view; the win region is cheaper and no worse">
   </div>
   <p class="foot">Win region = cheaper and no worse. Learned: <span class="num">0 of 8</span>. Perfect hindsight: <span class="num">1 of 8</span>.</p>
 </section>
 
-<!-- ══ 8 ══ why not yet -->
-<section class="slide">
+<!-- ══ why ══ poster panel 6, relabelled -->
+<section class="slide" id="why">
   <div class="kicker">Why not yet · a “which view” example exists only when the task is solved</div>
   <h2>More routing upside, less usable training signal.</h2>
   <div class="figs one">
-    <img src="fig/label_supply.png" alt="usable routing labels against best single-view coverage, six settings">
+    <img src="fig/talk_label_supply.png" alt="usable which-view examples against how many tasks the best single view solves, six settings">
   </div>
   <p class="foot">Base success <span class="num">2–36%</span> · <span class="num">15–97</span> usable examples per setting · enough to train in <span class="num">2 of the 6</span></p>
 </section>
 
-<!-- ══ 9 ══ what it would take, and three asks -->
-<section class="slide">
+<!-- ══ not-yet ══ what it would take, and three asks -->
+<section class="slide" id="not-yet">
   <div class="kicker">Not yet</div>
   <h2>Improve the agent first, collect reliable examples, then learn when to look.</h2>
   <div class="split">
@@ -316,11 +320,11 @@
   </div>
 </section>
 
-<!-- ══ 10 ══ close: the title comes back -->
-<section class="slide star dark">
+<!-- ══ close ══ answers the question page -->
+<section class="slide star dark" id="close">
   <div class="clauses">
     <div>Look, read, or both?</div>
-    <div>Hindsight says: choose.</div>
+    <div>It depends on the task.</div>
     <div>Nothing we trained knows it yet.</div>
   </div>
   <div class="qr">
@@ -330,34 +334,22 @@
   </div>
 </section>
 
-<!-- ══ 8 · backup: only if the live page fails — class "backup" exempts it from the word budget ══ -->
-<section class="slide backup">
-  <div class="kicker">Backup — task 130, recorded stepping, 39 s</div>
+<!-- ══ reference ══ outside the main flow (R to open, → returns to the close); "backup" exempts it from the word budget -->
+<section class="slide backup" id="reference">
+  <div class="kicker">Reference — task 130, recorded stepping, 39 s</div>
   <video src="talk_130.webm" controls preload="metadata"></video>
 </section>
 
-<div class="pager"><span id="cur">1</span> / <span id="tot">5</span></div>
-<div class="hint">← →  ·  space  ·  click</div>
+<div class="pager"><span id="pos"></span></div>
+<div class="hint">← →  ·  space  ·  click  ·  R reference</div>
 
 <script>
-  const slides=[...document.querySelectorAll('.slide')];let i=0;
-  const cur=document.getElementById('cur');document.getElementById('tot').textContent=slides.length;
-
-  // Remember the current slide across reloads (a file-watcher refresh, an
-  // accidental ⌘R, or reopening the tab) — otherwise you snap back to slide 1
-  // mid-talk. Stored in the URL hash so it also survives a fresh window, with
-  // sessionStorage as a fallback when the hash is stripped.
-  function save(n){
-    try{ history.replaceState(null,'','#'+n); }catch(e){ location.hash=String(n); }
-    try{ sessionStorage.setItem('showcase-slide',String(n)); }catch(e){}
-  }
-  function restore(){
-    const inRange=v=>Number.isInteger(v)&&v>=1&&v<=slides.length;
-    const h=parseInt(location.hash.slice(1),10);
-    if(inRange(h)) return h-1;
-    let v=NaN; try{ v=parseInt(sessionStorage.getItem('showcase-slide'),10); }catch(e){}
-    return inRange(v)?v-1:0;
-  }
+  // Pages have stable ids (playbook v3 §9 / Appendix A): the URL hash is the id, the script and
+  // runbook name pages by id, and the reference page sits outside the main flow.
+  const slides=[...document.querySelectorAll('.slide')];
+  const main=slides.filter(s=>!s.classList.contains('backup'));
+  const pos=document.getElementById('pos');
+  let cur=main[0];
 
   // scale the fixed-size demo iframe to whatever box the slide leaves it (see .demo-fit)
   function fitDemo(){
@@ -368,29 +360,50 @@
   }
   addEventListener('resize',fitDemo);
 
-  function go(n){i=Math.max(0,Math.min(slides.length-1,n));
-    slides.forEach((s,k)=>s.classList.toggle('on',k===i));cur.textContent=i+1;save(i+1);fitDemo();
-    // the demo slide owns the arrow keys: hand focus to its iframe, take it back elsewhere
-    const f=slides[i].querySelector('iframe');
+  // Remember the page across reloads (an accidental reload, reopening the tab): the id goes in the
+  // hash, sessionStorage is the fallback, and a bare number still reads as a main-flow position.
+  function save(id){
+    try{ history.replaceState(null,'','#'+id); }catch(e){ location.hash=id; }
+    try{ sessionStorage.setItem('showcase-slide',id); }catch(e){}
+  }
+  function find(key){
+    if(!key) return null;
+    const byId=slides.find(s=>s.id===key); if(byId) return byId;
+    const n=Number(key); return Number.isInteger(n)&&n>=1&&n<=main.length?main[n-1]:null;
+  }
+  function restore(){
+    let stored=null; try{ stored=sessionStorage.getItem('showcase-slide'); }catch(e){}
+    return find(location.hash.slice(1))||find(stored)||main[0];
+  }
+  function show(s){
+    cur=s; slides.forEach(x=>x.classList.toggle('on',x===s));
+    pos.textContent=s.classList.contains('backup')?'reference':`${main.indexOf(s)+1} / ${main.length}`;
+    save(s.id); fitDemo();
+    // the demo page owns the arrow keys: hand focus to its iframe, take it back elsewhere
+    const f=s.querySelector('iframe');
     if(f) f.focus(); else if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur();
   }
+  function step(d){
+    if(!main.includes(cur)){ show(main[main.length-1]); return; }   // leaving the reference page returns to the close
+    show(main[Math.max(0,Math.min(main.length-1,main.indexOf(cur)+d))]);
+  }
   addEventListener('keydown',e=>{
-    if(['ArrowRight','ArrowDown',' ','PageDown','n'].includes(e.key)){e.preventDefault();go(i+1)}
-    if(['ArrowLeft','ArrowUp','PageUp','p'].includes(e.key)){e.preventDefault();go(i-1)}
-    if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1);
+    if(['ArrowRight','ArrowDown',' ','PageDown','n'].includes(e.key)){e.preventDefault();step(1)}
+    if(['ArrowLeft','ArrowUp','PageUp','p'].includes(e.key)){e.preventDefault();step(-1)}
+    if(e.key==='Home'){e.preventDefault();show(main[0])}
+    if(e.key==='End'){e.preventDefault();show(main[main.length-1])}
+    if(e.key==='r'||e.key==='R'){const ref=slides.find(x=>x.classList.contains('backup')); if(ref) show(ref)}
   });
-  // a hand-edited hash (or a same-document jump to #N) should turn the page too;
-  // the template only reads the hash on load
-  addEventListener('hashchange',()=>go(restore()));
+  addEventListener('hashchange',()=>{ const s=restore(); if(s!==cur) show(s); });
   // the demo, stepped past its last (or first) step, asks for the page to turn
   addEventListener('message',e=>{
     if(!e.data||typeof e.data.type!=='string')return;
-    if(e.data.type==='demo-next')go(i+1);
-    if(e.data.type==='demo-prev')go(i-1);
+    if(e.data.type==='demo-next')step(1);
+    if(e.data.type==='demo-prev')step(-1);
   });
   // clicks on the demo (or the margin its scaled frame leaves) never turn the page
-  addEventListener('click',e=>{ if(e.target.tagName!=='IFRAME' && !e.target.closest('.demo-fit')) go(e.clientX<innerWidth*0.2?i-1:i+1) });
-  go(restore());
+  addEventListener('click',e=>{ if(e.target.tagName!=='IFRAME' && !e.target.closest('.demo-fit')) step(e.clientX<innerWidth*0.2?-1:1) });
+  show(restore());
 </script>
 </body>
 </html>
