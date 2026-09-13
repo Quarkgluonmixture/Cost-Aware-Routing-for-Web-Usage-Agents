@@ -82,7 +82,7 @@ event: 2026-09-16
 - [ ] Slack DM Zekun 五个问题（§6 有现成文字，09-13 改）：自带电脑还是统一电脑 · 10 分钟含不含问答 · 接口和演讲顺序 · 要不要提前交片子 · 板旁桌子 / 电源 / Wi-Fi（「模板何时到」已删，活动页有）
 - [x] user 09-11：先展出再演讲；演讲从自己电脑投屏，demo 单独一份或嵌进 slide → D2/D3 按此改写（HTML deck 嵌 demo）
 - [x] **09-13**：登记的海报标题 = 印出来的 v9.10（user 确认提交的是 v9），投票页对得上
-- [ ] **09-13 新增**：一台还是两台电脑 —— 先等 Zekun 第 1 问。统一电脑 → 一台 quark 放展板 + U 盘；自带电脑且有第二台 → 两台（quark 放展板跑 live，第二台只放片子，不需要网络 / 隧道 / DGX）；只有 quark → 一台，彩排时把 14:35 换场练一遍。两台的好处不是展板不停（投票已截止），而是省掉 10 分钟换场 + 互为备份
+- [x] **09-13 定：两台。** quark 全天放展板（live 页的 ssh 隧道只在 quark 上）；**MacBook + Chrome 只放片子**（离线，不需要网络 / 隧道 / DGX）。Zekun 若答「统一电脑」，片子走 U 盘，MacBook 退为备份。原判断：先等 Zekun 第 1 问。统一电脑 → 一台 quark 放展板 + U 盘；自带电脑且有第二台 → 两台（quark 放展板跑 live，第二台只放片子，不需要网络 / 隧道 / DGX）；只有 quark → 一台，彩排时把 14:35 换场练一遍。两台的好处不是展板不停（投票已截止），而是省掉 10 分钟换场 + 互为备份
 
 **判据**：消息已发。
 
@@ -149,6 +149,8 @@ event: 2026-09-16
 - [ ] 电源适配器 · HDMI 与 USB-C 转接 · 海报筒 · 手机热点已试
 - [ ] quark 电源计划「从不睡眠」；浏览器书签三条：`http://localhost:8799/` · 本地 portable · 本地 `talk/index.html`
 - [ ] quark 上看展板 demo 的截图够不够大：Windows 显示缩放 ≥ 125% 或浏览器放大时截图被挤小，150% 时消失 → 浏览器 100% + F11，仍小就 Ctrl+− 缩到 80–90%（`demo/README.md` → Live 第 5 步）
+- [ ] **MacBook**：装 Chrome；把 `tmp/showcase_talk_bundle.zip`（DGX 上，VS Code 里右键 Download）解压到桌面，保持 `showcase/demo_portable.html` 与 `showcase/talk/` 同级；Chrome 打开 `talk/index.html`：→ 翻完 8 张、第 2 张 demo 步进到底会自动翻页、第 8 张录屏能播、`fallback.html` 截图都在。同一份拷进 U 盘
+- [ ] MacBook 转接头（机身没有 HDMI 口就带 USB-C→HDMI）+ 充电器；在家接一次电视或显示器试镜像
 - [ ] DGX：tmux `showcase` 里 `docker compose up -d` + `server.py`；`curl -s localhost:8799/health` 返回 ok
 - [ ] 从 quark 走隧道跑一次 live 全流程（一个 suggestion 任务，三栏出结果，三栏都判完后红绿灰框正确）
 - [ ] 会前一句管理预期发 Zekun（「10 分钟：一段现场 demo 加六张片子，不是一份 deck」）
@@ -163,13 +165,13 @@ event: 2026-09-16
 |---|---|---|---|
 | 09:00–09:30 | Poster set-up | 挂海报；笔记本**先**双击离线 portable 让桌面有东西在动；再开隧道、`curl health`、跑一个测试任务；截图太小 → Ctrl+− 缩到 80–90% | 隧道不通 → 只用离线 portable，把「try your own」一句「not available on this network today」说清 |
 | 09:30 | Registration & refreshments | — | — |
-| 09:45–10:15 | **AV check & speaker briefing** | quark 接投影，片子 → 第 2 张 iframe 步进几下 → 兜底页各一遍；当面问清演讲顺序、含不含问答、自带电脑还是统一电脑 | 投影只认主办方电脑 → U 盘 `talk/` + portable；再不行 → webm |
+| 09:45–10:15 | **AV check & speaker briefing** | **MacBook** 接投影，片子 → 第 2 张 iframe 步进几下 → 兜底页各一遍；当面问清演讲顺序、含不含问答、自带电脑还是统一电脑 | 投影只认主办方电脑 → U 盘 `talk/` + portable；再不行 → webm |
 | 10:00 | Exhibition + voting opens | 回板前，demo 自动播放 | — |
 | 10:30–11:20 | 两段 opening + collaboration talk | 板前自动播放即可 | — |
 | 11:20–11:35 | Break | 站板前，20 秒版走读（标题 + 面板 5 + 面板 6） | — |
 | 11:35–12:35 | Alumni spotlight + PhD route | 板前自动播放即可 | — |
 | **12:35–14:35** | Lunch · 13:15–14:35 authors at boards | **12:35 起就站板前**（午饭那 40 分钟人已经在逛板）；循环 90 秒走读；深聊的访客给 live 页（按 Run 前说 D10 那句） | live 卡住 → `Stop`，回录像页，别当场排错 |
-| **14:35** | 投票截止 · 10 分钟茶歇 | **立刻**收板前电脑走去讲台（一台电脑的话要拔线、搬、接投影）；到了做 RUNBOOK「开讲前 5 分钟」 | 不是第一个讲 → 有余量；第一个讲 → 14:30 就开始收 |
+| **14:35** | 投票截止 · 10 分钟茶歇 | 带 MacBook 走去讲台，quark 留在展板；到了做 RUNBOOK「开讲前 5 分钟」 | MacBook 接不上 → U 盘插主办方电脑，Chrome 开 `talk/index.html` |
 | 14:45–15:30 | Student presentations | 自己的 10 分钟 | 浏览器崩 → 切 webm 那页 |
 | 15:30–16:30 | Keynote | — | — |
 | 16:30–17:00 | Closing & networking | 回板前，live 页给感兴趣的人 | — |
