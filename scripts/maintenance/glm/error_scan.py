@@ -127,8 +127,12 @@ def scan_file(path: Path, cutoff: datetime) -> list[dict]:
 
 # Audit (E) 2026-05-09: system-level health checks.
 DISK_FREE_GB_THRESHOLD = 50  # ntfy if repo partition has < 50 GB free
+# 2026-09-14: push once per band crossed downward, not every tick — another
+# user's 96.5GB download used to push "Disk free low" every 5 min for hours.
+DISK_ALERT_BANDS_GB = (50, 25, 10, 5, 1)
 TAILSCALE_FAIL_FILE = REPO / "logs" / "cron" / "tailscale_fail_count"
 DISK_FAIL_FILE = REPO / "logs" / "cron" / "disk_fail_count"
+DISK_BAND_FILE = REPO / "logs" / "cron" / "disk_alerted_band"
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "p79-exp-dgx-spark")
 
 
@@ -146,7 +150,12 @@ def _push_ntfy(title: str, body: str, priority: str = "default") -> None:
 
 
 def _check_disk() -> dict:
-    """Return {free_gb, total_gb, pct_free, alert}. ntfy if below threshold."""
+    """Return {free_gb, total_gb, pct_free, alert}. ntfy once per band crossed.
+
+    The partition is shared with other DGX users and the repo is usually a
+    small share of it (§487.6), so the message points at finding the writer
+    rather than pruning logs/.
+    """
     import shutil
     usage = shutil.disk_usage(REPO)
     free_gb = usage.free / (1024 ** 3)
@@ -163,19 +172,35 @@ def _check_disk() -> dict:
             DISK_FAIL_FILE.write_text(str(n_fail))
         except Exception:
             pass
-        if n_fail >= 2:  # alert on 2 consecutive (5min × 2 = 10min) below
-            _push_ntfy(
-                "Disk free low",
-                f"Repo partition free={free_gb:.1f}GB / total={total_gb:.1f}GB "
-                f"({pct_free:.1f}%) — below {DISK_FREE_GB_THRESHOLD}GB threshold "
-                f"({n_fail} consecutive ticks). Prune logs/ artifacts/.",
-                priority="high",
-            )
-    elif DISK_FAIL_FILE.exists():
+        band = min(b for b in DISK_ALERT_BANDS_GB if free_gb < b)
         try:
-            DISK_FAIL_FILE.unlink()
+            last_band = int(DISK_BAND_FILE.read_text().strip()) if DISK_BAND_FILE.exists() else None
         except Exception:
-            pass
+            last_band = None
+        # alert on 2 consecutive (5min × 2 = 10min) below, then only when free
+        # drops into a lower band; climbing back inside the alert zone stays quiet
+        if n_fail >= 2 and (last_band is None or band < last_band):
+            try:
+                DISK_BAND_FILE.write_text(str(band))
+            except Exception:
+                pass
+            _push_ntfy(
+                f"Disk free low (<{band}GB)",
+                f"Repo partition free={free_gb:.1f}GB / total={total_gb:.1f}GB "
+                f"({pct_free:.1f}%). Shared disk: find who is writing before "
+                f"pruning, the repo itself is rarely the cause — "
+                f"ps -eo user,etime,args | grep -E 'ollama pull|hf download'; "
+                f"own share: du -xsh ~/.cache ~/.local ~/workspace. "
+                f"Next push only below the next band.",
+                priority="urgent" if band <= 5 else "high",
+            )
+    else:
+        for f in (DISK_FAIL_FILE, DISK_BAND_FILE):
+            if f.exists():
+                try:
+                    f.unlink()
+                except Exception:
+                    pass
     return {"free_gb": round(free_gb, 1), "total_gb": round(total_gb, 1),
             "pct_free": round(pct_free, 1), "alert": alert}
 
