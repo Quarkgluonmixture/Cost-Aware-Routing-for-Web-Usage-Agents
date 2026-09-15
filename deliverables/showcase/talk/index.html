@@ -8,7 +8,9 @@
   Deck for the 10-minute showcase talk. Built from presentation-playbook.md Appendix A:
   <style>, .pager, .hint and the paging <script> are the template's, verbatim; only the
   <section>s are new, plus the small `.demo` / `.figs` / `.foot` additions marked below.
-  Slide 2 embeds the talk copy of the demo (demo_portable.html?task=130&autoplay=0). The
+  Front block (15 Sep, ROADMAP D24): opening → prize (the hook: three numbers) → agents (what a
+  web agent is, and LOOK / READ / BOTH as three real captures in the demo's lane order) → demo.
+  The demo page embeds the talk copy of the demo (demo_portable.html?task=130&autoplay=0). The
   arrow keys belong to the demo while it has steps left; it posts `demo-next` / `demo-prev`
   when stepped past either end, and the deck turns the page then. check_talk.py enforces
   the word budget (≤ 50 per slide, opening ≤ 15), traceable numbers and the jargon list.
@@ -242,27 +244,43 @@
     html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .slide{height:7.5in;width:13.333333in}
   }
-  /* ══ agents: two real captures side by side · prize: the cards ══ */
-  .real-pair{display:grid;grid-template-columns:1fr 1fr;gap:2vw;margin-top:2.4vh;align-items:start}
-  .app{margin:0;border-radius:10px;overflow:hidden;background:#1b1c26;box-shadow:0 .7vh 2.6vh rgba(18,22,46,.2)}
-  .app-bar{display:flex;align-items:center;gap:.5vw;padding:1vh 1vw;background:#101119;color:#a3a9c6;font-family:var(--mono);font-size:min(2.1vh,1.18vw)}
-  .app-bar i{width:min(1.2vh,.68vw);height:min(1.2vh,.68vw);border-radius:50%;background:#3a3d52;display:inline-block}
-  .app-bar b{color:#fff;font-weight:700;margin:0 .5vw 0 .6vw}
-  .app-claude .app-bar b::before{content:"✻ ";color:#e8845c}
-  .app-codex .app-bar b::before{content:">_ ";color:#9fb3ff}
-  .app img{display:block;width:100%;height:auto;max-height:50vh;object-fit:contain;background:#fff}
-  .app .shot-head{padding:.7vh 1vw;color:#a3a9c6;font-family:var(--mono);font-size:min(1.6vh,.9vw)}
-  .app figcaption{padding:.9vh 1vw;background:#eeedfd;color:var(--ink);font-family:var(--mono);font-size:min(2.1vh,1.18vw);text-align:center}
-  .app figcaption b{color:var(--violet)}
+  /* ══ prize: three cards, the hook · agents: three real captures in the demo's lane order and colours ══ */
   .ag-prize{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw;margin-top:15vh}
+  .ag-prize.three{grid-template-columns:repeat(3,1fr);gap:2.2vw;margin-top:11vh}
   .ag-card{border-radius:12px;background:var(--night);padding:5.5vh 1.4vw;opacity:0;transform:scale(.55)}
+  .ag-prize.three .ag-card{padding:6.5vh 1.4vw;text-align:center}
   .ag-card b{display:block;font-family:var(--serif);font-weight:400;font-size:min(6.4vh,3.6vw);line-height:1.05;color:#fff;white-space:nowrap}
+  .ag-prize.three .ag-card b{font-size:min(9vh,5vw)}
   .ag-card span{display:block;margin-top:1.4vh;font-family:var(--sans);font-size:min(2.3vh,1.3vw);color:var(--lav)}
+  .ag-prize.three .ag-card span{font-size:min(3vh,1.7vw);margin-top:2vh}
   .ag-card.go{animation:agpop .5s cubic-bezier(.2,1.5,.45,1) forwards}
   @keyframes agpop{to{opacity:1;transform:scale(1)}}
   #prize .foot{margin-top:6vh}
+
+  /* the demo's lane colours (demo/index.html :root) so the three panels here read as the three lanes there */
+  :root{--look:#1F5FD6;--read:#E8720C;--both:#14855F}
+  .real-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2vw;margin-top:1.6vh;align-items:start}
+  .app{margin:0;border-radius:10px;overflow:hidden;background:#1b1c26;box-shadow:0 .7vh 2.6vh rgba(18,22,46,.2);opacity:0;transform:translateY(3vh)}
+  .app.go{animation:appin .55s ease-out forwards}
+  @keyframes appin{to{opacity:1;transform:none}}
+  .app-bar{display:flex;align-items:center;gap:.5vw;padding:1vh 1vw;background:#101119;color:#a3a9c6;font-family:var(--mono);font-size:min(2.1vh,1.18vw);white-space:nowrap;overflow:hidden}
+  .app-bar i{width:min(1.2vh,.68vw);height:min(1.2vh,.68vw);border-radius:50%;background:#3a3d52;display:inline-block;flex:none}
+  .app-bar b{color:#fff;font-weight:700;margin:0 .5vw 0 .6vw}
+  .app-claude .app-bar b::before{content:"✻ ";color:#e8845c}
+  .app-codex .app-bar b::before{content:">_ ";color:#9fb3ff}
+  .app-ours .app-bar b::before{content:"▣ ";color:#5fd3e0}
+  /* one box height for all three, so a tall text excerpt and a wide screenshot line up; each image fitted inside */
+  .app .shot{height:44vh;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .app-claude .shot{background:#1b1c26}
+  .app .shot img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+  .app figcaption{padding:1vh 1vw;background:#eeedfd;color:var(--ink);font-family:var(--mono);font-size:min(2.4vh,1.35vw);text-align:center;border-top:.6vh solid var(--violet)}
+  .app figcaption b{font-weight:700}
+  .lane-look figcaption{border-top-color:var(--look)} .lane-look figcaption b{color:var(--look)}
+  .lane-read figcaption{border-top-color:var(--read)} .lane-read figcaption b{color:var(--read)}
+  .lane-both figcaption{border-top-color:var(--both)} .lane-both figcaption b{color:var(--both)}
+  #agents .foot{margin-top:1.6vh}
   @media print{
-    .ag-card{opacity:1!important;transform:none!important;animation:none!important}
+    .ag-card,.app{opacity:1!important;transform:none!important;animation:none!important}
     .ag-cursor,.ag-flash{display:none}
   }
   @page{size:13.333333in 7.5in;margin:0}
@@ -278,38 +296,45 @@
   <p class="affil">MSc thesis · REALM workshop, EMNLP 2026</p>
 </section>
 
-<!-- ══ agents ══ what a web agent actually sees: two REAL captures of one public page (15 Sep 2026) by
-     real_capture.py with the real Playwright MCP server — its snapshot reply (verbatim excerpt) and its screenshot.
-     Neither is a recording of Claude or Astra doing a task; the Astra line quotes OpenAI's computer-use docs. -->
-<section class="slide" id="agents">
-  <h2>Same page, two ways an agent sees it.</h2>
-  <div class="real-pair">
-    <figure class="app app-claude">
-      <div class="app-bar"><i></i><i></i><i></i><b>Claude Code</b><span>Playwright MCP</span></div>
-      <img src="fig/real_wiki_snapshot_excerpt.png" alt="Real Playwright MCP accessibility snapshot of Wikipedia's Create account page, verbatim excerpt">
-      <figcaption><b>READ</b> · the page as text</figcaption>
-    </figure>
-    <figure class="app app-codex">
-      <div class="app-bar"><i></i><i></i><i></i><b>Codex</b><span>GPT-6 Astra · computer use</span></div>
-      <div class="shot-head">screenshot · real capture</div>
-      <img src="fig/real_wiki_createaccount_screenshot.png" alt="Real screenshot of the same Wikipedia Create account page">
-      <figcaption><b>LOOK</b> · a screenshot</figcaption>
-    </figure>
-  </div>
-  <p class="foot">Real captures of one page, 15 Sep 2026 · frames name the tools · each can also use the other view</p>
-</section>
-
-<!-- ══ prize ══ what picking the right view per task would buy: perfect router vs best single view, large model,
-     three settings (talk/hindsight_efficiency.json). The cards pop one by one on entry. -->
+<!-- ══ prize ══ the hook, before anything is explained: what choosing the right way to see each page would buy.
+     Perfect router vs best single view, large model, three settings (talk/hindsight_efficiency.json); the time card
+     was dropped 15 Sep (same on two of three sites — it hedged the hook; it stays in the Q&A crib). Cards pop one by
+     one on entry. Plain words only: "view" and "router" are introduced on the next two pages. -->
 <section class="slide" id="prize">
-  <h2>If it always picked the right view:</h2>
-  <div class="ag-prize">
-    <div class="ag-card"><b>+11 to +16</b><span>solved per 100</span></div>
+  <h2>If a web agent always chose the right way to see each page:</h2>
+  <div class="ag-prize three">
+    <div class="ag-card"><b>+11 to +16</b><span>more tasks solved in every 100</span></div>
     <div class="ag-card"><b>−14 to −27%</b><span>token bill</span></div>
     <div class="ag-card"><b>−7 to −29%</b><span>CO₂e (estimated)</span></div>
-    <div class="ag-card"><b>up to 34%</b><span>faster on one site; same on two</span></div>
   </div>
-  <p class="foot">Perfect router vs best single view · our benchmark · large open model · not Claude or GPT results</p>
+  <p class="foot">Upper bound: the right choice on every task · our benchmark · large open model · not Claude or GPT results</p>
+</section>
+
+<!-- ══ agents ══ what a web agent is, and the three ways it can see a page — in the tools the room uses. Three REAL
+     captures of one public page from ONE Playwright MCP session (15 Sep 2026, real_capture.py): the screenshot (LOOK),
+     the snapshot reply, verbatim excerpt (READ), and the same screenshot with the page's interactive elements boxed
+     and numbered by this project's own SoM drawing code (BOTH). Lane order and colours match the demo's three lanes.
+     None is a recording of Claude Code or Codex doing a task; the frames only name the tools. -->
+<section class="slide" id="agents">
+  <h2>A web agent works the page for you — and can see it three ways.</h2>
+  <div class="real-trio">
+    <figure class="app app-codex lane-look">
+      <div class="app-bar"><i></i><i></i><i></i><b>Codex</b><span>computer use</span></div>
+      <div class="shot"><img src="fig/real_wiki_createaccount_screenshot.png" alt="Real screenshot of Wikipedia's Create account page, 1280 by 800"></div>
+      <figcaption><b>LOOK</b> · screenshot</figcaption>
+    </figure>
+    <figure class="app app-claude lane-read">
+      <div class="app-bar"><i></i><i></i><i></i><b>Claude Code</b><span>Playwright MCP</span></div>
+      <div class="shot"><img src="fig/real_wiki_snapshot_excerpt_compact.png" alt="Real Playwright MCP accessibility snapshot of the same page, verbatim excerpt of 20 of its 161 lines"></div>
+      <figcaption><b>READ</b> · page as text</figcaption>
+    </figure>
+    <figure class="app app-ours lane-both">
+      <div class="app-bar"><i></i><i></i><i></i><b>our agent</b><span>Set-of-Marks</span></div>
+      <div class="shot"><img src="fig/real_wiki_createaccount_som.png" alt="The same screenshot with 25 interactive elements boxed and numbered, drawn by this project's SoM code"></div>
+      <figcaption><b>BOTH</b> · screenshot + marks</figcaption>
+    </figure>
+  </div>
+  <p class="foot">One real page, 15 Sep 2026 · frames name the tools, not their limits · marks by our code</p>
 </section>
 
 <!-- ══ 2 ══ the demo itself: talk copy, arrow keys step it -->
@@ -454,7 +479,7 @@
     cur=s; slides.forEach(x=>x.classList.toggle('on',x===s));
     pos.textContent=s.classList.contains('backup')?'reference':`${main.indexOf(s)+1} / ${main.length}`;
     save(s.id); fitDemo();
-    if(s.id==='prize') agPop(s);
+    if(s.id==='prize'||s.id==='agents') agPop(s);
     // the demo page owns the arrow keys: hand focus to its iframe, take it back elsewhere
     const f=s.querySelector('iframe');
     if(f) f.focus(); else if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur();
@@ -463,8 +488,8 @@
     if(!main.includes(cur)){ show(main[main.length-1]); return; }   // leaving the reference page returns to the close
     show(main[Math.max(0,Math.min(main.length-1,main.indexOf(cur)+d))]);
   }
-  function agPop(slide){                       // prize cards: one by one, each a short pop
-    slide.querySelectorAll('.ag-card').forEach((c,i)=>{ c.classList.remove('go'); void c.offsetWidth; c.style.animationDelay=(0.2+i*0.45)+'s'; c.classList.add('go'); });
+  function agPop(slide){                       // prize cards / agents panels: one by one, each a short pop
+    slide.querySelectorAll('.ag-card, .app').forEach((c,i)=>{ c.classList.remove('go'); void c.offsetWidth; c.style.animationDelay=(0.2+i*0.55)+'s'; c.classList.add('go'); });
   }
 
   addEventListener('keydown',e=>{

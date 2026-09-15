@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "09-15 晚：片子 11 页（agents 真实抓取 + prize 数字卡 + perfect router 措辞），user 仍不太满意、开新 session 继续 · 剩 问清不满意处 / 掐表（约 932 词）/ DGX tmux / 发最新 PDF · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
+eta: "09-15 晚 D24：开场重排 opening → prize（三卡钩子）→ agents（三块真实抓取 LOOK/READ/BOTH）→ demo（演讲版减负、sunset 高亮），11 页 · 剩 user 过目 / 掐表（约 961 词）/ DGX tmux / 发最新 PDF · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
 detail: deliverables/showcase
 created: 2026-09-02
 updated: 2026-09-15
@@ -58,3 +58,5 @@ board), the 7-slide skeleton mapped to the six printed panels, and the day-of fa
 **09-15 晚（ROADMAP D19）**：user 09:50 到场，先帮忙布置展板；下午学生演讲第二个讲（约 14:55，以主持人为准）。手册、RUNBOOK、ROADMAP Phase 6 已同步。
 
 **09-15 晚收尾（ROADMAP D20–D23，笔记 §518–§526）**：why 换真实数据图 · learned 散点图简化 + 改说 perfect router · 开场 agents 用真实抓取（放进 Claude Code / Codex 窗口框）+ prize 数字卡 · 删书桌页 · Google 日历已建。user 仍不太满意，开新 session；交接见 next_steps §0。
+
+**09-15 晚 D24（笔记 §527）**：user 说清结构 —— 标题 → 用 Claude Code / Codex 讲 web agent + 三种看法 → demo，且一开始就报数字。落地：opening → prize（三卡，删用时卡）→ agents（三块真实抓取按 demo 泳道顺序与颜色，BOTH = 截图 + 我们 SoM 代码画的 25 个编号框，`real_capture.py` 同一会话）→ demo（演讲版隐藏 demo 自己的 header、task 句放大、*sunset* 高亮）。check_talk PASS、PDF 重导、离线包 17.5 MB、手册重发。待 user 过目与掐表。

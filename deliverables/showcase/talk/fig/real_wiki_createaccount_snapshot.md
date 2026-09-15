@@ -1,5 +1,6 @@
+<!-- captured 2026-09-15 19:00 BST · {'name': 'Playwright', 'version': '1.64.0-alpha-2026-09-14'} · https://en.wikipedia.org/wiki/Special:CreateAccount -->
 ### Page
-- Page URL: https://auth.wikimedia.org/enwiki/wiki/Special:CreateAccount?useformat=desktop&usesul3=1&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f
+- Page URL: https://auth.wikimedia.org/enwiki/wiki/Special:CreateAccount?useformat=desktop&usesul3=1&centralauthLoginToken=50df3f9e907220960d593d3be1b3d474
 - Page Title: Create account - Wikipedia
 ### Snapshot
 ```yaml
@@ -24,10 +25,10 @@
             - /url: https://donate.wikimedia.org/?wmf_source=donate&wmf_medium=sidebar&wmf_campaign=auth.wikimedia.org&uselang=en
         - listitem [ref=e25]:
           - link "Create account" [ref=e26] [cursor=pointer]:
-            - /url: /enwiki/w/index.php?title=Special:CreateAccount&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f&usesul3=1&useformat=desktop
+            - /url: /enwiki/w/index.php?title=Special:CreateAccount&centralauthLoginToken=50df3f9e907220960d593d3be1b3d474&usesul3=1&useformat=desktop
         - listitem [ref=e27]:
           - link "Log in" [ref=e28] [cursor=pointer]:
-            - /url: /enwiki/w/index.php?title=Special:UserLogin&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f&usesul3=1&useformat=desktop
+            - /url: /enwiki/w/index.php?title=Special:UserLogin&centralauthLoginToken=50df3f9e907220960d593d3be1b3d474&usesul3=1&useformat=desktop
   - generic [ref=e30]:
     - main [ref=e33]:
       - heading "Create account" [level=1] [ref=e35]
@@ -45,123 +46,123 @@
           - generic [ref=e50]:
             - generic [ref=e51]: Appearance
             - button "Hide Appearance" [ref=e52] [cursor=pointer]: hide
-          - generic [ref=e53]:
-            - generic [ref=e54]: Text
-            - list [ref=e56]:
-              - listitem [ref=e57]:
-                - generic [ref=e58]:
-                  - generic [ref=e59]:
-                    - generic [ref=e60]:
-                      - radio "Small" [disabled] [ref=e61]
-                      - generic [ref=e63]: Small
-                    - generic [ref=e65]:
-                      - radio "Standard" [disabled] [ref=e66]
-                      - generic [ref=e68]: Standard
-                    - generic [ref=e70]:
-                      - radio "Large" [disabled] [ref=e71]
-                      - generic [ref=e73]: Large
-                  - paragraph [ref=e75]: This page always uses small font size
-          - generic [ref=e76]:
-            - generic [ref=e77]: Width
-            - list [ref=e79]:
-              - listitem [ref=e80]:
-                - generic [ref=e82]:
-                  - generic [ref=e83]:
-                    - radio "Standard" [checked] [ref=e84]
-                    - generic [ref=e86]: Standard
-                  - generic [ref=e88]:
-                    - radio "Wide" [ref=e89]
-                    - generic [ref=e91]: Wide
-          - generic [ref=e93]:
-            - generic [ref=e94]: Color
-            - list [ref=e96]:
-              - listitem [ref=e97]:
-                - generic [ref=e99]:
-                  - generic [ref=e100]:
-                    - radio "Automatic" [ref=e101]
-                    - generic [ref=e103]: Automatic
-                  - generic [ref=e105]:
-                    - radio "Light" [checked] [ref=e106]
-                    - generic [ref=e108]: Light
-                  - generic [ref=e110]:
-                    - radio "Dark" [ref=e111]
-                    - generic [ref=e113]: Dark
-      - generic "Create account" [ref=e115]:
-        - generic [ref=e119]:
-          - generic [ref=e120]:
-            - generic [ref=e121]:
-              - generic [ref=e122]: Username
-              - generic [ref=e123]:
+          - generic [ref=e127]:
+            - generic [ref=e128]: Text
+            - list [ref=e130]:
+              - listitem [ref=e131]:
+                - generic [ref=e132]:
+                  - generic [ref=e133]:
+                    - generic [ref=e134]:
+                      - radio "Small" [disabled] [ref=e135]
+                      - generic [ref=e137]: Small
+                    - generic [ref=e139]:
+                      - radio "Standard" [disabled] [ref=e140]
+                      - generic [ref=e142]: Standard
+                    - generic [ref=e144]:
+                      - radio "Large" [disabled] [ref=e145]
+                      - generic [ref=e147]: Large
+                  - paragraph [ref=e149]: This page always uses small font size
+          - generic [ref=e150]:
+            - generic [ref=e151]: Width
+            - list [ref=e153]:
+              - listitem [ref=e154]:
+                - generic [ref=e156]:
+                  - generic [ref=e157]:
+                    - radio "Standard" [checked] [ref=e158]
+                    - generic [ref=e160]: Standard
+                  - generic [ref=e162]:
+                    - radio "Wide" [ref=e163]
+                    - generic [ref=e165]: Wide
+          - generic [ref=e167]:
+            - generic [ref=e168]: Color
+            - list [ref=e170]:
+              - listitem [ref=e171]:
+                - generic [ref=e173]:
+                  - generic [ref=e174]:
+                    - radio "Automatic" [ref=e175]
+                    - generic [ref=e177]: Automatic
+                  - generic [ref=e179]:
+                    - radio "Light" [checked] [ref=e180]
+                    - generic [ref=e182]: Light
+                  - generic [ref=e184]:
+                    - radio "Dark" [ref=e185]
+                    - generic [ref=e187]: Dark
+      - generic "Create account" [ref=e53]:
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]: Username
+              - generic [ref=e61]:
                 - text: Avoid using your real name.
-                - button "username policy" [ref=e124]
-            - textbox "Username" [ref=e128]:
+                - button "username policy" [ref=e62]
+            - textbox "Username" [ref=e66]:
               - /placeholder: Enter your username
-          - generic [ref=e129]:
-            - generic [ref=e130]: Password
-            - generic [ref=e133]:
-              - textbox "Password" [ref=e134]:
+          - generic [ref=e67]:
+            - generic [ref=e68]: Password
+            - generic [ref=e71]:
+              - textbox "Password" [ref=e72]:
                 - /placeholder: Enter a password
-              - generic [ref=e135] [cursor=pointer]
-          - generic [ref=e136]:
-            - generic [ref=e137]: Confirm password
-            - generic [ref=e140]:
-              - textbox "Confirm password" [ref=e141]:
+              - generic [ref=e73] [cursor=pointer]
+          - generic [ref=e74]:
+            - generic [ref=e75]: Confirm password
+            - generic [ref=e78]:
+              - textbox "Confirm password" [ref=e79]:
                 - /placeholder: Enter password again
-              - generic [ref=e142] [cursor=pointer]
-          - generic [ref=e143]:
-            - generic [ref=e144]: Email address (optional)
-            - textbox "Email address (optional)" [ref=e148]:
+              - generic [ref=e80] [cursor=pointer]
+          - generic [ref=e81]:
+            - generic [ref=e82]: Email address (optional)
+            - textbox "Email address (optional)" [ref=e86]:
               - /placeholder: Enter your email address
-          - button "Create your account" [ref=e151]
-          - generic [ref=e154]:
+          - button "Create your account" [ref=e89]
+          - generic [ref=e92]:
             - text: This site is protected by hCaptcha and its
-            - link "Privacy Policy" [ref=e155] [cursor=pointer]:
+            - link "Privacy Policy" [ref=e93] [cursor=pointer]:
               - /url: https://www.hcaptcha.com/privacy
             - text: and
-            - link "Terms of Service" [ref=e156] [cursor=pointer]:
+            - link "Terms of Service" [ref=e94] [cursor=pointer]:
               - /url: https://www.hcaptcha.com/terms
             - text: apply.
-    - contentinfo [ref=e158]:
+    - contentinfo [ref=e96]:
       - list:
-        - listitem [ref=e159]:
-          - link "Privacy policy" [ref=e160] [cursor=pointer]:
+        - listitem [ref=e97]:
+          - link "Privacy policy" [ref=e98] [cursor=pointer]:
             - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Privacy_policy
-        - listitem [ref=e161]:
-          - link "About Wikipedia" [ref=e162] [cursor=pointer]:
+        - listitem [ref=e99]:
+          - link "About Wikipedia" [ref=e100] [cursor=pointer]:
             - /url: https://en.wikipedia.org/wiki/Wikipedia:About
-        - listitem [ref=e163]:
-          - link "Disclaimers" [ref=e164] [cursor=pointer]:
+        - listitem [ref=e101]:
+          - link "Disclaimers" [ref=e102] [cursor=pointer]:
             - /url: https://en.wikipedia.org/wiki/Wikipedia:General_disclaimer
-        - listitem [ref=e165]:
-          - link "Contact Wikipedia" [ref=e166] [cursor=pointer]:
+        - listitem [ref=e103]:
+          - link "Contact Wikipedia" [ref=e104] [cursor=pointer]:
             - /url: //en.wikipedia.org/wiki/Wikipedia:Contact_us
-        - listitem [ref=e167]:
-          - link "Legal & safety contacts" [ref=e168] [cursor=pointer]:
+        - listitem [ref=e105]:
+          - link "Legal & safety contacts" [ref=e106] [cursor=pointer]:
             - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Legal:Wikimedia_Foundation_Legal_and_Safety_Contact_Information
-        - listitem [ref=e169]:
-          - link "Code of Conduct" [ref=e170] [cursor=pointer]:
+        - listitem [ref=e107]:
+          - link "Code of Conduct" [ref=e108] [cursor=pointer]:
             - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Universal_Code_of_Conduct
-        - listitem [ref=e171]:
-          - link "Developers" [ref=e172] [cursor=pointer]:
+        - listitem [ref=e109]:
+          - link "Developers" [ref=e110] [cursor=pointer]:
             - /url: https://developer.wikimedia.org
-        - listitem [ref=e173]:
-          - link "Statistics" [ref=e174] [cursor=pointer]:
+        - listitem [ref=e111]:
+          - link "Statistics" [ref=e112] [cursor=pointer]:
             - /url: https://stats.wikimedia.org/#/en.wikipedia.org
-        - listitem [ref=e175]:
-          - link "Cookie statement" [ref=e176] [cursor=pointer]:
+        - listitem [ref=e113]:
+          - link "Cookie statement" [ref=e114] [cursor=pointer]:
             - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Cookie_statement
-        - listitem [ref=e177]:
-          - link "Mobile view" [ref=e178] [cursor=pointer]:
-            - /url: //auth.wikimedia.org/enwiki/w/index.php?title=Special:CreateAccount&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f&usesul3=1&mobileaction=toggle_view_mobile
-      - list [ref=e179]:
-        - listitem [ref=e180]:
-          - link [ref=e181] [cursor=pointer]:
+        - listitem [ref=e115]:
+          - link "Mobile view" [ref=e116] [cursor=pointer]:
+            - /url: //auth.wikimedia.org/enwiki/w/index.php?title=Special:CreateAccount&centralauthLoginToken=50df3f9e907220960d593d3be1b3d474&usesul3=1&mobileaction=toggle_view_mobile
+      - list [ref=e117]:
+        - listitem [ref=e118]:
+          - link [ref=e119] [cursor=pointer]:
             - /url: https://www.wikimedia.org/
-            - img "Wikimedia Foundation" [ref=e183]
-        - listitem [ref=e184]:
-          - link [ref=e185] [cursor=pointer]:
+            - img "Wikimedia Foundation" [ref=e121]
+        - listitem [ref=e122]:
+          - link [ref=e123] [cursor=pointer]:
             - /url: https://www.mediawiki.org/
-            - img "Powered by MediaWiki" [ref=e187]
-  - generic [ref=e188]:
+            - img "Powered by MediaWiki" [ref=e125]
+  - generic [ref=e126]:
     - list
 ```

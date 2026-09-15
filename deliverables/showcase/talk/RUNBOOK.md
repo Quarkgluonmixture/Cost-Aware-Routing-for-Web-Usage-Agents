@@ -12,9 +12,9 @@ _你是下午第二个讲（09-15 user 告知，ROADMAP D19）：第一位讲者
 |---|---|---|
 | 1 | MacBook 接投影（机身没有 HDMI 口就用 USB-C→HDMI 转接头）；⌘F1，或 控制中心 → 屏幕镜像 → 选「镜像」；看一眼是 16:9 还是 16:10 | 片子第 1 张四边不裁 |
 | 2 | **Chrome**（不用 Safari，只测过 Chromium）**只留三个标签页**，从左到右：① `talk/index.html#opening` ② `demo_portable.html?task=130&autoplay=0` ③ `talk/fallback.html` | 其余标签页全关；书签栏收起 |
-| 3 | 浏览器缩放保持 **100%**（⌘0）；全屏 ⌃⌘F，并在菜单「显示」里取消「全屏模式下始终显示工具栏」。⛔ **不要放大**：demo 里只有截图会伸缩，1080p 上放大到 125% 截图只剩一半高，150% 时截图整个消失（09-13 实测）。片子第 2 张的 demo 已经按区域整体缩放，放大浏览器也不会让它变大 | 第 2 张三栏里的网页截图清楚可见 |
+| 3 | 浏览器缩放保持 **100%**（⌘0）；全屏 ⌃⌘F，并在菜单「显示」里取消「全屏模式下始终显示工具栏」。⛔ **不要放大**：demo 里只有截图会伸缩，1080p 上放大到 125% 截图只剩一半高，150% 时截图整个消失（09-13 实测）。片子 `demo` 页（第 4 张）的 demo 已经按区域整体缩放，放大浏览器也不会让它变大 | `demo` 页三栏里的网页截图清楚可见 |
 | 4 | ① 带 `#opening` 刷新一次（⌘R） | 停在 `opening`，不跳 |
-| 5 | ② 确认停在 **task 130 · step 1/…**，Play 按钮显示 *Play* 不是 *Pause* | 三栏第 0 帧都在 |
+| 5 | ② 确认顶上是 **Task: … taken during a sunset**（*sunset* 高亮；演讲版不显示标题和 task 标签页），步数 **step 1/…**，Play 按钮显示 *Play* 不是 *Pause* | 三栏第 0 帧都在 |
 | 6 | 控制中心 → 专注模式 → 勿扰；电源接上；静音；终端里跑 `caffeinate -d`（不熄屏，讲完 ⌃C） | 无弹窗 |
 | 7 | 手机计时器 9:30 | 放讲台上 |
 
@@ -24,7 +24,7 @@ _你是下午第二个讲（09-15 user 告知，ROADMAP D19）：第一位讲者
 
 | 段落 | 手 |
 |---|---|
-| opening → prize | ① 停在 `opening`。说完最后一句按 → 到 `agents`（两张真实截图）→ 按 → 到 `prize`（卡片自动弹出，等四张出齐）→ 按 → 到 `demo` |
+| opening → agents | ① 停在 `opening`。说完最后一句按 → 到 `prize`（三张卡片自动弹出，等出齐）→ 按 → 到 `agents`（三块窗口依次出现，LOOK · READ · BOTH）→ 按 → 到 `demo` |
 | demo | 点一下 iframe 里的空白处让它拿到焦点；只按 **→**，共 10 下（READ 9 步 + 1 下看结束态），再按一次 → 自动翻到 `question`。⛔ 不按 space，⛔ 不按 1/2/3/4 |
 | question → not-yet | 每段按一次 →：`question` → `behaviour` → `failure` → `learned` → `why` → `not-yet`；`learned`「only one of eight」后**不翻页，停一下** |
 | close | 按 → 到 `close`，收 |

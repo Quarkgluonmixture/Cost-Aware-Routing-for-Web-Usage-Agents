@@ -1,0 +1,240 @@
+{
+ "captured": "2026-09-15 19:00 BST",
+ "server": {
+  "name": "Playwright",
+  "version": "1.64.0-alpha-2026-09-14"
+ },
+ "url": "https://en.wikipedia.org/wiki/Special:CreateAccount",
+ "viewport": [
+  1280,
+  800
+ ],
+ "selector_note": "interactive elements in the viewport, page order, outer of nested",
+ "boxes": [
+  {
+   "tag": "a",
+   "role": "",
+   "name": "",
+   "x": 84,
+   "y": 8,
+   "w": 200,
+   "h": 50
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Donate",
+   "x": 1037.734375,
+   "y": 25,
+   "w": 45.15625,
+   "h": 16
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Create account",
+   "x": 1090.890625,
+   "y": 25,
+   "w": 94.953125,
+   "h": 16
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Log in",
+   "x": 1193.84375,
+   "y": 25,
+   "w": 38.15625,
+   "h": 16
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "name": "Hide Appearance",
+   "x": 1136.046875,
+   "y": 112.84375,
+   "w": 38.6875,
+   "h": 22
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "name": "username policy",
+   "x": 233.296875,
+   "y": 176.640625,
+   "w": 24,
+   "h": 24
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "name": "Enter your username",
+   "x": 56,
+   "y": 204.640625,
+   "w": 448,
+   "h": 32
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "name": "Enter a password",
+   "x": 56,
+   "y": 278.640625,
+   "w": 448,
+   "h": 32
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "name": "Enter password again",
+   "x": 56,
+   "y": 352.640625,
+   "w": 448,
+   "h": 32
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "name": "Enter your email address",
+   "x": 56,
+   "y": 426.640625,
+   "w": 448,
+   "h": 32
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "name": "Create your account",
+   "x": 56,
+   "y": 474.640625,
+   "w": 448,
+   "h": 44
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Privacy Policy",
+   "x": 315.921875,
+   "y": 537.640625,
+   "w": 87.140625,
+   "h": 16
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Terms of Service",
+   "x": 56,
+   "y": 537.640625,
+   "w": 431.640625,
+   "h": 38
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Privacy policy",
+   "x": 44,
+   "y": 722.125,
+   "w": 73.359375,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "About Wikipedia",
+   "x": 129.359375,
+   "y": 722.125,
+   "w": 86.71875,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Disclaimers",
+   "x": 228.078125,
+   "y": 722.125,
+   "w": 62.015625,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Contact Wikipedia",
+   "x": 302.09375,
+   "y": 722.125,
+   "w": 96.71875,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Legal & safety contacts",
+   "x": 410.8125,
+   "y": 722.125,
+   "w": 124.078125,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Code of Conduct",
+   "x": 546.890625,
+   "y": 722.125,
+   "w": 90.0625,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Developers",
+   "x": 648.953125,
+   "y": 722.125,
+   "w": 60.703125,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Statistics",
+   "x": 721.65625,
+   "y": 722.125,
+   "w": 48.015625,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Cookie statement",
+   "x": 781.671875,
+   "y": 722.125,
+   "w": 93.390625,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "Mobile view",
+   "x": 887.0625,
+   "y": 722.125,
+   "w": 62.703125,
+   "h": 14
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "",
+   "x": 1022,
+   "y": 717.125,
+   "w": 102,
+   "h": 44
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "name": "",
+   "x": 1130,
+   "y": 717.125,
+   "w": 106,
+   "h": 44
+  }
+ ]
+}

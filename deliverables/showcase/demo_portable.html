@@ -46,6 +46,12 @@ h1{margin:0;font:700 28px/1.2 Georgia,serif;letter-spacing:.1px}
 .taskbar{padding:11px 26px 0;flex:none}
 .intent{font:600 23px/1.3 Georgia,serif;color:var(--ink)}
 .intent .q{color:var(--muted);font-weight:400}
+/* talk copy (?autoplay=0, ROADMAP D24, 15 Sep): the deck's own title row does the framing, so the page's header
+   (title, subtitle, task tabs) is hidden and the task line is set larger; the word the caption quotes is marked */
+body.talk header{display:none}
+body.talk .taskbar{padding-top:18px}
+body.talk .intent{font-size:32px}
+.intent mark{background:#FFE9A8;color:inherit;padding:0 .14em;border-radius:4px}
 .caption{margin-top:6px;font:16px Arial;color:var(--muted)}
 .caption b{color:var(--ink);font-weight:700}
 /* Frames are as wide as three columns allow, so extra height cannot make them bigger;
@@ -2027,6 +2033,7 @@ const SUB_REPLAY = $("#sub").innerHTML;       // restored when leaving the live 
 // state instead of rolling over, so the arrow keys are the only thing that moves it.
 const Q = new URLSearchParams(location.search);
 const TALK = Q.get("autoplay") === "0";
+if (TALK) document.body.classList.add("talk");
 // task ids are compared as strings: DEMO_TASKS may hold "130" or 130 depending on the build
 const TASK0 = window.DEMO_TASKS.find(t => String(t) === Q.get("task")) ?? window.DEMO_TASKS[0];
 let task = TASK0, cursor = 0, playing = !TALK, timer = null;
@@ -2136,13 +2143,23 @@ function refs(el){
           mUsd:q(".m.usd"), mSec:q(".m.sec"), mCo2:q(".m.co2"), bar:q(".bar i"), lane:el};
 }
 
+// Talk copy only: the word(s) the caption puts in quotes (“sunset”) are marked in the task line, so the
+// eye finds the task's key before the lanes start moving. The board copy shows the plain line.
+function highlight(intent, caption){
+  const keys = [...caption.matchAll(/[“"]([^”"]+)[”"]/g)].map(m => m[1]);
+  let out = esc(intent);
+  for (const k of keys)
+    out = out.replace(new RegExp("(" + esc(k).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "i"), "<mark>$1</mark>");
+  return out;
+}
+
 // Build the three lanes for a task ONCE, mounting every frame stacked. After this the
 // only per-step work is toggling classes and writing text — no node is created or
 // destroyed, so nothing can blank out mid-transition.
 function mount(){
   const d = window.DEMO[task];
   $("#sub").innerHTML = SUB_REPLAY;
-  $("#intent").innerHTML = '<span class="q">Task:</span> ' + esc(d.intent);
+  $("#intent").innerHTML = '<span class="q">Task:</span> ' + (TALK ? highlight(d.intent, d.caption) : esc(d.intent));
   $("#caption").innerHTML = esc(d.caption);
   pickLine(d);
   // each meter row is scaled to the largest final value among this task's lanes

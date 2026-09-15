@@ -7,59 +7,60 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 
 ## 保底版本与裁剪
 
-必须表达：看法改变行为和失败方式（`behaviour` / `failure`）· 事后选对有收益，但要对着重跑读（`hindsight`）· 学到的选择 0 of 8、事后最优也只有 1 of 8（`learned`）· 例子只在做对时才有（`why`）· 边界和三个请求（`not-yet`）。
-先删：`question` 只念问题不念四个路标；`why` 并成 `learned` 末尾一句；`prize` 只念第一张卡和「a perfect router, not Claude or GPT numbers」。
+必须表达：看法改变行为和失败方式（`behaviour` / `failure`）· 选对有收益，但那是上限（`prize`）· 学到的选择 0 of 8、事后最优也只有 1 of 8（`learned`）· 例子只在做对时才有（`why`）· 边界和三个请求（`not-yet`）。
+先删：`question` 只念问题不念三个路标；`why` 并成 `learned` 末尾一句；`prize` 只念第一张卡和「an upper bound — not Claude or GPT numbers」；`agents` 三块各一句。
 再删或替换：`demo` 只讲 LOOK 与 READ，BOTH 一句带过（v3：demo 也可以裁）。
-短版（约 6 分钟）：`opening` → `agents` → `prize`（只念第一张卡）→ `demo`（LOOK / READ）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
+短版（约 6 分钟）：`opening` → `prize`（只念第一张卡）→ `agents`（三块各一句）→ `demo`（LOOK / READ）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
 
 ## 开场 —— 页面 `opening`
 
-目的：交代为什么值得听 —— agent 看网页有三种方式、价钱不同，而且这是量出来的。
+目的：一句话把赌注亮出来 —— agent 看网页的方式不止一种、价钱不同，选对了同一个 agent 就能多做对、少花钱。数字留到下一页。
 
 > When is expensive perception worth paying for?
-> A web agent can *look* at a page — a screenshot. It can *read* it — the page as text. Or both. They cost different amounts.
+> A web agent can see a web page in more than one way, and the ways cost different amounts. Pick the right way for each task, and the same agent does more, for less.
 > This is my MSc thesis, accepted at the REALM workshop at EMNLP this year.
-> First: what does a web agent actually see?
+> How much more, for how much less?
 
-提示：说完按 → 到 `demo`。
-转场：*"First: what does a web agent actually see?"* → `agents`
-
-## 段落 agents —— 页面 `agents`
-
-目的：先让大家认出「web agent 就是帮你在网页上干活的东西」，再看到主流工具看网页的方式真的不一样。两张图都是真实抓取，不是录像，也不是画出来的。
-
-> A web agent is a model that does things on web pages for you — fill in a form, book something, buy something.
-> Here's one real page, Wikipedia's sign-up form, captured this week two ways.
-> On the left, Claude Code with Playwright gets the page as text. This one page is a hundred and sixty-one lines.
-> On the right, Codex doing computer use with GPT-6 Astra can work from a screenshot of the same page. Each tool can use the other view too.
-> In between there's a third way — the screenshot with numbered marks. We call the three views READ, LOOK and BOTH.
-
-提示：先指左边高亮的 textbox 和 button 行，再指右边同一个表单。
-边界：两张图是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`），不是 Claude Code 或 Codex 做任务的记录，两个窗口框只是标出是哪个工具，不说「Claude 做了这个」。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），OpenAI 文档原话是「uses screenshots and other tool results」，所以台上说「can work from a screenshot」和「each tool can use the other view」，不说「Codex 只看截图」。161 行是这一次抓取的实测，页面会变。
-转场：→ `prize` *"So does the choice matter?"*
+提示：说完最后一句按 → 到 `prize`。
+转场：*"How much more, for how much less?"* → `prize`
 
 ## 段落 prize —— 页面 `prize`
 
-目的：一页四个数字回答「选对看法值多少」。卡片进页自动依次弹出。
+目的：一页三个数字回答「选对值多少」。卡片进页自动依次弹出。此时观众还不知道「看法」是什么，所以只说 *the right way to see each page*，不说 view / router。
 
-> If an agent always picked the right view for each task, here's what our measurements say it would get.
+> If a web agent always chose the right way to see each page — here's what our measurements say it would get.
 > **Eleven to sixteen more tasks solved in every hundred.**
-> Fourteen to twenty-seven percent off the token bill, and seven to twenty-nine percent less carbon — estimated from tokens.
-> On one site it's a third faster; on the other two, about the same.
-> That's a perfect router on our benchmark with a large open model — not Claude or GPT numbers. Let me show you one real task.
+> Fourteen to twenty-seven percent off the token bill. Seven to twenty-nine percent less carbon — estimated from tokens.
+> **That's an upper bound — a choice that already knows the right answer for every task — on our benchmark, with a large open model. Not Claude or GPT numbers.**
+> So what are these ways of seeing a page?
 
-提示：卡片弹一张念一张，四张出齐再翻页。
-边界：perfect router 是上限，事先知道每道题哪种看法能做对。时间只有一个网站变快，不说「快 34%」而不带「on one site」。
-转场：→ `demo` *"Same task, three ways of seeing it…"*
+提示：卡片弹一张念一张，三张出齐再翻页。
+边界：上限 = 事先知道每道题哪种看法能做对（后面 `learned` 页叫它 perfect router，这里还没引入这个词）。用时那张卡 09-15 删了（只有一个网站变快、两个持平，放在钩子页会自己拆台）；被问到再答：*on one site about a third faster, on the other two the same*。
+转场：*"So what are these ways of seeing a page?"* → `agents`
+
+## 段落 agents —— 页面 `agents`
+
+目的：用台下自己用的工具认出「web agent」，再让三种看法各留一个印象 —— 这一页只要让人记住「有三种、颜色各一」，细节留给 demo。三块都是真实抓取（同一次 Playwright MCP 会话），不是录像，也不是画出来的；三块依次弹出。
+
+> You've all used these. When Claude Code or Codex opens a browser and works a page for you — fills a form, checks a result — that's a web agent.
+> Here's one real page, Wikipedia's sign-up form, captured this week. Three ways to see it.
+> LOOK: a screenshot. Codex's computer use can work from this.
+> READ: the page as text. This is what Claude Code gets through Playwright — this one page is a hundred and sixty-one lines.
+> BOTH: the screenshot with every clickable thing boxed and numbered. The marks are ours.
+> Each tool can use the other views too. Keep the three colours in mind — you're about to see them run.
+
+提示：三块弹出时从左到右各指一下；READ 指高亮的 textbox / button 行；BOTH 指表单上的编号框。
+边界：三块是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`，同一会话：截图、快照、元素坐标），BOTH 的框是本项目的 SoM 画框代码画在同一张截图上的，不是 Claude Code 或 Codex 做任务的记录；窗口框只标出是哪个工具，不说「Claude 做了这个」。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），OpenAI 文档原话是「uses screenshots and other tool results」，所以台上说「can work from this」和「each tool can use the other views」，不说「Codex 只看截图」。161 行是这一次抓取的实测，页面会变。
+转场：*"you're about to see them run."* → `demo`
 
 ## 段落 demo —— 页面 `demo` / 操作 RUNBOOK「台上的动线」II
 
-目的：让观众亲眼看到同一任务三种看法、三种账单，以及 learned choice 选错。状态要说清：一次录制的回放，不是现场运行（v3 §5）。
+目的：让观众亲眼看到同一任务三种看法、三种账单，以及 learned choice 选错。状态要说清：一次录制的回放，不是现场运行（v3 §5）。演讲版的 demo 不显示自己的标题和 task 标签页，task 句放大，关键词 *sunset* 高亮。
 
 > **Same task, three ways of seeing it, three different bills.**
 > One recorded run per view — nothing on this screen is live.
-> The task: find the listing whose photo was taken at sunset.
-> LOOK gets the screenshot only. READ gets the page as text, no image. BOTH gets the screenshot with numbered marks.
+> The task is at the top: find the listing whose photo was taken at *sunset*. That word is the whole task.
+> Same three colours: LOOK gets the screenshot only. READ gets the page as text, no image. BOTH gets the screenshot with numbered marks.
 > LOOK sees the sunset and clicks it. Two steps. Solved.
 > READ is scrolling. The word "sunset" isn't on the page — it's in the picture.
 > Nine steps, and it gives up on the wrong boat.
@@ -67,7 +68,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > A learned choice, trained without this task, picked READ. The one view that failed.
 > One task proves nothing on its own. So here is the real question.
 
-提示：先说三栏是什么，再按 →；LOOK 那句后按一下；READ 边按边说到第 9 步；指 task 下面那行红字；「The one view that failed」后停一下，让大家看红框。demo 到底再按 → 自动翻到 `question`。
+提示：先指顶上高亮的 *sunset*，再说三栏是什么，再按 →；LOOK 那句后按一下；READ 边按边说到第 9 步；指 task 下面那行红字；「The one view that failed」后停一下，让大家看红框。demo 到底再按 → 自动翻到 `question`。
 边界：三道题是示例，不是成功率。⛔ 不切 76 / 17，不进 live，不解释 CO₂e（被问：按 token 估算，是区间，不是实测）。
 转场：*"So here is the real question."* → `question`
 
