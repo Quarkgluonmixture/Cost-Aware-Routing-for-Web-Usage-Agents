@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "09-15 深夜 D26：opening → agents（大 logo Codex / Claude Code / browser-use + 裁到表单的真实抓取）→ demo（演讲版减负、sunset 高亮）→ prize（模板数字卡 27 → 43 · −20%）→ question…，11 页 · 剩 user 过目 / 掐表（约 993 词）/ DGX tmux / 发最新 PDF · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
+eta: "09-15 深夜定稿（D26 补，user 没问题）：opening → agents（大 logo + 裁到表单的真实抓取，BOTH = browser-use DOM 覆盖层）→ demo（演讲版减负、sunset 高亮）→ prize（模板数字卡 27 → 43 · −20%）→ question…，11 页 · DGX 已备好（tmux showcase，站点已重置）· 离线包 / PDF / U 盘就绪 · 剩 user 掐表（约 993 词）· event 09-16（09:50 到场 · 投票 10:00–14:35 · 下午第二个讲，约 14:55）· 会后写笔记"
 detail: deliverables/showcase
 created: 2026-09-02
 updated: 2026-09-15

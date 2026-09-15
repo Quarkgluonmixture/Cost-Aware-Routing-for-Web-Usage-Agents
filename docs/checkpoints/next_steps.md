@@ -22,7 +22,7 @@ updated: 2026-09-15
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
-> ## 🟡 2026-09-15 深夜 · Showcase（09-16）开场三轮改完（D24 → D25 → D26：agents 大 logo + browser-use，demo，prize 27 → 43），剩 user 过目 + 掐表 · 先看这里
+> ## 🟢 2026-09-15 深夜收尾 · Showcase（09-16）片子定稿（D26 补，user「没问题」）· DGX 已备好 · 明天流程见手册 · 会后回来写笔记 · 先看这里
 >
 > **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D24 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语
 > chronicle → **笔记 §511–§527**（D24 这轮：§527）· commits `90544a5` … 本轮 D24 commit，**全部未 push**
@@ -41,11 +41,11 @@ updated: 2026-09-15
 > - 展板 live：`curl -s localhost:8799/health`；共用代理余额 `.venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once`
 > - 离线包 `tmp/showcase_talk_bundle.zip` 不入库（现 17.5 MB，09-15 19:10 版，片子引用的图 / 录屏 / 兜底截图逐个核对在包里）；片子一改就 `cd deliverables && zip -u ../tmp/showcase_talk_bundle.zip showcase/talk/<改过的文件>`（demo 改了还要加 `showcase/demo_portable.html`），再改 `day-of.html` 里的版本时间
 >
-> ### 还没做的
-> 1. user 在 MacBook 上看一遍新开场（agents 大 logo 版 → demo 演讲版 → prize 27 → 43），不满意再改
-> 2. 台本出声掐表（约 988 词；超过 9:30 就按 `rehearsal-script.md` 顶部的裁剪顺序砍）
+> ### 还没做的（09-15 23:55 状态）
+> 1. ~~user 过目~~ 已过（「没问题」）；~~离线包重下 / PDF 发 Zekun / U 盘~~ 已做（user 09-15 深夜）
+> 2. 台本出声掐表（约 993 词；超过 9:30 就按 `rehearsal-script.md` 顶部的裁剪顺序砍）—— user 自己的事，未做
 > 3. ~~DGX：live server 移进 tmux + 重置站点~~ **已做 09-15 23:43**（tmux 会话 `showcase`，站点 `down`/`up` 重置，health ok，余额 $30.18）。⚠️ 别用 `pkill -f "…server.py"`：模式会匹配到自己的 bash -c，把当前 shell 一起杀掉（§527.7 又踩了一次）；用 `fuser -k 8799/tcp` 或先 `pgrep` 拿 PID 再 `kill`
-> 4. user：MacBook 下载最新离线包 · 补发最新 `talk/talk.pdf` 给 Zekun · 板前 90 秒走读练熟
+> 4. user：板前 90 秒走读练熟（离线包、PDF、U 盘已就绪；Mac 自带 HDMI；今晚两台电脑关机，明早开机流程在本 session 末尾消息 + 手册「明早出门前」）
 > 5. 当天才能问清：10 分钟含不含问答 · 展板旁桌子 / 插座 / Wi-Fi。**已知（ROADMAP D19）**：09:50 到场先帮忙布展，AV check 只能 10:15 前挤时间；下午学生演讲**第二个**讲，约 14:55
 > 6. Google 日历已建（主日历 16 个 `Showcase · ` 事件，笔记 §526）；user 原有的「Research Day — Poster Exhibition」事件仍写 Registration 09:30、07:30 会弹提醒，改不改由 user 定；另有 6 个事件带默认 30 分钟提醒
 >
