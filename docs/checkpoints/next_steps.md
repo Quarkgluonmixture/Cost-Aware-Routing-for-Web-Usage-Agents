@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-09-11
+updated: 2026-09-15
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,22 @@ updated: 2026-09-11
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-09-15 · 本地 replicate chain 在 A100 上跑（10 格，预计 ~09-25 收尾）· 付费项等 proxy 额度
+>
+> chronicle → **笔记 §515** · 台账 **+12** · 意图书 `pre_run/local_replicate_chain_launch_intent_20260915.md`（commit `b805f79`，发车前提交）
+>
+> **在跑什么**：WA·B1·reddit 六臂 → B1·shop·som → B2 red dom / cls som / cls vision，`FORCE_NEW=1`，09-15 09:29 UTC 发车。
+> 进度现查：`ssh condense-a100 'tail -5 ~/workspace/p79/logs/queue_chain_local_replicate_20260915.log'`
+> **落地时对着意图书读**（C1 证伪判据、B2 cls 两格「结构上证伪不了 C1」都已事前写死），不要另起解释。
+> 每格落地会推 COMPLETE-ghost urgent，属预期；CLEAN_PAIRS 登记留给 user。**硬停 10-05 00:00 UTC。**
+>
+> **付费项全部阻塞**：proxy 余额 09-15 实测 **$30.18**。§505.27 写的「$546 实测」其实是费用估算合计，不是余额（已 RETRACTED）。
+> 额度到账 → 等当前 cell 跑完停 chain，先跑 §505.27 的付费项；注意 #1 shop_B0 的「~15 h」也是错的，每格按 32–59 h 估。
+> **A100 驱动**：09-12 又被自动升级、NVML 裂开，已原地换模块并 `apt-mark hold` 16 个 nvidia 包；chain 期间别重启、别 unhold。
+>
+> 已关闭：09-13 块待办 1（预算路由 prospective 检验 P-prompt 臂 two_tier / three_tier 均 PASS，§515.3）。
+> 仍未动：09-13 块待办 2（§505 pilot 脚本口径）· v12 规则批 · B5 vision ②③④。
+
 > ## 🟢 2026-09-13 · §509.8 遗留的 universe lint 两条失败清掉了 —— 底下压着真泄漏
 >
 > chronicle → **笔记 §510** · 台账 **+8** · commit `b9c86f7`
