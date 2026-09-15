@@ -22,6 +22,30 @@ updated: 2026-09-15
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-09-15 晚 · Showcase（09-16）材料就绪 · 新 session 先看这里
+>
+> **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D17 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语
+> chronicle → **笔记 §511–§517** · commits `90544a5` … `7a8c7c4`
+>
+> ### 先跑命令确认现状（别照抄旧数字）
+> - 片子：`.venv/bin/python3 deliverables/showcase/talk/check_talk.py`（`talk/index.html`，页面 id：opening · demo · question · behaviour · failure · hindsight · learned · why · not-yet · close · reference）
+> - 展板 live：`curl -s localhost:8799/health`；共用代理余额 `.venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once`
+> - hindsight 页的数字：`.venv/bin/python3 deliverables/showcase/talk/hindsight_efficiency.py`（有成本与 token 两道自检）
+> - 离线包 `tmp/showcase_talk_bundle.zip` 不入库；片子一改就要重打（打包写法见笔记 §511.6）
+>
+> ### 还没做的
+> 1. ~~/stress spot-check 本轮演讲说法~~ —— **user 09-15 决定跳过**（数字有脚本自检，口径在 `SHOWCASE_PREP.md §5`；catchy 化后的措辞未经独立审读）
+> 2. DGX：live server 移进 tmux + 重置站点（手册「今晚准备 B」）
+> 3. user：MacBook 重新下载离线包 · 补发新版 `talk/talk.pdf` 给 Zekun · 新台词出声掐表 · 板前 90 秒走读练熟
+> 4. 当天才能问清：10 分钟含不含问答 · 第几个讲 · 展板旁桌子 / 插座 / Wi-Fi（09:45 AV check）
+>
+> ### 本轮顺带发现、和 showcase 无关
+> - `scripts/analysis/router_objective_ordering.py` 的 WA 分支按 glob 找运行目录：09-15 A100 重跑新增 `B1_dom_wa_reddit_20260915_…_R3792` 后匹配不唯一 → **WA·B1 被静默跳过**（笔记 §517.3）。重跑这份分析前先改成按 manifest 固定 run
+>
+> ### 会后
+> - 撤展后 DGX：`tmux kill-session -t showcase`（没进 tmux 就 `fuser -k 8799/tcp`）+ `docker compose -f deliverables/showcase/demo/live/site-compose.yml down`
+> - 结果、被问到的问题、哪一段没讲好 → 笔记新一节
+
 > ## 🟢 2026-09-15 · 本地 replicate chain 在 A100 上跑（10 格，预计 ~09-25 收尾）· 付费项等 proxy 额度
 >
 > chronicle → **笔记 §515** · 台账 **+12** · 意图书 `pre_run/local_replicate_chain_launch_intent_20260915.md`（commit `b805f79`，发车前提交）

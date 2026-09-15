@@ -5,10 +5,10 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "talk v0 (deck+script+runbook+fallback) done 09-11 · author rewrites script + §2/§5 rewrite 09-12–13 · template skin ≤09-14 · rehearsal 09-14–15 · event 09-16 (votes 13:15–14:35, talk 14:45)"
+eta: "09-15 材料就绪（片子 10 页 v3 对齐 + 学长意见 D17、板前走读按 v9.10 重写、当天手册）· 剩 user 掐表 / MacBook 更新离线包 / DGX tmux · event 09-16（投票 10:00–14:35，演讲 14:45）"
 detail: deliverables/showcase
 created: 2026-09-02
-updated: 2026-09-11
+updated: 2026-09-15
 ---
 
 # Holistic AI × UCL CDI showcase (16 Sep 2026) — poster + laptop demo
@@ -50,3 +50,7 @@ board), the 7-slide skeleton mapped to the six printed panels, and the day-of fa
 **Talk v0 (2026-09-11, 笔记 §507.5)**: five artefacts per `presentation-playbook.md` in `deliverables/showcase/talk/` —
 `index.html` (8 slides, slide 2 = demo iframe, `check_talk.py` PASS) · `rehearsal-script.md` (735 words, six locked sentences) ·
 `RUNBOOK.md` · `fallback.html` (6 shots) · `talk_130.webm` · `talk.pdf`. Left: author rewrites the script aloud; template skin; rehearsal §6.
+
+**09-15 收尾（笔记 §511–§517）**：演讲电脑 = MacBook + Chrome，quark 全天在展板；Zekun：接自己电脑、提前发片子。
+片子按 playbook v3 与学长意见重排：question 页一个问题 + 四路标 · behaviour / failure · hindsight = Claude Code 前端自检场景 + 三个数字（`talk/hindsight_efficiency.py`）· learned 大数字 0 of 8 · why = scaling law · not-yet · close；开场加导师。
+板前走读已按印出来的 v9.10 重写（`SHOWCASE_PREP.md §2`，含「海报说过头处」口径表）。当天完整手册 `deliverables/showcase/day-of.html`（已发布为 artifact）。
