@@ -184,27 +184,32 @@ def routing() -> None:
     ax.scatter([0], [0], s=260, marker="*", color="#000000", zorder=6)
     ax.annotate("always the\ncheapest view", (0, 0), textcoords="offset points", xytext=(-12, -40),
                 ha="right", fontsize=13, color="#333333")
+    # two marks only: the in-sample triangles stay for Q&A, and green means the win corner alone
+    hindsight = "#5049F9"
+    learned = [r["pts"]["learned_nested_honest"] for r in rows if "learned_nested_honest" in r["pts"]]
+    assert len(learned) == 8 and all(x > 0 for x, _ in learned), learned   # the corner note below says so
     for r in rows:
         p = r["pts"]
         if "oracle_triage" in p:
-            ax.scatter(*p["oracle_triage"], s=150, marker="s", facecolor="none", edgecolor=f.C_ORACLE, lw=2.2, zorder=4)
-        if "learned_lossless" in p:
-            ax.scatter(*p["learned_lossless"], s=110, marker="^", color=f.C_LOSSLESS, zorder=4)
+            ax.scatter(*p["oracle_triage"], s=160, marker="s", facecolor="none", edgecolor=hindsight, lw=2.4, zorder=4)
         if "learned_nested_honest" in p:
-            ax.scatter(*p["learned_nested_honest"], s=170, color=f.C_NESTED, zorder=5)
+            ax.scatter(*p["learned_nested_honest"], s=190, color=f.C_NESTED, zorder=5)
+    ax.text(xhi - 0.01, yhi * 0.97, "every learned choice\ncosts more than the star", ha="right", va="top",
+            fontsize=15, color=f.C_NESTED, fontweight="bold", linespacing=1.2)
     ratios = [r for r in (0.8, 0.9, 1.0, 1.1, 1.25, 1.5) if xlo <= np.log2(r) <= xhi]
     ax.set_xticks([np.log2(r) for r in ratios])
     ax.set_xticklabels(["same" if r == 1.0 else f"{(r - 1) * 100:+.0f}%" for r in ratios], fontsize=14)
     ax.set_xlim(xlo, xhi); ax.set_ylim(ylo, yhi)
     ax.set_xlabel("cost, compared with always using the cheapest view", fontsize=16)
-    ax.set_ylabel("tasks solved per 100,\ncompared with it", fontsize=15)
+    for xa, ha, word in ((0.0, "left", "← cheaper"), (1.0, "right", "pricier →")):
+        ax.text(xa, -0.155, word, transform=ax.transAxes, ha=ha, va="center", fontsize=16, color="#555555")
+    ax.set_ylabel("tasks solved per 100,\ncompared with the star →", fontsize=15)
     ax.tick_params(axis="y", labelsize=14)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
-    ax.legend(handles=[Line2D([], [], marker="o", ls="", ms=12, color=f.C_NESTED, label="learned choice, tested on tasks it never saw"),
-                       Line2D([], [], marker="^", ls="", ms=11, color=f.C_LOSSLESS, label="learned choice, tested on its own training tasks"),
-                       Line2D([], [], marker="s", ls="", ms=11, mfc="none", mec=f.C_ORACLE, mew=2, label="perfect hindsight")],
-              loc="upper right", frameon=False, fontsize=13.5)
+    ax.legend(handles=[Line2D([], [], marker="o", ls="", ms=13, color=f.C_NESTED, label="learned choice, tested on tasks it never saw"),
+                       Line2D([], [], marker="s", ls="", ms=12, mfc="none", mec=hindsight, mew=2.2, label="perfect hindsight")],
+              loc="lower right", frameon=False, fontsize=14)
     fig.tight_layout()
     _save(fig, "talk_routing.png")
 

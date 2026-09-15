@@ -99,11 +99,11 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 目的：让大家看到绿色区域里没有学到的选择；0 of 8 是读图后的总结。
 
 > So can a model learn to make that pick? We tried five different ways.
-> The star is always using the cheapest view. Left is cheaper; up solves more. We want the green corner. None of the solid orange dots gets there.
+> The star is always using the cheapest view. Left is cheaper; up solves more. We want the green corner. None of the orange dots gets there — every one of them costs more than the star.
 > **Zero out of eight.** In none of our eight settings does a learned picker beat simply always using the cheapest view.
 > **Even perfect hindsight only manages it in one of eight** — so this isn't just a weak model.
 
-提示：先指星号，再指左上绿色区域，再指橙色圆点；「Zero out of eight」后停一下。空心绿方块是事后选择，绿色区域里有一个，不能说所有选择都没进去。
+提示：先指星号，再指左上绿色角，再指右上角那行字和橙点（全在星号右边）；「Zero out of eight」后停一下。紫色方块是事后选择，绿色角里有一个，不能说所有选择都没进去。图上只放「没见过的题上测」的结果；「在训练题上测」的乐观结果（旧图浅橙三角）只留到问答。
 边界：⛔ 不说 *routing doesn't work*；说 *not today*。
 转场：→ `why` *"Here's why — call it the scaling law of routing."*
 
