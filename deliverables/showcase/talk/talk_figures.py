@@ -292,10 +292,65 @@ def scaling_supply() -> None:
     _save(fig, "talk_scaling.png")
 
 
+def capability_supply() -> None:
+    """The six real settings against the line where a choice becomes trainable.
+
+    x = share of tasks some view solves (how capable the agent is); y = examples of the
+    second most common right view, the class that decides trainability. The line is
+    `scale_needed × second_largest_class` from `router_undersampling_control.json` §D
+    (10 training rows per class in a 5-fold split = 12.5), asserted equal across rows.
+    The arrow is a direction, not a fitted trend: today's mix of right views and today's
+    benchmark size are assumed, which makes any crossing a lower bound (笔记 §453.2).
+    Crossing the line means a choice can be trained and tested, not that it wins.
+    """
+    rows = json.loads((REPO / "docs/analysis/cross_sites/router_undersampling_control.json")
+                      .read_text())["whichmode_scale"]
+    needs = {round(r["scale_needed"] * r["second_largest_class"], 6) for r in rows}
+    assert len(rows) == 6 and len(needs) == 1, (len(rows), needs)
+    need = needs.pop()
+    ink, muted, accent = "#12162E", "#5D6787", "#5049F9"
+    fig, ax = plt.subplots(figsize=(13.5, 5.2), facecolor="white")
+    x0, x1, y0, y1 = 4, 100, 2, 60
+    ax.fill_between([x0, x1], need, y1, color="#EEF0FE", zorder=0)
+    ax.axhline(need, color=ink, lw=2.2, zorder=2)
+    ax.text(x0 * 1.08, need * 1.18, "Enough examples to train a choice", fontsize=16,
+            color=ink, fontweight="bold")
+    ax.text(x0 * 1.08, need * 0.74, "Too few", fontsize=16, color=muted)
+    # direction only: examples grow in step with solved tasks (slope 1 on log-log)
+    ax.annotate("", (70, 70 * 0.42), (8.5, 8.5 * 0.42),
+                arrowprops=dict(arrowstyle="simple,head_width=1.6,head_length=1.4,tail_width=0.55",
+                                color="#AB5FCE", alpha=.28, lw=0), zorder=1)
+    ax.text(95, 10, "stronger agents →\nmore solved tasks →\nmore examples",
+            fontsize=15, color="#8A45AE", ha="right", va="top", linespacing=1.3)
+    for r in rows:
+        above = r["second_largest_class"] >= need
+        ax.scatter([r["solvable_pct"]], [r["second_largest_class"]], s=380, zorder=4,
+                   facecolors=accent if above else "white", edgecolors=accent, linewidths=2.6)
+        ax.annotate("large model" if r["cell"].startswith("B0") else "small model",
+                    (r["solvable_pct"], r["second_largest_class"]), xytext=(14, 0),
+                    textcoords="offset points", fontsize=13, color=muted, va="center")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlim(x0, x1); ax.set_ylim(y0, y1)
+    ax.set_xticks([5, 10, 20, 50, 100], labels=["5%", "10%", "20%", "50%", "100%"])
+    ax.set_yticks([2, 5, 10, 20, 50], labels=["2", "5", "10", "20", "50"])
+    ax.minorticks_off()
+    ax.tick_params(labelsize=14, length=0)
+    ax.grid(True, which="major", color="#e5e8f1", lw=.8)
+    ax.set_axisbelow(True)
+    ax.set_xlabel("Tasks the agent solves with some view →  (log scale)", fontsize=17, labelpad=8, color=ink)
+    ax.set_ylabel("Examples of the second\nmost common right view", fontsize=16, labelpad=10, color=ink)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color("#b9c1d5")
+    fig.tight_layout()
+    _save(fig, "talk_capability.png")
+
+
 def main() -> None:
     OUT.mkdir(exist_ok=True)
     _base()
-    for fn in (behaviour, failure, hindsight, routing, label_supply, scaling_supply):
+    for fn in (behaviour, failure, hindsight, routing, label_supply, scaling_supply, capability_supply):
         fn()
 
 

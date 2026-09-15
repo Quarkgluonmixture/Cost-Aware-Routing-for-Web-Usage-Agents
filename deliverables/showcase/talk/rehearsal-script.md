@@ -112,13 +112,13 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 目的：一句好记的话讲清原因：没有成功，就没有例子。
 
 > Here's one bottleneck — call it the scaling law of routing: no wins, no examples.
-> Each line illustrates a different rate of producing successes. More tasks give us more examples, but a less successful agent produces them more slowly.
-> Follow the dashed line: to collect the same number of labels, the less successful agent needs more tasks.
-> **Fewer wins means more tasks for each usable training example.** That's how agent success rates set the price of learning to choose.
-> In the settings short of examples, we estimate at least two to four times more tasks.
+> Each dot is one real setting. Across: how many tasks the agent solves with some view. Up: examples of the second most common right view — to learn a choice, you need at least two different right answers, each seen often enough.
+> Above the line there are enough examples to train a choice. Today only two of the six get there.
+> **Stronger agents solve more tasks, and every solved task is an example — so they move toward the line.**
+> Crossing it doesn't mean the choice wins; it means we can finally test it. At today's success rates, the settings below the line would need at least two to four times more tasks.
 
-提示：先指横轴任务数量、纵轴可用训练例子；再沿水平虚线比较交点，指底部向右的任务量差距。双对数直线是固定标签产出率的关系示意，没有拟合数据点。共同标签目标不是「到线就能训练」的保证，类别分布也有影响；2–4× 是另行估算。
-边界：说 one bottleneck，不把标签稀缺说成所有失败的唯一原因。「scaling law」指「成功越多、例子越多」的关系（6 个设置），不是拟合幂律，也不声称失败轨迹对所有学习方法都无用。
+提示：先指横轴（用某种看法能做对的题）、纵轴（第二常见的正确看法有几条例子）；再指分界线，线上两个实心点、线下四个空心点；最后顺着紫色箭头往右上指。reddit 上的大模型也在线下：网站难，同样缺例子。
+边界：说 one bottleneck，不把标签稀缺说成所有失败的唯一原因。箭头只是方向，不是拟合趋势，不说「做对多少题就能越线」。越过线 = 能训练、能检验，不等于赢过「永远用最便宜的看法」（事后最优也只有 1 of 8）。「scaling law」是「成功越多、例子越多」的叫法，不是拟合幂律。分界线 = 5 折里两类各至少 10 条训练例子（12.5 条，`router_undersampling_control.md` §D）；2–4× 假设正确看法的比例不变，是下界。
 转场：→ `not-yet`
 
 ## 段落 not-yet —— 页面 `not-yet`
