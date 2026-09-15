@@ -22,27 +22,27 @@ updated: 2026-09-15
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
-> ## 🟡 2026-09-15 晚 · Showcase（09-16）开场按 user 零预设结构重排（ROADMAP D24），待 user 过目 + 出声掐表 · 先看这里
+> ## 🟡 2026-09-15 深夜 · Showcase（09-16）开场重排两轮（D24 → D25：agents → demo → prize），等 user 的两张真实终端截图换 agents 页 · 先看这里
 >
 > **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D24 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语
 > chronicle → **笔记 §511–§527**（D24 这轮：§527）· commits `90544a5` … 本轮 D24 commit，**全部未 push**
 >
-> ### 现在的片子（正文 11 页，页面 id）
-> opening · **prize**（钩子：三张卡 +11 到 +16 / 百题 · token 费用 −14 到 −27% · CO₂e −7 到 −29%；用时卡已删）· **agents**（*A web agent works the page for you — and can see it three ways.*：三块真实抓取按 demo 泳道顺序与颜色依次弹出 —— LOOK 截图 · READ 快照紧凑节选 · BOTH 截图 + 我们画的 25 个编号框）· demo（演讲版隐藏 demo 自己的标题和标签页、task 句放大、*sunset* 高亮）· question（3 个路标）· behaviour · failure · learned（perfect router 措辞 + 简化散点图，D21）· why（真实 6 点 + 训练分界线，D20）· not-yet · close · reference
+> ### 现在的片子（正文 11 页，页面 id，D25 顺序）
+> opening · **agents**（*A web agent works the page for you — and can see it three ways.*：三块真实抓取按 demo 泳道顺序与颜色依次弹出 —— LOOK 截图 · READ 快照紧凑节选 · BOTH 截图 + 我们画的 25 个编号框；**待换成 user 自己截的 Claude Code / Codex CLI 真实终端图**）· demo（演讲版隐藏 demo 自己的标题和标签页、task 句放大、*sunset* 高亮）· **prize**（两根条 27 → 43 of 100 + −20% token bill，页脚另两个网站；D25）· question（3 个路标）· behaviour · failure · learned（perfect router 措辞 + 简化散点图，D21）· why（真实 6 点 + 训练分界线，D20）· not-yet · close · reference
 >
-> ### user 09-15 晚说清了要什么并已落地（D24）—— 下一步是 user 自己看一遍
-> user 的结构：① 标题 ② 用 Claude Code / Codex 讲 web agent 是什么 + 三种看法各留一个印象 ③ demo；demo 信息太密要先铺垫；一开始就说能省多少、多做对多少更抓人。落地时把数字卡放在第 2 页（钩子先行）、agents 第 3 页、demo 第 4 页 —— **prize 在 agents 之前是我的判断**（user 原话只说了标题 / agents / demo 三页 + 「一开始说数字」），user 若想把数字卡放到 agents 之后或并进标题页，只动 `index.html` 里两个 `<section>` 的顺序 + 台本两段。
+> ### 09-15 深夜的状态（D25）—— 等两张截图
+> D24 把数字卡放第 2 页被 user 否了（「没说 web agent 是什么就跳三个数字」+ 三个区间难看），已改为 demo 之后的「27 → 43」两根条（§527.4）。agents 页仍是 CSS 窗口框 + 真实抓取，user 要换成**真的终端**：在 Mac 上让 Claude Code 和 Codex CLI 各跑一句（挂 Playwright MCP），跑完由它们自己 `screencapture` 存盘；需要的四个文件和 prompt 已经给 user（见本 session 末尾消息 / ROADMAP D25）。收到后：agents 页三栏 = Claude Code 终端图（READ）· Codex CLI 终端图 + 它拿到的页面截图（LOOK）· our agent 编号框图（BOTH），logo 用 `talk/claude-color.svg` / `codex-color.svg`。
 >
 > ### 先跑命令确认现状（别照抄旧数字）
-> - 片子：`.venv/bin/python3 deliverables/showcase/talk/check_talk.py`（D24 后 PASS，prize / agents 各 50 / 50 词；台本约 961 词，**偏长，未出声掐表**）
+> - 片子：`.venv/bin/python3 deliverables/showcase/talk/check_talk.py`（D25 后 PASS，agents 50 / 50、prize 47 / 50 词；台本约 988 词，**偏长，未出声掐表**）
 > - 真实抓取素材：`.venv/bin/python3 deliverables/showcase/talk/real_capture.py render`（素材已入库；`capture` 要联网、本机 MCP 需 `--no-sandbox`；`marks` 把坐标画成 BOTH 面板）
 > - PDF：`.venv/bin/python3 deliverables/showcase/talk/export_pdf.py`（不要直接 `page.pdf()`）
 > - 展板 live：`curl -s localhost:8799/health`；共用代理余额 `.venv/bin/python3 scripts/maintenance/proxy_budget_watch.py --once`
 > - 离线包 `tmp/showcase_talk_bundle.zip` 不入库（现 17.5 MB，09-15 19:10 版，片子引用的图 / 录屏 / 兜底截图逐个核对在包里）；片子一改就 `cd deliverables && zip -u ../tmp/showcase_talk_bundle.zip showcase/talk/<改过的文件>`（demo 改了还要加 `showcase/demo_portable.html`），再改 `day-of.html` 里的版本时间
 >
 > ### 还没做的
-> 1. user 在 MacBook 上看一遍新开场（prize → agents → demo 演讲版），不满意再改；每改一次走完：check_talk → export_pdf → 看 PDF 对应页 → 更新离线包 → 手册版本号 → 提交 → 重新发布手册
-> 2. 台本出声掐表（约 961 词；超过 9:30 就按 `rehearsal-script.md` 顶部的裁剪顺序砍）
+> 1. 收到 user 的两张终端截图（+ Claude 存的快照文本、Codex 存的页面截图）→ 重做 agents 页 → 走完：check_talk → export_pdf → 看 PDF 对应页 → 更新离线包 → 手册版本号 → 提交 → 重新发布手册
+> 2. 台本出声掐表（约 988 词；超过 9:30 就按 `rehearsal-script.md` 顶部的裁剪顺序砍）
 > 3. DGX：live server 移进 tmux + 重置站点（手册「今晚准备 B」）
 > 4. user：MacBook 下载最新离线包 · 补发最新 `talk/talk.pdf` 给 Zekun · 板前 90 秒走读练熟
 > 5. 当天才能问清：10 分钟含不含问答 · 展板旁桌子 / 插座 / Wi-Fi。**已知（ROADMAP D19）**：09:50 到场先帮忙布展，AV check 只能 10:15 前挤时间；下午学生演讲**第二个**讲，约 14:55
@@ -50,7 +50,7 @@ updated: 2026-09-15
 >
 > ### 本 session 定下的口径（改片子时别踩）
 > - agents 三块是同一次 Playwright MCP 会话对真实网页的抓取，**不是 Claude Code 或 Codex 的运行记录**；BOTH 的编号框是本项目 SoM 代码画在真实截图上的，台上说 *the marks are ours*、不说哪个产品长这样；Codex computer use 是截图加无障碍文本混用，不说「Codex 只看截图」；「GPT-6 Astra 只看截图」记为 CLAIM_UNVERIFIED（§524.1）
-> - prize 页在「view / router」引入之前，只说 *the right way to see each page* / *upper bound*；perfect router 从 `learned` 页起才说；用时那张卡删了，被问再答「一个网站快三分之一、两个持平」
+> - prize 页在 demo 之后：27 → 43 是 B0·classifieds（demo 的网站）一个设置，另两个网站必须同页页脚可见；*upper bound* 只说「a choice that already knows the answer」，perfect router 从 `learned` 页起才说；CO₂e（−7 到 −29%，token 估算）与用时（一个网站快三分之一、两个持平）都不上片子，被问再答
 > - 越过 why 页分界线 = 能训练、能检验，不等于赢；箭头不给越线点
 > - 演讲不说 hindsight，说 perfect router（事先知道结果的上限）；板前走读仍用海报原词 hindsight
 > - /stress：user 09-15 决定跳过（两次）

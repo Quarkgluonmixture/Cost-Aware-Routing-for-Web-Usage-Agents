@@ -166,7 +166,7 @@ td .say{font-family:var(--serif);font-size:1rem}
   <div class="eyebrow">Holistic AI × UCL CDI Research Showcase · Wed 16 Sep 2026 · UCL Centre for AI, 90 High Holborn</div>
   <h1>16 Sep Showcase 手册</h1>
   <p class="lede">从今晚准备到明天撤展，按时间顺序写清楚：每个时间点做什么、用哪台电脑、怎么配置、在板前和讲台上说什么、出了问题怎么办。</p>
-  <div class="meta">整理于 09-15 晚（D24 版：开场 prize → agents → demo，demo 演讲版减负）· 事实以 ROADMAP.md / talk/RUNBOOK.md / demo/README.md / talk/rehearsal-script.md / SHOWCASE_PREP.md 为准</div>
+  <div class="meta">整理于 09-15 晚（D25 版：opening → agents → demo → prize「27 → 43」→ question；demo 演讲版减负）· 事实以 ROADMAP.md / talk/RUNBOOK.md / demo/README.md / talk/rehearsal-script.md / SHOWCASE_PREP.md 为准</div>
 </header>
 
 <nav class="toc" aria-label="目录">
@@ -302,7 +302,7 @@ curl -s localhost:8799/health                      <span class="c"># {"ok": true
     <h3>C · quark：离线副本、隧道、live 实跑一次、显示设置 <span class="tag t-board">quark</span></h3>
     <ol class="check">
       <li><input type="checkbox" id="c1" data-key="c1"><label for="c1"><b>下载离线包，解压到桌面</b>
-        <span class="sub">VS Code 连 DGX 后，在资源管理器找到 <code>tmp/showcase_talk_bundle.zip</code>（17.5 MB，09-15 19:10 D24 版；之前下载过也要重新下载 —— 片子开场重排、demo 演讲版改了、PDF 重导，两张新图也在里面），右键 Download。解压后桌面有 <code>showcase/demo_portable.html</code>，双击确认三道题能播放。</span></label></li>
+        <span class="sub">VS Code 连 DGX 后，在资源管理器找到 <code>tmp/showcase_talk_bundle.zip</code>（17.5 MB，09-15 深夜 D25 版；之前下载过也要重新下载 —— 片子开场重排、demo 演讲版改了、PDF 重导，两张新图也在里面），右键 Download。解压后桌面有 <code>showcase/demo_portable.html</code>，双击确认三道题能播放。</span></label></li>
       <li><input type="checkbox" id="c2" data-key="c2"><label for="c2"><b>开隧道并查 health</b>
         <span class="sub">PowerShell 窗口 1 开隧道，一直开着不要关；窗口 2 查 health。出现 <code>bind [127.0.0.1]:8799: Permission denied</code> 不算失败：那是 VS Code 已经转发了 8799，ssh 改绑到 <code>::1</code>，两条路都能通。</span></label></li>
       <li><input type="checkbox" id="c3" data-key="c3"><label for="c3"><b>浏览器开 <code>http://localhost:8799/</code>，按 <code>4</code>，跑一个页面上给的建议任务</b>
@@ -328,7 +328,7 @@ curl.exe -s http://localhost:8799/health</code></pre>
       <li><input type="checkbox" id="d2" data-key="d2"><label for="d2"><b>把同一个 zip 拷到 MacBook，解压到桌面</b>
         <span class="sub">必须保持 <code>showcase/demo_portable.html</code> 和 <code>showcase/talk/</code> 在同一层，片子 <code>demo</code> 页靠相对路径找 demo，层级一变就白屏。</span></label></li>
       <li><input type="checkbox" id="d3" data-key="d3"><label for="d3"><b>Chrome 打开 <code>talk/index.html</code>，按顺序检查</b>
-        <span class="sub">① 停在 <code>opening</code> → ② 按两下 → 经 <code>prize</code>（三张卡片弹出）、<code>agents</code>（三块窗口依次出现）到 demo：顶上是放大的 Task 句、<i>sunset</i> 黄底高亮、没有 demo 自己的标题和标签页；点一下 iframe 里的空白处，再按 → 10 下走到 READ 结束 → ③ 再按 → 自动翻到 <code>question</code> → ④ 一路按 → 到 <code>close</code>（共 11 页）→ ⑤ 按 <code>R</code> 打开参考页，录屏能播放 → ⑥ 按 ⌘R 刷新，仍停在原页 → ⑦ 单独打开 <code>talk/fallback.html</code>，6 张截图都在。</span></label></li>
+        <span class="sub">① 停在 <code>opening</code> → ② 按一下到 <code>agents</code>（三块窗口依次出现），再按一下到 demo：顶上是放大的 Task 句、<i>sunset</i> 黄底高亮、没有 demo 自己的标题和标签页；点一下 iframe 里的空白处，再按 → 10 下走到 READ 结束 → ③ 再按 → 自动翻到 <code>prize</code>（两根条自动长出）→ ④ 一路按 → 经 <code>question</code> 到 <code>close</code>（共 11 页）→ ⑤ 按 <code>R</code> 打开参考页，录屏能播放 → ⑥ 按 ⌘R 刷新，仍停在原页 → ⑦ 单独打开 <code>talk/fallback.html</code>，6 张截图都在。</span></label></li>
       <li><input type="checkbox" id="d4" data-key="d4"><label for="d4"><b>在家接一次电视或显示器，试镜像</b>
         <span class="sub">机身没有 HDMI 口就用 USB-C→HDMI 转接头。按 ⌘F1，或「控制中心 → 屏幕镜像 → 镜像」。片子第 1 页四边不能被裁掉。</span></label></li>
     </ol>
@@ -599,10 +599,10 @@ curl -s localhost:8799/health
   <div class="tbl"><table>
     <thead><tr><th>页面</th><th>这页讲什么</th><th>手上</th><th>要说准的句子</th></tr></thead>
     <tbody>
-      <tr><td class="id">opening</td><td>为什么值得听：agent 看网页的方式不止一种、价钱不同，选对了同一个 agent 就多做对、少花钱；数字留到下一页</td><td>说完按 →</td><td><span class="say">"When is expensive perception worth paying for? … Pick the right way for each task, and the same agent does more, for less. … How much more, for how much less?"</span></td></tr>
-      <tr><td class="id">prize</td><td>钩子：三张卡片自动弹出：做对的题 +11 到 +16 /百题 · token 费用 −14 到 −27% · CO₂e −7 到 −29%（估算）。用时那张卡已删（只有一个网站变快），被问再答。这页还没引入 view / router 两个词，只说「the right way to see each page」「upper bound」</td><td>弹一张念一张，三张出齐再翻</td><td><span class="say"><b>"Eleven to sixteen more tasks solved in every hundred."</b> <b>"That's an upper bound — a choice that already knows the right answer for every task — on our benchmark, with a large open model. Not Claude or GPT numbers."</b> "So what are these ways of seeing a page?"</span></td></tr>
+      <tr><td class="id">opening</td><td>为什么值得听：agent 看网页的方式不止一种、价钱不同，选对了同一个 agent 就多做对、少花钱；数字留到 demo 之后</td><td>说完按 →</td><td><span class="say">"When is expensive perception worth paying for? … Pick the right way for each task, and the same agent does more, for less — I'll show you how much. … First: what does a web agent actually see?"</span></td></tr>
       <tr><td class="id">agents</td><td>web agent 是什么（用台下自己用的 Claude Code / Codex 认出来）+ 三种看法各留一个印象，给 demo 铺垫：同一张真实的 Wikipedia 注册页、同一次 Playwright MCP 会话的三块真实抓取，按 demo 泳道顺序和颜色依次弹出 —— LOOK 截图（Codex 框）· READ 快照节选（Claude Code 框，这一页 161 行）· BOTH 同一张截图加我们自己代码画的 25 个编号框（our agent 框）</td><td>三块弹出时从左到右各指一下；READ 指高亮的 textbox / button 行；BOTH 指表单上的编号框</td><td><span class="say">"When Claude Code or Codex opens a browser and works a page for you — that's a web agent." "Here's one real page … Three ways to see it." "LOOK: a screenshot." "READ: the page as text." "BOTH: the screenshot with every clickable thing boxed and numbered. The marks are ours." "Each tool can use the other views too. Keep the three colours in mind — you're about to see them run."</span> 框只标工具；不说 Claude 或 Codex 真做了这个任务，不说 Codex 只看截图；BOTH 的框是我们画的，不说哪个产品长这样</td></tr>
-      <tr><td class="id">demo</td><td>同一道题、三种看法、三种账单；learned choice 恰好选了唯一失败的那栏。说清这是录制的回放。演讲版不显示 demo 自己的标题和标签页，Task 句放大、<i>sunset</i> 高亮</td><td>先指顶上高亮的 <i>sunset</i>，再讲三栏是什么；点一下 iframe 空白处；只按 →，共 10 下；到底再按 → 自动翻页。⛔ 不按空格、不按 1/2/3/4</td><td><span class="say"><b>"Same task, three ways of seeing it, three different bills."</b> "One recorded run per view — nothing on this screen is live." "A learned choice, trained without this task, picked READ. The one view that failed."</span>（停一下）</td></tr>
+      <tr><td class="id">demo</td><td>同一道题、三种看法、三种账单；learned choice 恰好选了唯一失败的那栏。说清这是录制的回放。演讲版不显示 demo 自己的标题和标签页，Task 句放大、<i>sunset</i> 高亮</td><td>先指顶上高亮的 <i>sunset</i>，再讲三栏是什么；点一下 iframe 空白处；只按 →，共 10 下；到底再按 → 自动翻页。⛔ 不按空格、不按 1/2/3/4</td><td><span class="say"><b>"Same task, three ways of seeing it, three different bills."</b> "One recorded run per view — nothing on this screen is live." "A learned choice, trained without this task, picked READ. The one view that failed."</span>（停一下）"So what is choosing right worth across all of them?"</td></tr>
+      <tr><td class="id">prize</td><td>把 demo 那一道题放大到全部题：同一个网站、同一个大模型、224 道题。两根条自动长出：最佳单一看法 27 /百题 → 每题选对 43 /百题；右边 token 费用 −20%。页脚写另两个网站 +11 / +16、−14% / −27%。CO₂e 和用时不上片子，被问再答</td><td>条长完再念；念到 forty-three 指第二根条，念到 twenty percent 指右边</td><td><span class="say"><b>"Choose the right view for every task, and the same agent solves forty-three — sixteen more in every hundred — for twenty percent less on the token bill."</b> <b>"That's an upper bound: a choice that already knows the answer for every task. … Not Claude or GPT numbers."</b> "So the prize is real. The question is whether anything can learn to claim it."</span></td></tr>
       <tr><td class="id">question</td><td>提出本场问题，预告三步（行为 · 失败 · 能不能学会）；收尾时回答它</td><td>念三个路标时从左到右指</td><td><span class="say"><b>"If you build a web agent, that's the question: should it look, read, or both — and can it learn to choose?"</b></span></td></tr>
       <tr><td class="id">behaviour</td><td>① 看法一换，agent 做的事就换：只给截图时翻页约占 30% 的步数，其余看法约 6%，打字少一半</td><td>→</td><td>边界：不说「每个设置都是四倍」</td></tr>
       <tr><td class="id">failure</td><td>② 失败方式也不同：纯文本看法输在能点名的原因上，带截图的看法没有突出的原因</td><td>→</td><td><span class="say"><b>"This pattern comes from the six VisualWebArena settings."</b></span> 不拿两组互比，不说「因为」</td></tr>
@@ -617,12 +617,12 @@ curl -s localhost:8799/health
   <div class="two">
     <div>
       <h3>短版（约 6 分钟）</h3>
-      <p><code>opening</code> → <code>prize</code>（只念第一张卡）→ <code>agents</code>（三块各一句）→ <code>demo</code>（只讲 LOOK 和 READ）→ <code>question</code> → <code>behaviour</code> → <code>failure</code> → <code>learned</code>（末尾加一句「例子只在做对时才有」）→ <code>not-yet</code> → <code>close</code>。</p>
+      <p><code>opening</code> → <code>agents</code>（三块各一句）→ <code>demo</code>（只讲 LOOK 和 READ）→ <code>prize</code>（只念粗体第一句）→ <code>question</code> → <code>behaviour</code> → <code>failure</code> → <code>learned</code>（末尾加一句「例子只在做对时才有」）→ <code>not-yet</code> → <code>close</code>。</p>
       <p>什么时候用：10 分钟含问答，或者主持人提醒时间不够。</p>
     </div>
     <div>
       <h3>超时就按这个顺序砍</h3>
-      <p>① <code>question</code> 只念问题，不念路标 → ② <code>why</code> 并进 <code>learned</code> 末尾一句 → ③ <code>prize</code> 只念第一张卡、<code>agents</code> 三块各一句 → ④ demo 里 BOTH 一句带过。</p>
+      <p>① <code>question</code> 只念问题，不念路标 → ② <code>why</code> 并进 <code>learned</code> 末尾一句 → ③ <code>prize</code> 只念粗体第一句、<code>agents</code> 三块各一句 → ④ demo 里 BOTH 一句带过。</p>
       <p>被打断：一句话答完，接 <span class="say">"— so, same task, three views, three bills."</span> 回到主线。</p>
     </div>
   </div>

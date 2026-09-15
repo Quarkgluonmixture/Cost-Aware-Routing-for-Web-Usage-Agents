@@ -87,6 +87,7 @@ event: 2026-09-16
 
 - **D22（09-15，user 与学长）开场改为真实抓取，删书桌页。** 标题页后直接放 demo 太突兀、信息太多 ⇒ 先放 `agents`：同一张真实 Wikipedia 注册页的两种真实抓取（左：Playwright MCP `browser_snapshot` 原文逐字节选，这一页 161 行；右：同一次会话的截图），标 *READ · Claude Code + Playwright MCP* / *LOOK · GPT-6 Astra computer use*；再放 `prize` 四张卡片（perfect router vs best single view，B0 三设置）；然后进 demo。中途做过一版写死的动画（学长：hard code，且与 demo 重复），未提交。`hindsight` 书桌页与 `prize` 重复，删除；`question` 路标 4 → 3，`learned` kicker ④ → ③；主流程 11 页。素材与脚本 `talk/real_capture.py`。两张图都不是 Claude 或 Astra 的运行记录；Astra 一侧只引 OpenAI computer-use 文档原话 *uses screenshots and other tool results*，Astra 自己的接口我们没有记录，不说「只看截图」。
 
+- **D25（09-15 深夜，user 纠正 D24）prize 移到 demo 之后，三张区间卡改成一张前后对比。** user：「你都没说 web agent 是什么就跳三个数字」，且三个区间数字难看难读。新顺序 `opening` → `agents` → `demo` → **`prize`** → `question`（仍 11 页）：demo 那一道题之后，把同一网站、同一大模型的 224 道题放大 —— 两根条「best single view 27 → right view per task 43 of 100」自动长出，右边一个 −20% token bill；页脚写另两个网站 +11 / +16、−14 / −27%。CO₂e 与用时都不上片子。`question` 及之后不动，只改转场：demo 末句 *So what is choosing right worth across all of them?* → prize 末句 *The question is whether anything can learn to claim it.* → question。开场口播加 *I'll show you how much*，屏幕不出数字。agents 页下一步换成 user 在 Mac 上用 Claude Code / Codex CLI 自己截的真实终端图（user 有 Codex CLI，无桌面版）。
 - **D24（09-15 晚，user 重排开场）钩子先行，铺垫再 demo。** user 对 09-15 下午的开场仍不满意，给出零预设的结构：① 标题；② 用 Claude Code / Codex 讲清 web agent 是什么、三种看法（look / read / both）各留一个印象；③ demo —— demo 信息太密（三种看法、图里的操作、被埋住的 task 句），前面要先铺垫；另外一开始就把「能省多少、多做对多少」说出来更抓人。落地：主流程仍 11 页，顺序改为 `opening` → **`prize`**（钩子：三张卡，+11 到 +16 / 百题 · token 费用 −14 到 −27% · CO₂e −7 到 −29%；**用时那张卡删掉**，只有一个网站变快会自己拆台，留问答）→ **`agents`**（标题 *A web agent works the page for you — and can see it three ways.*；三块真实抓取按 demo 泳道顺序与颜色 LOOK · READ · BOTH 依次弹出：Codex 框装截图、Claude Code 框装 Playwright MCP 快照紧凑节选、「our agent · Set-of-Marks」框装同一张截图加本项目 SoM 代码画的 25 个编号框 —— 三样来自 `real_capture.py` 同一次 MCP 会话，截图与 16:38 那次逐字节相同）→ `demo`。demo 演讲版（`?autoplay=0`）隐藏自己的标题、副标题和 task 标签页，task 句放大到 32px，caption 引号里的词（*sunset*）在 task 句里加黄底高亮；展板版不变。`prize` 页在「view / router」引入之前，措辞只说 *the right way to see each page* / *upper bound*。台本开场改成一句赌注 + 「How much more, for how much less?」接 `prize`。
 - **D23（09-15，user）`agents` 两图放进工具窗口框**：左 *Claude Code · Playwright MCP*，右 *Codex · GPT-6 Astra · computer use*，让观众一眼认出是哪两个工具；框只画标题栏，内容仍是真实抓取，不加编出来的对话。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），页脚写 *the app frames only name the tools · each tool can also use the other view*，台词说 *can work from a screenshot*，不说「Codex 只看截图」。
 
@@ -203,9 +204,9 @@ event: 2026-09-16
 | 页面 id | 这页的作用（一页一事） | 画面 | 精确措辞 |
 |---|---|---|---|
 | `opening` | 为什么值得听：赌注一句话 | 标题 + 姓名 + 出处 | — |
-| `prize`（D24，09-15 晚） | 钩子：选对值多少（上限） | 三张卡：+11 到 +16 / 百题 · token 费用 −14 到 −27% · CO₂e −7 到 −29% | *Eleven to sixteen more tasks solved in every hundred.* · 边界：*an upper bound … not Claude or GPT numbers* |
 | `agents`（D22–D24） | web agent 是什么 + 三种看法各留一个印象（铺垫 demo） | 三块真实抓取，按 demo 泳道顺序与颜色：LOOK 截图（Codex 框）· READ 快照节选（Claude Code 框）· BOTH 截图加我们画的编号框（our agent 框） | — |
 | `demo` | 亲眼看到三种看法三种账单，learned choice 选错（演讲版：隐藏标题与标签页，task 句放大、*sunset* 高亮） | demo iframe（`?task=130&autoplay=0`） | *Same task, three ways of seeing it, three different bills.* |
+| `prize`（D25，09-15 深夜） | 一道题放大到全部题：选对值多少（上限） | 两根条 27 → 43 of 100 + −20% token bill；页脚另两个网站 | *Choose the right view for every task, and the same agent solves forty-three — sixteen more in every hundred — for twenty percent less on the token bill.* · 边界：*an upper bound … not Claude or GPT numbers* |
 | `question` | 提出本场问题，预告四步 | 深色：一个问题 + 四个路标 | *Should it look, read, or both — and can it learn to choose?* |
 | `behaviour` | ① 看法改变行为 | `talk_behaviour.png` | — |
 | `failure` | ② 看法改变失败方式（VWA 六格） | `talk_failure.png` | 边界：*from the six VisualWebArena settings* |

@@ -24,8 +24,9 @@ _你是下午第二个讲（09-15 user 告知，ROADMAP D19）：第一位讲者
 
 | 段落 | 手 |
 |---|---|
-| opening → agents | ① 停在 `opening`。说完最后一句按 → 到 `prize`（三张卡片自动弹出，等出齐）→ 按 → 到 `agents`（三块窗口依次出现，LOOK · READ · BOTH）→ 按 → 到 `demo` |
-| demo | 点一下 iframe 里的空白处让它拿到焦点；只按 **→**，共 10 下（READ 9 步 + 1 下看结束态），再按一次 → 自动翻到 `question`。⛔ 不按 space，⛔ 不按 1/2/3/4 |
+| opening → agents | ① 停在 `opening`。说完最后一句按 → 到 `agents`（三块窗口依次出现，LOOK · READ · BOTH）→ 按 → 到 `demo` |
+| demo | 点一下 iframe 里的空白处让它拿到焦点；只按 **→**，共 10 下（READ 9 步 + 1 下看结束态），再按一次 → 自动翻到 `prize`。⛔ 不按 space，⛔ 不按 1/2/3/4 |
+| prize | 两根条自动长出（约 1 秒），长完再念数字；念完按 → 到 `question` |
 | question → not-yet | 每段按一次 →：`question` → `behaviour` → `failure` → `learned` → `why` → `not-yet`；`learned`「only one of eight」后**不翻页，停一下** |
 | close | 按 → 到 `close`，收 |
 

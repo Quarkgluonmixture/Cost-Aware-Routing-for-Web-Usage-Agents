@@ -8,35 +8,21 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 ## 保底版本与裁剪
 
 必须表达：看法改变行为和失败方式（`behaviour` / `failure`）· 选对有收益，但那是上限（`prize`）· 学到的选择 0 of 8、事后最优也只有 1 of 8（`learned`）· 例子只在做对时才有（`why`）· 边界和三个请求（`not-yet`）。
-先删：`question` 只念问题不念三个路标；`why` 并成 `learned` 末尾一句；`prize` 只念第一张卡和「an upper bound — not Claude or GPT numbers」；`agents` 三块各一句。
+先删：`question` 只念问题不念三个路标；`why` 并成 `learned` 末尾一句；`prize` 只念粗体第一句和「an upper bound — not Claude or GPT numbers」；`agents` 三块各一句。
 再删或替换：`demo` 只讲 LOOK 与 READ，BOTH 一句带过（v3：demo 也可以裁）。
-短版（约 6 分钟）：`opening` → `prize`（只念第一张卡）→ `agents`（三块各一句）→ `demo`（LOOK / READ）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
+短版（约 6 分钟）：`opening` → `agents`（三块各一句）→ `demo`（LOOK / READ）→ `prize`（只念粗体第一句）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
 
 ## 开场 —— 页面 `opening`
 
-目的：一句话把赌注亮出来 —— agent 看网页的方式不止一种、价钱不同，选对了同一个 agent 就能多做对、少花钱。数字留到下一页。
+目的：一句话把赌注亮出来 —— agent 看网页的方式不止一种、价钱不同，选对了同一个 agent 就能多做对、少花钱。数字不在这页，留到 demo 之后的 `prize`。
 
 > When is expensive perception worth paying for?
-> A web agent can see a web page in more than one way, and the ways cost different amounts. Pick the right way for each task, and the same agent does more, for less.
+> A web agent can see a web page in more than one way, and the ways cost different amounts. Pick the right way for each task, and the same agent does more, for less — I'll show you how much.
 > This is my MSc thesis, accepted at the REALM workshop at EMNLP this year.
-> How much more, for how much less?
+> First: what does a web agent actually see?
 
-提示：说完最后一句按 → 到 `prize`。
-转场：*"How much more, for how much less?"* → `prize`
-
-## 段落 prize —— 页面 `prize`
-
-目的：一页三个数字回答「选对值多少」。卡片进页自动依次弹出。此时观众还不知道「看法」是什么，所以只说 *the right way to see each page*，不说 view / router。
-
-> If a web agent always chose the right way to see each page — here's what our measurements say it would get.
-> **Eleven to sixteen more tasks solved in every hundred.**
-> Fourteen to twenty-seven percent off the token bill. Seven to twenty-nine percent less carbon — estimated from tokens.
-> **That's an upper bound — a choice that already knows the right answer for every task — on our benchmark, with a large open model. Not Claude or GPT numbers.**
-> So what are these ways of seeing a page?
-
-提示：卡片弹一张念一张，三张出齐再翻页。
-边界：上限 = 事先知道每道题哪种看法能做对（后面 `learned` 页叫它 perfect router，这里还没引入这个词）。用时那张卡 09-15 删了（只有一个网站变快、两个持平，放在钩子页会自己拆台）；被问到再答：*on one site about a third faster, on the other two the same*。
-转场：*"So what are these ways of seeing a page?"* → `agents`
+提示：说完最后一句按 → 到 `agents`。
+转场：*"First: what does a web agent actually see?"* → `agents`
 
 ## 段落 agents —— 页面 `agents`
 
@@ -66,11 +52,24 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > Nine steps, and it gives up on the wrong boat.
 > BOTH finds it in three steps — at twice LOOK's bill.
 > A learned choice, trained without this task, picked READ. The one view that failed.
-> One task proves nothing on its own. So here is the real question.
+> One task proves nothing on its own. So what is choosing right worth across all of them?
 
-提示：先指顶上高亮的 *sunset*，再说三栏是什么，再按 →；LOOK 那句后按一下；READ 边按边说到第 9 步；指 task 下面那行红字；「The one view that failed」后停一下，让大家看红框。demo 到底再按 → 自动翻到 `question`。
+提示：先指顶上高亮的 *sunset*，再说三栏是什么，再按 →；LOOK 那句后按一下；READ 边按边说到第 9 步；指 task 下面那行红字；「The one view that failed」后停一下，让大家看红框。demo 到底再按 → 自动翻到 `prize`。
 边界：三道题是示例，不是成功率。⛔ 不切 76 / 17，不进 live，不解释 CO₂e（被问：按 token 估算，是区间，不是实测）。
-转场：*"So here is the real question."* → `question`
+转场：*"So what is choosing right worth across all of them?"* → `prize`
+
+## 段落 prize —— 页面 `prize`
+
+目的：把 demo 那一道题放大到全部题：同一个网站、同一个大模型，224 道题每道都选对看法值多少。两根条进页自动长出来，右边一个 −20%。观众刚看完 demo，已经知道「看法」和「选择」是什么，数字这时才有意义。
+
+> That was one task. Now all two hundred and twenty-four on that site, same large open model.
+> The best single view solves twenty-seven in a hundred. **Choose the right view for every task, and the same agent solves forty-three — sixteen more in every hundred — for twenty percent less on the token bill.**
+> **That's an upper bound: a choice that already knows the answer for every task. On the other two sites it's eleven and sixteen more, fourteen and twenty-seven percent off. Not Claude or GPT numbers.**
+> So the prize is real. The question is whether anything can learn to claim it.
+
+提示：两根条长完再念数字；念到 forty-three 指第二根条，念到 twenty percent 指右边的 −20%。
+边界：上限 = 事先知道每道题哪种看法能做对（后面 `learned` 页叫它 perfect router，这里先不用这个词）。27 / 43 / −20% 是大模型在 classifieds 一个设置的数（`talk/hindsight_efficiency.json`），另两个网站在页脚。CO₂e 不上片子（被问：−7 到 −29%，按 token 估算）；用时被问：一个网站快三分之一、两个持平。
+转场：*"…whether anything can learn to claim it."* → `question`
 
 ## 段落 question —— 页面 `question`
 

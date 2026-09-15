@@ -8,8 +8,9 @@
   Deck for the 10-minute showcase talk. Built from presentation-playbook.md Appendix A:
   <style>, .pager, .hint and the paging <script> are the template's, verbatim; only the
   <section>s are new, plus the small `.demo` / `.figs` / `.foot` additions marked below.
-  Front block (15 Sep, ROADMAP D24): opening → prize (the hook: three numbers) → agents (what a
-  web agent is, and LOOK / READ / BOTH as three real captures in the demo's lane order) → demo.
+  Front block (15 Sep, ROADMAP D24 → D25): opening → agents (what a web agent is, and LOOK / READ /
+  BOTH as three real captures in the demo's lane order) → demo → prize (that was one task; across
+  every task, the right view each time is worth 27 → 43 in 100) → question.
   The demo page embeds the talk copy of the demo (demo_portable.html?task=130&autoplay=0). The
   arrow keys belong to the demo while it has steps left; it posts `demo-next` / `demo-prev`
   when stepped past either end, and the deck turns the page then. check_talk.py enforces
@@ -244,18 +245,26 @@
     html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .slide{height:7.5in;width:13.333333in}
   }
-  /* ══ prize: three cards, the hook · agents: three real captures in the demo's lane order and colours ══ */
-  .ag-prize{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw;margin-top:15vh}
-  .ag-prize.three{grid-template-columns:repeat(3,1fr);gap:2.2vw;margin-top:11vh}
-  .ag-card{border-radius:12px;background:var(--night);padding:5.5vh 1.4vw;opacity:0;transform:scale(.55)}
-  .ag-prize.three .ag-card{padding:6.5vh 1.4vw;text-align:center}
-  .ag-card b{display:block;font-family:var(--serif);font-weight:400;font-size:min(6.4vh,3.6vw);line-height:1.05;color:#fff;white-space:nowrap}
-  .ag-prize.three .ag-card b{font-size:min(9vh,5vw)}
-  .ag-card span{display:block;margin-top:1.4vh;font-family:var(--sans);font-size:min(2.3vh,1.3vw);color:var(--lav)}
-  .ag-prize.three .ag-card span{font-size:min(3vh,1.7vw);margin-top:2vh}
-  .ag-card.go{animation:agpop .5s cubic-bezier(.2,1.5,.45,1) forwards}
-  @keyframes agpop{to{opacity:1;transform:scale(1)}}
-  #prize .foot{margin-top:6vh}
+  /* ══ prize: one setting, two thin bars (best single view → right view per task) + one side number ══
+     Single measure, two rows: no legend, values as text in ink, bars thin with rounded data-ends; they grow on entry. */
+  .prize-wrap{flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.34fr);gap:3vw;align-items:center;padding:0 1vw}
+  .prize-bars{display:grid;gap:4vh;font-family:var(--sans)}
+  .prize-row{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:1.6vw}
+  .prize-row .lab{font-size:min(3.2vh,1.8vw);color:var(--muted);text-align:right;white-space:nowrap;min-width:11em}
+  .prize-row.hi .lab{color:var(--ink)}
+  /* the track is the 0–100 scale; the bar and its value both read --w, so the number rides the data-end */
+  .prize-row .track{display:block;height:6vh;position:relative;border-left:2px solid var(--rule)}
+  .prize-row .track i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:0 4px 4px 0;background:#B8BFD9;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+  .prize-row.hi .track i{background:var(--violet)}
+  .prize-row .val{position:absolute;left:0;top:50%;transform:translateY(-50%);margin-left:1vw;font-family:var(--serif);font-weight:400;
+    font-size:min(7vh,3.9vw);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;transition:left .9s cubic-bezier(.2,.7,.2,1)}
+  #prize.go .prize-row .track i{width:var(--w)}
+  #prize.go .prize-row .val{left:var(--w)}
+  .prize-side{border-left:1px solid var(--rule);padding-left:2.4vw;font-family:var(--sans)}
+  .prize-side b{display:block;font-family:var(--serif);font-weight:400;font-size:min(11vh,6vw);line-height:1;color:var(--violet);white-space:nowrap}
+  .prize-side span{display:block;margin-top:1.4vh;font-size:min(3vh,1.7vw);color:var(--ink)}
+  #prize .foot{margin-top:1.6vh}
+  @media print{#prize .prize-row .track i{width:var(--w)!important;transition:none} #prize .prize-row .val{left:var(--w)!important;transition:none}}
 
   /* the demo's lane colours (demo/index.html :root) so the three panels here read as the three lanes there */
   :root{--look:#1F5FD6;--read:#E8720C;--both:#14855F}
@@ -296,20 +305,6 @@
   <p class="affil">MSc thesis · REALM workshop, EMNLP 2026</p>
 </section>
 
-<!-- ══ prize ══ the hook, before anything is explained: what choosing the right way to see each page would buy.
-     Perfect router vs best single view, large model, three settings (talk/hindsight_efficiency.json); the time card
-     was dropped 15 Sep (same on two of three sites — it hedged the hook; it stays in the Q&A crib). Cards pop one by
-     one on entry. Plain words only: "view" and "router" are introduced on the next two pages. -->
-<section class="slide" id="prize">
-  <h2>If a web agent always chose the right way to see each page:</h2>
-  <div class="ag-prize three">
-    <div class="ag-card"><b>+11 to +16</b><span>more tasks solved in every 100</span></div>
-    <div class="ag-card"><b>−14 to −27%</b><span>token bill</span></div>
-    <div class="ag-card"><b>−7 to −29%</b><span>CO₂e (estimated)</span></div>
-  </div>
-  <p class="foot">Upper bound: the right choice on every task · our benchmark · large open model · not Claude or GPT results</p>
-</section>
-
 <!-- ══ agents ══ what a web agent is, and the three ways it can see a page — in the tools the room uses. Three REAL
      captures of one public page from ONE Playwright MCP session (15 Sep 2026, real_capture.py): the screenshot (LOOK),
      the snapshot reply, verbatim excerpt (READ), and the same screenshot with the page's interactive elements boxed
@@ -342,6 +337,22 @@
   <div class="kicker">One recorded run per view · nothing on this screen is live</div>
   <h2>Same task, three ways of seeing it, three different bills.</h2>
   <div class="demo-fit"><iframe src="../demo_portable.html?task=130&autoplay=0" title="demo: task 130 in LOOK, READ and BOTH" loading="eager"></iframe></div>
+</section>
+
+<!-- ══ prize ══ after the demo (D25, 15 Sep evening): that was one task; across every task on that site, choosing the
+     right view each time is worth this much. One setting, the demo's own (B0 · classifieds, 224 tasks): best single view
+     27.23 → perfect per-task choice 43.30 solved per 100, billed cost −20.2% (talk/hindsight_efficiency.json); the other
+     two settings sit in the foot. A perfect-router bound; the word "router" waits for the `learned` page. -->
+<section class="slide" id="prize">
+  <h2>Choose the right view for every task: 27 → 43 of 100 solved.</h2>
+  <div class="prize-wrap">
+    <div class="prize-bars">
+      <div class="prize-row"><span class="lab">best single view</span><span class="track" style="--w:27.23%"><i></i><b class="val">27</b></span></div>
+      <div class="prize-row hi"><span class="lab">right view per task</span><span class="track" style="--w:43.30%"><i></i><b class="val">43</b></span></div>
+    </div>
+    <div class="prize-side"><b>−20%</b><span>token bill</span></div>
+  </div>
+  <p class="foot">Upper bound · the demo's site, 224 tasks · other two sites +11 and +16 per 100, −14 and −27% · not Claude or GPT results</p>
 </section>
 
 <!-- ══ question ══ the one question the rest of the talk answers; the close answers it -->
@@ -479,7 +490,8 @@
     cur=s; slides.forEach(x=>x.classList.toggle('on',x===s));
     pos.textContent=s.classList.contains('backup')?'reference':`${main.indexOf(s)+1} / ${main.length}`;
     save(s.id); fitDemo();
-    if(s.id==='prize'||s.id==='agents') agPop(s);
+    if(s.id==='agents') agPop(s);
+    if(s.id==='prize'){ s.classList.remove('go'); void s.offsetWidth; setTimeout(()=>s.classList.add('go'),150); }   // bars grow on entry
     // the demo page owns the arrow keys: hand focus to its iframe, take it back elsewhere
     const f=s.querySelector('iframe');
     if(f) f.focus(); else if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur();
@@ -488,8 +500,8 @@
     if(!main.includes(cur)){ show(main[main.length-1]); return; }   // leaving the reference page returns to the close
     show(main[Math.max(0,Math.min(main.length-1,main.indexOf(cur)+d))]);
   }
-  function agPop(slide){                       // prize cards / agents panels: one by one, each a short pop
-    slide.querySelectorAll('.ag-card, .app').forEach((c,i)=>{ c.classList.remove('go'); void c.offsetWidth; c.style.animationDelay=(0.2+i*0.55)+'s'; c.classList.add('go'); });
+  function agPop(slide){                       // agents panels: one by one, each a short pop
+    slide.querySelectorAll('.app').forEach((c,i)=>{ c.classList.remove('go'); void c.offsetWidth; c.style.animationDelay=(0.2+i*0.55)+'s'; c.classList.add('go'); });
   }
 
   addEventListener('keydown',e=>{
