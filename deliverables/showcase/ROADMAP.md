@@ -77,6 +77,8 @@ event: 2026-09-16
 - **D16 按 `talk/presentation-playbook 3.md`（user 09-13 给的 v3）对齐。** ① 第 3 页的三条结论作废（user：「一甩上去一头雾水」），改成**一个问题 + 四个路标**，`close` 回答它。② 图全部为演讲重画（`talk/talk_figures.py`，同一批源数据）：叫法统一成 demo 的 LOOK / READ / BOTH，三种纯文本变体按内容命名，去掉 oracle / pp / cell 代号；失败图的截图侧改叫 LOOK and BOTH（海报 `IMAGE-ONLY` 不对，BOTH 带文字）。③ `hindsight` 页删掉热力矩阵和三臂韦恩（韦恩那三臂的独有解题数下界可归零，§470.3），换成「单一最佳 → 事后最优」逐设置箭头图；脚注只放同臂数比较（加一种看法 +7.14 vs 重跑一次 +4.46–7.59，仅 cls·B0），不再把五臂收益和一次重跑并排（`noise_floor_inventory.md` §2 不许）。④ 片子每页有稳定 id，hash 用 id，参考页移出主讲流程（R 进入）。⑤ 台本 v2 按附录 C：段落按页面 id，精确措辞只锁核心主张 / 边界 / 请求，删掉「背六句」和「字数 ÷140 ÷120 加三分之一」（v3 §4：以出声计时为准）。D12 的字数公式随之作废。
 - **D17（09-15，学长意见）演讲要抓人，别太严谨。** ① `hindsight` 改成台下自己的场景：Claude Code 改完网页、开浏览器检查自己的改动；三个大数字 = 大模型三个网站上「每题选对看法」vs 最佳单一看法：成功 +11 到 +16 / 百题 · CO₂e 估算 −7 到 −29% · 用时两个网站持平、一个快 34%（新脚本 `talk/hindsight_efficiency.py`，与 `oracle_sr_cost` 同一套选择，成本自检一致；延迟不是处处更快，所以片子写「same on 2 of 3 sites」）。原来的同臂数重跑比较移出片子，只留在问答。② `learned` 改成大数字「0 of 8」+ 白话图。③ `why` 改名 scaling law：*no wins, no examples* + 「2–4×」。④ 开场页加导师 *Supervisors: Prof. María Pérez-Ortiz · Zekun Wu*（照海报页眉；`check_talk.py` 不把署名行计入字数和听众名检查）。
 
+- **D18（09-15，用户纠正，覆盖 D17 的三页呈现）** `hindsight` 用日常购物请求引入整组潜力，避免重复开场找船 demo；B0·classifieds 最佳固定 → 完美事后选择，约 27 → 43 /100，成本 100% → 80%，底部总结 +16 solved / −20% cost。书桌场景是类比，不是 Claude 实测。`learned` 以全宽结果图为主、0/8 与 1/8 放图下；`why` 保留 scaling law，用成功/全失败 → 赢家标签示意连到「更少成功 → 每个训练例子需要更多任务」，2–4× 降为页脚。
+
 ## 3. 六个 phase
 
 每个 phase 的判据都能用一句话验证真假，验证通过就勾掉。

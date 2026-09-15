@@ -238,10 +238,64 @@ def label_supply() -> None:
     _save(fig, "talk_label_supply.png")
 
 
+def scaling_supply() -> None:
+    """Schematic fixed-yield scaling; no measured points or fitted power law.
+
+    At a fixed probability p that any view solves a task, E[labels] = p*N.
+    Arbitrary p values separate the lines visually; they are not fitted success
+    rates. The common target is a label budget, NOT a trainability threshold:
+    class balance and the min-class filter also matter (label-supply diagnosis §2).
+    The empirical 2–4x estimate stays outside this schematic, in the slide footer.
+    """
+    ink, muted = "#12162E", "#5D6787"
+    fig, ax = plt.subplots(figsize=(13.5, 5.2), facecolor="white")
+    ax.set_facecolor("white")
+    tasks = np.geomspace(1, 100, 300)
+    target = 8.0
+    levels = [(0.65, "More successes", "#5049F9"),
+              (0.27, "", "#AB5FCE"),
+              (0.11, "Fewer successes", "#36B1FE")]
+    for rate, label, colour in levels:
+        ax.plot(tasks, rate * tasks, color=colour, lw=3.3, zorder=3)
+        crossing = target / rate
+        if label:
+            ax.plot([crossing, crossing], [0.3, target], color=colour, lw=1.2,
+                    ls=(0, (4, 4)), alpha=.65)
+        # These are theoretical intersections, deliberately not empirical dots.
+        if label:
+            ax.annotate(label, (103, rate * 100), xytext=(8, 0),
+                        textcoords="offset points", color=colour, fontsize=17,
+                        va="center", fontweight="bold")
+    ax.axhline(target, color=muted, lw=1.3, ls=(0, (5, 4)), zorder=1)
+    ax.text(1.1, target * 1.15, "Same label target", color=muted, fontsize=16)
+    left, right = target / levels[0][0], target / levels[-1][0]
+    ax.annotate("", (right, .48), (left, .48),
+                arrowprops=dict(arrowstyle="<->", color=ink, lw=1.7))
+    ax.text(np.sqrt(left * right), .65, "More tasks for the same target",
+            fontsize=16, color=ink, ha="center")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlim(1, 300); ax.set_ylim(.3, 100)
+    ax.set_xticks([1, 10, 100], labels=["", "", ""])
+    ax.set_yticks([1, 10, 100], labels=["", "", ""])
+    ax.minorticks_off()
+    ax.grid(True, which="major", color="#e5e8f1", lw=.8)
+    ax.set_axisbelow(True)
+    ax.set_xlabel("Tasks collected →  (log scale)", fontsize=18, labelpad=10, color=ink)
+    ax.set_ylabel("Usable training examples →\n(log scale)", fontsize=18, labelpad=12, color=ink)
+    ax.tick_params(length=0)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color("#b9c1d5")
+    fig.tight_layout()
+    fig.savefig(OUT / "talk_scaling.pdf", bbox_inches="tight", facecolor="white")
+    _save(fig, "talk_scaling.png")
+
+
 def main() -> None:
     OUT.mkdir(exist_ok=True)
     _base()
-    for fn in (behaviour, failure, hindsight, routing, label_supply):
+    for fn in (behaviour, failure, hindsight, routing, label_supply, scaling_supply):
         fn()
 
 

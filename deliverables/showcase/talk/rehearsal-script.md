@@ -8,7 +8,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 ## 保底版本与裁剪
 
 必须表达：看法改变行为和失败方式（`behaviour` / `failure`）· 事后选对有收益，但要对着重跑读（`hindsight`）· 学到的选择 0 of 8、事后最优也只有 1 of 8（`learned`）· 例子只在做对时才有（`why`）· 边界和三个请求（`not-yet`）。
-先删：`question` 只念问题不念四个路标；`why` 并成 `learned` 末尾一句；`hindsight` 只留「每行都往右」和「但 hindsight 会夸大」两句。
+先删：`question` 只念问题不念四个路标；`why` 并成 `learned` 末尾一句；`hindsight` 只留购物请求、16 more / 20% less 和「if you pick perfectly」。
 再删或替换：`demo` 只讲 LOOK 与 READ，BOTH 一句带过（v3：demo 也可以裁）。
 短版（约 6 分钟）：`opening` → `demo`（LOOK / READ）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
 
@@ -81,29 +81,29 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 
 ## 段落 hindsight —— 页面 `hindsight`
 
-目的：用台下每天真会遇到的场景，说清楚「选对看法」值多少 —— 三个大数字，好记就行（09-15 学长意见：演讲要抓人，别太严谨）。
+目的：demo 已讲日落找船，这里用日常购物请求引入整组任务上的潜力，不再讲一道题的过程或账单。书桌请求是代入场景；数字来自 classifieds 大模型组，不是 Claude 实测。
 
-> Now picture something you actually do. Your coding agent — Claude Code, say — fixes a bug in your web app, then opens a browser to check its own work.
-> Is the new chart there? That answer is in the picture. Did the form save the right value? That one is in the page text.
-> So what if it always picked the right view for each check? On our large model, across three websites:
-> **Eleven to sixteen more tasks solved in every hundred.**
-> **Seven to twenty-nine percent less carbon — estimated from tokens.**
-> **And it's no slower: about the same on two sites, a third faster on the third.**
-> That's the prize — if you pick perfectly.
+> Now think of an everyday request: "Claude, find a desk that fits my room."
+> You want the job done, without paying for views it doesn't need. What if the agent always picked right?
+> Here's the potential we measured on our classifieds benchmark, with the large model — not Claude.
+> The best fixed view solves about twenty-seven tasks in a hundred. Perfect picking takes that to forty-three, while spending less.
+> **Sixteen more tasks solved per hundred. Twenty percent less cost.**
+> That's the prize — if you pick perfectly. The next question is whether we can learn that choice.
 
-提示：三个数字一个一个指，每说一个停半拍。
-边界：⛔ 不说「快 34%」而不带「另外两个网站持平」；碳排放一定带 *estimated*；「if you pick perfectly」这半句别省 —— 下一页正是说今天做不到。数字出处 `talk/hindsight_efficiency.json`（B0 三个网站）。
+提示：先对观众念购物请求，再横向指成功率的 27 → 43，最后指费用 100% → 80%；不重讲 demo，不展示书桌任务的虚构运行。
+边界：16 是每百题多完成的任务数（+16.07 个百分点），不是相对提升 16%。两项收益都来自 `talk/hindsight_efficiency.json` 的 B0·classifieds：27.23% → 43.30%，成本 −20.2%，相对最佳固定看法。书桌是生活场景类比；这不是购物成功率或 Claude 产品的实测承诺。perfect hindsight 必须保留。
 转场：→ `learned` *"So can a model learn to make that pick?"*
 
 ## 段落 learned —— 页面 `learned`
 
-目的：一个数字说完：今天学不会。
+目的：让大家看到绿色区域里没有学到的选择；0 of 8 是读图后的总结。
 
 > So can a model learn to make that pick? We tried five different ways.
+> The star is always using the cheapest view. Left is cheaper; up solves more. We want the green corner. None of the solid orange dots gets there.
 > **Zero out of eight.** In none of our eight settings does a learned picker beat simply always using the cheapest view.
 > **Even perfect hindsight only manages it in one of eight** — so this isn't just a weak model.
 
-提示：「Zero out of eight」后停一下，让大家看大数字。
+提示：先指星号，再指左上绿色区域，再指橙色圆点；「Zero out of eight」后停一下。空心绿方块是事后选择，绿色区域里有一个，不能说所有选择都没进去。
 边界：⛔ 不说 *routing doesn't work*；说 *not today*。
 转场：→ `why` *"Here's why — call it the scaling law of routing."*
 
@@ -111,11 +111,14 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 
 目的：一句好记的话讲清原因：没有成功，就没有例子。
 
-> Here's why — call it the scaling law of routing: no wins, no examples.
-> To learn which view was right, you need tasks the agent actually solved. These agents solve two to thirty-six percent.
-> So the settings with the most to gain have the least to learn from. The ones short of examples need at least two to four times more tasks.
+> Here's one bottleneck — call it the scaling law of routing: no wins, no examples.
+> Each line illustrates a different rate of producing successes. More tasks give us more examples, but a less successful agent produces them more slowly.
+> Follow the dashed line: to collect the same number of labels, the less successful agent needs more tasks.
+> **Fewer wins means more tasks for each usable training example.** That's how agent success rates set the price of learning to choose.
+> In the settings short of examples, we estimate at least two to four times more tasks.
 
-边界：「scaling law」是个好记的叫法，指「成功越多、例子越多」这个趋势（6 个设置），不是拟合出来的幂律；被追问就这么说。
+提示：先指横轴任务数量、纵轴可用训练例子；再沿水平虚线比较交点，指底部向右的任务量差距。双对数直线是固定标签产出率的关系示意，没有拟合数据点。共同标签目标不是「到线就能训练」的保证，类别分布也有影响；2–4× 是另行估算。
+边界：说 one bottleneck，不把标签稀缺说成所有失败的唯一原因。「scaling law」指「成功越多、例子越多」的关系（6 个设置），不是拟合幂律，也不声称失败轨迹对所有学习方法都无用。
 转场：→ `not-yet`
 
 ## 段落 not-yet —— 页面 `not-yet`

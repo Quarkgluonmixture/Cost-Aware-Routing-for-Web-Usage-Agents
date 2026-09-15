@@ -218,6 +218,31 @@
   .bignum .figs{height:100%}
   .stat.solo .big{font-size:min(13vh,6.4vw)}
   .num{white-space:nowrap}
+  /* A familiar request opens the question; benchmark bars show the potential. */
+  .shopping-hook{font-family:var(--sans);font-size:3vh;color:var(--muted);margin-top:.5vh}
+  .potential-grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.45fr 1.45fr;gap:3vh 3vw;align-content:center;align-items:center;font-family:var(--sans)}
+  .potential-head{font-family:var(--mono);font-size:2.6vh;color:var(--muted);padding-bottom:1.6vh;border-bottom:1px solid var(--rule)}
+  .potential-label{font-size:3.2vh;color:var(--ink)}
+  .potential-bar{height:7vh;position:relative;background:#edf0f7;display:flex;align-items:center;border-radius:.6vh;overflow:hidden}
+  .potential-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--amount);background:#adb6cf}
+  .potential-bar.best i{background:#aaa4ff}
+  .potential-bar span{position:relative;z-index:1;font-size:3.1vh;font-weight:700;margin-left:1vw;color:var(--ink)}
+  .potential-payoff{font-family:var(--sans);font-size:min(4.2vh,2.4vw);padding:2.3vh 2vw;color:var(--violet);background:#eeedff;text-align:center}
+  .training-grid{flex:1;min-height:0;display:grid;grid-template-columns:1.3fr repeat(3,.7fr) 2fr;align-content:center;align-items:center;gap:2.3vh 1vw;font-family:var(--sans)}
+  .training-head{font-family:var(--mono);color:var(--muted);font-size:2.2vh;letter-spacing:.08em;padding-bottom:1.5vh;border-bottom:1px solid var(--rule)}
+  .training-task{font-size:3vh;color:var(--muted)}
+  .training-mark{font-size:6vh;line-height:1.4;text-align:center;background:#f1f3f9;color:#a6adbf;border-radius:.8vh}
+  .training-mark.win{background:#e5f3ec;color:var(--green)}
+  .training-result{font-size:min(3.5vh,2vw);padding-left:2vw;color:var(--muted)}
+  .training-result.win{color:var(--green)}
+  .scaling-link{font-family:var(--sans);font-size:min(3.6vh,2vw);text-align:center;background:#eeedff;color:var(--violet);padding:2.8vh 2vw;margin-top:2vh}
+  .check-caption{display:flex;justify-content:space-between;align-items:center;gap:1vw;margin-top:1.8vh;font-size:min(3.2vh,1.8vw)}
+  .check-caption b{font-family:var(--mono);color:var(--violet);font-size:.8em;letter-spacing:.1em}
+  .payoff{display:flex;gap:2.3vw;align-items:baseline;border-top:1px solid var(--rule);padding-top:2vh;margin-top:2vh;font-family:var(--sans);font-size:min(2.5vh,1.4vw);color:var(--muted)}
+  .payoff strong{color:var(--violet);font-size:1.2em;white-space:nowrap}
+  #hindsight .foot{font-size:min(2vh,1.13vw);margin-top:1.5vh}
+  .result-strip{display:flex;justify-content:space-between;gap:3vw;font-family:var(--sans);font-size:min(2.8vh,1.6vw);color:var(--muted);margin-top:2.4vh}
+  .result-strip strong{color:var(--violet)}
 
   /* chrome moves up, clear of the logos and the footer line */
   .pager{top:2.6vh;bottom:auto;right:2vw;color:var(--muted)}
@@ -226,7 +251,9 @@
   body:has(.slide.dark.on) .hint{color:rgba(201,198,255,.35)}
   @media print{
     html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .slide{height:7.5in;width:13.333333in}
   }
+  @page{size:13.333333in 7.5in;margin:0}
 </style>
 </head>
 <body>
@@ -278,36 +305,43 @@
   <p class="foot">Each side vs its own failures elsewhere · text-only: several over <span class="num">2×</span> · LOOK and BOTH: none stands out · six VisualWebArena settings</p>
 </section>
 
-<!-- ══ hindsight ══ what picking right would buy, in the room's own use case (numbers: hindsight_efficiency.json, B0) -->
+<!-- ══ hindsight ══ everyday request as hook; aggregate B0 classifieds potential, not a Claude measurement -->
 <section class="slide" id="hindsight">
   <div class="kicker">③ Picking right</div>
-  <h2>Your coding agent checks its fix in a browser. Pick the right view:</h2>
-  <div class="stats">
-    <div class="stat"><div class="big">+11 to +16</div><div class="lab">more tasks solved per 100</div></div>
-    <div class="stat"><div class="big">−7 to −29%</div><div class="lab">CO₂e (estimate)</div></div>
-    <div class="stat"><div class="big">up to −34%</div><div class="lab">time (same on 2 of 3 sites)</div></div>
+  <h2>“Claude, find a desk that fits my room.”</h2>
+  <p class="shopping-hook">If it always picked the right view…</p>
+  <div class="potential-grid">
+    <div></div><div class="potential-head">Best fixed view</div><div class="potential-head">Perfect picker</div>
+    <div class="potential-label">Solved /100</div>
+    <div class="potential-bar" style="--amount:27.23%"><i aria-hidden="true"></i><span>27</span></div>
+    <div class="potential-bar best" style="--amount:43.3%"><i aria-hidden="true"></i><span>43</span></div>
+    <div class="potential-label">Relative cost</div>
+    <div class="potential-bar" style="--amount:100%"><i aria-hidden="true"></i><span>100%</span></div>
+    <div class="potential-bar best" style="--amount:79.8%"><i aria-hidden="true"></i><span>80%</span></div>
   </div>
-  <p class="foot">Large model · 3 sites · hindsight vs the best fixed view</p>
+  <p class="potential-payoff">16 more solved. 20% less cost.</p>
+  <p class="foot">Classifieds benchmark · large model · perfect hindsight, not Claude results</p>
 </section>
 
-<!-- ══ learned ══ one number, then the picture -->
+<!-- ══ learned ══ the empty win region is the picture -->
 <section class="slide" id="learned">
   <div class="kicker">④ Can it learn to pick?</div>
-  <h2>Not today: nothing we trained picks well enough to beat the cheapest view.</h2>
-  <div class="bignum">
-    <div class="stat solo"><div class="big">0 of 8</div><div class="lab">settings where a learned picker beats always using the cheapest view</div><div class="sub">Even perfect hindsight: 1 of 8</div></div>
-    <div class="figs one"><img src="fig/talk_routing.png" alt="every learned choice against always using the cheapest view; the win region is cheaper and no worse"></div>
+  <h2>No learned choice reaches the cheaper-and-no-worse corner.</h2>
+  <div class="figs one"><img src="fig/talk_routing.png" alt="every learned choice against always using the cheapest view; no learned choice reaches the green win region"></div>
+  <div class="result-strip">
+    <span>Learned choices: <strong>0 of 8</strong> settings</span>
+    <span>Even perfect hindsight: <strong>1 of 8</strong></span>
   </div>
 </section>
 
-<!-- ══ why ══ the scaling law: examples only come from wins -->
+<!-- ══ why ══ illustrate the label bottleneck, then connect it to data scaling -->
 <section class="slide" id="why">
-  <div class="kicker">Why not yet · the scaling law</div>
+  <div class="kicker">Why learning stalls · schematic scaling</div>
   <h2>Routing's scaling law: no wins, no examples.</h2>
-  <div class="bignum">
-    <div class="stat solo"><div class="big">2–4×</div><div class="lab">at least this many more tasks for the settings short of examples</div><div class="sub">You only learn which view was right from tasks the agent solved</div></div>
-    <div class="figs one"><img src="fig/talk_label_supply.png" alt="usable which-view examples rise with how many tasks the best single view solves, six settings"></div>
+  <div class="figs one">
+    <img src="fig/talk_scaling.png" alt="Schematic log-log scaling: at fixed success rates, usable labels grow with task count; fewer successes require more tasks to reach the same label target. No fitted measurements.">
   </div>
+  <p class="foot">Fixed-rate illustration, not a fitted law · our estimate where labels are scarce: at least <span class="num">2–4×</span> more tasks</p>
 </section>
 
 <!-- ══ not-yet ══ what it would take, and three asks -->

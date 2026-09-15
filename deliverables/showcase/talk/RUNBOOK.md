@@ -47,6 +47,10 @@ _演讲只用 **MacBook + Chrome**。quark 全天留在展板（live 页的 ssh 
 
 ⛔ **永远不说 "it worked this morning"。** ⛔ 台上不调试。
 
+## 重新导出 PDF（编辑后）
+
+运行 `.venv/bin/python3 deliverables/showcase/talk/export_pdf.py`。脚本先切到打印布局，等待字体、图片与 CSS 背景（几何底图及 logo）全部解码，再导出；不要直接 `page.pdf()`。导出后检查 opening、question、close 的背景和 logo，以及修改页；它们在网页里正常不代表 PDF 里已加载。
+
 ## 会后
 
 - 一小时内把 repo 链接（海报页脚那个 QR）和 `demo_portable.html` 发给问过的人
