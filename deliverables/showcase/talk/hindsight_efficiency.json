@@ -1,0 +1,165 @@
+{
+ "what": "hindsight per-task view choice (oracle_sr_cost picks) vs best single view: success, cost, latency (total_latency_canonical_ms) and token-estimated CO2e (B0 only)",
+ "source_module": "scripts/analysis/router_objective_ordering.py",
+ "carbon_constants": {
+  "j_per_input_token": [
+   0.05,
+   0.4
+  ],
+  "j_per_output_token": [
+   1.0,
+   8.0
+  ],
+  "facility_factor": [
+   1.23,
+   1.97
+  ],
+  "grid_g_per_kwh": [
+   131.0,
+   144.0
+  ],
+  "region": "AWS eu-west-2 (London)",
+  "boundary": "operational only (no embodied emissions); location-based grid factor"
+ },
+ "cells": [
+  {
+   "site": "classifieds",
+   "baseline": "B0",
+   "n": 224,
+   "best_single_view": "SoM",
+   "cheapest_view": "Vision",
+   "sr_best_pct": 27.23,
+   "sr_hindsight_pct": 43.3,
+   "sr_gain_pp": 16.07,
+   "cost_change_pct": -20.2,
+   "latency_best_s": 106.0,
+   "latency_hindsight_s": 106.5,
+   "latency_change_pct": 0.5,
+   "co2_best_g": [
+    0.207,
+    2.914
+   ],
+   "co2_hindsight_g": [
+    0.177,
+    2.494
+   ],
+   "co2_change_pct": [
+    -14.4,
+    -14.4
+   ]
+  },
+  {
+   "site": "reddit",
+   "baseline": "B0",
+   "n": 203,
+   "best_single_view": "SoM",
+   "cheapest_view": "Vision",
+   "sr_best_pct": 14.78,
+   "sr_hindsight_pct": 26.11,
+   "sr_gain_pp": 11.33,
+   "cost_change_pct": -13.7,
+   "latency_best_s": 451.6,
+   "latency_hindsight_s": 442.6,
+   "latency_change_pct": -2.0,
+   "co2_best_g": [
+    0.309,
+    4.359
+   ],
+   "co2_hindsight_g": [
+    0.287,
+    4.039
+   ],
+   "co2_change_pct": [
+    -7.3,
+    -7.3
+   ]
+  },
+  {
+   "site": "classifieds",
+   "baseline": "B1",
+   "n": 224,
+   "best_single_view": "SoM",
+   "cheapest_view": "Vision",
+   "sr_best_pct": 14.29,
+   "sr_hindsight_pct": 24.55,
+   "sr_gain_pp": 10.27,
+   "cost_change_pct": -30.8,
+   "latency_best_s": 262.0,
+   "latency_hindsight_s": 254.4,
+   "latency_change_pct": -2.9
+  },
+  {
+   "site": "reddit",
+   "baseline": "B1",
+   "n": 203,
+   "best_single_view": "SoM",
+   "cheapest_view": "Vision",
+   "sr_best_pct": 7.39,
+   "sr_hindsight_pct": 11.82,
+   "sr_gain_pp": 4.43,
+   "cost_change_pct": -35.3,
+   "latency_best_s": 609.1,
+   "latency_hindsight_s": 472.5,
+   "latency_change_pct": -22.4
+  },
+  {
+   "site": "classifieds",
+   "baseline": "B2",
+   "n": 224,
+   "best_single_view": "SoM",
+   "cheapest_view": "Vision",
+   "sr_best_pct": 2.23,
+   "sr_hindsight_pct": 7.14,
+   "sr_gain_pp": 4.91,
+   "cost_change_pct": -23.4,
+   "latency_best_s": 374.3,
+   "latency_hindsight_s": 408.8,
+   "latency_change_pct": 9.2
+  },
+  {
+   "site": "reddit",
+   "baseline": "B2",
+   "n": 203,
+   "best_single_view": "DOM",
+   "cheapest_view": "Vision",
+   "sr_best_pct": 3.94,
+   "sr_hindsight_pct": 7.39,
+   "sr_gain_pp": 3.45,
+   "cost_change_pct": -26.6,
+   "latency_best_s": 669.9,
+   "latency_hindsight_s": 564.3,
+   "latency_change_pct": -15.8
+  },
+  {
+   "site": "wa_reddit",
+   "baseline": "B0",
+   "n": 104,
+   "best_single_view": "P-text",
+   "cheapest_view": "DOM",
+   "sr_best_pct": 35.58,
+   "sr_hindsight_pct": 51.92,
+   "sr_gain_pp": 16.35,
+   "cost_change_pct": -26.9,
+   "latency_best_s": 328.4,
+   "latency_hindsight_s": 217.2,
+   "latency_change_pct": -33.9,
+   "co2_best_g": [
+    0.258,
+    3.64
+   ],
+   "co2_hindsight_g": [
+    0.184,
+    2.598
+   ],
+   "co2_change_pct": [
+    -28.6,
+    -28.6
+   ]
+  },
+  {
+   "site": "wa_reddit",
+   "baseline": "B1",
+   "skipped": "incomplete six-view matrix"
+  }
+ ]
+}

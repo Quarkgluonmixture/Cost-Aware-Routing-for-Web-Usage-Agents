@@ -186,6 +186,7 @@
   .hl{background:var(--grad) left bottom/100% .07em no-repeat;padding:0 0 .05em}
   .speaker{font-family:var(--sans);color:#fff;font-size:max(1rem,min(3.5vh,2vw));margin-top:4.2vh}
   .affil{font-family:var(--sans);color:var(--lav);font-size:max(.85rem,min(2.6vh,1.5vw));margin-top:1.2vh}
+  .credits{font-family:var(--sans);color:#fff;opacity:.92;font-size:max(.9rem,min(2.8vh,1.6vw));margin-top:1.4vh}
   .clauses{align-items:center;margin-top:0}
   .clauses div{font-family:var(--serif);font-weight:400;letter-spacing:0;color:#fff;font-size:max(1.5rem,min(6.2vh,3.5vw))}
   .clauses div:nth-child(2){color:var(--cyan)}
@@ -206,6 +207,16 @@
   ol.signposts li::before{content:counter(q);display:block;font-family:var(--mono);font-weight:700;color:var(--cyan);
     font-size:.85em;margin-bottom:1.2vh}
   .next span.m{color:var(--purple)}
+  /* big-number slides (hindsight / learned / why): the figure is the number */
+  .stats{flex:1 1 0;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2vw;align-content:center}
+  .stat{position:relative;background:#fff;border:1px solid var(--rule);box-shadow:0 .5vh 1.4vh rgba(18,22,46,.10);padding:4.4vh 1.8vw 4vh}
+  .stat::before{content:"";position:absolute;left:0;right:0;top:0;height:.67vh;background:var(--grad)}
+  .stat .big{font-family:var(--serif);color:var(--violet);font-size:min(8.5vh,3.5vw);line-height:1.05;white-space:nowrap}
+  .stat .lab{font-family:var(--sans);color:var(--ink);font-size:max(1rem,min(3.1vh,1.75vw));line-height:1.3;margin-top:1.6vh}
+  .stat .sub{font-family:var(--sans);color:var(--muted);font-size:max(.85rem,min(2.5vh,1.4vw));line-height:1.35;margin-top:2.4vh}
+  .bignum{flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);gap:2.4vw;align-items:center}
+  .bignum .figs{height:100%}
+  .stat.solo .big{font-size:min(13vh,6.4vw)}
   .num{white-space:nowrap}
 
   /* chrome moves up, clear of the logos and the footer line */
@@ -224,6 +235,7 @@
 <section class="slide on star dark" id="opening">
   <h1>When is <span class="hl">expensive perception</span> worth paying for?</h1>
   <p class="speaker">Jiaming Wei</p>
+  <p class="credits">Supervisors: Prof. María Pérez-Ortiz · Zekun Wu</p>
   <p class="affil">MSc thesis · REALM workshop, EMNLP 2026</p>
 </section>
 
@@ -241,7 +253,7 @@
   <ol class="signposts">
     <li>How do the views behave?</li>
     <li>How do they fail?</li>
-    <li>Does choosing pay?</li>
+    <li>What does picking right buy?</li>
     <li>Can it be learned?</li>
   </ol>
 </section>
@@ -266,34 +278,36 @@
   <p class="foot">Each side vs its own failures elsewhere · text-only: several over <span class="num">2×</span> · LOOK and BOTH: none stands out · six VisualWebArena settings</p>
 </section>
 
-<!-- ══ hindsight ══ five-view gain in the figure; the rerun comparison is arm-count matched (noise_floor_inventory §2) -->
+<!-- ══ hindsight ══ what picking right would buy, in the room's own use case (numbers: hindsight_efficiency.json, B0) -->
 <section class="slide" id="hindsight">
-  <div class="kicker">③ Does choosing pay</div>
-  <h2>Hindsight says choosing pays; a rerun says how much of that is noise.</h2>
-  <div class="figs one">
-    <img src="fig/talk_hindsight.png" alt="for each of eight settings, the best single view's success rate and perfect per-task hindsight over all six views">
+  <div class="kicker">③ Picking right</div>
+  <h2>Your coding agent checks its fix in a browser. Pick the right view:</h2>
+  <div class="stats">
+    <div class="stat"><div class="big">+11 to +16</div><div class="lab">more tasks solved per 100</div></div>
+    <div class="stat"><div class="big">−7 to −29%</div><div class="lab">CO₂e (estimate)</div></div>
+    <div class="stat"><div class="big">up to −34%</div><div class="lab">time (same on 2 of 3 sites)</div></div>
   </div>
-  <p class="foot">Perfect hindsight: <span class="num">+3.45 to +16.35</span> in 100 · in the one setting rerun for every view, one more view bought <span class="num">+7.14</span>, one rerun <span class="num">+4.46 to +7.59</span></p>
+  <p class="foot">Large model · 3 sites · hindsight vs the best fixed view</p>
 </section>
 
-<!-- ══ learned ══ poster panel 5, relabelled -->
+<!-- ══ learned ══ one number, then the picture -->
 <section class="slide" id="learned">
-  <div class="kicker">④ Can it be learned · five learned choices · nested cross-validation · vs always-cheapest</div>
-  <h2>Learned routers buy success only by spending more.</h2>
-  <div class="figs one">
-    <img src="fig/talk_routing.png" alt="every learned choice against always using the cheapest view; the win region is cheaper and no worse">
+  <div class="kicker">④ Can it learn to pick?</div>
+  <h2>Not today: nothing we trained picks well enough to beat the cheapest view.</h2>
+  <div class="bignum">
+    <div class="stat solo"><div class="big">0 of 8</div><div class="lab">settings where a learned picker beats always using the cheapest view</div><div class="sub">Even perfect hindsight: 1 of 8</div></div>
+    <div class="figs one"><img src="fig/talk_routing.png" alt="every learned choice against always using the cheapest view; the win region is cheaper and no worse"></div>
   </div>
-  <p class="foot">Win region = cheaper and no worse. Learned: <span class="num">0 of 8</span>. Perfect hindsight: <span class="num">1 of 8</span>.</p>
 </section>
 
-<!-- ══ why ══ poster panel 6, relabelled -->
+<!-- ══ why ══ the scaling law: examples only come from wins -->
 <section class="slide" id="why">
-  <div class="kicker">Why not yet · a “which view” example exists only when the task is solved</div>
-  <h2>More routing upside, less usable training signal.</h2>
-  <div class="figs one">
-    <img src="fig/talk_label_supply.png" alt="usable which-view examples against how many tasks the best single view solves, six settings">
+  <div class="kicker">Why not yet · the scaling law</div>
+  <h2>Routing's scaling law: no wins, no examples.</h2>
+  <div class="bignum">
+    <div class="stat solo"><div class="big">2–4×</div><div class="lab">at least this many more tasks for the settings short of examples</div><div class="sub">You only learn which view was right from tasks the agent solved</div></div>
+    <div class="figs one"><img src="fig/talk_label_supply.png" alt="usable which-view examples rise with how many tasks the best single view solves, six settings"></div>
   </div>
-  <p class="foot">Base success <span class="num">2–36%</span> · <span class="num">15–97</span> usable examples per setting · enough to train in <span class="num">2 of the 6</span></p>
 </section>
 
 <!-- ══ not-yet ══ what it would take, and three asks -->
@@ -305,7 +319,7 @@
       <h3>What it takes</h3>
       <ul>
         <li><span class="m">→</span>a stronger agent</li>
-        <li><span class="m">→</span><span>failing settings: at least <b class="num">2.1–4.2×</b> more tasks</span></li>
+        <li><span class="m">→</span><span>at least <b class="num">2–4×</b> more tasks</span></li>
         <li><span class="m">→</span>reruns that agree</li>
       </ul>
     </div>

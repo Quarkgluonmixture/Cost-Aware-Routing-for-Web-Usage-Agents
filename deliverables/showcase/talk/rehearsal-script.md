@@ -48,7 +48,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 目的：提一个问题，后面四段各答一块，`close` 回答它。不提前给结论。
 
 > **If you build a web agent, that's the question: should it look, read, or both — and can it learn to choose?**
-> I'll take it in four steps: how the views behave, how they fail, whether choosing pays, and whether it can be learned.
+> I'll take it in four steps: how the views behave, how they fail, what picking right would buy you, and whether it can be learned.
 
 提示：念四个路标时从左到右指一下。
 转场：→ `behaviour` *"First, behaviour."*
@@ -77,46 +77,45 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > **This pattern comes from the six VisualWebArena settings.**
 
 边界：⛔ 不拿两侧互比（文本侧四种看法，截图侧两种）；⛔ 只说「出现得多」，不说「因为」；⛔ 截图侧不叫 image-only（BOTH 也带文字）。
-转场：→ `hindsight` *"So — does choosing pay?"*
+转场：→ `hindsight` *"Now picture something you actually do."*
 
 ## 段落 hindsight —— 页面 `hindsight`
 
-目的：事后看选对有收益；再拿重跑当尺子读。
+目的：用台下每天真会遇到的场景，说清楚「选对看法」值多少 —— 三个大数字，好记就行（09-15 学长意见：演讲要抓人，别太严谨）。
 
-> So — does choosing pay?
-> Each row is one setting. The dot is the best single view there — and it isn't the same view everywhere. The arrow is perfect hindsight: for every task, whichever of the six views solved it.
-> Every row moves right — three and a half to sixteen more tasks in a hundred.
-> **But hindsight flatters. In the one setting where we reran every view, adding a second view bought about seven tasks in a hundred — and simply rerunning the same view bought four and a half to seven and a half.**
-> At that margin, a different view was worth no more than a second try.
+> Now picture something you actually do. Your coding agent — Claude Code, say — fixes a bug in your web app, then opens a browser to check its own work.
+> Is the new chart there? That answer is in the picture. Did the form save the right value? That one is in the page text.
+> So what if it always picked the right view for each check? On our large model, across three websites:
+> **Eleven to sixteen more tasks solved in every hundred.**
+> **Seven to twenty-nine percent less carbon — estimated from tokens.**
+> **And it's no slower: about the same on two sites, a third faster on the third.**
+> That's the prize — if you pick perfectly.
 
-边界：⛔ 五种看法合起来的收益（+16）**不和一次重跑比**（`noise_floor_inventory.md` §2）；⛔「16」带 *in a hundred*；⛔ 不说 13.7、12–14、2.0–7.6。
-转场：→ `learned` *"Can a model learn that choice in advance?"*
+提示：三个数字一个一个指，每说一个停半拍。
+边界：⛔ 不说「快 34%」而不带「另外两个网站持平」；碳排放一定带 *estimated*；「if you pick perfectly」这半句别省 —— 下一页正是说今天做不到。数字出处 `talk/hindsight_efficiency.json`（B0 三个网站）。
+转场：→ `learned` *"So can a model learn to make that pick?"*
 
 ## 段落 learned —— 页面 `learned`
 
-目的：0 of 8 之后马上给 1 of 8 —— 问题主要不在学习器。
+目的：一个数字说完：今天学不会。
 
-> Can a model learn that choice in advance? We tried five ways, with nested cross-validation.
-> Learned routers buy success only by spending more.
-> The bar is always-cheapest: the one view that costs least on average in that setting, used for every task.
-> The shaded corner is a win — cheaper, and no worse. **Zero of eight learned choices land there. And even perfect hindsight reaches it in only one of eight.**
-> So this is not mainly a weak classifier. Something upstream is missing.
+> So can a model learn to make that pick? We tried five different ways.
+> **Zero out of eight.** In none of our eight settings does a learned picker beat simply always using the cheapest view.
+> **Even perfect hindsight only manages it in one of eight** — so this isn't just a weak model.
 
-提示：「only one of eight」后停，不翻页。
-边界：⛔ 不说 *the problem isn't the learner*；说 *not mainly*。
-转场：→ `why` *"Here is what's missing."*
+提示：「Zero out of eight」后停一下，让大家看大数字。
+边界：⛔ 不说 *routing doesn't work*；说 *not today*。
+转场：→ `why` *"Here's why — call it the scaling law of routing."*
 
 ## 段落 why —— 页面 `why`
 
-目的：例子只在做对时才存在。
+目的：一句好记的话讲清原因：没有成功，就没有例子。
 
-> Here is what's missing.
-> More routing upside, less usable training signal.
-> A training example for "which view" only exists when a task gets solved — here, two to thirty-six percent of the time.
-> Fifteen to ninety-seven usable examples per setting. Enough to train a classifier in two of the six.
-> The weaker the agent, the more there is to gain from choosing — and the fewer examples to learn from.
+> Here's why — call it the scaling law of routing: no wins, no examples.
+> To learn which view was right, you need tasks the agent actually solved. These agents solve two to thirty-six percent.
+> So the settings with the most to gain have the least to learn from. The ones short of examples need at least two to four times more tasks.
 
-边界：⛔ y 轴是计数，不说 percent of labels。
+边界：「scaling law」是个好记的叫法，指「成功越多、例子越多」这个趋势（6 个设置），不是拟合出来的幂律；被追问就这么说。
 转场：→ `not-yet`
 
 ## 段落 not-yet —— 页面 `not-yet`
@@ -125,7 +124,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 
 > **So I'm not claiming routing is unlearnable — just not yet, at these success rates.**
 > Improve the agent first, collect reliable examples, then learn when to look.
-> What it takes: a stronger agent. The failing settings would need at least two to four times more tasks. And examples that survive a rerun.
+> What it takes: a stronger agent, at least two to four times more tasks, and examples that survive a rerun.
 > **Three asks. Come to the board and type a task — it runs in all three views while you watch; nothing there is scored.**
 > **If you run web agents, tell me which view you use.**
 > **And if you have an agent that solves clearly more of its tasks — lend it to us. That's where this should be tested.**

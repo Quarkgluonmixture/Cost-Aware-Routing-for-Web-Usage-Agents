@@ -605,12 +605,12 @@ curl -s localhost:8799/health
     <tbody>
       <tr><td class="id">opening</td><td>为什么值得听：看网页有三种方式，价钱不同，这是量出来的</td><td>说完按 →</td><td><span class="say">"When is expensive perception worth paying for? … Let me show you one task first."</span></td></tr>
       <tr><td class="id">demo</td><td>同一道题、三种看法、三种账单；learned choice 恰好选了唯一失败的那栏。说清这是录制的回放</td><td>先讲三栏是什么；点一下 iframe 空白处；只按 →，共 10 下；到底再按 → 自动翻页。⛔ 不按空格、不按 1/2/3/4</td><td><span class="say"><b>"Same task, three ways of seeing it, three different bills."</b> "One recorded run per view — nothing on this screen is live." "A learned choice, trained without this task, picked READ. The one view that failed."</span>（停一下）</td></tr>
-      <tr><td class="id">question</td><td>提出本场问题，预告四步；收尾时回答它</td><td>念四个路标时从左到右指</td><td><span class="say"><b>"If you build a web agent, that's the question: should it look, read, or both — and can it learn to choose?"</b></span></td></tr>
+      <tr><td class="id">question</td><td>提出本场问题，预告四步（行为 · 失败 · 选对能换来什么 · 能不能学会）；收尾时回答它</td><td>念四个路标时从左到右指</td><td><span class="say"><b>"If you build a web agent, that's the question: should it look, read, or both — and can it learn to choose?"</b></span></td></tr>
       <tr><td class="id">behaviour</td><td>① 看法一换，agent 做的事就换：只给截图时翻页约占 30% 的步数，其余看法约 6%，打字少一半</td><td>→</td><td>边界：不说「每个设置都是四倍」</td></tr>
       <tr><td class="id">failure</td><td>② 失败方式也不同：纯文本看法输在能点名的原因上，带截图的看法没有突出的原因</td><td>→</td><td><span class="say"><b>"This pattern comes from the six VisualWebArena settings."</b></span> 不拿两组互比，不说「因为」</td></tr>
-      <tr><td class="id">hindsight</td><td>③ 事后选对，每个设置都往右移 3.5 到 16；但要对着重跑读</td><td>→</td><td><span class="say"><b>"But hindsight flatters. In the one setting where we reran every view, adding a second view bought about seven tasks in a hundred — and simply rerunning the same view bought four and a half to seven and a half."</b></span></td></tr>
-      <tr><td class="id">learned</td><td>④ 学不会：学到的选择 0 of 8，事后最优也只有 1 of 8，所以问题主要不在分类器</td><td>「only one of eight」后<b>停一下，不翻页</b></td><td><span class="say"><b>"Zero of eight learned choices land there. And even perfect hindsight reaches it in only one of eight."</b></span></td></tr>
-      <tr><td class="id">why</td><td>例子只在做对时才有：成功率 2–36%，每个设置 15–97 个可用例子，6 个里只有 2 个够训练</td><td>→</td><td>y 轴是数量，不说 percent</td></tr>
+      <tr><td class="id">hindsight</td><td>③ 用台下自己会用的场景：Claude Code 改完网页，开浏览器检查自己的改动。每次都选对看法，能换来什么（大模型、三个网站、完美选择）</td><td>三个数字一个一个指</td><td><span class="say"><b>"Eleven to sixteen more tasks solved in every hundred."</b> <b>"Seven to twenty-nine percent less carbon — estimated from tokens."</b> <b>"About the same speed on two sites, a third faster on the third."</b> "That's the prize — if you pick perfectly."</span></td></tr>
+      <tr><td class="id">learned</td><td>④ 大数字 0 of 8：今天没有哪个学到的选择能赢过「永远用最便宜的看法」</td><td>「Zero out of eight」后<b>停一下</b></td><td><span class="say"><b>"Zero out of eight."</b> <b>"Even perfect hindsight only manages it in one of eight."</b></span></td></tr>
+      <tr><td class="id">why</td><td>scaling law：没有成功就没有例子；缺例子的设置至少要 2–4 倍的题</td><td>→</td><td><span class="say">"Call it the scaling law of routing: no wins, no examples."</span> 被追问：这是趋势的叫法，不是拟合的幂律</td></tr>
       <tr><td class="id">not-yet</td><td>边界 + 三个请求</td><td>看向做 agent 的人；说完停一下</td><td><span class="say"><b>"So I'm not claiming routing is unlearnable — just not yet, at these success rates."</b> <b>"Three asks. Come to the board and type a task … tell me which view you use … lend us a stronger agent."</b></span></td></tr>
       <tr><td class="id">close</td><td>回答 question 页</td><td>→</td><td><span class="say"><b>"Look, read, or both? It depends on the task — and nothing we trained knows it yet."</b> "Come and find me at the board. Thank you."</span></td></tr>
       <tr><td class="id">reference</td><td>备用：39 秒录屏，不在主讲流程里</td><td><code>R</code> 打开；→ 回到 close</td><td>—</td></tr>
@@ -625,7 +625,7 @@ curl -s localhost:8799/health
     </div>
     <div>
       <h3>超时就按这个顺序砍</h3>
-      <p>① <code>question</code> 只念问题，不念路标 → ② <code>why</code> 并进 <code>learned</code> 末尾一句 → ③ <code>hindsight</code> 只留「每行都往右移」和「但事后看会夸大」→ ④ demo 里 BOTH 一句带过。</p>
+      <p>① <code>question</code> 只念问题，不念路标 → ② <code>why</code> 并进 <code>learned</code> 末尾一句 → ③ <code>hindsight</code> 只念三个数字 → ④ demo 里 BOTH 一句带过。</p>
       <p>被打断：一句话答完，接 <span class="say">"— so, same task, three views, three bills."</span> 回到主线。</p>
     </div>
   </div>

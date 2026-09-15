@@ -42,6 +42,9 @@ def slide_texts(deck: str) -> list[tuple[int, bool, str]]:
     out = []
     for n, (tag, inner) in enumerate(re.findall(r"(<section[^>]*>)(.*?)</section>", body, flags=re.S), 1):
         inner = re.sub(r"<!--.*?-->", " ", inner, flags=re.S)
+        # the credits line (speaker's supervisors, as printed on the poster) is identity, not content:
+        # it neither counts toward the word budget nor trips the listener-name grep
+        inner = re.sub(r'<p class="credits">.*?</p>', " ", inner, flags=re.S)
         text = html.unescape(re.sub(r"<[^>]+>", " ", inner))
         out.append((n, "backup" in tag, " ".join(text.split())))
     return out
