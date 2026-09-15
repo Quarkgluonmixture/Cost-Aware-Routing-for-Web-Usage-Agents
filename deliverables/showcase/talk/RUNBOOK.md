@@ -24,9 +24,9 @@ _你是下午第二个讲（09-15 user 告知，ROADMAP D19）：第一位讲者
 
 | 段落 | 手 |
 |---|---|
-| opening | ① 停在 `opening`。说完最后一句 → 按 → 到 `demo` |
+| opening → prize | ① 停在 `opening`。说完最后一句按 → 到 `agents`（两张真实截图）→ 按 → 到 `prize`（卡片自动弹出，等四张出齐）→ 按 → 到 `demo` |
 | demo | 点一下 iframe 里的空白处让它拿到焦点；只按 **→**，共 10 下（READ 9 步 + 1 下看结束态），再按一次 → 自动翻到 `question`。⛔ 不按 space，⛔ 不按 1/2/3/4 |
-| question → not-yet | 每段按一次 →：`question` → `behaviour` → `failure` → `hindsight` → `learned` → `why` → `not-yet`；`learned`「only one of eight」后**不翻页，停一下** |
+| question → not-yet | 每段按一次 →：`question` → `behaviour` → `failure` → `learned` → `why` → `not-yet`；`learned`「only one of eight」后**不翻页，停一下** |
 | close | 按 → 到 `close`，收 |
 
 参考页 `reference`（39 秒录屏）不在主讲流程里：按 **R** 打开，再按 → 回到 `close`。End（Mac 上 Fn+→）直达 `close`。

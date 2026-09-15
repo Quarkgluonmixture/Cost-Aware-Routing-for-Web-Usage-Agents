@@ -195,13 +195,13 @@
   .closeline{color:#fff;font-family:var(--sans);font-size:max(1rem,min(3vh,1.7vw))}
   .byline{font-family:var(--mono);color:var(--lav)}
 
-  /* question slide: the template's dark ground without logos; one question, four signposts */
+  /* question slide: the template's dark ground without logos; one question, three signposts */
   .slide.dark.plain{background:url(fig/tpl_bg.jpg) center/cover no-repeat var(--night)}
   .slide.questionslide{justify-content:center;padding:8vh 6.5vw 14vh}
   .questionslide .kicker{color:var(--lav)}
   .questionslide h2{font-family:var(--serif);font-weight:400;letter-spacing:0;color:#fff;
     font-size:max(1.8rem,min(7.2vh,4.1vw));line-height:1.15;max-width:none;margin-bottom:6vh}
-  ol.signposts{list-style:none;counter-reset:q;display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw}
+  ol.signposts{list-style:none;counter-reset:q;display:grid;grid-template-columns:repeat(3,1fr);gap:1.6vw}
   ol.signposts li{counter-increment:q;padding:2.2vh 1.3vw 2.6vh;border-top:.6vh solid;border-image:var(--grad) 1;
     background:rgba(20,30,65,.6);color:#fff;font-family:var(--sans);font-size:max(1rem,min(3.1vh,1.75vw));line-height:1.3}
   ol.signposts li::before{content:counter(q);display:block;font-family:var(--mono);font-weight:700;color:var(--cyan);
@@ -218,16 +218,6 @@
   .bignum .figs{height:100%}
   .stat.solo .big{font-size:min(13vh,6.4vw)}
   .num{white-space:nowrap}
-  /* A familiar request opens the question; benchmark bars show the potential. */
-  .shopping-hook{font-family:var(--sans);font-size:3vh;color:var(--muted);margin-top:.5vh}
-  .potential-grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.45fr 1.45fr;gap:3vh 3vw;align-content:center;align-items:center;font-family:var(--sans)}
-  .potential-head{font-family:var(--mono);font-size:2.6vh;color:var(--muted);padding-bottom:1.6vh;border-bottom:1px solid var(--rule)}
-  .potential-label{font-size:3.2vh;color:var(--ink)}
-  .potential-bar{height:7vh;position:relative;background:#edf0f7;display:flex;align-items:center;border-radius:.6vh;overflow:hidden}
-  .potential-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--amount);background:#adb6cf}
-  .potential-bar.best i{background:#aaa4ff}
-  .potential-bar span{position:relative;z-index:1;font-size:3.1vh;font-weight:700;margin-left:1vw;color:var(--ink)}
-  .potential-payoff{font-family:var(--sans);font-size:min(4.2vh,2.4vw);padding:2.3vh 2vw;color:var(--violet);background:#eeedff;text-align:center}
   .training-grid{flex:1;min-height:0;display:grid;grid-template-columns:1.3fr repeat(3,.7fr) 2fr;align-content:center;align-items:center;gap:2.3vh 1vw;font-family:var(--sans)}
   .training-head{font-family:var(--mono);color:var(--muted);font-size:2.2vh;letter-spacing:.08em;padding-bottom:1.5vh;border-bottom:1px solid var(--rule)}
   .training-task{font-size:3vh;color:var(--muted)}
@@ -240,7 +230,6 @@
   .check-caption b{font-family:var(--mono);color:var(--violet);font-size:.8em;letter-spacing:.1em}
   .payoff{display:flex;gap:2.3vw;align-items:baseline;border-top:1px solid var(--rule);padding-top:2vh;margin-top:2vh;font-family:var(--sans);font-size:min(2.5vh,1.4vw);color:var(--muted)}
   .payoff strong{color:var(--violet);font-size:1.2em;white-space:nowrap}
-  #hindsight .foot{font-size:min(2vh,1.13vw);margin-top:1.5vh}
   .result-strip{display:flex;justify-content:space-between;gap:3vw;font-family:var(--sans);font-size:min(2.8vh,1.6vw);color:var(--muted);margin-top:2.4vh}
   .result-strip strong{color:var(--violet)}
 
@@ -253,6 +242,23 @@
     html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .slide{height:7.5in;width:13.333333in}
   }
+  /* ══ agents: two real captures side by side · prize: the cards ══ */
+  .real-pair{display:grid;grid-template-columns:1fr 1fr;gap:2vw;margin-top:2.6vh;align-items:start}
+  .real-pair figure{display:flex;flex-direction:column;min-height:0;margin:0}
+  .real-pair figcaption{font-family:var(--mono);font-size:min(2.1vh,1.18vw);padding:.9vh 1vw;background:#eeedfd;border-radius:6px 6px 0 0;color:var(--ink)}
+  .real-pair figcaption b{color:var(--violet)}
+  .real-pair img{width:100%;height:auto;max-height:60vh;object-fit:contain;object-position:top center;border:1px solid var(--rule);border-top:0;border-radius:0 0 6px 6px;background:#fff}
+  .ag-prize{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw;margin-top:15vh}
+  .ag-card{border-radius:12px;background:var(--night);padding:5.5vh 1.4vw;opacity:0;transform:scale(.55)}
+  .ag-card b{display:block;font-family:var(--serif);font-weight:400;font-size:min(6.4vh,3.6vw);line-height:1.05;color:#fff;white-space:nowrap}
+  .ag-card span{display:block;margin-top:1.4vh;font-family:var(--sans);font-size:min(2.3vh,1.3vw);color:var(--lav)}
+  .ag-card.go{animation:agpop .5s cubic-bezier(.2,1.5,.45,1) forwards}
+  @keyframes agpop{to{opacity:1;transform:scale(1)}}
+  #prize .foot{margin-top:6vh}
+  @media print{
+    .ag-card{opacity:1!important;transform:none!important;animation:none!important}
+    .ag-cursor,.ag-flash{display:none}
+  }
   @page{size:13.333333in 7.5in;margin:0}
 </style>
 </head>
@@ -264,6 +270,37 @@
   <p class="speaker">Jiaming Wei</p>
   <p class="credits">Supervisors: Prof. María Pérez-Ortiz · Zekun Wu</p>
   <p class="affil">MSc thesis · REALM workshop, EMNLP 2026</p>
+</section>
+
+<!-- ══ agents ══ what a web agent actually sees: two REAL captures of one public page (15 Sep 2026) by
+     real_capture.py with the real Playwright MCP server — its snapshot reply (verbatim excerpt) and its screenshot.
+     Neither is a recording of Claude or Astra doing a task; the Astra line quotes OpenAI's computer-use docs. -->
+<section class="slide" id="agents">
+  <h2>Same page, two ways an agent sees it.</h2>
+  <div class="real-pair">
+    <figure>
+      <figcaption><b>READ</b> · Claude Code + Playwright MCP gets text</figcaption>
+      <img src="fig/real_wiki_snapshot_excerpt.png" alt="Real Playwright MCP accessibility snapshot of Wikipedia's Create account page, verbatim excerpt">
+    </figure>
+    <figure>
+      <figcaption><b>LOOK</b> · GPT-6 Astra computer use gets a screenshot</figcaption>
+      <img src="fig/real_wiki_createaccount_screenshot.png" alt="Real screenshot of the same Wikipedia Create account page">
+    </figure>
+  </div>
+  <p class="foot">Real captures, Wikipedia sign-up page, 15 Sep 2026 · OpenAI docs: the model “uses screenshots and other tool results”</p>
+</section>
+
+<!-- ══ prize ══ what picking the right view per task would buy: perfect router vs best single view, large model,
+     three settings (talk/hindsight_efficiency.json). The cards pop one by one on entry. -->
+<section class="slide" id="prize">
+  <h2>If it always picked the right view:</h2>
+  <div class="ag-prize">
+    <div class="ag-card"><b>+11 to +16</b><span>solved per 100</span></div>
+    <div class="ag-card"><b>−14 to −27%</b><span>token bill</span></div>
+    <div class="ag-card"><b>−7 to −29%</b><span>CO₂e (estimated)</span></div>
+    <div class="ag-card"><b>up to 34%</b><span>faster on one site; same on two</span></div>
+  </div>
+  <p class="foot">Perfect router vs best single view · our benchmark · large open model · not Claude or GPT results</p>
 </section>
 
 <!-- ══ 2 ══ the demo itself: talk copy, arrow keys step it -->
@@ -280,7 +317,6 @@
   <ol class="signposts">
     <li>How do the views behave?</li>
     <li>How do they fail?</li>
-    <li>What does picking right buy?</li>
     <li>Can it be learned?</li>
   </ol>
 </section>
@@ -305,27 +341,9 @@
   <p class="foot">Each side vs its own failures elsewhere · text-only: several over <span class="num">2×</span> · LOOK and BOTH: none stands out · six VisualWebArena settings</p>
 </section>
 
-<!-- ══ hindsight ══ everyday request as hook; aggregate B0 classifieds potential, not a Claude measurement -->
-<section class="slide" id="hindsight">
-  <div class="kicker">③ Picking right</div>
-  <h2>“Claude, find a desk that fits my room.”</h2>
-  <p class="shopping-hook">If it always picked the right view…</p>
-  <div class="potential-grid">
-    <div></div><div class="potential-head">Best fixed view</div><div class="potential-head">Perfect router</div>
-    <div class="potential-label">Solved /100</div>
-    <div class="potential-bar" style="--amount:27.23%"><i aria-hidden="true"></i><span>27</span></div>
-    <div class="potential-bar best" style="--amount:43.3%"><i aria-hidden="true"></i><span>43</span></div>
-    <div class="potential-label">Relative cost</div>
-    <div class="potential-bar" style="--amount:100%"><i aria-hidden="true"></i><span>100%</span></div>
-    <div class="potential-bar best" style="--amount:79.8%"><i aria-hidden="true"></i><span>80%</span></div>
-  </div>
-  <p class="potential-payoff">16 more solved. 20% less cost.</p>
-  <p class="foot">Classifieds benchmark · large model · a perfect router, not Claude results</p>
-</section>
-
 <!-- ══ learned ══ the empty win region is the picture -->
 <section class="slide" id="learned">
-  <div class="kicker">④ Can a router learn which view to use?</div>
+  <div class="kicker">③ Can a router learn which view to use?</div>
   <h2>No learned router reaches the win corner — even a perfect one rarely does.</h2>
   <div class="figs one"><img src="fig/talk_routing.png" alt="every learned router against always using the cheapest view; no learned router reaches the green win corner, and a perfect router reaches it in one setting"></div>
   <div class="result-strip">
@@ -427,6 +445,7 @@
     cur=s; slides.forEach(x=>x.classList.toggle('on',x===s));
     pos.textContent=s.classList.contains('backup')?'reference':`${main.indexOf(s)+1} / ${main.length}`;
     save(s.id); fitDemo();
+    if(s.id==='prize') agPop(s);
     // the demo page owns the arrow keys: hand focus to its iframe, take it back elsewhere
     const f=s.querySelector('iframe');
     if(f) f.focus(); else if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur();
@@ -435,6 +454,10 @@
     if(!main.includes(cur)){ show(main[main.length-1]); return; }   // leaving the reference page returns to the close
     show(main[Math.max(0,Math.min(main.length-1,main.indexOf(cur)+d))]);
   }
+  function agPop(slide){                       // prize cards: one by one, each a short pop
+    slide.querySelectorAll('.ag-card').forEach((c,i)=>{ c.classList.remove('go'); void c.offsetWidth; c.style.animationDelay=(0.2+i*0.45)+'s'; c.classList.add('go'); });
+  }
+
   addEventListener('keydown',e=>{
     if(['ArrowRight','ArrowDown',' ','PageDown','n'].includes(e.key)){e.preventDefault();step(1)}
     if(['ArrowLeft','ArrowUp','PageUp','p'].includes(e.key)){e.preventDefault();step(-1)}

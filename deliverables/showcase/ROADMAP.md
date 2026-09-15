@@ -85,6 +85,8 @@ event: 2026-09-16
 
 - **D21（09-15，user 决定）演讲里不说 hindsight，改说 perfect router。** 听众是做 AI 的，router 一词熟悉，也和 `why` 页的 routing 一致；learned router / perfect router 成对出现。取代 §4 词表里「router → a learned choice」那条，`check_talk.py` 的 JARGON 删掉 router / routers。demo 录像界面上的 *learned choice* 不改，台本在 `learned` 页用 *a router — like the learned choice in the demo* 接上。第一次说 perfect router 时交代「事先知道哪种看法能做对」：它是上限，不是真系统。`learned` 页 kicker 改 *Can a router learn which view to use?*，标题改 *No learned router reaches the win corner — even a perfect one rarely does.*（0 of 8 / 1 of 8）；`hindsight` 页表头 Perfect picker → Perfect router。板前走读与板前问答仍用海报原词 *hindsight*，未改。
 
+- **D22（09-15，user 与学长）开场改为真实抓取，删书桌页。** 标题页后直接放 demo 太突兀、信息太多 ⇒ 先放 `agents`：同一张真实 Wikipedia 注册页的两种真实抓取（左：Playwright MCP `browser_snapshot` 原文逐字节选，这一页 161 行；右：同一次会话的截图），标 *READ · Claude Code + Playwright MCP* / *LOOK · GPT-6 Astra computer use*；再放 `prize` 四张卡片（perfect router vs best single view，B0 三设置）；然后进 demo。中途做过一版写死的动画（学长：hard code，且与 demo 重复），未提交。`hindsight` 书桌页与 `prize` 重复，删除；`question` 路标 4 → 3，`learned` kicker ④ → ③；主流程 11 页。素材与脚本 `talk/real_capture.py`。两张图都不是 Claude 或 Astra 的运行记录；Astra 一侧只引 OpenAI computer-use 文档原话 *uses screenshots and other tool results*，Astra 自己的接口我们没有记录，不说「只看截图」。
+
 ## 3. 六个 phase
 
 每个 phase 的判据都能用一句话验证真假，验证通过就勾掉。

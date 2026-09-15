@@ -8,9 +8,9 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 ## 保底版本与裁剪
 
 必须表达：看法改变行为和失败方式（`behaviour` / `failure`）· 事后选对有收益，但要对着重跑读（`hindsight`）· 学到的选择 0 of 8、事后最优也只有 1 of 8（`learned`）· 例子只在做对时才有（`why`）· 边界和三个请求（`not-yet`）。
-先删：`question` 只念问题不念四个路标；`why` 并成 `learned` 末尾一句；`hindsight` 只留购物请求、16 more / 20% less 和「a perfect router」。
+先删：`question` 只念问题不念四个路标；`why` 并成 `learned` 末尾一句；`prize` 只念第一张卡和「a perfect router, not Claude or GPT numbers」。
 再删或替换：`demo` 只讲 LOOK 与 READ，BOTH 一句带过（v3：demo 也可以裁）。
-短版（约 6 分钟）：`opening` → `demo`（LOOK / READ）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
+短版（约 6 分钟）：`opening` → `agents` → `prize`（只念第一张卡）→ `demo`（LOOK / READ）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
 
 ## 开场 —— 页面 `opening`
 
@@ -19,10 +19,38 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > When is expensive perception worth paying for?
 > A web agent can *look* at a page — a screenshot. It can *read* it — the page as text. Or both. They cost different amounts.
 > This is my MSc thesis, accepted at the REALM workshop at EMNLP this year.
-> Let me show you one task first.
+> First: what does a web agent actually see?
 
 提示：说完按 → 到 `demo`。
-转场：*"Let me show you one task first."* → `demo` *"Same task, three ways of seeing it…"*
+转场：*"First: what does a web agent actually see?"* → `agents`
+
+## 段落 agents —— 页面 `agents`
+
+目的：先让大家认出「web agent 就是帮你在网页上干活的东西」，再看到主流工具看网页的方式真的不一样。两张图都是真实抓取，不是录像，也不是画出来的。
+
+> A web agent is a model that does things on web pages for you — fill in a form, book something, buy something.
+> Here's one real page, Wikipedia's sign-up form, captured this week two ways.
+> On the left is what Claude Code gets through Playwright: the page as text. This one page is a hundred and sixty-one lines.
+> On the right is what a screenshot agent like GPT-6 Astra works from: just the picture.
+> In between there's a third way — the screenshot with numbered marks. We call the three views READ, LOOK and BOTH.
+
+提示：先指左边高亮的 textbox 和 button 行，再指右边同一个表单。
+边界：两张图是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`），不是 Claude 或 Astra 做任务的记录，不说「Claude 做了这个」。Astra 看截图出自 OpenAI computer-use 文档原话「uses screenshots and other tool results」；Codex Desktop 是两种都用，不说 OpenAI 全家只看截图。161 行是这一次抓取的实测，页面会变。
+转场：→ `prize` *"So does the choice matter?"*
+
+## 段落 prize —— 页面 `prize`
+
+目的：一页四个数字回答「选对看法值多少」。卡片进页自动依次弹出。
+
+> If an agent always picked the right view for each task, here's what our measurements say it would get.
+> **Eleven to sixteen more tasks solved in every hundred.**
+> Fourteen to twenty-seven percent off the token bill, and seven to twenty-nine percent less carbon — estimated from tokens.
+> On one site it's a third faster; on the other two, about the same.
+> That's a perfect router on our benchmark with a large open model — not Claude or GPT numbers. Let me show you one real task.
+
+提示：卡片弹一张念一张，四张出齐再翻页。
+边界：perfect router 是上限，事先知道每道题哪种看法能做对。时间只有一个网站变快，不说「快 34%」而不带「on one site」。
+转场：→ `demo` *"Same task, three ways of seeing it…"*
 
 ## 段落 demo —— 页面 `demo` / 操作 RUNBOOK「台上的动线」II
 
@@ -48,7 +76,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 目的：提一个问题，后面四段各答一块，`close` 回答它。不提前给结论。
 
 > **If you build a web agent, that's the question: should it look, read, or both — and can it learn to choose?**
-> I'll take it in four steps: how the views behave, how they fail, what picking right would buy you, and whether it can be learned.
+> I'll take it in three steps: how the views behave, how they fail, and whether a router can learn to pick.
 
 提示：念四个路标时从左到右指一下。
 转场：→ `behaviour` *"First, behaviour."*
@@ -77,21 +105,6 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > **This pattern comes from the six VisualWebArena settings.**
 
 边界：⛔ 不拿两侧互比（文本侧四种看法，截图侧两种）；⛔ 只说「出现得多」，不说「因为」；⛔ 截图侧不叫 image-only（BOTH 也带文字）。
-转场：→ `hindsight` *"Now picture something you actually do."*
-
-## 段落 hindsight —— 页面 `hindsight`
-
-目的：demo 已讲日落找船，这里用日常购物请求引入整组任务上的潜力，不再讲一道题的过程或账单。书桌请求是代入场景；数字来自 classifieds 大模型组，不是 Claude 实测。
-
-> Now think of an everyday request: "Claude, find a desk that fits my room."
-> You want the job done, without paying for views it doesn't need. What if the agent always picked right?
-> Here's the potential we measured on our classifieds benchmark, with the large model — not Claude.
-> The best fixed view solves about twenty-seven tasks in a hundred. A perfect router — one that already knows which view will work — takes that to forty-three, while spending less.
-> **Sixteen more tasks solved per hundred. Twenty percent less cost.**
-> That's the prize — for a perfect router. The next question is whether we can learn that choice.
-
-提示：先对观众念购物请求，再横向指成功率的 27 → 43，最后指费用 100% → 80%；不重讲 demo，不展示书桌任务的虚构运行。
-边界：16 是每百题多完成的任务数（+16.07 个百分点），不是相对提升 16%。两项收益都来自 `talk/hindsight_efficiency.json` 的 B0·classifieds：27.23% → 43.30%，成本 −20.2%，相对最佳固定看法。书桌是生活场景类比；这不是购物成功率或 Claude 产品的实测承诺。perfect router 必须保留，并说清它事先知道每道题哪种看法能做对，是上限不是真系统。
 转场：→ `learned` *"So can a router learn to make that pick?"*
 
 ## 段落 learned —— 页面 `learned`

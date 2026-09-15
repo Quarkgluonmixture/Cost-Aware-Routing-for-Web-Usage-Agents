@@ -1,0 +1,167 @@
+### Page
+- Page URL: https://auth.wikimedia.org/enwiki/wiki/Special:CreateAccount?useformat=desktop&usesul3=1&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f
+- Page Title: Create account - Wikipedia
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - link "Jump to content" [ref=e2] [cursor=pointer]:
+    - /url: "#bodyContent"
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - navigation "Site" [ref=e6]:
+        - generic "Main menu" [ref=e7]:
+          - button "Main menu" [ref=e8] [cursor=pointer]
+          - generic [ref=e11]: Main menu
+      - link [ref=e12] [cursor=pointer]:
+        - /url: https://en.wikipedia.org/wiki/Main_Page
+        - generic [ref=e14]:
+          - img "Wikipedia" [ref=e15]
+          - img "The Free Encyclopedia" [ref=e16]
+    - navigation "Personal tools" [ref=e18]:
+      - list [ref=e22]:
+        - listitem [ref=e23]:
+          - link "Donate" [ref=e24] [cursor=pointer]:
+            - /url: https://donate.wikimedia.org/?wmf_source=donate&wmf_medium=sidebar&wmf_campaign=auth.wikimedia.org&uselang=en
+        - listitem [ref=e25]:
+          - link "Create account" [ref=e26] [cursor=pointer]:
+            - /url: /enwiki/w/index.php?title=Special:CreateAccount&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f&usesul3=1&useformat=desktop
+        - listitem [ref=e27]:
+          - link "Log in" [ref=e28] [cursor=pointer]:
+            - /url: /enwiki/w/index.php?title=Special:UserLogin&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f&usesul3=1&useformat=desktop
+  - generic [ref=e30]:
+    - main [ref=e33]:
+      - heading "Create account" [level=1] [ref=e35]
+      - generic [ref=e37]:
+        - generic:
+          - navigation "Namespaces"
+        - generic [ref=e38]:
+          - navigation "Views"
+          - navigation "Page tools" [ref=e39]:
+            - generic [ref=e40]:
+              - button "Tools" [ref=e41] [cursor=pointer]
+              - generic [ref=e44]: Tools
+      - navigation "Appearance" [ref=e47]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: Appearance
+            - button "Hide Appearance" [ref=e52] [cursor=pointer]: hide
+          - generic [ref=e53]:
+            - generic [ref=e54]: Text
+            - list [ref=e56]:
+              - listitem [ref=e57]:
+                - generic [ref=e58]:
+                  - generic [ref=e59]:
+                    - generic [ref=e60]:
+                      - radio "Small" [disabled] [ref=e61]
+                      - generic [ref=e63]: Small
+                    - generic [ref=e65]:
+                      - radio "Standard" [disabled] [ref=e66]
+                      - generic [ref=e68]: Standard
+                    - generic [ref=e70]:
+                      - radio "Large" [disabled] [ref=e71]
+                      - generic [ref=e73]: Large
+                  - paragraph [ref=e75]: This page always uses small font size
+          - generic [ref=e76]:
+            - generic [ref=e77]: Width
+            - list [ref=e79]:
+              - listitem [ref=e80]:
+                - generic [ref=e82]:
+                  - generic [ref=e83]:
+                    - radio "Standard" [checked] [ref=e84]
+                    - generic [ref=e86]: Standard
+                  - generic [ref=e88]:
+                    - radio "Wide" [ref=e89]
+                    - generic [ref=e91]: Wide
+          - generic [ref=e93]:
+            - generic [ref=e94]: Color
+            - list [ref=e96]:
+              - listitem [ref=e97]:
+                - generic [ref=e99]:
+                  - generic [ref=e100]:
+                    - radio "Automatic" [ref=e101]
+                    - generic [ref=e103]: Automatic
+                  - generic [ref=e105]:
+                    - radio "Light" [checked] [ref=e106]
+                    - generic [ref=e108]: Light
+                  - generic [ref=e110]:
+                    - radio "Dark" [ref=e111]
+                    - generic [ref=e113]: Dark
+      - generic "Create account" [ref=e115]:
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - generic [ref=e122]: Username
+              - generic [ref=e123]:
+                - text: Avoid using your real name.
+                - button "username policy" [ref=e124]
+            - textbox "Username" [ref=e128]:
+              - /placeholder: Enter your username
+          - generic [ref=e129]:
+            - generic [ref=e130]: Password
+            - generic [ref=e133]:
+              - textbox "Password" [ref=e134]:
+                - /placeholder: Enter a password
+              - generic [ref=e135] [cursor=pointer]
+          - generic [ref=e136]:
+            - generic [ref=e137]: Confirm password
+            - generic [ref=e140]:
+              - textbox "Confirm password" [ref=e141]:
+                - /placeholder: Enter password again
+              - generic [ref=e142] [cursor=pointer]
+          - generic [ref=e143]:
+            - generic [ref=e144]: Email address (optional)
+            - textbox "Email address (optional)" [ref=e148]:
+              - /placeholder: Enter your email address
+          - button "Create your account" [ref=e151]
+          - generic [ref=e154]:
+            - text: This site is protected by hCaptcha and its
+            - link "Privacy Policy" [ref=e155] [cursor=pointer]:
+              - /url: https://www.hcaptcha.com/privacy
+            - text: and
+            - link "Terms of Service" [ref=e156] [cursor=pointer]:
+              - /url: https://www.hcaptcha.com/terms
+            - text: apply.
+    - contentinfo [ref=e158]:
+      - list:
+        - listitem [ref=e159]:
+          - link "Privacy policy" [ref=e160] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Privacy_policy
+        - listitem [ref=e161]:
+          - link "About Wikipedia" [ref=e162] [cursor=pointer]:
+            - /url: https://en.wikipedia.org/wiki/Wikipedia:About
+        - listitem [ref=e163]:
+          - link "Disclaimers" [ref=e164] [cursor=pointer]:
+            - /url: https://en.wikipedia.org/wiki/Wikipedia:General_disclaimer
+        - listitem [ref=e165]:
+          - link "Contact Wikipedia" [ref=e166] [cursor=pointer]:
+            - /url: //en.wikipedia.org/wiki/Wikipedia:Contact_us
+        - listitem [ref=e167]:
+          - link "Legal & safety contacts" [ref=e168] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Legal:Wikimedia_Foundation_Legal_and_Safety_Contact_Information
+        - listitem [ref=e169]:
+          - link "Code of Conduct" [ref=e170] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Universal_Code_of_Conduct
+        - listitem [ref=e171]:
+          - link "Developers" [ref=e172] [cursor=pointer]:
+            - /url: https://developer.wikimedia.org
+        - listitem [ref=e173]:
+          - link "Statistics" [ref=e174] [cursor=pointer]:
+            - /url: https://stats.wikimedia.org/#/en.wikipedia.org
+        - listitem [ref=e175]:
+          - link "Cookie statement" [ref=e176] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Cookie_statement
+        - listitem [ref=e177]:
+          - link "Mobile view" [ref=e178] [cursor=pointer]:
+            - /url: //auth.wikimedia.org/enwiki/w/index.php?title=Special:CreateAccount&centralauthLoginToken=ae6a5242775cf2735543f2433c4b5b0f&usesul3=1&mobileaction=toggle_view_mobile
+      - list [ref=e179]:
+        - listitem [ref=e180]:
+          - link [ref=e181] [cursor=pointer]:
+            - /url: https://www.wikimedia.org/
+            - img "Wikimedia Foundation" [ref=e183]
+        - listitem [ref=e184]:
+          - link [ref=e185] [cursor=pointer]:
+            - /url: https://www.mediawiki.org/
+            - img "Powered by MediaWiki" [ref=e187]
+  - generic [ref=e188]:
+    - list
+```
