@@ -81,47 +81,46 @@ receive files.
 
 ---
 
-# 2. Board walk — 90 seconds
+# 2. Board walk — 90 seconds (poster v9.10, rewritten 2026-09-15)
 
-> ⚠️ **Stale for v9.10 (2026-09-11)** — written for the v8 sheet. Rewrite in `ROADMAP.md` Phase 2 to the six-panel order; the printed poster is described in `ROADMAP.md §0`.
+Walk the printed sheet top to bottom and point at each thing as you say it: title band → the strip in the
+middle (task 76) → panels 1–4 in one sweep → panel 5 → panel 6 → the laptop. The poster says
+DOM / SoM / Vision; the laptop and the strip say READ / BOTH / LOOK — give the mapping once, at the strip.
 
-Sheet order: loop diagram → number strip → catch / why / Fig 3 (left) · Fig 2 /
-laptop (right). The walk skips the loop unless they ask for the method.
+**① Title band**
+> A web agent can look at a page — a screenshot — read it as text, or both. The richer the view, the more each step costs. The question is when that's worth paying for.
 
-**① Title + standfirst**
-> A web agent can look at a page, read it, or both. Choosing right would help a
-> lot — in perfect hindsight, up to 16 more tasks in a hundred over the best
-> single view. But nothing we trained beat simply always using the cheapest
-> view on both success and cost.
+**② THE SAME TASK, SEEN TWO WAYS (task 76)**
+> One task, two ways: change the price of my bike listing. Reading the page text — that's DOM on the poster — the agent finishes in twelve steps. With screenshots only — Vision — it loops back to the same form and gives up after twenty-six. Same start, and both outcomes repeat on a rerun.
 
-**② The number strip and the three definitions under it**
-> Three comparisons, and they are different: the best single view, the cheapest
-> single view, and perfect hindsight. Hindsight is a bound, not a method — and
-> an optimistic one: rerunning the same view flips ten to fourteen percent of
-> outcomes by itself.
+**③ Panels 1–4, one sweep**
+> Across eight website-and-model settings, no single view wins everywhere, and the views don't solve the same tasks. They behave differently — with only the screenshot, the agent scrolls far more — and on the VisualWebArena settings they fail differently: the text-only views fail in ways you can name; the views with the screenshot just never get there.
 
-**③ THE CATCH (left)**
-> Here's why learning fails. A training example only exists when a task gets
-> solved, and these agents solve two to thirty-six percent of tasks. The agents
-> that would gain most from choosing produce the fewest examples to learn from.
+**④ Panel 5 — SO BUILD A ROUTER? NOT SO FAST.**
+> So build something that picks the view per task? Every learned choice here gains success only by spending more. The shaded corner — cheaper and no worse than always using the cheapest view — gets no learned choice in any of the eight settings; even perfect hindsight gets there in only one.
 
-**④ Fig 3**
-> Six settings: the more the agent solves, the more examples there are, and only
-> two settings had enough to train a classifier at all.
-
-**⑤ Fig 2 (right)**
-> Every way of choosing, against always-cheapest. The shaded region is a win —
-> cheaper and no worse. Zero learned choices land there; even perfect hindsight
-> lands there in one of eight.
+**⑤ Panel 6 — AND THIS IS WHY**
+> Here's why. An example of which view was right only exists when the task gets solved, and these agents solve two to thirty-six percent of tasks. The more there is to gain from choosing, the fewer examples there are to learn from.
 
 **⑥ The laptop**
-> Watch it: same task, three views, different behaviour and bills. Three
-> illustrative tasks, one per winner — not how often each wins.
+> On the laptop: three recorded tasks in all three views — or type your own and watch it run live. Nothing there is scored; every number on the poster comes from recorded runs.
 
-**⑦ The loop at the top, if they want the method**
-> Only the page view changes; the dashed box is what we measure.
+Before pressing *Run* on the live tab, say: *"First step in about twenty seconds."*
 
-**If they only have 20 seconds**, use ① ③ ⑤ and stop.
+**If they only have 20 seconds** — ① ④ ⑤ in one breath:
+> Web agents can look, read, or both, and richer views cost more. Picking per task would pay in hindsight — but nothing we trained beats always using the cheapest view on both success and cost, because the examples to learn from only exist when the agent already succeeds.
+
+**Where the printed sheet overstates — say it this way instead** (the sheet cannot be reprinted; §5 has the sources)
+
+| On the sheet | Don't repeat | Say |
+|---|---|---|
+| Panel 4, blue block `IMAGE-ONLY` | "image-only" | "the views with the screenshot" — the block is Vision **and SoM**, and SoM carries text marks too |
+| Panel 4 caption *…image-only toward stalled progress* | "they stall" as a finding | "nothing stands out — they fail there the way they fail everywhere"; the pattern comes from the six VisualWebArena settings |
+| Panel 3 caption *Vision scrolls ~4× more* | "four times more in every setting" | "the medians are four to five times apart, and Vision scrolls most in every one of the eight" |
+| Panel 5 x-axis `−0.1 … 0.6` | reading the ticks as dollars or percent | "to the right is more expensive" — the axis is a log cost ratio |
+| Panels 5–6: `oracle`, `routing labels`, `pp` | the internal words | "perfect hindsight", "examples of which view was right", "more tasks in a hundred" |
+| Panel 2 Venn (three text-only views) | "each view solves tasks no other view does" | "they overlap but don't coincide" — inside the text side the unique counts sit within rerun noise (§470.3) |
+| `+16` in conversation | putting it next to "a rerun buys …" | "up to sixteen more tasks in a hundred, in hindsight, with five extra views"; the fair noise comparison is one extra view vs one rerun, classifieds only: +7.14 vs +4.46–7.59 |
 
 ---
 
@@ -314,26 +313,9 @@ mode as raw HTML (it is an accessibility tree).
 
 # 7. On the day
 
-| Time | |
-|---|---|
-| 09:00 | Poster set-up |
-| 09:30 | Registration & refreshments |
-| 10:00 | **Exhibition opens — sticker voting starts** |
-| 10:30–12:35 | Opening remarks, alumni talks, PhD route session |
-| 12:35 | Lunch + posters (long open stretch) |
-| **13:15–14:35** | **Authors at their boards** ← the votes are won here |
-| 14:35 | Break — **voting closes** |
-| 14:45 | Student presentations (your slot, if confirmed) |
-| 15:30 | Keynote |
-| 16:30 | Awards (£300 / £200 / £100) |
-| 17:15 | Take-down |
+> ⚠️ The table that stood here (sticker voting, awards at 16:30, take-down 17:15) was written before the organiser's programme was published and is wrong in places. The day's timeline — official times, what you do, which machine, what to do when something breaks — is `ROADMAP.md` Phase 6 and the one-page day sheet `day-of.html`.
 
-**Voting closes at 14:35, before the oral slots.** The 13:15–14:35 stretch at the
-board is what decides the prize, not the talk. Prioritise being at the board and
-running the 90-second walk repeatedly.
-
-Prize note: 1st place includes mentorship to write the work up as a workshop
-paper, and the cover of the showcase proceedings.
+Voting: attendees enter their full name on the event website and have three votes; it opens at 10:00 and **closes at 14:35, before the talks**. The prize is decided at the board.
 
 ---
 

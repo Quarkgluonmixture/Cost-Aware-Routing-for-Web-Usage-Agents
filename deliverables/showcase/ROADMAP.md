@@ -2,7 +2,7 @@
 type: showcase-planning
 status: live
 created: 2026-09-11
-updated: 2026-09-13
+updated: 2026-09-15
 event: 2026-09-16
 ---
 
@@ -12,6 +12,8 @@ event: 2026-09-16
 > 别写在这里。当天要念的英文原稿仍在 `SHOWCASE_PREP.md`（§2 走读 · §4 问答 · §5 数字表 · §6 禁语）。
 
 ## 0. 先说结论
+
+> **09-15 现状（先读这段，下面 09-11 的叙述保留作背景）**：演讲电脑 = **MacBook + Chrome**，quark 全天在展板；Zekun 回复：演讲**接自己的电脑**、片子**要提前发他看**（10 分钟含不含问答、顺序、桌子电源 Wi-Fi 仍未知）。片子 v2（10 页 + 参考页）已按 playbook v3 对齐（D16，commit `13e01ee`）；台本 v2 待 user 出声计时；板前走读已按 v9.10 重写（`SHOWCASE_PREP.md §2`，含「海报说过头处怎么说」表）。展板 live 服务在 DGX 上仍是裸进程（D8 的 tmux 未做），且三栏用 **B0 代理密钥** —— 代理余额 09-15 上午实测 $30.18。当天从头到尾的完整清单 → `day-of.html`。
 
 今天是周五（09-11），周三（09-16）开展，中间五天。海报已经印好，不再动。要闭环的是两件事：
 **demo 收尾**（三处已定的修改加一个演讲模式）和**十分钟演讲**（从零到能排练）。
@@ -45,7 +47,7 @@ event: 2026-09-16
 | demo 录像三题 | v2 已提交（commit `83c857b`），`demo_portable.html` 11.7 MB | §506.10 定下的三处修改还没做（红绿框对照上色 / 碳排悬停去 "published" / 四条措辞）；没有演讲模式（一打开就自动播放并轮换三题） |
 | live 页 | DGX 上站点容器已跑 20 h，server 在**裸前台进程**里（不是 tmux） | 周三要重启；需要一个不会随终端断掉的运行方式 |
 | slide | v0 已做（09-11）。**09-13 核到：活动页 For presenters 已公布 *Speaker slide template (.pptx)*、A1 / A0 海报模板** —— 不是「模板未到」，是还没下载进仓库 | 把 pptx 下下来放进 `deliverables/showcase/`，按 Phase 3 搬配色/标题条进 deck CSS |
-| 演讲 slot | 10 分钟已确认（user 09-10）；节目单 14:45–15:30「Student presentations」共 45 分钟；**从 quark 投大屏，slide 与 demo 同一台电脑**（user 09-11） | 不知道：含不含问答、接口、主办方收不收 slide 文件 |
+| 演讲 slot | 10 分钟已确认（user 09-10）；节目单 14:45–15:30「Student presentations」共 45 分钟；~~从 quark 投大屏~~ → **09-13 改为 MacBook 投屏**；**09-13 Zekun：接自己的电脑、片子提前发他** | 不知道：含不含问答、接口、主办方收不收 slide 文件 |
 | 网络 | quark 在 UCL 校园网上 `ssh spark`（cloudflared）已验证可用（2026-05-28；Tailscale 被黑洞，cloudflared 通）。会场 = UCL Centre for AI，大概率同一网络 | 当天 09:00 仍要实测一次 |
 | 投票 | 10:00 开始，**14:35 截止**，演讲 14:45 才开始。**09-13 核到**：观众在活动网站**填全名**投票，每人 3 票可集中可分散；奖金 £300 / £200 / £100，一等奖进 proceedings 封面 + 写 workshop paper 的 mentorship | 演讲不决定奖；板前决定。投票页按**海报标题**列出（活动页：「final poster titles and abstracts will be published once confirmed」）⇒ 登记的标题必须和印出来的一致，见 Phase 0 |
 | GPU 侧 | B1 shopping 三格 ~09-13 落地（A100） | 只发下一条 chain，不开新分析，人力都在演讲上 |
@@ -57,7 +59,7 @@ event: 2026-09-16
 - **D1 演讲里的 demo 只放录像回放 task 130，不跑 live。** 130 是「找日落照片的那条 listing」：LOOK 2 步解出（$0.007）、READ 9 步失败（$0.041，文本树里根本没有 sunset 这个词）、BOTH 3 步解出（$0.014）。三秒能懂，最长一栏 9 步，手动步进约 45 秒。live 页首步要 ~20 秒、一栏最多 12 步、时长不可控，只在展板上给深聊的访客。
   为什么不用 76：76 已经印在海报中部（READ 解出 / LOOK 转圈），演讲讲 130 正好和它成一对 —— 130 是「贵的看法值」、76 是「便宜的看法值」，合起来就是题目那句问句；讲完 130 一句话把 76 指回海报。
   130 还有一个顺手的点：learned choice 选的是 READ，恰好是唯一失败的那栏 —— 直接引出「那能不能学会选」。
-- **D2 两处用法、一个页面（user 09-11 定）。** 展出时：海报旁边放 quark，跑现在这个 demo（三题自动播放 + `4` 进 live 页）。演讲时：从 quark 投大屏，demo 是**单独的一份演讲版**，同一个 `index.html` 加参数 `?task=130&autoplay=0`（停在 130 第 0 步、不自动播、不轮换，只认 ← →）。先展出再演讲，两处不打架。
+- **D2 两处用法、一个页面（user 09-11 定；投屏电脑 09-13 改为 MacBook，见 Phase 0）。** 展出时：海报旁边放 quark，跑现在这个 demo（三题自动播放 + `4` 进 live 页）。演讲时：~~从 quark 投大屏~~ MacBook 投屏，demo 是**单独的一份演讲版**，同一个 `index.html` 加参数 `?task=130&autoplay=0`（停在 130 第 0 步、不自动播、不轮换，只认 ← →）。先展出再演讲，两处不打架。
 - **D3 slide 用 HTML deck，demo 直接嵌在第 3 页里（推荐）；pptx 只作备用。** 既然从自己电脑投屏，HTML deck 能把演讲版 demo 用 iframe 嵌进去，一个浏览器窗口全屏，← → 既翻页也步进，不用 Alt+Tab；组会 deck 已经是这个形态。做法仍是 `talk_content.md` 单一来源 → `build_talk.py` 生成 `talk/index.html`，模板到了把它的标题条 / 页脚 / 配色搬进 CSS。同时导出一份 PDF（Playwright print）给主办方收 slide 用。**只有 Zekun 明确说「必须交 pptx 在统一电脑上放」**才走 python-pptx 铺模板那条路，那时 demo 回到 Alt+Tab 切浏览器。
   故障梯照旧三级：deck 里的 iframe 出问题 → 同一台电脑另开标签页 `demo_portable.html?task=130&autoplay=0` → deck 里第 3 页后面藏一页 39 秒 webm（`talk/talk_130.webm`）。
 - **D4 演讲词汇 = 海报词汇，三套名字一次对齐。** 海报系统图写 DOM / SoM / Vision，海报截图带和 demo 写 READ / LOOK / BOTH。第 2 页说一次：LOOK = screenshot only（海报的 Vision）· READ = page text only, no image（海报的 DOM，是 accessibility tree 不是 HTML）· BOTH = screenshot with numbered marks（海报的 SoM）。之后全程 LOOK / READ / BOTH。
@@ -81,7 +83,7 @@ event: 2026-09-16
 ### Phase 0 · 今天 09-11 · 定方向、问清楼下条件（≤ 1 小时）
 
 - [x] D1–D10 入档（本文件）
-- [ ] Slack DM Zekun 五个问题（§6 有现成文字，09-13 改）：自带电脑还是统一电脑 · 10 分钟含不含问答 · 接口和演讲顺序 · 要不要提前交片子 · 板旁桌子 / 电源 / Wi-Fi（「模板何时到」已删，活动页有）
+- [x] Slack DM Zekun（09-13 已问）。**回复**：演讲接自己的电脑；片子提前发他看（他问「找到 template 了吗」—— 已套用）。**仍未知**：10 分钟含不含问答 · 顺序 · 板旁桌子 / 电源 / Wi-Fi。原问题：自带电脑还是统一电脑 · 10 分钟含不含问答 · 接口和演讲顺序 · 要不要提前交片子 · 板旁桌子 / 电源 / Wi-Fi（「模板何时到」已删，活动页有）
 - [x] user 09-11：先展出再演讲；演讲从自己电脑投屏，demo 单独一份或嵌进 slide → D2/D3 按此改写（HTML deck 嵌 demo）
 - [x] **09-13**：登记的海报标题 = 印出来的 v9.10（user 确认提交的是 v9），投票页对得上
 - [x] **09-13 定：两台。** quark 全天放展板（live 页的 ssh 隧道只在 quark 上）；**MacBook + Chrome 只放片子**（离线，不需要网络 / 隧道 / DGX）。Zekun 若答「统一电脑」，片子走 U 盘，MacBook 退为备份。原判断：先等 Zekun 第 1 问。统一电脑 → 一台 quark 放展板 + U 盘；自带电脑且有第二台 → 两台（quark 放展板跑 live，第二台只放片子，不需要网络 / 隧道 / DGX）；只有 quark → 一台，彩排时把 14:35 换场练一遍。两台的好处不是展板不停（投票已截止），而是省掉 10 分钟换场 + 互为备份
@@ -106,7 +108,7 @@ event: 2026-09-16
 
 - [x] 09-11 `talk/rehearsal-script.md` **v0 骨架**：一句话主张 · 七幕各一个目的句 · 六句锁死句（= 片子标题）· 三处沉默 · 转场链 · 裁剪顺序 · 被问到时（指 §4）· 出事了
 - [ ] 每幕填英文台词（短句、一句一行引用块），出声念一遍改成自己的话；数词 ÷140 与 ÷120
-- [ ] `SHOWCASE_PREP.md §2` 板前走读按六面板顺序重写（标题条 → 中部 76 → 面板 1/2 → 5 → 6 → 桌上电脑；20 秒版 = 标题 + 面板 5 + 面板 6）
+- [x] 09-15 `SHOWCASE_PREP.md §2` 板前走读按 v9.10 重写（标题条 → 中部 76 → 面板 1–4 一口气 → 5 → 6 → 电脑；20 秒版 = ① ④ ⑤），另加「海报说过头的地方该怎么说」对照表（IMAGE-ONLY / stalled progress / ~4× / 横轴 / oracle / 韦恩 / +16）
 - [ ] `SHOWCASE_PREP.md §3` 12 分钟版删掉，只留指针到台本
 - [ ] `SHOWCASE_PREP.md §5` 数字表：「海报上有」那一列按 v9.10 重审；补 v9 印出来的新数字（76 的 12 / 26 步、$0.09 / $0.10、8 / 9 页；面板 4 的 2.3× / 2.2× / 1.6× / 1.2× / 0.9×；面板 3 的 ~4×）；**每个数先问「它在数什么」**
 - [ ] 去黑话 grep（词表见 §4 末）跑一遍台本英文行
@@ -179,7 +181,7 @@ event: 2026-09-16
 | 16:30–17:00 | Closing & networking | 回板前，live 页给感兴趣的人 | — |
 | 17:00–17:30 | Poster take-down | 撤展；DGX 上 `fuser -k 8799/tcp`、`docker compose down` | — |
 
-## 4. 十分钟演讲骨架 —— 一句话主张、七幕、六句锁死句
+## 4. 十分钟演讲骨架 —— 一句话主张、页面与精确措辞（09-13 按 v3 改）
 
 **一句话主张**（09-13 改）：How an agent sees the page changes what it does and how it fails; choosing per task would pay in hindsight, but nothing learns that choice yet — the examples only appear when the agent succeeds.
 
