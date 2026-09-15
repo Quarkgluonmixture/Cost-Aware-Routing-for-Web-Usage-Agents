@@ -37,7 +37,7 @@ updated: 2026-09-15
 > 1. ~~/stress spot-check 本轮演讲说法~~ —— **user 09-15 决定跳过**（数字有脚本自检，口径在 `SHOWCASE_PREP.md §5`；catchy 化后的措辞未经独立审读）
 > 2. DGX：live server 移进 tmux + 重置站点（手册「今晚准备 B」）
 > 3. user：MacBook 重新下载离线包 · 补发新版 `talk/talk.pdf` 给 Zekun · 新台词出声掐表 · 板前 90 秒走读练熟
-> 4. 当天才能问清：10 分钟含不含问答 · 第几个讲 · 展板旁桌子 / 插座 / Wi-Fi（09:45 AV check）
+> 4. 当天才能问清：10 分钟含不含问答 · 展板旁桌子 / 插座 / Wi-Fi。**已知（09-15 user，ROADMAP D19）**：09:50 到场先帮忙布展，AV check 只能 10:15 前挤时间；下午学生演讲**第二个**讲，约 14:55
 >
 > ### 本轮顺带发现、和 showcase 无关
 > - `scripts/analysis/router_objective_ordering.py` 的 WA 分支按 glob 找运行目录：09-15 A100 重跑新增 `B1_dom_wa_reddit_20260915_…_R3792` 后匹配不唯一 → **WA·B1 被静默跳过**（笔记 §517.3）。重跑这份分析前先改成按 manifest 固定 run

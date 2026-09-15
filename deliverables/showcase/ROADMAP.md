@@ -47,9 +47,9 @@ event: 2026-09-16
 | demo 录像三题 | v2 已提交（commit `83c857b`），`demo_portable.html` 11.7 MB | §506.10 定下的三处修改还没做（红绿框对照上色 / 碳排悬停去 "published" / 四条措辞）；没有演讲模式（一打开就自动播放并轮换三题） |
 | live 页 | DGX 上站点容器已跑 20 h，server 在**裸前台进程**里（不是 tmux） | 周三要重启；需要一个不会随终端断掉的运行方式 |
 | slide | v0 已做（09-11）。**09-13 核到：活动页 For presenters 已公布 *Speaker slide template (.pptx)*、A1 / A0 海报模板** —— 不是「模板未到」，是还没下载进仓库 | 把 pptx 下下来放进 `deliverables/showcase/`，按 Phase 3 搬配色/标题条进 deck CSS |
-| 演讲 slot | 10 分钟已确认（user 09-10）；节目单 14:45–15:30「Student presentations」共 45 分钟；~~从 quark 投大屏~~ → **09-13 改为 MacBook 投屏**；**09-13 Zekun：接自己的电脑、片子提前发他** | 不知道：含不含问答、接口、主办方收不收 slide 文件 |
-| 网络 | quark 在 UCL 校园网上 `ssh spark`（cloudflared）已验证可用（2026-05-28；Tailscale 被黑洞，cloudflared 通）。会场 = UCL Centre for AI，大概率同一网络 | 当天 09:00 仍要实测一次 |
-| 投票 | 10:00 开始，**14:35 截止**，演讲 14:45 才开始。**09-13 核到**：观众在活动网站**填全名**投票，每人 3 票可集中可分散；奖金 £300 / £200 / £100，一等奖进 proceedings 封面 + 写 workshop paper 的 mentorship | 演讲不决定奖；板前决定。投票页按**海报标题**列出（活动页：「final poster titles and abstracts will be published once confirmed」）⇒ 登记的标题必须和印出来的一致，见 Phase 0 |
+| 演讲 slot | 10 分钟已确认（user 09-10）；节目单 14:45–15:30「Student presentations」共 45 分钟；~~从 quark 投大屏~~ → **09-13 改为 MacBook 投屏**；**09-13 Zekun：接自己的电脑、片子提前发他**；**09-15 user：下午学生演讲第二个讲**（约 14:55，按每人 10 分钟估，D19） | 不知道：含不含问答、接口、主办方收不收 slide 文件 |
+| 网络 | quark 在 UCL 校园网上 `ssh spark`（cloudflared）已验证可用（2026-05-28；Tailscale 被黑洞，cloudflared 通）。会场 = UCL Centre for AI，大概率同一网络 | 当天 09:50 到场后仍要实测一次 |
+| 投票 | 10:00 开始，**14:35 截止**，学生演讲 14:45 才开始（user 第二个讲，约 14:55）。**09-13 核到**：观众在活动网站**填全名**投票，每人 3 票可集中可分散；奖金 £300 / £200 / £100，一等奖进 proceedings 封面 + 写 workshop paper 的 mentorship | 演讲不决定奖；板前决定。投票页按**海报标题**列出（活动页：「final poster titles and abstracts will be published once confirmed」）⇒ 登记的标题必须和印出来的一致，见 Phase 0 |
 | GPU 侧 | B1 shopping 三格 ~09-13 落地（A100） | 只发下一条 chain，不开新分析，人力都在演讲上 |
 
 ## 2. 定下来的细节
@@ -78,6 +78,8 @@ event: 2026-09-16
 - **D17（09-15，学长意见）演讲要抓人，别太严谨。** ① `hindsight` 改成台下自己的场景：Claude Code 改完网页、开浏览器检查自己的改动；三个大数字 = 大模型三个网站上「每题选对看法」vs 最佳单一看法：成功 +11 到 +16 / 百题 · CO₂e 估算 −7 到 −29% · 用时两个网站持平、一个快 34%（新脚本 `talk/hindsight_efficiency.py`，与 `oracle_sr_cost` 同一套选择，成本自检一致；延迟不是处处更快，所以片子写「same on 2 of 3 sites」）。原来的同臂数重跑比较移出片子，只留在问答。② `learned` 改成大数字「0 of 8」+ 白话图。③ `why` 改名 scaling law：*no wins, no examples* + 「2–4×」。④ 开场页加导师 *Supervisors: Prof. María Pérez-Ortiz · Zekun Wu*（照海报页眉；`check_talk.py` 不把署名行计入字数和听众名检查）。
 
 - **D18（09-15，用户纠正，覆盖 D17 的三页呈现）** `hindsight` 用日常购物请求引入整组潜力，避免重复开场找船 demo；B0·classifieds 最佳固定 → 完美事后选择，约 27 → 43 /100，成本 100% → 80%，底部总结 +16 solved / −20% cost。书桌场景是类比，不是 Claude 实测。`learned` 以全宽结果图为主、0/8 与 1/8 放图下；`why` 保留 scaling law，用成功/全失败 → 赢家标签示意连到「更少成功 → 每个训练例子需要更多任务」，2–4× 降为页脚。
+
+- **D19（09-15，user 告知）当天两处变化。** ① user **09:50 到场**（不是 09:00），先签到、帮忙布置展板，顺带挂自己的海报、把 quark 开起来；官方 AV check 09:45–10:15 只能在 10:15 前挤时间做，赶不上就 14:35 茶歇补接一次投影。② user 是**下午学生演讲第二个**：14:35 前都能留在板前；14:35–14:45 在讲台旁做不需要投影的准备（RUNBOOK 第 2–7 步），第一位讲完换场时再接投影，约 14:55 开讲（按每人 10 分钟估，以主持人为准）。§6 第 ③ 问因此已答。仍未知：10 分钟含不含问答、展板旁桌子 / 插座 / Wi-Fi。
 
 ## 3. 六个 phase
 
@@ -170,16 +172,15 @@ event: 2026-09-16
 
 | 时间（官方） | 节目单 | 你做什么 | 出问题怎么办 |
 |---|---|---|---|
-| 09:00–09:30 | Poster set-up | 挂海报；笔记本**先**双击离线 portable 让桌面有东西在动；再开隧道、`curl health`、跑一个测试任务；截图太小 → Ctrl+− 缩到 80–90% | 隧道不通 → 只用离线 portable，把「try your own」一句「not available on this network today」说清 |
-| 09:30 | Registration & refreshments | — | — |
-| 09:45–10:15 | **AV check & speaker briefing** | **MacBook** 接投影，片子 → 第 2 张 iframe 步进几下 → 兜底页各一遍；当面问清演讲顺序、含不含问答、自带电脑还是统一电脑 | 投影只认主办方电脑 → U 盘 `talk/` + portable；再不行 → webm |
+| **09:50**（官方布展 09:00–09:30） | Poster set-up | **user 09:50 才到（D19）**：签到，帮忙布置展板；挂海报；笔记本**先**双击离线 portable 让桌面有东西在动；再开隧道、`curl health`、跑一个测试任务；截图太小 → Ctrl+− 缩到 80–90% | 隧道不通 → 只用离线 portable，把「try your own」一句「not available on this network today」说清 |
+| 09:45–10:15 | **AV check & speaker briefing** | **MacBook** 接投影，片子 → 第 2 张 iframe 步进几下 → 兜底页各一遍；当面问清含不含问答、自带电脑还是统一电脑（顺序已知：第二个）；**user 09:50 才到 → 10:15 前挤时间做，赶不上就 14:35 茶歇补测** | 投影只认主办方电脑 → U 盘 `talk/` + portable；再不行 → webm |
 | 10:00 | Exhibition + voting opens | 回板前，demo 自动播放 | — |
 | 10:30–11:20 | 两段 opening + collaboration talk | 板前自动播放即可 | — |
 | 11:20–11:35 | Break | 站板前，20 秒版走读（标题 + 面板 5 + 面板 6） | — |
 | 11:35–12:35 | Alumni spotlight + PhD route | 板前自动播放即可 | — |
 | **12:35–14:35** | Lunch · 13:15–14:35 authors at boards | **12:35 起就站板前**（午饭那 40 分钟人已经在逛板）；循环 90 秒走读；深聊的访客给 live 页（按 Run 前说 D10 那句） | live 卡住 → `Stop`，回录像页，别当场排错 |
-| **14:35** | 投票截止 · 10 分钟茶歇 | 带 MacBook 走去讲台，quark 留在展板；到了做 RUNBOOK「开讲前 5 分钟」 | MacBook 接不上 → U 盘插主办方电脑，Chrome 开 `talk/index.html` |
-| 14:45–15:30 | Student presentations | 自己的 10 分钟 | 浏览器崩 → 切 webm 那页 |
+| **14:35** | 投票截止 · 10 分钟茶歇 | 带 MacBook 走去讲台，quark 留在展板；到了先做 RUNBOOK「开讲前准备」里不用投影的几步；早上没做 AV check 就趁此接一次投影 | MacBook 接不上 → U 盘插主办方电脑，Chrome 开 `talk/index.html` |
+| 14:45–15:30 | Student presentations | **第二个讲**：第一位讲时候场，换场接投影，约 14:55 开讲，自己的 10 分钟 | 浏览器崩 → 切 webm 那页 |
 | 15:30–16:30 | Keynote | — | — |
 | 16:30–17:00 | Closing & networking | 回板前，live 页给感兴趣的人 | — |
 | 17:00–17:30 | Poster take-down | 撤展；DGX 上 `fuser -k 8799/tcp`、`docker compose down` | — |
@@ -225,7 +226,7 @@ demo 这张只用 → 步进、不按 space；浏览器出问题不调试，切�
 >
 > Thanks!
 
-每问的答案会改什么：① 统一电脑 → U 盘，且那台要有 Chrome / Edge，只能放 PowerPoint 就放不了 demo · ② 含问答 → 台本压到 7–8 分钟 · ③ 第一个讲 → 14:35 立刻走 · ④ 要交 → `talk.pdf`，提醒第 2 张 demo 不在 PDF 里 · ⑤ 无 Wi-Fi → 手机热点，不行就只放离线录像；无电源 → 自带插线板。
+每问的答案会改什么：① 统一电脑 → U 盘，且那台要有 Chrome / Edge，只能放 PowerPoint 就放不了 demo · ② 含问答 → 台本压到 7–8 分钟 · ③ ~~第一个讲 → 14:35 立刻走~~ 已答（09-15）：第二个讲，见 D19 · ④ 要交 → `talk.pdf`，提醒第 2 张 demo 不在 PDF 里 · ⑤ 无 Wi-Fi → 手机热点，不行就只放离线录像；无电源 → 自带插线板。
 
 ## 7. 不做的事
 

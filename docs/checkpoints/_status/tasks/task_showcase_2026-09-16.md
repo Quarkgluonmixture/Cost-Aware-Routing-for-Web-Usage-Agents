@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "09-15 材料就绪（片子 10 页 v3 对齐 + 学长意见 D17、板前走读按 v9.10 重写、当天手册）· 剩 user 掐表 / MacBook 更新离线包 / DGX tmux · event 09-16（投票 10:00–14:35，演讲 14:45）"
+eta: "09-15 材料就绪（片子 10 页 v3 对齐 + 学长意见 D17、板前走读按 v9.10 重写、当天手册）· 剩 user 掐表 / MacBook 更新离线包 / DGX tmux · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
 detail: deliverables/showcase
 created: 2026-09-02
 updated: 2026-09-15
@@ -54,3 +54,5 @@ board), the 7-slide skeleton mapped to the six printed panels, and the day-of fa
 **09-15 收尾（笔记 §511–§517）**：演讲电脑 = MacBook + Chrome，quark 全天在展板；Zekun：接自己电脑、提前发片子。
 片子按 playbook v3 与学长意见重排：question 页一个问题 + 四路标 · behaviour / failure · hindsight = Claude Code 前端自检场景 + 三个数字（`talk/hindsight_efficiency.py`）· learned 大数字 0 of 8 · why = scaling law · not-yet · close；开场加导师。
 板前走读已按印出来的 v9.10 重写（`SHOWCASE_PREP.md §2`，含「海报说过头处」口径表）。当天完整手册 `deliverables/showcase/day-of.html`（已发布为 artifact）。
+
+**09-15 晚（ROADMAP D19）**：user 09:50 到场，先帮忙布置展板；下午学生演讲第二个讲（约 14:55，以主持人为准）。手册、RUNBOOK、ROADMAP Phase 6 已同步。
