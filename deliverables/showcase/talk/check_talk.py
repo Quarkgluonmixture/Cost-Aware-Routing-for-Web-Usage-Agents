@@ -27,7 +27,8 @@ WORD = re.compile(r"[A-Za-z0-9][\w',.%/§-]*")          # the playbook's one def
 NUMBER = re.compile(r"(?<![\w.@])\d[\d,.]*%?")           # a number on a slide; not digits inside an e-mail / identifier
 
 # ROADMAP.md §4 末 — internal words that must not reach an outsider. Whole-word, case-insensitive.
-JARGON = ["oracle", "router", "routers", "mode", "modes", "pp", "AXTree", "DOM", "cell", "cells",
+# "router" left the list on 09-15 (ROADMAP D21): the room is AI people, and "perfect router" reads better than "hindsight".
+JARGON = ["oracle", "mode", "modes", "pp", "AXTree", "DOM", "cell", "cells",
           "condition", "conditions", "replicate", "replicates", "episode", "episodes", "SR",
           "P-text", "P-SoM", "P-prompt", "canonical", "phantom", "baseline"]
 # Poster sentences and words the sheet itself prints, allowed verbatim (the audience has seen them).

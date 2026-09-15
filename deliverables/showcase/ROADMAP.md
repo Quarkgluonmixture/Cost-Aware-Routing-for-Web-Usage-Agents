@@ -83,6 +83,8 @@ event: 2026-09-16
 
 - **D20（09-15，user 纠正 §520 的纯示意图）** `why` 页改回真实数据：6 个 VWA 设置的点，横轴「用某种看法能做对的题 %」，纵轴「第二常见的正确看法有几条例子」（训练判据所在，不用标签总数），加训练分界线 12.5 条；紫色箭头表示 agent 变强 → 做对的题变多 → 往线上走。口径：越过线 = 能训练、能检验，**不等于赢**（事后最优也只 1 of 8）；箭头是方向，不给越线点；2–4× 留在页脚，是下界。新图 `talk/fig/talk_capability.png`（`talk_figures.py::capability_supply`）；§520 的 `talk_scaling.png` 不再上片子。
 
+- **D21（09-15，user 决定）演讲里不说 hindsight，改说 perfect router。** 听众是做 AI 的，router 一词熟悉，也和 `why` 页的 routing 一致；learned router / perfect router 成对出现。取代 §4 词表里「router → a learned choice」那条，`check_talk.py` 的 JARGON 删掉 router / routers。demo 录像界面上的 *learned choice* 不改，台本在 `learned` 页用 *a router — like the learned choice in the demo* 接上。第一次说 perfect router 时交代「事先知道哪种看法能做对」：它是上限，不是真系统。`learned` 页 kicker 改 *Can a router learn which view to use?*，标题改 *No learned router reaches the win corner — even a perfect one rarely does.*（0 of 8 / 1 of 8）；`hindsight` 页表头 Perfect picker → Perfect router。板前走读与板前问答仍用海报原词 *hindsight*，未改。
+
 ## 3. 六个 phase
 
 每个 phase 的判据都能用一句话验证真假，验证通过就勾掉。
@@ -210,7 +212,7 @@ event: 2026-09-16
 
 **沉默三处**：II「the one view that failed」后 2 秒；VII「only one of eight」后 3 秒不翻页；IX「that's where this should be tested」后 2 秒。
 
-**去黑话词表**（片子与台本英文行 grep，零命中才算过；海报自己用过的词除外）：`oracle`（只许 *hindsight oracle* 这一个海报原词）· `router`（说 *a learned choice*；海报标题 *SO BUILD A ROUTER?* 除外）· `mode`（说 *view*）· `pp`（说 *more tasks in 100* / *points*）· `AXTree` · `DOM`（说 *page text / text tree*；海报系统图除外）· `cell` · `condition` · `replicate`（说 *rerun*）· `episode`（说 *task attempt*）· `SR` · `P-text` / `P-SoM` / `P-prompt`（说 *text-only views*）· `canonical` · `phantom` · `baseline`（说 *always-cheapest* / *best single view*）。
+**去黑话词表**（片子与台本英文行 grep，零命中才算过；海报自己用过的词除外）：`oracle`（只许 *hindsight oracle* 这一个海报原词）· ~~`router`（说 *a learned choice*）~~ **09-15 D21 起允许**，说 *learned router* / *perfect router*· `mode`（说 *view*）· `pp`（说 *more tasks in 100* / *points*）· `AXTree` · `DOM`（说 *page text / text tree*；海报系统图除外）· `cell` · `condition` · `replicate`（说 *rerun*）· `episode`（说 *task attempt*）· `SR` · `P-text` / `P-SoM` / `P-prompt`（说 *text-only views*）· `canonical` · `phantom` · `baseline`（说 *always-cheapest* / *best single view*）。
 
 ## 5. 现场操作 → `talk/RUNBOOK.md`
 

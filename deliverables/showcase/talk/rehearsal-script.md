@@ -8,7 +8,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 ## 保底版本与裁剪
 
 必须表达：看法改变行为和失败方式（`behaviour` / `failure`）· 事后选对有收益，但要对着重跑读（`hindsight`）· 学到的选择 0 of 8、事后最优也只有 1 of 8（`learned`）· 例子只在做对时才有（`why`）· 边界和三个请求（`not-yet`）。
-先删：`question` 只念问题不念四个路标；`why` 并成 `learned` 末尾一句；`hindsight` 只留购物请求、16 more / 20% less 和「if you pick perfectly」。
+先删：`question` 只念问题不念四个路标；`why` 并成 `learned` 末尾一句；`hindsight` 只留购物请求、16 more / 20% less 和「a perfect router」。
 再删或替换：`demo` 只讲 LOOK 与 READ，BOTH 一句带过（v3：demo 也可以裁）。
 短版（约 6 分钟）：`opening` → `demo`（LOOK / READ）→ `question` → `behaviour` → `failure` → `learned`（带一句「例子只在做对时才有」）→ `not-yet` → `close`。
 
@@ -86,24 +86,24 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > Now think of an everyday request: "Claude, find a desk that fits my room."
 > You want the job done, without paying for views it doesn't need. What if the agent always picked right?
 > Here's the potential we measured on our classifieds benchmark, with the large model — not Claude.
-> The best fixed view solves about twenty-seven tasks in a hundred. Perfect picking takes that to forty-three, while spending less.
+> The best fixed view solves about twenty-seven tasks in a hundred. A perfect router — one that already knows which view will work — takes that to forty-three, while spending less.
 > **Sixteen more tasks solved per hundred. Twenty percent less cost.**
-> That's the prize — if you pick perfectly. The next question is whether we can learn that choice.
+> That's the prize — for a perfect router. The next question is whether we can learn that choice.
 
 提示：先对观众念购物请求，再横向指成功率的 27 → 43，最后指费用 100% → 80%；不重讲 demo，不展示书桌任务的虚构运行。
-边界：16 是每百题多完成的任务数（+16.07 个百分点），不是相对提升 16%。两项收益都来自 `talk/hindsight_efficiency.json` 的 B0·classifieds：27.23% → 43.30%，成本 −20.2%，相对最佳固定看法。书桌是生活场景类比；这不是购物成功率或 Claude 产品的实测承诺。perfect hindsight 必须保留。
-转场：→ `learned` *"So can a model learn to make that pick?"*
+边界：16 是每百题多完成的任务数（+16.07 个百分点），不是相对提升 16%。两项收益都来自 `talk/hindsight_efficiency.json` 的 B0·classifieds：27.23% → 43.30%，成本 −20.2%，相对最佳固定看法。书桌是生活场景类比；这不是购物成功率或 Claude 产品的实测承诺。perfect router 必须保留，并说清它事先知道每道题哪种看法能做对，是上限不是真系统。
+转场：→ `learned` *"So can a router learn to make that pick?"*
 
 ## 段落 learned —— 页面 `learned`
 
 目的：让大家看到绿色区域里没有学到的选择；0 of 8 是读图后的总结。
 
-> So can a model learn to make that pick? We tried five different ways.
+> So can a router — like the learned choice in the demo — learn to make that pick? We tried five different ways.
 > The star is always using the cheapest view. Left is cheaper; up solves more. We want the green corner. None of the orange dots gets there — every one of them costs more than the star.
-> **Zero out of eight.** In none of our eight settings does a learned picker beat simply always using the cheapest view.
-> **Even perfect hindsight only manages it in one of eight** — so this isn't just a weak model.
+> **Zero out of eight.** In none of our eight settings does a learned router beat simply always using the cheapest view.
+> **Even a perfect router only manages it in one of eight** — so this isn't just a weak model.
 
-提示：先指星号，再指左上绿色角，再指右上角那行字和橙点（全在星号右边）；「Zero out of eight」后停一下。紫色方块是事后选择，绿色角里有一个，不能说所有选择都没进去。图上只放「没见过的题上测」的结果；「在训练题上测」的乐观结果（旧图浅橙三角）只留到问答。
+提示：先指星号，再指左上绿色角，再指右上角那行字和橙点（全在星号右边）；「Zero out of eight」后停一下。紫色方块是 perfect router（事后上限），绿色角里有一个，不能说所有选择都没进去。图上只放「没见过的题上测」的结果；「在训练题上测」的乐观结果（旧图浅橙三角）只留到问答。
 边界：⛔ 不说 *routing doesn't work*；说 *not today*。
 转场：→ `why` *"Here's why — call it the scaling law of routing."*
 
@@ -146,7 +146,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 最尖的四个放这里，其余全部在 `../SHOWCASE_PREP.md §4`（含「为什么六种看法」「可部署吗」「更强的模型」「重跑噪声这么大结果还算数吗」）。
 
 **「0 of 8 是不是训练数据太少？」**（最可能的第一问）
-> We tested exactly that. The learning curves are still rising, so there is signal. But more data pushes the learner toward perfect hindsight — and perfect hindsight itself reaches the win region in one of eight. More data can't cross a line hindsight doesn't cross. We priced it anyway: the failing settings need two to four times more tasks. That's a specification, not an impossibility.
+> We tested exactly that. The learning curves are still rising, so there is signal. But more data pushes the learner toward a perfect router — and a perfect router itself reaches the win region in one of eight. More data can't cross a line a perfect router doesn't cross. We priced it anyway: the failing settings need two to four times more tasks. That's a specification, not an impossibility.
 
 **「always-cheapest 是每题选还是固定？」**
 > Fixed. The one view that costs least on average in that setting, used for every task. Not a per-task pick.
@@ -155,7 +155,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > Partly, at the margin we could test. In the one setting where every view was rerun, adding a second view bought about seven tasks in a hundred, and rerunning the same view bought four and a half to seven and a half. We only have one rerun, not five, so we don't claim the whole gain is noise — but we don't sell it as a result either.
 
 **「+16 是真系统做到的吗？」**
-> No — that's perfect hindsight, an upper bound, and the rerun band sits right next to it. What a learned choice actually reached is the plot: none in the win region.
+> No — that's a perfect router, an upper bound that knows every outcome, and the rerun band sits right next to it. What a learned router actually reached is the plot: none in the win region.
 
 **「那生产系统今天该怎么办？」**
 > On these benchmarks, always using the cheapest view is hard to beat on both counts, and BOTH is the dearest. Pick one view for your task mix. A learned per-task choice isn't there yet — improve the agent first, collect reliable examples, then learn when to look.

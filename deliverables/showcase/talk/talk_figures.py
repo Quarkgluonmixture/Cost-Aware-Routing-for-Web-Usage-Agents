@@ -194,7 +194,7 @@ def routing() -> None:
             ax.scatter(*p["oracle_triage"], s=160, marker="s", facecolor="none", edgecolor=hindsight, lw=2.4, zorder=4)
         if "learned_nested_honest" in p:
             ax.scatter(*p["learned_nested_honest"], s=190, color=f.C_NESTED, zorder=5)
-    ax.text(xhi - 0.01, yhi * 0.97, "every learned choice\ncosts more than the star", ha="right", va="top",
+    ax.text(xhi - 0.01, yhi * 0.97, "every learned router\ncosts more than the star", ha="right", va="top",
             fontsize=15, color=f.C_NESTED, fontweight="bold", linespacing=1.2)
     ratios = [r for r in (0.8, 0.9, 1.0, 1.1, 1.25, 1.5) if xlo <= np.log2(r) <= xhi]
     ax.set_xticks([np.log2(r) for r in ratios])
@@ -207,8 +207,8 @@ def routing() -> None:
     ax.tick_params(axis="y", labelsize=14)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
-    ax.legend(handles=[Line2D([], [], marker="o", ls="", ms=13, color=f.C_NESTED, label="learned choice, tested on tasks it never saw"),
-                       Line2D([], [], marker="s", ls="", ms=12, mfc="none", mec=hindsight, mew=2.2, label="perfect hindsight")],
+    ax.legend(handles=[Line2D([], [], marker="o", ls="", ms=13, color=f.C_NESTED, label="learned router, tested on tasks it never saw"),
+                       Line2D([], [], marker="s", ls="", ms=12, mfc="none", mec=hindsight, mew=2.2, label="perfect router (knows every outcome)")],
               loc="lower right", frameon=False, fontsize=14)
     fig.tight_layout()
     _save(fig, "talk_routing.png")
