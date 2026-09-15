@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "09-15 深夜 D25：opening → agents（三块真实抓取，待换 user 自截的 Claude Code / Codex CLI 终端图）→ demo（演讲版减负、sunset 高亮）→ prize（27 → 43 两根条 + −20%）→ question…，11 页 · 剩 收截图换 agents 页 / 掐表（约 988 词）/ DGX tmux / 发最新 PDF · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
+eta: "09-15 深夜 D26：opening → agents（大 logo Codex / Claude Code / browser-use + 裁到表单的真实抓取）→ demo（演讲版减负、sunset 高亮）→ prize（27 → 43 两根条 + −20%）→ question…，11 页 · 剩 user 过目 / 掐表（约 988 词）/ DGX tmux / 发最新 PDF · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
 detail: deliverables/showcase
 created: 2026-09-02
 updated: 2026-09-15

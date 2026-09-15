@@ -26,17 +26,17 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 
 ## 段落 agents —— 页面 `agents`
 
-目的：用台下自己用的工具认出「web agent」，再让三种看法各留一个印象 —— 这一页只要让人记住「有三种、颜色各一」，细节留给 demo。三块都是真实抓取（同一次 Playwright MCP 会话），不是录像，也不是画出来的；三块依次弹出。
+目的：用台下自己用的工具认出「web agent」，再让三种看法各留一个印象 —— 这一页只要让人记住「有三种、颜色各一」，细节留给 demo。三块各一个大 logo（Codex · Claude Code · browser-use）+ 同一张真实页面裁到注册表单的抓取；三块依次弹出。
 
 > You've all used these. When Claude Code or Codex opens a browser and works a page for you — fills a form, checks a result — that's a web agent.
 > Here's one real page, Wikipedia's sign-up form, captured this week. Three ways to see it.
 > LOOK: a screenshot. Codex's computer use can work from this.
 > READ: the page as text. This is what Claude Code gets through Playwright — this one page is a hundred and sixty-one lines.
-> BOTH: the screenshot with every clickable thing boxed and numbered. The marks are ours.
+> BOTH: the screenshot with every clickable thing boxed and numbered. browser-use does this by default; so does our agent.
 > Each tool can use the other views too. Keep the three colours in mind — you're about to see them run.
 
 提示：三块弹出时从左到右各指一下；READ 指高亮的 textbox / button 行；BOTH 指表单上的编号框。
-边界：三块是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`，同一会话：截图、快照、元素坐标），BOTH 的框是本项目的 SoM 画框代码画在同一张截图上的，不是 Claude Code 或 Codex 做任务的记录；窗口框只标出是哪个工具，不说「Claude 做了这个」。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），OpenAI 文档原话是「uses screenshots and other tool results」，所以台上说「can work from this」和「each tool can use the other views」，不说「Codex 只看截图」。161 行是这一次抓取的实测，页面会变。
+边界：LOOK / READ 两块是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`，同一会话），BOTH 是 browser-use 0.13 自己对同一页的高亮截图（`talk/browser_use_capture.py`，它默认 `highlight_elements=True`，虚线框和编号是它画的）；三块都裁到表单区。都不是某个工具做任务的记录；logo 只标出是哪个工具，不说「Claude 做了这个」。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），OpenAI 文档原话是「uses screenshots and other tool results」，所以台上说「can work from this」和「each tool can use the other views」，不说「Codex 只看截图」。161 行是这一次抓取的实测，页面会变。demo 里 BOTH 泳道的框是我们自己的青色框，和 browser-use 的样式不同，口径是「同一类做法」。
 转场：*"you're about to see them run."* → `demo`
 
 ## 段落 demo —— 页面 `demo` / 操作 RUNBOOK「台上的动线」II

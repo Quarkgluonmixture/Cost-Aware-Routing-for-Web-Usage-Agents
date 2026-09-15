@@ -1,0 +1,93 @@
+Jump to content
+[164]<nav aria-label=Site />
+	[166]<div id=vector-main-menu-dropdown title=Main menu />
+		[68]<label id=vector-main-menu-dropdown-label />
+			[49]<span />
+			Main menu
+		|scroll element|<div /> (0.0 pages above, 14.1 pages below)
+[268]<a image_src=enwiki-25.svg image_alt=Wikipedia image_src=wikipedia-wordmark-en-25.svg image_alt=The Free Encyclopedia image_src=wikipedia-tagline-en-25.svg />
+[363]<li id=pt-sitesupport-2 level=1 />
+	[364]<a />
+		Donate
+[370]<a title=You are encouraged to create an account and log in; however, it is not mandatory />
+	Create account
+[375]<li id=pt-login-2 level=1 />
+	[376]<a title=You're encouraged to log in; however, it's not mandatory. [alt-o] keyshortcuts=Alt+o />
+		Log in
+Create account
+[507]<div id=right-navigation />
+	[521]<nav aria-label=Page tools />
+		[523]<div id=vector-page-tools-dropdown />
+			[80]<label id=vector-page-tools-dropdown-label />
+				[47]<span />
+				Tools
+			|scroll element|<div /> (0.0 pages above, 5.0 pages below)
+Appearance
+[87]<button aria-label=Hide Appearance />
+	hide
+Text
+[635]<span />
+Small
+[641]<span />
+Standard
+[647]<span />
+Large
+This page always uses small font size
+Width
+[664]<span />
+Standard
+[670]<span />
+Wide
+Color
+[687]<span />
+Automatic
+[693]<span />
+Light
+[699]<span />
+Dark
+Username
+Avoid using your real name.
+[33]<button id=mw-username-help aria-label=username policy />
+|SHADOW(open)|[21]<input id=wpName2 name=wpName placeholder=Enter your username autocomplete=username required=true />
+Password
+|SHADOW(open)|[22]<input id=wpPassword2 name=wpPassword placeholder=Enter a password autocomplete=new-password type=password required=true />
+[9]<span />
+Confirm password
+|SHADOW(open)|[23]<input id=wpRetype name=retype placeholder=Enter password again autocomplete=new-password type=password required=true />
+[11]<span />
+Email address
+(optional)
+|SHADOW(open)|[24]<input id=wpEmail name=email placeholder=Enter your email address maxlength=255 autocomplete=email type=email />
+[34]<button id=wpCreateaccount type=submit value=Create your account />
+	Create your account
+This site is protected by hCaptcha and its
+[88]<a />
+	Privacy Policy
+and
+[89]<a />
+	Terms of Service
+apply.
+[821]<a />
+	Privacy policy
+[825]<a />
+	About Wikipedia
+[829]<a />
+	Disclaimers
+[833]<a />
+	Contact Wikipedia
+[837]<a />
+	Legal & safety contacts
+[840]<a />
+	Code of Conduct
+[844]<a />
+	Developers
+[848]<a />
+	Statistics
+[852]<a />
+	Cookie statement
+[856]<a />
+	Mobile view
+[863]<a image_alt=Wikimedia Foundation image_src=wikimedia.svg />
+	[865]<source />
+[868]<a image_alt=Powered by MediaWiki image_src=mediawiki_compact.svg />
+	[870]<source />
