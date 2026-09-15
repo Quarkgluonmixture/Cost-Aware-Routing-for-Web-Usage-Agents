@@ -5,7 +5,7 @@ priority: P0
 horizon: now
 order: 0
 blocker: ""
-eta: "09-15 材料就绪（片子 10 页 v3 对齐 + 学长意见 D17、板前走读按 v9.10 重写、当天手册）· 剩 user 掐表 / MacBook 更新离线包 / DGX tmux · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
+eta: "09-15 晚：片子 11 页（agents 真实抓取 + prize 数字卡 + perfect router 措辞），user 仍不太满意、开新 session 继续 · 剩 问清不满意处 / 掐表（约 932 词）/ DGX tmux / 发最新 PDF · event 09-16（user 09:50 到场帮忙布展 · 投票 10:00–14:35 · 下午学生演讲第二个，约 14:55）"
 detail: deliverables/showcase
 created: 2026-09-02
 updated: 2026-09-15
@@ -56,3 +56,5 @@ board), the 7-slide skeleton mapped to the six printed panels, and the day-of fa
 板前走读已按印出来的 v9.10 重写（`SHOWCASE_PREP.md §2`，含「海报说过头处」口径表）。当天完整手册 `deliverables/showcase/day-of.html`（已发布为 artifact）。
 
 **09-15 晚（ROADMAP D19）**：user 09:50 到场，先帮忙布置展板；下午学生演讲第二个讲（约 14:55，以主持人为准）。手册、RUNBOOK、ROADMAP Phase 6 已同步。
+
+**09-15 晚收尾（ROADMAP D20–D23，笔记 §518–§526）**：why 换真实数据图 · learned 散点图简化 + 改说 perfect router · 开场 agents 用真实抓取（放进 Claude Code / Codex 窗口框）+ prize 数字卡 · 删书桌页 · Google 日历已建。user 仍不太满意，开新 session；交接见 next_steps §0。
