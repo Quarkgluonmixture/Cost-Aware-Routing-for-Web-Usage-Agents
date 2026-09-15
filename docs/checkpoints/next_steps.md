@@ -44,7 +44,7 @@ updated: 2026-09-15
 > ### 还没做的
 > 1. user 在 MacBook 上看一遍新开场（agents 大 logo 版 → demo 演讲版 → prize 27 → 43），不满意再改
 > 2. 台本出声掐表（约 988 词；超过 9:30 就按 `rehearsal-script.md` 顶部的裁剪顺序砍）
-> 3. DGX：live server 移进 tmux + 重置站点（手册「今晚准备 B」）
+> 3. ~~DGX：live server 移进 tmux + 重置站点~~ **已做 09-15 23:43**（tmux 会话 `showcase`，站点 `down`/`up` 重置，health ok，余额 $30.18）。⚠️ 别用 `pkill -f "…server.py"`：模式会匹配到自己的 bash -c，把当前 shell 一起杀掉（§527.7 又踩了一次）；用 `fuser -k 8799/tcp` 或先 `pgrep` 拿 PID 再 `kill`
 > 4. user：MacBook 下载最新离线包 · 补发最新 `talk/talk.pdf` 给 Zekun · 板前 90 秒走读练熟
 > 5. 当天才能问清：10 分钟含不含问答 · 展板旁桌子 / 插座 / Wi-Fi。**已知（ROADMAP D19）**：09:50 到场先帮忙布展，AV check 只能 10:15 前挤时间；下午学生演讲**第二个**讲，约 14:55
 > 6. Google 日历已建（主日历 16 个 `Showcase · ` 事件，笔记 §526）；user 原有的「Research Day — Poster Exhibition」事件仍写 Registration 09:30、07:30 会弹提醒，改不改由 user 定；另有 6 个事件带默认 30 分钟提醒

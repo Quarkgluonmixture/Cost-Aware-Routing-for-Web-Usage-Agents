@@ -232,7 +232,7 @@ td .say{font-family:var(--serif);font-size:1rem}
         <li>classifieds 站点容器 <code>p79live_cls_web / db</code>，只开在 <code>127.0.0.1:9981</code>。</li>
         <li>live server <code>server.py</code>，端口 <code>8799</code>：自己提供页面，后台定时登录站点，给三栏各起一个 agent。</li>
         <li>三栏 agent 调 <b>B0 的 AWS 代理</b>，额度多人共用。09-15 实测余额 <b>$30.18</b>，一次三栏 live 约 $0.15。</li>
-        <li>09-15 现状：容器已连续运行 4 天，server 在跑，但<b>不在 tmux 里</b>（见今晚准备 B）。</li>
+        <li>09-15 23:43 已做完「今晚准备 B」：站点容器重置过（`down` → `up`），server 在 <b>tmux 会话 <code>showcase</code></b> 里，health ok，代理余额 $30.18。明早只需再查一次 health 和余额。</li>
       </ul>
     </div>
     <div class="machine">
@@ -279,8 +279,8 @@ shows the title. I'll present it from my laptop. Any comments are very welcome!<
   </div>
 
   <div class="group">
-    <h3>B · DGX：把 live 服务放进 tmux，并重置站点 <span class="tag t-dgx">DGX</span></h3>
-    <p>现在 server 是直接启动的进程，启动它的那个终端一断，它就可能跟着停。放进 tmux 就不受影响。<code>docker compose down</code> 会丢弃站点里测试时留下的改动，等于重置。今晚做或明早出门前做都可以。</p>
+    <h3>B · DGX：把 live 服务放进 tmux，并重置站点 <span class="tag t-dgx">DGX</span> <span class="tag t-me">已做 23:43</span></h3>
+    <p><b>09-15 23:43 已经做完</b>：站点 <code>down</code> → <code>up</code> 重置，server 在 tmux 会话 <code>showcase</code> 里，health 返回 ok。下面的命令留作明早 health 不正常时重跑；正常就只做「明早出门前」那两条检查。</p>
     <ol class="check">
       <li><input type="checkbox" id="b1" data-key="b1"><label for="b1"><b>在 DGX 上依次运行下面的命令</b>
         <span class="sub">从 VS Code 的 DGX 终端，或在 quark 上 <code>ssh spark</code> 登录后运行。</span></label></li>
