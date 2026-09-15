@@ -87,6 +87,8 @@ event: 2026-09-16
 
 - **D22（09-15，user 与学长）开场改为真实抓取，删书桌页。** 标题页后直接放 demo 太突兀、信息太多 ⇒ 先放 `agents`：同一张真实 Wikipedia 注册页的两种真实抓取（左：Playwright MCP `browser_snapshot` 原文逐字节选，这一页 161 行；右：同一次会话的截图），标 *READ · Claude Code + Playwright MCP* / *LOOK · GPT-6 Astra computer use*；再放 `prize` 四张卡片（perfect router vs best single view，B0 三设置）；然后进 demo。中途做过一版写死的动画（学长：hard code，且与 demo 重复），未提交。`hindsight` 书桌页与 `prize` 重复，删除；`question` 路标 4 → 3，`learned` kicker ④ → ③；主流程 11 页。素材与脚本 `talk/real_capture.py`。两张图都不是 Claude 或 Astra 的运行记录；Astra 一侧只引 OpenAI computer-use 文档原话 *uses screenshots and other tool results*，Astra 自己的接口我们没有记录，不说「只看截图」。
 
+- **D23（09-15，user）`agents` 两图放进工具窗口框**：左 *Claude Code · Playwright MCP*，右 *Codex · GPT-6 Astra · computer use*，让观众一眼认出是哪两个工具；框只画标题栏，内容仍是真实抓取，不加编出来的对话。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），页脚写 *the app frames only name the tools · each tool can also use the other view*，台词说 *can work from a screenshot*，不说「Codex 只看截图」。
+
 ## 3. 六个 phase
 
 每个 phase 的判据都能用一句话验证真假，验证通过就勾掉。

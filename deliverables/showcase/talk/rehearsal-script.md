@@ -30,12 +30,12 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 
 > A web agent is a model that does things on web pages for you — fill in a form, book something, buy something.
 > Here's one real page, Wikipedia's sign-up form, captured this week two ways.
-> On the left is what Claude Code gets through Playwright: the page as text. This one page is a hundred and sixty-one lines.
-> On the right is what a screenshot agent like GPT-6 Astra works from: just the picture.
+> On the left, Claude Code with Playwright gets the page as text. This one page is a hundred and sixty-one lines.
+> On the right, Codex doing computer use with GPT-6 Astra can work from a screenshot of the same page. Each tool can use the other view too.
 > In between there's a third way — the screenshot with numbered marks. We call the three views READ, LOOK and BOTH.
 
 提示：先指左边高亮的 textbox 和 button 行，再指右边同一个表单。
-边界：两张图是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`），不是 Claude 或 Astra 做任务的记录，不说「Claude 做了这个」。Astra 看截图出自 OpenAI computer-use 文档原话「uses screenshots and other tool results」；Codex Desktop 是两种都用，不说 OpenAI 全家只看截图。161 行是这一次抓取的实测，页面会变。
+边界：两张图是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`），不是 Claude Code 或 Codex 做任务的记录，两个窗口框只是标出是哪个工具，不说「Claude 做了这个」。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），OpenAI 文档原话是「uses screenshots and other tool results」，所以台上说「can work from a screenshot」和「each tool can use the other view」，不说「Codex 只看截图」。161 行是这一次抓取的实测，页面会变。
 转场：→ `prize` *"So does the choice matter?"*
 
 ## 段落 prize —— 页面 `prize`

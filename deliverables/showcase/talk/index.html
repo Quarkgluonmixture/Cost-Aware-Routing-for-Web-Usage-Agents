@@ -243,11 +243,17 @@
     .slide{height:7.5in;width:13.333333in}
   }
   /* ══ agents: two real captures side by side · prize: the cards ══ */
-  .real-pair{display:grid;grid-template-columns:1fr 1fr;gap:2vw;margin-top:2.6vh;align-items:start}
-  .real-pair figure{display:flex;flex-direction:column;min-height:0;margin:0}
-  .real-pair figcaption{font-family:var(--mono);font-size:min(2.1vh,1.18vw);padding:.9vh 1vw;background:#eeedfd;border-radius:6px 6px 0 0;color:var(--ink)}
-  .real-pair figcaption b{color:var(--violet)}
-  .real-pair img{width:100%;height:auto;max-height:60vh;object-fit:contain;object-position:top center;border:1px solid var(--rule);border-top:0;border-radius:0 0 6px 6px;background:#fff}
+  .real-pair{display:grid;grid-template-columns:1fr 1fr;gap:2vw;margin-top:2.4vh;align-items:start}
+  .app{margin:0;border-radius:10px;overflow:hidden;background:#1b1c26;box-shadow:0 .7vh 2.6vh rgba(18,22,46,.2)}
+  .app-bar{display:flex;align-items:center;gap:.5vw;padding:1vh 1vw;background:#101119;color:#a3a9c6;font-family:var(--mono);font-size:min(2.1vh,1.18vw)}
+  .app-bar i{width:min(1.2vh,.68vw);height:min(1.2vh,.68vw);border-radius:50%;background:#3a3d52;display:inline-block}
+  .app-bar b{color:#fff;font-weight:700;margin:0 .5vw 0 .6vw}
+  .app-claude .app-bar b::before{content:"✻ ";color:#e8845c}
+  .app-codex .app-bar b::before{content:">_ ";color:#9fb3ff}
+  .app img{display:block;width:100%;height:auto;max-height:50vh;object-fit:contain;background:#fff}
+  .app .shot-head{padding:.7vh 1vw;color:#a3a9c6;font-family:var(--mono);font-size:min(1.6vh,.9vw)}
+  .app figcaption{padding:.9vh 1vw;background:#eeedfd;color:var(--ink);font-family:var(--mono);font-size:min(2.1vh,1.18vw);text-align:center}
+  .app figcaption b{color:var(--violet)}
   .ag-prize{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw;margin-top:15vh}
   .ag-card{border-radius:12px;background:var(--night);padding:5.5vh 1.4vw;opacity:0;transform:scale(.55)}
   .ag-card b{display:block;font-family:var(--serif);font-weight:400;font-size:min(6.4vh,3.6vw);line-height:1.05;color:#fff;white-space:nowrap}
@@ -278,16 +284,19 @@
 <section class="slide" id="agents">
   <h2>Same page, two ways an agent sees it.</h2>
   <div class="real-pair">
-    <figure>
-      <figcaption><b>READ</b> · Claude Code + Playwright MCP gets text</figcaption>
+    <figure class="app app-claude">
+      <div class="app-bar"><i></i><i></i><i></i><b>Claude Code</b><span>Playwright MCP</span></div>
       <img src="fig/real_wiki_snapshot_excerpt.png" alt="Real Playwright MCP accessibility snapshot of Wikipedia's Create account page, verbatim excerpt">
+      <figcaption><b>READ</b> · the page as text</figcaption>
     </figure>
-    <figure>
-      <figcaption><b>LOOK</b> · GPT-6 Astra computer use gets a screenshot</figcaption>
+    <figure class="app app-codex">
+      <div class="app-bar"><i></i><i></i><i></i><b>Codex</b><span>GPT-6 Astra · computer use</span></div>
+      <div class="shot-head">screenshot · real capture</div>
       <img src="fig/real_wiki_createaccount_screenshot.png" alt="Real screenshot of the same Wikipedia Create account page">
+      <figcaption><b>LOOK</b> · a screenshot</figcaption>
     </figure>
   </div>
-  <p class="foot">Real captures, Wikipedia sign-up page, 15 Sep 2026 · OpenAI docs: the model “uses screenshots and other tool results”</p>
+  <p class="foot">Real captures of one page, 15 Sep 2026 · frames name the tools · each can also use the other view</p>
 </section>
 
 <!-- ══ prize ══ what picking the right view per task would buy: perfect router vs best single view, large model,
