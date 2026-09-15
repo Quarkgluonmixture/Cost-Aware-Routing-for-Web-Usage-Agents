@@ -28,10 +28,10 @@ updated: 2026-09-15
 > chronicle → **笔记 §511–§527**（D24 这轮：§527）· commits `90544a5` … 本轮 D24 commit，**全部未 push**
 >
 > ### 现在的片子（正文 11 页，页面 id，D25 顺序）
-> opening · **agents**（*A web agent works the page for you — and can see it three ways.*：三块「大 logo + 裁到表单的真实抓取」按 demo 泳道顺序与颜色依次弹出 —— LOOK 截图（Codex）· READ 快照紧凑节选（Claude Code）· BOTH browser-use 自己的高亮截图（browser-use，D26））· demo（演讲版隐藏 demo 自己的标题和标签页、task 句放大、*sunset* 高亮）· **prize**（两根条 27 → 43 of 100 + −20% token bill，页脚另两个网站；D25）· question（3 个路标）· behaviour · failure · learned（perfect router 措辞 + 简化散点图，D21）· why（真实 6 点 + 训练分界线，D20）· not-yet · close · reference
+> opening · **agents**（*A web agent works the page for you — and can see it three ways.*：三块「大 logo + 裁到表单的真实抓取」按 demo 泳道顺序与颜色依次弹出 —— LOOK 截图（Codex）· READ 快照紧凑节选（Claude Code）· BOTH browser-use 自己的高亮截图（browser-use，D26））· demo（演讲版隐藏 demo 自己的标题和标签页、task 句放大、*sunset* 高亮）· **prize**（模板两块数字卡 27 → 43 of 100 · −20% token bill，页脚另两个网站；D25/D26）· question（3 个路标）· behaviour · failure · learned（perfect router 措辞 + 简化散点图，D21）· why（真实 6 点 + 训练分界线，D20）· not-yet · close · reference
 >
 > ### 09-15 深夜的状态（D26）—— 不再等截图
-> D24 把数字卡放第 2 页被 user 否了 → D25 改为 demo 之后的「27 → 43」两根条（§527.4）。agents 页 user 嫌注册页太小、框认不出工具 → D26 改成三块「7vh 大 logo + 裁到表单的抓取」，BOTH 换成 browser-use 0.13 自己的高亮截图（`talk/browser_use_capture.py`，§527.5）。D25 里让 user 自截 Claude Code / Codex 终端图的方案**作废**。
+> D24 把数字卡放第 2 页被 user 否了 → D25 改为 demo 之后的「27 → 43」（§527.4）。agents 页 user 嫌注册页太小、框认不出工具 → D26 改成三块「7vh 大 logo + 裁到表单的抓取」，BOTH 换成 browser-use 0.13 自己的高亮截图（`talk/browser_use_capture.py`，§527.5）；user 嫌第一版「不像 SoM」→ 改用它的 DOM 覆盖层（每元素框 + 编号）；prize 条形图 user 嫌丑 → 模板两块数字卡（§527.6）。D25 里让 user 自截 Claude Code / Codex 终端图的方案**作废**。**user 若仍要红框**：换我们自己的画框代码改红 + 标 VisualWebArena，browser-use logo 撤掉。
 > 每改一次仍走：check_talk → export_pdf → 看 PDF 对应页 → 更新离线包 → 手册版本号 → 提交 → 重新发布手册。
 >
 > ### 先跑命令确认现状（别照抄旧数字）

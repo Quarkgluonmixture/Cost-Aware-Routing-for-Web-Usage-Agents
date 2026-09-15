@@ -245,26 +245,15 @@
     html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .slide{height:7.5in;width:13.333333in}
   }
-  /* ══ prize: one setting, two thin bars (best single view → right view per task) + one side number ══
-     Single measure, two rows: no legend, values as text in ink, bars thin with rounded data-ends; they grow on entry. */
-  .prize-wrap{flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.34fr);gap:3vw;align-items:center;padding:0 1vw}
-  .prize-bars{display:grid;gap:4vh;font-family:var(--sans)}
-  .prize-row{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:1.6vw}
-  .prize-row .lab{font-size:min(3.2vh,1.8vw);color:var(--muted);text-align:right;white-space:nowrap;min-width:11em}
-  .prize-row.hi .lab{color:var(--ink)}
-  /* the track is the 0–100 scale; the bar and its value both read --w, so the number rides the data-end */
-  .prize-row .track{display:block;height:6vh;position:relative;border-left:2px solid var(--rule)}
-  .prize-row .track i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:0 4px 4px 0;background:#B8BFD9;transition:width .9s cubic-bezier(.2,.7,.2,1)}
-  .prize-row.hi .track i{background:var(--violet)}
-  .prize-row .val{position:absolute;left:0;top:50%;transform:translateY(-50%);margin-left:1vw;font-family:var(--serif);font-weight:400;
-    font-size:min(7vh,3.9vw);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;transition:left .9s cubic-bezier(.2,.7,.2,1)}
-  #prize.go .prize-row .track i{width:var(--w)}
-  #prize.go .prize-row .val{left:var(--w)}
-  .prize-side{border-left:1px solid var(--rule);padding-left:2.4vw;font-family:var(--sans)}
-  .prize-side b{display:block;font-family:var(--serif);font-weight:400;font-size:min(11vh,6vw);line-height:1;color:var(--violet);white-space:nowrap}
-  .prize-side span{display:block;margin-top:1.4vh;font-size:min(3vh,1.7vw);color:var(--ink)}
+  /* ══ prize: two of the template's stat tiles — the hero pair 27 → 43 and the bill (D26; the bar version lasted an hour) ══ */
   #prize .foot{margin-top:1.6vh}
-  @media print{#prize .prize-row .track i{width:var(--w)!important;transition:none} #prize .prize-row .val{left:var(--w)!important;transition:none}}
+  .stats.two{grid-template-columns:1.35fr 1fr;gap:2.4vw;align-content:center}
+  .stats.two .stat{padding:6vh 2vw 5.4vh;text-align:center}
+  .stats.two .big{font-size:min(15vh,8vw);line-height:1}
+  .stats.two .big .from{color:var(--muted)}
+  .stats.two .big .arrow{color:var(--purple);font-size:.7em;vertical-align:.12em;margin:0 .06em}
+  .stats.two .lab{font-size:min(3.6vh,2vw);margin-top:2.2vh}
+  .stats.two .sub{font-size:min(2.6vh,1.45vw)}
 
   /* the demo's lane colours (demo/index.html :root) so the three panels here read as the three lanes there */
   :root{--look:#1F5FD6;--read:#E8720C;--both:#14855F}
@@ -340,20 +329,17 @@
   <div class="demo-fit"><iframe src="../demo_portable.html?task=130&autoplay=0" title="demo: task 130 in LOOK, READ and BOTH" loading="eager"></iframe></div>
 </section>
 
-<!-- ══ prize ══ after the demo (D25, 15 Sep evening): that was one task; across every task on that site, choosing the
+<!-- ══ prize ══ after the demo (D25/D26, 15 Sep evening): that was one task; across every task on that site, choosing the
      right view each time is worth this much. One setting, the demo's own (B0 · classifieds, 224 tasks): best single view
      27.23 → perfect per-task choice 43.30 solved per 100, billed cost −20.2% (talk/hindsight_efficiency.json); the other
-     two settings sit in the foot. A perfect-router bound; the word "router" waits for the `learned` page. -->
+     two settings sit in the foot. Two of the template's stat tiles. A perfect-router bound; "router" waits for `learned`. -->
 <section class="slide" id="prize">
-  <h2>Choose the right view for every task: 27 → 43 of 100 solved.</h2>
-  <div class="prize-wrap">
-    <div class="prize-bars">
-      <div class="prize-row"><span class="lab">best single view</span><span class="track" style="--w:27.23%"><i></i><b class="val">27</b></span></div>
-      <div class="prize-row hi"><span class="lab">right view per task</span><span class="track" style="--w:43.30%"><i></i><b class="val">43</b></span></div>
-    </div>
-    <div class="prize-side"><b>−20%</b><span>token bill</span></div>
+  <h2>Choose the right view for every task:</h2>
+  <div class="stats two">
+    <div class="stat"><div class="big"><span class="from">27</span> <span class="arrow">→</span> 43</div><div class="lab">of 100 tasks solved</div><div class="sub">best single view → right view per task</div></div>
+    <div class="stat"><div class="big">−20%</div><div class="lab">token bill</div><div class="sub">same 224 tasks</div></div>
   </div>
-  <p class="foot">Upper bound · the demo's site, 224 tasks · other two sites +11 and +16 per 100, −14 and −27% · not Claude or GPT results</p>
+  <p class="foot">Upper bound · the demo's site · other two sites +11 and +16 per 100, −14 and −27% · not Claude or GPT results</p>
 </section>
 
 <!-- ══ question ══ the one question the rest of the talk answers; the close answers it -->
@@ -492,7 +478,6 @@
     pos.textContent=s.classList.contains('backup')?'reference':`${main.indexOf(s)+1} / ${main.length}`;
     save(s.id); fitDemo();
     if(s.id==='agents') agPop(s);
-    if(s.id==='prize'){ s.classList.remove('go'); void s.offsetWidth; setTimeout(()=>s.classList.add('go'),150); }   // bars grow on entry
     // the demo page owns the arrow keys: hand focus to its iframe, take it back elsewhere
     const f=s.querySelector('iframe');
     if(f) f.focus(); else if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur();

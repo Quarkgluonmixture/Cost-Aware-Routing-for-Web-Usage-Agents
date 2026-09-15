@@ -36,7 +36,7 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 > Each tool can use the other views too. Keep the three colours in mind — you're about to see them run.
 
 提示：三块弹出时从左到右各指一下；READ 指高亮的 textbox / button 行；BOTH 指表单上的编号框。
-边界：LOOK / READ 两块是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`，同一会话），BOTH 是 browser-use 0.13 自己对同一页的高亮截图（`talk/browser_use_capture.py`，它默认 `highlight_elements=True`，虚线框和编号是它画的）；三块都裁到表单区。都不是某个工具做任务的记录；logo 只标出是哪个工具，不说「Claude 做了这个」。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），OpenAI 文档原话是「uses screenshots and other tool results」，所以台上说「can work from this」和「each tool can use the other views」，不说「Codex 只看截图」。161 行是这一次抓取的实测，页面会变。demo 里 BOTH 泳道的框是我们自己的青色框，和 browser-use 的样式不同，口径是「同一类做法」。
+边界：LOOK / READ 两块是用 Playwright MCP 对真实网页抓的（`talk/real_capture.py`，同一会话），BOTH 是 browser-use 0.13 自己对同一页的 DOM 覆盖层高亮截图（`talk/browser_use_capture.py`，它的 `add_highlights` 给每个可交互元素套虚线框加编号徽章；编号是它自己的元素 id，不是 1..K）；三块都裁到表单区。都不是某个工具做任务的记录；logo 只标出是哪个工具，不说「Claude 做了这个」。Codex 的 computer use 实际是截图加无障碍文本混用（09-09 调研），OpenAI 文档原话是「uses screenshots and other tool results」，所以台上说「can work from this」和「each tool can use the other views」，不说「Codex 只看截图」。161 行是这一次抓取的实测，页面会变。demo 里 BOTH 泳道的框是我们自己的青色框，和 browser-use 的样式不同，口径是「同一类做法」。
 转场：*"you're about to see them run."* → `demo`
 
 ## 段落 demo —— 页面 `demo` / 操作 RUNBOOK「台上的动线」II
@@ -60,14 +60,14 @@ _按 `presentation-playbook 3.md` 附录 C 重排（2026-09-13）。目标、证
 
 ## 段落 prize —— 页面 `prize`
 
-目的：把 demo 那一道题放大到全部题：同一个网站、同一个大模型，224 道题每道都选对看法值多少。两根条进页自动长出来，右边一个 −20%。观众刚看完 demo，已经知道「看法」和「选择」是什么，数字这时才有意义。
+目的：把 demo 那一道题放大到全部题：同一个网站、同一个大模型，224 道题每道都选对看法值多少。两块数字卡：左 27 → 43 of 100，右 −20% token bill。观众刚看完 demo，已经知道「看法」和「选择」是什么，数字这时才有意义。
 
 > That was one task. Now all two hundred and twenty-four on that site, same large open model.
 > The best single view solves twenty-seven in a hundred. **Choose the right view for every task, and the same agent solves forty-three — sixteen more in every hundred — for twenty percent less on the token bill.**
 > **That's an upper bound: a choice that already knows the answer for every task. On the other two sites it's eleven and sixteen more, fourteen and twenty-seven percent off. Not Claude or GPT numbers.**
 > So the prize is real. The question is whether anything can learn to claim it.
 
-提示：两根条长完再念数字；念到 forty-three 指第二根条，念到 twenty percent 指右边的 −20%。
+提示：念到 forty-three 指左边那张卡的 43，念到 twenty percent 指右边的 −20%。
 边界：上限 = 事先知道每道题哪种看法能做对（后面 `learned` 页叫它 perfect router，这里先不用这个词）。27 / 43 / −20% 是大模型在 classifieds 一个设置的数（`talk/hindsight_efficiency.json`），另两个网站在页脚。CO₂e 不上片子（被问：−7 到 −29%，按 token 估算）；用时被问：一个网站快三分之一、两个持平。
 转场：*"…whether anything can learn to claim it."* → `question`
 
