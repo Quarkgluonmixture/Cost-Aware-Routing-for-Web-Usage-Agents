@@ -1,0 +1,14 @@
+{
+  "csv_path": "/tmp/per_task_sr.csv",
+  "csv_sha256": "56052f2a48386128e4545207e8ea883c90e8edf72b3ebdbda82abf3437f50b11",
+  "manifest_path": "/home/ubuntu/workspace/p79/results/phantom_paper/run_manifest.yaml",
+  "manifest_sha256": "d9eea73f31a16fbf216a8a4298d886b97a5f7aa65b5179c5e36eb5ae6fb7d4c7",
+  "grade_filter": [
+    "paper-grade"
+  ],
+  "n_rows": 1287,
+  "n_complete_cells": 6,
+  "n_incomplete_cells": 0,
+  "incomplete_cells": [],
+  "producer": "generate_per_task_sr.py (A1.21 B-524 P0-5 manifest_path wired)"
+}

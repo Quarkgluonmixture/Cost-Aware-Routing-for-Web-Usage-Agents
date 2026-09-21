@@ -1,0 +1,980 @@
+{
+  "source_manifest": "results/phantom_paper/run_manifest.yaml",
+  "source_manifest_sha256": "d9eea73f31a16fbf216a8a4298d886b97a5f7aa65b5179c5e36eb5ae6fb7d4c7",
+  "results_roots": [
+    "results/visualwebarena/phase1",
+    "results/webarena/phase1",
+    "/mnt/scratch/p79_results_active_visualwebarena/phase1"
+  ],
+  "grades": [
+    "all"
+  ],
+  "n_conditions": 65,
+  "n_episode_summaries": 7725,
+  "total_bytes": 37706304,
+  "n_failed": 26,
+  "conditions": [
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1072480,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_som_classifieds_20260526_041601_863239369_602235_R5313",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1064538,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "Vision",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1075147,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-text",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
+      "condition_subdir": "phase1_phantom_text_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1079085,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1083984,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1086643,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B0_3mode_reddit_20260422",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "SoM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B0_3mode_reddit_20260422",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "Vision",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B0_3mode_reddit_20260422",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-text",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B0_phantom_text_reddit_20260427",
+      "condition_subdir": "phase1_phantom_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B0_phantom_prompt_reddit_20260429",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B0_phantom_som_reddit_20260428",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_3mode_classifieds_20260413",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 1,
+      "bytes": 8741,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "SoM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_3mode_classifieds_20260413",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 1,
+      "bytes": 8917,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "Vision",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_3mode_classifieds_20260413",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 1,
+      "bytes": 8706,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-text",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_phantom_dom_classifieds_20260429",
+      "condition_subdir": "phase1_phantom_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_phantom_som_classifieds_20260428",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_phantom_prompt_classifieds_20260501",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_3mode_reddit_20260413",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "SoM",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_3mode_reddit_20260413",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "Vision",
+      "grade": "archived",
+      "section": "cells",
+      "run_dir": "B1_3mode_reddit_20260413",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_dom_classifieds_20260603_103630_477435114_112846_R17188",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1104060,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1113314,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1111010,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-text",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_phantom_text_classifieds_20260605_194554_941872185_431169_R933",
+      "condition_subdir": "phase1_phantom_text_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1113134,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_som_classifieds_20260604_072456_562166453_226675_R31705",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1097199,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "Vision",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_vision_classifieds_20260605_012235_349047872_327631_R28622",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1100691,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_dom_classifieds_20260609_214713_553762009_985526_R21521",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1109143,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1119221,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1113599,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "P-text",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_phantom_text_classifieds_20260614_020803_377049301_1495224_R14219",
+      "condition_subdir": "phase1_phantom_text_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1114840,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_som_classifieds_20260611_210828_923656661_1218867_R3380",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1107358,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "Vision",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_vision_classifieds_20260612_221910_098760264_1351451_R9288",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 224,
+      "bytes": 1113469,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "DOM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 985203,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_som_reddit_20260627_035453_162107997_3024022_R20936",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 981406,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "Vision",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 994256,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-text",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
+      "condition_subdir": "phase1_phantom_text_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 991325,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 992064,
+      "status": "ok"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B0_phantom_prompt_reddit_20260709",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 981370,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "DOM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_dom_reddit_20260703",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 990941,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_som_reddit_20260706",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 987491,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "Vision",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_vision_reddit_20260708_002122_732634080_205180_R16847",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 1005067,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "P-text",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_phantom_text_reddit_20260710",
+      "condition_subdir": "phase1_phantom_text_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 1001391,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_phantom_som_reddit_20260711",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 998866,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B1_phantom_prompt_reddit_20260713",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 1001248,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "DOM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_dom_reddit_20260715",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 998909,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_som_reddit_20260717",
+      "condition_subdir": "phase1_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 992203,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "Vision",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_vision_reddit_20260719",
+      "condition_subdir": "phase1_vision_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 992877,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "P-text",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_phantom_text_reddit_20260720",
+      "condition_subdir": "phase1_phantom_text_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 998652,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_phantom_som_reddit_20260722",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 1000352,
+      "status": "ok"
+    },
+    {
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "grade": "paper-grade",
+      "section": "cells",
+      "run_dir": "B2_phantom_prompt_reddit_20260723",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [
+        "condition_meta.json",
+        "condition_summary_v2.json"
+      ],
+      "episodes": 205,
+      "bytes": 1007404,
+      "status": "ok"
+    },
+    {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-prompt",
+      "grade": "archived",
+      "section": "in_flight",
+      "run_dir": "B1_phantom_prompt_classifieds_20260501",
+      "condition_subdir": "phase1_phantom_prompt_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B2",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "in-flight",
+      "section": "in_flight",
+      "run_dir": "B2_dom_classifieds_20260516",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B2",
+      "site": "reddit",
+      "mode": "DOM",
+      "grade": "in-flight",
+      "section": "in_flight",
+      "run_dir": "B2_dom_reddit_20260516",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "_archive/B0_3mode_shopping_20260421_abandoned_placeholder",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "_archive/B0_dom_shopping_20260428_aborted_fpc_bug",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "_archive/B0_dom_shopping_20260428_dirty_no_reset",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "P-text",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "_archive/B0_phantom_dom_shopping_20260427_dirty_partial_reset",
+      "condition_subdir": "phase1_phantom_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "P-SoM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "_archive/B0_phantom_shopping_20260427_dirty_partial_reset",
+      "condition_subdir": "phase1_phantom_som_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B1",
+      "site": "shopping",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "_archive/B1_3mode_shopping_20260413_pre_magento_bug",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "B0_dom_classifieds_20260520_133223_291174117_410560_R2987",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "B0_dom_classifieds_20260520_000018_844563552_322810_R14647",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "B0_dom_classifieds_20260519_174455_061534393_281104_R12090",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "B0_dom_reddit_20260519_005439_733960924_218912_R1821",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    },
+    {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "grade": "archived",
+      "section": "archived",
+      "run_dir": "B0_dom_classifieds_20260518_212838_723280241_199081_R19740",
+      "condition_subdir": "phase1_dom_router_0",
+      "files": [],
+      "episodes": 0,
+      "bytes": 0,
+      "status": "run_dir_not_found"
+    }
+  ]
+}

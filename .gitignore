@@ -34,6 +34,12 @@ results/*
 !results/phantom_paper/
 results/phantom_paper/*
 !results/phantom_paper/run_manifest.yaml
+!results/phantom_paper/per_task_sr.csv
+!results/phantom_paper/per_task_sr.csv.provenance.json
+# Evidence snapshot pulled off the Condenser A100 before UCL access ends (2026-09-20):
+# small-text layer only (condition_meta / condition_summary_v2 / *_summary_v2), 8.9MB gz.
+!results/evidence_snapshots/
+!results/evidence_snapshots/**
 # Mechanistic dataset references (paper-cite-able, small text)
 !results/mechanistic/
 results/mechanistic/*
