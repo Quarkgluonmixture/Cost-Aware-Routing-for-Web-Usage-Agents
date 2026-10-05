@@ -12032,3 +12032,9 @@ flipped"的循环 (§H stress P0-3, 2026-08-02)。当时只有 dom+vision 有 re
 - **量化** (修正提取函数后重跑 `check_p10`, cls 23 个 condition): 失败侧 B0 56→50 · B1 39→29 · B2 16→14 · B5 61→50; **成功侧 B0 20→20 · B5 31→30 基本不变**。
   ⇒ 逗号只解释一小部分; P10 在强模型上的成功侧误报主要来自语义混比 (日期分量 / 型号数字 vs 价格), 修逗号不够, 另需把「价格 vs 非价格」分开。
 - **修法建议**: 数字正则先吃 `\d{1,3}(?:,\d{3})+(?:\.\d+)?` 再去逗号; 与 B-1999 一起 bump v12。
+
+### B-2001. classifieds reset 不清 `oc_t_alerts` / `oc_t_latest_searches` → 一行搜索订阅让 cls 整站开不了车 [P0] ✅ FIXED (2026-08-27, 原编号 B-1997 撞号, 2026-10-06 改号)
+- **现象** (2026-08-27, 笔记 §487.2): 一个 episode 订阅了搜索 (blake.sullivan, sPattern "purple"), 该行在每次 reset 后都存活; reset 的 sentinel 断言这两张表为空 ⇒ 之后每次 reset 都 fail-closed, cls 上任何 cell 都无法启动, 直到手工删行。
+- **原因**: `reset.php` 只恢复 items / comments / users; Gate-3 的 docker restart 不重灌 named volume, seed SQL 只在容器 CREATE 时跑 ⇒ 管线里没有任何一步清这两张表。B-746 把 sentinel 从 3 张扩到 5 张时点名了这个缺口, 但只上了断言没上清理。
+- **修法**: `scripts/maintenance/reset_vwa_sites.sh::_reset_vwa_local_classifieds` 在 sentinel 前无条件 `DELETE FROM` 两表 (seed 态本就为空, 所以是恢复 seed 而非偏离); DELETE 失败由紧随的 sentinel 报出, fail-closed 保留。
+- **编号说明**: 修复当天 A100 与 DGX 两机分叉各自发号 (笔记 §487.5), A100 侧把它记为 B-1997, 而 DGX 侧的 B-1997 已是 B5 vision 坐标契约 (上一条之前的 B-1997 条目)。该修复所在分支 `salvage/a100-fire-fixes-489` 于 2026-10-06 才并入 master, 并入时发现撞号, 改为 B-2001。笔记 §487.2 的「B-1997」指本条。

@@ -39,7 +39,9 @@ updated: 2026-10-06
 > ### 证据层补全（user 10-06 定：**先不定 frame**，先补全证据层；A100 暂不碰）
 > - **全部 run 已合并到 `E:\p79-runs\`**（A100 回拉 + 本地 + DGX，硬链接，原件不动）· 盘点 `docs/analysis/run_inventory/`（README + `run_matrix.md`）· 笔记 §529
 > - 🔴 **09-15 replicate chain 首读**：WA·B1 三个 powered arm discordance 9.62 / 8.65 / 5.77%，全部 ≥ 4.93% ⇒ 按意图书 C1（serving-path floor）**作废**；`serving_mode_floor.md` 已加标记。六对**待登记** `CLEAN_PAIRS`（留给 user）
-> - 剩余缺口（顺序）：① 六对登记 + 正式复算 ② 结论层落后台账 **871 条**（§398–§527）③ B0 shopping SoM/Vision 无人读 ④ B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上
+> - ✅ 六对已登记 `B1.wared.*` 并正式复算（§529.4）；✅ 结论层补齐到 §527（886 条，§530，`docs/reference/known/conclusions/INDEX.md`）
+> - 写稿前要钉死的口径（§530.4）：pooling estimand（FE vs task-clustered bootstrap）· 噪声带定义与 scope · learned vs always-cheapest 用哪个计数 · 两个来源不明的数
+> - 仍缺：B0 shopping SoM/Vision 无人读 · B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上 · §528 以后未进台账
 > ## 🟢 2026-09-15 深夜收尾 · Showcase（09-16）片子定稿（D26 补，user「没问题」）· DGX 已备好 · 明天流程见手册 · 会后回来写笔记 · 先看这里
 >
 > **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D24 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语

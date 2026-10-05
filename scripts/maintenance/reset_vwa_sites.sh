@@ -147,7 +147,9 @@ _reset_vwa_local_classifieds() {
         echo "[${label}][reset_vwa][local] classifieds HTTP FAIL (http=${code}) after 4 attempts" >&2
         return 1
     fi
-    # B-1997 (2026-08-27): clear the two tables the upstream reset does not own.
+    # B-2001 (2026-08-27; filed as B-1997 on the A100 side, renumbered 2026-10-06 — B-1997 is
+    # the B5 vision coordinate-contract bug in master_bug_catalog): clear the two tables the
+    # upstream reset does not own.
     # `reset.php` restores items/comments/users; it never touches `oc_t_alerts`
     # (search subscriptions) or `oc_t_latest_searches` (search history). The
     # Gate-3 docker restart above does not reseed them either — /var/lib/mysql is

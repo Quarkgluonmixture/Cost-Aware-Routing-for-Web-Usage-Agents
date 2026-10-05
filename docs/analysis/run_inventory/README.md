@@ -80,7 +80,7 @@ SR check: `B0_dom_classifieds … R21557` = 39/224 = 17.41%, identical to its ma
    nowhere in `docs/`. B0 shopping has no phantom arms and no replicate (paid, proxy budget).
 4. **B5 vision** R24364 is complete but is the known broken coordinate-contract run
    (B-1997) — deliberately out of the manifest; R16160 is a partial earlier attempt.
-5. **Conclusion layer lags the ledger by 871 entries.** `docs/reference/known/conclusions/`
+5. ~~**Conclusion layer lags the ledger by 871 entries.**~~ **Done 2026-10-06** (886 entries from §398, 实验笔记 §530). Original note: `docs/reference/known/conclusions/`
    aggregates §1–§397.10; the ledger now runs to §527 (2,919 entries). The 871 entries of
    §398–§527 (333 MEASURED · 290 ADJUDICATED · 151 RETRACTED · 67 DATA · 30 CLAIM_UNVERIFIED)
    are not in any topic file.
