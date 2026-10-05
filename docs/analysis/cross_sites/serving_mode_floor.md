@@ -8,6 +8,11 @@ producer: scripts/analysis/serving_mode_floor.py
 
 # Is the reproducibility floor a property of the model, or of the serving path?
 
+> 🔴 **2026-10-06 · 预注册判据已触发 (实验笔记 §529.3)。** 09-15 local replicate chain 的 WA·B1·reddit 三个 powered arm
+> 首读 discordance = dom 9.62% / P-prompt 8.65% / P-text 5.77%, 全部 ≥ 4.93%。按 `pre_run/local_replicate_chain_launch_intent_20260915.md`
+> Reading 1, 本文的 C1 (floor 按 serving path 分组) **按原表述作废, 撤回而非加限定**。下文数字是 09-06 的状态, 不得再作为 C1 的证据引用。
+> 正式重算待六对登记进 `CLEAN_PAIRS` 后由本 producer 复跑。
+
 Regenerate: `.venv/bin/python3 scripts/analysis/serving_mode_floor.py`
 
 Until a second API-served backbone landed (2026-08-21) this question could not be asked: the project held one API model and one local one, so *model* and *serving path* were the same variable. Every floor below is the same functional — per-task discordance between two runs of an identical condition.
