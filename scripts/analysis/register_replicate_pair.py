@@ -144,7 +144,14 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         return rollback(f"validate_fire_manifest could not read the registry: {e}")
     rep_run = args.replicate.split("/")[3] if args.replicate.startswith("results/") else ""
-    if rep_run and rep_run not in seen:
+    # The validator only collects replicate arms under results/visualwebarena/phase1/,
+    # because that is the only tree its ghost scan covers. A replicate elsewhere (WebArena,
+    # repro_replicates/) can never be flagged as a ghost, so "the validator sees it" is not
+    # a meaningful check there — skip it, and say so, rather than rolling back a valid pair.
+    if not args.replicate.startswith(vfm._PHASE1_PREFIX):
+        print(f"note: {args.replicate.split('/')[1]}/ is outside the validator's ghost scan "
+              f"({vfm._PHASE1_PREFIX}); visibility check not applicable")
+    elif rep_run and rep_run not in seen:
         return rollback(f"validator does not see {rep_run} after registration "
                         f"(sees {len(seen)} run ids) — the entry is present but not counted")
 

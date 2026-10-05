@@ -65,7 +65,9 @@ SR check: `B0_dom_classifieds … R21557` = 39/224 = 17.41%, identical to its ma
 
 ## 3. Gaps in the evidence layer (as of 2026-10-06)
 
-1. **The 09-15 local replicate chain is unread.** WA·B1·reddit six arms all landed
+1. ~~**The 09-15 local replicate chain is unread.**~~ **Done 2026-10-06**: six pairs registered as
+   `B1.wared.*`, recomputed by the producers, `serving_mode_floor` now renders the retraction (笔记 §529.4).
+   Original note: WA·B1·reddit six arms all landed
    (09-15 → 09-22), forming six complete same-condition pairs with the July runs — none
    is in `CLEAN_PAIRS`, none is cited anywhere in `docs/`. Reading per the pre-declared
    intent file (`pre_run/local_replicate_chain_launch_intent_20260915.md`, Reading 1) is in

@@ -55,6 +55,7 @@ def lp(p) -> str:
 
 
 unlistable: list[str] = []
+reparse_skipped: list[str] = []
 
 
 def iter_files(root: Path):
@@ -70,6 +71,16 @@ def iter_files(root: Path):
         with it:
             for e in it:
                 if e.name in SKIP_NAMES or e.is_symlink():
+                    continue
+                # WSL symlinks rsync'd onto NTFS are LX reparse points: is_symlink() is False and
+                # they look like files, but they point into the A100 filesystem (e.g. the
+                # phase1_paper_grade/_vwa -> external/visualwebarena link). Skip every reparse point.
+                try:
+                    if getattr(e.stat(follow_symlinks=False), "st_file_attributes", 0) & 0x400:
+                        reparse_skipped.append(str(Path(d) / e.name))
+                        continue
+                except OSError:
+                    reparse_skipped.append(str(Path(d) / e.name))
                     continue
                 if e.is_dir(follow_symlinks=False):
                     stack.append(Path(d) / e.name)
@@ -155,6 +166,7 @@ def main() -> int:
         "merged_bytes": sum(w[2] for w in winners.values()),
         "conflicts": len(conflicts),
         "unlistable_dirs": len(unlistable),
+        "reparse_points_skipped": len(reparse_skipped),
         "cross_volume_winners_linked_from_identical_copy": len(alt_link),
         "copy_bytes_total": sum(d["copy_bytes"] for d in by_src.values()),
     }

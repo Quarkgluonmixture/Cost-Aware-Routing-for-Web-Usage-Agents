@@ -33,43 +33,46 @@
       ]
     },
     "local": {
-      "n_arms": 5,
+      "n_arms": 11,
       "floor_min_pct": 0.0,
-      "floor_max_pct": 3.4482758620689653,
-      "floor_mean_pct": 1.708743842364532,
-      "n_arms_powered": 2,
+      "floor_max_pct": 9.615384615384617,
+      "floor_mean_pct": 4.185792655620241,
+      "n_arms_powered": 5,
       "floor_min_powered_pct": 0.0,
-      "floor_max_powered_pct": 0.0,
+      "floor_max_powered_pct": 9.615384615384617,
       "families": [
         "Qwen"
       ],
       "sites": [
         "VWA-classifieds",
-        "VWA-reddit"
+        "VWA-reddit",
+        "WA-reddit"
       ],
       "sites_powered": [
-        "VWA-classifieds"
+        "VWA-classifieds",
+        "WA-reddit"
       ],
       "cells": [
         "B1.cls",
-        "B1.red"
+        "B1.red",
+        "B1.wared"
       ]
     }
   },
   "separation": {
-    "p_one_sided_exact": 0.00011671335200746966,
-    "n_assignments": 8568,
-    "n_at_least_as_extreme": 1,
-    "separated": true,
-    "gap_pp": 1.4778325123152714,
+    "p_one_sided_exact": 0.00014582492035715888,
+    "n_assignments": 2496144,
+    "n_at_least_as_extreme": 364,
+    "separated": false,
+    "gap_pp": -4.68927624100038,
     "caveat": "arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test"
   },
   "separation_powered_only": {
-    "p_one_sided_exact": 0.01098901098901099,
-    "n_assignments": 91,
-    "n_at_least_as_extreme": 1,
-    "separated": true,
-    "gap_pp": 7.389162561576355,
+    "p_one_sided_exact": 0.003393665158371041,
+    "n_assignments": 6188,
+    "n_at_least_as_extreme": 21,
+    "separated": false,
+    "gap_pp": -2.2262220538082618,
     "caveat": "arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test"
   },
   "arms": [
@@ -360,6 +363,116 @@
       "weights": "open"
     },
     {
+      "label": "B1.wared.dom",
+      "base": "B1",
+      "site": "wared",
+      "arm": "dom",
+      "site_name": "WA-reddit",
+      "floor_pct": 9.615384615384617,
+      "n": 104,
+      "sr_mean_pct": 19.23076923076923,
+      "sr_a": 0.16346153846153846,
+      "sr_b": 0.22115384615384615,
+      "d": 11.799999999999999,
+      "powered": true,
+      "self_drop_lo": 1.9230769230769231,
+      "self_drop_hi": 7.6923076923076925,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
+      "label": "B1.wared.pprompt",
+      "base": "B1",
+      "site": "wared",
+      "arm": "pprompt",
+      "site_name": "WA-reddit",
+      "floor_pct": 8.653846153846153,
+      "n": 104,
+      "sr_mean_pct": 16.826923076923077,
+      "sr_a": 0.16346153846153846,
+      "sr_b": 0.17307692307692307,
+      "d": 10.325,
+      "powered": true,
+      "self_drop_lo": 3.8461538461538463,
+      "self_drop_hi": 4.807692307692308,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
+      "label": "B1.wared.som",
+      "base": "B1",
+      "site": "wared",
+      "arm": "som",
+      "site_name": "WA-reddit",
+      "floor_pct": 6.730769230769231,
+      "n": 104,
+      "sr_mean_pct": 12.019230769230768,
+      "sr_a": 0.1346153846153846,
+      "sr_b": 0.10576923076923077,
+      "d": 7.374999999999998,
+      "powered": false,
+      "self_drop_lo": 1.9230769230769231,
+      "self_drop_hi": 4.807692307692308,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
+      "label": "B1.wared.ptext",
+      "base": "B1",
+      "site": "wared",
+      "arm": "ptext",
+      "site_name": "WA-reddit",
+      "floor_pct": 5.769230769230769,
+      "n": 104,
+      "sr_mean_pct": 18.26923076923077,
+      "sr_a": 0.16346153846153846,
+      "sr_b": 0.20192307692307693,
+      "d": 11.209999999999999,
+      "powered": true,
+      "self_drop_lo": 0.9615384615384616,
+      "self_drop_hi": 4.807692307692308,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
+      "label": "B1.wared.psom",
+      "base": "B1",
+      "site": "wared",
+      "arm": "psom",
+      "site_name": "WA-reddit",
+      "floor_pct": 4.807692307692308,
+      "n": 104,
+      "sr_mean_pct": 12.98076923076923,
+      "sr_a": 0.11538461538461539,
+      "sr_b": 0.14423076923076922,
+      "d": 7.964999999999999,
+      "powered": false,
+      "self_drop_lo": 0.9615384615384616,
+      "self_drop_hi": 3.8461538461538463,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
       "label": "B1.red.dom",
       "base": "B1",
       "site": "red",
@@ -426,6 +539,28 @@
       "weights": "open"
     },
     {
+      "label": "B1.wared.vision",
+      "base": "B1",
+      "site": "wared",
+      "arm": "vision",
+      "site_name": "WA-reddit",
+      "floor_pct": 1.9230769230769231,
+      "n": 104,
+      "sr_mean_pct": 10.576923076923078,
+      "sr_a": 0.09615384615384616,
+      "sr_b": 0.11538461538461539,
+      "d": 6.490000000000001,
+      "powered": false,
+      "self_drop_lo": 0.0,
+      "self_drop_hi": 1.9230769230769231,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
       "label": "B1.cls.vision",
       "base": "B1",
       "site": "cls",
@@ -477,6 +612,6 @@
   "coverage_gaps": [
     "B2 (local, Gemma) carries no replicate: at its SR (0.45-2.23%) d~1.8, far below the bar — the local group cannot be given a second family by measuring B2, which is a power limit, not a scheduling one",
     "B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)",
-    "the local group spans 2 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 1 — VWA-classifieds. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone"
+    "the local group spans 3 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 2 — VWA-classifieds, WA-reddit. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone"
   ]
 }

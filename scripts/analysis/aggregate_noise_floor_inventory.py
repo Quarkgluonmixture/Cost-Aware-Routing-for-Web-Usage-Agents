@@ -247,6 +247,30 @@ CLEAN_PAIRS = [
     ("B0.red.vision",
      "results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/phase1_vision_router_0",
      "results/visualwebarena/phase1/B0_vision_reddit_20260905_081817_462107405_893625_R17511/phase1_vision_router_0"),
+    # Registered local replicate chain L1, intent 20260915.
+    ("B1.wared.dom",
+     "results/webarena/phase1/B1_dom_wa_reddit_20260727_180024_017253388_2658596_R13217/phase1_dom_router_0",
+     "results/webarena/phase1/B1_dom_wa_reddit_20260915_092904_886916359_2413028_R3792/phase1_dom_router_0"),
+    # Registered local replicate chain L2, intent 20260915.
+    ("B1.wared.pprompt",
+     "results/webarena/phase1/B1_phantom_prompt_wa_reddit_20260730_073250_892705973_3033575_R21734/phase1_phantom_prompt_router_0",
+     "results/webarena/phase1/B1_phantom_prompt_wa_reddit_20260916_002335_832285414_2513119_R28726/phase1_phantom_prompt_router_0"),
+    # Registered local replicate chain L3, intent 20260915.
+    ("B1.wared.ptext",
+     "results/webarena/phase1/B1_phantom_text_wa_reddit_20260729_154551_859907467_2958275_R10542/phase1_phantom_text_router_0",
+     "results/webarena/phase1/B1_phantom_text_wa_reddit_20260916_154515_493771292_2592541_R31888/phase1_phantom_text_router_0"),
+    # Registered local replicate chain L4, intent 20260915.
+    ("B1.wared.som",
+     "results/webarena/phase1/B1_som_wa_reddit_20260728_090436_011011933_2760426_R301/phase1_som_router_0",
+     "results/webarena/phase1/B1_som_wa_reddit_20260921_120306_487421722_2979355_R20276/phase1_som_router_0"),
+    # Registered local replicate chain L5, intent 20260915.
+    ("B1.wared.psom",
+     "results/webarena/phase1/B1_phantom_som_wa_reddit_20260730_231304_547960004_3121337_R11421/phase1_phantom_som_router_0",
+     "results/webarena/phase1/B1_phantom_som_wa_reddit_20260922_053424_553046548_3040627_R122/phase1_phantom_som_router_0"),
+    # Registered local replicate chain L6, intent 20260915.
+    ("B1.wared.vision",
+     "results/webarena/phase1/B1_vision_wa_reddit_20260729_002545_844006252_2860757_R20074/phase1_vision_router_0",
+     "results/webarena/phase1/B1_vision_wa_reddit_20260922_225941_543785452_3104625_R18252/phase1_vision_router_0"),
 ]
 
 # A replicate that is still running has a task set that merely LOOKS like a scored universe:
@@ -359,25 +383,30 @@ def _pair_stats(a: dict[int, int], b: dict[int, int], restrict: list[int] | None
 # start here. The scope string was hardcoded the same way — the twin of the
 # 2026-08-20 baseline fix, which caught "B0 x classifieds" being printed on
 # every B1 row.
-_SITE_OF_LABEL = {"cls": "classifieds", "red": "reddit", "shop": "shopping"}
+# Values are (site, benchmark). "wared" (WebArena reddit) added 2026-10-06 with the first WA
+# replicate pairs: WA-reddit task ids share the site name "reddit" with VWA but are a
+# different task set, so the benchmark has to travel with the key — a bare "reddit" would
+# restrict a WA pair to the VWA universe and fail closed on all 104 tasks.
+_SITE_OF_LABEL = {"cls": ("classifieds", "visualwebarena"), "red": ("reddit", "visualwebarena"),
+                  "shop": ("shopping", "visualwebarena"), "wared": ("reddit", "webarena")}
 
 
 def compute_clean_pairs(allow_partial: bool = False) -> list[dict]:
     from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
-    _universe: dict[str, set] = {}
+    _universe: dict[tuple, set] = {}
     rows = []
     for label, ra, rb in CLEAN_PAIRS:
         _baseline, _site_key = label.split(".")[0], label.split(".")[1]
         try:
-            _site = _SITE_OF_LABEL[_site_key]
+            _site, _bench = _SITE_OF_LABEL[_site_key]
         except KeyError:
             raise MissingInput(
                 f"{label}: unknown site key {_site_key!r}; extend _SITE_OF_LABEL "
                 f"(known: {sorted(_SITE_OF_LABEL)})") from None
-        if _site not in _universe:
-            _ids, _sha = expected_scored_ids(_site)
-            _universe[_site] = set(_ids)
-        scored = _universe[_site]
+        if (_site, _bench) not in _universe:
+            _ids, _sha = expected_scored_ids(_site, _bench)
+            _universe[(_site, _bench)] = set(_ids)
+        scored = _universe[(_site, _bench)]
         pa, pb = REPO / ra, REPO / rb
         for p in (pa, pb):
             if not p.is_dir():
@@ -400,9 +429,10 @@ def compute_clean_pairs(allow_partial: bool = False) -> list[dict]:
         # B1 pairs since B1.cls.som was registered, so every B1 row in the published
         # table read "B0 x classifieds" — a table whose whole point is that B0 and B1
         # floors differ by an order of magnitude. Derive it from the label instead.
-        st.update(label=label, site=_site,
-                  scope=(f"{_baseline} x {_site}, canonical n={len(scored)}" if not missing
-                         else f"{_baseline} x {_site}, PARTIAL n={st['n']} of {len(scored)}"),
+        _site_name = f"WA-{_site}" if _bench == "webarena" else _site
+        st.update(label=label, site=_site_name, benchmark=_bench,
+                  scope=(f"{_baseline} x {_site_name}, canonical n={len(scored)}" if not missing
+                         else f"{_baseline} x {_site_name}, PARTIAL n={st['n']} of {len(scored)}"),
                   partial=bool(missing), n_missing=len(missing),
                   arm_a=str(pa.relative_to(REPO)), arm_b=str(pb.relative_to(REPO)))
         rows.append(st)

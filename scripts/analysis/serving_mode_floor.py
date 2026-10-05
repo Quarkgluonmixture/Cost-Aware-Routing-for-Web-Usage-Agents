@@ -59,7 +59,8 @@ BACKBONE = {
     "B5": dict(serving="API", provider="AWS proxy", family="OpenAI", arch="undisclosed",
                name="GPT-5.6-terra", weights="closed"),
 }
-SITE_NAME = {"cls": "VWA-classifieds", "red": "VWA-reddit", "shop": "VWA-shopping"}
+SITE_NAME = {"cls": "VWA-classifieds", "red": "VWA-reddit", "shop": "VWA-shopping",
+             "wared": "WA-reddit"}
 
 # d ~ n x SR x 0.59 (§468 / B-1972). Below d=10 a pair is inventory, not an interval.
 D_BAR = 10.0
@@ -288,17 +289,38 @@ def render(d: dict) -> str:
                  f"**{r['floor_pct']:.2f}%** | {r['d']:.1f} | "
                  f"{'yes' if r['powered'] else '**no — inventory only**'} |")
 
-    L += ["", "## 3. What this does and does not license", "",
-          "**Licensed.** The floor groups by serving path across two unrelated model "
-          f"families ({', '.join(ga['families'])}) and {len(ga['sites'])} site(s) on the API "
-          "side. Before this, one API model meant *model* and *serving* were the same "
-          "variable; the second family removes the reading that the floor is a quirk of one "
-          "architecture.", "",
-          f"**Not removed: scale.** {d['confound_not_removed']} The experiment that would "
-          f"settle it is {d['settling_experiment']}", "",
-          f"**No mechanism.** {d['mechanism_policy']}", "",
-          f"**Local side, independent corroboration.** {d['independent_corroboration_local']}",
-          "", "**Coverage gaps.**"]
+    L += ["", "## 3. What this does and does not license", ""]
+    if d["separation"]["separated"]:
+        L += ["**Licensed.** The floor groups by serving path across two unrelated model "
+              f"families ({', '.join(ga['families'])}) and {len(ga['sites'])} site(s) on the API "
+              "side. Before this, one API model meant *model* and *serving* were the same "
+              "variable; the second family removes the reading that the floor is a quirk of one "
+              "architecture.", "",
+              f"**Not removed: scale.** {d['confound_not_removed']} The experiment that would "
+              f"settle it is {d['settling_experiment']}", "",
+              f"**No mechanism.** {d['mechanism_policy']}", "",
+              f"**Local side, independent corroboration.** {d['independent_corroboration_local']}",
+              ""]
+    else:
+        # This paragraph was hardcoded "Licensed" until 2026-10-06, so the first time the data
+        # overlapped, §1 said "overlap" while §3 still licensed the grouping. The verdict text
+        # must follow the same statistic the table does.
+        api_min = min(r["floor_pct"] for r in d["arms"] if r["serving"] == "API")
+        crossing = [r for r in d["arms"] if r["serving"] == "local" and r["floor_pct"] >= api_min]
+        L += ["**Retracted — the serving-path grouping does not hold.** "
+              f"{len(crossing)} local arm(s) sit at or above the lowest API floor ({api_min:.2f}%): "
+              + ", ".join(f"{r['site_name']} `{r['arm']}` {r['floor_pct']:.2f}%"
+                          f"{'' if r['powered'] else ' (inventory)'}" for r in crossing)
+              + ". The rule was declared before these replicates ran "
+              "(`docs/checkpoints/pre_run/local_replicate_chain_launch_intent_20260915.md`, "
+              "Reading 1: any powered local arm ≥ the API lower edge ⇒ the claim is dead as "
+              "stated, retracted rather than hedged). What survives is the per-arm table in §2: "
+              "floors differ by cell — benchmark/workload × backbone — and a two-group summary by "
+              "serving path is not supported.", "",
+              f"**Still true, narrower.** {d['independent_corroboration_local']} That probe is "
+              "on one VWA cell; it does not extend to the WA-reddit arms above.", "",
+              f"**No mechanism.** {d['mechanism_policy']}", ""]
+    L += ["**Coverage gaps.**"]
     for g in d["coverage_gaps"]:
         L.append(f"- {g}")
     L += ["", "## 4. Why it matters beyond this project", "",
@@ -306,8 +328,12 @@ def render(d: dict) -> str:
           "rerun through an API disagrees with itself on a tenth of its tasks, then any "
           "reported difference smaller than that is not distinguishable from repetition — "
           "and the overwhelming majority of agent evaluations are run through exactly such "
-          "an API, once. The local column is what makes this a statement about the serving "
-          "path rather than about benchmarks being noisy in general.", ""]
+          "an API, once."
+          + (" The local column is what makes this a statement about the serving "
+             "path rather than about benchmarks being noisy in general."
+             if d["separation"]["separated"] else
+             " With the serving-path grouping retracted, the statement is the plainer one: a "
+             "rerun floor has to be measured per cell — a local backbone is not exempt."), ""]
     return "\n".join(L)
 
 
