@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-08-08
+updated: 2026-10-06
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,17 @@ updated: 2026-08-08
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+
+> ## 🔴 2026-10-06 · **目标会议 NAACL 2027 → COLING 2027**（user 定）
+>
+> | | |
+> |---|---|
+> | 🎯 **COLING 2027** | **ARR submission `2026-10-12` AoE**（与原 NAACL 计划同一 ARR 周期）→ commit **12-23** → notif 02-10 → 会议 2027-05-09~14 澳门。已核 `2027.coling-iccl.org` 2026-10-06。七个攻击面见 `_status/tasks/task_coling2027_main.md` |
+> | ⏱️ 窗口 | 距 ARR **6 天** ⇒ 10-12 前只能进**已有数据 + 0-compute 分析**；新 GPU 实验赶不上，留给 author response / 下一轮 |
+> | 🖥️ A100 | **不可达**：跳板机连接超时（UCL VPN 未连）+ condenser 证书 09-28 已过期。重签步骤见 memory `reference-condenser-cert-7day-expiry` |
+> | 💾 A100 数据 | 09-23 已全量拉到 `E:100-condenser-backup\`（`_transfer/STATUS=COMPLETE`）。artifacts / archives / overleaf / probe_imgs 文件数+字节对齐；`workspace` 少 3,978 个文件（远端在拉取期间仍在写入），md5 抽检脚本只抽到 1 个样本，需补 |
+>
+> chronicle → 笔记 §449
 
 > ## 🟢 2026-08-09 收尾 · **A100 在跑 B1 shop 435×3；proxy 等续额度**（session handoff）
 >
@@ -90,7 +101,7 @@ updated: 2026-08-08
 > |---|---|
 > | ✅ **REALM** | Submission #192 已提交 08-06，**审查中**。notif **09-07** / camera-ready **09-14**。非归档轨 + Cross Submission 已保住主会投稿权 |
 > | 🔴 **毕设** | **硬截止 2026-09-01**（user 08-08）。落点 **`final_dissertation/`**（`prior/` 是学长给的往届优秀作品，参照用，不必逐字读）。当前除 `prior/` 外**为空** |
-> | 🎯 **NAACL 2027 main** | **ARR submission `2026-10-12`**（已核官网；会议 2027-06-01~05 SF）。⚠️ 毕设交付后到 ARR **只有 41 天**，REALM 意见 09-07 才到（剩 35 天）⇒ **补实验要与毕设写作并行**（人力 vs GPU 不抢资源）。要跨的是**证据强度**，七个攻击面见 `task_naacl2027_main.md` |
+> | 🎯 **NAACL 2027 main** | **ARR submission `2026-10-12`**（已核官网；会议 2027-06-01~05 SF）。⚠️ 毕设交付后到 ARR **只有 41 天**，REALM 意见 09-07 才到（剩 35 天）⇒ **补实验要与毕设写作并行**（人力 vs GPU 不抢资源）。要跨的是**证据强度**，七个攻击面见 `task_coling2027_main.md`（⚠️ 2026-10-06 已改投 **COLING 2027**，同一 ARR 10-12 周期，见下方最新块） |
 >
 > **毕设是纯写作路径，不需要任何新实验** —— cls+red Phase 1a 42 conditions / WA pilot /
 > mechanism archive 全部已落地。REALM 稿（8 页正文）是结果章骨架来源，但**毕设不是它的扩写**：

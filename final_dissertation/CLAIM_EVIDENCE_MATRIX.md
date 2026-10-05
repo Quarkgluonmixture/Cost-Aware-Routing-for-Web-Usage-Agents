@@ -52,7 +52,7 @@ C4 无 C5 ⇒ 只是"我们没做出来"；C5 无 C4 ⇒ 只是理论担忧。
 |---|---|---|---|
 | **同模式重跑的噪声地板只有 vision 一格** | C3 | §302 只做了 B0·cls·vision | 要么把 C3 措辞限定到"在已测的那一格"，要么补跑（A100 排队 + 预算见底 ⇒ 大概率**限定措辞**） |
 | **机制层未重新聚合** | 不影响 C1–C5 | 24 cell 已重跑完，聚合脚本已扩展 | 机制层**不进毕设主线**（advisor 2026-05-14 搁置）；若进 appendix 必须先重聚合 |
-| ⭐ **WA 只进了 oracle 层，没进 learnability 层** | C4 / C5 的外部效度 | `router_objective_ordering.md` 已含 `wa_reddit·B0/B1`（**8 cells 跨两个 benchmark**）；但 `router_triage_learnability` **stays VWA-only**——它依赖 `extract_50_features.py`，其中 `PHASE1_ROOT`(:55) / `VWA_CONFIG`(:56) / `CELLS`(:65-67) 全是 VWA 常量 | 不花钱不占 GPU，但**不是「改两行路径」**——见下方专条。若打通，C4 从「6 格 VWA」变「8 格跨 benchmark」，直接回答 Guide §14.2 Ch6 第 5 问 + NAACL 攻击面 #2 |
+| ⭐ **WA 只进了 oracle 层，没进 learnability 层** | C4 / C5 的外部效度 | `router_objective_ordering.md` 已含 `wa_reddit·B0/B1`（**8 cells 跨两个 benchmark**）；但 `router_triage_learnability` **stays VWA-only**——它依赖 `extract_50_features.py`，其中 `PHASE1_ROOT`(:55) / `VWA_CONFIG`(:56) / `CELLS`(:65-67) 全是 VWA 常量 | 不花钱不占 GPU，但**不是「改两行路径」**——见下方专条。若打通，C4 从「6 格 VWA」变「8 格跨 benchmark」，直接回答 Guide §14.2 Ch6 第 5 问 + COLING 攻击面 #2（原 NAACL 清单，2026-10-06 改投）|
 | **B4 / shop / 其余 WA 站未落地** | 会进一步加强 C1/C4 外部效度 | proxy 预算见底，等续额度 | 毕设不依赖它们；若 09-01 前落地则进 Ch6 external validation |
 | **rubric #2 系统结构图未画** | 全篇可读性 | 未开工 | Guide §14.3 点名要这张图，且"应该比任何 architecture 细节更早出现" |
 
