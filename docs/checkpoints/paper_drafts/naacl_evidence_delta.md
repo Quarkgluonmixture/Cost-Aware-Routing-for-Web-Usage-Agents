@@ -9,7 +9,7 @@ purpose: what the August replicates unlocked, which existing statements they fal
 # Evidence delta — what the August data lets us say that we could not say before
 
 Written against `realm/section1_intro.md` (the 8-item inventory) and
-`_status/tasks/task_naacl2027_main.md` (the seven attack surfaces). **This is not a
+`_status/tasks/task_coling2027_main.md` (the seven attack surfaces). **This is not a
 frame.** The REALM verdict lands 09-07 and the claim should be chosen against
 coverage, not before it — three frames died in 08-01/08-03 for exactly that reason.
 What follows is the raw material: what became sayable, what became false, what is
@@ -131,7 +131,7 @@ corrections for the *next* draft. The submitted text was true when submitted.
 is the one gap that makes C1's control group cross-site rather than single-site. It is
 also *direction-independent* — it strengthens C1 no matter which frame the 09-07
 verdict points at, which is exactly the property
-`task_naacl2027_main.md` asks of work done in this window.
+`task_coling2027_main.md` asks of work done in this window.
 
 ---
 

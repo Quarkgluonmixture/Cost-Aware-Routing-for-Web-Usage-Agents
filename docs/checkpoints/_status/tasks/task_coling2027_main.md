@@ -1,53 +1,56 @@
 ---
 type: task
-status: planned
+status: active
 priority: P0
-horizon: next
+horizon: now
 order: 3
-blocker: "毕设 09-05 交付前不占写作时间; 但补实验可在写毕设期间并行跑 (GPU 不与写作抢资源)"
-eta: "**ARR submission 2026-10-12** (已核 2027.naacl.org 2026-08-08)。REALM notif 09-07 / 毕设 09-05 (2026-08-19 user 更正)。会议 2027-06-01~05 旧金山。commitment deadline 官网标 'stay tuned for details' 尚未公布"
+blocker: "A100 不可达 (UCL VPN 未连 + condenser 证书 2026-09-28 已过期); 09-22 之后 A100 上新写的结果本地没有"
+eta: "**ARR submission 2026-10-12** (AoE) → commit COLING **2026-12-23** → notif 2027-02-10。已核 2027.coling-iccl.org 2026-10-06"
 detail: docs/checkpoints/paper_planning.md
 created: 2026-08-08
-updated: 2026-08-19
+updated: 2026-10-06
 ---
 
-# NAACL 2027 main conference — 完整版目标
+# COLING 2027 — 完整版目标（2026-10-06 由 NAACL 2027 改投）
 
-学长 2026-08-08 定的下一站。**REALM 是当前版本的落点; NAACL 2027 是这项工作的完整版目标** —— 两者不冲突, 非归档轨本就适合当反馈场再扩成主会稿。
+**2026-10-06 user 定: 目标会议由 NAACL 2027 改为 COLING 2027, archival, 是唯一的主会目标。**
+本文件原名 `task_naacl2027_main.md`; 下文 08-08 ~ 09-09 各段保留原貌, 其中的「NAACL 稿」一律读作「COLING 稿」。
+8 月 REALM 表单勾的「Plan to submit to ACL ARR 2026 August」**实际没投** (user 2026-10-06 确认) ⇒ 手上没有可直接 commit 的 ARR review。
 
-## 硬事实 (已核 `https://2027.naacl.org/`, 2026-08-08)
+## 硬事实 (已核 `https://2027.coling-iccl.org/`, 2026-10-06)
 
 | | |
 |---|---|
-| **ARR submission** | **2026-10-12** |
-| 会议 | 2027-06-01 ~ 06-05, San Francisco |
-| commitment deadline | 官网 "stay tuned for details" — **未公布**, 临近再查 |
+| **ARR submission** | **2026-10-12** (Mon), 23:59 AoE |
+| commitment (meta-review 后) | **2026-12-23** |
+| 录取通知 | 2027-02-10 |
+| 会议 | 2027-05-09 ~ 05-14, **澳门**（线上部分 05-06~07） |
 
-**定位**: ACL / EMNLP / NAACL 属同一第一梯队 (声望排序 ACL ≳ EMNLP ≳ NAACL, 非官方且随方向差异大)。NAACL 2024 主会 565/2434 = **23.2%** 录取, 另 12.5% 进 Findings。**NAACL Main 是正经顶会论文**, 不是"次一级小会"。
+**改投不改 ARR 周期**: COLING 2027 是第一届走 ACL Rolling Review 的 COLING, 收的正是 10 月 ARR 周期 ——
+和原 NAACL 计划**同一个 10-12 截稿**。改的只是 12-23 commit 到哪。
+⚠️ 页数上限 / 模板官网首页未列, 投前去 CFP 页核, ⛔ 别按 NAACL 的记忆写。
 
-**路径可行性**: ACL 系列 main conference 明确接受 measurement study / negative findings / resource / reproduction, 不要求"发明新模型" —— 本项目的 agent routing / cost-accuracy / empirical measurement 路线**本身就匹配**。
+## 已到手的外部反馈（两个 workshop 均为 non-archival poster, 不占投稿权）
 
-## 真实时间窗口 ⚠️
+- **REALM @ EMNLP 2026** #192 接受 (09-08), 意见 → `_status/issues/issue_realm_reviews_2026-09-09.md`
+- **VLM4RWD @ NeurIPS 2026** #18 Accept (Poster) (09-29), 意见 → `_status/issues/issue_vlm4rwd_reviews_2026-09-29.md`
+  - 两边交集仍是: rerun control 是最强贡献; 「路由学不到」的**解释**(label supply) 被认为还没立住;
+    rerun band 覆盖不足; 只比「两轴同时胜过固定策略」不够, 要看 SR–cost 折中本身
 
-🔴 **2026-08-19 user 更正（第二次翻转，这次是改回去）**: REALM 出结论是 **09-07**，
-毕设延长到 **09-05**。08-16 记的 "08-21" 是错的 —— 09-07 恰是它更正之前的原始值。
-**再看到 08-21 一律按 stale 处理，不要再翻。**
+## 真实时间窗口 ⚠️（2026-10-06 重算）
 
 ```
-今天 08-19 ──17天── 09-05 毕设硬截止 ──2天── 09-07 REALM notif ──35天── 10-12 ARR
-           └──── 19 天 GPU 窗口（不与写作抢资源）────┘
+10-06 今天 ──6天── 10-12 ARR 截稿 ──~10周── 12-23 COLING commit ──7周── 02-10 notif
 ```
 
-两条推论，方向相反，都要记住:
-- ⚠️ **审稿意见落在毕设交付之后**（差 2 天）⇒ 它**不能**用来指导毕设写作，别等它。
-- ✅ **但 GPU 窗口有 19 天**，而毕设是纯写作（人力）⇒ **补实验现在就能并行跑**，
-  不必等 09-07。真正的约束不是时间，是**方向未定**：意见没到，不知道该补七个攻击面
-  里的哪一个。所以这 19 天适合做**方向无关**的工作（地板 / 接线验证 / 已知缺口），
-  不适合押注某个攻击面。
+- **只剩 6 天**: 10-12 前能进稿的只有**已有数据 + 0-compute 分析**; 新 GPU 实验赶不上。
+- A100 不可达 (2026-10-06 实测): 跳板机 `ssh.condenser.arc.ucl.ac.uk` 连接超时 (UCL VPN 未连), 证书 09-28 已过期。
+  A100 上本项目数据 09-22~23 全量拉到 `E:100-condenser-backup\`; 但 local replicate chain (09-15 发车, 预计 ~09-25 收尾)
+  **在拉取之后还在写** —— `workspace` 远端比本地多 3,978 个文件, 很可能就是这批。要用这批 replicate 必须先恢复 A100 访问。
 
 ## 要跨过去的是「证据强度」, 不是 polish
 
-当前 REALM 稿 = 一篇很完整的 MSc measurement + routing study。workshop 靠清楚的问题 + 扎实实验 + 有意思的结果就能成立; NAACL reviewer 会继续追下去。**七个最可能的攻击面**（学长/user 2026-08-08 列）:
+当前 REALM 稿 = 一篇很完整的 MSc measurement + routing study。workshop 靠清楚的问题 + 扎实实验 + 有意思的结果就能成立; COLING reviewer 会继续追下去。**七个最可能的攻击面**（学长/user 2026-08-08 列）:
 
 - [ ] 1. routing 的**泛化**到底怎么样
 - [ ] 2. 是否**跨 site / benchmark** — 手上有 WA pilot + shop Phase 1b (pre-fix) 可用

@@ -2,152 +2,219 @@
 
 # Cost-Aware Routing for Web-Usage Agents
 
-**Can we route a vision-language web agent to a cheaper, faster *representation* of the page — without losing the signal it needs to act correctly?**
+**When does a web agent actually need expensive multimodal context — and can that need be predicted cheaply enough to route representations per task?**
 
-![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
-![Tests](https://img.shields.io/badge/tests-1.1k_functions-blue.svg)
-![Domain](https://img.shields.io/badge/domain-LLM_agents_·_VisualWebArena-8a2be2.svg)
-![Status](https://img.shields.io/badge/research-in_progress-orange.svg)
-[![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+![Python](https://img.shields.io/badge/Python-research%20stack-3776AB?logo=python&logoColor=white)
+![Domain](https://img.shields.io/badge/domain-Web%20Agents%20%C2%B7%20Evaluation-7c3aed)
+![Method](https://img.shields.io/badge/method-preregistered%20evaluation-0f766e)
+![Result](https://img.shields.io/badge/result-negative%20router%20result%2C%20mechanism%20identified-b45309)
+[![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-lightgrey)](https://creativecommons.org/licenses/by/4.0/)
 
-*MSc dissertation · Artificial Intelligence for Sustainable Development, UCL · solo · ~117K LOC Python · 1,088 commits over 4 months*
+*MSc dissertation research · UCL · Web agents · representation routing · evaluation reliability*
 
-**▶ [Live interactive portfolio & demo](https://quarkgluonmixture.github.io/Cost-Aware-Routing-for-Web-Usage-Agents/portfolio/)**
+**[Interactive project walkthrough](https://quarkgluonmixture.github.io/Cost-Aware-Routing-for-Web-Usage-Agents/portfolio/)**
 
 </div>
 
 ---
 
-## TL;DR
+## The result in one paragraph
 
-A web agent built on a vision-language model can perceive a page in several ways: raw screenshot (`vision`), accessibility tree (`dom`), or **Set-of-Marks** — a screenshot annotated with numbered boxes plus a matching text list (`som`). The annotated screenshot is the expensive part: it costs a full image's worth of vision-encoder tokens and the latency of rendering and encoding it.
+Web-agent representation needs are **state-dependent**: an oracle that can choose the right observation mode per task has a real upper bound over any fixed representation. But under the measured regime, a learned router does **not** recover that value cheaply enough to beat a trivial fixed policy: in nested cross-validation, **0/6 evaluated cells** Pareto-dominate `always-cheapest`.
 
-This project asks whether you can keep the *signal* of Set-of-Marks while dropping the *image* — and whether an agent should **route** between these representations per task to trade off success rate against cost and latency. To answer it rigorously I built a **preregistered, reproducible evaluation harness** that runs three model families × six observation modes across three [VisualWebArena](https://github.com/web-arena-x/visualwebarena) sites, on a three-tier compute fleet, with mechanistic-interpretability probes to explain *why* a representation works rather than only *that* it does.
+The failure is not simply "the classifier was weak." The bottleneck is **label supply**. A useful routing label only appears once the underlying task has been solved well enough to reveal which representation mattered, while base task success in the studied cells is only **2–27%**. The project therefore ends with a boundary result: the routing opportunity is real, but the supervision needed to learn it is structurally scarce in the regime measured here.
 
-> **Honest status.** The central hypothesis (below) is **under active evaluation** — `classifieds` is complete across all six modes for the largest model; other cells are still firing. I report the harness, methodology, and preliminary signal here; confirmed effect sizes belong in the paper, not the README.
+> **Thesis headline:** expensive multimodal context is sometimes necessary, but predicting *when* it is necessary can fail for structural reasons even when the oracle ceiling is demonstrably real.
 
----
-
-## The research question: a "phantom" routing space
-
-Set-of-Marks sits at a boundary. On one side, the agent reads the annotated **image**; on the other, it reads only **text**. Right on that boundary lives a family of representations I call the **phantom routing space** — they carry Set-of-Marks-style cues but render **no annotated screenshot at all**:
-
-| Mode | Text channel | Prompt style | Renders image? |
-|---|---|---|---|
-| `dom` | viewport AXTree | DOM | no |
-| `som` (full Set-of-Marks) | `[SOM_MARKS]` list | SoM | **yes** |
-| `vision` | — | vision | raw screenshot |
-| `phantom_text` | `[SOM_MARKS]` list | DOM | **no** |
-| `phantom_prompt` | AXTree | SoM | **no** |
-| **`phantom_som`** (hero) | `[SOM_MARKS]` list | SoM | **no** |
-
-**The hypothesis.** `phantom_som` is *designed* to be a drop-in for full Set-of-Marks that:
-
-| Designed property | Why, by construction | How it's tested |
-|---|---|---|
-| **Representation cost** stays in the DOM class | no rendered image ⟹ zero vision-encoder image tokens; the text channel is a regex-filtered AXTree | image-token accounting; end-to-end *billed* dollars sit in a near-flat **~$0.064–$0.073 / episode** band across all six modes (`classifieds`/B0), so cost is a floor — latency and signal are where the modes actually diverge |
-| **Latency** drops | skips screenshot render + vision-encoder forward pass | per-step wall-clock timing |
-| **Signal** is preserved | Set-of-Marks positional cues are retained *as text* | confidence-signal AUROC vs. baseline modes |
-| **Routing value** is real | adding it to a mode portfolio raises an oracle's ceiling | drop-one oracle lift, evaluated across 6 `(site × model)` cells |
-
-This is the kind of claim that is easy to *assert* and hard to *earn*: the entire harness below exists to either confirm it across models and sites under a preregistered test, or to falsify it honestly.
+Canonical writing anchor: [`final_dissertation/THESIS_ONE_SENTENCE.md`](final_dissertation/THESIS_ONE_SENTENCE.md).
 
 ---
 
-## What this project demonstrates
+## Why this is interesting
 
-A compact map from the work to transferable AI/ML research-engineering skills.
+A web agent can observe the same page through very different representations:
 
-| Competency | Where it shows up here |
-|---|---|
-| **Experimental design** | Factorial design that decomposes `dom → phantom_som → som` into independent *text-axis* and *prompt-axis* sub-effects; selection-bias-controlled 2×2; content-specific (random-injection) negative control. |
-| **Statistical rigor** | Preregistered primary gate = one-sided **fixed-effect inverse-variance pooled superiority test** (H₀: θ ≤ +1.0 pp); DerSimonian–Laird random-effects, HKSJ, and TOST equivalence as sensitivity analyses; paired-bootstrap SEs; explicit power analysis. |
-| **LLM experimentation** | Three model families benchmarked head-to-head: a 235B MoE via API, a 4B VLM run locally in bf16, and a cross-family 4B (Gemma-3) as a matched-capability control. |
-| **Mechanistic interpretability** | Activation patching, linear probes on hidden states, and layer-localization to find *where* a representation's effect lives inside the network — not just black-box outcomes. |
-| **ML systems engineering** | Race-safe distributed experiment orchestration across three heterogeneous compute tiers, with watchdog auto-recovery, structured logging, and schema-versioned data. |
-| **Reproducibility discipline** | Preregistration + OSF lock manifest, a software bill-of-materials for the benchmark fork, deterministic seeding, and 1,121 test functions guarding the analysis pipeline. |
+| Mode | What the model receives | Image required? |
+| --- | --- | ---: |
+| `dom` | accessibility / DOM-derived text | No |
+| `vision` | raw screenshot | Yes |
+| `som` | Set-of-Marks screenshot + matching text | Yes |
+| `phantom_text` | SoM-style text under DOM prompting | No |
+| `phantom_prompt` | DOM text under SoM prompting | No |
+| `phantom_som` | SoM positional cues as text, without the annotated image | No |
+
+The last three form a **phantom routing space**: representations that keep parts of the Set-of-Marks signal while removing the rendered annotation image. That factorization lets the experiments ask a cleaner question than "vision or no vision?": **which part of the representation is helping, on which tasks, and is that variation learnable?**
 
 ---
 
-## System architecture
+## What the experiments establish
 
-The science is only as trustworthy as the harness. The repo is a ~117K-LOC Python package plus ~230 analysis/orchestration scripts.
+### 1. There is something worth routing
 
+Across the preregistered evaluation cells, the oracle representation portfolio improves success rate by roughly **+3.45 to +16.07 percentage points** while using **13.7–35.3% less cost** than the strongest fixed reference in the corresponding comparison.
+
+That matters because a failed learned router is only scientifically interesting if the oracle first proves that a routing opportunity exists.
+
+### 2. The learned router does not recover the ceiling
+
+Under true nested cross-validation, **0/6 cells** produce a learned policy that Pareto-dominates the trivial `always-cheapest` fixed strategy.
+
+This README intentionally does **not** turn that into a claim that representation routing is impossible in general. The result is scoped to the observed benchmark/model regime.
+
+### 3. The bottleneck is supervision availability
+
+The strongest diagnosis is not "pick a better classifier." Routing labels are generated only by informative solved tasks. At low base success rates, the routing problem becomes label-starved before model selection becomes the main issue.
+
+### 4. The representations are complementary, not substitutes
+
+`phantom_som` is **not** claimed as a cheaper drop-in replacement for full Set-of-Marks. Its value is that it exposes a distinct signal axis and can add portfolio value in tasks where other modes fail.
+
+---
+
+## Research design
+
+The repository is deliberately built around **claim → evidence → failure-mode** discipline rather than a single leaderboard number.
+
+### Factorized representation study
+
+```text
+                 prompt style
+              DOM            SoM
+           ┌──────────┬──────────┐
+DOM text   │   dom    │ phantom_ │
+           │          │  prompt  │
+           ├──────────┼──────────┤
+SoM text   │ phantom_ │ phantom_ │
+           │  text    │   som    │
+           └──────────┴──────────┘
+
++ full SoM image
++ raw vision
 ```
+
+This separates text content, prompting style, and image rendering instead of confounding them into one "multimodal" switch.
+
+### Preregistered evaluation
+
+The confirmatory analysis was locked before the main run. Sensitivity analyses are kept separate from the primary gate, and negative controls are used to distinguish content-specific gains from prompt-length or formatting artifacts.
+
+### Cross-benchmark / OOD checks
+
+VisualWebArena is the primary environment; Online-Mind2Web-style / WA-derived cells are used to test whether the observed structure survives beyond one site/task distribution. Cross-benchmark comparisons are treated as distribution shift, not casually pooled as if the feature spaces were identical.
+
+### Mechanistic and diagnostic probes
+
+The project includes hidden-state probes, activation-patching experiments, benchmark EDA, label-supply analysis, pass@k-style noise-floor checks, and targeted stress tests. Probes that turned out to be trivial or in-sample artifacts are explicitly retracted rather than recycled as supporting evidence.
+
+---
+
+## Engineering the experiment
+
+The science sits on top of a fairly large reliability problem: live web environments are stateful, authenticated, slow, and easy to contaminate.
+
+```text
+configs / preregistration
+          ↓
+race-safe experiment queues
+          ↓
+VisualWebArena / web-agent runner
+          ↓
+schema-versioned episode records
+          ↓
+validation + contamination checks
+          ↓
+analysis / oracle / router / diagnostics
+          ↓
+claim-evidence matrix
+          ↓
+final dissertation
+```
+
+The harness includes:
+
+- heterogeneous local/API model backends;
+- per-site serialization and reset discipline;
+- restart-safe JSONL logging and migrations;
+- watchdogs for auth, quota, contaminated episodes, and failed runs;
+- deterministic analysis entry points;
+- explicit run-set vs scored-set accounting;
+- mutation/regression tests for failure modes that previously produced silent false confidence.
+
+The operational lessons are summarized in [`GOTCHAS.md`](GOTCHAS.md): many of the expensive failures in this project came from checks that *passed while checking the wrong thing*.
+
+---
+
+## Repository map
+
+```text
 p79/
-├── agents/        # VLM inference loops (local Qwen3-VL, Gemma-3; API-proxy agent)   2.4K LOC
-├── backends/      # backend abstraction: local transformers / API proxy / heuristic 1.8K LOC
-├── envs/          # VisualWebArena wrappers, observation standardization             2.5K LOC
-├── experiment/    # core engine: runner orchestration · routing · cost/energy/latency
-│                  #   metrics · structured JSONL logging · schema migrations         15K LOC
-├── mechanistic/   # activation patching · linear probes · hidden-state extraction
-├── policies/      # rule-based + learned routers (feature extraction, manifest)
-└── utils/         # CUDA workarounds, auth refresh, async helpers
+├── agents/          web/VLM agent loops
+├── backends/        local transformers + API backends
+├── envs/            benchmark/environment wrappers
+├── experiment/      runner, routing, metrics, logging, migrations
+├── mechanistic/     hidden-state extraction and probes
+├── policies/        fixed and learned routing policies
+└── utils/           auth, CUDA, async and reliability helpers
 
 scripts/
-├── analysis/      # 99 scripts, incl. 28 paper-grade figure generators
-├── queues/        # 53 scripts: race-safe launch queues + HPC qsub submission
-├── maintenance/   # 67 scripts: watchdog, contamination cleanup, live-status sidecars
-└── mechanistic/   # interpretability pilots (patching, probing, steering sweeps)
+├── analysis/        paper-grade analysis and figure generation
+├── queues/          launch / HPC / serialized run orchestration
+├── maintenance/     watchdogs, cleanup, integrity checks
+└── mechanistic/     probing / patching / localization experiments
+
+final_dissertation/  thesis-level claim and writing control files
+tests/               unit, regression, analysis and integrity tests
 ```
-
-**Three-tier compute fleet.** Workloads are matched to hardware: an aarch64 GB10 dev box (Tailscale-tunneled), a dedicated A100 VM that self-hosts the benchmark Docker stack for clean paper-grade runs, and an SGE-batch HPC cluster for large-model and CPU-heavy analysis.
-
-**Reliability under contention.** Web-agent runs share live Docker sites and authenticated accounts, so concurrency is a correctness hazard, not just a speed one. The harness enforces single-baseline-per-site locking, resets site state before every condition, and runs a **6-layer watchdog** (detect contamination → alert → refresh auth → clean the poisoned episode → re-run → verify) so that every episode that lands is clean by construction rather than by post-hoc filtering.
-
-**Data integrity.** Every step is written as schema-versioned JSONL with `fsync` durability and restart-deduplication; a single canonical reader handles corrupt-line recovery; a migration framework lets the schema evolve without orphaning historical runs.
 
 ---
 
-## Methodology & reproducibility
+## Start here
 
-- **Preregistration first.** The primary hypothesis, gate, and analysis plan are locked in `docs/checkpoints/pre_run/preregistration.md` (with an OSF lock manifest) *before* the confirmatory runs — so the headline test cannot be chosen after seeing the data.
-- **One primary gate, transparent sensitivity.** A one-sided FE inverse-variance pooled superiority test is the single confirmatory gate; random-effects, HKSJ, and TOST equivalence are reported as sensitivity analyses, and a K-of-N count is kept as transparency only (not a gate).
-- **Controls against the obvious confounds.** A selection-bias-controlled 2×2 separates *format* from *prompt style*; a random-injection negative control checks that gains are content-specific rather than artifacts of longer prompts.
-- **Reproducible by command.** The whole pipeline is one-command via a `Makefile` (`make analysis`, `make test`, `make launch …`); the benchmark itself is pinned as a git submodule fork with a documented software bill-of-materials.
+If you are reading the repository as a researcher or reviewer:
+
+1. [`final_dissertation/THESIS_ONE_SENTENCE.md`](final_dissertation/THESIS_ONE_SENTENCE.md) — problem, research question, headline answer.
+2. `final_dissertation/CLAIM_EVIDENCE_MATRIX.md` — what is claimed, what supports it, and which old claims were retired.
+3. [`GOTCHAS.md`](GOTCHAS.md) — reusable experiment / infrastructure failure modes.
+4. `docs/checkpoints/pre_run/` — preregistration and locked analysis plan.
+5. `scripts/analysis/` — executable evidence behind the paper figures and tables.
+
+The README deliberately does **not** mirror the current run cursor, queue state, or temporary machine status. Those belong in the repository's handoff/checkpoint material, not in the public landing page.
 
 ---
 
 ## Quick start
 
 ```bash
-# Clone with the VisualWebArena submodule fork
-git clone --recursive <repo-url> Cost-Aware-Routing-for-Web-Usage-Agents
+git clone --recursive https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents.git
 cd Cost-Aware-Routing-for-Web-Usage-Agents
 
-# Install (analysis + dev extras pull in pandas/scipy/matplotlib + pytest)
 pip install -e ".[analysis,dev]"
-
-# Run the test suite (no GPU or live sites required — these tests are skipped by default)
 make test
-
-# Explore the analysis pipeline on shipped result artifacts
 make help
 ```
 
-Reproducing a full experiment additionally needs GPU(s), a running VisualWebArena Docker stack, and API credentials for the largest model; launches always go through the race-safe queue layer (`make launch BASELINE=… SITE=… MODE=…`), never the bare runner, to preserve clean-run guarantees.
-
-**Tech stack:** Python · PyTorch · Hugging Face `transformers` / `accelerate` · `bitsandbytes` (bf16/quantized local inference) · OpenAI-style tool-calling over an API proxy · NumPy / pandas / SciPy / Matplotlib · Playwright-driven browser env · pytest · SGE/qsub.
+Reproducing the live benchmark requires the pinned VisualWebArena environment, model access, and the queue/orchestration layer. Do not launch paper-grade conditions through a bare runner: serialization and reset rules are part of the experiment contract.
 
 ---
 
-## Repository tour
+## What this project does **not** claim
 
-| Looking for… | Path |
-|---|---|
-| Core experiment engine | [`p79/experiment/`](p79/experiment/) |
-| Routing policies (rule-based + learned) | [`p79/policies/`](p79/policies/) |
-| Interpretability probes | [`p79/mechanistic/`](p79/mechanistic/) |
-| Analysis + figure scripts | [`scripts/analysis/`](scripts/analysis/) |
-| Preregistration & statistical plan | [`docs/checkpoints/pre_run/`](docs/checkpoints/pre_run/) |
-| Paper drafts (sections 1–8) | [`docs/checkpoints/paper_drafts/`](docs/checkpoints/paper_drafts/) |
-| Test suite | [`tests/`](tests/) |
+- `phantom_som` universally replaces full SoM;
+- removing images is automatically cheaper in end-to-end dollars for every provider/model;
+- the observed routing failure generalizes to every model or benchmark;
+- token cost is equivalent to energy use or carbon emissions;
+- a high in-sample probe score is evidence of a deployable router.
+
+Keeping those boundaries explicit is part of the result, not a disclaimer bolted on afterwards.
 
 ---
 
-## Status, author & license
+## Author & license
 
-- **Status:** active MSc dissertation research; paper in preparation. The phantom-routing-space hypothesis is under evaluation across the six `(site × model)` cells.
-- **Portfolio:** [Live interactive walkthrough + demo video](https://quarkgluonmixture.github.io/Cost-Aware-Routing-for-Web-Usage-Agents/portfolio/)
-- **Author:** Jiaming Wei · ucab352@ucl.ac.uk · [linkedin.com/in/jiaming-wei-810ab938b](https://linkedin.com/in/jiaming-wei-810ab938b)
-- **License:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/). Built on [VisualWebArena](https://github.com/web-arena-x/visualwebarena).
+**Jiaming Wei** · UCL MSc Artificial Intelligence for Sustainable Development
+
+- Portfolio: [quarkspace.top](https://quarkspace.top)
+- Project walkthrough: [interactive demo](https://quarkgluonmixture.github.io/Cost-Aware-Routing-for-Web-Usage-Agents/portfolio/)
+- License: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+
+Built on [VisualWebArena](https://github.com/web-arena-x/visualwebarena) and related web-agent evaluation infrastructure.

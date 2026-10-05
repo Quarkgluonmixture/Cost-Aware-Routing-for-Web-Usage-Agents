@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-09-15
+updated: 2026-10-06
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,19 @@ updated: 2026-09-15
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🔴 2026-10-06 · 目标会议改投 COLING 2027（archival，唯一主会目标）· ARR 10-12 只剩 6 天 · A100 不可达
+>
+> chronicle → **笔记 §528** · 任务卡 `_status/tasks/task_coling2027_main.md`（原 `task_naacl2027_main.md`）
+>
+> | | |
+> |---|---|
+> | 🎯 COLING 2027 | **ARR `2026-10-12` AoE**（与原 NAACL 同一 ARR 周期）→ commit **12-23** → notif 02-10 → 2027-05-09~14 澳门。8 月那次「Plan to submit to ARR August」**没投** |
+> | ✅ workshop | REALM @ EMNLP #192 poster（10-29 布达佩斯 / 线上，poster 已交、视频 user 在录）· **VLM4RWD @ NeurIPS #18 Accept (Poster)**（camera-ready **10-31 AoE**，+1 页 = 正文 9 页；12-11 悉尼，至少一名作者到场）。意见 → `_status/issues/issue_vlm4rwd_reviews_2026-09-29.md` |
+> | 🖥️ A100 | **不可达**：跳板机连接超时（UCL VPN 未连）+ condenser 证书 09-28 过期。GPU 是否空闲无法确认，未起任务 |
+> | 💾 A100 数据 | 09-22~23 全量拉到 `E:100-condenser-backup\`（STATUS=COMPLETE）：artifacts / archives / overleaf / probe_imgs 文件数+字节对齐；`workspace` 远端多 3,978 个文件（local replicate chain 拉取后仍在写），md5 抽检只拿到 1/20 —— 校验**未完成** |
+> | ⚠️ git | 2026-10-06 前 `origin/master` 落后于 `evidence/a100-snapshot-20260920` 228 个 commit（9-18 的 clone 拿的是旧 master）。本块所在版本已把两边合并 |
+>
+> 10-12 前只进**已有数据 + 0-compute 分析**；新 GPU 实验（variant D 点火、shop_B0 replicate 等）留给 author response / 下一轮。
 > ## 🟢 2026-09-15 深夜收尾 · Showcase（09-16）片子定稿（D26 补，user「没问题」）· DGX 已备好 · 明天流程见手册 · 会后回来写笔记 · 先看这里
 >
 > **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D24 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语
@@ -199,7 +212,7 @@ updated: 2026-09-15
 > 合计 P0–P1 ≈ **$350 / ~45 h 串行**，在 $546 预算与 10-12 前的窗口内。离线待办（不点火）：grounding 路径 router；
 > **early-stop / step-budget 文献核**（写作前必做，别把「预算是可学的那一半」写成「我们发明了 early stop」）。
 >
-> ### NAACL 故事骨架（详见 task 卡 `_status/tasks/task_naacl2027_main.md` 2026-09-09 段）
+> ### NAACL 故事骨架（详见 task 卡 `_status/tasks/task_coling2027_main.md` 2026-09-09 段）
 > 1 领域默认杠杆是表征路由（综述：semantic-first，无人有 learned per-step router）→ 2 设置 → 3 **分解**（任务/模式/交互/噪声 + 标签复现 20/66 + step-0 不可见 + B5 嵌套）
 > → 4 **十一种构造一个天花板**（REALM 五条 + LLM/bandit/lookahead/cascade/retry/规则/挖规则/enrich/合并）→ 5 **可学的那一半**：难度 → 弃权 → 预算分档（前沿、6 mode、过重跑、选臂 pilot 样本量）
 > → 6 verifier（一致性，8/8 正号，温和）→ 7 威胁（6/11 无 band、steady-state、单 family 跨 benchmark、全离线）→ 8 建议：measure your cell · cap your failures · route the budget。
@@ -773,7 +786,7 @@ updated: 2026-09-15
 
 > 🔴 **2026-08-19 日期更正（第二次翻转）**: REALM notif = **09-07**（不是 08-21）, 毕设 = **09-05**（从 09-01 延长）。
 > 本文件下方凡出现 "08-21 意见" / "09-01 毕设" 的推算**均按旧日期写成, 已 stale**（含"08-21 后可随时砍"
-> 这类排期语）。canonical = `_status/tasks/task_naacl2027_main.md` frontmatter。**别再把 09-07 翻成 08-21。**
+> 这类排期语）。canonical = `_status/tasks/task_coling2027_main.md` frontmatter。**别再把 09-07 翻成 08-21。**
 
 
 > ## 🟣 2026-08-17 上午 · **地板 chain 早上死在 task 0 → 修完重发, 已越过原炸点**（最新 handoff）
@@ -813,7 +826,7 @@ updated: 2026-09-15
 > chronicle → **笔记 §468**（9 小节）· 台账 **+9 条**（2367 → 2376）· B-1972~B-1980 · commits `a9dc260` `11c5ce2` `85818c1`
 >
 > ### 🔴 REALM 出结论是 **2026-08-21**（user 08-16 更正；全库旧记的 09-07 已作废）
-> 意见落在**毕设交付之前 11 天**，不是之后 6 天 ⇒ 到 ARR 从 35 天变 **52 天**，补实验可比原计划**早 17 天**启动。已同步 `task_naacl2027_main.md` / `task_realm_paper_b_router_negative.md` / memory。
+> 意见落在**毕设交付之前 11 天**，不是之后 6 天 ⇒ 到 ARR 从 35 天变 **52 天**，补实验可比原计划**早 17 天**启动。已同步 `task_coling2027_main.md` / `task_realm_paper_b_router_negative.md` / memory。
 >
 > ### ✅ A100 已 arm，不用管 —— 时间表（UTC，全部按实测吞吐算）
 > `_b1_floor_watcher.sh` **v2**（pid 1855437）等 R28065 收尾 → 自动发 **8 格 cls chain**。
@@ -1190,7 +1203,7 @@ updated: 2026-09-15
 > |---|---|
 > | ✅ **REALM** | Submission #192 已提交 08-06，**审查中**。notif **09-07** / camera-ready **09-14**。非归档轨 + Cross Submission 已保住主会投稿权 |
 > | 🔴 **毕设** | **硬截止 2026-09-01**（user 08-08）。落点 **`final_dissertation/`**（`prior/` 是学长给的往届优秀作品，参照用，不必逐字读）。当前除 `prior/` 外**为空** |
-> | 🎯 **NAACL 2027 main** | **ARR submission `2026-10-12`**（已核官网；会议 2027-06-01~05 SF）。⚠️ 毕设交付后到 ARR **只有 41 天**，REALM 意见 09-07 才到（剩 35 天）⇒ **补实验要与毕设写作并行**（人力 vs GPU 不抢资源）。要跨的是**证据强度**，七个攻击面见 `task_naacl2027_main.md` |
+> | 🎯 **NAACL 2027 main** | **ARR submission `2026-10-12`**（已核官网；会议 2027-06-01~05 SF）。⚠️ 毕设交付后到 ARR **只有 41 天**，REALM 意见 09-07 才到（剩 35 天）⇒ **补实验要与毕设写作并行**（人力 vs GPU 不抢资源）。要跨的是**证据强度**，七个攻击面见 `task_coling2027_main.md` |
 >
 > **毕设是纯写作路径，不需要任何新实验** —— cls+red Phase 1a 42 conditions / WA pilot /
 > mechanism archive 全部已落地。REALM 稿（8 页正文）是结果章骨架来源，但**毕设不是它的扩写**：
