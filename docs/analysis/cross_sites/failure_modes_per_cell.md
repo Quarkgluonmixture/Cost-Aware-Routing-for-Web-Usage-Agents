@@ -359,6 +359,128 @@
 | missing-context | 3 | 1.5% | 1.5% |
 | search-loop | 32 | 16.0% | 15.6% |
 
+## WebArena reddit
+
+WebArena reddit (B0, B1): canonical runs, registered replicates excluded. Same taxonomy; kept apart because WA is a different benchmark and is not in the preregistered cell set.
+
+### B0/wa_reddit/DOM (N=104, failed=76)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 46 | 60.5% | 44.2% |
+| max-steps-other | 14 | 18.4% | 13.5% |
+| search-loop | 12 | 15.8% | 11.5% |
+| visual-hijack/click-loop | 4 | 5.3% | 3.8% |
+
+### B0/wa_reddit/P-SoM (N=104, failed=78)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 42 | 53.8% | 40.4% |
+| max-steps-other | 11 | 14.1% | 10.6% |
+| search-loop | 20 | 25.6% | 19.2% |
+| visual-hijack/click-loop | 5 | 6.4% | 4.8% |
+
+### B0/wa_reddit/P-prompt (N=104, failed=77)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 47 | 61.0% | 45.2% |
+| max-steps-other | 16 | 20.8% | 15.4% |
+| search-loop | 10 | 13.0% | 9.6% |
+| visual-hijack/click-loop | 4 | 5.2% | 3.8% |
+
+### B0/wa_reddit/P-text (N=104, failed=67)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 26 | 38.8% | 25.0% |
+| max-steps-other | 10 | 14.9% | 9.6% |
+| search-loop | 26 | 38.8% | 25.0% |
+| visual-hijack/click-loop | 5 | 7.5% | 4.8% |
+
+### B0/wa_reddit/SoM (N=104, failed=81)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 42 | 51.9% | 40.4% |
+| max-steps-other | 12 | 14.8% | 11.5% |
+| missing-context | 2 | 2.5% | 1.9% |
+| search-loop | 19 | 23.5% | 18.3% |
+| visual-hijack/click-loop | 6 | 7.4% | 5.8% |
+
+### B0/wa_reddit/Vision (N=104, failed=84)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 26 | 31.0% | 25.0% |
+| error/noise | 1 | 1.2% | 1.0% |
+| max-steps-other | 29 | 34.5% | 27.9% |
+| search-loop | 23 | 27.4% | 22.1% |
+| visual-hijack/click-loop | 5 | 6.0% | 4.8% |
+
+### B1/wa_reddit/DOM (N=104, failed=87)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 19 | 21.8% | 18.3% |
+| error/noise | 1 | 1.1% | 1.0% |
+| max-steps-other | 15 | 17.2% | 14.4% |
+| missing-context | 4 | 4.6% | 3.8% |
+| search-loop | 43 | 49.4% | 41.3% |
+| visual-hijack/click-loop | 5 | 5.7% | 4.8% |
+
+### B1/wa_reddit/P-SoM (N=104, failed=92)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 21 | 22.8% | 20.2% |
+| max-steps-other | 18 | 19.6% | 17.3% |
+| search-loop | 41 | 44.6% | 39.4% |
+| visual-hijack/click-loop | 12 | 13.0% | 11.5% |
+
+### B1/wa_reddit/P-prompt (N=104, failed=87)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 17 | 19.5% | 16.3% |
+| error/noise | 2 | 2.3% | 1.9% |
+| max-steps-other | 18 | 20.7% | 17.3% |
+| search-loop | 40 | 46.0% | 38.5% |
+| visual-hijack/click-loop | 10 | 11.5% | 9.6% |
+
+### B1/wa_reddit/P-text (N=104, failed=87)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 23 | 26.4% | 22.1% |
+| max-steps-other | 15 | 17.2% | 14.4% |
+| missing-context | 2 | 2.3% | 1.9% |
+| search-loop | 37 | 42.5% | 35.6% |
+| visual-hijack/click-loop | 10 | 11.5% | 9.6% |
+
+### B1/wa_reddit/SoM (N=104, failed=90)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 21 | 23.3% | 20.2% |
+| error/noise | 1 | 1.1% | 1.0% |
+| max-steps-other | 30 | 33.3% | 28.8% |
+| missing-context | 2 | 2.2% | 1.9% |
+| search-loop | 30 | 33.3% | 28.8% |
+| visual-hijack/click-loop | 6 | 6.7% | 5.8% |
+
+### B1/wa_reddit/Vision (N=104, failed=94)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 30 | 31.9% | 28.8% |
+| error/noise | 1 | 1.1% | 1.0% |
+| max-steps-other | 43 | 45.7% | 41.3% |
+| missing-context | 4 | 4.3% | 3.8% |
+| search-loop | 9 | 9.6% | 8.7% |
+| visual-hijack/click-loop | 7 | 7.4% | 6.7% |
+
 ## Extension cells (outside the preregistered cell set)
 
 Cells registered under run_manifest `extension:` — B5 = GPT-5.6 and the shopping site (B0/B1). Same taxonomy, kept out of `cells` so consumers scoped to the preregistered set (figures, deployment profile) are unchanged. Shopping caveat: B-2002 (search box submits old+new query) hits the text arms far more than Vision, so shopping mode-to-mode bucket differences are not clean (实验笔记 §531.9).

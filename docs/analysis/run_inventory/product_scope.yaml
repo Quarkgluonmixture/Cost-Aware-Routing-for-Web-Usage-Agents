@@ -32,6 +32,7 @@ sets:
   REDDIT: [red_B0, red_B1, red_B2, wared_B0, wared_B1]
 
 common_reasons:
+  vwa_features: &vwafeat "feature pipeline (extract_50_features / l1_router raw_features_phase1a) reads VWA task-config annotations (reasoning / visual difficulty) that WebArena configs do not carry (checked 2026-10-07); a WA version is a new feature design, not a scope change"
   shop_B0: &shopB0 "3 modes only (no phantom arms), so any six-mode or cross-mode-oracle quantity is a different estimand"
   cls_B5: &clsB5 "5 modes; vision run is the broken coordinate contract (B-1997, §508), so cross-mode quantities would read a harness bug"
   shop_B1: &shopB1 "B-2002 (text arms 112 episodes vs vision 1) and the catalog-state drift (§534) make a cross-mode comparison on shopping a measurement of the harness; included only in per-mode descriptive products"
@@ -66,23 +67,23 @@ products:
   routing_ceiling: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   router_objective_ordering: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   supply_value_coupling: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
-  router_label_supply_diagnosis: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  router_label_supply_diagnosis: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   router_triage_learnability: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling carries WA"}}
   router_triage_learnability_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   router_pooled_tier_learnability: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
-  router_undersampling_control: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  router_undersampling_control: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   two_arm_action_learnability: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   retry_vs_switch_label_supply: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
-  routing_feature_diagnostics: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  routing_feature_diagnostics: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   visual_intent_routing: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   rule_routing_pareto: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
-  visual_difficulty_router: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  visual_difficulty_router: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   multimetric_pareto: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
   multimetric_pareto_with_wa: {kind: product, expected: ALL}
   confidence_cascade: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
   confidence_cascade_with_wa: {kind: product, expected: XMODE, why_out: {cls_B5: *clsB5, shop_B0: "vision→som cascade is a cross-mode policy; shopping SoM/Vision carry the catalog-state drift (§534)", shop_B1: *shopB1}}
-  abstention_learnability: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
-  abstention_site_transfer: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: "one site only for B5 — nothing to transfer to", shop_B1: *shopB1}}
+  abstention_learnability: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
+  abstention_site_transfer: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: "one site only for B5 — nothing to transfer to", shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   conditional_failure_attribution: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
 
   # --- band-relative: cells with a registered replicate ---
@@ -98,7 +99,7 @@ products:
   # --- site-specific audits ---
   reddit_sidebar_leakage_audit: {kind: product, expected: [red_B0, red_B1, red_B2], why_out: {other: "VWA reddit sidebar only; the _with_wa sibling carries WA"}}
   reddit_sidebar_leakage_audit_with_wa: {kind: product, expected: REDDIT, why_out: {other: "reddit-only question"}}
-  leakage_sensitivity: {kind: product, expected: REDDIT, why_out: {other: "reddit-only question"}}
+  leakage_sensitivity: {kind: product, expected: [red_B0, red_B1, red_B2], why_out: {other: "reddit-only question", wared_B0: "WA leaked successes = 0 in both leakage audits (reddit_sidebar_leakage_audit_with_wa, persistent_state_leakage_audit) — nothing to re-score", wared_B1: "same"}}
   persistent_state_leakage_audit: {kind: product, expected: REDDIT, why_out: {other: "scored-on-persistent-state tasks exist on reddit; shopping wishlist / cart state is B-2003, audited separately"}}
 
   # --- siblings, frozen lines, snapshots ---

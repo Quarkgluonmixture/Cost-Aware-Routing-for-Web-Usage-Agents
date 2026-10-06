@@ -2,7 +2,7 @@
   "schema": 1,
   "post_hoc_exploratory": true,
   "h10_eligible": false,
-  "generated": "2026-08-03T16:39:52+00:00",
+  "generated": "2026-10-06T19:48:40+00:00",
   "predicate": "\\b(image|picture|photo|screenshot)\\b|\\bcolou?r of\\b|\\bhow many\\b[^.]{0,40}\\bin (?:the|this)\\b",
   "cells": {
     "cls_B0": {
@@ -549,6 +549,194 @@
           "always-Vision",
           "rule: flag\u2192Vision else DOM"
         ]
+      }
+    },
+    "wa_red_B0": {
+      "n_flagged": 5,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 26.923076923076923,
+          "cost": 0.07530692307692308,
+          "latency_s": 284.0829528295077,
+          "latency_canonical_s": 282.6776278821322
+        },
+        "always-SoM": {
+          "sr_pct": 22.115384615384617,
+          "cost": 0.09110223076923077,
+          "latency_s": 272.1316125392914,
+          "latency_canonical_s": 271.7458683733757
+        },
+        "always-Vision": {
+          "sr_pct": 19.23076923076923,
+          "cost": 0.08639858653846154,
+          "latency_s": 337.85427418580423,
+          "latency_canonical_s": 337.4685145524832
+        },
+        "always-P-text": {
+          "sr_pct": 35.57692307692308,
+          "cost": 0.08478059615384616,
+          "latency_s": 330.2833958703738,
+          "latency_canonical_s": 328.3547435953067
+        },
+        "always-P-prompt": {
+          "sr_pct": 25.96153846153846,
+          "cost": 0.07746976923076923,
+          "latency_s": 262.39870842832784,
+          "latency_canonical_s": 260.85595135505383
+        },
+        "always-P-SoM": {
+          "sr_pct": 25.0,
+          "cost": 0.08498372115384616,
+          "latency_s": 323.95212827508266,
+          "latency_canonical_s": 320.8662213568504
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 26.923076923076923,
+          "cost": 0.07584017612795858,
+          "latency_s": 286.66811251009887,
+          "latency_canonical_s": 285.31180512589907
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 26.923076923076923,
+          "cost": 0.07606631286982249,
+          "latency_s": 283.5083691617088,
+          "latency_canonical_s": 282.15206252113427
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 35.57692307692308,
+          "cost": 0.08508452089497041,
+          "latency_s": 327.48763705637947,
+          "latency_canonical_s": 325.63316305579076
+        }
+      },
+      "frontier": [
+        "always-DOM",
+        "always-P-prompt",
+        "always-P-text",
+        "rule: flag\u2192SoM else DOM",
+        "rule: flag\u2192SoM else P-text"
+      ],
+      "dominated_by": {
+        "always-DOM": [],
+        "always-SoM": [
+          "always-P-prompt"
+        ],
+        "always-Vision": [
+          "always-DOM",
+          "always-P-text",
+          "always-P-prompt",
+          "always-P-SoM",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "always-P-text": [],
+        "always-P-prompt": [],
+        "always-P-SoM": [
+          "always-DOM",
+          "always-P-prompt",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM"
+        ],
+        "rule: flag\u2192Vision else DOM": [
+          "always-DOM"
+        ],
+        "rule: flag\u2192SoM else DOM": [],
+        "rule: flag\u2192SoM else P-text": []
+      }
+    },
+    "wa_red_B1": {
+      "n_flagged": 5,
+      "policies": {
+        "always-DOM": {
+          "sr_pct": 16.346153846153847,
+          "cost": 0.06578607615384616,
+          "latency_s": 485.199680520938,
+          "latency_canonical_s": 485.199680520938
+        },
+        "always-SoM": {
+          "sr_pct": 13.461538461538462,
+          "cost": 0.0794411176923077,
+          "latency_s": 494.7877387243968,
+          "latency_canonical_s": 494.7877387243968
+        },
+        "always-Vision": {
+          "sr_pct": 9.615384615384615,
+          "cost": 0.04468445634615385,
+          "latency_s": 490.7330749516304,
+          "latency_canonical_s": 490.7330749516304
+        },
+        "always-P-text": {
+          "sr_pct": 16.346153846153847,
+          "cost": 0.06150959480769231,
+          "latency_s": 509.86720393941954,
+          "latency_canonical_s": 509.86720393941954
+        },
+        "always-P-prompt": {
+          "sr_pct": 16.346153846153847,
+          "cost": 0.07386315615384616,
+          "latency_s": 506.3233460531785,
+          "latency_canonical_s": 506.3233460531785
+        },
+        "always-P-SoM": {
+          "sr_pct": 11.538461538461538,
+          "cost": 0.06659091932692308,
+          "latency_s": 510.59186003758356,
+          "latency_canonical_s": 510.59186003758356
+        },
+        "rule: flag\u2192Vision else DOM": {
+          "sr_pct": 16.346153846153847,
+          "cost": 0.06477157520155326,
+          "latency_s": 485.46570909933666,
+          "latency_canonical_s": 485.46570909933666
+        },
+        "rule: flag\u2192SoM else DOM": {
+          "sr_pct": 16.346153846153847,
+          "cost": 0.06644256853550295,
+          "latency_s": 485.66064485764275,
+          "latency_canonical_s": 485.66064485764275
+        },
+        "rule: flag\u2192SoM else P-text": {
+          "sr_pct": 16.346153846153847,
+          "cost": 0.06237168725406805,
+          "latency_s": 509.1422296502357,
+          "latency_canonical_s": 509.1422296502357
+        }
+      },
+      "frontier": [
+        "always-DOM",
+        "always-P-text",
+        "always-Vision",
+        "rule: flag\u2192SoM else P-text",
+        "rule: flag\u2192Vision else DOM"
+      ],
+      "dominated_by": {
+        "always-DOM": [],
+        "always-SoM": [
+          "always-DOM",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM"
+        ],
+        "always-Vision": [],
+        "always-P-text": [],
+        "always-P-prompt": [
+          "always-DOM",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM"
+        ],
+        "always-P-SoM": [
+          "always-DOM",
+          "always-P-text",
+          "rule: flag\u2192Vision else DOM",
+          "rule: flag\u2192SoM else DOM",
+          "rule: flag\u2192SoM else P-text"
+        ],
+        "rule: flag\u2192Vision else DOM": [],
+        "rule: flag\u2192SoM else DOM": [
+          "always-DOM",
+          "rule: flag\u2192Vision else DOM"
+        ],
+        "rule: flag\u2192SoM else P-text": []
       }
     }
   }

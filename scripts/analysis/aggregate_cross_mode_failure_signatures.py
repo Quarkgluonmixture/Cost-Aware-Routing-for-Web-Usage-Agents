@@ -52,6 +52,13 @@ sys.path.insert(0, str(ROOT))
 from scripts.analysis.lib.canonical_task_universe import restrict_to_scored  # noqa: E402
 
 PHASE1 = ROOT / "results" / "visualwebarena" / "phase1"
+WA_PHASE1 = ROOT / "results" / "webarena" / "phase1"
+WA_SCAN_DIR = ROOT / "results" / "diag_scans" / "v11_wa"
+
+
+def _universe(site: str) -> tuple[str, str]:
+    """(site, benchmark) for the scored universe. WA keys carry site `wa_reddit` (§538)."""
+    return ("reddit", "webarena") if site == "wa_reddit" else (site, "visualwebarena")
 OUT_DIR = ROOT / "docs" / "analysis" / "cross_sites"
 
 # Display order. `vision` carries no element-id list at all, so the id-space rules
@@ -105,6 +112,9 @@ ID_NAMESPACE = {
 
 def parse_key(key: str) -> tuple[str, str, str]:
     """`B0_phantom_som_reddit` -> (B0, phantom_som, reddit)."""
+    if key.endswith("_wa_reddit"):           # B1_phantom_som_wa_reddit -> (B1, phantom_som, wa_reddit)
+        parts = key[: -len("_wa_reddit")].split("_")
+        return parts[0], "_".join(parts[1:]), "wa_reddit"
     parts = key.split("_")
     return parts[0], "_".join(parts[1:-1]), parts[-1]
 
@@ -131,7 +141,7 @@ def resolve_targets() -> dict[str, str]:
     return targets
 
 
-def load_scans(scan_dir: Path, targets: dict[str, str]) -> dict[str, dict]:
+def load_scans(scan_dir: Path, targets: dict[str, str], expected_n: int = 36) -> dict[str, dict]:
     """Read (or produce) one diag scan JSON per condition, asserting one ruleset."""
     scan_dir.mkdir(parents=True, exist_ok=True)
     scans = {}
@@ -151,8 +161,8 @@ def load_scans(scan_dir: Path, targets: dict[str, str]) -> dict[str, dict]:
             f"FATAL: mixed ruleset_version {dict(versions)} — cross-mode aggregation is "
             "barred by the /diag discover-then-freeze discipline. Rerun diag_rescan_all.py."
         )
-    if len(scans) != 36:
-        raise SystemExit(f"FATAL: expected 36 landed conditions, resolved {len(scans)}")
+    if len(scans) != expected_n:
+        raise SystemExit(f"FATAL: expected {expected_n} landed conditions, resolved {len(scans)}")
     return scans
 
 
@@ -175,7 +185,8 @@ def part_a(scans: dict[str, dict]) -> dict:
         # the 203 every other rate in the paper uses.
         by_task = {int(ep["task_id"]): ep for ep in d["results"]
                    if ep.get("task_id") is not None}
-        kept, _prov = restrict_to_scored(by_task, site)
+        _us, _ub = _universe(site)
+        kept, _prov = restrict_to_scored(by_task, _us, benchmark=_ub)
         den[mode] += len(kept)
         cden[(cell, mode)] = len(kept)
         for ep in kept.values():
@@ -265,7 +276,8 @@ def measure_refs(run_dir: Path, site: str) -> dict:
                 rec["hall"] += 1
         per_task[int(tid)] = rec
 
-    kept, prov = restrict_to_scored(per_task, site)
+    _us, _ub = _universe(site)
+    kept, prov = restrict_to_scored(per_task, _us, benchmark=_ub)
     for rec in kept.values():
         out["ep_total"] += 1
         out["ep_failed"] += 0 if rec["ok"] else 1
@@ -284,7 +296,7 @@ def part_b(targets: dict[str, str]) -> dict:
     cells: dict[str, dict[str, dict]] = collections.defaultdict(dict)
     for key, run in sorted(targets.items()):
         model, mode, site = parse_key(key)
-        m = measure_refs(PHASE1 / run, site)
+        m = measure_refs((WA_PHASE1 if site == "wa_reddit" else PHASE1) / run, site)
         m["rate_all_pct"] = 100.0 * m["hall_all"] / m["act_all"] if m["act_all"] else 0.0
         m["rate_failed_pct"] = (100.0 * m["hall_failed"] / m["act_failed"]
                                 if m["act_failed"] else 0.0)
@@ -520,6 +532,21 @@ def main() -> int:
     print("  by action-step:      ", b["summary_by_action_step"])
     print("  by episode incidence:", b["summary_by_episode_incidence"])
 
+    # WebArena reddit, B0 + B1 (2026-10-07, 实验笔记 §538): same two parts over the 12 WA
+    # conditions, kept apart from the 36 preregistered ones (different benchmark).
+    from scripts.analysis.per_mode_four_dimension_profile import wa_spec
+    wa_targets = {}
+    for wb in ("B0", "B1"):
+        for ep in wa_spec(wb)["modes"].values():
+            name = Path(ep).parent.parent.name
+            stem = name[len(wb) + 1:name.index("_wa_reddit")]
+            wa_targets[f"{wb}_{stem}_wa_reddit"] = name
+    wa_scans = load_scans(WA_SCAN_DIR, wa_targets, expected_n=12)
+    wa_rules = {d.get("ruleset_version") for d in wa_scans.values()}
+    if wa_rules != {ruleset}:
+        raise SystemExit(f"FATAL: WA scans ruleset {wa_rules} != VWA {ruleset} — rescan WA first")
+    wa_a, wa_b = part_a(wa_scans), part_b(wa_targets)
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "producer": "scripts/analysis/aggregate_cross_mode_failure_signatures.py",
@@ -528,11 +555,23 @@ def main() -> int:
         "run_ids": {k: v for k, v in sorted(targets.items())},
         "part_a_signature_frequency": a,
         "part_b_hallucinated_references": b,
+        "wa": {"n_conditions": len(wa_scans), "run_ids": dict(sorted(wa_targets.items())),
+               "part_a_signature_frequency": wa_a, "part_b_hallucinated_references": wa_b},
     }
     (args.out_dir / "cross_mode_failure_signatures.json").write_text(
         json.dumps(payload, indent=1), encoding="utf-8")
+    md = render_md(a, b, ruleset).rstrip("\n")
+    wa_lines = ["", "", "## WebArena reddit (B0, B1) — same computation, 12 conditions", "",
+                "Added 2026-10-07 (实验笔记 §538). Different benchmark: read beside the 36 VWA "
+                "conditions above, not pooled with them.", "",
+                f"Episodes: {wa_a['episodes_total']}. Top signatures by episode-level hit rate (%):", "",
+                "| rule | " + " | ".join(MODES) + " |", "|---|" + "---|" * len(MODES)]
+    for r in wa_a["rules"][:10]:
+        wa_lines.append(f"| {r['rule_id']} | " + " | ".join(f"{r['per_mode_pct'][m]:.1f}" for m in MODES) + " |")
+    wa_lines += ["", f"Hallucinated-reference summary — by action-step: `{wa_b['summary_by_action_step']}`; "
+                 f"by episode incidence: `{wa_b['summary_by_episode_incidence']}`.", ""]
     (args.out_dir / "cross_mode_failure_signatures.md").write_text(
-        render_md(a, b, ruleset), encoding="utf-8")
+        md + "\n".join(wa_lines), encoding="utf-8")
     print(f"wrote {args.out_dir}/cross_mode_failure_signatures.{{json,md}}")
     return 0
 

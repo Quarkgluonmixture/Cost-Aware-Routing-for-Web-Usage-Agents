@@ -122,3 +122,24 @@ P-text = legend text under the DOM prompt; P-prompt = AXTree text under the SoM 
 The paper states only the two comparable rows. Together they are an interaction with opposite signs: moving to the SoM prompt **raises** the rate when the text supplies native ids (5/6 cells by action-step, 5/6 by episode) and **lowers** it when the text supplies the 1..K legend (6/6 and 5/6). Both halves hold the id namespace fixed, so neither is a detector artefact, and the sign flip is what a prompt-text mismatch account predicts: a prompt announcing marks 1..K helps when the text has them and hurts when it does not.
 
 The rows marked NOT comparable are printed so the asymmetry is visible, not as evidence. Note that they are also the rows that move most between the two denominators.
+
+## WebArena reddit (B0, B1) — same computation, 12 conditions
+
+Added 2026-10-07 (实验笔记 §538). Different benchmark: read beside the 36 VWA conditions above, not pooled with them.
+
+Episodes: 1248. Top signatures by episode-level hit rate (%):
+
+| rule | dom | som | vision | phantom_text | phantom_prompt | phantom_som |
+|---|---|---|---|---|---|---|
+| P31 | 46.2 | 50.0 | 57.7 | 48.6 | 47.6 | 48.6 |
+| P5 | 29.8 | 35.6 | 44.2 | 35.6 | 40.9 | 43.3 |
+| P45 | 26.9 | 33.7 | 0.0 | 32.7 | 37.0 | 41.3 |
+| P36 | 43.3 | 23.1 | 5.8 | 24.0 | 42.8 | 23.6 |
+| P14 | 9.6 | 15.4 | 28.8 | 13.5 | 19.7 | 22.6 |
+| P12 | 13.5 | 22.6 | 9.1 | 16.3 | 17.3 | 20.7 |
+| P49 | 4.3 | 11.5 | 0.0 | 4.8 | 6.7 | 6.7 |
+| P33 | 3.8 | 3.4 | 9.6 | 5.3 | 4.8 | 4.8 |
+| P43 | 4.8 | 0.0 | 0.0 | 4.8 | 4.8 | 4.8 |
+| P47 | 2.4 | 2.9 | 2.4 | 3.4 | 1.9 | 3.8 |
+
+Hallucinated-reference summary — by action-step: `{'n_cells': 2, 'cells_where_P_SoM_lowest': 1, 'cells_where_P_prompt_highest': 2, 'cells_text_effect_negative_at_SoM_prompt': 2, 'cells_text_effect_negative_at_DOM_prompt': 2, 'cells_reduction_larger_at_SoM_prompt': 2, 'cells_prompt_effect_negative_on_legend': 1, 'cells_prompt_effect_negative_on_AXTree': 0}`; by episode incidence: `{'n_cells': 2, 'cells_where_P_SoM_lowest': 1, 'cells_where_P_prompt_highest': 1, 'cells_text_effect_negative_at_SoM_prompt': 2, 'cells_text_effect_negative_at_DOM_prompt': 2, 'cells_reduction_larger_at_SoM_prompt': 1, 'cells_prompt_effect_negative_on_legend': 1, 'cells_prompt_effect_negative_on_AXTree': 1}`.

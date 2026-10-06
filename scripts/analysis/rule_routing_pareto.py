@@ -49,6 +49,7 @@ CFG_DIR = {
     "reddit": REPO / "external/visualwebarena/config_files/vwa/test_reddit",
 }
 PROFILE = REPO / "docs/analysis/cross_sites/per_mode_four_dimension_profile.json"
+PROFILE_WA = REPO / "docs/analysis/cross_sites/per_mode_four_dimension_profile_with_wa.json"
 OUT_MD = REPO / "docs/analysis/cross_sites/rule_routing_pareto.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/rule_routing_pareto.json"
 
@@ -111,6 +112,51 @@ def load_unit_costs() -> dict[str, dict[str, dict[str, float]]]:
     return out
 
 
+def wa_inputs(baseline: str) -> tuple[set[int], dict[int, dict[str, int]], dict[str, dict[str, float]]]:
+    """(flagged set, task -> {mode: 0/1}, unit costs) for <baseline> x WebArena-reddit.
+
+    2026-10-07 (实验笔记 §538). The rule reads only the intent and whether the task ships a
+    reference image, so it applies to WebArena unchanged; the configs come from the canonical
+    run's own task_configs/, outcomes from the canonical episodes (registered replicates
+    excluded by wa_spec), units from the _with_wa profile.
+    """
+    from scripts.analysis.lib.episode_rows import load_task_rows
+    from scripts.analysis.per_mode_four_dimension_profile import wa_spec
+    scored, _ = expected_scored_ids("reddit", "webarena")
+    spec = wa_spec(baseline)
+    tasks: dict[int, dict[str, int]] = {t: {} for t in scored}
+    cfg_dir = None
+    for pretty, ep in spec["modes"].items():
+        key = next(k for k, v in PRETTY.items() if v == pretty)
+        rows = load_task_rows(Path(ep))
+        missing = scored - set(rows)
+        if missing:
+            raise MissingInput(f"WA {baseline}/{pretty}: {len(missing)} scored tasks absent")
+        for t in scored:
+            tasks[t][key] = 1 if rows[t].get("success") else 0
+        cfg_dir = cfg_dir or Path(ep).parent.parent / "task_configs"
+    flagged = set()
+    for t in sorted(scored):
+        p = cfg_dir / f"reddit_task_{t}.json"
+        if not p.exists():
+            raise MissingInput(f"WA task config absent: {p}")
+        cfg = json.loads(p.read_text(encoding="utf-8"))
+        if not cfg.get("image") and VISUAL_INTENT_RE.search(str(cfg.get("intent") or "")):
+            flagged.add(t)
+    if not PROFILE_WA.exists():
+        raise MissingInput(f"{PROFILE_WA} missing — run per_mode_four_dimension_profile.py --with-wa")
+    prof = json.loads(PROFILE_WA.read_text(encoding="utf-8"))
+    cell = next((c for c in prof["cells"] if c["site"] == "wa_reddit" and c["baseline"] == baseline), None)
+    if cell is None:
+        raise MissingInput(f"{PROFILE_WA}: no wa_reddit x {baseline} cell")
+    unit = {}
+    for pretty, blk in cell["per_mode"].items():
+        key = next(k for k, v in PRETTY.items() if v == pretty)
+        unit[key] = {"cost": blk["mean_cost_usd"], "latency": blk["mean_latency_s"],
+                     "latency_canonical": blk.get("mean_latency_canonical_s", blk["mean_latency_s"])}
+    return flagged, tasks, unit
+
+
 def evaluate(tasks, unit, chooser) -> dict:
     n = len(tasks)
     sr = 100 * sum(tasks[t][chooser(t)] for t in tasks) / n
@@ -154,13 +200,18 @@ def main() -> None:
          "and are **within-cell comparable only**.", ""]
 
     verdict_rows: list[tuple[str, str, list[str]]] = []
+    groups = []
     for site, pre in (("classifieds", "cls"), ("reddit", "red")):
-        F = flagged_set(site)
-        for b in ("B0", "B1", "B2"):
-            cid = f"{pre}_{b}"
-            if cid not in sr or cid not in units:
+        groups.append((flagged_set(site),
+                       [(f"{pre}_{b}", sr.get(f"{pre}_{b}"), units.get(f"{pre}_{b}"))
+                        for b in ("B0", "B1", "B2")]))
+    for wb in ("B0", "B1"):
+        F_wa, tasks_wa, unit_wa = wa_inputs(wb)
+        groups.append((F_wa, [(f"wa_red_{wb}", tasks_wa, unit_wa)]))
+    for F, members in groups:
+        for cid, tasks, unit in members:
+            if tasks is None or unit is None:
                 continue
-            tasks, unit = sr[cid], units[cid]
             policies: dict[str, dict] = {}
             for m in MODES:
                 policies[f"always-{PRETTY[m]}"] = evaluate(tasks, unit, lambda t, m=m: m)

@@ -44,11 +44,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -56,9 +53,7 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2",
-   "wared_B0",
-   "wared_B1"
+   "red_B2"
   ]
  },
  {
@@ -74,11 +69,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -86,9 +78,7 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2",
-   "wared_B0",
-   "wared_B1"
+   "red_B2"
   ]
  },
  {
@@ -426,13 +416,12 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2"
-  ],
-  "status": "gap",
-  "missing": [
+   "red_B2",
    "wared_B0",
    "wared_B1"
   ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -612,13 +601,12 @@
    "red_B1",
    "red_B2",
    "shop_B0",
-   "shop_B1"
-  ],
-  "status": "gap",
-  "missing": [
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -747,18 +735,13 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "red_B0",
    "red_B1",
-   "red_B2",
-   "wared_B0",
-   "wared_B1"
+   "red_B2"
   ]
  },
  {
@@ -1099,7 +1082,7 @@
  {
   "product": "per_mode_four_dimension_profile_with_wa",
   "source": "per_mode_four_dimension_profile_with_wa.json",
-  "producer": "?",
+  "producer": "scripts/analysis/rule_routing_pareto.py",
   "last_commit": "2026-10-06",
   "cells": [
    "cls_B0",
@@ -1400,11 +1383,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1412,9 +1392,7 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2",
-   "wared_B0",
-   "wared_B1"
+   "red_B2"
   ]
  },
  {
@@ -1565,11 +1543,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1577,9 +1552,7 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2",
-   "wared_B0",
-   "wared_B1"
+   "red_B2"
   ]
  },
  {
@@ -1624,11 +1597,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1636,9 +1606,7 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2",
-   "wared_B0",
-   "wared_B1"
+   "red_B2"
   ]
  },
  {
@@ -1652,13 +1620,12 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2"
-  ],
-  "status": "gap",
-  "missing": [
+   "red_B2",
    "wared_B0",
    "wared_B1"
   ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1849,11 +1816,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1861,9 +1825,7 @@
    "cls_B2",
    "red_B0",
    "red_B1",
-   "red_B2",
-   "wared_B0",
-   "wared_B1"
+   "red_B2"
   ]
  },
  {

@@ -228,12 +228,24 @@ def main():
         _extension_run_names = None
         _unique_run_dirs = sorted([d for d in PHASE1_DIR.glob("B*") if d.is_dir()])
 
+    # WebArena (2026-10-07, 实验笔记 §538): WA runs are not in run_manifest.yaml and their names
+    # (B1_dom_wa_reddit_...) do not match RUN_RE, so they were never read. They come from the same
+    # canonical-run resolver the four-dimension profile uses (glob minus registered replicates)
+    # and go to their own `wa_cells` key; `cells` keeps its preregistered scope.
+    from scripts.analysis.per_mode_four_dimension_profile import wa_spec
+    _wa_runs: dict[str, tuple[str, str]] = {}
+    for _wb in ("B0", "B1"):
+        for _ep in wa_spec(_wb)["modes"].values():
+            _rd = Path(_ep).parent.parent
+            _wa_runs[_rd.name] = (_wb, "wa_reddit")
+            _unique_run_dirs.append(_rd)
+
     _missing_csv: list[str] = []
     _unparsed: list[str] = []
     for run_dir in _unique_run_dirs:
         if not run_dir.is_dir():
             continue
-        baseline, site = parse_run(run_dir.name)
+        baseline, site = _wa_runs.get(run_dir.name) or parse_run(run_dir.name)
         if not baseline or not site:
             _unparsed.append(run_dir.name)
             continue
@@ -299,6 +311,12 @@ def main():
         "unmapped_fine_buckets": dict(sorted(unmapped_fine.items())),
         "cells": {},
         "extension_cells": {},
+        "wa_cells": {},
+        "wa_note": (
+            "WebArena reddit (B0, B1): canonical runs, registered replicates excluded. Same "
+            "taxonomy; kept apart because WA is a different benchmark and is not in the "
+            "preregistered cell set."
+        ),
         "extension_note": (
             "Cells registered under run_manifest `extension:` — B5 = GPT-5.6 and the shopping "
             "site (B0/B1). Same taxonomy, kept out of `cells` so consumers scoped to the "
@@ -320,8 +338,9 @@ def main():
                 continue
             bucket_pct[b] = {"count": c, "pct_of_failed": (c / failed * 100) if failed else 0.0,
                              "pct_of_total": (c / total * 100) if total else 0.0}
-        target = result[output_section(seen_runs_per_cell[ck], _extension_run_names,
-                                       ck[0], _PREREG_BASELINES)]
+        target = (result["wa_cells"] if ck[1] == "wa_reddit" else
+                  result[output_section(seen_runs_per_cell[ck], _extension_run_names,
+                                        ck[0], _PREREG_BASELINES)])
         target[f"{ck[0]}/{ck[1]}/{ck[2]}"] = {
             "baseline": ck[0], "site": ck[1], "mode": ck[2],
             "total_episodes": total,
@@ -385,6 +404,10 @@ def main():
 
     for ck, info in sorted(result["cells"].items()):
         _cell_md(ck, info)
+    if result["wa_cells"]:
+        md_lines += ["## WebArena reddit", "", result["wa_note"], ""]
+        for ck, info in sorted(result["wa_cells"].items()):
+            _cell_md(ck, info)
     if result["extension_cells"]:
         md_lines += ["## Extension cells (outside the preregistered cell set)", "",
                      result["extension_note"], ""]

@@ -97,9 +97,37 @@ The partition is a regex over the task intent: nothing is learned, so there is n
 | always-P-SoM | 0.49% | 0.09451 | 640.0s | no | `always-Vision`, `rule: flag→Vision else DOM` |
 | always-P-prompt | 0.00% | 0.09940 | 599.3s | no | `always-Vision` |
 
+## `wa_red_B0` — flagged 5/104
+
+| policy | SR | cost | latency (canonical) | on frontier? | dominated by |
+|---|---|---|---|---|---|
+| always-P-text | 35.58% | 0.08478 | 328.4s | **yes** | — |
+| rule: flag→SoM else P-text ⭐ | 35.58% | 0.08508 | 325.6s | **yes** | — |
+| always-DOM | 26.92% | 0.07531 | 282.7s | **yes** | — |
+| rule: flag→Vision else DOM ⭐ | 26.92% | 0.07584 | 285.3s | no | `always-DOM` |
+| rule: flag→SoM else DOM ⭐ | 26.92% | 0.07607 | 282.2s | **yes** | — |
+| always-P-prompt | 25.96% | 0.07747 | 260.9s | **yes** | — |
+| always-P-SoM | 25.00% | 0.08498 | 320.9s | no | `always-DOM`, `always-P-prompt`, `rule: flag→Vision else DOM`, `rule: flag→SoM else DOM` |
+| always-SoM | 22.12% | 0.09110 | 271.7s | no | `always-P-prompt` |
+| always-Vision | 19.23% | 0.08640 | 337.5s | no | `always-DOM`, `always-P-text`, `always-P-prompt`, `always-P-SoM`, `rule: flag→Vision else DOM`, `rule: flag→SoM else DOM`, `rule: flag→SoM else P-text` |
+
+## `wa_red_B1` — flagged 5/104
+
+| policy | SR | cost | latency (canonical) | on frontier? | dominated by |
+|---|---|---|---|---|---|
+| always-P-text | 16.35% | 0.06151 | 509.9s | **yes** | — |
+| rule: flag→SoM else P-text ⭐ | 16.35% | 0.06237 | 509.1s | **yes** | — |
+| rule: flag→Vision else DOM ⭐ | 16.35% | 0.06477 | 485.5s | **yes** | — |
+| always-DOM | 16.35% | 0.06579 | 485.2s | **yes** | — |
+| rule: flag→SoM else DOM ⭐ | 16.35% | 0.06644 | 485.7s | no | `always-DOM`, `rule: flag→Vision else DOM` |
+| always-P-prompt | 16.35% | 0.07386 | 506.3s | no | `always-DOM`, `rule: flag→Vision else DOM`, `rule: flag→SoM else DOM` |
+| always-SoM | 13.46% | 0.07944 | 494.8s | no | `always-DOM`, `rule: flag→Vision else DOM`, `rule: flag→SoM else DOM` |
+| always-P-SoM | 11.54% | 0.06659 | 510.6s | no | `always-DOM`, `always-P-text`, `rule: flag→Vision else DOM`, `rule: flag→SoM else DOM`, `rule: flag→SoM else P-text` |
+| always-Vision | 9.62% | 0.04468 | 490.7s | **yes** | — |
+
 ## Verdict
 
-**A rule policy survives on the frontier in 5 of 6 cells**: `cls_B0` (3 of 3); `cls_B2` (2 of 3); `red_B0` (2 of 3); `red_B1` (2 of 3); `red_B2` (1 of 3).
+**A rule policy survives on the frontier in 7 of 8 cells**: `cls_B0` (3 of 3); `cls_B2` (2 of 3); `red_B0` (2 of 3); `red_B1` (2 of 3); `red_B2` (1 of 3); `wa_red_B0` (2 of 3); `wa_red_B1` (2 of 3).
 
 Surviving the frontier is a low bar: it means *nothing dominates*, not that the policy is preferable. Read it as "routing is not ruled out here" rather than "routing wins here". The cells where it is dominated are the informative ones — there, the signal is real (see `visual_intent_routing`) and routing on it still buys nothing, because the arm the rule sends work *to* is already the right arm to send everything to.
 
