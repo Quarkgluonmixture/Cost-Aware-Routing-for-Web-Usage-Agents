@@ -275,6 +275,28 @@ def wa_spec(baseline: str = "B1") -> dict:
             "steps_glob": "reddit_task_*_steps_v2.jsonl"}
 
 
+def extension_specs() -> list[dict]:
+    """Cells registered under run_manifest `extension:` (B5 x classifieds, B0/B1 x shopping).
+
+    Reported in their own section of the _with_wa product and never counted in the cross-cell
+    consistency denominator (that grid is the preregistered six plus WA). Shopping caveats travel
+    with the section: B-2002 and the catalog-state drift (§531.9, §534).
+    """
+    from scripts.analysis.lib.run_registry import BASELINES, get_all_cells
+    groups: dict[tuple[str, str], dict[str, Path]] = {}
+    for c in get_all_cells(grade_filter=["paper-grade"], include_extension=True):
+        if c.baseline in BASELINES and c.site in ("classifieds", "reddit"):
+            continue                      # preregistered cells are profiled from CELLS
+        groups.setdefault((c.baseline, c.site), {})[c.mode] = c.episodes_dir
+    specs = []
+    for (b, site), modes in sorted(groups.items()):
+        universe, _ = expected_scored_ids(site)
+        specs.append({"baseline": b, "site": site, "modes": modes, "universe": set(universe),
+                      "n_expected": len(universe),
+                      "steps_glob": f"{site}_task_*_steps_v2.jsonl", "extension": True})
+    return specs
+
+
 def _num(v: Any) -> float:
     return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0.0
 
@@ -475,14 +497,17 @@ POOLED_SPEC = {
 
 def profile_cell(spec: dict) -> dict[str, Any]:
     baseline, site = spec["baseline"], spec["site"]
+    # Extension cells (2026-10-07, 实验笔记 §538) can be partial: shop_B0 has 3 modes, cls_B5 5.
+    # Preregistered and WA specs carry all six, so for them this is DISPLAY_MODES unchanged.
+    modes_here = tuple(m for m in DISPLAY_MODES if m in (spec.get("modes") or {})) or DISPLAY_MODES
     summ = summary_layer(spec)
     solve_sets = {m: {t for t, r in summ[m].items() if r.get("success") is True}
-                  for m in DISPLAY_MODES}
+                  for m in modes_here}
 
     # ── trajectory layer, loaded once so the modes can be matched on a common set
     steps_by_mode: dict[str, dict[int, dict]] = {}
     skipped_by_mode: dict[str, list[int]] = {}
-    for m in DISPLAY_MODES:
+    for m in modes_here:
         steps_by_mode[m], skipped_by_mode[m] = steps_layer(baseline, site, m, spec=spec)
 
     # (codex Mode B finding, 2026-07-29) Cross-mode comparison must be PAIRED.
@@ -492,15 +517,15 @@ def profile_cell(spec: dict) -> dict[str, Any]:
     # Micro are therefore computed on the intersection of tasks for which EVERY
     # mode has a usable trajectory. The dropped count is reported.
     common_steps: set[int] = set.intersection(
-        *[set(steps_by_mode[m]) for m in DISPLAY_MODES]) if all(
-        steps_by_mode[m] for m in DISPLAY_MODES) else set()
+        *[set(steps_by_mode[m]) for m in modes_here]) if all(
+        steps_by_mode[m] for m in modes_here) else set()
 
     per_mode: dict[str, dict[str, Any]] = {}
-    for m in DISPLAY_MODES:
+    for m in modes_here:
         rows = summ[m]
         n = len(rows)
-        others = set().union(*[solve_sets[o] for o in DISPLAY_MODES if o != m]) \
-            if len(DISPLAY_MODES) > 1 else set()
+        others = set().union(*[solve_sets[o] for o in modes_here if o != m]) \
+            if len(modes_here) > 1 else set()
         metrics: dict[str, float | None] = {
             "sr_pct": 100.0 * len(solve_sets[m]) / n if n else None,
             "n_success": float(len(solve_sets[m])),
@@ -549,8 +574,8 @@ def profile_cell(spec: dict) -> dict[str, Any]:
         metrics["n_tasks_steps_excluded"] = float(len(skipped_by_mode[m]))
         per_mode[m] = metrics
 
-    dom_cost = per_mode["DOM"].get("mean_cost_usd")
-    for m in DISPLAY_MODES:
+    dom_cost = per_mode["DOM"].get("mean_cost_usd") if "DOM" in per_mode else None
+    for m in modes_here:
         c = per_mode[m].get("mean_cost_usd")
         per_mode[m]["cost_rel_dom"] = (c / dom_cost) if (c and dom_cost) else None
 
@@ -559,7 +584,7 @@ def profile_cell(spec: dict) -> dict[str, Any]:
         "per_mode": per_mode,
         "n_common_trajectory_tasks": len(common_steps),
         "n_dropped_for_pairing": {
-            m: len(steps_by_mode[m]) - len(common_steps) for m in DISPLAY_MODES},
+            m: len(steps_by_mode[m]) - len(common_steps) for m in modes_here},
         "steps_excluded_tasks": {m: v for m, v in skipped_by_mode.items() if v},
     }
 
@@ -788,6 +813,25 @@ def render(payload: dict) -> str:
     for line in payload["reading"]:
         L.append(line)
     L.append("")
+    ext = payload.get("extension_cells") or []
+    if ext:
+        # 2026-10-07 (实验笔记 §538): the manifest `extension:` cells, profiled on the modes each has.
+        # Not in the consistency counts above, whose denominator is the preregistered six + WA.
+        L += ["## Extension cells — B5 x classifieds, B0/B1 x shopping", "",
+              "Profiled on the modes each cell has (shop_B0: 3, cls_B5: 5 — its vision run is the "
+              "broken coordinate contract, B-1997, and is not registered). **Not counted in the "
+              "consistency grid above.** Shopping carries two measurement caveats that bear on any "
+              "mode-to-mode reading: B-2002 (search box submits old+new query; text arms far more "
+              "affected than Vision) and the catalog-state drift across runs (§534).", "",
+              "| cell | mode | n | SR | mean cost | mean latency (canonical, s) | mean tokens | unique solves |",
+              "|---|---|---:|---:|---:|---:|---:|---:|"]
+        for c in ext:
+            for m, v in c["per_mode"].items():
+                L.append(f"| `{c['cell_id']}` | {m} | {int(v['n_tasks_summary'])} | "
+                         f"{_fmt(v.get('sr_pct'), 'sr_pct')} | {_fmt(v.get('mean_cost_usd'), 'mean_cost_usd')} | "
+                         f"{_fmt(v.get('mean_latency_canonical_s'), 'mean_latency_canonical_s')} | "
+                         f"{_fmt(v.get('mean_tokens'), 'mean_tokens')} | {int(v['n_unique_solves'])} |")
+        L.append("")
     return "\n".join(L)
 
 
@@ -891,6 +935,8 @@ def main() -> int:
         "audit": audit,
     }
     payload["reading"] = reading(cells, cons)
+    if a.with_wa:
+        payload["extension_cells"] = [profile_cell(sp) for sp in extension_specs()]
 
     a.json_out.parent.mkdir(parents=True, exist_ok=True)
     a.json_out.write_text(json.dumps(payload, ensure_ascii=False, indent=1),

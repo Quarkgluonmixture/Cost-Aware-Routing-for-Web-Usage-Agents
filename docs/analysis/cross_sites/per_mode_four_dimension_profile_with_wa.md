@@ -1,6 +1,6 @@
 # Per-mode four-dimension evidence profile
 
-- generated: `2026-10-06T06:40:35+00:00`
+- generated: `2026-10-06T19:53:59+00:00`
 - schema: `2026-08-02-per-mode-four-dimension-profile-v2`
 - **post_hoc_exploratory=True / h10_eligible=False**
 - 笔记 §108 evidence layer, cross-mode axis (the paper-headline axis per `paper_section2_framework.canvas`). `INDEX.md §7`: the framework was defined but only the **Macro** dimension had ever been computed per mode. This is the first run of all four.
@@ -608,3 +608,24 @@ trajectory metrics on the **104 tasks every mode has a usable trajectory for** (
 2. **Mechanism claims are not established here.** These are Evidence-layer observations. Reading `scroll_frac` as "viewport-only forces scrolling" is an Explanation-layer hypothesis and the canvas's own reviewer caveat ("Evidence ≠ Explanation") applies: the two must be written separately and linked explicitly, not merged.
 3. **Vision is structurally off the 2×2 grid** (no AXTree text), which is why it never appeared in the earlier per-axis analyses (§103). Any Vision row here is the first time that mode has been profiled on this dimension.
 4. **Two estimands are reported for every step-level rate.** `task-macro` is the mean over episodes of a within-episode rate; `pooled-step` is total numerator over total denominator. They weight long and short episodes differently and can diverge substantially, so neither is reported alone.
+
+## Extension cells — B5 x classifieds, B0/B1 x shopping
+
+Profiled on the modes each cell has (shop_B0: 3, cls_B5: 5 — its vision run is the broken coordinate contract, B-1997, and is not registered). **Not counted in the consistency grid above.** Shopping carries two measurement caveats that bear on any mode-to-mode reading: B-2002 (search box submits old+new query; text arms far more affected than Vision) and the catalog-state drift across runs (§534).
+
+| cell | mode | n | SR | mean cost | mean latency (canonical, s) | mean tokens | unique solves |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `B0_shopping` | DOM | 432 | 11.34 | 0.11989 | 273.3478 | 112242 | 13 |
+| `B0_shopping` | SoM | 432 | 14.81 | 0.09770 | 225.1481 | 91421 | 13 |
+| `B0_shopping` | Vision | 432 | 14.35 | 0.07484 | 248.5073 | 67359 | 18 |
+| `B1_shopping` | DOM | 432 | 4.86 | 0.11108 | 447.4438 | 117165 | 4 |
+| `B1_shopping` | SoM | 432 | 7.64 | 0.08269 | 365.7153 | 86873 | 9 |
+| `B1_shopping` | Vision | 432 | 5.56 | 0.04943 | 416.6420 | 51061 | 10 |
+| `B1_shopping` | P-text | 432 | 6.71 | 0.07871 | 454.1084 | 82454 | 7 |
+| `B1_shopping` | P-prompt | 432 | 5.32 | 0.11420 | 457.9951 | 120516 | 0 |
+| `B1_shopping` | P-SoM | 432 | 4.63 | 0.08125 | 444.1090 | 85051 | 1 |
+| `B5_classifieds` | DOM | 224 | 23.66 | 0.13742 | 139.0371 | 54553 | 3 |
+| `B5_classifieds` | SoM | 224 | 37.05 | 0.16712 | 184.6372 | 70487 | 33 |
+| `B5_classifieds` | P-text | 224 | 24.11 | 0.14680 | 179.8328 | 57904 | 3 |
+| `B5_classifieds` | P-prompt | 224 | 21.88 | 0.15291 | 268.4679 | 62083 | 3 |
+| `B5_classifieds` | P-SoM | 224 | 22.77 | 0.14017 | 167.3951 | 56307 | 1 |

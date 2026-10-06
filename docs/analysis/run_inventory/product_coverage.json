@@ -1088,18 +1088,17 @@
    "cls_B0",
    "cls_B1",
    "cls_B2",
+   "cls_B5",
    "red_B0",
    "red_B1",
    "red_B2",
+   "shop_B0",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1613,7 +1612,7 @@
   "product": "rule_routing_pareto",
   "source": "rule_routing_pareto.json",
   "producer": "scripts/analysis/rule_routing_pareto.py",
-  "last_commit": "2026-08-03",
+  "last_commit": "2026-10-07",
   "cells": [
    "cls_B0",
    "cls_B1",
