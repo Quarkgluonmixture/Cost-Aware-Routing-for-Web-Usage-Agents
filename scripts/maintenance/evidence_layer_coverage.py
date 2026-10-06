@@ -117,6 +117,32 @@ def last_commit(path: Path) -> str:
     return out.stdout.decode("utf-8", "replace").strip() or "untracked"
 
 
+SCOPE = REPO / "docs/analysis/run_inventory/product_scope.yaml"
+
+
+def load_scope() -> dict:
+    import yaml
+    return yaml.safe_load(SCOPE.read_text(encoding="utf-8"))
+
+
+def judge(product: str, named: set[str], scope: dict) -> dict:
+    """status: gap / complete / not-applicable (index, snapshot, frozen, sibling) / unregistered."""
+    entry = (scope.get("products") or {}).get(product)
+    if entry is None:
+        return {"status": "unregistered", "missing": [], "unexplained": []}
+    if entry.get("kind") != "product":
+        return {"status": entry.get("kind"), "missing": [], "unexplained": []}
+    exp = entry.get("expected", [])
+    expected = set(scope["sets"][exp]) if isinstance(exp, str) else set(exp)
+    all_cells = set(scope["sets"]["ALL"])
+    why = entry.get("why_out") or {}
+    blanket = any(k in why for k in ("other", "all_other"))
+    unexplained = sorted(c for c in all_cells - expected if c not in why and not blanket)
+    missing = sorted(expected - named)
+    return {"status": "gap" if missing else "complete", "missing": missing,
+            "unexplained": unexplained, "expected": sorted(expected)}
+
+
 def main() -> None:
     stems = sorted({p.stem for p in CROSS.glob("*.json")} | {p.stem for p in CROSS.glob("*.md")})
     rows = []
@@ -125,6 +151,12 @@ def main() -> None:
         md_text = md.read_text(encoding="utf-8", errors="replace") if md.exists() else ""
         body = js.read_text(encoding="utf-8", errors="replace") if js.exists() else md_text
         named = {f"{s}_{b}" for (s, b) in CELLS if REGEX[(s, b)].search(body)}
+        # the md frontmatter states scope (e.g. "scope_warning: one cell (B0 x classifieds)");
+        # the md body is prose and is NOT read — a cell mentioned in passing is not coverage
+        fm = re.match(r"---\r?\n(.*?)\r?\n---", md_text, re.S)
+        if fm:
+            named |= {f"{s}_{b}" for (s, b) in CELLS if REGEX[(s, b)].search(fm.group(1))}
+            named |= _cells_in_context(fm.group(1).replace(" x ", "_"))
         if js.exists():
             try:
                 named |= json_cells(json.loads(body))
@@ -134,6 +166,9 @@ def main() -> None:
         src = js if js.exists() else md
         rows.append({"product": stem, "source": src.name, "producer": producer_of(stem, md_text),
                      "last_commit": last_commit(src), "cells": covered})
+    scope = load_scope()
+    for r in rows:
+        r.update(judge(r["product"], set(r["cells"]), scope))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.with_suffix(".json").write_text(json.dumps(rows, indent=1), encoding="utf-8")
 
@@ -148,12 +183,30 @@ def main() -> None:
     for r in rows:
         L.append(f"| `{r['product']}` | `{r['producer']}` | {r['last_commit']} | "
                  + " | ".join("●" if k in r["cells"] else "·" for k in keys) + " |")
+
+    gaps = [r for r in rows if r["status"] == "gap"]
+    unreg = [r for r in rows if r["status"] == "unregistered"]
+    unexplained = [r for r in rows if r.get("unexplained")]
+    L += ["", "## Against the scope registry (`product_scope.yaml`)", "",
+          f"- products with a **gap** (expected cell not named): **{len(gaps)}**",
+          f"- products **not in the registry**: **{len(unreg)}**",
+          f"- products with an excluded cell that has **no stated reason**: **{len(unexplained)}**", ""]
+    if gaps:
+        L += ["| product | expected but not named |", "|---|---|"]
+        for r in gaps:
+            L.append(f"| `{r['product']}` | " + ", ".join(r["missing"]) + " |")
+        L.append("")
+    for r in unreg:
+        L.append(f"- unregistered: `{r['product']}`")
+    for r in unexplained:
+        L.append(f"- no reason for excluding {', '.join(r['unexplained'])} from `{r['product']}`")
     tot = {k: sum(k in r["cells"] for r in rows) for k in keys}
     L += ["", f"**Products naming each cell** (of {len(rows)}): "
           + " · ".join(f"{h} {tot[k]}" for h, k in zip(head, keys)), ""]
     OUT.with_suffix(".md").write_text("\n".join(L), encoding="utf-8")
     print(f"wrote {OUT.with_suffix('.md')}  ({len(rows)} products)")
     print(" · ".join(f"{h} {tot[k]}" for h, k in zip(head, keys)))
+    print(f"gaps: {len(gaps)} · unregistered: {len(unreg)} · unexplained exclusions: {len(unexplained)}")
 
 
 if __name__ == "__main__":

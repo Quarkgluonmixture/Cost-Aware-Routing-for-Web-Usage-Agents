@@ -6,7 +6,10 @@
   "last_commit": "2026-08-03",
   "cells": [
    "cls_B0"
-  ]
+  ],
+  "status": "index",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "EVIDENCE_LAYER_SUMMARY",
@@ -22,7 +25,10 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "status": "index",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "abstention_learnability",
@@ -36,6 +42,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -50,6 +74,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -58,6 +100,17 @@
   "producer": "scripts/analysis/amendment08_sensitivity.py",
   "last_commit": "2026-07-27",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B2",
@@ -78,6 +131,17 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
   ]
  },
  {
@@ -92,7 +156,10 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "status": "sibling",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "axis1_microbehavior_report_with_wa",
@@ -108,7 +175,10 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "status": "sibling",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "axis1_microbehavior_with_wa",
@@ -124,6 +194,22 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -132,6 +218,17 @@
   "producer": "scripts/analysis/axis1_microbehavior.py; scripts/analysis/axis_effect_size.py",
   "last_commit": "2026-10-06",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B2",
@@ -152,7 +249,10 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "status": "sibling",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "axis_effect_size_report_with_wa",
@@ -168,7 +268,10 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "status": "sibling",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "axis_effect_size_with_wa",
@@ -182,6 +285,22 @@
    "red_B0",
    "red_B1",
    "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ]
@@ -200,6 +319,22 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -208,6 +343,17 @@
   "producer": "scripts/analysis/aggregate_confidence_cascade.py",
   "last_commit": "2026-10-06",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B2",
@@ -230,6 +376,24 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B0",
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -244,6 +408,28 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -258,6 +444,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -267,7 +471,10 @@
   "last_commit": "2026-05-25",
   "cells": [
    "cls_B0"
-  ]
+  ],
+  "status": "snapshot",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "diag_digest_index",
@@ -281,6 +488,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -295,6 +520,28 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -304,7 +551,10 @@
   "last_commit": "2026-08-12",
   "cells": [
    "cls_B0"
-  ]
+  ],
+  "status": "snapshot",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "energy_carbon_audit",
@@ -316,6 +566,20 @@
    "cls_B2",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B1",
+   "cls_B2",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B1"
   ]
  },
  {
@@ -330,6 +594,28 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -347,6 +633,25 @@
    "red_B2",
    "shop_B0",
    "shop_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -355,6 +660,13 @@
   "producer": "?",
   "last_commit": "2026-08-03",
   "cells": [
+   "cls_B0",
+   "red_B0"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "red_B0"
   ]
@@ -374,6 +686,17 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "wared_B1"
   ]
  },
  {
@@ -383,6 +706,17 @@
   "last_commit": "2026-08-26",
   "cells": [
    "cls_B0"
+  ],
+  "status": "gap",
+  "missing": [
+   "red_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "red_B0",
+   "wared_B1"
   ]
  },
  {
@@ -399,6 +733,26 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -410,6 +764,19 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -422,6 +789,20 @@
    "cls_B2",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B1",
+   "cls_B2",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B1"
   ]
  },
  {
@@ -429,7 +810,10 @@
   "source": "mechanism_evidence.json",
   "producer": "scripts/analysis/aggregate_mechanism_evidence.py",
   "last_commit": "2026-08-04",
-  "cells": []
+  "cells": [],
+  "status": "frozen",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "mechanism_per_task",
@@ -444,6 +828,24 @@
    "red_B0",
    "red_B1",
    "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B0"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
    "shop_B1",
    "wared_B0",
    "wared_B1"
@@ -464,7 +866,10 @@
    "red_B2",
    "shop_B1",
    "wared_B0"
-  ]
+  ],
+  "status": "sibling",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "multimetric_pareto",
@@ -472,6 +877,17 @@
   "producer": "scripts/analysis/aggregate_multimetric_pareto.py (single-sources per_mode_four_dimension_profile.md)",
   "last_commit": "2026-08-02",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B2",
@@ -494,6 +910,26 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -511,6 +947,17 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "wared_B1"
   ]
  },
  {
@@ -525,6 +972,26 @@
    "red_B0",
    "red_B1",
    "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ]
@@ -544,7 +1011,10 @@
    "red_B2",
    "shop_B0",
    "shop_B1"
-  ]
+  ],
+  "status": "snapshot",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "outcome_efficiency",
@@ -558,6 +1028,28 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -574,6 +1066,26 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -582,6 +1094,17 @@
   "producer": "scripts/analysis/aggregate_confidence_cascade.py; scripts/analysis/aggregate_multimetric_pareto.py",
   "last_commit": "2026-10-06",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B2",
@@ -604,6 +1127,26 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -615,6 +1158,19 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -630,7 +1186,10 @@
    "red_B1",
    "red_B2",
    "shop_B0"
-  ]
+  ],
+  "status": "snapshot",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "power_analysis",
@@ -643,7 +1202,10 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "status": "snapshot",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "reddit_sidebar_leakage_audit",
@@ -651,6 +1213,14 @@
   "producer": "scripts/analysis/aggregate_routing_ceiling.py; scripts/analysis/audit_reddit_sidebar_leakage.py",
   "last_commit": "2026-07-29",
   "cells": [
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "red_B0",
    "red_B1",
    "red_B2"
@@ -667,6 +1237,16 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -676,6 +1256,17 @@
   "last_commit": "2026-08-22",
   "cells": [
    "cls_B0"
+  ],
+  "status": "gap",
+  "missing": [
+   "red_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "red_B0",
+   "wared_B1"
   ]
  },
  {
@@ -690,6 +1281,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -698,6 +1307,17 @@
   "producer": "scripts/analysis/representation_deployment_profile.py",
   "last_commit": "2026-10-07",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B2",
@@ -718,6 +1338,17 @@
    "red_B0",
    "red_B1",
    "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "wared_B1"
   ]
  },
  {
@@ -727,6 +1358,17 @@
   "last_commit": "2026-08-22",
   "cells": [
    "cls_B0"
+  ],
+  "status": "gap",
+  "missing": [
+   "red_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "red_B0",
+   "wared_B1"
   ]
  },
  {
@@ -734,7 +1376,20 @@
   "source": "retry_vs_switch_label_supply.json",
   "producer": "scripts/analysis/retry_vs_switch_label_supply.py",
   "last_commit": "2026-08-12",
-  "cells": []
+  "cells": [
+   "cls_B0"
+  ],
+  "status": "gap",
+  "missing": [
+   "red_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "red_B0",
+   "wared_B1"
+  ]
  },
  {
   "product": "router_covariate_baseline_2026-07-05",
@@ -748,7 +1403,10 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "status": "snapshot",
+  "missing": [],
+  "unexplained": []
  },
  {
   "product": "router_label_supply_diagnosis",
@@ -762,6 +1420,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -776,6 +1452,22 @@
    "red_B0",
    "red_B1",
    "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ]
@@ -794,6 +1486,22 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -808,6 +1516,15 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "red_B0",
+   "red_B1"
   ]
  },
  {
@@ -816,6 +1533,17 @@
   "producer": "scripts/analysis/router_triage_learnability.py",
   "last_commit": "2026-08-10",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B2",
@@ -838,6 +1566,22 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -852,6 +1596,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -868,6 +1630,22 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -882,6 +1660,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -896,6 +1692,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -904,6 +1718,17 @@
   "producer": "scripts/analysis/serving_mode_floor.py",
   "last_commit": "2026-10-06",
   "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
    "cls_B0",
    "cls_B1",
    "cls_B5",
@@ -926,6 +1751,26 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -940,6 +1785,22 @@
    "red_B0",
    "red_B1",
    "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ]
@@ -958,6 +1819,22 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -968,6 +1845,16 @@
   "cells": [
    "cls_B0",
    "red_B0"
+  ],
+  "status": "gap",
+  "missing": [
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "red_B0",
+   "wared_B1"
   ]
  },
  {
@@ -982,6 +1869,24 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
   ]
  },
  {
@@ -996,6 +1901,22 @@
    "red_B0",
    "red_B1",
    "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "gap",
+  "missing": [
+   "shop_B1"
+  ],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ]

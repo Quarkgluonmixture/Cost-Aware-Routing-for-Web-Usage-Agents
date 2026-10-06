@@ -1,0 +1,118 @@
+# Which cells each cross-site evidence product SHOULD cover — and, for every cell left out, why.
+#
+# Read by scripts/maintenance/evidence_layer_coverage.py, which compares this against the cells
+# each product actually names and reports the difference. "Complete" (实验笔记 §536) means: for
+# every product, expected − named = ∅, and every cell outside `expected` is covered by a reason.
+#
+# Cell ids: cls_B0 cls_B1 cls_B2 cls_B5 red_B0 red_B1 red_B2 shop_B0 shop_B1 wared_B0 wared_B1
+# Sets (defined once here; a product may use a set name or an explicit list):
+#   ALL       all 11
+#   SIX_MODE  cells with all six modes on disk: all but shop_B0 (3 modes, no phantom arms — paid,
+#             never run) and cls_B5 (5 modes; its vision run is the broken coordinate contract, B-1997)
+#   PAIRED    cells holding ≥1 registered same-condition replicate (CLEAN_PAIRS)
+#   FULL_PAIRED  cells where all six arms carry a registered replicate (cls_B0; red_B0 and WA_B1 since 08-26 / 10-06)
+#   VWA6      the preregistered cls/red × B0/B1/B2 set
+#   LOCAL     locally served backbones (B1, B2)
+#   REDDIT    VWA reddit + WA reddit
+#
+# `kind`: product (a measured artifact) · sibling (a variant of another product, scope noted
+# there) · snapshot (dated record, never regenerated) · frozen (line closed by decision) · index.
+
+sets:
+  ALL: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, shop_B0, shop_B1, wared_B0, wared_B1]
+  SIX_MODE: [cls_B0, cls_B1, cls_B2, red_B0, red_B1, red_B2, shop_B1, wared_B0, wared_B1]
+  PAIRED: [cls_B0, cls_B1, cls_B5, red_B0, red_B1, wared_B1]
+  FULL_PAIRED: [cls_B0, red_B0, wared_B1]
+  VWA6: [cls_B0, cls_B1, cls_B2, red_B0, red_B1, red_B2]
+  LOCAL: [cls_B1, cls_B2, red_B1, red_B2, shop_B1, wared_B1]
+  REDDIT: [red_B0, red_B1, red_B2, wared_B0, wared_B1]
+
+common_reasons:
+  shop_B0: &shopB0 "3 modes only (no phantom arms), so any six-mode or cross-mode-oracle quantity is a different estimand"
+  cls_B5: &clsB5 "5 modes; vision run is the broken coordinate contract (B-1997, §508), so cross-mode quantities would read a harness bug"
+  no_pair: &nopair "no registered replicate pair on this cell; a band-relative quantity cannot be formed"
+  not_full_paired: &notfull "needs every one of the six arms replicated on the cell; elsewhere at most 3 of 6 are"
+
+products:
+  EVIDENCE_LAYER_SUMMARY: {kind: index, why: "08-04 narrative index; superseded for attack surfaces by paper_drafts/naacl_evidence_delta.md §0"}
+  .summary_number_allowlist: {kind: index, why: "allowlist for check_summary_numbers.py"}
+
+  # --- descriptive, per cell × mode: every cell ---
+  failure_modes_per_cell: {kind: product, expected: ALL}
+  per_mode_four_dimension_profile: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope product; the _with_wa sibling carries WA; shopping / B5 go to the extension sibling"}}
+  per_mode_four_dimension_profile_with_wa: {kind: product, expected: ALL}
+  cost_per_mode: {kind: product, expected: ALL}
+  latency_decomposition: {kind: product, expected: ALL}
+  offsite_navigation_audit: {kind: product, expected: ALL}
+  evaluator_score_granularity: {kind: product, expected: ALL}
+  dispatch_path_audit: {kind: product, expected: ALL}
+  representation_deployment_profile: {kind: product, expected: VWA6, why_out: {all_other: "reads failure_modes_per_cell `cells` (prereg) by design; extension cells are reported in failure_modes_per_cell itself"}}
+  outcome_efficiency: {kind: product, expected: ALL}
+  representation_class_comparison: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  cross_mode_failure_signatures: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  page_change_corrected: {kind: product, expected: ALL}
+  steps_summary_identity_audit: {kind: product, expected: ALL}
+  energy_carbon_audit: {kind: product, expected: LOCAL, why_out: {other: "energy is metered only on locally served backbones; API cells have no energy column"}}
+  local_cost_estimand_audit: {kind: product, expected: LOCAL, why_out: {other: "the audited dollar figure exists only for locally served backbones"}}
+  diag_digest_index: {kind: product, expected: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, wared_B0, wared_B1], why_out: {shop_B0: "no /diag digest exists for shopping (Tier-1 scan only, §531.9)", shop_B1: "same"}}
+
+  # --- cross-mode oracle / routing / learnability over the six modes ---
+  routing_ceiling: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  router_objective_ordering: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  supply_value_coupling: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  router_label_supply_diagnosis: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  router_triage_learnability: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling carries WA"}}
+  router_triage_learnability_with_wa: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  router_pooled_tier_learnability: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  router_undersampling_control: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  two_arm_action_learnability: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  retry_vs_switch_label_supply: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
+  routing_feature_diagnostics: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  visual_intent_routing: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  rule_routing_pareto: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  visual_difficulty_router: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  multimetric_pareto: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
+  multimetric_pareto_with_wa: {kind: product, expected: ALL}
+  confidence_cascade: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
+  confidence_cascade_with_wa: {kind: product, expected: [cls_B0, cls_B1, cls_B2, red_B0, red_B1, red_B2, shop_B0, shop_B1, wared_B0, wared_B1], why_out: {cls_B5: *clsB5}}
+  abstention_learnability: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  abstention_site_transfer: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: "one site only for B5 — nothing to transfer to"}}
+  conditional_failure_attribution: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+
+  # --- band-relative: cells with a registered replicate ---
+  noise_floor_inventory: {kind: product, expected: PAIRED, why_out: {other: *nopair}}
+  serving_mode_floor: {kind: product, expected: PAIRED, why_out: {other: *nopair}}
+  fusion_premium: {kind: product, expected: PAIRED, why_out: {other: *nopair}}
+  label_instability: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
+  replicate_metric_noise: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
+  rerun_union_extrapolation: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
+  rerun_flip_failure_anatomy: {kind: product, expected: PAIRED, why_out: {other: *nopair}}
+  unique_solve_envelope_cross_cell: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
+
+  # --- site-specific audits ---
+  reddit_sidebar_leakage_audit: {kind: product, expected: [red_B0, red_B1, red_B2], why_out: {other: "VWA reddit sidebar only; the _with_wa sibling carries WA"}}
+  reddit_sidebar_leakage_audit_with_wa: {kind: product, expected: REDDIT, why_out: {other: "reddit-only question"}}
+  leakage_sensitivity: {kind: product, expected: REDDIT, why_out: {other: "reddit-only question"}}
+  persistent_state_leakage_audit: {kind: product, expected: REDDIT, why_out: {other: "scored-on-persistent-state tasks exist on reddit; shopping wishlist / cart state is B-2003, audited separately"}}
+
+  # --- siblings, frozen lines, snapshots ---
+  axis1_microbehavior: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; _with_wa sibling extends"}}
+  axis1_microbehavior_with_wa: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  axis1_microbehavior_report: {kind: sibling, of: axis1_microbehavior}
+  axis1_microbehavior_report_with_wa: {kind: sibling, of: axis1_microbehavior_with_wa}
+  axis_effect_size: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; _with_wa sibling extends"}}
+  axis_effect_size_with_wa: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  axis_effect_size_report: {kind: sibling, of: axis_effect_size}
+  axis_effect_size_report_with_wa: {kind: sibling, of: axis_effect_size_with_wa}
+  mechanism_per_task: {kind: product, expected: ALL, why_out: {}}
+  mechanism_per_task_report: {kind: sibling, of: mechanism_per_task}
+  mechanism_evidence: {kind: frozen, why: "§5 mechanism line shelved 2026-05-14 (advisor); patching probes are per-mode, not per-cell"}
+  phase0b_noise_floor: {kind: snapshot, why: "Phase 0b record (2026-08-01), superseded by noise_floor_inventory"}
+  power_analysis: {kind: snapshot, why: "pre-fire power analysis (2026-05-18)"}
+  amendment08_sensitivity: {kind: product, expected: VWA6, why_out: {all_other: "AMENDMENT_08 exclusions are defined on cls/red only"}}
+  early_abort_B0_classifieds: {kind: snapshot, why: "single-cell exploratory (§459); the negative result is stated for this cell"}
+  cross_mode_failure_taxonomy_B0_classifieds: {kind: snapshot, why: "2026-05-25 single-cell taxonomy, superseded by cross_mode_failure_signatures"}
+  router_covariate_baseline_2026-07-05: {kind: snapshot, why: "dated"}
+  router_pooling_by_family: {kind: product, expected: [cls_B0, cls_B1, red_B0, red_B1], why_out: {other: "family split = Qwen B0 vs B1 pooling; B2 is the other family by construction"}}
+  field_consumption_audit: {kind: product, expected: [cls_B0, red_B0], why_out: {other: "schema audit on one run per site; not a per-cell quantity"}}
+  one_step_lookahead_2026-09-09: {kind: snapshot, why: "dated §505 pilot; frozen copy in results/evidence_snapshots/20261006_router_pilot_20260909/"}
