@@ -161,6 +161,19 @@ def test_universe_split_matches_the_counts():
     assert protocol_excluded_in_universe("classifieds") == frozenset()
 
 
+@pytest.mark.parametrize("site", ["classifieds", "reddit", "shopping"])
+def test_both_scoring_paths_agree_by_default(site):
+    """`expected_scored_ids` (what the aggregators divide by) and
+    `paper_scored_task_count` (what the amendment docs quote) must apply the same
+    default tiers. Until 2026-10-06 the former kept ("A", "B") after AMENDMENT_10
+    added "E" to the latter, so shopping scored 433 in every product and 432 in
+    the docs (实验笔记 §531.4). The AMENDMENT_10 test above pinned only the
+    `tasks` layer, which is why the fork went unnoticed."""
+    scored, _ = expected_scored_ids(site)
+    assert len(scored) == paper_scored_task_count(site, "visualwebarena")
+    assert scored.isdisjoint(protocol_excluded_task_ids(site))
+
+
 def test_excluded_ids_are_absent_from_the_scored_universe():
     scored, _ = expected_scored_ids("reddit")
     assert 58 not in scored and 160 not in scored

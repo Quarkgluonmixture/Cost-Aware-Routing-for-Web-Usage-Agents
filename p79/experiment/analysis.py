@@ -112,7 +112,7 @@ def paper_scored_task_count(
     benchmark: str = "visualwebarena",
     *,
     strict: bool = False,
-    tiers: tuple = ("A", "B", "E"),
+    tiers: tuple | None = None,
 ) -> int:
     """Scoring denominator = collection denominator minus protocol exclusions.
 
@@ -128,8 +128,10 @@ def paper_scored_task_count(
     Use this wherever a success RATE is formed. Use `scored_task_count` only to
     ask whether a run produced all the episodes it was supposed to.
     """
-    from p79.experiment.tasks import protocol_excluded_task_ids
+    from p79.experiment.tasks import PRIMARY_TIERS, protocol_excluded_task_ids
 
+    if tiers is None:
+        tiers = PRIMARY_TIERS
     base = scored_task_count(site, benchmark, strict=strict)
     if base == 0:
         return 0

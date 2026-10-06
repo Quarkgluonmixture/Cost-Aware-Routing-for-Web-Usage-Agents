@@ -194,12 +194,19 @@ PROTOCOL_EXCLUSIONS: Dict[tuple, tuple] = {
     ),
 }
 
+# The PRIMARY scoring tiers: every success RATE in the paper subtracts these. Defined once
+# here and imported by `analysis.paper_scored_task_count` and
+# `scripts/analysis/lib/canonical_task_universe` — until 2026-10-06 the latter kept its own
+# ("A", "B") default after AMENDMENT_10 added "E", so shopping scored 433 there and 432 here
+# (实验笔记 §531.4).
+PRIMARY_TIERS: tuple = ("A", "B", "E")
+
 
 def protocol_excluded_task_ids(
     site: str,
     benchmark: str = "visualwebarena",
     *,
-    tiers: tuple = ("A", "B", "E"),
+    tiers: tuple = PRIMARY_TIERS,
 ) -> frozenset:
     """Task IDs removed from the SCORED set for (site, benchmark).
 

@@ -77,7 +77,7 @@ def collected_task_ids(
 def expected_scored_ids(
     site: str,
     benchmark: str = "visualwebarena",
-    tiers: tuple[str, ...] = ("A", "B"),
+    tiers: tuple[str, ...] | None = None,
 ) -> tuple[frozenset[int], str]:
     """Return the SCORED task IDs and their stable SHA256.
 
@@ -91,7 +91,10 @@ def expected_scored_ids(
     ``tiers`` selects which exclusion warrants apply; ``()`` reproduces the
     pre-amendment universe exactly and is how the sensitivity arms are built.
     """
-    from p79.experiment.tasks import protocol_excluded_task_ids
+    from p79.experiment.tasks import PRIMARY_TIERS, protocol_excluded_task_ids
+
+    if tiers is None:  # AMENDMENT_10 primary tiers; single source in p79.experiment.tasks
+        tiers = PRIMARY_TIERS
 
     site = site.lower()
     ids = collected_task_ids(site, benchmark)
@@ -105,7 +108,7 @@ def restrict_to_scored(
     site: str,
     *,
     benchmark: str = "visualwebarena",
-    tiers: tuple[str, ...] = ("A", "B"),
+    tiers: tuple[str, ...] | None = None,
     require_complete: bool = False,
     label: str = "",
 ):
@@ -129,6 +132,9 @@ def restrict_to_scored(
     whole scored set (use it for paper-facing estimands); the default reports
     completeness in the provenance without raising, for descriptive producers.
     """
+    if tiers is None:  # AMENDMENT_10 primary tiers; single source in p79.experiment.tasks
+        from p79.experiment.tasks import PRIMARY_TIERS
+        tiers = PRIMARY_TIERS
     scored, canonical_sha = expected_scored_ids(site, benchmark, tuple(tiers))
     excluded_present = protocol_excluded_in_universe(site, benchmark, tuple(tiers))
 
@@ -179,7 +185,7 @@ def restrict_to_scored(
 def protocol_excluded_in_universe(
     site: str,
     benchmark: str = "visualwebarena",
-    tiers: tuple[str, ...] = ("A", "B"),
+    tiers: tuple[str, ...] | None = None,
 ) -> frozenset[int]:
     """AMENDMENT_08 exclusions that are actually present in the collected set.
 
@@ -187,7 +193,10 @@ def protocol_excluded_in_universe(
     ask for" (contamination) apart from "the run produced an episode we asked
     for but no longer score" (expected, post-amendment).
     """
-    from p79.experiment.tasks import protocol_excluded_task_ids
+    from p79.experiment.tasks import PRIMARY_TIERS, protocol_excluded_task_ids
+
+    if tiers is None:  # AMENDMENT_10 primary tiers; single source in p79.experiment.tasks
+        tiers = PRIMARY_TIERS
 
     site = site.lower()
     return collected_task_ids(site, benchmark) & protocol_excluded_task_ids(
