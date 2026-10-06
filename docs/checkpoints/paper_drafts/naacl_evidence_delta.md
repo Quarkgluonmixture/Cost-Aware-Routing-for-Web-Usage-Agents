@@ -2,11 +2,61 @@
 type: framing-input
 status: living
 created: 2026-08-26
-purpose: what the August replicates unlocked, which existing statements they falsify,
-         and what is still unbuyable — input for the reframe after the 09-07 verdict
+updated: 2026-10-06
+purpose: the evidence layer read against the seven reviewer attack surfaces (§0, live, for
+         COLING 2027 / ARR 2026-10-12); §1–§5 are the 08-26 record of what the August
+         replicates unlocked, kept as written apart from the retraction banners
 ---
 
 # Evidence delta — what the August data lets us say that we could not say before
+
+## 0. Status against the seven attack surfaces — as of 2026-10-06
+
+COLING 2027 (via ARR 2026-10-12) replaced NAACL as the target on 10-06; the filename keeps
+the old name because notes cite it. **This section supersedes §3 and §4.** It is still not a
+frame (user 10-06: complete the evidence layer first, choose the frame after).
+
+**Pointers, not numbers.** Each row names the product or 实验笔记 § that owns the number;
+read it there. The three coverage facts below are derived, so each carries its recompute.
+
+**Coverage the rows rely on** (derived 2026-10-06):
+
+- **11 cells**: VWA·classifieds × B0/B1/B2/B5 · VWA·reddit × B0/B1/B2 · VWA·shopping × B0/B1 ·
+  WA·reddit × B0/B1. Recompute: `docs/analysis/run_inventory/run_matrix.md` (regenerate per its README).
+- **Rerun band per cell.** All six arms: cls_B0, red_B0, WA_B1. Partial: cls_B1 (3/6), red_B1 (2/6),
+  cls_B5 (DOM only). None: cls_B2, red_B2, shop_B0, shop_B1, WA_B0 ⇒ **5 of 11 cells cannot be
+  read against a band** (6 of 11 on 09-09; WA_B1 closed by the 09-15 chain, §529.4).
+  Recompute: the labels of `CLEAN_PAIRS` in `scripts/analysis/aggregate_noise_floor_inventory.py`
+  (`<baseline>.<site>.<mode>`; `wared` = WA·reddit).
+- **Cross-site product suite** (`docs/analysis/cross_sites/*.json`) is wired for 8 units:
+  shop_B0/shop_B1 appear in none, cls_B5 as a cell in one (§531.2). The only analysis that
+  covers all 11 cells is the §505 router pilot (`results/evidence_snapshots/20261006_router_pilot_20260909/`).
+  Recompute: grep the cell keys across those JSONs.
+
+| # | surface | what the layer holds (owner) | moved since 08-26 | still open — and closable before 10-12 on existing data? |
+|---|---|---|---|---|
+| 1 | routing generalisation | §505.19: task difficulty pools across backbone and site, task×mode fit does not · budget router frozen before its test data was read (`pre_run/budget_router_prospective_shop_B1_20260909.*`), evaluated §510.3 / §515.3 | **yes** — the first prospective test exists; the pre-declared primary policy passes the direction criterion on both held-out shop_B1 arms | single run, B1 only, no band on shop_B1; both held-out arms are the text arms that B-2002 hits hardest (§531.9) ⇒ the result must carry that caveat. Wording only. |
+| 2 | cross-site / cross-benchmark | §505 pilot over 11 cells, 2 benchmarks, 4 sites · WA_B1 band (§529.4) · shopping: 9 conditions registered opt-in (§531.5), Tier-1 scan + Tier-2 sample (`docs/analysis/vwa_shopping/`, §531.9) | **yes** — shopping went from "no landed run" (§4 below) to 9 full conditions with a first failure attribution | (a) suite not opted in to shopping / cls_B5 — **0-compute, per product**; (b) shopping mode comparisons carry B-2002 (query concatenation, mode-uneven) and B-2003 (wishlist not reset); (c) category-grid order across runs unverified; (d) VWA and WA are one benchmark lineage — not closable. |
+| 3 | is the baseline strong enough | B5 (GPT-5.6) on cls in five modes (manifest `extension:`) · §505.10: the stronger backbone moves the mode main effect, not the interaction | **yes** — B5 now spans modes, not only DOM | B5·vision is the broken coordinate-contract run (B-1997, §508) — not a capability reading; B5 is one site. Not closable (paid). |
+| 4 | beats a simple heuristic | §387.16.4 (always-cheapest + label-shuffle controls) · §505.4 · §505.18 (hand rules forward, mined rules checked on reruns) · `rule_routing_pareto`, `router_objective_ordering` | **yes** — heuristics tested in both directions | which learned-vs-always-cheapest count the paper uses is unpinned: three counts under different policies and baselines (§530.4 #3). **User decision.** |
+| 5 | is the cost-accuracy trade-off stable | budget frontiers §505.21/22, per cell §505.24 · `outcome_efficiency` · `multimetric_pareto(_with_wa)` | **mixed** — the budget line has an SR–cost frontier; but the band's upper edge moved when WA entered and C1 is retracted (§529.4), so "smaller than the floor" has to be re-read per cell | (a) noise-band definition and scope per use (§530.4 #2) — **user decision**; (b) for representation routing the products give dominance verdicts, not the frontier itself, which is what the VLM4RWD AC asked for — 0-compute re-cut, not done; (c) early-stop / budget precedent literature unchecked (§505.27) — 0-compute, must precede any novelty wording. |
+| 6 | do DOM / SoM / Vision observations generalise | `representation_class_comparison`, `representation_deployment_profile`, `per_mode_four_dimension_profile(_with_wa)`, `cross_mode_failure_signatures` | **yes** — a fourth backbone (B5) and a third VWA site (shopping) exist | neither is in those products (row 2a); shopping's cross-mode reading needs the B-2002 caveat. |
+| 7 | near-perfect AUROC = artifact? | §111.2 (linear probe is the wrong tool), §127.1 (in-sample), §394 retraction, §460.3 (`0b-extra`'s high value is whole-episode aggregation), §505.3 (the model's first output adds ≈ 0 AUROC over pre-flight features) | **yes** — §505.3 is a direct test | the 08-26 label-noise argument survives C1's retraction (labels flip between identical reruns on both serving paths), but cite `noise_floor_inventory`, not `serving_mode_floor`. |
+
+**What the reviewers already named** (REALM ×3 `_status/issues/issue_realm_reviews_2026-09-09.md`,
+VLM4RWD ×2 `_status/issues/issue_vlm4rwd_reviews_2026-09-29.md`), mapped onto the layer:
+
+- *Rerun control is the strongest contribution* — `noise_floor_inventory` (24 pairs). Its stated
+  weakness is coverage, and that is the 5-of-11 above. No new pair can land before 10-12
+  (A100 unreachable; anything from the 09-15 chain after 09-24 is only there).
+- *The label-supply explanation is not established* — `router_label_supply_diagnosis`,
+  `retry_vs_switch_label_supply`, `supply_value_coupling`, and now `rerun_flip_failure_anatomy`
+  (§531.10): flipping reruns part from step 0 and their failure type is only partly stable. That
+  is consistent with labels set by stochastic execution, but it is not a direct test of supply;
+  absent one, the explanation reads as a hypothesis consistent with the data.
+- *SR–cost trade-off not explored beyond dominance* — row 5 (b).
+
+---
 
 Written against `realm/section1_intro.md` (the 8-item inventory) and
 `_status/tasks/task_coling2027_main.md` (the seven attack surfaces). **This is not a
@@ -20,6 +70,12 @@ still out of reach.
 ## 1. Three things became sayable
 
 ### C1. The reproducibility floor groups by **serving path**, not by model
+
+> ⛔ **RETRACTED 2026-10-06** (实验笔记 §529.4). The 09-15 local replicate chain put all three
+> powered local WA·B1 arms above the API group's lower edge; `serving_mode_floor` now reports
+> the groups as overlapping, and the pre-declared intent file
+> (`pre_run/local_replicate_chain_launch_intent_20260915.md`) fixed that outcome as "C1 is dead
+> as stated". The text below is the 08-26 record; do not cite it.
 
 Product: `docs/analysis/cross_sites/serving_mode_floor.{json,md}`
 
@@ -103,7 +159,7 @@ corrections for the *next* draft. The submitted text was true when submitted.
 
 ---
 
-## 3. Against the seven attack surfaces
+## 3. Against the seven attack surfaces (as of 2026-08-26 — superseded by §0)
 
 | # | surface | status after August |
 |---|---|---|
@@ -117,7 +173,10 @@ corrections for the *next* draft. The submitted text was true when submitted.
 
 ---
 
-## 4. What is still unbuyable, and why
+## 4. What is still unbuyable, and why (as of 2026-08-26 — superseded by §0)
+
+> Two rows no longer hold: shopping now has 9 full conditions (§0 row 2), and the
+> `B1 × reddit` buy was meant to support C1, which is retracted.
 
 | gap | why it matters | buyable? |
 |---|---|---|
@@ -135,7 +194,9 @@ verdict points at, which is exactly the property
 
 ---
 
-## 5. How to read this after 09-07
+## 5. How to read this after 09-07 (as of 2026-08-26)
+
+> Its premise — C1 standing independent of the routing line — fell with C1 (§529.4).
 
 C1 is the only item here that stands **independent of the routing line**. If the
 verdict attacks routing, C1 survives as a methods contribution; if it attacks the
