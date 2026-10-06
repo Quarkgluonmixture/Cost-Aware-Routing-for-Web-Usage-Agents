@@ -24,6 +24,7 @@ A failure in a named bucket (committed early, search loop, misgrounded element, 
 | `B0/classifieds` | Vision | 168 | 129 | 39 | **76.8%** | early-finish/wrong-commit |
 | `B0/reddit` | P-prompt | 179 | 145 | 34 | **81.0%** | early-finish/wrong-commit |
 | `B0/reddit` | DOM | 175 | 133 | 42 | **76.0%** | early-finish/wrong-commit |
+| `B0/reddit` | P-SoM | 182 | 125 | 57 | **68.7%** | early-finish/wrong-commit |
 | `B0/reddit` | P-text | 177 | 115 | 62 | **65.0%** | max-steps-other |
 | `B0/reddit` | SoM | 175 | 113 | 62 | **64.6%** | early-finish/wrong-commit |
 | `B0/reddit` | Vision | 189 | 88 | 101 | **46.6%** | max-steps-other |
@@ -62,18 +63,18 @@ Per-step `tokens.input` as the provider counted it. Context-window fit and the d
 |---|---|---:|---:|---:|---:|---:|---:|---:|
 | `B0/classifieds` | P-prompt | 1 | 3350 | 3883 | 5096 | **6794** | 18058 | 1.75 |
 | `B0/classifieds` | DOM | 1 | 3496 | 3769 | 4949 | **6495** | 17940 | 1.72 |
-| `B0/classifieds` | SoM | 2 | 6099 | 4741 | 5689 | **6287** | 18914 | 1.33 |
+| `B0/classifieds` | SoM | 1 | 3061 | 4720 | 5664 | **6344** | 18914 | 1.34 |
 | `B0/classifieds` | P-text | 1 | 3546 | 3663 | 4674 | **5861** | 17752 | 1.6 |
 | `B0/classifieds` | P-SoM | 1 | 3636 | 3796 | 4788 | **5472** | 17916 | 1.44 |
 | `B0/classifieds` | Vision | 1 | 3557 | 3495 | 4176 | **4265** | 4335 | 1.22 |
 | `B0/reddit` | SoM | 1 | 4103 | 4754 | 6777 | **7129** | 8029 | 1.5 |
 | `B0/reddit` | P-prompt | 1 | 4049 | 4649 | 6185 | **7008** | 10679 | 1.51 |
-| `B0/reddit` | DOM | 2 | 6882 | 4537 | 6130 | **6913** | 10216 | 1.52 |
-| `B0/reddit` | P-SoM | 1 | 4669 | 4018 | 5769 | **6136** | 7177 | 1.53 |
+| `B0/reddit` | DOM | 1 | 4132 | 4509 | 6145 | **6876** | 10216 | 1.52 |
+| `B0/reddit` | P-SoM | 1 | 4661 | 4020 | 5769 | **6136** | 7177 | 1.53 |
 | `B0/reddit` | P-text | 1 | 4713 | 3812 | 5598 | **6020** | 6799 | 1.58 |
 | `B0/reddit` | Vision | 1 | 4759 | 3518 | 4542 | **5253** | 5548 | 1.49 |
 
-⚠️ **Pooled over runs where more than one exists.** `SoM` on `B0/classifieds` pools 2; `DOM` on `B0/reddit` pools 2 — a same-condition replicate lives under `phase1/` for those, so their step counts are correspondingly larger. Quantiles of one condition pooled across its own reruns are still quantiles of that condition, but the step counts are not comparable across rows without this column.
+One run per row: the manifest's paper-grade run for that condition (registered replicates are not pooled, so every row is the same unit).
 
 ⚠️ `tokens.input` is the TOTAL input; the `input_text` / `input_image` split is null on B0 (the hosted endpoint does not itemise it), so a screenshot-bearing mode's tail cannot be attributed between text and image here. 台账 §260 estimated the image share from a som-vs-dom median difference instead.
 

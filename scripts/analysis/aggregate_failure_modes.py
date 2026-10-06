@@ -106,6 +106,20 @@ def fine_to_paper(fine: str) -> str:
 RUN_RE = re.compile(r"^(B\d)_(?:3mode_|phantom_[a-z]+_|[a-z]+_)?(classifieds|reddit|shopping)")
 
 
+def output_section(source_runs, extension_run_names, baseline: str, prereg_baselines) -> str:
+    """Which output key a cell belongs to: "cells" (preregistered set) or "extension_cells".
+
+    Decided by manifest section when the registry was read: any source run registered under
+    `extension:` sends the cell to `extension_cells`. Baseline alone is not enough — shopping
+    B0/B1 (registered under `extension:` 2026-10-06, 实验笔记 §531.5) have preregistered
+    baselines, and the old baseline-only rule put them into `cells`. Without a registry
+    (dev-smoke glob fallback) the baseline rule is all there is.
+    """
+    if extension_run_names is not None:
+        return "extension_cells" if any(r in extension_run_names for r in source_runs) else "cells"
+    return "cells" if baseline in prereg_baselines else "extension_cells"
+
+
 def parse_run(run_id: str):
     m = RUN_RE.match(run_id)
     if not m:
@@ -163,6 +177,7 @@ def main():
         OUT_MD.write_text("# Failure modes per cell\n\nNo phase1 runs found.\n")
         return
 
+    _extension_run_names: set[str] | None = None  # None = registry not read (glob fallback)
     # C4 fix 2026-05-24: replace PHASE1_DIR.glob("B*") with registry lookup.
     # Pre-fix: glob picked up ALL run dirs including pre-bug/archived/in-flight
     # runs that should not enter paper §5 failure-mode distribution. Registry
@@ -179,6 +194,8 @@ def main():
         # separate `extension_cells` key below — `cells` keeps its prereg-only scope for
         # fig_failure_modes_per_cell + representation_deployment_profile.
         _registry_cells = _get_all_cells(grade_filter=["paper-grade"], include_extension=True)
+        _default_run_names = {c.run_dir.name for c in _get_all_cells(grade_filter=["paper-grade"])}
+        _extension_run_names = {c.run_dir.name for c in _registry_cells} - _default_run_names
         # Collect unique run dirs that have a condition_reason_summary.csv
         _registry_run_dirs: dict[str, tuple[str, str]] = {}  # run_dir.name → (baseline, site)
         for _cs in _registry_cells:
@@ -200,6 +217,7 @@ def main():
             print("[failure_modes] WARN: registry returned 0 paper-grade run_dirs — "
                   "falling back to PHASE1_DIR.glob('B*') for dev smoke", file=_sys.stderr)
             _unique_run_dirs = sorted([d for d in PHASE1_DIR.glob("B*") if d.is_dir()])
+            _extension_run_names = None
         else:
             print(f"[failure_modes] registry: {len(_unique_run_dirs)} unique paper-grade run_dirs",
                   file=_sys.stderr)
@@ -207,6 +225,7 @@ def main():
         import sys as _sys
         print(f"[failure_modes] WARN: registry lookup failed ({_reg_exc}), "
               "falling back to PHASE1_DIR.glob('B*')", file=_sys.stderr)
+        _extension_run_names = None
         _unique_run_dirs = sorted([d for d in PHASE1_DIR.glob("B*") if d.is_dir()])
 
     _missing_csv: list[str] = []
@@ -281,9 +300,11 @@ def main():
         "cells": {},
         "extension_cells": {},
         "extension_note": (
-            "Backbones outside the preregistered cell set (run_manifest `extension:`, e.g. "
-            "B5 = GPT-5.6). Same taxonomy, kept out of `cells` so consumers scoped to the "
-            "preregistered set (figures, deployment profile) are unchanged."
+            "Cells registered under run_manifest `extension:` — B5 = GPT-5.6 and the shopping "
+            "site (B0/B1). Same taxonomy, kept out of `cells` so consumers scoped to the "
+            "preregistered set (figures, deployment profile) are unchanged. Shopping caveat: "
+            "B-2002 (search box submits old+new query) hits the text arms far more than Vision, "
+            "so shopping mode-to-mode bucket differences are not clean (实验笔记 §531.9)."
         ),
     }
     try:
@@ -299,7 +320,8 @@ def main():
                 continue
             bucket_pct[b] = {"count": c, "pct_of_failed": (c / failed * 100) if failed else 0.0,
                              "pct_of_total": (c / total * 100) if total else 0.0}
-        target = result["cells"] if ck[0] in _PREREG_BASELINES else result["extension_cells"]
+        target = result[output_section(seen_runs_per_cell[ck], _extension_run_names,
+                                       ck[0], _PREREG_BASELINES)]
         target[f"{ck[0]}/{ck[1]}/{ck[2]}"] = {
             "baseline": ck[0], "site": ck[1], "mode": ck[2],
             "total_episodes": total,
@@ -332,6 +354,10 @@ def main():
             f"names). The previous behaviour was to write a header-only markdown and "
             f"exit 0, which is how this went unnoticed. Fix the input, then rerun.")
 
+    # 2026-10-07 (实验笔记 §533.2): the stderr WARN above was the only trace that B0/reddit/P-SoM
+    # (R28173) had no reason summary — the cell was absent from 2026-08-03 to 10-07 and the
+    # product read as complete. Missing runs now go into the product itself.
+    result["missing_reason_diagnostics"] = sorted(_missing_csv)
     OUT_JSON.write_text(json.dumps(result, indent=2))
     print(f"[failure_modes] wrote {OUT_JSON}")
 
@@ -342,9 +368,11 @@ def main():
         "5-bucket paper taxonomy mapped from fine-grained reason_bucket "
         "(see `aggregate_failure_modes.py` PAPER_TAXONOMY).",
         "",
-        "## Per-cell breakdown",
-        "",
     ]
+    if _missing_csv:
+        md_lines += [f"⚠️ **{len(_missing_csv)} registered run(s) have no reason summary and are "
+                     f"absent below**: " + ", ".join(f"`{r}`" for r in sorted(_missing_csv)), ""]
+    md_lines += ["## Per-cell breakdown", ""]
     def _cell_md(ck, info):
         md_lines.append(f"### {ck} (N={info['total_episodes']}, failed={info['failed_count']})")
         md_lines.append("")

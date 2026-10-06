@@ -267,6 +267,39 @@
         "B0_dom_reddit_20260625_154833_928747130_2827521_R11344"
       ]
     },
+    "B0/reddit/P-SoM": {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "total_episodes": 205,
+      "success_count": 23,
+      "failed_count": 182,
+      "buckets": {
+        "max-steps-other": {
+          "count": 57,
+          "pct_of_failed": 31.318681318681318,
+          "pct_of_total": 27.80487804878049
+        },
+        "early-finish/wrong-commit": {
+          "count": 70,
+          "pct_of_failed": 38.46153846153847,
+          "pct_of_total": 34.146341463414636
+        },
+        "search-loop": {
+          "count": 31,
+          "pct_of_failed": 17.032967032967033,
+          "pct_of_total": 15.121951219512194
+        },
+        "visual-hijack/click-loop": {
+          "count": 24,
+          "pct_of_failed": 13.186813186813188,
+          "pct_of_total": 11.707317073170733
+        }
+      },
+      "source_runs": [
+        "B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173"
+      ]
+    },
     "B0/reddit/P-prompt": {
       "baseline": "B0",
       "site": "reddit",
@@ -1348,6 +1381,338 @@
     }
   },
   "extension_cells": {
+    "B0/shopping/DOM": {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "DOM",
+      "total_episodes": 433,
+      "success_count": 51,
+      "failed_count": 382,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 209,
+          "pct_of_failed": 54.712041884816756,
+          "pct_of_total": 48.26789838337183
+        },
+        "max-steps-other": {
+          "count": 115,
+          "pct_of_failed": 30.104712041884817,
+          "pct_of_total": 26.558891454965355
+        },
+        "search-loop": {
+          "count": 38,
+          "pct_of_failed": 9.947643979057592,
+          "pct_of_total": 8.775981524249422
+        },
+        "visual-hijack/click-loop": {
+          "count": 20,
+          "pct_of_failed": 5.2356020942408374,
+          "pct_of_total": 4.618937644341801
+        }
+      },
+      "source_runs": [
+        "B0_dom_shopping_20260804_003607_264370398_3845634_R3561"
+      ]
+    },
+    "B0/shopping/SoM": {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "SoM",
+      "total_episodes": 434,
+      "success_count": 66,
+      "failed_count": 368,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 241,
+          "pct_of_failed": 65.48913043478261,
+          "pct_of_total": 55.52995391705069
+        },
+        "max-steps-other": {
+          "count": 102,
+          "pct_of_failed": 27.717391304347828,
+          "pct_of_total": 23.502304147465438
+        },
+        "search-loop": {
+          "count": 13,
+          "pct_of_failed": 3.532608695652174,
+          "pct_of_total": 2.995391705069124
+        },
+        "visual-hijack/click-loop": {
+          "count": 12,
+          "pct_of_failed": 3.260869565217391,
+          "pct_of_total": 2.7649769585253456
+        }
+      },
+      "source_runs": [
+        "B0_som_shopping_20260806_113115_297007393_109097_R12449"
+      ]
+    },
+    "B0/shopping/Vision": {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "Vision",
+      "total_episodes": 434,
+      "success_count": 64,
+      "failed_count": 370,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 203,
+          "pct_of_failed": 54.864864864864856,
+          "pct_of_total": 46.774193548387096
+        },
+        "max-steps-other": {
+          "count": 137,
+          "pct_of_failed": 37.027027027027025,
+          "pct_of_total": 31.566820276497698
+        },
+        "visual-hijack/click-loop": {
+          "count": 22,
+          "pct_of_failed": 5.9459459459459465,
+          "pct_of_total": 5.0691244239631335
+        },
+        "search-loop": {
+          "count": 8,
+          "pct_of_failed": 2.1621621621621623,
+          "pct_of_total": 1.8433179723502304
+        }
+      },
+      "source_runs": [
+        "B0_vision_shopping_20260807_191852_632106648_362979_R23934"
+      ]
+    },
+    "B1/shopping/DOM": {
+      "baseline": "B1",
+      "site": "shopping",
+      "mode": "DOM",
+      "total_episodes": 434,
+      "success_count": 21,
+      "failed_count": 413,
+      "buckets": {
+        "max-steps-other": {
+          "count": 133,
+          "pct_of_failed": 32.20338983050847,
+          "pct_of_total": 30.64516129032258
+        },
+        "search-loop": {
+          "count": 128,
+          "pct_of_failed": 30.99273607748184,
+          "pct_of_total": 29.493087557603687
+        },
+        "early-finish/wrong-commit": {
+          "count": 132,
+          "pct_of_failed": 31.961259079903147,
+          "pct_of_total": 30.414746543778804
+        },
+        "visual-hijack/click-loop": {
+          "count": 16,
+          "pct_of_failed": 3.87409200968523,
+          "pct_of_total": 3.686635944700461
+        },
+        "error/noise": {
+          "count": 4,
+          "pct_of_failed": 0.9685230024213075,
+          "pct_of_total": 0.9216589861751152
+        }
+      },
+      "source_runs": [
+        "B1_dom_shopping_20260809"
+      ]
+    },
+    "B1/shopping/P-SoM": {
+      "baseline": "B1",
+      "site": "shopping",
+      "mode": "P-SoM",
+      "total_episodes": 434,
+      "success_count": 20,
+      "failed_count": 414,
+      "buckets": {
+        "search-loop": {
+          "count": 128,
+          "pct_of_failed": 30.917874396135264,
+          "pct_of_total": 29.493087557603687
+        },
+        "max-steps-other": {
+          "count": 119,
+          "pct_of_failed": 28.743961352657006,
+          "pct_of_total": 27.419354838709676
+        },
+        "early-finish/wrong-commit": {
+          "count": 146,
+          "pct_of_failed": 35.26570048309179,
+          "pct_of_total": 33.6405529953917
+        },
+        "visual-hijack/click-loop": {
+          "count": 19,
+          "pct_of_failed": 4.5893719806763285,
+          "pct_of_total": 4.377880184331797
+        },
+        "error/noise": {
+          "count": 2,
+          "pct_of_failed": 0.4830917874396135,
+          "pct_of_total": 0.4608294930875576
+        }
+      },
+      "source_runs": [
+        "B1_phantom_som_shopping_20260814"
+      ]
+    },
+    "B1/shopping/P-prompt": {
+      "baseline": "B1",
+      "site": "shopping",
+      "mode": "P-prompt",
+      "total_episodes": 434,
+      "success_count": 23,
+      "failed_count": 411,
+      "buckets": {
+        "search-loop": {
+          "count": 123,
+          "pct_of_failed": 29.927007299270077,
+          "pct_of_total": 28.341013824884794
+        },
+        "max-steps-other": {
+          "count": 116,
+          "pct_of_failed": 28.223844282238442,
+          "pct_of_total": 26.72811059907834
+        },
+        "early-finish/wrong-commit": {
+          "count": 148,
+          "pct_of_failed": 36.009732360097324,
+          "pct_of_total": 34.10138248847927
+        },
+        "visual-hijack/click-loop": {
+          "count": 20,
+          "pct_of_failed": 4.866180048661801,
+          "pct_of_total": 4.6082949308755765
+        },
+        "missing-context": {
+          "count": 3,
+          "pct_of_failed": 0.7299270072992701,
+          "pct_of_total": 0.6912442396313364
+        },
+        "error/noise": {
+          "count": 1,
+          "pct_of_failed": 0.24330900243309003,
+          "pct_of_total": 0.2304147465437788
+        }
+      },
+      "source_runs": [
+        "B1_phantom_prompt_shopping_20260911"
+      ]
+    },
+    "B1/shopping/P-text": {
+      "baseline": "B1",
+      "site": "shopping",
+      "mode": "P-text",
+      "total_episodes": 186,
+      "success_count": 19,
+      "failed_count": 167,
+      "buckets": {
+        "search-loop": {
+          "count": 51,
+          "pct_of_failed": 30.538922155688624,
+          "pct_of_total": 27.419354838709676
+        },
+        "early-finish/wrong-commit": {
+          "count": 75,
+          "pct_of_failed": 44.91017964071856,
+          "pct_of_total": 40.32258064516129
+        },
+        "max-steps-other": {
+          "count": 31,
+          "pct_of_failed": 18.562874251497004,
+          "pct_of_total": 16.666666666666664
+        },
+        "visual-hijack/click-loop": {
+          "count": 8,
+          "pct_of_failed": 4.790419161676647,
+          "pct_of_total": 4.301075268817205
+        },
+        "missing-context": {
+          "count": 2,
+          "pct_of_failed": 1.1976047904191618,
+          "pct_of_total": 1.0752688172043012
+        }
+      },
+      "source_runs": [
+        "B1_phantom_text_shopping_20260908"
+      ]
+    },
+    "B1/shopping/SoM": {
+      "baseline": "B1",
+      "site": "shopping",
+      "mode": "SoM",
+      "total_episodes": 434,
+      "success_count": 33,
+      "failed_count": 401,
+      "buckets": {
+        "max-steps-other": {
+          "count": 115,
+          "pct_of_failed": 28.6783042394015,
+          "pct_of_total": 26.497695852534562
+        },
+        "search-loop": {
+          "count": 81,
+          "pct_of_failed": 20.199501246882793,
+          "pct_of_total": 18.663594470046082
+        },
+        "early-finish/wrong-commit": {
+          "count": 170,
+          "pct_of_failed": 42.394014962593516,
+          "pct_of_total": 39.1705069124424
+        },
+        "missing-context": {
+          "count": 22,
+          "pct_of_failed": 5.486284289276807,
+          "pct_of_total": 5.0691244239631335
+        },
+        "visual-hijack/click-loop": {
+          "count": 10,
+          "pct_of_failed": 2.493765586034913,
+          "pct_of_total": 2.3041474654377883
+        },
+        "error/noise": {
+          "count": 3,
+          "pct_of_failed": 0.7481296758104738,
+          "pct_of_total": 0.6912442396313364
+        }
+      },
+      "source_runs": [
+        "B1_som_shopping_20260812"
+      ]
+    },
+    "B1/shopping/Vision": {
+      "baseline": "B1",
+      "site": "shopping",
+      "mode": "Vision",
+      "total_episodes": 434,
+      "success_count": 25,
+      "failed_count": 409,
+      "buckets": {
+        "max-steps-other": {
+          "count": 214,
+          "pct_of_failed": 52.32273838630807,
+          "pct_of_total": 49.30875576036866
+        },
+        "early-finish/wrong-commit": {
+          "count": 137,
+          "pct_of_failed": 33.496332518337404,
+          "pct_of_total": 31.566820276497698
+        },
+        "search-loop": {
+          "count": 36,
+          "pct_of_failed": 8.80195599022005,
+          "pct_of_total": 8.294930875576037
+        },
+        "visual-hijack/click-loop": {
+          "count": 22,
+          "pct_of_failed": 5.378973105134474,
+          "pct_of_total": 5.0691244239631335
+        }
+      },
+      "source_runs": [
+        "B1_vision_shopping_20260906"
+      ]
+    },
     "B5/classifieds/DOM": {
       "baseline": "B5",
       "site": "classifieds",
@@ -1519,5 +1884,6 @@
       ]
     }
   },
-  "extension_note": "Backbones outside the preregistered cell set (run_manifest `extension:`, e.g. B5 = GPT-5.6). Same taxonomy, kept out of `cells` so consumers scoped to the preregistered set (figures, deployment profile) are unchanged."
+  "extension_note": "Cells registered under run_manifest `extension:` \u2014 B5 = GPT-5.6 and the shopping site (B0/B1). Same taxonomy, kept out of `cells` so consumers scoped to the preregistered set (figures, deployment profile) are unchanged. Shopping caveat: B-2002 (search box submits old+new query) hits the text arms far more than Vision, so shopping mode-to-mode bucket differences are not clean (\u5b9e\u9a8c\u7b14\u8bb0 \u00a7531.9).",
+  "missing_reason_diagnostics": []
 }

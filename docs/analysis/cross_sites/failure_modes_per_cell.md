@@ -67,6 +67,15 @@
 | search-loop | 31 | 17.7% | 15.1% |
 | visual-hijack/click-loop | 21 | 12.0% | 10.2% |
 
+### B0/reddit/P-SoM (N=205, failed=182)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 70 | 38.5% | 34.1% |
+| max-steps-other | 57 | 31.3% | 27.8% |
+| search-loop | 31 | 17.0% | 15.1% |
+| visual-hijack/click-loop | 24 | 13.2% | 11.7% |
+
 ### B0/reddit/P-prompt (N=205, failed=179)
 
 | Paper bucket | Count | % of failed | % of total |
@@ -352,7 +361,95 @@
 
 ## Extension cells (outside the preregistered cell set)
 
-Backbones outside the preregistered cell set (run_manifest `extension:`, e.g. B5 = GPT-5.6). Same taxonomy, kept out of `cells` so consumers scoped to the preregistered set (figures, deployment profile) are unchanged.
+Cells registered under run_manifest `extension:` — B5 = GPT-5.6 and the shopping site (B0/B1). Same taxonomy, kept out of `cells` so consumers scoped to the preregistered set (figures, deployment profile) are unchanged. Shopping caveat: B-2002 (search box submits old+new query) hits the text arms far more than Vision, so shopping mode-to-mode bucket differences are not clean (实验笔记 §531.9).
+
+### B0/shopping/DOM (N=433, failed=382)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 209 | 54.7% | 48.3% |
+| max-steps-other | 115 | 30.1% | 26.6% |
+| search-loop | 38 | 9.9% | 8.8% |
+| visual-hijack/click-loop | 20 | 5.2% | 4.6% |
+
+### B0/shopping/SoM (N=434, failed=368)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 241 | 65.5% | 55.5% |
+| max-steps-other | 102 | 27.7% | 23.5% |
+| search-loop | 13 | 3.5% | 3.0% |
+| visual-hijack/click-loop | 12 | 3.3% | 2.8% |
+
+### B0/shopping/Vision (N=434, failed=370)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 203 | 54.9% | 46.8% |
+| max-steps-other | 137 | 37.0% | 31.6% |
+| search-loop | 8 | 2.2% | 1.8% |
+| visual-hijack/click-loop | 22 | 5.9% | 5.1% |
+
+### B1/shopping/DOM (N=434, failed=413)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 132 | 32.0% | 30.4% |
+| error/noise | 4 | 1.0% | 0.9% |
+| max-steps-other | 133 | 32.2% | 30.6% |
+| search-loop | 128 | 31.0% | 29.5% |
+| visual-hijack/click-loop | 16 | 3.9% | 3.7% |
+
+### B1/shopping/P-SoM (N=434, failed=414)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 146 | 35.3% | 33.6% |
+| error/noise | 2 | 0.5% | 0.5% |
+| max-steps-other | 119 | 28.7% | 27.4% |
+| search-loop | 128 | 30.9% | 29.5% |
+| visual-hijack/click-loop | 19 | 4.6% | 4.4% |
+
+### B1/shopping/P-prompt (N=434, failed=411)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 148 | 36.0% | 34.1% |
+| error/noise | 1 | 0.2% | 0.2% |
+| max-steps-other | 116 | 28.2% | 26.7% |
+| missing-context | 3 | 0.7% | 0.7% |
+| search-loop | 123 | 29.9% | 28.3% |
+| visual-hijack/click-loop | 20 | 4.9% | 4.6% |
+
+### B1/shopping/P-text (N=186, failed=167)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 75 | 44.9% | 40.3% |
+| max-steps-other | 31 | 18.6% | 16.7% |
+| missing-context | 2 | 1.2% | 1.1% |
+| search-loop | 51 | 30.5% | 27.4% |
+| visual-hijack/click-loop | 8 | 4.8% | 4.3% |
+
+### B1/shopping/SoM (N=434, failed=401)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 170 | 42.4% | 39.2% |
+| error/noise | 3 | 0.7% | 0.7% |
+| max-steps-other | 115 | 28.7% | 26.5% |
+| missing-context | 22 | 5.5% | 5.1% |
+| search-loop | 81 | 20.2% | 18.7% |
+| visual-hijack/click-loop | 10 | 2.5% | 2.3% |
+
+### B1/shopping/Vision (N=434, failed=409)
+
+| Paper bucket | Count | % of failed | % of total |
+|---|---:|---:|---:|
+| early-finish/wrong-commit | 137 | 33.5% | 31.6% |
+| max-steps-other | 214 | 52.3% | 49.3% |
+| search-loop | 36 | 8.8% | 8.3% |
+| visual-hijack/click-loop | 22 | 5.4% | 5.1% |
 
 ### B5/classifieds/DOM (N=224, failed=171)
 

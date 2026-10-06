@@ -86,16 +86,34 @@ def diagnosability() -> list[dict]:
     return rows
 
 
+def canonical_runs(baseline: str, site: str, mode_label: str) -> list[Path]:
+    """The manifest's paper-grade run for one condition — exactly one, or none.
+
+    2026-10-07 (实验笔记 §533.3): this used to glob `{baseline}_{mode}_{site}_*` under
+    `phase1/` and pool whatever matched. What matched depended on the host: after the run
+    stores were merged (§529.1) the glob also caught an unregistered partial attempt
+    (B0·cls·P-text R15674) and an unregistered early run (B0·red·DOM R819), and on the
+    generating host it had pooled whichever registered replicate happened to be parked
+    under `phase1/`. One canonical run per row keeps rows comparable and host-independent.
+    """
+    from scripts.analysis.lib.run_registry import get_all_cells
+    hits = sorted({c.run_dir for c in get_all_cells(grade_filter=["paper-grade"])
+                   if (c.baseline, c.site, c.mode) == (baseline, site, mode_label)})
+    if len(hits) > 1:
+        raise RuntimeError(f"manifest has {len(hits)} paper-grade runs for "
+                           f"{baseline}/{site}/{mode_label}: {hits}")
+    return hits
+
+
 def token_tail(cells: list[tuple[str, str]]) -> list[dict]:
     """p50/p95/p99/max of per-step `tokens.input`, per (baseline, site, mode)."""
     rows = []
     for baseline, site in cells:
         for mode_label, mode_dir in MODE_DIRS.items():
             pat = f"{baseline}_{mode_dir}_{site}_*"
-            runs = sorted(p for p in PHASE1.glob(pat)
-                          if p.is_dir() and "ABORTED" not in p.name)
+            runs = canonical_runs(baseline, site, mode_label)
             if not runs:
-                LOG.warning("no run dir for %s", pat)
+                LOG.warning("no paper-grade manifest run for %s/%s/%s", baseline, site, mode_label)
                 continue
             vals: list[int] = []
             n_steps = n_missing = 0
@@ -193,10 +211,11 @@ def render_md(diag: list[dict], tail: list[dict], cells) -> str:
             L += ["", "⚠️ **Pooled over runs where more than one exists.** "
                   + "; ".join(f"`{r['mode']}` on `{r['baseline']}/{r['site']}` pools "
                               f"{len(r['runs'])}" for r in multi)
-                  + " — a same-condition replicate lives under `phase1/` for those, so their "
-                  "step counts are correspondingly larger. Quantiles of one condition pooled "
-                  "across its own reruns are still quantiles of that condition, but the step "
-                  "counts are not comparable across rows without this column."]
+                  + " — more than one paper-grade manifest run for one condition should not "
+                  "happen (`canonical_runs` raises); if this line renders, check the manifest."]
+        else:
+            L += ["", "One run per row: the manifest's paper-grade run for that condition "
+                  "(registered replicates are not pooled, so every row is the same unit)."]
         L += ["", "⚠️ `tokens.input` is the TOTAL input; the `input_text` / `input_image` "
               "split is null on B0 (the hosted endpoint does not itemise it), so a "
               "screenshot-bearing mode's tail cannot be attributed between text and image "
