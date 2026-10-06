@@ -61,6 +61,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 LOG = logging.getLogger("confidence_cascade")
 
@@ -215,9 +216,16 @@ def _read_episodes(run_dir: Path, scored: set[int], *, with_signals: bool) -> di
 
 def _signals_for(summary_file: Path, task_id: int) -> dict[str, float]:
     """Aggregate one episode's step records into escalation scores. Low = unconfident."""
-    steps_glob = list(summary_file.parent.glob(f"*task_{task_id}_steps*.jsonl"))
-    if not steps_glob:
-        raise MissingInput(f"no step JSONL for task {task_id} beside {summary_file}")
+    # `.stale_<ts>` files are quarantined earlier attempts left beside the canonical
+    # `_steps_v2.jsonl` (13 of them in canonical runs). The loose glob matched both and
+    # `[0]` then took whichever the filesystem listed first: on the DGX that was the stale
+    # file for red_B1·vision task 33, which moved the 10% operating point 3.94% -> 4.43%
+    # (实验笔记 §531.7). Exclude them and require exactly one.
+    steps_glob = [p for p in summary_file.parent.glob(f"*task_{task_id}_steps_v2.jsonl")
+                  if ".stale_" not in p.name]
+    if len(steps_glob) != 1:
+        raise MissingInput(f"expected 1 step JSONL for task {task_id} beside {summary_file}, "
+                           f"got {[p.name for p in steps_glob]}")
     ml, mn, mm, mgn, vb, noop, actfail, n = [], [], [], [], [], 0, 0, 0
     for line in steps_glob[0].read_text().splitlines():
         if not line.strip():
@@ -370,6 +378,7 @@ def wa_cell(baseline: str = "B1") -> tuple[dict[int, Episode], dict[int, Episode
         pat = tmpl.format(b=baseline)
         hits = [Path(x) for x in glob.glob(str(WA_ROOT / pat))
                 if os.path.isdir(x) and "ABORTED" not in x]
+        hits = drop_registered_replicates(hits)
         if not hits:
             raise MissingInput(f"WA[{baseline}] {m}: no run dir for {pat!r}")
         got[m] = sorted(hits)[-1]

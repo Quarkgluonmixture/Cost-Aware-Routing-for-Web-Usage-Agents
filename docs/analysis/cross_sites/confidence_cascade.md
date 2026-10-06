@@ -59,7 +59,7 @@ For completeness the raw search tally is **79 of 495 (cell, signal, operating po
 | `cls_B1` | 20% | 27% | 40% |
 | `cls_B2` | 20% | 40% | 20% |
 | `red_B0` | 23% | 27% | 27% |
-| `red_B1` | 33% | 50% | 50% |
+| `red_B1` | 25% | 50% | 50% |
 | `red_B2` | 0% | 0% | 0% |
 
 ## 2. Does the confidence signal beat a signal-free escalation of the same size?
@@ -80,7 +80,7 @@ For each cell, the best signal at each escalation fraction, and the margin over 
 | `red_B0` | 10% | `mean_logprob_min` | 9.85% | +2.46pp | +0.73pp | **+1.74pp** ✅ |
 | `red_B0` | 20% | `mean_logprob_min` | 10.34% | +2.96pp | +1.49pp | **+1.46pp** ✅ |
 | `red_B0` | 30% | `mean_logprob_mean` | 10.34% | +2.96pp | +2.22pp | **+0.74pp** ✅ |
-| `red_B1` | 10% | `min_logprob_min` | 4.43% | +1.97pp | +0.49pp | **+1.49pp** ✅ |
+| `red_B1` | 10% | `min_logprob_min` | 3.94% | +1.48pp | +0.49pp | **+0.99pp** ✅ |
 | `red_B1` | 20% | `min_logprob_min` | 5.42% | +2.96pp | +0.99pp | **+1.96pp** ✅ |
 | `red_B1` | 30% | `mean_logprob_min` | 5.42% | +2.96pp | +1.48pp | **+1.48pp** ✅ |
 | `red_B2` | 10% | `mean_logprob_mean` | 1.97% | +0.00pp | -0.10pp | **+0.10pp** ✅ |
@@ -95,7 +95,7 @@ For each cell, the best signal at each escalation fraction, and the margin over 
 |---|---|---|---|
 | `mean_logprob_mean` | +0.29pp | +0.27pp | +0.26pp |
 | `mean_logprob_min` | +0.16pp | +0.39pp | +0.35pp |
-| `min_logprob_min` | +0.32pp | +0.36pp | -0.04pp |
+| `min_logprob_min` | +0.23pp | +0.36pp | -0.04pp |
 | `mean_margin_mean` | +0.05pp | +0.11pp | -0.13pp |
 | `min_margin_min` ⚠️ 5/6 cells | +0.53pp | +0.49pp | +0.07pp |
 | `verbalized_mean` ⚠️ 4/6 cells | +0.03pp | +0.30pp | +0.79pp |
@@ -187,7 +187,7 @@ _Signal shown: `mean_logprob_min` (best at 20% for this cell)._
 |---|---|---|---|---|---|---|
 | 0% | 0 | 2.46% | 1.00x | +0.00pp | +0.00pp | +0.00pp |
 | 5% | 10 | 2.46% | 1.07x | +0.00pp | +0.24pp | -0.24pp |
-| 10% | 20 | 4.43% | 1.18x | +1.97pp | +0.49pp | +1.49pp |
+| 10% | 20 | 3.94% | 1.18x | +1.48pp | +0.49pp | +0.99pp |
 | 15% | 30 | 4.43% | 1.27x | +1.97pp | +0.73pp | +1.24pp |
 | 20% | 41 | 5.42% | 1.37x | +2.96pp | +0.99pp | +1.96pp |
 | 30% | 61 | 5.42% | 1.55x | +2.96pp | +1.48pp | +1.48pp |
