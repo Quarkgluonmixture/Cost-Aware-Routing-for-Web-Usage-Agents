@@ -1,0 +1,350 @@
+{
+ "episodes": [
+  {
+   "condition": "B0_dom_shopping",
+   "task_id": 56,
+   "class": "unclear",
+   "mechanism": "The expected orange item (Banana Boat) is not in the first row of the page served, so the task could not be done as written; the agent also guessed and added a non-orange item.",
+   "evidence": "step_000 screenshot first row = Neutrogena stick / Bio-Essence / pink tan spray / Glossiva drops, nothing orange; [1] clicked Neutrogena 'which is likely the orange one'; eval must_include 'Banana Boat Ultra Sport...'. Missing: whether the grid order drift comes from our env or is inherent to the benchmark (the same category page's first row differs between runs, see B0_vision 77 vs B1_vision 202)."
+  },
+  {
+   "condition": "B0_dom_shopping",
+   "task_id": 124,
+   "class": "agent-limit",
+   "mechanism": "The agent made up a match ('NEC branding') and clicked the first search-result image, a generic mini projector, then reported its price.",
+   "evidence": "[1] 'white projector with NEC branding, matches one of the search results' -> clicked element 5620 (first image, B09MB6J2Y3) -> projector-wifi-bluetooth-...html; [2] answer '$177.13'; eval wants 645.00 (nec-np4100)."
+  },
+  {
+   "condition": "B0_dom_shopping",
+   "task_id": 219,
+   "class": "agent-limit",
+   "mechanism": "The agent left the starting category, searched 'colorful shirt with birds' and described a flamingo shirt instead of the toucan/parrot shirt.",
+   "evidence": "[0] typed 'colorful shirt with birds'; [2] -> pink-flamingo-bird-watercolor-artwork-t-shirt.html; [6] answer 'Pink Flamingo and Birds Of Paradise'; eval must_include toucan, parrot."
+  },
+  {
+   "condition": "B0_dom_shopping",
+   "task_id": 440,
+   "class": "agent-limit",
+   "mechanism": "The agent read the drink as plain coffee rather than cappuccino and added the cheapest items in the wrong set (a tea-lemonade, then green coffee beans).",
+   "evidence": "[3] sorted Coffee, Tea & Cocoa by price; [6]-[7] added 'Honest Tea ... Lemonade'; [9]-[10] added 'Paleo Verde ... Green Coffee'; eval wants 'Hills Bros Instant Sugar-Free Double Mocha Cappuccino Mix'."
+  },
+  {
+   "condition": "B0_dom_shopping",
+   "task_id": 457,
+   "class": "agent-limit",
+   "mechanism": "The agent added a single pink skull print, not a 3-piece set like the reference, and never compared prices.",
+   "evidence": "[1] search 'pink poster set'; [4] -> haus-and-hues-skull-art-print-pink-posters...12x16; [8] thought 'assuming the reference was $7.99 or less' (it was $23.99 per [1]); eval wants '3 Piece Vintage Canvas Wall Art Pink Peony...'."
+  },
+  {
+   "condition": "B0_som_shopping",
+   "task_id": 139,
+   "class": "agent-limit",
+   "mechanism": "In one step the agent returned the first product thumbnail (cookie packaging) without checking which product images actually show close-ups of cookies.",
+   "evidence": "[0] finish 'B08GGKVR2X.0.jpg' ('first product image ... appears to be a close-up'); step_000 screenshot shows LU Granola packaging; eval accepts only B08FP4B8N9.1 / B07GD7RHMV.1 / B0719MJ5H7.0."
+  },
+  {
+   "condition": "B0_som_shopping",
+   "task_id": 352,
+   "class": "agent-limit",
+   "mechanism": "The agent added one Lightning-to-3.5mm adapter, clicking it again and again, and never scrolled to find the other qualifying item (Belcompany 2-pack).",
+   "evidence": "[1]-[7],[13] clicked id 13 'Add to Cart' for '(Apple MFi Certified) Aux Cord ...' 7 times; Belcompany never appears in SoM obs at steps 1/13; [8]-[11] detour to a VR headset; eval must_include 'Belcompany 2 Pack Lightning to 3.5mm'."
+  },
+  {
+   "condition": "B0_som_shopping",
+   "task_id": 366,
+   "class": "agent-limit",
+   "mechanism": "The agent selected the Cherry Blossom option but never clicked the visible Add to Cart, then scrolled up and down 17 times and finished without buying.",
+   "evidence": "[6] clicked radio 'Cherry Blossom' (step_007 obs: checked: true); [8] select_option on StaticText 'Size' -> no_match_in_css_menus; step_008 SoM shows [id=13] button 'Add to Cart' never clicked; [9]-[24] scroll oscillation; [25] 'has been successfully located'. Eval needs an order containing B08N1FRB5X."
+  },
+  {
+   "condition": "B0_som_shopping",
+   "task_id": 370,
+   "class": "agent-limit",
+   "mechanism": "The agent decided the reference image was a 'yellow sports car', bought nothing, and finished after adding a novelty Bluetooth earpiece to the cart.",
+   "evidence": "[2] 'phones don't resemble cars, this is likely a misdirection'; [3] search 'yellow sports car phone'; [6] add to cart BM70 mini phone; [7] finish; no checkout. Eval needs an order containing B07NVKVYZR."
+  },
+  {
+   "condition": "B0_som_shopping",
+   "task_id": 410,
+   "class": "agent-limit",
+   "mechanism": "The agent assumed Seattle, picked a controller decal skin rather than a controller, and stopped at add-to-cart without placing an order.",
+   "evidence": "[1] search 'Seattle Seahawks controller'; [2] -> skinit-decal-gaming-skin-...seattle-seahawks; [4] 'decal ... has been added to the cart'; no checkout. Eval needs an order containing B01N57KNX7."
+  },
+  {
+   "condition": "B0_vision_shopping",
+   "task_id": 8,
+   "class": "agent-limit",
+   "mechanism": "The agent found only one of the three red-packaged Lays products and gave one price instead of the price range.",
+   "evidence": "[1] noticed only 'Smoked Salmon Cream Cheese'; [3]-[4] scrolls hit the page bottom (no_progress); [7] answer lists 1 product + '$14.99'; eval needs both Canadian Ketchup products + 11.85 and 38.99."
+  },
+  {
+   "condition": "B0_vision_shopping",
+   "task_id": 20,
+   "class": "agent-limit",
+   "mechanism": "The agent never reached the Posters & Prints category, kept asking for a sort option that does not exist, and answered from a few visible search results.",
+   "evidence": "[0]-[17] loop between home-kitchen.html and ?cat=38/158; [19]-[22] select_option 'Price: High to Low' -> no_match_in_select (the options are Product Name/Price/Relevance); [26] answer $65.88; eval wants 399.99."
+  },
+  {
+   "condition": "B0_vision_shopping",
+   "task_id": 75,
+   "class": "agent-limit",
+   "mechanism": "The agent clicked the first product in the first row instead of the second row, then wandered through wishlist pages.",
+   "evidence": "[0] click (237,902) -> pioneer-ts-a1676r speakers (step_000 screenshot: first row, first column); [2] added Pioneer; [3]-[5] paged the wishlist and re-added a canvas print; eval wants 'Amzparts 6.5\" MIB Car Radio'."
+  },
+  {
+   "condition": "B0_vision_shopping",
+   "task_id": 77,
+   "class": "benchmark-FP",
+   "mechanism": "The agent correctly added the actual third product in the first row, but the evaluator expects an item that was not in that row on the page served (the grid order had shifted).",
+   "evidence": "step_000 screenshot first row = red rocking-chair set / bar table set / navy sectional / gray daybed; [0] click (695,867) = 3rd tile -> mfstudio-6-piece-...navy-blue; step_002 obs 'MFSTUDIO ... has been added to your Wish List'; eval must_include 'Synthetic Rattan Woven Material...', which appears in no saved observation of task 77 in any run. Caveats: the agent then also added a pink shoe and its final claim ([4] 'pink safety shoe') is wrong, which does not affect grading. Root cause is listing-order drift: the same category's first row differs in B1_vision 202."
+  },
+  {
+   "condition": "B0_vision_shopping",
+   "task_id": 156,
+   "class": "agent-limit",
+   "mechanism": "The agent accepted a printer with exactly 4 stars as 'greater than 4' and stopped on the wrong HP model.",
+   "evidence": "[9] 'rating of 4 stars (which is exactly 4, not greater than 4)'; [15]-[17] picked HP ENVY Photo 6255 '11 reviews and a 4-star rating'; url_match EXACT wants hp-deskjet-f380. ([0] new_tab triggered a benign about_blank recovery.)"
+  },
+  {
+   "condition": "B1_dom_shopping",
+   "task_id": 39,
+   "class": "agent-limit",
+   "mechanism": "The agent ignored the orthodontic-supplies page, searched 'colorful item' and wishlisted a shampoo set.",
+   "evidence": "[0] clicked 'My Wish List' header link; [1] search 'colorful item'; [3] added L'Oreal Color Vibrancy shampoo; eval wants '50Pcs/Bag ... Dental Elastic Rubber Band ... Multi Color' from the start page."
+  },
+  {
+   "condition": "B1_dom_shopping",
+   "task_id": 100,
+   "class": "agent-limit",
+   "mechanism": "The agent found a Hawaiian shirt but kept clicking the header 'My Wish List' link instead of 'Add to Wish List', looping 5 times.",
+   "evidence": "[2],[4],[6],[9],[12],[17] product page -> /wishlist/ each time (thought: 'My Wish List link ... where I can add items'); [18] finish with wishlist showing 'none match the target shirt'; eval must_include 'hawaiian'."
+  },
+  {
+   "condition": "B1_dom_shopping",
+   "task_id": 256,
+   "class": "agent-limit",
+   "mechanism": "The agent never added the current Longan product to the compare list (it clicked the menu tabpanel instead of 'Add to Compare') and compared the wrong red fruit.",
+   "evidence": "[0] clicked [581] tabpanel '' (step_000 obs; 'Add to Compare' was [2167]) -> cell-phones-accessories.html; [7] Add to Compare on 'kaong (palm fruit) red'; eval wants Aroy-D Longan + 'Aroy-d Rambutan in Syrup'."
+  },
+  {
+   "condition": "B1_dom_shopping",
+   "task_id": 310,
+   "class": "agent-limit",
+   "mechanism": "The agent treated 'second row, first column' as the second product in the grid.",
+   "evidence": "[1] 'The second row corresponds to the second product in the grid ... Manitoba Harvest Hemp Seed Oil' -> manitoba-harvest...html; url_match wants lr1130-ag10-battery...html."
+  },
+  {
+   "condition": "B1_dom_shopping",
+   "task_id": 437,
+   "class": "agent-limit",
+   "mechanism": "The agent added a $12.99 phone case while saying it was in the $3-4 range, instead of a selfie-stick/tripod.",
+   "evidence": "[3] 'priced at $12.99, which falls within the $3-4 range'; [4] add to cart; eval wants 'Wireless Bluetooth Selfie Stick and Tripod Combination'."
+  },
+  {
+   "condition": "B1_phantom_prompt_shopping",
+   "task_id": 7,
+   "class": "agent-limit",
+   "mechanism": "The agent listed only 1 of the 4 animal-design pencil cases and gave no real price range.",
+   "evidence": "[2] one scroll; [3] answer lists only 'Danielle Cute Boston Terrier...' and price_range '$12.50'; eval needs 4 names + 5.99 and 38.67."
+  },
+  {
+   "condition": "B1_phantom_prompt_shopping",
+   "task_id": 37,
+   "class": "agent-limit",
+   "mechanism": "The agent left the blankets page, searched 'navy blue' and wishlisted a metal bed frame.",
+   "evidence": "[0] header 'My Wish List' link; [1] search 'navy blue'; [3] Add to Wish List 'Lexicon Urbana Metal Bed, Twin, Navy Blue'; eval wants 'PEACE NEST ... Throw Blanket ... Navy Blue'."
+  },
+  {
+   "condition": "B1_phantom_prompt_shopping",
+   "task_id": 62,
+   "class": "agent-limit",
+   "mechanism": "The agent opened a random first item, then searched 'yellow' and gave the price of an unrelated yellow toothbrush.",
+   "evidence": "[0] -> men-s-t-shirt-shorts-set...; [1] search 'yellow' (confidence 0.3); [3] answer '$24.75' ('NA Little Yellow Duck Electric Toothbrush'); eval wants 10.99. Task solved in 2/10 other runs."
+  },
+  {
+   "condition": "B1_phantom_prompt_shopping",
+   "task_id": 78,
+   "class": "agent-limit",
+   "mechanism": "The agent clicked the first product it could see (first row), not the first product in the last row, then cycled through wishlist items.",
+   "evidence": "[0] thought 'last row ... first product at [id=2327]', but 2327 is the first image in the step_000 viewport -> hollywood-glam-...console table; [2]-[7] wishlist -> product -> wishlist loop; eval wants 'HIFIT End Table Set of 2'."
+  },
+  {
+   "condition": "B1_phantom_prompt_shopping",
+   "task_id": 208,
+   "class": "agent-limit",
+   "mechanism": "The agent gave up on step 0 without scrolling to the bottom row.",
+   "evidence": "[0] finish 'No monster found on the brown box in the bottom row.' (confidence 0.0); eval wants 'Count Chocula'."
+  },
+  {
+   "condition": "B1_phantom_som_shopping",
+   "task_id": 52,
+   "class": "agent-limit",
+   "mechanism": "The agent left the planters page, searched 'wooden log' and wishlisted a log end table; it also kept confusing the header wishlist link with adding an item.",
+   "evidence": "[0],[2],[5] clicked id 3 'My Wish List' header link; [1],[4],[7] search 'wooden log'; [9] Add to Wish List 'CASTLECREEK Pine Log End Table'; eval wants 'REAL Planters H-2 Horizontal Log Planter' from the start page."
+  },
+  {
+   "condition": "B1_phantom_som_shopping",
+   "task_id": 54,
+   "class": "agent-limit",
+   "mechanism": "The agent searched the word 'waves' and wishlisted a 'Clear Waves' wall mirror, not the ocean print on the posters page.",
+   "evidence": "[0] search 'waves'; [3] -> camden-isle-clear-waves-wall-mirror; [4] Add to Wish List; eval wants 'SiMiWOW Beach Lighthouse Wall Art'."
+  },
+  {
+   "condition": "B1_phantom_som_shopping",
+   "task_id": 61,
+   "class": "agent-limit",
+   "mechanism": "The agent left the pillows page, searched 'pink' and gave the price of a lip palette.",
+   "evidence": "[0] opened first item (ivory macrame pillow); [1] search 'pink' (confidence 0.3); [3] answer '$6.74' (NYX Pro Lip Cream Palette); eval wants 26.99."
+  },
+  {
+   "condition": "B1_phantom_som_shopping",
+   "task_id": 74,
+   "class": "agent-limit",
+   "mechanism": "The agent decided the Van Gogh sunflower print was 'not yellow', went looking for other yellow items and ended up with toothpaste in the cart.",
+   "evidence": "[0]/[1] 'Van Gogh painting which is not yellow' -> search 'yellow'; [3] Add to Cart on the yellow duck toothbrush; [4]-[8] toothpaste page, option 'B'; eval wants 'Wieco Art Sunflower by Vincent Van Gogh' in the cart."
+  },
+  {
+   "condition": "B1_phantom_som_shopping",
+   "task_id": 294,
+   "class": "agent-limit",
+   "mechanism": "The agent left the given results page (p=5) to search 'paisley shirt' and gave the price of a different shirt.",
+   "evidence": "[1] typed 'paisley shirt' (left catalogsearch ?p=5&q=shirt); [3] -> men-s-floral-dress-shirt...paisley; [4] answer '$6.99'; eval wants 0.99."
+  },
+  {
+   "condition": "B1_phantom_text_shopping",
+   "task_id": 15,
+   "class": "agent-limit",
+   "mechanism": "The agent answered in one step by reading the sidebar price filters as if they were product rows.",
+   "evidence": "[0] finish 'second row is $10.00 - $19.99, third row is $20.00 - $29.99' ('price ranges in the form of links ... under the Price section'); eval wants 4.99 and 16.09."
+  },
+  {
+   "condition": "B1_phantom_text_shopping",
+   "task_id": 89,
+   "class": "agent-limit",
+   "mechanism": "The agent added an electric hair clipper when the image shows a hair brush.",
+   "evidence": "[2] -> hair-cutting-tools-electric-hair-clipper...; [3] Add to Cart; eval must_include 'hair brush' in the cart."
+  },
+  {
+   "condition": "B1_phantom_text_shopping",
+   "task_id": 208,
+   "class": "agent-limit",
+   "mechanism": "The agent went to a lexical search for 'monster box' and answered with the cereal name 'Monster Mash' instead of reading the bottom row of the given page.",
+   "evidence": "[1] clicked Nature Valley oatmeal; [2] search 'monster box'; [4] -> monster-mash-limited-edition...; [5] answer 'Monster Mash'; eval wants 'Count Chocula'."
+  },
+  {
+   "condition": "B1_phantom_text_shopping",
+   "task_id": 282,
+   "class": "agent-limit",
+   "mechanism": "The agent opened one shoe product page and finished without ordering anything.",
+   "evidence": "[1] -> women-s-classical-pointed-toe-ballet-flat...; [2] finish 'No further action is needed'; eval needs the latest order to contain B09CPNW61V."
+  },
+  {
+   "condition": "B1_phantom_text_shopping",
+   "task_id": 428,
+   "class": "agent-limit",
+   "mechanism": "The agent left the given results page to search for 'chair with wheels' and added a kitchen cart. Separately, the scaffold appended the typed text to the existing query instead of replacing it ('chairchair with wheels'); this did not cause the failure.",
+   "evidence": "[0] type 'chair with wheels' via element_id_locator_route, url_before q=chair -> url_after q=chairchair+with+wheels; [2] -> kitchen-island-on-wheels...; [3] Add to Cart; eval wants 'Modern Upholstered Tufted Velvet Office Chair ... Blue' from p=8 of the 'chair' results."
+  },
+  {
+   "condition": "B1_som_shopping",
+   "task_id": 13,
+   "class": "agent-limit",
+   "mechanism": "The agent opened one product from the homepage first row and gave its single price instead of the row's price range.",
+   "evidence": "[0] -> pre-baked-gingerbread-house-kit...; [1] answer '$19.99' ('the range is simply $19.99'); eval wants 14.47 and 23.50."
+  },
+  {
+   "condition": "B1_som_shopping",
+   "task_id": 38,
+   "class": "agent-limit",
+   "mechanism": "The agent left the page, searched 'pink', then wishlisted a cheese wheel it found in the wishlist.",
+   "evidence": "[0] search 'pink'; [1] header 'My Wish List'; [3] -> hushallsost-swedish-farmer-s-cheese...; [4] Add to Wish List; eval wants 'Wukong Direct Pants ... Bloomers Yoga'."
+  },
+  {
+   "condition": "B1_som_shopping",
+   "task_id": 160,
+   "class": "scaffold-bug",
+   "mechanism": "The episode could not be scored: the wishlist carries over between tasks (27 items, 10 per page, oldest first), so the newly added item lands on page 3 while the image check only looks at /wishlist/ page 1.",
+   "evidence": "[0]-[1] added 'Pre-baked Gingerbread House Kit' (a plausible match for a gingerbread cookie); step_002 screenshot/obs: 'Items 1 to 10 of 27 total', page 1 shows cheese/shirt/pig figurines/fountain, links to Page 2/3; eval page_image_query eval_image_url '__SHOPPING__/wishlist/' asks 'Is this a cookie?'. Also, all 4 wishlist page_image_query tasks (108/159/160/163) score 0/36 across runs, and their selector '.products-grid .wishlist ...' (descendant form) may match nothing. Whether a gingerbread-house image would pass the VQA is unverified."
+  },
+  {
+   "condition": "B1_som_shopping",
+   "task_id": 268,
+   "class": "agent-limit",
+   "mechanism": "The agent bought the wrong '777' item (a Yamaha NS-777 speaker instead of the 777 necklace on the start page) and went past the payment screen to place a real order.",
+   "evidence": "[0] search '777'; [1] -> yamaha-ns-777...speaker; [5] -> checkout/#payment; [6] 'click Place Order' -> checkout/onepage/success/; eval wants URL checkout/#payment with 'YYDS ... Digital Pendant Necklace' in the summary. Side effect: an extra order in the store."
+  },
+  {
+   "condition": "B1_som_shopping",
+   "task_id": 291,
+   "class": "agent-limit",
+   "mechanism": "The agent opened an end table that had no alarm clock and reported its total height as the 'feet height'.",
+   "evidence": "[1] -> comfortfa-cheap-end-tables...; [2] 'no visible alarm clock on the table'; [3] answer '16.5 inches'; eval wants 15.75."
+  },
+  {
+   "condition": "B1_vision_shopping",
+   "task_id": 17,
+   "class": "agent-limit",
+   "mechanism": "The agent guessed a price it could not read ('appears to be around $27.56') for the last column after one scroll.",
+   "evidence": "[1] 'the other product's price is partially cut off, but it appears to be around $27.56'; answer $27.56-$59.31; eval wants 123.41 and 184.59."
+  },
+  {
+   "condition": "B1_vision_shopping",
+   "task_id": 40,
+   "class": "agent-limit",
+   "mechanism": "The agent never found the Chocolate category and answered with the one chocolate item visible on Grocery.",
+   "evidence": "[2] answer \"{'shape': 'round', 'price': '$57.69'}\" ('the only chocolate item visible'); eval wants 1.04 + circle/round."
+  },
+  {
+   "condition": "B1_vision_shopping",
+   "task_id": 61,
+   "class": "benchmark-FP",
+   "mechanism": "The agent gave the price of the only first-row item described as pink, but the item the evaluator expects ($26.99) was not in the first row of the page served (grid order drift).",
+   "evidence": "step_000/step_001 screenshots: first row = 'UTF4C Colorful Pink Blue Galaxy ... Pillow Case' $17.99 / WAZHIJIA camo $7.99 / Ueerdand Easter $12.99 / Vintage Rustic bee $19.99, nothing at $26.99; [1] clicked the UTF4C pillow; [2] answer '$17.99'. Caveat: the galaxy image looks mostly blue/purple, so 'pink' rests on its product name. The same task passed in B1_dom, so the order differs between runs."
+  },
+  {
+   "condition": "B1_vision_shopping",
+   "task_id": 80,
+   "class": "agent-limit",
+   "mechanism": "The agent answered in one step from the sidebar price filter ('$800.00 and above') without looking at the product grid.",
+   "evidence": "[0] finish '$800.00 and above' ('as indicated in the Shopping Options section under Price'); eval wants 9.99 and 14.99."
+  },
+  {
+   "condition": "B1_vision_shopping",
+   "task_id": 202,
+   "class": "agent-limit",
+   "mechanism": "The agent opened a red fire-pit patio set with no mountains in its photo and listed only the 4 colour options visible above the fold.",
+   "evidence": "[0] click (289,745) -> asjmr-outdoor-patio-furniture-...-red (step_000 screenshot: trees, no mountains); [1] answer 'Beige, Blue, Brown, and Dark Blue' (step_001 screenshot shows exactly those 4 before the fold); eval wants Aegean Blue, Black & Khaki, Blue, Red, Royal Blue."
+  }
+ ],
+ "summary": {
+  "counts_by_class": {
+   "agent-limit": 41,
+   "scaffold-bug": 1,
+   "benchmark-FP": 2,
+   "unclear": 1
+  },
+  "recurring_mechanisms": [
+   "Agent leaves the page the task points to ('this page', 'on this page', 'the X one') and uses keyword site search, then acts on a lexical match — 13 episodes: B0_dom 219; B1_dom 39; B1_phantom_prompt 37, 62; B1_phantom_som 52, 54, 61, 74, 294; B1_phantom_text 208, 428; B1_som 38, 268",
+   "Wrong grid position (picks the first visible tile or miscounts row/column, never scrolls to the target row) — 4 episodes: B0_vision 75; B1_dom 310; B1_phantom_prompt 78; B0_dom 56 (partly)",
+   "Reads the sidebar 'Price' filter links or a single product price as the answer to a 'price range of row/column' question — 4 episodes: B1_phantom_text 15; B1_vision 80, 17; B1_som 13",
+   "Claims success on 'buy/order' tasks without placing an order (stops at the product page or after add-to-cart) — 4 episodes: B0_som 366, 370, 410; B1_phantom_text 282",
+   "Clicks the header 'My Wish List' link believing it adds the current item; can loop — 4 episodes: B1_dom 100, 39; B1_phantom_som 52; B1_som 38 (also B1_phantom_prompt 37 step 0)",
+   "Breaks a numeric or visual constraint stated in its own reasoning ($12.99 'within $3-4', '4 stars' as '>4', invented NEC/orange/mountain matches) — 6 episodes: B1_dom 437; B0_vision 156; B0_dom 124, 56, 457; B1_vision 202",
+   "Incomplete enumeration on 'all items / list all / range' tasks (stops after the first match) — 4 episodes: B0_vision 8; B1_phantom_prompt 7; B0_som 352; B1_som 13",
+   "Gives up or answers on step 0 or 1 without navigating — 5 episodes: B1_phantom_prompt 208; B1_phantom_text 15; B1_vision 80; B0_som 139; B1_vision 17",
+   "Listing-order drift: the product the evaluator expects is not at the position the intent names on the page served (the same category's first row differs between runs) — 3 episodes: B0_vision 77 (benchmark-FP), B1_vision 61 (benchmark-FP), B0_dom 56 (unclear)",
+   "Wishlist state carried over between tasks makes wishlist-based evaluation blind to newly added items — 1 episode: B1_som 160 (scaffold-bug)"
+  ],
+  "suspected_rule_gaps": [
+   "SCAFFOLD: typed search text is appended to the prefilled Magento search box instead of replacing it — detect q_after == q_before + typed_text on catalogsearch URLs. Across all shopping runs this matches 1324 of about 3,700 type actions into a prefilled box (almost all via element_id_locator_route). Another 1341 cases leave the query unchanged, which is worth checking. Only B1_phantom_text 428 in this sample, where it did not cause the failure.",
+   "ENV STATE: the wishlist accumulates across tasks (start-of-task counts seen: 5 to 47 items). Flag page_image_query tasks whose eval_image_url is /wishlist/ (10 per page) when the start-of-task wishlist count is 10 or more, and program_html '?limit=50' wishlist tasks when it is 50 or more. All 4 wishlist image tasks (108/159/160/163) are 0/36 across runs; also check whether the selector '.products-grid .wishlist .product-image-photo' (descendant form) matches anything.",
+   "LISTING DRIFT: for intents with positional references (first/second/last row or column, Nth product), check whether the eval's must_include product name (or reference price) appears in the step_000 observation or screenshot at that position; if it is missing, mark the task unsatisfiable on the page served rather than an agent failure.",
+   "BUY WITHOUT ORDER: intent contains 'buy'/'order'/'purchase', agent_finished=true, and no step reached checkout/onepage/success.",
+   "OVERSHOOT ORDER: intent says 'before placing the order' (or eval url_match is checkout/#payment) but a step reached checkout/onepage/success. Also flag it as store-state pollution for later 'latest order' evals.",
+   "HEADER-WISHLIST CONFUSION: intent says 'add ... to my wish list', and a click on a product page navigates to /wishlist/ (header link) rather than /wishlist/index/index/wishlist_id/... (add result); flag 2 or more repeats as a loop.",
+   "LEFT DEICTIC PAGE: intent contains 'this page'/'on this page'/'this'/'first row'/'these', and within the first 2 steps the agent types into the site search box or clicks a top-level category, so the start URL is never revisited.",
+   "FACET-AS-ANSWER: the final answer's price string matches a sidebar price-filter label ('$X.00 - $Y.99' or '$X and above') on the final page.",
+   "SELF-CONTRADICTION: the agent's thought states a value that breaks the constraint it just quoted (price outside 'between $A-$B', 'exactly 4, not greater than 4', 'not fully visible ... appears to be')."
+  ]
+ }
+}

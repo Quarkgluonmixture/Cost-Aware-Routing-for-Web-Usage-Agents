@@ -1,0 +1,92 @@
+{
+ "B0_dom_shopping": {
+  "run_id": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+  "tasks": [
+   56,
+   124,
+   219,
+   440,
+   457
+  ]
+ },
+ "B0_som_shopping": {
+  "run_id": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+  "tasks": [
+   139,
+   352,
+   366,
+   370,
+   410
+  ]
+ },
+ "B0_vision_shopping": {
+  "run_id": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+  "tasks": [
+   8,
+   20,
+   75,
+   77,
+   156
+  ]
+ },
+ "B1_dom_shopping": {
+  "run_id": "B1_dom_shopping_20260809",
+  "tasks": [
+   39,
+   100,
+   256,
+   310,
+   437
+  ]
+ },
+ "B1_phantom_prompt_shopping": {
+  "run_id": "B1_phantom_prompt_shopping_20260911",
+  "tasks": [
+   7,
+   37,
+   62,
+   78,
+   208
+  ]
+ },
+ "B1_phantom_som_shopping": {
+  "run_id": "B1_phantom_som_shopping_20260814",
+  "tasks": [
+   52,
+   54,
+   61,
+   74,
+   294
+  ]
+ },
+ "B1_phantom_text_shopping": {
+  "run_id": "B1_phantom_text_shopping_20260908",
+  "tasks": [
+   15,
+   89,
+   208,
+   282,
+   428
+  ]
+ },
+ "B1_som_shopping": {
+  "run_id": "B1_som_shopping_20260812",
+  "tasks": [
+   13,
+   38,
+   160,
+   268,
+   291
+  ]
+ },
+ "B1_vision_shopping": {
+  "run_id": "B1_vision_shopping_20260906",
+  "tasks": [
+   17,
+   40,
+   61,
+   80,
+   202
+  ]
+ }
+}

@@ -12038,3 +12038,23 @@ flipped"的循环 (§H stress P0-3, 2026-08-02)。当时只有 dom+vision 有 re
 - **原因**: `reset.php` 只恢复 items / comments / users; Gate-3 的 docker restart 不重灌 named volume, seed SQL 只在容器 CREATE 时跑 ⇒ 管线里没有任何一步清这两张表。B-746 把 sentinel 从 3 张扩到 5 张时点名了这个缺口, 但只上了断言没上清理。
 - **修法**: `scripts/maintenance/reset_vwa_sites.sh::_reset_vwa_local_classifieds` 在 sentinel 前无条件 `DELETE FROM` 两表 (seed 态本就为空, 所以是恢复 seed 而非偏离); DELETE 失败由紧随的 sentinel 报出, fail-closed 保留。
 - **编号说明**: 修复当天 A100 与 DGX 两机分叉各自发号 (笔记 §487.5), A100 侧把它记为 B-1997, 而 DGX 侧的 B-1997 已是 B5 vision 坐标契约 (上一条之前的 B-1997 条目)。该修复所在分支 `salvage/a100-fire-fixes-489` 于 2026-10-06 才并入 master, 并入时发现撞号, 改为 B-2001。笔记 §487.2 的「B-1997」指本条。
+
+### B-2002. shopping 搜索框已有查询时, TYPE 后提交的查询 = 旧查询 + 新输入 (`Sony` + `Sony headphones` → `SonySony headphones`) [P1] ⚠️ OPEN (机制未确认)
+- **现象** (2026-10-06, 笔记 §531.9): Tier-2 抽样读 shopping 失败轨迹时发现 (B1_phantom_text task 428: `chair` + `chair with wheels` → `q=chairchair with wheels`)。
+- **量化** (所有完整 shopping run, 输入前 URL 已带 `q=` 且输入非空的 TYPE 步, 判据 `q_after == q_before + text`): shopping **1,446 / 3,388 (43%)**;
+  classifieds 74 / 10,456、reddit 22 / 3,113 (<1%, 抽查是模型自己的改写, 不是追加)。⇒ **shopping 独有**。
+  按臂 (追加步 / 已填步, 受影响 episode): B0 dom 76/224 (17 ep) · som 20/99 (5) · vision 3/15 (2); B1 dom 355/735 (93) · P-text 385/756 (112) ·
+  P-prompt 214/541 (73) · P-SoM 175/550 (68) · som 87/359 (50) · vision 1/38 (1)。**按 mode 很不均匀**: 文本类臂远重于 vision。
+- **路径**: 追加的步全部走 P79 自己的 `element_id_locator_route` (`p79/envs/locator_dispatch.py`), `locator_route_meta` = success / 无兜底 / target INPUT ——
+  即 `locator.fill()` 成功返回, 但提交出去的查询没被替换。按 Playwright 语义 `fill()` 应先清空; 推测与 Magento 搜索框的前端脚本 (quick search) 交互有关,
+  **离线无法确认** (本机 VWA 容器 09-23 已删, A100 不可达)。另有 1,220 步提交后查询未变 (可能只是没按回车), 未细分。
+- **影响面**: shopping 的跨 mode 比较 (B1 尤甚); 用到 shopping 的结论 —— §505 的 11 格分析、预算路由前瞻检验 (§510.3 / §515.3) 的两个 held-out 臂
+  恰好是受影响最重的 B1 P-text / P-prompt。classifieds / reddit / WA 不受影响。SR 影响无法离线算 (受影响 episode 有的本来就会失败)。
+- **修法建议**: 先在活站点复现 (shopping 搜索框预填 → `fill()` → 读 `input.value` 与提交 URL); 若确认, TYPE 前显式 `fill('')` 再 `fill(text)` 或断言 value 等于输入。改的是 fire 路径 ⇒ 只对之后的 run 生效, 现有 shopping 数据只能披露。
+
+### B-2003. shopping 愿望清单不随 task 清空 → 4 道「加到愿望清单」的 page_image_query 题在全部 9 个 condition 上 0 成功 [P2] ⚠️ OPEN (机制部分未确认)
+- **现象** (2026-10-06, 笔记 §531.9): task 108 / 159 / 160 / 163 (评测 = 打开 `/wishlist/` 对 `.products-grid .wishlist .product-image-photo` 做 VQA) 在 B0×3 + B1×6 上均 **0/9**。
+- **已核**: PROTOCOL_NOTE_07 / B-1943 只做了「每题清 cart」, 管线里没有任何一步清 wishlist (`git grep wishlist` 只命中 `analyze_magento_state_surface.py` 的盘点表); §357.2 早有预警 (shopping 无 reset + add-to-cart/wishlist 会跨任务污染)。
+- **未核** (Tier-2 子 agent 读 B1_som task 160 观测所得): 愿望清单累积到 27 项、每页 10 项、最旧在前, 新加的项落在第 3 页而评测只看第 1 页; 选择器可能根本匹配不到。需活站点确认。
+- **同族**: 订单也不清 —— B1_som task 268 在任务要求「不要下单」时下了真实订单, 会影响之后检查「最近订单」的题 (未量化)。
+- **修法建议**: shopping 每题 reset 增加清 wishlist (与 cart 同处); 现有数据披露为结构性 0。
