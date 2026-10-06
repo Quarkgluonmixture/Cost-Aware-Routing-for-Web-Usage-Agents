@@ -1,0 +1,83 @@
+=== (a) 3-arm (dom/vision/som, arm-matched) vs 6-arm: oracle ceiling, contested share, which-mode label rows per class, vs best single + rerun band
+cell         n  best6   orc6   orc3 orc3-best orc6-best      band contested6 contested33-class rows (cheapest-solver among dom/vision/som)
+cls_B0     224  27.2%  43.3%  38.4%    +11.2pp    +16.1pp   4.5-7.6      39.3%      31.2%   {'dom': 17, 'vision': 56, 'som': 13} (order ['vision', 'dom', 'som'])
+cls_B1     224  14.3%  24.6%  21.4%     +7.1pp    +10.3pp   0.0-1.8      23.2%      19.2%   {'vision': 28, 'dom': 8, 'som': 12} (order ['vision', 'dom', 'som'])
+cls_B2     224   2.2%   7.1%   5.8%     +3.6pp     +4.9pp         —       7.1%       5.8%   {'dom': 3, 'vision': 5, 'som': 5} (order ['vision', 'dom', 'som'])
+cls_B5     224  37.1%  51.3%  46.4%     +9.4pp    +14.3pp   5.8-7.1      50.4%      44.6%   {'som': 43, 'dom': 53, 'vision': 8} (order ['dom', 'som', 'vision'])
+red_B0     205  14.6%  26.8%  23.4%     +8.8pp    +12.2pp   2.0-6.9      24.9%      21.0%   {'dom': 24, 'som': 8, 'vision': 16} (order ['vision', 'dom', 'som'])
+red_B0_WA  104  35.6%  51.9%  38.5%     +2.9pp    +16.3pp         —      43.3%      27.9%   {'vision': 6, 'som': 6, 'dom': 28} (order ['dom', 'vision', 'som'])
+red_B1     205   8.3%  12.7%  10.7%     +2.4pp     +4.4pp   0.5-2.0      11.2%       9.3%   {'som': 5, 'dom': 11, 'vision': 6} (order ['vision', 'dom', 'som'])
+red_B1_WA  104  16.3%  30.8%  22.1%     +5.8pp    +14.4pp         —      26.0%      17.3%   {'dom': 11, 'vision': 10, 'som': 2} (order ['vision', 'dom', 'som'])
+red_B2     205   3.9%   8.3%   6.8%     +2.9pp     +4.4pp         —       8.3%       6.8%   {'vision': 5, 'dom': 8, 'som': 1} (order ['vision', 'dom', 'som'])
+shop_B0    435  15.2%  23.2%  23.2%     +8.0pp     +8.0pp         —      17.9%      17.9%   {'som': 24, 'vision': 64, 'dom': 13} (order ['vision', 'som', 'dom'])
+shop_B1    171   9.9%  19.9%  15.8%     +5.8pp     +9.9pp         —      18.1%      13.5%   {'vision': 11, 'dom': 8, 'som': 8} (order ['vision', 'som', 'dom'])
+
+=== (b) 3-arm LinUCB (context = pre-flight page/task stats), 200 orders, lambda=0: SR vs fixed arms; last-quarter arm shares
+  cls_B0     fixed-best(som)=27.2%  fixed-dom=17.4%  LinUCB3=24.1%/$0.0684  oracle3=38.4%  lastQ dom:25% vision:39% som:37%
+  cls_B1     fixed-best(som)=14.3%  fixed-dom=6.2%  LinUCB3=12.0%/$0.0537  oracle3=21.4%  lastQ dom:23% vision:38% som:38%
+  cls_B2     fixed-best(vision)=2.2%  fixed-dom=1.3%  LinUCB3=2.0%/$0.0796  oracle3=5.8%  lastQ dom:32% vision:33% som:35%
+  cls_B5     fixed-best(som)=37.1%  fixed-dom=23.7%  LinUCB3=31.1%/$0.1658  oracle3=46.4%  lastQ dom:29% vision:15% som:56%
+  red_B0     fixed-best(dom)=14.6%  fixed-dom=14.6%  LinUCB3=12.9%/$0.1027  oracle3=23.4%  lastQ dom:35% vision:27% som:38%
+  red_B0_WA  fixed-best(dom)=26.9%  fixed-dom=26.9%  LinUCB3=23.0%/$0.0835  oracle3=38.5%  lastQ dom:43% vision:25% som:32%
+  red_B1     fixed-best(som)=8.3%  fixed-dom=6.8%  LinUCB3=6.2%/$0.0685  oracle3=10.7%  lastQ dom:32% vision:32% som:36%
+  red_B1_WA  fixed-best(dom)=16.3%  fixed-dom=16.3%  LinUCB3=13.7%/$0.0648  oracle3=22.1%  lastQ dom:38% vision:25% som:37%
+  red_B2     fixed-best(dom)=3.9%  fixed-dom=3.9%  LinUCB3=2.9%/$0.0905  oracle3=6.8%  lastQ dom:33% vision:36% som:31%
+  shop_B0    fixed-best(som)=15.2%  fixed-dom=11.8%  LinUCB3=14.2%/$0.0957  oracle3=23.3%  lastQ dom:24% vision:35% som:41%
+  shop_B1    fixed-best(dom)=9.4%  fixed-dom=9.4%  LinUCB3=8.9%/$0.0711  oracle3=15.8%  lastQ dom:36% vision:28% som:35%
+
+=== (c) 3-way one-step-lookahead: run dom step-0, then {stay dom | upgrade vision | upgrade som} by oof P(upg) argmax over threshold sweep; controls: always-dom / always-best / 2-way dom->som / oracle3
+  cls_B0     always-dom 17.4%/$0.0696  always-som 27.2%/$0.0724  oracle3 38.4%  band 4.5-7.6
+     f=0.1: 3-way SR=18.3%/$0.0697 (→vision 11, →som 11)   2-way dom→som SR=16.1%   random-to-best 18.4%
+     f=0.2: 3-way SR=19.2%/$0.0698 (→vision 19, →som 26)   2-way dom→som SR=17.0%   random-to-best 19.4%
+     f=0.3: 3-way SR=20.5%/$0.0707 (→vision 25, →som 42)   2-way dom→som SR=20.1%   random-to-best 20.4%
+     f=0.5: 3-way SR=23.7%/$0.0719 (→vision 41, →som 71)   2-way dom→som SR=23.2%   random-to-best 22.3%
+  cls_B1     always-dom 6.2%/$0.0595  always-som 14.3%/$0.0603  oracle3 21.4%  band 0.0-1.8
+     f=0.1: 3-way SR=8.0%/$0.0595 (→vision 12, →som 10)   2-way dom→som SR=7.6%   random-to-best 7.1%
+     f=0.2: 3-way SR=8.9%/$0.0603 (→vision 27, →som 18)   2-way dom→som SR=8.5%   random-to-best 7.9%
+     f=0.3: 3-way SR=8.9%/$0.0601 (→vision 40, →som 27)   2-way dom→som SR=8.9%   random-to-best 8.7%
+     f=0.5: 3-way SR=10.3%/$0.0575 (→vision 61, →som 51)   2-way dom→som SR=9.8%   random-to-best 10.3%
+  cls_B2     always-dom 1.3%/$0.0768  always-vision 2.2%/$0.0707  oracle3 5.8%  band —
+     f=0.1: 3-way SR=2.7%/$0.0757 (→vision 11, →som 11)   2-way dom→som SR=1.8%   random-to-best 1.4%
+     f=0.2: 3-way SR=2.2%/$0.0767 (→vision 23, →som 22)   2-way dom→som SR=1.8%   random-to-best 1.5%
+     f=0.3: 3-way SR=3.1%/$0.0786 (→vision 30, →som 37)   2-way dom→som SR=2.7%   random-to-best 1.6%
+     f=0.5: 3-way SR=3.1%/$0.0816 (→vision 48, →som 64)   2-way dom→som SR=2.7%   random-to-best 1.8%
+  cls_B5     always-dom 23.7%/$0.1374  always-som 37.1%/$0.1671  oracle3 46.4%  band 5.8-7.1
+     f=0.1: 3-way SR=24.1%/$0.1435 (→vision 10, →som 12)   2-way dom→som SR=24.6%   random-to-best 25.0%
+     f=0.2: 3-way SR=24.6%/$0.1500 (→vision 13, →som 32)   2-way dom→som SR=26.3%   random-to-best 26.3%
+     f=0.3: 3-way SR=25.9%/$0.1547 (→vision 14, →som 53)   2-way dom→som SR=27.2%   random-to-best 27.7%
+     f=0.5: 3-way SR=29.9%/$0.1615 (→vision 18, →som 94)   2-way dom→som SR=31.7%   random-to-best 30.4%
+  red_B0     always-dom 14.6%/$0.1013  always-dom 14.6%/$0.1013  oracle3 23.4%  band 2.0-6.9
+     f=0.1: 3-way SR=12.2%/$0.1016 (→vision 10, →som 10)   2-way dom→som SR=12.2%   random-to-best 14.6%
+     f=0.2: 3-way SR=11.7%/$0.1017 (→vision 17, →som 24)   2-way dom→som SR=12.7%   random-to-best 14.6%
+     f=0.3: 3-way SR=13.2%/$0.1029 (→vision 23, →som 39)   2-way dom→som SR=13.2%   random-to-best 14.6%
+     f=0.5: 3-way SR=14.1%/$0.1039 (→vision 43, →som 59)   2-way dom→som SR=14.1%   random-to-best 14.6%
+  red_B0_WA  always-dom 26.9%/$0.0753  always-dom 26.9%/$0.0753  oracle3 38.5%  band —
+     f=0.1: 3-way SR=25.0%/$0.0787 (→vision 6, →som 4)   2-way dom→som SR=25.0%   random-to-best 26.4%
+     f=0.2: 3-way SR=24.0%/$0.0813 (→vision 9, →som 12)   2-way dom→som SR=26.0%   random-to-best 26.0%
+     f=0.3: 3-way SR=25.0%/$0.0814 (→vision 12, →som 19)   2-way dom→som SR=26.0%   random-to-best 25.5%
+     f=0.5: 3-way SR=21.2%/$0.0803 (→vision 19, →som 33)   2-way dom→som SR=25.0%   random-to-best 24.5%
+  red_B1     always-dom 6.8%/$0.0730  always-som 8.3%/$0.0794  oracle3 10.7%  band 0.5-2.0
+     f=0.1: 3-way SR=7.8%/$0.0752 (→vision 2, →som 18)   2-way dom→som SR=7.8%   random-to-best 7.0%
+     f=0.2: 3-way SR=7.8%/$0.0753 (→vision 5, →som 36)   2-way dom→som SR=7.3%   random-to-best 7.1%
+     f=0.3: 3-way SR=7.8%/$0.0773 (→vision 9, →som 53)   2-way dom→som SR=7.3%   random-to-best 7.3%
+     f=0.5: 3-way SR=7.8%/$0.0796 (→vision 18, →som 84)   2-way dom→som SR=7.3%   random-to-best 7.6%
+  red_B1_WA  always-dom 16.3%/$0.0658  always-dom 16.3%/$0.0658  oracle3 22.1%  band —
+     f=0.1: 3-way SR=14.4%/$0.0659 (→vision 5, →som 5)   2-way dom→som SR=19.2%   random-to-best 16.1%
+     f=0.2: 3-way SR=14.4%/$0.0669 (→vision 9, →som 12)   2-way dom→som SR=18.3%   random-to-best 15.8%
+     f=0.3: 3-way SR=14.4%/$0.0676 (→vision 12, →som 19)   2-way dom→som SR=18.3%   random-to-best 15.5%
+     f=0.5: 3-way SR=14.4%/$0.0694 (→vision 21, →som 31)   2-way dom→som SR=16.3%   random-to-best 14.9%
+  red_B2     always-dom 3.9%/$0.0946  always-dom 3.9%/$0.0946  oracle3 6.8%  band —
+     f=0.1: 3-way SR=3.4%/$0.0922 (→vision 20, →som 0)   2-way dom→som SR=2.9%   random-to-best 3.8%
+     f=0.2: 3-way SR=2.9%/$0.0900 (→vision 41, →som 0)   2-way dom→som SR=2.9%   random-to-best 3.6%
+     f=0.3: 3-way SR=2.4%/$0.0876 (→vision 62, →som 0)   2-way dom→som SR=2.0%   random-to-best 3.5%
+     f=0.5: 3-way SR=2.0%/$0.0835 (→vision 102, →som 0)   2-way dom→som SR=2.0%   random-to-best 3.2%
+  shop_B0    always-dom 11.8%/$0.1198  always-som 15.2%/$0.0979  oracle3 23.3%  band —
+     f=0.1: 3-way SR=12.2%/$0.1167 (→vision 27, →som 16)   2-way dom→som SR=12.9%   random-to-best 12.1%
+     f=0.2: 3-way SR=13.4%/$0.1136 (→vision 49, →som 38)   2-way dom→som SR=13.6%   random-to-best 12.4%
+     f=0.3: 3-way SR=12.7%/$0.1119 (→vision 73, →som 57)   2-way dom→som SR=14.5%   random-to-best 12.8%
+     f=0.5: 3-way SR=14.1%/$0.1089 (→vision 120, →som 97)   2-way dom→som SR=15.0%   random-to-best 13.5%
+  shop_B1    always-dom 9.4%/$0.0906  always-dom 9.4%/$0.0906  oracle3 15.8%  band —
+     f=0.1: 3-way SR=9.9%/$0.0878 (→vision 7, →som 10)   2-way dom→som SR=9.9%   random-to-best 9.4%
+     f=0.2: 3-way SR=9.9%/$0.0843 (→vision 14, →som 20)   2-way dom→som SR=9.9%   random-to-best 9.4%
+     f=0.3: 3-way SR=9.9%/$0.0828 (→vision 17, →som 34)   2-way dom→som SR=9.4%   random-to-best 9.4%
+     f=0.5: 3-way SR=9.9%/$0.0770 (→vision 24, →som 62)   2-way dom→som SR=9.4%   random-to-best 9.4%

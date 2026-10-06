@@ -1,0 +1,45 @@
+--- cls_B0 ---
+cell=cls_B0 n=224 labelled=97 (43.3%)  shots=30 folds=5
+  prompt chars ~18476
+   {'som': 204, 'pprompt': 6, 'vision': 5, 'psom': 4, 'ptext': 3, 'dom': 2}
+--- cls_B1 ---
+cell=cls_B1 n=224 labelled=55 (24.6%)  shots=30 folds=5
+  prompt chars ~18394
+   {'som': 195, 'vision': 25, 'psom': 2, 'ptext': 1, 'pprompt': 1}
+--- cls_B2 ---
+cell=cls_B2 n=224 labelled=16 (7.1%)  shots=30 folds=5
+  prompt chars ~10855
+   {'som': 198, 'vision': 9, 'dom': 8, 'pprompt': 8, 'psom': 1}
+--- cls_B5 ---
+cell=cls_B5 n=224 labelled=115 (51.3%)  shots=30 folds=5
+  prompt chars ~18902
+   {'som': 194, 'dom': 14, 'ptext': 11, 'psom': 4, 'vision': 1}
+--- red_B0 ---
+cell=red_B0 n=205 labelled=55 (26.8%)  shots=30 folds=5
+  prompt chars ~19031
+   {'som': 167, 'pprompt': 15, 'vision': 11, 'dom': 6, 'psom': 3, 'ptext': 3}
+--- red_B1 ---
+cell=red_B1 n=205 labelled=26 (12.7%)  shots=30 folds=5
+  prompt chars ~14345
+   {'som': 176, 'ptext': 17, 'dom': 6, 'vision': 4, 'psom': 2}
+--- red_B2 ---
+cell=red_B2 n=205 labelled=17 (8.3%)  shots=30 folds=5
+  prompt chars ~10907
+   {'vision': 145, 'dom': 33, 'som': 23, 'ptext': 3, 'psom': 1}
+--- red_B0_WA ---
+cell=red_B0_WA n=104 labelled=54 (51.9%)  shots=30 folds=5
+  prompt chars ~16392
+   {'ptext': 57, 'dom': 16, 'pprompt': 13, 'som': 10, 'vision': 6, 'psom': 2}
+--- red_B1_WA ---
+cell=red_B1_WA n=104 labelled=32 (30.8%)  shots=30 folds=5
+  prompt chars ~15635
+   {'dom': 51, 'ptext': 32, 'pprompt': 10, 'som': 7, 'vision': 3, 'psom': 1}
+--- shop_B0 ---
+cell=shop_B0 n=435 labelled=101 (23.2%)  shots=30 folds=5
+  prompt chars ~14407
+   {'som': 380, 'vision': 40, 'dom': 15}
+--- shop_B1 ---
+cell=shop_B1 n=163 labelled=34 (20.9%)  shots=30 folds=5
+  prompt chars ~15331
+   {'som': 80, 'ptext': 57, 'vision': 19, 'dom': 5, 'psom': 2}
+V3ALL_DONE

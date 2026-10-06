@@ -76,11 +76,29 @@ SR check: `B0_dom_classifieds … R21557` = 39/224 = 17.41%, identical to its ma
 2. **B1·shop·som replicate (L7) is partial**: 93/435 episodes in the latest local sync
    (09-24). The chain was scheduled to run to ~09-25 and then B2 ×3 (L8–L10) until a hard
    halt 10-05; anything after 09-24 exists only on the A100, which is unreachable.
-3. **B0 shopping SoM and Vision** (R12449, R23934; 08-06/07) are complete but cited
-   nowhere in `docs/`. B0 shopping has no phantom arms and no replicate (paid, proxy budget).
+3. ~~**B0 shopping SoM and Vision** (R12449, R23934; 08-06/07) are complete but cited
+   nowhere in `docs/`.~~ **Corrected 2026-10-06** (实验笔记 §531): the run ids are not written in
+   `docs/`, but both runs are read — by the 11-cell router pilot (§505, `shop_B0` appears
+   in the tables of `cross_sites/one_step_lookahead_2026-09-09.md`) and by the prospective budget-router
+   test (`scripts/analysis/budget_router_prospective_eval.py`, run dirs pinned). A grep for run
+   ids is not a test of whether data is used. Still true: B0 shopping has no phantom arms and no
+   replicate (paid, proxy budget), and R23934 mixes two container generations (next_steps 08-09→11
+   block). The real gap is item 6.
 4. **B5 vision** R24364 is complete but is the known broken coordinate-contract run
    (B-1997) — deliberately out of the manifest; R16160 is a partial earlier attempt.
 5. ~~**Conclusion layer lags the ledger by 871 entries.**~~ **Done 2026-10-06** (886 entries from §398, 实验笔记 §530). Original note: `docs/reference/known/conclusions/`
    aggregates §1–§397.10; the ledger now runs to §527 (2,919 entries). The 871 entries of
    §398–§527 (333 MEASURED · 290 ADJUDICATED · 151 RETRACTED · 67 DATA · 30 CLAIM_UNVERIFIED)
    are not in any topic file.
+6. **Shopping and cls_B5 sit outside the cross-site product suite** (measured 2026-10-06 over
+   the 55 `docs/analysis/cross_sites/*.json`):
+   - `shop_B0`, `shop_B1`: **0 / 55** products. `mechanism_per_task` lists the shopping runs as
+     "complete but excluded by design". No `/diag` digest and no `results/diag_scans/*` scan.
+   - `cls_B5`: as a cell, **1 / 55** (`failure_modes_per_cell`, separate `extension_cells` key);
+     it also enters `noise_floor_inventory` / `serving_mode_floor` / `fusion_premium` only as the
+     `B5.cls.dom` replicate pair inside the rerun band. Has `/diag` digests (5 modes).
+   - The only 11-cell analysis is the 09-09 router pilot (§505). Its scripts and paid router
+     outputs were untracked until 2026-10-06 → now `results/evidence_snapshots/20261006_router_pilot_20260909/`.
+   Cause: the suite was wired 08-02 for 8 units (EVIDENCE_LAYER_SUMMARY §7); shopping was
+   adjudicated out of the REALM draft (§406); B5 joined 08-20 and was registered 09-11 in the opt-in manifest
+   `extension:` section. The COLING plan uses all 11 cells (task card, 09-09 block).

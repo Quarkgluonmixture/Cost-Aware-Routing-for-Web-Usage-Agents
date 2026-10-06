@@ -1,0 +1,21 @@
+--- cls_B0 ---
+cell=cls_B0 n=224 labelled=97 (43.3%)  shots=30 folds=5
+  GroupKFold by template: 75 groups, sibling-in-pool for 0/224 tasks
+  prompt chars ~18251
+   {'som': 220, 'vision': 4}
+--- cls_B1 ---
+cell=cls_B1 n=224 labelled=55 (24.6%)  shots=30 folds=5
+  GroupKFold by template: 75 groups, sibling-in-pool for 0/224 tasks
+  prompt chars ~18418
+   {'som': 204, 'vision': 18, 'ptext': 2}
+--- red_B0 ---
+cell=red_B0 n=205 labelled=55 (26.8%)  shots=30 folds=5
+  GroupKFold by template: 87 groups, sibling-in-pool for 0/205 tasks
+  prompt chars ~18882
+   {'som': 200, 'pprompt': 3, 'dom': 1, 'vision': 1}
+--- red_B2 ---
+cell=red_B2 n=205 labelled=17 (8.3%)  shots=30 folds=5
+  GroupKFold by template: 87 groups, sibling-in-pool for 0/205 tasks
+  prompt chars ~11737
+   {'vision': 151, 'dom': 28, 'som': 24, 'ptext': 2}
+V3G_DONE

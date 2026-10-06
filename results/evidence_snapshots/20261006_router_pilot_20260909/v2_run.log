@@ -1,0 +1,7 @@
+cell=cls_B0 n=224 labelled=97 (43.3%)  shots=30 folds=5
+  prompt chars ~13702
+   {'som': 213, 'pprompt': 5, 'vision': 3, 'psom': 1, 'dom': 1, 'ptext': 1}
+cell=cls_B0 n=224 labelled=97 (43.3%)  shots=30 folds=5
+  prompt chars ~13378
+   {'som': 200, 'pprompt': 9, 'ptext': 6, 'dom': 4, 'vision': 3, 'psom': 2}
+V2_DONE

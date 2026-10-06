@@ -41,7 +41,9 @@ updated: 2026-10-06
 > - 🔴 **09-15 replicate chain 首读**：WA·B1 三个 powered arm discordance 9.62 / 8.65 / 5.77%，全部 ≥ 4.93% ⇒ 按意图书 C1（serving-path floor）**作废**；`serving_mode_floor.md` 已加标记。六对**待登记** `CLEAN_PAIRS`（留给 user）
 > - ✅ 六对已登记 `B1.wared.*` 并正式复算（§529.4）；✅ 结论层补齐到 §527（886 条，§530，`docs/reference/known/conclusions/INDEX.md`）
 > - 写稿前要钉死的口径（§530.4）：pooling estimand（FE vs task-clustered bootstrap）· 噪声带定义与 scope · learned vs always-cheapest 用哪个计数 · 两个来源不明的数
-> - 仍缺：B0 shopping SoM/Vision 无人读 · B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上 · §528 以后未进台账
+> - ✅ §528–§531 已进台账 · ✅ §505 的 11 格脚本与付费 router 输出进仓 `results/evidence_snapshots/20261006_router_pilot_20260909/`（§531.3）
+> - 「B0 shopping SoM/Vision 无人读」不成立（§505 与预算路由前瞻检验都读过，§531.1）。**真缺口**：shopping 两格在 55 个跨站产物里 0 个、cls_B5 作为一格只进 1 个；shopping 没有 diag（§531.2，`run_inventory/README.md` 第 6 条）
+> - 仍缺：B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上
 > ## 🟢 2026-09-15 深夜收尾 · Showcase（09-16）片子定稿（D26 补，user「没问题」）· DGX 已备好 · 明天流程见手册 · 会后回来写笔记 · 先看这里
 >
 > **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D24 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语

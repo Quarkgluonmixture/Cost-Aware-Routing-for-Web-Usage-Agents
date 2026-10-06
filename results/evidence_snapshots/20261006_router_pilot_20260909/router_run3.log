@@ -1,0 +1,13 @@
+shopping: 435 tasks, model=global.openai.gpt-5.6-luna
+  cost $0.0812  choices: {'som': 354, 'dom': 66, 'vision': 15}
+shopping: 435 tasks, model=global.openai.gpt-5.6-luna
+  cost $0.0855  choices: {'som': 393, 'dom': 39, '__unparsed__:': 2, 'vision': 1}
+wa_reddit: 104 tasks, model=global.openai.gpt-5.6-luna
+  cost $0.0302  choices: {'som': 53, 'dom': 51}
+shopping: 435 tasks, model=global.openai.gpt-5.6-terra
+  cost $0.5201  choices: {'som': 287, 'vision': 107, 'dom': 41}
+shopping: 435 tasks, model=global.openai.gpt-5.6-terra
+  cost $0.4885  choices: {'som': 408, 'dom': 14, 'vision': 13}
+wa_reddit: 104 tasks, model=global.openai.gpt-5.6-terra
+  cost $0.1357  choices: {'som': 61, 'dom': 38, 'ptext': 5}
+ALL3_DONE

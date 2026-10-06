@@ -1,0 +1,34 @@
+--- cls_B0 ---
+cell=cls_B0 n=224 reps={0: 'pprompt', 1: 'pprompt', 2: 'pprompt', 3: 'pprompt', 4: 'pprompt'}
+   {'BOTH': 148, 'READ': 41, 'LOOK': 35}
+--- cls_B1 ---
+cell=cls_B1 n=224 reps={0: 'ptext', 1: 'ptext', 2: 'ptext', 3: 'ptext', 4: 'ptext'}
+   {'BOTH': 168, 'LOOK': 43, 'READ': 13}
+--- cls_B2 ---
+cell=cls_B2 n=224 reps={0: 'pprompt', 1: 'pprompt', 2: 'pprompt', 3: 'pprompt', 4: 'dom'}
+   {'BOTH': 170, 'READ': 27, 'LOOK': 27}
+--- cls_B5 ---
+cell=cls_B5 n=224 reps={0: 'ptext', 1: 'ptext', 2: 'dom', 3: 'dom', 4: 'dom'}
+   {'BOTH': 193, 'READ': 27, 'LOOK': 4}
+--- red_B0 ---
+cell=red_B0 n=205 reps={0: 'ptext', 1: 'dom', 2: 'dom', 3: 'ptext', 4: 'dom'}
+   {'BOTH': 124, 'READ': 65, 'LOOK': 16}
+--- red_B1 ---
+cell=red_B1 n=205 reps={0: 'dom', 1: 'dom', 2: 'ptext', 3: 'dom', 4: 'dom'}
+   {'BOTH': 180, 'READ': 23, 'LOOK': 2}
+--- red_B2 ---
+cell=red_B2 n=205 reps={0: 'dom', 1: 'dom', 2: 'dom', 3: 'dom', 4: 'dom'}
+   {'LOOK': 95, 'READ': 56, 'BOTH': 54}
+--- red_B0_WA ---
+cell=red_B0_WA n=104 reps={0: 'ptext', 1: 'ptext', 2: 'ptext', 3: 'ptext', 4: 'ptext'}
+   {'READ': 97, 'BOTH': 5, 'LOOK': 2}
+--- red_B1_WA ---
+cell=red_B1_WA n=104 reps={0: 'dom', 1: 'dom', 2: 'pprompt', 3: 'pprompt', 4: 'ptext'}
+   {'READ': 95, 'BOTH': 6, 'LOOK': 3}
+--- shop_B0 ---
+cell=shop_B0 n=435 reps={0: 'dom', 1: 'dom', 2: 'dom', 3: 'dom', 4: 'dom'}
+   {'BOTH': 209, 'LOOK': 182, 'READ': 44}
+--- shop_B1 ---
+cell=shop_B1 n=163 reps={0: 'dom', 1: 'ptext', 2: 'ptext', 3: 'dom', 4: 'dom'}
+   {'BOTH': 77, 'READ': 67, 'LOOK': 19}
+C3_DONE

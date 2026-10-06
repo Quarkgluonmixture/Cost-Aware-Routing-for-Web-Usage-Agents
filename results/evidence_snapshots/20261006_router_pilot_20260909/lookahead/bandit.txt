@@ -1,0 +1,28 @@
+lambda=0.0 (reward = success - lambda*cost/median_cost)
+cell          n arms            fixed-best        fixed-cheapest oracle-reward                LinUCB              ThompsonlastQ arm dist (LinUCB)
+cls_B0      224    6  som    +0.272/27.2%  vision +0.250/25.0%        +0.433   +0.224/22.4%/$0.0686   +0.215/21.5%/$0.0690   dom:13% pprompt:15% psom:12% ptext:14% som:22% vision:23%
+cls_B1      224    6  som    +0.143/14.3%  vision +0.125/12.5%        +0.246   +0.102/10.2%/$0.0560   +0.095/ 9.5%/$0.0567   dom:13% pprompt:13% psom:14% ptext:14% som:22% vision:24%
+cls_B2      224    6  som    +0.022/ 2.2%  vision +0.022/ 2.2%        +0.071   +0.016/ 1.6%/$0.0803   +0.016/ 1.6%/$0.0802   dom:16% pprompt:17% psom:16% ptext:16% som:18% vision:17%
+cls_B5      224    6  som    +0.371/37.1%  dom    +0.237/23.7%        +0.513   +0.281/28.1%/$0.1574   +0.267/26.7%/$0.1581   dom:13% pprompt:14% psom:14% ptext:13% som:34% vision:11%
+red_B0      205    6  som    +0.146/14.6%  vision +0.078/ 7.8%        +0.268   +0.124/12.4%/$0.1042   +0.124/12.4%/$0.1040   dom:17% pprompt:16% psom:15% ptext:19% som:18% vision:14%
+red_B0_WA   104    6  ptext  +0.356/35.6%  dom    +0.269/26.9%        +0.519   +0.276/27.6%/$0.0834   +0.272/27.2%/$0.0829   dom:15% pprompt:16% psom:14% ptext:32% som:13% vision:10%
+red_B1      205    6  som    +0.083/ 8.3%  vision +0.029/ 2.9%        +0.127   +0.064/ 6.4%/$0.0714   +0.063/ 6.3%/$0.0711   dom:17% pprompt:16% psom:17% ptext:17% som:18% vision:15%
+red_B1_WA   104    6  pprompt+0.163/16.3%  vision +0.096/ 9.6%        +0.308   +0.144/14.4%/$0.0656   +0.142/14.2%/$0.0657   dom:18% pprompt:17% psom:14% ptext:21% som:16% vision:14%
+red_B2      205    6  dom    +0.039/ 3.9%  vision +0.024/ 2.4%        +0.083   +0.022/ 2.2%/$0.0922   +0.022/ 2.2%/$0.0925   dom:17% pprompt:15% psom:16% ptext:17% som:16% vision:18%
+shop_B0     434    3  som    +0.152/15.2%  vision +0.147/14.7%        +0.233   +0.141/14.1%/$0.0963   +0.141/14.1%/$0.0963   dom:25% som:38% vision:37%
+shop_B1     171    5  ptext  +0.099/ 9.9%  vision +0.064/ 6.4%        +0.199   +0.089/ 8.9%/$0.0710   +0.089/ 8.9%/$0.0714   dom:21% psom:20% ptext:20% som:20% vision:19%
+
+lambda=0.5 (reward = success - lambda*cost/median_cost)
+cell          n arms            fixed-best        fixed-cheapest oracle-reward                LinUCB              ThompsonlastQ arm dist (LinUCB)
+cls_B0      224    6  vision -0.397/25.0%  vision -0.397/25.0%        +0.045   -0.452/22.6%/$0.0678   -0.460/22.0%/$0.0681   dom:14% pprompt:15% psom:12% ptext:15% som:17% vision:27%
+cls_B1      224    6  vision -0.187/12.5%  vision -0.187/12.5%        +0.045   -0.280/11.0%/$0.0539   -0.294/10.3%/$0.0550   dom:11% pprompt:9% psom:12% ptext:14% som:17% vision:38%
+cls_B2      224    6  vision -0.407/ 2.2%  vision -0.407/ 2.2%        -0.227   -0.465/ 1.5%/$0.0790   -0.466/ 1.5%/$0.0793   dom:17% pprompt:13% psom:13% ptext:20% som:12% vision:24%
+cls_B5      224    6  som    -0.144/37.1%  dom    -0.187/23.7%        +0.215   -0.204/26.8%/$0.1532   -0.206/26.7%/$0.1536   dom:19% pprompt:15% psom:18% ptext:18% som:23% vision:7%
+red_B0      205    6  dom    -0.282/14.6%  vision -0.334/ 7.8%        +0.002   -0.312/12.5%/$0.1034   -0.312/12.6%/$0.1036   dom:18% pprompt:17% psom:15% ptext:16% som:16% vision:18%
+red_B0_WA   104    6  ptext  -0.149/35.6%  dom    -0.180/26.9%        +0.240   -0.226/26.9%/$0.0830   -0.227/26.6%/$0.0827   dom:19% pprompt:18% psom:12% ptext:29% som:12% vision:10%
+red_B1      205    6  vision -0.314/ 2.9%  vision -0.314/ 2.9%        -0.134   -0.382/ 6.1%/$0.0673   -0.390/ 6.2%/$0.0686   dom:14% pprompt:13% psom:13% ptext:16% som:12% vision:32%
+red_B1_WA   104    6  vision -0.210/ 9.6%  vision -0.210/ 9.6%        +0.065   -0.282/13.8%/$0.0614   -0.294/13.6%/$0.0629   dom:17% pprompt:11% psom:12% ptext:21% som:9% vision:29%
+red_B2      205    6  vision -0.332/ 2.4%  vision -0.332/ 2.4%        -0.204   -0.429/ 2.6%/$0.0872   -0.440/ 2.5%/$0.0891   dom:14% pprompt:11% psom:13% ptext:16% som:9% vision:39%
+shop_B0     434    3  vision -0.301/14.7%  vision -0.301/14.7%        -0.111   -0.365/14.6%/$0.0853   -0.372/14.5%/$0.0863   dom:6% som:19% vision:75%
+shop_B1     171    5  vision -0.274/ 6.4%  vision -0.274/ 6.4%        -0.045   -0.382/ 8.7%/$0.0637   -0.399/ 8.6%/$0.0659   dom:7% psom:11% ptext:20% som:14% vision:48%
+

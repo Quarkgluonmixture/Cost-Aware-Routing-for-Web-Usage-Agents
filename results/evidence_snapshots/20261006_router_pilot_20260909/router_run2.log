@@ -1,0 +1,17 @@
+  File "/tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/52847ee1-eb54-4e06-85bb-1cbe2fbe82ea/scratchpad/llm_router.py", line 74
+    global MODES, PROMPT
+    ^^^^^^^^^^^^^^^^^^^^
+SyntaxError: name 'MODES' is assigned to before global declaration
+  File "/tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/52847ee1-eb54-4e06-85bb-1cbe2fbe82ea/scratchpad/llm_router.py", line 74
+    global MODES, PROMPT
+    ^^^^^^^^^^^^^^^^^^^^
+SyntaxError: name 'MODES' is assigned to before global declaration
+  File "/tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/52847ee1-eb54-4e06-85bb-1cbe2fbe82ea/scratchpad/llm_router.py", line 74
+    global MODES, PROMPT
+    ^^^^^^^^^^^^^^^^^^^^
+SyntaxError: name 'MODES' is assigned to before global declaration
+  File "/tmp/claude-1012/-home-jiaming-workspace-Cost-Aware-Routing-for-Web-Usage-Agents/52847ee1-eb54-4e06-85bb-1cbe2fbe82ea/scratchpad/llm_router.py", line 74
+    global MODES, PROMPT
+    ^^^^^^^^^^^^^^^^^^^^
+SyntaxError: name 'MODES' is assigned to before global declaration
+SHOP_DONE
