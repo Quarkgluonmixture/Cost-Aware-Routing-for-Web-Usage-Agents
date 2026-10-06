@@ -94,6 +94,9 @@ SR check: `B0_dom_classifieds … R21557` = 39/224 = 17.41%, identical to its ma
    the 55 `docs/analysis/cross_sites/*.json`):
    - `shop_B0`, `shop_B1`: **0 / 55** products. `mechanism_per_task` lists the shopping runs as
      "complete but excluded by design". No `/diag` digest and no `results/diag_scans/*` scan.
+     **Partly closed 2026-10-06**: registered under the manifest's opt-in `extension:` section (§531.5), and a
+     Tier-1 scan + 45-episode Tier-2 sample now exist (`docs/analysis/vwa_shopping/`, §531.9). The cross-site
+     products still do not opt in; that wiring is open.
    - `cls_B5`: as a cell, **1 / 55** (`failure_modes_per_cell`, separate `extension_cells` key);
      it also enters `noise_floor_inventory` / `serving_mode_floor` / `fusion_premium` only as the
      `B5.cls.dom` replicate pair inside the rerun band. Has `/diag` digests (5 modes).

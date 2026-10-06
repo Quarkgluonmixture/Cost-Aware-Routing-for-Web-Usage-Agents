@@ -43,7 +43,11 @@ updated: 2026-10-06
 > - 写稿前要钉死的口径（§530.4）：pooling estimand（FE vs task-clustered bootstrap）· 噪声带定义与 scope · learned vs always-cheapest 用哪个计数 · 两个来源不明的数
 > - ✅ §528–§531 已进台账 · ✅ §505 的 11 格脚本与付费 router 输出进仓 `results/evidence_snapshots/20261006_router_pilot_20260909/`（§531.3）
 > - 「B0 shopping SoM/Vision 无人读」不成立（§505 与预算路由前瞻检验都读过，§531.1）。**真缺口**：shopping 两格在 55 个跨站产物里 0 个、cls_B5 作为一格只进 1 个；shopping 没有 diag（§531.2，`run_inventory/README.md` 第 6 条）
-> - 仍缺：B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上
+> - ✅ shopping 9 个 condition 登记进 manifest `extension:`（opt-in，默认读取者不变）+ 首个 shopping 失败归因（Tier-1 + 45 条 Tier-2 抽样，§531.9，`docs/analysis/vwa_shopping/`）
+> - 🔴 **B-2002**：shopping 搜索框已有查询时提交的是「旧+新」拼接，43% 的此类输入（cls/red <1%），按 mode 不均匀（文本臂重、vision 几乎无）⇒ shopping 跨 mode 比较与预算路由前瞻检验要带限定；机制要活站点复现。**B-2003**：愿望清单不随 task 清空，4 道愿望清单题 9 格全 0
+> - ✅ 复测翻转的失败解剖（§531.10）：失败类型部分稳定（随机性骨干 kappa 中位 0.46–0.53，合并 0.62 不可单引）；翻转的两次 run 基本从头分岔（共享前缀中位 4%）
+> - ✅ 本机复算证据层修了 4 处静默降级（§531.8）；WA glob 排除复测（§531.6）；cascade red_B1 一格原本读错 stale 文件 4.43%→3.94%（§531.7）；重算后已发表产物的变化逐项归因在 §531.8（fusion_premium 的「过重跑 null」2/5→1/5、axis_effect_size BH 7→8 / Holm 2→1）
+> - 仍缺：B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上；shopping 网格顺序跨 run 是否稳定（未核）；跨站产物套件仍未接 shopping（manifest 已登记，逐个 opt-in 未做）
 > ## 🟢 2026-09-15 深夜收尾 · Showcase（09-16）片子定稿（D26 补，user「没问题」）· DGX 已备好 · 明天流程见手册 · 会后回来写笔记 · 先看这里
 >
 > **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D24 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语
