@@ -40,6 +40,7 @@ if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 from scripts.analysis.lib.run_registry import get_cells  # noqa: E402
 
 LOG = logging.getLogger("outcome_efficiency")
@@ -70,6 +71,7 @@ def load_wa_cell(baseline: str) -> dict[str, list[tuple[int, float, float]]]:
         pat = f"{baseline}_{stem}_wa_reddit_2026*_R*"
         hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat))
                       if Path(d).is_dir() and "ABORTED" not in d)
+        hits = drop_registered_replicates(hits)
         if not hits:
             raise MissingInput(f"WA[{baseline}]/{disp}: no run dir for {pat!r}")
         ep = next(Path(hits[-1]).glob("*/episodes"), None)

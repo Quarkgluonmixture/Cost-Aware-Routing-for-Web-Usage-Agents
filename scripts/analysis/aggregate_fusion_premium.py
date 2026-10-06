@@ -39,6 +39,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 LOG = logging.getLogger("fusion_premium")
 OUT_MD = REPO / "docs/analysis/cross_sites/fusion_premium.md"
@@ -125,6 +126,7 @@ def load_wa(baseline: str = "B1") -> dict[int, dict[str, int]]:
     for m, pat in pats.items():
         hits = [Path(p) for p in glob.glob(str(REPO / "results/webarena/phase1" / pat))
                 if os.path.isdir(p) and "ABORTED" not in p]
+        hits = drop_registered_replicates(hits)
         if len(hits) != 1:
             raise MissingInput(f"WA[{baseline}] {m}: expected 1 run dir for {pat!r}, got {len(hits)}")
         d = {}

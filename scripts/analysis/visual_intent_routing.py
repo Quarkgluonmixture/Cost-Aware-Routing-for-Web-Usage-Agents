@@ -39,6 +39,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 # Copied verbatim from scripts/analysis/diag_pattern_match.py (VISUAL_INTENT_RE).
 # Duplicated rather than imported so this product pins the exact predicate it measured:
@@ -116,6 +117,7 @@ def _wa_run_dir(baseline: str, mode: str) -> Path:
     pat = f"{baseline}_{WA_MODE_STEM[mode]}_wa_reddit_2026*_R*"
     hits = [Path(p) for p in glob.glob(str(WA_ROOT / pat))
             if Path(p).is_dir() and "ABORTED" not in p]
+    hits = drop_registered_replicates(hits)
     if len(hits) != 1:
         raise MissingInput(f"WA[{baseline}] {mode}: expected 1 run dir for {pat!r}, got {len(hits)}")
     return hits[0]

@@ -53,6 +53,7 @@ REPO = Path(__file__).resolve().parents[2]
 # finding was vacuously true over an empty set — exit 0. Put the root on the path instead
 # of catching the symptom.
 sys.path.insert(0, str(REPO))
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 PER_TASK_CSV = REPO / "results/phantom_paper/per_task_sr.csv"
 OUT_MD = REPO / "docs/analysis/cross_sites/noise_floor_inventory.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/noise_floor_inventory.json"
@@ -327,6 +328,7 @@ def _episode_success(condition_dir: Path) -> dict[int, int]:
 def _resolve_one(pattern: str) -> Path:
     hits = [Path(p) for p in glob.glob(str(REPO / WA_ROOT / pattern))
             if os.path.isdir(p) and "ABORTED" not in p]
+    hits = drop_registered_replicates(hits)
     if len(hits) != 1:
         raise MissingInput(f"expected exactly 1 run dir for {pattern!r}, got {len(hits)}")
     return hits[0]

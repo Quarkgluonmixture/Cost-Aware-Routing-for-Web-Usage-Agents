@@ -39,6 +39,7 @@ except ModuleNotFoundError:  # pragma: no cover - supports direct script executi
     import sys
     sys.path.append(str(Path(__file__).resolve().parents[2]))
     from scripts.analysis.lib.run_registry import canonical_mode, get_cells
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -92,6 +93,7 @@ def _wa_step_dirs(baseline: str) -> dict[str, Path]:
     for mode, stem in WA_STEM.items():
         hits = [p for p in WA_ROOT.glob(f"{baseline}_{stem}_wa_reddit_2026*_R*")
                 if p.is_dir() and "ABORTED" not in p.name]
+        hits = drop_registered_replicates(hits)
         if len(hits) != 1:
             continue
         eps = sorted(hits[0].glob("*/episodes"))

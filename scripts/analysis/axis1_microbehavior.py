@@ -76,6 +76,10 @@ def _wa_run_dir(baseline: str, mode_key: str) -> Path | None:
     pat = f"{baseline}_{WA_MODE_STEM[mode_key]}_wa_reddit_2026*_R*"
     hits = [Path(p) for p in _glob.glob(str(WA_ROOT / pat))
             if Path(p).is_dir() and "ABORTED" not in p]
+    if str(ROOT) not in sys.path:
+        sys.path.append(str(ROOT))
+    from scripts.analysis.lib.wa_runs import drop_registered_replicates  # §531.6
+    hits = drop_registered_replicates(hits)
     return hits[0] if len(hits) == 1 else None
 
 

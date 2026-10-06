@@ -37,6 +37,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 MODES = ["dom", "som", "vision", "ptext", "pprompt", "psom"]
 PRETTY = {"dom": "DOM", "som": "SoM", "vision": "Vision",
@@ -72,6 +73,7 @@ def load_cells() -> dict[str, dict[int, dict[str, int]]]:
             hits = [p for p in glob.glob(
                 str(REPO / f"results/webarena/phase1/{b}_{stem}_wa_reddit_2026*_R*"))
                 if Path(p).is_dir() and "ABORTED" not in p]
+            hits = drop_registered_replicates(hits)
             if len(hits) != 1:
                 per = {}
                 break

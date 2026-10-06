@@ -33,6 +33,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 import scripts.analysis.axis_effect_size as A  # noqa: E402
 
@@ -120,6 +121,7 @@ def main() -> int:
         for stem in WA_STEM.values():
             hits = [p for p in (REPO / "results/webarena/phase1").glob(
                 f"{b}_{stem}_wa_reddit_2026*_R*") if p.is_dir() and "ABORTED" not in p.name]
+            hits = drop_registered_replicates(hits)
             if hits:
                 files += sorted(hits[0].glob("*/episodes/*_steps_v2.jsonl"))
         if files:

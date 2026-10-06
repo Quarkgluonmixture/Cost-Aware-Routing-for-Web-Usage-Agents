@@ -55,6 +55,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/axis_effect_size.json"
@@ -172,6 +173,7 @@ def attach_wa(baseline: str = "B1") -> int:
         pat = tmpl.format(b=baseline)
         hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat))
                       if Path(d).is_dir() and "ABORTED" not in d)
+        hits = drop_registered_replicates(hits)
         if not hits:
             raise SystemExit(f"attach_wa[{baseline}]: no run dir for {disp} ({pat})")
         ep = next(Path(hits[-1]).glob("*/episodes"), None)

@@ -39,6 +39,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from scripts.analysis.lib.run_registry import get_cells  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 OUT_MD = REPO / "docs/analysis/cross_sites/latency_decomposition.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/latency_decomposition.json"
@@ -65,6 +66,7 @@ def _episode_dirs() -> dict[str, dict[str, Path]]:
             hits = [p for p in glob.glob(
                 str(REPO / f"results/webarena/phase1/{bl}_{stem}_wa_reddit_2026*_R*"))
                 if "ABORTED" not in p and Path(p).is_dir()]
+            hits = drop_registered_replicates(hits)
             if len(hits) == 1:
                 eps = sorted(Path(hits[0]).glob("*/episodes"))
                 if eps:

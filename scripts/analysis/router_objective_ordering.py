@@ -63,6 +63,7 @@ sys.path.insert(0, str(REPO))
 
 from scripts.analysis.aggregate_phantom_lift import CELLS  # noqa: E402
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 from scripts.analysis.lib.episode_rows import load_cell_task_rows  # noqa: E402
 
 SIX_MODES = ("DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM")
@@ -119,6 +120,7 @@ def _wa_matrix(baseline: str) -> tuple[list[int], dict, dict] | None:
         pat = f"{baseline}_{stem}_wa_reddit_2026*_R*"
         hits = [Path(p) for p in glob.glob(str(REPO / WA_ROOT / pat))
                 if p and Path(p).is_dir() and "ABORTED" not in p]
+        hits = drop_registered_replicates(hits)
         if len(hits) != 1:
             return None
         s_map, c_map = {}, {}

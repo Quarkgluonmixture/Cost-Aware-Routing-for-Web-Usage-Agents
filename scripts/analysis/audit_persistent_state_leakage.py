@@ -42,6 +42,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 
 OUT_MD = REPO / "docs/analysis/cross_sites/persistent_state_leakage_audit.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/persistent_state_leakage_audit.json"
@@ -191,6 +192,7 @@ def main() -> int:
             hits = [p for p in glob.glob(str(
                 REPO / f"results/webarena/phase1/{bl}_{stem}_wa_reddit_2026*_R*"))
                 if "ABORTED" not in p and Path(p).is_dir()]
+            hits = drop_registered_replicates(hits)
             if len(hits) != 1:
                 continue
             ep = next(Path(hits[0]).glob("*/episodes"), None)

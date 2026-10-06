@@ -62,6 +62,7 @@ if str(REPO) not in sys.path:
 import scripts.analysis.axis_effect_size as A  # noqa: E402
 from scripts.analysis.aggregate_phantom_lift import CELLS  # noqa: E402
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 from scripts.analysis.lib.episode_rows import load_cell_task_rows  # noqa: E402
 
 SCHEMA_VERSION = "2026-08-02-per-mode-four-dimension-profile-v2"
@@ -255,6 +256,7 @@ def wa_spec(baseline: str = "B1") -> dict:
         pat = tmpl.format(b=baseline)
         hits = sorted(d for d in _glob.glob(str(WA_ROOT / pat))
                       if Path(d).is_dir() and "ABORTED" not in d)
+        hits = drop_registered_replicates(hits)
         if not hits:
             raise SystemExit(f"wa_spec[{baseline}]: no run dir for {disp} ({pat})")
         ep = next(Path(hits[-1]).glob("*/episodes"), None)

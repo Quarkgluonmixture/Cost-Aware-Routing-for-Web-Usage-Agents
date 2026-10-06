@@ -69,6 +69,7 @@ from scripts.analysis.extract_50_features import (  # noqa: E402
     read_task_config,
 )
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.wa_runs import drop_registered_replicates  # noqa: E402  (§531.6)
 from scripts.analysis.lib.episode_rows import load_cell_task_rows  # noqa: E402
 
 SIX_MODES = ("DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM")
@@ -112,6 +113,7 @@ ACTIVE_IDX: list[int] = list(range(len(ALL_FEATURES)))
 def _wa_run_dir(baseline: str, mode: str) -> Path | None:
     hits = [p for p in WA_ROOT.glob(f"{baseline}_{WA_STEM[mode]}_wa_reddit_2026*_R*")
             if p.is_dir() and "ABORTED" not in p.name]
+    hits = drop_registered_replicates(hits)
     return hits[0] if len(hits) == 1 else None
 
 
