@@ -54,7 +54,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "abstention_site_transfer",
@@ -79,7 +81,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "amendment08_sensitivity",
@@ -104,7 +108,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "axis1_microbehavior",
@@ -129,7 +135,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "axis1_microbehavior_report",
@@ -194,7 +202,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "axis_effect_size",
@@ -219,7 +229,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "axis_effect_size_report",
@@ -284,7 +296,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "conditional_failure_attribution",
@@ -313,7 +327,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "confidence_cascade",
@@ -338,7 +354,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "confidence_cascade_with_wa",
@@ -367,7 +385,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "cost_per_mode",
@@ -382,14 +402,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1",
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -403,7 +417,15 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "cls_B5": "API/local cost class is keyed on the baseline name (`baseline == 'B0'`), so B5 (API) would be read as local; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency",
+   "shop_B0": "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency",
+   "shop_B1": "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency",
+   "wared_B0": "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency",
+   "wared_B1": "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency"
+  }
  },
  {
   "product": "cross_mode_failure_signatures",
@@ -432,7 +454,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "cross_mode_failure_taxonomy_B0_classifieds",
@@ -475,7 +499,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "dispatch_path_audit",
@@ -490,14 +516,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1",
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -511,7 +531,15 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "cls_B5": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B0": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B1": "audit not yet run on this cell; no current claim rests on it there",
+   "wared_B0": "audit not yet run on this cell; no current claim rests on it there",
+   "wared_B1": "audit not yet run on this cell; no current claim rests on it there"
+  }
  },
  {
   "product": "early_abort_B0_classifieds",
@@ -536,11 +564,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "shop_B1",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B1",
@@ -549,7 +574,12 @@
    "red_B2",
    "shop_B1",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "shop_B1": "audit not yet run on this cell; no current claim rests on it there",
+   "wared_B1": "audit not yet run on this cell; no current claim rests on it there"
+  }
  },
  {
   "product": "evaluator_score_granularity",
@@ -564,14 +594,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1",
-   "wared_B0",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -585,7 +609,15 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "cls_B5": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B0": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B1": "audit not yet run on this cell; no current claim rests on it there",
+   "wared_B0": "audit not yet run on this cell; no current claim rests on it there",
+   "wared_B1": "audit not yet run on this cell; no current claim rests on it there"
+  }
  },
  {
   "product": "failure_modes_per_cell",
@@ -620,7 +652,9 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "field_consumption_audit",
@@ -637,7 +671,9 @@
   "expected": [
    "cls_B0",
    "red_B0"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "fusion_premium",
@@ -665,7 +701,9 @@
    "red_B0",
    "red_B1",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "label_instability",
@@ -687,7 +725,9 @@
    "cls_B0",
    "red_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "latency_decomposition",
@@ -704,12 +744,8 @@
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -723,7 +759,13 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "cls_B5": "model-vs-environment split not yet run on this cell; mean latency per mode is in per_mode_four_dimension_profile_with_wa extension_cells",
+   "shop_B0": "model-vs-environment split not yet run on this cell; mean latency per mode is in per_mode_four_dimension_profile_with_wa extension_cells",
+   "shop_B1": "model-vs-environment split not yet run on this cell; mean latency per mode is in per_mode_four_dimension_profile_with_wa extension_cells"
+  }
  },
  {
   "product": "leakage_sensitivity",
@@ -742,7 +784,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "local_cost_estimand_audit",
@@ -755,11 +799,8 @@
    "red_B1",
    "red_B2"
   ],
-  "status": "gap",
-  "missing": [
-   "shop_B1",
-   "wared_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B1",
@@ -768,7 +809,12 @@
    "red_B2",
    "shop_B1",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "shop_B1": "audit not yet run on this cell; no current claim rests on it there",
+   "wared_B1": "audit not yet run on this cell; no current claim rests on it there"
+  }
  },
  {
   "product": "mechanism_evidence",
@@ -797,10 +843,8 @@
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "shop_B0"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -810,11 +854,11 @@
    "red_B0",
    "red_B1",
    "red_B2",
-   "shop_B0",
-   "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "mechanism_per_task_report",
@@ -859,7 +903,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "multimetric_pareto_with_wa",
@@ -870,18 +916,17 @@
    "cls_B0",
    "cls_B1",
    "cls_B2",
+   "cls_B5",
    "red_B0",
    "red_B1",
    "red_B2",
+   "shop_B0",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -895,7 +940,9 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "noise_floor_inventory",
@@ -923,7 +970,9 @@
    "red_B0",
    "red_B1",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "offsite_navigation_audit",
@@ -940,12 +989,8 @@
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -959,7 +1004,13 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "cls_B5": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B0": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B1": "audit not yet run on this cell; no current claim rests on it there"
+  }
  },
  {
   "product": "one_step_lookahead_2026-09-09",
@@ -991,18 +1042,17 @@
    "cls_B0",
    "cls_B1",
    "cls_B2",
+   "cls_B5",
    "red_B0",
    "red_B1",
    "red_B2",
+   "shop_B0",
+   "shop_B1",
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1016,7 +1066,9 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "page_change_corrected",
@@ -1033,12 +1085,8 @@
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1052,7 +1100,13 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {
+   "cls_B5": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B0": "audit not yet run on this cell; no current claim rests on it there",
+   "shop_B1": "audit not yet run on this cell; no current claim rests on it there"
+  }
  },
  {
   "product": "per_mode_four_dimension_profile",
@@ -1077,13 +1131,15 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "per_mode_four_dimension_profile_with_wa",
   "source": "per_mode_four_dimension_profile_with_wa.json",
   "producer": "scripts/analysis/rule_routing_pareto.py",
-  "last_commit": "2026-10-06",
+  "last_commit": "2026-10-07",
   "cells": [
    "cls_B0",
    "cls_B1",
@@ -1112,7 +1168,9 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "persistent_state_leakage_audit",
@@ -1135,7 +1193,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "phase0b_noise_floor",
@@ -1188,7 +1248,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "reddit_sidebar_leakage_audit_with_wa",
@@ -1211,7 +1273,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "replicate_metric_noise",
@@ -1233,7 +1297,9 @@
    "cls_B0",
    "red_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "representation_class_comparison",
@@ -1262,7 +1328,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "representation_deployment_profile",
@@ -1287,7 +1355,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "rerun_flip_failure_anatomy",
@@ -1312,7 +1382,9 @@
    "red_B0",
    "red_B1",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "rerun_union_extrapolation",
@@ -1331,7 +1403,9 @@
    "cls_B0",
    "red_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "retry_vs_switch_label_supply",
@@ -1350,7 +1424,9 @@
    "cls_B0",
    "red_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "router_covariate_baseline_2026-07-05",
@@ -1392,7 +1468,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "router_objective_ordering",
@@ -1421,7 +1499,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "router_pooled_tier_learnability",
@@ -1450,7 +1530,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "router_pooling_by_family",
@@ -1473,7 +1555,9 @@
    "cls_B1",
    "red_B0",
    "red_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "router_triage_learnability",
@@ -1498,7 +1582,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "router_triage_learnability_with_wa",
@@ -1527,7 +1613,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "router_undersampling_control",
@@ -1552,7 +1640,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "routing_ceiling",
@@ -1581,7 +1671,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "routing_feature_diagnostics",
@@ -1606,7 +1698,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "rule_routing_pareto",
@@ -1635,7 +1729,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "serving_mode_floor",
@@ -1660,7 +1756,9 @@
    "red_B0",
    "red_B1",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "sr_per_mode",
@@ -1687,7 +1785,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "steps_summary_identity_audit",
@@ -1704,12 +1804,8 @@
    "wared_B0",
    "wared_B1"
   ],
-  "status": "gap",
-  "missing": [
-   "cls_B5",
-   "shop_B0",
-   "shop_B1"
-  ],
+  "status": "complete",
+  "missing": [],
   "unexplained": [],
   "expected": [
    "cls_B0",
@@ -1723,7 +1819,13 @@
    "shop_B1",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {
+   "cls_B5": "per_mode_four_dimension_profile_with_wa extension_cells: the same steps/summary identity check, 0 mismatches and 0 tasks dropped for pairing (2026-10-07)",
+   "shop_B0": "per_mode_four_dimension_profile_with_wa extension_cells: the same steps/summary identity check, 0 mismatches and 0 tasks dropped for pairing (2026-10-07)",
+   "shop_B1": "per_mode_four_dimension_profile_with_wa extension_cells: the same steps/summary identity check, 0 mismatches and 0 tasks dropped for pairing (2026-10-07)"
+  },
+  "deferred": {}
  },
  {
   "product": "supply_value_coupling",
@@ -1752,7 +1854,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "two_arm_action_learnability",
@@ -1781,7 +1885,9 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "unique_solve_envelope_cross_cell",
@@ -1800,7 +1906,9 @@
    "cls_B0",
    "red_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "visual_difficulty_router",
@@ -1825,7 +1933,9 @@
    "red_B0",
    "red_B1",
    "red_B2"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  },
  {
   "product": "visual_intent_routing",
@@ -1854,6 +1964,8 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
-  ]
+  ],
+  "covered_by": {},
+  "deferred": {}
  }
 ]

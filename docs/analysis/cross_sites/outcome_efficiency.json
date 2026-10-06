@@ -974,5 +974,289 @@
       "max_n_success": 37,
       "has_content": true
     }
+  },
+  "extension_cells": {
+    "shopping_B0": {
+      "modes": [
+        "DOM",
+        "SoM",
+        "Vision"
+      ],
+      "per_mode": {
+        "DOM": {
+          "n": 432,
+          "n_success": 49,
+          "sr_pct": 11.342592592592593,
+          "cost_per_success": 1.0569696734693876,
+          "latency_per_success": 2421.314590853088,
+          "cost_ci": [
+            0.8122860000000001,
+            1.4533663513513513
+          ],
+          "latency_ci": [
+            1853.555008021612,
+            3331.420808143086
+          ],
+          "n_boot_undefined": 0
+        },
+        "SoM": {
+          "n": 432,
+          "n_success": 64,
+          "sr_pct": 14.814814814814815,
+          "cost_per_success": 0.659501046875,
+          "latency_per_success": 1528.5257513970137,
+          "cost_ci": [
+            0.5210820526315789,
+            0.86707044
+          ],
+          "latency_ci": [
+            1207.3548719174153,
+            2012.1464992980568
+          ],
+          "n_boot_undefined": 0
+        },
+        "Vision": {
+          "n": 432,
+          "n_success": 62,
+          "sr_pct": 14.351851851851851,
+          "cost_per_success": 0.5214925,
+          "latency_per_success": 1752.5611874172764,
+          "cost_ci": [
+            0.41065050000000003,
+            0.687184170212766
+          ],
+          "latency_ci": [
+            1377.6453579726972,
+            2315.3075316548347
+          ],
+          "n_boot_undefined": 0
+        }
+      },
+      "cost_per_attempt": {
+        "DOM": 0.11988776388888889,
+        "SoM": 0.0977038587962963,
+        "Vision": 0.07484383101851852
+      },
+      "cheapest_per_attempt": "Vision",
+      "cheapest_per_success": "Vision"
+    },
+    "shopping_B1": {
+      "modes": [
+        "DOM",
+        "SoM",
+        "Vision",
+        "P-text",
+        "P-prompt",
+        "P-SoM"
+      ],
+      "per_mode": {
+        "DOM": {
+          "n": 432,
+          "n_success": 21,
+          "sr_pct": 4.861111111111111,
+          "cost_per_success": 2.28502589,
+          "latency_per_success": 9204.558308726266,
+          "cost_ci": [
+            1.5616515189655173,
+            3.825977041538462
+          ],
+          "latency_ci": [
+            6270.590006836255,
+            15420.217188871824
+          ],
+          "n_boot_undefined": 0
+        },
+        "SoM": {
+          "n": 432,
+          "n_success": 33,
+          "sr_pct": 7.638888888888889,
+          "cost_per_success": 1.082423879090909,
+          "latency_per_success": 4787.545980966453,
+          "cost_ci": [
+            0.80165832,
+            1.6007056147826089
+          ],
+          "latency_ci": [
+            3536.4072975299573,
+            7079.63492539525
+          ],
+          "n_boot_undefined": 0
+        },
+        "Vision": {
+          "n": 432,
+          "n_success": 24,
+          "sr_pct": 5.555555555555555,
+          "cost_per_success": 0.8896828391666668,
+          "latency_per_success": 7499.555598219235,
+          "cost_ci": [
+            0.6154347226470589,
+            1.4230985093333333
+          ],
+          "latency_ci": [
+            5194.158829191152,
+            11998.422380526861
+          ],
+          "n_boot_undefined": 0
+        },
+        "P-text": {
+          "n": 432,
+          "n_success": 29,
+          "sr_pct": 6.712962962962963,
+          "cost_per_success": 1.172458635862069,
+          "latency_per_success": 6764.649801328264,
+          "cost_ci": [
+            0.8506364453658537,
+            1.783436528421053
+          ],
+          "latency_ci": [
+            4910.36241249549,
+            10306.210173519034
+          ],
+          "n_boot_undefined": 0
+        },
+        "P-prompt": {
+          "n": 432,
+          "n_success": 23,
+          "sr_pct": 5.324074074074074,
+          "cost_per_success": 2.144974471739131,
+          "latency_per_success": 8602.342966183372,
+          "cost_ci": [
+            1.500824303030303,
+            3.463425166666667
+          ],
+          "latency_ci": [
+            5999.854507021606,
+            13921.63373462359
+          ],
+          "n_boot_undefined": 0
+        },
+        "P-SoM": {
+          "n": 432,
+          "n_success": 20,
+          "sr_pct": 4.62962962962963,
+          "cost_per_success": 1.7550231379999999,
+          "latency_per_success": 9592.753903579713,
+          "cost_ci": [
+            1.2001840034482758,
+            3.0055278125000005
+          ],
+          "latency_ci": [
+            6563.711317794076,
+            16509.11978018284
+          ],
+          "n_boot_undefined": 0
+        }
+      },
+      "cost_per_attempt": {
+        "DOM": 0.11107764743055555,
+        "SoM": 0.08268515743055556,
+        "Vision": 0.049426824398148154,
+        "P-text": 0.07870671398148149,
+        "P-prompt": 0.11420002974537038,
+        "P-SoM": 0.0812510712037037
+      },
+      "cheapest_per_attempt": "Vision",
+      "cheapest_per_success": "Vision"
+    },
+    "classifieds_B5": {
+      "modes": [
+        "DOM",
+        "SoM",
+        "P-text",
+        "P-prompt",
+        "P-SoM"
+      ],
+      "per_mode": {
+        "DOM": {
+          "n": 224,
+          "n_success": 53,
+          "sr_pct": 23.660714285714285,
+          "cost_per_success": 0.5807946415094339,
+          "latency_per_success": 621.8474137513143,
+          "cost_ci": [
+            0.4498913333333333,
+            0.7758358604651163
+          ],
+          "latency_ci": [
+            476.3921115882695,
+            844.1369238658385
+          ],
+          "n_boot_undefined": 0
+        },
+        "SoM": {
+          "n": 224,
+          "n_success": 83,
+          "sr_pct": 37.05357142857143,
+          "cost_per_success": 0.45101913253012044,
+          "latency_per_success": 508.4492316504559,
+          "cost_ci": [
+            0.358089032967033,
+            0.5763402777777777
+          ],
+          "latency_ci": [
+            400.1267381830418,
+            654.2092062150929
+          ],
+          "n_boot_undefined": 0
+        },
+        "P-text": {
+          "n": 224,
+          "n_success": 54,
+          "sr_pct": 24.107142857142858,
+          "cost_per_success": 0.6089471111111111,
+          "latency_per_success": 745.9732576652809,
+          "cost_ci": [
+            0.47134847887323944,
+            0.8120721818181817
+          ],
+          "latency_ci": [
+            542.1077225569522,
+            1064.9388635537841
+          ],
+          "n_boot_undefined": 0
+        },
+        "P-prompt": {
+          "n": 224,
+          "n_success": 49,
+          "sr_pct": 21.875,
+          "cost_per_success": 0.6989975102040816,
+          "latency_per_success": 1247.9567496435982,
+          "cost_ci": [
+            0.5352328928571428,
+            0.949165512195122
+          ],
+          "latency_ci": [
+            740.8464501186953,
+            2031.595382777656
+          ],
+          "n_boot_undefined": 0
+        },
+        "P-SoM": {
+          "n": 224,
+          "n_success": 51,
+          "sr_pct": 22.767857142857142,
+          "cost_per_success": 0.6156301176470588,
+          "latency_per_success": 770.3225549342585,
+          "cost_ci": [
+            0.47077993333333334,
+            0.8361034
+          ],
+          "latency_ci": [
+            579.6315237482389,
+            1050.9409860953306
+          ],
+          "n_boot_undefined": 0
+        }
+      },
+      "cost_per_attempt": {
+        "DOM": 0.1374201607142857,
+        "SoM": 0.1671186964285714,
+        "P-text": 0.14679975,
+        "P-prompt": 0.15290570535714285,
+        "P-SoM": 0.1401657857142857
+      },
+      "cheapest_per_attempt": "DOM",
+      "cheapest_per_success": "SoM"
+    }
   }
 }

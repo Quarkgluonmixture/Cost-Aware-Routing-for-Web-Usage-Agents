@@ -67,3 +67,30 @@ Among those 6: the cheapest-per-attempt mode stops being cheapest-per-success in
 **Not licensed.** Any statement of the form "mode X is more efficient" without a denominator. Also any cross-cell comparison of these ratios: B0 bills an API and B1/B2 are electricity-derived, so only within-cell ordering is meaningful.
 
 ⚠️ These ratios inherit the success rate's noise twice over — once in the estimate and once in the fact that success itself moves 0.89–2.23pp between identical reruns (`noise_floor_inventory`). The CIs above capture the first, not the second.
+
+## Extension cells — B5 x classifieds, B0/B1 x shopping
+
+Added 2026-10-07 (实验笔记 §538); not in any count above. Within-cell only (B0 is API-billed, B1 electricity-derived). Shopping mode comparisons carry B-2002 and the catalog-state drift (§534).
+
+| cell | cheapest per attempt | cheapest per success | same? |
+|---|---|---|---|
+| `shopping_B0` | Vision | Vision | yes |
+| `shopping_B1` | Vision | Vision | yes |
+| `classifieds_B5` | DOM | SoM | **no** |
+
+| cell | mode | successes | cost / attempt | cost / success [95% CI] |
+|---|---|---:|---:|---|
+| `shopping_B0` | DOM | 49 | 0.1199 | 1.0570 [0.8123, 1.4534] |
+| `shopping_B0` | SoM | 64 | 0.0977 | 0.6595 [0.5211, 0.8671] |
+| `shopping_B0` | Vision | 62 | 0.0748 | 0.5215 [0.4107, 0.6872] |
+| `shopping_B1` | DOM | 21 | 0.1111 | 2.2850 [1.5617, 3.8260] |
+| `shopping_B1` | SoM | 33 | 0.0827 | 1.0824 [0.8017, 1.6007] |
+| `shopping_B1` | Vision | 24 | 0.0494 | 0.8897 [0.6154, 1.4231] |
+| `shopping_B1` | P-text | 29 | 0.0787 | 1.1725 [0.8506, 1.7834] |
+| `shopping_B1` | P-prompt | 23 | 0.1142 | 2.1450 [1.5008, 3.4634] |
+| `shopping_B1` | P-SoM | 20 | 0.0813 | 1.7550 [1.2002, 3.0055] |
+| `classifieds_B5` | DOM | 53 | 0.1374 | 0.5808 [0.4499, 0.7758] |
+| `classifieds_B5` | SoM | 83 | 0.1671 | 0.4510 [0.3581, 0.5763] |
+| `classifieds_B5` | P-text | 54 | 0.1468 | 0.6089 [0.4713, 0.8121] |
+| `classifieds_B5` | P-prompt | 49 | 0.1529 | 0.6990 [0.5352, 0.9492] |
+| `classifieds_B5` | P-SoM | 51 | 0.1402 | 0.6156 [0.4708, 0.8361] |

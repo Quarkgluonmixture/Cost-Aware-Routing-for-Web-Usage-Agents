@@ -20,6 +20,8 @@ python scripts/maintenance/run_inventory_report.py --inv docs/analysis/run_inven
 | `conditions.jsonl` | one row per condition **per copy** (source, path, episode count, artifact dirs, episode fingerprint) |
 | `run_inventory.json` | one row per unique (run, condition): completeness, SR over the canonical scored set, registry status, doc citations |
 | `run_matrix.md` | site × baseline × mode table of every **full** run with its SR and registry tag |
+| `product_coverage.md` | per cross-site product: which of the 11 cells it names, against `product_scope.yaml` (`scripts/maintenance/evidence_layer_coverage.py`) |
+| `product_scope.yaml` | which cells each product should cover, and the reason for every cell it does not |
 
 ## 1. Where the data was, and the merged store
 

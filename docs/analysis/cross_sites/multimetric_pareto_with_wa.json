@@ -301,5 +301,73 @@
         "observed_widen": true
       }
     }
+  },
+  "extension_cells": {
+    "B0_shopping": {
+      "modes": [
+        "DOM",
+        "SoM",
+        "Vision"
+      ],
+      "frontier_sr_cost": [
+        "SoM",
+        "Vision"
+      ],
+      "frontier_sr_cost_latency_canonical": [
+        "SoM",
+        "Vision"
+      ],
+      "cheapest": "Vision",
+      "fastest_canonical": "SoM",
+      "rho_cost_latency_canonical": 0.5,
+      "exact_p_one_sided": 0.5
+    },
+    "B1_shopping": {
+      "modes": [
+        "DOM",
+        "SoM",
+        "Vision",
+        "P-text",
+        "P-prompt",
+        "P-SoM"
+      ],
+      "frontier_sr_cost": [
+        "SoM",
+        "Vision",
+        "P-text"
+      ],
+      "frontier_sr_cost_latency_canonical": [
+        "SoM",
+        "Vision",
+        "P-text"
+      ],
+      "cheapest": "Vision",
+      "fastest_canonical": "SoM",
+      "rho_cost_latency_canonical": 0.4285714285714286,
+      "exact_p_one_sided": 0.20972222222222223
+    },
+    "B5_classifieds": {
+      "modes": [
+        "DOM",
+        "SoM",
+        "P-text",
+        "P-prompt",
+        "P-SoM"
+      ],
+      "frontier_sr_cost": [
+        "DOM",
+        "SoM",
+        "P-text"
+      ],
+      "frontier_sr_cost_latency_canonical": [
+        "DOM",
+        "SoM",
+        "P-text"
+      ],
+      "cheapest": "DOM",
+      "fastest_canonical": "DOM",
+      "rho_cost_latency_canonical": 0.9,
+      "exact_p_one_sided": 0.041666666666666664
+    }
   }
 }

@@ -48,19 +48,19 @@ products:
   failure_modes_per_cell: {kind: product, expected: ALL}
   per_mode_four_dimension_profile: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope product; the _with_wa sibling carries WA; shopping / B5 go to the extension sibling"}}
   per_mode_four_dimension_profile_with_wa: {kind: product, expected: ALL}
-  cost_per_mode: {kind: product, expected: ALL}
-  latency_decomposition: {kind: product, expected: ALL}
-  offsite_navigation_audit: {kind: product, expected: ALL}
-  evaluator_score_granularity: {kind: product, expected: ALL}
-  dispatch_path_audit: {kind: product, expected: ALL}
+  cost_per_mode: {kind: product, expected: ALL, deferred: {cls_B5: "API/local cost class is keyed on the baseline name (`baseline == 'B0'`), so B5 (API) would be read as local; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency", shop_B0: "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency", shop_B1: "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency", wared_B0: "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency", wared_B1: "the producer enumerates the preregistered VWA cells only; per-mode cost for this cell is in per_mode_four_dimension_profile_with_wa and outcome_efficiency"}}
+  latency_decomposition: {kind: product, expected: ALL, deferred: {cls_B5: "model-vs-environment split not yet run on this cell; mean latency per mode is in per_mode_four_dimension_profile_with_wa extension_cells", shop_B0: "model-vs-environment split not yet run on this cell; mean latency per mode is in per_mode_four_dimension_profile_with_wa extension_cells", shop_B1: "model-vs-environment split not yet run on this cell; mean latency per mode is in per_mode_four_dimension_profile_with_wa extension_cells"}}
+  offsite_navigation_audit: {kind: product, expected: ALL, deferred: {cls_B5: "audit not yet run on this cell; no current claim rests on it there", shop_B0: "audit not yet run on this cell; no current claim rests on it there", shop_B1: "audit not yet run on this cell; no current claim rests on it there"}}
+  evaluator_score_granularity: {kind: product, expected: ALL, deferred: {cls_B5: "audit not yet run on this cell; no current claim rests on it there", shop_B0: "audit not yet run on this cell; no current claim rests on it there", shop_B1: "audit not yet run on this cell; no current claim rests on it there", wared_B0: "audit not yet run on this cell; no current claim rests on it there", wared_B1: "audit not yet run on this cell; no current claim rests on it there"}}
+  dispatch_path_audit: {kind: product, expected: ALL, deferred: {cls_B5: "audit not yet run on this cell; no current claim rests on it there", shop_B0: "audit not yet run on this cell; no current claim rests on it there", shop_B1: "audit not yet run on this cell; no current claim rests on it there", wared_B0: "audit not yet run on this cell; no current claim rests on it there", wared_B1: "audit not yet run on this cell; no current claim rests on it there"}}
   representation_deployment_profile: {kind: product, expected: VWA6, why_out: {all_other: "reads failure_modes_per_cell `cells` (prereg) by design; extension cells are reported in failure_modes_per_cell itself"}}
   outcome_efficiency: {kind: product, expected: ALL}
   representation_class_comparison: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   cross_mode_failure_signatures: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
-  page_change_corrected: {kind: product, expected: ALL}
-  steps_summary_identity_audit: {kind: product, expected: ALL}
-  energy_carbon_audit: {kind: product, expected: LOCAL, why_out: {other: "energy is metered only on locally served backbones; API cells have no energy column"}}
-  local_cost_estimand_audit: {kind: product, expected: LOCAL, why_out: {other: "the audited dollar figure exists only for locally served backbones"}}
+  page_change_corrected: {kind: product, expected: ALL, deferred: {cls_B5: "audit not yet run on this cell; no current claim rests on it there", shop_B0: "audit not yet run on this cell; no current claim rests on it there", shop_B1: "audit not yet run on this cell; no current claim rests on it there"}}
+  steps_summary_identity_audit: {kind: product, expected: ALL, covered_by: {cls_B5: "per_mode_four_dimension_profile_with_wa extension_cells: the same steps/summary identity check, 0 mismatches and 0 tasks dropped for pairing (2026-10-07)", shop_B0: "per_mode_four_dimension_profile_with_wa extension_cells: the same steps/summary identity check, 0 mismatches and 0 tasks dropped for pairing (2026-10-07)", shop_B1: "per_mode_four_dimension_profile_with_wa extension_cells: the same steps/summary identity check, 0 mismatches and 0 tasks dropped for pairing (2026-10-07)"}}
+  energy_carbon_audit: {kind: product, expected: LOCAL, why_out: {other: "energy is metered only on locally served backbones; API cells have no energy column"}, deferred: {shop_B1: "audit not yet run on this cell; no current claim rests on it there", wared_B1: "audit not yet run on this cell; no current claim rests on it there"}}
+  local_cost_estimand_audit: {kind: product, expected: LOCAL, why_out: {other: "the audited dollar figure exists only for locally served backbones"}, deferred: {shop_B1: "audit not yet run on this cell; no current claim rests on it there", wared_B1: "audit not yet run on this cell; no current claim rests on it there"}}
   diag_digest_index: {kind: product, expected: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, wared_B0, wared_B1], why_out: {shop_B0: "no /diag digest exists for shopping (Tier-1 scan only, §531.9)", shop_B1: "same"}}
 
   # --- cross-mode oracle / routing / learnability over the six modes ---
@@ -111,7 +111,7 @@ products:
   axis_effect_size_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   axis_effect_size_report: {kind: sibling, of: axis_effect_size}
   axis_effect_size_report_with_wa: {kind: sibling, of: axis_effect_size_with_wa}
-  mechanism_per_task: {kind: product, expected: ALL, why_out: {}}
+  mechanism_per_task: {kind: product, expected: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, wared_B0, wared_B1], why_out: {shop_B0: "the producer lists the shopping runs as complete but excluded by design (E1-E4 contrasts are built on classifieds / reddit)", shop_B1: "same"}, deferred: {wared_B1: "absent from the product although WA_B1 canonical runs resolve; cause not checked (2026-10-07)"}}
   mechanism_per_task_report: {kind: sibling, of: mechanism_per_task}
   mechanism_evidence: {kind: frozen, why: "§5 mechanism line shelved 2026-05-14 (advisor); patching probes are per-mode, not per-cell"}
   phase0b_noise_floor: {kind: snapshot, why: "Phase 0b record (2026-08-01), superseded by noise_floor_inventory"}

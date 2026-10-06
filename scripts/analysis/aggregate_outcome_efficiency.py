@@ -115,11 +115,12 @@ class MissingInput(RuntimeError):
     """Fail loud rather than divide by a success count from a partial read."""
 
 
-def load_cell(baseline: str, site: str, cells: dict) -> dict[str, list[tuple[int, float, float]]]:
+def load_cell(baseline: str, site: str, cells: dict,
+              modes: list[str] | None = None) -> dict[str, list[tuple[int, float, float]]]:
     """mode -> [(success, cost, latency_s)] over the canonical scored universe."""
     scored = set(expected_scored_ids(site)[0])
     out: dict[str, list] = {}
-    for mode in MODES:
+    for mode in (modes or MODES):
         c = cells.get((baseline, site, mode))
         if c is None:
             raise MissingInput(f"{baseline}/{site}/{mode}: absent from the registry")
@@ -202,7 +203,47 @@ def build() -> dict:
                      out["cells"][cid]["cheapest_per_attempt"],
                      out["cells"][cid]["cheapest_per_success"],
                      out["cells"][cid]["fastest_per_success"])
+    # Extension cells (2026-10-07, 实验笔记 §538): manifest `extension:` — B5 x classifieds and
+    # B0/B1 x shopping — on the modes each has. Kept apart from `cells`.
+    from scripts.analysis.lib.run_registry import BASELINES, get_all_cells
+    ext_reg = {(c.baseline, c.site, c.mode): c
+               for c in get_all_cells(grade_filter=["paper-grade"], include_extension=True)
+               if not (c.baseline in BASELINES and c.site in ("classifieds", "reddit"))}
+    out["extension_cells"] = {}
+    for b, s_ in sorted({(k[0], k[1]) for k in ext_reg}):
+        modes = [m for m in MODES if (b, s_, m) in ext_reg]
+        data = load_cell(b, s_, ext_reg, modes=modes)
+        per_mode = {m: per_success(rows) for m, rows in data.items()}
+        att = {m: sum(r[1] for r in rows) / len(rows) for m, rows in data.items()}
+        live = [m for m in modes if per_mode[m]["cost_per_success"] is not None]
+        out["extension_cells"][f"{s_}_{b}"] = {
+            "modes": modes, "per_mode": per_mode, "cost_per_attempt": att,
+            "cheapest_per_attempt": min(modes, key=lambda m: att[m]),
+            "cheapest_per_success": (min(live, key=lambda m: per_mode[m]["cost_per_success"])
+                                     if live else None),
+        }
     return out
+
+
+def render_extension(ext: dict) -> str:
+    L = ["", "## Extension cells — B5 x classifieds, B0/B1 x shopping", "",
+         "Added 2026-10-07 (实验笔记 §538); not in any count above. Within-cell only (B0 is "
+         "API-billed, B1 electricity-derived). Shopping mode comparisons carry B-2002 and the "
+         "catalog-state drift (§534).", "",
+         "| cell | cheapest per attempt | cheapest per success | same? |", "|---|---|---|---|"]
+    for cid, c in ext.items():
+        same = "yes" if c["cheapest_per_attempt"] == c["cheapest_per_success"] else "**no**"
+        L.append(f"| `{cid}` | {c['cheapest_per_attempt']} | {c['cheapest_per_success']} | {same} |")
+    L += ["", "| cell | mode | successes | cost / attempt | cost / success [95% CI] |",
+          "|---|---|---:|---:|---|"]
+    for cid, c in ext.items():
+        for m in c["modes"]:
+            pm = c["per_mode"][m]
+            cps = pm["cost_per_success"]
+            ci = pm.get("cost_ci")
+            cps_s = "—" if cps is None else (f"{cps:.4f}" + (f" [{ci[0]:.4f}, {ci[1]:.4f}]" if ci else ""))
+            L.append(f"| `{cid}` | {m} | {pm['n_success']} | {c['cost_per_attempt'][m]:.4f} | {cps_s} |")
+    return "\n".join(L) + "\n"
 
 
 def render(d: dict) -> str:
@@ -277,7 +318,10 @@ def main() -> int:
                         format="%(levelname)s %(message)s")
     d = build()
     OUT_JSON.write_text(json.dumps(d, indent=2))
-    OUT_MD.write_text(render(d))
+    md = render(d)
+    if d.get("extension_cells"):
+        md = md.rstrip("\n") + "\n" + render_extension(d["extension_cells"])
+    OUT_MD.write_text(md)
     print(f"✓ {OUT_MD.relative_to(REPO)}")
     return 0
 

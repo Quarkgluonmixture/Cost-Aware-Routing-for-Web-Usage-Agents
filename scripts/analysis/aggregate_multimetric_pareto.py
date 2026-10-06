@@ -299,6 +299,52 @@ def render(d: dict) -> str:
     return "\n".join(L) + "\n"
 
 
+def extension_cells(profile_json: Path) -> dict:
+    """Within-cell frontiers for the manifest `extension:` cells (2026-10-07, 实验笔记 §538).
+
+    Read from the profile's JSON `extension_cells` (the Markdown parser above only knows the
+    six-mode tables). Partial mode sets are fine for a within-cell frontier; nothing here
+    enters the cross-cell counts.
+    """
+    prof = json.loads(profile_json.read_text(encoding="utf-8"))
+    out = {}
+    for c in prof.get("extension_cells") or []:
+        modes = {m: (v["sr_pct"], v["mean_cost_usd"], v["mean_latency_s"], v["mean_tokens"],
+                     v.get("mean_latency_canonical_s", v["mean_latency_s"]))
+                 for m, v in c["per_mode"].items()}
+        names = list(modes)
+        cost = [modes[m][1] for m in names]
+        latc = [modes[m][4] for m in names]
+        rho = spearman(cost, latc) if len(names) >= 3 else None
+        exact_p = (sum(1 for p in itertools.permutations(latc) if spearman(cost, list(p)) >= rho)
+                   / math.factorial(len(names))) if rho is not None else None
+        out[c["cell_id"]] = {
+            "modes": names,
+            "frontier_sr_cost": frontier(modes, [(0, 1), (1, -1)]),
+            "frontier_sr_cost_latency_canonical": frontier(modes, [(0, 1), (1, -1), (4, -1)]),
+            "cheapest": min(names, key=lambda m: modes[m][1]),
+            "fastest_canonical": min(names, key=lambda m: modes[m][4]),
+            "rho_cost_latency_canonical": rho, "exact_p_one_sided": exact_p,
+        }
+    return out
+
+
+def render_extension(ext: dict) -> str:
+    L = ["## Extension cells — within-cell only", "",
+         "B5 x classifieds (5 modes) and B0/B1 x shopping, from the profile's `extension_cells` "
+         "(added 2026-10-07, 实验笔记 §538). Within-cell readings only; not in any count above. "
+         "Shopping mode comparisons carry B-2002 and the catalog-state drift (§534).", "",
+         "| cell | modes | (SR, cost) frontier | + latency (canonical) | cheapest | fastest | ρ(cost, latency) | exact p |",
+         "|---|---:|---|---|---|---|---:|---:|"]
+    for cid, r in ext.items():
+        rho = "—" if r["rho_cost_latency_canonical"] is None else f"{r['rho_cost_latency_canonical']:+.3f}"
+        p = "—" if r["exact_p_one_sided"] is None else f"{r['exact_p_one_sided']:.3f}"
+        L.append(f"| `{cid}` | {len(r['modes'])} | {', '.join(r['frontier_sr_cost'])} | "
+                 f"{', '.join(r['frontier_sr_cost_latency_canonical'])} | {r['cheapest']} | "
+                 f"{r['fastest_canonical']} | {rho} | {p} |")
+    return "\n".join(L) + "\n"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--with-wa", action="store_true",
@@ -324,8 +370,14 @@ def main() -> int:
         om = OUT_MD.with_name(OUT_MD.stem + "_with_wa" + OUT_MD.suffix)
         oj = OUT_JSON.with_name(OUT_JSON.stem + "_with_wa" + OUT_JSON.suffix)
     d = build(src, n)
+    md = render(d)
+    if a.with_wa:
+        ext = extension_cells(src.with_suffix(".json"))
+        if ext:
+            d["extension_cells"] = ext
+            md = md.rstrip("\n") + "\n\n" + render_extension(ext)
     oj.write_text(json.dumps(d, indent=2))
-    om.write_text(render(d))
+    om.write_text(md)
     print(f"✓ {om.relative_to(REPO)}")
     return 0
 

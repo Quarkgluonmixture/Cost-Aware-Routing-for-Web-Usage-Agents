@@ -32,6 +32,9 @@ read it there. The three coverage facts below are derived, so each carries its r
   shop_B0/shop_B1 appear in none, cls_B5 as a cell in one (§531.2). The only analysis that
   covers all 11 cells is the §505 router pilot (`results/evidence_snapshots/20261006_router_pilot_20260909/`).
   Recompute: grep the cell keys across those JSONs.
+- **Product-by-product scope** (2026-10-07, §536–§538): `run_inventory/product_scope.yaml` states which cells each
+  product should cover and why the rest are out; `run_inventory/product_coverage.md` checks it — 0 gaps, 3 cells covered
+  elsewhere, 28 deferred with reasons. Cross-mode products cover the 8 VWA+WA units; shop_B1 is out of them by design (B-2002).
 
 | # | surface | what the layer holds (owner) | moved since 08-26 | still open — and closable before 10-12 on existing data? |
 |---|---|---|---|---|

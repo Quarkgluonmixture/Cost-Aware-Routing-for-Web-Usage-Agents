@@ -65,3 +65,13 @@ Expected widened cells under the null: **6.25 of 8**. Observed: **5**. P(at leas
 Read as *width*, not as evidence: Pareto dominance is strictly harder to achieve against three axes, so §5.3's negative result (no learned policy dominates a fixed one) holds a fortiori. Non-dominance becomes correspondingly cheaper to satisfy, so wherever the paper treats non-dominance as informative it must be read against a frontier this wide.
 
 Adding tokens enlarges the frontier further in **1** cell(s). The bill is computed from tokens, so this column is a consistency check rather than an axis — but the earlier claim that it 'changes nothing beyond latency' was false against this producer's own table.
+
+## Extension cells — within-cell only
+
+B5 x classifieds (5 modes) and B0/B1 x shopping, from the profile's `extension_cells` (added 2026-10-07, 实验笔记 §538). Within-cell readings only; not in any count above. Shopping mode comparisons carry B-2002 and the catalog-state drift (§534).
+
+| cell | modes | (SR, cost) frontier | + latency (canonical) | cheapest | fastest | ρ(cost, latency) | exact p |
+|---|---:|---|---|---|---|---:|---:|
+| `B0_shopping` | 3 | SoM, Vision | SoM, Vision | Vision | SoM | +0.500 | 0.500 |
+| `B1_shopping` | 6 | SoM, Vision, P-text | SoM, Vision, P-text | Vision | SoM | +0.429 | 0.210 |
+| `B5_classifieds` | 5 | DOM, SoM, P-text | DOM, SoM, P-text | DOM | DOM | +0.900 | 0.042 |

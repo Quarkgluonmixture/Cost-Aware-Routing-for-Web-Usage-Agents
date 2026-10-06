@@ -139,9 +139,16 @@ def judge(product: str, named: set[str], scope: dict) -> dict:
     why = entry.get("why_out") or {}
     blanket = any(k in why for k in ("other", "all_other"))
     unexplained = sorted(c for c in all_cells - expected if c not in why and not blanket)
-    missing = sorted(expected - named)
+    # `covered_by`: the quantity exists for that cell in another product (checked, cited).
+    # `deferred`: not run for that cell yet, with the reason. Neither is a gap, and neither is
+    # silently "complete": both are listed in the report.
+    covered = entry.get("covered_by") or {}
+    deferred = entry.get("deferred") or {}
+    missing = sorted(expected - named - set(covered) - set(deferred))
     return {"status": "gap" if missing else "complete", "missing": missing,
-            "unexplained": unexplained, "expected": sorted(expected)}
+            "unexplained": unexplained, "expected": sorted(expected),
+            "covered_by": {c: covered[c] for c in sorted(set(covered) & (expected - named))},
+            "deferred": {c: deferred[c] for c in sorted(set(deferred) & (expected - named))}}
 
 
 def main() -> None:
@@ -196,6 +203,24 @@ def main() -> None:
         L += ["| product | expected but not named |", "|---|---|"]
         for r in gaps:
             L.append(f"| `{r['product']}` | " + ", ".join(r["missing"]) + " |")
+        L.append("")
+    cov = [r for r in rows if r.get("covered_by")]
+    dfr = [r for r in rows if r.get("deferred")]
+    L += [f"- cells **covered by another product**: {sum(len(r['covered_by']) for r in cov)} "
+          f"(in {len(cov)} products)",
+          f"- cells **deferred** (not run yet, reason stated): {sum(len(r['deferred']) for r in dfr)} "
+          f"(in {len(dfr)} products)", ""]
+    if cov:
+        L += ["### Covered by another product", "", "| product | cell | where |", "|---|---|---|"]
+        for r in cov:
+            for c, why in r["covered_by"].items():
+                L.append(f"| `{r['product']}` | {c} | {why} |")
+        L.append("")
+    if dfr:
+        L += ["### Deferred", "", "| product | cell | why |", "|---|---|---|"]
+        for r in dfr:
+            for c, why in r["deferred"].items():
+                L.append(f"| `{r['product']}` | {c} | {why} |")
         L.append("")
     for r in unreg:
         L.append(f"- unregistered: `{r['product']}`")
