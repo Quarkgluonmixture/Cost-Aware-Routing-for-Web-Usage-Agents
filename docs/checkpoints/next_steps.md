@@ -48,7 +48,7 @@ updated: 2026-10-06
 > - ✅ 复测翻转的失败解剖（§531.10）：失败类型部分稳定（随机性骨干 kappa 中位 0.46–0.53，合并 0.62 不可单引）；翻转的两次 run 基本从头分岔（共享前缀中位 4%）
 > - ✅ 本机复算证据层修了 4 处静默降级（§531.8）；WA glob 排除复测（§531.6）；cascade red_B1 一格原本读错 stale 文件 4.43%→3.94%（§531.7）；重算后已发表产物的变化逐项归因在 §531.8（fusion_premium 的「过重跑 null」2/5→1/5、axis_effect_size BH 7→8 / Holm 2→1）
 > - ✅ 七个攻击面逐条汇总 → `paper_drafts/naacl_evidence_delta.md` §0（只放指针；C1 已标撤回；§532）。10-12 前 0-compute 可补的：跨站产物逐个接 shopping / cls_B5 · 表征路由的 SR–cost 前沿本身（VLM4RWD AC 点名）· early-stop / 预算先例文献；要 user 定的：§530.4 的口径（噪声带、learned vs always-cheapest 计数）
-> - 仍缺：B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上；shopping 网格顺序跨 run 是否稳定（未核）；跨站产物套件仍未接 shopping（manifest 已登记，逐个 opt-in 未做）
+> - 仍缺：B1·shop·som 复测只有 93/433，B2 ×3 只可能在 A100 上；~~shopping 网格顺序是否稳定~~ → **不稳定**，9 个 run 落在 4 个目录状态，42 道位置相关题各状态都近 0，作 scope 限定（§534）；跨站产物套件仍未接 shopping（manifest 已登记，逐个 opt-in 未做）
 > ## 🟢 2026-09-15 深夜收尾 · Showcase（09-16）片子定稿（D26 补，user「没问题」）· DGX 已备好 · 明天流程见手册 · 会后回来写笔记 · 先看这里
 >
 > **当天手册（手机可开）**：https://claude.ai/artifact/HHEK4g5x1G9irBhPvZU67x ← 源文件 `deliverables/showcase/day-of.html`。它只是汇总；事实变了先改源文件：`ROADMAP.md`（D15–D24 · Phase 5/6）· `talk/RUNBOOK.md` · `demo/README.md` → Live · `talk/rehearsal-script.md` · `SHOWCASE_PREP.md` §2 走读 / §4 问答 / §5 数字口径 / §6 禁语

@@ -1,0 +1,381 @@
+{
+ "method": "- Product identity = the ASIN in the catalog image url, in page order, restricted to the\n  main product list (after the \"Sort By\" control, before the \"Shop By\" sidebar). Pages\n  without a Sort By control are not category grids and are skipped. The sidebar is cut\n  because it shows wish-list / recently-viewed items, which differ by run for another\n  reason (B-2003).\n- \"First row\" = first four products (the grid is four wide at the recorded viewport).\n- Catalog states are not assumed: runs are clustered by pairwise first-row agreement\n  (>= AGREE_MIN on shared task pages = same state, union-find).\n- Order-sensitive tasks = scored tasks whose start grid differs across runs AND whose\n  intent names a position (row / column / first / Nth / last / top ...).",
+ "runs_with_step0_artifacts": [
+  "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+  "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+  "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+  "B1_dom_shopping_20260809",
+  "B1_phantom_prompt_shopping_20260911",
+  "B1_phantom_som_shopping_20260814",
+  "B1_phantom_text_shopping_20260908",
+  "B1_som_shopping_20260812",
+  "B1_vision_shopping_20260906"
+ ],
+ "task_url_groups_with_2plus_runs": 184,
+ "scored_tasks": 432,
+ "scored_tasks_whose_start_grid_differs": 152,
+ "order_sensitive_tasks": [
+  14,
+  15,
+  16,
+  17,
+  37,
+  46,
+  47,
+  48,
+  56,
+  58,
+  59,
+  61,
+  62,
+  65,
+  67,
+  75,
+  76,
+  77,
+  78,
+  79,
+  80,
+  81,
+  131,
+  132,
+  133,
+  134,
+  143,
+  144,
+  197,
+  198,
+  207,
+  208,
+  218,
+  234,
+  238,
+  239,
+  242,
+  249,
+  251,
+  258,
+  313,
+  407
+ ],
+ "pairwise_first_row_agreement": [
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "same": 57,
+   "n": 179
+  },
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "same": 180,
+   "n": 181
+  },
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B1_dom_shopping_20260809",
+   "same": 34,
+   "n": 177
+  },
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B1_phantom_prompt_shopping_20260911",
+   "same": 178,
+   "n": 178
+  },
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B1_phantom_som_shopping_20260814",
+   "same": 177,
+   "n": 177
+  },
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B1_phantom_text_shopping_20260908",
+   "same": 176,
+   "n": 176
+  },
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B1_som_shopping_20260812",
+   "same": 52,
+   "n": 178
+  },
+  {
+   "a": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "b": "B1_vision_shopping_20260906",
+   "same": 62,
+   "n": 181
+  },
+  {
+   "a": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "b": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "same": 58,
+   "n": 180
+  },
+  {
+   "a": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "b": "B1_dom_shopping_20260809",
+   "same": 54,
+   "n": 178
+  },
+  {
+   "a": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "b": "B1_phantom_prompt_shopping_20260911",
+   "same": 57,
+   "n": 179
+  },
+  {
+   "a": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "b": "B1_phantom_som_shopping_20260814",
+   "same": 56,
+   "n": 178
+  },
+  {
+   "a": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "b": "B1_phantom_text_shopping_20260908",
+   "same": 55,
+   "n": 177
+  },
+  {
+   "a": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "b": "B1_som_shopping_20260812",
+   "same": 36,
+   "n": 180
+  },
+  {
+   "a": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "b": "B1_vision_shopping_20260906",
+   "same": 163,
+   "n": 181
+  },
+  {
+   "a": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "b": "B1_dom_shopping_20260809",
+   "same": 34,
+   "n": 177
+  },
+  {
+   "a": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "b": "B1_phantom_prompt_shopping_20260911",
+   "same": 177,
+   "n": 178
+  },
+  {
+   "a": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "b": "B1_phantom_som_shopping_20260814",
+   "same": 176,
+   "n": 177
+  },
+  {
+   "a": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "b": "B1_phantom_text_shopping_20260908",
+   "same": 176,
+   "n": 177
+  },
+  {
+   "a": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "b": "B1_som_shopping_20260812",
+   "same": 52,
+   "n": 179
+  },
+  {
+   "a": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "b": "B1_vision_shopping_20260906",
+   "same": 64,
+   "n": 183
+  },
+  {
+   "a": "B1_dom_shopping_20260809",
+   "b": "B1_phantom_prompt_shopping_20260911",
+   "same": 35,
+   "n": 178
+  },
+  {
+   "a": "B1_dom_shopping_20260809",
+   "b": "B1_phantom_som_shopping_20260814",
+   "same": 34,
+   "n": 177
+  },
+  {
+   "a": "B1_dom_shopping_20260809",
+   "b": "B1_phantom_text_shopping_20260908",
+   "same": 33,
+   "n": 176
+  },
+  {
+   "a": "B1_dom_shopping_20260809",
+   "b": "B1_som_shopping_20260812",
+   "same": 29,
+   "n": 178
+  },
+  {
+   "a": "B1_dom_shopping_20260809",
+   "b": "B1_vision_shopping_20260906",
+   "same": 58,
+   "n": 178
+  },
+  {
+   "a": "B1_phantom_prompt_shopping_20260911",
+   "b": "B1_phantom_som_shopping_20260814",
+   "same": 178,
+   "n": 178
+  },
+  {
+   "a": "B1_phantom_prompt_shopping_20260911",
+   "b": "B1_phantom_text_shopping_20260908",
+   "same": 176,
+   "n": 176
+  },
+  {
+   "a": "B1_phantom_prompt_shopping_20260911",
+   "b": "B1_som_shopping_20260812",
+   "same": 53,
+   "n": 179
+  },
+  {
+   "a": "B1_phantom_prompt_shopping_20260911",
+   "b": "B1_vision_shopping_20260906",
+   "same": 60,
+   "n": 179
+  },
+  {
+   "a": "B1_phantom_som_shopping_20260814",
+   "b": "B1_phantom_text_shopping_20260908",
+   "same": 176,
+   "n": 176
+  },
+  {
+   "a": "B1_phantom_som_shopping_20260814",
+   "b": "B1_som_shopping_20260812",
+   "same": 52,
+   "n": 178
+  },
+  {
+   "a": "B1_phantom_som_shopping_20260814",
+   "b": "B1_vision_shopping_20260906",
+   "same": 59,
+   "n": 178
+  },
+  {
+   "a": "B1_phantom_text_shopping_20260908",
+   "b": "B1_som_shopping_20260812",
+   "same": 51,
+   "n": 177
+  },
+  {
+   "a": "B1_phantom_text_shopping_20260908",
+   "b": "B1_vision_shopping_20260906",
+   "same": 58,
+   "n": 177
+  },
+  {
+   "a": "B1_som_shopping_20260812",
+   "b": "B1_vision_shopping_20260906",
+   "same": 39,
+   "n": 180
+  }
+ ],
+ "states": {
+  "S1": [
+   "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "B1_phantom_prompt_shopping_20260911",
+   "B1_phantom_som_shopping_20260814",
+   "B1_phantom_text_shopping_20260908"
+  ],
+  "S2": [
+   "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "B1_vision_shopping_20260906"
+  ],
+  "S3": [
+   "B1_dom_shopping_20260809"
+  ],
+  "S4": [
+   "B1_som_shopping_20260812"
+  ]
+ },
+ "per_run": [
+  {
+   "run": "B0_dom_shopping_20260804_003607_264370398_3845634_R3561",
+   "state": "S1",
+   "n_scored": 432,
+   "sensitive_success": 1,
+   "sensitive_n": 42,
+   "rest_success": 48,
+   "rest_n": 390
+  },
+  {
+   "run": "B0_som_shopping_20260806_113115_297007393_109097_R12449",
+   "state": "S2",
+   "n_scored": 432,
+   "sensitive_success": 1,
+   "sensitive_n": 42,
+   "rest_success": 63,
+   "rest_n": 390
+  },
+  {
+   "run": "B0_vision_shopping_20260807_191852_632106648_362979_R23934",
+   "state": "S1",
+   "n_scored": 432,
+   "sensitive_success": 0,
+   "sensitive_n": 42,
+   "rest_success": 62,
+   "rest_n": 390
+  },
+  {
+   "run": "B1_dom_shopping_20260809",
+   "state": "S3",
+   "n_scored": 432,
+   "sensitive_success": 2,
+   "sensitive_n": 42,
+   "rest_success": 19,
+   "rest_n": 390
+  },
+  {
+   "run": "B1_phantom_prompt_shopping_20260911",
+   "state": "S1",
+   "n_scored": 432,
+   "sensitive_success": 0,
+   "sensitive_n": 42,
+   "rest_success": 23,
+   "rest_n": 390
+  },
+  {
+   "run": "B1_phantom_som_shopping_20260814",
+   "state": "S1",
+   "n_scored": 432,
+   "sensitive_success": 1,
+   "sensitive_n": 42,
+   "rest_success": 19,
+   "rest_n": 390
+  },
+  {
+   "run": "B1_phantom_text_shopping_20260908",
+   "state": "S1",
+   "n_scored": 432,
+   "sensitive_success": 1,
+   "sensitive_n": 42,
+   "rest_success": 28,
+   "rest_n": 390
+  },
+  {
+   "run": "B1_som_shopping_20260812",
+   "state": "S4",
+   "n_scored": 432,
+   "sensitive_success": 1,
+   "sensitive_n": 42,
+   "rest_success": 32,
+   "rest_n": 390
+  },
+  {
+   "run": "B1_vision_shopping_20260906",
+   "state": "S2",
+   "n_scored": 432,
+   "sensitive_success": 1,
+   "sensitive_n": 42,
+   "rest_success": 23,
+   "rest_n": 390
+  }
+ ]
+}
