@@ -1,6 +1,6 @@
 # /diag digest index — failure attribution coverage
 
-- **41 digests**: 37 with a readable three-way split · 3 that declare their own attribution incomplete · 1 pointer files (numbers live in the run-specific digests they forward to) · 0 this script still cannot parse
+- **46 digests**: 42 with a readable three-way split · 3 that declare their own attribution incomplete · 1 pointer files (numbers live in the run-specific digests they forward to) · 0 this script still cannot parse
 - built by `scripts/analysis/index_diag_digests.py`
 - **navigation layer only** — per-rule detail, Tier-2 deep dives and P-rule false-positive audits exist solely in the digests
 
@@ -48,13 +48,18 @@ Classes: **agent-limit** = model capability · **scaffold-bug** = our pipeline �
 | B2 | reddit | phantom_text | ✅ | — | 0 | 0 | 0 | FP |
 | B2 | reddit | som | ✅ | — | 0 | 0 | 0 | FP |
 | B2 | reddit | vision | ✅ | — | 0 | 0 | 0 | FP |
+| B5 | classifieds | dom | ✅ | — | 16 | 1 | 0 | — |
+| B5 | classifieds | phantom_prompt | ✅ | — | 36 | 0 | 0 | — |
+| B5 | classifieds | phantom_som | ✅ | — | 36 | 0 | 0 | — |
+| B5 | classifieds | phantom_text | ✅ | — | 33 | 0 | 0 | — |
+| B5 | classifieds | som | ✅ | — | 53 | 0 | 0 | — |
 
 ## ⚠️ Digests carrying a non-agent-limit signal
 
 Either a non-zero structured count, or free text naming a benchmark-FP / scaffold issue. **A failure-analysis section must read these directly.**
 
-- **B0_dom_classifieds_R31194** — free-text benchmark-FP mention · `docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md`
 - **B0_dom_classifieds_R21557** — scaffold-bug 1; benchmark-FP 1; free-text scaffold mention · `docs/analysis/vwa_classifieds/B0_dom_classifieds_R21557_diag_digest.md`
+- **B0_dom_classifieds_R31194** — free-text benchmark-FP mention · `docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md`
 - **B0_phantom_prompt_classifieds** — free-text benchmark-FP mention · `docs/analysis/vwa_classifieds/B0_phantom_prompt_classifieds_diag_digest.md`
 - **B0_phantom_som_classifieds** — free-text benchmark-FP mention · `docs/analysis/vwa_classifieds/B0_phantom_som_classifieds_diag_digest.md`
 - **B0_som_classifieds** — scaffold-bug 1; free-text scaffold mention · `docs/analysis/vwa_classifieds/B0_som_classifieds_diag_digest.md`
@@ -83,6 +88,7 @@ Either a non-zero structured count, or free text naming a benchmark-FP / scaffol
 - **B2_phantom_text_reddit** — free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B2_phantom_text_reddit_diag_digest.md`
 - **B2_som_reddit** — free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B2_som_reddit_diag_digest.md`
 - **B2_vision_reddit** — free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B2_vision_reddit_diag_digest.md`
+- **B5_dom_classifieds** — scaffold-bug 1 · `docs/analysis/vwa_classifieds/B5_dom_classifieds_diag_digest.md`
 
 ## ⚠️ Digests that declare their own attribution incomplete
 
@@ -94,12 +100,12 @@ For these, a blank scaffold-bug / benchmark-FP cell means **not investigated**. 
 
 ## Corpus-level verdict
 
-**Not admissible.** Only 37/41 digests expose a machine-readable attribution table, so no statement of the form "the pipeline is clean across all conditions" can be made from this index. The per-condition rows above are the usable unit.
+**Not admissible.** Only 42/46 digests expose a machine-readable attribution table, so no statement of the form "the pipeline is clean across all conditions" can be made from this index. The per-condition rows above are the usable unit.
 
 ## Run-specific digests (replicates / ablation arms)
 
-- `B0_dom_classifieds_R31194` (R31194) — ⚠️ 自称不完整 · `docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md`
 - `B0_dom_classifieds_R21557` (R21557) — ✅ · `docs/analysis/vwa_classifieds/B0_dom_classifieds_R21557_diag_digest.md`
+- `B0_dom_classifieds_R31194` (R31194) — ⚠️ 自称不完整 · `docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md`
 - `B0_vision_classifieds_R24792` (R24792) — ✅ · `docs/analysis/vwa_classifieds/B0_vision_classifieds_R24792_diag_digest.md`
 - `B0_vision_classifieds_R32024` (R32024) — ✅ · `docs/analysis/vwa_classifieds/B0_vision_classifieds_R32024_diag_digest.md`
 - `B2_dom_classifieds_R17895` (R17895) — ✅ · `docs/analysis/vwa_classifieds/B2_dom_classifieds_R17895_diag_digest.md`

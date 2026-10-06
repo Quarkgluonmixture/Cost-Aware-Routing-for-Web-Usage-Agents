@@ -128,6 +128,8 @@
    "passive_satisfiable": false
   }
  },
+ "wa_selector": null,
+ "wa_tasks": null,
  "n_leaked": 6,
  "n_earned": 31,
  "n_passive_satisfiable": 13,

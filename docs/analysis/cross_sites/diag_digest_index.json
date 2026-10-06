@@ -1,6 +1,6 @@
 {
- "n_digests": 41,
- "n_parsed": 37,
+ "n_digests": 46,
+ "n_parsed": 42,
  "n_pointer": 1,
  "n_self_declared_incomplete": 3,
  "n_unparsed": 0,
@@ -35,32 +35,6 @@
    "headline": null
   },
   {
-   "condition": "B0_dom_classifieds_R31194",
-   "baseline": "B0",
-   "mode": "dom",
-   "site": "classifieds",
-   "run": "R31194",
-   "path": "docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md",
-   "n_lines": 152,
-   "n_failed": null,
-   "attribution": {
-    "scaffold-bug": {
-     "n": 0,
-     "pct": null
-    },
-    "benchmark-fp": {
-     "n": 0,
-     "pct": null
-    }
-   },
-   "coverage": "self_declared_incomplete",
-   "table_layout": "B/C",
-   "incomplete_quote": "未逐个证因。\"agent-limit 主导\"应读作\"35 深挖",
-   "free_text_fp_signal": true,
-   "free_text_scaffold_signal": false,
-   "headline": null
-  },
-  {
    "condition": "B0_dom_classifieds_R21557",
    "baseline": "B0",
    "mode": "dom",
@@ -88,6 +62,32 @@
    "incomplete_quote": null,
    "free_text_fp_signal": false,
    "free_text_scaffold_signal": true,
+   "headline": null
+  },
+  {
+   "condition": "B0_dom_classifieds_R31194",
+   "baseline": "B0",
+   "mode": "dom",
+   "site": "classifieds",
+   "run": "R31194",
+   "path": "docs/analysis/vwa_classifieds/B0_dom_classifieds_R31194_diag_digest.md",
+   "n_lines": 152,
+   "n_failed": null,
+   "attribution": {
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "self_declared_incomplete",
+   "table_layout": "B/C",
+   "incomplete_quote": "未逐个证因。\"agent-limit 主导\"应读作\"35 深挖",
+   "free_text_fp_signal": true,
+   "free_text_scaffold_signal": false,
    "headline": null
   },
   {
@@ -1193,6 +1193,171 @@
    "table_layout": null,
    "incomplete_quote": null,
    "free_text_fp_signal": true,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B5_dom_classifieds",
+   "baseline": "B5",
+   "mode": "dom",
+   "site": "classifieds",
+   "run": null,
+   "path": "docs/analysis/vwa_classifieds/B5_dom_classifieds_diag_digest.md",
+   "n_lines": 134,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 16,
+     "pct": null,
+     "raw": "16 (no-hit) + Tier-1 命中的 154"
+    },
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null,
+     "raw": "1"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B5_phantom_prompt_classifieds",
+   "baseline": "B5",
+   "mode": "phantom_prompt",
+   "site": "classifieds",
+   "run": null,
+   "path": "docs/analysis/vwa_classifieds/B5_phantom_prompt_classifieds_diag_digest.md",
+   "n_lines": 129,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 36,
+     "pct": null,
+     "raw": "36 (no-hit) + Tier-1 命中的 138"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B5_phantom_som_classifieds",
+   "baseline": "B5",
+   "mode": "phantom_som",
+   "site": "classifieds",
+   "run": null,
+   "path": "docs/analysis/vwa_classifieds/B5_phantom_som_classifieds_diag_digest.md",
+   "n_lines": 128,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 36,
+     "pct": null,
+     "raw": "36 (no-hit) + Tier-1 命中的 136"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B5_phantom_text_classifieds",
+   "baseline": "B5",
+   "mode": "phantom_text",
+   "site": "classifieds",
+   "run": null,
+   "path": "docs/analysis/vwa_classifieds/B5_phantom_text_classifieds_diag_digest.md",
+   "n_lines": 126,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 33,
+     "pct": null,
+     "raw": "33 (no-hit) + Tier-1 命中的 136"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B5_som_classifieds",
+   "baseline": "B5",
+   "mode": "som",
+   "site": "classifieds",
+   "run": null,
+   "path": "docs/analysis/vwa_classifieds/B5_som_classifieds_diag_digest.md",
+   "n_lines": 135,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 53,
+     "pct": null,
+     "raw": "53 (no-hit) + Tier-1 命中的 87"
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    },
+    "unclear": {
+     "n": 0,
+     "pct": null,
+     "raw": "0"
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "D",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
    "headline": null
   }

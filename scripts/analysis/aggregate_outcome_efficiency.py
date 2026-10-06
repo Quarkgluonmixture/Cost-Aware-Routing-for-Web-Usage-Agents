@@ -88,8 +88,10 @@ def load_wa_cell(baseline: str) -> dict[str, list[tuple[int, float, float]]]:
     out: dict[str, list] = {}
     for disp, ep in eps.items():
         rows = []
-        for f in ep.glob("reddit_task_*_summary_v2.json"):
-            tid = int(re.search(r"task_(\d+)_", f.name).group(1))
+        # sorted by task id: the bootstrap indexes rows, so their order must not depend on the
+        # filesystem's readdir order (ext4 hashes it per directory) — 实验笔记 §536.3
+        for f in sorted(ep.glob("reddit_task_*_summary_v2.json"), key=_task_id):
+            tid = _task_id(f)
             if tid not in universe:
                 continue
             sm = json.loads(f.read_text())
@@ -105,6 +107,10 @@ def load_wa_cell(baseline: str) -> dict[str, list[tuple[int, float, float]]]:
     return out
 
 
+def _task_id(path: Path) -> int:
+    return int(re.search(r"task_(\d+)_", path.name).group(1))
+
+
 class MissingInput(RuntimeError):
     """Fail loud rather than divide by a success count from a partial read."""
 
@@ -118,8 +124,8 @@ def load_cell(baseline: str, site: str, cells: dict) -> dict[str, list[tuple[int
         if c is None:
             raise MissingInput(f"{baseline}/{site}/{mode}: absent from the registry")
         rows = []
-        for p in c.episodes_dir.glob(f"{site}_task_*_summary_v2.json"):
-            tid = int(re.search(r"task_(\d+)_", p.name).group(1))
+        for p in sorted(c.episodes_dir.glob(f"{site}_task_*_summary_v2.json"), key=_task_id):
+            tid = _task_id(p)
             if tid not in scored:
                 continue
             s = json.loads(p.read_text())

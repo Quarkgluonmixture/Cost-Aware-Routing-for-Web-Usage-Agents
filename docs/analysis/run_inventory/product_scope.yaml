@@ -38,6 +38,7 @@ products:
   .summary_number_allowlist: {kind: index, why: "allowlist for check_summary_numbers.py"}
 
   # --- descriptive, per cell × mode: every cell ---
+  sr_per_mode: {kind: product, expected: VWA6, why_out: {all_other: "gitignored Layer-0 SR table over the prereg cells; SR on all 11 cells is in run_inventory/run_matrix.md"}}
   failure_modes_per_cell: {kind: product, expected: ALL}
   per_mode_four_dimension_profile: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope product; the _with_wa sibling carries WA; shopping / B5 go to the extension sibling"}}
   per_mode_four_dimension_profile_with_wa: {kind: product, expected: ALL}

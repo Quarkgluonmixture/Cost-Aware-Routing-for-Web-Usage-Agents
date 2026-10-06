@@ -8,12 +8,12 @@
 
 | cell | n | best single mode | ceiling A: any mode | headroom | ceiling B': triage cost | +1 arm | rerun once |
 |---|---|---|---|---|---|---|---|
-| `wa_red_B0` | 104 | P-text 35.58% | **51.92%** | +16.35pp | SR unchanged, **-10.7%** | +5.77pp | 2.00–4.00pp |
-| `cls_B0` | 224 | SoM 27.23% | **43.30%** | +16.07pp | SR unchanged, **-12.8%** | +7.14pp | 4.91–7.59pp |
-| `wa_red_B1` | 104 | DOM 16.35% | **30.77%** | +14.42pp | SR unchanged, **-26.8%** | +4.81pp | 2.00–4.00pp |
-| `red_B0` | 203 | SoM 14.78% | **26.11%** | +11.33pp | SR unchanged, **-9.5%** | +4.93pp | —pp |
-| `cls_B1` | 224 | SoM 14.29% | **24.55%** | +10.27pp | SR unchanged, **-19.4%** | +4.91pp | —pp |
-| `red_B1` | 203 | SoM 6.90% | **11.82%** | +4.93pp | SR unchanged, **-30.6%** | +1.97pp | —pp |
+| `wa_red_B0` | 104 | P-text 35.58% | **51.92%** | +16.35pp | SR unchanged, **-10.7%** | +5.77pp | —pp |
+| `cls_B0` | 224 | SoM 27.23% | **43.30%** | +16.07pp | SR unchanged, **-12.8%** | +7.14pp | 4.46–7.59pp |
+| `wa_red_B1` | 104 | DOM 16.35% | **30.77%** | +14.42pp | SR unchanged, **-26.8%** | +4.81pp | 0.00–7.69pp |
+| `red_B0` | 203 | SoM 14.78% | **26.11%** | +11.33pp | SR unchanged, **-9.5%** | +4.93pp | 1.97–6.90pp |
+| `cls_B1` | 224 | SoM 14.29% | **24.55%** | +10.27pp | SR unchanged, **-19.4%** | +4.91pp | 0.00–1.79pp |
+| `red_B1` | 203 | SoM 6.90% | **11.82%** | +4.93pp | SR unchanged, **-30.6%** | +1.97pp | 0.49–1.97pp |
 | `cls_B2` | 224 | SoM 2.23% | **7.14%** | +4.91pp | SR unchanged, **-21.3%** | +2.23pp | —pp |
 | `red_B2` | 203 | DOM 2.46% | **5.91%** | +3.45pp | SR unchanged, **-26.7%** | +1.97pp | —pp |
 

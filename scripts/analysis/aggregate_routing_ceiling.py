@@ -121,7 +121,14 @@ def load_floor() -> dict[str, dict]:
         if len(parts) < 3:
             continue
         base, site_short = parts[0], parts[1]
-        key = f"{'cls' if site_short.startswith('cls') else 'red'}_{base}"
+        # 2026-10-07 (实验笔记 §536.2): this was `'cls' if startswith('cls') else 'red'`, so the
+        # six WebArena-reddit pairs registered on 10-06 (label `B1.wared.*`, §529.4) were read
+        # as VWA-reddit and widened red_B1's band to 0–7.69pp (8/104 is a WA denominator).
+        # Unknown site labels now fail loud instead of falling into reddit.
+        site_key = {"cls": "cls", "red": "red", "wared": "wa_red"}.get(site_short)
+        if site_key is None:
+            raise MissingInput(f"clean pair label {p.get('label')!r}: unknown site {site_short!r}")
+        key = f"{site_key}_{base}"
         for f in ("self_drop_a_to_b_pp", "self_drop_b_to_a_pp"):
             v = p.get(f)
             if isinstance(v, (int, float)):
@@ -224,7 +231,10 @@ def main() -> int:
         zeroed = evaluate(tasks, zeroed_succ, cost)
 
         m = floor["margins"].get(key, {})
-        reruns = floor["wa_reruns"] if is_wa else floor["reruns"].get(key, [])
+        # WA rows read their registered pairs like every other cell; the pooled 10-task
+        # `wa_floor` (a B1 pilot) is no longer borrowed — it was also applied to wa_B0,
+        # i.e. a B1 band read against a B0 gain (the borrowed-band error §477.2 banned).
+        reruns = floor["reruns"].get(key, [])
         rows.append({
             "cell": key, "site": cell["site"], "baseline": cell["baseline"],
             "n_leaked_zeroed": n_zeroed,

@@ -208,9 +208,17 @@ def probe_text_wins(scan_dir: Path) -> dict:
     return out
 
 
+def _repo_rel(p: Path) -> str:
+    """Repo-relative POSIX path, so the product does not change with the host it ran on."""
+    try:
+        return Path(p).resolve().relative_to(REPO).as_posix()
+    except ValueError:
+        return Path(p).as_posix()
+
+
 def build(scan_dir: Path, wa_scan_dir: Path | None = None) -> dict:
     out = {"schema": "2026-08-02-conditional-failure-attribution-v1",
-           "post_hoc_exploratory": True, "scan_dir": str(scan_dir),
+           "post_hoc_exploratory": True, "scan_dir": _repo_rel(scan_dir),
            "text_modes": TEXT, "image_modes": IMAGE, "cells": {}}
     for bb in BACKBONES:
         for site in SITES:

@@ -485,13 +485,13 @@
    "cls_B0",
    "cls_B1",
    "cls_B2",
+   "cls_B5",
    "red_B0",
    "red_B1",
    "red_B2"
   ],
   "status": "gap",
   "missing": [
-   "cls_B5",
    "wared_B0",
    "wared_B1"
   ],
@@ -1735,6 +1735,33 @@
    "red_B0",
    "red_B1",
    "wared_B1"
+  ]
+ },
+ {
+  "product": "sr_per_mode",
+  "source": "sr_per_mode.json",
+  "producer": "scripts/analysis/aggregate_sr_fp_per_mode.py; scripts/analysis/mechanism_per_task.py",
+  "last_commit": "untracked",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
   ]
  },
  {

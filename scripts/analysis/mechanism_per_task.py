@@ -579,11 +579,11 @@ def e3_cells_for_run(model: str, site: str, run_dir: Path) -> dict[str, dict[str
     cells: dict[str, dict[str, Any]] = {}
     if cross_rows:
         modes = sorted({normalize_mode_name(row.get("mode", "")) for row in cross_rows if row.get("mode")})
-        auroc_source = str((tables / "cross_mode_auroc.csv").relative_to(ROOT))
+        auroc_source = (tables / "cross_mode_auroc.csv").relative_to(ROOT).as_posix()
     else:
         single = infer_single_mode(run_dir)
         modes = [single] if single else []
-        auroc_source = str((tables / "auroc_all_metrics.csv").relative_to(ROOT))
+        auroc_source = (tables / "auroc_all_metrics.csv").relative_to(ROOT).as_posix()
     for mode in modes:
         if not mode:
             continue
@@ -612,17 +612,19 @@ def e3_cells_for_run(model: str, site: str, run_dir: Path) -> dict[str, dict[str
             "AUROC_behavioral_max": behavioral,
             "AUROC_behavioral_signal": behavioral_signal,
             "AUROC_behavioral_n": behavioral_n,
-            "source_run": str(run_dir.relative_to(ROOT)),
+            "source_run": run_dir.relative_to(ROOT).as_posix(),
             "source_table": auroc_source,
-            "calibration_source": str((tables / "per_mode_summary.csv").relative_to(ROOT)) if per_mode_rows else None,
+            "calibration_source": (tables / "per_mode_summary.csv").relative_to(ROOT).as_posix() if per_mode_rows else None,
         }
     return cells
 
 
 def load_sr_rates() -> dict[str, float]:
     """Load canonical Layer-0 SR values keyed as baseline/site/mode."""
+    # 2026-10-07 (实验笔记 §536.4): was `return {}` — sr_per_mode.json is gitignored, so on any
+    # fresh checkout the whole canonical-SR column silently became n/a (seen 10-06, §531.8).
     if not SR_JSON.exists():
-        return {}
+        raise SystemExit(f"{SR_JSON} missing — run scripts/analysis/aggregate_sr_fp_per_mode.py first")
     data = read_json(SR_JSON)
     rates: dict[str, float] = {}
     for key, row in (data.get("cells") or {}).items():
@@ -1240,7 +1242,7 @@ def main() -> None:
         ),
         "data_status": {
             "step_dirs": {
-                site: {mode: str(path.relative_to(ROOT)) for mode, path in modes.items()}
+                site: {mode: path.relative_to(ROOT).as_posix() for mode, path in modes.items()}
                 for site, modes in STEP_DIRS.items()
             },
             "p_prompt": detect_partial_prompt_runs(),

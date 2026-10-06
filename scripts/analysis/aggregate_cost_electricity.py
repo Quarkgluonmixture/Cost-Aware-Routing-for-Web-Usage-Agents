@@ -50,7 +50,7 @@ ELECTRICITY_USD_PER_KWH = 0.12
 # pays $0 in actual API dollars, so we mark it "non-comparable" and report
 # electricity-equivalent instead.
 def _condition_subpath(cell) -> str:
-    return str((cell.run_dir / cell.condition_subdir).relative_to(RESULTS))
+    return (cell.run_dir / cell.condition_subdir).relative_to(RESULTS).as_posix()
 
 
 def _runs_from_registry() -> dict[str, dict[str, dict[str, str]]]:

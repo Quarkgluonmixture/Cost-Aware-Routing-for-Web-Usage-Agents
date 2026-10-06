@@ -29,7 +29,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 PHASE1 = REPO / "results" / "visualwebarena" / "phase1"
 SCANNER = REPO / "scripts" / "analysis" / "diag_pattern_match.py"
-PY = str(REPO / ".venv" / "bin" / "python3")
+# 2026-10-07 (实验笔记 §536.4): was REPO/.venv/bin/python3 — a Linux venv path, FileNotFoundError on
+# Windows. The scanner runs under the same interpreter as its caller.
+PY = sys.executable
 
 # Canonical run per (model, mode, site). Keys are the digest basenames, so the
 # output filenames line up 1:1 with docs/analysis/vwa_<site>/<key>_diag_digest.md.

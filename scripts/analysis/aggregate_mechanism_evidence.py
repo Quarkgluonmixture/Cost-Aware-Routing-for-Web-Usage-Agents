@@ -101,7 +101,7 @@ def readability() -> dict:
                        for v in loto.values())[len(loto) // 2] if loto else None),
             "n_layers_total": d.get("n_layers"),
             "axis_cosine_gap": axis_gap,
-            "source": str(p.relative_to(REPO)),
+            "source": p.relative_to(REPO).as_posix(),
         }
     return out
 
@@ -168,7 +168,7 @@ def _arm_curve(path: Path) -> dict | None:
         "convergence_at_L0": conv[0] if conv else None,
         # L23 is where Method 4.2's cosine gap peaks; the layer disjoint is the claim.
         "displacement_at_L23": disp[23] if len(disp) > 23 else None,
-        "source": str(path.relative_to(REPO)),
+        "source": path.relative_to(REPO).as_posix(),
     }
 
 

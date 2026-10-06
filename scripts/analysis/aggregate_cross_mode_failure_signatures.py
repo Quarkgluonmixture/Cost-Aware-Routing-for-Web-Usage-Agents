@@ -46,7 +46,7 @@ from diag_pattern_match import (  # noqa: E402
     MISSING_UNION_BOUND_RE, _action_type, _discover_episodes, _load_steps,
     _locator_errors,
 )
-from diag_rescan_all import CANONICAL, _discover_cls, scan  # noqa: E402
+from diag_rescan_all import CANONICAL, scan  # noqa: E402
 
 sys.path.insert(0, str(ROOT))
 from scripts.analysis.lib.canonical_task_universe import restrict_to_scored  # noqa: E402
@@ -110,8 +110,24 @@ def parse_key(key: str) -> tuple[str, str, str]:
 
 
 def resolve_targets() -> dict[str, str]:
-    targets = dict(CANONICAL)
-    targets.update(_discover_cls())
+    """The 36 preregistered conditions, read from run_manifest.yaml (default sections only).
+
+    2026-10-07 (实验笔记 §536.4): was CANONICAL (hand-kept reddit dict) + `_discover_cls()`.
+    Since 09-11 `_discover_cls` also returns the B5 extension cells, so this product resolved 41
+    and could no longer run; and its unpinned classifieds fallback is newest-by-mtime, which in
+    the merged run store (§529.1) can hand back a same-condition replicate as the canonical run.
+    """
+    import re
+    from scripts.analysis.lib.run_registry import get_all_cells
+    targets = {}
+    for c in get_all_cells(grade_filter=["paper-grade"]):
+        m = re.match(r"phase1_(.+)_router_\d+$", c.condition_subdir)
+        if not m:
+            raise SystemExit(f"FATAL: unparseable condition_subdir {c.condition_subdir!r}")
+        targets[f"{c.baseline}_{m.group(1)}_{c.site}"] = c.run_dir.name
+    for k, v in CANONICAL.items():  # the hand-kept dict must agree with the manifest
+        if targets.get(k) != v:
+            raise SystemExit(f"FATAL: CANONICAL[{k}]={v} disagrees with manifest {targets.get(k)}")
     return targets
 
 

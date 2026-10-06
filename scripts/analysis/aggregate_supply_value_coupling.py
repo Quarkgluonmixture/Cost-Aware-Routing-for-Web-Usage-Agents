@@ -128,7 +128,7 @@ def main() -> int:
     mean_abs_gap = sum(abs(a - b) for a, b in zip(best, routable)) / len(rows)
 
     out = {
-        "generated_from": str(args.ceiling.relative_to(REPO)),
+        "generated_from": args.ceiling.relative_to(REPO).as_posix(),
         "leak_policy": policy,
         "n_cells": len(rows),
         "cells": rows,

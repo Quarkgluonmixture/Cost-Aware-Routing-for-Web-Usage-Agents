@@ -167,7 +167,7 @@ def parse(path: Path) -> dict:
 
     return {
         "condition": name, "baseline": baseline, "mode": mode, "site": site,
-        "run": run, "path": str(path.relative_to(REPO)),
+        "run": run, "path": path.relative_to(REPO).as_posix(),
         "n_lines": len(txt.splitlines()),
         "n_failed": int(failed.group(1)) if failed else None,
         "attribution": counts,
