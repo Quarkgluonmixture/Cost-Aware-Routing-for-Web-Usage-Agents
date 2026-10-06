@@ -46,7 +46,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-DIGEST_GLOB = "docs/analysis/vwa_*/*_diag_digest.md"
+# 2026-10-07 (实验笔记 §538): the WA digests (docs/analysis/wa_reddit/, 12 of them) were never
+# indexed — the glob only covered vwa_*. Both families now.
+DIGEST_GLOBS = ("docs/analysis/vwa_*/*_diag_digest.md", "docs/analysis/wa_reddit/*_diag_digest.md")
 
 CLASSES = ("agent-limit", "scaffold-bug", "benchmark-fp", "unclear")
 
@@ -117,11 +119,15 @@ def parse(path: Path) -> dict:
     parts = name.split("_")
     baseline = parts[0]
     site, run = None, None
-    if parts[-1].startswith("R") and parts[-1][1:].isdigit():
+    if "_wa_reddit" in name:          # WebArena: B0_dom_wa_reddit -> site wa_reddit, mode dom
+        site = "wa_reddit"
+        mode = name[len(baseline) + 1:name.index("_wa_reddit")]
+    elif parts[-1].startswith("R") and parts[-1][1:].isdigit():
         run, site = parts[-1], parts[-2]
     elif parts[-1] in ("classifieds", "reddit", "shopping"):
         site = parts[-1]
-    mode = "_".join(parts[1:parts.index(site)]) if site and site in parts else None
+    if site != "wa_reddit":
+        mode = "_".join(parts[1:parts.index(site)]) if site and site in parts else None
 
     counts = {k.lower(): {"n": int(n.replace(",", "")), "pct": float(p)}
               for k, n, p in ROW.findall(txt)}
@@ -188,10 +194,10 @@ def main() -> int:
                     default=REPO / "docs/analysis/cross_sites/diag_digest_index.json")
     a = ap.parse_args()
 
-    rows = sorted((parse(p) for p in REPO.glob(DIGEST_GLOB)),
+    rows = sorted((parse(p) for g in DIGEST_GLOBS for p in REPO.glob(g)),
                   key=lambda r: (r["baseline"], r["site"] or "", r["mode"] or ""))
     if not rows:
-        raise SystemExit(f"no digests matched {DIGEST_GLOB}")
+        raise SystemExit(f"no digests matched {DIGEST_GLOBS}")
 
     n_parsed = sum(1 for r in rows if r["coverage"] == "parsed")
     n_inc = sum(1 for r in rows if r["coverage"] == "self_declared_incomplete")

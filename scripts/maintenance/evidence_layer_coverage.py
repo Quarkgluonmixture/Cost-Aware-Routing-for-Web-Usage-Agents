@@ -47,6 +47,7 @@ def cell_regex(site: str, b: str) -> re.Pattern:
     pats = [rf"\b{b}{SEP}{s}", rf"{s}{SEP}{b}\b", rf"\b{b}_{MODES}_{s}"]
     if site == "wared":  # WA run ids: B0_dom_wa_reddit_…
         pats.append(rf"\b{b}_{MODES}_wa_reddit")
+        pats.append(rf"(?<![A-Za-z])wa_{b}\b")   # "wa_B1" keys (outcome_efficiency etc.)
     return re.compile("|".join(f"(?:{p})" for p in pats), re.I)
 
 
@@ -55,8 +56,8 @@ REGEX = {c: cell_regex(*c) for c in CELLS}
 
 BASE_TOKEN = re.compile(r"(?<![A-Za-z0-9])B([0-9])(?![0-9])")
 SITE_TOKEN = [  # order matters: a WA mention is removed before VWA reddit is looked for
-    ("wared", re.compile(r"(?<![Vv])wa[_\- ]?reddit|(?<![Vv])wa_red|wared|(?<![Vv])WA[·_\- ]red|webarena",
-                         re.I)),
+    ("wared", re.compile(r"(?<![Vv])wa[_\- ]?reddit|(?<![Vv])wa_red|wared|(?<![Vv])WA[·_\- ]red|webarena"
+                         r"|(?<![A-Za-z])wa(?=_B\d)", re.I)),
     ("cls", re.compile(r"classifieds|(?<![a-z])cls(?![a-z])|VWA-cla", re.I)),
     ("shop", re.compile(r"shopping|(?<![a-z])shop(?![a-z])", re.I)),
     ("red", re.compile(r"reddit|(?<![a-z])red(?![a-z])|VWA-red", re.I)),

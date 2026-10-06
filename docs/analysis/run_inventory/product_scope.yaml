@@ -9,6 +9,9 @@
 #   ALL       all 11
 #   SIX_MODE  cells with all six modes on disk: all but shop_B0 (3 modes, no phantom arms — paid,
 #             never run) and cls_B5 (5 modes; its vision run is the broken coordinate contract, B-1997)
+#   XMODE     cross-mode-comparison scope: SIX_MODE minus shop_B1 — B-2002 (search box submits old+new
+#             query) hits text arms far more than vision (B1 P-text 112 episodes, vision 1, §531.9), so a
+#             cross-mode quantity on shopping measures the harness bug; = the 8 units the suite was built on
 #   PAIRED    cells holding ≥1 registered same-condition replicate (CLEAN_PAIRS)
 #   FULL_PAIRED  cells where all six arms carry a registered replicate (cls_B0; red_B0 and WA_B1 since 08-26 / 10-06)
 #   VWA6      the preregistered cls/red × B0/B1/B2 set
@@ -21,6 +24,7 @@
 sets:
   ALL: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, shop_B0, shop_B1, wared_B0, wared_B1]
   SIX_MODE: [cls_B0, cls_B1, cls_B2, red_B0, red_B1, red_B2, shop_B1, wared_B0, wared_B1]
+  XMODE: [cls_B0, cls_B1, cls_B2, red_B0, red_B1, red_B2, wared_B0, wared_B1]
   PAIRED: [cls_B0, cls_B1, cls_B5, red_B0, red_B1, wared_B1]
   FULL_PAIRED: [cls_B0, red_B0, wared_B1]
   VWA6: [cls_B0, cls_B1, cls_B2, red_B0, red_B1, red_B2]
@@ -30,6 +34,7 @@ sets:
 common_reasons:
   shop_B0: &shopB0 "3 modes only (no phantom arms), so any six-mode or cross-mode-oracle quantity is a different estimand"
   cls_B5: &clsB5 "5 modes; vision run is the broken coordinate contract (B-1997, §508), so cross-mode quantities would read a harness bug"
+  shop_B1: &shopB1 "B-2002 (text arms 112 episodes vs vision 1) and the catalog-state drift (§534) make a cross-mode comparison on shopping a measurement of the harness; included only in per-mode descriptive products"
   no_pair: &nopair "no registered replicate pair on this cell; a band-relative quantity cannot be formed"
   not_full_paired: &notfull "needs every one of the six arms replicated on the cell; elsewhere at most 3 of 6 are"
 
@@ -49,8 +54,8 @@ products:
   dispatch_path_audit: {kind: product, expected: ALL}
   representation_deployment_profile: {kind: product, expected: VWA6, why_out: {all_other: "reads failure_modes_per_cell `cells` (prereg) by design; extension cells are reported in failure_modes_per_cell itself"}}
   outcome_efficiency: {kind: product, expected: ALL}
-  representation_class_comparison: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  cross_mode_failure_signatures: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  representation_class_comparison: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  cross_mode_failure_signatures: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   page_change_corrected: {kind: product, expected: ALL}
   steps_summary_identity_audit: {kind: product, expected: ALL}
   energy_carbon_audit: {kind: product, expected: LOCAL, why_out: {other: "energy is metered only on locally served backbones; API cells have no energy column"}}
@@ -58,27 +63,27 @@ products:
   diag_digest_index: {kind: product, expected: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, wared_B0, wared_B1], why_out: {shop_B0: "no /diag digest exists for shopping (Tier-1 scan only, §531.9)", shop_B1: "same"}}
 
   # --- cross-mode oracle / routing / learnability over the six modes ---
-  routing_ceiling: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  router_objective_ordering: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  supply_value_coupling: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  router_label_supply_diagnosis: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  routing_ceiling: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  router_objective_ordering: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  supply_value_coupling: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  router_label_supply_diagnosis: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   router_triage_learnability: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling carries WA"}}
-  router_triage_learnability_with_wa: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  router_pooled_tier_learnability: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  router_undersampling_control: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  two_arm_action_learnability: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  router_triage_learnability_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  router_pooled_tier_learnability: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  router_undersampling_control: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  two_arm_action_learnability: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   retry_vs_switch_label_supply: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
-  routing_feature_diagnostics: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  visual_intent_routing: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  rule_routing_pareto: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  visual_difficulty_router: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  routing_feature_diagnostics: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  visual_intent_routing: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  rule_routing_pareto: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  visual_difficulty_router: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   multimetric_pareto: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
   multimetric_pareto_with_wa: {kind: product, expected: ALL}
   confidence_cascade: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
-  confidence_cascade_with_wa: {kind: product, expected: [cls_B0, cls_B1, cls_B2, red_B0, red_B1, red_B2, shop_B0, shop_B1, wared_B0, wared_B1], why_out: {cls_B5: *clsB5}}
-  abstention_learnability: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
-  abstention_site_transfer: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: "one site only for B5 — nothing to transfer to"}}
-  conditional_failure_attribution: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  confidence_cascade_with_wa: {kind: product, expected: XMODE, why_out: {cls_B5: *clsB5, shop_B0: "vision→som cascade is a cross-mode policy; shopping SoM/Vision carry the catalog-state drift (§534)", shop_B1: *shopB1}}
+  abstention_learnability: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  abstention_site_transfer: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: "one site only for B5 — nothing to transfer to", shop_B1: *shopB1}}
+  conditional_failure_attribution: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
 
   # --- band-relative: cells with a registered replicate ---
   noise_floor_inventory: {kind: product, expected: PAIRED, why_out: {other: *nopair}}
@@ -98,11 +103,11 @@ products:
 
   # --- siblings, frozen lines, snapshots ---
   axis1_microbehavior: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; _with_wa sibling extends"}}
-  axis1_microbehavior_with_wa: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  axis1_microbehavior_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   axis1_microbehavior_report: {kind: sibling, of: axis1_microbehavior}
   axis1_microbehavior_report_with_wa: {kind: sibling, of: axis1_microbehavior_with_wa}
   axis_effect_size: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; _with_wa sibling extends"}}
-  axis_effect_size_with_wa: {kind: product, expected: SIX_MODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5}}
+  axis_effect_size_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   axis_effect_size_report: {kind: sibling, of: axis_effect_size}
   axis_effect_size_report_with_wa: {kind: sibling, of: axis_effect_size_with_wa}
   mechanism_per_task: {kind: product, expected: ALL, why_out: {}}

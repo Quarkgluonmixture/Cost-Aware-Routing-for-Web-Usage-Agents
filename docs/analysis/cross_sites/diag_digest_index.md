@@ -1,6 +1,6 @@
 # /diag digest index — failure attribution coverage
 
-- **46 digests**: 42 with a readable three-way split · 3 that declare their own attribution incomplete · 1 pointer files (numbers live in the run-specific digests they forward to) · 0 this script still cannot parse
+- **58 digests**: 54 with a readable three-way split · 3 that declare their own attribution incomplete · 1 pointer files (numbers live in the run-specific digests they forward to) · 0 this script still cannot parse
 - built by `scripts/analysis/index_diag_digests.py`
 - **navigation layer only** — per-rule detail, Tier-2 deep dives and P-rule false-positive audits exist solely in the digests
 
@@ -24,6 +24,12 @@ Classes: **agent-limit** = model capability · **scaffold-bug** = our pipeline �
 | B0 | reddit | phantom_text | ✅ | — | 5 | 1 | 1 | scaffold, FP |
 | B0 | reddit | som | ⚠️ 自称不完整 | — | 41 | 0 | 4 | FP |
 | B0 | reddit | vision | ✅ | — | 40 | 0 | 2 | FP |
+| B0 | wa_reddit | dom | ✅ | — | 10 | 1 | 3 | — |
+| B0 | wa_reddit | phantom_prompt | ✅ | — | 6 | 2 | 1 | — |
+| B0 | wa_reddit | phantom_som | ✅ | — | 9 | 4 | 2 | — |
+| B0 | wa_reddit | phantom_text | ✅ | — | 8 | 1 | 0 | — |
+| B0 | wa_reddit | som | ✅ | — | 6 | 9 | 1 | — |
+| B0 | wa_reddit | vision | ✅ | — | 8 | 5 | 4 | — |
 | B1 | classifieds | dom | ✅ | — | 17 | 0 | 0 | — |
 | B1 | classifieds | phantom_prompt | ✅ | — | 22 | 0 | 1 | — |
 | B1 | classifieds | phantom_som | ✅ | — | 45 | 0 | 0 | — |
@@ -36,6 +42,12 @@ Classes: **agent-limit** = model capability · **scaffold-bug** = our pipeline �
 | B1 | reddit | phantom_text | ✅ | — | 5 | 0 | 2 | FP |
 | B1 | reddit | som | ✅ | — | 5 | 0 | 2 | FP |
 | B1 | reddit | vision | ✅ | — | 5 | 0 | 1 | FP |
+| B1 | wa_reddit | dom | ✅ | — | 6 | 0 | 1 | — |
+| B1 | wa_reddit | phantom_prompt | ✅ | — | 5 | 1 | 0 | scaffold |
+| B1 | wa_reddit | phantom_som | ✅ | — | 7 | 1 | 0 | scaffold |
+| B1 | wa_reddit | phantom_text | ✅ | — | 10 | 1 | 0 | scaffold |
+| B1 | wa_reddit | som | ✅ | — | 9 | 1 | 0 | scaffold |
+| B1 | wa_reddit | vision | ✅ | — | 13 | 0 | 0 | — |
 | B2 | classifieds | dom | ✅ | — | 100 | 0 | 0 | FP |
 | B2 | classifieds | phantom_prompt | ✅ | — | 6 | 0 | 3 | — |
 | B2 | classifieds | phantom_som | ✅ | — | 99 | 0 | 1 | — |
@@ -69,6 +81,12 @@ Either a non-zero structured count, or free text naming a benchmark-FP / scaffol
 - **B0_phantom_text_reddit** — scaffold-bug 1; benchmark-FP 1; free-text scaffold mention; free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B0_phantom_text_reddit_diag_digest.md`
 - **B0_som_reddit** — benchmark-FP 4; free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B0_som_reddit_diag_digest.md`
 - **B0_vision_reddit** — benchmark-FP 2; free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B0_vision_reddit_diag_digest.md`
+- **B0_dom_wa_reddit** — scaffold-bug 1; benchmark-FP 3 · `docs/analysis/wa_reddit/B0_dom_wa_reddit_diag_digest.md`
+- **B0_phantom_prompt_wa_reddit** — scaffold-bug 2; benchmark-FP 1 · `docs/analysis/wa_reddit/B0_phantom_prompt_wa_reddit_diag_digest.md`
+- **B0_phantom_som_wa_reddit** — scaffold-bug 4; benchmark-FP 2 · `docs/analysis/wa_reddit/B0_phantom_som_wa_reddit_diag_digest.md`
+- **B0_phantom_text_wa_reddit** — scaffold-bug 1 · `docs/analysis/wa_reddit/B0_phantom_text_wa_reddit_diag_digest.md`
+- **B0_som_wa_reddit** — scaffold-bug 9; benchmark-FP 1 · `docs/analysis/wa_reddit/B0_som_wa_reddit_diag_digest.md`
+- **B0_vision_wa_reddit** — scaffold-bug 5; benchmark-FP 4 · `docs/analysis/wa_reddit/B0_vision_wa_reddit_diag_digest.md`
 - **B1_phantom_prompt_classifieds** — benchmark-FP 1 · `docs/analysis/vwa_classifieds/B1_phantom_prompt_classifieds_diag_digest.md`
 - **B1_som_classifieds** — free-text scaffold mention; free-text benchmark-FP mention · `docs/analysis/vwa_classifieds/B1_som_classifieds_diag_digest.md`
 - **B1_vision_classifieds** — benchmark-FP 1 · `docs/analysis/vwa_classifieds/B1_vision_classifieds_diag_digest.md`
@@ -78,6 +96,11 @@ Either a non-zero structured count, or free text naming a benchmark-FP / scaffol
 - **B1_phantom_text_reddit** — benchmark-FP 2; free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B1_phantom_text_reddit_diag_digest.md`
 - **B1_som_reddit** — benchmark-FP 2; free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B1_som_reddit_diag_digest.md`
 - **B1_vision_reddit** — benchmark-FP 1; free-text benchmark-FP mention · `docs/analysis/vwa_reddit/B1_vision_reddit_diag_digest.md`
+- **B1_dom_wa_reddit** — benchmark-FP 1 · `docs/analysis/wa_reddit/B1_dom_wa_reddit_diag_digest.md`
+- **B1_phantom_prompt_wa_reddit** — scaffold-bug 1; free-text scaffold mention · `docs/analysis/wa_reddit/B1_phantom_prompt_wa_reddit_diag_digest.md`
+- **B1_phantom_som_wa_reddit** — scaffold-bug 1; free-text scaffold mention · `docs/analysis/wa_reddit/B1_phantom_som_wa_reddit_diag_digest.md`
+- **B1_phantom_text_wa_reddit** — scaffold-bug 1; free-text scaffold mention · `docs/analysis/wa_reddit/B1_phantom_text_wa_reddit_diag_digest.md`
+- **B1_som_wa_reddit** — scaffold-bug 1; free-text scaffold mention · `docs/analysis/wa_reddit/B1_som_wa_reddit_diag_digest.md`
 - **B2_dom_classifieds** — free-text benchmark-FP mention · `docs/analysis/vwa_classifieds/B2_dom_classifieds_diag_digest.md`
 - **B2_dom_classifieds_R17895** — scaffold-bug 2 · `docs/analysis/vwa_classifieds/B2_dom_classifieds_R17895_diag_digest.md`
 - **B2_phantom_prompt_classifieds** — benchmark-FP 3 · `docs/analysis/vwa_classifieds/B2_phantom_prompt_classifieds_diag_digest.md`
@@ -100,7 +123,7 @@ For these, a blank scaffold-bug / benchmark-FP cell means **not investigated**. 
 
 ## Corpus-level verdict
 
-**Not admissible.** Only 42/46 digests expose a machine-readable attribution table, so no statement of the form "the pipeline is clean across all conditions" can be made from this index. The per-condition rows above are the usable unit.
+**Not admissible.** Only 54/58 digests expose a machine-readable attribution table, so no statement of the form "the pipeline is clean across all conditions" can be made from this index. The per-condition rows above are the usable unit.
 
 ## Run-specific digests (replicates / ablation arms)
 

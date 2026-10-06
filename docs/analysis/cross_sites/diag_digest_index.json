@@ -1,6 +1,6 @@
 {
- "n_digests": 46,
- "n_parsed": 42,
+ "n_digests": 58,
+ "n_parsed": 54,
  "n_pointer": 1,
  "n_self_declared_incomplete": 3,
  "n_unparsed": 0,
@@ -500,6 +500,186 @@
    "headline": null
   },
   {
+   "condition": "B0_dom_wa_reddit",
+   "baseline": "B0",
+   "mode": "dom",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B0_dom_wa_reddit_diag_digest.md",
+   "n_lines": 112,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 10,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 3,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B0_phantom_prompt_wa_reddit",
+   "baseline": "B0",
+   "mode": "phantom_prompt",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B0_phantom_prompt_wa_reddit_diag_digest.md",
+   "n_lines": 110,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 6,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 2,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B0_phantom_som_wa_reddit",
+   "baseline": "B0",
+   "mode": "phantom_som",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B0_phantom_som_wa_reddit_diag_digest.md",
+   "n_lines": 115,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 9,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 2,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 4,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B0_phantom_text_wa_reddit",
+   "baseline": "B0",
+   "mode": "phantom_text",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B0_phantom_text_wa_reddit_diag_digest.md",
+   "n_lines": 113,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 8,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B0_som_wa_reddit",
+   "baseline": "B0",
+   "mode": "som",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B0_som_wa_reddit_diag_digest.md",
+   "n_lines": 115,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 6,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 9,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B0_vision_wa_reddit",
+   "baseline": "B0",
+   "mode": "vision",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B0_vision_wa_reddit_diag_digest.md",
+   "n_lines": 110,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 8,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 4,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 5,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
    "condition": "B1_dom_classifieds",
    "baseline": "B1",
    "mode": "dom",
@@ -860,6 +1040,186 @@
    "table_layout": "B/C",
    "incomplete_quote": null,
    "free_text_fp_signal": true,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B1_dom_wa_reddit",
+   "baseline": "B1",
+   "mode": "dom",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B1_dom_wa_reddit_diag_digest.md",
+   "n_lines": 151,
+   "n_failed": null,
+   "attribution": {
+    "benchmark-fp": {
+     "n": 1,
+     "pct": null
+    },
+    "agent-limit": {
+     "n": 6,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": false,
+   "headline": null
+  },
+  {
+   "condition": "B1_phantom_prompt_wa_reddit",
+   "baseline": "B1",
+   "mode": "phantom_prompt",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B1_phantom_prompt_wa_reddit_diag_digest.md",
+   "n_lines": 155,
+   "n_failed": null,
+   "attribution": {
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    },
+    "agent-limit": {
+     "n": 5,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": true,
+   "headline": null
+  },
+  {
+   "condition": "B1_phantom_som_wa_reddit",
+   "baseline": "B1",
+   "mode": "phantom_som",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B1_phantom_som_wa_reddit_diag_digest.md",
+   "n_lines": 156,
+   "n_failed": null,
+   "attribution": {
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    },
+    "agent-limit": {
+     "n": 7,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": true,
+   "headline": null
+  },
+  {
+   "condition": "B1_phantom_text_wa_reddit",
+   "baseline": "B1",
+   "mode": "phantom_text",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B1_phantom_text_wa_reddit_diag_digest.md",
+   "n_lines": 155,
+   "n_failed": null,
+   "attribution": {
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    },
+    "agent-limit": {
+     "n": 10,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": true,
+   "headline": null
+  },
+  {
+   "condition": "B1_som_wa_reddit",
+   "baseline": "B1",
+   "mode": "som",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B1_som_wa_reddit_diag_digest.md",
+   "n_lines": 149,
+   "n_failed": null,
+   "attribution": {
+    "scaffold-bug": {
+     "n": 1,
+     "pct": null
+    },
+    "agent-limit": {
+     "n": 9,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
+   "free_text_scaffold_signal": true,
+   "headline": null
+  },
+  {
+   "condition": "B1_vision_wa_reddit",
+   "baseline": "B1",
+   "mode": "vision",
+   "site": "wa_reddit",
+   "run": null,
+   "path": "docs/analysis/wa_reddit/B1_vision_wa_reddit_diag_digest.md",
+   "n_lines": 140,
+   "n_failed": null,
+   "attribution": {
+    "agent-limit": {
+     "n": 13,
+     "pct": null
+    },
+    "scaffold-bug": {
+     "n": 0,
+     "pct": null
+    },
+    "benchmark-fp": {
+     "n": 0,
+     "pct": null
+    }
+   },
+   "coverage": "parsed",
+   "table_layout": "B/C",
+   "incomplete_quote": null,
+   "free_text_fp_signal": false,
    "free_text_scaffold_signal": false,
    "headline": null
   },
