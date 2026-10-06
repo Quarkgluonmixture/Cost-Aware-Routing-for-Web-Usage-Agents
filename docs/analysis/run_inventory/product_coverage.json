@@ -1,0 +1,1003 @@
+[
+ {
+  "product": ".summary_number_allowlist",
+  "source": ".summary_number_allowlist.json",
+  "producer": "scripts/analysis/check_summary_numbers.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0"
+  ]
+ },
+ {
+  "product": "EVIDENCE_LAYER_SUMMARY",
+  "source": "EVIDENCE_LAYER_SUMMARY.md",
+  "producer": "scripts/analysis/check_summary_numbers.py",
+  "last_commit": "2026-08-04",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "abstention_learnability",
+  "source": "abstention_learnability.json",
+  "producer": "scripts/analysis/abstention_learnability.py",
+  "last_commit": "2026-08-13",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "abstention_site_transfer",
+  "source": "abstention_site_transfer.json",
+  "producer": "scripts/analysis/abstention_site_transfer.py",
+  "last_commit": "2026-08-16",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "amendment08_sensitivity",
+  "source": "amendment08_sensitivity.md",
+  "producer": "scripts/analysis/amendment08_sensitivity.py",
+  "last_commit": "2026-07-27",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "axis1_microbehavior",
+  "source": "axis1_microbehavior.json",
+  "producer": "scripts/analysis/axis1_microbehavior.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "axis1_microbehavior_report",
+  "source": "axis1_microbehavior_report.md",
+  "producer": "scripts/analysis/axis1_microbehavior.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "axis1_microbehavior_report_with_wa",
+  "source": "axis1_microbehavior_report_with_wa.md",
+  "producer": "scripts/analysis/axis1_microbehavior.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "axis1_microbehavior_with_wa",
+  "source": "axis1_microbehavior_with_wa.json",
+  "producer": "scripts/analysis/axis1_microbehavior.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "axis_effect_size",
+  "source": "axis_effect_size.json",
+  "producer": "scripts/analysis/axis1_microbehavior.py; scripts/analysis/axis_effect_size.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "axis_effect_size_report",
+  "source": "axis_effect_size_report.md",
+  "producer": "scripts/analysis/axis_effect_size.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "axis_effect_size_report_with_wa",
+  "source": "axis_effect_size_report_with_wa.md",
+  "producer": "?",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "axis_effect_size_with_wa",
+  "source": "axis_effect_size_with_wa.json",
+  "producer": "scripts/analysis/axis1_microbehavior.py",
+  "last_commit": "2026-08-04",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "conditional_failure_attribution",
+  "source": "conditional_failure_attribution.json",
+  "producer": "scripts/analysis/aggregate_conditional_failure_attribution.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "confidence_cascade",
+  "source": "confidence_cascade.json",
+  "producer": "scripts/analysis/aggregate_confidence_cascade.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "confidence_cascade_with_wa",
+  "source": "confidence_cascade_with_wa.json",
+  "producer": "scripts/analysis/aggregate_confidence_cascade.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "cost_per_mode",
+  "source": "cost_per_mode.json",
+  "producer": "scripts/analysis/aggregate_cost_electricity.py",
+  "last_commit": "2026-07-27",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "cross_mode_failure_signatures",
+  "source": "cross_mode_failure_signatures.json",
+  "producer": "scripts/analysis/aggregate_cross_mode_failure_signatures.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "cross_mode_failure_taxonomy_B0_classifieds",
+  "source": "cross_mode_failure_taxonomy_B0_classifieds.md",
+  "producer": "?",
+  "last_commit": "2026-05-25",
+  "cells": [
+   "cls_B0"
+  ]
+ },
+ {
+  "product": "diag_digest_index",
+  "source": "diag_digest_index.json",
+  "producer": "scripts/analysis/index_diag_digests.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "dispatch_path_audit",
+  "source": "dispatch_path_audit.json",
+  "producer": "scripts/analysis/dispatch_path_audit.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "early_abort_B0_classifieds",
+  "source": "early_abort_B0_classifieds.json",
+  "producer": "scripts/analysis/early_abort_learnability.py",
+  "last_commit": "2026-08-12",
+  "cells": [
+   "cls_B0"
+  ]
+ },
+ {
+  "product": "energy_carbon_audit",
+  "source": "energy_carbon_audit.json",
+  "producer": "scripts/analysis/energy_carbon_audit.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B1",
+   "cls_B2",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "evaluator_score_granularity",
+  "source": "evaluator_score_granularity.json",
+  "producer": "scripts/analysis/aggregate_evaluator_score_granularity.py; scripts/maintenance/crossai_frame_direct.py",
+  "last_commit": "2026-07-28",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "failure_modes_per_cell",
+  "source": "failure_modes_per_cell.json",
+  "producer": "scripts/analysis/aggregate_failure_modes.py; scripts/analysis/representation_deployment_profile.py",
+  "last_commit": "2026-10-07",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1"
+  ]
+ },
+ {
+  "product": "field_consumption_audit",
+  "source": "field_consumption_audit.json",
+  "producer": "?",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "red_B0"
+  ]
+ },
+ {
+  "product": "fusion_premium",
+  "source": "fusion_premium.json",
+  "producer": "scripts/analysis/aggregate_fusion_premium.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "label_instability",
+  "source": "label_instability.json",
+  "producer": "scripts/analysis/aggregate_label_instability.py",
+  "last_commit": "2026-08-26",
+  "cells": [
+   "cls_B0"
+  ]
+ },
+ {
+  "product": "latency_decomposition",
+  "source": "latency_decomposition.json",
+  "producer": "scripts/analysis/latency_decomposition.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "leakage_sensitivity",
+  "source": "leakage_sensitivity.json",
+  "producer": "scripts/analysis/leakage_sensitivity.py",
+  "last_commit": "2026-08-16",
+  "cells": [
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "local_cost_estimand_audit",
+  "source": "local_cost_estimand_audit.json",
+  "producer": "scripts/analysis/local_cost_estimand_audit.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B1",
+   "cls_B2",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "mechanism_evidence",
+  "source": "mechanism_evidence.json",
+  "producer": "scripts/analysis/aggregate_mechanism_evidence.py",
+  "last_commit": "2026-08-04",
+  "cells": []
+ },
+ {
+  "product": "mechanism_per_task",
+  "source": "mechanism_per_task.json",
+  "producer": "scripts/analysis/mechanism_per_task.py",
+  "last_commit": "2026-09-18",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "mechanism_per_task_report",
+  "source": "mechanism_per_task_report.md",
+  "producer": "scripts/analysis/mechanism_per_task.py",
+  "last_commit": "2026-09-18",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B1",
+   "wared_B0"
+  ]
+ },
+ {
+  "product": "multimetric_pareto",
+  "source": "multimetric_pareto.json",
+  "producer": "scripts/analysis/aggregate_multimetric_pareto.py (single-sources per_mode_four_dimension_profile.md)",
+  "last_commit": "2026-08-02",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "multimetric_pareto_with_wa",
+  "source": "multimetric_pareto_with_wa.json",
+  "producer": "scripts/analysis/aggregate_multimetric_pareto.py (single-sources per_mode_four_dimension_profile.md)",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "noise_floor_inventory",
+  "source": "noise_floor_inventory.json",
+  "producer": "scripts/analysis/aggregate_noise_floor_inventory.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "offsite_navigation_audit",
+  "source": "offsite_navigation_audit.json",
+  "producer": "scripts/analysis/offsite_navigation_audit.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "one_step_lookahead_2026-09-09",
+  "source": "one_step_lookahead_2026-09-09.md",
+  "producer": "results/router_llm_pilot_20260909/scripts/{extract_step0.py,lookahead_eval.py,bandit_replay.py} (results/ is gitignored; raw outputs in results/router_llm_pilot_20260909/lookahead/)",
+  "last_commit": "2026-09-09",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0",
+   "shop_B1"
+  ]
+ },
+ {
+  "product": "outcome_efficiency",
+  "source": "outcome_efficiency.json",
+  "producer": "scripts/analysis/aggregate_outcome_efficiency.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "page_change_corrected",
+  "source": "page_change_corrected.json",
+  "producer": "scripts/analysis/page_change_corrected_metrics.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "per_mode_four_dimension_profile",
+  "source": "per_mode_four_dimension_profile.json",
+  "producer": "scripts/analysis/aggregate_confidence_cascade.py; scripts/analysis/aggregate_multimetric_pareto.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "per_mode_four_dimension_profile_with_wa",
+  "source": "per_mode_four_dimension_profile_with_wa.json",
+  "producer": "?",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "persistent_state_leakage_audit",
+  "source": "persistent_state_leakage_audit.json",
+  "producer": "scripts/analysis/audit_persistent_state_leakage.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "phase0b_noise_floor",
+  "source": "phase0b_noise_floor.md",
+  "producer": "scripts/analysis/aggregate_noise_floor_inventory.py",
+  "last_commit": "2026-08-01",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "shop_B0"
+  ]
+ },
+ {
+  "product": "power_analysis",
+  "source": "power_analysis.md",
+  "producer": "scripts/analysis/aggregate_phantom_lift.py; scripts/analysis/power_analysis.py",
+  "last_commit": "2026-05-18",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "reddit_sidebar_leakage_audit",
+  "source": "reddit_sidebar_leakage_audit.json",
+  "producer": "scripts/analysis/aggregate_routing_ceiling.py; scripts/analysis/audit_reddit_sidebar_leakage.py",
+  "last_commit": "2026-07-29",
+  "cells": [
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "reddit_sidebar_leakage_audit_with_wa",
+  "source": "reddit_sidebar_leakage_audit_with_wa.json",
+  "producer": "scripts/analysis/aggregate_routing_ceiling.py; scripts/analysis/leakage_sensitivity.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "replicate_metric_noise",
+  "source": "replicate_metric_noise.json",
+  "producer": "scripts/analysis/replicate_metric_noise.py",
+  "last_commit": "2026-08-22",
+  "cells": [
+   "cls_B0"
+  ]
+ },
+ {
+  "product": "representation_class_comparison",
+  "source": "representation_class_comparison.json",
+  "producer": "scripts/analysis/representation_class_comparison.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "representation_deployment_profile",
+  "source": "representation_deployment_profile.json",
+  "producer": "scripts/analysis/representation_deployment_profile.py",
+  "last_commit": "2026-10-07",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "rerun_flip_failure_anatomy",
+  "source": "rerun_flip_failure_anatomy.json",
+  "producer": "scripts/analysis/rerun_flip_failure_anatomy.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "rerun_union_extrapolation",
+  "source": "rerun_union_extrapolation.json",
+  "producer": "scripts/analysis/rerun_union_extrapolation.py",
+  "last_commit": "2026-08-22",
+  "cells": [
+   "cls_B0"
+  ]
+ },
+ {
+  "product": "retry_vs_switch_label_supply",
+  "source": "retry_vs_switch_label_supply.json",
+  "producer": "scripts/analysis/retry_vs_switch_label_supply.py",
+  "last_commit": "2026-08-12",
+  "cells": []
+ },
+ {
+  "product": "router_covariate_baseline_2026-07-05",
+  "source": "router_covariate_baseline_2026-07-05.md",
+  "producer": "?",
+  "last_commit": "2026-07-05",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "router_label_supply_diagnosis",
+  "source": "router_label_supply_diagnosis.md",
+  "producer": "scripts/analysis/router_label_supply_diagnosis.py; scripts/analysis/router_undersampling_control.py",
+  "last_commit": "2026-07-28",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "router_objective_ordering",
+  "source": "router_objective_ordering.json",
+  "producer": "scripts/analysis/aggregate_routing_ceiling.py; scripts/analysis/rerun_union_extrapolation.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "router_pooled_tier_learnability",
+  "source": "router_pooled_tier_learnability.json",
+  "producer": "scripts/analysis/router_pooled_tier_learnability.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "router_pooling_by_family",
+  "source": "router_pooling_by_family.json",
+  "producer": "?",
+  "last_commit": "2026-07-28",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "router_triage_learnability",
+  "source": "router_triage_learnability.json",
+  "producer": "scripts/analysis/router_triage_learnability.py",
+  "last_commit": "2026-08-10",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "router_triage_learnability_with_wa",
+  "source": "router_triage_learnability_with_wa.json",
+  "producer": "?",
+  "last_commit": "2026-08-10",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "router_undersampling_control",
+  "source": "router_undersampling_control.json",
+  "producer": "scripts/analysis/router_undersampling_control.py",
+  "last_commit": "2026-08-11",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "routing_ceiling",
+  "source": "routing_ceiling.json",
+  "producer": "scripts/analysis/aggregate_routing_ceiling.py; scripts/analysis/aggregate_supply_value_coupling.py",
+  "last_commit": "2026-08-04",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "routing_feature_diagnostics",
+  "source": "routing_feature_diagnostics.json",
+  "producer": "scripts/analysis/aggregate_routing_feature_diagnostics.py",
+  "last_commit": "2026-08-02",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "rule_routing_pareto",
+  "source": "rule_routing_pareto.json",
+  "producer": "scripts/analysis/rule_routing_pareto.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "serving_mode_floor",
+  "source": "serving_mode_floor.json",
+  "producer": "scripts/analysis/serving_mode_floor.py",
+  "last_commit": "2026-10-06",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B5",
+   "red_B0",
+   "red_B1",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "steps_summary_identity_audit",
+  "source": "steps_summary_identity_audit.json",
+  "producer": "scripts/analysis/axis_effect_size.py; scripts/analysis/per_mode_four_dimension_profile.py",
+  "last_commit": "2026-07-29",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "supply_value_coupling",
+  "source": "supply_value_coupling.json",
+  "producer": "scripts/analysis/aggregate_supply_value_coupling.py",
+  "last_commit": "2026-08-05",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "two_arm_action_learnability",
+  "source": "two_arm_action_learnability.md",
+  "producer": "scripts/analysis/two_arm_action_learnability.py",
+  "last_commit": "2026-08-30",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ },
+ {
+  "product": "unique_solve_envelope_cross_cell",
+  "source": "unique_solve_envelope_cross_cell.md",
+  "producer": "scripts/analysis/unique_solve_noise_envelope.py --compare",
+  "last_commit": "2026-09-13",
+  "cells": [
+   "cls_B0",
+   "red_B0"
+  ]
+ },
+ {
+  "product": "visual_difficulty_router",
+  "source": "visual_difficulty_router.json",
+  "producer": "scripts/analysis/aggregate_visual_difficulty_router.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2"
+  ]
+ },
+ {
+  "product": "visual_intent_routing",
+  "source": "visual_intent_routing.json",
+  "producer": "scripts/analysis/visual_intent_routing.py",
+  "last_commit": "2026-08-03",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ]
+ }
+]
