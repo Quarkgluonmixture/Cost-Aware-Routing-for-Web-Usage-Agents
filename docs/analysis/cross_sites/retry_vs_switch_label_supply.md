@@ -16,14 +16,20 @@ Regenerate: `.venv/bin/python3 scripts/analysis/retry_vs_switch_label_supply.py 
 
 | base | base SR | +1 rerun | +1 distinct representation | switch / retry |
 |---|---:|---:|---:|---:|
-| `dom.b` | 15.18% | **7.14pp** | 15.18–17.41pp | 2.12–2.44× |
-| `dom.a` | 17.41% | **4.91pp** | 15.18–16.96pp | 3.09–3.45× |
-| `vision.b` | 24.11% | **7.59pp** | 6.25–11.16pp | 0.82–1.47× |
-| `vision.a` | 25.00% | **6.70pp** | 7.14–10.71pp | 1.07–1.60× |
-| `som.a` | 27.23% | **7.59pp** | 4.91–7.14pp | 0.65–0.94× |
-| `som.b` | 29.46% | **5.36pp** | 3.12–6.25pp | 0.58–1.17× |
+| `ptext.b` | 14.29% | **5.80pp** | 5.36–18.75pp | 0.92–3.23× |
+| `psom.b` | 14.29% | **6.70pp** | 5.36–21.88pp | 0.80–3.27× |
+| `dom.b` | 15.18% | **7.14pp** | 4.46–17.41pp | 0.62–2.44× |
+| `ptext.a` | 15.62% | **4.46pp** | 4.02–19.20pp | 0.90–4.30× |
+| `psom.a` | 15.62% | **5.36pp** | 4.02–17.86pp | 0.75–3.33× |
+| `pprompt.b` | 16.96% | **7.59pp** | 4.02–17.41pp | 0.53–2.29× |
+| `dom.a` | 17.41% | **4.91pp** | 3.12–16.96pp | 0.64–3.45× |
+| `pprompt.a` | 19.64% | **4.91pp** | 3.12–16.52pp | 0.64–3.36× |
+| `vision.b` | 24.11% | **7.59pp** | 5.80–11.16pp | 0.76–1.47× |
+| `vision.a` | 25.00% | **6.70pp** | 6.25–11.16pp | 0.93–1.67× |
+| `som.a` | 27.23% | **7.59pp** | 4.46–7.14pp | 0.59–0.94× |
+| `som.b` | 29.46% | **5.36pp** | 3.12–6.70pp | 0.58–1.25× |
 
-Rerun gain moves over 4.91–7.59pp with no trend in the base, while switch gain moves over 3.12–17.41pp and tracks it. That asymmetry has a reading: what a repetition buys is a property of the serving path and the environment, roughly independent of which representation is being repeated, whereas what a switch buys is a function of what the current representation is missing.
+Rerun gain moves over 4.46–7.59pp with no trend in the base, while switch gain moves over 3.12–21.88pp and tracks it. That asymmetry has a reading: what a repetition buys is a property of the serving path and the environment, roughly independent of which representation is being repeated, whereas what a switch buys is a function of what the current representation is missing.
 
 ⚠️ Both generations of each switch target are reported because pairing a base with the same-generation arm or the other one is a free choice; quoting one would hide the drift sensitivity that choice carries.
 
@@ -33,16 +39,22 @@ The which-mode label needs a task **some mode solved**. A retry-or-switch label 
 
 | base | decision set | retry only | switch only | both | neither | contested | % of cell |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `dom.a` | 185 (82.6%) | 1 | 50 | 10 | 124 | 51 | 22.77% |
-| `dom.b` | 190 (84.8%) | 6 | 50 | 10 | 124 | 56 | 25.00% |
-| `som.a` | 163 (72.8%) | 6 | 22 | 11 | 124 | 28 | 12.50% |
-| `som.b` | 158 (70.5%) | 4 | 22 | 8 | 124 | 26 | 11.61% |
-| `vision.a` | 168 (75.0%) | 3 | 29 | 12 | 124 | 32 | 14.29% |
-| `vision.b` | 170 (75.9%) | 4 | 29 | 13 | 124 | 33 | 14.73% |
+| `dom.a` | 185 (82.6%) | 0 | 58 | 11 | 116 | 58 | 25.89% |
+| `dom.b` | 190 (84.8%) | 3 | 58 | 13 | 116 | 61 | 27.23% |
+| `som.a` | 163 (72.8%) | 4 | 30 | 13 | 116 | 34 | 15.18% |
+| `som.b` | 158 (70.5%) | 2 | 30 | 10 | 116 | 32 | 14.29% |
+| `vision.a` | 168 (75.0%) | 0 | 37 | 15 | 116 | 37 | 16.52% |
+| `vision.b` | 170 (75.9%) | 4 | 37 | 13 | 116 | 41 | 18.30% |
+| `ptext.a` | 189 (84.4%) | 1 | 63 | 9 | 116 | 64 | 28.57% |
+| `ptext.b` | 192 (85.7%) | 0 | 63 | 13 | 116 | 63 | 28.12% |
+| `pprompt.a` | 180 (80.4%) | 1 | 53 | 10 | 116 | 54 | 24.11% |
+| `pprompt.b` | 186 (83.0%) | 2 | 53 | 15 | 116 | 55 | 24.55% |
+| `psom.a` | 189 (84.4%) | 2 | 61 | 10 | 116 | 63 | 28.12% |
+| `psom.b` | 192 (85.7%) | 0 | 61 | 15 | 116 | 61 | 27.23% |
 
-`neither` is [124] out of n=224 on every base: the same tasks, no matter which arm starts. The decision set is large because failures are abundant, but most of it carries no preference to learn — both actions fail together.
+`neither` is [116] out of n=224 on every base: the same tasks, no matter which arm starts. The decision set is large because failures are abundant, but most of it carries no preference to learn — both actions fail together.
 
-Against the same-arm-count which-mode contested set (**24.11%** of the cell, recomputed on these three arms), retry-or-switch offers **25.00%** — **1.04×**. Redefining the label does not escape the ceiling. What bounds both is the number of tasks the agent can solve at all, which is the same circularity the draft's §7 names, reached from a second direction.
+Against the same-arm-count which-mode contested set (**31.70%** of the cell, recomputed on these three arms), retry-or-switch offers **28.57%** — **0.90×**. Redefining the label does not escape the ceiling. What bounds both is the number of tasks the agent can solve at all, which is the same circularity the draft's §7 names, reached from a second direction.
 
 ## 3. A fixed budget of six arms, spent two ways
 

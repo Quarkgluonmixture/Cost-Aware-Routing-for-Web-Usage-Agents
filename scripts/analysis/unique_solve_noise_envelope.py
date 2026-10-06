@@ -49,8 +49,8 @@ from analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E4
 
 
 @_lru_cache(maxsize=8)
-def _scored_for(site):
-    ids, sha = expected_scored_ids(site)
+def _scored_for(site, bench="visualwebarena"):
+    ids, sha = expected_scored_ids(site, bench)
     return ids, sha
 
 # --- cell registry -------------------------------------------------------------
@@ -60,20 +60,6 @@ def _scored_for(site):
 CELLS = {
  "cls_b0": {
   "site": "classifieds",
-  "runs": {
-   "DOM":      (f"{ROOT}/B0_dom_classifieds_20260525_194618_553890342_530647_R21557",
-                f"{REP}/B0_dom_classifieds_R31194_clean_replicate"),
-   "SoM":      (f"{ROOT}/B0_som_classifieds_20260526_041601_863239369_602235_R5313",
-                f"{ROOT}/B0_som_classifieds_20260803_084743_413015398_3677519_R30696"),
-   "Vision":   (f"{ROOT}/B0_vision_classifieds_20260526_141916_610351680_689390_R32024",
-                f"{REP}/B0_vision_classifieds_R24792_clean_replicate"),
-   "P-text":   (f"{ROOT}/B0_phantom_text_classifieds_20260526_233303_901232655_764510_R31183",
-                f"{ROOT}/B0_phantom_text_classifieds_20260817_092244_763693821_1962797_R20043"),
-   "P-SoM":    (f"{ROOT}/B0_phantom_som_classifieds_20260527_191300_844420226_914570_R32031",
-                f"{ROOT}/B0_phantom_som_classifieds_20260818_040525_430521618_2113605_R13257"),
-   "P-prompt": (f"{ROOT}/B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655",
-                f"{ROOT}/B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207"),
-  },
   "clean": ["DOM", "Vision"],
   "prov": {"DOM":"archive 05-23 (drift-free)","Vision":"archive 05-25 (drift-free)",
            "SoM":"rerun 08-03 (crosses 24 commits)","P-text":"rerun 08-17 (crosses 24)",
@@ -92,20 +78,6 @@ CELLS = {
  # six pairs and every flip classified model_nondeterm.
  "red_b0": {
   "site": "reddit",
-  "runs": {
-   "DOM":      (f"{ROOT}/B0_dom_reddit_20260625_154833_928747130_2827521_R11344",
-                f"{ROOT}/B0_dom_reddit_20260904_010441_409707415_681024_R9525"),
-   "SoM":      (f"{ROOT}/B0_som_reddit_20260627_035453_162107997_3024022_R20936",
-                f"{ROOT}/B0_som_reddit_20260902_194848_784669986_474818_R11761"),
-   "Vision":   (f"{ROOT}/B0_vision_reddit_20260628_094255_184327569_3222015_R17559",
-                f"{ROOT}/B0_vision_reddit_20260905_081817_462107405_893625_R17511"),
-   "P-text":   (f"{ROOT}/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139",
-                f"{ROOT}/B0_phantom_text_reddit_20260821_165404_673791669_2663733_R2359"),
-   "P-SoM":    (f"{ROOT}/B0_phantom_som_reddit_20260701_223127_661875492_3649813_R28173",
-                f"{ROOT}/B0_phantom_som_reddit_20260824_152956_638287802_3173740_R26550"),
-   "P-prompt": (f"{ROOT}/B0_phantom_prompt_reddit_20260709",
-                f"{ROOT}/B0_phantom_prompt_reddit_20260823_075453_423269667_2958720_R11669"),
-  },
   "clean": None,
   "prov": {"DOM":"rerun 09-04 (canonical 06-25, ~2.3 mo)",
            "Vision":"rerun 09-05 (canonical 06-28, ~2.3 mo)",
@@ -116,12 +88,38 @@ CELLS = {
  },
 }
 
-def _load_ext(run_dir, site):
+# Third cell, 2026-10-07 (实验笔记 §537): the 09-15 local chain replicated all six WA·B1 arms
+# (registered 10-06, §529.4). No clean subset: every replicate is 2026-09, every canonical 2026-07.
+CELLS["wared_b1"] = {
+  "site": "reddit", "bench": "webarena",
+  "clean": None,
+  "prov": {m: "rerun 09-15 chain (canonical 07-27..08-0x, ~1.6 mo)"
+           for m in ("DOM", "SoM", "Vision", "P-text", "P-SoM", "P-prompt")},
+}
+
+# Run directories are derived from CLEAN_PAIRS (lib/replicate_pairs), the one registry of
+# deliberate replicates. Until 2026-10-07 this file kept its own copy of the twelve paths
+# per cell (checked equal to CLEAN_PAIRS for cls_b0 / red_b0 before the copy was removed).
+from analysis.lib.replicate_pairs import cell_pairs as _cell_pairs, REPO as _REPO  # noqa: E402
+_DISP = {"dom": "DOM", "som": "SoM", "vision": "Vision",
+         "ptext": "P-text", "pprompt": "P-prompt", "psom": "P-SoM"}
+_KEY = {"cls_b0": ("B0", "cls"), "red_b0": ("B0", "red"), "wared_b1": ("B1", "wared")}
+for _name, _cfg in CELLS.items():
+    _pairs = _cell_pairs(*_KEY[_name])
+    if set(_pairs) != set(_DISP):
+        raise SystemExit(f"{_name}: CLEAN_PAIRS holds {sorted(_pairs)}, the envelope needs all six arms")
+    _cfg["runs"] = {_DISP[m]: (str(a.parent.relative_to(_REPO).as_posix()),
+                               str(b.parent.relative_to(_REPO).as_posix()))
+                    for m, (a, b) in _pairs.items()}
+    _cfg.setdefault("bench", "visualwebarena")
+
+
+def _load_ext(run_dir, site, bench="visualwebarena"):
     """task_id -> bool success over the CANONICAL SCORED universe of `site`.
 
     Same as load(); defined early because --compare runs before the module-level
     pipeline below.  `sr_excluded` alone is not enough — see the header note."""
-    scored, _ = _scored_for(site)
+    scored, _ = _scored_for(site, bench)
     out = {}
     for f in glob.glob(os.path.join(run_dir, "*", "episodes", "*_summary_v2.json")):
         try: d = json.load(open(f))
@@ -158,7 +156,8 @@ if _args.compare:
     for _name, _cfg in CELLS.items():
         _S = {m: {"A": None, "B": None} for m in _cfg["runs"]}
         for m, (a, b) in _cfg["runs"].items():
-            _S[m]["A"], _S[m]["B"] = _load_ext(a, _cfg["site"]), _load_ext(b, _cfg["site"])
+            _S[m]["A"], _S[m]["B"] = (_load_ext(a, _cfg["site"], _cfg["bench"]),
+                                      _load_ext(b, _cfg["site"], _cfg["bench"]))
         _modes = list(_cfg["runs"])
         _common = None
         for m in _modes:
@@ -174,7 +173,7 @@ if _args.compare:
                         if _S[m][asg[m]][t] and not any(_S[o][asg[o]][t]
                                                         for o in _modes if o != m))
                 env[m].append(c)
-        rows[_name] = {"site": _cfg["site"], "n": len(_common),
+        rows[_name] = {"site": ("WA-" if _cfg["bench"] == "webarena" else "") + _cfg["site"], "n": len(_common),
                        "min": {m: min(env[m]) for m in _modes},
                        "max": {m: max(env[m]) for m in _modes}}
 
@@ -228,10 +227,14 @@ if _args.compare:
         else:
             out += [f"- **{c}**: **inverted** ({gap}). A text arm has a higher "
                     f"assignment-robust unique contribution than the weakest visual arm."]
-    out += ["", "⚠️ **Scope.** Both cells are B0. A cell needs all six arms replicated to "
-            "appear here, and only B0 has that on two sites. Nothing here licenses a "
-            "statement about B1 or B2, whose floors are a different size entirely "
-            "(see `serving_mode_floor.md`).", ""]
+    # Scope line generated from the cells actually present (2026-10-07, §537): it used to say
+    # "Both cells are B0", which stopped being true when WA·B1 gained all six replicates.
+    _bb = sorted({_KEY[c][0] for c in cells})
+    out += ["", f"⚠️ **Scope.** {len(cells)} cells ({', '.join(cells)}; backbone "
+            f"{', '.join(_bb)}). A cell needs all six arms replicated to appear here. The B1 "
+            "cell is a different backbone on a different benchmark (WebArena) and is locally "
+            "served; read it beside the B0 cells, not pooled with them. Nothing here licenses "
+            "a statement about B2.", ""]
     dest = "docs/analysis/cross_sites/unique_solve_envelope_cross_cell.md"
     io_open = open(dest, "w")
     io_open.write("\n".join(out))
@@ -243,11 +246,11 @@ if _args.compare:
 CELL = CELLS[_args.cell]
 RUNS = CELL["runs"]
 MODES = list(RUNS)
-print(f"### cell = {_args.cell}  (site={CELL['site']}, backbone=B0)\n")
+print(f"### cell = {_args.cell}  (site={CELL['site']}, backbone={_KEY[_args.cell][0]})\n")
 
 def load(run_dir):
     """task_id -> bool success over the cell site's CANONICAL SCORED universe."""
-    return _load_ext(run_dir, CELL["site"])
+    return _load_ext(run_dir, CELL["site"], CELL["bench"])
 
 S = {m: {"A": load(a), "B": load(b)} for m, (a, b) in RUNS.items()}
 

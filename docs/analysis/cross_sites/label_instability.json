@@ -167,5 +167,349 @@
     "ptext",
     "som",
     "vision"
-  ]
+  ],
+  "by_cell": {
+    "red_B0": {
+      "schema": "2026-08-02-label-instability-v1",
+      "post_hoc_exploratory": true,
+      "cell": "red_B0",
+      "n": 203,
+      "n_flipped": 54,
+      "replicated_arms": [
+        "B0.red.ptext",
+        "B0.red.pprompt",
+        "B0.red.psom",
+        "B0.red.som",
+        "B0.red.dom",
+        "B0.red.vision"
+      ],
+      "strata": {
+        "which-mode label rows (any mode solved)": {
+          "n_tasks": 53,
+          "share_of_cell": 26.108374384236452,
+          "n_flipped": 44,
+          "flip_rate_pct": 83.01886792452831,
+          "share_of_all_flips": 81.48148148148148,
+          "enrichment_vs_complement": 10.654088050314465
+        },
+        "\u2026of those, the arms DISAGREE (the choice matters)": {
+          "n_tasks": 49,
+          "share_of_cell": 24.137931034482758,
+          "n_flipped": 42,
+          "flip_rate_pct": 85.71428571428571,
+          "share_of_all_flips": 77.77777777777777,
+          "enrichment_vs_complement": 11.0
+        },
+        "three-way channel decision is contested": {
+          "n_tasks": 47,
+          "share_of_cell": 23.15270935960591,
+          "n_flipped": 40,
+          "flip_rate_pct": 85.1063829787234,
+          "share_of_all_flips": 74.07407407407408,
+          "enrichment_vs_complement": 10.921985815602838
+        },
+        "exactly one mode solved it (label unambiguous)": {
+          "n_tasks": 17,
+          "share_of_cell": 8.374384236453203,
+          "n_flipped": 15,
+          "flip_rate_pct": 88.23529411764706,
+          "share_of_all_flips": 27.77777777777778,
+          "enrichment_vs_complement": 11.323529411764707
+        },
+        "COMPLEMENT: no mode solved, or all did": {
+          "n_tasks": 154,
+          "share_of_cell": 75.86206896551724,
+          "n_flipped": 12,
+          "flip_rate_pct": 7.792207792207792,
+          "share_of_all_flips": 22.22222222222222,
+          "enrichment_vs_complement": 1.0
+        },
+        "whole cell": {
+          "n_tasks": 203,
+          "share_of_cell": 100.0,
+          "n_flipped": 54,
+          "flip_rate_pct": 26.60098522167488,
+          "share_of_all_flips": 100.0,
+          "enrichment_vs_complement": 3.4137931034482762
+        }
+      },
+      "difficulty_null": {
+        "proxy": "k/6 where k = how many of ['dom', 'som', 'vision', 'ptext', 'pprompt', 'psom'] solved the task",
+        "arms_in_proxy": [
+          "dom",
+          "som",
+          "vision",
+          "ptext",
+          "pprompt",
+          "psom"
+        ],
+        "circular": true,
+        "contested": {
+          "n": 49,
+          "observed_flip_rate": 0.8571428571428571,
+          "binomial_floor": 0.3650793650793651,
+          "observed_over_floor": 2.3478260869565215
+        },
+        "complement": {
+          "n": 154,
+          "observed_flip_rate": 0.07792207792207792,
+          "binomial_floor": 0.0
+        },
+        "arithmetic_enrichment": "infinite (complement floor is exactly 0)",
+        "per_k": [
+          {
+            "k": 0,
+            "n": 150,
+            "n_flipped": 10,
+            "observed": 0.06666666666666667,
+            "binomial_floor": 0.0
+          },
+          {
+            "k": 1,
+            "n": 17,
+            "n_flipped": 15,
+            "observed": 0.8823529411764706,
+            "binomial_floor": 0.2777777777777778
+          },
+          {
+            "k": 2,
+            "n": 12,
+            "n_flipped": 11,
+            "observed": 0.9166666666666666,
+            "binomial_floor": 0.4444444444444445
+          },
+          {
+            "k": 3,
+            "n": 5,
+            "n_flipped": 5,
+            "observed": 1.0,
+            "binomial_floor": 0.5
+          },
+          {
+            "k": 4,
+            "n": 7,
+            "n_flipped": 7,
+            "observed": 1.0,
+            "binomial_floor": 0.4444444444444445
+          },
+          {
+            "k": 5,
+            "n": 8,
+            "n_flipped": 4,
+            "observed": 0.5,
+            "binomial_floor": 0.27777777777777773
+          },
+          {
+            "k": 6,
+            "n": 4,
+            "n_flipped": 2,
+            "observed": 0.5,
+            "binomial_floor": 0.0
+          }
+        ]
+      },
+      "difficulty_null_leave_replicated_out": null,
+      "leave_replicated_out_available": false,
+      "leave_replicated_out_unavailable": {
+        "reason": "every mode in MODES now carries a replicate; no un-replicated arm remains to build an independent difficulty proxy from",
+        "replicated_modes": [
+          "dom",
+          "pprompt",
+          "psom",
+          "ptext",
+          "som",
+          "vision"
+        ],
+        "modes": [
+          "dom",
+          "som",
+          "vision",
+          "ptext",
+          "pprompt",
+          "psom"
+        ],
+        "consequence": "the six-arm enrichment figure has lost its anti-circularity control and must not be quoted as a headline on its own",
+        "candidate_fix": "leave-one-out proxy (five other arms per arm) \u2014 changes the estimand, needs an explicit decision"
+      },
+      "replicated_arms_short": [
+        "dom",
+        "pprompt",
+        "psom",
+        "ptext",
+        "som",
+        "vision"
+      ]
+    },
+    "wared_B1": {
+      "schema": "2026-08-02-label-instability-v1",
+      "post_hoc_exploratory": true,
+      "cell": "wared_B1",
+      "n": 104,
+      "n_flipped": 25,
+      "replicated_arms": [
+        "B1.wared.dom",
+        "B1.wared.pprompt",
+        "B1.wared.ptext",
+        "B1.wared.som",
+        "B1.wared.psom",
+        "B1.wared.vision"
+      ],
+      "strata": {
+        "which-mode label rows (any mode solved)": {
+          "n_tasks": 32,
+          "share_of_cell": 30.76923076923077,
+          "n_flipped": 20,
+          "flip_rate_pct": 62.5,
+          "share_of_all_flips": 80.0,
+          "enrichment_vs_complement": 9.625000000000002
+        },
+        "\u2026of those, the arms DISAGREE (the choice matters)": {
+          "n_tasks": 27,
+          "share_of_cell": 25.96153846153846,
+          "n_flipped": 20,
+          "flip_rate_pct": 74.07407407407408,
+          "share_of_all_flips": 80.0,
+          "enrichment_vs_complement": 11.407407407407408
+        },
+        "three-way channel decision is contested": {
+          "n_tasks": 27,
+          "share_of_cell": 25.96153846153846,
+          "n_flipped": 20,
+          "flip_rate_pct": 74.07407407407408,
+          "share_of_all_flips": 80.0,
+          "enrichment_vs_complement": 11.407407407407408
+        },
+        "exactly one mode solved it (label unambiguous)": {
+          "n_tasks": 14,
+          "share_of_cell": 13.461538461538462,
+          "n_flipped": 12,
+          "flip_rate_pct": 85.71428571428571,
+          "share_of_all_flips": 48.0,
+          "enrichment_vs_complement": 13.200000000000001
+        },
+        "COMPLEMENT: no mode solved, or all did": {
+          "n_tasks": 77,
+          "share_of_cell": 74.03846153846153,
+          "n_flipped": 5,
+          "flip_rate_pct": 6.493506493506493,
+          "share_of_all_flips": 20.0,
+          "enrichment_vs_complement": 1.0
+        },
+        "whole cell": {
+          "n_tasks": 104,
+          "share_of_cell": 100.0,
+          "n_flipped": 25,
+          "flip_rate_pct": 24.03846153846154,
+          "share_of_all_flips": 100.0,
+          "enrichment_vs_complement": 3.7019230769230775
+        }
+      },
+      "difficulty_null": {
+        "proxy": "k/6 where k = how many of ['dom', 'som', 'vision', 'ptext', 'pprompt', 'psom'] solved the task",
+        "arms_in_proxy": [
+          "dom",
+          "som",
+          "vision",
+          "ptext",
+          "pprompt",
+          "psom"
+        ],
+        "circular": true,
+        "contested": {
+          "n": 27,
+          "observed_flip_rate": 0.7407407407407407,
+          "binomial_floor": 0.3395061728395061,
+          "observed_over_floor": 2.181818181818182
+        },
+        "complement": {
+          "n": 77,
+          "observed_flip_rate": 0.06493506493506493,
+          "binomial_floor": 0.0
+        },
+        "arithmetic_enrichment": "infinite (complement floor is exactly 0)",
+        "per_k": [
+          {
+            "k": 0,
+            "n": 72,
+            "n_flipped": 5,
+            "observed": 0.06944444444444445,
+            "binomial_floor": 0.0
+          },
+          {
+            "k": 1,
+            "n": 14,
+            "n_flipped": 12,
+            "observed": 0.8571428571428571,
+            "binomial_floor": 0.2777777777777778
+          },
+          {
+            "k": 2,
+            "n": 5,
+            "n_flipped": 4,
+            "observed": 0.8,
+            "binomial_floor": 0.4444444444444445
+          },
+          {
+            "k": 3,
+            "n": 3,
+            "n_flipped": 2,
+            "observed": 0.6666666666666666,
+            "binomial_floor": 0.5
+          },
+          {
+            "k": 4,
+            "n": 1,
+            "n_flipped": 0,
+            "observed": 0.0,
+            "binomial_floor": 0.4444444444444445
+          },
+          {
+            "k": 5,
+            "n": 4,
+            "n_flipped": 2,
+            "observed": 0.5,
+            "binomial_floor": 0.27777777777777773
+          },
+          {
+            "k": 6,
+            "n": 5,
+            "n_flipped": 0,
+            "observed": 0.0,
+            "binomial_floor": 0.0
+          }
+        ]
+      },
+      "difficulty_null_leave_replicated_out": null,
+      "leave_replicated_out_available": false,
+      "leave_replicated_out_unavailable": {
+        "reason": "every mode in MODES now carries a replicate; no un-replicated arm remains to build an independent difficulty proxy from",
+        "replicated_modes": [
+          "dom",
+          "pprompt",
+          "psom",
+          "ptext",
+          "som",
+          "vision"
+        ],
+        "modes": [
+          "dom",
+          "som",
+          "vision",
+          "ptext",
+          "pprompt",
+          "psom"
+        ],
+        "consequence": "the six-arm enrichment figure has lost its anti-circularity control and must not be quoted as a headline on its own",
+        "candidate_fix": "leave-one-out proxy (five other arms per arm) \u2014 changes the estimand, needs an explicit decision"
+      },
+      "replicated_arms_short": [
+        "dom",
+        "pprompt",
+        "psom",
+        "ptext",
+        "som",
+        "vision"
+      ]
+    }
+  }
 }

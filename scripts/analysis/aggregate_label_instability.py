@@ -30,7 +30,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
-from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.replicate_pairs import (  # noqa: E402
+    cell_id as _cell_id, full_paired_cells, outcome_matrix,
+)
 
 LOG = logging.getLogger("label_instability")
 INV = REPO / "docs/analysis/cross_sites/noise_floor_inventory.json"
@@ -49,7 +51,7 @@ class MissingInput(RuntimeError):
     """Fail loud: a missing flip list would silently understate the enrichment."""
 
 
-def load() -> tuple[set[int], dict[int, set[str]], list[str]]:
+def load(baseline: str = "B0", site_key: str = "cls") -> tuple[set[int], dict[int, set[str]], list[str]]:
     if not INV.exists():
         raise MissingInput(f"{INV} missing; run aggregate_noise_floor_inventory.py first")
     inv = json.loads(INV.read_text())
@@ -64,7 +66,10 @@ def load() -> tuple[set[int], dict[int, set[str]], list[str]]:
     # task 145. Unlike the sibling defect in retry_vs_switch_label_supply.py this
     # one fails SILENTLY: no shape check would catch it. The shipped artefact
     # predates the first foreign row, so nothing published is affected.
-    _prefix = CELL.split("_")[1] + "." + CELL.split("_")[0] + "."   # cls_B0 -> B0.cls.
+    # 2026-10-07 (§536): per cell, so red_B0 / WA_B1 (all six arms replicated since 08-26 / 10-06)
+    # get the same reading. "B0.red." cannot match "B0.wared." — the dot anchors the site token.
+    _prefix = f"{baseline}.{site_key}."
+    cell = _cell_id(baseline, site_key)
     for cp in inv["clean_pairs"]:
         if not cp["label"].startswith(_prefix):
             continue
@@ -72,19 +77,13 @@ def load() -> tuple[set[int], dict[int, set[str]], list[str]]:
         arms.append(cp["label"])
     if not arms:
         raise MissingInput(
-            f"no clean pairs match cell {CELL} (prefix {_prefix!r}) in {INV}")
+            f"no clean pairs match cell {cell} (prefix {_prefix!r}) in {INV}")
     if not flips:
         raise MissingInput("no flip task ids in the inventory")
-    scored, _ = expected_scored_ids(SITE)
-    solve = {}
-    for r in csv.DictReader(SR.open()):
-        if r["cell_id"] != CELL:
-            continue
-        t = int(r["task_id"])
-        if t in scored:
-            solve[t] = {m for m in MODES if float(r[f"sr_{m}"]) > 0}
-    if len(solve) != len(scored):
-        raise MissingInput(f"{CELL}: {len(solve)} tasks, canonical universe has {len(scored)}")
+    # Outcome matrix from the canonical arm of each registered pair (lib/replicate_pairs): for the
+    # VWA cells it equals per_task_sr.csv task for task (checked 2026-10-07), and it also exists for
+    # WA, which per_task_sr does not carry. It raises if any mode misses a scored task.
+    solve = {t: {m for m in MODES if row[m]} for t, row in outcome_matrix(baseline, site_key).items()}
     return flips, solve, arms
 
 
@@ -109,11 +108,12 @@ def strata(solve: dict[int, set[str]]) -> dict[str, list[int]]:
     }
 
 
-def build() -> dict:
-    flips, solve, arms = load()
+def build(baseline: str = "B0", site_key: str = "cls") -> dict:
+    flips, solve, arms = load(baseline, site_key)
     n = len(solve)
     out = {"schema": "2026-08-02-label-instability-v1", "post_hoc_exploratory": True,
-           "cell": CELL, "n": n, "n_flipped": len(flips), "replicated_arms": arms,
+           "cell": _cell_id(baseline, site_key), "n": n, "n_flipped": len(flips),
+           "replicated_arms": arms,
            "strata": {}}
     base_key = "COMPLEMENT: no mode solved, or all did"
     st = strata(solve)
@@ -248,9 +248,11 @@ def render(d: dict) -> str:
          # Arm count read from the data, never hardcoded: this line said "two of six" for a
          # day after the som replicate landed (2026-08-03), while the numbers below had
          # already moved. A stale scope note on fresh numbers is worse than no note.
-         f"scope_warning: one cell ({d['cell']}), {len(d['replicated_arms'])} of "
-         f"{len(MODES)} arms replicated once each. Every "
-         "figure is a LOWER bound on the flip rate; replicating more arms can only add flips.",
+         f"scope_warning: primary cell {d['cell']} ({len(d['replicated_arms'])} of {len(MODES)} arms "
+         "replicated once each)"
+         + (f"; also {', '.join(d.get('by_cell', {}))} (all six arms replicated), tables in the last "
+            "section" if d.get("by_cell") else "")
+         + ". Every figure is a LOWER bound on the flip rate; replicating more arms can only add flips.",
          "producer: scripts/analysis/aggregate_label_instability.py", "---", "",
          "# Where the instability sits", "",
          "Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_label_instability.py`", "",
@@ -275,9 +277,11 @@ def render(d: dict) -> str:
           f"**{dis['share_of_all_flips']:.1f}%** of all observed flips. Their flip rate is "
           f"**{dis['flip_rate_pct']:.1f}%** against **{comp['flip_rate_pct']:.1f}%** on the "
           f"complement, an enrichment of **{dis['enrichment_vs_complement']:.1f}x**.", "",
+          # 2026-10-07 (§537): this sentence carried "under 2.3 points" as a literal, written when two
+          # arms were replicated; with all six it is no longer true. The band lives in one place.
           "This is not the same statement as 'the benchmark is noisy'. Aggregate success rate "
-          "between these same two runs moves by under 2.3 points, which any reader would call "
-          "reproducible. The per-task counterfactual labels that routing needs are not, and the "
+          "between two runs of one arm moves by a few points (the per-arm band is in "
+          "`noise_floor_inventory.md`), which most readers would call reproducible. The per-task counterfactual labels that routing needs are not, and the "
           "gap between those two facts is the point: **instability concentrates precisely where "
           "the decision is contested**, so a router is fitted on the least stable subset of the "
           "benchmark by construction.", "",
@@ -288,6 +292,7 @@ def render(d: dict) -> str:
     # The obvious attack on the enrichment, answered with a number rather than an argument.
     dn = d["difficulty_null"]
     co, cm = dn["contested"], dn["complement"]
+    all_k = next((r for r in dn["per_k"] if r["k"] == len(MODES)), {"n": 0, "n_flipped": 0})
     L += ["", "## Is the enrichment just arithmetic?", "",
           "\"Contested\" means at least one arm solved the task and at least one did not, which "
           "is by definition a **mid-difficulty band**. A task with true per-run success rate *p* "
@@ -305,11 +310,11 @@ def render(d: dict) -> str:
           "predicted rate is exactly zero — *k*=0 and *k*=6 both give *2p(1−p)*=0 — so the "
           "arithmetic enrichment is **infinite**. The observed figure is therefore *deflated* by "
           "this mechanism, not inflated: the complement flips more than the model permits at "
-          "all, including two of the nine tasks that every mode solved.", "",
+          f"all, including {all_k['n_flipped']} of the {all_k['n']} tasks that every mode solved.", "",
           "**But the same table limits the claim.** Inside the contested band the observed rate "
           f"exceeds the floor by only **{co['observed_over_floor']:.2f}×** "
           f"({100 * co['observed_flip_rate']:.1f}% against {100 * co['binomial_floor']:.1f}%). "
-          "Most of the 51% is the band being mid-difficulty; the excess above that floor is what "
+          f"Most of the {100 * co['observed_flip_rate']:.0f}% is the band being mid-difficulty; the excess above that floor is what "
           "is left for structure to carry. The honest sentence is that instability concentrates "
           "on contested tasks **and** that being contested is itself most of the reason.", "",
           "| *k* solved | n | flipped | observed | floor |",
@@ -359,15 +364,49 @@ def render(d: dict) -> str:
     return "\n".join(L) + "\n"
 
 
+def render_other_cell(d: dict) -> str:
+    """Tables only. The prose above quotes cls_B0's own numbers and does not transfer."""
+    L = [f"### `{d['cell']}` — n = {d['n']}, {d['n_flipped']} tasks flip on at least one of "
+         f"{len(d['replicated_arms'])} replicated arms", "",
+         "| stratum | tasks | share of cell | flipped | flip rate | share of all flips | vs complement |",
+         "|---|---|---|---|---|---|---|"]
+    for name, st in d["strata"].items():
+        en = st["enrichment_vs_complement"]
+        L.append(f"| {name} | {st['n_tasks']} | {st['share_of_cell']:.1f}% | {st['n_flipped']} | "
+                 f"{st['flip_rate_pct']:.1f}% | {st['share_of_all_flips']:.1f}% | "
+                 f"{'—' if en is None else f'{en:.2f}x'} |")
+    dn = d["difficulty_null"]
+    co, cm = dn["contested"], dn["complement"]
+    f = lambda v: "—" if v is None else f"{100 * v:.2f}%"
+    ratio = "—" if co["observed_over_floor"] is None else f"{co['observed_over_floor']:.2f}x"
+    L += ["", "| set | n | observed flip rate | binomial floor *2p(1−p)* | observed / floor |",
+          "|---|---|---|---|---|",
+          f"| contested | {co['n']} | {f(co['observed_flip_rate'])} | {f(co['binomial_floor'])} | "
+          f"{ratio} |",
+          f"| complement | {cm['n']} | {f(cm['observed_flip_rate'])} | {f(cm['binomial_floor'])} | — |",
+          "", "Leave-replicated-out control: unavailable here for the same reason as above "
+          "(every arm of this cell is replicated)." if not d.get("leave_replicated_out_available")
+          else "", ""]
+    return "\n".join(L)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO if a.verbose else logging.WARNING,
                         format="%(levelname)s %(message)s")
-    d = build()
-    OUT_JSON.write_text(json.dumps(d, indent=2))
-    OUT_MD.write_text(render(d))
+    d = build("B0", "cls")
+    others = [c for c in full_paired_cells() if c != ("B0", "cls")]
+    d["by_cell"] = {_cell_id(b, s): build(b, s) for b, s in others}
+    md = render(d).rstrip("\n")
+    if d["by_cell"]:
+        md += ("\n\n## Other cells with every arm replicated\n\nSame computation, per cell "
+               "(added 2026-10-07, 实验笔记 §537). The reading above is cls_B0's; these cells are "
+               "read from their own tables.\n\n"
+               + "\n".join(render_other_cell(v) for v in d["by_cell"].values()))
+    OUT_JSON.write_text(json.dumps(d, indent=2), encoding="utf-8")
+    OUT_MD.write_text(md + "\n", encoding="utf-8")
     print(f"✓ {OUT_MD.relative_to(REPO)}")
     return 0
 

@@ -106,16 +106,23 @@ def load_cell(site: str, base: str):
     raise SystemExit(f"{SRC_ORDER}: cell {site}·{base} not found")
 
 
-def main() -> int:
+# label site token -> the heading router_objective_ordering.md uses for that site
+ORDER_SITE = {"cls": "classifieds", "red": "reddit", "wared": "wa_reddit"}
+
+
+def compute(base: str, site_key: str) -> dict:
+    """The whole analysis for one fully replicated cell (2026-10-07, 实验笔记 §537)."""
     pairs = RE_PAIR.findall(SRC_FLOOR.read_text(encoding="utf-8"))
     if not pairs:
         raise SystemExit(f"{SRC_FLOOR}: no replicate rows parsed")
+    prefix = f"{base}.{site_key}."
+    site = ORDER_SITE[site_key]
 
-    n_cell, sr_of, oracle_sr = load_cell("classifieds", "B0")
+    n_cell, sr_of, oracle_sr = load_cell(site, base)
     rows, K = [], 6
     for tag, n_s, drop_ab, drop_ba, disc in pairs:
-        if not tag.startswith("B0.cls."):
-            continue                      # only the cell that carries an oracle
+        if not tag.startswith(prefix):
+            continue                      # this cell's replicated arms only
         n = int(n_s)
         if n != n_cell:
             raise SystemExit(f"{tag}: n={n} != cell n={n_cell} — refusing")
@@ -151,7 +158,7 @@ def main() -> int:
                          round(100 * (u[K] - u6_lo) / (u6_hi - u6_lo))})
 
     if not rows:
-        raise SystemExit("no B0.cls replicate arms found")
+        raise SystemExit(f"no {prefix} replicate arms found")
 
     best_single = max(sr_of.values())
     u6 = [r["union_pct"]["6"] for r in rows]
@@ -170,7 +177,7 @@ def main() -> int:
             100 * (best_arm["union_pct"]["6"] - best_arm["sr_single_pct"]) / head, 1),
         "share_at_u6_ident_hi_pct": round(
             100 * (best_arm["u6_ident_hi_pct"] - best_arm["sr_single_pct"]) / head, 1)}
-    payload = {"cell": "classifieds·B0", "n": n_cell, "K": K,
+    payload = {"cell": f"{site}·{base}", "n": n_cell, "K": K,
                "best_single_sr_pct": best_single, "oracle_6mode_sr_pct": oracle_sr,
                "arms": rows,
                "u6_min_pct": min(u6), "u6_max_pct": max(u6),
@@ -185,6 +192,18 @@ def main() -> int:
                                  "end of the feasible range. U(2) is "
                                  "p-invariant and cannot test the pin.",
                "headroom_share": headroom}
+    return payload
+
+
+def main() -> int:
+    from scripts.analysis.lib.replicate_pairs import cell_id, full_paired_cells
+    payload = compute("B0", "cls")
+    n_cell, oracle_sr, rows = payload["n"], payload["oracle_6mode_sr_pct"], payload["arms"]
+    best_single, headroom = payload["best_single_sr_pct"], payload["headroom_share"]
+    u6 = [r["union_pct"]["6"] for r in rows]
+    best_arm = max(rows, key=lambda r: r["sr_single_pct"])
+    payload["by_cell"] = {cell_id(b, s): compute(b, s)
+                          for b, s in full_paired_cells() if (b, s) != ("B0", "cls")}
     OUT_JSON.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     L = ["# Six reruns of one mode vs six distinct modes", "",
@@ -236,9 +255,25 @@ def main() -> int:
           "residual buys little, but it buys it at a sixth of the deployment cost — "
           "which is the axis a deployment actually pays on. The surviving claim is "
           "therefore about cost-efficiency of the ceiling, not about its height.", "",
-          "⚠️ Both readings are bounded by one cell — `classifieds·B0` is the only "
-          "cell carrying replicated arms. Neither generalises without more replicates.",
+          ("⚠️ The prose above reads `classifieds·B0`. The same computation on the other cells "
+           "whose six arms are all replicated is tabulated below; read each from its own row."
+           if payload["by_cell"] else
+           "⚠️ Both readings are bounded by one cell — `classifieds·B0` is the only cell "
+           "carrying replicated arms. Neither generalises without more replicates."),
           ""]
+    if payload["by_cell"]:
+        L += ["## Other cells with every arm replicated (added 2026-10-07, 实验笔记 §537)", "",
+              "| cell | n | best single | six-mode oracle | U(6) at p=1/2, range over arms | "
+              "best arm's U(6), identified interval | share of headroom (interval) |",
+              "|---|---:|---:|---:|---:|---:|---:|"]
+        for cid, c in payload["by_cell"].items():
+            h = c["headroom_share"]
+            ba = max(c["arms"], key=lambda r: r["sr_single_pct"])
+            L.append(f"| `{cid}` | {c['n']} | {c['best_single_sr_pct']:.2f}% | "
+                     f"{c['oracle_6mode_sr_pct']:.2f}% | {c['u6_min_pct']:.2f}–{c['u6_max_pct']:.2f}% | "
+                     f"{ba['u6_ident_lo_pct']:.2f}–{ba['u6_ident_hi_pct']:.2f}% | "
+                     f"{h['share_at_u6_ident_lo_pct']:.1f}–{h['share_at_u6_ident_hi_pct']:.1f}% |")
+        L.append("")
     OUT_MD.write_text("\n".join(L), encoding="utf-8")
 
     print(f"wrote {OUT_MD.relative_to(ROOT)}")

@@ -82,19 +82,22 @@ ARMS = ("dom", "som", "vision", "ptext", "pprompt", "psom")
 CELL_PREFIX = "B0.cls."
 
 
-def load_arms() -> dict[str, dict[str, dict[int, int]]]:
-    """mode -> {"a": {task_id: 0/1}, "b": {...}} restricted to the canonical universe."""
-    from scripts.analysis.lib.canonical_task_universe import expected_scored_ids
+def load_arms(baseline: str = "B0", site_key: str = "cls") -> dict[str, dict[str, dict[int, int]]]:
+    """mode -> {"a": {task_id: 0/1}, "b": {...}} restricted to the canonical universe.
 
-    scored, sha = expected_scored_ids("classifieds")
-    scored = set(scored)
-    LOG.info("canonical classifieds scored universe: n=%d (sha=%s)", len(scored), sha[:12])
+    Per cell since 2026-10-07 (实验笔记 §537): red_B0 and WA_B1 also carry all six replicated arms.
+    """
+    from scripts.analysis.lib.replicate_pairs import scored_universe
+
+    prefix = f"{baseline}.{site_key}."
+    scored = scored_universe(site_key)
+    LOG.info("%s scored universe: n=%d", prefix, len(scored))
 
     out: dict[str, dict[str, dict[int, int]]] = {}
     for label, ra, rb in CLEAN_PAIRS:
-        if not label.startswith(CELL_PREFIX):
+        if not label.startswith(prefix):
             continue  # B-1994: other cells collide on the mode-only key
-        mode = label[len(CELL_PREFIX):]
+        mode = label[len(prefix):]
         arms = {}
         for key, rel in (("a", ra), ("b", rb)):
             p = REPO / rel
@@ -277,11 +280,12 @@ def part4_starting_point(p1, p2) -> list[dict]:
     return sorted(rows, key=lambda r: r["base_sr_pp"])
 
 
+BUDGET_ARMS = ("dom", "som", "vision")   # part 5: 3 representations x 2 generations = 6 arms
 MODE_SR_COLS = {"dom": "sr_dom", "som": "sr_som", "vision": "sr_vision",
                 "ptext": "sr_ptext", "pprompt": "sr_pprompt", "psom": "sr_psom"}
 
 
-def part5_arm_budget(arms) -> dict:
+def part5_arm_budget(arms, baseline: str = "B0", site_key: str = "cls") -> dict:
     """At a fixed budget of six arms: six representations once, or three twice?
 
     `noise_floor_inventory.md` explicitly declines this: "Not licensed. 'The whole 6-mode
@@ -294,25 +298,25 @@ def part5_arm_budget(arms) -> dict:
     The six-representation union is also a correctness check: it must reproduce the 43.30%
     six-mode oracle already published for this cell.
     """
-    per_task = REPO / "results/phantom_paper/per_task_sr.csv"
-    if not per_task.is_file():
-        raise MissingInput(f"per-task SR product absent: {per_task}")
-    six: dict[int, dict[str, float]] = {}
-    with per_task.open() as fh:
-        for row in csv.DictReader(fh):
-            if row.get("cell_id") != "cls_B0":
-                continue
-            six[int(row["task_id"])] = {m: float(row[c]) for m, c in MODE_SR_COLS.items()}
+    # The canonical arm of each registered pair (lib/replicate_pairs) — equal to
+    # per_task_sr.csv task for task on the VWA cells (checked 2026-10-07), and also
+    # available for WA, which per_task_sr does not carry.
+    from scripts.analysis.lib.replicate_pairs import outcome_matrix
+    six = {t: {m: float(v) for m, v in row.items()}
+           for t, row in outcome_matrix(baseline, site_key).items()}
     if not six:
-        raise MissingInput("no cls_B0 rows in per_task_sr.csv")
+        raise MissingInput(f"no outcome rows for {baseline}.{site_key}")
 
     tasks = sorted(set(six) & set(arms["dom"]["a"]))
     n = len(tasks)
     six_union = {t for t in tasks if any(v > 0 for v in six[t].values())}
     six_best = max(MODE_SR_COLS,
                    key=lambda m: sum(1 for t in tasks if six[t][m] > 0))
+    # 2026-10-07 (实验笔记 §537): this iterated ARMS, which grew from the three channels to all six
+    # modes on 2026-08-26 — so "three representations x two generations" silently became twelve
+    # arms against six and the budgets stopped matching. The matched budget is the three channels.
     three_x2_union = {t for t in tasks
-                      if any(arms[m][k][t] for m in ARMS for k in ("a", "b"))}
+                      if any(arms[m][k][t] for m in BUDGET_ARMS for k in ("a", "b"))}
     return {
         "n": n,
         "six_representations_one_generation": {
@@ -322,7 +326,7 @@ def part5_arm_budget(arms) -> dict:
         },
         "three_representations_two_generations": {
             "union_sr_pp": 100 * len(three_x2_union) / n,
-            "arms": [f"{m}.{k}" for m in ARMS for k in ("a", "b")],
+            "arms": [f"{m}.{k}" for m in BUDGET_ARMS for k in ("a", "b")],
         },
         "solved_only_by_six_rep": sorted(six_union - three_x2_union),
         "solved_only_by_three_x2": sorted(three_x2_union - six_union),
@@ -463,7 +467,7 @@ def main() -> int:
         "76c61488-38d6-4a27-bdba-1eb4de7cad09/scratchpad")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    arms = load_arms()
+    arms = load_arms("B0", "cls")
     p1 = part1_matched_gains(arms)
     p2 = part2_label_supply(arms)
     p3 = part3_which_mode_baseline(arms)
@@ -541,7 +545,7 @@ def main() -> int:
     print("  dependent: it is the strongest arm that leaves the others least to add.")
 
     # ---- Part 5: how to spend a fixed arm budget ------------------------------------
-    p5 = part5_arm_budget(arms)
+    p5 = part5_arm_budget(arms, "B0", "cls")
     print("\n=== PART 5 — a fixed budget of SIX arms, spent two ways (n=%d) ===" % p5["n"])
     a6 = p5["six_representations_one_generation"]
     b3 = p5["three_representations_two_generations"]
@@ -564,6 +568,21 @@ def main() -> int:
                "part3_which_mode_contested": p3,
                "part4_starting_point": p4,
                "part5_arm_budget": p5}
+    # The other cells whose six arms are all replicated (red_B0, WA_B1 as of 2026-10-07):
+    # same five parts, no per-task CSV rows.
+    from scripts.analysis.lib.replicate_pairs import cell_id, full_paired_cells
+    product["by_cell"] = {}
+    for b, sk in full_paired_cells():
+        if (b, sk) == ("B0", "cls"):
+            continue
+        a_ = load_arms(b, sk)
+        q1, q2 = part1_matched_gains(a_), part2_label_supply(a_)
+        product["by_cell"][cell_id(b, sk)] = {
+            "part1_matched_gains": q1,
+            "part2_label_supply": [{k: v for k, v in r.items() if k != "per_task"} for r in q2],
+            "part3_which_mode_contested": part3_which_mode_baseline(a_),
+            "part4_starting_point": part4_starting_point(q1, q2),
+            "part5_arm_budget": part5_arm_budget(a_, b, sk)}
     js.write_text(json.dumps(product, indent=2))
     if args.write_md:
         md = js.with_suffix(".md")

@@ -38,25 +38,21 @@ sys.path.insert(0, str(REPO))
 
 from scripts.analysis.aggregate_phantom_lift import CELLS  # noqa: E402
 from scripts.analysis.lib.canonical_task_universe import expected_scored_ids  # noqa: E402
+from scripts.analysis.lib.replicate_pairs import (  # noqa: E402
+    cell_id, cell_pairs, full_paired_cells,
+)
 from scripts.analysis.per_mode_four_dimension_profile import (  # noqa: E402
-    DIMENSIONS, DISPLAY_MODES, profile_cell,
+    DIMENSIONS, DISPLAY_MODES, profile_cell, wa_spec,
 )
 
 OUT_MD = REPO / "docs/analysis/cross_sites/replicate_metric_noise.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/replicate_metric_noise.json"
 
-# (display mode, replicate episodes dir) — all six arms replicated on B0 x classifieds.
-# Listed three until 2026-08-22; the three phantom replicates had landed in
-# CLEAN_PAIRS but never reached this dict, so the published band ignored them.
-P1 = "results/visualwebarena/phase1"
-REPLICATES = {
-    "DOM": f"{P1}/../../repro_replicates/B0_dom_classifieds_R31194_clean_replicate/phase1_dom_router_0/episodes",
-    "Vision": f"{P1}/../../repro_replicates/B0_vision_classifieds_R24792_clean_replicate/phase1_vision_router_0/episodes",
-    "SoM": f"{P1}/B0_som_classifieds_20260803_084743_413015398_3677519_R30696/phase1_som_router_0/episodes",
-    "P-text": f"{P1}/B0_phantom_text_classifieds_20260817_092244_763693821_1962797_R20043/phase1_phantom_text_router_0/episodes",
-    "P-prompt": f"{P1}/B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207/phase1_phantom_prompt_router_0/episodes",
-    "P-SoM": f"{P1}/B0_phantom_som_classifieds_20260818_040525_430521618_2113605_R13257/phase1_phantom_som_router_0/episodes",
-}
+# Replicate directories come from CLEAN_PAIRS via lib/replicate_pairs (2026-10-07, §537). This
+# file used to keep its own copy of the six B0 x classifieds paths — a second registry that had
+# already drifted once (three phantom replicates sat in CLEAN_PAIRS for days before reaching it).
+DISP = {"dom": "DOM", "som": "SoM", "vision": "Vision",
+        "ptext": "P-text", "pprompt": "P-prompt", "psom": "P-SoM"}
 # Cross-mode by construction: it asks what no OTHER mode solved, so swapping one arm moves
 # it for a reason that is not run-to-run noise.
 CROSS_MODE_METRICS = {"n_unique_solves"}
@@ -68,27 +64,44 @@ class MissingInput(RuntimeError):
     """Fail loud rather than report a band over a partial arm set."""
 
 
-def _base_spec() -> dict:
+def _base_spec(baseline: str, site_key: str) -> dict:
+    if site_key == "wared":
+        return wa_spec(baseline)
+    site = {"cls": "classifieds", "red": "reddit"}[site_key]
     for c in CELLS:
-        if c.get("baseline") == "B0" and c.get("site") == "classifieds":
+        if c.get("baseline") == baseline and c.get("site") == site:
             spec = dict(c)
-            ids, _sha = expected_scored_ids("classifieds")
+            ids, _sha = expected_scored_ids(site)
             spec["universe"] = set(ids)
-            spec["steps_glob"] = "classifieds_task_*_steps_v2.jsonl"
+            spec["steps_glob"] = f"{site}_task_*_steps_v2.jsonl"
             spec["modes"] = dict(spec.get("modes") or {})
             if not spec["modes"]:
-                raise MissingInput("B0 x classifieds cell carries no `modes` map")
+                raise MissingInput(f"{baseline} x {site} cell carries no `modes` map")
             return spec
-    raise MissingInput("B0 x classifieds not present in the run registry")
+    raise MissingInput(f"{baseline} x {site} not present in the run registry")
 
 
-def main() -> int:
-    base = _base_spec()
+def replicate_dirs(baseline: str, site_key: str, base: dict) -> dict[str, Path]:
+    """display mode -> replicate episodes dir; the spec's canonical dir must be the pair's arm a."""
+    out = {}
+    for mk, (arm_a, arm_b) in cell_pairs(baseline, site_key).items():
+        disp = DISP[mk]
+        canon = Path(base["modes"][disp]).resolve()
+        if canon != (arm_a / "episodes").resolve():
+            raise MissingInput(f"{cell_id(baseline, site_key)}/{disp}: profile reads {canon}, "
+                               f"CLEAN_PAIRS canonical arm is {arm_a}")
+        out[disp] = arm_b / "episodes"
+    return out
+
+
+def compute(baseline: str, site_key: str) -> dict:
+    base = _base_spec(baseline, site_key)
     canonical = profile_cell(base)
+    replicates = replicate_dirs(baseline, site_key, base)
 
     bands: dict[str, dict[str, float]] = {}     # metric -> {arm: |delta|}
-    for arm, rel in REPLICATES.items():
-        rep = (REPO / rel).resolve()
+    for arm, rep in replicates.items():
+        rep = rep.resolve()
         if not rep.is_dir():
             raise MissingInput(f"{arm}: replicate episodes dir absent: {rep}")
         swapped = dict(base)
@@ -129,26 +142,38 @@ def main() -> int:
 
     live = [r for r in rows if "excluded" not in r]
     n_exceed = sum(1 for r in live if r["exceeds_noise"])
+    return {"cell": cell_id(baseline, site_key), "arms_replicated": sorted(replicates),
+            "n_metrics_total": len(ALL_METRICS), "n_metrics_live": len(live),
+            "n_exceeding_noise": n_exceed, "metrics": rows}
+
+
+def main() -> int:
+    prim = compute("B0", "cls")
+    rows, live = prim["metrics"], [r for r in prim["metrics"] if "excluded" not in r]
+    n_exceed = prim["n_exceeding_noise"]
     out = {"schema": "2026-08-03-replicate-metric-noise-v1",
            "post_hoc_exploratory": True, "h10_eligible": False,
-           "cell": "B0·classifieds", "arms_replicated": sorted(REPLICATES),
+           "cell": "B0·classifieds", "arms_replicated": prim["arms_replicated"],
            "n_metrics_total": len(ALL_METRICS), "n_metrics_live": len(live),
            "n_exceeding_noise": n_exceed, "metrics": rows}
+    out["by_cell"] = {cell_id(b, s): compute(b, s)
+                      for b, s in full_paired_cells() if (b, s) != ("B0", "cls")}
 
     L = ["---", "type: analysis", "status: complete",
          "purpose: per-metric run-to-run band for the 26 behavioural metrics, and which "
          "cross-mode differences survive it",
          "post_hoc_exploratory: true",
-         "scope_warning: one cell (B0 x classifieds) and one rerun per arm. A band from a "
-         "single rerun is a point estimate, not a bound — the same caveat noise_floor_inventory "
+         "scope_warning: primary cell B0 x classifieds"
+         + (f"; also {', '.join(out['by_cell'])} (tables in the last section)" if out["by_cell"] else "")
+         + "; one rerun per arm. A band from a single rerun is a point estimate, not a bound — the same caveat noise_floor_inventory "
          "carries for the SR-scale band.",
          "producer: scripts/analysis/replicate_metric_noise.py", "---", "",
          "# Can a rerun produce the behavioural differences?", "",
          "Regenerate: `.venv/bin/python3 scripts/analysis/replicate_metric_noise.py`", "",
          "Every success-rate claim in this project is judged against the rerun band. The "
          "26-metric behavioural claims never were — not for a reason, but because no "
-         "per-metric band existed. Three replicated arms on `B0·classifieds` (dom, vision, "
-         "**som**, the last landing 2026-08-03) now allow one.", "",
+         f"per-metric band existed. {len(out['arms_replicated'])} replicated arms on "
+         f"`B0·classifieds` ({', '.join(out['arms_replicated'])}) now allow one.", "",
          f"**{n_exceed} of {len(live)} metrics** have a cross-mode spread larger than the "
          "largest run-to-run movement of the same metric.", "",
          "| dimension | metric | cross-mode spread | rerun band | ratio | bigger than a rerun? |",
@@ -181,7 +206,7 @@ def main() -> int:
                   "survives; any sentence naming a mode as fastest does not."]
     L += ["", "`cross-mode spread` = max − min of that metric over the six modes in the "
           "canonical cell. `rerun band` = the largest |metric(run A) − metric(run B)| over "
-          "the three replicated arms. A ratio near or below 1 means the differences the "
+          "the replicated arms. A ratio near or below 1 means the differences the "
           "profile reports between modes are the size a rerun of one mode produces on its "
           "own.", "",
           "## What this does and does not settle", "",
@@ -196,6 +221,24 @@ def main() -> int:
           "≥83% bar is a consistency bar. What this table adds is the magnitude the "
           "consistency is about, which the profile never printed.", ""]
 
+    if out["by_cell"]:
+        L += ["## Other cells with every arm replicated", "",
+              "Same computation per cell (added 2026-10-07, 实验笔记 §537). The reading above is "
+              "B0 x classifieds; each cell below is read from its own table.", ""]
+        for cid, c in out["by_cell"].items():
+            L += [f"### `{cid}` — {c['n_exceeding_noise']} of {c['n_metrics_live']} metrics exceed "
+                  "the rerun band", "",
+                  "| dimension | metric | cross-mode spread | rerun band | ratio | bigger than a rerun? |",
+                  "|---|---|---|---|---|---|"]
+            for r in c["metrics"]:
+                if "excluded" in r:
+                    L.append(f"| {r['dimension']} | `{r['metric']}` | — | — | — | *{r['excluded']}* |")
+                    continue
+                sp = "—" if r["cross_mode_spread"] is None else f"{r['cross_mode_spread']:.3f}"
+                rt = "—" if r["ratio"] is None else f"{r['ratio']:.2f}×"
+                L.append(f"| {r['dimension']} | `{r['metric']}` | {sp} | {r['band_max']:.3f} | {rt} "
+                         f"| {'**yes**' if r['exceeds_noise'] else 'no'} |")
+            L.append("")
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(out, ensure_ascii=False, indent=1))
     OUT_MD.write_text("\n".join(L), encoding="utf-8")

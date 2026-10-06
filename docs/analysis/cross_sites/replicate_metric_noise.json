@@ -446,5 +446,901 @@
    "ratio": 1.1229969918493454,
    "exceeds_noise": true
   }
- ]
+ ],
+ "by_cell": {
+  "red_B0": {
+   "cell": "red_B0",
+   "arms_replicated": [
+    "DOM",
+    "P-SoM",
+    "P-prompt",
+    "P-text",
+    "SoM",
+    "Vision"
+   ],
+   "n_metrics_total": 26,
+   "n_metrics_live": 25,
+   "n_exceeding_noise": 25,
+   "metrics": [
+    {
+     "dimension": "Outcome",
+     "metric": "sr_pct",
+     "label": "success rate %",
+     "band_per_arm": {
+      "P-text": 3.4482758620689644,
+      "P-prompt": 2.4630541871921174,
+      "P-SoM": 3.448275862068966,
+      "SoM": 2.463054187192119,
+      "DOM": 2.9556650246305427,
+      "Vision": 0.0
+     },
+     "band_max": 3.448275862068966,
+     "cross_mode_spread": 7.389162561576355,
+     "ratio": 2.1428571428571423,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Outcome",
+     "metric": "n_success",
+     "label": "solves",
+     "band_per_arm": {
+      "P-text": 7.0,
+      "P-prompt": 5.0,
+      "P-SoM": 7.0,
+      "SoM": 5.0,
+      "DOM": 6.0,
+      "Vision": 0.0
+     },
+     "band_max": 7.0,
+     "cross_mode_spread": 15.0,
+     "ratio": 2.142857142857143,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Outcome",
+     "metric": "n_unique_solves",
+     "label": "unique solves (no other mode got it)",
+     "excluded": "cross-mode by construction"
+    },
+    {
+     "dimension": "Macro",
+     "metric": "n_steps",
+     "label": "steps / episode",
+     "band_per_arm": {
+      "P-text": 1.4926108374384235,
+      "P-prompt": 0.40394088669950534,
+      "P-SoM": 0.6699507389162562,
+      "SoM": 0.6206896551724164,
+      "DOM": 0.9064039408867011,
+      "Vision": 0.25123152709359786
+     },
+     "band_max": 1.4926108374384235,
+     "cross_mode_spread": 3.487684729064039,
+     "ratio": 2.3366336633663365,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "cap_hit_rate",
+     "label": "episodes exhausting the step budget",
+     "band_per_arm": {
+      "P-text": 0.0640394088669951,
+      "P-prompt": 0.009852216748768461,
+      "P-SoM": 0.0049261083743843415,
+      "SoM": 0.044334975369458074,
+      "DOM": 0.08374384236453203,
+      "Vision": 0.0
+     },
+     "band_max": 0.08374384236453203,
+     "cross_mode_spread": 0.20197044334975367,
+     "ratio": 2.4117647058823524,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "click_frac",
+     "label": "click fraction",
+     "band_per_arm": {
+      "P-text": 0.014919644000708554,
+      "P-prompt": 0.026688645077174278,
+      "P-SoM": 0.006696448779109299,
+      "SoM": 0.0022664615108103914,
+      "DOM": 0.0044869892180337545,
+      "Vision": 0.029793241585526764
+     },
+     "band_max": 0.029793241585526764,
+     "cross_mode_spread": 0.1367234634696785,
+     "ratio": 4.589076454711705,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "type_frac",
+     "label": "type fraction",
+     "band_per_arm": {
+      "P-text": 0.011607403713957687,
+      "P-prompt": 0.004610394371073495,
+      "P-SoM": 0.010057540207054405,
+      "SoM": 0.0003380320133146292,
+      "DOM": 0.0018076978955506584,
+      "Vision": 0.0044568629703370805
+     },
+     "band_max": 0.011607403713957687,
+     "cross_mode_spread": 0.07303228125519226,
+     "ratio": 6.291870521171957,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "scroll_frac",
+     "label": "scroll fraction",
+     "band_per_arm": {
+      "P-text": 0.016168664959440263,
+      "P-prompt": 0.03681059247656018,
+      "P-SoM": 0.00031233757379359184,
+      "SoM": 0.0037257465047091376,
+      "DOM": 0.003987033005399265,
+      "Vision": 0.013722227858292302
+     },
+     "band_max": 0.03681059247656018,
+     "cross_mode_spread": 0.24267976072172173,
+     "ratio": 6.592661090045006,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "search_loop_rate",
+     "label": "search-loop rate",
+     "band_per_arm": {
+      "P-text": 0.0049261083743842304,
+      "P-prompt": 0.024630541871921208,
+      "P-SoM": 0.009852216748768461,
+      "SoM": 0.024630541871921208,
+      "DOM": 0.009852216748768461,
+      "Vision": 0.009852216748768461
+     },
+     "band_max": 0.024630541871921208,
+     "cross_mode_spread": 0.2315270935960591,
+     "ratio": 9.39999999999999,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "url_revisit_rate",
+     "label": "URL-revisit step rate",
+     "band_per_arm": {
+      "P-text": 0.015799229346976862,
+      "P-prompt": 0.015673466758070798,
+      "P-SoM": 0.0166476237250347,
+      "SoM": 0.018881776625994107,
+      "DOM": 0.013388869527548364,
+      "Vision": 0.01097951106653916
+     },
+     "band_max": 0.018881776625994107,
+     "cross_mode_spread": 0.10893096832347515,
+     "ratio": 5.769105867586231,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "parse_fail_rate",
+     "label": "parse-invalid step rate",
+     "band_per_arm": {
+      "P-text": 0.001431484718470258,
+      "P-prompt": 0.00044748540299152087,
+      "P-SoM": 0.000685374260939081,
+      "SoM": 0.0019854598056568496,
+      "DOM": 0.0003728890686621498,
+      "Vision": 0.0001589067217543302
+     },
+     "band_max": 0.0019854598056568496,
+     "cross_mode_spread": 0.0026767785686425444,
+     "ratio": 1.348190762168054,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "action_fail_rate",
+     "label": "action-execution failure rate",
+     "band_per_arm": {
+      "P-text": 0.02365440171289651,
+      "P-prompt": 0.016786055868990374,
+      "P-SoM": 0.025922990330500884,
+      "SoM": 0.022811711875769802,
+      "DOM": 0.05227831327539781,
+      "Vision": 0.014830100023273007
+     },
+     "band_max": 0.05227831327539781,
+     "cross_mode_spread": 0.18385360000847184,
+     "ratio": 3.5168234873980415,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "click_fail_rate",
+     "label": "action failure | action was a click",
+     "band_per_arm": {
+      "P-text": 0.03733105241059523,
+      "P-prompt": 0.009404120931674004,
+      "P-SoM": 0.01909799947919999,
+      "SoM": 0.0009215732452392267,
+      "DOM": 0.03905767022931389,
+      "Vision": 0.02560840042186191
+     },
+     "band_max": 0.03905767022931389,
+     "cross_mode_spread": 0.07398351679669832,
+     "ratio": 1.8942122344299888,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "type_fail_rate",
+     "label": "action failure | action was a type",
+     "band_per_arm": {
+      "P-text": 0.025604417064096982,
+      "P-prompt": 0.007538260392005933,
+      "P-SoM": 0.008598849270740214,
+      "SoM": 0.0015036003952260124,
+      "DOM": 0.01950841255663209,
+      "Vision": 0.004183127821966297
+     },
+     "band_max": 0.025604417064096982,
+     "cross_mode_spread": 0.04377908183756826,
+     "ratio": 1.7098253683328786,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "no_change_rate",
+     "label": "page-unchanged (no-op) step rate",
+     "band_per_arm": {
+      "P-text": 0.003417757868413751,
+      "P-prompt": 0.0059680743095268385,
+      "P-SoM": 0.01416301289895533,
+      "SoM": 0.02100282436985923,
+      "DOM": 0.044438720092700335,
+      "Vision": 0.018568187247595236
+     },
+     "band_max": 0.044438720092700335,
+     "cross_mode_spread": 0.16010486708962968,
+     "ratio": 3.602823545674734,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "scroll_inert_rate",
+     "label": "scroll action that did not move the viewport",
+     "band_per_arm": {
+      "P-text": 0.019462370281427888,
+      "P-prompt": 0.00702085058092039,
+      "P-SoM": 0.01368832403131981,
+      "SoM": 0.008051750256158757,
+      "DOM": 0.019809504863102012,
+      "Vision": 0.0016556950005814364
+     },
+     "band_max": 0.019809504863102012,
+     "cross_mode_spread": 0.18177022501376794,
+     "ratio": 9.175909558059704,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "noop_inert_rate",
+     "label": "no-op despite a SUCCEEDING action",
+     "band_per_arm": {
+      "P-text": 0.020236643844482795,
+      "P-prompt": 0.010817981559463521,
+      "P-SoM": 0.011759977431545568,
+      "SoM": 0.0018088875059105447,
+      "DOM": 0.007839593182697474,
+      "Vision": 0.0037380872243222285
+     },
+     "band_max": 0.020236643844482795,
+     "cross_mode_spread": 0.028989519894869774,
+     "ratio": 1.4325260709064322,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "visibility_gap_rate",
+     "label": "page changed but channel did not show it",
+     "band_per_arm": {
+      "P-text": 0.000683016798052688,
+      "P-prompt": 0.00020484970203640818,
+      "P-SoM": 0.0025524153783986897,
+      "SoM": 0.02290434855314448,
+      "DOM": 0.010464922377279348,
+      "Vision": 0.010531952493217006
+     },
+     "band_max": 0.02290434855314448,
+     "cross_mode_spread": 0.03321611330930216,
+     "ratio": 1.4502099124204082,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "locator_fallback_rate",
+     "label": "locator fallback rate",
+     "band_per_arm": {
+      "P-text": 0.0028789284883357705,
+      "P-prompt": 0.001068205984269141,
+      "P-SoM": 0.022435671352373017,
+      "SoM": 0.007606704917750409,
+      "DOM": 0.0292352691291399,
+      "Vision": 0.0018229250785159771
+     },
+     "band_max": 0.0292352691291399,
+     "cross_mode_spread": 0.11190856311362979,
+     "ratio": 3.827861567454711,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "action_repeat_frac",
+     "label": "consecutive same-action rate",
+     "band_per_arm": {
+      "P-text": 0.025081789949280064,
+      "P-prompt": 0.017233115555647327,
+      "P-SoM": 0.009490612848381597,
+      "SoM": 0.02880501660193191,
+      "DOM": 0.017479076523443327,
+      "Vision": 0.013927515279560154
+     },
+     "band_max": 0.02880501660193191,
+     "cross_mode_spread": 0.13105005874455855,
+     "ratio": 4.549556785736038,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "finish_rate",
+     "label": "episodes ending in finish",
+     "band_per_arm": {
+      "P-text": 0.06896551724137928,
+      "P-prompt": 0.009852216748768461,
+      "P-SoM": 0.0049261083743842304,
+      "SoM": 0.04433497536945813,
+      "DOM": 0.08866995073891626,
+      "Vision": 0.0
+     },
+     "band_max": 0.08866995073891626,
+     "cross_mode_spread": 0.20197044334975373,
+     "ratio": 2.277777777777778,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_cost_usd",
+     "label": "billed cost / episode",
+     "band_per_arm": {
+      "P-text": 0.006356940886699497,
+      "P-prompt": 0.003734655172413795,
+      "P-SoM": 0.0037836798029556445,
+      "SoM": 0.005701901477832505,
+      "DOM": 0.004663472906403926,
+      "Vision": 0.001890408866995083
+     },
+     "band_max": 0.006356940886699497,
+     "cross_mode_spread": 0.012384187192118229,
+     "ratio": 1.9481362832914526,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "cost_rel_dom",
+     "label": "cost relative to DOM (within cell)",
+     "band_per_arm": {
+      "P-text": 0.06264810217310135,
+      "P-prompt": 0.03680529093989349,
+      "P-SoM": 0.037288432142230654,
+      "SoM": 0.056192642456625475,
+      "DOM": 0.0,
+      "Vision": 0.018630113125046366
+     },
+     "band_max": 0.06264810217310135,
+     "cross_mode_spread": 0.12204704092276863,
+     "ratio": 1.9481362832914493,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_latency_s",
+     "label": "latency / episode (s)",
+     "band_per_arm": {
+      "P-text": 13.95464660733785,
+      "P-prompt": 12.373006282768813,
+      "P-SoM": 16.380534080449024,
+      "SoM": 15.077781233294274,
+      "DOM": 92.88543646206415,
+      "Vision": 79.86968138300136
+     },
+     "band_max": 92.88543646206415,
+     "cross_mode_spread": 181.60696871292413,
+     "ratio": 1.9551716138739923,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_latency_canonical_s",
+     "label": "latency canonical / episode (s)",
+     "band_per_arm": {
+      "P-text": 50.533188418214536,
+      "P-prompt": 34.74798268755086,
+      "P-SoM": 1.4605224390921876,
+      "SoM": 7.122665879761655,
+      "DOM": 75.24866026023335,
+      "Vision": 50.99167458646991
+     },
+     "band_max": 75.24866026023335,
+     "cross_mode_spread": 143.61525016935002,
+     "ratio": 1.9085422873003142,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_tokens",
+     "label": "tokens / episode",
+     "band_per_arm": {
+      "P-text": 5832.6847290640435,
+      "P-prompt": 3455.4827586206957,
+      "P-SoM": 3572.073891625623,
+      "SoM": 5579.300492610841,
+      "DOM": 4506.389162561565,
+      "Vision": 1703.748768472913
+     },
+     "band_max": 5832.6847290640435,
+     "cross_mode_spread": 14158.847290640391,
+     "ratio": 2.4275008762409875,
+     "exceeds_noise": true
+    }
+   ]
+  },
+  "wared_B1": {
+   "cell": "wared_B1",
+   "arms_replicated": [
+    "DOM",
+    "P-SoM",
+    "P-prompt",
+    "P-text",
+    "SoM",
+    "Vision"
+   ],
+   "n_metrics_total": 26,
+   "n_metrics_live": 25,
+   "n_exceeding_noise": 23,
+   "metrics": [
+    {
+     "dimension": "Outcome",
+     "metric": "sr_pct",
+     "label": "success rate %",
+     "band_per_arm": {
+      "DOM": 5.76923076923077,
+      "P-prompt": 0.9615384615384599,
+      "P-text": 3.8461538461538467,
+      "SoM": 2.884615384615385,
+      "P-SoM": 2.884615384615385,
+      "Vision": 1.9230769230769234
+     },
+     "band_max": 5.76923076923077,
+     "cross_mode_spread": 6.730769230769232,
+     "ratio": 1.1666666666666667,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Outcome",
+     "metric": "n_success",
+     "label": "solves",
+     "band_per_arm": {
+      "DOM": 6.0,
+      "P-prompt": 1.0,
+      "P-text": 4.0,
+      "SoM": 3.0,
+      "P-SoM": 3.0,
+      "Vision": 2.0
+     },
+     "band_max": 6.0,
+     "cross_mode_spread": 7.0,
+     "ratio": 1.1666666666666667,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Outcome",
+     "metric": "n_unique_solves",
+     "label": "unique solves (no other mode got it)",
+     "excluded": "cross-mode by construction"
+    },
+    {
+     "dimension": "Macro",
+     "metric": "n_steps",
+     "label": "steps / episode",
+     "band_per_arm": {
+      "DOM": 0.9615384615384635,
+      "P-prompt": 0.49038461538461675,
+      "P-text": 0.4423076923076934,
+      "SoM": 0.6923076923076898,
+      "P-SoM": 0.4326923076923066,
+      "Vision": 0.49038461538461675
+     },
+     "band_max": 0.9615384615384635,
+     "cross_mode_spread": 1.85576923076923,
+     "ratio": 1.9299999999999953,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "cap_hit_rate",
+     "label": "episodes exhausting the step budget",
+     "band_per_arm": {
+      "DOM": 0.04807692307692313,
+      "P-prompt": 0.019230769230769162,
+      "P-text": 0.04807692307692302,
+      "SoM": 0.05769230769230771,
+      "P-SoM": 0.028846153846153855,
+      "Vision": 0.028846153846153855
+     },
+     "band_max": 0.05769230769230771,
+     "cross_mode_spread": 0.09615384615384615,
+     "ratio": 1.666666666666666,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "click_frac",
+     "label": "click fraction",
+     "band_per_arm": {
+      "DOM": 0.003759100263626358,
+      "P-prompt": 0.0028460213324491557,
+      "P-text": 0.026737764502863137,
+      "SoM": 0.02534798517068837,
+      "P-SoM": 0.013683165550984588,
+      "Vision": 0.00030966308895824524
+     },
+     "band_max": 0.026737764502863137,
+     "cross_mode_spread": 0.11869124479527299,
+     "ratio": 4.43908632610491,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "type_frac",
+     "label": "type fraction",
+     "band_per_arm": {
+      "DOM": 0.006355593123011816,
+      "P-prompt": 0.003238887672035423,
+      "P-text": 0.010838531598475198,
+      "SoM": 0.01866841090771401,
+      "P-SoM": 0.0018260364481642033,
+      "Vision": 0.00561706353749962
+     },
+     "band_max": 0.01866841090771401,
+     "cross_mode_spread": 0.222310292375031,
+     "ratio": 11.908367213149873,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "scroll_frac",
+     "label": "scroll fraction",
+     "band_per_arm": {
+      "DOM": 0.005410127013112845,
+      "P-prompt": 0.01506285698384361,
+      "P-text": 0.009117172647831715,
+      "SoM": 0.012928920626709833,
+      "P-SoM": 0.002010528673835124,
+      "Vision": 0.008341269034492366
+     },
+     "band_max": 0.01506285698384361,
+     "cross_mode_spread": 0.23206684789618276,
+     "ratio": 15.406562522972713,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "search_loop_rate",
+     "label": "search-loop rate",
+     "band_per_arm": {
+      "DOM": 0.04807692307692313,
+      "P-prompt": 0.028846153846153855,
+      "P-text": 0.0,
+      "SoM": 0.038461538461538436,
+      "P-SoM": 0.04807692307692313,
+      "Vision": 0.07692307692307696
+     },
+     "band_max": 0.07692307692307696,
+     "cross_mode_spread": 0.4230769230769231,
+     "ratio": 5.499999999999997,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Macro",
+     "metric": "url_revisit_rate",
+     "label": "URL-revisit step rate",
+     "band_per_arm": {
+      "DOM": 0.027881859850258928,
+      "P-prompt": 0.010080999210243413,
+      "P-text": 0.005782817613639746,
+      "SoM": 0.014027008793531581,
+      "P-SoM": 0.0019363491680050027,
+      "Vision": 0.0024288896445074926
+     },
+     "band_max": 0.027881859850258928,
+     "cross_mode_spread": 0.07417240519455559,
+     "ratio": 2.6602387929966866,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "parse_fail_rate",
+     "label": "parse-invalid step rate",
+     "band_per_arm": {
+      "DOM": 0.00810901128441451,
+      "P-prompt": 0.004870401337792644,
+      "P-text": 0.004910895974551105,
+      "SoM": 0.0004899334536431314,
+      "P-SoM": 0.0017548815431879944,
+      "Vision": 0.0015093751368565255
+     },
+     "band_max": 0.00810901128441451,
+     "cross_mode_spread": 0.01753746925117893,
+     "ratio": 2.162713632534447,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "action_fail_rate",
+     "label": "action-execution failure rate",
+     "band_per_arm": {
+      "DOM": 0.02631945588992654,
+      "P-prompt": 0.04433872968959085,
+      "P-text": 0.037512565334611225,
+      "SoM": 0.04947605466165711,
+      "P-SoM": 0.0013089452483789898,
+      "Vision": 0.025151185637986795
+     },
+     "band_max": 0.04947605466165711,
+     "cross_mode_spread": 0.20954640298559535,
+     "ratio": 4.235309472806233,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "click_fail_rate",
+     "label": "action failure | action was a click",
+     "band_per_arm": {
+      "DOM": 0.014447945994778472,
+      "P-prompt": 0.06854680566950547,
+      "P-text": 0.012133675553450157,
+      "SoM": 0.018140551025012802,
+      "P-SoM": 0.006471447215976589,
+      "Vision": 0.02505997313361369
+     },
+     "band_max": 0.06854680566950547,
+     "cross_mode_spread": 0.12884448972913629,
+     "ratio": 1.8796570966465262,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "type_fail_rate",
+     "label": "action failure | action was a type",
+     "band_per_arm": {
+      "DOM": 0.0020227898674351416,
+      "P-prompt": 0.009066411579212244,
+      "P-text": 0.001741747280735409,
+      "SoM": 0.006403409624563469,
+      "P-SoM": 0.005931221556221555,
+      "Vision": 0.001034382284382282
+     },
+     "band_max": 0.009066411579212244,
+     "cross_mode_spread": 0.061519161038391806,
+     "ratio": 6.785392489730434,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "no_change_rate",
+     "label": "page-unchanged (no-op) step rate",
+     "band_per_arm": {
+      "DOM": 0.015937853826897386,
+      "P-prompt": 0.04317828923523942,
+      "P-text": 0.03249803036634907,
+      "SoM": 0.039935433428250344,
+      "P-SoM": 0.0005478458414742704,
+      "Vision": 0.018590488850676712
+     },
+     "band_max": 0.04317828923523942,
+     "cross_mode_spread": 0.2094497053492838,
+     "ratio": 4.85081065181119,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "scroll_inert_rate",
+     "label": "scroll action that did not move the viewport",
+     "band_per_arm": {
+      "DOM": 0.0028846153846153848,
+      "P-prompt": 0.0036610881246508797,
+      "P-text": 0.023683608058608065,
+      "SoM": 0.010168084015895688,
+      "P-SoM": 0.008253205128205134,
+      "Vision": 0.028180354254442624
+     },
+     "band_max": 0.028180354254442624,
+     "cross_mode_spread": 0.1908627484209545,
+     "ratio": 6.772900961344907,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "noop_inert_rate",
+     "label": "no-op despite a SUCCEEDING action",
+     "band_per_arm": {
+      "DOM": 0.01038160206302919,
+      "P-prompt": 0.0011604404543514094,
+      "P-text": 0.005014534968262152,
+      "SoM": 0.009540621233406772,
+      "P-SoM": 0.0007610994069047056,
+      "Vision": 0.006560696787310007
+     },
+     "band_max": 0.01038160206302919,
+     "cross_mode_spread": 0.015767233941430432,
+     "ratio": 1.5187669345929253,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "visibility_gap_rate",
+     "label": "page changed but channel did not show it",
+     "band_per_arm": {
+      "DOM": 0.024802890656212356,
+      "P-prompt": 0.02294050581892941,
+      "P-text": 0.002767682537072935,
+      "SoM": 0.02187025793764283,
+      "P-SoM": 0.001331191852990521,
+      "Vision": 0.0038618371521673134
+     },
+     "band_max": 0.024802890656212356,
+     "cross_mode_spread": 0.06842547102513157,
+     "ratio": 2.758770014897159,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "locator_fallback_rate",
+     "label": "locator fallback rate",
+     "band_per_arm": {
+      "DOM": 0.018974224955985927,
+      "P-prompt": 0.03418152148180423,
+      "P-text": 0.015920342060430942,
+      "SoM": 0.0010096871621421144,
+      "P-SoM": 0.00718986346004849,
+      "Vision": 0.00263389164598842
+     },
+     "band_max": 0.03418152148180423,
+     "cross_mode_spread": 0.19480463679241955,
+     "ratio": 5.699121289733093,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "action_repeat_frac",
+     "label": "consecutive same-action rate",
+     "band_per_arm": {
+      "DOM": 0.022884998090499264,
+      "P-prompt": 0.012713354860102055,
+      "P-text": 0.017506681436696314,
+      "SoM": 0.036528278268539105,
+      "P-SoM": 0.015572102515030273,
+      "Vision": 0.022707805246091617
+     },
+     "band_max": 0.036528278268539105,
+     "cross_mode_spread": 0.07042883512489995,
+     "ratio": 1.9280633652410206,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Micro",
+     "metric": "finish_rate",
+     "label": "episodes ending in finish",
+     "band_per_arm": {
+      "DOM": 0.04807692307692307,
+      "P-prompt": 0.019230769230769218,
+      "P-text": 0.0961538461538462,
+      "SoM": 0.04807692307692307,
+      "P-SoM": 0.0288461538461538,
+      "Vision": 0.038461538461538436
+     },
+     "band_max": 0.0961538461538462,
+     "cross_mode_spread": 0.10576923076923078,
+     "ratio": 1.0999999999999996,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_cost_usd",
+     "label": "billed cost / episode",
+     "band_per_arm": {
+      "DOM": 0.005049495865384612,
+      "P-prompt": 0.0037422137500000008,
+      "P-text": 0.0018621939423076952,
+      "SoM": 0.0022350949038461576,
+      "P-SoM": 0.0018661079807692216,
+      "Vision": 0.0008722122115384576
+     },
+     "band_max": 0.005049495865384612,
+     "cross_mode_spread": 0.03475666134615385,
+     "ratio": 6.88319433716508,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "cost_rel_dom",
+     "label": "cost relative to DOM (within cell)",
+     "band_per_arm": {
+      "DOM": 0.0,
+      "P-prompt": 0.056884586660078895,
+      "P-text": 0.02830680975641109,
+      "SoM": 0.03397519710127117,
+      "P-SoM": 0.028366306213569725,
+      "Vision": 0.013258310307164622
+     },
+     "band_max": 0.056884586660078895,
+     "cross_mode_spread": 0.5283285366476721,
+     "ratio": 9.287727443723318,
+     "exceeds_noise": true
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_latency_s",
+     "label": "latency / episode (s)",
+     "band_per_arm": {
+      "DOM": 8.960988986950667,
+      "P-prompt": 14.531575161677154,
+      "P-text": 41.2096020418864,
+      "SoM": 73.59224991156503,
+      "P-SoM": 54.66796340621437,
+      "Vision": 19.040247027690555
+     },
+     "band_max": 73.59224991156503,
+     "cross_mode_spread": 25.39217951664557,
+     "ratio": 0.3450387717070624,
+     "exceeds_noise": false
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_latency_canonical_s",
+     "label": "latency canonical / episode (s)",
+     "band_per_arm": {
+      "DOM": 8.960988986950667,
+      "P-prompt": 14.531575161677154,
+      "P-text": 41.2096020418864,
+      "SoM": 73.59224991156503,
+      "P-SoM": 54.66796340621437,
+      "Vision": 19.040247027690555
+     },
+     "band_max": 73.59224991156503,
+     "cross_mode_spread": 25.39217951664557,
+     "ratio": 0.3450387717070624,
+     "exceeds_noise": false
+    },
+    {
+     "dimension": "Efficiency",
+     "metric": "mean_tokens",
+     "label": "tokens / episode",
+     "band_per_arm": {
+      "DOM": 5318.817307692305,
+      "P-prompt": 3839.105769230766,
+      "P-text": 1715.163461538461,
+      "SoM": 2387.49038461539,
+      "P-SoM": 1911.0673076923122,
+      "Vision": 875.6826923076951
+     },
+     "band_max": 5318.817307692305,
+     "cross_mode_spread": 37061.75,
+     "ratio": 6.968043430707741,
+     "exceeds_noise": true
+    }
+   ]
+  }
+ }
 }

@@ -18,14 +18,14 @@ can be driven to 0 means the arm has no assignment-robust unique contribution.
 
 ## Per-arm lower bound (min over 64 assignments)
 
-| arm | side | cls_b0 (n=224) | red_b0 (n=203) |
-|---|---|---|---|
-| `SoM` | visual | **6**–12 | **4**–8 |
-| `Vision` | visual | **6**–11 | **2**–5 |
-| `P-text` | text | **0**–3 | **0**–6 |
-| `P-SoM` | text | **0**–4 | **0**–8 |
-| `P-prompt` | text | **1**–6 | **2**–4 |
-| `DOM` | text (AXTree, not in either side group) | **0**–6 | **0**–5 |
+| arm | side | cls_b0 (n=224) | red_b0 (n=203) | wared_b1 (n=104) |
+|---|---|---|---|---|
+| `SoM` | visual | **6**–12 | **4**–8 | **1**–2 |
+| `Vision` | visual | **6**–11 | **2**–5 | **0**–2 |
+| `P-text` | text | **0**–3 | **0**–6 | **1**–4 |
+| `P-SoM` | text | **0**–4 | **0**–8 | **0**–2 |
+| `P-prompt` | text | **1**–6 | **2**–4 | **2**–5 |
+| `DOM` | text (AXTree, not in either side group) | **0**–6 | **0**–5 | **1**–4 |
 
 ## The comparison the hero rests on
 
@@ -33,10 +33,12 @@ can be driven to 0 means the arm has no assignment-robust unique contribution.
 |---|---|---|---|
 | cls_b0 (classifieds) | 6 (`SoM`) | 1 (`P-prompt`) | **+5** |
 | red_b0 (reddit) | 2 (`Vision`) | 2 (`P-prompt`) | **+0** |
+| wared_b1 (WA-reddit) | 0 (`Vision`) | 2 (`P-prompt`) | **-2** |
 
 ## Reading
 
 - **cls_b0**: the two sides are separated by 5 — every visual arm keeps a unique contribution that no assignment of the text arms reaches.
 - **red_b0**: the sides **touch** at 2. The visual side's weakest arm and the text side's strongest arm have the same lower bound, so on this cell 'the visual side contributes more uniquely' is **not** supported arm-by-arm — it holds only for the stronger visual arm.
+- **wared_b1**: **inverted** (-2). A text arm has a higher assignment-robust unique contribution than the weakest visual arm.
 
-⚠️ **Scope.** Both cells are B0. A cell needs all six arms replicated to appear here, and only B0 has that on two sites. Nothing here licenses a statement about B1 or B2, whose floors are a different size entirely (see `serving_mode_floor.md`).
+⚠️ **Scope.** 3 cells (cls_b0, red_b0, wared_b1; backbone B0, B1). A cell needs all six arms replicated to appear here. The B1 cell is a different backbone on a different benchmark (WebArena) and is locally served; read it beside the B0 cells, not pooled with them. Nothing here licenses a statement about B2.

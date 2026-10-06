@@ -29,4 +29,11 @@ Cell `classifieds·B0`, n=224. Best single mode 27.23%; six-mode oracle **43.30%
 
 **At matched SERVING COST the two are not interchangeable.** The mode oracle spends ONE episode per task; the six-rerun union spends SIX. So the residual buys little, but it buys it at a sixth of the deployment cost — which is the axis a deployment actually pays on. The surviving claim is therefore about cost-efficiency of the ceiling, not about its height.
 
-⚠️ Both readings are bounded by one cell — `classifieds·B0` is the only cell carrying replicated arms. Neither generalises without more replicates.
+⚠️ The prose above reads `classifieds·B0`. The same computation on the other cells whose six arms are all replicated is tabulated below; read each from its own row.
+
+## Other cells with every arm replicated (added 2026-10-07, 实验笔记 §537)
+
+| cell | n | best single | six-mode oracle | U(6) at p=1/2, range over arms | best arm's U(6), identified interval | share of headroom (interval) |
+|---|---:|---:|---:|---:|---:|---:|
+| `red_B0` | 203 | 14.78% | 26.11% | 12.16–23.83% | 20.61–33.76% | 51.5–167.5% |
+| `wared_B1` | 104 | 16.35% | 30.77% | 11.48–25.66% | 23.14–37.78% | 47.1–148.6% |
