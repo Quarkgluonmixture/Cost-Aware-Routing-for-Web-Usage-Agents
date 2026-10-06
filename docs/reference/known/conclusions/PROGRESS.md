@@ -37,7 +37,7 @@ purpose: Phase 1 结论提取的进度与接力点 — 新 session 从这里接�
 **覆盖性自检已过**（07-28，实测）：
 - `A+B+C+D1–4+E = 2033` = ledger 全量，无遗漏无重复
 - A 批 `219+177+229+206 = 831` **= ledger 中 ADJUDICATED 的全部**，无裁定漏到别批
-- ⚠️ 文档漂移修正：`PHASE1_PLAN.md` 写 "A = ADJUDICATED 无数字 ~501 条" **是错的**，以 831 为准。
+- ⚠️ 文档漂移修正：`docs/checkpoints/conclusion_layer_plan.md`（原名 PHASE1_PLAN.md，2026-10-07 因与 phase1_plan.md 大小写冲突改名） 写 "A = ADJUDICATED 无数字 ~501 条" **是错的**，以 831 为准。
   另 §56 等少数条目含数字却落在 A 批 —— "无数字"切分有渗漏，**不影响产出（数字原样抄）**。
 
 **分片重建命令**（scratchpad 失效时）：见本文件末尾附录。
@@ -73,7 +73,7 @@ print({t: sum(1 for r in rs if r['type']==t) for t in
 
 ## 每批的产出格式
 
-见 `PHASE1_PLAN.md`。要点：**聚合不是转写** —— 把散落几十个 § 讲同一件事的记录
+见 `docs/checkpoints/conclusion_layer_plan.md`（原名 PHASE1_PLAN.md，2026-10-07 因与 phase1_plan.md 大小写冲突改名）。要点：**聚合不是转写** —— 把散落几十个 § 讲同一件事的记录
 归成一个主题，给出「当前值 / 演变 / 已作废 / caveats / 证据 / 原文片段」。
 
 ## 三条不可违反
