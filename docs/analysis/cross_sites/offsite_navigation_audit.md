@@ -18,7 +18,7 @@ A step is **off-site** when its `obs_url` host is not `localhost`. `env_step` is
 | cell | off-site steps | off-site episodes | median `env_step` on-site | off-site | ratio |
 |---|---|---|---|---|---|
 | `B0·VWA-cla` | 0/20646 (0.00%) | 0/1344 (0.0%) | 4,493 ms | — | — |
-| `B0·VWA-red` | 478/26425 (1.81%) | 36/1230 (2.9%) | 11,349 ms | 10,007 ms | **0.88×** |
+| `B0·VWA-red` | 478/26417 (1.81%) | 36/1230 (2.9%) | 11,337 ms | 10,007 ms | **0.88×** |
 | `B1·VWA-cla` | 0/27927 (0.00%) | 0/1344 (0.0%) | 5,750 ms | — | — |
 | `B1·VWA-red` | 501/29309 (1.71%) | 54/1230 (4.4%) | 7,848 ms | 6,349 ms | **0.81×** |
 | `B2·VWA-cla` | 58/36529 (0.16%) | 4/1344 (0.3%) | 4,656 ms | 14,884 ms | **3.20×** |
@@ -43,7 +43,7 @@ Too small to overturn a latency ordering on its own. It is recorded because it i
 | site | median on-site `env_step` |
 |---|---|
 | `B0·VWA-cla` | 4,493 ms |
-| `B0·VWA-red` | 11,349 ms |
+| `B0·VWA-red` | 11,337 ms |
 | `B1·VWA-cla` | 5,750 ms |
 | `B1·VWA-red` | 7,848 ms |
 | `B2·VWA-cla` | 4,656 ms |

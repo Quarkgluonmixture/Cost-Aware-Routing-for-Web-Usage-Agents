@@ -91,17 +91,17 @@
      "runtime_sleep": 16.053346505309953
     },
     "P-SoM": {
-     "total": 24796.734166824477,
-     "backend_infer": 4330.815630159278,
-     "obs_prepare": 1.2110906026173924,
-     "env_step": 20350.50019152697,
-     "runtime_sleep": 16.384664810451916
+     "total": 24761.11130559938,
+     "backend_infer": 4332.086116810823,
+     "obs_prepare": 1.2122987294191967,
+     "env_step": 20313.586755055672,
+     "runtime_sleep": 16.412786955588928
     }
    },
    "fastest_by_total": "Vision",
    "fastest_by_model_only": "P-SoM",
    "fastest_agrees": false,
-   "model_share_of_total": 0.22777533662072352
+   "model_share_of_total": 0.22783893036816333
   },
   "B0·wa_reddit": {
    "per_mode_ms": {

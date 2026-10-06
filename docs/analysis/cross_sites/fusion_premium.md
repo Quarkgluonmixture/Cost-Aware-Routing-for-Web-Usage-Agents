@@ -4,7 +4,7 @@ status: complete
 created: 2026-08-02
 purpose: turn §4.2's fusion-premium claim from a count over cells into a paired test against a priori comparators
 post_hoc_exploratory: true
-scope_warning: not the pre-registered H1; not gated. The rerun band it is read against (0.0-3.45pp, mean-difference scale) is measured on two conditions and extrapolated to the rest.
+scope_warning: not the pre-registered H1; not gated. The rerun band it is read against (0.0-5.77pp, mean-difference scale) is measured on two conditions and extrapolated to the rest.
 producer: scripts/analysis/aggregate_fusion_premium.py
 ---
 
@@ -34,9 +34,9 @@ Effects are `SR(SoM) - SR(comparator)` in points, against **a priori fixed** com
 | SoM − vision | 8 | **+1.48pp** | [+0.06, +2.93] | **yes** | no | no |
 | SoM − dom | 8 | **+0.70pp** | [-0.62, +2.04] | no | no | no |
 
-The band is the measured run-to-run mean-difference floor, 0.0 to 3.45pp. Reading the pooled estimate against it rather than against zero is the point: a premium has to beat what repetition delivers for the same money, not merely beat nothing.
+The band is the measured run-to-run mean-difference floor, 0.0 to 5.77pp. Reading the pooled estimate against it rather than against zero is the point: a premium has to beat what repetition delivers for the same money, not merely beat nothing.
 
-⚠️ **Two bands, and the last column is the one that answers the question.** `0.0–3.45pp` is what 13 reruns *happened to* deliver — two draws from a random quantity, not a bound on it. That quantity's own spread is computable from the same pairs' discordant counts: `SD(ΔSR) = √d/n` gives **0.0–2.53pp**, i.e. the band's upper edge is about one standard deviation. An effect only becomes unlikely for a single rerun to manufacture at roughly **0.0–4.15pp** (one-sided 95%). Both are reported; nothing here should be read as clearing noise on the strength of the observed band alone. → `noise_floor_inventory` §1b.
+⚠️ **Two bands, and the last column is the one that answers the question.** `0.0–5.77pp` is what 24 reruns *happened to* deliver — two draws from a random quantity, not a bound on it. That quantity's own spread is computable from the same pairs' discordant counts: `SD(ΔSR) = √d/n` gives **0.0–3.04pp**, i.e. the band's upper edge is about one standard deviation. An effect only becomes unlikely for a single rerun to manufacture at roughly **0.0–5.0pp** (one-sided 95%). Both are reported; nothing here should be read as clearing noise on the strength of the observed band alone. → `noise_floor_inventory` §1b.
 
 **The interval above is the task-clustered one, and that choice changes an answer.** Within a site the three backbones are scored on the same task universe, so their effects share sampling noise; the textbook `sqrt(1/Σw)` treats them as independent and understates the pooled SE. Resampling tasks once per site and evaluating every backbone in that site on the same draw gives:
 
@@ -70,12 +70,12 @@ The two columns read together show something neither shows alone. In every cell 
 | `red_B1` | dom | +1.48pp | [-1.48, +4.43] | no | no |
 | `red_B2` | dom | -2.96pp | [-5.91, -0.49] | **yes, negative** | no |
 | `wa_red_B1` | dom | -2.88pp | [-9.62, +2.88] | no | no |
-| `wa_red_B0` | dom | -4.81pp | [-12.50, +2.88] | no | yes |
+| `wa_red_B0` | dom | -4.81pp | [-12.50, +2.88] | no | no |
 
 **7 of 8** intervals include zero and the remaining one is negative, so in no cell does fusion beat the channel that suits the workload. ⚠️ The word *significantly* does not belong on that sentence and has been removed: the comparator is chosen per cell using the same observed success rates the interval is computed from, so these CIs do not retain nominal coverage. Restoring coverage needs either a site→channel mapping fixed in advance, or a bootstrap that re-selects the comparator inside every resample. Until then this row is descriptive. (§H stress P1-2.) Against the channel that does *not* suit the workload it does better — but the full set must be quoted, not its top end:
 
 - `SoM − dom` over DOM, where the visual channel is stronger: cls_B2 +0.89pp, cls_B1 +8.04pp, cls_B0 +9.82pp  → range **+0.89 to +9.82pp**, 2 of 3 above the rerun null.
-- `SoM − vision` over Vision, where the text channel is stronger: red_B2 -0.99pp, wa_red_B0 +2.88pp, wa_red_B1 +3.85pp, red_B1 +4.93pp, red_B0 +7.39pp  → range **-0.99 to +7.39pp**, 2 of 5 above the rerun null.
+- `SoM − vision` over Vision, where the text channel is stronger: red_B2 -0.99pp, wa_red_B0 +2.88pp, wa_red_B1 +3.85pp, red_B1 +4.93pp, red_B0 +7.39pp  → range **-0.99 to +7.39pp**, 1 of 5 above the rerun null.
 
 ⚠️ **Derived from the table above, not typed.** Until 2026-08-03 this paragraph hardcoded four of these numbers and named only the two largest on each side — the source of the `4.93-7.39pp` string quoted downstream. The dropped cells are not cosmetic: on the text-stronger side the smallest is **negative**, so a range starting at +4.93 is a subrange with the sign change removed. Which channel is stronger is read off each cell and is therefore post hoc, which is why both full columns appear in §1 and the pooled tests in §2 use comparators fixed in advance.
 

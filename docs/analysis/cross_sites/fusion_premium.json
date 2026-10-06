@@ -5,7 +5,7 @@
   "seed": 20260802,
   "floor_mean_pp": [
     0.0,
-    3.45
+    5.77
   ],
   "floor_band": {
     "functional": "mean difference |SR(a) - SR(b)| on same-condition replicate pairs",
@@ -139,15 +139,125 @@
         "null_sd_mean_diff_pp": 2.2574264507171624,
         "null_one_sided_95_pp": 3.7134665114297323,
         "null_two_sided_95_pp": 4.4245558434056385
+      },
+      {
+        "label": "B1.red.som",
+        "scope": "B1 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 4,
+        "abs_mean_diff_pp": 0.9852216748768473,
+        "null_sd_mean_diff_pp": 0.9852216748768473,
+        "null_one_sided_95_pp": 1.620689655172414,
+        "null_two_sided_95_pp": 1.9310344827586208
+      },
+      {
+        "label": "B1.red.dom",
+        "scope": "B1 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 7,
+        "abs_mean_diff_pp": 0.49261083743842365,
+        "null_sd_mean_diff_pp": 1.3033257689973354,
+        "null_one_sided_95_pp": 2.1439708900006167,
+        "null_two_sided_95_pp": 2.5545185072347776
+      },
+      {
+        "label": "B0.red.som",
+        "scope": "B0 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 17,
+        "abs_mean_diff_pp": 2.4630541871921183,
+        "null_sd_mean_diff_pp": 2.0310865150825914,
+        "null_one_sided_95_pp": 3.3411373173108627,
+        "null_two_sided_95_pp": 3.980929569561879
+      },
+      {
+        "label": "B0.red.dom",
+        "scope": "B0 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 20,
+        "abs_mean_diff_pp": 2.955665024630542,
+        "null_sd_mean_diff_pp": 2.203022637930827,
+        "null_one_sided_95_pp": 3.6239722393962106,
+        "null_two_sided_95_pp": 4.3179243703444214
+      },
+      {
+        "label": "B0.red.vision",
+        "scope": "B0 x reddit, canonical n=203",
+        "n": 203,
+        "discordant_count": 10,
+        "abs_mean_diff_pp": 0.0,
+        "null_sd_mean_diff_pp": 1.5577722463883643,
+        "null_one_sided_95_pp": 2.5625353453088593,
+        "null_two_sided_95_pp": 3.053233602921194
+      },
+      {
+        "label": "B1.wared.dom",
+        "scope": "B1 x WA-reddit, canonical n=104",
+        "n": 104,
+        "discordant_count": 10,
+        "abs_mean_diff_pp": 5.769230769230769,
+        "null_sd_mean_diff_pp": 3.0406515963157497,
+        "null_one_sided_95_pp": 5.0018718759394085,
+        "null_two_sided_95_pp": 5.9596771287788695
+      },
+      {
+        "label": "B1.wared.pprompt",
+        "scope": "B1 x WA-reddit, canonical n=104",
+        "n": 104,
+        "discordant_count": 9,
+        "abs_mean_diff_pp": 0.9615384615384616,
+        "null_sd_mean_diff_pp": 2.8846153846153846,
+        "null_one_sided_95_pp": 4.7451923076923075,
+        "null_two_sided_95_pp": 5.653846153846153
+      },
+      {
+        "label": "B1.wared.ptext",
+        "scope": "B1 x WA-reddit, canonical n=104",
+        "n": 104,
+        "discordant_count": 6,
+        "abs_mean_diff_pp": 3.8461538461538463,
+        "null_sd_mean_diff_pp": 2.3552785988299787,
+        "null_one_sided_95_pp": 3.874433295075315,
+        "null_two_sided_95_pp": 4.616346053706758
+      },
+      {
+        "label": "B1.wared.som",
+        "scope": "B1 x WA-reddit, canonical n=104",
+        "n": 104,
+        "discordant_count": 7,
+        "abs_mean_diff_pp": 2.8846153846153846,
+        "null_sd_mean_diff_pp": 2.543991645254414,
+        "null_one_sided_95_pp": 4.184866256443511,
+        "null_two_sided_95_pp": 4.986223624698652
+      },
+      {
+        "label": "B1.wared.psom",
+        "scope": "B1 x WA-reddit, canonical n=104",
+        "n": 104,
+        "discordant_count": 5,
+        "abs_mean_diff_pp": 2.8846153846153846,
+        "null_sd_mean_diff_pp": 2.150065362980567,
+        "null_one_sided_95_pp": 3.5368575221030327,
+        "null_two_sided_95_pp": 4.214128111441911
+      },
+      {
+        "label": "B1.wared.vision",
+        "scope": "B1 x WA-reddit, canonical n=104",
+        "n": 104,
+        "discordant_count": 2,
+        "abs_mean_diff_pp": 1.9230769230769231,
+        "null_sd_mean_diff_pp": 1.359820733051053,
+        "null_one_sided_95_pp": 2.236905105868982,
+        "null_two_sided_95_pp": 2.665248636780064
       }
     ],
     "observed_min_pp": 0.0,
-    "observed_max_pp": 3.45,
-    "n_draws": 13,
+    "observed_max_pp": 5.77,
+    "n_draws": 24,
     "null_sd_min_pp": 0.0,
-    "null_sd_max_pp": 2.53,
+    "null_sd_max_pp": 3.04,
     "one_sided_95_min_pp": 0.0,
-    "one_sided_95_max_pp": 4.15,
+    "one_sided_95_max_pp": 5.0,
     "reading": "observed_* is a range of 2 draws and must never be quoted as a threshold on its own; one_sided_95_* is the level an effect must reach before a single rerun would be unlikely to produce it"
   },
   "fused": "som",

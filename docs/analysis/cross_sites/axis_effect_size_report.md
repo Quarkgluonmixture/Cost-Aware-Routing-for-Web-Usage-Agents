@@ -9,20 +9,18 @@ Hierarchical analysis with two tiers:
 
 **Current data status**: computed from the run registry at grade `paper-grade`; Tier 2b Micro is tracked separately in `axis1_microbehavior.{json,md}`.
 
-> **Episodes dropped for steps↔summary identity mismatch**: B0/reddit/Phantom-SoM: tasks [87, 149]. Contrasts touching those arms pair on the intersection and so lose the task on both legs.
-
 ## Tier 1 — Hook: is P-SoM distinct from both DOM and SoM?
 
 | baseline | site | metric | DOM→P-SoM (compound) | P-SoM→SoM (image) | distinct from DOM? | distinct from SoM? |
 |---|---|---|---|---|---|---|
-| B0 | reddit | search loop | h=-0.27★; -13.43 pp; [-20.40, -5.97] | h=+0.05; +2.49 pp; [-4.48, +9.45] | ✅ | — |
-| B0 | reddit | type fraction | d_z=-0.07; -1.12 pp; [-3.41, +1.19] | d_z=-0.08; -1.43 pp; [-3.80, +0.78] | — | — |
-| B0 | reddit | scroll fraction | d_z=-0.18★; -4.20 pp; [-7.31, -0.97] | d_z=-0.15★; -2.49 pp; [-4.79, -0.06] | ✅ | ✅ |
-| B0 | reddit | self-correction | d_z=+0.22★; +0.76; [+0.32, +1.24] | d_z=-0.26★; -0.69; [-1.08, -0.34] | ✅ | ✅ |
-| B0 | reddit | click fraction | d_z=-0.01; -0.23 pp; [-3.69, +3.19] | d_z=+0.08; +2.11 pp; [-1.40, +5.64] | — | — |
-| B0 | reddit | finish rate | h=-0.20★; -9.95 pp; [-17.91, -2.49] | h=+0.16★; +7.96 pp; [+0.00, +16.42] | ✅ | ✅ |
-| B0 | reddit | step count | d_z=+0.25★; +2.72; [+1.20, +4.21] | d_z=-0.25★; -2.82; [-4.42, -1.31] | ✅ | ✅ |
-| B0 | reddit | action repeat | d_z=+0.20★; +7.35 pp; [+2.40, +12.14] | d_z=-0.03; -1.08 pp; [-5.68, +3.37] | ✅ | — |
+| B0 | reddit | search loop | h=-0.27★; -13.30 pp; [-20.21, -6.39] | h=+0.05; +2.46 pp; [-4.45, +9.36] | ✅ | — |
+| B0 | reddit | type fraction | d_z=-0.07; -1.16 pp; [-3.60, +1.16] | d_z=-0.09; -1.46 pp; [-3.77, +0.73] | — | — |
+| B0 | reddit | scroll fraction | d_z=-0.18★; -4.12 pp; [-7.41, -0.98] | d_z=-0.16★; -2.71 pp; [-4.95, -0.37] | ✅ | ✅ |
+| B0 | reddit | self-correction | d_z=+0.21★; +0.73; [+0.25, +1.23] | d_z=-0.25★; -0.67; [-1.05, -0.34] | ✅ | ✅ |
+| B0 | reddit | click fraction | d_z=-0.01; -0.13 pp; [-3.46, +3.18] | d_z=+0.09; +2.24 pp; [-1.22, +5.97] | — | — |
+| B0 | reddit | finish rate | h=-0.19★; -9.36 pp; [-16.75, -0.99] | h=+0.15; +7.39 pp; [-0.49, +15.27] | ✅ | ✅ |
+| B0 | reddit | step count | d_z=+0.24★; +2.63; [+1.07, +4.05] | d_z=-0.24★; -2.69; [-4.21, -1.16] | ✅ | ✅ |
+| B0 | reddit | action repeat | d_z=+0.20★; +7.44 pp; [+2.40, +12.29] | d_z=-0.03; -0.97 pp; [-5.31, +3.60] | ✅ | — |
 | B0 | classifieds | search loop | h=-0.06; -2.23 pp; [-7.14, +2.24] | h=-0.23★; -9.82 pp; [-15.18, -4.46] | — | ✅ |
 | B0 | classifieds | type fraction | d_z=-0.14; -2.38 pp; [-4.61, -0.10] | d_z=+0.03; +0.45 pp; [-1.47, +2.43] | ✅ | — |
 | B0 | classifieds | scroll fraction | d_z=+0.13; +2.50 pp; [-0.01, +4.97] | d_z=-0.25★; -5.39 pp; [-8.09, -2.61] | ✅ | ✅ |
@@ -67,9 +65,9 @@ Hierarchical analysis with two tiers:
 **P-SoM independence verdict** (cells where P-SoM differs from BOTH DOM and SoM, |effect|>0.1):
 - **Independent on**: scroll_frac@B0/reddit, selfcorr_count@B0/reddit, finish_rate@B0/reddit, n_steps@B0/reddit, scroll_frac@B0/classifieds, finish_rate@B0/classifieds, type_frac@B1/reddit, finish_rate@B1/reddit, n_steps@B1/reddit, click_frac@B1/classifieds, finish_rate@B2/reddit, action_repeat_frac@B2/reddit, type_frac@B2/classifieds, finish_rate@B2/classifieds, n_steps@B2/classifieds
 
-> **Multiplicity.** That count asks only |effect| > 0.1, across 48 (cell, metric) combinations and 96 Wilcoxon tests. Requiring **both** legs to also clear a correction applied jointly over all legs: **7 survive Benjamini-Hochberg** (FDR 0.05) and **2 survive Holm** (FWER 0.05), against 15 on effect size alone. The BH set spans 4 of the 6 cells, so it is not one cell's accident: selfcorr_count@B0/reddit, n_steps@B0/reddit, type_frac@B1/reddit, finish_rate@B1/reddit, click_frac@B1/classifieds, type_frac@B2/classifieds, finish_rate@B2/classifieds. Report the corrected count, not the bare one.
+> **Multiplicity.** That count asks only |effect| > 0.1, across 48 (cell, metric) combinations and 96 Wilcoxon tests. Requiring **both** legs to also clear a correction applied jointly over all legs: **8 survive Benjamini-Hochberg** (FDR 0.05) and **1 survive Holm** (FWER 0.05), against 15 on effect size alone. The BH set spans 4 of the 6 cells, so it is not one cell's accident: scroll_frac@B0/reddit, selfcorr_count@B0/reddit, n_steps@B0/reddit, type_frac@B1/reddit, finish_rate@B1/reddit, click_frac@B1/classifieds, type_frac@B2/classifieds, finish_rate@B2/classifieds. Report the corrected count, not the bare one.
 
-> **Distinct from both endpoints is not the same as independent.** A mode that *interpolates* between DOM and SoM also differs from both. P-SoM is off the DOM–SoM segment — an extremum rather than a midpoint — exactly when the two legs disagree in sign. Of the 7 BH survivors, **6 are off the segment** and 1 interpolate (type_frac@B1/reddit). The off-segment count is the one that supports an independent arm; on `finish_rate@B1/reddit` P-SoM sits about 9pp below *both* endpoints while the endpoints differ from each other by 0.5pp.
+> **Distinct from both endpoints is not the same as independent.** A mode that *interpolates* between DOM and SoM also differs from both. P-SoM is off the DOM–SoM segment — an extremum rather than a midpoint — exactly when the two legs disagree in sign. Of the 8 BH survivors, **6 are off the segment** and 2 interpolate (scroll_frac@B0/reddit, type_frac@B1/reddit). The off-segment count is the one that supports an independent arm; on `finish_rate@B1/reddit` P-SoM sits about 9pp below *both* endpoints while the endpoints differ from each other by 0.5pp.
 - Distinct from DOM only (≈ SoM-like): search_loop@B0/reddit, action_repeat_frac@B0/reddit, type_frac@B0/classifieds, selfcorr_count@B1/reddit, click_frac@B1/reddit, action_repeat_frac@B1/reddit, type_frac@B1/classifieds
 - Distinct from SoM only (≈ DOM-like): search_loop@B0/classifieds, n_steps@B0/classifieds, action_repeat_frac@B0/classifieds, search_loop@B1/reddit, scroll_frac@B1/reddit, search_loop@B1/classifieds, selfcorr_count@B1/classifieds, finish_rate@B1/classifieds, n_steps@B1/classifieds, action_repeat_frac@B1/classifieds, search_loop@B2/reddit, n_steps@B2/reddit, search_loop@B2/classifieds, selfcorr_count@B2/classifieds
 - Indistinct from both endpoints: type_frac@B0/reddit, click_frac@B0/reddit, selfcorr_count@B0/classifieds, click_frac@B0/classifieds, scroll_frac@B1/classifieds, type_frac@B2/reddit, scroll_frac@B2/reddit, selfcorr_count@B2/reddit, click_frac@B2/reddit, scroll_frac@B2/classifieds, click_frac@B2/classifieds, action_repeat_frac@B2/classifieds
@@ -80,14 +78,14 @@ DOM → P-text (axis 1, text only) → P-SoM (axis 2, prompt only) → SoM (axis
 
 | baseline | site | metric | text-axis (DOM→P-text) | prompt-axis (P-text→P-SoM) | image-axis (P-SoM→SoM) | dominant cascade axis | consistency |
 |---|---|---|---|---|---|---|---|
-| B0 | reddit | search loop | h=-0.17★; -8.37 pp; [-14.78, -1.97] | h=-0.10; -4.98 pp; [-10.45, +0.00] | h=+0.05; +2.49 pp; [-4.48, +9.45] | text | pass |
-| B0 | reddit | type fraction | d_z=+0.03; +0.49 pp; [-1.84, +2.98] | d_z=-0.10; -1.60 pp; [-3.92, +0.49] | d_z=-0.08; -1.43 pp; [-3.80, +0.78] | neither (all small) | pass |
-| B0 | reddit | scroll fraction | d_z=-0.21★; -4.88 pp; [-8.25, -1.63] | d_z=+0.04; +0.77 pp; [-1.83, +3.25] | d_z=-0.15★; -2.49 pp; [-4.79, -0.06] | text | pass |
-| B0 | reddit | self-correction | d_z=+0.28★; +0.90; [+0.48, +1.36] | d_z=-0.07; -0.16; [-0.53, +0.17] | d_z=-0.26★; -0.69; [-1.08, -0.34] | text | fail |
-| B0 | reddit | click fraction | d_z=-0.06; -1.41 pp; [-4.70, +1.77] | d_z=+0.05; +1.09 pp; [-1.64, +3.88] | d_z=+0.08; +2.11 pp; [-1.40, +5.64] | neither (all small) | pass |
-| B0 | reddit | finish rate | h=-0.30★; -14.78 pp; [-22.17, -6.90] | h=+0.10; +4.98 pp; [-1.99, +12.44] | h=+0.16★; +7.96 pp; [+0.00, +16.42] | text | fail |
-| B0 | reddit | step count | d_z=+0.28★; +3.00; [+1.49, +4.47] | d_z=-0.03; -0.32; [-1.69, +1.05] | d_z=-0.25★; -2.82; [-4.42, -1.31] | text | fail |
-| B0 | reddit | action repeat | d_z=+0.23★; +8.76 pp; [+3.33, +14.21] | d_z=-0.06; -1.62 pp; [-5.71, +2.38] | d_z=-0.03; -1.08 pp; [-5.68, +3.37] | text | pass |
+| B0 | reddit | search loop | h=-0.17★; -8.37 pp; [-14.78, -1.97] | h=-0.10; -4.93 pp; [-10.34, +0.49] | h=+0.05; +2.46 pp; [-4.45, +9.36] | text | pass |
+| B0 | reddit | type fraction | d_z=+0.03; +0.49 pp; [-1.84, +2.98] | d_z=-0.10; -1.65 pp; [-4.05, +0.43] | d_z=-0.09; -1.46 pp; [-3.77, +0.73] | prompt | pass |
+| B0 | reddit | scroll fraction | d_z=-0.21★; -4.88 pp; [-8.25, -1.63] | d_z=+0.04; +0.76 pp; [-1.82, +3.30] | d_z=-0.16★; -2.71 pp; [-4.95, -0.37] | text | pass |
+| B0 | reddit | self-correction | d_z=+0.28★; +0.90; [+0.48, +1.36] | d_z=-0.07; -0.17; [-0.53, +0.16] | d_z=-0.25★; -0.67; [-1.05, -0.34] | text | pass |
+| B0 | reddit | click fraction | d_z=-0.06; -1.41 pp; [-4.70, +1.77] | d_z=+0.06; +1.27 pp; [-1.43, +4.14] | d_z=+0.09; +2.24 pp; [-1.22, +5.97] | neither (all small) | pass |
+| B0 | reddit | finish rate | h=-0.30★; -14.78 pp; [-22.17, -6.90] | h=+0.11; +5.42 pp; [-1.97, +12.81] | h=+0.15; +7.39 pp; [-0.49, +15.27] | text | pass |
+| B0 | reddit | step count | d_z=+0.28★; +3.00; [+1.49, +4.47] | d_z=-0.04; -0.37; [-1.83, +1.01] | d_z=-0.24★; -2.69; [-4.21, -1.16] | text | pass |
+| B0 | reddit | action repeat | d_z=+0.23★; +8.76 pp; [+3.33, +14.21] | d_z=-0.05; -1.33 pp; [-5.38, +2.62] | d_z=-0.03; -0.97 pp; [-5.31, +3.60] | text | pass |
 | B0 | classifieds | search loop | h=-0.01; -0.45 pp; [-4.91, +4.02] | h=-0.04; -1.79 pp; [-6.25, +2.68] | h=-0.23★; -9.82 pp; [-15.18, -4.46] | image | pass |
 | B0 | classifieds | type fraction | d_z=-0.17★; -3.07 pp; [-5.42, -0.76] | d_z=+0.05; +0.69 pp; [-1.09, +2.60] | d_z=+0.03; +0.45 pp; [-1.47, +2.43] | text | pass |
 | B0 | classifieds | scroll fraction | d_z=+0.07; +1.26 pp; [-1.14, +3.65] | d_z=+0.06; +1.25 pp; [-1.30, +3.86] | d_z=-0.25★; -5.39 pp; [-8.09, -2.61] | image | pass |
@@ -142,14 +140,14 @@ Two routes lead from DOM to P-SoM:
 
 | baseline | site | metric | path A | path B | compound | A−comp | B−comp | same base set? |
 |---|---|---|---|---|---|---|---|---|
-| B0 | reddit | search loop | -13.35 | -13.39 | -13.43 | +0.083 | +0.044 | ✅ |
+| B0 | reddit | search loop | -13.30 | -13.30 | -13.30 | +0.000 | +0.000 | ✅ |
 | B0 | reddit | type fraction | -0.01 | -0.01 | -0.01 | +0.000 | -0.000 | ✅ |
-| B0 | reddit | scroll fraction | -0.04 | -0.04 | -0.04 | +0.001 | +0.002 | ✅ |
-| B0 | reddit | self-correction | +0.74 | +0.76 | +0.76 | -0.019 | +0.002 | ⚠️ n differs across legs |
-| B0 | reddit | click fraction | -0.00 | -0.00 | -0.00 | -0.001 | -0.002 | ✅ |
-| B0 | reddit | finish rate | -9.80 | -9.98 | -9.95 | +0.147 | -0.029 | ⚠️ n differs across legs |
-| B0 | reddit | step count | +2.68 | +2.73 | +2.72 | -0.035 | +0.013 | ⚠️ n differs across legs |
-| B0 | reddit | action repeat | +0.07 | +0.07 | +0.07 | -0.002 | +0.000 | ✅ |
+| B0 | reddit | scroll fraction | -0.04 | -0.04 | -0.04 | +0.000 | -0.000 | ✅ |
+| B0 | reddit | self-correction | +0.73 | +0.73 | +0.73 | +0.000 | +0.000 | ✅ |
+| B0 | reddit | click fraction | -0.00 | -0.00 | -0.00 | +0.000 | +0.000 | ✅ |
+| B0 | reddit | finish rate | -9.36 | -9.36 | -9.36 | +0.000 | +0.000 | ✅ |
+| B0 | reddit | step count | +2.63 | +2.63 | +2.63 | +0.000 | -0.000 | ✅ |
+| B0 | reddit | action repeat | +0.07 | +0.07 | +0.07 | +0.000 | +0.000 | ✅ |
 | B0 | classifieds | search loop | -2.23 | -2.23 | -2.23 | +0.000 | +0.000 | ✅ |
 | B0 | classifieds | type fraction | -0.02 | -0.02 | -0.02 | +0.000 | +0.000 | ✅ |
 | B0 | classifieds | scroll fraction | +0.03 | +0.03 | +0.03 | +0.000 | -0.000 | ✅ |
@@ -191,17 +189,16 @@ Two routes lead from DOM to P-SoM:
 | B2 | classifieds | step count | +1.00 | +1.00 | +1.00 | +0.000 | +0.000 | ✅ |
 | B2 | classifieds | action repeat | +0.02 | +0.02 | +0.02 | -0.000 | +0.000 | ✅ |
 
-**The identity holds in 45 of 48 (cell × metric) combinations.** Where it does not, the legs were averaged over different task sets, not over a world containing an interaction.
-The rows that miss are exactly the ones on the B0·reddit P-SoM arm, whose legs are summed over 201 tasks against 203 on the others (the two identity-mismatched episodes). The residual there is the base-set difference and nothing else.
+**The identity holds in 48 of 48 (cell × metric) combinations.** Where it does not, the legs were averaged over different task sets, not over a world containing an interaction.
 
 ## Cancellation patterns
 
 The following site/metric pairs are antagonistic: two cascade axes have opposite-signed effects and both exceed |0.1| effect size. These are exactly the cases where a DOM-vs-SoM endpoint comparison can mask the internal mechanism.
 
-- B0 reddit / self-correction: text vs image (d_z=+0.28 vs -0.26) -> antagonistic
-- B0 reddit / finish rate: text vs prompt (h=-0.30 vs +0.10) -> antagonistic
-- B0 reddit / finish rate: text vs image (h=-0.30 vs +0.16) -> antagonistic
-- B0 reddit / step count: text vs image (d_z=+0.28 vs -0.25) -> antagonistic
+- B0 reddit / self-correction: text vs image (d_z=+0.28 vs -0.25) -> antagonistic
+- B0 reddit / finish rate: text vs prompt (h=-0.30 vs +0.11) -> antagonistic
+- B0 reddit / finish rate: text vs image (h=-0.30 vs +0.15) -> antagonistic
+- B0 reddit / step count: text vs image (d_z=+0.28 vs -0.24) -> antagonistic
 - B1 reddit / finish rate: text vs image (h=-0.22 vs +0.22) -> antagonistic
 - B1 reddit / step count: text vs image (d_z=+0.20 vs -0.23) -> antagonistic
 - B1 classifieds / click fraction: text vs image (d_z=+0.14 vs -0.17) -> antagonistic
@@ -222,7 +219,7 @@ The following site/metric pairs are antagonistic: two cascade axes have opposite
 
 ## Consistency checks
 
-text + prompt + image recovers the direct SoM − DOM endpoint in **45 of 48** (site × metric) combinations, at tolerance 0.1 pp for the binary metric and 0.005 raw units for fractions and counts.
+text + prompt + image recovers the direct SoM − DOM endpoint in **48 of 48** (site × metric) combinations, at tolerance 0.1 pp for the binary metric and 0.005 raw units for fractions and counts.
 
 Read this the same way as Tier 2b: on mean differences the three axes summing to the endpoint is an **algebraic identity**, so passing is arithmetic rather than evidence that the cascade decomposes cleanly. A failure means the legs were averaged over different task sets. This sentence used to be a fixed claim that every combination passed, which was true of the empty table it was printed under. (§F audit, 2026-08-02)
 
@@ -232,7 +229,7 @@ Tracked separately in `axis1_microbehavior.{json,md}`. Macro action-frequency me
 
 ## Paper Section 5 implication
 
-**Tier 2a Macro — dominant cascade axis per metric**: text: search_loop@B0/reddit, scroll_frac@B0/reddit, selfcorr_count@B0/reddit, finish_rate@B0/reddit, n_steps@B0/reddit, action_repeat_frac@B0/reddit, type_frac@B0/classifieds, finish_rate@B1/reddit, action_repeat_frac@B1/reddit, click_frac@B2/reddit, action_repeat_frac@B2/reddit, scroll_frac@B2/classifieds; prompt: selfcorr_count@B0/classifieds, type_frac@B1/reddit, click_frac@B1/reddit, type_frac@B1/classifieds, click_frac@B1/classifieds, type_frac@B2/classifieds, selfcorr_count@B2/classifieds, click_frac@B2/classifieds, action_repeat_frac@B2/classifieds; image: search_loop@B0/classifieds, scroll_frac@B0/classifieds, finish_rate@B0/classifieds, n_steps@B0/classifieds, action_repeat_frac@B0/classifieds, search_loop@B1/reddit, scroll_frac@B1/reddit, n_steps@B1/reddit, search_loop@B1/classifieds, selfcorr_count@B1/classifieds, finish_rate@B1/classifieds, n_steps@B1/classifieds, action_repeat_frac@B1/classifieds, search_loop@B2/reddit, finish_rate@B2/reddit, n_steps@B2/reddit, search_loop@B2/classifieds, finish_rate@B2/classifieds, n_steps@B2/classifieds.
+**Tier 2a Macro — dominant cascade axis per metric**: text: search_loop@B0/reddit, scroll_frac@B0/reddit, selfcorr_count@B0/reddit, finish_rate@B0/reddit, n_steps@B0/reddit, action_repeat_frac@B0/reddit, type_frac@B0/classifieds, finish_rate@B1/reddit, action_repeat_frac@B1/reddit, click_frac@B2/reddit, action_repeat_frac@B2/reddit, scroll_frac@B2/classifieds; prompt: type_frac@B0/reddit, selfcorr_count@B0/classifieds, type_frac@B1/reddit, click_frac@B1/reddit, type_frac@B1/classifieds, click_frac@B1/classifieds, type_frac@B2/classifieds, selfcorr_count@B2/classifieds, click_frac@B2/classifieds, action_repeat_frac@B2/classifieds; image: search_loop@B0/classifieds, scroll_frac@B0/classifieds, finish_rate@B0/classifieds, n_steps@B0/classifieds, action_repeat_frac@B0/classifieds, search_loop@B1/reddit, scroll_frac@B1/reddit, n_steps@B1/reddit, search_loop@B1/classifieds, selfcorr_count@B1/classifieds, finish_rate@B1/classifieds, n_steps@B1/classifieds, action_repeat_frac@B1/classifieds, search_loop@B2/reddit, finish_rate@B2/reddit, n_steps@B2/reddit, search_loop@B2/classifieds, finish_rate@B2/classifieds, n_steps@B2/classifieds.
 
 **Antagonistic pairs** (axes pulling opposite directions, hidden by DOM↔SoM endpoint comparison): text_vs_image@selfcorr_count@B0/reddit; text_vs_prompt@finish_rate@B0/reddit; text_vs_image@finish_rate@B0/reddit; text_vs_image@n_steps@B0/reddit; text_vs_image@finish_rate@B1/reddit; text_vs_image@n_steps@B1/reddit; text_vs_image@click_frac@B1/classifieds; prompt_vs_image@click_frac@B1/classifieds; text_vs_prompt@n_steps@B1/classifieds; text_vs_image@n_steps@B1/classifieds; text_vs_prompt@click_frac@B2/reddit; text_vs_image@action_repeat_frac@B2/reddit; prompt_vs_image@search_loop@B2/classifieds; text_vs_prompt@type_frac@B2/classifieds; prompt_vs_image@type_frac@B2/classifieds; text_vs_prompt@scroll_frac@B2/classifieds; text_vs_prompt@selfcorr_count@B2/classifieds; text_vs_image@selfcorr_count@B2/classifieds; text_vs_prompt@click_frac@B2/classifieds; text_vs_image@finish_rate@B2/classifieds; prompt_vs_image@n_steps@B2/classifieds.
 

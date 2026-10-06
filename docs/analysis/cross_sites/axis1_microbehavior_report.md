@@ -21,7 +21,7 @@ Direct test of the hook claim: even when aggregate macro action frequencies conv
 
 | baseline | site | N | URL-path Jaccard (compound) | URL divergence | target-hit diff | first-action divergence |
 |---|---|---:|---:|---:|---:|---:|
-| B0 | reddit | 203 | 0.406 | 0.594 | 0.70 pp | 0.291 |
+| B0 | reddit | 205 | 0.405 | 0.595 | 0.69 pp | 0.288 |
 | B0 | classifieds | 224 | 0.863 | 0.137 | 0.00 pp | 0.281 |
 | B1 | reddit | 205 | 0.434 | 0.566 | 0.00 pp | 0.371 |
 | B1 | classifieds | 224 | 0.834 | 0.166 | 0.00 pp | 0.277 |

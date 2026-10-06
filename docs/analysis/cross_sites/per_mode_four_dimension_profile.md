@@ -1,6 +1,6 @@
 # Per-mode four-dimension evidence profile
 
-- generated: `2026-08-03T16:35:13+00:00`
+- generated: `2026-10-06T06:40:22+00:00`
 - schema: `2026-08-02-per-mode-four-dimension-profile-v2`
 - **post_hoc_exploratory=True / h10_eligible=False**
 - 笔记 §108 evidence layer, cross-mode axis (the paper-headline axis per `paper_section2_framework.canvas`). `INDEX.md §7`: the framework was defined but only the **Macro** dimension had ever been computed per mode. This is the first run of all four.
@@ -11,7 +11,7 @@
 
 Outcome + Efficiency read episode summaries and use **every** scored task. Macro + Micro read step JSONL and must drop episodes whose step file does not belong to their summary.
 
-- **B0_reddit / P-SoM**: excluded from Macro+Micro — tasks `[87, 149]` (2 episodes). Cause: quarantine → resume-rerun wrote a new summary but left the original interrupted step file in place.
+- none
 
 Blast radius measured by `audit_steps_summary_identity.py`: **2 of 7686 episodes** across all 36 combinations.
 
@@ -28,20 +28,20 @@ A per-mode difference only counts if it holds across cells. `unanimous` = the sa
 | Outcome | unique solves (no other mode got it) | Vision | 2.5/6 | P-text | 1.83/6 | 7 | 1.11–5.00× |  |
 | Macro | steps / episode | P-SoM | 2/6 | SoM | 5/6 | — | 1.00–1.05× |  |
 | Macro | episodes exhausting the step budget | Vision | 2/6 | SoM | 5/6 | — | 1.01–1.09× |  |
-| Macro | click fraction | P-SoM | 3/6 | Vision | 4/6 | — | 1.00–1.16× |  |
+| Macro | click fraction | P-SoM | 3/6 | Vision | 4/6 | — | 1.01–1.16× |  |
 | Macro | type fraction | P-text | 4/6 | Vision | 4/6 | — | 1.03–1.18× |  |
 | Macro | scroll fraction | Vision | 6/6 | SoM | 3/6 | — | 1.25–6.77× | ◆ **high: Vision 6/6** (arch. downstream) |
 | Macro | search-loop rate | DOM | 2/6 | Vision | 4/6 | — | 1.01–1.10× |  |
 | Macro | URL-revisit step rate | Vision | 6/6 | SoM | 4/6 | — | 1.02–1.05× | **high: Vision 6/6** |
 | Micro | parse-invalid step rate | SoM | 2/6 | Vision | 4.5/6 | 1 | 1.03–2.40× |  |
 | Micro | action-execution failure rate | Vision | 6/6 | SoM | 2/6 | — | 1.06–1.60× | ◆ **high: Vision 6/6** (arch. downstream) |
-| Micro | action failure | action was a click | Vision | 3/6 | P-text | 4/6 | — | 1.00–1.36× |  |
+| Micro | action failure | action was a click | Vision | 3/6 | P-text | 4/6 | — | 1.01–1.36× |  |
 | Micro | action failure | action was a type | DOM | 2/6 | Vision | 4/6 | — | 1.09–2.19× |  |
 | Micro | page-unchanged (no-op) step rate | Vision | 6/6 | P-text | 3/6 | — | 1.07–1.58× | ◆ **high: Vision 6/6** (arch. downstream) |
 | Micro | scroll action that did not move the viewport | Vision | 5/6 | SoM | 5/6 | — | 1.23–3.50× |  |
-| Micro | no-op despite a SUCCEEDING action | SoM | 5/6 | P-text | 2/6 | — | 1.02–1.50× |  |
+| Micro | no-op despite a SUCCEEDING action | SoM | 5/6 | P-text | 2/6 | — | 1.01–1.50× |  |
 | Micro | page changed but channel did not show it | Vision | 2/6 | Vision | 4/6 | — | 1.03–1.22× |  |
-| Micro | locator fallback rate | P-prompt | 2/6 | Vision | 6/6 | — | 1.00–1.43× | ⚙️ **low: Vision 6/6** (by construction) |
+| Micro | locator fallback rate | P-prompt | 2/6 | Vision | 6/6 | — | 1.00–1.44× | ⚙️ **low: Vision 6/6** (by construction) |
 | Micro | consecutive same-action rate | Vision | 4/6 | SoM | 2/6 | — | 1.01–1.19× |  |
 | Micro | episodes ending in finish | SoM | 5/6 | P-SoM | 2/6 | — | 1.01–1.21× |  |
 | Efficiency | billed cost / episode | SoM | 5/6 | Vision | 6/6 | — | 1.00–1.12× | ⚙️ **low: Vision 6/6** (by construction) |
@@ -145,22 +145,22 @@ trajectory metrics on the **224 tasks every mode has a usable trajectory for** (
 
 ### B0_reddit
 
-trajectory metrics on the **201 tasks every mode has a usable trajectory for** (paired); dropped for pairing: {'DOM': 2, 'SoM': 2, 'Vision': 2, 'P-text': 2, 'P-prompt': 2, 'P-SoM': 0}
+trajectory metrics on the **203 tasks every mode has a usable trajectory for** (paired); dropped for pairing: {'DOM': 0, 'SoM': 0, 'Vision': 0, 'P-text': 0, 'P-prompt': 0, 'P-SoM': 0}
 
 | metric | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
 |---|---|---|---|---|---|---|
-| steps / episode | 20.18 | 20.08 | 23.55 | 23.22 | 19.87 | 22.90 |
-| episodes exhausting the step budget *(task-macro)* | 0.4975 | 0.5124 | 0.6716 | 0.6468 | 0.4627 | 0.5920 |
-| episodes exhausting the step budget *(pooled-step)* | 0.4975 | 0.5124 | 0.6716 | 0.6468 | 0.4627 | 0.5920 |
-| click fraction *(task-macro)* | 0.4552 | 0.4740 | 0.3395 | 0.4420 | 0.4750 | 0.4529 |
-| click fraction *(pooled-step)* | 0.4651 | 0.4792 | 0.3179 | 0.4322 | 0.4680 | 0.4401 |
-| type fraction *(task-macro)* | 0.1484 | 0.1228 | 0.0792 | 0.1532 | 0.1416 | 0.1371 |
-| type fraction *(pooled-step)* | 0.1486 | 0.1160 | 0.0716 | 0.1500 | 0.1540 | 0.1323 |
-| scroll fraction *(task-macro)* | 0.1662 | 0.0994 | 0.3432 | 0.1166 | 0.1264 | 0.1243 |
-| scroll fraction *(pooled-step)* | 0.1913 | 0.0994 | 0.3692 | 0.1260 | 0.1467 | 0.1264 |
-| search-loop rate | 0.4726 | 0.3632 | 0.2388 | 0.3881 | 0.4279 | 0.3383 |
-| URL-revisit step rate *(task-macro)* | 0.7209 | 0.7306 | 0.8171 | 0.7746 | 0.7044 | 0.7747 |
-| URL-revisit step rate *(pooled-step)* | 0.8129 | 0.8370 | 0.8697 | 0.8453 | 0.7922 | 0.8392 |
+| steps / episode | 20.16 | 20.10 | 23.35 | 23.16 | 19.86 | 22.79 |
+| episodes exhausting the step budget *(task-macro)* | 0.4975 | 0.5123 | 0.6650 | 0.6453 | 0.4631 | 0.5862 |
+| episodes exhausting the step budget *(pooled-step)* | 0.4975 | 0.5123 | 0.6650 | 0.6453 | 0.4631 | 0.5862 |
+| click fraction *(task-macro)* | 0.4554 | 0.4765 | 0.3398 | 0.4414 | 0.4735 | 0.4541 |
+| click fraction *(pooled-step)* | 0.4652 | 0.4830 | 0.3179 | 0.4317 | 0.4663 | 0.4409 |
+| type fraction *(task-macro)* | 0.1477 | 0.1216 | 0.0796 | 0.1526 | 0.1408 | 0.1362 |
+| type fraction *(pooled-step)* | 0.1476 | 0.1147 | 0.0717 | 0.1491 | 0.1528 | 0.1318 |
+| scroll fraction *(task-macro)* | 0.1667 | 0.0984 | 0.3411 | 0.1179 | 0.1293 | 0.1255 |
+| scroll fraction *(pooled-step)* | 0.1918 | 0.0983 | 0.3690 | 0.1272 | 0.1496 | 0.1271 |
+| search-loop rate | 0.4680 | 0.3596 | 0.2365 | 0.3842 | 0.4236 | 0.3350 |
+| URL-revisit step rate *(task-macro)* | 0.7212 | 0.7324 | 0.8139 | 0.7742 | 0.7050 | 0.7748 |
+| URL-revisit step rate *(pooled-step)* | 0.8129 | 0.8380 | 0.8692 | 0.8452 | 0.7927 | 0.8390 |
 
 ### B1_classifieds
 
@@ -270,31 +270,31 @@ trajectory metrics on the **224 tasks every mode has a usable trajectory for** (
 
 ### B0_reddit
 
-trajectory metrics on the **201 tasks every mode has a usable trajectory for** (paired); dropped for pairing: {'DOM': 2, 'SoM': 2, 'Vision': 2, 'P-text': 2, 'P-prompt': 2, 'P-SoM': 0}
+trajectory metrics on the **203 tasks every mode has a usable trajectory for** (paired); dropped for pairing: {'DOM': 0, 'SoM': 0, 'Vision': 0, 'P-text': 0, 'P-prompt': 0, 'P-SoM': 0}
 
 | metric | DOM | SoM | Vision | P-text | P-prompt | P-SoM |
 |---|---|---|---|---|---|---|
 | parse-invalid step rate *(task-macro)* | 0.0002 | 0.0008 | 0.0000 | 0.0005 | 0.0026 | 0.0027 |
 | parse-invalid step rate *(pooled-step)* | 0.0002 | 0.0012 | 0.0000 | 0.0006 | 0.0040 | 0.0028 |
-| action-execution failure rate *(task-macro)* | 0.2215 | 0.2515 | 0.3818 | 0.2921 | 0.1942 | 0.2851 |
-| action-execution failure rate *(pooled-step)* | 0.2837 | 0.3385 | 0.4571 | 0.3544 | 0.2519 | 0.3480 |
-| action failure | action was a click *(task-macro)* | 0.1939 | 0.1266 | 0.1931 | 0.1259 | 0.1462 | 0.1176 |
-| action failure | action was a click *(pooled-step)* | 0.3026 | 0.2110 | 0.3236 | 0.1859 | 0.2370 | 0.1797 |
-| action failure | action was a type *(task-macro)* | 0.0512 | 0.0224 | 0.0177 | 0.0620 | 0.0461 | 0.0344 |
-| action failure | action was a type *(pooled-step)* | 0.1891 | 0.0598 | 0.0560 | 0.2186 | 0.1626 | 0.1248 |
-| page-unchanged (no-op) step rate *(task-macro)* | 0.2938 | 0.3284 | 0.4304 | 0.3391 | 0.2700 | 0.3353 |
-| page-unchanged (no-op) step rate *(pooled-step)* | 0.3081 | 0.3620 | 0.4708 | 0.3694 | 0.2787 | 0.3656 |
-| scroll action that did not move the viewport *(task-macro)* | 0.1607 | 0.0846 | 0.2681 | 0.1456 | 0.1494 | 0.1596 |
-| scroll action that did not move the viewport *(pooled-step)* | 0.3776 | 0.2993 | 0.5046 | 0.5510 | 0.4727 | 0.5361 |
-| no-op despite a SUCCEEDING action *(task-macro)* | 0.0723 | 0.0769 | 0.0487 | 0.0470 | 0.0757 | 0.0502 |
-| no-op despite a SUCCEEDING action *(pooled-step)* | 0.0244 | 0.0235 | 0.0137 | 0.0150 | 0.0268 | 0.0176 |
-| page changed but channel did not show it *(task-macro)* | 0.0755 | 0.0918 | 0.0637 | 0.0872 | 0.0932 | 0.0973 |
-| page changed but channel did not show it *(pooled-step)* | 0.0880 | 0.1045 | 0.0774 | 0.0863 | 0.0850 | 0.0976 |
-| locator fallback rate *(task-macro)* | 0.1185 | 0.0675 | 0.0063 | 0.0642 | 0.0827 | 0.0704 |
-| locator fallback rate *(pooled-step)* | 0.1481 | 0.0835 | 0.0055 | 0.0744 | 0.0999 | 0.0778 |
-| consecutive same-action rate *(task-macro)* | 0.4282 | 0.4910 | 0.5563 | 0.5179 | 0.4211 | 0.5017 |
-| consecutive same-action rate *(pooled-step)* | 0.5192 | 0.5995 | 0.6349 | 0.5802 | 0.4883 | 0.5695 |
-| episodes ending in finish | 0.5075 | 0.4876 | 0.3284 | 0.3582 | 0.5373 | 0.4080 |
+| action-execution failure rate *(task-macro)* | 0.2210 | 0.2490 | 0.3780 | 0.2902 | 0.1941 | 0.2841 |
+| action-execution failure rate *(pooled-step)* | 0.2837 | 0.3347 | 0.4565 | 0.3530 | 0.2522 | 0.3471 |
+| action failure | action was a click *(task-macro)* | 0.1938 | 0.1253 | 0.1912 | 0.1246 | 0.1447 | 0.1198 |
+| action failure | action was a click *(pooled-step)* | 0.3025 | 0.2070 | 0.3232 | 0.1847 | 0.2356 | 0.1804 |
+| action failure | action was a type *(task-macro)* | 0.0507 | 0.0222 | 0.0176 | 0.0614 | 0.0457 | 0.0341 |
+| action failure | action was a type *(pooled-step)* | 0.1887 | 0.0598 | 0.0559 | 0.2183 | 0.1623 | 0.1246 |
+| page-unchanged (no-op) step rate *(task-macro)* | 0.2933 | 0.3255 | 0.4299 | 0.3377 | 0.2698 | 0.3347 |
+| page-unchanged (no-op) step rate *(pooled-step)* | 0.3081 | 0.3582 | 0.4707 | 0.3681 | 0.2790 | 0.3650 |
+| scroll action that did not move the viewport *(task-macro)* | 0.1622 | 0.0837 | 0.2655 | 0.1474 | 0.1518 | 0.1580 |
+| scroll action that did not move the viewport *(pooled-step)* | 0.3796 | 0.2993 | 0.5043 | 0.5518 | 0.4776 | 0.5306 |
+| no-op despite a SUCCEEDING action *(task-macro)* | 0.0724 | 0.0765 | 0.0519 | 0.0475 | 0.0756 | 0.0506 |
+| no-op despite a SUCCEEDING action *(pooled-step)* | 0.0244 | 0.0235 | 0.0141 | 0.0151 | 0.0268 | 0.0179 |
+| page changed but channel did not show it *(task-macro)* | 0.0747 | 0.0909 | 0.0631 | 0.0864 | 0.0923 | 0.0963 |
+| page changed but channel did not show it *(pooled-step)* | 0.0872 | 0.1027 | 0.0773 | 0.0855 | 0.0843 | 0.0970 |
+| locator fallback rate *(task-macro)* | 0.1182 | 0.0669 | 0.0063 | 0.0636 | 0.0819 | 0.0715 |
+| locator fallback rate *(pooled-step)* | 0.1481 | 0.0826 | 0.0055 | 0.0738 | 0.0990 | 0.0782 |
+| consecutive same-action rate *(task-macro)* | 0.4264 | 0.4911 | 0.5508 | 0.5140 | 0.4197 | 0.5007 |
+| consecutive same-action rate *(pooled-step)* | 0.5170 | 0.6003 | 0.6343 | 0.5775 | 0.4863 | 0.5687 |
+| episodes ending in finish | 0.5074 | 0.4877 | 0.3350 | 0.3596 | 0.5369 | 0.4138 |
 
 ### B1_classifieds
 

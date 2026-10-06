@@ -37,17 +37,17 @@
       "reddit": {
         "search_loop": {
           "compound_dom_to_psom": {
-            "n": 201,
+            "n": 203,
             "n_discordant": 57,
-            "mean_diff": -13.432836,
+            "mean_diff": -13.300493,
             "diff_units": "pct_pts",
-            "cohen_h": -0.274549,
+            "cohen_h": -0.272272,
             "ci95": [
-              -20.39801,
-              -5.970149
+              -20.20936,
+              -6.391626
             ],
             "wilcoxon_p": 0.000349,
-            "mean_diff_pct_pts": -13.432836,
+            "mean_diff_pct_pts": -13.300493,
             "meaningful": true
           },
           "text": {
@@ -65,31 +65,31 @@
             "meaningful": true
           },
           "prompt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": 30,
-            "mean_diff": -4.975124,
+            "mean_diff": -4.926108,
             "diff_units": "pct_pts",
-            "cohen_h": -0.103508,
+            "cohen_h": -0.102709,
             "ci95": [
-              -10.447761,
-              0.0
+              -10.344828,
+              0.492611
             ],
             "wilcoxon_p": 0.067889,
-            "mean_diff_pct_pts": -4.975124,
+            "mean_diff_pct_pts": -4.926108,
             "meaningful": true
           },
           "image": {
-            "n": 201,
+            "n": 203,
             "n_discordant": 49,
-            "mean_diff": 2.487562,
+            "mean_diff": 2.463054,
             "diff_units": "pct_pts",
-            "cohen_h": 0.052136,
+            "cohen_h": 0.051741,
             "ci95": [
-              -4.477612,
-              9.452736
+              -4.445813,
+              9.359606
             ],
             "wilcoxon_p": 0.475051,
-            "mean_diff_pct_pts": 2.487562,
+            "mean_diff_pct_pts": 2.463054,
             "meaningful": false
           },
           "axis_2_prompt_alt": {
@@ -107,17 +107,17 @@
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": 46,
-            "mean_diff": -8.955224,
+            "mean_diff": -8.866995,
             "diff_units": "pct_pts",
-            "cohen_h": -0.184519,
+            "cohen_h": -0.183047,
             "ci95": [
-              -15.422886,
-              -2.487562
+              -15.763547,
+              -2.463054
             ],
             "wilcoxon_p": 0.007955,
-            "mean_diff_pct_pts": -8.955224,
+            "mean_diff_pct_pts": -8.866995,
             "meaningful": true
           },
           "endpoint_dom_to_som": {
@@ -138,50 +138,50 @@
           "psom_distinct_from_dom": true,
           "psom_distinct_from_som": false,
           "consistency_check": {
-            "axis_sum": -10.861946,
+            "axis_sum": -10.837438,
             "endpoint_diff": -10.837438,
-            "error": -0.024508,
+            "error": 0.0,
             "tolerance": 0.1,
             "units": "pct_pts",
             "pass": true
           },
           "cancellation_patterns": [],
           "diamond_additivity": {
-            "path_a_sum": -13.349509,
-            "path_b_sum": -13.388721,
-            "compound": -13.432836,
-            "residual_a": 0.083327,
-            "residual_b": 0.044114,
+            "path_a_sum": -13.300493,
+            "path_b_sum": -13.300493,
+            "compound": -13.300493,
+            "residual_a": 0.0,
+            "residual_b": 0.0,
             "tolerance": 0.1,
             "identity_holds_a": true,
             "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         },
         "type_frac": {
           "compound_dom_to_psom": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.011241,
+            "mean_diff": -0.011572,
             "diff_units": "fraction",
-            "cohen_d_z": -0.066885,
+            "cohen_d_z": -0.069161,
             "ci95": [
-              -0.034098,
-              0.011851
+              -0.035999,
+              0.011624
             ],
-            "wilcoxon_p": 0.492343,
-            "mean_diff_pct_pts": -1.124075,
+            "wilcoxon_p": 0.458737,
+            "mean_diff_pct_pts": -1.157209,
             "ci95_pct_pts": [
-              -3.409754,
-              1.185133
+              -3.599948,
+              1.162369
             ],
             "meaningful": false
           },
@@ -204,38 +204,38 @@
             "meaningful": false
           },
           "prompt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.016027,
+            "mean_diff": -0.016475,
             "diff_units": "fraction",
-            "cohen_d_z": -0.097619,
+            "cohen_d_z": -0.100742,
             "ci95": [
-              -0.03919,
-              0.004936
+              -0.04053,
+              0.00432
             ],
-            "wilcoxon_p": 0.446414,
-            "mean_diff_pct_pts": -1.602653,
+            "wilcoxon_p": 0.394088,
+            "mean_diff_pct_pts": -1.647492,
             "ci95_pct_pts": [
-              -3.91895,
-              0.493601
+              -4.05304,
+              0.431993
             ],
-            "meaningful": false
+            "meaningful": true
           },
           "image": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.014324,
+            "mean_diff": -0.014562,
             "diff_units": "fraction",
-            "cohen_d_z": -0.084092,
+            "cohen_d_z": -0.085885,
             "ci95": [
-              -0.037951,
-              0.007816
+              -0.037716,
+              0.007252
             ],
-            "wilcoxon_p": 0.435258,
-            "mean_diff_pct_pts": -1.432406,
+            "wilcoxon_p": 0.399664,
+            "mean_diff_pct_pts": -1.456187,
             "ci95_pct_pts": [
-              -3.795057,
-              0.78161
+              -3.77157,
+              0.725227
             ],
             "meaningful": false
           },
@@ -258,20 +258,20 @@
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.004451,
+            "mean_diff": -0.004644,
             "diff_units": "fraction",
-            "cohen_d_z": -0.02488,
+            "cohen_d_z": -0.026084,
             "ci95": [
-              -0.029393,
-              0.020526
+              -0.029625,
+              0.020647
             ],
-            "wilcoxon_p": 0.80129,
-            "mean_diff_pct_pts": -0.445115,
+            "wilcoxon_p": 0.776202,
+            "mean_diff_pct_pts": -0.464413,
             "ci95_pct_pts": [
-              -2.939285,
-              2.052595
+              -2.962501,
+              2.064719
             ],
             "meaningful": false
           },
@@ -292,55 +292,55 @@
               -0.178973
             ]
           },
-          "dominant_cascade": "neither (all small)",
+          "dominant_cascade": "prompt",
           "dominant_hook": "neither (all small)",
           "psom_distinct_from_dom": false,
           "psom_distinct_from_som": false,
           "consistency_check": {
-            "axis_sum": -0.025448,
+            "axis_sum": -0.026134,
             "endpoint_diff": -0.026134,
-            "error": 0.000686,
+            "error": 0.0,
             "tolerance": 0.005,
             "units": "fraction",
             "pass": true
           },
           "cancellation_patterns": [],
           "diamond_additivity": {
-            "path_a_sum": -0.011124,
-            "path_b_sum": -0.011379,
-            "compound": -0.011241,
-            "residual_a": 0.000117,
-            "residual_b": -0.000138,
+            "path_a_sum": -0.011572,
+            "path_b_sum": -0.011572,
+            "compound": -0.011572,
+            "residual_a": 0.0,
+            "residual_b": -0.0,
             "tolerance": 0.005,
             "identity_holds_a": true,
             "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         },
         "scroll_frac": {
           "compound_dom_to_psom": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.04197,
+            "mean_diff": -0.04121,
             "diff_units": "fraction",
-            "cohen_d_z": -0.181765,
+            "cohen_d_z": -0.179254,
             "ci95": [
-              -0.07314,
-              -0.009744
+              -0.074144,
+              -0.009802
             ],
-            "wilcoxon_p": 0.001265,
-            "mean_diff_pct_pts": -4.196958,
+            "wilcoxon_p": 0.001436,
+            "mean_diff_pct_pts": -4.121046,
             "ci95_pct_pts": [
-              -7.314008,
-              -0.974378
+              -7.414374,
+              -0.980175
             ],
             "meaningful": true
           },
@@ -363,38 +363,38 @@
             "meaningful": true
           },
           "prompt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 0.007658,
+            "mean_diff": 0.0076,
             "diff_units": "fraction",
-            "cohen_d_z": 0.040992,
+            "cohen_d_z": 0.040878,
             "ci95": [
-              -0.018289,
-              0.032523
+              -0.018229,
+              0.033043
             ],
-            "wilcoxon_p": 0.17622,
-            "mean_diff_pct_pts": 0.765827,
+            "wilcoxon_p": 0.175361,
+            "mean_diff_pct_pts": 0.760005,
             "ci95_pct_pts": [
-              -1.828878,
-              3.252292
+              -1.822851,
+              3.304336
             ],
             "meaningful": false
           },
           "image": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.024868,
+            "mean_diff": -0.027104,
             "diff_units": "fraction",
-            "cohen_d_z": -0.148048,
+            "cohen_d_z": -0.160702,
             "ci95": [
-              -0.047855,
-              -0.000584
+              -0.04953,
+              -0.00374
             ],
-            "wilcoxon_p": 0.028372,
-            "mean_diff_pct_pts": -2.486835,
+            "wilcoxon_p": 0.016809,
+            "mean_diff_pct_pts": -2.710362,
             "ci95_pct_pts": [
-              -4.785454,
-              -0.058368
+              -4.952999,
+              -0.373967
             ],
             "meaningful": true
           },
@@ -417,20 +417,20 @@
             "meaningful": true
           },
           "axis_1_text_alt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.002139,
+            "mean_diff": -0.003784,
             "diff_units": "fraction",
-            "cohen_d_z": -0.009882,
+            "cohen_d_z": -0.017515,
             "ci95": [
-              -0.03215,
-              0.02703
+              -0.035213,
+              0.024338
             ],
-            "wilcoxon_p": 0.941346,
-            "mean_diff_pct_pts": -0.213894,
+            "wilcoxon_p": 0.910807,
+            "mean_diff_pct_pts": -0.378373,
             "ci95_pct_pts": [
-              -3.214971,
-              2.703031
+              -3.521314,
+              2.433793
             ],
             "meaningful": false
           },
@@ -456,47 +456,47 @@
           "psom_distinct_from_dom": true,
           "psom_distinct_from_som": true,
           "consistency_check": {
-            "axis_sum": -0.066021,
+            "axis_sum": -0.068314,
             "endpoint_diff": -0.068314,
-            "error": 0.002293,
+            "error": 0.0,
             "tolerance": 0.005,
             "units": "fraction",
             "pass": true
           },
           "cancellation_patterns": [],
           "diamond_additivity": {
-            "path_a_sum": -0.041152,
-            "path_b_sum": -0.039566,
-            "compound": -0.04197,
-            "residual_a": 0.000817,
-            "residual_b": 0.002404,
+            "path_a_sum": -0.04121,
+            "path_b_sum": -0.04121,
+            "compound": -0.04121,
+            "residual_a": 0.0,
+            "residual_b": -0.0,
             "tolerance": 0.005,
             "identity_holds_a": true,
             "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         },
         "selfcorr_count": {
           "compound_dom_to_psom": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 0.756219,
+            "mean_diff": 0.729064,
             "diff_units": "count",
-            "cohen_d_z": 0.222559,
+            "cohen_d_z": 0.214569,
             "ci95": [
-              0.323259,
-              1.238806
+              0.251232,
+              1.226601
             ],
-            "wilcoxon_p": 0.001075,
-            "mean_diff_count": 0.756219,
+            "wilcoxon_p": 0.001707,
+            "mean_diff_count": 0.729064,
             "meaningful": true
           },
           "text": {
@@ -514,31 +514,31 @@
             "meaningful": true
           },
           "prompt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.164179,
+            "mean_diff": -0.172414,
             "diff_units": "count",
-            "cohen_d_z": -0.065163,
+            "cohen_d_z": -0.068681,
             "ci95": [
-              -0.527488,
-              0.169154
+              -0.527094,
+              0.162685
             ],
-            "wilcoxon_p": 0.659999,
-            "mean_diff_count": -0.164179,
+            "wilcoxon_p": 0.596589,
+            "mean_diff_count": -0.172414,
             "meaningful": false
           },
           "image": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.691542,
+            "mean_diff": -0.674877,
             "diff_units": "count",
-            "cohen_d_z": -0.258003,
+            "cohen_d_z": -0.252369,
             "ci95": [
-              -1.079602,
-              -0.338184
+              -1.054187,
+              -0.339901
             ],
-            "wilcoxon_p": 0.000222,
-            "mean_diff_count": -0.691542,
+            "wilcoxon_p": 0.000327,
+            "mean_diff_count": -0.674877,
             "meaningful": true
           },
           "axis_2_prompt_alt": {
@@ -556,17 +556,17 @@
             "meaningful": true
           },
           "axis_1_text_alt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 0.422886,
+            "mean_diff": 0.394089,
             "diff_units": "count",
-            "cohen_d_z": 0.129127,
+            "cohen_d_z": 0.120114,
             "ci95": [
-              -0.00995,
-              0.865796
+              -0.064039,
+              0.832512
             ],
-            "wilcoxon_p": 0.098901,
-            "mean_diff_count": 0.422886,
+            "wilcoxon_p": 0.129819,
+            "mean_diff_count": 0.394089,
             "meaningful": true
           },
           "endpoint_dom_to_som": {
@@ -587,58 +587,58 @@
           "psom_distinct_from_dom": true,
           "psom_distinct_from_som": true,
           "consistency_check": {
-            "axis_sum": 0.045756,
+            "axis_sum": 0.054187,
             "endpoint_diff": 0.054187,
-            "error": -0.008431,
+            "error": 0.0,
             "tolerance": 0.005,
             "units": "count",
-            "pass": false
+            "pass": true
           },
           "cancellation_patterns": [
             {
               "axis_a": "text",
               "axis_b": "image",
               "cohen_d_z_a": 0.27866,
-              "cohen_d_z_b": -0.258003,
+              "cohen_d_z_b": -0.252369,
               "pattern": "antagonistic"
             }
           ],
           "diamond_additivity": {
-            "path_a_sum": 0.737299,
-            "path_b_sum": 0.757861,
-            "compound": 0.756219,
-            "residual_a": -0.01892,
-            "residual_b": 0.001642,
+            "path_a_sum": 0.729064,
+            "path_b_sum": 0.729064,
+            "compound": 0.729064,
+            "residual_a": 0.0,
+            "residual_b": 0.0,
             "tolerance": 0.005,
-            "identity_holds_a": false,
+            "identity_holds_a": true,
             "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         },
         "click_frac": {
           "compound_dom_to_psom": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.002294,
+            "mean_diff": -0.001315,
             "diff_units": "fraction",
-            "cohen_d_z": -0.009488,
+            "cohen_d_z": -0.005461,
             "ci95": [
-              -0.036944,
-              0.031891
+              -0.034563,
+              0.031821
             ],
-            "wilcoxon_p": 0.683662,
-            "mean_diff_pct_pts": -0.229445,
+            "wilcoxon_p": 0.73924,
+            "mean_diff_pct_pts": -0.131533,
             "ci95_pct_pts": [
-              -3.694437,
-              3.18914
+              -3.456349,
+              3.182076
             ],
             "meaningful": false
           },
@@ -661,38 +661,38 @@
             "meaningful": false
           },
           "prompt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 0.010902,
+            "mean_diff": 0.012736,
             "diff_units": "fraction",
-            "cohen_d_z": 0.052946,
+            "cohen_d_z": 0.061911,
             "ci95": [
-              -0.016369,
-              0.038825
+              -0.014319,
+              0.041421
             ],
-            "wilcoxon_p": 0.893915,
-            "mean_diff_pct_pts": 1.090182,
+            "wilcoxon_p": 0.74095,
+            "mean_diff_pct_pts": 1.273615,
             "ci95_pct_pts": [
-              -1.636904,
-              3.882525
+              -1.431876,
+              4.142065
             ],
             "meaningful": false
           },
           "image": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 0.021128,
+            "mean_diff": 0.022427,
             "diff_units": "fraction",
-            "cohen_d_z": 0.080782,
+            "cohen_d_z": 0.085731,
             "ci95": [
-              -0.013986,
-              0.056445
+              -0.012234,
+              0.059658
             ],
-            "wilcoxon_p": 0.137268,
-            "mean_diff_pct_pts": 2.112844,
+            "wilcoxon_p": 0.122006,
+            "mean_diff_pct_pts": 2.242682,
             "ci95_pct_pts": [
-              -1.398575,
-              5.644482
+              -1.223433,
+              5.965765
             ],
             "meaningful": false
           },
@@ -715,20 +715,20 @@
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.022164,
+            "mean_diff": -0.019388,
             "diff_units": "fraction",
-            "cohen_d_z": -0.097868,
+            "cohen_d_z": -0.085383,
             "ci95": [
-              -0.053938,
-              0.009758
+              -0.050861,
+              0.012036
             ],
-            "wilcoxon_p": 0.080577,
-            "mean_diff_pct_pts": -2.216352,
+            "wilcoxon_p": 0.124239,
+            "mean_diff_pct_pts": -1.938766,
             "ci95_pct_pts": [
-              -5.39383,
-              0.975847
+              -5.086054,
+              1.203601
             ],
             "meaningful": false
           },
@@ -754,47 +754,47 @@
           "psom_distinct_from_dom": false,
           "psom_distinct_from_som": false,
           "consistency_check": {
-            "axis_sum": 0.017979,
+            "axis_sum": 0.021111,
             "endpoint_diff": 0.021111,
-            "error": -0.003133,
+            "error": -0.0,
             "tolerance": 0.005,
             "units": "fraction",
             "pass": true
           },
           "cancellation_patterns": [],
           "diamond_additivity": {
-            "path_a_sum": -0.00315,
-            "path_b_sum": -0.004091,
-            "compound": -0.002294,
-            "residual_a": -0.000855,
-            "residual_b": -0.001797,
+            "path_a_sum": -0.001315,
+            "path_b_sum": -0.001315,
+            "compound": -0.001315,
+            "residual_a": 0.0,
+            "residual_b": 0.0,
             "tolerance": 0.005,
             "identity_holds_a": true,
             "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         },
         "finish_rate": {
           "compound_dom_to_psom": {
-            "n": 201,
-            "n_discordant": 68,
-            "mean_diff": -9.950249,
+            "n": 203,
+            "n_discordant": 69,
+            "mean_diff": -9.359606,
             "diff_units": "pct_pts",
-            "cohen_h": -0.200061,
+            "cohen_h": -0.188058,
             "ci95": [
-              -17.910448,
-              -2.487562
+              -16.748768,
+              -0.985222
             ],
-            "wilcoxon_p": 0.015293,
-            "mean_diff_pct_pts": -9.950249,
+            "wilcoxon_p": 0.022176,
+            "mean_diff_pct_pts": -9.359606,
             "meaningful": true
           },
           "text": {
@@ -812,31 +812,31 @@
             "meaningful": true
           },
           "prompt": {
-            "n": 201,
-            "n_discordant": 54,
-            "mean_diff": 4.975124,
+            "n": 203,
+            "n_discordant": 55,
+            "mean_diff": 5.418719,
             "diff_units": "pct_pts",
-            "cohen_h": 0.102392,
+            "cohen_h": 0.111336,
             "ci95": [
-              -1.99005,
-              12.437811
+              -1.970443,
+              12.807882
             ],
-            "wilcoxon_p": 0.173568,
-            "mean_diff_pct_pts": 4.975124,
+            "wilcoxon_p": 0.138011,
+            "mean_diff_pct_pts": 5.418719,
             "meaningful": true
           },
           "image": {
-            "n": 201,
-            "n_discordant": 66,
-            "mean_diff": 7.960199,
+            "n": 203,
+            "n_discordant": 67,
+            "mean_diff": 7.389163,
             "diff_units": "pct_pts",
-            "cohen_h": 0.160257,
+            "cohen_h": 0.148647,
             "ci95": [
-              0.0,
-              16.41791
+              -0.492611,
+              15.270936
             ],
-            "wilcoxon_p": 0.0489,
-            "mean_diff_pct_pts": 7.960199,
+            "wilcoxon_p": 0.066871,
+            "mean_diff_pct_pts": 7.389163,
             "meaningful": true
           },
           "axis_2_prompt_alt": {
@@ -854,17 +854,17 @@
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 201,
-            "n_discordant": 68,
-            "mean_diff": -12.935323,
+            "n": 203,
+            "n_discordant": 69,
+            "mean_diff": -12.315271,
             "diff_units": "pct_pts",
-            "cohen_h": -0.259832,
+            "cohen_h": -0.247239,
             "ci95": [
-              -21.393035,
-              -5.472637
+              -20.197044,
+              -4.433498
             ],
-            "wilcoxon_p": 0.001616,
-            "mean_diff_pct_pts": -12.935323,
+            "wilcoxon_p": 0.002616,
+            "mean_diff_pct_pts": -12.315271,
             "meaningful": true
           },
           "endpoint_dom_to_som": {
@@ -885,62 +885,62 @@
           "psom_distinct_from_dom": true,
           "psom_distinct_from_som": true,
           "consistency_check": {
-            "axis_sum": -1.843002,
+            "axis_sum": -1.970443,
             "endpoint_diff": -1.970443,
-            "error": 0.127442,
+            "error": 0.0,
             "tolerance": 0.1,
             "units": "pct_pts",
-            "pass": false
+            "pass": true
           },
           "cancellation_patterns": [
             {
               "axis_a": "text",
               "axis_b": "prompt",
               "cohen_h_a": -0.299394,
-              "cohen_h_b": 0.102392,
+              "cohen_h_b": 0.111336,
               "pattern": "antagonistic"
             },
             {
               "axis_a": "text",
               "axis_b": "image",
               "cohen_h_a": -0.299394,
-              "cohen_h_b": 0.160257,
+              "cohen_h_b": 0.148647,
               "pattern": "antagonistic"
             }
           ],
           "diamond_additivity": {
-            "path_a_sum": -9.803201,
-            "path_b_sum": -9.979658,
-            "compound": -9.950249,
-            "residual_a": 0.147048,
-            "residual_b": -0.02941,
+            "path_a_sum": -9.359606,
+            "path_b_sum": -9.359606,
+            "compound": -9.359606,
+            "residual_a": 0.0,
+            "residual_b": 0.0,
             "tolerance": 0.1,
-            "identity_holds_a": false,
+            "identity_holds_a": true,
             "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         },
         "n_steps": {
           "compound_dom_to_psom": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 2.716418,
+            "mean_diff": 2.630542,
             "diff_units": "count",
-            "cohen_d_z": 0.245146,
+            "cohen_d_z": 0.236242,
             "ci95": [
-              1.198507,
-              4.214179
+              1.073768,
+              4.054187
             ],
-            "wilcoxon_p": 0.000523,
-            "mean_diff_count": 2.716418,
+            "wilcoxon_p": 0.00073,
+            "mean_diff_count": 2.630542,
             "meaningful": true
           },
           "text": {
@@ -958,31 +958,31 @@
             "meaningful": true
           },
           "prompt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.318408,
+            "mean_diff": -0.369458,
             "diff_units": "count",
-            "cohen_d_z": -0.031689,
+            "cohen_d_z": -0.036577,
             "ci95": [
-              -1.68694,
-              1.045025
+              -1.832512,
+              1.014778
             ],
-            "wilcoxon_p": 0.601089,
-            "mean_diff_count": -0.318408,
+            "wilcoxon_p": 0.577055,
+            "mean_diff_count": -0.369458,
             "meaningful": false
           },
           "image": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -2.820896,
+            "mean_diff": -2.689655,
             "diff_units": "count",
-            "cohen_d_z": -0.252462,
+            "cohen_d_z": -0.239833,
             "ci95": [
-              -4.418035,
-              -1.313433
+              -4.211946,
+              -1.157389
             ],
-            "wilcoxon_p": 0.000632,
-            "mean_diff_count": -2.820896,
+            "wilcoxon_p": 0.001147,
+            "mean_diff_count": -2.689655,
             "meaningful": true
           },
           "axis_2_prompt_alt": {
@@ -1000,17 +1000,17 @@
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 3.029851,
+            "mean_diff": 2.931034,
             "diff_units": "count",
-            "cohen_d_z": 0.257165,
+            "cohen_d_z": 0.247853,
             "ci95": [
-              1.447761,
-              4.741542
+              1.320074,
+              4.562069
             ],
-            "wilcoxon_p": 0.000574,
-            "mean_diff_count": 3.029851,
+            "wilcoxon_p": 0.000764,
+            "mean_diff_count": 2.931034,
             "meaningful": true
           },
           "endpoint_dom_to_som": {
@@ -1031,58 +1031,58 @@
           "psom_distinct_from_dom": true,
           "psom_distinct_from_som": true,
           "consistency_check": {
-            "axis_sum": -0.139303,
+            "axis_sum": -0.059113,
             "endpoint_diff": -0.059113,
-            "error": -0.08019,
+            "error": 0.0,
             "tolerance": 0.005,
             "units": "count",
-            "pass": false
+            "pass": true
           },
           "cancellation_patterns": [
             {
               "axis_a": "text",
               "axis_b": "image",
               "cohen_d_z_a": 0.276312,
-              "cohen_d_z_b": -0.252462,
+              "cohen_d_z_b": -0.239833,
               "pattern": "antagonistic"
             }
           ],
           "diamond_additivity": {
-            "path_a_sum": 2.681592,
-            "path_b_sum": 2.729358,
-            "compound": 2.716418,
-            "residual_a": -0.034826,
-            "residual_b": 0.01294,
+            "path_a_sum": 2.630542,
+            "path_b_sum": 2.630542,
+            "compound": 2.630542,
+            "residual_a": 0.0,
+            "residual_b": -0.0,
             "tolerance": 0.005,
-            "identity_holds_a": false,
-            "identity_holds_b": false,
+            "identity_holds_a": true,
+            "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         },
         "action_repeat_frac": {
           "compound_dom_to_psom": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 0.073483,
+            "mean_diff": 0.074356,
             "diff_units": "fraction",
-            "cohen_d_z": 0.201689,
+            "cohen_d_z": 0.204896,
             "ci95": [
-              0.023989,
-              0.121443
+              0.024027,
+              0.122883
             ],
-            "wilcoxon_p": 0.009377,
-            "mean_diff_pct_pts": 7.348326,
+            "wilcoxon_p": 0.007475,
+            "mean_diff_pct_pts": 7.435602,
             "ci95_pct_pts": [
-              2.398855,
-              12.144316
+              2.402681,
+              12.288281
             ],
             "meaningful": true
           },
@@ -1105,38 +1105,38 @@
             "meaningful": true
           },
           "prompt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.01618,
+            "mean_diff": -0.013269,
             "diff_units": "fraction",
-            "cohen_d_z": -0.055529,
+            "cohen_d_z": -0.045405,
             "ci95": [
-              -0.057066,
-              0.023838
+              -0.053819,
+              0.026238
             ],
-            "wilcoxon_p": 0.477026,
-            "mean_diff_pct_pts": -1.618027,
+            "wilcoxon_p": 0.571244,
+            "mean_diff_pct_pts": -1.326904,
             "ci95_pct_pts": [
-              -5.706578,
-              2.383843
+              -5.381872,
+              2.623843
             ],
             "meaningful": false
           },
           "image": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": -0.010754,
+            "mean_diff": -0.009663,
             "diff_units": "fraction",
-            "cohen_d_z": -0.032919,
+            "cohen_d_z": -0.02949,
             "ci95": [
-              -0.056787,
-              0.033721
+              -0.053106,
+              0.035978
             ],
-            "wilcoxon_p": 0.591765,
-            "mean_diff_pct_pts": -1.075427,
+            "wilcoxon_p": 0.611167,
+            "mean_diff_pct_pts": -0.966309,
             "ci95_pct_pts": [
-              -5.67869,
-              3.37207
+              -5.310583,
+              3.597827
             ],
             "meaningful": false
           },
@@ -1159,20 +1159,20 @@
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 201,
+            "n": 203,
             "n_discordant": null,
-            "mean_diff": 0.080596,
+            "mean_diff": 0.080976,
             "diff_units": "fraction",
-            "cohen_d_z": 0.219353,
+            "cohen_d_z": 0.221401,
             "ci95": [
-              0.030757,
-              0.131748
+              0.030214,
+              0.131051
             ],
-            "wilcoxon_p": 0.004884,
-            "mean_diff_pct_pts": 8.059575,
+            "wilcoxon_p": 0.00408,
+            "mean_diff_pct_pts": 8.097621,
             "ci95_pct_pts": [
-              3.075677,
-              13.174766
+              3.021388,
+              13.10508
             ],
             "meaningful": true
           },
@@ -1198,32 +1198,32 @@
           "psom_distinct_from_dom": true,
           "psom_distinct_from_som": false,
           "consistency_check": {
-            "axis_sum": 0.060691,
+            "axis_sum": 0.064693,
             "endpoint_diff": 0.064693,
-            "error": -0.004002,
+            "error": 0.0,
             "tolerance": 0.005,
             "units": "fraction",
             "pass": true
           },
           "cancellation_patterns": [],
           "diamond_additivity": {
-            "path_a_sum": 0.071445,
-            "path_b_sum": 0.073976,
-            "compound": 0.073483,
-            "residual_a": -0.002038,
-            "residual_b": 0.000492,
+            "path_a_sum": 0.074356,
+            "path_b_sum": 0.074356,
+            "compound": 0.074356,
+            "residual_a": 0.0,
+            "residual_b": 0.0,
             "tolerance": 0.005,
             "identity_holds_a": true,
             "identity_holds_b": true,
             "is_algebraic_identity": true,
             "n_per_leg": {
               "text": 203,
-              "prompt": 201,
+              "prompt": 203,
               "axis_2_prompt_alt": 203,
-              "axis_1_text_alt": 201,
-              "compound_dom_to_psom": 201
+              "axis_1_text_alt": 203,
+              "compound_dom_to_psom": 203
             },
-            "n_mismatched_legs": true
+            "n_mismatched_legs": false
           }
         }
       },
@@ -7188,193 +7188,193 @@
       "B0/reddit/search_loop/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/search_loop/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/search_loop/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/search_loop/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/type_frac/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/type_frac/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/type_frac/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/type_frac/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/scroll_frac/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/scroll_frac/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/scroll_frac/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/scroll_frac/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/selfcorr_count/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/selfcorr_count/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/selfcorr_count/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/selfcorr_count/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/click_frac/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/click_frac/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/click_frac/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/click_frac/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/finish_rate/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/finish_rate/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/finish_rate/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/finish_rate/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/n_steps/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/n_steps/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/n_steps/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/n_steps/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/action_repeat_frac/text": {
         "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/action_repeat_frac/prompt": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/action_repeat_frac/image": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/reddit/action_repeat_frac/compound": {
-        "observed": 201,
+        "observed": 203,
         "expected": 203,
-        "identity_dropped": 2,
+        "identity_dropped": 0,
         "pass": true
       },
       "B0/classifieds/search_loop/text": {
@@ -8340,65 +8340,65 @@
     },
     "consistency_checks": {
       "B0/reddit/search_loop": {
-        "axis_sum": -10.861946,
+        "axis_sum": -10.837438,
         "endpoint_diff": -10.837438,
-        "error": -0.024508,
+        "error": 0.0,
         "tolerance": 0.1,
         "units": "pct_pts",
         "pass": true
       },
       "B0/reddit/type_frac": {
-        "axis_sum": -0.025448,
+        "axis_sum": -0.026134,
         "endpoint_diff": -0.026134,
-        "error": 0.000686,
+        "error": 0.0,
         "tolerance": 0.005,
         "units": "fraction",
         "pass": true
       },
       "B0/reddit/scroll_frac": {
-        "axis_sum": -0.066021,
+        "axis_sum": -0.068314,
         "endpoint_diff": -0.068314,
-        "error": 0.002293,
+        "error": 0.0,
         "tolerance": 0.005,
         "units": "fraction",
         "pass": true
       },
       "B0/reddit/selfcorr_count": {
-        "axis_sum": 0.045756,
+        "axis_sum": 0.054187,
         "endpoint_diff": 0.054187,
-        "error": -0.008431,
+        "error": 0.0,
         "tolerance": 0.005,
         "units": "count",
-        "pass": false
+        "pass": true
       },
       "B0/reddit/click_frac": {
-        "axis_sum": 0.017979,
+        "axis_sum": 0.021111,
         "endpoint_diff": 0.021111,
-        "error": -0.003133,
+        "error": -0.0,
         "tolerance": 0.005,
         "units": "fraction",
         "pass": true
       },
       "B0/reddit/finish_rate": {
-        "axis_sum": -1.843002,
+        "axis_sum": -1.970443,
         "endpoint_diff": -1.970443,
-        "error": 0.127442,
+        "error": 0.0,
         "tolerance": 0.1,
         "units": "pct_pts",
-        "pass": false
+        "pass": true
       },
       "B0/reddit/n_steps": {
-        "axis_sum": -0.139303,
+        "axis_sum": -0.059113,
         "endpoint_diff": -0.059113,
-        "error": -0.08019,
+        "error": 0.0,
         "tolerance": 0.005,
         "units": "count",
-        "pass": false
+        "pass": true
       },
       "B0/reddit/action_repeat_frac": {
-        "axis_sum": 0.060691,
+        "axis_sum": 0.064693,
         "endpoint_diff": 0.064693,
-        "error": -0.004002,
+        "error": 0.0,
         "tolerance": 0.005,
         "units": "fraction",
         "pass": true
@@ -8728,6 +8728,7 @@
       "text@search_loop@B0/reddit",
       "prompt@search_loop@B0/reddit",
       "compound@search_loop@B0/reddit",
+      "prompt@type_frac@B0/reddit",
       "text@scroll_frac@B0/reddit",
       "image@scroll_frac@B0/reddit",
       "compound@scroll_frac@B0/reddit",
@@ -8861,12 +8862,7 @@
       "text_vs_image@finish_rate@B2/classifieds",
       "prompt_vs_image@n_steps@B2/classifieds"
     ],
-    "identity_skipped_episodes": {
-      "B0/reddit/Phantom-SoM": [
-        87,
-        149
-      ]
-    }
+    "identity_skipped_episodes": {}
   },
   "interpretation": {
     "tier1_hook": {
@@ -8932,8 +8928,9 @@
         "n_legs": 96,
         "n_combinations": 48,
         "effect_only": 15,
-        "effect_and_bh_fdr_0.05": 7,
+        "effect_and_bh_fdr_0.05": 8,
         "cells_bh": [
+          "scroll_frac@B0/reddit",
           "selfcorr_count@B0/reddit",
           "n_steps@B0/reddit",
           "type_frac@B1/reddit",
@@ -8951,10 +8948,8 @@
           "type_frac@B2/classifieds",
           "finish_rate@B2/classifieds"
         ],
-        "effect_and_holm_conjunction_0.05": 3,
+        "effect_and_holm_conjunction_0.05": 1,
         "cells_holm_conjunction": [
-          "selfcorr_count@B0/reddit",
-          "n_steps@B0/reddit",
           "type_frac@B2/classifieds"
         ],
         "off_segment_conjunction": 4,
@@ -8964,9 +8959,8 @@
           "type_frac@B2/classifieds",
           "finish_rate@B2/classifieds"
         ],
-        "effect_and_holm_fwer_0.05": 2,
+        "effect_and_holm_fwer_0.05": 1,
         "cells_holm": [
-          "n_steps@B0/reddit",
           "type_frac@B2/classifieds"
         ],
         "bh_and_off_segment": 6,
@@ -8979,6 +8973,7 @@
           "finish_rate@B2/classifieds"
         ],
         "cells_bh_interpolating": [
+          "scroll_frac@B0/reddit",
           "type_frac@B1/reddit"
         ],
         "note": "both legs (compound and image) must clear the correction for the combination to count; corrections are applied across all legs jointly, not per cell. `off_segment` additionally requires the two legs to disagree in sign."
@@ -9002,6 +8997,7 @@
           "scroll_frac@B2/classifieds"
         ],
         "prompt": [
+          "type_frac@B0/reddit",
           "selfcorr_count@B0/classifieds",
           "type_frac@B1/reddit",
           "click_frac@B1/reddit",

@@ -2,7 +2,7 @@
   "schema": 1,
   "post_hoc_exploratory": true,
   "h10_eligible": false,
-  "generated": "2026-08-03T16:33:11+00:00",
+  "generated": "2026-10-06T06:40:11+00:00",
   "local_hosts": [
     "0.0.0.0",
     "127.0.0.1",
@@ -25,15 +25,15 @@
     },
     {
       "cell": "B0\u00b7VWA-red",
-      "n_steps": 26425,
+      "n_steps": 26417,
       "n_offsite": 478,
-      "pct_steps": 1.8088930936613057,
+      "pct_steps": 1.8094408903357686,
       "n_episodes": 1230,
       "n_episodes_offsite": 36,
       "pct_episodes": 2.926829268292683,
-      "median_env_ms_onsite": 11349.076747894287,
+      "median_env_ms_onsite": 11337.066888809204,
       "median_env_ms_offsite": 10007.469892501831,
-      "mean_env_ms_onsite": 18921.223410155293,
+      "mean_env_ms_onsite": 18914.149593059657,
       "mean_env_ms_offsite": 11636.038872487376,
       "top_hosts": [
         [

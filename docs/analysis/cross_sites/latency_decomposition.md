@@ -18,7 +18,7 @@ Every latency figure in this project is `latency_ms.total`, or the canonical est
 | cell | mean total (ms) | mean model call (ms) | model share | obs prepare (ms) | runtime sleep (ms) |
 |---|---|---|---|---|---|
 | `B0·classifieds` | 7,622 | 2,140 | **28.1%** | 2.9 | 44 |
-| `B0·reddit` | 24,601 | 5,603 | **22.8%** | 3.8 | 17 |
+| `B0·reddit` | 24,595 | 5,604 | **22.8%** | 3.8 | 17 |
 | `B0·wa_reddit` | 16,112 | 3,551 | **22.0%** | 3.8 | 46 |
 | `B1·classifieds` | 14,180 | 8,213 | **57.9%** | 3.1 | 69 |
 | `B1·reddit` | 24,376 | 7,916 | **32.5%** | 3.8 | 17 |
