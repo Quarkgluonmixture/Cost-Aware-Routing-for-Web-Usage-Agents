@@ -49,14 +49,19 @@ paths. Without that, 17,722 directories were silently unlistable.
 
 ## 2. What we have
 
-**131** unique conditions; **87 full runs** (see `run_matrix.md`). Registry status:
+**131** unique conditions; **87 full runs** (see `run_matrix.md`). Registry status, by the
+matrix's tag (`status_tag()` in `run_inventory_report.py`: manifest section first, then
+`CLEAN_PAIRS`; archive = archive-named or from `a100_archives`) — as of 2026-10-06 after §529.4 / §531.5:
 
-| status | full | partial | empty |
-|---|---|---|---|
-| `run_manifest.yaml` paper-grade (cls + red × B0/B1/B2 × 6, + B5 cls × 5) | 41 | — | — |
-| `CLEAN_PAIRS` replicate | 18 | — | — |
-| unregistered | 28 | 21 | 4 |
-| archive / manifest-archived | 1 | 14 | 4 |
+| tag | full | partial | empty | archive |
+|---|---|---|---|---|
+| **P** manifest `cells` (cls + red × B0/B1/B2 × 6) | 36 | 3 (`cells:archived`) | — | — |
+| **X** manifest `extension` (B5 cls × 5, shopping × 9) | 14 | — | — | — |
+| **R** `CLEAN_PAIRS` member, not in manifest (incl. both WA·B1 runs of each of the 6 pairs) | 30 | — | — | — |
+| **U** unregistered (WA·B0 × 6, B5 vision R24364) | 7 | 23 | 5 | 13 |
+
+Recompute: load `run_inventory.json`, apply `status_tag()`, bucket by `completeness`
+(1 = full) and `is_archive_name`.
 
 "Unregistered" is not by itself a defect: shopping and WA are discovered by glob in the
 analysis scripts, not via the manifest. What is a gap is listed in §3.
