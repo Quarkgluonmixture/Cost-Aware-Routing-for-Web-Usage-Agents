@@ -97,6 +97,15 @@ CURVES = ("six_head", "triage", "oracle")
 
 OUT_MD = REPO / "docs/analysis/cross_sites/representation_routing_frontier.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/representation_routing_frontier.json"
+COST_BASES = {   # 笔记 §545: the frontier under each cost basis the local-cost audit distinguishes
+    "billed": {"field": None, "unit": "USD (`total_billed_cost_usd`; B1/B2 are token-priced electricity estimates)",
+               "baselines": None},
+    "wallclock": {"field": "total_latency_canonical_ms", "unit": "seconds of wall-clock episode time "
+                  "(`total_latency_canonical_ms`), the occupancy a deployment pays for", "baselines": None},
+    "gpu_time": {"field": None, "unit": "seconds of model inference (Σ steps `latency_ms.backend_infer`); "
+                 "locally served backbones only — for B0 this would be API latency, not GPU time",
+                 "baselines": ("B1", "B2")},
+}
 FIG_CELLS = "representation_routing_frontier_cells.png"
 FIG_POOLED = "representation_routing_frontier_pooled.png"
 
@@ -106,12 +115,48 @@ SITE_LABEL = {"classifieds": "classifieds", "reddit": "reddit", "wa_reddit": "wa
 
 # ---------------------------------------------------------------------------- data
 
-def load_cell(spec: dict) -> dict | None:
-    cell = rt.build_wa_cell(spec) if spec.get("_wa") else rt.build_cell(spec)
+def _gpu_seconds(spec: dict, task_ids: list[int]) -> np.ndarray:
+    """Per (task, mode): sum over steps of latency_ms.backend_infer, in seconds. A missing step
+    file or field is an error, never a zero (笔记 §545 measured 0 missing on the 5 local cells)."""
+    from p79.experiment.io_utils import read_jsonl_dedup
+
+    out = np.zeros((len(task_ids), len(MODES)))
+    for j, m in enumerate(MODES):
+        if spec.get("_wa"):
+            d = rt._wa_run_dir(spec["baseline"], m)
+            hits = {int(p.name.split("_task_")[1].split("_steps")[0]): p
+                    for p in d.glob("*/episodes/*_steps_v2.jsonl")}
+        else:
+            d = Path(spec["modes"][m])
+            hits = {int(p.name.split("_task_")[1].split("_steps")[0]): p
+                    for p in d.glob("*_steps_v2.jsonl")}
+        for i, t in enumerate(task_ids):
+            if t not in hits:
+                raise FileNotFoundError(f"{spec['site']} {spec['baseline']} {m}: no steps file for task {t}")
+            ms = [(r.get("latency_ms") or {}).get("backend_infer") for r in read_jsonl_dedup(hits[t])]
+            if not ms or any(v is None for v in ms):
+                raise ValueError(f"{hits[t]}: backend_infer missing on {sum(v is None for v in ms)} step(s)")
+            out[i, j] = sum(ms) / 1000.0
+    return out
+
+
+def load_cell(spec: dict, basis: str = "billed") -> dict | None:
+    field = COST_BASES[basis]["field"] or rt.COST_FIELD
+    cell = (rt.build_wa_cell(spec, cost_field=field) if spec.get("_wa")
+            else rt.build_cell(spec, cost_field=field))
     if cell is None:
         return None
     S = np.array([[bool(s[m]) for m in MODES] for s in cell["succ"]], dtype=float)
     C = np.array([[float(c[m]) for m in MODES] for c in cell["cost"]], dtype=float)
+    if basis == "gpu_time":
+        C = _gpu_seconds(spec, cell["task_ids"])
+    elif basis == "wallclock":
+        C = C / 1000.0                      # ms -> s
+    if basis != "billed" and not (C > 0).all():
+        # build_cell maps a missing field to 0.0; on a time basis that is a missing value, not a
+        # free episode.
+        raise ValueError(f"{spec['site']} {spec['baseline']}: {int((C <= 0).sum())} non-positive "
+                         f"{basis} cost(s) — a missing field, not a free episode")
     return {"site": cell["site"], "baseline": cell["baseline"], "task_ids": cell["task_ids"],
             "X": cell["X"][:, FEAT_IDX], "y": cell["y"], "S": S, "C": C}
 
@@ -330,9 +375,9 @@ def evaluate(cell: dict, n_shuffle: int) -> dict:
     }
 
 
-def run_cell(spec: dict, n_shuffle: int) -> dict:
+def run_cell(spec: dict, n_shuffle: int, basis: str = "billed") -> dict:
     t0 = time.time()
-    cell = load_cell(spec)
+    cell = load_cell(spec, basis)
     if cell is None:
         raise RuntimeError(f"cell {spec} did not build; every XMODE unit is expected to")
     res = evaluate(cell, n_shuffle)
@@ -456,7 +501,12 @@ def render(payload: dict) -> str:
         "frontier's SR at the same mean cost; a point cheaper than every fixed mode is scored "
         "against the cheapest mode's SR.",
         "",
-        "Cost is `total_billed_cost_usd` per task, **comparable within a cell only**.",
+        f"Cost basis **{payload['protocol'].get('cost_basis', 'billed')}**: "
+        f"{payload['protocol'].get('cost_unit', COST_BASES['billed']['unit'])}, mean per task, "
+        "**comparable within a cell only**."
+        + ("" if payload["protocol"].get("cost_basis", "billed") == "billed" else
+           " Sensitivity sibling of `representation_routing_frontier` (笔记 §545): same pipeline, "
+           "same seeds, only the cost axis changes; the per-cell `p` and Holm are recomputed here."),
         "",
         f"`p` = label-shuffle null for the curve's **max** excess (task bundle permuted against X, "
         f"whole curve refitted per draw, B={B}, plus-one estimator), so the selection over the "
@@ -600,13 +650,26 @@ def main() -> int:
     ap.add_argument("--n-shuffle", type=int, default=N_SHUFFLE)
     ap.add_argument("--jobs", type=int, default=8, help="cells evaluated in parallel processes")
     ap.add_argument("--no-fig", action="store_true",
-                    help=f"skip {FIG_CELLS} / {FIG_POOLED} (written next to --out by default)")
+                    help=f"skip {FIG_CELLS} / {FIG_POOLED} (written next to --out by default; "
+                         "billed basis only)")
+    ap.add_argument("--cost-basis", choices=sorted(COST_BASES), default="billed",
+                    help="billed writes the main product; the others write a _<basis> sibling")
     args = ap.parse_args()
+    if args.cost_basis != "billed":
+        if args.out == OUT_MD:
+            args.out = OUT_MD.with_name(f"{OUT_MD.stem}_{args.cost_basis}.md")
+        if args.json_out == OUT_JSON:
+            args.json_out = OUT_JSON.with_name(f"{OUT_JSON.stem}_{args.cost_basis}.json")
+        args.no_fig = True
 
     specs = list(CELLS) + list(rt.WA_CELLS)
+    keep = COST_BASES[args.cost_basis]["baselines"]
+    if keep:
+        specs = [s for s in specs if s["baseline"] in keep]
     # Cells are independent and each seeds its own RNG, so --jobs changes wall time only.
     with ProcessPoolExecutor(max_workers=max(1, args.jobs)) as ex:
-        results = list(ex.map(run_cell, specs, [args.n_shuffle] * len(specs)))
+        results = list(ex.map(run_cell, specs, [args.n_shuffle] * len(specs),
+                              [args.cost_basis] * len(specs)))
 
     for key in ("six_head", "triage"):
         verdict = holm({r["cell_id"]: r[key]["summary"]["null_p"] for r in results})
@@ -630,6 +693,7 @@ def main() -> int:
             "null_unit": "task bundle (y, success_by_mode, cost_by_mode) permuted against X",
             "p_estimator": "(k+1)/(B+1)", "multiplicity": "Holm across cells, per curve",
             "cost_field": rt.COST_FIELD,
+            "cost_basis": args.cost_basis, "cost_unit": COST_BASES[args.cost_basis]["unit"],
             "excess_definition": "SR(point) - fixed-frontier SR at the same mean cost; below the "
                                  "cheapest fixed cost the cheapest mode's SR is used",
             "frontier_gain_definition": "envelope(fixed ∪ curve points) - envelope(fixed), in SR pp, "

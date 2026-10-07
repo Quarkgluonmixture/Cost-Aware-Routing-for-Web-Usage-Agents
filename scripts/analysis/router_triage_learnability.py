@@ -153,7 +153,7 @@ def _wa_rows(baseline: str) -> dict[str, dict[int, dict]] | None:
     return out
 
 
-def build_wa_cell(cell: dict) -> dict | None:
+def build_wa_cell(cell: dict, cost_field: str = COST_FIELD) -> dict | None:
     """WA counterpart of build_cell. Universe = the six-mode intersection (104), the
     convention every other WA-wired product in this repo uses; WA has no exclusion list."""
     baseline = cell["baseline"]
@@ -180,7 +180,7 @@ def build_wa_cell(cell: dict) -> dict | None:
         bins = compute_intent_binaries(intent)
         binv = [0] + [int(bins[k]) for k in sorted(INTENT_REGEX.keys())]  # has_ref_image: n/a
         s = {m: rows_by_mode[m][t].get("success") is True for m in SIX_MODES}
-        c = {m: float(rows_by_mode[m][t].get(COST_FIELD) or 0.0) for m in SIX_MODES}
+        c = {m: float(rows_by_mode[m][t].get(cost_field) or 0.0) for m in SIX_MODES}
         tids.append(t)
         X.append(num + binv)
         y.append(int(any(s.values())))
@@ -245,7 +245,7 @@ def _feature_row(runs, site: str, tid: int) -> tuple[list[float], list[int]] | N
     return num, binv
 
 
-def build_cell(cell: dict) -> dict | None:
+def build_cell(cell: dict, cost_field: str = COST_FIELD) -> dict | None:
     site, baseline = cell["site"], cell["baseline"]
     universe, _ = expected_scored_ids(site)
     rows_by_mode = load_cell_task_rows(cell, modes=SIX_MODES)
@@ -265,7 +265,7 @@ def build_cell(cell: dict) -> dict | None:
             continue
         num, binv = fr
         s = {m: rows[m].get("success") is True for m in SIX_MODES}
-        c = {m: float(rows[m].get(COST_FIELD) or 0.0) for m in SIX_MODES}
+        c = {m: float(rows[m].get(cost_field) or 0.0) for m in SIX_MODES}
         tids.append(t)
         X.append(num + binv)
         y.append(int(any(s.values())))          # triage label: solvable by anything
