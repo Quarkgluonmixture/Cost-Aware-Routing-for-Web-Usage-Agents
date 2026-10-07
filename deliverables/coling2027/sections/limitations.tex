@@ -1,2 +1,13 @@
 \section*{Limitations}
-\todo{chunk 3: required by ARR.}
+
+\paragraph{Coverage of reruns.} Only three cells have every mode run twice, two with the same backbone; the preference test and decision study (\S\ref{sec:preference}) rest on them. Five of the eleven cells have no rerun of any mode.
+
+\paragraph{Breadth.} VWA-reddit and WA-reddit are task sets on the same application, so the study covers three applications, not four benchmarks. GPT-5.6 was run on classifieds only, and its Vision run is excluded for a coordinate-contract defect; a parser defect also let it take actions beyond the 30-step budget in every mode (Appendix~\ref{app:harness}). The ex-ante rule of \S\ref{sec:screenshot} works on classifieds only.
+
+\paragraph{Shopping filtering.} Dropping tasks touched by the search-box defect keeps the comparison between modes clean, but the dropped tasks are mostly search tasks, so the filtered cells read a different task mix; unfiltered results are reported alongside.
+
+\paragraph{What the routing result does not show.} The routers use 18 pre-flight features and logistic models; richer features, language-model routers or multiple runs per training task may do better. The result is that, with single-run labels and these features, the routers do not beat the fixed choices and their mixtures --- not that per-task routing is impossible. Step-level switching is out of scope.
+
+\paragraph{Exploratory analyses.} The preference test, frontier comparisons and bounds were designed after the runs were collected. Each family states its multiplicity correction; the bootstrap intervals for policies with a selected threshold are read as magnitudes, not tests.
+
+\paragraph{Cost.} API invoices and electricity estimates are different quantities and are never pooled; local cost depends on the pricing basis, which is why \S\ref{sec:routing} repeats the analysis under GPU time and wall-clock time.

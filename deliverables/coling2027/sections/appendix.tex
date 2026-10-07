@@ -1,12 +1,35 @@
 \section{Task universes and exclusions}\label{app:universe}
-\todo{chunk 3}
+
+Scored sets are the collected tasks minus protocol exclusions written as rules over task configuration: classifieds 224 of 224; VWA-reddit 203 of 205 (one task whose evaluator never checks the requested action, and one cross-site task answerable from memory); shopping 432 of 435; WebArena-reddit the 104 tasks every mode ran. Every analysis records the task set it was built on and fails if denominators differ.
+
 \section{The six observation modes}\label{app:modes}
-\todo{chunk 3}
+
+Four modes carry no page screenshot and cross two factors: the text payload (the accessibility tree, or the flattened list of set-of-marks elements) and the prompt family (DOM or SoM). DOM is tree + DOM prompt; P-prompt is tree + SoM prompt; P-text is marks + DOM prompt; \PSoM\ is marks + SoM prompt. \SoM\ adds the annotated screenshot to \PSoM; Vision is the raw screenshot with an empty text payload. A task's own reference image, when it has one, is given in every mode.
+
 \section{The intent rule}\label{app:rule}
-\todo{chunk 3}
+
+A task is flagged if its intent matches
+\begin{quote}\footnotesize
+\verb!\b(image|picture|photo|screenshot)\b|!\\
+\verb!\bcolou?r of\b|!\\
+\verb!\bhow many\b[^.]{0,40}\bin (?:the|this)\b!
+\end{quote}
+(case-insensitive) and the task carries no reference image. It flags 71 of 224 classifieds tasks, 63 of 203 VWA-reddit tasks, 56 of 432 shopping tasks and 5 of 104 WebArena-reddit tasks. It was written while auditing reddit failures; classifieds is out-of-sample.
+
 \section{Harness defects and how cells were filtered}\label{app:harness}
-\todo{chunk 3}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item \textbf{GPT-5.6 Vision}: the run used a broken coordinate contract and is excluded.
+  \item \textbf{GPT-5.6 step budget}: when the model emitted several valid actions, the parser executed one but booked the step as a free wait, so each GPT-5.6 condition took 50--90 actions beyond the 30-step budget (2--24 for B2, none for B0 and B1).
+  \item \textbf{Shopping search box}: typing into a search box that already holds a query submitted old + new text (``chair'' + ``chair with wheels'' $\to$ ``chairchair with wheels'') in 43\% of such submissions, far more often in text modes than in Vision. A detector reproducing the defect's per-mode counts marks affected episodes; the \emph{clean} shopping cells drop every task affected in any mode (B0 keeps 368 of 432 tasks, B1 192).
+  \item \textbf{Shopping state}: the category grid order differs between runs (42 order-sensitive tasks dropped), and the wishlist is not reset between tasks (4 tasks dropped).
+\end{itemize}
+
 \section{Six-mode results}\label{app:sixarm}
-\todo{chunk 3: six-mode null and D-study (task\_mode\_interaction\_null), per-arm rerun discordance (noise\_floor\_inventory).}
+
+Over all six modes, the no-interaction null of \S\ref{sec:preference} is rejected in all three fully rerun cells ($p=0.0005$, $0.017$, $0.0005$; Holm), with single-run reliability 0.29, 0.14 and 0.46 and three, six and two runs per task needed to reach 0.5. % task_mode_interaction_null
+Across the 24 registered rerun pairs, a rerun changes between 0 and 14\% of task outcomes, depending on arm and cell. % noise_floor_inventory
+
 \section{Template and rerun robustness}\label{app:robust}
-\todo{chunk 3: routing\_crossrun\_template\_validation and routing\_three\_arm template / A$\to$B columns.}
+
+Averaged over cells, the deployable excess over the frontier with folds grouped by task template is $-1.60$ (per-arm heads) and $-0.84$ (triage) points over six modes, and $-0.64$ and $+0.29$ over three. Fitting on one run and scoring on its rerun, averaged over the three fully rerun cells, gives $-0.90$ and $-1.60$ over six modes and $-0.60$ and $-0.56$ over three. Over six modes, every per-cell template-bootstrap interval (90\%) includes zero; the three-mode readings are point estimates. % routing_crossrun_template_validation, routing_three_arm
