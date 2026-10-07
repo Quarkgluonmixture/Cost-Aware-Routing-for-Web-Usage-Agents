@@ -183,8 +183,11 @@ def run_cell(spec: dict, n_boot: int) -> dict:
     for _ in range(n_boot):
         draw = rng.choice(uniq, size=len(uniq), replace=True)
         idx = np.concatenate([members[g] for g in draw])
-        # a resampled template keeps its own label so its copies stay in one fold
-        g = np.concatenate([np.full(len(members[t]), k) for k, t in enumerate(draw)])
+        # Label copies by the ORIGINAL template id, so every copy of a template drawn more than
+        # once lands in one fold. Until 2026-10-08 this used the draw position, which split
+        # copies of the same template (and so of the same tasks) across train and test
+        # (found by the zero-preset Codex frame review; 笔记 §549).
+        g = np.concatenate([np.full(len(members[t]), t) for t in draw])
         f = folds_by(g)
         r = crossfit(X[idx], S[idx], C[idx], S[idx], C[idx], f)
         for k in r:
