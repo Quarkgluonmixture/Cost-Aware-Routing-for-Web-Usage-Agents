@@ -4,7 +4,7 @@ status: active
 priority: P0
 horizon: now
 order: 3
-blocker: "A100 不可达 (UCL VPN 未连 + condenser 证书 2026-09-28 已过期); 09-22 之后 A100 上新写的结果本地没有"
+blocker: "A100 10-08 已恢复访问 (证书到 10-15) 并拉完; 复测链 09-24 已中止, B2 三个复测从未开跑 (笔记 §551)"
 eta: "**ARR submission 2026-10-12** (AoE) → commit COLING **2026-12-23** → notif 2027-02-10。已核 2027.coling-iccl.org 2026-10-06"
 detail: docs/checkpoints/paper_planning.md
 created: 2026-08-08
