@@ -1,2 +1,25 @@
 \section{Per-task preferences are real, but one run cannot measure them}\label{sec:preference}
-\todo{chunk 2: no-interaction null (three arms primary, six in appendix), D-study, same-task persistence across reruns.}
+
+\S\ref{sec:screenshot} found structure at the level of task \emph{types}. Routing per task needs more: that an individual task prefers one representation over another, beyond being easy or hard, and that this preference is stable enough to learn from.
+
+\paragraph{A null without task-by-mode structure.} In the three cells where every mode was run twice, let $Y_{imr}\in\{0,1\}$ be the outcome of task $i$ under mode $m$ in run $r$. Under
+\[
+  \operatorname{logit}\Pr(Y_{imr}=1) = a_i + b_{mr},
+\]
+every task has its own difficulty and every (mode, run) column its own easiness, but there is no persistent task-by-mode interaction. The row and column sums are sufficient for this model, so conditional on them every 0/1 matrix with those margins is equally likely; we sample that null exactly with curveball swaps, fitting nothing. The statistic is the reproducible part of the interaction, $\hat\sigma^2_{\text{int}} = (\mathrm{MS}_{\text{int}} - \mathrm{MS}_{\text{err}})/2$ from the two-way task $\times$ mode ANOVA with two runs: the run-to-run covariance of each task's mode profile.
+
+\paragraph{Result.} Over the three deployment modes the interaction exceeds the null in all three cells (classifieds B0 $\hat\sigma^2_{\text{int}}=0.033$ against a null 95th percentile of 0.015; reddit B0 0.018 against 0.009; WebArena-reddit B1 0.030 against 0.014; $p\le 0.002$ each, Holm across cells). % routing_three_arm null_cells
+Over all six modes the same holds (Appendix~\ref{app:sixarm}). Preferences between representations are therefore a property of tasks, not only of their difficulty.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_dstudy}
+  \caption{Decision study for the three deployment modes: reliability of a task-by-mode label averaged over $k$ runs, $\sigma^2_{\text{int}}/(\sigma^2_{\text{int}} + \sigma^2_{\text{err}}/k)$. A single run gives 0.31--0.50. Source: \texttt{routing\_three\_arm}.}
+  \label{fig:dstudy}
+\end{figure}
+
+\paragraph{But a single run measures them poorly.} The same decomposition gives the reliability of a label built from $k$ runs (Figure~\ref{fig:dstudy}). From one run it is 0.34, 0.31 and 0.50 in the three cells; two to three runs per task are needed to pass 0.5. Over six modes it is lower still, 0.14--0.46, and up to six runs are needed. % routing_three_arm, task_mode_interaction_null
+The preferences also persist where they can be observed directly: taking, for each task, the cheapest mode that succeeded on one run and scoring that choice on the rerun beats the fixed-mode frontier by 2.4--10.5 points on reddit B0 and WebArena-reddit B1. % routing_crossrun_template_validation diagnostic
+That choice uses the task's own label, which no deployment has, so it measures persistence, not an attainable policy.
+
+The routing target thus exists, and a training set built from single runs labels it with a reliability between a third and a half.

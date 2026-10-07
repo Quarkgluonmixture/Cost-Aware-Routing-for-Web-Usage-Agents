@@ -100,10 +100,84 @@ def fig_screenshot():
     plt.close(fig)
 
 
+def fig_dstudy():
+    """Reliability of a k-run-averaged task x arm label, three deployment arms (routing_three_arm)."""
+    nulls = _load("routing_three_arm")["null_cells"]
+    ks = list(range(1, 11))
+    fig, ax = plt.subplots(figsize=(COLW, 1.9))
+    for (c, (col, mk)) in zip(nulls, ((SLOT[1], "o"), (SLOT[2], "s"), (SLOT[3], "^"))):
+        s_int, s_err = c["decomposition"]["interaction"], c["decomposition"]["noise"]
+        rel = [s_int / (s_int + s_err / k) for k in ks]
+        ax.plot(ks, rel, color=col, lw=1.2, marker=mk, ms=3.5, label=_pretty(c["cell_id"]))
+    ax.axhline(0.5, color=MUTED, lw=0.6, ls="--", zorder=0)
+    ax.set_xlabel("runs per task averaged into the label (k)")
+    ax.set_ylabel("label reliability")
+    ax.set_ylim(0, 1)
+    ax.set_xticks(ks)
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+    ax.legend(frameon=False, loc="lower right", fontsize=6.5)
+    fig.savefig(OUT / "fig_dstudy.pdf")
+    plt.close(fig)
+
+
+def _m(s: str) -> str:
+    """Typeset minus signs as math minus."""
+    return s.replace("-", "$-$")
+
+
+def tab_routing():
+    """Table: curve max over the frontier (selected after seeing test outcomes) vs the deployable,
+    train-chosen policy. Pooled rows over the 8 cells; extension cells per variant."""
+    three = _load("routing_three_arm")
+    six_fr = _load("representation_routing_frontier")["pooled"]
+    six_dep = _load("routing_gain_upper_bounds")["pooled"]
+    ext = {v["variant"]: v for v in _load("routing_extension_cells")["variants"]}
+    rows = []
+    for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
+        f = three["pooled_frontier"][k]
+        d = three["pooled_deployable"][k]
+        rows.append(("3 arms, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
+                     f"{d['observed']:+.2f} [{d['lower05']:+.2f}, {d['upper95']:+.2f}]"))
+    for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
+        f = six_fr[k]
+        d = six_dep[k]
+        rows.append(("6 arms, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
+                     f"{d['observed']:+.2f} [{d['lower05']:+.2f}, {d['upper95']:+.2f}]"))
+    for vid, name in (("cls_B5", "GPT-5.6, classifieds (5 arms)"), ("shop_B0_clean", "Shopping B0 (3 arms)"),
+                      ("shop_B1_clean", "Shopping B1 (6 arms)")):
+        v = ext[vid]
+        for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
+            s = v["frontier"][k]["summary"]
+            d = v["deployable"]
+            rows.append((name, lab, f"{s['max_excess_pp']:+.2f} ({s['null_p']:.3f})",
+                         f"{d['observed'][k]:+.2f} [{d['lower05'][k]:+.2f}, {d['upper95'][k]:+.2f}]"))
+    L = [r"\begin{table*}[t]", r"\centering\small", r"\setlength{\tabcolsep}{6pt}",
+         r"\begin{tabular}{@{}llrr@{}}", r"\toprule",
+         r"cells & policy & curve max (p) & deployable [5\%, 95\%] \\", r"\midrule"]
+    last = None
+    for cells, lab, a, b in rows:
+        if last is not None and cells != last:
+            L.append(r"\addlinespace[2pt]")
+        L.append(f"{cells if cells != last else ''} & {lab} & {_m(a)} & {_m(b)} \\\\")
+        last = cells
+    L += [r"\bottomrule", r"\end{tabular}",
+          r"\caption{Routing gain over the fixed arms and their random mixtures, in SR points. \emph{Curve max}: the best "
+          r"point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: "
+          r"max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task "
+          r"bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, "
+          r"\texttt{routing\_gain\_upper\_bounds}, \texttt{routing\_extension\_cells}.}",
+          r"\label{tab:routing}", r"\end{table*}"]
+    (OUT.parent / "tables").mkdir(exist_ok=True)
+    (OUT.parent / "tables" / "tab_routing.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     fig_deploy()
     fig_screenshot()
+    fig_dstudy()
+    tab_routing()
     print(f"wrote {OUT}", file=sys.stderr)
     return 0
 

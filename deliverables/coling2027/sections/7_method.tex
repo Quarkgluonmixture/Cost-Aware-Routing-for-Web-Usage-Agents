@@ -1,2 +1,12 @@
 \section{A protocol for multi-representation claims}\label{sec:method}
-\todo{chunk 2: the four-step protocol.}
+
+The three quantities of \S\ref{sec:intro} came apart because each was measured against its own control. We suggest the same four steps for any claim that choosing among several agent configurations per task would pay.
+
+\begin{enumerate}\setlength{\itemsep}{1pt}
+  \item \textbf{Report reruns per arm and per cell}, not one flip rate or one resolution threshold for a whole study: in our data a rerun changes between 0 and 14\% of outcomes depending on arm and cell (Appendix~\ref{app:sixarm}).
+  \item \textbf{Isolate the component of interest with a matched ablation} (here \SoM$-$\PSoM, which removes only the screenshot) before attributing a difference to it.
+  \item \textbf{Test for per-task structure against a null that conditions on difficulty}, and use the decision study to say how many runs per task a training label needs. A single-run oracle is not a ceiling a router can reach.
+  \item \textbf{Score a deployable policy, operating point chosen on training data, against the fixed arms and their random mixtures}, never only against the best single arm or a hindsight curve.
+\end{enumerate}
+
+Applied here, the protocol says the screenshot is worth paying for on a predictable class of classifieds tasks, that per-task representation preferences are real but need two to three runs per task to be learnable, and that with single-run labels and pre-flight features a per-task representation router does not yet beat choosing one representation, or a fixed mixture, for the whole workload.
