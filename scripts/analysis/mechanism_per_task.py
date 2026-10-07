@@ -108,7 +108,26 @@ for _bl, _dirs in (("B0", STEP_DIRS), ("B1", B1_STEP_DIRS)):
     _wa = _wa_step_dirs(_bl)
     if _wa:
         _dirs["wa_reddit"] = _wa
-CONF_RUNS = _conf_runs_from_registry()
+def _wa_conf_runs() -> list[tuple[str, str, Path]]:
+    """E3 for WebArena reddit (2026-10-07, 实验笔记 §539). E3 resolved runs through the VWA
+    registry only, so WA never entered it — and WA·B1, which E1/E2/E4 (B0-only) do not
+    read either, was absent from the product altogether although its 6 runs carry the same
+    `analysis/signals/combined/tables` as the VWA single-mode runs. Fail loud on a
+    condition that does not resolve to exactly one run with tables: a silent skip is how
+    the gap stayed invisible."""
+    out: list[tuple[str, str, Path]] = []
+    for baseline in ("B0", "B1"):
+        for mode, stem in WA_STEM.items():
+            hits = [p for p in WA_ROOT.glob(f"{baseline}_{stem}_wa_reddit_2026*_R*")
+                    if p.is_dir() and "ABORTED" not in p.name]
+            hits = drop_registered_replicates(hits)
+            if len(hits) != 1 or not (hits[0] / "analysis/signals/combined/tables").is_dir():
+                raise SystemExit(f"E3 WA {baseline}/{mode}: expected 1 run with signal tables, got {[h.name for h in hits]}")
+            out.append((baseline, "wa_reddit", hits[0]))
+    return out
+
+
+CONF_RUNS = _conf_runs_from_registry() + _wa_conf_runs()
 
 # Render loops iterate THIS, not a literal. Until 2026-08-03 nine separate loops each
 # spelled the site list out by hand, so the moment a third benchmark loaded, its block was

@@ -874,7 +874,8 @@
    "red_B1",
    "red_B2",
    "shop_B1",
-   "wared_B0"
+   "wared_B0",
+   "wared_B1"
   ],
   "status": "sibling",
   "missing": [],
@@ -911,7 +912,7 @@
   "product": "multimetric_pareto_with_wa",
   "source": "multimetric_pareto_with_wa.json",
   "producer": "scripts/analysis/aggregate_multimetric_pareto.py (single-sources per_mode_four_dimension_profile.md)",
-  "last_commit": "2026-08-03",
+  "last_commit": "2026-10-07",
   "cells": [
    "cls_B0",
    "cls_B1",
@@ -1355,6 +1356,37 @@
    "red_B0",
    "red_B1",
    "red_B2"
+  ],
+  "covered_by": {},
+  "deferred": {}
+ },
+ {
+  "product": "representation_routing_frontier",
+  "source": "representation_routing_frontier.json",
+  "producer": "scripts/analysis/representation_routing_frontier.py",
+  "last_commit": "untracked",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
   ],
   "covered_by": {},
   "deferred": {}

@@ -107,7 +107,11 @@ def load_vwa() -> dict[str, dict[int, dict[str, int]]]:
             continue
         cells.setdefault(r["cell_id"], {})[tid] = {m: int(float(r[f"sr_{m}"]) > 0) for m in MODES}
     for cid, d in cells.items():
-        site = "classifieds" if cid.startswith("cls") else "reddit"
+        # §536.2: was `"classifieds" if startswith("cls") else "reddit"`, which would read any
+        # new site (shopping, a WA cell id) as VWA reddit. Unknown prefixes now fail loud.
+        site = {"cls": "classifieds", "red": "reddit"}.get(cid.split("_", 1)[0])
+        if site is None:
+            raise MissingInput(f"{cid}: unknown site prefix; only VWA classifieds / reddit are wired here")
         n_expected = len(expected_scored_ids(site)[0])
         if len(d) != n_expected:
             raise MissingInput(f"{cid}: {len(d)} scored tasks, canonical universe has {n_expected}")

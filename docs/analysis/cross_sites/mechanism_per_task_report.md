@@ -136,6 +136,12 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 | B0 | reddit | P-text | n/a | n/a | 0.688 | 0.695 | 0.654 | 13.300 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=url_revisit_max |
 | B0 | reddit | SoM | n/a | n/a | 0.588 | 0.576 | 0.714 | 14.778 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B0 | reddit | Vision | n/a | n/a | 0.788 | 0.854 | 0.877 | 7.389 | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B0 | wa_reddit | DOM | n/a | n/a | 0.758 | 0.762 | 0.813 | n/a | tok=ep_mean_logprob; verb=ep_min_verbalized; beh=url_revisit_max |
+| B0 | wa_reddit | P-SoM | n/a | n/a | 0.728 | 0.712 | 0.754 | n/a | tok=ep_mean_logprob; verb=ep_mean_verbalized; beh=url_revisit_max |
+| B0 | wa_reddit | P-prompt | n/a | n/a | 0.677 | 0.714 | 0.736 | n/a | tok=ep_mean_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B0 | wa_reddit | P-text | n/a | n/a | 0.680 | 0.713 | 0.783 | n/a | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B0 | wa_reddit | SoM | n/a | n/a | 0.666 | 0.737 | 0.790 | n/a | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_max |
+| B0 | wa_reddit | Vision | n/a | n/a | 0.827 | 0.850 | 0.897 | n/a | tok=ep_min_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B1 | classifieds | DOM | n/a | n/a | 0.753 | 0.702 | 0.870 | 6.250 | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | classifieds | P-SoM | n/a | n/a | 0.704 | 0.727 | 0.631 | 6.696 | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | classifieds | P-prompt | n/a | n/a | 0.631 | 0.659 | 0.727 | 6.696 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=action_diversity |
@@ -148,6 +154,12 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 | B1 | reddit | P-text | n/a | n/a | 0.688 | 0.685 | 0.641 | 5.911 | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B1 | reddit | SoM | n/a | n/a | 0.506 | 0.667 | 0.519 | 7.389 | tok=ep_mean_entropy; verb=ep_mean_verbalized; beh=max_repeat_streak |
 | B1 | reddit | Vision | n/a | n/a | n/a | n/a | n/a | 2.463 |  |
+| B1 | wa_reddit | DOM | n/a | n/a | 0.653 | 0.787 | 0.839 | n/a | tok=ep_mean_margin; verb=ep_mean_verbalized; beh=action_diversity |
+| B1 | wa_reddit | P-SoM | n/a | n/a | 0.885 | 0.864 | 0.915 | n/a | tok=ep_mean_logprob; verb=ep_min_verbalized; beh=url_revisit_count |
+| B1 | wa_reddit | P-prompt | n/a | n/a | 0.755 | 0.769 | 0.846 | n/a | tok=ep_mean_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
+| B1 | wa_reddit | P-text | n/a | n/a | 0.736 | 0.830 | 0.914 | n/a | tok=ep_mean_margin; verb=ep_mean_verbalized; beh=action_diversity |
+| B1 | wa_reddit | SoM | n/a | n/a | 0.560 | 0.702 | 0.695 | n/a | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=url_revisit_max |
+| B1 | wa_reddit | Vision | n/a | n/a | 0.746 | 0.800 | 0.847 | n/a | tok=ep_mean_margin; verb=ep_min_verbalized; beh=url_revisit_count |
 | B2 | classifieds | DOM | n/a | n/a | 0.682 | 0.671 | 0.915 | 1.339 | tok=ep_mean_margin; verb=ep_mean_verbalized; beh=url_revisit_count |
 | B2 | classifieds | P-SoM | n/a | n/a | 0.836 | 0.367 | 0.881 | 0.893 | tok=ep_max_entropy; verb=ep_min_verbalized; beh=action_diversity |
 | B2 | classifieds | P-prompt | n/a | n/a | 0.652 | 0.497 | 0.933 | 1.786 | tok=ep_min_logprob; verb=ep_min_verbalized; beh=max_repeat_streak |
@@ -164,8 +176,10 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 E3 highlights:
 - B0/classifieds: honest-commit mode None (ECE n/a); best-signal mode B0/classifieds/P-SoM (AUROC 0.766).
 - B0/reddit: honest-commit mode None (ECE n/a); best-signal mode B0/reddit/Vision (AUROC 0.877).
+- B0/wa_reddit: honest-commit mode None (ECE n/a); best-signal mode B0/wa_reddit/Vision (AUROC 0.897).
 - B1/classifieds: honest-commit mode None (ECE n/a); best-signal mode B1/classifieds/DOM (AUROC 0.870).
 - B1/reddit: honest-commit mode None (ECE n/a); best-signal mode B1/reddit/P-prompt (AUROC 0.706).
+- B1/wa_reddit: honest-commit mode None (ECE n/a); best-signal mode B1/wa_reddit/P-SoM (AUROC 0.915).
 - B2/classifieds: honest-commit mode None (ECE n/a); best-signal mode B2/classifieds/P-text (AUROC 0.934).
 - B2/reddit: honest-commit mode None (ECE n/a); best-signal mode B2/reddit/P-prompt (AUROC 0.875).
 
@@ -309,6 +323,12 @@ Each E3 row is sourced from existing analyzer outputs; calibration source is nul
 | B0/reddit/P-text | `results/visualwebarena/phase1/B0_phantom_text_reddit_20260629_140253_060787566_3384189_R32139/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 76 | 76 | 76 |
 | B0/reddit/SoM | `results/visualwebarena/phase1/B0_som_reddit_20260627_035453_162107997_3024022_R20936/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B0/reddit/Vision | `results/visualwebarena/phase1/B0_vision_reddit_20260628_094255_184327569_3222015_R17559/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
+| B0/wa_reddit/DOM | `results/webarena/phase1/B0_dom_wa_reddit_20260731_195425_442316725_3242503_R10765/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B0/wa_reddit/P-SoM | `results/webarena/phase1/B0_phantom_som_wa_reddit_20260802_200105_448982698_3591110_R14533/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B0/wa_reddit/P-prompt | `results/webarena/phase1/B0_phantom_prompt_wa_reddit_20260802_112513_879977727_3523969_R4739/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B0/wa_reddit/P-text | `results/webarena/phase1/B0_phantom_text_wa_reddit_20260802_005017_553273903_3453420_R26435/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B0/wa_reddit/SoM | `results/webarena/phase1/B0_som_wa_reddit_20260801_050840_717420611_3312794_R28517/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B0/wa_reddit/Vision | `results/webarena/phase1/B0_vision_wa_reddit_20260801_140334_349425772_3381851_R10604/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
 | B1/classifieds/DOM | `results/visualwebarena/phase1/B1_dom_classifieds_20260603_103630_477435114_112846_R17188/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
 | B1/classifieds/P-SoM | `results/visualwebarena/phase1/B1_phantom_som_classifieds_20260606_165421_042595838_568395_R26199/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
 | B1/classifieds/P-prompt | `results/visualwebarena/phase1/B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
@@ -321,6 +341,12 @@ Each E3 row is sourced from existing analyzer outputs; calibration source is nul
 | B1/reddit/P-text | `results/visualwebarena/phase1/B1_phantom_text_reddit_20260710/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B1/reddit/SoM | `results/visualwebarena/phase1/B1_som_reddit_20260706/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 205 | 205 | 205 |
 | B1/reddit/Vision | `results/visualwebarena/phase1/B1_vision_reddit_20260708_002122_732634080_205180_R16847/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | n/a | n/a |
+| B1/wa_reddit/DOM | `results/webarena/phase1/B1_dom_wa_reddit_20260727_180024_017253388_2658596_R13217/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B1/wa_reddit/P-SoM | `results/webarena/phase1/B1_phantom_som_wa_reddit_20260730_231304_547960004_3121337_R11421/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B1/wa_reddit/P-prompt | `results/webarena/phase1/B1_phantom_prompt_wa_reddit_20260730_073250_892705973_3033575_R21734/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B1/wa_reddit/P-text | `results/webarena/phase1/B1_phantom_text_wa_reddit_20260729_154551_859907467_2958275_R10542/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B1/wa_reddit/SoM | `results/webarena/phase1/B1_som_wa_reddit_20260728_090436_011011933_2760426_R301/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
+| B1/wa_reddit/Vision | `results/webarena/phase1/B1_vision_wa_reddit_20260729_002545_844006252_2860757_R20074/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 104 | 104 | 104 |
 | B2/classifieds/DOM | `results/visualwebarena/phase1/B2_dom_classifieds_20260609_214713_553762009_985526_R21521/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
 | B2/classifieds/P-SoM | `results/visualwebarena/phase1/B2_phantom_som_classifieds_20260615_044451_093238285_1626673_R22577/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 222 | 224 |
 | B2/classifieds/P-prompt | `results/visualwebarena/phase1/B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 224 | 224 | 224 |
@@ -529,5 +555,5 @@ Overall pass: True.
 |---|---|
 | E1 N reddit | 203 / 203 |
 | E1 N classifieds | 224 / 224 |
-| E3 cells | 36 / 36 |
+| E3 cells | 48 / 48 |
 | P-prompt status | {"B0_phantom_prompt_classifieds_20260528_040546_107246795_987141_R14655": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_classifieds_20260817_184335_813828144_2037698_R12207": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260709": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B0_phantom_prompt_reddit_20260823_075453_423269667_2958720_R11669": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_classifieds_20260607_135946_736335864_683961_R32516": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_reddit_20260713": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_shopping_20260911": {"episodes": 435, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B2_phantom_prompt_classifieds_20260616_142027_795794905_1801050_R10175": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B2_phantom_prompt_reddit_20260723": {"episodes": 205, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B5_phantom_prompt_classifieds_20260829_015238_489893385_3902862_R10294": {"episodes": 224, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |

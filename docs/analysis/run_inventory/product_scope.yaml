@@ -77,6 +77,7 @@ products:
   routing_feature_diagnostics: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   visual_intent_routing: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   rule_routing_pareto: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  representation_routing_frontier: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   visual_difficulty_router: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   multimetric_pareto: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
   multimetric_pareto_with_wa: {kind: product, expected: ALL}
@@ -111,7 +112,7 @@ products:
   axis_effect_size_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   axis_effect_size_report: {kind: sibling, of: axis_effect_size}
   axis_effect_size_report_with_wa: {kind: sibling, of: axis_effect_size_with_wa}
-  mechanism_per_task: {kind: product, expected: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, wared_B0, wared_B1], why_out: {shop_B0: "the producer lists the shopping runs as complete but excluded by design (E1-E4 contrasts are built on classifieds / reddit)", shop_B1: "same"}, deferred: {wared_B1: "absent from the product although WA_B1 canonical runs resolve; cause not checked (2026-10-07)"}}
+  mechanism_per_task: {kind: product, expected: [cls_B0, cls_B1, cls_B2, cls_B5, red_B0, red_B1, red_B2, wared_B0, wared_B1], why_out: {shop_B0: "the producer lists the shopping runs as complete but excluded by design (E1-E4 contrasts are built on classifieds / reddit)", shop_B1: "same"}}  # wared_B1 joined via E3 on 2026-10-07 (§539: E3 had read the VWA registry only)
   mechanism_per_task_report: {kind: sibling, of: mechanism_per_task}
   mechanism_evidence: {kind: frozen, why: "§5 mechanism line shelved 2026-05-14 (advisor); patching probes are per-mode, not per-cell"}
   phase0b_noise_floor: {kind: snapshot, why: "Phase 0b record (2026-08-01), superseded by noise_floor_inventory"}

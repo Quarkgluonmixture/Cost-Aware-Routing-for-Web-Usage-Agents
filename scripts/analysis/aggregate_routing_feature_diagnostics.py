@@ -71,7 +71,11 @@ def load() -> dict[str, list[dict]]:
             "solve": {m for m in MODES if float(r[f"sr_{m}"]) > 0},
         })
     for cid, rows in cells.items():
-        site = "classifieds" if cid.startswith("cls") else "reddit"
+        # §536.2: was `"classifieds" if startswith("cls") else "reddit"`, which would read any
+        # new site (shopping, a WA cell id) as VWA reddit. Unknown prefixes now fail loud.
+        site = {"cls": "classifieds", "red": "reddit"}.get(cid.split("_", 1)[0])
+        if site is None:
+            raise MissingInput(f"{cid}: unknown site prefix; only VWA classifieds / reddit are wired here")
         if len(rows) != len(expected_scored_ids(site)[0]):
             raise MissingInput(f"{cid}: {len(rows)} rows against the canonical universe")
     return cells
