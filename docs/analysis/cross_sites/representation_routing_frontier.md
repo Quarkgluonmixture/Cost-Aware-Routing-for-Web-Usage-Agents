@@ -27,7 +27,45 @@ Cost is `total_billed_cost_usd` per task, **comparable within a cell only**.
 
 A positive max excess is a point estimate on one run per arm; read it against the null column, and — where a cell has one — against its rerun band (which band definition to use is the open §530.4 #2 decision, so no band is applied here).
 
-## 2. Per cell: the curves
+## 2. Pooled across cells: the frontier on a normalised budget
+
+Cost units differ between cells, so each cell's budget is normalised: **u = 0 is its cheapest fixed mode, u = 1 its dearest** (101 grid points). Per cell and u, the **frontier gain** is the SR the attainable envelope gains when the curve's operating points are added to the fixed modes (and may be mixed with them) — ≥ 0 by construction. The pooled curve is the equal-weight mean over the 8 cells. Its max over u is tested against the same B=1000 label-shuffle draws, averaged across cells draw by draw before taking the max, so the choice of u is inside the null. A cell's max gain is not §1's max excess: it can be higher (the curve's own points may be mixed) or slightly lower (it is read on the grid inside [0, 1], so a peak between grid points or outside the fixed cost range is missed). The per-cell tests stay those of §1.
+
+| curve | pooled max gain | at u | cells with any gain | null max: median / q95 | p | share of oracle max |
+|---|---|---|---|---|---|---|
+| six-head (OOF) | +0.67pp | 0.47 | 6 of 8 | 0.46 / 1.00pp | 0.2517 | 5% |
+| triage (OOF) | +1.24pp | 0.11 | 7 of 8 | 0.62 / 1.20pp | 0.0430 | 9% |
+| oracle (hindsight) | +14.36pp | 0.0 | 8 of 8 | — | — | — |
+
+Per cell (gain is the max over u of that cell's curve, in SR pp):
+
+| cell | u = 0 → 1 cost | six-head max gain (u) | triage max gain (u) | oracle max gain (u) |
+|---|---|---|---|---|
+| cls_B0 | 0.06481 → 0.07236 | +1.88pp (0.55) | +1.49pp (0.33) | +18.30pp (0.0) |
+| red_B0 | 0.09807 → 0.11045 | +1.51pp (0.0) | +2.81pp (0.01) | +18.72pp (0.0) |
+| cls_B1 | 0.04316 → 0.06304 | +2.24pp (0.64) | +0.16pp (0.78) | +12.05pp (0.0) |
+| red_B1 | 0.05240 → 0.08000 | +0.03pp (0.99) | +2.23pp (0.22) | +9.36pp (0.0) |
+| cls_B2 | 0.07065 → 0.09075 | +0.00pp (0.0) | +0.00pp (0.0) | +4.91pp (0.0) |
+| red_B2 | 0.06833 → 0.11160 | +0.01pp (0.6) | +2.58pp (0.12) | +5.42pp (0.0) |
+| wared_B0 | 0.07531 → 0.09110 | +2.43pp (0.1) | +2.06pp (0.45) | +25.00pp (0.0) |
+| wared_B1 | 0.04468 → 0.07944 | +0.00pp (0.0) | +3.33pp (0.04) | +21.15pp (0.0) |
+
+Pooled gain at selected budgets (pp; null = pointwise q95 of the pooled draws, not a test):
+
+| u | six-head | null q95 | triage | null q95 | oracle |
+|---|---|---|---|---|---|
+| 0.0 | 0.19 | 0.69 | 0.00 | 0.79 | 14.36 |
+| 0.1 | 0.53 | 0.83 | 1.24 | 1.06 | 13.53 |
+| 0.25 | 0.57 | 0.84 | 1.12 | 1.07 | 12.29 |
+| 0.5 | 0.63 | 0.61 | 0.86 | 0.78 | 10.92 |
+| 0.75 | 0.43 | 0.48 | 0.58 | 0.54 | 10.39 |
+| 1.0 | 0.33 | 0.42 | 0.37 | 0.42 | 10.15 |
+
+![pooled frontier gain](representation_routing_frontier_pooled.png)
+
+## 3. Per cell: the curves
+
+![SR–cost plane per cell](representation_routing_frontier_cells.png)
 
 Fixed modes and frontier, then each learned curve's points that sit on or above the frontier (all points are in the JSON).
 

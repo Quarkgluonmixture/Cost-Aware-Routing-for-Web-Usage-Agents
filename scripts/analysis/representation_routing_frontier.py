@@ -43,15 +43,28 @@ that SR were available at the lower cost) — again conservative for the router.
 Cost = `total_billed_cost_usd`, mean per task, comparable within a cell only (B0 bills a
 proxy API; B1/B2 are electricity-derived). Never read a cost axis across cells.
 
+Pooling across cells (笔记 §540). Cost units differ, so cells are pooled on a normalised
+budget u = (cost − cheapest fixed mode) / (dearest fixed mode − cheapest fixed mode), u in
+[0, 1]. Per cell and u, the frontier gain is how much the attainable SR rises when the
+curve's operating points are added to the fixed modes: envelope(fixed ∪ curve)(u) −
+envelope(fixed)(u), ≥ 0 by construction (a router is deployable alongside the fixed modes
+and mixable with them, the same reasoning that puts mixtures on the fixed side). The pooled
+curve is the equal-weight mean of the eight cells' gain curves; its max over u is tested
+against the same label-shuffle draws, pooled draw by draw (draw b of every cell averaged,
+then the max over u), so the selection over u is inside the null too. The per-point excess
+above and the gain differ only in that the gain lets the curve's own points be mixed; the
+per-cell tests stay on the per-point excess.
+
 Scope: the 8 cross-mode units (product_scope.yaml XMODE). Features: the matched 18 of
 `router_triage_learnability --with-wa` on every cell (WA has no reference images and no
 reasoning annotation), so VWA and WA rows are fitted on the same columns.
 
 post_hoc_exploratory=True, h10_eligible=False. Touches no gating producer.
 
-Usage (writes both files by default):
+Usage (writes the md, the JSON and both PNGs next to them by default):
   python scripts/analysis/representation_routing_frontier.py
-  python scripts/analysis/representation_routing_frontier.py --n-shuffle 200 --fig /tmp/f.png
+  python scripts/analysis/representation_routing_frontier.py --n-shuffle 200 --no-fig \
+      --out /tmp/f.md --json-out /tmp/f.json
 """
 from __future__ import annotations
 
@@ -59,6 +72,7 @@ import argparse
 import json
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -78,9 +92,13 @@ TAUS = [round(float(t), 2) for t in np.linspace(0.0, 1.0, 21)]
 TRIAGE_QUANTILES = [round(float(q), 2) for q in np.linspace(0.0, 1.0, 21)]
 N_SHUFFLE = 1000
 EPS = 1e-9
+U_GRID = [round(float(u), 2) for u in np.linspace(0.0, 1.0, 101)]
+CURVES = ("six_head", "triage", "oracle")
 
 OUT_MD = REPO / "docs/analysis/cross_sites/representation_routing_frontier.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/representation_routing_frontier.json"
+FIG_CELLS = "representation_routing_frontier_cells.png"
+FIG_POOLED = "representation_routing_frontier_pooled.png"
 
 SITE_KEY = {"classifieds": "cls", "reddit": "red", "wa_reddit": "wared"}
 SITE_LABEL = {"classifieds": "classifieds", "reddit": "reddit", "wa_reddit": "wa_reddit"}
@@ -150,6 +168,18 @@ def hull_sr_at(hull: list[tuple[float, float]], cost: float) -> float:
         if cost <= x2:
             return y1 + (y2 - y1) * (cost - x1) / (x2 - x1)
     return hull[-1][1]
+
+
+def frontier_gain(fixed_pts: list[tuple[float, float]], curve_pts: list[tuple[float, float]],
+                  ) -> np.ndarray:
+    """SR (pp) the attainable envelope gains on the U_GRID when the curve's points join the
+    fixed modes. u = 0 is the cheapest fixed mode's mean cost, u = 1 the dearest's."""
+    costs = [c for c, _ in fixed_pts]
+    lo, hi = min(costs), max(costs)
+    base = fixed_hull(fixed_pts)
+    both = fixed_hull(list(fixed_pts) + list(curve_pts))
+    return np.array([hull_sr_at(both, lo + u * (hi - lo)) - hull_sr_at(base, lo + u * (hi - lo))
+                     for u in U_GRID])
 
 
 # ---------------------------------------------------------------------------- curves
@@ -243,16 +273,30 @@ def evaluate(cell: dict, n_shuffle: int) -> dict:
     s_tri = excess_summary(tri, hull, "quantile")
     s_orc = excess_summary(orc, hull, "lambda")
 
+    fixed_pts = [(v["cost"], v["sr_pct"]) for v in fixed.values()]
+
+    def _gain(curve: list[dict]) -> np.ndarray:
+        return frontier_gain(fixed_pts, [(p["cost"], p["sr_pct"]) for p in curve])
+
+    gain = {"six_head": _gain(six), "triage": _gain(tri), "oracle": _gain(orc)}
+
     # Label-shuffle null for the max excess: permute the task bundle against X and redo
     # both curves end to end (fold-local fits, sweep, max). The hull is a property of the
-    # cell's aggregate outcomes and is invariant to the permutation.
+    # cell's aggregate outcomes and is invariant to the permutation. Each draw's gain curve
+    # is kept (in memory only) for the cross-cell pooled null.
     rng = np.random.default_rng(SEED + 1)
     null_six, null_tri = [], []
-    for _ in range(n_shuffle):
+    null_gain = {"six_head": np.zeros((n_shuffle, len(U_GRID))),
+                 "triage": np.zeros((n_shuffle, len(U_GRID)))}
+    for b in range(n_shuffle):
         perm = rng.permutation(n)
         yb, Sb, Cb = y[perm], S[perm], C[perm]
-        null_six.append(excess_summary(six_head_curve(X, Sb, Cb, folds), hull, "tau")["max_excess_pp"])
-        null_tri.append(excess_summary(triage_curve(X, yb, Sb, Cb, folds), hull, "quantile")["max_excess_pp"])
+        c6 = six_head_curve(X, Sb, Cb, folds)
+        ct = triage_curve(X, yb, Sb, Cb, folds)
+        null_six.append(excess_summary(c6, hull, "tau")["max_excess_pp"])
+        null_tri.append(excess_summary(ct, hull, "quantile")["max_excess_pp"])
+        null_gain["six_head"][b] = _gain(c6)
+        null_gain["triage"][b] = _gain(ct)
 
     def _p(obs: float, null: list[float]) -> float | None:
         if not null:
@@ -276,8 +320,51 @@ def evaluate(cell: dict, n_shuffle: int) -> dict:
         "six_head": {"summary": s_six, "curve": six},
         "triage": {"summary": s_tri, "curve": tri},
         "oracle": {"summary": s_orc, "curve": orc},
+        "frontier_gain": {
+            "u0_cost": min(c for c, _ in fixed_pts), "u1_cost": max(c for c, _ in fixed_pts),
+            **{k: {"gain_pp": gain[k].tolist(), "max_gain_pp": float(gain[k].max()),
+                   "at_u": U_GRID[int(gain[k].argmax())]} for k in CURVES},
+        },
         "n_shuffle": n_shuffle,
+        "_null_gain": null_gain,
     }
+
+
+def run_cell(spec: dict, n_shuffle: int) -> dict:
+    t0 = time.time()
+    cell = load_cell(spec)
+    if cell is None:
+        raise RuntimeError(f"cell {spec} did not build; every XMODE unit is expected to")
+    res = evaluate(cell, n_shuffle)
+    print(f"{res['cell_id']}: six-head {res['six_head']['summary']['max_excess_pp']:+.2f}pp "
+          f"triage {res['triage']['summary']['max_excess_pp']:+.2f}pp "
+          f"oracle {res['oracle']['summary']['max_excess_pp']:+.2f}pp ({time.time() - t0:.0f}s)",
+          file=sys.stderr, flush=True)
+    return res
+
+
+def pool(results: list[dict]) -> dict:
+    """Equal-weight mean of the cells' gain curves on U_GRID; for the learned curves, the max
+    over u tested against the pooled null (draw b averaged across cells, then max over u)."""
+    out = {"weighting": "equal per cell", "cells": [r["cell_id"] for r in results],
+           "u_grid": U_GRID}
+    for k in CURVES:
+        mean = np.mean([r["frontier_gain"][k]["gain_pp"] for r in results], axis=0)
+        i = int(mean.argmax())
+        s = {"mean_gain_pp": mean.tolist(), "max_pp": float(mean[i]), "at_u": U_GRID[i],
+             "n_cells_with_gain": int(sum(r["frontier_gain"][k]["max_gain_pp"] > EPS for r in results))}
+        if k != "oracle":
+            draws = np.mean([r["_null_gain"][k] for r in results], axis=0)   # (B, len(U_GRID))
+            null_max = draws.max(1)
+            s["null_p"] = (int((null_max >= mean[i] - 1e-12).sum()) + 1) / (len(null_max) + 1)
+            s["null_max_median_pp"] = float(np.median(null_max))
+            s["null_max_q95_pp"] = float(np.quantile(null_max, 0.95))
+            s["null_pointwise_q95_pp"] = np.quantile(draws, 0.95, axis=0).tolist()
+        out[k] = s
+    orc_max = out["oracle"]["max_pp"]
+    for k in ("six_head", "triage"):
+        out[k]["share_of_oracle_max"] = out[k]["max_pp"] / orc_max if orc_max > EPS else None
+    return out
 
 
 def holm(pvals: dict[str, float | None], alpha: float = 0.05) -> dict[str, bool]:
@@ -294,6 +381,60 @@ def holm(pvals: dict[str, float | None], alpha: float = 0.05) -> dict[str, bool]
 
 def _f(v, nd=2):
     return "—" if v is None else f"{v:.{nd}f}"
+
+
+def render_pooled(payload: dict) -> list[str]:
+    P, cells = payload["pooled"], payload["cells"]
+    m, B = len(cells), payload["protocol"]["n_shuffle"]
+    L = [
+        "## 2. Pooled across cells: the frontier on a normalised budget",
+        "",
+        "Cost units differ between cells, so each cell's budget is normalised: **u = 0 is its "
+        "cheapest fixed mode, u = 1 its dearest** (101 grid points). Per cell and u, the "
+        "**frontier gain** is the SR the attainable envelope gains when the curve's operating "
+        "points are added to the fixed modes (and may be mixed with them) — ≥ 0 by "
+        f"construction. The pooled curve is the equal-weight mean over the {m} cells. Its max "
+        f"over u is tested against the same B={B} label-shuffle draws, averaged across cells "
+        "draw by draw before taking the max, so the choice of u is inside the null. A cell's max "
+        "gain is not §1's max excess: it can be higher (the curve's own points may be mixed) or "
+        "slightly lower (it is read on the grid inside [0, 1], so a peak between grid points or "
+        "outside the fixed cost range is missed). The per-cell tests stay those of §1.",
+        "",
+        "| curve | pooled max gain | at u | cells with any gain | null max: median / q95 | p | share of oracle max |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for k, name in (("six_head", "six-head (OOF)"), ("triage", "triage (OOF)"), ("oracle", "oracle (hindsight)")):
+        s = P[k]
+        null = (f"{s['null_max_median_pp']:.2f} / {s['null_max_q95_pp']:.2f}pp"
+                if "null_p" in s else "—")
+        share = s.get("share_of_oracle_max")
+        L.append(f"| {name} | +{s['max_pp']:.2f}pp | {s['at_u']} | {s['n_cells_with_gain']} of {m} "
+                 f"| {null} | {_f(s.get('null_p'), 4)} | {_f(share and 100 * share, 0) + '%' if share is not None else '—'} |")
+    L += [
+        "",
+        "Per cell (gain is the max over u of that cell's curve, in SR pp):",
+        "",
+        "| cell | u = 0 → 1 cost | six-head max gain (u) | triage max gain (u) | oracle max gain (u) |",
+        "|---|---|---|---|---|",
+    ]
+    for c in cells:
+        g = c["frontier_gain"]
+        L.append(f"| {c['cell_id']} | {g['u0_cost']:.5f} → {g['u1_cost']:.5f} "
+                 + " ".join(f"| +{g[k]['max_gain_pp']:.2f}pp ({g[k]['at_u']})" for k in CURVES) + " |")
+    L += [
+        "",
+        "Pooled gain at selected budgets (pp; null = pointwise q95 of the pooled draws, not a test):",
+        "",
+        "| u | six-head | null q95 | triage | null q95 | oracle |",
+        "|---|---|---|---|---|---|",
+    ]
+    for u in (0.0, 0.1, 0.25, 0.5, 0.75, 1.0):
+        i = U_GRID.index(u)
+        L.append(f"| {u} | {P['six_head']['mean_gain_pp'][i]:.2f} | {P['six_head']['null_pointwise_q95_pp'][i]:.2f} "
+                 f"| {P['triage']['mean_gain_pp'][i]:.2f} | {P['triage']['null_pointwise_q95_pp'][i]:.2f} "
+                 f"| {P['oracle']['mean_gain_pp'][i]:.2f} |")
+    L += ["", f"![pooled frontier gain]({FIG_POOLED})", ""]
+    return L
 
 
 def render(payload: dict) -> str:
@@ -353,7 +494,12 @@ def render(payload: dict) -> str:
         "column, and — where a cell has one — against its rerun band (which band definition to use "
         "is the open §530.4 #2 decision, so no band is applied here).",
         "",
-        "## 2. Per cell: the curves",
+    ]
+    L += render_pooled(payload)
+    L += [
+        "## 3. Per cell: the curves",
+        "",
+        f"![SR–cost plane per cell]({FIG_CELLS})",
         "",
         "Fixed modes and frontier, then each learned curve's points that sit on or above the "
         "frontier (all points are in the JSON).",
@@ -374,7 +520,39 @@ def render(payload: dict) -> str:
     return "\n".join(L).rstrip() + "\n"
 
 
-def plot(payload: dict, path: Path) -> None:
+def plot_pooled(payload: dict, path: Path) -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    P = payload["pooled"]
+    u = P["u_grid"]
+    style = {"six_head": ("#2a6fdb", "six-head (OOF)"), "triage": ("#d9822b", "triage (OOF)"),
+             "oracle": ("#3a9a5b", "oracle (hindsight)")}
+    fig, (a, b) = plt.subplots(1, 2, figsize=(10, 3.8))
+    for k in CURVES:
+        col, lab = style[k]
+        a.plot(u, P[k]["mean_gain_pp"], color=col, lw=1.6, label=lab)
+    a.set_title(f"mean frontier gain over {len(P['cells'])} cells", fontsize=9)
+    for k in ("six_head", "triage"):
+        col, lab = style[k]
+        b.plot(u, P[k]["mean_gain_pp"], color=col, lw=1.6, label=lab)
+        b.plot(u, P[k]["null_pointwise_q95_pp"], color=col, lw=1.0, ls="--",
+               label=f"{lab.split(' ')[0]}: label-shuffle q95")
+    b.set_title("learned curves vs their label-shuffle null (pointwise q95)", fontsize=9)
+    for ax in (a, b):
+        ax.axhline(0, color="0.6", lw=0.8)
+        ax.set_xlabel("normalised budget u (0 = cheapest fixed mode, 1 = dearest)", fontsize=8)
+        ax.set_ylabel("SR gain over fixed modes + mixtures (pp)", fontsize=8)
+        ax.tick_params(labelsize=7)
+        ax.legend(fontsize=7, loc="upper right")
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, facecolor="white")
+    plt.close(fig)
+
+
+def plot_cells(payload: dict, path: Path) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -405,10 +583,12 @@ def plot(payload: dict, path: Path) -> None:
         ax.set_ylabel("SR %", fontsize=7)
     for ax in list(axes.flat)[len(cells):]:
         ax.axis("off")
-    axes.flat[0].legend(fontsize=6, loc="lower right")
-    fig.tight_layout()
+    handles, labels = axes.flat[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=len(labels), fontsize=8, frameon=False)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=200, facecolor="white")
+    plt.close(fig)
 
 
 # ---------------------------------------------------------------------------- main
@@ -418,27 +598,27 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=OUT_MD)
     ap.add_argument("--json-out", type=Path, default=OUT_JSON)
     ap.add_argument("--n-shuffle", type=int, default=N_SHUFFLE)
-    ap.add_argument("--fig", type=Path, help="optional PNG of the eight planes (not tracked)")
+    ap.add_argument("--jobs", type=int, default=8, help="cells evaluated in parallel processes")
+    ap.add_argument("--no-fig", action="store_true",
+                    help=f"skip {FIG_CELLS} / {FIG_POOLED} (written next to --out by default)")
     args = ap.parse_args()
 
     specs = list(CELLS) + list(rt.WA_CELLS)
-    results = []
-    for spec in specs:
-        t0 = time.time()
-        cell = load_cell(spec)
-        if cell is None:
-            raise RuntimeError(f"cell {spec} did not build; every XMODE unit is expected to")
-        res = evaluate(cell, args.n_shuffle)
-        print(f"{res['cell_id']}: six-head {res['six_head']['summary']['max_excess_pp']:+.2f}pp "
-              f"triage {res['triage']['summary']['max_excess_pp']:+.2f}pp "
-              f"oracle {res['oracle']['summary']['max_excess_pp']:+.2f}pp ({time.time() - t0:.0f}s)",
-              file=sys.stderr)
-        results.append(res)
+    # Cells are independent and each seeds its own RNG, so --jobs changes wall time only.
+    with ProcessPoolExecutor(max_workers=max(1, args.jobs)) as ex:
+        results = list(ex.map(run_cell, specs, [args.n_shuffle] * len(specs)))
 
     for key in ("six_head", "triage"):
         verdict = holm({r["cell_id"]: r[key]["summary"]["null_p"] for r in results})
         for r in results:
             r[key]["holm"] = bool(verdict.get(r["cell_id"], False))
+
+    pooled = pool(results)
+    for r in results:
+        del r["_null_gain"]
+    print(f"pooled: six-head +{pooled['six_head']['max_pp']:.2f}pp (p={pooled['six_head']['null_p']:.4f}) "
+          f"triage +{pooled['triage']['max_pp']:.2f}pp (p={pooled['triage']['null_p']:.4f}) "
+          f"oracle +{pooled['oracle']['max_pp']:.2f}pp", file=sys.stderr)
 
     payload = {
         "post_hoc_exploratory": True, "h10_eligible": False,
@@ -452,14 +632,19 @@ def main() -> int:
             "cost_field": rt.COST_FIELD,
             "excess_definition": "SR(point) - fixed-frontier SR at the same mean cost; below the "
                                  "cheapest fixed cost the cheapest mode's SR is used",
+            "frontier_gain_definition": "envelope(fixed ∪ curve points) - envelope(fixed), in SR pp, "
+                                        "on u = (cost - cheapest fixed) / (dearest fixed - cheapest fixed)",
+            "pooled_null": "per draw b, mean of the cells' gain curves, then max over u",
         },
         "cells": results,
+        "pooled": pooled,
     }
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
     args.json_out.write_text(json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     args.out.write_text(render(payload), encoding="utf-8")
-    if args.fig:
-        plot(payload, args.fig)
+    if not args.no_fig:
+        plot_cells(payload, args.out.parent / FIG_CELLS)
+        plot_pooled(payload, args.out.parent / FIG_POOLED)
     print(f"wrote {args.out} and {args.json_out}", file=sys.stderr)
     return 0
 
