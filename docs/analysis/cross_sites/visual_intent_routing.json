@@ -2,7 +2,7 @@
   "schema": 1,
   "post_hoc_exploratory": true,
   "h10_eligible": false,
-  "generated": "2026-10-07T16:17:59+00:00",
+  "generated": "2026-10-07T17:40:50+00:00",
   "predicate": "\\b(image|picture|photo|screenshot)\\b|\\bcolou?r of\\b|\\bhow many\\b[^.]{0,40}\\bin (?:the|this)\\b",
   "n_boot": 10000,
   "seed": 20260803,
@@ -708,6 +708,58 @@
           },
           "degenerate": true,
           "concentration_pp": null
+        }
+      },
+      "cls_B0_rerun": {
+        "som-psom": {
+          "flagged": {
+            "n": 71,
+            "est_pp": 26.760563380281692,
+            "ci": [
+              14.084507042253522,
+              39.436619718309856
+            ],
+            "n_a": 23,
+            "n_b": 4
+          },
+          "rest": {
+            "n": 153,
+            "est_pp": 9.803921568627452,
+            "ci": [
+              1.9607843137254901,
+              17.647058823529413
+            ],
+            "n_a": 43,
+            "n_b": 28
+          },
+          "degenerate": false,
+          "concentration_pp": 16.95664181165424
+        }
+      },
+      "red_B0_rerun": {
+        "som-psom": {
+          "flagged": {
+            "n": 63,
+            "est_pp": 1.5873015873015872,
+            "ci": [
+              -6.349206349206349,
+              9.523809523809524
+            ],
+            "n_a": 8,
+            "n_b": 7
+          },
+          "rest": {
+            "n": 140,
+            "est_pp": -3.5714285714285716,
+            "ci": [
+              -9.285714285714286,
+              1.4285714285714286
+            ],
+            "n_a": 17,
+            "n_b": 22
+          },
+          "degenerate": false,
+          "concentration_pp": 5.158730158730159
         }
       },
       "cls_B5": {

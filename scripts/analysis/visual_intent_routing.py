@@ -259,6 +259,17 @@ def extension_section(sr: dict, out: dict) -> list[str]:
             rec: dict = {}
             _contrast_row(cell, sr[cell], flagged_by_site[site], "som", "psom", L, rec)
             ext["cells"][cell] = rec
+    # §552: the same contrast on the registered same-condition rerun (run b) of every fully
+    # replicated VWA cell — does the screenshot's value on the flagged tasks reproduce?
+    from scripts.analysis.lib.replicate_pairs import full_paired_cells, outcome_matrix
+    for bl, sk in full_paired_cells():
+        if sk not in ("cls", "red"):
+            continue                      # WA: the predicate flags 5 tasks, nothing to read
+        site = "classifieds" if sk == "cls" else "reddit"
+        tasks_b = outcome_matrix(bl, sk, "b")
+        rec = {}
+        _contrast_row(f"{sk}_{bl} rerun", tasks_b, flagged_by_site[site], "som", "psom", L, rec)
+        ext["cells"][f"{sk}_{bl}_rerun"] = rec
     for label, bl, site, modes, clean in EXT_CELLS:
         tasks, meta = load_ext_cell(bl, site, modes, clean)
         rec = {"meta": meta}
