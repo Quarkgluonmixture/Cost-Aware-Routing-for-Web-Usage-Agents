@@ -92,6 +92,7 @@ products:
   serving_mode_floor: {kind: product, expected: PAIRED, why_out: {other: *nopair}}
   fusion_premium: {kind: product, expected: PAIRED, why_out: {other: *nopair}}
   label_instability: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
+  task_mode_interaction_null: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
   replicate_metric_noise: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
   rerun_union_extrapolation: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
   rerun_flip_failure_anatomy: {kind: product, expected: PAIRED, why_out: {other: *nopair}}

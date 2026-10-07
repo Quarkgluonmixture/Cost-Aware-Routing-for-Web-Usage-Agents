@@ -58,8 +58,12 @@ VLM4RWD ×2 `_status/issues/issue_vlm4rwd_reviews_2026-09-29.md`), mapped onto t
 - *The label-supply explanation is not established* — `router_label_supply_diagnosis`,
   `retry_vs_switch_label_supply`, `supply_value_coupling`, and now `rerun_flip_failure_anatomy`
   (§531.10): flipping reruns part from step 0 and their failure type is only partly stable. That
-  is consistent with labels set by stochastic execution, but it is not a direct test of supply;
-  absent one, the explanation reads as a hypothesis consistent with the data.
+  is consistent with labels set by stochastic execution, but it is not a direct test of supply.
+  **Direct test since 10-07 (§543, `task_mode_interaction_null`)**: a no-interaction null conditioned on
+  task and (mode, run) margins. The task×mode interaction reproduces across reruns beyond it on all three
+  fully replicated cells (Holm), but a single-run label measures it with reliability 0.14–0.46, and 2–6
+  runs per task are needed to pass 0.5. The supported sentence is "the routing target exists; single-run
+  labels measure it poorly", not "there is nothing to learn".
 - *SR–cost trade-off not explored beyond dominance* — row 5 (b), now a frontier product (§539), pooled across cells (§540).
 
 ---
