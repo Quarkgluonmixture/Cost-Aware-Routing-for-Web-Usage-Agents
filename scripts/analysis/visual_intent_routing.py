@@ -56,8 +56,20 @@ IMAGE_ARMS = ["vision", "som"]
 CFG_DIR = {
     "classifieds": REPO / "external/visualwebarena/config_files/vwa/test_classifieds",
     "reddit": REPO / "external/visualwebarena/config_files/vwa/test_reddit",
+    "shopping": REPO / "external/visualwebarena/config_files/vwa/test_shopping",   # extension (§548)
 }
-SITE_PREFIX = {"classifieds": "cls", "reddit": "red"}
+SITE_PREFIX = {"classifieds": "cls", "reddit": "red", "shopping": "shop"}
+# Extension cells (笔记 §548): manifest `extension:` rows, read the way routing_extension_cells
+# reads them. Mode keys here -> manifest mode names.
+MANIFEST_MODE = {"dom": "DOM", "som": "SoM", "vision": "Vision", "ptext": "P-text",
+                 "pprompt": "P-prompt", "psom": "P-SoM"}
+EXT_CELLS = [  # (label, baseline, site, modes, clean)
+    ("cls_B5", "B5", "classifieds", ("dom", "som", "ptext", "pprompt", "psom"), False),
+    ("shop_B0_clean", "B0", "shopping", ("dom", "som", "vision"), True),
+    ("shop_B0_all", "B0", "shopping", ("dom", "som", "vision"), False),
+    ("shop_B1_clean", "B1", "shopping", tuple(MODES), True),
+    ("shop_B1_all", "B1", "shopping", tuple(MODES), False),
+]
 
 # WebArena. Its task configs are not in the submodule — each run mirrors the ones it ran
 # into its own `task_configs/`, so the predicate is rebuilt from a run directory. Success
@@ -181,6 +193,86 @@ def paired_diff(tasks: dict[int, dict[str, int]], ids: list[int], a: str, b: str
     return {"n": n, "est_pp": est,
             "ci": [boots[int(0.025 * N_BOOT)], boots[int(0.975 * N_BOOT) - 1]],
             "n_a": sum(tasks[t][a] for t in ids), "n_b": sum(tasks[t][b] for t in ids)}
+
+
+def load_ext_cell(baseline: str, site: str, modes: tuple, clean: bool) -> tuple[dict, dict]:
+    """task -> {mode: 0/1} for an extension cell from its manifest rows; `clean` drops whole task
+    rows touched by B-2002 on any of the cell's arms, the grid-order tasks and B-2003 (§547)."""
+    from scripts.analysis.lib.episode_rows import load_task_rows
+    from scripts.analysis.lib.shopping_contamination import B2003_TASKS, grid_order_sensitive_tasks
+    from scripts.analysis.routing_extension_cells import contaminated_tasks, manifest_dirs
+
+    dirs = manifest_dirs(baseline, site, [MANIFEST_MODE[m] for m in modes])
+    rows = {m: load_task_rows(dirs[MANIFEST_MODE[m]]) for m in modes}
+    scored, _ = expected_scored_ids(site)
+    tids = [t for t in sorted(scored) if all(t in rows[m] for m in modes)]
+    dropped = 0
+    if clean:
+        hit, _ = contaminated_tasks(dirs)
+        drop = hit | set(grid_order_sensitive_tasks()) | set(B2003_TASKS)
+        dropped = sum(t in drop for t in tids)
+        tids = [t for t in tids if t not in drop]
+    return ({t: {m: int(bool(rows[m][t].get("success"))) for m in modes} for t in tids},
+            {"n_universe": len(scored), "n_read": len(tids), "n_dropped": dropped})
+
+
+def _contrast_row(label, tasks, flagged_all, a, b, L, rec):
+    flagged = sorted(t for t in flagged_all if t in tasks)
+    rest = sorted(set(tasks) - set(flagged))
+    if not flagged or not rest:
+        L.append(f"| `{label}` | {a} − {b} | *degenerate partition* | | | | |")
+        return
+    fin, rou = paired_diff(tasks, flagged, a, b), paired_diff(tasks, rest, a, b)
+    degenerate = fin["n_a"] == 0 and fin["n_b"] == 0
+    rec[f"{a}-{b}"] = {"flagged": fin, "rest": rou, "degenerate": degenerate,
+                       "concentration_pp": None if degenerate else fin["est_pp"] - rou["est_pp"]}
+    if degenerate:
+        L.append(f"| `{label}` | {a} − {b} | {len(flagged)} | **degenerate** — no information | — "
+                 f"| {rou['est_pp']:+.2f}pp | — |")
+        return
+    L.append(f"| `{label}` | {a} − {b} | {len(flagged)} | **{fin['est_pp']:+.2f}pp** "
+             f"({fin['n_a']}/{fin['n']} vs {fin['n_b']}/{fin['n']}) [{fin['ci'][0]:+.2f}, {fin['ci'][1]:+.2f}] "
+             f"| {rou['est_pp']:+.2f}pp [{rou['ci'][0]:+.2f}, {rou['ci'][1]:+.2f}] "
+             f"| **{fin['est_pp'] - rou['est_pp']:+.2f}pp** | |")
+
+
+def extension_section(sr: dict, out: dict) -> list[str]:
+    """§548: the image-only contrast (SoM − P-SoM: same marks, same prompt, the annotated
+    screenshot is the only difference) on every VWA cell, and the extension cells."""
+    L = ["## Extension (2026-10-08, 笔记 §548): the image-only contrast and the extension cells", "",
+         "**SoM − P-SoM** differ only in the annotated screenshot (same `[SOM_MARKS]` payload, same "
+         "prompt), so it is the cleanest reading of what the image alone buys; `vision − dom` above also "
+         "swaps the text payload away. Extension cells: **cls_B5** (GPT-5.6; its Vision run is the "
+         "broken coordinate contract, B-1997, so only SoM-based contrasts), **shopping** B0 / B1 in a "
+         "`clean` version (whole task rows touched by B-2002 on any arm, the 42 grid-order and 4 "
+         "B-2003 tasks dropped) and an `all` version for sensitivity. WebArena stays a coverage note: "
+         "the predicate flags 5 of 104 tasks.", "",
+         "| cell | contrast | n flagged | flagged Δ [95% CI] | rest Δ [95% CI] | concentration | |",
+         "|---|---|---|---|---|---|---|"]
+    ext: dict = {"cells": {}}
+    flagged_by_site = {s: ex_ante_set(s) for s in ("classifieds", "reddit", "shopping")}
+    for site in ("classifieds", "reddit"):
+        for b in ("B0", "B1", "B2"):
+            cell = f"{SITE_PREFIX[site]}_{b}"
+            if cell not in sr:
+                continue
+            rec: dict = {}
+            _contrast_row(cell, sr[cell], flagged_by_site[site], "som", "psom", L, rec)
+            ext["cells"][cell] = rec
+    for label, bl, site, modes, clean in EXT_CELLS:
+        tasks, meta = load_ext_cell(bl, site, modes, clean)
+        rec = {"meta": meta}
+        pairs = [("som", "psom")] if "psom" in modes else []
+        pairs += [("som", "dom")] + ([("vision", "dom")] if "vision" in modes else [])
+        for a, bm in pairs:
+            _contrast_row(label, tasks, flagged_by_site[site], a, bm, L, rec)
+        ext["cells"][label] = rec
+    ext["n_flagged_shopping"] = len(flagged_by_site["shopping"])
+    out["extension"] = ext
+    L += ["", f"Shopping: the predicate flags {len(flagged_by_site['shopping'])} scored tasks before any "
+          "drop. Cells read: " + ", ".join(f"`{k}` {v['meta']['n_read']}/{v['meta']['n_universe']}"
+                                            for k, v in ext["cells"].items() if "meta" in v) + ".", ""]
+    return L
 
 
 def main() -> None:
@@ -326,6 +418,7 @@ def main() -> None:
           "behind the largest gap are in the low twenties against single digits; the "
           "intervals above are paired bootstrap over tasks and should be read, not the "
           "point estimates alone.", ""]
+    L += extension_section(sr, out)
 
     a.out_md.write_text("\n".join(L) + "\n")
     a.out_json.write_text(json.dumps(out, indent=2) + "\n")

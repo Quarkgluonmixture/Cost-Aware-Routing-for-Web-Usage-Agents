@@ -68,3 +68,30 @@ Three caveats that belong beside the number, in order of how much they cost:
 2. **It is site-specific, and on reddit the sign flips.** `red_B0` gets -3.17pp on its flagged tasks — the screenshot *hurts* there. Same predicate, opposite verdict, which is the modality reversal showing up in a third functional.
 3. **The counts are small.** The flagged sets are ~70 tasks and the successes behind the largest gap are in the low twenties against single digits; the intervals above are paired bootstrap over tasks and should be read, not the point estimates alone.
 
+## Extension (2026-10-08, 笔记 §548): the image-only contrast and the extension cells
+
+**SoM − P-SoM** differ only in the annotated screenshot (same `[SOM_MARKS]` payload, same prompt), so it is the cleanest reading of what the image alone buys; `vision − dom` above also swaps the text payload away. Extension cells: **cls_B5** (GPT-5.6; its Vision run is the broken coordinate contract, B-1997, so only SoM-based contrasts), **shopping** B0 / B1 in a `clean` version (whole task rows touched by B-2002 on any arm, the 42 grid-order and 4 B-2003 tasks dropped) and an `all` version for sensitivity. WebArena stays a coverage note: the predicate flags 5 of 104 tasks.
+
+| cell | contrast | n flagged | flagged Δ [95% CI] | rest Δ [95% CI] | concentration | |
+|---|---|---|---|---|---|---|
+| `cls_B0` | som − psom | 71 | **+25.35pp** (21/71 vs 3/71) [+14.08, +36.62] | +5.23pp [-1.31, +11.76] | **+20.12pp** | |
+| `cls_B1` | som − psom | 71 | **+11.27pp** (10/71 vs 2/71) [+2.82, +21.13] | +5.88pp [+0.00, +11.76] | **+5.39pp** | |
+| `cls_B2` | som − psom | 71 | **+2.82pp** (2/71 vs 0/71) [+0.00, +7.04] | +0.65pp [-1.96, +3.27] | **+2.16pp** | |
+| `red_B0` | som − psom | 63 | **+3.17pp** (8/63 vs 6/63) [-6.35, +12.70] | +4.29pp [-0.71, +9.29] | **-1.11pp** | |
+| `red_B1` | som − psom | 63 | **+1.59pp** (4/63 vs 3/63) [+0.00, +4.76] | +1.43pp [-1.43, +4.29] | **+0.16pp** | |
+| `red_B2` | som − psom | 63 | **degenerate** — no information | — | +0.71pp | — |
+| `cls_B5` | som − psom | 71 | **+29.58pp** (27/71 vs 6/71) [+16.90, +42.25] | +7.19pp [+0.65, +13.73] | **+22.39pp** | |
+| `cls_B5` | som − dom | 71 | **+28.17pp** (27/71 vs 7/71) [+16.90, +39.44] | +6.54pp [-0.65, +13.73] | **+21.63pp** | |
+| `shop_B0_clean` | som − dom | 48 | **-2.08pp** (2/48 vs 3/48) [-6.25, +0.00] | +5.00pp [+0.94, +9.06] | **-7.08pp** | |
+| `shop_B0_clean` | vision − dom | 48 | **+4.17pp** (5/48 vs 3/48) [-6.25, +14.58] | +3.75pp [-0.62, +8.12] | **+0.42pp** | |
+| `shop_B0_all` | som − dom | 56 | **-1.79pp** (2/56 vs 3/56) [-5.36, +0.00] | +4.26pp [+0.53, +7.98] | **-6.04pp** | |
+| `shop_B0_all` | vision − dom | 56 | **+3.57pp** (5/56 vs 3/56) [-5.36, +12.50] | +2.93pp [-1.06, +6.91] | **+0.65pp** | |
+| `shop_B1_clean` | som − psom | 35 | **+5.71pp** (2/35 vs 0/35) [+0.00, +14.29] | +3.82pp [-0.64, +8.28] | **+1.89pp** | |
+| `shop_B1_clean` | som − dom | 35 | **+2.86pp** (2/35 vs 1/35) [-5.71, +11.43] | +3.82pp [-0.64, +8.28] | **-0.96pp** | |
+| `shop_B1_clean` | vision − dom | 35 | **+5.71pp** (3/35 vs 1/35) [-5.71, +17.14] | +0.00pp [-5.10, +5.10] | **+5.71pp** | |
+| `shop_B1_all` | som − psom | 56 | **+3.57pp** (2/56 vs 0/56) [+0.00, +8.93] | +2.93pp [+0.27, +5.85] | **+0.65pp** | |
+| `shop_B1_all` | som − dom | 56 | **+1.79pp** (2/56 vs 1/56) [-3.57, +7.14] | +2.93pp [+0.27, +5.59] | **-1.14pp** | |
+| `shop_B1_all` | vision − dom | 56 | **+3.57pp** (3/56 vs 1/56) [-3.57, +10.71] | +0.27pp [-2.66, +3.19] | **+3.31pp** | |
+
+Shopping: the predicate flags 56 scored tasks before any drop. Cells read: `cls_B5` 224/224, `shop_B0_clean` 368/432, `shop_B0_all` 432/432, `shop_B1_clean` 192/432, `shop_B1_all` 432/432.
+

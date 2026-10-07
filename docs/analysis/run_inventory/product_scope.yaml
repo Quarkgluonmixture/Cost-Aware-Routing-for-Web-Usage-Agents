@@ -75,7 +75,7 @@ products:
   two_arm_action_learnability: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   retry_vs_switch_label_supply: {kind: product, expected: FULL_PAIRED, why_out: {other: *notfull}}
   routing_feature_diagnostics: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
-  visual_intent_routing: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  visual_intent_routing: {kind: product, expected: ALL}   # §548: B5 via SoM-based contrasts, shopping clean/all
   rule_routing_pareto: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   representation_routing_frontier: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   routing_gain_upper_bounds: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
