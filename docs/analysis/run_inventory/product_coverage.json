@@ -1746,7 +1746,7 @@
   "product": "routing_crossrun_template_validation",
   "source": "routing_crossrun_template_validation.json",
   "producer": "scripts/analysis/routing_crossrun_template_validation.py",
-  "last_commit": "2026-10-07",
+  "last_commit": "2026-10-08",
   "cells": [
    "cls_B0",
    "cls_B1",
@@ -1826,6 +1826,37 @@
   "source": "routing_gain_upper_bounds.json",
   "producer": "scripts/analysis/routing_crossrun_template_validation.py; scripts/analysis/routing_gain_upper_bounds.py",
   "last_commit": "2026-10-07",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "covered_by": {},
+  "deferred": {}
+ },
+ {
+  "product": "routing_three_arm",
+  "source": "routing_three_arm.json",
+  "producer": "scripts/analysis/routing_three_arm.py",
+  "last_commit": "untracked",
   "cells": [
    "cls_B0",
    "cls_B1",
@@ -2112,7 +2143,7 @@
   "product": "visual_intent_routing",
   "source": "visual_intent_routing.json",
   "producer": "scripts/analysis/visual_intent_routing.py",
-  "last_commit": "2026-08-03",
+  "last_commit": "2026-10-08",
   "cells": [
    "cls_B0",
    "cls_B1",

@@ -109,7 +109,7 @@ def anova(Y: np.ndarray) -> dict:
 def label_stats(Y: np.ndarray) -> dict:
     a, b = Y[:, :, 0], Y[:, :, 1]
     solved_a = a.sum(1)
-    contested = (solved_a > 0) & (solved_a < M)
+    contested = (solved_a > 0) & (solved_a < Y.shape[1])
     flipped = (a != b).any(1)
     fc = flipped[contested].mean() if contested.any() else float("nan")
     fo = flipped[~contested].mean() if (~contested).any() else float("nan")
@@ -137,7 +137,7 @@ def _to_rows(Y: np.ndarray) -> list[int]:
 def _to_matrix(rows: list[int], n_cols: int) -> np.ndarray:
     arr = np.array(rows, dtype=np.int64)[:, None]
     bits = (arr >> np.arange(n_cols)) & 1
-    return bits.reshape(len(rows), M, 2).astype(float)
+    return bits.reshape(len(rows), n_cols // 2, 2).astype(float)   # any arm count (§550)
 
 
 def _bits(x: int) -> list[int]:
