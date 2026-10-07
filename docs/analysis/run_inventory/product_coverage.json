@@ -1735,6 +1735,37 @@
   "deferred": {}
  },
  {
+  "product": "routing_gain_upper_bounds",
+  "source": "routing_gain_upper_bounds.json",
+  "producer": "scripts/analysis/routing_crossrun_template_validation.py; scripts/analysis/routing_gain_upper_bounds.py",
+  "last_commit": "untracked",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "covered_by": {},
+  "deferred": {}
+ },
+ {
   "product": "rule_routing_pareto",
   "source": "rule_routing_pareto.json",
   "producer": "scripts/analysis/rule_routing_pareto.py",
@@ -1894,7 +1925,7 @@
   "product": "task_mode_interaction_null",
   "source": "task_mode_interaction_null.json",
   "producer": "scripts/analysis/task_mode_interaction_null.py",
-  "last_commit": "untracked",
+  "last_commit": "2026-10-07",
   "cells": [
    "cls_B0",
    "red_B0",
