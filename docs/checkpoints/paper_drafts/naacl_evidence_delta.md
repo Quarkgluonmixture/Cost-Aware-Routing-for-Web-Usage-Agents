@@ -52,7 +52,7 @@ VLM4RWD ×2 `_status/issues/issue_vlm4rwd_reviews_2026-09-29.md`), mapped onto t
 - *Rerun control is the strongest contribution* — `noise_floor_inventory` (24 pairs). Its stated
   weakness is coverage, and that is the 5-of-11 above. Since §537 the five products that need *every* arm
   replicated read three cells, not one (cls_B0, red_B0, WA_B1): the flip-enrichment on contested tasks
-  replicates on all three (`label_instability`), while the cross-side unique-coverage claim is separated
+  replicates on all three (`label_instability`) — but on a floor matched to the same event it is no more than difficulty arithmetic predicts in any of the three (§541; the old "2.20× above the floor" compared a six-arm union with a single-arm floor), while the cross-side unique-coverage claim is separated
   only on cls_B0 — it touches on red_B0 and **inverts on WA_B1** (`unique_solve_envelope_cross_cell`). No new pair can land before 10-12
   (A100 unreachable; anything from the 09-15 chain after 09-24 is only there).
 - *The label-supply explanation is not established* — `router_label_supply_diagnosis`,

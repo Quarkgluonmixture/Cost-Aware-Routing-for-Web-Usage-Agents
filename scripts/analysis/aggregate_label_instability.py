@@ -14,10 +14,11 @@ Credit: the enrichment framing came from a zero-preset external review (2026-08-
 given the numbers with no access to our draft. We had computed the 51% and never computed its
 complement.
 
-Scope. Exactly one cell carries two same-condition replicates (B0 x classifieds), and only two
-of its six arms were replicated, once each. Every figure here is therefore a LOWER bound on the
-flip rate: replicating the other four arms can only add flips, and adding flips to the
-disagreement set is what the enrichment measures.
+Scope. Written when one cell (B0 x classifieds) had two of its six arms replicated; since
+2026-10-07 every cell with all six arms replicated is read (cls_B0, red_B0, WA_B1), one rerun
+per arm. A flip is "any replicated arm changes outcome", so every figure is a LOWER bound on the
+flip rate (more reruns can only add flips), and the difficulty floor is the union over the
+replicated arms (§541).
 """
 from __future__ import annotations
 
@@ -129,14 +130,14 @@ def build(baseline: str = "B0", site_key: str = "cls") -> dict:
             "enrichment_vs_complement": (rate / base_rate) if base_rate else None,
         }
         LOG.info("%-52s n=%3d flip=%3d (%.1f%%)", name[:52], len(ids), k, 100 * rate)
-    out["difficulty_null"] = difficulty_null(flips, solve)
+    out["difficulty_null"] = difficulty_null(flips, solve, len(arms))
     # Same computation with the replicated arms removed from the difficulty proxy — see the
     # docstring of difficulty_null for why the shipped version is circular.
     repl = {a.rsplit(".", 1)[-1] for a in arms}
     _proxy = [m for m in MODES if m not in repl]
     if _proxy:
         out["difficulty_null_leave_replicated_out"] = difficulty_null(
-            flips, solve, arms_for_proxy=_proxy)
+            flips, solve, len(arms), arms_for_proxy=_proxy)
         out["leave_replicated_out_available"] = True
     else:
         # B-1995 (2026-08-26). The anti-circularity control has been DESTROYED BY
@@ -174,7 +175,7 @@ def build(baseline: str = "B0", site_key: str = "cls") -> dict:
     return out
 
 
-def difficulty_null(flips: set[int], solve: dict[int, set[str]],
+def difficulty_null(flips: set[int], solve: dict[int, set[str]], n_replicated: int,
                     arms_for_proxy: list[str] | None = None) -> dict:
     """How much of the enrichment is arithmetic rather than structure?
 
@@ -191,9 +192,12 @@ def difficulty_null(flips: set[int], solve: dict[int, set[str]],
         arithmetic enrichment is INFINITE. The observed 17x is therefore not inflated by this
         mechanism; it is deflated by it. Nine all-solved tasks flip twice, which the model
         forbids outright.
-      * inside the contested band the observed rate exceeds the floor by only ~1.4x. So most of
-        the 51% is the band being mid-difficulty, and the excess above that is what is left for
-        "structure" to explain.
+      * inside the contested band the observed rate is compared with the floor of the SAME event.
+        A task counts as flipped if ANY of the `n_replicated` replicated arms flips, so the floor
+        is the union 1 - (1 - 2p(1-p))^R, not the single-arm 2p(1-p). Until 2026-10-07 the floor
+        was single-arm while the observation was the union over (by then) six arms, which
+        manufactured a "2.20x excess" on cls_B0; on the matched floor the contested band sits
+        at or below it (笔记 §541, found by the zero-preset Codex review of that day).
 
     ⚠️ TWO crudenesses, and the second is the serious one.
     (a) The six modes are different representations, not six draws from one model, so k/6
@@ -218,12 +222,21 @@ def difficulty_null(flips: set[int], solve: dict[int, set[str]],
 
     def obs(S): return len(S & flips) / len(S) if S else None
 
-    def pred(S): return (sum(2 * (k[t] / K) * (1 - k[t] / K) for t in S) / len(S)) if S else None
+    R = n_replicated
+
+    def floor(q: float) -> float:
+        """P(at least one of R independent arms flips) when each flips w.p. 2q(1-q)."""
+        return 1 - (1 - 2 * q * (1 - q)) ** R
+
+    def pred(S): return (sum(floor(k[t] / K) for t in S) / len(S)) if S else None
 
     oc, ok_ = obs(contested), obs(comp)
     pc, pk = pred(contested), pred(comp)
     return {
         "proxy": f"k/{K} where k = how many of {arms} solved the task",
+        "floor_definition": f"union over the {R} replicated arms: 1 - (1 - 2p(1-p))^{R}, p = k/{K}, "
+                            "arms assumed independent",
+        "n_replicated_arms": R,
         "arms_in_proxy": arms,
         "circular": aset & {"dom", "vision"} == {"dom", "vision"},
         "contested": {"n": len(contested), "observed_flip_rate": oc, "binomial_floor": pc,
@@ -234,7 +247,7 @@ def difficulty_null(flips: set[int], solve: dict[int, set[str]],
                    "n": sum(1 for t in solve if k[t] == kk),
                    "n_flipped": sum(1 for t in solve if k[t] == kk and t in flips),
                    "observed": obs({t for t in solve if k[t] == kk}),
-                   "binomial_floor": 2 * (kk / K) * (1 - kk / K)}
+                   "binomial_floor": floor(kk / K)}
                   for kk in range(K + 1)
                   if any(k[t] == kk for t in solve)],
     }
@@ -285,9 +298,11 @@ def render(d: dict) -> str:
           "gap between those two facts is the point: **instability concentrates precisely where "
           "the decision is contested**, so a router is fitted on the least stable subset of the "
           "benchmark by construction.", "",
-          "It also bounds the problem independently of sample size. More data does not repair a "
-          "target that a rerun rewrites, so this obstruction is of a different kind from the "
-          "supply and predictability results, which a larger or easier benchmark could move."]
+          "It is also a different kind of obstruction from the supply and predictability "
+          "results: more *tasks* do not repair a target that a rerun rewrites, but more *runs per "
+          "task* can, by averaging the label (笔记 §505.7 puts the price at k≥3 runs on "
+          "classifieds and k≥9 on reddit). It is a statement about single-draw labels, not a "
+          "proof that the conditional expectation is unlearnable."]
 
     # The obvious attack on the enrichment, answered with a number rather than an argument.
     dn = d["difficulty_null"]
@@ -296,27 +311,36 @@ def render(d: dict) -> str:
     L += ["", "## Is the enrichment just arithmetic?", "",
           "\"Contested\" means at least one arm solved the task and at least one did not, which "
           "is by definition a **mid-difficulty band**. A task with true per-run success rate *p* "
-          "flips between two runs with probability *2p(1−p)*: maximal near 0.5, zero at either "
-          "end. So the enrichment could be nothing but the complement being full of tasks nobody "
-          "solves. Taking *k/6* — how many of the six modes solved it — as a difficulty proxy:",
+          "flips between two runs of one arm with probability *2p(1−p)*: maximal near 0.5, zero at "
+          "either end. A task counts as flipped here if **any** of the "
+          f"{dn['n_replicated_arms']} replicated arms flips, so the floor for the same event is "
+          f"*1 − (1 − 2p(1−p))^{dn['n_replicated_arms']}* (arms taken as independent). So the "
+          "enrichment could be nothing but the complement being full of tasks nobody solves. "
+          "Taking *k/6* — how many of the six modes solved it — as a difficulty proxy:",
           "",
-          "| set | n | observed flip rate | binomial floor *2p(1−p)* |",
+          f"| set | n | observed flip rate | floor *1−(1−2p(1−p))^{dn['n_replicated_arms']}* |",
           "|---|---|---|---|",
           f"| contested | {co['n']} | {100 * co['observed_flip_rate']:.2f}% | "
           f"{100 * co['binomial_floor']:.2f}% |",
           f"| complement | {cm['n']} | {100 * cm['observed_flip_rate']:.2f}% | "
           f"{100 * cm['binomial_floor']:.2f}% |", "",
           "**The attack fails, and it fails in the unexpected direction.** The complement's "
-          "predicted rate is exactly zero — *k*=0 and *k*=6 both give *2p(1−p)*=0 — so the "
+          "predicted rate is exactly zero — *k*=0 and *k*=6 both give a zero floor — so the "
           "arithmetic enrichment is **infinite**. The observed figure is therefore *deflated* by "
           "this mechanism, not inflated: the complement flips more than the model permits at "
           f"all, including {all_k['n_flipped']} of the {all_k['n']} tasks that every mode solved.", "",
           "**But the same table limits the claim.** Inside the contested band the observed rate "
-          f"exceeds the floor by only **{co['observed_over_floor']:.2f}×** "
+          f"is **{co['observed_over_floor']:.2f}×** the floor "
           f"({100 * co['observed_flip_rate']:.1f}% against {100 * co['binomial_floor']:.1f}%). "
-          f"Most of the {100 * co['observed_flip_rate']:.0f}% is the band being mid-difficulty; the excess above that floor is what "
-          "is left for structure to carry. The honest sentence is that instability concentrates "
-          "on contested tasks **and** that being contested is itself most of the reason.", "",
+          + ("At or below 1, this crude model needs no task×mode structure at all to produce the "
+             "contested band's instability: being mid-difficulty is enough. "
+             if co["observed_over_floor"] <= 1 else
+             "The excess above the floor is what is left for structure to carry. ")
+          + "The honest sentence is that instability concentrates on contested tasks **and** that "
+          "being contested is itself the reason, as far as this proxy can tell. (Until 2026-10-07 "
+          "this compared the six-arm union with a single-arm floor and reported a 2.20× excess on "
+          "cls_B0; 笔记 §541.) A null that conditions on task and arm margins instead of a k/6 "
+          "proxy is the stronger test.", "",
           "| *k* solved | n | flipped | observed | floor |",
           "|---|---|---|---|---|"]
     for r in dn["per_k"]:
@@ -379,7 +403,7 @@ def render_other_cell(d: dict) -> str:
     co, cm = dn["contested"], dn["complement"]
     f = lambda v: "—" if v is None else f"{100 * v:.2f}%"
     ratio = "—" if co["observed_over_floor"] is None else f"{co['observed_over_floor']:.2f}x"
-    L += ["", "| set | n | observed flip rate | binomial floor *2p(1−p)* | observed / floor |",
+    L += ["", f"| set | n | observed flip rate | floor *1−(1−2p(1−p))^{dn['n_replicated_arms']}* | observed / floor |",
           "|---|---|---|---|---|",
           f"| contested | {co['n']} | {f(co['observed_flip_rate'])} | {f(co['binomial_floor'])} | "
           f"{ratio} |",
