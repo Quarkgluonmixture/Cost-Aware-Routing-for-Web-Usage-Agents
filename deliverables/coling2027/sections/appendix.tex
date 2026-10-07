@@ -9,11 +9,11 @@ Four modes carry no page screenshot and cross two factors: the text payload (the
 \section{The intent rule}\label{app:rule}
 
 A task is flagged if its intent matches
-\begin{quote}\footnotesize
+\begin{flushleft}\footnotesize
 \verb!\b(image|picture|photo|screenshot)\b|!\\
 \verb!\bcolou?r of\b|!\\
 \verb!\bhow many\b[^.]{0,40}\bin (?:the|this)\b!
-\end{quote}
+\end{flushleft}
 (case-insensitive) and the task carries no reference image. It flags 71 of 224 classifieds tasks, 63 of 203 VWA-reddit tasks, 56 of 432 shopping tasks and 5 of 104 WebArena-reddit tasks. It was written while auditing reddit failures; classifieds is out-of-sample.
 
 \section{Harness defects and how cells were filtered}\label{app:harness}
