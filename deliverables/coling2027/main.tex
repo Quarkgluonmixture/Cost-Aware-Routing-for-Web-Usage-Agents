@@ -1,0 +1,56 @@
+% COLING 2027 (via ACL Rolling Review, 2026-10-12) — first draft, 2026-10-08.
+% Frame: docs/checkpoints/paper_drafts/coling_frame_proposal.md (v2, user-chosen positive opening).
+% Every number in the text is read from a product under docs/analysis/ ; the source is named in a
+% comment next to it. Figures: scripts/analysis/figures/coling/make_figures.py.
+% ARR page limit (8 pages long paper) and COLING-specific CFP details: NOT YET VERIFIED.
+\documentclass[11pt]{article}
+\usepackage[review]{acl}   % [review] anonymises and adds line numbers; [final] is the default
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+
+\graphicspath{{figures/}}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+
+\newcommand{\todo}[1]{{\color{red!75!black}\bfseries[TODO: #1]}}
+\newcommand{\pp}{\,pp}
+\newcommand{\SoM}{SoM}
+\newcommand{\PSoM}{P-SoM}
+
+\title{Text, Screenshots, or Both?\\Representation Value and Task Routing in Web Agents}
+
+\begin{document}
+\maketitle
+
+\input{sections/0_abstract}
+\input{sections/1_intro}
+\input{sections/2_setup}
+\input{sections/3_deployment}
+\input{sections/4_screenshot}
+\input{sections/5_preference}
+\input{sections/6_routing}
+\input{sections/7_method}
+\input{sections/8_related}
+\input{sections/limitations}
+
+\bibliography{paper}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}
