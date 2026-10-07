@@ -63,7 +63,7 @@ VLM4RWD ×2 `_status/issues/issue_vlm4rwd_reviews_2026-09-29.md`), mapped onto t
   task and (mode, run) margins. The task×mode interaction reproduces across reruns beyond it on all three
   fully replicated cells (Holm), but a single-run label measures it with reliability 0.14–0.46, and 2–6
   runs per task are needed to pass 0.5. The supported sentence is "the routing target exists; single-run
-  labels measure it poorly", not "there is nothing to learn".
+  labels measure it poorly", not "there is nothing to learn". And it is not only the labels (§546, `routing_crossrun_template_validation`): one run's per-task preference, scored on the rerun of the SAME tasks, is worth +2.4 to +10.5pp over the frontier on red_B0 / wared_B1, while a deployable router from pre-flight features, held out by template or scored on the rerun, averages below the frontier in every reading — the signal persists per task but the features do not carry it to new tasks.
 - *SR–cost trade-off not explored beyond dominance* — row 5 (b), now a frontier product (§539), pooled across cells (§540).
 
 ---

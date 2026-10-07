@@ -1392,6 +1392,41 @@
   "deferred": {}
  },
  {
+  "product": "representation_routing_frontier_gpu_time",
+  "source": "representation_routing_frontier_gpu_time.json",
+  "producer": "?",
+  "last_commit": "2026-10-07",
+  "cells": [
+   "cls_B1",
+   "cls_B2",
+   "red_B1",
+   "red_B2",
+   "wared_B1"
+  ],
+  "status": "sibling",
+  "missing": [],
+  "unexplained": []
+ },
+ {
+  "product": "representation_routing_frontier_wallclock",
+  "source": "representation_routing_frontier_wallclock.json",
+  "producer": "?",
+  "last_commit": "2026-10-07",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "sibling",
+  "missing": [],
+  "unexplained": []
+ },
+ {
   "product": "rerun_flip_failure_anatomy",
   "source": "rerun_flip_failure_anatomy.json",
   "producer": "scripts/analysis/rerun_flip_failure_anatomy.py",
@@ -1708,6 +1743,37 @@
   "deferred": {}
  },
  {
+  "product": "routing_crossrun_template_validation",
+  "source": "routing_crossrun_template_validation.json",
+  "producer": "scripts/analysis/routing_crossrun_template_validation.py",
+  "last_commit": "untracked",
+  "cells": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B0",
+   "cls_B1",
+   "cls_B2",
+   "red_B0",
+   "red_B1",
+   "red_B2",
+   "wared_B0",
+   "wared_B1"
+  ],
+  "covered_by": {},
+  "deferred": {}
+ },
+ {
   "product": "routing_feature_diagnostics",
   "source": "routing_feature_diagnostics.json",
   "producer": "scripts/analysis/aggregate_routing_feature_diagnostics.py",
@@ -1738,7 +1804,7 @@
   "product": "routing_gain_upper_bounds",
   "source": "routing_gain_upper_bounds.json",
   "producer": "scripts/analysis/routing_crossrun_template_validation.py; scripts/analysis/routing_gain_upper_bounds.py",
-  "last_commit": "untracked",
+  "last_commit": "2026-10-07",
   "cells": [
    "cls_B0",
    "cls_B1",

@@ -79,6 +79,7 @@ products:
   rule_routing_pareto: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   representation_routing_frontier: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   routing_gain_upper_bounds: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  routing_crossrun_template_validation: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   visual_difficulty_router: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   multimetric_pareto: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
   multimetric_pareto_with_wa: {kind: product, expected: ALL}
@@ -108,6 +109,8 @@ products:
   # --- siblings, frozen lines, snapshots ---
   axis1_microbehavior: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; _with_wa sibling extends"}}
   axis1_microbehavior_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  representation_routing_frontier_gpu_time: {kind: sibling, of: representation_routing_frontier}
+  representation_routing_frontier_wallclock: {kind: sibling, of: representation_routing_frontier}
   axis1_microbehavior_report: {kind: sibling, of: axis1_microbehavior}
   axis1_microbehavior_report_with_wa: {kind: sibling, of: axis1_microbehavior_with_wa}
   axis_effect_size: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; _with_wa sibling extends"}}
