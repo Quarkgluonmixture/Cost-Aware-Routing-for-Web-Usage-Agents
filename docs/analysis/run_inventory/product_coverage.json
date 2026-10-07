@@ -1746,7 +1746,7 @@
   "product": "routing_crossrun_template_validation",
   "source": "routing_crossrun_template_validation.json",
   "producer": "scripts/analysis/routing_crossrun_template_validation.py",
-  "last_commit": "untracked",
+  "last_commit": "2026-10-07",
   "cells": [
    "cls_B0",
    "cls_B1",
@@ -1769,6 +1769,27 @@
    "red_B2",
    "wared_B0",
    "wared_B1"
+  ],
+  "covered_by": {},
+  "deferred": {}
+ },
+ {
+  "product": "routing_extension_cells",
+  "source": "routing_extension_cells.json",
+  "producer": "scripts/analysis/routing_extension_cells.py",
+  "last_commit": "untracked",
+  "cells": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
+  ],
+  "status": "complete",
+  "missing": [],
+  "unexplained": [],
+  "expected": [
+   "cls_B5",
+   "shop_B0",
+   "shop_B1"
   ],
   "covered_by": {},
   "deferred": {}

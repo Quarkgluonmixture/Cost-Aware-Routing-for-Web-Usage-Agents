@@ -80,6 +80,7 @@ products:
   representation_routing_frontier: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   routing_gain_upper_bounds: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   routing_crossrun_template_validation: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
+  routing_extension_cells: {kind: product, expected: [cls_B5, shop_B0, shop_B1], why_out: {other: "the 8 cross-mode units are read by the 8-cell routing suite (representation_routing_frontier / routing_gain_upper_bounds / routing_crossrun_template_validation); this product reads only the extension cells, cls_B5 without its broken vision arm and shopping with and without B-2002-touched tasks (§547)"}}
   visual_difficulty_router: {kind: product, expected: VWA6, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1, wared_B0: *vwafeat, wared_B1: *vwafeat}}
   multimetric_pareto: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; the _with_wa sibling extends it"}}
   multimetric_pareto_with_wa: {kind: product, expected: ALL}

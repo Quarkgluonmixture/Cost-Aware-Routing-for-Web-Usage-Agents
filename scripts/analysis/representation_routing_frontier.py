@@ -109,8 +109,8 @@ COST_BASES = {   # 笔记 §545: the frontier under each cost basis the local-co
 FIG_CELLS = "representation_routing_frontier_cells.png"
 FIG_POOLED = "representation_routing_frontier_pooled.png"
 
-SITE_KEY = {"classifieds": "cls", "reddit": "red", "wa_reddit": "wared"}
-SITE_LABEL = {"classifieds": "classifieds", "reddit": "reddit", "wa_reddit": "wa_reddit"}
+SITE_KEY = {"classifieds": "cls", "reddit": "red", "wa_reddit": "wared", "shopping": "shop"}   # shopping: extension cells only (§547)
+SITE_LABEL = {"classifieds": "classifieds", "reddit": "reddit", "wa_reddit": "wa_reddit", "shopping": "shopping"}
 
 
 # ---------------------------------------------------------------------------- data
@@ -238,8 +238,8 @@ def six_head_curve(X, S, C, folds) -> list[dict]:
         tr = np.setdiff1d(np.arange(n), f)
         tr_cost, tr_sr = C[tr].mean(0), S[tr].mean(0)
         dec_cost[f] = tr_cost
-        fallback[f] = min(range(len(MODES)), key=lambda j: (-tr_sr[j], tr_cost[j], j))
-        for j in range(len(MODES)):
+        fallback[f] = min(range(S.shape[1]), key=lambda j: (-tr_sr[j], tr_cost[j], j))
+        for j in range(S.shape[1]):
             P[f, j] = _fit_proba(X[tr], S[tr, j].astype(int), X[f])
     out = []
     for tau in TAUS:
@@ -260,8 +260,8 @@ def triage_curve(X, y, S, C, folds) -> list[dict]:
     for f in folds:
         tr = np.setdiff1d(np.arange(n), f)
         tr_cost, tr_sr = C[tr].mean(0), S[tr].mean(0)
-        best[f] = min(range(len(MODES)), key=lambda j: (-tr_sr[j], tr_cost[j], j))
-        cheap[f] = min(range(len(MODES)), key=lambda j: (tr_cost[j], j))
+        best[f] = min(range(S.shape[1]), key=lambda j: (-tr_sr[j], tr_cost[j], j))
+        cheap[f] = min(range(S.shape[1]), key=lambda j: (tr_cost[j], j))
         score[f] = _fit_proba(X[tr], y[tr], X[f])
     out = []
     thresholds = [float(np.quantile(score, q)) for q in TRIAGE_QUANTILES] + [np.inf]
@@ -307,7 +307,7 @@ def evaluate(cell: dict, n_shuffle: int) -> dict:
     folds = fold_split(n)
 
     fixed = {m: {"cost": float(C[:, j].mean()), "sr_pct": float(100 * S[:, j].mean())}
-             for j, m in enumerate(MODES)}
+             for j, m in enumerate(cell.get("modes", MODES))}   # extension cells carry fewer modes (§547)
     hull = fixed_hull([(v["cost"], v["sr_pct"]) for v in fixed.values()])
     hull_modes = [next(m for m, v in fixed.items() if (v["cost"], v["sr_pct"]) == h) for h in hull]
 

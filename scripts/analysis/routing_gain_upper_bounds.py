@@ -64,7 +64,7 @@ def group_folds(groups: np.ndarray) -> list[np.ndarray]:
 
 
 def _hull(S, C):
-    return rrf.fixed_hull([(float(C[:, j].mean()), float(100 * S[:, j].mean())) for j in range(len(rrf.MODES))])
+    return rrf.fixed_hull([(float(C[:, j].mean()), float(100 * S[:, j].mean())) for j in range(S.shape[1])])
 
 
 def _excess(S, C, sel, hull) -> tuple[float, float]:
