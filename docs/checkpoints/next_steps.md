@@ -33,6 +33,7 @@ updated: 2026-10-08
 > - **user 自己办（ARR，不办可能直接拒稿）**：所有作者 **10-14 前**完成审稿人注册；OpenReview 资料完整 + 指定服务审稿人；Responsible NLP checklist（E1 披露 AI 辅助）；REALM / VLM4RWD 非归档 poster 是否申报未定（建议问 ARR）。
 > - **待 user 定**：delta §0 第 4 / 5 行（推荐见 frame 提案 §6）；是否等 A100 数据再定稿图表。
 > - **10-08 下午已按零预设审查修订**（笔记 §554；Codex 原评 Overall 2）：措辞硬伤全改、三臂套件补成本口径与去 B2 敏感性（triage 的事后空间只在计费口径成立，可部署结论不随口径变）、附录加 agent 合同与敏感性表。正文约 7/8 页。
+> - **10-08 晚**：初稿过了一次 paper-deslop（笔记 §556：12 处破折号按句意重排，删一句重复限定；不变量 / 语义复核各 6/6 通过，正文在第 7 页结束）。重跑配对的 Tier-1 diag 已补齐，产物为 `cross_sites/rerun_diag_symptom_agreement`（笔记 §555）。**待 user 定**：是否把「重跑翻转从第一步就分岔、失败症状超出模板部分可复现」这一句放进正文；GPT 的「轨迹优先」frame 已定投稿后再做，10-12 不换。
 > - **匿名补充包**：`python scripts/release/build_coling_supplement.py` → `deliverables/coling2027/coling2027_supplement.zip`（0.8 MB，gitignore）。投稿时作为 ARR supplementary 上传；数据一改就重建。**待 user 判断**：代码 / 配置里的项目代号 `p79` 是否算破匿名（若 poster 公开过它）。
 > - **初稿还可补**：§553.2 未核实的候选文献；内层 held-out 阈值重算与 2PL 零模型（留给 author response）。
 > - **给其他 AI 的零预设证据交接包**：入口 `docs/handoff/EVIDENCE_HANDOFF_20261008.md`（英文，自包含，不含任何 frame）；完整包 `python scripts/release/build_evidence_handoff.py` → `deliverables/handoff_build/evidence_handoff_20261008.zip`（6.4 MB，gitignore；含全部产物、逐题数据、结论层、实验笔记、预注册、bug 目录、workshop 审稿意见）。产物或数据一改就重建。
