@@ -7,3 +7,7 @@
 *.log
 *.out
 *.synctex.gz
+
+# anonymous supplement (rebuild: scripts/release/build_coling_supplement.py)
+supplement/
+coling2027_supplement.zip
