@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+ & & \multicolumn{2}{c}{DOM} & \multicolumn{2}{c}{\SoM} & \multicolumn{2}{c}{Vision} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(l){7-8}
+cell & $n$ & SR & cost & SR & cost & SR & cost \\
+\midrule
+cls B0 & 224 & 17.4 & 6.96 & 27.2 & 7.24 & 25.0 & 6.48 \\
+cls B1 & 224 & 6.2 & 5.95 & 14.3 & 6.03 & 12.5 & 4.32 \\
+cls B2 & 224 & 1.3 & 7.68 & 2.2 & 9.08 & 2.2 & 7.07 \\
+VWA-red B0 & 203 & 14.3 & 10.15 & 14.8 & 11.05 & 7.4 & 9.81 \\
+VWA-red B1 & 203 & 5.9 & 7.33 & 7.4 & 8.00 & 2.5 & 5.24 \\
+VWA-red B2 & 203 & 3.9 & 9.48 & 1.0 & 11.16 & 2.0 & 6.83 \\
+WA-red B0 & 104 & 26.9 & 7.53 & 22.1 & 9.11 & 19.2 & 8.64 \\
+WA-red B1 & 104 & 16.3 & 6.58 & 13.5 & 7.94 & 9.6 & 4.47 \\
+\addlinespace[2pt]
+cls B5 & 224 & 23.7 & 13.74 & 37.1 & 16.71 & -- & -- \\
+shop B0 & 368 & 12.8 & 12.25 & 16.8 & 9.87 & 16.6 & 7.75 \\
+shop B1 & 192 & 5.7 & 10.60 & 9.4 & 7.75 & 6.8 & 4.69 \\
+\bottomrule
+\end{tabular}
+\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment arms. B0 and GPT-5.6 (B5) costs are API invoices; B1 and B2 are token-priced estimates for local serving, comparable within a cell only. Shopping rows are the clean cells (Appendix~\ref{app:harness}); GPT-5.6 Vision is excluded. Sources: \texttt{routing\_three\_arm}, \texttt{routing\_extension\_cells}.}
+\label{tab:cells}
+\end{table}

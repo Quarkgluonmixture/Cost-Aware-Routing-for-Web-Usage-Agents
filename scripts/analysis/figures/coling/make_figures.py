@@ -7,15 +7,20 @@ with marker shape as the second channel so identity never rests on colour alone.
 
   fig_deploy.pdf      success rate of the three deployment arms per cell (§1 of the frame)
   fig_screenshot.pdf  image-only contrast SoM - P-SoM on rule-flagged vs other tasks (§2)
+  fig_dstudy.pdf      decision study: label reliability against runs per task
+  fig_frontier.pdf    one cell's (cost, SR) plane + pooled gain over the mixture frontier
+  tables/tab_routing.tex, tables/tab_cells.tex
 """
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
 import matplotlib
 
+os.environ.setdefault("SOURCE_DATE_EPOCH", "0")   # byte-stable PDFs: a rerun with unchanged data is no diff
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
@@ -121,6 +126,91 @@ def fig_dstudy():
     plt.close(fig)
 
 
+def fig_frontier():
+    """(a) one cell's (cost, SR) plane: fixed arms, their mixture frontier, the two out-of-fold
+    router curves; (b) the pooled frontier gain over the normalised budget u with the label-shuffle
+    null's pointwise 95th percentile. Three deployment arms (routing_three_arm)."""
+    three = _load("routing_three_arm")
+    cell = next(c for c in three["cells"] if c["cell_id"] == "cls_B0")["frontier"]
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(2 * COLW + 0.3, 2.05), gridspec_kw={"wspace": 0.32})
+
+    fm = cell["fixed_modes"]
+    hull = [(p["cost"] * 100, p["sr_pct"]) for p in cell["fixed_hull"]]
+    xs = [c["cost"] * 100 for k in ("six_head", "triage") for c in cell[k]["curve"]] + [h[0] for h in hull] + \
+         [v["cost"] * 100 for v in fm.values()]
+    lo, hi = min(xs) - 0.1, max(xs) + 0.1
+    hx = [lo] + [h[0] for h in hull] + [hi]
+    hy = [hull[0][1]] + [h[1] for h in hull] + [hull[-1][1]]
+    ax.fill_between(hx, 0, hy, color=GRID, alpha=0.55, lw=0, zorder=0)
+    ax.plot(hx, hy, color=MUTED, lw=1.0, zorder=1, label="fixed arms + mixtures")
+    # a threshold sweep is not monotone in cost, so its points are drawn unconnected
+    for k, col, mk, lab in (("six_head", INK2, "o", "per-arm heads (threshold sweep)"),
+                            ("triage", INK, "x", "triage (threshold sweep)")):
+        ax.scatter([c["cost"] * 100 for c in cell[k]["curve"]], [c["sr_pct"] for c in cell[k]["curve"]],
+                   color=col, marker=mk, s=7 if mk == "o" else 9, lw=0.7, zorder=2, label=lab,
+                   facecolors="none" if mk == "o" else col)
+    for arm, (col, mk) in ARM_STYLE.items():
+        ax.scatter(fm[arm]["cost"] * 100, fm[arm]["sr_pct"], color=col, marker=mk, s=26, zorder=4,
+                   edgecolors="#fcfcfb", linewidths=0.6)
+        ax.annotate(arm, (fm[arm]["cost"] * 100, fm[arm]["sr_pct"]), xytext=(3, -8 if arm == "Vision" else 3),
+                    textcoords="offset points", fontsize=6.5, color=INK2)
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(14, 33.5)
+    ax.set_xlabel("mean cost per task (US cents)")
+    ax.set_ylabel("success rate (%)")
+    ax.set_title("(a) VWA-classifieds · B0, out-of-fold curves", fontsize=7.5, color=INK2, loc="left")
+    ax.legend(frameon=False, loc="upper left", fontsize=6.0, handletextpad=0.3, borderaxespad=0.2)
+
+    pf = three["pooled_frontier"]
+    u = pf["u_grid"]
+    for k, col, ls, lab in (("six_head", INK2, "-", "per-arm heads"), ("triage", INK, "--", "triage")):
+        bx.plot(u, pf[k]["mean_gain_pp"], color=col, lw=1.0, ls=ls, label=lab)
+    bx.plot(u, pf["triage"]["null_pointwise_q95_pp"], color=SLOT[2], lw=0.8, ls=":",
+            label="shuffle null, 95th pct (triage)")
+    bx.axhline(0, color=MUTED, lw=0.6, zorder=0)
+    bx.set_xlabel("normalised budget u")
+    bx.set_ylabel("gain over frontier (pp)")
+    bx.set_title("(b) pooled over 8 cells", fontsize=7.5, color=INK2, loc="left")
+    bx.legend(frameon=False, loc="upper right", fontsize=6.2)
+    for a in (ax, bx):
+        for s in ("top", "right"):
+            a.spines[s].set_visible(False)
+    fig.savefig(OUT / "fig_frontier.pdf")
+    plt.close(fig)
+
+
+def tab_cells():
+    """Appendix table: success rate and mean billed cost of the three deployment arms per cell."""
+    three = {c["cell_id"]: c for c in _load("routing_three_arm")["cells"]}
+    ext = {v["variant"]: v for v in _load("routing_extension_cells")["variants"]}
+    rows = [(k, three[k]) for k in ("cls_B0", "cls_B1", "cls_B2", "red_B0", "red_B1", "red_B2",
+                                    "wared_B0", "wared_B1")] + \
+           [("cls_B5", ext["cls_B5"]), ("shop_B0_clean", ext["shop_B0_clean"]), ("shop_B1_clean", ext["shop_B1_clean"])]
+    L = [r"\begin{table}[t]", r"\centering\footnotesize", r"\setlength{\tabcolsep}{3.5pt}",
+         r"\begin{tabular}{@{}lrrrrrrr@{}}", r"\toprule",
+         r" & & \multicolumn{2}{c}{DOM} & \multicolumn{2}{c}{\SoM} & \multicolumn{2}{c}{Vision} \\",
+         r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(l){7-8}",
+         r"cell & $n$ & SR & cost & SR & cost & SR & cost \\", r"\midrule"]
+    for k, c in rows:
+        fm = c["frontier"]["fixed_modes"]
+        n = c.get("n_tasks") or len(c["frontier"].get("tasks", [])) or ""
+        site, bl = k.split("_")[0], k.split("_")[1]
+        name = {"cls": "cls", "red": "VWA-red", "wared": "WA-red", "shop": "shop"}[site] + f" {bl}"
+        cells = []
+        for arm in ("DOM", "SoM", "Vision"):
+            cells += ([f"{fm[arm]['sr_pct']:.1f}", f"{fm[arm]['cost'] * 100:.2f}"] if arm in fm else ["--", "--"])
+        if k == "cls_B5":
+            L.append(r"\addlinespace[2pt]")
+        L.append(f"{name} & {n} & " + " & ".join(cells) + r" \\")
+    L += [r"\bottomrule", r"\end{tabular}",
+          r"\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment arms. "
+          r"B0 and GPT-5.6 (B5) costs are API invoices; B1 and B2 are token-priced estimates for local "
+          r"serving, comparable within a cell only. Shopping rows are the clean cells (Appendix~\ref{app:harness}); "
+          r"GPT-5.6 Vision is excluded. Sources: \texttt{routing\_three\_arm}, \texttt{routing\_extension\_cells}.}",
+          r"\label{tab:cells}", r"\end{table}"]
+    (OUT.parent / "tables" / "tab_cells.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
+
+
 def _m(s: str) -> str:
     """Typeset minus signs as math minus."""
     return s.replace("-", "$-$")
@@ -177,7 +267,9 @@ def main() -> int:
     fig_deploy()
     fig_screenshot()
     fig_dstudy()
+    fig_frontier()
     tab_routing()
+    tab_cells()
     print(f"wrote {OUT}", file=sys.stderr)
     return 0
 

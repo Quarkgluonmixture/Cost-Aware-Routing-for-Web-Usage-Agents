@@ -33,3 +33,21 @@ Across the 24 registered rerun pairs, a rerun changes between 0 and 14\% of task
 \section{Template and rerun robustness}\label{app:robust}
 
 Averaged over cells, the deployable excess over the frontier with folds grouped by task template is $-1.60$ (per-arm heads) and $-0.84$ (triage) points over six modes, and $-0.64$ and $+0.29$ over three. Fitting on one run and scoring on its rerun, averaged over the three fully rerun cells, gives $-0.90$ and $-1.60$ over six modes and $-0.60$ and $-0.56$ over three. Over six modes, every per-cell template-bootstrap interval (90\%) includes zero; the three-mode readings are point estimates. % routing_crossrun_template_validation, routing_three_arm
+
+\section{Per-cell results}\label{app:cells}
+
+\input{tables/tab_cells}
+
+Table~\ref{tab:cells} lists the success rate and cost behind Figures~\ref{fig:deploy} and \ref{fig:frontier}. In shopping the fused mode is cheaper than text: its marked-element list is shorter than the accessibility tree of a product-dense page.
+
+\section{Estimators}\label{app:estimators}
+
+\paragraph{Frontier.} For a cell with arms $m$ of mean cost $c_m$ and success rate $s_m$, $F(c)$ is the upper concave envelope of $\{(c_m, s_m)\}$, cut at the highest-success arm (constant beyond it) and equal to the cheapest arm's success below the cheapest cost. Every point of $F$ is reached by sending a random share of tasks to each of two arms. A policy with mean cost $c$ and success $s$ has excess $s - F(c)$.
+
+\paragraph{Router curves.} Features are standardised within each training fold and fed to an L2-regularised logistic regression ($C=1$); predictions are out-of-fold over five folds of distinct tasks. \emph{Per-arm heads}: for each threshold $\tau \in \{0, 0.05, \dots, 1\}$ a task goes to the cheapest arm (by training-fold mean cost) whose predicted success is at least $\tau$, and to the training fold's best arm if none is. \emph{Triage}: one model predicts whether any arm solves the task; for each quantile $q \in \{0, 0.05, \dots, 1\}$ of its score, tasks below the quantile go to the cheapest arm and the rest to the best arm.
+
+\paragraph{Pooled gain.} Within a cell, cost is normalised as $u = (c - c_{\min})/(c_{\max} - c_{\min})$ over the fixed arms, which makes cells with different cost units comparable without pooling their costs. The gain at $u$ is the envelope of the fixed arms together with the curve's points minus the envelope of the fixed arms alone, on 101 grid points; the pooled curve is the equal-weight mean over cells and its statistic is the maximum over $u$. The null permutes each task's outcomes and costs against its features and refits the whole curve ($B=1000$; $p=(k+1)/(B+1)$; for the pooled statistic each null draw is averaged over cells before the maximum).
+
+\paragraph{Deployable policy.} In each outer fold the threshold (or quantile) is the one with the largest excess over the \emph{training} tasks' own frontier, using in-sample predictions on those tasks; it is then applied to the held-out fold. The five folds' decisions form one policy over all tasks, scored against the full-sample frontier. Intervals resample tasks and rerun the whole pipeline ($B=1000$, 5th and 95th percentiles); pooled intervals average the cells draw by draw.
+
+\paragraph{No-interaction null and decision study.} For the task $\times$ mode $\times$ run array with $r=2$ runs, the two-way random-effects ANOVA gives $\hat\sigma^2_{\text{err}} = \mathrm{MS}_{\text{err}}$ and $\hat\sigma^2_{\text{int}} = (\mathrm{MS}_{\text{int}} - \mathrm{MS}_{\text{err}})/r$. The null matrices are drawn with curveball trades over the task-by-(mode, run) 0/1 matrix, which preserve every row and column total (four chains, each with 50 trades per row of burn-in and 5 per row between kept draws, 2000 draws in all; for the six-mode analysis a second sampler with four-fold thinning checks mixing). The reliability of a label averaged over $k$ runs is $\hat\sigma^2_{\text{int}}/(\hat\sigma^2_{\text{int}} + \hat\sigma^2_{\text{err}}/k)$, and the runs needed for 0.5 are $\lceil \hat\sigma^2_{\text{err}}/\hat\sigma^2_{\text{int}} \rceil$.
