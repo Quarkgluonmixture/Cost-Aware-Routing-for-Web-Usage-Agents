@@ -8,7 +8,7 @@ blocker: "A100 10-08 已恢复访问 (证书到 10-15) 并拉完; 复测链 09-2
 eta: "**ARR submission 2026-10-12** (AoE) → commit COLING **2026-12-23** → notif 2027-02-10。已核 2027.coling-iccl.org 2026-10-06"
 detail: docs/checkpoints/paper_planning.md
 created: 2026-08-08
-updated: 2026-10-06
+updated: 2026-10-08
 ---
 
 # COLING 2027 — 完整版目标（2026-10-06 由 NAACL 2027 改投）

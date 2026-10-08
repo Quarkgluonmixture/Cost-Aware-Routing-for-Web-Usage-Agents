@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-10-06
+updated: 2026-10-08
 ---
 
 # Next Steps — Forward Action Ledger
@@ -22,6 +22,20 @@ updated: 2026-10-06
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-10-08 · COLING 初稿已成 · A100 续跑中 · ARR 截稿 10-12 23:59 AoE（= 北京 10-13 19:59）
+>
+> chronicle → **笔记 §539–§553**（证据层补强 §541–§547、三臂 §550、A100 §551–§552、文献核实 §553）
+>
+> - **初稿**：`deliverables/coling2027/main.pdf`（ARR 匿名模板，正文约 5.5/8 页，0 报错 0 溢出）。frame = `paper_drafts/coling_frame_proposal.md` v2（user 10-08 选**正面开头** + 三臂进正文）。图表全由 `scripts/analysis/figures/coling/make_figures.py` 从产物 JSON 生成 —— 产物一改就重跑它再 `latexmk`。
+> - **A100 续跑链**（意图书 `pre_run/local_replicate_resume_intent_20261008.md`，发车 10-07 17:37 UTC）：B2 cls som → B2 cls vision → B1 shop som 续跑 R22515 → B2 red dom。状态看 A100 上 `~/workspace/p79/logs/chain_20261008.status`。前三格预计 10-11 前落地，第四格在截稿后。
+>   访问：Clash 只关「系统代理」（进程保留）→ Cisco 连 UCL VPN → `ssh condense-a100`。**证书 10-15T01:15 过期**，拉取要赶在之前。
+>   落地后：只拉 episode 文本、md5 对账；登记 CLEAN_PAIRS = **user 决定**；登记后重算 noise_floor_inventory / label_instability / task_mode_interaction_null 等，并更新初稿里的重跑范围（现写 0–14%）。
+> - **user 自己办（ARR，不办可能直接拒稿）**：所有作者 **10-14 前**完成审稿人注册；OpenReview 资料完整 + 指定服务审稿人；Responsible NLP checklist（E1 披露 AI 辅助）；REALM / VLM4RWD 非归档 poster 是否申报未定（建议问 ARR）。
+> - **待 user 定**：delta §0 第 4 / 5 行（推荐见 frame 提案 §6）；是否等 A100 数据再定稿图表。
+> - **初稿还可补**：§553.2 未核实的候选文献；正文余约 2.5 页；代码 / 数据可用性声明。
+> - cross-AI 存档（本地，不入库）：`docs/cross-ai-audits/2026-10-07-evidence-gaps/`、`2026-10-08-coling-frame/`、`2026-10-08-literature-policy/`。
+> - 本机跑分析用 `C:\Python314\python.exe` + `PYTHONUTF8=1`（conda 3.11 遇到嵌套 f-string 会 SyntaxError）。
+>
 > ## 🔴 2026-10-06 · 目标会议改投 COLING 2027（archival，唯一主会目标）· ARR 10-12 只剩 6 天 · A100 不可达
 >
 > chronicle → **笔记 §528** · 任务卡 `_status/tasks/task_coling2027_main.md`（原 `task_naacl2027_main.md`）
