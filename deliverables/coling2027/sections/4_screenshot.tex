@@ -7,7 +7,7 @@
   \label{fig:screenshot}
 \end{figure}
 
-\paragraph{A matched contrast.} Comparing Vision with DOM changes two things at once --- the image and the text the agent receives. \SoM\ and \PSoM\ differ only in the annotated screenshot, so their difference is the value of the image alone.
+\paragraph{A matched contrast.} Comparing Vision with DOM changes two things at once --- the image and the text the agent receives. \SoM\ and \PSoM\ differ only in the annotated screenshot, so their difference is the value of the image alone. \citet{chi2024elementordering} already compared screenshot-plus-text with text only on a subset of VisualWebArena tasks for one backbone (50.0\% against 46.3\%, without set-of-marks); we hold the set-of-marks text and prompt fixed, use four backbones and full task sets, rerun the contrast, and ask \emph{where} the image pays off.
 
 \paragraph{An ex-ante rule.} A regular expression over the task intent flags tasks that ask about an image, a photo, a colour or a count of things shown, excluding tasks that already carry a reference image (Appendix~\ref{app:rule}). It reads only the task configuration: no model call and no episode. It was written for reddit, so its classifieds hits were never inspected and classifieds is out-of-sample.
 

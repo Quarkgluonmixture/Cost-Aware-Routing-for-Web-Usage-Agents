@@ -2,67 +2,55 @@
 % Routing-paper references will be assembled separately.
 
 @misc{yang2023som,
-  title = {Set-of-Mark Prompting Unleashes Extraordinary Visual Grounding in GPT-4V},
-  author = {Yang, Jianwei and Zhang, Hao and Li, Feng and Zou, Xueyan and Li, Chunyuan and Gao, Jianfeng},
+  title = {{Set-of-Mark Prompting Unleashes Extraordinary Visual Grounding in GPT-4V}},
+  author = {Jianwei Yang and Hao Zhang and Feng Li and Xueyan Zou and Chunyuan Li and Jianfeng Gao},
   year = {2023},
   eprint = {2310.11441},
   archivePrefix = {arXiv},
-  primaryClass = {cs.CV},
-  doi = {10.48550/arXiv.2310.11441},
   url = {https://arxiv.org/abs/2310.11441}
 }
 
 @misc{he2025nondeterminism,
-  title = {Defeating Nondeterminism in {LLM} Inference},
-  author = {He, Horace and {Thinking Machines Lab}},
+  title = {{Defeating Nondeterminism in LLM Inference}},
+  author = {Horace He},
   year = {2025},
-  month = sep,
-  howpublished = {Thinking Machines Lab: Connectionism (blog post, 2025-09-10)},
-  url = {https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/},
-  annote = {Accessed 2026-06-08; companion code: thinking-machines-lab/batch-invariant-ops}
+  note = {Thinking Machines Lab technical blog; not peer-reviewed},
+  url = {https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/}
 }
 
 @misc{yuan2025numerical,
-  title = {Understanding and Mitigating Numerical Sources of Nondeterminism in {LLM} Inference},
-  author = {Yuan, Jiayi and Li, Hao and Ding, Xinheng and Xie, Wenya and Li, Yu-Jhe and Zhao, Wentian and Wan, Kun and Shi, Jing and Hu, Xia and Liu, Zirui},
+  title = {{Understanding and Mitigating Numerical Sources of Nondeterminism in LLM Inference}},
+  author = {Jiayi Yuan and Hao Li and Xinheng Ding and Wenya Xie and Yu-Jhe Li and Wentian Zhao and Kun Wan and Jing Shi and Xia Hu and Zirui Liu},
   year = {2025},
   eprint = {2506.09501},
   archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
   url = {https://arxiv.org/abs/2506.09501}
 }
 
 @inproceedings{koh2024visualwebarena,
-  title = {VisualWebArena: Evaluating Multimodal Agents on Realistic Visual Web Tasks},
-  author = {Koh, Jing Yu and Lo, Robert and Jang, Lawrence and Duvvur, Vikram and Lim, Ming Chong and Huang, Po-Yu and Neubig, Graham and Zhou, Shuyan and Salakhutdinov, Ruslan and Fried, Daniel},
-  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics},
+  title = {{VisualWebArena: Evaluating Multimodal Agents on Realistic Visual Web Tasks}},
+  author = {Jing Yu Koh and Robert Lo and Lawrence Jang and Vikram Duvvur and Ming Lim and Po-Yu Huang and Graham Neubig and Shuyan Zhou and Russ Salakhutdinov and Daniel Fried},
   year = {2024},
-  eprint = {2401.13649},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.LG},
-  doi = {10.48550/arXiv.2401.13649},
-  url = {https://arxiv.org/abs/2401.13649}
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics},
+  doi = {10.18653/v1/2024.acl-long.50},
+  url = {https://aclanthology.org/2024.acl-long.50/}
 }
 
 @inproceedings{zhou2024webarena,
-  title = {WebArena: A Realistic Web Environment for Building Autonomous Agents},
-  author = {Zhou, Shuyan and Xu, Frank F. and Zhu, Hao and Zhou, Xuhui and Lo, Robert and Sridhar, Abishek and Cheng, Xianyi and Ou, Tianyue and Bisk, Yonatan and Fried, Daniel and Alon, Uri and Neubig, Graham},
-  booktitle = {International Conference on Learning Representations},
+  title = {{WebArena: A Realistic Web Environment for Building Autonomous Agents}},
+  author = {Shuyan Zhou and Frank F. Xu and Hao Zhu and Xuhui Zhou and Robert Lo and Abishek Sridhar and Xianyi Cheng and Tianyue Ou and Yonatan Bisk and Daniel Fried and Uri Alon and Graham Neubig},
   year = {2024},
-  eprint = {2307.13854},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.AI},
-  doi = {10.48550/arXiv.2307.13854},
-  url = {https://arxiv.org/abs/2307.13854}
+  booktitle = {International Conference on Learning Representations},
+  url = {https://proceedings.iclr.cc/paper_files/paper/2024/hash/4410c0711e9154a7a2d26f9b3816d1ef-Abstract-Conference.html}
 }
 
-@misc{elhattami2025webarenaverified,
-  title = {{WebArena Verified}: Reliable Evaluation for Web Agents},
-  author = {{El hattami}, Amine and Thakkar, Megh and Chapados, Nicolas and Pal, Christopher},
+@inproceedings{elhattami2025webarenaverified,
+  title = {{WebArena Verified: Reliable Evaluation for Web Agents}},
+  author = {Amine El Hattami and Megh Thakkar and Nicolas Chapados and Christopher Pal},
   year = {2025},
-  howpublished = {Poster, SEA Workshop @ NeurIPS 2025 (non-archival by authors' choice)},
-  url = {https://openreview.net/forum?id=94tlGxmqkN},
-  annote = {Reproducible re-evaluation of WebArena: audits all 812 tasks, repairs misaligned evaluators, replaces substring matching with type- and normalization-aware comparators, verifies backend state, and reports an approximately 11 percent false-negative reduction on their baseline agent; also introduces the 137-task WebArena Verified Hard subset. Cited in Track B as INDEPENDENT evidence of the measurement problem and as the checker-repair CONTRAST --- do NOT list it among papers exposed to the upstream helper-function bugs (it replaces those checkers). Non-archival: cite with OpenReview URL. Metadata transcribed from the OpenReview forum page (id 94tlGxmqkN) provided by the author 2026-07-14; not on arXiv (API 0 hits, verified same day).}
+  booktitle = {Workshop on Scaling Environments for Agents},
+  note = {NeurIPS 2025 workshop; also see https://github.com/ServiceNow/webarena-verified},
+  url = {https://openreview.net/forum?id=94tlGxmqkN}
 }
 
 @inproceedings{zhou2025pae,
@@ -78,30 +66,19 @@
 }
 
 @inproceedings{deng2023mind2web,
-  title = {Mind2Web: Towards a Generalist Agent for the Web},
-  author = {Deng, Xiang and Gu, Yu and Zheng, Boyuan and Chen, Shijie and Stevens, Samuel and Wang, Boshi and Sun, Huan and Su, Yu},
-  booktitle = {Advances in Neural Information Processing Systems, Datasets and Benchmarks Track},
+  title = {{Mind2Web: Towards a Generalist Agent for the Web}},
+  author = {Xiang Deng and Yu Gu and Boyuan Zheng and Shijie Chen and Sam Stevens and Boshi Wang and Huan Sun and Yu Su},
   year = {2023},
-  eprint = {2306.06070},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
-  doi = {10.48550/arXiv.2306.06070},
-  url = {https://arxiv.org/abs/2306.06070}
+  booktitle = {Advances in Neural Information Processing Systems (Datasets and Benchmarks Track)},
+  doi = {10.52202/075280-1220},
+  url = {https://papers.neurips.cc/paper_files/paper/2023/hash/5950bf290a1570ea401bf98882128160-Abstract-Datasets_and_Benchmarks.html}
 }
 
 @inproceedings{zheng2024seeact,
-  title = {GPT-4V(ision) is a Generalist Web Agent, if Grounded},
-  author = {Zheng, Boyuan and Gou, Boyu and Kil, Jihyung and Sun, Huan and Su, Yu},
-  booktitle = {Proceedings of the 41st International Conference on Machine Learning},
-  series = {Proceedings of Machine Learning Research},
-  volume = {235},
-  pages = {61349--61385},
-  publisher = {PMLR},
+  title = {{GPT-4V(ision) is a Generalist Web Agent, if Grounded}},
+  author = {Boyuan Zheng and Boyu Gou and Jihyung Kil and Huan Sun and Yu Su},
   year = {2024},
-  eprint = {2401.01614},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.IR},
-  doi = {10.48550/arXiv.2401.01614},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning},
   url = {https://proceedings.mlr.press/v235/zheng24e.html}
 }
 
@@ -130,15 +107,11 @@
 }
 
 @inproceedings{sclar2024promptformat,
-  title = {Quantifying Language Models' Sensitivity to Spurious Features in Prompt Design or: How I learned to start worrying about prompt formatting},
-  author = {Sclar, Melanie and Choi, Yejin and Tsvetkov, Yulia and Suhr, Alane},
-  booktitle = {International Conference on Learning Representations},
+  title = {{Quantifying Language Models' Sensitivity to Spurious Features in Prompt Design or: How I learned to start worrying about prompt formatting}},
+  author = {Melanie Sclar and Yejin Choi and Yulia Tsvetkov and Alane Suhr},
   year = {2024},
-  eprint = {2310.11324},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
-  doi = {10.48550/arXiv.2310.11324},
-  url = {https://arxiv.org/abs/2310.11324}
+  booktitle = {International Conference on Learning Representations},
+  url = {https://proceedings.iclr.cc/paper_files/paper/2024/hash/6c0e99d736da621403018ca7b32b1a4d-Abstract-Conference.html}
 }
 
 @inproceedings{mishra2022reframing,
@@ -152,48 +125,29 @@
 }
 
 @inproceedings{ong2025routellm,
-  title = {RouteLLM: Learning to Route LLMs with Preference Data},
-  author = {Ong, Isaac and Almahairi, Amjad and Wu, Vincent and Chiang, Wei-Lin and Wu, Tianhao and Gonzalez, Joseph E. and Kadous, M. Waleed and Stoica, Ion},
-  booktitle = {International Conference on Learning Representations},
+  title = {{RouteLLM: Learning to Route LLMs from Preference Data}},
+  author = {Isaac Ong and Amjad Almahairi and Vincent Wu and Wei-Lin Chiang and Tianhao Wu and Joseph E. Gonzalez and M. Waleed Kadous and Ion Stoica},
   year = {2025},
-  eprint = {2406.18665},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.LG},
-  doi = {10.48550/arXiv.2406.18665},
-  url = {https://arxiv.org/abs/2406.18665}
+  booktitle = {International Conference on Learning Representations},
+  url = {https://proceedings.iclr.cc/paper_files/paper/2025/hash/5503a7c69d48a2f86fc00b3dc09de686-Abstract-Conference.html}
 }
 
 @article{chen2023frugalgpt,
-  title = {FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance},
-  author = {Chen, Lingjiao and Zaharia, Matei and Zou, James},
-  journal = {arXiv preprint arXiv:2305.05176},
-  year = {2023},
-  eprint = {2305.05176},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.LG},
-  doi = {10.48550/arXiv.2305.05176},
-  url = {https://arxiv.org/abs/2305.05176}
+  title = {{FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance}},
+  author = {Lingjiao Chen and Matei Zaharia and James Zou},
+  year = {2024},
+  journal = {Transactions on Machine Learning Research},
+  url = {https://mlanthology.org/tmlr/2024/chen2024tmlr-frugalgpt/}
 }
 
-@misc{kerboua2025focusagent,
-  title = {FocusAgent: Simple Yet Effective Ways of Trimming the Large Context of Web Agents},
-  author = {Kerboua, Imene and Shayegan, Sahar Omidi and Thakkar, Megh and L{\`u}, Xing Han and Boisvert, L{\'e}o and Caccia, Massimo and Espinas, J{\'e}r{\'e}my and Aussem, Alexandre and Eglin, V{\'e}ronique and Lacoste, Alexandre},
-  year = {2025},
-  eprint = {2510.03204},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
-  doi = {10.48550/arXiv.2510.03204},
-  url = {https://arxiv.org/abs/2510.03204}
-}
+
 
 @misc{li2026avenirweb,
-  title = {Avenir-Web: Human-Experience-Imitating Multimodal Web Agents with Mixture of Grounding Experts},
-  author = {Li, Aiden Yiliu and Hao, Xinyue and Liu, Shilong and Wang, Mengdi},
+  title = {{Avenir-Web: Human-Experience-Imitating Multimodal Web Agents with Mixture of Grounding Experts}},
+  author = {Aiden Yiliu Li and Xinyue Hao and Shilong Liu and Mengdi Wang},
   year = {2026},
   eprint = {2602.02468},
   archivePrefix = {arXiv},
-  primaryClass = {cs.AI},
-  doi = {10.48550/arXiv.2602.02468},
   url = {https://arxiv.org/abs/2602.02468}
 }
 
@@ -302,14 +256,11 @@
 }
 
 @inproceedings{zheng2024uground,
-  title={Navigating the Digital World as Humans Do: Universal Visual Grounding for {GUI} Agents},
-  author={Gou, Boyu and Wang, Ruohan and Zheng, Boyuan and others},
-  booktitle={International Conference on Learning Representations (ICLR)},
-  year={2025},
-  eprint={2410.05243},
-  archivePrefix={arXiv},
-  url={https://arxiv.org/abs/2410.05243},
-  annote={UGround universal visual grounding model for GUI agents. FIXED 2026-06-10: title corrected to the actual paper title and first author corrected to Gou (was listed as Zheng); eprint added — codex Mode B audit, arXiv API verified. Bib key kept for citation stability.}
+  title = {{Navigating the Digital World as Humans Do: Universal Visual Grounding for GUI Agents}},
+  author = {Boyu Gou and Demi Ruohan Wang and Boyuan Zheng and Yanan Xie and Cheng Chang and Yiheng Shu and Huan Sun and Yu Su},
+  year = {2025},
+  booktitle = {International Conference on Learning Representations},
+  url = {https://proceedings.iclr.cc/paper_files/paper/2025/hash/4ca0e369689dadb25a5345ba9755ad6f-Abstract-Conference.html}
 }
 
 @inproceedings{prabhu2026walt,
@@ -339,14 +290,11 @@
 }
 
 @inproceedings{agentoccam2025,
-  title={AgentOccam: A Simple Yet Strong Baseline for LLM-Based Web Agents},
-  author={Yang, Ke and Liu, Yao and Chaudhary, Sapana and others},
-  booktitle={The Thirteenth International Conference on Learning Representations},
-  year={2025},
-  url={https://openreview.net/forum?id=oWdzUpOlkX},
-  eprint={2410.13825},
-  archivePrefix={arXiv},
-  annote={Observation/action-space refinement alone moves WebArena SR substantially (+26.6 points over similar plain agents per abstract) — no new agent roles, examples, feedback, or search. Author field was blind-review "Anonymous" until 2026-06-10; fixed via arXiv API (codex Mode B audit).}
+  title = {{AgentOccam: A Simple Yet Strong Baseline for LLM-Based Web Agents}},
+  author = {Ke Yang and Yao Liu and Sapana Chaudhary and Rasool Fakoor and Pratik A. Chaudhari and George Karypis and Huzefa Rangwala},
+  year = {2025},
+  booktitle = {International Conference on Learning Representations},
+  url = {https://proceedings.iclr.cc/paper_files/paper/2025/hash/f2c6e459b95694a24ac69c469a4ee746-Abstract-Conference.html}
 }
 
 @article{wang2024webquest,
@@ -612,14 +560,13 @@
 }
 
 @misc{peale2026flexibleRouting,
-  title = {Flexible Routing via Uncertainty Decomposition},
-  author = {Peale, Charlotte and Devic, Siddartha and Gopalan, Parikshit and Wieder, Udi and Gollakota, Aravind},
+  title = {{Flexible Routing via Uncertainty Decomposition}},
+  author = {Charlotte Peale and Siddartha Devic and Parikshit Gopalan and Udi Wieder and Aravind Gollakota},
   year = {2026},
-  month = may,
   eprint = {2605.07805},
   archivePrefix = {arXiv},
-  primaryClass = {cs.LG},
-  annote = {Decomposes total uncertainty into reducible + irreducible via higher-order predictors (Ahdritz et al. 2025). Routes to oracle when reducible uncertainty is high, abstains when irreducible. Strong theoretical regret bound vs optimal task-specific routers. Provides theoretical anchor for our paper \S 6 cost-aware routing claim: phantom mode signal AUROC = reducible uncertainty proxy; 4-fold drop-in property maps onto Peale et al.'s "predict / route / abstain" trichotomy. Stronger than purely empirical baselines (RouteLLM, FrugalGPT) because of regret bound.}
+  note = {ICML 2026 Workshop on Statistical Frameworks for Uncertainty in Agentic Systems},
+  url = {https://arxiv.org/abs/2605.07805}
 }
 
 @misc{khorasani2026hdmi,
@@ -767,25 +714,21 @@
 }
 
 @misc{schiepanski2025d2snap,
-  title = {Beyond Pixels: Exploring {DOM} Downsampling for {LLM}-Based Web Agents},
-  author = {Schiepanski, Thassilo M. and Pi{\"e}l, Nicholas},
+  title = {{Beyond Pixels: Exploring DOM Downsampling for LLM-Based Web Agents}},
+  author = {Thassilo M. Schiepanski and Nicholas Pi{\"e}l},
   year = {2025},
   eprint = {2508.04412},
   archivePrefix = {arXiv},
-  primaryClass = {cs.AI},
-  url = {https://arxiv.org/abs/2508.04412},
-  annote = {First DOM-downsampling algorithm as a DOM-snapshot preprocessing step for token-cost reduction. Downsampled DOM (67\% SR) matches a grounded GUI-screenshot baseline (65\%) at the same token order ($10^3$), and exceeds it by 8\% one order higher ($10^4$); concludes the DOM-inherent hierarchy is a strong UI feature for LLMs. Cited in our paper \S 1/\S 6 cost argument as independent external corroboration that a DOM/text representation matches or beats a pixel-screenshot baseline at equal token budget --- the same cost-vs-representation logic behind our phantom-SoM cost $\approx$ DOM claim. The digest under-rated this (Score 1); it is the closest of the related GUI-grounding papers to our cost positioning.}
+  url = {https://arxiv.org/abs/2508.04412}
 }
 
-@misc{lu2025earlyexit,
-  title = {Runaway is Ashamed, But Helpful: On the Early-Exit Behavior of Large Language Model-based Agents in Embodied Environments},
-  author = {Lu, Qingyu and Ding, Liang and Cao, Siyi and Liu, Xuebo and Zhang, Kanjian and Zhang, Jinxia and Tao, Dacheng},
+@inproceedings{lu2025earlyexit,
+  title = {{Runaway is Ashamed, But Helpful: On the Early-Exit Behavior of Large Language Model-based Agents in Embodied Environments}},
+  author = {Qingyu Lu and Liang Ding and Siyi Cao and Xuebo Liu and Kanjian Zhang and Jinxia Zhang and Dacheng Tao},
   year = {2025},
-  eprint = {2505.17616},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
-  url = {https://arxiv.org/abs/2505.17616},
-  annote = {EMNLP 2025 Findings. First systematic study of early-exit for embodied LLM agents: intrinsic (inject exit instructions for self-termination) + extrinsic (external task-completion verification to halt); two metrics (redundant-step reduction vs progress degradation). 4 LLMs $\times$ 5 embodied environments; a strong agent taking over after an early-exit agent yields better performance at the same total step budget (a cascade precedent). Cited in our paper \S 6 related work to delimit the efficiency-axis taxonomy: model routing (RouteLLM/FrugalGPT/CSCR, \emph{which model}) vs early-exit halting (this work, \emph{when to stop} within an episode) vs representation routing (ours, \emph{which input} within a fixed model). Domain is embodied, not web --- not a direct baseline.}
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2025},
+  doi = {10.18653/v1/2025.findings-emnlp.1304},
+  url = {https://aclanthology.org/2025.findings-emnlp.1304/}
 }
 
 @misc{feldhus2026judgecircuits,
@@ -931,15 +874,13 @@
   annote = {Self-evaluation: P(True) / P(IK) calibration improves with model scale --- a directly relevant caveat for confidence-based routing with 4B-class models. Cited in thesis lit-review (routing-signals section).}
 }
 
-@misc{he2024webvoyager,
-  title = {{WebVoyager}: Building an End-to-End Web Agent with Large Multimodal Models},
-  author = {He, Hongliang and Yao, Wenlin and Ma, Kaixin and others},
+@inproceedings{he2024webvoyager,
+  title = {{WebVoyager: Building an End-to-End Web Agent with Large Multimodal Models}},
+  author = {Hongliang He and Wenlin Yao and Kaixin Ma and Wenhao Yu and Yong Dai and Hongming Zhang and Zhenzhong Lan and Dong Yu},
   year = {2024},
-  eprint = {2401.13919},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
-  url = {https://arxiv.org/abs/2401.13919},
-  annote = {End-to-end multimodal web agent on the live open web with an automatic (LLM-judge) evaluation protocol. Cited in thesis lit-review \S 2.1 (generalist live-web agent line; the system AutoWebWorld and others benchmark against). Added 2026-06-10, arXiv id API-verified.}
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics},
+  doi = {10.18653/v1/2024.acl-long.371},
+  url = {https://aclanthology.org/2024.acl-long.371/}
 }
 
 @inproceedings{ovadia2019trust,
@@ -953,36 +894,29 @@
   annote = {Canonical benchmark: predictive uncertainty that is calibrated in-distribution degrades into overconfidence under dataset shift. Cited thesis lit-review \S 2.5 --- a web agent's observation distribution shifts with every site/page. Added 2026-06-10 \S 2.5 citation pass, id API-verified.}
 }
 
-@misc{gupta2024cascades,
-  title = {Language Model Cascades: Token-Level Uncertainty and Beyond},
-  author = {Gupta, Neha and Narasimhan, Harikrishna and Jitkrittum, Wittawat and others},
+@inproceedings{gupta2024cascades,
+  title = {{Language Model Cascades: Token-Level Uncertainty and Beyond}},
+  author = {Neha Gupta and Harikrishna Narasimhan and Wittawat Jitkrittum and Ankit Singh Rawat and Aditya Krishna Menon and Sanjiv Kumar},
   year = {2024},
-  eprint = {2404.10136},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
-  url = {https://arxiv.org/abs/2404.10136},
-  annote = {Cascade deferral: sequence-level confidence aggregated from token probabilities is length-biased; quantile-based / learned deferral rules over richer uncertainty summaries beat fixed thresholds on raw sequence probability. Cited thesis lit-review \S 2.5 (length-bias + threshold-selection anchor). Added 2026-06-10 \S 2.5 citation pass, id API-verified. Venue left as arXiv (conference status not re-verified).}
+  booktitle = {International Conference on Learning Representations},
+  url = {https://proceedings.iclr.cc/paper_files/paper/2024/hash/11f5520daf9132775e8604e89f53925a-Abstract-Conference.html}
 }
 
-@misc{ding2024hybridllm,
-  title = {Hybrid {LLM}: Cost-Efficient and Quality-Aware Query Routing},
-  author = {Ding, Dujian and Mallick, Ankur and Wang, Chi and others},
+@inproceedings{ding2024hybridllm,
+  title = {{Hybrid LLM: Cost-Efficient and Quality-Aware Query Routing}},
+  author = {Dujian Ding and Ankur Mallick and Chi Wang and Robert Sim and Subhabrata Mukherjee and Victor R{\"u}hle and Laks V. S. Lakshmanan and Ahmed Hassan Awadallah},
   year = {2024},
-  eprint = {2404.14618},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.LG},
-  url = {https://arxiv.org/abs/2404.14618},
-  annote = {Small-vs-large query routing via a learned difficulty / quality-gap predictor with a tunable quality threshold; reported up to $\sim$40\% fewer large-model calls at matched quality (per internal routing-signals survey \S 3.4 entry, same first author --- cross-checked). Cited thesis lit-review \S 2.5 (learned routing beats raw confidence). Added 2026-06-10 \S 2.5 citation pass, id API-verified. Venue left as arXiv (conference status not re-verified).}
+  booktitle = {International Conference on Learning Representations},
+  url = {https://mlanthology.org/iclr/2024/ding2024iclr-hybrid/}
 }
 
 @misc{webrouter2025,
-  title = {WebRouter: Query-specific Router via Variational Information Bottleneck for Cost-sensitive Web Agent},
-  author = {Li, Tao and Hu, Jinlong and Wang, Yang and Liu, Junfeng and Liu, Xuejun},
+  title = {{WebRouter: Query-specific Router via Variational Information Bottleneck for Cost-sensitive Web Agent}},
+  author = {Tao Li and Jinlong Hu and Yang Wang and Junfeng Liu and Xuejun Liu},
   year = {2025},
   eprint = {2510.11221},
   archivePrefix = {arXiv},
-  url = {https://arxiv.org/abs/2510.11221},
-  annote = {Query$\to$model routing for web agents (cost-sensitive); nearest-neighbour differentiation anchor for paper \S 2.2/\S 2.5 (routes across models, not across representations of the same browser state). Added 2026-06-11, id + title + authors arXiv-API-verified.}
+  url = {https://arxiv.org/abs/2510.11221}
 }
 
 @inproceedings{strubell2019energy,
@@ -1032,15 +966,13 @@
   annote = {Modified Knapp-Hartung for few-study meta-analysis; cited in \S 8 statistical-limitations. Added 2026-06-11 to close a dangling key; DOI Crossref-verified + arXiv id title-search-verified.}
 }
 
-@misc{moslem2026routingsurvey,
-  title = {Dynamic Model Routing and Cascading for Efficient {LLM} Inference: A Survey},
-  author = {Moslem, Yasmin and Kelleher, John D.},
+@article{moslem2026routingsurvey,
+  title = {{Dynamic Model Routing and Cascading for Efficient LLM Inference: A Survey}},
+  author = {Yasmin Moslem and John D. Kelleher},
   year = {2026},
-  eprint = {2603.04445},
-  url           = {https://arxiv.org/abs/2603.04445},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.NI},
-  annote = {Survey of routing/cascading across independently trained LLMs (explicitly excludes MoE-internal routing); six paradigms (difficulty-aware / human-preference / clustering / RL / uncertainty-quantification / cascading) + a multimodal-routing chapter. Within this explicitly cross-model scope, all six paradigms select WHICH MODEL answers. Cited only for that taxonomy; its scope cannot establish a field-scale absence of observation routing. Do NOT cite as ``the first survey'' (paper makes no such claim). Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified; scope guard corrected 2026-07-14.}
+  journal = {Transactions on Machine Learning Research},
+  note = {Survey Certification; confirmed by author repository},
+  url = {https://openreview.net/forum?id=ypRg1TvQaM}
 }
 
 @misc{enomoto2026readmore,
@@ -1064,13 +996,12 @@
 }
 
 @misc{enomoto2026observation,
-  title = {Revisiting Observation Reduction for Web Agents: Comprehensive Evaluation with a Lightweight Framework},
-  author = {Enomoto, Masafumi and Obara, Ryoma and Zhang, Haochen and Oyamada, Masafumi},
+  title = {{Revisiting Observation Reduction for Web Agents: Comprehensive Evaluation with a Lightweight Framework}},
+  author = {Masafumi Enomoto and Ryoma Obara and Haochen Zhang and Masafumi Oyamada},
   year = {2026},
   eprint = {2605.29397},
   archivePrefix = {arXiv},
-  primaryClass = {cs.CL},
-  annote = {MFS (Minimal Failure Set) = smallest set of HTML elements whose deletion fails the task; MFS coverage is a zero-inference proxy metric (Spearman $\rho \geq 0.8$ vs end-to-end success, $\sim$290$\times$ faster evaluation). Benchmarks 11 extractive HTML-reduction methods on WorkArena L1 + WebLinx; best config 2.2$\times$ per-step latency reduction at 84\% success retention. WITHIN-representation compression (text-only HTML reduction, fixed per run, no per-task adaptivity, no cross-modal arms) --- cited in \S 2 as the nearest observation-efficiency neighbour, contrasting our cross-representation per-task routing. Added 2026-07-05 from raw\_digest\_triage\_2026-07-05, arXiv id API-verified.}
+  url = {https://arxiv.org/abs/2605.29397}
 }
 
 @misc{wang2026lazymcot,
@@ -1208,14 +1139,13 @@
 }
 
 @misc{hajimiri2026budgetmatched,
-  title        = {Are Online Skill and Memory Modules Always Worth Their Tokens? A Budget-Constrained Study of Web Agents},
-  author       = {Hajimiri, Sina and Aminbeidokhti, Masih and Dolz, Jose and Ben Ayed, Ismail and Laradji, Issam H. and Gella, Spandana and Gontier, Nicolas},
-  year         = {2026},
-  eprint       = {2606.15017},
-  url           = {https://arxiv.org/abs/2606.15017},
-  archivePrefix= {arXiv},
-  primaryClass = {cs.CL},
-  annote         = {Token-matched vanilla baseline erases the gains of AWM / ASI / ReasoningBank on three WebArena domains and three models; explicitly argues run-to-run variance should be a core evaluation criterion. The direct methodological precedent for our repetition-netted comparison, on the augmentation axis rather than the representation axis.}
+  title = {{Are Online Skill and Memory Modules Always Worth Their Tokens? A Budget-Constrained Study of Web Agents}},
+  author = {Sina Hajimiri and Masih Aminbeidokhti and Jose Dolz and Ismail Ben Ayed and Issam H. Laradji and Spandana Gella and Nicolas Gontier},
+  year = {2026},
+  eprint = {2606.15017},
+  archivePrefix = {arXiv},
+  note = {Accepted to EMNLP 2026 according to author lab; proceedings not verified},
+  url = {https://arxiv.org/abs/2606.15017}
 }
 
 @misc{enomoto2026readmore,
@@ -1239,13 +1169,12 @@
 }
 
 @misc{bhat2026benchmarkingbenchmarks,
-  title        = {Benchmarking the Benchmarks: A Validity Audit of Tool-Calling Evaluation},
-  author       = {Bhat, Vishvesh and Vaghasiya, Jay and Mohsin, Muhammad Ahmed and Aali, Asad},
-  year         = {2026},
-  eprint       = {2607.02577},
-  archivePrefix= {arXiv},
-  primaryClass = {cs.CL},
-  annote         = {23 repeated evaluations of one LiveMCPBench setup span 57.9\% to 76.8\%, an 18.9 point spread the authors note is large enough to change leaderboard conclusions.}
+  title = {{Benchmarking the Benchmarks: A Validity Audit of Tool-Calling Evaluation}},
+  author = {Vishvesh Bhat and Jay Vaghasiya and Muhammad Ahmed Mohsin and Asad Aali},
+  year = {2026},
+  eprint = {2607.02577},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2607.02577}
 }
 
 @inproceedings{xie2024osworld,
@@ -1268,4 +1197,91 @@
   url           = {https://arxiv.org/abs/2410.06703},
   archivePrefix = {arXiv},
   annote = {Cited for its Modality Challenge: 80 tasks (IDs 295-374) engineered so the answer is reachable through one modality and hidden in the other. That is complementarity INDUCED by adversarial page construction; ours is complementarity MEASURED on unmodified benchmark tasks. Distinguish explicitly.}
+}
+
+@misc{kerboua2025focusagent,
+  title = {{FocusAgent}: Simple Yet Effective Ways of Trimming the Large Context of Web Agents},
+  author = {Imene Kerboua and Sahar Omidi Shayegan and Xing Han L{\`u} and L{\'e}o Boisvert and Megh Thakkar and Massimo Caccia and J{\'e}r{\'e}my Espinas and Alexandre Aussem and V{\'e}ronique Eglin and Alexandre Lacoste},
+  year = {2025},
+  eprint = {2510.03204},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2510.03204}
+}
+
+@misc{chi2024elementordering,
+  title = {The Impact of Element Ordering on {LM} Agent Performance},
+  author = {Wayne Chi and Ameet Talwalkar and Chris Donahue},
+  year = {2024},
+  eprint = {2409.12089},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2409.12089}
+}
+
+@inproceedings{song2025irtrouter,
+  title = {{IRT-Router}: Effective and Interpretable Multi-{LLM} Routing via Item Response Theory},
+  author = {Wei Song and Zhenya Huang and Cheng Cheng and Weibo Gao and Bihan Xu and GuanHao Zhao and Fei Wang and Runze Wu},
+  booktitle = {Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages = {15629--15644},
+  year = {2025},
+  url = {https://aclanthology.org/2025.acl-long.761/}
+}
+
+@misc{jitkrittum2025uniroute,
+  title = {Universal Model Routing for Efficient {LLM} Inference},
+  author = {Wittawat Jitkrittum and Harikrishna Narasimhan and Ankit Singh Rawat and Jeevesh Juneja and Congchao Wang and Zifeng Wang and Alec Go and Chen-Yu Lee and Pradeep Shenoy and Rina Panigrahy and Aditya Krishna Menon and Sanjiv Kumar},
+  year = {2025},
+  eprint = {2502.08773},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2502.08773}
+}
+
+@inproceedings{hu2024routerbench,
+  title = {{RouterBench}: A Benchmark for Multi-{LLM} Routing System},
+  author = {Qitian Hu and Jacob Bieker and Xiuyu Li and Nan Jiang and Benjamin Keigwin and Gaurav Ranganath and Kurt Keutzer and Shriyash Upadhyay},
+  booktitle = {Agentic Markets Workshop at ICML 2024},
+  year = {2024},
+  url = {https://icml.cc/virtual/2024/39041}
+}
+
+@inproceedings{li2026llmrouterbench,
+  title = {{LLMRouterBench}: A Massive Benchmark and Unified Framework for {LLM} Routing},
+  author = {Hao Li and Yiqun Zhang and Zhaoyan Guo and Chenxu Wang and Shengji Tang and Qiaosheng Zhang and Yang Chen and Biqing Qi and Peng Ye and Lei Bai and Zhen Wang and Shuyue Hu},
+  booktitle = {Findings of the Association for Computational Linguistics: ACL 2026},
+  year = {2026},
+  url = {https://aclanthology.org/2026.findings-acl.1881/}
+}
+
+@inproceedings{yao2025taubench,
+  title = {$\tau$-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains},
+  author = {Shunyu Yao and Noah Shinn and Pedram Razavi and Karthik Narasimhan},
+  booktitle = {International Conference on Learning Representations},
+  year = {2025},
+  url = {https://arxiv.org/abs/2406.12045}
+}
+
+@misc{lee2026routinggap,
+  title = {Most of the {LLM} Routing Gap Is Task Type},
+  author = {Janghoon Lee},
+  year = {2026},
+  eprint = {2608.23023},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2608.23023}
+}
+
+@misc{li2026aoi,
+  title = {Agent-Computer Observation Interfaces Enable Dynamic Computer Use},
+  author = {Bojie Li and Noah Shi},
+  year = {2026},
+  eprint = {2606.29472},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2606.29472}
+}
+
+@misc{liu2026adaptivevlm,
+  title = {Adaptive Vision-Language Model Routing for Computer Use Agents},
+  author = {Xunzhuo Liu and Bowei He and Xue Liu and Andy Luo and Haichen Zhang and Huamin Chen},
+  year = {2026},
+  eprint = {2603.12823},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2603.12823}
 }
