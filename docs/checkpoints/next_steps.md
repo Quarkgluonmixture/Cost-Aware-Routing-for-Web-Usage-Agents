@@ -35,6 +35,7 @@ updated: 2026-10-08
 > - **10-08 下午已按零预设审查修订**（笔记 §554；Codex 原评 Overall 2）：措辞硬伤全改、三臂套件补成本口径与去 B2 敏感性（triage 的事后空间只在计费口径成立，可部署结论不随口径变）、附录加 agent 合同与敏感性表。正文约 7/8 页。
 > - **匿名补充包**：`python scripts/release/build_coling_supplement.py` → `deliverables/coling2027/coling2027_supplement.zip`（0.8 MB，gitignore）。投稿时作为 ARR supplementary 上传；数据一改就重建。**待 user 判断**：代码 / 配置里的项目代号 `p79` 是否算破匿名（若 poster 公开过它）。
 > - **初稿还可补**：§553.2 未核实的候选文献；内层 held-out 阈值重算与 2PL 零模型（留给 author response）。
+> - **给其他 AI 的零预设证据交接包**：入口 `docs/handoff/EVIDENCE_HANDOFF_20261008.md`（英文，自包含，不含任何 frame）；完整包 `python scripts/release/build_evidence_handoff.py` → `deliverables/handoff_build/evidence_handoff_20261008.zip`（6.4 MB，gitignore；含全部产物、逐题数据、结论层、实验笔记、预注册、bug 目录、workshop 审稿意见）。产物或数据一改就重建。
 > - cross-AI 存档（本地，不入库）：`docs/cross-ai-audits/2026-10-07-evidence-gaps/`、`2026-10-08-coling-frame/`、`2026-10-08-literature-policy/`。
 > - 本机跑分析用 `C:\Python314\python.exe` + `PYTHONUTF8=1`（conda 3.11 遇到嵌套 f-string 会 SyntaxError）。
 >

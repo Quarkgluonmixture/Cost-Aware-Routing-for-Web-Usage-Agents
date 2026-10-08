@@ -152,3 +152,6 @@ docs/reference/condenser/
 # private student-advisor documents, not for the public job-seeking repo. Kept on disk
 # (backed up via DGX→quark home rsync); referenced by next_steps/issue/memory pointers.
 docs/checkpoints/deliverables/
+
+# evidence handoff package (rebuild: scripts/release/build_evidence_handoff.py)
+deliverables/handoff_build/
