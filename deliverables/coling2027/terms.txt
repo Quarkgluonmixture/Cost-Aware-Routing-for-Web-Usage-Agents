@@ -1,0 +1,38 @@
+# Domain-term whitelist for the COLING 2027 draft (built 2026-10-08 from the draft itself;
+# audit with paper-deslop invariant_check.py --term-audit after edits).
+VisualWebArena
+WebArena
+VWA-reddit
+WA-reddit
+WebArena-reddit
+classifieds
+reddit
+shopping
+DOM
+SoM
+P-text
+P-prompt
+Vision
+backbone
+backbones
+rerun
+reruns
+hindsight
+oracle
+triage
+frontier
+router
+routers
+routing
+no-interaction null
+additive
+reliability
+template
+per-task
+per-arm
+single-run
+zero-cost
+ex-ante
+wall-clock
+set-of-marks
+deployable
