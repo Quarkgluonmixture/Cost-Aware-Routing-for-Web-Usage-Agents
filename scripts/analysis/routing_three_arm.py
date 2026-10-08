@@ -21,8 +21,13 @@ Readings:
                B=2000, on the three fully replicated cells; Holm across them; decomposition and
                D-study.
 
+Sensitivity (2026-10-08, draft review): `--cost-basis wallclock|gpu_time` reprices the frontier and
+deployable readings and writes a `_<basis>` sibling (gpu_time: locally served B1/B2 only; the null
+model and A→B are cost-free or billed-only and are skipped). Every run also pools the cells without
+the near-floor B2 backbone (`pooled_*_excl_B2`), where no router has room to gain.
+
 Usage:
-  python scripts/analysis/routing_three_arm.py
+  python scripts/analysis/routing_three_arm.py [--cost-basis billed|wallclock|gpu_time]
 """
 from __future__ import annotations
 
@@ -59,9 +64,9 @@ OUT_MD = REPO / "docs/analysis/cross_sites/routing_three_arm.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/routing_three_arm.json"
 
 
-def run_cell(spec: dict, n_shuffle: int, n_boot: int) -> dict:
+def run_cell(spec: dict, n_shuffle: int, n_boot: int, basis: str = "billed") -> dict:
     t0 = time.time()
-    full = rrf.load_cell(spec)
+    full = rrf.load_cell(spec, basis)
     S, C = full["S"][:, ARM_IDX], full["C"][:, ARM_IDX]
     X = full["X"]
     y = S.max(1).astype(int)
@@ -84,7 +89,7 @@ def run_cell(spec: dict, n_shuffle: int, n_boot: int) -> dict:
         "deployable": {"observed": dep, "_boot": boot},
         "template_folds": crossfit_eval(X, S, C, S, C, tf),
     }
-    b = run_b(spec, full)
+    b = run_b(spec, full) if basis == "billed" else None   # run b's costs are read on the billed basis only
     if b is not None:
         Sb, Cb = b[0][:, ARM_IDX], b[1][:, ARM_IDX]
         out["a_b_template"] = crossfit_eval(X, S, C, Sb, Cb, tf)
@@ -121,6 +126,8 @@ def render(p: dict) -> str:
         "decision space is restricted to the three deployment arms. `six-head` here means one success head per arm "
         "(three heads).",
         "",
+        f"Cost basis: **{p.get('cost_basis', 'billed')}** — {p.get('cost_unit', '')}",
+        "",
         "## 1. Frontier: max excess over the three fixed arms and their random mixtures",
         "",
         f"Label-shuffle null B={p['n_shuffle']}; Holm across the {len(cells)} cells per curve.",
@@ -135,13 +142,17 @@ def render(p: dict) -> str:
                  f"| +{f['oracle']['summary']['max_excess_pp']:.2f} | {s6['max_excess_pp']:+.2f} ({s6['null_p']:.4f}) "
                  f"| {'pass' if c['holm']['six_head'] else '—'} | {st['max_excess_pp']:+.2f} ({st['null_p']:.4f}) "
                  f"| {'pass' if c['holm']['triage'] else '—'} |")
-    po = p["pooled_frontier"]
-    L += ["", "Pooled frontier gain over the 8 cells (normalised budget, §540 definition):", "",
-          "| curve | pooled max gain | at u | p |", "|---|---|---|---|"]
-    for k, lab in (("six_head", "arm-selector"), ("triage", "triage"), ("oracle", "oracle")):
-        s = po[k]
-        L.append(f"| {lab} | +{s['max_pp']:.2f} | {s['at_u']} | {s.get('null_p', float('nan')):.4f} |"
-                 if "null_p" in s else f"| {lab} | +{s['max_pp']:.2f} | {s['at_u']} | — |")
+    for key, title in (("pooled_frontier", f"Pooled frontier gain over the {len(cells)} cells"),
+                       ("pooled_frontier_excl_B2", "Sensitivity: pooled without the near-floor B2 cells")):
+        po = p.get(key)
+        if not po:
+            continue
+        L += ["", f"{title} ({len(po['cells'])} cells; normalised budget, §540 definition):", "",
+              "| curve | pooled max gain | at u | p |", "|---|---|---|---|"]
+        for k, lab in (("six_head", "arm-selector"), ("triage", "triage"), ("oracle", "oracle")):
+            s = po[k]
+            L.append(f"| {lab} | +{s['max_pp']:.2f} | {s['at_u']} | {s.get('null_p', float('nan')):.4f} |"
+                     if "null_p" in s else f"| {lab} | +{s['max_pp']:.2f} | {s['at_u']} | — |")
     L += ["", "## 2. Deployable router (operating point chosen on training folds)", "",
           f"Task bootstrap B={p['n_boot']}: [5%, **95%**]. Template folds: same estimand, folds by template. "
           "A→B: fit on run a, scored on run b (fully replicated cells).", "",
@@ -155,11 +166,18 @@ def render(p: dict) -> str:
                  f"| {'—' if ab is None else format(ab['six_head'], '+.2f')} "
                  f"| {d['observed']['triage']:+.2f} | [{d['lower05']['triage']:+.2f}, **{d['upper95']['triage']:.2f}**] "
                  f"| {c['template_folds']['triage']:+.2f} | {'—' if ab is None else format(ab['triage'], '+.2f')} |")
-    pd_ = p["pooled_deployable"]
-    L += ["", "| pooled (8 cells) | arm-selector | [5%, **95%**] | triage | [5%, **95%**] |", "|---|---|---|---|---|",
-          f"| mean | {pd_['six_head']['observed']:+.2f} | [{pd_['six_head']['lower05']:+.2f}, **{pd_['six_head']['upper95']:.2f}**] "
-          f"| {pd_['triage']['observed']:+.2f} | [{pd_['triage']['lower05']:+.2f}, **{pd_['triage']['upper95']:.2f}**] |",
-          "", "## 3. No-interaction null on the three arms (fully replicated cells)", "",
+    L += ["", "| pooled | arm-selector | [5%, **95%**] | triage | [5%, **95%**] |", "|---|---|---|---|---|"]
+    for key, lab in (("pooled_deployable", f"mean, all {len(cells)} cells"),
+                     ("pooled_deployable_excl_B2", "mean, without B2")):
+        pd_ = p.get(key)
+        if pd_:
+            L.append(f"| {lab} | {pd_['six_head']['observed']:+.2f} | [{pd_['six_head']['lower05']:+.2f}, "
+                     f"**{pd_['six_head']['upper95']:.2f}**] | {pd_['triage']['observed']:+.2f} | "
+                     f"[{pd_['triage']['lower05']:+.2f}, **{pd_['triage']['upper95']:.2f}**] |")
+    if not p["null_cells"]:
+        L.append("")
+        return "\n".join(L)
+    L += ["", "## 3. No-interaction null on the three arms (fully replicated cells)", "",
           f"Same null and statistic as §543 (σ²_int = reproducible task×arm interaction), B={p['n_null']}; Holm across the cells.", "",
           "| cell | n | σ²_int | null mean / q95 | p | Holm | interaction / noise [95%] | single-run reliability | k for reliability ≥ 0.5 |",
           "|---|---|---|---|---|---|---|---|---|"]
@@ -181,34 +199,54 @@ def main() -> int:
     ap.add_argument("--n-boot", type=int, default=N_BOOT)
     ap.add_argument("--out", type=Path, default=OUT_MD)
     ap.add_argument("--json-out", type=Path, default=OUT_JSON)
+    ap.add_argument("--cost-basis", choices=sorted(rrf.COST_BASES), default="billed",
+                    help="billed writes the main product; the others write a _<basis> sibling")
     args = ap.parse_args()
+    if args.cost_basis != "billed":
+        if args.out == OUT_MD:
+            args.out = OUT_MD.with_name(f"{OUT_MD.stem}_{args.cost_basis}.md")
+        if args.json_out == OUT_JSON:
+            args.json_out = OUT_JSON.with_name(f"{OUT_JSON.stem}_{args.cost_basis}.json")
     if (args.n_shuffle, args.n_boot) != (N_SHUFFLE, N_BOOT) and (args.out == OUT_MD or args.json_out == OUT_JSON):
         raise SystemExit("non-default B must not overwrite the tracked product")
     specs = list(CELLS) + list(rt.WA_CELLS)
+    keep = rrf.COST_BASES[args.cost_basis]["baselines"]
+    if keep:
+        specs = [s for s in specs if s["baseline"] in keep]
     with ProcessPoolExecutor(max_workers=max(1, args.jobs)) as ex:
-        cells = list(ex.map(run_cell, specs, [args.n_shuffle] * len(specs), [args.n_boot] * len(specs)))
-        nulls = list(ex.map(null_cell, full_paired_cells()))
+        cells = list(ex.map(run_cell, specs, [args.n_shuffle] * len(specs), [args.n_boot] * len(specs),
+                            [args.cost_basis] * len(specs)))
+        nulls = list(ex.map(null_cell, full_paired_cells())) if args.cost_basis == "billed" else []
     for k in ("six_head", "triage"):
         verdict = rrf.holm({c["cell_id"]: c["frontier"][k]["summary"]["null_p"] for c in cells})
         for c in cells:
             c.setdefault("holm", {})[k] = bool(verdict[c["cell_id"]])
+    def pool_dep(cs):
+        out = {}
+        for k in ("six_head", "triage"):
+            draws = np.mean([c["deployable"]["_boot"][k] for c in cs], axis=0)
+            out[k] = {"observed": float(np.mean([c["deployable"]["observed"][k] for c in cs])),
+                      "lower05": float(np.quantile(draws, 0.05)), "upper95": float(np.quantile(draws, 0.95))}
+        return out
+
     pooled_frontier = rrf.pool(cells)
-    pooled_dep = {}
-    for k in ("six_head", "triage"):
-        draws = np.mean([c["deployable"]["_boot"][k] for c in cells], axis=0)
-        pooled_dep[k] = {"observed": float(np.mean([c["deployable"]["observed"][k] for c in cells])),
-                         "lower05": float(np.quantile(draws, 0.05)), "upper95": float(np.quantile(draws, 0.95))}
+    pooled_dep = pool_dep(cells)
+    no_b2 = [c for c in cells if not c["cell_id"].endswith("_B2")]
+    pooled_frontier_x = rrf.pool(no_b2) if len(no_b2) < len(cells) else None
+    pooled_dep_x = pool_dep(no_b2) if len(no_b2) < len(cells) else None
     for c in cells:
         c.pop("_null_gain")
         b = c["deployable"].pop("_boot")
         c["deployable"]["lower05"] = {k: float(np.quantile(v, 0.05)) for k, v in b.items()}
         c["deployable"]["upper95"] = {k: float(np.quantile(v, 0.95)) for k, v in b.items()}
-    nv = rrf.holm({c["cell_id"]: c["p_upper"] for c in nulls})
+    nv = rrf.holm({c["cell_id"]: c["p_upper"] for c in nulls}) if nulls else {}
     for c in nulls:
         c["holm"] = bool(nv[c["cell_id"]])
     payload = {"post_hoc_exploratory": True, "producer": "scripts/analysis/routing_three_arm.py",
                "arms": list(ARMS), "n_shuffle": args.n_shuffle, "n_boot": args.n_boot, "n_null": tmn.N_NULL,
+               "cost_basis": args.cost_basis, "cost_unit": rrf.COST_BASES[args.cost_basis]["unit"],
                "cells": cells, "pooled_frontier": pooled_frontier, "pooled_deployable": pooled_dep,
+               "pooled_frontier_excl_B2": pooled_frontier_x, "pooled_deployable_excl_B2": pooled_dep_x,
                "null_cells": nulls}
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
     args.json_out.write_text(json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")

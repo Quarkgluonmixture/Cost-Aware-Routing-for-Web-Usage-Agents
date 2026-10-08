@@ -185,7 +185,8 @@ def tab_cells():
     ext = {v["variant"]: v for v in _load("routing_extension_cells")["variants"]}
     rows = [(k, three[k]) for k in ("cls_B0", "cls_B1", "cls_B2", "red_B0", "red_B1", "red_B2",
                                     "wared_B0", "wared_B1")] + \
-           [("cls_B5", ext["cls_B5"]), ("shop_B0_clean", ext["shop_B0_clean"]), ("shop_B1_clean", ext["shop_B1_clean"])]
+           [("cls_B5", ext["cls_B5"]), ("shop_B0_clean", ext["shop_B0_clean"]), ("shop_B0_all", ext["shop_B0_all"]),
+            ("shop_B1_clean", ext["shop_B1_clean"]), ("shop_B1_all", ext["shop_B1_all"])]
     L = [r"\begin{table}[t]", r"\centering\footnotesize", r"\setlength{\tabcolsep}{3.5pt}",
          r"\begin{tabular}{@{}lrrrrrrr@{}}", r"\toprule",
          r" & & \multicolumn{2}{c}{DOM} & \multicolumn{2}{c}{\SoM} & \multicolumn{2}{c}{Vision} \\",
@@ -195,7 +196,8 @@ def tab_cells():
         fm = c["frontier"]["fixed_modes"]
         n = c.get("n_tasks") or len(c["frontier"].get("tasks", [])) or ""
         site, bl = k.split("_")[0], k.split("_")[1]
-        name = {"cls": "cls", "red": "VWA-red", "wared": "WA-red", "shop": "shop"}[site] + f" {bl}"
+        suffix = {"clean": " clean", "all": " all"}.get(k.split("_")[-1], "")
+        name = {"cls": "cls", "red": "VWA-red", "wared": "WA-red", "shop": "shop"}[site] + f" {bl}{suffix}"
         cells = []
         for arm in ("DOM", "SoM", "Vision"):
             cells += ([f"{fm[arm]['sr_pct']:.1f}", f"{fm[arm]['cost'] * 100:.2f}"] if arm in fm else ["--", "--"])
@@ -205,10 +207,43 @@ def tab_cells():
     L += [r"\bottomrule", r"\end{tabular}",
           r"\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment arms. "
           r"B0 and GPT-5.6 (B5) costs are API invoices; B1 and B2 are token-priced estimates for local "
-          r"serving, comparable within a cell only. Shopping rows are the clean cells (Appendix~\ref{app:harness}); "
+          r"serving, comparable within a cell only. Shopping: clean = tasks on which the search-box defect fired in no mode "
+          r"(Appendix~\ref{app:harness}), all = every scored task; "
           r"GPT-5.6 Vision is excluded. Sources: \texttt{routing\_three\_arm}, \texttt{routing\_extension\_cells}.}",
           r"\label{tab:cells}", r"\end{table}"]
     (OUT.parent / "tables" / "tab_cells.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
+
+
+def tab_sens():
+    """Appendix table: the three-arm pooled readings under each cost basis, with and without the
+    near-floor B2 cells (routing_three_arm and its _wallclock / _gpu_time siblings)."""
+    L = [r"\begin{table}[t]", r"\centering\scriptsize", r"\setlength{\tabcolsep}{3pt}",
+         r"\begin{tabular}{@{}llrrrr@{}}", r"\toprule",
+         r" & & \multicolumn{2}{c}{curve max ($p$)} & \multicolumn{2}{c}{deployable} \\",
+         r"\cmidrule(lr){3-4}\cmidrule(l){5-6}",
+         r"cost & cells & per-arm & triage & per-arm & triage \\", r"\midrule"]
+    first = True
+    for name, lab in (("routing_three_arm", "billed"), ("routing_three_arm_wallclock", "wall-clock"),
+                      ("routing_three_arm_gpu_time", "GPU time")):
+        p = _load(name)
+        if not first:
+            L.append(r"\addlinespace[2pt]")
+        first = False
+        for fk, dk, cl in (("pooled_frontier", "pooled_deployable", "all"),
+                           ("pooled_frontier_excl_B2", "pooled_deployable_excl_B2", "no B2")):
+            f, d = p[fk], p[dk]
+            row = [lab if cl == "all" else "", f"{cl} {len(f['cells'])}"]
+            row += [_m(f"{f[k]['max_pp']:+.2f}") + " (" + f"{f[k]['null_p']:.3f}".lstrip("0") + ")"
+                    for k in ("six_head", "triage")]
+            row += [_m(f"{d[k]['observed']:+.2f}") for k in ("six_head", "triage")]
+            L.append(" & ".join(row) + r" \\")
+    L += [r"\bottomrule", r"\end{tabular}",
+          r"\caption{Three-mode routing pooled over cells under three cost bases, with and without the weakest "
+          r"backbone (B2). GPU time exists only for the locally served B1 and B2. Curve max: best point after "
+          r"seeing test outcomes, with its label-shuffle $p$; deployable: operating point chosen on training folds. "
+          r"Sources: \texttt{routing\_three\_arm} and its \texttt{\_wallclock}, \texttt{\_gpu\_time} siblings.}",
+          r"\label{tab:sens}", r"\end{table}"]
+    (OUT.parent / "tables" / "tab_sens.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
 def _m(s: str) -> str:
@@ -234,8 +269,9 @@ def tab_routing():
         d = six_dep[k]
         rows.append(("6 arms, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
                      f"{d['observed']:+.2f} [{d['lower05']:+.2f}, {d['upper95']:+.2f}]"))
-    for vid, name in (("cls_B5", "GPT-5.6, classifieds (5 arms)"), ("shop_B0_clean", "Shopping B0 (3 arms)"),
-                      ("shop_B1_clean", "Shopping B1 (6 arms)")):
+    for vid, name in (("cls_B5", "GPT-5.6, classifieds (5 arms)"),
+                      ("shop_B0_clean", "Shopping B0, clean (3 arms)"), ("shop_B0_all", "Shopping B0, all tasks (3 arms)"),
+                      ("shop_B1_clean", "Shopping B1, clean (6 arms)"), ("shop_B1_all", "Shopping B1, all tasks (6 arms)")):
         v = ext[vid]
         for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
             s = v["frontier"][k]["summary"]
@@ -270,6 +306,7 @@ def main() -> int:
     fig_frontier()
     tab_routing()
     tab_cells()
+    tab_sens()
     print(f"wrote {OUT}", file=sys.stderr)
     return 0
 

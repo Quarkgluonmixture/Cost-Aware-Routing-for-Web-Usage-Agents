@@ -113,6 +113,8 @@ products:
   axis1_microbehavior_with_wa: {kind: product, expected: XMODE, why_out: {shop_B0: *shopB0, cls_B5: *clsB5, shop_B1: *shopB1}}
   representation_routing_frontier_gpu_time: {kind: sibling, of: representation_routing_frontier}
   representation_routing_frontier_wallclock: {kind: sibling, of: representation_routing_frontier}
+  routing_three_arm_wallclock: {kind: sibling, of: routing_three_arm}
+  routing_three_arm_gpu_time: {kind: sibling, of: routing_three_arm}
   axis1_microbehavior_report: {kind: sibling, of: axis1_microbehavior}
   axis1_microbehavior_report_with_wa: {kind: sibling, of: axis1_microbehavior_with_wa}
   axis_effect_size: {kind: product, expected: VWA6, why_out: {all_other: "prereg-scope; _with_wa sibling extends"}}

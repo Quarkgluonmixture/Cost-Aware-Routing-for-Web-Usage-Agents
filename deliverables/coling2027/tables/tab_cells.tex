@@ -17,10 +17,12 @@ WA-red B0 & 104 & 26.9 & 7.53 & 22.1 & 9.11 & 19.2 & 8.64 \\
 WA-red B1 & 104 & 16.3 & 6.58 & 13.5 & 7.94 & 9.6 & 4.47 \\
 \addlinespace[2pt]
 cls B5 & 224 & 23.7 & 13.74 & 37.1 & 16.71 & -- & -- \\
-shop B0 & 368 & 12.8 & 12.25 & 16.8 & 9.87 & 16.6 & 7.75 \\
-shop B1 & 192 & 5.7 & 10.60 & 9.4 & 7.75 & 6.8 & 4.69 \\
+shop B0 clean & 368 & 12.8 & 12.25 & 16.8 & 9.87 & 16.6 & 7.75 \\
+shop B0 all & 432 & 11.3 & 11.99 & 14.8 & 9.77 & 14.4 & 7.48 \\
+shop B1 clean & 192 & 5.7 & 10.60 & 9.4 & 7.75 & 6.8 & 4.69 \\
+shop B1 all & 432 & 4.9 & 11.11 & 7.6 & 8.27 & 5.6 & 4.94 \\
 \bottomrule
 \end{tabular}
-\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment arms. B0 and GPT-5.6 (B5) costs are API invoices; B1 and B2 are token-priced estimates for local serving, comparable within a cell only. Shopping rows are the clean cells (Appendix~\ref{app:harness}); GPT-5.6 Vision is excluded. Sources: \texttt{routing\_three\_arm}, \texttt{routing\_extension\_cells}.}
+\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment arms. B0 and GPT-5.6 (B5) costs are API invoices; B1 and B2 are token-priced estimates for local serving, comparable within a cell only. Shopping: clean = tasks on which the search-box defect fired in no mode (Appendix~\ref{app:harness}), all = every scored task; GPT-5.6 Vision is excluded. Sources: \texttt{routing\_three\_arm}, \texttt{routing\_extension\_cells}.}
 \label{tab:cells}
 \end{table}

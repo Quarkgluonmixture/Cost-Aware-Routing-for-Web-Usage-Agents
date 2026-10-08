@@ -8,8 +8,8 @@
 \end{figure}
 
 Figure~\ref{fig:deploy} shows the three deployment choices side by side. On classifieds the fused mode is the best of the three for B0, B1 and GPT-5.6 (B2 solves too few tasks to order the modes), and the margin over text is not small: \SoM$-$DOM is +9.82\pp\ [+3.57, +16.07] for B0 and +8.04\pp\ [+3.57, +12.95] for B1 (paired task bootstrap). % fusion_premium
-On WebArena reddit the order flips and text leads (\SoM$-$DOM $-4.81$\pp\ for B0 and $-2.88$\pp\ for B1, both intervals crossing zero), and on VWA-reddit the weakest backbone does significantly worse with the fused mode ($-2.96$\pp\ [$-5.91$, $-0.49$]). % fusion_premium
-On shopping the fused mode is best or tied with Vision (Figure~\ref{fig:deploy}).
+On WebArena reddit the order flips and text leads (\SoM$-$DOM $-4.81$\pp\ for B0 and $-2.88$\pp\ for B1, both intervals crossing zero), and on VWA-reddit the weakest backbone does worse with the fused mode ($-2.96$\pp\ [$-5.91$, $-0.49$]), but three of its eight DOM successes were credited although the episode never visited the target forum, whose subscription an earlier episode had made; without them the gap is $-1.48$\pp\ [$-3.45$, $+0.49$] (Appendix~\ref{app:harness}). % fusion_premium, leakage_sensitivity
+On shopping the fused mode is best or tied with Vision, on the filtered and on the full task sets (Figure~\ref{fig:deploy}, Table~\ref{tab:cells}).
 
 Two cautions keep this descriptive. Cells on the same site share their tasks, so the eight are not eight independent replications. And the screenshot-free modes are four, not one: a maximum over four text variants against a single screenshot mode would be a selection effect, so the comparison here takes one representative per deployment class, as practitioners do.
 

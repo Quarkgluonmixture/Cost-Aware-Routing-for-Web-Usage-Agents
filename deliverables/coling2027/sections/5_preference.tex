@@ -6,10 +6,10 @@
 \[
   \operatorname{logit}\Pr(Y_{imr}=1) = a_i + b_{mr},
 \]
-every task has its own difficulty and every (mode, run) column its own easiness, but there is no persistent task-by-mode interaction. This is the Rasch structure that item-response routers use to model difficulty \citep{song2025irtrouter}; here it is the null, and the question is what lies beyond it. The row and column sums are sufficient for this model, so conditional on them every 0/1 matrix with those margins is equally likely; we sample that null exactly with curveball swaps, fitting nothing. The statistic is the reproducible part of the interaction, $\hat\sigma^2_{\text{int}} = (\mathrm{MS}_{\text{int}} - \mathrm{MS}_{\text{err}})/2$ from the two-way task $\times$ mode ANOVA with two runs: the run-to-run covariance of each task's mode profile.
+every task has its own difficulty and every (mode, run) column its own easiness, but there is no persistent task-by-mode interaction. This is the Rasch structure that item-response routers use to model difficulty \citep{song2025irtrouter}; here it is the null, and the question is what lies beyond it. The row and column sums are sufficient for this model, so conditional on them every 0/1 matrix with those margins is equally likely; we approximate that conditional null by curveball Markov-chain sampling \citep{strona2014curveball}, fitting nothing. The statistic is the reproducible part of the interaction, $\hat\sigma^2_{\text{int}} = (\mathrm{MS}_{\text{int}} - \mathrm{MS}_{\text{err}})/2$ from the two-way task $\times$ mode ANOVA with two runs: the run-to-run covariance of each task's mode profile.
 
 \paragraph{Result.} Over the three deployment modes the interaction exceeds the null in all three cells (classifieds B0 $\hat\sigma^2_{\text{int}}=0.033$ against a null 95th percentile of 0.015; reddit B0 0.018 against 0.009; WebArena-reddit B1 0.030 against 0.014; $p\le 0.002$ each, Holm across cells). % routing_three_arm null_cells
-Over all six modes the same holds (Appendix~\ref{app:sixarm}). Preferences between representations are therefore a property of tasks, not only of their difficulty.
+Over all six modes the same holds (Appendix~\ref{app:sixarm}). Preferences between representations are therefore a reproducible property of tasks that an additive difficulty model does not capture. The test does not say what the extra structure is: a task-specific preference and a mode whose success responds more steeply to difficulty than another's both reject this null, and only the first is a representation preference in the narrow sense.
 
 \begin{figure}[t]
   \centering
@@ -18,8 +18,8 @@ Over all six modes the same holds (Appendix~\ref{app:sixarm}). Preferences betwe
   \label{fig:dstudy}
 \end{figure}
 
-\paragraph{But a single run measures them poorly.} The same decomposition gives the reliability of a label built from $k$ runs (Figure~\ref{fig:dstudy}). From one run it is 0.34, 0.31 and 0.50 in the three cells; two to three runs per task are needed to pass 0.5. Over six modes it is lower still, 0.14--0.46, and up to six runs are needed. % routing_three_arm, task_mode_interaction_null
-The preferences also persist where they can be observed directly: taking, for each task, the cheapest mode that succeeded on one run and scoring that choice on the rerun beats the fixed-mode frontier by 2.4--10.5 points on reddit B0 and WebArena-reddit B1. % routing_crossrun_template_validation diagnostic
+\paragraph{But a single run measures them poorly.} The same decomposition gives, in the sense of a generalisability decision study \citep{brennan2001generalizability}, the reliability of a task's mode profile averaged over $k$ runs (Figure~\ref{fig:dstudy}). From one run it is 0.34, 0.31 and 0.50 in the three cells; the projection crosses 0.5 at two to three runs (bootstrap ranges 2--4, 2--7 and 1--3). Over six modes it is lower still, 0.14--0.46, with up to six runs projected. This is the reliability of the interaction profile, not of a router's chosen arm, so it bounds how noisy single-run training labels are rather than predicting when a router starts to win. % routing_three_arm, task_mode_interaction_null
+The preferences also persist where they can be observed directly: over all six modes, taking for each task the cheapest mode that succeeded on one run and scoring that choice on the rerun beats the fixed-mode frontier by 2.4--10.5 points on reddit B0 and WebArena-reddit B1. % routing_crossrun_template_validation diagnostic
 That choice uses the task's own label, which no deployment has, so it measures persistence, not an attainable policy.
 
 The routing target thus exists, and a training set built from single runs labels it with a reliability between a third and a half.

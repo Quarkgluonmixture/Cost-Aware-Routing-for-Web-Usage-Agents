@@ -14,11 +14,17 @@ cells & policy & curve max (p) & deployable [5\%, 95\%] \\
 GPT-5.6, classifieds (5 arms) & per-arm heads & +0.45 (0.768) & $-$2.45 [$-$8.61, +4.24] \\
  & triage & +3.86 (0.127) & $-$1.63 [$-$6.70, +5.74] \\
 \addlinespace[2pt]
-Shopping B0 (3 arms) & per-arm heads & +1.14 (0.062) & $-$0.18 [$-$2.45, +2.02] \\
+Shopping B0, clean (3 arms) & per-arm heads & +1.14 (0.062) & $-$0.18 [$-$2.45, +2.02] \\
  & triage & +0.20 (0.496) & $-$0.87 [$-$2.63, +1.37] \\
 \addlinespace[2pt]
-Shopping B1 (6 arms) & per-arm heads & +1.11 (0.143) & +0.56 [$-$4.69, +0.88] \\
+Shopping B0, all tasks (3 arms) & per-arm heads & +1.09 (0.049) & +1.30 [$-$2.31, +1.85] \\
+ & triage & +0.18 (0.541) & $-$0.05 [$-$2.14, +1.45] \\
+\addlinespace[2pt]
+Shopping B1, clean (6 arms) & per-arm heads & +1.11 (0.143) & +0.56 [$-$4.69, +0.88] \\
  & triage & +1.63 (0.158) & +1.19 [$-$4.10, +1.57] \\
+\addlinespace[2pt]
+Shopping B1, all tasks (6 arms) & per-arm heads & +0.48 (0.169) & $-$0.43 [$-$2.78, +0.73] \\
+ & triage & +0.69 (0.289) & +0.40 [$-$2.02, +2.02] \\
 \bottomrule
 \end{tabular}
 \caption{Routing gain over the fixed arms and their random mixtures, in SR points. \emph{Curve max}: the best point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, \texttt{routing\_gain\_upper\_bounds}, \texttt{routing\_extension\_cells}.}

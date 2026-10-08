@@ -1,6 +1,10 @@
 \section{Task universes and exclusions}\label{app:universe}
 
-Scored sets are the collected tasks minus protocol exclusions written as rules over task configuration: classifieds 224 of 224; VWA-reddit 203 of 205 (one task whose evaluator never checks the requested action, and one cross-site task answerable from memory); shopping 432 of 435; WebArena-reddit the 104 tasks every mode ran. Every analysis records the task set it was built on and fails if denominators differ.
+Scored sets are the collected tasks minus protocol exclusions written as rules over task configuration: classifieds 224 of 224; VWA-reddit 203 of 205 (one task whose evaluator never checks the requested action, and one cross-site task answerable from memory); shopping 432 of 435. For every site the collected tasks are the benchmark's tasks minus those it marks as not applicable (WebArena-reddit: 104 of 106). Every analysis records the task set it was built on and fails if denominators differ.
+
+\section{Agent and run contract}\label{app:contract}
+
+Every condition uses the same agent loop and settings; only the observation mode and backbone vary. Decoding is greedy (temperature 0, at most 4096 new tokens per step). The browser viewport is 1280$\times$720, and the page is observed 0.5\,s after each action. The prompt holds the task instruction, the mode's system prompt, the last eight steps (thought, action, result) and the current observation; the text observation (accessibility tree or marked-element list) is never truncated. The nominal step budget is 30; three consecutive unparsable outputs end an episode. B1 (Qwen3-VL-4B-Instruct) and B2 (Gemma-3-4B-it) run locally from pinned model revisions; B0 (Qwen3-VL-235B-A22B) and B5 (the mid-price GPT-5.6 tier) are reached through a hosted API under a fixed model identifier. Each run uses seed 42, starts from freshly reset sites, and records the code version, configuration and environment with every episode. The exact prompts and configuration files are in the supplementary material.
 
 \section{The six observation modes}\label{app:modes}
 
@@ -20,7 +24,8 @@ A task is flagged if its intent matches
 
 \begin{itemize}\setlength{\itemsep}{1pt}
   \item \textbf{GPT-5.6 Vision}: the run used a broken coordinate contract and is excluded.
-  \item \textbf{GPT-5.6 step budget}: when the model emitted several valid actions, the parser executed one but booked the step as a free wait, so each GPT-5.6 condition took 50--90 actions beyond the 30-step budget (2--24 for B2, none for B0 and B1).
+  \item \textbf{GPT-5.6 step budget}: when the model emitted several valid actions, the parser executed one but booked the step as a free wait. Summed over a whole condition GPT-5.6 had 50--90 such steps (1.2--2.4\% of its steps; most of them executed an action, and some episodes reached 31--32 counted steps), B2 had 2--24, and B0 and B1 none. It affects \SoM\ and \PSoM\ alike.
+  \item \textbf{Reddit state}: subscriptions persist across the episodes of a run. Of the reddit successes scored by the subscribed-forum list, six were credited although the episode never visited the target forum, three of them for B2 with DOM; \S\ref{sec:deploy} reports the B2 comparison with and without them. The audit cannot detect an episode that reaches an already-subscribed forum and leaves without acting (one such case is confirmed on WebArena-reddit).
   \item \textbf{Shopping search box}: typing into a search box that already holds a query submitted old + new text (``chair'' + ``chair with wheels'' $\to$ ``chairchair with wheels'') in 43\% of such submissions, far more often in text modes than in Vision. A detector reproducing the defect's per-mode counts marks affected episodes; the \emph{clean} shopping cells drop every task affected in any mode (B0 keeps 368 of 432 tasks, B1 192).
   \item \textbf{Shopping state}: the category grid order differs between runs (42 order-sensitive tasks dropped), and the wishlist is not reset between tasks (4 tasks dropped).
 \end{itemize}
@@ -29,6 +34,8 @@ A task is flagged if its intent matches
 
 Over all six modes, the no-interaction null of \S\ref{sec:preference} is rejected in all three fully rerun cells ($p=0.0005$, $0.017$, $0.0005$; Holm), with single-run reliability 0.29, 0.14 and 0.46 and three, six and two runs per task needed to reach 0.5. % task_mode_interaction_null
 Across the 24 registered rerun pairs, a rerun changes between 0 and 14\% of task outcomes, depending on arm and cell. % noise_floor_inventory
+
+\input{tables/tab_sens}
 
 \section{Template and rerun robustness}\label{app:robust}
 

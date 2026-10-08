@@ -3,17 +3,17 @@
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{fig_screenshot}
-  \caption{Value of the screenshot alone (\SoM$-$\PSoM: same marks, same prompt) on the tasks a zero-cost intent rule flags, against the other tasks. Classifieds is out-of-sample for the rule. ``Rerun'' is a full repeat of both modes. VWA-reddit B2 is omitted: no mode solves a flagged task. Source: \texttt{visual\_intent\_routing}.}
+  \caption{Value of the screenshot alone (\SoM$-$\PSoM: same marks, same prompt) on the tasks a zero-cost intent rule flags, against the other tasks. Classifieds is out-of-sample for the rule. ``Rerun'' is a full repeat of both modes. VWA-reddit B2 is omitted: neither \SoM\ nor \PSoM\ solves a flagged task. Source: \texttt{visual\_intent\_routing}.}
   \label{fig:screenshot}
 \end{figure}
 
 \paragraph{A matched contrast.} Comparing Vision with DOM changes two things at once --- the image and the text the agent receives. \SoM\ and \PSoM\ differ only in the annotated screenshot, so their difference is the value of the image alone. \citet{chi2024elementordering} already compared screenshot-plus-text with text only on a subset of VisualWebArena tasks for one backbone (50.0\% against 46.3\%, without set-of-marks); we hold the set-of-marks text and prompt fixed, use four backbones and full task sets, rerun the contrast, and ask \emph{where} the image pays off.
 
-\paragraph{An ex-ante rule.} A regular expression over the task intent flags tasks that ask about an image, a photo, a colour or a count of things shown, excluding tasks that already carry a reference image (Appendix~\ref{app:rule}). It reads only the task configuration: no model call and no episode. It was written for reddit, so its classifieds hits were never inspected and classifieds is out-of-sample.
+\paragraph{An ex-ante rule.} A regular expression over the task intent flags tasks that ask about an image, a photo, a colour or a count of things shown, excluding tasks that already carry a reference image (Appendix~\ref{app:rule}). It reads only the task configuration: no model call and no episode. It was written as a reddit failure-diagnosis pattern a week before it was first used to partition tasks, and its classifieds hits were never inspected, so classifieds is out-of-sample for it.
 
 \paragraph{Result.} On the 71 classifieds tasks it flags, the screenshot raises success by +25.35\pp\ [+14.08, +36.62] for B0, against +5.23\pp\ on the other 153 tasks (Figure~\ref{fig:screenshot}). % visual_intent_routing ext cls_B0
 The effect reproduces on a full rerun of both modes (+26.76\pp\ [+14.08, +39.44], from 23 against 4 successes), % ext cls_B0_rerun
-and it grows with capability: +2.82\pp\ for B2, +11.27\pp\ for B1, +25.35\pp\ for B0 and +29.58\pp\ [+16.90, +42.25] for GPT-5.6. % ext cls_B2/B1/B0/B5
+and it is larger for the stronger backbones we tested: +2.82\pp\ for B2, +11.27\pp\ for B1, +25.35\pp\ for B0 and +29.58\pp\ [+16.90, +42.25] for GPT-5.6 (whose parser let some actions through beyond the step budget, in both modes alike; Appendix~\ref{app:harness}). The backbones differ in more than capability, so this is an association across the four we ran, not a scaling law. % ext cls_B2/B1/B0/B5
 On VWA-reddit the same rule flags 63 tasks and separates nothing: +3.17\pp\ on flagged tasks against +4.29\pp\ elsewhere for B0, +1.59\pp\ against $-3.57$\pp\ on its rerun. % ext red_B0, red_B0_rerun
 On shopping the flagged tasks carry at most five successes per mode, too few to read, and on WebArena the rule flags only 5 of 104 tasks.
 

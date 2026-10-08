@@ -4,9 +4,11 @@
 
 \paragraph{Breadth.} VWA-reddit and WA-reddit are task sets on the same application, so the study covers three applications, not four benchmarks. GPT-5.6 was run on classifieds only, and its Vision run is excluded for a coordinate-contract defect; a parser defect also let it take actions beyond the 30-step budget in every mode (Appendix~\ref{app:harness}). The ex-ante rule of \S\ref{sec:screenshot} works on classifieds only.
 
-\paragraph{Shopping filtering.} Dropping tasks touched by the search-box defect keeps the comparison between modes clean, but the dropped tasks are mostly search tasks, so the filtered cells read a different task mix; unfiltered results are reported alongside.
+\paragraph{Shopping filtering.} The clean shopping cells drop every task on which the search-box defect fired in any mode. Whether it fired depends on what the agent typed, so the filter selects on behaviour under the conditions being compared: the clean cells estimate the comparison on an observed defect-free subset, not on the benchmark, and B0 and B1 keep different subsets (368 and 192 tasks). Results on all tasks are reported alongside (Tables~\ref{tab:routing} and \ref{tab:cells}); no conclusion rests on the filtered cells alone.
 
 \paragraph{What the routing result does not show.} The routers use 18 pre-flight features and logistic models; richer features, language-model routers or multiple runs per training task may do better. The result is that, with single-run labels and these features, the routers do not beat the fixed choices and their mixtures --- not that per-task routing is impossible. Step-level switching is out of scope.
+
+\paragraph{Inherited state.} Reddit and shopping are reset before each run but not between tasks, so an episode can be credited for state an earlier episode created. A mechanical audit removes reddit successes credited without visiting the target forum and changes one comparison in the paper (\S\ref{sec:deploy}); it cannot see an episode that visits a forum an earlier episode already subscribed to and leaves without acting, so reddit outcomes may still carry inherited credit, and reruns may reproduce it.
 
 \paragraph{Exploratory analyses.} The preference test, frontier comparisons and bounds were designed after the runs were collected. Each family states its multiplicity correction; the bootstrap intervals for policies with a selected threshold are read as magnitudes, not tests.
 
@@ -14,6 +16,6 @@
 
 \section*{Ethics statement}
 
-All episodes ran against self-hosted copies of the VisualWebArena and WebArena sites, reset between tasks; no live website, real account or person was contacted, and no human subjects were involved. The API-served backbones were used under their providers' terms. Agents that act on websites can cause harm when deployed against live services; this study measures observation choices in sandboxes and releases no agent that acts outside them.
+All episodes ran against self-hosted copies of the VisualWebArena and WebArena sites; no live website, real account or person was contacted, and no human subjects were involved. Sites were reset before each run. The API-served backbones were used under their providers' terms. Agents that act on websites can cause harm when deployed against live services; this study measures observation choices in sandboxes and releases no agent that acts outside them.
 
-\paragraph{Availability.} Code, task configurations, per-episode outcomes and costs, and every analysis product cited in the text (each figure and table is regenerated from them by one script) will be released with the camera-ready version.
+\paragraph{Availability.} The anonymous supplementary material contains the agent and run configurations, per-episode outcomes and costs for every run used, the analysis scripts, and every analysis product cited in the text, with a guide that maps each number in the paper to the product field it comes from; figures and tables are regenerated from the products by one script. Full trajectories (screenshots and page text) are too large for the supplement and will be released with the camera-ready version.
