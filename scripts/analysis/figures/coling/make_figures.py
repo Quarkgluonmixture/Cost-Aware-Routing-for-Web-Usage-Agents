@@ -9,7 +9,7 @@ with marker shape as the second channel so identity never rests on colour alone.
   fig_screenshot.pdf  image-only contrast SoM - P-SoM on rule-flagged vs other tasks (§2)
   fig_dstudy.pdf      decision study: label reliability against runs per task
   fig_frontier.pdf    one cell's (cost, SR) plane + pooled gain over the mixture frontier
-  tables/tab_routing.tex, tables/tab_cells.tex
+  tables/tab_routing.tex, tables/tab_cells.tex, tables/tab_sixmode.tex
 """
 from __future__ import annotations
 
@@ -214,6 +214,56 @@ def tab_cells():
     (OUT.parent / "tables" / "tab_cells.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
+def tab_sixmode():
+    """Appendix table: success rate of all six observation modes per cell, with a mark on every arm
+    that has a registered same-condition rerun (CLEAN_PAIRS, via noise_floor_inventory)."""
+    six = {c["cell_id"]: c for c in _load("representation_routing_frontier")["cells"]}
+    ext = {v["variant"]: {**v["frontier"], "n_tasks": v.get("n_tasks")}
+           for v in _load("routing_extension_cells")["variants"]}
+    mode_of = {"dom": "DOM", "som": "SoM", "vision": "Vision", "ptext": "P-text", "pprompt": "P-prompt",
+               "psom": "P-SoM"}
+    site_of = {"cls": "cls", "red": "red", "wared": "wared", "shop": "shop"}
+    rerun = set()
+    for cp in _load("noise_floor_inventory")["clean_pairs"]:
+        bl, site, md = cp["label"].split(".")
+        rerun.add((f"{site_of[site]}_{bl}", mode_of[md]))
+    rows = [(k, six[k]) for k in ("cls_B0", "cls_B1", "cls_B2", "red_B0", "red_B1", "red_B2",
+                                  "wared_B0", "wared_B1")] + \
+           [(k, ext[k]) for k in ("cls_B5", "shop_B0_clean", "shop_B0_all", "shop_B1_clean", "shop_B1_all")]
+    arms = ("DOM", "P-prompt", "P-text", "P-SoM", "SoM", "Vision")
+    # eight columns plus the rerun mark do not fit one ACL column: span both
+    L = [r"\begin{table*}[t]", r"\centering\footnotesize", r"\setlength{\tabcolsep}{6pt}",
+         r"\begin{tabular}{@{}lrrrrrrr@{}}", r"\toprule",
+         r" & & \multicolumn{4}{c}{no screenshot} & \multicolumn{2}{c}{screenshot} \\",
+         r"\cmidrule(lr){3-6}\cmidrule(l){7-8}",
+         r"cell & $n$ & DOM & P-prompt & P-text & \PSoM & \SoM & Vision \\", r"\midrule"]
+    for k, c in rows:
+        fm = c["fixed_modes"]
+        site, bl = k.split("_")[0], k.split("_")[1]
+        suffix = {"clean": " clean", "all": " all"}.get(k.split("_")[-1], "")
+        name = {"cls": "cls", "red": "VWA-red", "wared": "WA-red", "shop": "shop"}[site] + f" {bl}{suffix}"
+        # a rerun pair covers the full scored set, so the mark goes on the "all" row only
+        cell_key = None if suffix == " clean" else f"{site}_{bl}"
+        vals = []
+        for arm in arms:
+            if arm not in fm:
+                vals.append("--")
+                continue
+            mark = r"$^\dagger$" if (cell_key, arm) in rerun else ""
+            vals.append(f"{fm[arm]['sr_pct']:.1f}{mark}")
+        if k == "cls_B5":
+            L.append(r"\addlinespace[2pt]")
+        L.append(f"{name} & {c.get('n_tasks') or ''} & " + " & ".join(vals) + r" \\")
+    L += [r"\bottomrule", r"\end{tabular}",
+          r"\caption{Success rate (\%) of all six observation modes per cell (Appendix~\ref{app:modes}); "
+          r"$^\dagger$ marks an arm with a registered same-condition rerun (Appendix~\ref{app:sixarm}). "
+          r"Shopping B0 has no screenshot-free text variants; GPT-5.6 Vision is excluded; shopping rows as in "
+          r"Table~\ref{tab:cells}. Sources: \texttt{representation\_routing\_frontier}, "
+          r"\texttt{routing\_extension\_cells}, \texttt{noise\_floor\_inventory}.}",
+          r"\label{tab:sixmode}", r"\end{table*}"]
+    (OUT.parent / "tables" / "tab_sixmode.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
+
+
 def tab_sens():
     """Appendix table: the three-arm pooled readings under each cost basis, with and without the
     near-floor B2 cells (routing_three_arm and its _wallclock / _gpu_time siblings)."""
@@ -306,6 +356,7 @@ def main() -> int:
     fig_frontier()
     tab_routing()
     tab_cells()
+    tab_sixmode()
     tab_sens()
     print(f"wrote {OUT}", file=sys.stderr)
     return 0

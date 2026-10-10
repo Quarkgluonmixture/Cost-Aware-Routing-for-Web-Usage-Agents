@@ -48,6 +48,30 @@ from scripts.analysis.routing_crossrun_template_validation import templates  # n
 OUT = REPO / "deliverables/coling2027/supplement"
 ZIP = REPO / "deliverables/coling2027/coling2027_supplement.zip"
 CS = REPO / "docs/analysis/cross_sites"
+PAPER = REPO / "deliverables/coling2027"
+# README labels -> LaTeX \label keys. Numbers are read from main.aux, never typed: inserting a
+# table renumbers every later one (2026-10-11: tab_sixmode turned Table 2/3 into 3/4).
+README_LABELS = {"fig_deploy": "fig:deploy", "fig_screenshot": "fig:screenshot", "fig_dstudy": "fig:dstudy",
+                 "fig_frontier": "fig:frontier", "tab_routing": "tab:routing", "tab_sixmode": "tab:sixmode",
+                 "tab_sens": "tab:sens", "tab_cells": "tab:cells", "app_rule": "app:rule",
+                 "app_harness": "app:harness", "app_estimators": "app:estimators"}
+
+
+def paper_labels() -> dict[str, str]:
+    """README placeholder -> the number LaTeX printed. Fails if the aux is missing, older than any
+    source file (the draft was edited but not recompiled), or lacks a label."""
+    aux = PAPER / "main.aux"
+    if not aux.is_file():
+        raise SystemExit(f"{aux} missing: compile the draft (latexmk) before building the supplement")
+    newest = max(f.stat().st_mtime for f in [PAPER / "main.tex", *PAPER.glob("sections/*.tex"),
+                                              *PAPER.glob("tables/*.tex")])
+    if aux.stat().st_mtime < newest:
+        raise SystemExit(f"{aux} is older than the draft sources: recompile before building the supplement")
+    nums = dict(re.findall(r"\\newlabel\{([^}]+)\}\{\{([^}]*)\}", aux.read_text(encoding="utf-8")))
+    missing = sorted(k for k, lab in README_LABELS.items() if lab not in nums)
+    if missing:
+        raise SystemExit(f"labels not in {aux}: {[README_LABELS[k] for k in missing]}")
+    return {k: nums[lab] for k, lab in README_LABELS.items()}
 
 PRODUCTS = [
     "routing_three_arm", "routing_three_arm_wallclock", "routing_three_arm_gpu_time",
@@ -272,8 +296,8 @@ the raw trajectories (screenshots and page text, too large; released with the ca
   Rows: {episodes} ({rerun_rows} of them reruns).
 - `data/features.csv` — the 18 pre-run router features (14 intent-keyword indicators, intent
   length, three first-page statistics) per (cell, task).
-- `data/tasks.csv` — scored task ids per site, intent template, the intent-rule flag (Appendix D),
-  and membership in the clean shopping sets (Appendix E). Task configurations themselves are the
+- `data/tasks.csv` — scored task ids per site, intent template, the intent-rule flag (Appendix {app_rule}),
+  and membership in the clean shopping sets (Appendix {app_harness}). Task configurations themselves are the
   public VisualWebArena / WebArena files.
 - `prompts/` — the system prompt of each observation mode (`phantom_*` = the screenshot-free
   controls: `phantom_som` = P-SoM, `phantom_text` = P-text, `phantom_prompt` = P-prompt;
@@ -289,13 +313,14 @@ the raw trajectories (screenshots and page text, too large; released with the ca
 
 | paper | product |
 |---|---|
-| Fig. 1, Table 3 | `routing_three_arm` (`cells[].frontier.fixed_modes`), `routing_extension_cells` |
+| Fig. {fig_deploy}, Table {tab_cells} | `routing_three_arm` (`cells[].frontier.fixed_modes`), `routing_extension_cells` |
+| Table {tab_sixmode} (six modes) | `representation_routing_frontier` (`cells[].fixed_modes`), `routing_extension_cells`; rerun marks: `noise_floor_inventory` |
 | §3 contrasts | `fusion_premium`; leakage-adjusted value: `leakage_sensitivity` |
-| Fig. 2, §4 | `visual_intent_routing` (extension section) |
-| §5, Fig. 3 | `routing_three_arm` (`null_cells`); six modes: `task_mode_interaction_null` |
+| Fig. {fig_screenshot}, §4 | `visual_intent_routing` (extension section) |
+| §5, Fig. {fig_dstudy} | `routing_three_arm` (`null_cells`); six modes: `task_mode_interaction_null` |
 | §5 persistence | `routing_crossrun_template_validation` |
-| Fig. 4, Table 1 | `routing_three_arm`, `representation_routing_frontier`, `routing_gain_upper_bounds`, `routing_extension_cells` |
-| Table 2 (sensitivity) | `routing_three_arm`, `_wallclock`, `_gpu_time` |
+| Fig. {fig_frontier}, Table {tab_routing} | `routing_three_arm`, `representation_routing_frontier`, `routing_gain_upper_bounds`, `routing_extension_cells` |
+| Table {tab_sens} (sensitivity) | `routing_three_arm`, `_wallclock`, `_gpu_time` |
 | rerun range 0–14% | `noise_floor_inventory` |
 | reddit inherited state | `reddit_sidebar_leakage_audit_with_wa` |
 
@@ -304,8 +329,8 @@ Figures and tables are regenerated from the products by `code/scripts/analysis/f
 ## Recomputing from `data/`
 
 The frontier of a cell is the upper concave envelope of the fixed modes' (mean cost, success
-rate) points (Appendix I). Mean cost and success per mode come directly from `episodes.csv`
-(`run == "a"`); the router curves need `features.csv` and the fold split described in Appendix I
+rate) points (Appendix {app_estimators}). Mean cost and success per mode come directly from `episodes.csv`
+(`run == "a"`); the router curves need `features.csv` and the fold split described in Appendix {app_estimators}
 (five folds over distinct task ids, seed 42 permutation).
 """
 
@@ -331,7 +356,7 @@ def main() -> int:
     OUT.mkdir(parents=True)
     stats = export_data()
     n_prompts, n_cfg, n_prod, n_code = export_prompts(), export_configs(), export_products(), export_code()
-    write(OUT / "README.md", README.format(**stats))
+    write(OUT / "README.md", README.format(**stats, **paper_labels()))
     hits = scan()
     if hits:
         print("ANONYMITY SCAN FAILED:", *hits[:40], sep="\n  ", file=sys.stderr)
