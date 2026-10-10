@@ -26,6 +26,7 @@ SITE_OF = {
     "cls": ("classifieds", "visualwebarena", "cls"),
     "red": ("reddit", "visualwebarena", "red"),
     "wared": ("reddit", "webarena", "wared"),
+    "shop": ("shopping", "visualwebarena", "shop"),  # first shopping pair registered 2026-10-10 (§557)
 }
 
 

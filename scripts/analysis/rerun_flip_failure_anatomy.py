@@ -55,7 +55,7 @@ REASON_ROOT = REPO / "results/diag_scans/reason_rows_20261006"
 OUT_MD = REPO / "docs/analysis/cross_sites/rerun_flip_failure_anatomy.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/rerun_flip_failure_anatomy.json"
 SITE_OF = {"cls": ("classifieds", "visualwebarena"), "red": ("reddit", "visualwebarena"),
-           "wared": ("reddit", "webarena")}
+           "wared": ("reddit", "webarena"), "shop": ("shopping", "visualwebarena")}
 
 
 class MissingInput(RuntimeError):

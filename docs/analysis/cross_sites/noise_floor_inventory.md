@@ -41,6 +41,9 @@ Regenerate: `.venv/bin/python3 scripts/analysis/aggregate_noise_floor_inventory.
 | `B1.wared.som` | B1 x WA-reddit, canonical n=104 | 104 | **4.81pp** | **1.92pp** | 6.73% |
 | `B1.wared.psom` | B1 x WA-reddit, canonical n=104 | 104 | **0.96pp** | **3.85pp** | 4.81% |
 | `B1.wared.vision` | B1 x WA-reddit, canonical n=104 | 104 | **0.00pp** | **1.92pp** | 1.92% |
+| `B2.cls.som` | B2 x classifieds, canonical n=224 | 224 | **0.00pp** | **0.00pp** | 0.00% |
+| `B2.cls.vision` | B2 x classifieds, canonical n=224 | 224 | **0.45pp** | **0.00pp** | 0.45% |
+| `B1.shop.som` | B1 x shopping, canonical n=432 | 432 | **2.31pp** | **3.01pp** | 5.32% |
 | `B1.wa-red` (**new**) | B1 x WA-reddit, registered 10-task pilot draw x 5 modes | 50 | **2.00pp** | **4.00pp** | 6.00% |
 
 ### 1b. The mean-difference floor is two draws, not a bound
@@ -73,6 +76,9 @@ The set-difference functional above is the one claim 1 needs. Claims 3 and 4 com
 | `B1.wared.som` | 104 | 7 | 2.88pp | **2.54pp** | 4.18pp | ±4.99pp |
 | `B1.wared.psom` | 104 | 5 | 2.88pp | **2.15pp** | 3.54pp | ±4.21pp |
 | `B1.wared.vision` | 104 | 2 | 1.92pp | **1.36pp** | 2.24pp | ±2.67pp |
+| `B2.cls.som` | 224 | 0 | 0.00pp | **0.00pp** | 0.00pp | ±0.00pp |
+| `B2.cls.vision` | 224 | 1 | 0.45pp | **0.45pp** | 0.73pp | ±0.87pp |
+| `B1.shop.som` | 432 | 23 | 0.69pp | **1.11pp** | 1.83pp | ±2.18pp |
 
 ⚠️ **The band's upper edge (5.77pp) is of the same order as one standard deviation (0.00–3.04pp).** So "clears the band" is not "clears the noise": an effect has to reach roughly **0.00–5.00pp** before a single rerun would be unlikely to produce it by itself. Both readings are reported because they answer different questions — *what did repetition actually deliver* (the two draws) versus *what could repetition deliver* (the null spread). Reading a 2.2pp effect against a 2.23pp "measured floor" is comparing a draw to a draw.
 

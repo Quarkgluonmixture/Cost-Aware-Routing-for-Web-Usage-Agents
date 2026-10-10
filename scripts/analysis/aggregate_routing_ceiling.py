@@ -125,7 +125,7 @@ def load_floor() -> dict[str, dict]:
         # six WebArena-reddit pairs registered on 10-06 (label `B1.wared.*`, §529.4) were read
         # as VWA-reddit and widened red_B1's band to 0–7.69pp (8/104 is a WA denominator).
         # Unknown site labels now fail loud instead of falling into reddit.
-        site_key = {"cls": "cls", "red": "red", "wared": "wa_red"}.get(site_short)
+        site_key = {"cls": "cls", "red": "red", "wared": "wa_red", "shop": "shop"}.get(site_short)
         if site_key is None:
             raise MissingInput(f"clean pair label {p.get('label')!r}: unknown site {site_short!r}")
         key = f"{site_key}_{base}"

@@ -10,11 +10,11 @@ producer: scripts/analysis/rerun_flip_failure_anatomy.py
 
 Regenerate: `python scripts/analysis/rerun_flip_failure_anatomy.py`. Questions and reading thresholds were fixed in the producer docstring before computing.
 
-24 registered same-condition pairs. Episodes excluded for a step-file / summary length mismatch or a missing file: 0 (Q3/Q4 only).
+27 registered same-condition pairs. Episodes excluded for a step-file / summary length mismatch or a missing file: 0 (Q3/Q4 only).
 
 ## Q1. Is the failure type stable across reruns?
 
-Tasks failing in both runs: **3658**. Same paper bucket in both runs: **72.4%**; chance from the marginals 27.9%; **kappa = 0.62** → failure type is a property of (task, condition).
+Tasks failing in both runs: **4482**. Same paper bucket in both runs: **70.4%**; chance from the marginals 26.2%; **kappa = 0.60** → between the pre-declared thresholds — no verdict.
 
 | pair | n | flip | both fail | same bucket | kappa |
 |---|---|---|---|---|---|
@@ -42,15 +42,19 @@ Tasks failing in both runs: **3658**. Same paper bucket in both runs: **72.4%**;
 | `B1.wared.som` | 104 | 7 | 88 | 72% | 0.59 |
 | `B1.wared.psom` | 104 | 5 | 88 | 72% | 0.59 |
 | `B1.wared.vision` | 104 | 2 | 92 | 63% | 0.45 |
+| `B2.cls.som` | 224 | 0 | 219 | 62% | 0.54 |
+| `B2.cls.vision` | 224 | 1 | 219 | 57% | 0.45 |
+| `B1.shop.som` | 432 | 23 | 386 | 64% | 0.48 |
 
 **Post hoc strata** (added after the pooled value was seen; median of per-pair kappa):
 
 | stratum | pairs | median kappa |
 |---|---|---|
 | B0 | 12 | 0.46 |
-| pairs with >= 5 flips | 20 | 0.53 |
-| B1 | 11 | 0.59 |
+| pairs with >= 5 flips | 21 | 0.52 |
+| B1 | 12 | 0.59 |
 | B5 | 1 | 0.61 |
+| B2 | 2 | 0.49 |
 
 ⚠️ The pooled kappa clears the 0.6 line partly because two B1·classifieds pairs have no flips and agree almost perfectly. Read the strata before quoting the pooled verdict.
 
@@ -60,13 +64,13 @@ Bucket of the failing run on flipped tasks, against both-fail tasks (each run co
 
 | paper bucket | flips (failing side) | both-fail |
 |---|---|---|
-| early-finish/wrong-commit | 204 (57%) | 3218 (44%) |
-| max-steps-other | 49 (14%) | 1553 (21%) |
-| visual-hijack/click-loop | 45 (13%) | 614 (8%) |
-| search-loop | 39 (11%) | 1109 (15%) |
-| element-misground | 17 (5%) | 755 (10%) |
-| error/noise | 3 (1%) | 34 (0%) |
-| missing-context | 1 (0%) | 33 (0%) |
+| early-finish/wrong-commit | 212 (55%) | 3648 (41%) |
+| max-steps-other | 59 (15%) | 2092 (23%) |
+| visual-hijack/click-loop | 45 (12%) | 634 (7%) |
+| search-loop | 45 (12%) | 1478 (16%) |
+| element-misground | 17 (4%) | 923 (10%) |
+| error/noise | 3 (1%) | 51 (1%) |
+| missing-context | 1 (0%) | 138 (2%) |
 
 ## Q3. When do the two runs part?
 
@@ -74,12 +78,12 @@ First step at which (action type, url after the action, typed text) differ.
 
 | group | tasks | already apart at step 0 | median first divergence |
 |---|---|---|---|
-| flip | 358 | 44% | 1.0 |
-| both_success | 472 | 22% | 2.0 |
-| both_fail | 3658 | 32% | 1.0 |
+| flip | 382 | 45% | 1.0 |
+| both_success | 504 | 21% | 3.0 |
+| both_fail | 4482 | 30% | 2.0 |
 
 ## Q4. How late is a flip decided?
 
-Shared prefix as a fraction of the successful run's length, over 358 flips: median **0.04**; below 0.25: 76%; 0.75 or more: 2%.
+Shared prefix as a fraction of the successful run's length, over 382 flips: median **0.03**; below 0.25: 77%; 0.75 or more: 2%.
 
 ⚠️ Paper buckets come from `analyze_reason_diagnostics.py` (a rule-based reason classifier), not from /diag rules or human reading. Action signatures ignore element ids (SoM ids are re-keyed per page), so two runs clicking different elements that lead to the same URL count as not yet diverged.

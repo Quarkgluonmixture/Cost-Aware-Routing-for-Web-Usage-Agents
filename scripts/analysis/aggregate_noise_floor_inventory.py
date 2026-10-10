@@ -272,6 +272,18 @@ CLEAN_PAIRS = [
     ("B1.wared.vision",
      "results/webarena/phase1/B1_vision_wa_reddit_20260729_002545_844006252_2860757_R20074/phase1_vision_router_0",
      "results/webarena/phase1/B1_vision_wa_reddit_20260922_225941_543785452_3104625_R18252/phase1_vision_router_0"),
+    # Registered resume chain cell 1, intent local_replicate_resume_intent_20261008; inventory only (d=0, B2 cls SR 2%).
+    ("B2.cls.som",
+     "results/visualwebarena/phase1/B2_som_classifieds_20260611_210828_923656661_1218867_R3380/phase1_som_router_0",
+     "results/visualwebarena/phase1/B2_som_classifieds_20261007_173726_644371947_3902675_R15790/phase1_som_router_0"),
+    # Registered resume chain cell 2, intent local_replicate_resume_intent_20261008; inventory only (d=1).
+    ("B2.cls.vision",
+     "results/visualwebarena/phase1/B2_vision_classifieds_20260612_221910_098760264_1351451_R9288/phase1_vision_router_0",
+     "results/visualwebarena/phase1/B2_vision_classifieds_20261008_170902_175730782_3981324_R15615/phase1_vision_router_0"),
+    # Registered resume chain cell 3 (R22515 resumed from 283/435), intent local_replicate_resume_intent_20261008; first shopping band (d=23).
+    ("B1.shop.som",
+     "results/visualwebarena/phase1/B1_som_shopping_20260812/phase1_som_router_0",
+     "results/visualwebarena/phase1/B1_som_shopping_20260923_150104_790051799_3162887_R22515/phase1_som_router_0"),
 ]
 
 # A replicate that is still running has a task set that merely LOOKS like a scored universe:

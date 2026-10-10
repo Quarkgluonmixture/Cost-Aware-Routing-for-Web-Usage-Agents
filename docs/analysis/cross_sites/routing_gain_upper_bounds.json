@@ -108,7 +108,10 @@
     "six_head": -3.125,
     "triage": -2.232142857142857
    },
-   "rerun_abs_diff_pp": []
+   "rerun_abs_diff_pp": [
+    0.0,
+    0.4464285714285714
+   ]
   },
   {
    "cell_id": "red_B2",

@@ -68,7 +68,7 @@ MODE_FILE = {"DOM": "dom", "SoM": "som", "Vision": "vision", "P-text": "phantom_
 PAIR_MODE = {"dom": "DOM", "som": "SoM", "vision": "Vision", "ptext": "P-text", "pprompt": "P-prompt",
              "psom": "P-SoM"}
 PAIR_SITE = {"cls": ("visualwebarena", "classifieds"), "red": ("visualwebarena", "reddit"),
-             "wared": ("webarena", "reddit")}
+             "wared": ("webarena", "reddit"), "shop": ("visualwebarena", "shopping")}
 
 # Identity tokens: the build fails if any survives redaction (case-insensitive).
 BANNED = ["quarkgluon", "quark", "jiaming", "ucab352", "ucl.ac.uk", "condenser", "spark-9ea3",

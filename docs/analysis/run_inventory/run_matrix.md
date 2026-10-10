@@ -10,14 +10,14 @@ cell = a same-condition replicate pair exists on disk.
 |---|---|---|---|---|---|---|---|
 | VWA·classifieds | B0 | 17.4 P<br>15.2 R | 27.2 P<br>29.5 R | 25.0 P<br>24.1 R | 15.6 P<br>14.3 R | 19.6 P<br>17.0 R | 15.6 P<br>14.3 R |
 | VWA·classifieds | B1 | 6.2 P<br>6.7 R | 14.3 P<br>14.3 R | 12.5 P<br>12.5 R | 7.6 P | 6.7 P | 6.7 P |
-| VWA·classifieds | B2 | 1.3 P | 2.2 P | 2.2 P | 0.4 P | 1.8 P | 0.9 P |
+| VWA·classifieds | B2 | 1.3 P | 2.2 P<br>2.2 R | 2.2 P<br>1.8 R | 0.4 P | 1.8 P | 0.9 P |
 | VWA·classifieds | B5 | 23.7 X<br>25.0 R | 37.0 X | 12.0 U | 24.1 X | 21.9 X | 22.8 X |
 | VWA·reddit | B0 | 14.3 P<br>11.3 R | 14.8 P<br>12.3 R | 7.4 P<br>7.4 R | 13.3 P<br>9.8 R | 12.3 P<br>9.8 R | 10.8 P<br>14.3 R |
 | VWA·reddit | B1 | 5.9 P<br>5.4 R | 7.4 P<br>6.4 R | 2.5 P | 5.9 P | 5.4 P | 5.9 P |
 | VWA·reddit | B2 | 3.9 P | 1.0 P | 2.0 P | 2.0 P | 0.0 P | 0.5 P |
 | VWA·shopping | B0 | 11.3 X | 14.8 X | 14.3 X | — | — | — |
-| VWA·shopping | B1 | 4.9 X | 7.6 X | 5.6 X | 6.7 X | 5.3 X | 4.6 X |
+| VWA·shopping | B1 | 4.9 X | 7.6 X<br>8.3 R | 5.6 X | 6.7 X | 5.3 X | 4.6 X |
 | WA·reddit | B0 | 26.9 U | 22.1 U | 19.2 U | 35.6 U | 26.0 U | 25.0 U |
 | WA·reddit | B1 | 16.4 R<br>22.1 R | 13.5 R<br>10.6 R | 9.6 R<br>11.5 R | 16.4 R<br>20.2 R | 16.4 R<br>17.3 R | 11.5 R<br>14.4 R |
 
-Full runs counted: 87.
+Full runs counted: 90.

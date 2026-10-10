@@ -163,10 +163,10 @@ Sources: `04_run_inventory/` (`README.md`, `run_matrix.md`, `run_inventory.json`
 | quantity | value |
 |---|---|
 | unique (run, condition) entries on disk | 131 |
-| full runs (complete episode set) | 88 (87 in the site × backbone × mode matrix) |
+| full runs (complete episode set) | 91 (90 in the site × backbone × mode matrix; +3 on 2026-10-10) |
 | episodes across all inventoried runs | 20,199 (18,957 in full runs) |
 | steps in the 8 core cells' canonical runs (6 modes each) | 200,975 over 9,984 episodes |
-| registered same-condition rerun pairs | 24 (+1 pilot draw) |
+| registered same-condition rerun pairs | 27 (+1 pilot draw; 24 → 27 on 2026-10-10) |
 | merged run store | 1,340,115 files, 105 GB (the A100 store with screenshots/DOM artifacts is 83.7 GB of it) |
 | per-episode table shipped here (`02_data/episodes.csv`) | 18,446 rows (13,942 run-a rows + 4,504 rerun rows) |
 
@@ -178,13 +178,13 @@ there is not a defect). Two values in one cell = a same-condition pair exists.
 |---|---|---|---|---|---|---|---|
 | VWA·classifieds | B0 | 17.4 P / 15.2 R | 27.2 P / 29.5 R | 25.0 P / 24.1 R | 15.6 P / 14.3 R | 19.6 P / 17.0 R | 15.6 P / 14.3 R |
 | VWA·classifieds | B1 | 6.2 P / 6.7 R | 14.3 P / 14.3 R | 12.5 P / 12.5 R | 7.6 P | 6.7 P | 6.7 P |
-| VWA·classifieds | B2 | 1.3 P | 2.2 P | 2.2 P | 0.4 P | 1.8 P | 0.9 P |
+| VWA·classifieds | B2 | 1.3 P | 2.2 P / 2.2 R | 2.2 P / 1.8 R | 0.4 P | 1.8 P | 0.9 P |
 | VWA·classifieds | B5 | 23.7 X / 25.0 R | 37.0 X | 12.0 U (broken run) | 24.1 X | 21.9 X | 22.8 X |
 | VWA·reddit | B0 | 14.3 P / 11.3 R | 14.8 P / 12.3 R | 7.4 P / 7.4 R | 13.3 P / 9.8 R | 12.3 P / 9.8 R | 10.8 P / 14.3 R |
 | VWA·reddit | B1 | 5.9 P / 5.4 R | 7.4 P / 6.4 R | 2.5 P | 5.9 P | 5.4 P | 5.9 P |
 | VWA·reddit | B2 | 3.9 P | 1.0 P | 2.0 P | 2.0 P | 0.0 P | 0.5 P |
 | VWA·shopping | B0 | 11.3 X | 14.8 X | 14.3 X | — | — | — |
-| VWA·shopping | B1 | 4.9 X | 7.6 X | 5.6 X | 6.7 X | 5.3 X | 4.6 X |
+| VWA·shopping | B1 | 4.9 X | 7.6 X / 8.3 R | 5.6 X | 6.7 X | 5.3 X | 4.6 X |
 | WA·reddit | B0 | 26.9 U | 22.1 U | 19.2 U | 35.6 U | 26.0 U | 25.0 U |
 | WA·reddit | B1 | 16.4 R / 22.1 R | 13.5 R / 10.6 R | 9.6 R / 11.5 R | 16.4 R / 20.2 R | 16.4 R / 17.3 R | 11.5 R / 14.4 R |
 
@@ -193,17 +193,18 @@ VWA-reddit × {B0, B1, B2}, WA-reddit × {B0, B1}. Extensions, never pooled with
 (five modes; its Vision run is the broken coordinate-contract run, §8.2), shopping B0 (three modes, no
 screenshot-free arms: paid API budget) and shopping B1 (six modes).
 
-**Rerun coverage.** Every mode rerun: cls_B0, red_B0, WA-red B1. Partial: cls_B1 (3/6), red_B1 (2/6),
-cls_B5 (DOM). None: cls_B2, red_B2, shop_B0, shop_B1, WA-red B0. Five of eleven cells therefore have no
-run-to-run reference at all.
+**Rerun coverage** (as of 2026-10-10). Every mode rerun: cls_B0, red_B0, WA-red B1. Partial: cls_B1 (3/6),
+red_B1 (2/6), cls_B2 (SoM, Vision), cls_B5 (DOM), shop_B1 (SoM). None: red_B2, shop_B0, WA-red B0. Three of
+eleven cells therefore have no run-to-run reference at all. The two cls_B2 pairs (0/224 and 1/224 flips)
+are inventory only: B2 solves ~2% of classifieds tasks, so they cannot bound an effect. The shop_B1 SoM
+pair flips 23/432 = 5.32% (|ΔSR| 0.69pp; 5.08% after dropping B-2002-touched, grid-order and B-2003 tasks).
 
 **Not on disk / unavailable.** Several pre-protocol-reset replicate directories referenced in May
-planning are empty (`phase0b_noise_floor.md`); per-step artifacts exist only for A100 runs; the B1
-shopping SoM rerun is partial (283/435 episodes as of 2026-09-24, partial, unregistered).
+planning are empty (`phase0b_noise_floor.md`); per-step artifacts exist only for A100 runs.
 
-**In flight (2026-10-08, A100).** A chain relaunched 2026-10-07 17:37 UTC: B2 classifieds SoM (≈134/233
-done at 07:24 UTC 10-08, SR ≈3%, matching the canonical 2.2%) → B2 classifieds Vision → B1 shopping SoM
-rerun (resume) → B2 reddit DOM. These are reruns that would add rerun coverage to cls_B2 and shop_B1.
+**In flight (2026-10-10, A100).** The chain relaunched 2026-10-07 landed its first three cells (B2
+classifieds SoM and Vision, B1 shopping SoM resumed to 435/435), registered 2026-10-10. Its fourth cell,
+B2 reddit DOM, started 2026-10-10 13:43 UTC; it would add a first rerun to red_B2.
 
 ---
 
@@ -455,8 +456,9 @@ at an unknown step is treated as an interval.
 - Cited cause of API variation: inference nondeterminism even at temperature 0 (batch-invariance
   literature). Local greedy B1 is deterministic on classifieds Vision/SoM but not on WA-reddit.
 - Rerun flips (`rerun_flip_failure_anatomy.md`): failure bucket of tasks failing in both runs agrees
-  72.4% (κ = 0.62 pooled; 0.36–0.63 on stochastic arms); flipping runs share a median ~4% of their
-  prefix (part from early steps).
+  70.4% over 27 pairs (κ = 0.60 pooled, between the pre-declared thresholds, so no verdict; it was 0.62
+  over 24 pairs and cleared 0.6 mainly through zero-flip local pairs; 0.36–0.63 on stochastic arms);
+  flipping runs share a median ~3% of their prefix (part from early steps).
 - 20 of 25 behaviour metrics have a cross-mode spread larger than their rerun band on cls_B0
   (`replicate_metric_noise.md`).
 - "Retry vs switch" (`retry_vs_switch_label_supply.md`): at the one-arm margin on cls_B0, adding a

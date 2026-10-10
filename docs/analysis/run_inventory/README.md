@@ -51,7 +51,7 @@ paths. Without that, 17,722 directories were silently unlistable.
 
 ## 2. What we have
 
-**131** unique conditions; **87 full runs** (see `run_matrix.md`). Registry status, by the
+**133** unique conditions; **90 full runs** in the matrix (2026-10-10 regeneration; see `run_matrix.md`). Registry status, by the
 matrix's tag (`status_tag()` in `run_inventory_report.py`: manifest section first, then
 `CLEAN_PAIRS`; archive = archive-named or from `a100_archives`) — as of 2026-10-06 after §529.4 / §531.5:
 

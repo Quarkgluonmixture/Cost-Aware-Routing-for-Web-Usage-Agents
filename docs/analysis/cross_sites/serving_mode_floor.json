@@ -33,44 +33,49 @@
       ]
     },
     "local": {
-      "n_arms": 11,
+      "n_arms": 14,
       "floor_min_pct": 0.0,
       "floor_max_pct": 9.615384615384617,
-      "floor_mean_pct": 4.185792655620241,
-      "n_arms_powered": 5,
+      "floor_mean_pct": 3.7010158469518077,
+      "n_arms_powered": 6,
       "floor_min_powered_pct": 0.0,
       "floor_max_powered_pct": 9.615384615384617,
       "families": [
+        "Gemma",
         "Qwen"
       ],
       "sites": [
         "VWA-classifieds",
         "VWA-reddit",
+        "VWA-shopping",
         "WA-reddit"
       ],
       "sites_powered": [
         "VWA-classifieds",
+        "VWA-shopping",
         "WA-reddit"
       ],
       "cells": [
         "B1.cls",
         "B1.red",
-        "B1.wared"
+        "B1.shop",
+        "B1.wared",
+        "B2.cls"
       ]
     }
   },
   "separation": {
-    "p_one_sided_exact": 0.00014582492035715888,
-    "n_assignments": 2496144,
-    "n_at_least_as_extreme": 364,
+    "p_one_sided_exact": 3.3901178065937795e-05,
+    "n_assignments": 20058300,
+    "n_at_least_as_extreme": 680,
     "separated": false,
     "gap_pp": -4.68927624100038,
     "caveat": "arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test"
   },
   "separation_powered_only": {
-    "p_one_sided_exact": 0.003393665158371041,
-    "n_assignments": 6188,
-    "n_at_least_as_extreme": 21,
+    "p_one_sided_exact": 0.0015082956259426848,
+    "n_assignments": 18564,
+    "n_at_least_as_extreme": 28,
     "separated": false,
     "gap_pp": -2.2262220538082618,
     "caveat": "arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test"
@@ -451,6 +456,28 @@
       "weights": "open"
     },
     {
+      "label": "B1.shop.som",
+      "base": "B1",
+      "site": "shop",
+      "arm": "som",
+      "site_name": "VWA-shopping",
+      "floor_pct": 5.324074074074074,
+      "n": 432,
+      "sr_mean_pct": 7.986111111111111,
+      "sr_a": 0.0763888888888889,
+      "sr_b": 0.08333333333333333,
+      "d": 20.355,
+      "powered": true,
+      "self_drop_lo": 2.314814814814815,
+      "self_drop_hi": 3.009259259259259,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Qwen",
+      "arch": "dense 4B",
+      "name": "Qwen3-VL-4B",
+      "weights": "open"
+    },
+    {
       "label": "B1.wared.psom",
       "base": "B1",
       "site": "wared",
@@ -561,6 +588,28 @@
       "weights": "open"
     },
     {
+      "label": "B2.cls.vision",
+      "base": "B2",
+      "site": "cls",
+      "arm": "vision",
+      "site_name": "VWA-classifieds",
+      "floor_pct": 0.4464285714285714,
+      "n": 224,
+      "sr_mean_pct": 2.008928571428571,
+      "sr_a": 0.022321428571428572,
+      "sr_b": 0.017857142857142856,
+      "d": 2.655,
+      "powered": false,
+      "self_drop_lo": 0.0,
+      "self_drop_hi": 0.4464285714285714,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Gemma",
+      "arch": "dense 4B",
+      "name": "google/gemma-3-4b-it",
+      "weights": "open"
+    },
+    {
       "label": "B1.cls.vision",
       "base": "B1",
       "site": "cls",
@@ -603,6 +652,28 @@
       "arch": "dense 4B",
       "name": "Qwen3-VL-4B",
       "weights": "open"
+    },
+    {
+      "label": "B2.cls.som",
+      "base": "B2",
+      "site": "cls",
+      "arm": "som",
+      "site_name": "VWA-classifieds",
+      "floor_pct": 0.0,
+      "n": 224,
+      "sr_mean_pct": 2.232142857142857,
+      "sr_a": 0.022321428571428572,
+      "sr_b": 0.022321428571428572,
+      "d": 2.9499999999999997,
+      "powered": false,
+      "self_drop_lo": 0.0,
+      "self_drop_hi": 0.0,
+      "serving": "local",
+      "provider": "self-hosted bf16",
+      "family": "Gemma",
+      "arch": "dense 4B",
+      "name": "google/gemma-3-4b-it",
+      "weights": "open"
     }
   ],
   "confound_not_removed": "serving mode covaries with scale (235B/undisclosed vs 4B). A second API family removes the FAMILY explanation, not the SCALE one.",
@@ -612,6 +683,6 @@
   "coverage_gaps": [
     "B2 (local, Gemma) carries no replicate: at its SR (0.45-2.23%) d~1.8, far below the bar — the local group cannot be given a second family by measuring B2, which is a power limit, not a scheduling one",
     "B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)",
-    "the local group spans 3 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 2 — VWA-classifieds, WA-reddit. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone"
+    "the local group spans 4 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 3 — VWA-classifieds, VWA-shopping, WA-reddit. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone"
   ]
 }

@@ -334,13 +334,54 @@
         "chance": 0.33081285444234404,
         "kappa": 0.44774011299435035
       }
+    },
+    "B2.cls.som": {
+      "n": 224,
+      "groups": {
+        "both_fail": 219,
+        "both_success": 5
+      },
+      "q1": {
+        "n": 219,
+        "agreement": 0.6164383561643836,
+        "chance": 0.17353683200934092,
+        "kappa": 0.5358998940410717
+      }
+    },
+    "B2.cls.vision": {
+      "n": 224,
+      "groups": {
+        "both_fail": 219,
+        "both_success": 4,
+        "flip": 1
+      },
+      "q1": {
+        "n": 219,
+        "agreement": 0.5707762557077626,
+        "chance": 0.2164049957256938,
+        "kappa": 0.4522377734021606
+      }
+    },
+    "B1.shop.som": {
+      "n": 432,
+      "groups": {
+        "both_fail": 386,
+        "both_success": 23,
+        "flip": 23
+      },
+      "q1": {
+        "n": 386,
+        "agreement": 0.6424870466321243,
+        "chance": 0.3122634164675562,
+        "kappa": 0.48016004684297836
+      }
     }
   },
   "q1_pooled": {
-    "n": 3658,
-    "agreement": 0.7238928376161837,
-    "chance": 0.27912495691640754,
-    "kappa": 0.6169833245956902
+    "n": 4482,
+    "agreement": 0.7041499330655957,
+    "chance": 0.2621215687281826,
+    "kappa": 0.5990531036061414
   },
   "q1_strata_post_hoc": {
     "B0": {
@@ -348,60 +389,64 @@
       "kappa_median": 0.4644305884331529
     },
     "pairs with >= 5 flips": {
-      "pairs": 20,
-      "kappa_median": 0.52552846208092
+      "pairs": 21,
+      "kappa_median": 0.5198231168039036
     },
     "B1": {
-      "pairs": 11,
-      "kappa_median": 0.5943952802359883
+      "pairs": 12,
+      "kappa_median": 0.5903529616674488
     },
     "B5": {
       "pairs": 1,
       "kappa_median": 0.6092710594496183
+    },
+    "B2": {
+      "pairs": 2,
+      "kappa_median": 0.49406883372161614
     }
   },
   "q2": {
     "flip_failing_side": {
-      "max-steps-other": 49,
-      "early-finish/wrong-commit": 204,
+      "max-steps-other": 59,
+      "early-finish/wrong-commit": 212,
       "element-misground": 17,
       "visual-hijack/click-loop": 45,
-      "search-loop": 39,
+      "search-loop": 45,
       "error/noise": 3,
       "missing-context": 1
     },
     "both_fail_per_run": {
-      "element-misground": 755,
-      "visual-hijack/click-loop": 614,
-      "early-finish/wrong-commit": 3218,
-      "search-loop": 1109,
-      "max-steps-other": 1553,
-      "error/noise": 34,
-      "missing-context": 33
+      "element-misground": 923,
+      "visual-hijack/click-loop": 634,
+      "early-finish/wrong-commit": 3648,
+      "search-loop": 1478,
+      "max-steps-other": 2092,
+      "error/noise": 51,
+      "missing-context": 138
     }
   },
   "q3": {
     "both_fail": {
-      "n": 3658,
-      "share_apart_at_step0": 0.31875341716785127,
-      "median_first_divergence": 1.0
+      "n": 4482,
+      "share_apart_at_step0": 0.29562695225345825,
+      "median_first_divergence": 2.0
     },
     "flip": {
-      "n": 358,
-      "share_apart_at_step0": 0.4441340782122905,
+      "n": 382,
+      "share_apart_at_step0": 0.4476439790575916,
       "median_first_divergence": 1.0
     },
     "both_success": {
-      "n": 472,
-      "share_apart_at_step0": 0.21822033898305085,
-      "median_first_divergence": 2.0
+      "n": 504,
+      "share_apart_at_step0": 0.20833333333333334,
+      "median_first_divergence": 3.0
     }
   },
   "q4": {
-    "n": 358,
-    "median": 0.03571428571428571,
-    "share_below_0.25": 0.7625698324022346,
-    "share_at_or_above_0.75": 0.0223463687150838
+    "n": 382,
+    "median": 0.03333333333333333,
+    "share_below_0.25": 0.7670157068062827,
+    "share_at_or_above_0.75": 0.020942408376963352
   },
   "excluded_identity_or_missing": 0
 }

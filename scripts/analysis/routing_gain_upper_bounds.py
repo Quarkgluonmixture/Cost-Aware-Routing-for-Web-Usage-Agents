@@ -52,7 +52,7 @@ SEED = 7
 NOISE_JSON = REPO / "docs/analysis/cross_sites/noise_floor_inventory.json"
 OUT_MD = REPO / "docs/analysis/cross_sites/routing_gain_upper_bounds.md"
 OUT_JSON = REPO / "docs/analysis/cross_sites/routing_gain_upper_bounds.json"
-LABEL_TO_CELL = {"cls": "cls", "red": "red", "wared": "wared"}
+LABEL_TO_CELL = {"cls": "cls", "red": "red", "wared": "wared", "shop": "shop"}
 
 
 def group_folds(groups: np.ndarray) -> list[np.ndarray]:

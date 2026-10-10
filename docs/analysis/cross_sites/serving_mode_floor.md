@@ -17,13 +17,13 @@ Until a second API-served backbone landed (2026-08-21) this question could not b
 | serving | arms | families | sites | floor range | powered arms (d≥10) |
 |---|---|---|---|---|---|
 | **API** | 13 | OpenAI, Qwen | 2 | **4.93–14.29%** | 12 (7.39–14.29%) |
-| **local** | 11 | Qwen | 3 | **0.00–9.62%** | 5 (0.00–9.62%) |
+| **local** | 14 | Gemma, Qwen | 4 | **0.00–9.62%** | 6 (0.00–9.62%) |
 
 The groups **overlap**.
 
-Exact one-sided rank test on a perfect split: **p = 0.0001** (364/2496144 assignments at least this extreme). ⚠️ arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test.
+Exact one-sided rank test on a perfect split: **p = 0.0000** (680/20058300 assignments at least this extreme). ⚠️ arms within a cell are not independent (shared site, backbone, task universe); descriptive separation statistic, NOT a gateable test.
 
-Restricted to arms carrying an interval (d≥10): separated=**False**, p = 0.0034, gap -2.23pp.
+Restricted to arms carrying an interval (d≥10): separated=**False**, p = 0.0015, gap -2.23pp.
 
 ## 2. Every arm, with its power
 
@@ -46,17 +46,20 @@ Restricted to arms carrying an interval (d≥10): separated=**False**, p = 0.003
 | local | `Qwen3-VL-4B` | dense 4B | WA-reddit | `pprompt` | 104 | 16.83% | **8.65%** | 10.3 | yes |
 | local | `Qwen3-VL-4B` | dense 4B | WA-reddit | `som` | 104 | 12.02% | **6.73%** | 7.4 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | WA-reddit | `ptext` | 104 | 18.27% | **5.77%** | 11.2 | yes |
+| local | `Qwen3-VL-4B` | dense 4B | VWA-shopping | `som` | 432 | 7.99% | **5.32%** | 20.4 | yes |
 | local | `Qwen3-VL-4B` | dense 4B | WA-reddit | `psom` | 104 | 12.98% | **4.81%** | 8.0 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-reddit | `dom` | 203 | 5.67% | **3.45%** | 6.8 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-classifieds | `dom` | 224 | 6.47% | **3.12%** | 8.6 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-reddit | `som` | 203 | 6.90% | **1.97%** | 8.3 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | WA-reddit | `vision` | 104 | 10.58% | **1.92%** | 6.5 | **no — inventory only** |
+| local | `google/gemma-3-4b-it` | dense 4B | VWA-classifieds | `vision` | 224 | 2.01% | **0.45%** | 2.7 | **no — inventory only** |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-classifieds | `vision` | 224 | 12.50% | **0.00%** | 16.5 | yes |
 | local | `Qwen3-VL-4B` | dense 4B | VWA-classifieds | `som` | 224 | 14.29% | **0.00%** | 18.9 | yes |
+| local | `google/gemma-3-4b-it` | dense 4B | VWA-classifieds | `som` | 224 | 2.23% | **0.00%** | 2.9 | **no — inventory only** |
 
 ## 3. What this does and does not license
 
-**Retracted — the serving-path grouping does not hold.** 4 local arm(s) sit at or above the lowest API floor (4.93%): WA-reddit `dom` 9.62%, WA-reddit `pprompt` 8.65%, WA-reddit `som` 6.73% (inventory), WA-reddit `ptext` 5.77%. The rule was declared before these replicates ran (`docs/checkpoints/pre_run/local_replicate_chain_launch_intent_20260915.md`, Reading 1: any powered local arm ≥ the API lower edge ⇒ the claim is dead as stated, retracted rather than hedged). What survives is the per-arm table in §2: floors differ by cell — benchmark/workload × backbone — and a two-group summary by serving path is not supported.
+**Retracted — the serving-path grouping does not hold.** 5 local arm(s) sit at or above the lowest API floor (4.93%): WA-reddit `dom` 9.62%, WA-reddit `pprompt` 8.65%, WA-reddit `som` 6.73% (inventory), WA-reddit `ptext` 5.77%, VWA-shopping `som` 5.32%. The rule was declared before these replicates ran (`docs/checkpoints/pre_run/local_replicate_chain_launch_intent_20260915.md`, Reading 1: any powered local arm ≥ the API lower edge ⇒ the claim is dead as stated, retracted rather than hedged). What survives is the per-arm table in §2: floors differ by cell — benchmark/workload × backbone — and a two-group summary by serving path is not supported.
 
 **Still true, narrower.** 实验笔记 §298.2: a controlled step-level probe on B1 (dense, local, temp=0) returned determinism 133/133 OK. The local group's near-zero floor is therefore not only a replicate-pair inference. That probe is on one VWA cell; it does not extend to the WA-reddit arms above.
 
@@ -65,7 +68,7 @@ Restricted to arms carrying an interval (d≥10): separated=**False**, p = 0.003
 **Coverage gaps.**
 - B2 (local, Gemma) carries no replicate: at its SR (0.45-2.23%) d~1.8, far below the bar — the local group cannot be given a second family by measuring B2, which is a power limit, not a scheduling one
 - B5 has no reddit replicate yet (_b5_reddit_chain.sh is armed for it)
-- the local group spans 3 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 2 — VWA-classifieds, WA-reddit. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone
+- the local group spans 4 site(s) only at INVENTORY grade: restricted to arms carrying an interval (d>=10.0) it covers 3 — VWA-classifieds, VWA-shopping, WA-reddit. Dropped at the bar: VWA-reddit. A cross-site claim about this group therefore rests on arms that were declared underpowered before they ran, and cannot be upgraded by pointing at the site count alone
 
 ## 4. Why it matters beyond this project
 
