@@ -5,29 +5,29 @@
 \toprule
 cells & policy & curve max ($p$) & deployable [5\%, 95\%] \\
 \midrule
-3 modes, 8 cells pooled & per-arm heads & +0.86 (0.072) & +0.23 [$-$2.20, +0.22] \\
+3 modes, 8 cells pooled & per-mode heads & +0.86 (0.072) & +0.23 [$-$2.20, +0.22] \\
  & triage & +1.69 (0.001) & +0.59 [$-$1.53, +1.23] \\
 \addlinespace[2pt]
-6 modes, 8 cells pooled & per-arm heads & +0.67 (0.252) & $-$0.38 [$-$3.20, $-$0.14] \\
+6 modes, 8 cells pooled & per-mode heads & +0.67 (0.252) & $-$0.38 [$-$3.20, $-$0.14] \\
  & triage & +1.24 (0.043) & $-$0.39 [$-$2.42, +0.81] \\
 \addlinespace[2pt]
-GPT-5.6, classifieds (5 modes) & per-arm heads & +0.45 (0.768) & $-$2.45 [$-$8.61, +4.24] \\
+GPT-5.6, classifieds (5 modes) & per-mode heads & +0.45 (0.768) & $-$2.45 [$-$8.61, +4.24] \\
  & triage & +3.86 (0.127) & $-$1.63 [$-$6.70, +5.74] \\
 \addlinespace[2pt]
-Shopping B0, clean (3 modes) & per-arm heads & +1.14 (0.062) & $-$0.18 [$-$2.45, +2.02] \\
+Shopping B0, clean (3 modes) & per-mode heads & +1.14 (0.062) & $-$0.18 [$-$2.45, +2.02] \\
  & triage & +0.20 (0.496) & $-$0.87 [$-$2.63, +1.37] \\
 \addlinespace[2pt]
-Shopping B0, all tasks (3 modes) & per-arm heads & +1.09 (0.049) & +1.30 [$-$2.31, +1.85] \\
+Shopping B0, all tasks (3 modes) & per-mode heads & +1.09 (0.049) & +1.30 [$-$2.31, +1.85] \\
  & triage & +0.18 (0.541) & $-$0.05 [$-$2.14, +1.45] \\
 \addlinespace[2pt]
-Shopping B1, clean (6 modes) & per-arm heads & +1.11 (0.143) & +0.56 [$-$4.69, +0.88] \\
+Shopping B1, clean (6 modes) & per-mode heads & +1.11 (0.143) & +0.56 [$-$4.69, +0.88] \\
  & triage & +1.63 (0.158) & +1.19 [$-$4.10, +1.57] \\
 \addlinespace[2pt]
-Shopping B1, all tasks (6 modes) & per-arm heads & +0.48 (0.169) & $-$0.43 [$-$2.78, +0.73] \\
+Shopping B1, all tasks (6 modes) & per-mode heads & +0.48 (0.169) & $-$0.43 [$-$2.78, +0.73] \\
  & triage & +0.69 (0.289) & +0.40 [$-$2.02, +2.02] \\
 \bottomrule
 \end{tabular}
-% six-arm pooled deployable rows: routing_gain_upper_bounds (its bootstrap ends are read as magnitudes, not as bounds)
+% six-mode pooled deployable rows: routing_gain_upper_bounds (its bootstrap ends are read as magnitudes, not as bounds)
 \caption{Routing gain over the fixed modes and their random mixtures, in success-rate points. \emph{Curve max}: the best point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, \texttt{routing\_extension\_cells}.}
 \label{tab:routing}
 \end{table*}

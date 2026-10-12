@@ -142,9 +142,9 @@ def fig_frontier():
     hx = [lo] + [h[0] for h in hull] + [hi]
     hy = [hull[0][1]] + [h[1] for h in hull] + [hull[-1][1]]
     ax.fill_between(hx, 0, hy, color=GRID, alpha=0.55, lw=0, zorder=0)
-    ax.plot(hx, hy, color=MUTED, lw=1.0, zorder=1, label="fixed arms + mixtures")
+    ax.plot(hx, hy, color=MUTED, lw=1.0, zorder=1, label="fixed modes + mixtures")
     # a threshold sweep is not monotone in cost, so its points are drawn unconnected
-    for k, col, mk, lab in (("six_head", INK2, "o", "per-arm heads (threshold sweep)"),
+    for k, col, mk, lab in (("six_head", INK2, "o", "per-mode heads (threshold sweep)"),
                             ("triage", INK, "x", "triage (threshold sweep)")):
         ax.scatter([c["cost"] * 100 for c in cell[k]["curve"]], [c["sr_pct"] for c in cell[k]["curve"]],
                    color=col, marker=mk, s=7 if mk == "o" else 9, lw=0.7, zorder=2, label=lab,
@@ -163,7 +163,7 @@ def fig_frontier():
 
     pf = three["pooled_frontier"]
     u = pf["u_grid"]
-    for k, col, ls, lab in (("six_head", INK2, "-", "per-arm heads"), ("triage", INK, "--", "triage")):
+    for k, col, ls, lab in (("six_head", INK2, "-", "per-mode heads"), ("triage", INK, "--", "triage")):
         bx.plot(u, pf[k]["mean_gain_pp"], color=col, lw=1.0, ls=ls, label=lab)
     bx.plot(u, pf["triage"]["null_pointwise_q95_pp"], color=SLOT[2], lw=0.8, ls=":",
             label="shuffle null, 95th pct (triage)")
@@ -277,7 +277,7 @@ def tab_sens():
          r"\begin{tabular}{@{}llrrrr@{}}", r"\toprule",
          r" & & \multicolumn{2}{c}{curve max ($p$)} & \multicolumn{2}{c}{deployable} \\",
          r"\cmidrule(lr){3-4}\cmidrule(l){5-6}",
-         r"cost & cells & per-arm & triage & per-arm & triage \\", r"\midrule"]
+         r"cost & cells & per-mode & triage & per-mode & triage \\", r"\midrule"]
     first = True
     for name, lab in (("routing_three_arm", "billed"), ("routing_three_arm_wallclock", "wall-clock"),
                       ("routing_three_arm_gpu_time", "GPU time")):
@@ -315,12 +315,12 @@ def tab_routing():
     six_dep = _load("routing_gain_upper_bounds")["pooled"]
     ext = {v["variant"]: v for v in _load("routing_extension_cells")["variants"]}
     rows = []
-    for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
+    for k, lab in (("six_head", "per-mode heads"), ("triage", "triage")):
         f = three["pooled_frontier"][k]
         d = three["pooled_deployable"][k]
         rows.append(("3 modes, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
                      f"{d['observed']:+.2f} [{d['lower05']:+.2f}, {d['upper95']:+.2f}]"))
-    for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
+    for k, lab in (("six_head", "per-mode heads"), ("triage", "triage")):
         f = six_fr[k]
         d = six_dep[k]
         rows.append(("6 modes, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
@@ -329,7 +329,7 @@ def tab_routing():
                       ("shop_B0_clean", "Shopping B0, clean (3 modes)"), ("shop_B0_all", "Shopping B0, all tasks (3 modes)"),
                       ("shop_B1_clean", "Shopping B1, clean (6 modes)"), ("shop_B1_all", "Shopping B1, all tasks (6 modes)")):
         v = ext[vid]
-        for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
+        for k, lab in (("six_head", "per-mode heads"), ("triage", "triage")):
             s = v["frontier"][k]["summary"]
             d = v["deployable"]
             rows.append((name, lab, f"{s['max_excess_pp']:+.2f} ({s['null_p']:.3f})",
@@ -344,7 +344,7 @@ def tab_routing():
         L.append(f"{cells if cells != last else ''} & {lab} & {_m(a)} & {_m(b)} \\\\")
         last = cells
     L += [r"\bottomrule", r"\end{tabular}",
-          r"% six-arm pooled deployable rows: routing_gain_upper_bounds (its bootstrap ends are read as magnitudes, not as bounds)",
+          r"% six-mode pooled deployable rows: routing_gain_upper_bounds (its bootstrap ends are read as magnitudes, not as bounds)",
           r"\caption{Routing gain over the fixed modes and their random mixtures, in success-rate points. \emph{Curve max}: the best "
           r"point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: "
           r"max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task "
