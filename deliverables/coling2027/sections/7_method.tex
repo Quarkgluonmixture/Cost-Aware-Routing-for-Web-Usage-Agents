@@ -1,12 +1,12 @@
 \section{A protocol for multi-representation claims}\label{sec:method}
 
-The three quantities of \S\ref{sec:intro} came apart because each was measured against its own control. We suggest four steps for any claim that choosing among several agent configurations per task would pay.
+We kept the three quantities of \S\ref{sec:intro} apart by measuring each against its own control. We suggest four steps for any claim that choosing among several agent configurations (\emph{arms}) per task would pay.
 
 \begin{enumerate}\setlength{\itemsep}{1pt}
   \item \textbf{Report reruns per arm and per cell}, not one flip rate for a whole study: in our data a rerun changes between 0 and 14\% of outcomes depending on arm and cell (Appendix~\ref{app:sixarm}).
   \item \textbf{Isolate the component of interest with a matched ablation} (here \SoM$-$\PSoM, which removes only the screenshot) before attributing a difference to it.
-  \item \textbf{Test for per-task structure against a null that conditions on difficulty}, and use a decision study to say how many runs per task make the label reliable. A hindsight ceiling from one run is not one a router can reach.
-  \item \textbf{Score a deployable policy, with its operating point chosen on training data, against the fixed arms and their random mixtures}, never only against the best single arm or a hindsight curve.
+  \item \textbf{Test for per-task structure against a null that conditions on difficulty}, and use a decision study to say how many runs per task make the label reliable. A router cannot reach a hindsight ceiling computed from one run.
+  \item \textbf{Choose the operating point on training data, and score the deployable policy against the fixed arms and their random mixtures}, never only against the best single arm or a hindsight curve.
 \end{enumerate}
 
-Applied here, the protocol says that the screenshot raises success most on a predictable class of classifieds tasks, and that per-task representation preferences are reproducible but single-run labels measure them with a reliability of only 0.31--0.50; over six modes those labels also flip most where the choice can change success, as the additive difficulty model predicts, which is the sense in which routing is least learnable where it is most valuable. With single-run labels and pre-flight features, the routers we tested do not reliably beat choosing one representation, or a fixed mixture, for the whole workload.
+Applied here, the protocol says that the screenshot raises success most on a predictable class of classifieds tasks. It also says that per-task representation preferences are reproducible but single-run labels measure them with a reliability of only 0.31--0.50. Over six modes, those labels also flip most where the choice can change success, as the additive difficulty model predicts. In this sense routing is least learnable where it is most valuable. With single-run labels and pre-run features, the routers we tested do not reliably beat choosing one representation, or a fixed mixture, for the whole workload.

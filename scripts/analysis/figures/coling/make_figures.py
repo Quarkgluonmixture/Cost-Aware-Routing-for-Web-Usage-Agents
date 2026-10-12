@@ -209,7 +209,7 @@ def tab_cells():
     assert all(len(d) == 1 for d in drop), drop   # one filter definition for both clean sets
     n_grid, n_wish = (d.pop() for d in drop)
     L += [r"\bottomrule", r"\end{tabular}",
-          r"\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment arms. "
+          r"\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment modes. "
           r"B0 and GPT-5.6 (B5) costs are API charges computed from token counts and per-token prices; B1 and B2 "
           r"costs are token-priced estimates for local serving, comparable within a cell only. Shopping: clean = "
           r"tasks on which the search-box defect fired in no mode, also excluding the "
@@ -262,7 +262,7 @@ def tab_sixmode():
         L.append(f"{name} & {c.get('n_tasks') or ''} & " + " & ".join(vals) + r" \\")
     L += [r"\bottomrule", r"\end{tabular}",
           r"\caption{Success rate (\%) of all six observation modes per cell (Appendix~\ref{app:modes}); "
-          r"$^\dagger$ marks an arm with a registered same-condition rerun (Appendix~\ref{app:sixarm}). "
+          r"$^\dagger$ marks a mode with a registered same-condition rerun (Appendix~\ref{app:sixarm}). "
           r"Shopping B0 was not run with P-prompt, P-text or \PSoM; GPT-5.6 Vision is excluded; shopping rows as in "
           r"Table~\ref{tab:cells}. Sources: \texttt{representation\_routing\_frontier}, "
           r"\texttt{routing\_extension\_cells}, \texttt{noise\_floor\_inventory}.}",
@@ -318,16 +318,16 @@ def tab_routing():
     for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
         f = three["pooled_frontier"][k]
         d = three["pooled_deployable"][k]
-        rows.append(("3 arms, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
+        rows.append(("3 modes, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
                      f"{d['observed']:+.2f} [{d['lower05']:+.2f}, {d['upper95']:+.2f}]"))
     for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
         f = six_fr[k]
         d = six_dep[k]
-        rows.append(("6 arms, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
+        rows.append(("6 modes, 8 cells pooled", lab, f"+{f['max_pp']:.2f} ({f['null_p']:.3f})",
                      f"{d['observed']:+.2f} [{d['lower05']:+.2f}, {d['upper95']:+.2f}]"))
-    for vid, name in (("cls_B5", "GPT-5.6, classifieds (5 arms)"),
-                      ("shop_B0_clean", "Shopping B0, clean (3 arms)"), ("shop_B0_all", "Shopping B0, all tasks (3 arms)"),
-                      ("shop_B1_clean", "Shopping B1, clean (6 arms)"), ("shop_B1_all", "Shopping B1, all tasks (6 arms)")):
+    for vid, name in (("cls_B5", "GPT-5.6, classifieds (5 modes)"),
+                      ("shop_B0_clean", "Shopping B0, clean (3 modes)"), ("shop_B0_all", "Shopping B0, all tasks (3 modes)"),
+                      ("shop_B1_clean", "Shopping B1, clean (6 modes)"), ("shop_B1_all", "Shopping B1, all tasks (6 modes)")):
         v = ext[vid]
         for k, lab in (("six_head", "per-arm heads"), ("triage", "triage")):
             s = v["frontier"][k]["summary"]
@@ -345,7 +345,7 @@ def tab_routing():
         last = cells
     L += [r"\bottomrule", r"\end{tabular}",
           r"% six-arm pooled deployable rows: routing_gain_upper_bounds (its bootstrap ends are read as magnitudes, not as bounds)",
-          r"\caption{Routing gain over the fixed arms and their random mixtures, in success-rate points. \emph{Curve max}: the best "
+          r"\caption{Routing gain over the fixed modes and their random mixtures, in success-rate points. \emph{Curve max}: the best "
           r"point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: "
           r"max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task "
           r"bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, "
