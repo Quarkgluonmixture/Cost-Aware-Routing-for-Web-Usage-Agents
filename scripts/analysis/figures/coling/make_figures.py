@@ -55,7 +55,7 @@ def fig_deploy():
     rows = [("cls_B5", ext["cls_B5"])] + [(k, three[k]) for k in ("cls_B0", "cls_B1", "cls_B2")] + \
            [(k, three[k]) for k in ("red_B0", "red_B1", "red_B2", "wared_B0", "wared_B1")] + \
            [("shop_B0", ext["shop_B0_clean"]), ("shop_B1", ext["shop_B1_clean"])]
-    fig, ax = plt.subplots(figsize=(COLW, 2.9))
+    fig, ax = plt.subplots(figsize=(COLW, 2.25), layout="constrained")   # labels inside COLW: text prints at ~7pt
     for y, (cell, fm) in enumerate(reversed(rows)):
         ax.axhline(y, color=GRID, lw=0.4, zorder=0)
         for arm, (col, mk) in ARM_STYLE.items():
@@ -64,7 +64,7 @@ def fig_deploy():
                            edgecolors="#fcfcfb", linewidths=0.6, label=arm if y == 0 else None)
         if "Vision" not in fm:
             ax.text(max(fm[a]["sr_pct"] for a in fm if a in ARM_STYLE) + 2.0, y, "(Vision n/a)",
-                    va="center", fontsize=6, color=MUTED)
+                    va="center", fontsize=6.5, color=MUTED)
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels([_pretty(c) + (" (clean)" if c.startswith("shop") else "") for c, _ in reversed(rows)])
     ax.set_xlabel("success rate (%)")
@@ -75,7 +75,7 @@ def fig_deploy():
     order = [l.index(a) for a in ARM_STYLE if a in l]
     ax.legend([h[i] for i in order], [l[i] for i in order], frameon=False, ncol=3, loc="lower center",
               bbox_to_anchor=(0.45, 1.0), handletextpad=0.2, columnspacing=1.0)
-    fig.savefig(OUT / "fig_deploy.pdf")
+    fig.savefig(OUT / "fig_deploy.pdf", pad_inches=0.02)   # default 0.1in padding shrinks the text again
     plt.close(fig)
 
 
@@ -85,7 +85,7 @@ def fig_screenshot():
             ("cls_B0", "VWA-classifieds · B0"), ("cls_B0_rerun", "VWA-classifieds · B0 (rerun)"),
             ("cls_B5", "VWA-classifieds · B5"), ("red_B1", "VWA-reddit · B1"),
             ("red_B0", "VWA-reddit · B0"), ("red_B0_rerun", "VWA-reddit · B0 (rerun)")]
-    fig, ax = plt.subplots(figsize=(COLW, 2.5))
+    fig, ax = plt.subplots(figsize=(COLW, 2.1), layout="constrained")
     for y, (key, lab) in enumerate(reversed(rows)):
         r = ext[key]["som-psom"]
         for part, col, mk, dy in (("flagged", SLOT[1], "o", 0.14), ("rest", SLOT[2], "D", -0.14)):
@@ -101,7 +101,7 @@ def fig_screenshot():
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
     ax.legend(frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.4, 1.0), handletextpad=0.2)
-    fig.savefig(OUT / "fig_screenshot.pdf")
+    fig.savefig(OUT / "fig_screenshot.pdf", pad_inches=0.02)
     plt.close(fig)
 
 
@@ -155,7 +155,7 @@ def fig_frontier():
         ax.annotate(arm, (fm[arm]["cost"] * 100, fm[arm]["sr_pct"]), xytext=(3, -8 if arm == "Vision" else 3),
                     textcoords="offset points", fontsize=6.5, color=INK2)
     ax.set_xlim(lo, hi)
-    ax.set_ylim(14, 33.5)
+    ax.set_ylim(14, 36.5)   # headroom above the highest sweep point (29) for the legend
     ax.set_xlabel("mean cost per task (US cents)")
     ax.set_ylabel("success rate (%)")
     ax.set_title("(a) VWA-classifieds · B0, out-of-fold curves", fontsize=7.5, color=INK2, loc="left")
