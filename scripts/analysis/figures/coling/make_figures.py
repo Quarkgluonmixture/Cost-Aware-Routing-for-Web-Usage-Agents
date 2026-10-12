@@ -204,10 +204,16 @@ def tab_cells():
         if k == "cls_B5":
             L.append(r"\addlinespace[2pt]")
         L.append(f"{name} & {n} & " + " & ".join(cells) + r" \\")
+    drop = {ext[k]["dropped"]["grid_order_tasks"] for k in ("shop_B0_clean", "shop_B1_clean")}, \
+           {ext[k]["dropped"]["b2003_tasks"] for k in ("shop_B0_clean", "shop_B1_clean")}
+    assert all(len(d) == 1 for d in drop), drop   # one filter definition for both clean sets
+    n_grid, n_wish = (d.pop() for d in drop)
     L += [r"\bottomrule", r"\end{tabular}",
           r"\caption{Success rate (\%) and mean billed cost per task (US cents) of the three deployment arms. "
-          r"B0 and GPT-5.6 (B5) costs are API invoices; B1 and B2 are token-priced estimates for local "
-          r"serving, comparable within a cell only. Shopping: clean = tasks on which the search-box defect fired in no mode "
+          r"B0 and GPT-5.6 (B5) costs are API charges computed from token counts and per-token prices; B1 and B2 "
+          r"costs are token-priced estimates for local serving, comparable within a cell only. Shopping: clean = "
+          r"tasks on which the search-box defect fired in no mode, also excluding the "
+          f"{n_grid} grid-order-sensitive and {n_wish} wishlist tasks "
           r"(Appendix~\ref{app:harness}), all = every scored task; "
           r"GPT-5.6 Vision is excluded. Sources: \texttt{routing\_three\_arm}, \texttt{routing\_extension\_cells}.}",
           r"\label{tab:cells}", r"\end{table}"]
@@ -257,7 +263,7 @@ def tab_sixmode():
     L += [r"\bottomrule", r"\end{tabular}",
           r"\caption{Success rate (\%) of all six observation modes per cell (Appendix~\ref{app:modes}); "
           r"$^\dagger$ marks an arm with a registered same-condition rerun (Appendix~\ref{app:sixarm}). "
-          r"Shopping B0 has no screenshot-free text variants; GPT-5.6 Vision is excluded; shopping rows as in "
+          r"Shopping B0 was not run with P-prompt, P-text or \PSoM; GPT-5.6 Vision is excluded; shopping rows as in "
           r"Table~\ref{tab:cells}. Sources: \texttt{representation\_routing\_frontier}, "
           r"\texttt{routing\_extension\_cells}, \texttt{noise\_floor\_inventory}.}",
           r"\label{tab:sixmode}", r"\end{table*}"]
@@ -330,7 +336,7 @@ def tab_routing():
                          f"{d['observed'][k]:+.2f} [{d['lower05'][k]:+.2f}, {d['upper95'][k]:+.2f}]"))
     L = [r"\begin{table*}[t]", r"\centering\small", r"\setlength{\tabcolsep}{6pt}",
          r"\begin{tabular}{@{}llrr@{}}", r"\toprule",
-         r"cells & policy & curve max (p) & deployable [5\%, 95\%] \\", r"\midrule"]
+         r"cells & policy & curve max ($p$) & deployable [5\%, 95\%] \\", r"\midrule"]
     last = None
     for cells, lab, a, b in rows:
         if last is not None and cells != last:
@@ -338,11 +344,12 @@ def tab_routing():
         L.append(f"{cells if cells != last else ''} & {lab} & {_m(a)} & {_m(b)} \\\\")
         last = cells
     L += [r"\bottomrule", r"\end{tabular}",
-          r"\caption{Routing gain over the fixed arms and their random mixtures, in SR points. \emph{Curve max}: the best "
+          r"% six-arm pooled deployable rows: routing_gain_upper_bounds (its bootstrap ends are read as magnitudes, not as bounds)",
+          r"\caption{Routing gain over the fixed arms and their random mixtures, in success-rate points. \emph{Curve max}: the best "
           r"point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: "
           r"max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task "
           r"bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, "
-          r"\texttt{routing\_gain\_upper\_bounds}, \texttt{routing\_extension\_cells}.}",
+          r"\texttt{routing\_extension\_cells}.}",
           r"\label{tab:routing}", r"\end{table*}"]
     (OUT.parent / "tables").mkdir(exist_ok=True)
     (OUT.parent / "tables" / "tab_routing.tex").write_text("\n".join(L) + "\n", encoding="utf-8")

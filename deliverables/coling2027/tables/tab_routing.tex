@@ -3,7 +3,7 @@
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{@{}llrr@{}}
 \toprule
-cells & policy & curve max (p) & deployable [5\%, 95\%] \\
+cells & policy & curve max ($p$) & deployable [5\%, 95\%] \\
 \midrule
 3 arms, 8 cells pooled & per-arm heads & +0.86 (0.072) & +0.23 [$-$2.20, +0.22] \\
  & triage & +1.69 (0.001) & +0.59 [$-$1.53, +1.23] \\
@@ -27,6 +27,7 @@ Shopping B1, all tasks (6 arms) & per-arm heads & +0.48 (0.169) & $-$0.43 [$-$2.
  & triage & +0.69 (0.289) & +0.40 [$-$2.02, +2.02] \\
 \bottomrule
 \end{tabular}
-\caption{Routing gain over the fixed arms and their random mixtures, in SR points. \emph{Curve max}: the best point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, \texttt{routing\_gain\_upper\_bounds}, \texttt{routing\_extension\_cells}.}
+% six-arm pooled deployable rows: routing_gain_upper_bounds (its bootstrap ends are read as magnitudes, not as bounds)
+\caption{Routing gain over the fixed arms and their random mixtures, in success-rate points. \emph{Curve max}: the best point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, \texttt{routing\_extension\_cells}.}
 \label{tab:routing}
 \end{table*}

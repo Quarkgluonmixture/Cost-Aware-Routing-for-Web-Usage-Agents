@@ -79,6 +79,7 @@ PRODUCTS = [
     "representation_routing_frontier_gpu_time", "routing_gain_upper_bounds", "routing_extension_cells",
     "routing_crossrun_template_validation", "task_mode_interaction_null", "visual_intent_routing",
     "fusion_premium", "leakage_sensitivity", "noise_floor_inventory", "reddit_sidebar_leakage_audit_with_wa",
+    "label_instability", "offsite_navigation_audit", "dispatch_path_audit",
 ]
 ENTRY_SCRIPTS = [
     "scripts/analysis/routing_three_arm.py", "scripts/analysis/representation_routing_frontier.py",
@@ -86,6 +87,8 @@ ENTRY_SCRIPTS = [
     "scripts/analysis/routing_crossrun_template_validation.py", "scripts/analysis/task_mode_interaction_null.py",
     "scripts/analysis/visual_intent_routing.py", "scripts/analysis/aggregate_noise_floor_inventory.py",
     "scripts/analysis/figures/coling/make_figures.py",
+    "scripts/analysis/aggregate_label_instability.py", "scripts/analysis/offsite_navigation_audit.py",
+    "scripts/analysis/dispatch_path_audit.py",
 ]
 MODE_FILE = {"DOM": "dom", "SoM": "som", "Vision": "vision", "P-text": "phantom_text",
              "P-prompt": "phantom_prompt", "P-SoM": "phantom_som"}
@@ -280,7 +283,7 @@ def export_code() -> int:
     return len(seen)
 
 
-README = """# Supplementary material — Text, Screenshots, or Both? Representation Value and Task Routing in Web Agents
+README = """# Supplementary material — Routing Is Least Learnable Where It Is Most Valuable: Bounds on Representation Routing for Web Agents
 
 Anonymous supplement for review. Everything the paper's numbers are computed from is here except
 the raw trajectories (screenshots and page text, too large; released with the camera-ready version).
@@ -319,10 +322,13 @@ the raw trajectories (screenshots and page text, too large; released with the ca
 | Fig. {fig_screenshot}, §4 | `visual_intent_routing` (extension section) |
 | §5, Fig. {fig_dstudy} | `routing_three_arm` (`null_cells`); six modes: `task_mode_interaction_null` |
 | §5 persistence | `routing_crossrun_template_validation` |
-| Fig. {fig_frontier}, Table {tab_routing} | `routing_three_arm`, `representation_routing_frontier`, `routing_gain_upper_bounds`, `routing_extension_cells` |
+| §5 label changes where the choice can change success (six modes) | `label_instability` (`strata`, `by_cell`: arms-disagree and complement rows); null reading: `task_mode_interaction_null` (`cells[].null.enrichment`, `cells[].null.contested_flip_rate`) |
+| Fig. {fig_frontier}, Table {tab_routing} | `routing_three_arm`, `representation_routing_frontier`, `routing_extension_cells`; six-arm deployable rows: `routing_gain_upper_bounds` (its 5%/95% bootstrap ends are read as magnitudes, not as bounds) |
 | Table {tab_sens} (sensitivity) | `routing_three_arm`, `_wallclock`, `_gpu_time` |
 | rerun range 0–14% | `noise_floor_inventory` |
 | reddit inherited state | `reddit_sidebar_leakage_audit_with_wa` |
+| §2 Vision clicks by coordinates | `dispatch_path_audit` |
+| Ethics: episodes that reached live public pages | `offsite_navigation_audit` |
 
 Figures and tables are regenerated from the products by `code/scripts/analysis/figures/coling/make_figures.py`.
 
