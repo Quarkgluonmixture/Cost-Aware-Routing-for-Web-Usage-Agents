@@ -11,3 +11,5 @@
 # anonymous supplement (rebuild: scripts/release/build_coling_supplement.py)
 supplement/
 coling2027_supplement.zip
+coling2027_software.zip
+coling2027_data.zip

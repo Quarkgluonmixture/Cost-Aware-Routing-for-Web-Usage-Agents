@@ -215,7 +215,8 @@ def tab_cells():
           r"tasks on which the search-box defect fired in no mode, also excluding the "
           f"{n_grid} grid-order-sensitive and {n_wish} wishlist tasks "
           r"(Appendix~\ref{app:harness}), all = every scored task; "
-          r"GPT-5.6 Vision is excluded. Sources: \texttt{routing\_three\_arm}, \texttt{routing\_extension\_cells}.}",
+          r"GPT-5.6 Vision is excluded.}",
+          r"% sources: routing_three_arm, routing_extension_cells",
           r"\label{tab:cells}", r"\end{table}"]
     (OUT.parent / "tables" / "tab_cells.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
 
@@ -264,8 +265,8 @@ def tab_sixmode():
           r"\caption{Success rate (\%) of all six observation modes per cell (Appendix~\ref{app:modes}); "
           r"$^\dagger$ marks a mode with a registered same-condition rerun (Appendix~\ref{app:sixarm}). "
           r"Shopping B0 was not run with P-prompt, P-text or \PSoM; GPT-5.6 Vision is excluded; shopping rows as in "
-          r"Table~\ref{tab:cells}. Sources: \texttt{representation\_routing\_frontier}, "
-          r"\texttt{routing\_extension\_cells}, \texttt{noise\_floor\_inventory}.}",
+          r"Table~\ref{tab:cells}.}",
+          r"% sources: representation_routing_frontier, routing_extension_cells, noise_floor_inventory",
           r"\label{tab:sixmode}", r"\end{table*}"]
     (OUT.parent / "tables" / "tab_sixmode.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
 
@@ -296,8 +297,8 @@ def tab_sens():
     L += [r"\bottomrule", r"\end{tabular}",
           r"\caption{Three-mode routing pooled over cells under three cost bases, with and without the weakest "
           r"backbone (B2). GPU time exists only for the locally served B1 and B2. Curve max: best point after "
-          r"seeing test outcomes, with its label-shuffle $p$; deployable: operating point chosen on training folds. "
-          r"Sources: \texttt{routing\_three\_arm} and its \texttt{\_wallclock}, \texttt{\_gpu\_time} siblings.}",
+          r"seeing test outcomes, with its label-shuffle $p$; deployable: operating point chosen on training folds.}",
+          r"% sources: routing_three_arm, routing_three_arm_wallclock, routing_three_arm_gpu_time",
           r"\label{tab:sens}", r"\end{table}"]
     (OUT.parent / "tables" / "tab_sens.tex").write_text("\n".join(L) + "\n", encoding="utf-8")
 
@@ -348,8 +349,8 @@ def tab_routing():
           r"\caption{Routing gain over the fixed modes and their random mixtures, in success-rate points. \emph{Curve max}: the best "
           r"point of an out-of-fold curve, chosen after seeing test outcomes, with its label-shuffle $p$ (pooled rows: "
           r"max over a normalised budget). \emph{Deployable}: the operating point chosen on training folds only, task "
-          r"bootstrap. Sources: \texttt{routing\_three\_arm}, \texttt{representation\_routing\_frontier}, "
-          r"\texttt{routing\_extension\_cells}.}",
+          r"bootstrap.}",
+          r"% sources: routing_three_arm, representation_routing_frontier, routing_extension_cells",
           r"\label{tab:routing}", r"\end{table*}"]
     (OUT.parent / "tables").mkdir(exist_ok=True)
     (OUT.parent / "tables" / "tab_routing.tex").write_text("\n".join(L) + "\n", encoding="utf-8")

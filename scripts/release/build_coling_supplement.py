@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Build the anonymous supplementary material for the COLING 2027 (ARR October 2026) submission.
 
-Writes deliverables/coling2027/supplement/ and deliverables/coling2027/coling2027_supplement.zip
-(both gitignored; rebuild with this script). Contents:
+Writes deliverables/coling2027/supplement/ and two archives, as the ARR form takes software and data
+separately (one .zip each, at most 200MB): coling2027_software.zip (code/, prompts/, configs/) and
+coling2027_data.zip (data/, products/), both with the README (all gitignored; rebuild with this
+script). Contents:
 
   data/episodes.csv   one row per (cell, mode, run, task): success, cost in USD, wall-clock and
                       GPU seconds — the inputs every routing / null-model product reads
@@ -46,7 +48,9 @@ from scripts.analysis.lib.replicate_pairs import clean_pairs  # noqa: E402
 from scripts.analysis.routing_crossrun_template_validation import templates  # noqa: E402
 
 OUT = REPO / "deliverables/coling2027/supplement"
-ZIP = REPO / "deliverables/coling2027/coling2027_supplement.zip"
+ZIPS = {REPO / "deliverables/coling2027/coling2027_software.zip": ("code", "prompts", "configs", "README.md"),
+        REPO / "deliverables/coling2027/coling2027_data.zip": ("data", "products", "README.md")}
+ZIP_MAX_MB = 200   # ARR limit per archive
 CS = REPO / "docs/analysis/cross_sites"
 PAPER = REPO / "deliverables/coling2027"
 # README labels -> LaTeX \label keys. Numbers are read from main.aux, never typed: inserting a
@@ -100,7 +104,9 @@ PAIR_SITE = {"cls": ("visualwebarena", "classifieds"), "red": ("visualwebarena",
 # Identity tokens: the build fails if any survives redaction (case-insensitive).
 BANNED = ["quarkgluon", "quark", "jiaming", "ucab352", "ucl.ac.uk", "condenser", "spark-9ea3",
           "administrator", "wubbalabbadubdub", "i5xpracyci", "amazonaws.com/model-api", "holistic", "zekun",
-          "/home/ubuntu", "c:\\users", "c:/users", "c:\\workspace", "c:/workspace", "e:\\", "a100-"]
+          "/home/ubuntu", "c:\\users", "c:/users", "c:\\workspace", "c:/workspace", "e:\\", "a100-",
+          # co-author surnames and handles (not bare "ortiz": it matches "amortization")
+          "koshiyama", "perez-ortiz", "adriano", "wu981526092"]
 REDACT = [
     (re.compile(r"https?://[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com\S*", re.I), "<redacted-api-endpoint>"),
     (re.compile(re.escape(str(REPO)).replace(r"\\", r"[\\/]"), re.I), "<repo>"),
@@ -312,6 +318,9 @@ the raw trajectories (screenshots and page text, too large; released with the ca
 - `code/` — the producer scripts and their in-repository imports. They read the raw run
   directories, which are not included; `data/` holds the per-episode values they extract.
 
+The software archive holds `code/`, `prompts/` and `configs/`; the data archive holds `data/` and
+`products/`. This README is in both.
+
 ## Where each number comes from
 
 | paper | product |
@@ -367,14 +376,23 @@ def main() -> int:
     if hits:
         print("ANONYMITY SCAN FAILED:", *hits[:40], sep="\n  ", file=sys.stderr)
         return 1
-    if ZIP.exists():
-        ZIP.unlink()
-    with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as z:
-        for f in sorted(OUT.rglob("*")):
-            if f.is_file():
-                z.write(f, Path("supplement") / f.relative_to(OUT))
+    sizes = []
+    for zp, parts in ZIPS.items():
+        if zp.exists():
+            zp.unlink()
+        with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
+            for part in parts:
+                src = OUT / part
+                for f in ([src] if src.is_file() else sorted(src.rglob("*"))):
+                    if f.is_file():
+                        z.write(f, Path("supplement") / f.relative_to(OUT))
+        mb = zp.stat().st_size / 1e6
+        if mb > ZIP_MAX_MB:
+            print(f"{zp.name} is {mb:.1f} MB, over the ARR limit of {ZIP_MAX_MB} MB", file=sys.stderr)
+            return 1
+        sizes.append(f"{zp.name} {mb:.1f} MB")
     print(f"episodes {stats['episodes']} (reruns {stats['rerun_rows']}), tasks {stats['tasks']}, cells {stats['cells']}; "
-          f"prompts {n_prompts}, configs {n_cfg}, products {n_prod}, code {n_code}; zip {ZIP.stat().st_size / 1e6:.1f} MB",
+          f"prompts {n_prompts}, configs {n_cfg}, products {n_prod}, code {n_code}; " + ", ".join(sizes),
           file=sys.stderr)
     return 0
 
