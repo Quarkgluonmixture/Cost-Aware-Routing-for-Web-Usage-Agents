@@ -1,5 +1,15 @@
 \section{Introduction}\label{sec:intro}
 
+% Pinned to the top of page 2: a figure* can only float to a later page than the one it is declared on,
+% and the title block owns page 1, so declaring it here on page 1 puts it in the first top slot of page 2.
+% Keep it [t]-only. Panels 1-2 of the REALM overview figure; built by scripts/analysis/figures/coling/make_fig_system.py
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{fig_system}
+\caption{The agent and its observation modes. \textbf{(1)} One model call per step returns a thought and a grounded action; the prompt holds the task, the current observation and the last $k{=}8$ steps. \textbf{(2)} The three deployment modes ground an action by element id (DOM), by numbered mark (\SoM) or by screen coordinates (Vision). Three further modes (\PSoM\ and two others; Appendix~\ref{app:modes}) withhold the page screenshot, as DOM does.}
+\label{fig:system}
+\end{figure*}
+
 Web agents can perceive a page in two standard ways that are complementary in principle: the page's text (an accessibility tree) is precise, and a screenshot shows what the text omits. A third option fuses them, overlaying numbered marks on the screenshot and listing the marked elements as text \citep{yang2023som,koh2024visualwebarena}. Practitioners typically pick one of the three for a whole deployment. We ask the question this choice raises: \emph{is the choice worth making per task, and can it be made?}
 
 Answering it requires keeping apart three quantities that a single leaderboard number merges:
