@@ -1,0 +1,26 @@
+\section{Other routing constructions}\label{app:otherrouters}
+
+Before settling on the two routers of \S\ref{sec:routing}, we tried the constructions in Table~\ref{tab:otherrouters}. They were exploratory: each was run offline on recorded runs, mostly with all six modes as the choice set, and none is corrected for multiple comparisons or carried into the main analysis. None selects modes better than the best fixed mode. The richer learners and the related-work adaptations fail on the same cell where the main routers fail, so the negative result of \S\ref{sec:routing} is not specific to logistic regression on 18 features.
+
+\begin{table*}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{0.36\textwidth}p{0.17\textwidth}p{0.40\textwidth}@{}}
+\toprule
+construction & cells & result \\
+\midrule
+Five learners (logistic regression, gradient boosting, random forest, calibrated linear SVM, one-hidden-layer MLP) $\times$ three feature sets (18 selected, all 50, raw features with full TF-IDF) & VWA-classifieds B0 & 15 of 15 below always-\SoM\ (27.23\%); best 25.45\% (logistic regression, 18 features), MLP 25.00\% \\
+RouteLLM-style $k$-nearest-neighbour vote, $k = 5, 10, 20$ \citep{ong2025routellm} & VWA-classifieds B0 & 26.79\%, 22.32\%, 21.43\% \\
+FrugalGPT-style cascade on output confidence \citep{chen2023frugalgpt} & VWA-classifieds B0 & reaches 27.23\% only at \$0.269 per task against \$0.072 for always-\SoM; 25.00\% at \$0.065 \\
+Escalation on step failure (DOM to Vision) or on task length (Vision to \SoM) & VWA-classifieds B0 & 23.66\% at \$0.107 and 25.89\% at \$0.108 \\
+Confidence cascade, Vision to \SoM & cells with both modes & beats always-\SoM\ in no cell \\
+Pooled cost-tier router & 6 cells & dominates the fixed modes in 0 of 6 \\
+Contextual bandit, replayed & 11 cells & below the best fixed mode in 11 of 11 \\
+Hand-written and mined rules & rules mined on one run & 0 of 20 keep their gain on the rerun \\
+One-step lookahead (choose after the first step) & 11 cells & largest gain +0.5 points, inside the rerun band \\
+GPT-5.6 prompted as a router (pilot) & 11 cells & no gain beyond the rerun band where one exists \\
+\bottomrule
+\end{tabular}
+\caption{Routing constructions tried before the two routers of \S\ref{sec:routing}. Success rates are on the 224 scored classifieds tasks. The language-model router is a pilot only: position bias in the prompt was not ablated, the B5 backbone routes for itself, and no significance test was run.}
+\label{tab:otherrouters}
+\end{table*}
