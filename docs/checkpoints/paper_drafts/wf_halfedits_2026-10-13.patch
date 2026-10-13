@@ -1,0 +1,384 @@
+diff --git a/scripts/analysis/figures/coling/make_figures.py b/scripts/analysis/figures/coling/make_figures.py
+index a36d7e62..ae18c081 100644
+--- a/scripts/analysis/figures/coling/make_figures.py
++++ b/scripts/analysis/figures/coling/make_figures.py
+@@ -3,7 +3,8 @@
+ 
+ Every plotted number comes from a product JSON under docs/analysis/cross_sites/; nothing is typed
+ here. Palette: the dataviz reference categorical slots 1-3 (validated 2026-10-08, light surface),
+-with marker shape as the second channel so identity never rests on colour alone.
++with marker shape as the second channel so identity never rests on colour alone. fig_dstudy's fourth
++cell (cls_B1, 2026-10-13) is drawn in ink, not slot 4: see DSTUDY_STYLE.
+ 
+   fig_deploy.pdf      success rate of the three deployment arms per cell (§1 of the frame)
+   fig_screenshot.pdf  image-only contrast SoM - P-SoM on rule-flagged vs other tasks (§2)
+@@ -31,6 +32,12 @@ OUT = REPO / "deliverables/coling2027/figures"
+ SLOT = {1: "#2a78d6", 2: "#eb6834", 3: "#1baf7a"}
+ INK, INK2, MUTED, GRID = "#0b0b0b", "#52514e", "#898781", "#e1e0d9"
+ ARM_STYLE = {"DOM": (SLOT[1], "o"), "SoM": (SLOT[2], "s"), "Vision": (SLOT[3], "^")}
++# fig_dstudy: style follows the cell, not its position in the product (2026-10-13, when cls_B1 joined
++# the three-arm null cells). The reference slot 4 (yellow #eda100) passes the adjacent pairlist but
++# fails the all-pairs normal-vision floor against slot 2 (dE 13.7 < 15) and is 2.1:1 on the light
++# surface; four lines share one panel, so the fourth cell is drawn in ink with its own marker instead.
++DSTUDY_STYLE = {"cls_B0": (SLOT[1], "o"), "red_B0": (SLOT[2], "s"), "wared_B1": (SLOT[3], "^"),
++                "cls_B1": (INK, "D")}
+ COLW = 3.15   # ACL single-column width, inches
+ 
+ plt.rcParams.update({"font.family": "serif", "font.size": 7.5, "axes.edgecolor": MUTED,
+@@ -107,10 +114,16 @@ def fig_screenshot():
+ 
+ def fig_dstudy():
+     """Reliability of a k-run-averaged task x arm label, three deployment arms (routing_three_arm)."""
+-    nulls = _load("routing_three_arm")["null_cells"]
++    nulls = {c["cell_id"]: c for c in _load("routing_three_arm")["null_cells"]}
++    unstyled = set(nulls) - set(DSTUDY_STYLE)
++    if unstyled:   # a zip over a fixed style list once dropped any cell past the third silently
++        raise KeyError(f"fig_dstudy: no style for null cell(s) {sorted(unstyled)}; add them to DSTUDY_STYLE")
+     ks = list(range(1, 11))
+     fig, ax = plt.subplots(figsize=(COLW, 1.9))
+-    for (c, (col, mk)) in zip(nulls, ((SLOT[1], "o"), (SLOT[2], "s"), (SLOT[3], "^"))):
++    for cid, (col, mk) in DSTUDY_STYLE.items():
++        if cid not in nulls:
++            continue
++        c = nulls[cid]
+         s_int, s_err = c["decomposition"]["interaction"], c["decomposition"]["noise"]
+         rel = [s_int / (s_int + s_err / k) for k in ks]
+         ax.plot(ks, rel, color=col, lw=1.2, marker=mk, ms=3.5, label=_pretty(c["cell_id"]))
+diff --git a/scripts/analysis/lib/replicate_pairs.py b/scripts/analysis/lib/replicate_pairs.py
+index 9f452f67..8a519214 100644
+--- a/scripts/analysis/lib/replicate_pairs.py
++++ b/scripts/analysis/lib/replicate_pairs.py
+@@ -62,10 +62,28 @@ def cell_pairs(baseline: str, site_key: str) -> dict[str, tuple[Path, Path]]:
+     return out
+ 
+ 
++def _check_modes(modes) -> tuple[str, ...]:
++    modes = tuple(modes)
++    bad = [m for m in modes if m not in MODE_KEYS]
++    if bad or not modes or len(set(modes)) != len(modes):
++        raise ValueError(f"modes must be distinct members of {MODE_KEYS}, got {modes!r}")
++    return modes
++
++
++def paired_cells(modes=MODE_KEYS) -> list[tuple[str, str]]:
++    """(baseline, site_key) cells where every arm in `modes` carries a registered replicate.
++
++    2026-10-13: mode-subset form, so a three-mode (DOM/SoM/Vision) reading can use every cell whose
++    three deployment arms were rerun (adds cls_B1, which has no P-* reruns). With the default it is
++    exactly `full_paired_cells()`."""
++    want = set(_check_modes(modes))
++    cells = sorted({tuple(lbl.split(".")[:2]) for lbl, _, _ in clean_pairs()})
++    return [(b, s) for b, s in cells if want <= set(cell_pairs(b, s))]
++
++
+ def full_paired_cells() -> list[tuple[str, str]]:
+     """(baseline, site_key) cells where all six arms carry a registered replicate."""
+-    cells = sorted({tuple(lbl.split(".")[:2]) for lbl, _, _ in clean_pairs()})
+-    return [(b, s) for b, s in cells if set(cell_pairs(b, s)) == set(MODE_KEYS)]
++    return paired_cells(MODE_KEYS)
+ 
+ 
+ def scored_universe(site_key: str) -> set[int]:
+@@ -73,19 +91,27 @@ def scored_universe(site_key: str) -> set[int]:
+     return set(expected_scored_ids(site, bench)[0])
+ 
+ 
+-def outcome_matrix(baseline: str, site_key: str, arm: str = "a") -> dict[int, dict[str, int]]:
++def outcome_matrix(baseline: str, site_key: str, arm: str = "a",
++                   modes=MODE_KEYS) -> dict[int, dict[str, int]]:
+     """task -> {mode: 0/1} over the canonical scored set, from one arm of the cell's pairs.
+ 
+     Identity-checked (`episode_rows.load_task_rows`); every mode must cover the whole scored set.
++    `modes` (2026-10-13) restricts the read to a subset; each requested mode must have a pair, and
++    only requested modes are read. Default = all six, behaviour unchanged (keys in registry order).
+     """
++    modes = _check_modes(modes)
++    if arm not in ("a", "b"):
++        raise ValueError(f"arm must be 'a' or 'b', got {arm!r}")
+     pairs = cell_pairs(baseline, site_key)
+-    missing = set(MODE_KEYS) - set(pairs)
++    missing = set(modes) - set(pairs)
+     if missing:
+         raise ValueError(f"{cell_id(baseline, site_key)}: no replicate pair for {sorted(missing)}")
+     scored = scored_universe(site_key)
+     idx = 0 if arm == "a" else 1
+     out: dict[int, dict[str, int]] = {t: {} for t in scored}
+     for mode, dirs in pairs.items():
++        if mode not in modes:
++            continue
+         rows = load_task_rows(dirs[idx] / "episodes")
+         got = {t for t in rows if t in scored}
+         if got != scored:
+diff --git a/scripts/analysis/router_prior_baselines.py b/scripts/analysis/router_prior_baselines.py
+index 482bcf3d..e7c3e540 100644
+--- a/scripts/analysis/router_prior_baselines.py
++++ b/scripts/analysis/router_prior_baselines.py
+@@ -1381,7 +1381,16 @@ def render_markdown(payload: dict[str, Any], *, report_title: str | None = None)
+         "Random rows show 1000-repeat mean ± sample SD.",
+         "",
+     ]
+-    lines.extend(render_literature_inventory(payload["literature_mining_inventory"]))
++    if payload["literature_mining_inventory"] is None:
++        lines.extend(
++            [
++                "## Literature inventory",
++                "",
++                f"OMITTED: {payload['literature_mining_inventory_omitted']}",
++            ]
++        )
++    else:
++        lines.extend(render_literature_inventory(payload["literature_mining_inventory"]))
+     lines.extend(
+         [
+             "",
+@@ -1532,6 +1541,7 @@ def run_analysis(
+     source_dir: Path,
+     random_repetitions: int,
+     random_seed: int,
++    include_literature_inventory: bool = True,
+ ) -> dict[str, Any]:
+     replay = json.loads(replay_path.read_text())
+     pareto_payload = json.loads(pareto_path.read_text())
+@@ -1721,7 +1731,21 @@ def run_analysis(
+                 "with the verified bibliography on the routed object"
+             ),
+         },
+-        "literature_mining_inventory": literature_mining_inventory(),
++        # The inventory is prose metadata (local file:line citations), not an input
++        # to any metric.  It is omitted only on an explicit CLI opt-out, and the
++        # omission is recorded in the payload rather than silently dropped.
++        "literature_mining_inventory": (
++            literature_mining_inventory() if include_literature_inventory else None
++        ),
++        "literature_mining_inventory_omitted": (
++            None
++            if include_literature_inventory
++            else (
++                "--omit-literature-inventory: the 2026-07-15 local file:line "
++                "citations no longer validate (sources moved/archived); no metric "
++                "depends on the inventory"
++            )
++        ),
+         "anchors": {
+             "best_single_policy_id": best["policy_id"],
+             "best_single_success_rate_pct": best_sr,
+@@ -1766,6 +1790,14 @@ def main() -> int:
+     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
+     parser.add_argument("--random-repetitions", type=int, default=RANDOM_REPETITIONS)
+     parser.add_argument("--random-seed", type=int, default=RANDOM_SEED)
++    parser.add_argument(
++        "--omit-literature-inventory",
++        action="store_true",
++        help=(
++            "Skip the fail-closed local-citation inventory (its 2026-07-15 file:line "
++            "sources have moved). Metrics are unaffected; the omission is recorded."
++        ),
++    )
+     args = parser.parse_args()
+ 
+     replay_path = args.replay_json.resolve()
+@@ -1789,7 +1821,10 @@ def main() -> int:
+         source_dir=source_dir,
+         random_repetitions=args.random_repetitions,
+         random_seed=args.random_seed,
++        include_literature_inventory=not args.omit_literature_inventory,
+     )
++    if args.omit_literature_inventory:
++        print("WARNING: literature inventory OMITTED (--omit-literature-inventory)")
+     out_dir.mkdir(parents=True, exist_ok=True)
+     json_path = out_dir / "router_prior_baselines.json"
+     md_path = out_dir / "router_prior_baselines.md"
+diff --git a/scripts/analysis/routing_crossrun_template_validation.py b/scripts/analysis/routing_crossrun_template_validation.py
+index 3621992b..92aaf449 100644
+--- a/scripts/analysis/routing_crossrun_template_validation.py
++++ b/scripts/analysis/routing_crossrun_template_validation.py
+@@ -49,7 +49,7 @@ from scripts.analysis import representation_routing_frontier as rrf  # noqa: E40
+ from scripts.analysis import router_triage_learnability as rt  # noqa: E402
+ from scripts.analysis.aggregate_phantom_lift import CELLS  # noqa: E402
+ from scripts.analysis.lib.episode_rows import load_task_rows  # noqa: E402
+-from scripts.analysis.lib.replicate_pairs import cell_pairs, full_paired_cells  # noqa: E402
++from scripts.analysis.lib.replicate_pairs import cell_pairs, paired_cells  # noqa: E402
+ from scripts.analysis.routing_gain_upper_bounds import _excess, _hull  # noqa: E402
+ 
+ N_BOOT = 500
+@@ -76,26 +76,31 @@ def templates(spec: dict, task_ids: list[int]) -> np.ndarray:
+     return np.array(out)
+ 
+ 
+-def run_b(spec: dict, cell: dict) -> tuple[np.ndarray, np.ndarray] | None:
+-    """(S_b, C_b) aligned to cell['task_ids'] and rrf.MODES, or None if not fully replicated.
+-    Fails loud if run a of the registered pairs is not the run load_cell read."""
++def run_b(spec: dict, cell: dict, modes=None) -> tuple[np.ndarray, np.ndarray] | None:
++    """(S_b, C_b) aligned to cell['task_ids'] and `modes` (default rrf.MODES, all six), or None if
++    any of those modes lacks a registered rerun. Fails loud if run a of the registered pairs is not
++    the run load_cell read. `modes` added 2026-10-13 so the three-arm product (routing_three_arm.py)
++    can use cells whose DOM/SoM/Vision were rerun but not the P-* arms (cls_B1); this product's
++    six-mode default is unchanged."""
++    modes = list(rrf.MODES) if modes is None else list(modes)
+     bl, sk = spec["baseline"], SITE_KEY[spec["site"]]
+-    if (bl, sk) not in full_paired_cells():
++    if (bl, sk) not in paired_cells([PAIR_MODE[m] for m in modes]):
+         return None
+     pairs = cell_pairs(bl, sk)
+     tids = cell["task_ids"]
+-    Sa = np.zeros((len(tids), len(rrf.MODES)))
++    col = [rrf.MODES.index(m) for m in modes]
++    Sa = np.zeros((len(tids), len(modes)))
+     Sb, Cb = np.zeros_like(Sa), np.zeros_like(Sa)
+-    for j, m in enumerate(rrf.MODES):
++    for j, m in enumerate(modes):
+         a_dir, b_dir = pairs[PAIR_MODE[m]]
+         ra, rb = load_task_rows(a_dir / "episodes"), load_task_rows(b_dir / "episodes")
+         for i, t in enumerate(tids):
+             Sa[i, j] = bool(ra[t].get("success"))
+             Sb[i, j] = bool(rb[t].get("success"))
+             Cb[i, j] = float(rb[t][rt.COST_FIELD])
+-    if not np.array_equal(Sa, cell["S"]):
++    if not np.array_equal(Sa, cell["S"][:, col]):
+         raise RuntimeError(f"{bl}·{sk}: run a of CLEAN_PAIRS differs from the run load_cell read "
+-                           f"on {int((Sa != cell['S']).sum())} (task, mode) entries")
++                           f"on {int((Sa != cell['S'][:, col]).sum())} (task, mode) entries")
+     return Sb, Cb
+ 
+ 
+diff --git a/scripts/analysis/routing_three_arm.py b/scripts/analysis/routing_three_arm.py
+index 11261556..78b95270 100644
+--- a/scripts/analysis/routing_three_arm.py
++++ b/scripts/analysis/routing_three_arm.py
+@@ -16,10 +16,16 @@ Readings:
+                on the normalised budget with its pooled null.
+   deployable   §544 — operating point chosen on training folds; task bootstrap B=1000; pooled.
+   template     §546 — deployable excess with folds grouped by intent_template_id; A→B (fit on
+-               run a, score on run b) on the three fully replicated cells.
++               run a, score on run b) on every cell whose three deployment arms were rerun.
+   null model   §543 — no-interaction (Rasch) null conditioned on margins, curveball sampling,
+-               B=2000, on the three fully replicated cells; Holm across them; decomposition and
+-               D-study.
++               B=2000, on every cell whose three deployment arms were rerun; Holm across them;
++               decomposition and D-study.
++
++Replicated cells (2026-10-13). The null model and A→B need a registered rerun of each arm they
++read. Until 2026-10-13 they used `full_paired_cells()` (all six arms rerun: cls_B0, red_B0,
++wared_B1), so cls_B1 — rerun on DOM, SoM and Vision but not on the P-* arms — was left out of a
++reading that only touches those three arms. They now use `paired_cells(NULL_KEYS)`: cls_B0,
++cls_B1, red_B0, wared_B1. The frontier and deployable readings never read run b and are unchanged.
+ 
+ Sensitivity (2026-10-08, draft review): `--cost-basis wallclock|gpu_time` reprices the frontier and
+ deployable readings and writes a `_<basis>` sibling (gpu_time: locally served B1/B2 only; the null
+@@ -48,7 +54,7 @@ from scripts.analysis import representation_routing_frontier as rrf  # noqa: E40
+ from scripts.analysis import router_triage_learnability as rt  # noqa: E402
+ from scripts.analysis import task_mode_interaction_null as tmn  # noqa: E402
+ from scripts.analysis.aggregate_phantom_lift import CELLS  # noqa: E402
+-from scripts.analysis.lib.replicate_pairs import full_paired_cells  # noqa: E402
++from scripts.analysis.lib.replicate_pairs import paired_cells  # noqa: E402
+ from scripts.analysis.routing_crossrun_template_validation import crossfit as crossfit_eval  # noqa: E402
+ from scripts.analysis.routing_crossrun_template_validation import folds_by, run_b, templates  # noqa: E402
+ from scripts.analysis.routing_gain_upper_bounds import crossfit, group_folds  # noqa: E402
+@@ -56,7 +62,6 @@ from scripts.analysis.routing_gain_upper_bounds import crossfit, group_folds  #
+ ARMS = ("DOM", "SoM", "Vision")
+ ARM_IDX = [rrf.MODES.index(m) for m in ARMS]
+ NULL_KEYS = ("dom", "som", "vision")
+-NULL_IDX = [tmn.MODE_KEYS.index(k) for k in NULL_KEYS]
+ N_SHUFFLE = 1000
+ N_BOOT = 1000
+ SEED_BOOT = 7
+@@ -89,9 +94,10 @@ def run_cell(spec: dict, n_shuffle: int, n_boot: int, basis: str = "billed") ->
+         "deployable": {"observed": dep, "_boot": boot},
+         "template_folds": crossfit_eval(X, S, C, S, C, tf),
+     }
+-    b = run_b(spec, full) if basis == "billed" else None   # run b's costs are read on the billed basis only
++    # run b's costs are read on the billed basis only; three-arm eligibility (2026-10-13)
++    b = run_b(spec, full, ARMS) if basis == "billed" else None
+     if b is not None:
+-        Sb, Cb = b[0][:, ARM_IDX], b[1][:, ARM_IDX]
++        Sb, Cb = b
+         out["a_b_template"] = crossfit_eval(X, S, C, Sb, Cb, tf)
+     print(f"{out['cell_id']}: arm-selector max {fr['six_head']['summary']['max_excess_pp']:+.2f} "
+           f"(p {fr['six_head']['summary']['null_p']:.3f}) triage max {fr['triage']['summary']['max_excess_pp']:+.2f} "
+@@ -102,8 +108,7 @@ def run_cell(spec: dict, n_shuffle: int, n_boot: int, basis: str = "billed") ->
+ 
+ def null_cell(cell: tuple[str, str]) -> dict:
+     bl, sk = cell
+-    tasks, Y6 = tmn.load(bl, sk)
+-    Y = Y6[:, NULL_IDX, :]
++    tasks, Y = tmn.load(bl, sk, NULL_KEYS)   # reads only the three arms (2026-10-13)
+     obs = tmn.statistics(Y)
+     nd = tmn.null_draws(Y, tmn.N_NULL, tmn.THIN_PER_ROW, tmn.SEED)
+     v = [d["sigma2_int"] for d in nd]
+@@ -155,7 +160,7 @@ def render(p: dict) -> str:
+                      if "null_p" in s else f"| {lab} | +{s['max_pp']:.2f} | {s['at_u']} | — |")
+     L += ["", "## 2. Deployable router (operating point chosen on training folds)", "",
+           f"Task bootstrap B={p['n_boot']}: [5%, **95%**]. Template folds: same estimand, folds by template. "
+-          "A→B: fit on run a, scored on run b (fully replicated cells).", "",
++          "A→B: fit on run a, scored on run b (cells whose three arms have a registered rerun).", "",
+           "| cell | arm-selector | [5%, **95%**] | template | A→B template | triage | [5%, **95%**] | template | A→B template |",
+           "|---|---|---|---|---|---|---|---|---|"]
+     for c in cells:
+@@ -177,7 +182,7 @@ def render(p: dict) -> str:
+     if not p["null_cells"]:
+         L.append("")
+         return "\n".join(L)
+-    L += ["", "## 3. No-interaction null on the three arms (fully replicated cells)", "",
++    L += ["", "## 3. No-interaction null on the three arms (cells whose three arms have a registered rerun)", "",
+           f"Same null and statistic as §543 (σ²_int = reproducible task×arm interaction), B={p['n_null']}; Holm across the cells.", "",
+           "| cell | n | σ²_int | null mean / q95 | p | Holm | interaction / noise [95%] | single-run reliability | k for reliability ≥ 0.5 |",
+           "|---|---|---|---|---|---|---|---|---|"]
+@@ -216,7 +221,7 @@ def main() -> int:
+     with ProcessPoolExecutor(max_workers=max(1, args.jobs)) as ex:
+         cells = list(ex.map(run_cell, specs, [args.n_shuffle] * len(specs), [args.n_boot] * len(specs),
+                             [args.cost_basis] * len(specs)))
+-        nulls = list(ex.map(null_cell, full_paired_cells())) if args.cost_basis == "billed" else []
++        nulls = list(ex.map(null_cell, paired_cells(NULL_KEYS))) if args.cost_basis == "billed" else []
+     for k in ("six_head", "triage"):
+         verdict = rrf.holm({c["cell_id"]: c["frontier"][k]["summary"]["null_p"] for c in cells})
+         for c in cells:
+diff --git a/scripts/analysis/task_mode_interaction_null.py b/scripts/analysis/task_mode_interaction_null.py
+index a90003e8..b688288a 100644
+--- a/scripts/analysis/task_mode_interaction_null.py
++++ b/scripts/analysis/task_mode_interaction_null.py
+@@ -75,12 +75,14 @@ M = len(MODE_KEYS)
+ 
+ # ---------------------------------------------------------------------------- data
+ 
+-def load(baseline: str, site_key: str) -> tuple[list[int], np.ndarray]:
+-    a = outcome_matrix(baseline, site_key, "a")
+-    b = outcome_matrix(baseline, site_key, "b")
++def load(baseline: str, site_key: str, modes=MODE_KEYS) -> tuple[list[int], np.ndarray]:
++    """(tasks, Y) with Y (n, len(modes), 2), columns in `modes` order. `modes` added 2026-10-13
++    for the three-arm reading (routing_three_arm.py); the default keeps this product's six arms."""
++    a = outcome_matrix(baseline, site_key, "a", modes)
++    b = outcome_matrix(baseline, site_key, "b", modes)
+     tasks = sorted(a)
+-    Y = np.array([[[a[t][m], b[t][m]] for m in MODE_KEYS] for t in tasks], dtype=float)
+-    return tasks, Y            # (n, 6, 2)
++    Y = np.array([[[a[t][m], b[t][m]] for m in modes] for t in tasks], dtype=float)
++    return tasks, Y            # (n, len(modes), 2)
+ 
+ 
+ # ---------------------------------------------------------------------------- statistics
+@@ -193,12 +195,25 @@ def bootstrap(Y: np.ndarray, seed: int) -> dict:
+     n = len(Y)
+     comps = {k: [] for k in ("task", "mode", "interaction", "noise", "interaction_over_noise")}
+     kstar = []
++    zero_noise = 0
+     for _ in range(N_BOOT):
+         d = anova(Y[rng.integers(0, n, n)])
++        if d["interaction_over_noise"] is None:
++            # 2026-10-13: a resample with no run-to-run change at all (σ²_err = 0). Reached first by
++            # cls_B1 over the three deployment arms, whose SoM and Vision reruns reproduce exactly.
++            # The ratio is +inf there; a non-positive interaction on top of it is undefined: fail.
++            if not d["interaction"] > 0:
++                raise ValueError(f"bootstrap draw with zero noise and interaction {d['interaction']!r}")
++            d = dict(d, interaction_over_noise=math.inf)
++            zero_noise += 1
+         for k in comps:
+             comps[k].append(d[k])
+         kstar.append(k_needed(d["interaction"], d["noise"]))
+     ci = {k: [float(np.quantile(v, 0.025)), float(np.quantile(v, 0.975))] for k, v in comps.items()}
++    if zero_noise:   # key absent when 0, so products without such draws are unchanged
++        print(f"bootstrap: {zero_noise} of {N_BOOT} draws had zero noise (ratio counted as +inf)",
++              file=sys.stderr, flush=True)
++        ci["n_draws_zero_noise"] = zero_noise
+     ks = np.array([np.inf if v is None else v for v in kstar])
+     ci["k_needed"] = [float(np.quantile(ks, 0.025)), float(np.quantile(ks, 0.975))]
+     return ci

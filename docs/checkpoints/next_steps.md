@@ -22,6 +22,16 @@ updated: 2026-10-10
 ---
 
 ## §0 SESSION HANDOFF — 新 session 接手 ⭐ 先读这个
+> ## 🟢 2026-10-13 · COLING 稿已投 ARR 2026 October（#7345）· 下一步 = 准备 author response
+>
+> chronicle → **笔记 §559**；GPT 审稿三条的证据清单 → `paper_drafts/gpt_review_evidence_2026-10-13.md`
+>
+> - 第 4 个完整格（三模式口径下的 cls_B1）：重算 `routing_three_arm` 的零模型、D-study、A→B，以及 `fig_dstudy`。半成品在 `paper_drafts/wf_halfedits_2026-10-13.patch`，要先审查。
+> - 2PL（mode 特定斜率）零模型：`scripts/analysis/task_mode_slope_null.py` 是半成品（未跟踪、未审查）。只用补充包里的逐题数据就能算，不需要新 run。
+> - 把附录「其他路由构造」用到的 §368 / §374 结果做成正式产物（原文件在 E 盘 DGX 备份 `results/phantom_paper/l1_router_{sweep,offline}_20260715/`），并加进补充包。LLM router pilot 还没有正式产物。
+> - B2·red·dom（R5361）应已在 A100 上跑完，还没拉回。拉取要连 A100：condenser 证书 10-15 01:15 到期，过期就得重签。
+> - Codex 续跑 prompt：`paper_drafts/codex_resume_gpt_review_2026-10-13.md`（写于投稿前，第 3 部分已经做完）。
+>
 > ## 🟢 2026-10-10 · A100 前三格已落地并登记（CLEAN_PAIRS 24 → 27）· 初稿已更新 · 第四格在跑
 >
 > chronicle → **笔记 §557**
