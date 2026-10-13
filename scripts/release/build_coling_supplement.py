@@ -309,7 +309,7 @@ the raw trajectories (screenshots and page text, too large; released with the ca
   and membership in the clean shopping sets (Appendix {app_harness}). Task configurations themselves are the
   public VisualWebArena / WebArena files.
 - `prompts/` — the system prompt of each observation mode (`phantom_*` = the screenshot-free
-  controls: `phantom_som` = P-SoM, `phantom_text` = P-text, `phantom_prompt` = P-prompt;
+  modes: `phantom_som` = P-SoM, `phantom_text` = P-text, `phantom_prompt` = P-prompt;
   `phantom_dom` is a legacy alias of `phantom_text`). For GPT-5.6, whose API returns structured
   output, the JSON-only line of every prompt is extended with "Emit exactly ONE JSON object for the
   single next action — do not plan ahead or emit further objects."
@@ -332,7 +332,7 @@ The software archive holds `code/`, `prompts/` and `configs/`; the data archive 
 | §5, Fig. {fig_dstudy} | `routing_three_arm` (`null_cells`); six modes: `task_mode_interaction_null` |
 | §5 persistence | `routing_crossrun_template_validation` |
 | §5 label changes where the choice can change success (six modes) | `label_instability` (`strata`, `by_cell`: arms-disagree and complement rows); null reading: `task_mode_interaction_null` (`cells[].null.enrichment`, `cells[].null.contested_flip_rate`) |
-| Fig. {fig_frontier}, Table {tab_routing} | `routing_three_arm`, `representation_routing_frontier`, `routing_extension_cells`; six-arm deployable rows: `routing_gain_upper_bounds` (its 5%/95% bootstrap ends are read as magnitudes, not as bounds) |
+| Fig. {fig_frontier}, Table {tab_routing} | `routing_three_arm`, `representation_routing_frontier`, `routing_extension_cells`; six-mode deployable rows: `routing_gain_upper_bounds` (its 5%/95% bootstrap ends are read as magnitudes, not as bounds) |
 | Table {tab_sens} (sensitivity) | `routing_three_arm`, `_wallclock`, `_gpu_time` |
 | rerun range 0–14% | `noise_floor_inventory` |
 | reddit inherited state | `reddit_sidebar_leakage_audit_with_wa` |
