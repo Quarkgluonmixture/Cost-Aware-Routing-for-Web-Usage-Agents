@@ -153,7 +153,7 @@ magnitude less」（`wa_red·B1` 的 set-difference 到 7.69pp）。并且「重
 - caption 完整性：`check_captions.py` 56 条，1 条报缺失为 `Δ`（U+0394）/ `∆`（U+2206）字形差异，人工核过原文完整
 - 路径泄漏：`strings` 0 命中；Title/Author/Subject/Keywords 空；0 embedded files
 - 编译环境：Mac 无 TeX，用 OrbStack 跑 `texlive/texlive:TL2025-historic`（见下方构建）
-- **未上传 OpenReview**（作者确认主张收窄后再传）
+- **已上传 OpenReview**（2026-10-25；回读服务器 PDF SHA-256 `bc3584bd8d90…` 与本地一致）
 
 ## ⚠️ 第二条教训：`pdftotext | grep` 查不出匿名性泄漏
 
@@ -223,9 +223,8 @@ Broader impacts 答 **NA**（measurement study, 不引入新模型/能力/数据
 
 ## 未做
 
-1. 作者确认 camera-ready 里的主张收窄（见上方 camera-ready 专节）
-2. 上传 OpenReview `Camera_Ready_Revision` 并回读确认（截止 UTC 11-01 12:00）
-3. 悉尼线下 presenter、NeurIPS 注册、61×85cm 竖版 poster —— 不在本目录，见任务卡
+1. Overleaf 项目（作者定账号后上传源码 zip）
+2. 悉尼线下 presenter 与 NeurIPS 注册 —— 见任务卡；海报在 `poster/`
 
 ## 构建与自查
 

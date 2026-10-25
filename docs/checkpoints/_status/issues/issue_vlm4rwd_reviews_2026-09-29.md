@@ -56,7 +56,9 @@ source: OpenReview forum i8hMsmnCq8 (VLM4RWD @ NeurIPS 2026, Submission #18), us
 
 逐条裁决见下方「camera-ready 回应矩阵」。
 
-## camera-ready 回应矩阵（2026-10-25，分支 `vlm4rwd-camera-ready`，未上传）
+## camera-ready 回应矩阵（2026-10-25，分支 `vlm4rwd-camera-ready`）
+
+**已上传**：作者 2026-10-25 认可主张收窄；OpenReview `Camera_Ready_Revision` 已提交（PDF 与摘要更新，标题/作者/关键词/TL;DR 未改）。回读：服务器 PDF SHA-256 `bc3584bd8d90…` 与本地 `main.pdf` 一致，摘要 1816 字符一致。
 
 改动细节与构建见 `deliverables/vlm4rwd/README.md` 的 camera-ready 专节。数字全部来自产物 JSON。
 
@@ -67,6 +69,5 @@ source: OpenReview forum i8hMsmnCq8 (VLM4RWD @ NeurIPS 2026, Submission #18), us
 | 1MR9 #1 + TtQ2：label-supply 解释没立住 / 受当前模型能力限制 | 不新增证据，降级为关联：写明 supply–value coupling 是跨 8 格的相关（ρ=0.95），没有在固定成功率下操纵 label supply（多次重跑合并标签、强 agent 标签都没做） | 摘要、§1、§7、贡献 (iii) | — |
 | TtQ2 / 1MR9 Pros：rerun control 是最强贡献 | 保留为贡献 (i)；逐格表让它更站得住 | — | — |
 
-⚠️ **待作者确认**：1MR9 #3 那一行收窄了论文主张（署名公开版）。不确认就不上传。
 
 **未处理**：多次重跑合并标签训练 router（能直接检验 label supply，需要新跑）；`fig_ceilings` 未按 25 对重画。
