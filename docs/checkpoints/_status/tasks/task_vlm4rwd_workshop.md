@@ -19,7 +19,7 @@ updated: 2026-10-25
 
 > **2026-10-25 camera-ready 已提交 OpenReview**（分支 `vlm4rwd-camera-ready`；回读 PDF SHA-256 与本地一致）：去匿名 + REALM camera-ready 修正 + 审稿回应（SR–cost 前沿、逐格重跑表、label-supply 降级为关联）。正文 9/9 页，审计全过。改动与回应矩阵 → `deliverables/vlm4rwd/README.md` camera-ready 节、issue 文件。
 > 海报：`deliverables/vlm4rwd/poster/VLM4RWD2026_Paper18_Poster_61x85cm.pdf`（REALM 海报换会议信息 + 缩放）。
-> 剩下的门：① 悉尼线下展示——主办方原文要求必须线下，作者都不去就得请一位到场的同事代展，不接受远程（10-19 邮件）；作者不打算去，需要找代展人或联系主办方 ② NeurIPS 作者注册（只在有人去时才需要）③ Overleaf 项目（待作者定账号）。
+> 剩下的门：① 悉尼线下展示——主办方原文要求必须线下，作者都不去就得请一位到场的同事代展，不接受远程（10-19 邮件）；作者不打算去，需要找代展人或联系主办方 ② NeurIPS 作者注册（只在有人去时才需要）。Overleaf 项目 `6adde2c26e26d2e60e63419d` 已建（2026-10-25）。
 
 **Venue**: [Grounded and Faithful Vision-Language Models for Real-World Deployment](https://vlm4rwd.github.io/),
 NeurIPS 2026 Workshop, Sydney, Dec 11 2026 · OpenReview `NeurIPS.cc/2026/Workshop/VLM4RWD`
