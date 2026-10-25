@@ -8,7 +8,7 @@ blocker: ""
 eta: "**已提交 2026-08-21**（投后经 GPT-5 复核又修两处: PDF 二进制里的 `/PTEX.FileName` 真名路径 + 补 NeurIPS Paper Checklist, 已重新上传）。notif **2026-09-29**, camera-ready 2026-10 月。非归档 ⇒ 不占 NAACL 2027 ARR (10-12) 投稿权。下一个动作在 09-29, 此前无事。"
 detail: docs/checkpoints/实验笔记.md §473
 created: 2026-08-21
-updated: 2026-10-06
+updated: 2026-10-25
 ---
 
 # VLM4RWD @ NeurIPS 2026 workshop 投稿 (non-archival) — 已提交
@@ -16,6 +16,9 @@ updated: 2026-10-06
 > **2026-09-29 Accept (Poster)**（Submission #18, forum `i8hMsmnCq8`, 公开 10-01）。意见归档 → `_status/issues/issue_vlm4rwd_reviews_2026-09-29.md`。
 > 下一步: **camera-ready 10-31 AoE**（可加 1 页 ⇒ 正文最多 9 页）· workshop 2026-12-11 悉尼, **至少一名作者线下到场**。
 > 下文「NAACL 2027 ARR」现读作 **COLING 2027 ARR**（同一 10-12 截稿, 2026-10-06 改投）。
+
+> **2026-10-25 camera-ready 候选已建**（分支 `vlm4rwd-camera-ready`，本地，**未上传**）：去匿名 + REALM camera-ready 修正 + 审稿回应（SR–cost 前沿、逐格重跑表、label-supply 降级为关联）。正文 9/9 页，审计全过。改动与回应矩阵 → `deliverables/vlm4rwd/README.md` camera-ready 节、issue 文件。
+> 剩下的门：① 作者确认主张收窄（重跑≈新表示只在 3 格成立）② 上传 OpenReview `Camera_Ready_Revision`（UTC 11-01 12:00 截止）并回读 ③ 悉尼线下 presenter + NeurIPS 作者注册（每篇一个预留名额）④ 61×85cm 竖版 poster。
 
 **Venue**: [Grounded and Faithful Vision-Language Models for Real-World Deployment](https://vlm4rwd.github.io/),
 NeurIPS 2026 Workshop, Sydney, Dec 11 2026 · OpenReview `NeurIPS.cc/2026/Workshop/VLM4RWD`

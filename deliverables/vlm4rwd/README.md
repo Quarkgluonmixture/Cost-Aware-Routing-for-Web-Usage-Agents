@@ -1,4 +1,4 @@
-# VLM4RWD @ NeurIPS 2026 — 非归档投稿（REALM 稿的模板移植）
+# VLM4RWD @ NeurIPS 2026 — 非归档 workshop 论文（Accept, Poster; camera-ready 见下方专节）
 
 **目标 venue**: [Grounded and Faithful Vision-Language Models for Real-World Deployment](https://vlm4rwd.github.io/), NeurIPS 2026 Workshop, Sydney
 
@@ -6,11 +6,11 @@
 |---|---|
 | 投稿截止 | **2026-08-30** |
 | 通知 | 2026-09-29 |
-| Camera-ready | 2026-10 月 |
+| Camera-ready | **2026-10-31 AoE**（OpenReview 表单 `Camera_Ready_Revision`，截止 UTC 2026-11-01 12:00） |
 | 归档性 | **非归档** —— 作者保留全部版权, 可再投会议/期刊 |
-| 页数 | 正文 8 页, **references 与 appendix 不计** |
-| 评审 | 双盲, 必须完全匿名 |
-| 格式 | NeurIPS 2026 (`neurips_2026.sty` 官方 kit, `dblblindworkshop` 档) |
+| 页数 | 投稿正文 8 页；camera-ready 正文 **9 页**；references 与 appendix 不计 |
+| 评审 | 双盲（已结束）；camera-ready 去匿名 |
+| 格式 | NeurIPS 2026 (`neurips_2026.sty` 官方 kit, `dblblindworkshop,final` + `\workshoptitle{VLM4RWD}`，按主办方 camera-ready 邮件) |
 | 提交口 | OpenReview `NeurIPS.cc/2026/Workshop/VLM4RWD` |
 
 CFP 对本次投稿唯一相关的一句原文: *"Relevant published work may be submitted for
@@ -104,22 +104,60 @@ about visual grounding.}`。**不含任何新数字。**
 **交叉引用**: 3 处 `\S\ref{sec:threats}` → `Appendix~\ref{...}`; 1 处
 `Figure~\ref{fig:partition}` 与 1 处 `Figure~\ref{fig:ceilings}` → `Appendix Figure~...`。
 
+## Camera-ready（2026-10-25）
+
+审稿意见与逐条回应 → `docs/checkpoints/_status/issues/issue_vlm4rwd_reviews_2026-09-29.md`。
+
+**去匿名**：`[final]` + `\workshoptitle{VLM4RWD}`；作者块照搬 REALM camera-ready（Overleaf `a89901e`）：
+四位作者、UCL / Holistic AI、邮箱。无致谢 / funding 段（REALM 也没有；要加由作者定）。
+
+**搬入 REALM camera-ready 的修正**（Overleaf `6480bc0..61e60d0`，经过 cross-AI 审过）：摘要重写、
+六臂重算的 flip / band / 阈值数字、Related work 附录、`2_setup` 的 36/48 口径、`tab13` 的 88.9%、
+shopping 的 Limitations。`3_noise` 与 `limitations` 在分叉点与 REALM 字节相同，其余手工逐块对位。
+
+**REALM camera-ready 自己没改干净的地方，这里改了**：正文写 18 对 / 5 格，`limitations` 却仍写
+「measured in two cells」，`tab18` / `tab42` 仍是三臂的 4.91–7.59；「each cell's own band is reported
+in Appendix」而附录并没有逐格表。
+
+**数据快照 = 当前产物，不是 REALM 的 09-09 快照**。`noise_floor_inventory.json` 现有 27 对，其中
+25 对落在本稿 8 格（6 格有重跑，`red·B2` / `wa_red·B0` 没有）。这推翻了 REALM 稿里两句：
+「No B2 cell carries a replicate」（`cls·B2` 有两对）和「local backbones move an order of
+magnitude less」（`wa_red·B1` 的 set-difference 到 7.69pp）。并且「重跑一次 ≈ 加一个新表示」
+**只在重跑噪声大的 3 格成立**；`cls·B1` 上新表示 +4.91pp，重跑最多 1.79pp。正文 §1 / §5 / 摘要 /
+贡献 (ii) 已按格限定。⚠️ 这是对主张的收窄，需要作者认可。
+
+**新增（由 `scripts/analysis/figures/vlm4rwd/make_figures.py` 从产物 JSON 生成，⛔ 不手改）**：
+- `tables/tab_rerun.tex`：逐格重跑表，取代 `tab18`（三对，08 月）。`tab42` 的 rerun 列从它抄、caption 写明出处
+- `figures/fig_frontier.pdf` + `tables/tab_frontier.tex`：SR–cost 前沿（六模式 + 随机混合的上凹包络；
+  事后曲线最大值 vs 训练折选点的可部署值）。回应 1MR9 #2 / AC
+- 产物一变就重跑脚本再编译
+
+**label-supply 因果限定**（1MR9 #1、TtQ2）：摘要、§1、§6 写明 supply–value coupling 是跨格关联，
+未做操纵实验。
+
+**原稿就有的错，顺手修**：`tab42` 的 WA·B0 行重跑列写着 2.00–4.00（那是 B1 pilot 的带，B0 没有重跑）。
+
+**没动**：`fig_ceilings`（暗段仍是画图时有重跑的格；caption 已注明并指向 `tab:rerun`）；`tab14`、
+`tab27` 的数值（各自 caption 写明口径）。
+
 ## 页脚为什么写「Submitted to … NeurIPS 2026」
 
 这是官方 kit 的行为, 不是配置错误。`neurips_2026.sty:398-403`: `\@trackname`（含
 `\workshoptitle`）**只在 `[final]` 下打印**, review 模式硬编码主会字样。录用后加 `final`
 即正确显示 workshop 名。`main.tex` 的注释已按此更正（初版注释说它会打印 workshoptitle, 是错的）。
 
-## 当前状态
+## 当前状态（camera-ready 候选，2026-10-25）
 
-- 正文 **8 页**（`\label{content-end}` 落在 p8）, 全文 **46 页**（含 7 页 checklist）; 正文 2 图 + 附录 3 图 + 49 表
-- 编译 **0 error / 0 undefined reference / 0 undefined citation**
-- overfull hbox 3 处, 最大 1.04pt（肉眼不可见）
-- **61 个 caption 全部完整**（逐个比对 PDF 文本, 见上文验证手段）
-- 49 张表全部自带缩放, 单栏下无溢出
-- 匿名: 见下方「匿名性审计」——**`pdftotext | grep` 不够**
+- 正文 **9 页**（`\label{content-end}` 落在 p9），全文 **47 页**；正文 3 图（新增 `fig_frontier`）
+- 编译 **0 error / 0 undefined reference / 0 undefined citation**；overfull hbox 3 处，最大约 1.04pt
+- caption 完整性：`check_captions.py` 56 条，1 条报缺失为 `Δ`（U+0394）/ `∆`（U+2206）字形差异，人工核过原文完整
+- 路径泄漏：`strings` 0 命中；Title/Author/Subject/Keywords 空；0 embedded files
+- 编译环境：Mac 无 TeX，用 OrbStack 跑 `texlive/texlive:TL2025-historic`（见下方构建）
+- **未上传 OpenReview**（作者确认主张收窄后再传）
 
 ## ⚠️ 第二条教训：`pdftotext | grep` 查不出匿名性泄漏
+
+> camera-ready 后真名本该出现，这条改用于查**绝对路径 / 临时文件 / 内部元数据**泄漏，命令见「构建与自查」。
 
 第一版通过了「`pdftotext main.pdf | grep -icE 'jiaming|ucl|...'` 命中 0」的匿名检查, 但
 **PDF 二进制内部**藏着:
@@ -185,26 +223,29 @@ Broader impacts 答 **NA**（measurement study, 不引入新模型/能力/数据
 
 ## 未做
 
-1. 🔴 **REALM 在审版本有四处同源问题未修** —— tab02 引错表 / paper-B 残留 / Multiplicity 归属
-   / **`fig_overview.pdf` 的路径泄漏**。前三处是 prose bug, 第四处是**匿名性问题**。
-   审稿阶段无法更换提交件, **camera-ready 09-14 是窗口**。
-2. **Overleaf 源图未清理** —— `~/overleaf-aaai27/figures/fig_overview.pdf` 仍带 `/PTEX.FileName`。
-   不清理的话 REALM camera-ready 会再次带上同一处泄漏。
+1. 作者确认 camera-ready 里的主张收窄（见上方 camera-ready 专节）
+2. 上传 OpenReview `Camera_Ready_Revision` 并回读确认（截止 UTC 11-01 12:00）
+3. 悉尼线下 presenter、NeurIPS 注册、61×85cm 竖版 poster —— 不在本目录，见任务卡
 
 ## 构建与自查
 
 ```bash
-cd deliverables/vlm4rwd && latexmk -pdf main.tex
+# 1. 产物 -> 新增图表（任何 Python + matplotlib）
+python scripts/analysis/figures/vlm4rwd/make_figures.py
+# 2. 编译（Mac 无 TeX：容器）
+cd deliverables/vlm4rwd
+docker run --rm -v "$PWD":/w -w /w texlive/texlive:TL2025-historic latexmk -g -pdf -interaction=nonstopmode main.tex
+# ⚠️ 不带 -g 时 latexmk 可能因已入库的 main.pdf 报 up-to-date 而不重建
 
-# 正文必须 ≤ 8 页
+# 正文必须 ≤ 9 页
 grep -oE 'newlabel\{content-end\}\{\{[^}]*\}\{[0-9]+\}' main.aux
 
-# caption 完整性 —— 编译干净不代表没丢字, 见上文
-pdftotext main.pdf - | tr '\n' ' ' | grep -F "Most of the apparent headroom"   # 必须命中
-# 务必先 tr 去换行: pdftotext 会在句中断行, 直接 grep 会假报缺失
+# caption 完整性 —— 编译干净不代表没丢字
+pdftotext main.pdf /tmp/main.txt && python3 check_captions.py /tmp/main.txt
 
-# 匿名性 —— pdftotext 看不见 PDF 二进制内部, 必须用 strings
-strings main.pdf | grep -icE 'jiaming|ucab|quarkgluon|/home/|/tmp/|workspace|scratchpad|claude'   # 必须 0
+# 路径 / 元数据泄漏 —— pdftotext 看不见 PDF 二进制内部，必须用 strings
+strings main.pdf | grep -icE '/home/|/tmp/|/users/|/private/|workspace|scratchpad|claude'   # 必须 0
+pdfinfo main.pdf | grep -E 'Title|Author|Subject|Keywords'; pdfdetach -list main.pdf
 
 # checklist 在位且无残留 TODO
 pdftotext main.pdf - | grep -c 'NeurIPS Paper Checklist'   # 须为 1

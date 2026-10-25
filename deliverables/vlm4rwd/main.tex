@@ -1,23 +1,17 @@
-% VLM4RWD @ NeurIPS 2026 submission (non-archival workshop).
+% VLM4RWD @ NeurIPS 2026 camera-ready (non-archival workshop).
 %
 % Source: the REALM @ EMNLP 2026 submission (Overleaf project
-% 6a59017b04233a73ed5ec570, commit a456bff). Prose and numbers are carried over
-% unchanged; only the venue template differs. The two venues want opposite
-% things from the layout -- ACL is two-column 11pt A4, NeurIPS is one-column
-% 10pt US Letter -- so the conversion is: table*/figure* collapse to
-% table/figure, \columnwidth becomes \linewidth, and acl_natbib gives way to
-% the plainnat that neurips_2026.sty loads.
+% 6a59017b04233a73ed5ec570, commit a456bff), ported to the NeurIPS template;
+% README.md lists every change since. The camera-ready also carries the REALM
+% camera-ready corrections (Overleaf 6480bc0..61e60d0) that apply to this copy.
 %
-% dblblindworkshop = the option the official kit ships for a double-blind
-% workshop. It anonymises the author block and defines \@trackname from
-% \workshoptitle. NOTE: neurips_2026.sty prints \@trackname only under [final];
-% in review mode line 400 hardcodes the main-conference notice, so the submitted
-% PDF's footer says "Submitted to ... NeurIPS 2026" whichever track is chosen.
-% That is the official kit's behaviour, not a misconfiguration -- the workshop
-% name appears once [final] is added for camera-ready.
+% [dblblindworkshop,final] is what the organisers' camera-ready instructions
+% specify, with \workshoptitle{VLM4RWD}. Under [final] neurips_2026.sty prints
+% the author block and the workshop name in the footer (in review mode the
+% footer hardcodes the main-conference notice).
 \documentclass{article}
 
-\usepackage[dblblindworkshop]{neurips_2026}
+\usepackage[dblblindworkshop,final]{neurips_2026}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -94,7 +88,19 @@
 \title{Routing Is Least Learnable Where It Is Most Valuable:\\
   Bounds on Representation Routing for Web Agents}
 
-\workshoptitle{Grounded and Faithful Vision-Language Models for Real-World Deployment}
+\workshoptitle{VLM4RWD}
+
+% Author block as in the REALM camera-ready (Overleaf a89901e).
+\author{%
+  Jiaming Wei\textsuperscript{1} \quad
+  Zekun Wu\textsuperscript{1,2} \quad
+  Adriano Koshiyama\textsuperscript{2} \quad
+  Mar\'ia P\'erez-Ortiz\textsuperscript{1} \\
+  \textsuperscript{1}University College London \quad
+  \textsuperscript{2}Holistic AI \\
+  {\small\texttt{\{jiaming.wei.25, zekun.wu.19, adriano.koshiyama.15,
+  maria.perez\}@ucl.ac.uk}}
+}
 
 \begin{document}
 \maketitle

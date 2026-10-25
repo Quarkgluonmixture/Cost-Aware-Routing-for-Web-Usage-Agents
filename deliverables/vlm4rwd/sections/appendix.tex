@@ -1,6 +1,16 @@
 % ===================== APPENDIX =====================
 % Unlimited pages per REALM CFP. Tables keep their source-order labels tab:tNN.
 
+\section{Related work}\label{app:related}
+
+\paragraph{What a web agent is shown, and who chooses it.} Benchmarks such as VisualWebArena \citep{koh2024visualwebarena}, WebArena \citep{zhou2024webarena} and Mind2Web \citep{deng2023mind2web} fix the observation format once, at build time, and hold it for every task; set-of-marks \citep{yang2023som} made the fused option practical and it has been the default since. \citet{zheng2024seeact} identify the grounding step that follows this choice as the bottleneck for a capable backbone, and a line of work attacks that step directly by improving visual grounding \citep{zheng2024uground}. That programme takes the representation as given and makes one arm better. We hold the arms fixed and ask what choosing among them per task is worth --- a question that is prior to, and unaffected by, how good any single arm becomes.
+
+\paragraph{Comparing modalities.} \citet{xie2024osworld} report the field's most-cited comparison across tree, screenshot, both and set-of-marks, but as an ablation inside a benchmark release rather than a controlled study. \citet{levy2026stwebagentbench} take the opposite route and \emph{engineer} complementarity, building tasks whose answer is reachable through one modality and hidden in the other. Neither design can say how much complementarity unmodified tasks contain, which is the quantity a deployment would route on, and neither compares the gain to what repeating one arm would have delivered.
+
+\paragraph{Routing.} \S\ref{sec:intro} states the contrast in one line --- existing routers exploit a capability gradient \citep{chen2023frugalgpt,ong2025routellm,webrouter2025,liu2026adaptive,moslem2026routingsurvey}, ours has none. Two consequences belong here rather than there. First, the gradient is what makes \emph{difficulty} a usable feature at all: a harder query needs the bigger model, so any difficulty proxy doubles as a routing signal. Between representations of one browser state under one model there is no such ordering, so difficulty predicts nothing about which arm to pick, and a router must find a signal specific to the representation instead. Second, cascades avoid needing the ordering by escalating on a confidence signal \citep{gupta2024cascades,kadavath2022know} --- that construction does transfer to our setting, and \S\ref{sec:lowerbound} reports what it buys.
+
+\paragraph{What a measurement on these benchmarks is worth.} Inference is not bit-reproducible in general \citep{he2025nondeterminism,yuan2025numerical} and models are separately sensitive to formatting that carries no information \citep{sclar2024promptformat}; both bear directly on how much of an observed mode difference is the mode. WebArena has since been re-audited task by task \citep{elhattami2025webarenaverified} and reported progress reassessed on live sites \citep{xue2025illusion}, while rule-based trajectory scoring is known to disagree with human judgement often enough to matter \citep{lu2025agentrewardbench}. The control closest to ours is \citet{hajimiri2026budgetmatched}, who match budgets on a different axis; \S\ref{sec:noise} applies the same discipline to the arm count.
+
 \section{Multiplicity and inferential scope}\label{app:multiplicity}
 
 \paragraph{Multiplicity status.} The tables in this paper and its appendix are not one inferential family and are not corrected as one. They divide into three classes: confirmatory (hypotheses fixed before the data and corrected within their own family, currently the 2$\times$2 axis-independence set of 64 conjunction hypotheses under BH/Holm \citep{holm1979sequentially} on $\max(p_1, p_2)$); descriptive (intervals, no test, no correction claimed: the full behavioural matrices, the efficiency tables, the failure-attribution counts); and selection-derived (a maximum over layers, signals, thresholds or comparators is part of the statistic, so these bound what a selection could deliver and cannot be read as effect estimates \citep{cawley2010overfitting}; each such table says so in its caption). No family-wise statement covers the set as a whole, and none is claimed.
@@ -29,7 +39,7 @@ The four dimensions unsummarised, for every metric in every cell and mode: Outco
 \begin{figure}[tb]
 \centering
 \includegraphics[width=0.66\linewidth]{fig_ceilings}
-\caption{The two ceilings, per cell (full table: Appendix Table~\ref{tab:t42}). Left: the six-run union ceiling against the best single mode; the tick is what one genuinely different arm adds, and the dark segment is what one rerun of an arm already in hand adds, where measured. Most of the apparent headroom is not attributable to representation diversity. Right: the cost ceiling at matched success, the bound that survives, because it adds no arm.}
+\caption{The two ceilings, per cell (full table: Appendix Table~\ref{tab:t42}). Left: the six-run union ceiling against the best single mode; the tick is what one genuinely different arm adds, and the dark segment is what one rerun of an arm already in hand adds, where measured when the figure was drawn; the full rerun inventory is Appendix Table~\ref{tab:rerun}. Where reruns are noisy, most of the apparent headroom is not attributable to representation diversity. Right: the cost ceiling at matched success, the bound that survives, because it adds no arm.}
 \label{fig:ceilings}
 \end{figure}
 
@@ -45,6 +55,8 @@ Two tables carry the efficiency point. Table~\ref{tab:t11} decomposes a latency 
 \input{tables/tab15}
 
 \section{Routing, triage, and cascade}\label{app:routing}
+
+\input{tables/tab_frontier}
 
 \begin{figure}[tb]
 \centering
@@ -67,16 +79,17 @@ Table~\ref{tab:t19} turns the ex-ante partition (Table~\ref{tab:t17}) into a pol
 % cut-candidates (t20-t22, t33) are retained as part of the five-route lower
 % bound; t33's truncated caption and damaged cells were rewritten 4a605ab.
 
-The bound the rest of this section does not reach is Table~\ref{tab:t42} in \S\ref{sec:upperbound}. The oracle stated against the best single mode, and its triage/route decomposition, are below, followed by the rerun comparator (Table~\ref{tab:t18}), the per-cell fusion-premium intervals behind Figure~\ref{fig:fusion} (Table~\ref{tab:t16}), the which-mode label supply (Table~\ref{tab:pb03}), and the per-cell partition intervals behind Figure~\ref{fig:partition} (Table~\ref{tab:t17}).
+The bound the rest of this section does not reach is Table~\ref{tab:t42} in \S\ref{sec:upperbound}. The oracle stated against the best single mode, and its triage/route decomposition, are below, followed by the rerun comparator (Table~\ref{tab:rerun}), the per-cell fusion-premium intervals behind Figure~\ref{fig:fusion} (Table~\ref{tab:t16}), the which-mode label supply (Table~\ref{tab:pb03}), and the per-cell partition intervals behind Figure~\ref{fig:partition} (Table~\ref{tab:t17}).
 
 \input{tables/tab42}
 \input{tables/pbt01}
 \input{tables/pbt02}
-\input{tables/tab18}
+% tab18 (three rerun pairs, 2026-08) is superseded by the generated tab_rerun
+\input{tables/tab_rerun}
 \begin{figure}[tp]
 \centering
 \includegraphics[width=\linewidth]{fig_fusion_forest}
-\caption{Fusion premium per cell (Appendix Table~\ref{tab:t16}), paired bootstrap 95\% CIs. The shaded region is the rerun threshold of \S\ref{sec:noise}: 3.8--4.2pp, the level a mean difference must reach before a single repetition of one arm would be unlikely to produce it. Against the workload-matched channel no cell clears it (the largest such premium is +2.23pp); SoM's decisive wins are all against the channel mismatched to that workload.}
+\caption{Fusion premium per cell (Appendix Table~\ref{tab:t16}), paired bootstrap 95\% CIs. The shaded region is the rerun threshold of \S\ref{sec:noise}: 3.5--4.2pp, the level a mean difference must reach before a single repetition of one arm would be unlikely to produce it. Against the workload-matched channel no cell clears it (the largest such premium is +2.23pp); SoM's decisive wins are all against the channel mismatched to that workload.}
 \label{fig:fusion}
 \end{figure}
 \input{tables/tab16}

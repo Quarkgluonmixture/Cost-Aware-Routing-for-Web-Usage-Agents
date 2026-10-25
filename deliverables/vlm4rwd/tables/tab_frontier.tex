@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+router & curve max ($p$) & cells above frontier & deployable [5\%, 95\%] \\
+\midrule
+per-mode heads & +0.67 (0.252) & 6 of 8 & $-$0.38 [$-$3.20, $-$0.14] \\
+triage & +1.24 (0.043) & 7 of 8 & $-$0.39 [$-$2.42, +0.81] \\
+outcome oracle & +14.36 (hindsight) & 8 of 8 & --- \\
+\bottomrule
+\end{tabular}
+\caption{Routing gain over the six fixed modes and all their random mixtures, in success-rate points, equal-weight mean over the eight cells. \emph{Curve max}: the best point of an out-of-fold threshold sweep, read on a budget normalised per cell, chosen after seeing test outcomes, with a label-shuffle $p$ that refits the whole curve per draw (so the choice of point is inside the null; not corrected across the two routers). \emph{Deployable}: the operating point chosen on training folds only, task bootstrap; its interval is read as a magnitude, not a test, because the threshold is re-selected in every draw. Exploratory: designed after the runs were collected.}
+% sources: representation_routing_frontier (pooled), routing_gain_upper_bounds (pooled)
+\label{tab:frontier}
+\end{table}

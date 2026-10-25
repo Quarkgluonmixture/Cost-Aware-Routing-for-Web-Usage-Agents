@@ -1,7 +1,7 @@
 \begin{itemize}
 \tightlist
 \item
-  \textbf{No third workload.} The planned shopping workload never launched, so every claim in this paper rests on classifieds and reddit task sets alone.
+  \textbf{No third workload in this matrix.} Every claim here rests on classifieds and reddit. The shopping workload is partially collected --- three modes on \texttt{B0} and four on \texttt{B1}, 435 scored tasks each --- but not the six modes every cell in this paper carries, and the unique-solve and class-ablation analyses are defined over the full six-arm set, so it cannot enter them. What blocked completion is wall-clock rather than design: shopping carries roughly twice the scored tasks of either site used here, and our launch protocol permits one site chain per host at a time. The remaining modes are still running.
 \item
   \textbf{No cross-family control on WebArena.} Both WA cells are Qwen; the cross-family control exists only on VWA. This data cannot hold ``across benchmarks'' and ``across families'' simultaneously.
 \item
@@ -11,7 +11,7 @@
 \item
   \textbf{Energy is uncalibrated} (psutil at \textasciitilde66W on a device rated several times that) and the local per-token cost constant was derived for a different accelerator.
 \item
-  \textbf{The rerun band is measured in two cells and imported into six.} Three arms of \texttt{cls$\cdot$B0} and five modes of \texttt{wa\_red$\cdot$B1} carry a replicate; no VWA-reddit cell and no B2 cell carries one. Every ``clears the noise floor'' statement about those six assumes the floor transfers, and it is not known to be mode- or cell-invariant.
+  \textbf{Rerun coverage is partial and uneven.} Six of the eight cells carry same-condition reruns (25 pairs, Appendix Table~\ref{tab:rerun}); \texttt{red$\cdot$B2} and \texttt{wa\_red$\cdot$B0} carry none, and three cells have only two or three arms rerun. How far a rerun moves differs between cells by more than an order of magnitude, so no band is transferred from one cell to another, and a statement that leans on a band holds only where one was measured.
 \item
   \textbf{The WebArena leakage zero is a lower bound, not a clean bill.} No leaked success was found in 37 audited episodes; that bounds the rate rather than establishing absence.
 \item

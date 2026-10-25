@@ -1,6 +1,7 @@
 ---
 type: issue
 status: open
+updated: 2026-10-25
 created: 2026-10-06
 source: OpenReview forum i8hMsmnCq8 (VLM4RWD @ NeurIPS 2026, Submission #18), user 2026-10-06 粘贴
 ---
@@ -53,4 +54,19 @@ source: OpenReview forum i8hMsmnCq8 (VLM4RWD @ NeurIPS 2026, Submission #18), us
 4. **只比「两轴同时胜过固定策略」不够**（1MR9 第 2 条 + AC 点名）—— 需要直接报 SR–cost 折中
    （前沿 / 每单位成本的 SR），而不是只判支配。
 
-逐条裁决与改稿动作待写作阶段补到本文件。
+逐条裁决见下方「camera-ready 回应矩阵」。
+
+## camera-ready 回应矩阵（2026-10-25，分支 `vlm4rwd-camera-ready`，未上传）
+
+改动细节与构建见 `deliverables/vlm4rwd/README.md` 的 camera-ready 专节。数字全部来自产物 JSON。
+
+| 意见 | 处置 | 落在哪 | 证据产物 |
+|---|---|---|---|
+| 1MR9 #2 + AC：只比「两轴同时胜过固定策略」不够，没探索 SR–cost 折中 | 改为对「六个固定模式 + 全部随机混合」的上凹前沿比较。事后曲线最大值：per-mode heads +0.67pp（p=0.252），triage +1.24pp（p=0.043），oracle +14.36pp；训练折选点的可部署值 −0.38 / −0.39pp。唯一的事后空间属于 triage，它决定的是难度不是表示 | §6 新段 + Figure 3；附录 `tab:frontier` | `representation_routing_frontier`、`routing_gain_upper_bounds` |
+| 1MR9 #3：rerun control 覆盖有限 | 稿子落后于数据。现在 25 对重跑 / 6 of 8 格，逐格列表。**结论也随之收窄**：「重跑一次 ≈ 加一个新表示」只在重跑噪声大的 3 格成立（cls·B0、red·B0、wa_red·B1）；cls·B1 上新表示 +4.91pp，重跑最多 1.79pp。不再在格间借带 | §4「What was replicated」、§5 加粗句、§1、摘要、贡献 (ii)、Limitations；附录 `tab:rerun`（取代 tab18）、tab42 rerun 列 | `noise_floor_inventory`（27 对） |
+| 1MR9 #1 + TtQ2：label-supply 解释没立住 / 受当前模型能力限制 | 不新增证据，降级为关联：写明 supply–value coupling 是跨 8 格的相关（ρ=0.95），没有在固定成功率下操纵 label supply（多次重跑合并标签、强 agent 标签都没做） | 摘要、§1、§7、贡献 (iii) | — |
+| TtQ2 / 1MR9 Pros：rerun control 是最强贡献 | 保留为贡献 (i)；逐格表让它更站得住 | — | — |
+
+⚠️ **待作者确认**：1MR9 #3 那一行收窄了论文主张（署名公开版）。不确认就不上传。
+
+**未处理**：多次重跑合并标签训练 router（能直接检验 label supply，需要新跑）；`fig_ceilings` 未按 25 对重画。

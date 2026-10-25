@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llrrrrl@{}}
+\toprule
+cell & rerun arms & $n$ & discordance & rerun adds & distinct arm adds & reading \\
+\midrule
+\texttt{cls$\cdot$B0} & all six & 224 & 10.27--14.29\% & 4.46--7.59 & +7.14 (DOM) & inside rerun range \\
+\texttt{cls$\cdot$B1} & Vision, SoM, DOM & 224 & 0.00--3.12\% & 0.00--1.79 & +4.91 (Vision) & exceeds rerun range \\
+\texttt{cls$\cdot$B2} & SoM, Vision & 224 & 0.00--0.45\% & 0.00--0.45 & +2.23 (Vision) & exceeds rerun range \\
+\texttt{red$\cdot$B0} & all six & 203 & 4.93--11.33\% & 1.97--6.90 & +4.93 (DOM) & inside rerun range \\
+\texttt{red$\cdot$B1} & SoM, DOM & 203 & 1.97--3.45\% & 0.49--1.97 & +1.97 (P-prompt) & inside rerun range \\
+\texttt{red$\cdot$B2} & none & 203 & --- & --- & +1.97 (Vision) & no rerun \\
+\texttt{wa\_red$\cdot$B0} & none & 104 & --- & --- & +5.77 (DOM) & no rerun \\
+\texttt{wa\_red$\cdot$B1} & all six & 104 & 1.92--9.62\% & 0.00--7.69 & +4.81 (P-text) & inside rerun range \\
+\bottomrule
+\end{tabular}
+\caption{Every registered same-condition rerun in the eight cells: 25 pairs in 6 cells. \emph{Discordance}: share of tasks whose outcome differs between the two runs. \emph{Rerun adds}: $|\{a \text{ solves}\} \setminus \{b \text{ solves}\}|/n$ over both directions of every pair, the ceiling gain bought by adding a rerun as one extra arm. \emph{Distinct arm adds}: the same functional for the best single genuinely different mode added to the cell's best single mode. Same cell, same $n$, same arm count, so the two columns are directly comparable; \emph{reading} only says whether the distinct arm's gain lies within the range of the cell's reruns. Every run, rerun included, carries environment drift as well as serving nondeterminism. The B2 cells solve 2--4\% of tasks, so their columns are one or two tasks wide. Outside the eight cells and not used here: \texttt{B5.cls.dom}, \texttt{B1.shop.som}. Source: \texttt{noise\_floor\_inventory.json}.}
+% source: noise_floor_inventory (clean_pairs, margins); regenerate when a pair is registered
+\label{tab:rerun}
+\end{table}
