@@ -153,6 +153,7 @@ magnitude less」（`wa_red·B1` 的 set-difference 到 7.69pp）。并且「重
 - caption 完整性：`check_captions.py` 56 条，1 条报缺失为 `Δ`（U+0394）/ `∆`（U+2206）字形差异，人工核过原文完整
 - 路径泄漏：`strings` 0 命中；Title/Author/Subject/Keywords 空；0 embedded files
 - 编译环境：Mac 无 TeX，用 OrbStack 跑 `texlive/texlive:TL2025-historic`（见下方构建）
+- **Overleaf**：项目 `6adde2c26e26d2e60e63419d`（VLM4RWD-2026-camera-ready，作者主账号，2026-10-25 网页上传源码 zip 建立）。Overleaf 编译：pdfTeX / TL2026，0 error / 0 undefined，47 页，content-end p9，与本地一致。**单向**：真源是本目录，Overleaf 上改了要同步回来
 - **已上传 OpenReview**（2026-10-25；回读服务器 PDF SHA-256 `bc3584bd8d90…` 与本地一致）
 
 ## ⚠️ 第二条教训：`pdftotext | grep` 查不出匿名性泄漏
@@ -223,8 +224,7 @@ Broader impacts 答 **NA**（measurement study, 不引入新模型/能力/数据
 
 ## 未做
 
-1. Overleaf 项目（作者定账号后上传源码 zip）
-2. 悉尼线下 presenter 与 NeurIPS 注册 —— 见任务卡；海报在 `poster/`
+1. 悉尼线下 presenter 与 NeurIPS 注册 —— 见任务卡；海报在 `poster/`
 
 ## 构建与自查
 
