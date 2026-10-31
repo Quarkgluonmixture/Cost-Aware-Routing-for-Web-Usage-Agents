@@ -1,6 +1,7 @@
 # Project context for AI CLI agents (codex / others)
 
-**Entry authority:** read [README.md](README.md) for the research scope and final claim boundaries,
+**Entry authority:** read [README.md](README.md) for the research-scope summary. Final claim scope and limitations follow
+[THESIS_ONE_SENTENCE](final_dissertation/THESIS_ONE_SENTENCE.md) and [CLAIM_EVIDENCE_MATRIX](final_dissertation/CLAIM_EVIDENCE_MATRIX.md). Read
 [the experiment ledger](docs/checkpoints/台账.md) and [experiment notes](docs/checkpoints/实验笔记.md) for dated operational evidence,
 and [GOTCHAS](docs/reference/GOTCHAS.md) before operational work. The former `.claude/CLAUDE.md` entry is absent from this tree.
 
@@ -20,7 +21,7 @@ Master bug catalog (cross-AI shared taxonomy + B-number reservation): `docs/refe
 
 ## Historical fire-state note — 2026-05-17
 
-The following note records the pre-fire audit framing as of 2026-05-17; it is not the current run or publication state. Current research claims follow README and its final-dissertation evidence pointers.
+The following note records the pre-fire audit framing as of 2026-05-17; it is not the current run or publication state. Current research claims follow the final-dissertation authorities linked above, including their cell-set and noise-floor qualifications.
 
 **Phase 1a has NOT yet fired on the Condenser A100 paper-grade target host as of 2026-05-17.** Paper §1 SR / paper §4 covariate-adjusted claims / any hero number in prose are **NOT yet pinned to published values** — the Phase 1a output will *be* the first published number, not a revision of an existing one.
 
