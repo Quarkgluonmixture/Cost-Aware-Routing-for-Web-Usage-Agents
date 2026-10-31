@@ -140,7 +140,7 @@ The harness includes:
 - explicit run-set vs scored-set accounting;
 - mutation/regression tests for failure modes that previously produced silent false confidence.
 
-The operational lessons are summarized in [`GOTCHAS.md`](GOTCHAS.md): many of the expensive failures in this project came from checks that *passed while checking the wrong thing*.
+The operational lessons are summarized in [`docs/reference/GOTCHAS.md`](docs/reference/GOTCHAS.md): many of the expensive failures in this project came from checks that *passed while checking the wrong thing*.
 
 ---
 
@@ -174,7 +174,7 @@ If you are reading the repository as a researcher or reviewer:
 
 1. [`final_dissertation/THESIS_ONE_SENTENCE.md`](final_dissertation/THESIS_ONE_SENTENCE.md) — problem, research question, headline answer.
 2. `final_dissertation/CLAIM_EVIDENCE_MATRIX.md` — what is claimed, what supports it, and which old claims were retired.
-3. [`GOTCHAS.md`](GOTCHAS.md) — reusable experiment / infrastructure failure modes.
+3. [`docs/reference/GOTCHAS.md`](docs/reference/GOTCHAS.md) — reusable experiment / infrastructure failure modes.
 4. `docs/checkpoints/pre_run/` — preregistration and locked analysis plan.
 5. `scripts/analysis/` — executable evidence behind the paper figures and tables.
 
